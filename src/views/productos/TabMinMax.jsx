@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import MotivoAjusteModal from './tabminmax/MotivoAjusteModal';
+import CeroEnTodasModal from './tabminmax/CeroEnTodasModal';
 import ReglaDeDespachoModal from './tabminmax/ReglaDeDespachoModal';
 import FilterBar from '../../components/common/FilterBar';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -81,7 +82,7 @@ const MINMAX_HISTORY_ACTION_META = {
     MINMAX_DISCARD_DRAFT:           { label: 'DESCARTADO',     variante: 'neutral' },
     MINMAX_ZERO_OUT:                { label: 'PUESTO EN 0',    variante: 'danger' },
     MINMAX_LIVE_ZERO:               { label: 'PUESTO EN 0',    variante: 'danger' },
-    MINMAX_ZERO_ALL_BRANCHES:       { label: '0 EN TODA LA RED', variante: 'danger' },
+    MINMAX_ZERO_ALL_BRANCHES:       { label: '0 EN TODAS LAS SALAS', variante: 'danger' },
     // Faltaba, así que el historial mostraba el código crudo
     // `MINMAX_REQUEST_APPROVED` dentro de la píldora — reportado el 2026-08-14.
     // Cada acción que se agrega al filtro de `openHistory` necesita su entrada
@@ -336,6 +337,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     // restringe a quien decide sobre todas las salas, y acá se oculta la opción
     // en vez de dejar que la elija y le rebote.
     const puedeYaNoRota = getScope('minmax') === 'ALL';
+    // «0 en todas las salas» lo tiene quien decide sobre todas, o quien recibió
+    // esa función sola (`minmax_cero_en_todas`) sin el alcance total: es la
+    // jefa de Compras y Logística, que retira productos pero no edita el
+    // MIN·MAX de cada sala. La base pide lo mismo.
+    const puedeCeroEnTodas = canManage && (puedeYaNoRota || hasPermission('minmax_cero_en_todas'));
     // Los parámetros del cálculo y los laboratorios ocultos no son de ninguna
     // sala: cambiarlos mueve el MIN·MAX de las siete. La base los exige con
     // alcance total (`stock_config_update`, `laboratorios_update`); acá el botón
@@ -1406,6 +1412,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             dead={dead}
                                             noHistory={noHistory}
                                             canManage={canManage}
+                                            puedeCeroEnTodas={puedeCeroEnTodas}
                                             publishing={publishing}
                                             hidingIds={hidingIds}
                                             onOpenMotivo={() => setMotivoRow(row)}
@@ -1434,13 +1441,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             onOpenHistory={() => openHistory(row)}
                                             onDiscardDraft={() => setDiscardRowConfirm({ open: true, row })}
                                             onPublish={(ids) => requestPublish(ids)}
-                                            onZeroAllBranches={() => {
-                                                const cls = row.draft_abc_class || row.abc_class;
-                                                if (cls === 'A' || cls === 'B')
-                                                    setZeroOutConfirm({ open: true, row, pendingCell: null, pendingPair: null, pendingZeroAll: true });
-                                                else
-                                                    setZeroAllConfirm({ open: true, row });
-                                            }}
+                                            onZeroAllBranches={() => setZeroAllConfirm({ open: true, row })}
                                         />
                                     </DataCell>
                                 </DataRow>
@@ -1699,7 +1700,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 const sol = d.request_id
                                     ? historySolicitudes.find(s => s.id === d.request_id)
                                     : null;
-                                const sucName = log.action === 'MINMAX_ZERO_ALL_BRANCHES' ? 'Toda la red' : (ERP_NAMES[d.sucursal_id] || '');
+                                const sucName = log.action === 'MINMAX_ZERO_ALL_BRANCHES' ? 'Todas las salas' : (ERP_NAMES[d.sucursal_id] || '');
                                 // El `badge:` del fallback viejo no lo leía nadie —`Badge` va
                                 // por `variante`— así que una acción sin entrada salía con el
                                 // código crudo Y sin color. Ahora al menos sale neutra.
@@ -1779,6 +1780,15 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                 entonces su motivo ya está arriba, en la tarjeta
                                                 de «Vigente», y repetirlo dos renglones más abajo
                                                 hace leer dos hechos donde hay uno. */}
+                                            {/* El porqué de «0 en todas las salas»: obligatorio
+                                                desde el 2026-09-28 y guardado en la bitácora. */}
+                                            {log.action === 'MINMAX_ZERO_ALL_BRANCHES' && d.nota && (
+                                                <p className="text-micro text-content-3 mt-1 leading-relaxed">
+                                                    <span className="font-semibold">
+                                                        {d.motivo === 'ya_no_rota' ? `${MOTIVO_AJUSTE.ya_no_rota.label}:` : 'Por qué:'}
+                                                    </span> {d.nota}
+                                                </p>
+                                            )}
                                             {sol?.reason && sol.id !== historyRow._ajuste_solicitud_id && (
                                                 <p className="text-micro text-content-3 mt-1 leading-relaxed">
                                                     <span className="font-semibold">Motivo:</span> {sol.reason}
@@ -1946,34 +1956,32 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             {/* ── Confirm poner 0 en producto de alta rotación ── */}
             <ConfirmModal
                 isOpen={zeroOutConfirm.open}
-                onClose={() => setZeroOutConfirm({ open: false, row: null, pendingCell: null, pendingPair: null, pendingZeroAll: false })}
+                onClose={() => setZeroOutConfirm({ open: false, row: null, pendingCell: null, pendingPair: null })}
                 onConfirm={() => {
-                    const { row, pendingCell, pendingPair, pendingZeroAll } = zeroOutConfirm;
-                    setZeroOutConfirm({ open: false, row: null, pendingCell: null, pendingPair: null, pendingZeroAll: false });
-                    if (pendingZeroAll) handleZeroAllBranches(row);
-                    else if (pendingCell) saveDraftCell(pendingCell, { confirmed: true });
+                    const { row, pendingCell, pendingPair } = zeroOutConfirm;
+                    setZeroOutConfirm({ open: false, row: null, pendingCell: null, pendingPair: null });
+                    if (pendingCell) saveDraftCell(pendingCell, { confirmed: true });
                     else if (pendingPair) saveDraftPair(...pendingPair, { confirmed: true });
                     else zeroOutRow(row);
                 }}
-                title={zeroOutConfirm.pendingZeroAll ? '¿Poner 0 en red — producto de alta rotación?' : '¿Poner 0 en producto de alta rotación?'}
-                message={zeroOutConfirm.pendingZeroAll
-                    ? `"${zeroOutConfirm.row?.product_name ?? ''}" es clase ${zeroOutConfirm.row?.draft_abc_class || zeroOutConfirm.row?.abc_class || '?'} con ${Number(zeroOutConfirm.row?.daily_velocity ?? 0).toFixed(1)} und/día. Quedará en 0/0 en todas las sucursales y bodega. Esta acción no se puede deshacer.`
-                    : `"${zeroOutConfirm.row?.product_name ?? ''}" es clase ${zeroOutConfirm.row?.draft_abc_class || zeroOutConfirm.row?.abc_class || '?'} con ${Number(zeroOutConfirm.row?.daily_velocity ?? 0).toFixed(1)} und/día. ¿Confirmar MIN·MAX en 0?`}
-                confirmText={zeroOutConfirm.pendingZeroAll ? '0 en red' : 'Poner 0'}
+                title="¿Poner 0 en producto de alta rotación?"
+                message={`"${zeroOutConfirm.row?.product_name ?? ''}" es clase ${zeroOutConfirm.row?.draft_abc_class || zeroOutConfirm.row?.abc_class || '?'} con ${Number(zeroOutConfirm.row?.daily_velocity ?? 0).toFixed(1)} und/día. ¿Confirmar MIN·MAX en 0?`}
+                confirmText="Poner 0"
                 cancelText="Cancelar"
                 isDestructive={true}
             />
 
-            {/* ── Confirm zero all branches modal (solo clase C / sin clase) ── */}
-            <ConfirmModal
-                isOpen={zeroAllConfirm.open}
+            {/* ── 0 en todas las salas: pide el porqué (obligatorio) ── */}
+            <CeroEnTodasModal
+                key={zeroAllConfirm.row?.erp_product_id ?? 'ninguno'}
+                open={zeroAllConfirm.open}
+                row={zeroAllConfirm.row}
+                puedeYaNoRota={puedeYaNoRota}
                 onClose={() => setZeroAllConfirm({ open: false, row: null })}
-                onConfirm={() => { const r = zeroAllConfirm.row; setZeroAllConfirm({ open: false, row: null }); handleZeroAllBranches(r); }}
-                title="¿Poner — / — en todas las salas?"
-                message={`"${zeroAllConfirm.row?.product_name ?? ''}" quedará en 0/0 en todas las sucursales y bodega. Se publicará inmediatamente. Esta acción no se puede deshacer.`}
-                confirmText="0 en red"
-                cancelText="Cancelar"
-                isDestructive={true}
+                onConfirmar={async (motivo) => {
+                    const ok = await handleZeroAllBranches(zeroAllConfirm.row, motivo);
+                    if (ok) setZeroAllConfirm({ open: false, row: null });
+                }}
             />
 
             {/* ── Confirm discard all modal ── */}

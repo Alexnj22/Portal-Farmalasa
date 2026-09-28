@@ -285,6 +285,10 @@ const GRUPOS_CRUDOS = [
                 { key: 'minmax_tab_agotados',    label: 'Agotados',    tipo: 'tab' },
                 { key: 'minmax_ver_costos',      label: 'Ver costos de compra y venta', tipo: 'cap' },
                 { key: 'minmax_descargar',       label: 'Descargar el análisis (CSV)',  tipo: 'cap' },
+                // Retirar un producto de las siete salas sin tener alcance total:
+                // la jefa de Compras y Logística lo necesita y el usuario no
+                // quiere darle el MIN·MAX de cada sala (2026-09-28).
+                { key: 'minmax_cero_en_todas',   label: 'Poner 0 en todas las salas',   tipo: 'cap' },
             ]},
             { key: 'ventas_perdidas', label: 'Ventas perdidas', desc: 'Registro de productos solicitados sin stock; alertas de compra para logística con seguimiento de estado', icono: 'PackageMinus', hasApprove: false, sub: [
                 { key: 'ventas_perdidas_descargar', label: 'Descargar el registro (CSV)', tipo: 'cap' },

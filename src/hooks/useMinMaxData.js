@@ -128,7 +128,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     const [zeroAllConfirm,  setZeroAllConfirm]  = useState({ open: false, row: null });
     const [calcularConfirm, setCalcularConfirm] = useState({ open: false, mode: null });
     const [discardRowConfirm, setDiscardRowConfirm] = useState({ open: false, row: null });
-    const [zeroOutConfirm,  setZeroOutConfirm]  = useState({ open: false, row: null, pendingCell: null, pendingPair: null, pendingZeroAll: false });
+    const [zeroOutConfirm,  setZeroOutConfirm]  = useState({ open: false, row: null, pendingCell: null, pendingPair: null });
     const [discardingAll,  setDiscardingAll]  = useState(false);
     const [hideFilteredConfirm, setHideFilteredConfirm] = useState(false);
     const [hidingFiltered,      setHidingFiltered]      = useState(false);
@@ -460,26 +460,34 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         }
     }, [hasPublishedData]);
 
-    const handleZeroAllBranches = useCallback(async (row) => {
+    const handleZeroAllBranches = useCallback(async (row, { motivo, nota }) => {
         // Ya no hace falta pedir el usuario: la RPC resuelve published_by con
         // auth.email() (F4.2), asi que este getUser() era un round-trip para nada.
+        // El porqué es obligatorio (2026-09-28): la RPC lo guarda en la fila y
+        // acá va también a la bitácora, que es lo que lee el historial.
         const { error } = await ponerEnCeroProductoEnTodasLasSalas({
             p_erp_product_id: row.erp_product_id,
+            p_motivo: motivo,
+            p_nota: nota,
         });
         if (error) {
             useToastStore.getState().showToast(row.product_name, mensajeAmigable(error), 'error');
-            return;
+            return false;
         }
+        const ahora = new Date().toISOString();
         setData(prev => prev.map(r =>
             r.erp_product_id === row.erp_product_id
-                ? { ...r, min_units: 0, max_units: 0, draft_min: null, draft_max: null, draft_status: 'none', has_manual: false, effective_min: 0, effective_max: 0 }
+                ? { ...r, min_units: 0, max_units: 0, draft_min: null, draft_max: null, draft_status: 'none', has_manual: false, effective_min: 0, effective_max: 0,
+                    _manual_motivo: motivo, _manual_nota: nota, _manual_at: ahora, _manual_cliente_unidades: null, _manual_cliente_dias: null }
                 : r
         ));
-        useToastStore.getState().showToast(row.product_name, 'Retirado de MIN·MAX en todas las salas', 'success');
+        useToastStore.getState().showToast(row.product_name, 'Quedó en 0 en todas las salas', 'success');
         useStaff.getState().appendAuditLog('MINMAX_ZERO_ALL_BRANCHES', String(row.erp_product_id), {
             field: 'min+max', product: row.product_name,
             new_min: 0, new_max: 0,
+            motivo, nota,
         });
+        return true;
     }, []);
 
     const saveDraftCell = useCallback(async (edit, opts = {}) => {
@@ -859,7 +867,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         setHistoryLogs([]);
         setHistoryLoading(true);
         // Toda acción que cambia MIN/MAX de este producto — incluye Bodega manual,
-        // ediciones desde Pedidos y los "0 en red" (que no llevan sucursal_id propio
+        // ediciones desde Pedidos y los "0 en todas las salas" (que no llevan sucursal_id propio
         // porque tocan TODAS las sucursales a la vez, por eso van con .or() aparte).
         // La bitácora de la aprobación trae quién pidió y quién decidió, pero NO
         // el motivo que se escribió al pedir: ese vive en la solicitud, y se

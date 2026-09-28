@@ -8,7 +8,7 @@ import {
 import useCapaFlotante from '../../../plataforma/capaFlotante';
 import { useEnHojaDeAcciones } from '../../../components/common/hojaDeAcciones';
 
-export default function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, publishing, hidingIds, onOpenMotivo,
+export default function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, puedeCeroEnTodas, publishing, hidingIds, onOpenMotivo,
     isBodegaRow,
     onUnhide, onHide, onZeroOut, onResetToCalc, onOpenHistory, onDiscardDraft, onPublish, onZeroAllBranches }) {
 
@@ -96,7 +96,7 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
                 cls: `${B} text-content-3 hover:text-content-2 hover:bg-surface-card-hover disabled:pointer-events-none`,
                 dropCls: 'text-content-3 hover:text-content-2 hover:bg-surface-card-hover',
                 onClick: () => onHide(), disabled: hidingIds.has(row.erp_product_id) },
-        isBodegaRow && canManage && { key: 'zero_all', icon: <XCircle size={13}/>, label: '0 en red',
+        isBodegaRow && puedeCeroEnTodas && { key: 'zero_all', icon: <XCircle size={13}/>, label: '0 en todas las salas',
             cls: `${B} text-danger-text hover:text-danger-text hover:bg-danger/10`,
             dropCls: 'text-danger-text hover:text-danger-text hover:bg-danger/10',
             onClick: () => onZeroAllBranches() },

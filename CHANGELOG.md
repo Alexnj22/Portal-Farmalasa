@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1084.10 — MIN·MAX: «0 en todas las salas» con permiso propio y el porqué obligatorio
+
+La jefa de Compras y Logística no podía retirar un producto de todas las salas:
+`zero_out_product_all_branches` exigía alcance total en MIN·MAX y le rebotaba
+con `BRANCH_SCOPE_DENIED`. El usuario no quiere darle ese alcance (editaría el
+MIN·MAX de cada sala), sólo la función. Ahora es una capacidad propia,
+`minmax_cero_en_todas` («Poner 0 en todas las salas» en Permisos), encendida
+para ese cargo; la RPC acepta alcance total **o** la capacidad.
+
+Y pregunta por qué: un diálogo nuevo (`CeroEnTodasModal`) exige escribir el
+motivo. Se guarda en la fila (`manual_motivo`/`manual_nota`, que ya muestra la
+tarjeta «Vigente») y en la bitácora, que el historial ahora pinta. «Ya no
+rota» se ofrece sólo con alcance total, igual que en el resto del módulo. El
+botón «0 en red» pasó a llamarse «0 en todas las salas».
+
+Migración `20260928222145` (firma nueva, la vieja se borró).
+
 ## v2.1084.9 — App: salir vuelve a la entrada; probada en iOS
 
 La app del teléfono se probó en un iPhone (simulador, iOS 27): entra, guarda

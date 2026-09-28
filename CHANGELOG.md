@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1076.2 — La base anota sola el dinero y lo fiscal
+
+Decisión del usuario (D3 del plan del núcleo, «la mezcla»): la bitácora la
+escribía cada pantalla en un paso aparte, y una app que se olvidara de ese paso
+dejaba una acción sin rastro. En dinero y lo fiscal ahora la base anota por su
+cuenta (migración `20260928155410`), en 13 tablas que no dejaban rastro:
+confirmaciones de pago y las cuatro resoluciones de Facturación, la caja del
+portal (aperturas, entradas y salidas, cortes, vales), abonos y pagos de
+créditos, pagos a proveedores y los períodos de planilla.
+
+- Anota qué se creó, qué cambió (antes → después), qué se anuló y **quién**. En
+  Facturación el autor lo mandaba el navegador como texto; ahora sale de la
+  sesión.
+- Cortes y bolsas no entran: ya anotaban en la base (`cortes_caja_eventos`,
+  `bolsas_eventos`). Tampoco las tablas que escribe un cron cada minuto.
+- Un cambio de pura mecánica (`updated_at`, un reintento) no se anota. Anular
+  o borrar va como aviso (WARNING).
+- Si la anotación fallara, la operación de caja se guarda igual: nunca se traba
+  un cobro por la bitácora.
+
+Probado en el entorno de pruebas (crea uno, anula otro, aprueba un tercero; la
+mecánica no se anota; el autor de Facturación sale de la sesión aunque el
+navegador mande otro nombre). La función de producción es idéntica byte a byte.
+Sigue la otra mitad: que las funciones de `src/data` escriban la entrada legible.
+
 ## v2.1076.1 — Login: botón para ver la contraseña
 
 Una regente no podía entrar desde el teléfono después de cambiar su

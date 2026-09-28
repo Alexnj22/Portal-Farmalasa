@@ -342,8 +342,7 @@ justamente lo que rompe en silencio (un import que apunta al archivo viejo, un
 
 ## Lo que queda por decidir (del usuario)
 
-1. **D3:** ¿la bitácora queda en el cliente dentro de `src/data`, o se lleva a
-   la base? *(pendiente: el usuario pidió la explicación, 2026-09-28)*
+*(nada pendiente de decidir por ahora)*
 
 ### Decidido (2026-09-28)
 
@@ -357,6 +356,12 @@ justamente lo que rompe en silencio (un import que apunta al archivo viejo, un
   los 15 envíos del navegador son hoy tres disparadores y una RPC, probados en
   pruebas con un pedido completo (11 avisos, 0 fallos) y con definiciones
   idénticas byte a byte a las de producción.
+- **D3 — la mezcla.** La entrada legible de la bitácora la escribe la función
+  de `src/data` que guarda (así la app del teléfono la hereda), y en dinero y lo
+  fiscal la base anota además por su cuenta. La mitad de la base está hecha:
+  `bitacora_de_dinero` en 13 tablas (`20260928155410`, v2.1076.2); cortes y
+  bolsas ya tenían su historial. Falta mover los ~269 `appendAuditLog` de las
+  pantallas a `src/data`, módulo por módulo, empezando por los de dinero.
 - **F8:** no hay piloto de un solo flujo. Palabras del usuario: *«abrirán todas.
   Así que debe estar toda la info. No sé si necesariamente igual, pero debe
   estar todo.»* La app del teléfono tiene que cubrir todas las pantallas; la

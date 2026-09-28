@@ -148,7 +148,7 @@ export default function Ronda({ fecha, bloques, onCerrar }) {
   const cerrar = () => {
     if (guardando) return;
     if (!items.length) { onCerrar(huboCambio); return; }
-    Alert.alert('¿Salir sin anotar?', `Hay ${items.length} ${items.length === 1 ? 'renglón escrito' : 'renglones escritos'} que todavía no se guardaron.`, [
+    Alert.alert('¿Salir sin anotar?', items.length === 1 ? 'Hay 1 renglón escrito que todavía no se guardó.' : `Hay ${items.length} renglones escritos que todavía no se guardaron.`, [
       { text: 'Seguir anotando', style: 'cancel' },
       { text: 'Salir sin guardar', style: 'destructive', onPress: () => onCerrar(huboCambio) },
     ]);

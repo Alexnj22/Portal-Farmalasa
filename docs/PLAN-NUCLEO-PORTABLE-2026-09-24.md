@@ -194,6 +194,13 @@
   la escribió con una sola y salió vacía; hoy hay `utils/salaDelUsuario.js`,
   usado en Bitácoras y la app. **Pendiente**: pasar las otras ~58 copias al
   canónico.
+- **F8 — probada en iOS (2026-09-28)**. Simulador iPhone 18 Pro, iOS 27, con
+  Expo Go y el mismo código: entrada (el sistema ofrece guardar la contraseña
+  en su llavero), Bitácoras con la barra y el gesto de volver propios de iOS,
+  la ronda como hoja nativa (bajarla con algo escrito pregunta), y el portal
+  incrustado con la sesión prestada. Salió un defecto que Android también
+  tenía: «Salir» dejaba un Inicio vacío — la app no tenía guardia de sesión
+  como la web; hoy la tiene la raíz (`GuardiaDeSesion`).
 
 ## Para qué
 

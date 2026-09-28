@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1084.9 — App: salir vuelve a la entrada; probada en iOS
+
+La app del teléfono se probó en un iPhone (simulador, iOS 27): entra, guarda
+la contraseña en el llavero del sistema si la persona quiere, Bitácoras y la
+ronda funcionan, bajar la hoja de la ronda con algo escrito pregunta antes de
+tirarlo, y el portal dentro de la app abre con la misma sesión. Dos arreglos:
+«Salir» dejaba un Inicio en blanco (ahora vuelve a la entrada, igual que
+cuando la sesión se vence), y el aviso de salir sin guardar decía «1 renglón
+… se guardaron».
+
+
 ## v2.1084.8 — Puntos: el acceso a Mis puntos sube y se envía por WhatsApp
 
 Pedido del usuario: subir el acceso a Mis puntos y hacerlo más moderno y

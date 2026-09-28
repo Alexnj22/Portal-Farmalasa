@@ -4,6 +4,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Notice from '../components/common/Notice';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
+import { useMarca } from '../plataforma/useMarca';
 import { useAuth } from '../context/AuthContext';
 import { fetchEmisor } from '../data/distribucion';
 import TabPedidos from './distribucion/TabPedidos';
@@ -28,6 +29,9 @@ const TABS = [
 ];
 
 export default function DistribucionView() {
+    // Otra empresa, otros colores: mientras esta vista está abierta, todo el
+    // portal se pinta con la marca de la distribuidora (index.css).
+    useMarca('distribucion');
     const [tab, setTab] = usePestanaEnUrl(TABS, 'pedidos');
     const { hasPermission } = useAuth();
     const puedeVender = hasPermission('distribucion', 'can_edit');

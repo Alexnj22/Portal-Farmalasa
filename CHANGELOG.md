@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1080.0 — Distribución con los colores de la distribuidora
+
+La distribuidora es otra empresa y tiene que distinguirse a simple vista de las
+farmacias (pedido del usuario). Mientras `/distribucion` está abierta, todo el
+portal —menú, botones, brillos de fondo, modales— se pinta con su marca, y al
+salir vuelve solo.
+
+- Paleta: **azul petróleo `#0f6e7d`** en el papel del magenta y **naranja
+  `#f28c1b`** en el del lima (`#b45309` para texto blanco). La Popular y La
+  Salud comparten el mismo par magenta/lima; su inverso RGB los devuelve
+  intercambiados, así que se giró el par 90° en la rueda. Todo el texto pasa AA.
+- `useMarca('distribucion')` (`src/plataforma/useMarca.js`) estampa
+  `data-marca` en `<html>`, para que los modales montados en `<body>` también
+  lo hereden; `index.css` redefine los tokens de marca e identidad bajo
+  `:root[data-marca="distribucion"]`, con sus variantes de tema oscuro.
+- Los brillos del menú y del fondo (`AppLayout`) estaban escritos como `rgba`
+  fijos; ahora salen de `--logo-*` con `color-mix`. Sin la marca dan el mismo
+  color de antes.
+- Los colores de dato (categorías, éxito/aviso/peligro) no cambian.
+
 ## v2.1079.1 — Distribución: el tipo de documento se elige en cada venta
 
 Un contribuyente no siempre pide Crédito Fiscal (pedido del usuario). La venta

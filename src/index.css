@@ -4046,3 +4046,74 @@ button[data-foco="hijo"]:focus-visible,
    es theme-aware por el bloque de arriba. Eran un parche por valor; ahora el
    sistema se sostiene solo y cualquier `rounded-2xl` nuevo hereda la
    geometría del tema sin agregar una regla. */
+
+/* ═══════════════════════════════════════════════════════════════
+   MARCA DE LA DISTRIBUIDORA (2026-09-28)
+   ─────────────────────────────────────────────────────────────
+   La distribuidora es OTRA empresa (otro NIT) y el usuario pidió que se
+   distinga a simple vista de las farmacias: al entrar a /distribucion, TODO
+   el portal —menú, botones, brillos, modales— toma sus colores, y al salir
+   vuelve solo. Lo enciende `useMarca('distribucion')` estampando
+   `data-marca` en <html>; va en <html> y no en el envoltorio de la vista
+   porque los modales se montan en <body> y no heredarían el token.
+
+   Por qué ESTOS dos colores: los logos de La Popular y La Salud usan el mismo
+   par (magenta #981d97 ≈ 300°, lima #8ec30f ≈ 77°), que ya son casi
+   complementarios — su inverso RGB los devuelve intercambiados. Se giró el
+   par 90° en la rueda: petróleo (≈188°) en el papel del magenta y naranja
+   (≈32°) en el del lima, conservando lo oscuro/intenso de cada uno.
+
+   Contraste medido (WCAG): blanco sobre #0f6e7d 5.92 · #0f6e7d sobre
+   #f4f6fb 5.48 · blanco sobre #b45309 5.02 · #9a4a06 sobre #f4f6fb 5.79 ·
+   #7fd0db sobre #1e293b 8.32 · #f9b97a sobre #1e293b 8.53. El naranja
+   brillante NO lleva texto blanco (2.46:1): para eso está su `-solid`,
+   igual que el lima del logo.
+
+   Los colores de DATO (chart-*, success/warning/danger) no se tocan: la
+   marca no pinta un dato (DESIGN.md §15, Nivel 1).
+   ═══════════════════════════════════════════════════════════════ */
+:root[data-marca="distribucion"] {
+  --brand:        #0f6e7d;
+  --brand-dark:   #0b5561;
+  --brand-hover:  #0b5561;
+  --brand-pressed:#083f48;
+  --brand-purple: #b45309;  /* pareja del degradado de los íconos */
+  --brand-text:   #0d6370;
+
+  --logo-magenta:      #0f6e7d;
+  --logo-green:        #f28c1b;
+  --logo-magenta-soft: #7fd0db;
+  --logo-green-soft:   #f9b97a;
+  --logo-green-solid:  #b45309;
+  --logo-magenta-text: #0d6370;
+  --logo-green-text:   #9a4a06;
+
+  --btn-brand-shadow:       0 4px 14px rgba(15,110,125,0.28);
+  --btn-brand-shadow-hover: 0 8px 20px rgba(15,110,125,0.40);
+  --shadow-glow-brand:      0 6px 20px rgba(15,110,125,.4);
+  --shadow-ring-brand:      0 0 0 4px rgba(15,110,125,.15);
+  --state-selected-overlay: rgba(15,110,125,0.08);
+}
+
+:root[data-marca="distribucion"][data-theme="dark"],
+:root[data-marca="distribucion"][data-theme="solid-dark"] {
+  --brand-text:        #5ec8d6;
+  --logo-magenta-text: var(--logo-magenta-soft);
+  --logo-green-text:   var(--logo-green-soft);
+  --btn-brand-shadow:       0 4px 14px rgba(15,110,125,0.45);
+  --btn-brand-shadow-hover: 0 8px 20px rgba(15,110,125,0.60);
+}
+
+:root[data-marca="distribucion"][data-theme="solid"],
+:root[data-marca="distribucion"][data-theme="solid-dark"] {
+  --btn-brand-shadow-hover: 0 0 0 2px color-mix(in srgb, var(--brand) 30%, transparent);
+  --shadow-glow-brand: 0 1px 3px color-mix(in srgb, rgba(15,110,125,.4) 30%, transparent);
+}
+
+/* Las superficies siempre oscuras (menú, tooltip, vidrio a medida) fijan su
+   propio --brand-text azul claro; acá va el petróleo claro. */
+:root[data-marca="distribucion"] [data-surface="sidebar"],
+:root[data-marca="distribucion"] [data-surface="tooltip"],
+:root[data-marca="distribucion"] [data-bespoke-glass] {
+  --brand-text: #7fd0db;
+}

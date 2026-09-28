@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1076.0 — Puntos: cumpleaños automático, dar y quitar a mano, y las fichas genéricas al encender
+
+Revisión previa al 1-oct: lo que el sistema anterior hacía y el portal no.
+Decisiones del usuario del 2026-09-28.
+
+- **Acumula toda ficha con nombre** (lo que el portal ya hacía). Medido en
+  agosto: 6,582 clientes y 174,342 puntos, contra 645 y 38,785 con el ticket
+  presentado a mano del sistema anterior.
+- **Las cuatro fichas genéricas** (CLIENTES VARIOS, CLIENTE FRECUENTE, CLIENTE
+  FRECUENTE NUEVO, CLIENTE VIP) dejan de acumular — pero **al encender**, dentro
+  de `puntos_encender`. Marcarlas antes despertó al puente viejo, que retira de
+  la base anterior los tickets de toda ficha que no acumula: una corrida retiró
+  499 (1–5 may 2025, nunca presentados, cero puntos restados) antes de revertir
+  la marca un minuto después.
+- **Cumpleaños**: 50 puntos el día del cumpleaños a toda ficha con fecha de
+  nacimiento (`puntos_dar_cumpleanos`, cron `puntos-cumpleanos-diario`, 6:10
+  a. m.). Uno por año, garantizado por un índice único; no repite a quien se le
+  regaló a mano en los últimos 60 días. La cantidad es una fila de
+  `puntos_config`.
+- **Dar o quitar puntos a mano** desde el detalle del cliente, con permiso
+  propio (`puntos_ajustar`: Gerencia, Administración, Supervisión de Ventas),
+  motivo obligatorio y bitácora. No deja la cuenta en negativo. Se habilita el
+  1-oct: antes el saldo lo manda el sistema anterior.
+- **Vencimiento programado desde ya** (`puntos-vencer-diario`); lo primero
+  vence el 1-oct-2027.
+- **Mis puntos** nombra cada movimiento: un vencimiento o una anulación salían
+  como «Compra» con un menos adelante. El cumpleaños sale como tal, también en
+  el detalle del cliente.
+
 ## v2.1075.37 — Los avisos de pedido los escribe la base
 
 Decisión del usuario (F4 del plan del núcleo): los avisos del camino de un

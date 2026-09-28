@@ -220,5 +220,13 @@ export const fetchClientesConPuntos = ({ busqueda = null, limite = 25, desde = 0
         p_busqueda: busqueda || null, p_limite: limite, p_desde: desde, p_orden: orden, p_dir: dir,
     });
 
+/**
+ * Dar (`puntos` > 0) o quitar (< 0) puntos a mano. Exige el permiso
+ * `puntos_ajustar` y el motivo, y rechaza dejar la cuenta en negativo: las tres
+ * cosas las vuelve a comprobar la base.
+ */
+export const ajustarPuntos = ({ customerId, puntos, motivo, nota = null }) =>
+    rpc('puntos_ajustar', { p_customer_id: customerId, p_puntos: puntos, p_motivo: motivo, p_nota: nota || null });
+
 /** Todo de un cliente: ficha, cuenta (saldo, vencimientos, movimientos) y cuentas viejas asignadas. */
 export const fetchPuntosCliente = (customerId) => rpc('puntos_panel_cliente', { p_customer_id: customerId });

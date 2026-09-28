@@ -278,6 +278,18 @@ const CRONS = [
           + 'Sólo llama a send-push-notification cuando hay algo que entregar.',
   },
   {
+    job: 'puntos-cumpleanos-diario', slug: null, cadencia: '10 12 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Regala los puntos de cumpleaños del día (decisión del usuario, 2026-09-28). SQL puro; '
+          + 'no hace nada mientras el programa siga en el sistema anterior.',
+  },
+  {
+    job: 'puntos-vencer-diario', slug: null, cadencia: '5 12 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Vence los lotes cumplidos (lo primero vence el 1-oct-2027). SQL puro, con guarda de '
+          + '`puntos_fuente() = portal`: programado desde ya para que nadie tenga que acordarse.',
+  },
+  {
     job: 'puntos-sincronizar-noche', slug: 'puntos-arranque', cadencia: '40 4 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'Trae al libro del portal sólo lo nuevo de la copia y cuadra, sin encender el programa. '

@@ -43,7 +43,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
     Loader2, AlertTriangle, ArrowLeft, ShoppingBag, Gift, ShieldCheck,
     CalendarClock, ChevronDown, ChevronUp, ChevronRight, CreditCard, Phone, UserRound, ScrollText,
-    KeyRound,
+    KeyRound, Cake, SlidersHorizontal, Undo2, CalendarX,
 } from 'lucide-react';
 import Button from '../components/common/Button';
 import PortalInput from '../components/common/PortalInput';
@@ -263,27 +263,42 @@ function ComoFunciona() {
     );
 }
 
-/** Un movimiento del historial. Compra suma, canje resta. */
+/**
+ * Cómo se nombra cada movimiento. Antes sólo existían «Compra» y «Canje», y un
+ * vencimiento o una anulación —que restan— salían como «Compra» con un menos
+ * adelante (2026-09-28). Lo que suma va en verde; lo que resta, en el tono del
+ * canje.
+ */
+const TIPOS_DE_MOVIMIENTO = {
+    compra:      { rotulo: 'Compra',                  icono: ShoppingBag },
+    cumpleanos:  { rotulo: 'Regalo de cumpleaños',    icono: Cake },
+    ajuste:      { rotulo: 'Ajuste',                  icono: SlidersHorizontal },
+    canje:       { rotulo: 'Canje',                   icono: Gift },
+    anulacion:   { rotulo: 'Compra anulada',          icono: Undo2 },
+    vencimiento: { rotulo: 'Vencieron',               icono: CalendarX },
+};
+
+/** Un movimiento del historial. */
 function Movimiento({ m }) {
-    const esCanje = m.tipo === 'canje';
+    const resta = m.puntos < 0;
+    const tipo = TIPOS_DE_MOVIMIENTO[m.tipo] ?? TIPOS_DE_MOVIMIENTO.compra;
+    const Icono = tipo.icono;
+    // Un ajuste que suma es un regalo para quien lo lee; el que resta, un ajuste.
+    const rotulo = m.tipo === 'ajuste' && !resta ? 'Puntos de regalo' : tipo.rotulo;
     return (
         <div data-surface="card" className="flex items-center gap-3 px-3 py-2.5">
             <div className={`w-8 h-8 rounded-btn flex items-center justify-center shrink-0
-                             ${esCanje ? 'bg-chart-3/[0.14]' : 'bg-success/[0.14]'}`}>
-                {esCanje
-                    ? <Gift size={15} className="text-chart-3-text" strokeWidth={2.5} />
-                    : <ShoppingBag size={15} className="text-success-text" strokeWidth={2.5} />}
+                             ${resta ? 'bg-chart-3/[0.14]' : 'bg-success/[0.14]'}`}>
+                <Icono size={15} className={resta ? 'text-chart-3-text' : 'text-success-text'} strokeWidth={2.5} />
             </div>
             <div className="min-w-0 flex-1">
-                <p className="text-body-lg font-bold text-content-1 leading-tight">
-                    {esCanje ? 'Canje' : 'Compra'}
-                </p>
+                <p className="text-body-lg font-bold text-content-1 leading-tight">{rotulo}</p>
                 <p className="text-caption text-content-3 truncate">
                     {fmtFecha(m.fecha)}{m.sala ? ` · ${m.sala}` : ''}
                 </p>
             </div>
             <span className={`text-body-lg font-black tabular-nums shrink-0
-                              ${esCanje ? 'text-chart-3-text' : 'text-success-text'}`}>
+                              ${resta ? 'text-chart-3-text' : 'text-success-text'}`}>
                 {m.puntos > 0 ? '+' : '−'}{Math.abs(m.puntos).toLocaleString()}
             </span>
         </div>

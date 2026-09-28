@@ -335,6 +335,9 @@ export default function PuntosView({ openModal }) {
                 open={!!clienteAbierto}
                 customerId={clienteAbierto}
                 puedeEditarFicha={puedeEditarFicha}
+                // Con el nombre literal del permiso, para que lo vea gate:permisos.
+                puedeAjustar={hasPermission('puntos_ajustar', 'can_view')}
+                enPortal={resumen?.config?.fuente === 'portal'}
                 onClose={() => setClienteAbierto(null)}
                 // La ficha se edita en el MISMO modal que usa Clientes. Se cierra
                 // éste primero para no apilar dos diálogos.

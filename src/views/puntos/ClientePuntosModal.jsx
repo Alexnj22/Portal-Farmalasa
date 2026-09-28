@@ -23,18 +23,21 @@
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import {
     Star, Pencil, TrendingUp, Gift, Undo2, CalendarX, Wrench, History, CalendarClock, IdCard, Phone,
-    ShoppingBag, X, KeyRound, BarChart3, Receipt,
+    ShoppingBag, X, KeyRound, BarChart3, Receipt, Cake, SlidersHorizontal,
 } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import PortalInput from '../../components/common/PortalInput';
+import LiquidSelect from '../../components/common/LiquidSelect';
+import { useStaffStore as useStaff } from '../../store/staffStore';
 import { LoadingState } from '../../components/common/StateViews';
 import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { formatMoney, formatQty } from '../../utils/formatNumber';
 import { fechaNumerica, fechaTexto } from '../../utils/fecha';
-import { fetchPuntosCliente } from '../../data/puntos';
+import { fetchPuntosCliente, ajustarPuntos } from '../../data/puntos';
 import CodigoDeAcceso from './CodigoDeAcceso';
 
 // `recharts` viaja en su chunk: el modal se abre sin esperarlo.
@@ -49,6 +52,7 @@ const dolares = (n) => formatMoney((Number(n) || 0) / 100);
 // color de la serie).
 const TIPO = {
     compra:      { icono: ShoppingBag, rotulo: 'Compra',      burbuja: 'bg-success/10 text-success-text' },
+    cumpleanos:  { icono: Cake,        rotulo: 'Cumpleaños',  burbuja: 'bg-brand/10 text-brand-text' },
     ajuste:      { icono: Wrench,      rotulo: 'Ajuste',      burbuja: 'bg-surface-card-hover text-content-3' },
     canje:       { icono: Gift,        rotulo: 'Canje',       burbuja: 'bg-warning/10 text-warning-text' },
     anulacion:   { icono: Undo2,       rotulo: 'Anulación',   burbuja: 'bg-danger/10 text-danger-text' },
@@ -67,17 +71,18 @@ const nombreMes = (clave) => {
     return `${MESES[m - 1]} ${a}`;
 };
 
-export default function ClientePuntosModal({ open, customerId, puedeEditarFicha, onEditar, onClose }) {
+export default function ClientePuntosModal({ open, customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar, onClose }) {
     if (!customerId) return null;
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-4xl" ariaLabel="Puntos del cliente">
             <Cuerpo key={customerId} customerId={customerId} puedeEditarFicha={puedeEditarFicha}
+                puedeAjustar={puedeAjustar} enPortal={enPortal}
                 onEditar={onEditar} onClose={onClose} />
         </LiquidModal>
     );
 }
 
-function Cuerpo({ customerId, puedeEditarFicha, onEditar, onClose }) {
+function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar, onClose }) {
     const showToast = useToastStore((s) => s.showToast);
     const [datos, setDatos] = useState(null);
     const [cargando, setCargando] = useState(true);
@@ -85,6 +90,9 @@ function Cuerpo({ customerId, puedeEditarFicha, onEditar, onClose }) {
     const [filtro, setFiltro] = useState('todos');
     const [mesElegido, setMesElegido] = useState(null);
     const [unidad, setUnidad] = useState('puntos');
+    // Sube después de un ajuste: se relee el estado de cuenta entero, así el
+    // saldo que se ve es el que la base dice, no una suma hecha acá.
+    const [version, setVersion] = useState(0);
 
     useEffect(() => {
         let vivo = true;
@@ -99,7 +107,7 @@ function Cuerpo({ customerId, puedeEditarFicha, onEditar, onClose }) {
             }
         })();
         return () => { vivo = false; };
-    }, [customerId, showToast]);
+    }, [customerId, showToast, version]);
 
     const cliente = datos?.cliente;
     const cuenta = datos?.cuenta;
@@ -240,6 +248,12 @@ function Cuerpo({ customerId, puedeEditarFicha, onEditar, onClose }) {
                                     sub={ultimaCompra ? (sala(ultimaCompra.sucursal) ?? '') : 'Sin compras'} />
                             </div>
                         </div>
+
+                        {puedeAjustar && (
+                            <AjustarPuntos customerId={cliente.id} nombre={cliente.nombre}
+                                saldo={Number(cuenta?.saldo) || 0} habilitado={enPortal}
+                                onHecho={() => setVersion((v) => v + 1)} />
+                        )}
 
                         {/* ── 2 · La historia por mes (tocar un mes filtra) ── */}
                         {meses.length > 0 && (
@@ -390,6 +404,111 @@ function Reparto({ ganados, saldo, canjeado, vencido, anulado }) {
     );
 }
 
+// Los motivos más comunes, para que el libro se pueda leer después. «Otro»
+// obliga a escribir la nota.
+const MOTIVOS_DE_AJUSTE = [
+    { value: 'Cumpleaños', label: 'Cumpleaños' },
+    { value: 'Promoción', label: 'Promoción' },
+    { value: 'Reclamo del cliente', label: 'Reclamo del cliente' },
+    { value: 'Corrección', label: 'Corrección' },
+    { value: 'Otro', label: 'Otro' },
+];
+
+/**
+ * Dar o quitar puntos a mano (decisión del usuario, 2026-09-28: «debe haber
+ * una forma de asignar puntos y restar manual, sólo con permiso»). El permiso
+ * es `puntos_ajustar` y la base lo vuelve a exigir; también exige el motivo y
+ * rechaza quitar más de lo que el cliente tiene. Antes del arranque la base lo
+ * rechaza —el saldo todavía lo manda el sistema anterior— y acá se dice por qué.
+ */
+function AjustarPuntos({ customerId, nombre, saldo, habilitado, onHecho }) {
+    const showToast = useToastStore((s) => s.showToast);
+    const [abierto, setAbierto] = useState(false);
+    const [sentido, setSentido] = useState('dar');
+    const [cantidad, setCantidad] = useState('');
+    const [motivo, setMotivo] = useState('');
+    const [nota, setNota] = useState('');
+    const [guardando, setGuardando] = useState(false);
+
+    if (!habilitado) {
+        return (
+            <p className="text-caption text-content-3 flex items-center gap-2">
+                <SlidersHorizontal size={14} className="shrink-0" />
+                Dar o quitar puntos se habilita el 1 de octubre, cuando el programa pasa al portal.
+            </p>
+        );
+    }
+    if (!abierto) {
+        return (
+            <div>
+                <Button variant="secondary" size="sm" icon={SlidersHorizontal} onClick={() => setAbierto(true)}>
+                    Dar o quitar puntos
+                </Button>
+            </div>
+        );
+    }
+
+    const n = Number(cantidad) || 0;
+    const quitaDeMas = sentido === 'quitar' && n > saldo;
+    const falta = !n ? 'Escribe cuántos puntos.' : !motivo ? 'Elige el motivo.'
+        : motivo === 'Otro' && !nota.trim() ? 'Con «Otro», escribe el detalle.'
+        : quitaDeMas ? `Tiene ${pts(saldo)} puntos; no se le pueden quitar ${pts(n)}.` : null;
+
+    const guardar = async () => {
+        if (falta) return;
+        setGuardando(true);
+        try {
+            const r = await ajustarPuntos({ customerId, puntos: sentido === 'dar' ? n : -n, motivo, nota });
+            useStaff.getState().appendAuditLog?.('PUNTOS_AJUSTE', String(customerId), {
+                nombre, puntos: sentido === 'dar' ? n : -n, motivo, nota: nota.trim() || null, saldo: r?.saldo,
+            });
+            showToast(sentido === 'dar' ? 'Puntos dados' : 'Puntos quitados',
+                `Ahora tiene ${pts(r?.saldo)} puntos.`, 'success');
+            setAbierto(false); setCantidad(''); setMotivo(''); setNota('');
+            onHecho?.();
+        } catch (e) {
+            showToast('No se pudo ajustar', mensajeAmigable(e), 'error');
+        } finally {
+            setGuardando(false);
+        }
+    };
+
+    return (
+        <section data-surface="card" className="p-4 md:p-5 flex flex-col gap-4 min-w-0">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <Titulo icono={SlidersHorizontal}>Dar o quitar puntos</Titulo>
+                <SegmentedControl size="sm" value={sentido} onChange={setSentido} label="Qué hacer"
+                    options={[{ value: 'dar', label: 'Dar' }, { value: 'quitar', label: 'Quitar' }]} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <PortalInput label="Puntos" name="puntos_ajuste" value={cantidad} inputMode="numeric"
+                    placeholder="50"
+                    onChange={(e) => setCantidad(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    helperText={n ? `Equivalen a ${dolares(n)}` : undefined} />
+                <div className="flex flex-col gap-1.5 min-w-0">
+                    <span className="text-caption font-bold text-content-2">Motivo</span>
+                    <LiquidSelect value={motivo} onChange={setMotivo} options={MOTIVOS_DE_AJUSTE}
+                        placeholder="Elegir motivo" clearable={false} ariaLabel="Motivo del ajuste" />
+                </div>
+            </div>
+            <PortalInput label="Detalle" name="nota_ajuste" value={nota}
+                placeholder={motivo === 'Otro' ? 'Obligatorio con «Otro»' : 'Opcional: ticket, promoción, quién lo pidió'}
+                onChange={(e) => setNota(e.target.value.slice(0, 200))} />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className={`text-caption ${falta ? 'text-content-3' : 'text-content-2'}`}>
+                    {falta ?? `${sentido === 'dar' ? 'Se le darán' : 'Se le quitarán'} ${pts(n)} puntos (${dolares(n)}). Quedará con ${pts(sentido === 'dar' ? saldo + n : saldo - n)}.`}
+                </p>
+                <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => setAbierto(false)} disabled={guardando}>Cancelar</Button>
+                    <Button variant="primary" size="sm" onClick={guardar} disabled={!!falta || guardando} loading={guardando}>
+                        {sentido === 'dar' ? 'Dar puntos' : 'Quitar puntos'}
+                    </Button>
+                </div>
+            </div>
+        </section>
+    );
+}
+
 function Dato({ icono: Icono, tono, rotulo, valor, sub }) {
     return (
         <div data-surface="card" className="p-3.5 flex flex-col gap-2 min-w-0">
@@ -409,7 +528,7 @@ function Movimiento({ m, sala }) {
     const p = Number(m.puntos) || 0;
     // El rótulo ya dice «Compra» o «Canje»: del motivo se quita esa palabra
     // para no leer «Compra · compra».
-    const detalle = String(m.motivo ?? '').replace(/^(compra|canje)(\s·\s)?/i, '').trim();
+    const detalle = String(m.motivo ?? '').replace(/^(compra|canje|cortesía cumpleaños)(\s·\s)?/i, '').trim();
     return (
         <div className="flex items-center gap-3 px-4 py-3 min-w-0">
             <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${t.burbuja}`}>
@@ -417,7 +536,8 @@ function Movimiento({ m, sala }) {
             </span>
             <div className="min-w-0 flex-1">
                 <p className="text-body-sm font-bold text-content truncate">
-                    {t.rotulo}{detalle ? <span className="font-normal text-content-3"> · {detalle}</span> : null}
+                    {m.tipo === 'ajuste' && p > 0 ? 'Puntos dados' : m.tipo === 'ajuste' ? 'Puntos quitados' : t.rotulo}
+                    {detalle ? <span className="font-normal text-content-3"> · {detalle}</span> : null}
                 </p>
                 <p className="text-caption text-content-3 tabular-nums truncate">
                     {fechaNumerica(m.fecha)}{sala ? ` · ${sala}` : ''}

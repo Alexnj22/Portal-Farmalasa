@@ -20,7 +20,7 @@
  * composición y los grupos se derivan acá de los movimientos, así que no pueden
  * contradecir a la lista que se ve debajo.
  */
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import {
     Star, Pencil, TrendingUp, Gift, Undo2, CalendarX, Wrench, History, CalendarClock, IdCard, Phone,
     ShoppingBag, X, KeyRound, BarChart3, Receipt, Cake, SlidersHorizontal,
@@ -29,6 +29,9 @@ import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import SearchInput from '../../components/common/SearchInput';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import PortalInput from '../../components/common/PortalInput';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { LoadingState } from '../../components/common/StateViews';
@@ -90,6 +93,7 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
     const [mostrar, setMostrar] = useState(DE_A);
     const [filtro, setFiltro] = useState('todos');
     const [mesElegido, setMesElegido] = useState(null);
+    const [busqueda, setBusqueda] = useState('');
     const [unidad, setUnidad] = useState('puntos');
     // Sube después de un ajuste: se relee el estado de cuenta entero, así el
     // saldo que se ve es el que la base dice, no una suma hecha acá.
@@ -112,7 +116,7 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
 
     const cliente = datos?.cliente;
     const cuenta = datos?.cuenta;
-    const salas = datos?.salas ?? {};
+    const salas = useMemo(() => datos?.salas ?? {}, [datos]);
     const sala = (codigo) => (codigo ? salas[codigo] ?? codigo : null);
     const movimientos = useMemo(() => cuenta?.movimientos ?? [], [cuenta]);
     const vencimientos = cuenta?.vencimientos ?? [];
@@ -154,13 +158,26 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
         return lista.slice(0, 18).reverse();
     }, [movimientos, cuenta]);
 
-    const filtrados = useMemo(() => movimientos.filter((m) => {
-        const p = Number(m.puntos) || 0;
-        if (filtro === 'entran' && p <= 0) return false;
-        if (filtro === 'salen' && m.tipo !== 'canje') return false;
-        if (mesElegido && String(m.fecha).slice(0, 7) !== mesElegido) return false;
-        return true;
-    }), [movimientos, filtro, mesElegido]);
+    // El documento y quién, por movimiento (`puntos_panel_cliente.detalle`).
+    // Un canje devuelto comparte los datos de su canje.
+    const detalle = useMemo(() => datos?.detalle ?? {}, [datos]);
+    const infoDe = useCallback((m) => detalle[`${m.tipo === 'canje_devuelto' ? 'canje' : m.tipo}-${m.id}`] ?? {},
+        [detalle]);
+
+    const filtrados = useMemo(() => {
+        const q = busqueda.trim();
+        return movimientos.filter((m) => {
+            const p = Number(m.puntos) || 0;
+            if (filtro === 'entran' && p <= 0) return false;
+            if (filtro === 'salen' && m.tipo !== 'canje') return false;
+            if (mesElegido && String(m.fecha).slice(0, 7) !== mesElegido) return false;
+            if (!q) return true;
+            // Por documento, número de movimiento, quién, sala o motivo.
+            const i = infoDe(m);
+            return tokenMatch(q, i.documento, String(m.id), i.quien, salas[m.sucursal] ?? m.sucursal,
+                m.motivo, String(Math.abs(p)));
+        });
+    }, [movimientos, filtro, mesElegido, busqueda, infoDe, salas]);
 
     // Agrupados por mes, sobre la tanda visible.
     const grupos = useMemo(() => {
@@ -288,6 +305,10 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                                             <span className="capitalize">{nombreMes(mesElegido)}</span>
                                         </Button>
                                     )}
+                                    <SearchInput size="sm" value={busqueda}
+                                        onChange={(v) => { setBusqueda(v); setMostrar(DE_A); }}
+                                        placeholder="Documento o vendedor…"
+                                        ariaLabel="Buscar en los movimientos del cliente" />
                                     <SegmentedControl size="sm" value={filtro} onChange={cambiarFiltro}
                                         label="Tipo de movimiento" options={FILTROS} />
                                 </div>
@@ -310,7 +331,7 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                                                 </p>
                                             </div>
                                             <div className="flex flex-col divide-y divide-divider">
-                                                {g.filas.map((m) => <Movimiento key={`${m.tipo}-${m.id}`} m={m} sala={sala(m.sucursal)} />)}
+                                                {g.filas.map((m) => <Movimiento key={`${m.tipo}-${m.id}`} m={m} sala={sala(m.sucursal)} info={infoDe(m)} />)}
                                             </div>
                                         </div>
                                     ))}
@@ -523,15 +544,26 @@ function Dato({ icono: Icono, tono, rotulo, valor, sub }) {
     );
 }
 
-function Movimiento({ m, sala }) {
+// Cómo se dice quién hizo el movimiento (2026-09-28). En lo automático —la
+// compra, el canje— la persona es quien vendió.
+const ROL = { 'vendió': 'Vendió', 'ajustó': 'Ajustó' };
+
+function Movimiento({ m, sala, info = {} }) {
     const t = TIPO[m.tipo] ?? TIPO.ajuste;
     const Icono = t.icono;
     const p = Number(m.puntos) || 0;
     // El rótulo ya dice «Compra» o «Canje»: del motivo se quita esa palabra
-    // para no leer «Compra · compra».
-    const detalle = String(m.motivo ?? '')
+    // para no leer «Compra · compra». Y si ya se sabe el documento, se muestra
+    // ése en vez del «ticket …» del sistema anterior.
+    let detalle = String(m.motivo ?? '')
         .replace(/^(compra anulada|canje aplicado en el sistema de ventas|la factura del canje se anuló|compra|canje|cortesía cumpleaños)(\s·\s)?/i, '')
         .trim();
+    if (info.documento) {
+        detalle = detalle.replace(/^(ticket\s+)?[0-9A-Za-z_-]+(\s·\s)?/, (x) => (x.includes(info.documento) || /ticket|DTE-|^\d/.test(x) ? '' : x)).trim();
+        detalle = [info.documento, detalle].filter(Boolean).join(' · ');
+    }
+    const quien = info.quien === 'Automático' ? 'Automático'
+        : info.quien ? `${ROL[info.rol] ?? ''} ${shortEmployeeName(info.quien)}`.trim() : null;
     return (
         <div className="flex items-center gap-3 px-4 py-3 min-w-0">
             <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${t.burbuja}`}>
@@ -543,7 +575,7 @@ function Movimiento({ m, sala }) {
                     {detalle ? <span className="font-normal text-content-3"> · {detalle}</span> : null}
                 </p>
                 <p className="text-caption text-content-3 tabular-nums truncate">
-                    {fechaNumerica(m.fecha)}{sala ? ` · ${sala}` : ''}
+                    {fechaNumerica(m.fecha)}{sala ? ` · ${sala}` : ''}{quien ? ` · ${quien}` : ''}
                 </p>
             </div>
             <div className="text-right shrink-0">

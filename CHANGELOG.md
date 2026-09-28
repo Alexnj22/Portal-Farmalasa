@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1084.3 — Puntos: buscador y quién en los movimientos del cliente
+
+Pedido del usuario: buscar dentro del detalle del cliente, y que cada
+movimiento diga quién lo hizo («en el caso automático, quien se lo vendió»).
+
+- **Buscador** en los movimientos: por documento, número de movimiento,
+  vendedor, sala o motivo. Se combina con el filtro por tipo y el mes elegido.
+- **Quién**, en la segunda línea de cada movimiento: «Vendió <nombre>» en
+  compras, canjes y anulaciones (el vendedor de la factura), «Ajustó <nombre>»
+  en los ajustes, «Automático» en el cumpleaños. El documento reemplaza al
+  «ticket …» del sistema anterior cuando se conoce.
+- Los datos salen de `puntos_panel_cliente.detalle` y NO del estado de cuenta,
+  que también alimenta «Mis puntos»: el nombre de un empleado no se le muestra
+  a un cliente.
+- Lo migrado se cruza con cuidado: los números de ticket viejos se repiten con
+  los nuevos, así que se exige la misma sala y una factura de hasta 90 días
+  antes (89% de las compras desde may-2025). La primera versión no lo exigía y
+  una compra de 2023 salió con el vendedor de una factura de 2025; se corrigió
+  el mismo día. Lo anterior a may-2025 no tiene vendedor: el portal no tenía
+  esas facturas.
+
 ## v2.1084.2 — Las pantallas abiertas ya no se rompen al publicar
 
 El 93% de los errores de pantalla del último mes (649 de 704, hasta 39

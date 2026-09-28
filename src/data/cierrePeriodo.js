@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { anotar } from './audit';
 
 // Cierre de período fiscal — la cadena del remanente (Art. 67 LIVA).
 //
@@ -19,13 +20,16 @@ export async function fetchPeriodosFiscales() {
 // Congela el período. `declaradoReal` es lo que la contadora presentó de verdad,
 // si difiere de lo calculado — nace NULL a propósito: «no se sabe» no es
 // «coincide».
-export async function cerrarPeriodoFiscal(periodo, nota, declaradoReal) {
+// Anota su propia entrada en la bitácora (D3, 2026-09-28): cualquier cliente
+// que la llame la deja. `contexto` son los datos legibles; la acción es fija.
+export async function cerrarPeriodoFiscal(periodo, nota, declaradoReal, contexto = {}) {
     const { data, error } = await supabase.rpc('cerrar_periodo_fiscal', {
         p_periodo: periodo,
         p_nota: nota || null,
         p_declarado_real: declaradoReal ?? null,
     });
     if (error) throw error;
+    anotar('CIERRE_PERIODO_CERRAR', periodo, { nota: nota || null, ...contexto });
     return data;
 }
 
@@ -38,5 +42,6 @@ export async function reabrirPeriodoFiscal(periodo, motivo) {
         p_motivo: motivo,
     });
     if (error) throw error;
+    anotar('CIERRE_PERIODO_REABRIR', periodo, { motivo });
     return data;
 }

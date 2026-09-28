@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { anotar } from './audit';
 
 // Cuentas por pagar — qué le debemos a cada proveedor y si podemos comprarle.
 //
@@ -50,7 +51,9 @@ export async function fetchPagos(emisorNit = null, dias = 180) {
  * lo aplicado y no un número aparte, así no puede existir un pago de $500
  * repartido en $300.
  */
-export async function registrarPago({ emisorNit, fecha, forma, referencia, aplicaciones, nota }) {
+// Anota su propia entrada en la bitácora (D3, 2026-09-28): cualquier cliente
+// que la llame la deja. `contexto` son los datos legibles; la acción es fija.
+export async function registrarPago({ emisorNit, fecha, forma, referencia, aplicaciones, nota }, contexto = {}) {
     const { data, error } = await supabase.rpc('registrar_pago_compra', {
         p_emisor_nit: emisorNit,
         p_fecha: fecha,
@@ -59,12 +62,20 @@ export async function registrarPago({ emisorNit, fecha, forma, referencia, aplic
         p_aplicaciones: aplicaciones,
         p_nota: nota || null,
     });
+    if (!error) {
+        anotar('CXP_PAGO_REGISTRADO', emisorNit, {
+            pago_id: data ?? null, forma, referencia: referencia || null,
+            monto: (aplicaciones ?? []).reduce((s, a) => s + Number(a.monto || 0), 0),
+            facturas: (aplicaciones ?? []).length, ...contexto,
+        });
+    }
     return { pagoId: data ?? null, error: error?.message ?? null };
 }
 
 /** Aprobar — sólo Gerencia (`can_approve`). */
-export async function aprobarPago(pagoId) {
+export async function aprobarPago(pagoId, contexto = {}) {
     const { error } = await supabase.rpc('aprobar_pago_compra', { p_pago_id: pagoId });
+    if (!error) anotar('CXP_PAGO_APROBADO', pagoId, contexto);
     return { error: error?.message ?? null };
 }
 
@@ -75,10 +86,11 @@ export async function aprobarPago(pagoId) {
  * que desaparece del registro es exactamente lo que un control no puede
  * permitir.
  */
-export async function anularPago(pagoId, motivo) {
+export async function anularPago(pagoId, motivo, contexto = {}) {
     const { error } = await supabase.rpc('anular_pago_compra', {
         p_pago_id: pagoId, p_motivo: motivo,
     });
+    if (!error) anotar('CXP_PAGO_ANULADO', pagoId, { motivo, ...contexto });
     return { error: error?.message ?? null };
 }
 
@@ -90,7 +102,7 @@ export async function anularPago(pagoId, motivo) {
  * queda. El documento lo propone cuando lo trae (`resumen.pagos[].periodo`, el
  * 39% de las facturas).
  */
-export async function guardarCondicionesProveedor(proveedorId, { diasCredito, limiteCredito, formaPago }) {
+export async function guardarCondicionesProveedor(proveedorId, { diasCredito, limiteCredito, formaPago }, contexto = {}) {
     // Por RPC y no por `.update()`: `proveedores_maestro` **no tiene policy de
     // UPDATE**, sólo de SELECT. Un update directo devuelve cero filas y ningún
     // error — el botón diría «guardado» sin haber guardado nada. Es la misma
@@ -101,5 +113,10 @@ export async function guardarCondicionesProveedor(proveedorId, { diasCredito, li
         p_limite_credito: limiteCredito === '' || limiteCredito == null ? null : Number(limiteCredito),
         p_forma_pago:     formaPago || null,
     });
+    if (!error) {
+        anotar('CXP_CONDICIONES', proveedorId, {
+            dias_credito: diasCredito, limite_credito: limiteCredito, forma_pago: formaPago || null, ...contexto,
+        });
+    }
     return { error: error?.message ?? null };
 }

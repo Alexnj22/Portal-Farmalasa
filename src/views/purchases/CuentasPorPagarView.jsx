@@ -24,7 +24,6 @@ import { formatMoney } from '../../utils/formatNumber';
 import { tokenMatch } from '../../utils/searchUtils';
 import { useAuth } from '../../context/AuthContext';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
-import { useStaffStore } from '../../store/staffStore';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
 import { fechaNumerica, hoySV } from '../../utils/fecha';
 
@@ -160,12 +159,9 @@ function PanelProveedor({ fila, puedeEditar, onCerrar, onHecho }) {
         setOcupado(true);
         const { error: e } = await guardarCondicionesProveedor(fila.proveedor_id, {
             diasCredito: dias, limiteCredito: limite, formaPago: forma,
-        });
+        }, { proveedor: fila.proveedor });
         setOcupado(false);
         if (e) { setError(e); return; }
-        useStaffStore.getState().appendAuditLog('CXP_CONDICIONES', String(fila.proveedor_id), {
-            proveedor: fila.proveedor, dias_credito: dias, limite_credito: limite,
-        });
         onHecho();
     };
 
@@ -178,12 +174,9 @@ function PanelProveedor({ fila, puedeEditar, onCerrar, onHecho }) {
         setError(''); setOcupado(true);
         const { error: e } = await registrarPago({
             emisorNit: fila.emisor_nit, fecha, forma, referencia, aplicaciones,
-        });
+        }, { proveedor: fila.proveedor });
         setOcupado(false);
         if (e) { setError(e); return; }
-        useStaffStore.getState().appendAuditLog('CXP_PAGO_REGISTRADO', fila.emisor_nit, {
-            proveedor: fila.proveedor, monto: totalAplicado, forma, referencia, facturas: aplicaciones.length,
-        });
         descartar();   // el pago existe: el borrador ya no sirve
         setMontos({}); setRef('');
         await cargar();
@@ -377,12 +370,9 @@ export default function CuentasPorPagarView() {
 
     const decidir = async (accion, pago) => {
         const { error: e } = accion === 'aprobar'
-            ? await aprobarPago(pago.id)
-            : await anularPago(pago.id, 'Anulado desde Cuentas por pagar');
+            ? await aprobarPago(pago.id, { proveedor: pago.proveedor, monto: pago.monto })
+            : await anularPago(pago.id, 'Anulado desde Cuentas por pagar', { proveedor: pago.proveedor, monto: pago.monto });
         if (e) { setError(e); return; }
-        useStaffStore.getState().appendAuditLog(
-            accion === 'aprobar' ? 'CXP_PAGO_APROBADO' : 'CXP_PAGO_ANULADO',
-            String(pago.id), { proveedor: pago.proveedor, monto: pago.monto });
         cargar();
     };
 

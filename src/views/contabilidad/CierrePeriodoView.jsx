@@ -10,7 +10,6 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import PromptModal from '../../components/common/PromptModal';
 import { useAuth } from '../../context/AuthContext';
-import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
@@ -238,8 +237,7 @@ export default function CierrePeriodoView() {
     const confirmarYCerrar = useCallback(async (fila) => {
         setBusy(true);
         try {
-            await cerrarPeriodoFiscal(fila.periodo, null, null);
-            useStaffStore.getState().appendAuditLog('CIERRE_PERIODO_CERRAR', fila.periodo, {
+            await cerrarPeriodoFiscal(fila.periodo, null, null, {
                 debito: fila.debito_fiscal, credito: fila.credito,
                 a_pagar: fila.aPagar, remanente: fila.remanente,
             });
@@ -260,7 +258,6 @@ export default function CierrePeriodoView() {
         setBusy(true);
         try {
             await reabrirPeriodoFiscal(fila.periodo, motivo.trim());
-            useStaffStore.getState().appendAuditLog('CIERRE_PERIODO_REABRIR', fila.periodo, { motivo: motivo.trim() });
             useToastStore.getState().showToast('Período reabierto', `${etiquetaMes(fila.periodo)} vuelve a estar abierto.`, 'info');
             await cargar();
         } catch (e) {

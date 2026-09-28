@@ -9,7 +9,6 @@ import CarrilCards from '../../components/common/CarrilCards';
 import FilterBar from '../../components/common/FilterBar';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
-import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import { fetchMetasGastos, anularMetaGasto } from '../../data/metas';
@@ -68,10 +67,7 @@ export default function TabGastos({ canEdit, reloadKey, onChanged, onAgregarGast
     const quitar = async (g) => {
         setBusy(g.id);
         try {
-            const res = await anularMetaGasto({ id: g.id, nota: notaQuitar.trim() });
-            useStaffStore.getState().appendAuditLog('METAS_GASTO_ANULAR', String(g.id), {
-                concepto: g.concepto, nota: notaQuitar.trim(), cuotasAnuladas: res?.cuotas_anuladas,
-            });
+            const res = await anularMetaGasto({ id: g.id, nota: notaQuitar.trim() }, { concepto: g.concepto });
             showToast('Gasto quitado',
                 res?.cuotas_anuladas
                     ? `Las metas de ${res.cuotas_anuladas} mes(es) que no arrancaron volvieron a su monto anterior.`

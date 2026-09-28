@@ -4,6 +4,7 @@ import { fetchAllRows } from '../utils/supabaseUtils';
 import { signPhotosDeep } from '../utils/storageFiles';
 import { repartoDeUnaSalida } from '../utils/cortesDiagnostico';
 import { hoySV } from '../utils/fecha';
+import { anotar } from './audit';
 
 // Bolsas de efectivo — el dinero que la sala guarda al confirmar un corte, hasta
 // que administración lo cuenta.
@@ -218,11 +219,20 @@ export async function fetchChequesDeBolsa(bolsaId) {
  * `resolverDiferencia`, por el mismo motivo — si el monto lo manda el navegador,
  * cualquiera elige cuánto dinero dice haber guardado.
  */
-export function cerrarBolsa(corteId, montoVisto) {
-    return supabase.rpc('cerrar_bolsa_de_corte', {
+// Anota su propia entrada en la bitácora (D3, 2026-09-28): cualquier cliente
+// que la llame la deja. `contexto` son los datos legibles; la acción es fija.
+export async function cerrarBolsa(corteId, montoVisto, contexto = {}) {
+    const res = await supabase.rpc('cerrar_bolsa_de_corte', {
         p_corte_id: corteId,
         p_monto_esperado: montoVisto,
     });
+    if (!res.error && res.data) {
+        anotar('BOLSA_CERRADA', res.data.id, {
+            bolsa_id: res.data.id, folio: res.data.folio, corte_id: corteId,
+            branch_id: res.data.branch_id, monto: res.data.monto_inicial, ...contexto,
+        });
+    }
+    return res;
 }
 
 /**

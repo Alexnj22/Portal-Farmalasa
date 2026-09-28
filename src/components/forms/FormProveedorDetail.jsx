@@ -143,14 +143,15 @@ const FormProveedorDetail = ({ formData, onClose }) => {
 
     const guardarCredito = async () => {
         setSavingCredito(true); setCreditoError('');
+        // La entrada de la bitácora la anota `guardarCondicionesProveedor`
+        // (D3, 2026-09-28). Antes esta pantalla la anotaba como
+        // PROVEEDOR_CONDICIONES_CREDITO y Cuentas por pagar como CXP_CONDICIONES:
+        // el mismo hecho con dos nombres. Ahora es uno.
         const { error: e } = await guardarCondicionesProveedor(formData.id, {
             diasCredito: credito.dias, limiteCredito: credito.limite, formaPago: credito.forma,
-        });
+        }, { proveedor: formData.nombre });
         setSavingCredito(false);
         if (e) { setCreditoError(e); return; }
-        useStaffStore.getState().appendAuditLog('PROVEEDOR_CONDICIONES_CREDITO', String(formData.id), {
-            nombre: formData.nombre, ...credito,
-        });
         useToastStore.getState().showToast('Guardado', 'Condiciones de crédito actualizadas.', 'success');
         formData?.onSaved?.();
     };

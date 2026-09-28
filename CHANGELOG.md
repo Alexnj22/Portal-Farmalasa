@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1076.5 — Bitácora: bolsas, proveedores, cierre fiscal y metas anotan desde la capa de datos
+
+_(pendiente de redactar)_
+
 ## v2.1076.4 — Puntos: el canje de una factura anulada se devuelve, y la anulación con puntos gastados queda en Avisos
 
 Auditoría del motor antes del 1-oct, corriéndolo en seco sobre la semana real.

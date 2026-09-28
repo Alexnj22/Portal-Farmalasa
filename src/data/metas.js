@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { anotar } from './audit';
 
 // Metas por sala (Fase 1 — docs/planes-cerrados/PLAN-METAS-2026-08-03.md). Los tres RPC
 // devuelven pocas filas (6 salas × meses), así que no hay paginación que
@@ -223,9 +224,12 @@ export async function crearMetaGasto({ concepto, salas, ymInicio, meses, nota })
     return data;
 }
 
-export async function anularMetaGasto({ id, nota }) {
+// Anota su propia entrada en la bitácora (D3, 2026-09-28): cualquier cliente
+// que la llame la deja. `contexto` son los datos legibles; la acción es fija.
+export async function anularMetaGasto({ id, nota }, contexto = {}) {
     const { data, error } = await supabase.rpc('anular_metas_gasto', { p_id: id, p_nota: nota });
     if (error) throw error;
+    anotar('METAS_GASTO_ANULAR', id, { nota, cuotasAnuladas: data?.cuotas_anuladas, ...contexto });
     return data;
 }
 

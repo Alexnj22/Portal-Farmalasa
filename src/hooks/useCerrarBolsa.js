@@ -5,7 +5,6 @@ import {
 } from '../data/bolsas';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { useAuth } from '../context/AuthContext';
-import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 
 /**
@@ -31,7 +30,6 @@ import { useToastStore } from '../store/toastStore';
  */
 export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = {}) {
     const { user } = useAuth();
-    const appendAuditLog = useStaff((s) => s.appendAuditLog);
     const showToast = useToastStore((s) => s.showToast);
     const [ocupadoId, setOcupadoId] = useState(null);
 
@@ -307,7 +305,8 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
     const cerrar = useCallback(async (corte) => {
         if (!corte || ocupadoId) return null;
         setOcupadoId(corte.corte_id);
-        const { data, error } = await cerrarBolsa(corte.corte_id, corte.sugerida);
+        // La entrada de la bitácora la anota `cerrarBolsa` (D3, 2026-09-28).
+        const { data, error } = await cerrarBolsa(corte.corte_id, corte.sugerida, { origen });
         setOcupadoId(null);
 
         if (error) {
@@ -315,19 +314,9 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
             return null;
         }
 
-        const sala = nombreSala[data.branch_id] || '';
-        appendAuditLog?.('BOLSA_CERRADA', user?.id, {
-            bolsa_id: data.id,
-            folio: data.folio,
-            corte_id: corte.corte_id,
-            sucursal: sala,
-            monto: data.monto_inicial,
-            origen,
-        });
-
         await imprimir(data);
         return data;
-    }, [ocupadoId, showToast, appendAuditLog, user, nombreSala, origen, imprimir]);
+    }, [ocupadoId, showToast, origen, imprimir]);
 
     return { cerrar, imprimir, imprimirValeDeOperacion, imprimirTrasLaSalida, reimprimirEtiqueta, ocupadoId };
 }

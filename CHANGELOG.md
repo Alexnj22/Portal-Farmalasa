@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1076.11 — Metas: la tarjeta de confirmación con gráfico de comparación
+
+El usuario pidió tarjetas más modernas e interactivas, «no solo puro texto».
+
+- Encabezado con ícono de sala; la meta en grande con una insignia de cuánto
+  sube o baja frente a la del mes anterior.
+- Gráfico de barras en una sola escala: meta nueva, meta del mes anterior
+  (rellena con lo vendido, en el color de cómo le fue), venta del mismo mes del
+  año pasado y venta promedio de los tres meses base. Una raya en cada barra
+  marca la meta nueva y se corre al subir o bajar; al pasar o tocar un renglón
+  se ve la diferencia en dinero.
+- Subir/Bajar 1% con una regla que muestra dónde está dentro del ±10%, y
+  «Volver» a la propuesta.
+- Propuesta del sistema al pie y Confirmar a lo ancho.
+
 ## v2.1076.10 — Puntos: aviso del canje que deja la venta en $0, productos que no acumulan y el texto de Mis puntos
 
 Decisiones del usuario (2026-09-28).

@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1090.1 — Portal: acceso a Torogoz en el menú, sólo para quien la administra
+
+Pedido del usuario: «agrega el icono de Torogoz al portal, para acceder desde
+ahí, solo para admin».
+
+- Al pie del menú lateral, arriba de Ajustes: el ícono de Torogoz con «Ir a la
+  distribuidora» (sólo el ícono con el menú angosto). Lleva a `/torogoz`.
+- Lo ve quien tiene el permiso de administrar la distribuidora
+  (`distribucion_config`): hoy, los cuatro cargos del área administrativa y la
+  cuenta de pruebas. Por permiso y no por cargo, para cambiarlo desde Permisos.
+
+
 ## v2.1090.0 — Torogoz: pedidos en pendientes y finalizados; la venta lista las pendientes para finalizarlas
 
 Pedido del usuario: «los pedidos deben estar separados por finalizados y

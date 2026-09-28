@@ -22,9 +22,15 @@ test('las secciones de Torogoz abren sin romper, y la dirección vieja lleva all
     // Un aviso viejo con `/distribucion?tab=…&documento=…` sigue llegando.
     await page.goto('/distribucion?tab=clientes');
     await expect(page).toHaveURL(/\/torogoz\/clientes$/);
-    // La distribuidora ya no está en el menú de las farmacias.
+    // La distribuidora no es un módulo del menú de las farmacias: es un acceso
+    // aparte al pie, sólo para quien la administra (la cuenta de pruebas sí).
     await page.goto('/ventas');
-    await expect(page.getByRole('link', { name: /Distribución|Torogoz/ })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /^Distribución$/ })).toHaveCount(0);
+    const acceso = page.getByRole('link', { name: /Torogoz/ }).first();
+    await expect(acceso).toBeVisible({ timeout: 15_000 });
+    await page.screenshot({ path: `${SALIDA}/acceso-torogoz.png` });
+    await acceso.click();
+    await expect(page).toHaveURL(/\/torogoz\/pedidos/);
     for (const [tab, titulo] of Object.entries(SECCIONES)) {
         await page.goto(`/torogoz/${tab}`);
         await expect(page.getByRole('heading', { name: titulo }).first()).toBeVisible({ timeout: 15_000 });

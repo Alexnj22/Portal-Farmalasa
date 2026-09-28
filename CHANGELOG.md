@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1084.5 — Puntos: el detalle del cliente, compacto y con la foto de quien vendió
+
+Revisión completa del detalle del cliente, en escritorio y en teléfono.
+
+- **Quién, con foto y nombre + apellido** (regla del portal):
+  `AvatarConEstado` + `shortEmployeeName` — «Vendió Mónica Estrada» con su
+  foto, en su propia línea. Pegado a la fecha y la sala se cortaba en el
+  teléfono («Vendió Monic…»).
+- **El saldo en UNA tarjeta**: el número grande, el reparto de lo acumulado y
+  los cuatro datos (acumulados, canjeados, próximo vencimiento, última compra)
+  juntos. Eran cinco tarjetas —casi dos pantallas en el teléfono— para seis
+  números.
+- **Encabezado compacto**: el nombre en dos renglones como máximo y, en el
+  teléfono, «Editar cliente» sólo con el ícono. Es fijo, y en tres renglones se
+  comía un tercio de la pantalla. El DUI y el teléfono ya no se parten.
+
+## v2.1084.4 — Aviso de CCF sin sello espera 5 minutos
+
+Reporte del usuario: llegó «Salud 5 · CCF sin sello de Hacienda» y al ir a
+ver ya estaba sellado. El CCF 113 se emitió 15:58:50, el aviso salió 16:00:03
+y el sello llegó 16:00:06. En 60 días, los 16 avisos salieron entre 0.1 y 5.5
+min después de emitido, y al menos 7 fueron falsos igual.
+
+`get_ccf_alerts()` ahora sólo avisa «sin sello» si el CCF lleva 5+ minutos
+emitido (decisión del usuario). Anulado y observación de Hacienda siguen
+avisando al momento. Migración `20260928220905_ccf_sin_sello_espera_5_minutos`.
+
 ## v2.1084.3 — Puntos: buscador y quién en los movimientos del cliente
 
 Pedido del usuario: buscar dentro del detalle del cliente, y que cada

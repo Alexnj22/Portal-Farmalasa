@@ -30,6 +30,7 @@ import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import SearchInput from '../../components/common/SearchInput';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import PortalInput from '../../components/common/PortalInput';
@@ -200,26 +201,40 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
     return (
         <>
             <LiquidModal.Header>
-                {/* En el teléfono el botón baja: al lado del nombre lo cortaba. */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full">
+                {/* Compacto a propósito: el encabezado queda fijo, y en el teléfono
+                    el nombre en tres renglones se comía un tercio de la pantalla.
+                    El nombre cabe en dos renglones; el botón, a su lado, sólo con
+                    el ícono en el teléfono. */}
+                <div className="flex items-start justify-between gap-3 w-full">
                     <div className="flex items-center gap-3 min-w-0">
-                        <span className="w-12 h-12 rounded-full bg-brand/10 text-brand-text flex items-center justify-center shrink-0">
-                            <Star size={20} />
+                        <span className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-brand/10 text-brand-text flex items-center justify-center shrink-0">
+                            <Star size={18} />
                         </span>
                         <div className="min-w-0">
-                            <h2 className="text-title font-black text-content break-words sm:truncate">
+                            <h2 className="text-body-lg sm:text-title font-black text-content line-clamp-2 sm:truncate leading-tight">
                                 {cliente?.nombre ?? 'Cliente'}
                             </h2>
                             <p className="text-caption text-content-3 mt-0.5 flex flex-wrap gap-x-4 gap-y-1 tabular-nums">
-                                <span className="inline-flex items-center gap-1.5"><IdCard size={12} />{cliente?.dui || 'Sin DUI'}</span>
-                                <span className="inline-flex items-center gap-1.5"><Phone size={12} />{cliente?.telefono || 'Sin teléfono'}</span>
+                                <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><IdCard size={12} />{cliente?.dui || 'Sin DUI'}</span>
+                                <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><Phone size={12} />{cliente?.telefono || 'Sin teléfono'}</span>
                             </p>
                         </div>
                     </div>
                     {cliente && (
-                        <Button variant="secondary" size="sm" icon={Pencil} onClick={() => onEditar(cliente)}>
-                            {puedeEditarFicha ? 'Editar cliente' : 'Ver ficha'}
-                        </Button>
+                        <>
+                            {/* El `hidden` va en un envoltorio: puesto en el botón,
+                                su propio `inline-flex` le ganaba y salían los dos. */}
+                            <span className="hidden sm:block shrink-0">
+                                <Button variant="secondary" size="sm" icon={Pencil} onClick={() => onEditar(cliente)}>
+                                    {puedeEditarFicha ? 'Editar cliente' : 'Ver ficha'}
+                                </Button>
+                            </span>
+                            <span className="sm:hidden shrink-0">
+                                <Button variant="secondary" size="sm" icon={Pencil} iconOnly onClick={() => onEditar(cliente)}
+                                    title={puedeEditarFicha ? 'Editar cliente' : 'Ver ficha'}
+                                    aria-label={puedeEditarFicha ? 'Editar cliente' : 'Ver ficha'} />
+                            </span>
+                        </>
                     )}
                 </div>
             </LiquidModal.Header>
@@ -235,38 +250,40 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                             </Notice>
                         )}
 
-                        {/* ── 1 · El saldo, y en qué se fue lo acumulado ───── */}
-                        <div className="grid grid-cols-1 md:grid-cols-[1.25fr_1fr] gap-4">
-                            <div data-surface="card" className="p-5 flex flex-col gap-4 min-w-0">
+                        {/* ── 1 · El saldo, y en qué se fue lo acumulado ─────
+                            Una sola tarjeta: el saldo manda y los cuatro datos lo
+                            acompañan. Eran cinco tarjetas —casi dos pantallas en
+                            el teléfono— para seis números. */}
+                        <div data-surface="card" className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-[1.1fr_1fr] gap-5 min-w-0">
+                            <div className="flex flex-col gap-4 min-w-0">
                                 <div>
                                     <p className="text-caption font-bold text-content-3">Puntos disponibles</p>
-                                    <p className="text-5xl font-black tabular-nums text-content leading-none mt-2">
+                                    <p className="text-4xl sm:text-5xl font-black tabular-nums text-content leading-none mt-2">
                                         {pts(cuenta?.saldo)}
                                     </p>
                                     <p className="text-body-sm text-content-2 mt-2">
                                         Equivalen a <span className="font-black tabular-nums">{dolares(cuenta?.saldo)}</span> de descuento
                                     </p>
                                 </div>
-                                <div className="mt-auto flex flex-col gap-2">
+                                <div className="flex flex-col gap-2">
                                     <p className="text-caption font-bold text-content-3">
                                         De los {pts(cuenta?.ganados)} acumulados
                                     </p>
                                     <Reparto ganados={Number(cuenta?.ganados) || 0} saldo={Number(cuenta?.saldo) || 0} {...reparto} />
                                 </div>
                             </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <Dato icono={TrendingUp} tono="bg-success/10 text-success-text" rotulo="Acumulados"
+                            <dl className="grid grid-cols-2 gap-x-4 gap-y-4 content-center md:border-l md:border-divider md:pl-5">
+                                <Dato icono={TrendingUp} rotulo="Acumulados"
                                     valor={pts(cuenta?.ganados)} sub={dolares(cuenta?.ganados)} />
-                                <Dato icono={Gift} tono="bg-warning/10 text-warning-text" rotulo="Canjeados"
+                                <Dato icono={Gift} rotulo="Canjeados"
                                     valor={pts(reparto.canjeado)} sub={dolares(reparto.canjeado)} />
-                                <Dato icono={CalendarClock} tono="bg-brand/10 text-brand-text" rotulo="Próximo vencimiento"
+                                <Dato icono={CalendarClock} rotulo="Próximo vencimiento"
                                     valor={proximo ? pts(proximo.puntos) : '—'}
                                     sub={proximo ? fechaTexto(proximo.vence_el, { day: 'numeric', month: 'short', year: 'numeric' }) : 'Nada por vencer'} />
-                                <Dato icono={Receipt} tono="bg-surface-card-hover text-content-3" rotulo="Última compra"
+                                <Dato icono={Receipt} rotulo="Última compra"
                                     valor={ultimaCompra ? fechaTexto(ultimaCompra.fecha, { day: 'numeric', month: 'short' }) : '—'}
                                     sub={ultimaCompra ? (sala(ultimaCompra.sucursal) ?? '') : 'Sin compras'} />
-                            </div>
+                            </dl>
                         </div>
 
                         {puedeAjustar && (
@@ -531,15 +548,15 @@ function AjustarPuntos({ customerId, nombre, saldo, habilitado, onHecho }) {
     );
 }
 
-function Dato({ icono: Icono, tono, rotulo, valor, sub }) {
+/** Un dato del saldo: rótulo con su ícono, el número y una línea de contexto. */
+function Dato({ icono: Icono, rotulo, valor, sub }) {
     return (
-        <div data-surface="card" className="p-3.5 flex flex-col gap-2 min-w-0">
-            <span className={`w-8 h-8 rounded-xl flex items-center justify-center ${tono}`}><Icono size={15} /></span>
-            <div className="min-w-0">
-                <p className="text-title font-black tabular-nums text-content leading-tight truncate">{valor}</p>
-                <p className="text-caption font-bold text-content-2 truncate">{rotulo}</p>
-                {sub && <p className="text-caption text-content-3 truncate">{sub}</p>}
-            </div>
+        <div className="min-w-0">
+            <dt className="text-caption font-bold text-content-3 flex items-center gap-1.5 truncate">
+                <Icono size={13} className="shrink-0" /> {rotulo}
+            </dt>
+            <dd className="text-body-lg font-black tabular-nums text-content leading-tight mt-1 truncate">{valor}</dd>
+            {sub && <dd className="text-caption text-content-3 truncate">{sub}</dd>}
         </div>
     );
 }
@@ -562,8 +579,11 @@ function Movimiento({ m, sala, info = {} }) {
         detalle = detalle.replace(/^(ticket\s+)?[0-9A-Za-z_-]+(\s·\s)?/, (x) => (x.includes(info.documento) || /ticket|DTE-|^\d/.test(x) ? '' : x)).trim();
         detalle = [info.documento, detalle].filter(Boolean).join(' · ');
     }
-    const quien = info.quien === 'Automático' ? 'Automático'
-        : info.quien ? `${ROL[info.rol] ?? ''} ${shortEmployeeName(info.quien)}`.trim() : null;
+    // Regla del portal: quien hizo algo sale con FOTO y nombre + apellido
+    // (`AvatarConEstado` + `shortEmployeeName`). Va en su propia línea: en el
+    // teléfono, pegado a la fecha y la sala, se cortaba en «Vendió Monic…».
+    const persona = info.quien && info.quien !== 'Automático'
+        ? { id: info.quien_id, name: info.quien } : null;
     return (
         <div className="flex items-center gap-3 px-4 py-3 min-w-0">
             <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${t.burbuja}`}>
@@ -575,8 +595,18 @@ function Movimiento({ m, sala, info = {} }) {
                     {detalle ? <span className="font-normal text-content-3"> · {detalle}</span> : null}
                 </p>
                 <p className="text-caption text-content-3 tabular-nums truncate">
-                    {fechaNumerica(m.fecha)}{sala ? ` · ${sala}` : ''}{quien ? ` · ${quien}` : ''}
+                    {fechaNumerica(m.fecha)}{sala ? ` · ${sala}` : ''}
                 </p>
+                {persona ? (
+                    <p className="text-caption text-content-3 flex items-center gap-1.5 mt-1 min-w-0">
+                        <AvatarConEstado emp={persona} px={18} radio="rounded-full" marco="" />
+                        <span className="truncate">
+                            {ROL[info.rol] ?? ''} <span className="font-bold text-content-2">{shortEmployeeName(persona)}</span>
+                        </span>
+                    </p>
+                ) : info.quien === 'Automático' ? (
+                    <p className="text-caption text-content-3 mt-1">Automático</p>
+                ) : null}
             </div>
             <div className="text-right shrink-0">
                 <p className="text-body-sm font-black tabular-nums text-content">

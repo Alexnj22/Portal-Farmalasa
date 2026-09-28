@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Truck, ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes } from 'lucide-react';
+import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes, Tag } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Notice from '../components/common/Notice';
-import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { useMarca } from '../plataforma/useMarca';
 import { useAuth } from '../context/AuthContext';
 import { fetchEmisor } from '../data/distribucion';
@@ -13,28 +12,32 @@ import TabClientes from './distribucion/TabClientes';
 import TabCatalogo from './distribucion/TabCatalogo';
 import TabInventario from './distribucion/TabInventario';
 import TabEmisor from './distribucion/TabEmisor';
+import SolicitudesDescuento from './distribucion/SolicitudesDescuento';
 
 // Distribución — la venta en ruta de la S.A.S. a tiendas, supermercados y
 // farmacias. Es otra empresa (otro NIT) con su propio emisor de documentos
 // electrónicos: nada de acá toca la facturación de las salas.
 //
-// Las seis pestañas siguen el orden del trabajo del día: se toma el pedido,
-// se factura, y lo demás (clientes, precios, existencias por lote, datos de la
-// empresa) se mira cuando hace falta.
+// Desde el 2026-09-28 vive en su propia entrada (`/torogoz`, ver
+// `distribucion/rutas.js`): cada sección es una dirección y el menú de la
+// distribuidora es la navegación, así que acá ya no hay pestañas. El orden
+// sigue siendo el del trabajo del día.
 const TABS = [
     { key: 'pedidos',    label: 'Pedidos',    icon: ClipboardList },
     { key: 'documentos', label: 'Documentos', icon: FileCheck2 },
     { key: 'clientes',   label: 'Clientes',   icon: Store },
     { key: 'catalogo',   label: 'Catálogo',   icon: PackageSearch },
     { key: 'inventario', label: 'Inventario', icon: Boxes },
+    { key: 'solicitudes', label: 'Solicitudes', icon: Tag },
     { key: 'emisor',     label: 'Empresa',    icon: Building2 },
 ];
 
-export default function DistribucionView() {
-    // Otra empresa, otros colores: mientras esta vista está abierta, todo el
-    // portal se pinta con la marca de la distribuidora (index.css).
+export default function DistribucionView({ seccion = 'pedidos' }) {
+    // Otra empresa, otros colores (index.css). El layout de Torogoz ya lo
+    // pone; acá queda por si la vista se abre sola.
     useMarca('distribucion');
-    const [tab, setTab] = usePestanaEnUrl(TABS, 'pedidos');
+    const actual = TABS.find(t => t.key === seccion) ?? TABS[0];
+    const tab = actual.key;
     const { hasPermission } = useAuth();
     const puedeVender = hasPermission('distribucion', 'can_edit');
     const puedeConfigurar = hasPermission('distribucion_config', 'can_edit');
@@ -64,7 +67,7 @@ export default function DistribucionView() {
     // El buscador es de la pestaña, no de la vista: al cambiar, se limpia.
     useEffect(() => { setBuscar(''); }, [tab]);
 
-    const conBuscador = tab !== 'emisor';
+    const conBuscador = tab !== 'emisor' && tab !== 'solicitudes';
     const placeholder = useMemo(() => ({
         pedidos: 'Buscar por cliente o número…',
         documentos: 'Buscar por cliente o número de control…',
@@ -77,13 +80,13 @@ export default function DistribucionView() {
 
     return (
         <GlassViewLayout
-            icon={Truck}
-            title="Distribución"
-            filtersContent={(
-                <ViewTabBar tabs={TABS} activeTab={tab} onTabChange={setTab}
+            icon={actual.icon}
+            title={actual.label}
+            filtersContent={conBuscador ? (
+                <ViewTabBar tabs={[actual]} activeTab={tab} onTabChange={() => {}}
                     searchValue={buscar} onSearchChange={setBuscar}
-                    placeholder={placeholder} showSearch={conBuscador} />
-            )}
+                    placeholder={placeholder} showSearch />
+            ) : null}
             transparentBody
         >
             {error && (
@@ -93,7 +96,7 @@ export default function DistribucionView() {
                 <div className="p-5 md:p-6">
                     <Notice variant="warning" icon={Building2}>
                         Todavía no están cargados los datos de la empresa que factura.
-                        {puedeConfigurar ? ' Complétalos en la pestaña Empresa.' : ' Pídele a quien administra Distribución que los complete.'}
+                        {puedeConfigurar ? ' Complétalos en Empresa.' : ' Pídele a quien administra la distribuidora que los complete.'}
                     </Notice>
                 </div>
             )}
@@ -112,6 +115,9 @@ export default function DistribucionView() {
             )}
             {visitadas.has('inventario') && (
                 <div className={tab === 'inventario' ? '' : 'hidden'}><TabInventario {...comunes} /></div>
+            )}
+            {visitadas.has('solicitudes') && (
+                <div className={tab === 'solicitudes' ? '' : 'hidden'}><SolicitudesDescuento /></div>
             )}
             {visitadas.has('emisor') && (
                 <div className={tab === 'emisor' ? '' : 'hidden'}>

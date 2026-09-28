@@ -84,6 +84,9 @@ export const IMPORTADORES = {
     CotizacionesView: () => import("../views/CotizacionesView"),
     DistribucionView: () => import("../views/DistribucionView"),
     DistribucionVentaView: () => import("../views/DistribucionVentaView"),
+    // La casa de la distribuidora (`/torogoz`): su marco y su entrada.
+    TorogozLayout: () => import("../views/distribucion/TorogozLayout"),
+    TorogozLoginView: () => import("../views/distribucion/TorogozLoginView"),
     EncuestaView: () => import("../views/EncuestaView"),
     EncuestaAdminView: () => import("../views/EncuestaAdminView"),
     NoAccessView: () => import("../views/NoAccessView"),
@@ -123,7 +126,7 @@ export const IMPORTADOR_POR_RUTA = {
     'cargar-compra': IMPORTADORES.CargarCompraView,
     'conteo-inventario': IMPORTADORES.ConteoInventarioView,
     'cotizaciones': IMPORTADORES.CotizacionesView,
-    'distribucion': IMPORTADORES.DistribucionView,
+    'torogoz': IMPORTADORES.TorogozLayout,
     'encuesta': IMPORTADORES.EncuestaView,
     'encuesta-admin': IMPORTADORES.EncuestaAdminView,
     'facturacion': IMPORTADORES.FacturacionView,

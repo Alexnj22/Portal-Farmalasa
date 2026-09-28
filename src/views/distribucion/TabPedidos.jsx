@@ -20,6 +20,7 @@ import { fetchPedidos, contarPagosSinComprobante } from '../../data/distribucion
 import DocumentoModal from './DocumentoModal';
 import PedidoModal from './PedidoModal';
 import { ESTADO_PEDIDO, ESTADO_DOCUMENTO, TIPO_DOCUMENTO, rotuloTipoCliente } from './comun';
+import { rutaVenta } from './rutas';
 
 const COLS = [
     { key: 'cliente',   label: 'Cliente',   align: 'left', className: 'w-[220px]' },
@@ -100,14 +101,14 @@ export default function TabPedidos({ emisor, puedeVender, buscar }) {
         setParams(limpio, { replace: true });
     }, [params, setParams]);
 
-    const abrirCorreccion = (pedidoId) => navigate(`/distribucion/venta/${pedidoId}`);
+    const abrirCorreccion = (pedidoId) => navigate(rutaVenta(pedidoId));
 
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filtrados.length });
     useEffect(() => { setPage(1); }, [buscar, estado]); // eslint-disable-line react-hooks/exhaustive-deps
     const pagina = filtrados.slice((page - 1) * pageSize, page * pageSize);
 
     const acciones = puedeVender && emisor
-        ? [{ key: 'nuevo', icon: Plus, label: 'Nueva venta', variant: 'primary', onClick: () => navigate('/distribucion/venta') }]
+        ? [{ key: 'nuevo', icon: Plus, label: 'Nueva venta', variant: 'primary', onClick: () => navigate(rutaVenta()) }]
         : [];
 
     return (

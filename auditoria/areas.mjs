@@ -616,8 +616,9 @@ export const AREAS = [
         id: 'distribucion',
         nombre: 'Distribución: venta en ruta y emisor DTE propio',
         resumen: 'La S.A.S. de distribución: motor de DTE 2.0 (armar, firmar, transmitir a Hacienda), preventa, clientes de ruta y liquidación del vendedor. Prefijo dist_ porque «ruta» ya es el reparto de Bodega a las salas.',
-        modulos: ['distribucion', 'distribucion_config'],
-        rutas: ['/distribucion', '/distribucion/venta'],
+        modulos: ['distribucion', 'distribucion_config', 'distribucion_descuentos', 'requests_distribucion'],
+        // Su propia entrada desde el 2026-09-28; `/distribucion` sólo redirige.
+        rutas: ['/torogoz', '/torogoz/login', '/torogoz/venta', '/distribucion', '/distribucion/venta'],
         archivos: [
             'src/views/DistribucionView.jsx', 'src/views/DistribucionVentaView.jsx', 'src/views/distribucion/',
             'src/data/distribucion.js', 'src/data/distribucionInventario.js', 'src/data/geoCodigosMH.js', 'src/data/actividadesMH.js',
@@ -626,7 +627,7 @@ export const AREAS = [
             'supabase/functions/_shared/dte/',
             'supabase/functions/distribucion-dte/', 'supabase/functions/distribucion-comprobante/',
             'supabase/borradores/distribucion/',
-            'scripts/entorno-pruebas/probar_distribucion.mjs',
+            'scripts/entorno-pruebas/probar_distribucion.mjs', 'scripts/entorno-pruebas/distribucion_pruebas.sql',
             'tests/unit/dteMotor.test.js', 'tests/unit/dteHacienda.test.js', 'tests/unit/dteLotes.test.js',
             'tests/fixtures/dte-reales-2026-09.json',
         ],

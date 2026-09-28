@@ -12,13 +12,22 @@ import { entrar } from './distribucionEntrar.js';
 const SALIDA = process.env.E2E_CAPTURAS || 'test-results/distribucion';
 
 
-test('las cinco pestañas abren sin romper', async ({ page }) => {
+const SECCIONES = { pedidos: 'Pedidos', documentos: 'Documentos', clientes: 'Clientes', catalogo: 'Catálogo',
+    inventario: 'Inventario', solicitudes: 'Solicitudes', emisor: 'Empresa' };
+
+test('las secciones de Torogoz abren sin romper, y la dirección vieja lleva allá', async ({ page }) => {
     const errores = [];
     page.on('pageerror', e => errores.push(e.message));
     await entrar(page);
-    for (const tab of ['pedidos', 'documentos', 'clientes', 'catalogo', 'emisor']) {
-        await page.goto(`/distribucion?tab=${tab}`);
-        await expect(page.getByRole('heading', { name: 'Distribución' }).first()).toBeVisible({ timeout: 15_000 });
+    // Un aviso viejo con `/distribucion?tab=…&documento=…` sigue llegando.
+    await page.goto('/distribucion?tab=clientes');
+    await expect(page).toHaveURL(/\/torogoz\/clientes$/);
+    // La distribuidora ya no está en el menú de las farmacias.
+    await page.goto('/ventas');
+    await expect(page.getByRole('link', { name: /Distribución|Torogoz/ })).toHaveCount(0);
+    for (const [tab, titulo] of Object.entries(SECCIONES)) {
+        await page.goto(`/torogoz/${tab}`);
+        await expect(page.getByRole('heading', { name: titulo }).first()).toBeVisible({ timeout: 15_000 });
         await page.waitForTimeout(1500);
         await expect(page.getByText(/algo salió mal/i)).toHaveCount(0);
         await page.screenshot({ path: `${SALIDA}/${tab}.png`, fullPage: true });
@@ -28,9 +37,9 @@ test('las cinco pestañas abren sin romper', async ({ page }) => {
 
 test('venta a una tienda: buscar, agregar, facturar, ver ticket y PDF', async ({ page }) => {
     await entrar(page);
-    await page.goto('/distribucion?tab=pedidos');
+    await page.goto('/torogoz/pedidos');
     await page.getByRole('button', { name: /nueva venta/i }).first().click();
-    await expect(page).toHaveURL(/\/distribucion\/venta$/);
+    await expect(page).toHaveURL(/\/torogoz\/venta$/);
     const modal = page;
     await expect(modal.getByRole('heading', { name: 'Nueva venta' }).first()).toBeVisible();
 
@@ -72,14 +81,14 @@ test('venta a una tienda: buscar, agregar, facturar, ver ticket y PDF', async ({
 
     // Corregir: el documento nunca llegó a Hacienda, se retira y el pedido vuelve a la venta.
     await doc.getByRole('button', { name: 'Corregir' }).click();
-    await expect(page).toHaveURL(/\/distribucion\/venta\/\d+$/, { timeout: 20_000 });
+    await expect(page).toHaveURL(/\/torogoz\/venta\/\d+$/, { timeout: 20_000 });
     await expect(page.getByRole('heading', { name: /Corregir venta/ }).first()).toBeVisible();
     await page.screenshot({ path: `${SALIDA}/corregir.png`, fullPage: true });
 });
 
 test('a un contribuyente se le puede emitir Factura si la pide', async ({ page }) => {
     await entrar(page);
-    await page.goto('/distribucion?tab=pedidos');
+    await page.goto('/torogoz/pedidos');
     await page.getByRole('button', { name: /nueva venta/i }).first().click();
     const modal = page;
     await modal.getByText('Elegir cliente…').click();
@@ -97,7 +106,7 @@ test('a un contribuyente se le puede emitir Factura si la pide', async ({ page }
 
 test('pago dividido: $2 en efectivo y el resto con tarjeta, comprobante después', async ({ page }) => {
     await entrar(page);
-    await page.goto('/distribucion?tab=pedidos');
+    await page.goto('/torogoz/pedidos');
     await page.getByRole('button', { name: /nueva venta/i }).first().click();
     const modal = page;
     await modal.getByText('Elegir cliente…').click();
@@ -125,7 +134,7 @@ test('pago dividido: $2 en efectivo y el resto con tarjeta, comprobante después
 
 test('venta como en la caja: presentación, lista, descuento y el cambio del efectivo, con el cobro abajo', async ({ page }) => {
     await entrar(page);
-    await page.goto('/distribucion/venta');
+    await page.goto('/torogoz/venta');
     await page.getByText('Elegir cliente…').click();
     await page.getByText('FARMACIA DEL PUEBLO, S.A. DE C.V.', { exact: true }).last().click();
     // La lista del encabezado sale de la ficha del cliente.

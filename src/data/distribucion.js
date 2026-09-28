@@ -253,6 +253,23 @@ export async function pedirDescuento(pedidoId, nota) {
     return data;
 }
 
+/**
+ * Las solicitudes de descuento, para la sección Solicitudes de la
+ * distribuidora. El RLS decide qué llega: quien pidió ve las suyas; quien
+ * puede verlas en la sala, todas. Tabla chica por tipo, pero paginada igual.
+ */
+export async function fetchSolicitudesDescuento() {
+    const rows = await fetchAllRows(() => supabase
+        .from('approval_requests')
+        .select('id, status, note, approver_note, metadata, created_at, updated_at, employee_id, approver_id, '
+            + 'solicitante:employees!approval_requests_employee_id_fkey(name), '
+            + 'decidio:employees!approval_requests_approver_id_fkey(name)')
+        .eq('type', 'DIST_DESCUENTO')
+        .order('created_at', { ascending: false }));
+    if (rows === null) throw new Error('No se pudieron cargar las solicitudes.');
+    return rows;
+}
+
 /** Aprueba (aplica a la venta) o rechaza (con motivo) un descuento pedido. */
 export async function resolverDescuento(solicitudId, aprobar, nota) {
     const { data, error } = await supabase.rpc('dist_resolver_descuento', {

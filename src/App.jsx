@@ -101,6 +101,28 @@ const FacturacionView = lazy(IMPORTADORES.FacturacionView);
 const CotizacionesView = lazy(IMPORTADORES.CotizacionesView);
 const DistribucionView = lazy(IMPORTADORES.DistribucionView);
 const DistribucionVentaView = lazy(IMPORTADORES.DistribucionVentaView);
+const TorogozLayout = lazy(IMPORTADORES.TorogozLayout);
+const TorogozLoginView = lazy(IMPORTADORES.TorogozLoginView);
+
+// La distribuidora vive en `/torogoz` (2026-09-28). Las direcciones viejas
+// —avisos ya enviados, favoritos, el enlace de un documento— siguen llegando:
+// `/distribucion?tab=x&documento=y` pasa a `/torogoz/x?documento=y`.
+function IrATorogoz() {
+    const location = useLocation();
+    const params = new URLSearchParams(location.search);
+    const venta = location.pathname.match(/^\/distribucion\/venta(?:\/(\d+))?/);
+    if (venta) return <Navigate to={venta[1] ? `/torogoz/venta/${venta[1]}` : '/torogoz/venta'} replace />;
+    const seccion = params.get('tab') || 'pedidos';
+    params.delete('tab');
+    const q = params.toString();
+    return <Navigate to={`/torogoz/${seccion}${q ? `?${q}` : ''}`} replace />;
+}
+
+/** Una sección de la distribuidora: la dirección ES la sección. */
+function SeccionTorogoz() {
+    const { seccion } = useParams();
+    return <DistribucionView seccion={seccion} />;
+}
 const EncuestaView = lazy(IMPORTADORES.EncuestaView);
 const EncuestaAdminView = lazy(IMPORTADORES.EncuestaAdminView);
 const NoAccessView = lazy(IMPORTADORES.NoAccessView);
@@ -734,6 +756,40 @@ function MainApp() {
                 </div>
             } />
 
+            {/* ── La distribuidora: su propia entrada, su menú y su marca ──────
+                Misma sesión y mismas cuentas que el portal (decisión del
+                usuario, 2026-09-28); lo que la separa es la dirección y el
+                permiso `distribucion`. Sin sesión, a SU login, no al de las
+                farmacias. */}
+            <Route path="/torogoz/login" element={
+                !isAuthenticated ? (
+                    <div className="relative min-h-[100dvh] w-full bg-surface-page">
+                        <GlobalBackground />
+                        <div className="relative z-base"><TorogozLoginView /></div>
+                    </div>
+                ) : <Navigate to="/torogoz" replace />
+            } />
+            <Route path="/torogoz/*" element={
+                isAuthenticated ? (
+                    <div className="relative min-h-[100dvh] lg:min-h-0 lg:fixed lg:inset-0 w-full bg-surface-page lg:overflow-hidden flex flex-col">
+                        <GlobalBackground />
+                        <AuthSyncHelper />
+                        <TorogozLayout handleLogout={handleLogout}>
+                            <ErrorBoundary>
+                            <Suspense fallback={<ContentLoadingFallback />}>
+                            <Routes>
+                                <Route index element={<Navigate to="pedidos" replace />} />
+                                <Route path="venta" element={<PermissionGuard moduleKey="distribucion"><DistribucionVentaView /></PermissionGuard>} />
+                                <Route path="venta/:pedidoId" element={<PermissionGuard moduleKey="distribucion"><DistribucionVentaView /></PermissionGuard>} />
+                                <Route path=":seccion" element={<PermissionGuard moduleKey="distribucion"><SeccionTorogoz /></PermissionGuard>} />
+                            </Routes>
+                            </Suspense>
+                            </ErrorBoundary>
+                        </TorogozLayout>
+                    </div>
+                ) : <Navigate to="/torogoz/login" replace />
+            } />
+
             {/* Sin acceso — fuera del layout para no mostrar el menú */}
             <Route path="/no-access" element={
                 isAuthenticated ? <NoAccessView /> : <Navigate to="/login" replace />
@@ -847,9 +903,10 @@ function MainApp() {
                                     <Route path="cuentas-por-cobrar" element={<PermissionGuard moduleKey="cuentas_por_cobrar"><CuentasPorCobrarView /></PermissionGuard>} />
                                     <Route path="facturacion" element={<PermissionGuard moduleKey="facturacion"><FacturacionView /></PermissionGuard>} />
                                     <Route path="cotizaciones" element={<PermissionGuard moduleKey="cotizaciones"><CotizacionesView /></PermissionGuard>} />
-                                    <Route path="distribucion" element={<PermissionGuard moduleKey="distribucion"><DistribucionView /></PermissionGuard>} />
-                                    <Route path="distribucion/venta" element={<PermissionGuard moduleKey="distribucion"><DistribucionVentaView /></PermissionGuard>} />
-                                    <Route path="distribucion/venta/:pedidoId" element={<PermissionGuard moduleKey="distribucion"><DistribucionVentaView /></PermissionGuard>} />
+                                    {/* La distribuidora se mudó a `/torogoz`: estas llevan allá. */}
+                                    <Route path="distribucion" element={<IrATorogoz />} />
+                                    <Route path="distribucion/venta" element={<IrATorogoz />} />
+                                    <Route path="distribucion/venta/:pedidoId" element={<IrATorogoz />} />
                                     <Route path="clientes" element={<PermissionGuard moduleKey="clientes"><ClientesView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="productos" element={<PermissionGuard moduleKey="productos"><ProductosView /></PermissionGuard>} />
                                     <Route path="laboratorios" element={<PermissionGuard moduleKey="laboratorios"><LaboratoriosView /></PermissionGuard>} />
@@ -1050,8 +1107,17 @@ const ROUTE_TITLES = {
     '/cuentas-por-cobrar': 'Cuentas por cobrar',
     '/facturacion':       'Facturación',
     '/cotizaciones':      'Cotizaciones',
-    '/distribucion':      'Distribución',
-    '/distribucion/venta': 'Nueva venta',
+    // La distribuidora (`/torogoz`): su marca en la pestaña del navegador.
+    '/torogoz':           'Torogoz',
+    '/torogoz/login':     'Torogoz',
+    '/torogoz/venta':     'Nueva venta',
+    '/torogoz/pedidos':   'Pedidos',
+    '/torogoz/documentos': 'Documentos',
+    '/torogoz/clientes':  'Clientes',
+    '/torogoz/catalogo':  'Catálogo',
+    '/torogoz/inventario': 'Inventario',
+    '/torogoz/solicitudes': 'Solicitudes',
+    '/torogoz/emisor':    'Empresa',
     '/clientes':          'Clientes',
     '/metas':             'Metas',
     // Copiado LITERAL del `title` del GlassViewLayout de la vista: es lo que

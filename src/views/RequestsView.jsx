@@ -19,7 +19,7 @@ import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { getLocalMonday, formatWeekRange, shiftWeek, enLaSemanaDe } from '../utils/semana';
 import { useDecidirSolicitud } from '../hooks/useDecidirSolicitud';
 import GlassViewLayout from '../components/GlassViewLayout';
-import { REQUEST_TYPES, esOperativa, adaptarMinMax } from '../store/slices/requestsSlice';
+import { REQUEST_TYPES, esOperativa, adaptarMinMax, DISTRIBUCION_REQUEST_TYPES } from '../store/slices/requestsSlice';
 import { fetchAllMinMaxChangeRequests } from '../data/minmaxRequests';
 import { ERP_NAMES, ERP_ORDEN, BRANCH_A_ERP } from '../constants/erp';
 import { ICONO_POR_TIPO } from '../components/common/catalogos/tiposDeAviso';
@@ -265,7 +265,12 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
      * con dos permisos, y mezclarlas acá volvería decorativo el corte del
      * servidor. */
     const delAmbito = useMemo(() => {
-        const propias = (requests ?? []).filter(r => esOperativa(r.type) === esSucursal);
+        // Los descuentos de la distribuidora se deciden en SU entrada
+        // (`/torogoz/solicitudes`): la distribuidora no aparece en el portal de
+        // las farmacias (decisión del usuario, 2026-09-28). Siguen siendo
+        // operativas para el RLS; sólo no se listan acá.
+        const propias = (requests ?? []).filter(r => esOperativa(r.type) === esSucursal
+            && !DISTRIBUCION_REQUEST_TYPES.has(r.type));
         return esSucursal ? [...propias, ...minmax] : propias;
     }, [requests, minmax, esSucursal]);
 

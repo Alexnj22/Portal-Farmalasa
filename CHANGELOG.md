@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1088.0 — Torogoz: la distribuidora con su propia entrada (/torogoz), login, menú y Solicitudes
+
+Decisión del usuario: la distribuidora «alimenta el portal y se consulta,
+pero parecen independientes: debe haber una URL aparte». Ruta dentro del
+portal, las mismas cuentas por permiso, y fuera del menú de las farmacias.
+
+- **`/torogoz`**: su login (`/torogoz/login`, mismo usuario y contraseña), su
+  marco con su marca y su menú — Nueva venta, Pedidos, Documentos, Clientes,
+  Catálogo, Inventario, Solicitudes y Empresa—, campana, salida y un enlace al
+  portal de las farmacias. Cada sección es una dirección (ya no pestañas).
+- **Solicitudes de descuento** se deciden en `/torogoz/solicitudes` (aprobar,
+  rechazar con motivo, ver la venta); el portal de las farmacias ya no las
+  lista y los avisos llevan allá.
+- Distribución sale del menú Comercial. Las direcciones viejas
+  (`/distribucion?tab=…`, `/distribucion/venta/…`) redirigen.
+- `distribucion/rutas.js` junta todas las direcciones de la distribuidora.
+- `gate:rutas` entiende las rutas anidadas bajo un prefijo propio
+  (`/torogoz/*`): antes leía `/venta` y daba `/torogoz` por inexistente.
+  Verificado fabricándole la regresión (quitar un título la caza).
+
+
 ## v2.1087.0 — Distribución: descuentos con aprobación, preventa, venta más clara y Enter en los montos
 
 Pedidos del usuario: que se diga que la lista cambia el precio de todos los

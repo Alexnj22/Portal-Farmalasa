@@ -32,6 +32,7 @@ import { filaNueva, problemaDePagos, cambioDePagos } from './distribucion/pagos'
 import { leerMonto, rotuloTipoCliente, soloVentaLibre, TIPO_DOCUMENTO } from './distribucion/comun';
 import { indexarPrecios, presentacionesDe, listasDe, precioDe } from './distribucion/precios';
 import { calcularVenta, descuentoConIva } from './distribucion/motor';
+import { rutaInicio, rutaDocumento } from './distribucion/rutas';
 
 // La venta de Distribución, en su propia vista.
 //
@@ -63,7 +64,7 @@ import { calcularVenta, descuentoConIva } from './distribucion/motor';
 // Es la otra empresa (Torogoz): `useMarca('distribucion')` pinta el portal con
 // sus colores mientras la vista está abierta. Por eso todo va con tokens.
 //
-// Rutas: `/distribucion/venta` (nueva) y `/distribucion/venta/:pedidoId`
+// Rutas: `/torogoz/venta` (nueva) y `/torogoz/venta/:pedidoId`
 // (corregir un pedido por facturar, incluido el que reemplaza a un sellado).
 
 const RESULTADOS = 8;
@@ -431,15 +432,15 @@ export default function DistribucionVentaView() {
                 showToast(pedida ? 'Enviada a aprobación' : 'Preventa guardada',
                     pedida ? 'La venta queda como preventa hasta que aprueben el descuento. Te llega un aviso.'
                            : 'Se factura después desde Pedidos.');
-                navigate('/distribucion?tab=pedidos', { replace: true });
+                navigate(rutaInicio(), { replace: true });
                 return;
             }
             try {
                 const factura = await facturarPedido(pedidoId);
-                navigate(`/distribucion?tab=pedidos&documento=${factura.dte_id}${imprimir ? '&imprimir=1' : ''}`, { replace: true });
+                navigate(rutaDocumento(factura.dte_id, { imprimir }), { replace: true });
             } catch (e) {
                 showToast('Pedido guardado sin facturar', mensajeDeDistribucion(e), 'warning');
-                navigate('/distribucion?tab=pedidos', { replace: true });
+                navigate(rutaInicio(), { replace: true });
             }
         } catch (e) {
             setError(mensajeDeDistribucion(e));
@@ -475,7 +476,7 @@ export default function DistribucionVentaView() {
 
     const headerLeft = (
         <div className="flex items-center gap-3 min-w-0">
-            <Button variant="ghost" iconOnly icon={ArrowLeft} title="Volver a Distribución" onClick={() => navigate('/distribucion?tab=pedidos')} />
+            <Button variant="ghost" iconOnly icon={ArrowLeft} title="Volver a Pedidos" onClick={() => navigate(rutaInicio())} />
             <div className="min-w-0">
                 <p className="text-caption font-black text-content-3 uppercase tracking-widest">Distribución</p>
                 <h2 className="font-black text-title text-content tracking-tight leading-tight truncate">{titulo}</h2>

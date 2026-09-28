@@ -10,8 +10,8 @@ test('pestañas y formulario de pedido en el teléfono', async ({ page }) => {
     const errores = [];
     page.on('pageerror', e => errores.push(e.message));
     await entrar(page);
-    for (const tab of ['pedidos', 'documentos', 'clientes', 'catalogo', 'emisor']) {
-        await page.goto(`/distribucion?tab=${tab}`);
+    for (const tab of ['pedidos', 'documentos', 'clientes', 'catalogo', 'inventario', 'solicitudes', 'emisor']) {
+        await page.goto(`/torogoz/${tab}`);
         await page.waitForTimeout(2000);
         await expect(page.getByText(/algo salió mal/i)).toHaveCount(0);
         // Sin desborde horizontal: en el teléfono una tabla que se sale del
@@ -20,10 +20,10 @@ test('pestañas y formulario de pedido en el teléfono', async ({ page }) => {
         expect(desborda, `la pestaña ${tab} desborda a lo ancho`).toBe(false);
         await page.screenshot({ path: `${SALIDA}/${tab}.png`, fullPage: true });
     }
-    await page.goto('/distribucion?tab=pedidos');
+    await page.goto('/torogoz/pedidos');
     await page.waitForTimeout(1500);
     await page.getByRole('button', { name: /nueva venta/i }).first().click();
-    await expect(page).toHaveURL(/\/distribucion\/venta$/);
+    await expect(page).toHaveURL(/\/torogoz\/venta$/);
     await expect(page.getByRole('heading', { name: 'Nueva venta' }).first()).toBeVisible();
     await page.getByText('Elegir cliente…').click();
     await page.getByText('TIENDA LA ESQUINA', { exact: true }).last().click();

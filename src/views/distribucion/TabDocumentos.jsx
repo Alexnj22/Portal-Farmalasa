@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { fetchDocumentos } from '../../data/distribucion';
 import DocumentoModal from './DocumentoModal';
 import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO } from './comun';
+import { rutaVenta } from './rutas';
 
 const COLS = [
     { key: 'documento', label: 'Documento', align: 'left', className: 'w-[200px]' },
@@ -157,7 +158,7 @@ export default function TabDocumentos({ puedeVender, buscar }) {
             {abierto && (
                 <DocumentoModal id={abierto} puedeVender={puedeVender} onClose={() => setAbierto(null)}
                     onCambio={cargar}
-                    onCorregirPedido={(pedidoId) => navigate(`/distribucion/venta/${pedidoId}`)} />
+                    onCorregirPedido={(pedidoId) => navigate(rutaVenta(pedidoId))} />
             )}
         </div>
     );

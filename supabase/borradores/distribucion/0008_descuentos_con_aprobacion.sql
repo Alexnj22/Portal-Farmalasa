@@ -321,7 +321,8 @@ BEGIN
                  || to_char(v_total, 'FM999,999,990.00') || ' para ' || coalesce(v_cliente, 'un cliente')
                  || ' (venta ' || p_pedido || ').'
                  || coalesce(' — ' || left(nullif(btrim(p_nota), ''), 140), '');
-        v_link := '/requests?solicitud=' || v_id;
+        -- La distribuidora tiene su propia entrada (`/torogoz`, 2026-09-28).
+        v_link := '/torogoz/solicitudes?solicitud=' || v_id;
         INSERT INTO public.notifications (recipient_id, type, title, body, link, metadata, created_by)
         SELECT d, 'REQUEST_PENDING', v_titulo, v_cuerpo, v_link,
                jsonb_build_object('request_id', v_id, 'request_type', 'DIST_DESCUENTO'), v_yo
@@ -394,11 +395,11 @@ BEGIN
              || CASE WHEN p_aprobar THEN ': ya se puede facturar con el descuento.'
                      ELSE ': queda sin el descuento. ' || btrim(p_nota) END;
     INSERT INTO public.notifications (recipient_id, type, title, body, link, metadata, created_by)
-    VALUES (v_sol.employee_id, 'REQUEST_DECIDED', v_titulo, v_cuerpo, '/distribucion/venta/' || v_pedido,
+    VALUES (v_sol.employee_id, 'REQUEST_DECIDED', v_titulo, v_cuerpo, '/torogoz/venta/' || v_pedido,
             jsonb_build_object('request_id', p_solicitud, 'request_type', 'DIST_DESCUENTO', 'pedido_id', v_pedido), v_yo);
     PERFORM net.http_post(
         url := public.push_function_url(), headers := public.push_function_headers(),
-        body := jsonb_build_object('title', v_titulo, 'message', v_cuerpo, 'url', '/distribucion/venta/' || v_pedido,
+        body := jsonb_build_object('title', v_titulo, 'message', v_cuerpo, 'url', '/torogoz/venta/' || v_pedido,
                                    'target_type', 'EMPLOYEE', 'target_value', to_jsonb(ARRAY[v_sol.employee_id])));
 
     RETURN json_build_object('pedido_id', v_pedido, 'renglones', v_n, 'aprobado', p_aprobar);

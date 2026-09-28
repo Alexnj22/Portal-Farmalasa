@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1077.2 — Metas: Salud 4 se ve en la barra de la meta general
+
+La sexta sala tomaba `chart-8`, que no se pintaba: quedaba un hueco en la barra
+y la leyenda sin punto. Ahora la sexta es un gris claro (`content-2`).
+
 ## v2.1077.1 — Metas: meta general del mes arriba de la confirmación
 
 Pedido del usuario: una «meta general» arriba, con el botón de confirmar todas ahí mismo.

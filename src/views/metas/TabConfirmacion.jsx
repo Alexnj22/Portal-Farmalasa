@@ -29,9 +29,11 @@ const PASOS_MAX = 10;
 const RELLENO_TRAMO = { completo: 'bg-success', medio: 'bg-warning', nada: 'bg-danger' };
 
 // Un color por sala en la barra de la meta general, en orden fijo. Son los
-// seis categóricos vigentes (2, 5 y 7 están retirados, DESIGN.md §6); las
-// salas con meta son seis.
-const COLORES_SALA = ['bg-chart-1', 'bg-chart-3', 'bg-chart-4', 'bg-chart-6', 'bg-chart-8', 'bg-chart-9'];
+// cinco categóricos con color propio (2, 5 y 7 están retirados, DESIGN.md §6)
+// más un gris claro para la sexta. NO `chart-8`: es un alias de `content-3` y
+// la clase no se pintaba — Salud 4 salió como un hueco en la barra y sin
+// punto en la leyenda (reporte del usuario, 2026-09-28).
+const COLORES_SALA = ['bg-chart-1', 'bg-chart-3', 'bg-chart-4', 'bg-chart-6', 'bg-chart-9', 'bg-content-2'];
 
 const ESTADO_CFG = {
     propuesta:             { label: 'Propuesta',              variante: 'chart-1' },

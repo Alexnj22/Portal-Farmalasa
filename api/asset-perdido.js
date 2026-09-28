@@ -1,5 +1,10 @@
 // Un archivo de /assets/ que NO existe (2026-09-24).
 //
+// Desde el 2026-09-28 llegan acá muchos menos: cada publicación de producción
+// conserva los archivos de las publicaciones de las últimas 48 horas
+// (`scripts/conservar-assets.mjs`), así que una pestaña abierta de una versión
+// reciente sigue encontrando sus pedazos. Lo que llega es más viejo que eso.
+//
 // `vercel.json` le pone a todo /assets/ «guardalo un año, no cambia nunca»
 // (`immutable`), que es correcto para un archivo con hash: su contenido no
 // cambia jamás. Pero la regla se aplicaba también a la respuesta 404 de un

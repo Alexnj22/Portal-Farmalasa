@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1084.2 — Las pantallas abiertas ya no se rompen al publicar
+
+El 93% de los errores de pantalla del último mes (649 de 704, hasta 39
+personas en una semana) era lo mismo: alguien tenía el portal abierto, se
+publicaba una versión nueva y la siguiente vista que abría ya no encontraba sus
+archivos. Desde ahora cada publicación conserva los archivos de las
+publicaciones de las últimas 48 horas, así que una pestaña abierta sigue
+funcionando hasta que la persona decida actualizar. Empieza a surtir efecto a
+partir de la segunda publicación después de ésta.
+
+
 ## v2.1084.1 — Los mensajes del login, cortos
 
 A pedido del usuario: una línea práctica por caso — «Usuario incorrecto.»,

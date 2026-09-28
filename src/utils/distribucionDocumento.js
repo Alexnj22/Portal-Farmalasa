@@ -134,7 +134,7 @@ export function leerDocumento(dte) {
  * rollo no lee UTF-8 (IMPRESION-EN-TICKETERA §5) y `soloASCII` le quita las
  * tildes en el envío, pero un rótulo pensado sin ellas se lee mejor.
  */
-export function ticketDeVenta(dte) {
+export function ticketDeVenta(dte, marca = null) {
     const d = leerDocumento(dte);
     const res = d.resumen;
     const totales = [];
@@ -149,10 +149,15 @@ export function ticketDeVenta(dte) {
     return {
         titulo: d.nombre,
         tituloDeCola: `${d.nombre} ${d.numeroControl.slice(-6)}`,
+        // La marca va arriba, como membrete; los datos fiscales, debajo y tal
+        // cual los dice el DTE. El rollo no lleva el icono: una imagen por el
+        // camino directo es un comando que esa impresora todavía no probó, y
+        // uno que no entiende se traga el trabajo siguiente (ticketPrint.js).
         encabezado: {
-            titulo: d.emisor.comercial || d.emisor.nombre,
+            titulo: (marca?.nombre ?? d.emisor.comercial ?? d.emisor.nombre).toUpperCase(),
             lineas: [
-                d.emisor.comercial ? d.emisor.nombre : null,
+                marca || d.emisor.comercial ? d.emisor.nombre : null,
+                d.emisor.comercial && d.emisor.comercial !== d.emisor.nombre ? d.emisor.comercial : null,
                 `NIT ${d.emisor.nit}  NRC ${d.emisor.nrc}`,
                 d.emisor.direccion,
                 `Tel. ${d.emisor.telefono}`,
@@ -183,7 +188,7 @@ export function ticketDeVenta(dte) {
     };
 }
 
-export const imprimirTicketDeVenta = (dte) => imprimirDocumento(ticketDeVenta(dte), {
+export const imprimirTicketDeVenta = (dte, marca = null) => imprimirDocumento(ticketDeVenta(dte, marca), {
     tituloDeCola: `${NOMBRE_DOCUMENTO[dte.tipo] ?? 'Documento'} ${dte.numero_control.slice(-6)}`,
 });
 
@@ -204,12 +209,49 @@ function getPdfMake() {
     return pdfMakePromise;
 }
 
-const GRIS = '#555555';
-const celda = (text, extra = {}) => ({ text: String(text ?? ''), fontSize: 8, ...extra });
-const par = (rotulo, valor) => ({ text: [{ text: `${rotulo}: `, bold: true }, String(valor ?? '—')], fontSize: 8, margin: [0, 1, 0, 1] });
+const GRIS = '#5b6770';
+const TINTA = '#1c2b33';
+const LINEA = '#d5dee2';
+const celda = (text, extra = {}) => ({ text: String(text ?? ''), fontSize: 8, color: TINTA, ...extra });
+const par = (rotulo, valor) => ({
+    text: [{ text: `${rotulo}  `, bold: true, color: GRIS, fontSize: 7 }, { text: String(valor ?? '—'), color: TINTA }],
+    fontSize: 8, margin: [0, 1.5, 0, 1.5],
+});
+const parApilado = (rotulo, valor) => ({
+    stack: [
+        { text: rotulo, bold: true, color: GRIS, fontSize: 7 },
+        { text: String(valor ?? '—'), fontSize: 7.5, color: TINTA, characterSpacing: 0.1 },
+    ],
+    margin: [0, 2, 0, 2],
+});
+// Sin marca, el papel sale en grises: la marca la decide la pantalla.
+const SIN_MARCA = { petroleo: '#33424a', petroleoClaro: '#f1f3f4', naranja: '#9aa5ab', naranjaTexto: '#5b6770' };
+let C = SIN_MARCA;
+const rotuloDeSeccion = (t) => ({ text: t.toUpperCase(), bold: true, fontSize: 7.5, color: C.petroleo, characterSpacing: 1.2, margin: [0, 0, 0, 4] });
 
-/** La definición del PDF. Carta, en negro: el papel no tiene tema. */
-export function definicionPdf(dte, qrSvg) {
+// Un panel: fondo petróleo muy claro, sin bordes. Da orden sin pedir tinta: en
+// una impresora en blanco y negro sale como un gris apenas visible.
+const panel = (stack, extra = {}) => ({
+    table: { widths: ['*'], body: [[{ stack, fillColor: C.petroleoClaro, margin: [8, 7, 8, 7] }]] },
+    layout: 'noBorders', ...extra,
+});
+
+// Las líneas de una tabla: sólo horizontales y finas; la cabecera, sin borde.
+const lineasSuaves = {
+    hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 0 : 0.5),
+    vLineWidth: () => 0,
+    hLineColor: () => LINEA,
+    paddingTop: () => 4, paddingBottom: () => 4, paddingLeft: () => 5, paddingRight: () => 5,
+};
+
+/**
+ * La definición del PDF. Carta, con el membrete de la marca: los colores van en
+ * rellenos y rótulos, nunca en un dato, y todo se sigue leyendo impreso en
+ * blanco y negro. Lo que la norma exige (Manual Funcional §XXII) está todo y
+ * sale del JSON firmado; la marca sólo lo ordena.
+ */
+export function definicionPdf(dte, qrSvg, marca = null) {
+    C = marca?.colores ?? SIN_MARCA;
     const d = leerDocumento(dte);
     const res = d.resumen;
     const filasResumen = [
@@ -219,84 +261,154 @@ export function definicionPdf(dte, qrSvg) {
         ...(res.percepcion ? [['IVA percibido', res.percepcion]] : []),
         ...(res.retencion ? [['IVA retenido', -res.retencion]] : []),
     ];
+    const ANCHO = 540; // carta (612) menos los márgenes
     return {
         pageSize: 'LETTER',
-        pageMargins: [36, 36, 36, 48],
-        ...(d.prueba ? { watermark: { text: 'SIN VALIDEZ FISCAL', color: '#999999', opacity: 0.15, bold: true } } : {}),
+        pageMargins: [36, 36, 36, 52],
+        info: { title: `${d.nombre} ${d.numeroControl}`, author: d.emisor.nombre, creator: marca?.nombre ?? d.emisor.nombre },
+        ...(d.prueba ? { watermark: { text: 'SIN VALIDEZ FISCAL', color: '#999999', opacity: 0.12, bold: true } } : {}),
         footer: (actual, total) => ({
-            columns: [
-                { text: d.sellado ? 'Documento sellado por el Ministerio de Hacienda.' : 'Documento pendiente del sello de Hacienda.', fontSize: 7, color: GRIS },
-                { text: `Página ${actual} de ${total}`, alignment: 'right', fontSize: 7, color: GRIS },
+            margin: [36, 14, 36, 0],
+            stack: [
+                { canvas: [{ type: 'line', x1: 0, y1: 0, x2: ANCHO, y2: 0, lineWidth: 0.6, lineColor: LINEA }] },
+                {
+                    margin: [0, 5, 0, 0],
+                    columns: [
+                        { text: marca ? [{ text: marca.nombre, bold: true, color: C.petroleo }, { text: `  ·  ${d.emisor.nombre}`, color: GRIS }] : d.emisor.nombre, fontSize: 7, color: GRIS },
+                        { text: d.sellado ? 'Documento sellado por el Ministerio de Hacienda' : 'Documento pendiente del sello de Hacienda', fontSize: 7, color: GRIS, alignment: 'center' },
+                        { text: `Página ${actual} de ${total}`, alignment: 'right', fontSize: 7, color: GRIS },
+                    ],
+                },
             ],
-            margin: [36, 16, 36, 0],
         }),
         content: [
+            // ── Membrete ──
+            {
+                columns: [
+                    ...(marca?.iconoSvg ? [{ width: 46, svg: marca.iconoSvg, fit: [46, 46] }] : []),
+                    {
+                        width: '*', margin: [marca?.iconoSvg ? 10 : 0, 5, 0, 0],
+                        stack: [
+                            { text: marca?.nombre ?? d.emisor.comercial ?? d.emisor.nombre, bold: true, fontSize: marca ? 21 : 15, color: C.petroleo, lineHeight: 0.9 },
+                            ...(marca?.bajada ? [{ text: marca.bajada.toUpperCase(), bold: true, fontSize: 7, color: C.naranjaTexto, characterSpacing: 2.4, margin: [1, 3, 0, 0] }] : []),
+                        ],
+                    },
+                    {
+                        width: 210,
+                        table: {
+                            widths: ['*'],
+                            body: [[{
+                                fillColor: C.petroleo, margin: [10, 7, 10, 7],
+                                stack: [
+                                    { text: 'DOCUMENTO TRIBUTARIO ELECTRÓNICO', fontSize: 6.5, bold: true, color: '#cfe8ec', characterSpacing: 0.8, alignment: 'center' },
+                                    { text: d.nombre, bold: true, fontSize: 11, color: '#ffffff', alignment: 'center', margin: [0, 3, 0, 0] },
+                                ],
+                            }]],
+                        },
+                        layout: 'noBorders',
+                    },
+                ],
+            },
+            { canvas: [{ type: 'rect', x: 0, y: 0, w: ANCHO, h: 2.2, color: C.naranja }], margin: [0, 10, 0, 12] },
+
+            // ── Emisor · identificación · QR ──
             {
                 columns: [
                     {
                         width: '*',
                         stack: [
-                            { text: d.emisor.nombre, bold: true, fontSize: 12 },
-                            ...(d.emisor.comercial ? [{ text: d.emisor.comercial, fontSize: 9 }] : []),
-                            { text: d.emisor.actividad, fontSize: 8, color: GRIS, margin: [0, 2, 0, 2] },
-                            par('NIT', d.emisor.nit), par('NRC', d.emisor.nrc),
+                            rotuloDeSeccion('Emisor'),
+                            { text: d.emisor.nombre, bold: true, fontSize: 10.5, color: TINTA },
+                            ...(d.emisor.comercial && d.emisor.comercial !== d.emisor.nombre ? [{ text: d.emisor.comercial, fontSize: 8.5, color: TINTA, margin: [0, 1, 0, 0] }] : []),
+                            { text: d.emisor.actividad, fontSize: 7.5, color: GRIS, margin: [0, 2, 0, 4] },
+                            { columns: [par('NIT', d.emisor.nit), par('NRC', d.emisor.nrc)] },
                             par('Dirección', d.emisor.direccion),
-                            par('Teléfono', d.emisor.telefono), par('Correo', d.emisor.correo),
+                            { columns: [par('Teléfono', d.emisor.telefono), par('Correo', d.emisor.correo)] },
                         ],
                     },
                     {
-                        width: 210,
-                        stack: [
-                            { text: 'DOCUMENTO TRIBUTARIO ELECTRÓNICO', bold: true, fontSize: 9, alignment: 'center' },
-                            { text: d.nombre, bold: true, fontSize: 11, alignment: 'center', margin: [0, 2, 0, 6] },
-                            ...(qrSvg ? [{ svg: qrSvg, width: 90, alignment: 'center', margin: [0, 0, 0, 4] }] : []),
-                            { text: 'Consulte su validez con el código QR', fontSize: 7, alignment: 'center', color: GRIS },
-                        ],
+                        width: 250,
+                        ...panel([
+                            {
+                                columns: [
+                                    {
+                                        width: '*',
+                                        stack: [
+                                            par('Emisión', `${d.fecha} ${d.hora}`),
+                                            par('Modelo', d.modelo), par('Transmisión', d.transmision),
+                                            parApilado('Número de control', d.numeroControl),
+                                        ],
+                                    },
+                                    ...(qrSvg ? [{
+                                        width: 66,
+                                        stack: [
+                                            { svg: qrSvg, width: 64, alignment: 'center' },
+                                            { text: 'Verifique en Hacienda', fontSize: 6, color: GRIS, alignment: 'center', margin: [0, 2, 0, 0] },
+                                        ],
+                                    }] : []),
+                                ],
+                                columnGap: 8,
+                            },
+                            // Los dos códigos largos van a lo ancho: son 36 y 40
+                            // caracteres sin espacios y no se pueden partir.
+                            parApilado('Código de generación', d.codigoGeneracion),
+                            parApilado('Sello de recepción', d.sellado ? d.sello : 'PENDIENTE'),
+                        ]),
                     },
                 ],
+                columnGap: 16,
             },
+
+            // ── Receptor ──
             {
-                margin: [0, 10, 0, 6],
-                table: {
-                    widths: ['*', '*'],
-                    body: [[
-                        { stack: [par('Código de generación', d.codigoGeneracion), par('Número de control', d.numeroControl),
-                            par('Sello de recepción', d.sellado ? d.sello : 'PENDIENTE')] },
-                        { stack: [par('Fecha y hora de emisión', `${d.fecha} ${d.hora}`), par('Modelo de facturación', d.modelo),
-                            par('Tipo de transmisión', d.transmision)] },
-                    ]],
-                },
-                layout: 'lightHorizontalLines',
+                margin: [0, 14, 0, 0],
+                ...panel([
+                    rotuloDeSeccion('Receptor'),
+                    {
+                        columns: [
+                            { width: '*', stack: [
+                                { text: d.receptor.nombre, bold: true, fontSize: 9.5, color: TINTA, margin: [0, 0, 0, 2] },
+                                par('Documento', d.receptor.documento || '—'),
+                                ...(d.receptor.nrc ? [par('NRC', d.receptor.nrc)] : []),
+                                ...(d.receptor.actividad ? [par('Actividad', d.receptor.actividad)] : []),
+                            ] },
+                            { width: '*', stack: [
+                                par('Dirección', d.receptor.direccion || '—'),
+                                par('Teléfono', d.receptor.telefono || '—'),
+                                par('Correo', d.receptor.correo || '—'),
+                            ] },
+                        ],
+                        columnGap: 16,
+                    },
+                ]),
             },
-            { text: 'RECEPTOR', bold: true, fontSize: 9, margin: [0, 4, 0, 2] },
+
+            // ── Renglones ──
             {
-                columns: [
-                    { width: '*', stack: [par('Nombre', d.receptor.nombre), par('Documento', d.receptor.documento || '—'),
-                        ...(d.receptor.nrc ? [par('NRC', d.receptor.nrc)] : []), ...(d.receptor.actividad ? [par('Actividad', d.receptor.actividad)] : [])] },
-                    { width: '*', stack: [par('Dirección', d.receptor.direccion || '—'), par('Teléfono', d.receptor.telefono || '—'),
-                        par('Correo', d.receptor.correo || '—')] },
-                ],
-            },
-            {
-                margin: [0, 10, 0, 0],
+                margin: [0, 14, 0, 0],
                 table: {
                     headerRows: 1,
-                    widths: [18, 34, '*', 52, 44, 50, 50, 56],
+                    widths: [16, 32, '*', 52, 40, 48, 48, 54],
                     body: [
                         ['N°', 'Cant.', 'Descripción', 'Precio unit.', 'Desc.', 'No sujetas', 'Exentas', 'Gravadas']
-                            .map(t => celda(t, { bold: true, fillColor: '#eeeeee' })),
-                        ...d.renglones.map(r => [
-                            celda(r.n), celda(r.cantidad, { alignment: 'right' }), celda(r.descripcion),
-                            celda(dinero(r.precio), { alignment: 'right' }), celda(dinero(r.descuento), { alignment: 'right' }),
-                            celda(dinero(r.noSujeta), { alignment: 'right' }), celda(dinero(r.exenta), { alignment: 'right' }),
-                            celda(dinero(r.gravada), { alignment: 'right' }),
-                        ]),
+                            .map((t, i) => celda(t, { bold: true, color: '#ffffff', fillColor: C.petroleo, fontSize: 7, alignment: i < 3 ? 'left' : 'right' })),
+                        ...d.renglones.map((r, i) => {
+                            const fondo = i % 2 ? '#f5f8f9' : null;
+                            const num = (v) => celda(dinero(v), { alignment: 'right', fillColor: fondo });
+                            return [
+                                celda(r.n, { color: GRIS, fillColor: fondo }), celda(r.cantidad, { alignment: 'right', fillColor: fondo }),
+                                celda(r.descripcion, { fillColor: fondo }),
+                                num(r.precio), num(r.descuento), num(r.noSujeta), num(r.exenta), num(r.gravada),
+                            ];
+                        }),
                     ],
                 },
-                layout: 'lightHorizontalLines',
+                layout: lineasSuaves,
             },
+
+            // ── Letras y totales ──
             {
-                margin: [0, 10, 0, 0],
+                margin: [0, 12, 0, 0],
                 columns: [
                     {
                         width: '*',
@@ -308,27 +420,31 @@ export function definicionPdf(dte, qrSvg) {
                         ],
                     },
                     {
-                        width: 200,
+                        width: 210,
                         table: {
-                            widths: ['*', 70],
+                            widths: ['*', 76],
                             body: [
-                                ...filasResumen.map(([t, v]) => [celda(t), celda(v < 0 ? `-${dinero(-v)}` : dinero(v), { alignment: 'right' })]),
-                                [celda('TOTAL A PAGAR', { bold: true, fontSize: 10 }), celda(dinero(res.total), { bold: true, fontSize: 10, alignment: 'right' })],
+                                ...filasResumen.map(([t, v]) => [celda(t, { color: GRIS }), celda(v < 0 ? `-${dinero(-v)}` : dinero(v), { alignment: 'right' })]),
+                                [
+                                    celda('TOTAL A PAGAR', { bold: true, fontSize: 9.5, color: '#ffffff', fillColor: C.petroleo, margin: [0, 2, 0, 2] }),
+                                    celda(dinero(res.total), { bold: true, fontSize: 11, color: '#ffffff', fillColor: C.petroleo, alignment: 'right', margin: [0, 1, 0, 1] }),
+                                ],
                             ],
                         },
-                        layout: 'lightHorizontalLines',
+                        layout: lineasSuaves,
                     },
                 ],
+                columnGap: 20,
             },
         ],
-        defaultStyle: { font: 'Roboto', color: '#000000' },
+        defaultStyle: { font: 'Roboto', color: TINTA },
     };
 }
 
 /** El PDF como `Blob`, para verlo en pantalla o descargarlo. */
-export async function pdfDelDocumento(dte) {
+export async function pdfDelDocumento(dte, marca = null) {
     const [pdfMake, qr] = await Promise.all([getPdfMake(), dibujarQR(urlConsultaPublica(dte)).catch(() => '')]);
-    const doc = pdfMake.createPdf(definicionPdf(dte, qr || null));
+    const doc = pdfMake.createPdf(definicionPdf(dte, qr || null, marca));
     // pdfmake 0.3 devuelve una promesa; la 0.2 recibía un callback. Se aceptan las dos.
     return doc.getBlob.length ? new Promise(r => doc.getBlob(r)) : doc.getBlob();
 }

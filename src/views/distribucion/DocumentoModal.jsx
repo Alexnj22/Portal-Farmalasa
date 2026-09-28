@@ -24,6 +24,7 @@ import { construirTicketHtml, conCodigosDibujados, ajustarAltoDePagina } from '.
 import {
     ticketDeVenta, imprimirTicketDeVenta, pdfDelDocumento, nombreDelPdf, urlConsultaPublica,
 } from '../../utils/distribucionDocumento';
+import { MARCA_PAPEL } from './marca';
 import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO } from './comun';
 
 // Un documento de Distribución con sus dos papeles a la vista: el TICKET (lo
@@ -55,7 +56,7 @@ function VistaTicket({ dte }) {
     const [alto, setAlto] = useState(600);
     useEffect(() => {
         let vivo = true;
-        conCodigosDibujados(ticketDeVenta(dte))
+        conCodigosDibujados(ticketDeVenta(dte, MARCA_PAPEL))
             .then(t => { if (vivo) setHtml(construirTicketHtml(t)); })
             .catch(e => console.error('VistaTicket', e));
         return () => { vivo = false; };
@@ -99,7 +100,7 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
     useEffect(() => { cargar(); }, [cargar]);
 
     const imprimirTicket = useCallback(async (doc) => {
-        const r = await imprimirTicketDeVenta(doc);
+        const r = await imprimirTicketDeVenta(doc, MARCA_PAPEL);
         useStaff.getState().appendAuditLog('DISTRIBUCION_TICKET_IMPRESO', String(doc.id), { ok: r?.ok !== false });
         if (r && r.ok === false) showToast('No se pudo imprimir el ticket', r.detalle ?? '', 'error');
     }, [showToast]);
@@ -119,7 +120,7 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
         let vivo = true;
         let url = null;
         setPdf({ blob: null, url: null, error: null });
-        pdfDelDocumento(d)
+        pdfDelDocumento(d, MARCA_PAPEL)
             .then(blob => { if (!vivo) return; url = URL.createObjectURL(blob); setPdf({ blob, url, error: null }); })
             .catch(e => { if (vivo) setPdf({ blob: null, url: null, error: `No se pudo armar el PDF: ${e.message}` }); });
         return () => { vivo = false; if (url) URL.revokeObjectURL(url); };

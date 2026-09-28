@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1082.0 — Torogoz en el PDF y el ticket
+
+Los papeles de Distribución seguían sin la marca (pedido del usuario: «los pdf,
+tickets, y demás aún no se actualizan con el nombre / icono. mejora
+visualmente ambos»).
+
+- **PDF rediseñado.** Membrete con el icono y «Torogoz · Distribuidora», el tipo
+  de documento en un recuadro petróleo, una línea naranja de cierre, la
+  identificación del DTE y el QR en un panel, el receptor en otro, la tabla con
+  cabecera petróleo y renglones alternados, y el TOTAL A PAGAR destacado. Los
+  colores van en rellenos y rótulos, nunca en un dato, y se sigue leyendo
+  impreso en blanco y negro. Los dos códigos largos (generación y sello) van a
+  lo ancho: no se pueden partir y desbordaban el margen.
+- **Ticket**: el encabezado dice TOROGOZ y debajo, tal cual, el nombre legal,
+  el comercial, NIT, NRC, dirección y teléfono. El rollo no lleva el icono: una
+  imagen por el camino directo es un comando que esa impresora no probó.
+- **Los datos fiscales no cambian**: salen del DTE firmado. Torogoz va como
+  membrete; el nombre legal y el comercial siguen siendo los del emisor.
+- **La marca vive en un solo sitio**, `src/views/distribucion/marca.js`
+  (nombre, colores y el SVG del icono). El menú lo usa como `data:`; el PDF y el
+  ticket lo reciben como parámetro desde `DocumentoModal`, porque
+  `distribucionDocumento.js` es núcleo portable y no importa pantallas. Sin
+  marca, el papel sale en grises. `public/distribuidora/` se borró.
+
 ## v2.1081.2 — Torogoz: la distribuidora cambia de nombre e icono
 
 «Rumbo» no le gustó al usuario; eligió **Torogoz**. En `/distribucion` el menú

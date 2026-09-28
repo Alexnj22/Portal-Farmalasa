@@ -4,6 +4,7 @@ import AvatarConEstado from '../common/AvatarConEstado';
 import Badge from '../common/Badge';
 import { LayoutGroup } from 'framer-motion';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { MARCA_DISTRIBUIDORA } from '../../views/distribucion/marca';
 import {
     Monitor, Calendar, Building2, ShieldCheck, LogOut, Menu, User,
     Megaphone, AlertTriangle, Activity,
@@ -65,12 +66,13 @@ import { hoySV } from '../../utils/fecha';
 // directorio de empleados; Clima Organizacional estaba partido entre su
 // propio grupo (encuesta) y RRHH (encuesta_admin) sin motivo. Ningún grupo
 // nuevo pasa de 6 ítems.
-// El encabezado del menú dice de quién es la pantalla. «Torogoz» (la
-// distribuidora) lo eligió el usuario el 2026-09-28; el icono es una propuesta
-// hecha a su pedido. Ojo: existe Torogoz S.A. de C.V. (1977, productos
-// metálicos) — antes de usar el nombre fuera del portal, consultarlo en el CNR.
+// El encabezado del menú dice de quién es la pantalla. La distribuidora es otra
+// empresa y lleva su marca (`views/distribucion/marca.js`).
 const MARCA_PORTAL = { icono: '/Logo192.png', alt: 'FLS', titulo: 'Portal', bajada: 'La Salud & La Popular', bajadaCorta: 'La Salud' };
-const MARCA_DISTRIBUIDORA = { icono: '/distribuidora/icono.svg', alt: 'Torogoz', titulo: 'Torogoz', bajada: 'Distribuidora', bajadaCorta: 'Distribuidora' };
+const MARCA_DISTRIBUIDORA_MENU = {
+    icono: MARCA_DISTRIBUIDORA.icono, alt: MARCA_DISTRIBUIDORA.nombre, titulo: MARCA_DISTRIBUIDORA.nombre,
+    bajada: MARCA_DISTRIBUIDORA.bajada, bajadaCorta: MARCA_DISTRIBUIDORA.bajada,
+};
 
 const MENU_GROUPS = [
     { key: 'overview',      label: 'Inicio',        icon: Home,          modules: ['overview']                          },
@@ -303,7 +305,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const activeId = activePath.split('/')[1] || '';
     // Distribución es otra empresa: su vista lleva su propio nombre e icono en
     // el encabezado (los colores los pone `useMarca` en la vista).
-    const marca = activeId === 'distribucion' ? MARCA_DISTRIBUIDORA : MARCA_PORTAL;
+    const marca = activeId === 'distribucion' ? MARCA_DISTRIBUIDORA_MENU : MARCA_PORTAL;
 
     const cargoLabel = (() => {
         if (isSU) return 'Super Admin';

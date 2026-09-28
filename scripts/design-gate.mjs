@@ -388,8 +388,13 @@ const EXCEPTIONS = {
   // papel también lleva separador de miles.)
   'src/utils/conteoInventarioPrint.js': ['hex'],
   // El PDF del DTE de Distribución (representación gráfica): docDefinition de
-  // pdfmake, en negro y grises de imprenta. El papel no tiene tema.
+  // pdfmake. El papel no tiene tema; lleva el membrete de la marca.
   'src/utils/distribucionDocumento.js': ['hex'],
+  // La marca de la distribuidora: el dibujo del icono y los colores que usa el
+  // PDF. Es un logo, no una superficie del portal — no puede depender del tema
+  // (el PDF no tiene CSS) y en pantalla los colores ya viven como tokens bajo
+  // `:root[data-marca="distribucion"]` en index.css.
+  'src/views/distribucion/marca.js': ['hex'],
   // <meta name="theme-color"> necesita un color SÓLIDO; --bg-page es un
   // gradiente, así que no se puede derivar del token con getComputedStyle.
   'src/plataforma/ThemeContext.jsx': ['hex'],

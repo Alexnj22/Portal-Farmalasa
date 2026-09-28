@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { tokenMatch } from '../../utils/searchUtils';
-import { CheckCircle2, Undo2, Sparkles, CalendarCheck, AlertTriangle, RefreshCw, Search, Minus, Plus, ShieldCheck, TrendingUp, TrendingDown, Store, Target, RotateCcw } from 'lucide-react';
+import { CheckCircle2, Undo2, Sparkles, CalendarCheck, AlertTriangle, RefreshCw, Search, Minus, Plus, ShieldCheck, TrendingUp, TrendingDown, Store, Target, RotateCcw, UserCheck } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
@@ -361,6 +361,12 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
         const tope = Math.max(total, ...refs.map((x) => x.valor)) * 1.04 || 1;
         const xDe = (v) => `${Math.max(0, Math.min(100, (v / tope) * 100))}%`;
         const porSala = [...filas].sort((a, b) => metaMostrada(b) - metaMostrada(a));
+        // El ajuste de las ya confirmadas, sumado: sólo cuenta las que dejaron
+        // de ser propuesta, porque en las otras todavía no hay decisión.
+        const confirmadas = filas.filter((r) => !['propuesta', 'devuelta'].includes(r.estado) && Number(r.monto_propuesto) > 0);
+        const propuestoTotal = confirmadas.reduce((s, r) => s + Number(r.monto_propuesto), 0);
+        const ajusteTotal = confirmadas.length
+            ? Math.round((confirmadas.reduce((s, r) => s + baseDe(r), 0) - propuestoTotal) * 100) / 100 : null;
 
         return (
             <div data-surface="card" className="p-5 md:p-6 space-y-5">
@@ -381,6 +387,20 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         <p className="text-label font-semibold text-content-3 mt-1.5">
                             {filas.length === 1 ? 'Una sala' : `${filas.length} salas`}
                             {searchTerm?.trim() ? ' (las que coinciden con la búsqueda)' : ''}
+                            {ajusteTotal != null && (
+                                <>
+                                    {' · '}
+                                    {ajusteTotal === 0 ? 'confirmadas igual a la propuesta del sistema' : (
+                                        <>
+                                            confirmadas{' '}
+                                            <span className="font-black tabular-nums text-content-1">
+                                                {ajusteTotal > 0 ? '+' : '−'}{formatMoney(Math.abs(ajusteTotal))}
+                                            </span>
+                                            {` (${formatPct(Math.abs(ajusteTotal / propuestoTotal) * 100)} ${ajusteTotal > 0 ? 'más' : 'menos'}) contra la propuesta del sistema de ${formatMoney(propuestoTotal)}`}
+                                        </>
+                                    )}
+                                </>
+                            )}
                         </p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
@@ -471,6 +491,13 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
         const difAnterior = metaAnterior > 0 && metaAhora > 0
             ? Math.round((metaAhora - metaAnterior) * 100) / 100 : null;
         const mesProyectado = meses.find((m) => m.proyectado)?.ym;
+        // Lo que se confirmó contra lo que propuso el sistema. `monto_base` es
+        // la venta confirmada (sin gastos) y `monto_propuesto` el original: la
+        // resta ES el ajuste, sin guardar nada aparte.
+        const propuesto = r.monto_propuesto != null ? Number(r.monto_propuesto) : null;
+        const ajusteConfirmado = !['propuesta', 'devuelta'].includes(r.estado) && propuesto > 0
+            ? Math.round((baseDe(r) - propuesto) * 100) / 100 : null;
+        const ajusteConfirmadoPct = ajusteConfirmado != null ? (ajusteConfirmado / propuesto) * 100 : null;
         // Lo vendido contra la meta del mes anterior: el relleno de su barra.
         const vendidoAnterior = metaAnterior != null && c?.pct_ultimo != null
             ? metaAnterior * Number(c.pct_ultimo) / 100 : null;
@@ -568,6 +595,29 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         <p className="text-micro font-semibold text-warning-text mt-1">
                             Cambiaste lo que confirmó el supervisor — le va a llegar el aviso.
                         </p>
+                    )}
+                    {/* Una vez confirmada, el ajuste queda a la vista: quien
+                        aprueba tiene que ver que no es el número del sistema, y
+                        cuánto se movió (pedido del usuario, 2026-09-28: «¿el
+                        gerente no ve mis cambios de propuesta?»). */}
+                    {ajusteConfirmado != null && (
+                        <div data-surface="card" className="mt-2.5 flex items-start gap-2 px-3 py-2">
+                            <UserCheck size={16} className="mt-0.5 shrink-0 text-chart-1-text" aria-hidden />
+                            <p className="text-label font-semibold text-content-3">
+                                {ajusteConfirmado === 0 ? (
+                                    <>Se confirmó <span className="font-black text-content-1">igual a la propuesta</span> del sistema</>
+                                ) : (
+                                    <>
+                                        Se confirmó{' '}
+                                        <span className={`font-black tabular-nums ${ajusteConfirmado > 0 ? 'text-chart-1-text' : 'text-content-1'}`}>
+                                            {ajusteConfirmado > 0 ? '+' : '−'}{formatMoney(Math.abs(ajusteConfirmado))}
+                                        </span>
+                                        {' · '}{formatPct(Math.abs(ajusteConfirmadoPct))} {ajusteConfirmado > 0 ? 'más alta' : 'más baja'} que
+                                        la propuesta del sistema ({formatMoney(r.monto_propuesto)})
+                                    </>
+                                )}
+                            </p>
+                        </div>
                     )}
                 </div>
 
@@ -677,14 +727,14 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         <div data-surface="card" className="flex items-center justify-between gap-3 px-3 py-2">
                             {pasos === 0 ? (
                                 <p className="text-label font-semibold text-content-3 py-1.5">
-                                    Igual a la propuesta del sistema
+                                    {ajustable ? 'Igual a lo que confirmó el supervisor' : 'Igual a la propuesta del sistema'}
                                 </p>
                             ) : (
                                 <p className="text-label font-semibold text-content-2 min-w-0">
                                     <span className={`font-black tabular-nums ${pasos > 0 ? 'text-chart-1-text' : 'text-content-1'}`}>
                                         {pasos > 0 ? '+' : '−'}{formatMoney(Math.abs(montoNum - baseDe(r)))}
                                     </span>
-                                    <span className="text-content-3"> · {Math.abs(pasos)}% {pasos > 0 ? 'más' : 'menos'} que la propuesta</span>
+                                    <span className="text-content-3"> · {Math.abs(pasos)}% {pasos > 0 ? 'más' : 'menos'} que {ajustable ? 'lo confirmado' : 'la propuesta'}</span>
                                 </p>
                             )}
                             {pasos !== 0 && (

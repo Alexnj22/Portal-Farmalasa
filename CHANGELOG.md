@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1079.1 — Metas: el ajuste del supervisor queda a la vista al confirmar
+
+Pregunta del usuario: «una vez confirmadas, ¿no sale qué tanto se bajó o subió
+a la propuesta? ¿el gerente no ve mis cambios?». El dato estaba
+(`monto_propuesto` contra `monto_base`) pero no se mostraba.
+
+- Cada tarjeta confirmada, aprobada u oficial dice «Se confirmó −$1,314.77 ·
+  3.0% más baja que la propuesta del sistema ($43,825.53)», o que se confirmó
+  igual.
+- La meta general suma lo mismo: «confirmadas −$7,370.52 (3.0% menos) contra
+  la propuesta del sistema de $247,057.02».
+- En «espera aprobación», el deslizador de quien aprueba se mide contra lo
+  confirmado por el supervisor y lo dice así, no «la propuesta».
+
 ## v2.1079.0 — F6 — los tokens del diseño en JSON, gate:tokens
 
 La app del teléfono no lee CSS: ahora los colores, espacios, radios y sombras

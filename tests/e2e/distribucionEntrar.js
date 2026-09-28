@@ -4,7 +4,8 @@ import { expect } from '@playwright/test';
 
 export async function entrar(page) {
     await page.goto('/login');
-    await expect(page.getByText(/entorno de pruebas/i).first()).toBeVisible({ timeout: 15_000 });
+    // El letrero existe dos veces (escritorio y teléfono) y sólo uno se ve.
+    await expect(page.locator('text=/entorno de pruebas/i >> visible=true').first()).toBeVisible({ timeout: 15_000 });
     // El formulario de entrada se hidrata tarde y a veces se traga lo escrito:
     // se reintenta hasta que los dos campos digan lo que tienen que decir.
     await page.waitForTimeout(1500);

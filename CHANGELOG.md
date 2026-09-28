@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1090.2 — El letrero del entorno de pruebas ya no tapa el menú
+
+Reporte del usuario: la píldora «Entorno de pruebas» (abajo a la izquierda)
+tapaba el pie del menú lateral.
+
+- Escritorio: pestaña colgada del borde de arriba, al centro, pegada al marco.
+- Teléfono: vertical, en el borde izquierdo a media altura, dentro del margen.
+- El texto sigue completo en los dos: las pruebas de navegador se niegan a
+  correr si no lo ven. `distribucionEntrar.js` busca el letrero VISIBLE.
+
+
 ## v2.1090.1 — Portal: acceso a Torogoz en el menú, sólo para quien la administra
 
 Pedido del usuario: «agrega el icono de Torogoz al portal, para acceder desde

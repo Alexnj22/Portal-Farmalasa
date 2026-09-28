@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1077.3 — Puntos: el Resumen contesta cuánto se debe, cómo va el mes y a quién ofrecer canjear
+
+Pedido del usuario: «mejórala, hazla útil». La pestaña Resumen pasa de mostrar
+curvas a contestar las preguntas de quien opera el programa
+(`puntos_panel_tablero`, ~180 ms):
+
+- **Se les debe**: el saldo de todos los clientes, en dólares y puntos.
+- **Acumulado** del mes contra el mes anterior **al mismo día** (contra el mes
+  entero, cada mes parecería bajar hasta su último día).
+- **Canjeado** del mes y qué porcentaje de lo acumulado representa.
+- **Pueden canjear**: cuántos clientes ya tienen el mínimo y cuánto suman;
+  lleva a Consulta.
+- **Los que más puntos tienen**: los 8 primeros, con barra y dólares; tocar uno
+  abre su detalle.
+- **El programa**: dónde funciona, clientes con saldo, cuántos compraron y
+  canjearon este mes, cuentas sin asignar.
+- «Cuándo vencen» lee el mismo libro que la deuda: antes leía la copia del
+  sistema anterior (con las cuentas sin asignar) y no cuadraba con «Se les debe».
+- En el teléfono: rótulos cortos que no se cortan, y las fechas de la curva ya
+  no se enciman.
 ## v2.1077.2 — Metas: Salud 4 se ve en la barra de la meta general
 
 La sexta sala tomaba `chart-8`, que no se pintaba: quedaba un hueco en la barra

@@ -69,7 +69,6 @@ const LEYENDA = {
 /** Acumulado y canjeado por día. */
 export function GraficaDiaria({ serie, unidad = 'puntos' }) {
     const datos = (serie ?? []).map((d) => ({ ...d, etiqueta: dia(d.fecha) }));
-    const paso = Math.max(0, Math.ceil(datos.length / 8) - 1);
     return (
         <ChartContainer minHeight={190}>
             <ComposedChart data={datos} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
@@ -80,7 +79,9 @@ export function GraficaDiaria({ serie, unidad = 'puntos' }) {
                     </linearGradient>
                 </defs>
                 <CartesianGrid stroke={COLOR.rejilla} vertical={false} />
-                <XAxis dataKey="etiqueta" interval={paso} minTickGap={18} tickLine={false} axisLine={false} tick={EJE} />
+                {/* `preserveStartEnd` + separación mínima: recharts decide cuántas
+                    fechas caben. Con un intervalo fijo, a 390px se encimaban. */}
+                <XAxis dataKey="etiqueta" interval="preserveStartEnd" minTickGap={28} tickLine={false} axisLine={false} tick={EJE} />
                 <YAxis tickLine={false} axisLine={false} width={52} tick={EJE} tickFormatter={ejeDe(unidad)} />
                 <Tooltip contentStyle={TOOLTIP}
                     cursor={{ stroke: COLOR.texto, strokeDasharray: '4 4' }}

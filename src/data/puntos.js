@@ -218,6 +218,12 @@ export const QUE_HACER_POR_MOTIVO = {
 export const fetchSerieDePuntos = (dias = 30) => rpc('puntos_panel_serie', { p_dias: dias });
 
 /**
+ * La pestaña Resumen: cuánto se les debe a los clientes, el mes contra el
+ * anterior al mismo día, quiénes ya pueden canjear y los que más tienen.
+ */
+export const fetchTableroDePuntos = () => rpc('puntos_panel_tablero');
+
+/**
  * Los clientes con cuenta de puntos, del mayor saldo al menor. Pagina en la
  * base (son ~10,600): devuelve `{ total, filas }`.
  */

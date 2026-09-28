@@ -30,7 +30,7 @@
  */
 import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Star, Search, LayoutDashboard, Activity, AlertTriangle, UserSearch, Coins, TrendingUp, Gift, Inbox, CalendarClock, Store, Users } from 'lucide-react';
+import { Star, Search, LayoutDashboard, Activity, Trophy, Wallet, ChevronRight, AlertTriangle, UserSearch, Coins, TrendingUp, Gift, Inbox, CalendarClock, Store, Users } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -51,7 +51,7 @@ import { formatMoney, formatQty } from '../utils/formatNumber';
 import { fechaHora12 } from '../utils/hora';
 import {
     fetchResumenDePuntos, fetchAvisosDePuntos, fetchCuentasPorAsignar, QUE_HACER_POR_MOTIVO,
-    fetchSerieDePuntos, fetchClientesConPuntos,
+    fetchSerieDePuntos, fetchClientesConPuntos, fetchTableroDePuntos,
 } from '../data/puntos';
 import { useTextoRebotado } from '../hooks/useBusqueda';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -61,6 +61,7 @@ import ClientePuntosModal from './puntos/ClientePuntosModal';
 // `recharts` pesa: viaja en su propio chunk y se pide cuando la pestaña lo pinta.
 const GraficaDiaria = lazy(() => import('./puntos/GraficasPuntos').then((m) => ({ default: m.GraficaDiaria })));
 import { fechaTexto } from '../utils/fecha';
+import { clickable } from '../utils/clickable';
 
 // Cada pestaña con su permiso. La lista que se le pasa a la URL es la de las
 // VISIBLES: una dirección con `?tab=avisos` en manos de quien no la tiene cae a
@@ -123,6 +124,7 @@ export default function PuntosView({ openModal }) {
     const [motivo, setMotivo] = useState('TODOS');
     const [abierta, setAbierta] = useState(null);
     const [serie, setSerie] = useState([]);
+    const [tablero, setTablero] = useState(null);
     const [clienteAbierto, setClienteAbierto] = useState(null);
 
     // `version` sube para recargar (después de asignar una cuenta). El estado
@@ -135,15 +137,16 @@ export default function PuntosView({ openModal }) {
             try {
                 // Sólo lo que la persona puede ver: pedir Avisos sin su permiso
                 // sería un error de la base en cada visita.
-                const [r, a, c, se] = await Promise.all([
+                const [r, a, c, se, tb] = await Promise.all([
                     fetchResumenDePuntos(),
                     veAvisos ? fetchAvisosDePuntos() : Promise.resolve([]),
                     vePorAsignar ? fetchCuentasPorAsignar() : Promise.resolve([]),
                     // La serie es de Resumen: sin esa pestaña, la base la niega.
                     veResumen ? fetchSerieDePuntos(30) : Promise.resolve([]),
+                    veResumen ? fetchTableroDePuntos() : Promise.resolve(null),
                 ]);
                 if (!vivo) return;
-                setResumen(r); setAvisos(a ?? []); setCuentas(c ?? []); setSerie(se ?? []);
+                setResumen(r); setAvisos(a ?? []); setCuentas(c ?? []); setSerie(se ?? []); setTablero(tb);
             } catch (e) {
                 if (vivo) showToast('No se pudo cargar', mensajeAmigable(e), 'error');
             } finally {
@@ -205,7 +208,8 @@ export default function PuntosView({ openModal }) {
                 {pestana === 'resumen' && (
                     <>
                         <AvisosDelPrograma resumen={resumen} cargando={cargando} />
-                        <Resumen resumen={resumen} serie={serie} cargando={cargando} />
+                        <Resumen resumen={resumen} serie={serie} tablero={tablero} cargando={cargando}
+                            irA={setPestana} onAbrirCliente={setClienteAbierto} />
                     </>
                 )}
 
@@ -445,15 +449,52 @@ function Tarjetas({ resumen, cargando, avisos, porAsignar, irA }) {
  *   · la curva de 30 días a dos tercios y el mes por sala a su lado;
  *   · el mes en cifras, cuándo vencen y el estado del programa.
  */
-function Resumen({ resumen, serie, cargando }) {
-    // En qué se leen las cifras. El tooltip muestra siempre las dos; esto
-    // decide el eje y los números escritos.
+function Resumen({ resumen, serie, tablero, cargando, irA, onAbrirCliente }) {
+    // En qué se leen la curva y las salas. El tooltip muestra siempre las dos.
     const [unidad, setUnidad] = useState('puntos');
-    const mes = resumen?.periodos?.mes ?? {};
-    const cifra = (v) => (unidad === 'dolares' ? dolares(v) : pts(v));
+    const deuda = tablero?.deuda ?? {};
+    const act = tablero?.mes_actual ?? {};
+    const ant = tablero?.mes_anterior ?? {};
+    // «vs. ago» y no «vs. agosto al 28»: el sub de una tarjeta lleva un dato
+    // corto (DESIGN §25.7). La comparación es contra el mismo día del mes
+    // anterior, que es lo único justo a mitad de mes.
+    const mesAnt = tablero?.mes_anterior_hasta
+        ? fechaTexto(tablero.mes_anterior_hasta, { month: 'short' }).replace('.', '') : '';
+    const cambio = (a, b) => {
+        const x = Number(a) || 0; const y = Number(b) || 0;
+        if (!y) return null;
+        const pct = Math.round(((x - y) / y) * 100);
+        return `${pct > 0 ? '+' : pct < 0 ? '−' : ''}${Math.abs(pct)}% vs. ${mesAnt}`;
+    };
+    const tasa = Number(act.acumulado) > 0
+        ? Math.round((Number(act.canjeado) / Number(act.acumulado)) * 100) : null;
 
     return (
         <>
+            {/* ── Las cuatro preguntas ─────────────────────────────────────
+                §17.0: el carril va en su contenedor de fila. */}
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            {/* Rótulos cortos: en el teléfono la tarjeta es media pantalla y
+                «Acumulado del mes» se cortaba. El «del mes» lo dice el sub. */}
+            <CarrilCards className="flex-1" ariaLabel="El programa de puntos en cifras, este mes">
+                <StatCard icon={Wallet} iconBg="bg-brand/10" iconCls="text-brand-text"
+                    label="Se les debe" value={dolares(deuda.puntos)}
+                    sub={`${pts(deuda.puntos)} puntos`} loading={!tablero && cargando} />
+                <StatCard icon={TrendingUp} iconBg="bg-success/10" iconCls="text-success-text"
+                    label="Acumulado" value={pts(act.acumulado)}
+                    sub={cambio(act.acumulado, ant.acumulado) ?? dolares(act.acumulado)}
+                    loading={!tablero && cargando} />
+                <StatCard icon={Gift} iconBg="bg-warning/10" iconCls="text-warning-text"
+                    label="Canjeado" value={pts(act.canjeado)}
+                    sub={tasa != null ? `${tasa}% de lo acumulado` : dolares(act.canjeado)}
+                    loading={!tablero && cargando} />
+                <StatCard icon={Users} iconBg="bg-brand/10" iconCls="text-brand-text"
+                    label="Pueden canjear" value={pts(deuda.listos_clientes)}
+                    sub={`${dolares(deuda.listos_puntos)} en puntos`}
+                    onClick={() => irA('consulta')} loading={!tablero && cargando} />
+            </CarrilCards>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <Panel icono={TrendingUp} titulo="Últimos 30 días" className="lg:col-span-2"
                     accion={(
@@ -467,7 +508,7 @@ function Resumen({ resumen, serie, cargando }) {
                         <GraficaDiaria serie={serie} unidad={unidad} />
                     </Suspense>
                 </Panel>
-                <Panel icono={Store} titulo="Este mes, por sala">
+                <Panel icono={Store} titulo="Este mes, por sala" nota="Acumulado · canjeado">
                     {(resumen?.por_sala ?? []).length === 0 && !cargando
                         ? <p className="text-body-sm text-content-3 py-6 text-center">Sin movimientos este mes</p>
                         : <SalasDelMes salas={resumen?.por_sala ?? []} unidad={unidad} />}
@@ -475,42 +516,64 @@ function Resumen({ resumen, serie, cargando }) {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <Panel icono={Coins} titulo="Este mes">
-                    <div className="grid grid-cols-2 gap-4">
-                        <Cifra rotulo="Acumulados" valor={cifra(mes.acumulado)}
-                            sub={unidad === 'dolares' ? `${pts(mes.acumulado)} pts` : dolares(mes.acumulado)} />
-                        <Cifra rotulo="Canjeados" valor={cifra(mes.canjeado)}
-                            sub={unidad === 'dolares' ? `${pts(mes.canjeado)} pts` : dolares(mes.canjeado)} />
-                    </div>
+                <Panel icono={Trophy} titulo="Los que más puntos tienen" className="lg:col-span-2"
+                    nota="Toca uno para ver todo lo suyo.">
+                    <LosQueMasTienen lista={tablero?.top ?? []} onAbrir={onAbrirCliente} />
                 </Panel>
-                <Panel icono={CalendarClock} titulo="Cuándo vencen"
-                    nota="A los doce meses de la compra.">
-                    <Vencimientos lista={resumen?.vencimientos ?? []} />
-                </Panel>
-                <Panel icono={Activity} titulo="El programa">
-                    <EstadoDelPrograma resumen={resumen} />
-                </Panel>
+                <div className="flex flex-col gap-4 min-w-0">
+                    <Panel icono={CalendarClock} titulo="Cuándo vencen" nota="A los doce meses de la compra.">
+                        {/* Del tablero y no del resumen: el mismo libro que «Se les
+                            debe», así las dos cifras cuadran. */}
+                        <Vencimientos lista={tablero?.vencimientos ?? []} />
+                    </Panel>
+                    <Panel icono={Activity} titulo="El programa">
+                        <EstadoDelPrograma resumen={resumen} tablero={tablero} />
+                    </Panel>
+                </div>
             </div>
         </>
     );
 }
 
-function Cifra({ rotulo, valor, sub }) {
+/** Los clientes con más saldo: a quién ofrecerle canjear primero. */
+function LosQueMasTienen({ lista, onAbrir }) {
+    if (lista.length === 0) return <p className="text-body-sm text-content-3">Sin clientes con puntos</p>;
+    const tope = Math.max(1, ...lista.map((c) => Number(c.saldo) || 0));
     return (
-        <div className="min-w-0">
-            <p className="text-title font-black tabular-nums text-content leading-tight">{valor}</p>
-            <p className="text-caption font-bold text-content-2">{rotulo}</p>
-            {sub && <p className="text-caption text-content-3 tabular-nums">{sub}</p>}
-        </div>
+        <ol className="flex flex-col divide-y divide-divider">
+            {lista.map((c, i) => (
+                <li key={c.customer_id}>
+                    <div {...clickable(() => onAbrir(c.customer_id), { label: `Ver los puntos de ${c.nombre}` })}
+                        className="flex items-center gap-3 py-2.5 min-h-[var(--tap-min)] rounded-btn cursor-pointer active:scale-[0.99] transition-transform">
+                        <span className="w-6 text-caption font-black text-content-3 tabular-nums text-right shrink-0">{i + 1}</span>
+                        <div className="min-w-0 flex-1 flex flex-col gap-1">
+                            <span className="text-body-sm font-bold text-content truncate">{c.nombre}</span>
+                            <span className="h-1.5 rounded-full bg-[var(--chart-1)]" data-medida="dato"
+                                style={{ width: `${((Number(c.saldo) || 0) / tope) * 100}%` }} />
+                        </div>
+                        <span className="text-right shrink-0 tabular-nums">
+                            <span className="block text-body-sm font-black text-content">{pts(c.saldo)}</span>
+                            <span className="block text-caption text-content-3">{dolares(c.saldo)}</span>
+                        </span>
+                        <ChevronRight size={16} className="text-content-3 shrink-0" />
+                    </div>
+                </li>
+            ))}
+        </ol>
     );
 }
 
 /** De dónde salen las cifras y cuándo fue lo último que pasó. */
-function EstadoDelPrograma({ resumen }) {
+function EstadoDelPrograma({ resumen, tablero }) {
     const cfg = resumen?.config;
     const enPortal = cfg?.fuente === 'portal' && cfg?.encendido;
+    const act = tablero?.mes_actual ?? {};
     const filas = [
         ['Funciona en', enPortal ? 'El portal' : 'El sistema anterior, hasta el 1 oct 2026'],
+        ['Clientes con saldo', pts(tablero?.deuda?.clientes)],
+        ['Compraron este mes', pts(act.clientes_acumularon)],
+        ['Canjearon este mes', pts(act.clientes_canjearon)],
+        ['Cuentas sin asignar', `${pts(resumen?.pendientes?.cuentas)} · ${pts(resumen?.pendientes?.puntos)} pts`],
         ['Última acumulación', resumen?.ultima_acumulacion ? fechaHora12(resumen.ultima_acumulacion) : '—'],
         ...(enPortal ? [] : [['Última copia', resumen?.copia_al ? fechaHora12(resumen.copia_al) : '—']]),
     ];

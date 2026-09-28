@@ -5,9 +5,20 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AuthProvider } from '@nucleo/context/AuthContext';
+import { useEffect } from 'react';
+import { AuthProvider, useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore } from '@nucleo/store/staffStore';
 import { notificarActividad } from '@plataforma/cicloDeVida';
 import { useTema } from '../tema/tema';
+
+// Lo mismo que hace `App.jsx` del portal al entrar: cargar salas, personal y
+// catálogos al store. Sin esto, las pantallas nativas verían el store vacío.
+function CargaInicial() {
+  const { isAuthenticated } = useAuth();
+  const fetchBoot = useStaffStore((s) => s.fetchBoot);
+  useEffect(() => { if (isAuthenticated) fetchBoot(); }, [isAuthenticated, fetchBoot]);
+  return null;
+}
 
 export default function Raiz() {
   const tema = useTema();
@@ -17,6 +28,7 @@ export default function Raiz() {
           y el teclado, y lo que mantiene viva la sesión. */}
       <View style={{ flex: 1, backgroundColor: tema.color.fondo }} onTouchStart={notificarActividad}>
         <AuthProvider>
+          <CargaInicial />
           <StatusBar style={tema.nombre === 'solid-dark' ? 'light' : 'dark'} />
           <Stack
             screenOptions={{

@@ -1,6 +1,6 @@
 # Plan — un núcleo que no conoce al navegador (2026-09-24)
 
-**Estado:** F0 a F6, U1 y U2 **cerradas** · F7 paso 1 hecho (paso 2 pospuesto) · **F8 en curso**: la app entra y abre las 58 pantallas (mixta); faltan las nativas.
+**Estado:** F0 a F6, U1 y U2 **cerradas** · F7 paso 1 hecho (paso 2 pospuesto) · **F8 en curso**: la app entra y abre las 58 pantallas (mixta); Bitácoras ya es nativa; siguen traslados, efectivo y pedidos.
 
 ### Bitácora
 
@@ -175,6 +175,25 @@
   está detrás del inicio de sesión de Vercel. **Falta**: probar la renovación
   del token con una sesión de más de una hora, un teléfono físico, y empezar
   las pantallas nativas por las más usadas en sala.
+- **F8 paso 3 — Bitácoras, la primera pantalla nativa (2026-09-28)**. El orden
+  sale del uso: en 30 días, bitácoras la usaron 34 personas (~2,000 registros),
+  traslados 36, efectivo 34 y pedidos 23. La pestaña «Registro diario» es
+  nativa con la misma información que la versión de teléfono del portal (las
+  cuatro cifras, un bloque por momento, las áreas en pausa, la ronda); las
+  otras tres pestañas abren el portal en esa pestaña. **Antes de dibujarla se
+  sacó la lógica de las pantallas web al núcleo** —`utils/rondaDeBitacora.js`:
+  momentos del día, resumen por momento, agrupar la ronda, armar el envío,
+  frenar la lectura fuera de rango sin acción, los muebles de la limpieza—, y
+  `TabHoy`, `PasarLaRonda`, `PuntosDeLimpieza` y `BitacorasView` la usan: la
+  web y la app mandan lo mismo por construcción (10 pruebas). Probado en el
+  emulador contra la base de pruebas: una ronda con 26 °C, 32 °C (frenada hasta
+  escribir la acción) y una limpieza entró con la acción guardada, y la
+  pantalla web de la misma sala muestra lo mismo. Dos hallazgos: «atrás» en
+  Android cerraba la ronda y tiraba lo escrito (ahora pregunta), y la sala
+  propia se escribía `user.branchId ?? user.branch_id` en ~60 sitios — la app
+  la escribió con una sola y salió vacía; hoy hay `utils/salaDelUsuario.js`,
+  usado en Bitácoras y la app. **Pendiente**: pasar las otras ~58 copias al
+  canónico.
 
 ## Para qué
 

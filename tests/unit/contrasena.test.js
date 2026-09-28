@@ -16,3 +16,14 @@ describe('problemaDeContrasenaNueva', () => {
         expect(problemaDeContrasenaNueva('Abcdefg1', 'Abcdefg1')).toBeNull();
     });
 });
+
+import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
+
+describe('salaDelUsuario', () => {
+    it('toma branchId, y si no, branch_id', () => {
+        expect(salaDelUsuario({ branchId: 3 })).toBe(3);
+        expect(salaDelUsuario({ branch_id: 4 })).toBe(4);
+        expect(salaDelUsuario({ branchId: 0, branch_id: 4 })).toBe(0);
+        expect(salaDelUsuario(null)).toBeNull();
+    });
+});

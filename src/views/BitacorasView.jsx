@@ -19,7 +19,9 @@ import {
     CLASE_ANTIBIOTICO, CLASE_BAJO_RECETA, LIBROS,
     fetchBitacoraDia, fetchLibro, pendientesDelDia, periodoDe,
 } from '@nucleo/data/bitacoras';
-import { fechaTexto, hoySV, sumarDias, ultimoDiaDelMes } from '@nucleo/utils/fecha';
+import { hoySV, sumarDias, ultimoDiaDelMes } from '@nucleo/utils/fecha';
+import { rotularDia, salasDeBitacora } from '@nucleo/utils/rondaDeBitacora';
+import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Bitácoras — los registros que exige la Superintendencia de Regulación
@@ -53,14 +55,6 @@ const METRICAS = [
 
 const primerDiaDelMes = (fecha) => `${String(fecha).slice(0, 7)}-01`;
 
-const rotularDia = (fecha) => {
-    const hoy = hoySV();
-    if (fecha === hoy) return 'Hoy';
-    if (fecha === sumarDias(hoy, -1)) return 'Ayer';
-    const txt = fechaTexto(fecha, {
-        weekday: 'long', day: 'numeric', month: 'long' });
-    return txt.charAt(0).toUpperCase() + txt.slice(1);
-};
 
 export default function BitacorasView() {
     const { user, hasPermission, getScope } = useAuth();
@@ -74,7 +68,7 @@ export default function BitacorasView() {
     // resolvió, y ofrecer el selector prometería un alcance que no existe.
     const alcanceTodas  = getScope('bitacoras') === 'ALL';
 
-    const miSala = user?.branchId ?? user?.branch_id ?? null;
+    const miSala = salaDelUsuario(user);
     const [sala, setSala] = useState(() => (alcanceTodas ? (miSala ?? '') : miSala));
     const [fecha, setFecha] = useState(hoySV);
     const tabs = useMemo(() => ([
@@ -113,12 +107,7 @@ export default function BitacorasView() {
     //   · El libro BAJO RECETA es de donde se DISPENSA: sólo las farmacias.
     //     Bodega no vende, y su libro siempre estaría vacío — un vacío que se
     //     lee como «no hubo ventas bajo receta» en vez de «acá no se vende».
-    const salaOptions = useMemo(() => {
-        const tipos = enLibro ? ['FARMACIA'] : ['FARMACIA', 'BODEGA'];
-        return branches
-            .filter(b => tipos.includes(b.type || 'FARMACIA'))
-            .map(b => ({ value: String(b.id), label: b.name }));
-    }, [branches, enLibro]);
+    const salaOptions = useMemo(() => salasDeBitacora(branches, { libro: enLibro }), [branches, enLibro]);
     const nombreSala = useMemo(
         () => salaOptions.find(o => o.value === String(sala))?.label || '',
         [salaOptions, sala],

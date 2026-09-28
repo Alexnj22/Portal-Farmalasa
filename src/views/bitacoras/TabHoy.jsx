@@ -12,6 +12,7 @@ import AnotarLimpieza from '../../components/bitacoras/AnotarLimpieza';
 import MatrizDelDia from '../../components/bitacoras/MatrizDelDia';
 import PasarLaRonda from '../../components/bitacoras/PasarLaRonda';
 import { bloquesDeLaRonda } from '@nucleo/data/bitacoras';
+import { momentosDelDia, resumenDelMomento } from '@nucleo/utils/rondaDeBitacora';
 import { rango12 } from '@nucleo/utils/hora';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -44,24 +45,12 @@ import { rango12 } from '@nucleo/utils/hora';
 
 /** Una banda por momento, para el teléfono: qué falta y qué ya está. */
 function BandaDelMomento({ momento, areas, onRonda, puedeAnotar, cerrado }) {
-    const bloques = [];
-    for (const a of areas) {
-        const f = (a.franjas || []).find(x => x.clave === momento.clave);
-        if (f) bloques.push({ area: a, bloque: f, tipo: 'lectura' });
-        for (const t of a.limpiezas || []) {
-            if (t.desde === momento.desde) bloques.push({ area: a, bloque: t, tipo: 'limpieza' });
-        }
-    }
+    const { bloques, hechos, vencidos, abiertos, completo, tono } = resumenDelMomento(momento, areas);
     if (!bloques.length) return null;
-
-    const hechos = bloques.filter(b => b.bloque.lectura || b.bloque.registro).length;
-    const vencidos = bloques.filter(b => b.bloque.estado === 'vencida' && !b.bloque.lectura && !b.bloque.registro).length;
-    const abiertos = bloques.filter(b => b.bloque.estado === 'abierta' && !b.bloque.lectura && !b.bloque.registro).length;
-    const completo = hechos === bloques.length;
 
     return (
         <section data-surface="card"
-            data-tono={completo ? 'success' : (abiertos ? 'warning' : (vencidos ? 'danger' : undefined))}
+            data-tono={tono || undefined}
             className="p-3 space-y-2">
             <header className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <h3 className="text-body-sm font-black text-content">{momento.label}</h3>
@@ -147,22 +136,7 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
     // horario. Desde que el reloj es de la sucursal son los mismos para todas,
     // pero se unen igual — la bodega central tiene los suyos y una sucursal
     // puede quedar a medio configurar.
-    const momentos = useMemo(() => {
-        const mapa = new Map();
-        for (const a of activas) {
-            for (const f of a.franjas || []) {
-                if (!mapa.has(f.clave)) {
-                    mapa.set(f.clave, {
-                        clave: f.clave, label: f.label, desde: f.desde, hasta: f.hasta,
-                        ahora: f.estado === 'abierta',
-                    });
-                } else if (f.estado === 'abierta') {
-                    mapa.get(f.clave).ahora = true;
-                }
-            }
-        }
-        return [...mapa.values()].sort((a, b) => String(a.desde).localeCompare(String(b.desde)));
-    }, [activas]);
+    const momentos = useMemo(() => momentosDelDia(activas), [activas]);
 
     // ── `?ronda=1` abre la vuelta sin pasar por la grilla ───────────────────
     // Lo usan el atajo del Inicio y el aviso de franja por vencerse. El

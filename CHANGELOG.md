@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1083.0 — F8 paso 3 — Bitácoras nativa en la app
+
+En la app del teléfono, Bitácoras es la primera pantalla nativa: el registro
+del día por momento, las cuatro cifras y la ronda para anotar temperatura,
+humedad y limpiezas. Si hay algo escrito y se toca «atrás», pregunta antes de
+tirarlo. El libro bajo receta, el cierre y la configuración se abren como el
+portal.
+
+En el portal no cambia nada visible: la lógica de la ronda salió de las
+pantallas a un solo lugar que usan la web y la app, para que las dos anoten
+exactamente lo mismo.
+
 ## v2.1082.1 — Puntos: Cuándo vencen en gráfica, sin el panel El programa
 
 Pedido del usuario: se quita el panel «El programa» y «Cuándo vencen» pasa a

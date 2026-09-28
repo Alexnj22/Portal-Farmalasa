@@ -3,6 +3,7 @@ import { Minus, Plus, Sparkles } from 'lucide-react';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import { PUNTOS_POR_AREA, TIPOS_DE_PUNTO, ajustarPuntos, contarPuntos } from '@nucleo/data/bitacoras';
+import { alternarGrupoDePuntos, alternarPunto, gruposDePuntos, rotuloCortoDePunto } from '@nucleo/utils/rondaDeBitacora';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Los muebles que se limpian dentro de un área.
@@ -103,41 +104,15 @@ export default function PuntosDeLimpieza({ tipoDeArea, puntos, onCambiar }) {
  * no como ausente. Es la diferencia que busca un inspector.
  */
 export function ListaDePuntos({ puntos, marcadas, onCambiar, compacta = false }) {
-    const lista = puntos || [];
     // Con uno solo no hay nada que elegir: marcar el turno ya lo dice todo, y
     // una lista de un renglón al lado de su propia casilla es la misma pregunta
     // dos veces. La captura lo manda igual como hecho.
-    if (lista.length < 2) return null;
+    const grupos = gruposDePuntos(puntos);
+    if (!grupos.length) return null;
 
-    const alternar = (clave) => {
-        const s = new Set(marcadas);
-        if (s.has(clave)) s.delete(clave); else s.add(clave);
-        onCambiar(s);
-    };
-
-    const alternarGrupo = (delGrupo) => {
-        const todas = delGrupo.every(p => marcadas.has(p.clave));
-        const s = new Set(marcadas);
-        delGrupo.forEach(p => (todas ? s.delete(p.clave) : s.add(p.clave)));
-        onCambiar(s);
-    };
-
-    // Agrupados por tipo: veintiséis casillas seguidas son un muro donde no se
-    // sabe si el visto de la derecha es del nombre que tiene al lado o del
-    // siguiente. Con la vitrina y el estante separados, cada grupo se lee —y se
-    // marca— como una unidad.
-    const grupos = TIPOS_DE_PUNTO
-        .map(t => ({ ...t, items: lista.filter(p => p.tipo === t.tipo) }))
-        .filter(g => g.items.length > 0);
-    const otros = lista.filter(p => !TIPOS_DE_PUNTO.some(t => t.tipo === p.tipo));
-    if (otros.length) grupos.push({ tipo: 'otro', label: 'Otros', singular: '', items: otros });
-
-    // Dentro de un grupo alcanza con el NÚMERO: repetir «Vitrina» once veces es
-    // la misma palabra ocupando el ancho que necesita la casilla.
-    const corto = (p, singular) => {
-        const n = String(p.label || '').replace(singular, '').trim();
-        return singular && n ? n : (p.label || '·');
-    };
+    const alternar = (clave) => onCambiar(alternarPunto(marcadas, clave));
+    const alternarGrupo = (delGrupo) => onCambiar(alternarGrupoDePuntos(marcadas, delGrupo));
+    const corto = rotuloCortoDePunto;
 
     return (
         <div className={compacta ? 'space-y-3 pl-7' : 'space-y-3'}>

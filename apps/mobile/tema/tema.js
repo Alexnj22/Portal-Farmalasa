@@ -62,6 +62,12 @@ function armar(nombre) {
 const CLARO = armar('solid');
 const OSCURO = armar('solid-dark');
 
+/** Un color de la paleta con transparencia, para el fondo de un tono. */
+export function suave(hex, alfa = 0.12) {
+  if (typeof hex !== 'string' || !/^#[0-9a-f]{6}$/i.test(hex)) return hex;
+  return hex + Math.round(alfa * 255).toString(16).padStart(2, '0');
+}
+
 export function useTema() {
   return useColorScheme() === 'dark' ? OSCURO : CLARO;
 }

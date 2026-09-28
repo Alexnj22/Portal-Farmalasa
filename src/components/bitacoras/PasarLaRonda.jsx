@@ -9,6 +9,7 @@ import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import { ListaDePuntos } from './PuntosDeLimpieza';
 import { fueraDeRango, registrarRonda, rotularRango } from '@nucleo/data/bitacoras';
+import { agruparRondaPorMomento, armarEnvioDeRonda, lecturasSinAccion, marcarTurnoDeLimpieza, mueblesQueFaltan } from '@nucleo/utils/rondaDeBitacora';
 import { rango12 } from '@nucleo/utils/hora';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -127,15 +128,12 @@ function RenglonLimpieza({ item, valor, onCambio, errorServidor }) {
 
     const puntos = area.puntos || [];
     const marcadas = valor.puntos || new Set();
-    const faltan = puntos.length - [...marcadas].filter(c => puntos.some(p => p.clave === c)).length;
+    const faltan = mueblesQueFaltan(area, marcadas);
 
     // Marcar el turno marca TODOS sus muebles: el día normal es que se limpió
     // todo, y ése no puede costar seis toques. Lo que faltó se desmarca abriendo
     // el detalle — la excepción es la que merece el trabajo.
-    const alternarTurno = (marcada) => onCambio({
-        marcada,
-        puntos: marcada ? new Set(puntos.map(p => p.clave)) : new Set(),
-    });
+    const alternarTurno = (marcada) => onCambio(marcarTurnoDeLimpieza(area, marcada));
 
     return (
         <>
@@ -213,61 +211,15 @@ export default function PasarLaRonda({ fecha, bloques, onCerrar }) {
     // La clave es el horario, no el rótulo: dos áreas pueden llamar «Mañana» a
     // ventanas distintas —la bodega central abre a las 08:00 y las farmacias a
     // las 07:00— y juntarlas diría una hora que no es la de nadie.
-    const momentos = useMemo(() => {
-        const mapa = new Map();
-        for (const it of pendientes) {
-            const clave = `${it.bloque.desde}|${it.bloque.hasta}`;
-            const g = mapa.get(clave) || {
-                clave, label: it.bloque.label, desde: it.bloque.desde, hasta: it.bloque.hasta,
-                estado: it.bloque.estado, lecturas: [], limpiezas: [],
-            };
-            (it.tipo === 'lectura' ? g.lecturas : g.limpiezas).push(it);
-            // Si algo de ese momento ya venció, el momento entero está vencido:
-            // es la señal que decide si se anota corriendo o con calma.
-            if (it.bloque.estado === 'vencida') g.estado = 'vencida';
-            mapa.set(clave, g);
-        }
-        return [...mapa.values()].sort((a, b) => String(a.desde).localeCompare(String(b.desde)));
-    }, [pendientes]);
+    const momentos = useMemo(() => agruparRondaPorMomento(pendientes), [pendientes]);
 
     // Lo que se va a mandar. Un renglón vacío no viaja.
-    const items = useMemo(() => {
-        const salida = [];
-        for (const it of pendientes) {
-            const v = valores[it.clave] || {};
-            if (it.tipo === 'lectura') {
-                const temp = String(v.temp ?? '').trim();
-                if (!temp) continue;
-                salida.push({
-                    clave: it.clave, tipo: 'lectura', area_id: it.area.id, fecha,
-                    franja: it.bloque.clave,
-                    temperatura: Number(temp),
-                    humedad: it.area.mide_humedad && String(v.hum ?? '').trim() !== ''
-                        ? Number(v.hum) : null,
-                    accion: String(v.accion || '').trim() || null,
-                });
-            } else if (v.marcada) {
-                const suyos = it.area.puntos || [];
-                salida.push({
-                    clave: it.clave, tipo: 'limpieza', area_id: it.area.id, fecha,
-                    turno: it.bloque.clave,
-                    observaciones: String(v.obs || '').trim() || null,
-                    puntos: suyos.map(p => ({ clave: p.clave, hecho: (v.puntos || new Set()).has(p.clave) })),
-                });
-            }
-        }
-        return salida;
-    }, [pendientes, valores, fecha]);
+    const items = useMemo(() => armarEnvioDeRonda(pendientes, valores, fecha), [pendientes, valores, fecha]);
 
     // Una lectura fuera de rango sin acción la rechaza la base. Frenarla acá no
     // reemplaza esa guarda —se puede llamar al RPC sin pasar por la pantalla—:
     // evita mandar una vuelta entera para que vuelva con un renglón caído.
-    const incompletos = useMemo(() => pendientes.filter(it => {
-        if (it.tipo !== 'lectura') return false;
-        const v = valores[it.clave] || {};
-        if (!String(v.temp ?? '').trim()) return false;
-        return fueraDeRango(it.area, v.temp) && !String(v.accion || '').trim();
-    }), [pendientes, valores]);
+    const incompletos = useMemo(() => lecturasSinAccion(pendientes, valores), [pendientes, valores]);
 
     const guardar = useCallback(async () => {
         setError(null);

@@ -90,7 +90,7 @@ export default function ClienteModal({ cliente, emisorId, puedeEditar, onClose, 
         setError('');
         try {
             const nit = f.tipo_documento === '36' ? digitosDoc : f.num_documento.trim();
-            await guardarCliente({
+            const id = await guardarCliente({
                 id: cliente?.id, emisor_id: emisorId, tipo: f.tipo, nombre: f.nombre.trim(),
                 nombre_comercial: f.nombre_comercial.trim() || null,
                 tipo_documento: nit ? f.tipo_documento : null, num_documento: nit || null,
@@ -105,7 +105,8 @@ export default function ClienteModal({ cliente, emisorId, puedeEditar, onClose, 
                 ruta: f.ruta.trim() || null, notas: f.notas.trim() || null, activo: f.activo,
             });
             descartar();
-            onGuardado?.();
+            // El id va de vuelta: la venta lo usa para dejar elegido al cliente recién creado.
+            onGuardado?.(id);
         } catch (e) {
             setError(mensajeDeDistribucion(e));
         } finally {

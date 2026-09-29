@@ -2,10 +2,11 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
     ShoppingCart, Plus, Minus, Trash2, ShieldAlert, Loader2, Receipt, Save, Search, Printer, PackageX, ArrowLeft, AlertTriangle,
-    Send, Clock, Store, Package, Tag, RefreshCw, ListChecks, ChevronRight, Wallet, Warehouse,
+    Send, Clock, Store, Package, Tag, ListChecks, ChevronRight, Wallet, Warehouse, Eraser, UserPlus, Split,
 } from 'lucide-react';
 import LiquidModal from '../components/common/LiquidModal';
 import ExistenciasSucursales from './distribucion/ExistenciasSucursales';
+import ClienteModal from './distribucion/ClienteModal';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import Notice from '../components/common/Notice';
@@ -26,13 +27,13 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import {
     fetchEmisor, fetchClientes, fetchCatalogo, fetchListasYPrecios, fetchPedidoParaCorregir, fetchPedidos,
     crearPedido, actualizarPedido, facturarPedido, mensajeDeDistribucion, guardarPagos, subirComprobante, adjuntarComprobante,
-    pedirDescuento,
+    pedirDescuento, anularPedido,
 } from '@nucleo/data/distribucion';
 import { fetchLotes } from '@nucleo/data/distribucionInventario';
 import Interruptor from './distribucion/Interruptor';
 import FormasDePago from './distribucion/FormasDePago';
 import { filaNueva, problemaDePagos, cambioDePagos } from './distribucion/pagos';
-import { leerMonto, rotuloTipoCliente, soloVentaLibre, TIPO_DOCUMENTO } from './distribucion/comun';
+import { leerMonto, rotuloTipoCliente, soloVentaLibre, TIPO_DOCUMENTO, FORMA_PAGO } from './distribucion/comun';
 import { indexarPrecios, presentacionesDe, listasDe, precioDe } from './distribucion/precios';
 import { calcularVenta, descuentoConIva, totalDePedido } from './distribucion/motor';
 import { rutaInicio, rutaDocumento, rutaVenta } from './distribucion/rutas';
@@ -40,12 +41,12 @@ import { rutaInicio, rutaDocumento, rutaVenta } from './distribucion/rutas';
 // La venta de Distribución, en su propia vista.
 //
 // ── Cómo se usa ────────────────────────────────────────────────────────────
-// Arriba: cliente, documento y LISTA DE PRECIOS (la del cliente por defecto).
-// En medio, los renglones como en la caja: producto → presentación (unidad,
-// caja, paquete: cada una con su precio) → lista (si ese renglón va a otro
-// precio) → cantidad → descuento en % o en $ → importe. Abajo, el cobro: las
-// formas de pago, lo que entrega en efectivo y el cambio, el desglose y el
-// botón. Se lee de arriba abajo en el orden en que se vende.
+// Arriba, en una franja: cliente, documento, LISTA DE PRECIOS (la del cliente
+// por defecto) y FORMA DE PAGO — el mismo orden de la caja, que pide el tipo de
+// pago antes de cobrar. En medio, los renglones: producto → cantidad →
+// presentación (unidad, caja, paquete: cada una con su precio) → precio/lista
+// → descuento en % o en $ → importe. A la derecha, el resumen fiscal y los
+// botones; F2 abre el cobro (entrega y cambio, o el pago dividido).
 //
 // ── Por qué vista y no modal ───────────────────────────────────────────────
 // En el teléfono la hoja del modal se comía media pantalla, y una vista tiene
@@ -71,6 +72,15 @@ import { rutaInicio, rutaDocumento, rutaVenta } from './distribucion/rutas';
 // (corregir un pedido por facturar, incluido el que reemplaza a un sellado).
 
 const RESULTADOS = 8;
+
+// La guía de teclas de la columna del resumen. Las mismas de la caja
+// (`js_funciones_venta.js`: F2 pagar, F8 guardar, F6 borrar, F3 buscar, F4
+// salir) más F7, que es del portal.
+const TECLAS = [
+    ['F2', 'Cobrar'], ['F8', 'Guardar preventa'], ['F6', 'Borrar la preventa · vaciar'],
+    ['F3', 'Buscar producto'], ['F7', 'Existencias en sucursales'], ['F4', 'Salir a Pedidos'],
+    ['Tab · ← →', 'Cambiar de campo'], ['↑ ↓', 'Cambiar de producto'], ['Supr', 'Quitar el producto'],
+];
 const conCantidad = (n) => String(Math.round(n * 10000) / 10000);
 /** Lo que se escribe en cantidad o descuento: sólo dígitos y UN separador decimal. */
 const soloNumero = (v) => {
@@ -297,7 +307,10 @@ export default function DistribucionVentaView() {
             sublabel: `${rotuloTipoCliente(c.tipo)} · ${c.contribuyente ? 'Crédito Fiscal' : 'Factura'}${!c.licencia_srs ? ' · sin licencia SRS' : ''}${c.ruta ? ` · ${c.ruta}` : ''}`,
         })), [clientes, clienteId]);
     const opcionesListas = useMemo(() => idx.listas.map(l => ({
-        value: String(l.id), label: l.nombre, sublabel: l.id === listaBase ? 'Base' : undefined,
+        // En el menú (no en el control) se dice lo que hace elegirla: cambia el
+        // precio de TODOS los productos (pedido del usuario).
+        value: String(l.id), label: l.nombre,
+        sublabel: `${l.id === listaBase ? 'Lista base · ' : ''}cambia el precio de todos los productos`,
     })), [idx, listaBase]);
 
     const permitido = useCallback((p) => p.activo && (!cliente || !soloVentaLibre(cliente.tipo) || (p.venta_libre && !p.controlado)), [cliente]);
@@ -383,9 +396,9 @@ export default function DistribucionVentaView() {
         : { ...c, cantidad: conCantidad(Math.max(1, (leerMonto(c.cantidad) ?? 0) + delta)) })));
     const quitar = (clave) => setCarrito(cs => cs.filter(c => c.clave !== clave));
 
-    const cambiarCliente = useCallback((v) => {
+    const cambiarCliente = useCallback((v, lista = clientes) => {
         setClienteId(v || '');
-        const c = clientes.find(x => String(x.id) === String(v));
+        const c = lista.find(x => String(x.id) === String(v));
         setTipoDoc(c?.contribuyente ? '03' : '01');
         setListaVenta(c?.lista_id ? String(c.lista_id) : '');
         if (!c || !(c.plazo_dias > 0)) setPagos(ps => ps.map(f => (f.forma === '13' ? { ...f, forma: '01' } : f)));
@@ -552,8 +565,10 @@ export default function DistribucionVentaView() {
                            : 'Queda en Pendientes para facturarla después.');
                 // Se toma un pedido tras otro: la pantalla queda lista para el
                 // siguiente, sin pasar por Pedidos.
+                // La misma vista sirve a las dos rutas y React la reutiliza: sin
+                // limpiar, la venta nueva nacería con los productos de ésta.
+                empezarOtra();
                 if (corrigiendo) navigate(rutaVenta(), { replace: true });
-                else empezarOtra();
                 return;
             }
             try {
@@ -595,6 +610,7 @@ export default function DistribucionVentaView() {
     // ── Teclas rápidas: las mismas de la caja (su js_funciones_venta.js) ──
     //   F2  finalizar (facturar, o enviar a aprobación)   · también Ctrl+Enter
     //   F8  guardar como preventa
+    //   F6  borrar la preventa abierta (o vaciar una venta nueva), con confirmación
     //   F3  al buscador                                   · también /
     //   F4  salir a Pedidos
     //   F7  existencias en todas las sucursales (nuevo, pedido del usuario)
@@ -614,6 +630,7 @@ export default function DistribucionVentaView() {
             // F2 abre el COBRO (el mismo botón «Cobrar»): ahí sólo queda el monto, y Enter procesa.
             if (k === 'F2' || (k === 'Enter' && (e.ctrlKey || e.metaKey))) { e.preventDefault(); apretar('[data-accion-principal]'); }
             else if (k === 'F8') { e.preventDefault(); apretar('[data-accion-preventa]'); }
+            else if (k === 'F6') { e.preventDefault(); apretar('[data-accion-borrar]'); }
             else if (k === 'F3' || (k === '/' && !enCampo)) { e.preventDefault(); buscador.current?.focus(); }
             else if (k === 'F4') { e.preventDefault(); navigate(rutaInicio()); }
             else if (k === 'F7') {
@@ -638,6 +655,83 @@ export default function DistribucionVentaView() {
     const [verCobro, setVerCobro] = useState(false);
     const [avisoCobro, setAvisoCobro] = useState('');
     const [verNotas, setVerNotas] = useState(!!notas);
+    const [verBorrar, setVerBorrar] = useState(false);
+    const [motivoBorrar, setMotivoBorrar] = useState('');
+    const [borrando, setBorrando] = useState(false);
+    const [nuevoCliente, setNuevoCliente] = useState(false);
+
+    // ── Forma de pago, en la franja de arriba ──
+    // En la caja el tipo de pago se elige ANTES de cobrar, junto al cliente;
+    // aquí vivía escondido dentro del cobro. Una sola forma se elige aquí; el
+    // pago dividido se arma en el cobro (F2) y aquí sólo se nombra.
+    const opcionesPago = [...FORMA_PAGO, ...(tieneCredito ? [{ value: '13', label: 'A crédito', sublabel: `${cliente.plazo_dias} días · hasta ${formatMoney(cliente.limite_credito)}` }] : [])];
+    const cambiarFormaPago = (v) => {
+        const forma = v || '01';
+        setPagos([filaNueva(forma)]);
+        setPagoAbierto(null);
+        if (forma === '13' && !plazo) setPlazo(String(cliente?.plazo_dias ?? ''));
+    };
+    const rotuloPago = pagos.length > 1 ? `Pago dividido en ${pagos.length} formas`
+        : pagos[0].forma === '13' ? `A crédito · ${plazo || cliente?.plazo_dias || 0} días`
+        : `Contado · ${FORMA_PAGO.find(f => f.value === pagos[0].forma)?.label ?? ''}`;
+
+    // ── Borrar (F6), como en la caja ──
+    // Una preventa abierta se ANULA: deja de salir en Pendientes y queda en
+    // Pedidos con su motivo (la caja la borra; aquí queda el rastro). Si
+    // esperaba un descuento, la base cancela la solicitud (borrador 0009). En
+    // una venta nueva no hay nada guardado: F6 la vacía.
+    const puedeBorrarPreventa = corrigiendo && !!pedido && !pedido.pedido.reemplaza_dte_id && puedeVender;
+    const hayAlgo = !!clienteId || carrito.length > 0;
+    const abrirBorrar = () => { setMotivoBorrar(''); setVerBorrar(true); };
+    const confirmarBorrar = async () => {
+        if (borrando) return;
+        if (!corrigiendo) {
+            descartar();
+            empezarOtra();
+            setVerBorrar(false);
+            return;
+        }
+        const id = pedido.pedido.id;
+        setBorrando(true);
+        try {
+            await anularPedido(id, motivoBorrar.trim() || 'Preventa borrada desde la venta');
+            useStaff.getState().appendAuditLog('DISTRIBUCION_PEDIDO_ANULADO', String(id), { desde: 'venta' });
+            showToast('Preventa borrada', `La venta ${id} ya no sale en Pendientes.`);
+            setVerBorrar(false);
+            empezarOtra();
+            navigate(rutaVenta(), { replace: true });
+        } catch (e) {
+            setVerBorrar(false);
+            setError(mensajeDeDistribucion(e));
+        } finally {
+            setBorrando(false);
+        }
+    };
+
+    // Cliente nuevo sin salir de la venta (la caja tiene «Agregar» al lado
+    // del cliente): se crea, se relee la lista y queda elegido.
+    const alCrearCliente = async (id) => {
+        setNuevoCliente(false);
+        try {
+            const cs = await fetchClientes();
+            setClientes(cs);
+            if (id) cambiarCliente(String(id), cs);
+        } catch (e) {
+            showToast('Cliente guardado', `No se pudo releer la lista (${mensajeDeDistribucion(e)}). Búscalo de nuevo.`, 'warning');
+        }
+    };
+
+    // Las preventas por finalizar se releen solas cada minuto (la caja lo hace
+    // cada 30 s) y al abrir la lista: otro vendedor pudo guardar una.
+    const releerPendientes = useCallback(() => {
+        fetchPedidos({ estados: ['confirmado'], desde: sumarDias(hoySV(), -60) })
+            .then(setPendientes).catch(e => console.error('venta: pendientes', e));
+    }, []);
+    useEffect(() => {
+        if (corrigiendo) return undefined;
+        const t = setInterval(releerPendientes, 60000);
+        return () => clearInterval(t);
+    }, [corrigiendo, releerPendientes]);
 
     const titulo = corrigiendo
         ? (pedido?.pedido.reemplaza_dte_id ? `Corregir documento (pedido ${pedidoIdParam})` : `Finalizar venta ${pedidoIdParam}`)
@@ -654,7 +748,7 @@ export default function DistribucionVentaView() {
     // Antes eran una tarjeta grande arriba de todo, que empujaba la venta
     // hacia abajo cada vez que se abría la pantalla.
     const accionesEncabezado = !corrigiendo && pendientes?.length > 0 ? (
-        <Button size="sm" variant="secondary" icon={ListChecks} onClick={() => setVerPendientes(true)}>
+        <Button size="sm" variant="secondary" icon={ListChecks} onClick={() => { setVerPendientes(true); releerPendientes(); }}>
             Pendientes <Badge size="sm" variant="warning" uppercase={false}>{pendientes.length}</Badge>
         </Button>
     ) : null;
@@ -729,41 +823,68 @@ export default function DistribucionVentaView() {
                         {/* Se acomoda al ancho de SU tarjeta (container query): con la
                             columna del resumen al lado, el ancho de la pantalla ya no dice
                             cuánto lugar hay. */}
-                        <section data-surface="card" className="@container p-3 md:p-4 flex flex-col gap-3">
-                            <div className="flex items-center justify-between gap-2 -mt-1">
-                                {headerLeft}
-                                <div className="flex items-center gap-2 shrink-0">
+                        <section data-surface="card" className="@container p-3 md:p-4 flex flex-col gap-2.5">
+                            {/* Dos filas, como el encabezado de la caja: arriba el título,
+                                lo que hay que saber del cliente y las acciones; abajo, lo que
+                                se elige — cliente, documento, lista y forma de pago. */}
+                            <div className="flex items-center justify-between gap-2 -mt-1 min-w-0">
+                                <div className="flex items-center gap-x-2 gap-y-1 min-w-0 flex-wrap">
+                                    {headerLeft}
+                                    {cliente && !cliente.contribuyente && <Badge size="sm" variant="neutral" uppercase={false}>Sin NRC: sólo Factura</Badge>}
+                                    {cliente?.gran_contribuyente && tipoDoc === '03' && <Badge size="sm" variant="warning" uppercase={false}>Retiene 1%</Badge>}
+                                    {cliente && soloVentaLibre(cliente.tipo) && <Badge size="sm" variant="neutral" uppercase={false}>Sólo venta libre</Badge>}
+                                    {tieneCredito && <Badge size="sm" variant="neutral" uppercase={false}>Crédito {formatMoney(cliente.limite_credito)} · {cliente.plazo_dias} días</Badge>}
+                                    {cliente?.lista_id && String(cliente.lista_id) !== String(listaEfectiva) && <Badge size="sm" variant="warning" uppercase={false}>Lista distinta de la del cliente</Badge>}
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0">
                                     <Button size="sm" variant="ghost" icon={Warehouse} title="Existencias en todas las sucursales (F7)"
                                         onClick={() => setVerExistencias(buscar || '')}>
                                         <span className="hidden @lg:inline">Existencias</span> <kbd aria-hidden="true" className="hidden @lg:inline text-micro font-bold opacity-60">F7</kbd>
                                     </Button>
+                                    {(corrigiendo ? puedeBorrarPreventa : hayAlgo) && (
+                                        <Button size="sm" variant="ghost" icon={Eraser} data-accion-borrar onClick={abrirBorrar}
+                                            title={corrigiendo ? 'Borrar esta preventa (F6)' : 'Vaciar la venta (F6)'}>
+                                            <span className="hidden @lg:inline">{corrigiendo ? 'Borrar' : 'Vaciar'}</span> <kbd aria-hidden="true" className="hidden @lg:inline text-micro font-bold opacity-60">F6</kbd>
+                                        </Button>
+                                    )}
                                     {accionesEncabezado}
                                 </div>
                             </div>
-                            <div className="grid grid-cols-1 @xl:grid-cols-[minmax(0,1fr)_auto] @4xl:grid-cols-[minmax(0,1fr)_auto_minmax(10rem,14rem)] gap-3 items-center">
-                                <LiquidSelect value={clienteId} onChange={cambiarCliente} options={opcionesClientes} icon={Store}
-                                    placeholder="Elegir cliente…" clearable={false} disabled={corrigiendo} ariaLabel="Cliente" />
+                            <div className="grid grid-cols-1 @xl:grid-cols-[minmax(0,1fr)_auto] @4xl:grid-cols-[minmax(0,1fr)_auto_minmax(9rem,12rem)_minmax(10rem,14rem)] gap-2.5 items-center">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                    <div className="flex-1 min-w-0">
+                                        <LiquidSelect value={clienteId} onChange={(v) => cambiarCliente(v)} options={opcionesClientes} icon={Store}
+                                            placeholder="Elegir cliente…" clearable={false} disabled={corrigiendo} ariaLabel="Cliente" />
+                                    </div>
+                                    {!corrigiendo && puedeVender && (
+                                        <Button variant="ghost" iconOnly icon={UserPlus} title="Cliente nuevo" onClick={() => setNuevoCliente(true)} />
+                                    )}
+                                </div>
                                 <SegmentedControl value={tipoDoc} onChange={setTipoDoc} label="Documento"
                                     options={[
                                         { value: '01', label: TIPO_DOCUMENTO['01'].largo },
                                         { value: '03', label: TIPO_DOCUMENTO['03'].largo, disabled: !cliente?.contribuyente },
                                     ]} />
-                                <div className="@xl:col-span-2 @4xl:col-span-1 min-w-0">
+                                {/* Lista y pago: una fila propia a media anchura; en pantalla
+                                    ancha, cada uno su columna junto al cliente. */}
+                                <div className="@xl:col-span-2 @4xl:contents grid grid-cols-1 @lg:grid-cols-2 gap-2.5">
+                                <div className="min-w-0">
                                     <LiquidSelect value={listaEfectiva != null ? String(listaEfectiva) : ''} onChange={cambiarLista} icon={Tag}
                                         options={opcionesListas} placeholder="Sin listas" clearable={false} disabled={!opcionesListas.length}
-                                        ariaLabel="Lista de precios (cambia el precio de todos los productos)" />
+                                        sublabelSoloEnMenu ariaLabel="Lista de precios (cambia el precio de todos los productos)" />
+                                </div>
+                                <div className="min-w-0" data-testid="forma-pago">
+                                    {pagos.length > 1 ? (
+                                        <Button variant="secondary" icon={Split} onClick={abrirCobro} disabled={!puedeGuardar} className="w-full justify-center">
+                                            Pago dividido · {pagos.length}
+                                        </Button>
+                                    ) : (
+                                        <LiquidSelect value={pagos[0].forma} onChange={cambiarFormaPago} options={opcionesPago} icon={Wallet}
+                                            clearable={false} disabled={!cliente} sublabelSoloEnMenu ariaLabel="Forma de pago" />
+                                    )}
+                                </div>
                                 </div>
                             </div>
-                            {cliente && (
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                    {!cliente.contribuyente && <Badge size="sm" variant="neutral" uppercase={false}>Sin NRC: sólo Factura</Badge>}
-                                    {cliente.gran_contribuyente && tipoDoc === '03' && <Badge size="sm" variant="warning" uppercase={false}>Retiene 1%</Badge>}
-                                    {soloVentaLibre(cliente.tipo) && <Badge size="sm" variant="neutral" uppercase={false}>Sólo venta libre</Badge>}
-                                    {tieneCredito && <Badge size="sm" variant="neutral" uppercase={false}>Crédito {formatMoney(cliente.limite_credito)} · {cliente.plazo_dias} días</Badge>}
-                                    {cliente.lista_id && String(cliente.lista_id) !== String(listaEfectiva) && <Badge size="sm" variant="warning" uppercase={false}>Lista distinta de la del cliente</Badge>}
-                                    <span className="text-caption text-content-3 flex items-center gap-1"><RefreshCw size={11} /> La lista cambia el precio de todos los productos</span>
-                                </div>
-                            )}
                             {sinLicencia && (
                                 <Notice variant="danger" icon={ShieldAlert} compact>
                                     {licenciaVencida ? 'La licencia de la SRS de este cliente está vencida.' : 'Este cliente no tiene licencia de la SRS registrada.'}
@@ -945,7 +1066,7 @@ export default function DistribucionVentaView() {
                                 </div>
                             )}
                             {lineas.length > 0 && (
-                                <p className="hidden md:block text-micro text-content-3">
+                                <p className="hidden md:block lg:hidden text-micro text-content-3">
                                     Tab o ← → cambian de campo · ↑ ↓ cambian de producto · Supr quita el producto · F7 existencias en todas las sucursales
                                 </p>
                             )}
@@ -963,6 +1084,7 @@ export default function DistribucionVentaView() {
                             <p className={`text-caption ${bloqueoGuardar ? 'text-content-2' : 'text-content-3'}`}>
                                 {bloqueoGuardar ?? `${lineas.length} producto${lineas.length === 1 ? '' : 's'} · ${conCantidad(unidadesTotal)} pieza${unidadesTotal === 1 ? '' : 's'}`}
                             </p>
+                            {cliente && <p className="text-caption font-bold text-content-2 -mt-1.5">{rotuloPago}</p>}
                             <DesgloseFiscal venta={venta} conIva={conIva} porAprobar={montoPorAprobar} />
                             <div className="flex flex-col gap-2 pt-1">
                                 <Button variant="primary" icon={porAprobar.length ? Send : Wallet} disabled={!puedeGuardar}
@@ -975,9 +1097,17 @@ export default function DistribucionVentaView() {
                                 </Button>
                             </div>
                         </section>
-                        <p className="text-micro text-content-3 px-1 leading-relaxed">
-                            F3 buscar · F7 existencias en sucursales · F4 salir
-                        </p>
+                        <section data-surface="card" className="p-3 flex flex-col gap-2" aria-label="Teclas rápidas">
+                            <p className="text-micro font-bold uppercase tracking-wide text-content-3">Teclas</p>
+                            <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 items-center text-caption">
+                                {TECLAS.map(([k, t]) => (
+                                    <React.Fragment key={k}>
+                                        <dt><kbd className="text-micro font-bold text-content-2 border border-divider rounded px-1.5 py-0.5 whitespace-nowrap">{k}</kbd></dt>
+                                        <dd className="text-content-3 truncate">{t}</dd>
+                                    </React.Fragment>
+                                ))}
+                            </dl>
+                        </section>
                     </aside>
                     </div>
 
@@ -1092,6 +1222,43 @@ export default function DistribucionVentaView() {
                         </div>
                     </LiquidModal.Footer>
                 </LiquidModal>
+            )}
+            {verBorrar && (
+                <LiquidModal open onClose={borrando ? undefined : () => setVerBorrar(false)} maxWidth="max-w-md"
+                    ariaLabel={corrigiendo ? 'Borrar preventa' : 'Vaciar la venta'}>
+                    <LiquidModal.Header>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <Eraser size={18} className="text-danger-text shrink-0" />
+                            <h2 className="text-title font-black text-content">{corrigiendo ? `Borrar la preventa ${pedido?.pedido.id}` : 'Vaciar la venta'}</h2>
+                        </div>
+                    </LiquidModal.Header>
+                    <LiquidModal.Body>
+                        <div className="flex flex-col gap-3" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirmarBorrar(); } }}>
+                            <p className="text-body-sm text-content-2">
+                                {corrigiendo
+                                    ? <>La venta de <b>{cliente?.nombre}</b> por <b>{formatMoney(venta.total)}</b> deja de salir en Pendientes. Queda anulada en Pedidos, con el motivo{esperandoAprobacion ? ', y se cancela la solicitud de descuento' : ''}.</>
+                                    : <>Se quitan el cliente y {carrito.length === 1 ? 'el producto' : `los ${carrito.length} productos`}. Todavía no se había guardado nada.</>}
+                            </p>
+                            {corrigiendo && (
+                                <PortalInput label="Motivo (opcional)" name="motivo-borrar" value={motivoBorrar} autoFocus
+                                    placeholder="Ej.: el cliente ya no la quiere" onChange={(e) => setMotivoBorrar(e.target.value)} />
+                            )}
+                        </div>
+                    </LiquidModal.Body>
+                    <LiquidModal.Footer>
+                        <div className="flex items-center justify-end gap-2 w-full">
+                            <Button variant="ghost" onClick={() => setVerBorrar(false)} disabled={borrando}>Cancelar</Button>
+                            <Button variant="secondary" tone="danger" icon={borrando ? Loader2 : Eraser} disabled={borrando}
+                                autoFocus={!corrigiendo} data-confirmar-borrar onClick={confirmarBorrar}>
+                                {corrigiendo ? 'Borrar preventa' : 'Vaciar'}
+                            </Button>
+                        </div>
+                    </LiquidModal.Footer>
+                </LiquidModal>
+            )}
+            {nuevoCliente && (
+                <ClienteModal cliente={{}} emisorId={emisor?.id} puedeEditar={puedeVender}
+                    onClose={() => setNuevoCliente(false)} onGuardado={alCrearCliente} />
             )}
             {verExistencias != null && (
                 <ExistenciasSucursales terminoInicial={verExistencias} onClose={() => setVerExistencias(null)} />

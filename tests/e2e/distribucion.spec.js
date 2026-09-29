@@ -286,3 +286,59 @@ test('teclado como en la caja: foco a la cantidad, Tab y flechas por el renglón
     await expect(page.getByRole('dialog', { name: 'Existencias en todas las sucursales' })).toBeVisible();
     await expect(page.getByText(/Bodega: /).first()).toBeVisible({ timeout: 15_000 });
 });
+
+test('la forma de pago se elige arriba; F6 borra la preventa abierta y vacía una venta nueva', async ({ page }) => {
+    await entrar(page);
+    await page.goto('/torogoz/venta');
+    await page.getByText('Elegir cliente…').click();
+    await page.getByText('FARMACIA DEL PUEBLO, S.A. DE C.V.', { exact: true }).last().click();
+    // La forma de pago vive en la franja, como el «tipo de pago» de la caja.
+    await page.locator('[data-testid="forma-pago"] [role="combobox"]').click();
+    await page.getByRole('option', { name: /Transferencia/ }).click();
+    await page.keyboard.press('F3');
+    await page.keyboard.type('ensure');
+    await expect(page.getByRole('option').first()).toBeVisible();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('[data-renglon]')).toHaveCount(1);
+    await expect(page.getByText(/Contado · Transferencia/).first()).toBeVisible();
+    await page.screenshot({ path: `${SALIDA}/venta-forma-de-pago.png`, fullPage: true });
+    // F2: el cobro abre con la forma ya elegida (pide la referencia).
+    const c = await cobrar(page);
+    await expect(c.locator('input[name^="ref-pago-"]')).toBeVisible();
+    await c.getByRole('button', { name: 'Volver' }).click();
+
+    // F8 guarda la preventa; se abre desde Pendientes y F6 la borra.
+    await page.keyboard.press('F8');
+    await expect(page.getByText('Preventa guardada').first()).toBeVisible({ timeout: 20_000 });
+    await page.getByRole('button', { name: /Pendientes/ }).first().click();
+    const primera = page.locator('[data-pendiente]').first();
+    await expect(primera).toBeVisible({ timeout: 15_000 });
+    const ids = await page.locator('[data-pendiente]').evaluateAll(els => els.map(e => Number(e.dataset.pendiente)));
+    const id = Math.max(...ids);
+    await page.locator(`[data-pendiente="${id}"]`).click();
+    await expect(page).toHaveURL(new RegExp(`/torogoz/venta/${id}$`));
+    await expect(page.locator('[data-renglon]').first()).toBeVisible({ timeout: 15_000 });
+    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('F6');
+    const d = page.getByRole('dialog', { name: 'Borrar preventa' });
+    await expect(d).toBeVisible();
+    await page.screenshot({ path: `${SALIDA}/venta-borrar-preventa.png` });
+    await d.locator('input[name="motivo-borrar"]').fill('prueba automática');
+    await page.keyboard.press('Enter');
+    await expect(page.getByText('Preventa borrada').first()).toBeVisible({ timeout: 20_000 });
+    await expect(page).toHaveURL(/\/torogoz\/venta$/);
+    await expect(page.locator('[data-renglon]')).toHaveCount(0);
+    await page.getByRole('button', { name: /Pendientes/ }).first().click();
+    await expect(page.locator('[data-pendiente]').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator(`[data-pendiente="${id}"]`)).toHaveCount(0);
+    await page.keyboard.press('Escape');
+
+    // En una venta nueva F6 no borra nada guardado: vacía la pantalla.
+    await page.getByText('Elegir cliente…').click();
+    await page.getByText('FARMACIA DEL PUEBLO, S.A. DE C.V.', { exact: true }).last().click();
+    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('F6');
+    await expect(page.getByRole('dialog', { name: 'Vaciar la venta' })).toBeVisible();
+    await page.keyboard.press('Enter');
+    await expect(page.getByText('Elegir cliente…')).toBeVisible();
+});

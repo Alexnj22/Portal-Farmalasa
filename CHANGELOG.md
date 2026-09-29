@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1096.0 — Venta de la distribuidora: forma de pago arriba, F6 borrar, cliente nuevo y guía de teclas
+
+Pedido del usuario: «al ERP, ¿qué más nos falta? … el tipo de pago, borrar la
+referencia, entre otras cosas». Comparada contra la pantalla de venta de la
+caja (`venta.php` + `js_funciones_venta.js`):
+
+- **Forma de pago en la franja de arriba**, junto al cliente, documento y
+  lista (en la caja el tipo de pago se elige antes de cobrar). «A crédito»
+  sólo aparece si el cliente lo tiene aprobado. El pago dividido se sigue
+  armando en el cobro (F2) y arriba se nombra. El resumen dice la condición
+  («Contado · Efectivo», «A crédito · 30 días»).
+- **F6 borrar**, como en la caja: con una preventa abierta la ANULA (motivo
+  opcional, queda el rastro en Pedidos y sale de Pendientes); en una venta
+  nueva la vacía. Siempre con confirmación.
+- **Borrador 0009**: anular una preventa cancela su solicitud de descuento
+  (antes quedaba PENDING para siempre en la bandeja de quien aprueba).
+  Aplicado y probado en el entorno de pruebas; falta producción.
+- **Cliente nuevo desde la venta** (el «Agregar» de la caja): se crea y queda
+  elegido.
+- Pendientes se relee cada minuto y al abrir la lista (la caja, cada 30 s).
+- Encabezado en dos filas (título + avisos del cliente + acciones; cliente ·
+  documento · lista · pago). «La lista cambia el precio de todos los
+  productos» pasa al menú de la lista.
+- Guía de teclas completa en la columna del resumen.
+- Al guardar o borrar una preventa abierta, la venta nueva ya no hereda sus
+  productos (la vista se reutiliza entre las dos rutas).
+
+
 ## v2.1095.0 — Venta de la distribuidora: más espacio, búsqueda encima y selectores de una línea
 
 Pedido del usuario: «el buscador aún no funciona bien, se corta la

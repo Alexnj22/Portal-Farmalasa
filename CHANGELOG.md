@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1099.0 — Torogoz: reservar lo que está en venta o preventa, 30 minutos y aviso al vencer
+
+Pedido del usuario: «que se reservaran los productos si están en preventa, o
+en una preventa en vivo alguien ya lo agregó (con un aviso si no hay más que
+diga: tal vendedor lo está vendiendo) […] tiempo máximo 30 min; si no, manda
+notificación».
+
+- **Reserva al vuelo** (borrador 0012, `dist_reservas`): lo que entra al
+  carrito queda apartado por lote, en vivo y al guardarlo como preventa. La
+  pantalla manda el carrito a `dist_reservar` medio segundo después de cada
+  cambio; la base serializa por lote (dos vendedores no se llevan la misma
+  caja) y dice quién tiene lo que falta.
+- **30 minutos como máximo, desde el primer producto**: no se reinicia al
+  seguir agregando ni al guardar. Chip «Reservado · N min» en la venta. Al
+  vencer, el cron `dist-vencer-reservas` (SQL puro, cada minuto) suelta y le
+  avisa al vendedor (campana + push) con el enlace para retomarla.
+- **«No hay más: Carmen Alvarado lo está vendiendo»**: en el buscador
+  («reservado por…»), al agregar (con la opción de anotarlo como venta
+  perdida) y en el renglón que queda corto.
+- **Facturar respeta las reservas de las demás ventas** y suelta la propia;
+  anular la preventa y vaciar la venta también sueltan.
+- **Rechazado por Hacienda o descartado devuelven la mercadería al
+  momento** (antes quedaba apartada hasta refacturar o anular):
+  `distribucion-dte` llama a `dist_liberar_lotes`. Desplegada en pruebas.
+- Semilla: GLUCERNA TRIPLE CARE 850 g con 3 unidades, para probar dos ventas
+  peleando lo mismo. Prueba e2e con dos navegadores a la vez.
+
+Pendiente para producción: declarar `dist-vencer-reservas` en `CRONS` de
+`scripts/eficiencia-gate.mjs` al migrar (hoy sólo existe en pruebas y el gate
+compara contra producción).
+
+
 ## v2.1098.0 — Torogoz: tablero de Inicio con ventas, clientes, vendedores y alertas
 
 Pedido del usuario: «un dashboard en la distribuidora con datos de ventas,

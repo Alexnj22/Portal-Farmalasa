@@ -81,3 +81,10 @@ ON CONFLICT DO NOTHING;
 UPDATE public.dist_lotes l SET existencia = 0
   FROM public.products p
  WHERE p.id = l.product_id AND p.nombre = 'NEPRO AP VAINILLA 8ONZ LIQUIDO';
+
+-- 6 · Para probar las reservas (0012, 2026-09-29): GLUCERNA TRIPLE CARE 850 g
+--     con sólo 3 unidades. Una venta que pide 3 deja a la otra sin nada, y la
+--     otra tiene que decir quién lo está vendiendo.
+UPDATE public.dist_lotes l SET existencia = 3
+  FROM public.products p
+ WHERE p.id = l.product_id AND p.nombre = 'GLUCERNA TRIPLE CARE X 850GR';

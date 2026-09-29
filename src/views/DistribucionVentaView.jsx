@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
     ShoppingCart, Plus, Minus, Trash2, ShieldAlert, Loader2, Receipt, Save, Search, Printer, PackageX, ArrowLeft, AlertTriangle,
-    Send, Clock, Store, Package, Tag, ListChecks, ChevronRight, Wallet, Warehouse, Eraser, UserPlus, Split,
+    Send, Clock, Store, Package, Tag, ListChecks, ChevronRight, Wallet, Warehouse, Eraser, UserPlus, Split, Timer,
 } from 'lucide-react';
 import LiquidModal from '../components/common/LiquidModal';
 import ExistenciasSucursales from './distribucion/ExistenciasSucursales';
@@ -29,7 +29,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import {
     fetchEmisor, fetchClientes, fetchCatalogo, fetchListasYPrecios, fetchPedidoParaCorregir, fetchPedidos,
     crearPedido, actualizarPedido, facturarPedido, mensajeDeDistribucion, guardarPagos, subirComprobante, adjuntarComprobante,
-    pedirDescuento, anularPedido,
+    pedirDescuento, anularPedido, reservar, fetchReservasVigentes,
 } from '@nucleo/data/distribucion';
 import { fetchLotes } from '@nucleo/data/distribucionInventario';
 import Interruptor from './distribucion/Interruptor';
@@ -164,9 +164,50 @@ export default function DistribucionVentaView() {
     const [guardando, setGuardando] = useState(null); // 'guardar' | 'facturar'
     const [error, setError] = useState('');
     const [motivoDescuento, setMotivoDescuento] = useState('');
-    const [existencias, setExistencias] = useState(null); // Map product_id → unidades, o null si no se pudo leer
-    const [lotesIdx, setLotesIdx] = useState(() => new Map()); // product_id → lotes, primero vence primero sale
+    const [existenciasBase, setExistenciasBase] = useState(null); // Map product_id → unidades REALES, o null si no se pudo leer
+    const [lotesBase, setLotesBase] = useState(() => new Map());   // product_id → lotes reales, primero vence primero sale
+    const [reservas, setReservas] = useState([]);                   // reservas vigentes de TODAS las ventas (0012)
+    const [miReserva, setMiReserva] = useState(null);               // { vence_at, renglones } de esta venta
+    const [avisoReserva, setAvisoReserva] = useState('');
+    const [ahora, setAhora] = useState(() => Date.now());
     const [perdida, setPerdida] = useState(null);         // la ventana de venta perdida: { producto?, cantidad, buscado?, clave? }
+
+    // ── Lo que apartaron OTRAS ventas (borrador 0012) ──
+    // La sesión de esta venta es su `client_uuid`: el de la preventa al
+    // corregirla, o el que nace con la pantalla. Todo lo que la venta mira
+    // —lo libre por lote, el total, el reparto por vencimiento— descuenta lo
+    // reservado por otras sesiones, y recuerda QUIÉN lo tiene para decirlo.
+    const sesion = corrigiendo ? pedido?.pedido.client_uuid ?? null : uuid;
+    const reservadoPorLote = useMemo(() => {
+        const m = new Map();
+        for (const r of reservas) {
+            if (r.sesion === sesion) continue;
+            const e = m.get(Number(r.lote_id)) ?? { unidades: 0, quien: new Set() };
+            e.unidades += Number(r.unidades) || 0;
+            e.quien.add(shortEmployeeName({ name: r.nombre }) || 'otro vendedor');
+            m.set(Number(r.lote_id), e);
+        }
+        return m;
+    }, [reservas, sesion]);
+    const lotesIdx = useMemo(() => {
+        const m = new Map();
+        for (const [pid, lista] of lotesBase) {
+            m.set(pid, lista.map(l => {
+                const r = reservadoPorLote.get(l.id);
+                return r ? { ...l, existencia: Math.max(0, l.existencia - r.unidades), reservadoPor: [...r.quien] } : l;
+            }));
+        }
+        return m;
+    }, [lotesBase, reservadoPorLote]);
+    const existencias = useMemo(() => {
+        if (!existenciasBase) return null;
+        const m = new Map();
+        for (const [pid, lista] of lotesIdx) m.set(pid, lista.reduce((t, l) => t + l.existencia, 0));
+        for (const pid of existenciasBase.keys()) if (!m.has(pid)) m.set(pid, 0);
+        return m;
+    }, [existenciasBase, lotesIdx]);
+    /** Quién tiene reservado (en otra venta) algo de ese producto. */
+    const quienTiene = (pid) => [...new Set((lotesIdx.get(String(pid)) ?? []).flatMap(l => l.reservadoPor ?? []))];
     const [pendientes, setPendientes] = useState(null);   // preventas por finalizar (sólo en una venta nueva)
     const [buscarPendiente, setBuscarPendiente] = useState('');
     const buscador = useRef(null);
@@ -254,8 +295,8 @@ export default function DistribucionVentaView() {
                 if (lotes) {
                     const m = new Map();
                     for (const l of lotes) m.set(String(l.product_id), (m.get(String(l.product_id)) ?? 0) + Number(l.existencia || 0));
-                    setExistencias(m);
-                    setLotesIdx(li);
+                    setExistenciasBase(m);
+                    setLotesBase(li);
                 }
                 // Una venta que llega armada (volver a vender, o una preventa de
                 // antes de los lotes) se reparte por vencimiento al abrir.
@@ -374,6 +415,46 @@ export default function DistribucionVentaView() {
     const [verExistencias, setVerExistencias] = useState(null); // null, o el texto con que abre la búsqueda
 
     const ctxLotes = useMemo(() => contextoLotes(idx, lotesIdx), [idx, lotesIdx]);
+
+    // ── Reservar lo que lleva el carrito (0012) ──
+    // Cada cambio del carrito —con una pausa de medio segundo— se le manda a la
+    // base, que aparta lo que siga libre por 30 minutos desde el primer
+    // producto. Y cada 15 segundos se releen las reservas de las demás ventas.
+    const porLoteDe = useCallback((cs) => {
+        const m = new Map();
+        for (const c of cs) {
+            const n = leerMonto(c.cantidad);
+            if (c.lote_id == null || !(n > 0)) continue;
+            const u = Math.ceil(n * ctxLotes.porDe(c.product_id, c.presentacion));
+            m.set(Number(c.lote_id), (m.get(Number(c.lote_id)) ?? 0) + u);
+        }
+        return [...m].map(([lote_id, unidades]) => ({ lote_id, unidades })).sort((a, b) => a.lote_id - b.lote_id);
+    }, [ctxLotes]);
+    const claveReserva = JSON.stringify(porLoteDe(carrito));
+    const releerReservas = useCallback(() => {
+        fetchReservasVigentes().then(setReservas).catch(e => console.error('venta: reservas', e));
+    }, []);
+    useEffect(() => {
+        if (cargando || errorCarga || !emisor || !puedeVender || !sesion) return undefined;
+        const t = setTimeout(async () => {
+            try {
+                const r = await reservar(sesion, { clienteId: clienteId || null, pedidoId: pedido?.pedido.id ?? null, porLote: JSON.parse(claveReserva) });
+                setMiReserva(r?.vence_at ? r : null);
+                setAvisoReserva('');
+            } catch (e) {
+                console.error('venta: reservar', e);
+                setAvisoReserva(mensajeDeDistribucion(e));
+            }
+            releerReservas();
+        }, 500);
+        return () => clearTimeout(t);
+    }, [claveReserva, sesion, clienteId, cargando, errorCarga, emisor, puedeVender, pedido, releerReservas]);
+    useEffect(() => {
+        if (cargando) return undefined;
+        const t = setInterval(() => { releerReservas(); setAhora(Date.now()); }, 15000);
+        return () => clearInterval(t);
+    }, [cargando, releerReservas]);
+    const minutosReserva = miReserva?.vence_at ? Math.ceil((new Date(miReserva.vence_at).getTime() - ahora) / 60000) : null;
     /** Reparte un renglón por lotes (primero vence) tras cambiarlo: cantidad, presentación o lote. */
     const cambiarYRepartir = (clave, cambios) => setCarrito(cs => repartir(
         cs.map(c => (c.clave === clave ? { ...c, ...(typeof cambios === 'function' ? cambios(c) : cambios) } : c)), clave, ctxLotes));
@@ -388,7 +469,14 @@ export default function DistribucionVentaView() {
         setBuscar('');
         setResaltado(0);
         if (existencias && !(existencias.get(pid) > 0)) {
-            setPerdida({ producto: { product_id: pid, nombre: p.nombre, motivo: 'Sin existencia en ningún lote' }, cantidad: 1 });
+            // Si hay pero lo apartó otra venta, se dice quién (pedido del usuario:
+            // «un aviso si no hay más que diga eso: tal vendedor lo está vendiendo»).
+            const quien = quienTiene(pid);
+            if (quien.length) showToast('No hay más', `${quien.join(' y ')} lo está vendiendo.`, 'warning');
+            setPerdida({
+                producto: { product_id: pid, nombre: p.nombre, motivo: quien.length ? `No hay más: ${quien.join(' y ')} lo está vendiendo` : 'Sin existencia en ningún lote' },
+                cantidad: 1,
+            });
             return;
         }
         const pres = presentacionesDe(idx, p.product_id)[0].presentacion;
@@ -513,6 +601,8 @@ export default function DistribucionVentaView() {
         return {
             ...c, p, n, r, presentacion, presentaciones, desc, pct, porAprobar, unidades, hay,
             lote, libres, libreLote, por,
+            // Quién tiene apartado (en otra venta) lo que a este renglón le falta.
+            quien: [...new Set(lotesP.flatMap(x => x.reservadoPor ?? []))],
             faltaExistencia: faltanUnidades > 0,
             faltan: faltanUnidades > 0 ? Math.ceil(faltanUnidades / por) : 0,
             descMalo, pasaImporte, noVa: !p || !permitido(p), sinPrecio: !!p && !r,
@@ -576,7 +666,11 @@ export default function DistribucionVentaView() {
     const puedeGuardar = !bloqueoGuardar && !guardando;
 
     /** Deja la pantalla lista para la siguiente venta (tras guardar una preventa). */
-    const empezarOtra = () => {
+    const empezarOtra = ({ soltar = false } = {}) => {
+        // Vaciar suelta lo apartado; guardar la preventa NO (lo apartado es de
+        // esa preventa hasta que venza, se facture o se anule).
+        if (soltar && sesion) reservar(sesion, { porLote: [] }).catch(e => console.error('venta: soltar reserva', e));
+        setMiReserva(null);
         setClienteId(''); setListaVenta(''); setCarrito([]); setBuscar(''); setTipoDoc('01');
         setPagos([filaNueva()]); setPagoAbierto(null); setPlazo(''); setNotas(''); setMotivoDescuento('');
         setUuid(crypto.randomUUID()); setError('');
@@ -611,6 +705,12 @@ export default function DistribucionVentaView() {
                     emisorId: emisor.id, clienteId: cliente.id, tipoDocumento: tipoDoc,
                     condicion, plazoDias: plazoNum, formaPago, observaciones: notas, clientUuid: uuid, renglones,
                 });
+            }
+            // La reserva de esta venta queda a nombre de la preventa (para el aviso
+            // al vencer y para soltarla si se anula).
+            if (sesion && !yFacturar) {
+                await reservar(sesion, { clienteId: cliente.id, pedidoId, porLote: porLoteDe(carrito) })
+                    .catch(e => console.error('venta: reserva de la preventa', e));
             }
             const guardados = await guardarPagos(pedidoId, pagos.map((f, i) => ({
                 forma: f.forma, monto: leerMonto(f.monto), referencia: f.referencia, recibido: leerMonto(f.recibido),
@@ -777,7 +877,7 @@ export default function DistribucionVentaView() {
         if (borrando) return;
         if (!corrigiendo) {
             descartar();
-            empezarOtra();
+            empezarOtra({ soltar: true });
             setVerBorrar(false);
             return;
         }
@@ -903,6 +1003,7 @@ export default function DistribucionVentaView() {
                     <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-4 lg:items-start">
                     <div className="flex flex-col gap-3 min-w-0">
                         {error && <Notice variant="danger" bloque>{error}</Notice>}
+                        {avisoReserva && <Notice variant="warning" icon={Timer} compact>{avisoReserva}</Notice>}
                         {esperandoAprobacion && (
                             <Notice variant="warning" icon={Clock} compact>
                                 Esta venta espera la aprobación de un descuento. Al guardarla, la solicitud se pone al día.
@@ -920,6 +1021,13 @@ export default function DistribucionVentaView() {
                             <div className="flex items-center justify-between gap-2 -mt-1 min-w-0">
                                 <div className="flex items-center gap-x-2 gap-y-1 min-w-0 flex-wrap">
                                     {headerLeft}
+                                    {/* El reloj de la reserva: 30 minutos desde el primer producto. */}
+                                    {minutosReserva != null && (
+                                        <Badge size="sm" icon={Timer} uppercase={false} data-testid="reserva"
+                                            variant={minutosReserva <= 5 ? 'warning' : 'info'}>
+                                            {minutosReserva > 0 ? `Reservado · ${minutosReserva} min` : 'Reserva vencida'}
+                                        </Badge>
+                                    )}
                                     {cliente && !cliente.contribuyente && <Badge size="sm" variant="neutral" uppercase={false}>Sin NRC: sólo Factura</Badge>}
                                     {cliente?.gran_contribuyente && tipoDoc === '03' && <Badge size="sm" variant="warning" uppercase={false}>Retiene 1%</Badge>}
                                     {cliente && soloVentaLibre(cliente.tipo) && <Badge size="sm" variant="neutral" uppercase={false}>Sólo venta libre</Badge>}
@@ -1033,7 +1141,11 @@ export default function DistribucionVentaView() {
                                                         <span className="block text-body-sm font-bold text-content truncate">{p.nombre}</span>
                                                         <span className="block text-caption text-content-3 truncate">
                                                             {pres.map(x => x.presentacion).join(' · ')}
-                                                            {hay != null && <span className={hay > 0 ? '' : 'text-danger-text font-bold'}> · {hay > 0 ? `hay ${hay}` : 'sin existencia'}</span>}
+                                                            {hay != null && (
+                                                                <span className={hay > 0 ? '' : 'text-danger-text font-bold'}>
+                                                                    {' · '}{hay > 0 ? `hay ${hay}` : quienTiene(p.product_id).length ? `reservado por ${quienTiene(p.product_id).join(' y ')}` : 'sin existencia'}
+                                                                </span>
+                                                            )}
                                                         </span>
                                                     </span>
                                                     <span className="flex items-center gap-2 shrink-0">
@@ -1111,10 +1223,12 @@ export default function DistribucionVentaView() {
                                                         )}
                                                         {l.faltaExistencia && (
                                                             <>
-                                                                <span className="text-danger-text font-bold">Faltan {l.faltan}</span>
+                                                                <span className="text-danger-text font-bold">
+                                                                    Faltan {l.faltan}{l.quien.length ? ` · ${l.quien.join(' y ')} lo está vendiendo` : ''}
+                                                                </span>
                                                                 <button type="button" className="font-bold text-warning-text underline min-h-[var(--tap-min)]"
                                                                     onClick={() => setPerdida({
-                                                                        producto: { product_id: l.product_id, nombre, motivo: l.hay ? `Sólo hay ${l.hay} en existencia` : 'Sin existencia en ningún lote' },
+                                                                        producto: { product_id: l.product_id, nombre, motivo: l.quien.length ? `No hay más: ${l.quien.join(' y ')} lo está vendiendo` : l.hay ? `Sólo hay ${l.hay} en existencia` : 'Sin existencia en ningún lote' },
                                                                         cantidad: l.faltan, clave: l.clave,
                                                                     })}>
                                                                     Anotar venta perdida

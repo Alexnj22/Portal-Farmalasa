@@ -446,3 +446,59 @@ test('tablero: indicadores, filtros por ruta y período en la dirección, y «Ve
     await expect(page.getByText(nombre, { exact: true }).first()).toBeVisible({ timeout: 15_000 });
     expect(errores).toEqual([]);
 });
+
+test('reservas: lo que una venta tiene en el carrito no se lo lleva otra, y se dice quién lo está vendiendo', async ({ browser }) => {
+    const a = await (await browser.newContext()).newPage();
+    const b = await (await browser.newContext()).newPage();
+    const abrirVenta = async (page) => {
+        await entrar(page);
+        await page.goto('/torogoz/venta');
+        await page.getByText('Elegir cliente…').click();
+        await page.getByText('FARMACIA DEL PUEBLO, S.A. DE C.V.', { exact: true }).last().click();
+    };
+    // A lleva las 3 que hay.
+    await abrirVenta(a);
+    await a.keyboard.press('F3');
+    await a.keyboard.type('glucerna triple care x 850');
+    await expect(a.getByRole('option').first()).toBeVisible();
+    await a.keyboard.press('Enter');
+    await a.keyboard.type('3');
+    await a.keyboard.press('Tab');
+    await expect(a.locator('[data-testid="reserva"]')).toContainText(/Reservado · \d+ min/, { timeout: 15_000 });
+    await a.screenshot({ path: `${SALIDA}/reserva-a.png` });
+
+    // B no puede: le sale quién lo está vendiendo.
+    await abrirVenta(b);
+    await b.keyboard.press('F3');
+    await b.keyboard.type('glucerna triple care x 850');
+    await expect(b.getByRole('option').first()).toContainText(/reservado por/i, { timeout: 20_000 });
+    await b.keyboard.press('Enter');
+    const d = b.getByRole('dialog', { name: 'Venta perdida' });
+    await expect(d).toContainText(/lo está vendiendo/);
+    await b.screenshot({ path: `${SALIDA}/reserva-b.png` });
+    await b.keyboard.press('Escape');
+
+    // A vacía la venta: se suelta, y B ya lo puede agregar.
+    await a.locator('body').click({ position: { x: 5, y: 5 } });
+    await a.keyboard.press('F6');
+    await a.keyboard.press('Enter');
+    await expect(a.getByText('Elegir cliente…')).toBeVisible();
+    await a.waitForTimeout(1500);
+    await b.reload();
+    // El borrador puede traer ya el cliente elegido.
+    await expect(b.getByPlaceholder(/Producto o código de barras|Elige primero el cliente/)).toBeVisible({ timeout: 15_000 });
+    if (await b.getByText('Elegir cliente…').count()) {
+        await b.getByText('Elegir cliente…').click();
+        await b.getByText('FARMACIA DEL PUEBLO, S.A. DE C.V.', { exact: true }).last().click();
+    }
+    await b.keyboard.press('F3');
+    await b.keyboard.type('glucerna triple care x 850');
+    await expect(b.getByRole('option').first()).toContainText(/hay 3/, { timeout: 15_000 });
+    await b.keyboard.press('Enter');
+    await expect(b.locator('[data-renglon]')).toHaveCount(1);
+    // Limpia: B vacía también.
+    await b.locator('body').click({ position: { x: 5, y: 5 } });
+    await b.keyboard.press('F6');
+    await b.keyboard.press('Enter');
+    await expect(b.getByText('Elegir cliente…')).toBeVisible();
+});

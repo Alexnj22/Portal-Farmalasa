@@ -32,6 +32,7 @@ const MENSAJES = {
     DIST_AUTOAPROBAR: 'No puedes decidir un descuento que pediste tú: lo decide otra persona con permiso.',
     DIST_SOLICITUD_RESUELTA: 'Esa solicitud ya se resolvió.',
     DIST_LOTE_AJENO: 'Ese lote no es de ese producto. Vuelve a elegirlo.',
+    DIST_RESERVA_AJENA: 'Esta venta la tiene abierta otra persona: sus productos siguen reservados a su nombre.',
     DIST_PAGO_FACTURADO: 'La forma y el monto ya están en el documento: sólo se puede adjuntar el comprobante.',
 };
 
@@ -175,7 +176,7 @@ export async function fetchHistorialDeCliente(clienteId) {
 export async function fetchPedidoParaCorregir(pedidoId) {
     const [{ data: pedido, error }, items, pagos] = await Promise.all([
         supabase.from('dist_pedidos')
-            .select('id, cliente_id, estado, tipo_documento, condicion, forma_pago, plazo_dias, observaciones, reemplaza_dte_id, descuento_solicitud_id')
+            .select('id, cliente_id, estado, tipo_documento, condicion, forma_pago, plazo_dias, observaciones, reemplaza_dte_id, descuento_solicitud_id, client_uuid')
             .eq('id', pedidoId).single(),
         fetchItemsDePedido(pedidoId),
         fetchPagos(pedidoId),
@@ -499,4 +500,25 @@ export async function fetchTablero({ desde, hasta, ruta = null, vendedor = null 
     });
     if (error) throw error;
     return data;
+}
+
+// ── Reservas (borrador 0012) ─────────────────────────────────────────────────
+// Lo que está en una venta —en vivo o guardada como preventa— queda apartado
+// 30 minutos desde el primer producto. La pantalla manda el carrito entero
+// (por lote) cada vez que cambia; la base aparta lo que siga libre y dice
+// quién tiene el resto.
+export async function reservar(sesion, { clienteId = null, pedidoId = null, porLote = [] } = {}) {
+    const { data, error } = await supabase.rpc('dist_reservar', {
+        p_sesion: sesion, p_cliente: clienteId ? Number(clienteId) : null, p_pedido: pedidoId ?? null,
+        p_renglones: porLote,
+    });
+    if (error) throw error;
+    return data;
+}
+
+/** Las reservas vigentes de todos (para descontar lo que apartaron otras ventas). */
+export async function fetchReservasVigentes() {
+    const { data, error } = await supabase.rpc('dist_reservas_vigentes');
+    if (error) throw error;
+    return data ?? [];
 }

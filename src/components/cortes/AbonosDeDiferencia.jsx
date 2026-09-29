@@ -11,6 +11,7 @@ import useResolverDiferencia from '@nucleo/hooks/useResolverDiferencia';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaHora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { hastaElTope } from '@nucleo/utils/hastaElTope';
 
 /**
  * Quién responde por un faltante sin causa, cuánto lleva abonado y cómo se
@@ -185,7 +186,8 @@ export default function AbonosDeDiferencia({
                                                     aria-label={`Cuánto abona ${shortEmployeeName(p.nombre)}`}
                                                     value={monto}
                                                     onChange={(e) => {
-                                                        const v = e.target.value;
+                                                        // Nadie abona más de lo que debe: se lleva al tope.
+                                                        const v = hastaElTope(e.target.value, queda).valor;
                                                         setMontos((prev) => new Map(prev).set(p.persona_id, v === '' ? '' : Number(v)));
                                                     }}
                                                 />

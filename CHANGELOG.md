@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1088.0 — Un monto con máximo se lleva al máximo en todo el portal
+
+Regla del usuario para los temas de dinero: si un campo tiene un máximo y se
+escribe de más, se pone el máximo en vez de bloquear. Queda como helper único
+(`hastaElTope`, que nació en Cuentas por Cobrar) y como canon en DESIGN.md
+§15.11.2. Aplicado en:
+
+- Diferencias de caja: lo que explica una causa (ya estaba) y cuánto le toca a
+  cada responsable (hasta lo que queda sin causa).
+- Abonos de un faltante: nadie abona más de lo que debe.
+- Abono de una reserva: hasta el total del producto; el campo pasa además a la
+  máscara de dinero, que acepta punto y coma.
+- Cuentas por Pagar: el pago por factura, hasta el saldo menos lo que está en
+  trámite.
+
+A propósito NO se aplica a los conteos a ciegas (bolsas, cortes) ni a las
+salidas contra el efectivo del cajón: el tope revelaría la cifra que esas
+pantallas esconden.
+
 ## v2.1087.1 — La causa no puede pasar de lo que queda: se lleva al tope
 
 Pedido del usuario: bloquear el guardado cuando «Cuánto explica esta causa»

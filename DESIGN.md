@@ -3549,6 +3549,32 @@ por señales duras —`prefix="$"`, `icon={DollarSign}`, `placeholder="0.00"`, o
 `step="0.01"` **no** cuenta como señal: la viñeta de un proveedor lo usa y es un
 identificador, no plata.
 
+#### 15.11.2 Un monto con máximo se LLEVA al máximo, no se bloquea (2026-09-29)
+
+Regla del usuario para todo el portal: *«que no permita ingresar un monto mayor
+al permitido no tiene sentido. Si se escribe un valor mayor, que se ponga el max
+permitido.»* Cuando un campo de dinero tiene un máximo conocido —lo que se debe,
+lo que queda por explicar, el saldo de una persona—, el `onChange` pasa por
+**`hastaElTope(valor, tope)`** (`src/utils/hastaElTope.js`) y quien escribe 100
+sobre un tope de 47.50 ve 47.50. El campo dice el tope en su ayuda («Hasta
+$47.50»). Nada de avisos rojos ni botones trabados por pasarse.
+
+Dónde está aplicado: Cuentas por Cobrar (el primero, 3-sep), la causa y los
+responsables de una diferencia de caja, los abonos de un faltante, el abono de
+una reserva y el pago por factura de Cuentas por Pagar.
+
+Dónde **NO** va, a propósito:
+- **Un conteo a ciegas** (bolsas, cortes): lo contado es el dato; topearlo al
+  esperado diría la cifra que el conteo tiene que ignorar.
+- **Una salida contra el efectivo de la sala**: el tope sería el efectivo del
+  cajón, que esa pantalla no puede revelar.
+- **Cuando el tope se mueve DESPUÉS** (se baja un precio, un borrador trae un
+  monto viejo): ahí el valor ya escrito no se cambia solo; se avisa o se toma
+  el mínimo al calcular.
+
+El servidor sigue rechazando de todos modos: el tope es la cortesía del campo,
+no el control.
+
 ### 15.12 Cuándo un `<input>` a mano es correcto — **CUATRO casos**
 
 > Reescrito el 2026-07-28. La versión anterior decía que el caso legítimo era

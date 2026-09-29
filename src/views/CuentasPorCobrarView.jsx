@@ -37,6 +37,8 @@ import { fechaCorta } from '@nucleo/utils/ticketCampos';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12 } from '@nucleo/utils/hora';
+// La regla de todo campo de dinero con máximo (ver el archivo).
+import { hastaElTope } from '@nucleo/utils/hastaElTope';
 
 /**
  * CUENTAS POR COBRAR — quién debe, desde cuándo, y cobrarle.
@@ -1682,32 +1684,6 @@ function sumaDeSaldos(hermanos, credito) {
     return lista.reduce((t, h) => t + (Number(h.saldo) || 0), 0);
 }
 
-/**
- * El monto que se deja escribir, topeado a lo que se debe.
- *
- * Pedido del usuario (3-sep): «en el input de monto no permita ingresar una
- * cantidad mayor a la de la deuda pendiente». No es comodidad: el freno ya
- * existía DESPUÉS —un comprobante por más de lo que el cliente debe se rechaza
- * al leerlo, y el reparto tiene que cuadrar exacto contra el documento—, así
- * que escribir de más era escribir algo que iba a ser rechazado tres campos
- * más abajo, sin que el campo dijera nada mientras tanto.
- *
- * Se TOPEA y no se borra la tecla: quien escribe 100 sobre una deuda de 47.50
- * ve 47.50 y el aviso dice por qué. Un campo que se queda mudo al teclear se
- * lee como un teclado que no anda.
- *
- * Devuelve también si topeó, porque el aviso no se puede deducir del valor:
- * 47.50 escrito a mano y 47.50 recortado se ven idénticos.
- */
-function hastaElTope(valor, tope) {
-    const v = String(valor ?? '');
-    const n = Number(v);
-    // Sin tope conocido —la cartera todavía no cargó— no se recorta nada: un
-    // tope de cero dejaría el campo en cero y sin explicación.
-    if (!Number.isFinite(n) || !Number.isFinite(tope) || tope <= 0) return { valor: v, topeado: false };
-    if (n <= tope + 0.004) return { valor: v, topeado: false };
-    return { valor: tope.toFixed(2), topeado: true };
-}
 
 
 /**

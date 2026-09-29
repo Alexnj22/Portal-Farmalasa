@@ -8,6 +8,7 @@ import BuscadorDeProducto from '../common/BuscadorDeProducto';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { hastaElTope } from '@nucleo/utils/hastaElTope';
 import { DIAS_DE_RESERVA, POLITICA_DE_RESERVA, vencimientoDeReserva } from '@nucleo/utils/abonoTicket';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -107,7 +108,9 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
 
     const conNombre = renglones.filter((r) => String(r.nombre ?? '').trim().length > 1);
     // El abono mayor que el total sería un saldo negativo impreso en un
-    // comprobante que el cliente se lleva. Se frena acá y en el servidor.
+    // comprobante que el cliente se lleva. Al escribirlo se lleva al total
+    // (`hastaElTope`, la regla de todo campo de dinero); este freno queda para
+    // cuando es el PRECIO el que baja después. Y el servidor también lo frena.
     const excede = total != null && Number.isFinite(monto) && monto > total;
     const valido = cliente.trim().length >= 3
         && conNombre.length > 0
@@ -309,8 +312,11 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
                 </div>
 
                 <div className="space-y-2">
-                    <PortalInput label="Cuánto abona" inputMode="decimal" value={abonado}
-                        onChange={(e) => setAbonado(e.target.value)} placeholder="0.00" />
+                    <PortalInput label="Cuánto abona" inputMode="decimal" maskType="DECIMAL" prefix="$"
+                        value={abonado}
+                        onChange={(e) => setAbonado(hastaElTope(e.target.value, total).valor)}
+                        helperText={total != null ? `Hasta ${formatMoney(total)}.` : undefined}
+                        placeholder="0.00" />
 
                     <div className="flex items-baseline justify-between gap-3 text-body-sm">
                         <span className="text-content-2">Total del producto</span>

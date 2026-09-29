@@ -26,6 +26,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
+import { hastaElTope } from '@nucleo/utils/hastaElTope';
 
 // Vista «Cuentas por pagar».
 //
@@ -268,7 +269,11 @@ function PanelProveedor({ fila, puedeEditar, onCerrar, onHecho }) {
                                 <div className="w-28">
                                     <PortalInput inputMode="decimal" maskType="DECIMAL"
                                         value={montos[d.document_id] ?? ''}
-                                        onChange={e => setMontos(m => ({ ...m, [d.document_id]: e.target.value }))}
+                                        // Lo que se puede pagar es el saldo menos lo que ya está en
+                                        // trámite (la misma cuenta que `registrar_pago_compra`). Escribir
+                                        // de más se lleva a ese tope en vez de trabar el pago.
+                                        onChange={e => setMontos(m => ({ ...m, [d.document_id]:
+                                            hastaElTope(e.target.value, Number(d.saldo) - Number(d.en_tramite || 0)).valor }))}
                                         placeholder="0.00" tono="brand"
                                         aria-label={`Cuánto pagar de la factura del ${fmtFecha(d.fecha_emision)}`} />
                                 </div>

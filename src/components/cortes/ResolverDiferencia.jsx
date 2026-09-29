@@ -18,6 +18,7 @@ import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { repartirEnPartes, severidad } from '@nucleo/utils/cortesDiagnostico';
 import { pendienteDe } from '@nucleo/utils/diferenciasDeCaja';
+import { hastaElTope } from '@nucleo/utils/hastaElTope';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { useAuth } from '@nucleo/context/AuthContext';
 import useResolverDiferencia from '@nucleo/hooks/useResolverDiferencia';
@@ -352,10 +353,7 @@ export default function ResolverDiferencia({
     // también, por si lo que queda bajó con el borrador ya escrito.
     const explica = String(montoCausa).trim() === '' ? objetivo : Math.min(objetivo, centavos(montoCausa));
     const explicaInvalido = via === 'JUSTIFICA' && explica < 1;
-    const escribirMontoCausa = (valor) => {
-        const tope = aMonto(objetivo);
-        setMontoCausa(String(valor).trim() !== '' && Number(valor) > tope ? tope.toFixed(2) : valor);
-    };
+    const escribirMontoCausa = (valor) => setMontoCausa(hastaElTope(valor, aMonto(objetivo)).valor);
     const quedaTrasCausa = via === 'JUSTIFICA' && !explicaInvalido ? objetivo - explica : 0;
 
     const alternar = useCallback((id) => {
@@ -366,9 +364,11 @@ export default function ResolverDiferencia({
         });
     }, []);
 
+    // Nadie responde por más de lo que queda sin causa: se lleva al tope.
     const cambiarMonto = useCallback((id, valor) => {
-        setMontos((prev) => new Map(prev).set(id, valor === '' ? '' : Number(valor)));
-    }, []);
+        const v = hastaElTope(valor, pendiente).valor;
+        setMontos((prev) => new Map(prev).set(id, v === '' ? '' : Number(v)));
+    }, [pendiente]);
 
     const cerrarFormulario = useCallback(() => {
         if (claveBorrador) clearDraft(claveBorrador);

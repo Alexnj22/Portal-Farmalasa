@@ -189,10 +189,10 @@ async function transmitirDte(admin: Admin, dteId: number) {
     const { error: e4 } = await admin.from("dist_pedidos")
       .update({ estado: "confirmado", dte_id: null }).eq("id", dte.pedido_id).eq("dte_id", dteId);
     if (e4) throw new Error(`devolver el pedido: ${e4.message}`);
-    // Un documento rechazado no vendió nada: sus unidades vuelven a los lotes
-    // YA, no cuando alguien refacture o anule el pedido (borrador 0012).
-    const { error: eLib } = await admin.rpc("dist_liberar_lotes", { p_pedido: dte.pedido_id, p_tipo: "liberacion", p_solo_dte: dteId });
-    if (eLib) throw new Error(`devolver la existencia: ${eLib.message}`);
+    // La mercadería NO vuelve a los lotes: ya se entregó, y un rechazo se
+    // corrige y se vuelve a facturar. Las unidades siguen atadas al pedido y
+    // al refacturar se reasignan en la misma transacción; sólo ANULAR el pedido
+    // las devuelve (`dist_lotes_al_anular`). Decisión del usuario, 2026-09-29.
   }
   return { estado: cambios.estado, sello: cambios.sello_recibido, mensaje: r.descripcionMsg, observaciones: r.observaciones };
 }
@@ -239,9 +239,7 @@ async function descartar(admin: Admin, dteId: number) {
     const { error: eP } = await admin.from("dist_pedidos")
       .update({ estado: "confirmado", dte_id: null }).eq("id", dte.pedido_id).eq("dte_id", dteId);
     if (eP) throw new Error(`liberar el pedido: ${eP.message}`);
-    // Igual que el rechazado: lo que apartó este documento vuelve a los lotes.
-    const { error: eLib } = await admin.rpc("dist_liberar_lotes", { p_pedido: dte.pedido_id, p_tipo: "liberacion", p_solo_dte: dteId });
-    if (eLib) throw new Error(`devolver la existencia: ${eLib.message}`);
+    // Igual que el rechazado: la mercadería sigue fuera hasta refacturar o anular.
   }
   return { estado: "descartado", aviso: "Documento retirado. El pedido volvió a «Por facturar» para corregirlo." };
 }

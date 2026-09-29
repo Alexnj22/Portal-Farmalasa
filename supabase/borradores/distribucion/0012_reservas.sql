@@ -29,10 +29,11 @@
 --     existencia ya salió de verdad.
 --   · anular el pedido suelta sus reservas.
 --
--- ── Y de paso: rechazado o descartado devuelven la mercadería YA ───────────
--- Antes el pedido volvía a «por facturar» pero sus unidades seguían apartadas
--- hasta refacturarlo o anularlo. `distribucion-dte` ahora llama a
--- `dist_liberar_lotes` en el momento; para eso service_role necesita EXECUTE.
+-- ── Rechazado o descartado NO devuelven la mercadería ─────────────────────
+-- Se pensó devolverla al momento y el usuario lo corrigió (2026-09-29): «si se
+-- rechaza, aún se puede corregir […] no debería entrar inventario porque el
+-- producto ya no lo tengo; a no ser que lo anule». Las unidades siguen atadas
+-- al pedido; al refacturar se reasignan y sólo anular las devuelve.
 
 SET lock_timeout = '5s';
 
@@ -203,8 +204,6 @@ DROP TRIGGER IF EXISTS dist_pedidos_suelta_reservas ON public.dist_pedidos;
 CREATE TRIGGER dist_pedidos_suelta_reservas AFTER UPDATE OF estado ON public.dist_pedidos
     FOR EACH ROW EXECUTE FUNCTION public.dist_reservas_al_anular();
 
--- ── Liberar lotes desde la edge function (rechazado / descartado) ──────────
-GRANT EXECUTE ON FUNCTION public.dist_liberar_lotes(bigint, text, bigint) TO service_role;
 
 -- ── Facturar respeta las reservas de las OTRAS ventas ─────────────────────
 -- Reescrita desde su definición VIVA (0010, entorno de pruebas 2026-09-29).

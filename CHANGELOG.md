@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1099.1 — Torogoz: un rechazo de Hacienda no devuelve la mercadería; sólo anular
+
+Corrección del usuario a v2.1099.0: «si se rechaza, aún se puede corregir […]
+no debería entrar inventario porque el producto ya no lo tengo. A no ser que
+lo anule, ahí sí».
+
+- `distribucion-dte` ya NO devuelve las unidades al lote cuando Hacienda
+  rechaza ni cuando se descarta un documento: la mercadería se entregó. Siguen
+  atadas al pedido, que vuelve a «por facturar» para corregir los datos y
+  facturar de nuevo; al refacturar se reasignan en la misma transacción.
+- Sólo **anular** el pedido devuelve la existencia (`dist_lotes_al_anular`,
+  sin cambios). Borrador 0012 corregido; función desplegada en pruebas.
+
+
 ## v2.1099.0 — Torogoz: reservar lo que está en venta o preventa, 30 minutos y aviso al vencer
 
 Pedido del usuario: «que se reservaran los productos si están en preventa, o

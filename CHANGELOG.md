@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1092.0 — Torogoz: venta con teclado como en la caja (F2, F8, F3, F7), foco a la cantidad y selectores ordenados
+
+Reporte del usuario (con capturas): los selectores del renglón se veían
+chicos y desordenados, la lista del buscador salía transparente encima de
+la venta, y pidió el flujo de teclado de la caja más una tecla para buscar en
+todas las sucursales.
+
+- **La lista del buscador** usa la superficie opaca de los menús del portal y
+  flota encima de todo (antes se veía lo de atrás a través). ↑ ↓ la recorren.
+- **Al agregar, el foco va directo a la cantidad** de ese producto (con todo
+  seleccionado). El orden del renglón es el del teclado: cantidad, presentación,
+  precio·lista, descuento.
+- **Tab o ← → cambian de campo, ↑ ↓ de producto** (en un campo de texto, ← →
+  saltan sólo con el cursor en el borde; con un menú abierto, las flechas son
+  del menú). Los − + y el % / $ no se roban el Tab.
+- **Teclas de la caja** (`js_funciones_venta.js`): F2 finalizar, F8 guardar
+  preventa, F3 buscar, F4 salir, Supr quita el producto. **F7 nuevo**:
+  existencias en todas las sucursales, buscando el producto donde está el
+  cursor (`ExistenciasSucursales`, sobre `buscar_inventario_global_v2`).
+- **Selectores ordenados**: todos los controles del renglón a la misma altura,
+  opciones en una línea («PAQUETE · 12 u.», «$37.50 · VIP») y con su ícono
+  (paquete, etiqueta) en vez de la lupa. El % / $ es un botón que alterna.
+
+
 ## v2.1091.0 — Torogoz: la venta más compacta y rápida; volver a vender
 
 Pedido del usuario: «mejora las vistas, más moderno, compacto, práctico:

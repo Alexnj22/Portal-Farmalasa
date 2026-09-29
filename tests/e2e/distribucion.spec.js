@@ -232,3 +232,36 @@ test('volver a vender desde un pedido finalizado; guardar la preventa deja lista
     await expect(page.locator('[data-renglon]')).toHaveCount(0);
     await expect(page.getByText('Elegir cliente…')).toBeVisible();
 });
+
+test('teclado como en la caja: foco a la cantidad, Tab y flechas por el renglón, ↑ ↓ entre productos, F7 existencias', async ({ page }) => {
+    await entrar(page);
+    await page.goto('/torogoz/venta');
+    await page.getByText('Elegir cliente…').click();
+    await page.getByText('FARMACIA DEL PUEBLO, S.A. DE C.V.', { exact: true }).last().click();
+    const foco = () => page.evaluate(() => document.activeElement?.getAttribute('name') || document.activeElement?.getAttribute('aria-label'));
+    // F3 al buscador; ↓ y Enter agregan: el foco cae en la cantidad de ESE producto.
+    await page.keyboard.press('F3');
+    await page.keyboard.type('ensure');
+    await expect(page.getByRole('option').first()).toBeVisible();
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect.poll(foco).toMatch(/^cantidad-/);
+    const primera = await foco();
+    await page.keyboard.type('5');
+    await page.keyboard.press('Tab');
+    await expect.poll(foco).toMatch(/^Presentación de/);
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(foco).toMatch(/^Precio y lista de|^descuento-/);
+    // Un segundo producto, y ↑ vuelve a la cantidad del primero.
+    await page.keyboard.press('F3');
+    await page.keyboard.type('transpore');
+    await expect(page.getByRole('option').first()).toBeVisible();
+    await page.keyboard.press('Enter');
+    await expect.poll(foco).toMatch(/^cantidad-/);
+    await page.keyboard.press('ArrowUp');
+    await expect.poll(foco).toBe(primera);
+    // F7: existencias en todas las sucursales, buscando el producto donde está el cursor.
+    await page.keyboard.press('F7');
+    await expect(page.getByRole('dialog', { name: 'Existencias en todas las sucursales' })).toBeVisible();
+    await expect(page.getByText(/Bodega: /).first()).toBeVisible({ timeout: 15_000 });
+});

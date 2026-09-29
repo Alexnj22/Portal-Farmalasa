@@ -5,6 +5,7 @@ import {
     Send, Clock, Store, Package, Tag, RefreshCw, ListChecks, ChevronRight,
 } from 'lucide-react';
 import LiquidModal from '../components/common/LiquidModal';
+import ExistenciasSucursales from './distribucion/ExistenciasSucursales';
 import GlassViewLayout from '../components/GlassViewLayout';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
@@ -81,7 +82,7 @@ const renglonNuevo = (productId, presentacion, extra = {}) => ({
 // Anchos de la grilla de renglones en pantalla ancha (xl): UNA línea por
 // producto, como en la caja, con el encabezado y cada fila sobre la MISMA
 // cadena. Por debajo de xl el renglón se parte en tres líneas cortas.
-const COLUMNAS = 'xl:grid-cols-[minmax(9rem,1fr)_7.5rem_7rem_9rem_7.5rem_5rem_2rem]';
+const COLUMNAS = 'xl:grid-cols-[minmax(9rem,1fr)_8rem_9rem_9.5rem_6.5rem_5.5rem_2rem]';
 
 export default function DistribucionVentaView() {
     useMarca('distribucion');
@@ -128,6 +129,9 @@ export default function DistribucionVentaView() {
     const [buscarPendiente, setBuscarPendiente] = useState('');
     const buscador = useRef(null);
     const barra = useRef(null);
+    const carritoRef = useRef([]);
+    const catalogoRef = useRef(new Map());
+    const buscadorTexto = useRef('');
 
     // La barra del total (teléfono) publica su alto en `--alto-barra-flotante`,
     // la misma variable que escribe `BarraFlotante`: así los botones de «ir
@@ -297,16 +301,64 @@ export default function DistribucionVentaView() {
         return catalogo.filter(p => permitido(p) && tokenMatch(q, p.nombre, p.codigo_barras)).slice(0, RESULTADOS);
     }, [buscar, catalogo, cliente, permitido]);
 
+    const [resaltado, setResaltado] = useState(0);     // el resultado del buscador que agrega Enter
+    const [enfocar, setEnfocar] = useState(null);      // la clave del renglón cuya cantidad toma el foco
+    const [verExistencias, setVerExistencias] = useState(null); // null, o el texto con que abre la búsqueda
+
+    // Al agregar, el foco va DIRECTO a la cantidad de ese producto (pedido del
+    // usuario): es lo primero que se escribe. Enter ahí vuelve al buscador.
     const agregar = (p) => {
         const pres = presentacionesDe(idx, p.product_id)[0].presentacion;
-        setCarrito(cs => {
-            const ya = cs.find(c => c.product_id === String(p.product_id) && c.presentacion === pres);
-            return ya
-                ? cs.map(c => (c === ya ? { ...c, cantidad: conCantidad((leerMonto(c.cantidad) ?? 0) + 1) } : c))
-                : [...cs, renglonNuevo(p.product_id, pres)];
-        });
+        const ya = carrito.find(c => c.product_id === String(p.product_id) && c.presentacion === pres);
+        if (ya) {
+            setCarrito(cs => cs.map(c => (c === ya ? { ...c, cantidad: conCantidad((leerMonto(c.cantidad) ?? 0) + 1) } : c)));
+            setEnfocar(ya.clave);
+        } else {
+            const nuevo = renglonNuevo(p.product_id, pres);
+            setCarrito(cs => [...cs, nuevo]);
+            setEnfocar(nuevo.clave);
+        }
         setBuscar('');
-        buscador.current?.focus();
+        setResaltado(0);
+    };
+    useEffect(() => {
+        if (enfocar == null) return;
+        const campo = document.querySelector(`input[name="cantidad-${enfocar}"]`);
+        if (campo) { campo.focus(); campo.select(); }
+        setEnfocar(null); // eslint-disable-line react-hooks/set-state-in-effect -- consumir la orden de foco
+    }, [enfocar, carrito]);
+
+    /*
+     * Moverse por los renglones con el teclado, como en una hoja:
+     *   ← →  al campo anterior / siguiente del mismo producto
+     *   ↑ ↓  al mismo campo del producto de arriba / abajo
+     * En un campo de texto, ← → sólo saltan si el cursor ya está en el borde
+     * (o todo está seleccionado): si no, mueven el cursor, que es lo esperado.
+     * Con un menú abierto las flechas son del menú, no de la tabla.
+     */
+    const navegarRenglones = (e) => {
+        if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
+        const t = e.target;
+        if (t.closest?.('[role="listbox"]') || t.getAttribute?.('aria-expanded') === 'true') return;
+        const celda = t.closest?.('[data-col]');
+        const fila = t.closest?.('[data-fila]');
+        if (!celda || !fila) return;
+        if (t.tagName === 'INPUT' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+            const todo = t.selectionStart === 0 && t.selectionEnd === t.value.length;
+            const enBorde = e.key === 'ArrowLeft' ? t.selectionStart === 0 && t.selectionEnd === 0 : t.selectionStart === t.value.length;
+            if (!todo && !enBorde) return;
+        }
+        const col = Number(celda.dataset.col);
+        const f = Number(fila.dataset.fila);
+        const destino = e.key === 'ArrowLeft' ? [f, col - 1] : e.key === 'ArrowRight' ? [f, col + 1]
+            : e.key === 'ArrowUp' ? [f - 1, col] : [f + 1, col];
+        const el = document.querySelector(`[data-fila="${destino[0]}"] [data-col="${destino[1]}"]`)
+            ?.querySelector('input:not([disabled]), [role="combobox"]:not([aria-disabled="true"]), button:not([disabled]):not([tabindex="-1"])');
+        if (!el) return;
+        e.preventDefault();
+        e.stopPropagation();
+        el.focus();
+        if (el.tagName === 'INPUT') el.select();
     };
     const cambiar = (clave, cambios) => setCarrito(cs => cs.map(c => (c.clave === clave ? { ...c, ...cambios } : c)));
     const sumar = (clave, delta) => setCarrito(cs => cs.map(c => (c.clave !== clave ? c
@@ -522,21 +574,45 @@ export default function DistribucionVentaView() {
     };
 
 
-    // ── Atajos de teclado: la venta se hace muchas veces al día ───────────
-    //   /          → al buscador (desde cualquier lado que no sea un campo)
-    //   Ctrl+Enter → el botón principal (facturar, o enviar a aprobación)
+    // ── Teclas rápidas: las mismas de la caja (su js_funciones_venta.js) ──
+    //   F2  finalizar (facturar, o enviar a aprobación)   · también Ctrl+Enter
+    //   F8  guardar como preventa
+    //   F3  al buscador                                   · también /
+    //   F4  salir a Pedidos
+    //   F7  existencias en todas las sucursales (nuevo, pedido del usuario)
+    //   Supr sobre un producto (fuera de un campo de texto): quitarlo
+    // Aprietan el MISMO botón que el ratón: si está deshabilitado, no pasa nada.
+    // Las teclas se escuchan una vez; el carrito que ven lo refresca este efecto.
+    useEffect(() => { carritoRef.current = carrito; }, [carrito]);
+    useEffect(() => { catalogoRef.current = porId; }, [porId]);
+    useEffect(() => { buscadorTexto.current = buscar; }, [buscar]);
     useEffect(() => {
+        const apretar = (sel) => document.querySelector(`${sel}:not([disabled])`)?.click();
         const alTeclado = (e) => {
+            if (document.querySelector('[role="dialog"]') && e.key !== 'F7') return; // con un diálogo abierto, las teclas son suyas
             const enCampo = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName) || e.target?.isContentEditable;
-            if (e.key === '/' && !enCampo) { e.preventDefault(); buscador.current?.focus(); }
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            const k = e.key;
+            if (k === 'F2' || (k === 'Enter' && (e.ctrlKey || e.metaKey))) { e.preventDefault(); apretar('[data-accion-principal]'); }
+            else if (k === 'F8') { e.preventDefault(); apretar('[data-accion-preventa]'); }
+            else if (k === 'F3' || (k === '/' && !enCampo)) { e.preventDefault(); buscador.current?.focus(); }
+            else if (k === 'F4') { e.preventDefault(); navigate(rutaInicio()); }
+            else if (k === 'F7') {
+                // Abre buscando el producto donde está parado el cursor, o lo escrito.
                 e.preventDefault();
-                document.querySelector('[data-accion-principal]:not([disabled])')?.click();
+                const fila = e.target?.closest?.('[data-fila]');
+                const renglon = fila && carritoRef.current[Number(fila.dataset.fila)];
+                const nombre = renglon ? catalogoRef.current.get(renglon.product_id)?.nombre : null;
+                setVerExistencias(v => (v != null ? null : (nombre ?? buscadorTexto.current ?? '')));
+            }
+            else if (k === 'Delete' && !enCampo) {
+                const fila = e.target?.closest?.('[data-fila]');
+                const clave = fila && carritoRef.current[Number(fila.dataset.fila)]?.clave;
+                if (clave != null) { e.preventDefault(); setCarrito(cs => cs.filter(c => c.clave !== clave)); buscador.current?.focus(); }
             }
         };
         window.addEventListener('keydown', alTeclado);
         return () => window.removeEventListener('keydown', alTeclado);
-    }, []);
+    }, [navigate]);
 
     const [verPendientes, setVerPendientes] = useState(false);
     const [verNotas, setVerNotas] = useState(!!notas);
@@ -568,13 +644,13 @@ export default function DistribucionVentaView() {
     // toma en la ruta y se factura después (o espera un descuento).
     const botonPrincipal = porAprobar.length > 0 ? (
         <Button variant="primary" icon={guardando === 'aprobacion' ? Loader2 : Send} disabled={!puedeGuardar}
-            data-accion-principal onClick={() => guardar('aprobacion')} className="flex-1 sm:flex-none">
-            Enviar a aprobación
+            data-accion-principal onClick={() => guardar('aprobacion')} className="flex-1 sm:flex-none" title="F2">
+            Enviar a aprobación <kbd aria-hidden="true" className="hidden lg:inline ml-1 text-micro font-bold opacity-70">F2</kbd>
         </Button>
     ) : (
         <Button variant="primary" icon={guardando === 'facturar' ? Loader2 : (imprimir ? Printer : Receipt)} disabled={!listo}
-            data-accion-principal onClick={() => guardar('facturar')} className="flex-1 sm:flex-none" title="Ctrl + Enter">
-            {imprimir ? 'Facturar e imprimir' : 'Facturar'}
+            data-accion-principal onClick={() => guardar('facturar')} className="flex-1 sm:flex-none" title="F2 o Ctrl + Enter">
+            {imprimir ? 'Facturar e imprimir' : 'Facturar'} <kbd aria-hidden="true" className="hidden lg:inline ml-1 text-micro font-bold opacity-70">F2</kbd>
         </Button>
     );
 
@@ -628,44 +704,52 @@ export default function DistribucionVentaView() {
                             )}
                         </section>
 
-                        {/* ── Qué se lleva ── */}
-                        <section data-surface="card" className="p-3 md:p-4 flex flex-col gap-3">
+                        {/* ── Qué se lleva ──
+                            `relative z-dropdown`: la lista del buscador flota por encima de
+                            las tarjetas de abajo (el cobro, la barra), no por debajo. */}
+                        <section data-surface="card" className="relative z-dropdown p-3 md:p-4 flex flex-col gap-3">
                             <div className="relative">
                                 <PortalInput ref={buscador} icon={Search} name="buscar-producto" value={buscar} alto
-                                    placeholder={cliente ? 'Producto o código de barras  ·  Enter agrega el primero  ·  / para volver aquí' : 'Elige primero el cliente'}
+                                    placeholder={cliente ? 'Producto o código de barras (F3)' : 'Elige primero el cliente'}
                                     aria-label="Buscar producto" disabled={!cliente}
-                                    onChange={(e) => setBuscar(e.target.value)}
+                                    onChange={(e) => { setBuscar(e.target.value); setResaltado(0); }}
                                     onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && resultados[0]) { e.preventDefault(); agregar(resultados[0]); }
+                                        // ↑ ↓ recorren los resultados; Enter agrega el resaltado.
+                                        if (e.key === 'ArrowDown' && resultados.length) { e.preventDefault(); setResaltado(i => Math.min(i + 1, resultados.length - 1)); }
+                                        if (e.key === 'ArrowUp' && resultados.length) { e.preventDefault(); setResaltado(i => Math.max(i - 1, 0)); }
+                                        if (e.key === 'Enter' && resultados[resaltado]) { e.preventDefault(); agregar(resultados[resaltado]); }
                                         if (e.key === 'Escape') setBuscar('');
                                     }} />
-                                {/* Los resultados FLOTAN sobre la lista, no la empujan: la venta
-                                    no salta de lugar con cada letra. */}
+                                {/* Los resultados flotan sobre la lista (no la empujan) y con la
+                                    superficie OPACA de los menús del portal: con la de tarjeta se
+                                    veía lo de atrás a través. */}
                                 {buscar.trim() && cliente && (
-                                    <div data-surface="card" className="absolute z-dropdown left-0 right-0 top-full mt-1 overflow-hidden max-h-[22rem] overflow-y-auto" role="listbox" aria-label="Productos encontrados">
+                                    <div data-surface="dropdown" className="absolute left-0 right-0 top-full mt-1 overflow-hidden max-h-[24rem] overflow-y-auto rounded-2xl" role="listbox" aria-label="Productos encontrados">
                                         {resultados.length === 0 && (
                                             <p className="px-4 py-3 text-caption text-content-3 flex items-center gap-2">
                                                 <PackageX size={14} /> Nada que coincida{soloVentaLibre(cliente.tipo) ? ' entre los productos de venta libre' : ''}.
+                                                <button type="button" className="font-bold text-brand-text underline" onClick={() => setVerExistencias(buscar)}>Buscar en todas las sucursales (F7)</button>
                                             </p>
                                         )}
                                         {resultados.map((p, k) => {
                                             const pres = presentacionesDe(idx, p.product_id);
                                             const r = precioDe(idx, p, pres[0].presentacion, listaEfectiva);
                                             const hay = existencias?.get(String(p.product_id));
+                                            const activo = k === resaltado;
                                             return (
-                                                <button key={p.product_id} type="button" role="option" aria-selected={k === 0}
-                                                    onClick={() => agregar(p)}
-                                                    className={`w-full flex items-center justify-between gap-3 px-4 min-h-[var(--tap-min)] py-2 text-left border-b border-divider last:border-b-0 hover:bg-surface-card-hover active:scale-[0.99] transition-transform ${k === 0 ? 'bg-brand/5' : ''}`}>
+                                                <button key={p.product_id} type="button" role="option" aria-selected={activo}
+                                                    onMouseEnter={() => setResaltado(k)} onClick={() => agregar(p)}
+                                                    className={`w-full grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 min-h-[max(48px,var(--tap-min))] py-2 text-left border-b border-divider last:border-b-0 transition-colors ${activo ? 'bg-brand/10' : ''}`}>
                                                     <span className="min-w-0">
-                                                        <span className="block text-body-sm font-bold text-content-2 truncate">{p.nombre}</span>
+                                                        <span className="block text-body-sm font-bold text-content truncate">{p.nombre}</span>
                                                         <span className="block text-caption text-content-3 truncate">
                                                             {pres.map(x => x.presentacion).join(' · ')}
                                                             {hay != null && <span className={hay > 0 ? '' : 'text-danger-text font-bold'}> · {hay > 0 ? `hay ${hay}` : 'sin existencia'}</span>}
                                                         </span>
                                                     </span>
                                                     <span className="flex items-center gap-2 shrink-0">
-                                                        <span className="text-body-sm font-bold text-content-2 tabular-nums">{r ? formatMoney(visto(r.precio)) : 'Sin precio'}</span>
-                                                        {k === 0 && <kbd className="hidden md:inline text-micro font-bold text-content-3 border border-divider rounded px-1">Enter</kbd>}
+                                                        <span className="text-body-sm font-black text-content tabular-nums">{r ? formatMoney(visto(r.precio)) : 'Sin precio'}</span>
+                                                        {activo && <kbd className="hidden md:inline text-micro font-bold text-content-3 border border-divider rounded px-1">Enter</kbd>}
                                                     </span>
                                                 </button>
                                             );
@@ -683,29 +767,29 @@ export default function DistribucionVentaView() {
                                     </p>
                                 </div>
                             ) : (
-                                <div className="rounded-xl border border-divider overflow-hidden">
-                                    <div className={`hidden xl:grid ${COLUMNAS} gap-2 px-3 py-1.5 border-b border-divider bg-surface-card-hover/40 text-micro font-bold uppercase tracking-wide text-content-3`}>
-                                        <span>Producto</span><span>Presentación</span><span className="text-center">Cantidad</span>
-                                        <span>Lista · precio {conIva ? 'c/IVA' : 's/IVA'}</span><span>Descuento</span>
+                                <div className="rounded-xl border border-divider overflow-hidden" onKeyDownCapture={navegarRenglones}>
+                                    <div className={`hidden xl:grid ${COLUMNAS} gap-2 px-3 py-2 border-b border-divider bg-surface-card-hover/40 text-micro font-bold uppercase tracking-wide text-content-3`}>
+                                        <span>Producto</span><span className="text-center">Cantidad</span><span>Presentación</span>
+                                        <span>Precio {conIva ? 'c/IVA' : 's/IVA'} · lista</span><span>Descuento</span>
                                         <span className="text-right">Importe</span><span />
                                     </div>
-                                    {lineas.map((l) => {
+                                    {lineas.map((l, k) => {
                                         const nombre = l.p?.nombre ?? `Producto ${l.product_id}`;
                                         const ocupadas = new Set(lineas.filter(o => o.clave !== l.clave && o.product_id === l.product_id).map(o => o.presentacion));
+                                        // Una línea por opción («PAQUETE · 12 u.»): con dos líneas el
+                                        // selector medía más que los campos de al lado.
                                         const opcPres = l.presentaciones
                                             .filter(x => !ocupadas.has(x.presentacion))
-                                            .map(x => ({ value: x.presentacion, label: x.presentacion, sublabel: x.unidades > 1 ? `${x.unidades} unidades` : undefined }));
-                                        // La lista y el precio en UN control: el precio grande y la lista
-                                        // debajo. Cada opción dice cuánto cuesta en esa lista, así se elige
-                                        // viendo el precio.
+                                            .map(x => ({ value: x.presentacion, label: x.unidades > 1 ? `${x.presentacion} · ${x.unidades} u.` : x.presentacion }));
+                                        // Lista y precio en UN control, en una línea: «$37.50 · VIP».
                                         const opcListas = l.p ? listasDe(idx, l.p.product_id, l.presentacion).map(x => {
                                             const pr = precioDe(idx, l.p, l.presentacion, x.id);
-                                            return { value: String(x.id), label: formatMoney(visto(pr?.precio ?? 0)), sublabel: x.nombre };
+                                            return { value: String(x.id), label: `${formatMoney(visto(pr?.precio ?? 0))} · ${x.nombre}` };
                                         }) : [];
                                         const errDesc = l.descMalo ? 'No es un número' : l.pasaImporte ? 'Pasa del importe' : null;
                                         return (
-                                            <div key={l.clave} data-renglon={l.product_id}
-                                                className={`grid grid-cols-[minmax(0,1fr)_auto] ${COLUMNAS} gap-x-2 gap-y-2 items-center px-3 py-2 border-b border-divider last:border-b-0 ${l.porAprobar ? 'bg-warning/5' : ''}`}>
+                                            <div key={l.clave} data-renglon={l.product_id} data-fila={k}
+                                                className={`grid grid-cols-[minmax(0,1fr)_auto] ${COLUMNAS} gap-x-2 gap-y-2 items-center px-3 py-2 border-b border-divider last:border-b-0 focus-within:bg-brand/5 ${l.porAprobar ? 'bg-warning/5' : ''}`}>
                                                 {/* Producto */}
                                                 <div className="min-w-0">
                                                     <p className="text-body-sm font-bold text-content truncate" title={nombre}>{nombre}</p>
@@ -717,65 +801,80 @@ export default function DistribucionVentaView() {
                                                         )}
                                                         {l.noVa && <span className="text-danger-text font-bold">No se le vende a este cliente</span>}
                                                         {l.sinPrecio && <span className="text-danger-text font-bold">Sin precio en esta presentación</span>}
-                                                        {l.otraLista && !l.noVa && <span>A precio {idx.listas.find(x => x.id === l.r.listaId)?.nombre}</span>}
                                                         {l.porAprobar && <span className="text-warning-text font-bold">Descuento por aprobar</span>}
                                                         {!l.porAprobar && l.descEstado === 'rechazado' && !l.descValor && <span>Descuento rechazado</span>}
                                                     </div>
                                                 </div>
-                                                {/* Importe (teléfono: arriba a la derecha) */}
                                                 <div className="xl:hidden text-right">
                                                     <p className="tabular-nums font-black text-content">{formatMoney(l.doc?.importe ?? 0)}</p>
                                                 </div>
-                                                <div className="col-span-2 xl:col-span-1">
-                                                    <LiquidSelect compact value={l.presentacion} options={opcPres} clearable={false}
-                                                        disabled={opcPres.length <= 1} ariaLabel={`Presentación de ${nombre}`}
-                                                        onChange={(v) => v && cambiar(l.clave, { presentacion: v, lista_id: '' })} />
-                                                </div>
-                                                {/* Teléfono: cantidad | precio, y abajo descuento | quitar.
-                                                    Pantalla ancha: cada control en su columna (`contents`). */}
-                                                <div className="col-span-2 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 xl:contents">
-                                                    <div className="flex items-center gap-1 justify-center">
-                                                        <Button variant="secondary" size="sm" iconOnly icon={Minus} title="Uno menos"
+
+                                                {/* Teléfono: cantidad | presentación, precio | descuento, quitar.
+                                                    Pantalla ancha: cada control en su columna (`contents`). El
+                                                    orden es el de Tab y ← →: cantidad primero, que es lo que se
+                                                    escribe al agregar. */}
+                                                <div className="col-span-2 grid grid-cols-2 gap-2 items-center xl:contents">
+                                                    {/* Cantidad */}
+                                                    <div data-col="0" className="flex items-center gap-1 justify-center">
+                                                        <Button variant="ghost" size="sm" iconOnly icon={Minus} title="Uno menos" tabIndex={-1}
                                                             disabled={(l.n ?? 0) <= 1} onClick={() => sumar(l.clave, -1)} />
-                                                        <PortalInput compact className="w-14" inputClassName="text-center font-bold" name={`cantidad-${l.clave}`} inputMode="decimal"
+                                                        <PortalInput compact className="w-16" inputClassName="text-center font-black" name={`cantidad-${l.clave}`} inputMode="decimal"
                                                             value={l.cantidad} aria-label={`Cantidad de ${nombre}`} hasError={!l.n || l.n <= 0}
                                                             onKeyDown={alEnterVolverAlBuscador} onFocus={(e) => e.target.select()}
                                                             onChange={(e) => cambiar(l.clave, { cantidad: e.target.value })} />
-                                                        <Button variant="secondary" size="sm" iconOnly icon={Plus} title="Uno más" onClick={() => sumar(l.clave, 1)} />
+                                                        <Button variant="ghost" size="sm" iconOnly icon={Plus} title="Uno más" tabIndex={-1} onClick={() => sumar(l.clave, 1)} />
                                                     </div>
-                                                    <div className="min-w-0" data-testid="precio-renglon">
+                                                    {/* Presentación */}
+                                                    <div data-col="1" className="min-w-0">
+                                                        <LiquidSelect compact icon={Package} value={l.presentacion} options={opcPres} clearable={false}
+                                                            disabled={opcPres.length <= 1} ariaLabel={`Presentación de ${nombre}`}
+                                                            onChange={(v) => v && cambiar(l.clave, { presentacion: v, lista_id: '' })} />
+                                                    </div>
+                                                    {/* Precio · lista */}
+                                                    <div data-col="2" className="min-w-0" data-testid="precio-renglon">
                                                         {opcListas.length > 1 ? (
-                                                            <LiquidSelect compact value={l.r?.listaId != null ? String(l.r.listaId) : ''} options={opcListas} clearable={false}
-                                                                ariaLabel={`Lista y precio de ${nombre}`}
+                                                            <LiquidSelect compact icon={Tag} value={l.r?.listaId != null ? String(l.r.listaId) : ''} options={opcListas} clearable={false}
+                                                                ariaLabel={`Precio y lista de ${nombre}`}
                                                                 onChange={(v) => cambiar(l.clave, { lista_id: v && Number(v) !== listaEfectiva ? v : '' })} />
                                                         ) : (
-                                                            <p className="text-body-sm tabular-nums text-content-2 px-2">
+                                                            <p className="h-8 flex items-center text-body-sm font-bold tabular-nums text-content-2 px-2">
                                                                 {l.r ? formatMoney(l.doc?.precioUni ?? visto(l.r.precio)) : '—'}
                                                             </p>
                                                         )}
                                                     </div>
-                                                    <div className="flex items-center gap-1 min-w-0 w-44 xl:w-auto">
-                                                        <SegmentedControl size="sm" value={l.descTipo} label={`Descuento de ${nombre} en`}
-                                                            onChange={(v) => cambiar(l.clave, { descTipo: v, descValor: '' })}
-                                                            options={[{ value: 'pct', label: '%' }, { value: 'monto', label: '$' }]} />
-                                                        <PortalInput compact className="flex-1 min-w-0" name={`descuento-${l.clave}`} inputMode="decimal" value={l.descValor}
+                                                    {/* Descuento */}
+                                                    <div data-col="3" className="flex items-center gap-1 min-w-0">
+                                                        <PortalInput compact className="flex-1 min-w-0" inputClassName="text-right" name={`descuento-${l.clave}`} inputMode="decimal" value={l.descValor}
                                                             placeholder="0" aria-label={`Descuento de ${nombre}`} hasError={!!errDesc} errorMessage={errDesc ?? undefined}
                                                             onKeyDown={alEnterVolverAlBuscador} onFocus={(e) => e.target.select()}
                                                             onChange={(e) => cambiar(l.clave, { descValor: e.target.value })} />
+                                                        {/* % / $ como un botón que alterna: la mitad de ancho que
+                                                            el control de dos opciones, y no se roba las flechas. */}
+                                                        <Button variant="secondary" size="sm" tabIndex={-1} className="w-9 shrink-0 font-black"
+                                                            title={l.descTipo === 'pct' ? 'En porcentaje (tocar para pasar a $)' : 'En dólares (tocar para pasar a %)'}
+                                                            onClick={() => cambiar(l.clave, { descTipo: l.descTipo === 'pct' ? 'monto' : 'pct', descValor: '' })}>
+                                                            {l.descTipo === 'pct' ? '%' : '$'}
+                                                        </Button>
                                                     </div>
+                                                    {/* Importe */}
                                                     <div className="hidden xl:block text-right tabular-nums">
                                                         <p className="font-black text-content">{formatMoney(l.doc?.importe ?? 0)}</p>
                                                         {l.doc?.descuento > 0 && <p className="text-micro text-success-text">−{formatMoney(l.doc.descuento)}</p>}
-                                                        {l.porAprobar && <p className="text-micro text-warning-text">−{formatMoney(conIva ? l.desc : l.desc / 1.13)} ?</p>}
+                                                        {l.porAprobar && <p className="text-micro text-warning-text">−{formatMoney(conIva ? l.desc : l.desc / 1.13)} por aprobar</p>}
                                                     </div>
-                                                    <div className="justify-self-end">
-                                                        <Button variant="ghost" size="sm" iconOnly icon={Trash2} title="Quitar de la venta" onClick={() => quitar(l.clave)} />
+                                                    <div data-col="4" className="col-span-2 xl:col-span-1 flex justify-end">
+                                                        <Button variant="ghost" size="sm" iconOnly icon={Trash2} title="Quitar de la venta (Supr)" onClick={() => quitar(l.clave)} />
                                                     </div>
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
+                            )}
+                            {lineas.length > 0 && (
+                                <p className="hidden md:block text-micro text-content-3">
+                                    Tab o ← → cambian de campo · ↑ ↓ cambian de producto · Supr quita el producto · F7 existencias en todas las sucursales
+                                </p>
                             )}
                         </section>
 
@@ -846,8 +945,8 @@ export default function DistribucionVentaView() {
                             </div>
                             <div className="flex gap-2">
                                 <Button variant="secondary" icon={guardando === 'preventa' ? Loader2 : Save} disabled={!puedeGuardar}
-                                    title="Guardar sin facturar: queda en Pendientes" onClick={() => guardar('preventa')} className="flex-1 sm:flex-none">
-                                    Guardar preventa
+                                    data-accion-preventa title="Guardar sin facturar: queda en Pendientes (F8)" onClick={() => guardar('preventa')} className="flex-1 sm:flex-none">
+                                    Guardar preventa <kbd aria-hidden="true" className="hidden lg:inline ml-1 text-micro font-bold opacity-60">F8</kbd>
                                 </Button>
                                 {botonPrincipal}
                             </div>
@@ -856,6 +955,9 @@ export default function DistribucionVentaView() {
                 )}
             </div>
 
+            {verExistencias != null && (
+                <ExistenciasSucursales terminoInicial={verExistencias} onClose={() => setVerExistencias(null)} />
+            )}
             {verPendientes && (
                 <LiquidModal open onClose={() => setVerPendientes(false)} maxWidth="max-w-xl" ariaLabel="Pendientes de finalizar">
                     <LiquidModal.Header>

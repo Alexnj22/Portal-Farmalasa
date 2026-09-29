@@ -342,3 +342,72 @@ test('la forma de pago se elige arriba; F6 borra la preventa abierta y vacía un
     await page.keyboard.press('Enter');
     await expect(page.getByText('Elegir cliente…')).toBeVisible();
 });
+
+test('lotes: primero vence, y lo que no alcanza se reparte abajo; sin existencia se anota como venta perdida', async ({ page }) => {
+    await entrar(page);
+    await page.goto('/torogoz/venta');
+    await page.getByText('Elegir cliente…').click();
+    await page.getByText('FARMACIA DEL PUEBLO, S.A. DE C.V.', { exact: true }).last().click();
+    // GLUCERNA LIQUIDO FRESA tiene un lote CORTO de 2 que vence antes (semilla 5).
+    await page.keyboard.press('F3');
+    await page.keyboard.type('glucerna liquido fresa');
+    await expect(page.getByRole('option').first()).toBeVisible();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('[data-renglon]')).toHaveCount(1);
+    await expect(page.locator('[data-renglon]').first()).toContainText('CORTO-01');
+    // Pido 5: quedan 2 del CORTO y 3 del siguiente lote, en un renglón nuevo abajo.
+    await page.keyboard.type('5');
+    await page.keyboard.press('Tab');
+    await expect(page.locator('[data-renglon]')).toHaveCount(2);
+    const filas = page.locator('[data-renglon]');
+    await expect(filas.nth(0)).toContainText('CORTO-01');
+    await expect(filas.nth(0).locator('input[name^="cantidad-"]')).toHaveValue('2');
+    await expect(filas.nth(1)).toContainText('PRUEBA-01');
+    await expect(filas.nth(1).locator('input[name^="cantidad-"]')).toHaveValue('3');
+    await expect(filas.nth(0)).toContainText(/Total \d+/);
+    await page.screenshot({ path: `${SALIDA}/venta-lotes.png`, fullPage: true });
+
+    // NEPRO AP no tiene existencia: no entra a la venta, se ofrece venta perdida.
+    await page.keyboard.press('F3');
+    await page.keyboard.type('nepro');
+    await expect(page.getByRole('option').first()).toBeVisible();
+    await page.keyboard.press('Enter');
+    const d = page.getByRole('dialog', { name: 'Venta perdida' });
+    await expect(d).toBeVisible();
+    await expect(d).toContainText('NEPRO');
+    await d.locator('input[name="cantidad-perdida"]').fill('4');
+    await page.screenshot({ path: `${SALIDA}/venta-perdida.png` });
+    await d.getByRole('button', { name: 'Anotar venta perdida' }).click();
+    await expect(d).toBeHidden({ timeout: 15_000 });
+    await expect(page.locator('[data-renglon]')).toHaveCount(2);
+
+    // Un insumo que no está en el catálogo: desde el buscador sin resultados.
+    await page.keyboard.press('F3');
+    await page.keyboard.type('gasa esteril prueba');
+    await page.locator('[data-anotar-perdida]').click();
+    const d2 = page.getByRole('dialog', { name: 'Venta perdida' });
+    await d2.getByRole('radio', { name: 'Insumo' }).or(d2.getByRole('button', { name: 'Insumo' })).first().click();
+    await expect(d2.locator('input[name="nombre-insumo"]')).toHaveValue('gasa esteril prueba');
+    await d2.getByRole('button', { name: 'Anotar venta perdida' }).click();
+    await expect(d2).toBeHidden({ timeout: 15_000 });
+
+    // Las dos aparecen en Ventas perdidas.
+    await page.goto('/torogoz/perdidas');
+    await expect(page.getByText('gasa esteril prueba').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/NEPRO AP/).first()).toBeVisible();
+    await page.screenshot({ path: `${SALIDA}/ventas-perdidas.png`, fullPage: true });
+});
+
+test('venta perdida de un medicamento buscado en la SRS', async ({ page }) => {
+    await entrar(page);
+    await page.goto('/torogoz/perdidas');
+    await page.getByRole('button', { name: 'Anotar venta perdida' }).first().click();
+    const d = page.getByRole('dialog', { name: 'Venta perdida' });
+    await d.locator('input[name="buscar-srs"]').fill('acetaminofen');
+    const primero = d.locator('[data-srs]').first();
+    await expect(primero).toBeVisible({ timeout: 30_000 });
+    await primero.click();
+    await page.screenshot({ path: `${SALIDA}/venta-perdida-srs.png` });
+    await d.getByRole('button', { name: 'Anotar venta perdida' }).click();
+    await expect(page.getByText('Venta perdida anotada').first()).toBeVisible({ timeout: 15_000 });
+});

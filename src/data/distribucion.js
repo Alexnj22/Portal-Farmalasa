@@ -31,6 +31,7 @@ const MENSAJES = {
     DIST_SIN_PERMISO: 'No tienes permiso para esto en Distribución.',
     DIST_AUTOAPROBAR: 'No puedes decidir un descuento que pediste tú: lo decide otra persona con permiso.',
     DIST_SOLICITUD_RESUELTA: 'Esa solicitud ya se resolvió.',
+    DIST_LOTE_AJENO: 'Ese lote no es de ese producto. Vuelve a elegirlo.',
     DIST_PAGO_FACTURADO: 'La forma y el monto ya están en el documento: sólo se puede adjuntar el comprobante.',
 };
 
@@ -185,7 +186,7 @@ export async function fetchPedidoParaCorregir(pedidoId) {
 
 export async function fetchItemsDePedido(pedidoId) {
     const { data, error } = await supabase.from('dist_pedido_items')
-        .select('id, product_id, cantidad, precio_con_iva, descuento, descuento_pct, descuento_estado, descuento_pedido, descripcion, presentacion, unidades, lista_id')
+        .select('id, product_id, cantidad, precio_con_iva, descuento, descuento_pct, descuento_estado, descuento_pedido, descripcion, presentacion, unidades, lista_id, lote_id')
         .eq('pedido_id', pedidoId).order('id');
     if (error) throw error;
     return data;
@@ -199,6 +200,10 @@ function filaDeRenglon(pedidoId, r) {
     return {
         pedido_id: pedidoId, product_id: r.product_id, cantidad: r.cantidad,
         presentacion: r.presentacion || 'UNIDAD', lista_id: r.lista_id ?? null,
+        // El lote que eligió la pantalla (primero vence, primero sale). Al
+        // facturar es una PREFERENCIA: si ya no alcanza, la base completa con
+        // el siguiente (borrador 0010).
+        lote_id: r.lote_id ?? null,
         precio_con_iva: 0, descripcion: '',
         descuento_pct: enPct ? Number(r.descuentoValor) : null,
         descuento: enPct ? 0 : (r.descuentoTipo === 'monto' ? Number(r.descuentoValor) || 0 : 0),
@@ -228,7 +233,7 @@ export async function crearPedido({ emisorId, clienteId, tipoDocumento, condicio
     // Los renglones van con precio 0: el trigger pone el del catálogo.
     const { error: eIt } = await supabase.from('dist_pedido_items').upsert(
         renglones.map(r => filaDeRenglon(pedidoId, r)),
-        { onConflict: 'pedido_id,product_id,presentacion' });
+        { onConflict: 'pedido_id,product_id,presentacion,lote_id' });
     if (eIt) {
         // Sin renglones el pedido no sirve: se anula para que no quede colgado.
         const { error: eAnular } = await supabase.from('dist_pedidos')
@@ -251,19 +256,21 @@ export async function actualizarPedido(pedidoId, { tipoDocumento, condicion, pla
         observaciones: observaciones?.trim() || null,
     }).eq('id', pedidoId).eq('estado', 'confirmado');
     if (error) throw error;
-    // Se borran los renglones que ya no están: la clave es producto + presentación.
-    const quedan = new Set(renglones.map(r => `${r.product_id}|${r.presentacion || 'UNIDAD'}`));
+    // Se borran los renglones que ya no están: la clave es producto +
+    // presentación + lote (el mismo producto en dos lotes son dos renglones).
+    const clave = (x) => `${x.product_id}|${x.presentacion || 'UNIDAD'}|${x.lote_id ?? ''}`;
+    const quedan = new Set(renglones.map(clave));
     const { data: previos, error: ePrev } = await supabase.from('dist_pedido_items')
-        .select('id, product_id, presentacion').eq('pedido_id', pedidoId);
+        .select('id, product_id, presentacion, lote_id').eq('pedido_id', pedidoId);
     if (ePrev) throw ePrev;
-    const sobran = (previos ?? []).filter(p => !quedan.has(`${p.product_id}|${p.presentacion}`)).map(p => p.id);
+    const sobran = (previos ?? []).filter(p => !quedan.has(clave(p))).map(p => p.id);
     if (sobran.length) {
         const { error: eBorrar } = await supabase.from('dist_pedido_items').delete().in('id', sobran);
         if (eBorrar) throw eBorrar;
     }
     const { error: eIt } = await supabase.from('dist_pedido_items').upsert(
         renglones.map(r => filaDeRenglon(pedidoId, r)),
-        { onConflict: 'pedido_id,product_id,presentacion' });
+        { onConflict: 'pedido_id,product_id,presentacion,lote_id' });
     if (eIt) throw eIt;
 }
 
@@ -441,4 +448,43 @@ export async function adjuntarComprobante(pagoId, { url, lectura, montoLeido, ve
         verificacion, nota: nota?.trim() || null,
     }).eq('id', pagoId);
     if (error) throw error;
+}
+
+// ── Ventas perdidas ────────────────────────────────────────────────────────
+// Lo que un cliente pidió y no se le pudo vender: un producto del catálogo sin
+// existencia, un medicamento buscado en la SRS o un insumo escrito a mano. Es
+// la lista de compras de la distribuidora (borrador 0010). `reportado_por` lo
+// pone la base.
+
+const SELECT_PERDIDA = 'id, cliente_id, product_id, pedido_id, origen, producto, registro_srs, principio_activo, laboratorio, '
+    + 'buscado, cantidad, estado, nota, created_at, resuelto_at, dist_clientes(nombre), '
+    + 'employees:reportado_por(id, name, photo_url)';
+
+export async function fetchVentasPerdidas({ estado } = {}) {
+    const rows = await fetchAllRows(() => {
+        let q = supabase.from('dist_ventas_perdidas').select(SELECT_PERDIDA).order('created_at', { ascending: false });
+        if (estado) q = q.eq('estado', estado);
+        return q;
+    });
+    if (rows === null) throw new Error('No se pudieron cargar las ventas perdidas.');
+    return rows;
+}
+
+export async function anotarVentaPerdida({ emisorId, clienteId, productId, pedidoId, origen, producto, registroSrs, principioActivo, laboratorio, buscado, cantidad }) {
+    const { data, error } = await supabase.from('dist_ventas_perdidas').insert({
+        emisor_id: emisorId, cliente_id: clienteId ?? null, product_id: productId ?? null, pedido_id: pedidoId ?? null,
+        origen, producto: producto.trim(), registro_srs: registroSrs || null, principio_activo: principioActivo || null,
+        laboratorio: laboratorio || null, buscado: buscado?.trim() || null, cantidad,
+    }).select('id').single();
+    if (error) throw error;
+    return data.id;
+}
+
+/** Atendida (se compró / se consiguió) o descartada. Quién y cuándo lo pone la base. */
+export async function resolverVentaPerdida(id, estado, nota) {
+    const { data, error } = await supabase.from('dist_ventas_perdidas')
+        .update({ estado, nota: nota?.trim() || null }).eq('id', id).select('id');
+    if (error) throw error;
+    // Sin policy que lo deje, el update «funciona» y no cambia nada: se dice.
+    if (!data?.length) throw new Error('No tienes permiso para resolver ventas perdidas.');
 }

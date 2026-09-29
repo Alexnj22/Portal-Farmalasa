@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1097.0 — Venta de la distribuidora: lote por vencimiento que se reparte solo, y ventas perdidas
+
+Pedido del usuario (2026-09-29): «que salga según el vence […] si del lote 1
+hay 1 unidad y pongo que voy a vender 3, que se agregue el producto abajo con
+el siguiente lote disponible; debe salir también el total en stock y por
+lote» y «agregar ventas perdidas […] que busque en la SRS si es medicamento, o
+si es insumo que mande el nombre».
+
+- **Lote por renglón, primero vence primero sale.** Al agregar se elige el
+  lote que vence antes; si no alcanza, lo que falta baja SOLO a un renglón
+  nuevo con el siguiente lote (o se suma al que ya lo tenga). La línea del
+  producto dice el total en existencia, el lote, cuánto le queda y cuándo
+  vence; con más de un lote se puede elegir otro. Una caja no se parte entre
+  lotes. Lógica pura en `distribucion/lotes.js` con 10 pruebas unitarias.
+- **Borrador 0010**: `dist_pedido_items.lote_id` (la clave del renglón pasa a
+  producto + presentación + lote), validación de que el lote sea del producto,
+  y `dist_asignar_lotes` —reescrita desde su definición viva— toma primero el
+  lote del renglón: es una PREFERENCIA, si ya no alcanza completa con el
+  siguiente y no traba la factura.
+- **Ventas perdidas.** Tabla propia de la distribuidora
+  (`dist_ventas_perdidas`, con su cliente), sección nueva en el menú con
+  pendientes / atendidas / descartadas, y una ventana para anotarlas:
+  - un producto SIN existencia ya no entra a la venta: se abre la ventana;
+  - si el renglón pide más de lo que hay, «Anotar venta perdida» anota lo que
+    falta y baja la cantidad a lo que sí hay;
+  - desde el buscador sin resultados o el botón del encabezado: medicamento
+    buscado en el registro de la SRS, o insumo con el nombre escrito.
+- Semilla del entorno de pruebas: un lote corto de GLUCERNA y NEPRO sin
+  existencia, para probar las dos cosas.
+
+Aplicado y probado en el entorno de pruebas; falta producción (junto con el
+resto de borradores de la distribuidora).
+
+
 ## v2.1096.0 — Venta de la distribuidora: forma de pago arriba, F6 borrar, cliente nuevo y guía de teclas
 
 Pedido del usuario: «al ERP, ¿qué más nos falta? … el tipo de pago, borrar la

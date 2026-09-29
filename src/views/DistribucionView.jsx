@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes, Tag } from 'lucide-react';
+import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes, Tag, PackageX } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Notice from '../components/common/Notice';
@@ -13,7 +13,8 @@ import TabCatalogo from './distribucion/TabCatalogo';
 import TabInventario from './distribucion/TabInventario';
 import TabEmisor from './distribucion/TabEmisor';
 import SolicitudesDescuento from './distribucion/SolicitudesDescuento';
-import { VISTAS_PEDIDOS } from './distribucion/comun';
+import TabVentasPerdidas from './distribucion/TabVentasPerdidas';
+import { VISTAS_PEDIDOS, VISTAS_PERDIDAS } from './distribucion/comun';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 
 // Distribución — la venta en ruta de la S.A.S. a tiendas, supermercados y
@@ -30,6 +31,7 @@ const TABS = [
     { key: 'clientes',   label: 'Clientes',   icon: Store },
     { key: 'catalogo',   label: 'Catálogo',   icon: PackageSearch },
     { key: 'inventario', label: 'Inventario', icon: Boxes },
+    { key: 'perdidas',   label: 'Ventas perdidas', icon: PackageX },
     { key: 'solicitudes', label: 'Solicitudes', icon: Tag },
     { key: 'emisor',     label: 'Empresa',    icon: Building2 },
 ];
@@ -43,6 +45,8 @@ export default function DistribucionView({ seccion = 'pedidos' }) {
     // Pedidos se divide en pendientes / finalizados / anulados; la pestaña
     // vive en `?vista=` (las demás secciones no tienen pestañas).
     const [vista, setVista] = usePestanaEnUrl(VISTAS_PEDIDOS, 'pendientes', 'vista');
+    // Ventas perdidas: pendientes / atendidas / descartadas, en `?estado=`.
+    const [estadoPerdida, setEstadoPerdida] = usePestanaEnUrl(VISTAS_PERDIDAS, 'pendiente', 'estado');
     const { hasPermission } = useAuth();
     const puedeVender = hasPermission('distribucion', 'can_edit');
     const puedeConfigurar = hasPermission('distribucion_config', 'can_edit');
@@ -79,6 +83,7 @@ export default function DistribucionView({ seccion = 'pedidos' }) {
         clientes: 'Buscar por nombre, NIT, DUI o NRC…',
         catalogo: 'Buscar producto…',
         inventario: 'Buscar producto o lote…',
+        perdidas: 'Buscar producto o cliente…',
     }[tab] ?? 'Buscar…'), [tab]);
 
     const comunes = { emisor, puedeVender, puedeConfigurar, buscar };
@@ -88,8 +93,9 @@ export default function DistribucionView({ seccion = 'pedidos' }) {
             icon={actual.icon}
             title={actual.label}
             filtersContent={conBuscador ? (
-                <ViewTabBar tabs={tab === 'pedidos' ? VISTAS_PEDIDOS : [actual]}
-                    activeTab={tab === 'pedidos' ? vista : tab} onTabChange={tab === 'pedidos' ? setVista : () => {}}
+                <ViewTabBar tabs={tab === 'pedidos' ? VISTAS_PEDIDOS : tab === 'perdidas' ? VISTAS_PERDIDAS : [actual]}
+                    activeTab={tab === 'pedidos' ? vista : tab === 'perdidas' ? estadoPerdida : tab}
+                    onTabChange={tab === 'pedidos' ? setVista : tab === 'perdidas' ? setEstadoPerdida : () => {}}
                     searchValue={buscar} onSearchChange={setBuscar}
                     placeholder={placeholder} showSearch />
             ) : null}
@@ -121,6 +127,9 @@ export default function DistribucionView({ seccion = 'pedidos' }) {
             )}
             {visitadas.has('inventario') && (
                 <div className={tab === 'inventario' ? '' : 'hidden'}><TabInventario {...comunes} /></div>
+            )}
+            {visitadas.has('perdidas') && (
+                <div className={tab === 'perdidas' ? '' : 'hidden'}><TabVentasPerdidas {...comunes} vista={estadoPerdida} /></div>
             )}
             {visitadas.has('solicitudes') && (
                 <div className={tab === 'solicitudes' ? '' : 'hidden'}><SolicitudesDescuento /></div>

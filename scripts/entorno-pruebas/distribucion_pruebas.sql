@@ -68,3 +68,16 @@ SELECT ped.id, 6, 2, 0, 0, 8, '', 'PAQUETE' FROM ped;
 SELECT public.dist_pedir_descuento((SELECT max(id) FROM public.dist_pedidos), 'Compra de volumen: 2 paquetes al mes') AS solicitud,
        (SELECT max(id) FROM public.dist_pedidos) AS pedido;
 RESET ROLE;
+
+-- 5 · Para probar el lote en la venta (0010, 2026-09-29):
+--     · GLUCERNA LIQUIDO FRESA con un lote CORTO de 2 unidades que vence en
+--       60 días: la venta lo elige primero y reparte el resto en PRUEBA-01.
+--     · NEPRO AP sin existencia: la venta ofrece anotarlo como venta perdida.
+INSERT INTO public.dist_lotes (emisor_id, product_id, lote, vence, existencia)
+SELECT c.emisor_id, c.product_id, 'CORTO-01', current_date + 60, 2
+  FROM public.dist_catalogo c JOIN public.products p ON p.id = c.product_id
+ WHERE p.nombre = 'GLUCERNA LIQUIDO FRESA X 237ML'
+ON CONFLICT DO NOTHING;
+UPDATE public.dist_lotes l SET existencia = 0
+  FROM public.products p
+ WHERE p.id = l.product_id AND p.nombre = 'NEPRO AP VAINILLA 8ONZ LIQUIDO';

@@ -36,6 +36,13 @@ export const ESTADO_PEDIDO = {
 // finalizados y pendientes»). Viven en la dirección (`?vista=`), como toda
 // pestaña del portal. Pendiente = preventa, guardada sin facturar;
 // finalizado = ya tiene documento.
+/** Las pestañas de Ventas perdidas (van en `?estado=`). */
+export const VISTAS_PERDIDAS = [
+    { key: 'pendiente',  label: 'Pendientes' },
+    { key: 'atendida',   label: 'Atendidas' },
+    { key: 'descartada', label: 'Descartadas' },
+];
+
 export const VISTAS_PEDIDOS = [
     { key: 'pendientes',  label: 'Pendientes',  estados: ['confirmado'] },
     { key: 'finalizados', label: 'Finalizados', estados: ['facturado', 'entregado'] },

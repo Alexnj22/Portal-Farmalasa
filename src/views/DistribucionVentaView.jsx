@@ -7,6 +7,8 @@ import {
 import LiquidModal from '../components/common/LiquidModal';
 import ExistenciasSucursales from './distribucion/ExistenciasSucursales';
 import ClienteModal from './distribucion/ClienteModal';
+import VentaPerdidaModal from './distribucion/VentaPerdidaModal';
+import { indexarLotes, ocupadasPorLote, libreEn, repartir, repartirTodo } from './distribucion/lotes';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import Notice from '../components/common/Notice';
@@ -94,12 +96,30 @@ const renglonNuevo = (productId, presentacion, extra = {}) => ({
     descTipo: 'pct', descValor: '', ...extra, clave: siguienteRenglon++,
 });
 
+/** Lo que `lotes.js` necesita saber del catálogo para repartir un renglón. */
+function contextoLotes(idx, lotesIdx) {
+    return {
+        lotesDe: (pid) => lotesIdx.get(String(pid)) ?? [],
+        porDe: (pid, pres) => presentacionesDe(idx, pid).find(x => x.presentacion === pres)?.unidades ?? 1,
+        // El tramo de otro lote hereda la lista y un descuento en % (en $ no:
+        // sería darlo dos veces).
+        nuevo: (b, cambios) => renglonNuevo(b.product_id, b.presentacion, {
+            lista_id: b.lista_id, descTipo: b.descTipo, descValor: b.descTipo === 'pct' ? b.descValor : '', ...cambios,
+        }),
+    };
+}
+
 // Los renglones se acomodan al ANCHO DE LA LISTA (container query), no al de la
 // pantalla: desde que el resumen vive en una columna a la derecha, la lista mide
 // distinto según el monitor. Con ≥56rem, UNA línea por producto (encabezado y
 // filas sobre la misma cadena); con ≥32rem, dos (el nombre arriba y los
 // controles en una fila); más angosta (teléfono), tres líneas cortas.
+// El LOTE no tiene columna: vive en la línea del producto, junto a lo que hay
+// en existencia. Como columna apretaba a la presentación y al precio hasta
+// dejarlos en «B…» y «$4…».
 const COLUMNAS = '@4xl:grid-cols-[minmax(9rem,1fr)_8rem_9rem_9.5rem_6.5rem_5.5rem_2rem]';
+/** «2026-11-01» → «11/2026»: el vencimiento como lo trae la caja del producto. */
+const mesVence = (v) => (v ? `${v.slice(5, 7)}/${v.slice(0, 4)}` : 'sin vencimiento');
 
 export default function DistribucionVentaView() {
     useMarca('distribucion');
@@ -142,6 +162,8 @@ export default function DistribucionVentaView() {
     const [error, setError] = useState('');
     const [motivoDescuento, setMotivoDescuento] = useState('');
     const [existencias, setExistencias] = useState(null); // Map product_id → unidades, o null si no se pudo leer
+    const [lotesIdx, setLotesIdx] = useState(() => new Map()); // product_id → lotes, primero vence primero sale
+    const [perdida, setPerdida] = useState(null);         // la ventana de venta perdida: { producto?, cantidad, buscado?, clave? }
     const [pendientes, setPendientes] = useState(null);   // preventas por finalizar (sólo en una venta nueva)
     const [buscarPendiente, setBuscarPendiente] = useState('');
     const buscador = useRef(null);
@@ -202,6 +224,8 @@ export default function DistribucionVentaView() {
                     setTipoDoc(base.pedido.tipo_documento ?? (c?.contribuyente ? '03' : '01'));
                     setCarrito(base.items.map(i => renglonNuevo(i.product_id, i.presentacion ?? 'UNIDAD', {
                         cantidad: conCantidad(Number(i.cantidad)),
+                        // El lote NO se hereda: se vuelve a elegir por vencimiento.
+                        lote_id: null,
                         lista_id: i.lista_id && c?.lista_id && Number(i.lista_id) !== Number(c.lista_id) ? String(i.lista_id) : '',
                     })));
                     const p = new URLSearchParams(params);
@@ -211,11 +235,17 @@ export default function DistribucionVentaView() {
                 }
                 if (!vivo) return;
                 setEmisor(e); setClientes(cs); setCatalogo(cat); setListas(lp.listas); setPrecios(lp.precios); setPedido(ped);
+                const li = lotes ? indexarLotes(lotes) : new Map();
                 if (lotes) {
                     const m = new Map();
                     for (const l of lotes) m.set(String(l.product_id), (m.get(String(l.product_id)) ?? 0) + Number(l.existencia || 0));
                     setExistencias(m);
+                    setLotesIdx(li);
                 }
+                // Una venta que llega armada (volver a vender, o una preventa de
+                // antes de los lotes) se reparte por vencimiento al abrir.
+                const ix = indexarPrecios(lp.precios, lp.listas);
+                const ctxAlAbrir = contextoLotes(ix, li);
                 if (ped) {
                     if (ped.pedido.estado !== 'confirmado') {
                         setErrorCarga(`El pedido ${ped.pedido.id} ya está ${ped.pedido.estado}: no se puede corregir.`);
@@ -240,6 +270,7 @@ export default function DistribucionVentaView() {
                         const cantidad = conCantidad(Number(i.cantidad));
                         return renglonNuevo(i.product_id, i.presentacion ?? 'UNIDAD', {
                             lista_id: i.lista_id ? String(i.lista_id) : '',
+                            lote_id: i.lote_id ?? null,
                             cantidad, descTipo, descValor,
                             descEstado: i.descuento_estado ?? 'aplicado',
                             // Un descuento que ya se dio (aprobado, o por quien podía)
@@ -256,6 +287,7 @@ export default function DistribucionVentaView() {
                         }))
                         : [filaNueva(p.condicion === 2 ? '13' : (p.forma_pago ?? '01'))]);
                 }
+                if (lotes) setCarrito(cs => repartirTodo(cs, ctxAlAbrir));
             } catch (e) {
                 if (vivo) setErrorCarga(mensajeDeDistribucion(e));
             } finally {
@@ -326,21 +358,40 @@ export default function DistribucionVentaView() {
     const [enfocar, setEnfocar] = useState(null);      // la clave del renglón cuya cantidad toma el foco
     const [verExistencias, setVerExistencias] = useState(null); // null, o el texto con que abre la búsqueda
 
+    const ctxLotes = useMemo(() => contextoLotes(idx, lotesIdx), [idx, lotesIdx]);
+    /** Reparte un renglón por lotes (primero vence) tras cambiarlo: cantidad, presentación o lote. */
+    const cambiarYRepartir = (clave, cambios) => setCarrito(cs => repartir(
+        cs.map(c => (c.clave === clave ? { ...c, ...(typeof cambios === 'function' ? cambios(c) : cambios) } : c)), clave, ctxLotes));
+
     // Al agregar, el foco va DIRECTO a la cantidad de ese producto (pedido del
     // usuario): es lo primero que se escribe. Enter ahí vuelve al buscador.
+    // Sin existencia en ningún lote no se agrega: se abre «venta perdida»
+    // (pedido del usuario: «si ingreso un producto y no hay stock, que salga
+    // agregar ventas perdidas»).
     const agregar = (p) => {
-        const pres = presentacionesDe(idx, p.product_id)[0].presentacion;
-        const ya = carrito.find(c => c.product_id === String(p.product_id) && c.presentacion === pres);
-        if (ya) {
-            setCarrito(cs => cs.map(c => (c === ya ? { ...c, cantidad: conCantidad((leerMonto(c.cantidad) ?? 0) + 1) } : c)));
-            setEnfocar(ya.clave);
-        } else {
-            const nuevo = renglonNuevo(p.product_id, pres);
-            setCarrito(cs => [...cs, nuevo]);
-            setEnfocar(nuevo.clave);
-        }
+        const pid = String(p.product_id);
         setBuscar('');
         setResaltado(0);
+        if (existencias && !(existencias.get(pid) > 0)) {
+            setPerdida({ producto: { product_id: pid, nombre: p.nombre, motivo: 'Sin existencia en ningún lote' }, cantidad: 1 });
+            return;
+        }
+        const pres = presentacionesDe(idx, p.product_id)[0].presentacion;
+        const mismos = carrito.filter(c => c.product_id === pid && c.presentacion === pres);
+        const ya = mismos[mismos.length - 1];
+        let clave;
+        let armado;
+        if (ya) {
+            clave = ya.clave;
+            armado = carrito.map(c => (c === ya ? { ...c, cantidad: conCantidad((leerMonto(c.cantidad) ?? 0) + 1) } : c));
+        } else {
+            const nuevo = renglonNuevo(pid, pres);
+            clave = nuevo.clave;
+            armado = [...carrito, nuevo];
+        }
+        const repartido = repartir(armado, clave, ctxLotes);
+        setCarrito(repartido);
+        setEnfocar(repartido.some(c => c.clave === clave) ? clave : [...repartido].reverse().find(c => c.product_id === pid)?.clave);
     };
     useEffect(() => {
         if (enfocar == null) return;
@@ -380,7 +431,7 @@ export default function DistribucionVentaView() {
         let el = null;
         if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
             const paso = e.key === 'ArrowLeft' ? -1 : 1;
-            for (let c = col + paso; c >= 0 && c <= 4 && !el; c += paso) el = enfocable(f, c);
+            for (let c = col + paso; c >= 0 && c <= 5 && !el; c += paso) el = enfocable(f, c);
         } else {
             const otra = e.key === 'ArrowUp' ? f - 1 : f + 1;
             el = enfocable(otra, col) ?? enfocable(otra, 0);
@@ -392,8 +443,7 @@ export default function DistribucionVentaView() {
         if (el.tagName === 'INPUT') el.select();
     };
     const cambiar = (clave, cambios) => setCarrito(cs => cs.map(c => (c.clave === clave ? { ...c, ...cambios } : c)));
-    const sumar = (clave, delta) => setCarrito(cs => cs.map(c => (c.clave !== clave ? c
-        : { ...c, cantidad: conCantidad(Math.max(1, (leerMonto(c.cantidad) ?? 0) + delta)) })));
+    const sumar = (clave, delta) => cambiarYRepartir(clave, (c) => ({ cantidad: conCantidad(Math.max(1, (leerMonto(c.cantidad) ?? 0) + delta)) }));
     const quitar = (clave) => setCarrito(cs => cs.filter(c => c.clave !== clave));
 
     const cambiarCliente = useCallback((v, lista = clientes) => {
@@ -406,6 +456,16 @@ export default function DistribucionVentaView() {
         setError('');
     }, [clientes]);
 
+    // Unidades que los OTROS renglones ya ocupan en cada lote.
+    const ocupadasTodas = ocupadasPorLote(carrito, ctxLotes.porDe);
+    const ocupadasOtros = (clave) => {
+        const c = carrito.find(x => x.clave === clave);
+        if (!c || c.lote_id == null) return ocupadasTodas;
+        const m = new Map(ocupadasTodas);
+        const propias = (leerMonto(c.cantidad) ?? 0) * ctxLotes.porDe(c.product_id, c.presentacion);
+        m.set(Number(c.lote_id), (m.get(Number(c.lote_id)) ?? 0) - propias);
+        return m;
+    };
     // Cada renglón resuelto: presentación, precio de lista y descuento (con IVA).
     const base = carrito.map(c => {
         const p = porId.get(c.product_id);
@@ -427,9 +487,19 @@ export default function DistribucionVentaView() {
         const porAprobar = desc > 0 && !pasaImporte && !descMalo && !directo;
         const unidades = r && n ? Math.ceil(n * (r.unidades || 1)) : 0;
         const hay = existencias ? (existencias.get(c.product_id) ?? 0) : null;
+        // El lote del renglón y lo que le queda, descontando lo que ya llevan
+        // los demás renglones de este carrito.
+        const lotesP = lotesIdx.get(c.product_id) ?? [];
+        const lote = lotesP.find(x => x.id === Number(c.lote_id)) ?? null;
+        const por = r?.unidades || 1;
+        const libres = lotesP.map(x => ({ ...x, libre: libreEn(x, ocupadasOtros(c.clave)) }));
+        const libreLote = lote ? libres.find(x => x.id === lote.id).libre : 0;
+        const faltanUnidades = existencias ? Math.max(0, unidades - (lote ? libreLote : 0)) : 0;
         return {
             ...c, p, n, r, presentacion, presentaciones, desc, pct, porAprobar, unidades, hay,
-            faltaExistencia: hay != null && unidades > hay,
+            lote, libres, libreLote, por,
+            faltaExistencia: faltanUnidades > 0,
+            faltan: faltanUnidades > 0 ? Math.ceil(faltanUnidades / por) : 0,
             descMalo, pasaImporte, noVa: !p || !permitido(p), sinPrecio: !!p && !r,
             // Otra lista distinta de la de la venta: se marca para que se vea.
             otraLista: r?.listaId != null && r.listaId !== listaEfectiva,
@@ -456,6 +526,7 @@ export default function DistribucionVentaView() {
     const hayNoPermitidos = lineas.some(l => l.noVa);
     const haySinPrecio = lineas.some(l => l.sinPrecio);
     const descuentoMalo = lineas.find(l => l.descMalo || l.pasaImporte);
+    const sinExistencia = lineas.find(l => l.faltaExistencia);
     const conCredito = pagos.some(f => f.forma === '13');
     const plazoNum = conCredito ? leerMonto(plazo) : null;
     const estimado = venta;
@@ -484,6 +555,7 @@ export default function DistribucionVentaView() {
     // Y lo que además impide FACTURAR.
     const bloqueo = bloqueoGuardar
         ?? (porAprobar.length ? 'Hay descuentos por aprobar: la venta se guarda como preventa.' : null)
+        ?? (sinExistencia ? `No hay existencia para «${sinExistencia.p?.nombre ?? 'un producto'}»: baja la cantidad o anota lo que falta como venta perdida.` : null)
         ?? problemaPago;
     const listo = !bloqueo && !guardando;
     const puedeGuardar = !bloqueoGuardar && !guardando;
@@ -505,6 +577,7 @@ export default function DistribucionVentaView() {
         setError('');
         const renglones = lineas.map(l => ({
             product_id: Number(l.product_id), cantidad: l.n, presentacion: l.presentacion,
+            lote_id: l.lote_id != null ? Number(l.lote_id) : null,
             // La lista que se pidió: la del renglón o la de la venta. La base
             // vuelve a resolver el precio con esto, igual que `precioDe`.
             lista_id: (l.lista_id ? Number(l.lista_id) : listaEfectiva) ?? null,
@@ -841,6 +914,12 @@ export default function DistribucionVentaView() {
                                         onClick={() => setVerExistencias(buscar || '')}>
                                         <span className="hidden @lg:inline">Existencias</span> <kbd aria-hidden="true" className="hidden @lg:inline text-micro font-bold opacity-60">F7</kbd>
                                     </Button>
+                                    {/* Como el botón de la caja: lo que pidieron y no hay. */}
+                                    {cliente && puedeVender && (
+                                        <Button size="sm" variant="ghost" icon={PackageX} title="Anotar una venta perdida" onClick={() => setPerdida({ buscado: buscar, cantidad: 1 })}>
+                                            <span className="hidden @2xl:inline">Venta perdida</span>
+                                        </Button>
+                                    )}
                                     {(corrigiendo ? puedeBorrarPreventa : hayAlgo) && (
                                         <Button size="sm" variant="ghost" icon={Eraser} data-accion-borrar onClick={abrirBorrar}
                                             title={corrigiendo ? 'Borrar esta preventa (F6)' : 'Vaciar la venta (F6)'}>
@@ -919,6 +998,8 @@ export default function DistribucionVentaView() {
                                             <p className="px-4 py-3 text-caption text-content-3 flex items-center gap-2">
                                                 <PackageX size={14} /> Nada que coincida{soloVentaLibre(cliente.tipo) ? ' entre los productos de venta libre' : ''}.
                                                 <button type="button" className="font-bold text-brand-text underline" onClick={() => setVerExistencias(buscar)}>Buscar en todas las sucursales (F7)</button>
+                                                <button type="button" className="font-bold text-warning-text underline" data-anotar-perdida
+                                                    onClick={() => { setPerdida({ buscado: buscar, cantidad: 1 }); setBuscar(''); }}>Anotar venta perdida</button>
                                             </p>
                                         )}
                                         {resultados.map((p, k) => {
@@ -965,7 +1046,11 @@ export default function DistribucionVentaView() {
                                     </div>
                                     {lineas.map((l, k) => {
                                         const nombre = l.p?.nombre ?? `Producto ${l.product_id}`;
-                                        const ocupadas = new Set(lineas.filter(o => o.clave !== l.clave && o.product_id === l.product_id).map(o => o.presentacion));
+                                        // Una presentación ya tomada por OTRO renglón del mismo producto y
+                                        // el mismo lote no se ofrece (serían dos renglones iguales). En otro
+                                        // lote sí: es el reparto por vencimiento.
+                                        const ocupadas = new Set(lineas.filter(o => o.clave !== l.clave && o.product_id === l.product_id
+                                            && String(o.lote_id ?? '') === String(l.lote_id ?? '')).map(o => o.presentacion));
                                         // Lo elegido se muestra CORTO («PAQUETE», «$30.18»): así no se
                                         // corta. Lo que falta (las unidades, la lista) va en la línea del
                                         // producto y en el menú abierto (`sublabel`).
@@ -986,10 +1071,37 @@ export default function DistribucionVentaView() {
                                                 <div className="min-w-0">
                                                     <p className="text-body-sm font-bold text-content truncate" title={nombre}>{nombre}</p>
                                                     <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-caption text-content-3">
-                                                        {l.hay != null && (
-                                                            <span className={l.faltaExistencia ? 'text-danger-text font-bold' : ''}>
-                                                                {l.faltaExistencia ? `Sólo hay ${l.hay}` : `Hay ${l.hay}`}
+                                                        {/* El total en existencia y lo del lote (pedido del usuario). */}
+                                                        {l.hay != null && <span>Total {l.hay}</span>}
+                                                        {/* El lote: el que vence primero, salvo que se elija otro. */}
+                                                        {l.libres.length > 1 ? (
+                                                            <span data-col="2" className="inline-flex items-center gap-1" data-testid="lote-renglon">
+                                                                Lote
+                                                                <span className="inline-block w-32">
+                                                                    <LiquidSelect nano sublabelSoloEnMenu value={l.lote ? String(l.lote.id) : ''} clearable={false}
+                                                                        options={l.libres.map(x => ({ value: String(x.id), label: x.lote, sublabel: `vence ${mesVence(x.vence)} · hay ${x.libre} u.`, disabled: x.libre < l.por && x.id !== l.lote?.id }))}
+                                                                        ariaLabel={`Lote de ${nombre}`} onChange={(v) => v && cambiarYRepartir(l.clave, { lote_id: Number(v) })} />
+                                                                </span>
                                                             </span>
+                                                        ) : l.lote ? (
+                                                            <span data-testid="lote-renglon">Lote {l.lote.lote}</span>
+                                                        ) : existencias && <span className="text-danger-text font-bold">Sin lote</span>}
+                                                        {l.lote && (
+                                                            <span className={l.faltaExistencia ? 'text-danger-text font-bold' : ''}>
+                                                                {l.libreLote} u. · vence {mesVence(l.lote.vence)}
+                                                            </span>
+                                                        )}
+                                                        {l.faltaExistencia && (
+                                                            <>
+                                                                <span className="text-danger-text font-bold">Faltan {l.faltan}</span>
+                                                                <button type="button" className="font-bold text-warning-text underline min-h-[var(--tap-min)]"
+                                                                    onClick={() => setPerdida({
+                                                                        producto: { product_id: l.product_id, nombre, motivo: l.hay ? `Sólo hay ${l.hay} en existencia` : 'Sin existencia en ningún lote' },
+                                                                        cantidad: l.faltan, clave: l.clave,
+                                                                    })}>
+                                                                    Anotar venta perdida
+                                                                </button>
+                                                            </>
                                                         )}
                                                         {porPresentacion > 1 && <span>{l.presentacion} de {porPresentacion} u.</span>}
                                                         {nombreLista && <span className={l.otraLista ? 'text-brand-text font-bold' : ''}>Lista {nombreLista}</span>}
@@ -1015,6 +1127,7 @@ export default function DistribucionVentaView() {
                                                         <PortalInput compact className="w-16" inputClassName="text-center font-black" name={`cantidad-${l.clave}`} inputMode="decimal"
                                                             value={l.cantidad} aria-label={`Cantidad de ${nombre}`} hasError={!l.n || l.n <= 0}
                                                             onKeyDown={alEnterVolverAlBuscador} onFocus={(e) => e.target.select()}
+                                                            onBlur={() => cambiarYRepartir(l.clave, {})}
                                                             onChange={(e) => cambiar(l.clave, { cantidad: soloNumero(e.target.value) })} />
                                                         <Button variant="ghost" size="sm" iconOnly icon={Plus} title="Uno más" tabIndex={-1} onClick={() => sumar(l.clave, 1)} />
                                                     </div>
@@ -1022,10 +1135,10 @@ export default function DistribucionVentaView() {
                                                     <div data-col="1" className="min-w-0">
                                                         <LiquidSelect compact sublabelSoloEnMenu icon={Package} value={l.presentacion} options={opcPres} clearable={false}
                                                             disabled={opcPres.length <= 1} ariaLabel={`Presentación de ${nombre}`}
-                                                            onChange={(v) => v && cambiar(l.clave, { presentacion: v, lista_id: '' })} />
+                                                            onChange={(v) => v && cambiarYRepartir(l.clave, { presentacion: v, lista_id: '' })} />
                                                     </div>
                                                     {/* Precio · lista */}
-                                                    <div data-col="2" className="min-w-0" data-testid="precio-renglon">
+                                                    <div data-col="3" className="min-w-0" data-testid="precio-renglon">
                                                         {opcListas.length > 1 ? (
                                                             <LiquidSelect compact sublabelSoloEnMenu icon={Tag} value={l.r?.listaId != null ? String(l.r.listaId) : ''} options={opcListas} clearable={false}
                                                                 ariaLabel={`Precio y lista de ${nombre}`}
@@ -1037,7 +1150,7 @@ export default function DistribucionVentaView() {
                                                         )}
                                                     </div>
                                                     {/* Descuento */}
-                                                    <div data-col="3" className="flex items-center gap-1 min-w-0">
+                                                    <div data-col="4" className="flex items-center gap-1 min-w-0">
                                                         <PortalInput compact className="flex-1 min-w-0" inputClassName="text-right" name={`descuento-${l.clave}`} inputMode="decimal" value={l.descValor}
                                                             placeholder="0" aria-label={`Descuento de ${nombre}`} hasError={!!errDesc} errorMessage={errDesc ?? undefined}
                                                             onKeyDown={alEnterVolverAlBuscador} onFocus={(e) => e.target.select()}
@@ -1056,7 +1169,7 @@ export default function DistribucionVentaView() {
                                                         {l.doc?.descuento > 0 && <p className="text-micro text-success-text">−{formatMoney(l.doc.descuento)}</p>}
                                                         {l.porAprobar && <p className="text-micro text-warning-text">−{formatMoney(conIva ? l.desc : l.desc / 1.13)} por aprobar</p>}
                                                     </div>
-                                                    <div data-col="4" className="col-span-2 @lg:col-span-1 flex justify-end">
+                                                    <div data-col="5" className="col-span-2 @lg:col-span-1 flex justify-end">
                                                         <Button variant="ghost" size="sm" iconOnly icon={Trash2} title="Quitar de la venta (Supr)" onClick={() => quitar(l.clave)} />
                                                     </div>
                                                 </div>
@@ -1255,6 +1368,25 @@ export default function DistribucionVentaView() {
                         </div>
                     </LiquidModal.Footer>
                 </LiquidModal>
+            )}
+            {perdida && emisor && (
+                <VentaPerdidaModal emisorId={emisor.id} cliente={cliente} pedidoId={pedido?.pedido.id ?? null}
+                    producto={perdida.producto ?? null} cantidad={perdida.cantidad} buscado={perdida.buscado ?? ''}
+                    onClose={() => setPerdida(null)}
+                    onGuardado={({ producto, cantidad }) => {
+                        // Lo que se anotó sale de la venta: el renglón baja a lo que
+                        // sí hay, o se quita si no había nada.
+                        if (perdida.clave != null) {
+                            setCarrito(cs => cs.flatMap(c => {
+                                if (c.clave !== perdida.clave) return [c];
+                                const queda = (leerMonto(c.cantidad) ?? 0) - cantidad;
+                                return queda > 0 ? [{ ...c, cantidad: conCantidad(queda) }] : [];
+                            }));
+                        }
+                        setPerdida(null);
+                        showToast('Venta perdida anotada', `${producto} · ${conCantidad(cantidad)}`);
+                        buscador.current?.focus();
+                    }} />
             )}
             {nuevoCliente && (
                 <ClienteModal cliente={{}} emisorId={emisor?.id} puedeEditar={puedeVender}

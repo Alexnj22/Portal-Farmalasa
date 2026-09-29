@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
-    ClipboardList, FileCheck2, Store, PackageSearch, Boxes, Tag, Building2, Plus, LogOut, Menu, X, ArrowLeftRight,
-} from 'lucide-react';
+    ClipboardList, FileCheck2, Store, PackageSearch, Boxes, Tag, Building2, Plus, LogOut, Menu, X, ArrowLeftRight, PackageX } from 'lucide-react';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useMarca } from '../../plataforma/useMarca';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -30,6 +29,7 @@ const MENU = [
     { seccion: 'clientes',    label: 'Clientes',    icon: Store },
     { seccion: 'catalogo',    label: 'Catálogo',    icon: PackageSearch },
     { seccion: 'inventario',  label: 'Inventario',  icon: Boxes },
+    { seccion: 'perdidas',    label: 'Ventas perdidas', icon: PackageX },
     { seccion: 'solicitudes', label: 'Solicitudes', icon: Tag, contador: true },
     { seccion: 'emisor',      label: 'Empresa',     icon: Building2, soloConfig: true },
 ];

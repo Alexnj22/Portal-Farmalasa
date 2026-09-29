@@ -12,7 +12,7 @@
 export const BASE_TOROGOZ = '/torogoz';
 
 /** Las secciones del menú, en el orden del trabajo del día. */
-export const SECCIONES = ['pedidos', 'documentos', 'clientes', 'catalogo', 'inventario', 'solicitudes', 'emisor'];
+export const SECCIONES = ['pedidos', 'documentos', 'clientes', 'catalogo', 'inventario', 'perdidas', 'solicitudes', 'emisor'];
 
 export const rutaLogin = () => `${BASE_TOROGOZ}/login`;
 export const rutaInicio = () => `${BASE_TOROGOZ}/pedidos`;

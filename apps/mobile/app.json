@@ -29,7 +29,19 @@
     "plugins": [
       "expo-router",
       "expo-status-bar",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Farmalasa usa Face ID para que entres sin escribir tu contraseña."
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": "Farmalasa usa Face ID para que entres sin escribir tu contraseña."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false

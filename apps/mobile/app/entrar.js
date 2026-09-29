@@ -3,8 +3,8 @@
 // con sus mismos mensajes y las mismas reglas de contraseña. La forma es la
 // del sistema: un formulario agrupado como el de Ajustes (ver
 // componentes/Formulario.js) y el botón nativo de @expo/ui.
-import { useRef, useState } from 'react';
-import { Image, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Image, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Button, Host } from '@expo/ui';
 import { colorSistema, FilaCampo, FilaTexto, Formulario, Grupo } from '../componentes/Formulario';
@@ -12,6 +12,21 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { cambiarMiContrasenaInicial } from '@nucleo/data/auth';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { problemaDeContrasenaNueva } from '@nucleo/utils/contrasena';
+import {
+  activarBiometria, biometriaActiva, leerConBiometria, nombreBiometria,
+  noVolverAPreguntar, olvidarBiometria, yaSePregunto,
+} from '../componentes/biometria';
+
+// Después de entrar con contraseña, una sola vez: ¿usar Face ID la próxima?
+async function ofrecerBiometria(usuario, clave) {
+  const nombre = await nombreBiometria();
+  if (!nombre || (await biometriaActiva()) || (await yaSePregunto())) return;
+  await new Promise((listo) => Alert.alert(`¿Entrar con ${nombre}?`,
+    `La próxima vez entras con ${nombre}, sin escribir la contraseña. Se puede quitar en «Yo».`, [
+      { text: 'Ahora no', style: 'cancel', onPress: async () => { await noVolverAPreguntar(); listo(); } },
+      { text: `Usar ${nombre}`, onPress: async () => { await activarBiometria(usuario, clave); listo(); } },
+    ]));
+}
 
 export default function Entrar() {
   const { loginWithUsername, completePasswordChange } = useAuth();
@@ -26,6 +41,43 @@ export default function Entrar() {
   // afuera: vaciar el estado dejaba los puntos en pantalla y «Entrar» apagado
   // con el campo aparentemente lleno. Se vacía pidiéndoselo al campo.
   const claveRef = useRef(null);
+  const [biometria, setBiometria] = useState(null); // «Face ID» si está activa
+
+  const entrarConBiometria = useCallback(async () => {
+    const c = await leerConBiometria();
+    if (!c) return;
+    setError('');
+    setOcupado(true);
+    try {
+      const r = await loginWithUsername(c.usuario, c.clave);
+      if (!r?.ok) {
+        // La contraseña cambió (o la cuenta): lo guardado ya no sirve.
+        await olvidarBiometria();
+        setBiometria(null);
+        setError(`${r?.error || 'Credenciales inválidas.'} Escribe tu contraseña.`);
+        return;
+      }
+      if (r.mustChangePassword) { setUsuario(c.usuario); setPendiente(r.user); return; }
+      router.replace('/inicio');
+    } catch {
+      setError('Error de conexión. Intenta de nuevo.');
+    } finally {
+      setOcupado(false);
+    }
+  }, [loginWithUsername]);
+
+  // Al abrir, si está activa, se pide la cara de una vez.
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      if (!(await biometriaActiva())) return;
+      const nombre = await nombreBiometria();
+      if (!vivo || !nombre) return;
+      setBiometria(nombre);
+      entrarConBiometria();
+    })();
+    return () => { vivo = false; };
+  }, [entrarConBiometria]);
 
   const entrar = async () => {
     if (!usuario || !clave || ocupado) return;
@@ -35,6 +87,7 @@ export default function Entrar() {
       const r = await loginWithUsername(usuario, clave);
       if (!r?.ok) { setError(r?.error || 'Credenciales inválidas.'); setClave(''); claveRef.current?.clear(); return; }
       if (r.mustChangePassword) { setPendiente(r.user); return; }
+      await ofrecerBiometria(usuario, clave);
       router.replace('/inicio');
     } catch {
       setError('Error de conexión. Intenta de nuevo.');
@@ -53,6 +106,9 @@ export default function Entrar() {
       const { error: e } = await cambiarMiContrasenaInicial(nueva);
       if (e) { setError(mensajeAmigable(e)); return; }
       await completePasswordChange(pendiente);
+      // Lo guardado tenía la contraseña temporal: se reemplaza por la nueva.
+      if (await biometriaActiva()) await activarBiometria(usuario, nueva);
+      else await ofrecerBiometria(usuario, nueva);
       router.replace('/inicio');
     } catch {
       setError('Error de conexión. Intenta de nuevo.');
@@ -95,6 +151,11 @@ export default function Entrar() {
             ? <Button variant="filled" label={ocupado ? 'Guardando…' : 'Guardar y entrar'} disabled={ocupado || !nueva || !confirmacion} onPress={cambiar} />
             : <Button variant="filled" label={ocupado ? 'Entrando…' : 'Entrar'} disabled={ocupado || !usuario || !clave} onPress={entrar} />}
         </Host>
+        {!pendiente && biometria ? (
+          <Host matchContents={{ vertical: true }} style={{ width: '100%', marginTop: 12 }}>
+            <Button variant="text" label={`Entrar con ${biometria}`} disabled={ocupado} onPress={entrarConBiometria} />
+          </Host>
+        ) : null}
       </View>
     </Formulario>
   );

@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1090.0 — La app: entrar con Face ID
+
+Pedido del usuario del 2026-09-29. Después de entrar con la contraseña, la app
+ofrece una vez «¿Entrar con Face ID?» (Touch ID o huella según el teléfono). Si
+se acepta, la próxima vez entra con la cara y el botón «Entrar con Face ID»
+queda en la pantalla de entrada. Se quita desde «Yo».
+
+- Se guardan usuario y contraseña en el llavero del teléfono, atados a la
+  biometría, sólo en ESE aparato y sólo si tiene código. No la sesión: el
+  cierre por inactividad la invalida, y con las credenciales Face ID sigue
+  sirviendo después de cada cierre. Entra por el mismo `loginWithUsername`.
+- Si la contraseña cambió, el intento falla, se olvida lo guardado y se pide
+  escribirla.
+- Al cambiar la contraseña temporal, lo guardado se actualiza con la nueva.
+
 ## v2.1089.0 — La app: barra de pestañas nativa y menú agrupado como el portal
 
 La app abría en una lista suelta de módulos y el tablero de Inicio ni

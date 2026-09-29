@@ -80,7 +80,7 @@ const RESULTADOS = 8;
 // salir) más F7, que es del portal.
 const TECLAS = [
     ['F2', 'Cobrar'], ['F8', 'Guardar preventa'], ['F6', 'Borrar la preventa · vaciar'],
-    ['F3', 'Buscar producto'], ['F7', 'Existencias en sucursales'], ['F4', 'Salir a Pedidos'],
+    ['F3', 'Buscar producto'], ['F7', 'Existencias en sucursales'], ['F9', 'Venta perdida'], ['F4', 'Salir a Pedidos'],
     ['Tab · ← →', 'Cambiar de campo'], ['↑ ↓', 'Cambiar de producto'], ['Supr', 'Quitar el producto'],
 ];
 const conCantidad = (n) => String(Math.round(n * 10000) / 10000);
@@ -684,6 +684,7 @@ export default function DistribucionVentaView() {
     //   F2  finalizar (facturar, o enviar a aprobación)   · también Ctrl+Enter
     //   F8  guardar como preventa
     //   F6  borrar la preventa abierta (o vaciar una venta nueva), con confirmación
+    //   F9  anotar una venta perdida (nuevo; en la caja F9 es «vale», que aquí no existe)
     //   F3  al buscador                                   · también /
     //   F4  salir a Pedidos
     //   F7  existencias en todas las sucursales (nuevo, pedido del usuario)
@@ -704,6 +705,7 @@ export default function DistribucionVentaView() {
             if (k === 'F2' || (k === 'Enter' && (e.ctrlKey || e.metaKey))) { e.preventDefault(); apretar('[data-accion-principal]'); }
             else if (k === 'F8') { e.preventDefault(); apretar('[data-accion-preventa]'); }
             else if (k === 'F6') { e.preventDefault(); apretar('[data-accion-borrar]'); }
+            else if (k === 'F9') { e.preventDefault(); apretar('[data-accion-perdida]'); }
             else if (k === 'F3' || (k === '/' && !enCampo)) { e.preventDefault(); buscador.current?.focus(); }
             else if (k === 'F4') { e.preventDefault(); navigate(rutaInicio()); }
             else if (k === 'F7') {
@@ -915,9 +917,10 @@ export default function DistribucionVentaView() {
                                         <span className="hidden @lg:inline">Existencias</span> <kbd aria-hidden="true" className="hidden @lg:inline text-micro font-bold opacity-60">F7</kbd>
                                     </Button>
                                     {/* Como el botón de la caja: lo que pidieron y no hay. */}
-                                    {cliente && puedeVender && (
-                                        <Button size="sm" variant="ghost" icon={PackageX} title="Anotar una venta perdida" onClick={() => setPerdida({ buscado: buscar, cantidad: 1 })}>
-                                            <span className="hidden @2xl:inline">Venta perdida</span>
+                                    {puedeVender && emisor && (
+                                        <Button size="sm" variant="ghost" icon={PackageX} title="Anotar una venta perdida (F9)" data-accion-perdida
+                                            onClick={() => setPerdida({ buscado: buscar, cantidad: 1 })}>
+                                            <span className="hidden @2xl:inline">Venta perdida</span> <kbd aria-hidden="true" className="hidden @2xl:inline text-micro font-bold opacity-60">F9</kbd>
                                         </Button>
                                     )}
                                     {(corrigiendo ? puedeBorrarPreventa : hayAlgo) && (

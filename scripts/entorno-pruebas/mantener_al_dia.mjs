@@ -179,6 +179,18 @@ async function herramientas(ref) {
     await sql(ref, leer('recalcular_resumenes.sql'), { escribe: true });
     await sql(ref, leer('permisos_de_la_cuenta_de_pruebas.sql'), { escribe: true });
     await igualarPermisosDeTablas(ref);
+    await asegurarOrigenes(ref);
+}
+
+// Las edge functions contestan CORS sólo a los dominios de `PORTAL_ORIGIN`
+// (más localhost). Un branch nuevo nace SIN ese secreto, así que desde
+// dev.farmasalud.lat toda función respondía «no autorizado» al navegador —
+// medido el 2026-09-29: la búsqueda en la SRS de Ventas perdidas decía «el
+// registro no respondió» en dev y funcionaba en localhost. Se reescribe en
+// cada corrida porque rehacer el branch lo borra sin avisar.
+const ORIGENES_DE_PRUEBAS = 'https://dev.farmasalud.lat';
+async function asegurarOrigenes(ref) {
+    await api('POST', `/projects/${ref}/secrets`, [{ name: 'PORTAL_ORIGIN', value: ORIGENES_DE_PRUEBAS }]);
 }
 
 async function rehacer(viejo) {

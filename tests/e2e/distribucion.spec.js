@@ -391,6 +391,12 @@ test('lotes: primero vence, y lo que no alcanza se reparte abajo; sin existencia
     await d2.getByRole('button', { name: 'Anotar venta perdida' }).click();
     await expect(d2).toBeHidden({ timeout: 15_000 });
 
+    // F9 abre la venta perdida desde cualquier parte de la venta.
+    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('F9');
+    await expect(page.getByRole('dialog', { name: 'Venta perdida' })).toBeVisible();
+    await page.keyboard.press('Escape');
+
     // Las dos aparecen en Ventas perdidas.
     await page.goto('/torogoz/perdidas');
     await expect(page.getByText('gasa esteril prueba').first()).toBeVisible({ timeout: 15_000 });

@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1097.1 — Venta de la distribuidora: F9 venta perdida, y la SRS responde en dev
+
+Pedido del usuario: «ventas perdidas no tiene su tecla de acceso rápido F …
+además, no busca en la SRS».
+
+- **F9 = venta perdida** en la venta (en la caja F9 es «vale», que la
+  distribuidora no tiene; F5, F11 y F12 son del navegador). Está en la guía
+  de teclas y en el botón, que ahora aparece también sin cliente elegido.
+- **La SRS no respondía en dev.farmasalud.lat, y no era la SRS**: el entorno
+  de pruebas no tenía el secreto `PORTAL_ORIGIN`, así que TODAS sus edge
+  functions contestaban CORS sólo a localhost (las pruebas locales pasaban).
+  Se configuró `PORTAL_ORIGIN=https://dev.farmasalud.lat` en el entorno de
+  pruebas, y `mantener_al_dia.mjs` lo reescribe en cada corrida: rehacer el
+  branch lo borra sin avisar.
+
+
 ## v2.1097.0 — Venta de la distribuidora: lote por vencimiento que se reparte solo, y ventas perdidas
 
 Pedido del usuario (2026-09-29): «que salga según el vence […] si del lote 1

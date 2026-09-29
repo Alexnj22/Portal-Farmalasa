@@ -108,7 +108,7 @@ export default function CorteDetalleModal({
     const [modo, setModo] = useState(modoInicial);
     const [motivo, setMotivo] = useState(MOTIVOS[0]);
     const [nota, setNota] = useState('');
-    const [diferencia, setDiferencia] = useState(null);
+    const [diferencias, setDiferencias] = useState([]);
     const [recarga, setRecarga] = useState(0);
     const [reabriendo, setReabriendo] = useState(false);
     const [ventas, setVentas] = useState(null);
@@ -137,7 +137,7 @@ export default function CorteDetalleModal({
         setMotivo(MOTIVOS[0]);
         setNota('');
         setMovs([]);
-        setDiferencia(null);
+        setDiferencias([]);
         setVentas(null);
         setAbonos(null);
     }
@@ -151,7 +151,9 @@ export default function CorteDetalleModal({
         let vivo = true;
         fetchDiferencias({ desde: fecha, hasta: fecha }).then((filas) => {
             if (!vivo) return;
-            setDiferencia((filas || []).find((d) => d.corte_id === corteId && !d.anulada_at) || null);
+            // Todas las vivas: una causa puede explicar sólo una parte, y el
+            // resto tener otra resolución (2026-09-29).
+            setDiferencias((filas || []).filter((d) => d.corte_id === corteId && !d.anulada_at));
         });
         return () => { vivo = false; };
     }, [abierto, corteId, fecha, recarga]);
@@ -713,8 +715,7 @@ export default function CorteDetalleModal({
                             <ResolverDiferencia
                                 corte={visible}
                                 nombreSala={nombreSala}
-                                diferencia={diferencia}
-                                personasResueltas={diferencia?.personas || []}
+                                diferencias={diferencias}
                                 puedeResolver={puedeResolverDif}
                                 origen={origen}
                                 onCambio={() => setRecarga((n) => n + 1)}

@@ -12,7 +12,7 @@ import { clickable } from '@nucleo/utils/clickable';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { desgloseDelDia, responsablesDelDia } from '@nucleo/utils/diferenciasDeCaja';
+import { desgloseDelDia, resolucionesDe, responsablesDelDia } from '@nucleo/utils/diferenciasDeCaja';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 /**
@@ -378,14 +378,13 @@ export default function DiasConDiferencia({
                                         <ResolverDiferencia
                                             corte={corte}
                                             nombreSala={nombreSala}
-                                            diferencia={c.diferencia && c.diferencia.via ? c.diferencia : null}
-                                            personasResueltas={c.diferencia?.personas || []}
+                                            diferencias={resolucionesDe(c)}
                                             puedeResolver={puedeResolver}
                                             origen="diferencias"
                                             onCambio={onCambio}
                                         />
 
-                                        {!puedeResolver && !c.diferencia && Number(c.tramo) < 0 && (
+                                        {!puedeResolver && c.estadoDif === 'sin_resolver' && (
                                             <p className="text-caption text-content-3 px-1">
                                                 Sin resolver. Quien opera la caja de la sala lo resuelve desde aquí.
                                             </p>

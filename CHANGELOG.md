@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1087.0 — Una causa puede explicar parte de la diferencia de un corte
+
+Pedido del usuario: «¿qué pasa si encontré causa pero no del total? Imagina que
+de eso, solo $20 se encontró causa». Hasta hoy explicar una diferencia era todo
+o nada: con un sobrante de $28.93 del que sólo $20 tienen comprobante, o se
+justificaba entero (y $8.93 sin causa salían del acumulado) o nada.
+
+- «Tiene causa: explicarlo» pide **cuánto explica esta causa**. Vacío = todo lo
+  que queda. Lo demás sigue en el acumulado (sobrante) o sin resolver (faltante)
+  y se puede explicar con otro comprobante o, en un faltante, asignar
+  responsables **sólo por el resto**.
+- Un corte muestra todas sus resoluciones, una debajo de otra, y cuánto queda.
+  Lo mismo en la ficha del corte y en la pestaña Diferencias: tarjeta, barra,
+  acumulado y total se calculan sobre lo que queda.
+- Base (`20260929211216`): varias causas por corte y a lo sumo una resolución
+  que mueve dinero, por exactamente lo que quedó. `resolver_diferencia_corte`
+  recibe `p_monto`; una causa no se anula mientras haya responsables por el
+  resto. El aviso a jefes y el aviso de ayer cuentan el **resto** sin resolver.
+
 ## v2.1086.2 — App: sin avisos en la configuración de compilación
 
 El número de compilación lo lleva EAS (no el `app.json`) y los perfiles ya no

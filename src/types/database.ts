@@ -22495,6 +22495,7 @@ export type Database = {
           p_corte_id: number
           p_evidencia_foto?: string
           p_evidencia_ref?: string
+          p_monto?: number
           p_monto_esperado: number
           p_personas?: Json
           p_via: string

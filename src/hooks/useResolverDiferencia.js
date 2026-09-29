@@ -60,7 +60,7 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
     }, [nombreSala, showToast, user]);
 
     const resolver = useCallback(async (corte, {
-        via, causa, montoVisto, personas = [], nombres = [], evidenciaRef = null, evidenciaFoto = null,
+        via, causa, montoVisto, monto = null, personas = [], nombres = [], evidenciaRef = null, evidenciaFoto = null,
     }) => {
         if (!corte || ocupado) return null;
         setOcupado(true);
@@ -68,7 +68,7 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
         // Las entradas de la bitácora de este archivo las anotan las funciones
         // de `data/cortes.js` (D3, 2026-09-28): acá sólo va el contexto legible.
         const { data, error } = await resolverDiferencia(corte.id, {
-            via, causa, montoVisto, personas, evidenciaRef, evidenciaFoto,
+            via, causa, montoVisto, monto, personas, evidenciaRef, evidenciaFoto,
         }, { sucursal: sala, fecha: corte.fecha, hora: corte.hora, origen });
         if (error) {
             setOcupado(false);

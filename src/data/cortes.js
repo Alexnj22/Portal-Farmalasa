@@ -391,9 +391,13 @@ export function reabrirCorte(id, motivo) {
  * migración `20260814211953`.
  *
  * `personas`: [{ employee_id, monto, del_turno }] y sólo para `REPONE`.
+ *
+ * `monto`: cuánto cubre ESTA resolución, sin signo (2026-09-29). Una causa
+ * puede explicar sólo una parte y lo demás sigue pendiente; la vía que mueve
+ * dinero va por todo lo que quedó sin causa. Sin él, cubre todo lo que queda.
  */
 export function resolverDiferencia(corteId, {
-    via, causa, montoVisto, personas = [], evidenciaRef = null, evidenciaFoto = null,
+    via, causa, montoVisto, monto = null, personas = [], evidenciaRef = null, evidenciaFoto = null,
 }, contexto = {}) {
     return conBitacora(supabase.rpc('resolver_diferencia_corte', {
         p_corte_id: corteId,
@@ -406,8 +410,10 @@ export function resolverDiferencia(corteId, {
         // rechaza la causa encontrada sin ninguna.
         p_evidencia_ref: evidenciaRef || null,
         p_evidencia_foto: evidenciaFoto || null,
+        p_monto: monto == null ? null : Math.abs(Number(monto)),
     }), 'CORTE_CAJA_DIFERENCIA_RESUELTA', corteId, {
-        corte_id: corteId, via, causa, evidencia_ref: evidenciaRef || null, con_foto: !!evidenciaFoto,
+        corte_id: corteId, via, causa, monto: monto == null ? undefined : Math.abs(Number(monto)),
+        evidencia_ref: evidenciaRef || null, con_foto: !!evidenciaFoto,
         responsables: via === 'REPONE' ? personas.length : undefined, ...contexto,
     });
 }

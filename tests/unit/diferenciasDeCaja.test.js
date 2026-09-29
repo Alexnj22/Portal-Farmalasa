@@ -3,6 +3,7 @@ import {
     conEstados, diaEnFiltro, diaEnMes, estadoDeCorte, mesesDeLosDias, ordenarDias, peorEstado,
     pendientesDeRegistrar, porSigno, resumenDeDias,
     saldoDeDiferencia, desgloseDelDia, responsablesDelDia,
+    resolucionesDe, movimientoDe, explicadoDe, pendienteDe, unirResoluciones,
 } from '@nucleo/utils/diferenciasDeCaja';
 
 // El caso real que originó la pestaña: Salud 2, 24-sep, faltante de −$20.25 en
@@ -217,5 +218,58 @@ describe('responsablesDelDia', () => {
         ] });
         expect(r.map((p) => p.employee_id)).toEqual(['b', 'a']);
         expect(r[1]).toMatchObject({ monto: 3.1, abonado: 2, saldo: 1.1 });
+    });
+});
+
+// Una causa que explica PARTE (usuario, 2026-09-29): Salud 3, 28-sep, sobrante
+// de +$28.93 del que sólo $20 tienen comprobante.
+describe('causa parcial', () => {
+    const justifica = (monto, id = 1) => ({ id, via: 'JUSTIFICA', monto });
+    const sobrante = { id: 9, estado: 'CONFIRMADO', tramo: 28.93, diferencias: [justifica(20)] };
+
+    it('lo que la causa no explica queda en el acumulado', () => {
+        expect(explicadoDe(sobrante)).toBe(20);
+        expect(pendienteDe(sobrante)).toBe(8.93);
+        expect(estadoDeCorte(sobrante)).toBe('acumulado');
+        const r = resumenDeDias(porSigno([{ fecha: 'x', cortes: [sobrante] }], 'sobra'));
+        expect(r.montoAcumulado).toBe(8.93);
+    });
+    it('dos causas que suman el total: resuelto', () => {
+        const c = { ...sobrante, diferencias: [justifica(20), justifica(8.93, 2)] };
+        expect(pendienteDe(c)).toBe(0);
+        expect(estadoDeCorte(c)).toBe('resuelto');
+    });
+    it('un faltante explicado en parte sigue sin resolver por el resto', () => {
+        const c = { id: 1, estado: 'CONFIRMADO', tramo: -30, diferencias: [justifica(-20)] };
+        expect(estadoDeCorte(c)).toBe('sin_resolver');
+        expect(desgloseDelDia({ cortes: [c] }, 'falta')).toMatchObject({ explicado: 20, sinResolver: 10, pct: 66 });
+    });
+    it('el resto con responsables: se cobra sólo el resto', () => {
+        const c = { id: 1, estado: 'CONFIRMADO', tramo: -30, diferencias: [
+            justifica(-20),
+            { id: 2, via: 'REPONE', monto: -10, asignado: 10, abonado: 4, abonos_sin_asentar: 1,
+              personas: [{ persona_id: 5, employee_id: 'a', nombre: 'A', monto: 10, abonado: 4, saldo: 6 }] },
+        ] };
+        expect(movimientoDe(c).id).toBe(2);
+        expect(estadoDeCorte(c)).toBe('con_saldo');
+        expect(desgloseDelDia({ cortes: [c] }, 'falta')).toMatchObject({ explicado: 20, abonado: 4, porCobrar: 6, sinResolver: 0 });
+        expect(conEstados([{ cortes: [c] }])[0].saldo).toBe(6);
+        expect(responsablesDelDia({ cortes: [c] })).toEqual([{ employee_id: 'a', nombre: 'A', monto: 10, abonado: 4, saldo: 6 }]);
+    });
+    it('las anuladas no cuentan', () => {
+        const c = { tramo: 28.93, estado: 'CONFIRMADO', diferencias: [{ ...justifica(20), anulada_at: 'x' }] };
+        expect(resolucionesDe(c)).toEqual([]);
+        expect(pendienteDe(c)).toBe(28.93);
+    });
+    it('la forma vieja —una sola, sin monto— sigue cubriendo el corte entero', () => {
+        const c = { tramo: -5, estado: 'CONFIRMADO', diferencia: { via: 'JUSTIFICA' } };
+        expect(pendienteDe(c)).toBe(0);
+        expect(estadoDeCorte(c)).toBe('resuelto');
+    });
+    it('unirResoluciones completa cada una por su id', () => {
+        const [d] = unirResoluciones([{ cortes: [{ tramo: -30, diferencias: [justifica(-20, 7), { id: 8, via: 'REPONE', monto: -10 }] }] }],
+            [{ id: 7, causa: 'a' }, { id: 8, personas: [{ persona_id: 1 }] }]);
+        expect(d.cortes[0].diferencias.map((r) => r.causa ?? r.personas.length)).toEqual(['a', 1]);
+        expect(d.cortes[0].diferencia.id).toBe(8);
     });
 });

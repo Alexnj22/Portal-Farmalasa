@@ -21,6 +21,15 @@
  *   · Un FALTANTE se paga (responsables y abonos) o se explica con causa y
  *     comprobante. Al centavo: no hay tolerancia.
  *
+ * ── Una causa puede explicar PARTE (usuario, 2026-09-29) ───────────────────
+ * «¿Qué pasa si encontré causa pero no del total? Imagina que de eso, solo $20
+ * se encontró causa.» Un corte tiene VARIAS resoluciones vivas: cero o más
+ * causas (`JUSTIFICA`), cada una por lo que explica su comprobante, y a lo sumo
+ * UNA que mueve dinero (`REPONE`/`RETIRA`) por exactamente lo que quedó sin
+ * causa. Lo que ninguna cubre es `pendienteDe`: en un sobrante sigue en el
+ * acumulado, en un faltante sigue sin resolver. La base lo hace cumplir en
+ * `resolver_diferencia_corte`; acá se lee.
+ *
  * Estados, en orden de URGENCIA — el del día es el peor de sus cortes:
  *
  *   sin_resolver   faltante confirmado sin causa ni responsables
@@ -44,6 +53,42 @@ const rango = (e) => {
 
 const centavos = (n) => Math.round(Number(n || 0) * 100);
 
+/**
+ * Las resoluciones VIVAS de un corte. `diferencias` es la lista que trae
+ * `get_dias_con_diferencia` desde el 2026-09-29; `diferencia` suelta es la
+ * forma de antes y la de las respuestas en caché.
+ */
+export function resolucionesDe(corte) {
+    if (Array.isArray(corte?.diferencias)) return corte.diferencias.filter((d) => d && !d.anulada_at);
+    const d = corte?.diferencia;
+    return d && d.via && !d.anulada_at ? [d] : [];
+}
+
+/** La que mueve dinero (responsables o retiro): a lo sumo una por corte. */
+export function movimientoDe(corte) {
+    return resolucionesDe(corte).find((d) => d.via !== 'JUSTIFICA') || null;
+}
+
+// Cuánto cubre una resolución, en centavos. Sin `monto` —la forma vieja, de
+// cuando cada una cubría el corte entero— cubre todo el tramo.
+const parteDe = (r, tramo) => (r?.monto == null ? Math.abs(centavos(tramo)) : Math.abs(centavos(r.monto)));
+
+/** Lo que las causas encontradas explican, en dólares. */
+export function explicadoDe(corte) {
+    const tope = Math.abs(centavos(corte?.tramo));
+    const c = resolucionesDe(corte)
+        .filter((d) => d.via === 'JUSTIFICA')
+        .reduce((a, d) => a + parteDe(d, corte?.tramo), 0);
+    return Math.min(tope, c) / 100;
+}
+
+/** Lo que ninguna resolución cubre todavía, en dólares y sin signo. */
+export function pendienteDe(corte) {
+    const tope = Math.abs(centavos(corte?.tramo));
+    const cubierto = resolucionesDe(corte).reduce((a, d) => a + parteDe(d, corte?.tramo), 0);
+    return Math.max(0, tope - cubierto) / 100;
+}
+
 /** Lo que falta cobrar de una resolución con responsables, en dólares. */
 export function saldoDeDiferencia(dif) {
     if (!dif || dif.via !== 'REPONE') return 0;
@@ -55,16 +100,18 @@ export function saldoDeDiferencia(dif) {
  * @param {object} corte `{ estado, tramo, diferencia }` como lo da `get_dias_con_diferencia`
  */
 export function estadoDeCorte(corte) {
-    const dif = corte?.diferencia;
-    if (!dif) {
+    // La que mueve dinero cubre lo que quedó sin causa, así que manda ella.
+    const mov = movimientoDe(corte);
+    if (mov?.via === 'REPONE') {
+        if (saldoDeDiferencia(mov) > 0) return 'con_saldo';
+        return Number(mov.abonos_sin_asentar) > 0 ? 'por_registrar' : 'resuelto';
+    }
+    if (mov?.via === 'RETIRA') return mov.asentado_at ? 'resuelto' : 'por_registrar';
+    // Sin ella, lo que las causas no explicaron sigue como si no hubiera nada.
+    if (centavos(pendienteDe(corte)) > 0) {
         if (corte?.estado === 'PENDIENTE') return 'por_confirmar';
         return centavos(corte?.tramo) > 0 ? 'acumulado' : 'sin_resolver';
     }
-    if (dif.via === 'REPONE') {
-        if (saldoDeDiferencia(dif) > 0) return 'con_saldo';
-        return Number(dif.abonos_sin_asentar) > 0 ? 'por_registrar' : 'resuelto';
-    }
-    if (dif.via === 'RETIRA' && !dif.asentado_at) return 'por_registrar';
     return 'resuelto';
 }
 
@@ -93,7 +140,7 @@ export function conEstados(dias) {
         for (const c of cortes) {
             const t = centavos(c.tramo);
             if (t < 0) faltante += t; else sobrante += t;
-            saldo += centavos(saldoDeDiferencia(c.diferencia));
+            saldo += centavos(saldoDeDiferencia(movimientoDe(c)));
         }
         return {
             ...d,
@@ -116,9 +163,10 @@ export function resumenDeDias(dias) {
         r[d.estadoDif] = (r[d.estadoDif] || 0) + 1;
         r.saldo += centavos(d.saldo);
         // Lo acumulado es la suma de los sobrantes CONFIRMADOS sin causa. Uno
-        // por confirmar todavía puede descartarse; uno explicado ya salió.
+        // por confirmar todavía puede descartarse; lo explicado ya salió —y
+        // de uno explicado en parte, sale sólo esa parte—.
         for (const c of d.cortes || []) {
-            if (c.estadoDif === 'acumulado') r.montoAcumulado += centavos(c.tramo);
+            if (c.estadoDif === 'acumulado') r.montoAcumulado += centavos(pendienteDe(c));
         }
     }
     r.saldo /= 100;
@@ -150,9 +198,13 @@ export function unirResoluciones(dias, resoluciones) {
     return (dias || []).map((d) => ({
         ...d,
         cortes: (d.cortes || []).map((c) => {
-            if (!c.diferencia) return c;
-            const completa = porId.get(String(c.diferencia.id));
-            return completa ? { ...c, diferencia: { ...c.diferencia, ...completa } } : c;
+            const vivas = resolucionesDe(c);
+            if (!vivas.length) return c;
+            const unidas = vivas.map((r) => {
+                const completa = porId.get(String(r.id));
+                return completa ? { ...r, ...completa } : r;
+            });
+            return { ...c, diferencias: unidas, diferencia: unidas[unidas.length - 1] };
         }),
     }));
 }
@@ -268,17 +320,24 @@ export function desgloseDelDia(dia, signo = 'falta') {
     const t = { abonado: 0, explicado: 0, porCobrar: 0, sinResolver: 0, porConfirmar: 0, acumulado: 0 };
     for (const c of dia?.cortes || []) {
         const m = Math.abs(centavos(c.tramo));
-        const dif = c.diferencia;
-        if (!dif) {
-            if (c.estado === 'PENDIENTE') t.porConfirmar += m;
-            else if (signo === 'sobra') t.acumulado += m;
-            else t.sinResolver += m;
-        } else if (dif.via === 'REPONE') {
-            const saldo = Math.min(m, centavos(saldoDeDiferencia(dif)));
+        // Primero lo explicado con causa; el resto, según qué se hizo con él.
+        const explicado = centavos(explicadoDe(c));
+        t.explicado += explicado;
+        const resto = m - explicado;
+        if (resto <= 0) continue;
+        const mov = movimientoDe(c);
+        if (mov?.via === 'REPONE') {
+            const saldo = Math.min(resto, centavos(saldoDeDiferencia(mov)));
             t.porCobrar += saldo;
-            t.abonado += m - saldo;
+            t.abonado += resto - saldo;
+        } else if (mov) {
+            t.explicado += resto;
+        } else if (c.estado === 'PENDIENTE') {
+            t.porConfirmar += resto;
+        } else if (signo === 'sobra') {
+            t.acumulado += resto;
         } else {
-            t.explicado += m;
+            t.sinResolver += resto;
         }
     }
     const total = Object.values(t).reduce((a, b) => a + b, 0);
@@ -295,10 +354,11 @@ export function desgloseDelDia(dia, signo = 'falta') {
 export function responsablesDelDia(dia) {
     const porId = new Map();
     for (const c of dia?.cortes || []) {
-        if (c.diferencia?.via !== 'REPONE') continue;
+        const mov = movimientoDe(c);
+        if (mov?.via !== 'REPONE') continue;
         // Por la FICHA (`employee_id`): `persona_id` es el id de la fila de
         // asignación, distinto en cada corte aunque sea la misma persona.
-        for (const p of c.diferencia.personas || []) {
+        for (const p of mov.personas || []) {
             const k = String(p.employee_id ?? p.persona_id);
             const prev = porId.get(k) || { employee_id: p.employee_id ?? null, nombre: p.nombre, monto: 0, abonado: 0, saldo: 0 };
             prev.monto += centavos(p.monto);

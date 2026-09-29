@@ -64,7 +64,7 @@ import { fetchCobrosDelPortal } from '@nucleo/data/creditos';
 import { fetchSalidasDeBolsaDelRango, fetchTiposDeSalida } from '@nucleo/data/bolsas';
 import { conTramoPorSalaYDia, resumenDeCortes, severidad } from '@nucleo/utils/cortesDiagnostico';
 import {
-    diaEnFiltro, diaEnMes, mesesDeLosDias, ordenarDias, pendientesDeRegistrar, porSigno, resumenDeDias,
+    diaEnFiltro, diaEnMes, mesesDeLosDias, ordenarDias, pendientesDeRegistrar, porSigno, resolucionesDe, resumenDeDias,
 } from '@nucleo/utils/diferenciasDeCaja';
 import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '@nucleo/utils/periodo';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -579,8 +579,8 @@ const CortesView = () => {
         return tokenMatch(busqueda,
             nombreSala[d.branch_id], d.fecha, String(d.neto),
             ...d.cortes.flatMap((c) => [
-                String(c.tramo), c.empleado_texto, c.diferencia?.causa,
-                ...(c.diferencia?.personas || []).map((p) => p.nombre),
+                String(c.tramo), c.empleado_texto,
+                ...resolucionesDe(c).flatMap((r) => [r.causa, ...(r.personas || []).map((p) => p.nombre)]),
             ]));
     }), [diasDif, signoDif, sala, busqueda, nombreSala]);
     // El carril cuenta lo del MES (con los faltantes sin resolver de antes):

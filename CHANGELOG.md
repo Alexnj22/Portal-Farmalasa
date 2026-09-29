@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1086.1 — App: configuración para compilar y publicar en TestFlight y Play
+
+La app del teléfono queda lista para compilarse en la nube (EAS, proyecto
+@farmasalud/farmalasa) como app nueva con el identificador
+`lat.farmasalud.portal` en iPhone y Android. Tres perfiles: `interna`
+(TestFlight y prueba interna de Play, contra producción), `interna-pruebas`
+(igual, contra la base de pruebas) y `produccion`. Las claves de Apple y de
+Google viven fuera del repositorio.
+
 ## v2.1086.0 — App: entrada e inicio con los controles propios del sistema
 
 Decisión del usuario: la app del teléfono se ve con los elementos propios de

@@ -1,0 +1,57 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "base": {
+      "node": "24.9.0"
+    },
+    "interna": {
+      "extends": "base",
+      "distribution": "store",
+      "autoIncrement": true,
+      "channel": "interna",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://sacecdkdmsdvgqnrsett.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_cdFHhrbNAqfoA7FIsEgL3A_COHXzBoz",
+        "EXPO_PUBLIC_PORTAL_URL": "https://portal.farmasalud.lat"
+      }
+    },
+    "interna-pruebas": {
+      "extends": "base",
+      "distribution": "store",
+      "autoIncrement": true,
+      "channel": "interna-pruebas",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://jaetaqvnxwobeoclvwmg.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphZXRhcXZueHdvYmVvY2x2d21nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MTkwNDAsImV4cCI6MjEwNjE5NTA0MH0.EYENa3Mo7JIZ3Imt02DfqMB8etbuEH0PmBbFmqqPjFk",
+        "EXPO_PUBLIC_PORTAL_URL": "https://portal.farmasalud.lat"
+      }
+    },
+    "produccion": {
+      "extends": "interna",
+      "channel": "produccion"
+    }
+  },
+  "submit": {
+    "interna": {
+      "ios": {},
+      "android": {
+        "track": "internal"
+      }
+    },
+    "interna-pruebas": {
+      "ios": {},
+      "android": {
+        "track": "internal"
+      }
+    },
+    "produccion": {
+      "ios": {},
+      "android": {
+        "track": "production"
+      }
+    }
+  }
+}

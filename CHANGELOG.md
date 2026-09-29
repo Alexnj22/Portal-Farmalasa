@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1087.1 — La causa no puede pasar de lo que queda: se lleva al tope
+
+Pedido del usuario: bloquear el guardado cuando «Cuánto explica esta causa»
+pasaba de la diferencia no tenía sentido. Ahora un número mayor se reemplaza
+por el máximo permitido (lo que queda por explicar) al escribirlo, y el campo
+dice «Hasta $X» desde el inicio. Sólo el cero sigue marcándose como error.
+
 ## v2.1087.0 — Una causa puede explicar parte de la diferencia de un corte
 
 Pedido del usuario: «¿qué pasa si encontré causa pero no del total? Imagina que

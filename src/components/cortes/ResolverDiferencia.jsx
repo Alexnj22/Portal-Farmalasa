@@ -346,9 +346,16 @@ export default function ResolverDiferencia({
     const objetivo = centavos(pendiente);
     const restan = objetivo - sumaAportes;
 
-    // Lo que explica la causa: vacío = todo lo que queda.
-    const explica = String(montoCausa).trim() === '' ? objetivo : centavos(montoCausa);
-    const explicaInvalido = via === 'JUSTIFICA' && (explica < 1 || explica > objetivo);
+    // Lo que explica la causa: vacío = todo lo que queda. Nunca más que eso:
+    // un número mayor se lleva al tope al escribirlo (usuario, 2026-09-29:
+    // «si se escribe un valor mayor que se ponga el max permitido»), y acá
+    // también, por si lo que queda bajó con el borrador ya escrito.
+    const explica = String(montoCausa).trim() === '' ? objetivo : Math.min(objetivo, centavos(montoCausa));
+    const explicaInvalido = via === 'JUSTIFICA' && explica < 1;
+    const escribirMontoCausa = (valor) => {
+        const tope = aMonto(objetivo);
+        setMontoCausa(String(valor).trim() !== '' && Number(valor) > tope ? tope.toFixed(2) : valor);
+    };
     const quedaTrasCausa = via === 'JUSTIFICA' && !explicaInvalido ? objetivo - explica : 0;
 
     const alternar = useCallback((id) => {
@@ -527,17 +534,15 @@ export default function ResolverDiferencia({
                             maskType="DECIMAL"
                             prefix="$"
                             value={montoCausa}
-                            onChange={(e) => setMontoCausa(e.target.value)}
+                            onChange={(e) => escribirMontoCausa(e.target.value)}
                             placeholder={aMonto(objetivo).toFixed(2)}
                             hasError={explicaInvalido}
-                            errorMessage={explicaInvalido
-                                ? (explica < 1 ? 'Tiene que ser mayor que cero.' : `No puede pasar de ${formatMoney(aMonto(objetivo))}.`)
-                                : undefined}
+                            errorMessage={explicaInvalido ? 'Tiene que ser mayor que cero.' : undefined}
                             helperText={quedaTrasCausa > 0
                                 ? (falta
                                     ? `Quedan ${formatMoney(aMonto(quedaTrasCausa))} sin causa: después se explican o se asignan responsables.`
                                     : `Quedan ${formatMoney(aMonto(quedaTrasCausa))} en el acumulado de la sala.`)
-                                : 'Si el comprobante explica sólo una parte, escribe cuánto.'}
+                                : `Hasta ${formatMoney(aMonto(objetivo))}. Si el comprobante explica sólo una parte, escribe cuánto.`}
                         />
                         <PortalInput
                             label="Número del documento corregido"

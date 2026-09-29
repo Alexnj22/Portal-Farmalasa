@@ -15,7 +15,7 @@ import TabEmisor from './distribucion/TabEmisor';
 import SolicitudesDescuento from './distribucion/SolicitudesDescuento';
 import TabVentasPerdidas from './distribucion/TabVentasPerdidas';
 import TabTablero from './distribucion/TabTablero';
-import { VISTAS_PEDIDOS, VISTAS_PERDIDAS, PERIODOS } from './distribucion/comun';
+import { VISTAS_PEDIDOS, VISTAS_PERDIDAS, PERIODOS, CUBETAS_FACTURACION } from './distribucion/comun';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 
 // Distribución — la venta en ruta de la S.A.S. a tiendas, supermercados y
@@ -29,7 +29,7 @@ import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 const TABS = [
     { key: 'inicio',     label: 'Inicio',     icon: LayoutDashboard },
     { key: 'pedidos',    label: 'Pedidos',    icon: ClipboardList },
-    { key: 'documentos', label: 'Documentos', icon: FileCheck2 },
+    { key: 'documentos', label: 'Facturación', icon: FileCheck2 },
     { key: 'clientes',   label: 'Clientes',   icon: Store },
     { key: 'catalogo',   label: 'Catálogo',   icon: PackageSearch },
     { key: 'inventario', label: 'Inventario', icon: Boxes },
@@ -51,6 +51,8 @@ export default function DistribucionView({ seccion = 'inicio' }) {
     const [estadoPerdida, setEstadoPerdida] = usePestanaEnUrl(VISTAS_PERDIDAS, 'pendiente', 'estado');
     // El tablero: el período en `?periodo=`.
     const [periodo, setPeriodo] = usePestanaEnUrl(PERIODOS, '30d', 'periodo');
+    // Facturación: por resolver / todos / sellados / invalidados, en `?cubeta=`.
+    const [cubeta, setCubeta] = usePestanaEnUrl(CUBETAS_FACTURACION, 'accion', 'cubeta');
     const { hasPermission } = useAuth();
     const puedeVender = hasPermission('distribucion', 'can_edit');
     const puedeConfigurar = hasPermission('distribucion_config', 'can_edit');
@@ -83,7 +85,7 @@ export default function DistribucionView({ seccion = 'inicio' }) {
     const conBuscador = tab !== 'emisor' && tab !== 'solicitudes' && tab !== 'inicio';
     const placeholder = useMemo(() => ({
         pedidos: 'Buscar por cliente o número…',
-        documentos: 'Buscar por cliente o número de control…',
+        documentos: 'Cliente, número de control o código de generación…',
         clientes: 'Buscar por nombre, NIT, DUI o NRC…',
         catalogo: 'Buscar producto…',
         inventario: 'Buscar producto o lote…',
@@ -99,9 +101,9 @@ export default function DistribucionView({ seccion = 'inicio' }) {
             filtersContent={tab === 'inicio' ? (
                 <ViewTabBar tabs={PERIODOS} activeTab={periodo} onTabChange={setPeriodo} showSearch={false} />
             ) : conBuscador ? (
-                <ViewTabBar tabs={tab === 'pedidos' ? VISTAS_PEDIDOS : tab === 'perdidas' ? VISTAS_PERDIDAS : [actual]}
-                    activeTab={tab === 'pedidos' ? vista : tab === 'perdidas' ? estadoPerdida : tab}
-                    onTabChange={tab === 'pedidos' ? setVista : tab === 'perdidas' ? setEstadoPerdida : () => {}}
+                <ViewTabBar tabs={tab === 'pedidos' ? VISTAS_PEDIDOS : tab === 'perdidas' ? VISTAS_PERDIDAS : tab === 'documentos' ? CUBETAS_FACTURACION : [actual]}
+                    activeTab={tab === 'pedidos' ? vista : tab === 'perdidas' ? estadoPerdida : tab === 'documentos' ? cubeta : tab}
+                    onTabChange={tab === 'pedidos' ? setVista : tab === 'perdidas' ? setEstadoPerdida : tab === 'documentos' ? setCubeta : () => {}}
                     searchValue={buscar} onSearchChange={setBuscar}
                     placeholder={placeholder} showSearch />
             ) : null}

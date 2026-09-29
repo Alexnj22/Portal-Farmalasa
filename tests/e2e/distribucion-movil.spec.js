@@ -7,6 +7,8 @@ import { entrar } from './distribucionEntrar.js';
 const SALIDA = process.env.E2E_CAPTURAS || 'test-results/distribucion-movil';
 
 test('pestañas y formulario de pedido en el teléfono', async ({ page }) => {
+    // Nueve secciones, dos segundos cada una, más la venta: pasa de los 30 s por defecto.
+    test.setTimeout(90_000);
     const errores = [];
     page.on('pageerror', e => errores.push(e.message));
     await entrar(page);
@@ -28,7 +30,10 @@ test('pestañas y formulario de pedido en el teléfono', async ({ page }) => {
     await page.getByText('Elegir cliente…').click();
     await page.getByText('TIENDA LA ESQUINA', { exact: true }).last().click();
     await page.getByLabel('Buscar producto').fill('a');
-    await page.getByRole('option').first().click();
+    // La opción de la lista de PRODUCTOS: el menú del cliente puede estar
+    // todavía cerrándose y también tiene opciones.
+    await page.getByRole('listbox', { name: 'Productos encontrados' }).getByRole('option').first().click();
+    await expect(page.locator('[data-renglon]')).toHaveCount(1);
     await page.getByRole('button', { name: 'Uno más' }).first().click();
     // La barra de abajo: total y «Cobrar», siempre a mano en el teléfono.
     await expect(page.getByRole('button', { name: /^Cobrar/ })).toBeVisible();

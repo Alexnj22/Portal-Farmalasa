@@ -334,7 +334,10 @@ export async function anularPedido(pedidoId, motivo) {
 export async function fetchDocumentos({ desde } = {}) {
     const rows = await fetchAllRows(() => {
         let q = supabase.from('dist_dte')
-            .select('id, tipo, ambiente, numero_control, codigo_generacion, fec_emi, hor_emi, total_pagar, estado, sello_recibido, descripcion_msg, observaciones_mh, intentos, ultimo_intento_at, pedido_id, dist_clientes(nombre)')
+            .select('id, tipo, ambiente, numero_control, codigo_generacion, fec_emi, hor_emi, total_pagar, estado, sello_recibido, '
+                + 'descripcion_msg, observaciones_mh, intentos, ultimo_intento_at, pedido_id, invalidacion_estado, reemplazo_id, '
+                // Para saber si un rechazo sigue pendiente: su pedido todavía por facturar.
+                + 'pedido:dist_pedidos!dist_dte_pedido_fk(estado, dte_id), dist_clientes(nombre)')
             .order('id', { ascending: false });
         if (desde) q = q.gte('fec_emi', desde);
         return q;
@@ -521,4 +524,11 @@ export async function fetchReservasVigentes() {
     const { data, error } = await supabase.rpc('dist_reservas_vigentes');
     if (error) throw error;
     return data ?? [];
+}
+
+/** Cuánto falta con Hacienda, por cubeta (el número del menú de Facturación). Borrador 0013. */
+export async function contarFacturacionPendiente() {
+    const { data, error } = await supabase.rpc('dist_facturacion_pendiente');
+    if (error) throw error;
+    return data ?? { por_enviar: 0, contingencia: 0, rechazados: 0, invalidaciones: 0 };
 }

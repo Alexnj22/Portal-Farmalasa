@@ -5,7 +5,7 @@ import {
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useMarca } from '../../plataforma/useMarca';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { contarDescuentosPendientes } from '@nucleo/data/distribucion';
+import { contarDescuentosPendientes, contarFacturacionPendiente } from '@nucleo/data/distribucion';
 import { MARCA_DISTRIBUIDORA } from './marca';
 import { rutaSeccion, rutaVenta, rutaLogin } from './rutas';
 import Badge from '../../components/common/Badge';
@@ -26,7 +26,7 @@ const CampanaLazy = React.lazy(() => import('../../components/common/Notificatio
 const MENU = [
     { seccion: 'inicio',      label: 'Inicio',      icon: LayoutDashboard },
     { seccion: 'pedidos',     label: 'Pedidos',     icon: ClipboardList },
-    { seccion: 'documentos',  label: 'Documentos',  icon: FileCheck2 },
+    { seccion: 'documentos',  label: 'Facturación', icon: FileCheck2, contadorFacturacion: true },
     { seccion: 'clientes',    label: 'Clientes',    icon: Store },
     { seccion: 'catalogo',    label: 'Catálogo',    icon: PackageSearch },
     { seccion: 'inventario',  label: 'Inventario',  icon: Boxes },
@@ -47,6 +47,27 @@ function usePendientes(activo) {
             .catch(e => console.error('Torogoz: pendientes', e.message));
         return () => { vivo = false; };
     }, [activo, location.pathname]); // se relee al navegar: barato, y el número no se queda viejo
+    return n;
+}
+
+/**
+ * Cuánto falta con Hacienda (el número rojo o naranja de Facturación):
+ * rechazados por corregir, sin sello e invalidaciones pendientes. Borrador 0013.
+ */
+function useFacturacionPendiente() {
+    const [n, setN] = useState({ total: 0, grave: false });
+    const location = useLocation();
+    useEffect(() => {
+        let vivo = true;
+        contarFacturacionPendiente()
+            .then(c => {
+                if (!vivo) return;
+                const total = (c.por_enviar ?? 0) + (c.rechazados ?? 0) + (c.invalidaciones ?? 0) + (c.contingencia ?? 0);
+                setN({ total, grave: (c.rechazados ?? 0) > 0 });
+            })
+            .catch(e => console.error('Torogoz: facturación pendiente', e.message));
+        return () => { vivo = false; };
+    }, [location.pathname]);
     return n;
 }
 
@@ -72,6 +93,7 @@ export default function TorogozLayout({ children, handleLogout }) {
     const puedeVender = hasPermission('distribucion', 'can_edit');
     const puedeConfigurar = hasPermission('distribucion_config', 'can_edit');
     const pendientes = usePendientes(true);
+    const facturacion = useFacturacionPendiente();
     const nombre = shortEmployeeName(user?.name) || user?.username || '';
 
     // El menú del teléfono se cierra al navegar.
@@ -101,6 +123,11 @@ export default function TorogozLayout({ children, handleLogout }) {
                     <span className="flex-1 truncate">{i.label}</span>
                     {i.contador && pendientes > 0 && (
                         <Badge size="sm" variant="warning" uppercase={false}>{pendientes}</Badge>
+                    )}
+                    {i.contadorFacturacion && facturacion.total > 0 && (
+                        <Badge size="sm" variant={facturacion.grave ? 'danger' : 'warning'} uppercase={false} data-testid="facturacion-pendiente">
+                            {facturacion.total}
+                        </Badge>
                     )}
                 </NavLink>
             ))}

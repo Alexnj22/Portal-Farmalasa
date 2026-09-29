@@ -1,46 +1,60 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { FileCheck2, AlertTriangle, Search, Clock, CheckCircle2, Ban } from 'lucide-react';
+import { FileCheck2, AlertTriangle, Search, Clock, CheckCircle2, ShieldCheck, RefreshCw, Loader2, FileX2, XCircle } from 'lucide-react';
 import FilterBar from '../../components/common/FilterBar';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import Badge from '../../components/common/Badge';
+import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { formatMoney } from '@nucleo/utils/formatNumber';
+import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, hoySV, sumarDias } from '@nucleo/utils/fecha';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
+import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { useNavigate } from 'react-router-dom';
-import { fetchDocumentos } from '@nucleo/data/distribucion';
+import { fetchDocumentos, reintentarDocumento } from '@nucleo/data/distribucion';
 import DocumentoModal from './DocumentoModal';
-import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO } from './comun';
+import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO, CUBETAS_FACTURACION as CUBETAS, revisionHacienda, pideAccion, selloValido } from './comun';
 import { rutaVenta } from './rutas';
+
+// Facturación de la distribuidora: el control con Hacienda. Pedido del usuario
+// (2026-09-29): «una parte de facturación para ver, como en el portal, si hay
+// algo pendiente, o mejor, llevar el control mucho más claro».
+//
+// Arriba, un semáforo que contesta la pregunta de una vez —¿está todo bien
+// con Hacienda?—; debajo, las cubetas de lo que pide acción (tocar una
+// filtra) y «Reenviar pendientes», que manda de a uno todo lo que quedó sin
+// sello. Cada documento dice en su columna si tiene código y sello, y al
+// abrirlo, la lista de chequeo completa con el botón de lo que toca.
+//
+// La cubeta vive en la dirección (`?cubeta=`), como toda pestaña del portal.
 
 const COLS = [
     { key: 'documento', label: 'Documento', align: 'left', className: 'w-[200px]' },
     { key: 'cliente',   label: 'Cliente',   align: 'left', hideBelow: 'md' },
-    { key: 'estado',    label: 'Estado',    align: 'left' },
+    { key: 'hacienda',  label: 'Hacienda',  align: 'left' },
     { key: 'fecha',     label: 'Emitido',   align: 'left', hideBelow: 'sm' },
     { key: 'total',     label: 'Total',     align: 'right' },
 ];
 
-const FILTRO_ESTADO = [
-    { value: 'pendiente', label: 'Sin sello' },
-    { value: 'sellado',   label: 'Sellados' },
-    { value: 'rechazado', label: 'Rechazados' },
-    { value: 'invalidado', label: 'Invalidados' },
-];
-const PENDIENTE = new Set(['sin_firmar', 'firmado', 'contingencia']);
+const esPorEnviar = (d) => revisionHacienda(d)?.accion === 'reenviar';
 
 export default function TabDocumentos({ puedeVender, buscar }) {
     const navigate = useNavigate();
+    const showToast = useToastStore(s => s.showToast);
     const [docs, setDocs] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState('');
-    const [estado, setEstado] = useState('');
     const [tipo, setTipo] = useState('');
+    const [sub, setSub] = useState('');            // dentro de «Por resolver»: por_enviar | rechazados | invalidaciones
     const [abierto, setAbierto] = useState(null);
+    const [reenvio, setReenvio] = useState(null);  // { hecho, total } mientras se reenvía en bloque
+    const [avisoFirma, setAvisoFirma] = useState('');
+    const [cubeta, setCubeta] = usePestanaEnUrl(CUBETAS, 'accion', 'cubeta');
     const pedidoRef = useRef(0);
 
     const cargar = useCallback(async () => {
@@ -60,48 +74,129 @@ export default function TabDocumentos({ puedeVender, buscar }) {
     }, []);
     useEffect(() => { cargar(); }, [cargar]);
 
+    const grupos = useMemo(() => {
+        const accion = docs.filter(pideAccion);
+        return {
+            accion,
+            porEnviar: accion.filter(esPorEnviar),
+            rechazados: accion.filter(d => d.estado === 'rechazado'),
+            invalidaciones: accion.filter(d => ['pendiente', 'rechazada'].includes(d.invalidacion_estado)),
+            contingencia: accion.filter(d => d.estado === 'contingencia'),
+            sellados: docs.filter(d => d.estado === 'sellado' && selloValido(d.sello_recibido)),
+            vendido: docs.filter(d => d.estado === 'sellado' && (d.tipo === '01' || d.tipo === '03'))
+                .reduce((a, d) => a + Number(d.total_pagar), 0),
+        };
+    }, [docs]);
+
     const filtrados = useMemo(() => {
         const q = buscar.trim();
-        return docs.filter(d =>
-            (!estado || (estado === 'pendiente' ? PENDIENTE.has(d.estado) : d.estado === estado))
-            && (!tipo || d.tipo === tipo)
-            && (!q || tokenMatch(q, d.dist_clientes?.nombre, d.numero_control)));
-    }, [docs, buscar, estado, tipo]);
-
-    const stats = useMemo(() => ({
-        pendientes: docs.filter(d => PENDIENTE.has(d.estado)).length,
-        sellados: docs.filter(d => d.estado === 'sellado').length,
-        rechazados: docs.filter(d => d.estado === 'rechazado').length,
-        vendido: docs.filter(d => d.estado === 'sellado' && (d.tipo === '01' || d.tipo === '03'))
-            .reduce((a, d) => a + Number(d.total_pagar), 0),
-    }), [docs]);
+        let base = cubeta === 'accion' ? grupos.accion
+            : cubeta === 'sellados' ? grupos.sellados
+            : cubeta === 'invalidados' ? docs.filter(d => d.estado === 'invalidado')
+            : docs;
+        if (cubeta === 'accion' && sub === 'por_enviar') base = grupos.porEnviar;
+        if (cubeta === 'accion' && sub === 'rechazados') base = grupos.rechazados;
+        if (cubeta === 'accion' && sub === 'invalidaciones') base = grupos.invalidaciones;
+        return base.filter(d => (!tipo || d.tipo === tipo) && (!q || tokenMatch(q, d.dist_clientes?.nombre, d.numero_control, d.codigo_generacion)));
+    }, [docs, grupos, cubeta, sub, buscar, tipo]);
 
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filtrados.length });
-    useEffect(() => { setPage(1); }, [buscar, estado, tipo]); // eslint-disable-line react-hooks/exhaustive-deps
+    useEffect(() => { setPage(1); }, [buscar, cubeta, sub, tipo]); // eslint-disable-line react-hooks/exhaustive-deps
     const pagina = filtrados.slice((page - 1) * pageSize, page * pageSize);
 
+    /** Reenvía, de a uno, todo lo que quedó sin sello. Se detiene si falta el certificado. */
+    const reenviarPendientes = async () => {
+        const lista = grupos.porEnviar;
+        if (!lista.length) return;
+        setAvisoFirma('');
+        setReenvio({ hecho: 0, total: lista.length });
+        const cuenta = { sellado: 0, rechazado: 0, pendiente: 0, error: 0 };
+        for (const [i, d] of lista.entries()) {
+            try {
+                const r = await reintentarDocumento(d.id);
+                if (r?.estado === 'sellado') cuenta.sellado += 1;
+                else if (r?.estado === 'rechazado') cuenta.rechazado += 1;
+                else cuenta.pendiente += 1;
+                // Sin certificado no hay nada que reintentar: los demás darían lo mismo.
+                if (r?.estado === 'sin_firmar' && /certificado/i.test(r?.aviso ?? '')) {
+                    setAvisoFirma(r.aviso);
+                    break;
+                }
+            } catch (e) {
+                cuenta.error += 1;
+                console.error('reenviar', d.id, e);
+            }
+            setReenvio({ hecho: i + 1, total: lista.length });
+        }
+        useStaff.getState().appendAuditLog('DISTRIBUCION_DTE_REENVIO_EN_BLOQUE', null, { total: lista.length, ...cuenta });
+        setReenvio(null);
+        showToast('Reenvío terminado',
+            `${cuenta.sellado} recibidos por Hacienda · ${cuenta.rechazado} rechazados · ${cuenta.pendiente + cuenta.error} siguen pendientes`,
+            cuenta.rechazado || cuenta.error ? 'warning' : 'success');
+        cargar();
+    };
+
+    const todoBien = !cargando && grupos.accion.length === 0;
+
     return (
-        <div className="p-5 md:p-6 space-y-5">
+        <div className="p-3 md:p-5 flex flex-col gap-4">
+            {/* ── El semáforo: ¿está todo bien con Hacienda? ── */}
+            {!cargando && !error && (
+                <section data-testid="semaforo-hacienda" data-nivel={todoBien ? 'ok' : grupos.rechazados.length || grupos.invalidaciones.some(d => d.invalidacion_estado === 'rechazada') ? 'error' : 'pendiente'}
+                    className={`rounded-2xl border p-4 flex flex-col md:flex-row md:items-center gap-3 ${todoBien ? 'border-success/40 bg-success/5' : grupos.rechazados.length ? 'border-danger/40 bg-danger/5' : 'border-warning/40 bg-warning/5'}`}>
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                        {todoBien
+                            ? <ShieldCheck size={26} className="text-success-text shrink-0" />
+                            : <AlertTriangle size={26} className={`${grupos.rechazados.length ? 'text-danger-text' : 'text-warning-text'} shrink-0`} />}
+                        <div className="min-w-0">
+                            <p className={`text-title font-black ${todoBien ? 'text-success-text' : grupos.rechazados.length ? 'text-danger-text' : 'text-warning-text'}`}>
+                                {todoBien ? 'Todo al día con Hacienda' : `${formatQty(grupos.accion.length)} documento${grupos.accion.length === 1 ? '' : 's'} por resolver`}
+                            </p>
+                            <p className="text-caption text-content-2">
+                                {todoBien
+                                    ? `Los ${formatQty(grupos.sellados.length)} documentos de los últimos 120 días tienen código de generación y sello de recepción.`
+                                    : [
+                                        grupos.porEnviar.length && `${formatQty(grupos.porEnviar.length)} sin sello de Hacienda`,
+                                        grupos.rechazados.length && `${formatQty(grupos.rechazados.length)} rechazado${grupos.rechazados.length === 1 ? '' : 's'} por corregir`,
+                                        grupos.invalidaciones.length && `${formatQty(grupos.invalidaciones.length)} invalidación pendiente`,
+                                        grupos.contingencia.length && `${formatQty(grupos.contingencia.length)} emitido${grupos.contingencia.length === 1 ? '' : 's'} sin conexión`,
+                                    ].filter(Boolean).join(' · ')}
+                            </p>
+                        </div>
+                    </div>
+                    {puedeVender && grupos.porEnviar.length > 0 && (
+                        <Button variant="primary" icon={reenvio ? Loader2 : RefreshCw} disabled={!!reenvio} onClick={reenviarPendientes} data-reenviar-todos>
+                            {reenvio ? `Reenviando ${reenvio.hecho} de ${reenvio.total}…` : `Reenviar pendientes (${formatQty(grupos.porEnviar.length)})`}
+                        </Button>
+                    )}
+                </section>
+            )}
+            {avisoFirma && (
+                <Notice variant="warning" icon={AlertTriangle}>
+                    {avisoFirma} Sin el certificado de la empresa no se puede firmar: hay que cargar las credenciales de Hacienda.
+                </Notice>
+            )}
+
+            {/* ── Las cubetas: tocar una filtra la lista ── */}
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                <CarrilCards className="flex-1" ariaLabel="Resumen de documentos">
-                    <StatCard icon={Clock} label="Sin sello" value={stats.pendientes} loading={cargando}
-                        iconBg="bg-warning/10" iconCls="text-warning" valueCls={stats.pendientes ? 'text-warning-text' : undefined}
-                        sub="Firmados o por firmar" active={estado === 'pendiente'} tono="warning"
-                        onClick={() => setEstado(v => (v === 'pendiente' ? '' : 'pendiente'))} />
-                    <StatCard icon={CheckCircle2} label="Sellados" value={stats.sellados} loading={cargando}
-                        iconBg="bg-success/10" iconCls="text-success" sub="Recibidos por Hacienda" />
-                    <StatCard icon={Ban} label="Rechazados" value={stats.rechazados} loading={cargando}
-                        iconBg="bg-danger/10" iconCls="text-danger" valueCls={stats.rechazados ? 'text-danger-text' : undefined}
-                        sub="Hay que emitirlos de nuevo" active={estado === 'rechazado'} tono="danger"
-                        onClick={() => setEstado(v => (v === 'rechazado' ? '' : 'rechazado'))} />
-                    <StatCard icon={FileCheck2} label="Vendido" value={formatMoney(stats.vendido)} loading={cargando}
-                        sub="Facturas y CCF sellados, 120 días" />
+                <CarrilCards className="flex-1" ariaLabel="Qué falta con Hacienda">
+                    <StatCard icon={Clock} label="Sin sello" value={formatQty(grupos.porEnviar.length)} loading={cargando}
+                        iconBg="bg-warning/10" iconCls="text-warning" valueCls={grupos.porEnviar.length ? 'text-warning-text' : undefined}
+                        sub="Firmar o reenviar a Hacienda" active={cubeta === 'accion' && sub === 'por_enviar'} tono="warning"
+                        onClick={() => { setCubeta('accion'); setSub(v => (v === 'por_enviar' ? '' : 'por_enviar')); }} />
+                    <StatCard icon={XCircle} label="Rechazados" value={formatQty(grupos.rechazados.length)} loading={cargando}
+                        iconBg="bg-danger/10" iconCls="text-danger" valueCls={grupos.rechazados.length ? 'text-danger-text' : undefined}
+                        sub="Corregir y volver a facturar" active={cubeta === 'accion' && sub === 'rechazados'} tono="danger"
+                        onClick={() => { setCubeta('accion'); setSub(v => (v === 'rechazados' ? '' : 'rechazados')); }} />
+                    <StatCard icon={FileX2} label="Invalidaciones" value={formatQty(grupos.invalidaciones.length)} loading={cargando}
+                        iconBg="bg-warning/10" iconCls="text-warning" sub="Por enviar o rechazadas"
+                        active={cubeta === 'accion' && sub === 'invalidaciones'} tono="warning"
+                        onClick={() => { setCubeta('accion'); setSub(v => (v === 'invalidaciones' ? '' : 'invalidaciones')); }} />
+                    <StatCard icon={CheckCircle2} label="Sellados" value={formatQty(grupos.sellados.length)} loading={cargando}
+                        iconBg="bg-success/10" iconCls="text-success" sub={`${formatMoney(grupos.vendido)} vendidos · 120 días`}
+                        active={cubeta === 'sellados'} tono="success" onClick={() => { setCubeta('sellados'); setSub(''); }} />
                 </CarrilCards>
-                <FilterBar onClear={() => { setEstado(''); setTipo(''); }} activeCount={[estado, tipo].filter(Boolean).length}>
-                    <FilterBar.Section active={!!estado} onClear={() => setEstado('')} label="estado">
-                        <FilterBar.Opciones options={FILTRO_ESTADO} value={estado} onChange={v => setEstado(v || '')}
-                            label="Estado" icon={FileCheck2} placeholder="Estado" />
-                    </FilterBar.Section>
+                <FilterBar onClear={() => setTipo('')} activeCount={tipo ? 1 : 0}>
                     <FilterBar.Section active={!!tipo} onClear={() => setTipo('')} label="tipo">
                         <FilterBar.Opciones value={tipo} onChange={v => setTipo(v || '')} label="Tipo" placeholder="Tipo"
                             options={Object.entries(TIPO_DOCUMENTO).map(([value, t]) => ({ value, label: t.largo }))} />
@@ -116,12 +211,17 @@ export default function TabDocumentos({ puedeVender, buscar }) {
                 movil={{ usarAccionDeFila: true }}
                 loading={cargando}
                 minWidth="320px"
-                empty={buscar || estado || tipo
+                empty={buscar || tipo
                     ? { icon: Search, message: 'Sin resultados', subtext: 'Ningún documento coincide con la búsqueda o el filtro.' }
-                    : { icon: FileCheck2, message: 'Sin documentos', subtext: 'Se crean al facturar un pedido.' }}
+                    : cubeta === 'accion'
+                        ? { icon: ShieldCheck, message: 'Sin pendientes', subtext: 'Todo lo facturado está recibido por Hacienda.' }
+                        : { icon: FileCheck2, message: 'Sin documentos', subtext: 'Se crean al facturar un pedido.' }}
             >
                 {pagina.map((d, i) => {
+                    const r = revisionHacienda(d);
                     const est = ESTADO_DOCUMENTO[d.estado];
+                    const codigoOk = r.pasos.find(p => p.clave === 'codigo')?.ok;
+                    const selloOk = r.pasos.find(p => p.clave === 'sello')?.ok;
                     return (
                         <DataRow key={d.id} index={i} onClick={() => setAbierto(d.id)}>
                             <DataCell>
@@ -130,15 +230,25 @@ export default function TabDocumentos({ puedeVender, buscar }) {
                                         {TIPO_DOCUMENTO[d.tipo]?.largo}
                                         {d.ambiente === '00' && <span className="text-caption text-content-3 font-normal"> · prueba</span>}
                                     </p>
-                                    <p className="font-mono text-caption text-content-3 truncate" title={d.numero_control}>{d.numero_control}</p>
+                                    <p className="font-mono text-caption text-content-3 truncate">{d.numero_control}</p>
                                 </div>
                             </DataCell>
                             <DataCell hideBelow="md">
-                                <span className="text-caption text-content-2 truncate block max-w-[200px]" title={d.dist_clientes?.nombre}>
-                                    {d.dist_clientes?.nombre ?? '—'}
-                                </span>
+                                <span className="text-caption text-content-2 truncate block max-w-[200px]">{d.dist_clientes?.nombre ?? '—'}</span>
                             </DataCell>
-                            <DataCell><Badge size="sm" variant={est.variant}>{est.label}</Badge></DataCell>
+                            <DataCell>
+                                <div className="flex flex-col items-start gap-1">
+                                    <Badge size="sm" variant={r.nivel === 'ok' ? 'success' : r.nivel === 'error' ? 'danger' : r.nivel === 'info' ? 'neutral' : 'warning'} uppercase={false}>
+                                        {r.nivel === 'ok' ? 'Recibido' : r.titulo}
+                                    </Badge>
+                                    <span className="text-micro text-content-3 flex items-center gap-2">
+                                        <span className={codigoOk ? 'text-success-text' : 'text-danger-text'}>{codigoOk ? '✓' : '✗'} Código</span>
+                                        <span className={selloOk ? 'text-success-text' : 'text-danger-text'}>{selloOk ? '✓' : '✗'} Sello</span>
+                                        {d.intentos > 1 && <span>{d.intentos} envíos</span>}
+                                        {est && d.estado !== 'sellado' && r.nivel !== 'error' && <span className="sr-only">{est.label}</span>}
+                                    </span>
+                                </div>
+                            </DataCell>
                             <DataCell hideBelow="sm">
                                 <span className="text-label text-content-2 tabular-nums">{fechaNumerica(d.fec_emi)}</span>
                             </DataCell>

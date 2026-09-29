@@ -130,3 +130,78 @@ export function rangoDe(periodo, hoy = hoySV()) {
         default: return { desde: sumarDias(hoy, -29), hasta: hoy };
     }
 }
+
+// ── ¿Está bien con Hacienda? ───────────────────────────────────────────────
+// Pedido del usuario (2026-09-29): «que en la facturación me avise si todo
+// está bien con Hacienda (código de generación y recibido) o falta algo, y si
+// falta algo que salga para reenviar».
+//
+// Revisa las piezas que hacen válido un documento y dice QUÉ hacer, no sólo
+// en qué estado está. «Recibido» es sello VÁLIDO: 40 caracteres, no «algo en
+// la columna» (la regla del sello del portal, CLAUDE.md).
+const UUID = /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/i;
+export const selloValido = (s) => typeof s === 'string' && s.trim().length === 40;
+
+/**
+ * @returns {{ nivel: 'ok'|'pendiente'|'error'|'info', titulo: string, detalle: string,
+ *             pasos: {clave:string, rotulo:string, ok:boolean|null, valor?:string}[],
+ *             accion: null|'reenviar'|'corregir'|'invalidacion' }}
+ */
+export function revisionHacienda(d) {
+    if (!d) return null;
+    const codigo = String(d.codigo_generacion ?? '').toUpperCase();
+    const firmado = !['sin_firmar', 'descartado'].includes(d.estado);
+    const sello = selloValido(d.sello_recibido);
+    const pasos = [
+        { clave: 'numero', rotulo: 'Número de control', ok: String(d.numero_control ?? '').length === 31, valor: d.numero_control },
+        { clave: 'codigo', rotulo: 'Código de generación', ok: UUID.test(codigo), valor: codigo },
+        { clave: 'firma', rotulo: 'Firmado', ok: firmado },
+        { clave: 'sello', rotulo: 'Recibido por Hacienda (sello)', ok: sello, valor: sello ? d.sello_recibido : undefined },
+    ];
+    const base = { pasos, accion: null };
+    if (d.estado === 'descartado') {
+        return { ...base, nivel: 'info', titulo: 'Retirado antes de llegar a Hacienda', detalle: 'El pedido volvió a «por facturar» para corregirlo.' };
+    }
+    if (d.estado === 'invalidado') {
+        return { ...base, nivel: 'info', titulo: 'Invalidado ante Hacienda', detalle: 'Quedó anulado y sus unidades volvieron al inventario.' };
+    }
+    if (d.invalidacion_estado === 'rechazada') {
+        return { ...base, nivel: 'error', accion: 'invalidacion', titulo: 'Hacienda rechazó la invalidación', detalle: 'El documento sigue vigente. Revisa el motivo y vuelve a enviarla.' };
+    }
+    if (d.invalidacion_estado === 'pendiente') {
+        return { ...base, nivel: 'pendiente', accion: 'invalidacion', titulo: 'Invalidación por enviar',
+            detalle: d.reemplazo_id ? 'Sale sola cuando el documento que lo reemplaza tenga sello.' : 'Está firmada y todavía no llega a Hacienda.' };
+    }
+    if (d.estado === 'rechazado') {
+        return { ...base, nivel: 'error', accion: 'corregir', titulo: 'Hacienda lo rechazó',
+            detalle: 'No tiene validez. Corrige lo que dice Hacienda (casi siempre la ficha del cliente) y vuelve a facturar el pedido.' };
+    }
+    if (d.estado === 'contingencia') {
+        // El aviso de contingencia a Hacienda todavía no está conectado (el
+        // evento se arma en `_shared/dte/eventos.ts`, falta enviarlo): no se
+        // ofrece un botón que no hace lo que dice.
+        return { ...base, nivel: 'pendiente', titulo: 'Emitido sin conexión',
+            detalle: 'Es válido para entregar; se transmite con el aviso de contingencia a Hacienda.' };
+    }
+    if (!sello) {
+        return { ...base, nivel: 'pendiente', accion: 'reenviar', titulo: firmado ? 'Falta que Hacienda lo reciba' : 'Falta firmarlo y enviarlo',
+            detalle: d.intentos > 0 ? `Se intentó ${d.intentos} ${d.intentos === 1 ? 'vez' : 'veces'} y no hubo respuesta. Reenvíalo.` : 'Todavía no se ha enviado.' };
+    }
+    return { ...base, nivel: 'ok', titulo: 'Todo bien con Hacienda', detalle: 'Tiene código de generación y sello de recepción.' };
+}
+
+/** ¿Pide que alguien haga algo? (un rechazo ya refacturado o anulado es constancia). */
+export function pideAccion(d) {
+    const r = revisionHacienda(d);
+    if (!r || r.nivel === 'ok' || r.nivel === 'info') return false;
+    if (d.estado === 'rechazado') return d.pedido ? d.pedido.estado === 'confirmado' && d.pedido.dte_id == null : true;
+    return true;
+}
+
+/** Las pestañas de Facturación (van en `?cubeta=`; la lee la vista y la pestaña). */
+export const CUBETAS_FACTURACION = [
+    { key: 'accion', label: 'Por resolver' },
+    { key: 'todos', label: 'Todos' },
+    { key: 'sellados', label: 'Sellados' },
+    { key: 'invalidados', label: 'Invalidados' },
+];

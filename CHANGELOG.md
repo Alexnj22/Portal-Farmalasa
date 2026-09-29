@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1100.0 — Torogoz: Facturación con semáforo de Hacienda, lista de chequeo por documento y reenvío
+
+Pedido del usuario: «que en la facturación me avise si todo está bien con
+Hacienda (código de generación y recibido) o falta algo, y si falta algo que
+salga para reenviar; y una parte de facturación para ver, como en el portal,
+si hay algo pendiente».
+
+- **Documentos pasa a llamarse Facturación**, con el control con Hacienda:
+  - **semáforo** arriba: «Todo al día con Hacienda» o «N documentos por
+    resolver» (sin sello, rechazados por corregir, invalidaciones, sin
+    conexión);
+  - **cubetas** que filtran (Sin sello · Rechazados · Invalidaciones ·
+    Sellados) y pestañas en la dirección (`?cubeta=`): Por resolver · Todos ·
+    Sellados · Invalidados;
+  - **Reenviar pendientes (N)**: manda de a uno todo lo que quedó sin sello;
+    si falta el certificado de la empresa se detiene al primero y lo dice;
+  - columna **Hacienda** por documento: ✓/✗ código y sello, y envíos.
+- **Lista de chequeo en cada documento** (`EstadoHacienda`): número de
+  control, código de generación, firma y sello de recepción, con lo que dijo
+  Hacienda y el botón de lo que toca (Reenviar · Corregir y facturar · Enviar
+  invalidación). «Recibido» es sello VÁLIDO (40 caracteres).
+- **Al facturar**, aviso inmediato: recibido por Hacienda, rechazado o falta
+  el sello.
+- **Número en el menú** de Facturación (rojo si hay rechazos):
+  `dist_facturacion_pendiente()`, borrador 0013. Un rechazo ya refacturado o
+  anulado es constancia y no cuenta.
+- El aviso de contingencia a Hacienda todavía no está conectado: un documento
+  sin respuesta queda «sin sello» y se reenvía; no se ofrece un botón de
+  contingencia que no hace lo que dice.
+- Semilla: un rechazo (NRC del receptor) y uno sin conexión, para ver los
+  casos. La prueba del teléfono recorre 9 secciones (tope de 90 s).
+
+
 ## v2.1099.1 — Torogoz: un rechazo de Hacienda no devuelve la mercadería; sólo anular
 
 Corrección del usuario a v2.1099.0: «si se rechaza, aún se puede corregir […]

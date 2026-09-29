@@ -761,6 +761,15 @@ export default function DistribucionVentaView() {
             }
             try {
                 const factura = await facturarPedido(pedidoId);
+                // Lo primero que se dice: ¿lo recibió Hacienda? El documento se
+                // abre con la lista de chequeo completa y el botón para reenviar.
+                if (factura.estado === 'sellado') {
+                    showToast('Recibido por Hacienda', `Código de generación y sello listos · ${factura.numero_control}`, 'success');
+                } else if (factura.estado === 'rechazado') {
+                    showToast('Hacienda lo rechazó', 'Corrige lo que indica y vuelve a facturar. La mercadería sigue apartada para este pedido.', 'error');
+                } else {
+                    showToast('Facturado, falta el sello de Hacienda', factura.aviso ?? 'Quedó guardado: reenvíalo desde el documento o desde Facturación.', 'warning');
+                }
                 navigate(rutaDocumento(factura.dte_id, { imprimir }), { replace: true });
             } catch (e) {
                 showToast('Pedido guardado sin facturar', mensajeDeDistribucion(e), 'warning');

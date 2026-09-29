@@ -26,6 +26,7 @@ import {
 } from '@nucleo/utils/distribucionDocumento';
 import { MARCA_PAPEL } from './marca';
 import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO } from './comun';
+import EstadoHacienda from './EstadoHacienda';
 import { useNavigate } from 'react-router-dom';
 import { rutaVolverAVender } from './rutas';
 
@@ -188,11 +189,9 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
 
     const est = d ? ESTADO_DOCUMENTO[d.estado] : null;
     const sinSello = d && ['sin_firmar', 'firmado', 'contingencia'].includes(d.estado);
-    const puedeReintentar = puedeVender && d && ['sin_firmar', 'firmado'].includes(d.estado);
     const invalidando = d?.invalidacion_estado === 'pendiente' || d?.invalidacion_estado === 'procesada';
     const puedeCorregir = puedeVender && d?.pedido_id && (sinSello || d.estado === 'rechazado' || (d.estado === 'sellado' && !invalidando));
     const puedeDeshacer = puedeVender && d?.estado === 'sellado' && !invalidando;
-    const obs = d?.observaciones_mh ?? [];
 
     return (
         <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-3xl" ariaLabel="Documento">
@@ -218,19 +217,9 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                     {!d && !error && <p className="text-caption text-content-3">Cargando…</p>}
                     {d && (<>
                         {d.ambiente === '00' && <Notice variant="info" compact>Documento de PRUEBA: no tiene validez fiscal.</Notice>}
-                        {d.estado !== 'sellado' && (
-                            <Notice variant={est.variant === 'danger' ? 'danger' : 'warning'} compact>
-                                {est.ayuda}{d.descripcion_msg ? ` Hacienda: «${d.descripcion_msg}».` : ''}
-                            </Notice>
-                        )}
-                        {obs.length > 0 && (
-                            <div className="rounded-xl border border-divider px-4 py-3">
-                                <p className="text-caption font-bold text-content-2 mb-1">Observaciones de Hacienda</p>
-                                <ul className="list-disc pl-4 text-caption text-content-2 space-y-0.5">
-                                    {obs.map((o, i) => <li key={i}>{o}</li>)}
-                                </ul>
-                            </div>
-                        )}
+                        {/* Lo primero: ¿está bien con Hacienda? Y si falta algo, el botón. */}
+                        <EstadoHacienda documento={d} ocupado={ocupado} puedeActuar={puedeVender}
+                            onReenviar={reintentar} onCorregir={corregir} onInvalidacion={reenviarInv} />
 
                         <SegmentedControl value={vista} onChange={setVista} options={VISTAS} />
 
@@ -250,15 +239,6 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                                 <dd className="font-black text-content tabular-nums">{formatMoney(d.total_pagar)}</dd>
                                 {d.intentos > 0 && (<><dt className="text-content-3">Envíos a Hacienda</dt><dd className="text-content-2">{d.intentos}</dd></>)}
                             </dl>
-                        )}
-                        {d.invalidacion_estado === 'pendiente' && (
-                            <Notice variant="warning" compact>
-                                Invalidación firmada y pendiente de enviar a Hacienda
-                                {d.reemplazo_id ? ': sale cuando el documento que lo reemplaza tenga sello.' : '.'}
-                            </Notice>
-                        )}
-                        {d.invalidacion_estado === 'rechazada' && (
-                            <Notice variant="danger" compact>Hacienda rechazó la invalidación. Revisa el motivo en «Datos» y vuelve a enviarla.</Notice>
                         )}
                         {d.estado === 'sellado' && puedeVender && !invalidando && (
                             <p className="text-caption text-content-3">
@@ -303,19 +283,10 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                         <Button variant="secondary" tone="danger" icon={ocupado === 'deshacer' ? Loader2 : Ban}
                             disabled={!!ocupado || !motivo.trim()} onClick={deshacer}>Invalidar ante Hacienda</Button>
                     )}
-                    {puedeVender && ['pendiente', 'rechazada'].includes(d?.invalidacion_estado) && (
-                        <Button variant="secondary" icon={ocupado === 'invalidacion' ? Loader2 : RefreshCw} disabled={!!ocupado} onClick={reenviarInv}>
-                            Enviar invalidación
-                        </Button>
-                    )}
-                    {puedeCorregir && (
+                    {/* Rechazado: el botón está en la tarjeta de Hacienda, arriba. */}
+                    {puedeCorregir && d.estado !== 'rechazado' && (
                         <Button variant="secondary" icon={ocupado === 'corregir' ? Loader2 : (d.estado === 'rechazado' ? Pencil : Undo2)}
                             disabled={!!ocupado} onClick={corregir}>Corregir</Button>
-                    )}
-                    {puedeReintentar && (
-                        <Button variant="primary" icon={ocupado === 'reintentar' ? Loader2 : RefreshCw} disabled={!!ocupado} onClick={reintentar}>
-                            Enviar a Hacienda
-                        </Button>
                     )}
                 </div>
             </LiquidModal.Footer>

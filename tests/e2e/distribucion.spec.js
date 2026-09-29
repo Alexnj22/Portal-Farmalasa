@@ -20,7 +20,7 @@ async function cobrar(page) {
 }
 
 
-const SECCIONES = { inicio: 'Inicio', pedidos: 'Pedidos', documentos: 'Documentos', clientes: 'Clientes', catalogo: 'Catálogo',
+const SECCIONES = { inicio: 'Inicio', pedidos: 'Pedidos', documentos: 'Facturación', clientes: 'Clientes', catalogo: 'Catálogo',
     inventario: 'Inventario', solicitudes: 'Solicitudes', emisor: 'Empresa' };
 
 test('las secciones de Torogoz abren sin romper, y la dirección vieja lleva allá', async ({ page }) => {
@@ -501,4 +501,37 @@ test('reservas: lo que una venta tiene en el carrito no se lo lleva otra, y se d
     await b.keyboard.press('F6');
     await b.keyboard.press('Enter');
     await expect(b.getByText('Elegir cliente…')).toBeVisible();
+});
+
+test('facturación: semáforo con Hacienda, cubetas, lista de chequeo del documento y reenviar pendientes', async ({ page }) => {
+    const errores = [];
+    page.on('pageerror', e => errores.push(e.message));
+    await entrar(page);
+    await page.goto('/torogoz/documentos');
+    // El menú avisa cuánto falta.
+    await expect(page.locator('[data-testid="facturacion-pendiente"]').first()).toBeVisible({ timeout: 15_000 });
+    const semaforo = page.locator('[data-testid="semaforo-hacienda"]');
+    await expect(semaforo).toBeVisible({ timeout: 15_000 });
+    await expect(semaforo).toContainText(/por resolver|Todo al día/);
+    await page.screenshot({ path: `${SALIDA}/facturacion.png`, fullPage: true });
+    // Rechazados: el documento dice qué dijo Hacienda y ofrece corregir.
+    await page.getByRole('button', { name: /Rechazados/ }).first().click();
+    await page.locator('table tbody tr').first().click();
+    const estado = page.locator('[data-testid="estado-hacienda"]');
+    await expect(estado).toHaveAttribute('data-nivel', 'error', { timeout: 15_000 });
+    await expect(estado).toContainText('Hacienda lo rechazó');
+    await expect(estado).toContainText(/NRC/);
+    await expect(estado.getByRole('button', { name: 'Corregir y facturar' })).toBeVisible();
+    await page.screenshot({ path: `${SALIDA}/facturacion-rechazado.png` });
+    await page.keyboard.press('Escape');
+    // Sin sello: el documento ofrece reenviar.
+    await page.getByRole('button', { name: /Sin sello/ }).first().click();
+    await page.locator('table tbody tr').first().click();
+    await expect(estado).toHaveAttribute('data-nivel', 'pendiente', { timeout: 15_000 });
+    await expect(estado.getByRole('button', { name: 'Reenviar a Hacienda' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    // En bloque: sin certificado en este entorno, se detiene al primero y lo dice.
+    await page.locator('[data-reenviar-todos]').click();
+    await expect(page.getByText(/certificado/i).first()).toBeVisible({ timeout: 60_000 });
+    expect(errores).toEqual([]);
 });

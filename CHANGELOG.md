@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1086.2 — App: sin avisos en la configuración de compilación
+
+El número de compilación lo lleva EAS (no el `app.json`) y los perfiles ya no
+nombran canales de actualización que la app no usa.
+
 ## v2.1086.1 — App: configuración para compilar y publicar en TestFlight y Play
 
 La app del teléfono queda lista para compilarse en la nube (EAS, proyecto

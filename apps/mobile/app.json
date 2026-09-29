@@ -10,14 +10,12 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "lat.farmasalud.portal",
-      "buildNumber": "1",
       "config": {
         "usesNonExemptEncryption": false
       }
     },
     "android": {
       "package": "lat.farmasalud.portal",
-      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/icono.png"

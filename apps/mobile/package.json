@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@expo/material-symbols": "^0.1.1",
     "@expo/metro-runtime": "~57.0.16",
+    "@expo/ui": "~57.0.21",
     "@supabase/supabase-js": "^2.117.2",
     "expo": "~57.0.25",
     "expo-constants": "~57.0.19",

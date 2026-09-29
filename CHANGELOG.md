@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1086.0 — App: entrada e inicio con los controles propios del sistema
+
+Decisión del usuario: la app del teléfono se ve con los elementos propios de
+cada sistema. La entrada es un formulario agrupado como el de Ajustes del
+iPhone (con los colores del sistema y el modo oscuro solo), con el botón
+nativo; el inicio es la lista nativa de iOS / Android con los íconos del
+sistema (SF Symbols y Material). Iniciar sesión sigue ofreciendo guardar la
+contraseña en el llavero.
+
+Dos cosas medidas antes de elegir: el campo de texto de @expo/ui avisaba el
+cambio una tecla tarde (el usuario salía «prueba» con la pantalla diciendo
+«pruebas»), así que los campos son los del sistema vía React Native; y un
+campo metido dentro del formulario de SwiftUI no recibía los toques, así que
+el formulario se arma con piezas de React Native y los colores del sistema.
+
 ## v2.1085.0 — App: pedir a otra sala, nativo; la lógica del pedido pasa al núcleo
 
 En la app del teléfono, Traslados abre nativo con «Pedir a otra sala»: buscar

@@ -132,6 +132,9 @@ export default function DistribucionVentaView() {
     const [params, setParams] = useSearchParams();
     // Se lee UNA vez, al abrir: después se limpia de la dirección.
     const [desde] = useState(() => (!corrigiendo ? Number(params.get('desde')) || null : null));
+    // `?cliente=<id>`: una venta nueva con ese cliente ya elegido (el «Vender»
+    // del tablero, sobre un cliente que dejó de comprar).
+    const [clienteInicial] = useState(() => (!corrigiendo && !params.get('desde') ? params.get('cliente') : null));
     const { hasPermission } = useAuth();
     const puedeVender = hasPermission('distribucion', 'can_edit');
     const puedeConfigurar = hasPermission('distribucion_config', 'can_edit');
@@ -233,6 +236,18 @@ export default function DistribucionVentaView() {
                     setParams(p, { replace: true });
                     showToast('Venta nueva con los mismos productos', 'Revisa las cantidades antes de guardar.', 'info');
                 }
+                if (vivo && clienteInicial && !base) {
+                    const c = cs.find(x => String(x.id) === String(clienteInicial));
+                    if (c) {
+                        setClienteId(String(c.id));
+                        setTipoDoc(c.contribuyente ? '03' : '01');
+                        setListaVenta(c.lista_id ? String(c.lista_id) : '');
+                        setPlazo(c.plazo_dias ? String(c.plazo_dias) : '');
+                    }
+                    const p = new URLSearchParams(params);
+                    p.delete('cliente');
+                    setParams(p, { replace: true });
+                }
                 if (!vivo) return;
                 setEmisor(e); setClientes(cs); setCatalogo(cat); setListas(lp.listas); setPrecios(lp.precios); setPedido(ped);
                 const li = lotes ? indexarLotes(lotes) : new Map();
@@ -307,7 +322,7 @@ export default function DistribucionVentaView() {
     const repuesto = useRef(false);
     useEffect(() => {
         // Con «volver a vender» la venta ya viene armada: el borrador no la pisa.
-        if (corrigiendo || desde || repuesto.current || !recuperado) return;
+        if (corrigiendo || desde || clienteInicial || repuesto.current || !recuperado) return;
         repuesto.current = true;
         setClienteId(recuperado.clienteId ?? '');
         setListaVenta(recuperado.listaVenta ?? '');
@@ -319,7 +334,7 @@ export default function DistribucionVentaView() {
         setPlazo(recuperado.plazo ?? '');
         setNotas(recuperado.notas ?? '');
         if (recuperado.uuid) setUuid(recuperado.uuid);
-    }, [corrigiendo, recuperado, desde]);
+    }, [corrigiendo, recuperado, desde, clienteInicial]);
 
     const cliente = useMemo(() => clientes.find(c => String(c.id) === String(clienteId)) ?? null, [clientes, clienteId]);
     const licenciaVencida = cliente?.licencia_srs_vence && cliente.licencia_srs_vence < hoySV();

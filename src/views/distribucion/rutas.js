@@ -12,7 +12,7 @@
 export const BASE_TOROGOZ = '/torogoz';
 
 /** Las secciones del menú, en el orden del trabajo del día. */
-export const SECCIONES = ['pedidos', 'documentos', 'clientes', 'catalogo', 'inventario', 'perdidas', 'solicitudes', 'emisor'];
+export const SECCIONES = ['inicio', 'pedidos', 'documentos', 'clientes', 'catalogo', 'inventario', 'perdidas', 'solicitudes', 'emisor'];
 
 export const rutaLogin = () => `${BASE_TOROGOZ}/login`;
 export const rutaInicio = () => `${BASE_TOROGOZ}/pedidos`;
@@ -23,4 +23,6 @@ export const rutaDocumento = (dteId, { imprimir = false } = {}) =>
     rutaSeccion('pedidos', `documento=${dteId}${imprimir ? '&imprimir=1' : ''}`);
 export const rutaSolicitud = (id) => rutaSeccion('solicitudes', `solicitud=${id}`);
 /** Una venta NUEVA con el cliente y los productos de otra («Volver a vender»). */
+/** Una venta NUEVA con ese cliente ya elegido (desde el tablero: «Vender»). */
+export const rutaVentaA = (clienteId) => `${BASE_TOROGOZ}/venta?cliente=${clienteId}`;
 export const rutaVolverAVender = (pedidoId) => `${BASE_TOROGOZ}/venta?desde=${pedidoId}`;

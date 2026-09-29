@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
-    ClipboardList, FileCheck2, Store, PackageSearch, Boxes, Tag, Building2, Plus, LogOut, Menu, X, ArrowLeftRight, PackageX } from 'lucide-react';
+    ClipboardList, FileCheck2, Store, PackageSearch, Boxes, Tag, Building2, Plus, LogOut, Menu, X, ArrowLeftRight, PackageX, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useMarca } from '../../plataforma/useMarca';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -24,6 +24,7 @@ import Badge from '../../components/common/Badge';
 const CampanaLazy = React.lazy(() => import('../../components/common/NotificationBell'));
 
 const MENU = [
+    { seccion: 'inicio',      label: 'Inicio',      icon: LayoutDashboard },
     { seccion: 'pedidos',     label: 'Pedidos',     icon: ClipboardList },
     { seccion: 'documentos',  label: 'Documentos',  icon: FileCheck2 },
     { seccion: 'clientes',    label: 'Clientes',    icon: Store },

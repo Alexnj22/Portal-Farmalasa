@@ -638,6 +638,7 @@ export const AREAS = [
             'supabase/functions/distribucion-dte/', 'supabase/functions/distribucion-comprobante/',
             'supabase/borradores/distribucion/',
             'scripts/entorno-pruebas/probar_distribucion.mjs', 'scripts/entorno-pruebas/distribucion_pruebas.sql',
+            'scripts/entorno-pruebas/distribucion_tablero_pruebas.sql',
             'tests/unit/dteMotor.test.js', 'tests/unit/dteHacienda.test.js', 'tests/unit/dteLotes.test.js',
             'tests/unit/distribucionLotes.test.js', 'tests/unit/distribucionPrecios.test.js',
             'tests/fixtures/dte-reales-2026-09.json',

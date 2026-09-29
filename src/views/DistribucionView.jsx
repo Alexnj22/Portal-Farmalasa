@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes, Tag, PackageX } from 'lucide-react';
+import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes, Tag, PackageX, LayoutDashboard } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Notice from '../components/common/Notice';
@@ -14,7 +14,8 @@ import TabInventario from './distribucion/TabInventario';
 import TabEmisor from './distribucion/TabEmisor';
 import SolicitudesDescuento from './distribucion/SolicitudesDescuento';
 import TabVentasPerdidas from './distribucion/TabVentasPerdidas';
-import { VISTAS_PEDIDOS, VISTAS_PERDIDAS } from './distribucion/comun';
+import TabTablero from './distribucion/TabTablero';
+import { VISTAS_PEDIDOS, VISTAS_PERDIDAS, PERIODOS } from './distribucion/comun';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 
 // Distribución — la venta en ruta de la S.A.S. a tiendas, supermercados y
@@ -26,6 +27,7 @@ import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 // distribuidora es la navegación, así que acá ya no hay pestañas. El orden
 // sigue siendo el del trabajo del día.
 const TABS = [
+    { key: 'inicio',     label: 'Inicio',     icon: LayoutDashboard },
     { key: 'pedidos',    label: 'Pedidos',    icon: ClipboardList },
     { key: 'documentos', label: 'Documentos', icon: FileCheck2 },
     { key: 'clientes',   label: 'Clientes',   icon: Store },
@@ -36,7 +38,7 @@ const TABS = [
     { key: 'emisor',     label: 'Empresa',    icon: Building2 },
 ];
 
-export default function DistribucionView({ seccion = 'pedidos' }) {
+export default function DistribucionView({ seccion = 'inicio' }) {
     // Otra empresa, otros colores (index.css). El layout de Torogoz ya lo
     // pone; acá queda por si la vista se abre sola.
     useMarca('distribucion');
@@ -47,6 +49,8 @@ export default function DistribucionView({ seccion = 'pedidos' }) {
     const [vista, setVista] = usePestanaEnUrl(VISTAS_PEDIDOS, 'pendientes', 'vista');
     // Ventas perdidas: pendientes / atendidas / descartadas, en `?estado=`.
     const [estadoPerdida, setEstadoPerdida] = usePestanaEnUrl(VISTAS_PERDIDAS, 'pendiente', 'estado');
+    // El tablero: el período en `?periodo=`.
+    const [periodo, setPeriodo] = usePestanaEnUrl(PERIODOS, '30d', 'periodo');
     const { hasPermission } = useAuth();
     const puedeVender = hasPermission('distribucion', 'can_edit');
     const puedeConfigurar = hasPermission('distribucion_config', 'can_edit');
@@ -76,7 +80,7 @@ export default function DistribucionView({ seccion = 'pedidos' }) {
     // El buscador es de la pestaña, no de la vista: al cambiar, se limpia.
     useEffect(() => { setBuscar(''); }, [tab]);
 
-    const conBuscador = tab !== 'emisor' && tab !== 'solicitudes';
+    const conBuscador = tab !== 'emisor' && tab !== 'solicitudes' && tab !== 'inicio';
     const placeholder = useMemo(() => ({
         pedidos: 'Buscar por cliente o número…',
         documentos: 'Buscar por cliente o número de control…',
@@ -92,7 +96,9 @@ export default function DistribucionView({ seccion = 'pedidos' }) {
         <GlassViewLayout
             icon={actual.icon}
             title={actual.label}
-            filtersContent={conBuscador ? (
+            filtersContent={tab === 'inicio' ? (
+                <ViewTabBar tabs={PERIODOS} activeTab={periodo} onTabChange={setPeriodo} showSearch={false} />
+            ) : conBuscador ? (
                 <ViewTabBar tabs={tab === 'pedidos' ? VISTAS_PEDIDOS : tab === 'perdidas' ? VISTAS_PERDIDAS : [actual]}
                     activeTab={tab === 'pedidos' ? vista : tab === 'perdidas' ? estadoPerdida : tab}
                     onTabChange={tab === 'pedidos' ? setVista : tab === 'perdidas' ? setEstadoPerdida : () => {}}
@@ -104,7 +110,7 @@ export default function DistribucionView({ seccion = 'pedidos' }) {
             {error && (
                 <div className="p-5 md:p-6"><Notice variant="danger" icon={AlertTriangle}>{error}</Notice></div>
             )}
-            {!cargando && !error && !emisor && tab !== 'emisor' && (
+            {!cargando && !error && !emisor && tab !== 'emisor' && tab !== 'inicio' && (
                 <div className="p-5 md:p-6">
                     <Notice variant="warning" icon={Building2}>
                         Todavía no están cargados los datos de la empresa que factura.
@@ -113,6 +119,9 @@ export default function DistribucionView({ seccion = 'pedidos' }) {
                 </div>
             )}
 
+            {visitadas.has('inicio') && (
+                <div className={tab === 'inicio' ? '' : 'hidden'}><TabTablero periodo={periodo} /></div>
+            )}
             {visitadas.has('pedidos') && (
                 <div className={tab === 'pedidos' ? '' : 'hidden'}><TabPedidos {...comunes} vista={vista} onVista={setVista} /></div>
             )}

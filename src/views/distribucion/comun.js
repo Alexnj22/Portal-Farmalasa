@@ -1,3 +1,4 @@
+import { hoySV, sumarDias } from '@nucleo/utils/fecha';
 // Rótulos y reglas de pantalla compartidos por las pestañas de Distribución.
 //
 // La pantalla habla del PORTAL (CLAUDE.md): «Enviado a Hacienda» sí, porque
@@ -101,4 +102,31 @@ export function cargarActividades() {
             .catch(e => { actividadesPromesa = null; throw e; });
     }
     return actividadesPromesa;
+}
+
+// ── El tablero (Inicio) ────────────────────────────────────────────────────
+// Los períodos van en `?periodo=`; el rango sale de la hora de El Salvador.
+export const PERIODOS = [
+    { key: 'hoy', label: 'Hoy' },
+    { key: '7d', label: '7 días' },
+    { key: '30d', label: '30 días' },
+    { key: 'mes', label: 'Este mes' },
+    { key: 'mes_ant', label: 'Mes anterior' },
+    { key: '90d', label: '90 días' },
+];
+
+/** El rango de fechas de cada período, en la hora de El Salvador. */
+export function rangoDe(periodo, hoy = hoySV()) {
+    const primeroDe = (iso) => `${iso.slice(0, 8)}01`;
+    switch (periodo) {
+        case 'hoy': return { desde: hoy, hasta: hoy };
+        case '7d': return { desde: sumarDias(hoy, -6), hasta: hoy };
+        case 'mes': return { desde: primeroDe(hoy), hasta: hoy };
+        case 'mes_ant': {
+            const fin = sumarDias(primeroDe(hoy), -1);
+            return { desde: primeroDe(fin), hasta: fin };
+        }
+        case '90d': return { desde: sumarDias(hoy, -89), hasta: hoy };
+        default: return { desde: sumarDias(hoy, -29), hasta: hoy };
+    }
 }

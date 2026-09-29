@@ -10,7 +10,7 @@ test('pestañas y formulario de pedido en el teléfono', async ({ page }) => {
     const errores = [];
     page.on('pageerror', e => errores.push(e.message));
     await entrar(page);
-    for (const tab of ['pedidos', 'documentos', 'clientes', 'catalogo', 'inventario', 'solicitudes', 'emisor']) {
+    for (const tab of ['inicio', 'pedidos', 'documentos', 'clientes', 'catalogo', 'inventario', 'perdidas', 'solicitudes', 'emisor']) {
         await page.goto(`/torogoz/${tab}`);
         await page.waitForTimeout(2000);
         await expect(page.getByText(/algo salió mal/i)).toHaveCount(0);

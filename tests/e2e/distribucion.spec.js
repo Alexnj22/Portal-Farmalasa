@@ -20,7 +20,7 @@ async function cobrar(page) {
 }
 
 
-const SECCIONES = { pedidos: 'Pedidos', documentos: 'Documentos', clientes: 'Clientes', catalogo: 'Catálogo',
+const SECCIONES = { inicio: 'Inicio', pedidos: 'Pedidos', documentos: 'Documentos', clientes: 'Clientes', catalogo: 'Catálogo',
     inventario: 'Inventario', solicitudes: 'Solicitudes', emisor: 'Empresa' };
 
 test('las secciones de Torogoz abren sin romper, y la dirección vieja lleva allá', async ({ page }) => {
@@ -38,7 +38,7 @@ test('las secciones de Torogoz abren sin romper, y la dirección vieja lleva all
     await expect(acceso).toBeVisible({ timeout: 15_000 });
     await page.screenshot({ path: `${SALIDA}/acceso-torogoz.png` });
     await acceso.click();
-    await expect(page).toHaveURL(/\/torogoz\/pedidos/);
+    await expect(page).toHaveURL(/\/torogoz\/(inicio|pedidos)/);
     for (const [tab, titulo] of Object.entries(SECCIONES)) {
         await page.goto(`/torogoz/${tab}`);
         await expect(page.getByRole('heading', { name: titulo }).first()).toBeVisible({ timeout: 15_000 });
@@ -416,4 +416,33 @@ test('venta perdida de un medicamento buscado en la SRS', async ({ page }) => {
     await page.screenshot({ path: `${SALIDA}/venta-perdida-srs.png` });
     await d.getByRole('button', { name: 'Anotar venta perdida' }).click();
     await expect(page.getByText('Venta perdida anotada').first()).toBeVisible({ timeout: 15_000 });
+});
+
+test('tablero: indicadores, filtros por ruta y período en la dirección, y «Vender» a un cliente que dejó de comprar', async ({ page }) => {
+    const errores = [];
+    page.on('pageerror', e => errores.push(e.message));
+    await entrar(page);
+    await page.goto('/torogoz');
+    await expect(page).toHaveURL(/\/torogoz\/inicio/);
+    await expect(page.getByText('Ventas por día')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/^\$[\d,]+\.\d{2}$/).first()).toBeVisible({ timeout: 15_000 });
+    await page.screenshot({ path: `${SALIDA}/tablero.png`, fullPage: true });
+    // Tocar una ruta filtra todo el tablero, y queda en la dirección.
+    await page.getByRole('button', { name: /Ruta 3 — La Palma/ }).first().click();
+    await expect(page).toHaveURL(/ruta=Ruta/);
+    await expect(page.getByRole('button', { name: 'Quitar filtros' })).toBeVisible();
+    await page.getByRole('button', { name: 'Quitar filtros' }).click();
+    await expect(page).not.toHaveURL(/ruta=/);
+    // El período también vive en la dirección.
+    await page.getByRole('tab', { name: '7 días' }).click();
+    await expect(page).toHaveURL(/periodo=7d/);
+    await expect(page.getByText('Ventas por día')).toBeVisible();
+    // «Vender» sobre un cliente que dejó de comprar abre la venta con él elegido.
+    const inactivo = page.locator('[data-inactivo]').first();
+    await expect(inactivo).toBeVisible({ timeout: 15_000 });
+    const nombre = (await inactivo.locator('span span').first().innerText()).trim();
+    await inactivo.click();
+    await expect(page).toHaveURL(/\/torogoz\/venta$/);
+    await expect(page.getByText(nombre, { exact: true }).first()).toBeVisible({ timeout: 15_000 });
+    expect(errores).toEqual([]);
 });

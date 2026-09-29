@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1098.0 — Torogoz: tablero de Inicio con ventas, clientes, vendedores y alertas
+
+Pedido del usuario: «un dashboard en la distribuidora con datos de ventas,
+clientes, etc. […] gráficas, elementos interactivos, y cosas que consideres
+necesarias, con datos de prueba».
+
+- **Inicio** es la portada de `/torogoz` (primera entrada del menú).
+- Indicadores con su variación contra el período anterior: ventas,
+  documentos, ticket promedio, clientes que compraron, unidades y preventas
+  por facturar (lleva a Pedidos pendientes).
+- Ventas (o documentos) por día con el período anterior punteado; ventas por
+  ruta (dona + lista); vendedores, productos y clientes en ranking (5, con
+  «Ver los 10»); cuándo se vende por día de la semana o por hora; ventas por
+  tipo de cliente y formas de pago.
+- «Pide atención»: clientes sin comprar hace +30 días con **Vender** (abre
+  la venta con el cliente elegido: `?cliente=`), lotes que vencen en 90 días,
+  ventas perdidas pendientes y valor del inventario.
+- Interactivo: período (Hoy · 7 días · 30 días · Este mes · Mes anterior ·
+  90 días), ruta y vendedor, todos en la dirección; tocar una ruta o un
+  vendedor filtra todo el tablero.
+- **Borrador 0011**: `dist_tablero(desde, hasta, ruta, vendedor)` devuelve
+  todo en UN JSON (patrón C, INVOKER, plpgsql con `force_custom_plan`).
+- Datos de prueba (`distribucion_tablero_pruebas.sql`, sólo corre en el
+  entorno de pruebas): 24 clientes más en tres rutas y ~750 ventas de 4
+  meses, pasando por los triggers de verdad.
+- Las gráficas cargan aparte (`React.lazy`): recharts no viaja en la venta.
+
+
 ## v2.1097.1 — Venta de la distribuidora: F9 venta perdida, y la SRS responde en dev
 
 Pedido del usuario: «ventas perdidas no tiene su tecla de acceso rápido F …

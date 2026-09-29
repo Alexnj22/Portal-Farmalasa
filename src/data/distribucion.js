@@ -488,3 +488,15 @@ export async function resolverVentaPerdida(id, estado, nota) {
     // Sin policy que lo deje, el update «funciona» y no cambia nada: se dice.
     if (!data?.length) throw new Error('No tienes permiso para resolver ventas perdidas.');
 }
+
+// ── Tablero ────────────────────────────────────────────────────────────────
+// Todo el Inicio de la distribuidora en UNA llamada (`dist_tablero`, borrador
+// 0011): un solo JSON con las cuentas hechas en la base, así el navegador no
+// suma miles de renglones ni cae bajo el techo de 1000 filas.
+export async function fetchTablero({ desde, hasta, ruta = null, vendedor = null }) {
+    const { data, error } = await supabase.rpc('dist_tablero', {
+        p_desde: desde, p_hasta: hasta, p_ruta: ruta || null, p_vendedor: vendedor || null,
+    });
+    if (error) throw error;
+    return data;
+}

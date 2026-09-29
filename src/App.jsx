@@ -778,7 +778,7 @@ function MainApp() {
                             <ErrorBoundary>
                             <Suspense fallback={<ContentLoadingFallback />}>
                             <Routes>
-                                <Route index element={<Navigate to="pedidos" replace />} />
+                                <Route index element={<Navigate to="inicio" replace />} />
                                 <Route path="venta" element={<PermissionGuard moduleKey="distribucion"><DistribucionVentaView /></PermissionGuard>} />
                                 <Route path="venta/:pedidoId" element={<PermissionGuard moduleKey="distribucion"><DistribucionVentaView /></PermissionGuard>} />
                                 <Route path=":seccion" element={<PermissionGuard moduleKey="distribucion"><SeccionTorogoz /></PermissionGuard>} />
@@ -1111,6 +1111,7 @@ const ROUTE_TITLES = {
     '/torogoz':           'Torogoz',
     '/torogoz/login':     'Torogoz',
     '/torogoz/venta':     'Nueva venta',
+    '/torogoz/inicio':    'Inicio',
     '/torogoz/pedidos':   'Pedidos',
     '/torogoz/documentos': 'Documentos',
     '/torogoz/clientes':  'Clientes',

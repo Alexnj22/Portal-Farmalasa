@@ -281,6 +281,21 @@ Bodega: es otra empresa), y todavía no existía.
   (precio con IVA en centavos, borrador 0007), a pedido suyo: la base de pruebas
   ya cambió y el archivo tiene que coincidir.
 
+## v2.1086.0 — App: entrada e inicio con los controles propios del sistema
+
+Decisión del usuario: la app del teléfono se ve con los elementos propios de
+cada sistema. La entrada es un formulario agrupado como el de Ajustes del
+iPhone (con los colores del sistema y el modo oscuro solo), con el botón
+nativo; el inicio es la lista nativa de iOS / Android con los íconos del
+sistema (SF Symbols y Material). Iniciar sesión sigue ofreciendo guardar la
+contraseña en el llavero.
+
+Dos cosas medidas antes de elegir: el campo de texto de @expo/ui avisaba el
+cambio una tecla tarde (el usuario salía «prueba» con la pantalla diciendo
+«pruebas»), así que los campos son los del sistema vía React Native; y un
+campo metido dentro del formulario de SwiftUI no recibía los toques, así que
+el formulario se arma con piezas de React Native y los colores del sistema.
+
 ## v2.1085.0 — Distribución: la venta como en la caja — presentaciones, listas de precio, descuentos y el cobro abajo
 
 Pedido del usuario: «mira el ERP, no como guía en diseño sino en utilidad.

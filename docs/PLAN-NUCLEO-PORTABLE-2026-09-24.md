@@ -214,6 +214,13 @@
   lo frena con su mensaje. En la app, Traslados abre nativo con «Pedir a otra
   sala»; sus cuatro pestañas siguen como el portal. De paso: en iPhone el
   teclado tapaba el campo que se escribía — hoy el formulario se corre solo.
+- **Decisiones del usuario sobre F8 (2026-09-29)**: (1) **controles propios de
+  cada sistema** —«que se vea nativa con los elementos nativos»—: la app pasa a
+  `@expo/ui` (SwiftUI en iOS, Jetpack Compose en Android) y deja los botones y
+  tarjetas dibujados con los colores del portal; los tokens quedan para la marca
+  y el color de acento. (2) Hay cuentas de Apple y de Google: se publica por EAS
+  a TestFlight y a Play interno. (3) **La app nueva reemplaza a la de
+  Capacitor**: mismo identificador (`lat.farmasalud.portal`) en las dos tiendas.
 
 ## Para qué
 

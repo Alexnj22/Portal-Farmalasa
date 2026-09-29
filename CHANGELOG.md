@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1094.0 — Torogoz: resumen fiscal en una columna fija a la derecha; cantidad y descuento sólo números
+
+Pedidos del usuario: la cantidad aceptaba letras; la barra de abajo tapaba
+productos («¿pasamos para arriba la barra de pagar? ¿o una columna a la
+derecha bien moderna?»), y ver todo el dato fiscal.
+
+- **Columna fija a la derecha** (computadora): «Resumen» con el desglose del
+  documento y los botones Cobrar (F2) y Guardar preventa (F8). Siempre a la
+  vista y sin tapar ningún producto. En el teléfono sigue la barra de abajo.
+- **Desglose según el documento** (`DesgloseFiscal`, también en la ventana de
+  cobro): Crédito Fiscal → sumas sin IVA, descuentos (ya aplicados), sub-total,
+  IVA 13%, monto total de la operación, IVA retenido/percibido 1%, total a
+  pagar. Factura → sumas con IVA, descuentos, sub-total, retención, total a
+  pagar e IVA incluido. El motor ahora expone `ventas`, `subTotal` y
+  `montoOperacion`.
+- **Cantidad y descuento sólo aceptan números** (y un separador decimal).
+- Los renglones y la franja del cliente se acomodan al ancho de SU tarjeta
+  (container queries): una línea con ≥56rem, dos con ≥32rem, tres en el
+  teléfono.
+
+
 ## v2.1093.0 — Torogoz: F2 cobra en una ventana (Enter procesa), el cobro sale de la página y las flechas saltan lo deshabilitado
 
 Pedidos del usuario: «al presionar F2 que me lleve a poner el monto (queda

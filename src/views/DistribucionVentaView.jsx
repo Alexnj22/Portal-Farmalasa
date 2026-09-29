@@ -73,16 +73,24 @@ import { rutaInicio, rutaDocumento, rutaVenta } from './distribucion/rutas';
 
 const RESULTADOS = 8;
 const conCantidad = (n) => String(Math.round(n * 10000) / 10000);
+/** Lo que se escribe en cantidad o descuento: sólo dígitos y UN separador decimal. */
+const soloNumero = (v) => {
+    const limpio = String(v ?? '').replace(/[^0-9.,]/g, '').replace(',', '.');
+    const [ent, ...resto] = limpio.split('.');
+    return resto.length ? `${ent}.${resto.join('')}` : ent;
+};
 let siguienteRenglon = 1;
 const renglonNuevo = (productId, presentacion, extra = {}) => ({
     product_id: String(productId), presentacion, lista_id: '', cantidad: '1',
     descTipo: 'pct', descValor: '', ...extra, clave: siguienteRenglon++,
 });
 
-// Anchos de la grilla de renglones en pantalla ancha (xl): UNA línea por
-// producto, como en la caja, con el encabezado y cada fila sobre la MISMA
-// cadena. Por debajo de xl el renglón se parte en tres líneas cortas.
-const COLUMNAS = 'xl:grid-cols-[minmax(9rem,1fr)_8rem_9rem_9.5rem_6.5rem_5.5rem_2rem]';
+// Los renglones se acomodan al ANCHO DE LA LISTA (container query), no al de la
+// pantalla: desde que el resumen vive en una columna a la derecha, la lista mide
+// distinto según el monitor. Con ≥56rem, UNA línea por producto (encabezado y
+// filas sobre la misma cadena); con ≥32rem, dos (el nombre arriba y los
+// controles en una fila); más angosta (teléfono), tres líneas cortas.
+const COLUMNAS = '@4xl:grid-cols-[minmax(9rem,1fr)_8rem_9rem_9.5rem_6.5rem_5.5rem_2rem]';
 
 export default function DistribucionVentaView() {
     useMarca('distribucion');
@@ -662,12 +670,6 @@ export default function DistribucionVentaView() {
         setAvisoCobro('');
         setVerCobro(true);
     };
-    const botonPrincipal = (
-        <Button variant="primary" icon={porAprobar.length ? Send : Wallet} disabled={!puedeGuardar}
-            data-accion-principal onClick={abrirCobro} className="flex-1 sm:flex-none" title="F2">
-            {porAprobar.length ? 'Enviar a aprobación' : 'Cobrar'} <kbd aria-hidden="true" className="hidden lg:inline ml-1 text-micro font-bold opacity-70">F2</kbd>
-        </Button>
-    );
 
     // Procesar desde la ventana de cobro: Enter o F2.
     const procesar = () => {
@@ -711,6 +713,11 @@ export default function DistribucionVentaView() {
                 {cargando && !errorCarga && <p className="text-caption text-content-3">Cargando…</p>}
                 {!cargando && !errorCarga && (
                     <>
+                    {/* La venta a la izquierda; el resumen fiscal y los botones en una
+                        columna fija a la derecha (pedido del usuario): siempre a la
+                        vista y sin tapar ningún producto. En el teléfono, la barra de abajo. */}
+                    <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-4 lg:items-start">
+                    <div className="flex flex-col gap-3 min-w-0">
                         {error && <Notice variant="danger" bloque>{error}</Notice>}
                         {esperandoAprobacion && (
                             <Notice variant="warning" icon={Clock} compact>
@@ -719,8 +726,11 @@ export default function DistribucionVentaView() {
                         )}
 
                         {/* ── Quién compra: una sola franja ── */}
-                        <section data-surface="card" className="p-3 md:p-4 flex flex-col gap-3">
-                            <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] xl:grid-cols-[minmax(0,1fr)_auto_minmax(10rem,14rem)] gap-3 items-center">
+                        {/* Se acomoda al ancho de SU tarjeta (container query): con la
+                            columna del resumen al lado, el ancho de la pantalla ya no dice
+                            cuánto lugar hay. */}
+                        <section data-surface="card" className="@container p-3 md:p-4 flex flex-col gap-3">
+                            <div className="grid grid-cols-1 @xl:grid-cols-[minmax(0,1fr)_auto] @4xl:grid-cols-[minmax(0,1fr)_auto_minmax(10rem,14rem)] gap-3 items-center">
                                 <LiquidSelect value={clienteId} onChange={cambiarCliente} options={opcionesClientes} icon={Store}
                                     placeholder="Elegir cliente…" clearable={false} disabled={corrigiendo} ariaLabel="Cliente" />
                                 <SegmentedControl value={tipoDoc} onChange={setTipoDoc} label="Documento"
@@ -728,7 +738,7 @@ export default function DistribucionVentaView() {
                                         { value: '01', label: TIPO_DOCUMENTO['01'].largo },
                                         { value: '03', label: TIPO_DOCUMENTO['03'].largo, disabled: !cliente?.contribuyente },
                                     ]} />
-                                <div className="md:col-span-2 xl:col-span-1 min-w-0">
+                                <div className="@xl:col-span-2 @4xl:col-span-1 min-w-0">
                                     <LiquidSelect value={listaEfectiva != null ? String(listaEfectiva) : ''} onChange={cambiarLista} icon={Tag}
                                         options={opcionesListas} placeholder="Sin listas" clearable={false} disabled={!opcionesListas.length}
                                         ariaLabel="Lista de precios (cambia el precio de todos los productos)" />
@@ -816,8 +826,8 @@ export default function DistribucionVentaView() {
                                     </p>
                                 </div>
                             ) : (
-                                <div className="rounded-xl border border-divider overflow-hidden" onKeyDownCapture={navegarRenglones}>
-                                    <div className={`hidden xl:grid ${COLUMNAS} gap-2 px-3 py-2 border-b border-divider bg-surface-card-hover/40 text-micro font-bold uppercase tracking-wide text-content-3`}>
+                                <div className="@container rounded-xl border border-divider overflow-hidden" onKeyDownCapture={navegarRenglones}>
+                                    <div className={`hidden @4xl:grid ${COLUMNAS} gap-2 px-3 py-2 border-b border-divider bg-surface-card-hover/40 text-micro font-bold uppercase tracking-wide text-content-3`}>
                                         <span>Producto</span><span className="text-center">Cantidad</span><span>Presentación</span>
                                         <span>Precio {conIva ? 'c/IVA' : 's/IVA'} · lista</span><span>Descuento</span>
                                         <span className="text-right">Importe</span><span />
@@ -854,7 +864,7 @@ export default function DistribucionVentaView() {
                                                         {!l.porAprobar && l.descEstado === 'rechazado' && !l.descValor && <span>Descuento rechazado</span>}
                                                     </div>
                                                 </div>
-                                                <div className="xl:hidden text-right">
+                                                <div className="@4xl:hidden text-right">
                                                     <p className="tabular-nums font-black text-content">{formatMoney(l.doc?.importe ?? 0)}</p>
                                                 </div>
 
@@ -862,7 +872,7 @@ export default function DistribucionVentaView() {
                                                     Pantalla ancha: cada control en su columna (`contents`). El
                                                     orden es el de Tab y ← →: cantidad primero, que es lo que se
                                                     escribe al agregar. */}
-                                                <div className="col-span-2 grid grid-cols-2 gap-2 items-center xl:contents">
+                                                <div className="col-span-2 grid grid-cols-2 @lg:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_6.5rem_auto] gap-2 items-center @4xl:contents">
                                                     {/* Cantidad */}
                                                     <div data-col="0" className="flex items-center gap-1 justify-center">
                                                         <Button variant="ghost" size="sm" iconOnly icon={Minus} title="Uno menos" tabIndex={-1}
@@ -870,7 +880,7 @@ export default function DistribucionVentaView() {
                                                         <PortalInput compact className="w-16" inputClassName="text-center font-black" name={`cantidad-${l.clave}`} inputMode="decimal"
                                                             value={l.cantidad} aria-label={`Cantidad de ${nombre}`} hasError={!l.n || l.n <= 0}
                                                             onKeyDown={alEnterVolverAlBuscador} onFocus={(e) => e.target.select()}
-                                                            onChange={(e) => cambiar(l.clave, { cantidad: e.target.value })} />
+                                                            onChange={(e) => cambiar(l.clave, { cantidad: soloNumero(e.target.value) })} />
                                                         <Button variant="ghost" size="sm" iconOnly icon={Plus} title="Uno más" tabIndex={-1} onClick={() => sumar(l.clave, 1)} />
                                                     </div>
                                                     {/* Presentación */}
@@ -896,7 +906,7 @@ export default function DistribucionVentaView() {
                                                         <PortalInput compact className="flex-1 min-w-0" inputClassName="text-right" name={`descuento-${l.clave}`} inputMode="decimal" value={l.descValor}
                                                             placeholder="0" aria-label={`Descuento de ${nombre}`} hasError={!!errDesc} errorMessage={errDesc ?? undefined}
                                                             onKeyDown={alEnterVolverAlBuscador} onFocus={(e) => e.target.select()}
-                                                            onChange={(e) => cambiar(l.clave, { descValor: e.target.value })} />
+                                                            onChange={(e) => cambiar(l.clave, { descValor: soloNumero(e.target.value) })} />
                                                         {/* % / $ como un botón que alterna: la mitad de ancho que
                                                             el control de dos opciones, y no se roba las flechas. */}
                                                         <Button variant="secondary" size="sm" tabIndex={-1} className="w-9 shrink-0 font-black"
@@ -906,12 +916,12 @@ export default function DistribucionVentaView() {
                                                         </Button>
                                                     </div>
                                                     {/* Importe */}
-                                                    <div className="hidden xl:block text-right tabular-nums">
+                                                    <div className="hidden @4xl:block text-right tabular-nums">
                                                         <p className="font-black text-content">{formatMoney(l.doc?.importe ?? 0)}</p>
                                                         {l.doc?.descuento > 0 && <p className="text-micro text-success-text">−{formatMoney(l.doc.descuento)}</p>}
                                                         {l.porAprobar && <p className="text-micro text-warning-text">−{formatMoney(conIva ? l.desc : l.desc / 1.13)} por aprobar</p>}
                                                     </div>
-                                                    <div data-col="4" className="col-span-2 xl:col-span-1 flex justify-end">
+                                                    <div data-col="4" className="col-span-2 @lg:col-span-1 flex justify-end">
                                                         <Button variant="ghost" size="sm" iconOnly icon={Trash2} title="Quitar de la venta (Supr)" onClick={() => quitar(l.clave)} />
                                                     </div>
                                                 </div>
@@ -927,38 +937,65 @@ export default function DistribucionVentaView() {
                             )}
                         </section>
 
-                        {/* ── La barra de acción: siempre a mano, en computadora y teléfono ──
-                            Total y botones pegados abajo: finalizar una venta no pide
-                            desplazarse. En computadora se pega al fondo del contenido; en
-                            el teléfono, al borde de la pantalla. */}
-                        <div className="flex-1 hidden lg:block" />
-                        <div ref={barra} data-surface="card"
-                            className="fixed lg:sticky inset-x-0 bottom-0 z-tabs lg:z-content px-4 lg:px-4 pt-3 pb-[max(12px,var(--sa-bottom))] lg:py-3 lg:mb-3 flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-4">
-                            <div className="flex items-end lg:items-center justify-between gap-3 lg:flex-1 min-w-0">
-                                <div className="min-w-0">
-                                    <p className={`text-caption truncate ${bloqueoGuardar ? 'text-content-2' : 'text-content-3'}`}>
-                                        {bloqueoGuardar ?? `${lineas.length} producto${lineas.length === 1 ? '' : 's'} · ${conCantidad(unidadesTotal)} pieza${unidadesTotal === 1 ? '' : 's'}`}
-                                    </p>
-                                    {!bloqueoGuardar && (
-                                        <p className="hidden lg:block text-micro text-content-3 tabular-nums truncate">
-                                            Suma {formatMoney(venta.suma)}
-                                            {venta.descuentos > 0 && ` · descuentos −${formatMoney(venta.descuentos)}`}
-                                            {!conIva && ` · IVA ${formatMoney(estimado.iva)}`}
-                                            {estimado.retencion > 0 && ` · retención −${formatMoney(estimado.retencion)}`}
-                                            {montoPorAprobar > 0 && ` · por aprobar −${formatMoney(montoPorAprobar)}`}
-                                        </p>
-                                    )}
-                                </div>
-                                <p className="text-title lg:text-display font-black text-brand-text tabular-nums shrink-0" data-testid="total-barra">{formatMoney(estimado.total)}</p>
+                    </div>
+
+                    {/* ── El resumen: columna fija a la derecha (computadora) ── */}
+                    <aside className="hidden lg:flex flex-col gap-3 lg:sticky lg:top-24" aria-label="Resumen de la venta">
+                        <section data-surface="card" className="p-4 flex flex-col gap-3">
+                            <div className="flex items-baseline justify-between gap-2">
+                                <h3 className="text-body font-black text-content">Resumen</h3>
+                                <span className="text-caption text-content-3">{TIPO_DOCUMENTO[tipoDoc]?.largo}</span>
                             </div>
-                            <div className="flex gap-2">
-                                <Button variant="secondary" icon={guardando === 'preventa' ? Loader2 : Save} disabled={!puedeGuardar}
-                                    data-accion-preventa title="Guardar sin facturar: queda en Pendientes (F8)" onClick={() => guardar('preventa')} className="flex-1 sm:flex-none">
-                                    Guardar preventa <kbd aria-hidden="true" className="hidden lg:inline ml-1 text-micro font-bold opacity-60">F8</kbd>
+                            <p className={`text-caption ${bloqueoGuardar ? 'text-content-2' : 'text-content-3'}`}>
+                                {bloqueoGuardar ?? `${lineas.length} producto${lineas.length === 1 ? '' : 's'} · ${conCantidad(unidadesTotal)} pieza${unidadesTotal === 1 ? '' : 's'}`}
+                            </p>
+                            <DesgloseFiscal venta={venta} conIva={conIva} porAprobar={montoPorAprobar} />
+                            <div className="flex flex-col gap-2 pt-1">
+                                <Button variant="primary" icon={porAprobar.length ? Send : Wallet} disabled={!puedeGuardar}
+                                    data-accion-principal onClick={abrirCobro} title="F2" className="w-full justify-center">
+                                    {porAprobar.length ? 'Enviar a aprobación' : 'Cobrar'} <kbd aria-hidden="true" className="ml-1 text-micro font-bold opacity-70">F2</kbd>
                                 </Button>
-                                {botonPrincipal}
+                                <Button variant="secondary" icon={guardando === 'preventa' ? Loader2 : Save} disabled={!puedeGuardar}
+                                    data-accion-preventa title="Guardar sin facturar: queda en Pendientes (F8)" onClick={() => guardar('preventa')} className="w-full justify-center">
+                                    Guardar preventa <kbd aria-hidden="true" className="ml-1 text-micro font-bold opacity-60">F8</kbd>
+                                </Button>
                             </div>
+                        </section>
+                        <p className="text-micro text-content-3 px-1 leading-relaxed">
+                            F3 buscar · F7 existencias en sucursales · F4 salir
+                        </p>
+                    </aside>
+                    </div>
+
+                    {/* ── Teléfono y tableta: la barra de abajo ── */}
+                    <div ref={barra} data-surface="card"
+                        className="lg:hidden fixed inset-x-0 bottom-0 z-tabs px-4 pt-3 pb-[max(12px,var(--sa-bottom))] flex flex-col gap-2">
+                        <div className="flex items-end justify-between gap-3 min-w-0">
+                            <div className="min-w-0">
+                                <p className={`text-caption truncate ${bloqueoGuardar ? 'text-content-2' : 'text-content-3'}`}>
+                                    {bloqueoGuardar ?? `${lineas.length} producto${lineas.length === 1 ? '' : 's'} · ${conCantidad(unidadesTotal)} pieza${unidadesTotal === 1 ? '' : 's'}`}
+                                </p>
+                                {!bloqueoGuardar && (
+                                    <p className="text-micro text-content-3 tabular-nums truncate">
+                                        {conIva ? `IVA incluido ${formatMoney(venta.iva)}` : `Sub-total ${formatMoney(venta.subTotal)} · IVA ${formatMoney(venta.iva)}`}
+                                        {venta.retencion > 0 && ` · retención −${formatMoney(venta.retencion)}`}
+                                        {venta.percepcion > 0 && ` · percepción ${formatMoney(venta.percepcion)}`}
+                                    </p>
+                                )}
+                            </div>
+                            <p className="text-title font-black text-brand-text tabular-nums shrink-0" data-testid="total-barra">{formatMoney(venta.total)}</p>
                         </div>
+                        <div className="flex gap-2">
+                            <Button variant="secondary" icon={guardando === 'preventa' ? Loader2 : Save} disabled={!puedeGuardar}
+                                onClick={() => guardar('preventa')} className="flex-1">
+                                Guardar preventa
+                            </Button>
+                            <Button variant="primary" icon={porAprobar.length ? Send : Wallet} disabled={!puedeGuardar}
+                                onClick={abrirCobro} className="flex-1">
+                                {porAprobar.length ? 'Enviar a aprobación' : 'Cobrar'}
+                            </Button>
+                        </div>
+                    </div>
                     </>
                 )}
             </div>
@@ -1009,14 +1046,7 @@ export default function DistribucionVentaView() {
                                 )}
                             </div>
                             <div className="rounded-2xl border border-brand/20 bg-brand/5 p-3 flex flex-col gap-1.5">
-                                <FilaTotal rotulo={`Suma (${cuentan.length} producto${cuentan.length === 1 ? '' : 's'})`} valor={formatMoney(venta.suma)} />
-                                {venta.descuentos > 0 && <FilaTotal rotulo="Descuentos" valor={`−${formatMoney(venta.descuentos)}`} tono="text-success-text" />}
-                                {montoPorAprobar > 0 && <FilaTotal rotulo="Por aprobar (no incluido)" valor={`−${formatMoney(montoPorAprobar)}`} tono="text-warning-text" />}
-                                {!conIva && <FilaTotal rotulo="IVA 13%" valor={formatMoney(estimado.iva)} />}
-                                {estimado.retencion > 0 && <FilaTotal rotulo="Retención 1%" valor={`−${formatMoney(estimado.retencion)}`} />}
-                                {estimado.percepcion > 0 && <FilaTotal rotulo="Percepción 1%" valor={formatMoney(estimado.percepcion)} />}
-                                <FilaTotal rotulo="Total" valor={formatMoney(estimado.total)} fuerte />
-                                {conIva && estimado.iva > 0 && <p className="text-micro text-content-3 text-right">Incluye IVA de {formatMoney(estimado.iva)}</p>}
+                                <DesgloseFiscal venta={venta} conIva={conIva} porAprobar={montoPorAprobar} />
                                 {cambio > 0 && (
                                     <div className="flex items-baseline justify-between gap-3 rounded-xl bg-success/10 px-3 py-1.5 mt-1">
                                         <span className="text-body-sm font-bold text-success-text">Cambio</span>
@@ -1093,6 +1123,32 @@ export default function DistribucionVentaView() {
                 </LiquidModal>
             )}
         </GlassViewLayout>
+    );
+}
+
+/**
+ * El desglose del total con los campos del RESUMEN del documento, en el orden
+ * y con los nombres del papel (pedido del usuario: «todo según fiscalmente»):
+ *   · Crédito Fiscal: sumas (sin IVA) · descuentos · sub-total · IVA 13% ·
+ *     monto total de la operación · IVA retenido 1% · IVA percibido 1% · total.
+ *   · Factura: sumas (con IVA) · descuentos · sub-total · IVA retenido 1% ·
+ *     total, y el IVA que va INCLUIDO, como lo informa la Factura.
+ * Los descuentos son informativos: ya vienen restados en cada renglón.
+ */
+function DesgloseFiscal({ venta, conIva, porAprobar = 0 }) {
+    return (
+        <div className="flex flex-col gap-1.5">
+            <FilaTotal rotulo={conIva ? 'Sumas (con IVA)' : 'Sumas (sin IVA)'} valor={formatMoney(venta.ventas)} />
+            {venta.descuentos > 0 && <FilaTotal rotulo="Descuentos (ya aplicados)" valor={formatMoney(venta.descuentos)} tono="text-success-text" />}
+            <FilaTotal rotulo="Sub-total" valor={formatMoney(venta.subTotal)} />
+            {!conIva && <FilaTotal rotulo="IVA 13%" valor={formatMoney(venta.iva)} />}
+            {!conIva && <FilaTotal rotulo="Monto total de la operación" valor={formatMoney(venta.montoOperacion)} />}
+            {venta.retencion > 0 && <FilaTotal rotulo="(−) IVA retenido 1%" valor={`−${formatMoney(venta.retencion)}`} />}
+            {venta.percepcion > 0 && <FilaTotal rotulo="(+) IVA percibido 1%" valor={formatMoney(venta.percepcion)} />}
+            {porAprobar > 0 && <FilaTotal rotulo="Descuento por aprobar (no incluido)" valor={`−${formatMoney(porAprobar)}`} tono="text-warning-text" />}
+            <FilaTotal rotulo="Total a pagar" valor={formatMoney(venta.total)} fuerte />
+            {conIva && venta.iva > 0 && <p className="text-micro text-content-3 text-right">IVA incluido: {formatMoney(venta.iva)}</p>}
+        </div>
     );
 }
 

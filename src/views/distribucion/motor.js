@@ -36,7 +36,7 @@ export function descuentoConIva({ tipo, valor, cantidad, precioConIva, conIva })
  */
 export function calcularVenta(lineas, { tipoDoc, retiene1 = false, percibe1 = false }) {
     const base = tipoDoc === '01' ? 'con_iva' : 'sin_iva';
-    const vacio = { renglones: [], suma: 0, descuentos: 0, iva: 0, retencion: 0, percepcion: 0, total: 0, error: null };
+    const vacio = { renglones: [], suma: 0, descuentos: 0, ventas: 0, subTotal: 0, montoOperacion: 0, iva: 0, retencion: 0, percepcion: 0, total: 0, error: null };
     if (!lineas.length) return vacio;
     try {
         const calc = lineas.map(l => calcularRenglon({
@@ -52,6 +52,11 @@ export function calcularVenta(lineas, { tipoDoc, retiene1 = false, percibe1 = fa
             })),
             suma: num(res.subTotalVentas + res.totalDescu),
             descuentos: num(res.totalDescu),
+            // Los campos del resumen del documento, con el nombre que les da
+            // Hacienda: la pantalla los muestra tal como saldrán en el papel.
+            ventas: num(res.subTotalVentas),       // sumas / ventas gravadas (ya netas del descuento por renglón)
+            subTotal: num(res.subTotal),
+            montoOperacion: num(res.montoTotalOperacion),
             iva: num(res.iva),
             retencion: num(res.ivaRete),
             percepcion: num(res.ivaPerci),

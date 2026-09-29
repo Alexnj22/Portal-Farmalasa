@@ -171,7 +171,7 @@ test('venta como en la caja: presentación, lista, descuento; F2 cobra con el fo
     // Descuento de 5%. (El tope de la empresa no frena a esta cuenta: tiene
     // la capacidad de configurar Distribución. El freno se probó en la base.)
     await renglon.locator('input[name^="descuento-"]').fill('5');
-    await expect(page.getByText(/descuentos −/).first()).toBeVisible();
+    await expect(page.getByText('Descuentos (ya aplicados)').first()).toBeVisible();
     await page.screenshot({ path: `${SALIDA}/venta-caja.png`, fullPage: true });
 
     // F2 abre el cobro con el foco en «Entrega»: se escribe el billete, se ve

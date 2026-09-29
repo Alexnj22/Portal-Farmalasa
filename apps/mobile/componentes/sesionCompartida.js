@@ -16,7 +16,12 @@ import { AUTH_STORAGE_KEY } from '@nucleo/supabaseClient';
 export const CLAVES_DE_SESION = [AUTH_STORAGE_KEY, 'sb_user', 'sb_last_activity_at'];
 
 /** El script que corre en el portal ANTES que su propio código. */
-export function scriptDeEntrada() {
+// `abajo`: cuando el portal va dentro de una pestaña (sin barra de título), la
+// WebView ocupa la pantalla entera —así el fondo pasa detrás de la hora y de
+// la barra de vidrio, como en cualquier app del sistema— y el portal corre su
+// CONTENIDO: arriba con su propio `--sa-top` (el `env()` de la WebView) y abajo
+// con el alto de la barra de pestañas, que la WebView no conoce y la app sí.
+export function scriptDeEntrada({ abajo = null } = {}) {
   const valores = {};
   for (const clave of CLAVES_DE_SESION) {
     const v = almacen.leer(clave);
@@ -33,6 +38,11 @@ export function scriptDeEntrada() {
       window.__FARMALASA_APP__ = true;
       // Esconde la barra y las pestañas del portal (ver src/index.css).
       document.documentElement.setAttribute('data-en-la-app', '');
+      var abajo = ${JSON.stringify(abajo)};
+      if (abajo != null) {
+        document.documentElement.setAttribute('data-en-pestana', '');
+        document.documentElement.style.setProperty('--sa-bottom', abajo + 'px');
+      }
       var original = Storage.prototype.setItem;
       var quitar = Storage.prototype.removeItem;
       var avisar = function (tipo, valor) {

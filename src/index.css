@@ -4058,3 +4058,12 @@ html[data-en-la-app] [data-shell="header-movil"],
 html[data-en-la-app] [data-shell="tabs-movil"] {
   display: none !important;
 }
+
+/* En una pestaña de la app (Inicio, Avisos) no hay barra de título: el portal
+   ocupa la pantalla entera y su fondo pasa detrás de la hora, como en una app
+   del sistema. El header del portal —que es el que respetaba `--sa-top`— está
+   escondido, así que el contenido se corre acá. Abajo, la app pisa
+   `--sa-bottom` con el alto de su barra de pestañas. */
+html[data-en-pestana] #main-scroll {
+  padding-top: var(--sa-top);
+}

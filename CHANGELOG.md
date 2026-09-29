@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1090.1 — La app: Inicio y Avisos a pantalla completa, sin franjas
+
+Reporte del usuario con captura: el portal dentro de las pestañas dejaba una
+franja arriba (bajo la hora) y otra abajo (bajo la barra de pestañas), del
+color de la app. Era el margen que se le ponía POR FUERA a la WebView.
+
+Ahora la WebView ocupa la pantalla entera y el fondo del portal pasa detrás de
+la hora y de la barra de vidrio. Lo que se corre es el contenido, y lo corre el
+portal: la app le marca `data-en-pestana` y le pisa `--sa-bottom` con el alto
+de su barra; `index.css` le suma `--sa-top` a `#main-scroll`, que es lo que
+hacía el header móvil que en la app está escondido. En el navegador ese
+atributo no existe: la web no cambia.
+
 ## v2.1090.0 — La app: entrar con Face ID
 
 Pedido del usuario del 2026-09-29. Después de entrar con la contraseña, la app

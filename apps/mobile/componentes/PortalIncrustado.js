@@ -2,7 +2,7 @@
 // Es el puente de la estrategia mixta (decisión del usuario, 2026-09-28): todo
 // abre desde el primer día, y las pantallas nativas lo van reemplazando.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { useIsFocused } from 'expo-router';
@@ -12,17 +12,19 @@ import { PORTAL_URL } from '@plataforma/config';
 import { scriptDeEntrada } from './sesionCompartida';
 import { useTema } from '../tema/tema';
 
-// `enPestana`: la pantalla va sin barra de título (Inicio, Avisos), así que el
-// portal se corre debajo de la hora y por encima de la barra de pestañas. La
-// barra de iOS 26 flota SOBRE el contenido (es de vidrio): sin esto, lo que el
-// portal fija abajo —el botón de ajustes, el aviso del entorno— queda debajo
-// de ella. Dentro de una pestaña el área segura de abajo ya incluye la barra.
+// `enPestana`: la pantalla va sin barra de título (Inicio, Avisos). La WebView
+// ocupa la pantalla ENTERA y el fondo del portal pasa detrás de la hora y de la
+// barra de vidrio; es el portal el que corre su contenido (ver
+// `scriptDeEntrada`). Con márgenes por fuera quedaban dos franjas del color de
+// la app arriba y abajo, que es justo lo que no hace una app del sistema.
+// Dentro de una pestaña, el área segura de abajo ya incluye la barra.
 export default function PortalIncrustado({ ruta, enPestana = false }) {
   const tema = useTema();
   const margen = useSafeAreaInsets();
   const { logout } = useAuth();
   const [cargando, setCargando] = useState(true);
-  const script = useMemo(() => scriptDeEntrada(), []);
+  const abajo = enPestana ? Math.round(margen.bottom) : null;
+  const script = useMemo(() => scriptDeEntrada({ abajo }), [abajo]);
   const ultimo = useRef(null);
 
   // Con la barra de abajo puede haber varios portales montados a la vez
@@ -57,11 +59,7 @@ export default function PortalIncrustado({ ruta, enPestana = false }) {
   };
 
   return (
-    <View style={{
-      flex: 1, backgroundColor: tema.color.fondo,
-      paddingTop: enPestana ? margen.top : 0,
-      paddingBottom: enPestana && Platform.OS === 'ios' ? margen.bottom : 0,
-    }}>
+    <View style={{ flex: 1, backgroundColor: tema.color.fondo }}>
       {enFoco ? <WebView
         source={{ uri: PORTAL_URL + ruta }}
         injectedJavaScriptBeforeContentLoaded={script}

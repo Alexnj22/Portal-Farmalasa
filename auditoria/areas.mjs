@@ -373,7 +373,7 @@ export const AREAS = [
             'src/plataforma/pushEquipo.js',
             'src/components/forms/FormAnnouncements.jsx',
         ],
-        tablas: ['announcements', 'notifications', 'avisos_emitidos', 'avisos_diferidos', 'push_subscriptions',
+        tablas: ['announcements', 'notifications', 'avisos_emitidos', 'avisos_diferidos', 'push_subscriptions', 'push_dispositivos',
                  'surveys', 'survey_bloques', 'survey_preguntas', 'survey_responses'],
         edge: ['send-push-notification'],
         crons: ['purge-notifications-daily', 'avisos-diferidos-5min'],

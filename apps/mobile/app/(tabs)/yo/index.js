@@ -13,6 +13,7 @@ import { useTema } from '../../../tema/tema';
 import { ICONO_SALIR, iconoDe } from '../../../tema/iconos';
 import { abrirModulo } from '../../../pantallas';
 import { biometriaActiva, nombreBiometria, olvidarBiometria } from '../../../componentes/biometria';
+import { soltarAvisos } from '../../../componentes/avisos';
 
 const PERSONALES = ['emp_profile', 'emp_documents', 'requests_personales'];
 
@@ -47,7 +48,7 @@ export default function Yo() {
 
   const salir = () => Alert.alert('¿Salir de la app?', 'Vas a tener que volver a entrar con tu usuario.', [
     { text: 'Cancelar', style: 'cancel' },
-    { text: 'Salir', style: 'destructive', onPress: () => logout?.() },
+    { text: 'Salir', style: 'destructive', onPress: async () => { await soltarAvisos(); logout?.(); } },
   ]);
 
   return (

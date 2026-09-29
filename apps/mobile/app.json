@@ -41,6 +41,13 @@
         {
           "faceIDPermission": "Farmalasa usa Face ID para que entres sin escribir tu contraseña."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#8E1F8F",
+          "mode": "production"
+        }
       ]
     ],
     "experiments": {

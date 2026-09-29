@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { notificarActividad } from '@plataforma/cicloDeVida';
 import { useTema } from '../tema/tema';
+import { escucharToques, registrarAvisos } from '../componentes/avisos';
 
 // Lo que hace `App.jsx` del portal alrededor de las pantallas:
 //  - al entrar, cargar salas, personal y catálogos al store (`fetchBoot`); sin
@@ -22,6 +23,9 @@ function GuardiaDeSesion() {
   const fetchBoot = useStaffStore((s) => s.fetchBoot);
   const segmentos = useSegments();
   useEffect(() => { if (isAuthenticated) fetchBoot(); }, [isAuthenticated, fetchBoot]);
+  // Con sesión, el teléfono recibe los avisos de esta persona.
+  useEffect(() => { if (isAuthenticated) registrarAvisos(); }, [isAuthenticated]);
+  useEffect(() => (isAuthenticated ? escucharToques() : undefined), [isAuthenticated]);
   useEffect(() => {
     if (loading) return;
     const enEntrada = !segmentos.length || segmentos[0] === 'entrar' || segmentos[0] === 'index';

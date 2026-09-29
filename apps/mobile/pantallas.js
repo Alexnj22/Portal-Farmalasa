@@ -16,3 +16,11 @@ export const PANTALLAS_DE_LA_APP = {
 export function abrirModulo(m) {
   router.push(PANTALLAS_DE_LA_APP[m.path] ? m.path : { pathname: '/portal', params: { ruta: m.path, nombre: m.label } });
 }
+
+// Abrir una dirección del portal (la de un aviso, con su `?solicitud=…`): la
+// pantalla nativa si la ruta ya la tiene, si no el portal en esa dirección
+// exacta, que ya sabe abrir la solicitud que nombra.
+export function abrirRuta(url) {
+  const ruta = '/' + (url.split(/[?#]/)[0].split('/')[1] || '');
+  router.push(PANTALLAS_DE_LA_APP[ruta] ? ruta : { pathname: '/portal', params: { ruta: url } });
+}

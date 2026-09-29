@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1091.0 — Avisos nativos en la app del teléfono
+
+Pedido del usuario del 2026-09-29. Los avisos que ya llegaban al navegador
+llegan también como notificación NATIVA a la app (APNs en iPhone, FCM en
+Android, por el servicio de Expo).
+
+- **Base** (`20260929231553_avisos_a_los_telefonos_de_la_app`, aplicada en
+  producción tras probarla en el branch): tabla `push_dispositivos` (token del
+  teléfono → empleado) y las funciones `registrar_dispositivo_push` /
+  `soltar_dispositivo_push`. El dueño sale de `auth_employee_id()`, nunca de un
+  parámetro; no hay policy de escritura, sólo esas dos funciones.
+- **`send-push-notification`** manda por los dos canales con los MISMOS
+  destinatarios y el MISMO horario laboral (una sola pregunta a
+  `avisos_filtrar_push` por persona, para no encolar el diferido dos veces).
+  Un token que el servicio da por muerto se quita, como un 410 del navegador.
+  Desplegada con `--no-verify-jwt`, como estaba.
+- **Arreglo de paso:** el `tag` salía `ann-undefined` para todo lo que no era
+  un comunicado, así que cada aviso de solicitudes, traslados o caja
+  REEMPLAZABA al anterior en el aparato. Ahora sólo los comunicados llevan tag.
+- **App:** al entrar registra el teléfono (pide permiso la primera vez); al
+  salir desde «Yo» lo suelta; tocar un aviso abre su pantalla (la nativa si la
+  hay, si no el portal en esa dirección, con su `?solicitud=`).
+
 ## v2.1090.1 — La app: Inicio y Avisos a pantalla completa, sin franjas
 
 Reporte del usuario con captura: el portal dentro de las pestañas dejaba una

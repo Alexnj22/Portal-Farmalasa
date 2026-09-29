@@ -165,7 +165,10 @@ export default function Ronda({ fecha, bloques, onCerrar }) {
             </View>
             <BotonChico onPress={cerrar} deshabilitado={guardando}>{huboCambio ? 'Listo' : 'Cancelar'}</BotonChico>
           </View>
-          <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 4, gap: 12 }} keyboardShouldPersistTaps="handled">
+          <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 4, gap: 12 }} keyboardShouldPersistTaps="handled"
+        // En iPhone el teclado tapaba el campo que se escribe: esto corre el
+        // contenido para que quede a la vista, y arrastrar lo cierra.
+        automaticallyAdjustKeyboardInsets keyboardDismissMode="on-drag">
             {Object.keys(errores).length ? (
               <Aviso tono="warning">Quedaron renglones sin guardar. Lo demás ya está anotado; abajo está el motivo de cada uno.</Aviso>
             ) : null}

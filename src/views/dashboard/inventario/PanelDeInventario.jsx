@@ -59,6 +59,7 @@ import { useComposicionTraslado } from '@nucleo/store/composicionTraslado';
 const PedirTrasladoModal = lazy(() => import('../PedirTrasladoModal'));
 import { ERP_BRANCH_MAP, BRANCH_ORDER, MI_ERP_POR_BRANCH } from './salas';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { MIN_LETRAS_BUSQUEDA } from '@nucleo/utils/consultaInventario';
 import { buscarEnSrs } from '@nucleo/data/srs';
 
 // Desde cuántas letras se sale a preguntar. Con una sola, el buscador pedía
@@ -66,7 +67,7 @@ import { buscarEnSrs } from '@nucleo/data/srs';
 // El techo por producto ya acota el payload; esto evita además la pregunta, que
 // con 25 personas consultando a la vez es trabajo que la base no tiene que pagar.
 // Tres es el mínimo con el que un nombre de producto empieza a distinguir algo.
-const MIN_LETRAS_BUSQUEDA = 3;
+// (La constante vive en el núcleo: la app del teléfono busca con el mismo mínimo.)
 
 const NEUTRAL_THEME = { dot: 'var(--chart-8)', pill: 'bg-surface-card-hover border-divider', label: 'text-content-2' };
 const VENCIDOS_THEME = { dot: 'var(--danger)', pill: 'bg-danger/10 border-danger/30', label: 'text-danger-text' };

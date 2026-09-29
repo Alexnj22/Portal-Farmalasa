@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1085.0 — App: pedir a otra sala, nativo; la lógica del pedido pasa al núcleo
+
+En la app del teléfono, Traslados abre nativo con «Pedir a otra sala»: buscar
+el producto, ver cuánto hay en cada sala, elegir de cuál, la presentación, la
+cantidad y los lotes, y mandar — con los mismos avisos que el portal (no
+alcanza, quedaría bajo su mínimo, vencimiento de los que llevan receta, falta
+el para qué). En iPhone el teclado ya no tapa el campo que se escribe.
+
+En el portal no cambia nada visible: el formulario de pedir a otra sala usa
+ahora la misma lógica que la app, así que las dos arman exactamente la misma
+solicitud.
+
 ## v2.1084.11 — Puntos: respetar la salida del programa y vigilar que el motor acumule
 
 Recomendaciones aceptadas por el usuario, las dos para después del arranque.

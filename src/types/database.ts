@@ -22557,6 +22557,7 @@ export type Database = {
           total: number
         }[]
       }
+      retirar_avisos_ccf_ya_sellados: { Args: never; Returns: number }
       retiro_abierto: { Args: never; Returns: Json }
       retiro_bultos_viejos: { Args: { p_dias?: number }; Returns: Json }
       retiro_cargar: {
@@ -22960,7 +22961,7 @@ export type Database = {
       }
       vigilar_reinicio_de_la_base: { Args: never; Returns: undefined }
       zero_out_product_all_branches: {
-        Args: { p_erp_product_id: number; p_published_by?: string }
+        Args: { p_erp_product_id: number; p_motivo?: string; p_nota?: string }
         Returns: Json
       }
     }

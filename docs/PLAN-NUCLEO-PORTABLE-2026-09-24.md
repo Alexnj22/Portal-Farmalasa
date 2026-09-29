@@ -1,6 +1,6 @@
 # Plan — un núcleo que no conoce al navegador (2026-09-24)
 
-**Estado:** F0 a F6, U1 y U2 **cerradas** · F7 paso 1 hecho (paso 2 pospuesto) · **F8 en curso**: la app entra y abre las 58 pantallas (mixta); Bitácoras ya es nativa; siguen traslados, efectivo y pedidos.
+**Estado:** F0 a F6, U1 y U2 **cerradas** · F7 paso 1 hecho (paso 2 pospuesto) · **F8 en curso**: la app entra y abre las 58 pantallas (mixta); Bitácoras y Pedir a otra sala ya son nativas; siguen efectivo y pedidos.
 
 ### Bitácora
 
@@ -201,6 +201,19 @@
   incrustado con la sesión prestada. Salió un defecto que Android también
   tenía: «Salir» dejaba un Inicio vacío — la app no tenía guardia de sesión
   como la web; hoy la tiene la raíz (`GuardiaDeSesion`).
+- **F8 paso 4 — Pedir a otra sala, nativo (2026-09-29)**. Es la acción de sala
+  más frecuente (932 en 30 días, 36 personas). **Antes de dibujarla se sacó al
+  núcleo todo lo que hacía `PedirTrasladoModal` salvo dibujar**: el hook
+  `hooks/usePedirTraslado.js` (salas, lotes por estante, presentaciones,
+  receta, aviso de vencimiento, reparto, composición de varias salas, envío),
+  `utils/pedirTraslado.js` (clave de origen y `avisosDelPedido`, los textos de
+  cada aviso) y `utils/consultaInventario.js` (el buscador resumido por
+  producto). El modal web quedó en la forma (1,270 → 625 líneas). Verificado:
+  el mismo pedido hecho desde la web y desde el iPhone (simulador) contra la
+  base de pruebas quedó con los MISMOS campos, lote y bitácora, y el duplicado
+  lo frena con su mensaje. En la app, Traslados abre nativo con «Pedir a otra
+  sala»; sus cuatro pestañas siguen como el portal. De paso: en iPhone el
+  teclado tapaba el campo que se escribía — hoy el formulario se corre solo.
 
 ## Para qué
 

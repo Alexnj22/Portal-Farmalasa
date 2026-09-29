@@ -874,8 +874,52 @@ crones de puntos que ya no sirven.
 
 - Una venta de septiembre que se anule en octubre **no** descuenta: sus puntos
   entraron con el historial migrado, sin la venta ligada.
-- `puntos-vencer-mensual` se apaga; el vencimiento en el portal
-  (`puntos_vencer_lotes`) no vence nada antes del 2-oct-2027 y su cron se
-  decide antes de esa fecha.
-- `mis-puntos` muestra una cortesía de cumpleaños como «compra»: el motivo
-  viaja en el estado de cuenta pero esa pantalla no lo pinta.
+- ~~`puntos-vencer-mensual` se apaga; el cron del portal se decide antes de
+  oct-2027~~ → **resuelto el 2026-09-28**: `puntos-vencer-diario` ya está
+  programado (§13).
+- ~~`mis-puntos` muestra el cumpleaños como «compra»~~ → **resuelto el
+  2026-09-28**: cada movimiento se nombra por su tipo (§13).
+
+---
+
+## 13. Cerrado para el arranque (2026-09-28)
+
+La auditoría previa al 1-oct comparó la lógica contra el reglamento y corrió el
+motor real en seco sobre septiembre. Decisiones del usuario y lo que se hizo:
+
+| tema | decisión | dónde vive |
+|---|---|---|
+| quién acumula | **toda ficha con nombre**, sin presentar ticket (≈4.5× el costo del sistema anterior, medido en agosto) | `ventas_elegibles_puntos` |
+| fichas genéricas | CLIENTES VARIOS, CLIENTE FRECUENTE, CLIENTE FRECUENTE NUEVO y CLIENTE VIP **no acumulan**, marcadas **al encender** (antes, el puente viejo retira sus tickets: pasó con 499) | `puntos_encender` |
+| convenios | excluidos por la ficha (`acumula_puntos`); hoy MAPFRE. Otros, cuando el usuario los nombre | `customers` |
+| productos mal clasificados | chips y bebidas en laboratorios de farmacia no cuentan como farmacia | `puntos_producto_no_acumula` |
+| cumpleaños | 50 pts automáticos el día, a toda ficha con fecha de nacimiento | `puntos_dar_cumpleanos` · cron `puntos-cumpleanos-diario` |
+| ajustes a mano | dar / quitar con permiso `puntos_ajustar`, motivo obligatorio, nunca negativo; desde el 1-oct | `puntos_ajustar` |
+| canje sobre factura anulada | sólo canjea una venta válida; el de una anulada después se **devuelve** a los mismos lotes | `puntos_devolver_canjes_anulados` |
+| anular una compra con los puntos gastados | se toman de sus **otros** puntos (FIFO); lo que no alcance, a Avisos | `puntos_anular_venta` · `puntos_anulacion_gastada` |
+| canje que deja la venta en $0 | no se puede impedir (lo hace la caja): se registra y **se avisa** a sala y supervisión | `puntos_barrer_canjes` · `puntos-motor` |
+| vencimiento | a los 12 meses, cron diario desde ya | `puntos-vencer-diario` |
+
+La vista `/puntos` quedó con cuatro pestañas (Resumen, Consulta, Avisos, Cuentas
+por asignar), cada una con su permiso; el detalle del cliente con historia por
+mes, buscador, quién vendió o ajustó (con foto) y el acceso a «Mis puntos» con
+envío por WhatsApp.
+
+### Lo que falta, y ya no es construir
+
+**1-oct en la mañana — verificar el arranque:** `puntos_arranque` con `ok` y
+`encendido`; `puntos_config.fuente = 'portal'`; `puntos-motor-1min` activo y
+acumulando ventas del día; `sync-puntos-1min` apagado; las 4 fichas genéricas
+en `acumula_puntos = false`.
+
+**Después del arranque — limpieza:** en `scripts/eficiencia-gate.mjs` quitar
+`sync-puntos-1min`, `puntos-vencer-mensual`, `puntos-archivar-*`,
+`puntos-arranque-1oct` y `puntos-sincronizar-noche`, y declarar
+`puntos-motor-1min`. Borrar `puntos-probe`, `puntos-traer-saldos`, `sync-puntos`,
+`puntos-vencer` (edge) y `puntos_migrar` (la vieja). Sellar el área en la
+auditoría con la primera semana real.
+
+**Operativo (del usuario):** nadie en la aplicación vieja después del cierre del
+30-sep; MySQL encendido hasta las 2:10; apagar el Apps Script de Drive; dar
+`puntos_ajustar` a quien regalaba cumpleaños; la caja consulta el saldo antes
+de un canje y no deja ventas en $0; nombrar otros convenios si los hay.

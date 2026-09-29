@@ -242,6 +242,51 @@ Pedido del usuario: «mira el ERP, no como guía en diseño sino en utilidad.
   cuánto entrega el cliente y muestra el cambio.
 - Precios con IVA si es Factura, sin IVA si es Crédito Fiscal.
 
+## v2.1085.0 — App: pedir a otra sala, nativo; la lógica del pedido pasa al núcleo
+
+En la app del teléfono, Traslados abre nativo con «Pedir a otra sala»: buscar
+el producto, ver cuánto hay en cada sala, elegir de cuál, la presentación, la
+cantidad y los lotes, y mandar — con los mismos avisos que el portal (no
+alcanza, quedaría bajo su mínimo, vencimiento de los que llevan receta, falta
+el para qué). En iPhone el teclado ya no tapa el campo que se escribe.
+
+En el portal no cambia nada visible: el formulario de pedir a otra sala usa
+ahora la misma lógica que la app, así que las dos arman exactamente la misma
+solicitud.
+
+## v2.1084.11 — Puntos: respetar la salida del programa y vigilar que el motor acumule
+
+Recomendaciones aceptadas por el usuario, las dos para después del arranque.
+
+- **La salida del programa se respeta.** «Mis puntos» deja salir del programa
+  (`acepta_programa_puntos = false`), pero la regla de acumulación no lo miraba:
+  esa persona seguía sumando, y le llegaba el cumpleaños. Hoy nadie salió; el
+  hueco era latente. Probado: la venta de una ficha que sale deja de acumular.
+- **Vigía del motor** (`puntos_vigilar_motor`, cron `puntos-vigilar-motor` cada
+  15 min): si en horario de ventas (8:00–21:00) hubo 3 o más ventas con cliente
+  en la última hora y ninguna acumuló, avisa a Gerencia y Administración, una
+  vez por día. Un motor detenido no da error visible: lo primero en notarlo
+  sería el cliente, días después. No hace nada mientras el programa siga en el
+  sistema anterior. Probado en una transacción que se deshace: detectó 57
+  ventas sin acumular, avisó a dos personas y no repitió el aviso.
+
+## v2.1084.10 — MIN·MAX: «0 en todas las salas» con permiso propio y el porqué obligatorio
+
+La jefa de Compras y Logística no podía retirar un producto de todas las salas:
+`zero_out_product_all_branches` exigía alcance total en MIN·MAX y le rebotaba
+con `BRANCH_SCOPE_DENIED`. El usuario no quiere darle ese alcance (editaría el
+MIN·MAX de cada sala), sólo la función. Ahora es una capacidad propia,
+`minmax_cero_en_todas` («Poner 0 en todas las salas» en Permisos), encendida
+para ese cargo; la RPC acepta alcance total **o** la capacidad.
+
+Y pregunta por qué: un diálogo nuevo (`CeroEnTodasModal`) exige escribir el
+motivo. Se guarda en la fila (`manual_motivo`/`manual_nota`, que ya muestra la
+tarjeta «Vigente») y en la bitácora, que el historial ahora pinta. «Ya no
+rota» se ofrece sólo con alcance total, igual que en el resto del módulo. El
+botón «0 en red» pasó a llamarse «0 en todas las salas».
+
+Migración `20260928222145` (firma nueva, la vieja se borró).
+
 ## v2.1084.9 — App: salir vuelve a la entrada; probada en iOS
 
 La app del teléfono se probó en un iPhone (simulador, iOS 27): entra, guarda
@@ -16135,76 +16180,6 @@ igual.
 La retención de la marca (400 días) va dentro del purgado de la campana, que ya
 existía: sobrevive a los 90 días de la notificación sin ser eterna.
 
-## v2.937.0 — Las anulaciones de compra se aplican solas
-
-**Seis CCF que el proveedor anuló seguían contando como buenos.** Cinco de
-agosto y uno de julio, $1,759.25 en total: los avisos habían llegado, estaban
-guardados y esperando en Revisión, y ninguno se había aplicado. El portal los
-mostraba vigentes y el libro de compras los tomaba, porque las tres funciones
-del libro eligen el DTE con `coalesce(d.invalidado, false) = false`.
-
-Los seis ya están marcados, cada uno con su motivo y con el aviso del proveedor
-enlazado al documento. En el detalle aparecen como **«Ver el PDF de anulación»**
-y **«Ver el aviso de anulación (JSON)»** — hasta ahora sólo se ofrecía uno, con
-un rótulo fijo que mentía en cuanto el respaldo no era un PDF.
-
-### Cuatro proveedores, cuatro maneras de esconder la misma palabra
-
-Ninguna de las cuatro fallas era la misma, y ninguna daba error:
-
-| proveedor | dónde estaba la anulación | por qué no se veía |
-|---|---|---|
-| Farmaquímicos | «DOCUMENTO ANULADO» escrito en el PDF | el PDF se procesó **1.1 s antes** de que su propio CCF entrara a la base |
-| Uniserfa (×2) | la marca de agua, como texto | el `\b` de apertura |
-| Guardado (×3) | la marca de agua, **como imagen** | no hay texto que leer |
-| Brandstar | el JSON del evento | el JSON se procesó **25 s antes** que su CCF |
-
-**El `\b` de apertura.** El extractor no pone separador delante de la marca de
-agua: devuelve `$ 138.97ANULADO`. Entre `7` y `A` no hay límite de palabra —los
-dos son `\w`—, así que `\banulado` nunca matcheaba. Y quitarlo a secas no era la
-salida: en una farmacéutica **«GRANULADO»** está en las descripciones de
-producto, y sin límite habría marcado anulado un CCF vigente. El límite correcto
-no es «palabra» sino «que no venga pegado a otra LETRA»: un dígito o un símbolo
-delante sí valen. Verificado contra los diez PDF reales, con los tres originales
-sanos dando negativo.
-
-**El asunto del correo, cuando no hay nada que leer.** Los tres avisos de
-Guardado traen exactamente el mismo texto que el CCF original —4,345 caracteres,
-idénticos— y cuatro imágenes de más: el sello está dibujado. La única señal es
-el asunto, y nunca actúa sola: hace falta además un código de generación que ya
-resuelva a un documento guardado.
-
-**El orden de los correos ya no decide.** Al cerrar cada cuenta hay una segunda
-pasada que contrasta lo que quedó pendiente contra la base completa. Es lo que
-rescató la anulación de julio, que llevaba cinco semanas esperando.
-
-**Y el aviso del evento se enlaza por el correo que lo trajo.** Bajo la norma
-DTE 2.0 una invalidación llega como tres archivos, y sólo el JSON sabe a qué
-documento apunta: el código impreso en el PDF del evento es el **del evento**
-(Brandstar: `122A62A7…` en el PDF, `9F53BF27…` el CCF anulado). Ese PDF no se
-puede resolver solo — se resuelve porque llegó en el mismo correo.
-
-### Aviso cuando la anulación cae sobre un mes ya declarado
-
-El plazo del evento de invalidación se cuenta por receptor: para un
-contribuyente son los diez primeros días hábiles del mes siguiente. O sea que un
-CCF del 28 de agosto se puede anular con septiembre empezado, cuando el libro de
-agosto ya se imprimió y se declaró. Aplicarlo en silencio es el peor modo de
-falla: el libro en pantalla deja de dar el total del papel presentado, sin error
-y sin fila de menos, y se descubre cuadrando meses después.
-
-Ahora avisa a quien lee los libros, con el proveedor y el monto. Nace inerte —
-`periodos_fiscales` está vacío, nunca se cerró un mes— y se enciende solo el día
-que se cierre el primero.
-
-### El JSON del evento ya no se puede sólo tirar
-
-Para una fila `invalidacion_pendiente` la única acción en pantalla era
-**Descartar**, y esa fila es el JSON del evento: trae su propio sello de
-recepción del Ministerio de Hacienda («Invalidación Recibida y Procesada»). La
-prueba legal de la anulación no tenía otro destino. Ahora se clasifica igual que
-el PDF, con el documento ya preseleccionado cuando el propio aviso dice cuál es.
-
 ## v2.937.1 — El invariante de las bolsas se mide con el saldo, y el aviso dice de qué lado
 
 Migración `20260902140259`. Salió de una pregunta del usuario sobre una tarjeta
@@ -16287,6 +16262,76 @@ contrario de lo que pasa manda a buscar dinero que está, y de paso esconde el
 caso que sí hay que mirar: guardar de más es que algo se contó dos veces. Son
 tres frases y no dos porque el conjunto puede ser mixto, y ahí ninguna de las dos
 sirve.
+
+## v2.937.0 — Las anulaciones de compra se aplican solas
+
+**Seis CCF que el proveedor anuló seguían contando como buenos.** Cinco de
+agosto y uno de julio, $1,759.25 en total: los avisos habían llegado, estaban
+guardados y esperando en Revisión, y ninguno se había aplicado. El portal los
+mostraba vigentes y el libro de compras los tomaba, porque las tres funciones
+del libro eligen el DTE con `coalesce(d.invalidado, false) = false`.
+
+Los seis ya están marcados, cada uno con su motivo y con el aviso del proveedor
+enlazado al documento. En el detalle aparecen como **«Ver el PDF de anulación»**
+y **«Ver el aviso de anulación (JSON)»** — hasta ahora sólo se ofrecía uno, con
+un rótulo fijo que mentía en cuanto el respaldo no era un PDF.
+
+### Cuatro proveedores, cuatro maneras de esconder la misma palabra
+
+Ninguna de las cuatro fallas era la misma, y ninguna daba error:
+
+| proveedor | dónde estaba la anulación | por qué no se veía |
+|---|---|---|
+| Farmaquímicos | «DOCUMENTO ANULADO» escrito en el PDF | el PDF se procesó **1.1 s antes** de que su propio CCF entrara a la base |
+| Uniserfa (×2) | la marca de agua, como texto | el `\b` de apertura |
+| Guardado (×3) | la marca de agua, **como imagen** | no hay texto que leer |
+| Brandstar | el JSON del evento | el JSON se procesó **25 s antes** que su CCF |
+
+**El `\b` de apertura.** El extractor no pone separador delante de la marca de
+agua: devuelve `$ 138.97ANULADO`. Entre `7` y `A` no hay límite de palabra —los
+dos son `\w`—, así que `\banulado` nunca matcheaba. Y quitarlo a secas no era la
+salida: en una farmacéutica **«GRANULADO»** está en las descripciones de
+producto, y sin límite habría marcado anulado un CCF vigente. El límite correcto
+no es «palabra» sino «que no venga pegado a otra LETRA»: un dígito o un símbolo
+delante sí valen. Verificado contra los diez PDF reales, con los tres originales
+sanos dando negativo.
+
+**El asunto del correo, cuando no hay nada que leer.** Los tres avisos de
+Guardado traen exactamente el mismo texto que el CCF original —4,345 caracteres,
+idénticos— y cuatro imágenes de más: el sello está dibujado. La única señal es
+el asunto, y nunca actúa sola: hace falta además un código de generación que ya
+resuelva a un documento guardado.
+
+**El orden de los correos ya no decide.** Al cerrar cada cuenta hay una segunda
+pasada que contrasta lo que quedó pendiente contra la base completa. Es lo que
+rescató la anulación de julio, que llevaba cinco semanas esperando.
+
+**Y el aviso del evento se enlaza por el correo que lo trajo.** Bajo la norma
+DTE 2.0 una invalidación llega como tres archivos, y sólo el JSON sabe a qué
+documento apunta: el código impreso en el PDF del evento es el **del evento**
+(Brandstar: `122A62A7…` en el PDF, `9F53BF27…` el CCF anulado). Ese PDF no se
+puede resolver solo — se resuelve porque llegó en el mismo correo.
+
+### Aviso cuando la anulación cae sobre un mes ya declarado
+
+El plazo del evento de invalidación se cuenta por receptor: para un
+contribuyente son los diez primeros días hábiles del mes siguiente. O sea que un
+CCF del 28 de agosto se puede anular con septiembre empezado, cuando el libro de
+agosto ya se imprimió y se declaró. Aplicarlo en silencio es el peor modo de
+falla: el libro en pantalla deja de dar el total del papel presentado, sin error
+y sin fila de menos, y se descubre cuadrando meses después.
+
+Ahora avisa a quien lee los libros, con el proveedor y el monto. Nace inerte —
+`periodos_fiscales` está vacío, nunca se cerró un mes— y se enciende solo el día
+que se cierre el primero.
+
+### El JSON del evento ya no se puede sólo tirar
+
+Para una fila `invalidacion_pendiente` la única acción en pantalla era
+**Descartar**, y esa fila es el JSON del evento: trae su propio sello de
+recepción del Ministerio de Hacienda («Invalidación Recibida y Procesada»). La
+prueba legal de la anulación no tenía otro destino. Ahora se clasifica igual que
+el PDF, con el documento ya preseleccionado cuando el propio aviso dice cuál es.
 
 ## v2.936.4 — Un crédito pagado no está vencido
 
@@ -17643,41 +17688,6 @@ al aplicar la regla de marca una vez se borró un logo que el usuario sí había
 aprobado y hubo que rescatarlo del historial — un archivo aprobado no se pierde
 porque dejó de estar en uso.
 
-## v2.922.3 — El código se lee de un vistazo y el QR entra solo
-
-Tres correcciones al papel del código de acceso a Mis puntos, después de
-imprimir uno de verdad.
-
-**El código sale grande.** Doble alto **y doble ancho** en el rollo, y del
-tamaño equivalente en el diálogo del navegador. Es el dato por el que existe
-este papel: alguien lo va a teclear en su teléfono, parado en la caja y muchas
-veces sin los lentes puestos. El doble ancho se puede usar acá —y no en un
-total— porque el renglón está solo y centrado: no hay nada contra qué
-alinearlo. A cambio caben 20 caracteres, que es donde se parte.
-
-**El QR lleva el código adentro.** Ahora apunta a
-`…/mis-puntos?codigo=K7MP4XN`: quien lo escanea llega con su saldo ya en
-pantalla, sin teclear nada. La pantalla lee ese código de la dirección al
-construir el estado —no dentro de un efecto—, así el campo nace lleno y nadie
-ve el formulario vacío parpadear un instante. Se valida la **forma** del código
-antes de usarlo: un intento fallido gasta uno de los cinco del freno, y ninguno
-se va a gastar por un enlace mal copiado.
-
-El código igual va escrito abajo. Los dos casos que este papel existe para
-cubrir son gente sin teléfono con cámara o sin datos en ese momento: el QR es el
-atajo, el escrito es el que nunca falla.
-
-**El pie pasó de cuatro renglones a dos.** Decía cómo escanear, qué se ve
-adentro, cuánto dura y qué hacer si se pierde. Eso es un instructivo, y un
-instructivo en un papel de caja no lo lee nadie. El QR ya no necesita
-explicación, así que queda sólo lo que el papel no puede hacer solo: *«Guarda
-este papel o copia tu codigo en un lugar seguro para poder entrar.»*
-
-**Y «PUNTOS SALUD» salía dos veces** — una en el encabezado y otra como título,
-tres renglones más abajo. Un renglón que repite al de arriba no informa, gasta
-rollo; es la misma decisión que ya había tomado el ticket de traslado. El nombre
-para la lista de la caja va aparte, donde sí hace falta distinguir un trabajo de
-otro.
 ## v2.923.0 — El cajón tiene catálogo: qué entra y qué sale, con nombre
 
 Migración `20260901214147`. «Nos faltan varias opciones de ingreso de efectivo y
@@ -17748,6 +17758,41 @@ efecto: sin eso, abrir «Salida» después de una entrada llegaba con el tipo de
 entrada elegido — y los tipos de los dos sentidos no son los mismos, así que el
 desplegable mostraba un código que su propia lista no tiene.
 
+## v2.922.3 — El código se lee de un vistazo y el QR entra solo
+
+Tres correcciones al papel del código de acceso a Mis puntos, después de
+imprimir uno de verdad.
+
+**El código sale grande.** Doble alto **y doble ancho** en el rollo, y del
+tamaño equivalente en el diálogo del navegador. Es el dato por el que existe
+este papel: alguien lo va a teclear en su teléfono, parado en la caja y muchas
+veces sin los lentes puestos. El doble ancho se puede usar acá —y no en un
+total— porque el renglón está solo y centrado: no hay nada contra qué
+alinearlo. A cambio caben 20 caracteres, que es donde se parte.
+
+**El QR lleva el código adentro.** Ahora apunta a
+`…/mis-puntos?codigo=K7MP4XN`: quien lo escanea llega con su saldo ya en
+pantalla, sin teclear nada. La pantalla lee ese código de la dirección al
+construir el estado —no dentro de un efecto—, así el campo nace lleno y nadie
+ve el formulario vacío parpadear un instante. Se valida la **forma** del código
+antes de usarlo: un intento fallido gasta uno de los cinco del freno, y ninguno
+se va a gastar por un enlace mal copiado.
+
+El código igual va escrito abajo. Los dos casos que este papel existe para
+cubrir son gente sin teléfono con cámara o sin datos en ese momento: el QR es el
+atajo, el escrito es el que nunca falla.
+
+**El pie pasó de cuatro renglones a dos.** Decía cómo escanear, qué se ve
+adentro, cuánto dura y qué hacer si se pierde. Eso es un instructivo, y un
+instructivo en un papel de caja no lo lee nadie. El QR ya no necesita
+explicación, así que queda sólo lo que el papel no puede hacer solo: *«Guarda
+este papel o copia tu codigo en un lugar seguro para poder entrar.»*
+
+**Y «PUNTOS SALUD» salía dos veces** — una en el encabezado y otra como título,
+tres renglones más abajo. Un renglón que repite al de arriba no informa, gasta
+rollo; es la misma decisión que ya había tomado el ticket de traslado. El nombre
+para la lista de la caja va aparte, donde sí hace falta distinguir un trabajo de
+otro.
 ## v2.922.2 — Efectivo: se dice de qué bolsa salió, y el comprobante del abono
 
 Dos correcciones de pantalla y la primera pieza visible de los abonos.
@@ -18666,44 +18711,6 @@ preguntándole al cliente con qué va a entrar— y aprieta el freno de 8 intent
 
 Falta la pantalla: emitir y ver desde la ficha del cliente, y el tiquete.
 
-## v2.909.0 — La última venta se recalcula, no sólo se acumula
-
-Migración `20260901173428`. Cierra la causa de fondo que v2.907.0 dejó abierta a
-propósito.
-
-`product_last_sale` —la fecha de la última venta de cada producto en cada sala—
-la escribía SÓLO un disparador, al insertar el renglón de venta, y con una
-condición que hace que la fecha **suba y nunca baje**. La anulación de la
-factura llega después: para cuando el sync la marca, el renglón ya está adentro
-y nadie vuelve a sacarlo. Por eso corregir el literal `'ANULADA'` arreglaba lo
-que entrara de ahí en adelante y no tocaba **nada** de lo ya escrito.
-
-Ahora existe `refresh_product_last_sale()`, que recalcula la tabla desde las
-ventas reales, con un cron diario a las **06:45 UTC** — quince minutos después
-del que ya hacía lo mismo con la tabla gemela del resumen de ventas, que por
-tenerlo se había corregido sola.
-
-Corrido una vez al aplicarlo: **34 fechas corregidas y 11 filas borradas**,
-exactamente lo que había predicho el ensayo. Las 11 eran productos que nunca se
-vendieron y figuraban vendidos porque su única venta estaba anulada. Nueve de
-esas 45 cruzaban el corte de 90 días con el que Mín·Máx decide si congela una
-baja de máximo. La tabla quedó en 16,885 filas, cero desfasadas.
-
-No era un arrastre que se limpia una vez y listo: se anulan **~65 facturas por
-mes** de forma sostenida (60/55/54/70/81/75/57 de febrero a agosto), así que sin
-el barrido se volvía a ensuciar sola y en silencio. Por eso es un cron y no un
-`UPDATE` suelto.
-
-Detalles que valen para quien la toque: recalcula **todo el historial** y no una
-ventana —la fecha de algo que no se vende hace dos años sigue siendo un dato, y
-una ventana la borraría—; cuesta ~1.07 s entrando por índice en las dos tablas
-grandes, sin barrer ninguna; usa los mismos criterios que el disparador
-(`es_bodega = false`, cantidad > 0, producto no nulo ni 0), verificado porque el
-recálculo no inserta ni una fila que el disparador no hubiera escrito; y sólo
-escribe las filas que cambian, que en este repo es regla para todo lo que corre
-solo. Queda declarada en el manifiesto de `gate:eficiencia` con su costo y su
-motivo.
-
 ## v2.909.1 — La bitácora firma con la ficha, y escribirla ya no exige poder leerla
 
 Migraciones `20260901172915` y `20260901173102`.
@@ -18762,6 +18769,44 @@ el mismo permiso que ya hace falta para escribir.
 tabla** (abril). El kiosco entra como `anon` con el token del equipo, y `anon` no
 puede escribir bitácora — abrirle la puerta es una decisión de seguridad, no un
 arreglo. Anotado sin tocar.
+
+## v2.909.0 — La última venta se recalcula, no sólo se acumula
+
+Migración `20260901173428`. Cierra la causa de fondo que v2.907.0 dejó abierta a
+propósito.
+
+`product_last_sale` —la fecha de la última venta de cada producto en cada sala—
+la escribía SÓLO un disparador, al insertar el renglón de venta, y con una
+condición que hace que la fecha **suba y nunca baje**. La anulación de la
+factura llega después: para cuando el sync la marca, el renglón ya está adentro
+y nadie vuelve a sacarlo. Por eso corregir el literal `'ANULADA'` arreglaba lo
+que entrara de ahí en adelante y no tocaba **nada** de lo ya escrito.
+
+Ahora existe `refresh_product_last_sale()`, que recalcula la tabla desde las
+ventas reales, con un cron diario a las **06:45 UTC** — quince minutos después
+del que ya hacía lo mismo con la tabla gemela del resumen de ventas, que por
+tenerlo se había corregido sola.
+
+Corrido una vez al aplicarlo: **34 fechas corregidas y 11 filas borradas**,
+exactamente lo que había predicho el ensayo. Las 11 eran productos que nunca se
+vendieron y figuraban vendidos porque su única venta estaba anulada. Nueve de
+esas 45 cruzaban el corte de 90 días con el que Mín·Máx decide si congela una
+baja de máximo. La tabla quedó en 16,885 filas, cero desfasadas.
+
+No era un arrastre que se limpia una vez y listo: se anulan **~65 facturas por
+mes** de forma sostenida (60/55/54/70/81/75/57 de febrero a agosto), así que sin
+el barrido se volvía a ensuciar sola y en silencio. Por eso es un cron y no un
+`UPDATE` suelto.
+
+Detalles que valen para quien la toque: recalcula **todo el historial** y no una
+ventana —la fecha de algo que no se vende hace dos años sigue siendo un dato, y
+una ventana la borraría—; cuesta ~1.07 s entrando por índice en las dos tablas
+grandes, sin barrer ninguna; usa los mismos criterios que el disparador
+(`es_bodega = false`, cantidad > 0, producto no nulo ni 0), verificado porque el
+recálculo no inserta ni una fila que el disparador no hubiera escrito; y sólo
+escribe las filas que cambian, que en este repo es regla para todo lo que corre
+solo. Queda declarada en el manifiesto de `gate:eficiencia` con su costo y su
+motivo.
 
 ## v2.908.0 — Puntos Salud, el programa tiene nombre
 
@@ -23964,39 +24009,6 @@ Ahora el `(A)` se acepta como parte de la abreviatura, en todas: `ING.(A)`,
 `TEC.(A)`, y sola sin nada detrás. Un oficio como «Comerciante» sigue **sin**
 nivel: no se le inventa uno universitario.
 
-## v2.836.1 — Reeditar ya no recorta: el recuadro cubre la foto entera
-
-*«Sigue recortando al reeditar.»* — y con razón, por tercera vez.
-
-Las dos correcciones anteriores arreglaron lo que se **guarda** (la imagen vuelve
-completa) y la **proporción** del recuadro. El margen seguía ahí: la foto se
-dibujaba un 7% más grande que el recuadro, y eso se lee como «me va a recortar
-otra vez» aunque el archivo salga entero. **Nadie juzga por lo que no ve.**
-
-Ahora el recuadro cubre el **100%** de la foto. Medido: 622×435 de foto, 622×435
-de recuadro, y el original vuelve idéntico —1600×1120— con su borde intacto en
-los cuatro lados.
-
-### Lo que no funcionó, y por qué
-
-- **Mover el acercamiento.** Es una prop controlada, el mínimo del canónico es 1
-  y acá hacía falta **alejar** — el factor medido era 0.95. Bajarle el mínimo
-  tampoco alcanzó: cambiar la forma del recuadro **remonta** el componente, así
-  que el ajuste quedaba calculado con la medida vieja. Quedó en 95%.
-- **Darle el tamaño que informa el canónico.** `onMediaLoaded` devuelve la medida
-  con la que él encajó la foto **dentro** del recuadro, o sea ya con el margen
-  adentro: 592 contra los 622 que la foto ocupa de verdad. También 95%.
-
-Lo que funcionó fue medir **el elemento dibujado** y darle ese tamaño al
-recuadro. Lo que hay que igualar es lo que se ve.
-
-### Y un control que prometí y no había renderizado
-
-El conmutador de **Perspectiva**. Lo destapó el linter —`setEnderezarPerspectiva`
-asignado y nunca usado—, no una prueba: la función de enderezar estaba entera y
-sin forma de apagarla, que es justo la vuelta atrás que hace defendible aplicarla
-sola. Aparece sólo cuando hay algo que enderezar.
-
 ## v2.837.0 — El portal pregunta por el rango del cargo, no por system_role
 
 *«la verdad system role no tiene sentido, para eso está el rol que es el cargo,
@@ -24033,6 +24045,39 @@ persona en el mensaje de ayuda que le manda a soporte.
 Falta el último paso, y va aparte: quitar la columna. Antes hay que redesplegar
 las 13 funciones que comparten `_shared/security.ts`, porque cada una lleva su
 propia copia y la copia vieja todavía la nombra en un `select`.
+
+## v2.836.1 — Reeditar ya no recorta: el recuadro cubre la foto entera
+
+*«Sigue recortando al reeditar.»* — y con razón, por tercera vez.
+
+Las dos correcciones anteriores arreglaron lo que se **guarda** (la imagen vuelve
+completa) y la **proporción** del recuadro. El margen seguía ahí: la foto se
+dibujaba un 7% más grande que el recuadro, y eso se lee como «me va a recortar
+otra vez» aunque el archivo salga entero. **Nadie juzga por lo que no ve.**
+
+Ahora el recuadro cubre el **100%** de la foto. Medido: 622×435 de foto, 622×435
+de recuadro, y el original vuelve idéntico —1600×1120— con su borde intacto en
+los cuatro lados.
+
+### Lo que no funcionó, y por qué
+
+- **Mover el acercamiento.** Es una prop controlada, el mínimo del canónico es 1
+  y acá hacía falta **alejar** — el factor medido era 0.95. Bajarle el mínimo
+  tampoco alcanzó: cambiar la forma del recuadro **remonta** el componente, así
+  que el ajuste quedaba calculado con la medida vieja. Quedó en 95%.
+- **Darle el tamaño que informa el canónico.** `onMediaLoaded` devuelve la medida
+  con la que él encajó la foto **dentro** del recuadro, o sea ya con el margen
+  adentro: 592 contra los 622 que la foto ocupa de verdad. También 95%.
+
+Lo que funcionó fue medir **el elemento dibujado** y darle ese tamaño al
+recuadro. Lo que hay que igualar es lo que se ve.
+
+### Y un control que prometí y no había renderizado
+
+El conmutador de **Perspectiva**. Lo destapó el linter —`setEnderezarPerspectiva`
+asignado y nunca usado—, no una prueba: la función de enderezar estaba entera y
+sin forma de apagarla, que es justo la vuelta atrás que hace defendible aplicarla
+sola. Aparece sólo cuando hay algo que enderezar.
 
 ## v2.836.0 — Endereza la perspectiva, y reeditar deja de comerse el borde
 
@@ -27608,6 +27653,49 @@ buena dieron 223 y 225 ms. La que sirvió fue un CTE `MATERIALIZED`: **188 ms �
 
 Falta la primera corrida real en sala.
 
+## v2.794.0 — Un cambio de vendedor llega al portal, y una venta emitida no se pasa a crédito
+
+Reportado desde Ventas: a la venta `0000070451_COF` se le aprobó un cambio de
+vendedor, el cambio entró en el sistema de origen, y el portal siguió mostrando
+al vendedor anterior.
+
+**El sync decidía si reescribir una venta comparando ocho campos, y escribía
+quince.** `cod_vendedor` viajaba en el payload pero no estaba en la
+comparación, así que la factura nunca entraba al upsert y el código nuevo no
+llegaba jamás. El resync del mes volvió a leer esa venta **cada hora** —unas 47
+veces desde el cambio— y la saltó todas.
+
+No era un caso: **las SEIS solicitudes de cambio de vendedor aprobadas desde el
+15 de agosto** seguían con el vendedor viejo en el portal (Salud 1, 3, 4 y 5).
+Seis ventas contadas a la persona equivocada en metas, ranking y comisiones, sin
+un error en ningún lado.
+
+Ahora se comparan también `cod_vendedor`, `correlativo`, `codigo_generacion`,
+`fecha` y `hora`, cada uno con su changelog, y un valor que llegue vacío **no
+borra** el guardado. Las comparaciones normalizan antes: el `codigo_generacion`
+es `uuid` y la base lo devuelve en minúsculas mientras el origen lo manda en
+mayúsculas — compararlos crudos habría reescrito la tabla entera cada minuto
+para no cambiar nada.
+
+**Y el enlace al cliente ahora sigue al nombre.** Se buscaba ficha sólo cuando
+`customer_id` estaba vacío, así que un cambio de cliente movía el nombre y
+dejaba la venta ligada al cliente anterior: mostraba a uno y sumaba en el
+historial del otro.
+
+**Una venta emitida ya no se puede pasar a crédito.** Para eso hay que anularla
+y volver a facturarla. La regla la impone la base
+(`validar_solicitud_facturacion`), la repite el paso que la aplica —por si
+alguna quedó pendiente de antes— y la pantalla ya no ofrece esa opción,
+diciendo por qué. La medición le da la razón: la única que llegó a aplicarse
+(`0000056702_COF`, Salud 3, 25-ago) quedó en crédito **cinco minutos** y volvió
+sola a tarjeta; el portal la dio por aplicada porque releyó la venta justo
+dentro de esa ventana.
+
+Lo que **no** cambió, a propósito: los renglones de una venta se siguen
+releyendo sólo a pedido. Un borrado y reinserción automática de renglones
+fiscales es un camino destructivo nuevo, y el total de una venta no se movió
+**ni una vez** en toda la historia del changelog.
+
 ## v2.793.3 — El conteo se lee sala por sala, con cara y sin texto cortado
 
 Cinco correcciones del usuario mirando la pantalla de conteos y la de una bolsa.
@@ -27700,49 +27788,6 @@ manda ésa, porque puede estar trasladando a la persona en el mismo movimiento.
 
 La foto además ya no se pierde: la absorción dejó de pisar `photo_url`, así que
 lo que se ve aquí es la que se conserva.
-
-## v2.794.0 — Un cambio de vendedor llega al portal, y una venta emitida no se pasa a crédito
-
-Reportado desde Ventas: a la venta `0000070451_COF` se le aprobó un cambio de
-vendedor, el cambio entró en el sistema de origen, y el portal siguió mostrando
-al vendedor anterior.
-
-**El sync decidía si reescribir una venta comparando ocho campos, y escribía
-quince.** `cod_vendedor` viajaba en el payload pero no estaba en la
-comparación, así que la factura nunca entraba al upsert y el código nuevo no
-llegaba jamás. El resync del mes volvió a leer esa venta **cada hora** —unas 47
-veces desde el cambio— y la saltó todas.
-
-No era un caso: **las SEIS solicitudes de cambio de vendedor aprobadas desde el
-15 de agosto** seguían con el vendedor viejo en el portal (Salud 1, 3, 4 y 5).
-Seis ventas contadas a la persona equivocada en metas, ranking y comisiones, sin
-un error en ningún lado.
-
-Ahora se comparan también `cod_vendedor`, `correlativo`, `codigo_generacion`,
-`fecha` y `hora`, cada uno con su changelog, y un valor que llegue vacío **no
-borra** el guardado. Las comparaciones normalizan antes: el `codigo_generacion`
-es `uuid` y la base lo devuelve en minúsculas mientras el origen lo manda en
-mayúsculas — compararlos crudos habría reescrito la tabla entera cada minuto
-para no cambiar nada.
-
-**Y el enlace al cliente ahora sigue al nombre.** Se buscaba ficha sólo cuando
-`customer_id` estaba vacío, así que un cambio de cliente movía el nombre y
-dejaba la venta ligada al cliente anterior: mostraba a uno y sumaba en el
-historial del otro.
-
-**Una venta emitida ya no se puede pasar a crédito.** Para eso hay que anularla
-y volver a facturarla. La regla la impone la base
-(`validar_solicitud_facturacion`), la repite el paso que la aplica —por si
-alguna quedó pendiente de antes— y la pantalla ya no ofrece esa opción,
-diciendo por qué. La medición le da la razón: la única que llegó a aplicarse
-(`0000056702_COF`, Salud 3, 25-ago) quedó en crédito **cinco minutos** y volvió
-sola a tarjeta; el portal la dio por aplicada porque releyó la venta justo
-dentro de esa ventana.
-
-Lo que **no** cambió, a propósito: los renglones de una venta se siguen
-releyendo sólo a pedido. Un borrado y reinserción automática de renglones
-fiscales es un camino destructivo nuevo, y el total de una venta no se movió
-**ni una vez** en toda la historia del changelog.
 
 ## v2.793.1 — El área de vencidos deja de trabar el estante
 
@@ -31083,30 +31128,6 @@ tenía preparados — un `git commit` sin pathspec commitea TODO lo que está en
 índice, no lo que uno acaba de agregar. Quedaron adentro y no se pierde nada,
 pero no era su commit.
 
-## v2.750.0 — El sobrante se puede probar en seco, y queda encendido
-
-**«Probar sin mover nada»**, en el bloque del movimiento, para bodega y
-supervisión. La función hace todas las comprobaciones contra el sistema —abre la
-sesión, busca el producto, resuelve la presentación, mide la existencia, reparte
-los lotes— y no escribe una línea. Ese modo existía **desde el día uno**
-(`simulacro` es su valor por omisión) y no había forma de dispararlo desde el
-portal, así que un movimiento pausado era un freno sin salida: la única manera
-de saber si iba a andar era dejarlo andar. El aviso cuenta el lote y la
-presentación que eligió, que es justo lo que hay que mirar.
-
-**Y los dos interruptores del sobrante quedan abiertos.** La duda era si la
-dirección Bodega → sala andaría, y al medirla resultó ser la **más transitada
-del portal**: `trasladar-pedido-erp` la hace en cada despacho de pedido —sesión
-en Bodega, área de vencidos descontada, foto antes/después, desempate contra una
-sala de destino, y la recepción con sesión en la sala— con las mismas piezas de
-`_shared/erp-traslado.ts`. Lo nuevo no es el camino: es que lo recorra esta otra
-función.
-
-**Una vuelta de menos al sistema.** Al conectar el área de vencidos quedaron dos
-lecturas de la misma pantalla —`existenciasDeUbicacion` y `leerUbicacion` sobre
-la ubicación de origen—, que es la más pesada que tiene el sistema. Una sola
-sirve para las dos cosas.
-
 ## v2.750.1 — El estado de cada plan sale de producción, y el barrido de RPC cierra limpio
 
 Segunda mitad de la auditoría de planes (v2.747.4). Ahí se movieron los que
@@ -31168,6 +31189,30 @@ ceros —entregas confirmadas, recorridos, solicitudes agrupadas— son el mismo
 tipo de cero: una etapa final que nadie ejercitó nunca. Un circuito que llega
 hasta el penúltimo paso no está probado, está a medias.
 
+
+## v2.750.0 — El sobrante se puede probar en seco, y queda encendido
+
+**«Probar sin mover nada»**, en el bloque del movimiento, para bodega y
+supervisión. La función hace todas las comprobaciones contra el sistema —abre la
+sesión, busca el producto, resuelve la presentación, mide la existencia, reparte
+los lotes— y no escribe una línea. Ese modo existía **desde el día uno**
+(`simulacro` es su valor por omisión) y no había forma de dispararlo desde el
+portal, así que un movimiento pausado era un freno sin salida: la única manera
+de saber si iba a andar era dejarlo andar. El aviso cuenta el lote y la
+presentación que eligió, que es justo lo que hay que mirar.
+
+**Y los dos interruptores del sobrante quedan abiertos.** La duda era si la
+dirección Bodega → sala andaría, y al medirla resultó ser la **más transitada
+del portal**: `trasladar-pedido-erp` la hace en cada despacho de pedido —sesión
+en Bodega, área de vencidos descontada, foto antes/después, desempate contra una
+sala de destino, y la recepción con sesión en la sala— con las mismas piezas de
+`_shared/erp-traslado.ts`. Lo nuevo no es el camino: es que lo recorra esta otra
+función.
+
+**Una vuelta de menos al sistema.** Al conectar el área de vencidos quedaron dos
+lecturas de la misma pantalla —`existenciasDeUbicacion` y `leerUbicacion` sobre
+la ubicación de origen—, que es la más pesada que tiene el sistema. Una sola
+sirve para las dos cosas.
 
 ## v2.749.0 — El testigo de índices: la ventana que le faltaba al hallazgo
 
@@ -46432,29 +46477,6 @@ el Inicio. Y el circuito del traslado, de punta a punta: se pidió desde
 Solicitudes eligiendo el producto, apareció en la bandeja y se contestó ahí
 mismo.
 
-## v2.611.2 — El ojo llega a la ficha móvil de toda tabla y a la tarjeta de conteo
-
-**Faltaba la mitad del portal, y era la del teléfono.** El barrido de v2.610.0
-buscó tarjetas por sus clases, así que sólo vio las que están escritas a mano en
-una vista. Las que más se repiten no se escriben: las dibuja un canónico. La más
-grande es la **ficha que toda tabla pinta en el teléfono** —33 vistas—, que al
-tocarla abre su hoja de detalle y no lo decía en ninguna parte; y como esa hoja
-existe en unas pantallas y en otras no, la misma tabla era tocable en una y muda
-en la siguiente sin forma de saberlo salvo probando. Ahora el ojo sale de la
-misma condición que decide si la ficha responde al toque, así que no pueden
-discrepar. Lo mismo con la **tarjeta de un conteo de inventario** en el
-teléfono.
-
-**Y se fue un chevron que apuntaba a nada.** Ventas e Inventario dibujaban una
-flechita para decir «esta fila se despliega». En el teléfono la fila que
-desplegaba no se pinta, así que la flecha no llevaba a ningún lado — y encima
-quedaba al lado del ojo, o sea dos señales para un solo toque. Se queda en la
-tabla de escritorio, que es donde sí hace algo.
-
-Los widgets del Inicio se revisaron uno por uno y quedan sin ojo con motivo: sus
-filas eligen (un cliente, un vendedor, un producto que se agrega), crean, o ya
-llevan su propia flecha.
-
 ## v2.611.3 — Diagnóstico de la caja y receta para rearmar la ticketera
 
 Nada de esto cambia el portal: es documentación y una herramienta de sala.
@@ -46485,6 +46507,29 @@ no puede llamar a `http://192.168.x.x`, y la exención es exclusiva de
 `localhost`), qué habría que relevar en las 6 salas con caja, y que el papel
 saldría idéntico porque **la maqueta la decide el portal, no el aparato desde el
 que se manda**. Sigue sin trabajo aprobado.
+
+## v2.611.2 — El ojo llega a la ficha móvil de toda tabla y a la tarjeta de conteo
+
+**Faltaba la mitad del portal, y era la del teléfono.** El barrido de v2.610.0
+buscó tarjetas por sus clases, así que sólo vio las que están escritas a mano en
+una vista. Las que más se repiten no se escriben: las dibuja un canónico. La más
+grande es la **ficha que toda tabla pinta en el teléfono** —33 vistas—, que al
+tocarla abre su hoja de detalle y no lo decía en ninguna parte; y como esa hoja
+existe en unas pantallas y en otras no, la misma tabla era tocable en una y muda
+en la siguiente sin forma de saberlo salvo probando. Ahora el ojo sale de la
+misma condición que decide si la ficha responde al toque, así que no pueden
+discrepar. Lo mismo con la **tarjeta de un conteo de inventario** en el
+teléfono.
+
+**Y se fue un chevron que apuntaba a nada.** Ventas e Inventario dibujaban una
+flechita para decir «esta fila se despliega». En el teléfono la fila que
+desplegaba no se pinta, así que la flecha no llevaba a ningún lado — y encima
+quedaba al lado del ojo, o sea dos señales para un solo toque. Se queda en la
+tabla de escritorio, que es donde sí hace algo.
+
+Los widgets del Inicio se revisaron uno por uno y quedan sin ojo con motivo: sus
+filas eligen (un cliente, un vendedor, un producto que se agrega), crean, o ya
+llevan su propia flecha.
 
 ## v2.611.1 — Ver la entrega del pedido ya no exige el módulo de Rutas
 
@@ -47066,15 +47111,6 @@ vacío y las cajas confirmadas reaparecían pendientes al recargar.
   quedó en **cero** y bloqueante; los 26 restantes son inserts de bitácora de
   los crons y quedan anotados como deuda, no escondidos.
 
-## v2.605.5 — número vacío
-
-El bump y esta entrada quedaron preparados en otra sesión y un commit
-concurrente se los llevó adentro (`b686a5db`, rotulado v2.605.4) antes de que
-existiera el código que describían. El contenido está abajo, en v2.605.6, que es
-la versión donde el código sí entra. Es el riesgo del árbol compartido: quedan
-dos números para un solo cambio y ninguno de los dos se puede reescribir sin
-mentir sobre lo que ya se pusheó.
-
 ## v2.605.6 — una caja especial es la caja, no la botella
 
 Regla del usuario: **una caja especial es una caja completa, no una unidad.** Un
@@ -47113,6 +47149,15 @@ v2.605.2: una condición que no podía ser verdadera.
 
 Anclado en `tests/unit/cajasEspeciales.test.js` contra los renglones reales del
 #114.
+
+## v2.605.5 — número vacío
+
+El bump y esta entrada quedaron preparados en otra sesión y un commit
+concurrente se los llevó adentro (`b686a5db`, rotulado v2.605.4) antes de que
+existiera el código que describían. El contenido está abajo, en v2.605.6, que es
+la versión donde el código sí entra. Es el riesgo del árbol compartido: quedan
+dos números para un solo cambio y ninguno de los dos se puede reescribir sin
+mentir sobre lo que ya se pusheó.
 
 ## v2.605.4 — La captura de cortes trabaja de 7 a 11
 
@@ -48896,25 +48941,6 @@ Verificado en el navegador, no sólo en el código: cinco pruebas en
 agujero para probar que el instrumento sabe verlo— más la captura del tablero
 completo.
 
-## v2.587.1 — El interruptor «Todas» ya no dice que sí cuando faltan familias
-
-Salió de probar la cascada de «Decidir solicitudes» con un clic real, cosa que
-nunca se había hecho. Los dos sentidos funcionan: encender «Todas» enciende las
-cuatro familias y apagarlo las apaga, y la base lo refleja al instante.
-
-Pero desde un estado intermedio no. Con «Decide 1 de 4» el interruptor se veía
-**encendido**, así que un clic apagaba las cuatro: para completar el juego había
-que apretarlo dos veces, y la primera hacía lo contrario de lo que uno quiere.
-
-Ahora se enciende **sólo cuando están las cuatro**. Desde «1 de 4» se ve apagado
-y un clic las enciende todas; desde «todas», un clic las apaga. El estado
-intermedio lo cuenta el renglón de arriba —«Decide 1 de 4»—, que es donde se
-lee, en vez de pedirle un tercer estado a un interruptor de dos posiciones.
-
-Medido en el entorno de pruebas, con el cargo QA / Testing y leyendo la base
-entre clic y clic: apagar desde todas → las cinco filas en no; encender sólo
-Facturación → «Decide 1 de 4»; un clic en el maestro → las cinco en sí.
-
 ## v2.588.0 — Min/Max: dejar un producto en cero, y el motivo obligatorio cuando el número no se explica solo
 
 **No se podía proponer 0 · 0.** El widget exigía `MAX > MIN`, que es más
@@ -48950,6 +48976,25 @@ en la tabla**, y el filtro ni siquiera traía las pendientes viejas, que son jus
 las que hay que ver. Las mayúsculas son del centro de solicitudes, donde
 conviven con las de `approval_requests` y `adaptarMinMax` las traduce; acá se
 normaliza igual en vez de copiar el literal de la otra pantalla.
+
+## v2.587.1 — El interruptor «Todas» ya no dice que sí cuando faltan familias
+
+Salió de probar la cascada de «Decidir solicitudes» con un clic real, cosa que
+nunca se había hecho. Los dos sentidos funcionan: encender «Todas» enciende las
+cuatro familias y apagarlo las apaga, y la base lo refleja al instante.
+
+Pero desde un estado intermedio no. Con «Decide 1 de 4» el interruptor se veía
+**encendido**, así que un clic apagaba las cuatro: para completar el juego había
+que apretarlo dos veces, y la primera hacía lo contrario de lo que uno quiere.
+
+Ahora se enciende **sólo cuando están las cuatro**. Desde «1 de 4» se ve apagado
+y un clic las enciende todas; desde «todas», un clic las apaga. El estado
+intermedio lo cuenta el renglón de arriba —«Decide 1 de 4»—, que es donde se
+lee, en vez de pedirle un tercer estado a un interruptor de dos posiciones.
+
+Medido en el entorno de pruebas, con el cargo QA / Testing y leyendo la base
+entre clic y clic: apagar desde todas → las cinco filas en no; encender sólo
+Facturación → «Decide 1 de 4»; un clic en el maestro → las cinco en sí.
 
 ## v2.586.0 — La deducibilidad del IVA se revisa por regla, no proveedor por proveedor
 
@@ -74153,6 +74198,74 @@ MIN vacio porque la UI guarda celda por celda. Su par efectivo se lee (0,3) y
 habria hecho fallar "descartar borrador". MIN=1 por decision de Alex, que es
 el mismo min-lift que ya aplican el publish y el trigger.
 
+## v2.220.0 — el arreglo del select, cerrado como canónico de verdad.
+
+v2.219.0 lo arregló en 35 sitios, pero eso no era "canónico": nada impedía que
+volviera y `DESIGN.md` no lo decía. Ahora sí.
+
+**Regla `select-con-envoltorio` en el gate**, en cero y bloqueante. Detecta por la
+**forma** —un div con alto fijo que contiene un `LiquidSelect`—, no por la clase
+exacta. Y ahí está lo importante: **encontró 11 sitios más que el grep manual no
+vio**, ninguno con la cadena que yo había buscado:
+
+| Archivo | Qué usaba |
+|---|---|
+| `CatalogSelect.jsx` (¡canónico!) | `h-[40px]` + outline de error |
+| `RolesView.jsx` × 3 | `h-[44px]` pelado |
+| `FormNovedad.jsx` × 5 | `h-[40px]` pelado |
+| `BranchTabLegal.jsx` × 2 | `rounded-2xl h-[42px]` |
+
+**`DESIGN.md` §15.13** documenta la regla con los números medidos (40 px de caja
+contra 46 px de control) y el contraejemplo.
+
+**Un error propio que vale registrar:** el script de migración desenvolvía por la
+clase del div sin mirar qué había adentro, y se llevó **3 `LiquidDatePicker`**.
+Ese sí necesita envoltorio: su contenedor usa `h-full`, toma la altura del padre,
+y sin él se colapsa. No lo detectó el gate —su regla exige `LiquidSelect` en el
+cuerpo, correctamente— sino leer el diff. Revertido y rehecho exigiendo
+`LiquidSelect` adentro; los 3 datepickers conservan su envoltorio.
+
+---
+
+## v2.219.0 — el select se veía cortado dentro de una caja que no era la suya.
+
+**35 sitios en 5 formularios** envolvían `LiquidSelect` en un
+`<div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>` para pintarle borde
+y estado de error. Pero `LiquidSelect` **ya se pinta entero**: lleva
+`data-surface="input"` (fondo, borde, radio, sombra) y
+`min-h-[max(40px,var(--tap-min))]`. Medido en el navegador:
+
+| | Envoltorio | Select real |
+|---|---|---|
+| Alto | **40 px** | **46 px** |
+| Radio | 10 px | 8 px |
+| Borde | 0 px | 1 px |
+| Fondo | rojo 10% (error) | blanco opaco |
+
+El control es **6 px más alto** que su caja y con otro radio, así que el fondo del
+envoltorio asomaba alrededor — ese es el "recorte". Y el `hover:border-brand/40`
+del envoltorio pintaba color sobre un borde de ancho cero: nunca se vio.
+
+**Arreglo:** prop `invalid` en el canónico, que pinta el error **con `outline`**
+sobre el mismo elemento —`border`/`bg` pierden contra `data-surface` por cascade
+layers, igual que el foco (ver `inputStyles.js`)— y agrega `aria-invalid`, que era
+la mitad que faltaba: el rojo solo se veía, ahora también se anuncia. Fuera los 35
+envoltorios.
+
+El foco/apertura gana sobre el error: mientras se elige manda el anillo azul; el
+rojo vuelve al cerrar si sigue vacío.
+
+Verificado en navegador: **0 envoltorios** en pantalla, alturas 46/39/25 (normal,
+compact, nano) y el contorno rojo siguiendo la forma del control — en el modal de
+conteo y en Nuevo Empleado.
+
+El migrador queda en `scripts/migradores/quitar-envoltorio-liquidselect.mjs`: no
+toca un caso que no calce exacto con el patrón. Migró 31; los 4 de
+`FormRehireEmployee` usaban un alias local y otra cadena de error, y se hicieron
+a mano.
+
+---
+
 ## v2.218.0 — Candado de mantenimiento por modulo (ver commit cb497d40)
 
 ## v2.217.0 — Rotado ADMIN_INVOKE_SECRET, la credencial que quedo en claro
@@ -74208,6 +74321,44 @@ Colisiones restantes: solo las 6 mensuales (1 vez al mes, dia 1) y 2 cada
 10 min. El pico al tope de hora bajo de ~10 a ~4.
 
 ## v2.215.0 — (ver entrada anterior)
+
+## v2.214.0 — el portal tardaba 5 segundos en hacer su primera petición.
+
+En **cada carga de página, para todos los usuarios**. La UI se pintaba a los
+324 ms y la primera llamada a Supabase salía a los **5,145 ms**. Todo lo que la
+app pedía en el medio quedaba encolado.
+
+**Causa: el callback de `onAuthStateChange` llamaba a supabase.** auth-js espera
+a que cada suscriptor termine antes de dar por inicializado el cliente, y toda
+llamada a supabase espera esa inicialización — pedir algo desde adentro del
+callback es un bloqueo mutuo consigo mismo:
+
+```
+  139 ms  SIGNED_IN → el callback invoca ensure_user_by_code → se cuelga
+ 5139 ms  salta el timeout de 5000 ms de withTimeout → se destraba
+ 5145 ms  INITIAL_SESSION → recién ahora sale toda la red encolada
+```
+
+Los **5,000 ms exactos** entre un evento y el otro eran la firma del timeout.
+
+El arreglo: el callback queda **síncrono** y el trabajo async se dispara con
+`setTimeout(0)` **sin `await`**, para que retorne de inmediato.
+
+| | Antes | Ahora |
+|---|---|---|
+| Primera petición | 5,145 ms | **150 ms** |
+| Sorteo del cíclico visible | ~5,000 ms | **785 ms** |
+
+Login 2.1 s, permisos aplicados, 0 errores JS.
+
+**Seis hipótesis descartadas antes con medición**, y vale anotarlas porque cada
+una parecía la buena: la base de datos (35 ms), CPU (sin long tasks), la carrera
+de Web Locks de supabase-js (0-3 ms de espera), el **service worker** (idéntico
+con y sin, en navegador real), `validateSession()` (se quitó y no cambió nada) y
+varios clientes de supabase (hay uno solo). El A/B del service worker daba 152 ms
+sin él — pero solo en headless; en navegador real era igual de lento.
+
+---
 
 ## v2.213.0 — El backup semanal llevaba 17 dias sin correr, en silencio
 
@@ -74320,6 +74471,30 @@ el secreto como Bearer, no un JWT — el mismo 401 que ya mordio a
 auto-calculate-minmax. Sin tocar: arreglarlo hace que empiecen a correr
 backups reales, y eso es decision del usuario.
 
+## v2.210.0 — el modal solo ofrece sucursales con inventario.
+
+Administración aparecía en la lista y no tiene inventario: elegirla llevaba a que
+`crear_conteo_inventario` reventara con `SUCURSAL_SIN_MAPEO_ERP`. El filtro va por
+el **mapeo al ERP** (`erp_sucursal_map`) y no por el `type` de la sucursal, que es
+exactamente el criterio que exige la RPC — filtrar por otra cosa dejaría opciones
+que revientan al elegirlas. Quedan las 7 con inventario.
+
+**Medido de paso, buscando por qué el sorteo tardaba ~5 s:**
+
+| | |
+|---|---|
+| `preview_muestra_ciclica` en BD (EXPLAIN ANALYZE) | **35 ms** |
+| Ida y vuelta HTTP | ~230 ms |
+| Abrir el modal + elegir sucursal | **2 peticiones** |
+
+**El sorteo no es lento.** Lo lento es que el portal entero se re-arranca solo:
+**24 peticiones en 8 segundos con la pestaña quieta**, sin tocar nada, incluida
+`ensure_user_by_code` (la edge function de auth) repetida. El preview salía
+dentro de esa ráfaga y esperaba detrás. Es un problema del arranque global, no
+del módulo de conteo — queda anotado, sin tocar.
+
+---
+
 ## v2.209.0 — Los dos hallazgos laterales de C4, corregidos y medidos
 
 1. SLOTS DE CONEXION. Los 13 crons de sync por minuto compartian el horario
@@ -74352,6 +74527,35 @@ facturas sigue sobre el trigram reconstruido (84 ms en caliente).
 
 Sigue pendiente y NO es de codigo: los pools idle de Storage/PostgREST son
 internos de Supabase; se atacan con Supavisor en modo transaccion (dashboard).
+
+## v2.208.0 — el modal de nuevo conteo estaba aplastado a un cuarto de su ancho.
+
+El `SegmentedControl` del alcance iba envuelto en un `md:grid-cols-2`. Pero en
+`layout="block"` ese control **ya arma su propia grilla**: el wrapper lo metía en
+media pantalla y él partía esa mitad en dos, así que cada píldora terminaba con
+~25% del ancho del modal y el texto en **tres líneas** sobre una píldora de alto
+fijo (`h-11`).
+
+- Fuera el wrapper. Las 5 píldoras quedan de **269×44 uniformes, una línea cada
+  una** (medido en Chromium contra el build de producción).
+- **Etiquetas de una línea.** Van en `text-caption` uppercase con
+  `tracking-widest`, que ensancha mucho: "Solo Bajo Receta (antibióticos)" no
+  cabía ni cerca. El paréntesis explicativo se movió al aviso.
+- **El aviso azul eran cuatro renglones en negrita.** Queda la regla en el
+  `Notice` y la letra chica debajo en tono normal, que es lo que la hace legible.
+- La vista previa ya no es una isla dentro de otra isla (doble borde, doble
+  radio): recuadro liviano.
+- Los badges salían en el orden de claves del JSON del servidor —"B, C, Bajo
+  Receta, A"—. Ahora en el orden en que se sortean.
+- El estado de carga vive en la **misma caja** que después muestra los datos, así
+  el modal no salta a los ~5s que tarda el sorteo. Con texto y no con
+  `SkeletonText`: medido acá, sus barras no contrastan contra
+  `surface-card-hover` y la caja se leía vacía.
+
+Verificado con Playwright contra `vite preview`: capturas de los tres estados
+(inicial, cargando, cargado) y medición de las píldoras.
+
+---
 
 ## v2.207.0 — Se recuperaron los JSON originales que se creian perdidos
 
@@ -74394,6 +74598,34 @@ Giro en v2.27.4; el dato sigue en el detalle, donde ademas explica la
 consecuencia fiscal. La tabla paso de 1,288px a 1,113px contra 1,044
 disponibles: practicamente entra, y son 163px MENOS que al empezar la
 sesion, habiendo sumado una columna de seleccion y el ordenamiento.
+
+## v2.206.0 — el aviso del recálculo mensual ya no miente cuando no calculó nada.
+
+`calculate_stock_params` devuelve `{ ok:false, skipped:true, reason }` cuando se
+salta una sucursal. `auto-calculate-minmax` lo trataba como éxito con `rows=0`,
+así que el push a los supervisores decía:
+
+> *"Recálculo mensual completado. 0 productos actualizados automáticamente. No hay
+> borradores pendientes."*
+
+Exactamente lo contrario de lo que había pasado. Por eso el recálculo llevaba
+desde junio sin correr en las 6 sucursales **sin que nadie se enterara**.
+
+- Las saltadas se cuentan aparte de las calculadas, y el mensaje **las nombra con
+  su motivo**: "La Popular (tiene borradores pendientes de revisar)".
+- Si no se calculó **ninguna**: *"NO se recalculó ninguna sucursal… El MIN/MAX
+  quedó igual que el mes pasado"*, con push **urgente** y anuncio en **HIGH** —
+  igual que un error, porque el efecto es el mismo.
+- En `minmax_sync_log` una saltada va con `success=false` y `"SALTADA: motivo"`:
+  desde "¿se recalculó esta sucursal?", saltada es un no, y así la ve cualquier
+  consulta al log.
+- El resumen dice siempre **cuántas de cuántas** se calcularon.
+
+Desplegada con `--no-verify-jwt`: esta función se autentica con su propio secreto
+como Bearer, no con un JWT, y sin el flag el redeploy la resetea a
+`verify_jwt=true` y su cron empieza a fallar con 401 (trampa ya registrada).
+
+---
 
 ## v2.205.0 — C3 y C4 del plan de cierre Supabase: 11 funciones SECURITY DEFINER
 dejaron de saltarse el RLS, y el 18% de rollbacks resulto ser historico.
@@ -74455,6 +74687,43 @@ Verificado: `gate:design` 0 en 25 categorías · `gate:doc` limpio · eslint lim
 · escáner de contraste de D1 sobre las 29 rutas: **0 superficies blancas, 0
 nodos bajo AA** · movimiento con `prefers-reduced-motion`: **0** en los dos ejes.
 
+## v2.203.0 — ocultar en MIN/MAX dejaba la sucursal sin recalcular desde junio.
+
+El recálculo mensual **no corre desde el 14-jun en ninguna sucursal**, y la causa
+es una cadena de tres piezas que por separado se ven razonables:
+
+1. **Ocultar** un producto escribía `draft_min=0, draft_max=0, draft_status='pending'`
+   — la propuesta de dejarlo en cero.
+2. Esa propuesta era **inalcanzable**: la tabla no lista los ocultos y el contador
+   de borradores los saltea a propósito (`useMinMaxData.js:298` lo documenta), así
+   que nadie podía verla ni publicarla. Tampoco la limpiaba
+   `calculate_stock_params`: su upsert lleva `WHERE is_hidden IS NOT TRUE`.
+3. `calculate_stock_params` **se salta la sucursal entera** ante un solo
+   `'pending'`, y esa guarda no excluía los ocultos.
+
+Resultado: **32 pendientes invisibles e inlimpiables** —11 en La Popular, todas
+ocultas, cero visibles— bloqueando las 6 sucursales para siempre. Eran servicios
+y no-inventario ocultados el 17-jul: APLICACION DE INYECCION, SERVICIO A
+DOMICILIO, COMISIONES POR CORRESPONSAL, DIETAS COFARSAL, AQUA ECO, PRUEBA DE
+GLUCOSA. Los `updated_at` coinciden exactamente con los `MINMAX_HIDE` de ese día.
+
+**El arreglo, por decisión del usuario: un producto oculto va en `-/-`
+publicado**, no en un borrador de 0/0. Ocultar —individual y masivo— ahora
+escribe `min/max` NULL y `draft_status='none'`.
+
+Se normalizaron las 41 filas ocultas que arrastraban valores, incluidas 3 con
+cantidades reales (PRUEBA DE EMBARAZO ADVIN 21/34, DOLO ESPASMON 8/13, ELECTROLIT
+JAMAICA 6/17): un producto que se decidió no gestionar no debería seguir pesando
+en el pedido sugerido. Revertirlo es desocultar y dejar que el recálculo lo
+vuelva a calcular.
+
+La guarda de `calculate_stock_params` también ignora ocultos, como defensa en
+profundidad.
+
+Verificado: **0 pendientes en las 6 sucursales**. El 1 de agosto ya calcula.
+
+---
+
 ## v2.202.0 — Cierre de los pendientes chicos de la auditoria DTE
 
 H15 — "(sin match ERP)" vivia como una opcion DENTRO del select de Categoria,
@@ -74487,6 +74756,40 @@ una columna entera de seleccion y el ordenamiento por +12px netos.
 
 El desborde de fondo NO se arreglo y no se puede sin sacar una columna, que
 es decision del usuario (como lo fue Giro). Queda anotado en el plan.
+
+## v2.201.0 — el cíclico se programa solo el 15, y la lista filtra por sucursal.
+
+**Un CHECK bloqueaba todo el cíclico.** `conteos_inventario_scope_type_check`
+nunca incluyó `'CICLICO'`, así que cualquier intento de crear ese conteo —el
+programado y el que se crea desde la vista— reventaba al insertar. No se detectó
+en v2.194.0 porque solo se había probado el sorteo de la muestra, nunca la
+creación del conteo; lo encontró el primer test real de la función programada,
+corriendo en una transacción revertida. De paso sale `'APROBADO'` del CHECK de
+status: nadie lo escribe, `aprobar_conteo_inventario` pone `'CERRADO'`.
+
+**Programación mensual:**
+
+- `crear_conteos_ciclicos_programados()` + cron `0 15 15 * *` — el 15 de cada mes
+  a las 9am de El Salvador. El 15 y no el 1 porque ese día ya corren el recálculo
+  de MIN/MAX y el cierre de ventas del mes.
+- Qué sucursales entran lo decide `branches.conteo_ciclico_activo`, no el código:
+  las 6 de venta en `true`, **Bodega en `false`** (ellos llevan su propio
+  control). Cambiarlo es un UPDATE, no un deploy. El tamaño también es por
+  sucursal (`conteo_ciclico_tamano`, default 200).
+- Salta la sucursal que ya tenga un conteo abierto y lo deja registrado, en vez
+  de romper la corrida. Avisa a la sucursal con `notify_branch`.
+- El guard interno era `auth.role() = 'service_role'`, que habría roto el cron en
+  silencio: pg_cron ejecuta SQL directo, sin contexto de request, así que
+  `auth.role()` es NULL. El control lo hacen los GRANT, que es donde corresponde.
+
+Probado de punta a punta en transacción revertida: crea los 6 conteos, 200
+productos cada uno, composición correcta por sucursal, Bodega fuera.
+
+**Selector de sucursal** en la lista de conteos, a la derecha con el resto de las
+acciones. Con scope `BRANCH` queda fijado y deshabilitado en la propia sucursal,
+para que se vea de qué sucursal son los datos y no parezca "todo el portal".
+
+---
 
 ## v2.200.0 — 17 cuentas auth duplicadas borradas, FK sin indice, bucket sin limites
 
@@ -74669,6 +74972,66 @@ Ademas, primer lote de policies de escritura abierta (F2.1): products,
 kiosk_devices, timesheets y employee_events pasaron de `true` a
 auth_can_edit_any con el wrapper (SELECT ...) obligatorio. 26 -> 20.
 
+## v2.194.0 — conteo cíclico mensual: 200 productos por sucursal.
+
+En vez de un evento anual de ~4,800 líneas, una muestra chica todos los meses:
+el ERP nunca se aleja mucho y las diferencias aparecen cuando todavía se pueden
+investigar.
+
+**Reparto de los 200:**
+
+| Segmento | Cuota | Frecuencia que da |
+|---|---|---|
+| Bajo receta | **100%** (23-54) | mensual — control sanitario, no es muestra |
+| Clase A | 60% del resto (~100) | cada ~4-5 meses |
+| Clase B | 25% del resto (~40) | ~1 vez al año |
+| Clase C / sin clase | 15% del resto (~25) | sondeo, no cobertura |
+
+La clase C no se cubre por ciclo, y está bien: eso lo cubre el **conteo TOTAL
+anual**, que sigue existiendo. El ciclo le baja la sorpresa.
+
+**No es azar puro.** Prioriza lo que lleva más tiempo sin contarse (nunca contado
+primero) y desempata al azar: así nada queda sin contarse jamás y a la vez nadie
+puede predecir qué cae este mes. La muestra se sortea **en el servidor** — si la
+eligiera el cliente, elegir qué se cuenta dejaría de ser un control y pasaría a
+ser una preferencia. La composición sorteada queda guardada en `scope_filter`:
+un cíclico que no dice cómo se armó no se puede auditar después.
+
+**Solo cuenta el ABC publicado, no el borrador de MinMax.** Decidir qué se audita
+con números que nadie aprobó convierte un control en una corazonada. Medido:
+Bodega tiene 0 clasificaciones publicadas y 2,540 en borrador, y Salud 5 solo 309
+de 1,914. Ahí la muestra pasa a ser "bajo receta 100% + rotación por antigüedad",
+que es lo correcto para un almacén sin ABC — y respeta que Bodega no se maneje
+por ABC ni por obligación mensual.
+
+El modal muestra la composición y la cobertura antes de crear el conteo
+(universo, nunca contados, sin contarse hace más de 6 meses).
+
+---
+
+## v2.193.0 — la grilla del conteo se ordena como está el anaquel.
+
+En las sucursales el producto está acomodado **por laboratorio**. La grilla
+ordenaba por nombre de producto — y con el filtro de diferencias, por valor del
+desvío (v2.190.0) — lo que obliga a zigzaguear la farmacia entera para contar o
+recontar. Gana la razón física: **laboratorio primero, producto alfabético
+adentro**, los sin laboratorio al final. Aplica a la pantalla, a las líneas y al
+payload de impresión.
+
+Verificado que el orden alfabético ya reproduce el numérico: de 356
+laboratorios, 57 tienen prefijo numérico y **ninguno pasa de un dígito**, así que
+no aparece el clásico "10- antes que 2-".
+
+La hoja de ajustes para el ERP mantiene su orden por código: ese documento no se
+camina, se digita.
+
+Además, entrar al **modo recuento** deja la vista filtrada en "Con diferencia",
+que es lo que se recuenta. Queda como filtro y no como candado: verificar unas
+líneas que cuadraron es lo que detecta al que copió el número del sistema en vez
+de contar.
+
+---
+
 ## v2.192.0 — Fase A de la auditoria DTE+Proveedores: seis cosas que la vista
 prometia y no cumplia.
 
@@ -74758,6 +75121,38 @@ descartar.
 Con esto la base quedó en **1,071 MB**, contra los 1,463 MB del inicio de la
 auditoría.
 
+## v2.190.0 — recuento de variaciones por supervisor.
+
+La causa más común de una diferencia grande no es robo ni merma: es **un error
+de conteo** — se saltó una caja, contó blísters en vez de unidades, leyó mal el
+lote. Ajustar el ERP con eso mete el error en el sistema y encima "explica" una
+merma que nunca ocurrió.
+
+El recuento vive **entre finalizar y aprobar**: antes es el conteo normal,
+después ya está firmado y el ajuste salió al ERP.
+
+- Gated por **`can_approve`**, que es el nivel de supervisor del módulo y se
+  asigna por rol desde la pantalla de permisos. Sin columna nueva en
+  `role_permissions`.
+- **No puede recontar quien contó esa línea.** Un recuento hecho por la misma
+  persona no es un recuento.
+- **Ciego también al primer conteo.** El campo arranca vacío y no se ve ni el
+  sistema ni lo que contó el primero hasta registrar el propio: si el supervisor
+  ve que decía 12, escribe 12.
+- `fisico_primer_conteo` preserva el original. Al destapar, la línea muestra si
+  el recuento coincidió o no — que es la métrica de calidad del conteo de base.
+- Con el filtro **"Con diferencia"** los productos salen ordenados por el **valor
+  absoluto del desvío**, no alfabéticos: se recuenta la plata primero. Verificado
+  contra datos reales — FORXIGA con −3 unidades sale antes que ASMONT con −1.
+- `recalcular_totales_conteo()` extraído: finalizar lo calculaba inline, y un
+  recuento cambia cantidades *después* de finalizar, así que la cabecera del
+  conteo quedaba mintiendo respecto de sus propias líneas.
+
+Sigue abierto: el corte de movimientos (es operativo, no de software) y los
+conteos cíclicos por ABC.
+
+---
+
 ## v2.189.0 — el 26.5% del CPU de la base era un INSERT que no insertaba nada.
 
 La query #1 de `pg_stat_statements` —127,170 llamadas, 8,281 s, 65 ms de media—
@@ -74809,6 +75204,40 @@ días, fallos 90.
 `net._http_response` resultó ser 2,203 filas vivas dentro de **205 MB** — páginas
 liberadas que nunca volvieron al SO. Con `VACUUM FULL` de ambas, la base pasó de
 **1,463 MB a 1,134 MB**.
+
+## v2.188.0 — el conteo termina en un ajuste, no en un número.
+
+Decisión del usuario: mientras el portal no sea el sistema completo, los ajustes
+de inventario se aplican en el ERP. El portal **no escribe stock** — eso no
+cambia y es deliberado — pero el conteo ahora entrega el documento con el que se
+hace ese ajuste, y registra si ya se aplicó.
+
+Antes, aprobar solo sellaba el estado. La diferencia quedaba medida y firmada, y
+ahí moría: un conteo aprobado y uno ya reflejado en el ERP se veían idénticos,
+así que nadie sabía si el stock del ERP todavía mentía.
+
+- **Hoja de Ajustes** (PDF apaisado) y **CSV**, partidos en **FALTANTES** (ajuste
+  de salida) y **SOBRANTES** (ajuste de entrada) — en un ERP son dos
+  transacciones distintas, y mezclarlas obliga a separarlas a mano al digitar.
+  Ordenados por código ERP, que es como se teclea, un renglón tras otro.
+- Cada línea trae código ERP, código de barras, producto, presentación, lote,
+  vencimiento, área (normal / vencidos), sistema, físico, **la cantidad firmada a
+  aplicar** y su valor, con totales por sección. Los renglones agregados a mano
+  salen marcados **ALTA DE LOTE**: en el ERP eso no es ajustar una cantidad, es
+  dar de alta un lote que no existe.
+- `marcar_ajuste_erp` deja constancia de quién lo aplicó y cuándo. Exige el
+  conteo **aprobado** (`CERRADO`): ajustar el ERP con un conteo que nadie firmó
+  es justo lo que el paso de aprobación existe para impedir.
+- Aviso persistente en el detalle y badge **"Falta ajuste ERP"** en la lista
+  mientras siga pendiente. Si el conteo cerró sin diferencias, lo dice y no pide
+  nada.
+- El PDF de ajustes arrastra el aviso de conteo parcial: valuar un faltante
+  sobre un conteo incompleto y no decirlo en la misma hoja se lee como un cuadre.
+
+Sigue abierto y documentado en `AUDITORIA-CONTEO-2026-07-29.md`: el corte de
+movimientos, el recuento de variaciones y los conteos cíclicos por ABC.
+
+---
 
 ## v2.187.0 — Auditoria de puntos ciegos, P3 + dos reglas nuevas en el gate
 
@@ -75033,390 +75462,6 @@ ningún secreto detrás.
 El resto de la auditoría —27% del CPU en un upsert incondicional, 275 fallos de
 cron por semana, 400 MB de basura operativa, y qué falta para que la base sea el
 sistema de registro del POS— está en el informe.
-
----
-
-## v2.220.0 — el arreglo del select, cerrado como canónico de verdad.
-
-v2.219.0 lo arregló en 35 sitios, pero eso no era "canónico": nada impedía que
-volviera y `DESIGN.md` no lo decía. Ahora sí.
-
-**Regla `select-con-envoltorio` en el gate**, en cero y bloqueante. Detecta por la
-**forma** —un div con alto fijo que contiene un `LiquidSelect`—, no por la clase
-exacta. Y ahí está lo importante: **encontró 11 sitios más que el grep manual no
-vio**, ninguno con la cadena que yo había buscado:
-
-| Archivo | Qué usaba |
-|---|---|
-| `CatalogSelect.jsx` (¡canónico!) | `h-[40px]` + outline de error |
-| `RolesView.jsx` × 3 | `h-[44px]` pelado |
-| `FormNovedad.jsx` × 5 | `h-[40px]` pelado |
-| `BranchTabLegal.jsx` × 2 | `rounded-2xl h-[42px]` |
-
-**`DESIGN.md` §15.13** documenta la regla con los números medidos (40 px de caja
-contra 46 px de control) y el contraejemplo.
-
-**Un error propio que vale registrar:** el script de migración desenvolvía por la
-clase del div sin mirar qué había adentro, y se llevó **3 `LiquidDatePicker`**.
-Ese sí necesita envoltorio: su contenedor usa `h-full`, toma la altura del padre,
-y sin él se colapsa. No lo detectó el gate —su regla exige `LiquidSelect` en el
-cuerpo, correctamente— sino leer el diff. Revertido y rehecho exigiendo
-`LiquidSelect` adentro; los 3 datepickers conservan su envoltorio.
-
----
-
-## v2.219.0 — el select se veía cortado dentro de una caja que no era la suya.
-
-**35 sitios en 5 formularios** envolvían `LiquidSelect` en un
-`<div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>` para pintarle borde
-y estado de error. Pero `LiquidSelect` **ya se pinta entero**: lleva
-`data-surface="input"` (fondo, borde, radio, sombra) y
-`min-h-[max(40px,var(--tap-min))]`. Medido en el navegador:
-
-| | Envoltorio | Select real |
-|---|---|---|
-| Alto | **40 px** | **46 px** |
-| Radio | 10 px | 8 px |
-| Borde | 0 px | 1 px |
-| Fondo | rojo 10% (error) | blanco opaco |
-
-El control es **6 px más alto** que su caja y con otro radio, así que el fondo del
-envoltorio asomaba alrededor — ese es el "recorte". Y el `hover:border-brand/40`
-del envoltorio pintaba color sobre un borde de ancho cero: nunca se vio.
-
-**Arreglo:** prop `invalid` en el canónico, que pinta el error **con `outline`**
-sobre el mismo elemento —`border`/`bg` pierden contra `data-surface` por cascade
-layers, igual que el foco (ver `inputStyles.js`)— y agrega `aria-invalid`, que era
-la mitad que faltaba: el rojo solo se veía, ahora también se anuncia. Fuera los 35
-envoltorios.
-
-El foco/apertura gana sobre el error: mientras se elige manda el anillo azul; el
-rojo vuelve al cerrar si sigue vacío.
-
-Verificado en navegador: **0 envoltorios** en pantalla, alturas 46/39/25 (normal,
-compact, nano) y el contorno rojo siguiendo la forma del control — en el modal de
-conteo y en Nuevo Empleado.
-
-El migrador queda en `scripts/migradores/quitar-envoltorio-liquidselect.mjs`: no
-toca un caso que no calce exacto con el patrón. Migró 31; los 4 de
-`FormRehireEmployee` usaban un alias local y otra cadena de error, y se hicieron
-a mano.
-
----
-
-## v2.214.0 — el portal tardaba 5 segundos en hacer su primera petición.
-
-En **cada carga de página, para todos los usuarios**. La UI se pintaba a los
-324 ms y la primera llamada a Supabase salía a los **5,145 ms**. Todo lo que la
-app pedía en el medio quedaba encolado.
-
-**Causa: el callback de `onAuthStateChange` llamaba a supabase.** auth-js espera
-a que cada suscriptor termine antes de dar por inicializado el cliente, y toda
-llamada a supabase espera esa inicialización — pedir algo desde adentro del
-callback es un bloqueo mutuo consigo mismo:
-
-```
-  139 ms  SIGNED_IN → el callback invoca ensure_user_by_code → se cuelga
- 5139 ms  salta el timeout de 5000 ms de withTimeout → se destraba
- 5145 ms  INITIAL_SESSION → recién ahora sale toda la red encolada
-```
-
-Los **5,000 ms exactos** entre un evento y el otro eran la firma del timeout.
-
-El arreglo: el callback queda **síncrono** y el trabajo async se dispara con
-`setTimeout(0)` **sin `await`**, para que retorne de inmediato.
-
-| | Antes | Ahora |
-|---|---|---|
-| Primera petición | 5,145 ms | **150 ms** |
-| Sorteo del cíclico visible | ~5,000 ms | **785 ms** |
-
-Login 2.1 s, permisos aplicados, 0 errores JS.
-
-**Seis hipótesis descartadas antes con medición**, y vale anotarlas porque cada
-una parecía la buena: la base de datos (35 ms), CPU (sin long tasks), la carrera
-de Web Locks de supabase-js (0-3 ms de espera), el **service worker** (idéntico
-con y sin, en navegador real), `validateSession()` (se quitó y no cambió nada) y
-varios clientes de supabase (hay uno solo). El A/B del service worker daba 152 ms
-sin él — pero solo en headless; en navegador real era igual de lento.
-
----
-
-## v2.210.0 — el modal solo ofrece sucursales con inventario.
-
-Administración aparecía en la lista y no tiene inventario: elegirla llevaba a que
-`crear_conteo_inventario` reventara con `SUCURSAL_SIN_MAPEO_ERP`. El filtro va por
-el **mapeo al ERP** (`erp_sucursal_map`) y no por el `type` de la sucursal, que es
-exactamente el criterio que exige la RPC — filtrar por otra cosa dejaría opciones
-que revientan al elegirlas. Quedan las 7 con inventario.
-
-**Medido de paso, buscando por qué el sorteo tardaba ~5 s:**
-
-| | |
-|---|---|
-| `preview_muestra_ciclica` en BD (EXPLAIN ANALYZE) | **35 ms** |
-| Ida y vuelta HTTP | ~230 ms |
-| Abrir el modal + elegir sucursal | **2 peticiones** |
-
-**El sorteo no es lento.** Lo lento es que el portal entero se re-arranca solo:
-**24 peticiones en 8 segundos con la pestaña quieta**, sin tocar nada, incluida
-`ensure_user_by_code` (la edge function de auth) repetida. El preview salía
-dentro de esa ráfaga y esperaba detrás. Es un problema del arranque global, no
-del módulo de conteo — queda anotado, sin tocar.
-
----
-
-## v2.208.0 — el modal de nuevo conteo estaba aplastado a un cuarto de su ancho.
-
-El `SegmentedControl` del alcance iba envuelto en un `md:grid-cols-2`. Pero en
-`layout="block"` ese control **ya arma su propia grilla**: el wrapper lo metía en
-media pantalla y él partía esa mitad en dos, así que cada píldora terminaba con
-~25% del ancho del modal y el texto en **tres líneas** sobre una píldora de alto
-fijo (`h-11`).
-
-- Fuera el wrapper. Las 5 píldoras quedan de **269×44 uniformes, una línea cada
-  una** (medido en Chromium contra el build de producción).
-- **Etiquetas de una línea.** Van en `text-caption` uppercase con
-  `tracking-widest`, que ensancha mucho: "Solo Bajo Receta (antibióticos)" no
-  cabía ni cerca. El paréntesis explicativo se movió al aviso.
-- **El aviso azul eran cuatro renglones en negrita.** Queda la regla en el
-  `Notice` y la letra chica debajo en tono normal, que es lo que la hace legible.
-- La vista previa ya no es una isla dentro de otra isla (doble borde, doble
-  radio): recuadro liviano.
-- Los badges salían en el orden de claves del JSON del servidor —"B, C, Bajo
-  Receta, A"—. Ahora en el orden en que se sortean.
-- El estado de carga vive en la **misma caja** que después muestra los datos, así
-  el modal no salta a los ~5s que tarda el sorteo. Con texto y no con
-  `SkeletonText`: medido acá, sus barras no contrastan contra
-  `surface-card-hover` y la caja se leía vacía.
-
-Verificado con Playwright contra `vite preview`: capturas de los tres estados
-(inicial, cargando, cargado) y medición de las píldoras.
-
----
-
-## v2.206.0 — el aviso del recálculo mensual ya no miente cuando no calculó nada.
-
-`calculate_stock_params` devuelve `{ ok:false, skipped:true, reason }` cuando se
-salta una sucursal. `auto-calculate-minmax` lo trataba como éxito con `rows=0`,
-así que el push a los supervisores decía:
-
-> *"Recálculo mensual completado. 0 productos actualizados automáticamente. No hay
-> borradores pendientes."*
-
-Exactamente lo contrario de lo que había pasado. Por eso el recálculo llevaba
-desde junio sin correr en las 6 sucursales **sin que nadie se enterara**.
-
-- Las saltadas se cuentan aparte de las calculadas, y el mensaje **las nombra con
-  su motivo**: "La Popular (tiene borradores pendientes de revisar)".
-- Si no se calculó **ninguna**: *"NO se recalculó ninguna sucursal… El MIN/MAX
-  quedó igual que el mes pasado"*, con push **urgente** y anuncio en **HIGH** —
-  igual que un error, porque el efecto es el mismo.
-- En `minmax_sync_log` una saltada va con `success=false` y `"SALTADA: motivo"`:
-  desde "¿se recalculó esta sucursal?", saltada es un no, y así la ve cualquier
-  consulta al log.
-- El resumen dice siempre **cuántas de cuántas** se calcularon.
-
-Desplegada con `--no-verify-jwt`: esta función se autentica con su propio secreto
-como Bearer, no con un JWT, y sin el flag el redeploy la resetea a
-`verify_jwt=true` y su cron empieza a fallar con 401 (trampa ya registrada).
-
----
-
-## v2.203.0 — ocultar en MIN/MAX dejaba la sucursal sin recalcular desde junio.
-
-El recálculo mensual **no corre desde el 14-jun en ninguna sucursal**, y la causa
-es una cadena de tres piezas que por separado se ven razonables:
-
-1. **Ocultar** un producto escribía `draft_min=0, draft_max=0, draft_status='pending'`
-   — la propuesta de dejarlo en cero.
-2. Esa propuesta era **inalcanzable**: la tabla no lista los ocultos y el contador
-   de borradores los saltea a propósito (`useMinMaxData.js:298` lo documenta), así
-   que nadie podía verla ni publicarla. Tampoco la limpiaba
-   `calculate_stock_params`: su upsert lleva `WHERE is_hidden IS NOT TRUE`.
-3. `calculate_stock_params` **se salta la sucursal entera** ante un solo
-   `'pending'`, y esa guarda no excluía los ocultos.
-
-Resultado: **32 pendientes invisibles e inlimpiables** —11 en La Popular, todas
-ocultas, cero visibles— bloqueando las 6 sucursales para siempre. Eran servicios
-y no-inventario ocultados el 17-jul: APLICACION DE INYECCION, SERVICIO A
-DOMICILIO, COMISIONES POR CORRESPONSAL, DIETAS COFARSAL, AQUA ECO, PRUEBA DE
-GLUCOSA. Los `updated_at` coinciden exactamente con los `MINMAX_HIDE` de ese día.
-
-**El arreglo, por decisión del usuario: un producto oculto va en `-/-`
-publicado**, no en un borrador de 0/0. Ocultar —individual y masivo— ahora
-escribe `min/max` NULL y `draft_status='none'`.
-
-Se normalizaron las 41 filas ocultas que arrastraban valores, incluidas 3 con
-cantidades reales (PRUEBA DE EMBARAZO ADVIN 21/34, DOLO ESPASMON 8/13, ELECTROLIT
-JAMAICA 6/17): un producto que se decidió no gestionar no debería seguir pesando
-en el pedido sugerido. Revertirlo es desocultar y dejar que el recálculo lo
-vuelva a calcular.
-
-La guarda de `calculate_stock_params` también ignora ocultos, como defensa en
-profundidad.
-
-Verificado: **0 pendientes en las 6 sucursales**. El 1 de agosto ya calcula.
-
----
-
-## v2.201.0 — el cíclico se programa solo el 15, y la lista filtra por sucursal.
-
-**Un CHECK bloqueaba todo el cíclico.** `conteos_inventario_scope_type_check`
-nunca incluyó `'CICLICO'`, así que cualquier intento de crear ese conteo —el
-programado y el que se crea desde la vista— reventaba al insertar. No se detectó
-en v2.194.0 porque solo se había probado el sorteo de la muestra, nunca la
-creación del conteo; lo encontró el primer test real de la función programada,
-corriendo en una transacción revertida. De paso sale `'APROBADO'` del CHECK de
-status: nadie lo escribe, `aprobar_conteo_inventario` pone `'CERRADO'`.
-
-**Programación mensual:**
-
-- `crear_conteos_ciclicos_programados()` + cron `0 15 15 * *` — el 15 de cada mes
-  a las 9am de El Salvador. El 15 y no el 1 porque ese día ya corren el recálculo
-  de MIN/MAX y el cierre de ventas del mes.
-- Qué sucursales entran lo decide `branches.conteo_ciclico_activo`, no el código:
-  las 6 de venta en `true`, **Bodega en `false`** (ellos llevan su propio
-  control). Cambiarlo es un UPDATE, no un deploy. El tamaño también es por
-  sucursal (`conteo_ciclico_tamano`, default 200).
-- Salta la sucursal que ya tenga un conteo abierto y lo deja registrado, en vez
-  de romper la corrida. Avisa a la sucursal con `notify_branch`.
-- El guard interno era `auth.role() = 'service_role'`, que habría roto el cron en
-  silencio: pg_cron ejecuta SQL directo, sin contexto de request, así que
-  `auth.role()` es NULL. El control lo hacen los GRANT, que es donde corresponde.
-
-Probado de punta a punta en transacción revertida: crea los 6 conteos, 200
-productos cada uno, composición correcta por sucursal, Bodega fuera.
-
-**Selector de sucursal** en la lista de conteos, a la derecha con el resto de las
-acciones. Con scope `BRANCH` queda fijado y deshabilitado en la propia sucursal,
-para que se vea de qué sucursal son los datos y no parezca "todo el portal".
-
----
-
-## v2.194.0 — conteo cíclico mensual: 200 productos por sucursal.
-
-En vez de un evento anual de ~4,800 líneas, una muestra chica todos los meses:
-el ERP nunca se aleja mucho y las diferencias aparecen cuando todavía se pueden
-investigar.
-
-**Reparto de los 200:**
-
-| Segmento | Cuota | Frecuencia que da |
-|---|---|---|
-| Bajo receta | **100%** (23-54) | mensual — control sanitario, no es muestra |
-| Clase A | 60% del resto (~100) | cada ~4-5 meses |
-| Clase B | 25% del resto (~40) | ~1 vez al año |
-| Clase C / sin clase | 15% del resto (~25) | sondeo, no cobertura |
-
-La clase C no se cubre por ciclo, y está bien: eso lo cubre el **conteo TOTAL
-anual**, que sigue existiendo. El ciclo le baja la sorpresa.
-
-**No es azar puro.** Prioriza lo que lleva más tiempo sin contarse (nunca contado
-primero) y desempata al azar: así nada queda sin contarse jamás y a la vez nadie
-puede predecir qué cae este mes. La muestra se sortea **en el servidor** — si la
-eligiera el cliente, elegir qué se cuenta dejaría de ser un control y pasaría a
-ser una preferencia. La composición sorteada queda guardada en `scope_filter`:
-un cíclico que no dice cómo se armó no se puede auditar después.
-
-**Solo cuenta el ABC publicado, no el borrador de MinMax.** Decidir qué se audita
-con números que nadie aprobó convierte un control en una corazonada. Medido:
-Bodega tiene 0 clasificaciones publicadas y 2,540 en borrador, y Salud 5 solo 309
-de 1,914. Ahí la muestra pasa a ser "bajo receta 100% + rotación por antigüedad",
-que es lo correcto para un almacén sin ABC — y respeta que Bodega no se maneje
-por ABC ni por obligación mensual.
-
-El modal muestra la composición y la cobertura antes de crear el conteo
-(universo, nunca contados, sin contarse hace más de 6 meses).
-
----
-
-## v2.193.0 — la grilla del conteo se ordena como está el anaquel.
-
-En las sucursales el producto está acomodado **por laboratorio**. La grilla
-ordenaba por nombre de producto — y con el filtro de diferencias, por valor del
-desvío (v2.190.0) — lo que obliga a zigzaguear la farmacia entera para contar o
-recontar. Gana la razón física: **laboratorio primero, producto alfabético
-adentro**, los sin laboratorio al final. Aplica a la pantalla, a las líneas y al
-payload de impresión.
-
-Verificado que el orden alfabético ya reproduce el numérico: de 356
-laboratorios, 57 tienen prefijo numérico y **ninguno pasa de un dígito**, así que
-no aparece el clásico "10- antes que 2-".
-
-La hoja de ajustes para el ERP mantiene su orden por código: ese documento no se
-camina, se digita.
-
-Además, entrar al **modo recuento** deja la vista filtrada en "Con diferencia",
-que es lo que se recuenta. Queda como filtro y no como candado: verificar unas
-líneas que cuadraron es lo que detecta al que copió el número del sistema en vez
-de contar.
-
----
-
-## v2.190.0 — recuento de variaciones por supervisor.
-
-La causa más común de una diferencia grande no es robo ni merma: es **un error
-de conteo** — se saltó una caja, contó blísters en vez de unidades, leyó mal el
-lote. Ajustar el ERP con eso mete el error en el sistema y encima "explica" una
-merma que nunca ocurrió.
-
-El recuento vive **entre finalizar y aprobar**: antes es el conteo normal,
-después ya está firmado y el ajuste salió al ERP.
-
-- Gated por **`can_approve`**, que es el nivel de supervisor del módulo y se
-  asigna por rol desde la pantalla de permisos. Sin columna nueva en
-  `role_permissions`.
-- **No puede recontar quien contó esa línea.** Un recuento hecho por la misma
-  persona no es un recuento.
-- **Ciego también al primer conteo.** El campo arranca vacío y no se ve ni el
-  sistema ni lo que contó el primero hasta registrar el propio: si el supervisor
-  ve que decía 12, escribe 12.
-- `fisico_primer_conteo` preserva el original. Al destapar, la línea muestra si
-  el recuento coincidió o no — que es la métrica de calidad del conteo de base.
-- Con el filtro **"Con diferencia"** los productos salen ordenados por el **valor
-  absoluto del desvío**, no alfabéticos: se recuenta la plata primero. Verificado
-  contra datos reales — FORXIGA con −3 unidades sale antes que ASMONT con −1.
-- `recalcular_totales_conteo()` extraído: finalizar lo calculaba inline, y un
-  recuento cambia cantidades *después* de finalizar, así que la cabecera del
-  conteo quedaba mintiendo respecto de sus propias líneas.
-
-Sigue abierto: el corte de movimientos (es operativo, no de software) y los
-conteos cíclicos por ABC.
-
----
-
-## v2.188.0 — el conteo termina en un ajuste, no en un número.
-
-Decisión del usuario: mientras el portal no sea el sistema completo, los ajustes
-de inventario se aplican en el ERP. El portal **no escribe stock** — eso no
-cambia y es deliberado — pero el conteo ahora entrega el documento con el que se
-hace ese ajuste, y registra si ya se aplicó.
-
-Antes, aprobar solo sellaba el estado. La diferencia quedaba medida y firmada, y
-ahí moría: un conteo aprobado y uno ya reflejado en el ERP se veían idénticos,
-así que nadie sabía si el stock del ERP todavía mentía.
-
-- **Hoja de Ajustes** (PDF apaisado) y **CSV**, partidos en **FALTANTES** (ajuste
-  de salida) y **SOBRANTES** (ajuste de entrada) — en un ERP son dos
-  transacciones distintas, y mezclarlas obliga a separarlas a mano al digitar.
-  Ordenados por código ERP, que es como se teclea, un renglón tras otro.
-- Cada línea trae código ERP, código de barras, producto, presentación, lote,
-  vencimiento, área (normal / vencidos), sistema, físico, **la cantidad firmada a
-  aplicar** y su valor, con totales por sección. Los renglones agregados a mano
-  salen marcados **ALTA DE LOTE**: en el ERP eso no es ajustar una cantidad, es
-  dar de alta un lote que no existe.
-- `marcar_ajuste_erp` deja constancia de quién lo aplicó y cuándo. Exige el
-  conteo **aprobado** (`CERRADO`): ajustar el ERP con un conteo que nadie firmó
-  es justo lo que el paso de aprobación existe para impedir.
-- Aviso persistente en el detalle y badge **"Falta ajuste ERP"** en la lista
-  mientras siga pendiente. Si el conteo cerró sin diferencias, lo dice y no pide
-  nada.
-- El PDF de ajustes arrastra el aviso de conteo parcial: valuar un faltante
-  sobre un conteo incompleto y no decirlo en la misma hoja se lee como un cuadre.
-
-Sigue abierto y documentado en `AUDITORIA-CONTEO-2026-07-29.md`: el corte de
-movimientos, el recuento de variaciones y los conteos cíclicos por ABC.
 
 ---
 

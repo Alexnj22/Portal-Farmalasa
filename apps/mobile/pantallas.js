@@ -6,4 +6,5 @@
 // 30 días al 2026-09-28): bitácoras 34, traslados 36, efectivo 34, pedidos 23.
 export const PANTALLAS_DE_LA_APP = {
   '/bitacoras': true,
+  '/traslados': true,
 };

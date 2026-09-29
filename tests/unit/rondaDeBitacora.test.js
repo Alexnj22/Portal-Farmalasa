@@ -107,3 +107,19 @@ describe('los muebles de la limpieza', () => {
         expect(rotuloCortoDePunto(puntos[3], '')).toBe('Mesa');
     });
 });
+
+import { resumirPorProducto } from '@nucleo/utils/consultaInventario';
+
+describe('resumirPorProducto', () => {
+    it('un renglón por producto, unidades con factor, sin el área de vencidos, salas en orden de despacho', () => {
+        const filas = [
+            { erp_product_id: 7, descripcion: 'X', erp_sucursal_id: 6, cantidad: 2, factor: 10 },
+            { erp_product_id: 7, descripcion: 'X', erp_sucursal_id: 5, cantidad: 3, factor: 1 },
+            { erp_product_id: 7, descripcion: 'X', erp_sucursal_id: 6, cantidad: 9, factor: 1, is_vencidos: true },
+            { erp_product_id: 8, descripcion: 'Y', erp_sucursal_id: 1, cantidad: 1, factor: 1 },
+        ];
+        const r = resumirPorProducto(filas);
+        expect(r.map(p => p.erp_product_id)).toEqual([7, 8]);
+        expect(r[0].salas.map(s => [s.sala, s.unidades])).toEqual([['La Popular', 3], ['Bodega', 20]]);
+    });
+});

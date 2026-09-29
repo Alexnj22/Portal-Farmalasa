@@ -278,6 +278,13 @@ const CRONS = [
           + 'Sólo llama a send-push-notification cuando hay algo que entregar.',
   },
   {
+    job: 'puntos-vigilar-motor', slug: null, cadencia: '*/15 * * * *',
+    corridasDia: 96, sistema: 0,
+    motivo: 'Avisa si en horario de ventas hubo ventas con cliente y ninguna acumuló puntos en '
+          + 'la última hora (el motor detenido no da error visible). SQL puro; no hace nada '
+          + 'mientras el programa siga en el sistema anterior ni fuera de 8:00–21:00.',
+  },
+  {
     job: 'puntos-cumpleanos-diario', slug: null, cadencia: '10 12 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'Regala los puntos de cumpleaños del día (decisión del usuario, 2026-09-28). SQL puro; '

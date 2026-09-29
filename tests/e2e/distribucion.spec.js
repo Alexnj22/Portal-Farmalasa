@@ -11,6 +11,14 @@ import { entrar } from './distribucionEntrar.js';
 
 const SALIDA = process.env.E2E_CAPTURAS || 'test-results/distribucion';
 
+/** «Cobrar» (F2): la ventana donde sólo queda el monto y Enter procesa. */
+async function cobrar(page) {
+    await page.getByRole('button', { name: /^(Cobrar|Enviar a aprobación)/ }).click();
+    const c = page.getByRole('dialog', { name: 'Cobrar' });
+    await expect(c).toBeVisible();
+    return c;
+}
+
 
 const SECCIONES = { pedidos: 'Pedidos', documentos: 'Documentos', clientes: 'Clientes', catalogo: 'Catálogo',
     inventario: 'Inventario', solicitudes: 'Solicitudes', emisor: 'Empresa' };
@@ -63,11 +71,11 @@ test('venta a una tienda: buscar, agregar, facturar, ver ticket y PDF', async ({
     await modal.getByRole('option').first().click();
     await modal.getByRole('button', { name: 'Uno más' }).first().click();
     await expect(modal.locator('input[name^="cantidad-"]').first()).toHaveValue('3');
-    // Sin ticketera, «imprimir» abriría el diálogo del navegador: acá se apaga.
-    await modal.getByRole('switch', { name: /Imprimir el ticket/ }).click();
     await page.screenshot({ path: `${SALIDA}/venta-lista.png`, fullPage: true });
-
-    await modal.getByRole('button', { name: /^Facturar$/ }).click();
+    // Sin ticketera, «imprimir» abriría el diálogo del navegador: acá se apaga.
+    const c = await cobrar(page);
+    await c.getByRole('switch', { name: /Imprimir el ticket/ }).click();
+    await c.getByRole('button', { name: /^Facturar$/ }).click();
     const doc = page.getByRole('dialog', { name: 'Documento' });
     await expect(doc).toBeVisible({ timeout: 30_000 });
     await expect(doc.frameLocator('iframe[title="Vista previa del ticket"]').getByText('FACTURA').first()).toBeVisible({ timeout: 15_000 });
@@ -104,8 +112,9 @@ test('a un contribuyente se le puede emitir Factura si la pide', async ({ page }
     await modal.getByRole('radio', { name: 'Factura' }).click();
     await modal.getByLabel('Buscar producto').fill('a');
     await modal.getByRole('option').first().click();
-    await modal.getByRole('switch', { name: /Imprimir el ticket/ }).click();
-    await modal.getByRole('button', { name: /^Facturar$/ }).click();
+    const c = await cobrar(page);
+    await c.getByRole('switch', { name: /Imprimir el ticket/ }).click();
+    await c.getByRole('button', { name: /^Facturar$/ }).click();
     const doc = page.getByRole('dialog', { name: 'Documento' });
     await expect(doc.getByRole('heading', { name: /^Factura/ })).toBeVisible({ timeout: 30_000 });
 });
@@ -121,15 +130,16 @@ test('pago dividido: $2 en efectivo y el resto con tarjeta, comprobante después
     await modal.getByRole('option').first().click();
     await modal.getByRole('button', { name: 'Uno más' }).first().click();
 
-    await modal.getByRole('button', { name: 'Dividir el pago' }).click();
+    const c = await cobrar(page);
+    await c.getByRole('button', { name: 'Dividir el pago' }).click();
     // La nueva forma (transferencia) entra arriba y lleva monto; el efectivo
     // queda último y es «lo que falta».
-    await modal.locator('input[name^="monto-pago-"]').first().fill('2');
-    await expect(modal.getByText('Lo que falta')).toBeVisible();
-    await expect(modal.getByText(/Comprobante pendiente/)).toBeVisible();
-    await modal.getByRole('switch', { name: /Imprimir el ticket/ }).click();
+    await c.locator('input[name^="monto-pago-"]').first().fill('2');
+    await expect(c.getByText('Lo que falta')).toBeVisible();
+    await expect(c.getByText(/Comprobante pendiente/)).toBeVisible();
+    await c.getByRole('switch', { name: /Imprimir el ticket/ }).click();
     await page.screenshot({ path: `${SALIDA}/pago-dividido.png`, fullPage: true });
-    await modal.getByRole('button', { name: /^Facturar$/ }).click();
+    await c.getByRole('button', { name: /^Facturar$/ }).click();
 
     const doc = page.getByRole('dialog', { name: 'Documento' });
     await expect(doc).toBeVisible({ timeout: 30_000 });
@@ -138,7 +148,7 @@ test('pago dividido: $2 en efectivo y el resto con tarjeta, comprobante después
     await page.screenshot({ path: `${SALIDA}/pagos-en-documento.png`, fullPage: true });
 });
 
-test('venta como en la caja: presentación, lista, descuento y el cambio del efectivo, con el cobro abajo', async ({ page }) => {
+test('venta como en la caja: presentación, lista, descuento; F2 cobra con el foco en la entrega y Enter procesa', async ({ page }) => {
     await entrar(page);
     await page.goto('/torogoz/venta');
     await page.getByText('Elegir cliente…').click();
@@ -161,23 +171,25 @@ test('venta como en la caja: presentación, lista, descuento y el cambio del efe
     // Descuento de 5%. (El tope de la empresa no frena a esta cuenta: tiene
     // la capacidad de configurar Distribución. El freno se probó en la base.)
     await renglon.locator('input[name^="descuento-"]').fill('5');
-    await expect(page.getByText('Descuentos')).toBeVisible();
-
-    // Efectivo: entrega un billete grande y se ve el cambio.
-    await page.locator('input[name^="recibido-pago-"]').fill('100');
-    await expect(page.getByText('Cambio').first()).toBeVisible();
-
-    // El cobro va DEBAJO de los productos, no al costado.
-    const yProductos = (await renglon.boundingBox()).y;
-    const yCobro = (await page.getByText('Forma de pago').boundingBox()).y;
-    expect(yCobro).toBeGreaterThan(yProductos);
-
-    await page.getByRole('switch', { name: /Imprimir el ticket/ }).click();
+    await expect(page.getByText(/descuentos −/).first()).toBeVisible();
     await page.screenshot({ path: `${SALIDA}/venta-caja.png`, fullPage: true });
+
+    // F2 abre el cobro con el foco en «Entrega»: se escribe el billete, se ve
+    // el cambio, y Enter procesa.
+    await page.keyboard.press('F2');
+    const c = page.getByRole('dialog', { name: 'Cobrar' });
+    await expect(c).toBeVisible();
+    await c.getByRole('switch', { name: /Imprimir el ticket/ }).click();
+    const entrega = c.locator('input[name^="recibido-pago-"]');
+    await entrega.click();
+    await entrega.fill('100');
+    await expect(c.getByText('Cambio').first()).toBeVisible();
+    await expect(c.getByText('Descuentos')).toBeVisible();
+    await page.screenshot({ path: `${SALIDA}/venta-caja-cobro.png`, fullPage: true });
     // El total de la pantalla sale del mismo motor que el documento: tiene que
     // ser EXACTAMENTE el que Hacienda recibe, no «uno parecido».
-    const totalPantalla = (await page.getByTestId('total-venta').innerText()).trim();
-    await page.getByRole('button', { name: /^Facturar$/ }).click();
+    const totalPantalla = (await c.getByTestId('total-venta').innerText()).trim();
+    await entrega.press('Enter');
     const doc = page.getByRole('dialog', { name: 'Documento' });
     await expect(doc).toBeVisible({ timeout: 30_000 });
     await doc.getByText('Datos', { exact: true }).click();
@@ -260,6 +272,15 @@ test('teclado como en la caja: foco a la cantidad, Tab y flechas por el renglón
     await expect.poll(foco).toMatch(/^cantidad-/);
     await page.keyboard.press('ArrowUp');
     await expect.poll(foco).toBe(primera);
+    // Un producto de presentación única (deshabilitada): → desde la cantidad
+    // la salta y cae en el precio o el descuento, no se queda trabado.
+    await page.keyboard.press('F3');
+    await page.keyboard.type('klaricid');
+    await expect(page.getByRole('option').first()).toBeVisible();
+    await page.keyboard.press('Enter');
+    await expect.poll(foco).toMatch(/^cantidad-/);
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(foco).toMatch(/^Precio y lista de|^descuento-/);
     // F7: existencias en todas las sucursales, buscando el producto donde está el cursor.
     await page.keyboard.press('F7');
     await expect(page.getByRole('dialog', { name: 'Existencias en todas las sucursales' })).toBeVisible();

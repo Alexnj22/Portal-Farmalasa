@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
     ShoppingCart, Plus, Minus, Trash2, ShieldAlert, Loader2, Receipt, Save, Search, Printer, PackageX, ArrowLeft, AlertTriangle,
-    Send, Clock, Store, Package, Tag, RefreshCw, ListChecks, ChevronRight,
+    Send, Clock, Store, Package, Tag, RefreshCw, ListChecks, ChevronRight, Wallet,
 } from 'lucide-react';
 import LiquidModal from '../components/common/LiquidModal';
 import ExistenciasSucursales from './distribucion/ExistenciasSucursales';
@@ -132,6 +132,7 @@ export default function DistribucionVentaView() {
     const carritoRef = useRef([]);
     const catalogoRef = useRef(new Map());
     const buscadorTexto = useRef('');
+    const porAprobarRef = useRef(false);
 
     // La barra del total (teléfono) publica su alto en `--alto-barra-flotante`,
     // la misma variable que escribe `BarraFlotante`: así los botones de «ir
@@ -350,10 +351,20 @@ export default function DistribucionVentaView() {
         }
         const col = Number(celda.dataset.col);
         const f = Number(fila.dataset.fila);
-        const destino = e.key === 'ArrowLeft' ? [f, col - 1] : e.key === 'ArrowRight' ? [f, col + 1]
-            : e.key === 'ArrowUp' ? [f - 1, col] : [f + 1, col];
-        const el = document.querySelector(`[data-fila="${destino[0]}"] [data-col="${destino[1]}"]`)
+        // Un campo deshabilitado (la presentación cuando es única) NO corta el
+        // camino: se sigue en la misma dirección hasta el siguiente que sirva.
+        // Arriba/abajo, si esa columna no sirve en el otro producto, cae en su
+        // cantidad, que siempre está.
+        const enfocable = (fi, co) => document.querySelector(`[data-fila="${fi}"] [data-col="${co}"]`)
             ?.querySelector('input:not([disabled]), [role="combobox"]:not([aria-disabled="true"]), button:not([disabled]):not([tabindex="-1"])');
+        let el = null;
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            const paso = e.key === 'ArrowLeft' ? -1 : 1;
+            for (let c = col + paso; c >= 0 && c <= 4 && !el; c += paso) el = enfocable(f, c);
+        } else {
+            const otra = e.key === 'ArrowUp' ? f - 1 : f + 1;
+            el = enfocable(otra, col) ?? enfocable(otra, 0);
+        }
         if (!el) return;
         e.preventDefault();
         e.stopPropagation();
@@ -586,12 +597,14 @@ export default function DistribucionVentaView() {
     useEffect(() => { carritoRef.current = carrito; }, [carrito]);
     useEffect(() => { catalogoRef.current = porId; }, [porId]);
     useEffect(() => { buscadorTexto.current = buscar; }, [buscar]);
+    useEffect(() => { porAprobarRef.current = porAprobar.length > 0; });
     useEffect(() => {
         const apretar = (sel) => document.querySelector(`${sel}:not([disabled])`)?.click();
         const alTeclado = (e) => {
             if (document.querySelector('[role="dialog"]') && e.key !== 'F7') return; // con un diálogo abierto, las teclas son suyas
             const enCampo = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName) || e.target?.isContentEditable;
             const k = e.key;
+            // F2 abre el COBRO (el mismo botón «Cobrar»): ahí sólo queda el monto, y Enter procesa.
             if (k === 'F2' || (k === 'Enter' && (e.ctrlKey || e.metaKey))) { e.preventDefault(); apretar('[data-accion-principal]'); }
             else if (k === 'F8') { e.preventDefault(); apretar('[data-accion-preventa]'); }
             else if (k === 'F3' || (k === '/' && !enCampo)) { e.preventDefault(); buscador.current?.focus(); }
@@ -615,6 +628,8 @@ export default function DistribucionVentaView() {
     }, [navigate]);
 
     const [verPendientes, setVerPendientes] = useState(false);
+    const [verCobro, setVerCobro] = useState(false);
+    const [avisoCobro, setAvisoCobro] = useState('');
     const [verNotas, setVerNotas] = useState(!!notas);
 
     const titulo = corrigiendo
@@ -640,19 +655,51 @@ export default function DistribucionVentaView() {
         </Button>
     ) : null;
 
-    // «Preventa» es la venta guardada sin facturar: el pedido que el vendedor
-    // toma en la ruta y se factura después (o espera un descuento).
-    const botonPrincipal = porAprobar.length > 0 ? (
-        <Button variant="primary" icon={guardando === 'aprobacion' ? Loader2 : Send} disabled={!puedeGuardar}
-            data-accion-principal onClick={() => guardar('aprobacion')} className="flex-1 sm:flex-none" title="F2">
-            Enviar a aprobación <kbd aria-hidden="true" className="hidden lg:inline ml-1 text-micro font-bold opacity-70">F2</kbd>
-        </Button>
-    ) : (
-        <Button variant="primary" icon={guardando === 'facturar' ? Loader2 : (imprimir ? Printer : Receipt)} disabled={!listo}
-            data-accion-principal onClick={() => guardar('facturar')} className="flex-1 sm:flex-none" title="F2 o Ctrl + Enter">
-            {imprimir ? 'Facturar e imprimir' : 'Facturar'} <kbd aria-hidden="true" className="hidden lg:inline ml-1 text-micro font-bold opacity-70">F2</kbd>
+    // El botón principal ABRE EL COBRO (F2): la venta se arma en la página y se
+    // cobra en una ventana donde sólo queda el monto y Enter procesa (pedido del
+    // usuario). Con un descuento por aprobar, la ventana pide el motivo.
+    const abrirCobro = () => {
+        setAvisoCobro('');
+        setVerCobro(true);
+    };
+    const botonPrincipal = (
+        <Button variant="primary" icon={porAprobar.length ? Send : Wallet} disabled={!puedeGuardar}
+            data-accion-principal onClick={abrirCobro} className="flex-1 sm:flex-none" title="F2">
+            {porAprobar.length ? 'Enviar a aprobación' : 'Cobrar'} <kbd aria-hidden="true" className="hidden lg:inline ml-1 text-micro font-bold opacity-70">F2</kbd>
         </Button>
     );
+
+    // Procesar desde la ventana de cobro: Enter o F2.
+    const procesar = () => {
+        if (guardando) return;
+        if (porAprobar.length) { guardar('aprobacion'); return; }
+        if (!listo) { setAvisoCobro(bloqueo ?? 'Revisa el cobro.'); return; }
+        guardar('facturar');
+    };
+    const alTecladoCobro = (e) => {
+        if (e.key !== 'Enter' && e.key !== 'F2') return;
+        if (e.key === 'Enter' && e.shiftKey) return;
+        const t = e.target;
+        if (t.tagName === 'TEXTAREA' && e.key === 'Enter') return;        // en observaciones, Enter es salto de línea
+        if (t.getAttribute?.('aria-expanded') === 'true' || t.closest?.('[role="listbox"]')) return; // el menú abierto elige
+        if (t.tagName === 'BUTTON' && e.key === 'Enter' && !t.dataset.procesar) return; // un botón hace lo suyo
+        e.preventDefault();
+        e.stopPropagation();
+        procesar();
+    };
+    // Al abrir: el foco al monto. Con efectivo solo, «Entrega»; con el pago
+    // dividido, el primer monto; con descuento por aprobar, el motivo.
+    useEffect(() => {
+        if (!verCobro) return undefined;
+        const t = setTimeout(() => {
+            const caja = document.querySelector('[data-cobro-ventana]');
+            const campo = porAprobarRef.current
+                ? caja?.querySelector('input[name="motivo-descuento"]')
+                : caja?.querySelector('input[name^="monto-pago-"]') ?? caja?.querySelector('input[name^="recibido-pago-"]');
+            if (campo) { campo.focus(); campo.select?.(); } else caja?.querySelector('[data-procesar]')?.focus();
+        }, 80);
+        return () => clearTimeout(t);
+    }, [verCobro]);
 
     const qPendiente = buscarPendiente.trim();
     const listaPendientes = (pendientes ?? []).filter(p => !qPendiente || tokenMatch(qPendiente, p.dist_clientes?.nombre, String(p.id)));
@@ -705,9 +752,11 @@ export default function DistribucionVentaView() {
                         </section>
 
                         {/* ── Qué se lleva ──
-                            `relative z-dropdown`: la lista del buscador flota por encima de
-                            las tarjetas de abajo (el cobro, la barra), no por debajo. */}
-                        <section data-surface="card" className="relative z-dropdown p-3 md:p-4 flex flex-col gap-3">
+                            Con la lista del buscador abierta, la tarjeta sube (`z-dropdown`)
+                            para que la lista flote por encima de lo de abajo. SÓLO mientras
+                            está abierta: siempre arriba, en el teléfono tapaba la barra fija
+                            del total y los botones. */}
+                        <section data-surface="card" className={`relative ${buscar.trim() && cliente ? 'z-dropdown' : ''} p-3 md:p-4 flex flex-col gap-3`}>
                             <div className="relative">
                                 <PortalInput ref={buscador} icon={Search} name="buscar-producto" value={buscar} alto
                                     placeholder={cliente ? 'Producto o código de barras (F3)' : 'Elige primero el cliente'}
@@ -878,58 +927,6 @@ export default function DistribucionVentaView() {
                             )}
                         </section>
 
-                        {/* ── El cobro: abajo, donde termina la venta ── */}
-                        {cliente && lineas.length > 0 && (
-                            <section data-surface="card" className="p-3 md:p-4 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_20rem] gap-4 items-start">
-                                <div className="flex flex-col gap-3 min-w-0" data-cobro>
-                                    {porAprobar.length > 0 && (
-                                        <div className="rounded-xl border border-warning/40 bg-warning/5 p-3 flex flex-col gap-2">
-                                            <p className="text-body-sm text-content-2 flex items-start gap-2">
-                                                <Tag size={16} className="text-warning-text shrink-0 mt-0.5" />
-                                                <span>
-                                                    <b>{formatMoney(montoPorAprobar)}</b> de descuento necesita{porAprobar.length === 1 ? '' : 'n'} aprobación
-                                                    {puedeDescontar ? ` (pasa del tope de ${topeDescuento}%)` : ''}. Se guarda como preventa, sin el descuento, y se actualiza sola al aprobarse.
-                                                </span>
-                                            </p>
-                                            <PortalTextarea label="¿Por qué el descuento? (lo ve quien aprueba)" name="motivo-descuento" value={motivoDescuento}
-                                                rows={2} compact onChange={(e) => setMotivoDescuento(e.target.value)}
-                                                placeholder="Ej.: cliente nuevo, compra de volumen, igualar precio de la competencia" />
-                                        </div>
-                                    )}
-                                    <FormasDePago filas={pagos} setFilas={setPagos} total={estimado.total} cliente={cliente}
-                                        plazo={plazo} setPlazo={setPlazo} abierto={pagoAbierto} setAbierto={setPagoAbierto} />
-                                    {excedeCredito && (
-                                        <Notice variant="warning" compact>Pasa del crédito aprobado del cliente ({formatMoney(cliente.limite_credito)}).</Notice>
-                                    )}
-                                    {verNotas ? (
-                                        <PortalTextarea label="Observaciones" name="notas" value={notas} rows={2} compact
-                                            onChange={(e) => setNotas(e.target.value)} placeholder="Sale impresa en el documento." />
-                                    ) : (
-                                        <div><Button size="sm" variant="ghost" icon={Plus} onClick={() => setVerNotas(true)}>Observaciones</Button></div>
-                                    )}
-                                </div>
-                                <div className="rounded-2xl border border-brand/20 bg-brand/5 p-3 flex flex-col gap-1.5">
-                                    <FilaTotal rotulo={`Suma (${cuentan.length} producto${cuentan.length === 1 ? '' : 's'})`} valor={formatMoney(venta.suma)} />
-                                    {venta.descuentos > 0 && <FilaTotal rotulo="Descuentos" valor={`−${formatMoney(venta.descuentos)}`} tono="text-success-text" />}
-                                    {montoPorAprobar > 0 && <FilaTotal rotulo="Por aprobar (no incluido)" valor={`−${formatMoney(montoPorAprobar)}`} tono="text-warning-text" />}
-                                    {!conIva && <FilaTotal rotulo="IVA 13%" valor={formatMoney(estimado.iva)} />}
-                                    {estimado.retencion > 0 && <FilaTotal rotulo="Retención 1%" valor={`−${formatMoney(estimado.retencion)}`} />}
-                                    {estimado.percepcion > 0 && <FilaTotal rotulo="Percepción 1%" valor={formatMoney(estimado.percepcion)} />}
-                                    <FilaTotal rotulo="Total" valor={formatMoney(estimado.total)} fuerte />
-                                    {conIva && estimado.iva > 0 && <p className="text-micro text-content-3 text-right">Incluye IVA de {formatMoney(estimado.iva)}</p>}
-                                    {cambio > 0 && (
-                                        <div className="flex items-baseline justify-between gap-3 rounded-xl bg-success/10 px-3 py-1.5 mt-1">
-                                            <span className="text-body-sm font-bold text-success-text">Cambio</span>
-                                            <span className="text-title font-black text-success-text tabular-nums">{formatMoney(cambio)}</span>
-                                        </div>
-                                    )}
-                                    <div className="pt-1">
-                                        <Interruptor checked={imprimir} onChange={setImprimir} label="Imprimir el ticket al facturar" />
-                                    </div>
-                                </div>
-                            </section>
-                        )}
-
                         {/* ── La barra de acción: siempre a mano, en computadora y teléfono ──
                             Total y botones pegados abajo: finalizar una venta no pide
                             desplazarse. En computadora se pega al fondo del contenido; en
@@ -938,10 +935,21 @@ export default function DistribucionVentaView() {
                         <div ref={barra} data-surface="card"
                             className="fixed lg:sticky inset-x-0 bottom-0 z-tabs lg:z-content px-4 lg:px-4 pt-3 pb-[max(12px,var(--sa-bottom))] lg:py-3 lg:mb-3 flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-4">
                             <div className="flex items-end lg:items-center justify-between gap-3 lg:flex-1 min-w-0">
-                                <p className={`min-w-0 text-caption truncate ${bloqueo ? 'text-content-2' : 'text-content-3'}`}>
-                                    {bloqueo ?? `${lineas.length} producto${lineas.length === 1 ? '' : 's'} · ${conCantidad(unidadesTotal)} pieza${unidadesTotal === 1 ? '' : 's'}${cambio > 0 ? ` · cambio ${formatMoney(cambio)}` : ''}`}
-                                </p>
-                                <p className="text-title lg:text-display font-black text-brand-text tabular-nums shrink-0">{formatMoney(estimado.total)}</p>
+                                <div className="min-w-0">
+                                    <p className={`text-caption truncate ${bloqueoGuardar ? 'text-content-2' : 'text-content-3'}`}>
+                                        {bloqueoGuardar ?? `${lineas.length} producto${lineas.length === 1 ? '' : 's'} · ${conCantidad(unidadesTotal)} pieza${unidadesTotal === 1 ? '' : 's'}`}
+                                    </p>
+                                    {!bloqueoGuardar && (
+                                        <p className="hidden lg:block text-micro text-content-3 tabular-nums truncate">
+                                            Suma {formatMoney(venta.suma)}
+                                            {venta.descuentos > 0 && ` · descuentos −${formatMoney(venta.descuentos)}`}
+                                            {!conIva && ` · IVA ${formatMoney(estimado.iva)}`}
+                                            {estimado.retencion > 0 && ` · retención −${formatMoney(estimado.retencion)}`}
+                                            {montoPorAprobar > 0 && ` · por aprobar −${formatMoney(montoPorAprobar)}`}
+                                        </p>
+                                    )}
+                                </div>
+                                <p className="text-title lg:text-display font-black text-brand-text tabular-nums shrink-0" data-testid="total-barra">{formatMoney(estimado.total)}</p>
                             </div>
                             <div className="flex gap-2">
                                 <Button variant="secondary" icon={guardando === 'preventa' ? Loader2 : Save} disabled={!puedeGuardar}
@@ -955,6 +963,92 @@ export default function DistribucionVentaView() {
                 )}
             </div>
 
+            {/* ── La ventana de cobro (F2) ──
+                Todo lo demás queda detrás: sólo el monto, y Enter procesa. */}
+            {verCobro && cliente && lineas.length > 0 && (
+                <LiquidModal open onClose={guardando ? undefined : () => setVerCobro(false)} maxWidth="max-w-3xl" ariaLabel="Cobrar">
+                    <LiquidModal.Header>
+                        <div className="flex items-center justify-between gap-3 w-full">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <Wallet size={18} className="text-brand-text shrink-0" />
+                                <h2 className="text-title font-black text-content truncate">{porAprobar.length ? 'Enviar a aprobación' : 'Cobrar'} · {cliente.nombre}</h2>
+                            </div>
+                            <p className="text-display font-black text-brand-text tabular-nums shrink-0">{formatMoney(estimado.total)}</p>
+                        </div>
+                    </LiquidModal.Header>
+                    <LiquidModal.Body>
+                        <div data-cobro-ventana onKeyDownCapture={alTecladoCobro}
+                            className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_17rem] gap-4 items-start">
+                            <div className="flex flex-col gap-3 min-w-0" data-cobro>
+                                {porAprobar.length > 0 && (
+                                    <div className="rounded-xl border border-warning/40 bg-warning/5 p-3 flex flex-col gap-2">
+                                        <p className="text-body-sm text-content-2 flex items-start gap-2">
+                                            <Tag size={16} className="text-warning-text shrink-0 mt-0.5" />
+                                            <span>
+                                                <b>{formatMoney(montoPorAprobar)}</b> de descuento necesita{porAprobar.length === 1 ? '' : 'n'} aprobación
+                                                {puedeDescontar ? ` (pasa del tope de ${topeDescuento}%)` : ''}. Se guarda como preventa, sin el descuento, y se actualiza sola al aprobarse.
+                                            </span>
+                                        </p>
+                                        <PortalInput label="¿Por qué el descuento? (lo ve quien aprueba)" name="motivo-descuento" value={motivoDescuento}
+                                            onChange={(e) => setMotivoDescuento(e.target.value)}
+                                            placeholder="Ej.: cliente nuevo, compra de volumen, igualar precio de la competencia" />
+                                    </div>
+                                )}
+                                {!porAprobar.length && (
+                                    <FormasDePago filas={pagos} setFilas={setPagos} total={estimado.total} cliente={cliente}
+                                        plazo={plazo} setPlazo={setPlazo} abierto={pagoAbierto} setAbierto={setPagoAbierto} />
+                                )}
+                                {excedeCredito && (
+                                    <Notice variant="warning" compact>Pasa del crédito aprobado del cliente ({formatMoney(cliente.limite_credito)}).</Notice>
+                                )}
+                                {verNotas ? (
+                                    <PortalTextarea label="Observaciones" name="notas" value={notas} rows={2} compact
+                                        onChange={(e) => setNotas(e.target.value)} placeholder="Sale impresa en el documento." />
+                                ) : (
+                                    <div><Button size="sm" variant="ghost" icon={Plus} tabIndex={-1} onClick={() => setVerNotas(true)}>Observaciones</Button></div>
+                                )}
+                            </div>
+                            <div className="rounded-2xl border border-brand/20 bg-brand/5 p-3 flex flex-col gap-1.5">
+                                <FilaTotal rotulo={`Suma (${cuentan.length} producto${cuentan.length === 1 ? '' : 's'})`} valor={formatMoney(venta.suma)} />
+                                {venta.descuentos > 0 && <FilaTotal rotulo="Descuentos" valor={`−${formatMoney(venta.descuentos)}`} tono="text-success-text" />}
+                                {montoPorAprobar > 0 && <FilaTotal rotulo="Por aprobar (no incluido)" valor={`−${formatMoney(montoPorAprobar)}`} tono="text-warning-text" />}
+                                {!conIva && <FilaTotal rotulo="IVA 13%" valor={formatMoney(estimado.iva)} />}
+                                {estimado.retencion > 0 && <FilaTotal rotulo="Retención 1%" valor={`−${formatMoney(estimado.retencion)}`} />}
+                                {estimado.percepcion > 0 && <FilaTotal rotulo="Percepción 1%" valor={formatMoney(estimado.percepcion)} />}
+                                <FilaTotal rotulo="Total" valor={formatMoney(estimado.total)} fuerte />
+                                {conIva && estimado.iva > 0 && <p className="text-micro text-content-3 text-right">Incluye IVA de {formatMoney(estimado.iva)}</p>}
+                                {cambio > 0 && (
+                                    <div className="flex items-baseline justify-between gap-3 rounded-xl bg-success/10 px-3 py-1.5 mt-1">
+                                        <span className="text-body-sm font-bold text-success-text">Cambio</span>
+                                        <span className="text-display font-black text-success-text tabular-nums">{formatMoney(cambio)}</span>
+                                    </div>
+                                )}
+                                {!porAprobar.length && (
+                                    <div className="pt-1">
+                                        <Interruptor checked={imprimir} onChange={setImprimir} label="Imprimir el ticket al facturar" />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        {(avisoCobro || error) && <Notice variant="danger" compact className="mt-3">{error || avisoCobro}</Notice>}
+                    </LiquidModal.Body>
+                    <LiquidModal.Footer>
+                        <div className="flex flex-wrap items-center justify-end gap-2 w-full">
+                            <p className="mr-auto text-caption text-content-3 hidden sm:block">Enter procesa · Esc vuelve a la venta</p>
+                            <Button variant="ghost" onClick={() => setVerCobro(false)} disabled={!!guardando}>Volver</Button>
+                            {!porAprobar.length && (
+                                <Button variant="secondary" icon={guardando === 'preventa' ? Loader2 : Save} disabled={!puedeGuardar}
+                                    onClick={() => guardar('preventa')}>Guardar preventa</Button>
+                            )}
+                            <Button variant="primary" data-procesar="1" icon={guardando ? Loader2 : (porAprobar.length ? Send : (imprimir ? Printer : Receipt))}
+                                disabled={!!guardando} onClick={procesar}>
+                                {porAprobar.length ? 'Enviar a aprobación' : (imprimir ? 'Facturar e imprimir' : 'Facturar')}
+                                <kbd aria-hidden="true" className="hidden sm:inline ml-1 text-micro font-bold opacity-70">Enter</kbd>
+                            </Button>
+                        </div>
+                    </LiquidModal.Footer>
+                </LiquidModal>
+            )}
             {verExistencias != null && (
                 <ExistenciasSucursales terminoInicial={verExistencias} onClose={() => setVerExistencias(null)} />
             )}

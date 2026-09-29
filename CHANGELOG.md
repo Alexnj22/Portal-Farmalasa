@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1093.0 — Torogoz: F2 cobra en una ventana (Enter procesa), el cobro sale de la página y las flechas saltan lo deshabilitado
+
+Pedidos del usuario: «al presionar F2 que me lleve a poner el monto (queda
+todo bloqueado menos eso) y al presionar Enter se procesa»; las flechas se
+trababan en una presentación deshabilitada; y con varios productos el pie de
+«Facturar» tapaba información.
+
+- **F2 = Cobrar**: una ventana con las formas de pago, el desglose, el cambio y
+  la impresión. El foco cae en el monto («Entrega» con efectivo; el primer
+  monto con pago dividido; el motivo si hay descuento por aprobar). **Enter (o
+  F2) procesa**; Esc vuelve a la venta. En observaciones Enter es salto de
+  línea y con un menú abierto Enter elige.
+- **El cobro sale de la página**: queda cliente, productos y la barra de abajo
+  con el total, su desglose en una línea, «Guardar preventa» (F8) y «Cobrar»
+  (F2). Ya no hay nada debajo del pie.
+- **Flechas**: un campo deshabilitado (la presentación única) no corta el
+  camino; ↑ ↓ caen en la cantidad si esa columna no sirve en el otro producto.
+- La tarjeta de productos sólo sube por encima del resto con la lista del
+  buscador abierta: siempre arriba, en el teléfono tapaba la barra fija.
+
+
 ## v2.1092.0 — Torogoz: venta con teclado como en la caja (F2, F8, F3, F7), foco a la cantidad y selectores ordenados
 
 Reporte del usuario (con capturas): los selectores del renglón se veían

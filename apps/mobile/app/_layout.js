@@ -45,11 +45,14 @@ export default function Raiz() {
               headerStyle: { backgroundColor: tema.color.tarjeta },
               headerTintColor: tema.color.texto,
               contentStyle: { backgroundColor: tema.color.fondo },
+              // Sólo la flecha: el nombre de la pantalla anterior es el de la
+              // barra de pestañas, que no significa nada para quien la usa.
+              headerBackButtonDisplayMode: 'minimal',
             }}
           >
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="entrar" options={{ headerShown: false }} />
-            <Stack.Screen name="inicio" options={{ title: "Inicio" }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           </Stack>
         </AuthProvider>
       </View>

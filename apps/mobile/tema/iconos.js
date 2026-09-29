@@ -54,6 +54,8 @@ export const ICONOS = {
   FlaskConical: i('flask', require('@expo/material-symbols/science.xml')),
   PenLine: i('pencil.line', require('@expo/material-symbols/edit.xml')),
   Mail: i('envelope', require('@expo/material-symbols/mail.xml')),
+  BarChart2: i('chart.bar', require('@expo/material-symbols/bar_chart.xml')),
+  Building2: i('building.2', require('@expo/material-symbols/domain.xml')),
   Contact: i('person.crop.rectangle', require('@expo/material-symbols/contact_page.xml')),
 };
 

@@ -69,6 +69,7 @@ import {
     Star,
 } from 'lucide-react';
 import { MODULE_MAP as BASE } from '@nucleo/constants/moduleMap';
+import { MENU_GROUPS as GRUPOS } from '@nucleo/constants/menuGroups';
 
 export * from '@nucleo/constants/moduleMap';
 
@@ -146,3 +147,4 @@ const conIconos = (v) => {
 };
 
 export const MODULE_MAP = conIconos(BASE);
+export const MENU_GROUPS = conIconos(GRUPOS);

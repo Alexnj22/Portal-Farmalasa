@@ -4,15 +4,7 @@ import AvatarConEstado from '../common/AvatarConEstado';
 import Badge from '../common/Badge';
 import { LayoutGroup } from 'framer-motion';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import {
-    Monitor, Calendar, Building2, ShieldCheck, LogOut, Menu, User,
-    Megaphone, AlertTriangle, Activity,
-    ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
-    Home, Bell, FolderOpen, Cake,
-    TrendingUp, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
-    PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck, Boxes, Search, BookOpen,
-    Thermometer, Wallet
-} from 'lucide-react';
+import { LogOut, Menu, ChevronLeft, ChevronRight, ChevronDown, X, Cake, Search } from 'lucide-react';
 import { fetchVentasPerdidasPendingCount } from '@nucleo/data/ventasPerdidas';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchKioskAuthCode } from '@nucleo/data/kioskAuth';
@@ -45,7 +37,8 @@ import AvisosApagadosDialog from '../common/AvisosApagadosDialog';
 import OfflineBanner from '../common/OfflineBanner';
 import BannerPortal from '../common/BannerPortal';
 import Contador from '../common/Contador';
-import { MODULE_MAP } from '../common/catalogos/modulos';
+import { MENU_GROUPS, MODULE_MAP } from '../common/catalogos/modulos';
+import { gruposVisibles } from '@nucleo/constants/menuGroups';
 import { prefetchRuta } from '../../routeImporters';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { remontarAlGirar, contarRenderShell } from '../../plataforma/cajaNegra';
@@ -53,118 +46,8 @@ import { useHayDialogo } from '../common/dialogosAbiertos';
 import { hoySV } from '@nucleo/utils/fecha';
 import { escucharCambios } from '@nucleo/data/tiempoReal';
 
-// MODULE_MAP vive en constants/moduleMap.js (lo comparte ModuleLockBanner).
-
-// ── Grupos del menú (define el orden y agrupación) ──────────────────────────
-// Orden: autoservicio del empleado primero, luego gestión de personal,
-// luego negocio (Comercial/Inventario), y configuración al final.
-// Reestructurado 2026-07-22 (a pedido del usuario) — Inventario tenía 9
-// módulos mezclando 3 dominios sin relación (inventario real, compras/
-// proveedores, logística inter-sucursal) y Comercial tenía 6 (ventas
-// mezclado con incentivos). Nómina vivía dentro de "Personal" junto al
-// directorio de empleados; Clima Organizacional estaba partido entre su
-// propio grupo (encuesta) y RRHH (encuesta_admin) sin motivo. Ningún grupo
-// nuevo pasa de 6 ítems.
-const MENU_GROUPS = [
-    { key: 'overview',      label: 'Inicio',        icon: Home,          modules: ['overview']                          },
-    // `traslados` va acá y no en Inventario: un traslado ES una solicitud
-    // —vive en `approval_requests`, con su ciclo pedir → confirmar → recibir— y
-    // su permiso nace en este grupo, aparte de `requests` para que confirmar un
-    // envío no arrastre aprobar vacaciones.
-    { key: 'solicitudes',   label: 'Solicitudes',   icon: ClipboardList, modules: ['requests', 'requests_personales', 'traslados'] },
-    { key: 'avisos',        label: 'Avisos',         icon: Bell,          modules: ['emp_announcements', 'announcements']  },
-    { key: 'documentos',    label: 'Documentos',    icon: FolderOpen,    modules: ['emp_documents']                       },
-    { key: 'clima',         label: 'Clima organizacional', icon: BarChart2, modules: ['encuesta', 'encuesta_admin']       },
-    { key: 'personal',      label: 'Personal',      icon: User,          modules: ['staff_list']                         },
-    { key: 'nomina',        label: 'Nómina',        icon: DollarSign,    modules: ['payroll']                            },
-    { key: 'asistencia',    label: 'Asistencia',    icon: Monitor,       modules: ['monitor', 'time_audit']               },
-    { key: 'horarios',      label: 'Horarios',      icon: Calendar,      modules: ['schedules', 'vacation_plan']          },
-    { key: 'rrhh',          label: 'RRHH',          icon: Users,         modules: ['entrevistas']                        },
-    // `clientes` entra acá y no en un grupo propio: el receptor de la factura es
-    // el mismo asunto que Facturación y Cotizaciones, y quien factura es quien
-    // necesita su ficha fiscal correcta. Quedan 4 de los 6 que admite un grupo.
-    // `puntos` (2026-09-25) va con Clientes: el programa es de los clientes y
-    // lo opera quien supervisa la venta. 5 de 6.
-    { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'facturacion', 'cotizaciones', 'clientes', 'puntos'] },
-    // Cortes de caja salió de Comercial a menú propio (2026-08-20, pedido del
-    // usuario). No es una pregunta sobre la venta: es el cuadre del efectivo al
-    // cerrar el turno, y quien lo abre —la sala que cierra, quien confirma la
-    // diferencia— entra por eso y no por otra cosa.
-    //
-    // El 2026-08-24 dejó de ser un grupo de un módulo: «Bolsas de efectivo» era
-    // una PESTAÑA de Cortes y hoy es su vecina. «Me estoy perdiendo en los
-    // pasos, al tener tantos, me pierdo y no sé dónde está qué» (usuario) —
-    // metidas en una vista, el corte y el circuito del efectivo compartían una
-    // píldora que cambiaba de significado según la pestaña, y las cuatro etapas
-    // de la bolsa quedaban apiladas dentro de una sola.
-    //
-    // Son dos preguntas seguidas y por eso van JUNTAS en un grupo y no en dos
-    // menús sueltos: el corte dice cuánto efectivo hubo, la bolsa dice dónde
-    // está. Se llama «Efectivo» y no «Caja» porque «caja» ya nombra el punto de
-    // venta en el resto del portal.
-    //
-    // Y esto además le abrió la puerta a `bolsas`, que era módulo de permisos
-    // propio —con alcance y tres capacidades— sin ruta ni entrada de menú: se
-    // llegaba sólo por `/cortes`, detrás del guardia de `cortes_caja`. Quien
-    // tuviera `bolsas` y no `cortes_caja` no podía entrar, y no daba error.
-    // `caja_vales` va PRIMERO del grupo: es la pantalla con la que se trabaja
-    // —abrir, anotar, cortar, cerrar— y las otras dos son de mirar lo que ya
-    // pasó. Y va acá y no en un grupo propio porque es el mismo dinero.
-    // `cuentas_por_cobrar` va en ESTE grupo y no en uno propio: es el mismo
-    // dinero. Pero es su propia ENTRADA porque es su propia pantalla —Efectivo
-    // pregunta «¿cuadra el dinero de hoy?» y la cartera «¿quién nos debe de los
-    // últimos dos años?»—, y el `dedupe` de abajo la deja pasar porque su ruta
-    // es distinta. Va TERCERA y no segunda (pedido del usuario, 2026-09-02):
-    // las dos primeras son el efectivo del turno —cuadrarlo y guardarlo—, y la
-    // cartera es la pregunta que se hace después. Ojo al contar la posición:
-    // `caja_vales` y `cortes_caja` se funden en UNA entrada, así que las cuatro
-    // claves de abajo pintan tres renglones.
-    { key: 'cortes',       label: 'Efectivo',      icon: Wallet,       modules: ['caja_vales', 'cortes_caja', 'bolsas', 'cuentas_por_cobrar'] },
-    // Metas salió de Comercial a menú propio (2026-08-04, pedido del usuario).
-    // Con un solo módulo el grupo se pinta plano (renderGroup → renderNavItem),
-    // así que queda a un click desde cualquier pantalla en vez de detrás del
-    // acordeón. Va pegado a Bonificaciones: el tramo del bono sale de la meta.
-    { key: 'metas',        label: 'Metas',         icon: Target,        modules: ['metas'] },
-    // Promociones se retiró el 2026-07-28 y el grupo quedó reservado como el
-    // slot de Bonificaciones. Se construyó el 2026-09-01 y volvió con su nombre:
-    // es la campaña por la que un laboratorio paga por unidad vendida.
-    { key: 'promociones', label: 'Promociones', icon: Gift, modules: ['promociones'] },
-    { key: 'producto',     label: 'Producto',      icon: Package,       modules: ['productos', 'laboratorios'] },
-    { key: 'pedidos_sucursales', label: 'Pedidos a sucursales', icon: ClipboardList, modules: ['pedidos'] },
-    // `inventario` y `gestion_stock` van PRIMERO y no al final de la lista
-    // (pedido del usuario, 2026-08-08): las dos eran pestañas de Productos y
-    // son las dos preguntas con las que alguien entra a este grupo —qué
-    // existencia hay hoy, y qué hacer con la que no se mueve—. Min/Max y el
-    // Conteo son lo que se hace *después* de haberlas mirado. Inventario
-    // arriba de Gestión de stock (usuario, 2026-09-24): es la que da nombre al
-    // grupo y la que más se abre.
-    { key: 'inventario',   label: 'Inventario',    icon: Boxes,         modules: ['inventario', 'gestion_stock', 'minmax', 'ventas_perdidas', 'conteo_inventario'] },
-    // Bitácoras va en grupo PROPIO (pedido del usuario, 2026-08-17) y no dentro
-    // de Inventario. No es una pregunta sobre la existencia: es el expediente
-    // que la Superintendencia de Regulación Sanitaria pide ver en una
-    // inspección, y quien lo abre —el dependiente que anota la lectura, el
-    // regente que firma el mes— entra por eso y no por otra cosa. Con un solo
-    // módulo el grupo se pinta plano, así que queda a un clic desde cualquier
-    // pantalla en vez de detrás de un acordeón.
-    { key: 'bitacoras',    label: 'Bitácoras',     icon: Thermometer,   modules: ['bitacoras'] },
-    // Vecino de Bitácoras y por el mismo motivo: es el expediente que otra
-    // autoridad —la Agencia de Ciberseguridad del Estado— puede pedir ver, y
-    // quien lo abre entra por eso. Grupo propio y plano, con un solo módulo.
-    { key: 'datos_personales', label: 'Solicitudes de datos', icon: ShieldCheck, modules: ['datos_personales'] },
-    // «Facturas de Sala» entra acá y no en Datos Contables: quien revisa que la
-    // factura tomada haya quedado cargada como compra trabaja en este grupo, no
-    // en el de los documentos que llegan por correo. Decisión del usuario
-    // 2026-08-07 («agregalo en compras, no en contabilidad»).
-    { key: 'compras',      label: 'Compras',       icon: ShoppingCart,  modules: ['compras', 'cargar_compra', 'facturas_sala', 'cuentas_por_pagar', 'proveedores'] },
-    // Datos Contables (2026-07-31, pedido del usuario). Facturas de Compra sale
-    // de "Compras": el documento de compra se sincroniza para CONTABILIDAD —el
-    // DTE, su JSON/PDF y el proveedor fiscal—, no para decidir qué reponer, que
-    // es de lo que trata el resto de ese grupo. Y aquí nace Libros IVA, que se
-    // apoya en el mismo dato fiscal desde el otro lado del mostrador.
-    { key: 'contabilidad', label: 'Datos contables', icon: BookOpen,    modules: ['facturas_compra', 'libros_iva', 'libro_compras_completo', 'cierre_periodo', 'resumen_fiscal', 'corte_z'] },
-    { key: 'estructura',    label: 'Estructura',    icon: Building2,     modules: ['branches', 'roles']                   },
-    { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'maintenance', 'auditview', 'ios_test', 'impresion', 'carne_temporal', 'sync_health', 'orphan_objects', 'sesiones'] },
-];
+// Los grupos del menú viven en el núcleo (`constants/menuGroups.js`) para que
+// la app nativa arme su menú con la misma lista; acá se les ponen los íconos.
 
 const SELF_KEYS = ['emp_announcements', 'emp_profile', 'emp_documents'];
 
@@ -435,34 +318,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         return () => { cancelled = true; clearInterval(timer); };
     }, [puedeVerCodigoDeKiosco]);
 
-    const visibleGroups = useMemo(() => {
-        return MENU_GROUPS.map(g => {
-            // Los "Próximamente" solo acompañan a un grupo que el usuario ya ve
-            // por permiso real — sin esto, todo empleado veía grupos muertos
-            // (ej. "Comercial" conteniendo solo "Bonificaciones Próximamente").
-            const hasReal = g.modules.some(key => !MODULE_MAP[key]?.comingSoon && hasPermission(key, 'can_view'));
-            /* Dos módulos que apuntan a la MISMA ruta son UNA entrada.
-             *
-             * `caja_vales` y `cortes_caja` son dos permisos —operar la caja y
-             * mirar los cortes— y una sola pantalla desde v2.914.0. Sin este
-             * `dedupe` el menú pintaría «Efectivo» dos veces, con el mismo
-             * destino, a quien tenga los dos; y quedarse con un solo módulo en
-             * el grupo dejaría sin entrada a quien tenga el otro —Contabilidad
-             * sólo tiene `cortes_caja`—. Gana el primero del grupo, que es el
-             * orden que la lista ya declara. */
-            const vistas = new Set();
-            const visibleModules = g.modules
-                .filter(key => MODULE_MAP[key]?.comingSoon ? hasReal : hasPermission(key, 'can_view'))
-                .filter(key => {
-                    const ruta = MODULE_MAP[key]?.path;
-                    if (!ruta || vistas.has(ruta)) return false;
-                    vistas.add(ruta);
-                    return true;
-                })
-                .map(key => ({ key, ...MODULE_MAP[key] }));
-            return { ...g, visibleModules };
-        }).filter(g => g.visibleModules.length > 0);
-    }, [hasPermission]);
+    const visibleGroups = useMemo(
+        () => gruposVisibles(MENU_GROUPS, MODULE_MAP, (k) => hasPermission(k, 'can_view')),
+        [hasPermission],
+    );
 
     // Índice del buscador de menú (Cmd/Ctrl+K) — mismos módulos ya filtrados
     // por permiso arriba, con el label del grupo como breadcrumb y sinónimos

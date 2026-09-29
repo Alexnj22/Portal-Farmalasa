@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1089.0 — La app: barra de pestañas nativa y menú agrupado como el portal
+
+La app abría en una lista suelta de módulos y el tablero de Inicio ni
+aparecía. Ahora abre en **Inicio** y tiene la barra de pestañas del sistema
+(la de vidrio de iOS; la de Material en Android): **Inicio · Menú · Avisos · Yo**.
+
+- **Menú** agrupa los módulos igual que el menú del portal. Los grupos se
+  mudaron de `AppLayout.jsx` al núcleo (`constants/menuGroups.js`, con
+  `gruposVisibles`), así que la web y la app leen la MISMA lista y el mismo
+  filtro de permisos. En la web no cambia nada.
+- **Yo**: perfil, documentos, solicitudes personales y salir (pide confirmar).
+- Sólo el portal que está a la vista tiene su WebView montado: con varias
+  pestañas abiertas, dos renovadores de sesión gastarían la misma llave.
+- El portal dentro de una pestaña respeta la hora de arriba y la barra de abajo;
+  al abrir un módulo, la barra sólo lleva la flecha de regreso.
+- EAS: el número de la app en App Store Connect queda en `eas.json`.
+
 ## v2.1088.1 — El depósito al banco también se lleva al máximo
 
 Con la misma función de todo el portal (`hastaElTope`): «Al banco» llega hasta

@@ -33,19 +33,28 @@
   },
   "submit": {
     "interna": {
-      "ios": {},
+      "ios": {
+        "ascAppId": "6817515258",
+        "appleTeamId": "ZZWA3Q7Q35"
+      },
       "android": {
         "track": "internal"
       }
     },
     "interna-pruebas": {
-      "ios": {},
+      "ios": {
+        "ascAppId": "6817515258",
+        "appleTeamId": "ZZWA3Q7Q35"
+      },
       "android": {
         "track": "internal"
       }
     },
     "produccion": {
-      "ios": {},
+      "ios": {
+        "ascAppId": "6817515258",
+        "appleTeamId": "ZZWA3Q7Q35"
+      },
       "android": {
         "track": "production"
       }

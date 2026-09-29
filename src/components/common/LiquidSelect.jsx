@@ -61,6 +61,12 @@ const LiquidSelect = ({
     // por la misma razón que el foco: border/bg pierden contra data-surface
     // por cascade layers (ver inputStyles.js).
     invalid = false,
+    // ── 2026-09-29 ──────────────────────────────────────────────────────
+    // El `sublabel` sólo en el menú abierto, no en el disparador. Para celdas
+    // de una grilla densa (la venta de la distribuidora): con la segunda línea
+    // el control mide más que los campos de al lado, y el dato ya se ve en otra
+    // parte de la fila. En el menú sigue, que es donde ayuda a elegir.
+    sublabelSoloEnMenu = false,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -728,7 +734,7 @@ const LiquidSelect = ({
                             )}
                             <span className="flex-1 min-w-0">
                                 <span className="block leading-tight truncate" title={selectedOption.label}>{selectedOption.label}</span>
-                                {selectedOption.sublabel && (
+                                {selectedOption.sublabel && !sublabelSoloEnMenu && (
                                     <span className="block text-caption font-medium leading-tight mt-0.5 truncate text-content-3">
                                         {selectedOption.sublabel}
                                     </span>

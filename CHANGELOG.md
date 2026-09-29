@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1095.0 — Venta de la distribuidora: más espacio, búsqueda encima y selectores de una línea
+
+Pedido del usuario: «el buscador aún no funciona bien, se corta la
+información, ¿y si quitamos el header? pendientes al encabezado, un botón
+para ver las existencias, y el buscador lo siento bien alto».
+
+- Sin el encabezado de vista: el título, **Existencias (F7)** y
+  **Pendientes** viven en la franja del cliente. La campana pasa al
+  sidebar, junto a la marca.
+- La lista de resultados del buscador queda ENCIMA de los renglones
+  (`z-dropdown` + superficie opaca). Buscador de altura normal.
+- Presentación y precio en una línea: `LiquidSelect` acepta
+  `sublabelSoloEnMenu` — el detalle (unidades, lista) sigue en el menú y
+  en la línea del producto, no en el disparador.
+
+
 ## v2.1094.0 — Torogoz: resumen fiscal en una columna fija a la derecha; cantidad y descuento sólo números
 
 Pedidos del usuario: la cantidad aceptaba letras; la barra de abajo tapaba

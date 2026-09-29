@@ -2,11 +2,10 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
     ShoppingCart, Plus, Minus, Trash2, ShieldAlert, Loader2, Receipt, Save, Search, Printer, PackageX, ArrowLeft, AlertTriangle,
-    Send, Clock, Store, Package, Tag, RefreshCw, ListChecks, ChevronRight, Wallet,
+    Send, Clock, Store, Package, Tag, RefreshCw, ListChecks, ChevronRight, Wallet, Warehouse,
 } from 'lucide-react';
 import LiquidModal from '../components/common/LiquidModal';
 import ExistenciasSucursales from './distribucion/ExistenciasSucursales';
-import GlassViewLayout from '../components/GlassViewLayout';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import Notice from '../components/common/Notice';
@@ -645,12 +644,9 @@ export default function DistribucionVentaView() {
         : 'Nueva venta';
 
     const headerLeft = (
-        <div className="flex items-center gap-3 min-w-0">
-            <Button variant="ghost" iconOnly icon={ArrowLeft} title="Volver a Pedidos" onClick={() => navigate(rutaInicio())} />
-            <div className="min-w-0">
-                <h2 className="font-black text-title text-content tracking-tight leading-tight truncate">{titulo}</h2>
-                {cliente && <p className="text-caption text-content-3 truncate">{cliente.nombre}</p>}
-            </div>
+        <div className="flex items-center gap-2 min-w-0">
+            <Button variant="ghost" size="sm" iconOnly icon={ArrowLeft} title="Volver a Pedidos (F4)" onClick={() => navigate(rutaInicio())} />
+            <h2 className="font-black text-body text-content tracking-tight leading-tight truncate">{titulo}</h2>
         </div>
     );
 
@@ -658,7 +654,7 @@ export default function DistribucionVentaView() {
     // Antes eran una tarjeta grande arriba de todo, que empujaba la venta
     // hacia abajo cada vez que se abría la pantalla.
     const accionesEncabezado = !corrigiendo && pendientes?.length > 0 ? (
-        <Button variant="secondary" icon={ListChecks} onClick={() => setVerPendientes(true)}>
+        <Button size="sm" variant="secondary" icon={ListChecks} onClick={() => setVerPendientes(true)}>
             Pendientes <Badge size="sm" variant="warning" uppercase={false}>{pendientes.length}</Badge>
         </Button>
     ) : null;
@@ -707,8 +703,12 @@ export default function DistribucionVentaView() {
     const listaPendientes = (pendientes ?? []).filter(p => !qPendiente || tokenMatch(qPendiente, p.dist_clientes?.nombre, String(p.id)));
 
     return (
-        <GlassViewLayout icon={ShoppingCart} title={titulo} headerLeft={headerLeft} filtersContent={accionesEncabezado} transparentBody>
-            <div className="p-3 md:p-5 pb-40 lg:pb-0 flex flex-col gap-3 min-h-full">
+        // Sin el encabezado de vista (pedido del usuario: «para tener más
+        // espacio»): el título y las acciones viven en la franja del cliente.
+        // Este contenedor hace lo que hacía GlassViewLayout con el desplazamiento:
+        // en computadora scrollea él; en el teléfono, el documento.
+        <div className="lg:h-full lg:overflow-y-auto lg:overscroll-contain scroll-smooth">
+            <div className="p-3 md:p-4 pb-40 lg:pb-4 flex flex-col gap-3 min-h-full">
                 {errorCarga && <Notice variant="danger" icon={AlertTriangle}>{errorCarga}</Notice>}
                 {cargando && !errorCarga && <p className="text-caption text-content-3">Cargando…</p>}
                 {!cargando && !errorCarga && (
@@ -730,6 +730,16 @@ export default function DistribucionVentaView() {
                             columna del resumen al lado, el ancho de la pantalla ya no dice
                             cuánto lugar hay. */}
                         <section data-surface="card" className="@container p-3 md:p-4 flex flex-col gap-3">
+                            <div className="flex items-center justify-between gap-2 -mt-1">
+                                {headerLeft}
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <Button size="sm" variant="ghost" icon={Warehouse} title="Existencias en todas las sucursales (F7)"
+                                        onClick={() => setVerExistencias(buscar || '')}>
+                                        <span className="hidden @lg:inline">Existencias</span> <kbd aria-hidden="true" className="hidden @lg:inline text-micro font-bold opacity-60">F7</kbd>
+                                    </Button>
+                                    {accionesEncabezado}
+                                </div>
+                            </div>
                             <div className="grid grid-cols-1 @xl:grid-cols-[minmax(0,1fr)_auto] @4xl:grid-cols-[minmax(0,1fr)_auto_minmax(10rem,14rem)] gap-3 items-center">
                                 <LiquidSelect value={clienteId} onChange={cambiarCliente} options={opcionesClientes} icon={Store}
                                     placeholder="Elegir cliente…" clearable={false} disabled={corrigiendo} ariaLabel="Cliente" />
@@ -768,7 +778,7 @@ export default function DistribucionVentaView() {
                             del total y los botones. */}
                         <section data-surface="card" className={`relative ${buscar.trim() && cliente ? 'z-dropdown' : ''} p-3 md:p-4 flex flex-col gap-3`}>
                             <div className="relative">
-                                <PortalInput ref={buscador} icon={Search} name="buscar-producto" value={buscar} alto
+                                <PortalInput ref={buscador} icon={Search} name="buscar-producto" value={buscar}
                                     placeholder={cliente ? 'Producto o código de barras (F3)' : 'Elige primero el cliente'}
                                     aria-label="Buscar producto" disabled={!cliente}
                                     onChange={(e) => { setBuscar(e.target.value); setResaltado(0); }}
@@ -783,7 +793,7 @@ export default function DistribucionVentaView() {
                                     superficie OPACA de los menús del portal: con la de tarjeta se
                                     veía lo de atrás a través. */}
                                 {buscar.trim() && cliente && (
-                                    <div data-surface="dropdown" className="absolute left-0 right-0 top-full mt-1 overflow-hidden max-h-[24rem] overflow-y-auto rounded-2xl" role="listbox" aria-label="Productos encontrados">
+                                    <div data-surface="dropdown" className="absolute z-dropdown left-0 right-0 top-full mt-1 overflow-hidden max-h-[24rem] overflow-y-auto rounded-2xl" role="listbox" aria-label="Productos encontrados">
                                         {resultados.length === 0 && (
                                             <p className="px-4 py-3 text-caption text-content-3 flex items-center gap-2">
                                                 <PackageX size={14} /> Nada que coincida{soloVentaLibre(cliente.tipo) ? ' entre los productos de venta libre' : ''}.
@@ -835,16 +845,18 @@ export default function DistribucionVentaView() {
                                     {lineas.map((l, k) => {
                                         const nombre = l.p?.nombre ?? `Producto ${l.product_id}`;
                                         const ocupadas = new Set(lineas.filter(o => o.clave !== l.clave && o.product_id === l.product_id).map(o => o.presentacion));
-                                        // Una línea por opción («PAQUETE · 12 u.»): con dos líneas el
-                                        // selector medía más que los campos de al lado.
+                                        // Lo elegido se muestra CORTO («PAQUETE», «$30.18»): así no se
+                                        // corta. Lo que falta (las unidades, la lista) va en la línea del
+                                        // producto y en el menú abierto (`sublabel`).
                                         const opcPres = l.presentaciones
                                             .filter(x => !ocupadas.has(x.presentacion))
-                                            .map(x => ({ value: x.presentacion, label: x.unidades > 1 ? `${x.presentacion} · ${x.unidades} u.` : x.presentacion }));
-                                        // Lista y precio en UN control, en una línea: «$37.50 · VIP».
+                                            .map(x => ({ value: x.presentacion, label: x.presentacion, sublabel: x.unidades > 1 ? `${x.unidades} unidades` : undefined }));
                                         const opcListas = l.p ? listasDe(idx, l.p.product_id, l.presentacion).map(x => {
                                             const pr = precioDe(idx, l.p, l.presentacion, x.id);
-                                            return { value: String(x.id), label: `${formatMoney(visto(pr?.precio ?? 0))} · ${x.nombre}` };
+                                            return { value: String(x.id), label: formatMoney(visto(pr?.precio ?? 0)), sublabel: `Lista ${x.nombre}` };
                                         }) : [];
+                                        const nombreLista = l.r?.listaId != null ? idx.listas.find(x => x.id === l.r.listaId)?.nombre : null;
+                                        const porPresentacion = l.presentaciones.find(x => x.presentacion === l.presentacion)?.unidades ?? 1;
                                         const errDesc = l.descMalo ? 'No es un número' : l.pasaImporte ? 'Pasa del importe' : null;
                                         return (
                                             <div key={l.clave} data-renglon={l.product_id} data-fila={k}
@@ -858,6 +870,8 @@ export default function DistribucionVentaView() {
                                                                 {l.faltaExistencia ? `Sólo hay ${l.hay}` : `Hay ${l.hay}`}
                                                             </span>
                                                         )}
+                                                        {porPresentacion > 1 && <span>{l.presentacion} de {porPresentacion} u.</span>}
+                                                        {nombreLista && <span className={l.otraLista ? 'text-brand-text font-bold' : ''}>Lista {nombreLista}</span>}
                                                         {l.noVa && <span className="text-danger-text font-bold">No se le vende a este cliente</span>}
                                                         {l.sinPrecio && <span className="text-danger-text font-bold">Sin precio en esta presentación</span>}
                                                         {l.porAprobar && <span className="text-warning-text font-bold">Descuento por aprobar</span>}
@@ -885,14 +899,14 @@ export default function DistribucionVentaView() {
                                                     </div>
                                                     {/* Presentación */}
                                                     <div data-col="1" className="min-w-0">
-                                                        <LiquidSelect compact icon={Package} value={l.presentacion} options={opcPres} clearable={false}
+                                                        <LiquidSelect compact sublabelSoloEnMenu icon={Package} value={l.presentacion} options={opcPres} clearable={false}
                                                             disabled={opcPres.length <= 1} ariaLabel={`Presentación de ${nombre}`}
                                                             onChange={(v) => v && cambiar(l.clave, { presentacion: v, lista_id: '' })} />
                                                     </div>
                                                     {/* Precio · lista */}
                                                     <div data-col="2" className="min-w-0" data-testid="precio-renglon">
                                                         {opcListas.length > 1 ? (
-                                                            <LiquidSelect compact icon={Tag} value={l.r?.listaId != null ? String(l.r.listaId) : ''} options={opcListas} clearable={false}
+                                                            <LiquidSelect compact sublabelSoloEnMenu icon={Tag} value={l.r?.listaId != null ? String(l.r.listaId) : ''} options={opcListas} clearable={false}
                                                                 ariaLabel={`Precio y lista de ${nombre}`}
                                                                 onChange={(v) => cambiar(l.clave, { lista_id: v && Number(v) !== listaEfectiva ? v : '' })} />
                                                         ) : (
@@ -940,7 +954,7 @@ export default function DistribucionVentaView() {
                     </div>
 
                     {/* ── El resumen: columna fija a la derecha (computadora) ── */}
-                    <aside className="hidden lg:flex flex-col gap-3 lg:sticky lg:top-24" aria-label="Resumen de la venta">
+                    <aside className="hidden lg:flex flex-col gap-3 lg:sticky lg:top-0" aria-label="Resumen de la venta">
                         <section data-surface="card" className="p-4 flex flex-col gap-3">
                             <div className="flex items-baseline justify-between gap-2">
                                 <h3 className="text-body font-black text-content">Resumen</h3>
@@ -1122,7 +1136,7 @@ export default function DistribucionVentaView() {
                     </LiquidModal.Body>
                 </LiquidModal>
             )}
-        </GlassViewLayout>
+        </div>
     );
 }
 

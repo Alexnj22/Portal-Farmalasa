@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1088.1 — El depósito al banco también se lleva al máximo
+
+Con la misma función de todo el portal (`hastaElTope`): «Al banco» llega hasta
+lo contado más lo que entra de afuera, menos lo que va en efectivo, y «En
+efectivo» al revés. Escribir de más pone el máximo en vez de mostrar «No
+alcanza». Para llevar más de lo contado, se anota primero lo que entra de
+afuera; el campo lo dice.
+
 ## v2.1088.0 — Un monto con máximo se lleva al máximo en todo el portal
 
 Regla del usuario para los temas de dinero: si un campo tiene un máximo y se

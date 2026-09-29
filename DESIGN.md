@@ -3561,7 +3561,9 @@ $47.50»). Nada de avisos rojos ni botones trabados por pasarse.
 
 Dónde está aplicado: Cuentas por Cobrar (el primero, 3-sep), la causa y los
 responsables de una diferencia de caja, los abonos de un faltante, el abono de
-una reserva y el pago por factura de Cuentas por Pagar.
+una reserva, el pago por factura de Cuentas por Pagar y el reparto de un
+depósito al banco (para llevar más de lo contado, primero se anota lo que entra
+de afuera, que es lo que sube el máximo).
 
 Dónde **NO** va, a propósito:
 - **Un conteo a ciegas** (bolsas, cortes): lo contado es el dato; topearlo al

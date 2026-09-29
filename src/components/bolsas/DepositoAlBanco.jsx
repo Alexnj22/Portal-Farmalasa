@@ -10,6 +10,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { hastaElTope } from '@nucleo/utils/hastaElTope';
 
 /**
  * Lo que sigue después de confirmar el conteo: cuánto se lleva al banco.
@@ -128,6 +129,13 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, on
     const reparto = Math.round((nMonto + nEfectivo) * 100) / 100;
     const remanente = Math.round((disponible - reparto) * 100) / 100;
     const noAlcanza = remanente < 0;
+    /* Cada parte llega hasta lo que la otra deja libre (la regla de todo campo
+     * de dinero, DESIGN.md §15.11.2, usuario 2026-09-29): escribir de más pone
+     * el máximo en vez de trabar el cierre. Para llevar MÁS de lo contado se
+     * anota primero lo que entra de afuera, que es lo que sube el máximo. El
+     * aviso de «no alcanza» queda para cuando el aporte se baja después. */
+    const topeBanco = Math.round((disponible - nEfectivo) * 100) / 100;
+    const topeEfectivo = Math.round((disponible - nMonto) * 100) / 100;
     const faltaNota = nAporte > 0 && !aporteNota.trim();
     /* Cada parte pide lo suyo, y sólo si esa parte existe: un cierre entero al
      * banco no pregunta a quién, y uno entero en mano no pregunta banco. */
@@ -227,7 +235,10 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, on
                         <PortalInput
                             id="dep-monto" name="dep-monto"
                             inputMode="decimal" maskType="DECIMAL"
-                            value={monto} onChange={(e) => setMonto(e.target.value)}
+                            value={monto} onChange={(e) => setMonto(hastaElTope(e.target.value, topeBanco).valor)}
+                            helperText={topeBanco > 0
+                                ? `Hasta ${formatMoney(topeBanco)}. Para llevar más, anota antes lo que entra de afuera.`
+                                : undefined}
                             placeholder="0.00"
                             inputClassName="tabular-nums"
                         />
@@ -257,7 +268,8 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, on
                         <PortalInput
                             id="dep-efectivo" name="dep-efectivo"
                             inputMode="decimal" maskType="DECIMAL"
-                            value={montoEfectivo} onChange={(e) => setMontoEfectivo(e.target.value)}
+                            value={montoEfectivo} onChange={(e) => setMontoEfectivo(hastaElTope(e.target.value, topeEfectivo).valor)}
+                            helperText={topeEfectivo > 0 ? `Hasta ${formatMoney(topeEfectivo)}.` : undefined}
                             placeholder="0.00"
                             inputClassName="tabular-nums"
                         />

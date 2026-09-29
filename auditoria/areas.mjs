@@ -616,6 +616,36 @@ export const AREAS = [
         docs: ['docs/RETOMAR-FACTURACION-Y-DTE-2026-08-09.md', 'docs/resumen-dte-el-salvador.md',
                'docs/RETOMAR-CLIENTES-2026-08-01.md'],
     },
+    {
+        // Área aparte y no dentro de `facturacion-dte` a propósito: aquélla
+        // mira los DTE que emite el sistema de la caja para las farmacias;
+        // ésta EMITE los suyos, con otro NIT (la S.A.S. de distribución), su
+        // propio certificado y su propia conexión con Hacienda. Mezclarlas
+        // haría que un cambio en el emisor nuevo descongele la facturación de
+        // las siete salas, y al revés.
+        id: 'distribucion',
+        nombre: 'Distribución: venta en ruta y emisor DTE propio',
+        resumen: 'La S.A.S. de distribución: motor de DTE 2.0 (armar, firmar, transmitir a Hacienda), preventa, clientes de ruta y liquidación del vendedor. Prefijo dist_ porque «ruta» ya es el reparto de Bodega a las salas.',
+        modulos: ['distribucion', 'distribucion_config', 'distribucion_descuentos', 'requests_distribucion'],
+        // Su propia entrada desde el 2026-09-28; `/distribucion` sólo redirige.
+        rutas: ['/torogoz', '/torogoz/login', '/torogoz/venta', '/distribucion', '/distribucion/venta'],
+        archivos: [
+            'src/views/DistribucionView.jsx', 'src/views/DistribucionVentaView.jsx', 'src/views/distribucion/',
+            'src/data/distribucion.js', 'src/data/distribucionInventario.js', 'src/data/geoCodigosMH.js', 'src/data/actividadesMH.js',
+            'src/utils/distribucionDocumento.js', 'tests/unit/distribucionDocumento.test.js',
+            'tests/e2e/distribucion.spec.js', 'tests/e2e/distribucion-movil.spec.js', 'tests/e2e/distribucionEntrar.js',
+            'supabase/functions/_shared/dte/',
+            'supabase/functions/distribucion-dte/', 'supabase/functions/distribucion-comprobante/',
+            'supabase/borradores/distribucion/',
+            'scripts/entorno-pruebas/probar_distribucion.mjs', 'scripts/entorno-pruebas/distribucion_pruebas.sql',
+            'tests/unit/dteMotor.test.js', 'tests/unit/dteHacienda.test.js', 'tests/unit/dteLotes.test.js',
+            'tests/fixtures/dte-reales-2026-09.json',
+        ],
+        tablas: [],
+        edge: ['distribucion-dte', 'distribucion-comprobante'],
+        crons: [],
+        docs: [],
+    },
 
     // ═══ PRODUCTO Y EXISTENCIA ══════════════════════════════════════════════
     {

@@ -47,6 +47,9 @@ export const MODULO_QUE_DECIDE = {
      * que la enciende siempre. Es por PAGO y no por abono: una liquidación que
      * cubre tres créditos no necesita tres firmas. */
     ABONO_APROBACION:          'requests_cuentas_por_cobrar',
+    // Un descuento de Distribución que el vendedor no puede dar solo. Espejo
+    // de `modulo_de_aprobacion()` (borrador distribucion/0008).
+    DIST_DESCUENTO:            'requests_distribucion',
 };
 
 /**
@@ -101,4 +104,5 @@ export const QUIEN_RESUELVE = {
     CLIENT_CHANGE_REQUEST:     'Quien apruebe facturación',
     INVENTORY_LOAD_REQUEST:    'Quien apruebe inventario',
     INVENTORY_DISCARD_REQUEST: 'Quien apruebe inventario',
+    DIST_DESCUENTO:            'Quien apruebe descuentos de Distribución',
 };

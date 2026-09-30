@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1116.0 — Torogoz: rutas y visitas del día
+
+Nueva sección **Rutas** (borrador `0027_rutas_y_visitas.sql`, sólo pruebas).
+
+- **La ruta deja de ser un texto a mano**: hay tabla de rutas (nombre, vendedor,
+  días de visita) y la ficha del cliente la elige de una lista. Dos clientes de
+  la misma ruta ya no pueden quedar en «dos» rutas por una tilde (la regla del
+  portal: un rótulo no es una clave). El texto `ruta` se mantiene solo desde la
+  tabla, así los reportes que lo leen siguen igual. Las tres rutas que existían
+  se pasaron a la tabla con sus clientes y el vendedor que más les vendió.
+- **Hoy**: el vendedor ve los clientes de sus rutas de ese día, en orden, con lo
+  que conviene saber antes de entrar —qué debe y cuánto atrasado, cuándo compró—
+  y registra la visita: vender (abre la venta con el cliente), sin pedido,
+  cerrado, no estaba o sólo cobro. Una venta del día cuenta sola como visita.
+  «Cómo llegar» (Google Maps) y «Llamar». La primera visita con GPS guarda la
+  ubicación del cliente. Quien administra ve la ruta de cualquier vendedor y
+  día.
+- **Armar rutas** (quien administra): nombre, vendedor, días de la semana y el
+  orden de recorrido de los clientes.
+
 ## v2.1115.0 — Torogoz: conteo físico y bajas con aprobación
 
 **Inventario → Conteo y bajas** (borrador `0026_conteo_y_bajas.sql`, sólo

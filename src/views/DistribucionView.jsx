@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes, Tag, PackageX, LayoutDashboard, HandCoins, ShoppingCart, BarChart3, Wallet, Lock } from 'lucide-react';
+import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes, Tag, PackageX, LayoutDashboard, HandCoins, ShoppingCart, BarChart3, Wallet, Lock, Route, MapPin } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Notice from '../components/common/Notice';
@@ -23,6 +23,7 @@ import TabLiquidacion from './distribucion/TabLiquidacion';
 import TabCierreDia from './distribucion/TabCierreDia';
 import TabReposicion from './distribucion/TabReposicion';
 import TabConteo from './distribucion/TabConteo';
+import TabRutas from './distribucion/TabRutas';
 import { VISTAS_REPORTES } from './distribucion/reportes';
 import { VISTAS_CARTERA } from './distribucion/cartera';
 import { VISTAS_PEDIDOS, VISTAS_PERDIDAS, PERIODOS, CUBETAS_FACTURACION } from './distribucion/comun';
@@ -49,8 +50,15 @@ const VISTAS_INVENTARIO = [
     { key: 'conteo', label: 'Conteo y bajas', icon: ClipboardList },
 ];
 
+// Rutas: hoy / armar (sólo quien administra), en `?rutas=`.
+const VISTAS_RUTAS = [
+    { key: 'hoy', label: 'Hoy', icon: MapPin },
+    { key: 'armar', label: 'Armar rutas', icon: Route },
+];
+
 const TABS = [
     { key: 'inicio',     label: 'Inicio',     icon: LayoutDashboard },
+    { key: 'rutas',      label: 'Rutas',      icon: Route },
     { key: 'pedidos',    label: 'Pedidos',    icon: ClipboardList },
     { key: 'documentos', label: 'Facturación', icon: FileCheck2 },
     { key: 'cobros',     label: 'Cuentas por cobrar', icon: HandCoins },
@@ -93,6 +101,8 @@ export default function DistribucionView({ seccion = 'inicio' }) {
     const vistasCaja = useMemo(() => VISTAS_CAJA.filter(v => puedeConfigurar || v.key !== 'dia'), [puedeConfigurar]);
     const [vistaCaja, setVistaCaja] = usePestanaEnUrl(vistasCaja, 'vendedor', 'caja');
     const [vistaInventario, setVistaInventario] = usePestanaEnUrl(VISTAS_INVENTARIO, 'lotes', 'inventario');
+    const vistasRutas = useMemo(() => VISTAS_RUTAS.filter(v => puedeConfigurar || v.key !== 'armar'), [puedeConfigurar]);
+    const [vistaRutas, setVistaRutas] = usePestanaEnUrl(vistasRutas, 'hoy', 'rutas');
 
     const [emisor, setEmisor] = useState(null);
     const [cargando, setCargando] = useState(true);
@@ -119,8 +129,8 @@ export default function DistribucionView({ seccion = 'inicio' }) {
     // El buscador es de la pestaña, no de la vista: al cambiar, se limpia.
     useEffect(() => { setBuscar(''); }, [tab]);
 
-    const conBuscador = tab !== 'emisor' && tab !== 'solicitudes' && tab !== 'inicio' && tab !== 'liquidacion';
-    const conPestanasSinBuscador = tab === 'liquidacion' && vistasCaja.length > 1;
+    const conBuscador = tab !== 'emisor' && tab !== 'solicitudes' && tab !== 'inicio' && tab !== 'liquidacion' && tab !== 'rutas';
+    const conPestanasSinBuscador = (tab === 'liquidacion' && vistasCaja.length > 1) || (tab === 'rutas' && vistasRutas.length > 1);
     const placeholder = useMemo(() => ({
         pedidos: 'Buscar por cliente o número…',
         documentos: 'Cliente, número de control o código de generación…',
@@ -142,7 +152,8 @@ export default function DistribucionView({ seccion = 'inicio' }) {
             filtersContent={tab === 'inicio' ? (
                 <ViewTabBar tabs={PERIODOS} activeTab={periodo} onTabChange={setPeriodo} showSearch={false} />
             ) : conPestanasSinBuscador ? (
-                <ViewTabBar tabs={vistasCaja} activeTab={vistaCaja} onTabChange={setVistaCaja} showSearch={false} />
+                <ViewTabBar tabs={tab === 'rutas' ? vistasRutas : vistasCaja} activeTab={tab === 'rutas' ? vistaRutas : vistaCaja}
+                    onTabChange={tab === 'rutas' ? setVistaRutas : setVistaCaja} showSearch={false} />
             ) : conBuscador ? (
                 <ViewTabBar tabs={tab === 'pedidos' ? VISTAS_PEDIDOS : tab === 'perdidas' ? VISTAS_PERDIDAS : tab === 'documentos' ? CUBETAS_FACTURACION : tab === 'cobros' ? VISTAS_CARTERA : tab === 'compras' ? VISTAS_COMPRAS : tab === 'reportes' ? VISTAS_REPORTES : tab === 'inventario' ? VISTAS_INVENTARIO : [actual]}
                     activeTab={tab === 'pedidos' ? vista : tab === 'perdidas' ? estadoPerdida : tab === 'documentos' ? cubeta : tab === 'cobros' ? vistaCartera : tab === 'compras' ? vistaCompras : tab === 'reportes' ? vistaReporte : tab === 'inventario' ? vistaInventario : tab}
@@ -166,6 +177,9 @@ export default function DistribucionView({ seccion = 'inicio' }) {
 
             {visitadas.has('inicio') && (
                 <div className={tab === 'inicio' ? '' : 'hidden'}><TabTablero periodo={periodo} /></div>
+            )}
+            {visitadas.has('rutas') && (
+                <div className={tab === 'rutas' ? '' : 'hidden'}><TabRutas {...comunes} vista={vistaRutas} /></div>
             )}
             {visitadas.has('pedidos') && (
                 <div className={tab === 'pedidos' ? '' : 'hidden'}><TabPedidos {...comunes} vista={vista} onVista={setVista} /></div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
-    ClipboardList, FileCheck2, Store, PackageSearch, Boxes, Tag, Building2, Plus, LogOut, Menu, X, ArrowLeftRight, PackageX, LayoutDashboard, WifiOff, Loader2, Send, HandCoins, ShoppingCart, BarChart3, Wallet } from 'lucide-react';
+    ClipboardList, FileCheck2, Store, PackageSearch, Boxes, Tag, Building2, Plus, LogOut, Menu, X, ArrowLeftRight, PackageX, LayoutDashboard, WifiOff, Loader2, Send, HandCoins, ShoppingCart, BarChart3, Wallet, Route } from 'lucide-react';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useMarca } from '../../plataforma/useMarca';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -28,6 +28,7 @@ const CampanaLazy = React.lazy(() => import('../../components/common/Notificatio
 
 const MENU = [
     { seccion: 'inicio',      label: 'Inicio',      icon: LayoutDashboard },
+    { seccion: 'rutas',       label: 'Rutas',       icon: Route },
     { seccion: 'pedidos',     label: 'Pedidos',     icon: ClipboardList },
     { seccion: 'documentos',  label: 'Facturación', icon: FileCheck2, contadorFacturacion: true },
     { seccion: 'cobros',      label: 'Cuentas por cobrar', icon: HandCoins },

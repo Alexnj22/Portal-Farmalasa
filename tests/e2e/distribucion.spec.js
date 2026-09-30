@@ -21,7 +21,7 @@ async function cobrar(page) {
 }
 
 
-const SECCIONES = { inicio: 'Inicio', pedidos: 'Pedidos', documentos: 'Facturación', clientes: 'Clientes', catalogo: 'Catálogo', compras: 'Compras', reportes: 'Reportes', liquidacion: 'Caja y liquidación',
+const SECCIONES = { inicio: 'Inicio', rutas: 'Rutas', pedidos: 'Pedidos', documentos: 'Facturación', clientes: 'Clientes', catalogo: 'Catálogo', compras: 'Compras', reportes: 'Reportes', liquidacion: 'Caja y liquidación',
     inventario: 'Inventario', solicitudes: 'Solicitudes', emisor: 'Empresa' };
 
 test('las secciones de Torogoz abren sin romper, y la dirección vieja lleva allá', async ({ page }) => {
@@ -1036,5 +1036,42 @@ test('conteo físico con diferencia valorizada y cierre, y una baja pedida y rec
     await pend.locator('input[name^="nota-baja-"]').fill('prueba automática');
     await pend.getByRole('button', { name: 'Rechazar' }).click();
     await expect(bajas.locator('[data-baja="rechazada"]').first()).toBeVisible({ timeout: 15_000 });
+    expect(errores).toEqual([]);
+});
+
+test('rutas: la ruta de hoy en orden, una visita registrada, el orden y los días se arman, y la ficha elige la ruta de la tabla', async ({ page }) => {
+    const errores = [];
+    page.on('pageerror', e => errores.push(e.message));
+    await entrar(page);
+    await page.goto('/torogoz/rutas');
+    await expect(page.getByText('Por visitar')).toBeVisible({ timeout: 15_000 });
+    const primero = page.locator('[data-cliente-ruta]').first();
+    await expect(primero).toBeVisible({ timeout: 15_000 });
+    await page.screenshot({ path: `${SALIDA}/ruta-hoy.png`, fullPage: true });
+    const pendiente = page.locator('[data-cliente-ruta="pendiente"]').first();
+    if (await pendiente.count()) {
+        const nombre = (await pendiente.locator('p').first().innerText()).trim();
+        await pendiente.getByRole('button', { name: 'No estaba' }).click();
+        await expect(page.getByText(`${nombre}: No estaba`).first()).toBeVisible({ timeout: 20_000 });
+    }
+
+    await page.goto('/torogoz/rutas?rutas=armar');
+    await page.locator('[data-ruta]').first().click();
+    await expect(page.locator('[data-orden-cliente]').first()).toBeVisible({ timeout: 15_000 });
+    const segundo = (await page.locator('[data-orden-cliente]').nth(1).innerText()).split('\n')[1];
+    await page.locator('[data-orden-cliente]').nth(1).getByRole('button', { name: /^Subir/ }).click();
+    await expect(page.locator('[data-orden-cliente]').first()).toContainText(segundo.trim());
+    await page.getByRole('button', { name: 'Guardar ruta' }).click();
+    await expect(page.getByText('Ruta guardada').first()).toBeVisible({ timeout: 15_000 });
+    // Se deja como estaba: vuelve a bajar.
+    await page.locator('[data-orden-cliente]').first().getByRole('button', { name: /^Bajar/ }).click();
+    await page.getByRole('button', { name: 'Guardar ruta' }).click();
+    await expect(page.getByText('Ruta guardada').first()).toBeVisible({ timeout: 15_000 });
+
+    await page.goto('/torogoz/clientes');
+    const cli = page.locator('table tbody tr', { hasText: 'FARMACIA' }).first();
+    await expect(cli).toBeVisible({ timeout: 15_000 });
+    await cli.click();
+    await expect(page.getByRole('combobox', { name: 'Ruta' })).toContainText(/Ruta \d/, { timeout: 15_000 });
     expect(errores).toEqual([]);
 });

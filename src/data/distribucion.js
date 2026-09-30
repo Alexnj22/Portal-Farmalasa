@@ -573,6 +573,45 @@ export async function resolverBaja(id, aprobar, nota) {
     if (error) throw error;
 }
 
+// ── Rutas y visitas (borrador 0027) ────────────────────────────────────────
+
+export async function fetchRutas() {
+    const { data, error } = await supabase.from('dist_rutas')
+        .select('id, nombre, vendedor_id, dias, activo, vendedor:employees!dist_rutas_vendedor_id_fkey(name)').order('nombre').limit(999);
+    if (error) throw error;
+    return data ?? [];
+}
+
+export async function guardarRuta({ id = null, nombre, vendedorId, dias, activo = true }) {
+    const { data, error } = await supabase.rpc('dist_guardar_ruta', { p_id: id, p_nombre: nombre, p_vendedor: vendedorId || null, p_dias: dias, p_activo: activo });
+    if (error) throw error;
+    return data;
+}
+
+export async function fetchClientesDeRuta(rutaId) {
+    const { data, error } = await supabase.from('dist_clientes').select('id, nombre, tipo, complemento, orden_ruta, activo')
+        .eq('ruta_id', rutaId).order('orden_ruta', { nullsFirst: false }).order('nombre').limit(999);
+    if (error) throw error;
+    return data ?? [];
+}
+
+export async function ordenarRuta(rutaId, clienteIds) {
+    const { error } = await supabase.rpc('dist_ordenar_ruta', { p_ruta: rutaId, p_clientes: clienteIds });
+    if (error) throw error;
+}
+
+export async function fetchRutaDelDia(vendedorId, fecha) {
+    const { data, error } = await supabase.rpc('dist_ruta_del_dia', { p_vendedor: vendedorId, p_fecha: fecha });
+    if (error) throw error;
+    return data;
+}
+
+export async function registrarVisita(clienteId, resultado, { nota = null, lat = null, lng = null } = {}) {
+    const { data, error } = await supabase.rpc('dist_registrar_visita', { p_cliente: clienteId, p_resultado: resultado, p_nota: nota, p_lat: lat, p_lng: lng });
+    if (error) throw error;
+    return data;
+}
+
 export async function fetchCuarentena() {
     const { data, error } = await supabase
         .from('dist_cuarentena')

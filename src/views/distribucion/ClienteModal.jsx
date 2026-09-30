@@ -13,7 +13,9 @@ import { isValidDUIAlgorithm } from '@nucleo/utils/duiUtils';
 import { formatearNit } from '@nucleo/utils/nitUtils';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { departamentosMH, municipiosMH, distritosMH } from '@nucleo/data/geoCodigosMH';
-import { guardarCliente, mensajeDeDistribucion } from '@nucleo/data/distribucion';
+import { guardarCliente, mensajeDeDistribucion, fetchRutas } from '@nucleo/data/distribucion';
+import { Route } from 'lucide-react';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { DOC_IDENTIDAD, TIPO_CLIENTE, cargarActividades, leerMonto, soloVentaLibre } from './comun';
 
 // La ficha de un cliente de ruta.
@@ -30,7 +32,7 @@ const VACIO = {
     tipo: 'tienda', nombre: '', nombre_comercial: '', tipo_documento: '13', num_documento: '',
     nrc: '', cod_actividad: '', desc_actividad: '', gran_contribuyente: false,
     departamento: '04', municipio: '', distrito: '', complemento: '', telefono: '', correo: '',
-    licencia_srs: '', licencia_srs_vence: '', limite_credito: '0', plazo_dias: '0', ruta: '', notas: '', activo: true,
+    licencia_srs: '', licencia_srs_vence: '', limite_credito: '0', plazo_dias: '0', ruta: '', ruta_id: '', notas: '', activo: true,
 };
 
 const aFormulario = (c) => ({
@@ -50,6 +52,10 @@ export default function ClienteModal({ cliente, emisorId, puedeEditar, onClose, 
     useEffect(() => {
         cargarActividades().then(setActividades).catch(e => console.error('ClienteModal: actividades', e));
     }, []);
+    // La ruta sale de la tabla de rutas (0027), no de un texto a mano: así dos
+    // clientes de la misma ruta no pueden quedar en «dos» rutas por una tilde.
+    const [rutas, setRutas] = useState([]);
+    useEffect(() => { fetchRutas().then(setRutas).catch(e => console.error('ClienteModal: rutas', e)); }, []);
 
     const { recuperado, descartar } = useBorrador(
         nuevo && emisorId ? `distribucion-cliente-${emisorId}` : null, f,
@@ -102,7 +108,8 @@ export default function ClienteModal({ cliente, emisorId, puedeEditar, onClose, 
                 correo: f.correo.trim() || null, licencia_srs: f.licencia_srs.trim() || null,
                 licencia_srs_vence: f.licencia_srs_vence || null,
                 limite_credito: leerMonto(f.limite_credito), plazo_dias: leerMonto(f.plazo_dias),
-                ruta: f.ruta.trim() || null, notas: f.notas.trim() || null, activo: f.activo,
+                // El texto de la ruta lo pone la base desde `ruta_id`.
+                ruta_id: f.ruta_id ? Number(f.ruta_id) : null, ruta: null, notas: f.notas.trim() || null, activo: f.activo,
             });
             descartar();
             // El id va de vuelta: la venta lo usa para dejar elegido al cliente recién creado.
@@ -142,8 +149,12 @@ export default function ClienteModal({ cliente, emisorId, puedeEditar, onClose, 
                             hasError={!!errores.nombre} errorMessage={errores.nombre} onChange={(e) => set('nombre', e.target.value)} />
                         <PortalInput label="Nombre comercial" name="nombre_comercial" value={f.nombre_comercial} readOnly={ro}
                             onChange={(e) => set('nombre_comercial', e.target.value)} helperText="Opcional." />
-                        <PortalInput label="Ruta" name="ruta" value={f.ruta} readOnly={ro}
-                            onChange={(e) => set('ruta', e.target.value)} placeholder="Ej.: Ruta 1 — Chalatenango centro" />
+                        <div>
+                            <span className={rotuloCampo()}>Ruta</span>
+                            <LiquidSelect value={f.ruta_id ? String(f.ruta_id) : ''} onChange={(v) => set('ruta_id', v ?? '')} disabled={ro}
+                                options={rutas.filter(r => r.activo || String(r.id) === String(f.ruta_id)).map(r => ({ value: String(r.id), label: r.nombre }))}
+                                placeholder="Sin ruta" clearLabel="Sin ruta" icon={Route} ariaLabel="Ruta" />
+                        </div>
                     </div>
 
                     <div>

@@ -154,3 +154,12 @@ UPDATE public.dist_catalogo c
        costo_actualizado_at = now()
  WHERE c.costo_promedio IS NULL AND c.precio_con_iva > 0
    AND (SELECT count(*) FROM public.employees) <= 30;
+
+-- 10 · Para ver las rutas (0027, 2026-09-30): días de visita de muestra y la
+--      Ruta 1 a la cuenta de pruebas todos los días, así «Hoy» siempre tiene
+--      clientes que mostrar.
+UPDATE public.dist_rutas SET dias = '{1,2,3,4,5,6,7}', vendedor_id = (SELECT id FROM public.employees WHERE username = 'pruebas')
+ WHERE nombre LIKE 'Ruta 1%' AND dias = '{}'
+   AND EXISTS (SELECT 1 FROM public.employees WHERE username = 'pruebas') AND (SELECT count(*) FROM public.employees) <= 30;
+UPDATE public.dist_rutas SET dias = '{2,5}' WHERE nombre LIKE 'Ruta 2%' AND dias = '{}' AND (SELECT count(*) FROM public.employees) <= 30;
+UPDATE public.dist_rutas SET dias = '{3,6}' WHERE nombre LIKE 'Ruta 3%' AND dias = '{}' AND (SELECT count(*) FROM public.employees) <= 30;

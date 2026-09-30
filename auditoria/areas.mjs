@@ -377,7 +377,7 @@ export const AREAS = [
                  'surveys', 'survey_bloques', 'survey_preguntas', 'survey_responses'],
         edge: ['send-push-notification'],
         crons: ['purge-notifications-daily', 'avisos-diferidos-5min'],
-        docs: ['docs/AVISOS-Y-PUSH-CUANDO-EL-CANAL-SE-ROMPE-2026-08-24.md'],
+        docs: ['docs/AVISOS-Y-PUSH-CUANDO-EL-CANAL-SE-ROMPE-2026-08-24.md', 'docs/PLAN-AVISOS-NATIVOS-2026-09-30.md'],
     },
     {
         id: 'sucursales',

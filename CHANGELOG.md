@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1093.0 — Avisos: tarjeta en el teléfono, campana nativa y aprobar con la misma regla del portal
+
+Fases N1 y N2 de `docs/PLAN-AVISOS-NATIVOS-2026-09-30.md`, más un pedido del
+usuario del mismo día («no veo las notificaciones en la app»).
+
+- **N1 — la tarjeta** (`send-push-notification/tarjeta.ts`, desplegada): para el
+  teléfono, cada aviso que nombra una solicitud (`?solicitud=`, `?envio=`,
+  `?solicitud=minmax:`) lleva una tarjeta estructurada —quién la origina con su
+  foto firmada por un día, contexto, hasta 4 renglones y la cuenta del resto—
+  para cada tipo: traslado, envío, descarte, carga, anulación, cambio de pago o
+  de vendedor, corrección de caja, abonos y Min/Max. El `body` se arma con lo
+  mismo, así que un aparato que no dibuje la tarjeta igual ve todo. Botones
+  (`categoryId`) sólo si sigue pendiente; el envío por ahora sólo se abre. Tema
+  por familia para agrupar. Si una lectura falla, sale el aviso de texto.
+- **N2 — aprobar con la MISMA regla:** `decidirSolicitud` sale de
+  `useDecidirSolicitud` como función del núcleo, sin avisos en pantalla. El
+  hook del portal la envuelve con sus toasts (la web no cambia; 2,938 pruebas
+  en verde) y el botón de la notificación la llama tal cual. Una copia de la
+  regla de aprobar es justo lo que no puede existir.
+- **La campana, nativa:** la pestaña Avisos de la app es la bandeja del portal
+  (lo no leído, en vivo con `useNotificationsChannel`), con el globo de no
+  leídos en la barra, «Leer todos», el historial y los comunicados. Las
+  pantallas que tapan la barra llevan la campana arriba a la derecha.
+
 ## v2.1092.1 — Aviso de traslado corto: cuatro productos y la cuenta del resto
 
 Usuario, 2026-09-30: «tampoco se mandará un testamento de notificación». El

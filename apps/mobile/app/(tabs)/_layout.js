@@ -3,8 +3,11 @@
 // usuario del 2026-09-29: «que se vea nativa con los elementos nativos», y que
 // la app ABRA en Inicio.
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { useStaffStore } from '@nucleo/store/staffStore';
 
 export default function Pestanas() {
+  // El globo de la campana: lo que falta leer, el mismo número que la web.
+  const sinLeer = useStaffStore((s) => s.notifications.length);
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="inicio">
@@ -18,6 +21,7 @@ export default function Pestanas() {
       <NativeTabs.Trigger name="avisos">
         <NativeTabs.Trigger.Icon sf={{ default: 'bell', selected: 'bell.fill' }} md="notifications" />
         <NativeTabs.Trigger.Label>Avisos</NativeTabs.Trigger.Label>
+        {sinLeer ? <NativeTabs.Trigger.Badge>{sinLeer > 99 ? '99+' : String(sinLeer)}</NativeTabs.Trigger.Badge> : null}
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="yo">
         <NativeTabs.Trigger.Icon sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }} md="account_circle" />

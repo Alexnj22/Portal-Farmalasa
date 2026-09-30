@@ -8,8 +8,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect } from 'react';
 import { AuthProvider, useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
+import { useNotificationsChannel } from '@nucleo/hooks/useNotificationsChannel';
 import { notificarActividad } from '@plataforma/cicloDeVida';
 import { useTema } from '../tema/tema';
+import BotonCampana from '../componentes/BotonCampana';
 import { escucharToques, registrarAvisos } from '../componentes/avisos';
 
 // Lo que hace `App.jsx` del portal alrededor de las pantallas:
@@ -31,6 +33,13 @@ function GuardiaDeSesion() {
     const enEntrada = !segmentos.length || segmentos[0] === 'entrar' || segmentos[0] === 'index';
     if (!isAuthenticated && !enEntrada) router.replace('/entrar');
   }, [isAuthenticated, loading, segmentos]);
+  return isAuthenticated ? <CampanaEnVivo /> : null;
+}
+
+// La campana en vivo, como `AppLayout` en la web: trae lo no leído y escucha
+// lo que llega. Sólo con sesión (el hook pide el usuario).
+function CampanaEnVivo() {
+  useNotificationsChannel();
   return null;
 }
 
@@ -52,6 +61,7 @@ export default function Raiz() {
               // Sólo la flecha: el nombre de la pantalla anterior es el de la
               // barra de pestañas, que no significa nada para quien la usa.
               headerBackButtonDisplayMode: 'minimal',
+              headerRight: () => <BotonCampana />,
             }}
           >
             <Stack.Screen name="index" options={{ headerShown: false }} />

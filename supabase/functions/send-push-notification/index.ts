@@ -2,47 +2,12 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import webpush from 'npm:web-push@3.6.7';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { checkCronSecret, getCorsHeaders } from '../_shared/security.ts';
+import { tarjetaParaTelefono, type AvisoTelefono } from './tarjeta.ts';
 
 // La app del teléfono: por el servicio de Expo, que entrega a APNs (iPhone) y
 // a FCM (Android). Hasta 100 por petición. Un token que el servicio da por
 // muerto (`DeviceNotRegistered`: la app se borró) se quita, igual que un 410
 // del navegador. Devuelve cuántos aceptó el servicio.
-type AvisoTelefono = {
-  title: string; message: string; url: string; urgent?: boolean;
-  subtitle?: string; categoryId?: string; data?: Record<string, unknown>;
-};
-
-// Un traslado pendiente llega al teléfono con TODO el pedido a la vista y con
-// sus botones (categoría `traslado`: Enviar todo · Rechazar), pedido del
-// usuario del 2026-09-30: «en la notificación debe mostrar toda la info».
-// Sólo el canal de la app: el navegador no tiene botones y sigue igual. Si la
-// lectura falla, el aviso sale como antes, sin detalle: el detalle adorna, no
-// puede costar el aviso.
-// deno-lint-ignore no-explicit-any
-async function detalleParaTelefono(supabase: any, base: AvisoTelefono): Promise<AvisoTelefono> {
-  const id = /[?&]solicitud=([0-9a-f-]{36})/i.exec(base.url || '')?.[1];
-  if (!id) return base;
-  const { data: s, error } = await supabase
-    .from('approval_requests').select('id, type, status, metadata').eq('id', id).maybeSingle();
-  if (error || !s || s.type !== 'INVENTORY_TRANSFER_REQUEST' || s.status !== 'PENDING') return base;
-  const m = s.metadata || {};
-  const renglones = (Array.isArray(m.items) ? m.items : []).map((it: { descripcion?: string; cantidad?: number; presentacion_tipo?: string }) =>
-    `• ${it.descripcion ?? 'Producto'} — ${it.cantidad ?? '?'} ${String(it.presentacion_tipo ?? '').toLowerCase()}`.trimEnd());
-  // Corta a propósito (usuario, 2026-09-30: «no un testamento»): hasta cuatro
-  // renglones y la cuenta del resto. El pedido entero está al tocarla.
-  const TOPE = 4;
-  const lineas = [base.message, ...renglones.slice(0, TOPE)];
-  if (renglones.length > TOPE) lineas.push(`y ${renglones.length - TOPE} producto${renglones.length - TOPE === 1 ? '' : 's'} más`);
-  if (m.reason) lineas.push(`Motivo: ${m.reason}`);
-  return {
-    ...base,
-    subtitle: [m.branch_name && `Para ${m.branch_name}`, m.origen_branch_name && `de ${m.origen_branch_name}`].filter(Boolean).join(' · ') || undefined,
-    message: lineas.join('\n'),
-    categoryId: 'traslado',
-    data: { url: base.url, solicitud: s.id, tipo: 'traslado' },
-  };
-}
-
 // deno-lint-ignore no-explicit-any
 async function enviarATelefonos(supabase: any, tokens: string[], a: AvisoTelefono) {
   let aceptados = 0;
@@ -60,7 +25,10 @@ async function enviarATelefonos(supabase: any, tokens: string[], a: AvisoTelefon
         title: a.title,
         ...(a.subtitle ? { subtitle: a.subtitle } : {}),
         body: a.message,
-        data: a.data ?? { url: a.url },
+        // `tema` agrupa en iOS (la extensión lo pone como hilo); `mutableContent`
+        // despierta a esa extensión, que baja la foto de quien lo origina.
+        data: { ...(a.data ?? { url: a.url }), tema: a.threadId ?? 'otros' },
+        mutableContent: true,
         ...(a.categoryId ? { categoryId: a.categoryId } : {}),
         sound: 'default',
         priority: a.urgent ? 'high' : 'default',
@@ -185,7 +153,7 @@ serve(async (req) => {
 
     const enviadosApp = aTelefonos.length
       ? await enviarATelefonos(supabase, aTelefonos.map((t: { token: string }) => t.token),
-          await detalleParaTelefono(supabase, { title, message, url, urgent }))
+          await tarjetaParaTelefono(supabase, { title, message, url, urgent }))
       : 0;
 
     const sent = results.filter(r => r.status === 'fulfilled').length;

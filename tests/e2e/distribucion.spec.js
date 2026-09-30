@@ -769,5 +769,9 @@ test('devolución: nota de crédito de un Crédito Fiscal sellado, a cuarentena,
     await expect(q).toBeVisible({ timeout: 15_000 });
     await q.getByRole('button', { name: 'Destruir' }).click();
     await expect(page.getByText('Anotado como destruido.').first()).toBeVisible({ timeout: 15_000 });
+
+    // Inicio resta lo devuelto y lo dice.
+    await page.goto('/torogoz/inicio');
+    await expect(page.getByTestId('devuelto')).toBeVisible({ timeout: 15_000 });
     expect(errores).toEqual([]);
 });

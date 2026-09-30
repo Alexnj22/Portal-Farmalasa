@@ -206,6 +206,11 @@ export default function TabTablero({ periodo = '30d' }) {
                 <Tarjeta titulo={metrica === 'ventas' ? 'Ventas por día' : 'Documentos por día'} icon={TrendingUp} className="xl:col-span-2"
                     accion={<SegmentedControl value={metrica} onChange={setMetrica} size="sm" label="Qué mirar"
                         options={[{ value: 'ventas', label: 'Ventas' }, { value: 'documentos', label: 'Documentos' }]} />}>
+                    {metrica === 'ventas' && num(r.devuelto) > 0 && (
+                        <p className="text-caption text-content-3 -mt-1 mb-2" data-testid="devuelto">
+                            Ya descuenta {formatMoney(num(r.devuelto))} en devoluciones (notas de crédito).
+                        </p>
+                    )}
                     <Suspense fallback={<Cargando alto={240} />}>
                         {cargando && !datos ? <Cargando alto={240} /> : <GraficaVentasDiarias serie={datos?.serie} metrica={metrica} />}
                     </Suspense>

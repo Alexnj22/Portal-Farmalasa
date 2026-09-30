@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1106.1 — Torogoz: Inicio resta las devoluciones
+
+Las ventas de Inicio sumaban sólo Facturas y Créditos Fiscales, así que lo
+devuelto con Nota de Crédito quedaba inflando la cifra, mientras la utilidad
+ya lo restaba (borrador `0018_tablero_resta_devoluciones.sql`).
+
+- Las notas entran en **negativo** el día de la nota, con el cliente, la ruta y
+  el vendedor de la venta que corrigen: restan en ventas, serie diaria, rutas,
+  tipos de cliente, vendedores, clientes y productos.
+- **No** cuentan como documentos, ni en el ticket promedio, la hora del día o
+  las formas de pago: no son ventas, son su corrección.
+- «Ventas por día» dice cuánto se descontó.
+
 ## v2.1106.0 — Torogoz: devoluciones con nota de crédito y cuarentena
 
 Una devolución parcial ya no obliga a anular la venta entera (borrador

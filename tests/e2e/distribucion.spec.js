@@ -21,7 +21,7 @@ async function cobrar(page) {
 }
 
 
-const SECCIONES = { inicio: 'Inicio', pedidos: 'Pedidos', documentos: 'Facturación', clientes: 'Clientes', catalogo: 'Catálogo', compras: 'Compras', reportes: 'Reportes', liquidacion: 'Liquidación',
+const SECCIONES = { inicio: 'Inicio', pedidos: 'Pedidos', documentos: 'Facturación', clientes: 'Clientes', catalogo: 'Catálogo', compras: 'Compras', reportes: 'Reportes', liquidacion: 'Caja y liquidación',
     inventario: 'Inventario', solicitudes: 'Solicitudes', emisor: 'Empresa' };
 
 test('las secciones de Torogoz abren sin romper, y la dirección vieja lleva allá', async ({ page }) => {
@@ -910,5 +910,44 @@ test('compra a parte relacionada: bajo el costo de Farmalasa avisa sin bloquear,
     await page.locator('input[name="motivo-anular"]').fill('prueba automática');
     await page.getByRole('button', { name: 'Anular compra' }).click();
     await expect(page.getByText('Compra anulada').first()).toBeVisible({ timeout: 15_000 });
+    expect(errores).toEqual([]);
+});
+
+test('caja del vendedor: apertura con fondo, gasto de ruta, y el cierre del día no cierra con cajas sin liquidar', async ({ page }) => {
+    const errores = [];
+    page.on('pageerror', e => errores.push(e.message));
+    await entrar(page);
+    await page.goto('/torogoz/liquidacion');
+    const caja = page.locator('section[aria-label="Caja del día"]');
+    await expect(caja).toBeVisible({ timeout: 15_000 });
+    // Una corrida anterior del mismo día pudo dejarla abierta o liquidada.
+    if (await caja.getAttribute('data-caja') === 'sin-abrir') {
+        await caja.locator('input[name="fondo-caja"]').fill('20');
+        await caja.getByRole('button', { name: 'Abrir caja' }).click();
+        await expect(page.getByText('Caja abierta').first()).toBeVisible({ timeout: 15_000 });
+    }
+    await expect(caja).toHaveAttribute('data-caja', /abierta|cerrada/, { timeout: 15_000 });
+    if (await caja.getAttribute('data-caja') === 'abierta') {
+        await expect(caja.locator('[data-desglose]')).toContainText('Fondo de cambio');
+        await caja.locator('input[name="monto-mov"]').fill('1.50');
+        await caja.locator('input[name="concepto-mov"]').fill('combustible prueba');
+        await caja.getByRole('button', { name: 'Registrar' }).click();
+        await expect(page.getByText('Gasto registrado').first()).toBeVisible({ timeout: 15_000 });
+        const mov = caja.locator('[data-movimiento="gasto"]').filter({ hasText: 'combustible prueba' }).last();
+        await expect(mov).toBeVisible();
+        await page.screenshot({ path: `${SALIDA}/caja-vendedor.png`, fullPage: true });
+        // Se anula para no ensuciar la liquidación de las otras pruebas.
+        await mov.getByRole('button', { name: 'Anular' }).click();
+        await mov.locator('input[name^="motivo-mov-"]').fill('prueba automática');
+        await mov.getByRole('button', { name: 'Anular' }).last().click();
+        await expect(caja.locator('[data-movimiento="gasto"]').filter({ hasText: 'combustible prueba' })).toHaveCount(0, { timeout: 15_000 });
+    }
+
+    await page.goto('/torogoz/liquidacion?caja=dia');
+    await expect(page.getByText('Efectivo recibido')).toBeVisible({ timeout: 15_000 });
+    await page.screenshot({ path: `${SALIDA}/cierre-dia.png`, fullPage: true });
+    if (await page.getByTestId('cierre-pendientes').isVisible()) {
+        await expect(page.getByRole('button', { name: 'Cerrar el día' })).toBeDisabled();
+    }
     expect(errores).toEqual([]);
 });

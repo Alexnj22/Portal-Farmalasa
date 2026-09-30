@@ -771,10 +771,15 @@ export function ticketDeLiquidacion(liq, marca = null, emisor = {}) {
     const esperado = Number(liq.efectivo?.esperado ?? 0);
     const formas = {};
     for (const f of liq.por_forma ?? []) formas[f.forma] = (formas[f.forma] ?? 0) + Number(f.monto);
+    const ef = liq.efectivo ?? {};
     const totales = [
         ['Vendido', dinero(liq.ventas?.total)],
         ['Cobrado de cartera', dinero(liq.cobros?.total)],
         ...Object.entries(formas).filter(([k]) => k !== '01').map(([k, v]) => [FORMA_EN_PAPEL[k] ?? 'Otro', dinero(v)]),
+        // La caja del día (0024): el fondo vuelve; gastos y entregas ya salieron.
+        ...(Number(ef.fondo) > 0 ? [['Fondo de cambio', dinero(ef.fondo)]] : []),
+        ...(Number(ef.gastos) > 0 ? [['Gastos de ruta', `-${dinero(ef.gastos)}`]] : []),
+        ...(Number(ef.entregas) > 0 ? [['Entregas parciales', `-${dinero(ef.entregas)}`]] : []),
         ['EFECTIVO A ENTREGAR', dinero(esperado), true],
     ];
     if (c) {
@@ -801,6 +806,42 @@ export function ticketDeLiquidacion(liq, marca = null, emisor = {}) {
             c?.nota ? `Nota: ${c.nota}` : null,
             c?.cerrada_por ? `Recibio: ${String(c.cerrada_por).split(' ')[0]}` : null,
             'Firma del vendedor: ____________________',
+        ].filter(Boolean),
+    };
+}
+
+/** El CIERRE DEL DÍA de la distribuidora (borrador 0024): la empresa entera. */
+export function ticketDeCierreDia(d, marca = null, emisor = {}) {
+    const recibido = Number(d.efectivo_recibido ?? 0);
+    const depositado = Number(d.depositado ?? 0);
+    const formas = {};
+    for (const f of d.por_forma ?? []) formas[f.forma] = (formas[f.forma] ?? 0) + Number(f.monto);
+    return {
+        titulo: d.cierre ? 'CIERRE DEL DIA' : 'CIERRE DEL DIA (SIN CERRAR)',
+        tituloDeCola: `Cierre ${d.fecha}`,
+        encabezado: {
+            titulo: (marca?.nombre ?? emisor.nombre_comercial ?? emisor.nombre ?? '').toUpperCase(),
+            lineas: [emisor.nombre].filter(Boolean),
+        },
+        datos: [['Dia', fechaDdMm(d.fecha)], ['Documentos', String(d.ventas?.documentos ?? 0)]],
+        bloques: Object.keys(formas).length ? [{ titulo: 'Por forma de pago', filas: Object.entries(formas).map(([k, v]) => [FORMA_EN_PAPEL[k] ?? 'Otro', dinero(v)]) }] : [],
+        items: {
+            columnas: [{ label: 'VENDEDOR', ancho: '72%' }, { label: 'ENTREGO', ancho: '28%', alinear: 'der' }],
+            filas: (d.vendedores ?? []).map(v => [`${String(v.name ?? '').split(' ')[0]}${v.cierre_id ? (Number(v.diferencia) ? ` (${dinero(v.diferencia)})` : '') : ' POR LIQUIDAR'}`,
+                v.cierre_id ? dinero(v.contado) : dinero(v.esperado)]),
+        },
+        totales: [
+            ['Vendido', dinero(d.ventas?.total)],
+            ...(Number(d.devoluciones) > 0 ? [['Devoluciones', `-${dinero(d.devoluciones)}`]] : []),
+            ['Gastos de ruta', dinero(d.gastos)],
+            ['EFECTIVO RECIBIDO', dinero(recibido), true],
+            ['Depositado', dinero(depositado)],
+            ['QUEDA EN CAJA', dinero(recibido - depositado), true],
+        ],
+        pie: [
+            ...(d.depositos ?? []).map(x => `Deposito ${x.banco} ${x.referencia}: ${dinero(x.monto)}`),
+            d.cierre?.nota ? `Nota: ${d.cierre.nota}` : null,
+            d.cierre?.cerrado_por ? `Cerro: ${String(d.cierre.cerrado_por).split(' ')[0]}` : null,
         ].filter(Boolean),
     };
 }

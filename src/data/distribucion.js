@@ -443,6 +443,66 @@ export async function reabrirLiquidacion(id, motivo) {
     if (error) throw error;
 }
 
+// ── Caja del vendedor y cierre del día (borrador 0024) ─────────────────────
+
+/** Los empleados que pueden vender en la distribuidora (sólo quien administra). */
+export async function fetchVendedores() {
+    const { data, error } = await supabase.rpc('dist_vendedores');
+    if (error) throw error;
+    return data ?? [];
+}
+
+/** La caja de hoy de quien está vendiendo (el RLS sólo deja ver la propia). */
+export async function fetchMiCaja(vendedorId, fecha) {
+    if (!vendedorId) return null;
+    const { data, error } = await supabase.from('dist_cajas').select('id, estado, fondo').eq('vendedor_id', vendedorId).eq('fecha', fecha).maybeSingle();
+    if (error) throw error;
+    return data;
+}
+
+export async function abrirCaja(vendedorId, fecha, fondo, nota) {
+    const { data, error } = await supabase.rpc('dist_abrir_caja', { p_vendedor: vendedorId, p_fecha: fecha, p_fondo: fondo, p_nota: nota || null });
+    if (error) throw error;
+    return data;
+}
+
+/** `tipo`: 'gasto' | 'entrega' (corte parcial, con `contado`) | 'ingreso'. */
+export async function movimientoCaja(cajaId, tipo, monto, concepto, contado = null) {
+    const { data, error } = await supabase.rpc('dist_movimiento_caja', {
+        p_caja: cajaId, p_tipo: tipo, p_monto: monto, p_concepto: concepto, p_contado: contado,
+    });
+    if (error) throw error;
+    return data;
+}
+
+export async function anularMovimientoCaja(id, motivo) {
+    const { error } = await supabase.rpc('dist_anular_movimiento_caja', { p_id: id, p_motivo: motivo });
+    if (error) throw error;
+}
+
+export async function fetchCierreDia(fecha) {
+    const { data, error } = await supabase.rpc('dist_cierre_dia', { p_fecha: fecha });
+    if (error) throw error;
+    return data;
+}
+
+export async function registrarDeposito(fecha, monto, banco, referencia) {
+    const { data, error } = await supabase.rpc('dist_registrar_deposito', { p_fecha: fecha, p_monto: monto, p_banco: banco, p_referencia: referencia });
+    if (error) throw error;
+    return data;
+}
+
+export async function cerrarDia(fecha, nota) {
+    const { data, error } = await supabase.rpc('dist_cerrar_dia', { p_fecha: fecha, p_nota: nota || null });
+    if (error) throw error;
+    return data;
+}
+
+export async function reabrirDia(id, motivo) {
+    const { error } = await supabase.rpc('dist_reabrir_dia', { p_id: id, p_motivo: motivo });
+    if (error) throw error;
+}
+
 export async function fetchCuarentena() {
     const { data, error } = await supabase
         .from('dist_cuarentena')

@@ -34,7 +34,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import {
     fetchEmisor, fetchClientes, fetchCatalogo, fetchListasYPrecios, fetchPedidoParaCorregir, fetchPedidos,
     crearPedido, actualizarPedido, facturarPedido, mensajeDeDistribucion, guardarPagos, subirComprobante, adjuntarComprobante,
-    pedirDescuento, anularPedido, reservar, fetchReservasVigentes, fetchCreditoCliente, fetchDocumento,
+    pedirDescuento, anularPedido, reservar, fetchReservasVigentes, fetchCreditoCliente, fetchDocumento, fetchMiCaja,
 } from '@nucleo/data/distribucion';
 import { fetchLotes } from '@nucleo/data/distribucionInventario';
 import Interruptor from './distribucion/Interruptor';
@@ -140,7 +140,7 @@ export default function DistribucionVentaView() {
     // `?cliente=<id>`: una venta nueva con ese cliente ya elegido (el «Vender»
     // del tablero, sobre un cliente que dejó de comprar).
     const [clienteInicial] = useState(() => (!corrigiendo && !params.get('desde') ? params.get('cliente') : null));
-    const { hasPermission } = useAuth();
+    const { hasPermission, user } = useAuth();
     const puedeVender = hasPermission('distribucion', 'can_edit');
     const puedeConfigurar = hasPermission('distribucion_config', 'can_edit');
     const puedeDescontar = hasPermission('distribucion_descuentos', 'can_edit');
@@ -398,6 +398,15 @@ export default function DistribucionVentaView() {
         fetchCreditoCliente(clienteCreditoId).then(c => { if (vivo) setCredito(c); }).catch(e => console.error('venta: crédito', e));
         return () => { vivo = false; };
     }, [clienteCreditoId]);
+    // La caja del día (0024): cobrar en efectivo sin fondo abierto no se frena
+    // —el efectivo cuenta igual en la liquidación—, pero se dice, porque sin
+    // caja no hay fondo de cambio registrado ni cortes.
+    const [miCaja, setMiCaja] = useState(undefined);
+    useEffect(() => {
+        let vivo = true;
+        fetchMiCaja(user?.id, hoySV()).then(k => { if (vivo) setMiCaja(k); }).catch(e => { console.error('venta: caja', e); if (vivo) setMiCaja(undefined); });
+        return () => { vivo = false; };
+    }, [user?.id]);
     const conIva = tipoDoc === '01';
     // Precio de lista (con IVA) → el que se ve. Sólo para mostrar: las cuentas son del motor.
     const visto = (conIvaPrecio) => (conIva ? conIvaPrecio : conIvaPrecio / 1.13);
@@ -1110,6 +1119,11 @@ export default function DistribucionVentaView() {
                                         <Badge size="sm" icon={Timer} uppercase={false} data-testid="reserva"
                                             variant={minutosReserva <= 5 ? 'warning' : 'info'}>
                                             {minutosReserva > 0 ? `Reservado · ${minutosReserva} min` : 'Reserva vencida'}
+                                        </Badge>
+                                    )}
+                                    {miCaja === null && pagos.some(p => p.forma === '01') && (
+                                        <Badge size="sm" variant="warning" uppercase={false} data-testid="sin-caja" title="Pide a quien administra que te abra la caja con el fondo de cambio">
+                                            Sin caja abierta hoy
                                         </Badge>
                                     )}
                                     {cliente && !cliente.contribuyente && <Badge size="sm" variant="neutral" uppercase={false}>Sin NRC: sólo Factura</Badge>}

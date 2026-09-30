@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1112.0 — Torogoz: caja del vendedor y cierre del día
+
+La distribuidora como punto de venta completo (borrador
+`0024_caja_y_cierre_del_dia.sql`, sólo pruebas). Con factura electrónica no hay
+«corte Z» fiscal —Hacienda recibe cada documento en línea—: lo que queda es el
+control interno del efectivo.
+
+- **Apertura**: quien administra abre la caja del vendedor con su **fondo de
+  cambio** (una por vendedor y día, con quién la abrió). Se le puede abrir a un
+  vendedor que todavía no vendió.
+- **Durante el día**: **gastos de ruta** con concepto (los anota el vendedor),
+  **entregas parciales** —el corte a media jornada: se cuenta lo que tiene en
+  mano y se compara con lo que la base calcula— e ingresos. No deja entregar más
+  de lo que hay en mano. Anular un movimiento exige motivo.
+- **Liquidación**: el efectivo a entregar es fondo + ventas + cobros + ingresos
+  − gastos − entregas, con el desglose a la vista y en el ticket. Liquidar
+  cierra la caja; reabrir la liquidación la reabre.
+- **Cierre del día** (Caja y liquidación → Cierre del día): lo vendido por forma
+  de pago, cada vendedor con lo que entregó o lo que le falta, gastos, efectivo
+  recibido, **depósitos al banco** (banco y boleta) y la conciliación: recibido −
+  depositado = queda en caja fuerte. No cierra con vendedores sin liquidar; lo
+  no depositado exige decir dónde quedó; cerrado, sus liquidaciones no se
+  reabren sin reabrir el día. Ticket del cierre.
+- **En la venta**: cobrar en efectivo sin caja abierta no se frena, pero se
+  avisa.
+
 ## v2.1111.0 — Torogoz: aviso diario de cuentas atrasadas
 
 Cada mañana a las 7:00, antes de salir a la ruta (borrador

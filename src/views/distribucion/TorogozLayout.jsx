@@ -31,7 +31,7 @@ const MENU = [
     { seccion: 'pedidos',     label: 'Pedidos',     icon: ClipboardList },
     { seccion: 'documentos',  label: 'Facturación', icon: FileCheck2, contadorFacturacion: true },
     { seccion: 'cobros',      label: 'Cuentas por cobrar', icon: HandCoins },
-    { seccion: 'liquidacion', label: 'Liquidación', icon: Wallet },
+    { seccion: 'liquidacion', label: 'Caja y liquidación', icon: Wallet },
     { seccion: 'clientes',    label: 'Clientes',    icon: Store },
     { seccion: 'catalogo',    label: 'Catálogo',    icon: PackageSearch },
     { seccion: 'compras',     label: 'Compras',     icon: ShoppingCart, soloConfig: true },

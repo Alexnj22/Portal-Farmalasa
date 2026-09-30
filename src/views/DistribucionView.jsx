@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes, Tag, PackageX, LayoutDashboard, HandCoins, ShoppingCart, BarChart3, Wallet } from 'lucide-react';
+import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes, Tag, PackageX, LayoutDashboard, HandCoins, ShoppingCart, BarChart3, Wallet, Lock } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Notice from '../components/common/Notice';
@@ -20,6 +20,7 @@ import TabCompras from './distribucion/TabCompras';
 import { VISTAS_COMPRAS } from './distribucion/compras';
 import TabReportes from './distribucion/TabReportes';
 import TabLiquidacion from './distribucion/TabLiquidacion';
+import TabCierreDia from './distribucion/TabCierreDia';
 import { VISTAS_REPORTES } from './distribucion/reportes';
 import { VISTAS_CARTERA } from './distribucion/cartera';
 import { VISTAS_PEDIDOS, VISTAS_PERDIDAS, PERIODOS, CUBETAS_FACTURACION } from './distribucion/comun';
@@ -33,12 +34,18 @@ import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 // `distribucion/rutas.js`): cada sección es una dirección y el menú de la
 // distribuidora es la navegación, así que acá ya no hay pestañas. El orden
 // sigue siendo el del trabajo del día.
+// Caja y liquidación: por vendedor, y el cierre del día de la empresa (0024).
+const VISTAS_CAJA = [
+    { key: 'vendedor', label: 'Por vendedor', icon: Wallet },
+    { key: 'dia', label: 'Cierre del día', icon: Lock },
+];
+
 const TABS = [
     { key: 'inicio',     label: 'Inicio',     icon: LayoutDashboard },
     { key: 'pedidos',    label: 'Pedidos',    icon: ClipboardList },
     { key: 'documentos', label: 'Facturación', icon: FileCheck2 },
     { key: 'cobros',     label: 'Cuentas por cobrar', icon: HandCoins },
-    { key: 'liquidacion', label: 'Liquidación', icon: Wallet },
+    { key: 'liquidacion', label: 'Caja y liquidación', icon: Wallet },
     { key: 'clientes',   label: 'Clientes',   icon: Store },
     { key: 'catalogo',   label: 'Catálogo',   icon: PackageSearch },
     { key: 'compras',    label: 'Compras',    icon: ShoppingCart },
@@ -68,11 +75,14 @@ export default function DistribucionView({ seccion = 'inicio' }) {
     const [vistaCartera, setVistaCartera] = usePestanaEnUrl(VISTAS_CARTERA, 'saldo', 'cartera');
     // Compras: recibidas / borradores / anuladas, en `?compras=`.
     const [vistaCompras, setVistaCompras] = usePestanaEnUrl(VISTAS_COMPRAS, 'recibida', 'compras');
+    // Caja: por vendedor / cierre del día (éste, sólo quien administra), en `?caja=`.
     // Reportes: utilidad / libro de compras, en `?reporte=`.
     const [vistaReporte, setVistaReporte] = usePestanaEnUrl(VISTAS_REPORTES, 'utilidad', 'reporte');
     const { hasPermission } = useAuth();
     const puedeVender = hasPermission('distribucion', 'can_edit');
     const puedeConfigurar = hasPermission('distribucion_config', 'can_edit');
+    const vistasCaja = useMemo(() => VISTAS_CAJA.filter(v => puedeConfigurar || v.key !== 'dia'), [puedeConfigurar]);
+    const [vistaCaja, setVistaCaja] = usePestanaEnUrl(vistasCaja, 'vendedor', 'caja');
 
     const [emisor, setEmisor] = useState(null);
     const [cargando, setCargando] = useState(true);
@@ -100,6 +110,7 @@ export default function DistribucionView({ seccion = 'inicio' }) {
     useEffect(() => { setBuscar(''); }, [tab]);
 
     const conBuscador = tab !== 'emisor' && tab !== 'solicitudes' && tab !== 'inicio' && tab !== 'liquidacion';
+    const conPestanasSinBuscador = tab === 'liquidacion' && vistasCaja.length > 1;
     const placeholder = useMemo(() => ({
         pedidos: 'Buscar por cliente o número…',
         documentos: 'Cliente, número de control o código de generación…',
@@ -120,6 +131,8 @@ export default function DistribucionView({ seccion = 'inicio' }) {
             title={actual.label}
             filtersContent={tab === 'inicio' ? (
                 <ViewTabBar tabs={PERIODOS} activeTab={periodo} onTabChange={setPeriodo} showSearch={false} />
+            ) : conPestanasSinBuscador ? (
+                <ViewTabBar tabs={vistasCaja} activeTab={vistaCaja} onTabChange={setVistaCaja} showSearch={false} />
             ) : conBuscador ? (
                 <ViewTabBar tabs={tab === 'pedidos' ? VISTAS_PEDIDOS : tab === 'perdidas' ? VISTAS_PERDIDAS : tab === 'documentos' ? CUBETAS_FACTURACION : tab === 'cobros' ? VISTAS_CARTERA : tab === 'compras' ? VISTAS_COMPRAS : tab === 'reportes' ? VISTAS_REPORTES : [actual]}
                     activeTab={tab === 'pedidos' ? vista : tab === 'perdidas' ? estadoPerdida : tab === 'documentos' ? cubeta : tab === 'cobros' ? vistaCartera : tab === 'compras' ? vistaCompras : tab === 'reportes' ? vistaReporte : tab}
@@ -166,7 +179,9 @@ export default function DistribucionView({ seccion = 'inicio' }) {
                 <div className={tab === 'compras' ? '' : 'hidden'}><TabCompras {...comunes} vista={vistaCompras} /></div>
             )}
             {visitadas.has('liquidacion') && (
-                <div className={tab === 'liquidacion' ? '' : 'hidden'}><TabLiquidacion {...comunes} /></div>
+                <div className={tab === 'liquidacion' ? '' : 'hidden'}>
+                    {vistaCaja === 'dia' && puedeConfigurar ? <TabCierreDia {...comunes} /> : <TabLiquidacion {...comunes} />}
+                </div>
             )}
             {visitadas.has('reportes') && (
                 <div className={tab === 'reportes' ? '' : 'hidden'}><TabReportes {...comunes} vista={vistaReporte} /></div>

@@ -23,8 +23,10 @@ import { imprimirDocumento } from '@nucleo/utils/ticketPrint';
 import { ticketDeLiquidacion } from '@nucleo/utils/distribucionDocumento';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import {
-    fetchLiquidacion, fetchLiquidacionesDelDia, cerrarLiquidacion, reabrirLiquidacion, mensajeDeDistribucion,
+    fetchLiquidacion, fetchLiquidacionesDelDia, cerrarLiquidacion, reabrirLiquidacion, mensajeDeDistribucion, fetchVendedores,
 } from '@nucleo/data/distribucion';
+import LiquidSelect from '../../components/common/LiquidSelect';
+import CajaDelVendedor from './CajaDelVendedor';
 import { FORMA_PAGO, leerMonto, TIPO_DOCUMENTO } from './comun';
 import { MARCA_PAPEL } from './marca';
 
@@ -53,6 +55,7 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
     const cambiar = (k, v) => setParams(p => { const n = new URLSearchParams(p); if (v) n.set(k, v); else n.delete(k); return n; }, { replace: true });
 
     const [delDia, setDelDia] = useState([]);
+    const [vendedores, setVendedores] = useState([]);
     const [liq, setLiq] = useState(null);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState('');
@@ -66,8 +69,9 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
         setCargando(true);
         setError('');
         try {
-            const lista = puedeConfigurar ? await fetchLiquidacionesDelDia(fecha) : [];
+            const [lista, todos] = puedeConfigurar ? await Promise.all([fetchLiquidacionesDelDia(fecha), fetchVendedores()]) : [[], []];
             setDelDia(lista);
+            setVendedores(todos);
             const quien = vendedorId ?? lista[0]?.id ?? null;
             setLiq(quien ? await fetchLiquidacion(quien, fecha) : null);
         } catch (e) {
@@ -144,6 +148,14 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
             {puedeConfigurar && (
                 <div className="flex flex-wrap gap-2" aria-label="Vendedores del día">
                     {delDia.length === 0 && !cargando && <p className="text-caption text-content-3">Nadie vendió ni cobró este día.</p>}
+                    {/* En la mañana todavía nadie vendió: para abrirle la caja a alguien. */}
+                    {vendedores.some(v => !delDia.some(d => d.id === v.id)) && (
+                        <div className="w-60">
+                            <LiquidSelect value={delDia.some(d => d.id === vendedorId) ? '' : (vendedorId ?? '')} onChange={(v) => cambiar('vendedor', v || '')}
+                                placeholder="Otro vendedor…" icon={Wallet} ariaLabel="Otro vendedor"
+                                options={vendedores.filter(v => !delDia.some(d => d.id === v.id)).map(v => ({ value: v.id, label: shortEmployeeName(v.name) }))} />
+                        </div>
+                    )}
                     {delDia.map(v => {
                         const activo = (vendedorId ?? delDia[0]?.id) === v.id;
                         return (
@@ -173,8 +185,11 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
                     <StatCard icon={Undo2} label="Devuelto" value={formatMoney(Number(liq.devoluciones.total))} loading={cargando}
                         iconBg="bg-warning/10" iconCls="text-warning" sub={Number(liq.devoluciones.a_favor) > 0 ? `${formatMoney(Number(liq.devoluciones.a_favor))} a favor de clientes` : 'Notas de crédito'} />
                     <StatCard icon={Wallet} label="Efectivo a entregar" value={formatMoney(esperado)} loading={cargando}
-                        iconBg="bg-chart-3/10" iconCls="text-chart-3" sub={`${formatMoney(Number(liq.efectivo.ventas))} ventas + ${formatMoney(Number(liq.efectivo.cobros))} cobros`} />
+                        iconBg="bg-chart-3/10" iconCls="text-chart-3"
+                        sub={Number(liq.efectivo.fondo) > 0 ? `Incluye ${formatMoney(Number(liq.efectivo.fondo))} de fondo de cambio` : `${formatMoney(Number(liq.efectivo.ventas))} ventas + ${formatMoney(Number(liq.efectivo.cobros))} cobros`} />
                 </CarrilCards>
+
+                <CajaDelVendedor liq={liq} fecha={fecha} esHoy={fecha === hoySV()} puedeAdministrar={!!liq.puede_cerrar} onCambio={cargar} />
 
                 {Number(liq.devoluciones.a_favor) > 0 && (
                     <Notice variant="info" icon={Undo2}>

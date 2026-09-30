@@ -9,6 +9,7 @@ import { router } from 'expo-router';
 export const PANTALLAS_DE_LA_APP = {
   '/bitacoras': true,
   '/traslados': true,
+  '/ventas-hoy': true,   // no existe en el portal: es la pantalla nativa de «Ventas de hoy»
 };
 
 // Abrir un módulo del menú: su pantalla nativa si ya la tiene, o el portal

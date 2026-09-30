@@ -31,7 +31,7 @@ export function Hoy({ pestana, datos, ctx }) {
   const solicitudes = datos.solicitudes ?? 0;
 
   const K = {
-    ventas: <Kpi key="v" icono="TrendingUp" rotulo="Ventas hoy" valor={dinero(ventasTotal)} color={MARCA.verde} onPress={puede('ventas') ? () => abrir('/ventas') : null} />,
+    ventas: <Kpi key="v" icono="TrendingUp" rotulo="Ventas hoy" valor={dinero(ventasTotal)} color={MARCA.verde} onPress={() => abrir('/ventas-hoy')} />,
     presentes: <Kpi key="p" icono="UserCheck" rotulo="Presentes" valor={`${presentes}`} apoyo={emps.length ? `de ${emps.length}` : null} color={MARCA.azul} onPress={puede('monitor') ? () => abrir('/monitor') : null} />,
     solicitudes: <Kpi key="s" icono="ClipboardList" rotulo="Solicitudes" valor={`${solicitudes}`} apoyo={solicitudes ? 'por decidir' : 'Al día'} color={MARCA.ambar} pide={solicitudes > 0} onPress={() => abrir('/solicitudes')} />,
     alertas: <Kpi key="a" icono="Building2" rotulo="Sucursales" valor={alertas ? `${alertas}` : '✓'} apoyo={alertas ? `alerta${alertas > 1 ? 's' : ''}` : 'Sin alertas'} color={alertas ? MARCA.rojo : MARCA.verde} pide={alertas > 0} onPress={puede('branches') ? () => abrir('/sucursales') : null} />,
@@ -99,7 +99,7 @@ export function Ventas({ datos, ctx }) {
   const salas = (datos.ventas || []).filter((v) => !ctx.alcanceSalaVentas || v.branchId === String(ctx.sala));
   const nombre = (id) => (ctx.sucursales || []).find((b) => String(b.id) === id)?.name ?? `Sala ${id}`;
   return (
-    <Tarjeta titulo="Ventas de hoy" icono="TrendingUp" color={MARCA.verde} onPress={ctx.puede('ventas') ? () => ctx.abrir('/ventas') : null}>
+    <Tarjeta titulo="Ventas de hoy" icono="TrendingUp" color={MARCA.verde} onPress={() => ctx.abrir('/ventas-hoy')}>
       {salas.length ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
           {salas.map((s) => (

@@ -69,6 +69,9 @@ export default function Raiz() {
           <Stack
             screenOptions={{
               headerTintColor: tema.color.marca,
+              // El título en el color del sistema (la flecha y los botones sí,
+              // en el de la marca).
+              headerTitleStyle: { color: oscuro ? '#FFFFFF' : '#000000' },
               // Sólo la flecha: el nombre de la pantalla anterior es el de la
               // barra de pestañas, que no significa nada para quien la usa.
               headerBackButtonDisplayMode: 'minimal',

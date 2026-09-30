@@ -35,19 +35,22 @@ export function problemaDeSucursal(b) {
 /**
  * Las ventas de un día por sala: total, transacciones y la curva por hora
  * (7 a. m. a 9 p. m.), a partir de las filas de `branch_hourly_sales`.
- * @returns {Array<{ branchId: string, total: number, tickets: number, porHora: number[] }>}
+ * @returns {Array<{ branchId: string, total: number, tickets: number, porHora: number[], ticketsPorHora: number[] }>}
  */
 export function ventasPorSala(filas = [], { desde = 7, hasta = 21 } = {}) {
     const por = new Map();
     for (const f of filas) {
         const k = String(f.branch_id);
-        if (!por.has(k)) por.set(k, { branchId: k, total: 0, tickets: 0, porHora: Array(hasta - desde + 1).fill(0) });
+        if (!por.has(k)) por.set(k, { branchId: k, total: 0, tickets: 0, porHora: Array(hasta - desde + 1).fill(0), ticketsPorHora: Array(hasta - desde + 1).fill(0) });
         const s = por.get(k);
         const monto = Number(f.total_sales) || 0;
         s.total += monto;
         s.tickets += Number(f.transaction_count) || 0;
         const h = Number(f.sale_hour);
-        if (h >= desde && h <= hasta) s.porHora[h - desde] += monto;
+        if (h >= desde && h <= hasta) {
+            s.porHora[h - desde] += monto;
+            s.ticketsPorHora[h - desde] += Number(f.transaction_count) || 0;
+        }
     }
     return [...por.values()].sort((a, b) => b.total - a.total);
 }
@@ -79,3 +82,17 @@ export function cumplenEl(empleados = [], fecha) {
     const md = fecha.slice(5);
     return empleadosActivos(empleados).filter((e) => e.birthDate && String(e.birthDate).slice(5, 10) === md);
 }
+
+/** La suma de varias salas (para «Todas»), con la misma forma que una. */
+export function sumarSalas(salas = []) {
+    const base = { branchId: 'todas', total: 0, tickets: 0, porHora: [], ticketsPorHora: [] };
+    for (const s of salas) {
+        base.total += s.total; base.tickets += s.tickets;
+        s.porHora.forEach((v, i) => { base.porHora[i] = (base.porHora[i] || 0) + v; });
+        s.ticketsPorHora.forEach((v, i) => { base.ticketsPorHora[i] = (base.ticketsPorHora[i] || 0) + v; });
+    }
+    return base;
+}
+
+/** Lo vendido hasta la hora `h` (incluida), para comparar «a esta hora». */
+export const hastaLaHora = (s, h, desde = 7) => (s?.porHora || []).slice(0, Math.max(0, h - desde + 1)).reduce((a, b) => a + b, 0);

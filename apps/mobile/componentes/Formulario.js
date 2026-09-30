@@ -22,6 +22,7 @@ export const colorSistema = {
   texto2: ios ? PlatformColor('secondaryLabel') : '#49454F',
   placeholder: ios ? PlatformColor('placeholderText') : '#79747E',
   separador: ios ? PlatformColor('separator') : '#CAC4D0',
+  separadorClaro: 'rgba(127,127,127,0.25)',   // para SVG, que no lee colores del sistema
   rojo: ios ? PlatformColor('systemRed') : '#B3261E',
   verde: ios ? PlatformColor('systemGreen') : '#1B873F',
   naranja: ios ? PlatformColor('systemOrange') : '#B26A00',

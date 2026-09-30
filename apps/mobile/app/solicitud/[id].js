@@ -21,6 +21,7 @@ import { puedeDecidirAviso, trasladoPorResolver } from '@nucleo/utils/accionesDe
 import { REQUEST_STATUS, REQUEST_TYPES } from '@nucleo/store/slices/requestsSlice';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { cuandoLlego } from '@nucleo/utils/notificacionTexto';
+import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { decidirDesdeAviso, enviarTraslado, rechazarTrasladoDesdeAviso } from '../../componentes/avisos';
 import { abrirRuta } from '../../pantallas';
@@ -92,7 +93,7 @@ export default function Solicitud() {
 
   return (
     <>
-      <Stack.Screen options={{ title: titulo }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: titulo }} />
       <ScrollView style={{ flex: 1 }}
         contentContainerStyle={{ padding: 16, gap: 16 }}
         contentInsetAdjustmentBehavior="automatic"

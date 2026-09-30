@@ -9,7 +9,7 @@ import { Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import ConAurora from './ConAurora';
 
-const BARRA_NATIVA = Platform.OS === 'ios'
+export const BARRA_NATIVA = Platform.OS === 'ios'
   ? { headerTransparent: true, headerBlurEffect: 'systemChromeMaterial', headerShadowVisible: false, headerLargeTitleShadowVisible: false, headerLargeStyle: { backgroundColor: 'transparent' } }
   : {};
 

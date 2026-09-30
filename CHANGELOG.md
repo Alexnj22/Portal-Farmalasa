@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1099.0 — App: Ventas de hoy nativa con gráfica que se recorre con el dedo
+
+Tocar «Ventas» en el Inicio de la app abre una pantalla nativa: sala por sala
+(o todas, según el alcance de `dash_sales`), la gráfica por hora y cuatro
+números — tickets, ticket promedio, hora pico y cómo va contra ayer **a esta
+misma hora** (comparar contra el día entero de ayer siempre daría «abajo»).
+
+- La gráfica se recorre con el dedo, como la app Bolsa: la barra bajo el dedo
+  se resalta, su valor sale en una etiqueta de vidrio y cada hora vibra leve.
+  La del sistema de Apple no deja tocar una barra, así que se dibuja con SVG
+  (decisión del usuario: «si con el nativo no se puede, hagamos el B»).
+- En iOS 26 se regresa deslizando desde cualquier parte y eso le ganaba al
+  dedo en la gráfica: en esta pantalla se regresa sólo desde el borde.
+- El título de las pantallas va en el color del sistema; la flecha y los
+  botones, en el de la marca.
+- Núcleo: `sumarSalas` y `hastaLaHora` en `utils/inicio.js`.
+
 ## v2.1098.0 — App: Inicio nativo con pestañas, números del día y secciones que aprenden del uso
 
 El Inicio de la app deja de ser el tablero del portal incrustado. Decisiones

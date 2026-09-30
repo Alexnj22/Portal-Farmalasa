@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1111.0 — Torogoz: aviso diario de cuentas atrasadas
+
+Cada mañana a las 7:00, antes de salir a la ruta (borrador
+`0023_aviso_de_cartera_atrasada.sql`, cron `dist-aviso-cartera-atrasada`, sólo
+pruebas):
+
+- **Cada vendedor** recibe cuántos clientes suyos tienen cuentas pasadas del
+  plazo, cuánto deben y quiénes, con los que vencieron ayer aparte (los que
+  todavía se cobran fácil). El vendedor es el de la venta.
+- **Quien administra** recibe el resumen de todos, con lo que ya pasó de 60
+  días.
+- Campana y push; el aviso lleva a Cuentas por cobrar → Atrasados.
+- Una vez por persona y día (si el cron corre dos veces, no duplica), y nadie
+  recibe «cero atrasados».
+
+Al migrar a producción, declarar el cron en `scripts/eficiencia-gate.mjs`.
+
 ## v2.1110.0 — Torogoz: compras a partes relacionadas con precio de mercado
 
 Entre dos empresas con NIT distinto no existe «pasar» mercadería: Farmalasa le

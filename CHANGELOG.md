@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1107.0 — App: Nueva solicitud — facturación nativa (anular, pago, vendedor, cliente)
+
+La app ya CREA solicitudes. El «+» de Solicitudes abre **Nueva solicitud**
+con las familias que el cargo puede usar (con el permiso de su widget, igual
+que los lanzadores del tablero del portal); las que todavía no son nativas
+abren el formulario del portal dentro de la app y lo dicen.
+
+**Facturación, nativa y en tres pasos**: elegir la factura (las del mes de la
+sala, con el buscador del sistema; también por el nombre del vendedor), ver
+su detalle y productos, y pedir:
+- **Anular**: sólo con la caja de la sala ABIERTA (se vuelve a preguntar al
+  enviar); motivo de la lista cerrada; un CCF de otro día exige comentario y
+  confirmar la autorización; aviso de venta a crédito.
+- **Forma de pago** (nunca la misma ni crédito), **vendedor** (alguien activo
+  de la sala) y **cliente** (búsqueda; sin el id del sistema de origen no se
+  puede aplicar y la app no deja enviarlo).
+Una factura anulada no se toca. A Supervisión le avisa la base.
+
+**Núcleo**: las reglas vivían privadas en `WidgetAnnulmentRequest.jsx` y el
+aprobador escrito dos veces; se mudaron a `utils/solicitudFacturacion.js`
+(motivos, formas de pago, `esAnulada`, `estadoDeLaCaja`, `ambitoDeFacturas`,
+`solicitudDeFacturacion`: el sobre común de las cuatro) y
+`utils/aprobadorOperativo.js` (`supervisorQueResuelve`), con 6 pruebas. El
+portal las usa desde ahí y no cambia de comportamiento.
+
+Probado en el entorno de pruebas: un cambio de forma de pago creado desde la
+app quedó en la base con todos sus datos (luego se borró).
+
 ## v2.1106.0 — App: Facturas de mi sala y Datos que faltan, nativos; abrir documentos
 
 Parte de «que todos los widgets del Inicio funcionen»:

@@ -12,13 +12,14 @@
 // bandeja es una cola, no un archivo (el portal recorta por semana).
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { Stack, useFocusEffect } from 'expo-router';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { REQUEST_TYPES, esOperativa, adaptarMinMax } from '@nucleo/store/slices/requestsSlice';
 import { fetchAllMinMaxChangeRequests } from '@nucleo/data/minmaxRequests';
 import { ERP_NAMES, ERP_ORDEN, BRANCH_A_ERP } from '@nucleo/constants/erp';
+import { familiasDisponibles } from '@nucleo/constants/familiasOperativas';
 import { buscadorDePersonas, lineasDe } from '@nucleo/utils/movimientoTexto';
 import { detalleDeMinMax, detalleDeSolicitud } from '@nucleo/utils/tarjetaDeSolicitud';
 import { reglasDeBandeja, ordenarCola, salaDeSolicitud } from '@nucleo/utils/bandejaDeSolicitudes';
@@ -207,6 +208,7 @@ export default function Solicitudes() {
     && (esOperativa(r.type) || r.type === 'MINMAX_CHANGE_REQUEST' ? reglas.sala : reglas.personal).puedeDecidir(r);
 
   const pendientes = cuenta('PENDING');
+  const puedeCrear = familiasDisponibles(hasPermission).length > 0 || hasPermission('requests_personales', 'can_edit');
 
   return (
     <>
@@ -221,7 +223,7 @@ export default function Solicitudes() {
           onCancelButtonPress: () => setBusqueda(''),
         },
       }} />
-      <MenuDeFiltros grupos={grupos} />
+      <MenuDeFiltros grupos={grupos} extra={puedeCrear ? { icono: 'plus', etiqueta: 'Nueva solicitud', onPress: () => router.push('/nueva-solicitud') } : null} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>

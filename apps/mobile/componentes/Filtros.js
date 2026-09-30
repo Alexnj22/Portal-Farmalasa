@@ -25,7 +25,7 @@ import { colorSistema } from './Formulario';
 const esIOS = Platform.OS === 'ios';
 const activo = (g) => g.activa !== g.porDefecto;
 
-export function MenuDeFiltros({ grupos }) {
+export function MenuDeFiltros({ grupos, extra = null }) {
   const sinLeer = useStaffStore((s) => s.notifications.length);
   const visibles = grupos.filter((g) => g.opciones.length > 1);
   const hayActivo = visibles.some(activo);
@@ -46,6 +46,11 @@ export function MenuDeFiltros({ grupos }) {
             </Stack.Toolbar.Menu>
           ))}
         </Stack.Toolbar.Menu>
+      ) : null}
+      {extra ? (
+        <Stack.Toolbar.Button icon={esIOS ? extra.icono : undefined} accessibilityLabel={extra.etiqueta} onPress={extra.onPress}>
+          {esIOS ? null : <Stack.Toolbar.Label>{extra.etiqueta}</Stack.Toolbar.Label>}
+        </Stack.Toolbar.Button>
       ) : null}
       <Stack.Toolbar.Button icon={esIOS ? 'bell' : undefined} accessibilityLabel="Notificaciones"
         onPress={() => router.navigate('/avisos')}>

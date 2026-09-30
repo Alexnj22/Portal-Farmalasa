@@ -32,22 +32,14 @@ import ListRow from '../../components/common/ListRow';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName, employeeInitials } from '@nucleo/utils/nameUtils';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
-import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { fechaTexto } from '@nucleo/utils/fecha';
+import { MOTIVOS_ANULACION, FORMAS_DE_PAGO, ROTULO_PAGO, esDeHoy, estadoDeLaCaja, MOTIVO_SIN_ANULAR, ventanaDelFiltro, esAnulada, ambitoDeFacturas, solicitudDeFacturacion } from '@nucleo/utils/solicitudFacturacion';
+import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
+const findTargetEmployee = supervisorQueResuelve;
 
-const REASONS = [
-  'Devolución del cliente',
-  'Error en venta',
-  'Duplicado / venta repetida',
-  'Cobro incorrecto',
-  'Producto no entregado',
-  'Otro',
-];
-
-const PAYMENT_METHODS = ['efectivo', 'tarjeta', 'credito', 'transferencia', 'cheque', 'bitcoin'];
-const PAYMENT_LABELS  = {
-  efectivo: 'Efectivo', tarjeta: 'Tarjeta', credito: 'Crédito',
-  transferencia: 'Transferencia', cheque: 'Cheque', bitcoin: 'Bitcoin',
-};
+const REASONS = MOTIVOS_ANULACION;
+const PAYMENT_METHODS = FORMAS_DE_PAGO;
+const PAYMENT_LABELS  = ROTULO_PAGO;
 
 /* Avatar sizes — explicit classes so JIT doesn't purge */
 const AV = {
@@ -58,96 +50,10 @@ const AV = {
   10: 'w-10 h-10',
 };
 
-function hoyComoFechaLocal() {
-  // El día de la sala como fecha local a medianoche: `isSameDay` la compara
-  // contra fechas locales. Sólo se usan sus partes de fecha, nunca la hora.
-  const [a, m, d] = hoySV().split('-').map(Number);
-  return new Date(a, m - 1, d);
-}
-function isSameDay(dateStr) {
-  const today = hoyComoFechaLocal();
-  const d = new Date(dateStr + 'T00:00:00');
-  return today.getFullYear() === d.getFullYear() &&
-    today.getMonth() === d.getMonth() &&
-    today.getDate() === d.getDate();
-}
-
-/* ── Anular pide una CAJA abierta, no un día abierto ────────────────────────
-   Pedido del usuario el 2026-08-24, y corregido por él mismo esa misma noche.
-
-   Anular devuelve efectivo, y ese efectivo sale de la caja que esté abierta en
-   ese momento. Si la sala ya sacó su cierre del día, no hay ninguna: no hay de
-   dónde descontar, y la venta quedaría moviendo un número ya declarado.
-
-   El freno es del MOMENTO, no de la venta. La fecha de la factura no
-   interviene: una venta de hace tres días se anula sin problema mientras la
-   sala tenga caja abierta. La primera versión de esta regla lo leía al revés
-   —bloqueaba para siempre lo que ya tenía su cierre— y eso convertía «esperá a
-   mañana» en una promesa falsa.
-
-   Acá vivía además un «período de gracia de 3 días» que no frenaba nada: sólo
-   pedía un comentario. Se fue entero.
-
-   Lo decide la base con `sala_con_caja_abierta`, la MISMA función que aplican
-   el trigger de la solicitud y la Edge Function que la ejecuta: una sola regla,
-   escrita una sola vez. Es una pregunta por SALA y por momento, no por factura.
-
-   `cajaAbierta` tiene cuatro valores a propósito. 'cargando' y `null` (no se
-   pudo averiguar) NO son «hay caja»: ofrecer anular con esa duda es prometer
-   algo que el servidor va a rechazar, y decir que ya cerró sería inventarlo.
-   Los dos bloquean, y cada uno dice lo suyo. */
-function estadoDeLaCaja(cajaAbierta) {
-  if (cajaAbierta === true)  return 'abierta';
-  if (cajaAbierta === false) return 'cerrada';
-  return cajaAbierta === 'cargando' ? 'cargando' : 'desconocido';
-}
-const MOTIVO_SIN_ANULAR = {
-  cerrada:     'La sala ya sacó su cierre del día — espera a mañana, o a que abra caja',
-  cargando:    'Verificando si la sala tiene caja abierta…',
-  desconocido: 'No se pudo verificar si la sala tiene caja abierta',
-};
-
-/* ── La ventana que el filtro de fecha admite ───────────────────────────────
-   La lista trae las ventas del MES CORRIENTE, así que dejar elegir cualquier
-   día de cualquier año ofrecía un resultado que no puede existir: el filtro
-   devolvía vacío y parecía roto.
-
-   Del 1 al 7 el mes recién arranca, y "no encuentro la factura de anteayer"
-   es exactamente cuando se usa esto. Por eso el piso es el MENOR entre el
-   primero del mes y hace 7 días: la ventana nunca baja de una semana.
-
-   **Enero.** El 3 de enero el piso cae en el 27 de diciembre — la ventana
-   cruza de año, y ahí `LiquidDatePicker` vuelve a mostrar el campo del año
-   solo (`hideYear` se anula cuando `min` y `max` no comparten año). Es la
-   única semana del año en que aparece, y aparece porque en esa semana el año
-   sí distingue: "01/03" podría ser de dos años distintos. El resto del tiempo
-   sobra, que es justamente lo que se pidió sacar.
-
-   OJO: la ventana es del CONTROL, no de la consulta. La lista sigue siendo la
-   del mes; elegir el 27 de diciembre desde acá no la va a traer. Se admite
-   porque el mismo día 3 el usuario está mirando cierres del mes anterior y un
-   calendario que apaga esos días se lee como que el portal los perdió. */
-function ventanaDelFiltro() {
-  const hoy = hoyComoFechaLocal();
-  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  const primeroDelMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-  const haceSiete = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - 7);
-  return { min: iso(primeroDelMes <= haceSiete ? primeroDelMes : haceSiete), max: iso(hoy) };
-}
-/* Una factura anulada ya no es un documento vivo: no se vuelve a anular, y
-   tampoco se le cambia el cliente, el pago ni el vendedor. La regla la impone
-   la BD (`factura_esta_anulada` + trigger `validar_solicitud_facturacion`); acá
-   se muestra antes de que alguien llene un formulario que el servidor va a
-   rechazar.
-
-   Son DOS estados, no uno. Medido el 2026-08-06: 975 facturas en
-   'DTE INVALIDADO EN MH' contra 14 en 'NULA'. 'NULA' es el paso intermedio
-   —anulada en el ERP, todavía sin invalidar ante Hacienda—; el estado final es
-   el otro. Mirar solo 'NULA' cubría el 1.4% de los casos. */
-const ESTADOS_ANULADA = ['NULA', 'DTE INVALIDADO EN MH'];
-function esAnulada(inv) {
-  return ESTADOS_ANULADA.includes(String(inv?.estado ?? '').toUpperCase());
-}
+// `esDeHoy`, `estadoDeLaCaja`, `MOTIVO_SIN_ANULAR` y `ventanaDelFiltro` viven
+// en `utils/solicitudFacturacion.js` desde que la app pide cambios de facturas.
+const isSameDay = esDeHoy;
+// `esAnulada` y `ESTADOS_ANULADA` viven en utils/solicitudFacturacion.
 
 function fmtCurrency(n) { return formatMoney(n ?? 0); }
 function fmtDate(d) {
@@ -239,23 +145,7 @@ function StickySubmit({ label, onClick, disabled, loading: isLoading }) {
   );
 }
 
-const SALES_SUPERVISOR_ROLE_ID = 13; // Supervisor/a de Ventas
-
-function findTargetEmployee(employees) {
-  const candidates = employees.filter(e =>
-    e.status === 'ACTIVO' &&
-    (e.role_id === SALES_SUPERVISOR_ROLE_ID || e.roleId === SALES_SUPERVISOR_ROLE_ID)
-  );
-  const avail = candidates.find(e => {
-    const ev = e.activeEventType ?? e.active_event_type;
-    return !ev || !['VACATION', 'DISABILITY'].includes(ev);
-  });
-  if (avail) return avail;
-  // El último recurso: alguien de dirección. Antes era `system_role IN
-  // ('ADMIN','SUPERADMIN')`, que resolvía a UNA sola persona; el rango del cargo
-  // da las tres, así que el aviso deja de depender de que esa una esté.
-  return employees.find(e => Number(e.rango ?? 0) >= 4);
-}
+// Quién resuelve: `supervisorQueResuelve` (utils/aprobadorOperativo).
 
 /* ─── Invoice detail ─────────────────────────────────────────────────────────── */
 function InvoiceDetail({ inv, onBack, onModify, employees, cajaAbierta }) {
@@ -451,24 +341,14 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
     setSubmitting(true); setSubmitError('');
     try {
       const target = findTargetEmployee(employees);
-      const { error } = await insertApprovalRequestSilent({
-        employee_id: user?.id, approver_id: target?.id ?? null,
-        type: 'ANNULMENT_REQUEST', status: 'PENDING',
-        note: comment.trim() || null,
-        metadata: {
-          invoice_id: inv.id,
-          // El id con el que se ubica la venta fuera del portal. El de arriba
-          // es el interno y no sirve para buscarla: son dos numeraciones.
-          erp_invoice_id: inv.erp_invoice_id ?? null,
-          correlativo: inv.correlativo, fecha: inv.fecha,
-          total: inv.total, tipo_documento: inv.tipo_documento, tipo_pago: inv.tipo_pago,
-          branch_id: activeBranchId, branch_name: activeBranch?.name,
-          reason, comment: comment.trim() || null,
+      const { error } = await insertApprovalRequestSilent(solicitudDeFacturacion('ANNULMENT_REQUEST', {
+        inv, usuarioId: user?.id, sala: { id: activeBranchId, name: activeBranch?.name },
+        aprobador: target, nota: comment,
+        extra: {
+          tipo_pago: inv.tipo_pago, reason, comment: comment.trim() || null,
           is_ccf: isCCF, is_credit_payment: isCreditPay,
-          notified_employee_id: target?.id ?? null,
-          notified_employee: target?.name ?? 'Sin supervisor asignado',
         },
-      });
+      }));
       if (error) throw error;
       // La entrada de la bitácora la anota `insertApprovalRequestSilent` con la
       // metadata de la solicitud (D3, 2026-09-28).
@@ -592,23 +472,13 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
     setSubmitting(true); setSubmitError('');
     try {
       const target = findTargetEmployee(employees);
-      const { error } = await insertApprovalRequestSilent({
-        employee_id: user?.id, approver_id: target?.id ?? null,
-        type: 'PAYMENT_CHANGE_REQUEST', status: 'PENDING',
-        note: comment.trim() || null,
-        metadata: {
-          invoice_id: inv.id,
-          // El id con el que se ubica la venta fuera del portal. El de arriba
-          // es el interno y no sirve para buscarla: son dos numeraciones.
-          erp_invoice_id: inv.erp_invoice_id ?? null,
-          correlativo: inv.correlativo, fecha: inv.fecha,
-          total: inv.total, tipo_documento: inv.tipo_documento,
+      const { error } = await insertApprovalRequestSilent(solicitudDeFacturacion('PAYMENT_CHANGE_REQUEST', {
+        inv, usuarioId: user?.id, sala: { id: activeBranchId, name: activeBranch?.name },
+        aprobador: target, nota: comment,
+        extra: {
           current_pago: inv.tipo_pago, new_pago: newPayment,
-          branch_id: activeBranchId, branch_name: activeBranch?.name,
-          notified_employee_id: target?.id ?? null,
-          notified_employee: target?.name ?? 'Sin supervisor asignado',
         },
-      });
+      }));
       if (error) throw error;
       // La entrada de la bitácora la anota `insertApprovalRequestSilent` con la
       // metadata de la solicitud (D3, 2026-09-28).
@@ -690,18 +560,10 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
     setSubmitting(true); setSubmitError('');
     try {
       const target = findTargetEmployee(employees);
-      const { error } = await insertApprovalRequestSilent({
-        employee_id: user?.id, approver_id: target?.id ?? null,
-        type: 'VENDOR_CHANGE_REQUEST', status: 'PENDING',
-        note: comment.trim() || null,
-        metadata: {
-          invoice_id: inv.id,
-          // El id con el que se ubica la venta fuera del portal. El de arriba
-          // es el interno y no sirve para buscarla: son dos numeraciones.
-          erp_invoice_id: inv.erp_invoice_id ?? null,
-          correlativo: inv.correlativo, fecha: inv.fecha,
-          total: inv.total, tipo_documento: inv.tipo_documento,
-          branch_id: activeBranchId, branch_name: activeBranch?.name,
+      const { error } = await insertApprovalRequestSilent(solicitudDeFacturacion('VENDOR_CHANGE_REQUEST', {
+        inv, usuarioId: user?.id, sala: { id: activeBranchId, name: activeBranch?.name },
+        aprobador: target, nota: comment,
+        extra: {
           current_vendor_code: inv.cod_vendedor,
           current_vendor_name: currentVendor?.name ?? null,
           current_vendor_photo: currentVendor?.photo_url ?? null,
@@ -709,10 +571,8 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
           new_vendor_code: selectedVendor.code,
           new_vendor_name: selectedVendor.name,
           new_vendor_photo: selectedVendor.photo_url ?? null,
-          notified_employee_id: target?.id ?? null,
-          notified_employee: target?.name ?? 'Sin supervisor asignado',
         },
-      });
+      }));
       if (error) throw error;
       // La entrada de la bitácora la anota `insertApprovalRequestSilent` con la
       // metadata de la solicitud (D3, 2026-09-28).
@@ -827,18 +687,10 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
     setSubmitting(true); setSubmitError('');
     try {
       const target = findTargetEmployee(employees);
-      const { error } = await insertApprovalRequestSilent({
-        employee_id: user?.id, approver_id: target?.id ?? null,
-        type: 'CLIENT_CHANGE_REQUEST', status: 'PENDING',
-        note: comment.trim() || null,
-        metadata: {
-          invoice_id: inv.id,
-          // El id con el que se ubica la venta fuera del portal. El de arriba
-          // es el interno y no sirve para buscarla: son dos numeraciones.
-          erp_invoice_id: inv.erp_invoice_id ?? null,
-          correlativo: inv.correlativo, fecha: inv.fecha,
-          total: inv.total, tipo_documento: inv.tipo_documento,
-          branch_id: activeBranchId, branch_name: activeBranch?.name,
+      const { error } = await insertApprovalRequestSilent(solicitudDeFacturacion('CLIENT_CHANGE_REQUEST', {
+        inv, usuarioId: user?.id, sala: { id: activeBranchId, name: activeBranch?.name },
+        aprobador: target, nota: comment,
+        extra: {
           current_cliente: inv.cliente ?? null,
           new_client_id: newClient.id,
           // El id que entiende el ERP es OTRO que el del portal. Sin este
@@ -848,10 +700,8 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
           new_client_name: newClient.name,
           new_client_nit: newClient.nit ?? null,
           new_client_dui: newClient.dui ?? null,
-          notified_employee_id: target?.id ?? null,
-          notified_employee: target?.name ?? 'Sin supervisor asignado',
         },
-      });
+      }));
       if (error) throw error;
       // La entrada de la bitácora la anota `insertApprovalRequestSilent` con la
       // metadata de la solicitud (D3, 2026-09-28).
@@ -979,14 +829,7 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null })
      resuelve en el servidor — antes el filtro de fecha se aplicaba en el
      navegador sobre una lista ya truncada, así que elegir un día del principio
      del mes no mostraba nada. */
-  const ambito = useMemo(() => {
-    if (dateFilter) return { fecha: dateFilter };
-    const now  = hoyComoFechaLocal();
-    const y    = now.getFullYear();
-    const m    = String(now.getMonth() + 1).padStart(2, '0');
-    const last = String(new Date(y, now.getMonth() + 1, 0).getDate()).padStart(2, '0');
-    return { from: `${y}-${m}-01`, to: `${y}-${m}-${last}` };
-  }, [dateFilter]);
+  const ambito = useMemo(() => ambitoDeFacturas(dateFilter), [dateFilter]);
 
   /* Índice nombre→código de los vendedores. `sales_invoices` guarda el código,
      no el nombre, así que buscar "marta" tiene que traducirse a códigos ANTES

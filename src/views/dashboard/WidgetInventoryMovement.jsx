@@ -22,6 +22,7 @@ import {
     fetchPerecederos, insertMovimientoInventario, fetchSucursalEnConteo,
 } from '@nucleo/data/inventoryMovements';
 import { diasEntre, fechaNumerica, hoySV } from '@nucleo/utils/fecha';
+import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
 
 // Widget «Ajuste de Inventario».
@@ -142,22 +143,8 @@ const OPS_CON_FOTO = ['PRODUCTO DAÑADO'];
 const BUCKET_EVIDENCIA = 'inventario-evidencia';
 const MAX_FOTOS = 3;
 
-const SUPERVISOR_ROLE_ID = 13; // Supervisor/a de Ventas
-
-/** Quién resuelve: SIEMPRE Supervisión. La jefatura se entera del resultado. */
-function findTargetEmployee(employees) {
-    const disponible = employees.find(e => {
-        if (e.status !== 'ACTIVO') return false;
-        if (e.role_id !== SUPERVISOR_ROLE_ID && e.roleId !== SUPERVISOR_ROLE_ID) return false;
-        const ev = e.activeEventType ?? e.active_event_type;
-        return !ev || !['VACATION', 'DISABILITY'].includes(ev);
-    });
-    if (disponible) return disponible;
-    // El último recurso: alguien de dirección. Antes era `system_role IN
-  // ('ADMIN','SUPERADMIN')`, que resolvía a UNA sola persona; el rango del cargo
-  // da las tres, así que el aviso deja de depender de que esa una esté.
-  return employees.find(e => Number(e.rango ?? 0) >= 4);
-}
+// Quién resuelve: SIEMPRE Supervisión — `supervisorQueResuelve` (utils/aprobadorOperativo).
+const findTargetEmployee = supervisorQueResuelve;
 
 const fmtFecha = (d) => fechaNumerica(d, { anio: 'corto', vacio: null });
 

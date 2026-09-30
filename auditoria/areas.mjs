@@ -342,6 +342,7 @@ export const AREAS = [
             'src/hooks/useDecidirSolicitud.js',
             'src/utils/minmaxSolicitud.js',
             'src/utils/bandejaDeSolicitudes.js',
+            'src/utils/solicitudFacturacion.js', 'src/utils/aprobadorOperativo.js',
         ],
         tablas: ['approval_requests'],
         // Las dos funciones que APLICAN una solicitud aprobada no viven acá:

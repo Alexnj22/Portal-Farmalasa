@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1092.1 — Aviso de traslado corto: cuatro productos y la cuenta del resto
+
+Usuario, 2026-09-30: «tampoco se mandará un testamento de notificación». El
+aviso del teléfono lista hasta cuatro productos y agrega «y N productos más»;
+el pedido completo se ve al tocarlo.
+
 ## v2.1092.0 — Avisos de traslado con todo el pedido y botones Enviar/Rechazar
 
 Pedido del usuario del 2026-09-30: la notificación de un traslado pendiente,

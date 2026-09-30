@@ -28,7 +28,11 @@ async function detalleParaTelefono(supabase: any, base: AvisoTelefono): Promise<
   const m = s.metadata || {};
   const renglones = (Array.isArray(m.items) ? m.items : []).map((it: { descripcion?: string; cantidad?: number; presentacion_tipo?: string }) =>
     `• ${it.descripcion ?? 'Producto'} — ${it.cantidad ?? '?'} ${String(it.presentacion_tipo ?? '').toLowerCase()}`.trimEnd());
-  const lineas = [base.message, ...renglones];
+  // Corta a propósito (usuario, 2026-09-30: «no un testamento»): hasta cuatro
+  // renglones y la cuenta del resto. El pedido entero está al tocarla.
+  const TOPE = 4;
+  const lineas = [base.message, ...renglones.slice(0, TOPE)];
+  if (renglones.length > TOPE) lineas.push(`y ${renglones.length - TOPE} producto${renglones.length - TOPE === 1 ? '' : 's'} más`);
   if (m.reason) lineas.push(`Motivo: ${m.reason}`);
   return {
     ...base,

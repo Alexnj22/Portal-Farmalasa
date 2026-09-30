@@ -18,17 +18,17 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { REQUEST_TYPES, esOperativa, adaptarMinMax } from '@nucleo/store/slices/requestsSlice';
 import { fetchAllMinMaxChangeRequests } from '@nucleo/data/minmaxRequests';
-import { ERP_NAMES } from '@nucleo/constants/erp';
+import { ERP_NAMES, ERP_ORDEN, BRANCH_A_ERP } from '@nucleo/constants/erp';
 import { buscadorDePersonas, lineasDe } from '@nucleo/utils/movimientoTexto';
 import { detalleDeMinMax, detalleDeSolicitud } from '@nucleo/utils/tarjetaDeSolicitud';
-import { reglasDeBandeja, ordenarCola } from '@nucleo/utils/bandejaDeSolicitudes';
+import { reglasDeBandeja, ordenarCola, salaDeSolicitud } from '@nucleo/utils/bandejaDeSolicitudes';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { cuandoLlego } from '@nucleo/utils/notificacionTexto';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import Segmentos from '../componentes/Segmentos';
-import Pestanas from '../componentes/inicio/Pestanas';
+import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Avatar from '../componentes/Avatar';
 import { abrirSolicitud } from '../pantallas';
 
@@ -82,11 +82,13 @@ export default function Solicitudes() {
   const { user, hasPermission, getScope } = useAuth();
   const requests = useStaffStore((s) => s.requests);
   const employees = useStaffStore((s) => s.employees);
+  const branches = useStaffStore((s) => s.branches);
   const personas = useStaffStore((s) => s.personasDeSolicitudes);
   const fetchRequests = useStaffStore((s) => s.fetchRequests);
   const [minmaxFilas, setMinmaxFilas] = useState([]);
   const [estado, setEstado] = useState('PENDING');
   const [familia, setFamilia] = useState('todas');
+  const [sala, setSala] = useState('todas');
   const [busqueda, setBusqueda] = useState('');
   const [recargando, setRecargando] = useState(false);
   const [cargado, setCargado] = useState(false);
@@ -140,16 +142,29 @@ export default function Solicitudes() {
   const cuenta = (s) => todas.filter((r) => r.status === s).length;
   const delEstado = todas.filter((r) => (estado === 'RESUELTAS' ? r.status !== 'PENDING' : r.status === estado));
 
-  // Familias que de verdad tienen algo en este estado: una píldora vacía es un
-  // toque que no informa.
+  // Las opciones de cada filtro son las que de verdad tienen algo en este
+  // estado: una opción vacía es un toque que no informa. Y si la elegida se
+  // queda sin nada (se resolvió la última), el filtro vuelve a «todas».
   const familias = [...new Set(delEstado.map((r) => r.type))]
-    .map((t) => ({ id: t, label: REQUEST_TYPES[t]?.label ?? t }))
+    .map((t) => ({ id: t, label: REQUEST_TYPES[t]?.label ?? 'Solicitud' }))
     .sort((a, b) => a.label.localeCompare(b.label));
+  const conSala = new Set(delEstado.map(salaDeSolicitud).filter(Boolean));
+  const salas = (branches ?? []).filter((b) => conSala.has(String(b.id)))
+    .map((b) => ({ id: String(b.id), label: b.name,
+      orden: BRANCH_A_ERP[b.id] != null ? ERP_ORDEN.indexOf(BRANCH_A_ERP[b.id]) : 99 }))
+    .sort((a, b) => a.orden - b.orden);
   useEffect(() => {
     if (familia !== 'todas' && !familias.some((f) => f.id === familia)) setFamilia('todas');
-  }, [familia, familias]);
+    if (sala !== 'todas' && !salas.some((s) => s.id === sala)) setSala('todas');
+  }, [familia, familias, sala, salas]);
 
-  const filtradas = delEstado.filter((r) => familia === 'todas' || r.type === familia);
+  const grupos = [
+    { id: 'tipo', titulo: 'Tipo', opciones: [{ id: 'todas', label: 'Todos los tipos' }, ...familias], activa: familia, porDefecto: 'todas', onCambiar: setFamilia },
+    { id: 'sala', titulo: 'Sala', opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salas], activa: sala, porDefecto: 'todas', onCambiar: setSala },
+  ];
+
+  const filtradas = delEstado.filter((r) => (familia === 'todas' || r.type === familia)
+    && (sala === 'todas' || salaDeSolicitud(r) === sala));
   const { results } = busqueda.trim()
     ? smartFilter(busqueda, filtradas, (r) => [r.employee?.name, REQUEST_TYPES[r.type]?.label,
         r.metadata?.correlativo, r.metadata?.branch_name, r.metadata?.producto,
@@ -176,6 +191,7 @@ export default function Solicitudes() {
           onCancelButtonPress: () => setBusqueda(''),
         },
       }} />
+      <MenuDeFiltros grupos={grupos} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
@@ -183,9 +199,7 @@ export default function Solicitudes() {
           { id: 'PENDING', label: pendientes ? `Pendientes (${pendientes})` : 'Pendientes' },
           { id: 'RESUELTAS', label: 'Resueltas' },
         ]} />
-        {familias.length > 1 ? (
-          <Pestanas activa={familia} onCambiar={setFamilia} opciones={[{ id: 'todas', label: 'Todas' }, ...familias]} />
-        ) : null}
+        <FiltrosActivos grupos={grupos} />
 
         {lista.map((r) => (
           <Fila key={r.id} r={r} detalle={detalleDe(r)} teToca={teToca(r)} onAbrir={() => abrirSolicitud(r.id)} />

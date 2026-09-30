@@ -34,6 +34,7 @@ export const ICONOS = {
   Wrench: i('wrench.and.screwdriver', require('@expo/material-symbols/build.xml')),
   TrendingUp: i('chart.line.uptrend.xyaxis', require('@expo/material-symbols/trending_up.xml')),
   Wallet: i('wallet.bifold', require('@expo/material-symbols/account_balance_wallet.xml')),
+  Search: i('magnifyingglass', require('@expo/material-symbols/search.xml')),
   Package: i('shippingbox', require('@expo/material-symbols/inventory_2.xml')),
   PackagePlus: i('plus.rectangle.on.rectangle', require('@expo/material-symbols/add_box.xml')),
   PackageMinus: i('minus.rectangle', require('@expo/material-symbols/inventory.xml')),

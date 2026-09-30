@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1101.0 — App: filtros en el menú de la barra, pestaña Buscar y ficha de producto
+
+Regla de la app, decidida por el usuario hoy: **la FilterBar del portal no
+viaja a la app**. Cada filtro toma la forma del sistema:
+
+- **El estado** va en el control segmentado del sistema.
+- **Lo secundario** (sala, tipo, semana) va en un botón de filtro en la barra
+  de arriba, que abre el menú nativo con palomitas. Con algo aplicado, el
+  ícono se rellena y debajo aparece una ficha con ✕ para quitarlo
+  (`componentes/Filtros.js`). La campana va en la misma barra, como botón del
+  sistema con su globo.
+- **Buscar en una pantalla** sigue siendo su buscador del sistema.
+- **Buscar en toda la app**: pestaña nueva **Buscar**, con `role="search"`.
+  En iOS 26 se separa del resto de la barra y se convierte en el campo al
+  tocarla. Encuentra productos (con existencias por sala), personas,
+  solicitudes y pantallas, y cada grupo respeta el permiso de su módulo.
+
+Aplicado a Solicitudes (tipo y sala) y a Ventas de hoy (sala).
+
+**Ficha nativa de producto** (`/producto/[id]`): el total, cuánto hay en cada
+sala y en qué lotes, lo que vence primero arriba y en color si vence pronto o
+ya venció. Es la consulta de inventario de la app; los números salen del
+núcleo (`fetchInventoryByProductIds`, `lotesEnUnidades`).
+
 ## v2.1100.0 — App: bandeja nativa de Solicitudes con las reglas del portal en el núcleo
 
 La app tiene su bandeja de Solicitudes nativa: las de la sala y las

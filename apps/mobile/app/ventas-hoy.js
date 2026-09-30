@@ -16,7 +16,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import GraficaHoras from '../componentes/GraficaHoras';
-import Pestanas from '../componentes/inicio/Pestanas';
+import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
@@ -48,10 +48,13 @@ export default function VentasHoy() {
 
   const visibles = soloMiSala ? hoy.filter((s) => s.branchId === miSala) : hoy;
   const nombre = (id) => (sucursales || []).find((b) => String(b.id) === id)?.name ?? `Sala ${id}`;
-  const opciones = [
-    ...(soloMiSala ? [] : [{ id: 'todas', label: 'Todas' }]),
-    ...visibles.map((s) => ({ id: s.branchId, label: nombre(s.branchId) })),
-  ];
+  // La sala va en el menú de filtros de la barra (regla de la app: lo
+  // secundario no ocupa pantalla). Con alcance de una sola sala no hay nada
+  // que elegir y el menú no aparece.
+  const grupos = soloMiSala ? [] : [{
+    id: 'sala', titulo: 'Sala', activa: elegida, porDefecto: 'todas', onCambiar: setElegida,
+    opciones: [{ id: 'todas', label: 'Todas las salas' }, ...visibles.map((s) => ({ id: s.branchId, label: nombre(s.branchId) }))],
+  }];
 
   const s = useMemo(() => (elegida === 'todas' ? sumarSalas(visibles) : visibles.find((x) => x.branchId === elegida)) ?? sumarSalas([]),
     [elegida, visibles]);
@@ -71,10 +74,11 @@ export default function VentasHoy() {
       {/* Regresar sólo desde el borde: en iOS 26 se regresa deslizando desde
           cualquier parte, y eso le ganaba al dedo que recorre la gráfica. */}
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Ventas de hoy', fullScreenGestureEnabled: false }} />
+      <MenuDeFiltros grupos={grupos} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 16, gap: 16 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Pestanas opciones={opciones} activa={elegida} onCambiar={setElegida} />
+        <FiltrosActivos grupos={grupos} />
 
         <View style={{ marginHorizontal: 16 }}>
           <Vidrio radio={24}>

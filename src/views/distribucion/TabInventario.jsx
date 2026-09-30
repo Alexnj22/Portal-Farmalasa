@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Plus, Boxes, Search, AlertTriangle, CalendarClock, CalendarX2, Loader2, Save, History, PackagePlus, Coins } from 'lucide-react';
+import { Plus, Boxes, Search, AlertTriangle, CalendarClock, CalendarX2, Loader2, Save, History, PackagePlus, Coins, ShieldAlert } from 'lucide-react';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import FilterBar from '../../components/common/FilterBar';
 import CarrilCards from '../../components/common/CarrilCards';
@@ -20,7 +20,8 @@ import { fechaNumerica, diasHasta } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
-import { fetchCatalogo, mensajeDeDistribucion } from '@nucleo/data/distribucion';
+import { fetchCatalogo, fetchCuarentena, mensajeDeDistribucion } from '@nucleo/data/distribucion';
+import CuarentenaModal from './CuarentenaModal';
 import { fetchLotes, fetchMovimientosDeLote, entradaDeLote, ajustarLote } from '@nucleo/data/distribucionInventario';
 import useBorrador from '@nucleo/hooks/useBorrador';
 
@@ -290,6 +291,8 @@ export default function TabInventario({ emisor, puedeVender, puedeConfigurar, bu
     const [entrada, setEntrada] = useState(false);
     const [abierto, setAbierto] = useState(null);
     const [costos, setCostos] = useState(new Map());
+    const [cuarentena, setCuarentena] = useState([]);
+    const [verCuarentena, setVerCuarentena] = useState(false);
     const pedidoRef = useRef(0);
 
     const cargar = useCallback(async () => {
@@ -297,9 +300,10 @@ export default function TabInventario({ emisor, puedeVender, puedeConfigurar, bu
         setCargando(true);
         setError('');
         try {
-            const [r, cat] = await Promise.all([fetchLotes(), puedeConfigurar ? fetchCatalogo() : Promise.resolve([])]);
+            const [r, cat, cua] = await Promise.all([fetchLotes(), puedeConfigurar ? fetchCatalogo() : Promise.resolve([]), fetchCuarentena()]);
             if (mio === pedidoRef.current) {
                 setLotes(r);
+                setCuarentena(cua);
                 // Costo promedio por producto (sin IVA), lo mantienen las compras (borrador 0015).
                 setCostos(new Map(cat.filter(p => p.costo_promedio !== null).map(p => [`${p.emisor_id}:${p.product_id}`, Number(p.costo_promedio)])));
             }
@@ -358,6 +362,9 @@ export default function TabInventario({ emisor, puedeVender, puedeConfigurar, bu
                     <StatCard icon={CalendarX2} label="Vencidos" value={stats.vencidos} loading={cargando}
                         iconBg="bg-danger/10" iconCls="text-danger" sub="Con existencia: no se venden"
                         active={filtro === 'vencidos'} tono="danger" onClick={() => alternar('vencidos')} />
+                    <StatCard icon={ShieldAlert} label="En cuarentena" value={cuarentena.reduce((t, q) => t + q.unidades, 0)} loading={cargando}
+                        iconBg="bg-warning/10" iconCls="text-warning" sub={cuarentena.length ? `${cuarentena.length} devoluciones por decidir` : 'Nada por decidir'}
+                        onClick={() => setVerCuarentena(true)} />
                     {puedeConfigurar && (
                         <StatCard icon={Coins} label="Valor al costo" value={formatMoney(stats.valor)} loading={cargando}
                             iconBg="bg-success/10" iconCls="text-success"
@@ -420,6 +427,10 @@ export default function TabInventario({ emisor, puedeVender, puedeConfigurar, bu
             {entrada && (
                 <EntradaModal emisorId={emisor?.id} onClose={() => setEntrada(false)}
                     onGuardado={() => { setEntrada(false); cargar(); }} />
+            )}
+            {verCuarentena && (
+                <CuarentenaModal filas={cuarentena} puedeResolver={puedeConfigurar} onClose={() => setVerCuarentena(false)}
+                    onCambio={cargar} />
             )}
             {abierto && (
                 <LoteModal lote={abierto} puedeAjustar={puedeConfigurar} onClose={() => setAbierto(null)}

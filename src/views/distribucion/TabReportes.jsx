@@ -108,7 +108,8 @@ function ReporteUtilidad({ buscar }) {
 
             <CarrilCards ariaLabel="Resumen de la utilidad">
                 <StatCard icon={Receipt} label="Venta sin IVA" value={formatMoney(venta)} loading={cargando}
-                    iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(Number(r.documentos ?? 0))} documentos`} />
+                    iconBg="bg-brand/10" iconCls="text-brand-text"
+                    sub={`${formatQty(Number(r.documentos ?? 0))} documentos${Number(r.devuelto) > 0 ? ` · ${formatMoney(Number(r.devuelto))} devuelto` : ''}`} />
                 <StatCard icon={Coins} label="Costo de lo vendido" value={formatMoney(costo)} loading={cargando}
                     iconBg="bg-chart-3/10" iconCls="text-chart-3" sub="Al costo del día de la venta" />
                 <StatCard icon={TrendingUp} label="Utilidad bruta" value={formatMoney(venta - costo)} loading={cargando}

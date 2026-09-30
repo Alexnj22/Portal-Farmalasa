@@ -734,3 +734,40 @@ test('utilidad: venta contra costo, agrupar por cliente en la dirección, y sin 
     await expect(page.getByText('FARMACIA LA PALMA').first()).toBeVisible();
     expect(errores).toEqual([]);
 });
+
+test('devolución: nota de crédito de un Crédito Fiscal sellado, a cuarentena, y la cuarentena se resuelve', async ({ page }) => {
+    const errores = [];
+    page.on('pageerror', e => errores.push(e.message));
+    await entrar(page);
+    await page.goto('/torogoz/documentos?cubeta=sellados');
+    await page.locator('table tbody tr', { hasText: 'Crédito Fiscal' }).first().click();
+    await page.getByRole('button', { name: 'Devolución' }).click();
+    const modal = page.locator('[data-devolucion]');
+    const renglon = modal.locator('[data-renglon-devolucion]').filter({ has: page.locator('input:not([disabled])') }).first();
+    await expect(renglon).toBeVisible({ timeout: 15_000 });
+    // Más de lo vendido: lo dice y no deja emitir.
+    await renglon.locator('input').fill('99999');
+    await expect(page.getByRole('button', { name: 'Emitir nota de crédito' })).toBeDisabled();
+    await renglon.locator('input').fill('1');
+    await renglon.getByRole('radio', { name: 'Cuarentena' }).click();
+    await expect(renglon.getByRole('radio', { name: 'Cuarentena' })).toHaveAttribute('aria-checked', 'true');
+    await page.locator('textarea[name="motivo-devolucion"]').fill('prueba automática: llegó golpeado');
+    await expect(modal.locator('[data-total-devolucion]')).not.toHaveText('$0.00');
+    await page.screenshot({ path: `${SALIDA}/devolucion.png`, fullPage: true });
+    await page.getByRole('button', { name: 'Emitir nota de crédito' }).click();
+    await expect(page.getByText('Nota de crédito emitida').first()).toBeVisible({ timeout: 30_000 });
+    await page.keyboard.press('Escape');
+
+    // La nota está en Facturación.
+    await page.goto('/torogoz/documentos?cubeta=todos');
+    await expect(page.locator('table tbody tr', { hasText: 'Nota de Crédito' }).first()).toBeVisible({ timeout: 15_000 });
+
+    // Lo devuelto espera en cuarentena; se destruye.
+    await page.goto('/torogoz/inventario');
+    await page.getByText('En cuarentena').first().click();
+    const q = page.locator('[data-cuarentena]').first();
+    await expect(q).toBeVisible({ timeout: 15_000 });
+    await q.getByRole('button', { name: 'Destruir' }).click();
+    await expect(page.getByText('Anotado como destruido.').first()).toBeVisible({ timeout: 15_000 });
+    expect(errores).toEqual([]);
+});

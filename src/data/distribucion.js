@@ -378,6 +378,40 @@ export const facturarPedido = (pedidoId, { contingencia = null } = {}) =>
 /** El aviso de contingencia a Hacienda, y después la transmisión de lo que cubre. */
 export const enviarContingencia = () => invocar({ accion: 'enviar_contingencia' });
 
+// ── Devoluciones con Nota de Crédito (borrador 0017) ───────────────────────
+
+/** Qué se puede devolver de un documento, por renglón y lote, y si admite nota. */
+export async function fetchDevolucionDisponible(dteId) {
+    const { data, error } = await supabase.rpc('dist_devolucion_disponible', { p_dte: dteId });
+    if (error) throw error;
+    return data;
+}
+
+/**
+ * Emite la Nota de Crédito de una devolución. `renglones`: [{ item_id, lote_id,
+ * unidades, destino: 'reingreso'|'cuarentena' }]. Un reintento con el mismo
+ * `clientUuid` no emite dos notas.
+ */
+export const emitirNotaCredito = ({ dteId, clientUuid, motivo, renglones }) =>
+    invocar({ accion: 'nota_credito', dte_id: dteId, client_uuid: clientUuid, motivo, renglones });
+
+export async function fetchCuarentena() {
+    const { data, error } = await supabase
+        .from('dist_cuarentena')
+        .select('id, product_id, lote_id, unidades, motivo, estado, nota, created_at, resuelta_at, products(nombre), dist_lotes(lote, vence)')
+        .eq('estado', 'pendiente')
+        .order('created_at', { ascending: false })
+        .limit(999);
+    if (error) throw error;
+    return data ?? [];
+}
+
+export async function resolverCuarentena(id, estado, nota) {
+    const { data, error } = await supabase.rpc('dist_resolver_cuarentena', { p_id: id, p_estado: estado, p_nota: nota || null });
+    if (error) throw error;
+    return data;
+}
+
 /** El pedido de una venta por su `client_uuid` (para no facturar dos veces una venta sin señal). */
 export async function fetchPedidoPorUuid(clientUuid) {
     const { data, error } = await supabase.from('dist_pedidos').select('id, estado, dte_id').eq('client_uuid', clientUuid).maybeSingle();

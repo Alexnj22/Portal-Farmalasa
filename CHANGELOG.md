@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1106.0 — Torogoz: devoluciones con nota de crédito y cuarentena
+
+Una devolución parcial ya no obliga a anular la venta entera (borrador
+`0017_devoluciones_y_nota_de_credito.sql`, sólo pruebas).
+
+- **«Devolución»** en un Crédito Fiscal sellado: se elige qué regresa, por
+  producto y **por lote**, hasta lo vendido menos lo ya devuelto, y sale una
+  **Nota de Crédito (05)** relacionada al Crédito Fiscal, con su misma retención
+  o percepción. Dos personas no pueden devolver lo mismo a la vez (el documento
+  se bloquea y lo apartado cuenta 15 minutos). Un reintento no emite dos notas.
+- A una **Factura** no se le hace nota (la ley no lo permite): la pantalla lo
+  dice y remite a «Corregir».
+- Lo devuelto **vuelve a su lote** con su costo, o va a **cuarentena** (dañado,
+  vencido). En Inventario, «En cuarentena» muestra lo que espera decisión:
+  reingresar (si el lote no venció), devolver al proveedor o destruir.
+- **La cuenta del cliente**: si se fió y se debe, la nota se descuenta de esa
+  cuenta; si ya estaba pagada, se dice cuánto devolverle.
+- **Si la nota se invalida o se descarta**, se deshace todo: la mercadería vuelve
+  a salir (hasta lo que haya), la cuarentena se anula y la cuenta recupera su
+  saldo. Un rechazo de Hacienda no deshace nada: se corrige y se reenvía.
+- **Utilidad**: lo devuelto resta venta; lo que reingresa resta también su costo,
+  y lo de cuarentena no (es pérdida).
+- De paso: abrir un documento sin su archivo guardado (datos de muestra) ya no
+  rompe la vista entera.
+
 ## v2.1105.0 — Torogoz: utilidad bruta y libro de compras
 
 Nueva sección **Reportes** de la distribuidora (sólo quien administra; borrador

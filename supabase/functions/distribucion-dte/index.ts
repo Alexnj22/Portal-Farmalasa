@@ -50,7 +50,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
 import {
-  armarCreditoFiscal, armarFactura, totalAPagar,
+  armarCreditoFiscal, armarFactura, armarNotaCredito, totalAPagar,
   type DatosVenta, type Emisor, type Receptor, type Renglon,
 } from "../_shared/dte/documentos.ts";
 import { CONTINGENCIA, MODELO, OPERACION, TIPO_DTE, VERSION, type Ambiente, type TipoDte } from "../_shared/dte/catalogos.ts";
@@ -761,6 +761,80 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string, cont
   return { dte_id: ins.id, tipo, numero_control: doc.numeroControl, codigo_generacion: doc.codigoGeneracion, total: doc.totalPagar, ...envio };
 }
 
+// ── Nota de Crédito por una devolución (borrador 0017) ─────────────────────
+// La base valida y aparta (`dist_preparar_devolucion`, con la sesión de quien
+// devuelve: el permiso y la firma son suyos); acá se arma, se firma y se
+// guarda la nota; después la base mueve inventario y cuenta
+// (`dist_aplicar_devolucion`) y recién entonces se transmite. Si algo falla
+// antes de guardar la nota, la devolución queda «preparada» y un reintento con
+// el mismo `client_uuid` la rehace: no hay número reservado de balde porque el
+// correlativo se pide después de validar.
+async function notaCredito(admin: Admin, comoUsuario: Admin, empleadoId: string, cuerpo: any) {
+  const dteId = Number(cuerpo.dte_id);
+  const uuid = String(cuerpo.client_uuid ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(uuid)) throw new ErrorUsuario("Falta el identificador de la devolución.");
+  const renglonesPedidos = Array.isArray(cuerpo.renglones) ? cuerpo.renglones : [];
+  const { data: prep, error: eP } = await comoUsuario.rpc("dist_preparar_devolucion", {
+    p_dte: dteId, p_client_uuid: uuid, p_motivo: String(cuerpo.motivo ?? ""), p_renglones: renglonesPedidos,
+  });
+  if (eP) {
+    if (/DIST_[A-Z_]+:/.test(eP.message)) throw new ErrorUsuario(eP.message, 409);
+    throw new Error(`preparar la devolución: ${eP.message}`);
+  }
+  const pr = prep as any;
+  if (pr.ya_emitida) return { devolucion_id: pr.devolucion_id, dte_id: pr.nota_id, ...(await transmitirDte(admin, pr.nota_id)) };
+
+  const o = pr.origen;
+  const [emi, cli] = await Promise.all([
+    admin.from("dist_emisores").select("*").eq("id", o.emisor_id).single(),
+    admin.from("dist_clientes").select("*").eq("id", o.cliente_id).single(),
+  ]);
+  for (const r of [emi, cli]) if (r.error) throw new Error(r.error.message);
+  const e = emi.data!, c = cli.data!;
+  const relacionado = String(o.codigo_generacion).toUpperCase();
+  // Por unidad y con IVA, como se guardó el precio al vender (borrador 0007).
+  const renglones: Renglon[] = (pr.renglones as any[]).map((x) => ({
+    codigo: String(x.product_id), descripcion: x.descripcion, uniMedida: 59,
+    cantidad: String(x.unidades), precio: String(x.precio_unitario), precioIncluyeIva: true,
+    descuento: String(x.descuento), numeroDocumento: relacionado,
+  }));
+  const ambiente = o.ambiente as Ambiente;
+  const anio = Number(new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 4));
+  const { data: correlativo, error: eCor } = await admin.rpc("dist_siguiente_correlativo", {
+    p_emisor: e.id, p_ambiente: ambiente, p_tipo: TIPO_DTE.NOTA_CREDITO,
+    p_establecimiento: e.establecimiento, p_punto_venta: e.punto_venta, p_anio: anio,
+  });
+  if (eCor) throw new Error(`correlativo: ${eCor.message}`);
+  let doc;
+  try {
+    doc = armarNotaCredito({
+      ambiente, emisor: emisorDe(e), correlativo: correlativo as number, receptor: receptorDe(c), renglones,
+      condicion: Number(o.condicion) || 1,
+      // La misma retención y percepción que el Crédito Fiscal que corrige.
+      opciones: { retiene1: !!c.gran_contribuyente, percibe1: !!e.gran_contribuyente && !c.gran_contribuyente },
+      observaciones: `Devolución: ${String(cuerpo.motivo ?? "").trim()}`.slice(0, 3000),
+      documentoRelacionado: [{ tipoDocumento: TIPO_DTE.CCF, numeroDocumento: relacionado, fechaEmision: o.fec_emi }],
+    });
+  } catch (err) {
+    throw new ErrorUsuario((err as Error).message);
+  }
+  const llave = await llaveDeFirma();
+  const firmado = llave ? await firmarDte(doc.json, llave) : null;
+  const { data: ins, error: eIns } = await admin.from("dist_dte").insert({
+    emisor_id: e.id, ambiente, tipo: TIPO_DTE.NOTA_CREDITO, codigo_generacion: doc.codigoGeneracion, numero_control: doc.numeroControl,
+    fec_emi: doc.fecEmi, hor_emi: doc.horEmi, cliente_id: c.id, pedido_id: null, relacionado_id: o.id, total_pagar: doc.totalPagar,
+    json: doc.json, firmado, estado: firmado ? "firmado" : "sin_firmar", creado_por: empleadoId,
+  }).select("id").single();
+  if (eIns) throw new Error(`guardar la nota: ${eIns.message}`);
+  const { data: apl, error: eA } = await admin.rpc("dist_aplicar_devolucion", { p_devolucion: pr.devolucion_id, p_nota: ins.id });
+  if (eA) throw new Error(`aplicar la devolución: ${eA.message}`);
+  const envio = await transmitirDte(admin, ins.id);
+  return {
+    devolucion_id: pr.devolucion_id, dte_id: ins.id, tipo: TIPO_DTE.NOTA_CREDITO, numero_control: doc.numeroControl,
+    total: doc.totalPagar, ...(apl as Record<string, unknown>), ...envio,
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(req) });
   if (req.method !== "POST") return json(req, 405, { error: "método no permitido" });
@@ -803,6 +877,9 @@ Deno.serve(async (req) => {
     }
     if (cuerpo?.accion === "enviar_contingencia") {
       return json(req, 200, await enviarContingencia(admin, empleado.id));
+    }
+    if (cuerpo?.accion === "nota_credito" && Number.isInteger(cuerpo.dte_id)) {
+      return json(req, 200, await notaCredito(admin, comoUsuario, empleado.id, cuerpo));
     }
     if (cuerpo?.accion === "transmitir" && Number.isInteger(cuerpo.dte_id)) {
       return json(req, 200, { dte_id: cuerpo.dte_id, ...(await transmitirDte(admin, cuerpo.dte_id)) });

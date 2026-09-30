@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-    FileCheck2, RefreshCw, Loader2, Download, ExternalLink, Printer, Pencil, Undo2, Ban, RotateCcw,
+    FileCheck2, RefreshCw, Loader2, Download, ExternalLink, Printer, Pencil, Undo2, Ban, RotateCcw, FileMinus,
 } from 'lucide-react';
 import PortalInput from '../../components/common/PortalInput';
 import PagosDelPedido from './PagosDelPedido';
@@ -9,6 +9,7 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import DevolucionModal from './DevolucionModal';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -176,6 +177,7 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
     const [ocupado, setOcupado] = useState(null);
     const [pdf, setPdf] = useState({ blob: null, url: null, error: null });
     const [deshaciendo, setDeshaciendo] = useState(false);
+    const [devolviendo, setDevolviendo] = useState(false);
     const [motivo, setMotivo] = useState('');
     const yaImprimio = useRef(false);
 
@@ -199,7 +201,7 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
     // Recién facturado con «imprimir»: el ticket sale solo, una vez — cuando ya
     // llegaron los pagos, para que salga con lo entregado y el cambio.
     useEffect(() => {
-        if (!d || pagos == null || !imprimirAlAbrir || yaImprimio.current) return;
+        if (!d?.json?.identificacion || pagos == null || !imprimirAlAbrir || yaImprimio.current) return;
         yaImprimio.current = true;
         imprimirTicket(d);
     }, [d, pagos, imprimirAlAbrir, imprimirTicket]);
@@ -208,7 +210,7 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
     // rehace si cambia el documento (por ejemplo, al recibir el sello).
     const selloVisto = d?.sello_recibido ?? null;
     useEffect(() => {
-        if (vista !== 'pdf' || !d) return undefined;
+        if (vista !== 'pdf' || !d?.json?.identificacion) return undefined;
         let vivo = true;
         let url = null;
         setPdf({ blob: null, url: null, error: null });
@@ -294,9 +296,12 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
 
     const est = d ? ESTADO_DOCUMENTO[d.estado] : null;
     const sinSello = d && ['sin_firmar', 'firmado', 'contingencia'].includes(d.estado);
+    const conArchivo = !!d?.json?.identificacion;
     const invalidando = d?.invalidacion_estado === 'pendiente' || d?.invalidacion_estado === 'procesada';
     const puedeCorregir = puedeVender && d?.pedido_id && (sinSello || d.estado === 'rechazado' || (d.estado === 'sellado' && !invalidando));
     const puedeDeshacer = puedeVender && d?.estado === 'sellado' && !invalidando;
+    // Devolución parcial: Nota de Crédito, que sólo corrige un Crédito Fiscal (borrador 0017).
+    const puedeDevolver = puedeVender && d?.tipo === '03' && d?.estado === 'sellado' && !invalidando;
 
     return (
         <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-3xl" ariaLabel="Documento">
@@ -328,9 +333,14 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
 
                         <SegmentedControl value={vista} onChange={setVista} options={VISTAS} />
 
-                        {vista === 'detalle' && <VistaDetalle dte={d} pagos={pagos} />}
-                        {vista === 'ticket' && <VistaTicket dte={d} pagos={pagos ?? []} />}
-                        {vista === 'pdf' && <VistaPdf url={pdf.url} error={pdf.error} />}
+                        {/* Sin el archivo del documento (datos de muestra sembrados a mano)
+                            no hay qué pintar: se dice, en vez de reventar la vista entera. */}
+                        {!conArchivo && vista !== 'datos' && (
+                            <Notice variant="info" bloque>Este documento no tiene guardado su archivo: sólo se pueden ver sus datos.</Notice>
+                        )}
+                        {conArchivo && vista === 'detalle' && <VistaDetalle dte={d} pagos={pagos} />}
+                        {conArchivo && vista === 'ticket' && <VistaTicket dte={d} pagos={pagos ?? []} />}
+                        {conArchivo && vista === 'pdf' && <VistaPdf url={pdf.url} error={pdf.error} />}
                         {vista === 'datos' && (
                             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-body-sm">
                                 <dt className="text-content-3">Número de control</dt>
@@ -350,6 +360,9 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                             <p className="text-caption text-content-3">
                                 Con sello, «Corregir» emite un documento nuevo que reemplaza a éste, y éste se invalida ante Hacienda.
                                 Si la venta no se hizo, usa «Deshacer la venta».
+                                {d.tipo === '03'
+                                    ? ' Si el cliente regresa sólo una parte, «Devolución» emite una nota de crédito por eso.'
+                                    : ' A una Factura no se le hace nota de crédito: si el cliente regresa una parte, «Corregir» y deja sólo lo que se queda.'}
                             </p>
                         )}
                         {deshaciendo && (
@@ -369,10 +382,10 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                     {puedeVender && d?.pedido_id && (
                         <Button variant="secondary" icon={RotateCcw} onClick={() => navigate(rutaVolverAVender(d.pedido_id))}>Volver a vender</Button>
                     )}
-                    {d && (vista === 'ticket' || vista === 'detalle') && (
+                    {conArchivo && (vista === 'ticket' || vista === 'detalle') && (
                         <Button variant="secondary" icon={Printer} onClick={() => imprimirTicket(d)}>Imprimir ticket</Button>
                     )}
-                    {d && vista === 'pdf' && (<>
+                    {conArchivo && vista === 'pdf' && (<>
                         <Button variant="secondary" icon={Download} disabled={!pdf.blob} onClick={descargarPdf}>Descargar PDF</Button>
                         <Button variant="secondary" icon={Printer} disabled={!pdf.url} onClick={() => abrirEnPestanaNueva(pdf.url)}>Abrir para imprimir</Button>
                     </>)}
@@ -382,6 +395,9 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                             <Button variant="secondary" icon={ExternalLink} onClick={() => abrirEnPestanaNueva(urlConsultaPublica(d))}>Ver en Hacienda</Button>
                         )}
                     </>)}
+                    {puedeDevolver && !deshaciendo && (
+                        <Button variant="secondary" icon={FileMinus} disabled={!!ocupado} onClick={() => setDevolviendo(true)}>Devolución</Button>
+                    )}
                     {puedeDeshacer && !deshaciendo && (
                         <Button variant="secondary" tone="danger" icon={Ban} disabled={!!ocupado} onClick={() => setDeshaciendo(true)}>Deshacer la venta</Button>
                     )}
@@ -396,6 +412,10 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                     )}
                 </div>
             </LiquidModal.Footer>
+            {devolviendo && (
+                <DevolucionModal dteId={id} onClose={() => setDevolviendo(false)}
+                    onEmitida={() => { setDevolviendo(false); cargar(); onCambio?.(); }} />
+            )}
         </LiquidModal>
     );
 }

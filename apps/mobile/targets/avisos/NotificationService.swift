@@ -3,13 +3,16 @@
 // Lo que hace:
 //  1. Lo agrupa por tema (`data.tema`: traslados, solicitudes, caja…), porque
 //     el servicio de Expo no deja mandar el hilo directo.
-//  2. Si la tarjeta trae quién lo originó, lo vuelve un aviso de COMUNICACIÓN:
+//  2. Si trae renglones, adjunta la TARJETA dibujada como imagen
+//     (`Tarjeta.swift`): es lo que se ve al mantener presionado.
+//  3. Si la tarjeta trae quién lo originó, lo vuelve un aviso de COMUNICACIÓN:
 //     la foto de esa persona en lugar del ícono de la app, como en Mensajes. El
 //     título original ("Ana te pide un traslado") pasa a subtítulo.
 //
 // Nada de esto puede costar el aviso: si algo falla, se entrega tal cual llegó,
 // y si el sistema corta el tiempo (`serviceExtensionTimeWillExpire`), también.
 import Intents
+import UIKit
 import UserNotifications
 
 class NotificationService: UNNotificationServiceExtension {
@@ -32,15 +35,27 @@ class NotificationService: UNNotificationServiceExtension {
       content.threadIdentifier = tema
     }
 
-    let quien = (datos["tarjeta"] as? [String: Any])?["quien"] as? [String: Any]
-    guard let nombre = quien?["nombre"] as? String, !nombre.isEmpty else {
+    let tarjeta = datos["tarjeta"] as? [String: Any]
+    let quien = tarjeta?["quien"] as? [String: Any]
+    let nombre = (quien?["nombre"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+    let modelo = Modelo(tarjeta: tarjeta)
+    if nombre == nil && modelo == nil {
       contentHandler(content)
       return
     }
 
     let foto = (quien?["foto"] as? String).flatMap(URL.init(string:))
     Self.bajar(foto) { imagen in
-      contentHandler(Self.comoComunicacion(content, nombre: nombre, imagen: imagen) ?? content)
+      DispatchQueue.main.async {
+        if let modelo, let adjunto = ImagenDeTarjeta.adjunto(modelo, foto: imagen) {
+          content.attachments = [adjunto]
+        }
+        if let nombre {
+          contentHandler(Self.comoComunicacion(content, nombre: nombre, imagen: imagen) ?? content)
+        } else {
+          contentHandler(content)
+        }
+      }
     }
   }
 

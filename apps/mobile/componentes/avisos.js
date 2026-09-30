@@ -55,7 +55,6 @@ async function declararCategorias() {
 /** Pide permiso (la primera vez), saca el token y lo liga a quien tiene la sesión. */
 export async function registrarAvisos() {
   try {
-    if (!Device.isDevice) return null;   // el simulador no recibe avisos
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
         name: 'Avisos', importance: Notifications.AndroidImportance.HIGH,
@@ -65,6 +64,9 @@ export async function registrarAvisos() {
     if (status !== 'granted') ({ status } = await Notifications.requestPermissionsAsync());
     if (status !== 'granted') return null;
     await declararCategorias();
+    // El simulador no tiene token de avisos; con el permiso y las categorías
+    // igual se prueban los avisos que se le mandan a mano (`simctl push`).
+    if (!Device.isDevice) return null;
     const projectId = Constants.expoConfig?.extra?.eas?.projectId;
     const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
     const { error } = await supabase.rpc('registrar_dispositivo_push', { p_token: token, p_plataforma: Platform.OS });

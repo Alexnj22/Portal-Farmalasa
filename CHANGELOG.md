@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1095.1 — Aviso del teléfono: la tarjeta va como imagen al mantener presionado
+
+La extensión de contenido (`targets/tarjeta`) no se mostraba en el iPhone del
+usuario. Medido leyendo el registro del teléfono por cable (`idevicesyslog`):
+el aviso llegaba con la categoría correcta, la extensión de servicio corría,
+y al mantener presionado SpringBoard armaba el contenido por defecto
+(«Setup ExpandedContentProvider») **sin buscar la extensión**. Versiones,
+firma, clase y categorías del `.ipa` estaban bien.
+
+En vez de apostar a algo que el sistema ignora, la extensión de servicio
+—la que sí corre, la de la foto— dibuja la tarjeta con SwiftUI
+(`ImageRenderer`) y la ADJUNTA sin miniatura: al mantener presionado, iOS
+muestra la imagen grande. Se quita `targets/tarjeta`. Además, en la app el
+simulador ya declara las categorías y pide permiso (sin token), para poder
+probar avisos a mano.
+
 ## v2.1095.0 — Notificaciones: tarjetas en la app, progreso visible y rechazo escrito en el aviso
 
 Revisión del usuario con la compilación 10 en la mano (2026-09-30).

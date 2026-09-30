@@ -8,5 +8,5 @@ module.exports = {
   name: 'Avisos',
   bundleIdentifier: '.avisos',
   deploymentTarget: '16.0',
-  frameworks: ['Intents'],
+  frameworks: ['Intents', 'SwiftUI', 'UIKit'],
 };

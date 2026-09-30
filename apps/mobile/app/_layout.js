@@ -13,6 +13,7 @@ import { notificarActividad } from '@plataforma/cicloDeVida';
 import { useTema } from '../tema/tema';
 import BotonCampana from '../componentes/BotonCampana';
 import { CapaDeProgreso } from '../componentes/Progreso';
+import Aurora from '../componentes/Aurora';
 import { escucharToques, registrarAvisos } from '../componentes/avisos';
 
 // Lo que hace `App.jsx` del portal alrededor de las pantallas:
@@ -47,8 +48,10 @@ function CampanaEnVivo() {
 // Los colores de la navegación siguen al TELÉFONO (claro u oscuro), no al tema
 // del portal: las barras, los títulos y los fondos son los del sistema. Con los
 // del portal el título grande salía oscuro sobre oscuro (usuario, 2026-09-30).
-const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: '#F2F2F7', card: '#F9F9F9' } };
-const OSCURO = { ...DarkTheme, colors: { ...DarkTheme.colors, background: '#000000', card: '#1C1C1E' } };
+// El fondo de las pantallas es transparente: detrás está la aurora (una sola,
+// en la raíz) que da la personalidad de la marca a toda la app.
+const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent', card: '#F9F9F9' } };
+const OSCURO = { ...DarkTheme, colors: { ...DarkTheme.colors, background: 'transparent', card: '#1C1C1E' } };
 
 export default function Raiz() {
   const tema = useTema();
@@ -58,7 +61,8 @@ export default function Raiz() {
     <SafeAreaProvider>
       {/* Cada toque cuenta como actividad: es lo que en la web hacen el mouse
           y el teclado, y lo que mantiene viva la sesión. */}
-      <View style={{ flex: 1, backgroundColor: oscuro ? OSCURO.colors.background : CLARO.colors.background }} onTouchStart={notificarActividad}>
+      <View style={{ flex: 1 }} onTouchStart={notificarActividad}>
+        <Aurora />
         <AuthProvider>
           <GuardiaDeSesion />
           <StatusBar style="auto" />

@@ -4,10 +4,14 @@
 // del sistema: un formulario agrupado como el de Ajustes (ver
 // componentes/Formulario.js) y el botón nativo de @expo/ui.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Image, Text, View } from 'react-native';
+import { Alert, Image, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { Button, Host } from '@expo/ui';
-import { colorSistema, FilaCampo, FilaTexto, Formulario, Grupo } from '../componentes/Formulario';
+import { Button, Host, Icon } from '@expo/ui';
+import Vidrio from '../componentes/Vidrio';
+import { colorSistema, FilaCampo, Formulario, Grupo } from '../componentes/Formulario';
+
+const ICONO_FACE = Icon.select({ ios: 'faceid', android: require('@expo/material-symbols/face.xml') });
+const ICONO_HUELLA = Icon.select({ ios: 'touchid', android: require('@expo/material-symbols/fingerprint.xml') });
 import { useAuth } from '@nucleo/context/AuthContext';
 import { cambiarMiContrasenaInicial } from '@nucleo/data/auth';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -117,33 +121,53 @@ export default function Entrar() {
     }
   };
 
+  // El ícono del botón según lo que tenga el teléfono.
+  const iconoBio = biometria === 'Face ID' ? ICONO_FACE : ICONO_HUELLA;
+
   return (
-    <Formulario contentContainerStyle={{ paddingTop: 72 }}>
-      <View style={{ alignItems: 'center', gap: 12 }}>
-        <Image source={require('../assets/icono.png')} style={{ width: 84, height: 84, borderRadius: 20 }} />
-        <Text style={{ color: colorSistema.texto, fontSize: 26, fontWeight: '800' }}>
-          {pendiente ? 'Elige tu contraseña' : 'Portal Farmalasa'}
+    <Formulario contentContainerStyle={{ paddingTop: 64, gap: 22 }}>
+      {/* La marca: el logo con su resplandor, sobre la aurora de toda la app. */}
+      <View style={{ alignItems: 'center', gap: 10 }}>
+        <View style={{ shadowColor: '#981D97', shadowOpacity: 0.45, shadowRadius: 28, shadowOffset: { width: 0, height: 8 }, elevation: 12 }}>
+          <Image source={require('../assets/icono.png')} style={{ width: 96, height: 96, borderRadius: 24 }} />
+        </View>
+        <Text style={{ color: colorSistema.texto, fontSize: 30, fontWeight: '800', letterSpacing: -0.5 }}>
+          {pendiente ? 'Elige tu contraseña' : 'Farmalasa'}
         </Text>
-        {pendiente ? (
-          <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center', marginHorizontal: 32 }}>
-            Es tu primera entrada: la contraseña que te dieron es temporal.
-          </Text>
-        ) : null}
+        <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center', marginHorizontal: 32 }}>
+          {pendiente ? 'Es tu primera entrada: la contraseña que te dieron es temporal.' : 'Portal del equipo'}
+        </Text>
       </View>
 
+      {/* Con la biometría activa, ése es el camino principal: arriba y grande. */}
+      {!pendiente && biometria ? (
+        <View style={{ marginHorizontal: 16 }}>
+          <Pressable onPress={entrarConBiometria} disabled={ocupado} accessibilityRole="button"
+            style={({ pressed }) => ({ opacity: pressed || ocupado ? 0.7 : 1 })}>
+            <Vidrio radio={26} interactivo tinte={colorSistema.acentoTinte}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 18 }}>
+                <Host matchContents><Icon name={iconoBio} size={28} color={colorSistema.acento} /></Host>
+                <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>Entrar con {biometria}</Text>
+              </View>
+            </Vidrio>
+          </Pressable>
+          <Text style={{ color: colorSistema.texto2, fontSize: 13, textAlign: 'center', marginTop: 14 }}>o con tu usuario y contraseña</Text>
+        </View>
+      ) : null}
+
       {pendiente ? (
-        <Grupo pie="Mínimo 8 caracteres, con una mayúscula y un número.">
+        <Grupo vidrio pie="Mínimo 8 caracteres, con una mayúscula y un número.">
           <FilaCampo placeholder="Contraseña nueva" secureTextEntry textContentType="newPassword" onChangeText={setNueva} returnKeyType="next" />
           <FilaCampo placeholder="Repítela" secureTextEntry textContentType="newPassword" onChangeText={setConfirmacion} returnKeyType="done" onSubmitEditing={cambiar} />
         </Grupo>
       ) : (
-        <Grupo>
+        <Grupo vidrio>
           <FilaCampo placeholder="Usuario" autoCapitalize="none" autoCorrect={false} textContentType="username" onChangeText={setUsuario} returnKeyType="next" />
           <FilaCampo ref={claveRef} placeholder="Contraseña" secureTextEntry textContentType="password" value={clave} onChangeText={setClave} returnKeyType="go" onSubmitEditing={entrar} />
         </Grupo>
       )}
 
-      {error ? <Grupo><FilaTexto color={colorSistema.rojo}>{error}</FilaTexto></Grupo> : null}
+      {error ? <Text style={{ color: colorSistema.rojo, fontSize: 15, textAlign: 'center', marginHorizontal: 24 }}>{error}</Text> : null}
 
       <View style={{ marginHorizontal: 16 }}>
         <Host matchContents={{ vertical: true }} style={{ width: '100%' }}>
@@ -151,11 +175,6 @@ export default function Entrar() {
             ? <Button variant="filled" label={ocupado ? 'Guardando…' : 'Guardar y entrar'} disabled={ocupado || !nueva || !confirmacion} onPress={cambiar} />
             : <Button variant="filled" label={ocupado ? 'Entrando…' : 'Entrar'} disabled={ocupado || !usuario || !clave} onPress={entrar} />}
         </Host>
-        {!pendiente && biometria ? (
-          <Host matchContents={{ vertical: true }} style={{ width: '100%', marginTop: 12 }}>
-            <Button variant="text" label={`Entrar con ${biometria}`} disabled={ocupado} onPress={entrarConBiometria} />
-          </Host>
-        ) : null}
       </View>
     </Formulario>
   );

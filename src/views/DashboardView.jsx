@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import { presentesEl, problemaDeSucursal } from '@nucleo/utils/inicio';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import Button from '../components/common/Button';
 import PeriodStepper from '../components/common/PeriodStepper';
@@ -844,12 +845,8 @@ const MonthYearPicker = ({ value, onChange, isMobile = false }) => {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const parseMeta = (raw) => typeof raw === 'object' && raw !== null ? raw : (() => { try { return JSON.parse(raw); } catch { return {}; } })();
 const localDateStr = (d = new Date()) => { const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; };
-const getBranchIssue = (b) => {
-  if (!b.address) return 'Sin dirección registrada';
-  if (!b.phone && !b.cell) return 'Sin teléfono de contacto';
-  if (b.propertyType === 'RENTED' && b.rent?.contract?.endDate) { const d = Math.ceil((new Date(b.rent.contract.endDate)-new Date())/86400000); if (d<=60) return `Contrato vence en ${d} días`; }
-  return null;
-};
+// Vive en el núcleo (`utils/inicio.js`): la usa también el Inicio de la app.
+const getBranchIssue = problemaDeSucursal;
 
 // ─── Per-tab layout init helpers ──────────────────────────────────────────────
 const initTabLayouts = (userId) => {
@@ -2052,7 +2049,7 @@ const DashboardView = ({ openModal }) => {
   // ── Computed ───────────────────────────────────────────────────────────────
   const today           = localDateStr();
   const activeEmployees = useMemo(()=>employees.filter(e=>e.status!=='INACTIVO'&&e.status!=='LIQUIDADO'),[employees]);
-  const presentToday    = useMemo(()=>{ const ids=new Set(); employees.forEach(e=>(e.attendance||[]).forEach(a=>{if((a.date||a.timestamp?.split('T')[0])===today) ids.add(e.id);})); return ids.size; },[employees,today]);
+  const presentToday    = useMemo(()=>presentesEl(employees, today),[employees,today]);
   const branchAlerts    = useMemo(()=>branches.filter(b=>getBranchIssue(b)!==null),[branches]);
 
   const trendScopeIsBranch = getScope('dash_trend') !== 'ALL';
@@ -3847,7 +3844,7 @@ const DashboardView = ({ openModal }) => {
             ? activeEmployees.filter(e => String(e.branchId ?? e.branch_id ?? '') === kpiBranchStr)
             : activeEmployees;
           const kpiPresent = kpiBranchStr
-            ? (() => { const ids=new Set(); kpiEmps.forEach(e=>(e.attendance||[]).forEach(a=>{if((a.date||a.timestamp?.split('T')[0])===today) ids.add(e.id);})); return ids.size; })()
+            ? presentesEl(kpiEmps, today)
             : presentToday;
           const kpiPending = kpiBranchStr
             ? pendingReqs.filter(r => { const emp=employees.find(e=>String(e.id)===String(r.employee_id)); return emp&&String(emp.branchId??emp.branch_id??'')===kpiBranchStr; }).length

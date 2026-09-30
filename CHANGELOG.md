@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1097.0 — App: aurora en toda la app, vidrio nativo y entrada rediseñada con Face ID
+
+Primer tramo del bloque «pantallas nativas» (sin compilar: se compila al
+cerrar el bloque, decisión del usuario del 2026-09-30).
+
+- **Aurora** (`componentes/Aurora.js`): el fondo de TODA la app —manchas con
+  el verde y el magenta del logo y el azul y el violeta de la marca—, una sola
+  en la raíz. Pedido del usuario: que el vidrio se luzca y la app tenga la
+  personalidad del portal.
+- **Vidrio** (`componentes/Vidrio.js`): Liquid Glass en iOS 26, desenfoque del
+  sistema en iOS anterior, tarjeta Material translúcida en Android.
+- **Listas del sistema sin fondo** (`componentes/Lista.ios.js`): Menú y Yo
+  dejan ver la aurora.
+- **Entrada rediseñada:** logo con resplandor, «Farmalasa · Portal del
+  equipo», campos en vidrio y, si está activo, un botón grande «Entrar con
+  Face ID» (o huella) con su ícono, arriba del formulario.
+- **Núcleo** para el Inicio nativo: `utils/inicio.js` (presentes del día,
+  alerta de sucursal, ventas por sala y hora, saludo) —el tablero del portal
+  pasa a usar las mismas dos primeras— y `utils/ordenPorUso.js`, el orden que
+  aprende del uso con vida media de 14 días. Con pruebas.
+
 ## v2.1096.2 — «Otro» no tapa una diferencia de cantidad en la recepción
 
 Usuario, 2026-09-30, con la captura de un pedido de Salud 4: la famotidina

@@ -2,13 +2,14 @@
 // portal vive en el menú del empleado y en la esquina del usuario.
 import { useEffect, useState } from 'react';
 import { Alert, useColorScheme } from 'react-native';
-import { Host, Icon, List, ListItem, Switch } from '@expo/ui';
+import { Host, Icon, ListItem, Switch } from '@expo/ui';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { MODULE_MAP } from '@nucleo/constants/moduleMap';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import Seccion from '../../../componentes/Seccion';
+import Lista from '../../../componentes/Lista';
 import { useTema } from '../../../tema/tema';
 import { ICONO_SALIR, iconoDe } from '../../../tema/iconos';
 import { abrirModulo } from '../../../pantallas';
@@ -53,7 +54,7 @@ export default function Yo() {
 
   return (
     <Host style={{ flex: 1 }} colorScheme={oscuro ? 'dark' : 'light'}>
-      <List>
+      <Lista>
         <Seccion>
           <ListItem supporting={[cargo, sala].filter(Boolean).join(' · ') || undefined}
             leading={<Icon name={iconoDe('User')} size={28} color={tema.color.marca} />}>
@@ -82,7 +83,7 @@ export default function Yo() {
             Salir
           </ListItem>
         </Seccion>
-      </List>
+      </Lista>
     </Host>
   );
 }

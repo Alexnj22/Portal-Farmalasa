@@ -5,11 +5,12 @@
 // Compose en Android.
 import { useMemo } from 'react';
 import { useColorScheme } from 'react-native';
-import { Host, Icon, List, ListItem } from '@expo/ui';
+import { Host, Icon, ListItem } from '@expo/ui';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { MODULE_MAP } from '@nucleo/constants/moduleMap';
 import { MENU_GROUPS, gruposVisibles } from '@nucleo/constants/menuGroups';
 import Seccion from '../../../componentes/Seccion';
+import Lista from '../../../componentes/Lista';
 import { useTema } from '../../../tema/tema';
 import { iconoDe } from '../../../tema/iconos';
 import { abrirModulo } from '../../../pantallas';
@@ -40,7 +41,7 @@ export default function Menu() {
 
   return (
     <Host style={{ flex: 1 }} colorScheme={oscuro ? 'dark' : 'light'}>
-      <List onRefresh={async () => { await refreshPermissions?.(user); }}>
+      <Lista onRefresh={async () => { await refreshPermissions?.(user); }}>
         {bloques.map((b) => (
           <Seccion key={b.key} titulo={b.titulo}>
             {b.modulos.map((m) => (
@@ -51,7 +52,7 @@ export default function Menu() {
             ))}
           </Seccion>
         ))}
-      </List>
+      </Lista>
     </Host>
   );
 }

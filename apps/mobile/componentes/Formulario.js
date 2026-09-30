@@ -12,6 +12,7 @@
 // su propio `Host`, que es la forma documentada de mezclarlos.
 import { Children, forwardRef, isValidElement } from 'react';
 import { Platform, PlatformColor, ScrollView, Text, TextInput, View } from 'react-native';
+import Vidrio from './Vidrio';
 
 const ios = Platform.OS === 'ios';
 export const colorSistema = {
@@ -25,11 +26,12 @@ export const colorSistema = {
   verde: ios ? PlatformColor('systemGreen') : '#1B873F',
   naranja: ios ? PlatformColor('systemOrange') : '#B26A00',
   acento: ios ? PlatformColor('link') : '#0052CC',
+  acentoTinte: 'rgba(0,82,204,0.12)',
 };
 
 export function Formulario({ children, contentContainerStyle, ...props }) {
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colorSistema.fondo }}
+    <ScrollView style={{ flex: 1 }}
       contentContainerStyle={[{ paddingVertical: 20, gap: 28 }, contentContainerStyle]}
       keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="on-drag"
       contentInsetAdjustmentBehavior="automatic" {...props}>
@@ -39,19 +41,21 @@ export function Formulario({ children, contentContainerStyle, ...props }) {
 }
 
 /** Un grupo de filas con esquinas redondeadas; `titulo` arriba y `pie` abajo, en gris. */
-export function Grupo({ titulo, pie, children }) {
+// `vidrio`: el grupo va sobre la aurora como superficie de vidrio (la entrada).
+export function Grupo({ titulo, pie, children, vidrio = false }) {
   const filas = Children.toArray(children).filter(isValidElement);
+  const contenido = filas.map((fila, i) => (
+    <View key={fila.key ?? i}>
+      {fila}
+      {i < filas.length - 1 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 16 }} /> : null}
+    </View>
+  ));
   return (
     <View style={{ marginHorizontal: 16 }}>
       {titulo ? <Text style={{ color: colorSistema.texto2, fontSize: 13, textTransform: 'uppercase', marginLeft: 16, marginBottom: 6 }}>{titulo}</Text> : null}
-      <View style={{ backgroundColor: colorSistema.fila, borderRadius: ios ? 26 : 16, overflow: 'hidden' }}>
-        {filas.map((fila, i) => (
-          <View key={fila.key ?? i}>
-            {fila}
-            {i < filas.length - 1 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 16 }} /> : null}
-          </View>
-        ))}
-      </View>
+      {vidrio
+        ? <Vidrio radio={ios ? 26 : 16}>{contenido}</Vidrio>
+        : <View style={{ backgroundColor: colorSistema.fila, borderRadius: ios ? 26 : 16, overflow: 'hidden' }}>{contenido}</View>}
       {pie ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 16, marginTop: 6 }}>{pie}</Text> : null}
     </View>
   );

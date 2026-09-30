@@ -86,7 +86,7 @@ export const AREAS = [
             'src/plataforma/',   // adaptadores del núcleo portable (docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md)
             'src/components/common/', 'src/components/layout/', 'src/components/GlassViewLayout.jsx',
             'src/components/MotionProvider.jsx', 'src/components/UnifiedModal.jsx',
-            'src/constants/moduleMap.js', 'src/constants/menuGroups.js', 'src/routeImporters.js', 'src/constants/menuSearchKeywords.js',
+            'src/constants/moduleMap.js', 'src/constants/menuGroups.js', 'src/utils/inicio.js', 'src/utils/ordenPorUso.js', 'src/routeImporters.js', 'src/constants/menuSearchKeywords.js',
             'src/constants/tipoIconos.js', 'src/constants/empresa.js', 'src/constants/erp.js',
             'src/context/', 'src/store/staffStore.js', 'src/store/toastStore.js', 'src/store/utils.js',
             'src/store/slices/systemSlice.js',

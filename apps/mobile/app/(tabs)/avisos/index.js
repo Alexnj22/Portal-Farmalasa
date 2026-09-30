@@ -130,7 +130,7 @@ export default function Notificaciones() {
           </Pressable>
         ) : undefined,
       }} />
-      <ScrollView style={{ flex: 1, backgroundColor: colorSistema.fondo }}
+      <ScrollView style={{ flex: 1 }}
         contentContainerStyle={{ paddingVertical: 12, gap: 12 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setDetalles({}); await recargar(); setRecargando(false); }} />}>

@@ -93,7 +93,7 @@ export default function Solicitud() {
   return (
     <>
       <Stack.Screen options={{ title: titulo }} />
-      <ScrollView style={{ flex: 1, backgroundColor: colorSistema.fondo }}
+      <ScrollView style={{ flex: 1 }}
         contentContainerStyle={{ padding: 16, gap: 16 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={false} onRefresh={cargar} />}>

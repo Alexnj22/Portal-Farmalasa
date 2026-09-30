@@ -687,7 +687,23 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string, cont
     throw new ErrorUsuario((err as Error).message);
   }
   // Los pagos se validan ANTES de reservar número: un error acá no deja salto.
-  await resolverPagos(admin, p, c, pag.data ?? [], total, { soloValidar: true });
+  const validados = await resolverPagos(admin, p, c, pag.data ?? [], total, { soloValidar: true });
+  // ── El límite de crédito FRENA (borrador 0014) ──
+  // Lo que ya debe más lo que se fía ahora no puede pasar del límite aprobado.
+  // El atraso no frena (es un hallazgo, igual que en la cartera de las
+  // farmacias). Una venta hecha SIN SEÑAL no se frena: la mercadería ya se
+  // entregó y el documento tiene que salir; queda a la vista en la cartera.
+  const aCredito = validados.pagos.filter((x) => x.codigo === CREDITO).reduce((a, x) => a + Number(x.monto), 0);
+  if (aCredito > 0 && !cont) {
+    const { data: cr, error: eCr } = await admin.rpc("dist_credito_cliente", { p_cliente: c.id });
+    if (eCr) throw new Error(`leer el crédito del cliente: ${eCr.message}`);
+    const saldo = Number((cr as any)?.saldo ?? 0);
+    const limite = Number(c.limite_credito ?? 0);
+    if (Math.round((saldo + aCredito) * 100) > Math.round(limite * 100)) {
+      throw new ErrorUsuario(`${c.nombre} ya debe $${saldo.toFixed(2)} y su límite es $${limite.toFixed(2)}: `
+        + `puede llevar a crédito hasta $${Math.max(0, limite - saldo).toFixed(2)}. Cobra un abono o cambia la forma de pago.`, 409);
+    }
+  }
   const { data: correlativo, error: eCor } = await admin.rpc("dist_siguiente_correlativo", {
     p_emisor: e.id, p_ambiente: ambiente, p_tipo: tipo,
     p_establecimiento: e.establecimiento, p_punto_venta: e.punto_venta, p_anio: anio,

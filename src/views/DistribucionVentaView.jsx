@@ -33,7 +33,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import {
     fetchEmisor, fetchClientes, fetchCatalogo, fetchListasYPrecios, fetchPedidoParaCorregir, fetchPedidos,
     crearPedido, actualizarPedido, facturarPedido, mensajeDeDistribucion, guardarPagos, subirComprobante, adjuntarComprobante,
-    pedirDescuento, anularPedido, reservar, fetchReservasVigentes,
+    pedirDescuento, anularPedido, reservar, fetchReservasVigentes, fetchCreditoCliente,
 } from '@nucleo/data/distribucion';
 import { fetchLotes } from '@nucleo/data/distribucionInventario';
 import Interruptor from './distribucion/Interruptor';
@@ -175,6 +175,7 @@ export default function DistribucionVentaView() {
     const [avisoReserva, setAvisoReserva] = useState('');
     const [ahora, setAhora] = useState(() => Date.now());
     const [verCobro, setVerCobro] = useState(false);  // la ventana de cobro (F2)
+    const [credito, setCredito] = useState(null);     // saldo, atraso y disponible del cliente (0014)
     const [perdida, setPerdida] = useState(null);         // la ventana de venta perdida: { producto?, cantidad, buscado?, clave? }
 
     // ── Lo que apartaron OTRAS ventas (borrador 0012) ──
@@ -386,6 +387,16 @@ export default function DistribucionVentaView() {
     const licenciaVencida = cliente?.licencia_srs_vence && cliente.licencia_srs_vence < hoySV();
     const sinLicencia = cliente && (!cliente.licencia_srs || licenciaVencida);
     const tieneCredito = cliente && cliente.plazo_dias > 0 && Number(cliente.limite_credito) > 0;
+    // Cuánto debe ya el cliente (cuentas por cobrar): se muestra al elegirlo y
+    // decide cuánto puede llevar a crédito. Si no se puede leer, la venta sigue
+    // y el servidor frena igual al facturar.
+    const clienteCreditoId = tieneCredito ? cliente.id : null;
+    useEffect(() => {
+        if (!clienteCreditoId) { setCredito(null); return undefined; } // eslint-disable-line react-hooks/set-state-in-effect -- limpiar al cambiar de cliente
+        let vivo = true;
+        fetchCreditoCliente(clienteCreditoId).then(c => { if (vivo) setCredito(c); }).catch(e => console.error('venta: crédito', e));
+        return () => { vivo = false; };
+    }, [clienteCreditoId]);
     const conIva = tipoDoc === '01';
     // Precio de lista (con IVA) → el que se ve. Sólo para mostrar: las cuentas son del motor.
     const visto = (conIvaPrecio) => (conIva ? conIvaPrecio : conIvaPrecio / 1.13);
@@ -645,7 +656,10 @@ export default function DistribucionVentaView() {
     const alCredito = !conCredito ? 0
         : fijas.filter(f => f.forma === '13').reduce((a, f) => a + (leerMonto(f.monto) ?? 0), 0)
           + (pagos[pagos.length - 1].forma === '13' ? Math.max(0, estimado.total - sumaFijas) : 0);
-    const excedeCredito = conCredito && cliente && alCredito > Number(cliente.limite_credito);
+    // Lo que puede llevar a crédito es lo DISPONIBLE (límite menos lo que ya
+    // debe), no el límite entero: el servidor frena igual (borrador 0014).
+    const disponibleCredito = credito ? Number(credito.disponible) : Number(cliente?.limite_credito ?? 0);
+    const excedeCredito = conCredito && cliente && Math.round(alCredito * 100) > Math.round(disponibleCredito * 100);
     const problemaPago = lineas.length ? problemaDePagos(pagos, estimado.total, { cliente, plazo }) : null;
     const cambio = cambioDePagos(pagos, estimado.total);
     const esperandoAprobacion = !!pedido?.pedido.descuento_solicitud_id;
@@ -666,6 +680,7 @@ export default function DistribucionVentaView() {
     const bloqueo = bloqueoGuardar
         ?? (porAprobar.length ? 'Hay descuentos por aprobar: la venta se guarda como preventa.' : null)
         ?? (sinExistencia ? `No hay existencia para «${sinExistencia.p?.nombre ?? 'un producto'}»: baja la cantidad o anota lo que falta como venta perdida.` : null)
+        ?? (excedeCredito ? `${cliente.nombre} ya debe ${formatMoney(credito?.saldo ?? 0)}: puede llevar a crédito hasta ${formatMoney(disponibleCredito)}. Cobra un abono o cambia la forma de pago.` : null)
         ?? problemaPago;
     const listo = !bloqueo && !guardando;
     const puedeGuardar = !bloqueoGuardar && !guardando;
@@ -1081,7 +1096,15 @@ export default function DistribucionVentaView() {
                                     {cliente && !cliente.contribuyente && <Badge size="sm" variant="neutral" uppercase={false}>Sin NRC: sólo Factura</Badge>}
                                     {cliente?.gran_contribuyente && tipoDoc === '03' && <Badge size="sm" variant="warning" uppercase={false}>Retiene 1%</Badge>}
                                     {cliente && soloVentaLibre(cliente.tipo) && <Badge size="sm" variant="neutral" uppercase={false}>Sólo venta libre</Badge>}
-                                    {tieneCredito && <Badge size="sm" variant="neutral" uppercase={false}>Crédito {formatMoney(cliente.limite_credito)} · {cliente.plazo_dias} días</Badge>}
+                                    {tieneCredito && (!credito || Number(credito.saldo) <= 0) && <Badge size="sm" variant="neutral" uppercase={false}>Crédito {formatMoney(cliente.limite_credito)} · {cliente.plazo_dias} días</Badge>}
+                                    {tieneCredito && credito && Number(credito.saldo) > 0 && (
+                                        <Badge size="sm" uppercase={false} data-testid="credito-cliente"
+                                            variant={Number(credito.disponible) <= 0 ? 'danger' : Number(credito.vencido) > 0 ? 'warning' : 'neutral'}>
+                                            Debe {formatMoney(credito.saldo)}
+                                            {Number(credito.dias_atraso) > 0 ? ` · ${credito.dias_atraso} días de atraso` : ''}
+                                            {` · disponible ${formatMoney(credito.disponible)}`}
+                                        </Badge>
+                                    )}
                                     {cliente?.lista_id && String(cliente.lista_id) !== String(listaEfectiva) && <Badge size="sm" variant="warning" uppercase={false}>Lista distinta de la del cliente</Badge>}
                                 </div>
                                 <div className="flex items-center gap-1.5 shrink-0">
@@ -1475,7 +1498,9 @@ export default function DistribucionVentaView() {
                                         plazo={plazo} setPlazo={setPlazo} abierto={pagoAbierto} setAbierto={setPagoAbierto} />
                                 )}
                                 {excedeCredito && (
-                                    <Notice variant="warning" compact>Pasa del crédito aprobado del cliente ({formatMoney(cliente.limite_credito)}).</Notice>
+                                    <Notice variant="danger" compact>
+                                        Ya debe {formatMoney(credito?.saldo ?? 0)} de un límite de {formatMoney(cliente.limite_credito)}: a crédito puede llevar hasta {formatMoney(disponibleCredito)}.
+                                    </Notice>
                                 )}
                                 {verNotas ? (
                                     <PortalTextarea label="Observaciones" name="notas" value={notas} rows={2} compact

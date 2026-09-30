@@ -40,6 +40,11 @@ export function mensajeDeDistribucion(error) {
     const texto = typeof error === 'string' ? error : error?.message ?? '';
     const codigo = Object.keys(MENSAJES).find(k => texto.includes(k));
     if (codigo) return MENSAJES[codigo];
+    // Un código de la base que no está en la lista trae su propia explicación
+    // después de los dos puntos (con las cifras reales, p. ej. cuánto debe el
+    // cliente): se muestra esa parte y no el código.
+    const propio = texto.match(/\bDIST_[A-Z_]+:\s*(.+)$/s);
+    if (propio) return propio[1].charAt(0).toUpperCase() + propio[1].slice(1);
     if (texto.includes('dist_clientes_documento_unico')) return 'Ya hay un cliente con ese documento.';
     if (texto.includes('dist_clientes_ccf_completo')) {
         return 'Un contribuyente necesita NIT, actividad económica y dirección completa para recibir Crédito Fiscal.';
@@ -546,4 +551,52 @@ export async function contarFacturacionPendiente() {
     const { data, error } = await supabase.rpc('dist_facturacion_pendiente');
     if (error) throw error;
     return data ?? { por_enviar: 0, contingencia: 0, rechazados: 0, invalidaciones: 0 };
+}
+
+// ── Cuentas por cobrar (borrador 0014) ──────────────────────────────────────
+// La cartera nace del documento: la parte a crédito de cada Factura o CCF. El
+// cobro lo hace `dist_cobrar` en UNA transacción (bloquea las cuentas del
+// cliente, valida contra el saldo, reparte y devuelve el recibo), y un
+// reintento con el mismo `clientUuid` devuelve el mismo recibo: no cobra dos veces.
+
+/** Toda la cartera en un JSON: resumen, antigüedad y clientes con saldo. */
+export async function fetchCartera() {
+    const { data, error } = await supabase.rpc('dist_cartera');
+    if (error) throw error;
+    return data;
+}
+
+/** Cuentas, crédito y cobros de un cliente. */
+export async function fetchEstadoCuenta(clienteId) {
+    const { data, error } = await supabase.rpc('dist_estado_cuenta', { p_cliente: Number(clienteId) });
+    if (error) throw error;
+    return data;
+}
+
+/** Saldo, vencido y disponible de un cliente (la venta lo muestra al elegirlo). */
+export async function fetchCreditoCliente(clienteId) {
+    const { data, error } = await supabase.rpc('dist_credito_cliente', { p_cliente: Number(clienteId) });
+    if (error) throw error;
+    return data;
+}
+
+/**
+ * Cobra. `aplicacion`: [{ cxc_id, monto }] para repartir a mano, o null para
+ * que la base reparta primero lo que vence antes. Devuelve el recibo.
+ */
+export async function cobrar({ clienteId, monto, forma, clientUuid, referencia = null, recibido = null, nota = null, aplicacion = null }) {
+    const { data, error } = await supabase.rpc('dist_cobrar', {
+        p_cliente: Number(clienteId), p_monto: monto, p_forma: forma, p_client_uuid: clientUuid,
+        p_referencia: referencia, p_recibido: recibido, p_nota: nota,
+        p_aplicacion: aplicacion?.length ? aplicacion : null,
+    });
+    if (error) throw error;
+    return data;
+}
+
+/** Anula un cobro (sólo quien administra, con motivo): el saldo vuelve. */
+export async function anularRecibo(reciboId, motivo) {
+    const { data, error } = await supabase.rpc('dist_anular_recibo', { p_recibo: reciboId, p_motivo: motivo });
+    if (error) throw error;
+    return data;
 }

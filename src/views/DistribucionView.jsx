@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes, Tag, PackageX, LayoutDashboard } from 'lucide-react';
+import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes, Tag, PackageX, LayoutDashboard, HandCoins } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Notice from '../components/common/Notice';
@@ -15,6 +15,8 @@ import TabEmisor from './distribucion/TabEmisor';
 import SolicitudesDescuento from './distribucion/SolicitudesDescuento';
 import TabVentasPerdidas from './distribucion/TabVentasPerdidas';
 import TabTablero from './distribucion/TabTablero';
+import TabCobros from './distribucion/TabCobros';
+import { VISTAS_CARTERA } from './distribucion/cartera';
 import { VISTAS_PEDIDOS, VISTAS_PERDIDAS, PERIODOS, CUBETAS_FACTURACION } from './distribucion/comun';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 
@@ -30,6 +32,7 @@ const TABS = [
     { key: 'inicio',     label: 'Inicio',     icon: LayoutDashboard },
     { key: 'pedidos',    label: 'Pedidos',    icon: ClipboardList },
     { key: 'documentos', label: 'Facturación', icon: FileCheck2 },
+    { key: 'cobros',     label: 'Cuentas por cobrar', icon: HandCoins },
     { key: 'clientes',   label: 'Clientes',   icon: Store },
     { key: 'catalogo',   label: 'Catálogo',   icon: PackageSearch },
     { key: 'inventario', label: 'Inventario', icon: Boxes },
@@ -53,6 +56,8 @@ export default function DistribucionView({ seccion = 'inicio' }) {
     const [periodo, setPeriodo] = usePestanaEnUrl(PERIODOS, '30d', 'periodo');
     // Facturación: por resolver / todos / sellados / invalidados, en `?cubeta=`.
     const [cubeta, setCubeta] = usePestanaEnUrl(CUBETAS_FACTURACION, 'accion', 'cubeta');
+    // Cuentas por cobrar: con saldo / atrasados / sobre el límite, en `?cartera=`.
+    const [vistaCartera, setVistaCartera] = usePestanaEnUrl(VISTAS_CARTERA, 'saldo', 'cartera');
     const { hasPermission } = useAuth();
     const puedeVender = hasPermission('distribucion', 'can_edit');
     const puedeConfigurar = hasPermission('distribucion_config', 'can_edit');
@@ -90,6 +95,7 @@ export default function DistribucionView({ seccion = 'inicio' }) {
         catalogo: 'Buscar producto…',
         inventario: 'Buscar producto o lote…',
         perdidas: 'Buscar producto o cliente…',
+        cobros: 'Buscar cliente o ruta…',
     }[tab] ?? 'Buscar…'), [tab]);
 
     const comunes = { emisor, puedeVender, puedeConfigurar, buscar };
@@ -101,9 +107,9 @@ export default function DistribucionView({ seccion = 'inicio' }) {
             filtersContent={tab === 'inicio' ? (
                 <ViewTabBar tabs={PERIODOS} activeTab={periodo} onTabChange={setPeriodo} showSearch={false} />
             ) : conBuscador ? (
-                <ViewTabBar tabs={tab === 'pedidos' ? VISTAS_PEDIDOS : tab === 'perdidas' ? VISTAS_PERDIDAS : tab === 'documentos' ? CUBETAS_FACTURACION : [actual]}
-                    activeTab={tab === 'pedidos' ? vista : tab === 'perdidas' ? estadoPerdida : tab === 'documentos' ? cubeta : tab}
-                    onTabChange={tab === 'pedidos' ? setVista : tab === 'perdidas' ? setEstadoPerdida : tab === 'documentos' ? setCubeta : () => {}}
+                <ViewTabBar tabs={tab === 'pedidos' ? VISTAS_PEDIDOS : tab === 'perdidas' ? VISTAS_PERDIDAS : tab === 'documentos' ? CUBETAS_FACTURACION : tab === 'cobros' ? VISTAS_CARTERA : [actual]}
+                    activeTab={tab === 'pedidos' ? vista : tab === 'perdidas' ? estadoPerdida : tab === 'documentos' ? cubeta : tab === 'cobros' ? vistaCartera : tab}
+                    onTabChange={tab === 'pedidos' ? setVista : tab === 'perdidas' ? setEstadoPerdida : tab === 'documentos' ? setCubeta : tab === 'cobros' ? setVistaCartera : () => {}}
                     searchValue={buscar} onSearchChange={setBuscar}
                     placeholder={placeholder} showSearch />
             ) : null}
@@ -138,6 +144,9 @@ export default function DistribucionView({ seccion = 'inicio' }) {
             )}
             {visitadas.has('inventario') && (
                 <div className={tab === 'inventario' ? '' : 'hidden'}><TabInventario {...comunes} /></div>
+            )}
+            {visitadas.has('cobros') && (
+                <div className={tab === 'cobros' ? '' : 'hidden'}><TabCobros {...comunes} vista={vistaCartera} /></div>
             )}
             {visitadas.has('perdidas') && (
                 <div className={tab === 'perdidas' ? '' : 'hidden'}><TabVentasPerdidas {...comunes} vista={estadoPerdida} /></div>

@@ -577,3 +577,60 @@ test('sin señal: la venta se guarda en el teléfono y al volver la señal se fa
     await page.goto('/torogoz/documentos?cubeta=todos');
     await expect(page.getByText(/DTE-01-/).first()).toBeVisible({ timeout: 15_000 });
 });
+
+test('cuentas por cobrar: cobrar, no cobrar de más, anular el cobro, y la venta a crédito respeta lo disponible', async ({ page }) => {
+    const errores = [];
+    page.on('pageerror', e => errores.push(e.message));
+    const dinero = (t) => Number(String(t).replace(/[^0-9.]/g, ''));
+    await entrar(page);
+    await page.goto('/torogoz/cobros');
+    await expect(page.getByText('Antigüedad de saldos')).toBeVisible({ timeout: 15_000 });
+    await page.screenshot({ path: `${SALIDA}/cuentas-por-cobrar.png`, fullPage: true });
+    await page.getByText('FARMACIA DEL PUEBLO, S.A. DE C.V.').first().click();
+    const saldo = page.locator('[data-testid="saldo-cliente"]');
+    await expect(saldo).toBeVisible({ timeout: 15_000 });
+    // Esperar a que carguen sus cuentas: antes, el saldo dice $0.00.
+    await expect(page.locator('[data-cuenta]').first()).toBeVisible({ timeout: 15_000 });
+    const antes = dinero(await saldo.innerText());
+    // De más: no deja.
+    await page.locator('input[name="monto-cobro"]').fill(String(antes + 100));
+    await expect(page.locator('[data-cobrar-cartera]')).toBeDisabled();
+    await expect(page.getByText(/no se puede cobrar más/)).toBeVisible();
+    // Un abono de $50 en efectivo, entrega $60.
+    await page.locator('input[name="monto-cobro"]').fill('50');
+    await page.locator('input[name="recibido-cobro"]').fill('60');
+    await page.getByRole('switch', { name: /Imprimir el recibo/ }).click();
+    await page.locator('[data-cobrar-cartera]').click();
+    await expect(page.getByText('Cobro registrado').first()).toBeVisible({ timeout: 15_000 });
+    await expect.poll(async () => dinero(await saldo.innerText())).toBeCloseTo(antes - 50, 2);
+    await page.screenshot({ path: `${SALIDA}/cuenta-cliente.png` });
+    // Anular el cobro (la cuenta de pruebas administra): el saldo vuelve.
+    const recibo = page.locator('[data-recibo]').first();
+    await recibo.getByRole('button', { name: 'Anular este cobro' }).click();
+    await recibo.locator('input[name^="motivo-anular-"]').fill('prueba automática');
+    await recibo.getByRole('button', { name: 'Anular cobro' }).click();
+    await expect(page.getByText('Cobro anulado').first()).toBeVisible({ timeout: 15_000 });
+    await expect.poll(async () => dinero(await saldo.innerText())).toBeCloseTo(antes, 2);
+    await page.keyboard.press('Escape');
+
+    // Venta a crédito a un cliente que ya debe más que su límite: se dice y no factura.
+    await page.goto('/torogoz/venta');
+    await page.getByText('Elegir cliente…').click();
+    await page.getByText('FARMACIA LA PALMA', { exact: true }).last().click();
+    await expect(page.locator('[data-testid="credito-cliente"]')).toContainText(/disponible \$0\.00/, { timeout: 15_000 });
+    await page.locator('[data-testid="forma-pago"] [role="combobox"]').click();
+    await page.getByRole('option', { name: /A crédito/ }).click();
+    await page.keyboard.press('F3');
+    await page.keyboard.type('ensure advance liq fresa');
+    await expect(page.getByRole('option').first()).toBeVisible();
+    await page.keyboard.press('Enter');
+    const c = await cobrar(page);
+    await expect(c.getByText(/a crédito puede llevar hasta \$0\.00/)).toBeVisible();
+    await c.getByRole('button', { name: /^Facturar/ }).click();
+    await expect(c.getByText(/puede llevar a crédito hasta/).first()).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('F6');
+    await page.keyboard.press('Enter');
+    expect(errores).toEqual([]);
+});

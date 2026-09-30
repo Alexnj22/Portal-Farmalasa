@@ -712,3 +712,80 @@ export function ticketProvisional({ marca = null, emisor = {}, tipoNombre = 'FAC
         ],
     };
 }
+
+// ── Cuentas por cobrar: recibo y estado de cuenta ──────────────────────────
+
+const fechaDe = (iso) => {
+    const r = relojSV(new Date(iso)).toISOString();
+    return `${fechaDdMm(r.slice(0, 10))} ${hora12(r.slice(11, 19))}`;
+};
+
+/**
+ * El RECIBO de un cobro (2026-09-30): lo que el cliente se queda como prueba de
+ * que pagó. Qué documentos abona, cuánto a cada uno, lo que queda de cada uno
+ * y lo que sigue debiendo en total. En efectivo, lo entregado y el cambio.
+ */
+export function ticketDeRecibo(recibo, marca = null, emisor = {}) {
+    const totales = [['ABONO', dinero(recibo.monto), true]];
+    if (recibo.forma === '01' && recibo.recibido != null && Number(recibo.recibido) > Number(recibo.monto)) {
+        totales.push(['Efectivo recibido', dinero(recibo.recibido)], ['CAMBIO', dinero(Number(recibo.recibido) - Number(recibo.monto))]);
+    }
+    totales.push(['SALDO PENDIENTE', dinero(recibo.saldo_cliente)]);
+    return {
+        titulo: recibo.anulado_at ? 'RECIBO ANULADO' : 'RECIBO DE ABONO',
+        tituloDeCola: `Recibo ${recibo.id}`,
+        encabezado: {
+            titulo: (marca?.nombre ?? emisor.nombre_comercial ?? emisor.nombre ?? '').toUpperCase(),
+            lineas: [emisor.nombre, emisor.nit ? `NIT ${formatoNit(emisor.nit)}` : null].filter(Boolean),
+        },
+        datos: [['Recibo', String(recibo.id)], ['Fecha', fechaDe(recibo.created_at)]],
+        bloques: [
+            { titulo: 'Cliente', texto: recibo.cliente },
+            { titulo: 'Forma de pago', filas: [[FORMA_EN_PAPEL[recibo.forma] ?? 'Pago', recibo.referencia ?? '']] },
+        ],
+        // Dos columnas: el maquetador del rollo sabe alinear cuatro (la venta)
+        // o dos; con tres se comería la del medio.
+        items: {
+            columnas: [{ label: 'DOCUMENTO', ancho: '72%' }, { label: 'ABONO', ancho: '28%', alinear: 'der' }],
+            filas: (recibo.abonos ?? []).map(a => [
+                `...${a.numero_control.slice(-6)} del ${fechaDdMm(a.fecha)} - queda ${dinero(a.saldo)}`,
+                dinero(a.monto),
+            ]),
+        },
+        totales,
+        pie: [
+            recibo.recibido_por?.name ? `Recibio: ${recibo.recibido_por.name.split(' ').slice(0, 1).join(' ')}` : null,
+            ...(recibo.nota ? [recibo.nota] : []),
+            ...(recibo.anulado_at ? [`ANULADO: ${recibo.anulado_motivo}`] : []),
+            'Gracias por su pago.',
+        ].filter(Boolean),
+    };
+}
+
+/** El ESTADO DE CUENTA para dejárselo al cliente: qué debe, desde cuándo y cuánto. */
+export function ticketDeEstadoDeCuenta({ cliente, estado, marca = null, emisor = {} }) {
+    const abiertas = (estado?.cuentas ?? []).filter(c => c.estado === 'abierta');
+    const cr = estado?.credito ?? {};
+    return {
+        titulo: 'ESTADO DE CUENTA',
+        tituloDeCola: `Estado de cuenta ${cliente}`,
+        encabezado: {
+            titulo: (marca?.nombre ?? emisor.nombre_comercial ?? emisor.nombre ?? '').toUpperCase(),
+            lineas: [emisor.nombre].filter(Boolean),
+        },
+        datos: [['Al', fechaDe(new Date().toISOString())]],
+        bloques: [{ titulo: 'Cliente', texto: cliente, filas: [['Limite', dinero(cr.limite)], ['Disponible', dinero(cr.disponible)]] }],
+        items: {
+            columnas: [{ label: 'DOCUMENTO', ancho: '72%' }, { label: 'SALDO', ancho: '28%', alinear: 'der' }],
+            filas: abiertas.map(c => [
+                `...${c.numero_control.slice(-6)} vence ${fechaDdMm(c.vence)}${c.dias > 0 ? ` (${c.dias}d)` : ''}`,
+                dinero(c.saldo),
+            ]),
+        },
+        totales: [
+            ...(Number(cr.vencido) > 0 ? [['VENCIDO', dinero(cr.vencido)]] : []),
+            ['TOTAL A PAGAR', dinero(cr.saldo), true],
+        ],
+        pie: ['Los dias entre parentesis son de atraso.'],
+    };
+}

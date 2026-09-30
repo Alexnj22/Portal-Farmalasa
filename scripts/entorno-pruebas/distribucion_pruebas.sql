@@ -106,3 +106,39 @@ UPDATE public.dist_pedidos p SET estado = 'confirmado', dte_id = NULL FROM u WHE
 UPDATE public.dist_dte SET estado = 'contingencia', firmado = 'PRUEBA'
  WHERE id = (SELECT id FROM public.dist_dte WHERE estado = 'sin_firmar' ORDER BY id DESC LIMIT 1)
    AND NOT EXISTS (SELECT 1 FROM public.dist_dte WHERE estado = 'contingencia');
+
+-- 8 · Para probar cuentas por cobrar (0014, 2026-09-30): cobros realistas
+--     sobre el historial del tablero. Lo de hace más de 45 días se pagó casi
+--     todo; entre 15 y 45 días, la mayoría; lo reciente queda debiendo. Dos
+--     clientes quedan con atrasos y uno con un pago parcial. Directo en las
+--     tablas (sin `dist_cobrar`, que pide una sesión): sólo en pruebas.
+DO $$
+DECLARE x record; v_rec bigint; v_monto numeric; v_cuando timestamptz;
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM public.employees WHERE username = 'pruebas')
+       OR (SELECT count(*) FROM public.employees) > 30
+       OR EXISTS (SELECT 1 FROM public.dist_recibos WHERE nota = 'Semilla de cobros') THEN
+        RETURN;
+    END IF;
+    FOR x IN
+        SELECT c.*, cl.nombre FROM public.dist_cxc c JOIN public.dist_clientes cl ON cl.id = c.cliente_id
+         WHERE c.estado = 'abierta' ORDER BY c.fecha
+    LOOP
+        -- Los morosos a propósito: nunca pagan lo de los últimos 70 días.
+        CONTINUE WHEN x.nombre IN ('FARMACIA LA PALMA', 'TIENDA LA ROCA') AND x.fecha > current_date - 70;
+        v_monto := CASE
+            WHEN x.fecha < current_date - 45 THEN x.saldo
+            WHEN x.fecha < current_date - 15 AND random() < 0.75 THEN x.saldo
+            WHEN x.fecha < current_date - 15 AND random() < 0.3 THEN round(x.saldo * 0.5, 2)
+            ELSE 0 END;
+        CONTINUE WHEN v_monto <= 0;
+        v_cuando := (least(x.vence, current_date - 1) - floor(random() * 10)::int + time '10:00')::timestamp AT TIME ZONE 'America/El_Salvador';
+        INSERT INTO public.dist_recibos (emisor_id, cliente_id, client_uuid, monto, forma, referencia, nota, recibido_por, created_at)
+        VALUES (x.emisor_id, x.cliente_id, gen_random_uuid(), v_monto,
+                CASE WHEN random() < 0.6 THEN '01' ELSE '05' END, 'TRF-' || x.id, 'Semilla de cobros',
+                coalesce(x.vendedor_id, (SELECT id FROM public.employees WHERE username = 'pruebas')), v_cuando)
+        RETURNING id INTO v_rec;
+        INSERT INTO public.dist_cxc_abonos (recibo_id, cxc_id, monto, created_at) VALUES (v_rec, x.id, v_monto, v_cuando);
+        PERFORM public.dist_cxc_recalcular(x.id);
+    END LOOP;
+END $$;

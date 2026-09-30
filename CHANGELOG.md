@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1103.0 — Torogoz: cuentas por cobrar con cartera, cobro repartido, recibo y límite de crédito que frena
+
+Pedido del usuario: «sigue con cuentas por cobrar […] usa el ERP como
+muestra y mejóralo para que el portal tenga sus validaciones, eficiencia,
+fluidez, y todo correcto». La muestra fue la cartera de las farmacias (espejo
+del sistema de la caja); aquí la cartera NACE en el portal.
+
+- **Borrador 0014** (aplicado y probado en pruebas):
+  - `dist_cxc`: una cuenta por documento con parte a crédito (código 13 en
+    los pagos del JSON que recibió Hacienda); vence = emisión + plazo. Nace
+    con el documento por trigger y se anula si se invalida, rechaza o
+    descarta. Historial previo cargado.
+  - `dist_recibos` + `dist_cxc_abonos`: un cobro es un recibo repartido en
+    cuentas. `dist_cobrar` bloquea las cuentas del cliente, valida contra el
+    saldo (no se puede cobrar de más: CHECK y validación), exige número a
+    cheque y transferencia, reparte primero lo que vence antes o a mano, y
+    un reintento con el mismo `client_uuid` devuelve el mismo recibo.
+  - `dist_anular_recibo`: sólo quien administra y con motivo; el saldo vuelve.
+  - `dist_cartera()`, `dist_estado_cuenta()`, `dist_credito_cliente()`: todo
+    en un JSON por llamada.
+- **Cuentas por cobrar** (menú de Torogoz): por cobrar, atrasado, vence en 7
+  días, cobrado este mes; antigüedad de saldos (barra + tramos que filtran);
+  pestañas Con saldo · Atrasados · Sobre el límite (en la dirección).
+- **Ficha de cobro**: límite, vencido, atraso, disponible; cada documento con
+  lo que le toca del cobro antes de cobrar; «Lo vencido» y «Todo»; efectivo
+  con cambio; repartir a mano; recibo impreso; estado de cuenta impreso;
+  historial con quién cobró y anulación con motivo.
+- **El límite frena**: `distribucion-dte` no factura a crédito si lo que ya
+  debe más lo nuevo pasa del límite (una venta sin señal no se frena: la
+  mercadería ya se entregó). La venta muestra «Debe $X · N días de atraso ·
+  disponible $Y» al elegir el cliente y no deja cobrar a crédito de más. El
+  atraso avisa, no frena (igual que en la cartera de las farmacias).
+- Semilla de cobros realistas en pruebas; reparto gemelo de la base con 4
+  pruebas unitarias; prueba e2e de cobrar, no cobrar de más, anular y el
+  freno en la venta.
+
+
 ## v2.1102.0 — Torogoz: contingencia completa para vender sin señal, y ticket que se lee de corrido
 
 Pedido del usuario: «termina el aviso de contingencia para cuando no hay

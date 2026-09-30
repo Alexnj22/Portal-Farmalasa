@@ -4,9 +4,9 @@
 import { Host, Picker, Text } from '@expo/ui/swift-ui';
 import { pickerStyle, tag } from '@expo/ui/swift-ui/modifiers';
 
-export default function Segmentos({ opciones, activa, onCambiar }) {
+export default function Segmentos({ opciones, activa, onCambiar, margen = 16 }) {
   return (
-    <Host matchContents={{ vertical: true }} style={{ marginHorizontal: 16 }}>
+    <Host matchContents={{ vertical: true }} style={{ marginHorizontal: margen }}>
       <Picker selection={activa} onSelectionChange={onCambiar} modifiers={[pickerStyle('segmented')]}>
         {opciones.map((o) => <Text key={o.id} modifiers={[tag(o.id)]}>{o.label}</Text>)}
       </Picker>

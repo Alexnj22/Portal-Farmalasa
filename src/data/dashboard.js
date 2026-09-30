@@ -114,10 +114,25 @@ export function fetchTodayHourlySales(dateStr) {
         .eq('sale_date', dateStr);
 }
 
-export function fetchBranchHourlySalesRange(branchId, sinceDateStr) {
-    return supabase.from('branch_hourly_sales')
+/**
+ * Las ventas por hora de una sala desde una fecha, PAGINADAS.
+ *
+ * Hasta el 2026-09-30 era un select a secas, y 90 días de una sala son una
+ * fila por hora abierta: medido ese día en producción, de 1,037 (Salud 5) a
+ * 1,385 (Salud 1) filas — todas por encima del techo de 1000 que PostgREST
+ * aplica sin avisar. El widget «Ventas por día/hora» del tablero promediaba
+ * con lo que llegaba: en Salud 1, el 72% de los datos. Lo encontró la versión
+ * de la app, que necesitaba la misma lectura.
+ *
+ * Devuelve `{ data, error }` como antes, para no cambiar a quien la llama.
+ */
+export async function fetchBranchHourlySalesRange(branchId, sinceDateStr) {
+    const data = await fetchAllRows(() => supabase.from('branch_hourly_sales')
         .select('sale_hour, transaction_count, sale_date')
-        .eq('branch_id', branchId).gte('sale_date', sinceDateStr);
+        .eq('branch_id', branchId).gte('sale_date', sinceDateStr)
+        .order('sale_date', { ascending: true })
+        .order('sale_hour', { ascending: true }));
+    return data === null ? { data: [], error: new Error('No se pudieron leer las ventas por hora.') } : { data, error: null };
 }
 
 export function fetchRecentCotizaciones(sinceDateStr) {

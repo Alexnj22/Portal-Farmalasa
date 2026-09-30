@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
-import { presentesEl, problemaDeSucursal } from '@nucleo/utils/inicio';
+import { nivelDeVolumen, presentesEl, problemaDeSucursal, promediosDeVentas } from '@nucleo/utils/inicio';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import Button from '../components/common/Button';
 import PeriodStepper from '../components/common/PeriodStepper';
@@ -1895,47 +1895,18 @@ const DashboardView = ({ openModal }) => {
       const max = Math.max(...arr.map(o => o.avg), 1);
       return arr.map(item => {
         const txPerHr = item.avg / scale;
-        let color = 'var(--txvol-muerta)';                     // ≤4  muerta   — 1 persona ociosa
-        if      (txPerHr > 18) color = 'var(--txvol-critica)';  // >18 crítica  — 3+ personas
-        else if (txPerHr > 12) color = 'var(--txvol-pico)';  // >12 pico     — 2-3 personas
-        else if (txPerHr >  4) color = 'var(--txvol-normal)';  // >4  normal   — 1-2 personas
+        const color = `var(--txvol-${nivelDeVolumen(txPerHr)})`;
         const hi = item.avg / max;
         return { ...item, color, height: hi > 0 ? `${Math.max(hi * 100, 15)}%` : '0%' };
       });
     };
     fetchBranchHourlySalesRange(salesBranch, localDateStr(since))
       .then(({ data }) => {
-        let openH=7, closeH=18;
         const cb = branches.find(b=>String(b.id)===String(salesBranch));
-        if (cb) {
-          let sch = cb.weekly_hours||cb.settings?.schedule;
-          if (typeof sch==='string') { try { sch=JSON.parse(sch); } catch { sch=null; } }
-          if (sch&&typeof sch==='object') {
-            let minO=1440,maxC=0;
-            Object.values(sch).forEach(d => { if (d&&d.isOpen!==false) { const o=d.start?d.start.split(':').reduce((a,b,i)=>a+(i===0?+b*60:+b),0):0; let c=d.end?d.end.split(':').reduce((a,b,i)=>a+(i===0?+b*60:+b),0):0; if(c<o)c+=1440; if(o&&o<minO)minO=o; if(c&&c>maxC)maxC=c; } });
-            if (minO<1440) openH=Math.floor(minO/60); if (maxC>0) closeH=Math.ceil(maxC/60)-1;
-          }
-        }
-        if (closeH<=openH) closeH=openH+11;
-        const dM={1:0,2:0,3:0,4:0,5:0,6:0,0:0}, hM={}, shM={1:{},2:{},3:{},4:{},5:{},6:{},0:{}};
-        const udD={1:new Set(),2:new Set(),3:new Set(),4:new Set(),5:new Set(),6:new Set(),0:new Set()}, ud=new Set();
-        (data||[]).filter(r=>{const h=Number(r.sale_hour);return h>=openH&&h<=closeH;}).forEach(r=>{
-          const h=Number(r.sale_hour),d=new Date(r.sale_date+'T00:00:00').getDay(),c=Number(r.transaction_count||0);
-          dM[d]+=c; hM[h]=(hM[h]||0)+c; shM[d][h]=(shM[d][h]||0)+c; ud.add(r.sale_date); udD[d].add(r.sale_date);
-        });
-        const tot=ud.size||1;
-        // Days: color/height = P75 of hourly avgs for that DOW (robust to single-hour outliers)
-        // dailyAvg = simple daily average shown in tooltip
-        const fD=[1,2,3,4,5,6,0].map(d=>{
-          const dc=udD[d].size||1;
-          const hrs=[]; for(let h=openH;h<=closeH;h++) hrs.push(Math.round((shM[d][h]||0)/dc));
-          hrs.sort((a,b)=>a-b);
-          const p75=hrs[Math.floor(hrs.length*0.75)]||0;
-          const dailyAvg=Math.round((dM[d]||0)/dc/(closeH-openH+1));
-          return {day:d,avg:p75,dailyAvg,label:DAY_NAMES[d]};
-        });
-        const fH=[]; for(let h=openH;h<=closeH;h++) fH.push({hour:h,avg:Math.round((hM[h]||0)/tot),label:formatHourAMPM(h)});
-        const fS={}; [1,2,3,4,5,6,0].forEach(d=>{fS[d]=[]; const dc=udD[d].size||1; for(let h=openH;h<=closeH;h++) fS[d].push({hour:h,avg:Math.round((shM[d][h]||0)/dc),label:formatHourAMPM(h)});});
+        const { dias, horas, porDia } = promediosDeVentas(data, cb);
+        const fD = dias.map(d => ({ ...d, label: DAY_NAMES[d.day] }));
+        const fH = horas.map(h => ({ ...h, label: formatHourAMPM(h.hour) }));
+        const fS = Object.fromEntries(Object.entries(porDia).map(([d, arr]) => [d, arr.map(h => ({ ...h, label: formatHourAMPM(h.hour) }))]));
         setSalesStats({ days:applyColors(fD), generalHours:applyColors(fH), specificHours:Object.fromEntries([1,2,3,4,5,6,0].map(d=>[d,applyColors(fS[d])])) });
         setSalesLoading(false);
       });

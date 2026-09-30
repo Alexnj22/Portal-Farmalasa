@@ -14,6 +14,30 @@ import { Avance } from '../Kpi';
 import { useDato } from '../useDato';
 import { MARCA } from '../marca';
 
+// ── Pedir un ajuste ─────────────────────────────────────────────────────────
+// Los tres widgets del portal para pedir algo (anulación o cambio de una
+// factura, ajuste de inventario, ajuste de Mín·Máx) son formularios; en la
+// app cada uno es su pantalla nativa y el widget es la puerta. Cada renglón
+// sale con su propio permiso, el mismo del portal.
+const AJUSTES = [
+  { permiso: 'dash_annulment_req', ruta: '/nueva/facturas', icono: 'Receipt', titulo: 'Anular o cambiar una factura', detalle: 'Anulación, forma de pago, datos del cliente', color: MARCA.rojo },
+  { permiso: 'dash_inv_movement', ruta: '/nueva/ajuste', icono: 'PackageMinus', titulo: 'Ajuste de inventario', detalle: 'Vencidos, dañados, faltantes o sobrantes', color: MARCA.ambar },
+  { permiso: 'dash_minmax_req', ruta: '/nueva/minmax', icono: 'BarChart2', titulo: 'Ajuste de Mín·Máx', detalle: 'Cambiar el par de un producto en la sala', color: MARCA.azul },
+];
+export const PERMISOS_DE_AJUSTE = AJUSTES.map((a) => a.permiso);
+
+export function PedirAjuste({ ctx }) {
+  const mias = AJUSTES.filter((a) => ctx.puede(a.permiso));
+  return (
+    <Widget titulo="Pedir un ajuste" icono="ClipboardList" color={MARCA.ambar} onAbrir={() => router.push('/nueva-solicitud')} accion="Todas">
+      {mias.map((a, i) => (
+        <Renglon key={a.ruta} primero={!i} titulo={a.titulo} detalle={a.detalle}
+          izquierda={<Chip icono={a.icono} color={a.color} tamano={30} />} onPress={() => router.push(a.ruta)} />
+      ))}
+    </Widget>
+  );
+}
+
 // ── Consulta de inventario ──────────────────────────────────────────────────
 // En el portal es un buscador dentro del widget; en la app la búsqueda vive en
 // su pestaña (la de iOS 26), así que acá es la puerta hacia ella.

@@ -58,7 +58,7 @@ export default function Inicio() {
   // Una pestaña sólo aparece si tiene algo que mostrar para este cargo.
   const visibles = (id) => {
     const s = SECCIONES.find((x) => x.id === id);
-    return s && (!s.permiso || puede(s.permiso)) && (!s.visible || s.visible(datos));
+    return s && (!s.permiso || [].concat(s.permiso).some((x) => puede(x))) && (!s.visible || s.visible(datos));
   };
   const pestanas = PESTANAS.filter((p) => p.id === 'general' || SECCIONES.some((s) => s.pestanas.includes(p.id) && visibles(s.id)) || puede('dash_kpi'));
   const secciones = orden

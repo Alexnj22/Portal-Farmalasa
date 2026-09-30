@@ -60,3 +60,18 @@ export const ERP_CODIGOS = { 1: 'S1', 2: 'S2', 3: 'S3', 4: 'S4', 5: 'PO', 6: 'BO
 // 2026-08-12 justo al definir la clave del traslado — se estaba por inventar un
 // cuarto código de sala sin saber que el módulo que imprime la hoja de despacho
 // ya tenía el suyo, idéntico. Se mudaron acá el mismo día.
+
+/**
+ * La posición de una sala (por su `branch_id` del portal) en el orden en que
+ * el negocio las nombra: La Popular, Salud 1 … Salud 5 y Bodega al final. Lo
+ * que no está en el mapa (Administración) va al fondo.
+ *
+ * Pedido del usuario el 2026-09-30, sobre el Inicio de la app que las ponía
+ * por venta: «siempre se debe ordenar por La Popular y luego de Salud 1 a
+ * Salud n». Para ordenar: `lista.sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id))`.
+ */
+export const ordenDeSala = (branchId) => {
+    const erp = BRANCH_A_ERP[Number(branchId)];
+    const i = erp != null ? ERP_ORDEN.indexOf(erp) : -1;
+    return i >= 0 ? i : 99;
+};

@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1109.0 — App: ventas por día y hora, todos los widgets en General, salas en orden y aviso nativo
+
+Tres reportes del usuario sobre la app, más un defecto del tablero del portal
+que salió al hacerla.
+
+- **Las salas van en el orden del negocio**: La Popular y después Salud 1…n
+  (`ordenDeSala` en `constants/erp.js`). Lo usan «Ventas de hoy» del Inicio,
+  su pantalla y el selector de sala.
+- **«Ventas por día y hora» en la app**: los últimos 90 días por día de la
+  semana (tocar un día abre sus horas) y por hora, con los colores de volumen
+  del portal y la sala en una hoja nativa. El cálculo salió de
+  `DashboardView.jsx` a `promediosDeVentas` del núcleo, y el portal usa el
+  mismo.
+- **Portal: el widget promediaba con un pedazo.** `fetchBranchHourlySalesRange`
+  era un select sin paginar y 90 días de una sala son de 1,037 a 1,385 filas:
+  PostgREST cortaba en 1000 sin avisar (en Salud 1, el 72% de los datos). Ahora
+  pagina con `fetchAllRows`.
+- **General lleva todos los widgets**, como el portal, y hay uno nuevo,
+  «Pedir un ajuste», con la puerta a anular/cambiar una factura, ajuste de
+  inventario y Mín·Máx (cada renglón con su permiso).
+- **El aviso al aprobar o rechazar es el del sistema**: una cápsula de vidrio
+  arriba con la rueda y después ✓ (con vibración), y los errores en la alerta
+  nativa. Antes era una caja oscura que tapaba la pantalla.
+
 ## v2.1108.0 — App: Nueva solicitud — ajuste de inventario y Mín·Máx nativos
 
 - **Ajuste de inventario** (`/nueva/ajuste`): qué se hace (vencimiento,

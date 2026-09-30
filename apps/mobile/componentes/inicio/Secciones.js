@@ -15,6 +15,7 @@ import * as W from './widgets/rrhh';
 import * as C from './widgets/comercial';
 import * as O from './widgets/operacion';
 import * as G from './widgets/general';
+import { VentasPorHora } from './widgets/ventasPorHora';
 import Kpi, { Avance, Curva, FilaDeKpis } from './Kpi';
 import { colorSistema } from '../Formulario';
 import { iconoDe } from '../../tema/iconos';
@@ -202,33 +203,37 @@ export function Avisos({ ctx }) {
 
 // El registro: en qué pestañas va cada widget y con qué permiso — el mismo
 // reparto y los mismos permisos del tablero del portal
-// (`PESTANAS_TEMATICAS` + `WIDGET_DEFS`). General lleva una selección, no los
-// veinte: en el teléfono la pantalla es corta.
+// (`PESTANAS_TEMATICAS` + `WIDGET_DEFS`). General los lleva TODOS, como el
+// portal (pedido del usuario del 2026-09-30: «no me salen todos los
+// widgets»); el orden por uso sube los que más se abren. `permiso` puede ser
+// una lista: basta con uno.
 export const SECCIONES = [
   { id: 'pendientes', pestanas: ['general', 'operacion'], visible: (d) => d.solicitudes != null || d.traslados != null || d.cortes != null, Componente: Pendientes },
   { id: 'ventas', pestanas: ['general', 'comercial'], permiso: 'dash_sales', Componente: Ventas },
+  { id: 'ventas_hora', pestanas: ['general', 'comercial'], permiso: 'dash_sales', Componente: VentasPorHora },
+  { id: 'pedir_ajuste', pestanas: ['general', 'operacion'], permiso: O.PERMISOS_DE_AJUSTE, Componente: O.PedirAjuste },
   { id: 'meta', pestanas: ['general', 'comercial'], permiso: 'dash_meta_sala', visible: (d) => !!d.meta, Componente: Meta },
   { id: 'equipo', pestanas: ['general'], permiso: 'dash_shifts', Componente: Equipo },
   { id: 'sucursales', pestanas: ['general'], permiso: 'dash_branches', Componente: W.AlertasSucursales },
   { id: 'datos_pedidos', pestanas: ['general', 'comercial'], permiso: 'dash_dato_pedido', Componente: G.DatosQueFaltan },
   { id: 'avisos', pestanas: ['general', 'rrhh'], permiso: 'dash_announcements', Componente: Avisos },
   // Comercial
-  { id: 'facturacion', pestanas: ['comercial'], permiso: 'dash_facturacion', Componente: C.Facturacion },
-  { id: 'vendedores', pestanas: ['comercial'], permiso: 'dash_vendedores', Componente: C.Vendedores },
-  { id: 'top', pestanas: ['comercial'], permiso: 'dash_top_productos', Componente: C.TopProductos },
-  { id: 'cortes', pestanas: ['comercial'], permiso: 'dash_cortes_sala', Componente: C.Cortes },
-  { id: 'cotizaciones', pestanas: ['comercial'], permiso: 'dash_cotizaciones', Componente: C.Cotizaciones },
+  { id: 'facturacion', pestanas: ['general', 'comercial'], permiso: 'dash_facturacion', Componente: C.Facturacion },
+  { id: 'vendedores', pestanas: ['general', 'comercial'], permiso: 'dash_vendedores', Componente: C.Vendedores },
+  { id: 'top', pestanas: ['general', 'comercial'], permiso: 'dash_top_productos', Componente: C.TopProductos },
+  { id: 'cortes', pestanas: ['general', 'comercial'], permiso: 'dash_cortes_sala', Componente: C.Cortes },
+  { id: 'cotizaciones', pestanas: ['general', 'comercial'], permiso: 'dash_cotizaciones', Componente: C.Cotizaciones },
   // RRHH
-  { id: 'turnos', pestanas: ['rrhh'], permiso: 'dash_shifts', Componente: W.Turnos },
-  { id: 'tendencia', pestanas: ['rrhh'], permiso: 'dash_trend', Componente: W.Tendencia },
-  { id: 'ausencias', pestanas: ['rrhh'], permiso: 'dash_absences', Componente: W.Ausencias },
-  { id: 'solicitudes', pestanas: ['rrhh'], permiso: 'dash_requests', Componente: W.SolicitudesPendientes },
+  { id: 'turnos', pestanas: ['general', 'rrhh'], permiso: 'dash_shifts', Componente: W.Turnos },
+  { id: 'tendencia', pestanas: ['general', 'rrhh'], permiso: 'dash_trend', Componente: W.Tendencia },
+  { id: 'ausencias', pestanas: ['general', 'rrhh'], permiso: 'dash_absences', Componente: W.Ausencias },
+  { id: 'solicitudes', pestanas: ['general', 'rrhh'], permiso: 'dash_requests', Componente: W.SolicitudesPendientes },
   { id: 'cumpleanos', pestanas: ['general', 'rrhh'], permiso: 'dash_birthdays', Componente: W.Cumpleanos },
-  { id: 'calendario', pestanas: ['rrhh'], permiso: 'dash_calendar', Componente: W.Calendario },
+  { id: 'calendario', pestanas: ['general', 'rrhh'], permiso: 'dash_calendar', Componente: W.Calendario },
   // Operación
-  { id: 'consulta', pestanas: ['operacion'], permiso: 'dash_inv_search', Componente: O.ConsultaInventario },
-  { id: 'traslados', pestanas: ['operacion'], permiso: 'dash_traslados', Componente: O.Traslados },
-  { id: 'bitacoras', pestanas: ['operacion'], permiso: 'dash_bitacoras', Componente: O.Bitacoras },
-  { id: 'recetas', pestanas: ['operacion'], permiso: 'dash_recetas_pendientes', Componente: O.RecetasPendientes },
-  { id: 'facturas_sala', pestanas: ['operacion'], permiso: 'dash_facturas_sala', Componente: O.FacturasSala },
+  { id: 'consulta', pestanas: ['general', 'operacion'], permiso: 'dash_inv_search', Componente: O.ConsultaInventario },
+  { id: 'traslados', pestanas: ['general', 'operacion'], permiso: 'dash_traslados', Componente: O.Traslados },
+  { id: 'bitacoras', pestanas: ['general', 'operacion'], permiso: 'dash_bitacoras', Componente: O.Bitacoras },
+  { id: 'recetas', pestanas: ['general', 'operacion'], permiso: 'dash_recetas_pendientes', Componente: O.RecetasPendientes },
+  { id: 'facturas_sala', pestanas: ['general', 'operacion'], permiso: 'dash_facturas_sala', Componente: O.FacturasSala },
 ];

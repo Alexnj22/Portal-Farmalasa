@@ -48,16 +48,9 @@ struct TarjetaDeAviso: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 14) {
-      if m.nombre != nil || m.contexto != nil {
-        HStack(spacing: 12) {
-          if m.nombre != nil { avatar }
-          VStack(alignment: .leading, spacing: 2) {
-            if let n = m.nombre { Text(n).font(.headline) }
-            if let c = m.contexto { Text(c).font(.subheadline).foregroundStyle(.secondary) }
-          }
-          Spacer(minLength: 0)
-        }
-      }
+      // Sin foto ni nombre: ya están arriba, en el aviso (usuario,
+      // 2026-09-30: «que no se vea doble»). Sólo el contexto y el detalle.
+      if let c = m.contexto { Text(c).font(.subheadline.weight(.semibold)) }
 
       VStack(spacing: 0) {
         ForEach(Array(m.renglones.enumerated()), id: \.offset) { i, r in
@@ -85,15 +78,6 @@ struct TarjetaDeAviso: View {
     .padding(18)
     .frame(width: 380, alignment: .leading)
     .background(Color(uiColor: .systemGroupedBackground))
-  }
-
-  @ViewBuilder private var avatar: some View {
-    if let foto {
-      Image(uiImage: foto).resizable().scaledToFill().frame(width: 44, height: 44).clipShape(Circle())
-    } else {
-      Circle().fill(Color(uiColor: .tertiarySystemFill)).frame(width: 44, height: 44)
-        .overlay(Text(m.iniciales).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary))
-    }
   }
 }
 

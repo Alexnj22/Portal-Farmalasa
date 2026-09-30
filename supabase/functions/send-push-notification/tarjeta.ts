@@ -69,11 +69,31 @@ export function temaDe(url: string): string {
 }
 
 // El texto que se ve donde la tarjeta no llega (y el de la vista previa).
+// El texto del aviso: COMPACTO (usuario, 2026-09-30: «que el texto sea
+// compacto, sin explicar… y que no se vea doble»). Una línea con lo esencial
+// y, si hay más que ver, la invitación a mantener presionado: el detalle
+// entero va en la tarjeta que dibuja la extensión del teléfono, así que
+// repetirlo acá lo mostraba dos veces.
+const FAMILIAS_DE_PRODUCTOS = new Set(['INVENTORY_TRANSFER_REQUEST', 'INVENTORY_TRANSFER_PUSH', 'INVENTORY_DISCARD_REQUEST', 'INVENTORY_LOAD_REQUEST']);
+export const MAS_DETALLE = 'Mantén presionado para ver el detalle';
+
 export function cuerpo(base: string, t: Tarjeta): string {
-  const l = [t.contexto || base, ...t.renglones.map(([a, b]) => (b ? `${a} · ${b}` : a))];
-  if (t.resto) l.push(`y ${t.resto} más`);
-  if (t.pie) l.push(t.pie);
-  return l.filter(Boolean).join('\n');
+  const inicio = t.contexto || base;
+  const total = t.renglones.length + (t.resto || 0);
+  let linea: string;
+  if (FAMILIAS_DE_PRODUCTOS.has(t.familia)) {
+    linea = total === 1
+      ? `${inicio} · ${t.renglones[0][0]}${t.renglones[0][1] ? ` · ${t.renglones[0][1]}` : ''}`
+      : `${inicio} · ${total} productos`;
+  } else if (t.familia === 'minmax') {
+    linea = `${t.renglones[0]?.[0] ?? inicio}`;
+  } else {
+    const [a, b] = t.renglones[0] ?? [];
+    linea = a ? `${inicio} · ${a}${b ? ` · ${b}` : ''}` : inicio;
+  }
+  // ¿Queda algo que sólo se ve en la tarjeta?
+  const hayMas = total > 1 || !!t.pie || t.familia === 'minmax';
+  return hayMas ? `${linea}\n${MAS_DETALLE}` : linea;
 }
 
 export async function tarjetaParaTelefono(supabase: any, base: AvisoTelefono): Promise<AvisoTelefono> {

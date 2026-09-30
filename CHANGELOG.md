@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1096.1 — Aviso compacto: una línea y el detalle al mantener presionado
+
+Usuario, 2026-09-30, con la captura del aviso expandido: el detalle salía dos
+veces (en el texto y en la tarjeta) y la tarjeta repetía la foto y el nombre.
+«Que el texto sea compacto, sin explicar, y que diga mantén presionado para
+ver más detalles.»
+
+- **Texto** (`cuerpo`, servidor): una línea —«Salud 2 pide a Salud 1 · 6
+  productos», «Anular en La Popular · COF 65 777 · $18.05»— y, si hay más,
+  «Mantén presionado para ver el detalle».
+- **Tarjeta** (`Tarjeta.swift`): sin foto ni nombre, que ya están arriba; sólo
+  el contexto, los renglones y la nota.
+
 ## v2.1096.0 — Avisos sin botones: se decide en la solicitud nativa de la app
 
 Decisión del usuario del 2026-09-30, después de probar los avisos con

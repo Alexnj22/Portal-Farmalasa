@@ -25,6 +25,7 @@ import { useMarca } from '../plataforma/useMarca';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
+import { enviarDocumentoPorCorreo } from './distribucion/correo';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hoySV, sumarDias } from '@nucleo/utils/fecha';
@@ -33,7 +34,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import {
     fetchEmisor, fetchClientes, fetchCatalogo, fetchListasYPrecios, fetchPedidoParaCorregir, fetchPedidos,
     crearPedido, actualizarPedido, facturarPedido, mensajeDeDistribucion, guardarPagos, subirComprobante, adjuntarComprobante,
-    pedirDescuento, anularPedido, reservar, fetchReservasVigentes, fetchCreditoCliente,
+    pedirDescuento, anularPedido, reservar, fetchReservasVigentes, fetchCreditoCliente, fetchDocumento,
 } from '@nucleo/data/distribucion';
 import { fetchLotes } from '@nucleo/data/distribucionInventario';
 import Interruptor from './distribucion/Interruptor';
@@ -465,6 +466,18 @@ export default function DistribucionVentaView() {
         }, 500);
         return () => clearTimeout(t);
     }, [claveReserva, sesion, clienteId, cargando, errorCarga, emisor, puedeVender, pedido, releerReservas]);
+    // Salir de una venta que NO se guardó suelta lo que tenía apartado. Antes
+    // quedaba reservado 30 minutos y nadie más lo podía vender: pasó con el
+    // lote corto de las pruebas, que la corrida siguiente ya no encontraba.
+    // Una preventa guardada (o corregida) conserva su reserva: para eso existe.
+    const soltarAlSalir = useRef(null);
+    useEffect(() => {
+        soltarAlSalir.current = !corrigiendo && sesion && claveReserva !== '[]' ? sesion : null;
+    }, [corrigiendo, sesion, claveReserva]);
+    useEffect(() => () => {
+        const s = soltarAlSalir.current;
+        if (s) reservar(s, { porLote: [] }).catch(e => console.error('venta: soltar al salir', e));
+    }, []);
     useEffect(() => {
         if (cargando) return undefined;
         const t = setInterval(() => { releerReservas(); setAhora(Date.now()); }, 15000);
@@ -819,6 +832,12 @@ export default function DistribucionVentaView() {
                 // abre con la lista de chequeo completa y el botón para reenviar.
                 if (factura.estado === 'sellado') {
                     showToast('Recibido por Hacienda', `Código de generación y sello listos · ${factura.numero_control}`, 'success');
+                    // Con el sello, se le manda al cliente sin esperar a nadie (borrador
+                    // 0019). Si no tiene correo o falla, queda pendiente en Facturación.
+                    fetchDocumento(factura.dte_id)
+                        .then(doc => (doc?.dist_clientes?.correo ? enviarDocumentoPorCorreo(doc) : null))
+                        .then(r => { if (r?.enviado) showToast('Documento enviado al cliente', r.destinatario, 'success'); })
+                        .catch(e => console.error('correo al facturar', e));
                 } else if (factura.estado === 'rechazado') {
                     showToast('Hacienda lo rechazó', 'Corrige lo que indica y vuelve a facturar. La mercadería sigue apartada para este pedido.', 'error');
                 } else {

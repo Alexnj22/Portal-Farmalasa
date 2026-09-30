@@ -775,3 +775,22 @@ test('devolución: nota de crédito de un Crédito Fiscal sellado, a cuarentena,
     await expect(page.getByTestId('devuelto')).toBeVisible({ timeout: 15_000 });
     expect(errores).toEqual([]);
 });
+
+test('correo al cliente: el documento se envía (simulado en pruebas) y queda anotado', async ({ page }) => {
+    const errores = [];
+    page.on('pageerror', e => errores.push(e.message));
+    await entrar(page);
+    await page.goto('/torogoz/documentos?cubeta=todos');
+    // Uno emitido por las pruebas (trae su archivo; los del historial sembrado no).
+    await page.locator('table tbody tr', { hasText: 'B001P001' }).first().click();
+    const correo = page.locator('section[aria-label="Correo al cliente"]');
+    await expect(correo).toBeVisible({ timeout: 15_000 });
+    await correo.locator('input[name="correo-destino"]').fill('no-es-correo');
+    await expect(correo.getByRole('button', { name: /^(Enviar|Reenviar)$/ })).toBeDisabled();
+    await correo.locator('input[name="correo-destino"]').fill('cliente.prueba@example.com');
+    await correo.getByRole('button', { name: /^(Enviar|Reenviar)$/ }).click();
+    await expect(page.getByText('Documento enviado').first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('section[data-correo="enviado"]')).toContainText('cliente.prueba@example.com', { timeout: 15_000 });
+    await page.screenshot({ path: `${SALIDA}/correo.png`, fullPage: true });
+    expect(errores).toEqual([]);
+});

@@ -34,7 +34,7 @@ const BORRADORES = path.join(raiz, 'supabase', 'borradores', 'distribucion');
  * `distribucion_pruebas.sql` se siembran sobre él.
  */
 const SEMILLAS = ['distribucion_tablero_pruebas.sql', 'distribucion_pruebas.sql'];
-export const FUNCIONES = ['distribucion-dte', 'distribucion-comprobante'];
+export const FUNCIONES = ['distribucion-dte', 'distribucion-comprobante', 'distribucion-correo'];
 
 /** Los archivos a correr, en orden: `0001_…` a `NNNN_…` y después las semillas. */
 export function archivosDeDistribucion() {
@@ -85,6 +85,9 @@ export function desplegarFunciones(ref, { log = console.log } = {}) {
             if (r.status !== 0) throw new Error(`No se pudo desplegar ${fn}: ${(r.stderr || r.stdout).slice(-400)}`);
             log(`  · función ${fn}`);
         }
+        // El correo al cliente, simulado: en pruebas no se le manda nada a nadie (0019).
+        const sec = spawnSync('supabase', ['secrets', 'set', 'CORREO_MODO=simulado', '--project-ref', ref], { cwd: raiz, encoding: 'utf8' });
+        if (sec.status !== 0) log(`⚠ No se pudo poner CORREO_MODO=simulado: ${(sec.stderr || sec.stdout).slice(-200)}`);
     } finally {
         if (mover) fs.renameSync(apartado, env);
     }

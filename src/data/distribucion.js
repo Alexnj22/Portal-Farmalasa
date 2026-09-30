@@ -342,7 +342,7 @@ export async function fetchDocumentos({ desde } = {}) {
             .select('id, tipo, ambiente, numero_control, codigo_generacion, fec_emi, hor_emi, total_pagar, estado, sello_recibido, '
                 + 'descripcion_msg, observaciones_mh, intentos, ultimo_intento_at, pedido_id, invalidacion_estado, reemplazo_id, contingencia_id, '
                 // Para saber si un rechazo sigue pendiente: su pedido todavía por facturar.
-                + 'pedido:dist_pedidos!dist_dte_pedido_fk(estado, dte_id), dist_clientes(nombre)')
+                + 'pedido:dist_pedidos!dist_dte_pedido_fk(estado, dte_id), dist_clientes(nombre, correo), correo:dist_correo_vigente(estado, destinatario, enviado_at)')
             .order('id', { ascending: false });
         if (desde) q = q.gte('fec_emi', desde);
         return q;
@@ -352,7 +352,8 @@ export async function fetchDocumentos({ desde } = {}) {
 }
 
 export async function fetchDocumento(id) {
-    const { data, error } = await supabase.from('dist_dte').select('*, dist_clientes(nombre)').eq('id', id).single();
+    const { data, error } = await supabase.from('dist_dte')
+        .select('*, dist_clientes(nombre, correo), correo:dist_correo_vigente(estado, destinatario, enviado_at, ultimo_error)').eq('id', id).single();
     if (error) throw error;
     return data;
 }
@@ -394,6 +395,25 @@ export async function fetchDevolucionDisponible(dteId) {
  */
 export const emitirNotaCredito = ({ dteId, clientUuid, motivo, renglones }) =>
     invocar({ accion: 'nota_credito', dte_id: dteId, client_uuid: clientUuid, motivo, renglones });
+
+// ── Correo al cliente (borrador 0019) ──────────────────────────────────────
+
+/**
+ * Le manda el documento al cliente. `pdfBase64` lo arma quien llama (la
+ * representación gráfica vive en el navegador); el JSON con firma y sello lo
+ * arma la función desde la base.
+ */
+export async function enviarCorreoDocumento(dteId, pdfBase64, { destinatario = null } = {}) {
+    const { data, error } = await supabase.functions.invoke('distribucion-correo', {
+        body: { dte_id: dteId, pdf_base64: pdfBase64, ...(destinatario ? { destinatario } : {}) },
+    });
+    if (error) {
+        let motivo = error.message;
+        try { motivo = (await error.context?.json())?.error ?? motivo; } catch { /* cuerpo no JSON */ }
+        throw new Error(motivo);
+    }
+    return data;
+}
 
 export async function fetchCuarentena() {
     const { data, error } = await supabase

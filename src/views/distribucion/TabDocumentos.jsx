@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { FileCheck2, AlertTriangle, Search, Clock, CheckCircle2, ShieldCheck, RefreshCw, Loader2, FileX2, XCircle, WifiOff } from 'lucide-react';
+import { FileCheck2, AlertTriangle, Search, Clock, CheckCircle2, ShieldCheck, RefreshCw, Loader2, FileX2, XCircle, WifiOff, Mail, Send } from 'lucide-react';
 import FilterBar from '../../components/common/FilterBar';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
@@ -16,7 +16,8 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { useNavigate } from 'react-router-dom';
-import { fetchDocumentos, reintentarDocumento, enviarContingencia, mensajeDeDistribucion } from '@nucleo/data/distribucion';
+import { fetchDocumentos, fetchDocumento, reintentarDocumento, enviarContingencia, mensajeDeDistribucion } from '@nucleo/data/distribucion';
+import { enviarDocumentoPorCorreo } from './correo';
 import DocumentoModal from './DocumentoModal';
 import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO, CUBETAS_FACTURACION as CUBETAS, revisionHacienda, pideAccion, selloValido } from './comun';
 import { rutaVenta } from './rutas';
@@ -85,6 +86,8 @@ export default function TabDocumentos({ puedeVender, buscar }) {
             sellados: docs.filter(d => d.estado === 'sellado' && selloValido(d.sello_recibido)),
             vendido: docs.filter(d => d.estado === 'sellado' && (d.tipo === '01' || d.tipo === '03'))
                 .reduce((a, d) => a + Number(d.total_pagar), 0),
+            // Sellados que todavía no le llegaron al cliente (borrador 0019).
+            sinEntregar: docs.filter(d => d.estado === 'sellado' && ['pendiente', 'fallido', 'sin_correo'].includes(d.correo?.[0]?.estado)),
         };
     }, [docs]);
 
@@ -157,6 +160,31 @@ export default function TabDocumentos({ puedeVender, buscar }) {
 
     const todoBien = !cargando && grupos.accion.length === 0;
 
+    const [enviandoCorreos, setEnviandoCorreos] = useState(null); // { hecho, total }
+    const enviables = grupos.sinEntregar.filter(d => d.correo?.[0]?.estado !== 'sin_correo');
+    /** Manda, de a uno, los correos pendientes. Cada PDF se arma acá. */
+    const enviarCorreos = async () => {
+        if (!enviables.length) return;
+        setEnviandoCorreos({ hecho: 0, total: enviables.length });
+        let ok = 0, mal = 0;
+        for (const [i, d] of enviables.entries()) {
+            try {
+                await enviarDocumentoPorCorreo(await fetchDocumento(d.id));
+                ok += 1;
+            } catch (e) {
+                mal += 1;
+                console.error('correo', d.id, e);
+                // Sin proveedor configurado, los demás darían lo mismo.
+                if (/configurar el correo/i.test(e?.message ?? '')) { setAvisoFirma(mensajeDeDistribucion(e)); break; }
+            }
+            setEnviandoCorreos({ hecho: i + 1, total: enviables.length });
+        }
+        useStaff.getState().appendAuditLog('DISTRIBUCION_DTE_CORREO_EN_BLOQUE', null, { total: enviables.length, ok, mal });
+        setEnviandoCorreos(null);
+        showToast('Correos enviados', `${ok} enviados${mal ? ` · ${mal} no se pudieron` : ''}`, mal ? 'warning' : 'success');
+        cargar();
+    };
+
     return (
         <div className="p-3 md:p-5 flex flex-col gap-4">
             {/* ── El semáforo: ¿está todo bien con Hacienda? ── */}
@@ -194,6 +222,22 @@ export default function TabDocumentos({ puedeVender, buscar }) {
                         </Button>
                     )}
                 </section>
+            )}
+            {!cargando && !error && grupos.sinEntregar.length > 0 && (
+                <Notice variant="warning" icon={Mail} data-testid="sin-entregar">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span>
+                            {formatQty(grupos.sinEntregar.length)} documento{grupos.sinEntregar.length === 1 ? '' : 's'} sellado{grupos.sinEntregar.length === 1 ? '' : 's'} todavía no le
+                            {grupos.sinEntregar.length === 1 ? ' llegó' : ' llegaron'} al cliente por correo
+                            {grupos.sinEntregar.length > enviables.length ? ` (${formatQty(grupos.sinEntregar.length - enviables.length)} sin correo en la ficha)` : ''}.
+                        </span>
+                        {puedeVender && enviables.length > 0 && (
+                            <Button size="sm" variant="secondary" icon={enviandoCorreos ? Loader2 : Send} disabled={!!enviandoCorreos} onClick={enviarCorreos}>
+                                {enviandoCorreos ? `Enviando ${enviandoCorreos.hecho} de ${enviandoCorreos.total}…` : `Enviar correos (${formatQty(enviables.length)})`}
+                            </Button>
+                        )}
+                    </div>
+                </Notice>
             )}
             {avisoFirma && (
                 <Notice variant="warning" icon={AlertTriangle}>

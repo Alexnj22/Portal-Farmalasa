@@ -10,6 +10,7 @@ import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import DevolucionModal from './DevolucionModal';
+import CorreoDocumento from './CorreoDocumento';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -341,6 +342,9 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                         {conArchivo && vista === 'detalle' && <VistaDetalle dte={d} pagos={pagos} />}
                         {conArchivo && vista === 'ticket' && <VistaTicket dte={d} pagos={pagos ?? []} />}
                         {conArchivo && vista === 'pdf' && <VistaPdf url={pdf.url} error={pdf.error} />}
+                        {conArchivo && vista === 'detalle' && ['01', '03', '05'].includes(d.tipo) && d.estado !== 'invalidado' && (
+                            <CorreoDocumento key={d.correo?.[0]?.enviado_at ?? d.id} dte={d} puedeEnviar={puedeVender} onEnviado={cargar} />
+                        )}
                         {vista === 'datos' && (
                             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-body-sm">
                                 <dt className="text-content-3">Número de control</dt>

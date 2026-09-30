@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1107.0 — Torogoz: el documento se le manda al cliente por correo
+
+Hacienda exige entregarle al cliente su documento —el JSON con firma y sello— y
+la representación gráfica. Hasta hoy sólo se imprimía el ticket (borrador
+`0019_correo_al_cliente.sql` y edge function `distribucion-correo`, sólo pruebas).
+
+- **Bandeja de salida**: cada documento sellado (Factura, Crédito Fiscal, Nota
+  de Crédito) nace «pendiente» de enviar, o «sin correo» si la ficha no tiene.
+  Cada intento queda anotado con quién lo mandó; un reenvío no pisa el anterior.
+- **Qué recibe el cliente**: el JSON con firma y sello —armado por la función
+  desde la base, así nadie manda uno alterado— y el PDF, que es el mismo que se
+  descarga del documento. El correo trae los datos del documento y el enlace a
+  la consulta pública de Hacienda.
+- **Al facturar**, si Hacienda sella en el momento y el cliente tiene correo,
+  sale solo. En el documento, «Correo al cliente» dice a quién se mandó o por
+  qué no, y deja escribir otro correo y reenviar.
+- **Facturación** avisa cuántos sellados todavía no le llegaron al cliente y
+  los manda en bloque.
+- **Proveedor**: Resend (`RESEND_API_KEY` y `CORREO_REMITENTE`, con el dominio
+  verificado). Sin eso la función dice «falta configurar» y no marca nada. En
+  pruebas va `CORREO_MODO=simulado`: se anota sin mandar nada a nadie.
+- **Arreglo de paso**: salir de una venta que no se guardó ahora suelta lo que
+  tenía apartado. Antes quedaba reservado 30 minutos y nadie más lo podía
+  vender.
+
 ## v2.1106.1 — Torogoz: Inicio resta las devoluciones
 
 Las ventas de Inicio sumaban sólo Facturas y Créditos Fiscales, así que lo

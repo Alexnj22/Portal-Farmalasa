@@ -71,6 +71,15 @@ export function fetchCortes({ desde, hasta }) {
         .order('hora', { ascending: true }));
 }
 
+/** Cortes de hoy que esperan confirmación (los que el RLS deja ver). Para el Inicio de la app. */
+export async function contarCortesPorConfirmar(fecha) {
+    const { count, error } = await supabase.from('cortes_caja')
+        .select('id', { count: 'exact', head: true })
+        .eq('fecha', fecha).eq('tipo', 'C').eq('estado', 'PENDIENTE');
+    if (error) throw error;
+    return count ?? 0;
+}
+
 // Lo mínimo para calcular el tramo y clasificarlo: `conTramo` necesita
 // `diferenciaDelCorte`, y ésa sale de `total_declarado`, `diferencia_erp`,
 // `tk_total_caja` y `tk_cobros_credito`. Nada más.

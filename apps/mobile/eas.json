@@ -22,8 +22,8 @@
       "distribution": "store",
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://jaetaqvnxwobeoclvwmg.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphZXRhcXZueHdvYmVvY2x2d21nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MTkwNDAsImV4cCI6MjEwNjE5NTA0MH0.EYENa3Mo7JIZ3Imt02DfqMB8etbuEH0PmBbFmqqPjFk",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://lyfafocpywvoxefetxah.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5ZmFmb2NweXd2b3hlZmV0eGFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3ODU0OTcsImV4cCI6MjEwNjM2MTQ5N30.wr_jpPQywtJh_BZ--y6UjIYoX1JRwQpQR3fIajmgvlE",
         "EXPO_PUBLIC_PORTAL_URL": "https://portal.farmasalud.lat"
       }
     },

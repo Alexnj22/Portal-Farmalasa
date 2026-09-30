@@ -5,25 +5,28 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useStaffStore } from '@nucleo/store/staffStore';
 
+// Transparente: detrás de cada pestaña está la aurora de la raíz.
+const TRANSPARENTE = { backgroundColor: 'transparent' };
+
 export default function Pestanas() {
   // El globo de la campana: lo que falta leer, el mismo número que la web.
   const sinLeer = useStaffStore((s) => s.notifications.length);
   return (
     <NativeTabs>
-      <NativeTabs.Trigger name="inicio">
+      <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="inicio">
         <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
         <NativeTabs.Trigger.Label>Inicio</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="menu">
+      <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="menu">
         <NativeTabs.Trigger.Icon sf={{ default: 'square.grid.2x2', selected: 'square.grid.2x2.fill' }} md="apps" />
         <NativeTabs.Trigger.Label>Menú</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="avisos">
+      <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="avisos">
         <NativeTabs.Trigger.Icon sf={{ default: 'bell', selected: 'bell.fill' }} md="notifications" />
         <NativeTabs.Trigger.Label>Notificaciones</NativeTabs.Trigger.Label>
         {sinLeer ? <NativeTabs.Trigger.Badge>{sinLeer > 99 ? '99+' : String(sinLeer)}</NativeTabs.Trigger.Badge> : null}
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="yo">
+      <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="yo">
         <NativeTabs.Trigger.Icon sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }} md="account_circle" />
         <NativeTabs.Trigger.Label>Yo</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>

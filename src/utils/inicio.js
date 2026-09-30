@@ -59,3 +59,23 @@ export function saludoDeLaHora(fecha = new Date()) {
     if (h < 19) return 'Buenas tardes';
     return 'Buenas noches';
 }
+
+const meta = (m) => (typeof m === 'string' ? (() => { try { return JSON.parse(m); } catch { return {}; } })() : (m || {}));
+
+/** Las ausencias aprobadas (vacaciones, incapacidad, permiso) vigentes `fecha`. */
+export function ausenciasDelDia(filas = [], fecha) {
+    return filas.filter((r) => {
+        const m = meta(r.metadata);
+        const dias = m.permissionDates || [];
+        const inicio = m.startDate || dias[0];
+        const fin = m.endDate || dias[dias.length - 1];
+        return inicio && inicio <= fecha && (!fin || fin >= fecha);
+    });
+}
+
+/** Quienes cumplen años `fecha` (AAAA-MM-DD). */
+export function cumplenEl(empleados = [], fecha) {
+    if (!fecha) return [];
+    const md = fecha.slice(5);
+    return empleadosActivos(empleados).filter((e) => e.birthDate && String(e.birthDate).slice(5, 10) === md);
+}

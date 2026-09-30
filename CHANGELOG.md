@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1098.0 — App: Inicio nativo con pestañas, números del día y secciones que aprenden del uso
+
+El Inicio de la app deja de ser el tablero del portal incrustado. Decisiones
+del usuario del 2026-09-30: que sigan las pestañas del portal, fondo aurora,
+saludo personal y compacto, y que el orden aprenda del uso.
+
+- **Saludo:** «Buenas tardes, Alex», sala y día en una línea, foto que lleva a
+  «Yo».
+- **Pestañas** General · Comercial · RRHH · Operación en píldoras de vidrio.
+- **Hoy:** cuatro números por pestaña, como el KpiCard del portal (ícono
+  tintado, número grande, en color si pide acción): ventas, presentes,
+  solicitudes, alertas; facturado, documentos, cotizaciones; activos,
+  ausencias; traslados y cortes por confirmar.
+- **Secciones:** pendiente para ti, ventas por sala con su curva por hora,
+  meta del mes con anillo, equipo de hoy (fotos, ausencias, cumpleaños) y
+  comunicados. Cada una sólo si el cargo tiene su permiso.
+- **Aprende:** cada toque se anota; al abrir el Inicio, lo más usado en las
+  últimas semanas sube. Nunca se reordena mientras se mira.
+- La aurora va dentro de cada pestaña (la barra de pestañas de iOS tapaba la
+  de la raíz) y arriba hay el borde difuminado del sistema.
+- **Núcleo:** `ausenciasDelDia`, `cumplenEl`; `contarSolicitudesPendientes`
+  (conteo exacto: la lista de 8 del tablero no sirve de conteo) y
+  `contarCortesPorConfirmar`.
+- Sólo en desarrollo, la app entra sola con la cuenta de pruebas del `.env`
+  local; el entorno de pruebas se rehízo hoy (ref `lyfafocpywvoxefetxah`).
+
 ## v2.1097.0 — App: aurora en toda la app, vidrio nativo y entrada rediseñada con Face ID
 
 Primer tramo del bloque «pantallas nativas» (sin compilar: se compila al

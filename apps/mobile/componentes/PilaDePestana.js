@@ -7,6 +7,7 @@
 // grande salía oscuro sobre oscuro en modo oscuro (usuario, 2026-09-30).
 import { Platform } from 'react-native';
 import { Stack } from 'expo-router';
+import ConAurora from './ConAurora';
 
 const BARRA_NATIVA = Platform.OS === 'ios'
   ? { headerTransparent: true, headerBlurEffect: 'systemChromeMaterial', headerShadowVisible: false, headerLargeTitleShadowVisible: false, headerLargeStyle: { backgroundColor: 'transparent' } }
@@ -15,8 +16,10 @@ const BARRA_NATIVA = Platform.OS === 'ios'
 // `sinBarra`: la pestaña muestra el portal, que ya trae su propio título.
 export default function PilaDePestana({ titulo, grande = false, sinBarra = false }) {
   return (
-    <Stack screenOptions={{ headerLargeTitle: grande, ...BARRA_NATIVA }}>
+    <ConAurora>
+    <Stack screenOptions={{ headerLargeTitle: grande, contentStyle: { backgroundColor: 'transparent' }, ...BARRA_NATIVA }}>
       <Stack.Screen name="index" options={{ title: titulo, headerShown: !sinBarra }} />
     </Stack>
+    </ConAurora>
   );
 }

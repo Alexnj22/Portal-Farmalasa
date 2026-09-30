@@ -70,6 +70,15 @@ export default function Entrar() {
     }
   }, [loginWithUsername]);
 
+  // Sólo en desarrollo (`__DEV__`, nunca en una compilación de tienda): entra
+  // solo con la cuenta de pruebas del `.env` local, para poder revisar
+  // pantallas en el simulador sin escribir.
+  useEffect(() => {
+    const u = process.env.EXPO_PUBLIC_PRUEBA_USUARIO, c = process.env.EXPO_PUBLIC_PRUEBA_CLAVE;
+    if (!__DEV__ || !u || !c) return;
+    loginWithUsername(u, c).then((r) => { if (r?.ok && !r.mustChangePassword) router.replace('/inicio'); }).catch(() => {});
+  }, [loginWithUsername]);
+
   // Al abrir, si está activa, se pide la cara de una vez.
   useEffect(() => {
     let vivo = true;

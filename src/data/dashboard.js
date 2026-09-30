@@ -86,6 +86,21 @@ export function fetchPendingApprovalRequests() {
  * el reparto entre páginas no está garantizado y `range()` puede repetir una
  * fila y perder otra.
  */
+/**
+ * Cuántas solicitudes pendientes ve quien pregunta (el RLS decide cuáles),
+ * sin tope. `fetchPendingApprovalRequests` trae 8 para la lista y su largo no
+ * sirve de conteo: con 12 pendientes decía 8. `tipos` acota (p. ej. sólo los
+ * traslados).
+ */
+export async function contarSolicitudesPendientes({ tipos = null, excepto = null } = {}) {
+    let q = supabase.from('approval_requests').select('id', { count: 'exact', head: true }).eq('status', 'PENDING');
+    if (tipos) q = q.in('type', tipos);
+    if (excepto) q = q.not('type', 'in', `(${excepto.join(',')})`);
+    const { count, error } = await q;
+    if (error) throw error;
+    return count ?? 0;
+}
+
 export function fetchActiveLeaveRequests() {
     return fetchAllRows(() => supabase.from('approval_requests')
         .select('id, type, employee_id, metadata')

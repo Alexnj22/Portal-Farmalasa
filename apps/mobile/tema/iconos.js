@@ -56,6 +56,8 @@ export const ICONOS = {
   Mail: i('envelope', require('@expo/material-symbols/mail.xml')),
   BarChart2: i('chart.bar', require('@expo/material-symbols/bar_chart.xml')),
   Building2: i('building.2', require('@expo/material-symbols/domain.xml')),
+  UserCheck: i('person.crop.circle.badge.checkmark', require('@expo/material-symbols/how_to_reg.xml')),
+  UserX: i('person.crop.circle.badge.xmark', require('@expo/material-symbols/person_off.xml')),
   Contact: i('person.crop.rectangle', require('@expo/material-symbols/contact_page.xml')),
 };
 

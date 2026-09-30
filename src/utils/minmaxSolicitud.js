@@ -128,3 +128,41 @@ export function motivosQueExigenExplicacion(actual, pedidoMin, pedidoMax) {
     }
     return motivos;
 }
+
+/**
+ * La solicitud lista para `insertMinMaxChangeRequest`. Estaba escrita dentro
+ * de `WidgetMinMaxRequest.jsx`; se mudó acá el 2026-09-30 con la app.
+ * `actual` = `{ min, max, sales6m }` (de `effectiveMinMaxPair`) y `ventas` =
+ * el contexto de `fetchMinMaxContextoVenta`, retratos del momento en que se
+ * propuso. `requested_by` es el CORREO: así lo guarda y lo busca la tabla.
+ */
+export function solicitudDeMinMax({ producto, erpSucursalId, actual, ventas, min, max, motivo, usuario }) {
+    return {
+        erp_product_id:       producto.id,
+        erp_sucursal_id:      Number(erpSucursalId),
+        product_name:         producto.nombre,
+        current_min:          actual?.min ?? null,
+        current_max:          actual?.max ?? null,
+        current_sales_6m:     actual?.sales6m ?? null,
+        current_sales_mes:    ventas?.unidadesMes ?? null,
+        current_ultima_venta: ventas?.ultimaVenta ?? null,
+        current_existencia:   ventas?.existencia ?? null,
+        requested_min:        min,
+        requested_max:        max,
+        reason:               String(motivo ?? '').trim() || null,
+        requested_by:         usuario?.email ?? '',
+        requested_by_id:      usuario?.id ?? null,
+        requested_by_name:    usuario?.name ?? null,
+    };
+}
+
+/** Lo que dice la base cuando rechaza una solicitud de Min/Max, en palabras. */
+export function mensajeDeMinMax(msg = '', sala = 'la sucursal') {
+    if (msg.includes('row-level security')) return 'No tienes permiso para crear solicitudes (widget Ajuste de Min/Max).';
+    if (msg.includes('mmcr_reason_required')) return 'Este ajuste necesita un motivo.';
+    if (msg.includes('mmcr_pair_valid')) return 'Ese par de MIN y MAX no es válido.';
+    if (msg.includes('MMCR_PRODUCTO_OCULTO')) return `Este producto está oculto en ${sala}: primero hay que mostrarlo de nuevo en Min/Max.`;
+    if (msg.includes('MMCR_SIN_CAMBIO')) return `${sala} ya está así: esta solicitud no cambiaría nada.`;
+    if (msg.includes('MMCR_BODEGA')) return 'Bodega no admite estas solicitudes: su MIN y su MAX salen de la suma de las salas.';
+    return msg || 'Error al enviar';
+}

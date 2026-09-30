@@ -66,6 +66,13 @@
           "cameraPermission": "Farmalasa usa la cámara para escanear el código de las cajas de traslado y de los productos.",
           "recordAudioAndroid": false
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Farmalasa usa tus fotos para adjuntar la evidencia de una solicitud (producto dañado, boleta).",
+          "cameraPermission": "Farmalasa usa la cámara para escanear cajas y fotografiar la evidencia de una solicitud."
+        }
       ]
     ],
     "experiments": {

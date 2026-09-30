@@ -23,6 +23,7 @@ import {
 } from '@nucleo/data/inventoryMovements';
 import { diasEntre, fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
+import { OPERACIONES_AJUSTE, MOTIVOS_AJUSTE, OPS_CON_FOTO, BUCKET_EVIDENCIA, MAX_FOTOS_AJUSTE, problemasDeLinea, llevaControlDeLote, solicitudDeAjuste, causaObligatoria } from '@nucleo/utils/ajusteInventario';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
 
 // Widget «Ajuste de Inventario».
@@ -74,38 +75,16 @@ import { subirArchivo } from '@nucleo/utils/storageFiles';
 // contando las líneas vencidas (hoy dentro de `contarPorVencer`, junto con los
 // tramos de 7 y 30 días de la franja): ese número no depende de nada de esto y
 // sigue siendo cierto.
-const OPERACIONES = [
-    {
-        key: 'VENCIMIENTO', movimiento: 'DESCARTE', icon: CalendarX2,
-        label: 'Descargar por vencimiento',
-        desc: 'Producto vencido que se retira de la sala',
-        color: 'text-danger-text', bg: 'bg-danger/10 border-danger/30', iconBg: 'bg-danger/10',
-    },
-    {
-        key: 'DESCARTE', movimiento: 'DESCARTE', icon: Trash2,
-        label: 'Descargar por descarte',
-        desc: 'Producto que se retira sin estar vencido',
-        color: 'text-warning-text', bg: 'bg-warning/10 border-warning/20', iconBg: 'bg-warning/10',
-    },
-    {
-        key: 'PRODUCTO DAÑADO', movimiento: 'DESCARTE', icon: AlertTriangle,
-        label: 'Descargar por daño',
-        desc: 'Producto roto, golpeado o inservible',
-        color: 'text-chart-6-text', bg: 'bg-chart-6/10 border-chart-6/30', iconBg: 'bg-chart-6/10',
-    },
-    {
-        key: 'CONSUMO INTERNO', movimiento: 'DESCARTE', icon: Stethoscope,
-        label: 'Descargar por consumo interno',
-        desc: 'Usado en inyecciones, curaciones o la sala',
-        color: 'text-chart-3-text', bg: 'bg-chart-3/10 border-chart-3/30', iconBg: 'bg-chart-3/10',
-    },
-    {
-        key: 'CARGA', movimiento: 'CARGA', icon: PackagePlus,
-        label: 'Cargar producto',
-        desc: 'Ingresar existencia que no entró por compra',
-        color: 'text-success-text', bg: 'bg-success/10 border-success/30', iconBg: 'bg-success/10',
-    },
-];
+// Las operaciones salen del núcleo (`utils/ajusteInventario`); acá sólo se les
+// pone su ícono y su color de pantalla.
+const ESTILO_OPERACION = {
+    'VENCIMIENTO':     { icon: CalendarX2,    color: 'text-danger-text',  bg: 'bg-danger/10 border-danger/30',   iconBg: 'bg-danger/10' },
+    'DESCARTE':        { icon: Trash2,        color: 'text-warning-text', bg: 'bg-warning/10 border-warning/20', iconBg: 'bg-warning/10' },
+    'PRODUCTO DAÑADO': { icon: AlertTriangle, color: 'text-chart-6-text', bg: 'bg-chart-6/10 border-chart-6/30', iconBg: 'bg-chart-6/10' },
+    'CONSUMO INTERNO': { icon: Stethoscope,   color: 'text-chart-3-text', bg: 'bg-chart-3/10 border-chart-3/30', iconBg: 'bg-chart-3/10' },
+    'CARGA':           { icon: PackagePlus,   color: 'text-success-text', bg: 'bg-success/10 border-success/30', iconBg: 'bg-success/10' },
+};
+const OPERACIONES = OPERACIONES_AJUSTE.map(o => ({ ...o, ...ESTILO_OPERACION[o.key] }));
 
 // ── El motivo, para las operaciones donde «descargar» no dice nada ──────────
 // «Descargar por descarte» y «Descargar por consumo interno» son cajones: lo
@@ -118,30 +97,11 @@ const OPERACIONES = [
 // y eso ensucia la lista entera. Al elegirlo, el detalle pasa a ser obligatorio.
 //
 // Vencimiento, daño y carga no llevan motivo: el motivo ES la operación.
-const MOTIVOS = {
-    'DESCARTE': [
-        { value: 'CRUCE',       label: 'Cruce de producto' },
-        { value: 'DESCUADRE',   label: 'Descuadre de inventario' },
-        { value: 'MAL_ESTADO',  label: 'Llegó en mal estado' },
-        { value: 'DEVOLUCION',  label: 'Devolución al proveedor' },
-        { value: 'RETIRO',      label: 'Retiro sanitario' },
-        { value: 'OTRO',        label: 'Otro' },
-    ],
-    'CONSUMO INTERNO': [
-        { value: 'ENFERMERIA',  label: 'Enfermería — inyecciones' },
-        { value: 'CURACIONES',  label: 'Curaciones' },
-        { value: 'INSUMO',      label: 'Insumo de la sala' },
-        { value: 'MUESTRA',     label: 'Muestra o demostración' },
-        { value: 'PERSONAL',    label: 'Uso del personal' },
-        { value: 'OTRO',        label: 'Otro' },
-    ],
-};
+const MOTIVOS = MOTIVOS_AJUSTE;
 
 // La foto sólo se pide donde se puede ver algo: un producto roto se muestra.
 // Un descuadre no se fotografía, y pedirla ahí sería un trámite vacío.
-const OPS_CON_FOTO = ['PRODUCTO DAÑADO'];
-const BUCKET_EVIDENCIA = 'inventario-evidencia';
-const MAX_FOTOS = 3;
+const MAX_FOTOS = MAX_FOTOS_AJUSTE;
 
 // Quién resuelve: SIEMPRE Supervisión — `supervisorQueResuelve` (utils/aprobadorOperativo).
 const findTargetEmployee = supervisorQueResuelve;
@@ -156,54 +116,8 @@ function diasHasta(fecha) {
 const LOTE_NUEVO = '__nuevo__';
 let contador = 0;
 
-/**
- * Lo que le falta a una línea para poder enviarse.
- *
- * Una sola definición para los dos lugares que la necesitan: el compositor
- * —que decide si «Agregar» se habilita— y el banco, que marca lo incompleto.
- * Escrita dos veces, la diferencia se paga al revés de como se descubre: se
- * agrega una línea que el compositor da por buena y el envío la rechaza desde
- * otra pestaña, sin decir cuál.
- */
-function problemasDeLinea(l, { llevaLote, esCarga, esPerecedero }) {
-    const problemas = [];
-    if (!(Number(l.cantidad) > 0)) problemas.push('cantidad');
-    if (!esCarga && l.existencia != null && Number(l.cantidad) > Number(l.existencia))
-        problemas.push('sin existencia');
-    // `llevaLote` tiene TRES valores en una carga y el tercero no es un detalle:
-    // `null` es «todavía no se sabe». Escribirlo como `if (llevaLote)` lo
-    // convertiría en «no lleva» y volvería a dejar pasar cargas sin lote — que
-    // es exactamente el bug que se corrigió el 2026-08-12.
-    //
-    // Y en una carga «no se sabe» EXIGE el lote igual (`!== false`), no lo
-    // sugiere. Primero porque la regla es que una carga no salga sin lote salvo
-    // que conste que el producto no lo lleva; y segundo porque el costo de los
-    // dos errores no se parece: pedirlo de más cuesta un campo escrito al pedo,
-    // y no pedirlo cuesta una solicitud que recorre todo el circuito, la aprueba
-    // el supervisor y recién ahí la rechaza el sistema — con el producto ya
-    // contado y nadie a quién preguntarle el número. Pasó el 2026-08-12 con
-    // AVAMYS. En un DESCARGO no cambia nada: ahí el lote se elige de los que la
-    // sala tiene, y si no hay ninguno `llevaLote` ya es `false`.
-    const loteObligatorio = esCarga ? llevaLote !== false : llevaLote === true;
-    if (loteObligatorio && !String(l.lote).trim()) problemas.push('lote');
-    if (esCarga && (loteObligatorio || esPerecedero) && !String(l.vence).trim())
-        problemas.push('vence');
-    return problemas;
-}
-
-/**
- * Si el producto lleva control de lote. `null` = no se sabe todavía.
- *
- * Son dos preguntas distintas según lo que se esté haciendo, y confundirlas fue
- * el bug: al DESCARGAR se elige entre los lotes que la sala tiene, así que la
- * respuesta es si hay alguno. Al CARGAR no hay lotes que mirar —lo que se carga
- * es lo que no está— y la respuesta es una propiedad del producto, que el
- * portal guarda en `products.regulado`.
- */
-function llevaControlDeLote(linea, { esCarga, lotes }) {
-    if (!esCarga) return (lotes ?? []).length > 0;
-    return linea?.regulado ?? null;
-}
+// `problemasDeLinea` y `llevaControlDeLote` viven en `utils/ajusteInventario.js`
+// desde que la app pide ajustes: una sola definición para las dos pantallas.
 
 /* ─── Paso 1 · qué se va a hacer ──────────────────────────────────────────── */
 function SelectorOperacion({ onSelect }) {
@@ -554,7 +468,8 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
     // libre pasa a ser obligatorio sólo cuando el motivo es «Otro» —ahí la lista
     // no dijo nada— o cuando no hay lista: en el resto, el motivo ya explica y
     // exigir además un párrafo es lo que hace que la gente escriba "x".
-    const detalleObligatorio = !motivos || motivo === 'OTRO';
+    // La causa la exige la base SIEMPRE (`causaObligatoria`, utils/ajusteInventario).
+    const detalleObligatorio = causaObligatoria(opKey, motivo);
     const puedeEnviar = totales.lineas > 0 && incompletas.length === 0
         && (!motivos || Boolean(motivo))
         && (!detalleObligatorio || causa.trim().length > 0)
@@ -591,46 +506,11 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
             }
 
             const target = findTargetEmployee(employees);
-            const items = lineas.map(l => ({
-                erp_product_id:    l.erp_product_id,
-                descripcion:       l.descripcion,
-                presentacion_tipo: l.tipo,
-                factor:            l.factor,
-                cantidad:          Number(l.cantidad),
-                lote:              String(l.lote).trim() || null,
-                numero_lote:       String(l.lote).trim() || null,
-                vence:             String(l.vence).trim() || null,
-                existencia:        l.existencia,
-            }));
-
-            const { error: errIns } = await insertMovimientoInventario({
-                employee_id: user?.id,
-                approver_id: target?.id ?? null,
-                type: esCarga ? 'INVENTORY_LOAD_REQUEST' : 'INVENTORY_DISCARD_REQUEST',
-                status: 'PENDING',
-                note: causa.trim(),
-                metadata: {
-                    movimiento: op.movimiento,
-                    subtipo: esCarga ? undefined : opKey,
-                    reason: causa.trim(),
-                    // El motivo va como código Y como rótulo: el código para
-                    // poder agrupar, el rótulo para que quien lea la solicitud
-                    // dentro de un año no tenga que buscar qué era 'CRUCE'.
-                    motivo: motivo || undefined,
-                    motivo_label: motivos?.find(m => m.value === motivo)?.label,
-                    evidencia_urls: evidencia.length ? evidencia : undefined,
-                    branch_id: branchId,
-                    branch_name: branchName,
-                    // Los ids con los que se ubica el movimiento fuera del
-                    // portal: son numeraciones distintas de las de acá.
-                    erp_sucursal_id: erpSucursalId,
-                    erp_ubicacion_id: erpUbicacionId,
-                    items,
-                    total_unidades: totales.unidades,
-                    notified_employee_id: target?.id ?? null,
-                    notified_employee: target?.name ?? 'Sin supervisión asignada',
-                },
-            }, { lineas: totales.lineas, fotos: evidencia.length });
+            const { error: errIns } = await insertMovimientoInventario(solicitudDeAjuste({
+                op, motivo, causa, evidencia, lineas,
+                usuarioId: user?.id, aprobador: target,
+                sala: { branchId, nombre: branchName, erpSucursalId, erpUbicacionId },
+            }), { lineas: totales.lineas, fotos: evidencia.length });
             // La bitácora la anota la capa de datos (`<TIPO>_CREATED`, con la
             // metadata de la solicitud). Acá se anotaba además una segunda
             // entrada del mismo hecho con otro nombre.

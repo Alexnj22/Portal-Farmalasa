@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1108.0 — App: Nueva solicitud — ajuste de inventario y Mín·Máx nativos
+
+- **Ajuste de inventario** (`/nueva/ajuste`): qué se hace (vencimiento,
+  descarte, daño, consumo interno, carga), qué productos —se buscan (al
+  descargar, sólo lo que la sala tiene), con presentación, cantidad y lote: al
+  descargar se elige de los lotes que hay; al cargar se escribe con su
+  vencimiento en el selector de fecha del sistema— y por qué: motivo, causa y,
+  si es producto dañado, **fotos desde la cámara o la galería**. Guarda
+  borrador (se probó: cerrar la app y volver deja todo como estaba). Si la
+  sala está contando inventario, no deja ajustar.
+- **Mín·Máx** (`/nueva/minmax`): se busca el producto, se ve su par de hoy y
+  cuánto vendió, y se propone el nuevo. El motivo se exige sólo en un salto
+  grande, sin par previo o 0·0; frena lo que no cambia nada, un producto oculto
+  y Bodega.
+- **Corrección en el portal**: la base exige la causa de un ajuste SIEMPRE
+  (`validar_solicitud_movimiento_inventario`), pero el formulario la pedía sólo
+  sin motivo de lista o con «Otro», así que elegir un motivo y dejarla vacía
+  rebotaba al enviar. La encontró la prueba de la app; ahora se pide siempre.
+- **Núcleo**: `utils/ajusteInventario.js` (operaciones, motivos,
+  `problemasDeLinea`, `llevaControlDeLote`, `causaObligatoria`,
+  `solicitudDeAjuste`) y en `utils/minmaxSolicitud.js` `solicitudDeMinMax` y
+  `mensajeDeMinMax`; el portal los usa desde ahí. 8 pruebas nuevas.
+- Formularios: el teclado ya no tapa el campo (ajuste de insets del sistema),
+  selector de fecha nativo (`Fecha`) y fotos (`Fotos`, `expo-image-picker`).
+
+Probado en el entorno de pruebas: un descarte y un Mín·Máx creados desde la
+app quedaron en la base con sus datos (luego se borraron).
+
 ## v2.1107.0 — App: Nueva solicitud — facturación nativa (anular, pago, vendedor, cliente)
 
 La app ya CREA solicitudes. El «+» de Solicitudes abre **Nueva solicitud**

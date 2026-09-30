@@ -133,9 +133,10 @@ export default function Envio() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: envio.codigo_bolsa ? `Envío ${envio.codigo_bolsa}` : 'Envío' }} />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive"
           refreshControl={<RefreshControl refreshing={false} onRefresh={cargar} />}>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>

@@ -18,7 +18,7 @@ import { colorSistema } from '../componentes/Formulario';
 import { MARCA } from '../componentes/inicio/marca';
 
 // Dónde abre cada familia. `null` = todavía en el portal.
-const NATIVA = { facturacion: '/nueva/facturas', traslado: '/pedir-traslado', inventario: null, minmax: null };
+const NATIVA = { facturacion: '/nueva/facturas', traslado: '/pedir-traslado', inventario: '/nueva/ajuste', minmax: '/nueva/minmax' };
 const COLOR = { inventario: MARCA.ambar, facturacion: MARCA.rojo, minmax: MARCA.azulClaro, traslado: MARCA.verde };
 const PERSONALES = ['VACATION', 'PERMIT', 'DISABILITY', 'SHIFT_CHANGE', 'OVERTIME', 'ADVANCE', 'CERTIFICATE'];
 

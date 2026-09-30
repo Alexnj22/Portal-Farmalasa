@@ -180,9 +180,10 @@ export default function Traslado() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Traslado' }} />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive"
           refreshControl={<RefreshControl refreshing={false} onRefresh={cargar} />}>
 
           {/* Quién pide, de dónde a dónde, y cuándo. */}

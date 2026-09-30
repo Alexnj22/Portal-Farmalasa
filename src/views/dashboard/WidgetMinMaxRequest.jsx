@@ -14,7 +14,7 @@ import {
 } from '@nucleo/data/minmaxRequests';
 import { ERP_NAMES } from '../productos/tabminmax/constants';
 import { effectiveMinMaxPair } from '@nucleo/data/stockParams';
-import { parMinMaxValido, motivosQueExigenExplicacion, ajusteSinCambio, fmtUltimaVenta } from '@nucleo/utils/minmaxSolicitud';
+import { parMinMaxValido, motivosQueExigenExplicacion, ajusteSinCambio, fmtUltimaVenta, solicitudDeMinMax, mensajeDeMinMax } from '@nucleo/utils/minmaxSolicitud';
 import PortalTextarea from '../../components/common/PortalTextarea';
 
 // Presentación dominante (la "caja" más grande, factor>1) para mostrar equivalentes.
@@ -148,28 +148,10 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
 
     setSubmitting(true);
     try {
-      const { error } = await insertMinMaxChangeRequest({
-        erp_product_id:    product.id,
-        erp_sucursal_id:   Number(erp),
-        product_name:      product.nombre,
-        current_min:       current?.min ?? null,
-        current_max:       current?.max ?? null,
-        current_sales_6m:  current?.sales6m ?? null,
-        // El retrato de venta viaja CON la solicitud, igual que las 6 meses:
-        // quien aprueba tiene que ver lo mismo que vio quien propuso, y el
-        // centro de solicitudes pinta muchas filas sin poder consultar por cada
-        // una. Si la consulta falló, va null — no un 0 que se leería como «no
-        // vendió».
-        current_sales_mes:   ventas?.unidadesMes ?? null,
-        current_ultima_venta: ventas?.ultimaVenta ?? null,
-        current_existencia:  ventas?.existencia ?? null,
-        requested_min:     newMin,
-        requested_max:     newMax,
-        reason:            reason.trim() || null,
-        requested_by:      user?.email ?? '',
-        requested_by_id:   user?.id ?? null,
-        requested_by_name: user?.name ?? null,
-      });
+      const { error } = await insertMinMaxChangeRequest(solicitudDeMinMax({
+        producto: product, erpSucursalId: erp, actual: current, ventas,
+        min: newMin, max: newMax, motivo: reason, usuario: user,
+      }));
       // La entrada de la bitácora la anota `insertMinMaxChangeRequest` (D3).
       if (error) throw error;
 
@@ -186,14 +168,7 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
       // rótulo crudo del disparador—, que no le dice nada a quien está
       // proponiendo un máximo.
       const msg = e.message ?? '';
-      setErr(
-        msg.includes('row-level security') ? 'No tienes permiso para crear solicitudes (widget Ajuste de Min/Max).'
-        : msg.includes('mmcr_reason_required') ? 'Este ajuste necesita un motivo.'
-        : msg.includes('mmcr_pair_valid') ? 'Ese par de MIN y MAX no es válido.'
-        : msg.includes('MMCR_PRODUCTO_OCULTO') ? `Este producto está oculto en ${ERP_NAMES[Number(erp)] || 'la sucursal'}: primero hay que mostrarlo de nuevo en Min/Max.`
-        : msg.includes('MMCR_SIN_CAMBIO') ? `${ERP_NAMES[Number(erp)] || 'La sucursal'} ya está así: esta solicitud no cambiaría nada.`
-        : msg.includes('MMCR_BODEGA') ? 'Bodega no admite estas solicitudes: su MIN y su MAX salen de la suma de las salas.'
-        : (msg || 'Error al enviar'));
+      setErr(mensajeDeMinMax(msg, ERP_NAMES[Number(erp)] || 'la sucursal'));
       setSubmitting(false);
     }
   };

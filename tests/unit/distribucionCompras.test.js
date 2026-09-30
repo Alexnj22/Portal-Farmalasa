@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { leerDteDelProveedor, problemasDeCompra, totalesCalculados, cambiarUnidadesPor, totalEsperado } from '../../src/views/distribucion/compras.js';
+import { leerDteDelProveedor, problemasDeCompra, totalesCalculados, cambiarUnidadesPor, totalEsperado, evaluarPrecioRelacionada } from '../../src/views/distribucion/compras.js';
 
 // Las cuentas de la pantalla son las de `dist_recibir_compra` (borrador 0015):
 // los mismos casos (IVA mal, total mal) se corrieron contra la base.
@@ -80,5 +80,30 @@ describe('compras: lo que impide recibir', () => {
     });
     it('en una Factura el IVA no se acredita: el costo es el precio completo', () => {
         expect(totalesCalculados(base.items, '01')).toEqual({ productos: 25, iva: 0 });
+    });
+});
+
+describe('compras a relacionadas: precio de mercado', () => {
+    const ref = { costo_farmalasa: 0.8754, mayoreo_sin_iva: 1.150442, precio_torogoz_sin_iva: 1.548673 };
+    it('dentro de lo razonable: sin avisos', () => {
+        expect(evaluarPrecioRelacionada(1.10, ref)).toEqual([]);
+    });
+    it('bajo el costo de Farmalasa: rojo (y no repite el de mayoreo)', () => {
+        expect(evaluarPrecioRelacionada(0.80, ref).map(a => a.clave)).toEqual(['bajo_costo']);
+    });
+    it('más de 10 % bajo el mayoreo a terceros: naranja', () => {
+        expect(evaluarPrecioRelacionada(1.00, ref).map(a => a.clave)).toEqual(['bajo_mayoreo']);
+    });
+    it('al precio de venta de Torogoz o más: sin margen', () => {
+        expect(evaluarPrecioRelacionada(1.60, ref).map(a => a.clave)).toEqual(['sin_margen']);
+    });
+    it('el caso del producto 4: cualquier precio justo deja a una en pérdida', () => {
+        const r4 = { costo_farmalasa: 2.1483, mayoreo_sin_iva: 2.787611, precio_torogoz_sin_iva: 1.902655 };
+        expect(evaluarPrecioRelacionada(2.20, r4).map(a => a.clave)).toEqual(['bajo_mayoreo', 'sin_margen']);
+        expect(evaluarPrecioRelacionada(1.80, r4).map(a => a.clave)).toEqual(['bajo_costo']);
+    });
+    it('sin referencias o sin precio: no inventa avisos', () => {
+        expect(evaluarPrecioRelacionada(1, null)).toEqual([]);
+        expect(evaluarPrecioRelacionada(0, ref)).toEqual([]);
     });
 });

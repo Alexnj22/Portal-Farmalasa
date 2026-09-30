@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1110.0 — Torogoz: compras a partes relacionadas con precio de mercado
+
+Entre dos empresas con NIT distinto no existe «pasar» mercadería: Farmalasa le
+VENDE a la S.A.S. con su Crédito Fiscal y Torogoz lo registra como COMPRA (ya
+existía). Lo nuevo es lo que la ley agrega entre empresas del mismo grupo: el
+precio tiene que ser el de mercado (borrador `0022_compras_a_relacionadas.sql`,
+sólo pruebas). El margen y si aplica el informe F-982 los confirma el contador.
+
+- **Referencias por unidad, sin IVA**: costo de compra de Farmalasa, su
+  mayoreo a terceros (el más bajo), el precio de venta y el costo de Torogoz.
+- **Avisos al capturar la compra** (no bloquean): 🔴 bajo el costo de
+  Farmalasa · 🟠 más de 10 % bajo su mayoreo a terceros · 🟠 Torogoz no gana al
+  revenderlo. Una sola regla (`evaluarPrecioRelacionada`) para la compra y el
+  reporte.
+- **Reportes → Relacionadas**: lo comprado a relacionadas en el año (lo que se
+  compara con el umbral del F-982), el IVA, los productos con aviso y un CSV de
+  trabajo para el contador.
+- **Arreglo**: `PortalInput` no usa `disabled` sino `readOnly`, y pisa el
+  `disabled` que se le pasa. Siete campos de la distribuidora lo tenían mal: se
+  podía escribir en una compra ya recibida o devolver un producto ya devuelto
+  entero (la base lo frenaba igual). Y el buscador de la venta ahora sí espera
+  al cliente, como decía el código. Quedan 8 casos iguales en otras áreas del
+  portal, sin tocar.
+
 ## v2.1109.0 — Torogoz: libros de IVA de ventas
 
 En **Reportes → Libros de ventas** (borrador `0021_libros_de_ventas.sql`, sólo

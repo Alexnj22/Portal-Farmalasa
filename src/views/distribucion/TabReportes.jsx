@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import {
-    TrendingUp, Coins, Percent, Receipt, AlertTriangle, Search, Download, Landmark, BookOpen, CalendarRange, Layers, Info, FileX2 } from 'lucide-react';
+    TrendingUp, Coins, Percent, Receipt, AlertTriangle, Search, Download, Landmark, BookOpen, CalendarRange, Layers, Info, FileX2, ShoppingCart as ShoppingCartIcono } from 'lucide-react';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import Badge from '../../components/common/Badge';
@@ -11,17 +11,18 @@ import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
-import { fechaNumerica, rangoDelMes } from '@nucleo/utils/fecha';
+import { fechaNumerica, rangoDelMes, hoySV } from '@nucleo/utils/fecha';
 import { exportCsv } from '@nucleo/utils/csvExport';
 import { construirLibro } from '@nucleo/utils/libroIva';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { mensajeDeDistribucion } from '@nucleo/data/distribucion';
-import { fetchUtilidad, fetchLibroCompras, fetchLibrosVentas } from '@nucleo/data/distribucionCompras';
+import { fetchUtilidad, fetchLibroCompras, fetchLibrosVentas, fetchRelacionadas } from '@nucleo/data/distribucionCompras';
+import { evaluarPrecioRelacionada } from './compras';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { PERIODOS, rangoDe } from './comun';
 import { TIPOS_COMPRA } from './compras';
-import { AGRUPAR_UTILIDAD, margen, mesesRecientes, comprasParaLibro, totalesDelLibro, LIBROS_VENTAS, totalesContribuyente, totalesConsumidor } from './reportes';
+import { AGRUPAR_UTILIDAD, margen, mesesRecientes, comprasParaLibro, totalesDelLibro, LIBROS_VENTAS, totalesContribuyente, totalesConsumidor, aniosRecientes } from './reportes';
 import { TIPO_DOCUMENTO } from './comun';
 
 // Reportes de la distribuidora (borrador 0016). Sólo quien administra: el
@@ -428,10 +429,110 @@ function LibrosVentas({ buscar }) {
     );
 }
 
+// ── Compras a partes relacionadas (borrador 0022) ───────────────────────
+// Lo que Torogoz le compró a empresas del grupo, con las referencias de precio
+// de mercado y los mismos avisos que la compra. Es papel de trabajo para el
+// contador: el F-982 y el margen los decide él.
+const COLS_RELACIONADAS = [
+    { key: 'producto', label: 'Producto', align: 'left', className: 'w-[240px]' },
+    { key: 'pagado', label: 'Pagado c/u', align: 'right' },
+    { key: 'costo', label: 'Costo Farmalasa', align: 'right', hideBelow: 'md' },
+    { key: 'mayoreo', label: 'Mayoreo s/IVA', align: 'right', hideBelow: 'lg' },
+    { key: 'venta', label: 'Venta Torogoz', align: 'right', hideBelow: 'lg' },
+];
+
+function ReporteRelacionadas({ buscar }) {
+    const anios = useMemo(() => aniosRecientes(hoySV()), []);
+    const [anio, setAnio] = usePestanaEnUrl(anios, anios[0].key, 'anio');
+    const [datos, setDatos] = useState(null);
+    const [cargando, setCargando] = useState(true);
+    const [error, setError] = useState('');
+
+    const cargar = useCallback(async () => {
+        setCargando(true);
+        setError('');
+        try {
+            const hasta = anio === anios[0].key ? hoySV() : `${anio}-12-31`;
+            setDatos(await fetchRelacionadas({ desde: `${anio}-01-01`, hasta }));
+        } catch (e) {
+            console.error('relacionadas', e);
+            setError(mensajeDeDistribucion(e));
+        } finally {
+            setCargando(false);
+        }
+    }, [anio, anios]);
+    useEffect(() => { cargar(); }, [cargar]);
+
+    const filas = useMemo(() => {
+        const q = (buscar ?? '').trim();
+        return (datos?.productos ?? [])
+            .map(p => ({ ...p, ref: datos?.referencias?.[p.product_id] ?? null }))
+            .map(p => ({ ...p, avisos: evaluarPrecioRelacionada(p.pagado_u, p.ref) }))
+            .filter(p => !q || tokenMatch(q, p.nombre));
+    }, [datos, buscar]);
+    const conAviso = filas.filter(f => f.avisos.length).length;
+    const r = datos?.resumen ?? {};
+
+    const exportar = () => {
+        const m = (n) => (n == null ? '' : Number(n).toFixed(4));
+        exportCsv(['PRODUCTO', 'UNIDADES', 'PAGADO TOTAL', 'PAGADO C/U SIN IVA', 'COSTO FARMALASA C/U', 'MAYOREO FARMALASA C/U SIN IVA', 'VENTA TOROGOZ C/U SIN IVA', 'AVISOS'],
+            filas.map(f => [f.nombre, f.unidades, Number(f.pagado).toFixed(2), m(f.pagado_u), m(f.ref?.costo_farmalasa), m(f.ref?.mayoreo_sin_iva),
+                m(f.ref?.precio_torogoz_sin_iva), f.avisos.map(a => a.texto).join(' | ')]),
+            `compras-relacionadas-torogoz-${anio}.csv`, 'distribucion');
+    };
+
+    return (
+        <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+                <div className="w-40"><LiquidSelect value={anio} onChange={(v) => setAnio(v || anios[0].key)} clearable={false} icon={CalendarRange}
+                    options={anios.map(a => ({ value: a.key, label: a.label }))} ariaLabel="Año" /></div>
+                <Button variant="secondary" icon={Download} onClick={exportar} disabled={cargando || !filas.length}>Descargar CSV</Button>
+            </div>
+            {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
+            <Notice variant="info" icon={Info}>
+                Entre empresas del mismo grupo el precio tiene que ser el de mercado, el que se le cobraría a un tercero. Si las operaciones con
+                relacionadas del año superan el monto que fija el Código Tributario, se presenta el informe de precios de transferencia (F-982).
+                El margen y si aplica el informe los confirma el contador.
+            </Notice>
+            <CarrilCards ariaLabel="Resumen de compras a relacionadas">
+                <StatCard icon={ShoppingCartIcono} label="Comprado a relacionadas" value={formatMoney(Number(datos?.anio?.total ?? 0))} loading={cargando}
+                    iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(Number(r.compras ?? 0))} compras en ${anio} (sin IVA)`} />
+                <StatCard icon={Landmark} label="IVA de esas compras" value={formatMoney(Number(r.iva ?? 0))} loading={cargando}
+                    iconBg="bg-success/10" iconCls="text-success" sub="Crédito fiscal" />
+                <StatCard icon={AlertTriangle} label="Productos con aviso" value={formatQty(conAviso)} loading={cargando}
+                    iconBg="bg-warning/10" iconCls="text-warning" valueCls={conAviso ? 'text-warning-text' : undefined} sub="Precio fuera de lo razonable" />
+            </CarrilCards>
+            <DataTable columns={COLS_RELACIONADAS} movil={{ usarAccionDeFila: false }} loading={cargando} minWidth="320px"
+                empty={{ icon: Info, message: 'Sin compras a relacionadas', subtext: 'Marca al proveedor como «empresa relacionada» y sus compras aparecen aquí.' }}>
+                {filas.map((f, i) => (
+                    <DataRow key={f.product_id} index={i}>
+                        <DataCell>
+                            <div className="min-w-0 max-w-[240px]">
+                                <p className="text-body-sm font-bold text-content-2 truncate" title={f.nombre}>{f.nombre}</p>
+                                <p className="text-caption text-content-3">{formatQty(Number(f.unidades))} unidades · {formatMoney(Number(f.pagado))}</p>
+                                {f.avisos.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mt-1" data-aviso-precio={f.avisos[0].clave}>
+                                        {f.avisos.map(a => <Badge key={a.clave} size="sm" variant={a.nivel} uppercase={false}>{a.texto}</Badge>)}
+                                    </div>
+                                )}
+                            </div>
+                        </DataCell>
+                        <DataCell align="right"><span className="tabular-nums font-black text-content">{formatMoney(Number(f.pagado_u))}</span></DataCell>
+                        <DataCell align="right" hideBelow="md"><span className="tabular-nums text-content-2">{f.ref?.costo_farmalasa ? formatMoney(Number(f.ref.costo_farmalasa)) : '—'}</span></DataCell>
+                        <DataCell align="right" hideBelow="lg"><span className="tabular-nums text-content-2">{f.ref?.mayoreo_sin_iva ? formatMoney(Number(f.ref.mayoreo_sin_iva)) : '—'}</span></DataCell>
+                        <DataCell align="right" hideBelow="lg"><span className="tabular-nums text-content-2">{f.ref?.precio_torogoz_sin_iva ? formatMoney(Number(f.ref.precio_torogoz_sin_iva)) : '—'}</span></DataCell>
+                    </DataRow>
+                ))}
+            </DataTable>
+        </div>
+    );
+}
+
 export default function TabReportes({ buscar, vista = 'utilidad' }) {
     return (
         <div className="p-3 md:p-5">
-            {vista === 'compras' ? <LibroCompras buscar={buscar} /> : vista === 'ventas' ? <LibrosVentas buscar={buscar} /> : <ReporteUtilidad buscar={buscar} />}
+            {vista === 'compras' ? <LibroCompras buscar={buscar} /> : vista === 'ventas' ? <LibrosVentas buscar={buscar} />
+                : vista === 'relacionadas' ? <ReporteRelacionadas buscar={buscar} /> : <ReporteUtilidad buscar={buscar} />}
         </div>
     );
 }

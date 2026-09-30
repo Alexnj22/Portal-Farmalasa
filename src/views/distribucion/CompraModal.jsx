@@ -18,9 +18,10 @@ import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { fechaNumerica, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeDeDistribucion } from '@nucleo/data/distribucion';
-import { fetchCompra, fetchMemoriaProveedor, guardarCompra, recibirCompra, anularCompra } from '@nucleo/data/distribucionCompras';
+import { fetchCompra, fetchMemoriaProveedor, guardarCompra, recibirCompra, anularCompra, fetchReferenciasRelacionada } from '@nucleo/data/distribucionCompras';
 import {
     TIPOS_COMPRA, totalesCalculados, totalEsperado, subtotalRenglon, problemasDeCompra, leerDteDelProveedor, cambiarUnidadesPor, toleranciaDeCuadre,
+    evaluarPrecioRelacionada,
 } from './compras';
 import ProveedorModal from './ProveedorModal';
 
@@ -49,7 +50,7 @@ const monto = (v) => (v === '' || v === null || v === undefined ? '' : String(v)
 function CampoMonto({ label, name, value, onChange, esperado, disabled }) {
     const ok = esperado === undefined || value === '' || Math.abs(num(value) - esperado) <= 0.01;
     return (
-        <PortalInput label={label} name={name} inputMode="decimal" value={value} disabled={disabled}
+        <PortalInput label={label} name={name} inputMode="decimal" value={value} readOnly={disabled}
             onChange={(e) => onChange(e.target.value)} hasError={!ok}
             errorMessage={esperado !== undefined ? `Debería ser ${formatMoney(esperado)}` : undefined} />
     );
@@ -119,6 +120,26 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
         .map(p => ({ value: String(p.id), label: p.nombre, sublabel: p.nit ? `NIT ${p.nit}` : undefined })), [proveedores, provId]);
 
     const calc = useMemo(() => (c ? totalesCalculados(c.items, c.tipo_doc) : { productos: 0, iva: 0 }), [c]);
+
+    // ── Parte relacionada: el precio tiene que ser el de mercado (0022) ──
+    // Avisa por renglón; no bloquea. En una Factura el costo trae el IVA, así
+    // que se compara sin él.
+    const [refs, setRefs] = useState({});
+    const idsProductos = (c?.items ?? []).map(it => it.product_id).filter(Boolean).sort().join(',');
+    useEffect(() => {
+        if (!proveedor?.relacionada || !idsProductos) { setRefs({}); return undefined; }
+        let vivo = true;
+        const t = setTimeout(() => {
+            fetchReferenciasRelacionada(idsProductos.split(',')).then(r => { if (vivo) setRefs(r); }).catch(e => console.error('referencias', e));
+        }, 300);
+        return () => { vivo = false; clearTimeout(t); };
+    }, [proveedor?.relacionada, idsProductos]);
+    const avisosPrecio = useMemo(() => {
+        if (!proveedor?.relacionada || !c) return [];
+        return c.items.map(it => evaluarPrecioRelacionada(
+            c.tipo_doc === '03' ? num(it.costo_unitario) : num(it.costo_unitario) / 1.13, refs[it.product_id]));
+    }, [proveedor?.relacionada, c, refs]);
+    const conAviso = avisosPrecio.filter(a => a.length).length;
     const problemas = useMemo(() => (c ? problemasDeCompra(c) : []), [c]);
     const conProblema = useMemo(() => new Set(problemas.map(p => p.campo)), [problemas]);
 
@@ -280,14 +301,18 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
                                     </div>
                                     {editable && <Button variant="secondary" iconOnly icon={Plus} title="Nuevo proveedor" onClick={() => setAltaProveedor({})} />}
                                 </div>
-                                {proveedor?.relacionada && <p className="text-caption text-content-3 mt-1">Empresa relacionada: se separa en los reportes.</p>}
+                                {proveedor?.relacionada && (
+                                    <p className="text-caption text-content-3 mt-1">
+                                        Empresa relacionada: es una venta de ella y una compra de Torogoz, y el precio tiene que ser el de mercado.
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <span className={ROTULO}>Documento</span>
                                 <LiquidSelect value={c.tipo_doc} onChange={(v) => set('tipo_doc')(v ?? '03')} options={TIPOS_COMPRA} clearable={false}
                                     icon={FileJson} disabled={!editable} ariaLabel="Tipo de documento" />
                             </div>
-                            <PortalInput label="Número de control" name="numero" value={c.numero} disabled={!editable}
+                            <PortalInput label="Número de control" name="numero" value={c.numero} readOnly={!editable}
                                 onChange={(e) => set('numero')(e.target.value.toUpperCase())} placeholder="DTE-03-…" />
                             <div>
                                 <span className={ROTULO}>Fecha del documento</span>
@@ -307,7 +332,7 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
                                         : <p className="text-body-sm text-content-2 tabular-nums">{c.vence ? fechaNumerica(c.vence) : '—'}</p>}
                                 </div>
                             )}
-                            <PortalInput label="Código de generación (opcional)" name="codigo" value={c.codigo_generacion} disabled={!editable}
+                            <PortalInput label="Código de generación (opcional)" name="codigo" value={c.codigo_generacion} readOnly={!editable}
                                 onChange={(e) => set('codigo_generacion')(e.target.value.trim().toLowerCase())} className="sm:col-span-2" />
                         </div>
 
@@ -345,12 +370,12 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
                                                         onChange={(e) => setItem(i, cambiarUnidadesPor(it, e.target.value))} className="md:col-span-1"
                                                         title={`${it.cantidad_doc} en el documento del proveedor`} />
                                                 ) : <span className="hidden md:block md:col-span-1" />}
-                                                <PortalInput label="Unidades" name={`cant-${i}`} inputMode="numeric" value={it.cantidad} disabled={!editable}
+                                                <PortalInput label="Unidades" name={`cant-${i}`} inputMode="numeric" value={it.cantidad} readOnly={!editable}
                                                     onChange={(e) => setItem(i, { cantidad: e.target.value })} className="md:col-span-1" />
-                                                <PortalInput label="Costo unit." name={`costo-${i}`} inputMode="decimal" value={it.costo_unitario} disabled={!editable}
+                                                <PortalInput label="Costo unit." name={`costo-${i}`} inputMode="decimal" value={it.costo_unitario} readOnly={!editable}
                                                     onChange={(e) => setItem(i, { costo_unitario: e.target.value })} className="md:col-span-1"
                                                     helperText={c.tipo_doc === '03' ? 'Sin IVA' : 'Con IVA'} />
-                                                <PortalInput label="Lote" name={`lote-${i}`} value={it.lote} disabled={!editable}
+                                                <PortalInput label="Lote" name={`lote-${i}`} value={it.lote} readOnly={!editable}
                                                     onChange={(e) => setItem(i, { lote: e.target.value.toUpperCase() })} className="md:col-span-2" />
                                                 <div className="md:col-span-2">
                                                     <span className={ROTULO}>Vence</span>
@@ -362,12 +387,24 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
                                                     {editable && <Button size="sm" variant="ghost" iconOnly icon={Trash2} title="Quitar renglón"
                                                         onClick={() => setC(x => ({ ...x, items: x.items.filter((_, j) => j !== i) }))} />}
                                                 </div>
+                                                {avisosPrecio[i]?.length > 0 && (
+                                                    <div className="col-span-2 md:col-span-12 flex flex-wrap gap-1.5" data-aviso-precio={avisosPrecio[i][0].clave}>
+                                                        {avisosPrecio[i].map(a => <Badge key={a.clave} size="sm" variant={a.nivel} uppercase={false}>{a.texto}</Badge>)}
+                                                    </div>
+                                                )}
                                             </li>
                                         );
                                     })}
                                 </ul>
                             )}
                         </section>
+
+                        {conAviso > 0 && (
+                            <Notice variant="warning" icon={AlertTriangle} bloque data-testid="aviso-relacionada">
+                                {conAviso} producto{conAviso === 1 ? '' : 's'} con precio fuera de lo razonable entre empresas del mismo grupo. Se puede recibir
+                                igual, pero conviene que el contador lo revise: entre relacionadas el precio tiene que ser el que se le cobraría a un tercero.
+                            </Notice>
+                        )}
 
                         {/* ── Montos del documento contra lo calculado ── */}
                         <section data-surface="card" className="p-4 flex flex-col gap-3" aria-label="Montos del documento">

@@ -1,4 +1,4 @@
-import { TrendingUp, BookOpen, BookText, Users, Store, FileX2 } from 'lucide-react';
+import { TrendingUp, BookOpen, BookText, Users, Store, FileX2, Handshake } from 'lucide-react';
 import { mesSV, correrMes, etiquetaMes } from '@nucleo/utils/fecha';
 
 // Reportes de la distribuidora (borrador 0016): la utilidad bruta y el libro de
@@ -9,7 +9,14 @@ export const VISTAS_REPORTES = [
     { key: 'utilidad', label: 'Utilidad', icon: TrendingUp },
     { key: 'ventas', label: 'Libros de ventas', icon: BookText },
     { key: 'compras', label: 'Libro de compras', icon: BookOpen },
+    { key: 'relacionadas', label: 'Relacionadas', icon: Handshake },
 ];
+
+/** Los años para el reporte de relacionadas: el actual y los dos anteriores. */
+export function aniosRecientes(hoy) {
+    const y = Number(String(hoy).slice(0, 4));
+    return [y, y - 1, y - 2].map(a => ({ key: String(a), label: String(a) }));
+}
 
 /** Los tres libros de ventas (borrador 0021); la pestaña va en `?libro=`. */
 export const LIBROS_VENTAS = [

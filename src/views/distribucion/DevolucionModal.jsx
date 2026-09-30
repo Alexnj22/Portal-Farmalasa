@@ -104,7 +104,7 @@ export default function DevolucionModal({ dteId, onClose, onEmitida }) {
                                                 vendidas {it.vendidas}{it.devueltas ? ` · ya devueltas ${it.devueltas}` : ''} · {formatMoney(Number(it.precio_unitario))} c/u
                                             </p>
                                         </div>
-                                        <PortalInput label="Devuelve" name={`dev-${it.clave}`} inputMode="numeric" value={it.pide} disabled={sinQueda}
+                                        <PortalInput label="Devuelve" name={`dev-${it.clave}`} inputMode="numeric" value={it.pide} readOnly={sinQueda}
                                             onChange={(e) => setUnidades(u => ({ ...u, [it.clave]: e.target.value }))} className="md:col-span-2"
                                             hasError={mal} errorMessage={`Hasta ${it.disponibles}`} helperText={sinQueda ? 'Nada' : `de ${it.disponibles}`} />
                                         <div className="md:col-span-5">

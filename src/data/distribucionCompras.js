@@ -92,6 +92,26 @@ export async function fetchUtilidad({ desde, hasta, ruta = null, vendedor = null
     return data;
 }
 
+/**
+ * Referencias de precio de mercado por producto (borrador 0022): costo y
+ * mayoreo de Farmalasa, precio y costo de Torogoz — todo por unidad y sin IVA.
+ * Devuelve `{ [product_id]: {...} }`.
+ */
+export async function fetchReferenciasRelacionada(productIds) {
+    const ids = [...new Set((productIds ?? []).map(Number).filter(n => Number.isInteger(n) && n > 0))];
+    if (!ids.length) return {};
+    const { data, error } = await supabase.rpc('dist_referencias_relacionada', { p_productos: ids });
+    if (error) throw error;
+    return data ?? {};
+}
+
+/** El reporte de compras a partes relacionadas del período (borrador 0022). */
+export async function fetchRelacionadas({ desde, hasta }) {
+    const { data, error } = await supabase.rpc('dist_relacionadas', { p_desde: desde, p_hasta: hasta });
+    if (error) throw error;
+    return data;
+}
+
 /** Los libros de ventas del período: `{ contribuyente, consumidor, anulados, sin_sello }` (borrador 0021). */
 export async function fetchLibrosVentas({ desde, hasta }) {
     const { data, error } = await supabase.rpc('dist_libros_iva', { p_desde: desde, p_hasta: hasta });

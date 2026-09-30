@@ -850,3 +850,65 @@ test('libros de ventas: contribuyentes y consumidor final con el archivo de las 
     expect(filas[0].split(';')).toHaveLength(23);
     expect(errores).toEqual([]);
 });
+
+test('compra a parte relacionada: bajo el costo de Farmalasa avisa sin bloquear, y sale en el reporte', async ({ page }) => {
+    const errores = [];
+    page.on('pageerror', e => errores.push(e.message));
+    const NOMBRE = 'FARMALASA PRUEBA E2E (RELACIONADA)';
+    await entrar(page);
+    await page.goto('/torogoz/compras');
+    await expect(page.getByText('Comprado este mes')).toBeVisible({ timeout: 15_000 });
+    // El proveedor relacionado (se crea la primera vez).
+    await page.getByRole('button', { name: 'Proveedores' }).click();
+    const lista = page.getByRole('dialog', { name: 'Proveedores' });
+    // Decidir después de que cargue la lista: si no, se crea un duplicado.
+    await expect(lista.locator('li').first().or(lista.getByText('Sin proveedores todavía.'))).toBeVisible({ timeout: 15_000 });
+    if (!(await lista.getByText(NOMBRE).first().isVisible().catch(() => false))) {
+        await lista.getByRole('button', { name: 'Nuevo proveedor' }).click();
+        await page.locator('input[name="nombre"]').fill(NOMBRE);
+        await page.getByRole('switch', { name: 'Es una empresa relacionada' }).click();
+        await page.getByRole('button', { name: 'Guardar proveedor' }).click();
+        await expect(page.getByRole('dialog', { name: 'Proveedores' }).getByText(NOMBRE)).toBeVisible({ timeout: 15_000 });
+    }
+    await page.keyboard.press('Escape');
+
+    await page.getByRole('button', { name: 'Nueva compra' }).click();
+    await page.getByRole('combobox', { name: 'Proveedor' }).click();
+    await page.getByRole('option', { name: new RegExp(NOMBRE.replace(/[()]/g, '.')) }).first().click();
+    const n = String(Date.now()).slice(-8);
+    await page.locator('input[name="numero"]').fill(`REL-${n}`);
+    await page.getByRole('button', { name: 'Agregar producto' }).click();
+    const r = page.locator('[data-renglon="0"]');
+    await r.getByRole('combobox').click();
+    await page.keyboard.type('ensure advance liq fresa');
+    const opcion = page.getByRole('option', { name: /ENSURE ADVANCE/i }).first();
+    await expect(opcion).toBeVisible();
+    await page.waitForTimeout(400);
+    await opcion.click();
+    await r.locator('input[name="cant-0"]').fill('2');
+    await r.locator('input[name="costo-0"]').fill('0.05');   // muy bajo su costo
+    await r.locator('input[name="lote-0"]').fill(`REL-${n}`);
+    await r.locator('input[aria-label="Día"]').pressSequentially('31');
+    await r.locator('input[aria-label="Mes"]').pressSequentially('12');
+    await r.locator('input[aria-label="Año"]').pressSequentially('2028');
+    await expect(page.locator('[data-aviso-precio="bajo_costo"]')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('aviso-relacionada')).toBeVisible();
+    await page.getByRole('button', { name: 'Copiar de los productos' }).click();
+    await page.screenshot({ path: `${SALIDA}/compra-relacionada.png`, fullPage: true });
+    // Avisa, pero no bloquea.
+    await page.getByRole('button', { name: 'Recibir en bodega' }).click();
+    await expect(page.getByText('Compra recibida').first()).toBeVisible({ timeout: 15_000 });
+
+    await page.goto('/torogoz/reportes?reporte=relacionadas');
+    await expect(page.getByText('Comprado a relacionadas')).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('table [data-aviso-precio="bajo_costo"]').first()).toBeVisible({ timeout: 15_000 });
+
+    // Se anula para no dejar mercadería de prueba en bodega.
+    await page.goto('/torogoz/compras');
+    await page.getByText(`REL-${n}`).first().click();
+    await page.getByRole('button', { name: 'Anular esta compra' }).click();
+    await page.locator('input[name="motivo-anular"]').fill('prueba automática');
+    await page.getByRole('button', { name: 'Anular compra' }).click();
+    await expect(page.getByText('Compra anulada').first()).toBeVisible({ timeout: 15_000 });
+    expect(errores).toEqual([]);
+});

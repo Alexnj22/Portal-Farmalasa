@@ -1198,7 +1198,7 @@ export default function DistribucionVentaView() {
                             <div className="relative">
                                 <PortalInput ref={buscador} icon={Search} name="buscar-producto" value={buscar}
                                     placeholder={cliente ? 'Producto o código de barras (F3)' : 'Elige primero el cliente'}
-                                    aria-label="Buscar producto" disabled={!cliente}
+                                    aria-label="Buscar producto" readOnly={!cliente}
                                     onChange={(e) => { setBuscar(e.target.value); setResaltado(0); }}
                                     onKeyDown={(e) => {
                                         // ↑ ↓ recorren los resultados; Enter agrega el resaltado.

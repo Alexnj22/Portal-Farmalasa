@@ -1,5 +1,6 @@
 import { PackageCheck, FilePen, Ban } from 'lucide-react';
 import { hoySV } from '@nucleo/utils/fecha';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 
 // Las cuentas de una compra a proveedor, escritas UNA vez: las usa el
 // formulario para avisar mientras se captura, y son las mismas que exige
@@ -187,4 +188,37 @@ export function cambiarUnidadesPor(it, unidadesPor) {
     if (!(it.cantidad_doc > 0)) return { ...it, unidades_por: u };
     const cantidad = Math.round(it.cantidad_doc * u);
     return { ...it, unidades_por: u, cantidad, costo_unitario: cantidad > 0 ? r6(it.neto / cantidad) : 0 };
+}
+
+// ── Compras a partes relacionadas (borrador 0022) ──────────────────────────
+// Entre empresas del mismo grupo el precio tiene que ser el de MERCADO: el que
+// se le cobraría a un tercero. Estas son las señales de que no lo es; AVISAN y
+// no bloquean — el margen lo decide el contador. La usan la compra y el
+// reporte: una sola regla.
+
+/** Tolerancia bajo el mayoreo de Farmalasa antes de avisar (10 %). */
+export const TOLERANCIA_MAYOREO = 0.10;
+
+/**
+ * `pagado`: costo unitario sin IVA de la compra. `ref`: lo que devuelve
+ * `dist_referencias_relacionada` para ese producto. Devuelve los avisos, del
+ * más grave al menos: `[{ nivel: 'danger'|'warning', clave, texto }]`.
+ */
+export function evaluarPrecioRelacionada(pagado, ref) {
+    const p = Number(pagado);
+    const out = [];
+    if (!ref || !(p > 0)) return out;
+    const costoF = Number(ref.costo_farmalasa) || 0;
+    const mayoreo = Number(ref.mayoreo_sin_iva) || 0;
+    const venta = Number(ref.precio_torogoz_sin_iva) || 0;
+    const $ = (n) => formatMoney(n);
+    if (costoF > 0 && p < costoF - 0.005) {
+        out.push({ nivel: 'danger', clave: 'bajo_costo', texto: `Farmalasa lo vendería bajo su costo (${$(costoF)}): es lo primero que revisa Hacienda entre relacionadas.` });
+    } else if (mayoreo > 0 && p < mayoreo * (1 - TOLERANCIA_MAYOREO)) {
+        out.push({ nivel: 'warning', clave: 'bajo_mayoreo', texto: `Más barato que lo que Farmalasa cobra a terceros (mayoreo ${$(mayoreo)} sin IVA).` });
+    }
+    if (venta > 0 && p >= venta) {
+        out.push({ nivel: 'warning', clave: 'sin_margen', texto: `Torogoz no gana al revenderlo: lo vende a ${$(venta)} sin IVA.` });
+    }
+    return out;
 }

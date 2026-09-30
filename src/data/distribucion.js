@@ -335,7 +335,7 @@ export async function fetchDocumentos({ desde } = {}) {
     const rows = await fetchAllRows(() => {
         let q = supabase.from('dist_dte')
             .select('id, tipo, ambiente, numero_control, codigo_generacion, fec_emi, hor_emi, total_pagar, estado, sello_recibido, '
-                + 'descripcion_msg, observaciones_mh, intentos, ultimo_intento_at, pedido_id, invalidacion_estado, reemplazo_id, '
+                + 'descripcion_msg, observaciones_mh, intentos, ultimo_intento_at, pedido_id, invalidacion_estado, reemplazo_id, contingencia_id, '
                 // Para saber si un rechazo sigue pendiente: su pedido todavía por facturar.
                 + 'pedido:dist_pedidos!dist_dte_pedido_fk(estado, dte_id), dist_clientes(nombre)')
             .order('id', { ascending: false });
@@ -363,7 +363,22 @@ async function invocar(body) {
     return data;
 }
 
-export const facturarPedido = (pedidoId) => invocar({ accion: 'facturar', pedido_id: pedidoId });
+/**
+ * Factura un pedido. Con `contingencia` es una venta hecha SIN SEÑAL que se
+ * manda al volver: { tipo: 3, emitido_at, codigo_generacion } — el documento
+ * sale en modelo diferido con la hora de la venta.
+ */
+export const facturarPedido = (pedidoId, { contingencia = null } = {}) =>
+    invocar({ accion: 'facturar', pedido_id: pedidoId, ...(contingencia ? { contingencia } : {}) });
+/** El aviso de contingencia a Hacienda, y después la transmisión de lo que cubre. */
+export const enviarContingencia = () => invocar({ accion: 'enviar_contingencia' });
+
+/** El pedido de una venta por su `client_uuid` (para no facturar dos veces una venta sin señal). */
+export async function fetchPedidoPorUuid(clientUuid) {
+    const { data, error } = await supabase.from('dist_pedidos').select('id, estado, dte_id').eq('client_uuid', clientUuid).maybeSingle();
+    if (error) throw error;
+    return data;
+}
 export const reintentarDocumento = (dteId) => invocar({ accion: 'transmitir', dte_id: dteId });
 export const descartarDocumento = (dteId) => invocar({ accion: 'descartar', dte_id: dteId });
 /** Documento sellado: abre un pedido nuevo que, al facturarse, lo reemplaza y lo invalida. */

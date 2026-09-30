@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
-    ClipboardList, FileCheck2, Store, PackageSearch, Boxes, Tag, Building2, Plus, LogOut, Menu, X, ArrowLeftRight, PackageX, LayoutDashboard } from 'lucide-react';
+    ClipboardList, FileCheck2, Store, PackageSearch, Boxes, Tag, Building2, Plus, LogOut, Menu, X, ArrowLeftRight, PackageX, LayoutDashboard, WifiOff, Loader2, Send } from 'lucide-react';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useMarca } from '../../plataforma/useMarca';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -9,6 +9,9 @@ import { contarDescuentosPendientes, contarFacturacionPendiente } from '@nucleo/
 import { MARCA_DISTRIBUIDORA } from './marca';
 import { rutaSeccion, rutaVenta, rutaLogin } from './rutas';
 import Badge from '../../components/common/Badge';
+import Button from '../../components/common/Button';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { useVentasSinSenal } from './sinSenal';
 
 // La casa de la distribuidora: su menú, su marca y nada del portal de las
 // farmacias (decisión del usuario, 2026-09-28: «parecen independientes, así
@@ -94,6 +97,20 @@ export default function TorogozLayout({ children, handleLogout }) {
     const puedeConfigurar = hasPermission('distribucion_config', 'can_edit');
     const pendientes = usePendientes(true);
     const facturacion = useFacturacionPendiente();
+    const showToast = useToastStore(s => s.showToast);
+    // Ventas hechas sin señal: se mandan solas al volver la señal, estés en la
+    // pantalla que estés (ver `sinSenal.js`).
+    const sinSenal = useVentasSinSenal({
+        automatico: true,
+        alTerminar: (r) => {
+            if (!r || (!r.facturadas && !r.errores)) return;
+            showToast(r.facturadas ? 'Ventas sin señal enviadas' : 'Ventas sin señal con problemas',
+                [r.facturadas && `${r.facturadas} facturada${r.facturadas === 1 ? '' : 's'} en contingencia`,
+                 r.errores && `${r.errores} con error (revísalas en la venta)`,
+                 r.aviso && `Aviso a Hacienda: ${r.aviso}`].filter(Boolean).join(' · '),
+                r.errores || r.aviso ? 'warning' : 'success');
+        },
+    });
     const nombre = shortEmployeeName(user?.name) || user?.username || '';
 
     // El menú del teléfono se cierra al navegar.
@@ -190,6 +207,19 @@ export default function TorogozLayout({ children, handleLogout }) {
 
                 <div id="main-scroll" className="flex-1 lg:min-h-0 lg:overflow-hidden relative lg:pt-2 lg:pb-4 lg:pr-2 pb-[max(0px,calc(1rem+var(--sa-bottom)-var(--alto-barra-flotante,0px)))] pl-[max(0.5rem,var(--sa-left))] pr-[max(0.5rem,var(--sa-right))] lg:pl-0">
                     <div className="lg:h-full w-full animate-route-enter">{children}</div>
+                    {/* Ventas sin señal esperando: flota arriba a la derecha, sin mover la vista. */}
+                    {sinSenal.lista.length > 0 && (
+                        <div data-surface="card" role="status" data-testid="ventas-sin-senal"
+                            className="fixed z-toast right-[max(1rem,var(--sa-right))] top-[calc(var(--sa-top)+4.75rem)] lg:top-4 px-3 py-2 flex items-center gap-2.5 max-w-[calc(100vw-2rem)]">
+                            <WifiOff size={16} className="text-warning-text shrink-0" />
+                            <span className="text-caption text-content-2 min-w-0">
+                                <b>{sinSenal.lista.length} venta{sinSenal.lista.length === 1 ? '' : 's'} sin señal</b>
+                                {sinSenal.lista.some(v => v.error) ? ' · con error' : ' · se envían al volver la señal'}
+                            </span>
+                            <Button size="sm" variant="secondary" icon={sinSenal.enviando ? Loader2 : Send} disabled={sinSenal.enviando}
+                                onClick={sinSenal.enviar}>Enviar</Button>
+                        </div>
+                    )}
                 </div>
             </main>
 

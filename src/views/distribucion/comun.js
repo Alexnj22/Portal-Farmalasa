@@ -145,7 +145,7 @@ export const selloValido = (s) => typeof s === 'string' && s.trim().length === 4
 /**
  * @returns {{ nivel: 'ok'|'pendiente'|'error'|'info', titulo: string, detalle: string,
  *             pasos: {clave:string, rotulo:string, ok:boolean|null, valor?:string}[],
- *             accion: null|'reenviar'|'corregir'|'invalidacion' }}
+ *             accion: null|'reenviar'|'corregir'|'invalidacion'|'contingencia' }}
  */
 export function revisionHacienda(d) {
     if (!d) return null;
@@ -177,11 +177,13 @@ export function revisionHacienda(d) {
             detalle: 'No tiene validez. Corrige lo que dice Hacienda (casi siempre la ficha del cliente) y vuelve a facturar el pedido.' };
     }
     if (d.estado === 'contingencia') {
-        // El aviso de contingencia a Hacienda todavía no está conectado (el
-        // evento se arma en `_shared/dte/eventos.ts`, falta enviarlo): no se
-        // ofrece un botón que no hace lo que dice.
-        return { ...base, nivel: 'pendiente', titulo: 'Emitido sin conexión',
-            detalle: 'Es válido para entregar; se transmite con el aviso de contingencia a Hacienda.' };
+        // Emitido sin poder transmitirlo (sin señal, o Hacienda caída). Primero
+        // va el AVISO de contingencia; con el aviso recibido, el documento.
+        return d.contingencia_id
+            ? { ...base, nivel: 'pendiente', accion: 'reenviar', titulo: 'Aviso de contingencia recibido: falta transmitirlo',
+                detalle: 'Hacienda ya conoce la contingencia; reenvíalo para que lo selle.' }
+            : { ...base, nivel: 'pendiente', accion: 'contingencia', titulo: 'Emitido en contingencia',
+                detalle: 'Es válido para entregar. Falta enviar el aviso de contingencia a Hacienda (hasta 72 horas).' };
     }
     if (!sello) {
         return { ...base, nivel: 'pendiente', accion: 'reenviar', titulo: firmado ? 'Falta que Hacienda lo reciba' : 'Falta firmarlo y enviarlo',

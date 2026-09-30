@@ -16,7 +16,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import {
     fetchDocumento, fetchPagos, reintentarDocumento, descartarDocumento, mensajeDeDistribucion,
-    corregirDocumentoSellado, anularVenta, reenviarInvalidacion,
+    corregirDocumentoSellado, anularVenta, reenviarInvalidacion, enviarContingencia,
 } from '@nucleo/data/distribucion';
 import { registrarEgreso } from '@nucleo/data/egreso';
 import { descargarArchivo, abrirEnPestanaNueva } from '../../plataforma/descargas';
@@ -258,6 +258,23 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
         cargar();
         onCambio?.();
     };
+    const avisoContingencia = async () => {
+        setOcupado('contingencia');
+        setError('');
+        try {
+            const r = await enviarContingencia();
+            useStaff.getState().appendAuditLog('DISTRIBUCION_CONTINGENCIA_AVISO', String(id), { avisos: r?.avisos?.length ?? 0, sellados: r?.sellados });
+            const rechazado = (r?.avisos ?? []).find(a => a.estado === 'rechazado');
+            if (rechazado) showToast('Hacienda rechazó el aviso de contingencia', rechazado.mensaje ?? '', 'error');
+            else showToast('Aviso de contingencia enviado', `${r?.sellados ?? 0} sellados · ${r?.pendientes ?? 0} pendientes · ${r?.rechazados ?? 0} rechazados`, 'success');
+        } catch (e) {
+            setError(mensajeDeDistribucion(e));
+        } finally {
+            setOcupado(null);
+            cargar();
+            onCambio?.();
+        }
+    };
     const reenviarInv = async () => {
         await accion('invalidacion', () => reenviarInvalidacion(id), 'DISTRIBUCION_INVALIDACION_REENVIO');
         cargar();
@@ -307,7 +324,7 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                         {d.ambiente === '00' && <Notice variant="info" compact>Documento de PRUEBA: no tiene validez fiscal.</Notice>}
                         {/* Lo primero: ¿está bien con Hacienda? Y si falta algo, el botón. */}
                         <EstadoHacienda documento={d} ocupado={ocupado} puedeActuar={puedeVender}
-                            onReenviar={reintentar} onCorregir={corregir} onInvalidacion={reenviarInv} />
+                            onReenviar={reintentar} onCorregir={corregir} onInvalidacion={reenviarInv} onContingencia={avisoContingencia} />
 
                         <SegmentedControl value={vista} onChange={setVista} options={VISTAS} />
 

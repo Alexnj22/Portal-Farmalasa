@@ -7,6 +7,29 @@
 //   { accion: "corregir_sellado", dte_id }        abre un pedido nuevo que lo reemplaza e invalida
 //   { accion: "anular_venta", dte_id, motivo }    invalida un sellado sin reemplazo (se deshizo la venta)
 //   { accion: "enviar_invalidacion", dte_id }     reintenta una invalidación pendiente
+//   { accion: "facturar", pedido_id, contingencia: { tipo, emitido_at, codigo_generacion } }
+//                                                 una venta hecha SIN SEÑAL: sale en contingencia
+//   { accion: "enviar_contingencia" }             el aviso de contingencia a Hacienda, y después
+//                                                 transmite los documentos que cubre
+//
+// ── Contingencia (2026-09-30) ──────────────────────────────────────────────
+// Pedido del usuario: «termina el aviso de contingencia para cuando no hay
+// señal». Tres entradas y una salida:
+//   · venta sin señal: el teléfono guardó la venta con su hora y su código de
+//     generación; al volver la señal la manda con `contingencia` y el
+//     documento se arma en modelo DIFERIDO con esa hora (tipo 3, sin internet);
+//   · Hacienda no responde al facturar: en vez de quedar «por enviar», el
+//     documento se re-firma en contingencia (tipo 1, Hacienda no disponible);
+//   · un documento sin sello de más de 25 minutos: ya no entra por la vía
+//     normal (Hacienda exige ±30 min entre emisión y transmisión), así que al
+//     reenviarlo pasa a contingencia (tipo 1 si ya se intentó, 2 si nunca se
+//     pudo firmar o enviar).
+// La salida es `enviar_contingencia`: arma el evento por tipo (≤1000
+// documentos), lo firma, lo reporta y, con el evento RECIBIDO, transmite cada
+// documento. Re-firmar un documento que Hacienda no tiene es válido: no existe
+// para ella hasta que lo recibe. Antes de re-firmar uno ya intentado se le
+// PREGUNTA a Hacienda, porque una respuesta perdida puede esconder uno que sí
+// entró.
 //
 // ── Por qué el DTE lo arma el SERVIDOR ─────────────────────────────────────
 // El navegador sólo pide «factura este pedido». Todo lo demás —el tipo de
@@ -30,12 +53,12 @@ import {
   armarCreditoFiscal, armarFactura, totalAPagar,
   type DatosVenta, type Emisor, type Receptor, type Renglon,
 } from "../_shared/dte/documentos.ts";
-import { TIPO_DTE, VERSION, type Ambiente, type TipoDte } from "../_shared/dte/catalogos.ts";
+import { CONTINGENCIA, MODELO, OPERACION, TIPO_DTE, VERSION, type Ambiente, type TipoDte } from "../_shared/dte/catalogos.ts";
 import { claveCoincide, firmarDte, importarLlavePrivada, leerCertificadoMH } from "../_shared/dte/firma.ts";
-import { armarInvalidacion } from "../_shared/dte/eventos.ts";
+import { armarContingencia, armarInvalidacion } from "../_shared/dte/eventos.ts";
 import { partirPorLote, type Asignacion } from "../_shared/dte/lotes.ts";
 import {
-  autenticar, consultar, ErrorHacienda, invalidar, tokenVigente, transmitirConReintentos,
+  autenticar, consultar, ErrorHacienda, invalidar, reportarContingencia, tokenVigente, transmitirConReintentos,
   type RespuestaRecepcion, type Token,
 } from "../_shared/dte/hacienda.ts";
 
@@ -120,13 +143,161 @@ async function registrarIntento(admin: Admin, dteId: number, operacion: string, 
   if (e) console.error("distribucion-dte: no se pudo anotar el intento", e.message);
 }
 
+/** Minutos desde que se emitió (fec_emi + hor_emi, hora de El Salvador, UTC−6). */
+function minutosDesdeEmision(d: { fec_emi: string; hor_emi: string }) {
+  const emitido = new Date(`${d.fec_emi}T${String(d.hor_emi).slice(0, 8)}-06:00`).getTime();
+  return (Date.now() - emitido) / 60_000;
+}
+
+/**
+ * Re-arma un documento que Hacienda NO tiene como documento de contingencia
+ * (modelo diferido) con la misma hora, número y código, y lo re-firma. Si ya
+ * se intentó mandar, antes se le pregunta a Hacienda: si lo tiene, se sella.
+ */
+async function pasarAContingencia(admin: Admin, dte: any, tipo: number, yaConsultado = false) {
+  const ambiente = dte.ambiente as Ambiente;
+  if (dte.intentos > 0 && !yaConsultado) {
+    const token = await tokenHacienda(admin, dte.emisor_id, ambiente).catch(() => null);
+    if (token) {
+      try {
+        const ya = await consultar(ambiente, token, {
+          tipoDte: dte.tipo as TipoDte,
+          codigoGeneracion: dte.codigo_generacion, nitEmisor: (dte.json as any).emisor.nit,
+        });
+        if (ya?.selloRecibido?.length === 40) {
+          const { error } = await admin.from("dist_dte").update({ estado: "sellado", sello_recibido: ya.selloRecibido, fh_procesamiento: ya.fhProcesamiento }).eq("id", dte.id);
+          if (error) throw new Error(`guardar sello: ${error.message}`);
+          return { estado: "sellado", sello: ya.selloRecibido, aviso: "Hacienda sí lo tenía: quedó sellado." };
+        }
+      } catch (e) {
+        if (!(e instanceof ErrorHacienda)) throw e;
+        // Sin respuesta tampoco a la consulta: Hacienda sigue caída.
+      }
+    }
+  }
+  const json = structuredClone(dte.json) as any;
+  // Uno que ya nació en contingencia (venta sin señal) conserva su motivo:
+  // sólo le faltaba la firma.
+  if (json.identificacion.tipoOperacion !== OPERACION.CONTINGENCIA) {
+    json.identificacion.tipoModelo = MODELO.DIFERIDO;
+    json.identificacion.tipoOperacion = OPERACION.CONTINGENCIA;
+    json.identificacion.tipoContingencia = tipo;
+    json.identificacion.motivoContin = null;
+  }
+  const llave = await llaveDeFirma();
+  const firmado = llave ? await firmarDte(json, llave) : null;
+  const { error } = await admin.from("dist_dte").update({
+    json, firmado, estado: firmado ? "contingencia" : "sin_firmar", contingencia_id: null,
+  }).eq("id", dte.id).in("estado", ["sin_firmar", "firmado"]);
+  if (error) throw new Error(`pasar a contingencia: ${error.message}`);
+  if (!firmado) return { estado: "sin_firmar", aviso: "Falta el certificado de firma: el documento quedó guardado sin firmar." };
+  return { estado: "contingencia", aviso: "Hacienda no lo recibió a tiempo: quedó en contingencia y sale con el aviso de contingencia." };
+}
+
+/**
+ * El aviso de contingencia: un evento por tipo con los documentos que cubre
+ * (hasta 1000), firmado y reportado; con el evento RECIBIDO, cada documento se
+ * transmite. También reintenta los de un aviso ya recibido que no llegaron.
+ */
+async function enviarContingencia(admin: Admin, empleadoId: string) {
+  const [{ data: e, error: eE }, { data: emp, error: eEmp }] = await Promise.all([
+    admin.from("dist_emisores").select("*").eq("activo", true).order("id").limit(1).single(),
+    admin.from("employees").select("name, dui").eq("id", empleadoId).single(),
+  ]);
+  if (eE) throw new Error(`leer el emisor: ${eE.message}`);
+  if (eEmp) throw new Error(`leer tu ficha: ${eEmp.message}`);
+  if (!emp?.dui) throw new ErrorUsuario("Tu ficha no tiene DUI: Hacienda pide el documento de quien reporta la contingencia.");
+  const ambiente = e.ambiente as Ambiente;
+  const llave = await llaveDeFirma();
+  if (!llave) throw new ErrorUsuario("Falta el certificado de firma: no se puede firmar el aviso de contingencia.");
+  const token = await tokenHacienda(admin, e.id, ambiente);
+  if (!token) throw new ErrorUsuario("Faltan las credenciales de Hacienda: el aviso de contingencia no se puede enviar.");
+
+  const { data: docs, error: eD } = await admin.from("dist_dte")
+    .select("id, tipo, codigo_generacion, fec_emi, hor_emi, json, contingencia_id")
+    .eq("emisor_id", e.id).eq("ambiente", ambiente).eq("estado", "contingencia").order("id")
+    // Tandas de 999 (bajo el tope silencioso de 1000 de PostgREST): si hay más,
+    // la próxima llamada sigue con el resto.
+    .limit(999);
+  if (eD) throw new Error(`leer documentos: ${eD.message}`);
+  const sinAviso = (docs ?? []).filter((d: any) => !d.contingencia_id);
+  const porTipo = new Map<number, any[]>();
+  for (const d of sinAviso) {
+    const t = Number((d.json as any).identificacion.tipoContingencia) || CONTINGENCIA.MH_NO_DISPONIBLE;
+    if (!porTipo.has(t)) porTipo.set(t, []);
+    porTipo.get(t)!.push(d);
+  }
+  const responsable = { nombre: emp.name, tipoDocumento: "13", numDocumento: emp.dui };
+  const avisos: { tipo: number; documentos: number; estado: string; mensaje?: string | null }[] = [];
+  for (const [tipo, lista] of porTipo) {
+    for (let i = 0; i < lista.length; i += 1000) {
+      const tanda = lista.slice(i, i + 1000);
+      const fechas = tanda.map((d: any) => new Date(`${d.fec_emi}T${String(d.hor_emi).slice(0, 8)}-06:00`));
+      const desde = new Date(Math.min(...fechas.map((f) => f.getTime())));
+      const hasta = new Date();
+      let evento;
+      try {
+        evento = armarContingencia({
+          ambiente,
+          emisor: {
+            nit: e.nit, nombre: e.nombre, telefono: e.telefono, correo: e.correo,
+            codEstableMH: e.cod_estable_mh, codPuntoVentaMH: e.cod_punto_venta_mh, tipoEstablecimiento: e.tipo_establecimiento,
+          },
+          responsable,
+          documentos: tanda.map((d: any) => ({ tipoDte: d.tipo as TipoDte, codigoGeneracion: String(d.codigo_generacion).toUpperCase() })),
+          desde, hasta, tipo,
+        });
+      } catch (err) {
+        throw new ErrorUsuario((err as Error).message);
+      }
+      const firmado = await firmarDte(evento, llave);
+      const r = await reportarContingencia(ambiente, token, { nit: String(e.nit).replace(/\D/g, ""), firmado });
+      const recibido = String(r.estado ?? "").toUpperCase().includes("RECIBIDO");
+      const { data: ins, error: eI } = await admin.from("dist_contingencias").insert({
+        emisor_id: e.id, ambiente, codigo_generacion: evento.identificacion.codigoGeneracion, tipo,
+        desde: desde.toISOString(), hasta: hasta.toISOString(), json: evento, firmado,
+        estado: recibido ? "recibido" : "rechazado", sello: r.sello, respuesta: r.cruda,
+      }).select("id").single();
+      if (eI) throw new Error(`guardar el aviso: ${eI.message}`);
+      if (recibido) {
+        const { error: eU } = await admin.from("dist_dte").update({ contingencia_id: ins.id }).in("id", tanda.map((d: any) => d.id));
+        if (eU) throw new Error(`atar documentos al aviso: ${eU.message}`);
+      }
+      avisos.push({ tipo, documentos: tanda.length, estado: recibido ? "recibido" : "rechazado",
+        mensaje: recibido ? null : [r.mensaje, ...(r.observaciones ?? [])].filter(Boolean).join(" ") });
+    }
+  }
+  // Con el aviso recibido, cada documento se transmite.
+  const { data: listos, error: eL } = await admin.from("dist_dte").select("id, dist_contingencias!inner(estado)")
+    .eq("emisor_id", e.id).eq("estado", "contingencia").not("contingencia_id", "is", null)
+    .eq("dist_contingencias.estado", "recibido").limit(999);
+  if (eL) throw new Error(`leer documentos con aviso: ${eL.message}`);
+  const resultado = { sellados: 0, rechazados: 0, pendientes: 0 };
+  for (const d of listos ?? []) {
+    const r = await transmitirDte(admin, (d as any).id);
+    if (r.estado === "sellado") resultado.sellados += 1;
+    else if (r.estado === "rechazado") resultado.rechazados += 1;
+    else resultado.pendientes += 1;
+  }
+  return { avisos, ...resultado };
+}
+
 async function transmitirDte(admin: Admin, dteId: number) {
   const { data: dte, error } = await admin.from("dist_dte")
-    .select("id, emisor_id, ambiente, tipo, codigo_generacion, json, firmado, estado, pedido_id, intentos")
+    .select("id, emisor_id, ambiente, tipo, codigo_generacion, json, firmado, estado, pedido_id, intentos, fec_emi, hor_emi, contingencia_id")
     .eq("id", dteId).single();
   if (error) throw new Error(`leer DTE: ${error.message}`);
   if (dte.estado === "sellado" || dte.estado === "invalidado") return { estado: dte.estado };
   if (dte.estado === "rechazado") throw new ErrorUsuario("este documento fue rechazado: hay que emitir uno nuevo");
+  if (dte.estado === "contingencia" && !dte.contingencia_id) {
+    return { estado: "contingencia", aviso: "Emitido en contingencia: sale a Hacienda con el aviso de contingencia." };
+  }
+  // Más de 25 minutos sin sello: la vía normal ya no lo acepta (±30 min).
+  const nacioEnContingencia = (dte.json as any)?.identificacion?.tipoOperacion === OPERACION.CONTINGENCIA;
+  if (dte.estado !== "contingencia" && (nacioEnContingencia || minutosDesdeEmision(dte) > 25)) {
+    return await pasarAContingencia(admin, dte,
+      dte.intentos > 0 ? CONTINGENCIA.MH_NO_DISPONIBLE : CONTINGENCIA.EMISOR_NO_DISPONIBLE);
+  }
 
   let firmado = dte.firmado as string | null;
   if (!firmado) {
@@ -159,6 +330,13 @@ async function transmitirDte(admin: Admin, dteId: number) {
     const { error: eInt } = await admin.from("dist_dte")
       .update({ intentos: dte.intentos + 1, ultimo_intento_at: new Date().toISOString() }).eq("id", dteId);
     if (eInt) throw new Error(`anotar el intento: ${eInt.message}`);
+    // Ya en contingencia (con su aviso recibido): se reintenta después.
+    if (dte.estado === "contingencia") return { estado: "contingencia", aviso: `Hacienda no respondió (${e.message}). Se reintenta después.` };
+    // Hacienda no disponible: el documento pasa a contingencia (la guía:
+    // sin respuesta tras consultar y reintentar → contingencia).
+    if (e.sinRespuesta || (e.http ?? 0) >= 500) {
+      return await pasarAContingencia(admin, { ...dte, intentos: dte.intentos + 1, firmado }, CONTINGENCIA.MH_NO_DISPONIBLE, true);
+    }
     return { estado: "firmado", aviso: `Hacienda no respondió (${e.message}). Queda pendiente de enviar.` };
   }
   await registrarIntento(admin, dteId, "transmitir", r.http, r.cruda, null);
@@ -427,7 +605,26 @@ async function corregirSellado(admin: Admin, dteId: number, empleadoId: string) 
 
 // ── Facturar un pedido ──────────────────────────────────────────────────────
 
-async function facturar(admin: Admin, pedidoId: number, empleadoId: string) {
+interface PedidoContingencia { tipo: number; emitidoAt: Date; codigoGeneracion: string | null }
+
+/** Valida lo que manda el teléfono de una venta hecha sin señal. */
+function leerContingencia(c: any): PedidoContingencia | null {
+  if (!c) return null;
+  const tipo = Number(c.tipo);
+  if (![2, 3, 4].includes(tipo)) throw new ErrorUsuario("tipo de contingencia no válido");
+  const emitidoAt = new Date(c.emitido_at);
+  if (Number.isNaN(emitidoAt.getTime())) throw new ErrorUsuario("falta la hora de la venta sin señal");
+  if (emitidoAt.getTime() > Date.now() + 5 * 60_000) throw new ErrorUsuario("la hora de la venta está en el futuro");
+  // Hacienda da 72 horas para transmitir lo emitido en contingencia.
+  if (Date.now() - emitidoAt.getTime() > 72 * 3600_000) {
+    throw new ErrorUsuario("Pasaron más de 72 horas desde la venta sin señal: Hacienda ya no la acepta en contingencia. Factúrala de nuevo.");
+  }
+  const cod = typeof c.codigo_generacion === "string" ? c.codigo_generacion.toUpperCase() : null;
+  if (cod && !/^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/.test(cod)) throw new ErrorUsuario("código de generación no válido");
+  return { tipo, emitidoAt, codigoGeneracion: cod };
+}
+
+async function facturar(admin: Admin, pedidoId: number, empleadoId: string, cont: PedidoContingencia | null = null) {
   const { data: p, error } = await admin.from("dist_pedidos")
     .select("id, emisor_id, cliente_id, estado, tipo_documento, condicion, forma_pago, plazo_dias, observaciones, dte_id, reemplaza_dte_id")
     .eq("id", pedidoId).maybeSingle();
@@ -478,7 +675,7 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string) {
   }, i.id, (asignadas ?? []) as Asignacion[]));
 
   const ambiente = e.ambiente as Ambiente;
-  const anio = Number(new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 4));
+  const anio = Number(new Date((cont ? cont.emitidoAt.getTime() : Date.now()) - 6 * 3600_000).toISOString().slice(0, 4));
   const opciones = {
     retiene1: c.gran_contribuyente && tipo === TIPO_DTE.CCF,
     percibe1: e.gran_contribuyente && !c.gran_contribuyente && tipo === TIPO_DTE.CCF,
@@ -505,7 +702,12 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string) {
   const armar = tipo === TIPO_DTE.CCF ? armarCreditoFiscal : armarFactura;
   let doc;
   try {
-    doc = armar({ ...base, pagos });
+    doc = armar({
+      ...base, pagos,
+      // Sin señal: con la hora de la venta y el código que ya lleva su
+      // comprobante provisional, en modelo diferido.
+      ...(cont ? { ahora: cont.emitidoAt, codigoGeneracion: cont.codigoGeneracion ?? undefined, contingencia: { tipo: cont.tipo } } : {}),
+    });
   } catch (err) {
     throw new ErrorUsuario((err as Error).message);
   }
@@ -515,7 +717,7 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string) {
   const { data: ins, error: eIns } = await admin.from("dist_dte").insert({
     emisor_id: e.id, ambiente, tipo, codigo_generacion: doc.codigoGeneracion, numero_control: doc.numeroControl,
     fec_emi: doc.fecEmi, hor_emi: doc.horEmi, cliente_id: c.id, pedido_id: p.id, total_pagar: doc.totalPagar,
-    json: doc.json, firmado, estado: firmado ? "firmado" : "sin_firmar", creado_por: empleadoId,
+    json: doc.json, firmado, estado: firmado ? (cont ? "contingencia" : "firmado") : "sin_firmar", creado_por: empleadoId,
   }).select("id").single();
   if (eIns) {
     // Dos clics a la vez: el índice único por pedido deja entrar a uno solo.
@@ -536,7 +738,10 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string) {
     // tenga su sello (Hacienda tiene que conocer al reemplazo primero).
     await prepararInvalidacion(admin, p.reemplaza_dte_id, 1, "Se corrigió la información del documento.", ins.id, empleadoId);
   }
-  const envio = await transmitirDte(admin, ins.id);
+  // En contingencia no se transmite todavía: va con el aviso.
+  const envio = cont
+    ? { estado: firmado ? "contingencia" : "sin_firmar", aviso: "Emitido en contingencia: sale a Hacienda con el aviso de contingencia." }
+    : await transmitirDte(admin, ins.id);
   return { dte_id: ins.id, tipo, numero_control: doc.numeroControl, codigo_generacion: doc.codigoGeneracion, total: doc.totalPagar, ...envio };
 }
 
@@ -562,7 +767,7 @@ Deno.serve(async (req) => {
 
   try {
     if (cuerpo?.accion === "facturar" && Number.isInteger(cuerpo.pedido_id)) {
-      return json(req, 200, await facturar(admin, cuerpo.pedido_id, empleado.id));
+      return json(req, 200, await facturar(admin, cuerpo.pedido_id, empleado.id, leerContingencia(cuerpo.contingencia)));
     }
     if (cuerpo?.accion === "descartar" && Number.isInteger(cuerpo.dte_id)) {
       return json(req, 200, { dte_id: cuerpo.dte_id, ...(await descartar(admin, cuerpo.dte_id)) });
@@ -579,6 +784,9 @@ Deno.serve(async (req) => {
     }
     if (cuerpo?.accion === "enviar_invalidacion" && Number.isInteger(cuerpo.dte_id)) {
       return json(req, 200, { dte_id: cuerpo.dte_id, ...(await enviarInvalidacion(admin, cuerpo.dte_id)) });
+    }
+    if (cuerpo?.accion === "enviar_contingencia") {
+      return json(req, 200, await enviarContingencia(admin, empleado.id));
     }
     if (cuerpo?.accion === "transmitir" && Number.isInteger(cuerpo.dte_id)) {
       return json(req, 200, { dte_id: cuerpo.dte_id, ...(await transmitirDte(admin, cuerpo.dte_id)) });

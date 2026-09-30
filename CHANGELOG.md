@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1102.0 — Torogoz: contingencia completa para vender sin señal, y ticket que se lee de corrido
+
+Pedido del usuario: «termina el aviso de contingencia para cuando no hay
+señal, y mejora el ticket: que se sienta más fluido visualmente».
+
+**Contingencia, de punta a punta**
+- **Venta sin señal**: si al facturar el teléfono no tiene datos (o la señal
+  se cae en el medio), la venta se guarda EN EL TELÉFONO con su hora y un
+  código de generación, sale un **comprobante provisional** con ese código, y
+  la pantalla queda lista para la siguiente. Un aviso flotante dice cuántas
+  esperan. Al volver la señal se mandan solas (`sinSenal.js`): crea el pedido
+  (idempotente por `client_uuid`), lo factura en contingencia y pide el aviso.
+- **Servidor** (`distribucion-dte`, desplegada en pruebas):
+  - `facturar` con `contingencia` arma el documento en modelo DIFERIDO con la
+    hora de la venta y el código del provisional (tipo 3, sin internet);
+    rechaza lo que pasó las 72 horas;
+  - Hacienda sin respuesta al facturar → el documento se re-firma en
+    contingencia (tipo 1) en vez de quedar «por enviar»; y uno sin sello de
+    más de 25 minutos también (la vía normal exige ±30 min). Antes de
+    re-firmar uno ya intentado se le pregunta a Hacienda si lo tiene;
+  - `enviar_contingencia`: un evento por tipo (≤1000 documentos), firmado y
+    reportado; con el evento RECIBIDO transmite cada documento.
+- **Facturación**: «Enviar aviso de contingencia (N)» en el semáforo y en el
+  documento; «aviso recibido: falta transmitirlo» cuando corresponde.
+- Probado en pruebas cortando la red en la prueba e2e: la venta quedó en el
+  teléfono, al volver se facturó con modelo diferido, operación en
+  contingencia, motivo 3 y la hora de la venta. En este entorno no hay
+  certificado, así que el aviso a Hacienda no se pudo probar de verdad: la
+  ruta del servicio sale de la guía y se confirma con la primera llamada.
+
+**Ticket**
+- Membrete sin repetir el nombre comercial; fecha y condición juntas.
+- El cliente en su propio bloque: nombre a lo ancho y debajo NIT y NRC (antes
+  «S.A. DE / C.V.» se partía pegado a la derecha).
+- Pruebas en una línea; columna CANT con aire.
+- Pie con el rótulo arriba y el dato abajo: número de control, código de
+  generación y sello ya no se cortan a la mitad.
+
+
 ## v2.1101.0 — Torogoz: detalle de lo vendido en el documento; ticket compacto, sin QR y con el cambio
 
 Pedido del usuario: «¿dónde puedo ver lo que vendí? no en ticket ni PDF, sino

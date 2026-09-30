@@ -8,6 +8,10 @@ import LiquidModal from '../components/common/LiquidModal';
 import ExistenciasSucursales from './distribucion/ExistenciasSucursales';
 import ClienteModal from './distribucion/ClienteModal';
 import VentaPerdidaModal from './distribucion/VentaPerdidaModal';
+import { guardarVentaSinSenal, esFallaDeRed } from './distribucion/sinSenal';
+import { ticketProvisional } from '@nucleo/utils/distribucionDocumento';
+import { imprimirDocumento } from '@nucleo/utils/ticketPrint';
+import { MARCA_PAPEL } from './distribucion/marca';
 import { indexarLotes, ocupadasPorLote, libreEn, repartir, repartirTodo } from './distribucion/lotes';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
@@ -170,6 +174,7 @@ export default function DistribucionVentaView() {
     const [miReserva, setMiReserva] = useState(null);               // { vence_at, renglones } de esta venta
     const [avisoReserva, setAvisoReserva] = useState('');
     const [ahora, setAhora] = useState(() => Date.now());
+    const [verCobro, setVerCobro] = useState(false);  // la ventana de cobro (F2)
     const [perdida, setPerdida] = useState(null);         // la ventana de venta perdida: { producto?, cantidad, buscado?, clave? }
 
     // ── Lo que apartaron OTRAS ventas (borrador 0012) ──
@@ -696,6 +701,40 @@ export default function DistribucionVentaView() {
         }));
         const condicion = conCredito ? 2 : 1;
         const formaPago = pagos[0].forma === '13' ? '01' : pagos[0].forma;
+        // ── Sin señal: la venta se guarda en el teléfono y sale en
+        // contingencia al volver (ver `distribucion/sinSenal.js`). Sólo una
+        // venta NUEVA: corregir una preventa necesita la base.
+        const venderSinSenal = () => {
+            const pagosDeLaVenta = pagos.map((f, i) => ({
+                forma: f.forma, monto: leerMonto(f.monto), referencia: f.referencia, recibido: leerMonto(f.recibido),
+                resto: i === pagos.length - 1,
+            }));
+            const entrada = guardarVentaSinSenal({
+                emisorId: emisor.id, clienteId: cliente.id, tipoDocumento: tipoDoc, condicion, plazoDias: plazoNum,
+                formaPago, observaciones: notas, clientUuid: uuid, renglones, pagos: pagosDeLaVenta,
+                resumen: { cliente: cliente.nombre, total: venta.total, productos: lineas.length },
+            });
+            if (imprimir) {
+                imprimirDocumento(ticketProvisional({
+                    marca: MARCA_PAPEL, emisor, tipoNombre: TIPO_DOCUMENTO[tipoDoc]?.largo?.toUpperCase() ?? 'FACTURA',
+                    cliente: cliente.nombre, emitidoAt: entrada.emitido_at, codigoGeneracion: entrada.codigo_generacion,
+                    renglones: lineas.filter(l => l.doc).map(l => ({ cantidad: l.n, descripcion: l.p?.nombre ?? '', precio: l.doc.precioUni, total: l.doc.importe })),
+                    total: venta.total,
+                    pagos: pagosDeLaVenta.map((p, i) => ({ ...p, monto: i === pagosDeLaVenta.length - 1 && p.monto == null ? venta.total : p.monto })),
+                })).catch(e => console.error('venta sin señal: imprimir', e));
+            }
+            useStaff.getState().appendAuditLog('DISTRIBUCION_VENTA_SIN_SENAL', entrada.codigo_generacion, { cliente: cliente.id, total: venta.total });
+            showToast('Venta guardada sin señal',
+                `Se factura en contingencia sola al volver la señal. Código de generación ${entrada.codigo_generacion.slice(0, 8)}…`, 'warning');
+            descartar();
+            empezarOtra();
+            setVerCobro(false);
+        };
+        if (yFacturar && !corrigiendo && typeof navigator !== 'undefined' && navigator.onLine === false) {
+            venderSinSenal();
+            setGuardando(null);
+            return;
+        }
         try {
             let pedidoId = pedido?.pedido.id;
             if (corrigiendo) {
@@ -772,10 +811,13 @@ export default function DistribucionVentaView() {
                 }
                 navigate(rutaDocumento(factura.dte_id, { imprimir }), { replace: true });
             } catch (e) {
+                // El pedido se guardó y la señal se cayó al facturar: a la cola.
+                if (!corrigiendo && esFallaDeRed(e)) { venderSinSenal(); return; }
                 showToast('Pedido guardado sin facturar', mensajeDeDistribucion(e), 'warning');
                 navigate(rutaInicio(), { replace: true });
             }
         } catch (e) {
+            if (yFacturar && !corrigiendo && esFallaDeRed(e)) { venderSinSenal(); return; }
             setError(mensajeDeDistribucion(e));
         } finally {
             setGuardando(null);
@@ -851,7 +893,6 @@ export default function DistribucionVentaView() {
     }, [navigate]);
 
     const [verPendientes, setVerPendientes] = useState(false);
-    const [verCobro, setVerCobro] = useState(false);
     const [avisoCobro, setAvisoCobro] = useState('');
     const [verNotas, setVerNotas] = useState(!!notas);
     const [verBorrar, setVerBorrar] = useState(false);

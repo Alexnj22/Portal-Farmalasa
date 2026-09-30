@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { FileCheck2, AlertTriangle, Search, Clock, CheckCircle2, ShieldCheck, RefreshCw, Loader2, FileX2, XCircle } from 'lucide-react';
+import { FileCheck2, AlertTriangle, Search, Clock, CheckCircle2, ShieldCheck, RefreshCw, Loader2, FileX2, XCircle, WifiOff } from 'lucide-react';
 import FilterBar from '../../components/common/FilterBar';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
@@ -16,7 +16,7 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { useNavigate } from 'react-router-dom';
-import { fetchDocumentos, reintentarDocumento } from '@nucleo/data/distribucion';
+import { fetchDocumentos, reintentarDocumento, enviarContingencia, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import DocumentoModal from './DocumentoModal';
 import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO, CUBETAS_FACTURACION as CUBETAS, revisionHacienda, pideAccion, selloValido } from './comun';
 import { rutaVenta } from './rutas';
@@ -136,6 +136,25 @@ export default function TabDocumentos({ puedeVender, buscar }) {
         cargar();
     };
 
+    const [avisando, setAvisando] = useState(false);
+    /** El aviso de contingencia de todo lo emitido sin poder transmitirlo. */
+    const avisoContingencia = async () => {
+        setAvisando(true);
+        try {
+            const r = await enviarContingencia();
+            useStaff.getState().appendAuditLog('DISTRIBUCION_CONTINGENCIA_AVISO', null, { avisos: r?.avisos?.length ?? 0, sellados: r?.sellados });
+            const rechazado = (r?.avisos ?? []).find(a => a.estado === 'rechazado');
+            if (rechazado) showToast('Hacienda rechazó el aviso de contingencia', rechazado.mensaje ?? '', 'error');
+            else showToast('Aviso de contingencia enviado', `${r?.sellados ?? 0} recibidos por Hacienda · ${r?.pendientes ?? 0} pendientes`, 'success');
+        } catch (e) {
+            setAvisoFirma(mensajeDeDistribucion(e));
+        } finally {
+            setAvisando(false);
+            cargar();
+        }
+    };
+    const sinAviso = grupos.contingencia.filter(d => !d.contingencia_id);
+
     const todoBien = !cargando && grupos.accion.length === 0;
 
     return (
@@ -159,11 +178,16 @@ export default function TabDocumentos({ puedeVender, buscar }) {
                                         grupos.porEnviar.length && `${formatQty(grupos.porEnviar.length)} sin sello de Hacienda`,
                                         grupos.rechazados.length && `${formatQty(grupos.rechazados.length)} rechazado${grupos.rechazados.length === 1 ? '' : 's'} por corregir`,
                                         grupos.invalidaciones.length && `${formatQty(grupos.invalidaciones.length)} invalidación pendiente`,
-                                        grupos.contingencia.length && `${formatQty(grupos.contingencia.length)} emitido${grupos.contingencia.length === 1 ? '' : 's'} sin conexión`,
+                                        grupos.contingencia.length && `${formatQty(grupos.contingencia.length)} en contingencia`,
                                     ].filter(Boolean).join(' · ')}
                             </p>
                         </div>
                     </div>
+                    {puedeVender && sinAviso.length > 0 && (
+                        <Button variant="primary" icon={avisando ? Loader2 : WifiOff} disabled={avisando} onClick={avisoContingencia} data-aviso-contingencia>
+                            {`Enviar aviso de contingencia (${formatQty(sinAviso.length)})`}
+                        </Button>
+                    )}
                     {puedeVender && grupos.porEnviar.length > 0 && (
                         <Button variant="primary" icon={reenvio ? Loader2 : RefreshCw} disabled={!!reenvio} onClick={reenviarPendientes} data-reenviar-todos>
                             {reenvio ? `Reenviando ${reenvio.hecho} de ${reenvio.total}…` : `Reenviar pendientes (${formatQty(grupos.porEnviar.length)})`}

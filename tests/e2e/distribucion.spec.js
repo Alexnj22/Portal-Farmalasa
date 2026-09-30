@@ -401,6 +401,12 @@ test('lotes: primero vence, y lo que no alcanza se reparte abajo; sin existencia
     await page.keyboard.press('Escape');
 
     // Las dos aparecen en Ventas perdidas.
+    // Vacía la venta: si no, la reserva de estos productos queda 30 minutos y
+    // la próxima corrida encuentra el lote corto ya apartado.
+    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('F6');
+    await page.keyboard.press('Enter');
+    await expect(page.getByText('Elegir cliente…')).toBeVisible();
     await page.goto('/torogoz/perdidas');
     await expect(page.getByText('gasa esteril prueba').first()).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/NEPRO AP/).first()).toBeVisible();
@@ -540,4 +546,34 @@ test('facturación: semáforo con Hacienda, cubetas, lista de chequeo del docume
     await page.locator('[data-reenviar-todos]').click();
     await expect(page.getByText(/certificado/i).first()).toBeVisible({ timeout: 60_000 });
     expect(errores).toEqual([]);
+});
+
+test('sin señal: la venta se guarda en el teléfono y al volver la señal se factura en contingencia', async ({ page, context }) => {
+    await entrar(page);
+    await page.goto('/torogoz/venta');
+    await page.getByText('Elegir cliente…').click();
+    await page.getByText('FARMACIA DEL PUEBLO, S.A. DE C.V.', { exact: true }).last().click();
+    await page.keyboard.press('F3');
+    await page.keyboard.type('ensure advance liq fresa');
+    await expect(page.getByRole('option').first()).toBeVisible();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('[data-renglon]')).toHaveCount(1);
+    const c = await cobrar(page);
+    await c.getByRole('switch', { name: /Imprimir el ticket/ }).click();
+    // Se cae la señal justo al facturar.
+    await context.setOffline(true);
+    await c.getByRole('button', { name: /^Facturar$/ }).click();
+    await expect(page.getByText('Venta guardada sin señal').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('[data-testid="ventas-sin-senal"]')).toContainText('1 venta sin señal');
+    await expect(page.getByText('Elegir cliente…')).toBeVisible();
+    await page.screenshot({ path: `${SALIDA}/sin-senal.png` });
+    // Vuelve la señal: la cola se manda sola.
+    await context.setOffline(false);
+    await page.evaluate(() => window.dispatchEvent(new Event('online')));
+    await expect(page.locator('[data-testid="ventas-sin-senal"]')).toHaveCount(0, { timeout: 45_000 });
+    await expect(page.getByText(/Ventas sin señal (enviadas|con problemas)/).first()).toBeVisible({ timeout: 15_000 });
+    // En Facturación queda en contingencia, con su aviso por enviar (en este
+    // entorno no hay certificado: queda sin firmar y con el motivo guardado).
+    await page.goto('/torogoz/documentos?cubeta=todos');
+    await expect(page.getByText(/DTE-01-/).first()).toBeVisible({ timeout: 15_000 });
 });

@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, XCircle, CircleDashed, ShieldCheck, AlertTriangle, Clock, Info, RefreshCw, Pencil, Loader2 } from 'lucide-react';
+import { CheckCircle2, XCircle, CircleDashed, ShieldCheck, AlertTriangle, Clock, Info, RefreshCw, Pencil, Loader2, WifiOff } from 'lucide-react';
 import Button from '../../components/common/Button';
 import { revisionHacienda } from './comun';
 
@@ -15,7 +15,7 @@ const NIVEL = {
     info:      { icono: Info,          caja: 'border-divider bg-surface-card-hover/40', texto: 'text-content-2' },
 };
 
-export default function EstadoHacienda({ documento, ocupado = null, puedeActuar = true, onReenviar, onCorregir, onInvalidacion }) {
+export default function EstadoHacienda({ documento, ocupado = null, puedeActuar = true, onReenviar, onCorregir, onInvalidacion, onContingencia }) {
     const r = revisionHacienda(documento);
     if (!r) return null;
     const n = NIVEL[r.nivel];
@@ -34,6 +34,11 @@ export default function EstadoHacienda({ documento, ocupado = null, puedeActuar 
                 {puedeActuar && r.accion === 'reenviar' && onReenviar && (
                     <Button size="sm" variant="primary" icon={ocupado === 'reintentar' ? Loader2 : RefreshCw} disabled={!!ocupado} onClick={onReenviar}>
                         Reenviar a Hacienda
+                    </Button>
+                )}
+                {puedeActuar && r.accion === 'contingencia' && onContingencia && (
+                    <Button size="sm" variant="primary" icon={ocupado === 'contingencia' ? Loader2 : WifiOff} disabled={!!ocupado} onClick={onContingencia}>
+                        Enviar aviso de contingencia
                     </Button>
                 )}
                 {puedeActuar && r.accion === 'corregir' && onCorregir && (

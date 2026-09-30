@@ -99,7 +99,7 @@ describe('ticket de venta', () => {
     it('sin sello, el papel lo dice; en pruebas, también', () => {
         const t = ticketDeVenta(factura);
         expect(t.pie).toContain('PENDIENTE DEL SELLO DE HACIENDA');
-        expect(t.bloques[0].texto).toBe('SIN VALIDEZ FISCAL');
+        expect(t.bloques[0].titulo).toBe('PRUEBA - SIN VALIDEZ FISCAL');
     });
     it('CCF: sumas, IVA, retención y total; con sello y QR a la consulta pública', () => {
         const t = ticketDeVenta(ccf);
@@ -108,13 +108,15 @@ describe('ticket de venta', () => {
         expect(mapa['IVA 13%']).toBe('$19.34');
         expect(mapa['IVA RETENIDO']).toBe('-$1.49');
         expect(mapa.TOTAL).toBe('$166.65');
-        expect(t.pie).toContain(`Sello: ${ccf.sello_recibido}`);
+        expect(t.pie).toContain('SELLO DE RECEPCION');
+        expect(t.pie).toContain(ccf.sello_recibido);
         // El ticket no lleva QR (ahorra papel, 2026-09-30): el código de
         // generación sí, y el QR sigue en el PDF.
         expect(t.qr).toBeUndefined();
-        expect(t.pie).toContain(`Cod. generacion: ${ccf.json.identificacion.codigoGeneracion}`);
+        expect(t.pie).toContain(ccf.json.identificacion.codigoGeneracion);
         expect(urlConsultaPublica(ccf)).toContain(`codGen=${ccf.codigo_generacion}`);
-        expect(t.bloques).toEqual([]);
+        // Sin pruebas, el único bloque es el del cliente.
+        expect(t.bloques.map(b => b.titulo)).toEqual(['Cliente']);
     });
 });
 

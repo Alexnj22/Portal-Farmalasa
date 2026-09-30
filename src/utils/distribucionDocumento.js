@@ -14,6 +14,7 @@
 import { ubicacionMH } from '../data/geoCodigosMH';
 import { dibujarQR, imprimirDocumento } from './ticketPrint';
 import { hora12 } from './hora';
+import { relojSV } from './fecha';
 import { formatMoney } from './formatNumber';
 
 export const NOMBRE_DOCUMENTO = {
@@ -219,31 +220,44 @@ export function ticketDeVenta(dte, marca = null, { pagos = [] } = {}) {
         // cual los dice el DTE. El rollo no lleva el icono: una imagen por el
         // camino directo es un comando que esa impresora todavía no probó, y
         // uno que no entiende se traga el trabajo siguiente (ticketPrint.js).
+        // ── Que se lea de corrido (2026-09-30) ──
+        // Pedido del usuario: «que se sienta más fluido visualmente». Membrete
+        // sin repetir el nombre comercial (ya es el título); fecha y condición en
+        // un solo renglón; el CLIENTE en su propio bloque —su nombre a lo ancho y
+        // debajo su documento—, en vez de un valor largo pegado a la derecha que
+        // se partía en «S.A. DE / C.V.»; y en el pie, cada rótulo arriba y su
+        // dato abajo, para que un código de 36 caracteres no se corte a la mitad.
         encabezado: {
             titulo: (marca?.nombre ?? d.emisor.comercial ?? d.emisor.nombre).toUpperCase(),
             lineas: [
                 marca || d.emisor.comercial ? d.emisor.nombre : null,
-                d.emisor.comercial && d.emisor.comercial !== d.emisor.nombre ? d.emisor.comercial : null,
                 `NIT ${d.emisor.nit}  NRC ${d.emisor.nrc}`,
                 d.emisor.direccion,
-                `Tel. ${d.emisor.telefono}`,
+                d.emisor.telefono ? `Tel. ${d.emisor.telefono}` : null,
             ].filter(Boolean),
         },
-        // En pruebas se dice en UNA línea normal: el aviso en letra gigante
-        // gastaba cinco renglones de rollo en cada ticket de prueba.
-        bloques: d.prueba ? [{ titulo: 'Ambiente de pruebas', texto: 'SIN VALIDEZ FISCAL' }] : [],
         datos: [
             ['Fecha', `${d.fecha} ${d.hora}`],
-            ['Cliente', d.receptor.nombre],
-            ...(d.receptor.documento ? [['Doc.', d.receptor.documento]] : []),
-            ...(d.receptor.nrc ? [['NRC', d.receptor.nrc]] : []),
-            ...(d.condicion ? [['Condicion', d.condicion]] : []),
+            ...(d.condicion ? [['Pago', d.condicion]] : []),
+        ],
+        bloques: [
+            // En pruebas se dice en UNA línea: el aviso en letra gigante
+            // gastaba cinco renglones de rollo en cada ticket de prueba.
+            ...(d.prueba ? [{ titulo: 'PRUEBA - SIN VALIDEZ FISCAL' }] : []),
+            {
+                titulo: 'Cliente',
+                texto: d.receptor.nombre,
+                filas: [
+                    ...(d.receptor.documento ? [[d.receptor.documento.split(' ')[0], d.receptor.documento.split(' ').slice(1).join(' ')]] : []),
+                    ...(d.receptor.nrc ? [['NRC', d.receptor.nrc]] : []),
+                ],
+            },
         ],
         items: {
             cantidadPrimero: true,
             columnas: [
-                { label: 'CANT', ancho: '8%' },
-                { label: 'DESCRIPCION', ancho: '56%' },
+                { label: 'CANT', ancho: '11%' },
+                { label: 'DESCRIPCION', ancho: '53%' },
                 { label: 'P.UNIT', ancho: '17%', alinear: 'der' },
                 { label: 'TOTAL', ancho: '19%', alinear: 'der' },
             ],
@@ -261,11 +275,11 @@ export function ticketDeVenta(dte, marca = null, { pagos = [] } = {}) {
         totales,
         total_letras: res.letras,
         pie: [
-            `Num. control: ${d.numeroControl}`,
-            `Cod. generacion: ${d.codigoGeneracion}`,
-            d.sellado ? `Sello: ${d.sello}` : 'PENDIENTE DEL SELLO DE HACIENDA',
+            'NUMERO DE CONTROL', d.numeroControl,
+            'CODIGO DE GENERACION', d.codigoGeneracion,
+            ...(d.sellado ? ['SELLO DE RECEPCION', d.sello] : ['PENDIENTE DEL SELLO DE HACIENDA']),
             ...(d.observaciones ? [d.observaciones] : []),
-            QR_EN_TICKET ? 'Verifique este documento con el codigo QR.' : 'Verifiquelo en Hacienda con el cod. de generacion.',
+            QR_EN_TICKET ? 'Verifique este documento con el codigo QR.' : 'Consultelo en Hacienda con su codigo.',
         ],
         ...(QR_EN_TICKET ? { qr: d.qr } : {}),
     };
@@ -647,3 +661,54 @@ export const jsonParaElCliente = (dte) => ({
 
 export const nombreDelPdf = (dte) =>
     `${(NOMBRE_DOCUMENTO[dte.tipo] ?? 'DOCUMENTO').replace(/\s+/g, '-')}-${dte.numero_control.slice(-6)}-${String(dte.codigo_generacion).toUpperCase()}.pdf`;
+
+// ── Comprobante provisional (venta sin señal) ──────────────────────────────
+
+/**
+ * El papel de una venta hecha SIN SEÑAL (2026-09-30). No es el documento
+ * tributario —ése se emite en contingencia al volver la señal, con la hora de
+ * la venta—, pero ya lleva el CÓDIGO DE GENERACIÓN que va a tener, así el
+ * cliente puede consultarlo en Hacienda después. Mismo formato compacto que el
+ * ticket de venta.
+ */
+export function ticketProvisional({ marca = null, emisor = {}, tipoNombre = 'FACTURA', cliente, emitidoAt, codigoGeneracion, renglones = [], total, pagos = [] }) {
+    const f = new Date(emitidoAt);
+    const iso = relojSV(f).toISOString();
+    const totales = [['TOTAL', dinero(total), true]];
+    for (const p of pagos) {
+        const recibido = p.forma === '01' && p.recibido != null ? Number(p.recibido) : null;
+        const monto = Number(p.monto ?? total);
+        if (recibido != null && recibido > monto) totales.push([`${FORMA_EN_PAPEL['01']} recibido`, dinero(recibido)], ['CAMBIO', dinero(recibido - monto)]);
+        else if (p.forma !== '01') totales.push([FORMA_EN_PAPEL[p.forma] ?? 'Pago', dinero(monto)]);
+    }
+    return {
+        titulo: 'COMPROBANTE PROVISIONAL',
+        tituloDeCola: `Provisional ${codigoGeneracion.slice(0, 8)}`,
+        encabezado: {
+            titulo: (marca?.nombre ?? emisor.nombre_comercial ?? emisor.nombre ?? '').toUpperCase(),
+            lineas: [emisor.nombre, emisor.nit ? `NIT ${formatoNit(emisor.nit)}${emisor.nrc ? `  NRC ${formatoNrc(emisor.nrc)}` : ''}` : null].filter(Boolean),
+        },
+        datos: [['Fecha', `${fechaDdMm(iso.slice(0, 10))} ${hora12(iso.slice(11, 19))}`]],
+        bloques: [
+            { titulo: `${tipoNombre} EN CONTINGENCIA - SIN SENAL` },
+            { titulo: 'Cliente', texto: cliente },
+        ],
+        items: {
+            cantidadPrimero: true,
+            columnas: [
+                { label: 'CANT', ancho: '11%' },
+                { label: 'DESCRIPCION', ancho: '53%' },
+                { label: 'P.UNIT', ancho: '17%', alinear: 'der' },
+                { label: 'TOTAL', ancho: '19%', alinear: 'der' },
+            ],
+            filas: renglones.map(r => [String(r.cantidad), r.descripcion, dinero(r.precio).replace('$', ''), dinero(r.total).replace('$', '')]),
+        },
+        totales,
+        pie: [
+            'CODIGO DE GENERACION',
+            codigoGeneracion,
+            'Venta sin senal: el documento tributario se',
+            'emite en contingencia al recuperar la senal.',
+        ],
+    };
+}

@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1113.0 — Torogoz: retenciones, percepciones y paquete del mes
+
+En **Reportes** (sin tablas ni consultas nuevas: sale de los libros de ventas y
+de compras):
+
+- **Retenciones**: el resumen fiscal del mes —débito, crédito e impuesto
+  REFERENCIAL (lo liquida el contador)— y cuatro listados con su CSV: el IVA
+  que nos retuvieron clientes grandes (formato de las farmacias), el que
+  percibimos a clientes, la percepción que nos cobraron proveedores y la
+  retención que les hicimos (anexos de 9 columnas de las farmacias). Las notas
+  de crédito restan.
+- **Paquete del mes**: un ZIP con todo lo fiscal —libros de contribuyentes,
+  consumidor final, anulados y compras, los cuatro anexos de retención y
+  percepción, compras a relacionadas y un resumen—. Si un libro falla no sale
+  (uno incompleto en silencio es peor). Avisa si hay documentos sin sello que
+  quedaron fuera. `client-zip` por `import()`, sólo al apretar.
+
 ## v2.1112.0 — Torogoz: caja del vendedor y cierre del día
 
 La distribuidora como punto de venta completo (borrador

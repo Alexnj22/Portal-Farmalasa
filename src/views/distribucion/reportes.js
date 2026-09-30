@@ -1,4 +1,4 @@
-import { TrendingUp, BookOpen, BookText, Users, Store, FileX2, Handshake } from 'lucide-react';
+import { TrendingUp, BookOpen, BookText, Users, Store, FileX2, Handshake, Percent } from 'lucide-react';
 import { mesSV, correrMes, etiquetaMes } from '@nucleo/utils/fecha';
 
 // Reportes de la distribuidora (borrador 0016): la utilidad bruta y el libro de
@@ -9,6 +9,7 @@ export const VISTAS_REPORTES = [
     { key: 'utilidad', label: 'Utilidad', icon: TrendingUp },
     { key: 'ventas', label: 'Libros de ventas', icon: BookText },
     { key: 'compras', label: 'Libro de compras', icon: BookOpen },
+    { key: 'retenciones', label: 'Retenciones', icon: Percent },
     { key: 'relacionadas', label: 'Relacionadas', icon: Handshake },
 ];
 
@@ -118,4 +119,73 @@ export function totalesDelLibro(filas) {
     }
     for (const k of ['exenta', 'gravada', 'iva', 'percepcion', 'retencion', 'total']) t[k] = Math.round(t[k] * 100) / 100;
     return t;
+}
+
+// ── Retenciones y percepciones del mes ─────────────────────────────────────
+// Cuatro listados, todos derivados de filas que ya existen (libros de ventas
+// 0021 y libro de compras 0016): no hay tabla ni consulta nueva. Las notas de
+// crédito restan (van en negativo), porque corrigen el documento que sí tuvo
+// retención o percepción.
+
+const fmtDdMm = (iso) => (iso ? `${String(iso).slice(8, 10)}/${String(iso).slice(5, 7)}/${String(iso).slice(0, 4)}` : '');
+const menosSiNota = (f, n) => (f.tipo_dte === '05' ? -1 : 1) * (Number(n) || 0);
+const TIPO_EN_ARCHIVO = { '03': 'CCF', '05': 'NC', '06': 'ND', '01': 'FACTURA' };
+
+/** El IVA que NOS retuvieron (clientes grandes contribuyentes), en el formato de las farmacias (`retencionVentas`). */
+export function retencionesDeClientes(contribuyente) {
+    return (contribuyente ?? []).filter(f => Number(f.retenido) > 0).map(f => ({
+        fecha: f.fecha, cliente: f.cliente, nrc: f.nrc, nit: f.nit,
+        tipo_documento: TIPO_EN_ARCHIVO[f.tipo_dte] ?? f.tipo_dte, correlativo: f.numero_control, numero_control: f.numero_control,
+        codigo_generacion: f.codigo_generacion, sello_recepcion: f.sello_recepcion,
+        monto_sujeto: menosSiNota(f, f.ventas_gravadas), retencion_iva: menosSiNota(f, f.retenido),
+        total: menosSiNota(f, Number(f.ventas_gravadas) + Number(f.debito_fiscal)), anulada: false,
+    }));
+}
+
+/** El IVA que PERCIBIMOS a clientes (la distribuidora como agente de percepción). */
+export function percepcionesAClientes(contribuyente) {
+    return (contribuyente ?? []).filter(f => Number(f.percibido) > 0).map(f => ({
+        fecha: f.fecha, cliente: f.cliente, nrc: f.nrc, tipo: TIPO_EN_ARCHIVO[f.tipo_dte] ?? f.tipo_dte,
+        numero_control: f.numero_control, base: menosSiNota(f, f.ventas_gravadas), percibido: menosSiNota(f, f.percibido),
+    }));
+}
+export const CSV_PERCEPCION_CLIENTES_HEADERS = ['N.', 'FECHA', 'CLIENTE', 'NRC', 'TIPO', 'NUMERO DE CONTROL', 'BASE', 'IVA PERCIBIDO'];
+export const csvPercepcionClientes = (filas) => {
+    const d = (n) => (Number(n) || 0).toFixed(2);
+    return [
+        ...filas.map((r, i) => [i + 1, fmtDdMm(r.fecha), r.cliente || '', String(r.nrc || '').replace(/-/g, ''), r.tipo, r.numero_control, d(r.base), d(r.percibido)]),
+        ['TOTALES', '', '', '', '', '', d(filas.reduce((a, r) => a + r.base, 0)), d(filas.reduce((a, r) => a + r.percibido, 0))],
+    ];
+};
+
+/**
+ * Lo que los PROVEEDORES nos percibieron o les retuvimos, con los nombres de
+ * campo del anexo de las farmacias (`construirLibro('percepcion'|'retencion')`).
+ */
+export function anexoDeCompras(compras, clave) {
+    const campo = clave === 'percepcion' ? 'percepcion_iva' : 'retencion_iva';
+    const origen = clave === 'percepcion' ? 'percepcion' : 'retencion';
+    return (compras ?? []).filter(c => Number(c[origen]) > 0).map(c => ({
+        fecha: c.fecha, proveedor: c.proveedor, nit: c.nit || c.nrc || '',
+        documento_tipo: c.tipo_doc === '03' ? 'CCF' : 'FACTURA',
+        documento_numero: String(c.numero ?? '').replace(/-/g, ''),
+        monto_sujeto: c.gravada, [campo]: c[origen],
+    }));
+}
+
+/**
+ * El resumen del mes para el contador. REFERENCIAL: la liquidación del IVA la
+ * hace él. Débito (contribuyentes + consumidor final) − crédito (compras); lo
+ * que nos retuvieron o percibieron son anticipos que se restan, y lo que
+ * percibimos a clientes es impuesto que se entera.
+ */
+export function resumenFiscal({ tc, tf, compras }) {
+    const r2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+    const credito = r2((compras ?? []).filter(c => c.en_libro).reduce((a, c) => a + Number(c.iva || 0), 0));
+    const percNos = r2((compras ?? []).reduce((a, c) => a + Number(c.percepcion || 0), 0));
+    const debito = r2(Number(tc.debito) + Number(tf.debito));
+    return {
+        debito, credito, retenidoNos: r2(tc.retenido), percibidoNos: percNos, percibidoAClientes: r2(tc.percibido),
+        impuesto: r2(debito - credito),
+    };
 }

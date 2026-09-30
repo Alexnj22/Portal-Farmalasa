@@ -96,6 +96,12 @@ const RE_BORRADOR = /\bfrom\s+['"][^'"]*(draftUtils|useBorrador)['"]|\b(saveDraf
  * una excepción: es deuda, y va al baseline.
  */
 const EXCEPCIONES = {
+    // Los reportes de la distribuidora no capturan nada: sus seis controles son
+    // FILTROS (período, agrupación, mes, año, libro) y todos viven en la
+    // dirección (`usePestanaEnUrl`), así que una recarga o una sesión cerrada
+    // vuelve exactamente al mismo reporte. No hay qué perder.
+    'src/views/distribucion/TabReportes.jsx': 'sólo filtros de reporte, todos en la dirección: no captura nada',
+
     // Sus controles son del DESCUENTO de una promoción, y su estado vive
     // entero en `PromocionModal` —que sí guarda borrador, con `desc` adentro
     // del valor—. Un borrador propio acá guardaría lo mismo dos veces y podría

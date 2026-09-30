@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { margen, mesesRecientes, comprasParaLibro, totalesDelLibro, totalesContribuyente, totalesConsumidor } from '../../src/views/distribucion/reportes.js';
+import { margen, mesesRecientes, comprasParaLibro, totalesDelLibro, totalesContribuyente, totalesConsumidor, retencionesDeClientes, percepcionesAClientes, csvPercepcionClientes, anexoDeCompras, resumenFiscal } from '../../src/views/distribucion/reportes.js';
 import { construirLibro } from '@nucleo/utils/libroIva.js';
 
 describe('reportes de la distribuidora', () => {
@@ -55,5 +55,32 @@ describe('libros de ventas de la distribuidora', () => {
     it('anulados: una nota invalidada sale con su tipo', () => {
         const r = construirLibro('anulados', { anulados: [{ numero_control: 'DTE-05-X', tipo_dte: '05', sello_recepcion: 'S', codigo_generacion: 'a-b' }] }).rows[0];
         expect(r[4]).toBe('05');
+    });
+});
+
+describe('retenciones y percepciones de la distribuidora', () => {
+    const ccf = { fecha: '2026-09-01', tipo_dte: '03', numero_control: 'DTE-03-X-1', sello_recepcion: 'S', codigo_generacion: 'c', nrc: '1', nit: '2',
+        cliente: 'SUPER', ventas_exentas: 0, ventas_gravadas: 200, debito_fiscal: 26, percibido: 2, retenido: 2 };
+    const nc = { ...ccf, tipo_dte: '05', ventas_gravadas: 20, debito_fiscal: 2.6, percibido: 0.2, retenido: 0.2 };
+    it('lo retenido por clientes, con el formato de las farmacias y la nota en negativo', () => {
+        const filas = retencionesDeClientes([ccf, nc, { ...ccf, retenido: 0 }]);
+        expect(filas.map(f => f.retencion_iva)).toEqual([2, -0.2]);
+        const l = construirLibro('retencionVentas', { retencionVentas: filas });
+        expect(l.headers).toHaveLength(14);
+        expect(l.rows.at(-1)[11]).toBe('1.80'); // TOTALES del IVA retenido
+    });
+    it('lo percibido a clientes', () => {
+        const filas = percepcionesAClientes([ccf, nc]);
+        expect(csvPercepcionClientes(filas).at(-1)).toEqual(['TOTALES', '', '', '', '', '', '180.00', '1.80']);
+    });
+    it('anexo de percepción de compras con 9 columnas', () => {
+        const filas = anexoDeCompras([{ fecha: '2026-09-02', proveedor: 'DROG', nit: '0614', tipo_doc: '03', numero: 'DTE-03-A', gravada: 100, percepcion: 1, retencion: 0 }], 'percepcion');
+        const r = construirLibro('percepcion', { percepcion: filas }).rows[0];
+        expect(r).toHaveLength(9);
+        expect(r.slice(4, 9)).toEqual(['03', 'DTE03A', '', '100.0000', '1.0000']);
+    });
+    it('el resumen fiscal: débito − crédito, y los anticipos aparte', () => {
+        const r = resumenFiscal({ tc: { debito: 23.4, retenido: 1.8, percibido: 1.8 }, tf: { debito: 13 }, compras: [{ en_libro: true, iva: 10, percepcion: 1 }] });
+        expect(r).toMatchObject({ debito: 36.4, credito: 10, impuesto: 26.4, retenidoNos: 1.8, percibidoNos: 1, percibidoAClientes: 1.8 });
     });
 });

@@ -951,3 +951,21 @@ test('caja del vendedor: apertura con fondo, gasto de ruta, y el cierre del día
     }
     expect(errores).toEqual([]);
 });
+
+test('retenciones y percepciones del mes, y el paquete del mes para el contador', async ({ page }) => {
+    const errores = [];
+    page.on('pageerror', e => errores.push(e.message));
+    await entrar(page);
+    await page.goto('/torogoz/reportes?reporte=retenciones');
+    await expect(page.getByText('Impuesto (referencial)')).toBeVisible({ timeout: 15_000 });
+    for (const clave of ['ret', 'perc', 'percProv', 'retProv']) await expect(page.locator(`[data-listado="${clave}"]`)).toBeVisible();
+    await page.screenshot({ path: `${SALIDA}/retenciones.png`, fullPage: true });
+    const [d] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Paquete del mes' }).click()]);
+    expect(d.suggestedFilename()).toMatch(/^torogoz-paquete-\d{4}-\d{2}\.zip$/);
+    const { execSync } = await import('node:child_process');
+    const lista = execSync(`unzip -l "${await d.path()}"`).toString();
+    expect(lista).toContain('libro-contribuyentes.csv');
+    expect(lista).toContain('libro-consumidor-final.csv');
+    expect(lista).toContain('resumen-del-mes.csv');
+    expect(errores).toEqual([]);
+});

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import {
-    TrendingUp, Coins, Percent, Receipt, AlertTriangle, Search, Download, Landmark, BookOpen, CalendarRange, Layers, Info, FileX2, ShoppingCart as ShoppingCartIcono } from 'lucide-react';
+    TrendingUp, Coins, Percent, Receipt, AlertTriangle, Search, Download, Landmark, BookOpen, CalendarRange, Layers, Info, FileX2, ShoppingCart as ShoppingCartIcono, Archive, Loader2 } from 'lucide-react';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import Badge from '../../components/common/Badge';
@@ -13,16 +13,24 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, rangoDelMes, hoySV } from '@nucleo/utils/fecha';
 import { exportCsv } from '@nucleo/utils/csvExport';
+import { useToastStore } from '@nucleo/store/toastStore';
 import { construirLibro } from '@nucleo/utils/libroIva';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { fetchUtilidad, fetchLibroCompras, fetchLibrosVentas, fetchRelacionadas } from '@nucleo/data/distribucionCompras';
 import { evaluarPrecioRelacionada } from './compras';
+import { armarPaqueteDelMes } from './paquete';
+import { descargarArchivo } from '@plataforma/descargas';
+import { registrarEgreso } from '@nucleo/data/egreso';
+import { csvRetencionVentas, CSV_RET_VENTAS_HEADERS } from '@nucleo/utils/libroIva';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { PERIODOS, rangoDe } from './comun';
 import { TIPOS_COMPRA } from './compras';
-import { AGRUPAR_UTILIDAD, margen, mesesRecientes, comprasParaLibro, totalesDelLibro, LIBROS_VENTAS, totalesContribuyente, totalesConsumidor, aniosRecientes } from './reportes';
+import {
+    AGRUPAR_UTILIDAD, margen, mesesRecientes, comprasParaLibro, totalesDelLibro, LIBROS_VENTAS, totalesContribuyente, totalesConsumidor, aniosRecientes,
+    retencionesDeClientes, percepcionesAClientes, CSV_PERCEPCION_CLIENTES_HEADERS, csvPercepcionClientes, anexoDeCompras, resumenFiscal,
+} from './reportes';
 import { TIPO_DOCUMENTO } from './comun';
 
 // Reportes de la distribuidora (borrador 0016). Sólo quien administra: el
@@ -331,6 +339,7 @@ function LibrosVentas({ buscar }) {
                     <div className="w-60"><LiquidSelect value={mes} onChange={(v) => setMes(v || meses[0].key)} clearable={false} icon={CalendarRange}
                         options={meses.map(m => ({ value: m.key, label: m.label }))} ariaLabel="Mes" /></div>
                     <Button variant="secondary" icon={Download} onClick={exportar} disabled={cargando || !(datos?.[libro]?.length)}>Descargar CSV</Button>
+                    <BotonPaquete mes={mes} />
                 </div>
             </div>
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
@@ -528,11 +537,132 @@ function ReporteRelacionadas({ buscar }) {
     );
 }
 
+// ── El paquete del mes: todo lo fiscal en un ZIP ──────────────────────────
+function BotonPaquete({ mes }) {
+    const showToast = useToastStore(s => s.showToast);
+    const [armando, setArmando] = useState(false);
+    const descargar = () => {
+        setArmando(true);
+        armarPaqueteDelMes(mes)
+            .then(p => {
+                if (!p) { showToast('Sin datos', 'No hay libros con datos en este mes.', 'warning'); return; }
+                descargarArchivo(p.blob, p.nombre);
+                registrarEgreso('distribucion', { formato: 'zip', filas: p.archivos, detalle: { mes, paquete: 'torogoz-mes' } });
+                showToast('Paquete del mes', `${p.archivos} archivos${p.sinSello ? ` · ojo: ${p.sinSello} documentos sin sello quedaron fuera` : ''}`, p.sinSello ? 'warning' : 'success');
+            })
+            .catch(e => showToast('No se pudo armar el paquete', mensajeDeDistribucion(e), 'error'))
+            .finally(() => setArmando(false));
+    };
+    return <Button variant="primary" icon={armando ? Loader2 : Archive} disabled={armando} onClick={descargar}>Paquete del mes</Button>;
+}
+
+// ── Retenciones y percepciones ───────────────────────────────────────────
+// Cuatro listados del mes, sacados de los libros de ventas y de compras: lo
+// que nos retuvieron los clientes grandes, lo que percibimos a clientes, y lo
+// que los proveedores nos percibieron o les retuvimos.
+function ReporteRetenciones() {
+    const meses = useMemo(() => mesesRecientes(13), []);
+    const [mes, setMes] = usePestanaEnUrl(meses, meses[0].key, 'mes');
+    const [ventas, setVentas] = useState(null);
+    const [compras, setCompras] = useState([]);
+    const [cargando, setCargando] = useState(true);
+    const [error, setError] = useState('');
+
+    const cargar = useCallback(async () => {
+        setCargando(true);
+        setError('');
+        try {
+            const [desde, hasta] = rangoDelMes(mes);
+            const [v, c] = await Promise.all([fetchLibrosVentas({ desde, hasta }), fetchLibroCompras({ desde, hasta })]);
+            setVentas(v); setCompras(c);
+        } catch (e) {
+            console.error('retenciones', e);
+            setError(mensajeDeDistribucion(e));
+        } finally {
+            setCargando(false);
+        }
+    }, [mes]);
+    useEffect(() => { cargar(); }, [cargar]);
+
+    const ret = useMemo(() => retencionesDeClientes(ventas?.contribuyente), [ventas]);
+    const perc = useMemo(() => percepcionesAClientes(ventas?.contribuyente), [ventas]);
+    const percProv = useMemo(() => anexoDeCompras(compras, 'percepcion'), [compras]);
+    const retProv = useMemo(() => anexoDeCompras(compras, 'retencion'), [compras]);
+    const r = useMemo(() => resumenFiscal({ tc: totalesContribuyente(ventas?.contribuyente), tf: totalesConsumidor(ventas?.consumidor), compras }), [ventas, compras]);
+    const suma = (xs, k) => xs.reduce((a, x) => a + Number(x[k] || 0), 0);
+
+    const bajar = (clave) => {
+        const archivo = `-torogoz-${mes}.csv`;
+        if (clave === 'ret') exportCsv(CSV_RET_VENTAS_HEADERS, csvRetencionVentas(ret), `iva-retenido-sobre-ventas${archivo}`, 'distribucion');
+        if (clave === 'perc') exportCsv(CSV_PERCEPCION_CLIENTES_HEADERS, csvPercepcionClientes(perc), `iva-percibido-a-clientes${archivo}`, 'distribucion');
+        if (clave === 'percProv' || clave === 'retProv') {
+            const tab = clave === 'percProv' ? 'percepcion' : 'retencion';
+            const l = construirLibro(tab, { [tab]: clave === 'percProv' ? percProv : retProv });
+            exportCsv(l.headers, l.rows, `${l.base}${archivo}`, 'distribucion');
+        }
+    };
+    const LISTADOS = [
+        { clave: 'ret', titulo: 'IVA que nos retuvieron', sub: 'Clientes grandes contribuyentes (1 %) — anticipo', n: ret.length, total: suma(ret, 'retencion_iva'),
+          filas: ret.map(f => [f.cliente, f.numero_control, f.retencion_iva]) },
+        { clave: 'perc', titulo: 'IVA que percibimos', sub: 'A clientes, como agente de percepción — se entera', n: perc.length, total: suma(perc, 'percibido'),
+          filas: perc.map(f => [f.cliente, f.numero_control, f.percibido]) },
+        { clave: 'percProv', titulo: 'Percepción que nos cobraron', sub: 'Proveedores grandes contribuyentes — anticipo', n: percProv.length, total: suma(percProv, 'percepcion_iva'),
+          filas: percProv.map(f => [f.proveedor, f.documento_numero, f.percepcion_iva]) },
+        { clave: 'retProv', titulo: 'Retención que hicimos', sub: 'A proveedores — se entera', n: retProv.length, total: suma(retProv, 'retencion_iva'),
+          filas: retProv.map(f => [f.proveedor, f.documento_numero, f.retencion_iva]) },
+    ];
+
+    return (
+        <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+                <div className="w-60"><LiquidSelect value={mes} onChange={(v) => setMes(v || meses[0].key)} clearable={false} icon={CalendarRange}
+                    options={meses.map(m => ({ value: m.key, label: m.label }))} ariaLabel="Mes" /></div>
+                <BotonPaquete mes={mes} />
+            </div>
+            {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
+            <CarrilCards ariaLabel="Resumen fiscal del mes">
+                <StatCard icon={Landmark} label="Débito fiscal" value={formatMoney(r.debito)} loading={cargando}
+                    iconBg="bg-brand/10" iconCls="text-brand-text" sub="Contribuyentes + consumidor final" />
+                <StatCard icon={Receipt} label="Crédito fiscal" value={formatMoney(r.credito)} loading={cargando}
+                    iconBg="bg-success/10" iconCls="text-success" sub="De las compras del mes" />
+                <StatCard icon={Percent} label="Impuesto (referencial)" value={formatMoney(r.impuesto)} loading={cargando}
+                    iconBg="bg-warning/10" iconCls="text-warning" sub="Débito − crédito; lo liquida el contador" />
+            </CarrilCards>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {LISTADOS.map(l => (
+                    <section key={l.clave} data-surface="card" className="p-4 flex flex-col gap-2" aria-label={l.titulo} data-listado={l.clave}>
+                        <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                                <h3 className="text-body font-black text-content">{l.titulo}</h3>
+                                <p className="text-caption text-content-3">{l.sub}</p>
+                            </div>
+                            <span className="text-title font-black tabular-nums text-content">{formatMoney(l.total)}</span>
+                        </div>
+                        {l.n === 0 ? <p className="text-caption text-content-3">Sin documentos este mes.</p> : (
+                            <ul className="divide-y divide-divider text-body-sm">
+                                {l.filas.slice(0, 6).map((f, i) => (
+                                    <li key={i} className="py-1.5 flex items-center justify-between gap-2">
+                                        <span className="min-w-0 truncate text-content-2">{f[0]} <span className="text-caption text-content-3 font-mono">{f[1]}</span></span>
+                                        <span className={`tabular-nums font-bold ${Number(f[2]) < 0 ? 'text-danger-text' : ''}`}>{formatMoney(Number(f[2]))}</span>
+                                    </li>
+                                ))}
+                                {l.n > 6 && <li className="py-1.5 text-caption text-content-3">y {l.n - 6} más en el archivo.</li>}
+                            </ul>
+                        )}
+                        <div><Button size="sm" variant="secondary" icon={Download} disabled={!l.n} onClick={() => bajar(l.clave)}>Descargar CSV</Button></div>
+                    </section>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 export default function TabReportes({ buscar, vista = 'utilidad' }) {
     return (
         <div className="p-3 md:p-5">
             {vista === 'compras' ? <LibroCompras buscar={buscar} /> : vista === 'ventas' ? <LibrosVentas buscar={buscar} />
-                : vista === 'relacionadas' ? <ReporteRelacionadas buscar={buscar} /> : <ReporteUtilidad buscar={buscar} />}
+                : vista === 'relacionadas' ? <ReporteRelacionadas buscar={buscar} /> : vista === 'retenciones' ? <ReporteRetenciones />
+                    : <ReporteUtilidad buscar={buscar} />}
         </div>
     );
 }

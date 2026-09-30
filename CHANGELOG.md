@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1101.2 — Mis puntos: la fecha de cada movimiento en hora de El Salvador
+
+`puntos_estado_cuenta` fechaba canjes, anulaciones y vencimientos con
+`created_at::date`, o sea en UTC: todo lo registrado desde las 6:00 p.m. salía
+con la fecha del día siguiente. Medido antes de corregir: 224 de los 1,673
+canjes migrados. Ahora se usa la hora de El Salvador, y el canje toma la fecha
+de su factura cuando la tiene (si el motor se atrasa pasada la medianoche, el
+cliente igual ve el día en que canjeó). Migración
+`20260930203529_mis_puntos_fecha_en_hora_de_el_salvador`, aplicada y
+verificada en producción.
+
 ## v2.1101.1 — Campos que decían bloquearse y no se bloqueaban
 
 `PortalInput` y `PortalTextarea` no usan `disabled`: su prop es `readOnly`, y

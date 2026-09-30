@@ -1,4 +1,5 @@
 {
+  "ignoreCommand": "case \"$VERCEL_GIT_COMMIT_REF\" in sesion/nucleo) exit 1;; sesion/*) exit 0;; *) exit 1;; esac",
   "rewrites": [
     { "source": "/api/oss-proxy/:path*", "destination": "/api/oss-proxy" },
     { "source": "/reglamento-puntos", "destination": "/reglamento-puntos.html" },

@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1102.1 — Vercel no compila las ramas de trabajo
+
+Vercel avisó que el crédito del mes iba en $15 de $20. En 46 horas hubo 100
+despliegues: 38 de `main`, 33 de `sesion/nucleo` (dev.farmasalud.lat) y 29 de
+`sesion/sas-ruta`, una rama de trabajo cuyo preview nadie mira.
+
+`vercel.json` lleva ahora un `ignoreCommand`: las ramas `sesion/*` no se
+compilan, salvo `sesion/nucleo`, que es la de dev. `main` y cualquier otra rama
+siguen igual.
+
 ## v2.1102.0 — App: Inicio como widgets, todas las salas, Menú en vidrio y tarjetas de solicitud
 
 Respuesta a la revisión del usuario de hoy: «los elementos son como widgets,

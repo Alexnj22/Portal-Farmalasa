@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1096.2 — «Otro» no tapa una diferencia de cantidad en la recepción
+
+Usuario, 2026-09-30, con la captura de un pedido de Salud 4: la famotidina
+salía con «Resuelto / Sin solución» y no se entendía qué hacer. Era un cruce
+—bodega metió fluconazol en vez de famotidina— y la sala marcó «Otro» para
+explicarlo. Como el tipo elegido le ganaba a la cantidad, un faltante real
+(enviado 1, contado 0) se guardaba sin las salidas del faltante, y cerrarlo
+dejaba las existencias descuadradas.
+
+- En la recepción, «Otro» sólo se guarda si las cantidades cuadran. Si no,
+  el renglón queda como faltante o sobrante y la nota de la sala se conserva.
+  Dañado y vencido siguen mandando, porque tienen su propio circuito.
+- El renglón de la famotidina de Salud 4 se pasó a faltante en la base, así
+  que ya muestra «Con un traslado» / «En físico», igual que el fluconazol.
+
 ## v2.1096.1 — Aviso compacto: una línea y el detalle al mantener presionado
 
 Usuario, 2026-09-30, con la captura del aviso expandido: el detalle salía dos

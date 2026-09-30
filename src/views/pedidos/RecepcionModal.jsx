@@ -1084,8 +1084,14 @@ export default function RecepcionModal({
 
             const nota = notaVals[r.id] || null;
             let error_tipo = null;
+            // «Otro» no le gana a la cantidad. Es lo que la sala marca para
+            // explicar un cruce («no venía esto, sino que fluconazol»), y si
+            // ganaba, un faltante real se guardaba sin las salidas del
+            // faltante — sólo «Resuelto / Sin solución», que cierran el
+            // renglón con las existencias descuadradas. La nota se conserva.
+            const elegido = hasProb ? errorVals[r.id] : null;
             if (isDiff) {
-                if (hasProb && errorVals[r.id]) error_tipo = errorVals[r.id];
+                if (elegido && (elegido !== 'otro' || fRaw === enviado)) error_tipo = elegido;
                 else if (fRaw < enviado)        error_tipo = 'faltante';
                 else if (fRaw > enviado)        error_tipo = 'sobrante';
                 else                            error_tipo = 'otro';

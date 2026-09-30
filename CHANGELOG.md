@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1100.0 — App: bandeja nativa de Solicitudes con las reglas del portal en el núcleo
+
+La app tiene su bandeja de Solicitudes nativa: las de la sala y las
+personales en una sola lista, con el control segmentado del sistema
+(Pendientes · Resueltas), píldoras por familia, el buscador de la barra de
+iOS y «Te toca decidir» en las que uno puede resolver. Tocar una abre la
+solicitud nativa, donde se decide. Lo resuelto muestra 30 días.
+
+- **Las reglas de la bandeja se mudaron al núcleo**
+  (`src/utils/bandejaDeSolicitudes.js`): de qué sala es una solicitud, quién
+  la ve, quién la decide y el orden de la cola. Vivían dentro de
+  `RequestsView`; ahora el portal y la app usan las mismas, con sus motivos
+  escritos y 8 pruebas. El portal no cambia de comportamiento.
+- En la app, `/solicitudes` y `/solicitudes-personales` abren la bandeja
+  nativa, y un enlace con `?solicitud=` abre directo esa solicitud.
+- Componentes de la app: `Segmentos` (el segmentado de SwiftUI en iPhone,
+  píldoras en Android) y `Avatar`.
+
 ## v2.1099.0 — App: Ventas de hoy nativa con gráfica que se recorre con el dedo
 
 Tocar «Ventas» en el Inicio de la app abre una pantalla nativa: sala por sala

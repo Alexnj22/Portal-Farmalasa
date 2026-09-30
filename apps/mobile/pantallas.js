@@ -10,12 +10,21 @@ export const PANTALLAS_DE_LA_APP = {
   '/bitacoras': true,
   '/traslados': true,
   '/ventas-hoy': true,   // no existe en el portal: es la pantalla nativa de «Ventas de hoy»
+  '/solicitudes': true,
+  // Los dos ámbitos del portal son una sola bandeja en la app.
+  '/solicitudes-personales': '/solicitudes',
+};
+
+// La pantalla nativa de una ruta del portal: la misma ruta, otra, o ninguna.
+const nativaDe = (ruta) => {
+  const v = PANTALLAS_DE_LA_APP[ruta];
+  return v === true ? ruta : (v || null);
 };
 
 // Abrir un módulo del menú: su pantalla nativa si ya la tiene, o el portal
 // dentro de la app si todavía no.
 export function abrirModulo(m) {
-  router.push(PANTALLAS_DE_LA_APP[m.path] ? m.path : { pathname: '/portal', params: { ruta: m.path, nombre: m.label } });
+  router.push(nativaDe(m.path) ?? { pathname: '/portal', params: { ruta: m.path, nombre: m.label } });
 }
 
 // Abrir una dirección del portal (la de un aviso, con su `?solicitud=…`): la
@@ -23,7 +32,10 @@ export function abrirModulo(m) {
 // exacta, que ya sabe abrir la solicitud que nombra.
 export function abrirRuta(url) {
   const ruta = '/' + (url.split(/[?#]/)[0].split('/')[1] || '');
-  router.push(PANTALLAS_DE_LA_APP[ruta] ? ruta : { pathname: '/portal', params: { ruta: url } });
+  // `/solicitudes?solicitud=…` nombra UNA: se abre ésa, no la bandeja.
+  const una = ruta.startsWith('/solicitudes') ? url.match(/[?&]solicitud=([^&#]+)/) : null;
+  if (una) return abrirSolicitud(decodeURIComponent(una[1]));
+  router.push(nativaDe(ruta) ?? { pathname: '/portal', params: { ruta: url } });
 }
 
 // Una solicitud nombrada por un aviso: la pantalla nativa donde se decide.

@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1096.0 — Avisos sin botones: se decide en la solicitud nativa de la app
+
+Decisión del usuario del 2026-09-30, después de probar los avisos con
+botones: «quitemos las aprobaciones desde ahí, lo siento raro, y mejoremos la
+experiencia de notificaciones en lo nativo de la app».
+
+- **La notificación informa** (sin `categoryId`): foto y nombre de quien la
+  origina, qué pide —sin repetir el nombre en el subtítulo— y sus renglones.
+  Tocarla abre la solicitud en la app. La app borra las categorías con botones
+  que hubiera registrado.
+- **`app/solicitud/[id].js`:** la solicitud nativa —quién (foto), contexto,
+  fecha, estado, TODOS los renglones, la nota y la respuesta— con Aprobar /
+  Rechazar (o Enviar todo en un traslado) si quien la mira puede. Todo del
+  núcleo: `cargarFilaDeAviso`, `detalleDeSolicitud`, `accionesDeAviso`,
+  `decidirSolicitud`.
+- **Pestaña Notificaciones:** las tarjetas informan y abren esa pantalla.
+- **Modo de prueba en `send-push-notification`** (`body.prueba`): avisos
+  armados a mano por el mismo camino que los reales (la foto se firma igual),
+  sólo a los teléfonos de una persona y marcados `prueba`.
+
 ## v2.1095.1 — Aviso del teléfono: la tarjeta va como imagen al mantener presionado
 
 La extensión de contenido (`targets/tarjeta`) no se mostraba en el iPhone del

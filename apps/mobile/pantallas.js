@@ -24,3 +24,8 @@ export function abrirRuta(url) {
   const ruta = '/' + (url.split(/[?#]/)[0].split('/')[1] || '');
   router.push(PANTALLAS_DE_LA_APP[ruta] ? ruta : { pathname: '/portal', params: { ruta: url } });
 }
+
+// Una solicitud nombrada por un aviso: la pantalla nativa donde se decide.
+export function abrirSolicitud(id) {
+  router.push({ pathname: '/solicitud/[id]', params: { id: String(id) } });
+}

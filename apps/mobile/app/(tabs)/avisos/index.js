@@ -8,24 +8,18 @@
 //
 // Cada aviso es una tarjeta: quién lo originó (foto), qué pasó, y —si nombra
 // una solicitud— su detalle con los mismos renglones que la notificación del
-// teléfono (`detalleDeSolicitud`, del núcleo). Si quien la mira puede decidir,
-// los botones están ahí mismo: la regla de quién puede es la de la campana del
-// portal (`utils/accionesDeAviso.js`) y la de aprobar, la del portal
-// (`decidirSolicitud`).
-import { useCallback, useEffect, useMemo, useState } from 'react';
+// teléfono (`detalleDeSolicitud`, del núcleo). Tocarla abre la solicitud en la
+// app (`app/solicitud/[id].js`), que es donde se decide: la lista informa.
+import { useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
-import { Button, Host, Row } from '@expo/ui';
-import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { cuandoLlego, tituloSinEmoji } from '@nucleo/utils/notificacionTexto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { cargarFilaDeAviso, esAvisoDeMinMax } from '@nucleo/data/solicitudDeAviso';
 import { detalleDeMinMax, detalleDeSolicitud, recortar } from '@nucleo/utils/tarjetaDeSolicitud';
-import { esAvisoDeTraslado, puedeDecidirAviso, trasladoPorResolver } from '@nucleo/utils/accionesDeAviso';
 import { colorSistema } from '../../../componentes/Formulario';
-import { decidirDesdeAviso, enviarTraslado, rechazarTrasladoDesdeAviso } from '../../../componentes/avisos';
-import { abrirRuta } from '../../../pantallas';
+import { abrirRuta, abrirSolicitud } from '../../../pantallas';
 
 // El detalle se pide para los avisos que nombran una solicitud todavía abierta.
 // Tope: con más, la pestaña pagaría decenas de lecturas por abrirse.
@@ -43,7 +37,7 @@ function Avatar({ empleado, titulo }) {
   );
 }
 
-function Tarjeta({ n, empleado, detalle, acciones, ocupado, onAbrir }) {
+function Tarjeta({ n, empleado, detalle, onAbrir }) {
   return (
     <Pressable onPress={onAbrir} style={({ pressed }) => ({
       backgroundColor: colorSistema.fila, borderRadius: 16, marginHorizontal: 16, padding: 14, gap: 10,
@@ -85,30 +79,17 @@ function Tarjeta({ n, empleado, detalle, acciones, ocupado, onAbrir }) {
         </View>
       ) : null}
 
-      {acciones.length ? (
-        <Host matchContents={{ vertical: true }} style={{ width: '100%' }}>
-          <Row spacing={8}>
-            {acciones.map((a) => (
-              <Button key={a.clave} variant={a.principal ? 'filled' : 'outlined'} label={ocupado === a.clave ? '…' : a.rotulo}
-                disabled={!!ocupado} onPress={a.hacer} />
-            ))}
-          </Row>
-        </Host>
-      ) : null}
     </Pressable>
   );
 }
 
 export default function Notificaciones() {
-  const { user, hasPermission } = useAuth();
   const avisos = useStaffStore((s) => s.notifications);
   const empleados = useStaffStore((s) => s.employees);
   const recargar = useStaffStore((s) => s.fetchNotifications);
   const marcarLeido = useStaffStore((s) => s.markNotificationRead);
   const marcarTodos = useStaffStore((s) => s.markAllNotificationsRead);
-  const marcarResuelto = useStaffStore((s) => s.marcarAvisoDeSolicitudResuelto);
   const [detalles, setDetalles] = useState({});      // id del aviso → detalle recortado
-  const [ocupado, setOcupado] = useState(null);      // `${aviso}|${acción}`
   const [recargando, setRecargando] = useState(false);
 
   const porId = useMemo(() => new Map((empleados || []).map((e) => [String(e.id), e])), [empleados]);
@@ -131,36 +112,10 @@ export default function Notificaciones() {
     return () => { vivo = false; };
   }, [avisos, detalles]);
 
-  const hacer = useCallback(async (n, accion, fn) => {
-    setOcupado(`${n.id}|${accion}`);
-    const ok = await fn();
-    setOcupado(null);
-    if (ok) {
-      marcarResuelto?.(n.metadata?.request_id, accion === 'rechazar' ? 'REJECTED' : 'APPROVED');
-      marcarLeido(n.id);
-    }
-  }, [marcarLeido, marcarResuelto]);
-
-  const accionesDe = (n) => {
-    const d = { solicitud: n.metadata?.request_id, url: n.link || '/solicitudes', tipo: esAvisoDeTraslado(n) ? 'traslado' : 'solicitud' };
-    if (esAvisoDeMinMax(n)) d.solicitud = `minmax:${n.metadata?.request_id}`;
-    if (trasladoPorResolver(n, hasPermission)) {
-      return [
-        { clave: 'enviar', rotulo: 'Enviar todo', principal: true, hacer: () => hacer(n, 'enviar', () => enviarTraslado(d)) },
-        { clave: 'rechazar', rotulo: 'Rechazar…', hacer: () => hacer(n, 'rechazar', () => rechazarTrasladoDesdeAviso(d)) },
-      ];
-    }
-    if (puedeDecidirAviso(n, hasPermission)) {
-      return [
-        { clave: 'aprobar', rotulo: 'Aprobar', principal: true, hacer: () => hacer(n, 'aprobar', () => decidirDesdeAviso(d, 'approve', user?.id)) },
-        { clave: 'rechazar', rotulo: 'Rechazar…', hacer: () => hacer(n, 'rechazar', () => decidirDesdeAviso(d, 'reject', user?.id)) },
-      ];
-    }
-    return [];
-  };
-
   const abrir = (n) => {
     marcarLeido(n.id);
+    const id = n.metadata?.request_id;
+    if (id) return abrirSolicitud(esAvisoDeMinMax(n) ? `minmax:${id}` : id);
     if (n.link) abrirRuta(n.link);
   };
 
@@ -181,7 +136,6 @@ export default function Notificaciones() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setDetalles({}); await recargar(); setRecargando(false); }} />}>
         {avisos.length ? avisos.map((n) => (
           <Tarjeta key={n.id} n={n} empleado={porId.get(String(n.created_by))} detalle={detalles[n.id]}
-            acciones={accionesDe(n)} ocupado={ocupado?.startsWith(`${n.id}|`) ? ocupado.split('|')[1] : null}
             onAbrir={() => abrir(n)} />
         )) : (
           <View style={{ alignItems: 'center', paddingTop: 80, gap: 6 }}>

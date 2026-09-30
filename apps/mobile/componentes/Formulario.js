@@ -23,6 +23,7 @@ export const colorSistema = {
   separador: ios ? PlatformColor('separator') : '#CAC4D0',
   rojo: ios ? PlatformColor('systemRed') : '#B3261E',
   verde: ios ? PlatformColor('systemGreen') : '#1B873F',
+  naranja: ios ? PlatformColor('systemOrange') : '#B26A00',
   acento: ios ? PlatformColor('link') : '#0052CC',
 };
 

@@ -8,7 +8,9 @@
 // la foto de comunicación y la tarjeta propia de iOS; cualquier aparato que no
 // sepa dibujarla muestra el `body`, que se arma con lo mismo.
 //
-// Los botones (`categoryId`) sólo van si la solicitud SIGUE pendiente. A quién
+// SIN botones (decisión del usuario, 2026-09-30: «quitemos las aprobaciones
+// desde ahí, lo siento raro»): el aviso informa, y tocarlo abre la solicitud
+// en la app, donde se decide. A quién
 // se le mandan lo decidió ya quien llamó (los aprobadores de esa solicitud); el
 // botón además pasa por las mismas funciones del portal, que aplican los
 // permisos otra vez.
@@ -46,7 +48,7 @@ async function fotoFirmada(supabase: any, url: string | null | undefined) {
   return data?.signedUrl ?? null;
 }
 
-async function quienEs(supabase: any, employeeId: string | null | undefined) {
+export async function quienEs(supabase: any, employeeId: string | null | undefined) {
   if (!employeeId) return undefined;
   const { data: e, error } = await supabase.from('employees')
     .select('name, first_names, last_names, photo_url').eq('id', employeeId).maybeSingle();
@@ -67,7 +69,7 @@ export function temaDe(url: string): string {
 }
 
 // El texto que se ve donde la tarjeta no llega (y el de la vista previa).
-function cuerpo(base: string, t: Tarjeta): string {
+export function cuerpo(base: string, t: Tarjeta): string {
   const l = [t.contexto || base, ...t.renglones.map(([a, b]) => (b ? `${a} · ${b}` : a))];
   if (t.resto) l.push(`y ${t.resto} más`);
   if (t.pie) l.push(t.pie);
@@ -92,8 +94,7 @@ export async function tarjetaParaTelefono(supabase: any, base: AvisoTelefono): P
       const pendiente = f.status === 'PENDING';
       return {
         ...conTema, tarjeta: t, message: cuerpo(base.message, t),
-        ...(pendiente ? { categoryId: 'solicitud' } : {}),
-        data: { url, tipo: 'minmax', solicitud: `minmax:${f.id}`, tarjeta: t },
+        data: { url, tipo: 'minmax', solicitud: `minmax:${f.id}`, pendiente, tarjeta: t },
       };
     }
 
@@ -105,12 +106,6 @@ export async function tarjetaParaTelefono(supabase: any, base: AvisoTelefono): P
 
     const t: Tarjeta = { familia: s.type, quien: await quienEs(supabase, s.employee_id), ...recortar(detalleDeSolicitud(s)) };
     const pendiente = s.status === 'PENDING';
-    // Los botones por familia. El envío por ahora sólo se abre: aceptarlo
-    // es decidir renglón por renglón (y «no llegó» pide evidencia).
-    const categoria = !pendiente ? undefined
-      : s.type === 'INVENTORY_TRANSFER_REQUEST' ? 'traslado'
-      : s.type === 'INVENTORY_TRANSFER_PUSH' ? undefined
-      : 'solicitud';
     const tipo = s.type === 'INVENTORY_TRANSFER_REQUEST' ? 'traslado'
       : s.type === 'INVENTORY_TRANSFER_PUSH' ? 'envio' : 'solicitud';
     return {
@@ -118,9 +113,7 @@ export async function tarjetaParaTelefono(supabase: any, base: AvisoTelefono): P
       ...(tipo !== 'solicitud' ? { threadId: 'traslados' } : {}),
       tarjeta: t,
       message: cuerpo(base.message, t),
-      ...(t.quien ? { subtitle: t.quien.nombre } : {}),
-      ...(categoria ? { categoryId: categoria } : {}),
-      data: { url, tipo, solicitud: s.id, tarjeta: t },
+      data: { url, tipo, solicitud: s.id, pendiente, tarjeta: t },
     };
   } catch (e) {
     console.error('tarjeta del aviso', String(e));

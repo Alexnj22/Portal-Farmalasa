@@ -13,7 +13,8 @@ import { despacharTraslado, rechazarTraslado, MOTIVOS_RECHAZO } from '@nucleo/da
 import { cargarFilaDeAviso, paraDecidir } from '@nucleo/data/solicitudDeAviso';
 import { decidirSolicitud } from '@nucleo/hooks/useDecidirSolicitud';
 import { useToastStore } from '@nucleo/store/toastStore';
-import { abrirRuta } from '../pantallas';
+import { router } from 'expo-router';
+import { abrirRuta, abrirSolicitud } from '../pantallas';
 import { fetchApprovalRequestById } from '@nucleo/data/requests';
 import { fallo, listo, trabajando } from './Progreso';
 
@@ -24,32 +25,12 @@ Notifications.setNotificationHandler({
   handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
 });
 
-// Los botones de cada tipo de aviso (2026-09-30, pedido del usuario). El
-// servidor elige la categoría (`send-push-notification`, `categoryId`) y sólo
-// se la pone a lo que sigue pendiente. Todos piden desbloquear el teléfono
-// (Face ID): nadie decide desde un teléfono ajeno sobre la mesa.
-//
-// Abren la app a propósito: iOS le da a una app en segundo plano unos pocos
-// segundos, y una anulación con Hacienda tardó 16 (medido el 2026-09-30). Se
-// cortaría a medias justo en lo más delicado. Abierta, la app muestra la capa
-// de progreso (`Progreso.js`) y termina con «✓» o con el motivo.
-//
-// El motivo de un rechazo se escribe EN la notificación (campo de texto de
-// iOS), y en un traslado los motivos fijos de la lista son botones.
-const ABRE = { opensAppToForeground: true, isAuthenticationRequired: true };
+// Los avisos NO llevan botones (usuario, 2026-09-30: «quitemos las
+// aprobaciones desde ahí, lo siento raro»): informan, y tocarlos abre la
+// solicitud en la app (`app/solicitud/[id].js`), donde se decide. Una
+// instalación que tuvo las categorías con botones las borra acá.
 async function declararCategorias() {
-  await Notifications.setNotificationCategoryAsync('traslado', [
-    { identifier: 'enviar', buttonTitle: 'Enviar todo', options: ABRE },
-    { identifier: 'rechazar_sin_existencia', buttonTitle: 'Rechazar: sin existencia', options: { ...ABRE, isDestructive: true } },
-    { identifier: 'rechazar_ya_encargado', buttonTitle: 'Rechazar: ya encargado', options: { ...ABRE, isDestructive: true } },
-    { identifier: 'rechazar', buttonTitle: 'Rechazar: otro motivo…', textInput: { submitButtonTitle: 'Rechazar', placeholder: 'Motivo' }, options: { ...ABRE, isDestructive: true } },
-  ]);
-  // Toda otra solicitud (descarte, carga, facturación, caja, abonos, Min/Max,
-  // las personales): la MISMA regla que el portal (`decidirSolicitud`).
-  await Notifications.setNotificationCategoryAsync('solicitud', [
-    { identifier: 'aprobar', buttonTitle: 'Aprobar', options: ABRE },
-    { identifier: 'rechazar', buttonTitle: 'Rechazar…', textInput: { submitButtonTitle: 'Rechazar', placeholder: 'Motivo' }, options: { ...ABRE, isDestructive: true } },
-  ]);
+  await Promise.all(['traslado', 'solicitud'].map((c) => Notifications.deleteNotificationCategoryAsync(c).catch(() => {})));
 }
 
 /** Pide permiso (la primera vez), saca el token y lo liga a quien tiene la sesión. */
@@ -187,7 +168,7 @@ export async function decidirDesdeAviso(d, modo, userId, nota = '') {
 const atendidos = new Set();
 
 /** Tocar un aviso abre su pantalla; sus botones hacen su trabajo. */
-export function escucharToques(userId) {
+export function escucharToques() {
   const abrir = async (resp) => {
     if (!resp) return;
     const clave = `${resp.notification?.request?.identifier}|${resp.actionIdentifier}`;
@@ -195,16 +176,9 @@ export function escucharToques(userId) {
     atendidos.add(clave);
     Notifications.clearLastNotificationResponseAsync?.().catch(() => {});
     const d = resp.notification?.request?.content?.data ?? {};
-    const a = resp.actionIdentifier;
-    const escrito = String(resp.userText ?? '').trim();
-    if (d.tipo === 'traslado') {
-      if (a === 'enviar') return enviarTraslado(d);
-      if (a === 'rechazar_sin_existencia') return rechazarTrasladoDesdeAviso(d, 'Sin existencia en físico');
-      if (a === 'rechazar_ya_encargado') return rechazarTrasladoDesdeAviso(d, 'Producto ya encargado');
-      if (a === 'rechazar') return rechazarTrasladoDesdeAviso(d, 'Otro', escrito);
-    }
-    if (a === 'aprobar') return decidirDesdeAviso(d, 'approve', userId);
-    if (a === 'rechazar') return decidirDesdeAviso(d, 'reject', userId, escrito);
+    // Si nombra una solicitud, se abre la solicitud nativa; si no, su pantalla.
+    if (d.solicitud && !d.prueba) return abrirSolicitud(d.solicitud);
+    if (d.prueba) return router.navigate('/avisos');
     const url = d.url;
     if (typeof url === 'string' && url.startsWith('/')) abrirRuta(url);
   };

@@ -2,7 +2,7 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import webpush from 'npm:web-push@3.6.7';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { checkCronSecret, getCorsHeaders } from '../_shared/security.ts';
-import { tarjetaParaTelefono, type AvisoTelefono } from './tarjeta.ts';
+import { cuerpo, quienEs, tarjetaParaTelefono, temaDe, type AvisoTelefono } from './tarjeta.ts';
 
 // La app del teléfono: por el servicio de Expo, que entrega a APNs (iPhone) y
 // a FCM (Android). Hasta 100 por petición. Un token que el servicio da por
@@ -73,6 +73,7 @@ serve(async (req) => {
     webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
 
     const body = await req.json();
+
     // body: { announcement_id, title, message, url, urgent, target_type, target_value }
     const { title, message, url = '/my-announcements', urgent, target_type, target_value, announcement_id } = body;
 
@@ -80,6 +81,27 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
+
+    // Modo PRUEBA: avisos armados a mano, con el mismo camino que los reales
+    // (la foto se firma igual), sólo a los teléfonos de UNA persona, sin
+    // navegador y con `data.prueba` (la app no decide nada con ellos). Sirve
+    // para ver cómo se ven sin inventar solicitudes en producción.
+    // { prueba: { destinatario: <employee uuid>, avisos: [{ title, url, quien_id, tarjeta }] } }
+    if (body?.prueba?.destinatario && Array.isArray(body.prueba.avisos)) {
+      const { data: tels, error: tErr } = await supabase.from('push_dispositivos')
+        .select('token').eq('employee_id', body.prueba.destinatario);
+      if (tErr) throw new Error(`push_dispositivos: ${tErr.message}`);
+      let n = 0;
+      for (const a of body.prueba.avisos.slice(0, 10)) {
+        const t = a.tarjeta ? { ...a.tarjeta, quien: await quienEs(supabase, a.quien_id) } : undefined;
+        n += await enviarATelefonos(supabase, (tels || []).map((x: { token: string }) => x.token), {
+          title: a.title, message: t ? cuerpo(a.message ?? '', t) : (a.message ?? ''), url: a.url ?? '/inicio',
+          threadId: temaDe(a.url ?? ''), tarjeta: t,
+          data: { url: a.url ?? '/inicio', prueba: true, solicitud: 'prueba', tipo: a.tipo, pendiente: true, tarjeta: t },
+        });
+      }
+      return new Response(JSON.stringify({ prueba: n }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     // A quién: los mismos destinatarios para los dos canales. `null` = GLOBAL.
     let destinatarios: string[] | null = null;

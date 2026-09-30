@@ -77,8 +77,17 @@ class NotificationService: UNNotificationServiceExtension {
     _ content: UNMutableNotificationContent, nombre: String, imagen: Data?
   ) -> UNNotificationContent? {
     // El título pasa a subtítulo: en un aviso de comunicación el título es el
-    // nombre de quien lo manda.
-    if content.subtitle.isEmpty || content.subtitle == nombre { content.subtitle = content.title }
+    // nombre de quien lo manda. Y sin repetir ese nombre: «Ana López te pide un
+    // traslado» debajo de «Ana López» se lee dos veces; queda «Te pide un
+    // traslado» (usuario, 2026-09-30: «muy bien estructuradas»).
+    if content.subtitle.isEmpty || content.subtitle == nombre {
+      var sub = content.title
+      if let r = sub.range(of: nombre, options: [.caseInsensitive, .diacriticInsensitive, .anchored]) {
+        sub = sub[r.upperBound...].trimmingCharacters(in: .whitespaces)
+        sub = sub.prefix(1).uppercased() + sub.dropFirst()
+      }
+      content.subtitle = sub
+    }
 
     let persona = INPerson(
       personHandle: INPersonHandle(value: nombre, type: .unknown),

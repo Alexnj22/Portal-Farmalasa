@@ -7,8 +7,40 @@ import { checkCronSecret, getCorsHeaders } from '../_shared/security.ts';
 // a FCM (Android). Hasta 100 por petición. Un token que el servicio da por
 // muerto (`DeviceNotRegistered`: la app se borró) se quita, igual que un 410
 // del navegador. Devuelve cuántos aceptó el servicio.
+type AvisoTelefono = {
+  title: string; message: string; url: string; urgent?: boolean;
+  subtitle?: string; categoryId?: string; data?: Record<string, unknown>;
+};
+
+// Un traslado pendiente llega al teléfono con TODO el pedido a la vista y con
+// sus botones (categoría `traslado`: Enviar todo · Rechazar), pedido del
+// usuario del 2026-09-30: «en la notificación debe mostrar toda la info».
+// Sólo el canal de la app: el navegador no tiene botones y sigue igual. Si la
+// lectura falla, el aviso sale como antes, sin detalle: el detalle adorna, no
+// puede costar el aviso.
 // deno-lint-ignore no-explicit-any
-async function enviarATelefonos(supabase: any, tokens: string[], a: { title: string; message: string; url: string; urgent?: boolean }) {
+async function detalleParaTelefono(supabase: any, base: AvisoTelefono): Promise<AvisoTelefono> {
+  const id = /[?&]solicitud=([0-9a-f-]{36})/i.exec(base.url || '')?.[1];
+  if (!id) return base;
+  const { data: s, error } = await supabase
+    .from('approval_requests').select('id, type, status, metadata').eq('id', id).maybeSingle();
+  if (error || !s || s.type !== 'INVENTORY_TRANSFER_REQUEST' || s.status !== 'PENDING') return base;
+  const m = s.metadata || {};
+  const renglones = (Array.isArray(m.items) ? m.items : []).map((it: { descripcion?: string; cantidad?: number; presentacion_tipo?: string }) =>
+    `• ${it.descripcion ?? 'Producto'} — ${it.cantidad ?? '?'} ${String(it.presentacion_tipo ?? '').toLowerCase()}`.trimEnd());
+  const lineas = [base.message, ...renglones];
+  if (m.reason) lineas.push(`Motivo: ${m.reason}`);
+  return {
+    ...base,
+    subtitle: [m.branch_name && `Para ${m.branch_name}`, m.origen_branch_name && `de ${m.origen_branch_name}`].filter(Boolean).join(' · ') || undefined,
+    message: lineas.join('\n'),
+    categoryId: 'traslado',
+    data: { url: base.url, solicitud: s.id, tipo: 'traslado' },
+  };
+}
+
+// deno-lint-ignore no-explicit-any
+async function enviarATelefonos(supabase: any, tokens: string[], a: AvisoTelefono) {
   let aceptados = 0;
   for (let i = 0; i < tokens.length; i += 100) {
     const tanda = tokens.slice(i, i + 100);
@@ -22,8 +54,10 @@ async function enviarATelefonos(supabase: any, tokens: string[], a: { title: str
       body: JSON.stringify(tanda.map((to) => ({
         to,
         title: a.title,
+        ...(a.subtitle ? { subtitle: a.subtitle } : {}),
         body: a.message,
-        data: { url: a.url },
+        data: a.data ?? { url: a.url },
+        ...(a.categoryId ? { categoryId: a.categoryId } : {}),
         sound: 'default',
         priority: a.urgent ? 'high' : 'default',
         interruptionLevel: a.urgent ? 'time-sensitive' : 'active',
@@ -145,7 +179,10 @@ serve(async (req) => {
       })
     );
 
-    const enviadosApp = await enviarATelefonos(supabase, aTelefonos.map((t: { token: string }) => t.token), { title, message, url, urgent });
+    const enviadosApp = aTelefonos.length
+      ? await enviarATelefonos(supabase, aTelefonos.map((t: { token: string }) => t.token),
+          await detalleParaTelefono(supabase, { title, message, url, urgent }))
+      : 0;
 
     const sent = results.filter(r => r.status === 'fulfilled').length;
     return new Response(JSON.stringify({ sent, total: aEnviar.length, app: enviadosApp, telefonos: aTelefonos.length, diferidos: empleados.length - permitidos.size }), {

@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1092.0 — Avisos de traslado con todo el pedido y botones Enviar/Rechazar
+
+Pedido del usuario del 2026-09-30: la notificación de un traslado pendiente,
+en la app del teléfono, muestra TODO el pedido (un renglón por producto con su
+cantidad y presentación, el motivo, para qué sala y de cuál) y trae dos
+botones:
+
+- **Enviar todo** — despacha el traslado completo con `despacharTraslado`, la
+  misma función del portal (la edge function aplica los permisos). Pide
+  desbloquear el teléfono. El ticket de la bolsa NO sale desde el teléfono:
+  se reimprime desde la tarjeta en la computadora de la sala (decisión del
+  usuario, elegida sabiendo eso).
+- **Rechazar…** — pregunta el motivo de la MISMA lista cerrada que valida la
+  base; «Otro» pide escribirlo.
+- Tocar el aviso abre esa solicitud.
+
+`send-push-notification` arma el detalle sólo para el canal de la app y sólo
+si el traslado sigue pendiente; si la lectura falla, el aviso sale como antes.
+Cada toque se atiende una vez (despachar dos veces no puede pasar).
+
 ## v2.1091.0 — Avisos nativos en la app del teléfono
 
 Pedido del usuario del 2026-09-29. Los avisos que ya llegaban al navegador

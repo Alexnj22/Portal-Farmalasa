@@ -9,7 +9,7 @@ import StatCard from '../../components/common/StatCard';
 import Notice from '../../components/common/Notice';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
-import LiquidSelect from '../../components/common/LiquidSelect';
+import FilterBar from '../../components/common/FilterBar';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { formatMoney, formatMoneyCorto, formatQty } from '@nucleo/utils/formatNumber';
@@ -156,50 +156,47 @@ export default function TabTablero({ periodo = '30d' }) {
 
     return (
         <div className="p-3 md:p-5 flex flex-col gap-4">
-            {/* ── Filtros ── */}
-            <div className="flex flex-wrap items-center gap-2">
-                <div className="w-full sm:w-56">
-                    <LiquidSelect compact icon={MapPin} value={ruta} placeholder="Todas las rutas" ariaLabel="Filtrar por ruta"
-                        options={(datos?.filtros?.rutas ?? []).map(x => ({ value: x, label: x }))}
-                        onChange={(v) => filtrar('ruta', v)} />
-                </div>
-                <div className="w-full sm:w-56">
-                    <LiquidSelect compact icon={UserRound} value={vendedor} placeholder="Todos los vendedores" ariaLabel="Filtrar por vendedor"
-                        options={(datos?.filtros?.vendedores ?? []).map(v => ({ value: v.id, label: shortEmployeeName(v) }))}
-                        onChange={(v) => filtrar('vendedor', v)} />
-                </div>
-                {hayFiltro && (
-                    <Button size="sm" variant="ghost" icon={X} onClick={() => setParams(p => { p.delete('ruta'); p.delete('vendedor'); return p; }, { replace: true })}>
-                        Quitar filtros
-                    </Button>
-                )}
-                <div className="sm:ml-auto flex items-center gap-2 text-caption text-content-3">
-                    <span>{fechaNumerica(desde)}{desde !== hasta ? ` – ${fechaNumerica(hasta)}` : ''}</span>
-                    {actualizado && <span className="hidden md:inline">· al {hora12(actualizado)}</span>}
-                    <Button size="sm" variant="ghost" iconOnly icon={RefreshCw} title="Actualizar" onClick={cargar} disabled={cargando} />
+            {/* ── Indicadores y filtros ── */}
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <CarrilCards className="flex-1" ariaLabel="Indicadores del período">
+                    <StatCard icon={Wallet} label="Ventas" value={formatMoney(num(r.ventas))} loading={cargando}
+                        iconBg="bg-brand/10" iconCls="text-brand-text" sub={<Variacion actual={r.ventas} antes={a.ventas} />} />
+                    <StatCard icon={Receipt} label="Documentos" value={formatQty(num(r.documentos))} loading={cargando}
+                        sub={<Variacion actual={r.documentos} antes={a.documentos} />} />
+                    <StatCard icon={ShoppingBasket} label="Ticket promedio" value={formatMoney(num(r.ticket))} loading={cargando}
+                        sub={<Variacion actual={r.ticket} antes={a.ticket} />} />
+                    <StatCard icon={Users} label="Clientes que compraron" value={formatQty(num(r.clientes))} loading={cargando}
+                        sub={<Variacion actual={r.clientes} antes={a.clientes} />} />
+                    <StatCard icon={Package} label="Unidades" value={formatQty(num(r.unidades))} loading={cargando} sub="Vendidas en el período" />
+                    <StatCard icon={ClipboardList} label="Preventas por facturar" value={formatMoney(num(datos?.preventas?.monto))} loading={cargando}
+                        iconBg="bg-warning/10" iconCls="text-warning-text" sub={`${formatQty(num(datos?.preventas?.total))} pendientes · ver`}
+                        onClick={() => navigate(rutaSeccion('pedidos', 'vista=pendientes'))} />
+                </CarrilCards>
+                <div className="flex justify-end min-w-0">
+                    <FilterBar onClear={() => setParams(p => { p.delete('ruta'); p.delete('vendedor'); return p; }, { replace: true })}
+                        activeCount={(ruta ? 1 : 0) + (vendedor ? 1 : 0)}
+                        acciones={[{ key: 'actualizar', icon: RefreshCw, label: 'Actualizar', soloIcono: true, disabled: cargando, onClick: cargar }]}>
+                        <FilterBar.Section active={!!ruta} onClear={() => filtrar('ruta', null)} label="ruta">
+                            <FilterBar.Opciones label="Ruta" icon={MapPin} value={ruta} onChange={(v) => filtrar('ruta', v)} umbral={1} ancho="150px"
+                                placeholder="Rutas" options={(datos?.filtros?.rutas ?? []).map(x => ({ value: x, label: x }))} />
+                        </FilterBar.Section>
+                        <FilterBar.Section active={!!vendedor} onClear={() => filtrar('vendedor', null)} label="vendedor">
+                            <FilterBar.Opciones label="Vendedor" icon={UserRound} value={vendedor} onChange={(v) => filtrar('vendedor', v)} umbral={1} ancho="170px"
+                                placeholder="Vendedores" options={(datos?.filtros?.vendedores ?? []).map(v => ({ value: v.id, label: shortEmployeeName(v) }))} />
+                        </FilterBar.Section>
+                    </FilterBar>
                 </div>
             </div>
 
+            <p className="text-caption text-content-3 -mt-2">
+                {fechaNumerica(desde)}{desde !== hasta ? ` – ${fechaNumerica(hasta)}` : ''}
+                {actualizado && <span className="hidden md:inline"> · al {hora12(actualizado)}</span>}
+            </p>
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
             {sinVentas && (
                 <Notice variant="info" compact>No hay ventas en este período{hayFiltro ? ' con esos filtros' : ''}. Prueba con un período más largo.</Notice>
             )}
 
-            {/* ── Indicadores ── */}
-            <CarrilCards ariaLabel="Indicadores del período">
-                <StatCard icon={Wallet} label="Ventas" value={formatMoney(num(r.ventas))} loading={cargando}
-                    iconBg="bg-brand/10" iconCls="text-brand-text" sub={<Variacion actual={r.ventas} antes={a.ventas} />} />
-                <StatCard icon={Receipt} label="Documentos" value={formatQty(num(r.documentos))} loading={cargando}
-                    sub={<Variacion actual={r.documentos} antes={a.documentos} />} />
-                <StatCard icon={ShoppingBasket} label="Ticket promedio" value={formatMoney(num(r.ticket))} loading={cargando}
-                    sub={<Variacion actual={r.ticket} antes={a.ticket} />} />
-                <StatCard icon={Users} label="Clientes que compraron" value={formatQty(num(r.clientes))} loading={cargando}
-                    sub={<Variacion actual={r.clientes} antes={a.clientes} />} />
-                <StatCard icon={Package} label="Unidades" value={formatQty(num(r.unidades))} loading={cargando} sub="Vendidas en el período" />
-                <StatCard icon={ClipboardList} label="Preventas por facturar" value={formatMoney(num(datos?.preventas?.monto))} loading={cargando}
-                    iconBg="bg-warning/10" iconCls="text-warning-text" sub={`${formatQty(num(datos?.preventas?.total))} pendientes · ver`}
-                    onClick={() => navigate(rutaSeccion('pedidos', 'vista=pendientes'))} />
-            </CarrilCards>
 
             {/* ── Tendencia y rutas ── */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">

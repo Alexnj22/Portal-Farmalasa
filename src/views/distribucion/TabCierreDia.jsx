@@ -10,7 +10,8 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
-import LiquidDatePicker from '../../components/common/LiquidDatePicker';
+import FilterBar from '../../components/common/FilterBar';
+import FiltroDia from './FiltroDia';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -113,27 +114,35 @@ export default function TabCierreDia({ emisor }) {
 
     return (
         <div className="p-3 md:p-5 flex flex-col gap-4" data-cierre-dia={cerrado ? 'cerrado' : 'abierto'}>
-            <div className="flex flex-wrap items-end justify-between gap-3">
-                <div className="w-56"><LiquidDatePicker value={fecha} onChange={cambiarFecha} max={hoySV()} /></div>
-                {d && <Button variant="secondary" icon={Printer} onClick={imprimir}>Imprimir cierre</Button>}
+            {/* Resumen a la izquierda, la píldora de filtros a la derecha (DESIGN §17). */}
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                {d ? (
+                    <CarrilCards className="flex-1" ariaLabel="Resumen del día">
+                        <StatCard icon={Receipt} label="Vendido" value={formatMoney(Number(d.ventas.total))} loading={cargando}
+                            iconBg="bg-brand/10" iconCls="text-brand-text"
+                            sub={`${formatQty(Number(d.ventas.documentos))} documentos${Number(d.devoluciones) > 0 ? ` · ${formatMoney(Number(d.devoluciones))} devuelto` : ''}`} />
+                        <StatCard icon={Wallet} label="Efectivo recibido" value={formatMoney(recibido)} loading={cargando}
+                            iconBg="bg-success/10" iconCls="text-success"
+                            sub={`Fondos entregados ${formatMoney(Number(d.fondos))} · gastos ${formatMoney(Number(d.gastos))}`} />
+                        <StatCard icon={Landmark} label="Depositado" value={formatMoney(depositado)} loading={cargando}
+                            iconBg="bg-chart-3/10" iconCls="text-chart-3" sub={`${formatQty(d.depositos.length)} depósitos`} />
+                        <StatCard icon={Scale} label="Queda en caja fuerte" value={formatMoney(queda)} loading={cargando}
+                            iconBg="bg-warning/10" iconCls="text-warning" valueCls={queda < 0 ? 'text-danger-text' : undefined}
+                            sub={Number(d.diferencias) === 0 ? 'Liquidaciones sin diferencia' : `Diferencias ${formatMoney(Number(d.diferencias))}`} />
+                    </CarrilCards>
+                ) : <div className="flex-1" />}
+                <div className="flex justify-end min-w-0">
+                    <FilterBar onClear={() => cambiarFecha('')} activeCount={fecha !== hoySV() ? 1 : 0}
+                        acciones={d ? [{ key: 'imprimir', icon: Printer, label: 'Imprimir cierre', onClick: imprimir }] : []}>
+                        <FilterBar.Section active={fecha !== hoySV()} onClear={() => cambiarFecha('')} label="fecha">
+                            <FiltroDia fecha={fecha} onChange={cambiarFecha} />
+                        </FilterBar.Section>
+                    </FilterBar>
+                </div>
             </div>
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
 
             {d && (<>
-                <CarrilCards ariaLabel="Resumen del día">
-                    <StatCard icon={Receipt} label="Vendido" value={formatMoney(Number(d.ventas.total))} loading={cargando}
-                        iconBg="bg-brand/10" iconCls="text-brand-text"
-                        sub={`${formatQty(Number(d.ventas.documentos))} documentos${Number(d.devoluciones) > 0 ? ` · ${formatMoney(Number(d.devoluciones))} devuelto` : ''}`} />
-                    <StatCard icon={Wallet} label="Efectivo recibido" value={formatMoney(recibido)} loading={cargando}
-                        iconBg="bg-success/10" iconCls="text-success"
-                        sub={`Fondos entregados ${formatMoney(Number(d.fondos))} · gastos ${formatMoney(Number(d.gastos))}`} />
-                    <StatCard icon={Landmark} label="Depositado" value={formatMoney(depositado)} loading={cargando}
-                        iconBg="bg-chart-3/10" iconCls="text-chart-3" sub={`${formatQty(d.depositos.length)} depósitos`} />
-                    <StatCard icon={Scale} label="Queda en caja fuerte" value={formatMoney(queda)} loading={cargando}
-                        iconBg="bg-warning/10" iconCls="text-warning" valueCls={queda < 0 ? 'text-danger-text' : undefined}
-                        sub={Number(d.diferencias) === 0 ? 'Liquidaciones sin diferencia' : `Diferencias ${formatMoney(Number(d.diferencias))}`} />
-                </CarrilCards>
-
                 {d.pendientes > 0 && (
                     <Notice variant="warning" icon={AlertTriangle} data-testid="cierre-pendientes">
                         {d.pendientes === 1 ? 'Falta 1 vendedor por liquidar' : `Faltan ${d.pendientes} vendedores por liquidar`}: el día se cierra cuando todos entregaron.

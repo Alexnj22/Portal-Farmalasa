@@ -444,8 +444,8 @@ test('tablero: indicadores, filtros por ruta y período en la dirección, y «Ve
     // Tocar una ruta filtra todo el tablero, y queda en la dirección.
     await page.getByRole('button', { name: /Ruta 3 — La Palma/ }).first().click();
     await expect(page).toHaveURL(/ruta=Ruta/);
-    await expect(page.getByRole('button', { name: 'Quitar filtros' })).toBeVisible();
-    await page.getByRole('button', { name: 'Quitar filtros' }).click();
+    await expect(page.getByRole('button', { name: 'Quitar ruta' })).toBeVisible();
+    await page.getByRole('button', { name: 'Quitar ruta' }).click();
     await expect(page).not.toHaveURL(/ruta=/);
     // El período también vive en la dirección.
     await page.getByRole('tab', { name: '7 días' }).click();
@@ -732,7 +732,7 @@ test('utilidad: venta contra costo, agrupar por cliente en la dirección, y sin 
     await expect(page.getByText('Venta y utilidad por día')).toBeVisible();
     await expect(page.locator('section[aria-label="Utilidad por día"] .recharts-surface').first()).toBeVisible({ timeout: 15_000 });
     await page.screenshot({ path: `${SALIDA}/utilidad.png`, fullPage: true });
-    await page.getByRole('combobox', { name: 'Agrupar' }).click();
+    await page.getByRole('combobox').filter({ hasText: 'Por producto' }).click();
     await page.getByRole('option', { name: 'Por cliente' }).click();
     await expect(page).toHaveURL(/agrupar=cliente/);
     await expect(page.getByText('FARMACIA LA PALMA').first()).toBeVisible();
@@ -842,7 +842,8 @@ test('libros de ventas: contribuyentes y consumidor final con el archivo de las 
     let filas = fs.readFileSync(await d.path(), 'utf8').replace(/^﻿/, '').split('\r\n');
     expect(filas[0].split(';')).toHaveLength(20);
     expect(filas[0].split(';')[1]).toBe('4');
-    await page.getByRole('radio', { name: 'Consumidor final' }).click();
+    await page.getByRole('combobox').filter({ hasText: 'Contribuyentes' }).click();
+    await page.getByRole('option', { name: 'Consumidor final' }).click();
     await expect(page).toHaveURL(/libro=consumidor/);
     await expect(page.getByText('IVA contenido')).toBeVisible();
     [d] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Descargar CSV' }).click()]);

@@ -138,7 +138,7 @@ export default function ClienteModal({ cliente, emisorId, puedeEditar, onClose, 
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <span className="text-caption font-bold text-content-2 block mb-1.5">Tipo de cliente</span>
+                            <span className={rotuloCampo()}>Tipo de cliente</span>
                             <LiquidSelect value={f.tipo} onChange={(v) => set('tipo', v || 'tienda')} options={TIPO_CLIENTE}
                                 clearable={false} disabled={ro} />
                             {soloVentaLibre(f.tipo) && (
@@ -161,7 +161,7 @@ export default function ClienteModal({ cliente, emisorId, puedeEditar, onClose, 
                         <p className="text-body-sm font-bold text-content mb-2">Datos fiscales</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                                <span className="text-caption font-bold text-content-2 block mb-1.5">Documento</span>
+                                <span className={rotuloCampo()}>Documento</span>
                                 <LiquidSelect value={f.tipo_documento} onChange={(v) => set('tipo_documento', v || '13')}
                                     options={DOC_IDENTIDAD} clearable={false} disabled={ro} />
                             </div>
@@ -179,7 +179,7 @@ export default function ClienteModal({ cliente, emisorId, puedeEditar, onClose, 
                                     label="Gran contribuyente (nos retiene el 1%)" />
                             </div>
                             <div className="sm:col-span-2">
-                                <span className="text-caption font-bold text-content-2 block mb-1.5">Actividad económica</span>
+                                <span className={rotuloCampo()}>Actividad económica</span>
                                 <LiquidSelect value={f.cod_actividad}
                                     onChange={(v) => { const a = actividades.find(x => x.value === v); setF(p => ({ ...p, cod_actividad: v || '', desc_actividad: a?.desc ?? '' })); }}
                                     options={actividades} placeholder={actividades.length ? 'Buscar actividad…' : 'Cargando catálogo…'}
@@ -217,7 +217,7 @@ export default function ClienteModal({ cliente, emisorId, puedeEditar, onClose, 
                             <PortalInput label="Autorización de la SRS" name="licencia_srs" value={f.licencia_srs} readOnly={ro}
                                 helperText="Sin licencia vigente no se le vende." onChange={(e) => set('licencia_srs', e.target.value)} />
                             <div>
-                                <span className="text-caption font-bold text-content-2 block mb-1.5">Vence</span>
+                                <span className={rotuloCampo()}>Vence</span>
                                 {ro
                                     ? <p className="text-body-sm text-content-2">{f.licencia_srs_vence ? fechaNumerica(f.licencia_srs_vence) : '—'}</p>
                                     : <LiquidDatePicker value={f.licencia_srs_vence} onChange={(v) => set('licencia_srs_vence', v || '')} />}

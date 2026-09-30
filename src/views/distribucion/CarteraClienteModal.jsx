@@ -6,6 +6,7 @@ import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Interruptor from './Interruptor';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -262,7 +263,7 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
                                             hasError={aC(n) > aC(saldo)} onChange={(e) => setMonto(e.target.value.replace(/[^0-9.]/g, ''))} />
                                     )}
                                     <div className="flex flex-col gap-1.5">
-                                        <span className="text-micro font-bold uppercase tracking-wide text-content-3 px-1">Forma de pago</span>
+                                        <span className={rotuloCampo()}>Forma de pago</span>
                                         <LiquidSelect value={forma} options={FORMAS_COBRO} clearable={false} icon={Wallet} ariaLabel="Forma de pago"
                                             onChange={(v) => { setForma(v || '01'); setRecibido(''); }} />
                                     </div>

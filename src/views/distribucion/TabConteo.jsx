@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { ClipboardCheck, PlayCircle, Lock, Ban, Loader2, CheckCircle2, AlertTriangle, PackageMinus, Check, X, Search } from 'lucide-react';
+import { ClipboardCheck, PlayCircle, Lock, Ban, Loader2, CheckCircle2, AlertTriangle, PackageMinus, Check, X, Search, ListFilter } from 'lucide-react';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import Badge from '../../components/common/Badge';
@@ -7,7 +7,8 @@ import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
 import LiquidSelect from '../../components/common/LiquidSelect';
-import SegmentedControl from '../../components/common/SegmentedControl';
+import FilterBar from '../../components/common/FilterBar';
+import Campo from './Campo';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import useBorrador from '@nucleo/hooks/useBorrador';
@@ -165,16 +166,28 @@ export default function TabConteo({ puedeVender, puedeConfigurar, buscar }) {
     return (
         <div className="p-5 md:p-6 space-y-5">
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
-            <CarrilCards ariaLabel="Resumen de conteo y bajas">
-                <StatCard icon={ClipboardCheck} label="Conteo" value={conteo ? `${formatQty(contados)} / ${formatQty(total)}` : 'Sin abrir'} loading={cargando}
-                    iconBg="bg-brand/10" iconCls="text-brand-text" sub={conteo ? 'lotes contados' : 'Nadie está contando'} />
-                {conteo?.ve_sistema && (
-                    <StatCard icon={AlertTriangle} label="Diferencias" value={formatQty(dif.conDif)} loading={cargando}
-                        iconBg="bg-warning/10" iconCls="text-warning" sub={`faltante ${formatMoney(dif.faltante)} · sobrante ${formatMoney(dif.sobrante)}`} />
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de conteo y bajas">
+                    <StatCard icon={ClipboardCheck} label="Conteo" value={conteo ? `${formatQty(contados)} / ${formatQty(total)}` : 'Sin abrir'} loading={cargando}
+                        iconBg="bg-brand/10" iconCls="text-brand-text" sub={conteo ? 'lotes contados' : 'Nadie está contando'} />
+                    {conteo?.ve_sistema && (
+                        <StatCard icon={AlertTriangle} label="Diferencias" value={formatQty(dif.conDif)} loading={cargando}
+                            iconBg="bg-warning/10" iconCls="text-warning" sub={`faltante ${formatMoney(dif.faltante)} · sobrante ${formatMoney(dif.sobrante)}`} />
+                    )}
+                    <StatCard icon={PackageMinus} label="Bajas por aprobar" value={formatQty(pendientes.length)} loading={cargando}
+                        iconBg="bg-danger/10" iconCls="text-danger" sub={`aprobadas: ${formatMoney(valorBajas)} al costo`} />
+                </CarrilCards>
+                {conteo && (
+                    <div className="flex justify-end min-w-0">
+                        <FilterBar onClear={() => setSoloSinContar(false)} activeCount={soloSinContar ? 1 : 0}>
+                            <FilterBar.Section active={soloSinContar} onClear={() => setSoloSinContar(false)} label="lotes">
+                                <FilterBar.Opciones label="Lotes" icon={ListFilter} value={soloSinContar ? 'sin' : 'todos'} onChange={(v) => setSoloSinContar(v === 'sin')}
+                                    options={[{ value: 'todos', label: 'Todos' }, { value: 'sin', label: 'Sin contar' }]} />
+                            </FilterBar.Section>
+                        </FilterBar>
+                    </div>
                 )}
-                <StatCard icon={PackageMinus} label="Bajas por aprobar" value={formatQty(pendientes.length)} loading={cargando}
-                    iconBg="bg-danger/10" iconCls="text-danger" sub={`aprobadas: ${formatMoney(valorBajas)} al costo`} />
-            </CarrilCards>
+            </div>
 
             {/* ── Conteo ── */}
             <section data-surface="card" className="p-4 flex flex-col gap-3" aria-label="Conteo físico" data-conteo={conteo ? 'abierto' : 'ninguno'}>
@@ -190,10 +203,6 @@ export default function TabConteo({ puedeVender, puedeConfigurar, buscar }) {
                 ) : <p className="text-caption text-content-3">No hay conteo abierto. Lo inicia quien administra.</p>)}
                 {conteo && (<>
                     {!conteo.ve_sistema && <Notice variant="info" compact>Cuenta lo que hay en cada lote. No se muestra lo que dice el sistema, a propósito.</Notice>}
-                    <div className="flex flex-wrap items-center gap-2">
-                        <SegmentedControl value={soloSinContar ? 'sin' : 'todos'} onChange={(v) => setSoloSinContar(v === 'sin')} size="sm"
-                            options={[{ value: 'todos', label: 'Todos' }, { value: 'sin', label: 'Sin contar' }]} />
-                    </div>
                     {items.length === 0 ? (
                         <p className="text-caption text-content-3 flex items-center gap-1.5"><Search size={14} /> {soloSinContar ? 'Todo está contado.' : 'Ningún lote coincide.'}</p>
                     ) : (
@@ -230,15 +239,15 @@ export default function TabConteo({ puedeVender, puedeConfigurar, buscar }) {
                 <h3 className="text-body font-black text-content flex items-center gap-2"><PackageMinus size={16} className="text-danger-text" /> Bajas</h3>
                 {(puedeVender || puedeConfigurar) && (
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
-                        <div className="md:col-span-5">
+                        <Campo label="Lote" className="md:col-span-5">
                             <LiquidSelect value={baja.lote} onChange={(v) => setBaja(b => ({ ...b, lote: v ?? '' }))} placeholder="Lote…" icon={PackageMinus} ariaLabel="Lote de la baja"
                                 options={lotes.map(l => ({ value: String(l.id), label: `${l.nombre} · ${l.lote}`, sublabel: `${l.existencia} unidades${l.vence ? ` · vence ${fechaNumerica(l.vence)}` : ''}` }))} />
-                        </div>
+                        </Campo>
                         <PortalInput label="Unidades" name="unidades-baja" inputMode="numeric" value={baja.unidades} onChange={(e) => setBaja(b => ({ ...b, unidades: e.target.value }))}
                             className="md:col-span-2" hasError={baja.unidades !== '' && (nBaja == null || (loteSel && nBaja > loteSel.existencia))} errorMessage={loteSel ? `Hasta ${loteSel.existencia}` : 'Entero'} />
-                        <div className="md:col-span-2">
+                        <Campo label="Motivo" className="md:col-span-2">
                             <LiquidSelect value={baja.motivo} onChange={(v) => setBaja(b => ({ ...b, motivo: v ?? 'vencido' }))} options={MOTIVOS_BAJA} clearable={false} icon={AlertTriangle} ariaLabel="Motivo" />
-                        </div>
+                        </Campo>
                         <PortalInput label="Qué pasó" name="detalle-baja" value={baja.detalle} onChange={(e) => setBaja(b => ({ ...b, detalle: e.target.value }))} className="md:col-span-3" />
                         <div className="md:col-span-12 flex justify-end">
                             <Button variant="secondary" icon={ocupado === 'baja' ? Loader2 : PackageMinus}

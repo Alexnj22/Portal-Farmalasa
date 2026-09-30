@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-    Wallet, Receipt, HandCoins, Undo2, AlertTriangle, CheckCircle2, Printer, Loader2, Lock, Unlock, FileText, Banknote,
-} from 'lucide-react';
+    Wallet, Receipt, HandCoins, Undo2, AlertTriangle, CheckCircle2, Printer, Loader2, Lock, Unlock, FileText, Banknote, UserRound } from 'lucide-react';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
-import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -25,7 +23,8 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import {
     fetchLiquidacion, fetchLiquidacionesDelDia, cerrarLiquidacion, reabrirLiquidacion, mensajeDeDistribucion, fetchVendedores,
 } from '@nucleo/data/distribucion';
-import LiquidSelect from '../../components/common/LiquidSelect';
+import FilterBar from '../../components/common/FilterBar';
+import FiltroDia from './FiltroDia';
 import CajaDelVendedor from './CajaDelVendedor';
 import { FORMA_PAGO, leerMonto, TIPO_DOCUMENTO } from './comun';
 import { MARCA_PAPEL } from './marca';
@@ -134,28 +133,45 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
     const c = liq?.cierre;
     return (
         <div className="p-3 md:p-5 flex flex-col gap-4">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-                <div className="w-56">
-                    <LiquidDatePicker value={fecha} onChange={(v) => cambiar('fecha', v && v !== hoySV() ? v : '')} max={hoySV()} />
+            {/* Resumen a la izquierda, la píldora de filtros a la derecha (DESIGN §17). */}
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                {liq ? (
+                    <CarrilCards className="flex-1" ariaLabel="Resumen de la liquidación">
+                        <StatCard icon={Receipt} label="Vendido" value={formatMoney(Number(liq.ventas.total))} loading={cargando}
+                            iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(Number(liq.ventas.documentos))} documentos · ${formatMoney(Number(liq.credito))} a crédito`} />
+                        <StatCard icon={HandCoins} label="Cobrado de cartera" value={formatMoney(Number(liq.cobros.total))} loading={cargando}
+                            iconBg="bg-success/10" iconCls="text-success" sub={`${formatQty(liq.cobros.lista.length)} cobros`} />
+                        <StatCard icon={Undo2} label="Devuelto" value={formatMoney(Number(liq.devoluciones.total))} loading={cargando}
+                            iconBg="bg-warning/10" iconCls="text-warning" sub={Number(liq.devoluciones.a_favor) > 0 ? `${formatMoney(Number(liq.devoluciones.a_favor))} a favor de clientes` : 'Notas de crédito'} />
+                        <StatCard icon={Wallet} label="Efectivo a entregar" value={formatMoney(esperado)} loading={cargando}
+                            iconBg="bg-chart-3/10" iconCls="text-chart-3"
+                            sub={Number(liq.efectivo.fondo) > 0 ? `Incluye ${formatMoney(Number(liq.efectivo.fondo))} de fondo de cambio` : `${formatMoney(Number(liq.efectivo.ventas))} ventas + ${formatMoney(Number(liq.efectivo.cobros))} cobros`} />
+                    </CarrilCards>
+                ) : <div className="flex-1" />}
+                <div className="flex justify-end min-w-0">
+                    <FilterBar onClear={() => { cambiar('fecha', ''); cambiar('vendedor', ''); }}
+                        activeCount={(fecha !== hoySV() ? 1 : 0) + (params.get('vendedor') ? 1 : 0)}
+                        acciones={liq ? [{ key: 'imprimir', icon: Printer, label: 'Imprimir liquidación', onClick: imprimir }] : []}>
+                        <FilterBar.Section active={fecha !== hoySV()} onClear={() => cambiar('fecha', '')} label="fecha">
+                            <FiltroDia fecha={fecha} onChange={(d) => cambiar('fecha', d !== hoySV() ? d : '')} />
+                        </FilterBar.Section>
+                        {puedeConfigurar && (
+                            <FilterBar.Section active={!!params.get('vendedor')} onClear={() => cambiar('vendedor', '')} label="vendedor">
+                                <FilterBar.Opciones label="Vendedor" icon={UserRound} umbral={1} ancho="200px"
+                                    value={vendedorId ?? delDia[0]?.id ?? ''} onChange={(v) => cambiar('vendedor', v || '')}
+                                    options={[...delDia, ...vendedores.filter(v => !delDia.some(d => d.id === v.id))]
+                                        .map(v => ({ value: v.id, label: shortEmployeeName(v.name) }))} />
+                            </FilterBar.Section>
+                        )}
+                    </FilterBar>
                 </div>
-                {liq && (
-                    <Button variant="secondary" icon={Printer} onClick={imprimir}>Imprimir liquidación</Button>
-                )}
             </div>
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
 
-            {/* Quien administra: los vendedores del día, con su estado. */}
-            {puedeConfigurar && (
-                <div className="flex flex-wrap gap-2" aria-label="Vendedores del día">
-                    {delDia.length === 0 && !cargando && <p className="text-caption text-content-3">Nadie vendió ni cobró este día.</p>}
-                    {/* En la mañana todavía nadie vendió: para abrirle la caja a alguien. */}
-                    {vendedores.some(v => !delDia.some(d => d.id === v.id)) && (
-                        <div className="w-60">
-                            <LiquidSelect value={delDia.some(d => d.id === vendedorId) ? '' : (vendedorId ?? '')} onChange={(v) => cambiar('vendedor', v || '')}
-                                placeholder="Otro vendedor…" icon={Wallet} ariaLabel="Otro vendedor"
-                                options={vendedores.filter(v => !delDia.some(d => d.id === v.id)).map(v => ({ value: v.id, label: shortEmployeeName(v.name) }))} />
-                        </div>
-                    )}
+            {/* Quien administra: los vendedores del día y su estado —un vistazo,
+                no un filtro: el filtro es la ranura «vendedor» de la píldora—. */}
+            {puedeConfigurar && delDia.length > 0 && (
+                <section data-surface="card" className="p-3 flex flex-wrap gap-2" aria-label="Vendedores del día">
                     {delDia.map(v => {
                         const activo = (vendedorId ?? delDia[0]?.id) === v.id;
                         return (
@@ -173,22 +189,10 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
                             </button>
                         );
                     })}
-                </div>
+                </section>
             )}
 
             {liq && (<>
-                <CarrilCards ariaLabel="Resumen de la liquidación">
-                    <StatCard icon={Receipt} label="Vendido" value={formatMoney(Number(liq.ventas.total))} loading={cargando}
-                        iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(Number(liq.ventas.documentos))} documentos · ${formatMoney(Number(liq.credito))} a crédito`} />
-                    <StatCard icon={HandCoins} label="Cobrado de cartera" value={formatMoney(Number(liq.cobros.total))} loading={cargando}
-                        iconBg="bg-success/10" iconCls="text-success" sub={`${formatQty(liq.cobros.lista.length)} cobros`} />
-                    <StatCard icon={Undo2} label="Devuelto" value={formatMoney(Number(liq.devoluciones.total))} loading={cargando}
-                        iconBg="bg-warning/10" iconCls="text-warning" sub={Number(liq.devoluciones.a_favor) > 0 ? `${formatMoney(Number(liq.devoluciones.a_favor))} a favor de clientes` : 'Notas de crédito'} />
-                    <StatCard icon={Wallet} label="Efectivo a entregar" value={formatMoney(esperado)} loading={cargando}
-                        iconBg="bg-chart-3/10" iconCls="text-chart-3"
-                        sub={Number(liq.efectivo.fondo) > 0 ? `Incluye ${formatMoney(Number(liq.efectivo.fondo))} de fondo de cambio` : `${formatMoney(Number(liq.efectivo.ventas))} ventas + ${formatMoney(Number(liq.efectivo.cobros))} cobros`} />
-                </CarrilCards>
-
                 <CajaDelVendedor liq={liq} fecha={fecha} esHoy={fecha === hoySV()} puedeAdministrar={!!liq.puede_cerrar} onCambio={cargar} />
 
                 {Number(liq.devoluciones.a_favor) > 0 && (

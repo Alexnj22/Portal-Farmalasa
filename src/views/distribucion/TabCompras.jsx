@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ShoppingCart, Plus, Truck, AlertTriangle, Search, Receipt, FilePen, Landmark, Pencil } from 'lucide-react';
 import CarrilCards from '../../components/common/CarrilCards';
+import FilterBar from '../../components/common/FilterBar';
 import StatCard from '../../components/common/StatCard';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -131,23 +132,27 @@ export default function TabCompras({ emisor, puedeConfigurar, buscar, vista = 'r
         <div className="p-3 md:p-5 flex flex-col gap-4">
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
 
-            <CarrilCards ariaLabel="Resumen de compras">
-                <StatCard icon={ShoppingCart} label="Comprado este mes" value={formatMoney(resumen.comprado)} loading={cargando}
-                    iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(resumen.documentos)} documentos recibidos`} />
-                <StatCard icon={Landmark} label="Crédito fiscal del mes" value={formatMoney(resumen.credito)} loading={cargando}
-                    iconBg="bg-success/10" iconCls="text-success" sub="IVA de los Créditos Fiscales" />
-                <StatCard icon={FilePen} label="Borradores" value={formatQty(resumen.borradores)} loading={cargando}
-                    iconBg="bg-warning/10" iconCls="text-warning" sub="Capturados y sin recibir" />
-                <StatCard icon={Truck} label="Proveedores" value={formatQty(proveedores.filter(p => p.activo).length)} loading={cargando}
-                    iconBg="bg-chart-3/10" iconCls="text-chart-3" sub="Activos" />
-            </CarrilCards>
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de compras">
+                    <StatCard icon={ShoppingCart} label="Comprado este mes" value={formatMoney(resumen.comprado)} loading={cargando}
+                        iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(resumen.documentos)} documentos recibidos`} />
+                    <StatCard icon={Landmark} label="Crédito fiscal del mes" value={formatMoney(resumen.credito)} loading={cargando}
+                        iconBg="bg-success/10" iconCls="text-success" sub="IVA de los Créditos Fiscales" />
+                    <StatCard icon={FilePen} label="Borradores" value={formatQty(resumen.borradores)} loading={cargando}
+                        iconBg="bg-warning/10" iconCls="text-warning" sub="Capturados y sin recibir" />
+                    <StatCard icon={Truck} label="Proveedores" value={formatQty(proveedores.filter(p => p.activo).length)} loading={cargando}
+                        iconBg="bg-chart-3/10" iconCls="text-chart-3" sub="Activos" />
+                </CarrilCards>
+                {puedeConfigurar && (
+                    <div className="flex justify-end min-w-0">
+                        <FilterBar acciones={[
+                            { key: 'proveedores', icon: Truck, label: 'Proveedores', variant: 'quiet', onClick: () => setVerProveedores(true) },
+                            { key: 'nueva', icon: Plus, label: 'Nueva compra', variant: 'primary', disabled: !emisor, onClick: () => setAbierta('nueva') },
+                        ]} />
+                    </div>
+                )}
+            </div>
 
-            {puedeConfigurar && (
-                <div className="flex flex-wrap items-center justify-end gap-2">
-                    <Button variant="secondary" icon={Truck} onClick={() => setVerProveedores(true)}>Proveedores</Button>
-                    <Button variant="primary" icon={Plus} onClick={() => setAbierta('nueva')} disabled={!emisor}>Nueva compra</Button>
-                </div>
-            )}
 
             <DataTable
                 columns={COLS}

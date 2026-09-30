@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-    MapPin, ShoppingBag, XCircle, DoorClosed, UserX, HandCoins, Navigation, Loader2, CheckCircle2, Route, ArrowUp, ArrowDown, Save, Plus, Phone, AlertTriangle,
+    MapPin, ShoppingBag, XCircle, UserRound, DoorClosed, UserX, HandCoins, Navigation, Loader2, CheckCircle2, Route, ArrowUp, ArrowDown, Save, Plus, Phone, AlertTriangle,
 } from 'lucide-react';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
@@ -10,7 +10,9 @@ import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
 import LiquidSelect from '../../components/common/LiquidSelect';
-import LiquidDatePicker from '../../components/common/LiquidDatePicker';
+import FilterBar from '../../components/common/FilterBar';
+import FiltroDia from './FiltroDia';
+import Campo from './Campo';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -93,27 +95,34 @@ function Hoy({ puedeConfigurar }) {
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-                <div className="flex flex-wrap items-end gap-2">
-                    <div className="w-52"><LiquidDatePicker value={fecha} onChange={(v) => cambiar('fecha', v && v !== hoySV() ? v : '')} /></div>
-                    {puedeConfigurar && (
-                        <div className="w-60">
-                            <LiquidSelect value={vendedorId ?? ''} onChange={(v) => cambiar('vendedor', v || '')} clearable={false} icon={Route} ariaLabel="Vendedor"
-                                options={vendedores.map(v => ({ value: v.id, label: shortEmployeeName(v.name) }))} placeholder="Vendedor…" />
-                        </div>
-                    )}
+            {/* Avance a la izquierda, la píldora de filtros a la derecha (DESIGN §17). */}
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <CarrilCards className="flex-1" ariaLabel="Avance de la ruta">
+                    <StatCard icon={MapPin} label="Por visitar" value={formatQty(n.total - n.visitados)} loading={cargando}
+                        iconBg="bg-brand/10" iconCls="text-brand-text" sub={`de ${formatQty(n.total)} clientes`} />
+                    <StatCard icon={ShoppingBag} label="Con venta" value={formatQty(n.venta)} loading={cargando}
+                        iconBg="bg-success/10" iconCls="text-success" sub={n.visitados ? `${Math.round((n.venta / n.visitados) * 100)}% de los visitados` : 'Todavía nadie'} />
+                    <StatCard icon={CheckCircle2} label="Visitados" value={formatQty(n.visitados)} loading={cargando}
+                        iconBg="bg-chart-3/10" iconCls="text-chart-3" sub={datos?.fuera_de_ruta ? `+ ${datos.fuera_de_ruta} ventas fuera de ruta` : 'Venta o visita registrada'} />
+                </CarrilCards>
+                <div className="flex justify-end min-w-0">
+                    <FilterBar onClear={() => { cambiar('fecha', ''); cambiar('vendedor', ''); }}
+                        activeCount={(fecha !== hoySV() ? 1 : 0) + (params.get('vendedor') ? 1 : 0)}>
+                        <FilterBar.Section active={fecha !== hoySV()} onClear={() => cambiar('fecha', '')} label="fecha">
+                            <FiltroDia fecha={fecha} max={null} onChange={(d) => cambiar('fecha', d !== hoySV() ? d : '')} />
+                        </FilterBar.Section>
+                        {puedeConfigurar && (
+                            <FilterBar.Section active={!!params.get('vendedor')} onClear={() => cambiar('vendedor', '')} label="vendedor">
+                                <FilterBar.Opciones label="Vendedor" icon={UserRound} umbral={1} ancho="200px"
+                                    value={vendedorId ?? ''} onChange={(v) => cambiar('vendedor', v || '')}
+                                    options={vendedores.map(v => ({ value: v.id, label: shortEmployeeName(v.name) }))} />
+                            </FilterBar.Section>
+                        )}
+                    </FilterBar>
                 </div>
-                {datos?.rutas?.length > 0 && <span className="text-caption text-content-3">{datos.rutas.map(r => r.nombre).join(' · ')}</span>}
             </div>
+            {datos?.rutas?.length > 0 && <p className="text-caption text-content-3">{datos.rutas.map(r => r.nombre).join(' · ')}</p>}
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
-            <CarrilCards ariaLabel="Avance de la ruta">
-                <StatCard icon={MapPin} label="Por visitar" value={formatQty(n.total - n.visitados)} loading={cargando}
-                    iconBg="bg-brand/10" iconCls="text-brand-text" sub={`de ${formatQty(n.total)} clientes`} />
-                <StatCard icon={ShoppingBag} label="Con venta" value={formatQty(n.venta)} loading={cargando}
-                    iconBg="bg-success/10" iconCls="text-success" sub={n.visitados ? `${Math.round((n.venta / n.visitados) * 100)}% de los visitados` : 'Todavía nadie'} />
-                <StatCard icon={CheckCircle2} label="Visitados" value={formatQty(n.visitados)} loading={cargando}
-                    iconBg="bg-chart-3/10" iconCls="text-chart-3" sub={datos?.fuera_de_ruta ? `+ ${datos.fuera_de_ruta} ventas fuera de ruta` : 'Venta o visita registrada'} />
-            </CarrilCards>
             {!cargando && clientes.length === 0 && (
                 <Notice variant="info" icon={Route}>
                     {datos?.rutas?.length ? 'Las rutas de este día no tienen clientes.' : 'Este día no tiene rutas asignadas.'}
@@ -233,10 +242,10 @@ function Armar() {
                     {error && <Notice variant="danger" bloque>{error}</Notice>}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <PortalInput label="Nombre" name="nombre-ruta" value={sel.nombre} onChange={(e) => setSel(s => ({ ...s, nombre: e.target.value }))} />
-                        <div>
+                        <Campo label="Vendedor">
                             <LiquidSelect value={sel.vendedorId} onChange={(v) => setSel(s => ({ ...s, vendedorId: v ?? '' }))} icon={Route} ariaLabel="Vendedor de la ruta"
                                 options={vendedores.map(v => ({ value: v.id, label: shortEmployeeName(v.name) }))} placeholder="Vendedor…" clearLabel="Sin vendedor" />
-                        </div>
+                        </Campo>
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Días de visita">
                         <span className="text-caption text-content-3 mr-1">Se visita:</span>

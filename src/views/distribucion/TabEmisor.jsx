@@ -3,6 +3,7 @@ import { Building2, Save, Loader2, KeyRound, FlaskConical, AlertTriangle } from 
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import PortalInput from '../../components/common/PortalInput';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import Interruptor from './Interruptor';
@@ -144,7 +145,7 @@ export default function TabEmisor({ emisor, puedeConfigurar, onGuardado }) {
                             label="Gran contribuyente (percibe el 1%)" />
                     </div>
                     <div className="sm:col-span-2">
-                        <span className="text-caption font-bold text-content-2 block mb-1.5">Actividad económica</span>
+                        <span className={rotuloCampo()}>Actividad económica</span>
                         <LiquidSelect value={f.cod_actividad} options={actividades} disabled={ro || !actividades.length}
                             placeholder={actividades.length ? 'Buscar actividad…' : 'Cargando catálogo…'}
                             onChange={(v) => { const a = actividades.find(x => x.value === v); setF(p => ({ ...p, cod_actividad: v || '', desc_actividad: a?.desc ?? '' })); }} />
@@ -183,7 +184,7 @@ export default function TabEmisor({ emisor, puedeConfigurar, onGuardado }) {
                         hasError={!!errores.punto_venta} errorMessage={errores.punto_venta}
                         onChange={(e) => set('punto_venta', e.target.value.toUpperCase())} />
                     <div>
-                        <span className="text-caption font-bold text-content-2 block mb-1.5">Tipo de establecimiento</span>
+                        <span className={rotuloCampo()}>Tipo de establecimiento</span>
                         <LiquidSelect value={f.tipo_establecimiento} options={TIPO_ESTABLECIMIENTO} clearable={false} disabled={ro}
                             onChange={(v) => set('tipo_establecimiento', v || '04')} />
                     </div>
@@ -196,7 +197,7 @@ export default function TabEmisor({ emisor, puedeConfigurar, onGuardado }) {
                         onChange={(e) => set('cod_punto_venta_mh', e.target.value.toUpperCase())} />
                 </div>
                 <div>
-                    <span className="text-caption font-bold text-content-2 block mb-1.5">Ambiente</span>
+                    <span className={rotuloCampo()}>Ambiente</span>
                     <SegmentedControl value={f.ambiente} onChange={(v) => set('ambiente', v)} disabled={ro}
                         options={[{ value: '00', label: 'Pruebas' }, { value: '01', label: 'Producción' }]} />
                 </div>

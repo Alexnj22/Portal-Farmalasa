@@ -6,7 +6,6 @@ import StatCard from '../../components/common/StatCard';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
-import LiquidSelect from '../../components/common/LiquidSelect';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
@@ -24,7 +23,7 @@ import { armarPaqueteDelMes } from './paquete';
 import { descargarArchivo } from '@plataforma/descargas';
 import { registrarEgreso } from '@nucleo/data/egreso';
 import { csvRetencionVentas, CSV_RET_VENTAS_HEADERS } from '@nucleo/utils/libroIva';
-import SegmentedControl from '../../components/common/SegmentedControl';
+import FilterBar from '../../components/common/FilterBar';
 import { PERIODOS, rangoDe } from './comun';
 import { TIPOS_COMPRA } from './compras';
 import {
@@ -108,25 +107,33 @@ function ReporteUtilidad({ buscar }) {
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-end gap-2">
-                <div className="w-52"><LiquidSelect value={periodo} onChange={(v) => setPeriodo(v || '30d')} clearable={false} icon={CalendarRange}
-                    options={PERIODOS.map(p => ({ value: p.key, label: p.label }))} ariaLabel="Período" /></div>
-                <div className="w-52"><LiquidSelect value={agrupar} onChange={(v) => setAgrupar(v || 'producto')} clearable={false} icon={Layers}
-                    options={AGRUPAR_UTILIDAD} ariaLabel="Agrupar" /></div>
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de la utilidad">
+                    <StatCard icon={Receipt} label="Venta sin IVA" value={formatMoney(venta)} loading={cargando}
+                        iconBg="bg-brand/10" iconCls="text-brand-text"
+                        sub={`${formatQty(Number(r.documentos ?? 0))} documentos${Number(r.devuelto) > 0 ? ` · ${formatMoney(Number(r.devuelto))} devuelto` : ''}`} />
+                    <StatCard icon={Coins} label="Costo de lo vendido" value={formatMoney(costo)} loading={cargando}
+                        iconBg="bg-chart-3/10" iconCls="text-chart-3" sub="Al costo del día de la venta" />
+                    <StatCard icon={TrendingUp} label="Utilidad bruta" value={formatMoney(venta - costo)} loading={cargando}
+                        iconBg="bg-success/10" iconCls="text-success" valueCls={venta - costo < 0 ? 'text-danger-text' : undefined} sub="Venta menos costo" />
+                    <StatCard icon={Percent} label="Margen" value={margen(venta, costo) === null ? '—' : `${margen(venta, costo).toFixed(1)}%`} loading={cargando}
+                        iconBg="bg-warning/10" iconCls="text-warning" sub="Sobre la venta sin IVA" />
+                </CarrilCards>
+                <div className="flex justify-end min-w-0">
+                    <FilterBar onClear={() => { setPeriodo('30d'); setAgrupar('producto'); }} activeCount={(periodo !== '30d' ? 1 : 0) + (agrupar !== 'producto' ? 1 : 0)}>
+                        <FilterBar.Section active={periodo !== '30d'} onClear={() => setPeriodo('30d')} label="período">
+                            <FilterBar.Opciones label="Período" icon={CalendarRange} value={periodo} onChange={(v) => setPeriodo(v || '30d')}
+                                options={PERIODOS.map(p => ({ value: p.key, label: p.label }))} ancho="170px" />
+                        </FilterBar.Section>
+                        <FilterBar.Section active={agrupar !== 'producto'} onClear={() => setAgrupar('producto')} label="agrupar">
+                            <FilterBar.Opciones label="Agrupar" icon={Layers} value={agrupar} onChange={(v) => setAgrupar(v || 'producto')}
+                                options={AGRUPAR_UTILIDAD} ancho="170px" />
+                        </FilterBar.Section>
+                    </FilterBar>
+                </div>
             </div>
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
 
-            <CarrilCards ariaLabel="Resumen de la utilidad">
-                <StatCard icon={Receipt} label="Venta sin IVA" value={formatMoney(venta)} loading={cargando}
-                    iconBg="bg-brand/10" iconCls="text-brand-text"
-                    sub={`${formatQty(Number(r.documentos ?? 0))} documentos${Number(r.devuelto) > 0 ? ` · ${formatMoney(Number(r.devuelto))} devuelto` : ''}`} />
-                <StatCard icon={Coins} label="Costo de lo vendido" value={formatMoney(costo)} loading={cargando}
-                    iconBg="bg-chart-3/10" iconCls="text-chart-3" sub="Al costo del día de la venta" />
-                <StatCard icon={TrendingUp} label="Utilidad bruta" value={formatMoney(venta - costo)} loading={cargando}
-                    iconBg="bg-success/10" iconCls="text-success" valueCls={venta - costo < 0 ? 'text-danger-text' : undefined} sub="Venta menos costo" />
-                <StatCard icon={Percent} label="Margen" value={margen(venta, costo) === null ? '—' : `${margen(venta, costo).toFixed(1)}%`} loading={cargando}
-                    iconBg="bg-warning/10" iconCls="text-warning" sub="Sobre la venta sin IVA" />
-            </CarrilCards>
 
             {!cargando && Number(r.sin_costo) > 0 && (
                 <Notice variant="warning" icon={AlertTriangle}>
@@ -189,6 +196,7 @@ function ReporteUtilidad({ buscar }) {
 function LibroCompras({ buscar }) {
     const meses = useMemo(() => mesesRecientes(13), []);
     const [mes, setMes] = usePestanaEnUrl(meses, meses[0].key, 'mes');
+    const paquete = usePaquete(mes);
     const [filas, setFilas] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState('');
@@ -222,23 +230,29 @@ function LibroCompras({ buscar }) {
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-end gap-2">
-                <div className="w-60"><LiquidSelect value={mes} onChange={(v) => setMes(v || meses[0].key)} clearable={false} icon={CalendarRange}
-                    options={meses.map(m => ({ value: m.key, label: m.label }))} ariaLabel="Mes" /></div>
-                <Button variant="secondary" icon={Download} onClick={exportar} disabled={cargando || t.documentos === 0}>Descargar CSV</Button>
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <CarrilCards className="flex-1" ariaLabel="Totales del libro de compras">
+                    <StatCard icon={BookOpen} label="Compras gravadas" value={formatMoney(t.gravada)} loading={cargando}
+                        iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(t.documentos)} Créditos Fiscales`} />
+                    <StatCard icon={Landmark} label="Crédito fiscal" value={formatMoney(t.iva)} loading={cargando}
+                        iconBg="bg-success/10" iconCls="text-success" sub="IVA acreditable del mes" />
+                    <StatCard icon={Percent} label="Percepción" value={formatMoney(t.percepcion)} loading={cargando}
+                        iconBg="bg-warning/10" iconCls="text-warning" sub="Anticipo a cuenta de IVA" />
+                    <StatCard icon={Receipt} label="Total" value={formatMoney(t.total)} loading={cargando}
+                        iconBg="bg-chart-3/10" iconCls="text-chart-3" sub={t.exenta ? `${formatMoney(t.exenta)} exento` : 'Con IVA y percepción'} />
+                </CarrilCards>
+                <div className="flex justify-end min-w-0">
+                    <FilterBar onClear={() => setMes(meses[0].key)} activeCount={mes !== meses[0].key ? 1 : 0}
+                        acciones={[{ key: 'csv', icon: Download, label: 'Descargar CSV', onClick: exportar, disabled: cargando || t.documentos === 0 }, paquete]}>
+                        <FilterBar.Section active={mes !== meses[0].key} onClear={() => setMes(meses[0].key)} label="mes">
+                            <FilterBar.Opciones label="Mes" icon={CalendarRange} value={mes} onChange={(v) => setMes(v || meses[0].key)}
+                                options={meses.map(m => ({ value: m.key, label: m.label }))} umbral={1} ancho="180px" />
+                        </FilterBar.Section>
+                    </FilterBar>
+                </div>
             </div>
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
 
-            <CarrilCards ariaLabel="Totales del libro de compras">
-                <StatCard icon={BookOpen} label="Compras gravadas" value={formatMoney(t.gravada)} loading={cargando}
-                    iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(t.documentos)} Créditos Fiscales`} />
-                <StatCard icon={Landmark} label="Crédito fiscal" value={formatMoney(t.iva)} loading={cargando}
-                    iconBg="bg-success/10" iconCls="text-success" sub="IVA acreditable del mes" />
-                <StatCard icon={Percent} label="Percepción" value={formatMoney(t.percepcion)} loading={cargando}
-                    iconBg="bg-warning/10" iconCls="text-warning" sub="Anticipo a cuenta de IVA" />
-                <StatCard icon={Receipt} label="Total" value={formatMoney(t.total)} loading={cargando}
-                    iconBg="bg-chart-3/10" iconCls="text-chart-3" sub={t.exenta ? `${formatMoney(t.exenta)} exento` : 'Con IVA y percepción'} />
-            </CarrilCards>
             {!cargando && fuera > 0 && (
                 <Notice variant="info" icon={Info}>
                     {fuera} compra{fuera === 1 ? '' : 's'} con Factura o Sujeto excluido se listan abajo pero no entran al libro: no dan crédito fiscal.
@@ -297,6 +311,7 @@ const COLS_ANULADOS = [
 function LibrosVentas({ buscar }) {
     const meses = useMemo(() => mesesRecientes(13), []);
     const [mes, setMes] = usePestanaEnUrl(meses, meses[0].key, 'mes');
+    const paquete = usePaquete(mes);
     const [libro, setLibro] = usePestanaEnUrl(LIBROS_VENTAS, 'contribuyente', 'libro');
     const [datos, setDatos] = useState(null);
     const [cargando, setCargando] = useState(true);
@@ -333,13 +348,41 @@ function LibrosVentas({ buscar }) {
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-                <SegmentedControl value={libro} onChange={setLibro} options={LIBROS_VENTAS.map(l => ({ value: l.key, label: l.label, icon: l.icon }))} />
-                <div className="flex flex-wrap items-center gap-2">
-                    <div className="w-60"><LiquidSelect value={mes} onChange={(v) => setMes(v || meses[0].key)} clearable={false} icon={CalendarRange}
-                        options={meses.map(m => ({ value: m.key, label: m.label }))} ariaLabel="Mes" /></div>
-                    <Button variant="secondary" icon={Download} onClick={exportar} disabled={cargando || !(datos?.[libro]?.length)}>Descargar CSV</Button>
-                    <BotonPaquete mes={mes} />
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <CarrilCards className="flex-1" key={libro} ariaLabel={`Totales del libro: ${LIBROS_VENTAS.find(l => l.key === libro)?.label ?? ''}`}>
+                    {libro === 'contribuyente' ? (<>
+                            <StatCard icon={Receipt} label="Ventas gravadas" value={formatMoney(tc.gravadas)} loading={cargando}
+                                iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(tc.documentos)} Créditos Fiscales${tc.notas ? ` · ${formatQty(tc.notas)} notas restan` : ''}`} />
+                            <StatCard icon={Landmark} label="Débito fiscal" value={formatMoney(tc.debito)} loading={cargando}
+                                iconBg="bg-success/10" iconCls="text-success" sub="IVA 13 % neto de notas" />
+                            <StatCard icon={Percent} label="IVA percibido" value={formatMoney(tc.percibido)} loading={cargando}
+                                iconBg="bg-warning/10" iconCls="text-warning" sub="Percepción 1 %" />
+                            <StatCard icon={Percent} label="IVA retenido" value={formatMoney(tc.retenido)} loading={cargando}
+                                iconBg="bg-chart-3/10" iconCls="text-chart-3" sub="No va en el libro: en la declaración" />
+                    </>) : libro === 'consumidor' ? (<>
+                            <StatCard icon={Receipt} label="Ventas del mes" value={formatMoney(tf.total)} loading={cargando}
+                                iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(tf.documentos)} Facturas en ${formatQty(tf.dias)} días`} />
+                            <StatCard icon={Landmark} label="IVA contenido" value={formatMoney(tf.debito)} loading={cargando}
+                                iconBg="bg-success/10" iconCls="text-success" sub="Débito fiscal de consumidor final" />
+                            <StatCard icon={Receipt} label="Exentas" value={formatMoney(tf.exentas)} loading={cargando}
+                                iconBg="bg-chart-3/10" iconCls="text-chart-3" sub="Ventas exentas" />
+                    </>) : (
+                        <StatCard icon={FileX2} label="Documentos anulados" value={formatQty(filas.length)} loading={cargando}
+                            iconBg="bg-danger/10" iconCls="text-danger" sub="Invalidados en el mes" />
+                    )}
+                </CarrilCards>
+                <div className="flex justify-end min-w-0">
+                    <FilterBar onClear={() => { setMes(meses[0].key); setLibro('contribuyente'); }} activeCount={mes !== meses[0].key ? 1 : 0}
+                        acciones={[{ key: 'csv', icon: Download, label: 'Descargar CSV', onClick: exportar, disabled: cargando || !(datos?.[libro]?.length) }, paquete]}>
+                        <FilterBar.Section label="libro">
+                            <FilterBar.Opciones label="Libro" icon={BookOpen} value={libro} onChange={(v) => setLibro(v || 'contribuyente')}
+                                options={LIBROS_VENTAS.map(l => ({ value: l.key, label: l.label, icon: l.icon }))} umbral={1} ancho="190px" />
+                        </FilterBar.Section>
+                        <FilterBar.Section active={mes !== meses[0].key} onClear={() => setMes(meses[0].key)} label="mes">
+                            <FilterBar.Opciones label="Mes" icon={CalendarRange} value={mes} onChange={(v) => setMes(v || meses[0].key)}
+                                options={meses.map(m => ({ value: m.key, label: m.label }))} umbral={1} ancho="180px" />
+                        </FilterBar.Section>
+                    </FilterBar>
                 </div>
             </div>
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
@@ -353,28 +396,6 @@ function LibrosVentas({ buscar }) {
                 <Notice variant="info" icon={Info}>Algunas filas son datos de muestra sin su archivo: sus montos se derivaron del total.</Notice>
             )}
 
-            {libro === 'contribuyente' && (
-                <CarrilCards ariaLabel="Totales del libro de contribuyentes">
-                    <StatCard icon={Receipt} label="Ventas gravadas" value={formatMoney(tc.gravadas)} loading={cargando}
-                        iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(tc.documentos)} Créditos Fiscales${tc.notas ? ` · ${formatQty(tc.notas)} notas restan` : ''}`} />
-                    <StatCard icon={Landmark} label="Débito fiscal" value={formatMoney(tc.debito)} loading={cargando}
-                        iconBg="bg-success/10" iconCls="text-success" sub="IVA 13 % neto de notas" />
-                    <StatCard icon={Percent} label="IVA percibido" value={formatMoney(tc.percibido)} loading={cargando}
-                        iconBg="bg-warning/10" iconCls="text-warning" sub="Percepción 1 %" />
-                    <StatCard icon={Percent} label="IVA retenido" value={formatMoney(tc.retenido)} loading={cargando}
-                        iconBg="bg-chart-3/10" iconCls="text-chart-3" sub="No va en el libro: en la declaración" />
-                </CarrilCards>
-            )}
-            {libro === 'consumidor' && (
-                <CarrilCards ariaLabel="Totales del libro de consumidor final">
-                    <StatCard icon={Receipt} label="Ventas del mes" value={formatMoney(tf.total)} loading={cargando}
-                        iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(tf.documentos)} Facturas en ${formatQty(tf.dias)} días`} />
-                    <StatCard icon={Landmark} label="IVA contenido" value={formatMoney(tf.debito)} loading={cargando}
-                        iconBg="bg-success/10" iconCls="text-success" sub="Débito fiscal de consumidor final" />
-                    <StatCard icon={Receipt} label="Exentas" value={formatMoney(tf.exentas)} loading={cargando}
-                        iconBg="bg-chart-3/10" iconCls="text-chart-3" sub="Ventas exentas" />
-                </CarrilCards>
-            )}
 
             {libro === 'contribuyente' && (
                 <DataTable columns={COLS_CONTRIB} movil={{ usarAccionDeFila: false }} loading={cargando} minWidth="320px"
@@ -492,10 +513,24 @@ function ReporteRelacionadas({ buscar }) {
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-end gap-2">
-                <div className="w-40"><LiquidSelect value={anio} onChange={(v) => setAnio(v || anios[0].key)} clearable={false} icon={CalendarRange}
-                    options={anios.map(a => ({ value: a.key, label: a.label }))} ariaLabel="Año" /></div>
-                <Button variant="secondary" icon={Download} onClick={exportar} disabled={cargando || !filas.length}>Descargar CSV</Button>
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de compras a relacionadas">
+                    <StatCard icon={ShoppingCartIcono} label="Comprado a relacionadas" value={formatMoney(Number(datos?.anio?.total ?? 0))} loading={cargando}
+                        iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(Number(r.compras ?? 0))} compras en ${anio} (sin IVA)`} />
+                    <StatCard icon={Landmark} label="IVA de esas compras" value={formatMoney(Number(r.iva ?? 0))} loading={cargando}
+                        iconBg="bg-success/10" iconCls="text-success" sub="Crédito fiscal" />
+                    <StatCard icon={AlertTriangle} label="Productos con aviso" value={formatQty(conAviso)} loading={cargando}
+                        iconBg="bg-warning/10" iconCls="text-warning" valueCls={conAviso ? 'text-warning-text' : undefined} sub="Precio fuera de lo razonable" />
+                </CarrilCards>
+                <div className="flex justify-end min-w-0">
+                    <FilterBar onClear={() => setAnio(anios[0].key)} activeCount={anio !== anios[0].key ? 1 : 0}
+                        acciones={[{ key: 'csv', icon: Download, label: 'Descargar CSV', onClick: exportar, disabled: cargando || !filas.length }]}>
+                        <FilterBar.Section active={anio !== anios[0].key} onClear={() => setAnio(anios[0].key)} label="año">
+                            <FilterBar.Opciones label="Año" icon={CalendarRange} value={anio} onChange={(v) => setAnio(v || anios[0].key)}
+                                options={anios.map(a => ({ value: a.key, label: a.label }))} umbral={1} ancho="130px" />
+                        </FilterBar.Section>
+                    </FilterBar>
+                </div>
             </div>
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
             <Notice variant="info" icon={Info}>
@@ -503,14 +538,6 @@ function ReporteRelacionadas({ buscar }) {
                 relacionadas del año superan el monto que fija el Código Tributario, se presenta el informe de precios de transferencia (F-982).
                 El margen y si aplica el informe los confirma el contador.
             </Notice>
-            <CarrilCards ariaLabel="Resumen de compras a relacionadas">
-                <StatCard icon={ShoppingCartIcono} label="Comprado a relacionadas" value={formatMoney(Number(datos?.anio?.total ?? 0))} loading={cargando}
-                    iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(Number(r.compras ?? 0))} compras en ${anio} (sin IVA)`} />
-                <StatCard icon={Landmark} label="IVA de esas compras" value={formatMoney(Number(r.iva ?? 0))} loading={cargando}
-                    iconBg="bg-success/10" iconCls="text-success" sub="Crédito fiscal" />
-                <StatCard icon={AlertTriangle} label="Productos con aviso" value={formatQty(conAviso)} loading={cargando}
-                    iconBg="bg-warning/10" iconCls="text-warning" valueCls={conAviso ? 'text-warning-text' : undefined} sub="Precio fuera de lo razonable" />
-            </CarrilCards>
             <DataTable columns={COLS_RELACIONADAS} movil={{ usarAccionDeFila: false }} loading={cargando} minWidth="320px"
                 empty={{ icon: Info, message: 'Sin compras a relacionadas', subtext: 'Marca al proveedor como «empresa relacionada» y sus compras aparecen aquí.' }}>
                 {filas.map((f, i) => (
@@ -538,7 +565,9 @@ function ReporteRelacionadas({ buscar }) {
 }
 
 // ── El paquete del mes: todo lo fiscal en un ZIP ──────────────────────────
-function BotonPaquete({ mes }) {
+// La acción «Paquete del mes» para la píldora: un descriptor (DESIGN §17 —
+// las acciones son descriptores, no JSX) con su propio estado de carga.
+function usePaquete(mes) {
     const showToast = useToastStore(s => s.showToast);
     const [armando, setArmando] = useState(false);
     const descargar = () => {
@@ -553,7 +582,7 @@ function BotonPaquete({ mes }) {
             .catch(e => showToast('No se pudo armar el paquete', mensajeDeDistribucion(e), 'error'))
             .finally(() => setArmando(false));
     };
-    return <Button variant="primary" icon={armando ? Loader2 : Archive} disabled={armando} onClick={descargar}>Paquete del mes</Button>;
+    return { key: 'paquete', icon: armando ? Loader2 : Archive, label: 'Paquete del mes', variant: 'primary', disabled: armando, onClick: descargar };
 }
 
 // ── Retenciones y percepciones ───────────────────────────────────────────
@@ -563,6 +592,7 @@ function BotonPaquete({ mes }) {
 function ReporteRetenciones() {
     const meses = useMemo(() => mesesRecientes(13), []);
     const [mes, setMes] = usePestanaEnUrl(meses, meses[0].key, 'mes');
+    const paquete = usePaquete(mes);
     const [ventas, setVentas] = useState(null);
     const [compras, setCompras] = useState([]);
     const [cargando, setCargando] = useState(true);
@@ -614,20 +644,25 @@ function ReporteRetenciones() {
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-end gap-2">
-                <div className="w-60"><LiquidSelect value={mes} onChange={(v) => setMes(v || meses[0].key)} clearable={false} icon={CalendarRange}
-                    options={meses.map(m => ({ value: m.key, label: m.label }))} ariaLabel="Mes" /></div>
-                <BotonPaquete mes={mes} />
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <CarrilCards className="flex-1" ariaLabel="Resumen fiscal del mes">
+                    <StatCard icon={Landmark} label="Débito fiscal" value={formatMoney(r.debito)} loading={cargando}
+                        iconBg="bg-brand/10" iconCls="text-brand-text" sub="Contribuyentes + consumidor final" />
+                    <StatCard icon={Receipt} label="Crédito fiscal" value={formatMoney(r.credito)} loading={cargando}
+                        iconBg="bg-success/10" iconCls="text-success" sub="De las compras del mes" />
+                    <StatCard icon={Percent} label="Impuesto (referencial)" value={formatMoney(r.impuesto)} loading={cargando}
+                        iconBg="bg-warning/10" iconCls="text-warning" sub="Débito − crédito; lo liquida el contador" />
+                </CarrilCards>
+                <div className="flex justify-end min-w-0">
+                    <FilterBar onClear={() => setMes(meses[0].key)} activeCount={mes !== meses[0].key ? 1 : 0} acciones={[paquete]}>
+                        <FilterBar.Section active={mes !== meses[0].key} onClear={() => setMes(meses[0].key)} label="mes">
+                            <FilterBar.Opciones label="Mes" icon={CalendarRange} value={mes} onChange={(v) => setMes(v || meses[0].key)}
+                                options={meses.map(m => ({ value: m.key, label: m.label }))} umbral={1} ancho="180px" />
+                        </FilterBar.Section>
+                    </FilterBar>
+                </div>
             </div>
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
-            <CarrilCards ariaLabel="Resumen fiscal del mes">
-                <StatCard icon={Landmark} label="Débito fiscal" value={formatMoney(r.debito)} loading={cargando}
-                    iconBg="bg-brand/10" iconCls="text-brand-text" sub="Contribuyentes + consumidor final" />
-                <StatCard icon={Receipt} label="Crédito fiscal" value={formatMoney(r.credito)} loading={cargando}
-                    iconBg="bg-success/10" iconCls="text-success" sub="De las compras del mes" />
-                <StatCard icon={Percent} label="Impuesto (referencial)" value={formatMoney(r.impuesto)} loading={cargando}
-                    iconBg="bg-warning/10" iconCls="text-warning" sub="Débito − crédito; lo liquida el contador" />
-            </CarrilCards>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {LISTADOS.map(l => (
                     <section key={l.clave} data-surface="card" className="p-4 flex flex-col gap-2" aria-label={l.titulo} data-listado={l.clave}>

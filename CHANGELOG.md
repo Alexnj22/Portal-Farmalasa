@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1116.1 — Torogoz: filtros en la píldora y campos alineados
+
+Los filtros de la distribuidora estaban sueltos y algunos campos no se alineaban con los de al lado.
+
+- **Filtros en la píldora (DESIGN §17)** en Inicio, Compras, Reportes (los cinco), Caja y liquidación, Cierre del día, Rutas y Conteo: las tarjetas a la izquierda y la píldora a la derecha, en el mismo renglón. Las acciones (descargar CSV, paquete del mes, imprimir, nueva compra, proveedores, actualizar) entran como descriptores de la píldora.
+- **El día se elige con el paso de período** (`FiltroDia`: anterior · calendario · siguiente), igual que en Cortes.
+- **Campos alineados:** los selectores de formulario llevan el mismo rótulo que `PortalInput` (`rotuloCampo`) — Cliente, Emisor, Cartera, Bajas, Armar rutas.
+- En Libros de ventas, Anulados también tiene su tarjeta.
+
 ## v2.1116.0 — Torogoz: rutas y visitas del día
 
 Nueva sección **Rutas** (borrador `0027_rutas_y_visitas.sql`, sólo pruebas).

@@ -21,7 +21,7 @@ async function cobrar(page) {
 }
 
 
-const SECCIONES = { inicio: 'Inicio', pedidos: 'Pedidos', documentos: 'Facturación', clientes: 'Clientes', catalogo: 'Catálogo', compras: 'Compras', reportes: 'Reportes',
+const SECCIONES = { inicio: 'Inicio', pedidos: 'Pedidos', documentos: 'Facturación', clientes: 'Clientes', catalogo: 'Catálogo', compras: 'Compras', reportes: 'Reportes', liquidacion: 'Liquidación',
     inventario: 'Inventario', solicitudes: 'Solicitudes', emisor: 'Empresa' };
 
 test('las secciones de Torogoz abren sin romper, y la dirección vieja lleva allá', async ({ page }) => {
@@ -792,5 +792,35 @@ test('correo al cliente: el documento se envía (simulado en pruebas) y queda an
     await expect(page.getByText('Documento enviado').first()).toBeVisible({ timeout: 30_000 });
     await expect(page.locator('section[data-correo="enviado"]')).toContainText('cliente.prueba@example.com', { timeout: 15_000 });
     await page.screenshot({ path: `${SALIDA}/correo.png`, fullPage: true });
+    expect(errores).toEqual([]);
+});
+
+test('liquidación del vendedor: efectivo a entregar, faltante exige motivo, cierre y reapertura', async ({ page }) => {
+    const errores = [];
+    page.on('pageerror', e => errores.push(e.message));
+    await entrar(page);
+    await page.goto('/torogoz/liquidacion');
+    await expect(page.getByText('Efectivo a entregar')).toBeVisible({ timeout: 15_000 });
+    const cierre = page.locator('section[aria-label="Cierre"]');
+    // Si una corrida anterior la dejó cerrada, se reabre primero.
+    if (await cierre.getAttribute('data-cierre') === 'cerrada') {
+        await cierre.getByRole('button', { name: 'Reabrir' }).click();
+        await page.locator('input[name="motivo-reabrir"]').fill('prueba automática');
+        await cierre.getByRole('button', { name: 'Reabrir' }).last().click();
+        await expect(cierre).toHaveAttribute('data-cierre', 'abierta', { timeout: 15_000 });
+    }
+    await page.locator('input[name="efectivo-contado"]').fill('1.00');
+    await expect(page.locator('[data-diferencia-previa]')).toContainText('Faltan');
+    await expect(cierre.getByRole('button', { name: 'Cerrar liquidación' })).toBeDisabled();
+    await page.locator('input[name="motivo-diferencia"]').fill('prueba automática');
+    await page.screenshot({ path: `${SALIDA}/liquidacion.png`, fullPage: true });
+    await cierre.getByRole('button', { name: 'Cerrar liquidación' }).click();
+    await expect(page.getByText('Liquidación cerrada').first()).toBeVisible({ timeout: 15_000 });
+    await expect(cierre.locator('[data-diferencia]')).toContainText('Faltante');
+    // Se deja abierta para la próxima corrida.
+    await cierre.getByRole('button', { name: 'Reabrir' }).click();
+    await page.locator('input[name="motivo-reabrir"]').fill('prueba automática');
+    await cierre.getByRole('button', { name: 'Reabrir' }).last().click();
+    await expect(cierre).toHaveAttribute('data-cierre', 'abierta', { timeout: 15_000 });
     expect(errores).toEqual([]);
 });

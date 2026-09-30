@@ -762,6 +762,49 @@ export function ticketDeRecibo(recibo, marca = null, emisor = {}) {
     };
 }
 
+/**
+ * La LIQUIDACIÓN del vendedor (borrador 0020): lo que se entrega al volver de
+ * la ruta. Dos columnas, como el recibo.
+ */
+export function ticketDeLiquidacion(liq, marca = null, emisor = {}) {
+    const c = liq.cierre;
+    const esperado = Number(liq.efectivo?.esperado ?? 0);
+    const formas = {};
+    for (const f of liq.por_forma ?? []) formas[f.forma] = (formas[f.forma] ?? 0) + Number(f.monto);
+    const totales = [
+        ['Vendido', dinero(liq.ventas?.total)],
+        ['Cobrado de cartera', dinero(liq.cobros?.total)],
+        ...Object.entries(formas).filter(([k]) => k !== '01').map(([k, v]) => [FORMA_EN_PAPEL[k] ?? 'Otro', dinero(v)]),
+        ['EFECTIVO A ENTREGAR', dinero(esperado), true],
+    ];
+    if (c) {
+        totales.push(['Efectivo contado', dinero(c.contado)]);
+        const d = Number(c.diferencia);
+        totales.push([d === 0 ? 'SIN DIFERENCIA' : d > 0 ? 'SOBRANTE' : 'FALTANTE', dinero(Math.abs(d)), true]);
+    }
+    return {
+        titulo: c ? 'LIQUIDACION CERRADA' : 'LIQUIDACION (SIN CERRAR)',
+        tituloDeCola: `Liquidacion ${liq.fecha}`,
+        encabezado: {
+            titulo: (marca?.nombre ?? emisor.nombre_comercial ?? emisor.nombre ?? '').toUpperCase(),
+            lineas: [emisor.nombre].filter(Boolean),
+        },
+        datos: [['Vendedor', liq.vendedor?.name ?? ''], ['Dia', fechaDdMm(liq.fecha)]],
+        bloques: (liq.cheques?.length ? [{ titulo: 'Cheques a entregar', filas: liq.cheques.map(ch => [`${ch.cliente} ${ch.referencia ?? ''}`.trim(), dinero(ch.monto)]) }] : []),
+        items: {
+            columnas: [{ label: 'DOCUMENTO', ancho: '72%' }, { label: 'TOTAL', ancho: '28%', alinear: 'der' }],
+            filas: (liq.ventas?.lista ?? []).map(v => [`...${v.numero_control.slice(-6)} ${v.cliente}`, dinero(v.total)]),
+        },
+        totales,
+        pie: [
+            Number(liq.devoluciones?.a_favor) > 0 ? `Devoluciones a favor de clientes: ${dinero(liq.devoluciones.a_favor)}` : null,
+            c?.nota ? `Nota: ${c.nota}` : null,
+            c?.cerrada_por ? `Recibio: ${String(c.cerrada_por).split(' ')[0]}` : null,
+            'Firma del vendedor: ____________________',
+        ].filter(Boolean),
+    };
+}
+
 /** El ESTADO DE CUENTA para dejárselo al cliente: qué debe, desde cuándo y cuánto. */
 export function ticketDeEstadoDeCuenta({ cliente, estado, marca = null, emisor = {} }) {
     const abiertas = (estado?.cuentas ?? []).filter(c => c.estado === 'abierta');

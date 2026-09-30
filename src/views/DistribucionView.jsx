@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes, Tag, PackageX, LayoutDashboard, HandCoins, ShoppingCart, BarChart3 } from 'lucide-react';
+import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes, Tag, PackageX, LayoutDashboard, HandCoins, ShoppingCart, BarChart3, Wallet } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Notice from '../components/common/Notice';
@@ -19,6 +19,7 @@ import TabCobros from './distribucion/TabCobros';
 import TabCompras from './distribucion/TabCompras';
 import { VISTAS_COMPRAS } from './distribucion/compras';
 import TabReportes from './distribucion/TabReportes';
+import TabLiquidacion from './distribucion/TabLiquidacion';
 import { VISTAS_REPORTES } from './distribucion/reportes';
 import { VISTAS_CARTERA } from './distribucion/cartera';
 import { VISTAS_PEDIDOS, VISTAS_PERDIDAS, PERIODOS, CUBETAS_FACTURACION } from './distribucion/comun';
@@ -37,6 +38,7 @@ const TABS = [
     { key: 'pedidos',    label: 'Pedidos',    icon: ClipboardList },
     { key: 'documentos', label: 'Facturación', icon: FileCheck2 },
     { key: 'cobros',     label: 'Cuentas por cobrar', icon: HandCoins },
+    { key: 'liquidacion', label: 'Liquidación', icon: Wallet },
     { key: 'clientes',   label: 'Clientes',   icon: Store },
     { key: 'catalogo',   label: 'Catálogo',   icon: PackageSearch },
     { key: 'compras',    label: 'Compras',    icon: ShoppingCart },
@@ -97,7 +99,7 @@ export default function DistribucionView({ seccion = 'inicio' }) {
     // El buscador es de la pestaña, no de la vista: al cambiar, se limpia.
     useEffect(() => { setBuscar(''); }, [tab]);
 
-    const conBuscador = tab !== 'emisor' && tab !== 'solicitudes' && tab !== 'inicio';
+    const conBuscador = tab !== 'emisor' && tab !== 'solicitudes' && tab !== 'inicio' && tab !== 'liquidacion';
     const placeholder = useMemo(() => ({
         pedidos: 'Buscar por cliente o número…',
         documentos: 'Cliente, número de control o código de generación…',
@@ -162,6 +164,9 @@ export default function DistribucionView({ seccion = 'inicio' }) {
             )}
             {visitadas.has('compras') && (
                 <div className={tab === 'compras' ? '' : 'hidden'}><TabCompras {...comunes} vista={vistaCompras} /></div>
+            )}
+            {visitadas.has('liquidacion') && (
+                <div className={tab === 'liquidacion' ? '' : 'hidden'}><TabLiquidacion {...comunes} /></div>
             )}
             {visitadas.has('reportes') && (
                 <div className={tab === 'reportes' ? '' : 'hidden'}><TabReportes {...comunes} vista={vistaReporte} /></div>

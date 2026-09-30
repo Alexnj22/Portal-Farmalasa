@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1108.0 — Torogoz: liquidación diaria del vendedor
+
+Al volver de la ruta, nada decía cuánto tenía que entregar el vendedor: ventas,
+cobros de cartera y devoluciones vivían en tres pantallas (borrador
+`0020_liquidacion_del_vendedor.sql`, sólo pruebas).
+
+- **Liquidación** (sección nueva): por vendedor y día, lo vendido con su
+  desglose por forma de pago, lo cobrado de cartera, lo devuelto y los cheques a
+  entregar uno por uno. **Efectivo a entregar** = efectivo de ventas + efectivo
+  de cobros. El día y el vendedor van en la dirección.
+- Un vendedor ve la suya; quien administra ve a todos los que tuvieron
+  movimiento ese día, con su estado (por cerrar / cerrada con o sin diferencia).
+- **Cierre**: se escribe el efectivo contado, la pantalla dice si sobra o falta,
+  y una diferencia exige motivo. Queda una foto de lo liquidado; si después
+  entra otra venta o cobro de ese día, lo avisa. Reabrir exige motivo.
+- Lo que una devolución dejó a favor de un cliente se muestra pero **no se
+  resta**: el portal no sabe si se le devolvió en efectivo en la ruta.
+- **Ticket de la liquidación** para la ticketera, con la línea de firma del
+  vendedor.
+
 ## v2.1107.0 — Torogoz: el documento se le manda al cliente por correo
 
 Hacienda exige entregarle al cliente su documento —el JSON con firma y sello— y

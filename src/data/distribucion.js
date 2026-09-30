@@ -415,6 +415,34 @@ export async function enviarCorreoDocumento(dteId, pdfBase64, { destinatario = n
     return data;
 }
 
+// ── Liquidación del vendedor (borrador 0020) ───────────────────────────────
+
+export async function fetchLiquidacion(vendedorId, fecha) {
+    const { data, error } = await supabase.rpc('dist_liquidacion', { p_vendedor: vendedorId, p_fecha: fecha });
+    if (error) throw error;
+    return data;
+}
+
+/** Los vendedores que tuvieron movimiento ese día, con su cierre (sólo quien administra). */
+export async function fetchLiquidacionesDelDia(fecha) {
+    const { data, error } = await supabase.rpc('dist_liquidaciones_del_dia', { p_fecha: fecha });
+    if (error) throw error;
+    return data ?? [];
+}
+
+export async function cerrarLiquidacion(vendedorId, fecha, contado, nota) {
+    const { data, error } = await supabase.rpc('dist_cerrar_liquidacion', {
+        p_vendedor: vendedorId, p_fecha: fecha, p_contado: contado, p_nota: nota || null,
+    });
+    if (error) throw error;
+    return data;
+}
+
+export async function reabrirLiquidacion(id, motivo) {
+    const { error } = await supabase.rpc('dist_reabrir_liquidacion', { p_id: id, p_motivo: motivo });
+    if (error) throw error;
+}
+
 export async function fetchCuarentena() {
     const { data, error } = await supabase
         .from('dist_cuarentena')

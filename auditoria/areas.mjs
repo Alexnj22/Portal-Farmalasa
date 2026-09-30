@@ -641,7 +641,7 @@ export const AREAS = [
             'scripts/entorno-pruebas/distribucion_tablero_pruebas.sql',
             'tests/unit/dteMotor.test.js', 'tests/unit/dteHacienda.test.js', 'tests/unit/dteLotes.test.js',
             'tests/unit/distribucionLotes.test.js', 'tests/unit/distribucionPrecios.test.js',
-            'tests/unit/distribucionCartera.test.js', 'tests/unit/distribucionCompras.test.js', 'tests/unit/distribucionReportes.test.js', 'tests/unit/distribucionDevolucion.test.js',
+            'tests/unit/distribucionCartera.test.js', 'tests/unit/distribucionCompras.test.js', 'tests/unit/distribucionReportes.test.js', 'tests/unit/distribucionDevolucion.test.js', 'tests/unit/distribucionLiquidacion.test.js',
             'scripts/entorno-pruebas/distribucion.mjs',
             'tests/fixtures/dte-reales-2026-09.json',
         ],

@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1094.2 — App: avisos urgentes pasan el modo Concentración
+
+`send-push-notification` ya marca los urgentes como `time-sensitive`; sin el
+permiso `usernotifications.time-sensitive` iOS los trata como normales y el
+modo Concentración los calla. Se declara en la app (y en Apple, «Time
+Sensitive Notifications» en el identificador).
+
 ## v2.1094.1 — App: Firebase para los avisos en Android
 
 Fase N4 de `docs/PLAN-AVISOS-NATIVOS-2026-09-30.md`. `apps/mobile/app.config.js`

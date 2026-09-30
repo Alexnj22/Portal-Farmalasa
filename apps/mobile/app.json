@@ -19,7 +19,8 @@
         ]
       },
       "entitlements": {
-        "com.apple.developer.usernotifications.communication": true
+        "com.apple.developer.usernotifications.communication": true,
+        "com.apple.developer.usernotifications.time-sensitive": true
       }
     },
     "android": {

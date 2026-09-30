@@ -9,6 +9,7 @@ import {
     MOTIVOS_RECHAZO, despacharTraslado, recibirTraslado, rechazarTraslado,
     fetchDisponibilidadTraslado,
 } from '@nucleo/data/traslados';
+import { loQueSeManda, nombreDeLinea, paquetesQueSalen, sugerenciaDeRechazo } from '@nucleo/utils/decisionTraslado';
 import { fmtCuando, fmtFechaLarga, resumenItems, lotesPedidos, loQueLlego, piezasDe, renglonesDe } from '@nucleo/utils/trasladoTexto';
 import DeclararFaltantes from './DeclararFaltantes';
 import { desdeHace, cuantoTardo } from '@nucleo/utils/movimientoTexto';
@@ -117,29 +118,10 @@ function ListaRenglones({ renglones, tope = null }) {
  * sugerencia se arma con el dato fresco y viaja en el aviso, y que «Otro» sin
  * texto no es un motivo.
  */
-/**
- * Cuántos PAQUETES de un renglón puede mandar hoy la sala de origen.
- *
- * Las dos escalas son la trampa: la disponibilidad viene en unidades BASE y lo
- * pedido en paquetes de la presentación. `factor` es lo que las une, y es la
- * MISMA cuenta que hace el despachador contra el reporte del sistema —acá es una
- * ayuda para que la casilla venga puesta, allá es la autoridad—.
- *
- * Nunca más de lo pedido: mandar de más no es mandar, es otro traslado.
- */
-function paquetesQueSalen(linea, item) {
-    const factor  = Number(item?.factor) || 1;
-    const pedidos = Number(item?.cantidad) || 0;
-    const hay     = Math.floor(Number(linea?.unidades ?? 0) / factor);
-    return Math.max(0, Math.min(pedidos, hay));
-}
-
-/** Cómo se llama un renglón. El nombre guardado manda; el número es el repuesto. */
-function nombreDe(linea, items) {
-    return linea?.descripcion
-        ?? items?.[linea?.idx]?.descripcion
-        ?? `#${linea?.erp_product_id ?? '?'}`;
-}
+// `paquetesQueSalen`, `nombreDeLinea`, `loQueSeManda` y `sugerenciaDeRechazo`
+// viven en `utils/decisionTraslado.js` desde que la app contesta traslados:
+// escritas dos veces, una mandaría una cantidad distinta sobre el mismo pedido.
+const nombreDe = nombreDeLinea;
 
 export function DecisionTraslado({ fila, onHecho }) {
     /* La sala y el nombre se SACAN de acá, no se reciben como props.
@@ -246,33 +228,10 @@ export function DecisionTraslado({ fila, onHecho }) {
     };
 
     // Lo que va a viajar. Índices con su cantidad, nunca los renglones.
-    const aceptadas = lineas
-        .map(l => ({ i: l.idx, cantidad: Math.min(saleDe(l.idx), pedidoDe(l.idx)) }))
-        .filter(a => a.cantidad > 0);
+    const { aceptadas, hayQueMandar, recortado, nadaEnFisico } = loQueSeManda(lineas, items, cuantos);
 
-    // Que no quede NADA en físico es un hecho de la existencia; que no quede
-    // nada en las casillas es una decisión de quien despacha. Se distinguen a
-    // propósito: el aviso rojo habla de lo primero, y decir «ya no puedes» sobre
-    // alguien que acaba de escribir un cero sería contarle mal lo que pasó.
-    const nadaEnFisico = !sinDatos && lineas.every(l => maxDe(l) === 0);
-    const hayQueMandar = aceptadas.length > 0;
-    const recortado    = hayQueMandar && (
-        aceptadas.length < lineas.length || aceptadas.some(a => a.cantidad !== pedidoDe(a.i))
-    );
-
-    /* A quién más pedirle, por renglón. El texto viaja en el aviso de rechazo:
-     * quien pidió no tiene por qué volver a buscar dónde hay. Se arma acá y no
-     * en la base porque acá está el dato fresco que se acaba de mirar. */
-    const conAlternativa = lineas.filter(l => (l.alternativas ?? []).length > 0);
-    const sugerencia = conAlternativa.length === 0
-        ? ''
-        : conAlternativa.map((l) => {
-            const donde = l.alternativas.slice(0, 3).map(a => `${a.sala} (${a.unidades})`).join(', ');
-            // Con un solo renglón el nombre del producto ya está en la tarjeta y
-            // repetirlo alarga la frase; con varios es lo único que distingue
-            // una sugerencia de la otra.
-            return lineas.length === 1 ? `Sí hay en ${donde}` : `${nombreDe(l, items)}: ${donde}`;
-        }).join(' · ');
+    // A quién más pedirle: la cuenta vive en `utils/decisionTraslado`.
+    const sugerencia = sugerenciaDeRechazo(lineas, items);
 
     const confirmar = async () => {
         setError(''); setOcupado(true);

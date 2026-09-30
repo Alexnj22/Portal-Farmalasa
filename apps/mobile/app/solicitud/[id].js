@@ -61,6 +61,12 @@ export default function Solicitud() {
   }, [idReal, esMinMax]);
   useEffect(() => { cargar(); }, [cargar]);
 
+  // Un traslado tiene su propia pantalla (contestar con cantidades, recibir
+  // anotando lo que faltó): la genérica sólo sabría «enviar todo».
+  useEffect(() => {
+    if (fila?.type === 'INVENTORY_TRANSFER_REQUEST') router.replace({ pathname: '/traslado/[id]', params: { id: String(fila.id) } });
+  }, [fila]);
+
   const tipo = esMinMax ? 'MINMAX_CHANGE_REQUEST' : fila?.type;
   const quienId = esMinMax ? fila?.requested_by_id : fila?.employee_id;
   const empleado = useMemo(() => (empleados || []).find((e) => String(e.id) === String(quienId)), [empleados, quienId]);

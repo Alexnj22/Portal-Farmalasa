@@ -59,7 +59,14 @@
           "mode": "production"
         }
       ],
-      "@bacons/apple-targets"
+      "@bacons/apple-targets",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Farmalasa usa la cámara para escanear el código de las cajas de traslado y de los productos.",
+          "recordAudioAndroid": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false

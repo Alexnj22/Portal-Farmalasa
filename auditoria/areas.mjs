@@ -742,7 +742,7 @@ export const AREAS = [
         rutas: ['/traslados'],
         archivos: [
             'src/utils/trasladoTexto.js',
-            'src/views/TrasladosView.jsx', 'src/views/traslados/',
+            'src/views/TrasladosView.jsx', 'src/views/traslados/', 'src/utils/decisionTraslado.js',
             'src/data/traslados.js', 'src/data/envios.js', 'src/data/trasladoSwitch.js',
             'src/data/retiros.js', 'src/data/faltantes.js',
             'src/store/composicionTraslado.js',

@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1104.0 — App: Traslados nativo — contestar, recibir y escanear la caja
+
+Traslados deja de abrir el portal en la app. La pantalla nueva tiene el
+selector del sistema «Te piden · Recibir · Envíos · Historial», el buscador de
+la barra, el escáner y un «+» (pedir a otra sala; mandar producto, llevar
+productos y faltantes todavía abren el portal).
+
+- **Contestar lo que te piden** (`traslado/[id]`): la existencia se relee al
+  abrir y cada renglón trae su casilla puesta en lo que alcanza; bajar una
+  cantidad obliga a escribir por qué no sale todo («Enviar lo que hay»). El
+  mínimo de la sala avisa, no frena. Rechazar pide un motivo de la lista
+  cerrada («Otro» exige texto) y lleva la sugerencia de dónde sí hay.
+- **Recibir**: lo que ya salió para tu sala, en rojo si lleva más de 24 h en
+  camino; se anota lo que faltó renglón por renglón y se avisa a quien envió.
+- **Escanear la caja** con la cámara (`componentes/Escaner.js`, `expo-camera`,
+  QR y códigos de barras, linterna): el número del ticket abre ese traslado.
+- **Envíos** e **Historial** en la app; decidir un envío todavía se hace en
+  el portal.
+- **Núcleo**: las cuentas de contestar un traslado (`paquetesQueSalen`,
+  `loQueSeManda`, `sugerenciaDeRechazo`) se mudaron de `FilasTraslado.jsx` a
+  `utils/decisionTraslado.js`, con 6 pruebas; el portal las usa desde ahí y no
+  cambia de comportamiento.
+
+Probado en el entorno de pruebas: contestar (envío parcial con motivo),
+rechazar con sugerencia (quedó guardado en la base) y la pantalla de recibir.
+El envío y la recepción reales pasan por la función que mueve inventario, que
+en ese entorno no está desplegada a propósito.
+
 ## v2.1103.0 — App: Inicio con los widgets del tablero en las cuatro pestañas
 
 Pedido del usuario: «mejora todo inicio». El Inicio de la app tenía 6

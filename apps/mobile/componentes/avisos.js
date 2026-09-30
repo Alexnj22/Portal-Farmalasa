@@ -10,6 +10,9 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { supabase } from '@nucleo/supabaseClient';
 import { despacharTraslado, rechazarTraslado, MOTIVOS_RECHAZO } from '@nucleo/data/traslados';
+import { cargarFilaDeAviso, paraDecidir } from '@nucleo/data/solicitudDeAviso';
+import { decidirSolicitud } from '@nucleo/hooks/useDecidirSolicitud';
+import { useToastStore } from '@nucleo/store/toastStore';
 import { abrirRuta } from '../pantallas';
 
 let tokenActual = null;
@@ -29,6 +32,12 @@ Notifications.setNotificationHandler({
 async function declararCategorias() {
   await Notifications.setNotificationCategoryAsync('traslado', [
     { identifier: 'enviar', buttonTitle: 'Enviar todo', options: { opensAppToForeground: true, isAuthenticationRequired: true } },
+    { identifier: 'rechazar', buttonTitle: 'Rechazar…', options: { opensAppToForeground: true, isAuthenticationRequired: true, isDestructive: true } },
+  ]);
+  // Toda otra solicitud (descarte, carga, facturación, caja, abonos, Min/Max,
+  // las personales): la MISMA regla que el portal (`decidirSolicitud`).
+  await Notifications.setNotificationCategoryAsync('solicitud', [
+    { identifier: 'aprobar', buttonTitle: 'Aprobar', options: { opensAppToForeground: true, isAuthenticationRequired: true } },
     { identifier: 'rechazar', buttonTitle: 'Rechazar…', options: { opensAppToForeground: true, isAuthenticationRequired: true, isDestructive: true } },
   ]);
 }
@@ -85,9 +94,9 @@ function pedirMotivo() {
   ]));
 }
 
-function pedirTexto() {
+function pedirTexto(titulo = '¿Cuál es el motivo?') {
   if (Platform.OS !== 'ios') return Promise.resolve(null);   // Alert.prompt sólo existe en iOS
-  return new Promise((listo) => Alert.prompt('¿Cuál es el motivo?', undefined, [
+  return new Promise((listo) => Alert.prompt(titulo, undefined, [
     { text: 'Cancelar', style: 'cancel', onPress: () => listo(null) },
     { text: 'Rechazar', style: 'destructive', onPress: (v) => listo(String(v ?? '').trim() || null) },
   ]));
@@ -107,13 +116,47 @@ async function rechazar(d) {
   await avisar('Traslado rechazado', 'La sala que lo pidió recibe el aviso con tu motivo.');
 }
 
+// La solicitud se relee al apretar (el aviso es una foto del momento en que
+// salió), con las mismas funciones que la campana del portal.
+async function traerSolicitud(d) {
+  const minmax = String(d.solicitud).startsWith('minmax:');
+  const aviso = { metadata: { request_id: minmax ? String(d.solicitud).slice(7) : d.solicitud, request_type: minmax ? 'MINMAX' : null } };
+  const fila = await cargarFilaDeAviso(aviso);
+  return paraDecidir(fila, minmax);
+}
+
+// El detalle de por qué no entró lo deja el store en su única ranura de toast
+// (la app no dibuja toasts): se lee de ahí para decirlo en la alerta.
+const ultimoMotivo = () => {
+  const t = useToastStore.getState();
+  return t.isOpen ? [t.title, t.message].filter(Boolean).join(': ') : null;
+};
+
+async function decidirDesdeAviso(d, modo, userId) {
+  if (!userId) { abrirRuta(d.url); return; }
+  let nota = '';
+  if (modo === 'reject') {
+    nota = await pedirTexto('¿Por qué la rechazas?');
+    if (!nota) { if (Platform.OS !== 'ios') abrirRuta(d.url); return; }
+  }
+  if (d.prueba) { await avisar('Prueba', modo === 'approve' ? 'Así se vería: aprobada. No se aprobó nada.' : `Así se vería: rechazada («${nota}»). No se rechazó nada.`); return; }
+  let req;
+  try { req = await traerSolicitud(d); } catch (e) { await avisar('No se pudo abrir la solicitud', e?.message ?? String(e)); return; }
+  if (!req) { await avisar('Ya no está', 'Esta solicitud ya no está disponible.'); return; }
+  if (req.status && req.status !== 'PENDING') { await avisar('Ya estaba resuelta', 'Alguien más la decidió mientras tanto.'); return; }
+  const r = await decidirSolicitud({ req, modo, nota, aceptadas: null, userId });
+  if (r.ok) { await avisar('Listo', r.mensaje); return; }
+  await avisar('No se pudo', (r.yaAvisado && ultimoMotivo()) || r.error);
+  abrirRuta(d.url);
+}
+
 // Cada toque se atiende una vez: el aviso que abrió la app desde cerrada vuelve
 // a aparecer en `getLastNotificationResponseAsync` mientras nadie lo limpie, y
 // despachar dos veces es justo lo que no puede pasar.
 const atendidos = new Set();
 
 /** Tocar un aviso abre su pantalla; sus botones hacen su trabajo. */
-export function escucharToques() {
+export function escucharToques(userId) {
   const abrir = async (resp) => {
     if (!resp) return;
     const clave = `${resp.notification?.request?.identifier}|${resp.actionIdentifier}`;
@@ -123,6 +166,8 @@ export function escucharToques() {
     const d = resp.notification?.request?.content?.data ?? {};
     if (d.tipo === 'traslado' && resp.actionIdentifier === 'enviar') return enviarTraslado(d);
     if (d.tipo === 'traslado' && resp.actionIdentifier === 'rechazar') return rechazar(d);
+    if (resp.actionIdentifier === 'aprobar') return decidirDesdeAviso(d, 'approve', userId);
+    if (d.tipo !== 'traslado' && resp.actionIdentifier === 'rechazar') return decidirDesdeAviso(d, 'reject', userId);
     const url = d.url;
     if (typeof url === 'string' && url.startsWith('/')) abrirRuta(url);
   };

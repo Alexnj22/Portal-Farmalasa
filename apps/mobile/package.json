@@ -32,5 +32,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "@bacons/apple-targets": "^5.0.0"
+  }
 }

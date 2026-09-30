@@ -21,13 +21,13 @@ import { escucharToques, registrarAvisos } from '../componentes/avisos';
 //    sin esto, «Salir» cerraba la sesión y dejaba un Inicio en blanco, y lo
 //    mismo pasaría cuando la sesión se vence por inactividad.
 function GuardiaDeSesion() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const fetchBoot = useStaffStore((s) => s.fetchBoot);
   const segmentos = useSegments();
   useEffect(() => { if (isAuthenticated) fetchBoot(); }, [isAuthenticated, fetchBoot]);
   // Con sesión, el teléfono recibe los avisos de esta persona.
   useEffect(() => { if (isAuthenticated) registrarAvisos(); }, [isAuthenticated]);
-  useEffect(() => (isAuthenticated ? escucharToques() : undefined), [isAuthenticated]);
+  useEffect(() => (isAuthenticated && user?.id ? escucharToques(user.id) : undefined), [isAuthenticated, user?.id]);
   useEffect(() => {
     if (loading) return;
     const enEntrada = !segmentos.length || segmentos[0] === 'entrar' || segmentos[0] === 'index';

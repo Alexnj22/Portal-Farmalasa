@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionAttributes</key>
+		<dict>
+			<!-- Las categorías que llevan botones: las mismas que declara la app
+			     (componentes/avisos.js) y que elige el servidor (tarjeta.ts). -->
+			<key>UNNotificationExtensionCategory</key>
+			<array>
+				<string>traslado</string>
+				<string>solicitud</string>
+			</array>
+			<key>UNNotificationExtensionInitialContentSizeRatio</key>
+			<real>0.5</real>
+			<!-- La tarjeta reemplaza al texto: dibujarlo abajo sería repetirlo. -->
+			<key>UNNotificationExtensionDefaultContentHidden</key>
+			<true/>
+		</dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.usernotifications.content-extension</string>
+		<key>NSExtensionPrincipalClass</key>
+		<string>$(PRODUCT_MODULE_NAME).NotificationViewController</string>
+	</dict>
+</dict>
+</plist>

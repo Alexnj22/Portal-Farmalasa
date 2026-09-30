@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1094.0 — App: botones Aprobar/Rechazar y tarjeta nativa de iPhone en los avisos
+
+Fase N3 de `docs/PLAN-AVISOS-NATIVOS-2026-09-30.md`. Todavía no está en una
+compilación: la fase se compila una sola vez al cerrarla (N5).
+
+- **Categoría `solicitud`** (Aprobar · Rechazar…) para toda solicitud que no
+  sea traslado: la app relee la solicitud con `cargarFilaDeAviso`/`paraDecidir`
+  —las mismas de la campana del portal— y decide con `decidirSolicitud`, la
+  misma regla. Rechazar pide la nota. Si el store ya explicó por qué no entró,
+  la alerta dice ese motivo.
+- **Extensión de servicio** (`targets/avisos`, Swift): agrupa por tema y vuelve
+  el aviso de COMUNICACIÓN con la foto de quien lo originó (estilo Mensajes);
+  el título pasa a subtítulo. Si algo falla, el aviso sale como llegó.
+- **Extensión de contenido** (`targets/tarjeta`, SwiftUI): la tarjeta al
+  mantener presionado —foto, contexto, renglones con la cifra a la derecha,
+  «y N más», nota— con los colores del sistema.
+- Con `@bacons/apple-targets`. Las dos extensiones compilan (xcodebuild,
+  simulador). La app declara `INSendMessageIntent` y el permiso de avisos de
+  comunicación; en Apple hay que marcar «Communication Notifications» en el
+  identificador (no se puede por API).
+
 ## v2.1093.0 — Avisos: tarjeta en el teléfono, campana nativa y aprobar con la misma regla del portal
 
 Fases N1 y N2 de `docs/PLAN-AVISOS-NATIVOS-2026-09-30.md`, más un pedido del

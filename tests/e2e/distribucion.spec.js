@@ -20,7 +20,7 @@ async function cobrar(page) {
 }
 
 
-const SECCIONES = { inicio: 'Inicio', pedidos: 'Pedidos', documentos: 'Facturación', clientes: 'Clientes', catalogo: 'Catálogo',
+const SECCIONES = { inicio: 'Inicio', pedidos: 'Pedidos', documentos: 'Facturación', clientes: 'Clientes', catalogo: 'Catálogo', compras: 'Compras',
     inventario: 'Inventario', solicitudes: 'Solicitudes', emisor: 'Empresa' };
 
 test('las secciones de Torogoz abren sin romper, y la dirección vieja lleva allá', async ({ page }) => {
@@ -632,5 +632,75 @@ test('cuentas por cobrar: cobrar, no cobrar de más, anular el cobro, y la venta
     await page.locator('body').click({ position: { x: 5, y: 5 } });
     await page.keyboard.press('F6');
     await page.keyboard.press('Enter');
+    expect(errores).toEqual([]);
+});
+
+test('compras: el JSON del proveedor llena la compra, no se recibe sin cuadrar ni sin lote, y se anula', async ({ page }) => {
+    const errores = [];
+    page.on('pageerror', e => errores.push(e.message));
+    await entrar(page);
+    await page.goto('/torogoz/compras');
+    await expect(page.getByText('Comprado este mes')).toBeVisible({ timeout: 15_000 });
+    await page.getByRole('button', { name: 'Nueva compra' }).click();
+    const n = String(Date.now()).slice(-9);
+    const dte = {
+        identificacion: { tipoDte: '03', numeroControl: `DTE-03-E2E00001-${n.padStart(15, '0')}`, codigoGeneracion: crypto.randomUUID(), fecEmi: new Date().toISOString().slice(0, 10) },
+        emisor: { nombre: 'DROGUERIA DE PRUEBA E2E, S.A. DE C.V.', nit: '06149999990019', nrc: '99999' },
+        cuerpoDocumento: [
+            { codigo: 'E2E-1', descripcion: 'ENSURE ADVANCE FRESA CAJA X 6', cantidad: 1, precioUni: 30, montoDescu: 0, ventaGravada: 30, ventaExenta: 0, ventaNoSuj: 0 },
+            { codigo: 'E2E-2', descripcion: 'ENSURE ADVANCE FRESA SUELTO', cantidad: 4, precioUni: 5, montoDescu: 0, ventaGravada: 20, ventaExenta: 0, ventaNoSuj: 0 },
+        ],
+        resumen: { totalGravada: 50, totalExenta: 0, totalNoSuj: 0, descuGravada: 0, tributos: [{ codigo: '20', valor: 6.5 }], ivaPerci1: 0, ivaRete1: 0, condicionOperacion: 1 },
+    };
+    await page.getByTestId('json-proveedor').setInputFiles({ name: 'ccf.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(dte)) });
+    // La primera vez el proveedor no existe: se registra con lo leído del documento.
+    const registrar = page.getByRole('button', { name: 'Registrarlo' });
+    if (await registrar.isVisible({ timeout: 3_000 }).catch(() => false)) {
+        await registrar.click();
+        await expect(page.locator('input[name="nit"]')).toHaveValue('06149999990019');
+        await page.getByRole('button', { name: 'Guardar proveedor' }).click();
+    }
+    await expect(page.locator('input[name="numero"]')).toHaveValue(dte.identificacion.numeroControl);
+    await expect(page.locator('input[name="total"]')).toHaveValue('56.5');
+    const recibir = page.getByRole('button', { name: 'Recibir en bodega' });
+    await expect(recibir).toBeDisabled();
+    // Productos: la memoria del proveedor los recuerda desde la segunda vez.
+    for (const i of [0, 1]) {
+        const r = page.locator(`[data-renglon="${i}"]`);
+        const combo = r.getByRole('combobox');
+        if ((await combo.innerText()).includes('Producto del catálogo')) {
+            await combo.click();
+            await page.keyboard.type('ensure advance liq fresa');
+            const opcion = page.getByRole('option', { name: /ENSURE ADVANCE/i }).first();
+            await expect(opcion).toBeVisible();
+            await page.waitForTimeout(400); // el menú termina de filtrar
+            await opcion.click();
+        }
+        await r.locator(`input[name="lote-${i}"]`).fill(`E2E-${n}-${i}`);
+        await r.locator('input[aria-label="Día"]').pressSequentially('31');
+        await r.locator('input[aria-label="Mes"]').pressSequentially('12');
+        await r.locator('input[aria-label="Año"]').pressSequentially('2028');
+    }
+    // La caja de 6: seis unidades a $5 cada una.
+    await page.locator('input[name="upe-0"]').fill('6');
+    await expect(page.locator('input[name="cant-0"]')).toHaveValue('6');
+    await expect(page.locator('[data-cuadre="si"]')).toBeVisible();
+    // Un IVA mal escrito lo dice y no deja recibir.
+    await page.locator('input[name="iva"]').fill('6.00');
+    await expect(page.getByText(/Debería ser \$6\.50/)).toBeVisible();
+    await expect(recibir).toBeDisabled();
+    await page.locator('input[name="iva"]').fill('6.50');
+    await page.screenshot({ path: `${SALIDA}/compra-nueva.png`, fullPage: true });
+    await expect(recibir).toBeEnabled();
+    await recibir.click();
+    await expect(page.getByText('Compra recibida').first()).toBeVisible({ timeout: 15_000 });
+
+    // En la lista, y se anula (todo sigue en bodega).
+    await page.getByText(dte.identificacion.numeroControl).first().click();
+    await expect(page.getByText('Recibida', { exact: true }).first()).toBeVisible({ timeout: 15_000 });
+    await page.getByRole('button', { name: 'Anular esta compra' }).click();
+    await page.locator('input[name="motivo-anular"]').fill('prueba automática');
+    await page.getByRole('button', { name: 'Anular compra' }).click();
+    await expect(page.getByText('Compra anulada').first()).toBeVisible({ timeout: 15_000 });
     expect(errores).toEqual([]);
 });

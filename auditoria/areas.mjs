@@ -631,7 +631,7 @@ export const AREAS = [
         rutas: ['/torogoz', '/torogoz/login', '/torogoz/venta', '/distribucion', '/distribucion/venta'],
         archivos: [
             'src/views/DistribucionView.jsx', 'src/views/DistribucionVentaView.jsx', 'src/views/distribucion/',
-            'src/data/distribucion.js', 'src/data/distribucionInventario.js', 'src/data/geoCodigosMH.js', 'src/data/actividadesMH.js',
+            'src/data/distribucion.js', 'src/data/distribucionInventario.js', 'src/data/distribucionCompras.js', 'src/data/geoCodigosMH.js', 'src/data/actividadesMH.js',
             'src/utils/distribucionDocumento.js', 'tests/unit/distribucionDocumento.test.js',
             'tests/e2e/distribucion.spec.js', 'tests/e2e/distribucion-movil.spec.js', 'tests/e2e/distribucionEntrar.js',
             'supabase/functions/_shared/dte/',
@@ -641,6 +641,7 @@ export const AREAS = [
             'scripts/entorno-pruebas/distribucion_tablero_pruebas.sql',
             'tests/unit/dteMotor.test.js', 'tests/unit/dteHacienda.test.js', 'tests/unit/dteLotes.test.js',
             'tests/unit/distribucionLotes.test.js', 'tests/unit/distribucionPrecios.test.js',
+            'tests/unit/distribucionCartera.test.js', 'tests/unit/distribucionCompras.test.js',
             'tests/fixtures/dte-reales-2026-09.json',
         ],
         tablas: [],

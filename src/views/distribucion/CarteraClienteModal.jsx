@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { HandCoins, Wallet, Loader2, Printer, Ban, AlertTriangle, CheckCircle2, FileText, SlidersHorizontal } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
@@ -21,6 +21,7 @@ import { fetchEstadoCuenta, cobrar, anularRecibo, mensajeDeDistribucion } from '
 import { FORMA_PAGO, leerMonto } from './comun';
 import { repartirCobro } from './cartera';
 import { MARCA_PAPEL } from './marca';
+import useBorrador from '@nucleo/hooks/useBorrador';
 
 // La ficha de cobro de un cliente: qué debe, cobrarle y lo que ya pagó.
 //
@@ -49,6 +50,21 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
     const [uuid, setUuid] = useState(() => crypto.randomUUID());
     const [anulando, setAnulando] = useState(null); // recibo id
     const [motivo, setMotivo] = useState('');
+
+    // Un cobro a medio escribir sobrevive a que la sesión se cierre sola. Y con
+    // él su `uuid`: si el cobro llegó a la base pero la respuesta se perdió,
+    // reintentarlo después no cobra dos veces.
+    const { recuperado, descartar } = useBorrador(puedeCobrar ? `distribucion-cobro-${cliente.id}` : null,
+        { monto, forma, referencia, recibido, nota, aMano, manual, uuid },
+        { vale: (v) => !!(v?.monto || v?.referencia || v?.nota || Object.keys(v?.manual ?? {}).length) });
+    const repuesto = useRef(false);
+    useEffect(() => {
+        if (repuesto.current || !recuperado) return;
+        repuesto.current = true;
+        setMonto(recuperado.monto ?? ''); setForma(recuperado.forma ?? '01'); setReferencia(recuperado.referencia ?? '');
+        setRecibido(recuperado.recibido ?? ''); setNota(recuperado.nota ?? ''); setAMano(!!recuperado.aMano);
+        setManual(recuperado.manual ?? {}); if (recuperado.uuid) setUuid(recuperado.uuid);
+    }, [recuperado]);
 
     const cargar = useCallback(() => {
         fetchEstadoCuenta(cliente.id).then(setEstado).catch(e => setError(mensajeDeDistribucion(e)));
@@ -101,6 +117,7 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
             }
             setMonto(''); setReferencia(''); setRecibido(''); setNota(''); setManual({}); setAMano(false);
             setUuid(crypto.randomUUID());
+            descartar();
             cargar();
             onCambio?.();
         } catch (e) {

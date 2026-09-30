@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Plus, Boxes, Search, AlertTriangle, CalendarClock, CalendarX2, Loader2, Save, History, PackagePlus } from 'lucide-react';
+import { Plus, Boxes, Search, AlertTriangle, CalendarClock, CalendarX2, Loader2, Save, History, PackagePlus, Coins } from 'lucide-react';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 import FilterBar from '../../components/common/FilterBar';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
@@ -40,6 +41,8 @@ const COLS = [
     { key: 'vence',      label: 'Vence',      align: 'left' },
     { key: 'existencia', label: 'Existencia', align: 'right' },
 ];
+// El costo sólo lo ve quien administra: es el margen de la empresa.
+const COL_COSTO = { key: 'costo', label: 'Al costo', align: 'right', hideBelow: 'md' };
 
 const TIPO_MOVIMIENTO = {
     entrada: { label: 'Entrada', variant: 'success' },
@@ -47,6 +50,8 @@ const TIPO_MOVIMIENTO = {
     venta: { label: 'Venta', variant: 'neutral' },
     liberacion: { label: 'Liberado', variant: 'info' },
     devolucion: { label: 'Devuelto', variant: 'info' },
+    compra: { label: 'Compra', variant: 'success' },
+    compra_anulada: { label: 'Compra anulada', variant: 'danger' },
 };
 
 function estadoDeVencimiento(vence) {
@@ -284,6 +289,7 @@ export default function TabInventario({ emisor, puedeVender, puedeConfigurar, bu
     const [filtro, setFiltro] = useState('');
     const [entrada, setEntrada] = useState(false);
     const [abierto, setAbierto] = useState(null);
+    const [costos, setCostos] = useState(new Map());
     const pedidoRef = useRef(0);
 
     const cargar = useCallback(async () => {
@@ -291,8 +297,12 @@ export default function TabInventario({ emisor, puedeVender, puedeConfigurar, bu
         setCargando(true);
         setError('');
         try {
-            const r = await fetchLotes();
-            if (mio === pedidoRef.current) setLotes(r);
+            const [r, cat] = await Promise.all([fetchLotes(), puedeConfigurar ? fetchCatalogo() : Promise.resolve([])]);
+            if (mio === pedidoRef.current) {
+                setLotes(r);
+                // Costo promedio por producto (sin IVA), lo mantienen las compras (borrador 0015).
+                setCostos(new Map(cat.filter(p => p.costo_promedio !== null).map(p => [`${p.emisor_id}:${p.product_id}`, Number(p.costo_promedio)])));
+            }
         } catch (e) {
             if (mio !== pedidoRef.current) return;
             console.error('TabInventario', e);
@@ -300,10 +310,13 @@ export default function TabInventario({ emisor, puedeVender, puedeConfigurar, bu
         } finally {
             if (mio === pedidoRef.current) setCargando(false);
         }
-    }, []);
+    }, [puedeConfigurar]);
     useEffect(() => { cargar(); }, [cargar]);
 
-    const conDias = useMemo(() => lotes.map(l => ({ ...l, dias: l.vence ? diasHasta(l.vence) : null })), [lotes]);
+    const conDias = useMemo(() => lotes.map(l => {
+        const costo = costos.get(`${l.emisor_id}:${l.product_id}`);
+        return { ...l, dias: l.vence ? diasHasta(l.vence) : null, costo: costo ?? null, valor: costo !== undefined ? costo * l.existencia : null };
+    }), [lotes, costos]);
 
     const filtrados = useMemo(() => {
         const q = buscar.trim();
@@ -320,6 +333,8 @@ export default function TabInventario({ emisor, puedeVender, puedeConfigurar, bu
             unidades: vivos.reduce((t, l) => t + l.existencia, 0),
             porVencer: vivos.filter(l => l.dias !== null && l.dias >= 0 && l.dias <= POR_VENCER).length,
             vencidos: vivos.filter(l => l.dias !== null && l.dias < 0).length,
+            valor: vivos.reduce((t, l) => t + (l.valor ?? 0), 0),
+            sinCosto: new Set(vivos.filter(l => l.costo === null).map(l => l.product_id)).size,
         };
     }, [conDias]);
 
@@ -343,6 +358,11 @@ export default function TabInventario({ emisor, puedeVender, puedeConfigurar, bu
                     <StatCard icon={CalendarX2} label="Vencidos" value={stats.vencidos} loading={cargando}
                         iconBg="bg-danger/10" iconCls="text-danger" sub="Con existencia: no se venden"
                         active={filtro === 'vencidos'} tono="danger" onClick={() => alternar('vencidos')} />
+                    {puedeConfigurar && (
+                        <StatCard icon={Coins} label="Valor al costo" value={formatMoney(stats.valor)} loading={cargando}
+                            iconBg="bg-success/10" iconCls="text-success"
+                            sub={stats.sinCosto ? `${stats.sinCosto} productos todavía sin costo` : 'Costo promedio, sin IVA'} />
+                    )}
                 </CarrilCards>
                 <FilterBar onClear={() => setFiltro('')} activeCount={filtro ? 1 : 0} acciones={acciones}>
                     <FilterBar.Chip active={filtro === 'agotados'} onToggle={() => alternar('agotados')} tone="brand">
@@ -354,7 +374,7 @@ export default function TabInventario({ emisor, puedeVender, puedeConfigurar, bu
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
 
             <DataTable
-                columns={COLS}
+                columns={puedeConfigurar ? [...COLS, COL_COSTO] : COLS}
                 movil={{ usarAccionDeFila: true }}
                 loading={cargando}
                 minWidth="320px"
@@ -377,6 +397,16 @@ export default function TabInventario({ emisor, puedeVender, puedeConfigurar, bu
                                 </div>
                             </DataCell>
                             <DataCell align="right"><span className="tabular-nums font-bold text-content-2">{l.existencia}</span></DataCell>
+                            {puedeConfigurar && (
+                                <DataCell align="right" hideBelow="md">
+                                    {l.costo === null ? <span className="text-caption text-content-3">Sin costo</span> : (
+                                        <div className="flex flex-col items-end">
+                                            <span className="tabular-nums text-body-sm font-bold text-content-2">{formatMoney(l.valor)}</span>
+                                            <span className="text-micro text-content-3 tabular-nums">{formatMoney(l.costo)} c/u</span>
+                                        </div>
+                                    )}
+                                </DataCell>
+                            )}
                         </DataRow>
                     );
                 })}

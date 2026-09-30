@@ -99,7 +99,7 @@ export async function guardarCliente(cliente) {
 export async function fetchCatalogo() {
     const rows = await fetchAllRows(() => supabase
         .from('dist_catalogo')
-        .select('emisor_id, product_id, precio_con_iva, venta_libre, activo, products(nombre, codigo_barras, es_antibiotico, requiere_receta, regulado)')
+        .select('emisor_id, product_id, precio_con_iva, venta_libre, activo, costo_promedio, products(nombre, codigo_barras, es_antibiotico, requiere_receta, regulado)')
         .order('product_id'));
     if (rows === null) throw new Error('No se pudo cargar el catálogo.');
     return rows.map(r => ({

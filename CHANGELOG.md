@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1104.0 — Torogoz: compras a proveedores con costo
+
+La mercadería de la distribuidora entraba con «Entrada de lote», sin costo: no
+había utilidad posible ni libro de compras. Ahora entra por **Compras**
+(sólo entorno de pruebas; borrador `0015_compras_y_costo.sql`).
+
+- **Proveedores** con NIT, NRC, plazo de pago y la marca de empresa relacionada
+  (las farmacias, cuando le pasen mercadería a la distribuidora).
+- **El JSON del documento del proveedor llena la compra**: número de control,
+  código de generación, fecha, condición, montos y renglones. El costo por
+  unidad sale de la venta gravada del renglón (ya sin descuento), un descuento
+  al total se reparte, y si el proveedor factura por caja se dice cuántas
+  unidades trae. Si el proveedor no existe, se registra con lo leído.
+- **Memoria de códigos**: lo que se eligió para cada código del proveedor se
+  recuerda, y la próxima compra se llena sola.
+- **No entra sin cuadrar**: los productos tienen que sumar lo gravado del papel,
+  el IVA de un Crédito Fiscal es el 13 %, el total tiene que dar gravado +
+  exento + IVA + percepción − retención, cada renglón con lote y vencimiento no
+  vencido, y el mismo documento no se registra dos veces. La pantalla lo avisa en
+  vivo con las mismas reglas que la base exige al recibir.
+- **Recibir** crea o suma el lote, deja el movimiento con su costo y calcula el
+  **costo promedio ponderado**. **Anular** sólo mientras todo siga en bodega, y
+  deshace el promedio.
+- **Inventario** muestra el valor al costo (sólo a quien administra).
+- El cobro de Cuentas por cobrar ahora guarda borrador, con su identificador:
+  un reintento después de perder la sesión no cobra dos veces.
+
 ## v2.1103.0 — Torogoz: cuentas por cobrar con cartera, cobro repartido, recibo y límite de crédito que frena
 
 Pedido del usuario: «sigue con cuentas por cobrar […] usa el ERP como

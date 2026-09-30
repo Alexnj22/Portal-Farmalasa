@@ -1115,6 +1115,7 @@ const ROUTE_TITLES = {
     '/torogoz/pedidos':   'Pedidos',
     '/torogoz/documentos': 'Facturación',
     '/torogoz/cobros':    'Cuentas por cobrar',
+    '/torogoz/compras':   'Compras',
     '/torogoz/clientes':  'Clientes',
     '/torogoz/catalogo':  'Catálogo',
     '/torogoz/inventario': 'Inventario',

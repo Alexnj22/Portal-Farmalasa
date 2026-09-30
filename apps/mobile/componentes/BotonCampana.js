@@ -14,7 +14,7 @@ export default function BotonCampana() {
   const sinLeer = useStaffStore((s) => s.notifications.length);
   return (
     <Pressable onPress={() => router.navigate('/avisos')} hitSlop={10}
-      accessibilityRole="button" accessibilityLabel={sinLeer ? `Avisos, ${sinLeer} sin leer` : 'Avisos'}>
+      accessibilityRole="button" accessibilityLabel={sinLeer ? `Notificaciones, ${sinLeer} sin leer` : 'Notificaciones'}>
       <Host matchContents>
         <Icon name={iconoDe('Bell')} size={22} color={tema.color.texto} />
       </Host>

@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1095.0 — Notificaciones: tarjetas en la app, progreso visible y rechazo escrito en el aviso
+
+Revisión del usuario con la compilación 10 en la mano (2026-09-30).
+
+- **Una anulación aprobada desde el teléfono decía «No se pudo» y SÍ se había
+  aplicado.** Medido en los registros: una sola llamada, 16 s con Hacienda, el
+  servidor respondió 200 y el teléfono no recibió la respuesta. La anulación
+  quedó hecha y a quien la pidió nunca le llegó el aviso (se le mandó a mano).
+  Ahora `decidirSolicitud` —la del portal y la app— **relee la solicitud** si
+  la respuesta no llega: si quedó como se pidió y firmada por quien decide, se
+  da por hecha y se completa el aviso a quien pidió
+  (`avisarDecisionAlQuePidio`). Enviar un traslado hace lo mismo.
+- **Progreso visible:** los botones abren la app a una capa de «Aprobando…»
+  que termina en «✓ Aprobada» con vibración o en el motivo (`Progreso.js`).
+  No se hace en segundo plano a propósito: iOS da unos segundos y una
+  anulación con Hacienda tarda 16.
+- **El motivo se escribe en la notificación** (campo de texto de iOS); en un
+  traslado, «sin existencia» y «ya encargado» son botones.
+- **La pestaña se llama Notificaciones y son tarjetas:** foto de quien lo
+  originó, el detalle de la solicitud y sus botones ahí mismo. Lo que dice cada
+  solicitud (`utils/tarjetaDeSolicitud.js`) y quién puede decidir desde un aviso
+  (`utils/accionesDeAviso.js`) pasan al núcleo: los usan la notificación (el
+  servidor importa el mismo archivo), la pestaña y la campana del portal.
+- **Textos del aviso:** nombres como se escriben («Dolores Tejada», no en
+  mayúsculas), el número de documento sin ceros ni sufijo y agrupado (el
+  teléfono tomaba 0000065777 por un teléfono y lo pintaba de azul), renglones
+  con «·» en vez de viñetas.
+- **Encabezados:** siguen al modo del teléfono (el título grande salía oscuro
+  sobre oscuro) y usan el vidrio de iOS al desplazar, no un fondo blanco.
+
 ## v2.1094.2 — App: avisos urgentes pasan el modo Concentración
 
 `send-push-notification` ya marca los urgentes como `time-sensitive`; sin el

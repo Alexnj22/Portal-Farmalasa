@@ -1,29 +1,163 @@
-// Avisos: la CAMPANA del portal, nativa (pedido del usuario del 2026-09-30:
-// «no veo las notificaciones en la app»). Hasta ese día esta pestaña abría
-// «Mis avisos» —los comunicados— y la campana no estaba en ningún lado.
+// Notificaciones: la CAMPANA del portal, nativa y con tarjetas (pedido del
+// usuario del 2026-09-30: «no salen como cards con la info»).
 //
 // Es la misma bandeja del portal y con las mismas reglas, porque sale del mismo
-// store: `fetchNotifications` trae SÓLO lo no leído (la campana es lo que falta
-// atender; lo leído sigue en el historial) y `useNotificationsChannel`, montado
-// en la raíz, la mantiene al día en vivo. Tocar un aviso lo marca leído y abre
-// su pantalla, igual que en la web.
-import { useColorScheme } from 'react-native';
+// store: `fetchNotifications` trae SÓLO lo no leído (lo que falta atender; lo
+// leído sigue en el historial) y `useNotificationsChannel`, montado en la raíz,
+// la mantiene al día en vivo.
+//
+// Cada aviso es una tarjeta: quién lo originó (foto), qué pasó, y —si nombra
+// una solicitud— su detalle con los mismos renglones que la notificación del
+// teléfono (`detalleDeSolicitud`, del núcleo). Si quien la mira puede decidir,
+// los botones están ahí mismo: la regla de quién puede es la de la campana del
+// portal (`utils/accionesDeAviso.js`) y la de aprobar, la del portal
+// (`decidirSolicitud`).
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Image, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
-import { Button, Host, Icon, List, ListItem } from '@expo/ui';
+import { Button, Host, Row } from '@expo/ui';
+import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { cuandoLlego, tituloSinEmoji } from '@nucleo/utils/notificacionTexto';
-import Seccion from '../../../componentes/Seccion';
-import { useTema } from '../../../tema/tema';
-import { iconoDe } from '../../../tema/iconos';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { cargarFilaDeAviso, esAvisoDeMinMax } from '@nucleo/data/solicitudDeAviso';
+import { detalleDeMinMax, detalleDeSolicitud, recortar } from '@nucleo/utils/tarjetaDeSolicitud';
+import { esAvisoDeTraslado, puedeDecidirAviso, trasladoPorResolver } from '@nucleo/utils/accionesDeAviso';
+import { colorSistema } from '../../../componentes/Formulario';
+import { decidirDesdeAviso, enviarTraslado, rechazarTrasladoDesdeAviso } from '../../../componentes/avisos';
 import { abrirRuta } from '../../../pantallas';
 
-export default function Avisos() {
-  const tema = useTema();
-  const oscuro = useColorScheme() === 'dark';
+// El detalle se pide para los avisos que nombran una solicitud todavía abierta.
+// Tope: con más, la pestaña pagaría decenas de lecturas por abrirse.
+const TOPE_DE_DETALLES = 20;
+
+function Avatar({ empleado, titulo }) {
+  const foto = empleado?.photo || empleado?.photo_url;
+  const letras = (empleado ? shortEmployeeName(empleado) : tituloSinEmoji(titulo))
+    .split(/\s+/).slice(0, 2).map((p) => p.charAt(0).toUpperCase()).join('');
+  if (foto) return <Image source={{ uri: foto }} style={{ width: 40, height: 40, borderRadius: 20 }} />;
+  return (
+    <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colorSistema.separador, alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ color: colorSistema.texto2, fontWeight: '600' }}>{letras || '•'}</Text>
+    </View>
+  );
+}
+
+function Tarjeta({ n, empleado, detalle, acciones, ocupado, onAbrir }) {
+  return (
+    <Pressable onPress={onAbrir} style={({ pressed }) => ({
+      backgroundColor: colorSistema.fila, borderRadius: 16, marginHorizontal: 16, padding: 14, gap: 10,
+      opacity: pressed ? 0.85 : 1,
+    })}>
+      <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
+        <Avatar empleado={empleado} titulo={n.title} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '600' }} numberOfLines={2}>
+              {tituloSinEmoji(n.title)}
+            </Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{cuandoLlego(n.created_at)}</Text>
+          </View>
+          {empleado ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{shortEmployeeName(empleado)}</Text> : null}
+          {!detalle && n.body ? <Text style={{ color: colorSistema.texto, fontSize: 14 }} numberOfLines={4}>{n.body}</Text> : null}
+        </View>
+      </View>
+
+      {detalle ? (
+        <View style={{ gap: 6 }}>
+          {detalle.contexto ? <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{detalle.contexto}</Text> : null}
+          {detalle.renglones.length ? (
+            <View style={{ backgroundColor: colorSistema.fondo, borderRadius: 10, paddingHorizontal: 10 }}>
+              {detalle.renglones.map(([a, b], i) => (
+                <View key={i} style={{ flexDirection: 'row', gap: 8, paddingVertical: 7, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
+                  <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 13 }} numberOfLines={2}>{a}</Text>
+                  {b ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontVariant: ['tabular-nums'] }}>{b}</Text> : null}
+                </View>
+              ))}
+              {detalle.resto ? (
+                <Text style={{ color: colorSistema.texto2, fontSize: 12, paddingVertical: 7, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
+                  y {detalle.resto} más
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
+          {detalle.pie ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{detalle.pie}</Text> : null}
+        </View>
+      ) : null}
+
+      {acciones.length ? (
+        <Host matchContents={{ vertical: true }} style={{ width: '100%' }}>
+          <Row spacing={8}>
+            {acciones.map((a) => (
+              <Button key={a.clave} variant={a.principal ? 'filled' : 'outlined'} label={ocupado === a.clave ? '…' : a.rotulo}
+                disabled={!!ocupado} onPress={a.hacer} />
+            ))}
+          </Row>
+        </Host>
+      ) : null}
+    </Pressable>
+  );
+}
+
+export default function Notificaciones() {
+  const { user, hasPermission } = useAuth();
   const avisos = useStaffStore((s) => s.notifications);
+  const empleados = useStaffStore((s) => s.employees);
   const recargar = useStaffStore((s) => s.fetchNotifications);
   const marcarLeido = useStaffStore((s) => s.markNotificationRead);
   const marcarTodos = useStaffStore((s) => s.markAllNotificationsRead);
+  const marcarResuelto = useStaffStore((s) => s.marcarAvisoDeSolicitudResuelto);
+  const [detalles, setDetalles] = useState({});      // id del aviso → detalle recortado
+  const [ocupado, setOcupado] = useState(null);      // `${aviso}|${acción}`
+  const [recargando, setRecargando] = useState(false);
+
+  const porId = useMemo(() => new Map((empleados || []).map((e) => [String(e.id), e])), [empleados]);
+
+  // El detalle de lo que nombra una solicitud abierta, leído de la base (el
+  // aviso es la foto del momento en que salió; la solicitud es la de ahora).
+  useEffect(() => {
+    let vivo = true;
+    const pendientes = avisos
+      .filter((n) => n.metadata?.request_id && !n.metadata?.resuelta && !(n.id in detalles))
+      .slice(0, TOPE_DE_DETALLES);
+    if (!pendientes.length) return undefined;
+    Promise.all(pendientes.map(async (n) => {
+      try {
+        const fila = await cargarFilaDeAviso(n);
+        if (!fila) return [n.id, null];
+        return [n.id, recortar(esAvisoDeMinMax(n) ? detalleDeMinMax(fila) : detalleDeSolicitud(fila))];
+      } catch { return [n.id, null]; }
+    })).then((pares) => { if (vivo) setDetalles((d) => ({ ...d, ...Object.fromEntries(pares) })); });
+    return () => { vivo = false; };
+  }, [avisos, detalles]);
+
+  const hacer = useCallback(async (n, accion, fn) => {
+    setOcupado(`${n.id}|${accion}`);
+    const ok = await fn();
+    setOcupado(null);
+    if (ok) {
+      marcarResuelto?.(n.metadata?.request_id, accion === 'rechazar' ? 'REJECTED' : 'APPROVED');
+      marcarLeido(n.id);
+    }
+  }, [marcarLeido, marcarResuelto]);
+
+  const accionesDe = (n) => {
+    const d = { solicitud: n.metadata?.request_id, url: n.link || '/solicitudes', tipo: esAvisoDeTraslado(n) ? 'traslado' : 'solicitud' };
+    if (esAvisoDeMinMax(n)) d.solicitud = `minmax:${n.metadata?.request_id}`;
+    if (trasladoPorResolver(n, hasPermission)) {
+      return [
+        { clave: 'enviar', rotulo: 'Enviar todo', principal: true, hacer: () => hacer(n, 'enviar', () => enviarTraslado(d)) },
+        { clave: 'rechazar', rotulo: 'Rechazar…', hacer: () => hacer(n, 'rechazar', () => rechazarTrasladoDesdeAviso(d)) },
+      ];
+    }
+    if (puedeDecidirAviso(n, hasPermission)) {
+      return [
+        { clave: 'aprobar', rotulo: 'Aprobar', principal: true, hacer: () => hacer(n, 'aprobar', () => decidirDesdeAviso(d, 'approve', user?.id)) },
+        { clave: 'rechazar', rotulo: 'Rechazar…', hacer: () => hacer(n, 'rechazar', () => decidirDesdeAviso(d, 'reject', user?.id)) },
+      ];
+    }
+    return [];
+  };
 
   const abrir = (n) => {
     marcarLeido(n.id);
@@ -33,39 +167,33 @@ export default function Avisos() {
   return (
     <>
       <Stack.Screen options={{
+        // Texto del color de acento, como «Editar» en Mail: el sistema le pone
+        // su propio fondo de vidrio en la barra.
         headerRight: avisos.length ? () => (
-          <Host matchContents>
-            <Button variant="text" label="Leer todos" onPress={() => marcarTodos()} />
-          </Host>
+          <Pressable onPress={() => marcarTodos()} hitSlop={8} accessibilityRole="button">
+            <Text style={{ color: colorSistema.acento, fontSize: 17 }}>Leer todas</Text>
+          </Pressable>
         ) : undefined,
       }} />
-      <Host style={{ flex: 1 }} colorScheme={oscuro ? 'dark' : 'light'}>
-        <List onRefresh={async () => { await recargar(); }}>
-          <Seccion titulo={avisos.length ? `${avisos.length} sin leer` : undefined}>
-            {avisos.length ? avisos.map((n) => (
-              <ListItem key={n.id} onPress={() => abrir(n)}
-                supporting={[n.body, cuandoLlego(n.created_at)].filter(Boolean).join('\n')}
-                leading={<Icon name={iconoDe('Bell')} size={20} color={tema.color.marca} />}>
-                {tituloSinEmoji(n.title)}
-              </ListItem>
-            )) : (
-              <ListItem supporting="Lo que llegue aparece acá y en la barra de abajo.">
-                Todo al día
-              </ListItem>
-            )}
-          </Seccion>
-          <Seccion>
-            <ListItem onPress={() => abrirRuta('/notificaciones')}
-              leading={<Icon name={iconoDe('Activity')} size={20} color={tema.color.marca} />}>
-              Historial de avisos
-            </ListItem>
-            <ListItem onPress={() => abrirRuta('/mis-avisos')}
-              leading={<Icon name={iconoDe('Megaphone')} size={20} color={tema.color.marca} />}>
-              Comunicados
-            </ListItem>
-          </Seccion>
-        </List>
-      </Host>
+      <ScrollView style={{ flex: 1, backgroundColor: colorSistema.fondo }}
+        contentContainerStyle={{ paddingVertical: 12, gap: 12 }}
+        contentInsetAdjustmentBehavior="automatic"
+        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setDetalles({}); await recargar(); setRecargando(false); }} />}>
+        {avisos.length ? avisos.map((n) => (
+          <Tarjeta key={n.id} n={n} empleado={porId.get(String(n.created_by))} detalle={detalles[n.id]}
+            acciones={accionesDe(n)} ocupado={ocupado?.startsWith(`${n.id}|`) ? ocupado.split('|')[1] : null}
+            onAbrir={() => abrir(n)} />
+        )) : (
+          <View style={{ alignItems: 'center', paddingTop: 80, gap: 6 }}>
+            <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>Todo al día</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Lo que llegue aparece acá y en la barra de abajo.</Text>
+          </View>
+        )}
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 24, paddingTop: 8 }}>
+          <Pressable onPress={() => abrirRuta('/notificaciones')}><Text style={{ color: colorSistema.acento, fontSize: 15 }}>Historial</Text></Pressable>
+          <Pressable onPress={() => abrirRuta('/mis-avisos')}><Text style={{ color: colorSistema.acento, fontSize: 15 }}>Comunicados</Text></Pressable>
+        </View>
+      </ScrollView>
     </>
   );
 }

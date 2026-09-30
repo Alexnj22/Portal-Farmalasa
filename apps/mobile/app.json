@@ -21,7 +21,8 @@
       "entitlements": {
         "com.apple.developer.usernotifications.communication": true,
         "com.apple.developer.usernotifications.time-sensitive": true
-      }
+      },
+      "appleTeamId": "ZZWA3Q7Q35"
     },
     "android": {
       "package": "lat.farmasalud.portal",

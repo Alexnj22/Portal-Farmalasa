@@ -1,9 +1,9 @@
 // La raíz de la app. El `AuthProvider` es EL MISMO del portal
 // (src/context/AuthContext.jsx): la sesión, los permisos, el cierre por
 // inactividad y el candado de módulos se deciden con el mismo código.
-import { router, Stack, useSegments } from 'expo-router';
+import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View } from 'react-native';
+import { useColorScheme, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect } from 'react';
 import { AuthProvider, useAuth } from '@nucleo/context/AuthContext';
@@ -12,6 +12,7 @@ import { useNotificationsChannel } from '@nucleo/hooks/useNotificationsChannel';
 import { notificarActividad } from '@plataforma/cicloDeVida';
 import { useTema } from '../tema/tema';
 import BotonCampana from '../componentes/BotonCampana';
+import { CapaDeProgreso } from '../componentes/Progreso';
 import { escucharToques, registrarAvisos } from '../componentes/avisos';
 
 // Lo que hace `App.jsx` del portal alrededor de las pantallas:
@@ -43,21 +44,27 @@ function CampanaEnVivo() {
   return null;
 }
 
+// Los colores de la navegación siguen al TELÉFONO (claro u oscuro), no al tema
+// del portal: las barras, los títulos y los fondos son los del sistema. Con los
+// del portal el título grande salía oscuro sobre oscuro (usuario, 2026-09-30).
+const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: '#F2F2F7', card: '#F9F9F9' } };
+const OSCURO = { ...DarkTheme, colors: { ...DarkTheme.colors, background: '#000000', card: '#1C1C1E' } };
+
 export default function Raiz() {
   const tema = useTema();
+  const oscuro = useColorScheme() === 'dark';
   return (
+    <ThemeProvider value={oscuro ? OSCURO : CLARO}>
     <SafeAreaProvider>
       {/* Cada toque cuenta como actividad: es lo que en la web hacen el mouse
           y el teclado, y lo que mantiene viva la sesión. */}
-      <View style={{ flex: 1, backgroundColor: tema.color.fondo }} onTouchStart={notificarActividad}>
+      <View style={{ flex: 1, backgroundColor: oscuro ? OSCURO.colors.background : CLARO.colors.background }} onTouchStart={notificarActividad}>
         <AuthProvider>
           <GuardiaDeSesion />
-          <StatusBar style={tema.nombre === 'solid-dark' ? 'light' : 'dark'} />
+          <StatusBar style="auto" />
           <Stack
             screenOptions={{
-              headerStyle: { backgroundColor: tema.color.tarjeta },
-              headerTintColor: tema.color.texto,
-              contentStyle: { backgroundColor: tema.color.fondo },
+              headerTintColor: tema.color.marca,
               // Sólo la flecha: el nombre de la pantalla anterior es el de la
               // barra de pestañas, que no significa nada para quien la usa.
               headerBackButtonDisplayMode: 'minimal',
@@ -68,8 +75,10 @@ export default function Raiz() {
             <Stack.Screen name="entrar" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           </Stack>
+          <CapaDeProgreso />
         </AuthProvider>
       </View>
     </SafeAreaProvider>
+    </ThemeProvider>
   );
 }

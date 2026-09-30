@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState, lazy, Suspense } from 'react';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
-import { MODULO_QUE_DECIDE } from '@nucleo/constants/solicitudModulos';
+import { puedeDecidirAviso, trasladoPorResolver as trasladoPorResolverRegla } from '@nucleo/utils/accionesDeAviso';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useDecidirSolicitud } from '@nucleo/hooks/useDecidirSolicitud';
 import useCortesDeAvisos, { AVISOS_DE_CORTE } from '@nucleo/hooks/useCortesDeAvisos';
@@ -49,46 +49,10 @@ export function useAccionesDeAviso({ avisos = [], activo = true, alAbrirDialogo 
 
     const cerrarLoQueEsteAbierto = useCallback(() => { alAbrirDialogo?.(); }, [alAbrirDialogo]);
 
-    /* ── Quién puede decidir qué ─────────────────────────────────────────────
-     * Cada solicitud con SU permiso, y desde v2.576.0 eso ya no es «uno por
-     * pantalla» sino uno por FAMILIA: quien puede anular una factura no
-     * necesariamente puede aprobar un descarte de inventario. El aviso trae el
-     * tipo en `metadata.request_type`, así que se resuelve por solicitud y no
-     * por una bandera calculada una vez para todas.
-     *
-     * `MODULO_QUE_DECIDE` es el mismo mapa que usa la bandeja y el espejo de
-     * `modulo_de_aprobacion()` en Postgres. */
-    const moduloDelAviso = (n) => {
-        if (n.type === 'MINMAX_PENDING') return 'requests_minmax';
-        if (n.type !== 'REQUEST_PENDING') return null;
-        return MODULO_QUE_DECIDE[n.metadata?.request_type] ?? 'requests';
-    };
-
-    /* Un traslado NO se decide desde acá: confirmarlo relee la existencia de la
-       sala de origen justo antes de despachar. Aprobarlo por fuera lo marcaría
-       APROBADO **sin mover nada** y lo haría desaparecer de las tres pestañas de
-       Traslados. */
-    const esTraslado = (n) => n.metadata?.request_type === 'INVENTORY_TRANSFER_REQUEST';
-    /* Un ENVÍO tampoco (24-sep): se acepta o devuelve producto por producto en
-       Traslados → Envíos. No tiene módulo en `MODULO_QUE_DECIDE`, así que caía
-       en `requests` y a quien pudiera aprobar solicitudes la campana le
-       ofrecía «Aprobar» — que lo marcaría aprobado sin tocar un solo renglón. */
-    const esEnvio = (n) => n.metadata?.request_type === 'INVENTORY_TRANSFER_PUSH';
-
-    /* `resuelta` la escribe el trigger `marcar_notificacion_solicitud_resuelta`
-       en el momento en que la solicitud deja de estar PENDING. Sin eso, el aviso
-       seguiría ofreciendo Aprobar/Rechazar sobre algo ya decidido. */
-    const puedeDecidir = useCallback((n) => {
-        if (esTraslado(n) || esEnvio(n)) return false;
-        const modulo = moduloDelAviso(n);
-        return !!modulo && hasPermission(modulo, 'can_approve')
-            && !!n.metadata?.request_id && !n.metadata?.resuelta;
-    }, [hasPermission]);
-
-    const trasladoPorResolver = useCallback((n) =>
-        n.type === 'REQUEST_PENDING' && esTraslado(n) && !n.metadata?.resuelta
-        && hasPermission('traslados', 'can_approve'),
-    [hasPermission]);
+    /* Quién puede decidir qué: la regla vive en el núcleo
+     * (`utils/accionesDeAviso.js`) porque la usa también la app del teléfono. */
+    const puedeDecidir = useCallback((n) => puedeDecidirAviso(n, hasPermission), [hasPermission]);
+    const trasladoPorResolver = useCallback((n) => trasladoPorResolverRegla(n, hasPermission), [hasPermission]);
 
     const [decidiendoId, setDecidiendoId] = useState(null);
     const [rechazo, setRechazo] = useState(null);   // { req, accion }

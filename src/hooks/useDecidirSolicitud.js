@@ -2,7 +2,8 @@ import { useState, useCallback } from 'react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
-import { YA_AVISADO } from '../store/slices/requestsSlice';
+import { YA_AVISADO, avisarDecisionAlQuePidio } from '../store/slices/requestsSlice';
+import { fetchApprovalRequestById } from '../data/requests';
 import { decidirMinMax } from '../data/minmaxRequests';
 import { notifyEmployees } from '../utils/notify';
 import { ERP_NAMES } from '../constants/erp';
@@ -127,6 +128,24 @@ export async function decidirSolicitud({ req, modo, nota, aceptadas, userId }) {
                 ? (aceptadas ? `Se aplicaron ${aceptadas.length} líneas; el resto quedó rechazado.` : 'Solicitud aprobada.')
                 : 'Solicitud rechazada.',
         };
+    }
+    /* ¿De verdad no entró? Se relee. Las que se aplican afuera (facturación,
+     * inventario, caja) las marca APROBADA la función del servidor al
+     * terminar; si su respuesta se pierde en el camino —medido el 2026-09-30:
+     * una anulación tardó 16 s con Hacienda, el servidor respondió 200 y el
+     * teléfono no lo recibió— la decisión ESTÁ hecha y decir «no se pudo»
+     * invita a repetirla. Si la fila quedó como se pidió y firmada por quien
+     * decide, se da por hecha y se completa lo que faltó: el aviso a quien la
+     * pidió. */
+    const esperado = modo === 'approve' ? 'APPROVED' : 'REJECTED';
+    try {
+        const { data: fila } = await fetchApprovalRequestById(req.id);
+        if (fila?.status === esperado && String(fila.approver_id) === String(userId)) {
+            await avisarDecisionAlQuePidio(fila, userId).catch(e => console.error('aviso de la decisión:', e?.message ?? e));
+            return { ok: true, recuperada: true, mensaje: modo === 'approve' ? 'Solicitud aprobada.' : 'Solicitud rechazada.' };
+        }
+    } catch (e) {
+        console.error('releer la solicitud:', e?.message ?? e);
     }
     // YA_AVISADO: el store ya explicó por qué no (ya estaba decidida, o el
     // sistema de origen dijo que no); repetirlo borraría ese detalle.

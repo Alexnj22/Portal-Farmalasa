@@ -679,6 +679,20 @@ const notifyEmployee = async (employeeId, approverId, requestType, status, appro
     });
 };
 
+/**
+ * El aviso a quien pidió, cuando la decisión SÍ entró pero su respuesta se
+ * perdió en el camino (2026-09-30: una anulación aprobada desde el teléfono
+ * tardó 16 s con Hacienda, el servidor respondió bien y el teléfono no recibió
+ * la respuesta; la anulación quedó hecha y a quien la pidió nunca le llegó el
+ * aviso). Lo usa `decidirSolicitud` después de releer la solicitud.
+ */
+export async function avisarDecisionAlQuePidio(fila, approverId) {
+    if (!fila?.employee_id) return;
+    const meta = parseMeta(fila.metadata);
+    await notifyEmployee(fila.employee_id, approverId, fila.type, fila.status,
+        fila.approver_note ?? '', meta, meta?.erp_aplicado?.instruccion ?? null);
+}
+
 // ── Helpers de Incapacidad ──────────────────────────────────────────────────
 
 

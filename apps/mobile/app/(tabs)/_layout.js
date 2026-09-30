@@ -20,7 +20,7 @@ export default function Pestanas() {
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="avisos">
         <NativeTabs.Trigger.Icon sf={{ default: 'bell', selected: 'bell.fill' }} md="notifications" />
-        <NativeTabs.Trigger.Label>Avisos</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Notificaciones</NativeTabs.Trigger.Label>
         {sinLeer ? <NativeTabs.Trigger.Badge>{sinLeer > 99 ? '99+' : String(sinLeer)}</NativeTabs.Trigger.Badge> : null}
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="yo">

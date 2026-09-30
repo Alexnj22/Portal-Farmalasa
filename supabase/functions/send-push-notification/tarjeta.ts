@@ -16,6 +16,9 @@
 // Nada de esto puede costar el aviso: si una lectura falla, sale el de texto.
 
 // deno-lint-ignore-file no-explicit-any
+// Qué dice cada solicitud vive en el núcleo, compartido con la pestaña
+// Notificaciones de la app: una sola definición.
+import { detalleDeMinMax, detalleDeSolicitud, nombreCorto, recortar } from '../../../src/utils/tarjetaDeSolicitud.js';
 export type Renglon = [string, string];
 export type Tarjeta = {
   familia: string;
@@ -32,22 +35,6 @@ export type AvisoTelefono = {
   tarjeta?: Tarjeta;
 };
 
-const TOPE = 4; // «tampoco se mandará un testamento» (usuario, 2026-09-30)
-
-const dinero = (v: unknown) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '';
-};
-
-// El nombre como lo muestra el portal: primer nombre + primer apellido
-// (`shortEmployeeName` de src/utils/nameUtils.js, misma regla).
-const primero = (s: unknown) => String(s ?? '').trim().split(/\s+/)[0] || '';
-function nombreCorto(e: any): string {
-  const a = primero(e?.first_names), b = primero(e?.last_names);
-  if (a || b) return `${a} ${b}`.trim();
-  const p = String(e?.name ?? '').trim().split(/\s+/).filter(Boolean);
-  return p.length <= 2 ? p.join(' ') : `${p[0]} ${p[2]}`;
-}
 
 // La foto se guarda como URL con forma pública; el bucket es privado, así que
 // el teléfono recibe una firmada por un día (la extensión la baja al llegar).
@@ -68,44 +55,6 @@ async function quienEs(supabase: any, employeeId: string | null | undefined) {
   return { nombre: nombreCorto(e), foto: await fotoFirmada(supabase, e.photo_url) };
 }
 
-const vendedor = (nombre: unknown, codigo: unknown) => (nombre ? nombreCorto({ name: nombre }) : `Cód. ${codigo ?? '?'}`);
-
-const renglonesDeItems = (items: any[]): Renglon[] => (Array.isArray(items) ? items : []).map((it) => [
-  String(it?.descripcion ?? 'Producto'),
-  `${it?.cantidad ?? '?'} ${String(it?.presentacion_tipo ?? '').toLowerCase()}`.trim(),
-]);
-
-// Lo que dice cada tipo de solicitud. Lo que no está acá sale con su nota.
-function porTipo(s: any): { contexto?: string; renglones: Renglon[]; pie?: string } {
-  const m = s.metadata ?? {};
-  const sala = m.branch_name ?? '';
-  switch (s.type) {
-    case 'INVENTORY_TRANSFER_REQUEST':
-      return { contexto: `Pide ${sala} a ${m.origen_branch_name ?? 'tu sala'}`, renglones: renglonesDeItems(m.items), pie: m.reason ? `Motivo: ${m.reason}` : undefined };
-    case 'INVENTORY_TRANSFER_PUSH':
-      return { contexto: `${m.origen_branch_name ?? 'Otra sala'} envía a ${sala}`, renglones: renglonesDeItems(m.items), pie: m.reason ? `Motivo: ${m.reason}` : undefined };
-    case 'INVENTORY_DISCARD_REQUEST':
-      return { contexto: `Descarte en ${sala}`, renglones: renglonesDeItems(m.items), pie: m.motivo_label ?? m.reason };
-    case 'INVENTORY_LOAD_REQUEST':
-      return { contexto: `Carga en ${sala}`, renglones: renglonesDeItems(m.items), pie: m.reason };
-    case 'ANNULMENT_REQUEST':
-      return { contexto: `Anular en ${sala}`, renglones: [[`${m.tipo_documento ?? 'Documento'} ${m.correlativo ?? ''}`.trim(), dinero(m.total)]], pie: m.reason };
-    case 'PAYMENT_CHANGE_REQUEST':
-      return { contexto: `Cambio de pago en ${sala}`, renglones: [[`${m.tipo_documento ?? 'Documento'} ${m.correlativo ?? ''}`.trim(), dinero(m.total)], ['Pago', `${m.current_pago ?? '?'} → ${m.new_pago ?? '?'}`]] };
-    case 'VENDOR_CHANGE_REQUEST':
-      return { contexto: `Cambio de vendedor en ${sala}`, renglones: [[`${m.tipo_documento ?? 'Documento'} ${m.correlativo ?? ''}`.trim(), dinero(m.total)], ['Vendedor', `${vendedor(m.current_vendor_name, m.current_vendor_code)} → ${vendedor(m.new_vendor_name, m.new_vendor_code)}`]] };
-    case 'CAJA_MOVIMIENTO_CHANGE':
-      return { contexto: m.que === 'ANULAR' ? 'Anular movimiento de caja' : 'Corrección de caja', renglones: [[String(m.concepto ?? 'Movimiento'), m.monto_nuevo == null ? dinero(m.monto_actual) : `${dinero(m.monto_actual)} → ${dinero(m.monto_nuevo)}`]] };
-    case 'ABONO_APROBACION':
-      return { contexto: 'Abono a crédito', renglones: [[String(m.cliente ?? 'Cliente'), dinero(m.monto)]], pie: m.forma };
-    case 'ABONO_CREDITO_CHANGE':
-      return { contexto: 'Corrección de abono', renglones: [[String(m.cliente ?? 'Cliente'), dinero(m.monto_actual)],
-        m.que === 'FORMA' ? ['Forma de pago', `${m.forma_actual ?? '?'} → ${m.forma_nueva ?? '?'}`] : ['Monto', `${dinero(m.monto_actual)} → ${dinero(m.monto_nuevo)}`]] };
-    default:
-      return { renglones: [], pie: s.note ?? undefined };
-  }
-}
-
 // El tema, para que iOS los agrupe: traslados con traslados, caja con caja.
 export function temaDe(url: string): string {
   const ruta = (url || '').split(/[?#]/)[0];
@@ -119,7 +68,7 @@ export function temaDe(url: string): string {
 
 // El texto que se ve donde la tarjeta no llega (y el de la vista previa).
 function cuerpo(base: string, t: Tarjeta): string {
-  const l = [t.contexto || base, ...t.renglones.map(([a, b]) => (b ? `• ${a} — ${b}` : `• ${a}`))];
+  const l = [t.contexto || base, ...t.renglones.map(([a, b]) => (b ? `${a} · ${b}` : a))];
   if (t.resto) l.push(`y ${t.resto} más`);
   if (t.pie) l.push(t.pie);
   return l.filter(Boolean).join('\n');
@@ -139,14 +88,7 @@ export async function tarjetaParaTelefono(supabase: any, base: AvisoTelefono): P
         .eq('id', minmax).maybeSingle();
       if (errMm) { console.error('tarjeta minmax', errMm.message); return conTema; }
       if (!f) return conTema;
-      const t: Tarjeta = {
-        familia: 'minmax',
-        quien: await quienEs(supabase, f.requested_by_id),
-        contexto: 'Ajuste de Min/Max',
-        renglones: [[String(f.product_name ?? 'Producto'), ''], ['Mínimo', `${f.current_min ?? '—'} → ${f.requested_min ?? '—'}`], ['Máximo', `${f.current_max ?? '—'} → ${f.requested_max ?? '—'}`]],
-        resto: 0,
-        pie: f.reason ?? undefined,
-      };
+      const t: Tarjeta = { familia: 'minmax', quien: await quienEs(supabase, f.requested_by_id), ...recortar(detalleDeMinMax(f)) };
       const pendiente = f.status === 'PENDING';
       return {
         ...conTema, tarjeta: t, message: cuerpo(base.message, t),
@@ -161,15 +103,7 @@ export async function tarjetaParaTelefono(supabase: any, base: AvisoTelefono): P
     if (errS) { console.error('tarjeta solicitud', errS.message); return conTema; }
     if (!s) return conTema;
 
-    const d = porTipo(s);
-    const t: Tarjeta = {
-      familia: s.type,
-      quien: await quienEs(supabase, s.employee_id),
-      contexto: d.contexto,
-      renglones: d.renglones.slice(0, TOPE),
-      resto: Math.max(0, d.renglones.length - TOPE),
-      pie: d.pie,
-    };
+    const t: Tarjeta = { familia: s.type, quien: await quienEs(supabase, s.employee_id), ...recortar(detalleDeSolicitud(s)) };
     const pendiente = s.status === 'PENDING';
     // Los botones por familia. El envío por ahora sólo se abre: aceptarlo
     // es decidir renglón por renglón (y «no llegó» pide evidencia).

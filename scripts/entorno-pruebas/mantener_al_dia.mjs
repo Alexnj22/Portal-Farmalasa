@@ -62,6 +62,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { reponerDistribucion } from './distribucion.mjs';
 
 const PROD = 'sacecdkdmsdvgqnrsett';
 const NOMBRE = 'staging';
@@ -180,6 +181,9 @@ async function herramientas(ref) {
     await sql(ref, leer('permisos_de_la_cuenta_de_pruebas.sql'), { escribe: true });
     await igualarPermisosDeTablas(ref);
     await asegurarOrigenes(ref);
+    // La distribuidora vive en borradores, no en migraciones: rehacer el branch
+    // la borra entera. Se repone si falta (ver distribucion.mjs).
+    await reponerDistribucion(sql, ref);
 }
 
 // Las edge functions contestan CORS sólo a los dominios de `PORTAL_ORIGIN`

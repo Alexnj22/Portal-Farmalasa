@@ -92,19 +92,21 @@ UPDATE public.dist_lotes l SET existencia = 3
 -- 7 · Para ver el control de Facturación (0013, 2026-09-29): un documento
 --     RECHAZADO por un dato del cliente (su pedido vuelve a «por facturar»)
 --     y uno emitido SIN CONEXIÓN. Salen de los «sin firmar» que dejan las
---     pruebas (en este entorno no hay credenciales de Hacienda).
+--     pruebas (en este entorno no hay credenciales de Hacienda) o, en un
+--     branch recién hecho —donde todavía no corrió ninguna—, de los sellados
+--     del historial del tablero (por eso esa semilla va ANTES que ésta).
 WITH r AS (
     SELECT d.id, d.pedido_id FROM public.dist_dte d JOIN public.dist_pedidos p ON p.id = d.pedido_id
-     WHERE d.estado = 'sin_firmar' AND p.estado = 'facturado' AND p.dte_id = d.id
+     WHERE d.estado IN ('sin_firmar', 'sellado') AND p.estado = 'facturado' AND p.dte_id = d.id
        AND NOT EXISTS (SELECT 1 FROM public.dist_dte x WHERE x.estado = 'rechazado')
-     ORDER BY d.id DESC LIMIT 1),
-u AS (UPDATE public.dist_dte d SET estado = 'rechazado', firmado = 'PRUEBA', intentos = 1,
+     ORDER BY d.estado = 'sin_firmar' DESC, d.id DESC LIMIT 1),
+u AS (UPDATE public.dist_dte d SET estado = 'rechazado', firmado = 'PRUEBA', intentos = 1, sello_recibido = NULL,
             codigo_msg = '004', descripcion_msg = 'RECHAZADO',
             observaciones_mh = '["[receptor.nrc] El NRC del receptor no existe o no está activo"]'::jsonb
         FROM r WHERE d.id = r.id RETURNING d.pedido_id)
 UPDATE public.dist_pedidos p SET estado = 'confirmado', dte_id = NULL FROM u WHERE p.id = u.pedido_id;
-UPDATE public.dist_dte SET estado = 'contingencia', firmado = 'PRUEBA'
- WHERE id = (SELECT id FROM public.dist_dte WHERE estado = 'sin_firmar' ORDER BY id DESC LIMIT 1)
+UPDATE public.dist_dte SET estado = 'contingencia', firmado = 'PRUEBA', sello_recibido = NULL
+ WHERE id = (SELECT id FROM public.dist_dte WHERE estado IN ('sin_firmar', 'sellado') ORDER BY estado = 'sin_firmar' DESC, id DESC LIMIT 1)
    AND NOT EXISTS (SELECT 1 FROM public.dist_dte WHERE estado = 'contingencia');
 
 -- 8 · Para probar cuentas por cobrar (0014, 2026-09-30): cobros realistas

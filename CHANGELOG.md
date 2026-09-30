@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1104.1 — Pruebas: la distribuidora se repone sola al rehacer el branch
+
+El 2026-09-30 el branch de pruebas se rehízo (cambió a `lyfafocpywvoxefetxah`)
+y la distribuidora desapareció entera: su esquema vive en
+`supabase/borradores/distribucion/`, no en migraciones, y el branch sólo replica
+las migraciones de producción.
+
+- `scripts/entorno-pruebas/distribucion.mjs` corre los borradores en orden, las
+  dos semillas y despliega `distribucion-dte` y `distribucion-comprobante`.
+  A mano: `npm run pruebas:distribucion`.
+- `mantener_al_dia.mjs` lo llama en cada corrida (no hace nada si ya está), y el
+  workflow instala el CLI de Supabase para poder desplegar las funciones.
+- La semilla del documento rechazado y el de contingencia ya no depende de que
+  antes hayan corrido las pruebas, y el historial del tablero se siembra primero
+  (los cobros de muestra se apoyan en él).
+
 ## v2.1104.0 — Torogoz: compras a proveedores con costo
 
 La mercadería de la distribuidora entraba con «Entrada de lote», sin costo: no

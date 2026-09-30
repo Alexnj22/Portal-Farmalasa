@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1105.0 — Torogoz: utilidad bruta y libro de compras
+
+Nueva sección **Reportes** de la distribuidora (sólo quien administra; borrador
+`0016_utilidad_y_libro_de_compras.sql`, sólo pruebas).
+
+- **El costo se congela al vender**: cada asignación de lote y cada movimiento
+  de venta guardan el costo promedio de ese momento. Así la utilidad de un mes
+  cerrado no cambia cuando entra una compra después.
+- **Utilidad**: venta sin IVA, costo de lo vendido, utilidad y margen del
+  período, por día (gráfica) y por producto, cliente, ruta o vendedor (período y
+  agrupación en la dirección). Lo vendido antes de guardar el costo usa el
+  promedio actual y se marca «estimado»; lo que no tiene costo de ninguna forma
+  se informa aparte y **no entra al margen** (con costo cero lo inflaría).
+- **Libro de compras** del mes: los Créditos Fiscales recibidos con gravado,
+  crédito fiscal, percepción y total; las Facturas y Sujetos excluidos se listan
+  como «fuera del libro». El CSV sale con el **mismo generador de 23 columnas**
+  que el libro de compras de las farmacias (`construirLibro`).
+- De paso: la prueba de cobro ya no supone cuánto debe el cliente.
+
 ## v2.1104.1 — Pruebas: la distribuidora se repone sola al rehacer el branch
 
 El 2026-09-30 el branch de pruebas se rehízo (cambió a `lyfafocpywvoxefetxah`)

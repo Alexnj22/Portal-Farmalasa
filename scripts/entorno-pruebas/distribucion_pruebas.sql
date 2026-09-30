@@ -144,3 +144,13 @@ BEGIN
         PERFORM public.dist_cxc_recalcular(x.id);
     END LOOP;
 END $$;
+
+-- 9 · Para ver la utilidad (0016, 2026-09-30): un costo promedio de muestra
+--     para los productos que todavía no entraron por una compra — entre 62 % y
+--     80 % del precio sin IVA. Sólo los que no tienen costo, así una compra
+--     real hecha en pruebas no se pisa.
+UPDATE public.dist_catalogo c
+   SET costo_promedio = round(c.precio_con_iva / 1.13 * (0.62 + (abs(hashtext(c.product_id::text)) % 19) / 100.0), 4),
+       costo_actualizado_at = now()
+ WHERE c.costo_promedio IS NULL AND c.precio_con_iva > 0
+   AND (SELECT count(*) FROM public.employees) <= 30;

@@ -7,6 +7,7 @@
 //
 // Se niega a correr si la página no muestra el marco «ENTORNO DE PRUEBAS».
 import { test, expect } from '@playwright/test';
+import fs from 'node:fs';
 import { entrar } from './distribucionEntrar.js';
 
 const SALIDA = process.env.E2E_CAPTURAS || 'test-results/distribucion';
@@ -20,7 +21,7 @@ async function cobrar(page) {
 }
 
 
-const SECCIONES = { inicio: 'Inicio', pedidos: 'Pedidos', documentos: 'Facturación', clientes: 'Clientes', catalogo: 'Catálogo', compras: 'Compras',
+const SECCIONES = { inicio: 'Inicio', pedidos: 'Pedidos', documentos: 'Facturación', clientes: 'Clientes', catalogo: 'Catálogo', compras: 'Compras', reportes: 'Reportes',
     inventario: 'Inventario', solicitudes: 'Solicitudes', emisor: 'Empresa' };
 
 test('las secciones de Torogoz abren sin romper, y la dirección vieja lleva allá', async ({ page }) => {
@@ -596,13 +597,14 @@ test('cuentas por cobrar: cobrar, no cobrar de más, anular el cobro, y la venta
     await page.locator('input[name="monto-cobro"]').fill(String(antes + 100));
     await expect(page.locator('[data-cobrar-cartera]')).toBeDisabled();
     await expect(page.getByText(/no se puede cobrar más/)).toBeVisible();
-    // Un abono de $50 en efectivo, entrega $60.
-    await page.locator('input[name="monto-cobro"]').fill('50');
-    await page.locator('input[name="recibido-cobro"]').fill('60');
+    // Un abono en efectivo (la mitad de lo que debe, hasta $50), entrega $10 más.
+    const abono = Math.min(50, Math.floor(antes * 50) / 100);
+    await page.locator('input[name="monto-cobro"]').fill(abono.toFixed(2));
+    await page.locator('input[name="recibido-cobro"]').fill((abono + 10).toFixed(2));
     await page.getByRole('switch', { name: /Imprimir el recibo/ }).click();
     await page.locator('[data-cobrar-cartera]').click();
     await expect(page.getByText('Cobro registrado').first()).toBeVisible({ timeout: 15_000 });
-    await expect.poll(async () => dinero(await saldo.innerText())).toBeCloseTo(antes - 50, 2);
+    await expect.poll(async () => dinero(await saldo.innerText())).toBeCloseTo(antes - abono, 2);
     await page.screenshot({ path: `${SALIDA}/cuenta-cliente.png` });
     // Anular el cobro (la cuenta de pruebas administra): el saldo vuelve.
     const recibo = page.locator('[data-recibo]').first();
@@ -695,12 +697,40 @@ test('compras: el JSON del proveedor llena la compra, no se recibe sin cuadrar n
     await recibir.click();
     await expect(page.getByText('Compra recibida').first()).toBeVisible({ timeout: 15_000 });
 
+    // Entra al libro de compras del mes, y el archivo sale con las 23 columnas del de las farmacias.
+    await page.goto('/torogoz/reportes?reporte=compras');
+    await expect(page.getByText(dte.identificacion.numeroControl).first()).toBeVisible({ timeout: 15_000 });
+    await page.screenshot({ path: `${SALIDA}/libro-compras.png`, fullPage: true });
+    const [descarga] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Descargar CSV' }).click()]);
+    const csv = fs.readFileSync(await descarga.path(), 'utf8');
+    const fila = csv.split('\r\n').find(l => l.includes(dte.identificacion.numeroControl.replace(/-/g, '')));
+    expect(fila?.split(';')).toHaveLength(23);
+    expect(fila).toContain(';DROGUERIA DE PRUEBA E2E, S.A. DE C.V.;');
+
     // En la lista, y se anula (todo sigue en bodega).
+    await page.goto('/torogoz/compras');
     await page.getByText(dte.identificacion.numeroControl).first().click();
     await expect(page.getByText('Recibida', { exact: true }).first()).toBeVisible({ timeout: 15_000 });
     await page.getByRole('button', { name: 'Anular esta compra' }).click();
     await page.locator('input[name="motivo-anular"]').fill('prueba automática');
     await page.getByRole('button', { name: 'Anular compra' }).click();
     await expect(page.getByText('Compra anulada').first()).toBeVisible({ timeout: 15_000 });
+    expect(errores).toEqual([]);
+});
+
+test('utilidad: venta contra costo, agrupar por cliente en la dirección, y sin costo no infla el margen', async ({ page }) => {
+    const errores = [];
+    page.on('pageerror', e => errores.push(e.message));
+    await entrar(page);
+    await page.goto('/torogoz/reportes?periodo=90d');
+    await expect(page.getByText('Utilidad bruta')).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('table tbody tr').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('Venta y utilidad por día')).toBeVisible();
+    await expect(page.locator('section[aria-label="Utilidad por día"] .recharts-surface').first()).toBeVisible({ timeout: 15_000 });
+    await page.screenshot({ path: `${SALIDA}/utilidad.png`, fullPage: true });
+    await page.getByRole('combobox', { name: 'Agrupar' }).click();
+    await page.getByRole('option', { name: 'Por cliente' }).click();
+    await expect(page).toHaveURL(/agrupar=cliente/);
+    await expect(page.getByText('FARMACIA LA PALMA').first()).toBeVisible();
     expect(errores).toEqual([]);
 });

@@ -82,3 +82,19 @@ export async function anularCompra(id, motivo) {
     if (error) throw error;
     return data;
 }
+
+// ── Reportes (borrador 0016) ───────────────────────────────────────────────
+
+/** Utilidad bruta del período: `{ resumen, grupos, por_dia }`. Sólo quien administra. */
+export async function fetchUtilidad({ desde, hasta, ruta = null, vendedor = null }) {
+    const { data, error } = await supabase.rpc('dist_utilidad', { p_desde: desde, p_hasta: hasta, p_ruta: ruta, p_vendedor: vendedor });
+    if (error) throw error;
+    return data;
+}
+
+/** Las compras recibidas del período, con `en_libro` (sólo los Créditos Fiscales). */
+export async function fetchLibroCompras({ desde, hasta }) {
+    const { data, error } = await supabase.rpc('dist_libro_compras', { p_desde: desde, p_hasta: hasta });
+    if (error) throw error;
+    return data ?? [];
+}

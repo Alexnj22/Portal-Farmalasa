@@ -70,6 +70,37 @@ export function GraficaVentasDiarias({ serie, metrica = 'ventas' }) {
 }
 
 /**
+ * La utilidad por día (Reportes): la venta sin IVA como área y lo que queda
+ * después del costo como barras verdes encima de la misma escala, así el alto
+ * de la barra contra el área ES el margen del día.
+ */
+export function GraficaUtilidadDiaria({ serie }) {
+    const datos = (serie ?? []).map(d => {
+        const venta = Number(d.venta) || 0;
+        return { etiqueta: dia(d.fecha), venta, utilidad: Math.round((venta - (Number(d.costo) || 0)) * 100) / 100 };
+    });
+    return (
+        <ChartContainer minHeight={220}>
+            <ComposedChart data={datos} margin={{ top: 8, right: 12, left: -4, bottom: 0 }}>
+                <defs>
+                    <linearGradient id="utilidadVenta" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.22} />
+                        <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0} />
+                    </linearGradient>
+                </defs>
+                <CartesianGrid stroke={REJILLA} vertical={false} />
+                <XAxis dataKey="etiqueta" interval="preserveStartEnd" minTickGap={28} tickLine={false} axisLine={false} tick={EJE} />
+                <YAxis tickLine={false} axisLine={false} width={52} tick={EJE} tickFormatter={dineroCorto} />
+                <Tooltip contentStyle={TOOLTIP} cursor={{ fill: 'var(--surface-card-hover)' }} formatter={(v, nombre) => [dinero(v), nombre]} />
+                <Area type="monotone" dataKey="venta" name="Venta sin IVA" stroke="var(--chart-1)" strokeWidth={2}
+                    fill="url(#utilidadVenta)" dot={false} isAnimationActive={false} />
+                <Bar dataKey="utilidad" name="Utilidad" fill="var(--success)" radius={[4, 4, 0, 0]} maxBarSize={18} isAnimationActive={false} />
+            </ComposedChart>
+        </ChartContainer>
+    );
+}
+
+/**
  * Una dona de participación. Tocar un sector lo elige (y otro toque lo
  * suelta): el tablero lo usa para filtrar por ruta.
  */

@@ -35,7 +35,10 @@ export function abrirRuta(url) {
   // `/solicitudes?solicitud=…` nombra UNA: se abre ésa, no la bandeja.
   const una = ruta.startsWith('/solicitudes') ? url.match(/[?&]solicitud=([^&#]+)/) : null;
   if (una) return abrirSolicitud(decodeURIComponent(una[1]));
-  router.push(nativaDe(ruta) ?? { pathname: '/portal', params: { ruta: url } });
+  // La pantalla nativa recibe la misma dirección con sus parámetros
+  // (`/ventas-hoy?sala=3` abre esa sala).
+  const nativa = nativaDe(ruta);
+  router.push(nativa ? nativa + url.slice(ruta.length) : { pathname: '/portal', params: { ruta: url } });
 }
 
 // Una solicitud nombrada por un aviso: la pantalla nativa donde se decide.

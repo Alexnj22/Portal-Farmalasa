@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { presentesEl, problemaDeSucursal, saludoDeLaHora, ventasPorSala } from '@nucleo/utils/inicio';
+import { conTodasLasSalas, nivelDeVolumen, presentesEl, problemaDeSucursal, saludoDeLaHora, ventasPorSala } from '@nucleo/utils/inicio';
 
 describe('inicio', () => {
     it('cuenta presentes una vez por persona y por sala', () => {
@@ -28,5 +28,21 @@ describe('inicio', () => {
         expect(problemaDeSucursal({ phone: '1' })).toBe('Sin dirección registrada');
         expect(saludoDeLaHora(new Date(2026, 8, 30, 9))).toBe('Buenos días');
         expect(saludoDeLaHora(new Date(2026, 8, 30, 15))).toBe('Buenas tardes');
+    });
+});
+
+describe('conTodasLasSalas', () => {
+    it('agrega en cero las salas que venden y hoy no han vendido', () => {
+        const hoy = [{ branchId: '1', total: 10, tickets: 2, porHora: [], ticketsPorHora: [] }];
+        const r = conTodasLasSalas(hoy, [1, 2], { desde: 7, hasta: 9 });
+        expect(r.map((s) => s.branchId)).toEqual(['1', '2']);
+        expect(r[1]).toMatchObject({ total: 0, tickets: 0, porHora: [0, 0, 0] });
+    });
+});
+
+describe('nivelDeVolumen', () => {
+    it('sigue la escala del tablero', () => {
+        expect([0, 4, 5, 12, 13, 18, 19].map(nivelDeVolumen))
+            .toEqual(['muerta', 'muerta', 'normal', 'normal', 'pico', 'pico', 'critica']);
     });
 });

@@ -7,10 +7,15 @@
 // grande salía oscuro sobre oscuro en modo oscuro (usuario, 2026-09-30).
 import { Platform } from 'react-native';
 import { Stack } from 'expo-router';
+import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import ConAurora from './ConAurora';
 
+// En iOS 26 el sistema ya pone su «borde suave» al desplazar (scroll edge
+// effect): sumarle un desenfoque propio los encima y se ve doble. El
+// desenfoque queda sólo para iOS anteriores.
+const IOS26 = Platform.OS === 'ios' && isLiquidGlassAvailable();
 export const BARRA_NATIVA = Platform.OS === 'ios'
-  ? { headerTransparent: true, headerBlurEffect: 'systemChromeMaterial', headerShadowVisible: false, headerLargeTitleShadowVisible: false, headerLargeStyle: { backgroundColor: 'transparent' } }
+  ? { headerTransparent: true, ...(IOS26 ? {} : { headerBlurEffect: 'systemChromeMaterial' }), headerShadowVisible: false, headerLargeTitleShadowVisible: false, headerLargeStyle: { backgroundColor: 'transparent' } }
   : {};
 
 // `sinBarra`: la pestaña muestra el portal, que ya trae su propio título.

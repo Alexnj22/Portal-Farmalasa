@@ -11,14 +11,12 @@
 // orden sólo cambia al abrir, nunca mientras se mira. «Hoy» va siempre
 // primero.
 import { useCallback, useMemo, useState } from 'react';
-import { Platform, RefreshControl, ScrollView, useColorScheme, View } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
+import { RefreshControl, ScrollView } from 'react-native';
+import { Stack, useFocusEffect } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
-import Encabezado from '../../../componentes/inicio/Encabezado';
+import Encabezado, { FotoDeCuenta, saludo } from '../../../componentes/inicio/Encabezado';
 import Pestanas from '../../../componentes/inicio/Pestanas';
 import useDatosInicio from '../../../componentes/inicio/useDatosInicio';
 import { anotar, ordenar } from '../../../componentes/inicio/uso';
@@ -33,7 +31,6 @@ const PESTANAS = [
 ];
 
 export default function Inicio() {
-  const margen = useSafeAreaInsets();
   const { user, getScope } = useAuth();
   const empleados = useStaffStore((s) => s.employees);
   const sucursales = useStaffStore((s) => s.branches);
@@ -67,26 +64,20 @@ export default function Inicio() {
 
   const abrirSeccion = (id, ruta) => { anotar(user?.id, id); abrirRuta(ruta); };
 
-  const oscuro = useColorScheme() === 'dark';
   return (
-    <View style={{ flex: 1 }}>
+    <>
+    <Stack.Screen options={{ title: saludo(user), headerRight: () => <FotoDeCuenta user={user} /> }} />
     <ScrollView style={{ flex: 1 }}
-      contentContainerStyle={{ paddingTop: margen.top + 8, paddingBottom: margen.bottom + 24, gap: 16 }}
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={{ paddingBottom: 24, gap: 16 }}
       refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await recargar(); setRecargando(false); }} />}>
-      <Encabezado user={user} sala={nombreSala} />
+      <Encabezado sala={nombreSala} />
       <Pestanas opciones={pestanas} activa={pestana} onCambiar={setPestana} />
       {puede('dash_kpi') ? <Hoy pestana={pestana} datos={datos} ctx={{ ...ctx, abrir: (r) => abrirSeccion('hoy', r) }} /> : null}
       {secciones.map(({ id, Componente }) => (
-        <View key={id}>
-          <Componente datos={datos} ctx={{ ...ctx, abrir: (r) => abrirSeccion(id, r) }} />
-        </View>
+        <Componente key={id} datos={datos} ctx={{ ...ctx, abrir: (r) => abrirSeccion(id, r) }} />
       ))}
     </ScrollView>
-    {/* El borde de arriba difuminado, como en las apps del sistema: sin él, lo
-        que se desplaza pasa por debajo de la hora y se lee encima. */}
-    <BlurView pointerEvents="none" intensity={Platform.OS === 'ios' ? 40 : 60}
-      tint={oscuro ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
-      style={{ position: 'absolute', top: 0, left: 0, right: 0, height: margen.top }} />
-    </View>
+    </>
   );
 }

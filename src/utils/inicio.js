@@ -55,6 +55,39 @@ export function ventasPorSala(filas = [], { desde = 7, hasta = 21 } = {}) {
     return [...por.values()].sort((a, b) => b.total - a.total);
 }
 
+/**
+ * Todas las salas que venden, aunque hoy todavía no hayan vendido nada.
+ *
+ * `ventasPorSala` sólo conoce las salas con filas HOY, así que a media mañana
+ * una sala que no ha abierto simplemente no existía — y el Inicio mostraba
+ * cinco de siete sin decir que faltaban dos. La lista de salas sale de las que
+ * vendieron en los últimos días (`fetchSalesBranchIdsSince`, la misma regla
+ * del tablero del portal) y las que no tienen venta hoy entran en cero.
+ */
+export function conTodasLasSalas(ventas = [], idsDeVenta = [], { desde = 7, hasta = 21 } = {}) {
+    const n = hasta - desde + 1;
+    const por = new Map(ventas.map((v) => [v.branchId, v]));
+    for (const id of idsDeVenta) {
+        const k = String(id);
+        if (!por.has(k)) por.set(k, { branchId: k, total: 0, tickets: 0, porHora: Array(n).fill(0), ticketsPorHora: Array(n).fill(0) });
+    }
+    return [...por.values()].sort((a, b) => b.total - a.total);
+}
+
+/**
+ * Qué tan cargada estuvo una hora, por tickets — la escala del tablero del
+ * portal (10 min por ticket → 6 por hora por persona): hasta 4 es una hora
+ * MUERTA (sobra gente), más de 12 es PICO y más de 18 CRÍTICA (hacen falta
+ * tres). El color de cada nivel es `--txvol-<nivel>`.
+ */
+export function nivelDeVolumen(tickets) {
+    const t = Number(tickets) || 0;
+    if (t > 18) return 'critica';
+    if (t > 12) return 'pico';
+    if (t > 4) return 'normal';
+    return 'muerta';
+}
+
 /** «Buenos días / tardes / noches» según la hora. */
 export function saludoDeLaHora(fecha = new Date()) {
     const h = fecha.getHours();

@@ -7,11 +7,10 @@
 // `fetchTodayHourlySales`) y la cuenta, la del núcleo (`ventasPorSala`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { fetchTodayHourlySales } from '@nucleo/data/dashboard';
-import { hastaLaHora, sumarSalas, ventasPorSala } from '@nucleo/utils/inicio';
+import { hastaLaHora, sumarSalas } from '@nucleo/utils/inicio';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
@@ -22,12 +21,13 @@ import Vidrio from '../componentes/Vidrio';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { MARCA } from '../componentes/inicio/Secciones';
+import { leerVentasDeHoy } from '../componentes/inicio/useDatosInicio';
+import { LeyendaDeVolumen, RejillaDeSalas } from '../componentes/inicio/MiniSala';
+import { Titulo } from '../componentes/inicio/Tarjeta';
 
-const leer = async (fecha) => {
-  const { data, error } = await fetchTodayHourlySales(fecha);
-  if (error) throw error;
-  return ventasPorSala(data || []);
-};
+// Todas las salas que venden, las que no han vendido en cero (la misma
+// lectura del Inicio).
+const leer = leerVentasDeHoy;
 
 export default function VentasHoy() {
   const { user, getScope } = useAuth();
@@ -36,7 +36,9 @@ export default function VentasHoy() {
   const miSala = String(salaDelUsuario(user) ?? '');
   const [hoy, setHoy] = useState([]);
   const [ayer, setAyer] = useState([]);
-  const [elegida, setElegida] = useState(soloMiSala ? miSala : 'todas');
+  // `?sala=` la trae el Inicio al tocar la baldosa de una sala.
+  const { sala: salaPedida } = useLocalSearchParams();
+  const [elegida, setElegida] = useState(soloMiSala ? miSala : (salaPedida ? String(salaPedida) : 'todas'));
   const [recargando, setRecargando] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -106,6 +108,17 @@ export default function VentasHoy() {
           <Kpi icono="TrendingUp" rotulo="Contra ayer" valor={cambio == null ? '—' : `${cambio > 0 ? '+' : ''}${cambio}%`} apoyo="a esta hora"
             color={cambio == null || cambio >= 0 ? MARCA.verde : MARCA.rojo} pide={cambio != null} />
         </FilaDeKpis>
+
+        {!soloMiSala && visibles.length > 1 ? (
+          <View style={{ marginHorizontal: 16, gap: 10 }}>
+            <View style={{ paddingHorizontal: 4, gap: 6 }}>
+              <Titulo texto="Por sucursal" icono="Building2" color={MARCA.azul} />
+              <View style={{ marginTop: -6 }}><LeyendaDeVolumen /></View>
+            </View>
+            <RejillaDeSalas salas={visibles} nombre={nombre} activa={elegida}
+              onElegir={(id) => setElegida(elegida === id ? 'todas' : id)} />
+          </View>
+        ) : null}
       </ScrollView>
     </>
   );

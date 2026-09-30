@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1102.0 — App: Inicio como widgets, todas las salas, Menú en vidrio y tarjetas de solicitud
+
+Respuesta a la revisión del usuario de hoy: «los elementos son como widgets,
+deben ser interactivos», «no me salen todas las sucursales», «el menú no tiene
+efecto vidrio» y «las solicitudes no se ven tan estéticas».
+
+- **Números del Inicio como widgets**: ícono y rótulo arriba con «›» si abren
+  algo, el número, y una forma que se lee de un vistazo — la curva de ventas
+  del día y la barra de cuántos llegaron.
+- **Ventas de hoy con TODAS las salas**: `conTodasLasSalas` (núcleo) agrega en
+  cero las que venden y hoy no han vendido; qué salas venden lo dice la última
+  semana, igual que el tablero del portal. Cada sala es la baldosa del
+  portal: su total y una barra por hora cuyo color dice qué tan cargada estuvo
+  (`nivelDeVolumen`: muerta · normal · pico · crítica, colores `--txvol-*`) y
+  un punto que late en la hora en curso. Tocar una abre esa sala.
+- **Ventas de hoy**: sección «Por sucursal» con las mismas baldosas; tocar una
+  la elige. Recibe `?sala=` desde el Inicio.
+- **Saludo como título grande del sistema**: se encoge al desplazar y el borde
+  de arriba lo difumina iOS 26 (antes el contenido se leía encima de la hora).
+  En iOS 26 la barra deja de sumar su propio desenfoque al del sistema.
+- **Menú en vidrio**, como Ajustes sobre un fondo de pantalla: cada grupo es
+  una tarjeta de vidrio con su título y cada módulo un renglón con su ícono en
+  un cuadro de color.
+- **Tarjetas de solicitud en vidrio**: el tipo con su ícono (el del portal),
+  lo que se pide y sus primeros renglones, quién la pidió y el estado en una
+  píldora de color.
 ## v2.1101.2 — Mis puntos: la fecha de cada movimiento en hora de El Salvador
 
 `puntos_estado_cuenta` fechaba canjes, anulaciones y vencimientos con

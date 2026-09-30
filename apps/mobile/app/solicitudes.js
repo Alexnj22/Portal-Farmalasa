@@ -24,17 +24,20 @@ import { detalleDeMinMax, detalleDeSolicitud } from '@nucleo/utils/tarjetaDeSoli
 import { reglasDeBandeja, ordenarCola, salaDeSolicitud } from '@nucleo/utils/bandejaDeSolicitudes';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { cuandoLlego } from '@nucleo/utils/notificacionTexto';
+import { nombreDelIconoDeTipo } from '@nucleo/constants/tipoIconos';
+import { Host, Icon } from '@expo/ui';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import Segmentos from '../componentes/Segmentos';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Avatar from '../componentes/Avatar';
+import { MARCA } from '../componentes/inicio/Secciones';
+import Vidrio from '../componentes/Vidrio';
+import { iconoDe } from '../tema/iconos';
 import { abrirSolicitud } from '../pantallas';
 
 const DIAS_DE_HISTORIAL = 30;
-const COLOR_ESTADO = { APPROVED: colorSistema.verde, REJECTED: colorSistema.rojo, CANCELLED: colorSistema.texto2 };
-const ROTULO_ESTADO = { APPROVED: 'Aprobada', REJECTED: 'Rechazada', CANCELLED: 'Cancelada' };
 
 /* Qué se le pide a la base. El portal lo pide por ámbito; acá los dos ámbitos
  * van en una sola lista, así que se pide lo más ancho que alguno de los dos
@@ -46,34 +49,61 @@ function criteriosDe(getScope, user) {
   return { soloMiasId: user?.id };
 }
 
+// La tarjeta de una solicitud, en vidrio como el resto de la app: arriba el
+// tipo con su ícono (el mismo del portal, `nombreDelIconoDeTipo`) y cuándo
+// llegó; en medio lo que se pide y sus primeros renglones; abajo quién la
+// pidió y el estado en una píldora del color de estado.
+// Colores en hexadecimal (los de la marca): a los del sistema no se les puede
+// pegar la transparencia del fondo tintado.
+const PILDORA = {
+  PENDING: { texto: 'Pendiente', color: MARCA.ambar },
+  APPROVED: { texto: 'Aprobada', color: MARCA.verde },
+  REJECTED: { texto: 'Rechazada', color: MARCA.rojo },
+  CANCELLED: { texto: 'Cancelada', color: '#8E8E93' },
+};
+const DECIDIR = { texto: 'Te toca decidir', color: MARCA.azulClaro };
+
 function Fila({ r, detalle, teToca, onAbrir }) {
   const tipo = REQUEST_TYPES[r.type]?.label ?? 'Solicitud';
-  const resuelta = r.status !== 'PENDING';
+  const estado = teToca ? DECIDIR : (PILDORA[r.status] ?? PILDORA.PENDING);
+  const colorTipo = estado.color;
+  const renglones = (detalle?.renglones ?? []).slice(0, 2);
+  const resto = (detalle?.renglones?.length ?? 0) - renglones.length;
   return (
-    <Pressable onPress={onAbrir} style={({ pressed }) => ({
-      backgroundColor: colorSistema.fila, borderRadius: 16, marginHorizontal: 16, padding: 14,
-      flexDirection: 'row', gap: 12, alignItems: 'center',
-      transform: [{ scale: pressed ? 0.98 : 1 }], opacity: pressed ? 0.9 : 1,
-    })}>
-      <Avatar empleado={r.employee} tamano={44} />
-      <View style={{ flex: 1, gap: 2 }}>
-        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'baseline' }}>
-          <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '600' }} numberOfLines={1}>
-            {shortEmployeeName(r.employee)}
-          </Text>
-          <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{cuandoLlego(r.created_at)}</Text>
+    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onAbrir(); }}
+      style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+      <Vidrio radio={22} interactivo>
+        <View style={{ padding: 14, gap: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: `${colorTipo}30`, alignItems: 'center', justifyContent: 'center' }}>
+              <Host matchContents><Icon name={iconoDe(nombreDelIconoDeTipo(r.type))} size={17} color={colorTipo} /></Host>
+            </View>
+            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }} numberOfLines={1}>{tipo}</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{cuandoLlego(r.created_at)}</Text>
+          </View>
+
+          {detalle?.contexto || renglones.length ? (
+            <View style={{ gap: 4 }}>
+              {detalle?.contexto ? <Text style={{ color: colorSistema.texto, fontSize: 14 }} numberOfLines={2}>{detalle.contexto}</Text> : null}
+              {renglones.map(([a, b], i) => (
+                <View key={i} style={{ flexDirection: 'row', gap: 8 }}>
+                  <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>{a}</Text>
+                  {b ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontVariant: ['tabular-nums'] }}>{b}</Text> : null}
+                </View>
+              ))}
+              {resto > 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>y {resto} más</Text> : null}
+            </View>
+          ) : null}
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 10, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
+            <Avatar empleado={r.employee} tamano={24} />
+            <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }} numberOfLines={1}>{shortEmployeeName(r.employee)}</Text>
+            <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: `${estado.color}26` }}>
+              <Text style={{ color: estado.color, fontSize: 12, fontWeight: '700' }}>{estado.texto}</Text>
+            </View>
+          </View>
         </View>
-        <Text style={{ color: colorSistema.texto, fontSize: 14 }} numberOfLines={1}>{tipo}</Text>
-        {detalle?.contexto ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={2}>{detalle.contexto}</Text> : null}
-        {resuelta ? (
-          <Text style={{ color: COLOR_ESTADO[r.status] ?? colorSistema.texto2, fontSize: 12, fontWeight: '600', marginTop: 2 }}>
-            {ROTULO_ESTADO[r.status] ?? r.status}
-          </Text>
-        ) : teToca ? (
-          <Text style={{ color: colorSistema.acento, fontSize: 12, fontWeight: '600', marginTop: 2 }}>Te toca decidir</Text>
-        ) : null}
-      </View>
-      <Text style={{ color: colorSistema.texto2, fontSize: 22, fontWeight: '300' }}>›</Text>
+      </Vidrio>
     </Pressable>
   );
 }

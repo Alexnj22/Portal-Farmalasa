@@ -2,20 +2,21 @@
 // permiso pide y cómo se dibuja; el Inicio las ordena por uso
 // (`ordenPorUso`) dentro de cada pestaña. «Hoy» va siempre primero: son los
 // números del día y no compiten.
-import { Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Host, Icon } from '@expo/ui';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { cumplenEl, empleadosActivos, presentesEl, problemaDeSucursal } from '@nucleo/utils/inicio';
-import Tarjeta from './Tarjeta';
-import Kpi, { FilaDeKpis } from './Kpi';
+import { cumplenEl, empleadosActivos, presentesEl, problemaDeSucursal, sumarSalas } from '@nucleo/utils/inicio';
+import Tarjeta, { Titulo } from './Tarjeta';
+import { COLOR_VOLUMEN, RejillaDeSalas } from './MiniSala';
+import Kpi, { Avance, Curva, FilaDeKpis } from './Kpi';
 import { colorSistema } from '../Formulario';
 import { iconoDe } from '../../tema/iconos';
 
 // Los colores de la marca (tokens del portal: --brand, --success, --warning,
 // --danger, --brand-purple).
-export const MARCA = { azul: '#0052CC', verde: '#12B76A', ambar: '#F79009', rojo: '#F04438', violeta: '#6929C4' };
+export const MARCA = { azul: '#0052CC', azulClaro: '#3B82F6', verde: '#12B76A', ambar: '#F79009', rojo: '#F04438', violeta: '#6929C4' };
 
 const dinero = (v) => formatMoney(v, { decimales: 0 });
 
@@ -24,15 +25,19 @@ export function Hoy({ pestana, datos, ctx }) {
   const { empleados, sala, alcanceSala, sucursales, abrir, puede } = ctx;
   const emps = empleadosActivos(empleados).filter((e) => !alcanceSala || String(e.branchId ?? e.branch_id ?? '') === String(sala));
   const presentes = presentesEl(emps, datos.hoy);
-  const ventasTotal = (datos.ventas || []).filter((v) => !alcanceSala || v.branchId === String(sala)).reduce((s, v) => s + v.total, 0);
+  const deVentas = (datos.ventas || []).filter((v) => !alcanceSala || v.branchId === String(sala));
+  const ventasTotal = deVentas.reduce((s, v) => s + v.total, 0);
+  const porHora = sumarSalas(deVentas).porHora ?? [];
   const alertas = (sucursales || []).filter((b) => problemaDeSucursal(b)).length;
   const ausentes = (datos.ausencias || []).length;
   const facturado = (datos.facturas || []).reduce((s, f) => s + (Number(f.total) || 0), 0);
   const solicitudes = datos.solicitudes ?? 0;
 
   const K = {
-    ventas: <Kpi key="v" icono="TrendingUp" rotulo="Ventas hoy" valor={dinero(ventasTotal)} color={MARCA.verde} onPress={() => abrir('/ventas-hoy')} />,
-    presentes: <Kpi key="p" icono="UserCheck" rotulo="Presentes" valor={`${presentes}`} apoyo={emps.length ? `de ${emps.length}` : null} color={MARCA.azul} onPress={puede('monitor') ? () => abrir('/monitor') : null} />,
+    ventas: <Kpi key="v" icono="TrendingUp" rotulo="Ventas hoy" valor={dinero(ventasTotal)} color={MARCA.verde} onPress={() => abrir('/ventas-hoy')}
+      visual={<Curva valores={porHora} color={MARCA.verde} />} />,
+    presentes: <Kpi key="p" icono="UserCheck" rotulo="Presentes" valor={`${presentes}`} apoyo={emps.length ? `de ${emps.length}` : null} color={MARCA.azul} onPress={puede('monitor') ? () => abrir('/monitor') : null}
+      visual={emps.length ? <Avance parte={presentes} total={emps.length} color={MARCA.azul} /> : null} />,
     solicitudes: <Kpi key="s" icono="ClipboardList" rotulo="Solicitudes" valor={`${solicitudes}`} apoyo={solicitudes ? 'por decidir' : 'Al día'} color={MARCA.ambar} pide={solicitudes > 0} onPress={() => abrir('/solicitudes')} />,
     alertas: <Kpi key="a" icono="Building2" rotulo="Sucursales" valor={alertas ? `${alertas}` : '✓'} apoyo={alertas ? `alerta${alertas > 1 ? 's' : ''}` : 'Sin alertas'} color={alertas ? MARCA.rojo : MARCA.verde} pide={alertas > 0} onPress={puede('branches') ? () => abrir('/sucursales') : null} />,
     activos: <Kpi key="ac" icono="Users" rotulo="Activos" valor={`${emps.length}`} color={MARCA.azul} onPress={puede('staff_list') ? () => abrir('/personal') : null} />,
@@ -84,35 +89,37 @@ export function Pendientes({ datos, ctx }) {
 }
 
 // ── Ventas de hoy ───────────────────────────────────────────────────────────
-function Barras({ valores, color }) {
-  const max = Math.max(1, ...valores);
+// Las baldosas del tablero del portal: todas las salas que venden, dos por
+// renglón, cada una con su total y sus horas coloreadas por carga. Van sueltas
+// sobre la aurora (vidrio dentro de vidrio se enturbia) y cada una abre su sala
+// en «Ventas de hoy».
+export function Ventas({ datos, ctx }) {
+  const salas = (datos.ventas || []).filter((v) => !ctx.alcanceSalaVentas || v.branchId === String(ctx.sala));
+  const nombre = (id) => (ctx.sucursales || []).find((b) => String(b.id) === id)?.name ?? `Sala ${id}`;
+  const total = salas.reduce((s, v) => s + v.total, 0);
+  const abrir = (sala) => ctx.abrir(sala ? `/ventas-hoy?sala=${sala}` : '/ventas-hoy');
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 2, height: 40 }}>
-      {valores.map((v, i) => (
-        <View key={i} style={{ flex: 1, height: Math.max(2, (v / max) * 40), borderRadius: 2, backgroundColor: v === max ? color : `${color}66` }} />
-      ))}
+    <View style={{ marginHorizontal: 16, gap: 10 }}>
+      <Pressable onPress={() => abrir()} style={{ paddingHorizontal: 4 }}>
+        <Titulo texto="Ventas de hoy" icono="TrendingUp" color={MARCA.verde} accion="Ver todo" />
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: -4 }}>
+          <Text style={{ color: colorSistema.texto, fontSize: 28, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(total)}</Text>
+          <LeyendaCorta />
+        </View>
+      </Pressable>
+      {salas.length ? <RejillaDeSalas salas={salas} nombre={nombre} onElegir={abrir} />
+        : <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>Todavía no hay ventas hoy.</Text>}
     </View>
   );
 }
 
-export function Ventas({ datos, ctx }) {
-  const salas = (datos.ventas || []).filter((v) => !ctx.alcanceSalaVentas || v.branchId === String(ctx.sala));
-  const nombre = (id) => (ctx.sucursales || []).find((b) => String(b.id) === id)?.name ?? `Sala ${id}`;
+function LeyendaCorta() {
   return (
-    <Tarjeta titulo="Ventas de hoy" icono="TrendingUp" color={MARCA.verde} onPress={() => ctx.abrir('/ventas-hoy')}>
-      {salas.length ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-          {salas.map((s) => (
-            <View key={s.branchId} style={{ width: 150, gap: 6, padding: 12, borderRadius: 16, backgroundColor: 'rgba(127,127,127,0.10)' }}>
-              <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }} numberOfLines={1}>{nombre(s.branchId)}</Text>
-              <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(s.total)}</Text>
-              <Barras valores={s.porHora} color={MARCA.verde} />
-              <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{s.tickets} tickets</Text>
-            </View>
-          ))}
-        </ScrollView>
-      ) : <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>Todavía no hay ventas hoy.</Text>}
-    </Tarjeta>
+    <View style={{ flexDirection: 'row', gap: 8 }}>
+      {['normal', 'pico', 'critica'].map((k) => (
+        <View key={k} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: COLOR_VOLUMEN[k] }} />
+      ))}
+    </View>
   );
 }
 

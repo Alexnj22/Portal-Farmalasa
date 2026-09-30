@@ -239,7 +239,7 @@ export default function TabDocumentos({ puedeVender, buscar }) {
                             <DataCell>
                                 <div className="flex flex-col items-start gap-1">
                                     <Badge size="sm" variant={r.nivel === 'ok' ? 'success' : r.nivel === 'error' ? 'danger' : r.nivel === 'info' ? 'neutral' : 'warning'} uppercase={false}>
-                                        {r.nivel === 'ok' ? 'Recibido' : r.titulo}
+                                        {r.nivel === 'ok' ? 'Recibido' : r.nivel === 'info' ? (est?.label ?? r.titulo) : r.titulo}
                                     </Badge>
                                     <span className="text-micro text-content-3 flex items-center gap-2">
                                         <span className={codigoOk ? 'text-success-text' : 'text-danger-text'}>{codigoOk ? '✓' : '✗'} Código</span>

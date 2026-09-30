@@ -160,7 +160,36 @@ export function leerDocumento(dte) {
  * rollo no lee UTF-8 (IMPRESION-EN-TICKETERA §5) y `soloASCII` le quita las
  * tildes en el envío, pero un rótulo pensado sin ellas se lee mejor.
  */
-export function ticketDeVenta(dte, marca = null) {
+// Las formas de pago como las dice el papel (sin tildes: el rollo no lee UTF-8).
+const FORMA_EN_PAPEL = { '01': 'Efectivo', '02': 'T. debito', '03': 'T. credito', '04': 'Cheque', '05': 'Transferencia', '13': 'Credito' };
+
+/**
+ * ¿El ticket lleva el QR? NO (pedido del usuario, 2026-09-30: «quita el QR si
+ * no es necesario, así ahorramos papel»). El papel conserva lo que permite
+ * verificar el documento a mano —código de generación, fecha y sello—, y el
+ * QR sigue en el PDF y en el JSON que recibe el cliente. Si la revisión con el
+ * contador dice que el ticket también lo debe llevar, se enciende acá.
+ */
+const QR_EN_TICKET = false;
+
+/**
+ * El objeto que espera `imprimirDocumento`. Sólo ASCII y rótulos cortos: el
+ * rollo no lee UTF-8 (IMPRESION-EN-TICKETERA §5) y `soloASCII` le quita las
+ * tildes en el envío, pero un rótulo pensado sin ellas se lee mejor.
+ *
+ * ── Un producto, una línea (2026-09-30) ─────────────────────────────────────
+ * CANT · DESCRIPCION · P.UNIT · TOTAL, con la cantidad delante (el usuario lo
+ * prefiere así: «es más ordenado visualmente»). Antes un producto ocupaba
+ * cinco renglones porque las cuatro columnas tenían el mismo ancho y la
+ * descripción quedaba en un cuarto del papel; ahora la descripción se lleva el
+ * ancho. En la impresora, `cantidadPrimero` le dice al maquetador del rollo el
+ * orden (su geometría medida esperaba el nombre primero y el nombre caía en el
+ * hueco de la cantidad). Un nombre largo sigue abajo, nunca se recorta.
+ *
+ * `pagos` (de `dist_pagos`): el papel dice cómo se pagó y, en efectivo, cuánto
+ * entregó el cliente y el CAMBIO — el dato que se discute en el mostrador.
+ */
+export function ticketDeVenta(dte, marca = null, { pagos = [] } = {}) {
     const d = leerDocumento(dte);
     const res = d.resumen;
     const totales = [];
@@ -171,6 +200,17 @@ export function ticketDeVenta(dte, marca = null) {
     if (res.retencion) totales.push(['IVA RETENIDO', `-${dinero(res.retencion)}`]);
     totales.push(['TOTAL', dinero(res.total), true]);
     if (res.ivaIncluido) totales.push(['IVA incluido', dinero(res.iva)]);
+    // Cómo se pagó; en efectivo, lo entregado y el cambio.
+    for (const p of pagos ?? []) {
+        const monto = Number(p.monto ?? 0);
+        const forma = FORMA_EN_PAPEL[p.forma] ?? 'Pago';
+        const recibido = p.forma === '01' && p.efectivo_recibido != null ? Number(p.efectivo_recibido) : null;
+        if (recibido != null && recibido > monto) {
+            totales.push([`${forma} recibido`, dinero(recibido)], ['CAMBIO', dinero(recibido - monto)]);
+        } else if ((pagos?.length ?? 0) > 1 || p.forma !== '01') {
+            totales.push([forma, dinero(monto)]);
+        }
+    }
 
     return {
         titulo: d.nombre,
@@ -189,7 +229,9 @@ export function ticketDeVenta(dte, marca = null) {
                 `Tel. ${d.emisor.telefono}`,
             ].filter(Boolean),
         },
-        bloques: d.prueba ? [{ titulo: 'Ambiente de pruebas', texto: 'SIN VALIDEZ FISCAL', destacado: true }] : [],
+        // En pruebas se dice en UNA línea normal: el aviso en letra gigante
+        // gastaba cinco renglones de rollo en cada ticket de prueba.
+        bloques: d.prueba ? [{ titulo: 'Ambiente de pruebas', texto: 'SIN VALIDEZ FISCAL' }] : [],
         datos: [
             ['Fecha', `${d.fecha} ${d.hora}`],
             ['Cliente', d.receptor.nombre],
@@ -198,13 +240,22 @@ export function ticketDeVenta(dte, marca = null) {
             ...(d.condicion ? [['Condicion', d.condicion]] : []),
         ],
         items: {
-            columnas: [{ label: 'CANT' }, { label: 'DESCRIPCION' }, { label: 'P. UNIT' }, { label: 'TOTAL' }],
+            cantidadPrimero: true,
+            columnas: [
+                { label: 'CANT', ancho: '8%' },
+                { label: 'DESCRIPCION', ancho: '56%' },
+                { label: 'P.UNIT', ancho: '17%', alinear: 'der' },
+                { label: 'TOTAL', ancho: '19%', alinear: 'der' },
+            ],
             // En el rollo el lote va pegado a la descripción: no hay ancho
             // para dos columnas más, y separado del producto se pierde.
             filas: d.renglones.map(r => [
                 r.cantidad,
-                r.lote ? `${r.descripcion} L:${r.lote}${r.vence ? ` V:${r.vence}` : ''}` : r.descripcion,
-                dinero(r.precio), dinero(r.gravada + r.exenta + r.noSujeta),
+                // Vence como mes/año («V:11/27»): en el rollo cada carácter es
+                // papel, y el día no cambia qué lote es.
+                r.lote ? `${r.descripcion} L:${r.lote}${r.vence ? ` V:${r.vence.slice(3, 5)}/${r.vence.slice(8, 10)}` : ''}` : r.descripcion,
+                dinero(r.precio).replace('$', ''),
+                dinero(r.gravada + r.exenta + r.noSujeta).replace('$', ''),
             ]),
         },
         totales,
@@ -214,13 +265,13 @@ export function ticketDeVenta(dte, marca = null) {
             `Cod. generacion: ${d.codigoGeneracion}`,
             d.sellado ? `Sello: ${d.sello}` : 'PENDIENTE DEL SELLO DE HACIENDA',
             ...(d.observaciones ? [d.observaciones] : []),
-            'Verifique este documento con el codigo QR.',
+            QR_EN_TICKET ? 'Verifique este documento con el codigo QR.' : 'Verifiquelo en Hacienda con el cod. de generacion.',
         ],
-        qr: d.qr,
+        ...(QR_EN_TICKET ? { qr: d.qr } : {}),
     };
 }
 
-export const imprimirTicketDeVenta = (dte, marca = null) => imprimirDocumento(ticketDeVenta(dte, marca), {
+export const imprimirTicketDeVenta = (dte, marca = null, opciones = {}) => imprimirDocumento(ticketDeVenta(dte, marca, opciones), {
     tituloDeCola: `${NOMBRE_DOCUMENTO[dte.tipo] ?? 'Documento'} ${dte.numero_control.slice(-6)}`,
 });
 

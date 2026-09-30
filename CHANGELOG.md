@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1101.0 — Torogoz: detalle de lo vendido en el documento; ticket compacto, sin QR y con el cambio
+
+Pedido del usuario: «¿dónde puedo ver lo que vendí? no en ticket ni PDF, sino
+como información» y «mejora el ticket: 1 producto ocupa demasiado espacio,
+compáctalo; quita el QR si no es necesario; debe mostrar el cambio».
+
+- **Detalle** es la primera vista del documento: cliente, fecha y condición;
+  los productos (cantidad, producto con lote y vencimiento, precio,
+  descuento, importe); los totales como el papel; y el pago, con lo recibido
+  y el **cambio**. Sale del mismo JSON del documento.
+- **Ticket compacto**: CANT · DESCRIPCIÓN · P.UNIT · TOTAL con la
+  descripción llevándose el ancho (antes las cuatro columnas medían lo mismo
+  y un producto ocupaba cinco renglones); vencimiento del lote como mes/año;
+  el aviso de pruebas en una línea normal y no en letra gigante.
+- **Sin QR** en el ticket (`QR_EN_TICKET = false`): quedan el código de
+  generación, la fecha y el sello para verificarlo; el QR sigue en el PDF.
+- **Efectivo recibido y CAMBIO** en el ticket (y la forma de pago si no es
+  efectivo), también en el que sale solo al facturar.
+- **Impresora**: el maquetador del rollo acepta `cantidadPrimero` (la
+  cantidad en 1-4, el nombre hasta la 36, importes en 44 y 52). Antes la
+  geometría medida esperaba el nombre primero y en papel el nombre caía en
+  el hueco de la cantidad. El ticket de las farmacias no cambia.
+
+
 ## v2.1100.0 — Torogoz: Facturación con semáforo de Hacienda, lista de chequeo por documento y reenvío
 
 Pedido del usuario: «que en la facturación me avise si todo está bien con

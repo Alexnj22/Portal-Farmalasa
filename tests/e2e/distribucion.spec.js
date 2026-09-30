@@ -78,6 +78,9 @@ test('venta a una tienda: buscar, agregar, facturar, ver ticket y PDF', async ({
     await c.getByRole('button', { name: /^Facturar$/ }).click();
     const doc = page.getByRole('dialog', { name: 'Documento' });
     await expect(doc).toBeVisible({ timeout: 30_000 });
+    // Abre en «Detalle» (lo vendido como información); el papel, en «Ticket».
+    await expect(doc.locator('[data-testid="detalle-venta"]')).toBeVisible({ timeout: 15_000 });
+    await doc.getByText('Ticket', { exact: true }).click();
     await expect(doc.frameLocator('iframe[title="Vista previa del ticket"]').getByText('FACTURA').first()).toBeVisible({ timeout: 15_000 });
     await page.screenshot({ path: `${SALIDA}/ticket.png`, fullPage: true });
 
@@ -522,6 +525,9 @@ test('facturación: semáforo con Hacienda, cubetas, lista de chequeo del docume
     await expect(estado).toContainText('Hacienda lo rechazó');
     await expect(estado).toContainText(/NRC/);
     await expect(estado.getByRole('button', { name: 'Corregir y facturar' })).toBeVisible();
+    // Lo vendido, como información (no como papel): abre en «Detalle».
+    await expect(page.locator('[data-testid="detalle-venta"]')).toBeVisible();
+    await expect(page.locator('[data-testid="detalle-venta"]')).toContainText(/Total/);
     await page.screenshot({ path: `${SALIDA}/facturacion-rechazado.png` });
     await page.keyboard.press('Escape');
     // Sin sello: el documento ofrece reenviar.

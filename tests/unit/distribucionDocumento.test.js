@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { armarFactura, armarCreditoFiscal } from '../../supabase/functions/_shared/dte/documentos.ts';
 import { ticketDeVenta, definicionPdf, leerDocumento, urlConsultaPublica, nombreDelPdf, jsonParaElCliente } from '@nucleo/utils/distribucionDocumento.js';
+import { seccionesParaElPrograma, COLUMNAS_TICKET } from '@nucleo/utils/ticketPrint';
 
 // El ticket y el PDF de un documento de Distribución.
 //
@@ -67,6 +68,34 @@ describe('ticket de venta', () => {
         expect(t.titulo).toBe('FACTURA');
         expect(t.items.filas).toHaveLength(2);
     });
+    it('cantidad primero y la descripción con el ancho: un producto, una línea', () => {
+        const t = ticketDeVenta(factura);
+        expect(t.items.columnas.map(c => c.label)).toEqual(['CANT', 'DESCRIPCION', 'P.UNIT', 'TOTAL']);
+        expect(t.items.cantidadPrimero).toBe(true);
+        const [cant, desc] = t.items.filas[0];
+        expect(desc.length).toBeGreaterThan(3);
+        expect(Number(cant)).toBeGreaterThan(0);
+    });
+    it('en la impresora: la cantidad delante, el nombre al lado y ningún renglón pasa de 54', () => {
+        const secciones = seccionesParaElPrograma({ ancho: 80, ...ticketDeVenta(factura) });
+        const texto = JSON.stringify(secciones);
+        const [cant, desc] = ticketDeVenta(factura).items.filas[0];
+        // El rollo va en ASCII: se compara sin tildes.
+        const primeraPalabra = desc.split(' ')[0].normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        expect(texto).toMatch(new RegExp(`\\s${cant} ${primeraPalabra}`));
+        // El cuerpo (datos, productos, totales): el que se rellena a mano.
+        const renglones = String(secciones.cuerpo).split('\n')
+            // eslint-disable-next-line no-control-regex
+            .map(r => r.replace(/\x1b.|\x1d.|\x1b[!-~]./g, ''));
+        expect(renglones.every(r => r.length <= COLUMNAS_TICKET.chica + 2)).toBe(true);
+    });
+    it('efectivo: lo entregado y el cambio', () => {
+        const total = factura.json.resumen.totalPagar;
+        const t = ticketDeVenta(factura, null, { pagos: [{ forma: '01', monto: total, efectivo_recibido: total + 4.5 }] });
+        const mapa = Object.fromEntries(t.totales.map(([k, v]) => [k, v]));
+        expect(mapa['Efectivo recibido']).toBe(`$${(total + 4.5).toFixed(2)}`);
+        expect(mapa.CAMBIO).toBe('$4.50');
+    });
     it('sin sello, el papel lo dice; en pruebas, también', () => {
         const t = ticketDeVenta(factura);
         expect(t.pie).toContain('PENDIENTE DEL SELLO DE HACIENDA');
@@ -80,8 +109,11 @@ describe('ticket de venta', () => {
         expect(mapa['IVA RETENIDO']).toBe('-$1.49');
         expect(mapa.TOTAL).toBe('$166.65');
         expect(t.pie).toContain(`Sello: ${ccf.sello_recibido}`);
-        expect(t.qr).toBe(urlConsultaPublica(ccf));
-        expect(t.qr).toContain(`codGen=${ccf.codigo_generacion}`);
+        // El ticket no lleva QR (ahorra papel, 2026-09-30): el código de
+        // generación sí, y el QR sigue en el PDF.
+        expect(t.qr).toBeUndefined();
+        expect(t.pie).toContain(`Cod. generacion: ${ccf.json.identificacion.codigoGeneracion}`);
+        expect(urlConsultaPublica(ccf)).toContain(`codGen=${ccf.codigo_generacion}`);
         expect(t.bloques).toEqual([]);
     });
 });

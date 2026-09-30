@@ -15,17 +15,17 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import {
-    fetchDocumento, reintentarDocumento, descartarDocumento, mensajeDeDistribucion,
+    fetchDocumento, fetchPagos, reintentarDocumento, descartarDocumento, mensajeDeDistribucion,
     corregirDocumentoSellado, anularVenta, reenviarInvalidacion,
 } from '@nucleo/data/distribucion';
 import { registrarEgreso } from '@nucleo/data/egreso';
 import { descargarArchivo, abrirEnPestanaNueva } from '../../plataforma/descargas';
 import { construirTicketHtml, conCodigosDibujados, ajustarAltoDePagina } from '@nucleo/utils/ticketPrint';
 import {
-    ticketDeVenta, imprimirTicketDeVenta, pdfDelDocumento, nombreDelPdf, urlConsultaPublica, jsonParaElCliente,
+    ticketDeVenta, imprimirTicketDeVenta, pdfDelDocumento, nombreDelPdf, urlConsultaPublica, jsonParaElCliente, leerDocumento,
 } from '@nucleo/utils/distribucionDocumento';
 import { MARCA_PAPEL } from './marca';
-import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO } from './comun';
+import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO, FORMA_PAGO } from './comun';
 import EstadoHacienda from './EstadoHacienda';
 import { useNavigate } from 'react-router-dom';
 import { rutaVolverAVender } from './rutas';
@@ -48,22 +48,102 @@ import { rutaVolverAVender } from './rutas';
 //     reemplazo; mientras tanto queda «pendiente» y se ve acá.
 
 const VISTAS = [
+    // Lo vendido como INFORMACIÓN, no como papel (pedido del usuario,
+    // 2026-09-30: «¿dónde puedo ver lo que vendí? no en ticket ni PDF»).
+    { value: 'detalle', label: 'Detalle' },
     { value: 'ticket', label: 'Ticket' },
     { value: 'pdf', label: 'PDF' },
     { value: 'datos', label: 'Datos' },
 ];
 
-function VistaTicket({ dte }) {
+const nombreForma = (f) => (f === '13' ? 'A crédito' : FORMA_PAGO.find(x => x.value === f)?.label ?? f);
+
+/** Una fila rótulo · valor del detalle. */
+function Fila({ rotulo, valor, fuerte = false, tono = '' }) {
+    return (
+        <div className={`flex items-baseline justify-between gap-3 ${fuerte ? 'pt-2 mt-1 border-t border-divider' : ''}`}>
+            <span className={fuerte ? 'text-body font-black text-content' : 'text-caption text-content-3'}>{rotulo}</span>
+            <span className={`tabular-nums ${fuerte ? 'text-title font-black text-brand-text' : `text-body-sm font-bold ${tono || 'text-content-2'}`}`}>{valor}</span>
+        </div>
+    );
+}
+
+/** Lo vendido, leído del mismo JSON del documento: productos, totales y cómo se pagó. */
+function VistaDetalle({ dte, pagos }) {
+    const d = leerDocumento(dte);
+    const r = d.resumen;
+    return (
+        <div className="flex flex-col gap-4" data-testid="detalle-venta">
+            <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-body-sm">
+                <div><dt className="text-caption text-content-3">Cliente</dt><dd className="font-bold text-content-2">{d.receptor.nombre}</dd></div>
+                <div><dt className="text-caption text-content-3">Documento</dt><dd className="text-content-2">{d.receptor.documento || '—'}</dd></div>
+                <div><dt className="text-caption text-content-3">Fecha</dt><dd className="text-content-2">{d.fecha} · {d.hora}</dd></div>
+                <div><dt className="text-caption text-content-3">Condición</dt><dd className="text-content-2">{d.condicion ?? 'Contado'}</dd></div>
+            </dl>
+            <div data-surface="card" className="overflow-hidden">
+                <div className="hidden sm:grid grid-cols-[3.5rem_minmax(0,1fr)_6rem_6rem] gap-3 px-3 py-2 border-b border-divider text-micro font-bold uppercase tracking-wide text-content-3">
+                    <span className="text-right">Cant.</span><span>Producto</span><span className="text-right">P. unit.</span><span className="text-right">Importe</span>
+                </div>
+                {d.renglones.map(x => (
+                    <div key={x.n} className="grid grid-cols-[3rem_minmax(0,1fr)_auto] sm:grid-cols-[3.5rem_minmax(0,1fr)_6rem_6rem] gap-3 px-3 py-2 border-b border-divider last:border-b-0 items-baseline">
+                        <span className="text-right font-black text-content tabular-nums">{x.cantidad}</span>
+                        <span className="min-w-0">
+                            <span className="block text-body-sm font-bold text-content-2">{x.descripcion}</span>
+                            <span className="block text-caption text-content-3">
+                                {[x.unidad, x.lote && `Lote ${x.lote}`, x.vence && `vence ${x.vence}`, x.descuento > 0 && `descuento ${formatMoney(x.descuento)}`].filter(Boolean).join(' · ')}
+                                <span className="sm:hidden"> · {formatMoney(x.precio)} c/u</span>
+                            </span>
+                        </span>
+                        <span className="hidden sm:block text-right text-body-sm tabular-nums text-content-2">{formatMoney(x.precio)}</span>
+                        <span className="text-right font-black tabular-nums text-content">{formatMoney(x.gravada + x.exenta + x.noSujeta)}</span>
+                    </div>
+                ))}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                    <p className="text-micro font-bold uppercase tracking-wide text-content-3">Pago</p>
+                    {pagos == null && <p className="text-caption text-content-3">Cargando…</p>}
+                    {pagos?.length === 0 && <p className="text-caption text-content-3">Sin pagos registrados.</p>}
+                    {(pagos ?? []).map(p => {
+                        const recibido = p.forma === '01' && p.efectivo_recibido != null ? Number(p.efectivo_recibido) : null;
+                        return (
+                            <div key={p.id} className="flex flex-col gap-1">
+                                <Fila rotulo={nombreForma(p.forma)} valor={formatMoney(p.monto)} />
+                                {recibido != null && recibido > Number(p.monto) && (<>
+                                    <Fila rotulo="Recibido" valor={formatMoney(recibido)} />
+                                    <Fila rotulo="Cambio" valor={formatMoney(recibido - Number(p.monto))} tono="text-success-text" />
+                                </>)}
+                                {p.referencia && <p className="text-caption text-content-3">Ref. {p.referencia}</p>}
+                            </div>
+                        );
+                    })}
+                </div>
+                <div className="flex flex-col gap-1.5">
+                    <p className="text-micro font-bold uppercase tracking-wide text-content-3">Totales</p>
+                    {!r.ivaIncluido && <Fila rotulo="Sumas (sin IVA)" valor={formatMoney(r.subTotal)} />}
+                    {r.descuento > 0 && <Fila rotulo="Descuentos (ya aplicados)" valor={formatMoney(r.descuento)} tono="text-success-text" />}
+                    {!r.ivaIncluido && <Fila rotulo="IVA 13%" valor={formatMoney(r.iva)} />}
+                    {r.percepcion > 0 && <Fila rotulo="(+) IVA percibido" valor={formatMoney(r.percepcion)} />}
+                    {r.retencion > 0 && <Fila rotulo="(−) IVA retenido" valor={`−${formatMoney(r.retencion)}`} />}
+                    <Fila rotulo="Total" valor={formatMoney(r.total)} fuerte />
+                    {r.ivaIncluido && <p className="text-micro text-content-3 text-right">IVA incluido: {formatMoney(r.iva)}</p>}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function VistaTicket({ dte, pagos }) {
     const marco = useRef(null);
     const [html, setHtml] = useState('');
     const [alto, setAlto] = useState(600);
     useEffect(() => {
         let vivo = true;
-        conCodigosDibujados(ticketDeVenta(dte, MARCA_PAPEL))
+        conCodigosDibujados(ticketDeVenta(dte, MARCA_PAPEL, { pagos }))
             .then(t => { if (vivo) setHtml(construirTicketHtml(t)); })
             .catch(e => console.error('VistaTicket', e));
         return () => { vivo = false; };
-    }, [dte]);
+    }, [dte, pagos]);
     if (!html) return <p className="text-caption text-content-3">Armando el ticket…</p>;
     return (
         <div className="flex justify-center overflow-auto max-h-[60vh]">
@@ -90,7 +170,8 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
     const navigate = useNavigate();
     const showToast = useToastStore(s => s.showToast);
     const [d, setD] = useState(null);
-    const [vista, setVista] = useState('ticket');
+    const [vista, setVista] = useState('detalle');
+    const [pagos, setPagos] = useState(null);   // de `dist_pagos`: el ticket dice lo entregado y el cambio
     const [error, setError] = useState('');
     const [ocupado, setOcupado] = useState(null);
     const [pdf, setPdf] = useState({ blob: null, url: null, error: null });
@@ -99,22 +180,29 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
     const yaImprimio = useRef(false);
 
     const cargar = useCallback(() => {
-        fetchDocumento(id).then(setD).catch(e => setError(mensajeDeDistribucion(e)));
+        fetchDocumento(id)
+            .then(doc => {
+                setD(doc);
+                if (!doc?.pedido_id) { setPagos([]); return; }
+                fetchPagos(doc.pedido_id).then(setPagos).catch(e => { console.error('DocumentoModal: pagos', e); setPagos([]); });
+            })
+            .catch(e => setError(mensajeDeDistribucion(e)));
     }, [id]);
     useEffect(() => { cargar(); }, [cargar]);
 
     const imprimirTicket = useCallback(async (doc) => {
-        const r = await imprimirTicketDeVenta(doc, MARCA_PAPEL);
+        const r = await imprimirTicketDeVenta(doc, MARCA_PAPEL, { pagos: pagos ?? [] });
         useStaff.getState().appendAuditLog('DISTRIBUCION_TICKET_IMPRESO', String(doc.id), { ok: r?.ok !== false });
         if (r && r.ok === false) showToast('No se pudo imprimir el ticket', r.detalle ?? '', 'error');
-    }, [showToast]);
+    }, [showToast, pagos]);
 
-    // Recién facturado con «imprimir»: el ticket sale solo, una vez.
+    // Recién facturado con «imprimir»: el ticket sale solo, una vez — cuando ya
+    // llegaron los pagos, para que salga con lo entregado y el cambio.
     useEffect(() => {
-        if (!d || !imprimirAlAbrir || yaImprimio.current) return;
+        if (!d || pagos == null || !imprimirAlAbrir || yaImprimio.current) return;
         yaImprimio.current = true;
         imprimirTicket(d);
-    }, [d, imprimirAlAbrir, imprimirTicket]);
+    }, [d, pagos, imprimirAlAbrir, imprimirTicket]);
 
     // El PDF se arma cuando se pide (pdfmake llega por `import()`), y se
     // rehace si cambia el documento (por ejemplo, al recibir el sello).
@@ -223,7 +311,8 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
 
                         <SegmentedControl value={vista} onChange={setVista} options={VISTAS} />
 
-                        {vista === 'ticket' && <VistaTicket dte={d} />}
+                        {vista === 'detalle' && <VistaDetalle dte={d} pagos={pagos} />}
+                        {vista === 'ticket' && <VistaTicket dte={d} pagos={pagos ?? []} />}
                         {vista === 'pdf' && <VistaPdf url={pdf.url} error={pdf.error} />}
                         {vista === 'datos' && (
                             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-body-sm">
@@ -263,7 +352,7 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                     {puedeVender && d?.pedido_id && (
                         <Button variant="secondary" icon={RotateCcw} onClick={() => navigate(rutaVolverAVender(d.pedido_id))}>Volver a vender</Button>
                     )}
-                    {d && vista === 'ticket' && (
+                    {d && (vista === 'ticket' || vista === 'detalle') && (
                         <Button variant="secondary" icon={Printer} onClick={() => imprimirTicket(d)}>Imprimir ticket</Button>
                     )}
                     {d && vista === 'pdf' && (<>

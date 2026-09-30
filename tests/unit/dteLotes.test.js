@@ -67,6 +67,6 @@ describe('el papel lee lo que escribe el motor', () => {
         const texto = JSON.stringify(definicionPdf(fila, null));
         expect(texto).toContain('"Lote"');
         expect(texto).toContain('31/12/2026');
-        expect(ticketDeVenta(fila).items.filas[0][1]).toBe('ENSURE ADVANCE LIQ FRESA X 220ML L:B2611 V:31/12/2026');
+        expect(ticketDeVenta(fila).items.filas[0][1]).toBe('ENSURE ADVANCE LIQ FRESA X 220ML L:B2611 V:12/26');
     });
 });

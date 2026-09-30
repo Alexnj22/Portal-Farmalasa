@@ -21,7 +21,8 @@ import Pestanas from '../../../componentes/inicio/Pestanas';
 import useDatosInicio from '../../../componentes/inicio/useDatosInicio';
 import { anotar, ordenar } from '../../../componentes/inicio/uso';
 import { Hoy, SECCIONES } from '../../../componentes/inicio/Secciones';
-import { abrirRuta } from '../../../pantallas';
+import { abrirRuta, abrirSolicitud } from '../../../pantallas';
+import { Recarga } from '../../../componentes/inicio/useDato';
 
 const PESTANAS = [
   { id: 'general', label: 'General' },
@@ -49,8 +50,10 @@ export default function Inicio() {
     empleados: empleados || [], sucursales, comunicados, sala, puede,
     alcanceSala: getScope?.('dash_kpi') !== 'ALL',
     alcanceSalaVentas: getScope?.('dash_sales') !== 'ALL',
-    abrir: abrirRuta,
+    abrir: abrirRuta, abrirSolicitud, getScope,
   }), [empleados, sucursales, comunicados, sala, puede, getScope]);
+  // Deslizar hacia abajo sube este número y los widgets vuelven a leer.
+  const [recarga, setRecarga] = useState(0);
 
   // Una pestaña sólo aparece si tiene algo que mostrar para este cargo.
   const visibles = (id) => {
@@ -65,12 +68,12 @@ export default function Inicio() {
   const abrirSeccion = (id, ruta) => { anotar(user?.id, id); abrirRuta(ruta); };
 
   return (
-    <>
+    <Recarga.Provider value={recarga}>
     <Stack.Screen options={{ title: saludo(user), headerRight: () => <FotoDeCuenta user={user} /> }} />
     <ScrollView style={{ flex: 1 }}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ paddingBottom: 24, gap: 16 }}
-      refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await recargar(); setRecargando(false); }} />}>
+      refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setRecarga((n) => n + 1); await recargar(); setRecargando(false); }} />}>
       <Encabezado sala={nombreSala} />
       <Pestanas opciones={pestanas} activa={pestana} onCambiar={setPestana} />
       {puede('dash_kpi') ? <Hoy pestana={pestana} datos={datos} ctx={{ ...ctx, abrir: (r) => abrirSeccion('hoy', r) }} /> : null}
@@ -78,6 +81,6 @@ export default function Inicio() {
         <Componente key={id} datos={datos} ctx={{ ...ctx, abrir: (r) => abrirSeccion(id, r) }} />
       ))}
     </ScrollView>
-    </>
+    </Recarga.Provider>
   );
 }

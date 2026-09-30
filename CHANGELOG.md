@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1103.0 — App: Inicio con los widgets del tablero en las cuatro pestañas
+
+Pedido del usuario: «mejora todo inicio». El Inicio de la app tenía 6
+secciones; el tablero del portal, 24 widgets. Ahora cada pestaña lleva los
+suyos, nativos, con los mismos datos del núcleo y los mismos permisos
+(`dash_*`) y alcances por sala:
+
+- **General**: pendiente para ti, ventas de hoy por sala, meta del mes,
+  equipo, alertas de sucursales, comunicados y cumpleaños.
+- **Comercial**: facturación de hoy (documentos, emitido, crédito fiscal),
+  quién está vendiendo (ranking del mes; sin el permiso de montos, en %), lo
+  que más se vende, cortes de caja del mes (con el juez del portal) y
+  cotizaciones activas.
+- **RRHH**: estado de los turnos ahora (toca un estado para ver quiénes),
+  asistencia de la semana, ausencias de hoy, solicitudes pendientes (abren la
+  solicitud nativa), cumpleaños y el calendario de feriados.
+- **Operación**: consulta de inventario (lleva a Buscar), traslados por
+  contestar y en camino, bitácoras de la sala (vencidas, por anotar, avance),
+  recetas pendientes y facturas de la sala por cargar con su antigüedad.
+
+Piezas nuevas: `Widget` (el armazón común con su encabezado, renglones,
+vacío y esqueleto de carga) y `useDato` — cada widget lee SU dato sólo al
+dibujarse, lo guarda mientras dura la sesión y vuelve a leer al deslizar hacia
+abajo. Los colores de marca pasan a `inicio/marca.js`. «Pedir un ajuste»
+(anulación, Mín·Máx, inventario) queda para sus formularios nativos: el portal
+no tiene un enlace directo a esos formularios.
 ## v2.1102.1 — Vercel no compila las ramas de trabajo
 
 Vercel avisó que el crédito del mes iba en $15 de $20. En 46 horas hubo 100

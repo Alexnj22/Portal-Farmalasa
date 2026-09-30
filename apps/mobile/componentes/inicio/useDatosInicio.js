@@ -54,7 +54,8 @@ export default function useDatosInicio() {
       puede('dash_absences') || puede('dash_kpi') ? suave(fetchActiveLeaveRequests().then((f) => ausenciasDelDia(f || [], hoy))) : null,
       puede('dash_facturacion') ? suave(fetchTodayInvoicesSummary(hoy)) : null,
       puede('dash_cotizaciones') ? suave(fetchRecentCotizaciones(sumarDias(hoy, -30)).then(({ data }) => (data || []).filter((c) => c.status === 'ACTIVA'))) : null,
-      suave(cargarAsistencia?.(1)),
+      // Siete días: los usa «Asistencia de la semana».
+      suave(cargarAsistencia?.(7)),
     ]);
     setDatos({ hoy, ventas, solicitudes, traslados, cortes, meta, ausencias, facturas, cotizaciones });
     setCargando(false);

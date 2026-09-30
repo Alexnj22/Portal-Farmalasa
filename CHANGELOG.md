@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1094.1 — App: Firebase para los avisos en Android
+
+Fase N4 de `docs/PLAN-AVISOS-NATIVOS-2026-09-30.md`. `apps/mobile/app.config.js`
+le agrega a `app.json` el `google-services.json` de Firebase (proyecto
+`farmasaludapp`), que NO va en el repositorio: al compilar lo entrega Expo
+como archivo secreto (`GOOGLE_SERVICES_JSON`) y en la Mac vive en
+`~/.claves-farmalasa/`. La clave de la cuenta de servicio para FCM se sube a
+las credenciales de Expo.
+
 ## v2.1094.0 — App: botones Aprobar/Rechazar y tarjeta nativa de iPhone en los avisos
 
 Fase N3 de `docs/PLAN-AVISOS-NATIVOS-2026-09-30.md`. Todavía no está en una

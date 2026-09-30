@@ -6,7 +6,8 @@
 //                    enviar lo que hay, o rechazar con motivo).
 //   · Recibir      — lo que ya salió para acá (recibir y anotar lo que faltó).
 //   · Envíos       — lo que una sala MANDA sin que se lo pidan: te enviaron,
-//                    sin salir, te devuelven, enviaste.
+//                    sin salir, te devuelven, enviaste. Cada uno abre
+//                    `envio/[id]`, donde se decide renglón por renglón.
 //   · Historial    — recibidos y rechazados de la semana.
 //
 // La barra tiene el escáner (recibir una caja con la cámara) y el «+»: pedir a
@@ -143,7 +144,7 @@ export default function Traslados() {
     if (traslado.es_de_un_pedido) { setAviso({ tono: 'info', texto: 'Esa caja es de un pedido de Bodega: se recibe en Pedidos.' }); return false; }
     setEscaneando(false);
     setAviso(null);
-    if (traslado.es_un_envio) { abrirRuta('/traslados?tab=envios'); return true; }
+    if (traslado.es_un_envio) { router.push({ pathname: '/envio/[id]', params: { id: String(traslado.envio_bolsa?.id ?? traslado.id) } }); return true; }
     router.push({ pathname: '/traslado/[id]', params: { id: String(traslado.id) } });
     return true;
   };
@@ -216,7 +217,7 @@ export default function Traslados() {
             return (
               <View key={s.id} style={{ gap: 10 }}>
                 <Titulo texto={s.titulo} n={lista.length} />
-                {lista.map((e) => <TarjetaEnvio key={e.id} envio={e} color={s.color} onPress={() => abrirRuta('/traslados?tab=envios')} />)}
+                {lista.map((e) => <TarjetaEnvio key={e.id} envio={e} color={s.color} onPress={() => router.push({ pathname: '/envio/[id]', params: { id: String(e.id) } })} />)}
               </View>
             );
           }) : datos ? <Vacio titulo="Sin envíos en curso" detalle="Lo que una sala manda sin que se lo pidan aparece acá." /> : null

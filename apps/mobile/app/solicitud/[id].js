@@ -10,9 +10,8 @@
 // `cargarFilaDeAviso`, lo que dice con `detalleDeSolicitud`, quién puede
 // decidir con `utils/accionesDeAviso.js` y la decisión con `decidirSolicitud`.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { Button, Host, Row } from '@expo/ui';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { cargarFilaDeAviso } from '@nucleo/data/solicitudDeAviso';
@@ -25,19 +24,12 @@ import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { decidirDesdeAviso, enviarTraslado, rechazarTrasladoDesdeAviso } from '../../componentes/avisos';
 import { abrirRuta } from '../../pantallas';
+import { usePorDecidir } from '../../componentes/porDecidir';
+import Vidrio from '../../componentes/Vidrio';
+import AvatarComun from '../../componentes/Avatar';
+import { MARCA } from '../../componentes/inicio/marca';
 
-const COLOR_ESTADO = { PENDING: colorSistema.naranja, APPROVED: colorSistema.verde, REJECTED: colorSistema.rojo };
-
-function Avatar({ empleado }) {
-  const foto = empleado?.photo || empleado?.photo_url;
-  if (foto) return <Image source={{ uri: foto }} style={{ width: 56, height: 56, borderRadius: 28 }} />;
-  const letras = shortEmployeeName(empleado).split(/\s+/).slice(0, 2).map((p) => p.charAt(0).toUpperCase()).join('');
-  return (
-    <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colorSistema.separador, alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ color: colorSistema.texto2, fontSize: 18, fontWeight: '600' }}>{letras || '•'}</Text>
-    </View>
-  );
-}
+const COLOR_ESTADO = { PENDING: MARCA.ambar, APPROVED: MARCA.verde, REJECTED: MARCA.rojo, CANCELLED: '#8E8E93' };
 
 export default function Solicitud() {
   const { id } = useLocalSearchParams();
@@ -65,13 +57,18 @@ export default function Solicitud() {
   // anotando lo que faltó): la genérica sólo sabría «enviar todo».
   useEffect(() => {
     if (fila?.type === 'INVENTORY_TRANSFER_REQUEST') router.replace({ pathname: '/traslado/[id]', params: { id: String(fila.id) } });
+    if (fila?.type === 'INVENTORY_TRANSFER_PUSH') router.replace({ pathname: '/envio/[id]', params: { id: String(fila.id) } });
   }, [fila]);
 
   const tipo = esMinMax ? 'MINMAX_CHANGE_REQUEST' : fila?.type;
   const quienId = esMinMax ? fila?.requested_by_id : fila?.employee_id;
   const empleado = useMemo(() => (empleados || []).find((e) => String(e.id) === String(quienId)), [empleados, quienId]);
   const detalle = fila ? (esMinMax ? detalleDeMinMax(fila) : detalleDeSolicitud(fila)) : null;
-  const estado = fila?.status ?? 'PENDING';
+  // En mayúsculas: Min/Max guarda su estado en minúsculas (`pending`) y con
+  // `=== 'PENDING'` la pantalla creía que ya estaba decidido y NO mostraba los
+  // botones — era por eso que un ajuste pendiente no se podía aprobar desde la
+  // app (reporte del usuario, 2026-09-30).
+  const estado = String(fila?.status ?? 'PENDING').toUpperCase();
   const url = esMinMax ? `/solicitudes?solicitud=minmax:${idReal}` : `/solicitudes?solicitud=${idReal}`;
 
   // Quién puede decidir: la misma regla que la campana del portal, con el aviso
@@ -92,16 +89,18 @@ export default function Solicitud() {
     setOcupado(true);
     const ok = await a.hacer();
     setOcupado(false);
-    if (ok) { await cargar(); router.back(); }
+    if (ok) { usePorDecidir.getState().quitar(clave); await cargar(); router.back(); }
   };
 
   const titulo = REQUEST_TYPES[tipo]?.label ?? 'Solicitud';
+
+  const colorEstado = COLOR_ESTADO[estado] ?? '#8E8E93';
 
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: titulo }} />
       <ScrollView style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 16, gap: 16 }}
+        contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={false} onRefresh={cargar} />}>
         {fila === undefined ? (
@@ -111,57 +110,61 @@ export default function Solicitud() {
         ) : (
           <>
             <View style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
-              {empleado ? <Avatar empleado={empleado} /> : null}
+              <AvatarComun empleado={empleado ?? { name: fila.requested_by_name }} tamano={56} />
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '700' }}>
-                  {empleado ? shortEmployeeName(empleado) : titulo}
+                  {empleado ? shortEmployeeName(empleado) : (fila.requested_by_name ?? titulo)}
                 </Text>
                 {detalle?.contexto ? <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>{detalle.contexto}</Text> : null}
-                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                  {cuandoLlego(fila.created_at ?? fila.requested_at)}
-                </Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{cuandoLlego(fila.created_at ?? fila.requested_at)}</Text>
               </View>
-              <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: colorSistema.fila }}>
-                <Text style={{ color: COLOR_ESTADO[estado] ?? colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>
-                  {REQUEST_STATUS[estado]?.label ?? estado}
-                </Text>
+              <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: `${colorEstado}2E` }}>
+                <Text style={{ color: colorEstado, fontSize: 13, fontWeight: '700' }}>{REQUEST_STATUS[estado]?.label ?? estado}</Text>
               </View>
             </View>
 
             {detalle?.renglones?.length ? (
-              <View style={{ backgroundColor: colorSistema.fila, borderRadius: 14, paddingHorizontal: 14 }}>
-                {detalle.renglones.map(([a, b], i) => (
-                  <View key={i} style={{ flexDirection: 'row', gap: 10, paddingVertical: 12, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
-                    <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{a}</Text>
-                    {b ? <Text style={{ color: colorSistema.texto2, fontSize: 15, fontVariant: ['tabular-nums'] }}>{b}</Text> : null}
-                  </View>
-                ))}
-              </View>
+              <Vidrio radio={20}>
+                <View style={{ paddingHorizontal: 14 }}>
+                  {detalle.renglones.map(([a, b], i) => (
+                    <View key={i} style={{ flexDirection: 'row', gap: 10, paddingVertical: 12, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
+                      <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{a}</Text>
+                      {b ? <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{b}</Text> : null}
+                    </View>
+                  ))}
+                </View>
+              </Vidrio>
             ) : null}
 
             {detalle?.pie || fila.note ? (
-              <View style={{ backgroundColor: colorSistema.fila, borderRadius: 14, padding: 14, gap: 4 }}>
-                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Nota</Text>
-                <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{detalle?.pie || fila.note}</Text>
-              </View>
+              <Vidrio radio={20}>
+                <View style={{ padding: 14, gap: 4 }}>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Nota</Text>
+                  <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{detalle?.pie || fila.note}</Text>
+                </View>
+              </Vidrio>
             ) : null}
 
-            {fila.approver_note && !pendiente ? (
-              <View style={{ backgroundColor: colorSistema.fila, borderRadius: 14, padding: 14, gap: 4 }}>
-                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Respuesta</Text>
-                <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{fila.approver_note}</Text>
-              </View>
+            {(fila.approver_note || fila.decision_note) && !pendiente ? (
+              <Vidrio radio={20}>
+                <View style={{ padding: 14, gap: 4 }}>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Respuesta</Text>
+                  <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{fila.approver_note || fila.decision_note}</Text>
+                </View>
+              </Vidrio>
             ) : null}
 
             {acciones.length ? (
-              <Host matchContents={{ vertical: true }} style={{ width: '100%' }}>
-                <Row spacing={10}>
-                  {acciones.map((a) => (
-                    <Button key={a.rotulo} variant={a.principal ? 'filled' : 'outlined'} label={a.rotulo}
-                      disabled={ocupado} onPress={() => hacer(a)} />
-                  ))}
-                </Row>
-              </Host>
+              <View style={{ gap: 12, marginTop: 4 }}>
+                {acciones.map((a) => (
+                  <Pressable key={a.rotulo} disabled={ocupado} onPress={() => hacer(a)} accessibilityRole="button"
+                    style={({ pressed }) => ({ minHeight: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center',
+                      backgroundColor: a.principal ? MARCA.verde : 'transparent', borderWidth: a.principal ? 0 : 1.5, borderColor: MARCA.rojo,
+                      opacity: ocupado ? 0.4 : pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+                    <Text style={{ color: a.principal ? '#fff' : MARCA.rojo, fontSize: 17, fontWeight: '700' }}>{a.rotulo}</Text>
+                  </Pressable>
+                ))}
+              </View>
             ) : null}
 
             <Pressable onPress={() => abrirRuta(url)} style={{ alignSelf: 'center', paddingVertical: 8 }}>

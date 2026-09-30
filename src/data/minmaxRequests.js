@@ -140,6 +140,22 @@ export async function decidirMinMax(requestId, aprobar, nota = '') {
 // `.limit(1000)` está prohibido (CLAUDE.md): es el cap EXACTO de PostgREST, así
 // que el día que la tabla lo cruza trunca en silencio y la bandeja muestra 1000
 // de N sin decirlo. Se pagina con el helper canónico.
+/** Los ajustes de Min/Max que falta decidir (el RLS recorta a lo que se ve). */
+export function fetchMinMaxPendientes() {
+    return fetchAllRows(() => supabase.from('minmax_change_requests')
+        .select('*')
+        .eq('status', 'pending')
+        .order('requested_at', { ascending: true }));
+}
+
+/** Cuántos ajustes de Min/Max falta decidir — para el contador del Inicio. */
+export async function contarMinMaxPendientes() {
+    const { count, error } = await supabase.from('minmax_change_requests')
+        .select('id', { count: 'exact', head: true }).eq('status', 'pending');
+    if (error) throw error;
+    return count ?? 0;
+}
+
 export function fetchAllMinMaxChangeRequests() {
     return fetchAllRows(() => supabase.from('minmax_change_requests')
         .select('*')

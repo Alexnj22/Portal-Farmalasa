@@ -2,8 +2,33 @@
 // vidrio de iOS; la barra de navegación de Material en Android). Decisión del
 // usuario del 2026-09-29: «que se vea nativa con los elementos nativos», y que
 // la app ABRA en Inicio.
+import { useEffect } from 'react';
+import { AppState } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
+import { usePorDecidir } from '../../componentes/porDecidir';
+
+const CADA = 2 * 60 * 1000;
+
+// «Por decidir» se mantiene al día sola: al entrar, cada dos minutos, al volver
+// a la app y cuando llega un aviso. Así el globo de la pestaña dice la verdad
+// aunque nadie abra la pestaña.
+function useMantenerPorDecidir() {
+  const auth = useAuth();
+  const cargar = usePorDecidir((s) => s.cargar);
+  useEffect(() => {
+    if (!auth.user) return undefined;
+    const leer = () => cargar(auth);
+    leer();
+    const reloj = setInterval(leer, CADA);
+    const app = AppState.addEventListener('change', (e) => { if (e === 'active') leer(); });
+    const aviso = Notifications.addNotificationReceivedListener(() => leer());
+    return () => { clearInterval(reloj); app.remove(); aviso.remove(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth.user?.id, cargar]);
+}
 
 // Transparente: detrás de cada pestaña está la aurora de la raíz.
 const TRANSPARENTE = { backgroundColor: 'transparent' };
@@ -11,6 +36,11 @@ const TRANSPARENTE = { backgroundColor: 'transparent' };
 export default function Pestanas() {
   // El globo de la campana: lo que falta leer, el mismo número que la web.
   const sinLeer = useStaffStore((s) => s.notifications.length);
+  // El globo cuenta lo que falta DECIDIR más lo que falta leer: un aviso leído
+  // sobre algo todavía pendiente sigue pidiendo atención.
+  const porDecidir = usePorDecidir((s) => s.items.length);
+  useMantenerPorDecidir();
+  const globo = sinLeer + porDecidir;
   return (
     <NativeTabs>
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="inicio">
@@ -24,7 +54,7 @@ export default function Pestanas() {
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="avisos">
         <NativeTabs.Trigger.Icon sf={{ default: 'bell', selected: 'bell.fill' }} md="notifications" />
         <NativeTabs.Trigger.Label>Notificaciones</NativeTabs.Trigger.Label>
-        {sinLeer ? <NativeTabs.Trigger.Badge>{sinLeer > 99 ? '99+' : String(sinLeer)}</NativeTabs.Trigger.Badge> : null}
+        {globo ? <NativeTabs.Trigger.Badge>{globo > 99 ? '99+' : String(globo)}</NativeTabs.Trigger.Badge> : null}
       </NativeTabs.Trigger>
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="yo">
         <NativeTabs.Trigger.Icon sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }} md="account_circle" />

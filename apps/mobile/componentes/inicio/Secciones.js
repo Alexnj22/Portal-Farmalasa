@@ -19,6 +19,7 @@ import { colorSistema } from '../Formulario';
 import { iconoDe } from '../../tema/iconos';
 
 import { MARCA } from './marca';
+import { usePorDecidir } from '../porDecidir';
 
 export { MARCA };
 
@@ -35,7 +36,10 @@ export function Hoy({ pestana, datos, ctx }) {
   const alertas = (sucursales || []).filter((b) => problemaDeSucursal(b)).length;
   const ausentes = (datos.ausencias || []).length;
   const facturado = (datos.facturas || []).reduce((s, f) => s + (Number(f.total) || 0), 0);
-  const solicitudes = datos.solicitudes ?? 0;
+  // Lo que falta decidir sale de «Por decidir» (la misma lista de la pestaña
+  // Notificaciones): así cuenta también los ajustes de Mín·Máx, que viven en
+  // otra tabla y el conteo viejo no veía — decía «Al día» con uno esperando.
+  const solicitudes = usePorDecidir((s) => s.items.filter((i) => i.tipo === 'solicitud' || i.tipo === 'minmax').length);
 
   const K = {
     ventas: <Kpi key="v" icono="TrendingUp" rotulo="Ventas hoy" valor={dinero(ventasTotal)} color={MARCA.verde} onPress={() => abrir('/ventas-hoy')}
@@ -67,9 +71,10 @@ export function Hoy({ pestana, datos, ctx }) {
 
 // ── Pendiente para ti ───────────────────────────────────────────────────────
 export function Pendientes({ datos, ctx }) {
+  const porDecidir = usePorDecidir((s) => s.items);
   const filas = [
-    { id: 'solicitudes', n: datos.solicitudes, icono: 'ClipboardList', texto: 'Solicitudes por decidir', ruta: '/solicitudes', color: MARCA.ambar },
-    { id: 'traslados', n: datos.traslados, icono: 'ArrowLeftRight', texto: 'Traslados por confirmar', ruta: '/traslados', color: MARCA.azul },
+    { id: 'solicitudes', n: porDecidir.filter((i) => i.tipo === 'solicitud' || i.tipo === 'minmax').length, icono: 'ClipboardList', texto: 'Solicitudes por decidir', ruta: '/solicitudes', color: MARCA.ambar },
+    { id: 'traslados', n: porDecidir.filter((i) => i.tipo === 'traslado' || i.tipo === 'envio').length, icono: 'ArrowLeftRight', texto: 'Traslados y envíos por contestar', ruta: '/traslados', color: MARCA.azul },
     { id: 'cortes', n: datos.cortes, icono: 'Wallet', texto: 'Cortes por confirmar', ruta: '/caja', color: MARCA.verde },
   ].filter((f) => f.n > 0);
   const total = filas.reduce((s, f) => s + f.n, 0);

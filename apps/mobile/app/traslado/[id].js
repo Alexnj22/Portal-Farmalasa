@@ -34,6 +34,7 @@ import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
+import { usePorDecidir } from '../../componentes/porDecidir';
 
 function Bloque({ titulo, children }) {
   return (
@@ -143,6 +144,7 @@ export default function Traslado() {
       const { data: otra } = await fetchApprovalRequestById(fila.id).catch(() => ({ data: null }));
       if (otra?.status !== 'APPROVED') { fallo('No se pudo enviar', r?.error ?? 'Inténtalo de nuevo.'); return; }
     }
+    usePorDecidir.getState().quitar(fila.id);
     listo(recortado ? 'Enviado lo que hay' : 'Traslado enviado', 'El ticket de la bolsa se imprime en la computadora de la sala.');
     router.back();
   };
@@ -152,6 +154,7 @@ export default function Traslado() {
     const { error } = await rechazarTraslado(fila.id, motivo, texto.trim(), sugerencia);
     setOcupado(false);
     if (error) { fallo('No se pudo rechazar', error.message ?? String(error)); return; }
+    usePorDecidir.getState().quitar(fila.id);
     listo('Traslado rechazado', sugerencia ? `Se le sugirió: ${sugerencia}` : undefined);
     router.back();
   };

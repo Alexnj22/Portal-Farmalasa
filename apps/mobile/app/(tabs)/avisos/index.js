@@ -10,16 +10,22 @@
 // una solicitud— su detalle con los mismos renglones que la notificación del
 // teléfono (`detalleDeSolicitud`, del núcleo). Tocarla abre la solicitud en la
 // app (`app/solicitud/[id].js`), que es donde se decide: la lista informa.
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useFocusEffect } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { cuandoLlego, tituloSinEmoji } from '@nucleo/utils/notificacionTexto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { cargarFilaDeAviso, esAvisoDeMinMax } from '@nucleo/data/solicitudDeAviso';
 import { detalleDeMinMax, detalleDeSolicitud, recortar } from '@nucleo/utils/tarjetaDeSolicitud';
 import { colorSistema } from '../../../componentes/Formulario';
+import Vidrio from '../../../componentes/Vidrio';
 import { abrirRuta, abrirSolicitud } from '../../../pantallas';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
+import { usePorDecidir } from '../../../componentes/porDecidir';
+import TarjetaPorDecidir from '../../../componentes/TarjetaPorDecidir';
+
 
 // El detalle se pide para los avisos que nombran una solicitud todavía abierta.
 // Tope: con más, la pestaña pagaría decenas de lecturas por abrirse.
@@ -39,10 +45,9 @@ function Avatar({ empleado, titulo }) {
 
 function Tarjeta({ n, empleado, detalle, onAbrir }) {
   return (
-    <Pressable onPress={onAbrir} style={({ pressed }) => ({
-      backgroundColor: colorSistema.fila, borderRadius: 16, marginHorizontal: 16, padding: 14, gap: 10,
-      opacity: pressed ? 0.85 : 1,
-    })}>
+    <Pressable onPress={onAbrir} style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+      <Vidrio radio={22} interactivo>
+      <View style={{ padding: 14, gap: 10 }}>
       <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
         <Avatar empleado={empleado} titulo={n.title} />
         <View style={{ flex: 1, gap: 2 }}>
@@ -61,7 +66,7 @@ function Tarjeta({ n, empleado, detalle, onAbrir }) {
         <View style={{ gap: 6 }}>
           {detalle.contexto ? <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{detalle.contexto}</Text> : null}
           {detalle.renglones.length ? (
-            <View style={{ backgroundColor: colorSistema.fondo, borderRadius: 10, paddingHorizontal: 10 }}>
+            <View style={{ backgroundColor: 'rgba(127,127,127,0.14)', borderRadius: 12, paddingHorizontal: 10 }}>
               {detalle.renglones.map(([a, b], i) => (
                 <View key={i} style={{ flexDirection: 'row', gap: 8, paddingVertical: 7, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 13 }} numberOfLines={2}>{a}</Text>
@@ -79,7 +84,15 @@ function Tarjeta({ n, empleado, detalle, onAbrir }) {
         </View>
       ) : null}
 
+      </View>
+      </Vidrio>
     </Pressable>
+  );
+}
+
+function Seccion({ texto }) {
+  return (
+    <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 32, marginTop: 4 }}>{texto}</Text>
   );
 }
 
@@ -93,6 +106,17 @@ export default function Notificaciones() {
   const [recargando, setRecargando] = useState(false);
 
   const porId = useMemo(() => new Map((empleados || []).map((e) => [String(e.id), e])), [empleados]);
+
+  // «Por decidir» va ARRIBA y no depende de que el aviso esté sin leer: leer
+  // un aviso no contesta la solicitud (reporte del usuario, 2026-09-30).
+  const auth = useAuth();
+  const porDecidir = usePorDecidir((s) => s.items);
+  const cargarPorDecidir = usePorDecidir((s) => s.cargar);
+  const persona = useMemo(() => buscadorDePersonas(empleados), [empleados]);
+  // Con la persona como dependencia, no con `auth` entero: `useAuth` devuelve
+  // un objeto nuevo en cada dibujo y la lista se releería sin parar.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useFocusEffect(useCallback(() => { cargarPorDecidir(auth); }, [auth.user?.id, cargarPorDecidir]));
 
   // El detalle de lo que nombra una solicitud abierta, leído de la base (el
   // aviso es la foto del momento en que salió; la solicitud es la de ahora).
@@ -133,11 +157,18 @@ export default function Notificaciones() {
       <ScrollView style={{ flex: 1 }}
         contentContainerStyle={{ paddingVertical: 12, gap: 12 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setDetalles({}); await recargar(); setRecargando(false); }} />}>
+        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setDetalles({}); await Promise.all([recargar(), cargarPorDecidir(auth)]); setRecargando(false); }} />}>
+        {porDecidir.length ? (
+          <>
+            <Seccion texto={`Por decidir · ${porDecidir.length}`} />
+            {porDecidir.map((i) => <TarjetaPorDecidir key={i.clave} item={i} persona={persona} />)}
+            {avisos.length ? <Seccion texto="Avisos sin leer" /> : null}
+          </>
+        ) : null}
         {avisos.length ? avisos.map((n) => (
           <Tarjeta key={n.id} n={n} empleado={porId.get(String(n.created_by))} detalle={detalles[n.id]}
             onAbrir={() => abrir(n)} />
-        )) : (
+        )) : porDecidir.length ? null : (
           <View style={{ alignItems: 'center', paddingTop: 80, gap: 6 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>Todo al día</Text>
             <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Lo que llegue aparece acá y en la barra de abajo.</Text>

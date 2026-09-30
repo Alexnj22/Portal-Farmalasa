@@ -250,6 +250,23 @@ export function fetchApprovalRequestsList({ employeeId, branchEmpIds, soloMiasId
     });
 }
 
+/**
+ * Todo lo que está PENDIENTE y quien mira puede ver (el RLS recorta). Es la
+ * materia de «Por decidir» de la app: ahí el aviso ya leído no puede hacer
+ * desaparecer lo que falta contestar — el aviso es la foto, la solicitud es
+ * la cola.
+ *
+ * Paginada con `fetchAllRows`: un día malo puede pasar de 1000 filas y el
+ * techo corta en silencio. Devuelve el ARRAY, o `null` si falló.
+ */
+export function fetchSolicitudesPendientes() {
+    return fetchAllRows(() => supabase.from('approval_requests')
+        .select(REQUEST_SIMPLE_SELECT)
+        .eq('status', 'PENDING')
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true }));
+}
+
 export function fetchEmployeesByIds(ids, columns) {
     return supabase.from('employees').select(columns).in('id', ids);
 }

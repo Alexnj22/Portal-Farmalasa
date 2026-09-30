@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1105.0 — App: «Por decidir» siempre a la vista, Mín·Máx se puede aprobar, envíos nativos
+
+Reporte del usuario: «las notificaciones y solicitudes, no tengo dónde
+confirmarlas ni rechazarlas, sólo me llegan notificaciones». Medido en
+producción ese momento: 1 ajuste de Mín·Máx, 1 traslado y 11 envíos esperando,
+y la app sin dónde contestarlos. Eran tres defectos:
+
+1. **La pestaña Notificaciones listaba sólo lo NO LEÍDO.** Leer el aviso —en el
+   teléfono o en el portal— hacía desaparecer de la app lo que seguía
+   pendiente. Ahora arriba va **«Por decidir»** (`componentes/porDecidir.js`):
+   solicitudes, ajustes de Mín·Máx, traslados y envíos que a esta persona le
+   toca contestar, con la misma regla del portal para cada uno, esté leído o
+   no el aviso. Se relee al entrar, cada 2 minutos, al volver a la app y al
+   llegar un aviso; el globo de la pestaña suma lo que falta decidir.
+2. **Mín·Máx no mostraba Aprobar/Rechazar**: su tabla guarda el estado en
+   minúsculas (`pending`) y la pantalla comparaba contra `PENDING`, así que lo
+   creía ya decidido. Se normaliza.
+3. **Los envíos sólo se decidían en el portal.** Pantalla nativa `envio/[id]`:
+   aceptar, devolver (motivo de la lista cerrada; «Otro» exige nota) o «no
+   llegó», renglón por renglón o «Aceptar todo»; recibir lo devuelto; y
+   reintentar o cancelar lo que no salió.
+
+Además: el contador «Solicitudes» del Inicio sale de la misma lista (contaba
+cero con un Mín·Máx esperando), la pantalla de una solicitud y las tarjetas de
+avisos pasan a vidrio, y el núcleo suma `fetchSolicitudesPendientes`,
+`fetchMinMaxPendientes` y `contarMinMaxPendientes`.
+
+Probado en el entorno de pruebas: el ajuste pendiente aparece en «Por
+decidir», se aprueba desde la app (quedó `approved` en la base) y sale de la
+lista.
+
 ## v2.1104.0 — App: Traslados nativo — contestar, recibir y escanear la caja
 
 Traslados deja de abrir el portal en la app. La pantalla nueva tiene el

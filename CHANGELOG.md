@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1109.0 — Torogoz: libros de IVA de ventas
+
+En **Reportes → Libros de ventas** (borrador `0021_libros_de_ventas.sql`, sólo
+pruebas):
+
+- **Contribuyentes** (Art. 85): Créditos Fiscales y Notas de Crédito
+  sellados, con gravado, débito, percibido y retenido. Las notas restan en los
+  totales y van con su tipo (05) en el archivo.
+- **Consumidor final** (Art. 83): un renglón por día, del primero al último por
+  número de control (no por el texto del código de generación, que es el error
+  del libro del ERP de las farmacias), con el IVA contenido.
+- **Anulados**: lo invalidado, por la fecha de la invalidación.
+- **Sólo entra lo sellado** por Hacienda. Lo que falta enviar se avisa arriba
+  con su monto, para no declarar un libro incompleto.
+- Los montos salen del JSON del documento —lo que Hacienda recibió—, no de
+  recalcular los renglones.
+- **El archivo** sale con el MISMO generador que los libros de las farmacias
+  (20 columnas contribuyentes, 23 consumidor, 10 anulados). Se extendió para
+  tomar el tipo real del documento (`05`/`06`); sin él sigue en `03`, así el de
+  las farmacias no cambia (28 pruebas de columnas en verde).
+- De paso: la prueba de lotes espera a que se suelte su reserva antes de salir;
+  un `goto` inmediato la cortaba y la corrida siguiente fallaba.
+
 ## v2.1108.0 — Torogoz: liquidación diaria del vendedor
 
 Al volver de la ruta, nada decía cuánto tenía que entregar el vendedor: ventas,

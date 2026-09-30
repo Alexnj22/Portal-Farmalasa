@@ -196,7 +196,11 @@ export const construirLibro = (tab, d, tot) => {
                 // H es NIT **o** NRC, y es excluyente con Q (el DUI).
                 const h = docId(r.nrc) || docId(r.nit);
                 return [
-                    fmtFecha(r.fecha), '4', '03',
+                    // C: el tipo del documento. Las farmacias sólo emiten
+                    // Crédito Fiscal ('03', el valor cuando la fila no lo dice);
+                    // la distribuidora además Notas de Crédito ('05') y de
+                    // Débito ('06'), que el anexo distingue por esta columna.
+                    fmtFecha(r.fecha), '4', r.tipo_dte || '03',
                     ncPelado(r.numero_control),
                     r.sello_recepcion || '',
                     cgPelado(r.codigo_generacion),
@@ -235,7 +239,7 @@ export const construirLibro = (tab, d, tot) => {
             d.anulados.map(r => [
                 ncPelado(r.numero_control),
                 '4', '0', '0',
-                r.tipo_documento === 'CCF' ? '03' : '01',
+                r.tipo_dte || (r.tipo_documento === 'CCF' ? '03' : '01'),
                 'D',
                 r.sello_recepcion || '',
                 '0', '0',

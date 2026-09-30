@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import {
-    TrendingUp, Coins, Percent, Receipt, AlertTriangle, Search, Download, Landmark, BookOpen, CalendarRange, Layers, Info,
-} from 'lucide-react';
+    TrendingUp, Coins, Percent, Receipt, AlertTriangle, Search, Download, Landmark, BookOpen, CalendarRange, Layers, Info, FileX2 } from 'lucide-react';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import Badge from '../../components/common/Badge';
@@ -18,10 +17,12 @@ import { construirLibro } from '@nucleo/utils/libroIva';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { mensajeDeDistribucion } from '@nucleo/data/distribucion';
-import { fetchUtilidad, fetchLibroCompras } from '@nucleo/data/distribucionCompras';
+import { fetchUtilidad, fetchLibroCompras, fetchLibrosVentas } from '@nucleo/data/distribucionCompras';
+import SegmentedControl from '../../components/common/SegmentedControl';
 import { PERIODOS, rangoDe } from './comun';
 import { TIPOS_COMPRA } from './compras';
-import { AGRUPAR_UTILIDAD, margen, mesesRecientes, comprasParaLibro, totalesDelLibro } from './reportes';
+import { AGRUPAR_UTILIDAD, margen, mesesRecientes, comprasParaLibro, totalesDelLibro, LIBROS_VENTAS, totalesContribuyente, totalesConsumidor } from './reportes';
+import { TIPO_DOCUMENTO } from './comun';
 
 // Reportes de la distribuidora (borrador 0016). Sólo quien administra: el
 // costo es el margen de la empresa. La pestaña va en `?reporte=`.
@@ -259,10 +260,178 @@ function LibroCompras({ buscar }) {
     );
 }
 
+// ── Libros de ventas (borrador 0021) ─────────────────────────────────────
+// Sólo lo SELLADO entra; lo que falta enviar se dice arriba, para que nadie
+// crea que el libro está completo. El archivo sale con el mismo generador de
+// los libros de las farmacias (`construirLibro`).
+const COLS_CONTRIB = [
+    { key: 'fecha', label: 'Fecha', align: 'left' },
+    { key: 'documento', label: 'Documento', align: 'left', className: 'w-[260px]' },
+    { key: 'gravadas', label: 'Gravado', align: 'right', hideBelow: 'md' },
+    { key: 'debito', label: 'Débito', align: 'right', hideBelow: 'sm' },
+    { key: 'percibido', label: 'Percibido', align: 'right', hideBelow: 'lg' },
+    { key: 'total', label: 'Total', align: 'right' },
+];
+const COLS_CONSUMIDOR = [
+    { key: 'fecha', label: 'Día', align: 'left' },
+    { key: 'rango', label: 'Del — al', align: 'left', className: 'w-[300px]' },
+    { key: 'documentos', label: 'Documentos', align: 'right', hideBelow: 'sm' },
+    { key: 'total', label: 'Total', align: 'right' },
+];
+const COLS_ANULADOS = [
+    { key: 'documento', label: 'Documento', align: 'left', className: 'w-[260px]' },
+    { key: 'anulado', label: 'Anulado el', align: 'left', hideBelow: 'sm' },
+    { key: 'motivo', label: 'Motivo', align: 'left', hideBelow: 'md' },
+    { key: 'total', label: 'Total', align: 'right' },
+];
+
+function LibrosVentas({ buscar }) {
+    const meses = useMemo(() => mesesRecientes(13), []);
+    const [mes, setMes] = usePestanaEnUrl(meses, meses[0].key, 'mes');
+    const [libro, setLibro] = usePestanaEnUrl(LIBROS_VENTAS, 'contribuyente', 'libro');
+    const [datos, setDatos] = useState(null);
+    const [cargando, setCargando] = useState(true);
+    const [error, setError] = useState('');
+
+    const cargar = useCallback(async () => {
+        setCargando(true);
+        setError('');
+        try {
+            const [desde, hasta] = rangoDelMes(mes);
+            setDatos(await fetchLibrosVentas({ desde, hasta }));
+        } catch (e) {
+            console.error('libros de ventas', e);
+            setError(mensajeDeDistribucion(e));
+        } finally {
+            setCargando(false);
+        }
+    }, [mes]);
+    useEffect(() => { cargar(); }, [cargar]);
+
+    const filas = useMemo(() => {
+        const q = (buscar ?? '').trim();
+        const base = datos?.[libro] ?? [];
+        return !q ? base : base.filter(f => tokenMatch(q, f.cliente, f.numero_control, f.numero_control_del, f.numero_control_al));
+    }, [datos, libro, buscar]);
+    const tc = useMemo(() => totalesContribuyente(datos?.contribuyente), [datos]);
+    const tf = useMemo(() => totalesConsumidor(datos?.consumidor), [datos]);
+    const sinArchivo = (datos?.[libro] ?? []).some(f => f.sin_archivo);
+
+    const exportar = () => {
+        const l = construirLibro(libro, { [libro]: datos?.[libro] ?? [] });
+        exportCsv(l.headers, l.rows, `${l.base}-torogoz-${mes}.csv`, 'distribucion');
+    };
+
+    return (
+        <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <SegmentedControl value={libro} onChange={setLibro} options={LIBROS_VENTAS.map(l => ({ value: l.key, label: l.label, icon: l.icon }))} />
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="w-60"><LiquidSelect value={mes} onChange={(v) => setMes(v || meses[0].key)} clearable={false} icon={CalendarRange}
+                        options={meses.map(m => ({ value: m.key, label: m.label }))} ariaLabel="Mes" /></div>
+                    <Button variant="secondary" icon={Download} onClick={exportar} disabled={cargando || !(datos?.[libro]?.length)}>Descargar CSV</Button>
+                </div>
+            </div>
+            {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
+            {!cargando && Number(datos?.sin_sello?.documentos) > 0 && (
+                <Notice variant="warning" icon={AlertTriangle} data-testid="libro-sin-sello">
+                    {formatQty(Number(datos.sin_sello.documentos))} documentos del mes ({formatMoney(Number(datos.sin_sello.total))}) todavía no tienen sello de
+                    Hacienda y no entran al libro. Envíalos desde Facturación antes de declarar.
+                </Notice>
+            )}
+            {!cargando && sinArchivo && (
+                <Notice variant="info" icon={Info}>Algunas filas son datos de muestra sin su archivo: sus montos se derivaron del total.</Notice>
+            )}
+
+            {libro === 'contribuyente' && (
+                <CarrilCards ariaLabel="Totales del libro de contribuyentes">
+                    <StatCard icon={Receipt} label="Ventas gravadas" value={formatMoney(tc.gravadas)} loading={cargando}
+                        iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(tc.documentos)} Créditos Fiscales${tc.notas ? ` · ${formatQty(tc.notas)} notas restan` : ''}`} />
+                    <StatCard icon={Landmark} label="Débito fiscal" value={formatMoney(tc.debito)} loading={cargando}
+                        iconBg="bg-success/10" iconCls="text-success" sub="IVA 13 % neto de notas" />
+                    <StatCard icon={Percent} label="IVA percibido" value={formatMoney(tc.percibido)} loading={cargando}
+                        iconBg="bg-warning/10" iconCls="text-warning" sub="Percepción 1 %" />
+                    <StatCard icon={Percent} label="IVA retenido" value={formatMoney(tc.retenido)} loading={cargando}
+                        iconBg="bg-chart-3/10" iconCls="text-chart-3" sub="No va en el libro: en la declaración" />
+                </CarrilCards>
+            )}
+            {libro === 'consumidor' && (
+                <CarrilCards ariaLabel="Totales del libro de consumidor final">
+                    <StatCard icon={Receipt} label="Ventas del mes" value={formatMoney(tf.total)} loading={cargando}
+                        iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(tf.documentos)} Facturas en ${formatQty(tf.dias)} días`} />
+                    <StatCard icon={Landmark} label="IVA contenido" value={formatMoney(tf.debito)} loading={cargando}
+                        iconBg="bg-success/10" iconCls="text-success" sub="Débito fiscal de consumidor final" />
+                    <StatCard icon={Receipt} label="Exentas" value={formatMoney(tf.exentas)} loading={cargando}
+                        iconBg="bg-chart-3/10" iconCls="text-chart-3" sub="Ventas exentas" />
+                </CarrilCards>
+            )}
+
+            {libro === 'contribuyente' && (
+                <DataTable columns={COLS_CONTRIB} movil={{ usarAccionDeFila: false }} loading={cargando} minWidth="320px"
+                    empty={{ icon: BookOpen, message: 'Sin documentos', subtext: 'No hay Créditos Fiscales sellados este mes.' }}>
+                    {filas.map((f, i) => (
+                        <DataRow key={f.id} index={i}>
+                            <DataCell><span className="text-caption tabular-nums text-content-2">{fechaNumerica(f.fecha)}</span></DataCell>
+                            <DataCell>
+                                <div className="min-w-0 max-w-[260px]">
+                                    <p className="text-body-sm font-bold text-content-2 truncate">{f.cliente}</p>
+                                    <p className="text-caption text-content-3 truncate">{TIPO_DOCUMENTO[f.tipo_dte]?.corto} · {f.numero_control} · NRC {f.nrc}</p>
+                                </div>
+                            </DataCell>
+                            <DataCell align="right" hideBelow="md"><span className="tabular-nums text-content-2">{formatMoney(Number(f.ventas_gravadas))}</span></DataCell>
+                            <DataCell align="right" hideBelow="sm"><span className="tabular-nums text-content-2">{formatMoney(Number(f.debito_fiscal))}</span></DataCell>
+                            <DataCell align="right" hideBelow="lg"><span className="tabular-nums text-content-3">{formatMoney(Number(f.percibido))}</span></DataCell>
+                            <DataCell align="right">
+                                <span className={`tabular-nums font-black ${f.tipo_dte === '05' ? 'text-danger-text' : 'text-content'}`}>
+                                    {f.tipo_dte === '05' ? '−' : ''}{formatMoney(Number(f.ventas_gravadas) + Number(f.ventas_exentas))}
+                                </span>
+                            </DataCell>
+                        </DataRow>
+                    ))}
+                </DataTable>
+            )}
+            {libro === 'consumidor' && (
+                <DataTable columns={COLS_CONSUMIDOR} movil={{ usarAccionDeFila: false }} loading={cargando} minWidth="320px"
+                    empty={{ icon: BookOpen, message: 'Sin ventas', subtext: 'No hay Facturas selladas este mes.' }}>
+                    {filas.map((f, i) => (
+                        <DataRow key={f.fecha} index={i}>
+                            <DataCell><span className="text-caption tabular-nums text-content-2">{fechaNumerica(f.fecha)}</span></DataCell>
+                            <DataCell>
+                                <p className="text-caption font-mono text-content-3 truncate max-w-[300px]">{f.numero_control_del}</p>
+                                <p className="text-caption font-mono text-content-3 truncate max-w-[300px]">{f.numero_control_al}</p>
+                            </DataCell>
+                            <DataCell align="right" hideBelow="sm"><span className="tabular-nums text-content-2">{formatQty(Number(f.documentos))}</span></DataCell>
+                            <DataCell align="right"><span className="tabular-nums font-black text-content">{formatMoney(Number(f.total_diario))}</span></DataCell>
+                        </DataRow>
+                    ))}
+                </DataTable>
+            )}
+            {libro === 'anulados' && (
+                <DataTable columns={COLS_ANULADOS} movil={{ usarAccionDeFila: false }} loading={cargando} minWidth="320px"
+                    empty={{ icon: FileX2, message: 'Sin anulados', subtext: 'No se invalidó ningún documento este mes.' }}>
+                    {filas.map((f, i) => (
+                        <DataRow key={f.id} index={i}>
+                            <DataCell>
+                                <div className="min-w-0 max-w-[260px]">
+                                    <p className="text-body-sm font-bold text-content-2 truncate">{f.cliente}</p>
+                                    <p className="text-caption text-content-3 truncate">{TIPO_DOCUMENTO[f.tipo_dte]?.corto} · {f.numero_control}</p>
+                                </div>
+                            </DataCell>
+                            <DataCell hideBelow="sm"><span className="text-caption tabular-nums text-content-2">{fechaNumerica(f.anulado_el)}</span></DataCell>
+                            <DataCell hideBelow="md"><span className="text-caption text-content-2 truncate">{f.motivo ?? '—'}</span></DataCell>
+                            <DataCell align="right"><span className="tabular-nums font-black text-content">{formatMoney(Number(f.total))}</span></DataCell>
+                        </DataRow>
+                    ))}
+                </DataTable>
+            )}
+        </div>
+    );
+}
+
 export default function TabReportes({ buscar, vista = 'utilidad' }) {
     return (
         <div className="p-3 md:p-5">
-            {vista === 'compras' ? <LibroCompras buscar={buscar} /> : <ReporteUtilidad buscar={buscar} />}
+            {vista === 'compras' ? <LibroCompras buscar={buscar} /> : vista === 'ventas' ? <LibrosVentas buscar={buscar} /> : <ReporteUtilidad buscar={buscar} />}
         </div>
     );
 }

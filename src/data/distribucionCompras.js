@@ -92,6 +92,13 @@ export async function fetchUtilidad({ desde, hasta, ruta = null, vendedor = null
     return data;
 }
 
+/** Los libros de ventas del período: `{ contribuyente, consumidor, anulados, sin_sello }` (borrador 0021). */
+export async function fetchLibrosVentas({ desde, hasta }) {
+    const { data, error } = await supabase.rpc('dist_libros_iva', { p_desde: desde, p_hasta: hasta });
+    if (error) throw error;
+    return data;
+}
+
 /** Las compras recibidas del período, con `en_libro` (sólo los Créditos Fiscales). */
 export async function fetchLibroCompras({ desde, hasta }) {
     const { data, error } = await supabase.rpc('dist_libro_compras', { p_desde: desde, p_hasta: hasta });

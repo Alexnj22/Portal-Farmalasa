@@ -1,4 +1,4 @@
-import { TrendingUp, BookOpen } from 'lucide-react';
+import { TrendingUp, BookOpen, BookText, Users, Store, FileX2 } from 'lucide-react';
 import { mesSV, correrMes, etiquetaMes } from '@nucleo/utils/fecha';
 
 // Reportes de la distribuidora (borrador 0016): la utilidad bruta y el libro de
@@ -7,8 +7,52 @@ import { mesSV, correrMes, etiquetaMes } from '@nucleo/utils/fecha';
 
 export const VISTAS_REPORTES = [
     { key: 'utilidad', label: 'Utilidad', icon: TrendingUp },
+    { key: 'ventas', label: 'Libros de ventas', icon: BookText },
     { key: 'compras', label: 'Libro de compras', icon: BookOpen },
 ];
+
+/** Los tres libros de ventas (borrador 0021); la pestaña va en `?libro=`. */
+export const LIBROS_VENTAS = [
+    { key: 'contribuyente', label: 'Contribuyentes', icon: Users },
+    { key: 'consumidor', label: 'Consumidor final', icon: Store },
+    { key: 'anulados', label: 'Anulados', icon: FileX2 },
+];
+
+const r2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+
+/**
+ * Totales del libro de contribuyentes. Las notas de crédito (05) RESTAN: en el
+ * archivo van en positivo con su tipo, pero lo que se declara es el neto.
+ */
+export function totalesContribuyente(filas) {
+    const t = { gravadas: 0, exentas: 0, debito: 0, percibido: 0, retenido: 0, documentos: 0, notas: 0 };
+    for (const f of filas ?? []) {
+        const s = f.tipo_dte === '05' ? -1 : 1;
+        t.gravadas += s * Number(f.ventas_gravadas || 0);
+        t.exentas += s * Number(f.ventas_exentas || 0);
+        t.debito += s * Number(f.debito_fiscal || 0);
+        t.percibido += s * Number(f.percibido || 0);
+        t.retenido += s * Number(f.retenido || 0);
+        if (f.tipo_dte === '05') t.notas += 1; else t.documentos += 1;
+    }
+    for (const k of ['gravadas', 'exentas', 'debito', 'percibido', 'retenido']) t[k] = r2(t[k]);
+    return t;
+}
+
+/** Totales del libro de consumidor final (la gravada ya trae el IVA adentro). */
+export function totalesConsumidor(filas) {
+    const t = { gravadas: 0, exentas: 0, total: 0, documentos: 0, dias: (filas ?? []).length };
+    for (const f of filas ?? []) {
+        t.gravadas += Number(f.ventas_gravadas || 0);
+        t.exentas += Number(f.ventas_exentas || 0);
+        t.total += Number(f.total_diario || 0);
+        t.documentos += Number(f.documentos || 0);
+    }
+    for (const k of ['gravadas', 'exentas', 'total']) t[k] = r2(t[k]);
+    // El IVA contenido en la venta a consumidor: lo que se declara como débito.
+    t.debito = r2(t.gravadas - t.gravadas / 1.13);
+    return t;
+}
 
 export const AGRUPAR_UTILIDAD = [
     { value: 'producto', label: 'Por producto' },

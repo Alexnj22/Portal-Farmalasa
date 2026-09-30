@@ -404,10 +404,14 @@ test('lotes: primero vence, y lo que no alcanza se reparte abajo; sin existencia
     // Las dos aparecen en Ventas perdidas.
     // Vacía la venta: si no, la reserva de estos productos queda 30 minutos y
     // la próxima corrida encuentra el lote corto ya apartado.
+    // Se espera la respuesta: un `goto` inmediato recarga la página y corta la
+    // liberación a medio camino (pasó: el lote corto quedó apartado 30 min).
     await page.locator('body').click({ position: { x: 5, y: 5 } });
+    const soltada = page.waitForResponse(r => r.url().includes('/rpc/dist_reservar') && r.request().postData()?.includes('"p_renglones":[]'));
     await page.keyboard.press('F6');
     await page.keyboard.press('Enter');
     await expect(page.getByText('Elegir cliente…')).toBeVisible();
+    await soltada;
     await page.goto('/torogoz/perdidas');
     await expect(page.getByText('gasa esteril prueba').first()).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/NEPRO AP/).first()).toBeVisible();
@@ -822,5 +826,27 @@ test('liquidación del vendedor: efectivo a entregar, faltante exige motivo, cie
     await page.locator('input[name="motivo-reabrir"]').fill('prueba automática');
     await cierre.getByRole('button', { name: 'Reabrir' }).last().click();
     await expect(cierre).toHaveAttribute('data-cierre', 'abierta', { timeout: 15_000 });
+    expect(errores).toEqual([]);
+});
+
+test('libros de ventas: contribuyentes y consumidor final con el archivo de las farmacias, y lo sin sello se avisa', async ({ page }) => {
+    const errores = [];
+    page.on('pageerror', e => errores.push(e.message));
+    await entrar(page);
+    await page.goto('/torogoz/reportes?reporte=ventas');
+    await expect(page.getByText('Débito fiscal')).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('table tbody tr').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('libro-sin-sello')).toBeVisible();
+    await page.screenshot({ path: `${SALIDA}/libro-contribuyentes.png`, fullPage: true });
+    let [d] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Descargar CSV' }).click()]);
+    let filas = fs.readFileSync(await d.path(), 'utf8').replace(/^﻿/, '').split('\r\n');
+    expect(filas[0].split(';')).toHaveLength(20);
+    expect(filas[0].split(';')[1]).toBe('4');
+    await page.getByRole('radio', { name: 'Consumidor final' }).click();
+    await expect(page).toHaveURL(/libro=consumidor/);
+    await expect(page.getByText('IVA contenido')).toBeVisible();
+    [d] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Descargar CSV' }).click()]);
+    filas = fs.readFileSync(await d.path(), 'utf8').replace(/^﻿/, '').split('\r\n');
+    expect(filas[0].split(';')).toHaveLength(23);
     expect(errores).toEqual([]);
 });

@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1115.0 — Torogoz: conteo físico y bajas con aprobación
+
+**Inventario → Conteo y bajas** (borrador `0026_conteo_y_bajas.sql`, sólo
+pruebas):
+
+- **Conteo físico**: quien administra lo inicia (foto de cada lote con
+  existencia); se cuenta **a ciegas** —quien cuenta no ve el sistema; quien
+  administra sí, con la diferencia valorizada al costo—. Al cerrar, el ajuste es
+  **relativo** (existencia de ahora + contado − foto), así una venta hecha
+  mientras se contaba no se pisa; lo no contado no se toca. Uno abierto a la
+  vez; anular exige motivo. Queda el historial con faltante y sobrante.
+- **Bajas** (vencido, dañado, muestra, otro): se piden por lote —no más de lo que
+  hay, contando lo ya pedido— y quien administra las aprueba o rechaza (con
+  motivo). Recién aprobadas salen del lote, valorizadas al costo.
+
 ## v2.1114.0 — Torogoz: mínimos, máximos y reposición
 
 **Inventario → Reposición** (borrador `0025_minimos_y_reposicion.sql`, sólo

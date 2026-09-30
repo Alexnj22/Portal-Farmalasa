@@ -517,6 +517,62 @@ export async function fijarMinMax(productId, minimo, maximo) {
     if (error) throw error;
 }
 
+// ── Conteo físico y bajas (borrador 0026) ──────────────────────────────────
+
+export async function fetchConteos() {
+    const { data, error } = await supabase.from('dist_conteos').select('id, estado, nota, resumen, created_at, cerrado_at').order('id', { ascending: false }).limit(20);
+    if (error) throw error;
+    return data ?? [];
+}
+
+/** El conteo con sus renglones; a quien no administra no le trae lo que dice el sistema. */
+export async function fetchConteo(id) {
+    const { data, error } = await supabase.rpc('dist_conteo', { p_id: id });
+    if (error) throw error;
+    return data;
+}
+
+export async function iniciarConteo(productos, nota) {
+    const { data, error } = await supabase.rpc('dist_iniciar_conteo', { p_productos: productos, p_nota: nota || null });
+    if (error) throw error;
+    return data;
+}
+
+export async function contar(itemId, contado, nota = null) {
+    const { error } = await supabase.rpc('dist_contar', { p_item: itemId, p_contado: contado, p_nota: nota });
+    if (error) throw error;
+}
+
+export async function cerrarConteo(id, nota) {
+    const { data, error } = await supabase.rpc('dist_cerrar_conteo', { p_id: id, p_nota: nota || null });
+    if (error) throw error;
+    return data;
+}
+
+export async function anularConteo(id, motivo) {
+    const { error } = await supabase.rpc('dist_anular_conteo', { p_id: id, p_motivo: motivo });
+    if (error) throw error;
+}
+
+export async function fetchBajas() {
+    const { data, error } = await supabase.from('dist_bajas')
+        .select('id, lote_id, product_id, unidades, motivo, detalle, estado, costo_unitario, nota_resolucion, created_at, resuelto_at, products(nombre), dist_lotes(lote, vence), solicitante:employees!dist_bajas_solicitado_por_fkey(name)')
+        .order('id', { ascending: false }).limit(100);
+    if (error) throw error;
+    return data ?? [];
+}
+
+export async function solicitarBaja(loteId, unidades, motivo, detalle) {
+    const { data, error } = await supabase.rpc('dist_solicitar_baja', { p_lote: loteId, p_unidades: unidades, p_motivo: motivo, p_detalle: detalle });
+    if (error) throw error;
+    return data;
+}
+
+export async function resolverBaja(id, aprobar, nota) {
+    const { error } = await supabase.rpc('dist_resolver_baja', { p_id: id, p_aprobar: aprobar, p_nota: nota || null });
+    if (error) throw error;
+}
+
 export async function fetchCuarentena() {
     const { data, error } = await supabase
         .from('dist_cuarentena')

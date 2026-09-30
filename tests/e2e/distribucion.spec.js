@@ -994,3 +994,47 @@ test('reposición: bajo el mínimo con compra sugerida, mínimo a mano y de vuel
     expect(fs.readFileSync(await d.path(), 'utf8')).toContain('GLUCERNA TRIPLE CARE');
     expect(errores).toEqual([]);
 });
+
+test('conteo físico con diferencia valorizada y cierre, y una baja pedida y rechazada', async ({ page }) => {
+    const errores = [];
+    page.on('pageerror', e => errores.push(e.message));
+    await entrar(page);
+    await page.goto('/torogoz/inventario?inventario=conteo');
+    const sec = page.locator('section[aria-label="Conteo físico"]');
+    await expect(sec).toBeVisible({ timeout: 15_000 });
+    if (await sec.getAttribute('data-conteo') === 'abierto') {   // una corrida anterior lo dejó abierto
+        await page.locator('input[name="nota-cierre-conteo"]').fill('prueba automática');
+        await sec.getByRole('button', { name: 'Anular' }).click();
+        await expect(sec).toHaveAttribute('data-conteo', 'ninguno', { timeout: 15_000 });
+    }
+    await sec.getByRole('button', { name: 'Iniciar conteo' }).click();
+    await expect(sec).toHaveAttribute('data-conteo', 'abierto', { timeout: 15_000 });
+    const filas = sec.locator('[data-renglon-conteo]');
+    const leerSistema = async (r) => Number((await r.innerText()).match(/sistema ([\d,]+)/)[1].replace(/,/g, ''));
+    const r1 = filas.nth(0), r2 = filas.nth(1);
+    const s1 = await leerSistema(r1), s2 = await leerSistema(r2);
+    await r1.locator('input').fill(String(s1)); await r1.locator('input').press('Enter');
+    await expect(r1).toContainText('cuadra', { timeout: 15_000 });
+    await r2.locator('input').fill(String(s2 - 1)); await r2.locator('input').press('Enter');
+    await expect(r2).toContainText('-1', { timeout: 15_000 });
+    await page.screenshot({ path: `${SALIDA}/conteo.png`, fullPage: true });
+    // Se corrige para no dejar un ajuste en pruebas, y se cierra: 0 ajustes.
+    await r2.locator('input').fill(String(s2)); await r2.locator('input').press('Enter');
+    await expect(r2).toContainText('cuadra', { timeout: 15_000 });
+    await sec.getByRole('button', { name: /Cerrar y ajustar/ }).click();
+    await expect(page.getByText('Conteo cerrado').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/0 lotes ajustados/).first()).toBeVisible();
+
+    const bajas = page.locator('section[aria-label="Bajas"]');
+    await bajas.getByRole('combobox', { name: 'Lote de la baja' }).click();
+    await page.getByRole('option').first().click();
+    await page.locator('input[name="unidades-baja"]').fill('1');
+    await page.locator('input[name="detalle-baja"]').fill('prueba automática: golpeado');
+    await bajas.getByRole('button', { name: 'Pedir baja' }).click();
+    await expect(page.getByText('Baja pedida').first()).toBeVisible({ timeout: 15_000 });
+    const pend = bajas.locator('[data-baja="pendiente"]').first();
+    await pend.locator('input[name^="nota-baja-"]').fill('prueba automática');
+    await pend.getByRole('button', { name: 'Rechazar' }).click();
+    await expect(bajas.locator('[data-baja="rechazada"]').first()).toBeVisible({ timeout: 15_000 });
+    expect(errores).toEqual([]);
+});

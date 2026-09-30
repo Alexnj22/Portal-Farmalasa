@@ -22,6 +22,7 @@ import TabReportes from './distribucion/TabReportes';
 import TabLiquidacion from './distribucion/TabLiquidacion';
 import TabCierreDia from './distribucion/TabCierreDia';
 import TabReposicion from './distribucion/TabReposicion';
+import TabConteo from './distribucion/TabConteo';
 import { VISTAS_REPORTES } from './distribucion/reportes';
 import { VISTAS_CARTERA } from './distribucion/cartera';
 import { VISTAS_PEDIDOS, VISTAS_PERDIDAS, PERIODOS, CUBETAS_FACTURACION } from './distribucion/comun';
@@ -45,6 +46,7 @@ const VISTAS_CAJA = [
 const VISTAS_INVENTARIO = [
     { key: 'lotes', label: 'Lotes', icon: Boxes },
     { key: 'reposicion', label: 'Reposición', icon: PackageSearch },
+    { key: 'conteo', label: 'Conteo y bajas', icon: ClipboardList },
 ];
 
 const TABS = [
@@ -179,7 +181,8 @@ export default function DistribucionView({ seccion = 'inicio' }) {
             )}
             {visitadas.has('inventario') && (
                 <div className={tab === 'inventario' ? '' : 'hidden'}>
-                    {vistaInventario === 'reposicion' ? <TabReposicion {...comunes} /> : <TabInventario {...comunes} />}
+                    {vistaInventario === 'reposicion' ? <TabReposicion {...comunes} />
+                        : vistaInventario === 'conteo' ? <TabConteo {...comunes} /> : <TabInventario {...comunes} />}
                 </div>
             )}
             {visitadas.has('cobros') && (

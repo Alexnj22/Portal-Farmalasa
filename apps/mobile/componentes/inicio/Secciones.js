@@ -14,6 +14,7 @@ import { COLOR_VOLUMEN, RejillaDeSalas } from './MiniSala';
 import * as W from './widgets/rrhh';
 import * as C from './widgets/comercial';
 import * as O from './widgets/operacion';
+import * as G from './widgets/general';
 import Kpi, { Avance, Curva, FilaDeKpis } from './Kpi';
 import { colorSistema } from '../Formulario';
 import { iconoDe } from '../../tema/iconos';
@@ -209,6 +210,7 @@ export const SECCIONES = [
   { id: 'meta', pestanas: ['general', 'comercial'], permiso: 'dash_meta_sala', visible: (d) => !!d.meta, Componente: Meta },
   { id: 'equipo', pestanas: ['general'], permiso: 'dash_shifts', Componente: Equipo },
   { id: 'sucursales', pestanas: ['general'], permiso: 'dash_branches', Componente: W.AlertasSucursales },
+  { id: 'datos_pedidos', pestanas: ['general', 'comercial'], permiso: 'dash_dato_pedido', Componente: G.DatosQueFaltan },
   { id: 'avisos', pestanas: ['general', 'rrhh'], permiso: 'dash_announcements', Componente: Avisos },
   // Comercial
   { id: 'facturacion', pestanas: ['comercial'], permiso: 'dash_facturacion', Componente: C.Facturacion },

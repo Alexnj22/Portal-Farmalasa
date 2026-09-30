@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1106.0 — App: Facturas de mi sala y Datos que faltan, nativos; abrir documentos
+
+Parte de «que todos los widgets del Inicio funcionen»:
+
+- **Facturas de mi sala** (`/facturas-sala`, nativa): las facturas de compra
+  sin sala, las «de tu línea» por confirmar y las tuyas. «Es de mi sala»
+  (`reclamarFactura`), «Soltar» mientras no esté cargada (`soltarFactura`) y
+  «Ver PDF». Con alcance «todas», la sala se elige en el menú de filtros.
+- **Datos que faltan** (widget de General y Comercial): el correo que pide
+  Hacienda para una venta; se escribe y se envía (`responderDatoPedido`) y se
+  informa si el documento entró o sigue pendiente. Sin pedidos, no ocupa
+  lugar.
+- **Abrir documentos en la app**: el adaptador `plataforma/descargas` usa el
+  visor del sistema (`expo-web-browser`); `openStoredFile` del núcleo ya abre
+  PDFs firmados en el teléfono. Se instalan `expo-web-browser` y
+  `expo-image-picker` (este último para las fotos de evidencia que vienen).
+
 ## v2.1105.0 — App: «Por decidir» siempre a la vista, Mín·Máx se puede aprobar, envíos nativos
 
 Reporte del usuario: «las notificaciones y solicitudes, no tengo dónde

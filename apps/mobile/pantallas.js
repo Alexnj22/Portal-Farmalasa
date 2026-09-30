@@ -11,6 +11,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/traslados': true,
   '/ventas-hoy': true,   // no existe en el portal: es la pantalla nativa de «Ventas de hoy»
   '/solicitudes': true,
+  '/facturas-sala': true,
   // Los dos ámbitos del portal son una sola bandeja en la app.
   '/solicitudes-personales': '/solicitudes',
 };

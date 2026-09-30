@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1114.0 — Torogoz: mínimos, máximos y reposición
+
+**Inventario → Reposición** (borrador `0025_minimos_y_reposicion.sql`, sólo
+pruebas): qué comprar y a quién antes de que falte.
+
+- **Disponible** = lotes sin vencer − lo reservado por ventas en curso; lo
+  vencido se muestra aparte.
+- **Velocidad** = lo vendido en 60 días menos lo devuelto, y los días de
+  inventario que alcanzan.
+- **Mínimo y máximo** automáticos (15 y 45 días de venta, configurables por
+  empresa) o **fijados a mano** —la distribuidora arranca sin historia, y ahí el
+  automático no sirve—; «Volver al automático» los suelta.
+- **Comprar**: si el disponible llegó al mínimo, lo que falta para el máximo, con
+  su costo estimado y el proveedor de la última compra.
+- **Pedido sugerido**: CSV agrupado por proveedor, listo para mandar.
+
 ## v2.1113.0 — Torogoz: retenciones, percepciones y paquete del mes
 
 En **Reportes** (sin tablas ni consultas nuevas: sale de los libros de ventas y

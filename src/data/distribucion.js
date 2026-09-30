@@ -503,6 +503,20 @@ export async function reabrirDia(id, motivo) {
     if (error) throw error;
 }
 
+// ── Reposición (borrador 0025) ─────────────────────────────────────────────
+
+export async function fetchReposicion() {
+    const { data, error } = await supabase.rpc('dist_reposicion');
+    if (error) throw error;
+    return data;
+}
+
+/** `null` en los dos = volver al automático. */
+export async function fijarMinMax(productId, minimo, maximo) {
+    const { error } = await supabase.rpc('dist_fijar_minmax', { p_product: productId, p_minimo: minimo, p_maximo: maximo });
+    if (error) throw error;
+}
+
 export async function fetchCuarentena() {
     const { data, error } = await supabase
         .from('dist_cuarentena')

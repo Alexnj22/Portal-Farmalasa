@@ -21,6 +21,7 @@ import { VISTAS_COMPRAS } from './distribucion/compras';
 import TabReportes from './distribucion/TabReportes';
 import TabLiquidacion from './distribucion/TabLiquidacion';
 import TabCierreDia from './distribucion/TabCierreDia';
+import TabReposicion from './distribucion/TabReposicion';
 import { VISTAS_REPORTES } from './distribucion/reportes';
 import { VISTAS_CARTERA } from './distribucion/cartera';
 import { VISTAS_PEDIDOS, VISTAS_PERDIDAS, PERIODOS, CUBETAS_FACTURACION } from './distribucion/comun';
@@ -38,6 +39,12 @@ import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 const VISTAS_CAJA = [
     { key: 'vendedor', label: 'Por vendedor', icon: Wallet },
     { key: 'dia', label: 'Cierre del día', icon: Lock },
+];
+
+// Inventario: lotes / reposición, en `?inventario=`.
+const VISTAS_INVENTARIO = [
+    { key: 'lotes', label: 'Lotes', icon: Boxes },
+    { key: 'reposicion', label: 'Reposición', icon: PackageSearch },
 ];
 
 const TABS = [
@@ -83,6 +90,7 @@ export default function DistribucionView({ seccion = 'inicio' }) {
     const puedeConfigurar = hasPermission('distribucion_config', 'can_edit');
     const vistasCaja = useMemo(() => VISTAS_CAJA.filter(v => puedeConfigurar || v.key !== 'dia'), [puedeConfigurar]);
     const [vistaCaja, setVistaCaja] = usePestanaEnUrl(vistasCaja, 'vendedor', 'caja');
+    const [vistaInventario, setVistaInventario] = usePestanaEnUrl(VISTAS_INVENTARIO, 'lotes', 'inventario');
 
     const [emisor, setEmisor] = useState(null);
     const [cargando, setCargando] = useState(true);
@@ -134,9 +142,9 @@ export default function DistribucionView({ seccion = 'inicio' }) {
             ) : conPestanasSinBuscador ? (
                 <ViewTabBar tabs={vistasCaja} activeTab={vistaCaja} onTabChange={setVistaCaja} showSearch={false} />
             ) : conBuscador ? (
-                <ViewTabBar tabs={tab === 'pedidos' ? VISTAS_PEDIDOS : tab === 'perdidas' ? VISTAS_PERDIDAS : tab === 'documentos' ? CUBETAS_FACTURACION : tab === 'cobros' ? VISTAS_CARTERA : tab === 'compras' ? VISTAS_COMPRAS : tab === 'reportes' ? VISTAS_REPORTES : [actual]}
-                    activeTab={tab === 'pedidos' ? vista : tab === 'perdidas' ? estadoPerdida : tab === 'documentos' ? cubeta : tab === 'cobros' ? vistaCartera : tab === 'compras' ? vistaCompras : tab === 'reportes' ? vistaReporte : tab}
-                    onTabChange={tab === 'pedidos' ? setVista : tab === 'perdidas' ? setEstadoPerdida : tab === 'documentos' ? setCubeta : tab === 'cobros' ? setVistaCartera : tab === 'compras' ? setVistaCompras : tab === 'reportes' ? setVistaReporte : () => {}}
+                <ViewTabBar tabs={tab === 'pedidos' ? VISTAS_PEDIDOS : tab === 'perdidas' ? VISTAS_PERDIDAS : tab === 'documentos' ? CUBETAS_FACTURACION : tab === 'cobros' ? VISTAS_CARTERA : tab === 'compras' ? VISTAS_COMPRAS : tab === 'reportes' ? VISTAS_REPORTES : tab === 'inventario' ? VISTAS_INVENTARIO : [actual]}
+                    activeTab={tab === 'pedidos' ? vista : tab === 'perdidas' ? estadoPerdida : tab === 'documentos' ? cubeta : tab === 'cobros' ? vistaCartera : tab === 'compras' ? vistaCompras : tab === 'reportes' ? vistaReporte : tab === 'inventario' ? vistaInventario : tab}
+                    onTabChange={tab === 'pedidos' ? setVista : tab === 'perdidas' ? setEstadoPerdida : tab === 'documentos' ? setCubeta : tab === 'cobros' ? setVistaCartera : tab === 'compras' ? setVistaCompras : tab === 'reportes' ? setVistaReporte : tab === 'inventario' ? setVistaInventario : () => {}}
                     searchValue={buscar} onSearchChange={setBuscar}
                     placeholder={placeholder} showSearch />
             ) : null}
@@ -170,7 +178,9 @@ export default function DistribucionView({ seccion = 'inicio' }) {
                 <div className={tab === 'catalogo' ? '' : 'hidden'}><TabCatalogo {...comunes} /></div>
             )}
             {visitadas.has('inventario') && (
-                <div className={tab === 'inventario' ? '' : 'hidden'}><TabInventario {...comunes} /></div>
+                <div className={tab === 'inventario' ? '' : 'hidden'}>
+                    {vistaInventario === 'reposicion' ? <TabReposicion {...comunes} /> : <TabInventario {...comunes} />}
+                </div>
             )}
             {visitadas.has('cobros') && (
                 <div className={tab === 'cobros' ? '' : 'hidden'}><TabCobros {...comunes} vista={vistaCartera} /></div>

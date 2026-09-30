@@ -969,3 +969,28 @@ test('retenciones y percepciones del mes, y el paquete del mes para el contador'
     expect(lista).toContain('resumen-del-mes.csv');
     expect(errores).toEqual([]);
 });
+
+test('reposición: bajo el mínimo con compra sugerida, mínimo a mano y de vuelta al automático, pedido sugerido', async ({ page }) => {
+    const errores = [];
+    page.on('pageerror', e => errores.push(e.message));
+    await entrar(page);
+    await page.goto('/torogoz/inventario?inventario=reposicion');
+    await expect(page.getByText('Bajo el mínimo')).toBeVisible({ timeout: 15_000 });
+    const fila = page.locator('table tbody tr', { hasText: 'GLUCERNA TRIPLE CARE' }).first();
+    await expect(fila).toBeVisible({ timeout: 15_000 });
+    await page.screenshot({ path: `${SALIDA}/reposicion.png`, fullPage: true });
+    await fila.getByRole('button', { name: /Mínimo y máximo de/ }).click();
+    await page.locator('input[name="minimo"]').fill('50');
+    await page.locator('input[name="maximo"]').fill('60');
+    await page.getByRole('button', { name: 'Guardar' }).click();
+    // Con 3 disponibles sigue bajo el mínimo: comprar 57 para llegar al máximo.
+    const f2 = page.locator('table tbody tr', { hasText: 'GLUCERNA TRIPLE CARE' }).first();
+    await expect(f2).toContainText('a mano', { timeout: 15_000 });
+    await expect(f2).toContainText('57');
+    await f2.getByRole('button', { name: /Mínimo y máximo de/ }).click();
+    await page.getByRole('button', { name: 'Volver al automático' }).click();
+    await expect(f2).not.toContainText('a mano', { timeout: 15_000 });
+    const [d] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Pedido sugerido' }).click()]);
+    expect(fs.readFileSync(await d.path(), 'utf8')).toContain('GLUCERNA TRIPLE CARE');
+    expect(errores).toEqual([]);
+});

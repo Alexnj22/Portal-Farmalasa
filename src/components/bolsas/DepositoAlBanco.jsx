@@ -318,7 +318,7 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, on
                             id="dep-aporte-nota" name="dep-aporte-nota"
                             value={aporteNota} onChange={(e) => setAporteNota(e.target.value)}
                             placeholder="Vale de $50 en Salud 3"
-                            disabled={nAporte <= 0}
+                            readOnly={nAporte <= 0}
                         />
                     </div>
                 </div>

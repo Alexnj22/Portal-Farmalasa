@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1101.1 — Campos que decían bloquearse y no se bloqueaban
+
+`PortalInput` y `PortalTextarea` no usan `disabled`: su prop es `readOnly`, y
+escriben `disabled={readOnly}` DESPUÉS del `{...rest}`, así que un `disabled`
+del llamador se pierde en silencio y el campo sigue editable. Lo destapó la
+devolución de la distribuidora (un producto ya devuelto entero dejaba escribir).
+
+Once campos del portal lo tenían, y ninguno se bloqueaba:
+- **Recepción de pedidos**: la cantidad y la nota de un renglón YA BLOQUEADO.
+- **Sanciones**: fecha, días sin goce, autorización y nota, mientras se guarda
+  (y los días cuando el peldaño 3 los fija).
+- **Mis puntos**: DUI y teléfono después de mandar el código de verificación.
+- **Depósito al banco**: la nota del aporte sin aporte.
+- **Avisos** y **solicitud de personal**: el texto mientras se envía.
+
+**`npm run gate:design` lo vigila ahora** (`prop-inexistente`): además del prop
+que un canónico no acepta, el que PISA —lo que escribe tras el `{...rest}` sin
+leer `rest` y sin ser prop propio—, derivado del código del componente y no de
+una lista. Fabricada la regresión, caza los 16 casos del día; `id="x"
+name="x"` no se acusa porque el pisado queda con el mismo valor.
+
 ## v2.1101.0 — App: filtros en el menú de la barra, pestaña Buscar y ficha de producto
 
 Regla de la app, decidida por el usuario hoy: **la FilterBar del portal no

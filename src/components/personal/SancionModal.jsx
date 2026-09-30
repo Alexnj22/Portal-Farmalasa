@@ -286,13 +286,13 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <PortalInput
                         name="fecha" label="Fecha" type="date"
-                        value={fecha} onChange={e => setFecha(e.target.value)} disabled={guardando}
+                        value={fecha} onChange={e => setFecha(e.target.value)} readOnly={guardando}
                     />
                     {esSuspension && (
                         <PortalInput
                             name="dias" label="Días sin goce de salario" inputMode="numeric"
                             value={dias} onChange={e => setDias(e.target.value)}
-                            disabled={guardando || peldano === 3}
+                            readOnly={guardando || peldano === 3}
                         />
                     )}
                 </div>
@@ -306,7 +306,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                         <PortalInput
                             name="autorizacion" label="Autorización del Director General de Inspección de Trabajo"
                             placeholder="Resolución y fecha"
-                            value={autorizacion} onChange={e => setAutoriz(e.target.value)} disabled={guardando}
+                            value={autorizacion} onChange={e => setAutoriz(e.target.value)} readOnly={guardando}
                         />
                     </>
                 )}
@@ -314,7 +314,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                 <PortalTextarea
                     name="nota" label="Qué pasó" rows={3}
                     placeholder="Los hechos, en las palabras de quien los presenció"
-                    value={nota} onChange={e => setNota(e.target.value)} disabled={guardando}
+                    value={nota} onChange={e => setNota(e.target.value)} readOnly={guardando}
                 />
 
                 {/* La constancia firmada NO se sustituye con este formulario: el

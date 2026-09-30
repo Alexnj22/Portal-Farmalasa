@@ -854,8 +854,79 @@ function firmaDeComponente(txtRaw, nombre) {
   return null;
 }
 
+// ── El prop que el canónico PISA (2026-09-30) ───────────────────────────────
+// Un componente con `...rest` acepta cualquier prop y por eso queda fuera del
+// chequeo de arriba. Pero lo que escribe DESPUÉS del `{...rest}` en su
+// elemento gana siempre: `PortalInput` pone `disabled={readOnly}`, así que un
+// `disabled` del llamador se pierde en silencio y el campo sigue editable.
+// Medido ese día: 15 campos en 6 archivos, entre ellos los renglones YA
+// BLOQUEADOS de la recepción de pedidos. Igual que la firma, la lista sale del
+// componente —los atributos escritos tras el spread que no leen `rest` y que no
+// son props propios— y no de una tabla a mano.
+function pisadosDeComponente(txtRaw, nombre) {
+  const txt = sinComentarios(txtRaw);
+  const pats = [
+    new RegExp(`(?:export\\s+)?(?:const|let)\\s+${nombre}\\s*=\\s*(?:React\\.)?(?:memo\\(|forwardRef\\(|)+\\s*\\(\\{`),
+    new RegExp(`(?:export\\s+)?(?:default\\s+)?function\\s+${nombre}\\s*\\(\\{`),
+  ];
+  let firma = null;
+  for (const re of pats) {
+    const m = re.exec(txt);
+    if (!m) continue;
+    const ini = txt.indexOf('{', m.index + m[0].length - 1);
+    let prof = 0, j = ini;
+    for (; j < txt.length; j++) {
+      if (txt[j] === '{') prof++;
+      else if (txt[j] === '}') { prof--; if (prof === 0) break; }
+    }
+    firma = { cuerpo: txt.slice(ini + 1, j), fin: j };
+    break;
+  }
+  if (!firma) return null;
+  const rest = /\.\.\.\s*([A-Za-z_$][\w$]*)/.exec(firma.cuerpo)?.[1];
+  if (!rest) return null;
+  // Los nombres propios: lo que va antes de `=`, `:` o `,` al nivel 0.
+  const propios = new Set();
+  let nivel = 0, buf = '', str = null, saltando = false;
+  for (const c of firma.cuerpo) {
+    if (str) { if (c === str) str = null; continue; }
+    if (c === '"' || c === "'" || c === '`') { str = c; continue; }
+    if ('{(['.includes(c)) { nivel++; continue; }
+    if ('})]'.includes(c)) { nivel--; continue; }
+    if (nivel > 0) continue;
+    if (c === ',') { if (!saltando && buf.trim()) propios.add(buf.trim()); buf = ''; saltando = false; continue; }
+    if (c === '=' || c === ':') { if (buf.trim()) propios.add(buf.trim()); buf = ''; saltando = true; continue; }
+    if (!saltando) buf += c;
+  }
+  const pisados = new Map();   // prop → el prop propio que lo reemplaza, si se sabe
+  const spread = new RegExp(`\\{\\s*\\.\\.\\.${rest}\\s*\\}`, 'g');
+  for (const m of txt.slice(firma.fin).matchAll(spread)) {
+    const desde = firma.fin + m.index + m[0].length;
+    // Hasta el cierre del tag, al nivel 0 de llaves.
+    let prof = 0, k = desde, str2 = null;
+    for (; k < txt.length; k++) {
+      const c = txt[k];
+      if (str2) { if (c === str2) str2 = null; continue; }
+      if (c === '"' || c === "'") { str2 = c; continue; }
+      if (c === '{') prof++;
+      else if (c === '}') prof--;
+      else if (c === '>' && prof === 0) break;
+    }
+    const cola = txt.slice(desde, k);
+    for (const a of cola.matchAll(/\s([A-Za-z][\w]*)=\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g)) {
+      const [, attr, valor] = a;
+      if (valor.includes(rest)) continue;          // se fusiona con lo del llamador
+      if (propios.has(attr)) continue;             // es un prop propio: el llamador lo pasa por ahí
+      const ident = /^\s*([A-Za-z_$][\w$]*)\s*$/.exec(valor)?.[1];
+      pisados.set(attr, ident && propios.has(ident) ? ident : null);
+    }
+  }
+  return pisados.size ? pisados : null;
+}
+
 /** `{ Nombre → Set(props) }` de todo `components/common/`. Se calcula una vez. */
 let _firmas = null;
+let _pisados = null;
 function firmasCanonicas() {
   if (_firmas) return _firmas;
   _firmas = {};
@@ -871,8 +942,13 @@ function firmasCanonicas() {
     for (const n of nombres) {
       const props = firmaDeComponente(txt, n);
       if (props) _firmas[n] = { props, origen: ruta };
+      else {
+        const pisados = pisadosDeComponente(txt, n);
+        if (pisados) (_pisados ??= {})[n] = { pisados, origen: ruta };
+      }
     }
   }
+  _pisados ??= {};
   return _firmas;
 }
 
@@ -3173,6 +3249,26 @@ function scanFile(path) {
           findings.push({
             line: limpio.slice(0, ini).split('\n').length,
             label: `<${nombre}> no acepta \`${p}\` — React ignora el prop en silencio, así que el efecto que se espera no ocurre`,
+            category: 'prop-inexistente', text: tag.replace(/\s+/g, ' ').slice(0, 120),
+          });
+        }
+      }
+    }
+    for (const [nombre, { pisados }] of Object.entries(_pisados ?? {})) {
+      if (path.endsWith(`/${nombre}.jsx`)) continue;
+      for (const [ini, fin] of tagsJsx(limpio, nombre)) {
+        const tag = limpio.slice(ini, fin);
+        for (const p of atributosDelTag(tag, nombre)) {
+          if (!pisados.has(p)) continue;
+          const usar = pisados.get(p);
+          // `id="x" name="x"`: el pisado queda con el mismo valor, no se pierde nada.
+          if (usar) {
+            const val = (a) => new RegExp(`\\s${a}=("[^"]*"|\\{[^{}]*\\})`).exec(tag)?.[1];
+            if (val(p) && val(p) === val(usar)) continue;
+          }
+          findings.push({
+            line: limpio.slice(0, ini).split('\n').length,
+            label: `<${nombre}> pisa \`${p}\` (lo reescribe después de \`{...rest}\`), así que el del llamador se pierde en silencio${usar ? ` — usar \`${usar}\`` : ''}`,
             category: 'prop-inexistente', text: tag.replace(/\s+/g, ' ').slice(0, 120),
           });
         }

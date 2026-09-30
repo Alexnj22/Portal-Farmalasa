@@ -457,14 +457,14 @@ export default function MisPuntosView() {
                                 name="dui" label="DUI" icon={CreditCard}
                                 maskType="DUI" inputMode="numeric"
                                 placeholder="00000000-0" value={dui} autoComplete="off"
-                                disabled={codigoOk}
+                                readOnly={codigoOk}
                                 onChange={e => setDui(e.target.value)}
                             />
                             <PortalInput
                                 name="telefono" label="Teléfono" icon={Phone}
                                 maskType="PHONE" inputMode="tel"
                                 placeholder="0000-0000" value={tel} autoComplete="tel"
-                                disabled={codigoOk}
+                                readOnly={codigoOk}
                                 onChange={e => setTel(e.target.value)}
                             />
 

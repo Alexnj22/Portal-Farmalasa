@@ -617,7 +617,7 @@ const AnnouncementsView = ({ openModal }) => {
                 <div>
                   <label className={rotuloCampo('text-content-3')}>Contenido</label>
  <PortalTextarea
-     placeholder="Escribe los detalles de tu anuncio aquí..." value={message} onChange={(e) => setMessage(e.target.value)} disabled={isSubmitting}
+     placeholder="Escribe los detalles de tu anuncio aquí..." value={message} onChange={(e) => setMessage(e.target.value)} readOnly={isSubmitting}
  />
                 </div>
 

@@ -2034,7 +2034,7 @@ export default function RecepcionModal({
                                                 aria-label="Cantidad recibida" compact
                                                 tono={eSinCant ? 'danger' : 'chart-9'}
                                                 type="number" min={0} value={e.fQty}
-                                                disabled={e.bloqueado}
+                                                readOnly={e.bloqueado}
                                                 onChange={ev => editarExtra(ei, { fQty: Math.max(0, parseInt(ev.target.value) || 0) })}
                                                 onBlur={asentarExtras}
                                                 inputClassName="text-center font-bold tabular-nums"
@@ -2050,7 +2050,7 @@ export default function RecepcionModal({
                                                     aria-label="Nota del renglón"
                                                     type="text"
                                                     value={e.nota}
-                                                    disabled={e.bloqueado}
+                                                    readOnly={e.bloqueado}
                                                     onChange={ev => editarExtra(ei, { nota: ev.target.value })}
                                                     onBlur={asentarExtras}
                                                     placeholder="Nota (opcional)…"

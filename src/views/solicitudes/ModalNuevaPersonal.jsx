@@ -831,7 +831,7 @@ export default function ModalNuevaPersonal({
                         onChange={e => { setNota(e.target.value); if (error) setError(''); }}
                         rows={4}
                         placeholder="Describe la solicitud..."
-                        disabled={enviando}
+                        readOnly={enviando}
                     />
                 </div>
             </LiquidModal.Body>

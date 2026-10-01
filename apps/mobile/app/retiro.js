@@ -54,7 +54,10 @@ export default function Retiro() {
   const sucursales = useStaffStore((s) => s.branches);
   const miSala = salaDelUsuario(user);
   const [retiro, setRetiro] = useState({ retiro_id: null, bultos: [], sin_firma: [] });
-  const [salaActual, setSalaActual] = useState(miSala ? { id: miSala, nombre: null } : null);
+  // La sala donde estás: la que dijo el último ticket escaneado, o la tuya.
+  // Derivada, porque al abrir el usuario puede no haber cargado todavía.
+  const [escaneada, setSalaActual] = useState(null);
+  const salaActual = escaneada ?? (miSala ? { id: miSala, nombre: null } : null);
   const [pendientes, setPendientes] = useState([]);
   const [escaneando, setEscaneando] = useState(null);   // null | 'ticket' | 'carne'
   const [aviso, setAviso] = useState(null);

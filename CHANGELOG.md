@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1132.0 — App: Llevar productos muestra la sala al abrir
+
+- **Llevar productos** dice en qué sala estás también al abrirla: la sala se
+  derivaba una sola vez, antes de que cargara el usuario.
+
 ## v2.1131.0 — App: Pedir a otra sala en vidrio y «Listo» en el teclado
 
 - **Pedir a otra sala** pasa a las piezas de vidrio de toda la app (era la

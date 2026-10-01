@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1133.3 — Rendimiento: tres consultas que leían de más, corregidas y medidas como usuario
+
+Hallazgos de `gate:perf` del 2026-10-01, medidos **como usuario** (con la sesión de un cargo de dirección, en caliente): como administrador de la base la RLS no corre y dos de los tres no se veían.
+
+- **Tablero de generar pedido** (308 llamadas en la ventana del gate): `product_sales_monthly_agg` nunca se vacuumaba —la rehace un cron cada hora y el autovacuum por defecto no llegaba—, y su parte de «ventas de 6 meses» iba a la tabla fila por fila (`Heap Fetches: 18,703`). Vacuumada y con autovacuum ajustado a su relleno (`20261001182239`): de ~43,600 a **21,055 bloques (−51%)**.
+- **Total de Ventas › Productos**: cruzaba cada renglón con `products`, una búsqueda por renglón. Suma por producto antes de cruzar (`20261001182900`): con un año, de 336,868 a **15,151 bloques (−95%)**, resultado idéntico al último decimal. Queda deuda escrita: un rango que corta a mitad de mes lee ~105 mil bloques por la RLS por renglón en los bordes en vivo.
+- **Vista previa del conteo cíclico**: buscaba el último conteo producto por producto. Ahora una vez para toda la sala (`20261001193748`): de 41,439 a **6,454 bloques (−84%)**, cobertura idéntica.
+- `scripts/bloques-por-llamada.json`: techos bajados con lo medido, `calculate_stock_params` declarada (el recálculo mensual de Mín·Máx: leer mucho es su trabajo) y `puntos_archivo_cerrar` marcada como retirada. El tablero de Puntos ya estaba bien (~35 MB): su promedio arrastraba la versión anterior.
+
 ## v2.1133.2 — Puntos: el aviso reconoce al empleado por nombre
 
 La regla «venta a su propia ficha» de `puntos_vigilar_irregularidades` cruzaba

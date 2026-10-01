@@ -14185,6 +14185,48 @@ export type Database = {
         }
         Relationships: []
       }
+      push_dispositivos: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          plataforma: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          plataforma: string
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          plataforma?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_dispositivos_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_dispositivos_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -21897,10 +21939,6 @@ export type Database = {
         Args: { p_desde: string; p_hasta: string }
         Returns: number
       }
-      puntos_migrar: {
-        Args: { p_filas: Json; p_ganado_el?: string; p_simular?: boolean }
-        Returns: Json
-      }
       puntos_migrar_historial: {
         Args: {
           p_despues_de?: number
@@ -21969,6 +22007,7 @@ export type Database = {
         Returns: Json
       }
       puntos_ventas_anuladas: { Args: { p_tope?: number }; Returns: Json }
+      puntos_vigilar_motor: { Args: never; Returns: Json }
       purgar_carnes_temporales: { Args: never; Returns: number }
       purgar_cola_impresion: { Args: never; Returns: number }
       purge_idle_sessions: { Args: never; Returns: number }
@@ -22216,6 +22255,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      registrar_dispositivo_push: {
+        Args: { p_plataforma: string; p_token: string }
+        Returns: undefined
       }
       registrar_egreso: {
         Args: {
@@ -22717,6 +22760,7 @@ export type Database = {
         Returns: Json
       }
       solicitud_datos_tomar_folio: { Args: { p_anio: number }; Returns: number }
+      soltar_dispositivo_push: { Args: { p_token: string }; Returns: undefined }
       soltar_factura_compra: {
         Args: { p_claim_id: number; p_motivo?: string }
         Returns: undefined

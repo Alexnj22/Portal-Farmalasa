@@ -235,47 +235,24 @@ const CRONS = [
           + 'las 1.920 corridas. Baja el día que el origen avise sus movimientos en vez de haber '
           + 'que preguntárselos.',
   },
-  {
-    job: 'puntos-vencer-mensual', slug: 'puntos-vencer', cadencia: '0 9 1 * *',
-    corridasDia: 1 / 30, sistema: 0,
-    motivo: 'El vencimiento de los puntos. `sistema: 0` como su hermana: no toca el sistema de '
-          + 'origen, lee y escribe en la base de puntos por MySQL. '
-          + 'UNA VEZ AL MES y no más, porque un punto vence un día concreto y adelantarse no '
-          + 'cambia nada: correrlo a diario sería recalcular la misma respuesta treinta veces. '
-          + 'El día 1 a las 09:00 UTC cae en la ventana en que los syncs no corren (12-23,0-5), '
-          + 'así que no compite por conexiones. '
-          + 'Medido en la primera corrida: 1,070 ms para reconstruir los grupos de las 14,632 '
-          + 'cuentas — una sola consulta con suma corrida, no una por cliente. '
-          + 'Hoy corre en modo MIRAR (`{"aplicar": false}` escrito en el cron, no sólo en el '
-          + 'default de la función): el primer punto que puede vencer es del 1-oct-2027, así que '
-          + 'hasta entonces lo único que hace es dejar su medición en `puntos_vencimiento_log`.',
-  },
-  // Los dos de UNA sola vez del 1-oct-2026 (migración 20260925175856). Se
-  // borran solos al encender: ese día este manifiesto cambia entero — salen
-  // éstos, `sync-puntos-1min` y `puntos-vencer-mensual`, y entra
-  // `puntos-motor-1min` (sistema: 0, lee y escribe sólo en el portal).
-  {
-    job: 'puntos-archivar-arranque', slug: 'puntos-archivar', cadencia: '0 8 1 10 *',
-    corridasDia: 1 / 365, sistema: 0,
-    motivo: 'Copia la base de puntos anterior al archivo del portal la madrugada del corte. '
-          + '`sistema: 0`: no toca el sistema de origen, lee MySQL. Una vez; el comando lleva la '
-          + 'guarda `current_date = 2026-10-01` para no repetirse al año siguiente.',
-  },
-  // La actualización de cada noche hasta el 30-sep (migración 20260925214820):
-  // «migrar ya y el 1 solo actualizar». Se borran solos al encender.
-  {
-    job: 'puntos-archivar-noche', slug: 'puntos-archivar', cadencia: '30 4 * * *',
-    corridasDia: 1, sistema: 0,
-    motivo: 'Copia el sistema de puntos anterior cada noche hasta el corte, después del cierre '
-          + 'de las salas. `sistema: 0`: lee MySQL, no el sistema de origen. Guarda de fecha en '
-          + 'el comando: después del 30-sep no hace nada.',
-  },
+
+
+
   {
     job: 'avisos-diferidos-5min', slug: null, cadencia: '*/5 * * * *',
     corridasDia: 288, sistema: 0,
     motivo: 'Entrega los avisos que nacieron fuera del horario laboral de quien los recibe '
           + '(regla del usuario 2026-09-25). SQL puro sobre la cola; casi siempre vacía. '
           + 'Sólo llama a send-push-notification cuando hay algo que entregar.',
+  },
+  {
+    job: 'puntos-motor-1min', slug: 'puntos-motor', cadencia: '* 12-23,0-5 * * *',
+    corridasDia: 1080, sistema: 0,
+    motivo: 'El programa de puntos desde el 2026-10-01: acumula las ventas del día, detecta los '
+          + 'canjes y devuelve los puntos de una venta anulada. `sistema: 0`: lee y escribe sólo '
+          + 'en el portal (reemplazó a `sync-puntos-1min`, que escribía por MySQL). Cada minuto '
+          + 'y en horario de sala, la misma cadencia que tenía su antecesor y por la misma razón '
+          + 'del mostrador: el saldo tiene que estar al día cuando el cliente vuelve a la caja.',
   },
   {
     job: 'puntos-vigilar-motor', slug: null, cadencia: '*/15 * * * *',
@@ -296,41 +273,9 @@ const CRONS = [
     motivo: 'Vence los lotes cumplidos (lo primero vence el 1-oct-2027). SQL puro, con guarda de '
           + '`puntos_fuente() = portal`: programado desde ya para que nadie tenga que acordarse.',
   },
-  {
-    job: 'puntos-sincronizar-noche', slug: 'puntos-arranque', cadencia: '40 4 * * *',
-    corridasDia: 1, sistema: 0,
-    motivo: 'Trae al libro del portal sólo lo nuevo de la copia y cuadra, sin encender el programa. '
-          + '~40 s medidos con la migración entera; las noches siguientes, menos.',
-  },
-  {
-    job: 'puntos-arranque-1oct', slug: 'puntos-arranque', cadencia: '10 8 1 10 *',
-    corridasDia: 1 / 365, sistema: 0,
-    motivo: 'Migra el historial, cuadra y sólo si cuadra enciende el programa en el portal. '
-          + 'Una vez; 22 s medidos en el ensayo real. Misma guarda de fecha que la copia.',
-  },
-  {
-    job: 'sync-puntos-1min', slug: 'sync-puntos', cadencia: '* 12-23,0-5 * * *',
-    corridasDia: 1080, sistema: 0,
-    motivo: 'Las ventas que ganan puntos, al sistema de puntos. `sistema: 0` porque NO le pega al '
-          + 'sistema de origen: lee del portal y escribe por MySQL en la base de puntos, así que '
-          + 'no gasta ninguna petición de las que este gate cuida. '
-          + 'CADA MINUTO, decisión del usuario, y la cadencia importa por una razón del mostrador: '
-          + 'el cliente puede presentar el ticket poco después de comprar, y si la venta todavía no '
-          + 'llegó, no se le pueden dar sus puntos. Cada cinco minutos deja una ventana de hasta '
-          + 'cinco en la que un ticket recién emitido «no existe». '
-          + 'Se puede porque se MIDIÓ, y desde el 2026-09-22 la corrida de cada minuto mira sólo '
-          + 'DOS días y las facturas sin fila en la bitácora; los siete días con las `sin_enviar` '
-          + 'se rehacen en el minuto 0 de cada hora (F7 de PLAN-REGRESO-2026-09-22: 46,149 → '
-          + '10,796 bloques por corrida). `ventas_para_puntos` tarda 19 ms, o sea 20 segundos de '
-          + 'base por día. Si ese '
-          + 'número crece, ACÁ hay que mirar antes de dejar la cadencia: una lectura lenta cada '
-          + 'minuto llena el pool de PostgREST y tira el portal entero. '
-          + 'El 14-sep llegó a 47 s y el portal se cayó, pero como VÍCTIMA: remedida esa noche '
-          + 'tarda 80 ms con el mismo plan, y sus ~380 MB por llamada salen de memoria (11.5 MB '
-          + 'de disco en 31 corridas) (docs/INCIDENTE-CAIDA-2026-09-14.md). Desde ese día corre sólo en '
-          + 'horario de sala (`12-23,0-5` UTC = 06:00–23:59 SV), como los demás syncs de ventas: '
-          + 'medido sobre 30 días no hay facturas de 00:00 a 05:59, y cada corrida vacía leía igual.',
-  },
+
+
+
   {
     job: 'vigilar-reinicio-de-la-base', slug: null, cadencia: '*/5 * * * *',
     corridasDia: 288, sistema: 0,

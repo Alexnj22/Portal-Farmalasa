@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1112.1 — Puntos: se retira el circuito de MySQL
+
+El arranque del 1-oct encendió el programa en el portal (`puntos_arranque` id 8:
+10,637 cuentas, 0 descuadradas). Verificado esa mañana: el motor acumula en las
+seis salas, las 20 ventas sin puntos tenían motivo, nada se acreditó dos veces.
+Con eso, lo de MySQL sobraba:
+
+- **Edge functions borradas** (servidor y repo): `sync-puntos`, `puntos-vencer`,
+  `puntos-probe`, `puntos-traer-saldos` (esta nunca llegó a desplegarse). Ninguna
+  tenía quien la llamara.
+- **Migración `20261001145816`**: fuera los crones apagados `sync-puntos-1min` y
+  `puntos-vencer-mensual` y la función `puntos_migrar` de la era MySQL.
+- **`gate:eficiencia`**: salen los seis crones del corte y del circuito viejo,
+  entra `puntos-motor-1min`. `auditoria/areas.mjs` y los tipos, al día.
+
+Se quedan `mis-puntos` y `puntos-consulta` (leen el libro; su rama MySQL ya no
+corre) y `puntos-archivar`/`puntos-arranque`, que cumplieron y no tienen cron.
+
 ## v2.1112.0 — Promociones: reactivar terminadas desde Histórico y píldora compacta
 
 «Aunque cambie el filtro, no me salen las finalizadas. Si la quiero reactivar,

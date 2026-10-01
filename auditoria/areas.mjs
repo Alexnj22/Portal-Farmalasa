@@ -455,17 +455,12 @@ export const AREAS = [
                  // Las cuentas de la base vieja que no pasan solas (2026-09-25).
                  'puntos_cuentas_pendientes'],
         edge: ['sync-dte-sales', 'sync-wfm-sales', 'check-sales-alerts', 'check-sales-reconciliation',
-               'backfill-dte-sales', 'heal-dte-sync', 'sync-puntos', 'puntos-probe',
-               // `puntos-vencer` la creó otra sesión el 2026-08-31 y quedó sin
-               // mapear, lo que bloquea el gate —y el commit— para todo el
-               // mundo. Va con sus hermanas de puntos, que es donde produce el
-               // efecto. Si esa sesión la ubica en otro lado, gana su decisión.
-               'puntos-consulta', 'puntos-vencer',
-               // Escritas el 2026-09-01 y NO desplegadas: producción sigue
-               // corriendo el circuito viejo. `puntos-motor` es el futuro cron
-               // (acumular + canjes + anulaciones) y `puntos-traer-saldos` el
-               // puente de una sola vez para la migración.
-               'puntos-motor', 'puntos-traer-saldos',
+               'backfill-dte-sales', 'heal-dte-sync',
+               // El programa de puntos vive en el portal desde el 2026-10-01:
+               // `puntos-motor` acumula, canjea y anula cada minuto; las dos
+               // pantallas leen el libro. Las cuatro de MySQL (sync-puntos,
+               // puntos-vencer, puntos-probe, puntos-traer-saldos) se retiraron ese día.
+               'puntos-consulta', 'puntos-motor',
                // El corte del 1-oct (2026-09-25): copiar el sistema anterior y
                // migrar su historial al libro, y encender el motor.
                'puntos-archivar', 'puntos-arranque'],

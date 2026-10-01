@@ -363,7 +363,7 @@ export default function PiezaModal({
                                         <Campo rotulo="Marcas" falta>
                                             <SeleccionMultiple opciones={opcionesMarca} valores={form.marcas} onChange={set('marcas')} />
                                         </Campo>
-                                        <div className="grid grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <Campo rotulo="Formato" falta>
                                                 <LiquidSelect value={form.formato} onChange={set('formato')} clearable={false}
                                                     options={FORMATOS.map((f) => ({ value: f.value, label: f.label }))} />
@@ -380,7 +380,7 @@ export default function PiezaModal({
                                     </Bloque>
 
                                     <Bloque icon={CalendarDays} titulo="Cuándo y en qué estado">
-                                        <div className="grid grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <Campo rotulo="Fecha" falta>
                                                 {puedeMover ? (
                                                     <LiquidDatePicker value={form.fecha} onChange={set('fecha')} min={desde} max={hasta} />

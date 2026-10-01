@@ -334,12 +334,12 @@ export default function MarketingView() {
             key: 'pedir', icon: Plus, label: 'Pedir', title: 'Pedirle una pieza al diseñador',
             rotulo: 'Pedir', variant: 'primary', onClick: () => setSolicitudAbierta({}),
         }] : []),
-        ...(puedeEditar && mesFila && resumen.total > 0 && mesFila.estado !== 'en_revision' ? [{
+        ...(delMes && puedeEditar && mesFila && resumen.total > 0 && mesFila.estado !== 'en_revision' ? [{
             key: 'publicar', icon: Send, label: mesFila.version > 0 ? 'Reenviar' : 'Enviar a revisión',
             title: 'Enviar el calendario del mes a quien aprueba', rotulo: mesFila.version > 0 ? 'Reenviar' : 'Enviar',
             variant: 'secondary', onClick: () => setDecision('publicar'),
         }] : []),
-        ...(puedeAprobar && publicado && mesFila.estado !== 'aprobado' ? [{
+        ...(delMes && puedeAprobar && publicado && mesFila.estado !== 'aprobado' ? [{
             key: 'aprobar', icon: ThumbsUp, label: 'Aprobar mes', title: 'Aprobar el calendario completo',
             rotulo: 'Aprobar', variant: 'secondary', tone: 'success', onClick: () => setDecision('aprobar'),
         }] : []),

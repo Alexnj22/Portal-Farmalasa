@@ -99,7 +99,7 @@ export default function SolicitudModal({ open, onClose, solicitud, marcas, perso
                             placeholder={impreso ? 'Ej. Banner de la promoción de vitaminas' : 'Ej. Post de la promoción de vitaminas'} required />
                         <PortalTextarea label="Detalle" name="descripcion" value={form.descripcion} onChange={set('descripcion')}
                             rows={4} placeholder="Producto, precio, vigencia, a quién va dirigido, referencias…" />
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <Campo rotulo="Marca">
                                 <LiquidSelect value={form.marca_id} onChange={set('marca_id')} placeholder="Marca"
                                     options={marcas.filter((m) => m.activo).map((m) => ({ value: m.id, label: m.nombre }))} />

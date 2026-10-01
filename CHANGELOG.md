@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1135.2 — Marketing: ajustes tras revisarlo en el navegador
+
+Lo que salió del primer recorrido real (Playwright contra producción, escritorio
+y teléfono, sin errores de consola):
+
+- «Enviar a revisión» y «Aprobar mes» aparecían en Galería y Marca, que no son
+  del mes: ahora sólo en Calendario, Flujo y Pauta.
+- En Flujo, «Programado» y «Publicado» quedaban fuera de la pantalla: en
+  escritorio son siete columnas en grilla; en el teléfono siguen deslizándose.
+- En el teléfono, Formato/Tema y Fecha/Hora iban en dos columnas y se cortaban
+  («P…»), con la hora encimada: una columna hasta `sm`, en la pieza, la
+  solicitud y la pauta.
+
 ## v2.1135.1 — Registro del gate: la deuda del total de Ventas era volumen, no permisos
 
 Corrige la causa anotada en `scripts/bloques-por-llamada.json` para `get_product_sales_total`: los ~90 mil bloques de un rango que corta a mitad de mes no los pone la RLS —su `EXISTS` por renglón nunca se ejecuta y sin RLS se lee lo mismo— sino el volumen de los bordes en vivo (~20 mil renglones por medio mes). Sin cambio de comportamiento.

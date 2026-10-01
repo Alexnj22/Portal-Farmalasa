@@ -95,7 +95,7 @@ export default function PautaModal({ open, onClose, pieza, redes, limite = 0, ot
                     {hayBorrador && <AvisoDeBorrador cuando={cuando} onRecuperar={reponer} onDescartar={descartar} />}
                     <section className="space-y-3">
                         <h3 className="text-label uppercase tracking-wide font-semibold text-content-2">El plan</h3>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <PortalInput label="Presupuesto" name="presupuesto" inputMode="decimal" maskType="DECIMAL" prefix="$"
                                 value={form.presupuesto} onChange={set('presupuesto')} placeholder="0.00"
                                 hasError={pasado}

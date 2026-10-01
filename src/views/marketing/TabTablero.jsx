@@ -41,13 +41,13 @@ export default function TabTablero({ piezas, marcasDe, comentariosPorPieza, ulti
     };
 
     return (
-        <div className="flex gap-3 overflow-x-auto pb-2 snap-x lg:snap-none">
+        <div className="flex gap-3 overflow-x-auto pb-2 snap-x lg:snap-none lg:grid lg:grid-cols-7 lg:overflow-visible">
             {ESTADOS_PIEZA.map((e) => {
                 const lista = porEstado[e.value] || [];
                 const destinoValido = ESTADOS_DEL_DISENADOR.includes(e.value) || ESTADOS_DE_SALIDA.includes(e.value);
                 return (
                     <section key={e.value}
-                        className={`snap-start shrink-0 w-[78vw] sm:w-64 lg:flex-1 lg:min-w-[200px] rounded-lg p-2 space-y-2 ${sobre === e.value ? 'bg-surface-card-hover' : 'bg-surface-input'}`}
+                        className={`snap-start shrink-0 w-[78vw] sm:w-64 lg:w-auto lg:min-w-0 rounded-lg p-2 space-y-2 ${sobre === e.value ? 'bg-surface-card-hover' : 'bg-surface-input'}`}
                         onDragOver={destinoValido ? (ev) => { ev.preventDefault(); setSobre(e.value); } : undefined}
                         onDragLeave={destinoValido ? () => setSobre((s) => (s === e.value ? null : s)) : undefined}
                         onDrop={destinoValido ? soltar(e.value) : undefined}

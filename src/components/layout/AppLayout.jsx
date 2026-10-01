@@ -4,7 +4,9 @@ import AvatarConEstado from '../common/AvatarConEstado';
 import Badge from '../common/Badge';
 import { LayoutGroup } from 'framer-motion';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { LogOut, Menu, ChevronLeft, ChevronRight, ChevronDown, X, Cake, Search } from 'lucide-react';
+import { LogOut, Menu, ChevronLeft, ChevronRight, ChevronDown, X, Cake, Search, ArrowUpRight } from 'lucide-react';
+import { MARCA_DISTRIBUIDORA } from '../../views/distribucion/marca';
+import { rutaInicio } from '../../views/distribucion/rutas';
 import { fetchVentasPerdidasPendingCount } from '@nucleo/data/ventasPerdidas';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchKioskAuthCode } from '@nucleo/data/kioskAuth';
@@ -290,6 +292,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     // el sufijo SU viaja DENTRO de esta misma respuesta, y quien lo puede ver
     // tiene también kiosk_pin (verificado en los 4 cargos que lo tienen).
     const puedeVerCodigoDeKiosco = hasPermission('kiosk_pin', 'can_view');
+    // El acceso a la distribuidora (`/torogoz`) desde el portal, sólo para el
+    // área administrativa (pedido del usuario: «solo para admin» = Gerente
+    // General, Administrador, Talento Humano y Supervisor/a de Ventas).
+    // Va por el PERMISO de administrarla y no por nombres de cargo: el día que
+    // cambie se cambia en Permisos, no acá.
+    const accesoTorogoz = hasPermission('distribucion_config', 'can_edit');
 
     // El código rota cada hora en el servidor. Se refresca cada 5 min —antes era
     // cada 10 s contra una función local, que ahora sería una llamada de red
@@ -1116,6 +1124,17 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                             {isExpanded ? (
                                 <>
+                                    {accesoTorogoz && (
+                                        <Link to={rutaInicio()}
+                                            className={`flex items-center gap-3 p-2 -mx-1 rounded-2xl transition duration-[var(--dur-base)] active:scale-[0.98] hover:bg-[rgb(var(--sidebar-realce)/0.06)] ${focusRing}`}>
+                                            <img src={MARCA_DISTRIBUIDORA.icono} alt="" className="w-9 h-9 rounded-xl shrink-0" />
+                                            <span className="flex-1 min-w-0">
+                                                <span className="block text-body-sm font-bold truncate text-[rgb(var(--sidebar-ink)/0.85)]">{MARCA_DISTRIBUIDORA.nombre}</span>
+                                                <span className="block text-micro truncate text-[rgb(var(--sidebar-ink)/0.55)]">Ir a la distribuidora</span>
+                                            </span>
+                                            <ArrowUpRight size={16} className="shrink-0 text-[rgb(var(--sidebar-ink)/0.55)]" />
+                                        </Link>
+                                    )}
                                     {/* Consolida PIN/SU + Sync/Alertas + Tema detrás de un solo ícono
                                         de Ajustes (antes 3 bloques sueltos, sentía "amontonado" — a
                                         pedido del usuario). Los 4 temas siguen expuestos ahí adentro
@@ -1174,6 +1193,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 </>
                             ) : (
                                 <div className="flex flex-col items-center gap-3 py-1 animate-in fade-in duration-[var(--dur-lento)]">
+                                    {accesoTorogoz && (
+                                        <Link to={rutaInicio()} aria-label={`Ir a ${MARCA_DISTRIBUIDORA.nombre}, la distribuidora`}
+                                            className={`w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center transition active:scale-[0.97] ${focusRing}`}>
+                                            <img src={MARCA_DISTRIBUIDORA.icono} alt="" className="w-11 h-11 rounded-2xl" />
+                                        </Link>
+                                    )}
                                     <SidebarSettingsMenu
                                         variant="compact"
                                         showPin={puedeVerCodigoDeKiosco}

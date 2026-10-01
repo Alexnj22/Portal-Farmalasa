@@ -1,8 +1,11 @@
 // Shared security utilities for all Edge Functions
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
+// `PORTAL_ORIGIN` admite VARIOS dominios separados por coma. En producción es
+// uno solo y no cambia nada; en el entorno de pruebas conviven dev.farmasalud.lat
+// y el enlace de Vercel de la rama que se esté probando.
 const ALLOWED_ORIGINS = [
-  Deno.env.get("PORTAL_ORIGIN") ?? "",
+  ...(Deno.env.get("PORTAL_ORIGIN") ?? "").split(",").map((o) => o.trim()),
   "http://localhost:5173",
   "http://localhost:4173",
 ].filter(Boolean);

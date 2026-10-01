@@ -78,6 +78,12 @@ export const NOMBRE_DE_ICONO_POR_TIPO = {
     // Productos sin venta: el `Archive` de «Stock retenido» en Gestión de stock,
     // que es adonde lleva el aviso.
     PRODUCTOS_SIN_VENTA: 'Archive',
+    // Distribución: venció la reserva de una venta (0012). El `Package` de
+    // producto: lo que se soltó son unidades apartadas.
+    RESERVA_VENCIDA:  'Package',
+    // Cuentas por cobrar de la distribuidora pasadas del plazo (borrador 0023).
+    CARTERA_ATRASADA: 'Wallet',
+    CARTERA_ATRASADA_RESUMEN: 'Wallet',
     SYSTEM:           'Info',       // mensaje del portal, no de una persona
 };
 

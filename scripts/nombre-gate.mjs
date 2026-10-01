@@ -98,6 +98,8 @@ const EXCEPCIONES = {
     { n: 1, motivo: '«Tiene ficha: …» coteja a qué ficha corresponde el documento; recortarlo quita justo lo que se está cotejando' },
 
   // ── Documentos y datos fiscales ──────────────────────────────────────────
+  'src/views/distribucion/DocumentoModal.jsx':
+    { n: 1, motivo: 'el receptor de un DTE de la distribuidora es un CLIENTE (razón social), no un empleado: su nombre es el del documento fiscal' },
   'src/components/personal/SancionModal.jsx':
     { n: 1, motivo: 'una sanción del RIT Art. 83 es un documento legal y nombra a la persona entera' },
   'src/components/forms/FormSalesDteViewer.jsx':

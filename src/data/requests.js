@@ -30,6 +30,19 @@ export function fetchEmployeeApprovalRequestsDetail(employeeId) {
         .order('id', { ascending: false }));
 }
 
+// Las vacaciones e incapacidades de UNA persona, con su metadata: lo que las
+// reglas de `utils/solicitudPersonal` necesitan para frenar una solicitud
+// personal (vacaciones ya aprobadas, un permiso que cae en una incapacidad).
+// La app las pide al abrir el formulario; el portal las tiene en el store.
+export function fetchSolicitudesPersonalesDe(employeeId) {
+    return fetchAllRows(() => supabase.from('approval_requests')
+        .select('id, employee_id, type, status, metadata, created_at')
+        .eq('employee_id', employeeId)
+        .in('type', ['VACATION', 'DISABILITY', 'PERMIT', 'SHIFT_CHANGE', 'OVERTIME', 'ADVANCE', 'CERTIFICATE'])
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false }));
+}
+
 // ── Disponibilidad del empleado (vacaciones/incapacidad vigentes) ──────────
 //
 // Pregunta, no pide. Antes se traía los eventos DE OTRA PERSONA y decidía en el

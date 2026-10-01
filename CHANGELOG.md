@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1122.0 — App: solicitudes personales nativas (y sus reglas en el núcleo)
+
+Cuarta pieza para cerrar el Inicio: las siete solicitudes personales se crean
+en el teléfono (`app/nueva/personal.js`) — vacaciones, permiso, incapacidad,
+cambio de turno, horas extra, anticipo y constancia.
+
+- **Las reglas salieron del formulario del portal a `utils/solicitudPersonal`**
+  y el portal ya las usa: un año para vacaciones, nada sobre una incapacidad
+  aprobada (una nueva sí puede empezar el día que termina la anterior), el
+  compañero del cambio de turno disponible ese día, motivo obligatorio. Con
+  pruebas en `tests/unit/solicitudPersonal.test.js`.
+- La incapacidad lleva la boleta (foto) a `documents/solicitudes/<persona>/`.
+- Con alcance «todas» se pide a nombre de otra persona, como en el portal.
+- Guarda borrador mientras se llena.
+
+⚠️ **Hallazgo, sin corregir todavía en producción**: el CHECK de
+`approval_requests.type` no acepta PERMIT, DISABILITY, OVERTIME, ADVANCE ni
+CERTIFICATE (tiene los nombres viejos). En toda la historia de producción hay
+**cero** solicitudes personales: el insert fallaba y la pantalla decía «No se
+pudo crear la solicitud». La corrección está probada en el entorno de pruebas
+y espera el visto bueno para aplicarse.
 ## v2.1121.0 — Torogoz: la distribuidora llega al portal (sólo dirección)
 
 La distribuidora **Torogoz** sale a producción en `/torogoz`, visible sólo para dirección (Gerente General, Administrador, Jefe/a de Talento Humano y Supervisor/a de Ventas), con un acceso en el menú del portal para esos cargos. Su esquema ya estaba en la base desde el mismo día (33 migraciones `distribucion_00NN_*`). Todavía no emite documentos reales: faltan el emisor (los datos de la S.A.S., en Empresa) y las credenciales de Hacienda.

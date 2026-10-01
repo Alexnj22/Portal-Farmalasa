@@ -68,8 +68,8 @@ export default function NuevaSolicitud() {
             <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>Personales</Text>
             <Vidrio radio={22}><View style={{ paddingHorizontal: 14, paddingVertical: 4 }}>
               {PERSONALES.map((t, i) => (
-                <Opcion key={t} primero={!i} icono={nombreDelIconoDeTipo(t)} color={MARCA.violeta} titulo={REQUEST_TYPES[t]?.label ?? t} enPortal
-                  onPress={() => alPortal('/solicitudes-personales', REQUEST_TYPES[t]?.label)} />
+                <Opcion key={t} primero={!i} icono={nombreDelIconoDeTipo(t)} color={MARCA.violeta} titulo={REQUEST_TYPES[t]?.label ?? t}
+                  onPress={() => router.push({ pathname: '/nueva/personal', params: { tipo: t } })} />
               ))}
             </View></Vidrio>
           </View>

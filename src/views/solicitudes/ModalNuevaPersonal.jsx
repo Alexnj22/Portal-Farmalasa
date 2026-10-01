@@ -18,6 +18,10 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import FileField from '../../components/common/FileField';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
+import {
+    CERT_TYPES, antiguedadDe, choqueEnDia as choqueEnDiaDe, choqueEnRango as choqueEnRangoDe,
+    companeroNoDisponible, diasDe, finDeIncapacidad, incapacidadesVigentes, motivoParaNoEnviar, periodoDe,
+} from '@nucleo/utils/solicitudPersonal';
 import { REQUEST_TYPES } from '@nucleo/store/slices/requestsSlice';
 import { fetchEmployeeEventsByTypes } from '@nucleo/data/employeeSelfService';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -74,11 +78,6 @@ const TIPOS = [
     { key: 'OVERTIME',     icon: Coffee,      label: 'Horas extra'  },
 ];
 
-const CERT_TYPES = [
-    { key: 'LABORAL',  label: 'Constancia Laboral',    desc: 'Confirma la relación de trabajo' },
-    { key: 'SALARIO',  label: 'Constancia de Salario', desc: 'Incluye el salario mensual' },
-    { key: 'BANCARIA', label: 'Constancia Bancaria',   desc: 'Para gestión o apertura de cuenta' },
-];
 
 const fmtCorto = (d) => d
     ? fechaTexto(d, { day: '2-digit', month: 'short' })
@@ -88,15 +87,9 @@ const fmtLargo = (d) => d
     : '';
 
 /** Días de un rango, contando los dos extremos. */
-function diasDe(inicio, fin) {
-    if (!inicio || !fin) return 0;
-    const a = new Date(inicio + 'T00:00:00');
-    const b = new Date(fin + 'T00:00:00');
-    return Math.round((b - a) / 86400000) + 1;
-}
 
 /** El rótulo de un período de incapacidad, para los avisos. */
-const periodo = (d) => `${fmtCorto(d.startDate)} – ${fmtCorto(d.endDate)}`;
+const periodo = periodoDe;
 
 export default function ModalNuevaPersonal({
     open = true,
@@ -183,34 +176,7 @@ export default function ModalNuevaPersonal({
         [solicitudes, empleadoId]);
 
     // ── Antigüedad y ventana de vacaciones ───────────────────────────────────
-    const antiguedad = useMemo(() => {
-        if (!sujeto?.hireDate) return null;
-        const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
-        const ingreso = new Date(sujeto.hireDate + 'T12:00:00'); ingreso.setHours(0, 0, 0, 0);
-        const msAnio = 365.25 * 24 * 3600 * 1000;
-        const aniosExactos = (hoy - ingreso) / msAnio;
-        const mesesTotales = Math.floor((hoy - ingreso) / (30.44 * 24 * 3600 * 1000));
-        const anios = Math.floor(aniosExactos);
-        const meses = mesesTotales - anios * 12;
-
-        if (aniosExactos < 1) {
-            const primerAniv = new Date(ingreso); primerAniv.setFullYear(ingreso.getFullYear() + 1);
-            const faltan = Math.ceil((primerAniv - hoy) / (24 * 3600 * 1000));
-            return { habilitado: false, anios, meses, faltan, ingreso: sujeto.hireDate };
-        }
-
-        const ultimoAniv = new Date(ingreso); ultimoAniv.setFullYear(ingreso.getFullYear() + anios);
-        const finVentana = new Date(ultimoAniv); finVentana.setDate(finVentana.getDate() + 90);
-        const proxAniv = new Date(ingreso); proxAniv.setFullYear(ingreso.getFullYear() + anios + 1);
-
-        return {
-            habilitado: true, anios, meses, ingreso: sujeto.hireDate,
-            enVentana:    hoy <= finVentana,
-            inicioVentana: ultimoAniv.toISOString().split('T')[0],
-            finVentana:    finVentana.toISOString().split('T')[0],
-            proxAniv:      proxAniv.toISOString().split('T')[0],
-        };
-    }, [sujeto]);
+    const antiguedad = useMemo(() => antiguedadDe(sujeto?.hireDate), [sujeto]);
 
     const vacacionExistente = useMemo(() => ({
         aprobada:  suyas.find(r => r.type === 'VACATION' && r.status === 'APPROVED'),
@@ -225,28 +191,13 @@ export default function ModalNuevaPersonal({
         [suyas, tipo]);
 
     // Incapacidades aprobadas todavía vigentes (no se bloquean días ya pasados).
-    const incapacidades = useMemo(() => {
-        const hoy = hoySV();
-        return suyas
-            .filter(r => r.type === 'DISABILITY' && r.status === 'APPROVED')
-            .map(r => {
-                const meta = typeof r.metadata === 'object' && r.metadata !== null
-                    ? r.metadata
-                    : (() => { try { return JSON.parse(r.metadata); } catch { return {}; } })();
-                return { startDate: meta.startDate, endDate: meta.endDate };
-            })
-            .filter(d => d.startDate && d.endDate && d.endDate >= hoy);
-    }, [suyas]);
+    const incapacidades = useMemo(() => incapacidadesVigentes(suyas, hoySV()), [suyas]);
 
-    const choqueEnDia = useCallback((fecha) =>
-        incapacidades.find(d => fecha >= d.startDate && fecha <= d.endDate) ?? null
-    , [incapacidades]);
+    const choqueEnDia = useCallback((fecha) => choqueEnDiaDe(incapacidades, fecha), [incapacidades]);
 
     /* Estricta (`<`, `>`) a propósito: una incapacidad puede empezar el mismo
      * día que termina la anterior — es una extensión médica, no un solape. */
-    const choqueEnRango = useCallback((desde, hasta) =>
-        incapacidades.find(d => desde < d.endDate && hasta > d.startDate) ?? null
-    , [incapacidades]);
+    const choqueEnRango = useCallback((desde, hasta) => choqueEnRangoDe(incapacidades, desde, hasta), [incapacidades]);
 
     // ── Cambio de turno ──────────────────────────────────────────────────────
     const companeros = useMemo(() =>
@@ -276,22 +227,14 @@ export default function ModalNuevaPersonal({
         fetchEmployeeEventsByTypes(payload.targetEmployeeId).then(({ data }) => {
             if (cancelado) return;
             if (!data?.length) { setCompaneroOcupado(null); return; }
-            const d = payload.date;
-            const bloqueo = data.find(ev => d >= ev.date && d <= (ev.metadata?.endDate || ev.date));
-            const rotulos = { DISABILITY: 'incapacitado', PERMIT: 'con permiso', VACATION: 'de vacaciones' };
-            setCompaneroOcupado(bloqueo ? { motivo: rotulos[bloqueo.type] || 'no disponible' } : null);
+            setCompaneroOcupado(companeroNoDisponible(data, payload.date));
         });
         return () => { cancelado = true; };
     }, [payload.targetEmployeeId, payload.date]);
 
     // ── Guardas que apagan el botón ──────────────────────────────────────────
     const diasIncapacidad = Number(payload.days) || 0;
-    const finIncapacidad = useMemo(() => {
-        if (!payload.startDate || diasIncapacidad < 1) return null;
-        const d = new Date(payload.startDate + 'T00:00:00');
-        d.setDate(d.getDate() + diasIncapacidad - 1);
-        return d.toISOString().split('T')[0];
-    }, [payload.startDate, diasIncapacidad]);
+    const finIncapacidad = useMemo(() => finDeIncapacidad(payload.startDate, diasIncapacidad), [payload.startDate, diasIncapacidad]);
 
     const necesitaISSS = tipo === 'DISABILITY' && diasIncapacidad > 3;
     const solapeISSS   = tipo === 'DISABILITY' && finIncapacidad
@@ -372,45 +315,14 @@ export default function ModalNuevaPersonal({
         e?.preventDefault();
         setError('');
 
-        if (!empleadoId)   { setError('Elige a nombre de quién va la solicitud.'); return; }
-        if (!nota.trim())  { setError('El motivo es obligatorio.'); return; }
-
-        if (tipo === 'VACATION') {
-            if (!payload.startDate || !payload.endDate) { setError('Selecciona el período de vacaciones.'); return; }
-            if (!antiguedad?.habilitado) { setError('Todavía no se cumple 1 año en la empresa para pedir vacaciones.'); return; }
-            if (vacacionExistente.aprobada) { setError('Ya hay vacaciones aprobadas para este período.'); return; }
-            if (payload.startDate.slice(0, 4) < String(new Date().getFullYear())) {
-                setError('No se pueden elegir fechas de años anteriores.'); return;
-            }
-        }
-        if (tipo === 'PERMIT') {
-            if (!(payload.permissionDates || []).length) { setError('Selecciona al menos un día de permiso.'); return; }
-            const chocado = payload.permissionDates.find(d => choqueEnDia(d));
-            if (chocado) {
-                setError(`El día ${fmtCorto(chocado)} cae dentro de una incapacidad vigente (${periodo(choqueEnDia(chocado))}).`);
-                return;
-            }
-        }
-        if (tipo === 'SHIFT_CHANGE') {
-            if (!payload.targetEmployeeId || !payload.date) { setError('Selecciona el compañero y la fecha del cambio.'); return; }
-            const propio = choqueEnDia(payload.date);
-            if (propio) { setError(`Hay una incapacidad del ${periodo(propio)} — no se puede cambiar turno esa fecha.`); return; }
-            if (companeroOcupado) { setError(`El compañero está ${companeroOcupado.motivo} en esa fecha.`); return; }
-        }
-        if (tipo === 'ADVANCE' && (!payload.amount || Number(payload.amount) <= 0)) {
-            setError('Ingresa el monto del anticipo.'); return;
-        }
-        if (tipo === 'CERTIFICATE' && !payload.certificateType) {
-            setError('Selecciona el tipo de constancia.'); return;
-        }
-        if (tipo === 'OVERTIME') {
-            if (!payload.date) { setError('Selecciona la fecha de las horas extra.'); return; }
-            if (!payload.hours || Number(payload.hours) <= 0) { setError('Ingresa cuántas horas.'); return; }
-        }
-        if (tipo === 'DISABILITY') {
-            if (!payload.startDate || diasIncapacidad < 1) { setError('Ingresa la fecha de inicio y la cantidad de días.'); return; }
-            if (solapeISSS) { setError(`Ya hay una incapacidad aprobada del ${periodo(solapeISSS)} — esas fechas se solapan.`); return; }
-        }
+        // Las reglas viven en el núcleo (`utils/solicitudPersonal`): la app
+        // pregunta lo mismo y no puede dejar pedir lo que acá se frena.
+        const motivo = motivoParaNoEnviar({
+            empleadoId, tipo, payload, nota, antiguedad,
+            vacacionAprobada: !!vacacionExistente.aprobada,
+            incapacidades, companeroOcupado,
+        });
+        if (motivo) { setError(motivo); return; }
 
         setEnviando(true);
 

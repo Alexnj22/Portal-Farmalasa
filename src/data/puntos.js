@@ -224,8 +224,9 @@ export const fetchSerieDePuntos = (dias = 30) => rpc('puntos_panel_serie', { p_d
 export const fetchTableroDePuntos = () => rpc('puntos_panel_tablero');
 
 /**
- * Los clientes con cuenta de puntos, del mayor saldo al menor. Pagina en la
- * base (son ~10,600): devuelve `{ total, filas }`.
+ * Todos los clientes, con o sin puntos (los que no tienen cuenta salen en 0),
+ * del mayor saldo al menor. Pagina en la base (son ~28,500): devuelve
+ * `{ total, filas }`.
  */
 // El orden va a la base: la lista pagina ahí, y ordenar en el navegador
 // ordenaría sólo la página visible.

@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1133.1 — Puntos: Consulta muestra a todos los clientes
+
+Pedido del usuario: «en consulta, deben salir todos, sin importar si tienen 0
+puntos». La lista partía de `puntos_cuenta` y sólo mostraba a los 10,766
+clientes con cuenta; los otros 17,722 no se podían ni buscar, y la caja no
+distinguía «no tiene puntos» de «no existe».
+
+`puntos_panel_clientes` ahora parte de `customers` (28,488) y cruza la cuenta
+con LEFT JOIN: quien no tiene cuenta sale con 0 en puntos, acumulados y
+canjeados. El título pasa de «Clientes con puntos» a «Clientes». Ordenar por
+última acumulación sólo busca entre quienes tienen cuenta (nadie sin cuenta
+tiene lotes), así que cuesta lo mismo que antes. Probado con la sesión de un
+Gerente General. Migraciones `20261001230922` y `20261001230946`.
+
 ## v2.1133.0 — App: ícono de Constancia
 
 - **Ícono de «Constancia» (y de todo lo que usa `FileCheck`)**: el símbolo

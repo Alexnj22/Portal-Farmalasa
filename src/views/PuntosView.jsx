@@ -647,9 +647,10 @@ function Hueco({ alto }) {
 }
 
 /**
- * Los clientes con puntos, debajo de las gráficas. Pagina en la BASE (son
- * ~10,600 cuentas, no se bajan enteras) y la página vive en la dirección con su
- * propio parámetro. Tocar un cliente abre todo lo suyo.
+ * TODOS los clientes, tengan o no puntos (pedido del usuario, 2026-10-01): la
+ * caja tiene que poder buscar a cualquiera y ver «0» en vez de «no existe».
+ * Pagina en la BASE (son ~28,500, no se bajan enteros) y la página vive en la
+ * dirección con su propio parámetro. Tocar un cliente abre todo lo suyo.
  */
 // Las columnas por las que la base sabe ordenar (`puntos_panel_clientes`).
 const ORDEN_CLIENTES = ['nombre', 'dui', 'telefono', 'saldo', 'acumulados', 'canjeados', 'ultima'];
@@ -714,7 +715,7 @@ function ClientesConPuntos({ busqueda, onAbrir }) {
     return (
         <section className="flex flex-col gap-3">
             <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
-                <Users size={14} /> Clientes con puntos
+                <Users size={14} /> Clientes
                 {datos.total > 0 && <span className="font-bold text-content-3 normal-case tracking-normal">· {pts(datos.total)}</span>}
             </h3>
             <DataTable
@@ -733,7 +734,7 @@ function ClientesConPuntos({ busqueda, onAbrir }) {
                 loading={cargando}
                 minWidth="920px"
                 movil={{ usarAccionDeFila: true, identidad: 'nombre', ancla: 'saldo' }}
-                empty={{ icon: Inbox, message: aplicado ? 'Sin coincidencias' : 'Sin clientes con puntos' }}
+                empty={{ icon: Inbox, message: aplicado ? 'Sin coincidencias' : 'Sin clientes' }}
             >
                 {datos.filas.map((c, i) => (
                     <DataRow key={c.customer_id} index={i} onClick={() => onAbrir(c.customer_id)}>

@@ -1,7 +1,7 @@
 {
   "_comment": "Snapshot de las columnas BOOLEAN de public.* en prod. Lo usa scripts/data-gate.mjs para detectar el bug de `.eq('col', true)` sobre una columna que NO es booleana (caso recibido_mh, auditoría 2026-07-30). Regenerar con: npm run gate:data -- --regen-schema (imprime el SQL a correr).",
   "_por_que_importa_la_fecha": "El detector NO opina sobre una tabla que no está acá (`if (!(tabla in BOOLEANAS)) continue`), así que un snapshot viejo falla en las DOS direcciones: una tabla nueva entera queda sin vigilar, y una columna nueva de una tabla que SÍ está se reporta como «no es boolean» cuando sí lo es. Medido el 2026-08-21: el snapshot del 30-jul tenía 71 columnas y en prod había 96 — 25 invisibles en tres semanas, entre ellas employees.carne_pendiente, role_permissions.delega_en_ausencia y proveedores_maestro.iva_deducible, que son de tablas ya listadas y por lo tanto candidatas a falso positivo. Si esta fecha tiene más de un mes, regenerar ANTES de creerle al verde.",
-  "_generado": "2026-09-05",
+  "_generado": "2026-10-01",
   "_fuente": "pg_attribute atttypid='boolean' sobre pg_class relkind in ('r','v','m') del esquema public — incluye VISTAS y MATERIALIZADAS, no sólo tablas. El snapshot del 30-jul sólo traía tablas base, y el frontend consulta employees_safe, products_with_lab, v_inventario_lotes, v_sync_health y dte_rechazos_vigentes por nombre igual que a una tabla: sin ellas el detector se callaba justo donde más se lee.",
   "tablas_grandes": {
     "_comment": "Tablas que REQUIEREN paginación (>1000 filas o creciendo sin tope). Conteos reales al 2026-08-21, salvo los `null`, que son «crece sin tope» y no se cuentan. approval_requests entra por la SEGUNDA mitad del criterio, no por tamaño: hoy son cientos de filas, pero es un expediente que sólo crece y el día que cruce las 1000 el corte de PostgREST es mudo.",
@@ -24,6 +24,9 @@
   "tablas": {
     "announcements": [
       "is_archived"
+    ],
+    "avisos_diferidos": [
+      "con_push"
     ],
     "backup_sync_log": [
       "success"
@@ -52,10 +55,10 @@
       "activo"
     ],
     "bolsas_tipos_salida": [
-      "activo",
-      "entidad_la_dice_el_papel",
       "pide_boleta",
-      "pide_receptor"
+      "pide_receptor",
+      "activo",
+      "entidad_la_dice_el_papel"
     ],
     "bono_semestre_decision": [
       "pagar"
@@ -67,11 +70,11 @@
       "conteo_ciclico_activo"
     ],
     "caja_tipos_movimiento": [
-      "activo",
-      "identifica_receptor",
-      "lleva_comprobante",
       "pide_boleta",
-      "pide_persona"
+      "pide_persona",
+      "lleva_comprobante",
+      "activo",
+      "identifica_receptor"
     ],
     "compra_renglon_pendiente": [
       "ignorado"
@@ -80,13 +83,13 @@
       "otorgado"
     ],
     "conteo_inventario_items": [
-      "es_agregado_manual",
-      "is_vencidos"
+      "is_vencidos",
+      "es_agregado_manual"
     ],
     "conteos_inventario": [
-      "ajuste_erp_aplicado",
       "incluye_vencidos",
-      "pendientes_como_cero"
+      "pendientes_como_cero",
+      "ajuste_erp_aplicado"
     ],
     "cortes_caja_aperturas": [
       "turno_corriendo"
@@ -102,13 +105,46 @@
       "ok"
     ],
     "customers": [
+      "acumula_puntos",
       "acepta_programa_puntos",
-      "acepta_promociones",
-      "acumula_puntos"
+      "acepta_promociones"
     ],
     "dispatch_rules": [
-      "caja_especial",
-      "solo_cajas"
+      "solo_cajas",
+      "caja_especial"
+    ],
+    "dist_catalogo": [
+      "venta_libre",
+      "activo"
+    ],
+    "dist_clientes": [
+      "contribuyente",
+      "gran_contribuyente",
+      "activo"
+    ],
+    "dist_emisores": [
+      "gran_contribuyente",
+      "activo"
+    ],
+    "dist_listas": [
+      "activo"
+    ],
+    "dist_pedidos": [
+      "desde_camion"
+    ],
+    "dist_precios": [
+      "activo"
+    ],
+    "dist_proveedores": [
+      "relacionada",
+      "gran_contribuyente",
+      "activo"
+    ],
+    "dist_puntos_venta": [
+      "activo"
+    ],
+    "dist_rutas": [
+      "activo"
     ],
     "dte_mh_intentos": [
       "ok"
@@ -123,31 +159,31 @@
       "success"
     ],
     "employees": [
-      "carne_pendiente",
-      "disability_has_certification",
-      "has_car",
-      "has_car_license",
-      "has_disability",
-      "has_maestria",
-      "has_motorcycle",
-      "has_motorcycle_license",
-      "has_srs_accreditation",
       "is_studying",
+      "has_maestria",
       "maestria_is_studying",
+      "has_motorcycle",
+      "has_car",
+      "has_motorcycle_license",
+      "has_car_license",
+      "has_srs_accreditation",
+      "has_disability",
+      "disability_has_certification",
+      "carne_pendiente",
       "tiene_acreditacion_dependiente"
     ],
     "employees_safe": [
-      "carne_pendiente",
-      "disability_has_certification",
-      "has_car",
-      "has_car_license",
-      "has_disability",
-      "has_maestria",
-      "has_motorcycle",
-      "has_motorcycle_license",
-      "has_srs_accreditation",
       "is_studying",
+      "has_maestria",
       "maestria_is_studying",
+      "has_motorcycle",
+      "has_car",
+      "has_motorcycle_license",
+      "has_car_license",
+      "has_srs_accreditation",
+      "has_disability",
+      "disability_has_certification",
+      "carne_pendiente",
       "tiene_acreditacion_dependiente"
     ],
     "erp_sucursal_map": [
@@ -182,34 +218,46 @@
       "succeeded"
     ],
     "laboratorios": [
-      "acumula_puntos",
-      "ocultar_en_minmax"
+      "ocultar_en_minmax",
+      "acumula_puntos"
+    ],
+    "marketing_comentarios": [
+      "resuelto"
+    ],
+    "marketing_marcas": [
+      "activo"
+    ],
+    "marketing_piezas": [
+      "pautar"
+    ],
+    "marketing_redes": [
+      "activo"
     ],
     "metas_bono_persona": [
-      "en_prueba",
-      "es_jefe"
+      "es_jefe",
+      "en_prueba"
     ],
     "metas_config": [
-      "bonificaciones_activas",
-      "id"
+      "id",
+      "bonificaciones_activas"
     ],
     "minmax_sync_log": [
       "success"
     ],
     "mv_stock_analysis": [
-      "is_catalog_only",
-      "is_dead_stock"
+      "is_dead_stock",
+      "is_catalog_only"
     ],
     "pedido_devolucion": [
       "viaja"
     ],
     "pedido_items": [
-      "agotamiento",
-      "caja_especial",
-      "es_extra",
-      "falta_caja",
+      "sin_stock",
       "revision_minmax",
-      "sin_stock"
+      "falta_caja",
+      "caja_especial",
+      "agotamiento",
+      "es_extra"
     ],
     "pedido_sucursal_status": [
       "electrolit_ok"
@@ -224,38 +272,50 @@
       "is_hidden"
     ],
     "products": [
-      "activo",
-      "devolutivo",
       "es_antibiotico",
-      "oculto_en_ventas",
+      "activo",
       "perecedero",
-      "regulado",
       "requiere_receta",
-      "sin_principio_activo"
+      "sin_principio_activo",
+      "devolutivo",
+      "oculto_en_ventas",
+      "regulado"
     ],
     "products_sync_log": [
       "success"
     ],
     "products_with_lab": [
-      "activo",
-      "es_antibiotico"
+      "es_antibiotico",
+      "activo"
     ],
     "promocion_renglon": [
       "tiene_bono"
+    ],
+    "promociones": [
+      "resumen_supervision",
+      "resumen_salas"
     ],
     "proveedores": [
       "devolutivo"
     ],
     "proveedores_maestro": [
-      "activo",
-      "iva_deducible",
       "percibe_1",
+      "retiene_renta",
+      "activo",
       "percibe_1_override",
-      "retiene_renta"
+      "iva_deducible"
+    ],
+    "puntos_archivo_carga": [
+      "completa"
+    ],
+    "puntos_arranque": [
+      "simulado",
+      "ok",
+      "encendido"
     ],
     "puntos_config": [
-      "acumulacion_activa",
-      "id"
+      "id",
+      "acumulacion_activa"
     ],
     "puntos_consulta_intentos": [
       "acerto"
@@ -279,14 +339,14 @@
       "firma_requerida"
     ],
     "role_permissions": [
-      "can_approve",
-      "can_edit",
       "can_view",
+      "can_edit",
+      "can_approve",
       "delega_en_ausencia"
     ],
     "roles": [
-      "es_cuenta_de_pruebas",
-      "is_su"
+      "is_su",
+      "es_cuenta_de_pruebas"
     ],
     "ruta_pedidos": [
       "discrepancia"
@@ -301,8 +361,8 @@
       "is_active"
     ],
     "solicitudes_datos": [
-      "negada",
-      "por_representacion"
+      "por_representacion",
+      "negada"
     ],
     "stock_config": [
       "pedido_recepcion_activa"

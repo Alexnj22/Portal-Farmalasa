@@ -1044,6 +1044,51 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
         );
     }
 
+    /* ── Un descuento de Distribución ─────────────────────────────────────
+     *
+     * Quien decide necesita ver, renglón por renglón, a qué precio iba, cuánto
+     * se pide y qué porcentaje es — y el tope de la empresa, que es contra lo
+     * que se está pidiendo la excepción. Los montos llevan IVA: es lo que paga
+     * el cliente. Aprobar lo aplica a la venta; rechazar la deja sin él. */
+    if (t === 'DIST_DESCUENTO') {
+        const renglones = Array.isArray(meta.renglones) ? meta.renglones : [];
+        return (
+            <div className="space-y-2">
+                <Caja tono="hover">
+                    <Rotulo>La venta</Rotulo>
+                    <p className="text-body-sm font-bold text-content-2 leading-tight">{meta.cliente || 'Sin nombre'}</p>
+                    <p className="text-label font-black text-content-2 tabular-nums mt-0.5">
+                        Descuento pedido: {formatMoney(meta.total)}
+                    </p>
+                    {meta.tope_pct != null && (
+                        <p className="text-micro text-content-3 mt-0.5">Tope de la empresa: {Number(meta.tope_pct)}% por producto</p>
+                    )}
+                </Caja>
+                {renglones.length > 0 && (
+                    <Caja>
+                        <Rotulo>{renglones.length === 1 ? 'El producto' : `Los ${renglones.length} productos`}</Rotulo>
+                        <div className="space-y-1 mt-1">
+                            {renglones.map((r, i) => (
+                                <div key={i} className="flex items-start justify-between gap-2 py-1 border-b border-divider last:border-0">
+                                    <div className="min-w-0">
+                                        <p className="text-label font-bold text-content-2 leading-tight">{r?.descripcion}</p>
+                                        <p className="text-micro text-content-3 tabular-nums">
+                                            {Number(r?.cantidad)} × {formatMoney(r?.precio)} con IVA
+                                        </p>
+                                    </div>
+                                    <div className="text-right shrink-0">
+                                        <p className="text-label font-black text-content-2 tabular-nums">−{formatMoney(r?.descuento)}</p>
+                                        {r?.pct != null && <p className="text-micro text-content-3 tabular-nums">{Number(r.pct)}%</p>}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </Caja>
+                )}
+            </div>
+        );
+    }
+
     /* ── Un abono que espera confirmación ──────────────────────────────────
      *
      * Se resuelve CRÉDITO POR CRÉDITO —«se debe poder confirmar individualmente

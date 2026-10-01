@@ -11,7 +11,7 @@ import * as almacen from '@plataforma/almacen';
 // el día que alguien las pintara. No lo detectó nadie porque hasta ese día
 // NINGUNA pantalla las mostraba — se subían y ahí quedaban.
 // `marketing` (2026-10-01): los diseños del planificador de contenido.
-const PRIVATE_BUCKETS = ['documents', 'payment-proofs', 'empleados', 'purchase-dte', 'sales-dte', 'inventario-evidencia', 'marketing'];
+const PRIVATE_BUCKETS = ['documents', 'payment-proofs', 'empleados', 'purchase-dte', 'sales-dte', 'inventario-evidencia', 'dist-comprobantes', 'marketing'];
 const STORAGE_PATH_RE = /\/storage\/v1\/object\/(?:public|sign|authenticated)\/([^/]+)\/(.+?)(?:\?.*)?$/;
 
 /**

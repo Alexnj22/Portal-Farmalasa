@@ -126,6 +126,25 @@ function titulosDeRuta(app) {
 // ── Las rutas declaradas en App.jsx, con su componente ───────────────────────
 function rutasDeApp(app) {
   const out = [];
+  // ── Casas con prefijo propio (`<Route path="/torogoz/*" element={…<Routes>…}>`)
+  // La distribuidora vive en `/torogoz` con su propio marco (2026-09-28), y sus
+  // rutas van ANIDADAS y relativas (`path="venta"`). Leídas sueltas parecían
+  // `/venta` — una ruta que no existe— y `/torogoz` no aparecía nunca, así que
+  // el menú «apuntaba a una ruta inexistente». Se mide qué rango del texto
+  // cubre cada casa y a lo de adentro se le antepone su prefijo.
+  const casas = [];
+  for (const m of app.matchAll(/<Route\s+path="(\/[a-z0-9-]+)\/\*"\s+element=\{/g)) {
+    const desde = m.index + m[0].length;
+    let prof = 1, i = desde;
+    while (i < app.length && prof > 0) {
+      if (app[i] === '{') prof++;
+      else if (app[i] === '}') prof--;
+      i++;
+    }
+    casas.push({ prefijo: m[1], desde, hasta: i });
+    out.push({ path: m[1], comp: null, esRedireccion: true });
+  }
+  const prefijoDe = (idx) => casas.find(c => idx > c.desde && idx < c.hasta)?.prefijo ?? '';
   // El `element={…}` se lee CONTANDO LLAVES, no con un tope de caracteres.
   // El tope era 260 y costó exactamente lo que este gate existe para evitar:
   // `/mis-puntos` —la única vista pública con envoltorio propio, la que abre un
@@ -163,7 +182,8 @@ function rutasDeApp(app) {
       .map(s => s.slice(1))
       .filter(c => !['PermissionGuard', 'Navigate', 'Suspense', 'ErrorBoundary'].includes(c));
     const comp = candidatos.find(c => /View$/.test(c)) || candidatos[0] || null;
-    out.push({ path: path.startsWith('/') ? path : '/' + path, comp, esRedireccion });
+    const pre = path.startsWith('/') ? '' : prefijoDe(m.index);
+    out.push({ path: path.startsWith('/') ? path : `${pre}/${path}`, comp, esRedireccion });
   }
   // Rutas anidadas con índice (`<Route path="personal"><Route index …`).
   for (const m of app.matchAll(/<Route\s+path="([a-z0-9-]+)"\s*>/g)) {

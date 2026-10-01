@@ -21,7 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.1118.0 — Marketing: el planificador de contenido para redes
+## v2.1123.0 — Marketing: el planificador de contenido para redes
 
 Módulo nuevo (menú **Marketing**, `/marketing`) para trabajar con el diseñador
 gráfico externo. Pedido del usuario: el mes completo para planificar post,
@@ -54,6 +54,989 @@ Canales Digitales ve, comenta y pide.
 Probado contra el entorno de pruebas el flujo entero de la base (candados,
 cambios, reenvío, aprobación, reapertura). Falta el barrido en el navegador.
 
+## v2.1122.1 — Torogoz: cierres técnicos tras salir a producción
+
+Cierres del plan de paso a producción de la distribuidora (`docs/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md`, sección 3).
+
+- **Tipos de la base regenerados** desde producción (`npm run tipos:base`): ya traen las 44 tablas `dist_*`. Los tres archivos de datos de la distribuidora pierden su `@ts-nocheck` y entran al contrato con cero avisos.
+- **Registro de columnas booleanas** al día (`scripts/db/boolean-columns.json`, 82 → 99 tablas): incluye las 15 columnas booleanas de la distribuidora, así `gate:data` vigila sus consultas.
+- **`gate:eficiencia`** declara los dos crons de la distribuidora (`dist-vencer-reservas`, `dist-aviso-cartera-atrasada`): SQL puro, sin peticiones al sistema de origen.
+
+## v2.1122.0 — App: solicitudes personales nativas (y sus reglas en el núcleo)
+
+Cuarta pieza para cerrar el Inicio: las siete solicitudes personales se crean
+en el teléfono (`app/nueva/personal.js`) — vacaciones, permiso, incapacidad,
+cambio de turno, horas extra, anticipo y constancia.
+
+- **Las reglas salieron del formulario del portal a `utils/solicitudPersonal`**
+  y el portal ya las usa: un año para vacaciones, nada sobre una incapacidad
+  aprobada (una nueva sí puede empezar el día que termina la anterior), el
+  compañero del cambio de turno disponible ese día, motivo obligatorio. Con
+  pruebas en `tests/unit/solicitudPersonal.test.js`.
+- La incapacidad lleva la boleta (foto) a `documents/solicitudes/<persona>/`.
+- Con alcance «todas» se pide a nombre de otra persona, como en el portal.
+- Guarda borrador mientras se llena.
+
+⚠️ **Hallazgo, sin corregir todavía en producción**: el CHECK de
+`approval_requests.type` no acepta PERMIT, DISABILITY, OVERTIME, ADVANCE ni
+CERTIFICATE (tiene los nombres viejos). En toda la historia de producción hay
+**cero** solicitudes personales: el insert fallaba y la pantalla decía «No se
+pudo crear la solicitud». La corrección está probada en el entorno de pruebas
+y espera el visto bueno para aplicarse.
+## v2.1121.0 — Torogoz: la distribuidora llega al portal (sólo dirección)
+
+La distribuidora **Torogoz** sale a producción en `/torogoz`, visible sólo para dirección (Gerente General, Administrador, Jefe/a de Talento Humano y Supervisor/a de Ventas), con un acceso en el menú del portal para esos cargos. Su esquema ya estaba en la base desde el mismo día (33 migraciones `distribucion_00NN_*`). Todavía no emite documentos reales: faltan el emisor (los datos de la S.A.S., en Empresa) y las credenciales de Hacienda.
+
+Todo lo construido en la rama de desarrollo, con su numeración de entonces (las versiones de abajo son de esa rama, no de `main`):
+
+### v2.1118.0 — Torogoz en producción (esquema) y rastreo de la ruta
+
+**El esquema de la distribuidora está en producción** (2026-10-01): 33 migraciones `distribucion_00NN_*`, 44 tablas `dist_*` (todas con RLS), 2 crons. Las ve sólo dirección: Gerente General, Administrador, Jefe/a de Talento Humano y Supervisor/a de Ventas (más la cuenta QA, que por regla de producción lo tiene todo). Sin emisor cargado todavía: se carga en Empresa con los datos reales de la S.A.S.
+
+- **Rastreo de la ruta en segundo plano** (0033): «Iniciar ruta» / «Terminar ruta» en Rutas → Hoy, sólo en la app. En ruta, la app anota la posición cada minuto aunque se cambie de pantalla o se bloquee el teléfono (en Android, aviso fijo «Ruta activa»). Dirección ve la última ubicación, los puntos del día y «Ver en el mapa». Un punto por minuto, firmado por quien lo manda, retención de 90 días.
+- Los borradores pasaron a `supabase/migrations/` y se borraron, junto con el script de paso. El entorno de pruebas ya no los repone: el branch trae el esquema de producción y `scripts/entorno-pruebas/distribucion.mjs` sólo siembra los datos de muestra y despliega las funciones.
+
+### v2.1117.3 — Torogoz: GPS sólo en la app, sólo dirección ve el módulo, script de paso a producción
+
+- **GPS de la visita sólo en la app y sólo al registrar la visita de la ruta** (pedido del usuario). En el navegador no se pregunta nada; en la app se usa el plugin nativo, que no depende del `geolocation=()` de `vercel.json`.
+- **En producción, Torogoz lo ven sólo los cuatro cargos de dirección**: Gerente General, Administrador, Jefe/a de Talento Humano y Supervisor/a de Ventas (0001 y 0008 dan los permisos por id de cargo).
+- `scripts/distribucion-a-produccion.mjs`: aplica los 32 borradores a producción desde el archivo, uno por transacción, registrándolos como `apply_migration` y escribiendo cada `supabase/migrations/<versión>_<name>.sql`. Sin `--aplicar` sólo muestra qué haría.
+
+### v2.1117.2 — Torogoz: listo para producción (ajustes de la auditoría y plan)
+
+Preparación para pasar la distribuidora a producción, sin tocar la base real. Plan completo en `docs/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md`.
+
+- **Arreglado: el faltante del camión salía en $0** en la liquidación: el costo no se estampaba en los movimientos `faltante`, `carga` y `descarga` (borrador 0032).
+- **Privilegios**: trece tablas y una vista sólo le quitaban permisos a `anon`; `authenticated` conservaba TRUNCATE, que salta el RLS. Ahora se revoca todo y se da exactamente lo necesario.
+- **18 índices de FK** que faltaban o eran parciales.
+- **Solicitudes de descuento**: si el aviso push fallaba, se caía la solicitud entera; ahora el aviso no la tumba.
+- La auditoría del portal conoce las 43 tablas y los 2 crons de la distribuidora; los tickets quedaron sin avisos de tipos.
+
+### v2.1117.1 — Torogoz: el camión en la liquidación del vendedor
+
+La liquidación ya contaba el efectivo de las ventas del camión; ahora dice qué pasó con la mercadería (borrador 0031): cargado, vendido, lo que volvió a bodega, lo que sigue en el camión y el faltante valorizado al costo del momento, con la nota de quien descargó y el número de la Nota de Remisión.
+
+### v2.1117.0 — Torogoz: numeración según la norma, descuento del catálogo y autoventa desde el camión
+
+Decisiones del usuario del 30-sep: venta mixta (preventa y camión), ticket sin QR, no reusar un número rechazado, % de descuento por producto como el ERP. Plazos verificados contra la Normativa DTE v2.0 (DGII, 25-may-2026) y el Manual Funcional 2.0.
+
+- **Numeración por establecimiento** (borrador 0028). La norma (regla 7.1.2) prohíbe el correlativo por tipo o por punto de venta: hoy hay un contador por establecimiento y año, compartido por todos los documentos.
+- **Un punto de venta por vendedor**, creado solo la primera vez que factura (P002, P003…). Se listan en Empresa.
+- **Plazo de invalidación**: CCF/NR/NC hasta el décimo día hábil del mes siguiente; Factura 3 meses (2 años si es de medicamentos). El documento sellado lo dice, y pasado el plazo el servidor frena y manda a Nota de Crédito. Asuetos nacionales 2026-2030.
+- **Descuento del catálogo** (0029): % por producto con vigencia opcional, entra solo al vender y sin aprobación; tope por producto para dar más; aviso si queda bajo el costo; filtro «Con descuento». El renglón guarda si el descuento salió del catálogo o fue a mano.
+- **Autoventa desde el camión** (0030): el camión es una ubicación del lote. Inventario → Camiones: cargar (con su Nota de Remisión, título «traslado», CT art. 109), lo cargado / vendido / en el camión, y descargar contando lo que volvió (el faltante exige motivo). La venta elige «De mi camión» o «Preventa (bodega)».
+
+### v2.1116.1 — Torogoz: filtros en la píldora y campos alineados
+
+Los filtros de la distribuidora estaban sueltos y algunos campos no se alineaban con los de al lado.
+
+- **Filtros en la píldora (DESIGN §17)** en Inicio, Compras, Reportes (los cinco), Caja y liquidación, Cierre del día, Rutas y Conteo: las tarjetas a la izquierda y la píldora a la derecha, en el mismo renglón. Las acciones (descargar CSV, paquete del mes, imprimir, nueva compra, proveedores, actualizar) entran como descriptores de la píldora.
+- **El día se elige con el paso de período** (`FiltroDia`: anterior · calendario · siguiente), igual que en Cortes.
+- **Campos alineados:** los selectores de formulario llevan el mismo rótulo que `PortalInput` (`rotuloCampo`) — Cliente, Emisor, Cartera, Bajas, Armar rutas.
+- En Libros de ventas, Anulados también tiene su tarjeta.
+
+### v2.1116.0 — Torogoz: rutas y visitas del día
+
+Nueva sección **Rutas** (borrador `0027_rutas_y_visitas.sql`, sólo pruebas).
+
+- **La ruta deja de ser un texto a mano**: hay tabla de rutas (nombre, vendedor,
+  días de visita) y la ficha del cliente la elige de una lista. Dos clientes de
+  la misma ruta ya no pueden quedar en «dos» rutas por una tilde (la regla del
+  portal: un rótulo no es una clave). El texto `ruta` se mantiene solo desde la
+  tabla, así los reportes que lo leen siguen igual. Las tres rutas que existían
+  se pasaron a la tabla con sus clientes y el vendedor que más les vendió.
+- **Hoy**: el vendedor ve los clientes de sus rutas de ese día, en orden, con lo
+  que conviene saber antes de entrar —qué debe y cuánto atrasado, cuándo compró—
+  y registra la visita: vender (abre la venta con el cliente), sin pedido,
+  cerrado, no estaba o sólo cobro. Una venta del día cuenta sola como visita.
+  «Cómo llegar» (Google Maps) y «Llamar». La primera visita con GPS guarda la
+  ubicación del cliente. Quien administra ve la ruta de cualquier vendedor y
+  día.
+- **Armar rutas** (quien administra): nombre, vendedor, días de la semana y el
+  orden de recorrido de los clientes.
+
+### v2.1115.0 — Torogoz: conteo físico y bajas con aprobación
+
+**Inventario → Conteo y bajas** (borrador `0026_conteo_y_bajas.sql`, sólo
+pruebas):
+
+- **Conteo físico**: quien administra lo inicia (foto de cada lote con
+  existencia); se cuenta **a ciegas** —quien cuenta no ve el sistema; quien
+  administra sí, con la diferencia valorizada al costo—. Al cerrar, el ajuste es
+  **relativo** (existencia de ahora + contado − foto), así una venta hecha
+  mientras se contaba no se pisa; lo no contado no se toca. Uno abierto a la
+  vez; anular exige motivo. Queda el historial con faltante y sobrante.
+- **Bajas** (vencido, dañado, muestra, otro): se piden por lote —no más de lo que
+  hay, contando lo ya pedido— y quien administra las aprueba o rechaza (con
+  motivo). Recién aprobadas salen del lote, valorizadas al costo.
+
+### v2.1114.0 — Torogoz: mínimos, máximos y reposición
+
+**Inventario → Reposición** (borrador `0025_minimos_y_reposicion.sql`, sólo
+pruebas): qué comprar y a quién antes de que falte.
+
+- **Disponible** = lotes sin vencer − lo reservado por ventas en curso; lo
+  vencido se muestra aparte.
+- **Velocidad** = lo vendido en 60 días menos lo devuelto, y los días de
+  inventario que alcanzan.
+- **Mínimo y máximo** automáticos (15 y 45 días de venta, configurables por
+  empresa) o **fijados a mano** —la distribuidora arranca sin historia, y ahí el
+  automático no sirve—; «Volver al automático» los suelta.
+- **Comprar**: si el disponible llegó al mínimo, lo que falta para el máximo, con
+  su costo estimado y el proveedor de la última compra.
+- **Pedido sugerido**: CSV agrupado por proveedor, listo para mandar.
+
+### v2.1113.0 — Torogoz: retenciones, percepciones y paquete del mes
+
+En **Reportes** (sin tablas ni consultas nuevas: sale de los libros de ventas y
+de compras):
+
+- **Retenciones**: el resumen fiscal del mes —débito, crédito e impuesto
+  REFERENCIAL (lo liquida el contador)— y cuatro listados con su CSV: el IVA
+  que nos retuvieron clientes grandes (formato de las farmacias), el que
+  percibimos a clientes, la percepción que nos cobraron proveedores y la
+  retención que les hicimos (anexos de 9 columnas de las farmacias). Las notas
+  de crédito restan.
+- **Paquete del mes**: un ZIP con todo lo fiscal —libros de contribuyentes,
+  consumidor final, anulados y compras, los cuatro anexos de retención y
+  percepción, compras a relacionadas y un resumen—. Si un libro falla no sale
+  (uno incompleto en silencio es peor). Avisa si hay documentos sin sello que
+  quedaron fuera. `client-zip` por `import()`, sólo al apretar.
+
+### v2.1112.0 — Torogoz: caja del vendedor y cierre del día
+
+La distribuidora como punto de venta completo (borrador
+`0024_caja_y_cierre_del_dia.sql`, sólo pruebas). Con factura electrónica no hay
+«corte Z» fiscal —Hacienda recibe cada documento en línea—: lo que queda es el
+control interno del efectivo.
+
+- **Apertura**: quien administra abre la caja del vendedor con su **fondo de
+  cambio** (una por vendedor y día, con quién la abrió). Se le puede abrir a un
+  vendedor que todavía no vendió.
+- **Durante el día**: **gastos de ruta** con concepto (los anota el vendedor),
+  **entregas parciales** —el corte a media jornada: se cuenta lo que tiene en
+  mano y se compara con lo que la base calcula— e ingresos. No deja entregar más
+  de lo que hay en mano. Anular un movimiento exige motivo.
+- **Liquidación**: el efectivo a entregar es fondo + ventas + cobros + ingresos
+  − gastos − entregas, con el desglose a la vista y en el ticket. Liquidar
+  cierra la caja; reabrir la liquidación la reabre.
+- **Cierre del día** (Caja y liquidación → Cierre del día): lo vendido por forma
+  de pago, cada vendedor con lo que entregó o lo que le falta, gastos, efectivo
+  recibido, **depósitos al banco** (banco y boleta) y la conciliación: recibido −
+  depositado = queda en caja fuerte. No cierra con vendedores sin liquidar; lo
+  no depositado exige decir dónde quedó; cerrado, sus liquidaciones no se
+  reabren sin reabrir el día. Ticket del cierre.
+- **En la venta**: cobrar en efectivo sin caja abierta no se frena, pero se
+  avisa.
+
+### v2.1111.0 — Torogoz: aviso diario de cuentas atrasadas
+
+Cada mañana a las 7:00, antes de salir a la ruta (borrador
+`0023_aviso_de_cartera_atrasada.sql`, cron `dist-aviso-cartera-atrasada`, sólo
+pruebas):
+
+- **Cada vendedor** recibe cuántos clientes suyos tienen cuentas pasadas del
+  plazo, cuánto deben y quiénes, con los que vencieron ayer aparte (los que
+  todavía se cobran fácil). El vendedor es el de la venta.
+- **Quien administra** recibe el resumen de todos, con lo que ya pasó de 60
+  días.
+- Campana y push; el aviso lleva a Cuentas por cobrar → Atrasados.
+- Una vez por persona y día (si el cron corre dos veces, no duplica), y nadie
+  recibe «cero atrasados».
+
+Al migrar a producción, declarar el cron en `scripts/eficiencia-gate.mjs`.
+
+### v2.1110.0 — Torogoz: compras a partes relacionadas con precio de mercado
+
+Entre dos empresas con NIT distinto no existe «pasar» mercadería: Farmalasa le
+VENDE a la S.A.S. con su Crédito Fiscal y Torogoz lo registra como COMPRA (ya
+existía). Lo nuevo es lo que la ley agrega entre empresas del mismo grupo: el
+precio tiene que ser el de mercado (borrador `0022_compras_a_relacionadas.sql`,
+sólo pruebas). El margen y si aplica el informe F-982 los confirma el contador.
+
+- **Referencias por unidad, sin IVA**: costo de compra de Farmalasa, su
+  mayoreo a terceros (el más bajo), el precio de venta y el costo de Torogoz.
+- **Avisos al capturar la compra** (no bloquean): 🔴 bajo el costo de
+  Farmalasa · 🟠 más de 10 % bajo su mayoreo a terceros · 🟠 Torogoz no gana al
+  revenderlo. Una sola regla (`evaluarPrecioRelacionada`) para la compra y el
+  reporte.
+- **Reportes → Relacionadas**: lo comprado a relacionadas en el año (lo que se
+  compara con el umbral del F-982), el IVA, los productos con aviso y un CSV de
+  trabajo para el contador.
+- **Arreglo**: `PortalInput` no usa `disabled` sino `readOnly`, y pisa el
+  `disabled` que se le pasa. Siete campos de la distribuidora lo tenían mal: se
+  podía escribir en una compra ya recibida o devolver un producto ya devuelto
+  entero (la base lo frenaba igual). Y el buscador de la venta ahora sí espera
+  al cliente, como decía el código. Quedan 8 casos iguales en otras áreas del
+  portal, sin tocar.
+
+### v2.1109.0 — Torogoz: libros de IVA de ventas
+
+En **Reportes → Libros de ventas** (borrador `0021_libros_de_ventas.sql`, sólo
+pruebas):
+
+- **Contribuyentes** (Art. 85): Créditos Fiscales y Notas de Crédito
+  sellados, con gravado, débito, percibido y retenido. Las notas restan en los
+  totales y van con su tipo (05) en el archivo.
+- **Consumidor final** (Art. 83): un renglón por día, del primero al último por
+  número de control (no por el texto del código de generación, que es el error
+  del libro del ERP de las farmacias), con el IVA contenido.
+- **Anulados**: lo invalidado, por la fecha de la invalidación.
+- **Sólo entra lo sellado** por Hacienda. Lo que falta enviar se avisa arriba
+  con su monto, para no declarar un libro incompleto.
+- Los montos salen del JSON del documento —lo que Hacienda recibió—, no de
+  recalcular los renglones.
+- **El archivo** sale con el MISMO generador que los libros de las farmacias
+  (20 columnas contribuyentes, 23 consumidor, 10 anulados). Se extendió para
+  tomar el tipo real del documento (`05`/`06`); sin él sigue en `03`, así el de
+  las farmacias no cambia (28 pruebas de columnas en verde).
+- De paso: la prueba de lotes espera a que se suelte su reserva antes de salir;
+  un `goto` inmediato la cortaba y la corrida siguiente fallaba.
+
+### v2.1108.0 — Torogoz: liquidación diaria del vendedor
+
+Al volver de la ruta, nada decía cuánto tenía que entregar el vendedor: ventas,
+cobros de cartera y devoluciones vivían en tres pantallas (borrador
+`0020_liquidacion_del_vendedor.sql`, sólo pruebas).
+
+- **Liquidación** (sección nueva): por vendedor y día, lo vendido con su
+  desglose por forma de pago, lo cobrado de cartera, lo devuelto y los cheques a
+  entregar uno por uno. **Efectivo a entregar** = efectivo de ventas + efectivo
+  de cobros. El día y el vendedor van en la dirección.
+- Un vendedor ve la suya; quien administra ve a todos los que tuvieron
+  movimiento ese día, con su estado (por cerrar / cerrada con o sin diferencia).
+- **Cierre**: se escribe el efectivo contado, la pantalla dice si sobra o falta,
+  y una diferencia exige motivo. Queda una foto de lo liquidado; si después
+  entra otra venta o cobro de ese día, lo avisa. Reabrir exige motivo.
+- Lo que una devolución dejó a favor de un cliente se muestra pero **no se
+  resta**: el portal no sabe si se le devolvió en efectivo en la ruta.
+- **Ticket de la liquidación** para la ticketera, con la línea de firma del
+  vendedor.
+
+### v2.1107.0 — Torogoz: el documento se le manda al cliente por correo
+
+Hacienda exige entregarle al cliente su documento —el JSON con firma y sello— y
+la representación gráfica. Hasta hoy sólo se imprimía el ticket (borrador
+`0019_correo_al_cliente.sql` y edge function `distribucion-correo`, sólo pruebas).
+
+- **Bandeja de salida**: cada documento sellado (Factura, Crédito Fiscal, Nota
+  de Crédito) nace «pendiente» de enviar, o «sin correo» si la ficha no tiene.
+  Cada intento queda anotado con quién lo mandó; un reenvío no pisa el anterior.
+- **Qué recibe el cliente**: el JSON con firma y sello —armado por la función
+  desde la base, así nadie manda uno alterado— y el PDF, que es el mismo que se
+  descarga del documento. El correo trae los datos del documento y el enlace a
+  la consulta pública de Hacienda.
+- **Al facturar**, si Hacienda sella en el momento y el cliente tiene correo,
+  sale solo. En el documento, «Correo al cliente» dice a quién se mandó o por
+  qué no, y deja escribir otro correo y reenviar.
+- **Facturación** avisa cuántos sellados todavía no le llegaron al cliente y
+  los manda en bloque.
+- **Proveedor**: Resend (`RESEND_API_KEY` y `CORREO_REMITENTE`, con el dominio
+  verificado). Sin eso la función dice «falta configurar» y no marca nada. En
+  pruebas va `CORREO_MODO=simulado`: se anota sin mandar nada a nadie.
+- **Arreglo de paso**: salir de una venta que no se guardó ahora suelta lo que
+  tenía apartado. Antes quedaba reservado 30 minutos y nadie más lo podía
+  vender.
+
+### v2.1106.1 — Torogoz: Inicio resta las devoluciones
+
+Las ventas de Inicio sumaban sólo Facturas y Créditos Fiscales, así que lo
+devuelto con Nota de Crédito quedaba inflando la cifra, mientras la utilidad
+ya lo restaba (borrador `0018_tablero_resta_devoluciones.sql`).
+
+- Las notas entran en **negativo** el día de la nota, con el cliente, la ruta y
+  el vendedor de la venta que corrigen: restan en ventas, serie diaria, rutas,
+  tipos de cliente, vendedores, clientes y productos.
+- **No** cuentan como documentos, ni en el ticket promedio, la hora del día o
+  las formas de pago: no son ventas, son su corrección.
+- «Ventas por día» dice cuánto se descontó.
+
+### v2.1106.0 — Torogoz: devoluciones con nota de crédito y cuarentena
+
+Una devolución parcial ya no obliga a anular la venta entera (borrador
+`0017_devoluciones_y_nota_de_credito.sql`, sólo pruebas).
+
+- **«Devolución»** en un Crédito Fiscal sellado: se elige qué regresa, por
+  producto y **por lote**, hasta lo vendido menos lo ya devuelto, y sale una
+  **Nota de Crédito (05)** relacionada al Crédito Fiscal, con su misma retención
+  o percepción. Dos personas no pueden devolver lo mismo a la vez (el documento
+  se bloquea y lo apartado cuenta 15 minutos). Un reintento no emite dos notas.
+- A una **Factura** no se le hace nota (la ley no lo permite): la pantalla lo
+  dice y remite a «Corregir».
+- Lo devuelto **vuelve a su lote** con su costo, o va a **cuarentena** (dañado,
+  vencido). En Inventario, «En cuarentena» muestra lo que espera decisión:
+  reingresar (si el lote no venció), devolver al proveedor o destruir.
+- **La cuenta del cliente**: si se fió y se debe, la nota se descuenta de esa
+  cuenta; si ya estaba pagada, se dice cuánto devolverle.
+- **Si la nota se invalida o se descarta**, se deshace todo: la mercadería vuelve
+  a salir (hasta lo que haya), la cuarentena se anula y la cuenta recupera su
+  saldo. Un rechazo de Hacienda no deshace nada: se corrige y se reenvía.
+- **Utilidad**: lo devuelto resta venta; lo que reingresa resta también su costo,
+  y lo de cuarentena no (es pérdida).
+- De paso: abrir un documento sin su archivo guardado (datos de muestra) ya no
+  rompe la vista entera.
+
+### v2.1105.0 — Torogoz: utilidad bruta y libro de compras
+
+Nueva sección **Reportes** de la distribuidora (sólo quien administra; borrador
+`0016_utilidad_y_libro_de_compras.sql`, sólo pruebas).
+
+- **El costo se congela al vender**: cada asignación de lote y cada movimiento
+  de venta guardan el costo promedio de ese momento. Así la utilidad de un mes
+  cerrado no cambia cuando entra una compra después.
+- **Utilidad**: venta sin IVA, costo de lo vendido, utilidad y margen del
+  período, por día (gráfica) y por producto, cliente, ruta o vendedor (período y
+  agrupación en la dirección). Lo vendido antes de guardar el costo usa el
+  promedio actual y se marca «estimado»; lo que no tiene costo de ninguna forma
+  se informa aparte y **no entra al margen** (con costo cero lo inflaría).
+- **Libro de compras** del mes: los Créditos Fiscales recibidos con gravado,
+  crédito fiscal, percepción y total; las Facturas y Sujetos excluidos se listan
+  como «fuera del libro». El CSV sale con el **mismo generador de 23 columnas**
+  que el libro de compras de las farmacias (`construirLibro`).
+- De paso: la prueba de cobro ya no supone cuánto debe el cliente.
+
+### v2.1104.1 — Pruebas: la distribuidora se repone sola al rehacer el branch
+
+El 2026-09-30 el branch de pruebas se rehízo (cambió a `lyfafocpywvoxefetxah`)
+y la distribuidora desapareció entera: su esquema vive en
+`supabase/borradores/distribucion/`, no en migraciones, y el branch sólo replica
+las migraciones de producción.
+
+- `scripts/entorno-pruebas/distribucion.mjs` corre los borradores en orden, las
+  dos semillas y despliega `distribucion-dte` y `distribucion-comprobante`.
+  A mano: `npm run pruebas:distribucion`.
+- `mantener_al_dia.mjs` lo llama en cada corrida (no hace nada si ya está), y el
+  workflow instala el CLI de Supabase para poder desplegar las funciones.
+- La semilla del documento rechazado y el de contingencia ya no depende de que
+  antes hayan corrido las pruebas, y el historial del tablero se siembra primero
+  (los cobros de muestra se apoyan en él).
+
+### v2.1104.0 — Torogoz: compras a proveedores con costo
+
+La mercadería de la distribuidora entraba con «Entrada de lote», sin costo: no
+había utilidad posible ni libro de compras. Ahora entra por **Compras**
+(sólo entorno de pruebas; borrador `0015_compras_y_costo.sql`).
+
+- **Proveedores** con NIT, NRC, plazo de pago y la marca de empresa relacionada
+  (las farmacias, cuando le pasen mercadería a la distribuidora).
+- **El JSON del documento del proveedor llena la compra**: número de control,
+  código de generación, fecha, condición, montos y renglones. El costo por
+  unidad sale de la venta gravada del renglón (ya sin descuento), un descuento
+  al total se reparte, y si el proveedor factura por caja se dice cuántas
+  unidades trae. Si el proveedor no existe, se registra con lo leído.
+- **Memoria de códigos**: lo que se eligió para cada código del proveedor se
+  recuerda, y la próxima compra se llena sola.
+- **No entra sin cuadrar**: los productos tienen que sumar lo gravado del papel,
+  el IVA de un Crédito Fiscal es el 13 %, el total tiene que dar gravado +
+  exento + IVA + percepción − retención, cada renglón con lote y vencimiento no
+  vencido, y el mismo documento no se registra dos veces. La pantalla lo avisa en
+  vivo con las mismas reglas que la base exige al recibir.
+- **Recibir** crea o suma el lote, deja el movimiento con su costo y calcula el
+  **costo promedio ponderado**. **Anular** sólo mientras todo siga en bodega, y
+  deshace el promedio.
+- **Inventario** muestra el valor al costo (sólo a quien administra).
+- El cobro de Cuentas por cobrar ahora guarda borrador, con su identificador:
+  un reintento después de perder la sesión no cobra dos veces.
+
+### v2.1103.0 — Torogoz: cuentas por cobrar con cartera, cobro repartido, recibo y límite de crédito que frena
+
+Pedido del usuario: «sigue con cuentas por cobrar […] usa el ERP como
+muestra y mejóralo para que el portal tenga sus validaciones, eficiencia,
+fluidez, y todo correcto». La muestra fue la cartera de las farmacias (espejo
+del sistema de la caja); aquí la cartera NACE en el portal.
+
+- **Borrador 0014** (aplicado y probado en pruebas):
+  - `dist_cxc`: una cuenta por documento con parte a crédito (código 13 en
+    los pagos del JSON que recibió Hacienda); vence = emisión + plazo. Nace
+    con el documento por trigger y se anula si se invalida, rechaza o
+    descarta. Historial previo cargado.
+  - `dist_recibos` + `dist_cxc_abonos`: un cobro es un recibo repartido en
+    cuentas. `dist_cobrar` bloquea las cuentas del cliente, valida contra el
+    saldo (no se puede cobrar de más: CHECK y validación), exige número a
+    cheque y transferencia, reparte primero lo que vence antes o a mano, y
+    un reintento con el mismo `client_uuid` devuelve el mismo recibo.
+  - `dist_anular_recibo`: sólo quien administra y con motivo; el saldo vuelve.
+  - `dist_cartera()`, `dist_estado_cuenta()`, `dist_credito_cliente()`: todo
+    en un JSON por llamada.
+- **Cuentas por cobrar** (menú de Torogoz): por cobrar, atrasado, vence en 7
+  días, cobrado este mes; antigüedad de saldos (barra + tramos que filtran);
+  pestañas Con saldo · Atrasados · Sobre el límite (en la dirección).
+- **Ficha de cobro**: límite, vencido, atraso, disponible; cada documento con
+  lo que le toca del cobro antes de cobrar; «Lo vencido» y «Todo»; efectivo
+  con cambio; repartir a mano; recibo impreso; estado de cuenta impreso;
+  historial con quién cobró y anulación con motivo.
+- **El límite frena**: `distribucion-dte` no factura a crédito si lo que ya
+  debe más lo nuevo pasa del límite (una venta sin señal no se frena: la
+  mercadería ya se entregó). La venta muestra «Debe $X · N días de atraso ·
+  disponible $Y» al elegir el cliente y no deja cobrar a crédito de más. El
+  atraso avisa, no frena (igual que en la cartera de las farmacias).
+- Semilla de cobros realistas en pruebas; reparto gemelo de la base con 4
+  pruebas unitarias; prueba e2e de cobrar, no cobrar de más, anular y el
+  freno en la venta.
+
+
+### v2.1102.0 — Torogoz: contingencia completa para vender sin señal, y ticket que se lee de corrido
+
+Pedido del usuario: «termina el aviso de contingencia para cuando no hay
+señal, y mejora el ticket: que se sienta más fluido visualmente».
+
+**Contingencia, de punta a punta**
+- **Venta sin señal**: si al facturar el teléfono no tiene datos (o la señal
+  se cae en el medio), la venta se guarda EN EL TELÉFONO con su hora y un
+  código de generación, sale un **comprobante provisional** con ese código, y
+  la pantalla queda lista para la siguiente. Un aviso flotante dice cuántas
+  esperan. Al volver la señal se mandan solas (`sinSenal.js`): crea el pedido
+  (idempotente por `client_uuid`), lo factura en contingencia y pide el aviso.
+- **Servidor** (`distribucion-dte`, desplegada en pruebas):
+  - `facturar` con `contingencia` arma el documento en modelo DIFERIDO con la
+    hora de la venta y el código del provisional (tipo 3, sin internet);
+    rechaza lo que pasó las 72 horas;
+  - Hacienda sin respuesta al facturar → el documento se re-firma en
+    contingencia (tipo 1) en vez de quedar «por enviar»; y uno sin sello de
+    más de 25 minutos también (la vía normal exige ±30 min). Antes de
+    re-firmar uno ya intentado se le pregunta a Hacienda si lo tiene;
+  - `enviar_contingencia`: un evento por tipo (≤1000 documentos), firmado y
+    reportado; con el evento RECIBIDO transmite cada documento.
+- **Facturación**: «Enviar aviso de contingencia (N)» en el semáforo y en el
+  documento; «aviso recibido: falta transmitirlo» cuando corresponde.
+- Probado en pruebas cortando la red en la prueba e2e: la venta quedó en el
+  teléfono, al volver se facturó con modelo diferido, operación en
+  contingencia, motivo 3 y la hora de la venta. En este entorno no hay
+  certificado, así que el aviso a Hacienda no se pudo probar de verdad: la
+  ruta del servicio sale de la guía y se confirma con la primera llamada.
+
+**Ticket**
+- Membrete sin repetir el nombre comercial; fecha y condición juntas.
+- El cliente en su propio bloque: nombre a lo ancho y debajo NIT y NRC (antes
+  «S.A. DE / C.V.» se partía pegado a la derecha).
+- Pruebas en una línea; columna CANT con aire.
+- Pie con el rótulo arriba y el dato abajo: número de control, código de
+  generación y sello ya no se cortan a la mitad.
+
+
+### v2.1101.0 — Torogoz: detalle de lo vendido en el documento; ticket compacto, sin QR y con el cambio
+
+Pedido del usuario: «¿dónde puedo ver lo que vendí? no en ticket ni PDF, sino
+como información» y «mejora el ticket: 1 producto ocupa demasiado espacio,
+compáctalo; quita el QR si no es necesario; debe mostrar el cambio».
+
+- **Detalle** es la primera vista del documento: cliente, fecha y condición;
+  los productos (cantidad, producto con lote y vencimiento, precio,
+  descuento, importe); los totales como el papel; y el pago, con lo recibido
+  y el **cambio**. Sale del mismo JSON del documento.
+- **Ticket compacto**: CANT · DESCRIPCIÓN · P.UNIT · TOTAL con la
+  descripción llevándose el ancho (antes las cuatro columnas medían lo mismo
+  y un producto ocupaba cinco renglones); vencimiento del lote como mes/año;
+  el aviso de pruebas en una línea normal y no en letra gigante.
+- **Sin QR** en el ticket (`QR_EN_TICKET = false`): quedan el código de
+  generación, la fecha y el sello para verificarlo; el QR sigue en el PDF.
+- **Efectivo recibido y CAMBIO** en el ticket (y la forma de pago si no es
+  efectivo), también en el que sale solo al facturar.
+- **Impresora**: el maquetador del rollo acepta `cantidadPrimero` (la
+  cantidad en 1-4, el nombre hasta la 36, importes en 44 y 52). Antes la
+  geometría medida esperaba el nombre primero y en papel el nombre caía en
+  el hueco de la cantidad. El ticket de las farmacias no cambia.
+
+
+### v2.1100.0 — Torogoz: Facturación con semáforo de Hacienda, lista de chequeo por documento y reenvío
+
+Pedido del usuario: «que en la facturación me avise si todo está bien con
+Hacienda (código de generación y recibido) o falta algo, y si falta algo que
+salga para reenviar; y una parte de facturación para ver, como en el portal,
+si hay algo pendiente».
+
+- **Documentos pasa a llamarse Facturación**, con el control con Hacienda:
+  - **semáforo** arriba: «Todo al día con Hacienda» o «N documentos por
+    resolver» (sin sello, rechazados por corregir, invalidaciones, sin
+    conexión);
+  - **cubetas** que filtran (Sin sello · Rechazados · Invalidaciones ·
+    Sellados) y pestañas en la dirección (`?cubeta=`): Por resolver · Todos ·
+    Sellados · Invalidados;
+  - **Reenviar pendientes (N)**: manda de a uno todo lo que quedó sin sello;
+    si falta el certificado de la empresa se detiene al primero y lo dice;
+  - columna **Hacienda** por documento: ✓/✗ código y sello, y envíos.
+- **Lista de chequeo en cada documento** (`EstadoHacienda`): número de
+  control, código de generación, firma y sello de recepción, con lo que dijo
+  Hacienda y el botón de lo que toca (Reenviar · Corregir y facturar · Enviar
+  invalidación). «Recibido» es sello VÁLIDO (40 caracteres).
+- **Al facturar**, aviso inmediato: recibido por Hacienda, rechazado o falta
+  el sello.
+- **Número en el menú** de Facturación (rojo si hay rechazos):
+  `dist_facturacion_pendiente()`, borrador 0013. Un rechazo ya refacturado o
+  anulado es constancia y no cuenta.
+- El aviso de contingencia a Hacienda todavía no está conectado: un documento
+  sin respuesta queda «sin sello» y se reenvía; no se ofrece un botón de
+  contingencia que no hace lo que dice.
+- Semilla: un rechazo (NRC del receptor) y uno sin conexión, para ver los
+  casos. La prueba del teléfono recorre 9 secciones (tope de 90 s).
+
+
+### v2.1099.1 — Torogoz: un rechazo de Hacienda no devuelve la mercadería; sólo anular
+
+Corrección del usuario a v2.1099.0: «si se rechaza, aún se puede corregir […]
+no debería entrar inventario porque el producto ya no lo tengo. A no ser que
+lo anule, ahí sí».
+
+- `distribucion-dte` ya NO devuelve las unidades al lote cuando Hacienda
+  rechaza ni cuando se descarta un documento: la mercadería se entregó. Siguen
+  atadas al pedido, que vuelve a «por facturar» para corregir los datos y
+  facturar de nuevo; al refacturar se reasignan en la misma transacción.
+- Sólo **anular** el pedido devuelve la existencia (`dist_lotes_al_anular`,
+  sin cambios). Borrador 0012 corregido; función desplegada en pruebas.
+
+
+### v2.1099.0 — Torogoz: reservar lo que está en venta o preventa, 30 minutos y aviso al vencer
+
+Pedido del usuario: «que se reservaran los productos si están en preventa, o
+en una preventa en vivo alguien ya lo agregó (con un aviso si no hay más que
+diga: tal vendedor lo está vendiendo) […] tiempo máximo 30 min; si no, manda
+notificación».
+
+- **Reserva al vuelo** (borrador 0012, `dist_reservas`): lo que entra al
+  carrito queda apartado por lote, en vivo y al guardarlo como preventa. La
+  pantalla manda el carrito a `dist_reservar` medio segundo después de cada
+  cambio; la base serializa por lote (dos vendedores no se llevan la misma
+  caja) y dice quién tiene lo que falta.
+- **30 minutos como máximo, desde el primer producto**: no se reinicia al
+  seguir agregando ni al guardar. Chip «Reservado · N min» en la venta. Al
+  vencer, el cron `dist-vencer-reservas` (SQL puro, cada minuto) suelta y le
+  avisa al vendedor (campana + push) con el enlace para retomarla.
+- **«No hay más: Carmen Alvarado lo está vendiendo»**: en el buscador
+  («reservado por…»), al agregar (con la opción de anotarlo como venta
+  perdida) y en el renglón que queda corto.
+- **Facturar respeta las reservas de las demás ventas** y suelta la propia;
+  anular la preventa y vaciar la venta también sueltan.
+- **Rechazado por Hacienda o descartado devuelven la mercadería al
+  momento** (antes quedaba apartada hasta refacturar o anular):
+  `distribucion-dte` llama a `dist_liberar_lotes`. Desplegada en pruebas.
+- Semilla: GLUCERNA TRIPLE CARE 850 g con 3 unidades, para probar dos ventas
+  peleando lo mismo. Prueba e2e con dos navegadores a la vez.
+
+Pendiente para producción: declarar `dist-vencer-reservas` en `CRONS` de
+`scripts/eficiencia-gate.mjs` al migrar (hoy sólo existe en pruebas y el gate
+compara contra producción).
+
+
+### v2.1098.0 — Torogoz: tablero de Inicio con ventas, clientes, vendedores y alertas
+
+Pedido del usuario: «un dashboard en la distribuidora con datos de ventas,
+clientes, etc. […] gráficas, elementos interactivos, y cosas que consideres
+necesarias, con datos de prueba».
+
+- **Inicio** es la portada de `/torogoz` (primera entrada del menú).
+- Indicadores con su variación contra el período anterior: ventas,
+  documentos, ticket promedio, clientes que compraron, unidades y preventas
+  por facturar (lleva a Pedidos pendientes).
+- Ventas (o documentos) por día con el período anterior punteado; ventas por
+  ruta (dona + lista); vendedores, productos y clientes en ranking (5, con
+  «Ver los 10»); cuándo se vende por día de la semana o por hora; ventas por
+  tipo de cliente y formas de pago.
+- «Pide atención»: clientes sin comprar hace +30 días con **Vender** (abre
+  la venta con el cliente elegido: `?cliente=`), lotes que vencen en 90 días,
+  ventas perdidas pendientes y valor del inventario.
+- Interactivo: período (Hoy · 7 días · 30 días · Este mes · Mes anterior ·
+  90 días), ruta y vendedor, todos en la dirección; tocar una ruta o un
+  vendedor filtra todo el tablero.
+- **Borrador 0011**: `dist_tablero(desde, hasta, ruta, vendedor)` devuelve
+  todo en UN JSON (patrón C, INVOKER, plpgsql con `force_custom_plan`).
+- Datos de prueba (`distribucion_tablero_pruebas.sql`, sólo corre en el
+  entorno de pruebas): 24 clientes más en tres rutas y ~750 ventas de 4
+  meses, pasando por los triggers de verdad.
+- Las gráficas cargan aparte (`React.lazy`): recharts no viaja en la venta.
+
+
+### v2.1097.1 — Venta de la distribuidora: F9 venta perdida, y la SRS responde en dev
+
+Pedido del usuario: «ventas perdidas no tiene su tecla de acceso rápido F …
+además, no busca en la SRS».
+
+- **F9 = venta perdida** en la venta (en la caja F9 es «vale», que la
+  distribuidora no tiene; F5, F11 y F12 son del navegador). Está en la guía
+  de teclas y en el botón, que ahora aparece también sin cliente elegido.
+- **La SRS no respondía en dev.farmasalud.lat, y no era la SRS**: el entorno
+  de pruebas no tenía el secreto `PORTAL_ORIGIN`, así que TODAS sus edge
+  functions contestaban CORS sólo a localhost (las pruebas locales pasaban).
+  Se configuró `PORTAL_ORIGIN=https://dev.farmasalud.lat` en el entorno de
+  pruebas, y `mantener_al_dia.mjs` lo reescribe en cada corrida: rehacer el
+  branch lo borra sin avisar.
+
+
+### v2.1097.0 — Venta de la distribuidora: lote por vencimiento que se reparte solo, y ventas perdidas
+
+Pedido del usuario (2026-09-29): «que salga según el vence […] si del lote 1
+hay 1 unidad y pongo que voy a vender 3, que se agregue el producto abajo con
+el siguiente lote disponible; debe salir también el total en stock y por
+lote» y «agregar ventas perdidas […] que busque en la SRS si es medicamento, o
+si es insumo que mande el nombre».
+
+- **Lote por renglón, primero vence primero sale.** Al agregar se elige el
+  lote que vence antes; si no alcanza, lo que falta baja SOLO a un renglón
+  nuevo con el siguiente lote (o se suma al que ya lo tenga). La línea del
+  producto dice el total en existencia, el lote, cuánto le queda y cuándo
+  vence; con más de un lote se puede elegir otro. Una caja no se parte entre
+  lotes. Lógica pura en `distribucion/lotes.js` con 10 pruebas unitarias.
+- **Borrador 0010**: `dist_pedido_items.lote_id` (la clave del renglón pasa a
+  producto + presentación + lote), validación de que el lote sea del producto,
+  y `dist_asignar_lotes` —reescrita desde su definición viva— toma primero el
+  lote del renglón: es una PREFERENCIA, si ya no alcanza completa con el
+  siguiente y no traba la factura.
+- **Ventas perdidas.** Tabla propia de la distribuidora
+  (`dist_ventas_perdidas`, con su cliente), sección nueva en el menú con
+  pendientes / atendidas / descartadas, y una ventana para anotarlas:
+  - un producto SIN existencia ya no entra a la venta: se abre la ventana;
+  - si el renglón pide más de lo que hay, «Anotar venta perdida» anota lo que
+    falta y baja la cantidad a lo que sí hay;
+  - desde el buscador sin resultados o el botón del encabezado: medicamento
+    buscado en el registro de la SRS, o insumo con el nombre escrito.
+- Semilla del entorno de pruebas: un lote corto de GLUCERNA y NEPRO sin
+  existencia, para probar las dos cosas.
+
+Aplicado y probado en el entorno de pruebas; falta producción (junto con el
+resto de borradores de la distribuidora).
+
+
+### v2.1096.0 — Venta de la distribuidora: forma de pago arriba, F6 borrar, cliente nuevo y guía de teclas
+
+Pedido del usuario: «al ERP, ¿qué más nos falta? … el tipo de pago, borrar la
+referencia, entre otras cosas». Comparada contra la pantalla de venta de la
+caja (`venta.php` + `js_funciones_venta.js`):
+
+- **Forma de pago en la franja de arriba**, junto al cliente, documento y
+  lista (en la caja el tipo de pago se elige antes de cobrar). «A crédito»
+  sólo aparece si el cliente lo tiene aprobado. El pago dividido se sigue
+  armando en el cobro (F2) y arriba se nombra. El resumen dice la condición
+  («Contado · Efectivo», «A crédito · 30 días»).
+- **F6 borrar**, como en la caja: con una preventa abierta la ANULA (motivo
+  opcional, queda el rastro en Pedidos y sale de Pendientes); en una venta
+  nueva la vacía. Siempre con confirmación.
+- **Borrador 0009**: anular una preventa cancela su solicitud de descuento
+  (antes quedaba PENDING para siempre en la bandeja de quien aprueba).
+  Aplicado y probado en el entorno de pruebas; falta producción.
+- **Cliente nuevo desde la venta** (el «Agregar» de la caja): se crea y queda
+  elegido.
+- Pendientes se relee cada minuto y al abrir la lista (la caja, cada 30 s).
+- Encabezado en dos filas (título + avisos del cliente + acciones; cliente ·
+  documento · lista · pago). «La lista cambia el precio de todos los
+  productos» pasa al menú de la lista.
+- Guía de teclas completa en la columna del resumen.
+- Al guardar o borrar una preventa abierta, la venta nueva ya no hereda sus
+  productos (la vista se reutiliza entre las dos rutas).
+
+
+### v2.1095.0 — Venta de la distribuidora: más espacio, búsqueda encima y selectores de una línea
+
+Pedido del usuario: «el buscador aún no funciona bien, se corta la
+información, ¿y si quitamos el header? pendientes al encabezado, un botón
+para ver las existencias, y el buscador lo siento bien alto».
+
+- Sin el encabezado de vista: el título, **Existencias (F7)** y
+  **Pendientes** viven en la franja del cliente. La campana pasa al
+  sidebar, junto a la marca.
+- La lista de resultados del buscador queda ENCIMA de los renglones
+  (`z-dropdown` + superficie opaca). Buscador de altura normal.
+- Presentación y precio en una línea: `LiquidSelect` acepta
+  `sublabelSoloEnMenu` — el detalle (unidades, lista) sigue en el menú y
+  en la línea del producto, no en el disparador.
+
+
+### v2.1094.0 — Torogoz: resumen fiscal en una columna fija a la derecha; cantidad y descuento sólo números
+
+Pedidos del usuario: la cantidad aceptaba letras; la barra de abajo tapaba
+productos («¿pasamos para arriba la barra de pagar? ¿o una columna a la
+derecha bien moderna?»), y ver todo el dato fiscal.
+
+- **Columna fija a la derecha** (computadora): «Resumen» con el desglose del
+  documento y los botones Cobrar (F2) y Guardar preventa (F8). Siempre a la
+  vista y sin tapar ningún producto. En el teléfono sigue la barra de abajo.
+- **Desglose según el documento** (`DesgloseFiscal`, también en la ventana de
+  cobro): Crédito Fiscal → sumas sin IVA, descuentos (ya aplicados), sub-total,
+  IVA 13%, monto total de la operación, IVA retenido/percibido 1%, total a
+  pagar. Factura → sumas con IVA, descuentos, sub-total, retención, total a
+  pagar e IVA incluido. El motor ahora expone `ventas`, `subTotal` y
+  `montoOperacion`.
+- **Cantidad y descuento sólo aceptan números** (y un separador decimal).
+- Los renglones y la franja del cliente se acomodan al ancho de SU tarjeta
+  (container queries): una línea con ≥56rem, dos con ≥32rem, tres en el
+  teléfono.
+
+
+### v2.1093.0 — Torogoz: F2 cobra en una ventana (Enter procesa), el cobro sale de la página y las flechas saltan lo deshabilitado
+
+Pedidos del usuario: «al presionar F2 que me lleve a poner el monto (queda
+todo bloqueado menos eso) y al presionar Enter se procesa»; las flechas se
+trababan en una presentación deshabilitada; y con varios productos el pie de
+«Facturar» tapaba información.
+
+- **F2 = Cobrar**: una ventana con las formas de pago, el desglose, el cambio y
+  la impresión. El foco cae en el monto («Entrega» con efectivo; el primer
+  monto con pago dividido; el motivo si hay descuento por aprobar). **Enter (o
+  F2) procesa**; Esc vuelve a la venta. En observaciones Enter es salto de
+  línea y con un menú abierto Enter elige.
+- **El cobro sale de la página**: queda cliente, productos y la barra de abajo
+  con el total, su desglose en una línea, «Guardar preventa» (F8) y «Cobrar»
+  (F2). Ya no hay nada debajo del pie.
+- **Flechas**: un campo deshabilitado (la presentación única) no corta el
+  camino; ↑ ↓ caen en la cantidad si esa columna no sirve en el otro producto.
+- La tarjeta de productos sólo sube por encima del resto con la lista del
+  buscador abierta: siempre arriba, en el teléfono tapaba la barra fija.
+
+
+### v2.1092.0 — Torogoz: venta con teclado como en la caja (F2, F8, F3, F7), foco a la cantidad y selectores ordenados
+
+Reporte del usuario (con capturas): los selectores del renglón se veían
+chicos y desordenados, la lista del buscador salía transparente encima de
+la venta, y pidió el flujo de teclado de la caja más una tecla para buscar en
+todas las sucursales.
+
+- **La lista del buscador** usa la superficie opaca de los menús del portal y
+  flota encima de todo (antes se veía lo de atrás a través). ↑ ↓ la recorren.
+- **Al agregar, el foco va directo a la cantidad** de ese producto (con todo
+  seleccionado). El orden del renglón es el del teclado: cantidad, presentación,
+  precio·lista, descuento.
+- **Tab o ← → cambian de campo, ↑ ↓ de producto** (en un campo de texto, ← →
+  saltan sólo con el cursor en el borde; con un menú abierto, las flechas son
+  del menú). Los − + y el % / $ no se roban el Tab.
+- **Teclas de la caja** (`js_funciones_venta.js`): F2 finalizar, F8 guardar
+  preventa, F3 buscar, F4 salir, Supr quita el producto. **F7 nuevo**:
+  existencias en todas las sucursales, buscando el producto donde está el
+  cursor (`ExistenciasSucursales`, sobre `buscar_inventario_global_v2`).
+- **Selectores ordenados**: todos los controles del renglón a la misma altura,
+  opciones en una línea («PAQUETE · 12 u.», «$37.50 · VIP») y con su ícono
+  (paquete, etiqueta) en vez de la lupa. El % / $ es un botón que alterna.
+
+
+### v2.1091.0 — Torogoz: la venta más compacta y rápida; volver a vender
+
+Pedido del usuario: «mejora las vistas, más moderno, compacto, práctico:
+la preventa / venta se hará muy seguido, que sea de fácil uso».
+
+- **Una franja para el cliente**: cliente, documento y lista en una línea,
+  con sus avisos debajo. Sin encabezados de paso que ocupaban espacio.
+- **Pendientes** pasa a un botón del encabezado (con su número) que abre la
+  lista; ya no empuja la venta hacia abajo.
+- **Buscador grande** con los resultados flotando encima de la lista (no la
+  mueven con cada letra); Esc limpia.
+- **Un renglón por producto** en pantalla ancha. Lista y precio en un solo
+  control (precio grande, lista debajo, cada opción con su precio).
+- **Barra de acción fija abajo** en computadora y teléfono: total, «Guardar
+  preventa» y «Facturar». Ctrl+Enter factura; `/` vuelve al buscador.
+- **Guardar preventa deja la pantalla lista para la siguiente**, en vez de
+  mandar a Pedidos.
+- Observaciones detrás de un botón; el cobro queda más corto.
+- **Volver a vender** (pedido y documento): abre una venta nueva con el mismo
+  cliente y productos, sin descuentos ni pagos. «Repetir su último pedido» al
+  elegir cliente se quitó a pedido del usuario.
+- Teléfono: el renglón en tres líneas cortas y la forma de pago en su propia
+  línea (al lado del monto quedaba en «E»).
+
+
+### v2.1090.2 — El letrero del entorno de pruebas ya no tapa el menú
+
+Reporte del usuario: la píldora «Entorno de pruebas» (abajo a la izquierda)
+tapaba el pie del menú lateral.
+
+- Escritorio: pestaña colgada del borde de arriba, al centro, pegada al marco.
+- Teléfono: vertical, en el borde izquierdo a media altura, dentro del margen.
+- El texto sigue completo en los dos: las pruebas de navegador se niegan a
+  correr si no lo ven. `distribucionEntrar.js` busca el letrero VISIBLE.
+
+
+### v2.1090.1 — Portal: acceso a Torogoz en el menú, sólo para quien la administra
+
+Pedido del usuario: «agrega el icono de Torogoz al portal, para acceder desde
+ahí, solo para admin».
+
+- Al pie del menú lateral, arriba de Ajustes: el ícono de Torogoz con «Ir a la
+  distribuidora» (sólo el ícono con el menú angosto). Lleva a `/torogoz`.
+- Lo ve quien tiene el permiso de administrar la distribuidora
+  (`distribucion_config`): hoy, los cuatro cargos del área administrativa y la
+  cuenta de pruebas. Por permiso y no por cargo, para cambiarlo desde Permisos.
+
+### v2.1090.0 — Torogoz: pedidos en pendientes y finalizados; la venta lista las pendientes para finalizarlas
+
+Pedido del usuario: «los pedidos deben estar separados por finalizados y
+pendientes; en venta debe salir un listado de los pendientes, para
+seleccionar y finalizar».
+
+- **Pedidos** en tres pestañas —Pendientes (preventas), Finalizados
+  (facturados) y Anulados—, en la dirección (`?vista=`). Las pendientes
+  muestran su total, calculado con el motor del documento (`totalDePedido`).
+- **Venta nueva**: arriba, «Pendientes de finalizar» con cliente, fecha,
+  vendedor, documento, total y si espera un descuento; buscador si son
+  más de cuatro. Al elegir una se abre como «Finalizar venta N» para
+  revisarla y facturarla.
+
+### v2.1089.0 — Une la distribuidora (Torogoz) con el núcleo portable
+
+Pedido del usuario: ver la distribuidora en dev.farmasalud.lat, que publica
+`sesion/nucleo`. Se unió `sesion/sas-ruta` (v2.1080–2.1088: Distribución y
+Torogoz) sobre el núcleo portable.
+
+- Las importaciones de Distribución que cruzan el borde del núcleo pasan a
+  `@nucleo/…` (`gate:alias --escribir`, 95 en 21 archivos).
+- El número de pendientes del menú de Torogoz se pide desde `src/data`
+  (`contarDescuentosPendientes`), como pide `gate:consultas`.
+- `src/data/distribucion.js` y `distribucionInventario.js` llevan
+  `@ts-nocheck` con motivo: las tablas `dist_*` todavía no existen en
+  producción y `gate:tipos` revisa contra sus tipos. Se quita al migrar.
+- Conflictos resueltos conservando las dos partes (`index.css`,
+  `routeImporters.js`, `RequestsView.jsx`, `CHANGELOG.md`).
+
+### v2.1088.0 — Torogoz: la distribuidora con su propia entrada (/torogoz), login, menú y Solicitudes
+
+Decisión del usuario: la distribuidora «alimenta el portal y se consulta,
+pero parecen independientes: debe haber una URL aparte». Ruta dentro del
+portal, las mismas cuentas por permiso, y fuera del menú de las farmacias.
+
+- **`/torogoz`**: su login (`/torogoz/login`, mismo usuario y contraseña), su
+  marco con su marca y su menú — Nueva venta, Pedidos, Documentos, Clientes,
+  Catálogo, Inventario, Solicitudes y Empresa—, campana, salida y un enlace al
+  portal de las farmacias. Cada sección es una dirección (ya no pestañas).
+- **Solicitudes de descuento** se deciden en `/torogoz/solicitudes` (aprobar,
+  rechazar con motivo, ver la venta); el portal de las farmacias ya no las
+  lista y los avisos llevan allá.
+- Distribución sale del menú Comercial. Las direcciones viejas
+  (`/distribucion?tab=…`, `/distribucion/venta/…`) redirigen.
+- `distribucion/rutas.js` junta todas las direcciones de la distribuidora.
+- `gate:rutas` entiende las rutas anidadas bajo un prefijo propio
+  (`/torogoz/*`): antes leía `/venta` y daba `/torogoz` por inexistente.
+  Verificado fabricándole la regresión (quitar un título la caza).
+
+### v2.1087.0 — Distribución: descuentos con aprobación, preventa, venta más clara y Enter en los montos
+
+Pedidos del usuario: que se diga que la lista cambia el precio de todos los
+productos, que la vista se vea mejor, qué es «sin factura», que Enter en un
+monto haga algo, y que los descuentos sean sólo de quien tiene permiso — el
+resto se pide, se aprueba o se rechaza, y la venta espera como preventa.
+
+- **Descuentos con aprobación** (borrador `distribucion/0008`): permisos
+  `distribucion_descuentos` (hasta el tope) y `requests_distribucion`
+  (decidir). Lo que no se puede dar queda «por aprobar», en cero, y la venta es
+  preventa; `dist_pedir_descuento` arma una solicitud `DIST_DESCUENTO` en
+  Solicitudes y avisa a quien decide; `dist_resolver_descuento` aplica o
+  rechaza (con motivo), firma, avisa al vendedor y no deja aprobarse a sí
+  mismo. Facturar con un descuento pendiente lo frena `distribucion-dte`.
+- **Lista de precios**: al cambiarla se actualizan todos los productos (también
+  los que tenían otra lista a mano), con aviso y texto que lo dice.
+- **«Guardar preventa»** en vez de «Sin facturar»; en Pedidos, «Preventa» y
+  «Descuento por aprobar».
+- **Enter** confirma el monto (dos decimales) y pasa al campo siguiente; en
+  cantidad y descuento vuelve al buscador.
+- **Vista**: pasos numerados, existencia por producto (y en el buscador),
+  panel del total con la marca, cambio destacado.
+- Entorno de pruebas rehecho el 28-sep: las semillas 0002/0005 ya no dependen
+  de «≤2 fichas», `scripts/entorno-pruebas/distribucion_pruebas.sql` repone
+  existencia, permisos y un vendedor de prueba, y `dist_dte_firmado_con_firma`
+  acepta `descartado` sin firma (el entorno viejo lo tenía cambiado a mano).
+- Inventario: la entrada de lote guarda borrador.
+
+### v2.1086.1 — Distribución: precios con IVA en centavos y la pantalla calcula con el motor del documento
+
+Pregunta del usuario: «eso del redondeo, ¿cómo lo espera la ley?». La pantalla
+cobraba $32.40 sobre un documento de $32.39: el documento estaba bien (Manual
+Funcional: 8 decimales en el cuerpo, 2 en el resumen, ±$0.01 de holgura); la
+pantalla hacía su propia cuenta.
+
+- **La pantalla calcula con el motor del documento** (`motor.js` importa
+  `_shared/dte/calculos.ts`): importe por renglón, IVA, retención, percepción
+  y total son los del papel por construcción. Una prueba compara 500 ventas al
+  azar contra `totalAPagar` de la edge function: 0 diferencias. La prueba de
+  navegador compara el total de la pantalla con el del documento emitido.
+- **Precios con IVA en centavos** (borrador 0007): `dist_catalogo`,
+  `dist_precios` y `dist_pedido_items` pasan de `precio_sin_iva` (6 decimales)
+  a `precio_con_iva` (2). La Factura lo usa tal cual; el Crédito Fiscal lo lleva
+  a sin IVA a 8 decimales. El descuento se guarda en la misma base.
+- Catálogo: el precio se escribe con IVA y no acepta más de dos decimales.
+- Detalle del pedido: importes y total también del motor.
+
+### v2.1086.0 — Distribución: inventario por lote y el lote en el documento
+
+Pedido del usuario: el documento lleva lote y vencimiento, y «si se vende de
+dos lotes se separa». La distribuidora tiene inventario PROPIO (no el de
+Bodega: es otra empresa), y todavía no existía.
+
+- **Pestaña «Inventario»**: existencia por producto, lote y vencimiento, con
+  lotes por vencer (90 días) y vencidos. «Entrada de lote» registra lo que llega
+  (en unidades sueltas); un **ajuste** corrige la existencia o el vencimiento y
+  exige motivo. Cada lote tiene su historial de movimientos. No hay «salida» a
+  mano: una salida sin documento sería una venta sin documento.
+- **Al facturar se asigna el lote solo**: primero vence, primero sale; una
+  presentación no se parte entre lotes. Si no alcanza, NO factura y dice qué
+  falta («Sin existencia suficiente: … (faltan N unidades)»), sin dejar nada
+  reservado a medias. Vuelve al inventario si el documento se invalida o el
+  pedido se anula; un reintento después de un rechazo reasigna sin contar doble.
+- **Dos lotes = dos renglones** en el DTE, con «LOTE: X VENCE: dd/mm/aaaa» al
+  final de la descripción: queda DENTRO del documento firmado, como lo hacen las
+  droguerías que nos facturan. Partir no cambia el total (cantidad y descuento se
+  reparten exactos; probado con precio con y sin IVA).
+- El **PDF** separa esa cola en columnas Lote y Vence (sólo si el documento las
+  trae); el **ticket** la pega corta a la descripción («L:… V:…»).
+- Esquema en `supabase/borradores/distribucion/0006_inventario_lotes.sql`,
+  aplicado en pruebas con `execute_sql`. La existencia sólo cambia por funciones
+  (`dist_mover_lote` y quienes la llaman). Medido al probar: en este proyecto una
+  tabla nueva nace SIN `SELECT` para `authenticated` y CON `TRUNCATE` (que salta
+  el RLS) — se revoca todo y se da sólo lectura.
+- Verificado en pruebas de punta a punta: pedido 29 → documento 41 con dos
+  renglones (lote B2611 y A2703), total $76.44 igual al pago ya registrado,
+  existencias 1→0 y 10→8.
+- `distribucion-dte/index.ts` va con cuatro líneas de la sesión de Distribución
+  (precio con IVA en centavos, borrador 0007), a pedido suyo: la base de pruebas
+  ya cambió y el archivo tiene que coincidir.
+
+## v2.1120.0 — App: completar recetas pendientes
+
+Tercera pieza para cerrar el Inicio: en Recetas pendientes, tocar un renglón
+lo completa en el teléfono (`app/receta/[id].js`), con las reglas del portal
+(`CompletarRenglon.jsx`).
+
+- **Paciente**: se propone el cliente de la factura sólo si es una persona; un
+  genérico o una empresa avisan y piden el nombre real. Edad y DUI opcionales.
+- **Médico**: por N.º de junta o por nombre, primero en el portal y después en
+  el registro del Consejo; el del Consejo se guarda verificado. No se escribe a
+  mano.
+- **Receta**: cuánto recetó (no puede ser menos de lo entregado), la fecha con
+  el selector del sistema y la foto (cámara o galería) al bucket privado
+  `recetas`. Sin foto se puede guardar, y el renglón la sigue pidiendo.
+- Guarda borrador mientras se llena. La firma la pone el servidor.
+
+## v2.1119.0 — App: bolsas de la sala — guardar, reimprimir y entregar
+
+Segunda pieza para cerrar el Inicio: lo que la sala hace con sus bolsas en el
+día, en el teléfono (`app/bolsas-sala.js`, adonde lleva el widget).
+
+- **Ver** el efectivo que espera el retiro (el saldo, no lo guardado; sin
+  permiso de montos se cuentan bolsas) y la alarma de los 4 días.
+- **Guardar** un corte confirmado que quedó sin bolsa, con su etiqueta.
+- **Reimprimir** la etiqueta de una bolsa, con sus salidas y cheques, por la
+  caja de la sala.
+- **Entregar al retiro**: se eligen los días y quien recoge escanea su carné
+  (o usa su usuario y contraseña). La base no deja que reciba quien firma.
+- «Sacar dinero» sigue llevando a Efectivo, que todavía es del portal.
+
+## v2.1118.0 — App: cortes de caja nativos — confirmar, descartar, entregar la caja e imprimir
+
+Primera pieza de lo que faltaba para cerrar el Inicio de la app: los cortes
+se deciden en el teléfono, con las mismas reglas del portal
+(`useResolverCorte`).
+
+- **Cortes de caja** (`/cortes`): los del día con «Por confirmar» arriba; la
+  cifra es el tramo del corte con su color. Día y sala en el menú de filtros.
+  El aviso «Corte por confirmar» abre ese corte directo.
+- **El corte** (`/corte/[id]`): cuadra al centavo → se confirma de un toque;
+  con diferencia, el sistema pregunta mostrando cuánto falta o sobra.
+  Descartar pide motivo (uno sin conteo lleva el suyo). Se puede reabrir una
+  firma con su motivo.
+- **Entrega de la caja**: si la sala sigue abierta, quien recibe escanea su
+  carné con la cámara (o usa su usuario y contraseña), o se dice por qué no
+  hay quien reciba. Es la pieza `Identidad`, que también usarán bolsas y
+  retiros.
+- **El papel**: el comprobante del corte y la etiqueta de la bolsa salen por la
+  cola de la caja de la sala, con los mismos bytes del portal. Si no salen, se
+  dice — la firma ya quedó. Si la sala ya cerró su turno, se ofrece cerrar el
+  día (Z).
+- **Base**: la app ya puede usar `utils/ticketPrint` (adaptador
+  `plataforma/impresion` y sustituto de `@zxing/library`, que sólo dibuja en
+  la web). Android usa el selector de fecha de Material 3.
 ## v2.1117.0 — Promociones: salas en 0 se conservan, reactivar en un paso, «Baja el precio» se suelta al borrar
 
 Los tres arreglos que tocaban producción, con el sí del usuario. Las dos

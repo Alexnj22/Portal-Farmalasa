@@ -10,6 +10,8 @@ export const PANTALLAS_DE_LA_APP = {
   '/bitacoras': true,
   '/traslados': true,
   '/ventas-hoy': true,   // no existe en el portal: es la pantalla nativa de «Ventas de hoy»
+  '/cortes': true,        // confirmar y descartar cortes (y entregar la caja) en el teléfono
+  '/bolsas-sala': true,   // no existe en el portal: las bolsas de la sala (el widget); `/bolsas` sigue siendo el módulo completo
   '/monitor-ventas': true, // el «Monitor de ventas» del portal es un modal; en la app, su pantalla
   '/solicitudes': true,
   '/facturas-sala': true,

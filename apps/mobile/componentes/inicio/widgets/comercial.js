@@ -157,7 +157,7 @@ export function Cortes({ ctx }) {
   const r = resumenDeCortes(conTramoPorSalaYDia(deLaSala));
   return (
     <Widget titulo="Cortes de caja del mes" icono="Wallet" color={MARCA.verde} cuenta={r.pendientes}
-      onAbrir={ctx.puede('cortes_caja') ? () => ctx.abrir('/caja') : null}>
+      onAbrir={ctx.puede('cortes_caja') ? () => ctx.abrir('/cortes') : null}>
       {cargando && !dato ? <Esqueleto lineas={2} /> : r.vivos ? (
         <View style={{ gap: 8 }}>
           <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -176,8 +176,8 @@ export function Cortes({ ctx }) {
 // El widget del portal (`WidgetBolsasSala.jsx`) con los mismos datos y reglas:
 // cuánto efectivo espera el retiro en la sala (el SALDO, no lo guardado), la
 // alarma de los 4 días y los cortes confirmados que quedaron sin bolsa. Sin el
-// permiso `bolsas_ver_montos` cuenta bolsas, no dinero. Entregar, sacar e
-// imprimir viven en Bolsas de efectivo: el widget lleva allá.
+// permiso `bolsas_ver_montos` cuenta bolsas, no dinero. Guardar, reimprimir
+// y entregar se hacen en `app/bolsas-sala.js`, adonde lleva el widget.
 const DIAS_DE_ALARMA = 4;
 const rotularDia = (fecha) => {
   const hoy = hoySV();
@@ -210,7 +210,7 @@ export function Bolsas({ ctx }) {
   const nombre = (id) => (ctx.sucursales || []).find((b) => Number(b.id) === Number(id))?.name ?? '';
   const varias = new Set([...enSala, ...faltan].map((x) => x.branch_id)).size > 1;
   return (
-    <Widget titulo="Bolsas de efectivo" icono="Package" color={MARCA.verde} onAbrir={() => ctx.abrir('/bolsas')}>
+    <Widget titulo="Bolsas de efectivo" icono="Package" color={MARCA.verde} onAbrir={() => ctx.abrir('/bolsas-sala')}>
       {cargando && !dato ? <Esqueleto lineas={2} /> : !dato ? <Vacio texto="No se pudieron cargar las bolsas." /> : (
         <View style={{ gap: 8 }}>
           <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -226,7 +226,7 @@ export function Bolsas({ ctx }) {
             <Renglon key={c.corte_id} primero={!vencidas && !i}
               titulo={`${varias ? `${nombre(c.branch_id)} · ` : ''}Corte sin bolsa · ${rotularDia(c.fecha)} ${hora12(c.hora) || ''}`}
               detalle={c.caja || 'Sin nombre'} derecha={verMontos ? dinero0(c.sugerida) : null}
-              onPress={() => ctx.abrir('/bolsas')} />
+              onPress={() => ctx.abrir('/bolsas-sala')} />
           ))}
         </View>
       )}

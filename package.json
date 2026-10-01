@@ -8,6 +8,7 @@
     "dev:staging": "vite --mode staging",
     "pruebas:al-dia": "node scripts/entorno-pruebas/mantener_al_dia.mjs",
     "pruebas:env": "node scripts/entorno-pruebas/mantener_al_dia.mjs --env",
+    "pruebas:distribucion": "node scripts/entorno-pruebas/distribucion.mjs",
     "prebuild": "node scripts/publicar-agente.mjs && npm run legal:web && npm run legal:js && node scripts/limpiar-dist.mjs --auto",
     "agente:publicar": "node scripts/publicar-agente.mjs",
     "build": "vite build --outDir ${OUT_DIR:-dist} && node scripts/conservar-assets.mjs ${OUT_DIR:-dist}",

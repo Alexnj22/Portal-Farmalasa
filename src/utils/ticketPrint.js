@@ -253,7 +253,7 @@ export function emparejarDatos(datos = [], ancho = COLUMNAS_TICKET.chica) {
  *   titulo       — qué es este papel ('PRUEBA DE IMPRESIÓN', 'PEDIDO', …)
  *   datos        — [[rótulo, valor], …]   los pares de arriba
  *   bloques      — [{ titulo, filas[]|texto|monoespaciado }, …]  el cuerpo
- *   items        — { columnas: [{label, ancho, alinear}], filas: [[…]] }
+ *   items        — { columnas: [{label, ancho, alinear}], filas: [[…]], cantidadPrimero? }
  *   codigos      — [{ valor, simbologia, texto?, svg? }, …]  códigos de barras
  *   totales      — [[rótulo, valor, destacado?], …]
  *   pie          — [líneas]
@@ -826,8 +826,24 @@ function enRenglones(texto, ancho) {
  * cantidad cae a rótulo-izquierda / valor-derecha, que es lo único que se puede
  * alinear sin inventar posiciones.
  */
-function filaDeItem(celdas) {
+function filaDeItem(celdas, cantidadPrimero = false) {
     if (celdas.length !== 4) return [dosColumnas(celdas[0], celdas[celdas.length - 1])];
+    if (cantidadPrimero) {
+        // La distribuidora pone la CANTIDAD delante del nombre (pedido del
+        // usuario, 2026-09-30: «es más ordenado visualmente»). Mismas columnas
+        // de cierre del origen: la cantidad ocupa 1-4, el nombre sigue hasta la
+        // 36 (el hueco que en el orden de la caja era de la cantidad) y los
+        // importes terminan en 44 y 52. El nombre que no entra sigue abajo,
+        // alineado bajo sí mismo.
+        const [cant, nombre, pu, total] = celdas;
+        const ANCHO_CANT = 4;
+        const ancho = FIN_CANT - ANCHO_CANT - 1;
+        const [primera, ...resto] = enRenglones(nombre, ancho);
+        const linea = aDerecha(cant, ANCHO_CANT) + ' ' + primera.padEnd(ancho)
+            + aDerecha(pu, FIN_PU - FIN_CANT)
+            + aDerecha(total, FIN_TOTAL - FIN_PU);
+        return [linea, ...resto.map(r => ' '.repeat(ANCHO_CANT + 1) + r)];
+    }
     const [nombre, cant, pu, total] = celdas;
     const [primera, ...resto] = enRenglones(nombre, FIN_NOMBRE);
     const linea = primera.padEnd(FIN_NOMBRE)
@@ -859,9 +875,14 @@ function renglonesDeDatos(datos, ancho = COLUMNAS_TICKET.chica) {
 }
 
 /** El encabezado de la tabla, en las mismas posiciones que sus datos. */
-function encabezadoDeItems(columnas) {
+function encabezadoDeItems(columnas, cantidadPrimero = false) {
     if (columnas.length !== 4) return dosColumnas(columnas[0]?.label, columnas[columnas.length - 1]?.label);
     const [c1, c2, c3, c4] = columnas.map(c => c.label ?? '');
+    if (cantidadPrimero) {
+        return aDerecha(c1, 4) + ' ' + c2.padEnd(FIN_CANT - 5)
+            + aDerecha(c3, FIN_PU - FIN_CANT)
+            + aDerecha(c4, FIN_TOTAL - FIN_PU);
+    }
     return c1.padEnd(FIN_NOMBRE)
         + aDerecha(c2, FIN_CANT - FIN_NOMBRE)
         + aDerecha(c3, FIN_PU - FIN_CANT)
@@ -918,9 +939,9 @@ export function seccionesParaElPrograma(ticket) {
             ...(b.filas ?? []).map(([r, v]) => dosColumnas(r, v)),
         ].filter(Boolean)),
         ...(items ? [
-            IZQUIERDA + encabezadoDeItems(items.columnas),
+            IZQUIERDA + encabezadoDeItems(items.columnas, items.cantidadPrimero),
             regla(),
-            ...items.filas.flatMap(filaDeItem),
+            ...items.filas.flatMap(f => filaDeItem(f, items.cantidadPrimero)),
             regla(),
         ] : []),
         ...(totales.length ? [

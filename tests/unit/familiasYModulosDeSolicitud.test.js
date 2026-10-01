@@ -101,13 +101,13 @@ describe('a quién espera una solicitud pendiente', () => {
             .toBeNull();
     });
 
-    it('las nueve que se deciden por permiso tienen su área escrita', () => {
+    it('las diez que se deciden por permiso tienen su área escrita', () => {
         // Es el mismo alcance que `modulo_de_aprobacion()` en Postgres, que
         // devuelve NULL para todo lo demás. Una solicitud personal la resuelve
         // una jefatura concreta y ahí el nombre ES el dato.
         expect(Object.keys(QUIEN_RESUELVE).sort()).toEqual([
             'ABONO_APROBACION', 'ABONO_CREDITO_CHANGE', 'ANNULMENT_REQUEST',
-            'CAJA_MOVIMIENTO_CHANGE', 'CLIENT_CHANGE_REQUEST',
+            'CAJA_MOVIMIENTO_CHANGE', 'CLIENT_CHANGE_REQUEST', 'DIST_DESCUENTO',
             'INVENTORY_DISCARD_REQUEST', 'INVENTORY_LOAD_REQUEST',
             'PAYMENT_CHANGE_REQUEST', 'VENDOR_CHANGE_REQUEST',
         ]);

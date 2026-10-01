@@ -6082,6 +6082,3462 @@ export type Database = {
           },
         ]
       }
+      dist_asuetos: {
+        Row: {
+          created_at: string
+          fecha: string
+          nombre: string
+        }
+        Insert: {
+          created_at?: string
+          fecha: string
+          nombre: string
+        }
+        Update: {
+          created_at?: string
+          fecha?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
+      dist_bajas: {
+        Row: {
+          costo_unitario: number | null
+          created_at: string
+          detalle: string
+          emisor_id: number
+          estado: string
+          id: number
+          lote_id: number
+          motivo: string
+          nota_resolucion: string | null
+          product_id: number
+          resuelto_at: string | null
+          resuelto_por: string | null
+          solicitado_por: string
+          unidades: number
+        }
+        Insert: {
+          costo_unitario?: number | null
+          created_at?: string
+          detalle: string
+          emisor_id: number
+          estado?: string
+          id?: never
+          lote_id: number
+          motivo: string
+          nota_resolucion?: string | null
+          product_id: number
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+          solicitado_por?: string
+          unidades: number
+        }
+        Update: {
+          costo_unitario?: number | null
+          created_at?: string
+          detalle?: string
+          emisor_id?: number
+          estado?: string
+          id?: never
+          lote_id?: number
+          motivo?: string
+          nota_resolucion?: string | null
+          product_id?: number
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+          solicitado_por?: string
+          unidades?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_bajas_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_bajas_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "dist_lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_bajas_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_bajas_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_bajas_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_bajas_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_bajas_solicitado_por_fkey"
+            columns: ["solicitado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_bajas_solicitado_por_fkey"
+            columns: ["solicitado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_caja_movimientos: {
+        Row: {
+          anulado_at: string | null
+          anulado_motivo: string | null
+          anulado_por: string | null
+          caja_id: number
+          comprobante_url: string | null
+          concepto: string
+          contado: number | null
+          creado_por: string
+          created_at: string
+          esperado: number | null
+          id: number
+          monto: number
+          tipo: string
+        }
+        Insert: {
+          anulado_at?: string | null
+          anulado_motivo?: string | null
+          anulado_por?: string | null
+          caja_id: number
+          comprobante_url?: string | null
+          concepto: string
+          contado?: number | null
+          creado_por?: string
+          created_at?: string
+          esperado?: number | null
+          id?: never
+          monto: number
+          tipo: string
+        }
+        Update: {
+          anulado_at?: string | null
+          anulado_motivo?: string | null
+          anulado_por?: string | null
+          caja_id?: number
+          comprobante_url?: string | null
+          concepto?: string
+          contado?: number | null
+          creado_por?: string
+          created_at?: string
+          esperado?: number | null
+          id?: never
+          monto?: number
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_caja_movimientos_anulado_por_fkey"
+            columns: ["anulado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_caja_movimientos_anulado_por_fkey"
+            columns: ["anulado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_caja_movimientos_caja_id_fkey"
+            columns: ["caja_id"]
+            isOneToOne: false
+            referencedRelation: "dist_cajas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_caja_movimientos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_caja_movimientos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_cajas: {
+        Row: {
+          abierta_at: string
+          abierta_por: string
+          cerrada_at: string | null
+          created_at: string
+          emisor_id: number
+          estado: string
+          fecha: string
+          fondo: number
+          id: number
+          liquidacion_id: number | null
+          nota: string | null
+          vendedor_id: string
+        }
+        Insert: {
+          abierta_at?: string
+          abierta_por?: string
+          cerrada_at?: string | null
+          created_at?: string
+          emisor_id: number
+          estado?: string
+          fecha: string
+          fondo?: number
+          id?: never
+          liquidacion_id?: number | null
+          nota?: string | null
+          vendedor_id: string
+        }
+        Update: {
+          abierta_at?: string
+          abierta_por?: string
+          cerrada_at?: string | null
+          created_at?: string
+          emisor_id?: number
+          estado?: string
+          fecha?: string
+          fondo?: number
+          id?: never
+          liquidacion_id?: number | null
+          nota?: string | null
+          vendedor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_cajas_abierta_por_fkey"
+            columns: ["abierta_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cajas_abierta_por_fkey"
+            columns: ["abierta_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cajas_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cajas_liquidacion_id_fkey"
+            columns: ["liquidacion_id"]
+            isOneToOne: false
+            referencedRelation: "dist_liquidaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cajas_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cajas_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_carga_items: {
+        Row: {
+          carga_id: number
+          cargado: number
+          created_at: string
+          devuelto: number
+          faltante: number
+          id: number
+          lote_camion_id: number
+          product_id: number
+        }
+        Insert: {
+          carga_id: number
+          cargado?: number
+          created_at?: string
+          devuelto?: number
+          faltante?: number
+          id?: never
+          lote_camion_id: number
+          product_id: number
+        }
+        Update: {
+          carga_id?: number
+          cargado?: number
+          created_at?: string
+          devuelto?: number
+          faltante?: number
+          id?: never
+          lote_camion_id?: number
+          product_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_carga_items_carga_id_fkey"
+            columns: ["carga_id"]
+            isOneToOne: false
+            referencedRelation: "dist_cargas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_carga_items_lote_camion_id_fkey"
+            columns: ["lote_camion_id"]
+            isOneToOne: false
+            referencedRelation: "dist_lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_carga_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_carga_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_cargas: {
+        Row: {
+          cargado_por: string | null
+          cerrada_at: string | null
+          cerrada_por: string | null
+          created_at: string
+          dte_id: number | null
+          emisor_id: number
+          estado: string
+          id: number
+          nota: string | null
+          nota_cierre: string | null
+          vendedor_id: string
+        }
+        Insert: {
+          cargado_por?: string | null
+          cerrada_at?: string | null
+          cerrada_por?: string | null
+          created_at?: string
+          dte_id?: number | null
+          emisor_id: number
+          estado?: string
+          id?: never
+          nota?: string | null
+          nota_cierre?: string | null
+          vendedor_id: string
+        }
+        Update: {
+          cargado_por?: string | null
+          cerrada_at?: string | null
+          cerrada_por?: string | null
+          created_at?: string
+          dte_id?: number | null
+          emisor_id?: number
+          estado?: string
+          id?: never
+          nota?: string | null
+          nota_cierre?: string | null
+          vendedor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_cargas_cargado_por_fkey"
+            columns: ["cargado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cargas_cargado_por_fkey"
+            columns: ["cargado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cargas_cerrada_por_fkey"
+            columns: ["cerrada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cargas_cerrada_por_fkey"
+            columns: ["cerrada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cargas_dte_id_fkey"
+            columns: ["dte_id"]
+            isOneToOne: false
+            referencedRelation: "dist_dte"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cargas_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cargas_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cargas_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_catalogo: {
+        Row: {
+          activo: boolean
+          costo_actualizado_at: string | null
+          costo_promedio: number | null
+          created_at: string
+          descuento_desde: string | null
+          descuento_hasta: string | null
+          descuento_max_pct: number | null
+          descuento_pct: number
+          emisor_id: number
+          maximo: number | null
+          minimo: number | null
+          precio_con_iva: number
+          product_id: number
+          updated_at: string
+          venta_libre: boolean
+        }
+        Insert: {
+          activo?: boolean
+          costo_actualizado_at?: string | null
+          costo_promedio?: number | null
+          created_at?: string
+          descuento_desde?: string | null
+          descuento_hasta?: string | null
+          descuento_max_pct?: number | null
+          descuento_pct?: number
+          emisor_id: number
+          maximo?: number | null
+          minimo?: number | null
+          precio_con_iva: number
+          product_id: number
+          updated_at?: string
+          venta_libre?: boolean
+        }
+        Update: {
+          activo?: boolean
+          costo_actualizado_at?: string | null
+          costo_promedio?: number | null
+          created_at?: string
+          descuento_desde?: string | null
+          descuento_hasta?: string | null
+          descuento_max_pct?: number | null
+          descuento_pct?: number
+          emisor_id?: number
+          maximo?: number | null
+          minimo?: number | null
+          precio_con_iva?: number
+          product_id?: number
+          updated_at?: string
+          venta_libre?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_catalogo_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_catalogo_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_catalogo_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_cierres_dia: {
+        Row: {
+          cerrado_at: string
+          cerrado_por: string
+          created_at: string
+          emisor_id: number
+          estado: string
+          fecha: string
+          id: number
+          nota: string | null
+          reabierto_at: string | null
+          reabierto_motivo: string | null
+          reabierto_por: string | null
+          resumen: Json
+        }
+        Insert: {
+          cerrado_at?: string
+          cerrado_por?: string
+          created_at?: string
+          emisor_id: number
+          estado?: string
+          fecha: string
+          id?: never
+          nota?: string | null
+          reabierto_at?: string | null
+          reabierto_motivo?: string | null
+          reabierto_por?: string | null
+          resumen: Json
+        }
+        Update: {
+          cerrado_at?: string
+          cerrado_por?: string
+          created_at?: string
+          emisor_id?: number
+          estado?: string
+          fecha?: string
+          id?: never
+          nota?: string | null
+          reabierto_at?: string | null
+          reabierto_motivo?: string | null
+          reabierto_por?: string | null
+          resumen?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_cierres_dia_cerrado_por_fkey"
+            columns: ["cerrado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cierres_dia_cerrado_por_fkey"
+            columns: ["cerrado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cierres_dia_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cierres_dia_reabierto_por_fkey"
+            columns: ["reabierto_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cierres_dia_reabierto_por_fkey"
+            columns: ["reabierto_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_clientes: {
+        Row: {
+          activo: boolean
+          cod_actividad: string | null
+          complemento: string | null
+          contribuyente: boolean | null
+          correo: string | null
+          creado_por: string | null
+          created_at: string
+          departamento: string | null
+          desc_actividad: string | null
+          distrito: string | null
+          emisor_id: number
+          gran_contribuyente: boolean
+          id: number
+          lat: number | null
+          licencia_srs: string | null
+          licencia_srs_vence: string | null
+          limite_credito: number
+          lista_id: number | null
+          lng: number | null
+          municipio: string | null
+          nombre: string
+          nombre_comercial: string | null
+          notas: string | null
+          nrc: string | null
+          num_documento: string | null
+          orden_ruta: number | null
+          plazo_dias: number
+          ruta: string | null
+          ruta_id: number | null
+          telefono: string | null
+          tipo: string
+          tipo_documento: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          cod_actividad?: string | null
+          complemento?: string | null
+          contribuyente?: boolean | null
+          correo?: string | null
+          creado_por?: string | null
+          created_at?: string
+          departamento?: string | null
+          desc_actividad?: string | null
+          distrito?: string | null
+          emisor_id: number
+          gran_contribuyente?: boolean
+          id?: never
+          lat?: number | null
+          licencia_srs?: string | null
+          licencia_srs_vence?: string | null
+          limite_credito?: number
+          lista_id?: number | null
+          lng?: number | null
+          municipio?: string | null
+          nombre: string
+          nombre_comercial?: string | null
+          notas?: string | null
+          nrc?: string | null
+          num_documento?: string | null
+          orden_ruta?: number | null
+          plazo_dias?: number
+          ruta?: string | null
+          ruta_id?: number | null
+          telefono?: string | null
+          tipo: string
+          tipo_documento?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          cod_actividad?: string | null
+          complemento?: string | null
+          contribuyente?: boolean | null
+          correo?: string | null
+          creado_por?: string | null
+          created_at?: string
+          departamento?: string | null
+          desc_actividad?: string | null
+          distrito?: string | null
+          emisor_id?: number
+          gran_contribuyente?: boolean
+          id?: never
+          lat?: number | null
+          licencia_srs?: string | null
+          licencia_srs_vence?: string | null
+          limite_credito?: number
+          lista_id?: number | null
+          lng?: number | null
+          municipio?: string | null
+          nombre?: string
+          nombre_comercial?: string | null
+          notas?: string | null
+          nrc?: string | null
+          num_documento?: string | null
+          orden_ruta?: number | null
+          plazo_dias?: number
+          ruta?: string | null
+          ruta_id?: number | null
+          telefono?: string | null
+          tipo?: string
+          tipo_documento?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_clientes_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_clientes_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_clientes_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_clientes_lista_id_fkey"
+            columns: ["lista_id"]
+            isOneToOne: false
+            referencedRelation: "dist_listas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_clientes_ruta_id_fkey"
+            columns: ["ruta_id"]
+            isOneToOne: false
+            referencedRelation: "dist_rutas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_compra_items: {
+        Row: {
+          cantidad: number
+          codigo_proveedor: string | null
+          compra_id: number
+          costo_unitario: number
+          created_at: string
+          descripcion_proveedor: string | null
+          id: number
+          lote: string | null
+          lote_id: number | null
+          product_id: number
+          vence: string | null
+        }
+        Insert: {
+          cantidad: number
+          codigo_proveedor?: string | null
+          compra_id: number
+          costo_unitario: number
+          created_at?: string
+          descripcion_proveedor?: string | null
+          id?: never
+          lote?: string | null
+          lote_id?: number | null
+          product_id: number
+          vence?: string | null
+        }
+        Update: {
+          cantidad?: number
+          codigo_proveedor?: string | null
+          compra_id?: number
+          costo_unitario?: number
+          created_at?: string
+          descripcion_proveedor?: string | null
+          id?: never
+          lote?: string | null
+          lote_id?: number | null
+          product_id?: number
+          vence?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_compra_items_compra_id_fkey"
+            columns: ["compra_id"]
+            isOneToOne: false
+            referencedRelation: "dist_compras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_compra_items_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "dist_lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_compra_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_compra_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_compras: {
+        Row: {
+          anulada_at: string | null
+          anulada_motivo: string | null
+          anulada_por: string | null
+          client_uuid: string
+          codigo_generacion: string | null
+          condicion: number
+          creado_por: string | null
+          created_at: string
+          emisor_id: number
+          estado: string
+          exenta: number
+          fecha: string
+          gravada: number
+          id: number
+          iva: number
+          nota: string | null
+          numero: string
+          percepcion: number
+          proveedor_id: number
+          recibida_at: string | null
+          recibida_por: string | null
+          retencion: number
+          tipo_doc: string
+          total: number
+          vence: string | null
+        }
+        Insert: {
+          anulada_at?: string | null
+          anulada_motivo?: string | null
+          anulada_por?: string | null
+          client_uuid: string
+          codigo_generacion?: string | null
+          condicion?: number
+          creado_por?: string | null
+          created_at?: string
+          emisor_id: number
+          estado?: string
+          exenta?: number
+          fecha: string
+          gravada?: number
+          id?: never
+          iva?: number
+          nota?: string | null
+          numero: string
+          percepcion?: number
+          proveedor_id: number
+          recibida_at?: string | null
+          recibida_por?: string | null
+          retencion?: number
+          tipo_doc: string
+          total?: number
+          vence?: string | null
+        }
+        Update: {
+          anulada_at?: string | null
+          anulada_motivo?: string | null
+          anulada_por?: string | null
+          client_uuid?: string
+          codigo_generacion?: string | null
+          condicion?: number
+          creado_por?: string | null
+          created_at?: string
+          emisor_id?: number
+          estado?: string
+          exenta?: number
+          fecha?: string
+          gravada?: number
+          id?: never
+          iva?: number
+          nota?: string | null
+          numero?: string
+          percepcion?: number
+          proveedor_id?: number
+          recibida_at?: string | null
+          recibida_por?: string | null
+          retencion?: number
+          tipo_doc?: string
+          total?: number
+          vence?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_compras_anulada_por_fkey"
+            columns: ["anulada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_compras_anulada_por_fkey"
+            columns: ["anulada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_compras_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_compras_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_compras_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_compras_proveedor_id_fkey"
+            columns: ["proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_proveedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_compras_recibida_por_fkey"
+            columns: ["recibida_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_compras_recibida_por_fkey"
+            columns: ["recibida_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_conteo_items: {
+        Row: {
+          contado: number | null
+          contado_at: string | null
+          contado_por: string | null
+          conteo_id: number
+          costo_unitario: number | null
+          created_at: string
+          id: number
+          lote_id: number
+          nota: string | null
+          product_id: number
+          sistema: number
+        }
+        Insert: {
+          contado?: number | null
+          contado_at?: string | null
+          contado_por?: string | null
+          conteo_id: number
+          costo_unitario?: number | null
+          created_at?: string
+          id?: never
+          lote_id: number
+          nota?: string | null
+          product_id: number
+          sistema: number
+        }
+        Update: {
+          contado?: number | null
+          contado_at?: string | null
+          contado_por?: string | null
+          conteo_id?: number
+          costo_unitario?: number | null
+          created_at?: string
+          id?: never
+          lote_id?: number
+          nota?: string | null
+          product_id?: number
+          sistema?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_conteo_items_contado_por_fkey"
+            columns: ["contado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_conteo_items_contado_por_fkey"
+            columns: ["contado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_conteo_items_conteo_id_fkey"
+            columns: ["conteo_id"]
+            isOneToOne: false
+            referencedRelation: "dist_conteos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_conteo_items_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "dist_lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_conteo_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_conteo_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_conteos: {
+        Row: {
+          cerrado_at: string | null
+          cerrado_por: string | null
+          creado_por: string
+          created_at: string
+          emisor_id: number
+          estado: string
+          id: number
+          nota: string | null
+          resumen: Json | null
+        }
+        Insert: {
+          cerrado_at?: string | null
+          cerrado_por?: string | null
+          creado_por?: string
+          created_at?: string
+          emisor_id: number
+          estado?: string
+          id?: never
+          nota?: string | null
+          resumen?: Json | null
+        }
+        Update: {
+          cerrado_at?: string | null
+          cerrado_por?: string | null
+          creado_por?: string
+          created_at?: string
+          emisor_id?: number
+          estado?: string
+          id?: never
+          nota?: string | null
+          resumen?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_conteos_cerrado_por_fkey"
+            columns: ["cerrado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_conteos_cerrado_por_fkey"
+            columns: ["cerrado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_conteos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_conteos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_conteos_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_contingencias: {
+        Row: {
+          ambiente: string
+          codigo_generacion: string
+          created_at: string
+          desde: string
+          emisor_id: number
+          estado: string
+          firmado: string
+          hasta: string
+          id: number
+          json: Json
+          respuesta: Json | null
+          sello: string | null
+          tipo: number
+        }
+        Insert: {
+          ambiente: string
+          codigo_generacion: string
+          created_at?: string
+          desde: string
+          emisor_id: number
+          estado: string
+          firmado: string
+          hasta: string
+          id?: never
+          json: Json
+          respuesta?: Json | null
+          sello?: string | null
+          tipo: number
+        }
+        Update: {
+          ambiente?: string
+          codigo_generacion?: string
+          created_at?: string
+          desde?: string
+          emisor_id?: number
+          estado?: string
+          firmado?: string
+          hasta?: string
+          id?: never
+          json?: Json
+          respuesta?: Json | null
+          sello?: string | null
+          tipo?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_contingencias_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_correlativos: {
+        Row: {
+          ambiente: string
+          anio: number
+          created_at: string
+          emisor_id: number
+          establecimiento: string
+          punto_venta: string
+          tipo: string
+          ultimo: number
+        }
+        Insert: {
+          ambiente: string
+          anio: number
+          created_at?: string
+          emisor_id: number
+          establecimiento: string
+          punto_venta: string
+          tipo: string
+          ultimo?: number
+        }
+        Update: {
+          ambiente?: string
+          anio?: number
+          created_at?: string
+          emisor_id?: number
+          establecimiento?: string
+          punto_venta?: string
+          tipo?: string
+          ultimo?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_correlativos_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_correos: {
+        Row: {
+          created_at: string
+          destinatario: string | null
+          dte_id: number
+          enviado_at: string | null
+          enviado_por: string | null
+          estado: string
+          id: number
+          intentos: number
+          proveedor_id: string | null
+          ultimo_error: string | null
+        }
+        Insert: {
+          created_at?: string
+          destinatario?: string | null
+          dte_id: number
+          enviado_at?: string | null
+          enviado_por?: string | null
+          estado?: string
+          id?: never
+          intentos?: number
+          proveedor_id?: string | null
+          ultimo_error?: string | null
+        }
+        Update: {
+          created_at?: string
+          destinatario?: string | null
+          dte_id?: number
+          enviado_at?: string | null
+          enviado_por?: string | null
+          estado?: string
+          id?: never
+          intentos?: number
+          proveedor_id?: string | null
+          ultimo_error?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_correos_dte_id_fkey"
+            columns: ["dte_id"]
+            isOneToOne: false
+            referencedRelation: "dist_dte"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_correos_enviado_por_fkey"
+            columns: ["enviado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_correos_enviado_por_fkey"
+            columns: ["enviado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_cuarentena: {
+        Row: {
+          created_at: string
+          devolucion_id: number | null
+          emisor_id: number
+          estado: string
+          id: number
+          lote_id: number | null
+          motivo: string
+          nota: string | null
+          product_id: number
+          resuelta_at: string | null
+          resuelta_por: string | null
+          unidades: number
+        }
+        Insert: {
+          created_at?: string
+          devolucion_id?: number | null
+          emisor_id: number
+          estado?: string
+          id?: never
+          lote_id?: number | null
+          motivo: string
+          nota?: string | null
+          product_id: number
+          resuelta_at?: string | null
+          resuelta_por?: string | null
+          unidades: number
+        }
+        Update: {
+          created_at?: string
+          devolucion_id?: number | null
+          emisor_id?: number
+          estado?: string
+          id?: never
+          lote_id?: number | null
+          motivo?: string
+          nota?: string | null
+          product_id?: number
+          resuelta_at?: string | null
+          resuelta_por?: string | null
+          unidades?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_cuarentena_devolucion_id_fkey"
+            columns: ["devolucion_id"]
+            isOneToOne: false
+            referencedRelation: "dist_devoluciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cuarentena_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cuarentena_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "dist_lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cuarentena_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cuarentena_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cuarentena_resuelta_por_fkey"
+            columns: ["resuelta_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cuarentena_resuelta_por_fkey"
+            columns: ["resuelta_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_cxc: {
+        Row: {
+          abonado: number
+          acreditado: number
+          anulada_at: string | null
+          cliente_id: number
+          created_at: string
+          dte_id: number
+          emisor_id: number
+          estado: string
+          fecha: string
+          id: number
+          monto: number
+          pagada_at: string | null
+          pedido_id: number | null
+          saldo: number | null
+          vence: string
+          vendedor_id: string | null
+        }
+        Insert: {
+          abonado?: number
+          acreditado?: number
+          anulada_at?: string | null
+          cliente_id: number
+          created_at?: string
+          dte_id: number
+          emisor_id: number
+          estado?: string
+          fecha: string
+          id?: never
+          monto: number
+          pagada_at?: string | null
+          pedido_id?: number | null
+          saldo?: number | null
+          vence: string
+          vendedor_id?: string | null
+        }
+        Update: {
+          abonado?: number
+          acreditado?: number
+          anulada_at?: string | null
+          cliente_id?: number
+          created_at?: string
+          dte_id?: number
+          emisor_id?: number
+          estado?: string
+          fecha?: string
+          id?: never
+          monto?: number
+          pagada_at?: string | null
+          pedido_id?: number | null
+          saldo?: number | null
+          vence?: string
+          vendedor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_cxc_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "dist_clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cxc_dte_id_fkey"
+            columns: ["dte_id"]
+            isOneToOne: true
+            referencedRelation: "dist_dte"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cxc_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cxc_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "dist_pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cxc_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cxc_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_cxc_abonos: {
+        Row: {
+          created_at: string
+          cxc_id: number
+          id: number
+          monto: number
+          recibo_id: number
+        }
+        Insert: {
+          created_at?: string
+          cxc_id: number
+          id?: never
+          monto: number
+          recibo_id: number
+        }
+        Update: {
+          created_at?: string
+          cxc_id?: number
+          id?: never
+          monto?: number
+          recibo_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_cxc_abonos_cxc_id_fkey"
+            columns: ["cxc_id"]
+            isOneToOne: false
+            referencedRelation: "dist_cxc"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_cxc_abonos_recibo_id_fkey"
+            columns: ["recibo_id"]
+            isOneToOne: false
+            referencedRelation: "dist_recibos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_depositos: {
+        Row: {
+          anulado_at: string | null
+          anulado_motivo: string | null
+          banco: string
+          comprobante_url: string | null
+          creado_por: string
+          created_at: string
+          emisor_id: number
+          fecha: string
+          id: number
+          monto: number
+          referencia: string
+        }
+        Insert: {
+          anulado_at?: string | null
+          anulado_motivo?: string | null
+          banco: string
+          comprobante_url?: string | null
+          creado_por?: string
+          created_at?: string
+          emisor_id: number
+          fecha: string
+          id?: never
+          monto: number
+          referencia: string
+        }
+        Update: {
+          anulado_at?: string | null
+          anulado_motivo?: string | null
+          banco?: string
+          comprobante_url?: string | null
+          creado_por?: string
+          created_at?: string
+          emisor_id?: number
+          fecha?: string
+          id?: never
+          monto?: number
+          referencia?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_depositos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_depositos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_depositos_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_devolucion_items: {
+        Row: {
+          costo_unitario: number | null
+          created_at: string
+          descuento: number
+          destino: string
+          devolucion_id: number
+          id: number
+          item_id: number
+          lote_id: number | null
+          precio_unitario: number
+          product_id: number
+          unidades: number
+        }
+        Insert: {
+          costo_unitario?: number | null
+          created_at?: string
+          descuento?: number
+          destino: string
+          devolucion_id: number
+          id?: never
+          item_id: number
+          lote_id?: number | null
+          precio_unitario: number
+          product_id: number
+          unidades: number
+        }
+        Update: {
+          costo_unitario?: number | null
+          created_at?: string
+          descuento?: number
+          destino?: string
+          devolucion_id?: number
+          id?: never
+          item_id?: number
+          lote_id?: number | null
+          precio_unitario?: number
+          product_id?: number
+          unidades?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_devolucion_items_devolucion_id_fkey"
+            columns: ["devolucion_id"]
+            isOneToOne: false
+            referencedRelation: "dist_devoluciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_devolucion_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "dist_pedido_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_devolucion_items_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "dist_lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_devolucion_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_devolucion_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_devoluciones: {
+        Row: {
+          a_favor: number
+          anulada_at: string | null
+          client_uuid: string
+          cliente_id: number
+          creado_por: string | null
+          created_at: string
+          credito_aplicado: number
+          cxc_id: number | null
+          dte_origen_id: number
+          emisor_id: number
+          emitida_at: string | null
+          estado: string
+          id: number
+          motivo: string
+          nota_id: number | null
+          total: number | null
+        }
+        Insert: {
+          a_favor?: number
+          anulada_at?: string | null
+          client_uuid: string
+          cliente_id: number
+          creado_por?: string | null
+          created_at?: string
+          credito_aplicado?: number
+          cxc_id?: number | null
+          dte_origen_id: number
+          emisor_id: number
+          emitida_at?: string | null
+          estado?: string
+          id?: never
+          motivo: string
+          nota_id?: number | null
+          total?: number | null
+        }
+        Update: {
+          a_favor?: number
+          anulada_at?: string | null
+          client_uuid?: string
+          cliente_id?: number
+          creado_por?: string | null
+          created_at?: string
+          credito_aplicado?: number
+          cxc_id?: number | null
+          dte_origen_id?: number
+          emisor_id?: number
+          emitida_at?: string | null
+          estado?: string
+          id?: never
+          motivo?: string
+          nota_id?: number | null
+          total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_devoluciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "dist_clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_devoluciones_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_devoluciones_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_devoluciones_cxc_id_fkey"
+            columns: ["cxc_id"]
+            isOneToOne: false
+            referencedRelation: "dist_cxc"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_devoluciones_dte_origen_id_fkey"
+            columns: ["dte_origen_id"]
+            isOneToOne: false
+            referencedRelation: "dist_dte"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_devoluciones_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_devoluciones_nota_id_fkey"
+            columns: ["nota_id"]
+            isOneToOne: true
+            referencedRelation: "dist_dte"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_dte: {
+        Row: {
+          ambiente: string
+          anio: number | null
+          cliente_id: number | null
+          codigo_generacion: string
+          codigo_msg: string | null
+          contingencia_id: number | null
+          creado_por: string | null
+          created_at: string
+          descripcion_msg: string | null
+          emisor_id: number
+          estado: string
+          fec_emi: string
+          fh_procesamiento: string | null
+          firmado: string | null
+          hor_emi: string
+          id: number
+          intentos: number
+          invalidacion_estado: string | null
+          invalidacion_firmado: string | null
+          invalidacion_json: Json | null
+          invalidacion_motivo: string | null
+          invalidacion_respuesta: Json | null
+          invalidacion_sello: string | null
+          invalidacion_tipo: number | null
+          invalidado_at: string | null
+          invalidado_por: string | null
+          json: Json
+          numero_control: string
+          observaciones_mh: Json
+          pedido_id: number | null
+          reemplazo_id: number | null
+          relacionado_id: number | null
+          sello_recibido: string | null
+          tipo: string
+          total_pagar: number
+          ultimo_intento_at: string | null
+        }
+        Insert: {
+          ambiente: string
+          anio?: number | null
+          cliente_id?: number | null
+          codigo_generacion: string
+          codigo_msg?: string | null
+          contingencia_id?: number | null
+          creado_por?: string | null
+          created_at?: string
+          descripcion_msg?: string | null
+          emisor_id: number
+          estado: string
+          fec_emi: string
+          fh_procesamiento?: string | null
+          firmado?: string | null
+          hor_emi: string
+          id?: never
+          intentos?: number
+          invalidacion_estado?: string | null
+          invalidacion_firmado?: string | null
+          invalidacion_json?: Json | null
+          invalidacion_motivo?: string | null
+          invalidacion_respuesta?: Json | null
+          invalidacion_sello?: string | null
+          invalidacion_tipo?: number | null
+          invalidado_at?: string | null
+          invalidado_por?: string | null
+          json: Json
+          numero_control: string
+          observaciones_mh?: Json
+          pedido_id?: number | null
+          reemplazo_id?: number | null
+          relacionado_id?: number | null
+          sello_recibido?: string | null
+          tipo: string
+          total_pagar: number
+          ultimo_intento_at?: string | null
+        }
+        Update: {
+          ambiente?: string
+          anio?: number | null
+          cliente_id?: number | null
+          codigo_generacion?: string
+          codigo_msg?: string | null
+          contingencia_id?: number | null
+          creado_por?: string | null
+          created_at?: string
+          descripcion_msg?: string | null
+          emisor_id?: number
+          estado?: string
+          fec_emi?: string
+          fh_procesamiento?: string | null
+          firmado?: string | null
+          hor_emi?: string
+          id?: never
+          intentos?: number
+          invalidacion_estado?: string | null
+          invalidacion_firmado?: string | null
+          invalidacion_json?: Json | null
+          invalidacion_motivo?: string | null
+          invalidacion_respuesta?: Json | null
+          invalidacion_sello?: string | null
+          invalidacion_tipo?: number | null
+          invalidado_at?: string | null
+          invalidado_por?: string | null
+          json?: Json
+          numero_control?: string
+          observaciones_mh?: Json
+          pedido_id?: number | null
+          reemplazo_id?: number | null
+          relacionado_id?: number | null
+          sello_recibido?: string | null
+          tipo?: string
+          total_pagar?: number
+          ultimo_intento_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_dte_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "dist_clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_dte_contingencia_fk"
+            columns: ["contingencia_id"]
+            isOneToOne: false
+            referencedRelation: "dist_contingencias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_dte_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_dte_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_dte_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_dte_invalidado_por_fkey"
+            columns: ["invalidado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_dte_invalidado_por_fkey"
+            columns: ["invalidado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_dte_pedido_fk"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "dist_pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_dte_reemplazo_id_fkey"
+            columns: ["reemplazo_id"]
+            isOneToOne: false
+            referencedRelation: "dist_dte"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_dte_relacionado_id_fkey"
+            columns: ["relacionado_id"]
+            isOneToOne: false
+            referencedRelation: "dist_dte"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_dte_intentos: {
+        Row: {
+          created_at: string
+          dte_id: number | null
+          error: string | null
+          http: number | null
+          id: number
+          operacion: string
+          respuesta: Json | null
+        }
+        Insert: {
+          created_at?: string
+          dte_id?: number | null
+          error?: string | null
+          http?: number | null
+          id?: never
+          operacion: string
+          respuesta?: Json | null
+        }
+        Update: {
+          created_at?: string
+          dte_id?: number | null
+          error?: string | null
+          http?: number | null
+          id?: never
+          operacion?: string
+          respuesta?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_dte_intentos_dte_id_fkey"
+            columns: ["dte_id"]
+            isOneToOne: false
+            referencedRelation: "dist_dte"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_emisores: {
+        Row: {
+          activo: boolean
+          ambiente: string
+          cod_actividad: string
+          cod_estable_mh: string | null
+          cod_punto_venta_mh: string | null
+          complemento: string
+          correo: string
+          created_at: string
+          departamento: string
+          desc_actividad: string
+          descuento_max_pct: number
+          distrito: string
+          establecimiento: string
+          gran_contribuyente: boolean
+          id: number
+          municipio: string
+          nit: string
+          nombre: string
+          nombre_comercial: string | null
+          nrc: string
+          punto_venta: string
+          reposicion_max_dias: number
+          reposicion_min_dias: number
+          telefono: string
+          tipo_establecimiento: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          ambiente?: string
+          cod_actividad: string
+          cod_estable_mh?: string | null
+          cod_punto_venta_mh?: string | null
+          complemento: string
+          correo: string
+          created_at?: string
+          departamento: string
+          desc_actividad: string
+          descuento_max_pct?: number
+          distrito: string
+          establecimiento?: string
+          gran_contribuyente?: boolean
+          id?: never
+          municipio: string
+          nit: string
+          nombre: string
+          nombre_comercial?: string | null
+          nrc: string
+          punto_venta?: string
+          reposicion_max_dias?: number
+          reposicion_min_dias?: number
+          telefono: string
+          tipo_establecimiento?: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          ambiente?: string
+          cod_actividad?: string
+          cod_estable_mh?: string | null
+          cod_punto_venta_mh?: string | null
+          complemento?: string
+          correo?: string
+          created_at?: string
+          departamento?: string
+          desc_actividad?: string
+          descuento_max_pct?: number
+          distrito?: string
+          establecimiento?: string
+          gran_contribuyente?: boolean
+          id?: never
+          municipio?: string
+          nit?: string
+          nombre?: string
+          nombre_comercial?: string | null
+          nrc?: string
+          punto_venta?: string
+          reposicion_max_dias?: number
+          reposicion_min_dias?: number
+          telefono?: string
+          tipo_establecimiento?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      dist_liquidaciones: {
+        Row: {
+          cerrada_at: string
+          cerrada_por: string
+          created_at: string
+          diferencia: number | null
+          efectivo_contado: number
+          efectivo_esperado: number
+          emisor_id: number
+          estado: string
+          fecha: string
+          id: number
+          nota: string | null
+          reabierta_at: string | null
+          reabierta_motivo: string | null
+          reabierta_por: string | null
+          resumen: Json
+          vendedor_id: string
+        }
+        Insert: {
+          cerrada_at?: string
+          cerrada_por?: string
+          created_at?: string
+          diferencia?: number | null
+          efectivo_contado: number
+          efectivo_esperado: number
+          emisor_id: number
+          estado?: string
+          fecha: string
+          id?: never
+          nota?: string | null
+          reabierta_at?: string | null
+          reabierta_motivo?: string | null
+          reabierta_por?: string | null
+          resumen: Json
+          vendedor_id: string
+        }
+        Update: {
+          cerrada_at?: string
+          cerrada_por?: string
+          created_at?: string
+          diferencia?: number | null
+          efectivo_contado?: number
+          efectivo_esperado?: number
+          emisor_id?: number
+          estado?: string
+          fecha?: string
+          id?: never
+          nota?: string | null
+          reabierta_at?: string | null
+          reabierta_motivo?: string | null
+          reabierta_por?: string | null
+          resumen?: Json
+          vendedor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_liquidaciones_cerrada_por_fkey"
+            columns: ["cerrada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_liquidaciones_cerrada_por_fkey"
+            columns: ["cerrada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_liquidaciones_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_liquidaciones_reabierta_por_fkey"
+            columns: ["reabierta_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_liquidaciones_reabierta_por_fkey"
+            columns: ["reabierta_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_liquidaciones_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_liquidaciones_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_listas: {
+        Row: {
+          activo: boolean
+          created_at: string
+          emisor_id: number
+          id: number
+          nombre: string
+          orden: number
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          emisor_id: number
+          id?: never
+          nombre: string
+          orden?: number
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          emisor_id?: number
+          id?: never
+          nombre?: string
+          orden?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_listas_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_lote_asignaciones: {
+        Row: {
+          cantidad: number
+          costo_unitario: number | null
+          created_at: string
+          devuelta_at: string | null
+          dte_id: number | null
+          id: number
+          item_id: number
+          lote_id: number
+          pedido_id: number
+          unidades: number
+        }
+        Insert: {
+          cantidad: number
+          costo_unitario?: number | null
+          created_at?: string
+          devuelta_at?: string | null
+          dte_id?: number | null
+          id?: never
+          item_id: number
+          lote_id: number
+          pedido_id: number
+          unidades: number
+        }
+        Update: {
+          cantidad?: number
+          costo_unitario?: number | null
+          created_at?: string
+          devuelta_at?: string | null
+          dte_id?: number | null
+          id?: never
+          item_id?: number
+          lote_id?: number
+          pedido_id?: number
+          unidades?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_lote_asignaciones_dte_id_fkey"
+            columns: ["dte_id"]
+            isOneToOne: false
+            referencedRelation: "dist_dte"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_lote_asignaciones_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "dist_pedido_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_lote_asignaciones_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "dist_lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_lote_asignaciones_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "dist_pedidos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_lote_movimientos: {
+        Row: {
+          cantidad: number
+          compra_id: number | null
+          costo_unitario: number | null
+          creado_por: string | null
+          created_at: string
+          dte_id: number | null
+          existencia_despues: number
+          id: number
+          lote_id: number
+          nota: string | null
+          pedido_id: number | null
+          tipo: string
+        }
+        Insert: {
+          cantidad: number
+          compra_id?: number | null
+          costo_unitario?: number | null
+          creado_por?: string | null
+          created_at?: string
+          dte_id?: number | null
+          existencia_despues: number
+          id?: never
+          lote_id: number
+          nota?: string | null
+          pedido_id?: number | null
+          tipo: string
+        }
+        Update: {
+          cantidad?: number
+          compra_id?: number | null
+          costo_unitario?: number | null
+          creado_por?: string | null
+          created_at?: string
+          dte_id?: number | null
+          existencia_despues?: number
+          id?: never
+          lote_id?: number
+          nota?: string | null
+          pedido_id?: number | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_lote_movimientos_compra_id_fkey"
+            columns: ["compra_id"]
+            isOneToOne: false
+            referencedRelation: "dist_compras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_lote_movimientos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_lote_movimientos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_lote_movimientos_dte_id_fkey"
+            columns: ["dte_id"]
+            isOneToOne: false
+            referencedRelation: "dist_dte"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_lote_movimientos_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "dist_lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_lote_movimientos_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "dist_pedidos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_lotes: {
+        Row: {
+          created_at: string
+          emisor_id: number
+          en_camion_de: string | null
+          existencia: number
+          id: number
+          lote: string
+          product_id: number
+          updated_at: string
+          vence: string | null
+        }
+        Insert: {
+          created_at?: string
+          emisor_id: number
+          en_camion_de?: string | null
+          existencia?: number
+          id?: never
+          lote: string
+          product_id: number
+          updated_at?: string
+          vence?: string | null
+        }
+        Update: {
+          created_at?: string
+          emisor_id?: number
+          en_camion_de?: string | null
+          existencia?: number
+          id?: never
+          lote?: string
+          product_id?: number
+          updated_at?: string
+          vence?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_lotes_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_lotes_en_camion_de_fkey"
+            columns: ["en_camion_de"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_lotes_en_camion_de_fkey"
+            columns: ["en_camion_de"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_lotes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_lotes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_mh_token: {
+        Row: {
+          ambiente: string
+          created_at: string
+          emisor_id: number
+          obtenido_at: string
+          token: string
+        }
+        Insert: {
+          ambiente: string
+          created_at?: string
+          emisor_id: number
+          obtenido_at: string
+          token: string
+        }
+        Update: {
+          ambiente?: string
+          created_at?: string
+          emisor_id?: number
+          obtenido_at?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_mh_token_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_pagos: {
+        Row: {
+          comprobante_url: string | null
+          created_at: string
+          efectivo_recibido: number | null
+          forma: string
+          id: number
+          lectura: Json | null
+          monto: number | null
+          monto_leido: number | null
+          nota: string | null
+          orden: number
+          pedido_id: number
+          referencia: string | null
+          registrado_por: string | null
+          updated_at: string
+          verificacion: string
+        }
+        Insert: {
+          comprobante_url?: string | null
+          created_at?: string
+          efectivo_recibido?: number | null
+          forma: string
+          id?: never
+          lectura?: Json | null
+          monto?: number | null
+          monto_leido?: number | null
+          nota?: string | null
+          orden: number
+          pedido_id: number
+          referencia?: string | null
+          registrado_por?: string | null
+          updated_at?: string
+          verificacion?: string
+        }
+        Update: {
+          comprobante_url?: string | null
+          created_at?: string
+          efectivo_recibido?: number | null
+          forma?: string
+          id?: never
+          lectura?: Json | null
+          monto?: number | null
+          monto_leido?: number | null
+          nota?: string | null
+          orden?: number
+          pedido_id?: number
+          referencia?: string | null
+          registrado_por?: string | null
+          updated_at?: string
+          verificacion?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_pagos_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "dist_pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_pagos_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_pagos_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_pedido_items: {
+        Row: {
+          cantidad: number
+          created_at: string
+          descripcion: string
+          descuento: number
+          descuento_estado: string
+          descuento_origen: string | null
+          descuento_pct: number | null
+          descuento_pedido: number | null
+          id: number
+          lista_id: number | null
+          lote_id: number | null
+          pedido_id: number
+          precio_con_iva: number
+          presentacion: string
+          product_id: number
+          unidades: number
+        }
+        Insert: {
+          cantidad: number
+          created_at?: string
+          descripcion: string
+          descuento?: number
+          descuento_estado?: string
+          descuento_origen?: string | null
+          descuento_pct?: number | null
+          descuento_pedido?: number | null
+          id?: never
+          lista_id?: number | null
+          lote_id?: number | null
+          pedido_id: number
+          precio_con_iva: number
+          presentacion?: string
+          product_id: number
+          unidades?: number
+        }
+        Update: {
+          cantidad?: number
+          created_at?: string
+          descripcion?: string
+          descuento?: number
+          descuento_estado?: string
+          descuento_origen?: string | null
+          descuento_pct?: number | null
+          descuento_pedido?: number | null
+          id?: never
+          lista_id?: number | null
+          lote_id?: number | null
+          pedido_id?: number
+          precio_con_iva?: number
+          presentacion?: string
+          product_id?: number
+          unidades?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_pedido_items_lista_id_fkey"
+            columns: ["lista_id"]
+            isOneToOne: false
+            referencedRelation: "dist_listas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_pedido_items_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "dist_lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_pedido_items_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "dist_pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_pedido_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_pedido_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_pedidos: {
+        Row: {
+          anulado_motivo: string | null
+          client_uuid: string
+          cliente_id: number
+          condicion: number
+          created_at: string
+          descuento_solicitud_id: string | null
+          desde_camion: boolean
+          dte_id: number | null
+          emisor_id: number
+          estado: string
+          forma_pago: string
+          id: number
+          lat: number | null
+          lng: number | null
+          observaciones: string | null
+          plazo_dias: number | null
+          reemplaza_dte_id: number | null
+          tipo_documento: string | null
+          updated_at: string
+          vendedor_id: string
+        }
+        Insert: {
+          anulado_motivo?: string | null
+          client_uuid: string
+          cliente_id: number
+          condicion?: number
+          created_at?: string
+          descuento_solicitud_id?: string | null
+          desde_camion?: boolean
+          dte_id?: number | null
+          emisor_id: number
+          estado?: string
+          forma_pago?: string
+          id?: never
+          lat?: number | null
+          lng?: number | null
+          observaciones?: string | null
+          plazo_dias?: number | null
+          reemplaza_dte_id?: number | null
+          tipo_documento?: string | null
+          updated_at?: string
+          vendedor_id?: string
+        }
+        Update: {
+          anulado_motivo?: string | null
+          client_uuid?: string
+          cliente_id?: number
+          condicion?: number
+          created_at?: string
+          descuento_solicitud_id?: string | null
+          desde_camion?: boolean
+          dte_id?: number | null
+          emisor_id?: number
+          estado?: string
+          forma_pago?: string
+          id?: never
+          lat?: number | null
+          lng?: number | null
+          observaciones?: string | null
+          plazo_dias?: number | null
+          reemplaza_dte_id?: number | null
+          tipo_documento?: string | null
+          updated_at?: string
+          vendedor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_pedidos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "dist_clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_pedidos_descuento_solicitud_id_fkey"
+            columns: ["descuento_solicitud_id"]
+            isOneToOne: false
+            referencedRelation: "approval_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_pedidos_dte_id_fkey"
+            columns: ["dte_id"]
+            isOneToOne: false
+            referencedRelation: "dist_dte"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_pedidos_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_pedidos_reemplaza_dte_id_fkey"
+            columns: ["reemplaza_dte_id"]
+            isOneToOne: false
+            referencedRelation: "dist_dte"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_pedidos_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_pedidos_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_precios: {
+        Row: {
+          activo: boolean
+          created_at: string
+          emisor_id: number
+          id: number
+          lista_id: number
+          precio_con_iva: number
+          presentacion: string
+          product_id: number
+          unidades: number
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          emisor_id: number
+          id?: never
+          lista_id: number
+          precio_con_iva: number
+          presentacion: string
+          product_id: number
+          unidades?: number
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          emisor_id?: number
+          id?: never
+          lista_id?: number
+          precio_con_iva?: number
+          presentacion?: string
+          product_id?: number
+          unidades?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_precios_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_precios_lista_id_fkey"
+            columns: ["lista_id"]
+            isOneToOne: false
+            referencedRelation: "dist_listas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_precios_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_precios_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_proveedor_productos: {
+        Row: {
+          codigo: string
+          created_at: string
+          product_id: number
+          proveedor_id: number
+          unidades_por: number
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          product_id: number
+          proveedor_id: number
+          unidades_por?: number
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          product_id?: number
+          proveedor_id?: number
+          unidades_por?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_proveedor_productos_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_proveedor_productos_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_proveedor_productos_proveedor_id_fkey"
+            columns: ["proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_proveedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_proveedores: {
+        Row: {
+          activo: boolean
+          correo: string | null
+          creado_por: string | null
+          created_at: string
+          emisor_id: number
+          gran_contribuyente: boolean
+          id: number
+          nit: string | null
+          nombre: string
+          nrc: string | null
+          plazo_dias: number
+          relacionada: boolean
+          telefono: string | null
+        }
+        Insert: {
+          activo?: boolean
+          correo?: string | null
+          creado_por?: string | null
+          created_at?: string
+          emisor_id: number
+          gran_contribuyente?: boolean
+          id?: never
+          nit?: string | null
+          nombre: string
+          nrc?: string | null
+          plazo_dias?: number
+          relacionada?: boolean
+          telefono?: string | null
+        }
+        Update: {
+          activo?: boolean
+          correo?: string | null
+          creado_por?: string | null
+          created_at?: string
+          emisor_id?: number
+          gran_contribuyente?: boolean
+          id?: never
+          nit?: string | null
+          nombre?: string
+          nrc?: string | null
+          plazo_dias?: number
+          relacionada?: boolean
+          telefono?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_proveedores_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_proveedores_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_proveedores_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_puntos_venta: {
+        Row: {
+          activo: boolean
+          codigo: string
+          created_at: string
+          emisor_id: number
+          empleado_id: string | null
+          id: number
+        }
+        Insert: {
+          activo?: boolean
+          codigo: string
+          created_at?: string
+          emisor_id: number
+          empleado_id?: string | null
+          id?: never
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string
+          created_at?: string
+          emisor_id?: number
+          empleado_id?: string | null
+          id?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_puntos_venta_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_puntos_venta_empleado_id_fkey"
+            columns: ["empleado_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_puntos_venta_empleado_id_fkey"
+            columns: ["empleado_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_rastreo: {
+        Row: {
+          created_at: string
+          id: number
+          lat: number
+          lng: number
+          precision_m: number | null
+          vendedor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          lat: number
+          lng: number
+          precision_m?: number | null
+          vendedor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          lat?: number
+          lng?: number
+          precision_m?: number | null
+          vendedor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_rastreo_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_rastreo_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_recibos: {
+        Row: {
+          anulado_at: string | null
+          anulado_motivo: string | null
+          anulado_por: string | null
+          client_uuid: string
+          cliente_id: number
+          comprobante_url: string | null
+          created_at: string
+          emisor_id: number
+          forma: string
+          id: number
+          monto: number
+          nota: string | null
+          recibido: number | null
+          recibido_por: string
+          referencia: string | null
+        }
+        Insert: {
+          anulado_at?: string | null
+          anulado_motivo?: string | null
+          anulado_por?: string | null
+          client_uuid: string
+          cliente_id: number
+          comprobante_url?: string | null
+          created_at?: string
+          emisor_id: number
+          forma: string
+          id?: never
+          monto: number
+          nota?: string | null
+          recibido?: number | null
+          recibido_por?: string
+          referencia?: string | null
+        }
+        Update: {
+          anulado_at?: string | null
+          anulado_motivo?: string | null
+          anulado_por?: string | null
+          client_uuid?: string
+          cliente_id?: number
+          comprobante_url?: string | null
+          created_at?: string
+          emisor_id?: number
+          forma?: string
+          id?: never
+          monto?: number
+          nota?: string | null
+          recibido?: number | null
+          recibido_por?: string
+          referencia?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_recibos_anulado_por_fkey"
+            columns: ["anulado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_recibos_anulado_por_fkey"
+            columns: ["anulado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_recibos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "dist_clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_recibos_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_recibos_recibido_por_fkey"
+            columns: ["recibido_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_recibos_recibido_por_fkey"
+            columns: ["recibido_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_reservas: {
+        Row: {
+          cliente_id: number | null
+          created_at: string
+          emisor_id: number
+          id: number
+          lote_id: number
+          pedido_id: number | null
+          product_id: number
+          sesion: string
+          unidades: number
+          vence_at: string
+          vendedor_id: string
+        }
+        Insert: {
+          cliente_id?: number | null
+          created_at?: string
+          emisor_id: number
+          id?: never
+          lote_id: number
+          pedido_id?: number | null
+          product_id: number
+          sesion: string
+          unidades: number
+          vence_at: string
+          vendedor_id: string
+        }
+        Update: {
+          cliente_id?: number | null
+          created_at?: string
+          emisor_id?: number
+          id?: never
+          lote_id?: number
+          pedido_id?: number | null
+          product_id?: number
+          sesion?: string
+          unidades?: number
+          vence_at?: string
+          vendedor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_reservas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "dist_clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_reservas_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_reservas_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "dist_lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_reservas_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "dist_pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_reservas_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_reservas_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_rutas: {
+        Row: {
+          activo: boolean
+          created_at: string
+          dias: number[]
+          emisor_id: number
+          id: number
+          nombre: string
+          updated_at: string
+          vendedor_id: string | null
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          dias?: number[]
+          emisor_id: number
+          id?: never
+          nombre: string
+          updated_at?: string
+          vendedor_id?: string | null
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          dias?: number[]
+          emisor_id?: number
+          id?: never
+          nombre?: string
+          updated_at?: string
+          vendedor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_rutas_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_rutas_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_rutas_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_ventas_perdidas: {
+        Row: {
+          buscado: string | null
+          cantidad: number
+          cliente_id: number | null
+          created_at: string
+          emisor_id: number
+          estado: string
+          id: number
+          laboratorio: string | null
+          nota: string | null
+          origen: string
+          pedido_id: number | null
+          principio_activo: string | null
+          product_id: number | null
+          producto: string
+          registro_srs: string | null
+          reportado_por: string
+          resuelto_at: string | null
+          resuelto_por: string | null
+        }
+        Insert: {
+          buscado?: string | null
+          cantidad: number
+          cliente_id?: number | null
+          created_at?: string
+          emisor_id: number
+          estado?: string
+          id?: never
+          laboratorio?: string | null
+          nota?: string | null
+          origen: string
+          pedido_id?: number | null
+          principio_activo?: string | null
+          product_id?: number | null
+          producto: string
+          registro_srs?: string | null
+          reportado_por?: string
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+        }
+        Update: {
+          buscado?: string | null
+          cantidad?: number
+          cliente_id?: number | null
+          created_at?: string
+          emisor_id?: number
+          estado?: string
+          id?: never
+          laboratorio?: string | null
+          nota?: string | null
+          origen?: string
+          pedido_id?: number | null
+          principio_activo?: string | null
+          product_id?: number | null
+          producto?: string
+          registro_srs?: string | null
+          reportado_por?: string
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_ventas_perdidas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "dist_clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_ventas_perdidas_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_ventas_perdidas_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "dist_pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_ventas_perdidas_reportado_por_fkey"
+            columns: ["reportado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_ventas_perdidas_reportado_por_fkey"
+            columns: ["reportado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_ventas_perdidas_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_ventas_perdidas_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_visitas: {
+        Row: {
+          cliente_id: number
+          created_at: string
+          fecha: string
+          id: number
+          lat: number | null
+          lng: number | null
+          nota: string | null
+          resultado: string
+          vendedor_id: string
+        }
+        Insert: {
+          cliente_id: number
+          created_at?: string
+          fecha?: string
+          id?: never
+          lat?: number | null
+          lng?: number | null
+          nota?: string | null
+          resultado: string
+          vendedor_id?: string
+        }
+        Update: {
+          cliente_id?: number
+          created_at?: string
+          fecha?: string
+          id?: never
+          lat?: number | null
+          lng?: number | null
+          nota?: string | null
+          resultado?: string
+          vendedor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_visitas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "dist_clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_visitas_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_visitas_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documentos_por_asignar: {
         Row: {
           aplicado_a: string | null
@@ -16939,6 +20395,27 @@ export type Database = {
           },
         ]
       }
+      dist_correo_vigente: {
+        Row: {
+          created_at: string | null
+          destinatario: string | null
+          dte_id: number | null
+          enviado_at: string | null
+          estado: string | null
+          id: number | null
+          intentos: number | null
+          ultimo_error: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_correos_dte_id_fkey"
+            columns: ["dte_id"]
+            isOneToOne: false
+            referencedRelation: "dist_dte"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dte_rechazos_vigentes: {
         Row: {
           accionable: boolean | null
@@ -19139,6 +22616,328 @@ export type Database = {
         Args: { p_erp_sucursal_id: number }
         Returns: number
       }
+      dist_abrir_caja: {
+        Args: {
+          p_fecha: string
+          p_fondo: number
+          p_nota?: string
+          p_vendedor: string
+        }
+        Returns: number
+      }
+      dist_anular_compra: {
+        Args: { p_compra: number; p_motivo: string }
+        Returns: Json
+      }
+      dist_anular_conteo: {
+        Args: { p_id: number; p_motivo: string }
+        Returns: undefined
+      }
+      dist_anular_movimiento_caja: {
+        Args: { p_id: number; p_motivo: string }
+        Returns: undefined
+      }
+      dist_anular_recibo: {
+        Args: { p_motivo: string; p_recibo: number }
+        Returns: Json
+      }
+      dist_aplicar_devolucion: {
+        Args: { p_devolucion: number; p_nota: number }
+        Returns: Json
+      }
+      dist_asignar_lotes: { Args: { p_pedido: number }; Returns: Json }
+      dist_avisar_cartera_atrasada: { Args: never; Returns: number }
+      dist_camion_del_dia: {
+        Args: { p_fecha: string; p_vendedor: string }
+        Returns: Json
+      }
+      dist_camiones: { Args: never; Returns: Json }
+      dist_cargar_camion: {
+        Args: { p_items: Json; p_nota?: string; p_vendedor: string }
+        Returns: number
+      }
+      dist_cartera: { Args: never; Returns: Json }
+      dist_cerrar_conteo: {
+        Args: { p_id: number; p_nota?: string }
+        Returns: Json
+      }
+      dist_cerrar_dia: {
+        Args: { p_fecha: string; p_nota?: string }
+        Returns: number
+      }
+      dist_cerrar_liquidacion: {
+        Args: {
+          p_contado: number
+          p_fecha: string
+          p_nota?: string
+          p_vendedor: string
+        }
+        Returns: Json
+      }
+      dist_cierre_dia: { Args: { p_fecha: string }; Returns: Json }
+      dist_cobrar: {
+        Args: {
+          p_aplicacion?: Json
+          p_client_uuid: string
+          p_cliente: number
+          p_comprobante_url?: string
+          p_forma: string
+          p_monto: number
+          p_nota?: string
+          p_recibido?: number
+          p_referencia?: string
+        }
+        Returns: Json
+      }
+      dist_contar: {
+        Args: { p_contado: number; p_item: number; p_nota?: string }
+        Returns: undefined
+      }
+      dist_conteo: { Args: { p_id: number }; Returns: Json }
+      dist_credito_cliente: { Args: { p_cliente: number }; Returns: Json }
+      dist_credito_del_documento: { Args: { p_dte: number }; Returns: number }
+      dist_cxc_recalcular: { Args: { p_cxc: number }; Returns: undefined }
+      dist_descargar_camion: {
+        Args: { p_contado: Json; p_nota?: string; p_vendedor: string }
+        Returns: Json
+      }
+      dist_devolucion_disponible: { Args: { p_dte: number }; Returns: Json }
+      dist_dia_del_sello: {
+        Args: { p_fec_emi: string; p_fh: string }
+        Returns: string
+      }
+      dist_dia_habil_del_mes: {
+        Args: { p_mes: string; p_n: number }
+        Returns: string
+      }
+      dist_estado_cuenta: { Args: { p_cliente: number }; Returns: Json }
+      dist_facturacion_pendiente: { Args: never; Returns: Json }
+      dist_fijar_minmax: {
+        Args: { p_maximo: number; p_minimo: number; p_product: number }
+        Returns: undefined
+      }
+      dist_guardar_compra: { Args: { p_compra: Json }; Returns: number }
+      dist_guardar_ruta: {
+        Args: {
+          p_activo?: boolean
+          p_dias: number[]
+          p_id: number
+          p_nombre: string
+          p_vendedor: string
+        }
+        Returns: number
+      }
+      dist_iniciar_conteo: {
+        Args: { p_nota?: string; p_productos?: number[] }
+        Returns: number
+      }
+      dist_liberar_lotes: {
+        Args: { p_pedido: number; p_solo_dte?: number; p_tipo?: string }
+        Returns: number
+      }
+      dist_libro_compras: {
+        Args: { p_desde: string; p_hasta: string }
+        Returns: Json
+      }
+      dist_libros_iva: {
+        Args: { p_desde: string; p_hasta: string }
+        Returns: Json
+      }
+      dist_liquidacion: {
+        Args: { p_fecha: string; p_vendedor: string }
+        Returns: Json
+      }
+      dist_liquidaciones_del_dia: { Args: { p_fecha: string }; Returns: Json }
+      dist_lote_ajustar: {
+        Args: {
+          p_existencia: number
+          p_lote: number
+          p_nota: string
+          p_vence: string
+        }
+        Returns: Json
+      }
+      dist_lote_entrada: {
+        Args: {
+          p_emisor: number
+          p_lote: string
+          p_nota?: string
+          p_producto: number
+          p_unidades: number
+          p_vence: string
+        }
+        Returns: Json
+      }
+      dist_mover_lote: {
+        Args: {
+          p_cantidad: number
+          p_dte?: number
+          p_lote: number
+          p_nota?: string
+          p_pedido?: number
+          p_tipo: string
+        }
+        Returns: number
+      }
+      dist_movimiento_caja: {
+        Args: {
+          p_caja: number
+          p_concepto: string
+          p_contado?: number
+          p_monto: number
+          p_tipo: string
+        }
+        Returns: Json
+      }
+      dist_ordenar_ruta: {
+        Args: { p_clientes: number[]; p_ruta: number }
+        Returns: undefined
+      }
+      dist_pedir_descuento: {
+        Args: { p_nota?: string; p_pedido: number }
+        Returns: string
+      }
+      dist_plazo_invalidacion: {
+        Args: { p_dia_sello: string; p_hoy?: string; p_tipo: string }
+        Returns: Json
+      }
+      dist_plazo_invalidacion_de: { Args: { p_dte: number }; Returns: Json }
+      dist_preparar_devolucion: {
+        Args: {
+          p_client_uuid: string
+          p_dte: number
+          p_motivo: string
+          p_renglones: Json
+        }
+        Returns: Json
+      }
+      dist_punto_venta_de: {
+        Args: { p_emisor: number; p_empleado: string }
+        Returns: string
+      }
+      dist_reabrir_dia: {
+        Args: { p_id: number; p_motivo: string }
+        Returns: undefined
+      }
+      dist_reabrir_liquidacion: {
+        Args: { p_id: number; p_motivo: string }
+        Returns: undefined
+      }
+      dist_recibir_compra: { Args: { p_compra: number }; Returns: Json }
+      dist_recibo: { Args: { p_recibo: number }; Returns: Json }
+      dist_recorrido: {
+        Args: { p_fecha: string; p_vendedor: string }
+        Returns: Json
+      }
+      dist_referencias_relacionada: {
+        Args: { p_productos: number[] }
+        Returns: Json
+      }
+      dist_registrar_correo: {
+        Args: {
+          p_destinatario: string
+          p_dte: number
+          p_empleado: string
+          p_error: string
+          p_ok: boolean
+          p_proveedor_id: string
+        }
+        Returns: number
+      }
+      dist_registrar_deposito: {
+        Args: {
+          p_banco: string
+          p_fecha: string
+          p_monto: number
+          p_referencia: string
+        }
+        Returns: number
+      }
+      dist_registrar_posicion: {
+        Args: { p_lat: number; p_lng: number; p_precision?: number }
+        Returns: boolean
+      }
+      dist_registrar_visita: {
+        Args: {
+          p_cliente: number
+          p_lat?: number
+          p_lng?: number
+          p_nota?: string
+          p_resultado: string
+        }
+        Returns: number
+      }
+      dist_relacionadas: {
+        Args: { p_desde: string; p_hasta: string }
+        Returns: Json
+      }
+      dist_reposicion: { Args: never; Returns: Json }
+      dist_reservar: {
+        Args: {
+          p_cliente: number
+          p_pedido: number
+          p_renglones: Json
+          p_sesion: string
+        }
+        Returns: Json
+      }
+      dist_reservas_vigentes: { Args: never; Returns: Json }
+      dist_resolver_baja: {
+        Args: { p_aprobar: boolean; p_id: number; p_nota?: string }
+        Returns: undefined
+      }
+      dist_resolver_cuarentena: {
+        Args: { p_estado: string; p_id: number; p_nota?: string }
+        Returns: Json
+      }
+      dist_resolver_descuento: {
+        Args: { p_aprobar: boolean; p_nota?: string; p_solicitud: string }
+        Returns: Json
+      }
+      dist_ruta_del_dia: {
+        Args: { p_fecha: string; p_vendedor: string }
+        Returns: Json
+      }
+      dist_siguiente_correlativo: {
+        Args: {
+          p_ambiente: string
+          p_anio: number
+          p_emisor: number
+          p_establecimiento: string
+          p_punto_venta: string
+          p_tipo: string
+        }
+        Returns: number
+      }
+      dist_solicitar_baja: {
+        Args: {
+          p_detalle: string
+          p_lote: number
+          p_motivo: string
+          p_unidades: number
+        }
+        Returns: number
+      }
+      dist_tablero: {
+        Args: {
+          p_desde: string
+          p_hasta: string
+          p_ruta?: string
+          p_vendedor?: string
+        }
+        Returns: Json
+      }
+      dist_utilidad: {
+        Args: {
+          p_desde: string
+          p_hasta: string
+          p_ruta?: string
+          p_vendedor?: string
+        }
+        Returns: Json
+      }
+      dist_vencer_reservas: { Args: never; Returns: number }
+      dist_vendedores: { Args: never; Returns: Json }
       dui_disponible: {
         Args: { p_dui: string; p_excluir?: string }
         Returns: boolean

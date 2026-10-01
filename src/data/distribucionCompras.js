@@ -1,6 +1,3 @@
-// @ts-nocheck — Las tablas `dist_*` todavía NO existen en producción (viven en
-// supabase/borradores/distribucion y sólo en el entorno de pruebas). Al migrar:
-// `npm run tipos:base` y se QUITA esta línea. Ver distribucionInventario.js.
 // Compras de la distribuidora a sus proveedores (borrador 0015).
 //
 // Se guarda como borrador mientras se captura y se RECIBE cuando cuadra: eso

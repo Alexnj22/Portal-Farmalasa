@@ -571,6 +571,20 @@ const CRONS = [
   { job: 'dte-resync-month-salud3',  slug: 'backfill-dte-sales', cadencia: '0 5 1 * *', corridasDia: 0, sistema: null, motivo: 'SIN MEDIR. Mensual, una sala.' },
   { job: 'dte-resync-month-salud4',  slug: 'backfill-dte-sales', cadencia: '0 5 1 * *', corridasDia: 0, sistema: null, motivo: 'SIN MEDIR. Mensual, una sala.' },
   { job: 'dte-resync-month-salud5',  slug: 'backfill-dte-sales', cadencia: '0 5 1 * *', corridasDia: 0, sistema: null, motivo: 'SIN MEDIR. Mensual, una sala.' },
+  // La distribuidora (Torogoz), en producción desde el 2026-10-01.
+  {
+    job: 'dist-vencer-reservas', slug: null, cadencia: '* * * * *',
+    corridasDia: 1440, sistema: 0,
+    motivo: 'Suelta las reservas de una venta en ruta que pasaron sus 30 minutos y le avisa al vendedor '
+          + '(borrador 0012). SQL puro sobre dist_reservas, casi siempre vacía: no toca el sistema de origen '
+          + 'ni Hacienda. Su push va a la función de notificaciones propia y sólo cuando venció algo.',
+  },
+  {
+    job: 'dist-aviso-cartera-atrasada', slug: null, cadencia: '0 13 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Aviso diario (7:00 SV) de la cartera vencida de cada vendedor y el resumen a quien administra '
+          + '(borrador 0023). SQL puro; un push por destinatario sólo si hay algo vencido.',
+  },
 ];
 
 /* Los crons que NO invocan una edge function quedan fuera a propósito: no le

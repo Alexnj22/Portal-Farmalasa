@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1122.1 — Torogoz: cierres técnicos tras salir a producción
+
+Cierres del plan de paso a producción de la distribuidora (`docs/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md`, sección 3).
+
+- **Tipos de la base regenerados** desde producción (`npm run tipos:base`): ya traen las 44 tablas `dist_*`. Los tres archivos de datos de la distribuidora pierden su `@ts-nocheck` y entran al contrato con cero avisos.
+- **Registro de columnas booleanas** al día (`scripts/db/boolean-columns.json`, 82 → 99 tablas): incluye las 15 columnas booleanas de la distribuidora, así `gate:data` vigila sus consultas.
+- **`gate:eficiencia`** declara los dos crons de la distribuidora (`dist-vencer-reservas`, `dist-aviso-cartera-atrasada`): SQL puro, sin peticiones al sistema de origen.
+
 ## v2.1122.0 — App: solicitudes personales nativas (y sus reglas en el núcleo)
 
 Cuarta pieza para cerrar el Inicio: las siete solicitudes personales se crean

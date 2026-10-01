@@ -1,9 +1,3 @@
-// @ts-nocheck — Las tablas `dist_*` todavía NO existen en producción (viven en
-// supabase/borradores/distribucion y sólo en el entorno de pruebas), y
-// `gate:tipos` revisa contra los tipos de PRODUCCIÓN (`src/types/database.ts`):
-// cada consulta de este archivo salía como «tabla inexistente». Es cierto hoy y
-// deja de serlo al migrar: ese día se corre `npm run tipos:base` y se QUITA
-// esta línea, para que el archivo entre al contrato como los demás.
 // El inventario de la distribuidora: existencia por lote y vencimiento.
 //
 // La existencia SÓLO cambia por funciones de la base (entrada, ajuste, y la

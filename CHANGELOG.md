@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1114.1 — Puntos: el vigía avisa errores del motor, cumpleaños y vencimiento
+
+El vigía de puntos (`puntos_vigilar_motor`, cada 15 min) sólo miraba si el motor
+se había detenido. Ahora avisa además:
+
+- **Motor con errores**: 3+ corridas fallidas en una hora. `puntos-motor` anota
+  cada falla en la tabla nueva `puntos_motor_fallas` (purga a 90 días).
+- **Cumpleaños y vencimiento**: el cron diario no existe, no corrió o falló.
+
+Avisa a UNA persona, `puntos_config.avisar_fallas_a` (decisión del usuario), con
+notificación al teléfono y una vez por día por hallazgo; sin destinatario
+activo cae a Gerencia/Administración. El canje sin saldo también le llega a esa
+persona al teléfono, además de a la sala y Supervisión.
+
+Probado en una transacción deshecha: con tres fallas sembradas sale un aviso,
+para esa persona sola.
+
 ## v2.1114.0 — Aviso de descargas grandes en vez de techo de exportación
 
 - Toda descarga de más de 5,000 filas avisa a quien administra las sesiones:

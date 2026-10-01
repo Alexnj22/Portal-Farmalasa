@@ -12998,6 +12998,7 @@ export type Database = {
       puntos_config: {
         Row: {
           acumulacion_activa: boolean
+          avisar_fallas_a: string | null
           fuente: string
           id: boolean
           inicio: string | null
@@ -13009,6 +13010,7 @@ export type Database = {
         }
         Insert: {
           acumulacion_activa?: boolean
+          avisar_fallas_a?: string | null
           fuente?: string
           id?: boolean
           inicio?: string | null
@@ -13020,6 +13022,7 @@ export type Database = {
         }
         Update: {
           acumulacion_activa?: boolean
+          avisar_fallas_a?: string | null
           fuente?: string
           id?: boolean
           inicio?: string | null
@@ -13030,6 +13033,20 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "puntos_config_avisar_fallas_a_fkey"
+            columns: ["avisar_fallas_a"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_config_avisar_fallas_a_fkey"
+            columns: ["avisar_fallas_a"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "puntos_config_updated_by_fkey"
             columns: ["updated_by"]
@@ -13309,6 +13326,27 @@ export type Database = {
             referencedColumns: ["invoice_id"]
           },
         ]
+      }
+      puntos_motor_fallas: {
+        Row: {
+          created_at: string
+          detalle: Json | null
+          error: string
+          id: number
+        }
+        Insert: {
+          created_at?: string
+          detalle?: Json | null
+          error: string
+          id?: never
+        }
+        Update: {
+          created_at?: string
+          detalle?: Json | null
+          error?: string
+          id?: never
+        }
+        Relationships: []
       }
       puntos_producto_no_acumula: {
         Row: {

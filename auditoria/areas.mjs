@@ -453,7 +453,9 @@ export const AREAS = [
                  'puntos_archivo_carga', 'puntos_archivo_cliente', 'puntos_archivo_venta',
                  'puntos_archivo_canje', 'puntos_arranque',
                  // Las cuentas de la base vieja que no pasan solas (2026-09-25).
-                 'puntos_cuentas_pendientes'],
+                 'puntos_cuentas_pendientes',
+                 // Las corridas del motor que fallaron; las lee el vigía (2026-10-01).
+                 'puntos_motor_fallas'],
         edge: ['sync-dte-sales', 'sync-wfm-sales', 'check-sales-alerts', 'check-sales-reconciliation',
                'backfill-dte-sales', 'heal-dte-sync',
                // El programa de puntos vive en el portal desde el 2026-10-01:

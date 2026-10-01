@@ -26,7 +26,14 @@
 // ── Los avisos ──────────────────────────────────────────────────────────────
 // `puntos_barrer_canjes` devuelve los avisos ARMADOS pero no los manda: una
 // función de Postgres no manda notificaciones. Acá se mandan, con `check_key`
-// antiduplicado, a la sala donde pasó y a los supervisores.
+// antiduplicado, a la sala donde pasó y a los supervisores. El canje sin saldo
+// le llega además, al teléfono, a quien diga `puntos_config.avisar_fallas_a`.
+//
+// ── Las fallas se anotan ────────────────────────────────────────────────────
+// Una corrida que falla o queda a medias deja una fila en
+// `puntos_motor_fallas`; `puntos_vigilar_motor` (cron cada 15 min) avisa si
+// se juntan tres en una hora. Sin esto el motor podía seguir acumulando con los
+// canjes rotos y nadie se enteraba: el único vigía miraba si acumulaba.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { getCorsHeaders, requireInvokeSecret } from '../_shared/security.ts';
 
@@ -48,6 +55,17 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
 
+  // Anotar nunca puede tumbar la respuesta: si la base no contesta, tampoco
+  // habrá acumulación, y eso lo ve el vigía por su cuenta.
+  const anotarFalla = async (error: string, detalle: unknown = null) => {
+    try {
+      const { error: e } = await supabase.from('puntos_motor_fallas').insert({ error, detalle });
+      if (e) console.error('puntos_motor_fallas:', e.message);
+    } catch (e) {
+      console.error('puntos_motor_fallas:', e);
+    }
+  };
+
   try {
     const body = await req.json().catch(() => ({}));
     const hoy = new Date();
@@ -60,7 +78,7 @@ Deno.serve(async (req) => {
     // que puede encender solo un trabajo destructivo es un parámetro que alguien
     // pone por error una vez.
     const { data: cfg, error: eCfg } = await supabase
-      .from('puntos_config').select('acumulacion_activa, fuente').maybeSingle();
+      .from('puntos_config').select('acumulacion_activa, fuente, avisar_fallas_a').maybeSingle();
     if (eCfg) throw new Error(`puntos_config: ${eCfg.message}`);
 
     const encendido = cfg?.acumulacion_activa === true;
@@ -147,24 +165,40 @@ Deno.serve(async (req) => {
         const enCero = a.tipo === 'venta_en_cero';
         if (yaEstan.has(checkKey)) continue;
         const salaId = salaPorCodigo.get(a.sucursal as string);
+        // El canje sin saldo va además al teléfono de quien vigila el programa
+        // (decisión del usuario, 2026-10-01). Sale de la lista general para no
+        // recibirlo dos veces.
+        const vigia = !enCero && cfg?.avisar_fallas_a ? String(cfg.avisar_fallas_a) : null;
         const destinatarios = [...new Set([
           ...(porSala.get(salaId as number) ?? []),
           ...supervision,
-        ])];
-        if (!destinatarios.length) continue;
+        ])].filter((id) => id !== vigia);
+        if (!destinatarios.length && !vigia) continue;
 
         // Un fallo en UN aviso no puede tumbar la corrida: se anota y se sigue.
+        const titulo = enCero ? 'Un canje dejó la venta en $0.00' : 'Se canjearon puntos que el cliente no tenía';
+        const cuerpo = enCero
+          ? `La venta ${a.documento ?? ''} se pagó entera con ${a.puntos} puntos. Una venta no puede quedar en $0.00: hay que revisarla.`
+          : `Se aplicaron ${a.pedidos} puntos de descuento y el cliente tenía ${a.tenia}. Hay que revisar la venta.`;
+        const metadata = { check_key: checkKey, invoice_id: a.invoice_id, customer_id: a.customer_id };
+        if (vigia) {
+          const { error: e5 } = await supabase.rpc('notify_employees', {
+            p_recipients: [vigia], p_type: 'PUNTOS_SIN_SALDO', p_title: titulo, p_body: cuerpo,
+            p_link: '/puntos?tab=avisos', p_metadata: metadata, p_push: true,
+            p_branch_id: salaId ?? null,
+          });
+          if (e5) fallidos.push(`${checkKey} (vigía): ${e5.message}`);
+        }
+        if (!destinatarios.length) { avisados++; continue; }
         const { error: e4 } = await supabase.rpc('notify_employees', {
           p_recipients: destinatarios,
           p_type: enCero ? 'PUNTOS_VENTA_EN_CERO' : 'PUNTOS_SIN_SALDO',
-          p_title: enCero ? 'Un canje dejó la venta en $0.00' : 'Se canjearon puntos que el cliente no tenía',
           // Se dice lo accionable: cuánto se pidió y cuánto había, o que la
           // venta se pagó entera con puntos (regla del usuario, 2026-09-28).
-          p_body: enCero
-            ? `La venta ${a.documento ?? ''} se pagó entera con ${a.puntos} puntos. Una venta no puede quedar en $0.00: hay que revisarla.`
-            : `Se aplicaron ${a.pedidos} puntos de descuento y el cliente tenía ${a.tenia}. Hay que revisar la venta.`,
+          p_title: titulo,
+          p_body: cuerpo,
           p_link: '/puntos?tab=avisos',
-          p_metadata: { check_key: checkKey, invoice_id: a.invoice_id, customer_id: a.customer_id },
+          p_metadata: metadata,
           p_push: false,
           p_branch_id: salaId ?? null,
         });
@@ -176,6 +210,7 @@ Deno.serve(async (req) => {
     // `ok: false` cuando algo quedó a medias, y con el detalle. Una corrida que
     // devuelve 200 sobre trabajo incompleto es como un fallo vive meses sin que
     // nadie lo mire.
+    if (fallidos.length) await anotarFalla('avisos que no salieron', { fallidos });
     return json({
       ok: fallidos.length === 0,
       encendido, simulado: simular, ventana: { desde, hasta },
@@ -183,6 +218,8 @@ Deno.serve(async (req) => {
       avisados, avisos_pendientes: avisos.length, fallidos,
     }, fallidos.length ? 500 : 200);
   } catch (e) {
-    return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
+    const msg = e instanceof Error ? e.message : String(e);
+    await anotarFalla(msg);
+    return json({ ok: false, error: msg }, 500);
   }
 });

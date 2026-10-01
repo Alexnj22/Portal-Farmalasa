@@ -17342,6 +17342,86 @@ export type Database = {
           },
         ]
       }
+      puntos_irregularidad: {
+        Row: {
+          avisado_at: string | null
+          clave: string
+          created_at: string
+          customer_id: number | null
+          detalle: Json | null
+          dia: string
+          employee_id: string | null
+          id: number
+          invoice_id: number | null
+          nota: string
+          puntos: number | null
+          sucursal: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          avisado_at?: string | null
+          clave: string
+          created_at?: string
+          customer_id?: number | null
+          detalle?: Json | null
+          dia: string
+          employee_id?: string | null
+          id?: never
+          invoice_id?: number | null
+          nota: string
+          puntos?: number | null
+          sucursal?: string | null
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          avisado_at?: string | null
+          clave?: string
+          created_at?: string
+          customer_id?: number | null
+          detalle?: Json | null
+          dia?: string
+          employee_id?: string | null
+          id?: never
+          invoice_id?: number | null
+          nota?: string
+          puntos?: number | null
+          sucursal?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "puntos_irregularidad_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_irregularidad_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "puntos_irregularidad_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_irregularidad_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       puntos_lote: {
         Row: {
           creado_por: string | null
@@ -26538,6 +26618,10 @@ export type Database = {
         Returns: Json
       }
       puntos_ventas_anuladas: { Args: { p_tope?: number }; Returns: Json }
+      puntos_vigilar_irregularidades: {
+        Args: { p_simular?: boolean }
+        Returns: Json
+      }
       puntos_vigilar_motor: { Args: never; Returns: Json }
       purgar_carnes_temporales: { Args: never; Returns: number }
       purgar_cola_impresion: { Args: never; Returns: number }

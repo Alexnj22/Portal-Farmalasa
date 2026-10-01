@@ -14,7 +14,10 @@
  *                          (el panel de puntos de la ficha se mudó aquí,
  *                          pedido del usuario, 2026-09-25).
  *   · Avisos             — ¿qué hay que revisar? (canjes sin saldo, anulaciones
- *                          con puntos ya gastados)
+ *                          con puntos ya gastados, y desde el 2026-10-01 los
+ *                          movimientos fuera de lo normal que detecta
+ *                          `puntos_vigilar_irregularidades` — ver su migración
+ *                          para los umbrales y de dónde salen)
  *   · Cuentas por asignar — las cuentas del sistema anterior que no pasaron
  *                          solas, para asignarlas cuando el cliente reclame.
  *
@@ -57,6 +60,8 @@ import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import AsignarCuentaModal from './puntos/AsignarCuentaModal';
 import ClientePuntosModal from './puntos/ClientePuntosModal';
+import AvatarConEstado from '../components/common/AvatarConEstado';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 // `recharts` pesa: viaja en su propio chunk y se pide cuando la pestaña lo pinta.
 const GraficaDiaria = lazy(() => import('./puntos/GraficasPuntos').then((m) => ({ default: m.GraficaDiaria })));
@@ -77,6 +82,27 @@ const PESTANAS = [
 // 100 puntos = US$1.00 (cláusula 4 del reglamento).
 const dolares = (puntos) => formatMoney((Number(puntos) || 0) / 100);
 const pts = (n) => formatQty(Number(n) || 0);
+
+// Qué dice cada aviso. Los de movimientos fuera de lo normal traen su `nota`
+// escrita en la base (cuántas ventas, cuántos vendedores…) y quién lo hizo.
+const ptsDe = (a) => pts(a.puntos);
+const AVISOS = {
+    canje_sin_saldo:             { rotulo: 'Canje sin saldo suficiente', variante: 'danger', puntos: (a) => `Faltaron ${pts(a.faltaron)}` },
+    canje_devuelto:              { rotulo: 'Canje devuelto: la factura se anuló', variante: 'info', puntos: (a) => `${ptsDe(a)} devueltos` },
+    canje_venta_en_cero:         { rotulo: 'Canje dejó la venta en $0.00', variante: 'danger', puntos: (a) => `${ptsDe(a)} canjeados` },
+    anulada_con_puntos_gastados: { rotulo: 'Anulada con puntos ya canjeados', variante: 'warning', puntos: (a) => `${ptsDe(a)} no recuperados` },
+    muchas_ventas:               { rotulo: 'Muchas ventas a una ficha', variante: 'danger', puntos: (a) => `${ptsDe(a)} acumulados` },
+    acumulacion_alta:            { rotulo: 'Acumulación alta en un día', variante: 'warning', puntos: (a) => `${ptsDe(a)} acumulados` },
+    varias_salas:                { rotulo: 'Compras en 3 salas o más', variante: 'warning', puntos: (a) => `${ptsDe(a)} acumulados` },
+    mismo_vendedor:              { rotulo: 'Mismo vendedor, varias veces', variante: 'warning', puntos: (a) => `${ptsDe(a)} acumulados` },
+    venta_a_si_mismo:            { rotulo: 'Venta a su propia ficha', variante: 'danger', puntos: (a) => `${ptsDe(a)} acumulados` },
+    ajuste_suma:                 { rotulo: 'Puntos dados a mano', variante: 'warning', puntos: (a) => `+${ptsDe(a)}` },
+    ajuste_resta:                { rotulo: 'Puntos quitados a mano', variante: 'warning', puntos: (a) => `−${pts(Math.abs(a.puntos))}` },
+    canje_grande:                { rotulo: 'Canje grande', variante: 'warning', puntos: (a) => `${ptsDe(a)} canjeados` },
+    canje_recien_ganado:         { rotulo: 'Canje con puntos recién ganados', variante: 'warning', puntos: (a) => `${ptsDe(a)} canjeados` },
+};
+// Un tipo que la pantalla todavía no conoce se muestra igual, no desaparece.
+const avisoDe = (a) => AVISOS[a.tipo] ?? { rotulo: 'Movimiento para revisar', variante: 'warning', puntos: ptsDe };
 const fechaCorta = (iso) => fechaTexto(iso, { day: 'numeric', month: 'short', year: 'numeric' }, '—');
 
 // ¿La acumulación está parada? Sólo se pregunta de 8:00 a 22:00 SV: las salas
@@ -247,27 +273,20 @@ export default function PuntosView({ openModal }) {
                             <DataRow key={`${a.tipo}-${a.invoice_id}-${i}`} index={i}>
                                 <DataCell>{fechaHora12(a.cuando)}</DataCell>
                                 <DataCell>
-                                    {a.tipo === 'canje_sin_saldo'
-                                        ? <Badge variant="danger" tone="soft" uppercase={false}>Canje sin saldo suficiente</Badge>
-                                        : a.tipo === 'canje_devuelto'
-                                            ? <Badge variant="info" tone="soft" uppercase={false}>Canje devuelto: la factura se anuló</Badge>
-                                        : a.tipo === 'canje_venta_en_cero'
-                                            ? <Badge variant="danger" tone="soft" uppercase={false}>Canje dejó la venta en $0.00</Badge>
-                                            : <Badge variant="warning" tone="soft" uppercase={false}>Anulada con puntos ya canjeados</Badge>}
+                                    <Badge variant={avisoDe(a).variante} tone="soft" uppercase={false}>{avisoDe(a).rotulo}</Badge>
+                                    {a.nota && <div className="text-xs text-content-2 mt-1">{a.nota}</div>}
+                                    {a.quien_id && (
+                                        <div className="flex items-center gap-1.5 mt-1 text-xs text-content-2">
+                                            <AvatarConEstado emp={{ id: a.quien_id, name: a.quien }} px={18} radio="rounded-full" marco="" />
+                                            <span>{shortEmployeeName({ name: a.quien })}</span>
+                                        </div>
+                                    )}
                                 </DataCell>
                                 <DataCell>{a.cliente || <span className="text-content-3">—</span>}</DataCell>
                                 <DataCell>{a.sala || '—'}</DataCell>
                                 <DataCell><span className="tabular-nums">{a.documento || '—'}</span></DataCell>
                                 <DataCell>
-                                    <span className="tabular-nums">
-                                        {a.tipo === 'canje_sin_saldo'
-                                            ? `Faltaron ${pts(a.faltaron)}`
-                                            : a.tipo === 'canje_devuelto'
-                                                ? `${pts(a.puntos)} devueltos`
-                                            : a.tipo === 'canje_venta_en_cero'
-                                                ? `${pts(a.puntos)} canjeados`
-                                                : `${pts(a.puntos)} no recuperados`}
-                                    </span>
+                                    <span className="tabular-nums">{avisoDe(a).puntos(a)}</span>
                                 </DataCell>
                             </DataRow>
                         ))}

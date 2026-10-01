@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1129.0 — Puntos: aviso de movimientos fuera de lo normal
+
+Pedido del usuario: enterarse cuando a un cliente se le acumulan o descuentan
+puntos de forma no habitual. `puntos_vigilar_irregularidades` corre cada 5 min
+en horario de sala, guarda cada hallazgo una sola vez en `puntos_irregularidad`,
+avisa al teléfono de quien figura en `puntos_config.avisar_fallas_a` y lo lista
+en Puntos → Avisos con quién lo hizo.
+
+Reglas, con umbrales medidos sobre un año del sistema anterior: una ficha
+atendida por 4+ vendedores o con 8+ ventas en un día; 500+ puntos en un día;
+compras en 3+ salas; un mismo vendedor en 3+ visitas separadas; una venta de un
+empleado a su propia ficha; todo ajuste a mano (sumar o quitar); canje de
+2,000+ o hecho con puntos ganados en los 3 días anteriores; y la anulación con
+puntos ya canjeados.
+
+La medición dejó un hallazgo de fondo: en el último año, 359 días-ficha con 4+
+vendedores sumaron 85,215 puntos (22% de todo lo acumulado), en 273 fichas, y
+crecían cada mes (12 en oct-2025, 82 en sep-2026). La primera versión contaba
+facturas por vendedor y en la simulación acusó una compra partida en tres
+facturas en 4 minutos; se corrigió a visitas separadas por más de 30 minutos.
+
 ## v2.1128.2 — Pie de modal: separación entre botones también en Promociones
 
 `PieDeModal` sube a `components/common`: lo de la izquierda (un texto o una

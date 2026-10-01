@@ -262,6 +262,13 @@ const CRONS = [
           + 'mientras el programa siga en el sistema anterior ni fuera de 8:00–21:00.',
   },
   {
+    job: 'puntos-vigilar-irregularidades', slug: null, cadencia: '*/5 12-23,0-5 * * *',
+    corridasDia: 216, sistema: 0,
+    motivo: 'Avisa al momento de los movimientos de puntos fuera de lo normal (una ficha con '
+          + '4+ vendedores en un día, ajustes a mano, canjes grandes…; pedido del usuario '
+          + '2026-10-01). SQL puro sobre las ventas de hoy y ayer, ~26 ms por vuelta.',
+  },
+  {
     job: 'puntos-cumpleanos-diario', slug: null, cadencia: '10 12 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'Regala los puntos de cumpleaños del día (decisión del usuario, 2026-09-28). SQL puro; '

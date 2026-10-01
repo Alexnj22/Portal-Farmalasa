@@ -455,7 +455,10 @@ export const AREAS = [
                  // Las cuentas de la base vieja que no pasan solas (2026-09-25).
                  'puntos_cuentas_pendientes',
                  // Las corridas del motor que fallaron; las lee el vigía (2026-10-01).
-                 'puntos_motor_fallas'],
+                 'puntos_motor_fallas',
+                 // Movimientos de puntos fuera de lo normal que detecta el
+                 // vigía de irregularidades (2026-10-01).
+                 'puntos_irregularidad'],
         edge: ['sync-dte-sales', 'sync-wfm-sales', 'check-sales-alerts', 'check-sales-reconciliation',
                'backfill-dte-sales', 'heal-dte-sync',
                // El programa de puntos vive en el portal desde el 2026-10-01:

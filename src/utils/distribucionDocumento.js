@@ -671,9 +671,11 @@ export const nombreDelPdf = (dte) =>
  * cliente puede consultarlo en Hacienda después. Mismo formato compacto que el
  * ticket de venta.
  */
+/** @typedef {{ nombre?: string, nombre_comercial?: string, nit?: string, nrc?: string }} EmisorPapel */
+/** @param {{ marca?: any, emisor?: EmisorPapel, tipoNombre?: string, cliente?: any, emitidoAt: any, codigoGeneracion: string, renglones?: any[], total: any, pagos?: any[] }} datos */
 export function ticketProvisional({ marca = null, emisor = {}, tipoNombre = 'FACTURA', cliente, emitidoAt, codigoGeneracion, renglones = [], total, pagos = [] }) {
     const f = new Date(emitidoAt);
-    const iso = relojSV(f).toISOString();
+    const iso = relojSV(f.getTime()).toISOString();
     const totales = [['TOTAL', dinero(total), true]];
     for (const p of pagos) {
         const recibido = p.forma === '01' && p.recibido != null ? Number(p.recibido) : null;
@@ -716,7 +718,7 @@ export function ticketProvisional({ marca = null, emisor = {}, tipoNombre = 'FAC
 // ── Cuentas por cobrar: recibo y estado de cuenta ──────────────────────────
 
 const fechaDe = (iso) => {
-    const r = relojSV(new Date(iso)).toISOString();
+    const r = relojSV(new Date(iso).getTime()).toISOString();
     return `${fechaDdMm(r.slice(0, 10))} ${hora12(r.slice(11, 19))}`;
 };
 
@@ -847,6 +849,7 @@ export function ticketDeCierreDia(d, marca = null, emisor = {}) {
 }
 
 /** El ESTADO DE CUENTA para dejárselo al cliente: qué debe, desde cuándo y cuánto. */
+/** @param {{ cliente: any, estado?: any, marca?: any, emisor?: EmisorPapel }} datos */
 export function ticketDeEstadoDeCuenta({ cliente, estado, marca = null, emisor = {} }) {
     const abiertas = (estado?.cuentas ?? []).filter(c => c.estado === 'abierta');
     const cr = estado?.credito ?? {};

@@ -645,10 +645,12 @@ export const AREAS = [
             'scripts/entorno-pruebas/distribucion.mjs',
             'tests/fixtures/dte-reales-2026-09.json',
         ],
-        tablas: [],
+        // Las 43 tablas dist_* de los borradores (todavía no en producción:
+        // hasta entonces el gate sólo avisa «declarada y no en el snapshot»).
+        tablas: ['dist_asuetos', 'dist_bajas', 'dist_caja_movimientos', 'dist_cajas', 'dist_carga_items', 'dist_cargas', 'dist_catalogo', 'dist_cierres_dia', 'dist_clientes', 'dist_compra_items', 'dist_compras', 'dist_conteo_items', 'dist_conteos', 'dist_contingencias', 'dist_correlativos', 'dist_correos', 'dist_cuarentena', 'dist_cxc', 'dist_cxc_abonos', 'dist_depositos', 'dist_devolucion_items', 'dist_devoluciones', 'dist_dte', 'dist_dte_intentos', 'dist_emisores', 'dist_liquidaciones', 'dist_listas', 'dist_lote_asignaciones', 'dist_lote_movimientos', 'dist_lotes', 'dist_mh_token', 'dist_pagos', 'dist_pedido_items', 'dist_pedidos', 'dist_precios', 'dist_proveedor_productos', 'dist_proveedores', 'dist_puntos_venta', 'dist_recibos', 'dist_reservas', 'dist_rutas', 'dist_ventas_perdidas', 'dist_visitas'],
         edge: ['distribucion-dte', 'distribucion-comprobante', 'distribucion-correo'],
-        crons: [],
-        docs: [],
+        crons: ['dist-vencer-reservas', 'dist-aviso-cartera-atrasada'],
+        docs: ['docs/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md'],
     },
 
     // ═══ PRODUCTO Y EXISTENCIA ══════════════════════════════════════════════

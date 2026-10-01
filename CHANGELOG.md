@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1117.2 — Torogoz: listo para producción (ajustes de la auditoría y plan)
+
+Preparación para pasar la distribuidora a producción, sin tocar la base real. Plan completo en `docs/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md`.
+
+- **Arreglado: el faltante del camión salía en $0** en la liquidación: el costo no se estampaba en los movimientos `faltante`, `carga` y `descarga` (borrador 0032).
+- **Privilegios**: trece tablas y una vista sólo le quitaban permisos a `anon`; `authenticated` conservaba TRUNCATE, que salta el RLS. Ahora se revoca todo y se da exactamente lo necesario.
+- **18 índices de FK** que faltaban o eran parciales.
+- **Solicitudes de descuento**: si el aviso push fallaba, se caía la solicitud entera; ahora el aviso no la tumba.
+- La auditoría del portal conoce las 43 tablas y los 2 crons de la distribuidora; los tickets quedaron sin avisos de tipos.
+
 ## v2.1117.1 — Torogoz: el camión en la liquidación del vendedor
 
 La liquidación ya contaba el efectivo de las ventas del camión; ahora dice qué pasó con la mercadería (borrador 0031): cargado, vendido, lo que volvió a bodega, lo que sigue en el camión y el faltante valorizado al costo del momento, con la nota de quien descargó y el número de la Nota de Remisión.

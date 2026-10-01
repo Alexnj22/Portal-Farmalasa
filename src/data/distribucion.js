@@ -150,7 +150,9 @@ const SELECT_PEDIDO = 'id, cliente_id, vendedor_id, estado, tipo_documento, cond
     // hay `total_pagar`): lo calcula la pantalla con el motor del documento.
     + 'dist_pedido_items(cantidad, precio_con_iva, descuento)';
 
-/** `estados`: sólo esos (p. ej. las preventas por finalizar: `['confirmado']`). */
+/** `estados`: sólo esos (p. ej. las preventas por finalizar: `['confirmado']`).
+ * @param {{ desde?: string, estados?: string[] }} [opciones]
+ */
 export async function fetchPedidos({ desde, estados } = {}) {
     const rows = await fetchAllRows(() => {
         let q = supabase.from('dist_pedidos').select(SELECT_PEDIDO).order('created_at', { ascending: false });
@@ -338,6 +340,7 @@ export async function anularPedido(pedidoId, motivo) {
 
 // ── Documentos (DTE) ───────────────────────────────────────────────────────
 
+/** @param {{ desde?: string }} [opciones] */
 export async function fetchDocumentos({ desde } = {}) {
     const rows = await fetchAllRows(() => {
         let q = supabase.from('dist_dte')
@@ -757,6 +760,7 @@ const SELECT_PERDIDA = 'id, cliente_id, product_id, pedido_id, origen, producto,
     + 'buscado, cantidad, estado, nota, created_at, resuelto_at, dist_clientes(nombre), '
     + 'employees:reportado_por(id, name, photo_url)';
 
+/** @param {{ estado?: string }} [opciones] */
 export async function fetchVentasPerdidas({ estado } = {}) {
     const rows = await fetchAllRows(() => {
         let q = supabase.from('dist_ventas_perdidas').select(SELECT_PERDIDA).order('created_at', { ascending: false });

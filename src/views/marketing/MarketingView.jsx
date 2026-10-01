@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
     Megaphone, CalendarDays, KanbanSquare, Inbox, Plus, Send, ThumbsUp, Settings2, Target,
-    CheckCircle2, AlertTriangle, DollarSign, Layers, MessageSquare, FileDown, Clock,
+    CheckCircle2, AlertTriangle, DollarSign, Layers, MessageSquare, FileDown, Clock, Images, Palette, Copy,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -23,17 +23,20 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import {
     ESTADOS_MES, ESTADOS_SOLICITUD, resumenDelMes, mezclaDelMes, totalesDePauta, textoDePieza, pilarDe, formatoDe,
-    ultimoCambioPorPieza, esDeMarca, asignadoEnPauta,
+    ultimoCambioPorPieza, esDeMarca, asignadoEnPauta, FORMATOS,
 } from '@nucleo/utils/marketing';
 import {
     fetchCatalogos, fetchMes, crearMes, fetchPiezas, fetchComentarios, fetchSolicitudes, fetchPersonas,
-    firmarDisenos, moverPieza, fetchAjustes, fetchFechasEspeciales, fetchPromocionesLigables, fetchEfectoEnVentas, fetchHistorial,
+    firmarDisenos, moverPieza, fetchAjustes, fetchFechasEspeciales, fetchPromocionesLigables, fetchEfectoEnVentas, fetchHistorial, fetchGaleria, fetchRecursos, liberarPieza,
 } from '@nucleo/data/marketing';
 import { registrarEgreso } from '@nucleo/data/egreso';
 import TabCalendario from './TabCalendario';
 import TabTablero from './TabTablero';
 import TabSolicitudes from './TabSolicitudes';
 import TabPauta from './TabPauta';
+import TabBiblioteca from './TabBiblioteca';
+import Galeria from './Galeria';
+import DuplicarModal from './DuplicarModal';
 import PiezaModal from './PiezaModal';
 import PautaModal from './PautaModal';
 import SolicitudModal from './SolicitudModal';
@@ -68,6 +71,8 @@ export default function MarketingView() {
         { key: 'tablero',     label: 'Flujo',       icon: KanbanSquare },
         { key: 'solicitudes', label: 'Solicitudes', icon: Inbox },
         { key: 'pauta',       label: 'Pauta',       icon: Megaphone },
+        { key: 'galeria',     label: 'Galería',     icon: Images },
+        { key: 'biblioteca',  label: 'Marca',       icon: Palette },
     ]), []);
     const [tab, setTab] = usePestanaEnUrl(tabs, 'calendario');
 
@@ -86,6 +91,7 @@ export default function MarketingView() {
 
     const [busqueda, setBusqueda] = useState('');
     const [fMarca, setFMarca] = useState('');
+    const [fFormato, setFFormato] = useState('');
     const [fSolicitud, setFSolicitud] = useState('');
 
     const [catalogos, setCatalogos] = useState({ marcas: [], redes: [] });
@@ -113,6 +119,14 @@ export default function MarketingView() {
     const [decision, setDecision] = useState(null);           // 'publicar' | 'aprobar'
     const [datosMes, setDatosMes] = useState(false);
     const [ajustes, setAjustes] = useState(false);
+    const [duplicando, setDuplicando] = useState(null);       // { pieza? } — sin pieza, el mes
+    // Galería y biblioteca no son del mes: se cargan al abrir su pestaña.
+    const [galeria, setGaleria] = useState([]);
+    const [recursos, setRecursos] = useState([]);
+    const [firmasExtra, setFirmasExtra] = useState(new Map());
+    const [cargandoExtra, setCargandoExtra] = useState(false);
+    const [fLiberada, setFLiberada] = useState('');
+    const delMes = ['calendario', 'tablero', 'pauta'].includes(tab);
 
     const cargar = useCallback(async ({ silencioso = false } = {}) => {
         if (!silencioso) setCargando(true);
@@ -150,7 +164,39 @@ export default function MarketingView() {
     }, [mes]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- la carga inicial del mes; no hay forma de tenerlo antes de pedirlo
+
+    const cargarExtra = useCallback(async () => {
+        if (tab !== 'galeria' && tab !== 'biblioteca') return;
+        setCargandoExtra(true);
+        try {
+            if (tab === 'galeria') {
+                const ps = await fetchGaleria({ desde: `${correrMes(mesSV(), -6)}-01` });
+                setGaleria(ps);
+                setFirmasExtra(await firmarDisenos(ps));
+            } else {
+                const rs = await fetchRecursos();
+                setRecursos(rs);
+                setFirmasExtra(await firmarDisenos([{ archivos: rs.filter((r) => r.url) }]));
+            }
+        } catch (err) {
+            showToast('No se pudo cargar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        } finally {
+            setCargandoExtra(false);
+        }
+    }, [tab, showToast]);
+    useEffect(() => { cargarExtra(); }, [cargarExtra]); // eslint-disable-line react-hooks/set-state-in-effect -- galería y biblioteca se piden al abrir su pestaña
+
     const recargar = useCallback(() => cargar({ silencioso: true }), [cargar]);
+
+    const liberarDesdeGaleria = useCallback(async (p, on) => {
+        try {
+            await liberarPieza(p.id, on);
+            setGaleria((g) => g.map((x) => (x.id === p.id ? { ...x, liberada: on } : x)));
+            recargar();
+        } catch (err) {
+            showToast('No se pudo cambiar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        }
+    }, [recargar, showToast]);
 
     const marcasPorId = useMemo(() => Object.fromEntries(catalogos.marcas.map((m) => [m.id, m])), [catalogos.marcas]);
 
@@ -280,6 +326,10 @@ export default function MarketingView() {
             key: 'nueva', icon: Plus, label: 'Pieza', title: 'Agregar una pieza al calendario',
             rotulo: 'Pieza', variant: 'primary', onClick: () => nuevaPieza(null),
         }] : []),
+        ...(puedeEditar && ['calendario', 'tablero'].includes(tab) && piezas.length > 0 ? [{
+            key: 'duplicar', icon: Copy, label: 'Duplicar a otro mes', title: 'Copiar piezas de este mes a otro',
+            soloIcono: true, variant: 'secondary', onClick: () => setDuplicando({}),
+        }] : []),
         ...(tab === 'solicitudes' ? [{
             key: 'pedir', icon: Plus, label: 'Pedir', title: 'Pedirle una pieza al diseñador',
             rotulo: 'Pedir', variant: 'primary', onClick: () => setSolicitudAbierta({}),
@@ -294,11 +344,11 @@ export default function MarketingView() {
             rotulo: 'Aprobar', variant: 'secondary', tone: 'success', onClick: () => setDecision('aprobar'),
         }] : []),
         // El presupuesto de pauta lo fija gerencia: quien aprueba también puede.
-        ...((puedeEditar || puedeAprobar) && tab !== 'solicitudes' ? [{
+        ...((puedeEditar || puedeAprobar) && delMes ? [{
             key: 'datos', icon: Target, label: 'Objetivo y presupuesto', title: 'Objetivo del mes y presupuesto de pauta',
             soloIcono: true, variant: 'secondary', onClick: abrirDatosDelMes,
         }] : []),
-        ...(mesFila && resumen.total > 0 && tab !== 'solicitudes' ? [{
+        ...(mesFila && resumen.total > 0 && delMes ? [{
             key: 'informe', icon: FileDown, label: generando ? 'Generando…' : 'Informe PDF',
             title: 'Descargar el informe del mes en PDF', soloIcono: true, variant: 'secondary',
             onClick: generando ? undefined : descargarInforme,
@@ -320,7 +370,7 @@ export default function MarketingView() {
         { key: 'costo', icon: MessageSquare, label: 'Costo por mensaje',
             value: pauta.costoPorMensaje != null ? formatMoney(pauta.costoPorMensaje) : '—',
             sub: pauta.costoPorClic != null ? `${formatMoney(pauta.costoPorClic)} por clic` : 'Sin resultados' },
-    ] : tab === 'solicitudes' ? [] : [
+    ] : !delMes ? [] : [
         { key: 'piezas', icon: Layers, label: 'Piezas', value: resumen.total,
             sub: Object.entries(mezcla.formatos).map(([f, c]) => `${c} ${formatoDe(f).label.toLowerCase()}`).join(' · ') || 'Sin planificar' },
         { key: 'avance', icon: CheckCircle2, label: 'Listas', value: formatPct(resumen.avance * 100, { decimales: 0 }),
@@ -345,8 +395,8 @@ export default function MarketingView() {
             : `Quedan ${limite - hoy} días para enviar el calendario de ${sig} a revisión (límite: día ${limite}).` };
     })();
 
-    const filtrosPuestos = (fMarca ? 1 : 0) + (fSolicitud ? 1 : 0);
-    const limpiar = () => { setFMarca(''); setFSolicitud(''); };
+    const filtrosPuestos = (fMarca ? 1 : 0) + (fSolicitud ? 1 : 0) + (fFormato ? 1 : 0) + (fLiberada ? 1 : 0);
+    const limpiar = () => { setFMarca(''); setFSolicitud(''); setFFormato(''); setFLiberada(''); };
     const esMesActual = mes === mesSV();
 
     const cuerpo = () => {
@@ -356,6 +406,31 @@ export default function MarketingView() {
                 <Notice variant="danger" icon={AlertTriangle}>
                     {mensajeAmigable(error, 'No se pudo cargar el planificador.')}
                 </Notice>
+            );
+        }
+        if (tab === 'galeria' || tab === 'biblioteca') {
+            if (cargandoExtra && !(tab === 'galeria' ? galeria : recursos).length) return <LoadingState label="Cargando…" />;
+            if (tab === 'biblioteca') {
+                return (
+                    <TabBiblioteca recursos={recursos} marcas={marcasPorId} firmadas={firmasExtra}
+                        puedeGestionar={puedeEditar || puedeAprobar} yoId={yoId} onCambio={cargarExtra} />
+                );
+            }
+            const enGaleria = galeria
+                .filter((p) => !fMarca || esDeMarca(p, fMarca))
+                .filter((p) => !fFormato || p.formato === fFormato)
+                .filter((p) => !fLiberada || (fLiberada === 'si' ? p.liberada : !p.liberada))
+                .filter((p) => !busqueda || tokenMatch(busqueda, p.titulo, p.copy, p.hashtags));
+            return (
+                <Galeria piezas={enGaleria} marcas={marcasPorId} firmadas={firmasExtra} gestion
+                    puedeLiberar={puedeEditar || puedeAprobar} onLiberar={liberarDesdeGaleria}
+                    onAbrir={(p) => setParams((prev) => {
+                        const n = new URLSearchParams(prev);
+                        n.set('tab', 'calendario');
+                        n.set('mes', String(p.fecha).slice(0, 7));
+                        n.set('pieza', p.id);
+                        return n;
+                    })} />
             );
         }
         if (tab === 'solicitudes') {
@@ -419,7 +494,7 @@ export default function MarketingView() {
                     ) : <div className="flex-1" />}
                     <div className="flex justify-end min-w-0">
                         <FilterBar acciones={acciones} activeCount={filtrosPuestos} onClear={filtrosPuestos ? limpiar : undefined}>
-                            {tab !== 'solicitudes' && (
+                            {delMes && (
                                 <FilterBar.Section label="mes" fija>
                                     <PeriodStepper unit="mes" label={etiquetaMes(mes)} isCurrent={esMesActual}
                                         resetLabel="Este mes" onReset={() => cambiarParam('mes', null)}
@@ -427,12 +502,24 @@ export default function MarketingView() {
                                         onNext={() => cambiarParam('mes', correrMes(mes, 1))} />
                                 </FilterBar.Section>
                             )}
-                            {tab !== 'solicitudes' && catalogos.marcas.length > 1 && (
+                            {(delMes || tab === 'galeria') && catalogos.marcas.length > 1 && (
                                 <FilterBar.Section label="marca" active={!!fMarca} onClear={() => setFMarca('')}>
                                     <FilterBar.Opciones value={fMarca} onChange={(v) => setFMarca(v || '')} label="Marca" placeholder="Marca"
                                         umbral={0}
                                         options={[{ value: '', label: 'Marca' },
                                             ...catalogos.marcas.map((m) => ({ value: String(m.id), label: m.nombre }))]} />
+                                </FilterBar.Section>
+                            )}
+                            {tab === 'galeria' && (
+                                <FilterBar.Section label="formato" active={!!fFormato} onClear={() => setFFormato('')}>
+                                    <FilterBar.Opciones value={fFormato} onChange={(v) => setFFormato(v || '')} label="Formato" placeholder="Formato"
+                                        options={[{ value: '', label: 'Formato' }, ...FORMATOS.map((f) => ({ value: f.value, label: f.label }))]} />
+                                </FilterBar.Section>
+                            )}
+                            {tab === 'galeria' && (
+                                <FilterBar.Section label="salas" active={!!fLiberada} onClear={() => setFLiberada('')}>
+                                    <FilterBar.Opciones value={fLiberada} onChange={(v) => setFLiberada(v || '')} label="Salas"
+                                        options={[{ value: '', label: 'Todas' }, { value: 'si', label: 'Liberadas' }, { value: 'no', label: 'Sin liberar' }]} />
                                 </FilterBar.Section>
                             )}
                             {tab === 'solicitudes' && (
@@ -446,13 +533,13 @@ export default function MarketingView() {
                     </div>
                 </div>
 
-                {tab !== 'solicitudes' && avisoLimite && (
+                {delMes && avisoLimite && (
                     <Notice variant={avisoLimite.vencido ? 'danger' : 'warning'} icon={Clock}>
                         {avisoLimite.texto}
                     </Notice>
                 )}
 
-                {tab !== 'solicitudes' && mesFila && estadoMes && (
+                {delMes && mesFila && estadoMes && (
                     <Notice variant={estadoMes.variant === 'neutral' ? 'info' : estadoMes.variant}
                         icon={mesFila.estado === 'aprobado' ? CheckCircle2 : CalendarDays}>
                         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -484,7 +571,8 @@ export default function MarketingView() {
                     catalogos={catalogos} promociones={promociones} personas={personas} comentarios={comentarios} firmadas={firmadas}
                     historial={historial} piezasDelMes={piezas} esSU={isSU}
                     puedeEditar={puedeEditar} puedeAprobar={puedeAprobar} yoId={yoId}
-                    onCambio={recargar} onEditarPauta={(p) => { abrirPieza(null); setPautaId(p.id); }} />
+                    onCambio={recargar} onEditarPauta={(p) => { abrirPieza(null); setPautaId(p.id); }}
+                    onDuplicar={(p) => { abrirPieza(null); setDuplicando({ pieza: p }); }} />
             )}
             {pautaDe && (
                 <PautaModal key={pautaDe.id} open onClose={() => setPautaId(null)} pieza={pautaDe}
@@ -502,6 +590,14 @@ export default function MarketingView() {
             )}
             {datosMes && <DatosDelMesModal open mes={mesFila} puedeAprobar={puedeAprobar} asignado={pauta.presupuesto}
                 onClose={() => setDatosMes(false)} onCambio={recargar} />}
+            {duplicando && (
+                <DuplicarModal mes={mes} piezas={piezas} preseleccion={duplicando.pieza || null}
+                    onClose={() => setDuplicando(null)}
+                    onListo={(destino) => {
+                        setDuplicando(null);
+                        if (destino !== mes) cambiarParam('mes', destino); else recargar();
+                    }} />
+            )}
             <AjustesModal open={ajustes} onClose={() => setAjustes(false)} marcas={catalogos.marcas} redes={catalogos.redes}
                 ajustes={ajustesMes} fechas={fechasEspeciales} puedeEditar={puedeEditar} puedeAprobar={puedeAprobar}
                 onCambio={recargar} />

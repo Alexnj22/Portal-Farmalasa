@@ -85,7 +85,8 @@ export async function aprobarMes(mesId, texto) {
 
 // ── Las piezas ─────────────────────────────────────────────────────────────
 
-const PIEZA_SELECT = '*, pauta:marketing_pautas(*), archivos:marketing_archivos(id, url, enlace, nombre, mime, orden, created_at)';
+const ARCHIVO_SELECT = 'id, url, enlace, nombre, mime, orden, version, anterior_id, reemplazado, tamano, ancho, alto, created_at';
+const PIEZA_SELECT = `*, pauta:marketing_pautas(*), archivos:marketing_archivos(${ARCHIVO_SELECT})`;
 
 export async function fetchPiezas(mesId) {
     const data = sinError(await supabase.from('marketing_piezas')
@@ -168,15 +169,21 @@ function nombreSeguro(nombre) {
     return limpio || 'archivo';
 }
 
-/** Sube un diseño a `<mes>/<pieza>/…`: el RLS del bucket mira la carpeta del mes. */
-export async function subirDiseno({ mesId, piezaId, archivo, orden, subidoPor }) {
+/**
+ * Sube un diseño a `<mes>/<pieza>/…`: el RLS del bucket mira la carpeta del
+ * mes (y la de la pieza, para la galería). Con `anteriorId` es una VERSIÓN
+ * nueva de ese diseño: la base le pone el número y retira la anterior.
+ * `medidas` ({ tamano, ancho, alto }) las mide la pantalla al elegir el archivo.
+ */
+export async function subirDiseno({ mesId, piezaId, archivo, orden, subidoPor, anteriorId = null, medidas = {} }) {
     const path = `${mesId}/${piezaId}/${Date.now()}-${nombreSeguro(archivo.name)}`;
     const url = await subirArchivo(BUCKET_MARKETING, path, archivo, { contentType: archivo.type });
     const data = sinError(await supabase.from('marketing_archivos').insert({
         pieza_id: piezaId, url, nombre: archivo.name, mime: archivo.type || null,
-        orden: orden ?? 0, subido_por: subidoPor,
-    }).select().single());
-    anotar('MARKETING_ARCHIVO_SUBIR', piezaId, { nombre: archivo.name });
+        orden: orden ?? 0, subido_por: subidoPor, anterior_id: anteriorId,
+        tamano: medidas.tamano ?? archivo.size ?? null, ancho: medidas.ancho ?? null, alto: medidas.alto ?? null,
+    }).select(ARCHIVO_SELECT).single());
+    anotar(anteriorId ? 'MARKETING_ARCHIVO_VERSION' : 'MARKETING_ARCHIVO_SUBIR', piezaId, { nombre: archivo.name, version: data.version });
     return data;
 }
 
@@ -238,13 +245,15 @@ export async function quitarPauta(piezaId) {
 
 export async function fetchComentarios(mesId) {
     return sinError(await supabase.from('marketing_comentarios')
-        .select('id, mes_id, pieza_id, tipo, texto, autor_id, resuelto, created_at')
+        .select('id, mes_id, pieza_id, tipo, texto, autor_id, resuelto, archivo_id, marca, created_at')
         .eq('mes_id', mesId).order('created_at')) || [];
 }
 
-export async function comentar({ mesId, piezaId, texto, autorId }) {
+/** Un comentario; con `archivoId` y `marca`, marcado sobre ese diseño. */
+export async function comentar({ mesId, piezaId, texto, autorId, archivoId = null, marca = null }) {
     const data = sinError(await supabase.from('marketing_comentarios').insert({
         mes_id: mesId, pieza_id: piezaId || null, texto: texto.trim(), autor_id: autorId,
+        archivo_id: archivoId, marca,
     }).select().single());
     anotar('MARKETING_COMENTAR', piezaId || mesId, { texto: texto.slice(0, 120) });
     return data;
@@ -335,4 +344,73 @@ export async function fetchPersonas(ids) {
     const data = sinError(await supabase.from('employees_safe').select('id, name, photo_url').in('id', unicos));
     const firmadas = await signPhotosDeep(data || []);
     return Object.fromEntries((firmadas || []).map((e) => [e.id, { ...e, photo: e.photo || e.photo_url }]));
+}
+
+// ── Duplicar ───────────────────────────────────────────────────────────────
+
+/**
+ * Copia piezas a otro mes (`YYYY-MM`). `modo`: 'semana' (el mismo día de la
+ * semana en la misma semana del mes) o 'dia' (el mismo número de día). Las
+ * copias nacen pendientes, sin diseños ni pauta.
+ */
+export async function duplicarPiezas(piezaIds, mesDestino, modo = 'semana') {
+    const data = sinError(await supabase.rpc('marketing_duplicar', {
+        p_piezas: piezaIds, p_mes_destino: primerDia(mesDestino), p_modo: modo,
+    }));
+    anotar('MARKETING_DUPLICAR', primerDia(mesDestino), { piezas: piezaIds.length, modo });
+    return data;
+}
+
+// ── Liberar para las salas ─────────────────────────────────────────────────
+
+export async function liberarPieza(piezaId, liberar) {
+    const data = sinError(await supabase.rpc('marketing_liberar_pieza', { p_pieza_id: piezaId, p_liberar: liberar }));
+    anotar(liberar ? 'MARKETING_LIBERAR' : 'MARKETING_RETENER', piezaId);
+    return data;
+}
+
+/**
+ * Las piezas de la galería, de la más nueva a la más vieja. Quien tiene sólo
+ * `galeria` recibe sólo lo liberado y aprobado: lo recorta el RLS, no esto.
+ * Seis meses alcanzan para lo que una sala va a querer reenviar.
+ */
+export async function fetchGaleria({ desde }) {
+    const data = sinError(await supabase.from('marketing_piezas')
+        .select(`id, mes_id, titulo, copy, hashtags, formato, pilar, marca_id, marcas, fecha, hora, estado, redes,
+                 liberada, liberada_at, archivos:marketing_archivos(${ARCHIVO_SELECT})`)
+        .gte('fecha', desde).order('fecha', { ascending: false }).limit(400));
+    return (data || []).map((p) => ({ ...p, archivos: (p.archivos || []).filter((a) => !a.reemplazado) }));
+}
+
+// ── Biblioteca de marca ────────────────────────────────────────────────────
+
+export async function fetchRecursos() {
+    return sinError(await supabase.from('marketing_recursos')
+        .select('*').order('tipo').order('created_at', { ascending: false }).limit(500)) || [];
+}
+
+export async function guardarRecurso(r, archivo, autorId) {
+    let url = null;
+    let mime = null;
+    if (archivo) {
+        url = await subirArchivo(BUCKET_MARKETING, `biblioteca/${Date.now()}-${nombreSeguro(archivo.name)}`, archivo,
+            { contentType: archivo.type });
+        mime = archivo.type || null;
+    }
+    const data = sinError(await supabase.from('marketing_recursos').insert({
+        marca_id: r.marca_id || null, tipo: r.tipo, nombre: r.nombre.trim(), url,
+        enlace: r.enlace?.trim() || null, color: r.color || null, mime, notas: r.notas?.trim() || null,
+        subido_por: autorId,
+    }).select().single());
+    anotar('MARKETING_RECURSO_AGREGAR', data.id, { nombre: data.nombre, tipo: data.tipo });
+    return data;
+}
+
+export async function quitarRecurso(r) {
+    const { error, count } = await supabase.from('marketing_recursos').delete({ count: 'exact' }).eq('id', r.id);
+    if (error) throw error;
+    if (!count) throw new Error('No se pudo quitar el recurso.');
+    const ruta = rutaEnBucket(r);
+    if (ruta) avisarSiFalla(await supabase.storage.from(BUCKET_MARKETING).remove([ruta]), [ruta]);
+    anotar('MARKETING_RECURSO_QUITAR', r.id, { nombre: r.nombre });
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send, CheckCircle2, Circle } from 'lucide-react';
+import { Send, CheckCircle2, Circle, PenLine } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import PortalTextarea from '../../components/common/PortalTextarea';
@@ -20,7 +20,7 @@ const TIPO = {
  * pedidos de cambio se marcan resueltos cuando el diseñador los corrige: así
  * quien revisa ve qué quedó pendiente sin releer todo el hilo.
  */
-export default function Conversacion({ comentarios, personas, mesId, piezaId = null, yoId, puedeResolver, onCambio }) {
+export default function Conversacion({ comentarios, personas, mesId, piezaId = null, yoId, puedeResolver, onCambio, onVerMarca }) {
     const showToast = useToastStore((s) => s.showToast);
     const [texto, setTexto] = useState('');
     const [enviando, setEnviando] = useState(false);
@@ -69,7 +69,12 @@ export default function Conversacion({ comentarios, personas, mesId, piezaId = n
                                 <p className={`text-body-sm whitespace-pre-wrap ${c.resuelto ? 'text-content-3 line-through' : 'text-content-2'}`}>
                                     {c.texto}
                                 </p>
-                                {c.tipo === 'cambio' && puedeResolver && (
+                                {c.archivo_id && c.marca && onVerMarca && (
+                                    <Button variant="ghost" size="xs" icon={PenLine} onClick={() => onVerMarca(c)}>
+                                        Marcado sobre el diseño
+                                    </Button>
+                                )}
+                                {(c.tipo === 'cambio' || c.marca) && puedeResolver && (
                                     <Button variant="ghost" size="xs" icon={c.resuelto ? CheckCircle2 : Circle}
                                         onClick={() => resolver(c)}>
                                         {c.resuelto ? 'Resuelto' : 'Marcar resuelto'}

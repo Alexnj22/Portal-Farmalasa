@@ -308,6 +308,9 @@ export function fraseDeHistorial(h) {
         case 'archivo':         return `subió ${h.a ? `«${h.a}»` : 'un diseño'}`;
         case 'archivo_quitado': return `quitó ${h.a ? `«${h.a}»` : 'un diseño'}`;
         case 'quitada':         return `quitó «${h.titulo}» del calendario`;
+        case 'version':         return `subió la ${h.a || 'versión nueva'}`;
+        case 'liberada':        return 'la liberó para las salas';
+        case 'retenida':        return h.a ? `se retuvo para las salas (${h.a})` : 'la retuvo para las salas';
         default:                return h.evento;
     }
 }
@@ -326,4 +329,50 @@ export const esDeMarca = (pieza, marcaId) =>
 /** Lo asignado en pauta en el mes, sin contar una pieza (la que se edita). */
 export function asignadoEnPauta(piezas, exceptoId = null) {
     return (piezas || []).reduce((t, p) => (p.id !== exceptoId && p.pauta ? t + (Number(p.pauta.presupuesto) || 0) : t), 0);
+}
+
+// ── Versiones de un diseño ──────────────────────────────────────────────────
+
+/** Todas las versiones de un diseño (de la V1 a la última), dado cualquiera de ellas. */
+export function versionesDe(archivos, archivo) {
+    if (!archivo) return [];
+    const porId = Object.fromEntries((archivos || []).map((a) => [a.id, a]));
+    let primero = archivo;
+    while (primero.anterior_id && porId[primero.anterior_id]) primero = porId[primero.anterior_id];
+    const cadena = [primero];
+    for (;;) {
+        const sig = (archivos || []).find((a) => a.anterior_id === cadena[cadena.length - 1].id);
+        if (!sig) break;
+        cadena.push(sig);
+    }
+    return cadena;
+}
+
+// ── ¿Sirve para WhatsApp? ───────────────────────────────────────────────────
+// Un estado de WhatsApp acepta imagen (JPG, PNG, WEBP) o video MP4. El video
+// se recorta si pesa demasiado, y lo vertical (9:16) es lo que llena la
+// pantalla: lo demás se ve con bordes. No se bloquea nada —la sala decide—,
+// sólo se dice.
+const MB = 1024 * 1024;
+export const TOPE_VIDEO_WHATSAPP = 16 * MB;
+
+export function aptoParaWhatsApp(archivo) {
+    if (!archivo?.url) return { apto: false, motivo: 'Es un enlace: descárgalo desde su origen' };
+    const mime = String(archivo.mime || '');
+    if (/^image\/(jpeg|png|webp)$/.test(mime)) {
+        return { apto: true, vertical: esVertical(archivo) };
+    }
+    if (/^video\/(mp4|quicktime)$/.test(mime)) {
+        if (archivo.tamano && archivo.tamano > TOPE_VIDEO_WHATSAPP) {
+            return { apto: false, motivo: `El video pesa ${(archivo.tamano / MB).toFixed(0)} MB: WhatsApp lo recorta` };
+        }
+        return { apto: true, vertical: esVertical(archivo) };
+    }
+    return { apto: false, motivo: 'Formato que WhatsApp no publica como estado' };
+}
+
+function esVertical(a) {
+    if (!a.ancho || !a.alto) return null;
+    const r = a.ancho / a.alto;
+    return r > 0.5 && r < 0.62;
 }

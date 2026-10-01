@@ -99,6 +99,10 @@ const EXCEPCIONES = {
     // Los ajustes del planificador no son un formulario: cada interruptor y
     // cada desplegable GUARDA al tocarlo. Lo único que se escribe es una fecha
     // especial (nombre, mes, día, idea): perderla es volver a teclear una línea.
+    // Agregar un recurso de marca son tres datos cortos y un ARCHIVO, y un
+    // archivo elegido no se puede guardar en un borrador: recuperar el texto
+    // sin el archivo no ahorra nada.
+    'src/views/marketing/TabBiblioteca.jsx': 'un recurso son tres datos cortos y un archivo, que no cabe en un borrador',
     'src/views/marketing/AjustesModal.jsx': 'cada control guarda al tocarlo; sólo se escribe una fecha de cuatro campos',
     // Los reportes de la distribuidora no capturan nada: sus seis controles son
     // FILTROS (período, agrupación, mes, año, libro) y todos viven en la

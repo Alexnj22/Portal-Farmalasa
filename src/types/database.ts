@@ -11875,6 +11875,9 @@ export type Database = {
       }
       marketing_archivos: {
         Row: {
+          alto: number | null
+          ancho: number | null
+          anterior_id: string | null
           created_at: string
           enlace: string | null
           id: string
@@ -11882,10 +11885,16 @@ export type Database = {
           nombre: string | null
           orden: number
           pieza_id: string
+          reemplazado: boolean
           subido_por: string | null
+          tamano: number | null
           url: string | null
+          version: number
         }
         Insert: {
+          alto?: number | null
+          ancho?: number | null
+          anterior_id?: string | null
           created_at?: string
           enlace?: string | null
           id?: string
@@ -11893,10 +11902,16 @@ export type Database = {
           nombre?: string | null
           orden?: number
           pieza_id: string
+          reemplazado?: boolean
           subido_por?: string | null
+          tamano?: number | null
           url?: string | null
+          version?: number
         }
         Update: {
+          alto?: number | null
+          ancho?: number | null
+          anterior_id?: string | null
           created_at?: string
           enlace?: string | null
           id?: string
@@ -11904,10 +11919,20 @@ export type Database = {
           nombre?: string | null
           orden?: number
           pieza_id?: string
+          reemplazado?: boolean
           subido_por?: string | null
+          tamano?: number | null
           url?: string | null
+          version?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "marketing_archivos_anterior_id_fkey"
+            columns: ["anterior_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_archivos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "marketing_archivos_pieza_id_fkey"
             columns: ["pieza_id"]
@@ -11933,9 +11958,11 @@ export type Database = {
       }
       marketing_comentarios: {
         Row: {
+          archivo_id: string | null
           autor_id: string
           created_at: string
           id: string
+          marca: Json | null
           mes_id: string
           pieza_id: string | null
           resuelto: boolean
@@ -11943,9 +11970,11 @@ export type Database = {
           tipo: string
         }
         Insert: {
+          archivo_id?: string | null
           autor_id?: string
           created_at?: string
           id?: string
+          marca?: Json | null
           mes_id: string
           pieza_id?: string | null
           resuelto?: boolean
@@ -11953,9 +11982,11 @@ export type Database = {
           tipo?: string
         }
         Update: {
+          archivo_id?: string | null
           autor_id?: string
           created_at?: string
           id?: string
+          marca?: Json | null
           mes_id?: string
           pieza_id?: string | null
           resuelto?: boolean
@@ -11963,6 +11994,13 @@ export type Database = {
           tipo?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "marketing_comentarios_archivo_id_fkey"
+            columns: ["archivo_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_archivos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "marketing_comentarios_autor_id_fkey"
             columns: ["autor_id"]
@@ -12286,6 +12324,9 @@ export type Database = {
           hashtags: string | null
           hora: string | null
           id: string
+          liberada: boolean
+          liberada_at: string | null
+          liberada_por: string | null
           marca_id: number
           marcas: number[]
           mes_id: string
@@ -12312,6 +12353,9 @@ export type Database = {
           hashtags?: string | null
           hora?: string | null
           id?: string
+          liberada?: boolean
+          liberada_at?: string | null
+          liberada_por?: string | null
           marca_id: number
           marcas?: number[]
           mes_id: string
@@ -12338,6 +12382,9 @@ export type Database = {
           hashtags?: string | null
           hora?: string | null
           id?: string
+          liberada?: boolean
+          liberada_at?: string | null
+          liberada_por?: string | null
           marca_id?: number
           marcas?: number[]
           mes_id?: string
@@ -12364,6 +12411,20 @@ export type Database = {
           {
             foreignKeyName: "marketing_piezas_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_piezas_liberada_por_fkey"
+            columns: ["liberada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_piezas_liberada_por_fkey"
+            columns: ["liberada_por"]
             isOneToOne: false
             referencedRelation: "employees_safe"
             referencedColumns: ["id"]
@@ -12408,6 +12469,70 @@ export type Database = {
             columns: ["solicitud_id"]
             isOneToOne: false
             referencedRelation: "marketing_solicitudes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_recursos: {
+        Row: {
+          color: string | null
+          created_at: string
+          enlace: string | null
+          id: string
+          marca_id: number | null
+          mime: string | null
+          nombre: string
+          notas: string | null
+          subido_por: string
+          tipo: string
+          url: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          enlace?: string | null
+          id?: string
+          marca_id?: number | null
+          mime?: string | null
+          nombre: string
+          notas?: string | null
+          subido_por?: string
+          tipo: string
+          url?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          enlace?: string | null
+          id?: string
+          marca_id?: number | null
+          mime?: string | null
+          nombre?: string
+          notas?: string | null
+          subido_por?: string
+          tipo?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_recursos_marca_id_fkey"
+            columns: ["marca_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_marcas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_recursos_subido_por_fkey"
+            columns: ["subido_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_recursos_subido_por_fkey"
+            columns: ["subido_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -26051,8 +26176,16 @@ export type Database = {
         Args: { p_accion: string; p_excepto?: string }
         Returns: string[]
       }
+      marketing_duplicar: {
+        Args: { p_mes_destino: string; p_modo?: string; p_piezas: string[] }
+        Returns: Json
+      }
       marketing_efecto_en_ventas: {
         Args: { p_pieza_id: string }
+        Returns: Json
+      }
+      marketing_liberar_pieza: {
+        Args: { p_liberar: boolean; p_pieza_id: string }
         Returns: Json
       }
       marketing_nombre_mes: { Args: { p_mes: string }; Returns: string }

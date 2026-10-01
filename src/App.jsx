@@ -91,6 +91,7 @@ const CorteZView = lazy(IMPORTADORES.CorteZView);
 const MetasView = lazy(IMPORTADORES.MetasView);
 const PromocionesView = lazy(IMPORTADORES.PromocionesView);
 const MarketingView = lazy(IMPORTADORES.MarketingView);
+const GaleriaView = lazy(IMPORTADORES.GaleriaView);
 const ProveedoresView = lazy(IMPORTADORES.ProveedoresView);
 const ClientesView = lazy(IMPORTADORES.ClientesView);
 const ConteoInventarioView = lazy(IMPORTADORES.ConteoInventarioView);
@@ -930,6 +931,7 @@ function MainApp() {
                                     <Route path="metas" element={<PermissionGuard moduleKey="metas"><MetasView /></PermissionGuard>} />
                                     <Route path="promociones" element={<PermissionGuard moduleKey="promociones"><PromocionesView /></PermissionGuard>} />
                                     <Route path="marketing" element={<PermissionGuard moduleKey="marketing"><MarketingView /></PermissionGuard>} />
+                                    <Route path="galeria" element={<PermissionGuard moduleKey="galeria"><GaleriaView /></PermissionGuard>} />
                                     <Route path="proveedores" element={<PermissionGuard moduleKey="proveedores"><ProveedoresView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="conteo-inventario" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoInventarioView /></PermissionGuard>} />
                                     <Route path="bitacoras" element={<PermissionGuard moduleKey="bitacoras"><BitacorasView /></PermissionGuard>} />
@@ -1134,6 +1136,7 @@ const ROUTE_TITLES = {
     // navegador es uno de los cuatro nombres de una vista.
     '/promociones':       'Promociones',
     '/marketing':         'Marketing',
+    '/galeria':           'Galería',
     '/productos':         'Productos',
     '/laboratorios':      'Laboratorios',
     '/pedidos':           'Pedidos a sucursales',

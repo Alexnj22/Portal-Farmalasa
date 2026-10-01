@@ -38,6 +38,7 @@ export const MODULE_SEARCH_KEYWORDS = {
     cotizaciones:       ['presupuestos', 'ofertas a clientes'],
     encuesta:           ['clima laboral', 'satisfaccion del empleado'],
     encuesta_admin:     ['gestionar encuestas', 'crear encuesta'],
+    galeria:            ['material', 'whatsapp', 'estados', 'descargar diseños', 'publicaciones liberadas', 'imagenes'],
     marketing:          ['redes sociales', 'publicaciones', 'calendario de contenido', 'diseñador', 'posts', 'reels', 'historias', 'pauta', 'facebook', 'instagram'],
     promociones:        ['descuentos', 'ofertas especiales', 'promos', 'rebaja', 'porcentaje de descuento', 'precio con descuento', 'promocion de producto'],
     bonificaciones:     ['incentivos', 'comisiones', 'bonos'],

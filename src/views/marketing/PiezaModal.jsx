@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import {
     Check, Trash2, MessageSquare, AlertTriangle, ThumbsUp, PencilLine, Megaphone, Link2, Send, EyeOff,
     CalendarCheck, Type, CalendarDays, Share2, Image as ImageIcon, History, ShieldCheck, Tag, X, Paperclip,
+    Store, Copy, CheckCircle2,
 } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
@@ -26,11 +27,11 @@ import { rangoDelMes, fechaTexto, etiquetaMes } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import {
     FORMATOS, PILARES, ESTADOS_PIEZA, ESTADOS_DEL_DISENADOR, ESTADOS_DE_SALIDA, estadoDe, objetivoDe,
-    asignadoEnPauta,
+    asignadoEnPauta, aptoParaWhatsApp,
 } from '@nucleo/utils/marketing';
 import {
     guardarPieza, borrarPieza, subirDiseno, agregarEnlace, quitarArchivo, revisarPieza, moverPieza,
-    guardarPauta, quitarPauta,
+    guardarPauta, quitarPauta, liberarPieza,
 } from '@nucleo/data/marketing';
 import { abrirEnPestanaNueva } from '@plataforma/descargas';
 import Disenos from './Disenos';
@@ -41,6 +42,9 @@ import Conversacion from './Conversacion';
 import SeleccionMultiple from './SeleccionMultiple';
 import Historial, { Quien } from './Historial';
 import { puntoDeMarca } from './iconos';
+import AnotadorModal from './AnotadorModal';
+import VersionesModal from './VersionesModal';
+import { medirArchivo } from './medir';
 
 const VACIA = {
     marcas: [], fecha: '', hora: '', formato: 'post', redes: [], pilar: '', titulo: '', promocion_id: '',
@@ -77,7 +81,7 @@ function Bloque({ icon: Icono, titulo, accion, children }) {
  */
 export default function PiezaModal({
     open, onClose, mes, pieza, fechaInicial, catalogos, promociones, personas, comentarios, historial, firmadas,
-    piezasDelMes, puedeEditar, puedeAprobar, yoId, esSU, onCambio, onEditarPauta,
+    piezasDelMes, puedeEditar, puedeAprobar, yoId, esSU, onCambio, onEditarPauta, onDuplicar,
 }) {
     const showToast = useToastStore((s) => s.showToast);
     const esNueva = !pieza?.id;
@@ -105,6 +109,9 @@ export default function PiezaModal({
     const [textoCambio, setTextoCambio] = useState('');
     const [decidiendo, setDecidiendo] = useState(false);
     const [verPrevia, setVerPrevia] = useState('disenos');
+    const [anotando, setAnotando] = useState(null);      // el archivo sobre el que se comenta
+    const [versionando, setVersionando] = useState(null);
+    const [liberando, setLiberando] = useState(false);
 
     const { recuperado, cuando, descartar, hayBorrador } = useBorrador(
         esNueva && puedeEditar ? `marketing_pieza_${mes?.id}` : null, form, { activo: open && esNueva });
@@ -148,7 +155,8 @@ export default function PiezaModal({
 
     const subirUno = async (piezaId, mesId, item, orden) => {
         if (item.tipo === 'archivo') {
-            await subirDiseno({ mesId, piezaId, archivo: item.archivo, orden, subidoPor: yoId });
+            const medidas = await medirArchivo(item.archivo);
+            await subirDiseno({ mesId, piezaId, archivo: item.archivo, orden, subidoPor: yoId, medidas });
         } else {
             await agregarEnlace({ piezaId, enlace: item.enlace, orden, subidoPor: yoId });
         }
@@ -276,6 +284,21 @@ export default function PiezaModal({
         }
     };
 
+    // Liberar para las salas: sólo lo aprobado, y se retiene solo si vuelve a
+    // revisión (lo hace la base).
+    const liberar = async (on) => {
+        setLiberando(true);
+        try {
+            await liberarPieza(pieza.id, on);
+            showToast(on ? 'Liberada para las salas' : 'Retenida', pieza.titulo, 'success');
+            onCambio?.();
+        } catch (err) {
+            showToast('No se pudo cambiar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        } finally {
+            setLiberando(false);
+        }
+    };
+
     const publicado = !!mes?.publicado_at;
     const archivos = pieza?.archivos || [];
     const misComentarios = useMemo(() => (comentarios || []).filter((c) => c.pieza_id === pieza?.id), [comentarios, pieza?.id]);
@@ -283,6 +306,15 @@ export default function PiezaModal({
     const puedeRevisar = puedeAprobar && publicado && pieza?.id && ['finalizado', 'cambios', 'aprobado'].includes(pieza.estado);
     const est = estadoDe(pieza?.estado || form.estado);
     const marcaPrincipal = catalogos.marcas.find((m) => m.id === form.marcas[0]);
+    const vigentes = archivos.filter((a) => !a.reemplazado);
+    const marcasPorArchivo = useMemo(() => {
+        const m = {};
+        for (const c of comentarios || []) if (c.archivo_id && c.marca) m[c.archivo_id] = (m[c.archivo_id] || 0) + 1;
+        return m;
+    }, [comentarios]);
+    const puedeVerDisenos = puedeEditar || publicado;
+    const sePuedeLiberar = !esNueva && ['aprobado', 'programado', 'publicado'].includes(pieza.estado)
+        && (puedeEditar || puedeAprobar);
 
     if (!open) return null;
 
@@ -440,15 +472,18 @@ export default function PiezaModal({
                                         marca={marcaPrincipal} />
                                 ) : (
                                     <>
-                                        {!archivos.length && !pendientes.length && !puedeEditar && !publicado && (
+                                        {!vigentes.length && !pendientes.length && !puedeEditar && !publicado && (
                                             <Notice icon={EyeOff} compact>
                                                 Los diseños se ven cuando el diseñador envíe el mes a revisión.
                                             </Notice>
                                         )}
-                                        {!archivos.length && !pendientes.length && (puedeEditar || publicado) && (
+                                        {!vigentes.length && !pendientes.length && (puedeEditar || publicado) && (
                                             <p className="text-body-sm text-content-3">Sin diseños todavía.</p>
                                         )}
-                                        <Disenos archivos={archivos} firmadas={firmadas} onQuitar={puedeEditar ? quitar : undefined} />
+                                        <Disenos archivos={archivos} firmadas={firmadas} marcasPorArchivo={marcasPorArchivo}
+                                            onQuitar={puedeEditar ? quitar : undefined}
+                                            onAnotar={puedeVerDisenos && !esNueva ? setAnotando : undefined}
+                                            onVersiones={puedeVerDisenos && !esNueva ? setVersionando : undefined} />
                                         {pendientes.length > 0 && (
                                             <ul className="space-y-1">
                                                 {pendientes.map((p) => (
@@ -486,6 +521,30 @@ export default function PiezaModal({
                                     </>
                                 )}
                             </Bloque>
+
+                            {sePuedeLiberar && (
+                                <Bloque icon={Store} titulo="Para las salas"
+                                    accion={<Switch checked={!!pieza.liberada} label="Liberada para las salas" disabled={liberando}
+                                        onChange={liberar} />}>
+                                    <p className="text-body-sm text-content-3">
+                                        {pieza.liberada
+                                            ? 'Las salas la ven en Galería y la pueden descargar para publicarla en WhatsApp.'
+                                            : 'Al liberarla, las salas la ven en Galería y la pueden descargar.'}
+                                    </p>
+                                    {vigentes.filter((a) => a.url).map((a) => {
+                                        const w = aptoParaWhatsApp(a);
+                                        return (
+                                            <p key={a.id} className={`text-caption flex items-center gap-1.5 ${w.apto ? 'text-success' : 'text-warning'}`}>
+                                                {w.apto ? <CheckCircle2 size={13} /> : <AlertTriangle size={13} />}
+                                                <span className="truncate">{a.nombre || 'Diseño'}:</span>
+                                                <span className="shrink-0">
+                                                    {w.apto ? (w.vertical === false ? 'sirve para WhatsApp, pero no es vertical (se ve con bordes)' : 'listo para WhatsApp') : w.motivo}
+                                                </span>
+                                            </p>
+                                        );
+                                    })}
+                                </Bloque>
+                            )}
 
                             {puedeRevisar && (
                                 <Bloque icon={ThumbsUp} titulo="Revisión">
@@ -527,7 +586,8 @@ export default function PiezaModal({
                                 <Bloque icon={MessageSquare} titulo="Comentarios">
                                     <Conversacion comentarios={misComentarios} personas={personas}
                                         mesId={mes.id} piezaId={pieza.id} yoId={yoId}
-                                        puedeResolver={puedeEditar || puedeAprobar} onCambio={onCambio} />
+                                        puedeResolver={puedeEditar || puedeAprobar} onCambio={onCambio}
+                                        onVerMarca={(c) => setAnotando(archivos.find((a) => a.id === c.archivo_id) || null)} />
                                 </Bloque>
                             )}
                         </div>
@@ -550,6 +610,9 @@ export default function PiezaModal({
                             Publicada
                         </Button>
                     )}
+                    {!esNueva && puedeEditar && onDuplicar && (
+                        <Button variant="secondary" icon={Copy} onClick={() => onDuplicar(pieza)}>Duplicar</Button>
+                    )}
                     <Button variant="secondary" onClick={onClose}>{puedeEditar ? 'Cancelar' : 'Cerrar'}</Button>
                     {puedeEditar && (
                         <Button icon={Check} loading={guardando} disabled={falta} onClick={guardar}>
@@ -559,6 +622,16 @@ export default function PiezaModal({
                 </PieDeModal>
             </LiquidModal>
 
+            {anotando && (
+                <AnotadorModal archivo={anotando} src={firmadas?.get?.(anotando.url)} mesId={mes.id} piezaId={pieza.id}
+                    comentarios={comentarios} personas={personas} yoId={yoId}
+                    onClose={() => setAnotando(null)} onCambio={onCambio} />
+            )}
+            {versionando && (
+                <VersionesModal archivos={archivos} archivo={versionando} firmadas={firmadas} mesId={mes.id}
+                    piezaId={pieza.id} yoId={yoId} puedeEditar={puedeEditar}
+                    onClose={() => setVersionando(null)} onCambio={onCambio} />
+            )}
             <ConfirmModal isOpen={borrando} onClose={() => setBorrando(false)} onConfirm={borrar}
                 title="¿Quitar esta pieza?"
                 message={`«${pieza?.titulo}» sale del calendario con sus diseños y comentarios.${publicado ? ' Quien revisa recibe el aviso.' : ''}`}

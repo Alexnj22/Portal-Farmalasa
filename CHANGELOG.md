@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1135.0 — Marketing: versiones, comentarios sobre el diseño, duplicar, biblioteca y galería para las salas
+
+Cuarta tanda del planificador, pedida por el usuario.
+
+- **Versiones del diseño**: «Nueva versión» sube la V2, V3… y la anterior
+  queda guardada (la base numera y la retira). Comparador lado a lado,
+  por defecto la última contra la anterior.
+- **Comentar sobre el diseño**: punto, recuadro o lápiz encima de la imagen,
+  con el texto atado a la marca; las marcas se ven numeradas y caen en el
+  mismo sitio a cualquier tamaño (coordenadas relativas).
+- **Duplicar** una pieza o el mes a otro mes: mismo día de la semana (el
+  segundo lunes cae en el segundo lunes) o mismo número de día. Las copias
+  nacen pendientes, sin diseños ni pauta.
+- **Biblioteca de marca** (pestaña «Marca»): logos, paleta (se copia el
+  color), tipografías, fotos y plantillas, por marca o para todas.
+- **Liberar para las salas**: sólo lo aprobado; vuelve a retenerse solo si la
+  pieza regresa a revisión. Cada diseño dice si está listo para un estado de
+  WhatsApp (formato, peso del video, vertical).
+- **Galería** (`/galeria`, permiso propio `galeria`): las salas ven SÓLO lo
+  liberado y aprobado —ni borradores, ni versiones viejas, ni comentarios, lo
+  recorta el RLS—, con filtro por formato y marca; descargar, copiar el texto
+  y, en el teléfono, compartir directo a WhatsApp. En Marketing, la pestaña
+  «Galería» muestra todo con el interruptor de liberar.
+
+Migraciones `marketing_versiones_marcas_biblioteca_y_galeria` y
+`marketing_historial_anota_reapertura_y_retencion` (el historial no anotaba
+la vuelta automática a revisión: el trigger miraba sólo las columnas del SET).
+Probadas con rollback contra producción, incluida la vista de una dependiente.
+
 ## v2.1134.0 — App: Bitácoras en vidrio y Libro bajo receta nativo
 
 Siguiente fase de la app: las pantallas del menú, en orden de uso (Bitácoras:

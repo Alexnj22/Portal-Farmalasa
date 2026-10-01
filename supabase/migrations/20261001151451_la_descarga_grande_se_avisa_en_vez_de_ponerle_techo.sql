@@ -64,7 +64,7 @@ CREATE TRIGGER export_log_avisar_descarga_grande
 
 -- La decision queda firmada: el recordatorio mensual se apaga con updated_by.
 UPDATE public.security_config
-   SET updated_by = 'bbc796d7-7435-495b-9306-a2115f44a18f',
+   SET updated_by = (SELECT id FROM public.employees WHERE id = 'bbc796d7-7435-495b-9306-a2115f44a18f'),  -- sólo si existe: el branch de pruebas no tiene esa ficha
        updated_at = now(),
        nota = 'Fase 3.3 — DECIDIDO 2026-10-01: no va techo con confirmacion. En su lugar, el trigger export_log_avisar_descarga_grande avisa toda descarga de mas de 5,000 filas.'
  WHERE key = 'techo_exportacion';

@@ -8,7 +8,7 @@ SET lock_timeout = '5s';
 ALTER TABLE public.puntos_config
   ADD COLUMN IF NOT EXISTS avisar_fallas_a uuid REFERENCES public.employees(id) ON DELETE SET NULL;
 
-UPDATE public.puntos_config SET avisar_fallas_a = 'bbc796d7-7435-495b-9306-a2115f44a18f' WHERE id;
+UPDATE public.puntos_config SET avisar_fallas_a = (SELECT id FROM public.employees WHERE id = 'bbc796d7-7435-495b-9306-a2115f44a18f') WHERE id;  -- sólo si existe: el branch de pruebas no tiene esa ficha
 
 -- Las corridas del motor que fallaron. Sólo las fallas: una fila por minuto
 -- sería churn por nada. La escribe `puntos-motor` (service_role) y la lee el

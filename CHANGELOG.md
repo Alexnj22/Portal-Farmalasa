@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1126.2 — Pruebas: dos migraciones ya no exigen una ficha que sólo existe en producción
+
+El entorno de pruebas se rehízo solo el 2026-10-01 y quedó roto (`MIGRATIONS_FAILED`): dev.farmasalud.lat y las pruebas automáticas se quedaron sin base.
+
+- **Causa** (reproducida en el branch, error 23503): `20261001151451_la_descarga_grande_se_avisa_en_vez_de_ponerle_techo` firma con un empleado concreto de producción (`security_config.updated_by`) y `20261001151534_puntos_vigia_completo_y_destinatario` lo pone como destinatario (`puntos_config.avisar_fallas_a`). Las dos columnas tienen llave foránea a `employees`, y en el branch esa ficha no existe.
+- **Corrección** (con OK del usuario), en el archivo y en el registro de producción: el valor pasa a `(SELECT id FROM public.employees WHERE id = '…')`. En producción da el mismo id; en el branch, vacío. La base viva no cambia. Es la misma regla que los crons «sólo si existe»: **una migración no puede exigir una fila que sólo existe en producción.**
+
 ## v2.1126.1 — Torogoz: sus permisos en un grupo aparte
 
 Pedido del usuario: «quiero que los permisos para la distribuidora estén aparte».

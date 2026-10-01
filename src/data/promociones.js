@@ -164,6 +164,35 @@ export async function extenderRenglon(renglonId, fin) {
 }
 
 /**
+ * Reactiva una promoción terminada moviendo el fin de sus productos.
+ *
+ * No hay un «reabrir» aparte, y a propósito: la vigencia de la promoción se
+ * DERIVA de sus renglones (`extender_renglon` la vuelve a `activa`), así que
+ * reactivarla es extender cada producto que cerró por fecha. Los que cerraron
+ * porque se vendió el lote se saltan — la base los rechaza, y con razón: mover
+ * la fecha no agrega producto.
+ *
+ * Se manda renglón por renglón, en tandas, y es idempotente: si una tanda
+ * falla, repetir con la misma fecha termina el trabajo sin duplicar nada.
+ *
+ * Devuelve `{ extendidos, agotados }`.
+ */
+export async function reactivarPromocion(id, fin) {
+    const promo = await fetchPromocion(id);
+    const renglones = promo?.renglones ?? [];
+    const agotados = renglones.filter((r) => r.cerrado_motivo === 'lote_agotado');
+    const aExtender = renglones.filter((r) => r.cerrado_motivo !== 'lote_agotado');
+    if (!aExtender.length) {
+        throw new Error('Todos sus productos cerraron porque se vendió el lote: no hay nada que reabrir. Duplícala para empezar otra.');
+    }
+    const TANDA = 8;
+    for (let i = 0; i < aExtender.length; i += TANDA) {
+        await Promise.all(aExtender.slice(i, i + TANDA).map((r) => extenderRenglon(r.id, fin)));
+    }
+    return { extendidos: aExtender.length, agotados: agotados.length };
+}
+
+/**
  * Las presentaciones en que se ha vendido un producto, agrupadas POR FACTOR.
  *
  * Por factor y no por rótulo porque el rótulo está sucio: en agosto hubo 283

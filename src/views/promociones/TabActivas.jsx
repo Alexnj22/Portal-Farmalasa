@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Tag, Search, Plus, Power, PauseCircle, Pencil, FlaskConical, BarChart3, Copy, Percent, ChevronRight } from 'lucide-react';
+import { Tag, Search, Plus, Power, PauseCircle, Pencil, FlaskConical, BarChart3, Copy, Percent, History } from 'lucide-react';
+import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import { clickable } from '@nucleo/utils/clickable';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -20,29 +21,50 @@ import {
  * leer de un vistazo — cuánto queda del lote.
  */
 export default function TabActivas({
-    promos, busqueda, puedeEditar, onCambio, onNueva, onEditar, onVerMatriz, onDuplicar, onSeguir,
+    promos, busqueda, filtrando = false, terminadas = 0, onVerTerminadas,
+    puedeEditar, onCambio, onNueva, onEditar, onVerMatriz, onDuplicar, onSeguir,
 }) {
     if (!promos.length) {
-        // Buscar sin resultados NO es un vacío: uno se arregla borrando el
-        // filtro y el otro no tiene arreglo (§26.2).
-        return busqueda.trim()
-            ? (
+        // Buscar o filtrar sin resultados NO es un vacío: uno se arregla
+        // soltando el filtro y el otro no tiene arreglo (§26.2).
+        if (busqueda.trim() || filtrando) {
+            return (
                 <EmptyState
                     icon={Search}
                     title="Sin resultados"
-                    subtitle={`Ninguna promoción coincide con "${busqueda.trim()}".`}
+                    subtitle={busqueda.trim()
+                        ? `Ninguna promoción vigente coincide con "${busqueda.trim()}".`
+                        : 'Ninguna promoción vigente coincide con los filtros puestos.'}
                 />
-            )
-            : (
+            );
+        }
+        /* «Todavía no hay promociones» era FALSO cuando todas terminaron —el
+           1-oct eran 4 de 4—, y no decía dónde estaban. Con terminadas, el
+           vacío las nombra y lleva a Histórico, que es donde se reactivan. */
+        if (terminadas > 0) {
+            return (
                 <EmptyState
                     icon={Tag}
-                    title="Todavía no hay promociones"
-                    subtitle="Una promoción es la campaña por la que un laboratorio paga una bonificación por cada unidad vendida."
-                    action={puedeEditar
-                        ? <Button icon={Plus} onClick={onNueva}>Crear la primera</Button>
+                    title="Sin promociones vigentes"
+                    subtitle={`${terminadas === 1 ? 'La última terminó' : `Las ${terminadas} terminaron`}. Se pueden reactivar desde Histórico, moviéndoles la fecha de fin.`}
+                    action={onVerTerminadas
+                        ? <Button variant="secondary" icon={History} onClick={onVerTerminadas}>
+                            Ver las terminadas
+                        </Button>
                         : undefined}
                 />
             );
+        }
+        return (
+            <EmptyState
+                icon={Tag}
+                title="Todavía no hay promociones"
+                subtitle="Una promoción es la campaña por la que un laboratorio paga una bonificación por cada unidad vendida."
+                action={puedeEditar
+                    ? <Button icon={Plus} onClick={onNueva}>Crear la primera</Button>
+                    : undefined}
+            />
+        );
     }
 
     return (
@@ -93,7 +115,7 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz,
             data-surface="card"
             {...clickable(onSeguir, { label: `Ver el seguimiento de ${promo.nombre}` })}
             className={`rounded-card border border-border-card bg-surface-card shadow-card p-4 flex flex-col gap-3
-                ${onSeguir ? 'cursor-pointer hover:border-brand/40 active:scale-[0.99] transition-[border-color,transform] duration-[var(--dur-base)]' : ''}`}
+                ${onSeguir ? 'group cursor-pointer hover:border-brand/40 active:scale-[0.99] transition-[border-color,transform] duration-[var(--dur-base)]' : ''}`}
         >
             <div className="flex items-start gap-2">
                 <div className="min-w-0 flex-1">
@@ -118,6 +140,11 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz,
                         <Badge variant="info" icon={Percent}>Baja el precio</Badge>
                     )}
                     <Badge variant={est.variant}>{est.rotulo}</Badge>
+                    {/* El ojo y no una línea «Ver seguimiento ›» al pie: la
+                        marca canónica de «esta tarjeta abre», siempre arriba a
+                        la derecha (OjoDeTarjeta), y no una fila entera de la
+                        tarjeta gastada en decirlo. */}
+                    {onSeguir && <OjoDeTarjeta className="ml-0.5" />}
                 </div>
             </div>
 
@@ -148,7 +175,7 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz,
                 )}
             </div>
 
-            {fallo && <p className="text-caption text-danger">{fallo}</p>}
+            {fallo && <p className="text-caption text-danger-text">{fallo}</p>}
 
             {/* Ver la matriz NO exige poder editar: es la pantalla que le dice a
                 supervisión cómo va cada sala, y pedir permiso de escritura para
@@ -158,13 +185,6 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz,
                     onClick={(e) => { e.stopPropagation(); onVerMatriz?.(); }}>
                     Ver cómo va cada sala
                 </Button>
-            )}
-
-            {/* El ojo: la tarjeta se toca, y eso tiene que verse ANTES de tocar. */}
-            {onSeguir && (
-                <p className="flex items-center justify-end gap-0.5 text-caption font-semibold text-brand-text">
-                    Ver seguimiento <ChevronRight size={14} aria-hidden />
-                </p>
             )}
 
             {puedeEditar && (

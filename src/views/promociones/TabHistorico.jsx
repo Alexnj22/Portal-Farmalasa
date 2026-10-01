@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { History, Search } from 'lucide-react';
+import { History, Search, RotateCcw, Copy } from 'lucide-react';
+import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
@@ -12,8 +13,13 @@ import { fmtUnidades, fmtVigencia, rotuloMes, esLaboratorio } from '@nucleo/util
  *
  * Acá SÍ es una tabla: una promoción cerrada es un registro histórico y lo que
  * se hace con ella es buscarla, ordenarla y compararla — no leer su avance.
+ *
+ * Y es el ÚNICO sitio donde una terminada se ve, así que sus acciones viven
+ * acá (usuario, 2026-10-01: «si la quiero reactivar, ¿cómo hago?»). Antes la
+ * tabla no tenía ninguna: reactivar exigía «Editar», que sólo estaba en las
+ * tarjetas de Activas, donde las terminadas no se listan.
  */
-export default function TabHistorico({ promos, busqueda }) {
+export default function TabHistorico({ promos, busqueda, puedeEditar, onReactivar, onDuplicar }) {
     const [sortKey, setSortKey] = useState('fin');
     const [sortDir, setSortDir] = useState('desc');
 
@@ -62,7 +68,9 @@ export default function TabHistorico({ promos, busqueda }) {
                     { key: 'fin',        label: 'Vigencia', sortable: true, hideBelow: 'md' },
                     { key: 'renglones',  label: 'Productos', align: 'right', sortable: true, hideBelow: 'lg' },
                     { key: 'lote_total', label: 'Lote', align: 'right', sortable: true },
+                    ...(puedeEditar ? [{ key: 'acciones', label: '', align: 'right' }] : []),
                 ]}
+                movil={puedeEditar ? { acciones: true } : undefined}
                 sortKey={sortKey}
                 sortDir={sortDir}
                 onSort={ordenar}
@@ -98,6 +106,25 @@ export default function TabHistorico({ promos, busqueda }) {
                         <DataCell align="right">
                             {esLaboratorio(p) ? '—' : fmtUnidades(p.lote_total)}
                         </DataCell>
+                        {puedeEditar && (
+                            <DataCell align="right">
+                                <span className="inline-flex items-center gap-1 justify-end">
+                                    {/* La de laboratorio vive por MES: no se
+                                        «extiende», se crea la del mes siguiente
+                                        —duplicándola—. */}
+                                    {!esLaboratorio(p) && (
+                                        <Button variant="secondary" size="sm" icon={RotateCcw}
+                                            onClick={() => onReactivar?.(p)}>
+                                            Reactivar
+                                        </Button>
+                                    )}
+                                    <Button variant="ghost" size="sm" icon={Copy} iconOnly
+                                        title="Duplicar esta promoción"
+                                        aria-label={`Duplicar ${p.nombre}`}
+                                        onClick={() => onDuplicar?.(p)} />
+                                </span>
+                            </DataCell>
+                        )}
                     </DataRow>
                 ))}
             </DataTable>

@@ -32,6 +32,7 @@ import DuplicarPromocionModal from './DuplicarPromocionModal';
 import EditarPromocionModal from './EditarPromocionModal';
 import PromocionLaboratorioModal from './PromocionLaboratorioModal';
 import MatrizLaboratorioModal from './MatrizLaboratorioModal';
+import ReactivarPromocionModal from './ReactivarPromocionModal';
 
 /**
  * Promociones — `docs/planes-cerrados/PLAN-PROMOCIONES-2026-09-01.md`.
@@ -70,13 +71,27 @@ import MatrizLaboratorioModal from './MatrizLaboratorioModal';
    no»— y de paso ocupa la mitad, que es ancho que la píldora le devuelve a lo
    demás. Reportado el 2026-09-05: la barra mostraba «Cualquiera» y «Todos», dos
    palabras que no dicen de qué son. */
+/* «Terminada» NO está, y es el arreglo del 2026-10-01 («aunque cambie el
+   filtro, no me salen las finalizadas»). Activas y Seguimiento listan sólo las
+   vivas, así que la opción daba vacío SIEMPRE: un filtro que no puede devolver
+   nada. Las terminadas viven en Histórico, y ahí el estado no se ofrece porque
+   todas son la misma. */
 const ESTADOS = [
     { value: '',           label: 'Estado' },
     { value: 'activa',     label: 'Activa' },
     { value: 'por_vencer', label: 'Por vencer' },
     { value: 'vencida',    label: 'Vencida' },
     { value: 'borrador',   label: 'Borrador' },
-    { value: 'finalizada', label: 'Terminada' },
+];
+
+/* La opción vacía nombra el filtro, igual que Estado. Y con `umbral={0}` va
+   como desplegable: tres opciones serían un segmentado en MAYÚSCULAS con
+   tracking —«TODAS · PRODUCTO · LABORATORIO», ~500px— y ésa era la mitad del
+   ancho de la píldora en el reporte «el filterbar es enorme». */
+const TIPOS = [
+    { value: '',            label: 'Tipo' },
+    { value: 'producto',    label: 'Por producto' },
+    { value: 'laboratorio', label: 'Por laboratorio' },
 ];
 
 export default function PromocionesView() {
@@ -124,6 +139,7 @@ export default function PromocionesView() {
     const [editando, setEditando] = useState(null);   // {id, tipo} de la que se corrige
     const [matriz, setMatriz] = useState(null);       // id de la de laboratorio que se mira
     const [duplicando, setDuplicando] = useState(null);  // la promoción que se copia
+    const [reactivando, setReactivando] = useState(null); // la terminada que se reabre
     const [recarga, setRecarga] = useState(0);
 
     // ── Los descuentos, aparte: viven en el sistema de la caja ─────────────
@@ -206,17 +222,16 @@ export default function PromocionesView() {
         return promos.filter((p) => {
             if (q && !tokenMatch(q, textoBuscable(p))) return false;
             if (fTipo && (esLaboratorio(p) ? 'laboratorio' : 'producto') !== fTipo) return false;
-            /* Por el estado VISIBLE y no por `p.estado`: la pantalla pinta
-               «Vencida» y «Por vencer», que no son estados guardados sino una
-               lectura de la fecha. Filtrar por el de la base ofrecería opciones
-               que no coinciden con lo que se ve en las tarjetas. */
-            if (fEstado && estadoVisible(p).clave !== fEstado) return false;
             if (fLab && !(p.laboratorios || []).includes(fLab)) return false;
             return true;
         });
-    }, [promos, busqueda, fTipo, fEstado, fLab]);
+    }, [promos, busqueda, fTipo, fLab]);
 
-    const filtrosPuestos = [fTipo, fEstado, fLab].filter(Boolean).length;
+    /* El estado sólo recorta las VIVAS. En Histórico no se ofrece, así que
+       tampoco puede filtrar: un «Activa» que quedó puesto desde la otra pestaña
+       dejaría el histórico vacío sin ningún control visible que lo explique. */
+    const filtraEstado = tab !== 'historico';
+    const filtrosPuestos = [fTipo, filtraEstado && fEstado, fLab].filter(Boolean).length;
     const limpiarFiltros = useCallback(() => { setFTipo(''); setFEstado(''); setFLab(''); }, []);
 
     /* Busca por nombre del descuento y también por el de sus productos: quien
@@ -227,7 +242,13 @@ export default function PromocionesView() {
             d.descripcion, ...(d.productos || []).map((p) => p.nombre)));
     }, [descuentos, busqueda]);
 
-    const vivas      = useMemo(() => filtradas.filter((p) => p.estado !== 'finalizada'), [filtradas]);
+    /* Por el estado VISIBLE y no por `p.estado`: la pantalla pinta «Vencida» y
+       «Por vencer», que no son estados guardados sino una lectura de la fecha. */
+    const vivas = useMemo(
+        () => filtradas.filter((p) => p.estado !== 'finalizada'
+            && (!fEstado || estadoVisible(p).clave === fEstado)),
+        [filtradas, fEstado],
+    );
     const terminadas = useMemo(() => filtradas.filter((p) => p.estado === 'finalizada'), [filtradas]);
 
     /* Lo que llenan las dos ranuras nuevas. El tipo va en el rótulo de la
@@ -445,12 +466,23 @@ export default function PromocionesView() {
             return <TabExcedentes puedeAprobar={puedeAprobar} onResumen={setResumenTab} />;
         }
         if (tab === 'historico') {
-            return <TabHistorico promos={terminadas} busqueda={busqueda} />;
+            return (
+                <TabHistorico
+                    promos={terminadas}
+                    busqueda={busqueda}
+                    puedeEditar={puedeEditar}
+                    onReactivar={setReactivando}
+                    onDuplicar={setDuplicando}
+                />
+            );
         }
         return (
             <TabActivas
                 promos={vivas}
                 busqueda={busqueda}
+                filtrando={filtrosPuestos > 0}
+                terminadas={terminadas.length}
+                onVerTerminadas={() => setTab('historico')}
                 puedeEditar={puedeEditar}
                 onCambio={recargar}
                 onNueva={() => setModal(true)}
@@ -538,16 +570,14 @@ export default function PromocionesView() {
                                         value={fTipo}
                                         onChange={setFTipo}
                                         label="Tipo"
-                                        options={[
-                                            { value: '', label: 'Todas' },
-                                            { value: 'producto', label: 'Producto' },
-                                            { value: 'laboratorio', label: 'Laboratorio' },
-                                        ]}
+                                        options={TIPOS}
+                                        placeholder="Tipo"
+                                        umbral={0}
                                     />
                                 </FilterBar.Section>
                                 )}
 
-                                {recortaLaLista && (
+                                {recortaLaLista && filtraEstado && (
                                 <FilterBar.Section label="estado" active={!!fEstado}
                                     onClear={() => setFEstado('')}>
                                     <FilterBar.Opciones
@@ -588,7 +618,7 @@ export default function PromocionesView() {
                     nadie—, y el aviso se leería como que el descuento tampoco
                     aplica. */}
                 {tab !== 'descuentos' && (
-                    <Notice variant="warning" icon={AlertTriangle}>
+                    <Notice variant="warning" icon={AlertTriangle} compact>
                         <span className="font-semibold">Bonificaciones suspendidas.</span>{' '}
                         Las promociones se crean y se siguen igual, y el portal muestra lo que
                         <em> se habría ganado</em>. No genera nada para pago hasta que se reactiven.
@@ -633,6 +663,15 @@ export default function PromocionesView() {
                     open
                     onClose={() => setDuplicando(null)}
                     onDuplicada={() => { setDuplicando(null); recargar(); }}
+                />
+            )}
+
+            {reactivando && (
+                <ReactivarPromocionModal
+                    promo={reactivando}
+                    open
+                    onClose={() => setReactivando(null)}
+                    onReactivada={() => { setReactivando(null); recargar(); setTab('activas'); }}
                 />
             )}
 

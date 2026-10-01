@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1112.0 — Promociones: reactivar terminadas desde Histórico y píldora compacta
+
+«Aunque cambie el filtro, no me salen las finalizadas. Si la quiero reactivar,
+¿cómo hago?». Activas lista sólo las promociones vigentes, así que la opción
+«Terminada» del filtro de estado daba vacío siempre. Y reactivar una no tenía
+camino: había que extender la fecha producto por producto desde «Editar», que
+sólo vivía en las tarjetas de Activas — donde las terminadas no aparecen. El
+1-oct las cuatro promociones habían terminado por fecha, una con 102 productos.
+
+- **Histórico tiene acciones**: «Reactivar» pide una fecha de fin (hoy o
+  después) y extiende todos los productos que cerraron por fecha; los que
+  cerraron por lote agotado no se reabren. También «Duplicar».
+- Si la promoción baja el precio, el diálogo avisa que el descuento tiene sus
+  propias fechas y se mueve desde Descuentos.
+- El filtro de estado ya no ofrece «Terminada», y en Histórico no aparece.
+- Activas vacía con terminadas dice «Sin promociones vigentes» y lleva a
+  Histórico, en vez de «Todavía no hay promociones».
+- Píldora más corta: el tipo pasa de segmentado de tres a desplegable; el aviso
+  de bonificaciones suspendidas va compacto; las tarjetas usan el ojo canónico
+  en vez de una línea «Ver seguimiento».
 ## v2.1111.0 — App: widget de Bolsas de efectivo en el Inicio
 
 Reporte del usuario: «aún no veo todos los widgets en mi app, tengo todos

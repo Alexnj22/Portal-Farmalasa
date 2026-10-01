@@ -458,12 +458,10 @@ export const AREAS = [
                'backfill-dte-sales', 'heal-dte-sync',
                // El programa de puntos vive en el portal desde el 2026-10-01:
                // `puntos-motor` acumula, canjea y anula cada minuto; las dos
-               // pantallas leen el libro. Las cuatro de MySQL (sync-puntos,
-               // puntos-vencer, puntos-probe, puntos-traer-saldos) se retiraron ese día.
-               'puntos-consulta', 'puntos-motor',
-               // El corte del 1-oct (2026-09-25): copiar el sistema anterior y
-               // migrar su historial al libro, y encender el motor.
-               'puntos-archivar', 'puntos-arranque'],
+               // pantallas leen el libro. Las de MySQL (sync-puntos,
+               // puntos-vencer, puntos-probe, puntos-traer-saldos) y las del
+               // corte (puntos-archivar, puntos-arranque) se retiraron ese día.
+               'puntos-consulta', 'puntos-motor'],
         crons: ['sync-dte-inv-all-1min', 'check-sales-alerts-5min', 'check-sales-reconciliation-daily',
                 'close-ventas-month', 'refresh-sales-daily-stats', 'refresh-sales-daily-stats-full',
                 'refresh-product-sales-rollup-daily', 'refresh-product-sales-monthly-agg',

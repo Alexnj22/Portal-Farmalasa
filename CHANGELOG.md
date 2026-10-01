@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1112.2 — Puntos: se retiran las herramientas del corte
+
+Ya encendido el programa en el portal, `puntos-archivar` (copiaba MySQL al archivo)
+y `puntos-arranque` (migraba y encendía) cumplieron y no tenían cron ni quien las
+llamara: borradas del servidor y del repo. El archivo de la base anterior
+(`puntos_archivo_*`) se queda: de ahí salen las cuentas por asignar.
+
 ## v2.1112.1 — Puntos: se retira el circuito de MySQL
 
 El arranque del 1-oct encendió el programa en el portal (`puntos_arranque` id 8:

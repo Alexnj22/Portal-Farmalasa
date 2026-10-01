@@ -9,7 +9,7 @@ import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import Checkbox from '../../components/common/Checkbox';
 import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
 import Campo from '../promociones/Campo';
-import PieDeModal from './PieDeModal';
+import PieDeModal from '../../components/common/PieDeModal';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';

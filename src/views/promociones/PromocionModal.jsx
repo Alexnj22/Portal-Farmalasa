@@ -6,6 +6,7 @@ import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import Button from '../../components/common/Button';
+import PieDeModal from '../../components/common/PieDeModal';
 import Badge from '../../components/common/Badge';
 import Checkbox from '../../components/common/Checkbox';
 import Notice from '../../components/common/Notice';
@@ -675,14 +676,15 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                 </div>
             </LiquidModal.Body>
 
-            <LiquidModal.Footer>
-                <span className="text-caption text-content-3 mr-auto">
+            <PieDeModal izquierda={(
+                <span className="text-caption text-content-3">
                     {hayEditando
                         ? 'Termina el producto para poder guardar.'
                         : (problemasPromo[0] || problemasDesc[0]
                             || (promoCreada ? 'La promoción ya quedó: falta el descuento.'
                                 : 'En borrador no cuenta ventas hasta activarla.'))}
                 </span>
+            )}>
                 {/* Con la promoción ya creada, cerrar también recarga la lista:
                     con `onClose` a secas la nueva no aparecía hasta refrescar. */}
                 <Button variant="secondary" onClick={promoCreada ? onGuardada : onClose} disabled={guardando}>
@@ -712,7 +714,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                         </Button>
                     </>
                 )}
-            </LiquidModal.Footer>
+            </PieDeModal>
 
             {/* Vaciar la lista pregunta: con 86 productos agregados por
                 laboratorio, un clic accidental deshace un trabajo que no tiene

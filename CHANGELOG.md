@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1128.2 — Pie de modal: separación entre botones también en Promociones
+
+`PieDeModal` sube a `components/common`: lo de la izquierda (un texto o una
+acción secundaria) va solo y el resto en un grupo con `gap-2`, porque
+`LiquidModal.Footer` es `justify-between` sin separación y con tres hijos
+sueltos dejaba pegados los botones de la derecha. Además de Marketing, lo usan
+ahora los cuatro pies de Promociones que tenían el problema: nueva promoción,
+descuento, y el aviso «¿agregar a los dos?» de editar promoción. Distribución
+ya resolvía lo mismo con su propio contenedor y no se tocó.
+
 ## v2.1128.1 — Marketing: el pie de los modales con separación entre botones
 
 `LiquidModal.Footer` en escritorio es `justify-between` sin `gap`: sirve para

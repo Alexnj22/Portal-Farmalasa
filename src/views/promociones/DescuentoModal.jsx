@@ -5,6 +5,7 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import PortalInput from '../../components/common/PortalInput';
 import Button from '../../components/common/Button';
+import PieDeModal from '../../components/common/PieDeModal';
 import Notice from '../../components/common/Notice';
 import Checkbox from '../../components/common/Checkbox';
 import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
@@ -353,10 +354,11 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
                 )}
             </LiquidModal.Body>
 
-            <LiquidModal.Footer>
-                <span className="text-caption text-content-3 mr-auto">
+            <PieDeModal izquierda={(
+                <span className="text-caption text-content-3">
                     {problemas.length ? problemas[0] : 'Empieza a descontar en la fecha de inicio.'}
                 </span>
+            )}>
                 <Button variant="secondary" onClick={onClose}>Cancelar</Button>
                 {avisos.length > 0 ? (
                     <Button
@@ -377,7 +379,7 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
                         Guardar cambios
                     </Button>
                 )}
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }

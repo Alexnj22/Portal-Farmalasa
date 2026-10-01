@@ -38,7 +38,7 @@ import Vidrio from '../componentes/Vidrio';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { MARCA } from '../componentes/inicio/marca';
-import { abrirRuta } from '../pantallas';
+import { sePuedeDeclararTarde } from '@nucleo/data/faltantes';
 
 const HORAS_EN_CAMINO_ALERTA = 24;
 
@@ -144,6 +144,8 @@ export default function Traslados() {
     if (traslado.es_de_un_pedido) { setAviso({ tono: 'info', texto: 'Esa caja es de un pedido de Bodega: se recibe en Pedidos.' }); return false; }
     setEscaneando(false);
     setAviso(null);
+    // Una bolsa ya recibida, dentro de las 48 h: se puede anotar lo que faltó.
+    if (sePuedeDeclararTarde(traslado)) { router.push({ pathname: '/faltante-tardio', params: { codigo: String(codigo) } }); return true; }
     if (traslado.es_un_envio) { router.push({ pathname: '/envio/[id]', params: { id: String(traslado.envio_bolsa?.id ?? traslado.id) } }); return true; }
     router.push({ pathname: '/traslado/[id]', params: { id: String(traslado.id) } });
     return true;
@@ -180,10 +182,10 @@ export default function Traslados() {
           </Stack.Toolbar.MenuAction>
           <Stack.Toolbar.MenuAction icon="barcode.viewfinder" onPress={escanear}>Recibir una caja</Stack.Toolbar.MenuAction>
           {hasPermission('traslados', 'can_edit') ? (
-            <Stack.Toolbar.MenuAction icon="shippingbox" onPress={() => abrirRuta('/traslados?tab=envios')}>Enviar producto</Stack.Toolbar.MenuAction>
+            <Stack.Toolbar.MenuAction icon="shippingbox" onPress={() => router.push('/enviar-producto')}>Enviar producto</Stack.Toolbar.MenuAction>
           ) : null}
-          <Stack.Toolbar.MenuAction icon="figure.walk" onPress={() => abrirRuta('/traslados?tab=recibir')}>Llevar productos</Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction icon="exclamationmark.triangle" onPress={() => abrirRuta('/traslados?tab=faltantes')}>Faltantes</Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction icon="figure.walk" onPress={() => router.push('/retiro')}>Llevar productos</Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction icon="exclamationmark.triangle" onPress={() => router.push('/faltantes')}>Faltantes</Stack.Toolbar.MenuAction>
         </Stack.Toolbar.Menu>
       </Stack.Toolbar>
 

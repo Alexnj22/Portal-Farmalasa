@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1125.0 — App: traslados completos — enviar, llevar, faltantes
+
+Quinta pieza para cerrar el Inicio: lo que faltaba de Traslados, en el
+teléfono. El menú «+» de Traslados ya no abre el portal.
+
+- **Enviar producto** (`app/enviar-producto.js`): se busca el producto en el
+  estante de origen (mi sala; con alcance todas, cualquiera, también el de
+  vencidos), se elige presentación y cantidad, y se reparte entre los lotes
+  del que vence primero. Motivo según la dirección, foto para «Avería», nota
+  obligatoria, presentaciones completas a Bodega por «Baja rotación» y tope
+  de 20 renglones. Se crea y se despacha (`enviarAOtraSala`) y el ticket de la
+  bolsa sale por la caja de la sala.
+- **Llevar productos** (`app/retiro.js`): escanear los tickets de las bolsas
+  (varias seguidas), la firma de quien entrega con su carné, «dejar aquí»,
+  «aquí quedan», lo que llevas encima con alarma a los 3 días, soltar una
+  bolsa y terminar el recorrido.
+- **Faltantes** (`app/faltantes.js`): los que no se han aclarado, y cerrarlos
+  con «Apareció» o «No apareció» (con nota).
+- **Lo que faltó en una bolsa ya recibida**: al escanearla dentro de las 48 h
+  se ofrece anotarlo (`app/faltante-tardio.js`). La regla del plazo y los
+  renglones de la bolsa pasaron a `data/faltantes` y el portal los usa.
 ## v2.1124.1 — Torogoz: la campana como en el portal
 
 Pedido del usuario: «con las notificaciones hay problemas, pásalo a donde está en el portal, con el mismo tamaño y función; si paso el mouse se pone enorme y raro».

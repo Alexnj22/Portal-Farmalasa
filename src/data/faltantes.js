@@ -62,6 +62,35 @@ export async function declararFaltanteTardio(requestId, faltantes) {
 export const HORAS_PARA_DECLARAR_TARDE = 48;
 
 /**
+ * ¿Todavía se puede anotar lo que faltó en esta bolsa YA recibida? Dentro de
+ * `HORAS_PARA_DECLARAR_TARDE` desde que se recibió (un envío: desde la última
+ * decisión de sus renglones, y nunca mientras alguno siga por decidir). Vivía
+ * en `ConfirmarPorCodigo.jsx`; se mudó el 2026-10-01 para que la app pregunte
+ * lo mismo al escanear.
+ */
+export function sePuedeDeclararTarde(t, ahora = Date.now()) {
+    const horasDesde = (cuando) => {
+        const ms = cuando ? new Date(cuando).getTime() : NaN;
+        return Number.isFinite(ms) ? (ahora - ms) / 3_600_000 : Infinity;
+    };
+    if (t?.es_un_envio) {
+        const lineas = t.envio_bolsa?.lineas ?? [];
+        if (lineas.some(l => l?.estado === 'enviada')) return false;   // todavía se decide
+        const ultima = lineas.map(l => l?.decidido_at).filter(Boolean).sort().at(-1);
+        return horasDesde(ultima) <= HORAS_PARA_DECLARAR_TARDE;
+    }
+    if (!t?.id || !t.ya_recibido) return false;
+    return horasDesde(t.recibido_at) <= HORAS_PARA_DECLARAR_TARDE;
+}
+
+/** Los renglones de la bolsa sobre los que se declara: la POSICIÓN es la clave. */
+export function renglonesDeLaBolsa(t) {
+    return t?.es_un_envio
+        ? (t.envio_bolsa?.lineas ?? []).map(l => ({ posicion: l?.posicion, descripcion: l?.descripcion, cantidad: l?.cantidad }))
+        : (t?.items ?? []).map((it, i) => ({ posicion: i, descripcion: it?.descripcion, cantidad: it?.cantidad }));
+}
+
+/**
  * Los dos finales de un faltante, y no hay un tercero.
  *
  * `aparecio` es la bolsa que estaba en el mostrador de al lado. `no_aparecio`

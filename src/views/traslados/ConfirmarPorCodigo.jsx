@@ -8,7 +8,7 @@ import { SkeletonText } from '../../components/common/StateViews';
 import useCapturaDeCarne from '../../plataforma/useCapturaDeCarne';
 import { fetchTrasladoPorCodigo, recibirTraslado } from '@nucleo/data/traslados';
 import DeclararFaltantes from './DeclararFaltantes';
-import { declararFaltanteTardio, HORAS_PARA_DECLARAR_TARDE } from '@nucleo/data/faltantes';
+import { declararFaltanteTardio, HORAS_PARA_DECLARAR_TARDE, renglonesDeLaBolsa as renglonesDeLaBolsaDe, sePuedeDeclararTarde } from '@nucleo/data/faltantes';
 import { FilaEnvioPorDecidir } from './FilasEnvio';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fmtCuando } from '@nucleo/utils/trasladoTexto';
@@ -60,20 +60,7 @@ const LectorDeCodigo = lazy(() => import('../../components/common/LectorDeCodigo
  * lo guarda en un solo momento; el envío se decide renglón por renglón, así que
  * es el ÚLTIMO — cuando se terminó de mirar la caja.
  */
-function dentroDelPlazo(t) {
-    const horasDesde = (cuando) => {
-        const ms = cuando ? new Date(cuando).getTime() : NaN;
-        return Number.isFinite(ms) ? (Date.now() - ms) / 3_600_000 : Infinity;
-    };
-    if (t?.es_un_envio) {
-        const lineas = t.envio_bolsa?.lineas ?? [];
-        if (lineas.some(l => l?.estado === 'enviada')) return false;   // todavía se decide
-        const ultima = lineas.map(l => l?.decidido_at).filter(Boolean).sort().at(-1);
-        return horasDesde(ultima) <= HORAS_PARA_DECLARAR_TARDE;
-    }
-    if (!t?.id || !t.ya_recibido) return false;
-    return horasDesde(t.recibido_at) <= HORAS_PARA_DECLARAR_TARDE;
-}
+const dentroDelPlazo = (t) => sePuedeDeclararTarde(t);
 
 export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
     const [buscando, setBuscando] = useState(false);
@@ -179,13 +166,7 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
 
     // Los renglones sobre los que se declara, en la forma que espera
     // `DeclararFaltantes`: la POSICIÓN es la clave, no el lugar en la lista.
-    const renglonesDeLaBolsa = hallado?.es_un_envio
-        ? (hallado.envio_bolsa?.lineas ?? []).map(l => ({
-            posicion: l?.posicion, descripcion: l?.descripcion, cantidad: l?.cantidad,
-        }))
-        : (hallado?.items ?? []).map((it, i) => ({
-            posicion: i, descripcion: it?.descripcion, cantidad: it?.cantidad,
-        }));
+    const renglonesDeLaBolsa = renglonesDeLaBolsaDe(hallado);
 
     if (!abierto) return null;
 

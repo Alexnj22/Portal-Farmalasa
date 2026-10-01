@@ -120,6 +120,7 @@ INSERT INTO public.role_permissions (role_id, module_key, can_view, can_edit, ca
 SELECT rp.role_id, 'requests_distribucion', true, true, true, 'ALL'
   FROM public.role_permissions rp
  WHERE rp.module_key = 'requests_cuentas_por_cobrar' AND rp.can_approve
+   AND rp.role_id IN (2, 3, 11, 13)   -- sólo dirección (ver 0001)
 ON CONFLICT DO NOTHING;
 
 -- ── 4 · El juez del renglón: aplica lo que se puede, guarda lo que se pide ─

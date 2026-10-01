@@ -39,13 +39,34 @@ const RESULTADOS = [
 const DIAS = [{ n: 1, c: 'L' }, { n: 2, c: 'M' }, { n: 3, c: 'Mi' }, { n: 4, c: 'J' }, { n: 5, c: 'V' }, { n: 6, c: 'S' }, { n: 7, c: 'D' }];
 const ROTULO_RESULTADO = Object.fromEntries(RESULTADOS.map(r => [r.value, r.label]));
 
-/** La ubicación del teléfono, si la da en 5 segundos. Sin ella, la visita cuenta igual. */
-const ubicacion = () => new Promise((resolve) => {
-    if (!('geolocation' in navigator)) { resolve(null); return; }
-    navigator.geolocation.getCurrentPosition(
-        (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
-        () => resolve(null), { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 });
-});
+// La ubicación de la visita se pide SÓLO en la app (Capacitor) y SÓLO al
+// registrar la visita de la ruta (decisión del usuario, 2026-10-01: «solo para
+// las apps, y solo cuando se haga ruta de pedido»). En el navegador no se
+// pregunta nada: además `vercel.json` manda `geolocation=()`, que la apaga en
+// todo el sitio. El plugin nativo no depende de esa cabecera: pide su propio
+// permiso al sistema la primera vez.
+const esApp = () => !!window.Capacitor?.isNativePlatform?.();
+let geoPromise = null;
+function getGeo() {
+    if (!geoPromise) {
+        geoPromise = import('@capacitor/geolocation')
+            .then(m => m.Geolocation)
+            .catch(err => { geoPromise = null; throw err; });
+    }
+    return geoPromise;
+}
+/** La ubicación del teléfono, si la da en 8 segundos. Sin ella, la visita cuenta igual. */
+async function ubicacion() {
+    if (!esApp()) return null;
+    try {
+        const Geo = await getGeo();
+        const p = await Geo.getCurrentPosition({ enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 });
+        return { lat: p.coords.latitude, lng: p.coords.longitude };
+    } catch (e) {
+        console.warn('rutas: sin ubicación para la visita', e?.message ?? e);
+        return null;
+    }
+}
 const comoLlegar = (c) => (c.lat != null && c.lng != null
     ? `https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c.nombre} ${c.direccion ?? ''} Chalatenango El Salvador`)}`);

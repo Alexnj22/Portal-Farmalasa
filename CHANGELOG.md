@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1117.3 — Torogoz: GPS sólo en la app, sólo dirección ve el módulo, script de paso a producción
+
+- **GPS de la visita sólo en la app y sólo al registrar la visita de la ruta** (pedido del usuario). En el navegador no se pregunta nada; en la app se usa el plugin nativo, que no depende del `geolocation=()` de `vercel.json`.
+- **En producción, Torogoz lo ven sólo los cuatro cargos de dirección**: Gerente General, Administrador, Jefe/a de Talento Humano y Supervisor/a de Ventas (0001 y 0008 dan los permisos por id de cargo).
+- `scripts/distribucion-a-produccion.mjs`: aplica los 32 borradores a producción desde el archivo, uno por transacción, registrándolos como `apply_migration` y escribiendo cada `supabase/migrations/<versión>_<name>.sql`. Sin `--aplicar` sólo muestra qué haría.
+
 ## v2.1117.2 — Torogoz: listo para producción (ajustes de la auditoría y plan)
 
 Preparación para pasar la distribuidora a producción, sin tocar la base real. Plan completo en `docs/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md`.

@@ -477,11 +477,14 @@ REVOKE ALL ON public.dist_emisores, public.dist_clientes, public.dist_catalogo, 
     public.dist_pedidos, public.dist_pedido_items FROM anon;
 
 -- ── Permisos: el módulo y su capacidad de configuración ─────────────────────
--- Sólo para quien ya tiene `facturacion` con edición (gerencia y contabilidad):
--- el resto de cargos los recibe cuando alguien lo decida en Permisos.
+-- Sólo para los cuatro cargos de dirección (decisión del usuario,
+-- 2026-10-01: «que solo lo pueda ver admin» = Gerente General (2),
+-- Administrador (3), Jefe/a de Talento Humano (11), Supervisor/a de Ventas
+-- (13)). Por id y no por nombre: un rótulo no es una clave. El resto de
+-- cargos lo recibe cuando alguien lo decida en Permisos.
 INSERT INTO public.role_permissions (role_id, module_key, can_view, can_edit, can_approve)
-SELECT rp.role_id, m.k, true, true, false
-  FROM public.role_permissions rp
+SELECT r.id, m.k, true, true, false
+  FROM public.roles r
  CROSS JOIN (VALUES ('distribucion'), ('distribucion_config')) AS m(k)
- WHERE rp.module_key = 'facturacion' AND rp.can_edit
+ WHERE r.id IN (2, 3, 11, 13)
 ON CONFLICT (role_id, module_key) DO NOTHING;

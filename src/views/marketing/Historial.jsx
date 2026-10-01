@@ -34,9 +34,11 @@ export function Quien({ id, personas, px = 20 }) {
 export function UltimoCambio({ cambio, personas }) {
     if (!cambio) return null;
     return (
-        <div className="flex items-center gap-1.5 min-w-0 text-micro text-content-3">
+        // Nombre y hora en líneas distintas: en una columna angosta del flujo,
+        // juntos cortaban el nombre a una letra, y el nombre va siempre.
+        <div className="flex flex-col gap-0.5 min-w-0 text-micro text-content-3">
             <Quien id={cambio.actor} personas={personas} px={16} />
-            <span className="shrink-0">· {fechaHora12(cambio.created_at, { day: 'numeric', month: 'short' })}</span>
+            <span className="pl-[22px]">{fechaHora12(cambio.created_at, { day: 'numeric', month: 'short' })}</span>
         </div>
     );
 }

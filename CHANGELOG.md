@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1136.1 — Marketing: el nombre del último cambio entero en el flujo
+
+Con siete columnas en el flujo, la tarjeta es angosta y el nombre de quien hizo
+el último cambio se cortaba a una letra junto a la hora. Van en líneas
+distintas: el nombre se ve siempre (pedido del usuario).
+
 ## v2.1136.0 — Pedidos: llegada y conteo de la sala al núcleo
 
 Preparación de Pedidos en la app: lo que la sala hace al recibir pasa al

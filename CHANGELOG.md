@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1128.0 — Solicitudes personales: la base acepta sus siete tipos
+
+**Las solicitudes personales ya se pueden crear.** El CHECK de
+`approval_requests.type` no aceptaba PERMIT, DISABILITY, OVERTIME, ADVANCE ni
+CERTIFICATE (tenía los nombres viejos): en toda la historia de producción había
+cero solicitudes personales, porque el insert fallaba y el portal decía «No se
+pudo crear la solicitud». Migración `20261001180230`, aplicada con el visto
+bueno del usuario; los nombres viejos se quedan.
 ## v2.1127.1 — Pruebas: la semilla del tablero enlaza sus rutas, y dos pruebas ya no dependen de restos viejos
 
 El primer rehacer del entorno de pruebas con la distribuidora ya en producción (2026-10-01) destapó tres cosas que sólo se veían en un branch nuevo: la batería de Torogoz dio 26 de 30.

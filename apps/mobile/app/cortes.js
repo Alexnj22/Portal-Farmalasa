@@ -104,7 +104,7 @@ export default function Cortes() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Cortes de caja', headerLargeTitle: true }} />
-      <MenuDeFiltros grupos={grupos} />
+      <MenuDeFiltros grupos={grupos} extra={{ icono: 'banknote', etiqueta: 'Efectivo', onPress: () => router.push('/efectivo') }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 40 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>

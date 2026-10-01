@@ -21,7 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.1129.0 — Puntos: aviso de movimientos fuera de lo normal
+## v2.1130.0 — Puntos: aviso de movimientos fuera de lo normal
 
 Pedido del usuario: enterarse cuando a un cliente se le acumulan o descuentan
 puntos de forma no habitual. `puntos_vigilar_irregularidades` corre cada 5 min
@@ -41,6 +41,26 @@ vendedores sumaron 85,215 puntos (22% de todo lo acumulado), en 273 fichas, y
 crecían cada mes (12 en oct-2025, 82 en sep-2026). La primera versión contaba
 facturas por vendedor y en la simulación acusó una compra partida en tres
 facturas en 4 minutos; se corrigió a visitas separadas por más de 30 minutos.
+
+## v2.1129.0 — App: Efectivo — sacar dinero y cerrar el día
+
+El dinero de la sala, en el teléfono.
+
+- **Efectivo** (`app/efectivo.js`, botón en la barra de Cortes): cuánto hay en
+  la caja, los cortes de hoy y dos acciones.
+- **Cerrar el día** pasa por los tres frenos del portal, en su orden: un corte
+  sin resolver, ningún corte confirmado y efectivo que entró sin contar (o que
+  no se pudo medir). Sólo con los tres en verde pregunta y emite el Z.
+- **Sacar dinero** (`app/sacar-dinero.js`, también desde Bolsas): sale primero
+  del cajón y, si no alcanza, de las bolsas más viejas (`elegirOrigen`). Cada
+  motivo pide lo suyo — a quién o a qué entidad, boleta que no se repita en la
+  sala, foto del comprobante, carné de quien se lo lleva. Del cajón sale el
+  comprobante del movimiento; de las bolsas, el vale y la etiqueta nueva de
+  cada bolsa tocada. Todo por la caja de la sala.
+## v2.1128.3 — Torogoz: disparadores con permisos del usuario; gate:perf encuentra la constante mudada
+
+- **Cuatro disparadores de Torogoz** (`dist_validar_lote_item`, `dist_validar_desde_camion`, `dist_cliente_ruta_texto`, `dist_ventas_perdidas_resolver`) dejan de correr con permisos de administrador: sólo leen tablas que cualquiera con permiso de ver Distribución ya puede leer, o completan la propia fila. Probado en el branch con las pruebas de venta, lotes, autoventa, rutas y venta perdida (5 de 5) y aplicado en producción (`20261001180959`).
+- **`gate:perf`** buscaba `MIN_LETRAS_BUSQUEDA` en `PanelDeInventario.jsx`, y la constante se había mudado a `utils/consultaInventario.js` al pasar la lógica al núcleo: avisaba que faltaba un freno que seguía en su sitio (en 3).
 
 ## v2.1128.2 — Pie de modal: separación entre botones también en Promociones
 

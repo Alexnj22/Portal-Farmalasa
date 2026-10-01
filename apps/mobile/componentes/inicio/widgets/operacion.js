@@ -140,7 +140,8 @@ export function Bitacoras({ ctx }) {
 
 // ── Recetas pendientes de mi sala ───────────────────────────────────────────
 // Los renglones del libro bajo receta que quedaron sin completar. Dos días o
-// más ya es tarde (en rojo).
+// más ya es tarde (en rojo). Con permiso de editar bitácoras, tocar uno abre
+// `app/receta/[id].js` para completarlo; sin él, el libro.
 export function RecetasPendientes({ ctx }) {
   const farmacia = (ctx.sucursales || []).find((b) => String(b.id) === String(ctx.sala))?.type === 'FARMACIA';
   const { dato, cargando } = useDato(farmacia ? `recetas:${ctx.sala}` : null, async () => {
@@ -152,6 +153,7 @@ export function RecetasPendientes({ ctx }) {
   if (!farmacia) return null;
   const hoy = hoySV();
   const lista = dato || [];
+  const completa = ctx.puede('bitacoras', 'can_edit');
   const tarde = lista.filter((r) => diasEntre(String(r.fecha).slice(0, 10), hoy) >= 2).length;
   return (
     <Widget titulo="Recetas pendientes" icono="Pill" color={MARCA.violeta} cuenta={lista.length} onAbrir={() => ctx.abrir('/bitacoras')} accion="Ver el libro">
@@ -162,7 +164,8 @@ export function RecetasPendientes({ ctx }) {
             <Renglon key={r.id} primero={!i} titulo={r.producto_nombre} lineas={1}
               detalle={[r.folio_txt, fechaTexto(String(r.fecha).slice(0, 10)), r.cliente].filter(Boolean).join(' · ')}
               colorDerecha={diasEntre(String(r.fecha).slice(0, 10), hoy) >= 2 ? MARCA.rojo : undefined}
-              derecha={`${diasEntre(String(r.fecha).slice(0, 10), hoy)} d`} onPress={() => ctx.abrir('/bitacoras')} />
+              derecha={`${diasEntre(String(r.fecha).slice(0, 10), hoy)} d`}
+              onPress={completa ? () => router.push({ pathname: '/receta/[id]', params: { id: String(r.id), sala: String(ctx.sala), fecha: String(r.fecha).slice(0, 10) } }) : () => ctx.abrir('/bitacoras')} />
           ))}
           {lista.length > 5 ? <Vacio texto={`y ${lista.length - 5} más`} /> : null}
         </View>

@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1120.0 — App: completar recetas pendientes
+
+Tercera pieza para cerrar el Inicio: en Recetas pendientes, tocar un renglón
+lo completa en el teléfono (`app/receta/[id].js`), con las reglas del portal
+(`CompletarRenglon.jsx`).
+
+- **Paciente**: se propone el cliente de la factura sólo si es una persona; un
+  genérico o una empresa avisan y piden el nombre real. Edad y DUI opcionales.
+- **Médico**: por N.º de junta o por nombre, primero en el portal y después en
+  el registro del Consejo; el del Consejo se guarda verificado. No se escribe a
+  mano.
+- **Receta**: cuánto recetó (no puede ser menos de lo entregado), la fecha con
+  el selector del sistema y la foto (cámara o galería) al bucket privado
+  `recetas`. Sin foto se puede guardar, y el renglón la sigue pidiendo.
+- Guarda borrador mientras se llena. La firma la pone el servidor.
+
 ## v2.1119.0 — App: bolsas de la sala — guardar, reimprimir y entregar
 
 Segunda pieza para cerrar el Inicio: lo que la sala hace con sus bolsas en el

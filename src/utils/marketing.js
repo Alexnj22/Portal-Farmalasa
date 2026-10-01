@@ -42,8 +42,14 @@ export const ESTADOS_PIEZA = [
     { value: 'finalizado', label: 'Finalizado', variant: 'chart-3' },
     { value: 'cambios',    label: 'Con cambios', variant: 'warning' },
     { value: 'aprobado',   label: 'Aprobado',   variant: 'success' },
+    // Ya agendada en la red: sale sola. El recordatorio de las 8:00 no insiste
+    // con ella, y el cron la pasa a publicada cuando su día queda atrás.
+    { value: 'programado', label: 'Programado', variant: 'chart-4' },
     { value: 'publicado',  label: 'Publicado',  variant: 'chart-9' },
 ];
+
+/** Los estados que vienen después de aprobar: los mueve el diseñador. */
+export const ESTADOS_DE_SALIDA = ['programado', 'publicado'];
 
 /** Los estados que el diseñador mueve a mano. */
 export const ESTADOS_DEL_DISENADOR = ['pendiente', 'en_proceso', 'finalizado'];
@@ -134,7 +140,7 @@ export function resumenDelMes(piezas) {
     const por = Object.fromEntries(ESTADOS_PIEZA.map((e) => [e.value, 0]));
     for (const p of lista) por[p.estado] = (por[p.estado] || 0) + 1;
     const total = lista.length;
-    const listas = por.finalizado + por.aprobado + por.publicado;
+    const listas = por.finalizado + por.aprobado + por.programado + por.publicado;
     return {
         total,
         por,
@@ -196,4 +202,77 @@ export function tipoDeArchivo(archivo) {
 export function textoDePieza(p, marcas = {}) {
     return [p.titulo, p.copy, p.hashtags, p.notas, formatoDe(p.formato).label,
         pilarDe(p.pilar).label, marcas[p.marca_id]?.nombre].filter(Boolean).join(' ');
+}
+
+// ── Fechas especiales ───────────────────────────────────────────────────────
+// Las fijas traen mes y día; las que se mueven, una regla que se calcula acá.
+
+/** Domingo de Pascua (algoritmo anónimo gregoriano), como `YYYY-MM-DD`. */
+export function domingoDePascua(anio) {
+    const a = anio % 19, b = Math.floor(anio / 100), c = anio % 100;
+    const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+    const g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const mes = Math.floor((h + l - 7 * m + 114) / 31), dia = ((h + l - 7 * m + 114) % 31) + 1;
+    return `${anio}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+}
+
+const masDias = (iso, n) => {
+    const d = new Date(`${iso}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+};
+
+/** El viernes después del cuarto jueves de noviembre. */
+function blackFriday(anio) {
+    const primero = new Date(Date.UTC(anio, 10, 1)).getUTCDay();   // 0 = domingo
+    const primerJueves = 1 + ((4 - primero + 7) % 7);
+    return `${anio}-11-${String(primerJueves + 21 + 1).padStart(2, '0')}`;
+}
+
+const POR_REGLA = {
+    jueves_santo:  (a) => masDias(domingoDePascua(a), -3),
+    viernes_santo: (a) => masDias(domingoDePascua(a), -2),
+    black_friday:  blackFriday,
+};
+
+/** La fecha (`YYYY-MM-DD`) de una fecha especial en un año, o `null`. */
+export function fechaEspecialEn(f, anio) {
+    if (f.regla) return POR_REGLA[f.regla]?.(anio) || null;
+    if (!f.mes || !f.dia) return null;
+    const ultimo = new Date(Date.UTC(anio, f.mes, 0)).getUTCDate();
+    if (f.dia > ultimo) return null;
+    return `${anio}-${String(f.mes).padStart(2, '0')}-${String(f.dia).padStart(2, '0')}`;
+}
+
+/** Las fechas especiales activas que caen en el mes `YYYY-MM`, por día. */
+export function fechasEspecialesDelMes(lista, mes) {
+    const anio = Number(String(mes).slice(0, 4));
+    const porDia = {};
+    for (const f of lista || []) {
+        if (!f.activo) continue;
+        const d = fechaEspecialEn(f, anio);
+        if (d && d.slice(0, 7) === String(mes).slice(0, 7)) (porDia[d] ||= []).push({ ...f, fecha: d });
+    }
+    return porDia;
+}
+
+// ── El efecto en ventas ─────────────────────────────────────────────────────
+
+/**
+ * La variación entre «durante» y «antes» de `marketing_efecto_en_ventas`.
+ * Sin ventas antes no hay porcentaje honesto (dividir por cero): se dice
+ * «sin ventas antes» y la pantalla muestra sólo lo vendido.
+ */
+export function variacionDeVentas(efecto) {
+    if (!efecto?.durante || !efecto?.antes) return null;
+    const antes = Number(efecto.antes.monto) || 0;
+    const durante = Number(efecto.durante.monto) || 0;
+    return {
+        antes, durante,
+        unidadesAntes: Number(efecto.antes.unidades) || 0,
+        unidadesDurante: Number(efecto.durante.unidades) || 0,
+        pct: antes > 0 ? ((durante - antes) / antes) * 100 : null,
+    };
 }

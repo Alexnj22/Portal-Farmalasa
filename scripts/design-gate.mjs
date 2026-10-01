@@ -384,6 +384,7 @@ const EXCEPTIONS = {
   // cualquier teléfono. Mismo criterio que la guía de encuadre de la cámara.
   'src/components/common/QrDeCaptura.jsx': ['hex'],
   'src/utils/corteZPrint.js': ['hex'],           // idem: el PDF del Corte Z no pasa por CSS ni por los tokens del tema
+  'src/utils/marketingInforme.js': ['hex'],      // idem: el informe mensual de marketing es un PDF (docDefinition, no CSS)
   // pdfmake: docDefinition, no CSS. (Su dinero ya pasa por `formatMoney`: el
   // papel también lleva separador de miles.)
   'src/utils/conteoInventarioPrint.js': ['hex'],

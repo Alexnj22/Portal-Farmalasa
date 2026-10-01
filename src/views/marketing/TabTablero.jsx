@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import Badge from '../../components/common/Badge';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { ESTADOS_PIEZA, ESTADOS_DEL_DISENADOR } from '@nucleo/utils/marketing';
+import { ESTADOS_PIEZA, ESTADOS_DEL_DISENADOR, ESTADOS_DE_SALIDA } from '@nucleo/utils/marketing';
 import FichaDePieza from './FichaDePieza';
 
 /**
@@ -10,7 +10,7 @@ import FichaDePieza from './FichaDePieza';
  * todavía no se puedan mirar.
  *
  * Arrastrar sólo mueve entre los estados del diseñador (pendiente, en proceso,
- * finalizado) y de aprobado a publicado. Aprobar y pedir cambios no se hace
+ * finalizado) y, después de aprobada, a programado o publicado. Aprobar y pedir cambios no se hace
  * soltando una tarjeta: eso lo hace quien revisa, con su comentario.
  */
 export default function TabTablero({ piezas, marcas, comentariosPorPieza, puedeEditar, onAbrir, onMover }) {
@@ -23,8 +23,9 @@ export default function TabTablero({ piezas, marcas, comentariosPorPieza, puedeE
 
     const admite = (destino, pieza) => {
         if (!puedeEditar || !pieza || pieza.estado === destino) return false;
-        if (ESTADOS_DEL_DISENADOR.includes(destino)) return pieza.estado !== 'aprobado' && pieza.estado !== 'publicado';
-        return destino === 'publicado' && pieza.estado === 'aprobado';
+        if (ESTADOS_DEL_DISENADOR.includes(destino)) return !['aprobado', 'programado', 'publicado'].includes(pieza.estado);
+        if (destino === 'programado') return pieza.estado === 'aprobado';
+        return destino === 'publicado' && ['aprobado', 'programado'].includes(pieza.estado);
     };
 
     const soltar = (destino) => (e) => {
@@ -42,7 +43,7 @@ export default function TabTablero({ piezas, marcas, comentariosPorPieza, puedeE
         <div className="flex gap-3 overflow-x-auto pb-2 snap-x lg:snap-none">
             {ESTADOS_PIEZA.map((e) => {
                 const lista = porEstado[e.value] || [];
-                const destinoValido = puedeEditar && (ESTADOS_DEL_DISENADOR.includes(e.value) || e.value === 'publicado');
+                const destinoValido = puedeEditar && (ESTADOS_DEL_DISENADOR.includes(e.value) || ESTADOS_DE_SALIDA.includes(e.value));
                 return (
                     <section key={e.value}
                         className={`snap-start shrink-0 w-[78vw] sm:w-64 lg:flex-1 lg:min-w-[200px] rounded-lg p-2 space-y-2 ${sobre === e.value ? 'bg-surface-card-hover' : 'bg-surface-input'}`}

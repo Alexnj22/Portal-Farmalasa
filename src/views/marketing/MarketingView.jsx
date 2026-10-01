@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
     Megaphone, CalendarDays, KanbanSquare, Inbox, Plus, Send, ThumbsUp, Settings2, Target,
-    CheckCircle2, AlertTriangle, DollarSign, Layers, MessageSquare, Sparkles,
+    CheckCircle2, AlertTriangle, DollarSign, Layers, MessageSquare, Sparkles, FileDown, Clock,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -19,7 +19,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
-import { mesSV, correrMes, etiquetaMes, fechaTexto } from '@nucleo/utils/fecha';
+import { mesSV, correrMes, etiquetaMes, fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import {
@@ -27,8 +27,9 @@ import {
 } from '@nucleo/utils/marketing';
 import {
     fetchCatalogos, fetchMes, crearMes, fetchPiezas, fetchComentarios, fetchSolicitudes, fetchPersonas,
-    firmarDisenos, moverPieza,
+    firmarDisenos, moverPieza, fetchAjustes, fetchFechasEspeciales, fetchPromocionesLigables, fetchEfectoEnVentas,
 } from '@nucleo/data/marketing';
+import { registrarEgreso } from '@nucleo/data/egreso';
 import TabCalendario from './TabCalendario';
 import TabTablero from './TabTablero';
 import TabSolicitudes from './TabSolicitudes';
@@ -88,6 +89,11 @@ export default function MarketingView() {
     const [fSolicitud, setFSolicitud] = useState('');
 
     const [catalogos, setCatalogos] = useState({ marcas: [], redes: [] });
+    const [ajustesMes, setAjustesMes] = useState(null);
+    const [fechasEspeciales, setFechasEspeciales] = useState([]);
+    const [promociones, setPromociones] = useState([]);
+    const [mesSiguiente, setMesSiguiente] = useState(null);
+    const [generando, setGenerando] = useState(false);
     const [mesFila, setMesFila] = useState(null);
     const [piezas, setPiezas] = useState([]);
     const [comentarios, setComentarios] = useState([]);
@@ -110,13 +116,20 @@ export default function MarketingView() {
     const cargar = useCallback(async ({ silencioso = false } = {}) => {
         if (!silencioso) setCargando(true);
         try {
-            const [cat, fila, sols] = await Promise.all([fetchCatalogos(), fetchMes(mes), fetchSolicitudes()]);
+            const [cat, fila, sols, aj, fechas, promos, sig] = await Promise.all([
+                fetchCatalogos(), fetchMes(mes), fetchSolicitudes(), fetchAjustes(), fetchFechasEspeciales(),
+                fetchPromocionesLigables(), fetchMes(correrMes(mesSV(), 1)),
+            ]);
             const [ps, cs] = fila ? await Promise.all([fetchPiezas(fila.id), fetchComentarios(fila.id)]) : [[], []];
             const [gente, firmas] = await Promise.all([
                 fetchPersonas([...cs.map((c) => c.autor_id), ...sols.map((s) => s.solicitado_por), fila?.publicado_por, fila?.aprobado_por]),
                 firmarDisenos(ps),
             ]);
             setCatalogos(cat);
+            setAjustesMes(aj);
+            setFechasEspeciales(fechas);
+            setPromociones(promos);
+            setMesSiguiente(sig);
             setMesFila(fila);
             setPiezas(ps);
             setComentarios(cs);
@@ -177,6 +190,28 @@ export default function MarketingView() {
             showToast('No se pudo empezar el mes', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
         }
     }, [asegurarMes, showToast]);
+
+    // El informe del mes en PDF. Mide el efecto en ventas de las piezas ligadas
+    // a una promoción justo al generarlo: es lo que gerencia quiere ver.
+    const descargarInforme = useCallback(async () => {
+        if (!mesFila) return;
+        setGenerando(true);
+        try {
+            const ligadas = piezas.filter((p) => p.promocion_id);
+            const efectos = Object.fromEntries(await Promise.all(
+                ligadas.map(async (p) => [p.id, await fetchEfectoEnVentas(p.id).catch(() => null)])));
+            const { descargarInformePdf } = await import('@nucleo/utils/marketingInforme');
+            await descargarInformePdf({
+                mes: mesFila, piezas, marcas: marcasPorId, redes: catalogos.redes, efectos,
+                promociones: Object.fromEntries(promociones.map((x) => [x.id, x])),
+            });
+            registrarEgreso('marketing', { formato: 'pdf', filas: piezas.length, detalle: { mes } });
+        } catch (err) {
+            showToast('No se pudo generar el informe', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        } finally {
+            setGenerando(false);
+        }
+    }, [mesFila, piezas, marcasPorId, catalogos.redes, promociones, mes, showToast]);
 
     const nuevaPieza = useCallback(async (fecha, prellenado = null) => {
         try {
@@ -251,8 +286,13 @@ export default function MarketingView() {
             key: 'datos', icon: Target, label: 'Objetivo y presupuesto', title: 'Objetivo del mes y presupuesto de pauta',
             soloIcono: true, variant: 'secondary', onClick: abrirDatosDelMes,
         }] : []),
-        ...(puedeEditar ? [{
-            key: 'ajustes', icon: Settings2, label: 'Marcas y redes', title: 'Marcas y redes',
+        ...(mesFila && resumen.total > 0 && tab !== 'solicitudes' ? [{
+            key: 'informe', icon: FileDown, label: generando ? 'Generando…' : 'Informe PDF',
+            title: 'Descargar el informe del mes en PDF', soloIcono: true, variant: 'secondary',
+            onClick: generando ? undefined : descargarInforme,
+        }] : []),
+        ...((puedeEditar || puedeAprobar) ? [{
+            key: 'ajustes', icon: Settings2, label: 'Ajustes', title: 'Fecha límite, recordatorios, fechas especiales, marcas y redes',
             soloIcono: true, variant: 'secondary', onClick: () => setAjustes(true),
         }] : []),
     ];
@@ -278,6 +318,20 @@ export default function MarketingView() {
         { key: 'pauta', icon: Megaphone, label: 'Se pautan', value: resumen.pautadas,
             sub: pauta.presupuesto ? formatMoney(pauta.presupuesto) : 'Sin inversión' },
     ];
+
+    // La fecha límite del mes siguiente: se avisa en pantalla desde tres días
+    // antes, igual que el recordatorio de las 8:00.
+    const avisoLimite = (() => {
+        if (!ajustesMes || mesSiguiente?.publicado_at) return null;
+        const limite = ajustesMes.dia_limite_envio;
+        const hoy = Number(hoySV().slice(8));
+        if (hoy < limite - 3) return null;
+        const sig = etiquetaMes(correrMes(mesSV(), 1));
+        if (hoy > limite) return { vencido: true, texto: `El calendario de ${sig} debía enviarse a revisión el día ${limite} y todavía no se envía.` };
+        return { vencido: false, texto: hoy === limite
+            ? `Hoy es el último día para enviar el calendario de ${sig} a revisión.`
+            : `Quedan ${limite - hoy} días para enviar el calendario de ${sig} a revisión (límite: día ${limite}).` };
+    })();
 
     const filtrosPuestos = (fMarca ? 1 : 0) + (fSolicitud ? 1 : 0);
     const limpiar = () => { setFMarca(''); setFSolicitud(''); };
@@ -321,8 +375,9 @@ export default function MarketingView() {
         return (
             <div className="space-y-6">
                 <TabCalendario mes={mes} piezas={visibles} marcas={marcasPorId} comentariosPorPieza={comentariosPorPieza}
+                    especiales={fechasEspeciales}
                     puedeEditar={puedeEditar} onAbrir={abrirPieza}
-                    onNueva={(fecha) => nuevaPieza(fecha)} onMover={mover} />
+                    onNueva={(fecha, prellenado) => nuevaPieza(fecha, prellenado)} onMover={mover} />
                 {(publicado || comentariosDelMes.length > 0) && (
                     <section data-surface="card" className="p-4 space-y-3">
                         <h3 className="text-label uppercase tracking-wide font-semibold text-content-2 flex items-center gap-1.5">
@@ -383,6 +438,12 @@ export default function MarketingView() {
                     </div>
                 </div>
 
+                {tab !== 'solicitudes' && avisoLimite && (
+                    <Notice variant={avisoLimite.vencido ? 'danger' : 'warning'} icon={Clock}>
+                        {avisoLimite.texto}
+                    </Notice>
+                )}
+
                 {tab !== 'solicitudes' && mesFila && estadoMes && (
                     <Notice variant={estadoMes.variant === 'neutral' ? 'info' : estadoMes.variant}
                         icon={mesFila.estado === 'aprobado' ? CheckCircle2 : CalendarDays}>
@@ -412,7 +473,7 @@ export default function MarketingView() {
                 <PiezaModal key={piezaAbierta?.id || 'nueva'} open
                     onClose={() => (piezaAbierta ? abrirPieza(null) : setNueva(null))}
                     mes={mesFila} pieza={piezaAbierta || nueva?.prellenado} fechaInicial={nueva?.fecha}
-                    catalogos={catalogos} personas={personas} comentarios={comentarios} firmadas={firmadas}
+                    catalogos={catalogos} promociones={promociones} personas={personas} comentarios={comentarios} firmadas={firmadas}
                     puedeEditar={puedeEditar} puedeAprobar={puedeAprobar} yoId={yoId}
                     onCambio={recargar} onEditarPauta={(p) => { abrirPieza(null); setPautaId(p.id); }} />
             )}
@@ -430,7 +491,9 @@ export default function MarketingView() {
                     onClose={() => setDecision(null)} onCambio={recargar} />
             )}
             {datosMes && <DatosDelMesModal open mes={mesFila} onClose={() => setDatosMes(false)} onCambio={recargar} />}
-            <AjustesModal open={ajustes} onClose={() => setAjustes(false)} marcas={catalogos.marcas} redes={catalogos.redes} onCambio={recargar} />
+            <AjustesModal open={ajustes} onClose={() => setAjustes(false)} marcas={catalogos.marcas} redes={catalogos.redes}
+                ajustes={ajustesMes} fechas={fechasEspeciales} puedeEditar={puedeEditar} puedeAprobar={puedeAprobar}
+                onCambio={recargar} />
         </GlassViewLayout>
     );
 }

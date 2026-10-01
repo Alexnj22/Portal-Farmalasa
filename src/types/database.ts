@@ -11849,6 +11849,30 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_ajustes: {
+        Row: {
+          created_at: string
+          dia_limite_envio: number
+          id: boolean
+          recordatorios_activos: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dia_limite_envio?: number
+          id?: boolean
+          recordatorios_activos?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dia_limite_envio?: number
+          id?: boolean
+          recordatorios_activos?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       marketing_archivos: {
         Row: {
           created_at: string
@@ -11968,6 +11992,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      marketing_fechas_especiales: {
+        Row: {
+          activo: boolean
+          created_at: string
+          dia: number | null
+          id: number
+          idea: string | null
+          mes: number | null
+          nombre: string
+          regla: string | null
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          dia?: number | null
+          id?: never
+          idea?: string | null
+          mes?: number | null
+          nombre: string
+          regla?: string | null
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          dia?: number | null
+          id?: never
+          idea?: string | null
+          mes?: number | null
+          nombre?: string
+          regla?: string | null
+        }
+        Relationships: []
       }
       marketing_marcas: {
         Row: {
@@ -12169,6 +12226,7 @@ export type Database = {
           notas: string | null
           pautar: boolean
           pilar: string | null
+          promocion_id: number | null
           publicado_en: string | null
           redes: string[]
           revisado_at: string | null
@@ -12193,6 +12251,7 @@ export type Database = {
           notas?: string | null
           pautar?: boolean
           pilar?: string | null
+          promocion_id?: number | null
           publicado_en?: string | null
           redes?: string[]
           revisado_at?: string | null
@@ -12217,6 +12276,7 @@ export type Database = {
           notas?: string | null
           pautar?: boolean
           pilar?: string | null
+          promocion_id?: number | null
           publicado_en?: string | null
           redes?: string[]
           revisado_at?: string | null
@@ -12252,6 +12312,13 @@ export type Database = {
             columns: ["mes_id"]
             isOneToOne: false
             referencedRelation: "marketing_meses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_piezas_promocion_id_fkey"
+            columns: ["promocion_id"]
+            isOneToOne: false
+            referencedRelation: "promociones"
             referencedColumns: ["id"]
           },
           {
@@ -25830,11 +25897,17 @@ export type Database = {
         Args: { p_accion: string; p_excepto?: string }
         Returns: string[]
       }
+      marketing_efecto_en_ventas: {
+        Args: { p_pieza_id: string }
+        Returns: Json
+      }
       marketing_nombre_mes: { Args: { p_mes: string }; Returns: string }
+      marketing_promociones: { Args: never; Returns: Json }
       marketing_publicar_mes: {
         Args: { p_mes_id: string; p_nota?: string }
         Returns: Json
       }
+      marketing_recordatorios_diarios: { Args: never; Returns: number }
       marketing_revisar_pieza: {
         Args: { p_decision: string; p_pieza_id: string; p_texto?: string }
         Returns: Json

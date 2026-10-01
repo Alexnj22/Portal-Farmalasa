@@ -16,3 +16,11 @@ const PUNTO = {
 };
 export const COLORES_MARCA = Object.keys(PUNTO);
 export const puntoDeMarca = (color) => PUNTO[color] || PUNTO['chart-1'];
+
+// El mismo color como fondo tenue con su texto legible: la inicial de la marca.
+const TINTA = {
+    'chart-1': 'bg-chart-1/15 text-chart-1-text', 'chart-3': 'bg-chart-3/15 text-chart-3-text',
+    'chart-4': 'bg-chart-4/15 text-chart-4-text', 'chart-6': 'bg-chart-6/15 text-chart-6-text',
+    'chart-8': 'bg-chart-8/15 text-chart-8-text', 'chart-9': 'bg-chart-9/15 text-chart-9-text',
+};
+export const tintaDeMarca = (color) => TINTA[color] || TINTA['chart-1'];

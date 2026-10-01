@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1135.1 — Registro del gate: la deuda del total de Ventas era volumen, no permisos
+
+Corrige la causa anotada en `scripts/bloques-por-llamada.json` para `get_product_sales_total`: los ~90 mil bloques de un rango que corta a mitad de mes no los pone la RLS —su `EXISTS` por renglón nunca se ejecuta y sin RLS se lee lo mismo— sino el volumen de los bordes en vivo (~20 mil renglones por medio mes). Sin cambio de comportamiento.
+
 ## v2.1135.0 — Marketing: versiones, comentarios sobre el diseño, duplicar, biblioteca y galería para las salas
 
 Cuarta tanda del planificador, pedida por el usuario.

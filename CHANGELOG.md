@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1132.2 — Archivo local de tres migraciones de hoy
+
+`gate:migrations --remote` encontró tres migraciones aplicadas en producción el
+2026-10-01 sin su archivo en `supabase/migrations/`:
+`20261001182239` (autovacuum de `product_sales_monthly_agg`),
+`20261001182900` (`get_product_sales_total` suma por producto antes de cruzar)
+y `20261001193748` (`preview_muestra_ciclica` calcula el último conteo una
+vez). Se copiaron del registro de producción; el contenido coincide con
+`schema_migrations.statements` salvo espacios y `;`. No cambia nada en la base.
+
 ## v2.1132.1 — Puntos: el canje ya no se cuenta doble
 
 Llegó el aviso «Se aplicaron 688 puntos de descuento y el cliente tenía 344»

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { numeroEscrito, problemasDeLaPromocion, fmtLote } from '../../src/utils/promocionesUtils';
+import { numeroEscrito, problemasDeLaPromocion, fmtLote } from '@nucleo/utils/promocionesUtils';
 
 describe('numeroEscrito', () => {
     it('acepta coma decimal y espacios', () => {

@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1114.0 — Aviso de descargas grandes en vez de techo de exportación
+
+- Toda descarga de más de 5,000 filas avisa a quien administra las sesiones:
+  quién descargó, qué y cuántas filas. No pide confirmación ni frena a nadie.
+- Se decidió no poner el techo con confirmación (Fase 3.3 del blindaje): con un
+  mes de registro, la mayor descarga normal fue de 3,972 filas, y confirmar un
+  diálogo no detiene a quien se quiere llevar los datos. El recordatorio mensual
+  «Ya se puede ponerle techo a lo que sale» deja de llegar.
+
 ## v2.1113.0 — Promociones: auditoría completa — datos que se perdían, validaciones y practicidad
 
 Revisión del módulo entero (vista, seis pestañas, siete modales, capa de datos y

@@ -564,6 +564,15 @@ diseño.
 - [x] **Fase 1** — `security_config`, `export_log` y las **once salidas cableadas**, verificados el 2026-08-24 (`20260825033558`, `20260825034152`) · falta juntar un mes de línea base
 - [ ] Fase 2A/2B/2C/2D — cierre de lecturas
 - [ ] Fase 3 — contención
+  - [x] **3.3 decidida el 2026-10-01: NO va techo con confirmación.** Con el mes
+    de línea base (78 descargas, la mayor 3,972 filas) la confirmación no frena
+    a nadie —quien se lleva los datos aprieta «sí»— y lo único útil, que quede
+    anotado, ya lo hace `export_log`. Lo que faltaba es que alguien lo mire: el
+    trigger `export_log_avisar_descarga_grande` avisa a quien edita «sesiones»
+    toda descarga de más de **5,000 filas** (`20261001151451`, `20261001151511`).
+    `techo_exportacion.updated_by` quedó firmado, así que el recordatorio mensual
+    se apagó. Límite que sigue en pie: sólo ve lo que pasa por los botones de
+    descarga; una lectura directa a la API con una sesión válida es la Fase 2.
 - [ ] Fase 4 — vigilancia
 
 **Lo verificado el 2026-08-13**: policies de RLS (246 de lectura, 54 abiertas),

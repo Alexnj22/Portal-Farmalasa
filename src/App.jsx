@@ -90,6 +90,7 @@ const ResumenFiscalView = lazy(IMPORTADORES.ResumenFiscalView);
 const CorteZView = lazy(IMPORTADORES.CorteZView);
 const MetasView = lazy(IMPORTADORES.MetasView);
 const PromocionesView = lazy(IMPORTADORES.PromocionesView);
+const MarketingView = lazy(IMPORTADORES.MarketingView);
 const ProveedoresView = lazy(IMPORTADORES.ProveedoresView);
 const ClientesView = lazy(IMPORTADORES.ClientesView);
 const ConteoInventarioView = lazy(IMPORTADORES.ConteoInventarioView);
@@ -866,6 +867,7 @@ function MainApp() {
                                     <Route path="corte-z" element={<PermissionGuard moduleKey="corte_z"><CorteZView /></PermissionGuard>} />
                                     <Route path="metas" element={<PermissionGuard moduleKey="metas"><MetasView /></PermissionGuard>} />
                                     <Route path="promociones" element={<PermissionGuard moduleKey="promociones"><PromocionesView /></PermissionGuard>} />
+                                    <Route path="marketing" element={<PermissionGuard moduleKey="marketing"><MarketingView /></PermissionGuard>} />
                                     <Route path="proveedores" element={<PermissionGuard moduleKey="proveedores"><ProveedoresView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="conteo-inventario" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoInventarioView /></PermissionGuard>} />
                                     <Route path="bitacoras" element={<PermissionGuard moduleKey="bitacoras"><BitacorasView /></PermissionGuard>} />
@@ -1051,6 +1053,7 @@ const ROUTE_TITLES = {
     // exige gate:rutas, y por buenos motivos — el título de la pestaña del
     // navegador es uno de los cuatro nombres de una vista.
     '/promociones':       'Promociones',
+    '/marketing':         'Marketing',
     '/productos':         'Productos',
     '/laboratorios':      'Laboratorios',
     '/pedidos':           'Pedidos a sucursales',

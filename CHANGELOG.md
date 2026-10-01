@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1118.0 — Marketing: el planificador de contenido para redes
+
+Módulo nuevo (menú **Marketing**, `/marketing`) para trabajar con el diseñador
+gráfico externo. Pedido del usuario: el mes completo para planificar post,
+reels, videos e historias, el flujo de trabajo, solicitudes, publicar el
+calendario para revisarlo y comentar o aprobar, y la pauta con su inversión.
+
+- **Calendario** del mes (agenda en el teléfono): piezas por marca, formato,
+  redes, pilar, copy y hashtags. Se arrastran de día.
+- **Flujo**: tablero por estado — pendiente, en proceso, finalizado, con
+  cambios, aprobado, publicado.
+- **Revisión**: el diseñador envía el mes; quien aprueba recibe el aviso, ve
+  los diseños, comenta, pide cambios por pieza o aprueba el mes entero. Antes
+  de enviarlo el resto ve el avance pero **no los diseños** — lo decide el RLS
+  de `marketing_archivos` y del bucket privado `marketing`, no la pantalla.
+- Tocar una pieza aprobada (texto, fecha o diseño) la devuelve a revisión: un
+  trigger lo hace en la base, para que nadie firme lo que no vio.
+- **Solicitudes** al diseñador con prioridad y fecha; aceptar abre la pieza ya
+  escrita.
+- **Pauta**: plan (presupuesto, objetivo, fechas, redes, público) y resultado
+  (gastado, alcance, impresiones, mensajes, clics), con el presupuesto del mes
+  y el costo por mensaje y por clic.
+- Marcas y redes son tablas (La Popular y La Salud; TikTok entra apagada).
+
+Base: migraciones `marketing_planificador` y
+`marketing_revocar_triggers_a_authenticated`. Cargo nuevo «Diseñador/a
+Gráfico/a» (id 38, ficha de servicio externo). Editar lo tiene sólo el
+diseñador; Gerente General y Administrador ven y aprueban; el Agente de
+Canales Digitales ve, comenta y pide.
+
+Probado contra el entorno de pruebas el flujo entero de la base (candados,
+cambios, reenvío, aprobación, reapertura). Falta el barrido en el navegador.
+
 ## v2.1117.0 — Promociones: salas en 0 se conservan, reactivar en un paso, «Baja el precio» se suelta al borrar
 
 Los tres arreglos que tocaban producción, con el sí del usuario. Las dos

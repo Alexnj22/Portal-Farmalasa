@@ -245,6 +245,7 @@ const GRUPOS_CRUDOS = [
             ]},
             { key: 'metas',          label: 'Metas',         desc: 'Metas mensuales de venta por sala: cumplimiento en vivo, proyección de cierre e histórico con el tramo del bono', icono: 'Target', hasApprove: true, hasScope: true },
             { key: 'promociones',    label: 'Promociones',   desc: 'Campañas de laboratorio que pagan por unidad vendida —el lote repartido por sala, su avance y lo que habría ganado cada persona— y los descuentos que la venta le rebaja al renglón', icono: 'DollarSign', hasApprove: true, hasScope: true },
+            { key: 'marketing',      label: 'Marketing',     desc: 'Planificador de contenido para redes: el calendario del mes, el flujo de cada pieza con el diseñador, las solicitudes, la revisión del calendario y la pauta. Ver = mirar, comentar y pedir; editar = planificar y subir diseños; aprobar = revisar el calendario', icono: 'Megaphone', hasApprove: true },
         ],
     },
     {

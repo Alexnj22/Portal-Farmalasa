@@ -10,7 +10,8 @@ import * as almacen from '@plataforma/almacen';
 // devolvía la URL cruda: las fotos de un descarte por daño habrían salido rotas
 // el día que alguien las pintara. No lo detectó nadie porque hasta ese día
 // NINGUNA pantalla las mostraba — se subían y ahí quedaban.
-const PRIVATE_BUCKETS = ['documents', 'payment-proofs', 'empleados', 'purchase-dte', 'sales-dte', 'inventario-evidencia'];
+// `marketing` (2026-10-01): los diseños del planificador de contenido.
+const PRIVATE_BUCKETS = ['documents', 'payment-proofs', 'empleados', 'purchase-dte', 'sales-dte', 'inventario-evidencia', 'marketing'];
 const STORAGE_PATH_RE = /\/storage\/v1\/object\/(?:public|sign|authenticated)\/([^/]+)\/(.+?)(?:\?.*)?$/;
 
 /**

@@ -79,6 +79,9 @@ export const MENU_GROUPS = [
     // slot de Bonificaciones. Se construyó el 2026-09-01 y volvió con su nombre:
     // es la campaña por la que un laboratorio paga por unidad vendida.
     { key: 'promociones', label: 'Promociones', icono: 'Gift', modules: ['promociones'] },
+    // El planificador de contenido para redes (2026-10-01): lo usa el diseñador
+    // externo y quien aprueba el calendario.
+    { key: 'marketing', label: 'Marketing', icono: 'Megaphone', modules: ['marketing'] },
     { key: 'producto',     label: 'Producto',      icono: 'Package',       modules: ['productos', 'laboratorios'] },
     { key: 'pedidos_sucursales', label: 'Pedidos a sucursales', icono: 'ClipboardList', modules: ['pedidos'] },
     // `inventario` y `gestion_stock` van PRIMERO y no al final de la lista

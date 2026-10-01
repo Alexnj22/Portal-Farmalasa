@@ -527,6 +527,23 @@ export const AREAS = [
                'docs/DESCUENTOS-EN-LA-VENTA-2026-09-04.md'],
     },
     {
+        id: 'marketing',
+        nombre: 'Marketing',
+        resumen: 'El planificador de contenido para redes. El diseñador (ficha de servicio externo) arma el mes pieza por pieza —post, carrusel, reel, video, historia— para cada marca y red, lleva el flujo (pendiente, en proceso, finalizado) y sube los diseños. Mientras arma, el resto ve el avance pero NO los diseños (lo decide el RLS de marketing_archivos y del bucket). Al enviarlo a revisión, quien aprueba comenta, pide cambios por pieza o aprueba el mes; tocar una pieza aprobada la devuelve a revisión. Al lado: las solicitudes al diseñador y la pauta, plan y resultado.',
+        modulos: ['marketing'],
+        rutas: ['/marketing'],
+        archivos: [
+            'src/utils/marketing.js',
+            'src/data/marketing.js',
+            'src/views/marketing/',
+        ],
+        tablas: ['marketing_marcas', 'marketing_redes', 'marketing_meses', 'marketing_solicitudes',
+                 'marketing_piezas', 'marketing_archivos', 'marketing_comentarios', 'marketing_pautas'],
+        edge: [],
+        crons: [],
+        docs: [],
+    },
+    {
         id: 'cortes-efectivo',
         nombre: 'Cortes de caja y bolsas de efectivo',
         resumen: 'El cierre de turno de cada caja, las diferencias y su resolución, y el recorrido del dinero físico hasta administración.',

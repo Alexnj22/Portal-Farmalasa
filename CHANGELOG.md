@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1126.1 — Torogoz: sus permisos en un grupo aparte
+
+Pedido del usuario: «quiero que los permisos para la distribuidora estén aparte».
+
+- En **Permisos** hay un grupo propio, **Distribuidora (Torogoz)**, con todo lo de la distribuidora junto: «Vender y operar» (con sus capacidades «Precios y datos de la empresa» y «Dar descuentos hasta el tope») y «Decidir: descuentos».
+- **Arreglado de paso:** «Decidir: descuentos» estaba marcado para la tarjeta «Decidir solicitudes», que tiene su lista escrita a mano y no lo incluía. O sea que ese permiso **no aparecía en ninguna parte** de la pantalla y no se le podía asignar a nadie desde ahí. Ahora es una tarjeta más del grupo nuevo.
+
 ## v2.1126.0 — Marketing: recordatorios, fecha límite, fechas especiales, promociones, informe y vista previa
 
 Segunda tanda del planificador, pedida por el usuario sobre las ideas propuestas.

@@ -57,12 +57,24 @@ BEGIN
     END IF;
     SELECT id INTO v_emisor FROM public.dist_emisores ORDER BY id LIMIT 1;
 
+    -- ── Rutas ──
+    -- Desde 0027 la ruta es una TABLA y el texto `dist_clientes.ruta` lo
+    -- mantiene un disparador a partir de `ruta_id`: un cliente que entra sólo
+    -- con el texto queda «Sin ruta», porque el disparador se lo borra. En un
+    -- branch recién rehecho (2026-10-01) los 24 clientes del tablero salían
+    -- así. Por eso la ruta se crea y se enlaza por id.
+    FOR k IN 1 .. array_length(v_rutas, 1) LOOP
+        INSERT INTO public.dist_rutas (emisor_id, nombre)
+        SELECT v_emisor, v_rutas[k]
+         WHERE NOT EXISTS (SELECT 1 FROM public.dist_rutas WHERE emisor_id = v_emisor AND nombre = v_rutas[k]);
+    END LOOP;
+
     -- ── Clientes ──
     FOR k IN 1 .. array_length(v_nombres, 1) LOOP
         INSERT INTO public.dist_clientes (emisor_id, tipo, nombre, tipo_documento, num_documento, nrc,
                cod_actividad, desc_actividad,
                departamento, municipio, distrito, complemento, telefono, licencia_srs, licencia_srs_vence,
-               limite_credito, plazo_dias, ruta, activo)
+               limite_credito, plazo_dias, ruta_id, activo)
         VALUES (v_emisor, v_tipos[1 + (k % 6)], v_nombres[k], '36', lpad((06140000000000 + k * 7919)::text, 14, '0'),
                 CASE WHEN k % 3 = 0 THEN (1000000 + k)::text END,
                 CASE WHEN k % 3 = 0 THEN '47111' END, CASE WHEN k % 3 = 0 THEN 'Venta al por menor en comercios no especializados' END,
@@ -70,7 +82,7 @@ BEGIN
                 '04', '36', '07', 'Barrio El Centro, casa ' || k, '2301' || lpad(k::text, 4, '0'),
                 'SRS-PRUEBA-' || k, current_date + 365,
                 CASE WHEN k % 4 = 0 THEN 1500 ELSE 0 END, CASE WHEN k % 4 = 0 THEN 30 ELSE 0 END,
-                v_rutas[1 + (k % 3)], true);
+                (SELECT id FROM public.dist_rutas WHERE emisor_id = v_emisor AND nombre = v_rutas[1 + (k % 3)]), true);
     END LOOP;
 
     SELECT array_agg(id ORDER BY id) INTO v_vend FROM (

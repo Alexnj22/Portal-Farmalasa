@@ -540,9 +540,13 @@ test('facturación: semáforo con Hacienda, cubetas, lista de chequeo del docume
     await expect(estado).toContainText('Hacienda lo rechazó');
     await expect(estado).toContainText(/NRC/);
     await expect(estado.getByRole('button', { name: 'Corregir y facturar' })).toBeVisible();
-    // Lo vendido, como información (no como papel): abre en «Detalle».
-    await expect(page.locator('[data-testid="detalle-venta"]')).toBeVisible();
-    await expect(page.locator('[data-testid="detalle-venta"]')).toContainText(/Total/);
+    // Lo vendido, como información (no como papel): abre en «Detalle». En un
+    // branch recién rehecho el rechazado sale del historial sembrado, que no
+    // guarda su archivo: ahí lo correcto es decirlo (pasó el 2026-10-01).
+    const detalle = page.locator('[data-testid="detalle-venta"]');
+    const sinArchivo = page.getByText('Este documento no tiene guardado su archivo');
+    await expect(detalle.or(sinArchivo).first()).toBeVisible();
+    if (await detalle.isVisible()) await expect(detalle).toContainText(/Total/);
     await page.screenshot({ path: `${SALIDA}/facturacion-rechazado.png` });
     await page.keyboard.press('Escape');
     // Sin sello: el documento ofrece reenviar.
@@ -798,8 +802,10 @@ test('correo al cliente: el documento se envía (simulado en pruebas) y queda an
     page.on('pageerror', e => errores.push(e.message));
     await entrar(page);
     await page.goto('/torogoz/documentos?cubeta=todos');
-    // Uno emitido por las pruebas (trae su archivo; los del historial sembrado no).
-    await page.locator('table tbody tr', { hasText: 'B001P001' }).first().click();
+    // Uno emitido por las pruebas (trae su archivo; los del historial sembrado
+    // dicen PRUEBA01 y no lo traen). Desde 0028 cada vendedor tiene su punto
+    // de venta, así que puede ser P001, P002…
+    await page.locator('table tbody tr', { hasText: /B001P\d{3}/ }).first().click();
     const correo = page.locator('section[aria-label="Correo al cliente"]');
     await expect(correo).toBeVisible({ timeout: 15_000 });
     await correo.locator('input[name="correo-destino"]').fill('no-es-correo');

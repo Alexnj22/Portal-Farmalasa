@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1127.1 — Pruebas: la semilla del tablero enlaza sus rutas, y dos pruebas ya no dependen de restos viejos
+
+El primer rehacer del entorno de pruebas con la distribuidora ya en producción (2026-10-01) destapó tres cosas que sólo se veían en un branch nuevo: la batería de Torogoz dio 26 de 30.
+
+- **Semilla del tablero:** escribía la ruta del cliente como texto, y desde la migración 0027 ese texto lo mantiene un disparador a partir de la ruta enlazada: un cliente que entra sólo con el texto queda «Sin ruta» (faltaba la Ruta 3 entera). Ahora crea las tres rutas y enlaza a cada cliente por id. El branch actual se reparó con la misma regla.
+- **Prueba de correo:** buscaba un documento `B001P001`; desde la numeración por vendedor (0028) el de pruebas sale con su punto de venta (`B001P002`). Acepta cualquiera.
+- **Prueba de facturación:** daba por hecho que el rechazado trae su archivo; en un branch nuevo sale del historial sembrado, que no lo guarda, y la pantalla lo dice. Acepta los dos casos.
+
 ## v2.1127.0 — Marketing: calendario siempre visible, varias marcas, historial, impresos y tope de pauta
 
 Siete pedidos del usuario sobre el planificador, con capturas.

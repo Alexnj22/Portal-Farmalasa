@@ -25,7 +25,10 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import DescuentoEnVentas from './DescuentoEnVentas';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Campo from './Campo';
-import { fmtUnidades, rotuloPresentacion, descuentoDesdeLaPromocion, problemasDelDescuento } from '@nucleo/utils/promocionesUtils';
+import {
+    fmtUnidades, rotuloPresentacion, descuentoDesdeLaPromocion, problemasDelDescuento,
+    problemasDeLaPromocion, numeroEscrito,
+} from '@nucleo/utils/promocionesUtils';
 import { hoySV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 
@@ -63,8 +66,10 @@ const useSalasDeVenta = () => {
  */
 const generalNuevo = (salas = []) => ({
     inicio: hoySV(),
-    // Vacío a propósito: «todavía no se sabe» es un estado válido y se puede
-    // guardar así. La promoción cuenta las ventas de sus fechas igual.
+    // Vacío para que se ELIJA, no porque se pueda guardar así: `fin` es NOT
+    // NULL en la base (medido el 2026-10-01). Hasta esa fecha este comentario
+    // decía lo contrario y el guardado reventaba con un error genérico;
+    // `problemasDeLaPromocion` lo dice antes.
     fin: '',
     lote_total: '',
     tiene_bono: true,
@@ -228,9 +233,20 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                 : r
         )));
 
+    /* Repartir unidades a una sala la MARCA y deja el producto como ajustado.
+       Antes no hacía ninguna de las dos: el guardado sólo manda las salas
+       marcadas, así que lo escrito en una sala sin marcar se perdía en
+       silencio, y un cambio posterior del reparto general lo pisaba. */
     const cambiarReparto = (idx, salaId, v) =>
         setRenglones((rs) => rs.map((r, i) => (
-            i === idx ? { ...r, reparto: { ...r.reparto, [salaId]: v } } : r
+            i === idx
+                ? {
+                    ...r,
+                    ajustado: true,
+                    reparto: { ...r.reparto, [salaId]: v },
+                    salas: (Number(v) || 0) > 0 ? { ...r.salas, [salaId]: true } : r.salas,
+                }
+                : r
         )));
 
     const quitar = (idx) => setRenglones((rs) => rs.filter((_, i) => i !== idx));
@@ -313,7 +329,16 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
             /* Si ya se creó en un intento anterior, no se vuelve a crear:
                reintentar entero dejaría dos promociones iguales. */
             if (promoCreada) {
-                const ok = await mandarDescuento(promoCreada, forzarDescuento);
+                let ok = false;
+                try {
+                    ok = await mandarDescuento(promoCreada, forzarDescuento);
+                } catch (e) {
+                    // La promoción YA existe: el genérico «no se pudo crear la
+                    // promoción» de abajo invitaba a crearla otra vez.
+                    setFallo(`La promoción «${nombre.trim()}» ya está creada; el descuento sigue sin quedar: `
+                        + `${mensajeAmigable(e, 'el sistema de ventas no lo aceptó')}.`);
+                    return;
+                }
                 if (!ok) return;
                 descartar();
                 onGuardada?.();
@@ -330,16 +355,19 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                     fin: r.fin,
                     // Vacío viaja como vacío, no como cero: la base distingue
                     // «no se sabe» de «cero», y `Number('')` daría 0.
-                    lote_total: r.lote_total === '' ? null : Number(r.lote_total),
+                    lote_total: r.lote_total === '' ? null : numeroEscrito(r.lote_total),
                     tiene_bono: !!r.tiene_bono,
                     paga: r.tiene_bono ? r.paga : null,
                     supplier_id: r.tiene_bono && r.paga === 'proveedor'
                         ? (r.supplier_id === '' ? null : Number(r.supplier_id))
                         : null,
-                    bono_vendedor: r.tiene_bono ? Number(r.bono_vendedor) || 0 : 0,
-                    bono_adm: r.tiene_bono ? Number(r.bono_adm) || 0 : 0,
-                    bono_bodega: r.tiene_bono ? Number(r.bono_bodega) || 0 : 0,
-                    unidades_por_bono: Number(r.unidades_por_bono) || 1,
+                    // `numeroEscrito` acepta «1,5»; lo que no es número ya lo
+                    // frenó `problemasDeLaPromocion`, así que el `?? 0` sólo
+                    // cubre el campo vacío.
+                    bono_vendedor: r.tiene_bono ? numeroEscrito(r.bono_vendedor) ?? 0 : 0,
+                    bono_adm: r.tiene_bono ? numeroEscrito(r.bono_adm) ?? 0 : 0,
+                    bono_bodega: r.tiene_bono ? numeroEscrito(r.bono_bodega) ?? 0 : 0,
+                    unidades_por_bono: numeroEscrito(r.unidades_por_bono) || 1,
                     /* Una fila POR SALA MARCADA, con sus unidades o 0. El 0 no
                        es relleno: la base lo lee como «aplica acá, sin lote
                        asignado» y por eso acota el bono. Sin ninguna marcada no
@@ -348,10 +376,16 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                         .filter(([, marcada]) => marcada)
                         .map(([branch_id]) => ({
                             branch_id: Number(branch_id),
-                            unidades: Number(r.reparto?.[branch_id]) || 0,
+                            unidades: numeroEscrito(r.reparto?.[branch_id]) || 0,
                         })),
                 })),
             });
+
+            /* La promoción YA existe: el borrador se suelta ahora, no al final.
+               Si el descuento falla y se cierra con «Dejarlo así», el borrador
+               vivo ofrecía recuperarla al reabrir — y guardarla de nuevo creaba
+               una segunda promoción igual. */
+            descartar();
 
             if (!desc.activo) {
                 descartar();
@@ -392,9 +426,19 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
         }
     };
 
-    const problemasDesc = problemasDelDescuento(renglones, desc, alcanceTodo);
+    /* La sala del descuento tiene que ser una de las marcadas: desmarcar arriba
+       la sala elegida dejaba `branchId` apuntando a una donde la promoción no
+       aplica, y el descuento se mandaba ahí. */
+    const marcadasGen = salas.filter((x) => general.salas?.[x.id]);
+    const descSalaFuera = desc.activo && marcadasGen.length > 1 && !desc.todas && desc.branchId
+        && !marcadasGen.some((x) => String(x.id) === String(desc.branchId));
+    const problemasDesc = [
+        ...problemasDelDescuento(renglones, desc, alcanceTodo),
+        ...(descSalaFuera ? ['La sala del descuento ya no está entre las salas de la promoción.'] : []),
+    ];
+    const problemasPromo = promoCreada ? [] : problemasDeLaPromocion(renglones);
     const listo = nombre.trim() && renglones.length > 0 && !hayEditando
-        && problemasDesc.length === 0;
+        && problemasDesc.length === 0 && problemasPromo.length === 0;
 
     /* ── PRODUCTOS QUE NACEN VENCIDOS ──────────────────────────────────────
      *
@@ -598,6 +642,15 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                         </Notice>
                     )}
 
+                    {problemasPromo.length > 0 && !hayEditando && (
+                        <Notice variant="warning" icon={AlertTriangle}>
+                            <span className="font-semibold">Falta corregir antes de guardar:</span>
+                            <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                                {problemasPromo.slice(0, 6).map((t) => <li key={t}>{t}</li>)}
+                            </ul>
+                        </Notice>
+                    )}
+
                     {fallo && <Notice variant="danger" icon={AlertTriangle}>{fallo}</Notice>}
                 </div>
             </LiquidModal.Body>
@@ -606,11 +659,11 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                 <span className="text-caption text-content-3 mr-auto">
                     {hayEditando
                         ? 'Termina el producto para poder guardar.'
-                        : (problemasDesc[0]
+                        : (problemasPromo[0] || problemasDesc[0]
                             || (promoCreada ? 'La promoción ya quedó: falta el descuento.'
                                 : 'Nace en borrador — no cuenta hasta activarla.'))}
                 </span>
-                <Button variant="secondary" onClick={onClose}>
+                <Button variant="secondary" onClick={onClose} disabled={guardando}>
                     {promoCreada ? 'Dejarlo así' : 'Cancelar'}
                 </Button>
                 {avisosDesc.length > 0 ? (
@@ -677,12 +730,12 @@ function GeneralDeLaPromocion({ valor, onCambiar, onReparto, onSala, salas, prov
                 <Campo rotulo="Empieza" falta={!valor.inicio}>
                     <LiquidDatePicker value={valor.inicio} onChange={(v) => onCambiar('inicio', v)} />
                 </Campo>
-                <Campo rotulo="Termina">
+                <Campo rotulo="Termina" falta={!valor.fin}>
                     <LiquidDatePicker value={valor.fin} onChange={(v) => onCambiar('fin', v)}
                         min={valor.inicio || undefined} />
                 </Campo>
                 <PortalInput
-                    label="Lote en unidades"
+                    label="Lote por producto"
                     name="lote-general"
                     /* Puede quedar vacío: «todavía no se sabe» es un estado válido
                        —el lote se conoce cuando llega la mercadería— y la promoción

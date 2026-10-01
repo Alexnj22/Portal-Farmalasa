@@ -4,12 +4,13 @@ import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import { clickable } from '@nucleo/utils/clickable';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
+import ConfirmModal from '../../components/common/ConfirmModal';
 import { EmptyState } from '../../components/common/StateViews';
 import { activarPromocion } from '@nucleo/data/promociones';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import {
     fmtUnidades, fmtVigencia, diasRestantes, estadoVisible, rotuloMes,
-    esLaboratorio,
+    esLaboratorio, fmtLote,
 } from '@nucleo/utils/promocionesUtils';
 
 /**
@@ -88,6 +89,7 @@ export default function TabActivas({
 function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz, onDuplicar, onSeguir }) {
     const [ocupado, setOcupado] = useState(false);
     const [fallo, setFallo] = useState(null);
+    const [confirmarPausa, setConfirmarPausa] = useState(false);
 
     const est = estadoVisible(promo);
     const dias = diasRestantes(promo.fin);
@@ -95,6 +97,7 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz,
     const esLab = esLaboratorio(promo);
 
     const alternar = async () => {
+        setConfirmarPausa(false);
         setOcupado(true);
         setFallo(null);
         try {
@@ -170,7 +173,7 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz,
                     <>
                         <Dato rotulo="Productos" valor={fmtUnidades(promo.renglones)} />
                         <Dato rotulo="Abiertos"  valor={fmtUnidades(promo.abiertos)} />
-                        <Dato rotulo="Lote"      valor={fmtUnidades(promo.lote_total)} sufijo="u." />
+                        <Dato rotulo="Lote"      valor={fmtLote(promo.lote_total)} sufijo={promo.lote_total == null ? undefined : 'u.'} />
                     </>
                 )}
             </div>
@@ -198,7 +201,9 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz,
                             size="sm"
                             icon={promo.estado === 'activa' ? PauseCircle : Power}
                             loading={ocupado}
-                            onClick={alternar}
+                            /* Pausar una viva pregunta: era un clic y la
+                               promoción dejaba de contar ventas en el acto. */
+                            onClick={promo.estado === 'activa' ? () => setConfirmarPausa(true) : alternar}
                             className="flex-1 basis-[10rem]"
                         >
                             {promo.estado === 'activa' ? 'Volver a borrador' : 'Activar'}
@@ -217,6 +222,21 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz,
                         onClick={onDuplicar} title="Duplicar esta promoción" />
                 </div>
             )}
+            {/* Dentro de un corte de clic: el modal vive en un portal, pero
+                los eventos de React suben por el árbol y llegarían a la
+                tarjeta, que navega a Seguimiento. */}
+            <div className="contents" onClick={(e) => e.stopPropagation()}>
+            <ConfirmModal
+                isOpen={confirmarPausa}
+                onClose={() => setConfirmarPausa(false)}
+                onConfirm={alternar}
+                title="Volver a borrador"
+                message={`«${promo.nombre}» deja de estar activa hasta que alguien la vuelva a activar.`}
+                confirmText="Volver a borrador"
+                isDestructive={false}
+                isProcessing={ocupado}
+            />
+            </div>
         </div>
     );
 }

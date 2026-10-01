@@ -7,10 +7,13 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import PromptModal from '../../components/common/PromptModal';
+import ConfirmModal from '../../components/common/ConfirmModal';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import { fetchExcedentes, decidirExcedente } from '@nucleo/data/promociones';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { fmtMoneda, fmtUnidades } from '@nucleo/utils/promocionesUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { fmtMoneda, fmtUnidades, mensajeDeCarga } from '@nucleo/utils/promocionesUtils';
 
 /**
  * Lo vendido por encima del lote, esperando decisión.
@@ -27,25 +30,32 @@ import { fmtMoneda, fmtUnidades } from '@nucleo/utils/promocionesUtils';
  * bajarle a $100. Un número que se muestra y después se corrige es peor que uno
  * que llega más tarde.
  */
-export default function TabExcedentes({ puedeAprobar, onResumen }) {
-    const [filas, setFilas] = useState([]);
+export default function TabExcedentes({ puedeAprobar, busqueda = '', onResumen }) {
+    const [todas, setTodas] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
     const [ocupado, setOcupado] = useState(null);   // id en curso
     const [negando, setNegando] = useState(null);   // fila a negar
+    const [aprobando, setAprobando] = useState(null); // fila a aprobar
     const [fallo, setFallo] = useState(null);
-    const [recarga, setRecarga] = useState(0);
 
     useEffect(() => {
         let vivo = true;
         setCargando(true);
         setError(null);
         fetchExcedentes('por_decidir')
-            .then((f) => { if (vivo) setFilas(f); })
+            .then((f) => { if (vivo) setTodas(f); })
             .catch((e) => { if (vivo) setError(e); })
             .finally(() => { if (vivo) setCargando(false); });
         return () => { vivo = false; };
-    }, [recarga]);
+    }, []);
+
+    /* La caja de búsqueda de la vista se veía en esta pestaña y no hacía nada. */
+    const filas = useMemo(() => {
+        const q = busqueda.trim();
+        return q ? todas.filter((f) => tokenMatch(q, f.persona, f.promocion, f.producto, f.sala)) : todas;
+    }, [todas, busqueda]);
+    const personas = useMemo(() => new Set(filas.map((f) => f.persona)).size, [filas]);
 
     /* Las tarjetas de arriba. Salen de acá porque los excedentes son otra
        consulta —`fetchExcedentes`— que sólo esta pestaña hace. */
@@ -58,10 +68,9 @@ export default function TabExcedentes({ puedeAprobar, onResumen }) {
             { key: 'm', icon: DollarSign, label: 'Serían',
               value: fmtMoneda(filas.reduce((a, f) => a + (Number(f.monto) || 0), 0)),
               iconBg: 'bg-brand/10', iconCls: 'text-brand-text', valueCls: 'text-brand' },
-            { key: 'p', icon: Users, label: 'Personas',
-              value: new Set(filas.map((f) => f.persona)).size },
-        ] : null);
-    }, [filas, onResumen]);
+            { key: 'p', icon: Users, label: 'Personas', value: personas },
+        ] : []);
+    }, [filas, personas, onResumen]);
 
     const decidir = useCallback(async (fila, aprobar, motivo) => {
         setOcupado(fila.id);
@@ -69,7 +78,10 @@ export default function TabExcedentes({ puedeAprobar, onResumen }) {
         try {
             await decidirExcedente(fila.id, aprobar, motivo);
             setNegando(null);
-            setRecarga((n) => n + 1);
+            setAprobando(null);
+            /* Se quita la fila decidida y nada más: volver a pedir la lista
+               entera escondía la tabla tras el cargador en cada clic. */
+            setTodas((xs) => xs.filter((x) => x.id !== fila.id));
         } catch (e) {
             setFallo(mensajeAmigable(e, 'No se pudo registrar la decisión.'));
         } finally {
@@ -82,15 +94,20 @@ export default function TabExcedentes({ puedeAprobar, onResumen }) {
         [filas],
     );
 
-    if (cargando) return <LoadingState label="Cargando los excedentes…" />;
+    if (cargando && !todas.length) return <LoadingState label="Cargando los excedentes…" />;
 
     if (error) {
         return (
             <Notice variant="danger" icon={AlertTriangle}>
-                {error.code === '42501'
-                    ? 'Tu cargo todavía no tiene el módulo de Promociones. Hay que otorgarlo en Ajustes → Permisos.'
-                    : (error.message || 'No se pudieron cargar los excedentes.')}
+                {mensajeDeCarga(error, 'No se pudieron cargar los excedentes.')}
             </Notice>
+        );
+    }
+
+    if (!filas.length && busqueda.trim()) {
+        return (
+            <EmptyState icon={Scale} title="Sin resultados"
+                subtitle={`Ningún excedente coincide con "${busqueda.trim()}".`} />
         );
     }
 
@@ -108,7 +125,9 @@ export default function TabExcedentes({ puedeAprobar, onResumen }) {
         <div className="space-y-3">
             <Notice variant="warning" icon={AlertTriangle}>
                 <span className="font-semibold">
-                    {filas.length} {filas.length === 1 ? 'persona vendió' : 'personas vendieron'} por
+                    {/* Una fila es persona × producto: contarlas como personas
+                        decía «5 personas» donde eran dos. */}
+                    {personas} {personas === 1 ? 'persona vendió' : 'personas vendieron'} por
                     encima del lote — {fmtMoneda(total)} en total.
                 </span>{' '}
                 Ese bono <em>no está acordado con el laboratorio</em>, así que no se paga hasta que
@@ -136,7 +155,7 @@ export default function TabExcedentes({ puedeAprobar, onResumen }) {
                 {filas.map((f, i) => (
                     <DataRow key={f.id} index={i}>
                         <DataCell>
-                            <span className="font-medium text-content">{f.persona}</span>
+                            <span className="font-medium text-content">{shortEmployeeName(f.persona)}</span>
                             {f.sala && (
                                 <span className="block text-micro uppercase tracking-wide text-content-3">
                                     {f.sala}
@@ -165,10 +184,12 @@ export default function TabExcedentes({ puedeAprobar, onResumen }) {
                         {puedeAprobar && (
                             <DataCell align="right">
                                 <span className="inline-flex gap-1.5">
+                                    {/* Aprobar mueve plata y no se deshace: pide
+                                        confirmación, igual que negar pide motivo. */}
                                     <Button
                                         size="sm" icon={Check} iconOnly title="Aprobar y pagar"
                                         loading={ocupado === f.id}
-                                        onClick={(e) => { e.stopPropagation(); decidir(f, true, null); }}
+                                        onClick={(e) => { e.stopPropagation(); setAprobando(f); }}
                                     />
                                     <Button
                                         size="sm" variant="secondary" icon={X} iconOnly title="No pagar"
@@ -191,13 +212,27 @@ export default function TabExcedentes({ puedeAprobar, onResumen }) {
                 onConfirm={(texto) => decidir(negando, false, texto)}
                 title="No pagar este excedente"
                 message={negando
-                    ? `${negando.persona} vendió ${fmtUnidades(negando.unidades)} unidades por encima del lote de ${negando.promocion}. Escribe por qué no se paga — lo va a leer esa persona.`
+                    ? `${shortEmployeeName(negando.persona)} vendió ${fmtUnidades(negando.unidades)} unidades por encima del lote de ${negando.promocion}. Escribe por qué no se paga — lo va a leer esa persona.`
                     : ''}
                 placeholder="El laboratorio sólo cubrió el lote acordado…"
                 confirmText="No pagar"
                 cancelText="Volver"
                 isProcessing={ocupado === negando?.id}
                 required
+            />
+
+            <ConfirmModal
+                isOpen={!!aprobando}
+                onClose={() => setAprobando(null)}
+                onConfirm={() => decidir(aprobando, true, null)}
+                title="Aprobar este excedente"
+                message={aprobando
+                    ? `${shortEmployeeName(aprobando.persona)} cobra ${fmtMoneda(aprobando.monto)} por ${fmtUnidades(aprobando.unidades)} unidades vendidas por encima del lote de ${aprobando.promocion}. La decisión no se deshace.`
+                    : ''}
+                confirmText="Aprobar y pagar"
+                cancelText="Volver"
+                isDestructive={false}
+                isProcessing={ocupado === aprobando?.id}
             />
         </div>
     );

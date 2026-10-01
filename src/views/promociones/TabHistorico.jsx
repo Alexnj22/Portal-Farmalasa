@@ -6,7 +6,7 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import TablePagination from '../../components/common/TablePagination';
 import { EmptyState } from '../../components/common/StateViews';
 import usePaginaEnUrl from '../../plataforma/usePaginaEnUrl';
-import { fmtUnidades, fmtVigencia, rotuloMes, esLaboratorio } from '@nucleo/utils/promocionesUtils';
+import { fmtUnidades, fmtLote, fmtVigencia, rotuloMes, esLaboratorio } from '@nucleo/utils/promocionesUtils';
 
 /**
  * Las promociones terminadas.
@@ -19,7 +19,7 @@ import { fmtUnidades, fmtVigencia, rotuloMes, esLaboratorio } from '@nucleo/util
  * tabla no tenía ninguna: reactivar exigía «Editar», que sólo estaba en las
  * tarjetas de Activas, donde las terminadas no se listan.
  */
-export default function TabHistorico({ promos, busqueda, puedeEditar, onReactivar, onDuplicar }) {
+export default function TabHistorico({ promos, busqueda, filtrando = false, puedeEditar, onReactivar, onDuplicar, onSeguir }) {
     const [sortKey, setSortKey] = useState('fin');
     const [sortDir, setSortDir] = useState('desc');
 
@@ -53,9 +53,11 @@ export default function TabHistorico({ promos, busqueda, puedeEditar, onReactiva
     };
 
     if (!promos.length) {
-        return busqueda.trim()
+        return busqueda.trim() || filtrando
             ? <EmptyState icon={Search} title="Sin resultados"
-                subtitle={`Ninguna promoción terminada coincide con "${busqueda.trim()}".`} />
+                subtitle={busqueda.trim()
+                    ? `Ninguna promoción terminada coincide con "${busqueda.trim()}".`
+                    : 'Ninguna promoción terminada coincide con los filtros puestos.'} />
             : <EmptyState icon={History} title="Todavía no hay promociones terminadas"
                 subtitle="Cuando una promoción cierre su último producto, se guarda aquí con lo que dejó." />;
     }
@@ -70,7 +72,9 @@ export default function TabHistorico({ promos, busqueda, puedeEditar, onReactiva
                     { key: 'lote_total', label: 'Lote', align: 'right', sortable: true },
                     ...(puedeEditar ? [{ key: 'acciones', label: '', align: 'right' }] : []),
                 ]}
-                movil={puedeEditar ? { acciones: true } : undefined}
+                /* Tocar la fila abre su Seguimiento: el vacío prometía que acá
+                   se guarda «con lo que dejó», y no había cómo verlo. */
+                movil={{ usarAccionDeFila: !!onSeguir, ...(puedeEditar ? { acciones: true } : {}) }}
                 sortKey={sortKey}
                 sortDir={sortDir}
                 onSort={ordenar}
@@ -78,7 +82,7 @@ export default function TabHistorico({ promos, busqueda, puedeEditar, onReactiva
                 empty={{ icon: History, message: 'Sin promociones terminadas' }}
             >
                 {visibles.map((p, i) => (
-                    <DataRow key={p.id} index={i}>
+                    <DataRow key={p.id} index={i} onClick={onSeguir ? () => onSeguir(p.id) : undefined}>
                         <DataCell>
                             <span className="font-medium text-content inline-flex items-center gap-1.5">
                                 {p.nombre}
@@ -104,7 +108,7 @@ export default function TabHistorico({ promos, busqueda, puedeEditar, onReactiva
                             {esLaboratorio(p) ? '—' : fmtUnidades(p.renglones)}
                         </DataCell>
                         <DataCell align="right">
-                            {esLaboratorio(p) ? '—' : fmtUnidades(p.lote_total)}
+                            {esLaboratorio(p) ? '—' : fmtLote(p.lote_total)}
                         </DataCell>
                         {puedeEditar && (
                             <DataCell align="right">
@@ -114,14 +118,14 @@ export default function TabHistorico({ promos, busqueda, puedeEditar, onReactiva
                                         —duplicándola—. */}
                                     {!esLaboratorio(p) && (
                                         <Button variant="secondary" size="sm" icon={RotateCcw}
-                                            onClick={() => onReactivar?.(p)}>
+                                            onClick={(e) => { e.stopPropagation(); onReactivar?.(p); }}>
                                             Reactivar
                                         </Button>
                                     )}
                                     <Button variant="ghost" size="sm" icon={Copy} iconOnly
                                         title="Duplicar esta promoción"
                                         aria-label={`Duplicar ${p.nombre}`}
-                                        onClick={() => onDuplicar?.(p)} />
+                                        onClick={(e) => { e.stopPropagation(); onDuplicar?.(p); }} />
                                 </span>
                             </DataCell>
                         )}

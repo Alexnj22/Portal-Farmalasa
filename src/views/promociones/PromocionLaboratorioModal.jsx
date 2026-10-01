@@ -239,7 +239,7 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
             <LiquidModal.Body>
                 {cargando ? <LoadingState label="Cargando la promoción…" /> : (
                     <div className="space-y-4">
-                        {hayBorrador && (
+                        {hayBorrador && !editando && (
                             <AvisoDeBorrador cuando={cuando} onRecuperar={reponer} onDescartar={descartar} />
                         )}
 
@@ -386,10 +386,13 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
                                     <LiquidSelect
                                         value={supplierId}
                                         onChange={setSupplierId}
-                                        options={[
-                                            { value: '', label: 'Elige el proveedor' },
-                                            ...proveedores.map((p) => ({ value: String(p.id), label: p.nombre })),
-                                        ]}
+                                        /* `fetchProveedoresDelSistema` ya devuelve
+                                           `{ value, label }`: mapearlo otra vez
+                                           por `id`/`nombre` dejaba opciones
+                                           vacías con valor «undefined». */
+                                        options={proveedores}
+                                        placeholder="Elige el proveedor"
+                                        clearable={false}
                                         ariaLabel="Proveedor que paga el bono"
                                     />
                                 </Campo>

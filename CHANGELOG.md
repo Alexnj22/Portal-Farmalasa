@@ -21,6 +21,62 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1113.0 — Promociones: auditoría completa — datos que se perdían, validaciones y practicidad
+
+Revisión del módulo entero (vista, seis pestañas, siete modales, capa de datos y
+funciones de la base). La base está sana: todas sus funciones son `plpgsql` y
+`get_promocion` sobre la promoción de 102 productos lee ~26 MB en ~80 ms. Los
+defectos estaban en el portal.
+
+**Datos que cambiaban sin avisar**
+- Guardar un producto desde Editar **borraba sus salas**: el reparto viajaba
+  siempre y la base sólo reinserta las salas con unidades. Las 108 filas de
+  reparto que hay hoy valen 0 («aplica en esta sala»), así que corregir la
+  presentación pasaba el producto a contar en todas las salas. Ahora el reparto
+  sólo viaja si se tocó.
+- «Guardar montos desde hoy» ponía «cada 1 unidad» a un producto que pagaba cada
+  N. Ahora conserva su valor, y el botón espera a que haya un cambio.
+- Al crear: lo repartido a una sala sin marcar se perdía; ahora repartir marca
+  la sala y el producto queda como ajustado.
+- Agregar productos a una promoción que paga un proveedor fallaba siempre (no
+  heredaba el proveedor). Ahora lo hereda.
+- Si el descuento fallaba después de crear la promoción, al reabrir se ofrecía
+  el borrador y se podía crear otra promoción igual.
+- El selector de proveedor de la promoción por laboratorio mostraba opciones
+  vacías, y al editar una se ofrecía «recuperar» el borrador de otra.
+
+**Validaciones antes de guardar**: fecha de fin (era obligatoria y el
+formulario la daba por opcional), fin anterior al inicio, lote, proveedor,
+montos escritos con coma o con letras, y reparto que no suma el lote. Antes
+llegaban como «fuera del rango permitido».
+
+**Pantallas que mentían**
+- Sin permiso se veía «Todavía no hay promociones» en vez del aviso de permiso.
+- Las tarjetas de arriba mostraban las de Activas en Pagos, Excedentes y
+  Seguimiento de laboratorio.
+- Badge de filtros y «Limpiar» en pestañas sin filtros; vacíos que no
+  distinguían «no hay» de «el filtro no deja ver».
+- La búsqueda no hacía nada en Pagos ni en Excedentes.
+- Excedentes contaba filas como personas y mostraba el nombre completo.
+- «Lote 0 u.» en promociones sin lote; el estado crudo («activa») en Editar.
+- El aviso «bonificaciones suspendidas» contradecía Pagos y Excedentes.
+
+**Practicidad**
+- Seguimiento tiene Editar, Duplicar y Reactivar, y deja ver las terminadas;
+  tocar una fila de Histórico abre su seguimiento.
+- Pagos muestra por defecto lo que falta pagar.
+- Confirmación al aprobar un excedente, al volver a borrador y al quitar un
+  producto.
+- El buscador de productos conserva lo marcado entre búsquedas y avisa si la
+  consulta falla.
+
+**Eficiencia**
+- Editar una promoción grande ya no abre 102 formularios ni hace 102 consultas:
+  los productos van plegados y consultan al abrirse.
+- Laboratorios y proveedores se guardan 5 minutos en vez de pedirse en cada
+  modal; el detalle de Seguimiento y los descuentos no se repiten al volver a
+  la pestaña; las acciones refrescan sin tapar la pantalla.
+
 ## v2.1112.2 — Puntos: se retiran las herramientas del corte
 
 Ya encendido el programa en el portal, `puntos-archivar` (copiaba MySQL al archivo)

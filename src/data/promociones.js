@@ -18,7 +18,13 @@ export async function fetchPromociones(estado = null, tipo = null) {
         p_tipo: tipo || null,
     });
     if (error) throw error;
-    return data ?? [];
+    /* La RPC devuelve NULL —no un error— a quien no tiene `can_view`. Leído
+       como `[]` la pantalla decía «Todavía no hay promociones», y el aviso de
+       permiso, que es el que tiene arreglo, no salía nunca. */
+    if (data === null) {
+        throw Object.assign(new Error('Sin permiso para ver Promociones'), { code: '42501' });
+    }
+    return data;
 }
 
 /**
@@ -29,11 +35,28 @@ export async function fetchPromociones(estado = null, tipo = null) {
  * desplegable de «agregar sus productos» es ofrecer opciones que sólo pueden
  * dar vacío.
  */
-export async function fetchLaboratoriosConProductos() {
+/* Los catálogos de los modales —laboratorios y proveedores— se pedían en CADA
+   apertura de cada modal. Cambian muy rara vez, así que se guardan unos
+   minutos. Si la consulta falla, la promesa se suelta para que el próximo
+   intento vuelva a preguntar en vez de quedar roto. */
+const VIGENCIA_CATALOGO_MS = 5 * 60 * 1000;
+function enCache(cargar) {
+    let promesa = null;
+    let desde = 0;
+    return () => {
+        if (!promesa || Date.now() - desde > VIGENCIA_CATALOGO_MS) {
+            desde = Date.now();
+            promesa = cargar().catch((err) => { promesa = null; throw err; });
+        }
+        return promesa;
+    };
+}
+
+export const fetchLaboratoriosConProductos = enCache(async () => {
     const { data, error } = await supabase.rpc('get_laboratorios_con_productos');
     if (error) throw error;
     return data ?? [];
-}
+});
 
 /**
  * Los productos que se pueden meter en una promoción, para elegir VARIOS.
@@ -215,14 +238,14 @@ export async function fetchPresentacionesDeProducto(erpProductId) {
  * lista corta del portal: no hay que mantenerla a mano y ya contiene a quien
  * emite la nota de crédito de una campaña.
  */
-export async function fetchProveedoresDelSistema() {
+export const fetchProveedoresDelSistema = enCache(async () => {
     const { data, error } = await supabase
         .from('suppliers')
         .select('id, nombre')
         .order('nombre');
     if (error) throw error;
     return (data ?? []).map((s) => ({ value: String(s.id), label: s.nombre }));
-}
+});
 
 /**
  * La cola de excedentes: lo vendido por encima del lote, esperando decisión.

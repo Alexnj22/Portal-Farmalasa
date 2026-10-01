@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { Wallet, Warehouse, Briefcase, CheckCircle2, Clock } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Wallet, Warehouse, Briefcase, CheckCircle2, Clock, AlertTriangle, Search } from 'lucide-react';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import { fetchPagosBonoProducto } from '@nucleo/data/bonosProducto';
-import { fmtMoneda } from '@nucleo/utils/promocionesUtils';
+import { fmtMoneda, mensajeDeCarga } from '@nucleo/utils/promocionesUtils';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 
 const PAGADO = new Set(['pagado', 'fuera_del_portal']);
 
@@ -20,19 +21,32 @@ const PAGADO = new Set(['pagado', 'fuera_del_portal']);
  *
  * Esta pestaña es de lectura: el pago se hace en «Mi caja» de cada sala.
  */
-export default function TabPagos({ onResumen }) {
-    const [promos, setPromos] = useState([]);
+/* ¿Le queda algo por pagar a esta promoción? Vendedores en sala o bodega. */
+const tienePendiente = (p) => (p.salas || []).some((s) => Number(s.pendientes) > 0)
+    || (p.bodega && !PAGADO.has(p.bodega.estado) && Number(p.bodega.monto) > 0);
+
+export default function TabPagos({ busqueda = '', soloPendientes = false, onResumen }) {
+    const [todas, setTodas] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
         let vivo = true;
         fetchPagosBonoProducto()
-            .then((d) => { if (vivo) setPromos(Array.isArray(d) ? d : []); })
+            .then((d) => { if (vivo) setTodas(Array.isArray(d) ? d : []); })
             .catch((e) => { if (vivo) setError(e); })
             .finally(() => { if (vivo) setCargando(false); });
         return () => { vivo = false; };
     }, []);
+
+    /* La lista sólo crece —cada promoción terminada con bono se queda acá—, así
+       que se puede recortar a lo que falta pagar y buscar por nombre. La caja
+       de búsqueda de la vista se veía en esta pestaña y no hacía nada. */
+    const promos = useMemo(() => {
+        const q = busqueda.trim();
+        return todas.filter((p) => (!soloPendientes || tienePendiente(p))
+            && (!q || tokenMatch(q, p.promocion, ...(p.salas || []).map((x) => x.sala))));
+    }, [todas, busqueda, soloPendientes]);
 
     useEffect(() => {
         const pendiente = promos.reduce((a, p) => a + (p.salas || [])
@@ -42,17 +56,26 @@ export default function TabPagos({ onResumen }) {
             { key: 'p', icon: Clock, label: 'Por pagar en salas', value: fmtMoneda(pendiente),
               iconBg: 'bg-warning/10', iconCls: 'text-warning-text' },
             { key: 'a', icon: Briefcase, label: 'A planilla', value: fmtMoneda(planilla) },
-        ] : null);
+        ] : []);
     }, [promos, onResumen]);
 
-    if (cargando) return <LoadingState label="Cargando los pagos" />;
+    if (cargando) return <LoadingState label="Cargando los pagos…" />;
     if (error) {
         return (
-            <Notice variant="danger">
-                {error.code === '42501'
-                    ? 'Tu cargo todavía no tiene el módulo de Promociones.'
-                    : (error.message || 'No se pudieron cargar los pagos.')}
+            <Notice variant="danger" icon={AlertTriangle}>
+                {mensajeDeCarga(error, 'No se pudieron cargar los pagos.')}
             </Notice>
+        );
+    }
+    if (!promos.length && todas.length) {
+        return (
+            <EmptyState
+                icon={busqueda.trim() ? Search : CheckCircle2}
+                title={busqueda.trim() ? 'Sin resultados' : 'Sin pagos pendientes'}
+                subtitle={busqueda.trim()
+                    ? `Ninguna promoción con bono coincide con "${busqueda.trim()}".`
+                    : 'Todo el bono de las promociones terminadas ya se pagó. Quita el filtro para ver el historial.'}
+            />
         );
     }
     if (!promos.length) {
@@ -91,7 +114,7 @@ export default function TabPagos({ onResumen }) {
                                         <span className="text-body-sm font-bold">{s.sala}</span>
                                         {Number(s.pendientes) > 0
                                             ? <Badge variant="warning" size="sm">{s.pendientes} por pagar</Badge>
-                                            : <Badge variant="success" size="sm">pagado</Badge>}
+                                            : <Badge variant="success" size="sm">Pagado</Badge>}
                                     </span>
                                 </DataCell>
                                 <DataCell align="right" hideBelow="md">

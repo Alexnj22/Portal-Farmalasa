@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
     Layers, Search, AlertTriangle, Download, Package, FileText, Users, DollarSign, Store,
+    Pencil, Copy, RotateCcw,
 } from 'lucide-react';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import Button from '../../components/common/Button';
@@ -12,7 +13,7 @@ import { exportCsv } from '@nucleo/utils/csvExport';
 import MatrizLaboratorio from './MatrizLaboratorio';
 import {
     fmtMoneda, fmtUnidades, porLaboratorio, rotuloPresentacion, MOTIVO_CIERRE,
-    esLaboratorio,
+    esLaboratorio, estadoVisible, fmtVigencia, rotuloMes, mensajeDeCarga,
 } from '@nucleo/utils/promocionesUtils';
 
 /**
@@ -22,7 +23,19 @@ import {
  * cálculo cruza los renglones de venta del período: pedirlo para todas a la vez
  * sería pagar esa consulta N veces para que alguien mire una.
  */
-export default function TabSeguimiento({ promos, busqueda, elegida, onResumen }) {
+/**
+ * @param promos     las que se pueden elegir (ya recortadas por los filtros).
+ * @param todas      la lista ENTERA, para saber de qué tipo es la elegida. Con
+ *                   `promos` a secas, una de laboratorio que la búsqueda
+ *                   escondía se leía como de producto y se pedía su detalle.
+ * @param cache      Map id → detalle que vive en la vista: volver a la pestaña
+ *                   o a una promoción ya mirada no repite la consulta que cruza
+ *                   las ventas del período. La vista lo vacía al recargar.
+ */
+export default function TabSeguimiento({
+    promos, todas = promos, busqueda, filtrando = false, elegida, onResumen, cache,
+    puedeEditar = false, onEditar, onDuplicar, onReactivar,
+}) {
     const [detalle, setDetalle] = useState(null);
     const [cargando, setCargando] = useState(false);
     const [error, setError] = useState(null);
@@ -31,22 +44,27 @@ export default function TabSeguimiento({ promos, busqueda, elegida, onResumen })
     // devolvería un detalle vacío que se leería como «no vendió nada». Su
     // avance lo trae `MatrizLaboratorio`, así que acá no se consulta.
     const elegidaObj = useMemo(
-        () => promos.find((p) => String(p.id) === String(elegida)) || null,
-        [promos, elegida],
+        () => todas.find((p) => String(p.id) === String(elegida)) || null,
+        [todas, elegida],
     );
     const esLab = esLaboratorio(elegidaObj);
 
     useEffect(() => {
         if (!elegida || esLab) { setDetalle(null); return undefined; }
-        let vivo = true;
-        setCargando(true);
         setError(null);
+        const guardado = cache?.get(String(elegida));
+        if (guardado) { setDetalle(guardado); setCargando(false); return undefined; }
+        let vivo = true;
+        // Se suelta el anterior: sus tarjetas seguían arriba mientras cargaba
+        // otra promoción, con números que ya no eran de lo elegido.
+        setDetalle(null);
+        setCargando(true);
         fetchPromocion(elegida)
-            .then((d) => { if (vivo) setDetalle(d); })
+            .then((d) => { if (vivo) { cache?.set(String(elegida), d); setDetalle(d); } })
             .catch((e) => { if (vivo) setError(e); })
             .finally(() => { if (vivo) setCargando(false); });
         return () => { vivo = false; };
-    }, [elegida, esLab]);
+    }, [elegida, esLab, cache]);
 
 
     /* `useMemo` y no `?? []` suelto: el arreglo nuevo de cada render haría que
@@ -54,13 +72,16 @@ export default function TabSeguimiento({ promos, busqueda, elegida, onResumen })
     const renglones  = useMemo(() => detalle?.renglones ?? [], [detalle]);
     const vendedores = useMemo(() => detalle?.vendedores ?? [], [detalle]);
     const sinDueno   = detalle?.sin_dueno;
+    const grupos     = useMemo(() => porLaboratorio(renglones), [renglones]);
+    const salasVend  = useMemo(() => porSala(vendedores), [vendedores]);
+    const conBono    = useMemo(() => renglones.some((r) => r.tiene_bono), [renglones]);
 
     /* Las tarjetas de arriba las pinta la vista, pero los números salen de ACÁ:
        son de la promoción elegida, y pedir `get_promocion` otra vez desde el
        padre para mostrarlos sería pagar dos veces la consulta que cruza los
        renglones de venta del período. */
     useEffect(() => {
-        if (!detalle) { onResumen?.(null); return; }
+        if (!detalle) { onResumen?.([]); return; }
         onResumen?.([
             { key: 'u', icon: Package, label: 'Unidades vendidas',
               value: fmtUnidades(renglones.reduce((a, r) => a + (r.vendido_base || 0), 0)) },
@@ -74,9 +95,11 @@ export default function TabSeguimiento({ promos, busqueda, elegida, onResumen })
     }, [detalle, renglones, vendedores, onResumen]);
 
     if (!promos.length) {
-        return busqueda.trim()
+        return busqueda.trim() || filtrando
             ? <EmptyState icon={Search} title="Sin resultados"
-                subtitle={`Ninguna promoción coincide con "${busqueda.trim()}".`} />
+                subtitle={busqueda.trim()
+                    ? `Ninguna promoción coincide con "${busqueda.trim()}".`
+                    : 'Ninguna promoción coincide con los filtros puestos.'} />
             : <EmptyState icon={Layers} title="Sin promociones activas"
                 subtitle="Cuando haya una en marcha, aquí se ve cuánto lleva vendido cada sala." />;
     }
@@ -93,6 +116,40 @@ export default function TabSeguimiento({ promos, busqueda, elegida, onResumen })
     return (
         <div className="space-y-4">
 
+            {/* Lo que se puede hacer con la promoción, desde donde se la mira.
+                Antes había que volver a Activas para corregirla — y una
+                terminada no tenía dónde. */}
+            {elegidaObj && (
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                        <p className="text-body-lg font-semibold text-content break-words">{elegidaObj.nombre}</p>
+                        <p className="text-caption text-content-3 tabular-nums">
+                            {esLab ? rotuloMes(elegidaObj.year_month) : fmtVigencia(elegidaObj.inicio, elegidaObj.fin)}
+                            {' · '}{estadoVisible(elegidaObj).rotulo}
+                        </p>
+                    </div>
+                    {puedeEditar && (
+                        <div className="flex flex-wrap gap-2">
+                            {elegidaObj.estado === 'finalizada' && !esLab && (
+                                <Button size="sm" variant="secondary" icon={RotateCcw}
+                                    onClick={() => onReactivar?.(elegidaObj)}>
+                                    Reactivar
+                                </Button>
+                            )}
+                            {elegidaObj.estado !== 'finalizada' && (
+                                <Button size="sm" variant="secondary" icon={Pencil}
+                                    onClick={() => onEditar?.({ id: elegidaObj.id, tipo: elegidaObj.tipo || 'producto' })}>
+                                    Editar
+                                </Button>
+                            )}
+                            <Button size="sm" variant="ghost" icon={Copy} iconOnly
+                                title="Duplicar esta promoción"
+                                onClick={() => onDuplicar?.(elegidaObj)} />
+                        </div>
+                    )}
+                </div>
+            )}
+
             {esLab && elegida && (
                 <MatrizLaboratorio key={elegida} promocionId={elegida} />
             )}
@@ -101,15 +158,13 @@ export default function TabSeguimiento({ promos, busqueda, elegida, onResumen })
 
             {!esLab && error && (
                 <Notice variant="danger" icon={AlertTriangle}>
-                    {error.code === '42501'
-                        ? 'Tu cargo todavía no tiene el módulo de Promociones. Hay que otorgarlo en Ajustes → Permisos.'
-                        : (error.message || 'No se pudo calcular el avance.')}
+                    {mensajeDeCarga(error, 'No se pudo calcular el avance.')}
                 </Notice>
             )}
 
             {!esLab && !cargando && !error && detalle && (
                 <>
-                    {porLaboratorio(renglones).map(({ laboratorio, items }) => (
+                    {grupos.map(({ laboratorio, items }) => (
                         <section key={laboratorio} className="space-y-2">
                             <h3 className="text-label uppercase tracking-wide text-content-3 font-semibold">
                                 {laboratorio}
@@ -141,8 +196,8 @@ export default function TabSeguimiento({ promos, busqueda, elegida, onResumen })
                                sala, y en una lista plana ordenada por nombre la
                                sala era una columna más que había que ir leyendo. */
                             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                                {porSala(vendedores).map((g) => (
-                                    <SeccionSala key={g.sala} g={g} conBono={renglones.some((r) => r.tiene_bono)} />
+                                {salasVend.map((g) => (
+                                    <SeccionSala key={g.sala} g={g} conBono={conBono} />
                                 ))}
                             </div>
                         )}

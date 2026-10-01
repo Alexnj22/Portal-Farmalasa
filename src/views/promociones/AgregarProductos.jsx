@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import AvisoParecidos from '../../components/common/AvisoParecidos';
-import { Check, FlaskConical, Plus, Search } from 'lucide-react';
+import { AlertTriangle, FlaskConical, Plus, RotateCcw, Search } from 'lucide-react';
 import SearchInput from '../../components/common/SearchInput';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import Button from '../../components/common/Button';
@@ -56,7 +56,13 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
     const [sonParecidos, setSonParecidos] = useState(false);
     const [total, setTotal] = useState(0);
     const [cargando, setCargando] = useState(false);
-    const [marcados, setMarcados] = useState(() => new Set());
+    const [fallo, setFallo] = useState(false);
+    const [reintento, setReintento] = useState(0);
+    /* Un Map id → producto, no un Set de ids: los marcados SOBREVIVEN a cambiar
+       la búsqueda («leche», después «ensure»), y con sólo el id el botón
+       contaba 5 pero `agregar` encontraba en pantalla los 2 de la búsqueda
+       actual — agregaba 2 y borraba las 5 marcas. */
+    const [marcados, setMarcados] = useState(() => new Map());
 
     const yaSet = useMemo(() => new Set(yaElegidos.map(Number)), [yaElegidos]);
 
@@ -72,6 +78,7 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
         if (modo === 'laboratorio' && !labId) { setFilas([]); setTotal(0); return undefined; }
         let vivo = true;
         setCargando(true);
+        setFallo(false);
         const t = setTimeout(() => {
             fetchProductosParaPromocion({
                 texto: modo === 'texto' ? consulta : null,
@@ -83,11 +90,11 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
                     setTotal(r.total || 0);
                     setSonParecidos(!!r.aproximado);
                 })
-                .catch(() => { if (vivo) { setFilas([]); setTotal(0); } })
+                .catch(() => { if (vivo) { setFilas([]); setTotal(0); setFallo(true); } })
                 .finally(() => { if (vivo) setCargando(false); });
         }, 300);
         return () => { vivo = false; clearTimeout(t); };
-    }, [modo, consulta, labId]);
+    }, [modo, consulta, labId, reintento]);
 
     /* Lo que se puede marcar: lo que la promoción todavía no tiene. Los que ya
        están se muestran igual, en gris — esconderlos haría que la lista de un
@@ -99,25 +106,25 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
        `caben`, y aunque hoy no puede fallar —el cuerpo de una función corre
        después—, `gate:tdz` lo cuenta como deuda porque mover ese uso fuera de
        la función lo convertiría en una lectura que lanza. */
-    const cuantos = [...marcados].filter((id) => !yaSet.has(Number(id))).length;
+    const cuantos = [...marcados.keys()].filter((id) => !yaSet.has(Number(id))).length;
 
-    const alternar = (id) => setMarcados((s) => {
-        const n = new Set(s);
-        if (n.has(id)) n.delete(id); else n.add(id);
+    const alternar = (p) => setMarcados((s) => {
+        const n = new Map(s);
+        if (n.has(p.id)) n.delete(p.id); else n.set(p.id, p);
         return n;
     });
 
     const agregar = () => {
-        const elegidos = filas.filter((p) => marcados.has(p.id) && !yaSet.has(Number(p.id)));
+        const elegidos = [...marcados.values()].filter((p) => !yaSet.has(Number(p.id)));
         if (!elegidos.length) return;
         onAgregar?.(elegidos);
-        setMarcados(new Set());
+        setMarcados(new Map());
     };
 
     const alternarTodos = () => setMarcados((s2) => {
-        const n = new Set(s2);
+        const n = new Map(s2);
         if (todosMarcados) disponibles.forEach((p) => n.delete(p.id));
-        else disponibles.forEach((p) => n.add(p.id));
+        else disponibles.forEach((p) => n.set(p.id, p));
         return n;
     });
 
@@ -133,7 +140,7 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
                         <button
                             key={k}
                             type="button"
-                            onClick={() => { setModo(k); setMarcados(new Set()); }}
+                            onClick={() => setModo(k)}
                             aria-pressed={modo === k}
                             className={`min-h-[max(32px,var(--tap-min))] px-3 rounded-md text-caption font-semibold
                                         flex items-center gap-1.5 transition-colors
@@ -155,7 +162,7 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
                     ) : (
                         <LiquidSelect
                             value={lab}
-                            onChange={(v) => { setLab(v || ''); setMarcados(new Set()); }}
+                            onChange={(v) => setLab(v || '')}
                             /* El conteo va en el rótulo: con 324 laboratorios el
                                desplegable exige escribir, así que quien elige lo
                                hace a ciegas — el número es lo único que anticipa
@@ -212,7 +219,7 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
                                 <li key={p.id} className="px-2 py-1">
                                     <Checkbox
                                         checked={yaEsta || marcados.has(p.id)}
-                                        onChange={() => !yaEsta && alternar(p.id)}
+                                        onChange={() => !yaEsta && alternar(p)}
                                         disabled={yaEsta}
                                         label={p.nombre}
                                         description={yaEsta
@@ -234,7 +241,27 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
                 </>
             )}
 
-            {!cargando && filas.length === 0 && (
+            {/* Con marcados de otra búsqueda, el botón vive también acá: si
+                no, buscar algo que no existe escondía lo ya marcado. */}
+            {!cargando && filas.length === 0 && cuantos > 0 && (
+                <Button icon={Plus} onClick={agregar} loading={ocupado} disabled={ocupado} className="w-full">
+                    {`Agregar ${cuantos} ${cuantos === 1 ? 'producto marcado' : 'productos marcados'}`}
+                </Button>
+            )}
+
+            {!cargando && fallo && (
+                <div className="space-y-2">
+                    <Notice variant="danger" icon={AlertTriangle}>
+                        No se pudieron consultar los productos.
+                    </Notice>
+                    <Button variant="secondary" size="sm" icon={RotateCcw}
+                        onClick={() => setReintento((n) => n + 1)}>
+                        Volver a intentar
+                    </Button>
+                </div>
+            )}
+
+            {!cargando && !fallo && filas.length === 0 && (
                 <Notice variant="info" icon={modo === 'texto' ? Search : FlaskConical}>
                     {modo === 'texto'
                         ? (consulta.length < 2
@@ -245,22 +272,6 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
                             : 'Elige un laboratorio para ver sus productos.')}
                 </Notice>
             )}
-        </div>
-    );
-}
-
-/** Un producto ya elegido, en una línea. */
-export function LineaElegida({ nombre, detalle, onAjustar, onQuitar, AccionAjustar, AccionQuitar }) {
-    return (
-        <div className="rounded-lg border border-border-card bg-surface-card-hover px-3 py-2
-                        flex items-center gap-2">
-            <Check size={15} className="text-success shrink-0" aria-hidden />
-            <div className="flex-1 min-w-0">
-                <p className="text-body-sm font-semibold text-content truncate">{nombre}</p>
-                <p className="text-caption text-content-3 truncate">{detalle}</p>
-            </div>
-            {AccionAjustar && <AccionAjustar onClick={onAjustar} />}
-            {AccionQuitar && <AccionQuitar onClick={onQuitar} />}
         </div>
     );
 }

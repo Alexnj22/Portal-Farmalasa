@@ -1,5 +1,6 @@
 import { formatMoney, formatQty } from './formatNumber';
 import { correrMes, hoySV, mesSV } from './fecha';
+import { mensajeAmigable } from './errorMessages';
 
 /**
  * Promociones — lo que comparten las pestañas.
@@ -14,6 +15,23 @@ import { correrMes, hoySV, mesSV } from './fecha';
 // separadores distintos.
 export const fmtMoneda   = (n) => formatMoney(Number(n) || 0);
 export const fmtUnidades = (n) => formatQty(Number(n) || 0);
+
+/** El lote de una promoción: sin lote es un guion, no un «0 u.» que se lee como dato. */
+export const fmtLote = (n) => (n == null ? '—' : fmtUnidades(n));
+
+/**
+ * El error de una carga del módulo, en palabras de la pantalla.
+ *
+ * El 42501 es «tu cargo no tiene el módulo», que tiene arreglo y se dice con
+ * su camino; lo demás pasa por `mensajeAmigable`. Estaba escrito CUATRO veces
+ * —una por pestaña—, tres con `error.message` crudo y una sin el camino.
+ */
+export function mensajeDeCarga(error, porDefecto) {
+    if (error?.code === '42501') {
+        return 'Tu cargo todavía no tiene el módulo de Promociones. Hay que otorgarlo en Ajustes → Permisos.';
+    }
+    return mensajeAmigable(error, porDefecto);
+}
 
 /** «1 sep – 30 sep 2026». Sin hora: son fechas, no instantes. */
 export function fmtVigencia(inicio, fin) {
@@ -81,7 +99,7 @@ export function porLaboratorio(renglones = []) {
         .sort((a, b) => a.laboratorio.localeCompare(b.laboratorio, 'es'));
 }
 
-/** El texto que busca la barra: nombre, laboratorio y productos. */
+/** El texto que busca la barra: nombre, nota y laboratorios (la lista no trae productos). */
 export const textoBuscable = (p) => [
     p.nombre, p.nota,
     ...(Array.isArray(p.laboratorios) ? p.laboratorios : []),
@@ -239,3 +257,64 @@ export function problemasDelDescuento(renglones, valor, alcanceTodo) {
     if (alcanceTodo && !valor.todas && !valor.branchId) l.push('Elige la sala del descuento.');
     return l;
 }
+
+/**
+ * Un número escrito por una persona: acepta coma decimal y espacios. Devuelve
+ * `null` si el texto no es un número — nunca un 0 inventado. Con `Number(x)
+ * || 0`, «1,5» se guardaba como bono de $0 sin que nadie se enterara.
+ */
+export function numeroEscrito(texto) {
+    if (texto == null) return null;
+    const limpio = String(texto).trim().replace(/\s+/g, '').replace(',', '.');
+    if (limpio === '') return null;
+    if (!/^-?\d+(\.\d+)?$/.test(limpio)) return null;
+    return Number(limpio);
+}
+
+/**
+ * Lo que la base rechazaría al crear la promoción, dicho ANTES de mandarla.
+ *
+ * Cada regla es un CHECK o una validación de `crear_promocion` que hoy llegaba
+ * como «Uno de los valores está fuera del rango permitido» —un mensaje que no
+ * dice qué producto ni qué campo—. Medido el 2026-10-01 contra el esquema vivo:
+ * `fin` es NOT NULL (el formulario lo daba por opcional), `fin >= inicio`,
+ * `lote_total > 0`, proveedor obligatorio si paga un proveedor, y el reparto
+ * tiene que sumar el lote.
+ *
+ * Devuelve frases cortas; agrupa por regla para no listar 40 veces lo mismo.
+ */
+export function problemasDeLaPromocion(renglones) {
+    const fallas = new Map();   // frase → productos
+    const anotar = (frase, r) => {
+        if (!fallas.has(frase)) fallas.set(frase, []);
+        fallas.get(frase).push(r.producto);
+    };
+    for (const r of renglones) {
+        if (!r.inicio) anotar('falta la fecha de inicio', r);
+        if (!r.fin) anotar('falta la fecha de fin', r);
+        if (r.inicio && r.fin && r.fin < r.inicio) anotar('termina antes de empezar', r);
+        const lote = r.lote_total === '' || r.lote_total == null ? null : numeroEscrito(r.lote_total);
+        const loteMal = r.lote_total !== '' && r.lote_total != null
+            && (lote == null || lote <= 0 || !Number.isInteger(lote));
+        if (loteMal) anotar('el lote tiene que ser un número entero mayor que cero (o vacío)', r);
+        if (r.tiene_bono) {
+            if (r.paga === 'proveedor' && !r.supplier_id) anotar('falta el proveedor que paga', r);
+            for (const [campo, rot] of [['bono_vendedor', 'vendedor'], ['bono_adm', 'admón.'], ['bono_bodega', 'bodega']]) {
+                const n = numeroEscrito(r[campo]);
+                if (r[campo] !== '' && r[campo] != null && (n == null || n < 0)) {
+                    anotar(`el bono de ${rot} no es un monto válido`, r);
+                }
+            }
+            const upb = numeroEscrito(r.unidades_por_bono);
+            if (upb == null || upb < 1 || !Number.isInteger(upb)) anotar('«cada cuántas unidades» tiene que ser un entero', r);
+        }
+        const marcadas = Object.entries(r.salas || {}).filter(([, m]) => m).map(([id]) => id);
+        const suma = marcadas.reduce((a, id) => a + (numeroEscrito(r.reparto?.[id]) || 0), 0);
+        if (suma > 0 && lote == null) anotar('reparte unidades sin un lote', r);
+        if (suma > 0 && lote != null && suma !== lote) anotar('el reparto no suma el lote', r);
+    }
+    return [...fallas.entries()].map(([frase, prods]) => (prods.length === 1
+        ? `${prods[0]}: ${frase}.`
+        : `${prods.length} productos: ${frase}.`));
+}
+

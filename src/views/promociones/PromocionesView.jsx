@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import {
     Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Wallet, Percent,
@@ -18,7 +18,7 @@ import { fetchDescuentos } from '@nucleo/data/descuentos';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { estadoVisible, esLaboratorio, textoBuscable } from '@nucleo/utils/promocionesUtils';
+import { estadoVisible, esLaboratorio, textoBuscable, mensajeDeCarga } from '@nucleo/utils/promocionesUtils';
 import { hoySV } from '@nucleo/utils/fecha';
 import TabActivas from './TabActivas';
 import TabSeguimiento from './TabSeguimiento';
@@ -128,6 +128,7 @@ export default function PromocionesView() {
        mira qué está seleccionado (§17), y sueltos arriba del contenido eran dos
        controles flotando sin caja —reportado con captura en Liquidación—. */
     const [seguida, setSeguida] = useState('');  // la promoción que se sigue
+    const [pagosPendientes, setPagosPendientes] = useState('pendientes'); // 'pendientes' | 'todas'
 
     const [promos, setPromos] = useState([]);
     const [cargando, setCargando] = useState(true);
@@ -170,10 +171,21 @@ export default function PromocionesView() {
         [branches],
     );
 
-    const recargar = useCallback(() => setRecarga((n) => n + 1), []);
+    /* El detalle de cada promoción ya mirada en Seguimiento. Volver a la
+       pestaña o a una promoción ya vista repetía `get_promocion`, que cruza
+       las ventas del período. Se vacía con cada recarga: después de editar,
+       lo guardado ya no es cierto. */
+    const [cacheDetalle, setCacheDetalle] = useState(() => new Map());
+    const recargar = useCallback(() => {
+        setCacheDetalle(new Map());
+        setRecarga((n) => n + 1);
+    }, []);
 
     useEffect(() => {
         let vivo = true;
+        // El cargador tapa la vista sólo en la PRIMERA carga. Después de
+        // activar, duplicar o reactivar, la lista se refresca detrás: antes
+        // cada acción parpadeaba la pantalla entera y perdía el scroll.
         setCargando(true);
         setError(null);
         fetchPromociones()
@@ -188,19 +200,25 @@ export default function PromocionesView() {
        no tiene por qué pagarlas. */
     const [recargaDesc, setRecargaDesc] = useState(0);
     const recargarDesc = useCallback(() => setRecargaDesc((n) => n + 1), []);
+    /* Qué recarga de descuentos ya está en pantalla. Entrar y salir de la
+       pestaña volvía a pedir todo al sistema de la caja —varias peticiones en
+       cada visita— sin que nada hubiera cambiado. */
+    const descCargados = useRef(null);
 
     useEffect(() => {
         if (tab !== 'descuentos') return undefined;
+        if (descCargados.current === recargaDesc) return undefined;
         let vivo = true;
         // Los descuentos viven en un sistema ajeno: no hay forma de tenerlos
         // antes de pedirlos, así que el cargador se enciende acá.
-        setCargandoDesc(true); // eslint-disable-line react-hooks/set-state-in-effect
+        setCargandoDesc(true);
         setErrorDesc(null);
         fetchDescuentos()
             .then(({ descuentos: filas, alcanceTodo: todo }) => {
                 if (!vivo) return;
                 setDescuentos(filas);
                 setAlcanceTodo(todo);
+                descCargados.current = recargaDesc;
             })
             .catch((e) => { if (vivo) setErrorDesc(e); })
             .finally(() => { if (vivo) setCargandoDesc(false); });
@@ -231,7 +249,13 @@ export default function PromocionesView() {
        tampoco puede filtrar: un «Activa» que quedó puesto desde la otra pestaña
        dejaría el histórico vacío sin ningún control visible que lo explique. */
     const filtraEstado = tab !== 'historico';
-    const filtrosPuestos = [fTipo, filtraEstado && fEstado, fLab].filter(Boolean).length;
+    /* Los recortes de la lista sólo tienen sentido donde se lista: en
+       Descuentos, Excedentes y Pagos recortarían algo que no está en pantalla.
+       Contarlos ahí dejaba el badge «1» y «Limpiar» sin ningún filtro visible. */
+    const recortaLaLista = ['activas', 'seguimiento', 'historico'].includes(tab);
+    const filtrosPuestos = recortaLaLista
+        ? [fTipo, filtraEstado && fEstado, fLab].filter(Boolean).length
+        : 0;
     const limpiarFiltros = useCallback(() => { setFTipo(''); setFEstado(''); setFLab(''); }, []);
 
     /* Busca por nombre del descuento y también por el de sus productos: quien
@@ -251,22 +275,31 @@ export default function PromocionesView() {
     );
     const terminadas = useMemo(() => filtradas.filter((p) => p.estado === 'finalizada'), [filtradas]);
 
-    /* Lo que llenan las dos ranuras nuevas. El tipo va en el rótulo de la
-       promoción porque dos pueden llamarse parecido y lo que se ve abajo es
-       completamente distinto según cuál sea. */
+    /* Lo que se puede seguir: las vivas primero y DESPUÉS las terminadas. Una
+       terminada también tiene un avance que mirar —lo que dejó—, y antes no
+       había ningún sitio donde verlo. El tipo y el estado van en el rótulo
+       porque dos pueden llamarse parecido. */
+    const seguibles = useMemo(() => [...vivas, ...terminadas], [vivas, terminadas]);
     const opcionesSeguimiento = useMemo(
-        () => vivas.map((p) => ({
+        () => seguibles.map((p) => ({
             value: String(p.id),
-            label: esLaboratorio(p) ? `${p.nombre} · laboratorio` : p.nombre,
+            label: [p.nombre, esLaboratorio(p) && 'laboratorio', p.estado === 'finalizada' && 'terminada']
+                .filter(Boolean).join(' · '),
         })),
-        [vivas],
+        [seguibles],
     );
 
     /* La primera de la lista, para que Seguimiento abra con algo y no con un
-       desplegable vacío que parece un error. */
+       desplegable vacío que parece un error. Y si la elegida dejó de estar
+       —la búsqueda o un filtro la escondieron—, se pasa a la primera visible:
+       quedarse con ella dejaba el desplegable sin valor y un detalle de algo
+       que ya no está en la lista. */
     useEffect(() => {
-        if (!seguida && vivas.length) setSeguida(String(vivas[0].id)); // eslint-disable-line react-hooks/set-state-in-effect -- la lista llega asincrónica; el default no se puede fijar antes de tenerla
-    }, [vivas, seguida]);
+        if (!seguibles.length) return;
+        if (!seguida || !seguibles.some((p) => String(p.id) === String(seguida))) {
+            setSeguida(String(seguibles[0].id)); // eslint-disable-line react-hooks/set-state-in-effect -- la lista llega asincrónica; el default no se puede fijar antes de tenerla
+        }
+    }, [seguibles, seguida]);
 
     /* ── Las tarjetas de la fila de arriba ────────────────────────────────
        Describen LO QUE SE ESTÁ MIRANDO, no la vista entera: se calculan sobre
@@ -280,6 +313,10 @@ export default function PromocionesView() {
        de «la filterbar es enorme». */
     const tarjetas = useMemo(() => {
         if (resumenTab) return resumenTab;
+        /* Las pestañas con consulta propia publican sus tarjetas. Mientras
+           cargan —o cuando no tienen nada— la fila va vacía: caer al cálculo de
+           Activas mostraba números de otra pestaña. */
+        if (!['activas', 'historico', 'descuentos'].includes(tab)) return [];
 
         if (tab === 'descuentos') {
             const hoy = hoySV();
@@ -392,11 +429,6 @@ export default function PromocionesView() {
     const muestraFiltros = acciones.length > 0 || promos.length > 0
         || tarjetas.length > 0 || tab === 'seguimiento';
 
-    /* Los recortes de la lista sólo tienen sentido donde se lista: en
-       Descuentos, Excedentes y Liquidación recortarían algo que no está en
-       pantalla. Una ranura que no afecta a lo que se mira es peor que ninguna. */
-    const recortaLaLista = ['activas', 'seguimiento', 'historico'].includes(tab);
-
     /* Los tres estados van separados a propósito. Un rechazo de permiso NO se
        puede ver como una lista vacía: deja a la persona sin nada que reportar
        más que «me sale vacía», que fue exactamente lo que pasó con el módulo de
@@ -431,48 +463,60 @@ export default function PromocionesView() {
                     alcanceTodo={alcanceTodo}
                     salas={salasDeVenta}
                     onEditar={(id) => setModalDesc(id)}
-                    onCambio={recargarDesc}
+                    /* Borrar un descuento cambia también la marca «Baja el
+                       precio» de su promoción: se recargan las dos listas. */
+                    onCambio={() => { recargarDesc(); recargar(); }}
                 />
             );
         }
 
-        if (permsLoading || cargando) {
+        if (permsLoading || (cargando && !promos.length && !error)) {
             return <LoadingState label="Cargando las promociones…" />;
         }
         if (error) {
             return (
                 <Notice variant="danger" icon={AlertTriangle}>
-                    {error.code === '42501'
-                        ? 'Tu cargo todavía no tiene el módulo de Promociones. Hay que otorgarlo en Ajustes → Permisos.'
-                        : (error.message || 'No se pudieron cargar las promociones. Vuelve a intentar en un momento.')}
+                    {mensajeDeCarga(error, 'No se pudieron cargar las promociones. Vuelve a intentar en un momento.')}
                 </Notice>
             );
         }
         if (tab === 'seguimiento') {
             return (
                 <TabSeguimiento
-                    promos={vivas}
+                    promos={seguibles}
+                    todas={promos}
                     busqueda={busqueda}
+                    filtrando={filtrosPuestos > 0}
                     elegida={seguida}
                     onElegir={setSeguida}
                     onResumen={setResumenTab}
+                    cache={cacheDetalle}
+                    puedeEditar={puedeEditar}
+                    onEditar={setEditando}
+                    onDuplicar={setDuplicando}
+                    onReactivar={setReactivando}
                 />
             );
         }
         if (tab === 'pagos') {
-            return <TabPagos onResumen={setResumenTab} />;
+            return (
+                <TabPagos busqueda={busqueda} soloPendientes={pagosPendientes === 'pendientes'}
+                    onResumen={setResumenTab} />
+            );
         }
         if (tab === 'excedentes') {
-            return <TabExcedentes puedeAprobar={puedeAprobar} onResumen={setResumenTab} />;
+            return <TabExcedentes puedeAprobar={puedeAprobar} busqueda={busqueda} onResumen={setResumenTab} />;
         }
         if (tab === 'historico') {
             return (
                 <TabHistorico
                     promos={terminadas}
                     busqueda={busqueda}
+                    filtrando={filtrosPuestos > 0}
                     puedeEditar={puedeEditar}
                     onReactivar={setReactivando}
                     onDuplicar={setDuplicando}
+                    onSeguir={(id) => { setSeguida(String(id)); setTab('seguimiento'); }}
                 />
             );
         }
@@ -557,6 +601,22 @@ export default function PromocionesView() {
                                     </FilterBar.Section>
                                 )}
 
+                                {/* Pagos sólo crece: por defecto muestra lo que falta
+                                    pagar, y «Todas» trae el historial. */}
+                                {tab === 'pagos' && (
+                                    <FilterBar.Section label="pagos" fija>
+                                        <FilterBar.Opciones
+                                            value={pagosPendientes}
+                                            onChange={(v) => setPagosPendientes(v || 'pendientes')}
+                                            label="Pagos"
+                                            options={[
+                                                { value: 'pendientes', label: 'Por pagar' },
+                                                { value: 'todas', label: 'Todas' },
+                                            ]}
+                                        />
+                                    </FilterBar.Section>
+                                )}
+
                                 {/* `FilterBar.Opciones` y no un `SegmentedControl`
                                     a mano: el canónico decide el control por el
                                     NÚMERO de opciones —hasta 3 segmentado, de 4
@@ -617,7 +677,10 @@ export default function PromocionesView() {
                     —un descuento le baja el precio al cliente y no le paga a
                     nadie—, y el aviso se leería como que el descuento tampoco
                     aplica. */}
-                {tab !== 'descuentos' && (
+                {/* Ni en Pagos ni en Excedentes: ahí el bono de producto SÍ se
+                    paga —en sala, o al aprobarlo— y el aviso «no genera nada
+                    para pago» contradecía lo que la pestaña mostraba. */}
+                {['activas', 'seguimiento', 'historico'].includes(tab) && (
                     <Notice variant="warning" icon={AlertTriangle} compact>
                         <span className="font-semibold">Bonificaciones suspendidas.</span>{' '}
                         Las promociones se crean y se siguen igual, y el portal muestra lo que
@@ -671,7 +734,14 @@ export default function PromocionesView() {
                     promo={reactivando}
                     open
                     onClose={() => setReactivando(null)}
-                    onReactivada={() => { setReactivando(null); recargar(); setTab('activas'); }}
+                    onReactivada={() => {
+                        const id = reactivando.id;
+                        setReactivando(null);
+                        recargar();
+                        // Se queda mirando la que reactivó: ya es una viva.
+                        setSeguida(String(id));
+                        setTab('seguimiento');
+                    }}
                 />
             )}
 

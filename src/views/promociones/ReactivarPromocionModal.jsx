@@ -6,7 +6,7 @@ import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import { reactivarPromocion } from '@nucleo/data/promociones';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { hoySV } from '@nucleo/utils/fecha';
+import { hoySV, mesSV, ultimoDiaDelMes } from '@nucleo/utils/fecha';
 import { fmtVigencia } from '@nucleo/utils/promocionesUtils';
 import Campo from './Campo';
 
@@ -24,7 +24,8 @@ import Campo from './Campo';
  * a cerrar a la mañana siguiente y parecería que el botón no hizo nada.
  */
 export default function ReactivarPromocionModal({ promo, open, onClose, onReactivada }) {
-    const [fin, setFin] = useState('');
+    // Sugiere el fin del mes en curso, que es como se negocian casi todas.
+    const [fin, setFin] = useState(() => ultimoDiaDelMes(mesSV()));
     const [ocupado, setOcupado] = useState(false);
     const [fallo, setFallo] = useState(null);
     const hoy = hoySV();
@@ -55,7 +56,7 @@ export default function ReactivarPromocionModal({ promo, open, onClose, onReacti
             <LiquidModal.Body>
                 <div className="space-y-4">
                     <Campo rotulo="Hasta cuándo">
-                        <LiquidDatePicker value={fin} onChange={setFin} />
+                        <LiquidDatePicker value={fin} onChange={setFin} min={hoy} />
                     </Campo>
                     {fin && !fechaValida && (
                         <p className="text-caption text-danger-text">

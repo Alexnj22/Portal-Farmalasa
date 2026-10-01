@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Check, Trash2, CalendarPlus, DollarSign, Percent, BellOff, ShieldCheck, Store } from 'lucide-react';
+import { AlertTriangle, Check, Trash2, CalendarPlus, DollarSign, Percent, BellOff, ShieldCheck, Store, ChevronDown } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
@@ -19,7 +19,7 @@ import { guardarDescuento, sincronizarProductosDelDescuento } from '@nucleo/data
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
-import { fmtUnidades, fmtVigencia, MOTIVO_CIERRE, descuentoDesdeLaPromocion } from '@nucleo/utils/promocionesUtils';
+import { fmtUnidades, fmtVigencia, MOTIVO_CIERRE, descuentoDesdeLaPromocion, estadoVisible, mensajeDeCarga } from '@nucleo/utils/promocionesUtils';
 import DescuentoEnVentas from './DescuentoEnVentas';
 import AgregarProductos from './AgregarProductos';
 import Campo from './Campo';
@@ -64,6 +64,8 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
     const [avisoSync, setAvisoSync] = useState(null);
     const [recarga, setRecarga] = useState(0);
     const [borrando, setBorrando] = useState(false);
+    const [borrandoYa, setBorrandoYa] = useState(false);
+    const [aQuitar, setAQuitar] = useState(null);      // renglón a quitar (sin descuento)
 
     /* El descuento en la venta, para las promociones que todavía no lo tienen —
        una duplicada, por ejemplo. Nace apagado: entrar a corregir el lote no
@@ -207,6 +209,19 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                El proveedor no se hereda porque la ficha devuelve su NOMBRE y no
                su id — se elige renglón por renglón, que es donde ya se hace. */
             const modelo = (promo.renglones ?? [])[0] ?? {};
+            /* El proveedor SÍ se hereda (2026-10-01): sin él, una promoción que
+               paga un proveedor rechazaba TODO producto agregado —la base exige
+               el proveedor— con un «fuera del rango permitido» que no decía
+               nada. La ficha trae su nombre, así que se resuelve contra la
+               lista; si no da con uno, no se escribe y se dice por qué. */
+            const pagaProveedor = modelo.tiene_bono && (modelo.paga || 'proveedor') === 'proveedor';
+            const proveedorId = pagaProveedor
+                ? (proveedores.find((x) => x.label === modelo.proveedor)?.value ?? null)
+                : null;
+            if (pagaProveedor && proveedorId == null) {
+                setFallo(`No se pudo identificar al proveedor «${modelo.proveedor || 'sin nombre'}» del primer producto. Revisa ese producto y vuelve a agregar.`);
+                return;
+            }
             const r2 = await agregarRenglonesAPromocion(promocionId, prods.map((p) => ({
                 erp_product_id: p.id,
                 inicio,
@@ -214,6 +229,7 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                 lote_total: '',
                 tiene_bono: modelo.tiene_bono ?? false,
                 paga: modelo.tiene_bono ? (modelo.paga || 'proveedor') : null,
+                supplier_id: proveedorId,
                 bono_vendedor: modelo.tiene_bono ? (Number(modelo.bono_vendedor) || 0) : 0,
                 bono_adm: modelo.tiene_bono ? (Number(modelo.bono_adm) || 0) : 0,
                 bono_bodega: modelo.tiene_bono ? (Number(modelo.bono_bodega) || 0) : 0,
@@ -240,6 +256,7 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
 
     const quitarYa = async (renglon, tambienElDescuento) => {
         setFallo(null);
+        setAQuitar(null);
         try {
             await quitarRenglon(renglon.id);
             if (tambienElDescuento) await sincronizar({ quitar: [renglon.erp_product_id] });
@@ -257,12 +274,16 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
     /** Quitar un producto: con descuento, pregunta antes. */
     const quitarProducto = (renglon) => {
         if (conDescuento) { setPendiente({ tipo: 'quitar', renglon }); return; }
-        quitarYa(renglon, false);
+        // Sin descuento también se confirma: era un clic directo, y un doble
+        // toque mandaba dos llamadas sobre una promoción viva.
+        setAQuitar(renglon);
     };
 
 
     const borrar = async () => {
+        if (borrandoYa) return;
         setFallo(null);
+        setBorrandoYa(true);
         try {
             await borrarPromocion(promocionId);
             setBorrando(false);
@@ -271,6 +292,8 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
         } catch (e) {
             setBorrando(false);
             setFallo(mensajeAmigable(e, 'No se pudo borrar la promoción.'));
+        } finally {
+            setBorrandoYa(false);
         }
     };
 
@@ -283,7 +306,7 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                     </h2>
                     {promo && (
                         <p className="text-caption text-content-3">
-                            {fmtVigencia(promo.inicio, promo.fin)} · {promo.estado}
+                            {fmtVigencia(promo.inicio, promo.fin)} · {estadoVisible(promo).rotulo}
                         </p>
                     )}
                 </div>
@@ -294,9 +317,7 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
 
                 {error && (
                     <Notice variant="danger" icon={AlertTriangle}>
-                        {error.code === '42501'
-                            ? 'Tu cargo todavía no tiene el módulo de Promociones.'
-                            : (error.message || 'No se pudo cargar la promoción.')}
+                        {mensajeDeCarga(error, 'No se pudo cargar la promoción.')}
                     </Notice>
                 )}
 
@@ -350,10 +371,15 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                             ganado no cambia: el monto nuevo cuenta desde hoy.
                         </Notice>
 
+                        {/* Plegados cuando son muchos: con 102 productos se
+                            abrían 102 formularios y 102 consultas de
+                            presentaciones de golpe. Ahora cada uno consulta al
+                            abrirse. */}
                         {(promo.renglones ?? []).map((r) => (
                             <RenglonEditable
                                 key={r.id}
                                 r={r}
+                                abiertoInicial={(promo.renglones ?? []).length <= 3}
                                 salas={salas}
                                 proveedores={proveedores}
                                 onCambio={recargar}
@@ -483,6 +509,19 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                 message={`«${promo?.nombre}» se borra con todos sus productos. Sólo se puede porque sigue en borrador: una que ya corrió es historia y no se borra.`}
                 confirmText="Borrar"
                 isDestructive
+                isProcessing={borrandoYa}
+            />
+
+            <ConfirmModal
+                isOpen={!!aQuitar}
+                onClose={() => setAQuitar(null)}
+                onConfirm={() => quitarYa(aQuitar, false)}
+                title="Quitar el producto"
+                message={aQuitar
+                    ? `«${aQuitar.producto}» sale de la promoción. Lleva ${fmtUnidades(aQuitar.vendido_base)} unidades vendidas en ella: dejan de contar.`
+                    : ''}
+                confirmText="Quitar"
+                isDestructive
             />
 
             {/* ── ¿También en el descuento? ─────────────────────────────────
@@ -567,7 +606,8 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
     );
 }
 
-function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar }) {
+function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar, abiertoInicial = true }) {
+    const [abierto, setAbierto] = useState(abiertoInicial);
     const [presentaciones, setPresentaciones] = useState([]);
     const [ocupado, setOcupado] = useState(null);
 
@@ -577,12 +617,20 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar })
     const [tieneBono, setTieneBono] = useState(!!r.tiene_bono);
     const [paga, setPaga] = useState(r.paga || 'proveedor');
     const [prov, setProv] = useState('');
-    const [reparto, setReparto] = useState(() => Object.fromEntries(
+    const repartoOriginal = useMemo(() => Object.fromEntries(
         salas.map((s) => {
             const fila = (r.reparto || []).find((x) => Number(x.branch_id) === Number(s.id));
             return [s.id, fila ? String(fila.asignado_vigente) : ''];
         }),
-    ));
+    ), [salas, r.reparto]);
+    const [reparto, setReparto] = useState(repartoOriginal);
+    /* El reparto viaja SÓLO si se tocó. Hasta el 2026-10-01 iba siempre, y la
+       base lo reemplaza entero quedándose con las salas de más de 0: las filas
+       en 0 —«aplica en esta sala, sin lote»; eran las 108 que había— se
+       borraban, y corregir la presentación de un producto lo pasaba a contar
+       en TODAS las salas sin que nadie lo pidiera. */
+    const repartoCambio = salas.some((s) =>
+        (Number(reparto[s.id]) || 0) !== (Number(repartoOriginal[s.id]) || 0));
 
     // Los montos: van con fecha y no reescriben el pasado.
     const [bv, setBv] = useState(String(r.bono_vendedor ?? '0'));
@@ -591,10 +639,17 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar })
     const [fin, setFin] = useState(r.fin || '');
 
     useEffect(() => {
+        if (!abierto) return undefined;
+        let vivo = true;
         fetchPresentacionesDeProducto(r.erp_product_id)
-            .then((p) => setPresentaciones(p || []))
-            .catch(() => setPresentaciones([]));
-    }, [r.erp_product_id]);
+            .then((p) => { if (vivo) setPresentaciones(p || []); })
+            .catch(() => { if (vivo) setPresentaciones([]); });
+        return () => { vivo = false; };
+    }, [r.erp_product_id, abierto]);
+
+    const tarifaCambio = String(bv) !== String(r.bono_vendedor ?? '0')
+        || String(ba) !== String(r.bono_adm ?? '0')
+        || String(bb) !== String(r.bono_bodega ?? '0');
 
     const opcionesPres = useMemo(() => ([
         { value: '', label: 'Cualquier presentación' },
@@ -611,12 +666,22 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar })
 
     const sumaReparto = Object.values(reparto).reduce((a, u) => a + (Number(u) || 0), 0);
 
+    const pct = r.lote_total ? Math.min(Math.round((Number(r.vendido_base) || 0) / r.lote_total * 100), 999) : null;
+
     return (
         <div className="rounded-lg border border-border-card bg-surface-card p-3 space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
-                <span className="flex-1 min-w-0 truncate text-body-sm font-semibold text-content">
-                    {r.producto}
-                </span>
+                <button type="button" onClick={() => setAbierto((x) => !x)} aria-expanded={abierto}
+                    className="flex-1 min-w-0 flex items-center gap-1.5 text-left min-h-[var(--tap-min)] active:scale-[0.99]">
+                    <ChevronDown size={16} aria-hidden
+                        className={`shrink-0 text-content-3 transition-transform duration-[var(--dur-base)] ${abierto ? '' : '-rotate-90'}`} />
+                    <span className="min-w-0 truncate text-body-sm font-semibold text-content">{r.producto}</span>
+                    {!abierto && (
+                        <span className="shrink-0 text-caption text-content-3 tabular-nums">
+                            · {fmtUnidades(r.vendido_base)}{r.lote_total ? ` de ${fmtUnidades(r.lote_total)} (${pct}%)` : ' u.'}
+                        </span>
+                    )}
+                </button>
                 {r.estado === 'cerrado' && (
                     <Badge variant="neutral" size="sm">
                         {MOTIVO_CIERRE[r.cerrado_motivo] || 'Terminado'}
@@ -626,6 +691,7 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar })
                     onClick={() => onQuitar?.(r)} />
             </div>
 
+            {abierto && (<>
             <p className="text-caption text-content-3 tabular-nums">
                 Lleva <span className="text-content font-semibold">{fmtUnidades(r.vendido_base)}</span> unidades
                 {r.lote_total ? ` de ${fmtUnidades(r.lote_total)}` : ' · sin lote declarado'}
@@ -717,9 +783,11 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar })
                     supplierId: prov || null,
                     borrarLote: lote === '',
                     cualquierPresentacion: factor === '',
-                    reparto: Object.entries(reparto)
-                        .filter(([, u]) => Number(u) > 0)
-                        .map(([b, u]) => ({ branch_id: Number(b), unidades: Number(u) })),
+                    reparto: repartoCambio
+                        ? Object.entries(reparto)
+                            .filter(([, u]) => Number(u) > 0)
+                            .map(([b, u]) => ({ branch_id: Number(b), unidades: Number(u) }))
+                        : null,
                 }))}>
                 Guardar lote, presentación y reparto
             </Button>
@@ -745,9 +813,14 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar })
                     Los montos nuevos rigen <span className="font-semibold">desde hoy</span>. Lo vendido
                     antes se sigue pagando con el monto que regía ese día.
                 </p>
+                {/* `unidadesPorBono` viaja con el valor vigente: sin él la capa de
+                    datos ponía 1, y un producto que pagaba «cada 3 u.» pasaba a
+                    pagar por unidad desde hoy. */}
                 <Button size="sm" variant="secondary" icon={DollarSign} loading={ocupado === 'tarifa'}
+                    disabled={!tarifaCambio}
                     onClick={() => correr('tarifa', () => editarTarifaRenglon({
                         renglonId: r.id, bonoVendedor: bv, bonoAdm: ba, bonoBodega: bb,
+                        unidadesPorBono: Number(r.unidades_por_bono) || 1,
                     }))}>
                     Guardar montos desde hoy
                 </Button>
@@ -769,6 +842,7 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar })
                     Guardar la fecha
                 </Button>
             </div>
+            </>)}
         </div>
     );
 }

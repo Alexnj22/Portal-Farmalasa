@@ -8,6 +8,7 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { etiquetaMes } from '@nucleo/utils/fecha';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 import { publicarMes, aprobarMes, actualizarMes } from '@nucleo/data/marketing';
 
 // Los dos se montan frescos (la vista los pinta sólo abiertos): el estado nace
@@ -90,7 +91,7 @@ export function DecisionMesModal({ modo, mes, resumen, onClose, onCambio }) {
 }
 
 /** El objetivo del mes y el presupuesto de pauta. */
-export function DatosDelMesModal({ open, mes, onClose, onCambio }) {
+export function DatosDelMesModal({ open, mes, puedeAprobar, asignado = 0, onClose, onCambio }) {
     const showToast = useToastStore((s) => s.showToast);
     const [objetivo, setObjetivo] = useState(() => mes?.objetivo || '');
     const [presupuesto, setPresupuesto] = useState(() => (mes?.presupuesto_pauta ? String(mes.presupuesto_pauta) : ''));
@@ -101,7 +102,10 @@ export function DatosDelMesModal({ open, mes, onClose, onCambio }) {
     const guardar = async () => {
         setGuardando(true);
         try {
-            await actualizarMes(mes.id, { objetivo, presupuesto_pauta: presupuesto });
+            // El presupuesto sólo lo manda quien aprueba: si lo mandara el
+            // diseñador con el mismo valor la base lo dejaría pasar, pero con
+            // otro lo rechazaría — mejor no mandarlo.
+            await actualizarMes(mes.id, puedeAprobar ? { objetivo, presupuesto_pauta: presupuesto } : { objetivo });
             onCambio?.();
             onClose();
         } catch (err) {
@@ -122,7 +126,11 @@ export function DatosDelMesModal({ open, mes, onClose, onCambio }) {
                         onChange={(e) => setObjetivo(e.target.value)} rows={3}
                         placeholder="Ej. Lanzar la temporada de vitaminas y crecer en Instagram" />
                     <PortalInput label="Presupuesto de pauta del mes" name="presupuesto_pauta" inputMode="decimal" maskType="DECIMAL" prefix="$"
-                        value={presupuesto} onChange={(e) => setPresupuesto(e.target.value)} placeholder="0.00" />
+                        value={presupuesto} onChange={(e) => setPresupuesto(e.target.value)} placeholder="0.00"
+                        readOnly={!puedeAprobar}
+                        helperText={puedeAprobar
+                            ? `${formatMoney(asignado)} ya repartidos en piezas: no puede quedar por debajo.`
+                            : 'Lo fija gerencia. Tú lo repartes al marcar cada pieza para pautar.'} />
                 </div>
             </LiquidModal.Body>
             <LiquidModal.Footer>

@@ -20,6 +20,26 @@ export const FORMATOS = [
 ];
 
 /**
+ * Lo que se pide IMPRESO (solicitudes). No va al calendario de redes: se
+ * acepta, se diseña y se entrega. Cada formato trae sus tamaños comunes; el
+ * selector deja escribir uno libre. Deben coincidir con el CHECK de
+ * `marketing_solicitudes.formato`.
+ */
+export const FORMATOS_IMPRESOS = [
+    { value: 'banner',   label: 'Banner',   tamanos: ['2 × 1 m', '3 × 1 m', '1.5 × 0.5 m', '4 × 1 m'] },
+    { value: 'rollup',   label: 'Roll-up',  tamanos: ['0.85 × 2 m', '1 × 2 m'] },
+    { value: 'afiche',   label: 'Afiche',   tamanos: ['Carta (8.5 × 11")', 'Tabloide (11 × 17")', 'A3 (29.7 × 42 cm)', 'A2 (42 × 59.4 cm)', '60 × 90 cm'] },
+    { value: 'volante',  label: 'Volante',  tamanos: ['Carta (8.5 × 11")', 'Media carta (5.5 × 8.5")', 'Cuarto de carta (4.25 × 5.5")'] },
+    { value: 'rotulo',   label: 'Rótulo',   tamanos: ['1 × 0.5 m', '2 × 1 m', '3 × 1 m'] },
+    { value: 'etiqueta', label: 'Etiqueta', tamanos: ['5 × 3 cm', '5 × 5 cm', '10 × 5 cm'] },
+    { value: 'tarjeta',  label: 'Tarjeta',  tamanos: ['Presentación (3.5 × 2")', 'Postal (6 × 4")'] },
+    { value: 'otro',     label: 'Otro',     tamanos: [] },
+];
+
+/** Los tamaños sugeridos de un formato impreso. */
+export const tamanosDe = (formato) => FORMATOS_IMPRESOS.find((f) => f.value === formato)?.tamanos || [];
+
+/**
  * Los pilares: de qué habla la pieza. Sirven para ver la mezcla del mes —un
  * mes que es todo promoción se nota en el resumen antes de publicarlo.
  */
@@ -85,7 +105,7 @@ export const OBJETIVOS_PAUTA = [
 ];
 
 const porValor = (lista) => Object.fromEntries(lista.map((x) => [x.value, x]));
-const FORMATO = porValor(FORMATOS);
+const FORMATO = porValor([...FORMATOS, ...FORMATOS_IMPRESOS]);
 const PILAR = porValor(PILARES);
 const ESTADO = porValor(ESTADOS_PIEZA);
 const PRIORIDAD = porValor(PRIORIDADES);
@@ -275,4 +295,35 @@ export function variacionDeVentas(efecto) {
         unidadesDurante: Number(efecto.durante.unidades) || 0,
         pct: antes > 0 ? ((durante - antes) / antes) * 100 : null,
     };
+}
+
+// ── El historial de una pieza ───────────────────────────────────────────────
+
+/** La frase de un evento de `marketing_historial`, sin el nombre de quién. */
+export function fraseDeHistorial(h) {
+    switch (h.evento) {
+        case 'creada':          return 'creó la pieza';
+        case 'estado':          return `la pasó a ${estadoDe(h.a).label}`;
+        case 'fecha':           return `la movió del ${String(h.de).slice(8, 10)}/${String(h.de).slice(5, 7)} al ${String(h.a).slice(8, 10)}/${String(h.a).slice(5, 7)}`;
+        case 'archivo':         return `subió ${h.a ? `«${h.a}»` : 'un diseño'}`;
+        case 'archivo_quitado': return `quitó ${h.a ? `«${h.a}»` : 'un diseño'}`;
+        case 'quitada':         return `quitó «${h.titulo}» del calendario`;
+        default:                return h.evento;
+    }
+}
+
+/** El último cambio de cada pieza, por id. `historial` viene del más nuevo al más viejo. */
+export function ultimoCambioPorPieza(historial) {
+    const m = {};
+    for (const h of historial || []) if (h.pieza_id && !m[h.pieza_id]) m[h.pieza_id] = h;
+    return m;
+}
+
+/** ¿Es de esta marca? Una pieza puede ser de varias (`marcas`). */
+export const esDeMarca = (pieza, marcaId) =>
+    (pieza.marcas?.length ? pieza.marcas : [pieza.marca_id]).some((m) => String(m) === String(marcaId));
+
+/** Lo asignado en pauta en el mes, sin contar una pieza (la que se edita). */
+export function asignadoEnPauta(piezas, exceptoId = null) {
+    return (piezas || []).reduce((t, p) => (p.id !== exceptoId && p.pauta ? t + (Number(p.pauta.presupuesto) || 0) : t), 0);
 }

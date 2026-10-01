@@ -13,7 +13,7 @@ import FichaDePieza from './FichaDePieza';
  * finalizado) y, después de aprobada, a programado o publicado. Aprobar y pedir cambios no se hace
  * soltando una tarjeta: eso lo hace quien revisa, con su comentario.
  */
-export default function TabTablero({ piezas, marcas, comentariosPorPieza, puedeEditar, onAbrir, onMover }) {
+export default function TabTablero({ piezas, marcasDe, comentariosPorPieza, ultimos, personas, puedeMoverla, onAbrir, onMover }) {
     const [sobre, setSobre] = useState(null);
     const porEstado = useMemo(() => {
         const m = Object.fromEntries(ESTADOS_PIEZA.map((e) => [e.value, []]));
@@ -21,8 +21,9 @@ export default function TabTablero({ piezas, marcas, comentariosPorPieza, puedeE
         return m;
     }, [piezas]);
 
+    // Sólo quien creó la pieza la mueve (lo exige también la base).
     const admite = (destino, pieza) => {
-        if (!puedeEditar || !pieza || pieza.estado === destino) return false;
+        if (!pieza || !puedeMoverla(pieza) || pieza.estado === destino) return false;
         if (ESTADOS_DEL_DISENADOR.includes(destino)) return !['aprobado', 'programado', 'publicado'].includes(pieza.estado);
         if (destino === 'programado') return pieza.estado === 'aprobado';
         return destino === 'publicado' && ['aprobado', 'programado'].includes(pieza.estado);
@@ -43,7 +44,7 @@ export default function TabTablero({ piezas, marcas, comentariosPorPieza, puedeE
         <div className="flex gap-3 overflow-x-auto pb-2 snap-x lg:snap-none">
             {ESTADOS_PIEZA.map((e) => {
                 const lista = porEstado[e.value] || [];
-                const destinoValido = puedeEditar && (ESTADOS_DEL_DISENADOR.includes(e.value) || ESTADOS_DE_SALIDA.includes(e.value));
+                const destinoValido = ESTADOS_DEL_DISENADOR.includes(e.value) || ESTADOS_DE_SALIDA.includes(e.value);
                 return (
                     <section key={e.value}
                         className={`snap-start shrink-0 w-[78vw] sm:w-64 lg:flex-1 lg:min-w-[200px] rounded-lg p-2 space-y-2 ${sobre === e.value ? 'bg-surface-card-hover' : 'bg-surface-input'}`}
@@ -60,9 +61,9 @@ export default function TabTablero({ piezas, marcas, comentariosPorPieza, puedeE
                                 <span className="text-micro text-content-3 px-1">
                                     {fechaTexto(p.fecha, { weekday: 'short', day: 'numeric', month: 'short' })}
                                 </span>
-                                <FichaDePieza pieza={p} marca={marcas[p.marca_id]}
-                                    comentarios={comentariosPorPieza[p.id]}
-                                    arrastrable={puedeEditar && p.estado !== 'publicado'} onAbrir={() => onAbrir(p)} grande />
+                                <FichaDePieza pieza={p} marcas={marcasDe(p)}
+                                    comentarios={comentariosPorPieza[p.id]} cambio={ultimos[p.id]} personas={personas}
+                                    arrastrable={puedeMoverla(p) && p.estado !== 'publicado'} onAbrir={() => onAbrir(p)} grande />
                             </div>
                         ))}
                         {!lista.length && <p className="text-micro text-content-3 px-1 py-4 text-center">Sin piezas</p>}

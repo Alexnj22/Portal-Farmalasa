@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1127.0 — Marketing: calendario siempre visible, varias marcas, historial, impresos y tope de pauta
+
+Siete pedidos del usuario sobre el planificador, con capturas.
+
+1. **El calendario se ve siempre**, aunque el mes no tenga piezas (en el
+   teléfono, la agenda con todos los días). Tocar un día crea el mes.
+2. **Quitar una pieza ya puesta**: cualquiera que no esté publicada, sólo quien
+   la creó. Si el mes ya se envió, quien revisa recibe el aviso.
+3. **Varias marcas por pieza** (`marketing_piezas.marcas`; la primera es la
+   principal) y redes, elegidas con tarjetas, no con un desplegable. Una pieza
+   NUEVA ya acepta diseños y enlaces: se suben al guardarla.
+4. **El modal de la pieza, rehecho por bloques**: qué se publica, cuándo y en
+   qué estado, dónde y con qué texto (con contador del corte de 125), pauta;
+   y a la derecha diseños, revisión, historial y comentarios.
+5. **Historial** (`marketing_historial`, lo escriben triggers): quién creó,
+   movió de estado o de día, subió o quitó un diseño, con foto, nombre y hora.
+   En Flujo cada tarjeta muestra su último cambio. **Sólo quien creó una pieza
+   la mueve** —lo exige la base—; el resto puede editar su contenido.
+6. **Solicitudes impresas**: banner, roll-up, afiche, volante, rótulo,
+   etiqueta, tarjeta; con tamaño obligatorio, de una lista por formato o
+   escrito a mano. No van al calendario: se aceptan y se entregan.
+7. **Tope de pauta**: gerencia (quien aprueba) fija el presupuesto del mes y
+   no puede dejarlo por debajo de lo repartido; el diseñador pone el monto en
+   cada pieza y ve lo que queda. La base no deja pasarse.
+
+Migración `marketing_marcas_historial_impresos_y_tope`, aplicada en prod con
+el sí del usuario y probada con rollback contra producción (marcas, quién
+mueve, tope, historial, aviso al quitar, solicitud impresa).
+
 ## v2.1126.3 — Puntos: las tarjetas de cifras con permiso propio
 
 Pedido del usuario: las tarjetas de cifras de Puntos (las de Resumen y las de

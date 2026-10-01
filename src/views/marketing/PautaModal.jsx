@@ -13,6 +13,7 @@ import useBorrador from '@nucleo/hooks/useBorrador';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { OBJETIVOS_PAUTA } from '@nucleo/utils/marketing';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 import { guardarPauta, quitarPauta } from '@nucleo/data/marketing';
 
 const CAMPOS = ['redes', 'objetivo', 'publico', 'presupuesto', 'fecha_inicio', 'fecha_fin',
@@ -34,7 +35,7 @@ const desde = (pauta, pieza) => Object.fromEntries(CAMPOS.map((k) => {
  * publicar; los resultados, cuando la campaña cierra. Un resultado vacío es
  * «todavía no se anotó», no cero.
  */
-export default function PautaModal({ open, onClose, pieza, redes, onCambio }) {
+export default function PautaModal({ open, onClose, pieza, redes, limite = 0, otros = 0, onCambio }) {
     const showToast = useToastStore((s) => s.showToast);
     const [form, setForm] = useState(() => desde(pieza?.pauta, pieza));
     const [guardando, setGuardando] = useState(false);
@@ -49,6 +50,9 @@ export default function PautaModal({ open, onClose, pieza, redes, onCambio }) {
     }, [recuperado, descartar]);
 
     const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v?.target ? v.target.value : v }));
+    // El tope del mes lo fija gerencia; la base tampoco deja pasarse.
+    const libre = limite - otros - (Number(form.presupuesto) || 0);
+    const pasado = libre < 0 && Number(form.presupuesto) > 0;
 
     const guardar = async () => {
         setGuardando(true);
@@ -92,7 +96,11 @@ export default function PautaModal({ open, onClose, pieza, redes, onCambio }) {
                         <h3 className="text-label uppercase tracking-wide font-semibold text-content-2">El plan</h3>
                         <div className="grid grid-cols-2 gap-3">
                             <PortalInput label="Presupuesto" name="presupuesto" inputMode="decimal" maskType="DECIMAL" prefix="$"
-                                value={form.presupuesto} onChange={set('presupuesto')} placeholder="0.00" />
+                                value={form.presupuesto} onChange={set('presupuesto')} placeholder="0.00"
+                                hasError={pasado}
+                                helperText={limite > 0
+                                    ? (pasado ? `Te pasas por ${formatMoney(-libre)}` : `Quedan ${formatMoney(libre)} de ${formatMoney(limite)} del mes`)
+                                    : 'Gerencia todavía no fija el presupuesto del mes'} />
                             <Campo rotulo="Objetivo">
                                 <LiquidSelect value={form.objetivo} onChange={set('objetivo')} placeholder="Qué se busca"
                                     options={OBJETIVOS_PAUTA.map((o) => ({ value: o.value, label: o.label }))} />
@@ -137,7 +145,7 @@ export default function PautaModal({ open, onClose, pieza, redes, onCambio }) {
             <LiquidModal.Footer>
                 {!nueva && <Button variant="ghost" icon={Trash2} onClick={quitar} className="mr-auto">Quitar pauta</Button>}
                 <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-                <Button icon={Check} loading={guardando} onClick={guardar}>Guardar</Button>
+                <Button icon={Check} loading={guardando} disabled={pasado} onClick={guardar}>Guardar</Button>
             </LiquidModal.Footer>
         </LiquidModal>
     );

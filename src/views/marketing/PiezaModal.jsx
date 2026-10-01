@@ -1,5 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Check, Trash2, MessageSquare, AlertTriangle, ThumbsUp, PencilLine, Megaphone, Link2, Send, EyeOff, CalendarCheck } from 'lucide-react';
+import {
+    Check, Trash2, MessageSquare, AlertTriangle, ThumbsUp, PencilLine, Megaphone, Link2, Send, EyeOff,
+    CalendarCheck, Type, CalendarDays, Share2, Image as ImageIcon, History, ShieldCheck, Tag, X, Paperclip,
+} from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -9,9 +12,9 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import TimePicker12 from '../../components/common/TimePicker12';
-import Checkbox from '../../components/common/Checkbox';
-import SegmentedControl from '../../components/common/SegmentedControl';
+import Switch from '../../components/common/Switch';
 import FileField from '../../components/common/FileField';
+import SegmentedControl from '../../components/common/SegmentedControl';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
 import Campo from '../promociones/Campo';
@@ -19,61 +22,89 @@ import useBorrador from '@nucleo/hooks/useBorrador';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { rangoDelMes, fechaTexto } from '@nucleo/utils/fecha';
+import { rangoDelMes, fechaTexto, etiquetaMes } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import {
     FORMATOS, PILARES, ESTADOS_PIEZA, ESTADOS_DEL_DISENADOR, ESTADOS_DE_SALIDA, estadoDe, objetivoDe,
+    asignadoEnPauta,
 } from '@nucleo/utils/marketing';
 import {
     guardarPieza, borrarPieza, subirDiseno, agregarEnlace, quitarArchivo, revisarPieza, moverPieza,
+    guardarPauta, quitarPauta,
 } from '@nucleo/data/marketing';
 import { abrirEnPestanaNueva } from '@plataforma/descargas';
 import Disenos from './Disenos';
 import VistaPrevia from './VistaPrevia';
 import EfectoEnVentas from './EfectoEnVentas';
 import Conversacion from './Conversacion';
+import SeleccionMultiple from './SeleccionMultiple';
+import Historial, { Quien } from './Historial';
+import { puntoDeMarca } from './iconos';
 
 const VACIA = {
-    marca_id: '', fecha: '', hora: '', formato: 'post', redes: [], pilar: '', titulo: '', promocion_id: '',
-    copy: '', hashtags: '', notas: '', estado: 'pendiente', pautar: false, enlace_publicado: '',
+    marcas: [], fecha: '', hora: '', formato: 'post', redes: [], pilar: '', titulo: '', promocion_id: '',
+    copy: '', hashtags: '', notas: '', estado: 'pendiente', pautar: false, enlace_publicado: '', monto: '',
 };
+// Lo que la red muestra antes del «más»: lo importante va antes.
+const CORTE_DEL_TEXTO = 125;
+
+/** Un bloque del formulario: ícono, título y su contenido. */
+function Bloque({ icon: Icono, titulo, accion, children }) {
+    return (
+        <section data-surface="card" className="p-4 space-y-3">
+            <header className="flex items-center gap-2 min-w-0">
+                <Icono size={15} className="text-brand shrink-0" aria-hidden />
+                <h3 className="text-label uppercase tracking-wide font-semibold text-content-2 truncate">{titulo}</h3>
+                {accion && <div className="ml-auto shrink-0">{accion}</div>}
+            </header>
+            {children}
+        </section>
+    );
+}
 
 /**
+ * Una pieza del calendario: qué se publica, cuándo y dónde; sus diseños; la
+ * revisión, el historial y la conversación.
+ *
  * Se monta FRESCO por pieza (la vista le pone `key`): el formulario nace de la
  * fila y no se resincroniza cuando la vista recarga —eso pisaría lo que se está
- * escribiendo—, mientras los diseños y comentarios sí llegan nuevos por props.
+ * escribiendo—, mientras diseños, historial y comentarios sí llegan nuevos.
  *
- * Una pieza del calendario: qué se publica, cuándo y dónde; sus diseños; y la
- * conversación de la revisión.
- *
- * Quien edita (el diseñador) ve el formulario y sube los diseños. Quien sólo
- * mira ve la ficha y comenta. Quien aprueba, además, aprueba o pide cambios —
- * eso lo decide la base (`marketing_revisar_pieza`), no este botón.
+ * Sólo quien CREÓ la pieza la mueve (estado, día) o la quita: lo vuelve a
+ * exigir la base. Una pieza nueva ya acepta diseños y enlaces: se suben al
+ * guardarla.
  */
 export default function PiezaModal({
-    open, onClose, mes, pieza, fechaInicial, catalogos, promociones, personas, comentarios, firmadas,
-    puedeEditar, puedeAprobar, yoId, onCambio, onEditarPauta,
+    open, onClose, mes, pieza, fechaInicial, catalogos, promociones, personas, comentarios, historial, firmadas,
+    piezasDelMes, puedeEditar, puedeAprobar, yoId, esSU, onCambio, onEditarPauta,
 }) {
     const showToast = useToastStore((s) => s.showToast);
     const esNueva = !pieza?.id;
     const [form, setForm] = useState(() => {
         const activas = catalogos.marcas.filter((m) => m.activo);
-        const marcaUnica = activas.length === 1 ? activas[0].id : '';
-        return pieza?.id
-            ? { ...VACIA, ...pieza, hora: pieza.hora || '', marca_id: pieza.marca_id ?? '' }
-            : { ...VACIA, marca_id: marcaUnica, fecha: fechaInicial || '', ...(pieza || {}) };
+        if (pieza?.id) {
+            return {
+                ...VACIA, ...pieza, hora: pieza.hora || '', promocion_id: pieza.promocion_id ?? '',
+                marcas: pieza.marcas?.length ? pieza.marcas : [pieza.marca_id],
+                monto: pieza.pauta?.presupuesto ? String(pieza.pauta.presupuesto) : '',
+            };
+        }
+        return {
+            ...VACIA, fecha: fechaInicial || '',
+            marcas: pieza?.marca_id ? [pieza.marca_id] : (activas.length === 1 ? [activas[0].id] : []),
+            ...(pieza || {}),
+        };
     });
+    const [pendientes, setPendientes] = useState([]);   // diseños de una pieza nueva, se suben al guardar
     const [guardando, setGuardando] = useState(false);
     const [subiendo, setSubiendo] = useState(false);
     const [enlace, setEnlace] = useState('');
     const [borrando, setBorrando] = useState(false);
-    const [decision, setDecision] = useState(null);   // 'cambios' mientras se escribe el pedido
+    const [decision, setDecision] = useState(null);
     const [textoCambio, setTextoCambio] = useState('');
     const [decidiendo, setDecidiendo] = useState(false);
     const [verPrevia, setVerPrevia] = useState('disenos');
 
-    // Borrador sólo de una pieza NUEVA: al editar una ya guardada, la fila de la
-    // base es la verdad y un borrador viejo la pisaría.
     const { recuperado, cuando, descartar, hayBorrador } = useBorrador(
         esNueva && puedeEditar ? `marketing_pieza_${mes?.id}` : null, form, { activo: open && esNueva });
     const reponer = useCallback(() => {
@@ -85,13 +116,15 @@ export default function PiezaModal({
     const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v?.target ? v.target.value : v }));
     const [desde, hasta] = mes ? rangoDelMes(mes.mes) : [undefined, undefined];
 
-    const opcionesMarca = catalogos.marcas
-        .filter((m) => m.activo || m.id === form.marca_id)
-        .map((m) => ({ value: m.id, label: m.nombre }));
-    const redesVisibles = catalogos.redes.filter((r) => r.activo || form.redes?.includes(r.clave));
+    const esCreador = esNueva || !pieza.created_by || pieza.created_by === yoId || esSU;
+    const puedeMover = puedeEditar && esCreador;
 
-    // El diseñador mueve su flujo; `aprobado` sólo lo pone quien revisa, y
-    // programar o publicar sólo tiene sentido después de aprobada.
+    const opcionesMarca = catalogos.marcas
+        .filter((m) => m.activo || form.marcas.includes(m.id))
+        .map((m) => ({ value: m.id, label: m.nombre, punto: puntoDeMarca(m.color) }));
+    const opcionesRed = catalogos.redes
+        .filter((r) => r.activo || form.redes?.includes(r.clave))
+        .map((r) => ({ value: r.clave, label: r.nombre }));
     const despuesDeAprobar = ['aprobado', 'programado', 'publicado'].includes(pieza?.estado);
     const opcionesEstado = ESTADOS_PIEZA
         .filter((e) => ESTADOS_DEL_DISENADOR.includes(e.value)
@@ -102,15 +135,43 @@ export default function PiezaModal({
         .filter((p) => p.estado === 'activa' || p.id === form.promocion_id)
         .map((p) => ({ value: p.id, label: p.nombre }));
 
-    const falta = !form.titulo?.trim() || !form.fecha || !form.marca_id || !form.formato;
+    // La pauta: el tope lo fija gerencia y el diseñador lo reparte.
+    const limite = Number(mes?.presupuesto_pauta) || 0;
+    const otros = asignadoEnPauta(piezasDelMes, pieza?.id);
+    const monto = Number(form.monto) || 0;
+    const disponible = limite - otros - monto;
+    const pasado = form.pautar && monto > 0 && disponible < 0;
+
+    const largoTexto = (form.copy || '').length;
+    const falta = !form.titulo?.trim() || !form.fecha || !form.marcas.length || !form.formato || pasado;
+
+    const subirUno = async (piezaId, mesId, item, orden) => {
+        if (item.tipo === 'archivo') {
+            await subirDiseno({ mesId, piezaId, archivo: item.archivo, orden, subidoPor: yoId });
+        } else {
+            await agregarEnlace({ piezaId, enlace: item.enlace, orden, subidoPor: yoId });
+        }
+    };
 
     const guardar = async () => {
         if (falta) return;
         setGuardando(true);
         try {
-            const datos = { ...form, hora: form.hora || null, pilar: form.pilar || null, promocion_id: form.promocion_id || null };
+            const { monto: _monto, ...resto } = form;
+            const datos = {
+                ...resto, hora: form.hora || null, pilar: form.pilar || null, promocion_id: form.promocion_id || null,
+                marca_id: form.marcas[0],
+            };
             if (datos.estado === 'publicado' && !pieza?.publicado_en) datos.publicado_en = new Date().toISOString();
-            await guardarPieza(mes.id, datos);
+            const fila = await guardarPieza(mes.id, datos);
+            // La pauta va aparte (su propia tabla y su tope). Desmarcar «se
+            // pautará» libera lo asignado.
+            if (form.pautar && (monto !== Number(pieza?.pauta?.presupuesto || 0) || !pieza?.pauta)) {
+                await guardarPauta(fila.id, { presupuesto: monto, redes: form.redes });
+            } else if (!form.pautar && pieza?.pauta) {
+                await quitarPauta(fila.id);
+            }
+            for (const [i, item] of pendientes.entries()) await subirUno(fila.id, mes.id, item, i);
             descartar();
             showToast(esNueva ? 'Pieza agregada' : 'Pieza guardada', form.titulo, 'success');
             onCambio?.();
@@ -122,11 +183,15 @@ export default function PiezaModal({
         }
     };
 
-    const subir = async (archivo) => {
-        if (!archivo || !pieza?.id) return;
+    const elegirArchivo = async (archivo) => {
+        if (!archivo) return;
+        if (esNueva) {
+            setPendientes((p) => [...p, { tipo: 'archivo', archivo, id: `${Date.now()}-${archivo.name}` }]);
+            return;
+        }
         setSubiendo(true);
         try {
-            await subirDiseno({ mesId: mes.id, piezaId: pieza.id, archivo, orden: pieza.archivos?.length || 0, subidoPor: yoId });
+            await subirUno(pieza.id, mes.id, { tipo: 'archivo', archivo }, pieza.archivos?.length || 0);
             showToast('Diseño agregado', archivo.name, 'success');
             onCambio?.();
         } catch (err) {
@@ -136,13 +201,18 @@ export default function PiezaModal({
         }
     };
 
-    const agregar = async () => {
+    const agregarElEnlace = async () => {
         if (!/^https?:\/\//i.test(enlace.trim())) {
             showToast('Enlace no válido', 'Pega el enlace completo, que empiece con https://', 'error');
             return;
         }
+        if (esNueva) {
+            setPendientes((p) => [...p, { tipo: 'enlace', enlace: enlace.trim(), id: `${Date.now()}-enlace` }]);
+            setEnlace('');
+            return;
+        }
         try {
-            await agregarEnlace({ piezaId: pieza.id, enlace, orden: pieza.archivos?.length || 0, subidoPor: yoId });
+            await subirUno(pieza.id, mes.id, { tipo: 'enlace', enlace }, pieza.archivos?.length || 0);
             setEnlace('');
             onCambio?.();
         } catch (err) {
@@ -159,8 +229,6 @@ export default function PiezaModal({
         }
     };
 
-    // Marcar que ya salió (o que quedó agendada en la red) sin abrir el
-    // formulario: es lo que el recordatorio de las 8:00 le pide al diseñador.
     const marcarSalida = async (estado) => {
         setGuardando(true);
         try {
@@ -209,159 +277,205 @@ export default function PiezaModal({
 
     const publicado = !!mes?.publicado_at;
     const archivos = pieza?.archivos || [];
-    const misComentarios = useMemo(
-        () => (comentarios || []).filter((c) => c.pieza_id === pieza?.id),
-        [comentarios, pieza?.id]);
-    const puedeRevisar = puedeAprobar && publicado && pieza?.id
-        && ['finalizado', 'cambios', 'aprobado'].includes(pieza.estado);
+    const misComentarios = useMemo(() => (comentarios || []).filter((c) => c.pieza_id === pieza?.id), [comentarios, pieza?.id]);
+    const miHistorial = useMemo(() => (historial || []).filter((h) => h.pieza_id === pieza?.id), [historial, pieza?.id]);
+    const puedeRevisar = puedeAprobar && publicado && pieza?.id && ['finalizado', 'cambios', 'aprobado'].includes(pieza.estado);
     const est = estadoDe(pieza?.estado || form.estado);
+    const marcaPrincipal = catalogos.marcas.find((m) => m.id === form.marcas[0]);
 
     if (!open) return null;
 
     return (
         <>
-            <LiquidModal open={open} onClose={onClose} maxWidth="max-w-4xl"
+            <LiquidModal open={open} onClose={onClose} maxWidth="max-w-5xl"
                 ariaLabel={esNueva ? 'Nueva pieza' : `Pieza ${pieza.titulo}`}>
                 <LiquidModal.Header>
-                    <div className="flex items-center gap-2 min-w-0">
-                        <h2 className="text-body-xl font-semibold text-content truncate">
-                            {esNueva ? 'Nueva pieza' : pieza.titulo}
-                        </h2>
-                        {!esNueva && <Badge variant={est.variant} size="sm">{est.label}</Badge>}
+                    <div className="min-w-0 space-y-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <h2 className="text-body-xl font-semibold text-content truncate">
+                                {esNueva ? 'Nueva pieza' : pieza.titulo}
+                            </h2>
+                            <Badge variant={est.variant} size="sm">{est.label}</Badge>
+                        </div>
+                        <div className="flex items-center gap-2 text-caption text-content-3 min-w-0">
+                            <span>{mes ? etiquetaMes(mes.mes) : ''}</span>
+                            {!esNueva && pieza.created_by && (
+                                <>
+                                    <span aria-hidden>·</span>
+                                    <span className="shrink-0">creada por</span>
+                                    <Quien id={pieza.created_by} personas={personas} px={18} />
+                                </>
+                            )}
+                        </div>
                     </div>
                 </LiquidModal.Header>
                 <LiquidModal.Body>
-                    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
-                        {/* ── Los datos de la pieza ── */}
+                    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+                        {/* ── Columna izquierda: la pieza ── */}
                         <div className="space-y-4 min-w-0">
                             {hayBorrador && <AvisoDeBorrador cuando={cuando} onRecuperar={reponer} onDescartar={descartar} />}
-                            {puedeEditar ? (
-                                <>
-                                    <PortalInput label="Título" name="titulo" value={form.titulo} onChange={set('titulo')}
-                                        placeholder="Ej. Reel: 3 tips para el resfriado" required />
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <Campo rotulo="Marca" falta>
-                                            <LiquidSelect value={form.marca_id} onChange={set('marca_id')} options={opcionesMarca}
-                                                placeholder="Marca" clearable={false} />
-                                        </Campo>
-                                        <Campo rotulo="Formato" falta>
-                                            <LiquidSelect value={form.formato} onChange={set('formato')} clearable={false}
-                                                options={FORMATOS.map((f) => ({ value: f.value, label: f.label }))} />
-                                        </Campo>
-                                        <Campo rotulo="Fecha" falta>
-                                            <LiquidDatePicker value={form.fecha} onChange={set('fecha')} min={desde} max={hasta} />
-                                        </Campo>
-                                        <Campo rotulo="Hora">
-                                            <TimePicker12 value={form.hora} onChange={set('hora')} />
-                                        </Campo>
-                                        <Campo rotulo="Pilar">
-                                            <LiquidSelect value={form.pilar} onChange={set('pilar')} placeholder="De qué habla"
-                                                options={PILARES.map((p) => ({ value: p.value, label: p.label }))} />
-                                        </Campo>
-                                        <Campo rotulo="Estado">
-                                            <LiquidSelect value={form.estado} onChange={set('estado')} options={opcionesEstado} clearable={false} />
-                                        </Campo>
-                                    </div>
-                                    <Campo rotulo="Promoción ligada">
-                                        <LiquidSelect value={form.promocion_id} onChange={set('promocion_id')}
-                                            placeholder="Ninguna" options={opcionesPromocion} />
-                                    </Campo>
-                                    <Campo rotulo="Redes">
-                                        <div className="flex flex-wrap gap-x-4 gap-y-2">
-                                            {redesVisibles.map((r) => (
-                                                <Checkbox key={r.clave} label={r.nombre} checked={form.redes?.includes(r.clave)}
-                                                    onChange={(on) => setForm((f) => ({
-                                                        ...f,
-                                                        redes: (on?.target ? on.target.checked : on)
-                                                            ? [...new Set([...(f.redes || []), r.clave])]
-                                                            : (f.redes || []).filter((x) => x !== r.clave),
-                                                    }))} />
-                                            ))}
-                                        </div>
-                                    </Campo>
-                                    <PortalTextarea label="Texto de la publicación (copy)" name="copy" value={form.copy || ''}
-                                        onChange={set('copy')} rows={4} placeholder="Lo que va en la descripción del post" />
-                                    <PortalInput label="Hashtags" name="hashtags" value={form.hashtags || ''} onChange={set('hashtags')}
-                                        placeholder="#Salud #Farmacia" />
-                                    <PortalTextarea label="Notas para el diseño" name="notas" value={form.notas || ''}
-                                        onChange={set('notas')} rows={2} placeholder="Referencias, producto, precio, colores…" />
-                                    {form.estado === 'publicado' && (
-                                        <PortalInput label="Enlace de la publicación" name="enlace_publicado"
-                                            value={form.enlace_publicado || ''} onChange={set('enlace_publicado')}
-                                            placeholder="https://www.instagram.com/p/…" />
-                                    )}
-                                    <Checkbox label="Se pautará" description="Aparece en la pestaña Pauta para planificar la inversión"
-                                        checked={!!form.pautar} onChange={(on) => setForm((f) => ({ ...f, pautar: on?.target ? on.target.checked : on }))} />
-                                </>
-                            ) : (
-                                <FichaDeLectura pieza={pieza} catalogos={catalogos} promociones={promociones} />
+                            {!puedeEditar && <FichaDeLectura pieza={pieza} catalogos={catalogos} promociones={promociones} />}
+                            {puedeEditar && !esCreador && (
+                                <Notice icon={ShieldCheck} compact>
+                                    La creó otra persona: puedes editar el contenido, pero el estado, el día y quitarla
+                                    los decide quien la creó.
+                                </Notice>
                             )}
 
-                            {!esNueva && pieza.pautar && (
-                                <div data-surface="card" className="p-3 space-y-1">
-                                    <div className="flex items-center gap-2">
-                                        <Megaphone size={14} className="text-content-3" />
-                                        <span className="text-label uppercase tracking-wide font-semibold text-content-2">Pauta</span>
-                                        {puedeEditar && onEditarPauta && (
-                                            <Button variant="ghost" size="xs" className="ml-auto" onClick={() => onEditarPauta(pieza)}>
-                                                {pieza.pauta ? 'Editar' : 'Planificar'}
-                                            </Button>
+                            {puedeEditar && (
+                                <>
+                                    <Bloque icon={Type} titulo="Qué se publica">
+                                        <PortalInput label="Título" name="titulo" value={form.titulo} onChange={set('titulo')}
+                                            placeholder="Ej. Reel: 3 tips para el resfriado" required />
+                                        <Campo rotulo="Marcas" falta>
+                                            <SeleccionMultiple opciones={opcionesMarca} valores={form.marcas} onChange={set('marcas')} />
+                                        </Campo>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <Campo rotulo="Formato" falta>
+                                                <LiquidSelect value={form.formato} onChange={set('formato')} clearable={false}
+                                                    options={FORMATOS.map((f) => ({ value: f.value, label: f.label }))} />
+                                            </Campo>
+                                            <Campo rotulo="Tema">
+                                                <LiquidSelect value={form.pilar} onChange={set('pilar')} placeholder="De qué habla"
+                                                    options={PILARES.map((p) => ({ value: p.value, label: p.label }))} />
+                                            </Campo>
+                                        </div>
+                                        <Campo rotulo="Promoción ligada">
+                                            <LiquidSelect value={form.promocion_id} onChange={set('promocion_id')}
+                                                placeholder="Ninguna" options={opcionesPromocion} />
+                                        </Campo>
+                                    </Bloque>
+
+                                    <Bloque icon={CalendarDays} titulo="Cuándo y en qué estado">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <Campo rotulo="Fecha" falta>
+                                                {puedeMover ? (
+                                                    <LiquidDatePicker value={form.fecha} onChange={set('fecha')} min={desde} max={hasta} />
+                                                ) : (
+                                                    <p className="text-body-sm text-content py-2">
+                                                        {fechaTexto(form.fecha, { weekday: 'long', day: 'numeric', month: 'long' })}
+                                                    </p>
+                                                )}
+                                            </Campo>
+                                            <Campo rotulo="Hora">
+                                                <TimePicker12 value={form.hora} onChange={set('hora')} />
+                                            </Campo>
+                                        </div>
+                                        <Campo rotulo="Estado">
+                                            <LiquidSelect value={form.estado} onChange={set('estado')} options={opcionesEstado}
+                                                clearable={false} disabled={!puedeMover} />
+                                        </Campo>
+                                        {form.estado === 'publicado' && (
+                                            <PortalInput label="Enlace de la publicación" name="enlace_publicado"
+                                                value={form.enlace_publicado || ''} onChange={set('enlace_publicado')}
+                                                placeholder="https://www.instagram.com/p/…" />
                                         )}
-                                    </div>
-                                    {pieza.pauta ? (
-                                        <p className="text-body-sm text-content-2">
-                                            {formatMoney(pieza.pauta.presupuesto)} · {objetivoDe(pieza.pauta.objetivo).label}
-                                            {pieza.pauta.gastado != null && <> · gastado {formatMoney(pieza.pauta.gastado)}</>}
-                                        </p>
-                                    ) : (
-                                        <p className="text-body-sm text-content-3">Sin presupuesto asignado</p>
-                                    )}
-                                </div>
+                                    </Bloque>
+
+                                    <Bloque icon={Share2} titulo="Dónde y con qué texto">
+                                        <Campo rotulo="Redes">
+                                            <SeleccionMultiple opciones={opcionesRed} valores={form.redes} onChange={set('redes')}
+                                                columnas="grid-cols-2 sm:grid-cols-3" />
+                                        </Campo>
+                                        <PortalTextarea label="Texto de la publicación" name="copy" value={form.copy || ''}
+                                            onChange={set('copy')} rows={4} placeholder="Lo que va en la descripción del post"
+                                            helperText={`${largoTexto} caracteres${largoTexto > CORTE_DEL_TEXTO ? ` · la red muestra los primeros ${CORTE_DEL_TEXTO}` : ''}`} />
+                                        <PortalInput label="Hashtags" name="hashtags" value={form.hashtags || ''} onChange={set('hashtags')}
+                                            placeholder="#Salud #Farmacia" />
+                                        <PortalTextarea label="Notas para el diseño" name="notas" value={form.notas || ''}
+                                            onChange={set('notas')} rows={2} placeholder="Referencias, producto, precio, colores…" />
+                                    </Bloque>
+
+                                    <Bloque icon={Megaphone} titulo="Pauta"
+                                        accion={<Switch checked={!!form.pautar} label="Se pautará"
+                                            onChange={(on) => setForm((f) => ({ ...f, pautar: on }))} />}>
+                                        {!form.pautar ? (
+                                            <p className="text-body-sm text-content-3">
+                                                Actívala para invertir en esta pieza. Presupuesto de {mes ? etiquetaMes(mes.mes) : 'este mes'}:{' '}
+                                                {limite > 0 ? `${formatMoney(limite - otros)} libres de ${formatMoney(limite)}` : 'gerencia todavía no lo fija'}.
+                                            </p>
+                                        ) : limite === 0 ? (
+                                            <Notice variant="warning" icon={AlertTriangle} compact>
+                                                Gerencia todavía no fijó el presupuesto de pauta del mes. Se puede marcar para
+                                                pautar; el monto se asigna cuando lo fije.
+                                            </Notice>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                <PortalInput label="Monto para esta pieza" name="monto" inputMode="decimal" maskType="DECIMAL"
+                                                    prefix="$" value={form.monto} onChange={set('monto')} placeholder="0.00"
+                                                    hasError={pasado} errorMessage={pasado ? 'Supera lo disponible del mes' : undefined} />
+                                                <BarraDePresupuesto limite={limite} otros={otros} esta={monto} />
+                                                {!esNueva && pieza.pauta && onEditarPauta && (
+                                                    <Button variant="ghost" size="xs" onClick={() => onEditarPauta(pieza)}>
+                                                        Objetivo, fechas y resultados
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </Bloque>
+                                </>
+                            )}
+
+                            {!esNueva && !puedeEditar && pieza.pauta && (
+                                <Bloque icon={Megaphone} titulo="Pauta">
+                                    <p className="text-body-sm text-content-2">
+                                        {formatMoney(pieza.pauta.presupuesto)} · {objetivoDe(pieza.pauta.objetivo).label}
+                                        {pieza.pauta.gastado != null && <> · gastado {formatMoney(pieza.pauta.gastado)}</>}
+                                    </p>
+                                </Bloque>
                             )}
                             {!esNueva && pieza.promocion_id && <EfectoEnVentas pieza={pieza} />}
                         </div>
 
-                        {/* ── Diseños y revisión ── */}
+                        {/* ── Columna derecha: diseños, revisión, historial, conversación ── */}
                         <div className="space-y-4 min-w-0">
-                            <section className="space-y-2">
-                                <div className="flex items-center justify-between gap-2">
-                                    <h3 className="text-label uppercase tracking-wide font-semibold text-content-2">Diseños</h3>
-                                    {!esNueva && (puedeEditar || publicado) && (
-                                        <SegmentedControl size="sm" value={verPrevia} onChange={setVerPrevia} label="Ver"
-                                            options={[{ value: 'disenos', label: 'Archivos' }, { value: 'previa', label: 'Vista previa' }]} />
-                                    )}
-                                </div>
-                                {!esNueva && verPrevia === 'previa' ? (
-                                    <VistaPrevia pieza={{ ...pieza, ...form }} archivos={archivos} firmadas={firmadas}
-                                        marca={catalogos.marcas.find((m) => m.id === (form.marca_id || pieza.marca_id))} />
-                                ) : esNueva ? (
-                                    <p className="text-body-sm text-content-3">Guarda la pieza para poder subir sus diseños.</p>
+                            <Bloque icon={ImageIcon} titulo="Diseños"
+                                accion={(puedeEditar || publicado) && (archivos.length > 0 || form.copy) ? (
+                                    <SegmentedControl size="sm" value={verPrevia} onChange={setVerPrevia} label="Ver"
+                                        options={[{ value: 'disenos', label: 'Archivos' }, { value: 'previa', label: 'Vista previa' }]} />
+                                ) : null}>
+                                {verPrevia === 'previa' ? (
+                                    <VistaPrevia pieza={{ ...(pieza || {}), ...form }} archivos={archivos} firmadas={firmadas}
+                                        marca={marcaPrincipal} />
                                 ) : (
                                     <>
-                                        {!archivos.length && !puedeEditar && !publicado && (
+                                        {!archivos.length && !pendientes.length && !puedeEditar && !publicado && (
                                             <Notice icon={EyeOff} compact>
                                                 Los diseños se ven cuando el diseñador envíe el mes a revisión.
                                             </Notice>
                                         )}
-                                        {!archivos.length && (puedeEditar || publicado) && (
+                                        {!archivos.length && !pendientes.length && (puedeEditar || publicado) && (
                                             <p className="text-body-sm text-content-3">Sin diseños todavía.</p>
                                         )}
                                         <Disenos archivos={archivos} firmadas={firmadas} onQuitar={puedeEditar ? quitar : undefined} />
+                                        {pendientes.length > 0 && (
+                                            <ul className="space-y-1">
+                                                {pendientes.map((p) => (
+                                                    <li key={p.id} className="flex items-center gap-2 min-w-0 text-body-sm text-content-2">
+                                                        {p.tipo === 'archivo' ? <Paperclip size={13} className="shrink-0" /> : <Link2 size={13} className="shrink-0" />}
+                                                        <span className="truncate flex-1">{p.tipo === 'archivo' ? p.archivo.name : p.enlace}</span>
+                                                        <Button variant="ghost" size="xs" iconOnly icon={X} title="No subir"
+                                                            onClick={() => setPendientes((l) => l.filter((x) => x.id !== p.id))} />
+                                                    </li>
+                                                ))}
+                                                <li className="text-caption text-content-3">Se suben al guardar la pieza.</li>
+                                            </ul>
+                                        )}
                                         {puedeEditar && (
                                             <>
-                                                <FileField label="Subir imagen o video" accept="image/*,video/*,.pdf" maxSizeMB={200}
-                                                    file={null} onChange={subir} busy={subiendo} busyLabel="Subiendo diseño…"
+                                                <FileField label="Imagen, video o PDF" accept="image/*,video/*,.pdf" maxSizeMB={200}
+                                                    file={null} onChange={elegirArchivo} busy={subiendo} busyLabel="Subiendo diseño…"
                                                     conEditor={false} conTelefono={false} />
                                                 <div className="flex items-end gap-2">
                                                     <div className="flex-1 min-w-0">
-                                                        <PortalInput label="O pega un enlace (Drive, Canva)" name="enlace" value={enlace}
+                                                        <PortalInput label="O un enlace (Drive, Canva)" name="enlace" value={enlace}
                                                             onChange={(e) => setEnlace(e.target.value)} placeholder="https://…" />
                                                     </div>
-                                                    <Button variant="secondary" icon={Link2} disabled={!enlace.trim()} onClick={agregar}>
+                                                    <Button variant="secondary" icon={Link2} disabled={!enlace.trim()} onClick={agregarElEnlace}>
                                                         Agregar
                                                     </Button>
                                                 </div>
-                                                {pieza.estado === 'aprobado' && (
+                                                {['aprobado', 'programado'].includes(pieza?.estado) && (
                                                     <p className="text-caption text-content-3">
                                                         Cambiar el diseño o el texto de una pieza aprobada la devuelve a revisión.
                                                     </p>
@@ -370,11 +484,10 @@ export default function PiezaModal({
                                         )}
                                     </>
                                 )}
-                            </section>
+                            </Bloque>
 
                             {puedeRevisar && (
-                                <section className="space-y-2">
-                                    <h3 className="text-label uppercase tracking-wide font-semibold text-content-2">Revisión</h3>
+                                <Bloque icon={ThumbsUp} titulo="Revisión">
                                     {decision === 'cambios' ? (
                                         <div className="space-y-2">
                                             <PortalTextarea label="¿Qué hay que cambiar?" name="cambio" value={textoCambio}
@@ -400,37 +513,40 @@ export default function PiezaModal({
                                             </Button>
                                         </div>
                                     )}
-                                </section>
+                                </Bloque>
                             )}
 
                             {!esNueva && (
-                                <section className="space-y-2">
-                                    <h3 className="text-label uppercase tracking-wide font-semibold text-content-2 flex items-center gap-1.5">
-                                        <MessageSquare size={13} /> Comentarios
-                                    </h3>
+                                <Bloque icon={History} titulo="Historial">
+                                    <Historial entradas={miHistorial} personas={personas} />
+                                </Bloque>
+                            )}
+
+                            {!esNueva && (
+                                <Bloque icon={MessageSquare} titulo="Comentarios">
                                     <Conversacion comentarios={misComentarios} personas={personas}
                                         mesId={mes.id} piezaId={pieza.id} yoId={yoId}
                                         puedeResolver={puedeEditar || puedeAprobar} onCambio={onCambio} />
-                                </section>
+                                </Bloque>
                             )}
                         </div>
                     </div>
                 </LiquidModal.Body>
                 <LiquidModal.Footer>
-                    {!esNueva && puedeEditar && ['pendiente', 'en_proceso'].includes(pieza.estado) && (
+                    {!esNueva && puedeMover && pieza.estado !== 'publicado' && (
                         <Button variant="ghost" icon={Trash2} onClick={() => setBorrando(true)} className="mr-auto">Quitar</Button>
                     )}
-                    {!esNueva && pieza.estado === 'cambios' && (
+                    {!esNueva && pieza.estado === 'cambios' && !puedeMover && (
                         <span className="text-caption text-warning flex items-center gap-1 mr-auto">
                             <AlertTriangle size={13} /> Con cambios pedidos
                         </span>
                     )}
-                    {!esNueva && puedeEditar && pieza.estado === 'aprobado' && (
+                    {!esNueva && puedeMover && pieza.estado === 'aprobado' && (
                         <Button variant="secondary" icon={CalendarCheck} loading={guardando} onClick={() => marcarSalida('programado')}>
                             Programada
                         </Button>
                     )}
-                    {!esNueva && puedeEditar && ['aprobado', 'programado'].includes(pieza.estado) && (
+                    {!esNueva && puedeMover && ['aprobado', 'programado'].includes(pieza.estado) && (
                         <Button variant="secondary" icon={Send} loading={guardando} onClick={() => marcarSalida('publicado')}>
                             Publicada
                         </Button>
@@ -438,34 +554,56 @@ export default function PiezaModal({
                     <Button variant="secondary" onClick={onClose}>{puedeEditar ? 'Cancelar' : 'Cerrar'}</Button>
                     {puedeEditar && (
                         <Button icon={Check} loading={guardando} disabled={falta} onClick={guardar}>
-                            {esNueva ? 'Agregar' : 'Guardar'}
+                            {esNueva ? (pendientes.length ? `Agregar y subir ${pendientes.length}` : 'Agregar') : 'Guardar'}
                         </Button>
                     )}
                 </LiquidModal.Footer>
             </LiquidModal>
 
             <ConfirmModal isOpen={borrando} onClose={() => setBorrando(false)} onConfirm={borrar}
-                title="¿Quitar esta pieza?" message={`«${pieza?.titulo}» sale del calendario con sus diseños y comentarios.`}
+                title="¿Quitar esta pieza?"
+                message={`«${pieza?.titulo}» sale del calendario con sus diseños y comentarios.${publicado ? ' Quien revisa recibe el aviso.' : ''}`}
                 confirmText="Quitar" isProcessing={guardando} />
         </>
+    );
+}
+
+/** Cuánto hay, cuánto ya se repartió y cuánto toma esta pieza. */
+function BarraDePresupuesto({ limite, otros, esta }) {
+    const pct = (n) => `${Math.max(0, Math.min(100, (n / limite) * 100))}%`;
+    const libre = limite - otros - esta;
+    return (
+        <div className="space-y-1">
+            <div className="h-2 rounded-full bg-surface-input overflow-hidden flex" data-medida="dato"
+                role="img" aria-label={`Asignado en otras piezas ${formatMoney(otros)}, esta ${formatMoney(esta)}, libre ${formatMoney(Math.max(libre, 0))}`}>
+                <span className="h-full bg-chart-4" style={{ width: pct(otros) }} />
+                <span className={`h-full ${libre < 0 ? 'bg-danger' : 'bg-brand'}`} style={{ width: pct(esta) }} />
+            </div>
+            <p className={`text-caption ${libre < 0 ? 'text-danger' : 'text-content-3'}`}>
+                {libre < 0
+                    ? `Te pasas por ${formatMoney(-libre)}. Quedan ${formatMoney(limite - otros)} de ${formatMoney(limite)}.`
+                    : `Quedan ${formatMoney(libre)} de ${formatMoney(limite)} · ${formatMoney(otros)} en otras piezas`}
+            </p>
+        </div>
     );
 }
 
 /** La pieza para quien no la edita: lo mismo que el formulario, sin controles. */
 function FichaDeLectura({ pieza, catalogos, promociones }) {
     if (!pieza) return null;
-    const marca = catalogos.marcas.find((m) => m.id === pieza.marca_id);
+    const marcas = (pieza.marcas?.length ? pieza.marcas : [pieza.marca_id])
+        .map((id) => catalogos.marcas.find((m) => m.id === id)?.nombre).filter(Boolean);
     const redes = (pieza.redes || []).map((c) => catalogos.redes.find((r) => r.clave === c)?.nombre || c);
     const filas = [
-        ['Marca', marca?.nombre],
+        ['Marcas', marcas.join(', ')],
         ['Fecha', [fechaTexto(pieza.fecha, { weekday: 'long', day: 'numeric', month: 'long' }), hora12(pieza.hora)].filter(Boolean).join(' · ')],
         ['Formato', FORMATOS.find((f) => f.value === pieza.formato)?.label],
-        ['Pilar', PILARES.find((p) => p.value === pieza.pilar)?.label],
+        ['Tema', PILARES.find((p) => p.value === pieza.pilar)?.label],
         ['Redes', redes.join(', ')],
         ['Promoción', (promociones || []).find((p) => p.id === pieza.promocion_id)?.nombre],
     ].filter(([, v]) => v);
     return (
-        <div className="space-y-3">
+        <Bloque icon={Tag} titulo="La pieza">
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-body-sm">
                 {filas.map(([k, v]) => (
                     <React.Fragment key={k}>
@@ -474,24 +612,14 @@ function FichaDeLectura({ pieza, catalogos, promociones }) {
                     </React.Fragment>
                 ))}
             </dl>
-            {pieza.copy && (
-                <div>
-                    <p className="text-label uppercase tracking-wide font-semibold text-content-2 mb-1">Copy</p>
-                    <p className="text-body-sm text-content whitespace-pre-wrap">{pieza.copy}</p>
-                    {pieza.hashtags && <p className="text-body-sm text-brand mt-1">{pieza.hashtags}</p>}
-                </div>
-            )}
-            {pieza.notas && (
-                <div>
-                    <p className="text-label uppercase tracking-wide font-semibold text-content-2 mb-1">Notas</p>
-                    <p className="text-body-sm text-content-2 whitespace-pre-wrap">{pieza.notas}</p>
-                </div>
-            )}
+            {pieza.copy && <p className="text-body-sm text-content whitespace-pre-wrap">{pieza.copy}</p>}
+            {pieza.hashtags && <p className="text-body-sm text-brand">{pieza.hashtags}</p>}
+            {pieza.notas && <p className="text-body-sm text-content-2 whitespace-pre-wrap">{pieza.notas}</p>}
             {pieza.enlace_publicado && (
                 <Button variant="ghost" size="sm" icon={Link2} onClick={() => abrirEnPestanaNueva(pieza.enlace_publicado)}>
                     Ver la publicación
                 </Button>
             )}
-        </div>
+        </Bloque>
     );
 }

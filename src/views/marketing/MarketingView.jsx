@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
     Megaphone, CalendarDays, KanbanSquare, Inbox, Plus, Send, ThumbsUp, Settings2, Target,
-    CheckCircle2, AlertTriangle, DollarSign, Layers, MessageSquare, Sparkles, FileDown, Clock,
+    CheckCircle2, AlertTriangle, DollarSign, Layers, MessageSquare, FileDown, Clock,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -12,8 +12,7 @@ import StatCard from '../../components/common/StatCard';
 import PeriodStepper from '../../components/common/PeriodStepper';
 import Notice from '../../components/common/Notice';
 import Badge from '../../components/common/Badge';
-import Button from '../../components/common/Button';
-import { LoadingState, EmptyState } from '../../components/common/StateViews';
+import { LoadingState } from '../../components/common/StateViews';
 import usePestanaEnUrl from '../../plataforma/usePestanaEnUrl';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -24,10 +23,11 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import {
     ESTADOS_MES, ESTADOS_SOLICITUD, resumenDelMes, mezclaDelMes, totalesDePauta, textoDePieza, pilarDe, formatoDe,
+    ultimoCambioPorPieza, esDeMarca, asignadoEnPauta,
 } from '@nucleo/utils/marketing';
 import {
     fetchCatalogos, fetchMes, crearMes, fetchPiezas, fetchComentarios, fetchSolicitudes, fetchPersonas,
-    firmarDisenos, moverPieza, fetchAjustes, fetchFechasEspeciales, fetchPromocionesLigables, fetchEfectoEnVentas,
+    firmarDisenos, moverPieza, fetchAjustes, fetchFechasEspeciales, fetchPromocionesLigables, fetchEfectoEnVentas, fetchHistorial,
 } from '@nucleo/data/marketing';
 import { registrarEgreso } from '@nucleo/data/egreso';
 import TabCalendario from './TabCalendario';
@@ -57,7 +57,7 @@ import { DecisionMesModal, DatosDelMesModal } from './MesModales';
  * (planificar, diseñar, pautar) y aprobar (revisar el calendario).
  */
 export default function MarketingView() {
-    const { hasPermission, user } = useAuth();
+    const { hasPermission, user, isSU } = useAuth();
     const puedeEditar = hasPermission('marketing', 'can_edit');
     const puedeAprobar = hasPermission('marketing', 'can_approve');
     const yoId = user?.id;
@@ -97,6 +97,7 @@ export default function MarketingView() {
     const [mesFila, setMesFila] = useState(null);
     const [piezas, setPiezas] = useState([]);
     const [comentarios, setComentarios] = useState([]);
+    const [historial, setHistorial] = useState([]);
     const [solicitudes, setSolicitudes] = useState([]);
     const [personas, setPersonas] = useState({});
     const [firmadas, setFirmadas] = useState(new Map());
@@ -120,9 +121,12 @@ export default function MarketingView() {
                 fetchCatalogos(), fetchMes(mes), fetchSolicitudes(), fetchAjustes(), fetchFechasEspeciales(),
                 fetchPromocionesLigables(), fetchMes(correrMes(mesSV(), 1)),
             ]);
-            const [ps, cs] = fila ? await Promise.all([fetchPiezas(fila.id), fetchComentarios(fila.id)]) : [[], []];
+            const [ps, cs, hs] = fila
+                ? await Promise.all([fetchPiezas(fila.id), fetchComentarios(fila.id), fetchHistorial(fila.id)])
+                : [[], [], []];
             const [gente, firmas] = await Promise.all([
-                fetchPersonas([...cs.map((c) => c.autor_id), ...sols.map((s) => s.solicitado_por), fila?.publicado_por, fila?.aprobado_por]),
+                fetchPersonas([...cs.map((c) => c.autor_id), ...sols.map((s) => s.solicitado_por), ...hs.map((h) => h.actor),
+                    ...ps.map((p) => p.created_by), fila?.publicado_por, fila?.aprobado_por]),
                 firmarDisenos(ps),
             ]);
             setCatalogos(cat);
@@ -133,6 +137,7 @@ export default function MarketingView() {
             setMesFila(fila);
             setPiezas(ps);
             setComentarios(cs);
+            setHistorial(hs);
             setSolicitudes(sols);
             setPersonas(gente);
             setFirmadas(firmas);
@@ -150,7 +155,7 @@ export default function MarketingView() {
     const marcasPorId = useMemo(() => Object.fromEntries(catalogos.marcas.map((m) => [m.id, m])), [catalogos.marcas]);
 
     const visibles = useMemo(() => piezas
-        .filter((p) => !fMarca || String(p.marca_id) === String(fMarca))
+        .filter((p) => !fMarca || esDeMarca(p, fMarca))
         .filter((p) => !busqueda || tokenMatch(busqueda, textoDePieza(p, marcasPorId))),
     [piezas, fMarca, busqueda, marcasPorId]);
 
@@ -164,6 +169,13 @@ export default function MarketingView() {
         }
         return m;
     }, [comentarios]);
+    const ultimos = useMemo(() => ultimoCambioPorPieza(historial), [historial]);
+    const marcasDe = useCallback((p) => (p.marcas?.length ? p.marcas : [p.marca_id])
+        .map((id) => marcasPorId[id]).filter(Boolean), [marcasPorId]);
+    // Sólo quien creó la pieza la mueve (la base lo vuelve a exigir).
+    const puedeMoverla = useCallback((p) => puedeEditar && (!p.created_by || p.created_by === yoId || isSU),
+        [puedeEditar, yoId, isSU]);
+
     const comentariosDelMes = useMemo(() => comentarios.filter((c) => !c.pieza_id), [comentarios]);
 
     const resumen = useMemo(() => resumenDelMes(piezas), [piezas]);
@@ -353,17 +365,13 @@ export default function MarketingView() {
                     onAbrir={setSolicitudAbierta} onNueva={() => setSolicitudAbierta({})} />
             );
         }
-        if (!mesFila) {
-            return (
-                <EmptyState icon={Sparkles} title={`Sin calendario para ${etiquetaMes(mes)}`}
-                    subtitle={puedeEditar ? 'Empieza a planificar las publicaciones del mes.' : 'El diseñador todavía no empezó este mes.'}
-                    action={puedeEditar ? <Button icon={Plus} onClick={() => nuevaPieza(null)}>Agregar la primera pieza</Button> : undefined} />
-            );
-        }
+        // Sin el mes creado todavía, el calendario se pinta igual (pedido del
+        // usuario): tocar un día lo crea. Las tablas de abajo quedan vacías.
         if (tab === 'tablero') {
             return (
-                <TabTablero piezas={visibles} marcas={marcasPorId} comentariosPorPieza={comentariosPorPieza}
-                    puedeEditar={puedeEditar} onAbrir={abrirPieza} onMover={mover} />
+                <TabTablero piezas={visibles} marcasDe={marcasDe} comentariosPorPieza={comentariosPorPieza}
+                    ultimos={ultimos} personas={personas}
+                    puedeMoverla={puedeMoverla} onAbrir={abrirPieza} onMover={mover} />
             );
         }
         if (tab === 'pauta') {
@@ -374,11 +382,11 @@ export default function MarketingView() {
         }
         return (
             <div className="space-y-6">
-                <TabCalendario mes={mes} piezas={visibles} marcas={marcasPorId} comentariosPorPieza={comentariosPorPieza}
-                    especiales={fechasEspeciales}
-                    puedeEditar={puedeEditar} onAbrir={abrirPieza}
+                <TabCalendario mes={mes} piezas={visibles} marcasDe={marcasDe} comentariosPorPieza={comentariosPorPieza}
+                    ultimos={ultimos} personas={personas} especiales={fechasEspeciales}
+                    puedeEditar={puedeEditar} puedeMoverla={puedeMoverla} onAbrir={abrirPieza}
                     onNueva={(fecha, prellenado) => nuevaPieza(fecha, prellenado)} onMover={mover} />
-                {(publicado || comentariosDelMes.length > 0) && (
+                {mesFila && (publicado || comentariosDelMes.length > 0) && (
                     <section data-surface="card" className="p-4 space-y-3">
                         <h3 className="text-label uppercase tracking-wide font-semibold text-content-2 flex items-center gap-1.5">
                             <MessageSquare size={13} /> Comentarios del mes
@@ -474,12 +482,14 @@ export default function MarketingView() {
                     onClose={() => (piezaAbierta ? abrirPieza(null) : setNueva(null))}
                     mes={mesFila} pieza={piezaAbierta || nueva?.prellenado} fechaInicial={nueva?.fecha}
                     catalogos={catalogos} promociones={promociones} personas={personas} comentarios={comentarios} firmadas={firmadas}
+                    historial={historial} piezasDelMes={piezas} esSU={isSU}
                     puedeEditar={puedeEditar} puedeAprobar={puedeAprobar} yoId={yoId}
                     onCambio={recargar} onEditarPauta={(p) => { abrirPieza(null); setPautaId(p.id); }} />
             )}
             {pautaDe && (
                 <PautaModal key={pautaDe.id} open onClose={() => setPautaId(null)} pieza={pautaDe}
-                    redes={catalogos.redes} onCambio={recargar} />
+                    redes={catalogos.redes} limite={Number(mesFila?.presupuesto_pauta) || 0}
+                    otros={asignadoEnPauta(piezas, pautaDe.id)} onCambio={recargar} />
             )}
             {solicitudAbierta && (
                 <SolicitudModal key={solicitudAbierta.id || 'nueva'} open onClose={() => setSolicitudAbierta(null)}
@@ -490,7 +500,8 @@ export default function MarketingView() {
                 <DecisionMesModal key={decision} modo={decision} mes={mesFila} resumen={resumen}
                     onClose={() => setDecision(null)} onCambio={recargar} />
             )}
-            {datosMes && <DatosDelMesModal open mes={mesFila} onClose={() => setDatosMes(false)} onCambio={recargar} />}
+            {datosMes && <DatosDelMesModal open mes={mesFila} puedeAprobar={puedeAprobar} asignado={pauta.presupuesto}
+                onClose={() => setDatosMes(false)} onCambio={recargar} />}
             <AjustesModal open={ajustes} onClose={() => setAjustes(false)} marcas={catalogos.marcas} redes={catalogos.redes}
                 ajustes={ajustesMes} fechas={fechasEspeciales} puedeEditar={puedeEditar} puedeAprobar={puedeAprobar}
                 onCambio={recargar} />

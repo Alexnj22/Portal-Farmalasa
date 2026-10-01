@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { Plus, CalendarDays, Star } from 'lucide-react';
+import { Plus, Star } from 'lucide-react';
 import Button from '../../components/common/Button';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
-import { EmptyState } from '../../components/common/StateViews';
 import useMediaQuery from '../../plataforma/useMediaQuery';
 import { CORTE_TELEFONO } from '../../components/common/usarExpediente';
 import { hoySV, fechaTexto } from '@nucleo/utils/fecha';
@@ -18,7 +17,8 @@ import FichaDePieza from './FichaDePieza';
  * para agregar ahí.
  */
 export default function TabCalendario({
-    mes, piezas, marcas, comentariosPorPieza, especiales, puedeEditar, onAbrir, onNueva, onMover,
+    mes, piezas, marcasDe, comentariosPorPieza, ultimos, personas, especiales, puedeEditar, puedeMoverla,
+    onAbrir, onNueva, onMover,
 }) {
     const enTelefono = useMediaQuery(CORTE_TELEFONO);
     const semanas = useMemo(() => semanasDelMes(mes), [mes]);
@@ -32,27 +32,30 @@ export default function TabCalendario({
     const [sobre, setSobre] = useState(null);   // el día sobre el que se arrastra
 
     if (enTelefono) {
-        const dias = semanas.flat().filter(Boolean).filter((d) => porDia[d]?.length || fechas[d]);
-        if (!dias.length) {
-            return (
-                <EmptyState icon={CalendarDays} title="Sin piezas este mes"
-                    subtitle={puedeEditar ? 'Agrega la primera pieza del calendario.' : 'El diseñador todavía no planificó este mes.'}
-                    action={puedeEditar ? <Button icon={Plus} onClick={() => onNueva(null)}>Agregar pieza</Button> : undefined} />
-            );
-        }
+        // El mes entero, día por día, aunque esté vacío: el calendario se ve
+        // siempre (pedido del usuario) y cada día vacío es donde se agrega.
+        const dias = semanas.flat().filter(Boolean);
         return (
-            <div className="space-y-4">
+            <div className="space-y-3">
                 {dias.map((d) => (
                     <section key={d} className="space-y-2">
-                        <h3 className={`text-label uppercase tracking-wide font-semibold ${d === hoy ? 'text-brand' : 'text-content-2'}`}>
-                            {fechaTexto(d, { weekday: 'long', day: 'numeric', month: 'long' })}
-                        </h3>
+                        <div className="flex items-center justify-between gap-2">
+                            <h3 className={`text-label uppercase tracking-wide font-semibold ${d === hoy ? 'text-brand' : 'text-content-2'}`}>
+                                {fechaTexto(d, { weekday: 'long', day: 'numeric', month: 'long' })}
+                            </h3>
+                            {puedeEditar && (
+                                <Button variant="ghost" size="xs" iconOnly icon={Plus}
+                                    title={`Agregar pieza el ${fechaTexto(d, { day: 'numeric', month: 'long' })}`}
+                                    onClick={() => onNueva(d)} />
+                            )}
+                        </div>
                         {(fechas[d] || []).map((f) => (
                             <MarcaDeFecha key={f.id} fecha={f} puedeEditar={puedeEditar} onUsar={() => desdeFecha(f)} />
                         ))}
                         {(porDia[d] || []).map((p) => (
-                            <FichaDePieza key={p.id} pieza={p} marca={marcas[p.marca_id]}
-                                comentarios={comentariosPorPieza[p.id]} onAbrir={() => onAbrir(p)} grande />
+                            <FichaDePieza key={p.id} pieza={p} marcas={marcasDe(p)}
+                                comentarios={comentariosPorPieza[p.id]} cambio={ultimos[p.id]} personas={personas}
+                                onAbrir={() => onAbrir(p)} grande />
                         ))}
                     </section>
                 ))}
@@ -65,7 +68,7 @@ export default function TabCalendario({
         setSobre(null);
         const id = e.dataTransfer.getData('text/pieza');
         const pieza = piezas.find((p) => p.id === id);
-        if (pieza && pieza.fecha !== fecha) onMover(pieza, { fecha });
+        if (pieza && pieza.fecha !== fecha && puedeMoverla(pieza)) onMover(pieza, { fecha });
     };
 
     return (
@@ -102,9 +105,9 @@ export default function TabCalendario({
                                     <MarcaDeFecha key={f.id} fecha={f} puedeEditar={puedeEditar} onUsar={() => desdeFecha(f)} />
                                 ))}
                                 {lista.map((p) => (
-                                    <FichaDePieza key={p.id} pieza={p} marca={marcas[p.marca_id]}
+                                    <FichaDePieza key={p.id} pieza={p} marcas={marcasDe(p)}
                                         comentarios={comentariosPorPieza[p.id]}
-                                        arrastrable={puedeEditar} onAbrir={() => onAbrir(p)} />
+                                        arrastrable={puedeMoverla(p)} onAbrir={() => onAbrir(p)} />
                                 ))}
                             </div>
                         );

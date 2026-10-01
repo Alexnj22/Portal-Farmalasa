@@ -12026,6 +12026,71 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_historial: {
+        Row: {
+          a: string | null
+          actor: string | null
+          created_at: string
+          de: string | null
+          evento: string
+          id: number
+          mes_id: string
+          pieza_id: string | null
+          titulo: string
+        }
+        Insert: {
+          a?: string | null
+          actor?: string | null
+          created_at?: string
+          de?: string | null
+          evento: string
+          id?: never
+          mes_id: string
+          pieza_id?: string | null
+          titulo: string
+        }
+        Update: {
+          a?: string | null
+          actor?: string | null
+          created_at?: string
+          de?: string | null
+          evento?: string
+          id?: never
+          mes_id?: string
+          pieza_id?: string | null
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_historial_actor_fkey"
+            columns: ["actor"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_historial_actor_fkey"
+            columns: ["actor"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_historial_mes_id_fkey"
+            columns: ["mes_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_meses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_historial_pieza_id_fkey"
+            columns: ["pieza_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_piezas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketing_marcas: {
         Row: {
           activo: boolean
@@ -12222,6 +12287,7 @@ export type Database = {
           hora: string | null
           id: string
           marca_id: number
+          marcas: number[]
           mes_id: string
           notas: string | null
           pautar: boolean
@@ -12247,6 +12313,7 @@ export type Database = {
           hora?: string | null
           id?: string
           marca_id: number
+          marcas?: number[]
           mes_id: string
           notas?: string | null
           pautar?: boolean
@@ -12272,6 +12339,7 @@ export type Database = {
           hora?: string | null
           id?: string
           marca_id?: number
+          marcas?: number[]
           mes_id?: string
           notas?: string | null
           pautar?: boolean
@@ -12380,6 +12448,8 @@ export type Database = {
           prioridad: string
           respuesta: string | null
           solicitado_por: string
+          tamano: string | null
+          tipo: string
           titulo: string
           updated_at: string
         }
@@ -12394,6 +12464,8 @@ export type Database = {
           prioridad?: string
           respuesta?: string | null
           solicitado_por?: string
+          tamano?: string | null
+          tipo?: string
           titulo: string
           updated_at?: string
         }
@@ -12408,6 +12480,8 @@ export type Database = {
           prioridad?: string
           respuesta?: string | null
           solicitado_por?: string
+          tamano?: string | null
+          tipo?: string
           titulo?: string
           updated_at?: string
         }

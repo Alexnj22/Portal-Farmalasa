@@ -64,10 +64,8 @@ export async function crearMes(mes) {
 }
 
 export async function actualizarMes(id, cambios) {
-    const fila = {
-        objetivo: cambios.objetivo?.trim() || null,
-        presupuesto_pauta: Number(cambios.presupuesto_pauta) || 0,
-    };
+    const fila = { objetivo: cambios.objetivo?.trim() || null };
+    if ('presupuesto_pauta' in cambios) fila.presupuesto_pauta = Number(cambios.presupuesto_pauta) || 0;
     const data = sinError(await supabase.from('marketing_meses').update(fila).eq('id', id).select().single());
     anotar('MARKETING_MES_EDITAR', id, fila);
     return data;
@@ -102,7 +100,7 @@ export async function fetchPiezas(mesId) {
     }));
 }
 
-const CAMPOS_PIEZA = ['marca_id', 'fecha', 'hora', 'formato', 'redes', 'pilar', 'titulo', 'copy',
+const CAMPOS_PIEZA = ['marca_id', 'marcas', 'fecha', 'hora', 'formato', 'redes', 'pilar', 'titulo', 'copy',
     'hashtags', 'notas', 'estado', 'pautar', 'solicitud_id', 'promocion_id', 'enlace_publicado', 'publicado_en'];
 
 function limpiarPieza(p) {
@@ -268,6 +266,7 @@ export async function crearSolicitud(s, autorId) {
     const data = sinError(await supabase.from('marketing_solicitudes').insert({
         titulo: s.titulo.trim(), descripcion: s.descripcion?.trim() || null, marca_id: s.marca_id || null,
         formato: s.formato || null, fecha_deseada: s.fecha_deseada || null, prioridad: s.prioridad || 'normal',
+        tipo: s.tipo || 'digital', tamano: s.tipo === 'impreso' ? (s.tamano?.trim() || null) : null,
         solicitado_por: autorId,
     }).select().single());
     anotar('MARKETING_SOLICITUD_CREAR', data.id, { titulo: data.titulo, prioridad: data.prioridad });
@@ -316,6 +315,15 @@ export async function fetchPromocionesLigables() {
 /** Ventas de los productos de la promoción durante la pauta contra antes. */
 export async function fetchEfectoEnVentas(piezaId) {
     return sinError(await supabase.rpc('marketing_efecto_en_ventas', { p_pieza_id: piezaId }));
+}
+
+// ── Historial ──────────────────────────────────────────────────────────────
+
+/** Los cambios del mes, del más nuevo al más viejo (decenas por mes, no miles). */
+export async function fetchHistorial(mesId) {
+    return sinError(await supabase.from('marketing_historial')
+        .select('id, pieza_id, titulo, evento, de, a, actor, created_at')
+        .eq('mes_id', mesId).order('created_at', { ascending: false }).limit(500)) || [];
 }
 
 // ── Personas ───────────────────────────────────────────────────────────────

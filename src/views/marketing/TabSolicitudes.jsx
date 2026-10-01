@@ -53,7 +53,11 @@ export default function TabSolicitudes({ solicitudes, marcas, personas, busqueda
                         <DataCell>
                             <div className="min-w-0">
                                 <p className="text-body-sm font-semibold text-content truncate">{s.titulo}</p>
-                                {s.formato && <p className="text-micro text-content-3">{formatoDe(s.formato).label}</p>}
+                                {(s.formato || s.tipo === 'impreso') && (
+                                    <p className="text-micro text-content-3">
+                                        {[s.tipo === 'impreso' ? 'Impreso' : null, s.formato && formatoDe(s.formato).label, s.tamano].filter(Boolean).join(' · ')}
+                                    </p>
+                                )}
                             </div>
                         </DataCell>
                         <DataCell hideBelow="md">{marcas[s.marca_id]?.nombre || '—'}</DataCell>

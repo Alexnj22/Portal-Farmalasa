@@ -63,7 +63,8 @@ export function construirInformeDoc({ mes, piezas, marcas, redes, efectos = {}, 
     const estadoMes = ESTADOS_MES[mes.estado]?.label || mes.estado;
 
     const porMarca = {};
-    for (const p of piezas) porMarca[p.marca_id] = (porMarca[p.marca_id] || 0) + 1;
+    const marcasDe = (p) => (p.marcas?.length ? p.marcas : [p.marca_id]);
+    for (const p of piezas) for (const m of marcasDe(p)) porMarca[m] = (porMarca[m] || 0) + 1;
 
     const conEfecto = piezas.filter((p) => p.promocion_id && efectos[p.id]?.durante);
 
@@ -114,7 +115,7 @@ export function construirInformeDoc({ mes, piezas, marcas, redes, efectos = {}, 
                 [th('Fecha'), th('Marca'), th('Formato'), th('Pieza'), th('Redes'), th('Estado')],
                 piezas.map((p) => [
                     fechaNumerica(p.fecha, { anio: false }),
-                    marcas[p.marca_id]?.nombre || '—',
+                    marcasDe(p).map((m) => marcas[m]?.nombre).filter(Boolean).join(', ') || '—',
                     formatoDe(p.formato).label,
                     { text: p.titulo + (p.promocion_id && promociones[p.promocion_id] ? `\nPromoción: ${promociones[p.promocion_id].nombre}` : ''), fontSize: 8 },
                     (p.redes || []).map(nombreRed).join(', '),

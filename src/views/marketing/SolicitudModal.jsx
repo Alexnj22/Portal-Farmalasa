@@ -16,10 +16,11 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hoySV, fechaTexto } from '@nucleo/utils/fecha';
-import { FORMATOS, PRIORIDADES, prioridadDe, estadoSolicitudDe, formatoDe } from '@nucleo/utils/marketing';
+import { FORMATOS, FORMATOS_IMPRESOS, PRIORIDADES, prioridadDe, estadoSolicitudDe, formatoDe, tamanosDe } from '@nucleo/utils/marketing';
 import { crearSolicitud, responderSolicitud } from '@nucleo/data/marketing';
 
-const VACIA = { titulo: '', descripcion: '', marca_id: '', formato: '', fecha_deseada: '', prioridad: 'normal' };
+const VACIA = { tipo: 'digital', titulo: '', descripcion: '', marca_id: '', formato: '', tamano: '', fecha_deseada: '', prioridad: 'normal' };
+const TIPOS = [{ value: 'digital', label: 'Para redes' }, { value: 'impreso', label: 'Impreso' }];
 const CLAVE_BORRADOR = 'marketing_solicitud_nueva';
 
 /**
@@ -42,9 +43,15 @@ export default function SolicitudModal({ open, onClose, solicitud, marcas, perso
     }, [recuperado, descartar]);
 
     const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v?.target ? v.target.value : v }));
+    const impreso = form.tipo === 'impreso';
+    // Los tamaños sugeridos del formato, más el que se haya escrito a mano
+    // (el selector deja crear uno libre).
+    const opcionesTamano = [...new Set([...tamanosDe(form.formato), ...(form.tamano ? [form.tamano] : [])])]
+        .map((t) => ({ value: t, label: t }));
+    const falta = !form.titulo.trim() || (impreso && (!form.formato || !form.tamano?.trim()));
 
     const enviar = async () => {
-        if (!form.titulo.trim()) return;
+        if (falta) return;
         setGuardando(true);
         try {
             await crearSolicitud(form, yoId);
@@ -65,7 +72,8 @@ export default function SolicitudModal({ open, onClose, solicitud, marcas, perso
             const fila = await responderSolicitud(solicitud.id, estado, respuesta);
             onCambio?.();
             onClose();
-            if (estado === 'aceptada') onAceptar?.(fila);
+            // Lo impreso no va al calendario de redes: se acepta y se entrega.
+            if (estado === 'aceptada' && fila.tipo !== 'impreso') onAceptar?.(fila);
         } catch (err) {
             showToast('No se pudo responder', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
         } finally {
@@ -84,8 +92,10 @@ export default function SolicitudModal({ open, onClose, solicitud, marcas, perso
                 <LiquidModal.Body>
                     <div className="space-y-4">
                         {hayBorrador && <AvisoDeBorrador cuando={cuando} onRecuperar={reponer} onDescartar={descartar} />}
+                        <SegmentedControl value={form.tipo} label="Tipo de pieza" options={TIPOS}
+                            onChange={(v) => setForm((f) => ({ ...f, tipo: v, formato: '', tamano: '' }))} />
                         <PortalInput label="Qué necesitas" name="titulo" value={form.titulo} onChange={set('titulo')}
-                            placeholder="Ej. Post de la promoción de vitaminas" required />
+                            placeholder={impreso ? 'Ej. Banner de la promoción de vitaminas' : 'Ej. Post de la promoción de vitaminas'} required />
                         <PortalTextarea label="Detalle" name="descripcion" value={form.descripcion} onChange={set('descripcion')}
                             rows={4} placeholder="Producto, precio, vigencia, a quién va dirigido, referencias…" />
                         <div className="grid grid-cols-2 gap-3">
@@ -93,10 +103,18 @@ export default function SolicitudModal({ open, onClose, solicitud, marcas, perso
                                 <LiquidSelect value={form.marca_id} onChange={set('marca_id')} placeholder="Marca"
                                     options={marcas.filter((m) => m.activo).map((m) => ({ value: m.id, label: m.nombre }))} />
                             </Campo>
-                            <Campo rotulo="Formato">
-                                <LiquidSelect value={form.formato} onChange={set('formato')} placeholder="Cualquiera"
-                                    options={FORMATOS.map((f) => ({ value: f.value, label: f.label }))} />
+                            <Campo rotulo="Formato" falta={impreso}>
+                                <LiquidSelect value={form.formato} placeholder={impreso ? 'Qué se imprime' : 'Cualquiera'}
+                                    onChange={(v) => setForm((f) => ({ ...f, formato: v, tamano: '' }))}
+                                    options={(impreso ? FORMATOS_IMPRESOS : FORMATOS).map((f) => ({ value: f.value, label: f.label }))} />
                             </Campo>
+                            {impreso && (
+                                <Campo rotulo="Tamaño" falta>
+                                    <LiquidSelect value={form.tamano} onChange={set('tamano')} options={opcionesTamano}
+                                        placeholder={form.formato ? 'Elige o escribe uno' : 'Primero el formato'}
+                                        disabled={!form.formato} creatable onCreateOption={(t) => setForm((f) => ({ ...f, tamano: t }))} />
+                                </Campo>
+                            )}
                             <Campo rotulo="Para cuándo">
                                 <LiquidDatePicker value={form.fecha_deseada} onChange={set('fecha_deseada')} min={hoySV()} />
                             </Campo>
@@ -109,7 +127,7 @@ export default function SolicitudModal({ open, onClose, solicitud, marcas, perso
                 </LiquidModal.Body>
                 <LiquidModal.Footer>
                     <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-                    <Button icon={Send} loading={guardando} disabled={!form.titulo.trim()} onClick={enviar}>Enviar</Button>
+                    <Button icon={Send} loading={guardando} disabled={falta} onClick={enviar}>Enviar</Button>
                 </LiquidModal.Footer>
             </LiquidModal>
         );
@@ -139,7 +157,9 @@ export default function SolicitudModal({ open, onClose, solicitud, marcas, perso
                     {solicitud.descripcion && <p className="text-body-sm text-content whitespace-pre-wrap">{solicitud.descripcion}</p>}
                     <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-body-sm">
                         {marca && <><dt className="text-content-3">Marca</dt><dd>{marca.nombre}</dd></>}
+                        <dt className="text-content-3">Tipo</dt><dd>{solicitud.tipo === 'impreso' ? 'Impreso' : 'Para redes'}</dd>
                         {solicitud.formato && <><dt className="text-content-3">Formato</dt><dd>{formatoDe(solicitud.formato).label}</dd></>}
+                        {solicitud.tamano && <><dt className="text-content-3">Tamaño</dt><dd>{solicitud.tamano}</dd></>}
                         {solicitud.fecha_deseada && <><dt className="text-content-3">Para</dt><dd>{fechaTexto(solicitud.fecha_deseada, { weekday: 'long', day: 'numeric', month: 'long' })}</dd></>}
                     </dl>
                     {puedeEditar && ['nueva', 'aceptada'].includes(solicitud.estado) ? (
@@ -158,7 +178,9 @@ export default function SolicitudModal({ open, onClose, solicitud, marcas, perso
                 {puedeEditar && solicitud.estado === 'nueva' && (
                     <>
                         <Button variant="ghost" icon={X} loading={guardando} onClick={() => responder('rechazada')}>Rechazar</Button>
-                        <Button icon={Check} loading={guardando} onClick={() => responder('aceptada')}>Aceptar y planificar</Button>
+                        <Button icon={Check} loading={guardando} onClick={() => responder('aceptada')}>
+                            {solicitud.tipo === 'impreso' ? 'Aceptar' : 'Aceptar y planificar'}
+                        </Button>
                     </>
                 )}
                 {puedeEditar && solicitud.estado === 'aceptada' && (

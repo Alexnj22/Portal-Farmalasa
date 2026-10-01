@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1124.0 — Reactivar una promoción mueve también su descuento en la caja
+
+Reporte del usuario: reactivó Rinokem y el precio no bajó en la venta. El
+descuento tiene sus propias fechas y reactivar no lo movía (Rinokem además no
+tenía descuento ligado: se había cargado directo en la caja).
+
+- La ventana **Reactivar promoción** ahora lista los descuentos ligados y trae
+  la casilla **«Mover también el descuento hasta el …»**, marcada.
+- Al confirmar, reactiva y después mueve el fin de cada descuento. Relee el
+  descuento justo antes de escribir (no pisa productos agregados en el medio)
+  y nunca lo acorta.
+- Si la caja devuelve avisos (solape, bajo costo) o falla, la promoción queda
+  reactivada y la ventana nombra lo que faltó, con «Moverlo igual» /
+  «Reintentar» / «Dejarlo así».
+- Un descuento cargado directo en la caja no está ligado y no se mueve.
+
 ## v2.1123.0 — Marketing: el planificador de contenido para redes
 
 Módulo nuevo (menú **Marketing**, `/marketing`) para trabajar con el diseñador

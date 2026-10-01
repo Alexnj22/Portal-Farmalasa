@@ -66,6 +66,42 @@ export async function guardarDescuento(payload) {
     throw new Error(data.error || 'No se pudo guardar el descuento.');
 }
 
+/** Los ids de los descuentos que una promoción tiene ligados en la caja. */
+export async function fetchIdsDeDescuentosDePromocion(promocionId) {
+    const { data, error } = await supabase
+        .from('promociones').select('descuentos_erp').eq('id', Number(promocionId)).maybeSingle();
+    if (error) throw error;
+    return (data?.descuentos_erp ?? []).map(Number);
+}
+
+/**
+ * Mueve la fecha de fin de un descuento y nada más.
+ *
+ * Relee el descuento en el momento de escribir, no usa lo que la pantalla leyó
+ * al abrirse: el origen guarda el descuento ENTERO —productos incluidos—, y
+ * entre que se abrió la ventana y se apretó alguien pudo agregarle un producto
+ * desde el sistema de ventas. Mandar la foto vieja se lo llevaría sin error.
+ *
+ * Devuelve lo mismo que `guardarDescuento`: `{ ok }` o `{ avisos }`.
+ */
+export async function moverFinDeDescuento(id, fin, { forzar = false } = {}) {
+    const d = await fetchDescuento(id);
+    // Nunca lo acorta: si ya llega hasta esa fecha o más, se deja como está.
+    if (d.fin >= fin) return { ok: true, sinCambio: true };
+    return guardarDescuento({
+        id: Number(id),
+        descripcion: d.descripcion,
+        tipo: d.tipo,
+        monto: Number(d.monto),
+        inicio: d.inicio,
+        fin,
+        todas_las_salas: d.todas_las_salas === true,
+        branch_id: d.branch_id ?? null,
+        productos: (d.productos ?? []).map((p) => Number(p.id)),
+        forzar,
+    });
+}
+
 /** Borra. El origen no tiene «apagar»: o se mueve la fecha de fin, o se borra. */
 export async function borrarDescuento(id) {
     const data = await llamar({ accion: 'borrar', id: Number(id) });

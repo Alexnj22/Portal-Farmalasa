@@ -1,23 +1,19 @@
-// La distribuidora (Torogoz) en el entorno de pruebas: reponerla cuando el
-// branch se rehace.
+// La distribuidora (Torogoz) en el entorno de pruebas: lo que el branch NO
+// trae solo cuando se rehace.
 //
-// Su esquema vive en `supabase/borradores/distribucion/`, NO en migraciones:
-// todavía no existe en producción, y el branch se construye replicando las
-// migraciones de producción. Así que cada vez que `mantener_al_dia.mjs` rehace
-// el branch, la distribuidora desaparece entera —tablas, funciones, semillas y
-// sus dos edge functions— y nada lo dice: la pantalla contesta «no se pudieron
-// cargar los datos de la empresa». Pasó el 2026-09-30, con quince borradores
-// encima y a media sesión de trabajo.
+// Desde el 2026-10-01 su esquema está en PRODUCCIÓN (33 migraciones
+// `distribucion_00NN_*`), así que el branch lo replica al rehacerse, junto con
+// las semillas 0002 y 0005 (que sólo siembran donde existe la cuenta
+// `pruebas`). Lo que sigue faltando y hace este archivo:
+//   · los datos de muestra de las pruebas de pantalla (tablero e historial);
+//   · las tres edge functions, con `CORREO_MODO=simulado` (en pruebas no se le
+//     manda un correo a nadie).
+// Antes este archivo corría los borradores; ya no existen.
 //
 // Dos usos:
 //   · `mantener_al_dia.mjs` llama a `reponerDistribucion(sql, ref)` en cada
-//     corrida; si `dist_emisores` ya existe no hace nada.
-//   · a mano: `node scripts/entorno-pruebas/distribucion.mjs [--forzar]` repone
-//     en el branch de `.env.staging` con el CLI de Supabase (el del llavero).
-//
-// Las edge functions se despliegan con el CLI si está instalado (en GitHub lo
-// instala el workflow). Al migrar la distribuidora a producción, este archivo
-// se borra: sus borradores pasan a ser migraciones y el branch los trae solo.
+//     corrida; si ya hay pedidos de muestra no hace nada.
+//   · a mano: `node scripts/entorno-pruebas/distribucion.mjs [--forzar]`.
 
 import fs from 'node:fs';
 import os from 'node:os';
@@ -27,33 +23,38 @@ import { fileURLToPath } from 'node:url';
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 const raiz = path.resolve(aqui, '..', '..');
-const BORRADORES = path.join(raiz, 'supabase', 'borradores', 'distribucion');
 /**
- * Después de los borradores: los datos de muestra que usan las pruebas. El
+ * Los datos de muestra que usan las pruebas. El
  * historial del tablero va PRIMERO: los cobros y el documento rechazado de
  * `distribucion_pruebas.sql` se siembran sobre él.
  */
 const SEMILLAS = ['distribucion_tablero_pruebas.sql', 'distribucion_pruebas.sql'];
 export const FUNCIONES = ['distribucion-dte', 'distribucion-comprobante', 'distribucion-correo'];
 
-/** Los archivos a correr, en orden: `0001_…` a `NNNN_…` y después las semillas. */
+/** Los archivos a correr, en orden: las semillas de las pruebas. */
 export function archivosDeDistribucion() {
-    const borradores = fs.readdirSync(BORRADORES).filter(f => /^\d{4}_.+\.sql$/.test(f)).sort()
-        .map(f => path.join(BORRADORES, f));
-    return [...borradores, ...SEMILLAS.map(f => path.join(aqui, f))];
+    return SEMILLAS.map(f => path.join(aqui, f));
 }
 
-/** ¿Hay que reponer? — sin `dist_emisores` el branch no tiene la distribuidora. */
+/** ¿Está el esquema (lo trae el branch) y tiene datos de muestra? */
 export const CONSULTA_EXISTE = "select to_regclass('public.dist_emisores') is not null as existe";
+const CONSULTA_DATOS = 'select exists (select 1 from public.dist_pedidos) as hay';
 
 /**
- * Corre los borradores con el `sql(ref, query, { escribe })` de quien llama.
- * Devuelve cuántos archivos corrió (0 si ya estaba).
+ * Siembra los datos de muestra y despliega las funciones con el
+ * `sql(ref, query, { escribe })` de quien llama. Devuelve cuántos archivos
+ * corrió (0 si ya estaba).
  */
 export async function reponerDistribucion(sql, ref, { forzar = false, log = console.log } = {}) {
     const [fila] = await sql(ref, CONSULTA_EXISTE);
-    if (fila?.existe && !forzar) {
-        log('✓ Distribuidora: ya está en el branch.');
+    if (!fila?.existe) {
+        // El esquema viene de las migraciones de producción: si falta, el
+        // branch está viejo y lo que corresponde es rehacerlo, no parcharlo.
+        throw new Error('El branch no tiene el esquema de la distribuidora: está atrasado respecto de producción (rehacerlo).');
+    }
+    const [datos] = await sql(ref, CONSULTA_DATOS);
+    if (datos?.hay && !forzar) {
+        log('✓ Distribuidora: ya tiene sus datos de muestra.');
         return 0;
     }
     const archivos = archivosDeDistribucion();
@@ -62,7 +63,7 @@ export async function reponerDistribucion(sql, ref, { forzar = false, log = cons
         log(`  · ${path.basename(f)}`);
     }
     desplegarFunciones(ref, { log });
-    log(`✓ Distribuidora repuesta: ${archivos.length} archivos.`);
+    log(`✓ Distribuidora sembrada: ${archivos.length} archivos.`);
     return archivos.length;
 }
 

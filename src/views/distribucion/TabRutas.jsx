@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-    MapPin, ShoppingBag, XCircle, UserRound, DoorClosed, UserX, HandCoins, Navigation, Loader2, CheckCircle2, Route, ArrowUp, ArrowDown, Save, Plus, Phone, AlertTriangle,
+    MapPin, ShoppingBag, XCircle, UserRound, DoorClosed, UserX, HandCoins, Navigation, Loader2, CheckCircle2, Route, ArrowUp, ArrowDown, Save, Plus, Phone, AlertTriangle, Square,
 } from 'lucide-react';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
@@ -21,8 +21,11 @@ import { hoySV, diasDesde } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import {
     fetchRutaDelDia, registrarVisita, fetchRutas, guardarRuta, fetchClientesDeRuta, ordenarRuta, fetchVendedores, mensajeDeDistribucion,
+    fetchRecorrido,
 } from '@nucleo/data/distribucion';
 import { rutaVentaA } from './rutas';
+import { useEnRuta, esApp } from './rastreo';
+import { hora12 } from '@nucleo/utils/hora';
 import { rotuloTipoCliente } from './comun';
 
 // Rutas y visitas (borrador 0027). «Hoy»: los clientes de las rutas que tocan
@@ -45,7 +48,6 @@ const ROTULO_RESULTADO = Object.fromEntries(RESULTADOS.map(r => [r.value, r.labe
 // pregunta nada: además `vercel.json` manda `geolocation=()`, que la apaga en
 // todo el sitio. El plugin nativo no depende de esa cabecera: pide su propio
 // permiso al sistema la primera vez.
-const esApp = () => !!window.Capacitor?.isNativePlatform?.();
 let geoPromise = null;
 function getGeo() {
     if (!geoPromise) {
@@ -84,9 +86,13 @@ function Hoy({ puedeConfigurar }) {
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState('');
     const [ocupado, setOcupado] = useState(null);
+    const [recorrido, setRecorrido] = useState(null);
+    const enRuta = useEnRuta(user?.id);
 
     const cargar = useCallback(async () => {
         if (!vendedorId) return;
+        // El recorrido es ayuda: si no se puede leer, la ruta abre igual.
+        fetchRecorrido(vendedorId, fecha).then(setRecorrido).catch(e => { console.error('recorrido', e); setRecorrido(null); });
         setCargando(true);
         setError('');
         try { setDatos(await fetchRutaDelDia(vendedorId, fecha)); } catch (e) { console.error('ruta', e); setError(mensajeDeDistribucion(e)); } finally { setCargando(false); }
@@ -98,6 +104,17 @@ function Hoy({ puedeConfigurar }) {
     const n = { total: clientes.length, venta: clientes.filter(c => c.estado === 'venta').length, visitados: clientes.filter(c => c.estado !== 'pendiente').length };
     const esHoy = fecha === hoySV();
     const esMio = vendedorId === user?.id;
+
+    const iniciarRuta = () => {
+        enRuta.iniciar();
+        useStaff.getState().appendAuditLog('DISTRIBUCION_RUTA_INICIADA', String(user?.id ?? ''), { fecha });
+        showToast('Ruta iniciada', 'La app anota tu ubicación cada minuto hasta que termines la ruta.', 'success');
+    };
+    const terminarRuta = () => {
+        enRuta.terminar();
+        useStaff.getState().appendAuditLog('DISTRIBUCION_RUTA_TERMINADA', String(user?.id ?? ''), { fecha });
+        showToast('Ruta terminada', 'Se dejó de anotar tu ubicación.', 'info');
+    };
 
     const visitar = async (c, resultado) => {
         setOcupado(`${c.id}:${resultado}`);
@@ -128,7 +145,10 @@ function Hoy({ puedeConfigurar }) {
                 </CarrilCards>
                 <div className="flex justify-end min-w-0">
                     <FilterBar onClear={() => { cambiar('fecha', ''); cambiar('vendedor', ''); }}
-                        activeCount={(fecha !== hoySV() ? 1 : 0) + (params.get('vendedor') ? 1 : 0)}>
+                        activeCount={(fecha !== hoySV() ? 1 : 0) + (params.get('vendedor') ? 1 : 0)}
+                        acciones={esMio && esHoy && esApp() ? [enRuta.activa
+                            ? { key: 'ruta', icon: Square, label: 'Terminar ruta', variant: 'quiet', tone: 'danger', onClick: terminarRuta }
+                            : { key: 'ruta', icon: Navigation, label: 'Iniciar ruta', variant: 'primary', onClick: iniciarRuta }] : []}>
                         <FilterBar.Section active={fecha !== hoySV()} onClear={() => cambiar('fecha', '')} label="fecha">
                             <FiltroDia fecha={fecha} max={null} onChange={(d) => cambiar('fecha', d !== hoySV() ? d : '')} />
                         </FilterBar.Section>
@@ -143,6 +163,19 @@ function Hoy({ puedeConfigurar }) {
                 </div>
             </div>
             {datos?.rutas?.length > 0 && <p className="text-caption text-content-3">{datos.rutas.map(r => r.nombre).join(' · ')}</p>}
+            {esMio && esHoy && enRuta.activa && esApp() && (
+                <Notice variant="success" icon={Navigation} compact data-en-ruta>
+                    En ruta: tu ubicación se anota cada minuto, aunque bloquees el teléfono. Al terminar, toca «Terminar ruta».
+                </Notice>
+            )}
+            {recorrido?.ultima && (
+                <p className="text-caption text-content-3 flex flex-wrap items-center gap-x-2" data-recorrido={recorrido.puntos?.length ?? 0}>
+                    <MapPin size={14} className="text-brand-text" />
+                    Última ubicación a las {hora12(recorrido.ultima.at)} · {formatQty(recorrido.puntos?.length ?? 0)} puntos del recorrido
+                    <a className="font-bold text-brand-text underline" target="_blank" rel="noreferrer"
+                        href={`https://www.google.com/maps/search/?api=1&query=${recorrido.ultima.lat},${recorrido.ultima.lng}`}>Ver en el mapa</a>
+                </p>
+            )}
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
             {!cargando && clientes.length === 0 && (
                 <Notice variant="info" icon={Route}>

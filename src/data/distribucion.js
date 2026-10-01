@@ -910,3 +910,19 @@ export async function fetchCamionDelDia(vendedorId, fecha) {
 
 /** La Nota de Remisión que ampara la carga (Código Tributario art. 109). */
 export const emitirNotaRemision = (cargaId) => invocar({ accion: 'nota_remision', carga_id: cargaId });
+
+// ── Rastreo de la ruta (borrador 0033) ─────────────────────────────────────
+
+/** Anota la posición de quien llama (un punto por minuto; lo que llega antes se descarta). */
+export async function registrarPosicion(lat, lng, precision = null) {
+    const { data, error } = await supabase.rpc('dist_registrar_posicion', { p_lat: lat, p_lng: lng, p_precision: precision });
+    if (error) throw error;
+    return data;
+}
+
+/** El recorrido de un vendedor ese día: { ultima: {lat,lng,at} | null, puntos: [[lat,lng], …] }. */
+export async function fetchRecorrido(vendedorId, fecha) {
+    const { data, error } = await supabase.rpc('dist_recorrido', { p_vendedor: vendedorId, p_fecha: fecha });
+    if (error) throw error;
+    return data ?? { ultima: null, puntos: [] };
+}

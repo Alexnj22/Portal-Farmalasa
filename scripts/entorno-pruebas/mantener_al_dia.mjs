@@ -181,8 +181,8 @@ async function herramientas(ref) {
     await sql(ref, leer('permisos_de_la_cuenta_de_pruebas.sql'), { escribe: true });
     await igualarPermisosDeTablas(ref);
     await asegurarOrigenes(ref);
-    // La distribuidora vive en borradores, no en migraciones: rehacer el branch
-    // la borra entera. Se repone si falta (ver distribucion.mjs).
+    // La distribuidora ya está en producción (2026-10-01): el branch trae su
+    // esquema solo. Faltan sus datos de muestra y sus tres funciones.
     await reponerDistribucion(sql, ref);
 }
 

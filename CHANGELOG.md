@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1118.0 — Torogoz en producción (esquema) y rastreo de la ruta
+
+**El esquema de la distribuidora está en producción** (2026-10-01): 33 migraciones `distribucion_00NN_*`, 44 tablas `dist_*` (todas con RLS), 2 crons. Las ve sólo dirección: Gerente General, Administrador, Jefe/a de Talento Humano y Supervisor/a de Ventas (más la cuenta QA, que por regla de producción lo tiene todo). Sin emisor cargado todavía: se carga en Empresa con los datos reales de la S.A.S.
+
+- **Rastreo de la ruta en segundo plano** (0033): «Iniciar ruta» / «Terminar ruta» en Rutas → Hoy, sólo en la app. En ruta, la app anota la posición cada minuto aunque se cambie de pantalla o se bloquee el teléfono (en Android, aviso fijo «Ruta activa»). Dirección ve la última ubicación, los puntos del día y «Ver en el mapa». Un punto por minuto, firmado por quien lo manda, retención de 90 días.
+- Los borradores pasaron a `supabase/migrations/` y se borraron, junto con el script de paso. El entorno de pruebas ya no los repone: el branch trae el esquema de producción y `scripts/entorno-pruebas/distribucion.mjs` sólo siembra los datos de muestra y despliega las funciones.
+
 ## v2.1117.3 — Torogoz: GPS sólo en la app, sólo dirección ve el módulo, script de paso a producción
 
 - **GPS de la visita sólo en la app y sólo al registrar la visita de la ruta** (pedido del usuario). En el navegador no se pregunta nada; en la app se usa el plugin nativo, que no depende del `geolocation=()` de `vercel.json`.

@@ -1,9 +1,9 @@
 # Torogoz a producción — plan (2026-10-01)
 
-Estado: **preparado, sin tocar producción.** La distribuidora vive en el
-entorno de pruebas (32 borradores en `supabase/borradores/distribucion/`, tres
-edge functions, la UI en `/torogoz`). Este documento es el orden para pasarla
-a la base real sin romper un gate ni el portal.
+Estado: **el esquema está en producción desde el 2026-10-01** — 33 migraciones
+`distribucion_00NN_*` (archivos en `supabase/migrations/`), aplicadas por el
+usuario con el script de paso. Los borradores y ese script se borraron. Queda
+lo de las secciones 3 y 4 y publicar la pantalla.
 
 Nace de dos auditorías del 2026-10-01: una de los borradores contra las reglas
 de `CLAUDE.md` y otra de qué exige cada gate. Lo que se pudo corregir sin
@@ -21,7 +21,7 @@ producción ya está corregido en `0032_ajustes_antes_de_produccion.sql`.
 ## 1. Antes de la ventana (sin producción)
 
 - [x] `0032`: REVOKE completo (TRUNCATE ya no queda para `authenticated`), 18 índices de FK, el push que no tumba una solicitud, y el **faltante del camión valorizado** (estaba en $0).
-- [x] `auditoria/areas.mjs`: las 43 tablas `dist_*` y los 2 crons en el área `distribucion`.
+- [x] `auditoria/areas.mjs`: las 44 tablas `dist_*` y los 2 crons en el área `distribucion`.
 - [x] `gate:tipos`: `src/utils/distribucionDocumento.js` en 0 avisos; JSDoc de opciones en `src/data/distribucion.js` para el día que pierda `@ts-nocheck`.
 - [ ] Unir `origin/main` en una rama sobre `sesion/sas-ruta` (main está en 2.1113.x; la rama en 2.1117.x). Quedarse con el `ignoreCommand` de `vercel.json` de main. Bumpear con `npm run version:bump -- minor "Torogoz a producción"`.
 
@@ -38,7 +38,7 @@ falla por lock, se reintenta; no congela el portal.
    `approval_requests_type_check`, que existen en producción y otras sesiones
    tocan. Sacar las tres con `pg_get_functiondef` / `pg_get_constraintdef` en
    el momento y agregarles sólo `DIST_DESCUENTO`.
-2. `apply_migration`, **uno por borrador, en orden 0001 → 0032**, con nombre
+2. `apply_migration`, **uno por borrador, en orden 0001 → 0033**, con nombre
    `distribucion_00NN_<nombre>`. Las semillas 0002 y 0005 pueden entrar (en
    producción no hacen nada: exigen la cuenta `pruebas` o el NIT ficticio) o
    saltarse; entrar mantiene idéntica la historia con el branch.

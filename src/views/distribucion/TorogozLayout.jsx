@@ -12,6 +12,7 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { useVentasSinSenal } from './sinSenal';
+import { useRastreoDeRuta } from './rastreo';
 
 // La casa de la distribuidora: su menú, su marca y nada del portal de las
 // farmacias (decisión del usuario, 2026-09-28: «parecen independientes, así
@@ -101,6 +102,9 @@ export default function TorogozLayout({ children, handleLogout }) {
     const puedeVender = hasPermission('distribucion', 'can_edit');
     const puedeConfigurar = hasPermission('distribucion_config', 'can_edit');
     const pendientes = usePendientes(true);
+    // En ruta, la app sigue la posición aunque se cambie de pantalla o se
+    // bloquee el teléfono (0033). Por eso vive en el marco y no en Rutas.
+    useRastreoDeRuta(puedeVender ? user?.id : null);
     const facturacion = useFacturacionPendiente();
     const showToast = useToastStore(s => s.showToast);
     // Ventas hechas sin señal: se mandan solas al volver la señal, estés en la

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1117.1 — Torogoz: el camión en la liquidación del vendedor
+
+La liquidación ya contaba el efectivo de las ventas del camión; ahora dice qué pasó con la mercadería (borrador 0031): cargado, vendido, lo que volvió a bodega, lo que sigue en el camión y el faltante valorizado al costo del momento, con la nota de quien descargó y el número de la Nota de Remisión.
+
 ## v2.1117.0 — Torogoz: numeración según la norma, descuento del catálogo y autoventa desde el camión
 
 Decisiones del usuario del 30-sep: venta mixta (preventa y camión), ticket sin QR, no reusar un número rechazado, % de descuento por producto como el ERP. Plazos verificados contra la Normativa DTE v2.0 (DGII, 25-may-2026) y el Manual Funcional 2.0.

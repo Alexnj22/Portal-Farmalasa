@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-    Wallet, Receipt, HandCoins, Undo2, AlertTriangle, CheckCircle2, Printer, Loader2, Lock, Unlock, FileText, Banknote, UserRound } from 'lucide-react';
+    Wallet, Receipt, HandCoins, Undo2, AlertTriangle, CheckCircle2, Printer, Loader2, Lock, Unlock, FileText, Banknote, UserRound, Truck } from 'lucide-react';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import Badge from '../../components/common/Badge';
@@ -22,6 +22,7 @@ import { ticketDeLiquidacion } from '@nucleo/utils/distribucionDocumento';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import {
     fetchLiquidacion, fetchLiquidacionesDelDia, cerrarLiquidacion, reabrirLiquidacion, mensajeDeDistribucion, fetchVendedores,
+    fetchCamionDelDia,
 } from '@nucleo/data/distribucion';
 import FilterBar from '../../components/common/FilterBar';
 import FiltroDia from './FiltroDia';
@@ -45,6 +46,45 @@ const COLS_VENTAS = [
 ];
 const rotuloForma = (f) => (f === '13' ? 'A crédito' : FORMA_PAGO.find(x => x.value === f)?.label ?? f);
 
+// La mercadería del camión ese día (0031): el efectivo de esas ventas ya está
+// en la liquidación; esto dice si lo que salió de bodega volvió o se vendió.
+function CamionDelDia({ cargas }) {
+    const t = cargas.reduce((a, g) => ({
+        cargado: a.cargado + Number(g.cargado), vendido: a.vendido + Number(g.vendido), devuelto: a.devuelto + Number(g.devuelto),
+        queda: a.queda + Number(g.queda), faltante: a.faltante + Number(g.faltante), costo: a.costo + Number(g.faltante_costo),
+    }), { cargado: 0, vendido: 0, devuelto: 0, queda: 0, faltante: 0, costo: 0 });
+    const abierta = cargas.some(g => g.estado === 'abierta');
+    const filas = [
+        ['Cargado', t.cargado], ['Vendido', t.vendido], ['Volvió a bodega', t.devuelto],
+        ...(abierta ? [['Sigue en el camión', t.queda]] : []),
+    ];
+    return (
+        <section data-surface="card" className="p-4 flex flex-col gap-3" aria-label="Camión del día" data-camion-del-dia>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-body font-black text-content flex items-center gap-2"><Truck size={16} className="text-brand-text" /> Camión</h3>
+                <span className="text-caption text-content-3">
+                    {cargas.map(g => g.nota_remision ? `NR ${g.nota_remision.slice(-6)}` : 'sin Nota de Remisión').join(' · ')}
+                    {abierta ? ' · todavía no se descarga' : ''}
+                </span>
+            </div>
+            <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {filas.map(([rot, n]) => (
+                    <div key={rot}>
+                        <dt className="text-caption text-content-3">{rot}</dt>
+                        <dd className="text-title font-black tabular-nums text-content">{formatQty(n)}</dd>
+                    </div>
+                ))}
+            </dl>
+            {t.faltante > 0 && (
+                <Notice variant="warning" icon={AlertTriangle} compact data-faltante-camion={t.faltante}>
+                    Faltaron {formatQty(t.faltante)} unidades del camión ({formatMoney(t.costo)} al costo)
+                    {cargas.find(g => g.nota_cierre)?.nota_cierre ? `: ${cargas.find(g => g.nota_cierre).nota_cierre}` : ''}.
+                </Notice>
+            )}
+        </section>
+    );
+}
+
 export default function TabLiquidacion({ emisor, puedeConfigurar }) {
     const { user } = useAuth();
     const showToast = useToastStore(s => s.showToast);
@@ -63,6 +103,7 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
     const [ocupado, setOcupado] = useState('');
     const [reabriendo, setReabriendo] = useState(false);
     const [motivo, setMotivo] = useState('');
+    const [camion, setCamion] = useState([]);   // cargas del camión de ese día (0031)
 
     const cargar = useCallback(async () => {
         setCargando(true);
@@ -72,7 +113,15 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
             setDelDia(lista);
             setVendedores(todos);
             const quien = vendedorId ?? lista[0]?.id ?? null;
-            setLiq(quien ? await fetchLiquidacion(quien, fecha) : null);
+            const [l, cam] = quien
+                ? await Promise.all([
+                    fetchLiquidacion(quien, fecha),
+                    // El camión es ayuda: si no se puede leer, la liquidación abre igual.
+                    fetchCamionDelDia(quien, fecha).catch(e => { console.error('liquidación: camión', e); return []; }),
+                ])
+                : [null, []];
+            setLiq(l);
+            setCamion(cam);
         } catch (e) {
             console.error('liquidación', e);
             setError(mensajeDeDistribucion(e));
@@ -194,6 +243,8 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
 
             {liq && (<>
                 <CajaDelVendedor liq={liq} fecha={fecha} esHoy={fecha === hoySV()} puedeAdministrar={!!liq.puede_cerrar} onCambio={cargar} />
+
+                {camion.length > 0 && <CamionDelDia cargas={camion} />}
 
                 {Number(liq.devoluciones.a_favor) > 0 && (
                     <Notice variant="info" icon={Undo2}>

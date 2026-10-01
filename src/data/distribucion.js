@@ -897,5 +897,12 @@ export async function descargarCamion(vendedorId, contado, nota) {
     return data;
 }
 
+/** Las cargas del camión de un vendedor que se abrieron, cerraron o siguen abiertas ese día (0031). */
+export async function fetchCamionDelDia(vendedorId, fecha) {
+    const { data, error } = await supabase.rpc('dist_camion_del_dia', { p_vendedor: vendedorId, p_fecha: fecha });
+    if (error) throw error;
+    return data ?? [];
+}
+
 /** La Nota de Remisión que ampara la carga (Código Tributario art. 109). */
 export const emitirNotaRemision = (cargaId) => invocar({ accion: 'nota_remision', carga_id: cargaId });

@@ -1179,6 +1179,10 @@ test('autoventa: cargar el camión con su Nota de Remisión, vender desde el cam
         await page.goto('/torogoz/inventario?inventario=camiones');
         await expect(page.locator('[data-camion]').first().getByText(producto).first()).toBeVisible({ timeout: 15_000 });
         await page.screenshot({ path: `${SALIDA}/camion-tras-venta.png`, fullPage: true });
+        // Y la liquidación del vendedor dice qué pasó con la mercadería.
+        await page.goto('/torogoz/liquidacion');
+        await expect(page.locator('[data-camion-del-dia]')).toBeVisible({ timeout: 15_000 });
+        await page.screenshot({ path: `${SALIDA}/liquidacion-camion.png`, fullPage: true });
     } finally {
         // Descargar lo que quedó, contado completo: sin faltante.
         await page.goto('/torogoz/inventario?inventario=camiones');

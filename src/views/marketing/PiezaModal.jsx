@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Check, Trash2, MessageSquare, AlertTriangle, ThumbsUp, PencilLine, Megaphone, Link2, Send, EyeOff } from 'lucide-react';
+import { Check, Trash2, MessageSquare, AlertTriangle, ThumbsUp, PencilLine, Megaphone, Link2, Send, EyeOff, CalendarCheck } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -10,6 +10,7 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import TimePicker12 from '../../components/common/TimePicker12';
 import Checkbox from '../../components/common/Checkbox';
+import SegmentedControl from '../../components/common/SegmentedControl';
 import FileField from '../../components/common/FileField';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
@@ -21,17 +22,19 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { rangoDelMes, fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import {
-    FORMATOS, PILARES, ESTADOS_PIEZA, ESTADOS_DEL_DISENADOR, estadoDe, objetivoDe,
+    FORMATOS, PILARES, ESTADOS_PIEZA, ESTADOS_DEL_DISENADOR, ESTADOS_DE_SALIDA, estadoDe, objetivoDe,
 } from '@nucleo/utils/marketing';
 import {
-    guardarPieza, borrarPieza, subirDiseno, agregarEnlace, quitarArchivo, revisarPieza,
+    guardarPieza, borrarPieza, subirDiseno, agregarEnlace, quitarArchivo, revisarPieza, moverPieza,
 } from '@nucleo/data/marketing';
 import { abrirEnPestanaNueva } from '@plataforma/descargas';
 import Disenos from './Disenos';
+import VistaPrevia from './VistaPrevia';
+import EfectoEnVentas from './EfectoEnVentas';
 import Conversacion from './Conversacion';
 
 const VACIA = {
-    marca_id: '', fecha: '', hora: '', formato: 'post', redes: [], pilar: '', titulo: '',
+    marca_id: '', fecha: '', hora: '', formato: 'post', redes: [], pilar: '', titulo: '', promocion_id: '',
     copy: '', hashtags: '', notas: '', estado: 'pendiente', pautar: false, enlace_publicado: '',
 };
 
@@ -48,7 +51,7 @@ const VACIA = {
  * eso lo decide la base (`marketing_revisar_pieza`), no este botón.
  */
 export default function PiezaModal({
-    open, onClose, mes, pieza, fechaInicial, catalogos, personas, comentarios, firmadas,
+    open, onClose, mes, pieza, fechaInicial, catalogos, promociones, personas, comentarios, firmadas,
     puedeEditar, puedeAprobar, yoId, onCambio, onEditarPauta,
 }) {
     const showToast = useToastStore((s) => s.showToast);
@@ -67,6 +70,7 @@ export default function PiezaModal({
     const [decision, setDecision] = useState(null);   // 'cambios' mientras se escribe el pedido
     const [textoCambio, setTextoCambio] = useState('');
     const [decidiendo, setDecidiendo] = useState(false);
+    const [verPrevia, setVerPrevia] = useState('disenos');
 
     // Borrador sólo de una pieza NUEVA: al editar una ya guardada, la fila de la
     // base es la verdad y un borrador viejo la pisaría.
@@ -87,12 +91,16 @@ export default function PiezaModal({
     const redesVisibles = catalogos.redes.filter((r) => r.activo || form.redes?.includes(r.clave));
 
     // El diseñador mueve su flujo; `aprobado` sólo lo pone quien revisa, y
-    // `publicado` sólo tiene sentido después de aprobada.
+    // programar o publicar sólo tiene sentido después de aprobada.
+    const despuesDeAprobar = ['aprobado', 'programado', 'publicado'].includes(pieza?.estado);
     const opcionesEstado = ESTADOS_PIEZA
         .filter((e) => ESTADOS_DEL_DISENADOR.includes(e.value)
             || e.value === form.estado
-            || (e.value === 'publicado' && ['aprobado', 'publicado'].includes(pieza?.estado)))
+            || (ESTADOS_DE_SALIDA.includes(e.value) && despuesDeAprobar))
         .map((e) => ({ value: e.value, label: e.label }));
+    const opcionesPromocion = (promociones || [])
+        .filter((p) => p.estado === 'activa' || p.id === form.promocion_id)
+        .map((p) => ({ value: p.id, label: p.nombre }));
 
     const falta = !form.titulo?.trim() || !form.fecha || !form.marca_id || !form.formato;
 
@@ -100,7 +108,7 @@ export default function PiezaModal({
         if (falta) return;
         setGuardando(true);
         try {
-            const datos = { ...form, hora: form.hora || null, pilar: form.pilar || null };
+            const datos = { ...form, hora: form.hora || null, pilar: form.pilar || null, promocion_id: form.promocion_id || null };
             if (datos.estado === 'publicado' && !pieza?.publicado_en) datos.publicado_en = new Date().toISOString();
             await guardarPieza(mes.id, datos);
             descartar();
@@ -148,6 +156,23 @@ export default function PiezaModal({
             onCambio?.();
         } catch (err) {
             showToast('No se pudo quitar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        }
+    };
+
+    // Marcar que ya salió (o que quedó agendada en la red) sin abrir el
+    // formulario: es lo que el recordatorio de las 8:00 le pide al diseñador.
+    const marcarSalida = async (estado) => {
+        setGuardando(true);
+        try {
+            await moverPieza(pieza.id, estado === 'publicado'
+                ? { estado, publicado_en: new Date().toISOString() } : { estado });
+            showToast(estado === 'publicado' ? 'Marcada como publicada' : 'Marcada como programada', pieza.titulo, 'success');
+            onCambio?.();
+            onClose();
+        } catch (err) {
+            showToast('No se pudo marcar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        } finally {
+            setGuardando(false);
         }
     };
 
@@ -237,6 +262,10 @@ export default function PiezaModal({
                                             <LiquidSelect value={form.estado} onChange={set('estado')} options={opcionesEstado} clearable={false} />
                                         </Campo>
                                     </div>
+                                    <Campo rotulo="Promoción ligada">
+                                        <LiquidSelect value={form.promocion_id} onChange={set('promocion_id')}
+                                            placeholder="Ninguna" options={opcionesPromocion} />
+                                    </Campo>
                                     <Campo rotulo="Redes">
                                         <div className="flex flex-wrap gap-x-4 gap-y-2">
                                             {redesVisibles.map((r) => (
@@ -265,7 +294,7 @@ export default function PiezaModal({
                                         checked={!!form.pautar} onChange={(on) => setForm((f) => ({ ...f, pautar: on?.target ? on.target.checked : on }))} />
                                 </>
                             ) : (
-                                <FichaDeLectura pieza={pieza} catalogos={catalogos} />
+                                <FichaDeLectura pieza={pieza} catalogos={catalogos} promociones={promociones} />
                             )}
 
                             {!esNueva && pieza.pautar && (
@@ -289,13 +318,23 @@ export default function PiezaModal({
                                     )}
                                 </div>
                             )}
+                            {!esNueva && pieza.promocion_id && <EfectoEnVentas pieza={pieza} />}
                         </div>
 
                         {/* ── Diseños y revisión ── */}
                         <div className="space-y-4 min-w-0">
                             <section className="space-y-2">
-                                <h3 className="text-label uppercase tracking-wide font-semibold text-content-2">Diseños</h3>
-                                {esNueva ? (
+                                <div className="flex items-center justify-between gap-2">
+                                    <h3 className="text-label uppercase tracking-wide font-semibold text-content-2">Diseños</h3>
+                                    {!esNueva && (puedeEditar || publicado) && (
+                                        <SegmentedControl size="sm" value={verPrevia} onChange={setVerPrevia} label="Ver"
+                                            options={[{ value: 'disenos', label: 'Archivos' }, { value: 'previa', label: 'Vista previa' }]} />
+                                    )}
+                                </div>
+                                {!esNueva && verPrevia === 'previa' ? (
+                                    <VistaPrevia pieza={{ ...pieza, ...form }} archivos={archivos} firmadas={firmadas}
+                                        marca={catalogos.marcas.find((m) => m.id === (form.marca_id || pieza.marca_id))} />
+                                ) : esNueva ? (
                                     <p className="text-body-sm text-content-3">Guarda la pieza para poder subir sus diseños.</p>
                                 ) : (
                                     <>
@@ -386,6 +425,16 @@ export default function PiezaModal({
                             <AlertTriangle size={13} /> Con cambios pedidos
                         </span>
                     )}
+                    {!esNueva && puedeEditar && pieza.estado === 'aprobado' && (
+                        <Button variant="secondary" icon={CalendarCheck} loading={guardando} onClick={() => marcarSalida('programado')}>
+                            Programada
+                        </Button>
+                    )}
+                    {!esNueva && puedeEditar && ['aprobado', 'programado'].includes(pieza.estado) && (
+                        <Button variant="secondary" icon={Send} loading={guardando} onClick={() => marcarSalida('publicado')}>
+                            Publicada
+                        </Button>
+                    )}
                     <Button variant="secondary" onClick={onClose}>{puedeEditar ? 'Cancelar' : 'Cerrar'}</Button>
                     {puedeEditar && (
                         <Button icon={Check} loading={guardando} disabled={falta} onClick={guardar}>
@@ -403,7 +452,7 @@ export default function PiezaModal({
 }
 
 /** La pieza para quien no la edita: lo mismo que el formulario, sin controles. */
-function FichaDeLectura({ pieza, catalogos }) {
+function FichaDeLectura({ pieza, catalogos, promociones }) {
     if (!pieza) return null;
     const marca = catalogos.marcas.find((m) => m.id === pieza.marca_id);
     const redes = (pieza.redes || []).map((c) => catalogos.redes.find((r) => r.clave === c)?.nombre || c);
@@ -413,6 +462,7 @@ function FichaDeLectura({ pieza, catalogos }) {
         ['Formato', FORMATOS.find((f) => f.value === pieza.formato)?.label],
         ['Pilar', PILARES.find((p) => p.value === pieza.pilar)?.label],
         ['Redes', redes.join(', ')],
+        ['Promoción', (promociones || []).find((p) => p.id === pieza.promocion_id)?.nombre],
     ].filter(([, v]) => v);
     return (
         <div className="space-y-3">

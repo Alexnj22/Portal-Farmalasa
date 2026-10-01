@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { Plus, CalendarDays } from 'lucide-react';
+import { Plus, CalendarDays, Star } from 'lucide-react';
 import Button from '../../components/common/Button';
+import LiquidTooltip from '../../components/common/LiquidTooltip';
 import { EmptyState } from '../../components/common/StateViews';
 import useMediaQuery from '../../plataforma/useMediaQuery';
 import { CORTE_TELEFONO } from '../../components/common/usarExpediente';
 import { hoySV, fechaTexto } from '@nucleo/utils/fecha';
-import { semanasDelMes, piezasPorDia, DIAS_SEMANA } from '@nucleo/utils/marketing';
+import { semanasDelMes, piezasPorDia, DIAS_SEMANA, fechasEspecialesDelMes } from '@nucleo/utils/marketing';
 import FichaDePieza from './FichaDePieza';
 
 /**
@@ -17,16 +18,21 @@ import FichaDePieza from './FichaDePieza';
  * para agregar ahí.
  */
 export default function TabCalendario({
-    mes, piezas, marcas, comentariosPorPieza, puedeEditar, onAbrir, onNueva, onMover,
+    mes, piezas, marcas, comentariosPorPieza, especiales, puedeEditar, onAbrir, onNueva, onMover,
 }) {
     const enTelefono = useMediaQuery(CORTE_TELEFONO);
     const semanas = useMemo(() => semanasDelMes(mes), [mes]);
     const porDia = useMemo(() => piezasPorDia(piezas), [piezas]);
+    const fechas = useMemo(() => fechasEspecialesDelMes(especiales, mes), [especiales, mes]);
+    // Tocar una fecha especial la convierte en pieza (quien edita) ya escrita.
+    const desdeFecha = (f) => onNueva(f.fecha, {
+        titulo: f.nombre, pilar: 'fecha_especial', notas: f.idea || '', fecha: f.fecha,
+    });
     const hoy = hoySV();
     const [sobre, setSobre] = useState(null);   // el día sobre el que se arrastra
 
     if (enTelefono) {
-        const dias = semanas.flat().filter(Boolean).filter((d) => porDia[d]?.length);
+        const dias = semanas.flat().filter(Boolean).filter((d) => porDia[d]?.length || fechas[d]);
         if (!dias.length) {
             return (
                 <EmptyState icon={CalendarDays} title="Sin piezas este mes"
@@ -41,7 +47,10 @@ export default function TabCalendario({
                         <h3 className={`text-label uppercase tracking-wide font-semibold ${d === hoy ? 'text-brand' : 'text-content-2'}`}>
                             {fechaTexto(d, { weekday: 'long', day: 'numeric', month: 'long' })}
                         </h3>
-                        {porDia[d].map((p) => (
+                        {(fechas[d] || []).map((f) => (
+                            <MarcaDeFecha key={f.id} fecha={f} puedeEditar={puedeEditar} onUsar={() => desdeFecha(f)} />
+                        ))}
+                        {(porDia[d] || []).map((p) => (
                             <FichaDePieza key={p.id} pieza={p} marca={marcas[p.marca_id]}
                                 comentarios={comentariosPorPieza[p.id]} onAbrir={() => onAbrir(p)} grande />
                         ))}
@@ -89,6 +98,9 @@ export default function TabCalendario({
                                             onClick={() => onNueva(d)} />
                                     )}
                                 </div>
+                                {(fechas[d] || []).map((f) => (
+                                    <MarcaDeFecha key={f.id} fecha={f} puedeEditar={puedeEditar} onUsar={() => desdeFecha(f)} />
+                                ))}
                                 {lista.map((p) => (
                                     <FichaDePieza key={p.id} pieza={p} marca={marcas[p.marca_id]}
                                         comentarios={comentariosPorPieza[p.id]}
@@ -100,5 +112,28 @@ export default function TabCalendario({
                 </div>
             ))}
         </div>
+    );
+}
+
+/**
+ * Una fecha especial en el día. Quien edita la toca y nace una pieza con el
+ * nombre, el tema y la idea; el resto la ve como recordatorio.
+ */
+function MarcaDeFecha({ fecha, puedeEditar, onUsar }) {
+    const contenido = (
+        <>
+            <Star size={10} className="shrink-0" aria-hidden />
+            <span className="truncate">{fecha.nombre}</span>
+        </>
+    );
+    return puedeEditar ? (
+        <Button variant="ghost" size="xs" className="justify-start min-w-0 max-w-full text-chart-8-text"
+            title={`${fecha.nombre}${fecha.idea ? ` — ${fecha.idea}` : ''}. Toca para planificar una pieza`} onClick={onUsar}>
+            <span className="flex items-center gap-1 min-w-0 text-micro font-semibold">{contenido}</span>
+        </Button>
+    ) : (
+        <LiquidTooltip content={fecha.idea || fecha.nombre}>
+            <span className="flex items-center gap-1 min-w-0 text-micro font-semibold text-chart-8-text">{contenido}</span>
+        </LiquidTooltip>
     );
 }

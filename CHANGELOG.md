@@ -21,12 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.1125.1 — Torogoz: sus permisos en un grupo aparte
+## v2.1126.0 — Marketing: recordatorios, fecha límite, fechas especiales, promociones, informe y vista previa
 
-Pedido del usuario: «quiero que los permisos para la distribuidora estén aparte».
+Segunda tanda del planificador, pedida por el usuario sobre las ideas propuestas.
 
-- En **Permisos** hay un grupo propio, **Distribuidora (Torogoz)**, con todo lo de la distribuidora junto: «Vender y operar» (con sus capacidades «Precios y datos de la empresa» y «Dar descuentos hasta el tope») y «Decidir: descuentos».
-- **Arreglado de paso:** «Decidir: descuentos» estaba marcado para la tarjeta «Decidir solicitudes», que tiene su lista escrita a mano y no lo incluía. O sea que ese permiso **no aparecía en ninguna parte** de la pantalla y no se le podía asignar a nadie desde ahí. Ahora es una tarjeta más del grupo nuevo.
+- **Estado «Programado»**: la pieza ya agendada en la red. Sólo se programa lo
+  aprobado, y tocarla la devuelve a revisión. Botones «Programada» y
+  «Publicada» en la pieza, y en el tablero se arrastra.
+- **Recordatorio de las 8:00** (`marketing-recordatorios-8am-sv`, SQL puro):
+  lo que toca publicar hoy y no está programado, al diseñador (push); lo vencido
+  de los últimos 14 días, al diseñador y a quien aprueba; y pasa a publicado lo
+  programado cuyo día ya pasó.
+- **Fecha límite** para enviar el calendario del mes siguiente (día 20 por
+  defecto, la cambia quien aprueba): aviso 3 días antes, 1 antes y el mismo día;
+  vencido, a quien aprueba al día siguiente y al diseñador cada día. También en
+  pantalla.
+- **Fechas especiales** de El Salvador (26, con Semana Santa y Black Friday
+  calculados cada año) marcadas en el calendario: tocarlas crea la pieza escrita.
+- **Pieza ligada a una promoción** y **ventas de sus productos** durante la
+  pauta contra los mismos días anteriores (`marketing_efecto_en_ventas`, 49 ms
+  medido). Es una referencia y la pantalla lo dice.
+- **Informe del mes en PDF** (pdfmake por `import()`), anotado en `export_log`.
+- **Vista previa tipo teléfono** (Instagram/Facebook, 9:16 en historias y reels)
+  con el corte del texto a ~125 caracteres.
+
+Migraciones `marketing_recordatorios` y `marketing_recordatorios_orden_de_argumentos`.
+La segunda corrige el orden push/metadata en `notify_employees`, que cazó la
+prueba con rollback en producción antes de la primera corrida del cron.
 
 ## v2.1125.0 — App: traslados completos — enviar, llevar, faltantes
 

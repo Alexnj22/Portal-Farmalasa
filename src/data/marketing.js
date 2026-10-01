@@ -103,7 +103,7 @@ export async function fetchPiezas(mesId) {
 }
 
 const CAMPOS_PIEZA = ['marca_id', 'fecha', 'hora', 'formato', 'redes', 'pilar', 'titulo', 'copy',
-    'hashtags', 'notas', 'estado', 'pautar', 'solicitud_id', 'enlace_publicado', 'publicado_en'];
+    'hashtags', 'notas', 'estado', 'pautar', 'solicitud_id', 'promocion_id', 'enlace_publicado', 'publicado_en'];
 
 function limpiarPieza(p) {
     const fila = {};
@@ -279,6 +279,43 @@ export async function responderSolicitud(id, estado, respuesta) {
         .update({ estado, respuesta: respuesta?.trim() || null }).eq('id', id).select().single());
     anotar('MARKETING_SOLICITUD_' + estado.toUpperCase(), id, { respuesta });
     return data;
+}
+
+// ── Ajustes, fechas especiales y promociones ───────────────────────────────
+
+export async function fetchAjustes() {
+    return sinError(await supabase.from('marketing_ajustes').select('dia_limite_envio, recordatorios_activos').maybeSingle());
+}
+
+export async function guardarAjustes(cambios) {
+    const data = sinError(await supabase.from('marketing_ajustes').update(cambios).eq('id', true).select().single());
+    anotar('MARKETING_AJUSTES', 'marketing', cambios);
+    return data;
+}
+
+export async function fetchFechasEspeciales() {
+    return sinError(await supabase.from('marketing_fechas_especiales')
+        .select('id, nombre, mes, dia, regla, idea, activo').order('mes', { nullsFirst: false }).order('dia')) || [];
+}
+
+export async function guardarFechaEspecial(f) {
+    const fila = { nombre: f.nombre?.trim(), mes: f.mes ?? null, dia: f.dia ?? null, idea: f.idea?.trim() || null, activo: f.activo ?? true };
+    const q = f.id
+        ? supabase.from('marketing_fechas_especiales').update(fila).eq('id', f.id).select().single()
+        : supabase.from('marketing_fechas_especiales').insert(fila).select().single();
+    const data = sinError(await q);
+    anotar(f.id ? 'MARKETING_FECHA_EDITAR' : 'MARKETING_FECHA_CREAR', String(data.id), { nombre: data.nombre });
+    return data;
+}
+
+/** Las promociones que se pueden ligar: nombre, tipo y vigencia, nada más. */
+export async function fetchPromocionesLigables() {
+    return sinError(await supabase.rpc('marketing_promociones')) || [];
+}
+
+/** Ventas de los productos de la promoción durante la pauta contra antes. */
+export async function fetchEfectoEnVentas(piezaId) {
+    return sinError(await supabase.rpc('marketing_efecto_en_ventas', { p_pieza_id: piezaId }));
 }
 
 // ── Personas ───────────────────────────────────────────────────────────────

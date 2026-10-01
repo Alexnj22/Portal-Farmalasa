@@ -534,13 +534,15 @@ export const AREAS = [
         rutas: ['/marketing'],
         archivos: [
             'src/utils/marketing.js',
+            'src/utils/marketingInforme.js',
             'src/data/marketing.js',
             'src/views/marketing/',
         ],
         tablas: ['marketing_marcas', 'marketing_redes', 'marketing_meses', 'marketing_solicitudes',
-                 'marketing_piezas', 'marketing_archivos', 'marketing_comentarios', 'marketing_pautas'],
+                 'marketing_piezas', 'marketing_archivos', 'marketing_comentarios', 'marketing_pautas',
+                 'marketing_ajustes', 'marketing_fechas_especiales'],
         edge: [],
-        crons: [],
+        crons: ['marketing-recordatorios-8am-sv'],
         docs: [],
     },
     {

@@ -96,6 +96,10 @@ const RE_BORRADOR = /\bfrom\s+['"][^'"]*(draftUtils|useBorrador)['"]|\b(saveDraf
  * una excepción: es deuda, y va al baseline.
  */
 const EXCEPCIONES = {
+    // Los ajustes del planificador no son un formulario: cada interruptor y
+    // cada desplegable GUARDA al tocarlo. Lo único que se escribe es una fecha
+    // especial (nombre, mes, día, idea): perderla es volver a teclear una línea.
+    'src/views/marketing/AjustesModal.jsx': 'cada control guarda al tocarlo; sólo se escribe una fecha de cuatro campos',
     // Los reportes de la distribuidora no capturan nada: sus seis controles son
     // FILTROS (período, agrupación, mes, año, libro) y todos viven en la
     // dirección (`usePestanaEnUrl`), así que una recarga o una sesión cerrada

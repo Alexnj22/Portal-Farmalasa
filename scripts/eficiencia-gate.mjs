@@ -469,6 +469,14 @@ const CRONS = [
           + '`functions/v1/`, así que si no está escrito no lo vigila nadie.',
   },
   {
+    job: 'marketing-recordatorios-8am-sv', slug: null, cadencia: '0 14 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'SQL puro: no llama a ninguna función ni toca el sistema de origen. A las 8:00 SV '
+          + 'pasa a publicadas las piezas programadas cuyo día ya pasó y avisa al diseñador lo que '
+          + 'toca publicar hoy, lo vencido y la fecha límite del calendario siguiente. Se declara '
+          + 'porque un cron de SQL puro es invisible al barrido de `functions/v1/`.',
+  },
+  {
     job: 'cortes-diferencia-de-ayer-0800-sv', slug: null, cadencia: '0 14 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'SQL puro: no llama a ninguna función ni toca el sistema de origen. Una vez al día a '

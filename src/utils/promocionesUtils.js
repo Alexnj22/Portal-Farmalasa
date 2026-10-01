@@ -259,13 +259,19 @@ export function problemasDelDescuento(renglones, valor, alcanceTodo) {
 }
 
 /**
- * Un número escrito por una persona: acepta coma decimal y espacios. Devuelve
- * `null` si el texto no es un número — nunca un 0 inventado. Con `Number(x)
- * || 0`, «1,5» se guardaba como bono de $0 sin que nadie se enterara.
+ * Un número escrito por una persona. Devuelve `null` si el texto no es un
+ * número — nunca un 0 inventado: con `Number(x) || 0`, «1,5» se guardaba como
+ * bono de $0 sin que nadie se enterara.
+ *
+ * La coma, como se escribe en El Salvador: separador de MILES cuando agrupa de
+ * a tres («4,250», «1,250.50») y decimal sólo cuando no puede ser otra cosa
+ * («1,5»). Leerla siempre como decimal convertía un umbral de $4,250 en $4.25.
  */
 export function numeroEscrito(texto) {
     if (texto == null) return null;
-    const limpio = String(texto).trim().replace(/\s+/g, '').replace(',', '.');
+    let limpio = String(texto).trim().replace(/\s+/g, '').replace(/^\$/, '');
+    if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(limpio)) limpio = limpio.replace(/,/g, '');
+    else if (/^-?\d+,\d+$/.test(limpio)) limpio = limpio.replace(',', '.');
     if (limpio === '') return null;
     if (!/^-?\d+(\.\d+)?$/.test(limpio)) return null;
     return Number(limpio);
@@ -316,5 +322,17 @@ export function problemasDeLaPromocion(renglones) {
     return [...fallas.entries()].map(([frase, prods]) => (prods.length === 1
         ? `${prods[0]}: ${frase}.`
         : `${prods.length} productos: ${frase}.`));
+}
+
+/**
+ * Vigente, programado o terminado — sale de las fechas, que es lo único que
+ * tiene un descuento. Vive acá porque lo usan la pestaña (secciones) y la vista
+ * (el filtro de estado): escrito dos veces, el filtro y la sección podrían
+ * dejar de coincidir.
+ */
+export function estadoDescuento(d, hoy = hoySV()) {
+    if (d.fin < hoy) return { clave: 'terminados', rotulo: 'Terminado', variant: 'neutral' };
+    if (d.inicio > hoy) return { clave: 'programados', rotulo: 'Programado', variant: 'info' };
+    return { clave: 'activos', rotulo: 'Descontando', variant: 'success' };
 }
 

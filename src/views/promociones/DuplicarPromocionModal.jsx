@@ -116,8 +116,8 @@ export default function DuplicarPromocionModal({ promo, open, onClose, onDuplica
                     {promo?.descuentos > 0 && (
                         <Notice variant="warning" icon={AlertTriangle}>
                             El original ya <span className="font-semibold">baja el precio</span>. La
-                            copia sólo va a poder tener el suyo si le cambias las fechas: el sistema
-                            de ventas admite un solo descuento por producto en unas mismas fechas,
+                            copia sólo va a poder tener el suyo si le cambias las fechas: la venta
+                            admite un solo descuento por producto en unas mismas fechas,
                             da igual la sala.
                         </Notice>
                     )}

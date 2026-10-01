@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     Layers, Search, AlertTriangle, Download, Package, FileText, Users, DollarSign, Store,
     Pencil, Copy, RotateCcw,
@@ -11,6 +11,7 @@ import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import { fetchPromocion } from '@nucleo/data/promociones';
 import { exportCsv } from '@nucleo/utils/csvExport';
 import MatrizLaboratorio from './MatrizLaboratorio';
+import TituloSeccion from './TituloSeccion';
 import {
     fmtMoneda, fmtUnidades, porLaboratorio, rotuloPresentacion, MOTIVO_CIERRE,
     esLaboratorio, estadoVisible, fmtVigencia, rotuloMes, mensajeDeCarga,
@@ -81,6 +82,8 @@ export default function TabSeguimiento({
        padre para mostrarlos sería pagar dos veces la consulta que cruza los
        renglones de venta del período. */
     useEffect(() => {
+        // La de laboratorio publica las suyas desde la matriz (abajo).
+        if (esLab) return;
         if (!detalle) { onResumen?.([]); return; }
         onResumen?.([
             { key: 'u', icon: Package, label: 'Unidades vendidas',
@@ -92,7 +95,22 @@ export default function TabSeguimiento({
               value: fmtMoneda(vendedores.reduce((a, v) => a + Number(v.bono || 0), 0)),
               iconBg: 'bg-brand/10', iconCls: 'text-brand-text', valueCls: 'text-brand' },
         ]);
-    }, [detalle, renglones, vendedores, onResumen]);
+    }, [detalle, renglones, vendedores, onResumen, esLab]);
+
+    /* Las tarjetas de una de laboratorio salen de su matriz. Antes publicaba
+       `null` y la fila de arriba caía a los números de Activas. */
+    const publicarMatriz = useCallback((d) => {
+        if (!d) { onResumen?.([]); return; }
+        const salas = Array.isArray(d.salas) ? d.salas : [];
+        onResumen?.([
+            { key: 'v', icon: DollarSign, label: 'Venta del mes', value: fmtMoneda(d.venta_total) },
+            { key: 'n', icon: Store, label: 'Salas con nivel',
+              value: `${salas.filter((x) => x.nivel != null).length} de ${salas.length}` },
+            { key: 'p', icon: Users, label: 'Cobran bono', value: fmtUnidades(d.personas_pagadas) },
+            { key: 'c', icon: DollarSign, label: 'Costo del bono', value: fmtMoneda(d.costo_total),
+              iconBg: 'bg-brand/10', iconCls: 'text-brand-text', valueCls: 'text-brand' },
+        ]);
+    }, [onResumen]);
 
     if (!promos.length) {
         return busqueda.trim() || filtrando
@@ -151,7 +169,7 @@ export default function TabSeguimiento({
             )}
 
             {esLab && elegida && (
-                <MatrizLaboratorio key={elegida} promocionId={elegida} />
+                <MatrizLaboratorio key={elegida} promocionId={elegida} onCabecera={publicarMatriz} />
             )}
 
             {!esLab && cargando && <LoadingState label="Calculando el avance…" />}
@@ -166,9 +184,7 @@ export default function TabSeguimiento({
                 <>
                     {grupos.map(({ laboratorio, items }) => (
                         <section key={laboratorio} className="space-y-2">
-                            <h3 className="text-label uppercase tracking-wide text-content-3 font-semibold">
-                                {laboratorio}
-                            </h3>
+                            <TituloSeccion titulo={laboratorio} conteo={items.length} />
                             <div className="grid gap-3 md:grid-cols-2">
                                 {items.map((r) => <TarjetaRenglon key={r.id} r={r} />)}
                             </div>
@@ -176,16 +192,13 @@ export default function TabSeguimiento({
                     ))}
 
                     <section className="space-y-2">
-                        <div className="flex items-baseline gap-3 flex-wrap">
-                            <h3 className="text-subtitle font-semibold text-content">Quién vendió</h3>
-                            <span className="text-caption text-content-3">unidades base</span>
-                            <span className="flex-1" />
+                        <TituloSeccion titulo="Quién vendió" sub="unidades base">
                             {vendedores.length > 0 && (
                                 <Button variant="secondary" size="sm" icon={Download} onClick={exportar}>
                                     Exportar
                                 </Button>
                             )}
-                        </div>
+                        </TituloSeccion>
 
                         {vendedores.length === 0 ? (
                             <EmptyState icon={Layers} title="Sin ventas todavía"

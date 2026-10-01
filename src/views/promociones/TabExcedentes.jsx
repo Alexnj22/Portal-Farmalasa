@@ -12,6 +12,8 @@ import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import { fetchExcedentes, decidirExcedente } from '@nucleo/data/promociones';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { exportCsv } from '@nucleo/utils/csvExport';
+import { hoySV } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fmtMoneda, fmtUnidades, mensajeDeCarga } from '@nucleo/utils/promocionesUtils';
 
@@ -30,7 +32,7 @@ import { fmtMoneda, fmtUnidades, mensajeDeCarga } from '@nucleo/utils/promocione
  * bajarle a $100. Un número que se muestra y después se corrige es peor que uno
  * que llega más tarde.
  */
-export default function TabExcedentes({ puedeAprobar, busqueda = '', onResumen }) {
+export default function TabExcedentes({ puedeAprobar, busqueda = '', onResumen, onExportable }) {
     const [todas, setTodas] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
@@ -71,6 +73,16 @@ export default function TabExcedentes({ puedeAprobar, busqueda = '', onResumen }
             { key: 'p', icon: Users, label: 'Personas', value: personas },
         ] : []);
     }, [filas, personas, onResumen]);
+
+    useEffect(() => {
+        onExportable?.(filas.length ? () => exportCsv(
+            ['PERSONA', 'SALA', 'PROMOCION', 'PRODUCTO', 'UNIDADES DE MAS', 'LOTE', 'SERIA'],
+            filas.map((f) => [f.persona, f.sala || '', f.promocion, f.producto,
+                f.unidades, f.lote_total ?? '', f.monto]),
+            `promociones_excedentes_${hoySV()}.csv`,
+            'promociones',
+        ) : null);
+    }, [filas, onExportable]);
 
     const decidir = useCallback(async (fila, aprobar, motivo) => {
         setOcupado(fila.id);

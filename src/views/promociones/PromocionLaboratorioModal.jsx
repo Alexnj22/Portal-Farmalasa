@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Plus, Trash2, X, FlaskConical } from 'lucide-react';
+import { AlertTriangle, Plus, Trash2, X, FlaskConical, Copy } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PortalInput from '../../components/common/PortalInput';
@@ -17,7 +17,7 @@ import {
     fetchPromocionLaboratorio, fetchLaboratorios, fetchProveedoresDelSistema,
 } from '@nucleo/data/promociones';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { fmtMoneda, mesesRecientes } from '@nucleo/utils/promocionesUtils';
+import { fmtMoneda, mesesRecientes, numeroEscrito } from '@nucleo/utils/promocionesUtils';
 import Campo from './Campo';
 
 const CLAVE_BORRADOR = 'promocion_laboratorio';
@@ -158,6 +158,25 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
     const setUmbral = (branchId, nivel, v) =>
         setUmbrales((u) => ({ ...u, [`${branchId}:${nivel}`]: v }));
 
+    /* Copiar los umbrales de una sala a las que todavía no tienen ninguno.
+       Eran 6 salas × N niveles a mano, y casi siempre se parte del mismo
+       escalón y se ajusta. Las salas que ya tienen algo escrito NO se pisan. */
+    const copiarUmbrales = (desde) => setUmbrales((u) => {
+        const salida = { ...u };
+        for (const s of salas) {
+            if (String(s.id) === String(desde)) continue;
+            const tiene = niveles.some((n) => numeroEscrito(u[`${s.id}:${n.nivel}`]) > 0);
+            if (tiene) continue;
+            for (const n of niveles) {
+                const v = u[`${desde}:${n.nivel}`];
+                if (v) salida[`${s.id}:${n.nivel}`] = v;
+            }
+        }
+        return salida;
+    });
+    const salaTieneUmbral = (id) => niveles.some((n) => numeroEscrito(umbrales[`${id}:${n.nivel}`]) > 0);
+    const hayVacias = salas.some((s) => !salaTieneUmbral(s.id));
+
     // ── Lo que hay que avisar ANTES de mandar ────────────────────────────────
     const problemas = useMemo(() => {
         const out = [];
@@ -165,16 +184,16 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
         if (!mes) out.push('Falta el mes.');
         if (!labs.length) out.push('Elige al menos un laboratorio.');
         if (!niveles.length) out.push('Tiene que haber al menos un nivel.');
-        if (niveles.some((n) => !(Number(n.monto) > 0))) {
+        if (niveles.some((n) => !(numeroEscrito(n.monto) > 0))) {
             out.push('Cada nivel necesita un monto mayor que cero.');
         }
         const conUmbral = salas.filter((s) =>
-            niveles.some((n) => Number(umbrales[`${s.id}:${n.nivel}`]) > 0));
+            niveles.some((n) => numeroEscrito(umbrales[`${s.id}:${n.nivel}`]) > 0));
         if (!conUmbral.length) out.push('Ninguna sala tiene umbral: nadie podría alcanzar un nivel.');
         for (const s of conUmbral) {
             let previo = null;
             for (const n of niveles) {
-                const v = Number(umbrales[`${s.id}:${n.nivel}`]);
+                const v = numeroEscrito(umbrales[`${s.id}:${n.nivel}`]);
                 if (!(v > 0)) continue;
                 if (previo !== null && v <= previo) {
                     out.push(`En ${s.name} el nivel ${n.nivel} no pide más venta que el anterior.`);
@@ -183,6 +202,10 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
                 previo = v;
             }
         }
+        /* Un umbral escrito que no es número se descartaba en silencio y la
+           sala quedaba sin ese nivel. */
+        const ilegibles = Object.entries(umbrales).filter(([, v]) => String(v ?? '').trim() !== '' && numeroEscrito(v) == null);
+        if (ilegibles.length) out.push(`Hay ${ilegibles.length === 1 ? 'un umbral escrito' : `${ilegibles.length} umbrales escritos`} que no se entienden como monto.`);
         if (paga === 'proveedor' && !supplierId) out.push('Elige el proveedor que paga.');
         return out;
     }, [nombre, mes, labs, niveles, umbrales, salas, paga, supplierId]);
@@ -194,12 +217,12 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
             const payload = {
                 nombre: nombre.trim(),
                 laboratorios: labs.map((l) => Number(l.id)),
-                niveles: niveles.map((n) => ({ nivel: n.nivel, monto: Number(n.monto) })),
+                niveles: niveles.map((n) => ({ nivel: n.nivel, monto: numeroEscrito(n.monto) })),
                 umbrales: Object.entries(umbrales)
-                    .filter(([, v]) => Number(v) > 0)
+                    .filter(([, v]) => numeroEscrito(v) > 0)
                     .map(([k, v]) => {
                         const [branch_id, nivel] = k.split(':').map(Number);
-                        return { branch_id, nivel, umbral: Number(v) };
+                        return { branch_id, nivel, umbral: numeroEscrito(v) };
                     }),
                 paga: paga || null,
                 supplierId: paga === 'proveedor' && supplierId ? Number(supplierId) : null,
@@ -347,15 +370,24 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
                                 Dejar un nivel en blanco significa que esa sala no lo puede alcanzar.
                             </p>
                             {salas.map((s) => (
-                                <div key={s.id} className="rounded-card border border-border-card p-3">
-                                    <span className="block text-label uppercase tracking-wide font-semibold text-content-2 mb-2">
-                                        {s.name}
-                                    </span>
+                                <div key={s.id} className="rounded-lg bg-surface-card-hover p-3">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="flex-1 min-w-0 truncate text-label uppercase tracking-wide font-semibold text-content-2">
+                                            {s.name}
+                                        </span>
+                                        {salaTieneUmbral(s.id) && hayVacias && (
+                                            <Button variant="ghost" size="sm" icon={Copy}
+                                                title="Copia estos umbrales a las salas que todavía no tienen ninguno"
+                                                onClick={() => copiarUmbrales(s.id)}>
+                                                A las vacías
+                                            </Button>
+                                        )}
+                                    </div>
                                     <div className="grid gap-2 grid-cols-2 sm:grid-cols-4">
                                         {niveles.map((n) => (
                                             <PortalInput
                                                 key={n.nivel}
-                                                label={`N${n.nivel} · ${n.monto ? fmtMoneda(n.monto) : '—'}`}
+                                                label={`N${n.nivel} · ${numeroEscrito(n.monto) > 0 ? fmtMoneda(numeroEscrito(n.monto)) : '—'}`}
                                                 name={`u-${s.id}-${n.nivel}`}
                                                 value={umbrales[`${s.id}:${n.nivel}`] || ''}
                                                 onChange={(e) => setUmbral(s.id, n.nivel, e.target.value)}

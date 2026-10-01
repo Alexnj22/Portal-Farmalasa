@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1116.0 — Promociones: exportar, filtros de Descuentos, guardar y activar, umbrales y textos
+
+Segunda tanda de la auditoría del módulo: lo que quedó pendiente en v2.1113.0.
+
+- **Exportar** desde la píldora en Activas, Histórico, Pagos y Excedentes, y
+  desde la matriz de una promoción por laboratorio.
+- **Descuentos se puede filtrar** por sala (con alcance de todas) y por estado.
+- **«Guardar y activar»** al crear una promoción: antes nacía siempre en
+  borrador y había que ir a encenderla. Si la activación falla, queda creada
+  en borrador, se dice así y no se puede crear dos veces. Cerrar después de un
+  fallo ahora recarga la lista.
+- **Promoción por laboratorio**: botón para copiar los umbrales de una sala a
+  las que todavía no tienen ninguno; un umbral escrito que no es número se
+  avisa en vez de descartarse.
+- **La coma se lee como se escribe acá**: «4,250» son cuatro mil doscientos
+  cincuenta, no 4.25. Lote y montos ilegibles en Editar se avisan en vez de
+  guardarse como 0.
+- Seguimiento de una promoción por laboratorio muestra sus propias tarjetas
+  (venta del mes, salas con nivel, cobran bono, costo).
+- La matriz ya no desaparece al cambiar de mes y siempre ofrece el mes propio
+  de la promoción.
+- Encabezados de sección iguales en todas las pestañas.
+- La pantalla deja de nombrar «el sistema de ventas»: se habla de la venta y
+  del descuento.
+
 ## v2.1115.0 — App: notificaciones con tarjetas ricas, Por decidir sólo lo tuyo y vidrio en Buscar
 
 Tres reportes del usuario con capturas de la app al lado del portal.

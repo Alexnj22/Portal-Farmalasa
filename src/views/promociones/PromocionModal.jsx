@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Trash2, AlertTriangle, Check, Tag, Pencil, Plus, ChevronRight } from 'lucide-react';
+import { Trash2, AlertTriangle, Check, Tag, Pencil, Plus, ChevronRight, Power } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
@@ -16,7 +16,7 @@ import useBorrador from '@nucleo/hooks/useBorrador';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import {
-    crearPromocion, fetchPresentacionesDeProducto, fetchProveedoresDelSistema,
+    crearPromocion, activarPromocion, fetchPresentacionesDeProducto, fetchProveedoresDelSistema,
     fetchLaboratoriosConProductos,
 } from '@nucleo/data/promociones';
 import AgregarProductos from './AgregarProductos';
@@ -322,7 +322,12 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
      * peor que puede pasar es una promoción sin su descuento — visible,
      * corregible, y sin tocar ningún precio.
      */
-    const guardar = async (forzarDescuento = false) => {
+    /* Activar al guardar (2026-10-01): la promoción nacía SIEMPRE en borrador
+       y había que ir a buscarla a Activas para encenderla — un paso que casi
+       siempre se daba enseguida. Sigue existiendo guardar en borrador. */
+    const [activarAlGuardar, setActivarAlGuardar] = useState(false);
+
+    const guardar = async (forzarDescuento = false, activar = activarAlGuardar) => {
         setFallo(null);
         setGuardando(true);
         try {
@@ -336,7 +341,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                     // La promoción YA existe: el genérico «no se pudo crear la
                     // promoción» de abajo invitaba a crearla otra vez.
                     setFallo(`La promoción «${nombre.trim()}» ya está creada; el descuento sigue sin quedar: `
-                        + `${mensajeAmigable(e, 'el sistema de ventas no lo aceptó')}.`);
+                        + `${mensajeAmigable(e, 'no se pudo guardar')}.`);
                     return;
                 }
                 if (!ok) return;
@@ -381,6 +386,21 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                 })),
             });
 
+            /* Encenderla, si se pidió. Si esto falla la promoción ya existe en
+               borrador: se dice así, y no como «no se pudo crear». */
+            if (activar && creada?.id) {
+                try {
+                    await activarPromocion(creada.id, true);
+                } catch (e) {
+                    descartar();
+                    // Se recuerda como creada: otro clic no puede crearla de nuevo.
+                    setPromoCreada(Number(creada.id) || null);
+                    setFallo(`La promoción «${nombre.trim()}» quedó creada en borrador, pero no se pudo activar: `
+                        + `${mensajeAmigable(e, 'vuelve a intentar desde Activas')}.`);
+                    if (!desc.activo) return;
+                }
+            }
+
             /* La promoción YA existe: el borrador se suelta ahora, no al final.
                Si el descuento falla y se cierra con «Dejarlo así», el borrador
                vivo ofrecía recuperarla al reabrir — y guardarla de nuevo creaba
@@ -411,7 +431,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                    el descuento no. Un «no se pudo guardar» a secas haría creer
                    que no quedó nada y llevaría a crearla otra vez. */
                 setFallo(`La promoción «${nombre.trim()}» quedó creada, pero el descuento no: `
-                    + `${mensajeAmigable(e, 'el sistema de ventas no lo aceptó')}. `
+                    + `${mensajeAmigable(e, 'no se pudo guardar')}. `
                     + 'Puedes reintentar sólo el descuento.');
                 return;
             }
@@ -661,9 +681,11 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                         ? 'Termina el producto para poder guardar.'
                         : (problemasPromo[0] || problemasDesc[0]
                             || (promoCreada ? 'La promoción ya quedó: falta el descuento.'
-                                : 'Nace en borrador — no cuenta hasta activarla.'))}
+                                : 'En borrador no cuenta ventas hasta activarla.'))}
                 </span>
-                <Button variant="secondary" onClick={onClose} disabled={guardando}>
+                {/* Con la promoción ya creada, cerrar también recarga la lista:
+                    con `onClose` a secas la nueva no aparecía hasta refrescar. */}
+                <Button variant="secondary" onClick={promoCreada ? onGuardada : onClose} disabled={guardando}>
                     {promoCreada ? 'Dejarlo así' : 'Cancelar'}
                 </Button>
                 {avisosDesc.length > 0 ? (
@@ -671,11 +693,24 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                         onClick={() => guardar(true)}>
                         Guardar de todos modos
                     </Button>
-                ) : (
+                ) : promoCreada && !desc.activo ? null : promoCreada ? (
                     <Button icon={Check} loading={guardando} disabled={!listo}
                         onClick={() => guardar(false)}>
-                        {promoCreada ? 'Reintentar el descuento' : 'Guardar promoción'}
+                        Reintentar el descuento
                     </Button>
+                ) : (
+                    <>
+                        <Button variant="secondary" icon={Check}
+                            loading={guardando && !activarAlGuardar} disabled={!listo || guardando}
+                            onClick={() => { setActivarAlGuardar(false); guardar(false, false); }}>
+                            En borrador
+                        </Button>
+                        <Button icon={Power}
+                            loading={guardando && activarAlGuardar} disabled={!listo || guardando}
+                            onClick={() => { setActivarAlGuardar(true); guardar(false, true); }}>
+                            Guardar y activar
+                        </Button>
+                    </>
                 )}
             </LiquidModal.Footer>
 

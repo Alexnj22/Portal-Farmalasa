@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { numeroEscrito, problemasDeLaPromocion, fmtLote } from '@nucleo/utils/promocionesUtils';
 
 describe('numeroEscrito', () => {
-    it('acepta coma decimal y espacios', () => {
+    it('la coma agrupa miles como se escribe acá; decimal sólo si no puede ser otra cosa', () => {
+        expect(numeroEscrito('4,250')).toBe(4250);
+        expect(numeroEscrito('1,250.50')).toBe(1250.5);
+        expect(numeroEscrito('$1,000')).toBe(1000);
         expect(numeroEscrito('1,5')).toBe(1.5);
         expect(numeroEscrito(' 12 ')).toBe(12);
         expect(numeroEscrito('0.25')).toBe(0.25);

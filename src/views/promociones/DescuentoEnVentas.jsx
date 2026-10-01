@@ -113,7 +113,7 @@ export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, 
                 checked={!!valor.activo}
                 onChange={(v) => onCambiar('activo', v)}
                 label="Además baja el precio en la venta"
-                description="El sistema de ventas le descuenta al renglón cuando se vende cualquiera de estos productos."
+                description="La venta le descuenta al renglón cuando se vende cualquiera de estos productos."
             />
 
             {valor.activo && (
@@ -184,8 +184,8 @@ export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, 
                             ) : (
                                 <>
                                     <Notice variant="warning" icon={AlertTriangle}>
-                                        La promoción aplica en {salasMarcadas.length} salas, pero el
-                                        sistema de ventas admite <span className="font-semibold">un
+                                        La promoción aplica en {salasMarcadas.length} salas, pero la
+                                        venta admite <span className="font-semibold">un
                                         solo descuento por producto</span> en unas mismas fechas —da
                                         igual la sala. Elige dónde baja el precio.
                                     </Notice>

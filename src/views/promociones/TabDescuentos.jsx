@@ -6,20 +6,15 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import ConfirmModal from '../../components/common/ConfirmModal';
+import TituloSeccion from './TituloSeccion';
 import { EmptyState } from '../../components/common/StateViews';
 import { borrarDescuento } from '@nucleo/data/descuentos';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { fmtVigencia } from '@nucleo/utils/promocionesUtils';
-import { hoySV } from '@nucleo/utils/fecha';
+import { fmtVigencia, estadoDescuento } from '@nucleo/utils/promocionesUtils';
 
-/** Vigente, programado o terminado — sale de las fechas, que es lo único que hay. */
-function estado(d) {
-    const hoy = hoySV();
-    if (d.fin < hoy) return { clave: 'terminados', rotulo: 'Terminado', variant: 'neutral' };
-    if (d.inicio > hoy) return { clave: 'programados', rotulo: 'Programado', variant: 'info' };
-    return { clave: 'activos', rotulo: 'Descontando', variant: 'success' };
-}
+/** Vigente, programado o terminado — el canónico vive en `promocionesUtils`. */
+const estado = (d) => estadoDescuento(d);
 
 /* El subtítulo dice QUÉ HACE cada grupo, no lo que ya dice su nombre: la
    diferencia entre los tres es si un precio está bajo ahora, lo va a estar, o
@@ -39,7 +34,7 @@ const SECCIONES = [
  * una celda.
  */
 export default function TabDescuentos({
-    descuentos, busqueda, puedeEditar, alcanceTodo, salas, onEditar, onCambio,
+    descuentos, busqueda, filtrando = false, puedeEditar, alcanceTodo, salas, onEditar, onCambio,
 }) {
     const [borrando, setBorrando] = useState(null);   // el descuento que se va a borrar
     const [ocupado, setOcupado] = useState(false);
@@ -74,12 +69,14 @@ export default function TabDescuentos({
     if (!descuentos.length) {
         // Buscar sin resultados NO es un vacío: uno se arregla borrando el
         // filtro y el otro no tiene arreglo (§26.2).
-        return busqueda.trim()
+        return busqueda.trim() || filtrando
             ? (
                 <EmptyState
                     icon={Search}
                     title="Sin resultados"
-                    subtitle={`Ningún descuento coincide con "${busqueda.trim()}".`}
+                    subtitle={busqueda.trim()
+                        ? `Ningún descuento coincide con "${busqueda.trim()}".`
+                        : 'Ningún descuento coincide con los filtros puestos.'}
                 />
             )
             : (
@@ -97,8 +94,8 @@ export default function TabDescuentos({
                 que lista cosas y no tiene botón de agregar se lee como un
                 permiso que falta. */}
             <Notice variant="info" icon={Info}>
-                Los descuentos nacen al crear la promoción. Aquí se ven todos —incluidos los
-                que se hicieron directamente en el sistema de ventas— y se corrigen o se quitan.
+                Los descuentos nacen al crear la promoción. Aquí se ven todos —incluidos
+                los que se cargaron sin promoción— y se corrigen o se quitan.
             </Notice>
 
             {fallo && <Notice variant="danger" icon={AlertTriangle}>{fallo}</Notice>}
@@ -117,13 +114,7 @@ export default function TabDescuentos({
                 if (!filas.length) return null;
                 return (
                     <section key={clave} className="space-y-2">
-                        <div className="flex items-baseline gap-2 flex-wrap">
-                            <h2 className="text-body-lg font-semibold text-content">{titulo}</h2>
-                            <span className="text-caption text-content-3 tabular-nums">
-                                {filas.length}
-                            </span>
-                            <span className="text-caption text-content-3">· {sub}</span>
-                        </div>
+                        <TituloSeccion as="h2" titulo={titulo} conteo={filas.length} sub={sub} />
                         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                             {filas.map((d) => (
                                 <Tarjeta
@@ -215,7 +206,7 @@ function Tarjeta({ d, salas, alcanceTodo, puedeEditar, onEditar, onBorrar }) {
                 <span className="truncate">
                     {d.promocion
                         ? <>De la promoción <span className="font-semibold">{d.promocion}</span></>
-                        : 'Hecho en el sistema de ventas, sin promoción en el portal'}
+                        : 'Sin promoción asociada'}
                 </span>
             </p>
 

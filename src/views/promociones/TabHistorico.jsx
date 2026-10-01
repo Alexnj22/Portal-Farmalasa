@@ -74,7 +74,7 @@ export default function TabHistorico({ promos, busqueda, filtrando = false, pued
                 ]}
                 /* Tocar la fila abre su Seguimiento: el vacío prometía que acá
                    se guarda «con lo que dejó», y no había cómo verlo. */
-                movil={{ usarAccionDeFila: !!onSeguir, ...(puedeEditar ? { acciones: true } : {}) }}
+                movil={puedeEditar ? { usarAccionDeFila: true, acciones: true } : { usarAccionDeFila: true }}
                 sortKey={sortKey}
                 sortDir={sortDir}
                 onSort={ordenar}

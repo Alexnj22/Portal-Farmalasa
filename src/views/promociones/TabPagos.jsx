@@ -3,10 +3,13 @@ import { Wallet, Warehouse, Briefcase, CheckCircle2, Clock, AlertTriangle, Searc
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
+import TituloSeccion from './TituloSeccion';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import { fetchPagosBonoProducto } from '@nucleo/data/bonosProducto';
 import { fmtMoneda, mensajeDeCarga } from '@nucleo/utils/promocionesUtils';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { exportCsv } from '@nucleo/utils/csvExport';
+import { hoySV } from '@nucleo/utils/fecha';
 
 const PAGADO = new Set(['pagado', 'fuera_del_portal']);
 
@@ -25,7 +28,7 @@ const PAGADO = new Set(['pagado', 'fuera_del_portal']);
 const tienePendiente = (p) => (p.salas || []).some((s) => Number(s.pendientes) > 0)
     || (p.bodega && !PAGADO.has(p.bodega.estado) && Number(p.bodega.monto) > 0);
 
-export default function TabPagos({ busqueda = '', soloPendientes = false, onResumen }) {
+export default function TabPagos({ busqueda = '', soloPendientes = false, onResumen, onExportable }) {
     const [todas, setTodas] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
@@ -58,6 +61,21 @@ export default function TabPagos({ busqueda = '', soloPendientes = false, onResu
             { key: 'a', icon: Briefcase, label: 'A planilla', value: fmtMoneda(planilla) },
         ] : []);
     }, [promos, onResumen]);
+
+    useEffect(() => {
+        onExportable?.(promos.length ? () => exportCsv(
+            ['PROMOCION', 'PARTE', 'SALA', 'PERSONAS', 'BONO', 'PAGADO', 'ESTADO'],
+            promos.flatMap((p) => [
+                ...(p.salas || []).map((x) => [p.promocion, 'Vendedores', x.sala, x.personas, x.total, x.pagado,
+                    Number(x.pendientes) > 0 ? `${x.pendientes} por pagar` : 'Pagado']),
+                ...(p.bodega ? [[p.promocion, 'Bodega', 'Salud 3', '', p.bodega.monto, '',
+                    PAGADO.has(p.bodega.estado) ? 'Pagado' : 'Por pagar']] : []),
+                ...(Number(p.administracion) > 0 ? [[p.promocion, 'Administracion', 'Planilla', '', p.administracion, '', '']] : []),
+            ]),
+            `promociones_pagos_${hoySV()}.csv`,
+            'promociones',
+        ) : null);
+    }, [promos, onExportable]);
 
     if (cargando) return <LoadingState label="Cargando los pagos…" />;
     if (error) {
@@ -96,7 +114,7 @@ export default function TabPagos({ busqueda = '', soloPendientes = false, onResu
             </p>
             {promos.map((p) => (
                 <section key={p.promocion_id} className="space-y-2">
-                    <h3 className="text-subtitle font-semibold text-content">{p.promocion}</h3>
+                    <TituloSeccion titulo={p.promocion} />
                     <DataTable
                         columns={[
                             { key: 'sala', label: 'Sala' },

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import {
     Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Wallet, Percent,
-    CalendarClock, CheckCircle2, Package, Users, DollarSign, FileText,
+    CalendarClock, CheckCircle2, Package, Users, DollarSign, FileText, Download,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -18,8 +18,9 @@ import { fetchDescuentos } from '@nucleo/data/descuentos';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { estadoVisible, esLaboratorio, textoBuscable, mensajeDeCarga } from '@nucleo/utils/promocionesUtils';
+import { estadoVisible, esLaboratorio, textoBuscable, mensajeDeCarga, estadoDescuento } from '@nucleo/utils/promocionesUtils';
 import { hoySV } from '@nucleo/utils/fecha';
+import { exportCsv } from '@nucleo/utils/csvExport';
 import TabActivas from './TabActivas';
 import TabSeguimiento from './TabSeguimiento';
 import TabHistorico from './TabHistorico';
@@ -122,6 +123,10 @@ export default function PromocionesView() {
     const [fTipo, setFTipo] = useState('');       // '' | 'producto' | 'laboratorio'
     const [fEstado, setFEstado] = useState('');   // '' | activa | borrador | finalizada
     const [fLab, setFLab] = useState('');         // nombre de laboratorio
+    // Los de Descuentos: con alcance de todas las salas se mezclaban seis
+    // salas sin forma de recortar.
+    const [fDescSala, setFDescSala] = useState('');
+    const [fDescEstado, setFDescEstado] = useState('');
 
     /* Estos dos NO son recortes de una lista: son «de qué estoy hablando». Aun
        así viven en la píldora, porque es el único sitio de la vista donde se
@@ -154,6 +159,13 @@ export default function PromocionesView() {
        cosa es peor que no tenerla. */
     const [resumenTab, setResumenTab] = useState(null);
     useEffect(() => { setResumenTab(null); }, [tab]); // eslint-disable-line react-hooks/set-state-in-effect -- el resumen es DE una pestaña; conservarlo al cambiar mostraría números de la anterior
+
+    /* Lo que exporta la pestaña que tiene sus propios datos (Pagos,
+       Excedentes). Lo publica ella con `onExportable`, igual que sus tarjetas,
+       y se suelta al cambiar de pestaña por el mismo motivo. */
+    const [exportadorTab, setExportadorTab] = useState(null);
+    useEffect(() => { setExportadorTab(null); }, [tab]); // eslint-disable-line react-hooks/set-state-in-effect -- el exportador es DE una pestaña
+    const publicarExportador = useCallback((fn) => setExportadorTab(() => fn), []);
 
     const [descuentos, setDescuentos] = useState([]);
     const [alcanceTodo, setAlcanceTodo] = useState(false);
@@ -255,16 +267,24 @@ export default function PromocionesView() {
     const recortaLaLista = ['activas', 'seguimiento', 'historico'].includes(tab);
     const filtrosPuestos = recortaLaLista
         ? [fTipo, filtraEstado && fEstado, fLab].filter(Boolean).length
-        : 0;
-    const limpiarFiltros = useCallback(() => { setFTipo(''); setFEstado(''); setFLab(''); }, []);
+        : tab === 'descuentos' ? [fDescSala, fDescEstado].filter(Boolean).length : 0;
+    const limpiarFiltros = useCallback(() => {
+        setFTipo(''); setFEstado(''); setFLab(''); setFDescSala(''); setFDescEstado('');
+    }, []);
 
     /* Busca por nombre del descuento y también por el de sus productos: quien
        pregunta «¿este producto tiene descuento?» escribe el producto. */
     const descuentosFiltrados = useMemo(() => {
-        if (!busqueda.trim()) return descuentos;
-        return descuentos.filter((d) => tokenMatch(busqueda,
-            d.descripcion, ...(d.productos || []).map((p) => p.nombre)));
-    }, [descuentos, busqueda]);
+        const q = busqueda.trim();
+        const hoy = hoySV();
+        return descuentos.filter((d) => {
+            if (q && !tokenMatch(q, d.descripcion, ...(d.productos || []).map((p) => p.nombre))) return false;
+            // «En todas las salas» también descuenta en la sala elegida.
+            if (fDescSala && !d.todas_las_salas && String(d.branch_id) !== String(fDescSala)) return false;
+            if (fDescEstado && estadoDescuento(d, hoy).clave !== fDescEstado) return false;
+            return true;
+        });
+    }, [descuentos, busqueda, fDescSala, fDescEstado]);
 
     /* Por el estado VISIBLE y no por `p.estado`: la pantalla pinta «Vencida» y
        «Por vencer», que no son estados guardados sino una lectura de la fecha. */
@@ -376,7 +396,28 @@ export default function PromocionesView() {
        puertas era el defecto —obligaba a cargar los mismos productos y las
        mismas fechas dos veces, que es cómo dos listas que deberían decir lo
        mismo terminan diciendo cosas distintas. */
-    const acciones = !puedeEditar || tab === 'descuentos' ? [] : [
+    /* Exportar lo que se ve. Faltaba en todas las pestañas salvo «Quién
+       vendió»: lo que se negocia con un laboratorio se manda en planilla. */
+    const exportarLista = (lista, nombre) => exportCsv(
+        ['PROMOCION', 'TIPO', 'ESTADO', 'INICIO', 'FIN', 'LABORATORIOS', 'PRODUCTOS', 'ABIERTOS', 'LOTE', 'BAJA EL PRECIO'],
+        lista.map((p) => [
+            p.nombre, esLaboratorio(p) ? 'Laboratorio' : 'Producto', estadoVisible(p).rotulo,
+            p.inicio || '', p.fin || '', (p.laboratorios || []).join(' / '),
+            esLaboratorio(p) ? '' : (p.renglones ?? ''), esLaboratorio(p) ? '' : (p.abiertos ?? ''),
+            p.lote_total ?? '', p.descuentos > 0 ? 'Si' : 'No',
+        ]),
+        `promociones_${nombre}_${hoySV()}.csv`,
+        'promociones',
+    );
+    const exportador = tab === 'activas' && vivas.length ? () => exportarLista(vivas, 'vigentes')
+        : tab === 'historico' && terminadas.length ? () => exportarLista(terminadas, 'terminadas')
+            : exportadorTab;
+    const accionExportar = exportador ? [{
+        key: 'exportar', icon: Download, label: 'Exportar', title: 'Exportar lo que se ve a CSV',
+        tone: 'success', variant: 'quiet', soloIcono: true, onClick: exportador,
+    }] : [];
+
+    const acciones = [...(!puedeEditar || tab === 'descuentos' ? [] : [
             /* SIN `rotuloFijo`: es «opt-in y rara» según el propio canónico
                —hace que el texto no ceda nunca y la píldora se mida siempre
                con él—, y puesta en las DOS dejaba la barra con dos botones
@@ -410,7 +451,7 @@ export default function PromocionesView() {
                 rotulo: 'Por laboratorio', variant: 'secondary',
                 onClick: () => setModalLab(true),
             },
-        ];
+        ]), ...accionExportar];
 
     /* Sólo donde los filtros recortan lo que se ve. Seguimiento e Histórico sí
        listan promociones; Descuentos sale del sistema de ventas y Excedentes y
@@ -459,6 +500,7 @@ export default function PromocionesView() {
                 <TabDescuentos
                     descuentos={descuentosFiltrados}
                     busqueda={busqueda}
+                    filtrando={filtrosPuestos > 0}
                     puedeEditar={puedeEditar}
                     alcanceTodo={alcanceTodo}
                     salas={salasDeVenta}
@@ -501,11 +543,12 @@ export default function PromocionesView() {
         if (tab === 'pagos') {
             return (
                 <TabPagos busqueda={busqueda} soloPendientes={pagosPendientes === 'pendientes'}
-                    onResumen={setResumenTab} />
+                    onResumen={setResumenTab} onExportable={publicarExportador} />
             );
         }
         if (tab === 'excedentes') {
-            return <TabExcedentes puedeAprobar={puedeAprobar} busqueda={busqueda} onResumen={setResumenTab} />;
+            return <TabExcedentes puedeAprobar={puedeAprobar} busqueda={busqueda}
+                onResumen={setResumenTab} onExportable={publicarExportador} />;
         }
         if (tab === 'historico') {
             return (
@@ -597,6 +640,33 @@ export default function PromocionesView() {
                                             placeholder="Promoción"
                                             umbral={0}
                                             ancho="240px"
+                                        />
+                                    </FilterBar.Section>
+                                )}
+
+                                {tab === 'descuentos' && alcanceTodo && (
+                                    <FilterBar.Section label="sucursal" active={!!fDescSala}
+                                        onClear={() => setFDescSala('')}>
+                                        <FilterBar.Sucursal value={fDescSala}
+                                            onChange={(v) => setFDescSala(v || '')}
+                                            options={salasDeVenta.map((b) => ({ value: String(b.id), label: b.name }))} />
+                                    </FilterBar.Section>
+                                )}
+                                {tab === 'descuentos' && (
+                                    <FilterBar.Section label="estado" active={!!fDescEstado}
+                                        onClear={() => setFDescEstado('')}>
+                                        <FilterBar.Opciones
+                                            value={fDescEstado}
+                                            onChange={(v) => setFDescEstado(v || '')}
+                                            label="Estado"
+                                            placeholder="Estado"
+                                            umbral={0}
+                                            options={[
+                                                { value: '', label: 'Estado' },
+                                                { value: 'activos', label: 'Descontando' },
+                                                { value: 'programados', label: 'Programados' },
+                                                { value: 'terminados', label: 'Terminados' },
+                                            ]}
                                         />
                                     </FilterBar.Section>
                                 )}

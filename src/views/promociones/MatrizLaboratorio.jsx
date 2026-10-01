@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { AlertTriangle, Lock, FlaskConical, TrendingUp } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, Lock, FlaskConical, TrendingUp, Download } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -7,6 +7,7 @@ import Notice from '../../components/common/Notice';
 import { LoadingState, EmptyState } from '../../components/common/StateViews';
 import { fetchPromocionLaboratorio } from '@nucleo/data/promociones';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { exportCsv } from '@nucleo/utils/csvExport';
 import { fmtMoneda, fmtUnidades, mesesRecientes, rotuloMes } from '@nucleo/utils/promocionesUtils';
 import Campo from './Campo';
 
@@ -55,7 +56,29 @@ export default function MatrizLaboratorio({ promocionId, onCabecera }) {
 
     const salas = Array.isArray(datos?.salas) ? datos.salas : [];
 
-    if (cargando) return <LoadingState label="Calculando el avance…" />;
+    /* `mesesRecientes` cubre 13 meses: una promoción más vieja quedaba con el
+       selector en blanco porque su propio mes no estaba entre las opciones. */
+    const opcionesMes = useMemo(() => {
+        const base = mesesRecientes();
+        const propio = datos?.year_month;
+        if (!propio || base.some((o) => o.value === propio)) return base;
+        return [...base, { value: propio, label: rotuloMes(propio) }];
+    }, [datos?.year_month]);
+
+    const exportar = () => {
+        exportCsv(
+            ['SALA', 'VENTA', 'NIVEL', 'PERSONAS', 'CADA PERSONA', 'COSTO', 'FALTA PARA EL SIGUIENTE'],
+            salas.map((x) => [x.sala, x.venta, x.nivel ?? '', x.personas, x.monto_por_persona, x.costo,
+                x.siguiente_nivel != null ? x.falta : '']),
+            `promocion_laboratorio_${(datos?.nombre || promocionId).toString().replace(/\W+/g, '_')}_${datos?.mes_medido || datos?.year_month || ''}.csv`,
+            'promociones',
+        );
+    };
+
+    // El cargador tapa todo sólo la primera vez. Al cambiar de mes se queda la
+    // cabecera con su selector y se atenúan los números viejos: antes el panel
+    // entero desaparecía y volvía, selector incluido.
+    if (cargando && !datos) return <LoadingState label="Calculando el avance…" />;
 
     if (error) {
         return (
@@ -76,7 +99,8 @@ export default function MatrizLaboratorio({ promocionId, onCabecera }) {
     }
 
     return (
-        <div className="space-y-4">
+        <div className={`space-y-4 transition-opacity duration-[var(--dur-base)] ${cargando ? 'opacity-60' : ''}`}
+            aria-busy={cargando}>
             {datos.congelado && (
                 <Notice variant="info" icon={Lock}>
                     <span className="font-semibold">Mes cerrado.</span>{' '}
@@ -98,11 +122,16 @@ export default function MatrizLaboratorio({ promocionId, onCabecera }) {
                     <LiquidSelect
                         value={mes || datos.year_month}
                         onChange={setMes}
-                        options={mesesRecientes()}
+                        options={opcionesMes}
                         clearable={false}
                         ariaLabel="Mes contra el que se mide"
                     />
                 </Campo>
+                {salas.length > 0 && (
+                    <Button variant="secondary" size="sm" icon={Download} onClick={exportar}>
+                        Exportar
+                    </Button>
+                )}
                 {datos.simulacion && (
                     <Button variant="secondary" size="sm" onClick={() => setMes('')}>
                         Volver a {rotuloMes(datos.year_month)}
@@ -117,7 +146,9 @@ export default function MatrizLaboratorio({ promocionId, onCabecera }) {
                 )}
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 rounded-card border border-border-card p-3">
+            {/* El mismo recuadro de datos que las tarjetas de Activas: era una
+                caja con borde escrita a mano y sin superficie. */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 rounded-lg bg-surface-card-hover p-3">
                 <Total rotulo="Venta del mes" valor={fmtMoneda(datos.venta_total)} />
                 <Total rotulo="Costo del bono" valor={fmtMoneda(datos.costo_total)} destacado />
                 {/* «Personas» a secas se leía como el padrón: decía 0 mientras la

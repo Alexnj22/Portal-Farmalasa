@@ -19,7 +19,7 @@ import { guardarDescuento, sincronizarProductosDelDescuento } from '@nucleo/data
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
-import { fmtUnidades, fmtVigencia, MOTIVO_CIERRE, descuentoDesdeLaPromocion, estadoVisible, mensajeDeCarga } from '@nucleo/utils/promocionesUtils';
+import { fmtUnidades, fmtVigencia, MOTIVO_CIERRE, descuentoDesdeLaPromocion, estadoVisible, mensajeDeCarga, numeroEscrito } from '@nucleo/utils/promocionesUtils';
 import DescuentoEnVentas from './DescuentoEnVentas';
 import AgregarProductos from './AgregarProductos';
 import Campo from './Campo';
@@ -186,7 +186,7 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
             setAvisoSync(r);
         } catch (e) {
             setFallo(mensajeAmigable(e,
-                'El producto quedó en la promoción, pero el descuento del sistema de ventas no se pudo actualizar. Corrígelo desde Descuentos.'));
+                'El producto quedó en la promoción, pero su descuento no se pudo actualizar. Corrígelo desde Descuentos.'));
         } finally {
             setSincronizando(false);
         }
@@ -349,7 +349,7 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                                     </>
                                 ) : avisoSync.cambiados?.length ? (
                                     <>
-                                        Listo en el sistema de ventas:{' '}
+                                        Descuento actualizado:{' '}
                                         {avisoSync.cambiados.map((c) => (
                                             `«${c.descripcion}» queda con ${c.productos} producto${c.productos === 1 ? '' : 's'}`
                                         )).join(' · ')}.
@@ -560,8 +560,8 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                         {pendiente?.tipo === 'quitar' ? (
                             <>
                                 <span className="font-semibold">{pendiente?.renglon?.producto ?? ''}</span>{' '}
-                                sale de la promoción. Si no se quita también del descuento, el sistema
-                                de ventas <span className="font-semibold">le sigue bajando el precio</span>{' '}
+                                sale de la promoción. Si no se quita también del descuento, la venta{' '}
+                                <span className="font-semibold">le sigue bajando el precio</span>{' '}
                                 a un producto que ya no es de ninguna campaña.
                             </>
                         ) : (
@@ -655,6 +655,12 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar, a
         { value: '', label: 'Cualquier presentación' },
         ...presentaciones.map((p) => ({ value: String(p.factor), label: `${p.etiqueta} · ×${p.factor}` })),
     ]), [presentaciones]);
+
+    /* Lo escrito se lee con `numeroEscrito`: la capa de datos hace
+       `Number(x) || 0`, y «abc» o «1.2.3» se guardaban como $0 sin aviso. */
+    const montosIlegibles = [bv, ba, bb].some((v) => String(v ?? '').trim() !== '' && numeroEscrito(v) == null);
+    const loteIlegible = String(lote ?? '').trim() !== ''
+        && !(numeroEscrito(lote) > 0 && Number.isInteger(numeroEscrito(lote)));
 
     const correr = async (clave, fn) => {
         setOcupado(clave);
@@ -773,10 +779,13 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar, a
                 base los valida juntos y ofrecerlos por separado dejaba un
                 candado sin llave — bajar el lote pedía arreglar el reparto, y
                 el reparto no se podía cambiar por no cuadrar con el lote viejo. */}
-            <Button size="sm" icon={Check} loading={ocupado === 'declarado'}
+            {loteIlegible && (
+                <p className="text-caption text-danger-text">El lote tiene que ser un número entero mayor que cero, o quedar vacío.</p>
+            )}
+            <Button size="sm" icon={Check} loading={ocupado === 'declarado'} disabled={loteIlegible}
                 onClick={() => correr('declarado', () => editarRenglon({
                     renglonId: r.id,
-                    loteTotal: lote === '' ? null : lote,
+                    loteTotal: lote === '' ? null : numeroEscrito(lote),
                     factorUnidades: factor === '' ? null : factor,
                     tieneBono,
                     paga: tieneBono ? paga : null,
@@ -809,6 +818,9 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar, a
                     <PortalInput label="Fondo bodega" name={`e-bb-${r.id}`} value={bb}
                         onChange={(e) => setBb(e.target.value)} inputMode="decimal" />
                 </div>
+                {montosIlegibles && (
+                    <p className="text-caption text-danger-text">Uno de los montos no se entiende como número.</p>
+                )}
                 <p className="text-caption text-content-3">
                     Los montos nuevos rigen <span className="font-semibold">desde hoy</span>. Lo vendido
                     antes se sigue pagando con el monto que regía ese día.
@@ -817,9 +829,12 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar, a
                     datos ponía 1, y un producto que pagaba «cada 3 u.» pasaba a
                     pagar por unidad desde hoy. */}
                 <Button size="sm" variant="secondary" icon={DollarSign} loading={ocupado === 'tarifa'}
-                    disabled={!tarifaCambio}
+                    disabled={!tarifaCambio || montosIlegibles}
                     onClick={() => correr('tarifa', () => editarTarifaRenglon({
-                        renglonId: r.id, bonoVendedor: bv, bonoAdm: ba, bonoBodega: bb,
+                        renglonId: r.id,
+                        bonoVendedor: numeroEscrito(bv) ?? 0,
+                        bonoAdm: numeroEscrito(ba) ?? 0,
+                        bonoBodega: numeroEscrito(bb) ?? 0,
                         unidadesPorBono: Number(r.unidades_por_bono) || 1,
                     }))}>
                     Guardar montos desde hoy

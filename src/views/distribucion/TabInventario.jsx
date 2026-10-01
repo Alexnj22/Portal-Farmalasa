@@ -302,7 +302,8 @@ export default function TabInventario({ emisor, puedeVender, puedeConfigurar, bu
         try {
             const [r, cat, cua] = await Promise.all([fetchLotes(), puedeConfigurar ? fetchCatalogo() : Promise.resolve([]), fetchCuarentena()]);
             if (mio === pedidoRef.current) {
-                setLotes(r);
+                // Bodega: lo que va en un camión se mira en «Camiones» (0030).
+                setLotes(r.filter(l => !l.en_camion_de));
                 setCuarentena(cua);
                 // Costo promedio por producto (sin IVA), lo mantienen las compras (borrador 0015).
                 setCostos(new Map(cat.filter(p => p.costo_promedio !== null).map(p => [`${p.emisor_id}:${p.product_id}`, Number(p.costo_promedio)])));

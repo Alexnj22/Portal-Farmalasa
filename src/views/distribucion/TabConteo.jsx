@@ -100,7 +100,7 @@ export default function TabConteo({ puedeVender, puedeConfigurar, buscar }) {
         setError('');
         try {
             const [cs, bs, ls] = await Promise.all([fetchConteos(), fetchBajas(), fetchLotes()]);
-            setConteos(cs); setBajas(bs); setLotes(ls.filter(l => l.existencia > 0));
+            setConteos(cs); setBajas(bs); setLotes(ls.filter(l => l.existencia > 0 && !l.en_camion_de));
             const abierto = cs.find(c => c.estado === 'abierto');
             setConteo(abierto ? await fetchConteo(abierto.id) : null);
         } catch (e) {

@@ -111,3 +111,30 @@ describe('formas de pago', () => {
         expect(problemaDePagos([efectivo({ monto: '30' }), filaNueva('03')], 25.48, {})).toMatch(/Quítala/);
     });
 });
+
+// Borrador 0029: el % del catálogo. Mismos casos que se corrieron contra el
+// trigger en pruebas el 2026-09-30 (5 % → «catalogo», 8 % → «manual»).
+import { descuentoDelCatalogo, topeDeDescuento } from '../../src/views/distribucion/precios';
+
+describe('descuento del catálogo', () => {
+    const hoy = '2026-09-30';
+    it('sin % o en cero no hay descuento', () => {
+        expect(descuentoDelCatalogo({}, hoy)).toBe(0);
+        expect(descuentoDelCatalogo({ descuento_pct: 0 }, hoy)).toBe(0);
+        expect(descuentoDelCatalogo(null, hoy)).toBe(0);
+    });
+    it('vale dentro de la vigencia, incluidos los extremos', () => {
+        expect(descuentoDelCatalogo({ descuento_pct: '5.00' }, hoy)).toBe(5);
+        expect(descuentoDelCatalogo({ descuento_pct: 5, descuento_desde: hoy, descuento_hasta: hoy }, hoy)).toBe(5);
+    });
+    it('fuera de la vigencia no vale', () => {
+        expect(descuentoDelCatalogo({ descuento_pct: 5, descuento_desde: '2026-10-01' }, hoy)).toBe(0);
+        expect(descuentoDelCatalogo({ descuento_pct: 5, descuento_hasta: '2026-09-29' }, hoy)).toBe(0);
+    });
+    it('el tope: el del producto, si no el de la empresa, y nunca bajo el % del catálogo', () => {
+        expect(topeDeDescuento({}, 10, hoy)).toBe(10);
+        expect(topeDeDescuento({ descuento_max_pct: '15' }, 10, hoy)).toBe(15);
+        expect(topeDeDescuento({ descuento_max_pct: 0 }, 10, hoy)).toBe(0);
+        expect(topeDeDescuento({ descuento_max_pct: 3, descuento_pct: 5 }, 10, hoy)).toBe(5);
+    });
+});

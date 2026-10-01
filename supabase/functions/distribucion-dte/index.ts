@@ -50,13 +50,13 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
 import {
-  armarCreditoFiscal, armarFactura, armarNotaCredito, totalAPagar,
+  armarCreditoFiscal, armarFactura, armarNotaCredito, armarNotaRemision, totalAPagar,
   type DatosVenta, type Emisor, type Receptor, type Renglon,
 } from "../_shared/dte/documentos.ts";
-import { CONTINGENCIA, MODELO, OPERACION, TIPO_DTE, VERSION, type Ambiente, type TipoDte } from "../_shared/dte/catalogos.ts";
+import { CONTINGENCIA, DOC_IDENTIFICACION, MODELO, OPERACION, TIPO_DTE, VERSION, type Ambiente, type TipoDte } from "../_shared/dte/catalogos.ts";
 import { claveCoincide, firmarDte, importarLlavePrivada, leerCertificadoMH } from "../_shared/dte/firma.ts";
 import { armarContingencia, armarInvalidacion } from "../_shared/dte/eventos.ts";
-import { partirPorLote, type Asignacion } from "../_shared/dte/lotes.ts";
+import { colaDeLote, partirPorLote, type Asignacion } from "../_shared/dte/lotes.ts";
 import {
   autenticar, consultar, ErrorHacienda, invalidar, reportarContingencia, tokenVigente, transmitirConReintentos,
   type RespuestaRecepcion, type Token,
@@ -491,6 +491,13 @@ async function prepararInvalidacion(
     throw new ErrorUsuario("Este documento ya tiene una invalidación en curso.");
   }
   if (!emp?.dui) throw new ErrorUsuario("Tu ficha no tiene DUI: Hacienda pide el documento de quien invalida.");
+  // El plazo de la Normativa DTE v2.0 (regla 13.1). El juez vive en la base
+  // (dist_plazo_invalidacion) y es el mismo que usa la pantalla para avisar.
+  const { data: plazo, error: ePlazo } = await admin.rpc("dist_plazo_invalidacion_de", { p_dte: dteId });
+  if (ePlazo) throw new Error(`leer el plazo de invalidación: ${ePlazo.message}`);
+  if ((plazo as any)?.estado === "vencido") {
+    throw new ErrorUsuario(`Venció el plazo para invalidar este documento (${(plazo as any).limite}). Corrígelo con una Nota de Crédito.`);
+  }
   const { data: e, error: eE } = await admin.from("dist_emisores").select("*").eq("id", d.emisor_id).single();
   if (eE) throw new Error(`leer el emisor: ${eE.message}`);
   if (!e.cod_estable_mh || !e.cod_punto_venta_mh) {
@@ -704,6 +711,11 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string, cont
         + `puede llevar a crédito hasta $${Math.max(0, limite - saldo).toFixed(2)}. Cobra un abono o cambia la forma de pago.`, 409);
     }
   }
+  // Un punto de venta por vendedor (lo crea la primera vez que emite). La
+  // numeración es por establecimiento: el punto de venta sólo va en el número.
+  const { data: pv, error: ePv } = await admin.rpc("dist_punto_venta_de", { p_emisor: e.id, p_empleado: empleadoId });
+  if (ePv) throw new Error(`punto de venta: ${ePv.message}`);
+  e.punto_venta = pv ?? e.punto_venta;
   const { data: correlativo, error: eCor } = await admin.rpc("dist_siguiente_correlativo", {
     p_emisor: e.id, p_ambiente: ambiente, p_tipo: tipo,
     p_establecimiento: e.establecimiento, p_punto_venta: e.punto_venta, p_anio: anio,
@@ -761,6 +773,82 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string, cont
   return { dte_id: ins.id, tipo, numero_control: doc.numeroControl, codigo_generacion: doc.codigoGeneracion, total: doc.totalPagar, ...envio };
 }
 
+// ── Nota de Remisión de la carga del camión (borrador 0030) ────────────────
+// Código Tributario art. 109: la mercadería que circula sin venderse va
+// amparada por una NR. Título «04 · traslado» (CAT-025). El receptor es la
+// misma empresa: la norma no dice cómo llenarlo cuando el traslado es propio,
+// y se confirma en el plan de pruebas de Hacienda. Los montos van al precio
+// del catálogo: la NR dice qué viaja y cuánto vale, no cobra nada.
+async function notaRemision(admin: Admin, comoUsuario: Admin, empleadoId: string, cargaId: number) {
+  const { data: puede, error: ePerm } = await comoUsuario.rpc("auth_can_edit_any", { p_modules: ["distribucion_config"] });
+  if (ePerm) throw new Error(`permiso: ${ePerm.message}`);
+  if (!puede) throw new ErrorUsuario("La Nota de Remisión la emite quien administra la bodega.", 403);
+  const { data: g, error: eG } = await admin.from("dist_cargas")
+    .select("id, emisor_id, vendedor_id, estado, dte_id, employees!dist_cargas_vendedor_id_fkey(name), dist_dte(estado)")
+    .eq("id", cargaId).single();
+  if (eG) throw new Error(`leer la carga: ${eG.message}`);
+  if (g.estado !== "abierta") throw new ErrorUsuario("Esa carga ya se cerró.");
+  const previo = (g as any).dist_dte?.estado;
+  if (g.dte_id && !["descartado", "rechazado", "invalidado"].includes(previo)) {
+    return { dte_id: g.dte_id, aviso: "Esta carga ya tiene su Nota de Remisión." };
+  }
+  const [emi, its] = await Promise.all([
+    admin.from("dist_emisores").select("*").eq("id", g.emisor_id).single(),
+    admin.from("dist_carga_items")
+      .select("cargado, product_id, dist_lotes!dist_carga_items_lote_camion_id_fkey(lote, vence), products(nombre)")
+      .eq("carga_id", cargaId).gt("cargado", 0).order("id"),
+  ]);
+  if (emi.error) throw new Error(`leer el emisor: ${emi.error.message}`);
+  if (its.error) throw new Error(`leer la carga: ${its.error.message}`);
+  if (!its.data?.length) throw new ErrorUsuario("La carga está vacía.");
+  const e = emi.data!;
+  const { data: cat, error: eCat } = await admin.from("dist_catalogo").select("product_id, precio_con_iva")
+    .eq("emisor_id", e.id).in("product_id", its.data.map((i: any) => i.product_id));
+  if (eCat) throw new Error(`leer precios: ${eCat.message}`);
+  const precio = new Map((cat ?? []).map((c: any) => [c.product_id, String(c.precio_con_iva)]));
+  const renglones: Renglon[] = its.data.map((i: any) => ({
+    codigo: String(i.product_id),
+    descripcion: `${i.products?.nombre ?? `Producto ${i.product_id}`}${colaDeLote(i.dist_lotes?.lote ?? "", i.dist_lotes?.vence ?? null)}`,
+    cantidad: String(i.cargado), precio: precio.get(i.product_id) ?? "0", precioIncluyeIva: true, descuento: "0",
+  }));
+  const { data: pv, error: ePv } = await admin.rpc("dist_punto_venta_de", { p_emisor: e.id, p_empleado: g.vendedor_id });
+  if (ePv) throw new Error(`punto de venta: ${ePv.message}`);
+  e.punto_venta = pv ?? e.punto_venta;
+  const ambiente = e.ambiente as Ambiente;
+  const anio = Number(new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 4));
+  const { data: correlativo, error: eCor } = await admin.rpc("dist_siguiente_correlativo", {
+    p_emisor: e.id, p_ambiente: ambiente, p_tipo: TIPO_DTE.NOTA_REMISION,
+    p_establecimiento: e.establecimiento, p_punto_venta: e.punto_venta, p_anio: anio,
+  });
+  if (eCor) throw new Error(`correlativo: ${eCor.message}`);
+  const emisor = emisorDe(e);
+  let doc;
+  try {
+    doc = armarNotaRemision({
+      ambiente, emisor, correlativo: correlativo as number, renglones, bienTitulo: "04",
+      receptor: {
+        tipoDocumento: DOC_IDENTIFICACION.NIT, numDocumento: e.nit, nrc: e.nrc, nombre: e.nombre,
+        codActividad: e.cod_actividad, descActividad: e.desc_actividad, nombreComercial: e.nombre_comercial,
+        direccion: emisor.direccion, telefono: e.telefono, correo: e.correo,
+      } as Receptor,
+      observaciones: `Traslado de mercadería al camión de ${(g as any).employees?.name ?? "ruta"} (carga ${g.id}).`,
+    });
+  } catch (err) {
+    throw new ErrorUsuario((err as Error).message);
+  }
+  const llave = await llaveDeFirma();
+  const firmado = llave ? await firmarDte(doc.json, llave) : null;
+  const { data: ins, error: eIns } = await admin.from("dist_dte").insert({
+    emisor_id: e.id, ambiente, tipo: TIPO_DTE.NOTA_REMISION, codigo_generacion: doc.codigoGeneracion, numero_control: doc.numeroControl,
+    fec_emi: doc.fecEmi, hor_emi: doc.horEmi, total_pagar: doc.totalPagar,
+    json: doc.json, firmado, estado: firmado ? "firmado" : "sin_firmar", creado_por: empleadoId,
+  }).select("id").single();
+  if (eIns) throw new Error(`guardar la Nota de Remisión: ${eIns.message}`);
+  const { error: eU } = await admin.from("dist_cargas").update({ dte_id: ins.id }).eq("id", cargaId);
+  if (eU) throw new Error(`ligar la nota a la carga: ${eU.message}`);
+  return { dte_id: ins.id, numero_control: doc.numeroControl, ...(await transmitirDte(admin, ins.id)) };
+}
+
 // ── Nota de Crédito por una devolución (borrador 0017) ─────────────────────
 // La base valida y aparta (`dist_preparar_devolucion`, con la sesión de quien
 // devuelve: el permiso y la firma son suyos); acá se arma, se firma y se
@@ -800,6 +888,11 @@ async function notaCredito(admin: Admin, comoUsuario: Admin, empleadoId: string,
   }));
   const ambiente = o.ambiente as Ambiente;
   const anio = Number(new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 4));
+  // Un punto de venta por vendedor (lo crea la primera vez que emite). La
+  // numeración es por establecimiento: el punto de venta sólo va en el número.
+  const { data: pv, error: ePv } = await admin.rpc("dist_punto_venta_de", { p_emisor: e.id, p_empleado: empleadoId });
+  if (ePv) throw new Error(`punto de venta: ${ePv.message}`);
+  e.punto_venta = pv ?? e.punto_venta;
   const { data: correlativo, error: eCor } = await admin.rpc("dist_siguiente_correlativo", {
     p_emisor: e.id, p_ambiente: ambiente, p_tipo: TIPO_DTE.NOTA_CREDITO,
     p_establecimiento: e.establecimiento, p_punto_venta: e.punto_venta, p_anio: anio,
@@ -877,6 +970,9 @@ Deno.serve(async (req) => {
     }
     if (cuerpo?.accion === "enviar_contingencia") {
       return json(req, 200, await enviarContingencia(admin, empleado.id));
+    }
+    if (cuerpo?.accion === "nota_remision" && Number.isInteger(cuerpo.carga_id)) {
+      return json(req, 200, await notaRemision(admin, comoUsuario, empleado.id, cuerpo.carga_id));
     }
     if (cuerpo?.accion === "nota_credito" && Number.isInteger(cuerpo.dte_id)) {
       return json(req, 200, await notaCredito(admin, comoUsuario, empleado.id, cuerpo));

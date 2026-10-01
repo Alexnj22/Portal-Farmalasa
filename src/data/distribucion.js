@@ -99,7 +99,7 @@ export async function guardarCliente(cliente) {
 export async function fetchCatalogo() {
     const rows = await fetchAllRows(() => supabase
         .from('dist_catalogo')
-        .select('emisor_id, product_id, precio_con_iva, venta_libre, activo, costo_promedio, products(nombre, codigo_barras, es_antibiotico, requiere_receta, regulado)')
+        .select('emisor_id, product_id, precio_con_iva, venta_libre, activo, costo_promedio, descuento_pct, descuento_desde, descuento_hasta, descuento_max_pct, products(nombre, codigo_barras, es_antibiotico, requiere_receta, regulado)')
         .order('product_id'));
     if (rows === null) throw new Error('No se pudo cargar el catálogo.');
     return rows.map(r => ({
@@ -143,7 +143,7 @@ export async function agregarAlCatalogo(emisorId, productId, precioConIva, venta
 
 // ── Pedidos ────────────────────────────────────────────────────────────────
 
-const SELECT_PEDIDO = 'id, cliente_id, vendedor_id, estado, tipo_documento, condicion, forma_pago, plazo_dias, observaciones, created_at, dte_id, descuento_solicitud_id, '
+const SELECT_PEDIDO = 'id, cliente_id, vendedor_id, estado, tipo_documento, condicion, forma_pago, plazo_dias, observaciones, created_at, dte_id, descuento_solicitud_id, desde_camion, '
     + 'dist_clientes(nombre, tipo, contribuyente), employees!dist_pedidos_vendedor_id_fkey(name), '
     + 'dist_dte!dist_pedidos_dte_id_fkey(numero_control, estado, total_pagar, tipo), '
     // Los renglones, para el total de una preventa (sin documento todavía no
@@ -181,7 +181,7 @@ export async function fetchHistorialDeCliente(clienteId) {
 export async function fetchPedidoParaCorregir(pedidoId) {
     const [{ data: pedido, error }, items, pagos] = await Promise.all([
         supabase.from('dist_pedidos')
-            .select('id, cliente_id, estado, tipo_documento, condicion, forma_pago, plazo_dias, observaciones, reemplaza_dte_id, descuento_solicitud_id, client_uuid')
+            .select('id, cliente_id, estado, tipo_documento, condicion, forma_pago, plazo_dias, observaciones, reemplaza_dte_id, descuento_solicitud_id, client_uuid, desde_camion')
             .eq('id', pedidoId).single(),
         fetchItemsDePedido(pedidoId),
         fetchPagos(pedidoId),
@@ -221,7 +221,7 @@ function filaDeRenglon(pedidoId, r) {
  * mandar: si la señal se corta y se reintenta, la base rechaza el duplicado
  * por `client_uuid` en vez de crear dos pedidos.
  */
-export async function crearPedido({ emisorId, clienteId, tipoDocumento, condicion, plazoDias, formaPago, observaciones, clientUuid, renglones }) {
+export async function crearPedido({ emisorId, clienteId, tipoDocumento, condicion, plazoDias, formaPago, observaciones, clientUuid, renglones, desdeCamion = false }) {
     const { data: previo, error: ePrev } = await supabase.from('dist_pedidos')
         .select('id').eq('client_uuid', clientUuid).maybeSingle();
     if (ePrev) throw ePrev;
@@ -232,6 +232,8 @@ export async function crearPedido({ emisorId, clienteId, tipoDocumento, condicio
             emisor_id: emisorId, cliente_id: clienteId, tipo_documento: tipoDocumento,
             condicion, plazo_dias: condicion === 2 ? plazoDias : null,
             forma_pago: formaPago, observaciones: observaciones?.trim() || null, client_uuid: clientUuid,
+            // Autoventa (0030): sale del camión de quien vende, no de bodega.
+            desde_camion: !!desdeCamion,
         }).select('id').single();
         if (error) throw error;
         pedidoId = data.id;
@@ -354,6 +356,26 @@ export async function fetchDocumentos({ desde } = {}) {
 export async function fetchDocumento(id) {
     const { data, error } = await supabase.from('dist_dte')
         .select('*, dist_clientes(nombre, correo), correo:dist_correo_vigente(estado, destinatario, enviado_at, ultimo_error)').eq('id', id).single();
+    if (error) throw error;
+    return data;
+}
+
+/** Los puntos de venta de los vendedores (borrador 0028): uno por vendedor, se crea al emitir. */
+export async function fetchPuntosVenta(emisorId) {
+    const { data, error } = await supabase.from('dist_puntos_venta')
+        .select('codigo, activo, empleado:employees(id, name)').eq('emisor_id', emisorId).order('codigo');
+    if (error) throw error;
+    return data ?? [];
+}
+
+/**
+ * Hasta cuándo se puede invalidar un documento sellado (Normativa DTE v2.0,
+ * regla 13.1). El juez es `dist_plazo_invalidacion`, el mismo que consulta la
+ * edge function antes de firmar el evento: la pantalla avisa, el servidor frena.
+ * → { limite, limite_medicamentos, estado: 'vigente'|'gracia'|'medicamentos'|'vencido', dias }
+ */
+export async function fetchPlazoInvalidacion(dteId) {
+    const { data, error } = await supabase.rpc('dist_plazo_invalidacion_de', { p_dte: dteId });
     if (error) throw error;
     return data;
 }
@@ -851,3 +873,29 @@ export async function anularRecibo(reciboId, motivo) {
     if (error) throw error;
     return data;
 }
+
+// ── Camiones: autoventa (borrador 0030) ────────────────────────────────────
+
+/** Por camión: la carga abierta, su Nota de Remisión y lo que lleva por lote. */
+export async function fetchCamiones() {
+    const { data, error } = await supabase.rpc('dist_camiones');
+    if (error) throw error;
+    return data ?? [];
+}
+
+/** Carga el camión de un vendedor: [{ lote_id (bodega), unidades }]. Devuelve la carga. */
+export async function cargarCamion(vendedorId, items, nota) {
+    const { data, error } = await supabase.rpc('dist_cargar_camion', { p_vendedor: vendedorId, p_items: items, p_nota: nota || null });
+    if (error) throw error;
+    return data;
+}
+
+/** Descarga: [{ lote_id (camión), contado }]. Lo que falta exige nota. */
+export async function descargarCamion(vendedorId, contado, nota) {
+    const { data, error } = await supabase.rpc('dist_descargar_camion', { p_vendedor: vendedorId, p_contado: contado, p_nota: nota || null });
+    if (error) throw error;
+    return data;
+}
+
+/** La Nota de Remisión que ampara la carga (Código Tributario art. 109). */
+export const emitirNotaRemision = (cargaId) => invocar({ accion: 'nota_remision', carga_id: cargaId });

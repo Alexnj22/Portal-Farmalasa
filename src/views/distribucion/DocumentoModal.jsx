@@ -14,11 +14,12 @@ import CorreoDocumento from './CorreoDocumento';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { fechaTexto } from '@nucleo/utils/fecha';
+import { fechaTexto, fechaNumerica } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import {
     fetchDocumento, fetchPagos, reintentarDocumento, descartarDocumento, mensajeDeDistribucion,
     corregirDocumentoSellado, anularVenta, reenviarInvalidacion, enviarContingencia,
+    fetchPlazoInvalidacion,
 } from '@nucleo/data/distribucion';
 import { registrarEgreso } from '@nucleo/data/egreso';
 import { descargarArchivo, abrirEnPestanaNueva } from '../../plataforma/descargas';
@@ -168,6 +169,40 @@ function VistaPdf({ url, error }) {
     return <iframe title="Documento en PDF" src={url} className="block w-full h-[60vh] border border-border-card" />;
 }
 
+// El plazo para invalidar, dicho antes de que alguien lo intente. Los estados
+// salen de `dist_plazo_invalidacion` (borrador 0028).
+function AvisoPlazo({ plazo, tipo }) {
+    const limite = fechaNumerica(plazo.limite);
+    if (plazo.estado === 'vencido') {
+        return (
+            <Notice variant="danger" compact data-plazo="vencido">
+                Venció el plazo para invalidarlo ({limite}).{tipo === '03'
+                    ? ' Si hay que corregirlo, usa «Devolución»: emite una nota de crédito.'
+                    : ' Ya no se puede corregir ni deshacer ante Hacienda.'}
+            </Notice>
+        );
+    }
+    if (plazo.estado === 'gracia') {
+        return (
+            <Notice variant="warning" compact data-plazo="gracia">
+                El plazo para invalidarlo era el {limite}. Puede que Hacienda todavía lo acepte si hubo asuetos; si lo rechaza, corrige con nota de crédito.
+            </Notice>
+        );
+    }
+    if (plazo.estado === 'medicamentos') {
+        return (
+            <Notice variant="warning" compact data-plazo="medicamentos">
+                Pasaron los 3 meses para invalidar una factura ({limite}). Sólo se puede si la venta es de medicamentos, hasta el {fechaNumerica(plazo.limite_medicamentos)}.
+            </Notice>
+        );
+    }
+    return (
+        <p className={`text-caption ${plazo.dias <= 3 ? 'text-warning-text font-bold' : 'text-content-3'}`} data-plazo="vigente">
+            Se puede corregir o deshacer ante Hacienda hasta el {limite}{plazo.dias <= 3 ? ` · quedan ${plazo.dias === 0 ? 'horas' : `${plazo.dias} día${plazo.dias === 1 ? '' : 's'}`}` : ''}.
+        </p>
+    );
+}
+
 export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = false, onClose, onCambio, onCorregirPedido }) {
     const navigate = useNavigate();
     const showToast = useToastStore(s => s.showToast);
@@ -180,6 +215,7 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
     const [deshaciendo, setDeshaciendo] = useState(false);
     const [devolviendo, setDevolviendo] = useState(false);
     const [motivo, setMotivo] = useState('');
+    const [plazo, setPlazo] = useState(null);   // hasta cuándo se puede invalidar (sólo sellados)
     const yaImprimio = useRef(false);
 
     const cargar = useCallback(() => {
@@ -192,6 +228,15 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
             .catch(e => setError(mensajeDeDistribucion(e)));
     }, [id]);
     useEffect(() => { cargar(); }, [cargar]);
+    const estadoDoc = d?.estado;
+    useEffect(() => {
+        if (estadoDoc !== 'sellado') return undefined;
+        let vivo = true;
+        fetchPlazoInvalidacion(id)
+            .then(p => { if (vivo) setPlazo(p); })
+            .catch(e => console.error('DocumentoModal: plazo de invalidación', e));
+        return () => { vivo = false; };
+    }, [id, estadoDoc]);
 
     const imprimirTicket = useCallback(async (doc) => {
         const r = await imprimirTicketDeVenta(doc, MARCA_PAPEL, { pagos: pagos ?? [] });
@@ -299,8 +344,11 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
     const sinSello = d && ['sin_firmar', 'firmado', 'contingencia'].includes(d.estado);
     const conArchivo = !!d?.json?.identificacion;
     const invalidando = d?.invalidacion_estado === 'pendiente' || d?.invalidacion_estado === 'procesada';
-    const puedeCorregir = puedeVender && d?.pedido_id && (sinSello || d.estado === 'rechazado' || (d.estado === 'sellado' && !invalidando));
-    const puedeDeshacer = puedeVender && d?.estado === 'sellado' && !invalidando;
+    // Pasado el plazo, Hacienda no sella el evento: ni «Corregir» (que invalida
+    // el sellado) ni «Deshacer» sirven. Queda la Nota de Crédito.
+    const vencido = d?.estado === 'sellado' && plazo?.estado === 'vencido';
+    const puedeCorregir = puedeVender && d?.pedido_id && (sinSello || d.estado === 'rechazado' || (d.estado === 'sellado' && !invalidando && !vencido));
+    const puedeDeshacer = puedeVender && d?.estado === 'sellado' && !invalidando && !vencido;
     // Devolución parcial: Nota de Crédito, que sólo corrige un Crédito Fiscal (borrador 0017).
     const puedeDevolver = puedeVender && d?.tipo === '03' && d?.estado === 'sellado' && !invalidando;
 
@@ -360,7 +408,8 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                                 {d.intentos > 0 && (<><dt className="text-content-3">Envíos a Hacienda</dt><dd className="text-content-2">{d.intentos}</dd></>)}
                             </dl>
                         )}
-                        {d.estado === 'sellado' && puedeVender && !invalidando && (
+                        {d.estado === 'sellado' && !invalidando && plazo && <AvisoPlazo plazo={plazo} tipo={d.tipo} />}
+                        {d.estado === 'sellado' && puedeVender && !invalidando && !vencido && (
                             <p className="text-caption text-content-3">
                                 Con sello, «Corregir» emite un documento nuevo que reemplaza a éste, y éste se invalida ante Hacienda.
                                 Si la venta no se hizo, usa «Deshacer la venta».

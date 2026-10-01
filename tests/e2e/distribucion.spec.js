@@ -11,6 +11,10 @@ import fs from 'node:fs';
 import { entrar } from './distribucionEntrar.js';
 
 const SALIDA = process.env.E2E_CAPTURAS || 'test-results/distribucion';
+// El mes con datos de muestra. Los libros abren en el mes en curso, y el día 1
+// ese mes está vacío: pasó el 2026-10-01 y dos pruebas fallaron sin que el
+// portal tuviera nada. Hoy menos 15 días cae siempre en un mes con ventas.
+const MES_CON_DATOS = new Date(Date.now() - 6 * 3600_000 - 15 * 86_400_000).toISOString().slice(0, 7);
 
 /** «Cobrar» (F2): la ventana donde sólo queda el monto y Enter procesa. */
 async function cobrar(page) {
@@ -744,10 +748,19 @@ test('devolución: nota de crédito de un Crédito Fiscal sellado, a cuarentena,
     page.on('pageerror', e => errores.push(e.message));
     await entrar(page);
     await page.goto('/torogoz/documentos?cubeta=sellados');
-    await page.locator('table tbody tr', { hasText: 'Crédito Fiscal' }).first().click();
-    await page.getByRole('button', { name: 'Devolución' }).click();
+    // Cada corrida devuelve algo: el primer Crédito Fiscal se agota con el
+    // tiempo. Se busca uno al que todavía le quede algo por devolver.
     const modal = page.locator('[data-devolucion]');
     const renglon = modal.locator('[data-renglon-devolucion]').filter({ has: page.locator('input:not([disabled])') }).first();
+    const ccf = page.locator('table tbody tr', { hasText: 'Crédito Fiscal' });
+    await expect(ccf.first()).toBeVisible({ timeout: 15_000 });
+    for (let i = 0; i < Math.min(8, await ccf.count()); i++) {
+        await ccf.nth(i).click();
+        await page.getByRole('button', { name: 'Devolución' }).click();
+        if (await renglon.waitFor({ state: 'visible', timeout: 5_000 }).then(() => true, () => false)) break;
+        await page.keyboard.press('Escape');
+        await page.keyboard.press('Escape');
+    }
     await expect(renglon).toBeVisible({ timeout: 15_000 });
     // Más de lo vendido: lo dice y no deja emitir.
     await renglon.locator('input').fill('99999');
@@ -833,7 +846,7 @@ test('libros de ventas: contribuyentes y consumidor final con el archivo de las 
     const errores = [];
     page.on('pageerror', e => errores.push(e.message));
     await entrar(page);
-    await page.goto('/torogoz/reportes?reporte=ventas');
+    await page.goto(`/torogoz/reportes?reporte=ventas&mes=${MES_CON_DATOS}`);
     await expect(page.getByText('Débito fiscal')).toBeVisible({ timeout: 15_000 });
     await expect(page.locator('table tbody tr').first()).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('libro-sin-sello')).toBeVisible();
@@ -957,7 +970,7 @@ test('retenciones y percepciones del mes, y el paquete del mes para el contador'
     const errores = [];
     page.on('pageerror', e => errores.push(e.message));
     await entrar(page);
-    await page.goto('/torogoz/reportes?reporte=retenciones');
+    await page.goto(`/torogoz/reportes?reporte=retenciones&mes=${MES_CON_DATOS}`);
     await expect(page.getByText('Impuesto (referencial)')).toBeVisible({ timeout: 15_000 });
     for (const clave of ['ret', 'perc', 'percProv', 'retProv']) await expect(page.locator(`[data-listado="${clave}"]`)).toBeVisible();
     await page.screenshot({ path: `${SALIDA}/retenciones.png`, fullPage: true });
@@ -1074,5 +1087,107 @@ test('rutas: la ruta de hoy en orden, una visita registrada, el orden y los día
     await expect(cli).toBeVisible({ timeout: 15_000 });
     await cli.click();
     await expect(page.getByRole('combobox', { name: 'Ruta' })).toContainText(/Ruta \d/, { timeout: 15_000 });
+    expect(errores).toEqual([]);
+});
+
+test('descuento del catálogo: se asigna por producto, entra solo en la venta y dice de dónde salió; el sellado dice hasta cuándo se invalida', async ({ page }) => {
+    const errores = [];
+    page.on('pageerror', e => errores.push(e.message));
+    await entrar(page);
+
+    // El plazo de invalidación (Normativa DTE v2.0) se dice antes de intentarlo.
+    await page.goto('/torogoz/documentos?cubeta=sellados');
+    await page.locator('table tbody tr', { hasText: 'Crédito Fiscal' }).first().click();
+    await expect(page.getByRole('dialog', { name: 'Documento' }).locator('[data-plazo]')).toBeVisible({ timeout: 15_000 });
+    await page.keyboard.press('Escape');
+
+    // Asignar 5 % a un producto del catálogo.
+    await page.goto('/torogoz/catalogo');
+    const fila = page.locator('table tbody tr').first();
+    await expect(fila).toBeVisible({ timeout: 15_000 });
+    const nombre = (await fila.locator('p').first().getAttribute('title')) ?? '';
+    await fila.click();
+    const modal = page.getByRole('dialog', { name: 'Precio de distribución' });
+    await modal.locator('input[name="descuento_pct"]').fill('5');
+    await expect(modal.getByText(/Con el descuento:/)).toBeVisible();
+    await page.screenshot({ path: `${SALIDA}/catalogo-descuento.png`, fullPage: true });
+    await modal.getByRole('button', { name: 'Guardar' }).click();
+    await expect(modal).toBeHidden({ timeout: 15_000 });
+    await expect(page.locator('table tbody tr').first().getByText('5 %')).toBeVisible();
+
+    try {
+        // En la venta entra ya puesto, y el importe dice que es del catálogo.
+        await page.goto('/torogoz/venta');
+        await page.getByText('Elegir cliente…').click();
+        await page.getByText('FARMACIA LA PALMA', { exact: true }).last().click();
+        await page.getByLabel('Buscar producto').fill(nombre.slice(0, 12));
+        await page.getByRole('option', { name: new RegExp(nombre.slice(0, 12).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) }).first().click();
+        await expect(page.locator('input[name^="descuento-"]').first()).toHaveValue('5');
+        await expect(page.locator('[data-descuento-catalogo="5"]').first()).toBeVisible();
+        await page.screenshot({ path: `${SALIDA}/venta-descuento-catalogo.png`, fullPage: true });
+    } finally {
+        // Dejar el catálogo como estaba.
+        await page.goto('/torogoz/catalogo');
+        const f = page.locator('table tbody tr', { hasText: nombre }).first();
+        await f.click();
+        await page.getByRole('dialog', { name: 'Precio de distribución' }).locator('input[name="descuento_pct"]').fill('');
+        await page.getByRole('dialog', { name: 'Precio de distribución' }).getByRole('button', { name: 'Guardar' }).click();
+        await expect(page.getByRole('dialog', { name: 'Precio de distribución' })).toBeHidden({ timeout: 15_000 });
+    }
+    expect(errores).toEqual([]);
+});
+
+test('autoventa: cargar el camión con su Nota de Remisión, vender desde el camión, y descargar lo que volvió', async ({ page }) => {
+    const errores = [];
+    page.on('pageerror', e => errores.push(e.message));
+    await entrar(page);
+
+    // Cargar 3 unidades de un lote al camión de la cuenta de pruebas.
+    await page.goto('/torogoz/inventario?inventario=camiones');
+    await page.getByRole('button', { name: 'Cargar camión' }).click();
+    const carga = page.locator('[data-cargar-camion]');
+    await carga.getByRole('combobox', { name: 'Vendedor' }).click();
+    await page.getByRole('option', { name: /Usuario Pruebas/ }).first().click();
+    await carga.getByRole('combobox', { name: 'Lote en bodega' }).click();
+    const opcion = page.getByRole('option').first();
+    const producto = ((await opcion.textContent()) ?? '').split(' · ')[0].trim();
+    await opcion.click();
+    await carga.locator('input[name="unidades-carga"]').fill('3');
+    await carga.getByRole('button', { name: 'Agregar' }).click();
+    await page.screenshot({ path: `${SALIDA}/camion-cargar.png`, fullPage: true });
+    await page.getByRole('button', { name: /^Cargar/ }).last().click();
+    const camion = page.locator('[data-camion]').first();
+    await expect(camion).toBeVisible({ timeout: 30_000 });
+    await expect(camion.getByText(producto).first()).toBeVisible();
+
+    try {
+        // La venta abre «De mi camión», y lo que se vende sale de ahí.
+        await page.goto('/torogoz/venta');
+        await expect(page.locator('[data-origen-venta="camion"]')).toBeVisible({ timeout: 15_000 });
+        await page.getByText('Elegir cliente…').click();
+        await page.getByText('FARMACIA LA PALMA', { exact: true }).last().click();
+        await page.getByLabel('Buscar producto').fill(producto.slice(0, 12));
+        await page.getByRole('option').first().click();
+        await page.screenshot({ path: `${SALIDA}/venta-desde-camion.png`, fullPage: true });
+        const c = await cobrar(page);
+        await c.getByRole('switch', { name: /Imprimir el ticket/ }).click();
+        await c.getByRole('button', { name: /^Facturar$/ }).click();
+        await expect(page.getByRole('dialog', { name: 'Documento' })).toBeVisible({ timeout: 30_000 });
+        await page.keyboard.press('Escape');
+
+        // En Camiones: vendido 1, quedan 2.
+        await page.goto('/torogoz/inventario?inventario=camiones');
+        await expect(page.locator('[data-camion]').first().getByText(producto).first()).toBeVisible({ timeout: 15_000 });
+        await page.screenshot({ path: `${SALIDA}/camion-tras-venta.png`, fullPage: true });
+    } finally {
+        // Descargar lo que quedó, contado completo: sin faltante.
+        await page.goto('/torogoz/inventario?inventario=camiones');
+        await page.locator('[data-camion]').first().getByRole('button', { name: 'Descargar' }).click();
+        const d = page.locator('[data-descargar-camion]');
+        await expect(d).toBeVisible();
+        await expect(d.locator('[data-faltante]')).toHaveCount(0);
+        await page.getByRole('button', { name: 'Descargar y cerrar' }).click();
+        await expect(d).toBeHidden({ timeout: 20_000 });
+    }
     expect(errores).toEqual([]);
 });

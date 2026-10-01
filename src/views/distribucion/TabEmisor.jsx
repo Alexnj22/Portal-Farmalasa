@@ -12,7 +12,9 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { formatearNit } from '@nucleo/utils/nitUtils';
 import { departamentosMH, municipiosMH, distritosMH } from '@nucleo/data/geoCodigosMH';
-import { guardarEmisor, mensajeDeDistribucion } from '@nucleo/data/distribucion';
+import { guardarEmisor, mensajeDeDistribucion, fetchPuntosVenta } from '@nucleo/data/distribucion';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { cargarActividades } from './comun';
 
 // Los datos de la S.A.S. que factura. Salen impresos en cada documento, y el
@@ -35,6 +37,42 @@ const VACIO = {
     establecimiento: 'B001', punto_venta: 'P001', tipo_establecimiento: '04',
     cod_estable_mh: '', cod_punto_venta_mh: '', ambiente: '00', gran_contribuyente: false,
 };
+
+// Un punto de venta por vendedor (Normativa DTE v2.0: el punto de venta es el
+// dispositivo que emite, y no hay tope). Se crea solo la primera vez que el
+// vendedor emite; la numeración es por establecimiento, así que agregar
+// vendedores no toca los correlativos.
+function PuntosDeVenta({ emisorId, oficina }) {
+    const [puntos, setPuntos] = useState(null);
+    useEffect(() => {
+        if (!emisorId) return undefined;
+        let vivo = true;
+        fetchPuntosVenta(emisorId)
+            .then(p => { if (vivo) setPuntos(p); })
+            .catch(e => { console.error('TabEmisor: puntos de venta', e); if (vivo) setPuntos([]); });
+        return () => { vivo = false; };
+    }, [emisorId]);
+    return (
+        <div className="flex flex-col gap-1.5" aria-label="Puntos de venta">
+            <span className={rotuloCampo()}>Puntos de venta</span>
+            <ul className="flex flex-wrap gap-2">
+                <li className="flex items-center gap-2 rounded-full border border-divider px-3 py-1 text-caption">
+                    <span className="font-mono font-bold text-content">{oficina}</span><span className="text-content-3">Oficina</span>
+                </li>
+                {(puntos ?? []).map(p => (
+                    <li key={p.codigo} className="flex items-center gap-2 rounded-full border border-divider px-2 py-1 text-caption">
+                        <AvatarConEstado emp={p.empleado} px={22} radio="rounded-full" marco="" mostrarChip={false} />
+                        <span className="font-mono font-bold text-content">{p.codigo}</span>
+                        <span className="text-content-3">{shortEmployeeName(p.empleado)}</span>
+                    </li>
+                ))}
+            </ul>
+            <p className="text-caption text-content-3">
+                Cada vendedor recibe su punto de venta la primera vez que factura. El número de los documentos es uno solo por establecimiento, como pide Hacienda.
+            </p>
+        </div>
+    );
+}
 
 export default function TabEmisor({ emisor, puedeConfigurar, onGuardado }) {
     const showToast = useToastStore(s => s.showToast);
@@ -180,7 +218,7 @@ export default function TabEmisor({ emisor, puedeConfigurar, onGuardado }) {
                     <PortalInput label="Establecimiento (número de control)" name="establecimiento" value={f.establecimiento} readOnly={ro}
                         hasError={!!errores.establecimiento} errorMessage={errores.establecimiento}
                         onChange={(e) => set('establecimiento', e.target.value.toUpperCase())} />
-                    <PortalInput label="Punto de venta (número de control)" name="punto_venta" value={f.punto_venta} readOnly={ro}
+                    <PortalInput label="Punto de venta de la oficina" name="punto_venta" value={f.punto_venta} readOnly={ro}
                         hasError={!!errores.punto_venta} errorMessage={errores.punto_venta}
                         onChange={(e) => set('punto_venta', e.target.value.toUpperCase())} />
                     <div>
@@ -196,6 +234,7 @@ export default function TabEmisor({ emisor, puedeConfigurar, onGuardado }) {
                         hasError={!!errores.cod_punto_venta_mh} errorMessage={errores.cod_punto_venta_mh}
                         onChange={(e) => set('cod_punto_venta_mh', e.target.value.toUpperCase())} />
                 </div>
+                <PuntosDeVenta emisorId={emisor?.id} oficina={f.punto_venta} />
                 <div>
                     <span className={rotuloCampo()}>Ambiente</span>
                     <SegmentedControl value={f.ambiente} onChange={(v) => set('ambiente', v)} disabled={ro}

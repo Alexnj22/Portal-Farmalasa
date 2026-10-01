@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1117.0 — Torogoz: numeración según la norma, descuento del catálogo y autoventa desde el camión
+
+Decisiones del usuario del 30-sep: venta mixta (preventa y camión), ticket sin QR, no reusar un número rechazado, % de descuento por producto como el ERP. Plazos verificados contra la Normativa DTE v2.0 (DGII, 25-may-2026) y el Manual Funcional 2.0.
+
+- **Numeración por establecimiento** (borrador 0028). La norma (regla 7.1.2) prohíbe el correlativo por tipo o por punto de venta: hoy hay un contador por establecimiento y año, compartido por todos los documentos.
+- **Un punto de venta por vendedor**, creado solo la primera vez que factura (P002, P003…). Se listan en Empresa.
+- **Plazo de invalidación**: CCF/NR/NC hasta el décimo día hábil del mes siguiente; Factura 3 meses (2 años si es de medicamentos). El documento sellado lo dice, y pasado el plazo el servidor frena y manda a Nota de Crédito. Asuetos nacionales 2026-2030.
+- **Descuento del catálogo** (0029): % por producto con vigencia opcional, entra solo al vender y sin aprobación; tope por producto para dar más; aviso si queda bajo el costo; filtro «Con descuento». El renglón guarda si el descuento salió del catálogo o fue a mano.
+- **Autoventa desde el camión** (0030): el camión es una ubicación del lote. Inventario → Camiones: cargar (con su Nota de Remisión, título «traslado», CT art. 109), lo cargado / vendido / en el camión, y descargar contando lo que volvió (el faltante exige motivo). La venta elige «De mi camión» o «Preventa (bodega)».
+
 ## v2.1116.1 — Torogoz: filtros en la píldora y campos alineados
 
 Los filtros de la distribuidora estaban sueltos y algunos campos no se alineaban con los de al lado.

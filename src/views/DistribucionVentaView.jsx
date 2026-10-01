@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
     ShoppingCart, Plus, Minus, Trash2, ShieldAlert, Loader2, Receipt, Save, Search, Printer, PackageX, ArrowLeft, AlertTriangle,
-    Send, Clock, Store, Package, Tag, ListChecks, ChevronRight, Wallet, Warehouse, Eraser, UserPlus, Split, Timer,
+    Send, Clock, Store, Package, Tag, ListChecks, ChevronRight, Wallet, Warehouse, Eraser, UserPlus, Split, Timer, Truck,
 } from 'lucide-react';
 import LiquidModal from '../components/common/LiquidModal';
 import ExistenciasSucursales from './distribucion/ExistenciasSucursales';
@@ -41,7 +41,7 @@ import Interruptor from './distribucion/Interruptor';
 import FormasDePago from './distribucion/FormasDePago';
 import { filaNueva, problemaDePagos, cambioDePagos } from './distribucion/pagos';
 import { leerMonto, rotuloTipoCliente, soloVentaLibre, TIPO_DOCUMENTO, FORMA_PAGO } from './distribucion/comun';
-import { indexarPrecios, presentacionesDe, listasDe, precioDe } from './distribucion/precios';
+import { indexarPrecios, presentacionesDe, listasDe, precioDe, descuentoDelCatalogo, topeDeDescuento } from './distribucion/precios';
 import { calcularVenta, descuentoConIva, totalDePedido } from './distribucion/motor';
 import { rutaInicio, rutaDocumento, rutaVenta } from './distribucion/rutas';
 
@@ -169,8 +169,11 @@ export default function DistribucionVentaView() {
     const [guardando, setGuardando] = useState(null); // 'guardar' | 'facturar'
     const [error, setError] = useState('');
     const [motivoDescuento, setMotivoDescuento] = useState('');
-    const [existenciasBase, setExistenciasBase] = useState(null); // Map product_id → unidades REALES, o null si no se pudo leer
-    const [lotesBase, setLotesBase] = useState(() => new Map());   // product_id → lotes reales, primero vence primero sale
+    // Todos los lotes (bodega y camiones), o null si no se pudo leer. La venta
+    // mira los de UNA ubicación: bodega (preventa) o el camión de quien vende
+    // (autoventa, borrador 0030).
+    const [lotesCrudos, setLotesCrudos] = useState(null);
+    const [desdeCamionElegido, setDesdeCamion] = useState(null); // null = lo decide la carga
     const [reservas, setReservas] = useState([]);                   // reservas vigentes de TODAS las ventas (0012)
     const [miReserva, setMiReserva] = useState(null);               // { vence_at, renglones } de esta venta
     const [avisoReserva, setAvisoReserva] = useState('');
@@ -185,6 +188,19 @@ export default function DistribucionVentaView() {
     // —lo libre por lote, el total, el reparto por vencimiento— descuenta lo
     // reservado por otras sesiones, y recuerda QUIÉN lo tiene para decirlo.
     const sesion = corrigiendo ? pedido?.pedido.client_uuid ?? null : uuid;
+    // ¿Lleva mercadería en su camión? Entonces la venta nueva sale de ahí por
+    // defecto, y puede pasarla a preventa (mixto).
+    const tieneCamion = !!lotesCrudos?.some(l => l.en_camion_de === user?.id && Number(l.existencia) > 0);
+    const desdeCamion = corrigiendo ? !!pedido?.pedido.desde_camion : (desdeCamionElegido ?? tieneCamion);
+    const lotesDeAqui = useMemo(() => (lotesCrudos ?? [])
+        .filter(l => (l.en_camion_de ?? null) === (desdeCamion ? user?.id ?? null : null)), [lotesCrudos, desdeCamion, user?.id]);
+    const lotesBase = useMemo(() => indexarLotes(lotesDeAqui), [lotesDeAqui]);
+    const existenciasBase = useMemo(() => {
+        if (!lotesCrudos) return null;
+        const m = new Map();
+        for (const l of lotesDeAqui) m.set(String(l.product_id), (m.get(String(l.product_id)) ?? 0) + Number(l.existencia || 0));
+        return m;
+    }, [lotesCrudos, lotesDeAqui]);
     const reservadoPorLote = useMemo(() => {
         const m = new Map();
         for (const r of reservas) {
@@ -298,13 +314,15 @@ export default function DistribucionVentaView() {
                 }
                 if (!vivo) return;
                 setEmisor(e); setClientes(cs); setCatalogo(cat); setListas(lp.listas); setPrecios(lp.precios); setPedido(ped);
-                const li = lotes ? indexarLotes(lotes) : new Map();
-                if (lotes) {
-                    const m = new Map();
-                    for (const l of lotes) m.set(String(l.product_id), (m.get(String(l.product_id)) ?? 0) + Number(l.existencia || 0));
-                    setExistenciasBase(m);
-                    setLotesBase(li);
-                }
+                // Al abrir se reparte con los lotes de la ubicación que va a
+                // quedar elegida: la del pedido al corregir, o el camión si
+                // quien vende lleva mercadería.
+                const camionAlAbrir = ped ? !!ped.pedido.desde_camion
+                    : !!lotes?.some(l => l.en_camion_de === user?.id && Number(l.existencia) > 0);
+                const li = lotes
+                    ? indexarLotes(lotes.filter(l => (l.en_camion_de ?? null) === (camionAlAbrir ? user?.id ?? null : null)))
+                    : new Map();
+                if (lotes) setLotesCrudos(lotes);
                 // Una venta que llega armada (volver a vender, o una preventa de
                 // antes de los lotes) se reparte por vencimiento al abrir.
                 const ix = indexarPrecios(lp.precios, lp.listas);
@@ -526,7 +544,10 @@ export default function DistribucionVentaView() {
             clave = ya.clave;
             armado = carrito.map(c => (c === ya ? { ...c, cantidad: conCantidad((leerMonto(c.cantidad) ?? 0) + 1) } : c));
         } else {
-            const nuevo = renglonNuevo(pid, pres);
+            // El % del catálogo entra ya puesto (borrador 0029): el vendedor lo
+            // ve antes de cobrar y puede bajarlo.
+            const catPct = descuentoDelCatalogo(porId.get(pid), hoySV());
+            const nuevo = renglonNuevo(pid, pres, catPct > 0 ? { descTipo: 'pct', descValor: String(catPct) } : {});
             clave = nuevo.clave;
             armado = [...carrito, nuevo];
         }
@@ -608,6 +629,7 @@ export default function DistribucionVentaView() {
         return m;
     };
     // Cada renglón resuelto: presentación, precio de lista y descuento (con IVA).
+    const hoy = hoySV();
     const base = carrito.map(c => {
         const p = porId.get(c.product_id);
         const presentaciones = p ? presentacionesDe(idx, p.product_id) : [];
@@ -624,7 +646,14 @@ export default function DistribucionVentaView() {
         // de configuración, cualquiera; el de descuentos, hasta el tope; y uno
         // ya dado que nadie tocó, sigue. Lo demás se PIDE (no bloquea).
         const yaDado = !!c.descFijo && c.descFijo === `${c.descTipo}|${c.descValor}|${c.cantidad}|${r?.precio}`;
-        const directo = desc === 0 || yaDado || puedeConfigurar || (puedeDescontar && pct <= topeDescuento + 0.005);
+        // Hasta el % del catálogo lo da cualquiera (0029); el tope es el del
+        // producto si lo tiene.
+        const catPct = descuentoDelCatalogo(p, hoy);
+        // ¿Es el del catálogo tal cual? Se compara lo ESCRITO: el % calculado
+        // sobre el importe cambia de base según el documento.
+        const delCatalogo = catPct > 0 && c.descTipo === 'pct' && leerMonto(c.descValor) === catPct;
+        const directo = desc === 0 || yaDado || puedeConfigurar || delCatalogo || pct <= catPct + 0.005
+            || (puedeDescontar && pct <= topeDeDescuento(p, topeDescuento, hoy) + 0.005);
         const porAprobar = desc > 0 && !pasaImporte && !descMalo && !directo;
         const unidades = r && n ? Math.ceil(n * (r.unidades || 1)) : 0;
         const hay = existencias ? (existencias.get(c.product_id) ?? 0) : null;
@@ -637,7 +666,7 @@ export default function DistribucionVentaView() {
         const libreLote = lote ? libres.find(x => x.id === lote.id).libre : 0;
         const faltanUnidades = existencias ? Math.max(0, unidades - (lote ? libreLote : 0)) : 0;
         return {
-            ...c, p, n, r, presentacion, presentaciones, desc, pct, porAprobar, unidades, hay,
+            ...c, p, n, r, presentacion, presentaciones, desc, pct, catPct, delCatalogo, porAprobar, unidades, hay,
             lote, libres, libreLote, por,
             // Quién tiene apartado (en otra venta) lo que a este renglón le falta.
             quien: [...new Set(lotesP.flatMap(x => x.reservadoPor ?? []))],
@@ -778,6 +807,7 @@ export default function DistribucionVentaView() {
                 await actualizarPedido(pedidoId, { tipoDocumento: tipoDoc, condicion, plazoDias: plazoNum, formaPago, observaciones: notas, renglones });
             } else {
                 pedidoId = await crearPedido({
+                    desdeCamion,
                     emisorId: emisor.id, clienteId: cliente.id, tipoDocumento: tipoDoc,
                     condicion, plazoDias: plazoNum, formaPago, observaciones: notas, clientUuid: uuid, renglones,
                 });
@@ -1161,6 +1191,22 @@ export default function DistribucionVentaView() {
                                     {accionesEncabezado}
                                 </div>
                             </div>
+                            {(tieneCamion || desdeCamion) && (
+                                <div className="flex flex-wrap items-center gap-2" data-origen-venta={desdeCamion ? 'camion' : 'bodega'}>
+                                    <SegmentedControl size="sm" label="De dónde sale"
+                                        value={desdeCamion ? 'camion' : 'bodega'}
+                                        onChange={(v) => setDesdeCamion(v === 'camion')}
+                                        options={[
+                                            { value: 'camion', label: 'De mi camión', icon: Truck, disabled: corrigiendo || carrito.length > 0 },
+                                            { value: 'bodega', label: 'Preventa (bodega)', icon: Warehouse, disabled: corrigiendo || carrito.length > 0 },
+                                        ]} />
+                                    <span className="text-caption text-content-3">
+                                        {corrigiendo ? 'Sale de donde se tomó el pedido.'
+                                            : carrito.length > 0 ? 'Para cambiar de dónde sale, vacía la venta.'
+                                            : desdeCamion ? 'Se entrega ahora, con lo que llevas cargado.' : 'Se entrega después, desde bodega.'}
+                                    </span>
+                                </div>
+                            )}
                             <div className="grid grid-cols-1 @xl:grid-cols-[minmax(0,1fr)_auto] @4xl:grid-cols-[minmax(0,1fr)_auto_minmax(9rem,12rem)_minmax(10rem,14rem)] gap-2.5 items-center">
                                 <div className="flex items-center gap-1.5 min-w-0">
                                     <div className="flex-1 min-w-0">
@@ -1388,7 +1434,8 @@ export default function DistribucionVentaView() {
                                                         )}
                                                     </div>
                                                     {/* Descuento */}
-                                                    <div data-col="4" className="flex items-center gap-1 min-w-0">
+                                                    <div data-col="4" className="flex items-center gap-1 min-w-0"
+                                                        data-descuento-catalogo={l.delCatalogo ? l.catPct : undefined}>
                                                         <PortalInput compact className="flex-1 min-w-0" inputClassName="text-right" name={`descuento-${l.clave}`} inputMode="decimal" value={l.descValor}
                                                             placeholder="0" aria-label={`Descuento de ${nombre}`} hasError={!!errDesc} errorMessage={errDesc ?? undefined}
                                                             onKeyDown={alEnterVolverAlBuscador} onFocus={(e) => e.target.select()}
@@ -1404,7 +1451,7 @@ export default function DistribucionVentaView() {
                                                     {/* Importe */}
                                                     <div className="hidden @4xl:block text-right tabular-nums">
                                                         <p className="font-black text-content">{formatMoney(l.doc?.importe ?? 0)}</p>
-                                                        {l.doc?.descuento > 0 && <p className="text-micro text-success-text">−{formatMoney(l.doc.descuento)}</p>}
+                                                        {l.doc?.descuento > 0 && <p className="text-micro text-success-text">−{formatMoney(l.doc.descuento)}{l.delCatalogo ? ' · del catálogo' : ''}</p>}
                                                         {l.porAprobar && <p className="text-micro text-warning-text">−{formatMoney(conIva ? l.desc : l.desc / 1.13)} por aprobar</p>}
                                                     </div>
                                                     <div data-col="5" className="col-span-2 @lg:col-span-1 flex justify-end">

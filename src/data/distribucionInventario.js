@@ -16,7 +16,7 @@ import { fetchAllRows } from '../utils/supabaseUtils';
 export async function fetchLotes() {
     const rows = await fetchAllRows(() => supabase
         .from('dist_lotes')
-        .select('id, emisor_id, product_id, lote, vence, existencia, updated_at, products(nombre)')
+        .select('id, emisor_id, product_id, lote, vence, existencia, en_camion_de, updated_at, products(nombre)')
         .order('product_id').order('vence', { ascending: true, nullsFirst: false }));
     if (rows === null) throw new Error('No se pudo cargar el inventario.');
     return rows.map(r => ({ ...r, nombre: r.products?.nombre ?? `Producto ${r.product_id}` }));

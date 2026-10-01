@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Plus, PackageSearch, Search, AlertTriangle, ShieldCheck, Tag, Loader2, Save, Ban } from 'lucide-react';
+import { Plus, PackageSearch, Search, AlertTriangle, ShieldCheck, Tag, Loader2, Save, Ban, Percent } from 'lucide-react';
 import FilterBar from '../../components/common/FilterBar';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
@@ -20,6 +20,11 @@ import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { fetchCatalogo, guardarPrecio, agregarAlCatalogo, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { buscarProductos } from '@nucleo/data/busquedaProductos';
 import { leerMonto } from './comun';
+import { descuentoDelCatalogo } from './precios';
+import Campo from './Campo';
+import LiquidDatePicker from '../../components/common/LiquidDatePicker';
+import useBorrador from '@nucleo/hooks/useBorrador';
+import { hoySV, fechaNumerica } from '@nucleo/utils/fecha';
 
 // El catálogo de distribución: a qué precio se vende cada producto y si puede
 // ir a una tienda.
@@ -36,9 +41,10 @@ const COLS = [
     { key: 'canal',    label: 'Se vende a', align: 'left' },
     { key: 'precio',   label: 'Precio con IVA', align: 'right' },
     { key: 'sin_iva',  label: 'Sin IVA',    align: 'right', hideBelow: 'md' },
+    { key: 'descuento', label: 'Descuento', align: 'right', hideBelow: 'sm' },
 ];
 
-function PrecioModal({ item, emisorId, onClose, onGuardado }) {
+function PrecioModal({ item, emisorId, emisorTope, onClose, onGuardado }) {
     const nuevo = !item.product_id;
     const [producto, setProducto] = useState(null);
     const [texto, setTexto] = useState('');
@@ -46,6 +52,12 @@ function PrecioModal({ item, emisorId, onClose, onGuardado }) {
     const [precio, setPrecio] = useState(nuevo ? '' : String(item.precio_con_iva));
     const [libre, setLibre] = useState(nuevo ? false : item.venta_libre);
     const [activo, setActivo] = useState(nuevo ? true : item.activo);
+    // Descuento del catálogo (borrador 0029): se precarga al vender y lo da
+    // cualquiera sin aprobación mientras esté vigente.
+    const [descPct, setDescPct] = useState(nuevo || !Number(item.descuento_pct) ? '' : String(Number(item.descuento_pct)));
+    const [descDesde, setDescDesde] = useState(nuevo ? '' : item.descuento_desde ?? '');
+    const [descHasta, setDescHasta] = useState(nuevo ? '' : item.descuento_hasta ?? '');
+    const [tope, setTope] = useState(nuevo || item.descuento_max_pct == null ? '' : String(Number(item.descuento_max_pct)));
     const [guardando, setGuardando] = useState(false);
     const [error, setError] = useState('');
     const buscado = useTextoRebotado(texto);
@@ -69,16 +81,53 @@ function PrecioModal({ item, emisorId, onClose, onGuardado }) {
     // más de dos decimales (un tercero se redondearía sin avisar).
     const leido = leerMonto(precio);
     const precioNum = leido !== null && Math.abs(leido * 100 - Math.round(leido * 100)) < 1e-9 ? leido : null;
-    const listo = (nuevo ? !!producto : true) && precioNum !== null && !guardando;
+    const pctNum = descPct.trim() === '' ? 0 : leerMonto(descPct);
+    const pctMalo = pctNum === null || pctNum < 0 || pctNum > 100;
+    const topeNum = tope.trim() === '' ? null : leerMonto(tope);
+    const topeMalo = tope.trim() !== '' && (topeNum === null || topeNum < 0 || topeNum > 100);
+    const fechasMal = !!(descDesde && descHasta && descDesde > descHasta);
+    // ¿Con el descuento queda bajo el costo? El costo es sin IVA y por unidad
+    // (0015); el precio es con IVA. Avisa, no bloquea: una liquidación de
+    // vencimiento bajo el costo puede ser justo lo que se quiere.
+    const costo = nuevo ? null : Number(item.costo_promedio ?? 0) || null;
+    const finalSinIva = precioNum !== null && !pctMalo ? (precioNum * (1 - (pctNum || 0) / 100)) / 1.13 : null;
+    const bajoCosto = costo !== null && finalSinIva !== null && finalSinIva < costo - 0.0001;
+    const listo = (nuevo ? !!producto : true) && precioNum !== null && !pctMalo && !topeMalo && !fechasMal && !guardando;
+    const descuento = {
+        descuento_pct: pctNum || 0,
+        descuento_desde: pctNum ? descDesde || null : null,
+        descuento_hasta: pctNum ? descHasta || null : null,
+        descuento_max_pct: topeNum,
+    };
+
+    // Lo escrito sobrevive a que la sesión se cierre sola (gate:borradores).
+    const { recuperado, descartar } = useBorrador(!nuevo ? `distribucion-precio-${emisorId}-${item.product_id}` : null,
+        { precio, libre, activo, descPct, descDesde, descHasta, tope });
+    const repuesto = useRef(false);
+    useEffect(() => {
+        if (repuesto.current || !recuperado) return;
+        repuesto.current = true;
+        if (recuperado.precio != null) setPrecio(recuperado.precio);
+        if (recuperado.libre != null) setLibre(recuperado.libre);
+        if (recuperado.activo != null) setActivo(recuperado.activo);
+        setDescPct(recuperado.descPct ?? ''); setDescDesde(recuperado.descDesde ?? '');
+        setDescHasta(recuperado.descHasta ?? ''); setTope(recuperado.tope ?? '');
+    }, [recuperado]);
 
     const guardar = async () => {
         setGuardando(true);
         setError('');
         try {
-            if (nuevo) await agregarAlCatalogo(emisorId, producto.id, precioNum, libre && !controlado);
-            else await guardarPrecio(emisorId, item.product_id, { precio_con_iva: precioNum, venta_libre: libre && !controlado, activo });
+            if (nuevo) {
+                await agregarAlCatalogo(emisorId, producto.id, precioNum, libre && !controlado);
+                if (descuento.descuento_pct || descuento.descuento_max_pct != null) await guardarPrecio(emisorId, producto.id, descuento);
+            } else {
+                await guardarPrecio(emisorId, item.product_id, { precio_con_iva: precioNum, venta_libre: libre && !controlado, activo, ...descuento });
+            }
             useStaff.getState().appendAuditLog('DISTRIBUCION_PRECIO', String(nuevo ? producto.id : item.product_id),
-                { precio_con_iva: precioNum, venta_libre: libre && !controlado, antes: nuevo ? null : item.precio_con_iva });
+                { precio_con_iva: precioNum, venta_libre: libre && !controlado, ...descuento,
+                  antes: nuevo ? null : { precio_con_iva: item.precio_con_iva, descuento_pct: item.descuento_pct, descuento_max_pct: item.descuento_max_pct } });
+            descartar();
             onGuardado();
         } catch (e) {
             setError(mensajeDeDistribucion(e));
@@ -117,6 +166,38 @@ function PrecioModal({ item, emisorId, onClose, onGuardado }) {
                         </Notice>
                     )}
                     {!nuevo && <Interruptor checked={activo} onChange={setActivo} label="Se ofrece en los pedidos" />}
+                    <fieldset className="flex flex-col gap-3 border-t border-divider pt-3" aria-label="Descuento">
+                        <legend className="text-body-sm font-bold text-content pb-1">Descuento</legend>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <PortalInput label="Descuento del catálogo (%)" name="descuento_pct" inputMode="decimal" value={descPct} placeholder="0"
+                                onChange={(e) => setDescPct(e.target.value)} hasError={pctMalo} errorMessage="Entre 0 y 100"
+                                helperText="Entra solo al vender y no pide aprobación." />
+                            <PortalInput label="Tope para dar más (%)" name="descuento_max_pct" inputMode="decimal" value={tope}
+                                placeholder={`Empresa: ${Number(emisorTope ?? 0)}`} onChange={(e) => setTope(e.target.value)}
+                                hasError={topeMalo} errorMessage="Entre 0 y 100"
+                                helperText="Hasta ahí lo da quien tiene permiso; más, pide aprobación." />
+                            {pctNum > 0 && (<>
+                                <Campo label="Desde (opcional)">
+                                    <LiquidDatePicker value={descDesde} onChange={(v) => setDescDesde(v || '')} />
+                                </Campo>
+                                <Campo label="Hasta (opcional)">
+                                    <LiquidDatePicker value={descHasta} onChange={(v) => setDescHasta(v || '')} />
+                                </Campo>
+                            </>)}
+                        </div>
+                        {fechasMal && <Notice variant="danger" compact>«Desde» va antes de «Hasta».</Notice>}
+                        {pctNum > 0 && finalSinIva !== null && (
+                            <p className="text-caption text-content-3">
+                                Con el descuento: {formatMoney(precioNum * (1 - pctNum / 100))} con IVA
+                                {costo !== null ? ` · costo ${formatMoney(costo * 1.13)} con IVA` : ''}.
+                            </p>
+                        )}
+                        {bajoCosto && (
+                            <Notice variant="warning" icon={AlertTriangle} compact data-bajo-costo>
+                                Con este descuento se vende bajo el costo. Se puede guardar igual (por ejemplo, para sacar un vencimiento).
+                            </Notice>
+                        )}
+                    </fieldset>
                 </div>
             </LiquidModal.Body>
             <LiquidModal.Footer>
@@ -154,17 +235,22 @@ export default function TabCatalogo({ emisor, puedeConfigurar, buscar }) {
     }, []);
     useEffect(() => { cargar(); }, [cargar]);
 
+    const hoy = hoySV();
     const filtrados = useMemo(() => {
         const q = buscar.trim();
         return items.filter(p => (!q || tokenMatch(q, p.nombre))
-            && (!canal || (canal === 'libre' ? p.venta_libre && !p.controlado : canal === 'farmacia' ? !p.venta_libre || p.controlado : !p.activo)));
-    }, [items, buscar, canal]);
+            && (!canal || (canal === 'libre' ? p.venta_libre && !p.controlado
+                : canal === 'farmacia' ? !p.venta_libre || p.controlado
+                : canal === 'descuento' ? descuentoDelCatalogo(p, hoy) > 0
+                : !p.activo)));
+    }, [items, buscar, canal, hoy]);
 
     const stats = useMemo(() => ({
         total: items.filter(p => p.activo).length,
         libre: items.filter(p => p.activo && p.venta_libre && !p.controlado).length,
         farmacia: items.filter(p => p.activo && (!p.venta_libre || p.controlado)).length,
-    }), [items]);
+        descuento: items.filter(p => p.activo && descuentoDelCatalogo(p, hoy) > 0).length,
+    }), [items, hoy]);
 
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filtrados.length });
     useEffect(() => { setPage(1); }, [buscar, canal]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -184,6 +270,9 @@ export default function TabCatalogo({ emisor, puedeConfigurar, buscar }) {
                         active={canal === 'libre'} tono="success" onClick={() => setCanal(v => (v === 'libre' ? '' : 'libre'))} />
                     <StatCard icon={Ban} label="Sólo farmacias" value={stats.farmacia} loading={cargando} sub="Con receta, regulado o sin marcar"
                         active={canal === 'farmacia'} tono="brand" onClick={() => setCanal(v => (v === 'farmacia' ? '' : 'farmacia'))} />
+                    <StatCard icon={Percent} label="Con descuento" value={stats.descuento} loading={cargando} sub="Vigente hoy en el catálogo"
+                        iconBg="bg-warning/10" iconCls="text-warning" active={canal === 'descuento'} tono="warning"
+                        onClick={() => setCanal(v => (v === 'descuento' ? '' : 'descuento'))} />
                 </CarrilCards>
                 <FilterBar onClear={() => setCanal('')} activeCount={canal ? 1 : 0} acciones={acciones}>
                     <FilterBar.Chip active={canal === 'inactivo'} onToggle={() => setCanal(v => (v === 'inactivo' ? '' : 'inactivo'))} tone="brand">
@@ -220,6 +309,18 @@ export default function TabCatalogo({ emisor, puedeConfigurar, buscar }) {
                         </DataCell>
                         <DataCell align="right"><span className="tabular-nums font-bold text-content-2">{formatMoney(p.precio_con_iva)}</span></DataCell>
                         <DataCell align="right" hideBelow="md"><span className="tabular-nums text-content-3">{formatMoney(p.precio_con_iva / 1.13)}</span></DataCell>
+                        <DataCell align="right" hideBelow="sm">
+                            {Number(p.descuento_pct) > 0 ? (
+                                <span className="inline-flex flex-col items-end">
+                                    <Badge size="sm" variant={descuentoDelCatalogo(p, hoy) > 0 ? 'success' : 'neutral'}>{Number(p.descuento_pct)} %</Badge>
+                                    {(p.descuento_desde || p.descuento_hasta) && (
+                                        <span className="text-micro text-content-3 tabular-nums">
+                                            {p.descuento_desde ? fechaNumerica(p.descuento_desde) : '…'} – {p.descuento_hasta ? fechaNumerica(p.descuento_hasta) : '…'}
+                                        </span>
+                                    )}
+                                </span>
+                            ) : <span className="text-content-3">—</span>}
+                        </DataCell>
                     </DataRow>
                 ))}
             </DataTable>
@@ -230,7 +331,7 @@ export default function TabCatalogo({ emisor, puedeConfigurar, buscar }) {
             )}
 
             {abierto && (
-                <PrecioModal item={abierto} emisorId={emisor?.id} onClose={() => setAbierto(null)}
+                <PrecioModal item={abierto} emisorId={emisor?.id} emisorTope={emisor?.descuento_max_pct} onClose={() => setAbierto(null)}
                     onGuardado={() => { setAbierto(null); cargar(); }} />
             )}
         </div>

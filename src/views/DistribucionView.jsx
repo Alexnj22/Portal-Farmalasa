@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes, Tag, PackageX, LayoutDashboard, HandCoins, ShoppingCart, BarChart3, Wallet, Lock, Route, MapPin } from 'lucide-react';
+import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes, Tag, PackageX, LayoutDashboard, HandCoins, ShoppingCart, BarChart3, Wallet, Lock, Route, MapPin, Truck } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Notice from '../components/common/Notice';
@@ -23,6 +23,7 @@ import TabLiquidacion from './distribucion/TabLiquidacion';
 import TabCierreDia from './distribucion/TabCierreDia';
 import TabReposicion from './distribucion/TabReposicion';
 import TabConteo from './distribucion/TabConteo';
+import TabCamiones from './distribucion/TabCamiones';
 import TabRutas from './distribucion/TabRutas';
 import { VISTAS_REPORTES } from './distribucion/reportes';
 import { VISTAS_CARTERA } from './distribucion/cartera';
@@ -48,6 +49,7 @@ const VISTAS_INVENTARIO = [
     { key: 'lotes', label: 'Lotes', icon: Boxes },
     { key: 'reposicion', label: 'Reposición', icon: PackageSearch },
     { key: 'conteo', label: 'Conteo y bajas', icon: ClipboardList },
+    { key: 'camiones', label: 'Camiones', icon: Truck },
 ];
 
 // Rutas: hoy / armar (sólo quien administra), en `?rutas=`.
@@ -196,7 +198,8 @@ export default function DistribucionView({ seccion = 'inicio' }) {
             {visitadas.has('inventario') && (
                 <div className={tab === 'inventario' ? '' : 'hidden'}>
                     {vistaInventario === 'reposicion' ? <TabReposicion {...comunes} />
-                        : vistaInventario === 'conteo' ? <TabConteo {...comunes} /> : <TabInventario {...comunes} />}
+                        : vistaInventario === 'conteo' ? <TabConteo {...comunes} />
+                        : vistaInventario === 'camiones' ? <TabCamiones {...comunes} /> : <TabInventario {...comunes} />}
                 </div>
             )}
             {visitadas.has('cobros') && (

@@ -63,3 +63,29 @@ export function precioDe(idx, producto, presentacion, listaId) {
     if (usada == null) return null;
     return { precio: e.porLista.get(usada), listaId: usada, unidades: e.unidades };
 }
+
+/**
+ * El % de descuento del catálogo que vale HOY para un producto (borrador
+ * 0029), o 0. Gemelo de la rama `v_cat_pct` de `dist_validar_item`: la
+ * pantalla lo precarga en el renglón y lo da por «directo» (sin aprobación);
+ * la base juzga con la misma regla. `hoy` es la fecha de El Salvador
+ * (YYYY-MM-DD).
+ */
+export function descuentoDelCatalogo(producto, hoy) {
+    const pct = Number(producto?.descuento_pct ?? 0);
+    if (!(pct > 0)) return 0;
+    if (producto.descuento_desde && producto.descuento_desde > hoy) return 0;
+    if (producto.descuento_hasta && producto.descuento_hasta < hoy) return 0;
+    return pct;
+}
+
+/**
+ * El tope de quien tiene permiso de descuentos para este producto: el del
+ * producto si lo tiene, si no el de la empresa — y nunca menos que el % del
+ * catálogo. Mismo `greatest(v_tope, v_cat_pct)` de `dist_validar_item`.
+ */
+export function topeDeDescuento(producto, topeEmpresa, hoy) {
+    const propio = producto?.descuento_max_pct;
+    const tope = propio == null || propio === '' ? Number(topeEmpresa ?? 0) : Number(propio);
+    return Math.max(tope, descuentoDelCatalogo(producto, hoy));
+}

@@ -24,12 +24,21 @@ const ALIAS = {
   '@nucleo/': path.join(raiz, 'src') + '/',
   '@plataforma/': path.join(app, 'plataforma') + '/',
 };
+// Paquetes que el núcleo carga con `import()` SÓLO en la web — `@zxing/library`
+// dibuja el código de barras y el QR de la vista previa del ticket. En el
+// teléfono el papel va por la cola como texto del rollo y nunca se dibuja, pero
+// Metro resuelve todo `import()` al compilar: sin esto, importar
+// `utils/ticketPrint` rompe el bundle. El sustituto lanza si alguien lo usa.
+const SOLO_WEB = new Set(['@zxing/library']);
 const resolverOriginal = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (contexto, nombre, plataforma) => {
   for (const [prefijo, destino] of Object.entries(ALIAS)) {
     if (nombre.startsWith(prefijo)) {
       return contexto.resolveRequest(contexto, destino + nombre.slice(prefijo.length), plataforma);
     }
+  }
+  if (SOLO_WEB.has(nombre)) {
+    return { type: 'sourceFile', filePath: path.join(app, 'plataforma', '_soloWeb.js') };
   }
   const resolver = resolverOriginal || contexto.resolveRequest;
   const esPaquete = !nombre.startsWith('.') && !path.isAbsolute(nombre);

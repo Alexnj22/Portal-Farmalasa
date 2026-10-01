@@ -157,7 +157,7 @@ export function Cortes({ ctx }) {
   const r = resumenDeCortes(conTramoPorSalaYDia(deLaSala));
   return (
     <Widget titulo="Cortes de caja del mes" icono="Wallet" color={MARCA.verde} cuenta={r.pendientes}
-      onAbrir={ctx.puede('cortes_caja') ? () => ctx.abrir('/caja') : null}>
+      onAbrir={ctx.puede('cortes_caja') ? () => ctx.abrir('/cortes') : null}>
       {cargando && !dato ? <Esqueleto lineas={2} /> : r.vivos ? (
         <View style={{ gap: 8 }}>
           <View style={{ flexDirection: 'row', gap: 8 }}>

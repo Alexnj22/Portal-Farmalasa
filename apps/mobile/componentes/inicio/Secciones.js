@@ -56,7 +56,7 @@ export function Hoy({ pestana, datos, ctx }) {
     documentos: <Kpi key="d" icono="FileText" rotulo="Documentos" valor={`${(datos.facturas || []).length}`} apoyo="hoy" color={MARCA.violeta} />,
     cotizaciones: <Kpi key="c" icono="Receipt" rotulo="Cotizaciones" valor={`${(datos.cotizaciones || []).length}`} apoyo="activas, 30 días" color={MARCA.azul} onPress={puede('cotizaciones') ? () => abrir('/cotizaciones') : null} />,
     traslados: <Kpi key="t" icono="ArrowLeftRight" rotulo="Traslados" valor={`${datos.traslados ?? 0}`} apoyo="por confirmar" color={MARCA.azul} pide={(datos.traslados ?? 0) > 0} onPress={() => abrir('/traslados')} />,
-    cortes: <Kpi key="co" icono="Wallet" rotulo="Cortes" valor={`${datos.cortes ?? 0}`} apoyo="por confirmar" color={MARCA.verde} pide={(datos.cortes ?? 0) > 0} onPress={() => abrir('/caja')} />,
+    cortes: <Kpi key="co" icono="Wallet" rotulo="Cortes" valor={`${datos.cortes ?? 0}`} apoyo="por confirmar" color={MARCA.verde} pide={(datos.cortes ?? 0) > 0} onPress={() => abrir('/cortes')} />,
   };
   const PARES = {
     general: [[puede('dash_sales') ? 'ventas' : 'activos', 'presentes'], ['solicitudes', 'alertas']],
@@ -77,7 +77,7 @@ export function Pendientes({ datos, ctx }) {
   const filas = [
     { id: 'solicitudes', n: porDecidir.filter((i) => i.tipo === 'solicitud' || i.tipo === 'minmax').length, icono: 'ClipboardList', texto: 'Solicitudes por decidir', ruta: '/solicitudes', color: MARCA.ambar },
     { id: 'traslados', n: porDecidir.filter((i) => i.tipo === 'traslado' || i.tipo === 'envio').length, icono: 'ArrowLeftRight', texto: 'Traslados y envíos por contestar', ruta: '/traslados', color: MARCA.azul },
-    { id: 'cortes', n: datos.cortes, icono: 'Wallet', texto: 'Cortes por confirmar', ruta: '/caja', color: MARCA.verde },
+    { id: 'cortes', n: datos.cortes, icono: 'Wallet', texto: 'Cortes por confirmar', ruta: '/cortes', color: MARCA.verde },
   ].filter((f) => f.n > 0);
   const total = filas.reduce((s, f) => s + f.n, 0);
   return (

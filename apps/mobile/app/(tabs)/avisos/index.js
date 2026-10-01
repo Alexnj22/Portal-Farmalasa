@@ -13,7 +13,7 @@
 // app (`app/solicitud/[id].js`), que es donde se decide: la lista informa.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { Stack, useFocusEffect } from 'expo-router';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { cargarFilaDeAviso, esAvisoDeMinMax } from '@nucleo/data/solicitudDeAviso';
 import { detalleDeMinMax, detalleDeSolicitud, recortar } from '@nucleo/utils/tarjetaDeSolicitud';
@@ -76,6 +76,10 @@ export default function Notificaciones() {
 
   const abrir = (n) => {
     marcarLeido(n.id);
+    // Un corte nuevo abre ESE corte, listo para confirmar.
+    if (n.type === 'CORTE_NUEVO' && n.metadata?.corte_id) {
+      return router.push({ pathname: '/corte/[id]', params: { id: String(n.metadata.corte_id), fecha: n.metadata.fecha ?? '' } });
+    }
     const id = n.metadata?.request_id;
     if (id) return abrirSolicitud(esAvisoDeMinMax(n) ? `minmax:${id}` : id);
     if (n.link) abrirRuta(n.link);

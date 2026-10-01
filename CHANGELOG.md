@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1118.0 — App: cortes de caja nativos — confirmar, descartar, entregar la caja e imprimir
+
+Primera pieza de lo que faltaba para cerrar el Inicio de la app: los cortes
+se deciden en el teléfono, con las mismas reglas del portal
+(`useResolverCorte`).
+
+- **Cortes de caja** (`/cortes`): los del día con «Por confirmar» arriba; la
+  cifra es el tramo del corte con su color. Día y sala en el menú de filtros.
+  El aviso «Corte por confirmar» abre ese corte directo.
+- **El corte** (`/corte/[id]`): cuadra al centavo → se confirma de un toque;
+  con diferencia, el sistema pregunta mostrando cuánto falta o sobra.
+  Descartar pide motivo (uno sin conteo lleva el suyo). Se puede reabrir una
+  firma con su motivo.
+- **Entrega de la caja**: si la sala sigue abierta, quien recibe escanea su
+  carné con la cámara (o usa su usuario y contraseña), o se dice por qué no
+  hay quien reciba. Es la pieza `Identidad`, que también usarán bolsas y
+  retiros.
+- **El papel**: el comprobante del corte y la etiqueta de la bolsa salen por la
+  cola de la caja de la sala, con los mismos bytes del portal. Si no salen, se
+  dice — la firma ya quedó. Si la sala ya cerró su turno, se ofrece cerrar el
+  día (Z).
+- **Base**: la app ya puede usar `utils/ticketPrint` (adaptador
+  `plataforma/impresion` y sustituto de `@zxing/library`, que sólo dibuja en
+  la web). Android usa el selector de fecha de Material 3.
 ## v2.1117.0 — Promociones: salas en 0 se conservan, reactivar en un paso, «Baja el precio» se suelta al borrar
 
 Los tres arreglos que tocaban producción, con el sí del usuario. Las dos

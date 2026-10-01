@@ -9,6 +9,7 @@ import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import Checkbox from '../../components/common/Checkbox';
 import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
 import Campo from '../promociones/Campo';
+import PieDeModal from './PieDeModal';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -142,11 +143,10 @@ export default function PautaModal({ open, onClose, pieza, redes, limite = 0, ot
                     </section>
                 </div>
             </LiquidModal.Body>
-            <LiquidModal.Footer>
-                {!nueva && <Button variant="ghost" icon={Trash2} onClick={quitar} className="mr-auto">Quitar pauta</Button>}
+            <PieDeModal izquierda={!nueva && <Button variant="ghost" icon={Trash2} onClick={quitar}>Quitar pauta</Button>}>
                 <Button variant="secondary" onClick={onClose}>Cancelar</Button>
                 <Button icon={Check} loading={guardando} disabled={pasado} onClick={guardar}>Guardar</Button>
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }

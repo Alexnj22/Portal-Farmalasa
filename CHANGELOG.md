@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1128.1 — Marketing: el pie de los modales con separación entre botones
+
+`LiquidModal.Footer` en escritorio es `justify-between` sin `gap`: sirve para
+dos hijos (uno a cada lado). Los modales de pieza, pauta y detalle de solicitud
+le pasaban tres o más botones sueltos con `mr-auto` y los de la derecha
+quedaban pegados (reportado con captura). `marketing/PieDeModal` separa la
+acción de la izquierda del grupo de la derecha, con `gap-2`, y en táctil apila
+igual que el canónico. El mismo patrón está en Promociones y Distribución.
+
 ## v2.1128.0 — Solicitudes personales: la base acepta sus siete tipos
 
 **Las solicitudes personales ya se pueden crear.** El CHECK de

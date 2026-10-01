@@ -34,6 +34,7 @@ import {
 } from '@nucleo/data/marketing';
 import { abrirEnPestanaNueva } from '@plataforma/descargas';
 import Disenos from './Disenos';
+import PieDeModal from './PieDeModal';
 import VistaPrevia from './VistaPrevia';
 import EfectoEnVentas from './EfectoEnVentas';
 import Conversacion from './Conversacion';
@@ -532,15 +533,13 @@ export default function PiezaModal({
                         </div>
                     </div>
                 </LiquidModal.Body>
-                <LiquidModal.Footer>
-                    {!esNueva && puedeMover && pieza.estado !== 'publicado' && (
-                        <Button variant="ghost" icon={Trash2} onClick={() => setBorrando(true)} className="mr-auto">Quitar</Button>
-                    )}
-                    {!esNueva && pieza.estado === 'cambios' && !puedeMover && (
-                        <span className="text-caption text-warning flex items-center gap-1 mr-auto">
-                            <AlertTriangle size={13} /> Con cambios pedidos
-                        </span>
-                    )}
+                <PieDeModal izquierda={(!esNueva && puedeMover && pieza.estado !== 'publicado' && (
+                    <Button variant="ghost" icon={Trash2} onClick={() => setBorrando(true)}>Quitar</Button>
+                )) || (!esNueva && pieza.estado === 'cambios' && !puedeMover && (
+                    <span className="text-caption text-warning flex items-center gap-1">
+                        <AlertTriangle size={13} /> Con cambios pedidos
+                    </span>
+                ))}>
                     {!esNueva && puedeMover && pieza.estado === 'aprobado' && (
                         <Button variant="secondary" icon={CalendarCheck} loading={guardando} onClick={() => marcarSalida('programado')}>
                             Programada
@@ -557,7 +556,7 @@ export default function PiezaModal({
                             {esNueva ? (pendientes.length ? `Agregar y subir ${pendientes.length}` : 'Agregar') : 'Guardar'}
                         </Button>
                     )}
-                </LiquidModal.Footer>
+                </PieDeModal>
             </LiquidModal>
 
             <ConfirmModal isOpen={borrando} onClose={() => setBorrando(false)} onConfirm={borrar}

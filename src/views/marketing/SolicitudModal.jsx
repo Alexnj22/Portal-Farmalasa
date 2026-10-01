@@ -11,6 +11,7 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Campo from '../promociones/Campo';
+import PieDeModal from './PieDeModal';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -173,8 +174,7 @@ export default function SolicitudModal({ open, onClose, solicitud, marcas, perso
                     )}
                 </div>
             </LiquidModal.Body>
-            <LiquidModal.Footer>
-                <Button variant="secondary" onClick={onClose} className="mr-auto">Cerrar</Button>
+            <PieDeModal izquierda={<Button variant="secondary" onClick={onClose}>Cerrar</Button>}>
                 {puedeEditar && solicitud.estado === 'nueva' && (
                     <>
                         <Button variant="ghost" icon={X} loading={guardando} onClick={() => responder('rechazada')}>Rechazar</Button>
@@ -186,7 +186,7 @@ export default function SolicitudModal({ open, onClose, solicitud, marcas, perso
                 {puedeEditar && solicitud.estado === 'aceptada' && (
                     <Button icon={PackageCheck} loading={guardando} onClick={() => responder('entregada')}>Marcar entregada</Button>
                 )}
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }

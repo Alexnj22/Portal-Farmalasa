@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1126.3 — Puntos: las tarjetas de cifras con permiso propio
+
+Pedido del usuario: las tarjetas de cifras de Puntos (las de Resumen y las de
+Consulta) pasan a un permiso propio, `puntos_tarjetas`, y sólo lo tienen los
+cargos de administración: Gerente General, Administrador, Jefe/a de Talento
+Humano y Supervisor/a de Ventas. Las salas siguen viendo sus pestañas, la lista
+de clientes y las gráficas, sin las tarjetas. Migración
+`20261001173422_puntos_permiso_tarjetas`.
 ## v2.1126.2 — Pruebas: dos migraciones ya no exigen una ficha que sólo existe en producción
 
 El entorno de pruebas se rehízo solo el 2026-10-01 y quedó roto (`MIGRATIONS_FAILED`): dev.farmasalud.lat y las pruebas automáticas se quedaron sin base.

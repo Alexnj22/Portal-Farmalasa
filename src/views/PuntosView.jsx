@@ -115,6 +115,9 @@ export default function PuntosView({ openModal }) {
     const veResumen = visibles.some((t) => t.key === 'resumen');
     const veAvisos = visibles.some((t) => t.key === 'avisos');
     const vePorAsignar = visibles.some((t) => t.key === 'por_asignar');
+    // Las tarjetas de cifras (Resumen y Consulta) son sólo de administración
+    // (pedido del usuario, 2026-10-01). Con el nombre literal, por gate:permisos.
+    const veTarjetas = hasPermission('puntos_tarjetas', 'can_view');
 
     const [resumen, setResumen] = useState(null);
     const [avisos, setAvisos] = useState([]);
@@ -209,16 +212,18 @@ export default function PuntosView({ openModal }) {
                     <>
                         <AvisosDelPrograma resumen={resumen} cargando={cargando} />
                         <Resumen resumen={resumen} serie={serie} tablero={tablero} cargando={cargando}
-                            irA={setPestana} onAbrirCliente={setClienteAbierto} />
+                            irA={setPestana} veTarjetas={veTarjetas} onAbrirCliente={setClienteAbierto} />
                     </>
                 )}
 
                 {pestana === 'consulta' && (
                     <>
                         <AvisosDelPrograma resumen={resumen} cargando={cargando} />
-                        <Tarjetas resumen={resumen} cargando={cargando}
-                            avisos={veAvisos ? avisos.length : null}
-                            porAsignar={vePorAsignar ? cuentas.length : null} irA={setPestana} />
+                        {veTarjetas && (
+                            <Tarjetas resumen={resumen} cargando={cargando}
+                                avisos={veAvisos ? avisos.length : null}
+                                porAsignar={vePorAsignar ? cuentas.length : null} irA={setPestana} />
+                        )}
                         <ClientesConPuntos busqueda={busquedaClientes} onAbrir={setClienteAbierto} />
                     </>
                 )}
@@ -449,7 +454,7 @@ function Tarjetas({ resumen, cargando, avisos, porAsignar, irA }) {
  *   · la curva de 30 días a dos tercios y el mes por sala a su lado;
  *   · el mes en cifras, cuándo vencen y el estado del programa.
  */
-function Resumen({ resumen, serie, tablero, cargando, irA, onAbrirCliente }) {
+function Resumen({ resumen, serie, tablero, cargando, irA, onAbrirCliente, veTarjetas }) {
     // En qué se leen la curva y las salas. El tooltip muestra siempre las dos.
     const [unidad, setUnidad] = useState('puntos');
     const deuda = tablero?.deuda ?? {};
@@ -472,7 +477,9 @@ function Resumen({ resumen, serie, tablero, cargando, irA, onAbrirCliente }) {
     return (
         <>
             {/* ── Las cuatro preguntas ─────────────────────────────────────
-                §17.0: el carril va en su contenedor de fila. */}
+                §17.0: el carril va en su contenedor de fila. Sólo con su
+                permiso (`puntos_tarjetas`). */}
+            {veTarjetas && (
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
             {/* Rótulos cortos: en el teléfono la tarjeta es media pantalla y
                 «Acumulado del mes» se cortaba. El «del mes» lo dice el sub. */}
@@ -494,6 +501,7 @@ function Resumen({ resumen, serie, tablero, cargando, irA, onAbrirCliente }) {
                     onClick={() => irA('consulta')} loading={!tablero && cargando} />
             </CarrilCards>
             </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <Panel icono={TrendingUp} titulo="Últimos 30 días" className="lg:col-span-2"

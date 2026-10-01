@@ -1,13 +1,14 @@
 import React, { lazy, Suspense, useState, useEffect, useMemo, memo } from 'react';
 import SegmentedControl from '../common/SegmentedControl';
-import { fetchBranchHourlySalesOrdered } from '@nucleo/data/schedules';
+import { fetchBranchHourlySalesRange } from '@nucleo/data/dashboard';
+import { afluencia } from '@nucleo/utils/afluencia';
+import { nivelDeVolumen } from '@nucleo/utils/inicio';
 import { fetchVentasSinProducto } from '@nucleo/data/ventas';
 import AvisoSinProducto from '../common/AvisoSinProducto';
 import { Loader2, Activity, Users, DollarSign, Calendar as CalendarIcon, MousePointerClick, TrendingUp, Sparkles, Building2 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
 // 🚀 IMPORTANTE: Importamos el parser robusto que usamos en el otro componente
-import { timeToMins } from '@nucleo/utils/scheduleHelpers';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { AiThinkingState } from '../common/StateViews';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -89,7 +90,9 @@ const FormWfmAnalytics = ({ branches }) => {
                     queryStr = `${yearStart}-${monthStart}-${dayStart}`;
                 }
 
-                const { data, error } = await fetchBranchHourlySalesOrdered(selectedBranch, queryStr, 10000);
+                // Paginada (2026-10-01): con `.limit(10000)` PostgREST igual cortaba en
+                // 1000, y de la MÁS RECIENTE hacia atrás — «1 año» mostraba unos 75 días.
+                const { data, error } = await fetchBranchHourlySalesRange(selectedBranch, queryStr);
 
                 if (error) throw error;
                 setSalesData(data || []);
@@ -119,137 +122,30 @@ const FormWfmAnalytics = ({ branches }) => {
     const chartData = useMemo(() => {
         if (!salesData.length) return [];
 
-        let openH = 7; let closeH = 18; 
+        // El cálculo vive en el núcleo (`utils/afluencia`), el mismo de la app y
+        // del widget del tablero. Acá sólo se le ponen los nombres del dibujo.
         const currentBranch = branches.find(b => String(b.id) === String(selectedBranch));
-        
-        if (currentBranch) {
-            let sch = currentBranch.weekly_hours || currentBranch.settings?.schedule;
-            if (typeof sch === 'string') {
-                try { sch = JSON.parse(sch); } catch { sch = null; }
-            }
-
-            if (sch && typeof sch === 'object') {
-                let minOpen = 1440; let maxClose = 0;
-                Object.values(sch).forEach(d => {
-                    if (d && d.isOpen !== false && !d.isClosed && !d.isOff) {
-                        const cleanStart = String(d.start || d.open || '').replace(/[^0-9:]/g, '').trim();
-                        const cleanEnd = String(d.end || d.close || '').replace(/[^0-9:]/g, '').trim();
-                        
-                        if (cleanStart && cleanEnd) {
-                            const oMins = timeToMins(cleanStart);
-                            let cMins = timeToMins(cleanEnd);
-                            if (cMins < oMins) cMins += 1440;
-
-                            if (oMins < minOpen) minOpen = oMins;
-                            if (cMins > maxClose) maxClose = cMins;
-                        }
-                    }
-                });
-                if (minOpen < 1440) openH = Math.floor(minOpen / 60);
-                if (maxClose > 0) closeH = Math.ceil(maxClose / 60) - 1;
-            }
-        }
-        if (closeH <= openH) closeH = openH + 11; 
-
-        const validSalesData = salesData.filter(row => {
-            const hour = Number(row.sale_hour);
-            return hour >= openH && hour <= closeH;
+        const isTodayView = timeRange === '0';
+        const { items, fechas } = afluencia(salesData, currentBranch, {
+            vista: activeView === 'DAYS' ? 'dias' : activeView === 'GENERAL_HOURS' ? 'horas' : activeView,
+            hoy: isTodayView,
         });
+        if (!fechas) return [];
+        const fill = (v) => `var(--txvol-${nivelDeVolumen(v)})`;
 
-        if (validSalesData.length === 0) return [];
-
-        const todayStr = hoySV();
-
-        // Staffing-based color thresholds (10 min/tx → 6 tx/hr per employee)
-        // Days view uses peak hourly avg → consistent with hours view
-        const applyColorsStatistical = (arr) => {
-            return arr.map(item => {
-                const v = item.avgTransactions;
-                let fill = 'var(--txvol-muerta)';                // ≤4  muerta   — 1 persona ociosa
-                if      (v > 18) fill = 'var(--txvol-critica)';  // >18 crítica  — 3+ personas
-                else if (v > 12) fill = 'var(--txvol-pico)';  // >12 pico     — 2-3 personas
-                else if (v >  4) fill = 'var(--txvol-normal)';  // >4  normal   — 1-2 personas
-                return { ...item, fill };
-            });
-        };
-
-        // ====================================================================
-        // VISTA: DÍAS DE LA SEMANA 
-        // ====================================================================
         if (activeView === 'DAYS') {
-            const hourlyByDow = {};
-            const uniqueDatesMap = {};
-            const salesByDow = {};
-
-            DAYS_ORDER.forEach(d => {
-                hourlyByDow[d] = {};
-                uniqueDatesMap[d] = new Set();
-                salesByDow[d] = 0;
-            });
-
-            validSalesData.forEach(row => {
-                const d = new Date(row.sale_date + 'T00:00:00').getDay();
-                const h = Number(row.sale_hour);
-                if (hourlyByDow[d] !== undefined) {
-                    hourlyByDow[d][h] = (hourlyByDow[d][h] || 0) + Number(row.transaction_count || 0);
-                    salesByDow[d] += Number(row.total_sales || 0);
-                    uniqueDatesMap[d].add(row.sale_date);
-                }
-            });
-
-            // Days: color = P75 of hourly averages for that DOW (robust to single-hour outliers)
-            const finalDays = DAYS_ORDER.map(d => {
-                const dc = uniqueDatesMap[d].size || 1;
-                const hrs = [];
-                for (let h = openH; h <= closeH; h++) hrs.push(Math.round((hourlyByDow[d][h] || 0) / dc));
-                hrs.sort((a, b) => a - b);
-                const p75 = hrs[Math.floor(hrs.length * 0.75)] || 0;
-                const avgSales = salesByDow[d] / dc;
-                return { dayOfWeek: d, displayLabel: DAYS_MAP[d], avgTransactions: p75, avgSales, uniqueDates: Array.from(uniqueDatesMap[d]) };
-            });
-
-            return applyColorsStatistical(finalDays);
-
-        } else {
-            // ====================================================================
-            // VISTA: HORAS GENERALES O DE UN DÍA ESPECÍFICO
-            // ====================================================================
-            const filteredData = activeView === 'GENERAL_HOURS'
-                ? validSalesData
-                : validSalesData.filter(row => new Date(row.sale_date + 'T00:00:00').getDay() === activeView);
-
-            const uniqueDatesCount = new Set(filteredData.map(d => d.sale_date)).size || 1;
-            const hourlyMap = {};
-
-            for (let h = openH; h <= closeH; h++) {
-                hourlyMap[h] = { hour: h, displayLabel: formatHourAMPM(h), totalTrans: 0, totalSales: 0, datesInHour: new Set() };
-            }
-
-            filteredData.forEach(row => {
-                const h = Number(row.sale_hour);
-                if (hourlyMap[h]) {
-                    hourlyMap[h].totalTrans += Number(row.transaction_count || 0);
-                    hourlyMap[h].totalSales += Number(row.total_sales || 0);
-                    hourlyMap[h].datesInHour.add(row.sale_date);
-                }
-            });
-
-            const isTodayView = timeRange === '0';
-
-            const finalHours = Object.values(hourlyMap).map(item => {
-                const dateCount = isTodayView ? 1 : uniqueDatesCount; 
-                const avgTrans = isTodayView ? item.totalTrans : Math.round(item.totalTrans / dateCount);
-                const avgSales = isTodayView ? item.totalSales : (item.totalSales / dateCount);
-
-                const datesArray = Array.from(item.datesInHour);
-                const tooltipDate = isTodayView ? todayStr : 
-                                   (datesArray.length === 1 ? datesArray[0] : null); 
-
-                return { ...item, avgTransactions: avgTrans, avgSales, tooltipDate };
-            }).sort((a, b) => a.hour - b.hour);
-
-            return applyColorsStatistical(finalHours);
+            return items.map(it => ({
+                dayOfWeek: it.dia, displayLabel: DAYS_MAP[it.dia],
+                avgTransactions: it.tickets, avgSales: it.ventas, uniqueDates: it.fechas, fill: fill(it.tickets),
+            }));
         }
+        const todayStr = hoySV();
+        return items.map(it => ({
+            hour: it.hora, displayLabel: formatHourAMPM(it.hora),
+            avgTransactions: it.tickets, avgSales: it.ventas,
+            tooltipDate: isTodayView ? todayStr : (it.fechas.length === 1 ? it.fechas[0] : null),
+            fill: fill(it.tickets),
+        }));
     }, [salesData, activeView, timeRange, branches, selectedBranch]);
 
     const handleBarClick = (data) => {

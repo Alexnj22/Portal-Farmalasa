@@ -8,7 +8,8 @@
 //   · Horas — el promedio de cada hora sobre toda la semana.
 //
 // Pedido del usuario del 2026-09-30: «no veo la venta por hora ni día, ese
-// widget no está». El cálculo es el MISMO del portal (`promediosDeVentas`,
+// widget no está». «Ampliar» abre el Monitor de ventas (`app/monitor-ventas.js`),
+// con período y sala. El cálculo es el MISMO del portal (`promediosDeVentas`,
 // que salió de `DashboardView.jsx` ese día), y la lectura ahora pagina: 90
 // días de una sala pasaban de las 1000 filas y el promedio se hacía con un
 // pedazo.
@@ -85,7 +86,8 @@ export function VentasPorHora({ ctx }) {
   const items = !p ? [] : dia != null ? p.porDia[dia] : vista === 'dias' ? p.dias : p.horas;
 
   return (
-    <Widget titulo="Ventas por día y hora" icono="BarChart2" color={MARCA.azul}>
+    <Widget titulo="Ventas por día y hora" icono="BarChart2" color={MARCA.azul} accion="Ampliar"
+      onAbrir={salaId ? () => ctx.abrir(`/monitor-ventas?sala=${salaId}`) : null}>
       <View style={{ gap: 12 }}>
         <Pressable onPress={elegirSala} disabled={!!propia || salas.length < 2}
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 6, opacity: pressed ? 0.6 : 1 })}>

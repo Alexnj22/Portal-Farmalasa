@@ -125,10 +125,12 @@ export function fetchTodayHourlySales(dateStr) {
  * de la app, que necesitaba la misma lectura.
  *
  * Devuelve `{ data, error }` como antes, para no cambiar a quien la llama.
+ * La usan también los dos «Monitor de ventas» (portal y app), que con «1 año»
+ * leen ~4,700 filas: el `.limit(10000)` que tenían no pasaba de 1000.
  */
 export async function fetchBranchHourlySalesRange(branchId, sinceDateStr) {
     const data = await fetchAllRows(() => supabase.from('branch_hourly_sales')
-        .select('sale_hour, transaction_count, sale_date')
+        .select('sale_hour, transaction_count, total_sales, sale_date')
         .eq('branch_id', branchId).gte('sale_date', sinceDateStr)
         .order('sale_date', { ascending: true })
         .order('sale_hour', { ascending: true }));

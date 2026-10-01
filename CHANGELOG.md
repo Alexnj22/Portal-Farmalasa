@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1110.0 — Monitor de ventas nativo y ventas por hora completas en el portal
+
+Pedido del usuario: abrir «Ventas por día y hora» con filtros de tiempo y de
+sala, como en el portal, y que se vea todo nativo.
+
+- **App: Monitor de ventas.** «Ampliar» en el widget abre la pantalla. Sala y
+  período (hoy, 30 días, 3 meses, 6 meses, 1 año) van en el menú de filtros
+  de la barra; Semana · Por hora y el día, en el control segmentado del
+  sistema. Tocar una barra muestra su detalle (tickets, venta, de cuántos días
+  sale el promedio), y en Semana lleva a las horas de ese día.
+- **Portal: el monitor mostraba menos de lo que decía.** Pedía las filas con
+  `.limit(10000)`, pero PostgREST corta en 1000 y las tomaba de la más
+  reciente hacia atrás: con «6 meses» o «1 año» promediaba unos 75 días (de
+  ~5,000 filas por sala en un año, llegaban 1000). Ahora pagina.
+- **Portal: lo mismo en Horarios y en la ficha de la sala.** La cobertura de
+  Horarios (90 días) y el historial de ventas de la pestaña Personal de una
+  sala (completo, ~7,000 filas) también se cortaban en 1000 — el historial
+  recibía el 14%. Las dos lecturas paginan.
+- **Un solo cálculo de afluencia** (`utils/afluencia`) para el monitor del
+  portal, el de la app y el widget del tablero. El horario de la sala ahora
+  descarta los días cerrados también en el widget, como ya hacía el monitor.
+
 ## v2.1109.0 — App: ventas por día y hora, todos los widgets en General, salas en orden y aviso nativo
 
 Tres reportes del usuario sobre la app, más un defecto del tablero del portal

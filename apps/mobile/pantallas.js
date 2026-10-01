@@ -10,6 +10,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/bitacoras': true,
   '/traslados': true,
   '/ventas-hoy': true,   // no existe en el portal: es la pantalla nativa de «Ventas de hoy»
+  '/monitor-ventas': true, // el «Monitor de ventas» del portal es un modal; en la app, su pantalla
   '/solicitudes': true,
   '/facturas-sala': true,
   // Los dos ámbitos del portal son una sola bandeja en la app.

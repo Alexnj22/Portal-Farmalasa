@@ -13,7 +13,7 @@ import ChartContainer from '../common/ChartContainer';
  * caso de la regla de CLAUDE.md: librerías pesadas sólo por `await import()`.
  *
  * **El chunk se descarga gratis.** El gráfico no se monta hasta que hay datos,
- * o sea después de `fetchBranchHourlySalesOrdered`, y hasta entonces el modal ya
+ * o sea después de `fetchBranchHourlySalesRange`, y hasta entonces el modal ya
  * pintaba `AiThinkingState`. La descarga corre en paralelo con esa consulta y
  * usa **el mismo** estado de espera como `Suspense`: las dos esperas se leen
  * como una.

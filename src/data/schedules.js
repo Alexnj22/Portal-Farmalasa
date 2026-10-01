@@ -6,6 +6,7 @@
 // data/system.js — mismos queries exactos, no se duplican.
 import { supabase } from '../supabaseClient';
 import { conBitacora } from './audit';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
 // ── Horarios de la semana ────────────────────────────────────────────────────
 
@@ -56,29 +57,32 @@ export function fetchScheduleCoverageFromBranch(employeeIds, weekStart) {
         .eq('week_start_date', weekStart);
 }
 
-export function fetchBranchHourlySales(branchId, sinceDateStr) {
-    return supabase.from('branch_hourly_sales')
-        .select('*')
-        .eq('branch_id', branchId)
-        .gte('sale_date', sinceDateStr);
-}
+// Las dos lecturas de abajo PAGINAN (2026-10-01): una sala abre ~13 horas al
+// día, así que 90 días son más de 1000 filas y el historial completo de
+// TabStaff, varias veces eso. Como selects a secas, PostgREST cortaba en 1000
+// sin avisar y el análisis de cobertura promediaba con un pedazo. Devuelven
+// `{ data, error }` como antes.
+const conTodas = async (consulta) => {
+    const data = await fetchAllRows(consulta);
+    return data === null ? { data: [], error: new Error('No se pudieron leer las ventas por hora.') } : { data, error: null };
+};
 
-// FormWfmAnalytics.jsx — mismo filtro base que fetchBranchHourlySales pero
-// con order+limit (10000, la vista analítica pagina distinto que SchedulesView).
-export function fetchBranchHourlySalesOrdered(branchId, sinceDateStr, limit) {
-    return supabase.from('branch_hourly_sales')
+export function fetchBranchHourlySales(branchId, sinceDateStr) {
+    return conTodas(() => supabase.from('branch_hourly_sales')
         .select('*')
         .eq('branch_id', branchId)
         .gte('sale_date', sinceDateStr)
-        .order('sale_date', { ascending: false })
-        .limit(limit);
+        .order('sale_date', { ascending: true })
+        .order('sale_hour', { ascending: true }));
 }
 
 // TabStaff.jsx — historial completo (sin filtro de fecha), columnas reducidas.
 export function fetchBranchHourlySalesAll(branchId) {
-    return supabase.from('branch_hourly_sales')
+    return conTodas(() => supabase.from('branch_hourly_sales')
         .select('sale_date, sale_hour, total_sales')
-        .eq('branch_id', branchId);
+        .eq('branch_id', branchId)
+        .order('sale_date', { ascending: true })
+        .order('sale_hour', { ascending: true }));
 }
 
 // Una cobertura dice que alguien de otra sala trabaja acá esa semana. Quitarla

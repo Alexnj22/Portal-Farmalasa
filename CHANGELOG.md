@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1133.0 — App: ícono de Constancia
+
+- **Ícono de «Constancia» (y de todo lo que usa `FileCheck`)**: el símbolo
+  `doc.badge.checkmark` no existe en SF Symbols y el iPhone dibujaba un cuadro
+  vacío. Ahora es `checkmark.seal`.
 ## v2.1132.2 — Archivo local de tres migraciones de hoy
 
 `gate:migrations --remote` encontró tres migraciones aplicadas en producción el

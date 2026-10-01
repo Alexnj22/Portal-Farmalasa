@@ -41,7 +41,8 @@ export const ICONOS = {
   CalendarX2: i('calendar.badge.exclamationmark', require('@expo/material-symbols/event_busy.xml')),
   Coffee: i('cup.and.saucer', require('@expo/material-symbols/coffee.xml')),
   CreditCard: i('creditcard', require('@expo/material-symbols/credit_card.xml')),
-  FileCheck: i('doc.badge.checkmark', require('@expo/material-symbols/task.xml')),
+  // 'doc.badge.checkmark' no existe en SF Symbols: salía un cuadro vacío.
+  FileCheck: i('checkmark.seal', require('@expo/material-symbols/task.xml')),
   Info: i('info.circle', require('@expo/material-symbols/info.xml')),
   RefreshCw: i('arrow.triangle.2.circlepath', require('@expo/material-symbols/autorenew.xml')),
   Stethoscope: i('stethoscope', require('@expo/material-symbols/stethoscope.xml')),

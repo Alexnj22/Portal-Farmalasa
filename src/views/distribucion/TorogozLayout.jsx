@@ -185,15 +185,7 @@ export default function TorogozLayout({ children, handleLogout }) {
             {/* Escritorio: menú fijo a la izquierda. */}
             <aside className="hidden lg:flex w-64 shrink-0 flex-col gap-4 p-4 pl-[max(1rem,var(--sa-left))]">
                 <div data-surface="card" className="flex-1 min-h-0 flex flex-col gap-4 p-4">
-                    {/* La campana va junto a la marca y no flotando sobre el contenido:
-                        encima tapaba la primera tarjeta de cada vista (la venta ya no
-                        tiene encabezado que le dejara el hueco). */}
-                    <div className="flex items-center justify-between gap-2">
-                        <Marca />
-                        <React.Suspense fallback={<div className="w-11 h-11" />}>
-                            <CampanaLazy variant="mobile" />
-                        </React.Suspense>
-                    </div>
+                    <Marca />
                     <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">{navegacion}</div>
                     {pie}
                 </div>
@@ -215,6 +207,16 @@ export default function TorogozLayout({ children, handleLogout }) {
                 </header>
 
                 <div id="main-scroll" className="flex-1 lg:min-h-0 lg:overflow-hidden relative lg:pt-2 lg:pb-4 lg:pr-2 pb-[max(0px,calc(1rem+var(--sa-bottom)-var(--alto-barra-flotante,0px)))] pl-[max(0.5rem,var(--sa-left))] pr-[max(0.5rem,var(--sa-right))] lg:pl-0">
+                    {/* La campana, igual que en el portal (pedido del usuario,
+                        2026-10-01): en escritorio flota arriba a la derecha del
+                        contenido con su versión de escritorio. Dentro del menú
+                        lateral iba la versión de teléfono, que al pasar el mouse
+                        se agrandaba y se veía rara. */}
+                    <div className="absolute top-4 right-5 z-bell-desktop hidden lg:block">
+                        <React.Suspense fallback={<div className="w-11 h-11 shrink-0" aria-hidden="true" />}>
+                            <CampanaLazy variant="desktop" />
+                        </React.Suspense>
+                    </div>
                     <div className="lg:h-full w-full animate-route-enter">{children}</div>
                     {/* Ventas sin señal esperando: flota arriba a la derecha, sin mover la vista. */}
                     {sinSenal.lista.length > 0 && (

@@ -1475,7 +1475,9 @@ export default function DistribucionVentaView() {
                     {/* ── El resumen: columna fija a la derecha (computadora) ── */}
                     <aside className="hidden lg:flex flex-col gap-3 lg:sticky lg:top-0" aria-label="Resumen de la venta">
                         <section data-surface="card" className="p-4 flex flex-col gap-3">
-                            <div className="flex items-baseline justify-between gap-2">
+                            {/* `pr-12`: la campana de escritorio flota en esta esquina,
+                                igual que en el portal; sin el hueco tapaba el documento. */}
+                            <div className="flex items-baseline justify-between gap-2 pr-12">
                                 <h3 className="text-body font-black text-content">Resumen</h3>
                                 <span className="text-caption text-content-3">{TIPO_DOCUMENTO[tipoDoc]?.largo}</span>
                             </div>

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1124.1 — Torogoz: la campana como en el portal
+
+Pedido del usuario: «con las notificaciones hay problemas, pásalo a donde está en el portal, con el mismo tamaño y función; si paso el mouse se pone enorme y raro».
+
+- En escritorio, la campana de Torogoz sale del menú lateral y flota arriba a la derecha del contenido, con la versión de escritorio de `NotificationBell` — igual que en el portal. En el menú iba la versión de teléfono, que al pasar el mouse se agrandaba.
+- En Venta, el encabezado del Resumen deja el hueco de la campana para no tapar el tipo de documento.
+- Gerente General también aprueba los descuentos de Torogoz (permiso «Decidir: descuentos de Distribución»).
+
 ## v2.1124.0 — Reactivar una promoción mueve también su descuento en la caja
 
 Reporte del usuario: reactivó Rinokem y el precio no bajó en la venta. El

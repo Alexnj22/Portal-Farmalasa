@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1134.0 — App: Bitácoras en vidrio y Libro bajo receta nativo
+
+Siguiente fase de la app: las pantallas del menú, en orden de uso (Bitácoras:
+34 personas y 2,215 acciones en 30 días).
+
+- **Bitácoras en vidrio**: era la última pantalla grande con los componentes
+  sólidos viejos. La sala va en el menú de filtros, el día con el selector del
+  sistema, las cuatro cifras y cada momento en tarjetas de vidrio.
+- **La ronda** (anotar temperaturas y limpieza) en vidrio sobre la aurora, con
+  la misma lógica del núcleo.
+- **Libro bajo receta nativo** (`app/libro-receta.js`): los renglones del mes
+  con lo que le falta a cada uno; tocar uno pendiente lo completa. Cierre de
+  mes y Configuración siguen abriendo el portal (son de administración).
 ## v2.1133.3 — Rendimiento: tres consultas que leían de más, corregidas y medidas como usuario
 
 Hallazgos de `gate:perf` del 2026-10-01, medidos **como usuario** (con la sesión de un cargo de dirección, en caliente): como administrador de la base la RLS no corre y dos de los tres no se veían.

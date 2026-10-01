@@ -57,7 +57,10 @@ export default function NuevaPersonal() {
   const puedeElegir = getScope?.('requests_personales') === 'ALL';
   const clave = `solicitud_personal_app_${tipo}`;
 
-  const [empleadoId, setEmpleadoId] = useState(String(user?.id ?? ''));
+  // A nombre de quién: la persona que usa la app, salvo que se elija a otra.
+  // Derivado y no guardado, porque al abrir el usuario puede no haber cargado.
+  const [elegido, setEmpleadoId] = useState(null);
+  const empleadoId = elegido ?? String(user?.id ?? '');
   const [buscaPersona, setBuscaPersona] = useState('');
   const [payload, setPayload] = useState({});
   const [nota, setNota] = useState('');
@@ -82,6 +85,7 @@ export default function NuevaPersonal() {
   useEffect(() => { saveDraft(clave, { payload, nota }); }, [clave, payload, nota]);
 
   useEffect(() => {
+    if (!empleadoId) return undefined;
     let vivo = true;
     fetchSolicitudesPersonalesDe(empleadoId).then((r) => { if (vivo) setSuyas(r || []); });
     return () => { vivo = false; };

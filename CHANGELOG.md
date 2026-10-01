@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1131.0 — App: Pedir a otra sala en vidrio y «Listo» en el teclado
+
+- **Pedir a otra sala** pasa a las piezas de vidrio de toda la app (era la
+  última pantalla con fondos sólidos). La lógica sigue siendo
+  `usePedirTraslado` del núcleo.
+- **Los teclados numéricos del iPhone traen «Listo»** para cerrarse; antes
+  tapaban el botón de enviar.
+- **Solicitud personal**: ya no consulta con un id vacío mientras carga el
+  usuario.
 ## v2.1130.0 — Puntos: aviso de movimientos fuera de lo normal
 
 Pedido del usuario: enterarse cuando a un cliente se le acumulan o descuentan

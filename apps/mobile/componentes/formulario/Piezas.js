@@ -2,7 +2,8 @@
 // recibir): una sección de vidrio con su título, el campo de texto, la lista
 // de opciones con palomita, el botón grande y el renglón «dato: valor». Todas
 // iguales en toda la app, para que un formulario se sienta como el anterior.
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { useState } from 'react';
+import { InputAccessoryView, Keyboard, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
@@ -18,11 +19,37 @@ export function Seccion({ titulo, pie, children }) {
   );
 }
 
-export function Campo({ multiline = true, style, ...props }) {
+// Los teclados numéricos del iPhone no traen tecla para cerrarse: sin una
+// barra con «Listo», el teclado se queda tapando el botón de enviar y hay que
+// adivinar que se baja deslizando. Cada `Campo` numérico trae la suya
+// (montada en la raíz no aparecía: la vista del teclado no la encontraba).
+const NUMERICOS = new Set(['number-pad', 'decimal-pad', 'numeric', 'phone-pad']);
+let siguiente = 0;
+
+function BarraListo({ id }) {
   return (
-    <TextInput placeholderTextColor={colorSistema.texto2} multiline={multiline} {...props}
-      style={[{ minHeight: 44, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, color: colorSistema.texto,
-        backgroundColor: 'rgba(127,127,127,0.16)' }, style]} />
+    <InputAccessoryView nativeID={id}>
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 16, paddingVertical: 6,
+        backgroundColor: 'rgba(30,27,46,0.92)', borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
+        <Pressable onPress={() => Keyboard.dismiss()} hitSlop={10} style={{ minHeight: 36, justifyContent: 'center' }}>
+          <Text style={{ color: colorSistema.acento, fontSize: 17, fontWeight: '600' }}>Listo</Text>
+        </Pressable>
+      </View>
+    </InputAccessoryView>
+  );
+}
+
+export function Campo({ multiline = true, style, ...props }) {
+  const numerico = Platform.OS === 'ios' && NUMERICOS.has(props.keyboardType);
+  const [id] = useState(() => `listo-${siguiente++}`);
+  return (
+    <>
+      <TextInput placeholderTextColor={colorSistema.texto2} multiline={multiline}
+        inputAccessoryViewID={numerico ? id : undefined} {...props}
+        style={[{ minHeight: 44, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, color: colorSistema.texto,
+          backgroundColor: 'rgba(127,127,127,0.16)' }, style]} />
+      {numerico ? <BarraListo id={id} /> : null}
+    </>
   );
 }
 

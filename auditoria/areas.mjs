@@ -770,7 +770,7 @@ export const AREAS = [
         rutas: ['/pedidos'],
         archivos: [
             'src/views/PedidosView.jsx', 'src/views/pedidos/',
-            'src/data/pedidos.js', 'src/data/devoluciones.js', 'src/data/diferencias.js',
+            'src/data/pedidos.js', 'src/data/devoluciones.js', 'src/data/diferencias.js', 'src/data/llegadaDePedido.js',
             'src/data/dispatchRules.js', 'src/data/recepcion.js',
             'src/hooks/useResolverDiferencia.js', 'src/hooks/usePedidosData.js',
             'src/utils/tableroDePedidos.js', 'src/constants/pedidos.js',

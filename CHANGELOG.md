@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1136.0 — Pedidos: llegada y conteo de la sala al núcleo
+
+Preparación de Pedidos en la app: lo que la sala hace al recibir pasa al
+núcleo, y el portal ya lo usa (sin cambiar lo que hace).
+
+- **Confirmar llegada** (`data/llegadaDePedido.js`): las cajas que no llegaron
+  marcan sus renglones, el Electrolit y las especiales igual, la etapa avanza y
+  se guarda el detalle. Salió de `hooks/usePedidosData.js`.
+- **El conteo de cada renglón** (`utils/recepcionDePedido.js`): de la
+  presentación de despacho a unidades, y si es faltante, sobrante, dañado o
+  vencido. Salió de `RecepcionModal.jsx`. Con pruebas
+  (`tests/unit/recepcionDePedido.test.js`).
+- La app trata `pdfmake` como paquete sólo de la web (el papel del pedido).
 ## v2.1135.2 — Marketing: ajustes tras revisarlo en el navegador
 
 Lo que salió del primer recorrido real (Playwright contra producción, escritorio

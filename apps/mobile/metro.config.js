@@ -29,7 +29,7 @@ const ALIAS = {
 // teléfono el papel va por la cola como texto del rollo y nunca se dibuja, pero
 // Metro resuelve todo `import()` al compilar: sin esto, importar
 // `utils/ticketPrint` rompe el bundle. El sustituto lanza si alguien lo usa.
-const SOLO_WEB = new Set(['@zxing/library']);
+const SOLO_WEB = new Set(['@zxing/library', 'pdfmake/build/pdfmake', 'pdfmake/build/vfs_fonts']);
 const resolverOriginal = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (contexto, nombre, plataforma) => {
   for (const [prefijo, destino] of Object.entries(ALIAS)) {

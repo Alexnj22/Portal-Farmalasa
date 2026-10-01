@@ -8,19 +8,20 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { tokenMatch } from '../utils/searchUtils';
 import { ERP_NAMES, SUCURSALES as ERP_ORDER } from '../constants/erp';
-import { printFromPedidoItems, getExactPageGroups } from '../utils/pedidoPrint';
+import { printFromPedidoItems } from '../utils/pedidoPrint';
 import { PAUSE_REASONS } from '../constants/pedidos';
 import { getBranchStage, estadoDeLaSala, claveParada, agruparPorRuta, currentMonthRange, necesitaAtencion, faltantesDeLaSala } from '../utils/tableroDePedidos';
-import { anularPedido, avanzarEtapaDePedidoEnSala, confirmarEnvioPedido, despacharTrasladoPedido, fetchActiveRutas, fetchApoyoForPedido, fetchApoyoForPedidos, fetchAttendancePunches, fetchBranchNamesForSucursales, fetchEmployeeBranchId, fetchEntregasDePedidos, fetchItemsSinIngresar, fetchPausaHistorial, fetchPedidoItemEventosAll, fetchPedidoItemsAll, fetchPedidoItemsFaltaElectrolit, fetchPedidoItemsFaltaEspeciales, fetchPedidoItemsPendientesIds, fetchPedidoSucursalStatus, fetchPedidosEnCurso, fetchResumenDeRenglonesPorPedido, fetchResumenIngresoPedidos, fetchRutaLocations, fetchSucursalIdForBranch, fetchTrasladosDePedidos, noReenviarEspeciales, recibirTrasladoPedido, resolverRenglonDePedido, tieneEtiquetaDeDespacho, updatePedidoItemsFaltaCaja, updatePedidoSucursalStatus, updateRutaPedidoEntregado, upsertRutaLocation } from '../data/pedidos';
+import { anularPedido, avanzarEtapaDePedidoEnSala, confirmarEnvioPedido, despacharTrasladoPedido, fetchActiveRutas, fetchApoyoForPedido, fetchApoyoForPedidos, fetchAttendancePunches, fetchBranchNamesForSucursales, fetchEmployeeBranchId, fetchEntregasDePedidos, fetchItemsSinIngresar, fetchPausaHistorial, fetchPedidoItemEventosAll, fetchPedidoItemsAll, fetchPedidoItemsFaltaElectrolit, fetchPedidoItemsFaltaEspeciales, fetchPedidoSucursalStatus, fetchPedidosEnCurso, fetchResumenDeRenglonesPorPedido, fetchResumenIngresoPedidos, fetchRutaLocations, fetchSucursalIdForBranch, fetchTrasladosDePedidos, noReenviarEspeciales, recibirTrasladoPedido, resolverRenglonDePedido, tieneEtiquetaDeDespacho, updatePedidoItemsFaltaCaja, updatePedidoSucursalStatus, updateRutaPedidoEntregado, upsertRutaLocation } from '../data/pedidos';
 import {
     fetchDevolucionesDePedido, decidirDevolucion,
     subirEvidencia, moverDevoluciones, recibirDevoluciones,
 } from '../data/devoluciones';
 import { decidirDiferencia, confirmarLlegadaDiferencia } from '../data/diferencias';
+import { confirmarLlegadaDePedido } from '../data/llegadaDePedido';
 import { seguirPosicion } from '@plataforma/ubicacion';
 
 import { mensajeAmigable } from '../utils/errorMessages';
-import { cajasDeRenglon, construirCajasEspeciales, renglonesDeCajasFaltantes, renglonesQueSalen } from '../utils/cajasEspeciales';
+import { cajasDeRenglon, construirCajasEspeciales, renglonesQueSalen } from '../utils/cajasEspeciales';
 import { fetchEmployeesPublicByIds } from '../data/employees';
 import { escucharCambios } from '../data/tiempoReal';
 
@@ -779,141 +780,12 @@ export function usePedidosData({ searchTerm = '' }) {
         setLlegadaModal(null);
         setBusyAction('llegada');
         try {
-            // 1. Determinar tipo global
-            //
-            //    Cuenta TODO lo que no llegó, no sólo las cajas numeradas. Escrito
-            //    con `cajasFaltantes` a secas, el 1-sep-2026 Salud 1 reportó cuatro
-            //    cajas de Electrolit no recibidas y la tarjeta igual dijo «Llegada
-            //    confirmada — sin novedad»: las seis cajas con número sí habían
-            //    llegado, y el tipo no miraba nada más. El faltante existía —los
-            //    renglones quedaron bloqueados y bodega recibió el aviso—, pero la
-            //    única línea que alguien lee decía lo contrario.
-            const hasFaltaNumerada = cajasFaltantes.length > 0;
-            const hasDanada        = cajasDanadas.length > 0;
-            const hasFaltaElec     = (electrolitFaltantes ?? 0) > 0;
-            const hasFaltaEsp      = !!especialesLlegadas && Object.values(especialesLlegadas).some(v => v === 'faltante');
-            const hasFalta         = hasFaltaNumerada || hasFaltaElec || hasFaltaEsp;
-            const tipo = hasFalta && hasDanada ? 'mixto'
-                       : hasFalta              ? 'falta_caja'
-                       : hasDanada             ? 'caja_danada'
-                       :                         'completa';
-
-            // 2. Marcar items de cajas faltantes como falta_caja: true
-            //    `hasFaltaNumerada` y no `hasFalta`: acá se resuelven los renglones
-            //    por número de caja. El Electrolit y las especiales tienen sus
-            //    propios pasos (2b y 2c), y entrar acá sin cajas numeradas caería
-            //    en la rama conservadora que bloquea TODO lo pendiente.
-            if (hasFaltaNumerada) {
-                const { data: pss, error: pssErr } = await fetchPedidoSucursalStatus(pedidoId, sucId, 'caja_map, pagina_items');
-                if (pssErr) throw pssErr;
-                const cajaMapDb     = pss?.caja_map    ?? {};
-                const paginaItemsDb = pss?.pagina_items ?? {};
-
-                let missingIds = [];
-                if (Object.keys(paginaItemsDb).length > 0) {
-                    const missingPages = cajasFaltantes.flatMap(n => cajaMapDb[String(n)] ?? []);
-                    missingIds = missingPages.flatMap(p => paginaItemsDb[String(p)] ?? []);
-                } else if (Object.keys(cajaMapDb).length > 0) {
-                    // pagina_items vacío (pedido legacy) — recomputar con el mismo método del PDF y persistir
-                    const pageGroups = await getExactPageGroups(sucId, rows);
-                    const recomputed = {};
-                    pageGroups.forEach((pg, idx) => { recomputed[String(idx + 1)] = pg.ids; });
-                    const { error: pagErr } = await updatePedidoSucursalStatus(pedidoId, sucId, { pagina_items: recomputed });
-                    if (pagErr) throw pagErr;
-                    const missingPages = cajasFaltantes.flatMap(n => cajaMapDb[String(n)] ?? []);
-                    missingIds = missingPages.flatMap(p => recomputed[String(p)] ?? []);
-                } else {
-                    // Sin caja_map ni pagina_items — conservador: bloquear todos los ítems pendientes
-                    // Pagina: hay pedidos de más de 1,000 renglones por sucursal
-                    // (1,108 el mayor, medido). `fetchAllRows` devuelve null si la
-                    // primera página falló, y acá eso NO se puede pasar por alto:
-                    // lo que sigue marca renglones como faltantes, así que seguir
-                    // con una lista corta daría la caja por procesada sin marcar.
-                    const allPending = await fetchPedidoItemsPendientesIds(pedidoId, sucId);
-                    if (allPending === null) throw new Error('No se pudieron leer los renglones pendientes de la sucursal.');
-                    missingIds = allPending.map(r => r.id);
-                }
-                if (missingIds.length > 0) {
-                    const { error: faltaErr } = await updatePedidoItemsFaltaCaja(missingIds, true);
-                    if (faltaErr) throw faltaErr;
-                }
-            }
-
-            // 2b. Marcar items de Electrolit faltantes como falta_caja: true
-            if ((electrolitFaltantes ?? 0) > 0 && rows.length > 0) {
-                const faltaElecItems = rows
-                    .filter(r => (r.products?.nombre ?? '').toLowerCase().includes('electrolit') && !r.falta_caja && r.status !== 'recibido')
-                    .slice(0, electrolitFaltantes);
-                if (faltaElecItems.length > 0) {
-                    const { error: elecErr } = await updatePedidoItemsFaltaCaja(faltaElecItems.map(r => r.id), true);
-                    if (elecErr) throw elecErr;
-                }
-            }
-
-            // 2c. Marcar items de cajas especiales faltantes como falta_caja: true
-            //
-            //     La etiqueta E1…En es una CLAVE y su dueño ya está guardado:
-            //     `cajas_especiales` lo escribió `construirCajasEspeciales` al
-            //     finalizar el despacho, con el `pedido_item_id` adentro, y es la
-            //     MISMA lista que esta pantalla le mostró a la sala. Acá se lee;
-            //     no se vuelve a derivar — ver `renglonesDeCajasFaltantes` y lo
-            //     que costó el pedido #178 de Salud 4.
-            //
-            //     Se relee de la base en vez de usar `rows` a propósito: `rows`
-            //     es lo que esta sesión tiene en memoria, y el mapa tiene que
-            //     salir de lo que se imprimió en las cajas.
-            let cajasEspecialesDb = [];
-            if (hasFaltaEsp) {
-                const { data: pssEsp, error: pssEspErr } = await fetchPedidoSucursalStatus(pedidoId, sucId, 'cajas_especiales');
-                if (pssEspErr) throw pssEspErr;
-                cajasEspecialesDb = pssEsp?.cajas_especiales ?? [];
-
-                const { ids: faltaIds, huerfanas } = renglonesDeCajasFaltantes(cajasEspecialesDb, especialesLlegadas);
-
-                //  Una etiqueta sin dueño NO se saltea. Seguir dejaría la llegada
-                //  confirmada con el faltante sin ningún renglón bloqueado, o sea
-                //  invisible: peor que no poder confirmar.
-                if (huerfanas.length > 0) {
-                    throw new Error(`No se pudo identificar qué producto es la caja ${huerfanas.join(', ')}. Avisa a bodega antes de confirmar la llegada.`);
-                }
-                if (faltaIds.length > 0) {
-                    const { error: espErr } = await updatePedidoItemsFaltaCaja(faltaIds, true);
-                    if (espErr) throw espErr;
-                }
-            }
-
-            // 3. Confirmar llegada física
-            //
-            //    El `error` de acá NO se miraba, y por eso el 2026-08-14 una
-            //    sala sin permiso de gestionar pedidos vio la llegada
-            //    confirmada, con su entrada en la bitácora y su aviso a bodega,
-            //    sobre una base donde `llegada_fisica_at` seguía vacío. Si esta
-            //    línea falla no hay llegada, y todo lo que viene abajo estaría
-            //    contando algo que no pasó.
-            const { error: llegadaErr } = await avanzarEtapaDePedidoEnSala({
-                p_pedido_id: pedidoId, p_sucursal_id: sucId,
-                p_stage: 'confirmar_llegada', p_user_id: user?.id ?? null,
+            // La lógica vive en el núcleo (`data/llegadaDePedido`): la app del
+            // teléfono confirma la llegada con la misma función.
+            const { tipo } = await confirmarLlegadaDePedido({
+                pedidoId, sucId, rows, userId: user?.id ?? null,
+                cajasDanadas, cajasFaltantes, nota, electrolitFaltantes, especialesLlegadas, cajasExtra, cajasExtraNotas,
             });
-            if (llegadaErr) throw llegadaErr;
-
-            // 4. Guardar metadata de llegada
-            const { error: metaErr } = await updatePedidoSucursalStatus(pedidoId, sucId, {
-                llegada_tipo:  tipo,
-                llegada_nota:  nota || null,
-                falta_cajas:   cajasFaltantes,
-                cajas_danadas: cajasDanadas,
-                ...((hasFalta || hasDanada) ? { falta_caja_at: new Date().toISOString() } : {}),
-                ...(electrolitFaltantes !== null ? {
-                    electrolit_ok:        electrolitFaltantes === 0,
-                    electrolit_faltantes: electrolitFaltantes,
-                } : {}),
-                ...(especialesLlegadas !== null ? { cajas_especiales_llegadas: especialesLlegadas } : {}),
-                // Las cajas de más: antes sólo iban a la bitácora; ahora el aviso a
-                // bodega sale de la base y tiene que poder leerlas.
-                cajas_extra:       cajasExtra > 0 ? cajasExtra : null,
-                cajas_extra_notas: cajasExtra > 0 ? (cajasExtraNotas ?? null) : null,
-            });
-            if (metaErr) throw metaErr;
 
             useStaff.getState().appendAuditLog('PEDIDO_LLEGADA_CONFIRMADA', pedidoId, { tipo, cajasFaltantes, cajasDanadas, cajasExtra, cajasExtraNotas });
             setLlegadaStatus(prev => ({ ...prev, [key]: true }));

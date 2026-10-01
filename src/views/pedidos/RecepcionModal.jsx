@@ -29,15 +29,13 @@ import { estadoDeHojas, hojasContables, hojasContadas } from '@nucleo/utils/hoja
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { lotesAsignadosToDispatch } from '@nucleo/utils/pedidoPrint';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { enviadoDe, renglonContado, renglonTodoOk, toDispatch } from '@nucleo/utils/recepcionDePedido';
 
 // `EmpChip` vivía acá y se fue con la franja de «Responsables» del pie: era su
 // único uso en todo el repo (el chip de las tarjetas de pedido es
 // `tabpedidos/EmpChip.jsx`, otro archivo).
 
-function toDispatch(qty, erpFactor, dispFactor) {
-    if (!dispFactor || dispFactor === erpFactor) return qty;
-    return Math.round(qty * erpFactor / dispFactor);
-}
+// `toDispatch` y `enviadoDe` viven en el núcleo (`utils/recepcionDePedido`).
 
 function fmtDispatchLabel(dispatch_tipo, dispatch_factor) {
     const f = Number(dispatch_factor) || 1;
@@ -345,7 +343,6 @@ function SueltoRapido({ rows, confirmados = [], hojaDe, sueltosOk, saving, onRec
  * mismo (`COALESCE(cantidad_enviada, cantidad_asignada)` dentro de
  * `receive_pedido_sucursal`), así que la pantalla y la base miran lo mismo.
  */
-const enviadoDe = (r) => r?.cantidad_enviada ?? r?.cantidad_asignada ?? 0;
 
 const ERROR_TIPOS = [
     { value: 'danado',  label: 'Dañado'  },
@@ -1064,43 +1061,11 @@ export default function RecepcionModal({
     }, [extras, presMap, pedido?.id, sucursalId]);
 
     // ── Build p_items payload for a set of rows ─────────────────────────────────
-    const buildPItems = useCallback((rowsToProcess) => {
-        return rowsToProcess.map(r => {
-            const erpFactor  = Number(r.factor) || 1;
-            const dispFactor = Number(r.dispatch_factor) || erpFactor;
-            const enviado    = enviadoDe(r);
-            const fQty  = fQtyVals[r.id]  ?? toDispatch(enviado, erpFactor, dispFactor);
-            const fPres = fPresVals[r.id] ?? dispFactor;
-            const tp = tieneProblema[r.id];
-            const hasProb = !!tp;
-            const fRaw = Math.round(fQty * fPres / erpFactor);
-            // Contra lo ENVIADO, no contra una segunda casilla que había que
-            // llenar a mano. Cambiar la presentación sin cambiar el total ya no
-            // es una diferencia: son las mismas unidades en otro empaque, y eso
-            // es justo lo que la sala hace cuando le llega en caja lo que se
-            // pidió por unidad. (El tipo `presentacion` deja de generarse; se
-            // conserva su etiqueta en «Diferencias» por los renglones viejos.)
-            const isDiff = fRaw !== enviado || hasProb;
-
-            const nota = notaVals[r.id] || null;
-            let error_tipo = null;
-            // «Otro» no le gana a la cantidad. Es lo que la sala marca para
-            // explicar un cruce («no venía esto, sino que fluconazol»), y si
-            // ganaba, un faltante real se guardaba sin las salidas del
-            // faltante — sólo «Resuelto / Sin solución», que cierran el
-            // renglón con las existencias descuadradas. La nota se conserva.
-            const elegido = hasProb ? errorVals[r.id] : null;
-            if (isDiff) {
-                if (elegido && (elegido !== 'otro' || fRaw === enviado)) error_tipo = elegido;
-                else if (fRaw < enviado)        error_tipo = 'faltante';
-                else if (fRaw > enviado)        error_tipo = 'sobrante';
-                else                            error_tipo = 'otro';
-            }
-            const cantProb = (error_tipo === 'danado' || error_tipo === 'vencido')
-                ? (cantProblemaVals[r.id] ?? 1) : null;
-            return { pedido_item_id: r.id, cantidad_recibida: fRaw, nota_diferencia: nota, error_tipo, cantidad_problema: cantProb };
-        });
-    }, [fQtyVals, fPresVals, notaVals, errorVals, tieneProblema, cantProblemaVals]);
+    const buildPItems = useCallback((rowsToProcess) => rowsToProcess.map(r => renglonContado(r, {
+        fQty: fQtyVals[r.id], fPres: fPresVals[r.id],
+        problema: tieneProblema[r.id] ? errorVals[r.id] : null,
+        nota: notaVals[r.id], cantProblema: cantProblemaVals[r.id],
+    })), [fQtyVals, fPresVals, notaVals, errorVals, tieneProblema, cantProblemaVals]);
 
     // ── Meter al inventario lo que se acaba de confirmar ────────────────────────
     // Cada producto viaja en su propio traslado, así que dar por recibidos los
@@ -1398,13 +1363,7 @@ export default function RecepcionModal({
         setSaving(true); setSaveError(null);
 
         // Payload con cantidades exactas asignadas, sin diferencias
-        const p_items = rowsToSave.map(r => {
-            const erpFactor  = Number(r.factor) || 1;
-            const dispFactor = Number(r.dispatch_factor) || erpFactor;
-            const dispQty    = toDispatch(enviadoDe(r), erpFactor, dispFactor);
-            const rawQty     = Math.round(dispQty * dispFactor / erpFactor);
-            return { pedido_item_id: r.id, cantidad_recibida: rawQty, nota_diferencia: null, error_tipo: null, cantidad_problema: null };
-        });
+        const p_items = rowsToSave.map(renglonTodoOk);
 
         try {
             const { error } = await recibirPedidoDeSucursal({

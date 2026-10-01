@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1128.2 — Torogoz: disparadores con permisos del usuario; gate:perf encuentra la constante mudada
+
+- **Cuatro disparadores de Torogoz** (`dist_validar_lote_item`, `dist_validar_desde_camion`, `dist_cliente_ruta_texto`, `dist_ventas_perdidas_resolver`) dejan de correr con permisos de administrador: sólo leen tablas que cualquiera con permiso de ver Distribución ya puede leer, o completan la propia fila. Probado en el branch con las pruebas de venta, lotes, autoventa, rutas y venta perdida (5 de 5) y aplicado en producción (`20261001180959`).
+- **`gate:perf`** buscaba `MIN_LETRAS_BUSQUEDA` en `PanelDeInventario.jsx`, y la constante se había mudado a `utils/consultaInventario.js` al pasar la lógica al núcleo: avisaba que faltaba un freno que seguía en su sitio (en 3).
+
 ## v2.1128.1 — Marketing: el pie de los modales con separación entre botones
 
 `LiquidModal.Footer` en escritorio es `justify-between` sin `gap`: sirve para

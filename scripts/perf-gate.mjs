@@ -83,7 +83,10 @@ const CODIGO = [
     // que tiene que hacer: un chequeo por ruta fija no distingue «la constante
     // se borró» de «el archivo se movió», y de las dos la primera es la
     // peligrosa. Confirmado a mano que sigue en 3.
-    archivo: 'src/views/dashboard/inventario/PanelDeInventario.jsx',
+    // Y se volvió a mudar el 2026-10-01: la lógica del inventario pasó al
+    // núcleo (`utils/consultaInventario.js`, para que la reuse la app nativa) y
+    // la pantalla la importa de ahí. Sigue en 3.
+    archivo: 'src/utils/consultaInventario.js',
     prueba: (t) => {
       const m = t.match(/const\s+MIN_LETRAS_BUSQUEDA\s*=\s*(\d+)/);
       if (!m) return 'no encontré la constante MIN_LETRAS_BUSQUEDA';

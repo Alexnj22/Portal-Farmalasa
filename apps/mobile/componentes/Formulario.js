@@ -42,8 +42,10 @@ export function Formulario({ children, contentContainerStyle, ...props }) {
 }
 
 /** Un grupo de filas con esquinas redondeadas; `titulo` arriba y `pie` abajo, en gris. */
-// `vidrio`: el grupo va sobre la aurora como superficie de vidrio (la entrada).
-export function Grupo({ titulo, pie, children, vidrio = false }) {
+// `vidrio`: el grupo va sobre la aurora como superficie de vidrio. Es el
+// default desde el 2026-10-01 (usuario: «si usamos canónico y vidrio, ¿por qué
+// poner sólidos?»): todas las pantallas van sobre la aurora.
+export function Grupo({ titulo, pie, children, vidrio = true }) {
   const filas = Children.toArray(children).filter(isValidElement);
   const contenido = filas.map((fila, i) => (
     <View key={fila.key ?? i}>

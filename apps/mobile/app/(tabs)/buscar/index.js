@@ -29,6 +29,7 @@ import { REQUEST_TYPES } from '@nucleo/store/slices/requestsSlice';
 import { formatQty } from '@nucleo/utils/formatNumber';
 import { colorSistema } from '../../../componentes/Formulario';
 import Avatar from '../../../componentes/Avatar';
+import Vidrio from '../../../componentes/Vidrio';
 import { useTema } from '../../../tema/tema';
 import { iconoDe } from '../../../tema/iconos';
 import { abrirModulo, abrirRuta, abrirSolicitud } from '../../../pantallas';
@@ -39,7 +40,7 @@ function Grupo({ titulo, children, pie }) {
   return (
     <View style={{ gap: 6 }}>
       <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', marginHorizontal: 32 }}>{titulo}</Text>
-      <View style={{ backgroundColor: colorSistema.fila, borderRadius: 16, marginHorizontal: 16, overflow: 'hidden' }}>{children}</View>
+      <View style={{ marginHorizontal: 16 }}><Vidrio radio={22}>{children}</Vidrio></View>
       {pie ? <Text style={{ color: colorSistema.texto2, fontSize: 12, marginHorizontal: 32 }}>{pie}</Text> : null}
     </View>
   );

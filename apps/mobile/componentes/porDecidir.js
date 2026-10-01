@@ -10,9 +10,15 @@
 //   · solicitudes      — `reglasDeBandeja(...).puedeDecidir`, por ámbito
 //   · ajustes Min/Max   — `requests_minmax.can_approve`
 //   · traslados         — `traslados.can_approve` y que la sala de origen sea
-//                         la mía o una que cubro (o alcance «todas»)
-//   · envíos            — los que están `por_decidir` para mi sala
-//                         (`momentoDelEnvio`)
+//                         la mía o una que cubro
+//   · envíos            — los que están `por_decidir` y van a mi sala o a una
+//                         que cubro (`momentoDelEnvio`)
+//
+// Traslados y envíos NO miran el alcance «todas» (reporte del usuario del
+// 2026-10-01, con 11 envíos ajenos en la lista: «no deberían salirme, no son
+// míos»). El alcance dice qué se PUEDE ver y operar —eso sigue en Traslados—;
+// esta lista dice qué te toca contestar a VOS, y un envío lo contesta la sala
+// que lo recibe.
 //
 // Es un store y no un estado de pantalla porque lo leen dos lugares: la
 // pestaña (la lista) y la barra de abajo (el número del globo).
@@ -45,13 +51,12 @@ export const usePorDecidir = create((set, get) => ({
       };
       const sala = reglas('requests');
       const personal = reglas('requests_personales');
-      const todas = getScope?.('traslados') === 'ALL';
       const decideTraslados = hasPermission('traslados', 'can_approve');
 
       const [solicitudes, minmax, cubro, envios] = await Promise.all([
         fetchSolicitudesPendientes().catch(() => null),
         hasPermission('requests_minmax', 'can_approve') ? fetchMinMaxPendientes().catch(() => null) : [],
-        decideTraslados && !todas && miSala ? fetchSalasQueCubro(miSala).catch(() => []) : [],
+        decideTraslados && miSala ? fetchSalasQueCubro(miSala).catch(() => []) : [],
         decideTraslados ? fetchEnviosVivos().catch(() => ({ envios: [] })) : { envios: [] },
       ]);
       const misSalas = new Set([String(miSala), ...(cubro || []).map((s) => String(s.branch_id ?? s))]);
@@ -59,7 +64,7 @@ export const usePorDecidir = create((set, get) => ({
       const items = [];
       for (const r of solicitudes || []) {
         if (r.type === 'INVENTORY_TRANSFER_REQUEST') {
-          if (decideTraslados && (todas || misSalas.has(String(r.metadata?.origen_branch_id)))) {
+          if (decideTraslados && misSalas.has(String(r.metadata?.origen_branch_id))) {
             items.push({ clave: r.id, tipo: 'traslado', fila: r, creado: r.created_at });
           }
           continue;
@@ -73,7 +78,8 @@ export const usePorDecidir = create((set, get) => ({
         items.push({ clave: `minmax:${m.id}`, tipo: 'minmax', fila: m, creado: m.requested_at });
       }
       for (const e of envios?.envios || []) {
-        if (momentoDelEnvio(e, todas ? null : miSala) === 'por_decidir') {
+        const destino = String(e.branch_id ?? '');
+        if (misSalas.has(destino) && momentoDelEnvio(e, destino) === 'por_decidir') {
           items.push({ clave: `envio:${e.id}`, tipo: 'envio', fila: e, creado: e.created_at });
         }
       }

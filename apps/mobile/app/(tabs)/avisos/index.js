@@ -6,89 +6,29 @@
 // leído sigue en el historial) y `useNotificationsChannel`, montado en la raíz,
 // la mantiene al día en vivo.
 //
-// Cada aviso es una tarjeta: quién lo originó (foto), qué pasó, y —si nombra
-// una solicitud— su detalle con los mismos renglones que la notificación del
-// teléfono (`detalleDeSolicitud`, del núcleo). Tocarla abre la solicitud en la
+// Cada aviso es una tarjeta (`componentes/avisos/TarjetaDeAviso`), la misma de
+// la campana del portal: anillo, barras por sala, quién lo pide y sus datos.
+// Si no tiene tarjeta propia y nombra una solicitud, va su detalle con los
+// renglones de la notificación del teléfono (`detalleDeSolicitud`). Tocarla abre la solicitud en la
 // app (`app/solicitud/[id].js`), que es donde se decide: la lista informa.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack, useFocusEffect } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { cuandoLlego, tituloSinEmoji } from '@nucleo/utils/notificacionTexto';
-import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { cargarFilaDeAviso, esAvisoDeMinMax } from '@nucleo/data/solicitudDeAviso';
 import { detalleDeMinMax, detalleDeSolicitud, recortar } from '@nucleo/utils/tarjetaDeSolicitud';
 import { colorSistema } from '../../../componentes/Formulario';
-import Vidrio from '../../../componentes/Vidrio';
 import { abrirRuta, abrirSolicitud } from '../../../pantallas';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
 import { usePorDecidir } from '../../../componentes/porDecidir';
 import TarjetaPorDecidir from '../../../componentes/TarjetaPorDecidir';
+import TarjetaDeAviso from '../../../componentes/avisos/TarjetaDeAviso';
 
 
 // El detalle se pide para los avisos que nombran una solicitud todavía abierta.
 // Tope: con más, la pestaña pagaría decenas de lecturas por abrirse.
 const TOPE_DE_DETALLES = 20;
-
-function Avatar({ empleado, titulo }) {
-  const foto = empleado?.photo || empleado?.photo_url;
-  const letras = (empleado ? shortEmployeeName(empleado) : tituloSinEmoji(titulo))
-    .split(/\s+/).slice(0, 2).map((p) => p.charAt(0).toUpperCase()).join('');
-  if (foto) return <Image source={{ uri: foto }} style={{ width: 40, height: 40, borderRadius: 20 }} />;
-  return (
-    <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colorSistema.separador, alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ color: colorSistema.texto2, fontWeight: '600' }}>{letras || '•'}</Text>
-    </View>
-  );
-}
-
-function Tarjeta({ n, empleado, detalle, onAbrir }) {
-  return (
-    <Pressable onPress={onAbrir} style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Vidrio radio={22} interactivo>
-      <View style={{ padding: 14, gap: 10 }}>
-      <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
-        <Avatar empleado={empleado} titulo={n.title} />
-        <View style={{ flex: 1, gap: 2 }}>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '600' }} numberOfLines={2}>
-              {tituloSinEmoji(n.title)}
-            </Text>
-            <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{cuandoLlego(n.created_at)}</Text>
-          </View>
-          {empleado ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{shortEmployeeName(empleado)}</Text> : null}
-          {!detalle && n.body ? <Text style={{ color: colorSistema.texto, fontSize: 14 }} numberOfLines={4}>{n.body}</Text> : null}
-        </View>
-      </View>
-
-      {detalle ? (
-        <View style={{ gap: 6 }}>
-          {detalle.contexto ? <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{detalle.contexto}</Text> : null}
-          {detalle.renglones.length ? (
-            <View style={{ backgroundColor: 'rgba(127,127,127,0.14)', borderRadius: 12, paddingHorizontal: 10 }}>
-              {detalle.renglones.map(([a, b], i) => (
-                <View key={i} style={{ flexDirection: 'row', gap: 8, paddingVertical: 7, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
-                  <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 13 }} numberOfLines={2}>{a}</Text>
-                  {b ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontVariant: ['tabular-nums'] }}>{b}</Text> : null}
-                </View>
-              ))}
-              {detalle.resto ? (
-                <Text style={{ color: colorSistema.texto2, fontSize: 12, paddingVertical: 7, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
-                  y {detalle.resto} más
-                </Text>
-              ) : null}
-            </View>
-          ) : null}
-          {detalle.pie ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{detalle.pie}</Text> : null}
-        </View>
-      ) : null}
-
-      </View>
-      </Vidrio>
-    </Pressable>
-  );
-}
 
 function Seccion({ texto }) {
   return (
@@ -104,8 +44,6 @@ export default function Notificaciones() {
   const marcarTodos = useStaffStore((s) => s.markAllNotificationsRead);
   const [detalles, setDetalles] = useState({});      // id del aviso → detalle recortado
   const [recargando, setRecargando] = useState(false);
-
-  const porId = useMemo(() => new Map((empleados || []).map((e) => [String(e.id), e])), [empleados]);
 
   // «Por decidir» va ARRIBA y no depende de que el aviso esté sin leer: leer
   // un aviso no contesta la solicitud (reporte del usuario, 2026-09-30).
@@ -166,8 +104,7 @@ export default function Notificaciones() {
           </>
         ) : null}
         {avisos.length ? avisos.map((n) => (
-          <Tarjeta key={n.id} n={n} empleado={porId.get(String(n.created_by))} detalle={detalles[n.id]}
-            onAbrir={() => abrir(n)} />
+          <TarjetaDeAviso key={n.id} n={n} persona={persona} detalle={detalles[n.id]} onAbrir={() => abrir(n)} />
         )) : porDecidir.length ? null : (
           <View style={{ alignItems: 'center', paddingTop: 80, gap: 6 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>Todo al día</Text>

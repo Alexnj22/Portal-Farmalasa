@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1115.0 — App: notificaciones con tarjetas ricas, Por decidir sólo lo tuyo y vidrio en Buscar
+
+Tres reportes del usuario con capturas de la app al lado del portal.
+
+- **Notificaciones con tarjeta, como la campana del portal** («en la app nativa
+  se ve plano, sólo texto»). Cada aviso dibuja lo suyo con los mismos datos del
+  núcleo: el cierre del día con su anillo, una barra por sala y lo que sobró o
+  faltó; la solicitud con quién la pide y sus datos en grilla (fecha, monto,
+  documento, cliente, hoy → pasa a); el corte con lo que falta o sobra; el
+  pedido con sus etapas; Mín·Máx, bitácoras, créditos, traslados, bolsas,
+  depósitos, aperturas, metas y respuestas a solicitudes. Lo que no tiene
+  tarjeta propia sigue mostrando su texto.
+- **«Por decidir» muestra sólo lo tuyo** («¿por qué me salen esas? No son
+  mías»). Con alcance sobre todas las salas y sin sala propia, cualquier envío
+  pendiente salía como «Te toca decidir». Ahora traslados y envíos aparecen
+  sólo si son de tu sala o de una que cubres; el resto sigue en Traslados.
+- **Sin fondos sólidos** («si usamos canónico y vidrio, ¿por qué poner
+  sólidos?»): los resultados de Buscar, las existencias por sala de la ficha
+  de producto y los grupos de formulario van en vidrio.
 ## v2.1114.1 — Puntos: el vigía avisa errores del motor, cumpleaños y vencimiento
 
 El vigía de puntos (`puntos_vigilar_motor`, cada 15 min) sólo miraba si el motor

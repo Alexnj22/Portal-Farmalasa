@@ -92,7 +92,7 @@ export default function Producto() {
             </Vidrio>
 
             {salas.length ? salas.map((s) => (
-              <View key={s.id} style={{ backgroundColor: colorSistema.fila, borderRadius: 16, paddingHorizontal: 14 }}>
+              <Vidrio key={s.id} radio={20}><View style={{ paddingHorizontal: 14 }}>
                 <View style={{ flexDirection: 'row', paddingVertical: 12, alignItems: 'baseline' }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{s.nombre}</Text>
                   <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatNumber(s.unidades)}</Text>
@@ -106,7 +106,7 @@ export default function Producto() {
                     <Text style={{ color: colorSistema.texto, fontSize: 14, fontVariant: ['tabular-nums'], minWidth: 44, textAlign: 'right' }}>{formatNumber(l.unidades)}</Text>
                   </View>
                 ))}
-              </View>
+              </View></Vidrio>
             )) : (
               <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 20 }}>Sin existencias en ninguna sala.</Text>
             )}

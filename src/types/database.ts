@@ -22131,6 +22131,10 @@ export type Database = {
         Args: { p_motivo: string; p_periodo: string }
         Returns: Json
       }
+      reactivar_promocion: {
+        Args: { p_fin: string; p_id: number }
+        Returns: Json
+      }
       rebuild_product_sales_monthly_agg: {
         Args: { p_desde: string; p_hasta: string }
         Returns: number

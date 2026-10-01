@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1117.0 — Promociones: salas en 0 se conservan, reactivar en un paso, «Baja el precio» se suelta al borrar
+
+Los tres arreglos que tocaban producción, con el sí del usuario. Las dos
+funciones se probaron primero en el branch de pruebas (`lyfafocpywvoxefetxah`)
+dentro de una transacción que se deshizo sola.
+
+- **Las salas en 0 ya no se pierden** (`20261001154209`). `editar_renglon`
+  reinsertaba sólo las salas con unidades; las de 0 —«aplica acá, sin lote»—
+  se borraban y el producto pasaba a contar en las 7 salas. Ahora las
+  conserva, y Editar manda también las salas que ya estaban marcadas.
+- **Reactivar es una sola operación** (`20261001154220`, `reactivar_promocion`).
+  Antes iba producto por producto y un corte a mitad la dejaba medio
+  reactivada. Rechaza fechas pasadas y las de laboratorio.
+- **Borrar un descuento suelta la marca «Baja el precio»** de su promoción
+  (`descuentos-erp` v14). Sus mensajes de error dejan de nombrar el sistema de
+  origen.
+- El aviso «una promoción terminada no se reabre» decía lo contrario de lo que
+  hoy se puede hacer; ahora manda a Histórico.
+
 ## v2.1116.1 — Promociones: el bono de producto se paga en sala aunque esté suspendido
 
 Decisión del usuario (2026-10-01): «si se activa bono, aunque estén

@@ -625,10 +625,12 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar, a
     ), [salas, r.reparto]);
     const [reparto, setReparto] = useState(repartoOriginal);
     /* El reparto viaja SÓLO si se tocó. Hasta el 2026-10-01 iba siempre, y la
-       base lo reemplaza entero quedándose con las salas de más de 0: las filas
-       en 0 —«aplica en esta sala, sin lote»; eran las 108 que había— se
+       base lo reemplazaba entero quedándose con las salas de más de 0: las
+       filas en 0 —«aplica en esta sala, sin lote»; eran las 108 que había— se
        borraban, y corregir la presentación de un producto lo pasaba a contar
-       en TODAS las salas sin que nadie lo pidiera. */
+       en TODAS las salas. La base ya conserva las de 0
+       (`20261001154209_editar_renglon_conserva_salas_en_cero`); no mandarlo
+       cuando no cambió sigue ahorrando el borrado y la reinserción. */
     const repartoCambio = salas.some((s) =>
         (Number(reparto[s.id]) || 0) !== (Number(repartoOriginal[s.id]) || 0));
 
@@ -792,10 +794,14 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar, a
                     supplierId: prov || null,
                     borrarLote: lote === '',
                     cualquierPresentacion: factor === '',
+                    /* Van las salas con unidades Y las que ya estaban marcadas
+                       aunque queden en 0: desde v2.1117 la base conserva las
+                       filas en 0 («aplica acá, sin lote»). Sin ellas, cambiar
+                       las unidades de una sala desmarcaba a las demás. */
                     reparto: repartoCambio
                         ? Object.entries(reparto)
-                            .filter(([, u]) => Number(u) > 0)
-                            .map(([b, u]) => ({ branch_id: Number(b), unidades: Number(u) }))
+                            .filter(([b, u]) => (numeroEscrito(u) || 0) > 0 || repartoOriginal[b] !== '')
+                            .map(([b, u]) => ({ branch_id: Number(b), unidades: numeroEscrito(u) || 0 }))
                         : null,
                 }))}>
                 Guardar lote, presentación y reparto

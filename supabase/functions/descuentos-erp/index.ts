@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
     if (!permiso.alcanceTodo && !miSala) {
       return responder({
         ok: false,
-        error: "Tu ficha no tiene una sala del sistema de la caja asignada, así que no se pueden ver sus descuentos.",
+        error: "Tu ficha no tiene una sala asignada, así que no se pueden ver sus descuentos.",
       }, 409);
     }
 
@@ -362,7 +362,7 @@ Deno.serve(async (req) => {
         productos,
       });
       if (!r.success) {
-        return responder({ ok: false, error: r.msg || "El sistema de la caja no guardó el descuento." }, 502);
+        return responder({ ok: false, error: r.msg || "No se pudo guardar el descuento. Vuelve a intentar." }, 502);
       }
 
       /* Se relee para saber el id y para CONFIRMAR: el mensaje del origen es
@@ -376,7 +376,7 @@ Deno.serve(async (req) => {
         if (!nacidos.length) {
           return responder({
             ok: false,
-            error: "El sistema de la caja dijo que sí pero el descuento no aparece en la lista.",
+            error: "El descuento no quedó guardado. Vuelve a intentar.",
           }, 502);
         }
         /* Si dos sesiones crearon a la vez puede haber más de uno nacido: se
@@ -520,7 +520,7 @@ Deno.serve(async (req) => {
         if (!r.success) {
           return responder({
             ok: false,
-            error: r.msg || `El sistema de la caja no aceptó el cambio en «${d.descripcion}».`,
+            error: r.msg || `No se pudo aplicar el cambio en «${d.descripcion}».`,
           }, 502);
         }
         cambiados.push({ id, descripcion: d.descripcion, productos: lista.length });
@@ -565,7 +565,7 @@ Deno.serve(async (req) => {
 
       const r = await borrarDescuento(cookie, id);
       if (!r.success) {
-        return responder({ ok: false, error: r.msg || "El sistema de la caja no borró el descuento." }, 502);
+        return responder({ ok: false, error: r.msg || "No se pudo borrar el descuento. Vuelve a intentar." }, 502);
       }
 
       /* El origen contesta «Promocion guardada correctamente» también al
@@ -574,7 +574,7 @@ Deno.serve(async (req) => {
          relee el saldo en vez de creerle al «success». */
       const sigue = (await listarDescuentos(cookie, salas)).some((d) => d.id === id);
       if (sigue) {
-        return responder({ ok: false, error: "El sistema de la caja dijo que sí pero el descuento sigue ahí." }, 502);
+        return responder({ ok: false, error: "El descuento no se borró. Vuelve a intentar." }, 502);
       }
 
       const { error: auditErr } = await admin.from("audit_logs").insert({
@@ -593,6 +593,22 @@ Deno.serve(async (req) => {
         },
       });
       if (auditErr) console.error("[descuentos-erp] audit_logs:", auditErr.message);
+
+      /* El id sale también de la promoción que lo creó. Sin esto la promoción
+         seguía marcada «Baja el precio» —ese distintivo cuenta
+         `promociones.descuentos_erp`— sobre un descuento que ya no existe
+         (auditoría 2026-10-01). No se falla el borrado si esto falla: el
+         descuento YA se borró y decir lo contrario sería peor; queda en log. */
+      const { data: duenas, error: duenasErr } = await admin
+        .from("promociones").select("id, descuentos_erp").contains("descuentos_erp", [id]);
+      if (duenasErr) console.error("[descuentos-erp] promociones dueñas:", duenasErr.message);
+      for (const p of duenas ?? []) {
+        const resto = (Array.isArray(p.descuentos_erp) ? p.descuentos_erp : [])
+          .map(Number).filter((x: number) => Number.isInteger(x) && x !== id);
+        const { error: updErr } = await admin
+          .from("promociones").update({ descuentos_erp: resto }).eq("id", p.id);
+        if (updErr) console.error("[descuentos-erp] soltar descuento de la promoción:", updErr.message);
+      }
 
       return responder({ ok: true });
     }

@@ -34,7 +34,7 @@ import {
 } from '@nucleo/data/marketing';
 import { abrirEnPestanaNueva } from '@plataforma/descargas';
 import Disenos from './Disenos';
-import PieDeModal from './PieDeModal';
+import PieDeModal from '../../components/common/PieDeModal';
 import VistaPrevia from './VistaPrevia';
 import EfectoEnVentas from './EfectoEnVentas';
 import Conversacion from './Conversacion';

@@ -21,10 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.1128.2 — Torogoz: disparadores con permisos del usuario; gate:perf encuentra la constante mudada
+## v2.1128.3 — Torogoz: disparadores con permisos del usuario; gate:perf encuentra la constante mudada
 
 - **Cuatro disparadores de Torogoz** (`dist_validar_lote_item`, `dist_validar_desde_camion`, `dist_cliente_ruta_texto`, `dist_ventas_perdidas_resolver`) dejan de correr con permisos de administrador: sólo leen tablas que cualquiera con permiso de ver Distribución ya puede leer, o completan la propia fila. Probado en el branch con las pruebas de venta, lotes, autoventa, rutas y venta perdida (5 de 5) y aplicado en producción (`20261001180959`).
 - **`gate:perf`** buscaba `MIN_LETRAS_BUSQUEDA` en `PanelDeInventario.jsx`, y la constante se había mudado a `utils/consultaInventario.js` al pasar la lógica al núcleo: avisaba que faltaba un freno que seguía en su sitio (en 3).
+
+## v2.1128.2 — Pie de modal: separación entre botones también en Promociones
+
+`PieDeModal` sube a `components/common`: lo de la izquierda (un texto o una
+acción secundaria) va solo y el resto en un grupo con `gap-2`, porque
+`LiquidModal.Footer` es `justify-between` sin separación y con tres hijos
+sueltos dejaba pegados los botones de la derecha. Además de Marketing, lo usan
+ahora los cuatro pies de Promociones que tenían el problema: nueva promoción,
+descuento, y el aviso «¿agregar a los dos?» de editar promoción. Distribución
+ya resolvía lo mismo con su propio contenedor y no se tocó.
 
 ## v2.1128.1 — Marketing: el pie de los modales con separación entre botones
 

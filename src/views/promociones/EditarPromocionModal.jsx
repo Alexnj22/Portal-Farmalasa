@@ -5,6 +5,7 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import PortalInput from '../../components/common/PortalInput';
 import Button from '../../components/common/Button';
+import PieDeModal from '../../components/common/PieDeModal';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import ConfirmModal from '../../components/common/ConfirmModal';
@@ -576,7 +577,7 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                     </Notice>
                 </LiquidModal.Body>
 
-                <LiquidModal.Footer>
+                <PieDeModal>
                     <Button variant="secondary" disabled={agregando || sincronizando}
                         onClick={() => setPendiente(null)}>
                         Cancelar
@@ -599,7 +600,7 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                         }}>
                         {pendiente?.tipo === 'quitar' ? 'Quitar de los dos' : 'Agregar a los dos'}
                     </Button>
-                </LiquidModal.Footer>
+                </PieDeModal>
             </LiquidModal>
 
         </LiquidModal>

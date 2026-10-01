@@ -11,7 +11,7 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Campo from '../promociones/Campo';
-import PieDeModal from './PieDeModal';
+import PieDeModal from '../../components/common/PieDeModal';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';

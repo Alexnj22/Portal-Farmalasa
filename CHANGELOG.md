@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1116.1 — Promociones: el bono de producto se paga en sala aunque esté suspendido
+
+Decisión del usuario (2026-10-01): «si se activa bono, aunque estén
+suspendidas se paga en la sala, se debe llevar el control». La suspensión es
+del bono de meta. Se retira el aviso «Bonificaciones suspendidas… no genera
+nada para pago», que decía lo contrario de lo que hacen Pagos y Mi caja, y la
+tarjeta de Seguimiento pasa de «Se habría ganado» a «Bono ganado».
+
 ## v2.1116.0 — Promociones: exportar, filtros de Descuentos, guardar y activar, umbrales y textos
 
 Segunda tanda de la auditoría del módulo: lo que quedó pendiente en v2.1113.0.

@@ -91,7 +91,7 @@ export default function TabSeguimiento({
             { key: 'd', icon: FileText, label: 'Documentos',
               value: fmtUnidades(renglones.reduce((a, r) => a + (r.documentos || 0), 0)) },
             { key: 'v', icon: Users, label: 'Vendedores', value: vendedores.length },
-            { key: 'b', icon: DollarSign, label: 'Se habría ganado',
+            { key: 'b', icon: DollarSign, label: 'Bono ganado',
               value: fmtMoneda(vendedores.reduce((a, v) => a + Number(v.bono || 0), 0)),
               iconBg: 'bg-brand/10', iconCls: 'text-brand-text', valueCls: 'text-brand' },
         ]);
@@ -124,7 +124,7 @@ export default function TabSeguimiento({
 
     const exportar = () => {
         exportCsv(
-            ['VENDEDOR', 'SALA', 'UNIDADES', 'DOCUMENTOS', 'SE HABRIA GANADO'],
+            ['VENDEDOR', 'SALA', 'UNIDADES', 'DOCUMENTOS', 'BONO'],
             vendedores.map((v) => [v.nombre, v.sala || '', v.unidades, v.documentos, v.bono]),
             `promocion_${(detalle?.nombre || '').replace(/\W+/g, '_')}.csv`,
             'promociones',

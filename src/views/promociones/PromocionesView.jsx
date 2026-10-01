@@ -740,23 +740,11 @@ export default function PromocionesView() {
                     </div>
                 )}
 
-                {/* El aviso va una sola vez y arriba de todo: la pantalla no
-                    puede prometer un pago que hoy no existe.
-
-                    Fuera de Descuentos: ahí no hay bonificación de la que hablar
-                    —un descuento le baja el precio al cliente y no le paga a
-                    nadie—, y el aviso se leería como que el descuento tampoco
-                    aplica. */}
-                {/* Ni en Pagos ni en Excedentes: ahí el bono de producto SÍ se
-                    paga —en sala, o al aprobarlo— y el aviso «no genera nada
-                    para pago» contradecía lo que la pestaña mostraba. */}
-                {['activas', 'seguimiento', 'historico'].includes(tab) && (
-                    <Notice variant="warning" icon={AlertTriangle} compact>
-                        <span className="font-semibold">Bonificaciones suspendidas.</span>{' '}
-                        Las promociones se crean y se siguen igual, y el portal muestra lo que
-                        <em> se habría ganado</em>. No genera nada para pago hasta que se reactiven.
-                    </Notice>
-                )}
+                {/* El aviso «Bonificaciones suspendidas… no genera nada para
+                    pago» se retiró el 2026-10-01 por decisión del usuario: «si se
+                    activa bono, aunque estén suspendidas se paga en la sala, se
+                    debe llevar el control». La suspensión es del bono de META; el
+                    de producto se paga en sala y su control vive en Pagos. */}
 
                 {cuerpo()}
             </div>

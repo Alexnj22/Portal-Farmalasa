@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1132.1 — Puntos: el canje ya no se cuenta doble
+
+Llegó el aviso «Se aplicaron 688 puntos de descuento y el cliente tenía 344»
+sobre el COF 0000088147 de Salud 1. La venta decía 344 ($3.44): el aviso era
+falso.
+
+**Causa.** El descuento por puntos se calculaba como «suma de renglones −
+total», y el sistema de ventas manda el canje **como un renglón más**
+(`erp_product_id = 0`, sin descripción, en positivo). El canje entraba dos
+veces: $9.45 + $3.44 − $6.01 = $6.88. Medido oct-2025 → oct-2026: las 601
+ventas con canje traen ese renglón, así que tocaba **todo** canje.
+
+**Corregido** en `puntos_registrar_canje` (el que registra el canje y dispara
+el aviso) y en `puntos_panel_tablero`/`_resumen`/`_serie`, que mostraban lo
+canjeado al doble. Ahora suman sólo renglones de producto, como ya hacía
+`get_puntos_canjeados`. Migración `20261001225854`, aplicada sobre la
+definición viva de cada función.
+
+El único canje mal registrado (fila 9731) quedó con monto $3.44 y sin el
+«faltaron», así que sale de Puntos → Avisos. El saldo de la cliente ya estaba
+bien: se le descontaron los 344 que tenía.
+
 ## v2.1132.0 — App: Llevar productos muestra la sala al abrir
 
 - **Llevar productos** dice en qué sala estás también al abrirla: la sala se

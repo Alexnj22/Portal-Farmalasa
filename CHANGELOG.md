@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1133.2 — Puntos: el aviso reconoce al empleado por nombre
+
+La regla «venta a su propia ficha» de `puntos_vigilar_irregularidades` cruzaba
+sólo por DUI, y ningún empleado lo tiene cargado: no veía nada. Ahora también
+por nombre — el nombre del portal (primer nombre + apellido) completo dentro del
+de la ficha, con el mismo primer nombre —, y el aviso dice cuándo la
+coincidencia es por nombre. Medido jul–sep 2026: 25 empleados, los 25 son la
+misma persona, pero ~450 ventas, casi todas compras propias normales; por eso
+avisa por empleado y día, sólo con 3+ facturas o 50+ puntos (~1 cada 2 días).
+Migración `20261001231228`.
+
+**Corrección de v2.1130.0.** Allí se escribió que el 22% de los puntos del año
+(85,215) se había cargado en días con 4+ vendedores a una misma ficha. Cruzando
+cada ticket del sistema anterior con su factura, el 95% eran facturas reales
+del MISMO cliente registradas con una mediana de 95 días de atraso, en tandas:
+la fecha del archivo es la del registro, no la de la venta. Lo que sí resultó
+irregular es otra cosa: 1,308 tickets (32,530 puntos, 390 fichas) acreditados a
+una ficha distinta de la persona de la factura, sin contar las facturas
+genéricas reclamadas después. Se le entregó al usuario como planilla aparte, no
+queda en el portal. El comentario de la regla 1 en la función se corrigió.
+
 ## v2.1133.1 — Puntos: Consulta muestra a todos los clientes
 
 Pedido del usuario: «en consulta, deben salir todos, sin importar si tienen 0
@@ -101,9 +122,10 @@ empleado a su propia ficha; todo ajuste a mano (sumar o quitar); canje de
 2,000+ o hecho con puntos ganados en los 3 días anteriores; y la anulación con
 puntos ya canjeados.
 
-La medición dejó un hallazgo de fondo: en el último año, 359 días-ficha con 4+
-vendedores sumaron 85,215 puntos (22% de todo lo acumulado), en 273 fichas, y
-crecían cada mes (12 en oct-2025, 82 en sep-2026). La primera versión contaba
+~~La medición dejó un hallazgo de fondo: 22% de los puntos del año en días con
+4+ vendedores a una ficha.~~ **Corregido en v2.1133.2: no era una
+irregularidad.** El 95% eran facturas reales del mismo cliente que el sistema
+anterior registró con meses de atraso, todas juntas. La primera versión contaba
 facturas por vendedor y en la simulación acusó una compra partida en tres
 facturas en 4 minutos; se corrigió a visitas separadas por más de 30 minutos.
 

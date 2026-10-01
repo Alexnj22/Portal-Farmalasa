@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1119.0 — App: bolsas de la sala — guardar, reimprimir y entregar
+
+Segunda pieza para cerrar el Inicio: lo que la sala hace con sus bolsas en el
+día, en el teléfono (`app/bolsas-sala.js`, adonde lleva el widget).
+
+- **Ver** el efectivo que espera el retiro (el saldo, no lo guardado; sin
+  permiso de montos se cuentan bolsas) y la alarma de los 4 días.
+- **Guardar** un corte confirmado que quedó sin bolsa, con su etiqueta.
+- **Reimprimir** la etiqueta de una bolsa, con sus salidas y cheques, por la
+  caja de la sala.
+- **Entregar al retiro**: se eligen los días y quien recoge escanea su carné
+  (o usa su usuario y contraseña). La base no deja que reciba quien firma.
+- «Sacar dinero» sigue llevando a Efectivo, que todavía es del portal.
+
 ## v2.1118.0 — App: cortes de caja nativos — confirmar, descartar, entregar la caja e imprimir
 
 Primera pieza de lo que faltaba para cerrar el Inicio de la app: los cortes

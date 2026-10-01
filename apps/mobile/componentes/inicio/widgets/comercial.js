@@ -6,9 +6,12 @@ import { fetchRecentCotizaciones, fetchTodayInvoicesSummary } from '@nucleo/data
 import { fetchTopProductosDelMes } from '@nucleo/data/ventas';
 import { fetchMesEnCurso } from '@nucleo/data/metas';
 import { fetchCortesResumen } from '@nucleo/data/cortes';
+import { fetchBolsas, fetchCortesPorEmbolsar, fetchSaldos } from '@nucleo/data/bolsas';
+import { saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
+import { hora12 } from '@nucleo/utils/hora';
 import { conTramoPorSalaYDia, resumenDeCortes } from '@nucleo/utils/cortesDiagnostico';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
+import { diasEntre, fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import Widget, { Esqueleto, Renglon, Vacio } from '../Widget';
 import { useDato, datos } from '../useDato';
 import { colorSistema } from '../../Formulario';
@@ -165,6 +168,68 @@ export function Cortes({ ctx }) {
           <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{r.pendientes} sin confirmar · {r.confirmados} confirmados</Text>
         </View>
       ) : <Vacio texto="Sin cortes este mes" />}
+    </Widget>
+  );
+}
+
+// ── Bolsas de efectivo ──────────────────────────────────────────────────────
+// El widget del portal (`WidgetBolsasSala.jsx`) con los mismos datos y reglas:
+// cuánto efectivo espera el retiro en la sala (el SALDO, no lo guardado), la
+// alarma de los 4 días y los cortes confirmados que quedaron sin bolsa. Sin el
+// permiso `bolsas_ver_montos` cuenta bolsas, no dinero. Entregar, sacar e
+// imprimir viven en Bolsas de efectivo: el widget lleva allá.
+const DIAS_DE_ALARMA = 4;
+const rotularDia = (fecha) => {
+  const hoy = hoySV();
+  if (fecha === hoy) return 'Hoy';
+  if (fecha === sumarDias(hoy, -1)) return 'Ayer';
+  return fechaTexto(fecha, { day: 'numeric', month: 'short' });
+};
+
+export function Bolsas({ ctx }) {
+  const todas = ctx.getScope?.('dash_bolsas_sala') === 'ALL';
+  const verMontos = ctx.puede('bolsas_ver_montos');
+  const hoy = hoySV();
+  const { dato, cargando } = useDato(`bolsas:${hoy}`, async () => {
+    const [abiertas, pendientes] = await Promise.all([
+      fetchBolsas({ estados: ['ABIERTA'] }),
+      fetchCortesPorEmbolsar({ desde: sumarDias(hoy, -1), hasta: hoy }),
+    ]);
+    if (!abiertas) throw new Error('No se pudieron cargar las bolsas');
+    const saldos = await fetchSaldos(abiertas.map((b) => b.id));
+    return { bolsas: abiertas.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })), faltan: pendientes || [] };
+  });
+  const sala = todas ? null : Number(ctx.sala);
+  const deLaSala = (l) => (sala == null || Number.isNaN(sala) ? l : l.filter((x) => x.branch_id === sala));
+  const enSala = deLaSala(dato?.bolsas || []);
+  const faltan = deLaSala(dato?.faltan || []);
+  const dias = (f) => Math.max(0, diasEntre(f, hoy));
+  const masVieja = enSala.reduce((m, b) => Math.max(m, dias(b.fecha)), 0);
+  const vencidas = enSala.filter((b) => dias(b.fecha) >= DIAS_DE_ALARMA).length;
+  const total = enSala.reduce((a, b) => a + saldoDeBolsa(b), 0);
+  const nombre = (id) => (ctx.sucursales || []).find((b) => Number(b.id) === Number(id))?.name ?? '';
+  const varias = new Set([...enSala, ...faltan].map((x) => x.branch_id)).size > 1;
+  return (
+    <Widget titulo="Bolsas de efectivo" icono="Package" color={MARCA.verde} onAbrir={() => ctx.abrir('/bolsas')}>
+      {cargando && !dato ? <Esqueleto lineas={2} /> : !dato ? <Vacio texto="No se pudieron cargar las bolsas." /> : (
+        <View style={{ gap: 8 }}>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Cifra valor={verMontos ? dinero0(total) : `${enSala.length}`} rotulo={verMontos ? 'efectivo guardado' : 'bolsas guardadas'} color={MARCA.verde} />
+            <Cifra valor={enSala.length ? `${masVieja} d` : '—'} rotulo={enSala.length ? `la más vieja · ${enSala.length} bolsa${enSala.length === 1 ? '' : 's'}` : 'nada en espera'}
+              color={vencidas ? MARCA.rojo : undefined} />
+          </View>
+          {vencidas ? (
+            <Renglon primero titulo={`${vencidas === 1 ? 'Una bolsa lleva' : `${vencidas} bolsas llevan`} ${DIAS_DE_ALARMA} días o más`}
+              detalle="Avisa para que pasen a recogerlas." colorDerecha={MARCA.rojo} lineas={2} />
+          ) : null}
+          {faltan.map((c, i) => (
+            <Renglon key={c.corte_id} primero={!vencidas && !i}
+              titulo={`${varias ? `${nombre(c.branch_id)} · ` : ''}Corte sin bolsa · ${rotularDia(c.fecha)} ${hora12(c.hora) || ''}`}
+              detalle={c.caja || 'Sin nombre'} derecha={verMontos ? dinero0(c.sugerida) : null}
+              onPress={() => ctx.abrir('/bolsas')} />
+          ))}
+        </View>
+      )}
     </Widget>
   );
 }

@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1111.0 — App: widget de Bolsas de efectivo en el Inicio
+
+Reporte del usuario: «aún no veo todos los widgets en mi app, tengo todos
+activos». Con éste, el Inicio de la app tiene los 26 widgets del tablero del
+portal (los tres de pedir un ajuste van juntos en «Pedir un ajuste»).
+
+- **Bolsas de efectivo**, en General y Comercial: el efectivo que espera el
+  retiro (el saldo, no lo guardado), cuántos días lleva la bolsa más vieja, la
+  alarma de los 4 días y los cortes confirmados que quedaron sin bolsa. Sin el
+  permiso de ver montos cuenta bolsas, no dinero. Entregar, sacar e imprimir se
+  hacen en Bolsas de efectivo, adonde lleva el widget.
+
 ## v2.1110.0 — Monitor de ventas nativo y ventas por hora completas en el portal
 
 Pedido del usuario: abrir «Ventas por día y hora» con filtros de tiempo y de

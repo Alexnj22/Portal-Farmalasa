@@ -222,6 +222,7 @@ export const SECCIONES = [
   { id: 'vendedores', pestanas: ['general', 'comercial'], permiso: 'dash_vendedores', Componente: C.Vendedores },
   { id: 'top', pestanas: ['general', 'comercial'], permiso: 'dash_top_productos', Componente: C.TopProductos },
   { id: 'cortes', pestanas: ['general', 'comercial'], permiso: 'dash_cortes_sala', Componente: C.Cortes },
+  { id: 'bolsas', pestanas: ['general', 'comercial'], permiso: 'dash_bolsas_sala', Componente: C.Bolsas },
   { id: 'cotizaciones', pestanas: ['general', 'comercial'], permiso: 'dash_cotizaciones', Componente: C.Cotizaciones },
   // RRHH
   { id: 'turnos', pestanas: ['general', 'rrhh'], permiso: 'dash_shifts', Componente: W.Turnos },

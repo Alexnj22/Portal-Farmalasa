@@ -10,11 +10,12 @@
 //     persona se prueba con su carné (`Identidad`) y la base no deja que reciba
 //     quien firma ni que se mezclen salas (`entregar_bolsas`).
 //
-// «Sacar dinero» no saca de la bolsa: LLEVA a Efectivo (regla del usuario del
-// 3-sep, «todo debe pasar desde efectivo»), que todavía es del portal.
+// «Sacar dinero» abre `app/sacar-dinero.js`: sale primero del cajón y sólo si
+// no alcanza de las bolsas (regla del usuario del 3-sep, «todo debe pasar
+// desde efectivo»).
 import { useCallback, useMemo, useState } from 'react';
 import { ActionSheetIOS, Alert, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { Stack, useFocusEffect } from 'expo-router';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -34,7 +35,6 @@ import Vidrio from '../componentes/Vidrio';
 import Identidad from '../componentes/Identidad';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
-import { abrirRuta } from '../pantallas';
 import { etiquetaDeLaBolsa, reimprimirEtiqueta } from '../componentes/cortes/papel';
 
 const DIAS_DE_ALARMA = 4;
@@ -217,7 +217,7 @@ export default function BolsasDeLaSala() {
             {puedeGuardar && enSala.length ? (
               <View style={{ gap: 10 }}>
                 <BotonGrande texto="Entregar al retiro" color={MARCA.verde} onPress={() => setEntregando(true)} />
-                <BotonGrande texto="Sacar dinero" borde onPress={() => abrirRuta('/caja?tab=hoy')} />
+                <BotonGrande texto="Sacar dinero" borde onPress={() => router.push({ pathname: '/sacar-dinero', params: { sala } })} />
               </View>
             ) : null}
           </>

@@ -6,9 +6,10 @@
 // Cada uno devuelve `{ ok, detalle }` y NUNCA lanza: que no salga el papel no
 // deshace la firma, sólo hay que decirlo para que lo impriman desde la caja.
 import { fetchCorteParaElPapel } from '@nucleo/data/cortes';
-import { fetchBolsaDeCorte, fetchChequesDeBolsa, fetchSalidasDeBolsa, marcarEtiquetaImpresa } from '@nucleo/data/bolsas';
+import { fetchBolsaDeCorte, fetchChequesDeBolsa, fetchOperacionDeBolsa, fetchSalidasDeBolsa, marcarEtiquetaImpresa, marcarValeImpreso } from '@nucleo/data/bolsas';
 import { construirComprobanteDeCorte } from '@nucleo/utils/corteTicket';
-import { construirEtiquetaDeBolsa, salidasParaEtiqueta } from '@nucleo/utils/bolsaComprobante';
+import { construirEtiquetaDeBolsa, construirValeDeSalida, salidasParaEtiqueta } from '@nucleo/utils/bolsaComprobante';
+import { construirComprobanteDeMovimiento } from '@nucleo/utils/movimientoTicket';
 import { resultadoDeLaFila } from '@nucleo/utils/cortesDiagnostico';
 import { imprimirEnLaSala } from '../imprimir';
 
@@ -58,5 +59,40 @@ export async function reimprimirEtiqueta(bolsa, sala, cerradaPor) {
     }), bolsa.branch_id);
   } catch (e) {
     return { ok: false, detalle: e?.message ?? 'No se pudo preparar el papel.' };
+  }
+}
+
+// El vale de una salida de BOLSA (`imprimirValeDeOperacion` del portal): se
+// marca impreso cada renglón sólo si la cola lo recibió.
+export async function valeDeLaSalida(operacionId, salaId) {
+  try {
+    const oper = await fetchOperacionDeBolsa(operacionId);
+    if (!oper) return { ok: false, detalle: 'No se pudo traer esa salida.' };
+    const vivas = (oper.lineas || []).filter((l) => !l.anulado_at);
+    const r = await imprimirEnLaSala(construirValeDeSalida({
+      operacion: {
+        folio: oper.folio, motivo: oper.etiqueta, entidad: oper.entidad, entidadEtiqueta: oper.etiqueta_entidad,
+        numero_boleta: oper.numero_boleta, monto: oper.monto, nota: oper.nota, leyenda: oper.leyenda,
+      },
+      lineas: vivas, sala: oper.sala || '', registradoPor: oper.registrado_nombre,
+      recibidoPor: oper.recibido_nombre ? { nombre: oper.recibido_nombre, metodo: oper.recibido_metodo } : null,
+      registradoAt: oper.registrado_at,
+    }), salaId);
+    if (r.ok) await Promise.all(vivas.map((l) => marcarValeImpreso(l.movimiento_id)));
+    return { ...r, folio: oper.folio };
+  } catch (e) {
+    return { ok: false, detalle: e?.message ?? 'No se pudo preparar el vale.' };
+  }
+}
+
+// El comprobante de una salida del CAJÓN (`imprimirMovimiento` de Mi caja).
+export async function comprobanteDelMovimiento(movimiento, { etiqueta, detalle, persona, comoSeComprobo }, sala, salaNombre, hechoPor) {
+  try {
+    return await imprimirEnLaSala(construirComprobanteDeMovimiento({
+      movimiento, etiqueta: etiqueta || '', detalle: detalle || '', persona: persona || '', comoSeComprobo: comoSeComprobo || null,
+      sala: salaNombre, hechoPor, hechoAt: new Date().toISOString(),
+    }), sala);
+  } catch (e) {
+    return { ok: false, detalle: e?.message ?? 'No se pudo preparar el comprobante.' };
   }
 }

@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1129.0 — App: Efectivo — sacar dinero y cerrar el día
+
+El dinero de la sala, en el teléfono.
+
+- **Efectivo** (`app/efectivo.js`, botón en la barra de Cortes): cuánto hay en
+  la caja, los cortes de hoy y dos acciones.
+- **Cerrar el día** pasa por los tres frenos del portal, en su orden: un corte
+  sin resolver, ningún corte confirmado y efectivo que entró sin contar (o que
+  no se pudo medir). Sólo con los tres en verde pregunta y emite el Z.
+- **Sacar dinero** (`app/sacar-dinero.js`, también desde Bolsas): sale primero
+  del cajón y, si no alcanza, de las bolsas más viejas (`elegirOrigen`). Cada
+  motivo pide lo suyo — a quién o a qué entidad, boleta que no se repita en la
+  sala, foto del comprobante, carné de quien se lo lleva. Del cajón sale el
+  comprobante del movimiento; de las bolsas, el vale y la etiqueta nueva de
+  cada bolsa tocada. Todo por la caja de la sala.
 ## v2.1128.3 — Torogoz: disparadores con permisos del usuario; gate:perf encuentra la constante mudada
 
 - **Cuatro disparadores de Torogoz** (`dist_validar_lote_item`, `dist_validar_desde_camion`, `dist_cliente_ruta_texto`, `dist_ventas_perdidas_resolver`) dejan de correr con permisos de administrador: sólo leen tablas que cualquiera con permiso de ver Distribución ya puede leer, o completan la propia fila. Probado en el branch con las pruebas de venta, lotes, autoventa, rutas y venta perdida (5 de 5) y aplicado en producción (`20261001180959`).

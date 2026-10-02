@@ -68,6 +68,7 @@ import {
     PackagePlus,
     Thermometer,
     Star,
+    Syringe,
 } from 'lucide-react';
 import { MODULE_MAP as BASE } from '@nucleo/constants/moduleMap';
 import { MENU_GROUPS as GRUPOS } from '@nucleo/constants/menuGroups';
@@ -134,6 +135,7 @@ const ICONOS = {
     Wrench,
     X,
     Star,
+    Syringe,
 };
 
 // Le agrega `.icon` a todo objeto del catálogo que tenga `icono`, a cualquier

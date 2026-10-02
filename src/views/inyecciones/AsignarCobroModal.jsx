@@ -16,9 +16,9 @@ import { hora12 } from '@nucleo/utils/hora';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 
 /*
- * Amarrar a mano un cobro que quedó suelto: los de texto libre de antes del
- * control, y los de «la venta no aparece todavía». Se elige el RENGLÓN y no
- * sólo la venta, porque es el renglón el que tiene el saldo de aplicaciones.
+ * Asignar a mano un cobro que quedó suelto: los de texto libre de antes del
+ * control (2026-10-02). Se elige el RENGLÓN y no sólo la venta, porque es el
+ * renglón el que tiene el saldo de aplicaciones.
  *
  * La venta tiene que ser de la misma sala que el cobro —lo frena la base—, así
  * que la lista ya viene filtrada por esa sala. Quedan aplicadas a la hora del
@@ -27,7 +27,7 @@ import { fechaNumerica } from '@nucleo/utils/fecha';
 
 const fechaCorta = (f) => fechaNumerica(f, { anio: false });
 
-export default function AmarrarCobroModal({ cobro, onClose, onHecho }) {
+export default function AsignarCobroModal({ cobro, onClose, onHecho }) {
     const showToast = useToastStore((s) => s.showToast);
     const [texto, setTexto] = useState('');
     const buscar = useTextoRebotado(texto, 350);
@@ -53,28 +53,28 @@ export default function AmarrarCobroModal({ cobro, onClose, onHecho }) {
         setEnviando(true);
         try {
             const n = await vincularCobro({ cobroId: cobro.id, invoiceId: elegido.invoice_id, lineaNum: elegido.linea_num });
-            useStaffStore.getState().appendAuditLog('INYECCION_COBRO_AMARRADO', String(cobro.id),
+            useStaffStore.getState().appendAuditLog('INYECCION_COBRO_ASIGNADO', String(cobro.id),
                 { venta: elegido.invoice_id, renglon: elegido.linea_num, aplicaciones: n });
-            showToast('Cobro amarrado', n === 1 ? 'Una aplicación, aplicada a la hora del cobro.' : `${n} aplicaciones, aplicadas a la hora del cobro.`, 'success');
+            showToast('Cobro asignado', n === 1 ? 'Una aplicación, aplicada a la hora del cobro.' : `${n} aplicaciones, aplicadas a la hora del cobro.`, 'success');
             onHecho?.();
         } catch (e) {
-            showToast('No se pudo amarrar', mensajeAmigable(e), 'error');
+            showToast('No se pudo asignar', mensajeAmigable(e), 'error');
         } finally {
             setEnviando(false);
         }
     };
-    const amarrar = useMemo(() => unaSolaVez(() => cuerpo.current()), []);
+    const asignar = useMemo(() => unaSolaVez(() => cuerpo.current()), []);
 
     return (
-        <LiquidModal open onClose={enviando ? undefined : onClose} maxWidth="max-w-lg" ariaLabel="Amarrar el cobro a una venta">
+        <LiquidModal open onClose={enviando ? undefined : onClose} maxWidth="max-w-lg" ariaLabel="Asignar el cobro a una venta">
             <div className="p-5 space-y-4">
                 <div>
-                    <h3 className="text-h3 font-bold text-content">Amarrar el cobro a una venta</h3>
+                    <h3 className="text-h3 font-bold text-content">Asignar el cobro a una venta</h3>
                     <p className="text-body-sm text-content-2 mt-1">
                         {fechaCorta(cobro.fecha)} · {hora12(cobro.hora)} · {formatMoney(cobro.monto)} · {cobro.concepto}
                     </p>
                 </div>
-                <SearchInput value={texto} onChange={setTexto} placeholder="Cliente o número de factura" />
+                <SearchInput value={texto} onChange={setTexto} placeholder="Cliente, factura o inyección" />
                 {error && <Notice variant="danger">{error}</Notice>}
                 {ventas == null ? <LoadingState /> : ordenadas.length === 0 ? (
                     <p className="text-body-sm text-content-3">No hay ventas con inyección que coincidan.</p>
@@ -110,7 +110,7 @@ export default function AmarrarCobroModal({ cobro, onClose, onHecho }) {
                 )}
                 <div className="flex justify-end gap-2">
                     <Button variant="ghost" onClick={onClose} disabled={enviando}>Cancelar</Button>
-                    <Button variant="primary" loading={enviando} disabled={!elegido} onClick={amarrar}>Amarrar</Button>
+                    <Button variant="primary" loading={enviando} disabled={!elegido} onClick={asignar}>Asignar</Button>
                 </div>
             </div>
         </LiquidModal>

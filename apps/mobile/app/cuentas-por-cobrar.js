@@ -40,7 +40,7 @@ function Tarjeta({ c, sala, vendedor, enAprobacion }) {
     Haptics.selectionAsync().catch(() => {});
     router.push({ pathname: '/credito/[id]', params: {
       id: String(c.id), sala: String(c.branch_id), credito: String(c.credito), documento: c.documento ?? '',
-      cliente: c.cliente ?? '', dias: String(c.dias ?? ''), saldo: String(c.saldo ?? 0), total: String(c.total ?? 0),
+      cliente: c.cliente ?? '', fecha: c.fecha ?? '', dias: String(c.dias ?? ''), saldo: String(c.saldo ?? 0), total: String(c.total ?? 0),
       enAprobacion: enAprobacion ? '1' : '',
     } });
   };

@@ -1288,16 +1288,18 @@ Deno.serve(async (req) => {
       /* ── LA APLICACIÓN DE INYECCIÓN ─────────────────────────────────────
        *
        * Es un ingreso con un CONTROL encima, igual que el abono: además del
-       * dinero queda una fila por aplicación pagada, amarrada a la venta, que
+       * dinero queda una fila por aplicación pagada, asignada a la venta, que
        * después se canjea (pedido del usuario, 2026-10-02). Antes era un
        * detalle de texto libre y la pestaña Inyecciones lo adivinaba.
        *
-       * Tres formas, y el navegador dice cuál en `aplicacion.origen`:
-       *   COMPRADA  → la venta y sus renglones: se amarra.
-       *   TRAIDA    → el cliente trajo la inyección: producto y cantidad.
-       *   SIN_VENTA → la venta todavía no llegó al portal. Se cobra a precio
-       *               de comprada y queda SUELTA, para que supervisión la
-       *               amarre desde Inyecciones. Es la salida, no el camino.
+       * Dos formas, y el navegador dice cuál en `aplicacion.origen`:
+       *   COMPRADA → la venta y sus renglones: se asigna.
+       *   TRAIDA   → el cliente trajo la inyección: producto y cantidad.
+       *
+       * NO hay forma de cobrar una comprada sin su venta (usuario,
+       * 2026-10-02): la salida «la venta no aparece todavía» se quitó. Una
+       * venta recién hecha tarda hasta un minuto en llegar; se espera y se
+       * actualiza, y así toda aplicación comprada queda asignada.
        *
        * EL MONTO LO PONE EL SERVIDOR con el precio vigente, nunca el
        * navegador. Si no coincide con el que la pantalla mostró —el precio
@@ -1307,7 +1309,7 @@ Deno.serve(async (req) => {
        * Va DESPUÉS de las dos guardas de repetido: un reintento del mismo
        * envío tiene que contestar con lo que ya se escribió, y si cotizara
        * primero lo rechazaría por «ya no quedan» — las que pagó él mismo. */
-      type Aplicacion = { origen?: string; items?: unknown; cantidad?: number; producto?: string; aplicar_ahora?: number };
+      type Aplicacion = { origen?: string; items?: unknown; cantidad?: number; producto?: string; aplicar_ahora?: number; cliente?: string };
       const aplicacion = (body.aplicacion && typeof body.aplicacion === "object") ? body.aplicacion as Aplicacion : null;
       const esAplicacion = esEntrada && !esAbono && String(body.tipo ?? "") === "APLICACION";
       if (esAplicacion && !aplicacion) {
@@ -1315,14 +1317,12 @@ Deno.serve(async (req) => {
       }
       if (esAplicacion && aplicacion) {
         const origen = String(aplicacion.origen ?? "");
-        if (!["COMPRADA", "TRAIDA", "SIN_VENTA"].includes(origen)) {
+        if (!["COMPRADA", "TRAIDA"].includes(origen)) {
           return json({ ok: false, error: "Falta decir si la inyección se compró aquí o la trajo el cliente." }, 400);
         }
-        // SIN_VENTA se cotiza como lo traído —producto y cantidad— pero al
-        // precio de la comprada, que es lo que es.
         const { data: cot, error: errCot } = await supabase.rpc("inyeccion_cotizar", {
           p_branch_id: sala,
-          p_origen: origen === "TRAIDA" ? "TRAIDA" : origen === "SIN_VENTA" ? "COMPRADA_SUELTA" : "COMPRADA",
+          p_origen: origen,
           p_items: origen === "COMPRADA" ? (aplicacion.items ?? []) : null,
           p_cantidad: origen === "COMPRADA" ? null : Number(aplicacion.cantidad ?? 0),
           p_producto: origen === "COMPRADA" ? null : String(aplicacion.producto ?? ""),
@@ -1597,9 +1597,9 @@ Deno.serve(async (req) => {
        *
        * Si no se pueden escribir, el movimiento se ANULA acá mismo y no se
        * toca la caja: un cobro sin su control es justo lo que esto viene a
-       * cerrar. SIN_VENTA no escribe filas: queda suelto a propósito. */
+       * cerrar. */
       let aplicaciones: Record<string, unknown> | null = null;
-      if (esAplicacion && aplicacion && aplicacion.origen !== "SIN_VENTA") {
+      if (esAplicacion && aplicacion) {
         const { data: reg, error: errReg } = await supabase.rpc("inyeccion_registrar", {
           p_cobro_id: fila.id,
           p_origen: String(aplicacion.origen),
@@ -1608,6 +1608,9 @@ Deno.serve(async (req) => {
           p_producto: aplicacion.origen === "TRAIDA" ? String(aplicacion.producto ?? "") : null,
           p_aplicar_ahora: Number(aplicacion.aplicar_ahora ?? 0),
           p_por: quien.id,
+          // A nombre de quién quedan las pendientes. La pantalla lo pide cuando
+          // queda alguna; sin él, la comprada toma el nombre de la factura.
+          p_cliente: aplicacion.cliente ? String(aplicacion.cliente).slice(0, 80) : null,
         });
         if (errReg) {
           console.error(`[operar-caja] aplicacion sala=${sala} fila=${fila.id}: ${errReg.message}`);

@@ -417,9 +417,11 @@ export const AREAS = [
         nombre: 'Ventas',
         resumen: 'Lo vendido: anulaciones en vivo, ranking de vendedores, productos más vendidos, cuadre diario y lo que se cobra sin ser venta de productos.',
         modulos: ['ventas', 'ventas_tab_ventas', 'ventas_tab_vendedores', 'ventas_tab_productos',
-                  'ventas_tab_inyecciones', 'ventas_inyecciones_dosis', 'ventas_inyecciones_precios',
+                  // La vista Inyecciones (2026-10-02): era la pestaña de Ventas.
+                  'inyecciones', 'inyecciones_tab_por_cobrar', 'inyecciones_tab_pendientes',
+                  'inyecciones_tab_bitacora', 'inyecciones_dosis', 'inyecciones_precios',
                   'ventas_ver_cards', 'ventas_no_producto', 'puntos'],
-        rutas: ['/ventas', '/puntos'],
+        rutas: ['/ventas', '/puntos', '/inyecciones'],
         archivos: [
             'src/views/VentasView.jsx',
             'src/views/ventas/',
@@ -428,6 +430,8 @@ export const AREAS = [
             // Se cobran en Mi caja (`components/caja/DialogoAplicacion`, que es
             // de Cortes) y se controlan en la pestaña Inyecciones.
             'src/data/inyecciones.js',
+            'src/views/InyeccionesView.jsx',
+            'src/views/inyecciones/',
             'src/components/common/AvisoSinProducto.jsx',
             // La costura con el sistema de puntos. Vive acá y no en Clientes
             // porque la sirve la misma función y el estado es de una VENTA;

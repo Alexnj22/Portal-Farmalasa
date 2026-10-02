@@ -101,6 +101,7 @@ export const IMPORTADORES = {
     BitacorasView: () => import("./views/BitacorasView"),
     SolicitudesDatosView: () => import("./views/SolicitudesDatosView"),
     PuntosView: () => import("./views/PuntosView"),
+    InyeccionesView: () => import("./views/InyeccionesView"),
 };
 
 // Primer segmento de la ruta → vista que la atiende.
@@ -125,6 +126,7 @@ export const IMPORTADOR_POR_RUTA = {
     'clientes': IMPORTADORES.ClientesView,
     'mis-puntos': IMPORTADORES.MisPuntosView,
     'puntos': IMPORTADORES.PuntosView,
+    'inyecciones': IMPORTADORES.InyeccionesView,
     'compras': IMPORTADORES.ComprasView,
     'facturas-sala': IMPORTADORES.FacturasSalaView,
     'cuentas-por-pagar': IMPORTADORES.CuentasPorPagarView,

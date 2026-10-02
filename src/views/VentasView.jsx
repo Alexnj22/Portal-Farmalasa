@@ -12,7 +12,7 @@ import {
     TrendingUp, TrendingDown, Users, Package, FileText,
     Clock, Building2, Loader2, ChevronDown,
     ChevronUp, Search, X, Trophy, Star, ChevronLeft,
-    ArrowUp, ArrowDown, Minus, Info, ChevronsUpDown, Eye, EyeOff, FlaskConical, Syringe
+    ArrowUp, ArrowDown, Minus, Info, ChevronsUpDown, Eye, EyeOff, FlaskConical
 } from 'lucide-react';
 import { ROTULO_PUNTOS, OPCIONES_FILTRO_PUNTOS } from '@nucleo/data/puntos';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
@@ -37,7 +37,6 @@ import { clickable } from '@nucleo/utils/clickable';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
-import TabInyecciones from './ventas/TabInyecciones';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { filaDeProductoVendido as mapAggRow, precioALaVista, totalesDeProductos, CODIGOS_ESPECIALES as SPECIAL_CODES, diasDelRango as countDays, horaDeCorte as currentHoraCorte, mesEnCurso as currentMonthRange, periodoAnterior as computePrevRange, mesAnteriorDe, puestosDelMesAnterior, rankingDeVendedores, renglonesDeLaVenta, variacionPorDia as dailyPct, ventasDiariasDelVendedor } from '@nucleo/utils/ventasPeriodo';
 
@@ -2816,7 +2815,6 @@ const TABS = [
     { key: 'ventas',     label: 'Ventas',     icon: FileText },
     { key: 'vendedores', label: 'Vendedores', icon: Users },
     { key: 'productos',  label: 'Productos',  icon: Package },
-    { key: 'inyecciones', label: 'Inyecciones', icon: Syringe },
 ];
 
 export default function VentasView() {
@@ -2826,7 +2824,7 @@ export default function VentasView() {
     const [searchParams, setSearchParams] = useSearchParams();
 
     // Pestañas filtradas según permisos
-    const VALID_TABS = new Set(['ventas', 'vendedores', 'productos', 'inyecciones']);
+    const VALID_TABS = new Set(['ventas', 'vendedores', 'productos']);
     const allowedTabs = TABS.filter(t => hasPermission(`ventas_tab_${t.key}`));
     const defaultTab  = allowedTabs[0]?.key ?? 'ventas';
     const rawTab      = searchParams.get('tab');
@@ -2855,7 +2853,6 @@ export default function VentasView() {
     const searchPlaceholder =
         activeTab === 'ventas'     ? 'Buscar correlativo, cliente o producto...' :
         activeTab === 'vendedores' ? 'Buscar vendedor...' :
-        activeTab === 'inyecciones' ? 'Buscar cliente, factura o inyección...' :
                                      'Buscar producto...';
 
     // Antes: copia hand-rolled del pill de ViewTabBar (DESIGN.md §32/§23,
@@ -2892,11 +2889,6 @@ export default function VentasView() {
                 <TabProductos filterBranch={filterBranch} setFilterBranch={setFilterBranch}
                     searchTerm={debouncedSearch} monthRange={monthRange} setMonthRange={setMonthRange}
                     branchOptions={branchOptions} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} />
-            )}
-            {activeTab === 'inyecciones' && (
-                <TabInyecciones filterBranch={filterBranch} setFilterBranch={setFilterBranch}
-                    branchOptions={branchOptions} branchLocked={getScope('ventas') !== 'ALL'}
-                    searchTerm={debouncedSearch} />
             )}
         </GlassViewLayout>
     );

@@ -1,6 +1,6 @@
 // Aplicaciones de inyección pagadas: el control (2026-10-02).
 //
-// Una fila por aplicación pagada, amarrada a la venta cuando la inyección se
+// Una fila por aplicación pagada, asignada a la venta cuando la inyección se
 // compró aquí. Se paga al cobrar en Mi caja (`anotarIngreso` con `aplicacion`,
 // que va por `operar-caja`) y se canjea después. Todo lo que escribe va por
 // funciones de la base: el navegador no inserta ni el monto ni las filas.
@@ -36,9 +36,14 @@ export async function fetchAplicacionesPendientes({ buscar = '', sala = null } =
     return data ?? [];
 }
 
-/** Marca aplicadas. Falla entera si alguna ya no estaba pendiente. */
-export async function aplicarPendientes(ids) {
-    const { data, error } = await supabase.rpc('inyeccion_aplicar', { p_ids: ids });
+/**
+ * Marca aplicadas, en la sala donde se aplican (la de la caja en pantalla).
+ * Falla entera si alguna ya no estaba pendiente.
+ */
+export async function aplicarPendientes(ids, sala = null) {
+    const { data, error } = await supabase.rpc('inyeccion_aplicar', {
+        p_ids: ids, p_branch_id: sala ? Number(sala) : null,
+    });
     if (error) throw error;
     return data;
 }
@@ -62,7 +67,7 @@ export async function fijarPrecioDeAplicacion({ origen, precio }) {
     if (error) throw error;
 }
 
-/** Supervisión: amarrar un cobro suelto a un renglón de una venta. */
+/** Supervisión: asignar un cobro suelto a un renglón de una venta. */
 export async function vincularCobro({ cobroId, invoiceId, lineaNum }) {
     const { data, error } = await supabase.rpc('inyeccion_vincular_cobro', {
         p_cobro_id: cobroId, p_invoice_id: invoiceId, p_linea_num: lineaNum,
@@ -71,7 +76,7 @@ export async function vincularCobro({ cobroId, invoiceId, lineaNum }) {
     return data;
 }
 
-/** Deshace SÓLO un amarre hecho a mano. */
+/** Deshace SÓLO una asignación hecha a mano. */
 export async function desvincularCobro(cobroId) {
     const { data, error } = await supabase.rpc('inyeccion_desvincular_cobro', { p_cobro_id: cobroId });
     if (error) throw error;
@@ -79,9 +84,22 @@ export async function desvincularCobro(cobroId) {
 }
 
 /**
- * Las ventas de la sala de ese día con inyección, para amarrar un cobro suelto.
+ * Las ventas de la sala de ese día con inyección, para asignar un cobro suelto.
  * Reusa la lista del cobro: es la misma pregunta —qué renglón tiene saldo—.
  */
 export async function fetchVentasParaVincular({ sala, buscar = '' }) {
     return fetchInyeccionesParaCobrar({ sala, buscar, dias: 31 });
+}
+
+/**
+ * La bitácora: cada aplicación pagada del período (por la fecha del cobro),
+ * con quién la cobró, quién la aplicó, cuándo y dónde. Hasta tres meses.
+ */
+export async function fetchBitacoraDeAplicaciones({ sala = null, desde, hasta, buscar = '' }) {
+    const { data, error } = await supabase.rpc('inyecciones_bitacora', {
+        p_branch_id: sala ? Number(sala) : null, p_desde: desde, p_hasta: hasta,
+        p_buscar: buscar?.trim() || null,
+    });
+    if (error) throw error;
+    return data ?? [];
 }

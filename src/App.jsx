@@ -101,6 +101,7 @@ const ConteoInventarioView = lazy(IMPORTADORES.ConteoInventarioView);
 const BitacorasView = lazy(IMPORTADORES.BitacorasView);
 const SolicitudesDatosView = lazy(IMPORTADORES.SolicitudesDatosView);
 const PuntosView = lazy(IMPORTADORES.PuntosView);
+const InyeccionesView = lazy(IMPORTADORES.InyeccionesView);
 const ConteoDetailView = lazy(IMPORTADORES.ConteoDetailView);
 const FacturacionView = lazy(IMPORTADORES.FacturacionView);
 const CotizacionesView = lazy(IMPORTADORES.CotizacionesView);
@@ -953,6 +954,7 @@ function MainApp() {
                                     <Route path="bitacoras" element={<PermissionGuard moduleKey="bitacoras"><BitacorasView /></PermissionGuard>} />
                                     <Route path="solicitudes-datos" element={<PermissionGuard moduleKey="datos_personales"><SolicitudesDatosView /></PermissionGuard>} />
                                     <Route path="puntos" element={<PermissionGuard moduleKey="puntos"><PuntosView openModal={openModal} /></PermissionGuard>} />
+                                    <Route path="inyecciones" element={<PermissionGuard moduleKey="inyecciones"><InyeccionesView /></PermissionGuard>} />
                                     <Route path="conteo-inventario/:id" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoDetailView /></PermissionGuard>} />
                                     <Route path="encuesta" element={<PermissionGuard moduleKey="encuesta"><EncuestaView /></PermissionGuard>} />
                                     <Route path="encuesta-admin" element={<PermissionGuard moduleKey="encuesta_admin"><EncuestaAdminView /></PermissionGuard>} />
@@ -1180,6 +1182,7 @@ const ROUTE_TITLES = {
     '/bitacoras':         'Bitácoras',
     '/solicitudes-datos': 'Solicitudes sobre datos',
     '/puntos':            'Puntos',
+    '/inyecciones':       'Inyecciones',
     '/sucursales':          'Sucursales',
     '/cargos':            'Cargos y organigrama',
     '/permisos':       'Permisos de acceso',

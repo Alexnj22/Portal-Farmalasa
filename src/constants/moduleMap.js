@@ -67,6 +67,10 @@ export const MODULE_MAP = {
     // El programa de puntos, entero (2026-09-25): desde el 1-oct vive en el
     // portal y la ficha de cada cliente sólo muestra el suyo.
     puntos:            { path: '/puntos',           label: 'Puntos',                   icono: 'Star'       },
+    // Las aplicaciones de inyección (2026-10-02): lo cobrado, lo pendiente por
+    // cliente y la bitácora. Vista propia y no pestaña de Ventas: «no es solo
+    // venta ni dinero» (usuario).
+    inyecciones:       { path: '/inyecciones',      label: 'Inyecciones',              icono: 'Syringe'    },
     encuesta:          { path: '/encuesta',         label: 'Clima organizacional',     icono: 'BarChart2'  },
     encuesta_admin:    { path: '/encuesta-admin',   label: 'Encuestas',                icono: 'PenLine'    },
     /* El slot de «Bonificaciones» era el que quedó cuando se retiró Promociones

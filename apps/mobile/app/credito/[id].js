@@ -5,8 +5,7 @@
 // cobró (`abonosDelCredito`, del núcleo). Sólo lectura: el historial de la caja
 // se PIDE, no se escribe.
 //
-// Cobrar todavía se hace en el portal (dentro de la app, con la misma sesión):
-// cobrar escribe en la caja y no tiene vuelta atrás.
+// «Recibir un pago» abre el cobro nativo (`cobrar-credito`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -134,8 +133,11 @@ export default function Credito() {
 
         {puedeAbonar && saldo > 0.004 ? (
           p.enAprobacion ? <Aviso tono="cuidado" texto="Ya tiene un cobro esperando aprobación." />
-            : <BotonGrande texto="Cobrar (en el portal)" color={MARCA.verde}
-                onPress={() => router.push({ pathname: '/portal', params: { ruta: `/cuentas-por-cobrar?sala=${p.sala}`, nombre: 'Cuentas por cobrar' } })} />
+            : <BotonGrande texto="Recibir un pago" color={MARCA.verde}
+                onPress={() => router.push({ pathname: '/cobrar-credito', params: {
+                  id: p.id, sala: p.sala, credito: p.credito, documento: p.documento, cliente: p.cliente, dias: p.dias,
+                  saldo: String(saldo), total: String(total), fecha: c?.fecha ?? p.fecha ?? '',
+                } })} />
         ) : null}
       </ScrollView>
     </>

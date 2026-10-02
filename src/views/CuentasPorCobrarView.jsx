@@ -34,6 +34,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
  * nada, así que no arrastra el maquetador del rollo. Escribirla dos veces es
  * cómo dos pantallas terminan mostrando días distintos. */
 import { fechaCorta } from '@nucleo/utils/ticketCampos';
+import { aplicacionesDelPago, APROBACION, estadoDelCobro, FORMAS_DE_COBRO as FORMAS, FORMAS_REALES, MOTIVO_DEL_FRENO, repartoDelMasViejo, repartoDesdeElComprobante, ROTULO_DE_FORMA, sumaDeSaldos } from '@nucleo/utils/abonoDeCredito';
 import { abonosDelCredito, carteraFiltrada, desdeLaLectura, pagadoPct, tituloDeDias, VER_CARTERA as VER } from '@nucleo/utils/cartera';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12 } from '@nucleo/utils/hora';
@@ -88,37 +89,19 @@ import { hastaElTope } from '@nucleo/utils/hastaElTope';
  *
  * Es la corrección de haber puesto «Otro» ahí: con «Otro» ocupando ese lugar, un
  * pago de MAPFRE hecho por transferencia se registraba como «Otro» y se perdía
- * el dato con el que se cuadra el banco. */
-const APROBACION = 'APROBACION';
-const FORMAS = ['Efectivo', 'Transferencia', 'Tarjeta', 'Cheque', APROBACION];
-const ROTULO_DE_FORMA = { [APROBACION]: 'Solicitar aprobación' };
-
-/** Las que se pueden elegir DENTRO de «Solicitar aprobación». Sin efectivo: un
- *  pago en efectivo se cuenta en el cajón y no necesita que nadie lo apruebe. */
-/* La forma DE VERDAD cuando se pide aprobación. **Sin efectivo, y no por
- * descuido**: desde el 2026-09-03 el cobro que espera firma no se aplica, y un
- * efectivo sin aplicar deja el dinero en el cajón sin registrar — el conteo del
- * día daría un sobrante del tamaño del cobro. El servidor lo rechaza igual: el
- * navegador puede mandar la bandera con cualquier forma. */
-const FORMAS_REALES = ['Transferencia', 'Tarjeta', 'Cheque', 'Otro'];
-
-
+ * el dato con el que se cuadra el banco.
+ *
+ * Las listas (`FORMAS_DE_COBRO`, `FORMAS_REALES`, `ROTULO_DE_FORMA`) y los
+ * frenos (`MOTIVO_DEL_FRENO`) viven desde el 2026-10-02 en el núcleo,
+ * `utils/abonoDeCredito`: la app del teléfono cobra con las mismas. */
 const VACIO = [];
 
-/** Lo que cada freno significa, en palabras del mostrador.
+/* Sobre los frenos (`MOTIVO_DEL_FRENO`, en el núcleo):
  *
  *  `OTRO_BENEFICIARIO` estuvo acá hasta el 2026-09-04 y ya no frena: un pago QR
  *  a «FARMACIA LA SALUD QPL» —o sea a nosotros, con el nombre del comercio en
  *  vez del de la persona— dejaba el botón apagado con el cliente ya habiendo
  *  pagado. Hoy ese caso avisa fuerte y deja marca; ver `nombreSinReconocer`. */
-const MOTIVO_DEL_FRENO = {
-    NO_ES_COMPROBANTE: 'La foto no muestra un comprobante de pago.',
-    ILEGIBLE: 'El comprobante no se lee: la foto está borrosa o cortada.',
-    NO_APROBADO: 'Ese voucher salió declinado, así que no acredita ningún pago.',
-    OPERACION_NO_APLICADA: 'El comprobante dice que la operación no se aplicó.',
-    SIN_MONTO: 'No se pudo leer el monto del comprobante.',
-    MONTO_MAYOR_AL_SALDO: 'El comprobante es por más de lo que este cliente debe.',
-};
 
 /** El aviso del nombre que no se reconoce.
  *
@@ -1013,8 +996,6 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
     /* «Otro» no pide foto: lo que se liquida por planilla o convenio no viene
      * con un comprobante que se pueda leer. Pide DECIR con qué, que es el dato
      * que hace falta para poder confirmarlo después. */
-    const pideAprobacion = forma === APROBACION;
-    const conPapel = forma !== 'Efectivo' && !pideAprobacion;
 
 
     useEffect(() => {
@@ -1070,19 +1051,10 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
              * abre el reparto con el resto repartido del más viejo al más nuevo
              * — y ahí se corrige a mano. Si sobra y NO hay otros, se deja el
              * total: la advertencia de «sobran $X» es la que tiene que hablar. */
-            const suyo = Math.min(Number(r.sugerido.monto), Number(credito.saldo) || 0);
-            const resto = Number((Number(r.sugerido.monto) - suyo).toFixed(2));
-            const nuevo = { [credito.id]: (resto > 0.004 ? suyo : Number(r.sugerido.monto)).toFixed(2) };
-            if (resto > 0.004 && otros.length) {
-                setRepartir(true);
-                let queda = resto;
-                for (const h of otros) {
-                    if (queda <= 0.004) break;
-                    const toma = Math.min(queda, Number(h.saldo) || 0);
-                    if (toma > 0.004) { nuevo[h.id] = toma.toFixed(2); queda = Number((queda - toma).toFixed(2)); }
-                }
-            }
-            setReparto(nuevo);
+            // Todo al crédito abierto hasta su saldo; lo que sobra, a los demás.
+            const d = repartoDesdeElComprobante(r.sugerido.monto, credito, otros);
+            if (d.repartir) setRepartir(true);
+            setReparto(d.reparto);
         }
         if (r.sugerido?.fecha) setFechaDoc(r.sugerido.fecha);
         if (r.sugerido?.documento) setDocumento(String(r.sugerido.documento));
@@ -1093,16 +1065,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
      * documento. Es el orden en que conviene cerrar: el que lleva más tiempo.
      * Se propone y no se impone — la persona lo corrige renglón por renglón. */
     const repartirSolo = useCallback((total) => {
-        let queda = Number(total) || 0;
-        const nuevo = {};
-        // Del actual PRIMERO y después los otros por antigüedad: quien abrió
-        // este crédito vino a cobrar éste, no el más viejo del cliente.
-        for (const h of [credito, ...otros.filter((o) => !quitados.has(String(o.id)))]) {
-            if (queda <= 0.004) break;
-            const toma = Math.min(queda, Number(h.saldo) || 0);
-            if (toma > 0.004) { nuevo[h.id] = toma.toFixed(2); queda = Number((queda - toma).toFixed(2)); }
-        }
-        setReparto(nuevo);
+        setReparto(repartoDelMasViejo(total, [credito, ...otros.filter((o) => !quitados.has(String(o.id)))]));
     }, [credito, otros, quitados]);
 
     /* En un `useMemo` y no suelto: lo consume un `useCallback`, y una lista
@@ -1132,22 +1095,11 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
     // Repartir sólo tiene sentido con un DOCUMENTO: un comprobante es uno y
     // puede cubrir varios créditos. El efectivo se cobra de a uno.
     const puedeRepartir = forma !== 'Efectivo' && otros.length > 0;
-    const sumaRepartida = Object.values(reparto)
-        .reduce((t, v) => t + (Number(v) || 0), 0);
-    /* El total lo dice el PAPEL, y sin papel lo dice el reparto.
-     *
-     * Hasta el 2026-09-04 «Solicitar aprobación» pedía el monto DOS veces: un
-     * campo «Monto del pago» arriba y el «Abona» de cada crédito abajo. El
-     * usuario preguntó lo obvio —«no entiendo por qué en 2 lados hay que
-     * agregar el monto»— y midiéndolo resultó que el campo de arriba no podía
-     * tener otro valor: `cuadra` exige que la suma repartida dé EXACTO contra
-     * él, así que su único valor válido lo dictaba el otro campo. Escribirlo
-     * distinto no era una opción, era un error garantizado.
-     *
-     * Con comprobante los dos SÍ son hechos distintos —cuánto dice la
-     * transferencia y a qué créditos se aplica—, y ahí «Va aplicado $X de $Y»
-     * es el control que impide explicar $45 de los $50 que movió el banco. */
-    const totalPago = conPapel ? Number(montoDoc) : sumaRepartida;
+    // La regla entera del cobro —papel, aprobación, cuadre, excesos, listo— es
+    // `estadoDelCobro` (núcleo): la app cobra con la misma.
+    const { pideAprobacion, conPapel, sumaRepartida, totalPago, bloqueado, iraAprobacion, cuadra, listo } = estadoDelCobro({
+        forma, montoDoc, reparto, creditos: listaDeCreditos, lectura, hayArchivo: !!archivo, motivo,
+    });
 
     /* Contra QUÉ se topea: todo lo que el cliente debe en la sala, que es la
      * misma vara con la que el lector rechaza un comprobante por más de la
@@ -1174,33 +1126,9 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
         setTopeado(r.topeado);
     }, [debeTodo, setMontoDoc, setTopeado]);
 
-    const bloqueado = lectura && lectura.veredicto !== 'OK';
-
-    /* El comprobante que no nos nombra NO se aplica solo: va a firma. Es una
-     * variable aparte de `pideAprobacion` a propósito — ésa mira la FORMA que
-     * la persona eligió, y de ella cuelga `conPapel`. Mezclarlas escondería el
-     * campo del comprobante justo en el caso donde el comprobante es lo único
-     * que quien firma va a poder mirar. */
-    const dudaDeBeneficiario = !!lectura?.nombreSinReconocer;
-    const iraAprobacion = pideAprobacion || dudaDeBeneficiario;
-
-    const cuadra = Number.isFinite(totalPago) && totalPago > 0
-        && Math.abs(sumaRepartida - totalPago) < 0.005;
-    /* Ninguna cuenta puede recibir más de lo que debe. El campo ya lo topea al
-     * escribir, pero un borrador recuperado trae los montos de hace un rato y
-     * el saldo pudo bajar en el medio: abonar de más deja el crédito en
-     * negativo allá, y eso es el cliente pagando dos veces. */
-    const seExcedeAlguno = listaDeCreditos.some(
-        (h) => (Number(reparto[h.id]) || 0) > (Number(h.saldo) || 0) + 0.004);
-    const listo = !bloqueado && cuadra && !seExcedeAlguno
-        && (!conPapel || (archivo && lectura))
-        && (!pideAprobacion || motivo.trim().length >= 5);
-
     const cobrar = useCallback(async () => {
         setOcupado(true);
-        const aplicaciones = listaDeCreditos
-            .filter((h) => Number(reparto[h.id]) > 0.004)
-            .map((h) => ({ credito: h.credito, monto: Number(reparto[h.id]) }));
+        const aplicaciones = aplicacionesDelPago(listaDeCreditos, reparto);
         const entro = await onCobrar({
             // Se manda la forma DE VERDAD, no el camino: «Solicitar aprobación»
             // es cómo entra el abono, no con qué se pagó.
@@ -1622,10 +1550,6 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
 /** Todo lo que el cliente debe en esa sala. Es contra esto que se compara el
  *  monto del papel: contra el saldo de UN crédito, una transferencia que paga
  *  tres se rechazaría — que es justo el caso que hay que soportar. */
-function sumaDeSaldos(hermanos, credito) {
-    const lista = hermanos?.length ? hermanos : [credito];
-    return lista.reduce((t, h) => t + (Number(h.saldo) || 0), 0);
-}
 
 
 

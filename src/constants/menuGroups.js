@@ -70,6 +70,9 @@ export const MENU_GROUPS = [
     // `caja_vales` y `cortes_caja` se funden en UNA entrada, así que las cuatro
     // claves de abajo pintan tres renglones.
     { key: 'cortes',       label: 'Efectivo',      icono: 'Wallet',       modules: ['caja_vales', 'cortes_caja', 'bolsas', 'cuentas_por_cobrar'] },
+    // Inyecciones en grupo PROPIO (usuario, 2026-10-02): «aparte, porque no es
+    // solo venta ni dinero». Con un módulo se pinta plano, a un click.
+    { key: 'inyecciones',  label: 'Inyecciones',   icono: 'Syringe',      modules: ['inyecciones'] },
     // Metas salió de Comercial a menú propio (2026-08-04, pedido del usuario).
     // Con un solo módulo el grupo se pinta plano (renderGroup → renderNavItem),
     // así que queda a un click desde cualquier pantalla en vez de detrás del

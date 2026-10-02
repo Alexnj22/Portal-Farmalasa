@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
     Megaphone, CalendarDays, KanbanSquare, Inbox, Plus, Send, ThumbsUp, Settings2, Target,
-    CheckCircle2, AlertTriangle, DollarSign, Layers, MessageSquare, FileDown, Clock, Images, Palette, Copy, FileSignature,
+    CheckCircle2, AlertTriangle, DollarSign, Layers, MessageSquare, FileDown, Clock, Images, Palette, Copy,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -37,7 +37,6 @@ import TabPauta from './TabPauta';
 import TabBiblioteca from './TabBiblioteca';
 import Galeria from './Galeria';
 import DuplicarModal from './DuplicarModal';
-import TabServicio from './TabServicio';
 import PiezaModal from './PiezaModal';
 import PautaModal from './PautaModal';
 import SolicitudModal from './SolicitudModal';
@@ -74,9 +73,7 @@ export default function MarketingView() {
         { key: 'pauta',       label: 'Pauta',       icon: Megaphone },
         { key: 'galeria',     label: 'Galería',     icon: Images },
         { key: 'biblioteca',  label: 'Marca',       icon: Palette },
-        // El control del servicio: lo ven quien lo presta y quien lo evalúa.
-        ...(puedeEditar || puedeAprobar ? [{ key: 'servicio', label: 'Servicio', icon: FileSignature }] : []),
-    ]), [puedeEditar, puedeAprobar]);
+    ]), []);
     const [tab, setTab] = usePestanaEnUrl(tabs, 'calendario');
 
     // El mes también vive en la dirección: el aviso del calendario trae
@@ -413,12 +410,6 @@ export default function MarketingView() {
                 </Notice>
             );
         }
-        if (tab === 'servicio') {
-            return (
-                <TabServicio key={mes} mes={mes} mesFila={mesFila} puedeAprobar={puedeAprobar} puedeEditar={puedeEditar}
-                    yoId={yoId} personas={personas} />
-            );
-        }
         if (tab === 'galeria' || tab === 'biblioteca') {
             if (cargandoExtra && !(tab === 'galeria' ? galeria : recursos).length) return <LoadingState label="Cargando…" />;
             if (tab === 'biblioteca') {
@@ -505,7 +496,7 @@ export default function MarketingView() {
                     ) : <div className="flex-1" />}
                     <div className="flex justify-end min-w-0">
                         <FilterBar acciones={acciones} activeCount={filtrosPuestos} onClear={filtrosPuestos ? limpiar : undefined}>
-                            {(delMes || tab === 'servicio') && (
+                            {delMes && (
                                 <FilterBar.Section label="mes" fija>
                                     <PeriodStepper unit="mes" label={etiquetaMes(mes)} isCurrent={esMesActual}
                                         resetLabel="Este mes" onReset={() => cambiarParam('mes', null)}

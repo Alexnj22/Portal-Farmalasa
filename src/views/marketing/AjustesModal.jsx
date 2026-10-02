@@ -27,7 +27,6 @@ export default function AjustesModal({ open, onClose, marcas, redes, ajustes, fe
     const [nueva, setNueva] = useState('');
     const [fecha, setFecha] = useState({ nombre: '', mes: '', dia: '', idea: '' });
     const [guardando, setGuardando] = useState(false);
-    const [metas, setMetas] = useState({});   // lo que se está escribiendo; se guarda al salir del campo
 
     if (!open) return null;
 
@@ -85,31 +84,6 @@ export default function AjustesModal({ open, onClose, marcas, redes, ajustes, fe
                         {!puedeAprobar && (
                             <p className="text-caption text-content-3">Los cambia quien aprueba el calendario.</p>
                         )}
-                    </section>
-
-                    <section className="space-y-3">
-                        <h3 className={titulo}>Metas del servicio (contrato)</h3>
-                        <div className="grid grid-cols-2 gap-3">
-                            {[
-                                ['meta_publicaciones', 'Publicaciones al mes'],
-                                ['meta_videos', 'Videos o reels al mes'],
-                                ['meta_visitas', 'Visitas al mes'],
-                                ['dias_anticipacion', 'Días de anticipación'],
-                            ].map(([k, rotulo]) => (
-                                <PortalInput key={k} label={rotulo} name={k} type="number" inputMode="numeric" min={0}
-                                    value={metas[k] ?? String(ajustes?.[k] ?? '')} readOnly={!puedeAprobar}
-                                    onChange={(e) => setMetas((m) => ({ ...m, [k]: e.target.value }))}
-                                    onBlur={() => {
-                                        const n = Number(metas[k]);
-                                        if (metas[k] != null && metas[k] !== '' && n >= 0 && n !== Number(ajustes?.[k])) {
-                                            intentar(() => guardarAjustes({ [k]: n }));
-                                        }
-                                    }} />
-                            ))}
-                        </div>
-                        <p className="text-caption text-content-3">
-                            Se miden en la pestaña Servicio. Cambian cuando se ajuste el contrato (por ejemplo, al terminar los 6 meses de prueba).
-                        </p>
                     </section>
 
                     <section className="space-y-2">

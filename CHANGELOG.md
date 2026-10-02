@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1144.1 — Marketing: la pestaña Servicio se retira (queda documentada)
+
+Decisión del usuario: «no lo siento necesario por ahora, dejalo documentado pero
+quitalo». Se quitan la pestaña Servicio, el acta en PDF y las metas de Ajustes.
+La base queda entera y sin uso (tablas `marketing_visitas`/`marketing_cierres`,
+funciones de cumplimiento y cierre, columnas de metas) para no hacer DDL de
+ida y vuelta. Cómo volver a ponerlo o retirarlo del todo:
+`docs/MARKETING-CONTROL-DEL-SERVICIO-EN-PAUSA-2026-10-01.md`. Siguen el OK por
+pieza, el aviso a las salas y «Lista para revisión».
+
 ## v2.1144.0 — Puntos: el traspaso de un cambio de cliente se reintenta y avisa
 
 Pedido del usuario: «¿no podríamos tener el error al momento que se descuenta y

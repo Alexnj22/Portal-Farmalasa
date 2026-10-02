@@ -542,7 +542,6 @@ export const AREAS = [
         archivos: [
             'src/utils/marketing.js',
             'src/utils/marketingInforme.js',
-            'src/utils/marketingActa.js',
             'src/data/marketing.js',
             'src/views/marketing/',
         ],

@@ -382,10 +382,3 @@ function esVertical(a) {
 
 /** ¿Ya tiene el OK de quien revisa? (aprobada, o después). */
 export const tieneOk = (p) => ['aprobado', 'programado', 'publicado'].includes(p?.estado);
-
-export const RESULTADOS_CIERRE = [
-    { value: 'cumplio', label: 'Cumplió', variant: 'success' },
-    { value: 'con_observaciones', label: 'Con observaciones', variant: 'warning' },
-    { value: 'no_cumplio', label: 'No cumplió', variant: 'danger' },
-];
-export const resultadoCierreDe = (v) => RESULTADOS_CIERRE.find((r) => r.value === v) || { value: v, label: v || '—', variant: 'neutral' };

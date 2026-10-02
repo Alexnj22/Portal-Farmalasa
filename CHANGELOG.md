@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1142.0 — Encuestas a clientes: QR, tablet, entrevista y avance
+
+Fase 2 de cuatro: las encuestas publicadas ya reciben respuestas.
+
+- **QR / enlace** (`/e/<código>`): el cliente responde desde su teléfono sin
+  iniciar sesión. El código es uno por encuesta y sucursal.
+- **Tablet en sala** (`?modo=tablet`): el mismo formulario, que vuelve a
+  empezar solo a los 8 segundos para el cliente siguiente.
+- **Entrevista**: sección nueva «Aplicar encuesta» (permiso
+  `encuestas_aplicar`), con la sucursal del día y el aviso de la muestra
+  médica cuando corresponde.
+- Al final, paso opcional de **datos con consentimiento**: sin él, la
+  respuesta es anónima aunque se haya escrito un número. Un teléfono responde
+  una sola vez por encuesta.
+- La base **valida cada respuesta** contra el cuestionario aprobado
+  (obligatorias, tipos, opciones) y descarta lo que el cliente no llegó a ver.
+- Pestaña **Avance**: respuestas contra la meta, por sucursal y por canal, y el
+  QR de cada sucursal con su enlace.
+- **Cierre automático**: al llegar a la meta (con la respuesta que la
+  completa) o a la fecha (cron `encuestas-cerrar-vencidas`, 00:10 SV).
+
+Migración `encuestas_clientes_captura`, probada en el entorno de pruebas y
+aplicada en producción con el sí del usuario. `anon` alcanza sólo
+`encuesta_publica` y `encuesta_publica_responder`, declaradas en
+`auditoria/superficie-anon.json`.
+
 ## v2.1141.1 — puntos: el canje de una venta anulada deja de salir en Avisos
 
 Pregunta del usuario: «si se anuló, ¿por qué sigue saliendo?». Anular la

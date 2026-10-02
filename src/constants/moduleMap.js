@@ -78,6 +78,7 @@ export const MODULE_MAP = {
     promociones:       { path: '/promociones',      label: 'Promociones',              icono: 'Gift'       },
     marketing:         { path: '/marketing',        label: 'Marketing',                icono: 'Megaphone'  },
     encuestas_clientes: { path: '/encuestas-clientes', label: 'Encuestas a clientes', icono: 'ClipboardCheck' },
+    encuestas_aplicar: { path: '/encuestas-aplicar', label: 'Aplicar encuesta',     icono: 'Mic' },
     galeria:           { path: '/galeria',          label: 'Galería',                  icono: 'FolderOpen' },
     entrevistas:       { path: '/entrevistas',      label: 'Entrevistas',              icono: 'Users',        comingSoon: true },
     productos:         { path: '/productos',        label: 'Productos',                icono: 'Package'       },

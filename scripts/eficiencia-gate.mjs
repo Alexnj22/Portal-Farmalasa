@@ -476,6 +476,14 @@ const CRONS = [
           + '`functions/v1/`, así que si no está escrito no lo vigila nadie.',
   },
   {
+    job: 'encuestas-cerrar-vencidas', slug: null, cadencia: '10 6 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'SQL puro: a las 00:10 SV cierra las encuestas a clientes publicadas cuya fecha de '
+          + 'cierre ya pasó y avisa a quien la diseñó. No llama a ninguna función ni toca el '
+          + 'sistema de origen. El cierre por META no es de este cron: lo hace la misma respuesta '
+          + 'que la completa.',
+  },
+  {
     job: 'marketing-recordatorios-8am-sv', slug: null, cadencia: '0 14 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'SQL puro: no llama a ninguna función ni toca el sistema de origen. A las 8:00 SV '

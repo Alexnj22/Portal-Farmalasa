@@ -60,6 +60,7 @@ export default function EncuestasClientesView() {
         { key: 'preguntas', label: 'Preguntas',   icon: ListOrdered },
         { key: 'ajustes',   label: 'Ajustes',     icon: Settings2 },
         { key: 'vista',     label: 'Vista previa', icon: Eye },
+        { key: 'avance',    label: 'Avance',      icon: Radio },
         { key: 'historial', label: 'Historial',   icon: History },
     ]), []);
     const [tab, setTab] = usePestanaEnUrl(tabsLista, 'diseno');

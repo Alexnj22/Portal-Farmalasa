@@ -204,9 +204,37 @@ export function cumpleCondicion(condicion, respuestas = {}) {
     }
 }
 
+/**
+ * Las preguntas que el cliente ve, en orden, y sólo las respuestas que cuentan.
+ *
+ * Se recorre EN ORDEN y cada condición se evalúa contra lo ya visible: una
+ * respuesta que quedó escondida (porque el cliente cambió de opinión más
+ * arriba) no puede abrir otra pregunta. Es exactamente lo que hace
+ * `encuesta_cliente_limpiar` en la base; si divergieran, el cliente
+ * contestaría un recorrido que la base rechaza.
+ */
+export function recorrido(cuestionario, respuestas = {}) {
+    const visibles = [];
+    const limpias = {};
+    for (const p of preguntasEnOrden(cuestionario)) {
+        if (!cumpleCondicion(p.condicion, limpias)) continue;
+        visibles.push(p);
+        const r = respuestas[p.id];
+        const vacia = r === undefined || r === null || (typeof r === 'string' && !r.trim()) || (Array.isArray(r) && !r.length);
+        if (!vacia) limpias[p.id] = typeof r === 'string' ? r.trim() : r;
+    }
+    return { visibles, limpias };
+}
+
 /** Las preguntas que el cliente ve, en orden, con lo que lleva contestado. */
 export function preguntasVisibles(cuestionario, respuestas) {
-    return preguntasEnOrden(cuestionario).filter((p) => cumpleCondicion(p.condicion, respuestas));
+    return recorrido(cuestionario, respuestas).visibles;
+}
+
+/** Un teléfono de El Salvador: 8 dígitos que empiezan en 2, 6 o 7. */
+export function telefonoValido(texto) {
+    const d = String(texto || '').replace(/\D/g, '').slice(-8);
+    return /^[267]\d{7}$/.test(d);
 }
 
 /** ¿Falta contestar alguna obligatoria visible? Devuelve la primera. */

@@ -164,3 +164,49 @@ export async function fetchPersonas(ids) {
     const firmadas = await signPhotosDeep(data || []);
     return Object.fromEntries((firmadas || []).map((e) => [e.id, { ...e, photo: e.photo || e.photo_url }]));
 }
+
+// ── Captura (fase 2) ───────────────────────────────────────────────────────
+//
+// Las respuestas sólo entran por funciones de la base, que validan contra el
+// cuestionario aprobado. El error que lanzan ya viene en palabras del cliente
+// («Ese teléfono ya respondió esta encuesta»), así que se pasa tal cual.
+
+const mensajeDe = (error) => new Error(String(error?.message || 'No se pudo enviar').replace(/^.*?:\s(?=[A-ZÁÉÍÓÚ¡¿])/, ''));
+
+/** La encuesta de un QR, sin sesión. `{ estado: 'abierta' | 'cerrada' | 'aun_no' | 'no_disponible' | 'no_existe', … }` */
+export async function fetchEncuestaPublica(token) {
+    const { data, error } = await supabase.rpc('encuesta_publica', { p_token: token });
+    if (error) throw error;
+    return data;
+}
+
+/** Responder desde el QR o la tablet (`modo: 'tablet'`), sin sesión. */
+export async function responderEncuestaPublica(token, { respuestas, contacto, dispositivo, segundos, modo }) {
+    const { data, error } = await supabase.rpc('encuesta_publica_responder', {
+        p_token: token, p_respuestas: respuestas, p_contacto: contacto || null,
+        p_dispositivo: dispositivo, p_duracion: segundos ?? null, p_modo: modo === 'tablet' ? 'tablet' : 'qr',
+    });
+    if (error) throw mensajeDe(error);
+    return data;
+}
+
+/** Las encuestas que se pueden aplicar hoy, con sus sucursales y avance. */
+export async function fetchParaAplicar() {
+    return sinError(await supabase.rpc('encuestas_para_aplicar')) || [];
+}
+
+/** Guardar una entrevista. Quien entrevista lo firma la base. */
+export async function guardarEntrevista(encuestaId, branchId, { respuestas, contacto, segundos }) {
+    const { data, error } = await supabase.rpc('encuesta_cliente_entrevistar', {
+        p_id: encuestaId, p_branch: branchId, p_respuestas: respuestas,
+        p_contacto: contacto || null, p_duracion: segundos ?? null,
+    });
+    if (error) throw mensajeDe(error);
+    anotar('ENCUESTA_CLIENTE_ENTREVISTA', data?.id, { encuesta: encuestaId, sucursal: branchId });
+    return data;
+}
+
+/** Avance de una encuesta: total, por sucursal (con su token), por canal y por día. */
+export async function fetchAvance(id) {
+    return sinError(await supabase.rpc('encuesta_cliente_avance', { p_id: id }));
+}

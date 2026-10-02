@@ -86,7 +86,7 @@ export const MENU_GROUPS = [
     { key: 'marketing', label: 'Marketing', icono: 'Megaphone', modules: ['marketing', 'galeria'] },
     // Encuestas a clientes (2026-10-01): sección propia por pedido del usuario,
     // no una pestaña de Marketing.
-    { key: 'encuestas_clientes', label: 'Encuestas', icono: 'ClipboardCheck', modules: ['encuestas_clientes'] },
+    { key: 'encuestas_clientes', label: 'Encuestas', icono: 'ClipboardCheck', modules: ['encuestas_clientes', 'encuestas_aplicar'] },
     { key: 'producto',     label: 'Producto',      icono: 'Package',       modules: ['productos', 'laboratorios'] },
     { key: 'pedidos_sucursales', label: 'Pedidos a sucursales', icono: 'ClipboardList', modules: ['pedidos'] },
     // `inventario` y `gestion_stock` van PRIMERO y no al final de la lista

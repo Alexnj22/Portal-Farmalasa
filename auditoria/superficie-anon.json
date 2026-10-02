@@ -114,6 +114,20 @@
       "guarda": "secreto del QR",
       "estado": "abierta-a-proposito",
       "motivo": "El teléfono deja la foto y quema el código en un solo acto. El `usada_el IS NULL` dentro del UPDATE es lo que lo vuelve de un solo uso: con el mismo QR en dos teléfonos, sólo el primero escribe. Lo que consigue quien robe el código es meter una imagen en un formulario que una persona está mirando y todavía no guardó."
+    },
+    {
+      "nombre": "encuesta_publica",
+      "area": "encuestas-clientes",
+      "guarda": "token del QR",
+      "estado": "abierta-a-proposito",
+      "motivo": "Encuestas a clientes: el cliente responde desde el QR de la sucursal (o la tablet de sala) SIN iniciar sesión. Devuelve el cuestionario de UNA encuesta publicada a quien tiene el token (uno por encuesta y sucursal, 32 hex). No devuelve respuestas, contactos ni avance; sin encuesta abierta sólo dice el motivo."
+    },
+    {
+      "nombre": "encuesta_publica_responder",
+      "area": "encuestas-clientes",
+      "guarda": "token del QR",
+      "estado": "abierta-a-proposito",
+      "motivo": "Encuestas a clientes: el cliente responde desde el QR de la sucursal (o la tablet de sala) SIN iniciar sesión. Única escritura: pasa por encuesta_cliente_registrar, que valida contra el cuestionario aprobado, exige encuesta publicada y vigente, frena el envío repetido por dispositivo (20 s; 3 por día en QR) y sólo guarda el teléfono con consentimiento, uno por encuesta."
     }
   ],
   "tablas": [

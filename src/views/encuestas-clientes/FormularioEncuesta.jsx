@@ -1,37 +1,81 @@
-import React, { useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Check, CheckCircle2 } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Check, CheckCircle2, Gift, AlertTriangle } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
+import Checkbox from '../../components/common/Checkbox';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import {
-    CARITAS, ACUERDO, preguntasEnOrden, cumpleCondicion, primeraSinContestar,
+    CARITAS, ACUERDO, recorrido, primeraSinContestar, telefonoValido,
 } from '@nucleo/utils/encuestasClientes';
 
 /**
  * El cuestionario tal como lo contesta el cliente: una sección por pantalla,
- * las preguntas condicionadas aparecen o desaparecen según lo contestado.
+ * las preguntas condicionadas aparecen o desaparecen según lo contestado y, al
+ * final, el paso opcional de dejar su teléfono con consentimiento.
  *
- * Hoy lo usa la vista previa del constructor; en la fase 2 es el formulario
- * real (QR, entrevista y tablet). Por eso NO sabe guardar: recibe `onTerminar`
- * con las respuestas. Lo que el revisor aprueba mirando la vista previa es
- * exactamente lo que el cliente va a recorrer.
+ * Es el MISMO componente en la vista previa del constructor, el QR, la tablet
+ * y la entrevista: lo que el revisor aprueba mirando la vista previa es lo que
+ * el cliente recorre. Por eso no sabe guardar: `onEnviar(respuestas, contacto,
+ * segundos)` lo hace quien lo monta, y si lanza, el error se muestra acá y
+ * nada se pierde. Sin `onEnviar` (vista previa) sólo muestra el cierre.
+ *
+ * `reinicioAuto` (segundos): la tablet de sala vuelve sola al principio para
+ * el cliente siguiente. `entrevista`: los textos le hablan a quien pregunta.
  */
-export default function FormularioEncuesta({ encuesta, onTerminar, onReiniciar }) {
+export default function FormularioEncuesta({ encuesta, onEnviar, reinicioAuto = null, entrevista = false }) {
     const secciones = useMemo(() => (encuesta?.cuestionario?.secciones || [])
         .filter((s) => (s.preguntas || []).length > 0), [encuesta?.cuestionario]);
-    const numeradas = useMemo(() => preguntasEnOrden(encuesta?.cuestionario), [encuesta?.cuestionario]);
-    const [paso, setPaso] = useState(encuesta?.mensaje_bienvenida ? -1 : 0);
+    const conBienvenida = !!encuesta?.mensaje_bienvenida && !entrevista;
+    const [paso, setPaso] = useState(conBienvenida ? -1 : 0);
     const [respuestas, setRespuestas] = useState({});
     const [faltante, setFaltante] = useState(null);
+    const [enContacto, setEnContacto] = useState(false);
+    const [contacto, setContacto] = useState({ consiente: false, telefono: '', nombre: '' });
+    const [errorContacto, setErrorContacto] = useState(null);
+    const [enviando, setEnviando] = useState(false);
+    const [errorEnvio, setErrorEnvio] = useState(null);
     const [terminado, setTerminado] = useState(false);
+    const [inicio, setInicio] = useState(() => Date.now());
+    const [cuenta, setCuenta] = useState(null);
 
+    const { visibles, limpias } = useMemo(() => recorrido(encuesta?.cuestionario, respuestas), [encuesta?.cuestionario, respuestas]);
     // Las secciones que quedaron sin ninguna pregunta visible se saltan.
-    const visiblesDe = (s) => numeradas
-        .filter((p) => p.seccionId === s.id && cumpleCondicion(p.condicion, respuestas));
-    const pasos = secciones.map((s, i) => ({ s, i })).filter(({ s }) => visiblesDe(s).length > 0);
-    const actual = pasos[paso] || null;
-    const progreso = pasos.length ? Math.round(((terminado ? pasos.length : Math.max(paso, 0)) / pasos.length) * 100) : 0;
+    const visiblesDe = (s) => visibles.filter((p) => p.seccionId === s.id);
+    const pasos = secciones.filter((s) => visiblesDe(s).length > 0);
+    const actual = paso >= 0 ? pasos[paso] || null : null;
+    const total = pasos.length + 1;
+    const progreso = terminado ? 100 : Math.round((Math.max(enContacto ? pasos.length : paso, 0) / total) * 100);
+    const incentivo = encuesta?.incentivo_tipo === 'puntos' && encuesta?.incentivo_puntos
+        ? `Deja tu teléfono y recibe ${encuesta.incentivo_puntos} puntos en tu cuenta.`
+        : encuesta?.incentivo_tipo === 'muestra' && entrevista
+            ? `Si deja su teléfono, entrégale: ${encuesta.incentivo_descripcion || 'la muestra médica'}.`
+            : null;
+
+    const reiniciar = () => {
+        setRespuestas({});
+        setFaltante(null);
+        setEnContacto(false);
+        setContacto({ consiente: false, telefono: '', nombre: '' });
+        setErrorContacto(null);
+        setErrorEnvio(null);
+        setTerminado(false);
+        setCuenta(null);
+        setInicio(Date.now());
+        setPaso(conBienvenida ? -1 : 0);
+    };
+
+    // La tablet vuelve sola al principio: el cliente siguiente no tiene que
+    // tocar nada para empezar.
+    useEffect(() => {
+        if (!terminado || !reinicioAuto) return undefined;
+        setCuenta(reinicioAuto); // eslint-disable-line react-hooks/set-state-in-effect -- arranca la cuenta al terminar
+        const t = setInterval(() => setCuenta((c) => (c > 1 ? c - 1 : 0)), 1000);
+        return () => clearInterval(t);
+    }, [terminado, reinicioAuto]);
+    useEffect(() => {
+        if (cuenta === 0) reiniciar(); // eslint-disable-line react-hooks/set-state-in-effect -- el reinicio de la tablet al terminar la cuenta
+    }, [cuenta]); // eslint-disable-line react-hooks/exhaustive-deps -- `reiniciar` sólo reinicia estado
 
     const contestar = (id, valor) => {
         setRespuestas((r) => ({ ...r, [id]: valor }));
@@ -40,28 +84,34 @@ export default function FormularioEncuesta({ encuesta, onTerminar, onReiniciar }
 
     const siguiente = () => {
         if (actual) {
-            const falta = primeraSinContestar(visiblesDe(actual.s), respuestas);
+            const falta = primeraSinContestar(visiblesDe(actual), respuestas);
             if (falta) { setFaltante(falta.id); return; }
         }
         setFaltante(null);
-        if (paso + 1 >= pasos.length) {
-            // Lo que quedó escondido por una condición no viaja: el cliente no
-            // lo vio, aunque lo hubiera contestado antes de cambiar de opinión.
-            const vistas = new Set(numeradas.filter((p) => cumpleCondicion(p.condicion, respuestas)).map((p) => p.id));
-            const limpias = Object.fromEntries(Object.entries(respuestas).filter(([k]) => vistas.has(k)));
-            setTerminado(true);
-            onTerminar?.(limpias);
-            return;
-        }
+        if (paso + 1 >= pasos.length) { setEnContacto(true); return; }
         setPaso((p) => p + 1);
     };
 
-    const reiniciar = () => {
-        setRespuestas({});
-        setFaltante(null);
-        setTerminado(false);
-        setPaso(encuesta?.mensaje_bienvenida ? -1 : 0);
-        onReiniciar?.();
+    const enviar = async (conDatos) => {
+        const c = conDatos ? contacto : { consiente: false };
+        if (conDatos) {
+            if (!c.consiente) { setErrorContacto('Para guardar los datos hay que aceptar el consentimiento.'); return; }
+            if (!c.telefono.trim() && !c.nombre.trim()) { setErrorContacto('Escribe el teléfono o el nombre, o envía sin datos.'); return; }
+            if (c.telefono.trim() && !telefonoValido(c.telefono)) { setErrorContacto('El teléfono debe tener 8 dígitos.'); return; }
+        }
+        setErrorContacto(null);
+        setErrorEnvio(null);
+        if (!onEnviar) { setTerminado(true); return; }
+        setEnviando(true);
+        try {
+            await onEnviar(limpias, conDatos ? { consiente: true, telefono: c.telefono.trim(), nombre: c.nombre.trim() } : null,
+                Math.round((Date.now() - inicio) / 1000));
+            setTerminado(true);
+        } catch (err) {
+            setErrorEnvio(err?.message || 'No se pudo enviar. Intenta de nuevo.');
+        } finally {
+            setEnviando(false);
+        }
     };
 
     if (!secciones.length) {
@@ -79,9 +129,41 @@ export default function FormularioEncuesta({ encuesta, onTerminar, onReiniciar }
                 <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 py-8">
                     <CheckCircle2 size={48} className="text-success" />
                     <p className="text-body-lg font-semibold text-content">
-                        {encuesta.mensaje_cierre || '¡Gracias por tu opinión!'}
+                        {entrevista ? 'Respuesta guardada' : (encuesta.mensaje_cierre || '¡Gracias por tu opinión!')}
                     </p>
-                    <Button variant="secondary" onClick={reiniciar}>Volver a empezar</Button>
+                    {cuenta != null && cuenta > 0 && (
+                        <p className="text-body-sm text-content-3">Vuelve a empezar en {cuenta}…</p>
+                    )}
+                    <Button variant="secondary" onClick={reiniciar}>{entrevista ? 'Otra entrevista' : 'Volver a empezar'}</Button>
+                </div>
+            ) : enContacto ? (
+                <div className="flex-1 flex flex-col gap-4">
+                    <div>
+                        <p className="text-body-lg font-semibold text-content">
+                            {entrevista ? '¿El cliente quiere dejar sus datos?' : '¿Quieres dejarnos tus datos?'}
+                        </p>
+                        <p className="text-body-sm text-content-2">
+                            Es opcional. {entrevista ? 'Sin datos, la respuesta queda anónima.' : 'Si no, tu respuesta queda anónima.'}
+                        </p>
+                    </div>
+                    {incentivo && <Notice variant="success" icon={Gift} compact>{incentivo}</Notice>}
+                    <PortalInput label="Teléfono" name="telefono" inputMode="tel" maskType="PHONE" value={contacto.telefono}
+                        placeholder="7777-7777" onChange={(e) => setContacto((c) => ({ ...c, telefono: e.target.value }))} />
+                    <PortalInput label="Nombre (opcional)" name="nombre" value={contacto.nombre}
+                        onChange={(e) => setContacto((c) => ({ ...c, nombre: e.target.value }))} />
+                    <Checkbox name="consiente" checked={contacto.consiente}
+                        label={entrevista ? 'Consentimiento del cliente' : 'Consentimiento'}
+                        description={encuesta.texto_consentimiento}
+                        onChange={(v) => setContacto((c) => ({ ...c, consiente: v }))} />
+                    {errorContacto && <p className="text-micro font-semibold text-danger">{errorContacto}</p>}
+                    {errorEnvio && <Notice variant="danger" icon={AlertTriangle} compact>{errorEnvio}</Notice>}
+                    <div className="flex flex-wrap gap-2 justify-between pt-2 mt-auto">
+                        <Button variant="secondary" icon={ArrowLeft} disabled={enviando} onClick={() => setEnContacto(false)}>Atrás</Button>
+                        <div className="flex flex-wrap gap-2">
+                            <Button variant="secondary" disabled={enviando} onClick={() => enviar(false)}>Enviar sin datos</Button>
+                            <Button icon={Check} loading={enviando} onClick={() => enviar(true)}>Enviar</Button>
+                        </div>
+                    </div>
                 </div>
             ) : paso === -1 ? (
                 <div className="flex-1 flex flex-col justify-center gap-4 py-6">
@@ -91,24 +173,22 @@ export default function FormularioEncuesta({ encuesta, onTerminar, onReiniciar }
                 </div>
             ) : actual && (
                 <>
-                    {(actual.s.titulo || actual.s.descripcion) && (
+                    {(actual.titulo || actual.descripcion) && (
                         <div>
-                            {actual.s.titulo && <p className="text-body-lg font-semibold text-content">{actual.s.titulo}</p>}
-                            {actual.s.descripcion && <p className="text-body-sm text-content-2">{actual.s.descripcion}</p>}
+                            {actual.titulo && <p className="text-body-lg font-semibold text-content">{actual.titulo}</p>}
+                            {actual.descripcion && <p className="text-body-sm text-content-2">{actual.descripcion}</p>}
                         </div>
                     )}
                     <div className="space-y-5 flex-1">
-                        {visiblesDe(actual.s).map((p) => (
+                        {visiblesDe(actual).map((p) => (
                             <Pregunta key={p.id} p={p} valor={respuestas[p.id]} falta={faltante === p.id}
                                 onChange={(v) => contestar(p.id, v)} />
                         ))}
                     </div>
                     <div className="flex gap-2 justify-between pt-2">
-                        <Button variant="secondary" icon={ArrowLeft} disabled={paso === 0 && !encuesta.mensaje_bienvenida}
+                        <Button variant="secondary" icon={ArrowLeft} disabled={paso === 0 && !conBienvenida}
                             onClick={() => setPaso((x) => x - 1)}>Atrás</Button>
-                        <Button icon={paso + 1 >= pasos.length ? Check : ArrowRight} onClick={siguiente}>
-                            {paso + 1 >= pasos.length ? 'Enviar' : 'Siguiente'}
-                        </Button>
+                        <Button icon={ArrowRight} onClick={siguiente}>Siguiente</Button>
                     </div>
                 </>
             )}

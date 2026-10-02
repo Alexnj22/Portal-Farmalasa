@@ -76,7 +76,9 @@ const AREAS = process.env.RUTAS_GATE_AREAS || 'auditoria/areas.mjs';
 // ── Rutas que NO son una vista del portal ────────────────────────────────────
 // El kiosco corre sin sesión y es su propia aplicación; login y no-access son
 // puertas; raw-test es un banco de pruebas que no aparece en ningún menú.
-const FUERA_DE_ALCANCE = new Set(['/kiosk', '/login', '/no-access', '/raw-test']);
+// `/e` es la encuesta pública (`/e/:token`): una ruta con parámetro que este
+// lector salta, y que areas.mjs sí nombra. Su título es el de la encuesta.
+const FUERA_DE_ALCANCE = new Set(['/kiosk', '/login', '/no-access', '/raw-test', '/e']);
 
 // ── Deuda heredada: rutas en inglés que ya estaban en producción ─────────────
 //

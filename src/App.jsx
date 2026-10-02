@@ -93,6 +93,8 @@ const PromocionesView = lazy(IMPORTADORES.PromocionesView);
 const MarketingView = lazy(IMPORTADORES.MarketingView);
 const GaleriaView = lazy(IMPORTADORES.GaleriaView);
 const EncuestasClientesView = lazy(IMPORTADORES.EncuestasClientesView);
+const AplicarEncuestaView = lazy(IMPORTADORES.AplicarEncuestaView);
+const EncuestaPublicaView = lazy(IMPORTADORES.EncuestaPublicaView);
 const ProveedoresView = lazy(IMPORTADORES.ProveedoresView);
 const ClientesView = lazy(IMPORTADORES.ClientesView);
 const ConteoInventarioView = lazy(IMPORTADORES.ConteoInventarioView);
@@ -740,6 +742,17 @@ function MainApp() {
                 llave son sus DOS datos (documento y teléfono), que la función
                 del servidor exige juntos y con freno por intentos — un teléfono
                 solo no es una llave: sale en el ticket y se puede recorrer. */}
+            {/* La encuesta que abre el cliente con el QR (o la tablet de sala):
+                sin sesión y sin layout, como Mis puntos. El scroll lo declara
+                la ruta por la misma razón que allá: `#root` no se desplaza. */}
+            <Route path="/e/:token" element={
+                <div className="relative h-[100dvh] w-full bg-surface-page overflow-y-auto overscroll-contain">
+                    <GlobalBackground />
+                    <div className="relative z-base">
+                        <Suspense fallback={null}><EncuestaPublicaView /></Suspense>
+                    </div>
+                </div>
+            } />
             <Route path="/mis-puntos" element={
                 /* El scroll lo declara ESTA ruta, y tiene que hacerlo: `#root`
                    es `height:100%; overflow:hidden` (index.css), o sea que el
@@ -934,6 +947,7 @@ function MainApp() {
                                     <Route path="marketing" element={<PermissionGuard moduleKey="marketing"><MarketingView /></PermissionGuard>} />
                                     <Route path="galeria" element={<PermissionGuard moduleKey="galeria"><GaleriaView /></PermissionGuard>} />
                                     <Route path="encuestas-clientes" element={<PermissionGuard moduleKey="encuestas_clientes"><EncuestasClientesView /></PermissionGuard>} />
+                                    <Route path="encuestas-aplicar" element={<PermissionGuard moduleKey="encuestas_aplicar"><AplicarEncuestaView /></PermissionGuard>} />
                                     <Route path="proveedores" element={<PermissionGuard moduleKey="proveedores"><ProveedoresView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="conteo-inventario" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoInventarioView /></PermissionGuard>} />
                                     <Route path="bitacoras" element={<PermissionGuard moduleKey="bitacoras"><BitacorasView /></PermissionGuard>} />
@@ -1139,6 +1153,7 @@ const ROUTE_TITLES = {
     '/promociones':       'Promociones',
     '/marketing':         'Marketing',
     '/encuestas-clientes': 'Encuestas a clientes',
+    '/encuestas-aplicar': 'Aplicar encuesta',
     '/galeria':           'Galería',
     '/productos':         'Productos',
     '/laboratorios':      'Laboratorios',

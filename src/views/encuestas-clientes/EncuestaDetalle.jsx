@@ -23,6 +23,7 @@ import {
 import Constructor from './Constructor';
 import AjustesEncuesta from './AjustesEncuesta';
 import FormularioEncuesta from './FormularioEncuesta';
+import AvanceEncuesta from './AvanceEncuesta';
 
 const RETARDO_GUARDADO = 900;
 
@@ -275,6 +276,8 @@ export default function EncuestaDetalle({
                         <FormularioEncuesta encuesta={encuesta} />
                     </div>
                 </div>
+            ) : vista === 'avance' ? (
+                <AvanceEncuesta encuesta={encuesta} />
             ) : vista === 'historial' ? (
                 <Historial eventos={eventos} personas={personas} />
             ) : (

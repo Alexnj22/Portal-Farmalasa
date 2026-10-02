@@ -10664,6 +10664,103 @@ export type Database = {
           },
         ]
       }
+      encuesta_cliente_respuestas: {
+        Row: {
+          branch_id: number
+          canal: string
+          consentimiento_at: string | null
+          contacto_nombre: string | null
+          created_at: string
+          customer_id: number | null
+          dispositivo: string | null
+          duracion_seg: number | null
+          encuesta_id: string
+          entrevistador_id: string | null
+          id: string
+          nps: number | null
+          respuestas: Json
+          telefono: string | null
+          telefono_hash: string | null
+        }
+        Insert: {
+          branch_id: number
+          canal: string
+          consentimiento_at?: string | null
+          contacto_nombre?: string | null
+          created_at?: string
+          customer_id?: number | null
+          dispositivo?: string | null
+          duracion_seg?: number | null
+          encuesta_id: string
+          entrevistador_id?: string | null
+          id?: string
+          nps?: number | null
+          respuestas: Json
+          telefono?: string | null
+          telefono_hash?: string | null
+        }
+        Update: {
+          branch_id?: number
+          canal?: string
+          consentimiento_at?: string | null
+          contacto_nombre?: string | null
+          created_at?: string
+          customer_id?: number | null
+          dispositivo?: string | null
+          duracion_seg?: number | null
+          encuesta_id?: string
+          entrevistador_id?: string | null
+          id?: string
+          nps?: number | null
+          respuestas?: Json
+          telefono?: string | null
+          telefono_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encuesta_cliente_respuestas_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuesta_cliente_respuestas_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuesta_cliente_respuestas_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "encuesta_cliente_respuestas_encuesta_id_fkey"
+            columns: ["encuesta_id"]
+            isOneToOne: false
+            referencedRelation: "encuestas_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuesta_cliente_respuestas_entrevistador_id_fkey"
+            columns: ["entrevistador_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuesta_cliente_respuestas_entrevistador_id_fkey"
+            columns: ["entrevistador_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       encuesta_cliente_sucursales: {
         Row: {
           branch_id: number
@@ -17705,6 +17802,101 @@ export type Database = {
           },
         ]
       }
+      puntos_cambio_pendiente: {
+        Row: {
+          created_at: string
+          customer_nuevo: number
+          intentos: number
+          invoice_id: number
+          nota: string | null
+          por: string | null
+          resuelto_at: string | null
+          resuelto_como: string | null
+          resuelto_por: string | null
+          solicitud_id: string
+          ultimo_error: string | null
+          ultimo_intento_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_nuevo: number
+          intentos?: number
+          invoice_id: number
+          nota?: string | null
+          por?: string | null
+          resuelto_at?: string | null
+          resuelto_como?: string | null
+          resuelto_por?: string | null
+          solicitud_id: string
+          ultimo_error?: string | null
+          ultimo_intento_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_nuevo?: number
+          intentos?: number
+          invoice_id?: number
+          nota?: string | null
+          por?: string | null
+          resuelto_at?: string | null
+          resuelto_como?: string | null
+          resuelto_por?: string | null
+          solicitud_id?: string
+          ultimo_error?: string | null
+          ultimo_intento_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "puntos_cambio_pendiente_customer_nuevo_fkey"
+            columns: ["customer_nuevo"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_cambio_pendiente_customer_nuevo_fkey"
+            columns: ["customer_nuevo"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "puntos_cambio_pendiente_por_fkey"
+            columns: ["por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_cambio_pendiente_por_fkey"
+            columns: ["por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_cambio_pendiente_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_cambio_pendiente_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_cambio_pendiente_solicitud_id_fkey"
+            columns: ["solicitud_id"]
+            isOneToOne: true
+            referencedRelation: "approval_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       puntos_codigo_acceso: {
         Row: {
           codigo: string
@@ -24437,6 +24629,7 @@ export type Database = {
         Returns: number
       }
       encuesta_cliente_archivar: { Args: { p_id: string }; Returns: Json }
+      encuesta_cliente_avance: { Args: { p_id: string }; Returns: Json }
       encuesta_cliente_avisar: {
         Args: {
           p_cuerpo: string
@@ -24450,6 +24643,15 @@ export type Database = {
         Args: { p_id: string; p_motivo?: string }
         Returns: Json
       }
+      encuesta_cliente_cerrar_si_llego: {
+        Args: { p_id: string }
+        Returns: boolean
+      }
+      encuesta_cliente_cerrar_vencidas: { Args: never; Returns: number }
+      encuesta_cliente_cumple: {
+        Args: { p_cond: Json; p_r: Json }
+        Returns: boolean
+      }
       encuesta_cliente_destinatarios: {
         Args: { p_accion: string; p_excepto?: string }
         Returns: string[]
@@ -24458,8 +24660,22 @@ export type Database = {
         Args: { p_como_plantilla?: boolean; p_id: string }
         Returns: string
       }
+      encuesta_cliente_entrevistar: {
+        Args: {
+          p_branch: number
+          p_contacto?: Json
+          p_duracion?: number
+          p_id: string
+          p_respuestas: Json
+        }
+        Returns: Json
+      }
       encuesta_cliente_enviar: {
         Args: { p_id: string; p_nota?: string }
+        Returns: Json
+      }
+      encuesta_cliente_limpiar: {
+        Args: { p_cuestionario: Json; p_r: Json }
         Returns: Json
       }
       encuesta_cliente_poblacion: { Args: never; Returns: Json }
@@ -24471,10 +24687,36 @@ export type Database = {
         Returns: string[]
       }
       encuesta_cliente_publicar: { Args: { p_id: string }; Returns: Json }
+      encuesta_cliente_registrar: {
+        Args: {
+          p_branch: number
+          p_canal: string
+          p_contacto: Json
+          p_dispositivo: string
+          p_duracion: number
+          p_enc: Database["public"]["Tables"]["encuestas_cliente"]["Row"]
+          p_entrevistador: string
+          p_respuestas: Json
+        }
+        Returns: Json
+      }
       encuesta_cliente_revisar: {
         Args: { p_comentario?: string; p_decision: string; p_id: string }
         Returns: Json
       }
+      encuesta_publica: { Args: { p_token: string }; Returns: Json }
+      encuesta_publica_responder: {
+        Args: {
+          p_contacto?: Json
+          p_dispositivo?: string
+          p_duracion?: number
+          p_modo?: string
+          p_respuestas: Json
+          p_token: string
+        }
+        Returns: Json
+      }
+      encuestas_para_aplicar: { Args: never; Returns: Json }
       entregar_bolsas: {
         Args: { p_ids: number[]; p_recibido_por: string; p_vale: string }
         Returns: {
@@ -27186,6 +27428,22 @@ export type Database = {
         }
         Returns: Json
       }
+      puntos_cambio_de_cliente_nucleo: {
+        Args: {
+          p_aplicar?: boolean
+          p_customer_nuevo: number
+          p_invoice_id: number
+          p_por?: string
+          p_solicitud?: string
+        }
+        Returns: Json
+      }
+      puntos_cambio_reintentar: { Args: { p_solicitud: string }; Returns: Json }
+      puntos_cambio_resuelto_a_mano: {
+        Args: { p_nota: string; p_solicitud: string }
+        Returns: Json
+      }
+      puntos_cambios_pendientes: { Args: never; Returns: Json }
       puntos_cliente_por_documento: {
         Args: { p_documento: string; p_telefono?: string }
         Returns: {

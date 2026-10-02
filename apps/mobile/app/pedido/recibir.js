@@ -20,7 +20,9 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { avanzarEtapaDePedidoEnSala, fetchPedidoItemsAll, fetchPedidoSucursalStatus, fetchPedidosEnCurso, recibirTrasladoPedido } from '@nucleo/data/pedidos';
+import { avanzarEtapaDePedidoEnSala, fetchApoyoForPedido, fetchEmployeeByKioskPin, fetchPedidoItemsAll, fetchPedidoSucursalStatus, fetchPedidosEnCurso, recibirTrasladoPedido, upsertPedidoApoyo } from '@nucleo/data/pedidos';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import Escaner from '../../componentes/Escaner';
 import { marcarHojasRecibidas, recibirPedidoDeSucursal } from '@nucleo/data/recepcion';
 import { construirCajasEspeciales } from '@nucleo/utils/cajasEspeciales';
 import { estadoDeHojas } from '@nucleo/utils/hojasRecepcion';
@@ -96,6 +98,9 @@ export default function Recibir() {
   const [valores, setValores] = useState({});
   const [huboDiferencia, setHuboDiferencia] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  const [apoyo, setApoyo] = useState([]);
+  const [escaneando, setEscaneando] = useState(false);
+  const [avisoApoyo, setAvisoApoyo] = useState(null);
 
   const cargar = useCallback(async () => {
     const [items, { data: pss }, { data: activos }] = await Promise.all([
@@ -105,7 +110,23 @@ export default function Recibir() {
     ]);
     const fila = (activos ?? []).find((r) => r.pedido_id === pedidoId && Number(r.erp_sucursal_id) === sucId) ?? {};
     setDatos({ items: items ?? [], paginaItems: pss?.pagina_items ?? {}, paginas: pss?.paginas ?? [], recibidas: pss?.hojas_recibidas ?? [], fila });
+    const { data: ap } = await fetchApoyoForPedido(pedidoId, sucId);
+    setApoyo((ap ?? []).filter((a) => a.tipo === 'recepcion'));
   }, [pedidoId, sucId]);
+
+  // Quién ayudó a recibir: se escanean los carnés uno tras otro, como en el
+  // portal (`ApoioScanModal`). El servidor sólo reconoce gente de la sala.
+  const leerCarne = async (codigo) => {
+    const { data: emp, error } = await fetchEmployeeByKioskPin(String(codigo).toUpperCase());
+    if (error || !emp) { setAvisoApoyo(error ? mensajeAmigable(error, 'No se pudo confirmar el carné.') : 'Ese carné no es de nadie de esta sucursal.'); return false; }
+    if (apoyo.some((a) => a.employee_id === emp.id)) { setAvisoApoyo(`${shortEmployeeName(emp)} ya está anotado.`); return false; }
+    const { error: e } = await upsertPedidoApoyo({ pedido_id: pedidoId, erp_sucursal_id: sucId, employee_id: emp.id, registered_by: user?.id ?? null, tipo: 'recepcion' });
+    if (e) { setAvisoApoyo(mensajeAmigable(e, 'No se pudo registrar el apoyo.')); return false; }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    setApoyo((xs) => [...xs, { employee_id: emp.id, tipo: 'recepcion', employees: emp }]);
+    setAvisoApoyo(`${shortEmployeeName(emp)} anotado. Escanea el siguiente o cierra.`);
+    return false;
+  };
   useEffect(() => { cargar(); }, [cargar]);
 
   const derivado = useMemo(() => {
@@ -267,12 +288,23 @@ export default function Recibir() {
             })}
           </Seccion>
         ) : null}
+        <Seccion titulo={`Quién ayudó a recibir · ${apoyo.length}`}>
+          {apoyo.map((a, i) => (
+            <Text key={a.employee_id} style={{ color: colorSistema.texto, fontSize: 15, paddingVertical: 4, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
+              {shortEmployeeName(a.employees ?? {})}
+            </Text>
+          ))}
+          <BotonGrande texto="Escanear el carné de quien ayudó" borde onPress={() => { setAvisoApoyo(null); setEscaneando(true); }} />
+        </Seccion>
         <Vidrio radio={18}>
           <Text style={{ color: colorSistema.texto2, fontSize: 13, padding: 12 }}>
             Cuenta cada hoja con su papel. Si algo no cuadra, quedará como diferencia y se resuelve con Bodega.
           </Text>
         </Vidrio>
       </ScrollView>
+      <Escaner visible={escaneando} titulo="Quién ayudó a recibir" ayuda="Apunta al código del carné; puedes escanear varios seguidos"
+        onCodigo={leerCarne} onCerrar={() => setEscaneando(false)}
+        pie={avisoApoyo ? <Text style={{ color: '#fff', fontSize: 14, textAlign: 'center' }}>{avisoApoyo}</Text> : null} />
     </>
   );
 }

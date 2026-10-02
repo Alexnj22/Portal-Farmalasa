@@ -99,6 +99,15 @@ export default function Pedidos() {
                   ) : null}
                   {puede && etapa === 'transito' ? <BotonGrande texto="Confirmar que llegó" color={MARCA.azul} onPress={() => ir('/pedido/llegada', r)} /> : null}
                   {puede && etapa === 'contando' ? <BotonGrande texto="Contar lo que llegó" color={MARCA.verde} onPress={() => ir('/pedido/recibir', r)} /> : null}
+                  {/* Lo poco frecuente —menos de diez veces al mes— sigue en el
+                      portal, dentro de la app: la llegada de un reenvío y
+                      resolver diferencias con Bodega. */}
+                  {(r.reenvios_historial ?? []).some((c) => c.sent_at && !c.arrived_at) ? (
+                    <BotonGrande texto="Llegó el reenvío (portal)" borde onPress={() => router.push({ pathname: '/portal', params: { ruta: '/pedidos', nombre: 'Pedidos' } })} />
+                  ) : null}
+                  {r.diferencias_reportadas_at && !r.confirmado_correccion_at ? (
+                    <BotonGrande texto="Ver las diferencias (portal)" borde color={MARCA.ambar} onPress={() => router.push({ pathname: '/portal', params: { ruta: '/pedidos', nombre: 'Pedidos' } })} />
+                  ) : null}
                 </View>
               </Vidrio>
             </View>

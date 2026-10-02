@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1138.0 — App: Pedidos — apoyo con carné
+
+- **Pedidos: quién ayudó a recibir** se anota en el teléfono escaneando los
+  carnés uno tras otro (145 veces y 19 personas en 30 días), como el
+  `ApoioScanModal` del portal: el servidor sólo reconoce gente de la sala.
+- **La llegada de un reenvío y las diferencias con Bodega** (menos de diez
+  veces al mes) tienen un acceso directo al portal desde la tarjeta del pedido.
+
 ## v2.1137.0 — App: Pedidos — confirmar llegada y contar
 
 **Pedidos en la app** (34 personas al mes): lo que la sala hace al recibir.

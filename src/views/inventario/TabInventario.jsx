@@ -21,6 +21,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hoySV } from '@nucleo/utils/fecha';
+import { loteAMostrar, unidadesDeUbicacion, unidadesVencidasPorProducto, vencimientoDe } from '@nucleo/utils/inventarioDeSala';
 
 import { ERP_NAMES } from '@nucleo/constants/erp';
 // Orden numérico a propósito en esta pestaña (no el de despacho de `ERP_ORDEN`).
@@ -36,33 +37,20 @@ const ERP_VARIANTE = {
     7: 'neutral',
 };
 
-function parseFactor(detalle) {
-    if (!detalle) return 1;
-    const m = detalle.match(/[Xx](\d+)/);
-    return m ? parseInt(m[1], 10) : 1;
-}
-
-function expiryInfo(fecha) {
-    if (!fecha) return null;
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const days = Math.ceil((new Date(fecha) - today) / 86400000);
-    return { days, expired: days < 0 };
-}
-
 function ExpiryCell({ fecha }) {
     if (!fecha) return <span className="text-content-3 text-xs">—</span>;
-    const info = expiryInfo(fecha);
+    const info = vencimientoDe(fecha);
     if (!info) return null;
-    if (info.expired) return (
+    if (info.vencido) return (
         <Badge variant="danger" icon={AlertTriangle} uppercase={false}>{fecha}</Badge>
     );
-    if (info.days <= 30) return (
+    if (info.franja === 'pronto') return (
         <span className="inline-flex items-center gap-1 text-caption font-semibold text-warning-text bg-warning/10 border border-warning/30 px-2 py-0.5 rounded-full whitespace-nowrap">
-            <Calendar size={9} /> {fecha} <span className="opacity-70">{info.days}d</span>
+            <Calendar size={9} /> {fecha} <span className="opacity-70">{info.dias}d</span>
         </span>
     );
-    if (info.days <= 90)  return <span className="text-xs font-semibold text-warning-text whitespace-nowrap">{fecha}</span>;
-    if (info.days <= 180) return (
+    if (info.franja === 'trimestre') return <span className="text-xs font-semibold text-warning-text whitespace-nowrap">{fecha}</span>;
+    if (info.franja === 'semestre') return (
         <Badge variant="chart-4" icon={Calendar} uppercase={false}>{fecha}</Badge>
     );
     return <span className="text-xs text-content-3 whitespace-nowrap">{fecha}</span>;
@@ -150,8 +138,7 @@ function TablaUbicaciones({ filas, titulo, vencidos = false }) {
             <DataTable columns={COLS_UBICACION} plano dense minWidth="520px"
                 movil={{ identidad: 'presentacion', ancla: 'unidades', chips: ['lote', 'vence'] }}>
                 {filas.map((row, j) => {
-                    const factor   = parseFactor(row.detalle);
-                    const rowUnits = (row.cantidad || 0) * factor;
+                    const rowUnits = unidadesDeUbicacion(row);
                     return (
                         <DataRow key={j} index={j}>
                             <DataCell>
@@ -226,13 +213,7 @@ export default function TabInventario({ searchTerm = '' }) {
         let cancelled = false;
         fetchAllVencidosInventory(selectedErp).then((data) => {
             if (cancelled) return;
-            const map = {};
-            for (const row of (data || [])) {
-                const key = `${row.erp_sucursal_id}_${row.erp_product_id}`;
-                const factor = parseFactor(row.detalle);
-                map[key] = (map[key] || 0) + (row.cantidad || 0) * factor;
-            }
-            setVencidosMap(map);
+            setVencidosMap(unidadesVencidasPorProducto(data));
         });
         return () => { cancelled = true; };
     }, [selectedErp]);
@@ -492,16 +473,13 @@ export default function TabInventario({ searchTerm = '' }) {
                         const key        = `${group.erp_sucursal_id}_${group.erp_product_id}`;
                         const isExpanded = expandedKey === key;
                         const lab        = group.laboratorio ?? null;
-                        const numLotes   = Number(group.num_lotes);
-                        const loteDisplay = numLotes === 0 ? '—'
-                            : numLotes === 1 ? (group.lote_sample || '—')
-                            : 'VARIOS';
+                        const loteDisplay = loteAMostrar(group);
                         const pres  = group.presentaciones || [];
                         const units = Number(group.total_unidades);
-                        const info       = group.earliest_venc ? expiryInfo(group.earliest_venc) : null;
-                        const hasExpired = info?.expired;
-                        const isSoon     = info && !info.expired && info.days <= 30;
-                        const isSixMo    = info && !info.expired && info.days > 30 && info.days <= 180;
+                        const info       = vencimientoDe(group.earliest_venc);
+                        const hasExpired = info?.vencido;
+                        const isSoon     = info?.franja === 'pronto';
+                        const isSixMo    = info?.franja === 'trimestre' || info?.franja === 'semestre';
 
                         return (
                             <React.Fragment key={key}>

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1148.0 — App: Inventario nativo
+
+- **App: Inventario nativo.** Lo que hay en una sala producto por producto: unidades, lote, laboratorio y lo que vence primero, con las cifras de vencidos, por vencer en seis meses, productos e inversión. «Todo / Por vencer / Vencidos» en el segmentado; sala, área de vencidos de Bodega, categoría y orden en el menú; búsqueda en la barra. Arranca en la sala de quien la abre y tocar un producto abre su ficha con los lotes por sala.
+- **Núcleo:** el factor de la presentación, las franjas de vencimiento (en días de El Salvador), el lote que se muestra y las unidades vencidas pasan de `TabInventario` a `src/utils/inventarioDeSala.js`, con su prueba.
 ## v2.1147.0 — Encuestas a clientes: incentivos (puntos y muestra médica)
 
 Fase 3 de cuatro: quien deja su teléfono con consentimiento recibe el

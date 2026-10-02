@@ -121,7 +121,9 @@ export default function TabPendientes({ filterBranch, setFilterBranch, branchOpt
                 skeletonRows={6}
                 empty={{ icon: Hourglass, message: searchTerm ? 'Nadie con ese dato tiene aplicaciones pendientes' : 'Ninguna pendiente: todo lo pagado ya se aplicó' }}
                 minWidth="680px"
-                movil={{ identidad: 'cliente', ancla: 'monto', chips: ['producto', 'pagada'] }}
+                /* `acciones: true`: «Elegir» es la única acción y tiene que verse en el
+                   teléfono — es justo donde la sala marca lo que aplicó. */
+                movil={{ identidad: 'cliente', ancla: 'monto', chips: ['producto', 'pagada'], acciones: true }}
             >
                 {(filas || []).map((p, i) => {
                     const dias = diasDesde(p.pagada_at);

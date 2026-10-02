@@ -307,7 +307,7 @@ BEGIN
     RAISE EXCEPTION 'Falta elegir qué inyecciones de la venta se pagan.';
   END IF;
   SELECT array_agg(DISTINCT (e->>'invoice_id')::bigint) INTO v_ids FROM jsonb_array_elements(p_items) e;
-  IF array_length(v_ids, 1) > 1 THEN RAISE EXCEPTION 'Un cobro se amarra a una sola venta.'; END IF;
+  IF array_length(v_ids, 1) > 1 THEN RAISE EXCEPTION 'Un cobro se asigna a una sola venta.'; END IF;
 
   SELECT id, branch_id, correlativo INTO v_venta FROM sales_invoices WHERE id = v_ids[1] AND public.venta_valida(estado);
   IF v_venta.id IS NULL THEN RAISE EXCEPTION 'Esa venta no existe o está anulada.'; END IF;
@@ -482,10 +482,14 @@ BEGIN
     RAISE EXCEPTION 'FORBIDDEN' USING ERRCODE = '42501';
   END IF;
   -- Sin alcance total, sólo en la sala propia (igual que `operar-caja`).
+  -- Con alcance total: la sala que se indique, y si no se indica ninguna, la
+  -- de cada aplicación (donde se pagó) — NUNCA la de la ficha de quien marca:
+  -- medido en pruebas, canjear desde la vista con «todas las salas» dejaba la
+  -- aplicación «en Administración».
   IF coalesce((SELECT auth_module_scope('caja_vales')), '') <> 'ALL' THEN
     v_sala := (SELECT auth_employee_branch_id());
   ELSE
-    v_sala := coalesce(p_branch_id, (SELECT auth_employee_branch_id()));
+    v_sala := p_branch_id;
   END IF;
   UPDATE inyeccion_aplicaciones a
      SET aplicada_at = now(), aplicada_por = v_emp, aplicada_branch_id = coalesce(v_sala, a.branch_id)
@@ -596,7 +600,7 @@ BEGIN
     RAISE EXCEPTION 'Ese cobro no es una aplicación vigente.';
   END IF;
   IF EXISTS (SELECT 1 FROM inyeccion_aplicaciones WHERE cobro_id = p_cobro_id) THEN
-    RAISE EXCEPTION 'Ese cobro ya está amarrado.';
+    RAISE EXCEPTION 'Ese cobro ya está asignado.';
   END IF;
   SELECT id, branch_id, customer_id, cliente INTO v_venta FROM sales_invoices
    WHERE id = p_invoice_id AND public.venta_valida(estado);
@@ -635,7 +639,7 @@ BEGIN
     RAISE EXCEPTION 'FORBIDDEN' USING ERRCODE = '42501';
   END IF;
   IF EXISTS (SELECT 1 FROM inyeccion_aplicaciones WHERE cobro_id = p_cobro_id AND vinculada_por IS NULL) THEN
-    RAISE EXCEPTION 'Ese cobro se amarró al cobrarse; no se deshace desde acá.';
+    RAISE EXCEPTION 'Ese cobro se asignó al cobrarse; no se deshace desde acá.';
   END IF;
   DELETE FROM inyeccion_aplicaciones WHERE cobro_id = p_cobro_id AND vinculada_por IS NOT NULL;
   GET DIAGNOSTICS v_n = ROW_COUNT;

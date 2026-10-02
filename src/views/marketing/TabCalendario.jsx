@@ -86,7 +86,7 @@ export default function TabCalendario({
             {semanas.map((semana, i) => (
                 <div key={i} className="grid grid-cols-7 border-b border-border-card last:border-b-0">
                     {semana.map((d, j) => {
-                        if (!d) return <div key={j} className="min-h-[132px] border-r border-border-card last:border-r-0 bg-surface-card-hover opacity-40" />;
+                        if (!d) return <div key={j} className="min-h-[132px] border-r border-border-card last:border-r-0" />;
                         const lista = porDia[d] || [];
                         const esHoy = d === hoy;
                         return (

@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1153.2 — Marketing: días fuera del mes sin resaltar; la idea vacía no se marca en rojo
+
+Visto en el navegador: las casillas antes del día 1 se veían MÁS claras que
+los días del mes (parecían resaltadas) y el campo «Idea» nacía con borde rojo
+de requerido antes de escribir nada. El botón ya se apaga sin título.
+
 ## v2.1153.1 — Min·Max: descartar borradores y recalcular en un paso
 
 Si la sala tiene borradores sin revisar, «Recalcular» ya no sólo avisa en rojo:

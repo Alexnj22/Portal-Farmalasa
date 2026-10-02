@@ -121,7 +121,7 @@ export default function TabIdeas({
                     </div>
                 </header>
                 <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)]">
-                    <PortalInput label="Idea" name="idea_titulo" value={form.titulo} required
+                    <PortalInput label="Idea" name="idea_titulo" value={form.titulo}
                         onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))}
                         placeholder="Ej. Reel: cómo leer la etiqueta de un medicamento" />
                     <Campo rotulo="Marca">

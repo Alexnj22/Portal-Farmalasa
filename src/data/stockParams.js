@@ -348,3 +348,16 @@ export const descartarBorradoresDeMinMax = (params) => supabase.rpc('discard_sto
 
 /** Publica el borrador de MIN·MAX de una sala (o de algunos productos). */
 export const publicarMinMax = (params) => supabase.rpc('publish_stock_params', params);
+
+/**
+ * ¿La sala ya tiene MIN·MAX publicado? Es lo que decide si un cambio va EN VIVO
+ * o al borrador (`planDeGuardadoMinMax`). El portal lo deduce de la tabla de
+ * la sala entera que ya tiene cargada; la ficha de un producto en la app no la
+ * tiene, así que pregunta por una sola fila.
+ */
+export async function salaTieneMinMaxPublicado(erpSucursalId) {
+    const { data, error } = await supabase.from('product_stock_params')
+        .select('erp_product_id').eq('erp_sucursal_id', erpSucursalId).not('published_by', 'is', null).limit(1);
+    if (error) return { publicado: null, error };
+    return { publicado: (data ?? []).length > 0, error: null };
+}

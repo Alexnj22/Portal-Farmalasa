@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1142.0 — App: Mín·Máx — ficha de producto por sala
+
+**Mín·Máx en la app**: la ficha de UN producto en todas las salas
+(`app/minmax-producto.js`) — existencia, MIN·MAX vigente, el borrador si lo
+hay y la alerta. Quien administra toca una sala y ajusta su par, o lo pone en
+0. La revisión de la sala entera (publicar, descartar en lote, la matriz) sigue
+en el portal y tiene un acceso directo.
+
+- **La decisión de cómo se guarda pasó al núcleo** (`utils/minmaxGuardar.js`,
+  con pruebas) y el portal la usa en `saveDraftPair`: Bodega guarda un delta
+  sobre la suma de las salas (nunca por debajo), una sala publicada y sin
+  borrador se edita en vivo, si no va al borrador, y un A o B a 0·0 pregunta.
+  Mismo comportamiento que antes.
+- `data/stockParams.salaTieneMinMaxPublicado`: la ficha pregunta por una fila
+  en vez de cargar la sala entera.
+- Probado en el entorno de pruebas: un cambio en Salud 1 quedó en vivo con su
+  bitácora; se devolvió al valor original.
 ## v2.1141.1 — puntos: el canje de una venta anulada deja de salir en Avisos
 
 Pregunta del usuario: «si se anuló, ¿por qué sigue saliendo?». Anular la

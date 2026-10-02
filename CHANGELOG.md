@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1160.0 — App: Efectivo completo
+
+- **App: Efectivo completo.** El menú «Efectivo» abre la pantalla nativa, y desde ahí las tres secciones que faltaban en el teléfono: **Cortes**, **Diferencias** y **Movimientos**.
+  - **Diferencias:** los días con faltante o sobrante (por separado: no se restan entre sí), cómo quedó cada uno y qué falta hacer —sin resolver, por confirmar, por cobrar, por anotar, acumulado—, con el desglose de lo recuperado y quién responde. Mes, estado y sala en el menú. Tocar un día abre su ficha con los cortes que no cuadraron y lo que se hizo con cada uno; cada corte abre su detalle. Asignar responsables o una causa con comprobante sigue en el portal.
+  - **Movimientos:** todo lo que entró y salió de las cajas —movimientos de la caja, cobros de crédito del portal y salidas pagadas con una bolsa— con lo editado después de guardarse y lo que ya no está en la caja marcado. Período, estado y sala en el menú; entradas/salidas en el segmentado; búsqueda.
+- **Núcleo:** cómo se arma y se filtra la lista de movimientos pasa de `MovimientosDeCaja` a `src/utils/movimientosDeCaja.js`, con su prueba.
 ## v2.1159.0 — Cuentas por cobrar: filtros de orden, vendedor y por vencer
 
 - **Ordenar:** más antiguos (como siempre), más recientes —para encontrar lo que se acaba de vender— o mayor saldo.

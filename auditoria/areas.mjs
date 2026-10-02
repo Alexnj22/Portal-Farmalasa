@@ -460,7 +460,9 @@ export const AREAS = [
                  // vigía de irregularidades (2026-10-01).
                  'puntos_irregularidad',
                  // Cada venta que cambió de cliente con sus puntos (2026-10-01).
-                 'puntos_cambio_cliente'],
+                 'puntos_cambio_cliente',
+                 // Los traspasos de puntos que no entraron al aprobar; se reintentan.
+                 'puntos_cambio_pendiente'],
         edge: ['sync-dte-sales', 'sync-wfm-sales', 'check-sales-alerts', 'check-sales-reconciliation',
                'backfill-dte-sales', 'heal-dte-sync',
                // El programa de puntos vive en el portal desde el 2026-10-01:

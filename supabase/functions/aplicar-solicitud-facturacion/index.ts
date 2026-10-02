@@ -651,15 +651,35 @@ Deno.serve(async (req) => {
       if (!Number.isFinite(nuevo) || nuevo <= 0) {
         avisos.push("Los puntos no se movieron: la solicitud no trae la ficha del cliente nuevo.");
       } else {
-        const { data, error: ptsErr } = await admin.rpc("puntos_cambio_de_cliente", {
-          p_invoice_id: factura.id, p_customer_nuevo: nuevo, p_aplicar: true,
-          p_solicitud: sol.id, p_por: aprobador.id,
-        });
-        if (ptsErr) {
-          console.error(`puntos_cambio_de_cliente (factura ${factura.id}):`, ptsErr.message);
-          avisos.push(`Los puntos no se movieron: ${ptsErr.message}`);
-        } else {
-          puntos = data;
+        /* Tres intentos seguidos (2026-10-01, pedido del usuario: «así lo
+         * reintenta y si no, me avisa»). El traspaso es una sola transacción:
+         * un intento fallido no deja nada a medias y uno que ya entró contesta
+         * «ya es suyo», así que reintentar nunca lo hace dos veces. */
+        let ultimoError = "";
+        for (let intento = 1; intento <= 3; intento++) {
+          const { data, error: ptsErr } = await admin.rpc("puntos_cambio_de_cliente", {
+            p_invoice_id: factura.id, p_customer_nuevo: nuevo, p_aplicar: true,
+            p_solicitud: sol.id, p_por: aprobador.id,
+          });
+          if (!ptsErr) { puntos = data; break; }
+          ultimoError = ptsErr.message;
+          console.error(`puntos_cambio_de_cliente (factura ${factura.id}, intento ${intento}):`, ultimoError);
+          if (intento < 3) await new Promise((r) => setTimeout(r, intento * 1000));
+        }
+        if (puntos === undefined) {
+          /* No entró: queda pendiente y el aviso de cada 5 minutos lo sigue
+           * intentando; a los 15 minutos sin entrar le avisa a quien vigila los
+           * puntos. Si ni esta fila se pudiera escribir, el aviso igual lo
+           * encuentra comparando la solicitud con la venta. */
+          const { error: pendErr } = await admin.from("puntos_cambio_pendiente").upsert({
+            solicitud_id: sol.id, invoice_id: factura.id, customer_nuevo: nuevo, por: aprobador.id,
+            intentos: 3, ultimo_error: ultimoError, ultimo_intento_at: new Date().toISOString(),
+          }, { onConflict: "solicitud_id", ignoreDuplicates: true });
+          if (pendErr) console.error(`puntos_cambio_pendiente (solicitud ${sol.id}):`, pendErr.message);
+          avisos.push(
+            `Los puntos todavía no se movieron (${ultimoError}). Se reintentan solos cada 5 minutos; ` +
+            "si no entran, llega un aviso para hacerlo a mano.",
+          );
         }
       }
     }

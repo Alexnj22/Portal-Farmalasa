@@ -60,6 +60,7 @@ import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import AsignarCuentaModal from './puntos/AsignarCuentaModal';
 import ClientePuntosModal from './puntos/ClientePuntosModal';
+import TraspasosPendientes from './puntos/TraspasosPendientes';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
@@ -101,6 +102,7 @@ const AVISOS = {
     canje_grande:                { rotulo: 'Canje grande', variante: 'warning', puntos: (a) => `${ptsDe(a)} canjeados` },
     canje_recien_ganado:         { rotulo: 'Canje con puntos recién ganados', variante: 'warning', puntos: (a) => `${ptsDe(a)} canjeados` },
     cambio_cliente:              { rotulo: 'Compra pasada de otro cliente', variante: 'danger', puntos: (a) => `${ptsDe(a)} recibidos` },
+    cambio_cliente_fallido:      { rotulo: 'Puntos de un cambio de cliente sin mover', variante: 'danger', puntos: (a) => `${ptsDe(a)} sin mover` },
 };
 // Un tipo que la pantalla todavía no conoce se muestra igual, no desaparece.
 const avisoDe = (a) => AVISOS[a.tipo] ?? { rotulo: 'Movimiento para revisar', variante: 'warning', puntos: ptsDe };
@@ -257,6 +259,11 @@ export default function PuntosView({ openModal }) {
                     </>
                 )}
 
+                {/* Los traspasos de puntos que no terminaron, arriba de todo: son los
+                    únicos avisos que piden hacer algo (2026-10-01). */}
+                {pestana === 'avisos' && (
+                    <TraspasosPendientes puedeResolver={hasPermission('puntos_ajustar', 'can_view')} />
+                )}
                 {pestana === 'avisos' && (
                     <DataTable
                         columns={[

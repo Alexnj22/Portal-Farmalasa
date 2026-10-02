@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1144.0 — Puntos: el traspaso de un cambio de cliente se reintenta y avisa
+
+Pedido del usuario: «¿no podríamos tener el error al momento que se descuenta y
+suma al otro? Así lo reintenta y, si no, me avisa para hacerlo manualmente».
+
+Cuando se aprueba un cambio de cliente y los puntos no logran pasar:
+1. La aprobación lo intenta **3 veces seguidas**.
+2. Si no entra, queda en `puntos_cambio_pendiente` y el aviso de cada 5 minutos
+   lo **reintenta solo**.
+3. A los **15 minutos** sin entrar, avisa al teléfono (regla 11) y en Puntos →
+   Avisos aparece arriba, con **Reintentar** y **Lo hice a mano** (este último
+   no mueve puntos: deja escrito qué se hizo y apaga los reintentos). Los dos
+   botones piden el permiso de dar y quitar puntos.
+4. **La red:** el aviso también busca solicitudes aprobadas cuya venta sigue
+   dando los puntos a otra persona aunque nadie haya anotado un error.
+
+Reintentar es seguro porque el traspaso es UNA transacción: o entra entero o no
+entra nada, y una segunda vez contesta «ya es suyo». Si el reintento entra, la
+solicitud pasa a mostrar lo que pasó con los puntos. El traspaso quedó en
+`puntos_cambio_de_cliente_nucleo` (sin guarda de rol, fuera del alcance del
+navegador) y `puntos_cambio_de_cliente` es la guarda. Probado en el entorno de
+pruebas con un fallo forzado y en la pantalla con Playwright (escritorio y
+teléfono). Migración `20261002020409`.
+
 ## v2.1143.1 — Marketing: octubre exento de los 10 días de anticipación
 
 La medida «10 días antes» marcaba tarde lo programado para los primeros días de

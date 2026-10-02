@@ -258,3 +258,20 @@ export const fetchPuntosCliente = (customerId) => rpc('puntos_panel_cliente', { 
  */
 export const fetchPuntosDelCambioDeCliente = (invoiceId, customerNuevo) =>
     rpc('puntos_cambio_de_cliente', { p_invoice_id: invoiceId, p_customer_nuevo: customerNuevo, p_aplicar: false });
+
+/** Traspasos de puntos de un cambio de cliente que no terminaron (más los resueltos de la semana). */
+export const fetchCambiosPendientes = () => rpc('puntos_cambios_pendientes');
+
+/** Vuelve a intentar un traspaso pendiente. Contesta `{ ok, error? }`: un fallo no lanza. */
+export const reintentarCambioDeCliente = async (solicitudId, contexto = {}) => {
+    const r = await rpc('puntos_cambio_reintentar', { p_solicitud: solicitudId });
+    anotar('PUNTOS_TRASPASO_REINTENTO', solicitudId, { ...contexto, ok: !!r?.ok, error: r?.error ?? null });
+    return r;
+};
+
+/** Cierra un traspaso que se resolvió a mano (con un ajuste de puntos). Exige escribir qué se hizo. */
+export const marcarCambioResueltoAMano = async (solicitudId, nota, contexto = {}) => {
+    const r = await rpc('puntos_cambio_resuelto_a_mano', { p_solicitud: solicitudId, p_nota: nota });
+    anotar('PUNTOS_TRASPASO_A_MANO', solicitudId, { ...contexto, nota: nota?.trim() || null });
+    return r;
+};

@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1153.3 — Inyecciones: el cobro de aplicación va a la venta del producto que nombra
+
+Salud 4, 30-sep: el único cobro del día, «Aplicacion de inyeccion · DEPO
+PROVERA» (18:06), aparecía en la fila de PULMO GRIP (17:55) y Depo Provera
+(17:34) figuraba «sin cobro». El nombre del producto valía 3 minutos en el
+puntaje y la venta más cercana ganaba igual.
+
+`get_inyecciones_aplicadas` ahora castiga +1000 a una venta que no tiene el
+producto que nombra el cobro: la que lo tiene siempre gana, y si ninguna lo
+tiene el cobro cae en la más cercana como antes (no se exige: 123 de 766
+detalles están escritos de forma que no coincide). La comparación va sin
+tildes, por cualquier palabra de 4+ letras del detalle o por el detalle
+entero sin espacios. Un mes, todas las salas: 327 ms.
+
 ## v2.1153.2 — Marketing: días fuera del mes sin resaltar; la idea vacía no se marca en rojo
 
 Visto en el navegador: las casillas antes del día 1 se veían MÁS claras que

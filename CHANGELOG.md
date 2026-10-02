@@ -40,8 +40,6 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 - «Amarrar» → «Asignar» en todas las pantallas.
 
 
-## v2.1157.0 — Inyecciones: el cobro de la aplicación se amarra a la venta y queda el control de lo pagado (en pruebas)
-
 ## v2.1158.0 — Inyecciones: el cobro de la aplicación se amarra a la venta y queda el control de lo pagado (en pruebas)
 
 **Sólo en el entorno de pruebas. No está en producción.**

@@ -20,7 +20,6 @@
     "contexto_de_solicitud_minmax",
     "destinatarios_de_modulo",
     "encolar_impresion",
-    "encuesta_cliente_entrevistar",
     "get_draft_cost_estimate",
     "get_inventory_cost_summary",
     "get_minmax_contexto_producto",

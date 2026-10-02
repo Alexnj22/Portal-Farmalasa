@@ -54,6 +54,26 @@ función con un hueco en una sola acción va como `deuda` hasta que se cierra.
 Tampoco ve el permiso equivocado: `pagar` con `can_view` no es un problema de
 sala, y lo cazó la lectura, no el gate.
 
+## Decisiones del usuario (2026-10-02)
+
+1. **Pedidos: sólo Bodega crea y despacha.** Los cargos de sala trabajan con
+   solicitudes y traslados, no generan pedidos. Hoy ya no ven la pestaña
+   Generar —tienen `pedidos` sólo para Historial y Rutas, que es donde reciben
+   sus cajas—, así que **no se les quita el módulo**: se cierra en la base.
+   Crear y despachar exige alcance de red en `pedidos` (Auxiliar de Bodega y
+   Jefe/a de Compras lo tienen); recibir y mover el estado, sólo la propia sala.
+2. **Jefe/a de Compras y Logística ve MIN·MAX sólo de Bodega**, no sala por
+   sala. Las otras salas las ve al desplegar un producto y dentro del pedido,
+   donde puede ver y editar lo que no se envió por regla. O sea que el
+   `minmax` en `BRANCH` es correcto, y lo que falta es el chequeo en las cinco
+   funciones que hoy le dejan elegir otra sala. **Ojo al cerrarlo:** no romper
+   el despliegue del producto ni la edición dentro del pedido — mirar qué
+   función alimenta cada una antes de acotar.
+3. **Encuestas sólo por permiso, y por ahora sólo administración.** Aplicado el
+   mismo día: se le quitó `encuestas_aplicar` a Jefe/a de Sala (6 personas).
+   `encuesta_cliente_entrevistar` pasa a `modulo-de-red` y el gate vigila que
+   ningún cargo de sala lo vuelva a recibir.
+
 ## Las fases
 
 Al cerrar cada ítem: cambiar su guarda en el manifiesto, `npm run gate:alcance`
@@ -82,7 +102,7 @@ junto con `auth_can_edit_scope_all(ARRAY['pedidos'])` (así lo hacen
 | `confirmar_envio_pedido` | es de Bodega y lo puede ejecutar un cargo de sala: exigir Bodega |
 | `trasladar-pedido-erp` · `enviar` | despacha desde Bodega sin exigir ser de Bodega (sus hermanas `devolver-…` y `no-reenviar-…` sí lo exigen) |
 | `retiro_pendientes_en_sala` | lee los traslados pendientes de otra sala |
-| `confirm_pedido` | crea un pedido para cualquier sala. **Decisión del usuario:** ¿un cargo de sala puede pedir para otra? |
+| `confirm_pedido` | crea un pedido para cualquier sala; lo puede un cargo de sala. Decisión 1: exigir alcance de red |
 
 `pedido_items` y `pedido_sucursal_status` no están en la lista de tablas
 calientes, pero **se prueba en el branch de pruebas con `execute_sql`** antes de
@@ -111,11 +131,8 @@ producción.
   hermanas.
 - Las cinco de MIN/MAX que cazó el gate (`audit_log_de_producto`,
   `get_minmax_solicitudes_de_producto`, `get_inventory_cost_summary`,
-  `productos_parados_de_sala`, `get_stagnant_inventory`). **Decisión del
-  usuario:** ¿Jefe/a de Compras y Logística va con `minmax` en ALL? Si sí, son
-  `modulo-de-red` y se cierran con una fila. Si no, llevan el chequeo de sala.
-- `encuesta_cliente_entrevistar`: `encuestas_aplicar` está en ALL para Jefe/a
-  de Sala. **Decisión del usuario:** ¿es a propósito?
+  `productos_parados_de_sala`, `get_stagnant_inventory`). Decisión 2: llevan
+  el chequeo de sala (Jefe/a de Compras sólo Bodega).
 - **Revocar a `authenticated`** (no las llama el portal):
   `save_pedido_snapshot`, `sincronizar_bitacora_dispensaciones`,
   `resumen_ventas_diario`, `verificar_hojas_pedido`, `destinatarios_de_modulo`.

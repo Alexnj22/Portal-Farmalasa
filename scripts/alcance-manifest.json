@@ -375,7 +375,7 @@
     "audit_log_de_producto": {
       "guarda": "deuda",
       "plan": "F4",
-      "motivo": "Exige `minmax`, y Jefe/a de Compras y Logística lo tiene con alcance de UNA sala: ve los de todas. Decidir si ese cargo va a ALL o agregar el chequeo de sala."
+      "motivo": "Decisión del usuario (2026-10-02): Jefe/a de Compras ve MIN·MAX sólo de Bodega, no sala por sala; las otras salas sólo al desplegar un producto y dentro del pedido. Hoy estas funciones le dejan elegir cualquier sala: llevan el chequeo de sala."
     },
     "audit_log_de_sucursal": {
       "guarda": "modulo-de-red",
@@ -409,12 +409,12 @@
     "confirm_pedido": {
       "guarda": "deuda",
       "plan": "F2",
-      "motivo": "Crea un pedido para cualquier sala; falta decidir si un cargo de sala puede pedir para otra."
+      "motivo": "Crea un pedido para cualquier sala; falta decidir si un cargo de sala puede pedir para otra. Decisión del usuario (2026-10-02): sólo Bodega crea y despacha pedidos; exigir alcance de red en `pedidos`."
     },
     "confirmar_envio_pedido": {
       "guarda": "deuda",
       "plan": "F2",
-      "motivo": "Fija lo enviado o cierra renglones de cualquier sala; es de Bodega y lo puede un cargo de sala."
+      "motivo": "Fija lo enviado o cierra renglones de cualquier sala; es de Bodega y lo puede un cargo de sala. Decisión del usuario (2026-10-02): sólo Bodega crea y despacha pedidos; exigir alcance de red en `pedidos`."
     },
     "contexto_de_solicitud_minmax": {
       "guarda": "deuda",
@@ -477,9 +477,12 @@
       "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
     },
     "encuesta_cliente_entrevistar": {
-      "guarda": "deuda",
-      "plan": "F4",
-      "motivo": "Registra una entrevista a nombre de cualquier sala; `encuestas_aplicar` está en ALL para Jefe/a de Sala — decidir."
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "encuestas_clientes",
+        "encuestas_aplicar"
+      ],
+      "motivo": "Decisión del usuario (2026-10-02): las encuestas sólo por permiso, y por ahora sólo administración (cargos de red). Se le quitó `encuestas_aplicar` a Jefe/a de Sala."
     },
     "encuesta_cliente_guardar_resumen": {
       "guarda": "modulo-de-red",
@@ -553,7 +556,7 @@
     "get_inventory_cost_summary": {
       "guarda": "deuda",
       "plan": "F4",
-      "motivo": "Exige `minmax`, y Jefe/a de Compras y Logística lo tiene con alcance de UNA sala: ve los de todas. Decidir si ese cargo va a ALL o agregar el chequeo de sala."
+      "motivo": "Decisión del usuario (2026-10-02): Jefe/a de Compras ve MIN·MAX sólo de Bodega, no sala por sala; las otras salas sólo al desplegar un producto y dentro del pedido. Hoy estas funciones le dejan elegir cualquier sala: llevan el chequeo de sala."
     },
     "get_inyecciones_aplicadas": {
       "guarda": "alcance"
@@ -599,7 +602,7 @@
     "get_minmax_solicitudes_de_producto": {
       "guarda": "deuda",
       "plan": "F4",
-      "motivo": "Exige `minmax`, y Jefe/a de Compras y Logística lo tiene con alcance de UNA sala: ve los de todas. Decidir si ese cargo va a ALL o agregar el chequeo de sala."
+      "motivo": "Decisión del usuario (2026-10-02): Jefe/a de Compras ve MIN·MAX sólo de Bodega, no sala por sala; las otras salas sólo al desplegar un producto y dentro del pedido. Hoy estas funciones le dejan elegir cualquier sala: llevan el chequeo de sala."
     },
     "get_pending_mh_invoices": {
       "guarda": "modulo-de-red",
@@ -632,7 +635,7 @@
     "get_stagnant_inventory": {
       "guarda": "deuda",
       "plan": "F4",
-      "motivo": "Exige `minmax`, y Jefe/a de Compras y Logística lo tiene con alcance de UNA sala: ve los de todas. Decidir si ese cargo va a ALL o agregar el chequeo de sala."
+      "motivo": "Decisión del usuario (2026-10-02): Jefe/a de Compras ve MIN·MAX sólo de Bodega, no sala por sala; las otras salas sólo al desplegar un producto y dentro del pedido. Hoy estas funciones le dejan elegir cualquier sala: llevan el chequeo de sala."
     },
     "get_ventas_fuera_del_libro": {
       "guarda": "alcance"
@@ -650,7 +653,7 @@
     "productos_parados_de_sala": {
       "guarda": "deuda",
       "plan": "F4",
-      "motivo": "Exige `minmax`, y Jefe/a de Compras y Logística lo tiene con alcance de UNA sala: ve los de todas. Decidir si ese cargo va a ALL o agregar el chequeo de sala."
+      "motivo": "Decisión del usuario (2026-10-02): Jefe/a de Compras ve MIN·MAX sólo de Bodega, no sala por sala; las otras salas sólo al desplegar un producto y dentro del pedido. Hoy estas funciones le dejan elegir cualquier sala: llevan el chequeo de sala."
     },
     "publish_stock_params": {
       "guarda": "alcance"
@@ -665,7 +668,7 @@
     "receive_pedido_sucursal": {
       "guarda": "deuda",
       "plan": "F2",
-      "motivo": "Marca recibido/diferencias en el pedido de cualquier sala; sólo exige pedidos.can_edit, que tienen 34 personas de sala."
+      "motivo": "Marca recibido/diferencias en el pedido de cualquier sala; sólo exige pedidos.can_edit, que tienen 34 personas de sala. Decisión (2026-10-02): la sala sólo recibe lo suyo."
     },
     "reclamar_factura_compra": {
       "guarda": "alcance"
@@ -733,7 +736,7 @@
     "update_pedido_sucursal_lifecycle": {
       "guarda": "deuda",
       "plan": "F2",
-      "motivo": "Cambia el estado del pedido de cualquier sala; sólo exige el módulo."
+      "motivo": "Cambia el estado del pedido de cualquier sala; sólo exige el módulo. Decisión (2026-10-02): la sala sólo recibe lo suyo."
     },
     "upsert_meta_manual": {
       "guarda": "modulo-de-red",

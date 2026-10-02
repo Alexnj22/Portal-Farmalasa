@@ -179,7 +179,9 @@ Deno.serve(async (req) => {
         const titulo = enCero ? 'Un canje dejó la venta en $0.00' : 'Se canjearon puntos que el cliente no tenía';
         const cuerpo = enCero
           ? `La venta ${a.documento ?? ''} se pagó entera con ${a.puntos} puntos. Una venta no puede quedar en $0.00: hay que revisarla.`
-          : `Se aplicaron ${a.pedidos} puntos de descuento y el cliente tenía ${a.tenia}. Hay que revisar la venta.`;
+          // Quién y qué venta (2026-10-01): sin eso el aviso no se puede
+          // revisar desde el teléfono, y «hay que revisar la venta» no dice cuál.
+          : `${a.cliente ?? 'Un cliente'} — venta ${a.documento ?? ''}: se aplicaron ${a.pedidos} puntos de descuento y tenía ${a.tenia}. Hay que revisar la venta.`;
         const metadata = { check_key: checkKey, invoice_id: a.invoice_id, customer_id: a.customer_id };
         if (vigia) {
           const { error: e5 } = await supabase.rpc('notify_employees', {

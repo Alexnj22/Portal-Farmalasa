@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1140.1 — puntos: el canje hecho sin saldo aparece en Avisos
+
+Reporte: el aviso «Se canjearon puntos que el cliente no tenía» llegaba, pero
+«Ver» abría la pestaña de Avisos sin esa venta.
+
+- **Causa:** con saldo **0** la salida del canje se borraba (`puntos_salida`
+  exige puntos > 0) y el panel lee el aviso de ahí. Sólo se veía el canje con
+  saldo PARCIAL. Ahora `puntos_registrar_canje` lo anota en
+  `puntos_irregularidad` (tipo `canje_sin_saldo`, misma clave que el aviso) y
+  `puntos_panel_avisos` lo muestra con lo que faltó. Se cargó el caso del
+  1-oct (Salud 2, 200 puntos).
+- **El aviso dice quién y cuál venta:** cliente y documento en el texto
+  (`puntos-motor` redesplegada, con `--no-verify-jwt` como estaba).
+
 ## v2.1140.0 — Puntos: cambiar el cliente de una venta se lleva sus puntos
 
 Pedido del usuario: «si se cambia [el cliente] en la solicitud, ¿qué pasa con

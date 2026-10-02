@@ -17,7 +17,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/bolsas-sala': true,   // no existe en el portal: las bolsas de la sala (el widget); `/bolsas` sigue siendo el módulo completo
   '/monitor-ventas': true, // el «Monitor de ventas» del portal es un modal; en la app, su pantalla
   '/ventas': true,         // la lista de facturas con sus cifras; tocar una abre la venta
-  '/cuentas-por-cobrar': true, // la cartera y la ficha de un crédito; cobrar sigue en el portal
+  '/cuentas-por-cobrar': true, // la cartera, la ficha de un crédito y el cobro
   '/inventario': true,     // lo de una sala producto por producto; tocar uno abre su ficha nativa
   '/personal': true,       // el directorio por sala; la ficha de una persona abre el portal
   '/solicitudes': true,

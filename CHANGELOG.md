@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1157.0 — App: cobrar un crédito
+
+- **App: cobrar un crédito, nativo.** «Recibir un pago» en la ficha del crédito: efectivo, transferencia, tarjeta, cheque o solicitar aprobación (con la forma real y el motivo). Con comprobante, la foto se lee sola y llena monto, fecha, número y POS; lo aplicado tiene que dar exacto el comprobante y puede repartirse entre los créditos del mismo cliente (a mano, «Todo» o «Repartir del más viejo»). Un comprobante a nombre de otro va a aprobación solo. No deja cobrar un crédito con un cobro esperando firma, ni si no se pudo comprobar eso. Confirma antes de escribir («un abono no se puede deshacer») y guarda borrador.
+- **Núcleo:** la regla del cobro —formas aceptadas, motivos de freno, reparto desde el comprobante y del más viejo, cuadre exacto y «listo para cobrar», y lo que se le manda a la caja— pasa de `DialogoAbono` a `src/utils/abonoDeCredito.js`, con su prueba. El portal cobra con la misma.
 ## v2.1156.0 — Salida de efectivo: la bolsa primero y la caja pone el resto
 
 - **Una salida ya no se traba porque ni la bolsa ni la caja alcanzan solas.** Reportado en Salud 4: una remesa de $150 con $130 en billetes en la bolsa y el resto en el cajón no se podía registrar («el cajón entra entero o no entra»). Ahora, cuando ninguno de los dos alcanza solo pero juntos sí, la bolsa da lo que tiene y la caja pone el resto, anotado como vale del turno. Si la caja alcanza sola, sigue saliendo entera de ahí; si las bolsas alcanzan, no se toca la caja.

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Minus, Plus, Search, Syringe } from 'lucide-react';
+import { Minus, Plus, RefreshCw, Syringe } from 'lucide-react';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
@@ -49,6 +49,10 @@ const MODOS = [
 ];
 
 const fechaCorta = (f) => fechaNumerica(f, { anio: false });
+/* El nombre de la factura no sirve para reclamar una pendiente cuando es el
+ * genérico de mostrador: medido en pruebas, casi todas las ventas con inyección
+ * salen a nombre de «CLIENTES VARIOS». */
+const esGenerico = (n) => !n || /^(CLIENTES? VARIOS|CLIENTE FRECUENTE|CONSUMIDOR FINAL)/i.test(String(n).trim());
 const factura = (c) => String(c || '').replace(/^0+/, '');
 
 /** − n + con blanco de dedo; `max` 0 lo apaga entero. */
@@ -77,13 +81,15 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
     const [errorVentas, setErrorVentas] = useState(null);
     const [ventaId, setVentaId] = useState(null);
     const [cuantas, setCuantas] = useState({});           // linea_num → cuántas se pagan
-    const [sinVenta, setSinVenta] = useState(false);      // «la venta no aparece todavía»
+    // Sube para volver a pedir la lista: las ventas tardan hasta un minuto en llegar.
+    const [vuelta, setVuelta] = useState(0);
 
     // ── La trajo / sin venta ──
     const [producto, setProducto] = useState('');
     const [cantidad, setCantidad] = useState(1);
 
     const [aplicarAhora, setAplicarAhora] = useState(1);
+    const [aNombreDe, setANombreDe] = useState('');
     const [enviando, setEnviando] = useState(false);
 
     // ── Ya la pagó ──
@@ -113,7 +119,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
             .then((d) => { if (vivo) setVentas(d); })
             .catch((e) => { if (vivo) { setVentas([]); setErrorVentas(mensajeAmigable(e, 'No se pudieron cargar las ventas')); } });
         return () => { vivo = false; };
-    }, [abierto, modo, sala, buscar]);
+    }, [abierto, modo, sala, buscar, vuelta]);
 
     const cargarPendientes = useCallback(() => {
         setElegidas(new Set());
@@ -135,21 +141,23 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
         const conSaldo = (v.renglones || []).filter((r) => r.disponibles > 0);
         setCuantas(conSaldo.length === 1 ? { [conSaldo[0].linea_num]: 1 } : {});
         setAplicarAhora(1);
+        setANombreDe(esGenerico(v.cliente) ? '' : v.cliente);
     };
 
-    const origen = modo === 'TRAIDA' ? 'TRAIDA' : (sinVenta ? 'SIN_VENTA' : 'COMPRADA');
+    const origen = modo === 'TRAIDA' ? 'TRAIDA' : 'COMPRADA';
     const precio = precios ? (origen === 'TRAIDA' ? precios.TRAIDA : precios.COMPRADA) : null;
     const items = useMemo(() => Object.entries(cuantas)
         .filter(([, n]) => n > 0)
         .map(([linea, n]) => ({ invoice_id: ventaId, linea_num: Number(linea), cantidad: n })), [cuantas, ventaId]);
     const total = origen === 'COMPRADA' ? items.reduce((s, i) => s + i.cantidad, 0) : cantidad;
     const monto = precio != null ? Math.round(precio * total * 100) / 100 : null;
-    // Sin venta no hay a quién dejarle pendientes: se cobra y queda suelto.
-    const llevaPendientes = origen !== 'SIN_VENTA';
 
+    // Lo que queda pagado sin aplicar necesita a nombre de quién: sin eso no hay
+    // a quién dárselo cuando vuelva (pedido del usuario: «que haya un control»).
+    const quedan = total - Math.min(aplicarAhora, total);
     const valido = precio != null && total > 0 && !!sala && (
         origen === 'COMPRADA' ? !!venta && items.length > 0 : producto.trim().length > 2
-    );
+    ) && (quedan === 0 || aNombreDe.trim().length >= 3);
 
     const cuerpoDeCobrar = useRef(null);
     cuerpoDeCobrar.current = async () => {
@@ -161,7 +169,8 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                 aplicacion: {
                     origen,
                     ...(origen === 'COMPRADA' ? { items } : { producto: producto.trim(), cantidad }),
-                    aplicar_ahora: llevaPendientes ? Math.min(aplicarAhora, total) : 0,
+                    aplicar_ahora: Math.min(aplicarAhora, total),
+                    cliente: quedan > 0 ? aNombreDe.trim() : null,
                 },
             });
         } catch (e) {
@@ -184,7 +193,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
         setEnviando(true);
         try {
             const ids = [...elegidas];
-            const n = await aplicarPendientes(ids);
+            const n = await aplicarPendientes(ids, sala);
             useStaffStore.getState().appendAuditLog('INYECCION_APLICADA', ids.join(','), { aplicaciones: n, sala });
             showToast(n === 1 ? 'Aplicación marcada' : `${n} aplicaciones marcadas`, 'Quedan como aplicadas por ti.', 'success');
             await cargarPendientes();
@@ -224,15 +233,30 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                 {errorPrecios && <Notice variant="danger">{errorPrecios}</Notice>}
 
                 <SegmentedControl options={MODOS} value={modo} label="Cómo se paga" layout="block" columns={3}
-                    onChange={(m) => { setModo(m); setSinVenta(false); }} />
+                    onChange={setModo} />
 
-                {modo === 'COMPRADA' && !sinVenta && (
+                {modo === 'COMPRADA' && (
                     <div className="space-y-3">
-                        <SearchInput value={texto} onChange={setTexto} placeholder="Cliente o número de factura" />
+                        <SearchInput value={texto} onChange={setTexto} placeholder="Cliente, factura o inyección" />
+                        <div className="flex items-center justify-between gap-2">
+                            <p className="text-caption font-black uppercase tracking-widest text-content-2">
+                                Con aplicaciones por pagar · últimos 7 días
+                            </p>
+                            {/* Sin salida para cobrar «sin venta» (usuario, 2026-10-02):
+                                toda aplicación comprada queda asignada a su venta. Una
+                                venta recién hecha tarda hasta un minuto en llegar. */}
+                            <Button variant="ghost" size="sm" icon={RefreshCw}
+                                onClick={() => { setVentas(null); setVuelta((n) => n + 1); }}>
+                                Actualizar
+                            </Button>
+                        </div>
                         {errorVentas && <Notice variant="danger">{errorVentas}</Notice>}
                         {ventas == null ? <LoadingState /> : ventas.length === 0 ? (
                             <p className="text-body-sm text-content-3">
-                                {buscar ? 'Ninguna venta con inyección coincide.' : 'No hay ventas con inyección en los últimos días.'}
+                                {buscar
+                                    ? 'Ninguna venta con aplicaciones por pagar coincide.'
+                                    : 'No hay ventas con aplicaciones por pagar en los últimos 7 días.'}
+                                {' '}Si la venta se acaba de hacer, espera un minuto y toca «Actualizar».
                             </p>
                         ) : (
                             <ul className="space-y-2 max-h-[45vh] overflow-y-auto">
@@ -293,26 +317,11 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                 ))}
                             </div>
                         )}
-
-                        <button type="button" onClick={() => { setSinVenta(true); setVentaId(null); }}
-                            className="text-caption underline text-content-3 min-h-[var(--tap-min)]">
-                            La venta no aparece todavía
-                        </button>
                     </div>
                 )}
 
-                {(modo === 'TRAIDA' || sinVenta) && (
+                {modo === 'TRAIDA' && (
                     <div className="space-y-3">
-                        {sinVenta && (
-                            <Notice variant="warning" icon={Search}>
-                                Se cobra como comprada aquí y queda <b>sin amarrar a la venta</b>: supervisión la amarra
-                                después. Úsalo sólo si la venta acaba de hacerse y todavía no aparece.
-                                <button type="button" onClick={() => setSinVenta(false)}
-                                    className="block mt-1 underline font-bold min-h-[var(--tap-min)]">
-                                    Volver a buscar la venta
-                                </button>
-                            </Notice>
-                        )}
                         <PortalInput label="Qué inyección" value={producto} maxLength={40} icon={Syringe}
                             onChange={(e) => setProducto(e.target.value)} placeholder="Neurobion 25000" />
                         <div className="flex items-center justify-between gap-3">
@@ -322,23 +331,26 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                     </div>
                 )}
 
-                {modo !== 'CANJEAR' && llevaPendientes && total > 0 && (
+                {modo !== 'CANJEAR' && total > 0 && (
                     <div className="flex items-center justify-between gap-3">
                         <div>
                             <p className="text-body-sm text-content-2">Se aplican ahora</p>
                             <p className="text-caption text-content-3">
-                                {(() => {
-                                    const quedan = total - Math.min(aplicarAhora, total);
-                                    if (quedan <= 0) return 'No queda ninguna pendiente';
-                                    return quedan === 1
-                                        ? '1 queda pendiente a nombre del cliente'
-                                        : `${quedan} quedan pendientes a nombre del cliente`;
-                                })()}
+                                {quedan <= 0 ? 'No queda ninguna pendiente'
+                                    : quedan === 1 ? '1 queda pendiente a nombre del cliente'
+                                        : `${quedan} quedan pendientes a nombre del cliente`}
                             </p>
                         </div>
                         <Contador etiqueta="se aplican ahora" valor={Math.min(aplicarAhora, total)} max={total}
                             onChange={setAplicarAhora} />
                     </div>
+                )}
+
+                {modo !== 'CANJEAR' && total > 0 && quedan > 0 && (
+                    <PortalInput label="A nombre de" value={aNombreDe} maxLength={80}
+                        onChange={(e) => setANombreDe(e.target.value)}
+                        placeholder="nombre del cliente, para cuando vuelva"
+                        helperText={aNombreDe.trim().length < 3 ? 'Obligatorio cuando queda alguna pendiente.' : undefined} />
                 )}
 
                 {modo !== 'CANJEAR' && monto != null && total > 0 && (

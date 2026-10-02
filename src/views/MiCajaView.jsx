@@ -1220,7 +1220,7 @@ export default function MiCajaView({ comoPestana = false }) {
                                     sala, monto, clave, tipo: 'APLICACION', aplicacion,
                                     concepto: tipo?.etiqueta || 'Aplicacion de inyeccion',
                                 }),
-                                aplicacion.aplicar_ahora > 0 || aplicacion.origen === 'SIN_VENTA'
+                                aplicacion.aplicar_ahora > 0
                                     ? 'Aplicación cobrada.'
                                     : 'Aplicación cobrada. Queda pendiente a nombre del cliente.',
                             );
@@ -1251,7 +1251,7 @@ export default function MiCajaView({ comoPestana = false }) {
                 entra ocupado={ocupado} sala={sala} userId={user?.id}
                 tipos={tiposDeCaja}
                 // Dos tipos llevan su propio diálogo: el abono (comprobante) y la
-                // aplicación de inyección (se amarra a la venta). Lo decide la
+                // aplicación de inyección (se asigna a la venta). Lo decide la
                 // bandera del catálogo; acá sólo se elige cuál de los dos.
                 onComprobante={(t) => setDialogo(t?.codigo === 'APLICACION' ? 'aplicacion' : 'abono')}
                 onClose={() => setDialogo(null)}

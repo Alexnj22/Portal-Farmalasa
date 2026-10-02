@@ -123,11 +123,15 @@ GRANT SELECT ON public.inyeccion_aplicaciones TO authenticated;
 GRANT ALL ON public.inyeccion_aplicaciones TO service_role;
 CREATE POLICY bloqueo_global ON public.inyeccion_aplicaciones AS RESTRICTIVE
   FOR ALL TO authenticated USING ((SELECT public.auth_no_bloqueado()));
--- Lo ve quien ve la caja (su sala o todas) y supervisión desde Inyecciones.
--- Las escrituras van SOLO por las funciones de abajo.
+-- Lo ve quien ve la vista Inyecciones (su sala o todas, según el alcance) y
+-- quien opera una caja (su sala o todas). Las escrituras van SOLO por las
+-- funciones de abajo.
 CREATE POLICY inyeccion_aplicaciones_select ON public.inyeccion_aplicaciones
   FOR SELECT TO authenticated USING (
-    (SELECT public.auth_has_module_permission('ventas_tab_inyecciones', 'can_view'))
+    ((SELECT public.auth_has_module_permission('inyecciones', 'can_view'))
+     AND ((SELECT public.auth_module_scope('inyecciones')) = 'ALL'
+          OR branch_id = (SELECT public.auth_employee_branch_id())
+          OR aplicada_branch_id = (SELECT public.auth_employee_branch_id())))
     OR ((SELECT public.auth_has_module_permission('caja_vales', 'can_view'))
         AND ((SELECT public.auth_module_scope('caja_vales')) = 'ALL'
              OR branch_id = (SELECT public.auth_employee_branch_id())))
@@ -231,9 +235,13 @@ BEGIN
   WHERE si.branch_id = p_branch_id
     AND si.fecha >= (now() AT TIME ZONE 'America/El_Salvador')::date - greatest(least(coalesce(p_dias, 7), 31), 0)
     AND public.venta_valida(si.estado)
-    AND (v_buscar IS NULL OR upper(si.cliente) LIKE '%' || v_buscar || '%' OR si.correlativo LIKE '%' || v_buscar || '%')
     AND EXISTS (SELECT 1 FROM sales_invoice_items ii
-                WHERE ii.invoice_id = si.id AND public.es_inyectable(ii.descripcion));
+                WHERE ii.invoice_id = si.id AND public.es_inyectable(ii.descripcion)
+                  -- Se busca por cliente, por factura o por la INYECCIÓN.
+                  AND (v_buscar IS NULL
+                       OR upper(si.cliente) LIKE '%' || v_buscar || '%'
+                       OR si.correlativo LIKE '%' || v_buscar || '%'
+                       OR upper(ii.descripcion) LIKE '%' || v_buscar || '%'));
 
   RETURN coalesce((
     SELECT json_agg(v ORDER BY v.fecha DESC, v.hora DESC NULLS LAST, v.id DESC)
@@ -251,6 +259,9 @@ BEGIN
       LEFT JOIN employees ev ON ev.code = si.cod_vendedor
       WHERE si.id = ANY (v_ids)
       GROUP BY si.id, ev.name, ev.id
+      -- Sólo las que todavía tienen algo por pagar: una venta ya pagada entera
+      -- no es una opción, es ruido en la lista (pedido del usuario).
+      HAVING sum(r.disponibles) > 0
       ORDER BY si.fecha DESC, si.hora DESC NULLS LAST
       LIMIT 80
     ) v
@@ -279,21 +290,17 @@ DECLARE
   v_falta    text;
   v_venta    record;
 BEGIN
-  -- COMPRADA_SUELTA: se compró aquí pero la venta todavía no llegó al portal.
-  -- Se cobra como comprada y queda sin amarrar (ver `operar-caja`).
-  IF p_origen NOT IN ('COMPRADA', 'TRAIDA', 'COMPRADA_SUELTA') THEN RAISE EXCEPTION 'Falta si la inyección se compró aquí o la trajo el cliente.'; END IF;
-  SELECT precio INTO v_precio FROM inyeccion_precios
-   WHERE origen = CASE WHEN p_origen = 'COMPRADA_SUELTA' THEN 'COMPRADA' ELSE p_origen END;
+  IF p_origen NOT IN ('COMPRADA', 'TRAIDA') THEN RAISE EXCEPTION 'Falta si la inyección se compró aquí o la trajo el cliente.'; END IF;
+  SELECT precio INTO v_precio FROM inyeccion_precios WHERE origen = p_origen;
   IF v_precio IS NULL THEN RAISE EXCEPTION 'No hay precio para %.', p_origen; END IF;
 
-  IF p_origen IN ('TRAIDA', 'COMPRADA_SUELTA') THEN
+  IF p_origen = 'TRAIDA' THEN
     v_producto := nullif(trim(coalesce(p_producto, '')), '');
     IF v_producto IS NULL THEN RAISE EXCEPTION 'Falta qué inyección trajo el cliente.'; END IF;
     IF coalesce(p_cantidad, 0) NOT BETWEEN 1 AND 20 THEN RAISE EXCEPTION 'La cantidad de aplicaciones no es válida.'; END IF;
     RETURN json_build_object('precio', v_precio, 'aplicaciones', p_cantidad,
       'monto', round(v_precio * p_cantidad, 2),
-      'detalle', CASE WHEN p_origen = 'TRAIDA' THEN 'Traida · ' ELSE 'Sin venta · ' END
-                 || p_cantidad || 'x ' || upper(v_producto));
+      'detalle', 'Traida · ' || p_cantidad || 'x ' || upper(v_producto));
   END IF;
 
   IF jsonb_typeof(p_items) <> 'array' OR jsonb_array_length(p_items) = 0 THEN
@@ -338,9 +345,12 @@ GRANT EXECUTE ON FUNCTION public.inyeccion_cotizar(integer, text, jsonb, integer
 -- y otra sala pudo cobrar el mismo renglón— y escribe una fila por aplicación,
 -- sin confirmar. `p_aplicar_ahora` marca las primeras N como aplicadas por
 -- quien cobra: lo normal es pagar y aplicar en el mismo acto.
+-- `p_cliente`: a nombre de quién quedan. Lo pide la pantalla cuando queda
+-- alguna pendiente: una pendiente a nombre de «CLIENTES VARIOS» —o de nadie,
+-- en una traída— no se puede reclamar, que es todo lo que el control promete.
 CREATE OR REPLACE FUNCTION public.inyeccion_registrar(
   p_cobro_id bigint, p_origen text, p_items jsonb, p_cantidad integer, p_producto text,
-  p_aplicar_ahora integer, p_por uuid)
+  p_aplicar_ahora integer, p_por uuid, p_cliente text DEFAULT NULL)
 RETURNS json LANGUAGE plpgsql VOLATILE SECURITY DEFINER
 SET search_path = public, extensions AS $$
 DECLARE
@@ -372,9 +382,10 @@ BEGIN
 
   IF p_origen = 'TRAIDA' THEN
     FOR i IN 1..p_cantidad LOOP
-      INSERT INTO inyeccion_aplicaciones (branch_id, origen, producto, precio, cobro_id, creada_por,
+      INSERT INTO inyeccion_aplicaciones (branch_id, origen, cliente, producto, precio, cobro_id, creada_por,
                                           aplicada_at, aplicada_por, aplicada_branch_id)
-      VALUES (v_cobro.branch_id, 'TRAIDA', upper(trim(p_producto)), v_precio, p_cobro_id, p_por,
+      VALUES (v_cobro.branch_id, 'TRAIDA', nullif(upper(trim(coalesce(p_cliente, ''))), ''),
+              upper(trim(p_producto)), v_precio, p_cobro_id, p_por,
               CASE WHEN v_hechas < v_ahora THEN now() END,
               CASE WHEN v_hechas < v_ahora THEN p_por END,
               CASE WHEN v_hechas < v_ahora THEN v_cobro.branch_id END);
@@ -390,7 +401,8 @@ BEGIN
                                             producto, precio, cobro_id, creada_por,
                                             aplicada_at, aplicada_por, aplicada_branch_id)
         VALUES (v_cobro.branch_id, 'COMPRADA', v_venta.id, (e->>'linea_num')::smallint, v_venta.customer_id,
-                v_venta.cliente, r.descripcion, v_precio, p_cobro_id, p_por,
+                coalesce(nullif(upper(trim(coalesce(p_cliente, ''))), ''), v_venta.cliente),
+                r.descripcion, v_precio, p_cobro_id, p_por,
                 CASE WHEN v_hechas < v_ahora THEN now() END,
                 CASE WHEN v_hechas < v_ahora THEN p_por END,
                 CASE WHEN v_hechas < v_ahora THEN v_cobro.branch_id END);
@@ -403,21 +415,29 @@ BEGIN
                            'monto', v_cot->'monto', 'detalle', v_cot->'detalle');
 END;
 $$;
-REVOKE EXECUTE ON FUNCTION public.inyeccion_registrar(bigint, text, jsonb, integer, text, integer, uuid) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.inyeccion_registrar(bigint, text, jsonb, integer, text, integer, uuid) TO service_role;
+REVOKE EXECUTE ON FUNCTION public.inyeccion_registrar(bigint, text, jsonb, integer, text, integer, uuid, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.inyeccion_registrar(bigint, text, jsonb, integer, text, integer, uuid, text) TO service_role;
 
 -- ── Las pendientes: qué tiene pagado y sin aplicar ─────────────────────────
--- Se busca por cliente, factura o producto. Todas las salas: el cliente puede
--- volver a otra; la fila dice dónde pagó.
+-- Se busca por cliente, factura o producto.
+--
+-- Desde la CAJA (quien puede cobrar) se ven todas las salas: el cliente puede
+-- volver a aplicarse a otra, y la fila dice dónde pagó. Desde la vista
+-- Inyecciones manda su alcance: la sala ve lo de su sala.
 CREATE OR REPLACE FUNCTION public.inyecciones_pendientes(p_buscar text DEFAULT NULL, p_branch_id integer DEFAULT NULL)
 RETURNS json LANGUAGE plpgsql STABLE SECURITY DEFINER
 SET search_path = public, extensions AS $$
 DECLARE
   v_buscar text := nullif(upper(trim(coalesce(p_buscar, ''))), '');
 BEGIN
-  IF NOT ((SELECT auth_has_module_permission('caja_vales', 'can_view'))
-          OR (SELECT auth_has_module_permission('ventas_tab_inyecciones', 'can_view'))) THEN
+  IF NOT ((SELECT auth_has_module_permission('caja_vales', 'can_edit'))
+          OR (SELECT auth_has_module_permission('inyecciones_tab_pendientes', 'can_view'))) THEN
     RAISE EXCEPTION 'FORBIDDEN' USING ERRCODE = '42501';
+  END IF;
+  IF NOT (SELECT auth_has_module_permission('caja_vales', 'can_edit'))
+     AND coalesce((SELECT auth_module_scope('inyecciones')), '') <> 'ALL' THEN
+    p_branch_id := (SELECT auth_employee_branch_id());
+    IF p_branch_id IS NULL THEN RAISE EXCEPTION 'FORBIDDEN' USING ERRCODE = '42501'; END IF;
   END IF;
   RETURN coalesce((
     SELECT json_agg(x ORDER BY x.pagada_at DESC)
@@ -446,18 +466,26 @@ REVOKE EXECUTE ON FUNCTION public.inyecciones_pendientes(text, integer) FROM PUB
 GRANT EXECUTE ON FUNCTION public.inyecciones_pendientes(text, integer) TO authenticated, service_role;
 
 -- ── Canjear: marcar aplicadas ──────────────────────────────────────────────
--- Lo hace quien opera una caja; queda en la sala de quien la aplica, que puede
--- no ser la que cobró.
-CREATE OR REPLACE FUNCTION public.inyeccion_aplicar(p_ids bigint[])
+-- Lo hace quien opera una caja. Queda en la sala DONDE SE APLICA (`p_branch_id`,
+-- la de la caja abierta en pantalla), que puede no ser la que cobró — y no en la
+-- de la ficha de quien la marca: medido en pruebas, una supervisora que canjea
+-- en Salud 4 dejaba la aplicación «en Administración».
+CREATE OR REPLACE FUNCTION public.inyeccion_aplicar(p_ids bigint[], p_branch_id integer DEFAULT NULL)
 RETURNS integer LANGUAGE plpgsql VOLATILE SECURITY DEFINER
 SET search_path = public, extensions AS $$
 DECLARE
   v_emp  uuid := (SELECT auth_employee_id());
-  v_sala integer := (SELECT auth_employee_branch_id());
+  v_sala integer;
   v_n    integer;
 BEGIN
   IF v_emp IS NULL OR NOT (SELECT auth_has_module_permission('caja_vales', 'can_edit')) THEN
     RAISE EXCEPTION 'FORBIDDEN' USING ERRCODE = '42501';
+  END IF;
+  -- Sin alcance total, sólo en la sala propia (igual que `operar-caja`).
+  IF coalesce((SELECT auth_module_scope('caja_vales')), '') <> 'ALL' THEN
+    v_sala := (SELECT auth_employee_branch_id());
+  ELSE
+    v_sala := coalesce(p_branch_id, (SELECT auth_employee_branch_id()));
   END IF;
   UPDATE inyeccion_aplicaciones a
      SET aplicada_at = now(), aplicada_por = v_emp, aplicada_branch_id = coalesce(v_sala, a.branch_id)
@@ -470,8 +498,8 @@ BEGIN
   RETURN v_n;
 END;
 $$;
-REVOKE EXECUTE ON FUNCTION public.inyeccion_aplicar(bigint[]) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.inyeccion_aplicar(bigint[]) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.inyeccion_aplicar(bigint[], integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.inyeccion_aplicar(bigint[], integer) TO authenticated, service_role;
 
 -- ── Supervisión: el catálogo de aplicaciones por presentación ──────────────
 -- Las presentaciones inyectables vendidas en los últimos 90 días, con lo que
@@ -480,7 +508,8 @@ CREATE OR REPLACE FUNCTION public.inyeccion_catalogo_dosis()
 RETURNS json LANGUAGE plpgsql STABLE SECURITY DEFINER
 SET search_path = public, extensions AS $$
 BEGIN
-  IF NOT (SELECT auth_has_module_permission('ventas_tab_inyecciones', 'can_view')) THEN
+  IF NOT ((SELECT auth_has_module_permission('inyecciones_dosis', 'can_view'))
+          OR (SELECT auth_has_module_permission('inyecciones_precios', 'can_view'))) THEN
     RAISE EXCEPTION 'FORBIDDEN' USING ERRCODE = '42501';
   END IF;
   RETURN coalesce((
@@ -514,7 +543,7 @@ CREATE OR REPLACE FUNCTION public.inyeccion_fijar_dosis(p_erp_product_id integer
 RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER
 SET search_path = public, extensions AS $$
 BEGIN
-  IF NOT (SELECT auth_has_module_permission('ventas_inyecciones_dosis', 'can_view')) THEN
+  IF NOT (SELECT auth_has_module_permission('inyecciones_dosis', 'can_view')) THEN
     RAISE EXCEPTION 'FORBIDDEN' USING ERRCODE = '42501';
   END IF;
   IF coalesce(p_aplicaciones, 0) NOT BETWEEN 1 AND 20 THEN RAISE EXCEPTION 'Entre 1 y 20 aplicaciones.'; END IF;
@@ -531,7 +560,7 @@ CREATE OR REPLACE FUNCTION public.inyeccion_fijar_precio(p_origen text, p_precio
 RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER
 SET search_path = public, extensions AS $$
 BEGIN
-  IF NOT (SELECT auth_has_module_permission('ventas_inyecciones_precios', 'can_view')) THEN
+  IF NOT (SELECT auth_has_module_permission('inyecciones_precios', 'can_view')) THEN
     RAISE EXCEPTION 'FORBIDDEN' USING ERRCODE = '42501';
   END IF;
   IF p_precio IS NULL OR p_precio < 0 OR p_precio > 100 THEN RAISE EXCEPTION 'Precio no válido.'; END IF;
@@ -558,7 +587,7 @@ DECLARE
   v_n     integer;
   i       integer;
 BEGIN
-  IF NOT (SELECT auth_has_module_permission('ventas_inyecciones_dosis', 'can_view')) THEN
+  IF NOT (SELECT auth_has_module_permission('inyecciones_dosis', 'can_view')) THEN
     RAISE EXCEPTION 'FORBIDDEN' USING ERRCODE = '42501';
   END IF;
   SELECT id, branch_id, monto, registrado_at, registrado_por, tipo_codigo, anulado_at INTO v_cobro
@@ -602,7 +631,7 @@ RETURNS integer LANGUAGE plpgsql VOLATILE SECURITY DEFINER
 SET search_path = public, extensions AS $$
 DECLARE v_n integer;
 BEGIN
-  IF NOT (SELECT auth_has_module_permission('ventas_inyecciones_dosis', 'can_view')) THEN
+  IF NOT (SELECT auth_has_module_permission('inyecciones_dosis', 'can_view')) THEN
     RAISE EXCEPTION 'FORBIDDEN' USING ERRCODE = '42501';
   END IF;
   IF EXISTS (SELECT 1 FROM inyeccion_aplicaciones WHERE cobro_id = p_cobro_id AND vinculada_por IS NULL) THEN
@@ -615,6 +644,62 @@ END;
 $$;
 REVOKE EXECUTE ON FUNCTION public.inyeccion_desvincular_cobro(bigint) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.inyeccion_desvincular_cobro(bigint) TO authenticated, service_role;
+
+-- ── La bitácora: cada aplicación, quién la cobró y quién la aplicó ─────────
+-- Una fila por aplicación pagada del período (por la fecha del COBRO), con su
+-- estado. Es el registro que antes no existía: hasta el 2026-10-02 lo único
+-- que quedaba era un ingreso de caja con un texto libre.
+--
+-- El alcance es el de la vista: la sala ve lo cobrado O aplicado en su sala.
+CREATE OR REPLACE FUNCTION public.inyecciones_bitacora(p_branch_id integer, p_desde date, p_hasta date, p_buscar text DEFAULT NULL)
+RETURNS json LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path = public, extensions
+SET plan_cache_mode = 'force_custom_plan' AS $$
+DECLARE
+  v_buscar text := nullif(upper(trim(coalesce(p_buscar, ''))), '');
+BEGIN
+  IF NOT (SELECT auth_has_module_permission('inyecciones_tab_bitacora', 'can_view')) THEN
+    RAISE EXCEPTION 'FORBIDDEN' USING ERRCODE = '42501';
+  END IF;
+  IF coalesce((SELECT auth_module_scope('inyecciones')), '') <> 'ALL' THEN
+    p_branch_id := (SELECT auth_employee_branch_id());
+    IF p_branch_id IS NULL THEN RAISE EXCEPTION 'FORBIDDEN' USING ERRCODE = '42501'; END IF;
+  END IF;
+  IF p_desde IS NULL OR p_hasta IS NULL OR p_hasta < p_desde OR p_hasta - p_desde > 92 THEN
+    RAISE EXCEPTION 'Rango de fechas inválido (hasta tres meses).';
+  END IF;
+
+  RETURN coalesce((
+    SELECT json_agg(x ORDER BY x.cobrada_at DESC, x.id DESC)
+    FROM (
+      SELECT a.id, a.origen, a.branch_id, b.name AS sala, a.invoice_id, si.correlativo,
+             coalesce(a.cliente, si.cliente) AS cliente, a.producto, a.precio, a.cobro_id,
+             c.registrado_at AS cobrada_at, ec.name AS cobrada_por,
+             a.aplicada_at, ea.name AS aplicada_por, a.aplicada_branch_id, ba.name AS aplicada_en,
+             (a.vinculada_por IS NOT NULL) AS asignada_a_mano,
+             CASE WHEN a.aplicada_at IS NULL THEN 'PENDIENTE' ELSE 'APLICADA' END AS estado
+      FROM inyeccion_aplicaciones a
+      JOIN caja_movimientos_portal c ON c.id = a.cobro_id AND c.anulado_at IS NULL
+      JOIN branches b ON b.id = a.branch_id
+      LEFT JOIN branches ba ON ba.id = a.aplicada_branch_id
+      LEFT JOIN sales_invoices si ON si.id = a.invoice_id
+      LEFT JOIN employees ec ON ec.id = c.registrado_por
+      LEFT JOIN employees ea ON ea.id = a.aplicada_por
+      WHERE a.confirmada
+        AND c.fecha BETWEEN p_desde AND p_hasta
+        AND (p_branch_id IS NULL OR a.branch_id = p_branch_id OR a.aplicada_branch_id = p_branch_id)
+        AND (v_buscar IS NULL
+             OR upper(coalesce(a.cliente, si.cliente, '')) LIKE '%' || v_buscar || '%'
+             OR coalesce(si.correlativo, '') LIKE '%' || v_buscar || '%'
+             OR upper(a.producto) LIKE '%' || v_buscar || '%')
+      ORDER BY c.registrado_at DESC
+      LIMIT 3000
+    ) x
+  ), '[]'::json);
+END;
+$$;
+REVOKE EXECUTE ON FUNCTION public.inyecciones_bitacora(integer, date, date, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.inyecciones_bitacora(integer, date, date, text) TO authenticated, service_role;
 
 -- ── La pestaña Inyecciones: primero lo REGISTRADO, después lo estimado ─────
 -- Un cobro con filas en `inyeccion_aplicaciones` ya dice a qué venta va: no
@@ -635,10 +720,11 @@ DECLARE
   v_cobros  bigint[] := '{}';
   r         record;
 BEGIN
-  IF NOT (SELECT auth_has_module_permission('ventas_tab_inyecciones', 'can_view')) THEN
+  -- La pestaña «Por cobrar» de la vista Inyecciones (antes, de Ventas).
+  IF NOT (SELECT auth_has_module_permission('inyecciones_tab_por_cobrar', 'can_view')) THEN
     RAISE EXCEPTION 'FORBIDDEN' USING ERRCODE = '42501';
   END IF;
-  IF coalesce((SELECT auth_module_scope('ventas')), '') <> 'ALL' THEN
+  IF coalesce((SELECT auth_module_scope('inyecciones')), '') <> 'ALL' THEN
     p_branch_id := (SELECT auth_employee_branch_id());
     IF p_branch_id IS NULL THEN
       RAISE EXCEPTION 'FORBIDDEN' USING ERRCODE = '42501';
@@ -808,14 +894,31 @@ BEGIN
 END;
 $function$;
 
--- ── Los dos permisos nuevos ────────────────────────────────────────────────
--- Dosis y vínculos: supervisión. Precios: gerencia. En el branch se le dan a
--- los cargos que ya ven la pestaña; en producción, lo decide el usuario.
+-- ── Los permisos de la vista Inyecciones ──────────────────────────────────
+-- La pestaña salió de Ventas a una vista propia (pedido del usuario: «no es
+-- solo venta ni dinero»). Quien veía la pestaña ve la vista entera con alcance
+-- de todas las salas. La SALA (quien opera una caja de su sala) ve las
+-- pendientes y la bitácora de su sala; «Por cobrar» —que nombra a su propio
+-- equipo— no (decisión del 2026-09-23 que sigue en pie).
 INSERT INTO public.role_permissions (role_id, module_key, can_view, can_edit, can_approve, scope)
-SELECT rp.role_id, k.key, true, true, false, 'ALL'
+SELECT rp.role_id, k.key, true, false, false, 'ALL'
 FROM public.role_permissions rp
-CROSS JOIN (VALUES ('ventas_inyecciones_dosis'), ('ventas_inyecciones_precios')) k(key)
+CROSS JOIN (VALUES ('inyecciones'), ('inyecciones_tab_por_cobrar'), ('inyecciones_tab_pendientes'),
+                   ('inyecciones_tab_bitacora'), ('inyecciones_dosis')) k(key)
 WHERE rp.module_key = 'ventas_tab_inyecciones' AND rp.can_view
-  AND (k.key = 'ventas_inyecciones_dosis'
-       OR rp.role_id IN (SELECT id FROM public.roles WHERE name IN ('Gerente General', 'Administrador', 'QA / Testing (CI)')))
 ON CONFLICT DO NOTHING;
+
+INSERT INTO public.role_permissions (role_id, module_key, can_view, can_edit, can_approve, scope)
+SELECT r.id, 'inyecciones_precios', true, false, false, 'ALL'
+FROM public.roles r WHERE r.name IN ('Gerente General', 'Administrador', 'QA / Testing (CI)')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.role_permissions (role_id, module_key, can_view, can_edit, can_approve, scope)
+SELECT rp.role_id, k.key, true, false, false, 'BRANCH'
+FROM public.role_permissions rp
+CROSS JOIN (VALUES ('inyecciones'), ('inyecciones_tab_pendientes'), ('inyecciones_tab_bitacora')) k(key)
+WHERE rp.module_key = 'caja_vales' AND rp.can_edit AND rp.scope = 'BRANCH'
+ON CONFLICT DO NOTHING;
+
+-- La pestaña vieja de Ventas ya no existe en la pantalla.
+DELETE FROM public.role_permissions WHERE module_key = 'ventas_tab_inyecciones';

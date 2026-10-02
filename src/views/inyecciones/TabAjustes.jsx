@@ -1,114 +1,37 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ClipboardList, Hourglass, Minus, Plus, Save, Syringe } from 'lucide-react';
+import { ClipboardList, Minus, Plus, Save, Syringe } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
-import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-    fetchAplicacionesPendientes, fetchCatalogoDeDosis, fetchPreciosDeAplicacion,
-    fijarDosis, fijarPrecioDeAplicacion,
+    fetchCatalogoDeDosis, fetchPreciosDeAplicacion, fijarDosis, fijarPrecioDeAplicacion,
 } from '@nucleo/data/inyecciones';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { fechaNumerica } from '@nucleo/utils/fecha';
 
 /*
- * El control de las aplicaciones pagadas, debajo de la lista de ventas.
+ * Ajustes de las aplicaciones de inyección.
  *
- *   · Pendientes: lo pagado y sin aplicar, a nombre de quién y desde cuándo.
- *     Es la cifra que hay que vigilar: una pendiente vieja es un cliente que
- *     pagó y no volvió, o una aplicación que se hizo y nadie marcó.
+ *   · Precio (gerencia): lo que vale una aplicación, comprada o traída.
  *   · Por producto (supervisión): cuántas aplicaciones trae cada presentación.
  *     La factura no lo sabe —un TRI PACK sale «CAJA X 3» con factor 1—, así
  *     que rige una sugerencia sacada del nombre hasta que alguien la confirma.
- *   · Precio (gerencia): lo que vale una aplicación, comprada o traída.
  */
 
-const fechaCorta = (f) => fechaNumerica(String(f || '').slice(0, 10), { anio: false });
-const factura = (c) => String(c || '').replace(/^0+/, '');
-
-export default function InyeccionesControl({ filterBranch, nombreSala, recargar }) {
+export default function TabAjustes() {
     const { hasPermission } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
-    const puedeDosis = hasPermission('ventas_inyecciones_dosis');
-    const puedePrecio = hasPermission('ventas_inyecciones_precios');
-
-    const [pendientes, setPendientes] = useState(null);
-    const [errorPend, setErrorPend] = useState(null);
-    const [verAjustes, setVerAjustes] = useState(false);
-
-    useEffect(() => {
-        let vivo = true;
-        setPendientes(null);
-        fetchAplicacionesPendientes({ sala: filterBranch || null })
-            .then((d) => { if (vivo) setPendientes(d); })
-            .catch((e) => { if (vivo) { setPendientes([]); setErrorPend(mensajeAmigable(e, 'No se pudieron cargar las pendientes')); } });
-        return () => { vivo = false; };
-    }, [filterBranch, recargar]);
-
-    const montoPend = (pendientes || []).reduce((s, p) => s + Number(p.precio || 0), 0);
-
+    const puedeDosis = hasPermission('inyecciones_dosis');
+    const puedePrecio = hasPermission('inyecciones_precios');
     return (
-        <div className="space-y-4">
-            <div className="space-y-2">
-                <div>
-                    <h3 className="text-title-sm font-black text-content flex items-center gap-2">
-                        <Hourglass className="w-4 h-4" aria-hidden="true" /> Aplicaciones pagadas sin aplicar
-                    </h3>
-                    <p className="text-body-sm text-content-3">
-                        {pendientes == null ? 'Cargando…'
-                            : pendientes.length === 0 ? 'Ninguna: todo lo pagado ya se aplicó.'
-                                : `${pendientes.length} pendientes · ${formatMoney(montoPend)} cobrados. Se canjean desde Mi caja → Aplicación de inyección → «Ya la pagó».`}
-                    </p>
-                </div>
-                {errorPend && <Notice variant="danger">{errorPend}</Notice>}
-                {(pendientes || []).length > 0 && (
-                    <DataTable
-                        columns={[
-                            { key: 'cliente',  label: 'Cliente' },
-                            { key: 'producto', label: 'Inyección' },
-                            { key: 'pagada',   label: 'Pagada' },
-                            { key: 'monto',    label: 'Monto', align: 'right' },
-                        ]}
-                        minWidth="620px"
-                        movil={{ identidad: 'cliente', ancla: 'monto', chips: ['producto', 'pagada'] }}
-                    >
-                        {pendientes.map((p, i) => (
-                            <DataRow key={p.id} index={i}>
-                                <DataCell className="text-body-sm">
-                                    <p className="font-semibold">{p.cliente || 'Sin nombre'}</p>
-                                    <p className="text-caption text-content-3">
-                                        {p.correlativo ? `Factura ${factura(p.correlativo)}` : 'Traída por el cliente'}
-                                        {!filterBranch && ` · ${nombreSala(p.branch_id)}`}
-                                    </p>
-                                </DataCell>
-                                <DataCell className="text-body-sm">{p.producto}</DataCell>
-                                <DataCell className="text-body-sm whitespace-nowrap">
-                                    <p>{fechaCorta(p.pagada_at)}</p>
-                                    {p.cobrada_por && <p className="text-caption text-content-3">{shortEmployeeName(p.cobrada_por)}</p>}
-                                </DataCell>
-                                <DataCell align="right" className="font-semibold text-body-sm">{formatMoney(p.precio)}</DataCell>
-                            </DataRow>
-                        ))}
-                    </DataTable>
-                )}
-            </div>
-
-            {(puedeDosis || puedePrecio) && (
-                <div className="space-y-3">
-                    <button type="button" onClick={() => setVerAjustes((v) => !v)}
-                        className="text-body-sm font-bold underline text-content-2 min-h-[var(--tap-min)]">
-                        {verAjustes ? 'Ocultar los ajustes' : 'Ajustes: aplicaciones por producto y precio'}
-                    </button>
-                    {verAjustes && puedePrecio && <Precios showToast={showToast} />}
-                    {verAjustes && puedeDosis && <CatalogoDeDosis showToast={showToast} />}
-                </div>
-            )}
+        <div className="p-4 md:p-6 space-y-6">
+            {puedePrecio && <Precios showToast={showToast} />}
+            {puedeDosis && <CatalogoDeDosis showToast={showToast} />}
         </div>
     );
 }

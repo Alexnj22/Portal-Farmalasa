@@ -10,8 +10,7 @@ import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import Button from '../../components/common/Button';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
-import InyeccionesControl from './InyeccionesControl';
-import AmarrarCobroModal from './AmarrarCobroModal';
+import AsignarCobroModal from './AsignarCobroModal';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -39,7 +38,7 @@ import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
  * siempre son de alguien que trajo su inyección o la compró otro día, y sumarlos
  * o callarlos cambiaría la respuesta a la pregunta de la pestaña.
  *
- * Desde el 2026-10-02 el cobro se AMARRA a la venta al cobrarse (Mi caja →
+ * Desde el 2026-10-02 el cobro se ASIGNA a la venta al cobrarse (Mi caja →
  * Aplicación de inyección) y el cruce por hora queda sólo para lo de antes y lo
  * que se cobró suelto. Cada venta dice cuál le tocó (`vinculo`): «registrado»
  * es un hecho, «estimado» es una suposición y se muestra como tal.
@@ -71,7 +70,7 @@ const nombre = (n) => (n ? shortEmployeeName(n) : '—');
 const productosTexto = (v) => (v.productos || []).map((p) => p.descripcion).join(' · ');
 const fechaCorta = (f) => fechaNumerica(f, { anio: false });
 
-export default function TabInyecciones({
+export default function TabPorCobrar({
     filterBranch, setFilterBranch, branchOptions, branchLocked, searchTerm,
 }) {
     // Período PROPIO y no el de las otras pestañas de Ventas: ahí el defecto es
@@ -83,10 +82,9 @@ export default function TabInyecciones({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [estado, setEstado] = useState('todas');
-    const [amarrando, setAmarrando] = useState(null);
-    const [vuelta, setVuelta] = useState(0);
+    const [asignando, setAsignando] = useState(null);
     const { hasPermission } = useAuth();
-    const puedeAmarrar = hasPermission('ventas_inyecciones_dosis');
+    const puedeAsignar = hasPermission('inyecciones_dosis');
     const showToast = useToastStore((s) => s.showToast);
     const genRef = useRef(0);
     const [fini, ffin] = monthRange.split('|');
@@ -109,16 +107,16 @@ export default function TabInyecciones({
     }, [fini, ffin, filterBranch]);
 
     useEffect(() => { cargar(); }, [cargar]);
-    const recargar = () => { setVuelta((n) => n + 1); cargar(); };
+    const recargar = () => { cargar(); };
 
-    const desamarrar = async (v) => {
+    const desasignar = async (v) => {
         try {
             await desvincularCobro(v.cobro.id);
-            useStaffStore.getState().appendAuditLog('INYECCION_COBRO_DESAMARRADO', String(v.cobro.id), { venta: v.id });
-            showToast('Cobro desamarrado', 'Vuelve a la lista de cobros sin venta.', 'success');
+            useStaffStore.getState().appendAuditLog('INYECCION_COBRO_DESASIGNADO', String(v.cobro.id), { venta: v.id });
+            showToast('Asignación deshecha', 'Vuelve a la lista de cobros sin venta.', 'success');
             recargar();
         } catch (e) {
-            showToast('No se pudo desamarrar', mensajeAmigable(e), 'error');
+            showToast('No se pudo deshacer la asignación', mensajeAmigable(e), 'error');
         }
     };
 
@@ -174,7 +172,7 @@ export default function TabInyecciones({
                 v.cobro ? nombre(v.cobro.registrado_nombre) : '',
             ]),
             `inyecciones_${fini}_${ffin}.csv`,
-            'ventas',
+            'inyecciones',
         );
     };
 
@@ -245,7 +243,7 @@ export default function TabInyecciones({
             {error && <Notice variant="danger">{error}</Notice>}
 
             <Notice variant="info" icon={Info}>
-                El cobro de la aplicación se amarra a su venta al cobrarse. Los cobros de antes, o los que
+                El cobro de la aplicación se asigna a su venta al cobrarse. Los cobros de antes, o los que
                 se cobraron sin venta, se unen por hora con la venta más cercana del mismo día y sucursal, y
                 se marcan <b>estimado</b>: la hora de los dos y quién cobró quedan a la vista para revisarlo.
             </Notice>
@@ -325,8 +323,8 @@ export default function TabInyecciones({
                                             {v.pagadas} de {v.dosis} pagadas · {v.aplicadas} aplicadas
                                         </p>
                                     )}
-                                    {v.vinculo === 'a_mano' && puedeAmarrar && (
-                                        <Button variant="ghost" size="sm" onClick={() => desamarrar(v)}>Desamarrar</Button>
+                                    {v.vinculo === 'a_mano' && puedeAsignar && (
+                                        <Button variant="ghost" size="sm" onClick={() => desasignar(v)}>Deshacer asignación</Button>
                                     )}
                                 </div>
                             ) : (
@@ -360,7 +358,7 @@ export default function TabInyecciones({
                             { key: 'detalle', label: 'Detalle' },
                             { key: 'por',     label: 'Registrado por' },
                             { key: 'monto',   label: 'Monto', align: 'right' },
-                            ...(puedeAmarrar ? [{ key: 'accion', label: '' }] : []),
+                            ...(puedeAsignar ? [{ key: 'accion', label: '' }] : []),
                         ]}
                         minWidth="520px"
                         movil={{ identidad: 'detalle', ancla: 'monto', chips: ['fecha', 'por'] }}
@@ -377,10 +375,10 @@ export default function TabInyecciones({
                                 </DataCell>
                                 <DataCell className="text-body-sm">{nombre(c.registrado_nombre)}</DataCell>
                                 <DataCell align="right" className="font-semibold text-body-sm">{formatMoney(c.monto)}</DataCell>
-                                {puedeAmarrar && (
+                                {puedeAsignar && (
                                     <DataCell align="right">
                                         {c.origen !== 'TRAIDA' && (
-                                            <Button variant="secondary" size="sm" onClick={() => setAmarrando(c)}>Amarrar</Button>
+                                            <Button variant="secondary" size="sm" onClick={() => setAsignando(c)}>Asignar</Button>
                                         )}
                                     </DataCell>
                                 )}
@@ -390,11 +388,9 @@ export default function TabInyecciones({
                 </div>
             )}
 
-            <InyeccionesControl filterBranch={filterBranch} nombreSala={nombreSala} recargar={vuelta} />
-
-            {amarrando && (
-                <AmarrarCobroModal cobro={amarrando} onClose={() => setAmarrando(null)}
-                    onHecho={() => { setAmarrando(null); recargar(); }} />
+            {asignando && (
+                <AsignarCobroModal cobro={asignando} onClose={() => setAsignando(null)}
+                    onHecho={() => { setAsignando(null); recargar(); }} />
             )}
         </div>
     );

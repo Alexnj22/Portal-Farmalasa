@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1159.0 — Inyecciones: vista propia con pendientes y bitácora; el cobro siempre asignado a su venta (en pruebas)
+
+**Sólo en el entorno de pruebas.** Pedidos del usuario al probarlo:
+
+- **Vista propia «Inyecciones»** en el menú, aparte («no es solo venta ni
+  dinero»): Por cobrar (lo que era la pestaña de Ventas), Pendientes, Bitácora
+  (cada aplicación: quién cobró, quién aplicó, cuándo y dónde) y Ajustes.
+  Permisos nuevos `inyecciones` (con alcance) y sus pestañas; la sala ve
+  pendientes y bitácora de su sala, «Por cobrar» sigue siendo de supervisión.
+- **Sin cobro «sin venta»**: toda aplicación comprada queda asignada a su
+  venta. En su lugar, «Actualizar» (las ventas tardan hasta un minuto en llegar).
+- La lista del cobro muestra sólo ventas con aplicaciones por pagar (7 días) y
+  se busca también por inyección.
+- **«A nombre de»** obligatorio cuando queda alguna pendiente: casi todas las
+  ventas salen a nombre de «CLIENTES VARIOS» y una traída no tenía nombre.
+- El canje queda en la sala de la caja, no en la de la ficha de quien marca.
+- «Amarrar» → «Asignar» en todas las pantallas.
+
+
+## v2.1157.0 — Inyecciones: el cobro de la aplicación se amarra a la venta y queda el control de lo pagado (en pruebas)
+
 ## v2.1158.0 — Inyecciones: el cobro de la aplicación se amarra a la venta y queda el control de lo pagado (en pruebas)
 
 **Sólo en el entorno de pruebas. No está en producción.**

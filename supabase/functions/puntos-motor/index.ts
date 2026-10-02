@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
       if (e1) throw new Error(`notifications: ${e1.message}`);
       const yaEstan = new Set((yaAvisados ?? []).map((n: any) => n?.metadata?.check_key).filter(Boolean));
 
-      // Quién recibe: la gente de la sala donde pasó, más supervisión. Se
+      // Quién recibe: la jefatura de la sala donde pasó, más supervisión. Se
       // resuelve UNA vez para toda la corrida.
       const codigos = [...new Set(avisos.map((a) => a.sucursal).filter(Boolean))];
       const { data: salas, error: e2 } = await supabase
@@ -152,9 +152,13 @@ Deno.serve(async (req) => {
       // puede cruzar el patrón entre salas, que es donde se ve si esto es un
       // error de caja o algo peor. Rol 13 = «Supervisor/a de Ventas».
       const supervision: string[] = [];
+      // De la sala, sólo la jefatura (decisión del usuario, 2026-10-01): con
+      // toda la sala avisada, el aviso le llegaba también a quien hizo el
+      // canje. Rol 19 = «Jefe/a de Sala», 20 = «Subjefe/a de Sala».
+      const JEFATURA_DE_SALA = new Set([19, 20]);
       for (const g of gente ?? []) {
         if (g.role_id === 13) supervision.push(String(g.id));
-        if (!g.branch_id) continue;
+        if (!g.branch_id || !JEFATURA_DE_SALA.has(g.role_id)) continue;
         const arr = porSala.get(g.branch_id) ?? [];
         arr.push(String(g.id));
         porSala.set(g.branch_id, arr);

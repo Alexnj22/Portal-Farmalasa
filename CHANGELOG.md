@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1140.3 — puntos: el aviso de canje va a la jefatura de la sala, no a toda la sala
+
+Decisión del usuario (2026-10-01). Los avisos de canje sin saldo y de venta
+en $0.00 llegaban a TODA la sala donde pasó —en el caso de Salud 2, también a
+quien hizo el canje—. Ahora van sólo a Jefe/a y Subjefe/a de Sala (roles 19 y
+20), más supervisión y quien vigila el programa, como antes.
+`puntos-motor` redesplegada con `--no-verify-jwt`.
+
 ## v2.1140.2 — puntos: Avisos dice quién vendió y abre la venta con el perfil del cliente
 
 Pedido del usuario: «no sale quién lo vendió (quién le canjeó los puntos)» y

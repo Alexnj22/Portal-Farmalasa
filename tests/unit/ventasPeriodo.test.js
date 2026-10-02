@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diasDelRango, horaDeCorte, mesAnteriorDe, mesEnCurso, periodoAnterior, puestosDelMesAnterior, rankingDeVendedores, renglonesDeLaVenta, variacionPorDia, ventasDiariasDelVendedor } from '@nucleo/utils/ventasPeriodo';
+import { filaDeProductoVendido, totalesDeProductos, diasDelRango, horaDeCorte, mesAnteriorDe, mesEnCurso, periodoAnterior, puestosDelMesAnterior, rankingDeVendedores, renglonesDeLaVenta, variacionPorDia, ventasDiariasDelVendedor } from '@nucleo/utils/ventasPeriodo';
 
 describe('ventasPeriodo', () => {
     it('mes en curso hasta hoy', () => {
@@ -57,5 +57,19 @@ describe('vendedores', () => {
             { fecha: '2026-10-01', branch_id: 1, total_ventas: '10', total_facturas: '2' },
             { fecha: '2026-10-01', branch_id: 2, total_ventas: '4', total_facturas: '1' },
         ])).toEqual([{ fecha: '2026-10-01', total: 14, count: 3, branches: [{ branch_id: 1, total: 10 }, { branch_id: 2, total: 4 }] }]);
+    });
+});
+
+describe('productos vendidos', () => {
+    it('fila: unidades base por factor, utilidad y margen sobre el neto', () => {
+        const f = filaDeProductoVendido({ erp_product_id: 5, descripcion: 'X', cantidad: '3', neto: '100', costo_total: '60',
+            presentaciones: [{ presentacion: 'CAJA X30', cantidad: '2', neto: '90', factor: '30' }, { presentacion: 'UNIDAD', cantidad: '1', neto: '10', factor: '1' }] });
+        expect([f.cantidad_base, f.utilidad, f.margen, f.costo_unitario]).toEqual([61, 40, 40, 20]);
+        expect(filaDeProductoVendido({ cantidad: '2', neto: '0' }).margen).toBeNull();
+    });
+    it('totales: el costo sólo suma lo que tiene costo', () => {
+        const t = totalesDeProductos([{ neto: 100, costo_total: 60, utilidad: 40 }, { neto: 50, costo_total: null, utilidad: null }]);
+        expect([t.neto, t.costo, t.utilidad, t.mayor]).toEqual([150, 60, 40, 100]);
+        expect(t.margen).toBeCloseTo(26.667, 2);
     });
 });

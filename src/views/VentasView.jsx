@@ -39,7 +39,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
 import TabInyecciones from './ventas/TabInyecciones';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { CODIGOS_ESPECIALES as SPECIAL_CODES, diasDelRango as countDays, horaDeCorte as currentHoraCorte, mesEnCurso as currentMonthRange, periodoAnterior as computePrevRange, mesAnteriorDe, puestosDelMesAnterior, rankingDeVendedores, renglonesDeLaVenta, variacionPorDia as dailyPct, ventasDiariasDelVendedor } from '@nucleo/utils/ventasPeriodo';
+import { filaDeProductoVendido as mapAggRow, precioALaVista, totalesDeProductos, CODIGOS_ESPECIALES as SPECIAL_CODES, diasDelRango as countDays, horaDeCorte as currentHoraCorte, mesEnCurso as currentMonthRange, periodoAnterior as computePrevRange, mesAnteriorDe, puestosDelMesAnterior, rankingDeVendedores, renglonesDeLaVenta, variacionPorDia as dailyPct, ventasDiariasDelVendedor } from '@nucleo/utils/ventasPeriodo';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
@@ -1687,39 +1687,6 @@ function VentasPorVendedor({ porVendedor, porSucursal, branches, employees, filt
 
 // Fila del RPC get_product_sales_agg_jsonb → fila de la tabla. Compartido entre
 // la carga de browse (fetchProductos) y la búsqueda server-side con sucursal.
-function mapAggRow(item) {
-    const qty         = parseFloat(item.cantidad     || 0);
-    const neto        = parseFloat(item.neto         || 0);
-    const costo_total = item.costo_total != null ? parseFloat(item.costo_total) : null;
-    const utilidad    = costo_total != null ? neto - costo_total : null;
-    const margen      = utilidad != null && neto > 0 ? (utilidad / neto) * 100 : null;
-    const costo_unitario = costo_total != null && qty > 0 ? costo_total / qty : null;
-    const presentaciones = (item.presentaciones || []).map(p => ({
-        presentacion: p.presentacion || '',
-        cantidad:     parseFloat(p.cantidad || 0),
-        neto:         parseFloat(p.neto     || 0),
-        factor:       parseInt(p.factor     || 1, 10),
-    }));
-    // Total in base units: each presentation quantity × its ERP factor.
-    // e.g. 2 CAJA(×10) + 6 UNIDAD(×1) = 26, not 8.
-    const cantidad_base = presentaciones.length > 0
-        ? presentaciones.reduce((s, p) => s + p.cantidad * p.factor, 0)
-        : qty;
-    return {
-        erp_product_id: item.erp_product_id,
-        descripcion:    item.descripcion,
-        laboratorio_id:     item.laboratorio_id ?? null,
-        laboratorio_nombre: item.laboratorio_nombre || null,
-        cantidad: qty, cantidad_base, neto, costo_total, costo_unitario, utilidad, margen, presentaciones,
-        ultima_venta:        item.ultima_venta        || null,
-        ultima_venta_por_suc: item.ultima_venta_por_suc || [],
-        oculto_en_ventas: !!item.oculto_en_ventas,
-        oculto_por: item.oculto_en_ventas
-            ? { first_names: item.oculto_por_first_names || null, last_names: item.oculto_por_last_names || null }
-            : null,
-        oculto_at: item.oculto_at || null,
-    };
-}
 
 function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions, privacyMode, setPrivacyMode }) {
     const { maxPriceLevel, getScope, hasPermission, user: currentUser } = useAuth();
@@ -2065,9 +2032,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     : histByName ? (histNameMap.get(saleKey) || [])[0]?.id_presentacion
                     : idPres;
                 // RPC normalizes everything to s/IVA; multiply back for non-CCF display (COF carries IVA)
-                const isCCFLike      = row.tipo_documento === 'CCF';
-                const precio_display = isCCFLike ? parseFloat(row.precio_unitario) : parseFloat(row.precio_unitario) * 1.13;
-                const neto_display   = isCCFLike ? parseFloat(row.neto)           : parseFloat(row.neto)           * 1.13;
+                const { precio: precio_display, neto: neto_display } = precioALaVista(row);
                 const tier        = detectTier(precio_display, histPrices ?? currPrices, allowedDrillTiers);
                 const currentTier = detectTier(precio_display, currPrices, allowedDrillTiers);
                 const tierChanged   = !!(histPrices && currPrices && tier?.label !== currentTier?.label);
@@ -2193,12 +2158,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         filterLab ? visibleBaseRows.filter(r => String(r.laboratorio_id) === String(filterLab)) : visibleBaseRows,
         [visibleBaseRows, filterLab]
     );
-    const maxNeto      = labFilteredRows.reduce((m, r) => Math.max(m, r.neto), 0) || 1;
-    const totNeto      = labFilteredRows.reduce((s, r) => s + r.neto, 0);
-    const totCosto     = labFilteredRows.filter(r => r.costo_total != null).reduce((s, r) => s + r.costo_total, 0);
-    const totUtilidad  = labFilteredRows.filter(r => r.utilidad    != null).reduce((s, r) => s + r.utilidad,    0);
-    const margenGlobal = totNeto > 0 ? (totUtilidad / totNeto) * 100 : 0;
-    const totNetoConIva = totNeto * 1.13;
+    const { mayor: maxNeto, neto: totNeto, costo: totCosto, utilidad: totUtilidad, margen: margenGlobal, conIva: totNetoConIva } = totalesDeProductos(labFilteredRows);
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
     const paginated  = filtered.slice((page - 1) * pageSize, page * pageSize);

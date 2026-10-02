@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1152.0 — App: Productos en Ventas
+
+- **App: Productos en Ventas.** Tercera opción del selector de Ventas (con su permiso, igual que la pestaña del portal): qué se vendió en el período, de más a menos, con laboratorio, unidades (las presentaciones por su factor), ingreso sin IVA, margen en color y la barra contra el más vendido. Arriba los ingresos contra el período anterior y la utilidad con su margen; el orden (ingreso, unidades, utilidad, margen) en el menú y la búsqueda por producto o laboratorio. Tocar uno abre lo que se vendió: total como lo pagó el cliente, unidades, los últimos tres meses, por sala, quién lo vendió y cada venta, que abre su factura.
+- **Núcleo:** la fila de un producto vendido, los totales de la lista y el precio como lo lee quien compra (el crédito fiscal sin IVA) pasan de `VentasView` a `src/utils/ventasPeriodo.js`, con su prueba.
 ## v2.1151.2 — Min·Max: recalcular avisa cuando la sala se salta
 
 «Recalcular» sobre una sala con borradores sin revisar no recalculaba nada y

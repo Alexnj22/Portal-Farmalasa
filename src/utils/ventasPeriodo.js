@@ -149,3 +149,63 @@ export function ventasDiariasDelVendedor(filas) {
     }
     return [...porDia.values()];
 }
+
+// ── Productos vendidos ──────────────────────────────────────────────────────
+
+/**
+ * Una fila de `get_product_sales_agg_jsonb` lista para mostrar: utilidad y
+ * margen sobre el neto (sin IVA), costo unitario, y las unidades BASE — las
+ * presentaciones por su factor, porque «2 cajas X30» son 60 unidades.
+ */
+export function filaDeProductoVendido(item) {
+    const qty = parseFloat(item.cantidad || 0);
+    const neto = parseFloat(item.neto || 0);
+    const costo_total = item.costo_total != null ? parseFloat(item.costo_total) : null;
+    const utilidad = costo_total != null ? neto - costo_total : null;
+    const margen = utilidad != null && neto > 0 ? (utilidad / neto) * 100 : null;
+    const costo_unitario = costo_total != null && qty > 0 ? costo_total / qty : null;
+    const presentaciones = (item.presentaciones || []).map((p) => ({
+        presentacion: p.presentacion || '',
+        cantidad: parseFloat(p.cantidad || 0),
+        neto: parseFloat(p.neto || 0),
+        factor: parseInt(p.factor || 1, 10),
+    }));
+    const cantidad_base = presentaciones.length > 0
+        ? presentaciones.reduce((s, p) => s + p.cantidad * p.factor, 0)
+        : qty;
+    return {
+        erp_product_id: item.erp_product_id,
+        descripcion: item.descripcion,
+        laboratorio_id: item.laboratorio_id ?? null,
+        laboratorio_nombre: item.laboratorio_nombre || null,
+        cantidad: qty, cantidad_base, neto, costo_total, costo_unitario, utilidad, margen, presentaciones,
+        ultima_venta: item.ultima_venta || null,
+        ultima_venta_por_suc: item.ultima_venta_por_suc || [],
+        oculto_en_ventas: !!item.oculto_en_ventas,
+        oculto_por: item.oculto_en_ventas
+            ? { first_names: item.oculto_por_first_names || null, last_names: item.oculto_por_last_names || null }
+            : null,
+        oculto_at: item.oculto_at || null,
+    };
+}
+
+/** Los totales de una lista de productos vendidos. El costo y la utilidad sólo suman lo que tiene costo. */
+export function totalesDeProductos(filas) {
+    let neto = 0, costo = 0, utilidad = 0, mayor = 0;
+    for (const r of (filas || [])) {
+        neto += r.neto;
+        if (r.costo_total != null) costo += r.costo_total;
+        if (r.utilidad != null) utilidad += r.utilidad;
+        if (r.neto > mayor) mayor = r.neto;
+    }
+    return { neto, costo, utilidad, margen: neto > 0 ? (utilidad / neto) * 100 : 0, conIva: neto * 1.13, mayor: mayor || 1 };
+}
+
+/**
+ * El precio y el neto de un renglón como los lee quien compra: el crédito
+ * fiscal (CCF) va sin IVA —el IVA se desglosa aparte—; todo lo demás, con IVA.
+ */
+export function precioALaVista(renglon) {
+    const f = renglon.tipo_documento === 'CCF' ? 1 : 1.13;
+    return { precio: parseFloat(renglon.precio_unitario || 0) * f, neto: parseFloat(renglon.neto || 0) * f };
+}

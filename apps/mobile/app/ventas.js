@@ -33,6 +33,7 @@ import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
 import Vendedores from '../componentes/ventas/Vendedores';
+import Productos, { ORDENES_DE_PRODUCTOS } from '../componentes/ventas/Productos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
@@ -103,8 +104,12 @@ export default function Ventas() {
   // Las mismas pestañas que el portal, cada una con su permiso.
   const verFacturas = hasPermission('ventas_tab_ventas');
   const verVendedores = hasPermission('ventas_tab_vendedores');
+  const verProductos = hasPermission('ventas_tab_productos');
+  const vistas = [verFacturas && { id: 'facturas', label: 'Facturas' }, verVendedores && { id: 'vendedores', label: 'Vendedores' },
+    verProductos && { id: 'productos', label: 'Productos' }].filter(Boolean);
   const [vistaElegida, setVista] = useState('facturas');
-  const vista = !verFacturas ? 'vendedores' : !verVendedores ? 'facturas' : vistaElegida;
+  const vista = vistas.some((v) => v.id === vistaElegida) ? vistaElegida : (vistas[0]?.id ?? 'facturas');
+  const [ordenProductos, setOrdenProductos] = useState('neto');
   const miSala = String(user?.branchId || '');
 
   const [periodo, setPeriodo] = useState('mes');
@@ -216,6 +221,8 @@ export default function Ventas() {
       opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
     ...(vista === 'facturas' ? [{ id: 'mostrar', titulo: 'Mostrar', activa: mostrar, porDefecto: 'todas', onCambiar: setMostrar,
       opciones: [{ id: 'todas', label: 'Todas las ventas' }, { id: 'receta', label: 'Con receta médica' }, { id: 'anuladas', label: 'Sólo anuladas' }] }] : []),
+    ...(vista === 'productos' ? [{ id: 'orden', titulo: 'Ordenar por', activa: ordenProductos, porDefecto: 'neto', onCambiar: setOrdenProductos,
+      opciones: ORDENES_DE_PRODUCTOS }] : []),
   ];
 
   const c = cifras;
@@ -230,7 +237,7 @@ export default function Ventas() {
       <Stack.Screen options={{
         ...BARRA_NATIVA, title: 'Ventas', headerLargeTitle: true,
         headerSearchBarOptions: {
-          placeholder: vista === 'vendedores' ? 'Nombre del vendedor' : 'Cliente, producto o número', hideWhenScrolling: false,
+          placeholder: vista === 'vendedores' ? 'Nombre del vendedor' : vista === 'productos' ? 'Producto o laboratorio' : 'Cliente, producto o número', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
@@ -240,11 +247,9 @@ export default function Ventas() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
         <FiltrosActivos grupos={grupos} />
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20, textTransform: fini === ffin ? 'capitalize' : 'none' }}>{rangoTexto}</Text>
-        {verFacturas && verVendedores ? (
-          <Segmentos activa={vista} onCambiar={setVista}
-            opciones={[{ id: 'facturas', label: 'Facturas' }, { id: 'vendedores', label: 'Vendedores' }]} />
-        ) : null}
-        {vista === 'vendedores' ? <Vendedores key={`${fini}|${ffin}|${sala}`} fini={fini} ffin={ffin} sala={sala} busqueda={busqueda} verCifras={verCifras} /> : (<>
+        {vistas.length > 1 ? <Segmentos activa={vista} onCambiar={setVista} opciones={vistas} /> : null}
+        {vista === 'productos' ? <Productos key={`${fini}|${ffin}|${sala}`} fini={fini} ffin={ffin} sala={sala} busqueda={busqueda} verCifras={verCifras} orden={ordenProductos} />
+          : vista === 'vendedores' ? <Vendedores key={`${fini}|${ffin}|${sala}`} fini={fini} ffin={ffin} sala={sala} busqueda={busqueda} verCifras={verCifras} /> : (<>
         {verCifras && c ? (
           <>
             <FilaDeKpis>

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1141.1 — puntos: el canje de una venta anulada deja de salir en Avisos
+
+Pregunta del usuario: «si se anuló, ¿por qué sigue saliendo?». Anular la
+factura deshace el canje, así que un «canje sin saldo» cuya venta se anuló no
+deja nada que revisar: `puntos_panel_avisos` ya no lo devuelve. Los avisos que
+SON de una anulación (anulada con puntos gastados, canje devuelto) siguen, y
+en ellos ya no se repite la nota «anulada después».
+
 ## v2.1141.0 — Marketing: OK por pieza, aviso a las salas y control del servicio
 
 Quinta tanda del planificador, sobre la oferta al diseñador (30-sep-2026).

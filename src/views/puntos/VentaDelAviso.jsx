@@ -38,6 +38,11 @@ export default function VentaDelAviso({ aviso, rotulo, variante, puntosTexto }) 
     }, [aviso?.invoice_id]);
 
     if (!aviso) return null;
+    // En estos dos la anulación ES el aviso: repetirla en una nota no suma.
+    // Los demás ya no llegan con la venta anulada (el panel los saca), así
+    // que la nota queda como red por si un tipo nuevo no lo hace.
+    const anuladaSinAviso = aviso.venta_vigente === false
+        && !['anulada_con_puntos_gastados', 'canje_devuelto'].includes(aviso.tipo);
     // El renglón -999 es el descuento: se cuenta aparte, no como producto.
     const productos = (items ?? []).filter((it) => it.erp_product_id !== -999 && it.descripcion);
     const vendedor = aviso.vendedor ? { id: aviso.vendedor_id, name: aviso.vendedor } : null;
@@ -59,12 +64,12 @@ export default function VentaDelAviso({ aviso, rotulo, variante, puntosTexto }) 
                     </div>
                     {aviso.nota && <p className="text-caption text-content-3 mt-1">{aviso.nota}</p>}
                 </div>
-                {aviso.venta_vigente === false && (
+                {anuladaSinAviso && (
                     <Badge variant="info" tone="soft" uppercase={false}>Anulada después</Badge>
                 )}
             </div>
 
-            {aviso.venta_vigente === false && (
+            {anuladaSinAviso && (
                 <Notice variant="info" bloque>
                     Esta venta se anuló después del canje ({aviso.venta_estado}). Si la sala la rehízo,
                     la venta nueva aparece en los movimientos del cliente.

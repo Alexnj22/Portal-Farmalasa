@@ -1,0 +1,399 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Minus, Plus, Search, Syringe } from 'lucide-react';
+import Button from '../common/Button';
+import LiquidModal from '../common/LiquidModal';
+import Notice from '../common/Notice';
+import PortalInput from '../common/PortalInput';
+import SearchInput from '../common/SearchInput';
+import SegmentedControl from '../common/SegmentedControl';
+import { LoadingState } from '../common/StateViews';
+import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
+import {
+    aplicarPendientes, fetchAplicacionesPendientes, fetchInyeccionesParaCobrar, fetchPreciosDeAplicacion,
+} from '@nucleo/data/inyecciones';
+import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { hora12 } from '@nucleo/utils/hora';
+import { fechaNumerica } from '@nucleo/utils/fecha';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { useStaffStore } from '@nucleo/store/staffStore';
+
+/**
+ * Cobrar la aplicación de una inyección — y llevar el control de lo pagado.
+ *
+ * ── Por qué es su propio diálogo ───────────────────────────────────────────
+ * Hasta el 2026-10-02 la aplicación era un ingreso más con un detalle de texto
+ * libre, y la pestaña Inyecciones lo ADIVINABA contra las ventas por hora. Lo
+ * adivinó mal el 30-sep en Salud 4 (la Depo Provera quedó «sin cobro» y la
+ * Pulmo Grip «cobrada»). Ahora se pregunta lo que antes se adivinaba:
+ *
+ *   · ¿se compró aquí o la trajo el cliente? — vale distinto ($1 / $2);
+ *   · si se compró, ¿de qué venta?, y si la venta trae varias, ¿cuáles y
+ *     cuántas se pagan?
+ *
+ * Lo pagado y no aplicado queda PENDIENTE a nombre del cliente y se canjea
+ * después desde el tercer modo, «Ya la pagó».
+ *
+ * ── El monto no se escribe ─────────────────────────────────────────────────
+ * Sale de cuántas aplicaciones se pagan por el precio vigente, y el servidor lo
+ * vuelve a calcular: si el precio cambió entre que se abrió esto y se apretó
+ * cobrar, frena en vez de cobrar otro número del que se le dijo al cliente.
+ */
+
+const MODOS = [
+    { value: 'COMPRADA', label: 'Compró aquí' },
+    { value: 'TRAIDA',   label: 'La trajo' },
+    { value: 'CANJEAR',  label: 'Ya la pagó' },
+];
+
+const fechaCorta = (f) => fechaNumerica(f, { anio: false });
+const factura = (c) => String(c || '').replace(/^0+/, '');
+
+/** − n + con blanco de dedo; `max` 0 lo apaga entero. */
+function Contador({ valor, min = 0, max, onChange, etiqueta }) {
+    return (
+        <div className="flex items-center gap-1.5" role="group" aria-label={etiqueta}>
+            <Button variant="secondary" size="sm" iconOnly icon={Minus} title={`Una menos · ${etiqueta}`}
+                disabled={valor <= min} onClick={() => onChange(Math.max(min, valor - 1))} />
+            <span className="w-7 text-center text-body font-black tabular-nums text-content">{valor}</span>
+            <Button variant="secondary" size="sm" iconOnly icon={Plus} title={`Una más · ${etiqueta}`}
+                disabled={valor >= max} onClick={() => onChange(Math.min(max, valor + 1))} />
+        </div>
+    );
+}
+
+export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onCobrar }) {
+    const showToast = useToastStore((s) => s.showToast);
+    const [modo, setModo] = useState('COMPRADA');
+    const [precios, setPrecios] = useState(null);
+    const [errorPrecios, setErrorPrecios] = useState(null);
+
+    // ── Compró aquí ──
+    const [texto, setTexto] = useState('');
+    const buscar = useTextoRebotado(texto, 350);
+    const [ventas, setVentas] = useState(null);
+    const [errorVentas, setErrorVentas] = useState(null);
+    const [ventaId, setVentaId] = useState(null);
+    const [cuantas, setCuantas] = useState({});           // linea_num → cuántas se pagan
+    const [sinVenta, setSinVenta] = useState(false);      // «la venta no aparece todavía»
+
+    // ── La trajo / sin venta ──
+    const [producto, setProducto] = useState('');
+    const [cantidad, setCantidad] = useState(1);
+
+    const [aplicarAhora, setAplicarAhora] = useState(1);
+    const [enviando, setEnviando] = useState(false);
+
+    // ── Ya la pagó ──
+    const [textoPend, setTextoPend] = useState('');
+    const buscarPend = useTextoRebotado(textoPend, 350);
+    const [pendientes, setPendientes] = useState(null);
+    const [elegidas, setElegidas] = useState(() => new Set());
+
+    /* La clave de ESTE cobro, una sola para todos sus reintentos: el servidor
+     * contesta con el movimiento que ya escribió en vez de escribir otro (ver
+     * `clave_envio` en `operar-caja`). El diálogo se monta en cada apertura. */
+    const claveDeEnvio = useRef(globalThis.crypto?.randomUUID?.()
+        ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+
+    useEffect(() => {
+        if (!abierto) return;
+        fetchPreciosDeAplicacion()
+            .then(setPrecios)
+            .catch((e) => setErrorPrecios(mensajeAmigable(e, 'No se pudo leer el precio de la aplicación')));
+    }, [abierto]);
+
+    useEffect(() => {
+        if (!abierto || modo !== 'COMPRADA' || !sala) return undefined;
+        let vivo = true;
+        setErrorVentas(null);
+        fetchInyeccionesParaCobrar({ sala, buscar })
+            .then((d) => { if (vivo) setVentas(d); })
+            .catch((e) => { if (vivo) { setVentas([]); setErrorVentas(mensajeAmigable(e, 'No se pudieron cargar las ventas')); } });
+        return () => { vivo = false; };
+    }, [abierto, modo, sala, buscar]);
+
+    const cargarPendientes = useCallback(() => {
+        setElegidas(new Set());
+        return fetchAplicacionesPendientes({ buscar: buscarPend })
+            .then(setPendientes)
+            .catch((e) => { setPendientes([]); showToast('No se pudieron cargar las pendientes', mensajeAmigable(e), 'error'); });
+    }, [buscarPend, showToast]);
+
+    useEffect(() => {
+        if (abierto && modo === 'CANJEAR') cargarPendientes();
+    }, [abierto, modo, cargarPendientes]);
+
+    const venta = useMemo(() => (ventas || []).find((v) => v.id === ventaId) || null, [ventas, ventaId]);
+
+    const elegirVenta = (v) => {
+        setVentaId(v.id);
+        // Con un solo renglón con saldo, una aplicación ya marcada: es el caso
+        // de casi todas las ventas, y obligar a tocar el «+» es un paso de más.
+        const conSaldo = (v.renglones || []).filter((r) => r.disponibles > 0);
+        setCuantas(conSaldo.length === 1 ? { [conSaldo[0].linea_num]: 1 } : {});
+        setAplicarAhora(1);
+    };
+
+    const origen = modo === 'TRAIDA' ? 'TRAIDA' : (sinVenta ? 'SIN_VENTA' : 'COMPRADA');
+    const precio = precios ? (origen === 'TRAIDA' ? precios.TRAIDA : precios.COMPRADA) : null;
+    const items = useMemo(() => Object.entries(cuantas)
+        .filter(([, n]) => n > 0)
+        .map(([linea, n]) => ({ invoice_id: ventaId, linea_num: Number(linea), cantidad: n })), [cuantas, ventaId]);
+    const total = origen === 'COMPRADA' ? items.reduce((s, i) => s + i.cantidad, 0) : cantidad;
+    const monto = precio != null ? Math.round(precio * total * 100) / 100 : null;
+    // Sin venta no hay a quién dejarle pendientes: se cobra y queda suelto.
+    const llevaPendientes = origen !== 'SIN_VENTA';
+
+    const valido = precio != null && total > 0 && !!sala && (
+        origen === 'COMPRADA' ? !!venta && items.length > 0 : producto.trim().length > 2
+    );
+
+    const cuerpoDeCobrar = useRef(null);
+    cuerpoDeCobrar.current = async () => {
+        setEnviando(true);
+        try {
+            await onCobrar({
+                clave: claveDeEnvio.current,
+                monto,
+                aplicacion: {
+                    origen,
+                    ...(origen === 'COMPRADA' ? { items } : { producto: producto.trim(), cantidad }),
+                    aplicar_ahora: llevaPendientes ? Math.min(aplicarAhora, total) : 0,
+                },
+            });
+        } catch (e) {
+            /* Un rechazo del cobro ya lo avisa quien llama (`correr` convierte
+             * todo tropiezo de `operar-caja` en un toast). Lo que llega acá es
+             * lo de DESPUÉS: el papel. Igual que en el abono, el cobro ya
+             * quedó hecho, así que se avisa y no se relanza — volver a apretar
+             * cobraría dos veces. */
+            console.error('cobrar aplicación:', e);
+            showToast('El cobro quedó anotado, pero algo falló después',
+                mensajeAmigable(e, 'Revisa si salió el comprobante.'), 'warning');
+        } finally {
+            setEnviando(false);
+        }
+    };
+    const cobrar = useMemo(() => unaSolaVez(() => cuerpoDeCobrar.current()), []);
+
+    const cuerpoDeCanjear = useRef(null);
+    cuerpoDeCanjear.current = async () => {
+        setEnviando(true);
+        try {
+            const ids = [...elegidas];
+            const n = await aplicarPendientes(ids);
+            useStaffStore.getState().appendAuditLog('INYECCION_APLICADA', ids.join(','), { aplicaciones: n, sala });
+            showToast(n === 1 ? 'Aplicación marcada' : `${n} aplicaciones marcadas`, 'Quedan como aplicadas por ti.', 'success');
+            await cargarPendientes();
+        } catch (e) {
+            showToast('No se pudieron marcar', mensajeAmigable(e), 'error');
+            await cargarPendientes();
+        } finally {
+            setEnviando(false);
+        }
+    };
+    const canjear = useMemo(() => unaSolaVez(() => cuerpoDeCanjear.current()), []);
+
+    if (!abierto) return null;
+
+    const pie = modo === 'CANJEAR' ? (
+        <Button variant="primary" loading={enviando} disabled={ocupado || elegidas.size === 0} onClick={canjear}>
+            {elegidas.size > 1 ? `Marcar ${elegidas.size} aplicadas` : 'Marcar aplicada'}
+        </Button>
+    ) : (
+        <Button variant="primary" loading={enviando} disabled={ocupado || !valido} onClick={cobrar}>
+            {enviando ? 'Cobrando…' : `Cobrar ${monto != null ? formatMoney(monto) : ''}`}
+        </Button>
+    );
+
+    return (
+        <LiquidModal open onClose={enviando ? undefined : onClose} maxWidth="max-w-lg" ariaLabel="Aplicación de inyección">
+            <div className="p-5 space-y-4">
+                <div>
+                    <h3 className="text-h3 font-bold text-content">Aplicación de inyección</h3>
+                    <p className="text-body-sm text-content-2 mt-1">
+                        {precios
+                            ? <>Comprada aquí <b className="text-content">{formatMoney(precios.COMPRADA)}</b> · traída por
+                                el cliente <b className="text-content">{formatMoney(precios.TRAIDA)}</b>, por aplicación.</>
+                            : 'Cada aplicación pagada queda a nombre del cliente hasta que se aplica.'}
+                    </p>
+                </div>
+                {errorPrecios && <Notice variant="danger">{errorPrecios}</Notice>}
+
+                <SegmentedControl options={MODOS} value={modo} label="Cómo se paga" layout="block" columns={3}
+                    onChange={(m) => { setModo(m); setSinVenta(false); }} />
+
+                {modo === 'COMPRADA' && !sinVenta && (
+                    <div className="space-y-3">
+                        <SearchInput value={texto} onChange={setTexto} placeholder="Cliente o número de factura" />
+                        {errorVentas && <Notice variant="danger">{errorVentas}</Notice>}
+                        {ventas == null ? <LoadingState /> : ventas.length === 0 ? (
+                            <p className="text-body-sm text-content-3">
+                                {buscar ? 'Ninguna venta con inyección coincide.' : 'No hay ventas con inyección en los últimos días.'}
+                            </p>
+                        ) : (
+                            <ul className="space-y-2 max-h-[45vh] overflow-y-auto">
+                                {ventas.map((v) => {
+                                    const activa = v.id === ventaId;
+                                    const agotada = Number(v.disponibles) <= 0;
+                                    return (
+                                        <li key={v.id}>
+                                            <button type="button" disabled={agotada} aria-pressed={activa}
+                                                onClick={() => elegirVenta(v)}
+                                                data-surface="card"
+                                                className={`w-full text-left rounded-xl p-3 min-h-[var(--tap-min)] active:scale-[0.97]
+                                                    ${activa ? 'ring-2 ring-accent' : 'ring-1 ring-border-card'}
+                                                    ${agotada ? 'opacity-50' : ''}`}>
+                                                <div className="flex items-baseline justify-between gap-2">
+                                                    <span className="text-body-sm font-bold text-content truncate">{v.cliente || 'Sin nombre'}</span>
+                                                    <span className="text-caption text-content-3 whitespace-nowrap">
+                                                        {fechaCorta(v.fecha)} · {hora12(v.hora)}
+                                                    </span>
+                                                </div>
+                                                <p className="text-caption text-content-3">
+                                                    Factura {factura(v.correlativo)} · {v.vendedor_nombre ? shortEmployeeName(v.vendedor_nombre) : '—'}
+                                                </p>
+                                                {(v.renglones || []).map((r) => (
+                                                    <p key={r.linea_num} className="text-caption text-content-2 mt-0.5">
+                                                        <span className="font-semibold">{Number(r.cantidad)}×</span> {r.descripcion}
+                                                        {' · '}
+                                                        {r.disponibles > 0
+                                                            ? `${r.disponibles} de ${r.total} por pagar`
+                                                            : 'ya pagadas'}
+                                                    </p>
+                                                ))}
+                                            </button>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        )}
+
+                        {venta && (
+                            <div data-surface="card" className="rounded-xl p-3 space-y-2">
+                                <h4 className="text-caption font-black uppercase tracking-widest text-content-2">
+                                    Cuántas se pagan
+                                </h4>
+                                {(venta.renglones || []).filter((r) => r.disponibles > 0).map((r) => (
+                                    <div key={r.linea_num} className="flex items-center justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <p className="text-body-sm text-content truncate">{r.descripcion}</p>
+                                            <p className="text-caption text-content-3">
+                                                {r.total} {r.total === 1 ? 'aplicación' : 'aplicaciones'} en la venta
+                                                {!r.confirmado && r.por_unidad > 1 && ` (${r.por_unidad} por unidad, sin confirmar)`}
+                                            </p>
+                                        </div>
+                                        <Contador etiqueta={r.descripcion} valor={cuantas[r.linea_num] || 0}
+                                            max={r.disponibles}
+                                            onChange={(n) => setCuantas((c) => ({ ...c, [r.linea_num]: n }))} />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <button type="button" onClick={() => { setSinVenta(true); setVentaId(null); }}
+                            className="text-caption underline text-content-3 min-h-[var(--tap-min)]">
+                            La venta no aparece todavía
+                        </button>
+                    </div>
+                )}
+
+                {(modo === 'TRAIDA' || sinVenta) && (
+                    <div className="space-y-3">
+                        {sinVenta && (
+                            <Notice variant="warning" icon={Search}>
+                                Se cobra como comprada aquí y queda <b>sin amarrar a la venta</b>: supervisión la amarra
+                                después. Úsalo sólo si la venta acaba de hacerse y todavía no aparece.
+                                <button type="button" onClick={() => setSinVenta(false)}
+                                    className="block mt-1 underline font-bold min-h-[var(--tap-min)]">
+                                    Volver a buscar la venta
+                                </button>
+                            </Notice>
+                        )}
+                        <PortalInput label="Qué inyección" value={producto} maxLength={40} icon={Syringe}
+                            onChange={(e) => setProducto(e.target.value)} placeholder="Neurobion 25000" />
+                        <div className="flex items-center justify-between gap-3">
+                            <span className="text-body-sm text-content-2">Cuántas aplicaciones se pagan</span>
+                            <Contador etiqueta="aplicaciones" valor={cantidad} min={1} max={10} onChange={setCantidad} />
+                        </div>
+                    </div>
+                )}
+
+                {modo !== 'CANJEAR' && llevaPendientes && total > 0 && (
+                    <div className="flex items-center justify-between gap-3">
+                        <div>
+                            <p className="text-body-sm text-content-2">Se aplican ahora</p>
+                            <p className="text-caption text-content-3">
+                                {(() => {
+                                    const quedan = total - Math.min(aplicarAhora, total);
+                                    if (quedan <= 0) return 'No queda ninguna pendiente';
+                                    return quedan === 1
+                                        ? '1 queda pendiente a nombre del cliente'
+                                        : `${quedan} quedan pendientes a nombre del cliente`;
+                                })()}
+                            </p>
+                        </div>
+                        <Contador etiqueta="se aplican ahora" valor={Math.min(aplicarAhora, total)} max={total}
+                            onChange={setAplicarAhora} />
+                    </div>
+                )}
+
+                {modo !== 'CANJEAR' && monto != null && total > 0 && (
+                    <div className="flex items-baseline justify-between gap-3 text-body">
+                        <span className="text-content-2">{total} × {formatMoney(precio)}</span>
+                        <span className="font-black tabular-nums text-content">{formatMoney(monto)}</span>
+                    </div>
+                )}
+
+                {modo === 'CANJEAR' && (
+                    <div className="space-y-3">
+                        <SearchInput value={textoPend} onChange={setTextoPend} placeholder="Cliente, factura o inyección" />
+                        {pendientes == null ? <LoadingState /> : pendientes.length === 0 ? (
+                            <p className="text-body-sm text-content-3">
+                                {buscarPend ? 'Nadie con ese dato tiene aplicaciones pagadas sin aplicar.' : 'No hay aplicaciones pagadas sin aplicar.'}
+                            </p>
+                        ) : (
+                            <ul className="space-y-2 max-h-[45vh] overflow-y-auto">
+                                {pendientes.map((p) => {
+                                    const marcada = elegidas.has(p.id);
+                                    return (
+                                        <li key={p.id}>
+                                            <button type="button" aria-pressed={marcada}
+                                                onClick={() => setElegidas((s) => {
+                                                    const n = new Set(s);
+                                                    if (n.has(p.id)) n.delete(p.id); else n.add(p.id);
+                                                    return n;
+                                                })}
+                                                data-surface="card"
+                                                className={`w-full text-left rounded-xl p-3 min-h-[var(--tap-min)] active:scale-[0.97]
+                                                    ${marcada ? 'ring-2 ring-accent' : 'ring-1 ring-border-card'}`}>
+                                                <div className="flex items-baseline justify-between gap-2">
+                                                    <span className="text-body-sm font-bold text-content truncate">{p.cliente || 'Sin nombre'}</span>
+                                                    <span className="text-caption text-content-3 whitespace-nowrap">{p.sala}</span>
+                                                </div>
+                                                <p className="text-caption text-content-2">{p.producto}</p>
+                                                <p className="text-caption text-content-3">
+                                                    {p.correlativo ? `Factura ${factura(p.correlativo)} · ` : 'Traída · '}
+                                                    pagada el {fechaCorta(String(p.pagada_at).slice(0, 10))}
+                                                    {p.cobrada_por ? ` · ${shortEmployeeName(p.cobrada_por)}` : ''}
+                                                </p>
+                                            </button>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        )}
+                    </div>
+                )}
+
+                <div className="flex justify-end gap-2">
+                    <Button variant="ghost" onClick={onClose} disabled={enviando}>Cancelar</Button>
+                    {pie}
+                </div>
+            </div>
+        </LiquidModal>
+    );
+}

@@ -23,6 +23,11 @@ export function fetchAntibioticProductIds() {
     return supabase.from('products').select('id').eq('es_antibiotico', true);
 }
 
+/** De estos productos, cuáles van bajo receta. `id` es único: la entrada acota la respuesta. */
+export function fetchCualesVanBajoReceta(productIds) {
+    return supabase.from('products').select('id').eq('es_antibiotico', true).in('id', productIds);
+}
+
 /*
  * Lo que se facturó en un período y NO es venta de productos.
  *

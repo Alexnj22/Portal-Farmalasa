@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1149.0 — App: Ventas nativa
+
+- **App: Ventas nativa.** Las facturas del período con sus cifras arriba —total, facturas, ticket promedio y puntos canjeados—, cada una contra el período anterior equivalente y por día. Período (hoy, ayer, 7 días, este mes, mes anterior), sala y «con receta médica / sólo anuladas» en el menú; búsqueda por cliente, producto o número en la barra. Tocar una venta abre su detalle: cliente, cuándo, sala, vendedor, forma de pago, sello de Hacienda, productos con lote y vencimiento, descuento por puntos y, en crédito fiscal, el IVA y la retención.
+- **Núcleo:** el período de comparación, la variación por día, la hora de corte y los renglones de una venta (sin duplicados, con el descuento por puntos) pasan de `VentasView` a `src/utils/ventasPeriodo.js`, con su prueba. Nueva `fetchCualesVanBajoReceta`, acotada por los productos de la venta.
+
 ## v2.1148.0 — App: Inventario nativo
 
 - **App: Inventario nativo.** Lo que hay en una sala producto por producto: unidades, lote, laboratorio y lo que vence primero, con las cifras de vencidos, por vencer en seis meses, productos e inversión. «Todo / Por vencer / Vencidos» en el segmentado; sala, área de vencidos de Bodega, categoría y orden en el menú; búsqueda en la barra. Arranca en la sala de quien la abre y tocar un producto abre su ficha con los lotes por sala.

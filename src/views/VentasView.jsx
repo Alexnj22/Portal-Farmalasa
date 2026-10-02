@@ -38,7 +38,8 @@ import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
 import TabInyecciones from './ventas/TabInyecciones';
-import { fechaTexto, horaSV, hoySV, relojSV } from '@nucleo/utils/fecha';
+import { fechaTexto } from '@nucleo/utils/fecha';
+import { diasDelRango as countDays, horaDeCorte as currentHoraCorte, mesEnCurso as currentMonthRange, periodoAnterior as computePrevRange, renglonesDeLaVenta, variacionPorDia as dailyPct } from '@nucleo/utils/ventasPeriodo';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
@@ -77,61 +78,10 @@ function fmtDate(dateStr) {
     return fechaTexto(dateStr, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function currentMonthRange() {
-    const now = relojSV();
-    const y = now.getFullYear();
-    const m = now.getMonth() + 1;
-    const d = now.getDate();
-    const pad = (n) => String(n).padStart(2, '0');
-    // Use today as ffin so the comparison period is "same days last month", not full-month-vs-full-month
-    return { fini: `${y}-${pad(m)}-01`, ffin: `${y}-${pad(m)}-${pad(d)}`, label: `${y}-${pad(m)}` };
-}
-
-// Rango de comparación: mismo rango desplazado hacia atrás EL NÚMERO DE MESES QUE
-// ABARCA la selección — no siempre 1 mes fijo (bug reportado 2026-07-17: "Últimos 3
-// meses" / "Este año" se comparaban contra solo 1 mes atrás, un rango casi solapado
-// con el actual en vez de un período previo equivalente y no solapado).
-// Ej: rango de 1 mes (5-9 may) → 5-9 abr (shift de 1 mes, caso común/default).
-//     rango de 3 meses (may-jul) → feb-abr (shift de 3 meses, no solapado).
-//     rango de 12 meses (ene-dic 2026) → ene-dic 2025 (shift de 12 meses).
-function computePrevRange(fini, ffin) {
-    const pad = n => String(n).padStart(2, '0');
-    const [sy, sm] = fini.split('-').map(Number);
-    const [ey, em] = ffin.split('-').map(Number);
-    const monthsSpan = Math.max(1, (ey * 12 + em) - (sy * 12 + sm) + 1);
-    const shiftBack = (dateStr) => {
-        const [y, m, d] = dateStr.split('-').map(Number);
-        const idx = y * 12 + (m - 1) - monthsSpan; // índice absoluto de mes (0 = ene año 0)
-        const py = Math.floor(idx / 12);
-        const pm = ((idx % 12) + 12) % 12 + 1;
-        const lastDay = new Date(py, pm, 0).getDate(); // último día del mes resultante
-        return `${py}-${pad(pm)}-${pad(Math.min(d, lastDay))}`;
-    };
-    return { prevFini: shiftBack(fini), prevFfin: shiftBack(ffin) };
-}
-
 function fmtShort(dateStr) {
     if (!dateStr) return '';
     const [, m, d] = dateStr.split('-');
     return `${parseInt(d)}/${parseInt(m)}`;
-}
-
-function countDays(fini, ffin) {
-    return Math.round((new Date(ffin + 'T12:00:00') - new Date(fini + 'T12:00:00')) / 86400000) + 1;
-}
-
-// Compare by daily average (total/days) so months with different lengths are fair
-function dailyPct(curTotal, curDays, prevTotal, prevDays) {
-    if (!prevTotal || !prevDays || !curDays) return null;
-    const curAvg  = curTotal  / curDays;
-    const prevAvg = prevTotal / prevDays;
-    return ((curAvg - prevAvg) / prevAvg) * 100;
-}
-
-// Returns "HH:MM:00" in CST if ffin is today, null for past ranges (no cutoff needed)
-function currentHoraCorte(ffin) {
-    if (ffin !== hoySV()) return null;
-    return horaSV().replace(/:\d\d$/, ':00');   // el corte va al minuto: los segundos en cero
 }
 
 function FilterControls({
@@ -752,19 +702,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     </div>
                 ) : (
                     (() => {
-                        const seen = new Set();
-                        const deduped = (cachedItems || []).filter(it => {
-                            const sig = `${it.erp_product_id ?? it.descripcion}|${it.presentacion ?? ''}|${it.precio_unitario}|${it.total_linea}|${it.lote ?? ''}`;
-                            if (seen.has(sig)) return false;
-                            seen.add(sig);
-                            return true;
-                        });
-                        const discountItems = deduped.filter(it => it.erp_product_id === -999);
-                        const regularItems  = deduped.filter(it => it.erp_product_id !== -999 && it.descripcion);
-                        const discountAmt   = discountItems.reduce((s, it) => s + Math.abs(parseFloat(it.total_linea || 0)), 0);
-                        const regularSum    = regularItems.reduce((s, it) => s + parseFloat(it.total_linea || 0), 0);
-                        const arithmeticDiscount = regularSum - parseFloat(r.total || 0);
-                        const finalDiscount = discountItems.length > 0 ? discountAmt : (arithmeticDiscount > 0.01 ? arithmeticDiscount : 0);
+                        const { productos: regularItems, descuento: finalDiscount } = renglonesDeLaVenta(cachedItems, r.total);
                         const nameTxt = 'text-content-2';
                         const numTxt = 'text-content-3';
                         return (

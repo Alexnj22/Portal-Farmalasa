@@ -174,6 +174,13 @@ Deno.serve(async (req) => {
       const que = String(body.que ?? "");
       const motivo = String(body.motivo ?? "").trim();
 
+      /* Con alcance de una sala, sólo se piden correcciones de la PROPIA. Sin
+       * esto, cambiar el número en la petición dejaba pedir la anulación de un
+       * abono de otra sucursal — la decide un supervisor, pero la solicitud no
+       * tendría que poder existir. Mismo freno que `historial` y `pagar`. */
+      if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
+        return responder({ ok: false, error: "Ese crédito es de otra sucursal." }, 403);
+      }
       if (!["ANULAR", "MONTO", "FORMA"].includes(que)) {
         return responder({ ok: false, error: "No se dijo qué corregir." }, 400);
       }

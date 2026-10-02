@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1159.0 — Cuentas por cobrar: filtros de orden, vendedor y por vencer
+
+- **Ordenar:** más antiguos (como siempre), más recientes —para encontrar lo que se acaba de vender— o mayor saldo.
+- **Ver «Por vencer»:** los créditos con saldo que cumplen el plazo esta semana, para llamar antes de que venzan. «Pasados del plazo» pasa a llamarse «Vencidos».
+- **Filtro por vendedor:** quién vendió el crédito, con su nombre corto. Sólo aparece si hay más de uno.
+- La píldora de filtros queda en el orden canónico (sucursal → vendedor → ver → orden), con desplegables compactos, y los filtros viven en la dirección: un F5 o un enlace compartido conservan lo que se estaba mirando.
+- **Seguridad:** quien ve una sola sucursal ya no puede cambiar el `?sala=` de la dirección para ver otra (antes la base ya lo impedía y mostraba la lista vacía; ahora se queda en la propia). Y pedir la corrección de un abono de otra sucursal se rechaza en el servidor.
+
 ## v2.1158.0 — Cuentas por cobrar: la pantalla relee la caja mientras está abierta
 
 - **Un crédito recién vendido ya aparece para abonarlo al momento.** Antes la lista se ponía al día cada 10 minutos y un crédito vendido en ese rato no salía. Ahora la pantalla relee la caja de su sucursal al abrirse, cada minuto mientras está a la vista y al volver a la pestaña. Con la pantalla oculta no pide nada.

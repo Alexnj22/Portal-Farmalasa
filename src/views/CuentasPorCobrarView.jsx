@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AlertTriangle, Building2, CalendarClock, HandCoins, Pencil, RefreshCw, Search, ShoppingBag, UserCircle2, X } from 'lucide-react';
+import { AlertTriangle, ArrowDownUp, Building2, CalendarClock, HandCoins, Pencil, RefreshCw, Search, ShoppingBag, UserCircle2, X } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -36,7 +36,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
  * cómo dos pantallas terminan mostrando días distintos. */
 import { fechaCorta } from '@nucleo/utils/ticketCampos';
 import { aplicacionesDelPago, APROBACION, estadoDelCobro, FORMAS_DE_COBRO as FORMAS, FORMAS_REALES, MOTIVO_DEL_FRENO, repartoDelMasViejo, repartoDesdeElComprobante, ROTULO_DE_FORMA, sumaDeSaldos } from '@nucleo/utils/abonoDeCredito';
-import { abonosDelCredito, carteraFiltrada, desdeLaLectura, pagadoPct, tituloDeDias, VER_CARTERA as VER } from '@nucleo/utils/cartera';
+import { abonosDelCredito, carteraFiltrada, desdeLaLectura, ORDEN_CARTERA as ORDEN, pagadoPct, tituloDeDias, VER_CARTERA as VER } from '@nucleo/utils/cartera';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12 } from '@nucleo/utils/hora';
 // La regla de todo campo de dinero con máximo (ver el archivo).
@@ -142,18 +142,32 @@ export default function CuentasPorCobrarView() {
      * cierra sola a los 5 minutos y la recarga volvería a «todas» sin decir
      * nada, con la lista de otra sucursal delante. */
     const [params, setParams] = useSearchParams();
-    const sala = params.get('sala') || '';
-    const setSala = useCallback((v) => {
+    /* Con alcance de UNA sala la dirección no manda: `?sala=28` escrito a mano
+     * mostraría una lista vacía —el RLS no deja ver otra— que se lee como «nadie
+     * debe nada». La sala es la propia, diga lo que diga la URL. */
+    const salaPropia = String(user?.branchId ?? user?.branch_id ?? '');
+    const sala = alcance === 'ALL' ? (params.get('sala') || '') : salaPropia;
+    /* Los filtros viven en la dirección igual que la sala: un F5 o el enlace que
+     * alguien pasa conserva lo que se estaba mirando. El valor por defecto NO se
+     * escribe, así la dirección limpia es la vista de arranque. */
+    const ponerFiltro = useCallback((clave, valor, defecto = '') => {
         setParams((p) => {
             const q = new URLSearchParams(p);
-            if (v) q.set('sala', String(v)); else q.delete('sala');
+            if (valor && valor !== defecto) q.set(clave, String(valor)); else q.delete(clave);
             q.delete('pagina');
             return q;
         }, { replace: true });
     }, [setParams]);
+    const setSala = useCallback((v) => ponerFiltro('sala', v), [ponerFiltro]);
+    const leerDe = (lista, valor, defecto) => (lista.some((o) => o.value === valor) ? valor : defecto);
+    const ver = leerDe(VER, params.get('ver'), 'DEBEN');
+    const setVer = useCallback((v) => ponerFiltro('ver', v, 'DEBEN'), [ponerFiltro]);
+    const orden = leerDe(ORDEN, params.get('orden'), 'ANTIGUOS');
+    const setOrden = useCallback((v) => ponerFiltro('orden', v, 'ANTIGUOS'), [ponerFiltro]);
+    const vendedor = params.get('vendedor') || '';
+    const setVendedor = useCallback((v) => ponerFiltro('vendedor', v), [ponerFiltro]);
 
     const [busqueda, setBusqueda] = useState('');
-    const [ver, setVer] = useState('DEBEN');
     const [creditos, setCreditos] = useState(VACIO);
     const [cargando, setCargando] = useState(true);
     const [abonando, setAbonando] = useState(null);
@@ -263,8 +277,26 @@ export default function CuentasPorCobrarView() {
         [creditos],
     );
 
-    // Los más viejos arriba: son los que hay que ir a cobrar (`carteraFiltrada`).
-    const filtrados = useMemo(() => carteraFiltrada(conEdad, { ver, busqueda, nombreDeSala }), [conEdad, ver, busqueda, nombreDeSala]);
+    // Por defecto los más viejos arriba: son los que hay que ir a cobrar (`carteraFiltrada`).
+    const filtrados = useMemo(
+        () => carteraFiltrada(conEdad, { ver, busqueda, nombreDeSala, orden, vendedor }),
+        [conEdad, ver, busqueda, nombreDeSala, orden, vendedor],
+    );
+
+    /* Quién vendió, sacado de la propia cartera: sólo aparece quien tiene
+     * créditos en lo que se está mirando, y el nombre es el corto canónico. */
+    const opcionesVendedor = useMemo(() => {
+        const vistos = new Map();
+        for (const c of creditos) {
+            if (c.vendedor_id == null || vistos.has(String(c.vendedor_id))) continue;
+            const ficha = vendedores.get(String(c.vendedor_id)) ?? c.vendedor;
+            vistos.set(String(c.vendedor_id), shortEmployeeName(ficha?.name ?? ''));
+        }
+        return [{ value: '', label: 'Vendedores' },
+            ...[...vistos].filter(([, n]) => n)
+                .sort((a, b) => a[1].localeCompare(b[1], 'es'))
+                .map(([value, label]) => ({ value, label }))];
+    }, [creditos, vendedores]);
 
     /* Una búsqueda que no encuentra a nadie puede ser «lo acaban de vender»:
      * antes de quedarse con el vacío, se le pregunta a la caja (tope corto en
@@ -417,31 +449,58 @@ export default function CuentasPorCobrarView() {
                         )}
                     </div>
 
+                    {/* §17: ámbito → entidad → estado, y el orden al final. Los
+                        cuatro son desplegables compactos y no segmentados: con
+                        cuatro estados un segmentado se come media píldora.
+                        Si falta ancho, lo primero que cede es el vendedor y lo
+                        último «Ver», que es el filtro que se usa. */}
                     <FilterBar
-                        onClear={() => { setVer('DEBEN'); setSala(''); }}
-                        activeCount={(ver !== 'DEBEN' ? 1 : 0) + (sala ? 1 : 0)}
+                        onClear={() => setParams((p) => {
+                            const q = new URLSearchParams(p);
+                            ['ver', 'orden', 'vendedor', 'pagina'].forEach((k) => q.delete(k));
+                            if (alcance === 'ALL') q.delete('sala');
+                            return q;
+                        }, { replace: true })}
+                        activeCount={(ver !== 'DEBEN' ? 1 : 0) + (orden !== 'ANTIGUOS' ? 1 : 0)
+                            + (vendedor ? 1 : 0) + (alcance === 'ALL' && sala ? 1 : 0)}
                     >
-                        <FilterBar.Section active={ver !== 'DEBEN'} onClear={() => setVer('DEBEN')} label="ver">
-                            <FilterBar.Opciones
-                                label="Ver" icon={CalendarClock}
-                                value={ver} onChange={(v) => { setVer(v || 'DEBEN'); setPage(1); }}
-                                options={VER} ancho="185px"
-                            />
-                        </FilterBar.Section>
-
                         {/* Con una sola sala no se dibuja: un control con una
                             opción no es una elección, y ocupa el lugar de una. */}
                         {salas.length > 1 && (
-                            <FilterBar.Section active={!!sala} onClear={() => setSala('')} label="sucursal">
-                                <FilterBar.Opciones
-                                    label="Sucursal" icon={Building2}
+                            <FilterBar.Section active={!!sala} onClear={() => setSala('')} label="sucursal" prioridad={1}>
+                                <FilterBar.Sucursal
                                     value={sala} onChange={(v) => setSala(v || '')}
                                     options={[{ value: '', label: 'Todas' },
                                         ...salas.map((b) => ({ value: String(b.id), label: b.name }))]}
-                                    ancho="165px"
                                 />
                             </FilterBar.Section>
                         )}
+
+                        {opcionesVendedor.length > 2 && (
+                            <FilterBar.Section active={!!vendedor} onClear={() => setVendedor('')} label="vendedor">
+                                <FilterBar.Opciones
+                                    label="Vendedor" icon={UserCircle2} umbral={0}
+                                    value={vendedor} onChange={(v) => setVendedor(v || '')}
+                                    options={opcionesVendedor} placeholder="Vendedores" ancho="155px"
+                                />
+                            </FilterBar.Section>
+                        )}
+
+                        <FilterBar.Section active={ver !== 'DEBEN'} onClear={() => setVer('DEBEN')} label="ver" prioridad={2}>
+                            <FilterBar.Opciones
+                                label="Ver" icon={CalendarClock} umbral={0}
+                                value={ver} onChange={(v) => setVer(v || 'DEBEN')}
+                                options={VER} ancho="150px"
+                            />
+                        </FilterBar.Section>
+
+                        <FilterBar.Section active={orden !== 'ANTIGUOS'} onClear={() => setOrden('ANTIGUOS')} label="orden" prioridad={1}>
+                            <FilterBar.Opciones
+                                label="Ordenar" icon={ArrowDownUp} umbral={0}
+                                value={orden} onChange={(v) => setOrden(v || 'ANTIGUOS')}
+                                options={ORDEN} ancho="155px"
+                            />
+                        </FilterBar.Section>
                     </FilterBar>
                 </div>
 
@@ -456,14 +515,22 @@ export default function CuentasPorCobrarView() {
                         /* Un vacío FELIZ cuando es «con saldo»: nadie debe nada.
                            Se nombra como tal en vez de dejar el cartel gris de
                            «no hay datos», que se lee como que algo falló. */
-                        <EmptyState compact icon={HandCoins}
-                            title={ver === 'VENCIDOS' ? 'Nadie se pasó del plazo' : 'Nadie debe nada'}
-                            subtitle={ver === 'VENCIDOS'
-                                ? `Todos los créditos con saldo están dentro de los ${DIAS_DE_PLAZO} días.`
-                                : 'Todos los créditos están pagados.'}
-                            action={ver !== 'TODOS'
-                                ? <Button variant="secondary" onClick={() => setVer('TODOS')}>Ver todos</Button>
-                                : undefined} />
+                        vendedor ? (
+                            <EmptyState compact icon={UserCircle2} title="Sin créditos de este vendedor"
+                                subtitle="Con los filtros puestos, no hay créditos vendidos por esta persona."
+                                action={<Button variant="secondary" onClick={() => setVendedor('')}>Todos los vendedores</Button>} />
+                        ) : (
+                            <EmptyState compact icon={HandCoins}
+                                title={ver === 'VENCIDOS' ? 'Nadie se pasó del plazo'
+                                    : ver === 'POR_VENCER' ? 'Nada vence esta semana' : 'Nadie debe nada'}
+                                subtitle={ver === 'VENCIDOS'
+                                    ? `Todos los créditos con saldo están dentro de los ${DIAS_DE_PLAZO} días.`
+                                    : ver === 'POR_VENCER' ? 'Ningún crédito con saldo está por cumplir el plazo.'
+                                    : 'Todos los créditos están pagados.'}
+                                action={ver !== 'TODOS'
+                                    ? <Button variant="secondary" onClick={() => setVer('TODOS')}>Ver todos</Button>
+                                    : undefined} />
+                        )
                     )
                 ) : (
                     <>

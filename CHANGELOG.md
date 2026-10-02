@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1156.0 — Salida de efectivo: la bolsa primero y la caja pone el resto
+
+- **Una salida ya no se traba porque ni la bolsa ni la caja alcanzan solas.** Reportado en Salud 4: una remesa de $150 con $130 en billetes en la bolsa y el resto en el cajón no se podía registrar («el cajón entra entero o no entra»). Ahora, cuando ninguno de los dos alcanza solo pero juntos sí, la bolsa da lo que tiene y la caja pone el resto, anotado como vale del turno. Si la caja alcanza sola, sigue saliendo entera de ahí; si las bolsas alcanzan, no se toca la caja.
+- **Un solo vale** que dice cuánto salió de cada bolsa, cuánto de la caja y el total entregado. No dice cuánto queda en el cajón.
+- **Se anulan juntas.** Anular una salida así pide la corrección de su parte de caja; al aprobarse, se anulan las dos. Si la caja rechaza su parte al registrar, la de la bolsa se anula sola: no queda una salida a medias.
+- El aviso de «no alcanza» dice ahora que ni sumando la caja alcanza, en vez de hablar sólo de las monedas de las bolsas.
+- Base: `caja_movimientos_portal.bolsa_operacion_id` liga las dos partes; `operar-caja` hereda de la bolsa quién retira y, al aprobar la anulación, anula también la bolsa.
+
 ## v2.1155.0 — App: Cuentas por cobrar nativa
 
 - **App: Cuentas por cobrar nativa.** La cartera: quién debe, cuánto de cuánto (con la barra de lo pagado), desde cuándo (los días en color: dentro del plazo, la última semana, pasado), quién vendió y cuándo abonó, el más viejo primero. Arriba cuánto suma lo que se ve, cuántos se pasaron del plazo y si la lista está al día. «Con saldo / Pasados / Todos», la sala en el menú y la búsqueda por cliente, documento o monto. Un crédito con un cobro esperando aprobación lo dice. Tocar uno abre su ficha: lo que debe y lleva pagado, cuándo compró, quién vendió, lo que se llevó y sus abonos —leídos de la caja y casados con quién cobró desde el portal—. Cobrar sigue en el portal, dentro de la app.

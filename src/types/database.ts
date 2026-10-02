@@ -2716,6 +2716,7 @@ export type Database = {
           anulado_at: string | null
           anulado_motivo: string | null
           anulado_por: string | null
+          bolsa_operacion_id: number | null
           branch_id: number
           clave_envio: string | null
           concepto: string
@@ -2743,6 +2744,7 @@ export type Database = {
           anulado_at?: string | null
           anulado_motivo?: string | null
           anulado_por?: string | null
+          bolsa_operacion_id?: number | null
           branch_id: number
           clave_envio?: string | null
           concepto: string
@@ -2770,6 +2772,7 @@ export type Database = {
           anulado_at?: string | null
           anulado_motivo?: string | null
           anulado_por?: string | null
+          bolsa_operacion_id?: number | null
           branch_id?: number
           clave_envio?: string | null
           concepto?: string
@@ -2806,6 +2809,13 @@ export type Database = {
             columns: ["anulado_por"]
             isOneToOne: false
             referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "caja_movimientos_portal_bolsa_operacion_id_fkey"
+            columns: ["bolsa_operacion_id"]
+            isOneToOne: false
+            referencedRelation: "bolsas_operaciones"
             referencedColumns: ["id"]
           },
           {
@@ -23386,6 +23396,37 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      anular_salida_de_bolsa_desde_caja: {
+        Args: { p_motivo: string; p_operacion_id: number; p_por: string }
+        Returns: {
+          anulada_at: string | null
+          anulada_motivo: string | null
+          anulada_por: string | null
+          branch_id: number
+          created_at: string
+          entidad: string | null
+          folio: string
+          foto_lectura: Json | null
+          foto_url: string | null
+          id: number
+          monto: number
+          monto_origen: string | null
+          nota: string | null
+          numero_boleta: string | null
+          recibido_metodo: string | null
+          recibido_por: string | null
+          registrado_at: string
+          registrado_por: string | null
+          tipo: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bolsas_operaciones"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       apagar_cuenta_de_carne_temporal: {
         Args: { p_auth_user_id: string }
         Returns: undefined
@@ -23625,6 +23666,41 @@ export type Database = {
       boleta_ya_registrada: {
         Args: { p_branch_id: number; p_numero_boleta: string }
         Returns: Json
+      }
+      bolsa_anular_operacion_nucleo: {
+        Args: { p_motivo: string; p_operacion_id: number; p_por: string }
+        Returns: {
+          anulada_at: string | null
+          anulada_motivo: string | null
+          anulada_por: string | null
+          branch_id: number
+          created_at: string
+          entidad: string | null
+          folio: string
+          foto_lectura: Json | null
+          foto_url: string | null
+          id: number
+          monto: number
+          monto_origen: string | null
+          nota: string | null
+          numero_boleta: string | null
+          recibido_metodo: string | null
+          recibido_por: string | null
+          registrado_at: string
+          registrado_por: string | null
+          tipo: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bolsas_operaciones"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      bolsa_operacion_no_anulable: {
+        Args: { p_operacion_id: number }
+        Returns: string
       }
       bolsa_reintegro_maximo: { Args: { p_bolsa_id: number }; Returns: number }
       bolsa_saldo: { Args: { p_bolsa_id: number }; Returns: number }

@@ -221,9 +221,12 @@ export const totalDisponible = (lista) =>
  *   ninguna bolsa que tocar, y devolver uno falso haría que la pantalla
  *   anunciara una etiqueta nueva sobre una bolsa que nadie abrió.
  *
- * El cajón entra ENTERO o no entra: partir una salida entre el cajón y una
- * bolsa dejaría un vale de caja y un vale de bolsa por una sola entrega, que
- * son dos papeles en dos archivos distintos por un solo acto.
+ * `'MIXTO'` (desde el 2026-10-02): ni el cajón ni las bolsas alcanzan solos,
+ * pero juntos sí. Las bolsas dan lo que tienen en `repartos` y el cajón pone
+ * `delCajon`. Sigue siendo UNA salida: un solo vale que dice de dónde salió
+ * cada parte, y se anulan juntas. Hasta ese día la regla era «el cajón entra
+ * entero o no entra», y una remesa de $150 con $130 en la bolsa y el resto en
+ * el cajón no se podía registrar.
  *
  * Y respeta el paso igual que una bolsa: si el monto es múltiplo de $10, del
  * cajón salen billetes de $10. Con el monto redondo eso sólo puede recortar el
@@ -233,18 +236,57 @@ export function elegirOrigen({ efectivoEnCaja, puedeElCajon, lista, monto }) {
     const enBolsas = elegirBolsas(lista, monto);
     const objetivo = centavos(monto);
     if (objetivo <= 0 || !puedeElCajon || efectivoEnCaja == null) {
-        return { ...enBolsas, origen: 'BOLSAS' };
+        return { ...enBolsas, origen: 'BOLSAS', delCajon: 0 };
     }
     const paso = pasoDeMonto(objetivo);
     const enCaja = centavos(efectivoEnCaja);
     const puede = paso > 0 ? Math.floor(enCaja / paso) * paso : enCaja;
-    if (puede < objetivo) return { ...enBolsas, origen: 'BOLSAS' };
+    if (puede >= objetivo) {
+        return {
+            ...enBolsas,
+            origen: 'CAJA',
+            repartos: [],
+            alcanza: true,
+            combinada: false,
+            falta: 0,
+            delCajon: objetivo / 100,
+        };
+    }
+    if (enBolsas.alcanza) return { ...enBolsas, origen: 'BOLSAS', delCajon: 0 };
+
+    /* ── MIXTA: las bolsas dan lo que tienen y el cajón pone el resto ──────
+     *
+     * «primero la bolsa y luego de caja» (usuario, 2026-10-02). Lo trajo una
+     * remesa de $150 en Salud 4: la bolsa tenía $130 en billetes de $10, el
+     * cajón tenía el resto, y la regla vieja —el cajón entra entero o no
+     * entra— dejaba la salida sin forma de registrarse.
+     *
+     * Sólo cuando NINGUNO de los dos alcanza solo: si el cajón alcanza, sale
+     * entero de ahí (la prioridad del 2-sep), y si las bolsas alcanzan, no se
+     * toca el cajón. Partir sin necesidad es dos registros por una entrega.
+     *
+     * Las bolsas se vacían en su orden y con su paso, igual que una combinada,
+     * así que el resto ya es múltiplo del paso y el cajón lo entrega en los
+     * mismos billetes. */
+    const repartos = [];
+    let resta = objetivo;
+    for (const b of lista || []) {
+        if (resta <= 0) break;
+        const s = centavos(b.saldo);
+        const toma = Math.min(paso > 0 ? Math.floor(s / paso) * paso : s, resta);
+        if (toma <= 0) continue;
+        repartos.push({ bolsa_id: b.id, folio: b.folio, monto: toma / 100 });
+        resta -= toma;
+    }
+    if (!repartos.length || resta > puede) return { ...enBolsas, origen: 'BOLSAS', delCajon: 0 };
     return {
         ...enBolsas,
-        origen: 'CAJA',
-        repartos: [],
+        origen: 'MIXTO',
+        repartos,
         alcanza: true,
-        combinada: false,
+        combinada: repartos.length > 1,
         falta: 0,
+        delCajon: resta / 100,
+        deBolsas: (objetivo - resta) / 100,
     };
 }

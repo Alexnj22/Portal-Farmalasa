@@ -441,11 +441,18 @@ Deno.serve(async (req) => {
       // él mismo inventó.
       const { data: mov, error: errMov } = await supabase
         .from("caja_movimientos_portal")
-        .select("id, branch_id, tipo, monto, concepto, erp_movimiento_id, anulado_at")
+        .select("id, branch_id, tipo, monto, concepto, erp_movimiento_id, anulado_at, bolsa_operacion_id")
         .eq("id", movId).maybeSingle();
       if (errMov) throw new Error(`leyendo el movimiento: ${errMov.message}`);
       if (!mov) return json({ ok: false, error: "Ese movimiento no existe." }, 404);
       if (mov.anulado_at) return json({ ok: false, error: "Ese movimiento ya está anulado." }, 409);
+      /* La parte del cajón de una salida que salió primero de una bolsa no se
+       * corrige de monto: el vale dice «$130 de la bolsa + $20 de la caja», y
+       * cambiar una mitad deja un vale que no suma. Se anula ENTERA (y al
+       * aprobarse se anulan las dos partes) y se vuelve a registrar. */
+      if (mov.bolsa_operacion_id && que === "MONTO") {
+        return json({ ok: false, error: "Ese movimiento es la parte de la caja de una salida que también sacó de una bolsa: no se le cambia el monto, se anula entera y se vuelve a registrar." }, 409);
+      }
 
       /* Una sola solicitud viva por movimiento. Faltaba (auditado el 2-sep a
        * pedido del usuario): dos personas podían pedir lo mismo, un supervisor
@@ -610,7 +617,7 @@ Deno.serve(async (req) => {
 
       const { data: mov, error: errMov } = await supabase
         .from("caja_movimientos_portal")
-        .select("id, tipo, monto, concepto, erp_movimiento_id, anulado_at")
+        .select("id, tipo, monto, concepto, erp_movimiento_id, anulado_at, bolsa_operacion_id")
         .eq("id", Number(meta.movimiento_portal)).maybeSingle();
       if (errMov) throw new Error(`leyendo el movimiento: ${errMov.message}`);
       if (!mov) return json({ ok: false, error: "Ese movimiento ya no existe." }, 404);
@@ -650,6 +657,23 @@ Deno.serve(async (req) => {
       const montoNuevo = Number(meta.monto_nuevo);
       if (!anular && !(Number.isFinite(montoNuevo) && montoNuevo > 0)) {
         return json({ ok: false, error: "La solicitud no trae un monto válido." }, 400);
+      }
+
+      /* ── La parte del cajón de una salida mixta se anula CON su bolsa ──────
+       *
+       * «si se anula se anula de ambas» (usuario, 2026-10-02). La pregunta va
+       * ANTES de borrar en la caja: si la bolsa ya se entregó, borrar allá y
+       * fallar acá dejaría la salida a medio anular — $20 de vuelta en el
+       * cajón y $130 todavía descontados de una bolsa. */
+      const operacionBolsa = mov.bolsa_operacion_id ? Number(mov.bolsa_operacion_id) : null;
+      if (operacionBolsa && !anular) {
+        return json({ ok: false, error: "Ese movimiento es la parte de la caja de una salida que también sacó de una bolsa: no se le cambia el monto, se anula entera." }, 409);
+      }
+      if (operacionBolsa) {
+        const { data: motivoNo, error: errNo } = await supabase
+          .rpc("bolsa_operacion_no_anulable", { p_operacion_id: operacionBolsa });
+        if (errNo) throw new Error(`revisando la parte de la bolsa: ${errNo.message}`);
+        if (motivoNo) return json({ ok: false, error: String(motivoNo) }, 409);
       }
 
       const resp = anular
@@ -714,6 +738,30 @@ Deno.serve(async (req) => {
         // la segunda no encuentra la fila y no vuelve a escribir en la caja.
         .eq("id", sol.id).eq("status", "PENDING");
 
+      // La otra mitad. Sólo si la bolsa sigue viva: ya anulada, no hay nada que
+      // hacer y no es un error.
+      let errBolsa: { message: string } | null = null;
+      if (operacionBolsa) {
+        const { data: op, error: errOp } = await supabase.from("bolsas_operaciones")
+          .select("anulada_at").eq("id", operacionBolsa).maybeSingle();
+        errBolsa = errOp;
+        if (!errOp && op && !op.anulada_at) {
+          const { error } = await supabase.rpc("anular_salida_de_bolsa_desde_caja", {
+            p_operacion_id: operacionBolsa,
+            p_motivo: (sol as { note?: string }).note || "Anulada junto con su parte de la caja",
+            p_por: quien.id,
+          });
+          errBolsa = error;
+        }
+        if (errBolsa) {
+          console.error(`[operar-caja] corrección mov=${mov.id}: anulando la bolsa ${operacionBolsa}: ${errBolsa.message}`);
+        }
+      }
+
+      if (errBolsa) {
+        return json({ ok: true, aplicado: { que: meta.que, movimiento: mov.id },
+          aviso: "La caja se corrigió, pero la parte de la bolsa no se pudo anular. Anúlala desde el detalle de la bolsa o avísale a Sistemas." });
+      }
       if (errPortal || errCerrar) {
         return json({ ok: true, aplicado: { que: meta.que, movimiento: mov.id },
           aviso: "La caja se corrigió, pero el portal no lo pudo anotar entero. Avísale a Sistemas." });
@@ -1271,9 +1319,49 @@ Deno.serve(async (req) => {
        * sabe si fue carne o contrasena, y dejar que lo diga el navegador
        * permitiria escribir «carne» sobre una comprobacion que fue de otra
        * clase. */
+      /* ── LA PARTE DEL CAJÓN DE UNA SALIDA QUE SALIÓ PRIMERO DE UNA BOLSA ──
+       *
+       * «primero la bolsa y luego de caja. el vale sale 1 solo» (usuario,
+       * 2026-10-02). La bolsa ya se descontó en `registrar_salida_de_bolsa`;
+       * esto anota el resto y lo LIGA a esa operación, que es lo que hace de
+       * las dos una sola salida: un vale, y se anulan juntas.
+       *
+       * La operación se RELEE: el navegador manda un id y nada más. Tiene que
+       * ser de esta sala, de quien está escribiendo y de hace minutos — sin eso
+       * cualquiera podría colgarle un retiro del cajón a una salida ajena.
+       *
+       * Y la identidad de quien retira se HEREDA de ella: ya se comprobó contra
+       * el servidor y el vale de identidad es de un solo uso, así que pedirlo
+       * otra vez dejaría la salida a medias justo después de abrir la bolsa. */
+      let operacionBolsa: { id: number; recibido_por: string | null; recibido_metodo: string | null } | null = null;
+      if (!esEntrada && body.operacion_bolsa != null && body.operacion_bolsa !== "") {
+        const opId = Number(body.operacion_bolsa);
+        if (!Number.isFinite(opId)) return json({ ok: false, error: "La parte de la bolsa no es válida." }, 400);
+        const { data: op, error: errOp } = await supabase.from("bolsas_operaciones")
+          .select("id, branch_id, registrado_por, registrado_at, anulada_at, recibido_por, recibido_metodo")
+          .eq("id", opId).maybeSingle();
+        if (errOp) throw new Error(`leyendo la parte de la bolsa: ${errOp.message}`);
+        if (!op || op.anulada_at) {
+          return json({ ok: false, error: "La parte de la bolsa no existe o ya se anuló." }, 409);
+        }
+        if (Number(op.branch_id) !== sala) {
+          return json({ ok: false, error: "La parte de la bolsa es de otra sala." }, 400);
+        }
+        if (op.registrado_por !== quien.id) {
+          return json({ ok: false, error: "La parte de la bolsa la registró otra persona." }, 403);
+        }
+        if (Date.now() - new Date(op.registrado_at).getTime() > 15 * 60_000) {
+          return json({ ok: false, error: "La parte de la bolsa se registró hace demasiado: anúlala y vuelve a registrar la salida entera." }, 409);
+        }
+        operacionBolsa = op as typeof operacionBolsa;
+      }
+
       let recibidoPor: string | null = null;
       let recibidoMetodo: string | null = null;
-      if (!esEntrada && body.recibido_por) {
+      if (operacionBolsa?.recibido_por) {
+        recibidoPor = operacionBolsa.recibido_por;
+        recibidoMetodo = operacionBolsa.recibido_metodo;
+      } else if (!esEntrada && body.recibido_por) {
         const { data: metodo, error: errVale } = await supabase
           .rpc("consumir_vale_de_identidad", {
             p_vale: body.vale ?? null, p_persona: String(body.recibido_por),
@@ -1343,6 +1431,8 @@ Deno.serve(async (req) => {
           // La clave de ESTE envío: su índice único es lo que hace que dos
           // peticiones en paralelo no puedan escribir dos movimientos.
           clave_envio: claveEnvio,
+          // De qué salida de bolsa es el resto, si lo es. Ver `operacionBolsa`.
+          bolsa_operacion_id: operacionBolsa?.id ?? null,
         })
         .select("*").single();
 
@@ -1371,6 +1461,11 @@ Deno.serve(async (req) => {
             abono: null, movimiento: ya, repetido: true,
           });
         }
+      }
+      // El índice `caja_mov_portal_una_parte_por_operacion`: esa salida ya
+      // tiene su parte de la caja viva.
+      if (errFila?.code === "23505" && operacionBolsa) {
+        return json({ ok: false, error: "Esa salida ya tiene su parte de la caja anotada." }, 409);
       }
       if (errFila) throw new Error(`guardando el movimiento: ${errFila.message}`);
 

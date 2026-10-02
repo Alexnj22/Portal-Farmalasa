@@ -249,11 +249,12 @@ describe('de dónde sale: el cajón primero', () => {
         expect(r.repartos).toEqual([{ bolsa_id: 1, folio: 'S3-1001', monto: 300 }]);
     });
 
-    it('el cajón entra ENTERO: no se parte una salida entre el cajón y una bolsa', () => {
-        // Con $200 en el cajón y una salida de $300, el cajón no aporta nada:
-        // serían dos vales en dos archivos distintos por una sola entrega.
+    it('si las bolsas alcanzan solas, el cajón no se parte con ellas', () => {
+        // Con $200 en el cajón y una salida de $300, la bolsa de $300 alcanza:
+        // partir sería dos registros por una entrega sin ninguna necesidad.
         const r = conCajon(200, 300);
         expect(r.origen).toBe('BOLSAS');
+        expect(r.delCajon).toBe(0);
         expect(r.repartos).toEqual([{ bolsa_id: 1, folio: 'S3-1001', monto: 300 }]);
     });
 
@@ -274,5 +275,55 @@ describe('de dónde sale: el cajón primero', () => {
         // `bolsas_tipos_salida.caja_tipo` en NULL = ese motivo nunca sale del
         // cajón, por más efectivo que haya.
         expect(conCajon(5000, 3.37, false).origen).toBe('BOLSAS');
+    });
+});
+
+/* ── MIXTA: la bolsa primero, el cajón el resto (usuario, 2026-10-02) ───────
+ *
+ * Lo trajo una remesa de $150 en Salud 4: la bolsa S4-1583 tenía $133.58
+ * —$130 en billetes de $10— y el cajón tenía el resto. «primero la bolsa y
+ * luego de caja. el vale sale 1 solo». */
+describe('de dónde sale: bolsa y cajón juntos', () => {
+    const salud4 = [B(584, 'S4-1583', '2026-10-01', '21:00', 133.58)];
+    const mixta = (efectivoEnCaja, monto, l = salud4) =>
+        elegirOrigen({ efectivoEnCaja, puedeElCajon: true, lista: l, monto });
+
+    it('el caso de Salud 4: $130 de la bolsa y $20 del cajón', () => {
+        const r = mixta(60, 150);
+        expect(r.origen).toBe('MIXTO');
+        expect(r.alcanza).toBe(true);
+        expect(r.repartos).toEqual([{ bolsa_id: 584, folio: 'S4-1583', monto: 130 }]);
+        expect(r.delCajon).toBe(20);
+        expect(r.deBolsas).toBe(130);
+    });
+
+    it('el cajón pone el resto en los mismos billetes: con $15 no paga $20', () => {
+        // $150 va en billetes de $10, así que de $15 el cajón sólo da $10.
+        expect(mixta(15, 150).origen).toBe('BOLSAS');
+        expect(mixta(15, 150).alcanza).toBe(false);
+        expect(mixta(20, 150).origen).toBe('MIXTO');
+    });
+
+    it('si el cajón alcanza solo, sale entero de ahí (la prioridad no cambia)', () => {
+        const r = mixta(200, 150);
+        expect(r.origen).toBe('CAJA');
+        expect(r.delCajon).toBe(150);
+    });
+
+    it('sin medir el cajón no hay mezcla: «no sé» no es tener', () => {
+        expect(mixta(null, 150).origen).toBe('BOLSAS');
+        expect(mixta(null, 150).alcanza).toBe(false);
+    });
+
+    it('con varias bolsas se vacían en su orden y el cajón pone lo que falta', () => {
+        const r = mixta(100, 1600, lista);
+        expect(r.origen).toBe('MIXTO');
+        expect(r.repartos.map((x) => x.monto)).toEqual([300, 700, 500]);
+        expect(r.combinada).toBe(true);
+        expect(r.delCajon).toBe(100);
+    });
+
+    it('sin nada en las bolsas no es mixta: es que no alcanza', () => {
+        expect(mixta(10, 150, []).origen).toBe('BOLSAS');
     });
 });

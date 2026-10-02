@@ -711,6 +711,29 @@ export default function MiCajaView({ comoPestana = false }) {
      * motivo sin perder lo escrito, y la identidad comprobada se suelta sola
      * allá cuando la escritura no entró. */
     const anotarSalidaDelCajon = useCallback(async (datos) => {
+        /* ── La parte del cajón de una salida que salió primero de una bolsa ──
+         *
+         * Sin `correr` a propósito: `correr` avisa «Salida anotada», cierra el
+         * diálogo y recarga, y acá la salida todavía no terminó — el diálogo
+         * tiene que poder anular la parte de la bolsa si esto falla, y después
+         * imprimir el ÚNICO vale, que es el de la bolsa. Por eso tampoco se
+         * imprime el comprobante de caja. */
+        if (datos.operacionBolsa) {
+            const r = await anotarSalida({
+                sala,
+                monto: datos.monto,
+                concepto: datos.concepto,
+                tipo: datos.tipo,
+                boleta: datos.boleta,
+                fotoUrl: datos.fotoUrl,
+                recibe: datos.recibe,
+                detalle: datos.conceptoCompleto,
+                operacionBolsa: datos.operacionBolsa,
+            });
+            if (r?.error || !r?.ok) return { ok: false, error: mensajeAmigable(r?.error || 'La caja no aceptó su parte.') };
+            if (r.aviso) showToast('Quedó algo pendiente', r.aviso, 'warning');
+            return { ok: true, movimiento: r.movimiento };
+        }
         const r = await correr(() => anotarSalida({
             sala,
             monto: datos.monto,
@@ -750,7 +773,7 @@ export default function MiCajaView({ comoPestana = false }) {
             });
         }
         return { ok: true };
-    }, [correr, sala, imprimirMovimiento]);
+    }, [correr, sala, imprimirMovimiento, showToast]);
 
 
     /* Las acciones de la vista son un DESCRIPTOR, no botones a mano (§15.5): la

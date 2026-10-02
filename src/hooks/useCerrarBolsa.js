@@ -179,6 +179,8 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
                 ? { nombre: oper.recibido_nombre, metodo: oper.recibido_metodo }
                 : null,
             registradoAt: oper.registrado_at,
+            // La parte del cajón de una salida mixta: el vale es UNO y la nombra.
+            caja: oper.caja || null,
         }), { sala: salaId });
 
         // Constancia de que se mandó a imprimir. Como con la etiqueta, `ok`

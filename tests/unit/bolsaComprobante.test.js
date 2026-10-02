@@ -436,3 +436,30 @@ describe('la hora que va en la etiqueta', () => {
         expect(out[0]).toEqual({ fecha: '2026-08-15', hora: '16:23', motivo: 'Remesa', monto: -500 });
     });
 });
+
+/* ── La salida mixta: UN vale que dice de dónde salió cada parte ────────────
+ * «el vale sale 1 solo, y explica de donde salio» (usuario, 2026-10-02). */
+describe('vale de una salida mixta (bolsa + caja)', () => {
+    it('nombra la parte de la caja y destaca el total entregado', () => {
+        const t = vale({ caja: { monto: 20, anulado_at: null } });
+        expect(t.items.filas.at(-1)[0]).toMatch(/^CAJA/);
+        expect(t.totales).toEqual([
+            ['DE LA BOLSA', '$200.00'],
+            ['DE LA CAJA', '$20.00'],
+            ['TOTAL ENTREGADO', '$220.00', true],
+        ]);
+    });
+
+    it('no dice cuánto queda en el cajón (conteo a ciegas)', () => {
+        const t = vale({ caja: { monto: 20, anulado_at: null } });
+        expect(t.items.filas.at(-1)[3]).toBe('');
+    });
+
+    it('sin parte de caja, o con la parte anulada, es el vale de siempre', () => {
+        for (const caja of [null, { monto: 20, anulado_at: '2026-10-02T15:00:00Z' }]) {
+            const t = vale({ caja });
+            expect(t.items.filas).toHaveLength(1);
+            expect(t.totales).toEqual([['SALE DE LA BOLSA', '$200.00', true]]);
+        }
+    });
+});

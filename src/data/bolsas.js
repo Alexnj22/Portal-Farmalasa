@@ -1105,10 +1105,14 @@ export async function anotarAbono({ sala, monto, clienteNombre, clienteTelefono 
  */
 export async function anotarSalida({ sala, monto, concepto, tipo = null, boleta = null,
     fotoUrl = null, recibe = '', recibidoPor = null, vale = null, detalle = null,
-    lectura = null, clave = null }) {
+    lectura = null, clave = null, operacionBolsa = null }) {
     return operar({
         accion: 'salida', sala, monto, concepto, tipo, boleta, foto_url: fotoUrl, recibe,
         recibido_por: recibidoPor, vale,
+        /* La operación de bolsa de la que esto es el RESTO, en una salida mixta
+         * (2026-10-02). El servidor la relee, hereda de ella quién retira y las
+         * liga: un vale, y se anulan juntas. */
+        operacion_bolsa: operacionBolsa,
         /* Ver `anotarIngreso`: la clave hace que un envío repetido —dos toques,
          * un reintento de red— conteste con el movimiento que ya existe. */
         clave_envio: clave,

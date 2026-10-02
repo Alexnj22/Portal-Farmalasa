@@ -9,7 +9,8 @@ import PromptModal from '../common/PromptModal';
 import { EmptyState, SkeletonText } from '../common/StateViews';
 import PhotoLightbox from '../common/PhotoLightbox';
 import {
-    anularBolsa, anularSalida, fetchEventosDeBolsa, fetchSalidasDeBolsa,
+    anularBolsa, anularSalida, fetchEventosDeBolsa, fetchOperacionDeBolsa, fetchSalidasDeBolsa,
+    pedirCorreccion,
 } from '@nucleo/data/bolsas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -186,6 +187,35 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
         if (!anulando || !motivo?.trim()) return;
         const eraBolsa = anulando.tipo === 'bolsa';
         setOcupado('anular');
+
+        /* ── Una salida que también sacó de la CAJA se anula entera ─────────
+         *
+         * «si se anula se anula de ambas» (usuario, 2026-10-02). Borrar el
+         * movimiento de la caja pasa por una corrección aprobada, así que la
+         * anulación de las dos partes va por ahí: se pide, y al aprobarse
+         * `operar-caja` borra la parte del cajón y anula la de la bolsa. El
+         * servidor también lo frena (`anular_salida_de_bolsa`); esto es para
+         * que el camino sea pedirla y no un error. */
+        if (!eraBolsa) {
+            const op = await fetchOperacionDeBolsa(anulando.operacionId);
+            const caja = op?.caja;
+            if (caja && !caja.anulado_at && caja.erp_movimiento_id) {
+                const r = await pedirCorreccion({
+                    sala: caja.branch_id, movimiento: caja.movimiento_id, que: 'ANULAR', motivo,
+                });
+                setOcupado(null);
+                if (r?.error) {
+                    showToast?.('No se pudo pedir', mensajeAmigable(r.error, 'Vuelve a intentar en un momento.'), 'error');
+                    return;
+                }
+                showToast?.('Anulación pedida',
+                    `Esta salida también sacó ${formatMoney(caja.monto)} de la caja: al aprobarse se anulan las dos partes.`,
+                    'success');
+                setAnulando(null);
+                return;
+            }
+        }
+
         const { error } = eraBolsa
             ? await anularBolsa(bolsa.id, motivo)
             : await anularSalida(anulando.operacionId, motivo);

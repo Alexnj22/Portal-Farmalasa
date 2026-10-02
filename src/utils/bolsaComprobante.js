@@ -287,10 +287,16 @@ export function construirEtiquetaDeBolsa({
  * @param {string} registradoAt ISO
  */
 export function construirValeDeSalida({
-    operacion = {}, lineas = [], sala, registradoPor, recibidoPor, registradoAt,
+    operacion = {}, lineas = [], sala, registradoPor, recibidoPor, registradoAt, caja = null,
 }) {
     const vivas = (lineas || []).filter((l) => !l.anulado_at);
     const total = Math.abs(Number(operacion?.monto ?? sumar(vivas)));
+    /* La parte del CAJÓN de una salida mixta (2026-10-02): «el vale sale 1
+     * solo, y explica de donde salio» (usuario). Es un renglón más de «de qué
+     * sale» y cambia el destacado: lo que se firma es el TOTAL entregado, no
+     * lo que salió de la bolsa. Sin QUEDA: lo que queda en el cajón no se dice
+     * en ningún papel (conteo a ciegas, 1-sep). */
+    const delCajon = caja && !caja.anulado_at ? Math.abs(Number(caja.monto) || 0) : 0;
 
     const datos = [
         ['Vale', recortar(operacion?.folio || '', 24)],
@@ -350,20 +356,29 @@ export function construirValeDeSalida({
                 { label: 'SALIO', alinear: 'der' },
                 { label: 'QUEDA', alinear: 'der' },
             ],
-            filas: vivas.map((l) => [
-                recortar(`${l.bolsa_folio || ''} ${fechaCorta(l.bolsa_fecha).slice(0, 5)} ${horaDeColumna(l.bolsa_hora)}`.trim(), ANCHO_MOTIVO),
-                '',
-                importeDeColumna(l.monto),
-                importeDeColumna(l.saldo_despues),
-            ]),
+            filas: [
+                ...vivas.map((l) => [
+                    recortar(`${l.bolsa_folio || ''} ${fechaCorta(l.bolsa_fecha).slice(0, 5)} ${horaDeColumna(l.bolsa_hora)}`.trim(), ANCHO_MOTIVO),
+                    '',
+                    importeDeColumna(l.monto),
+                    importeDeColumna(l.saldo_despues),
+                ]),
+                ...(delCajon > 0 ? [['CAJA (vale del turno)', '', importeDeColumna(delCajon), '']] : []),
+            ],
         },
         // El destacado es el TOTAL de la operacion: es lo que se llevaron y lo
         // que se firma. El detalle por bolsa ya esta arriba, renglon por
         // renglon, asi que repetirlo aca seria decir dos veces lo mismo.
-        totales: [
-            [vivas.length === 1 ? 'SALE DE LA BOLSA' : `SALE DE ${vivas.length} BOLSAS`,
-             formatMoney(total), true],
-        ],
+        totales: delCajon > 0
+            ? [
+                [vivas.length === 1 ? 'DE LA BOLSA' : `DE ${vivas.length} BOLSAS`, formatMoney(total)],
+                ['DE LA CAJA', formatMoney(delCajon)],
+                ['TOTAL ENTREGADO', formatMoney(total + delCajon), true],
+            ]
+            : [
+                [vivas.length === 1 ? 'SALE DE LA BOLSA' : `SALE DE ${vivas.length} BOLSAS`,
+                 formatMoney(total), true],
+            ],
         /* Quién y cuándo son un solo hecho, y quién retira y cómo se comprobó
          * también: cada par entra en un renglón mientras los nombres quepan, y
          * `juntarSiEntra` los separa cuando no —un nombre de 40 caracteres

@@ -11,7 +11,7 @@ import AvisoDeBorrador from '../common/AvisoDeBorrador';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import {
-    boletaYaRegistrada, fetchEntidadesDeSalida, fetchTiposDeSalida,
+    anularSalida, boletaYaRegistrada, fetchEntidadesDeSalida, fetchTiposDeSalida,
     guardarLecturaDeBoleta, leerBoleta, registrarSalida, subirComprobante,
 } from '@nucleo/data/bolsas';
 import { disponibles, elegirOrigen, totalDisponible } from '@nucleo/utils/bolsasReparto';
@@ -444,6 +444,8 @@ export default function SalidaDeBolsa({
         [lista, n, t, efectivoEnCaja, onSalidaDeCaja],
     );
     const delCajon = eleccion.origen === 'CAJA';
+    // Bolsa primero y el cajón el resto (2026-10-02). Ver `elegirOrigen`.
+    const mixta = eleccion.origen === 'MIXTO';
     /* Si el cajón siquiera se consultó. Distinto de `delCajon`: acá la pregunta
      * es «¿esta pantalla podía sacarlo de la caja?», y sirve para que el aviso
      * de «no alcanza» no mienta por omisión en las dos pantallas que ni miran
@@ -887,8 +889,13 @@ export default function SalidaDeBolsa({
              * por motivo y sólo la tiene «Cambio por monedas»: desde que el
              * paso lo dispara el monto (1-sep), una remesa de $500 anunciaba
              * «En billetes de $0.00». */
+            /* Desde que la caja pone el resto (2-oct), «no alcanza» con el cajón
+             * a la vista quiere decir que ni JUNTOS alcanzan — y hay que
+             * decirlo: la frase vieja hablaba sólo de las bolsas y se leía como
+             * si el problema fueran las monedas. */
             if (eleccion.redondo) {
-                return `En billetes de ${formatMoney(eleccion.paso)} la sala tiene `
+                return `${puedeSalirDelCajon ? 'Ni sumando la caja alcanza. ' : ''}`
+                     + `En billetes de ${formatMoney(eleccion.paso)} la sala tiene `
                      + `${formatMoney(eleccion.disponible)}: no alcanza. `
                      + `Los ${formatMoney(totalDisponible(lista) - eleccion.disponible)} `
                      + 'que faltan son monedas y se quedan en las bolsas.';
@@ -896,8 +903,8 @@ export default function SalidaDeBolsa({
             // No se dice cuánto hay en el cajón: el conteo a ciegas del corte
             // es todo el control, y esta pantalla no puede ser la puerta de al
             // lado por donde se sabe el número (regla del usuario, 1-sep).
-            return `${puedeSalirDelCajon ? 'En la caja no hay tanto, y en' : 'En'} `
-                 + `la sala hay ${formatMoney(totalDisponible(lista))} en bolsas: no alcanza.`;
+            return `${puedeSalirDelCajon ? 'Ni sumando la caja alcanza: en' : 'En'} `
+                 + `la sala hay ${formatMoney(totalDisponible(lista))} en bolsas${puedeSalirDelCajon ? '.' : ': no alcanza.'}`;
         }
         if (t.etiqueta_entidad && !t.entidad_la_dice_el_papel && !entidad.trim()) {
             return `Falta ${t.etiqueta_entidad.toLowerCase()}.`;
@@ -1034,7 +1041,9 @@ export default function SalidaDeBolsa({
 
             const { data, error: err } = await registrarSalida({
                 tipo: t.codigo,
-                monto: n,
+                // En una mixta la bolsa registra SU parte: el servidor exige que
+                // los repartos sumen exactamente el monto.
+                monto: mixta ? eleccion.deBolsas : n,
                 repartos: eleccion.repartos.map(({ bolsa_id, monto: m }) => ({ bolsa_id, monto: m })),
                 entidad, numeroBoleta: boleta, fotoUrl, nota,
                 recibidoPor: t.pide_receptor ? persona?.id : null,
@@ -1053,9 +1062,47 @@ export default function SalidaDeBolsa({
             // propósito: es auditoría, y la salida ya ocurrió en la realidad.
             if (lectura && !lectura.error) guardarLecturaDeBoleta(data.id, lectura);
 
+            /* ── La parte del cajón de una salida mixta ─────────────────────
+             *
+             * Va DESPUÉS de la bolsa y ligada a ella (`operacionBolsa`): el
+             * servidor hereda de la operación quién retira —el vale de
+             * identidad ya se gastó— y la anulación de una arrastra a la otra.
+             *
+             * Si la caja no la acepta, la parte de la bolsa se ANULA: una
+             * salida a medias dejaría $130 descontados de la bolsa por una
+             * remesa que no se entregó. Y no imprime su propio comprobante: el
+             * vale de la bolsa es el único papel y dice de dónde salió cada
+             * parte. */
+            if (mixta) {
+                const r = await onSalidaDeCaja({
+                    monto: eleccion.delCajon,
+                    tipo: t.caja_tipo,
+                    etiqueta: t.etiqueta,
+                    concepto: [t.etiqueta, data.folio, entidadDicha, nota.trim()]
+                        .filter(Boolean).join(' · ').slice(0, 50),
+                    conceptoCompleto: [t.etiqueta, `resto de ${data.folio}`, entidadDicha, nota.trim()]
+                        .filter(Boolean).join(' · '),
+                    boleta: boleta.trim() || null,
+                    fotoUrl,
+                    recibe: t.pide_receptor ? '' : entidad.trim(),
+                    operacionBolsa: data.id,
+                });
+                if (!r?.ok) {
+                    const { error: errAnular } = await anularSalida(data.id,
+                        'La caja no aceptó su parte: la salida no se completó');
+                    if (t.pide_receptor) olvidarLaIdentidad();
+                    setError(errAnular
+                        ? `La caja no aceptó su parte y la salida ${data.folio} de la bolsa quedó registrada: anúlala desde el detalle de la bolsa.`
+                        : `${r?.error || 'La caja no aceptó su parte.'} No se sacó nada: vuelve a intentarlo.`);
+                    return;
+                }
+            }
+
             // El dinero ya salió: el borrador se descarta ACÁ, antes de cerrar.
             descartar();
-            showToast?.('Salida registrada', `${data.folio} · ${formatMoney(n)}`, 'success');
+            showToast?.('Salida registrada', mixta
+                ? `${data.folio} · ${formatMoney(eleccion.deBolsas)} de la bolsa y ${formatMoney(eleccion.delCajon)} de la caja`
+                : `${data.folio} · ${formatMoney(n)}`, 'success');
             onHecho?.(data, eleccion.repartos);
             onClose?.();
         } catch (e) {
@@ -1066,7 +1113,7 @@ export default function SalidaDeBolsa({
         }
     }, [falta, guardando, foto, eleccion, bolsas, user, t, n, entidad, boleta, nota,
         persona, vale, lectura, olvidarLaIdentidad, showToast, onHecho, onClose, descartar,
-        delCajon, onSalidaDeCaja, salaId]);
+        delCajon, mixta, onSalidaDeCaja, salaId]);
 
     const enIdentidad = paso === 'IDENTIDAD' && !!t?.pide_receptor;
 
@@ -1230,7 +1277,28 @@ export default function SalidaDeBolsa({
                     </div>
                 );
             })}
-            {eleccion.combinada && (
+            {/* La parte del cajón de una mixta. No dice cuánto QUEDA en la
+                caja: el conteo a ciegas del corte es todo el control (1-sep). */}
+            {mixta && (
+                <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-label text-content truncate">
+                        La caja
+                        <span className="text-caption text-content-3">
+                            {' '}· el resto, anotado como vale del turno
+                        </span>
+                    </span>
+                    <span className="text-label font-bold tabular-nums text-content shrink-0">
+                        {formatMoney(eleccion.delCajon)}
+                    </span>
+                </div>
+            )}
+            {mixta && (
+                <p className="text-caption text-content-3 pt-1">
+                    La bolsa no alcanzaba sola: la caja pone lo que falta. Sale un solo
+                    vale que dice cuánto salió de cada lado.
+                </p>
+            )}
+            {eleccion.combinada && !mixta && (
                 <p className="text-caption text-warning-text pt-1">
                     Ninguna bolsa alcanzaba sola: van a salir {eleccion.repartos.length} vales,
                     uno para cada bolsa.
@@ -1601,7 +1669,9 @@ export default function SalidaDeBolsa({
                     <span className="text-caption text-content-3 min-w-0 truncate">
                         {falta || (delCajon
                             ? 'Sale el comprobante de la caja para archivar'
-                            : eleccion.repartos.length > 1
+                            : mixta
+                                ? 'Sale un vale para archivar y la etiqueta nueva de la bolsa'
+                                : eleccion.repartos.length > 1
                                 ? `Sale un vale para archivar y ${eleccion.repartos.length} etiquetas nuevas`
                                 : 'Sale un vale para archivar y la etiqueta nueva de la bolsa')}
                     </span>

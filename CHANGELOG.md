@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1140.0 — Puntos: cambiar el cliente de una venta se lleva sus puntos
+
+Pedido del usuario: «si se cambia [el cliente] en la solicitud, ¿qué pasa con
+los puntos? Debe aparecer en la solicitud que se descontarán y se acumularán a
+la otra persona». Hasta hoy el programa le daba los puntos a una factura una sola
+vez y no la volvía a mirar: aprobar un cambio de cliente dejaba los puntos con
+el cliente original, que era además el camino para pasarle a alguien los puntos
+de otro. Cambiar el VENDEDOR no toca los puntos: son del cliente.
+
+`puntos_cambio_de_cliente` contesta y hace, con la misma cuenta que una
+anulación: al cliente viejo se le quita lo que queda de esa compra y, si ya lo
+usó, de sus otros puntos; lo que ni así alcanza queda anotado. El nuevo recibe
+la compra entera con su fecha y vencimiento, salvo que no acumule (ficha
+genérica o salió del programa). Cada venta sigue con un solo lote `venta`, así
+que ninguna de las ~20 funciones que buscan «el lote de una factura» cambió: el
+del cliente viejo pasa a `venta_pasada`. Verificado en el entorno de pruebas
+con un cliente que ya había gastado parte (libro cuadrado en las dos cuentas,
+segunda aplicación sin efecto, y una anulación posterior le quita a quien la
+tiene ahora). Migración `20261002014409`.
+
+En pantalla: la solicitud lo dice al pedirla y al revisarla («esta venta le dio
+N puntos a A; al aprobar se le quitan N y B recibe N»), y después dice lo que
+pasó. `aplicar-solicitud-facturacion` hace el traspaso al aprobar; si fallara,
+la solicitud queda aprobada igual y el problema aparece en sus avisos. La ficha
+del cliente muestra «Compra pasada a otro cliente», y el aviso de movimientos
+fuera de lo normal suma la regla 10: toda venta pasada a otro cliente avisa.
+
 ## v2.1139.0 — Encuestas a clientes: diseño, plantillas y aprobación
 
 Sección nueva **Encuestas** (`/encuestas-clientes`) para que marketing mida

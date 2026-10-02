@@ -23,7 +23,7 @@
 import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import {
     Star, Pencil, TrendingUp, Gift, Undo2, CalendarX, Wrench, History, CalendarClock, IdCard, Phone,
-    ShoppingBag, X, KeyRound, BarChart3, Receipt, Cake, SlidersHorizontal,
+    ShoppingBag, X, KeyRound, BarChart3, Receipt, Cake, SlidersHorizontal, ArrowLeftRight,
 } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
@@ -62,6 +62,8 @@ const TIPO = {
     canje_devuelto: { icono: Undo2,    rotulo: 'Canje devuelto', burbuja: 'bg-success/10 text-success-text' },
     anulacion:   { icono: Undo2,       rotulo: 'Compra anulada', burbuja: 'bg-danger/10 text-danger-text' },
     vencimiento: { icono: CalendarX,   rotulo: 'Vencimiento', burbuja: 'bg-surface-card-hover text-content-3' },
+    // La compra se pasó a otro cliente con una solicitud aprobada (2026-10-01).
+    cambio_cliente: { icono: ArrowLeftRight, rotulo: 'Compra pasada a otro cliente', burbuja: 'bg-danger/10 text-danger-text' },
 };
 const FILTROS = [
     { value: 'todos',  label: 'Todos' },

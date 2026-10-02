@@ -17478,6 +17478,94 @@ export type Database = {
         }
         Relationships: []
       }
+      puntos_cambio_cliente: {
+        Row: {
+          a_customer: number | null
+          created_at: string
+          de_customer: number | null
+          de_otras: number
+          id: number
+          invoice_id: number
+          no_recuperados: number
+          por: string | null
+          puntos: number
+          quitados: number
+          recibio: number
+          solicitud_id: string | null
+        }
+        Insert: {
+          a_customer?: number | null
+          created_at?: string
+          de_customer?: number | null
+          de_otras: number
+          id?: never
+          invoice_id: number
+          no_recuperados: number
+          por?: string | null
+          puntos: number
+          quitados: number
+          recibio: number
+          solicitud_id?: string | null
+        }
+        Update: {
+          a_customer?: number | null
+          created_at?: string
+          de_customer?: number | null
+          de_otras?: number
+          id?: never
+          invoice_id?: number
+          no_recuperados?: number
+          por?: string | null
+          puntos?: number
+          quitados?: number
+          recibio?: number
+          solicitud_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "puntos_cambio_cliente_a_customer_fkey"
+            columns: ["a_customer"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_cambio_cliente_a_customer_fkey"
+            columns: ["a_customer"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "puntos_cambio_cliente_de_customer_fkey"
+            columns: ["de_customer"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_cambio_cliente_de_customer_fkey"
+            columns: ["de_customer"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "puntos_cambio_cliente_por_fkey"
+            columns: ["por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_cambio_cliente_por_fkey"
+            columns: ["por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       puntos_codigo_acceso: {
         Row: {
           codigo: string
@@ -26936,6 +27024,16 @@ export type Database = {
           p_hasta: string
           p_simular?: boolean
           p_tope?: number
+        }
+        Returns: Json
+      }
+      puntos_cambio_de_cliente: {
+        Args: {
+          p_aplicar?: boolean
+          p_customer_nuevo: number
+          p_invoice_id: number
+          p_por?: string
+          p_solicitud?: string
         }
         Returns: Json
       }

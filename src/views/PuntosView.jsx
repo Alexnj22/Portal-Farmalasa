@@ -100,6 +100,7 @@ const AVISOS = {
     ajuste_resta:                { rotulo: 'Puntos quitados a mano', variante: 'warning', puntos: (a) => `−${pts(Math.abs(a.puntos))}` },
     canje_grande:                { rotulo: 'Canje grande', variante: 'warning', puntos: (a) => `${ptsDe(a)} canjeados` },
     canje_recien_ganado:         { rotulo: 'Canje con puntos recién ganados', variante: 'warning', puntos: (a) => `${ptsDe(a)} canjeados` },
+    cambio_cliente:              { rotulo: 'Compra pasada de otro cliente', variante: 'danger', puntos: (a) => `${ptsDe(a)} recibidos` },
 };
 // Un tipo que la pantalla todavía no conoce se muestra igual, no desaparece.
 const avisoDe = (a) => AVISOS[a.tipo] ?? { rotulo: 'Movimiento para revisar', variante: 'warning', puntos: ptsDe };

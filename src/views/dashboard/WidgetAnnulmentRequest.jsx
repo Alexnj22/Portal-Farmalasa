@@ -35,6 +35,7 @@ import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { MOTIVOS_ANULACION, FORMAS_DE_PAGO, ROTULO_PAGO, esDeHoy, estadoDeLaCaja, MOTIVO_SIN_ANULAR, ventanaDelFiltro, esAnulada, ambitoDeFacturas, solicitudDeFacturacion } from '@nucleo/utils/solicitudFacturacion';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
+import PuntosDelCambio from '../solicitudes/PuntosDelCambio';
 const findTargetEmployee = supervisorQueResuelve;
 
 const REASONS = MOTIVOS_ANULACION;
@@ -758,6 +759,9 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
               </div>
             </div>
           )}
+
+          {/* Los puntos van con el cliente: quien pide el cambio lo ve antes de mandarlo. */}
+          {newClient && <PuntosDelCambio invoiceId={inv.id} customerNuevo={newClient.id} />}
 
           {/* Resultados */}
           {!newClient && query.trim().length >= 2 && !searching && results.length === 0 && (

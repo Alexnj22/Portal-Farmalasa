@@ -636,6 +636,34 @@ Deno.serve(async (req) => {
         }, 502);
     }
 
+    /* ── Los puntos siguen al cliente (2026-10-01) ─────────────────────────
+     *
+     * La venta ya cambió de cliente en el sistema; sus puntos también. Antes
+     * se quedaban con el cliente original para siempre, que era además el
+     * camino para pasarle a alguien los puntos de otro. La cuenta la hace
+     * `puntos_cambio_de_cliente`, la MISMA que la solicitud mostró antes de
+     * aprobar. Si falla, la solicitud igual queda aprobada —el cambio ya está
+     * hecho allá y no se deshace— y el problema queda escrito en `avisos`. */
+    let puntos: unknown = undefined;
+    const avisos: string[] = [];
+    if (campo === "cliente") {
+      const nuevo = Number(meta.new_client_id);
+      if (!Number.isFinite(nuevo) || nuevo <= 0) {
+        avisos.push("Los puntos no se movieron: la solicitud no trae la ficha del cliente nuevo.");
+      } else {
+        const { data, error: ptsErr } = await admin.rpc("puntos_cambio_de_cliente", {
+          p_invoice_id: factura.id, p_customer_nuevo: nuevo, p_aplicar: true,
+          p_solicitud: sol.id, p_por: aprobador.id,
+        });
+        if (ptsErr) {
+          console.error(`puntos_cambio_de_cliente (factura ${factura.id}):`, ptsErr.message);
+          avisos.push(`Los puntos no se movieron: ${ptsErr.message}`);
+        } else {
+          puntos = data;
+        }
+      }
+    }
+
     // ── Recién ahora la solicitud es APPROVED ────────────────────────────
     const aplicado = {
       at: new Date().toISOString(),
@@ -645,6 +673,8 @@ Deno.serve(async (req) => {
       de: campo === "tipo_pago" ? (ERP_A_PAGO[de] ?? de) : de,
       a:  campo === "tipo_pago" ? (ERP_A_PAGO[a] ?? a) : a,
       cliente_nombre: campo === "cliente" ? despues.clienteNombre : undefined,
+      puntos,
+      avisos: avisos.length ? avisos : undefined,
     };
 
     const { error: updErr } = await admin

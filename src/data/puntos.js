@@ -250,3 +250,11 @@ export const ajustarPuntos = async ({ customerId, puntos, motivo, nota = null },
 
 /** Todo de un cliente: ficha, cuenta (saldo, vencimientos, movimientos) y cuentas viejas asignadas. */
 export const fetchPuntosCliente = (customerId) => rpc('puntos_panel_cliente', { p_customer_id: customerId });
+
+/**
+ * Qué pasaría con los puntos si una venta cambia de cliente: cuántos se le
+ * quitan al actual, cuántos ya gastó y cuántos recibe el nuevo. Es la MISMA
+ * función que hace el traspaso al aprobar la solicitud, en modo consulta.
+ */
+export const fetchPuntosDelCambioDeCliente = (invoiceId, customerNuevo) =>
+    rpc('puntos_cambio_de_cliente', { p_invoice_id: invoiceId, p_customer_nuevo: customerNuevo, p_aplicar: false });

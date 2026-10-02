@@ -17,6 +17,7 @@ import {
 } from '@nucleo/utils/movimientoTexto';
 import { CaraPersona, ChipPersona, BloquePersonas } from './PersonasSolicitud';
 import LaVenta from './VentaDeSolicitud';
+import PuntosDelCambio from './PuntosDelCambio';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { ajusteSinCambio, fmtUltimaVenta } from '@nucleo/utils/minmaxSolicitud';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -952,6 +953,9 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                         )}
                     </Caja>
                 </div>
+                {/* Los puntos van con el cliente: se ve ANTES de aprobar. */}
+                <PuntosDelCambio invoiceId={meta.invoice_id} customerNuevo={meta.new_client_id}
+                    aplicado={meta.erp_aplicado?.puntos} />
                 <IdVenta meta={meta} />
             </div>
         );

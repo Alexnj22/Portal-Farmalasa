@@ -81,6 +81,7 @@
     "gate:receta": "node scripts/receta-gate.mjs",
     "comparar:diferencia-de-corte": "npx --yes vite-node scripts/comparar-diferencia-de-corte.mjs",
     "gate:tipos": "node scripts/tipos-gate.mjs",
+    "gate:alcance": "node scripts/alcance-gate.mjs",
     "tipos:base": "bash -c 'd=$(mktemp -d) && (cd $d && supabase gen types typescript --project-id sacecdkdmsdvgqnrsett --schema public) > src/types/database.ts'"
   },
   "dependencies": {

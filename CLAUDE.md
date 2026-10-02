@@ -1536,6 +1536,23 @@ instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`
   vigila `npm run gate:alias` en el pre-commit (`--escribir` en
   `scripts/nucleo-alias.mjs` lo corrige solo). Es lo que deja mudar el núcleo a
   `packages/core` sin tocar pantallas.
+- **`npm run gate:alcance` — nadie toca lo de otra sucursal cambiando un
+  número.** Las edge functions usan la llave del servidor y las funciones
+  `SECURITY DEFINER` saltan el RLS: el único freno por sucursal está en su
+  código. Nació el 2026-10-02 de `pedir_correccion`, que aceptaba la sala del
+  navegador sin compararla, y al buscar el patrón apareció en recibir pedidos,
+  anotar vales y despachar desde Bodega, más dos funciones abiertas a internet.
+  **Toda edge function nueva, y toda función de la base que reciba una
+  sucursal, se declara en `scripts/alcance-manifest.json` con su guarda**
+  (`alcance`, `modulo-de-red`, `sin-sala`, `cron`, `publica`, `solo-servidor`);
+  sin declarar, el gate falla. `modulo-de-red` significa «no compara la sala
+  porque hoy sólo tienen el módulo cargos de toda la red», y el gate lo
+  comprueba contra `role_permissions`: **darle ese módulo a un cargo de sala lo
+  pone en rojo**. Declarar `alcance` es una afirmación sobre CADA acción — el
+  gate lee el archivo entero y no ve una acción sin chequeo al lado de otra que
+  sí lo tiene. Las deudas viven en `scripts/alcance-baseline.json` y **sólo
+  bajan**. En el pre-commit corre la parte local cuando el commit toca
+  `supabase/functions/`. Plan: `docs/PLAN-ALCANCE-POR-SUCURSAL-2026-10-02.md`.
 - **`npm run gate:tipos` — la base es un CONTRATO.** `src/types/database.ts`
   son los tipos de producción y el cliente de Supabase se declara con ellos:
   una tabla, columna o parámetro de `.rpc()` que no existe da un aviso de `tsc`

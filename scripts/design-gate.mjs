@@ -388,6 +388,13 @@ const EXCEPTIONS = {
   // pdfmake: docDefinition, no CSS. (Su dinero ya pasa por `formatMoney`: el
   // papel también lleva separador de miles.)
   'src/utils/conteoInventarioPrint.js': ['hex'],
+  // El afiche del QR de una encuesta es PAPEL: negro sobre blanco a propósito
+  // (un QR con poco contraste no lo lee ningún teléfono) y sin tokens del tema.
+  'src/views/encuestas-clientes/aficheQr.js': ['hex'],
+  // La tarjeta de un aviso de solicitud no lleva imports A PROPÓSITO: la
+  // corre también Deno (`send-push-notification/tarjeta.ts`), así que no puede
+  // usar `formatMoney`. Su `$` con dos decimales es la moneda a mano declarada.
+  'src/utils/tarjetaDeSolicitud.js': ['formato-cifra'],
   // El PDF del DTE de Distribución (representación gráfica): docDefinition de
   // pdfmake. El papel no tiene tema; lleva el membrete de la marca.
   'src/utils/distribucionDocumento.js': ['hex'],

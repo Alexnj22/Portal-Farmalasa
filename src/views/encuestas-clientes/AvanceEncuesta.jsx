@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Users, CalendarCheck, Phone, Clock, Copy, ExternalLink, QrCode, Tablet, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Users, CalendarCheck, Phone, Clock, Copy, ExternalLink, QrCode, Tablet, AlertTriangle, RefreshCw, Printer } from 'lucide-react';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import Button from '../../components/common/Button';
@@ -14,6 +14,7 @@ import { formatPct } from '@nucleo/utils/formatNumber';
 import { canalDe, metaTotal } from '@nucleo/utils/encuestasClientes';
 import { fetchAvance } from '@nucleo/data/encuestasClientes';
 import IncentivosEncuesta from './IncentivosEncuesta';
+import { abrirAfiche, imprimirAfiche } from './aficheQr';
 
 /**
  * Cómo va la encuesta en campo: respuestas contra la meta, por sucursal y por
@@ -109,6 +110,17 @@ export default function AvanceEncuesta({ encuesta, puedeEditar }) {
                                         <div className="space-y-2 min-w-0">
                                             {conQr && (
                                                 <LineaEnlace etiqueta="Enlace para el cliente (QR, ticket, mensaje)" url={enlace(s.token)} onCopiar={copiar} />
+                                            )}
+                                            {conQr && (
+                                                <Button variant="secondary" size="sm" icon={Printer}
+                                                    onClick={async () => {
+                                                        // La ventana se abre en el clic, antes de cualquier await.
+                                                        const win = abrirAfiche();
+                                                        const r = await imprimirAfiche(win, { encuesta, sucursal: s.nombre, enlace: enlace(s.token) });
+                                                        if (!r.ok) showToast('No se pudo imprimir', r.motivo, 'error');
+                                                    }}>
+                                                    Imprimir afiche
+                                                </Button>
                                             )}
                                             {conTablet && (
                                                 <LineaEnlace etiqueta="Tablet de la sala (vuelve a empezar sola)" icono={Tablet}

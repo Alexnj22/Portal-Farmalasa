@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1153.4 — Encuestas a clientes: afiche del QR para imprimir
+
+- **Imprimir afiche** en Avance → QR y enlace: una hoja carta para pegar en la
+  sala, con el QR grande, la invitación a responder, la sucursal y el incentivo
+  si es de puntos. Negro sobre blanco y con margen alrededor del código, que es
+  lo que necesita un teléfono para leerlo.
+- Prueba de humo del canal público en producción: QR y tablet responden sin
+  sesión, la validación rechaza lo inválido y las funciones privadas siguen
+  cerradas para quien no inició sesión. La encuesta temporal se borró en la
+  misma llamada.
+- `gate:design` vuelve a verde: `src/utils/tarjetaDeSolicitud.js` lleva su
+  excepción de `formato-cifra` con el motivo (no tiene imports a propósito
+  porque también lo corre el servidor), y el afiche la suya de `hex` (es papel).
+
 ## v2.1153.3 — Inyecciones: el cobro de aplicación va a la venta del producto que nombra
 
 Salud 4, 30-sep: el único cobro del día, «Aplicacion de inyeccion · DEPO

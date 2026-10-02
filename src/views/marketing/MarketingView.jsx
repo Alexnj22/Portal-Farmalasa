@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
     Megaphone, CalendarDays, KanbanSquare, Inbox, Plus, Send, ThumbsUp, Settings2, Target,
-    CheckCircle2, AlertTriangle, DollarSign, Layers, MessageSquare, FileDown, Clock, Images, Palette, Copy,
+    CheckCircle2, AlertTriangle, DollarSign, Layers, MessageSquare, FileDown, Clock, Images, Palette, Copy, FileSignature,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -17,7 +17,7 @@ import usePestanaEnUrl from '../../plataforma/usePestanaEnUrl';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mesSV, correrMes, etiquetaMes, fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -37,6 +37,7 @@ import TabPauta from './TabPauta';
 import TabBiblioteca from './TabBiblioteca';
 import Galeria from './Galeria';
 import DuplicarModal from './DuplicarModal';
+import TabServicio from './TabServicio';
 import PiezaModal from './PiezaModal';
 import PautaModal from './PautaModal';
 import SolicitudModal from './SolicitudModal';
@@ -73,7 +74,9 @@ export default function MarketingView() {
         { key: 'pauta',       label: 'Pauta',       icon: Megaphone },
         { key: 'galeria',     label: 'Galería',     icon: Images },
         { key: 'biblioteca',  label: 'Marca',       icon: Palette },
-    ]), []);
+        // El control del servicio: lo ven quien lo presta y quien lo evalúa.
+        ...(puedeEditar || puedeAprobar ? [{ key: 'servicio', label: 'Servicio', icon: FileSignature }] : []),
+    ]), [puedeEditar, puedeAprobar]);
     const [tab, setTab] = usePestanaEnUrl(tabs, 'calendario');
 
     // El mes también vive en la dirección: el aviso del calendario trae
@@ -225,6 +228,7 @@ export default function MarketingView() {
     const comentariosDelMes = useMemo(() => comentarios.filter((c) => !c.pieza_id), [comentarios]);
 
     const resumen = useMemo(() => resumenDelMes(piezas), [piezas]);
+    const aprobadas = resumen.por.aprobado + resumen.por.programado + resumen.por.publicado;
     const mezcla = useMemo(() => mezclaDelMes(piezas), [piezas]);
     const pauta = useMemo(() => totalesDePauta(piezas.map((p) => p.pauta).filter(Boolean), mesFila?.presupuesto_pauta),
         [piezas, mesFila?.presupuesto_pauta]);
@@ -373,8 +377,9 @@ export default function MarketingView() {
     ] : !delMes ? [] : [
         { key: 'piezas', icon: Layers, label: 'Piezas', value: resumen.total,
             sub: Object.entries(mezcla.formatos).map(([f, c]) => `${c} ${formatoDe(f).label.toLowerCase()}`).join(' · ') || 'Sin planificar' },
-        { key: 'avance', icon: CheckCircle2, label: 'Listas', value: formatPct(resumen.avance * 100, { decimales: 0 }),
-            sub: `${resumen.listas} de ${resumen.total}` },
+        // Los OK de quien revisa, a la vista (pedido del usuario).
+        { key: 'avance', icon: CheckCircle2, label: 'Aprobadas', valueCls: resumen.total && aprobadas === resumen.total ? 'text-success' : undefined,
+            value: `${aprobadas}/${resumen.total}`, sub: `${resumen.por.finalizado} por revisar` },
         { key: 'abiertas', icon: AlertTriangle, label: 'Con cambios', value: resumen.por.cambios,
             valueCls: resumen.por.cambios ? 'text-warning' : undefined, sub: `${resumen.abiertas} sin terminar` },
         { key: 'pauta', icon: Megaphone, label: 'Se pautan', value: resumen.pautadas,
@@ -406,6 +411,12 @@ export default function MarketingView() {
                 <Notice variant="danger" icon={AlertTriangle}>
                     {mensajeAmigable(error, 'No se pudo cargar el planificador.')}
                 </Notice>
+            );
+        }
+        if (tab === 'servicio') {
+            return (
+                <TabServicio key={mes} mes={mes} mesFila={mesFila} puedeAprobar={puedeAprobar} puedeEditar={puedeEditar}
+                    yoId={yoId} personas={personas} />
             );
         }
         if (tab === 'galeria' || tab === 'biblioteca') {
@@ -494,7 +505,7 @@ export default function MarketingView() {
                     ) : <div className="flex-1" />}
                     <div className="flex justify-end min-w-0">
                         <FilterBar acciones={acciones} activeCount={filtrosPuestos} onClear={filtrosPuestos ? limpiar : undefined}>
-                            {delMes && (
+                            {(delMes || tab === 'servicio') && (
                                 <FilterBar.Section label="mes" fija>
                                     <PeriodStepper unit="mes" label={etiquetaMes(mes)} isCurrent={esMesActual}
                                         resetLabel="Este mes" onReset={() => cambiarParam('mes', null)}

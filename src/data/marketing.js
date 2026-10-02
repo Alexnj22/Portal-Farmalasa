@@ -292,7 +292,9 @@ export async function responderSolicitud(id, estado, respuesta) {
 // ── Ajustes, fechas especiales y promociones ───────────────────────────────
 
 export async function fetchAjustes() {
-    return sinError(await supabase.from('marketing_ajustes').select('dia_limite_envio, recordatorios_activos').maybeSingle());
+    return sinError(await supabase.from('marketing_ajustes')
+        .select('dia_limite_envio, recordatorios_activos, meta_publicaciones, meta_videos, meta_visitas, dias_anticipacion, control_desde')
+        .maybeSingle());
 }
 
 export async function guardarAjustes(cambios) {
@@ -413,4 +415,54 @@ export async function quitarRecurso(r) {
     const ruta = rutaEnBucket(r);
     if (ruta) avisarSiFalla(await supabase.storage.from(BUCKET_MARKETING).remove([ruta]), [ruta]);
     anotar('MARKETING_RECURSO_QUITAR', r.id, { nombre: r.nombre });
+}
+
+// ── OK individual ──────────────────────────────────────────────────────────
+
+/** Envía UNA pieza a revisión: quien aprueba la ve y la confirma sin esperar el mes. */
+export async function enviarPieza(piezaId) {
+    const data = sinError(await supabase.rpc('marketing_enviar_pieza', { p_pieza_id: piezaId }));
+    anotar('MARKETING_PIEZA_ENVIAR', piezaId);
+    return data;
+}
+
+// ── Control del servicio ───────────────────────────────────────────────────
+
+export async function fetchCumplimiento(mesId) {
+    return sinError(await supabase.rpc('marketing_cumplimiento', { p_mes_id: mesId }));
+}
+
+/** Los últimos meses con su cierre, del más nuevo al más viejo (seis, un semestre de prueba). */
+export async function fetchMesesConCierre(limite = 6) {
+    return sinError(await supabase.from('marketing_meses')
+        .select('id, mes, estado, primer_envio_at, cierre:marketing_cierres(resultado, observaciones, resumen, firmado_por, firmado_at)')
+        .order('mes', { ascending: false }).limit(limite)) || [];
+}
+
+export async function cerrarMes(mesId, resultado, observaciones) {
+    const data = sinError(await supabase.rpc('marketing_cerrar_mes',
+        { p_mes_id: mesId, p_resultado: resultado, p_observaciones: observaciones || null }));
+    anotar('MARKETING_CIERRE_FIRMAR', mesId, { resultado });
+    return data;
+}
+
+export async function fetchVisitas(desde, hasta) {
+    return sinError(await supabase.from('marketing_visitas')
+        .select('id, fecha, branch_id, notas, registrada_por, created_at')
+        .gte('fecha', desde).lte('fecha', hasta).order('fecha', { ascending: false })) || [];
+}
+
+export async function registrarVisita(v, autorId) {
+    const data = sinError(await supabase.from('marketing_visitas').insert({
+        fecha: v.fecha, branch_id: v.branch_id || null, notas: v.notas?.trim() || null, registrada_por: autorId,
+    }).select().single());
+    anotar('MARKETING_VISITA_REGISTRAR', data.id, { fecha: data.fecha });
+    return data;
+}
+
+export async function quitarVisita(id) {
+    const { error, count } = await supabase.from('marketing_visitas').delete({ count: 'exact' }).eq('id', id);
+    if (error) throw error;
+    if (!count) throw new Error('No se pudo quitar la visita.');
+    anotar('MARKETING_VISITA_QUITAR', id);
 }

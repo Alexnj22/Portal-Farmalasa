@@ -31,7 +31,7 @@ import {
 } from '@nucleo/utils/marketing';
 import {
     guardarPieza, borrarPieza, subirDiseno, agregarEnlace, quitarArchivo, revisarPieza, moverPieza,
-    guardarPauta, quitarPauta, liberarPieza,
+    guardarPauta, quitarPauta, liberarPieza, enviarPieza,
 } from '@nucleo/data/marketing';
 import { abrirEnPestanaNueva } from '@plataforma/descargas';
 import Disenos from './Disenos';
@@ -112,6 +112,7 @@ export default function PiezaModal({
     const [anotando, setAnotando] = useState(null);      // el archivo sobre el que se comenta
     const [versionando, setVersionando] = useState(null);
     const [liberando, setLiberando] = useState(false);
+    const [enviando, setEnviando] = useState(false);
 
     const { recuperado, cuando, descartar, hayBorrador } = useBorrador(
         esNueva && puedeEditar ? `marketing_pieza_${mes?.id}` : null, form, { activo: open && esNueva });
@@ -299,7 +300,22 @@ export default function PiezaModal({
         }
     };
 
-    const publicado = !!mes?.publicado_at;
+    // El OK individual: el diseñador manda ESTA pieza a revisión sin esperar
+    // el mes; quien aprueba recibe el aviso y la confirma al momento.
+    const enviarSola = async () => {
+        setEnviando(true);
+        try {
+            await enviarPieza(pieza.id);
+            showToast('Enviada a revisión', pieza.titulo, 'success');
+            onCambio?.();
+        } catch (err) {
+            showToast('No se pudo enviar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        } finally {
+            setEnviando(false);
+        }
+    };
+
+    const publicado = !!mes?.publicado_at || !!pieza?.enviada_at;
     const archivos = pieza?.archivos || [];
     const misComentarios = useMemo(() => (comentarios || []).filter((c) => c.pieza_id === pieza?.id), [comentarios, pieza?.id]);
     const miHistorial = useMemo(() => (historial || []).filter((h) => h.pieza_id === pieza?.id), [historial, pieza?.id]);
@@ -608,6 +624,12 @@ export default function PiezaModal({
                     {!esNueva && puedeMover && ['aprobado', 'programado'].includes(pieza.estado) && (
                         <Button variant="secondary" icon={Send} loading={guardando} onClick={() => marcarSalida('publicado')}>
                             Publicada
+                        </Button>
+                    )}
+                    {!esNueva && puedeEditar && pieza.estado === 'finalizado' && (
+                        <Button variant="secondary" icon={Send} loading={enviando} onClick={enviarSola}
+                            title="Mandar sólo esta pieza a quien aprueba">
+                            {pieza.enviada_at ? 'Reenviar a revisión' : 'Enviar a revisión'}
                         </Button>
                     )}
                     {!esNueva && puedeEditar && onDuplicar && (

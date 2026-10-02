@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Plus, Trash2, ExternalLink, Download, Palette, Image as ImageIcon, Type, FileText, Copy } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Download, Palette, Image as ImageIcon, Type, FileText, Copy, BookOpen } from 'lucide-react';
 import Button from '../../components/common/Button';
 import PortalInput from '../../components/common/PortalInput';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -20,6 +20,8 @@ const TIPOS = [
     { value: 'tipografia', label: 'Tipografías', icono: Type },
     { value: 'foto',       label: 'Fotos',       icono: ImageIcon },
     { value: 'plantilla',  label: 'Plantillas',  icono: FileText },
+    // Entregable mensual del contrato: cuenta en el control del servicio.
+    { value: 'manual',     label: 'Manual de marca', icono: BookOpen },
     { value: 'otro',       label: 'Otros',       icono: FileText },
 ];
 const VACIO = { tipo: 'logo', marca_id: '', nombre: '', enlace: '', color: '' };

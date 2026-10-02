@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1141.0 — Marketing: OK por pieza, aviso a las salas y control del servicio
+
+Quinta tanda del planificador, sobre la oferta al diseñador (30-sep-2026).
+
+- **OK por pieza**: «Enviar a revisión» manda UNA pieza sola; gerencia la ve y
+  la aprueba al momento sin esperar el mes. ✓ verde en el calendario y el
+  flujo, y la tarjeta «Aprobadas 3/12 · 2 por revisar». «Finalizado» se llama
+  ahora «Lista para revisión» (el valor guardado no cambia).
+- **Aviso a las salas** al liberar material: «Material nuevo para WhatsApp»;
+  el push suena con la primera y las de los 15 minutos siguientes van sólo a la
+  campana.
+- **Pestaña «Servicio»**: el cumplimiento del mes contra la oferta —12
+  publicaciones y 4 videos aprobados, 1 visita, 10 días de anticipación por
+  pieza, calendario desde el mes anterior (se exige desde noviembre 2026),
+  cambios y tiempo de corrección, entregables del manual de marca, solicitudes
+  extraordinarias—, el registro de visitas, la tendencia de 6 meses (período
+  de prueba) y el **cierre mensual**: gerencia firma Cumplió / Con
+  observaciones / No cumplió y el acta congela los números para el pago (PDF).
+  El mes se puede seguir corrigiendo; el acta no cambia salvo que se vuelva a
+  firmar. Metas editables en Ajustes.
+
+Migración `marketing_control_del_servicio`, probada con rollback contra
+producción (candados, envío y OK individual, aviso a 23 personas de sala,
+cumplimiento, cierre).
+
 ## v2.1140.3 — puntos: el aviso de canje va a la jefatura de la sala, no a toda la sala
 
 Decisión del usuario (2026-10-01). Los avisos de canje sin saldo y de venta

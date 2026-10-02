@@ -59,7 +59,9 @@ export const PILARES = [
 export const ESTADOS_PIEZA = [
     { value: 'pendiente',  label: 'Pendiente',  variant: 'neutral' },
     { value: 'en_proceso', label: 'En proceso', variant: 'info' },
-    { value: 'finalizado', label: 'Finalizado', variant: 'chart-3' },
+    // El valor guardado sigue siendo `finalizado`; el rótulo dice lo que es
+    // (pedido del usuario): terminada por el diseñador, esperando revisión.
+    { value: 'finalizado', label: 'Lista para revisión', variant: 'chart-3' },
     { value: 'cambios',    label: 'Con cambios', variant: 'warning' },
     { value: 'aprobado',   label: 'Aprobado',   variant: 'success' },
     // Ya agendada en la red: sale sola. El recordatorio de las 8:00 no insiste
@@ -308,6 +310,7 @@ export function fraseDeHistorial(h) {
         case 'archivo':         return `subió ${h.a ? `«${h.a}»` : 'un diseño'}`;
         case 'archivo_quitado': return `quitó ${h.a ? `«${h.a}»` : 'un diseño'}`;
         case 'quitada':         return `quitó «${h.titulo}» del calendario`;
+        case 'enviada':         return 'la envió a revisión';
         case 'version':         return `subió la ${h.a || 'versión nueva'}`;
         case 'liberada':        return 'la liberó para las salas';
         case 'retenida':        return h.a ? `se retuvo para las salas (${h.a})` : 'la retuvo para las salas';
@@ -376,3 +379,13 @@ function esVertical(a) {
     const r = a.ancho / a.alto;
     return r > 0.5 && r < 0.62;
 }
+
+/** ¿Ya tiene el OK de quien revisa? (aprobada, o después). */
+export const tieneOk = (p) => ['aprobado', 'programado', 'publicado'].includes(p?.estado);
+
+export const RESULTADOS_CIERRE = [
+    { value: 'cumplio', label: 'Cumplió', variant: 'success' },
+    { value: 'con_observaciones', label: 'Con observaciones', variant: 'warning' },
+    { value: 'no_cumplio', label: 'No cumplió', variant: 'danger' },
+];
+export const resultadoCierreDe = (v) => RESULTADOS_CIERRE.find((r) => r.value === v) || { value: v, label: v || '—', variant: 'neutral' };

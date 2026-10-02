@@ -12149,23 +12149,38 @@ export type Database = {
       }
       marketing_ajustes: {
         Row: {
+          control_desde: string
           created_at: string
           dia_limite_envio: number
+          dias_anticipacion: number
           id: boolean
+          meta_publicaciones: number
+          meta_videos: number
+          meta_visitas: number
           recordatorios_activos: boolean
           updated_at: string
         }
         Insert: {
+          control_desde?: string
           created_at?: string
           dia_limite_envio?: number
+          dias_anticipacion?: number
           id?: boolean
+          meta_publicaciones?: number
+          meta_videos?: number
+          meta_visitas?: number
           recordatorios_activos?: boolean
           updated_at?: string
         }
         Update: {
+          control_desde?: string
           created_at?: string
           dia_limite_envio?: number
+          dias_anticipacion?: number
           id?: boolean
+          meta_publicaciones?: number
+          meta_videos?: number
+          meta_visitas?: number
           recordatorios_activos?: boolean
           updated_at?: string
         }
@@ -12250,6 +12265,58 @@ export type Database = {
             columns: ["subido_por"]
             isOneToOne: false
             referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_cierres: {
+        Row: {
+          created_at: string
+          firmado_at: string
+          firmado_por: string
+          mes_id: string
+          observaciones: string | null
+          resultado: string
+          resumen: Json
+        }
+        Insert: {
+          created_at?: string
+          firmado_at?: string
+          firmado_por: string
+          mes_id: string
+          observaciones?: string | null
+          resultado: string
+          resumen: Json
+        }
+        Update: {
+          created_at?: string
+          firmado_at?: string
+          firmado_por?: string
+          mes_id?: string
+          observaciones?: string | null
+          resultado?: string
+          resumen?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_cierres_firmado_por_fkey"
+            columns: ["firmado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_cierres_firmado_por_fkey"
+            columns: ["firmado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_cierres_mes_id_fkey"
+            columns: ["mes_id"]
+            isOneToOne: true
+            referencedRelation: "marketing_meses"
             referencedColumns: ["id"]
           },
         ]
@@ -12465,6 +12532,7 @@ export type Database = {
           mes: string
           objetivo: string | null
           presupuesto_pauta: number
+          primer_envio_at: string | null
           publicado_at: string | null
           publicado_por: string | null
           updated_at: string
@@ -12480,6 +12548,7 @@ export type Database = {
           mes: string
           objetivo?: string | null
           presupuesto_pauta?: number
+          primer_envio_at?: string | null
           publicado_at?: string | null
           publicado_por?: string | null
           updated_at?: string
@@ -12495,6 +12564,7 @@ export type Database = {
           mes?: string
           objetivo?: string | null
           presupuesto_pauta?: number
+          primer_envio_at?: string | null
           publicado_at?: string | null
           publicado_por?: string | null
           updated_at?: string
@@ -12616,6 +12686,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           enlace_publicado: string | null
+          enviada_at: string | null
+          enviada_por: string | null
           estado: string
           fecha: string
           formato: string
@@ -12645,6 +12717,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           enlace_publicado?: string | null
+          enviada_at?: string | null
+          enviada_por?: string | null
           estado?: string
           fecha: string
           formato: string
@@ -12674,6 +12748,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           enlace_publicado?: string | null
+          enviada_at?: string | null
+          enviada_por?: string | null
           estado?: string
           fecha?: string
           formato?: string
@@ -12709,6 +12785,20 @@ export type Database = {
           {
             foreignKeyName: "marketing_piezas_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_piezas_enviada_por_fkey"
+            columns: ["enviada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_piezas_enviada_por_fkey"
+            columns: ["enviada_por"]
             isOneToOne: false
             referencedRelation: "employees_safe"
             referencedColumns: ["id"]
@@ -12926,6 +13016,55 @@ export type Database = {
           {
             foreignKeyName: "marketing_solicitudes_solicitado_por_fkey"
             columns: ["solicitado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_visitas: {
+        Row: {
+          branch_id: number | null
+          created_at: string
+          fecha: string
+          id: string
+          notas: string | null
+          registrada_por: string
+        }
+        Insert: {
+          branch_id?: number | null
+          created_at?: string
+          fecha: string
+          id?: string
+          notas?: string | null
+          registrada_por?: string
+        }
+        Update: {
+          branch_id?: number | null
+          created_at?: string
+          fecha?: string
+          id?: string
+          notas?: string | null
+          registrada_por?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_visitas_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_visitas_registrada_por_fkey"
+            columns: ["registrada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_visitas_registrada_por_fkey"
+            columns: ["registrada_por"]
             isOneToOne: false
             referencedRelation: "employees_safe"
             referencedColumns: ["id"]
@@ -26597,6 +26736,15 @@ export type Database = {
         }
         Returns: number
       }
+      marketing_cerrar_mes: {
+        Args: {
+          p_mes_id: string
+          p_observaciones?: string
+          p_resultado: string
+        }
+        Returns: Json
+      }
+      marketing_cumplimiento: { Args: { p_mes_id: string }; Returns: Json }
       marketing_destinatarios: {
         Args: { p_accion: string; p_excepto?: string }
         Returns: string[]
@@ -26609,6 +26757,7 @@ export type Database = {
         Args: { p_pieza_id: string }
         Returns: Json
       }
+      marketing_enviar_pieza: { Args: { p_pieza_id: string }; Returns: Json }
       marketing_liberar_pieza: {
         Args: { p_liberar: boolean; p_pieza_id: string }
         Returns: Json

@@ -1,8 +1,8 @@
 import React from 'react';
-import { Megaphone, MessageSquare } from 'lucide-react';
+import { Megaphone, MessageSquare, CheckCircle2, Send } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import { clickable } from '@nucleo/utils/clickable';
-import { formatoDe, estadoDe } from '@nucleo/utils/marketing';
+import { formatoDe, estadoDe, tieneOk } from '@nucleo/utils/marketing';
 import { hora12 } from '@nucleo/utils/hora';
 import { ICONOS_FORMATO, ICONO_DESCONOCIDO, puntoDeMarca } from './iconos';
 import { UltimoCambio } from './Historial';
@@ -25,6 +25,11 @@ export default function FichaDePieza({ pieza, marcas = [], comentarios, cambio, 
             className={`min-h-[var(--tap-min)] rounded-md px-1.5 py-1 flex flex-col gap-0.5 active:scale-[0.97] ${grande ? 'p-3 gap-1.5' : ''}`}
             title={`${formato.label} · ${pieza.titulo} · ${est.label}`}>
             <div className="flex items-center gap-1 min-w-0">
+                {/* El OK se ve de un vistazo en el calendario y en el flujo. */}
+                {tieneOk(pieza) && <CheckCircle2 size={grande ? 14 : 12} className="text-success shrink-0" aria-label="Aprobada" />}
+                {!tieneOk(pieza) && pieza.estado === 'finalizado' && pieza.enviada_at && (
+                    <Send size={grande ? 13 : 11} className="text-brand shrink-0" aria-label="Enviada a revisión" />
+                )}
                 <span className="flex -space-x-0.5 shrink-0" aria-hidden>
                     {marcas.map((m) => <span key={m.id} className={`w-1.5 h-1.5 rounded-full ${puntoDeMarca(m.color)}`} />)}
                 </span>

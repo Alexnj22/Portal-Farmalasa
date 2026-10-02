@@ -12573,10 +12573,12 @@ export type Database = {
           archivo_id: string | null
           autor_id: string
           created_at: string
+          editado_at: string | null
           id: string
           marca: Json | null
           mes_id: string
           pieza_id: string | null
+          respuesta_a: string | null
           resuelto: boolean
           texto: string
           tipo: string
@@ -12585,10 +12587,12 @@ export type Database = {
           archivo_id?: string | null
           autor_id?: string
           created_at?: string
+          editado_at?: string | null
           id?: string
           marca?: Json | null
           mes_id: string
           pieza_id?: string | null
+          respuesta_a?: string | null
           resuelto?: boolean
           texto: string
           tipo?: string
@@ -12597,10 +12601,12 @@ export type Database = {
           archivo_id?: string | null
           autor_id?: string
           created_at?: string
+          editado_at?: string | null
           id?: string
           marca?: Json | null
           mes_id?: string
           pieza_id?: string | null
+          respuesta_a?: string | null
           resuelto?: boolean
           texto?: string
           tipo?: string
@@ -12639,6 +12645,13 @@ export type Database = {
             columns: ["pieza_id"]
             isOneToOne: false
             referencedRelation: "marketing_piezas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_comentarios_respuesta_a_fkey"
+            columns: ["respuesta_a"]
+            isOneToOne: false
+            referencedRelation: "marketing_comentarios"
             referencedColumns: ["id"]
           },
         ]
@@ -12737,6 +12750,114 @@ export type Database = {
             columns: ["pieza_id"]
             isOneToOne: false
             referencedRelation: "marketing_piezas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_ideas: {
+        Row: {
+          autor_id: string
+          cerrada_at: string | null
+          cerrada_por: string | null
+          created_at: string
+          detalle: string | null
+          estado: string
+          formato: string | null
+          id: string
+          marca_id: number | null
+          nota_cierre: string | null
+          pieza_id: string | null
+          titulo: string
+          tomada_at: string | null
+          tomada_por: string | null
+        }
+        Insert: {
+          autor_id?: string
+          cerrada_at?: string | null
+          cerrada_por?: string | null
+          created_at?: string
+          detalle?: string | null
+          estado?: string
+          formato?: string | null
+          id?: string
+          marca_id?: number | null
+          nota_cierre?: string | null
+          pieza_id?: string | null
+          titulo: string
+          tomada_at?: string | null
+          tomada_por?: string | null
+        }
+        Update: {
+          autor_id?: string
+          cerrada_at?: string | null
+          cerrada_por?: string | null
+          created_at?: string
+          detalle?: string | null
+          estado?: string
+          formato?: string | null
+          id?: string
+          marca_id?: number | null
+          nota_cierre?: string | null
+          pieza_id?: string | null
+          titulo?: string
+          tomada_at?: string | null
+          tomada_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_ideas_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_ideas_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_ideas_cerrada_por_fkey"
+            columns: ["cerrada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_ideas_cerrada_por_fkey"
+            columns: ["cerrada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_ideas_marca_id_fkey"
+            columns: ["marca_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_marcas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_ideas_pieza_id_fkey"
+            columns: ["pieza_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_piezas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_ideas_tomada_por_fkey"
+            columns: ["tomada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_ideas_tomada_por_fkey"
+            columns: ["tomada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -27183,6 +27304,10 @@ export type Database = {
         }
         Returns: Json
       }
+      marketing_comentario_tiene_respuestas: {
+        Args: { p_id: string }
+        Returns: boolean
+      }
       marketing_cumplimiento: { Args: { p_mes_id: string }; Returns: Json }
       marketing_destinatarios: {
         Args: { p_accion: string; p_excepto?: string }
@@ -27197,6 +27322,15 @@ export type Database = {
         Returns: Json
       }
       marketing_enviar_pieza: { Args: { p_pieza_id: string }; Returns: Json }
+      marketing_idea_mover: {
+        Args: {
+          p_estado: string
+          p_id: string
+          p_nota?: string
+          p_pieza_id?: string
+        }
+        Returns: Json
+      }
       marketing_liberar_pieza: {
         Args: { p_liberar: boolean; p_pieza_id: string }
         Returns: Json

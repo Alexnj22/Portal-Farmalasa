@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
     Megaphone, CalendarDays, KanbanSquare, Inbox, Plus, Send, ThumbsUp, Settings2, Target,
-    CheckCircle2, AlertTriangle, DollarSign, Layers, MessageSquare, FileDown, Clock, Images, Palette, Copy,
+    CheckCircle2, AlertTriangle, DollarSign, Layers, MessageSquare, FileDown, Clock, Images, Palette, Copy, LayoutGrid, Lightbulb,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -26,11 +26,13 @@ import {
     ultimoCambioPorPieza, esDeMarca, asignadoEnPauta, FORMATOS,
 } from '@nucleo/utils/marketing';
 import {
-    fetchCatalogos, fetchMes, crearMes, fetchPiezas, fetchComentarios, fetchSolicitudes, fetchPersonas,
+    fetchCatalogos, fetchMes, crearMes, fetchPiezas, fetchComentarios, fetchSolicitudes, fetchPersonas, fetchIdeas,
     firmarDisenos, moverPieza, fetchAjustes, fetchFechasEspeciales, fetchPromocionesLigables, fetchEfectoEnVentas, fetchHistorial, fetchGaleria, fetchRecursos, liberarPieza,
 } from '@nucleo/data/marketing';
 import { registrarEgreso } from '@nucleo/data/egreso';
 import TabCalendario from './TabCalendario';
+import TabFeed from './TabFeed';
+import TabIdeas from './TabIdeas';
 import TabTablero from './TabTablero';
 import TabSolicitudes from './TabSolicitudes';
 import TabPauta from './TabPauta';
@@ -70,7 +72,9 @@ export default function MarketingView() {
         { key: 'calendario',  label: 'Calendario',  icon: CalendarDays },
         { key: 'tablero',     label: 'Flujo',       icon: KanbanSquare },
         { key: 'solicitudes', label: 'Solicitudes', icon: Inbox },
+        { key: 'feed',        label: 'Feed',        icon: LayoutGrid },
         { key: 'pauta',       label: 'Pauta',       icon: Megaphone },
+        { key: 'ideas',       label: 'Ideas',       icon: Lightbulb },
         { key: 'galeria',     label: 'Galería',     icon: Images },
         { key: 'biblioteca',  label: 'Marca',       icon: Palette },
     ]), []);
@@ -92,6 +96,7 @@ export default function MarketingView() {
     const [busqueda, setBusqueda] = useState('');
     const [fMarca, setFMarca] = useState('');
     const [fFormato, setFFormato] = useState('');
+    const [fEstado, setFEstado] = useState('');   // la leyenda del calendario
     const [fSolicitud, setFSolicitud] = useState('');
 
     const [catalogos, setCatalogos] = useState({ marcas: [], redes: [] });
@@ -106,6 +111,7 @@ export default function MarketingView() {
     const [historial, setHistorial] = useState([]);
     const [solicitudes, setSolicitudes] = useState([]);
     const [personas, setPersonas] = useState({});
+    const [ideas, setIdeas] = useState([]);
     const [firmadas, setFirmadas] = useState(new Map());
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
@@ -126,21 +132,22 @@ export default function MarketingView() {
     const [firmasExtra, setFirmasExtra] = useState(new Map());
     const [cargandoExtra, setCargandoExtra] = useState(false);
     const [fLiberada, setFLiberada] = useState('');
-    const delMes = ['calendario', 'tablero', 'pauta'].includes(tab);
+    const delMes = ['calendario', 'tablero', 'feed', 'pauta'].includes(tab);
 
     const cargar = useCallback(async ({ silencioso = false } = {}) => {
         if (!silencioso) setCargando(true);
         try {
-            const [cat, fila, sols, aj, fechas, promos, sig] = await Promise.all([
+            const [cat, fila, sols, aj, fechas, promos, sig, ids] = await Promise.all([
                 fetchCatalogos(), fetchMes(mes), fetchSolicitudes(), fetchAjustes(), fetchFechasEspeciales(),
-                fetchPromocionesLigables(), fetchMes(correrMes(mesSV(), 1)),
+                fetchPromocionesLigables(), fetchMes(correrMes(mesSV(), 1)), fetchIdeas(),
             ]);
             const [ps, cs, hs] = fila
                 ? await Promise.all([fetchPiezas(fila.id), fetchComentarios(fila.id), fetchHistorial(fila.id)])
                 : [[], [], []];
             const [gente, firmas] = await Promise.all([
                 fetchPersonas([...cs.map((c) => c.autor_id), ...sols.map((s) => s.solicitado_por), ...hs.map((h) => h.actor),
-                    ...ps.map((p) => p.created_by), fila?.publicado_por, fila?.aprobado_por]),
+                    ...ps.map((p) => p.created_by), fila?.publicado_por, fila?.aprobado_por,
+                    ...ids.flatMap((i) => [i.autor_id, i.tomada_por, i.cerrada_por])]),
                 firmarDisenos(ps),
             ]);
             setCatalogos(cat);
@@ -153,6 +160,7 @@ export default function MarketingView() {
             setComentarios(cs);
             setHistorial(hs);
             setSolicitudes(sols);
+            setIdeas(ids);
             setPersonas(gente);
             setFirmadas(firmas);
             setError(null);
@@ -225,6 +233,8 @@ export default function MarketingView() {
     const comentariosDelMes = useMemo(() => comentarios.filter((c) => !c.pieza_id), [comentarios]);
 
     const resumen = useMemo(() => resumenDelMes(piezas), [piezas]);
+    // La leyenda cuenta lo que dejan los OTROS filtros (marca, búsqueda), no el de estado.
+    const resumenVisible = useMemo(() => resumenDelMes(visibles).por, [visibles]);
     const aprobadas = resumen.por.aprobado + resumen.por.programado + resumen.por.publicado;
     const mezcla = useMemo(() => mezclaDelMes(piezas), [piezas]);
     const pauta = useMemo(() => totalesDePauta(piezas.map((p) => p.pauta).filter(Boolean), mesFila?.presupuesto_pauta),
@@ -233,6 +243,18 @@ export default function MarketingView() {
     const piezaAbierta = piezaEnUrl ? piezas.find((p) => p.id === piezaEnUrl) || null : null;
     const abrirPieza = useCallback((p) => cambiarParam('pieza', p?.id || null), [cambiarParam]);
     const pautaDe = pautaId ? piezas.find((p) => p.id === pautaId) || null : null;
+
+    // La pieza donde se usó una idea puede ser de otro mes: se va a ese mes y se abre.
+    const abrirPiezaDeIdea = useCallback((pz) => {
+        const destino = String(pz?.mes?.mes || pz?.fecha || '').slice(0, 7);
+        setParams((p) => {
+            const n = new URLSearchParams(p);
+            n.set('tab', 'calendario');
+            if (destino) n.set('mes', destino);
+            n.set('pieza', pz.id);
+            return n;
+        });
+    }, [setParams]);
 
     const asegurarMes = useCallback(async () => {
         if (mesFila) return mesFila;
@@ -397,8 +419,8 @@ export default function MarketingView() {
             : `Quedan ${limite - hoy} días para enviar el calendario de ${sig} a revisión (límite: día ${limite}).` };
     })();
 
-    const filtrosPuestos = (fMarca ? 1 : 0) + (fSolicitud ? 1 : 0) + (fFormato ? 1 : 0) + (fLiberada ? 1 : 0);
-    const limpiar = () => { setFMarca(''); setFSolicitud(''); setFFormato(''); setFLiberada(''); };
+    const filtrosPuestos = (fMarca ? 1 : 0) + (fSolicitud ? 1 : 0) + (fFormato ? 1 : 0) + (fLiberada ? 1 : 0) + (fEstado && tab === 'calendario' ? 1 : 0);
+    const limpiar = () => { setFMarca(''); setFSolicitud(''); setFFormato(''); setFLiberada(''); setFEstado(''); };
     const esMesActual = mes === mesSV();
 
     const cuerpo = () => {
@@ -451,6 +473,20 @@ export default function MarketingView() {
                     puedeMoverla={puedeMoverla} onAbrir={abrirPieza} onMover={mover} />
             );
         }
+        if (tab === 'feed') {
+            return <TabFeed mes={mes} piezas={visibles} marcas={catalogos.marcas} firmadas={firmadas} onAbrir={abrirPieza} />;
+        }
+        if (tab === 'ideas') {
+            return (
+                <TabIdeas ideas={ideas} personas={personas} marcas={catalogos.marcas} piezasDelMes={piezas} mes={mes}
+                    yoId={yoId} puedeEditar={puedeEditar} puedeAprobar={puedeAprobar} busqueda={busqueda}
+                    onCambio={recargar} onAbrirPieza={abrirPiezaDeIdea}
+                    onConvertir={(i) => nuevaPieza('', {
+                        titulo: i.titulo, notas: i.detalle || '', formato: i.formato || 'post',
+                        ...(i.marca_id ? { marca_id: i.marca_id } : {}), idea_id: i.id,
+                    })} />
+            );
+        }
         if (tab === 'pauta') {
             return (
                 <TabPauta piezas={visibles} marcas={marcasPorId} redes={catalogos.redes} puedeEditar={puedeEditar}
@@ -462,14 +498,33 @@ export default function MarketingView() {
                 <TabCalendario mes={mes} piezas={visibles} marcasDe={marcasDe} comentariosPorPieza={comentariosPorPieza}
                     ultimos={ultimos} personas={personas} especiales={fechasEspeciales}
                     puedeEditar={puedeEditar} puedeMoverla={puedeMoverla} onAbrir={abrirPieza}
-                    onNueva={(fecha, prellenado) => nuevaPieza(fecha, prellenado)} onMover={mover} />
-                {mesFila && (publicado || comentariosDelMes.length > 0) && (
-                    <section data-surface="card" className="p-4 space-y-3">
-                        <h3 className="text-label uppercase tracking-wide font-semibold text-content-2 flex items-center gap-1.5">
-                            <MessageSquare size={13} /> Comentarios del mes
-                        </h3>
-                        <Conversacion comentarios={comentariosDelMes} personas={personas} mesId={mesFila.id}
-                            yoId={yoId} puedeResolver={puedeEditar || puedeAprobar} onCambio={recargar} />
+                    onNueva={(fecha, prellenado) => nuevaPieza(fecha, prellenado)} onMover={mover}
+                    porEstado={resumenVisible} fEstado={fEstado} onFEstado={setFEstado} />
+                {/* La conversación del mes, siempre a la vista (pedido del usuario):
+                    gerencia y diseño, comentarios sueltos y respuestas. Lo de una
+                    pieza se habla dentro de la pieza. */}
+                {(mesFila || puedeEditar) && (
+                    <section data-surface="card" className="p-4 md:p-5 space-y-4">
+                        <header className="flex items-start gap-3">
+                            <span className="w-9 h-9 rounded-xl bg-brand/10 text-brand-text flex items-center justify-center shrink-0">
+                                <MessageSquare size={18} aria-hidden />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                                <h3 className="text-body font-semibold text-content flex items-center gap-2">
+                                    Conversación del mes
+                                    {comentariosDelMes.length > 0 && (
+                                        <Badge variant="neutral" size="sm">{comentariosDelMes.length}</Badge>
+                                    )}
+                                </h3>
+                                <p className="text-caption text-content-3">
+                                    Entre gerencia y diseño sobre {etiquetaMes(mes).toLowerCase()}. Lo de una pieza, coméntalo dentro de la pieza.
+                                </p>
+                            </div>
+                        </header>
+                        <Conversacion comentarios={comentariosDelMes} personas={personas} mesId={mesFila?.id}
+                            asegurarMes={puedeEditar ? asegurarMes : undefined}
+                            yoId={yoId} puedeResolver={puedeEditar || puedeAprobar} onCambio={recargar}
+                            placeholder="Una idea, una pregunta, un pendiente del mes…" />
                     </section>
                 )}
             </div>
@@ -479,7 +534,8 @@ export default function MarketingView() {
     return (
         <GlassViewLayout icon={Megaphone} title="Marketing" filtersContent={(
             <ViewTabBar
-                tabs={tabs.map((t) => (t.key === 'solicitudes' && puedeEditar ? { ...t, cuenta: nuevasSolicitudes } : t))}
+                tabs={tabs.map((t) => (t.key === 'solicitudes' && puedeEditar ? { ...t, cuenta: nuevasSolicitudes }
+                    : t.key === 'ideas' && puedeEditar ? { ...t, cuenta: ideas.filter((i) => i.estado === 'nueva').length } : t))}
                 activeTab={tab} onTabChange={setTab}
                 searchValue={busqueda} onSearchChange={setBusqueda}
                 placeholder={tab === 'solicitudes' ? 'Buscar solicitud…' : 'Buscar pieza…'} />
@@ -496,7 +552,7 @@ export default function MarketingView() {
                     ) : <div className="flex-1" />}
                     <div className="flex justify-end min-w-0">
                         <FilterBar acciones={acciones} activeCount={filtrosPuestos} onClear={filtrosPuestos ? limpiar : undefined}>
-                            {delMes && (
+                            {(delMes || tab === 'ideas') && (
                                 <FilterBar.Section label="mes" fija>
                                     <PeriodStepper unit="mes" label={etiquetaMes(mes)} isCurrent={esMesActual}
                                         resetLabel="Este mes" onReset={() => cambiarParam('mes', null)}

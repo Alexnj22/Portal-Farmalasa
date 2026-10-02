@@ -103,6 +103,7 @@ const EXCEPCIONES = {
     // archivo elegido no se puede guardar en un borrador: recuperar el texto
     // sin el archivo no ahorra nada.
     'src/views/marketing/TabBiblioteca.jsx': 'un recurso son tres datos cortos y un archivo, que no cabe en un borrador',
+    'src/views/marketing/TabIdeas.jsx': 'una idea son cuatro campos cortos; corregirla o cerrarla es una línea',
     'src/views/marketing/AjustesModal.jsx': 'cada control guarda al tocarlo; sólo se escribe una fecha de cuatro campos',
     // El constructor de encuestas a clientes AUTOGUARDA en la base unos
     // instantes después de cada cambio (`EncuestaDetalle`), y al desmontarse

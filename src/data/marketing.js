@@ -245,18 +245,34 @@ export async function quitarPauta(piezaId) {
 
 export async function fetchComentarios(mesId) {
     return sinError(await supabase.from('marketing_comentarios')
-        .select('id, mes_id, pieza_id, tipo, texto, autor_id, resuelto, archivo_id, marca, created_at')
+        .select('id, mes_id, pieza_id, tipo, texto, autor_id, resuelto, archivo_id, marca, respuesta_a, editado_at, created_at')
         .eq('mes_id', mesId).order('created_at')) || [];
 }
 
 /** Un comentario; con `archivoId` y `marca`, marcado sobre ese diseño. */
-export async function comentar({ mesId, piezaId, texto, autorId, archivoId = null, marca = null }) {
+export async function comentar({ mesId, piezaId, texto, autorId, archivoId = null, marca = null, respuestaA = null }) {
+    // Una respuesta hereda el mes y la pieza de su hilo en la base (trigger
+    // `marketing_comentario_hilo`); se mandan igual porque son NOT NULL.
     const data = sinError(await supabase.from('marketing_comentarios').insert({
         mes_id: mesId, pieza_id: piezaId || null, texto: texto.trim(), autor_id: autorId,
-        archivo_id: archivoId, marca,
+        archivo_id: archivoId, marca, respuesta_a: respuestaA,
     }).select().single());
-    anotar('MARKETING_COMENTAR', piezaId || mesId, { texto: texto.slice(0, 120) });
+    anotar(respuestaA ? 'MARKETING_RESPONDER' : 'MARKETING_COMENTAR', piezaId || mesId, { texto: texto.slice(0, 120) });
     return data;
+}
+
+/** Corregir lo que uno escribió (la base lo marca «editado»). */
+export async function editarComentario(id, texto) {
+    sinError(await supabase.from('marketing_comentarios').update({ texto: texto.trim() }).eq('id', id).select('id').single());
+    anotar('MARKETING_COMENTARIO_EDITAR', id, { texto: texto.slice(0, 120) });
+}
+
+/** Quitar lo propio mientras nadie haya respondido (lo exige la policy). */
+export async function quitarComentario(id) {
+    const { error, count } = await supabase.from('marketing_comentarios').delete({ count: 'exact' }).eq('id', id);
+    if (error) throw error;
+    if (!count) throw new Error('Ya tiene respuestas: no se puede quitar.');
+    anotar('MARKETING_COMENTARIO_QUITAR', id);
 }
 
 export async function marcarResuelto(id, resuelto) {
@@ -423,5 +439,47 @@ export async function quitarRecurso(r) {
 export async function enviarPieza(piezaId) {
     const data = sinError(await supabase.rpc('marketing_enviar_pieza', { p_pieza_id: piezaId }));
     anotar('MARKETING_PIEZA_ENVIAR', piezaId);
+    return data;
+}
+
+// ── Banco de ideas ─────────────────────────────────────────────────────────
+
+export async function fetchIdeas() {
+    return sinError(await supabase.from('marketing_ideas')
+        .select('*, pieza:marketing_piezas(id, titulo, fecha, mes_id, mes:marketing_meses(mes))')
+        .order('created_at', { ascending: false }).limit(300)) || [];
+}
+
+/** Cualquiera con acceso deja una idea; la firma es la de la sesión. */
+export async function crearIdea(idea, autorId) {
+    const data = sinError(await supabase.from('marketing_ideas').insert({
+        titulo: idea.titulo.trim(), detalle: idea.detalle?.trim() || null,
+        marca_id: idea.marca_id || null, formato: idea.formato || null, autor_id: autorId,
+    }).select().single());
+    anotar('MARKETING_IDEA_CREAR', data.id, { titulo: data.titulo });
+    return data;
+}
+
+/** Corregir la propia mientras nadie la tomó. */
+export async function editarIdea(id, cambios) {
+    sinError(await supabase.from('marketing_ideas').update({
+        titulo: cambios.titulo.trim(), detalle: cambios.detalle?.trim() || null,
+        marca_id: cambios.marca_id || null, formato: cambios.formato || null,
+    }).eq('id', id).select('id').single());
+    anotar('MARKETING_IDEA_EDITAR', id);
+}
+
+export async function quitarIdea(id) {
+    const { error, count } = await supabase.from('marketing_ideas').delete({ count: 'exact' }).eq('id', id);
+    if (error) throw error;
+    if (!count) throw new Error('Ya la tomaron: no se puede quitar.');
+    anotar('MARKETING_IDEA_QUITAR', id);
+}
+
+/** Tomarla («en trabajo»), usarla en una pieza, descartarla o reabrirla. */
+export async function moverIdea(id, estado, { piezaId = null, nota = null } = {}) {
+    const data = sinError(await supabase.rpc('marketing_idea_mover',
+        { p_id: id, p_estado: estado, p_pieza_id: piezaId, p_nota: nota || null }));
+    anotar('MARKETING_IDEA_MOVER', id, { estado, pieza_id: piezaId });
     return data;
 }

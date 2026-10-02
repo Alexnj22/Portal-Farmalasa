@@ -548,7 +548,7 @@ export const AREAS = [
         tablas: ['marketing_marcas', 'marketing_redes', 'marketing_meses', 'marketing_solicitudes',
                  'marketing_piezas', 'marketing_archivos', 'marketing_comentarios', 'marketing_pautas',
                  'marketing_ajustes', 'marketing_fechas_especiales', 'marketing_historial', 'marketing_recursos',
-                 'marketing_visitas', 'marketing_cierres'],
+                 'marketing_visitas', 'marketing_cierres', 'marketing_ideas'],
         edge: [],
         crons: ['marketing-recordatorios-8am-sv'],
         docs: [],

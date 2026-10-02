@@ -70,6 +70,17 @@ export const ESTADOS_PIEZA = [
     { value: 'publicado',  label: 'Publicado',  variant: 'chart-9' },
 ];
 
+/**
+ * El camino de una pieza, en orden. «Con cambios» no es un paso: es volver
+ * atrás desde «Lista para revisión», y se pinta EN ese lugar.
+ */
+export const PASOS_DEL_FLUJO = ['pendiente', 'en_proceso', 'finalizado', 'aprobado', 'programado', 'publicado'];
+export const pasoDelFlujo = (estado) => PASOS_DEL_FLUJO.indexOf(estado === 'cambios' ? 'finalizado' : estado);
+export const ROTULO_CORTO = {
+    pendiente: 'Pendiente', en_proceso: 'En proceso', finalizado: 'Por revisar', cambios: 'Cambios',
+    aprobado: 'Aprobada', programado: 'Programada', publicado: 'Publicada',
+};
+
 /** Los estados que vienen después de aprobar: los mueve el diseñador. */
 export const ESTADOS_DE_SALIDA = ['programado', 'publicado'];
 

@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1153.0 — Marketing: conversación en hilo, calendario por estado, banco de ideas y feed
+
+Pedido del usuario: comentarios en el mes con respuestas, el estado en el
+encabezado de la pieza, el calendario «muy completo y visualmente atractivo»,
+un banco de ideas y la vista feed.
+
+- **Conversación del mes**, siempre bajo el calendario: hilos con «Responder»
+  (un nivel, como en los chats), lo propio se edita (queda «editado») o se
+  quita mientras nadie haya respondido, Ctrl/⌘+Enter envía. Quien ya está en el
+  hilo recibe push «X te respondió». Los mismos hilos dentro de cada pieza.
+- **Encabezado de la pieza**: el camino Pendiente → En proceso → Por revisar →
+  Aprobada → Programada → Publicada es el selector de estado (paso actual en su
+  color, lo recorrido con ✓, «Con cambios» en el lugar de «Por revisar»); día y
+  hora al lado.
+- **Calendario**: cada pieza en el color de su estado (franja, fondo, ícono) con
+  una barra de avance de seis tramos, hora, título en dos líneas, marcas e
+  íconos de enviada / liberada / pauta / cambios pendientes. Arriba, la leyenda
+  con el conteo por estado, que filtra. Hoy resaltado.
+- **Ideas**: cualquiera con acceso deja una (quién y a qué hora). Quien diseña
+  la toma («en trabajo»), crea la pieza desde ella (queda ligada y resuelta),
+  la liga a una pieza existente o la descarta con motivo; cada paso con foto,
+  nombre y hora, y aviso a quien la propuso.
+- **Feed**: el mes como se verá en el perfil de cada marca — cuadrícula de
+  tres, lo más nuevo arriba, historias en círculos, «Todo el plan» o «Sólo
+  aprobado».
+
+Migraciones `marketing_comentarios_en_hilo`, `marketing_banco_de_ideas` y
+`marketing_comentarios_borrar_sin_recursion` (la policy de quitar se consultaba
+a sí misma), aplicadas con el sí del usuario y probadas con rollback.
+
 ## v2.1152.0 — App: Productos en Ventas
 
 - **App: Productos en Ventas.** Tercera opción del selector de Ventas (con su permiso, igual que la pestaña del portal): qué se vendió en el período, de más a menos, con laboratorio, unidades (las presentaciones por su factor), ingreso sin IVA, margen en color y la barra contra el más vendido. Arriba los ingresos contra el período anterior y la utilidad con su margen; el orden (ingreso, unidades, utilidad, margen) en el menú y la búsqueda por producto o laboratorio. Tocar uno abre lo que se vendió: total como lo pagó el cliente, unidades, los últimos tres meses, por sala, quién lo vendió y cada venta, que abre su factura.

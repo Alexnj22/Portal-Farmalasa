@@ -27,11 +27,11 @@ import { rangoDelMes, fechaTexto, etiquetaMes } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import {
     FORMATOS, PILARES, ESTADOS_PIEZA, ESTADOS_DEL_DISENADOR, ESTADOS_DE_SALIDA, estadoDe, objetivoDe,
-    asignadoEnPauta, aptoParaWhatsApp,
+    asignadoEnPauta, aptoParaWhatsApp, formatoDe,
 } from '@nucleo/utils/marketing';
 import {
     guardarPieza, borrarPieza, subirDiseno, agregarEnlace, quitarArchivo, revisarPieza, moverPieza,
-    guardarPauta, quitarPauta, liberarPieza, enviarPieza,
+    guardarPauta, quitarPauta, liberarPieza, enviarPieza, moverIdea,
 } from '@nucleo/data/marketing';
 import { abrirEnPestanaNueva } from '@plataforma/descargas';
 import Disenos from './Disenos';
@@ -41,7 +41,8 @@ import EfectoEnVentas from './EfectoEnVentas';
 import Conversacion from './Conversacion';
 import SeleccionMultiple from './SeleccionMultiple';
 import Historial, { Quien } from './Historial';
-import { puntoDeMarca } from './iconos';
+import { puntoDeMarca, tonoDeEstado, ICONOS_FORMATO, ICONO_DESCONOCIDO } from './iconos';
+import FlujoDePieza from './FlujoDePieza';
 import AnotadorModal from './AnotadorModal';
 import VersionesModal from './VersionesModal';
 import { medirArchivo } from './medir';
@@ -182,6 +183,15 @@ export default function PiezaModal({
                 await quitarPauta(fila.id);
             }
             for (const [i, item] of pendientes.entries()) await subirUno(fila.id, mes.id, item, i);
+            // Nació de una idea del banco: queda ligada y resuelta. Si esto
+            // falla la pieza ya está guardada; se avisa y se liga a mano.
+            if (esNueva && form.idea_id) {
+                try {
+                    await moverIdea(form.idea_id, 'usada', { piezaId: fila.id });
+                } catch (err) {
+                    showToast('La pieza se guardó', `No se pudo ligar la idea: ${mensajeAmigable(err, 'lígala desde Ideas.')}`, 'warning');
+                }
+            }
             descartar();
             showToast(esNueva ? 'Pieza agregada' : 'Pieza guardada', form.titulo, 'success');
             onCambio?.();
@@ -320,7 +330,11 @@ export default function PiezaModal({
     const misComentarios = useMemo(() => (comentarios || []).filter((c) => c.pieza_id === pieza?.id), [comentarios, pieza?.id]);
     const miHistorial = useMemo(() => (historial || []).filter((h) => h.pieza_id === pieza?.id), [historial, pieza?.id]);
     const puedeRevisar = puedeAprobar && publicado && pieza?.id && ['finalizado', 'cambios', 'aprobado'].includes(pieza.estado);
-    const est = estadoDe(pieza?.estado || form.estado);
+    // El encabezado sigue lo que se está eligiendo, no lo guardado.
+    const estForm = estadoDe(puedeEditar ? form.estado : pieza?.estado);
+    const tonoActual = tonoDeEstado(puedeEditar ? form.estado : pieza?.estado);
+    const formatoActual = formatoDe(form.formato || pieza?.formato);
+    const IconoFormato = ICONOS_FORMATO[formatoActual.icono] || ICONO_DESCONOCIDO;
     const marcaPrincipal = catalogos.marcas.find((m) => m.id === form.marcas[0]);
     const vigentes = archivos.filter((a) => !a.reemplazado);
     const marcasPorArchivo = useMemo(() => {
@@ -339,21 +353,63 @@ export default function PiezaModal({
             <LiquidModal open={open} onClose={onClose} maxWidth="max-w-5xl"
                 ariaLabel={esNueva ? 'Nueva pieza' : `Pieza ${pieza.titulo}`}>
                 <LiquidModal.Header>
-                    <div className="min-w-0 space-y-1">
-                        <div className="flex items-center gap-2 min-w-0">
-                            <h2 className="text-body-xl font-semibold text-content truncate">
-                                {esNueva ? 'Nueva pieza' : pieza.titulo}
-                            </h2>
-                            <Badge variant={est.variant} size="sm">{est.label}</Badge>
-                        </div>
-                        <div className="flex items-center gap-2 text-caption text-content-3 min-w-0">
-                            <span>{mes ? etiquetaMes(mes.mes) : ''}</span>
-                            {!esNueva && pieza.created_by && (
-                                <>
+                    {/* Cuándo sale y en qué va, arriba y siempre a la vista
+                        (pedido del usuario): el camino de la pieza es el
+                        selector de estado, y el día y la hora van al lado. */}
+                    <div className="space-y-4 min-w-0 pr-8">
+                        <div className="flex items-start gap-3 min-w-0">
+                            <span className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${tonoActual.suave} ${tonoActual.texto}`}>
+                                <IconoFormato size={20} aria-hidden />
+                            </span>
+                            <div className="min-w-0 flex-1 space-y-0.5">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <h2 className="text-body-xl font-semibold text-content truncate">
+                                        {esNueva ? (form.titulo?.trim() || 'Nueva pieza') : pieza.titulo}
+                                    </h2>
+                                    <Badge variant={estForm.variant} size="sm">{estForm.label}</Badge>
+                                </div>
+                                <div className="flex items-center gap-2 text-caption text-content-3 min-w-0 flex-wrap">
+                                    <span>{formatoActual.label}</span>
                                     <span aria-hidden>·</span>
-                                    <span className="shrink-0">creada por</span>
-                                    <Quien id={pieza.created_by} personas={personas} px={18} />
-                                </>
+                                    <span>{mes ? etiquetaMes(mes.mes) : ''}</span>
+                                    {!esNueva && pieza.created_by && (
+                                        <>
+                                            <span aria-hidden>·</span>
+                                            <span className="shrink-0">creada por</span>
+                                            <Quien id={pieza.created_by} personas={personas} px={18} />
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-border-card bg-surface-card-hover p-3 md:p-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+                            <FlujoDePieza estado={puedeEditar ? form.estado : pieza?.estado}
+                                onElegir={puedeMover ? set('estado') : undefined}
+                                permitidos={opcionesEstado.map((o) => o.value)} />
+                            {puedeEditar ? (
+                                <div className="grid grid-cols-2 gap-3 lg:border-l lg:border-border-card lg:pl-4 lg:w-[380px]">
+                                    <Campo rotulo="Día" falta>
+                                        {puedeMover ? (
+                                            <LiquidDatePicker value={form.fecha} onChange={set('fecha')} min={desde} max={hasta} compact />
+                                        ) : (
+                                            <p className="text-body-sm font-semibold text-content py-1.5">
+                                                {fechaTexto(form.fecha, { weekday: 'short', day: 'numeric', month: 'short' })}
+                                            </p>
+                                        )}
+                                    </Campo>
+                                    <Campo rotulo="Hora">
+                                        <TimePicker12 value={form.hora} onChange={set('hora')} />
+                                    </Campo>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2 lg:border-l lg:border-border-card lg:pl-4">
+                                    <CalendarDays size={16} className="text-brand-text shrink-0" aria-hidden />
+                                    <span className="text-body-sm font-semibold text-content">
+                                        {pieza?.fecha ? fechaTexto(pieza.fecha, { weekday: 'long', day: 'numeric', month: 'long' }) : '—'}
+                                        {pieza?.hora ? ` · ${hora12(pieza.hora)}` : ''}
+                                    </span>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -395,33 +451,12 @@ export default function PiezaModal({
                                         </Campo>
                                     </Bloque>
 
-                                    <Bloque icon={CalendarDays} titulo="Cuándo y en qué estado">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            <Campo rotulo="Fecha" falta>
-                                                {puedeMover ? (
-                                                    <LiquidDatePicker value={form.fecha} onChange={set('fecha')} min={desde} max={hasta} />
-                                                ) : (
-                                                    <p className="text-body-sm text-content py-2">
-                                                        {fechaTexto(form.fecha, { weekday: 'long', day: 'numeric', month: 'long' })}
-                                                    </p>
-                                                )}
-                                            </Campo>
-                                            <Campo rotulo="Hora">
-                                                <TimePicker12 value={form.hora} onChange={set('hora')} />
-                                            </Campo>
-                                        </div>
-                                        <Campo rotulo="Estado">
-                                            <LiquidSelect value={form.estado} onChange={set('estado')} options={opcionesEstado}
-                                                clearable={false} disabled={!puedeMover} />
-                                        </Campo>
+                                    <Bloque icon={Share2} titulo="Dónde y con qué texto">
                                         {form.estado === 'publicado' && (
                                             <PortalInput label="Enlace de la publicación" name="enlace_publicado"
                                                 value={form.enlace_publicado || ''} onChange={set('enlace_publicado')}
                                                 placeholder="https://www.instagram.com/p/…" />
                                         )}
-                                    </Bloque>
-
-                                    <Bloque icon={Share2} titulo="Dónde y con qué texto">
                                         <Campo rotulo="Redes">
                                             <SeleccionMultiple opciones={opcionesRed} valores={form.redes} onChange={set('redes')}
                                                 columnas="grid-cols-2 sm:grid-cols-3" />

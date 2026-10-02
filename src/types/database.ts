@@ -10859,6 +10859,58 @@ export type Database = {
           },
         ]
       }
+      encuesta_cliente_resumenes: {
+        Row: {
+          branch_key: number
+          comentarios_n: number
+          created_at: string
+          encuesta_id: string
+          generado_por: string | null
+          hasta: string
+          texto: string
+        }
+        Insert: {
+          branch_key?: number
+          comentarios_n: number
+          created_at?: string
+          encuesta_id: string
+          generado_por?: string | null
+          hasta: string
+          texto: string
+        }
+        Update: {
+          branch_key?: number
+          comentarios_n?: number
+          created_at?: string
+          encuesta_id?: string
+          generado_por?: string | null
+          hasta?: string
+          texto?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encuesta_cliente_resumenes_encuesta_id_fkey"
+            columns: ["encuesta_id"]
+            isOneToOne: false
+            referencedRelation: "encuestas_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuesta_cliente_resumenes_generado_por_fkey"
+            columns: ["generado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuesta_cliente_resumenes_generado_por_fkey"
+            columns: ["generado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       encuesta_cliente_sucursales: {
         Row: {
           branch_id: number
@@ -24754,6 +24806,14 @@ export type Database = {
         Returns: boolean
       }
       encuesta_cliente_cerrar_vencidas: { Args: never; Returns: number }
+      encuesta_cliente_comentarios: {
+        Args: { p_branch?: number; p_id: string }
+        Returns: Json
+      }
+      encuesta_cliente_con_texto: {
+        Args: { p_branch: number; p_desde: string; p_id: string }
+        Returns: number
+      }
       encuesta_cliente_cumple: {
         Args: { p_cond: Json; p_r: Json }
         Returns: boolean
@@ -24780,6 +24840,15 @@ export type Database = {
         Args: { p_id: string; p_nota?: string }
         Returns: Json
       }
+      encuesta_cliente_guardar_resumen: {
+        Args: {
+          p_branch: number
+          p_hasta: string
+          p_id: string
+          p_texto: string
+        }
+        Returns: Json
+      }
       encuesta_cliente_incentivos_de: { Args: { p_id: string }; Returns: Json }
       encuesta_cliente_limpiar: {
         Args: { p_cuestionario: Json; p_r: Json }
@@ -24798,6 +24867,10 @@ export type Database = {
         Returns: string[]
       }
       encuesta_cliente_publicar: { Args: { p_id: string }; Returns: Json }
+      encuesta_cliente_puntaje: {
+        Args: { p_tipo: string; p_valor: Json }
+        Returns: number
+      }
       encuesta_cliente_registrar: {
         Args: {
           p_branch: number
@@ -24811,10 +24884,23 @@ export type Database = {
         }
         Returns: Json
       }
+      encuesta_cliente_respuestas_para_exportar: {
+        Args: { p_id: string }
+        Returns: Json
+      }
+      encuesta_cliente_resultados: {
+        Args: { p_branch?: number; p_id: string }
+        Returns: Json
+      }
+      encuesta_cliente_resumen: {
+        Args: { p_branch?: number; p_id: string }
+        Returns: Json
+      }
       encuesta_cliente_revisar: {
         Args: { p_comentario?: string; p_decision: string; p_id: string }
         Returns: Json
       }
+      encuesta_cliente_rondas: { Args: { p_id: string }; Returns: Json }
       encuesta_publica: { Args: { p_token: string }; Returns: Json }
       encuesta_publica_responder: {
         Args: {

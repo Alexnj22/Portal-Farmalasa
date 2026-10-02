@@ -19,3 +19,10 @@ const TINTA = {
 };
 export const COLORES_DIMENSION = Object.keys(TINTA);
 export const tintaDeDimension = (color) => TINTA[color] || TINTA['chart-1'];
+
+// La barra de una dimensión en Resultados: el mismo acento, relleno.
+const BARRA = {
+    'chart-1': 'bg-chart-1', 'chart-3': 'bg-chart-3', 'chart-4': 'bg-chart-4',
+    'chart-6': 'bg-chart-6', 'chart-8': 'bg-chart-8', 'chart-9': 'bg-chart-9',
+};
+export const barraDeDimension = (color) => BARRA[color] || BARRA['chart-1'];

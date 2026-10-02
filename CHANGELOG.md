@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1151.0 — Encuestas a clientes: resultados, aviso de detractor y resumen con IA
+
+Fase 4 de cuatro: el módulo queda completo.
+
+- Pestaña **Resultados**:
+  - NPS con su lectura y la barra de promotores, pasivos y detractores;
+  - puntaje 0 a 100 por tema y NPS por sucursal;
+  - la distribución de cada pregunta y la comparación entre rondas;
+  - filtro por sucursal.
+- **Exportar CSV**: una fila por respuesta, con los valores en palabras.
+- **Aviso de cliente insatisfecho**: una nota de 0 a 6 avisa a la jefatura de esa
+  sala y a supervisión de ventas, con lo que escribió.
+- **Resumen de comentarios con IA**, cuidando la cuota (pedido del usuario):
+  - se guarda y todos ven el mismo;
+  - sólo se rehace a mano y con al menos 5 comentarios nuevos;
+  - viajan los 100 más recientes, sin repetidos y recortados.
+
+  Es una acción nueva de `saly-ai`, `analyze-customer-survey`, ya desplegada.
+
+Migración `encuestas_clientes_resultados`, aplicada en producción con el sí
+del usuario. Lo de la base y la pantalla se probó antes en el entorno de pruebas;
+el resumen con IA no, porque la función no está desplegada ahí.
+
 ## v2.1150.0 — App: Vendedores en Ventas
 
 - **App: Vendedores en Ventas.** Un selector «Facturas / Vendedores» arriba de Ventas (cada uno con su permiso, igual que las pestañas del portal). El ranking del período con foto y nombre corto, puesto con la flecha de cuánto subió o bajó contra el mes anterior, sala, facturas, total y ticket, la barra de su parte del total, y aparte lo facturado con un código que no es de nadie. Tocar a alguien abre sus ventas día por día, con lo que vendió en otra sala marcado en ámbar.

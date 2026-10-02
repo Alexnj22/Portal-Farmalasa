@@ -233,3 +233,40 @@ export async function asignarIncentivo(incentivoId, customerId) {
     anotar('ENCUESTA_CLIENTE_PUNTOS_ASIGNADOS', incentivoId, { customer_id: customerId, estado: data?.estado });
     return data;
 }
+
+// ── Resultados (fase 4) ────────────────────────────────────────────────────
+//
+// Todo se cuenta en la base y llega como un solo objeto: las respuestas crecen
+// sin techo y PostgREST corta en 1000 sin avisar.
+
+/** NPS, dimensiones, distribución por pregunta, por sucursal y por canal. */
+export async function fetchResultados(id, branchId = null) {
+    return sinError(await supabase.rpc('encuesta_cliente_resultados', { p_id: id, p_branch: branchId }));
+}
+
+/** Las respuestas abiertas, las 400 más recientes. */
+export async function fetchComentarios(id, branchId = null) {
+    return sinError(await supabase.rpc('encuesta_cliente_comentarios', { p_id: id, p_branch: branchId })) || [];
+}
+
+/** Las rondas de la misma encuesta (versiones publicadas), con su NPS. */
+export async function fetchRondas(id) {
+    return sinError(await supabase.rpc('encuesta_cliente_rondas', { p_id: id })) || [];
+}
+
+/** Una fila por respuesta, para el CSV. */
+export async function fetchRespuestasParaExportar(id) {
+    return sinError(await supabase.rpc('encuesta_cliente_respuestas_para_exportar', { p_id: id })) || [];
+}
+
+/** El resumen de IA guardado y cuántos comentarios nuevos entraron desde entonces. */
+export async function fetchResumen(id, branchId = null) {
+    return sinError(await supabase.rpc('encuesta_cliente_resumen', { p_id: id, p_branch: branchId }));
+}
+
+/** Guarda el resumen para que todos lo vean sin volver a llamar a la IA. */
+export async function guardarResumen(id, branchId, texto, hasta) {
+    return sinError(await supabase.rpc('encuesta_cliente_guardar_resumen', {
+        p_id: id, p_branch: branchId, p_texto: texto, p_hasta: hasta,
+    }));
+}

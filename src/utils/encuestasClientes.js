@@ -290,3 +290,58 @@ export function resumenDeCierre(encuesta, sucursales, fechaTexto) {
     if (meta) partes.push(`${meta} respuestas`);
     return partes.join(' · ') || 'Sin cierre definido';
 }
+
+// ── Resultados ─────────────────────────────────────────────────────────────
+
+/**
+ * Cómo leer un NPS (de −100 a 100). Los cortes son los de uso común: sobre 50
+ * es excelente, sobre 0 hay más promotores que detractores.
+ */
+export function lecturaNps(puntaje) {
+    if (puntaje == null) return { label: 'Sin datos', variant: 'neutral' };
+    if (puntaje >= 50) return { label: 'Excelente', variant: 'success' };
+    if (puntaje >= 0) return { label: 'Bueno', variant: 'info' };
+    return { label: 'Por mejorar', variant: 'danger' };
+}
+
+/** Lo que significa un valor guardado, en palabras: «Sí», «De acuerdo», el texto de la opción. */
+export function textoDeValor(pregunta, valor) {
+    if (valor === undefined || valor === null || valor === '') return '';
+    switch (pregunta.tipo) {
+        case 'si_no': return valor ? 'Sí' : 'No';
+        case 'csat': return CARITAS.find((c) => c.valor === Number(valor))?.label || String(valor);
+        case 'likert': return ACUERDO[Number(valor) - 1] || String(valor);
+        case 'unica': return pregunta.opciones?.find((o) => o.id === valor)?.texto || String(valor);
+        case 'multiple':
+        case 'ranking':
+            return (Array.isArray(valor) ? valor : [valor])
+                .map((id) => pregunta.opciones?.find((o) => o.id === id)?.texto || id).join(pregunta.tipo === 'ranking' ? ' > ' : '; ');
+        default: return String(valor);
+    }
+}
+
+/** Las opciones de una pregunta para pintar su distribución, en orden y con su rótulo. */
+export function categoriasDe(pregunta) {
+    switch (pregunta.tipo) {
+        case 'nps': return Array.from({ length: 11 }, (_, n) => ({ clave: String(n), label: String(n) }));
+        case 'csat': return CARITAS.map((c) => ({ clave: String(c.valor), label: `${c.emoji} ${c.label}` }));
+        case 'likert': return ACUERDO.map((l, i) => ({ clave: String(i + 1), label: l }));
+        case 'si_no': return [{ clave: 'true', label: 'Sí' }, { clave: 'false', label: 'No' }];
+        case 'unica':
+        case 'multiple': return (pregunta.opciones || []).filter((o) => o.texto).map((o) => ({ clave: o.id, label: o.texto }));
+        default: return [];
+    }
+}
+
+/** El CSV de respuestas: una columna por pregunta, con el valor en palabras. */
+export function tablaDeRespuestas(cuestionario, filas, { fechaHora }) {
+    const preguntas = preguntasEnOrden(cuestionario);
+    const headers = ['Fecha', 'Sucursal', 'Canal', 'Entrevistó', 'NPS',
+        ...preguntas.map((p) => `${p.numero}. ${p.texto}`), 'Nombre', 'Teléfono', 'Duración (s)'];
+    const rows = filas.map((f) => [
+        fechaHora(f.fecha), f.sucursal, canalDe(f.canal).label, f.entrevistador || '', f.nps ?? '',
+        ...preguntas.map((p) => textoDeValor(p, f.respuestas?.[p.id])),
+        f.contacto_nombre || '', f.telefono || '', f.duracion_seg ?? '',
+    ]);
+    return { headers, rows };
+}

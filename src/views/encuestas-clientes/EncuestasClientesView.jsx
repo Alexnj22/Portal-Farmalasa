@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
     ClipboardList, PenLine, Radio, Archive, BookCopy, Plus, ListOrdered, Settings2, Eye, History, AlertTriangle,
-    FileEdit, Hourglass, CheckCircle2,
+    FileEdit, Hourglass, CheckCircle2, BarChart3,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -61,6 +61,7 @@ export default function EncuestasClientesView() {
         { key: 'ajustes',   label: 'Ajustes',     icon: Settings2 },
         { key: 'vista',     label: 'Vista previa', icon: Eye },
         { key: 'avance',    label: 'Avance',      icon: Radio },
+        { key: 'resultados', label: 'Resultados', icon: BarChart3 },
         { key: 'historial', label: 'Historial',   icon: History },
     ]), []);
     const [tab, setTab] = usePestanaEnUrl(tabsLista, 'diseno');

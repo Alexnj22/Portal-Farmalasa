@@ -63,6 +63,73 @@ Deno.serve(async (req) => {
     }
 
     const mapa = getErpBranchMap().filter((e) => e.erpId !== 6);   // Bodega no vende al crédito
+
+    // ── REFRESCAR HOY — la pantalla abierta relee los créditos del día ────
+    //
+    // «Se vendió al crédito y se quería abonar en el mismo momento» (usuario,
+    // 2-oct): el cron de cada 10 min dejaba hasta 10 minutos sin ver el crédito
+    // recién vendido. Ahora la pantalla lo pide al abrirse, cada minuto mientras
+    // está a la vista, y cuando una búsqueda no encuentra nada.
+    //
+    // Va ANTES del login a propósito: lo normal es que otra pantalla de la misma
+    // sala ya haya leído hace menos de un minuto, y entonces no se toca la caja
+    // en absoluto. El tope lo decide la BASE (`creditos_tomar_lectura`, atómico)
+    // y es por sala, no por persona: diez pantallas abiertas cuestan lo mismo
+    // que una. La búsqueda sin resultado usa un tope corto —es el caso «lo
+    // acaban de vender»— y es rara, así que no mueve el número.
+    if (accion === "refrescar_hoy") {
+      const tope = body.motivo === "busqueda" ? 10 : 60;
+      const salas = permiso.alcanceTodo
+        ? (body.sala ? mapa.filter((e) => e.branchId === Number(body.sala)) : mapa)
+        : mapa.filter((e) => e.branchId === Number(permiso.emp?.branch_id));
+      const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+
+      let cookie: string | null = null;
+      const filas: Record<string, unknown>[] = [];
+      const leidas: number[] = [];
+      const fallidas: string[] = [];
+      for (const { branchId, erpId } of salas) {
+        const { data: toca, error: eToca } = await supabase.rpc("creditos_tomar_lectura",
+          { p_branch_id: branchId, p_segundos: tope });
+        if (eToca) { fallidas.push(`sala ${branchId}: ${eToca.message}`); continue; }
+        if (!toca) continue;
+        try {
+          if (!cookie) {
+            const { username, password } = getCortesCreds();
+            cookie = await getSessionCookie(username, password);
+          }
+          // En serie: la sucursal vive en la SESIÓN del origen.
+          for (const c of await creditosDeLaSala(cookie, erpId, hoy, hoy)) filas.push({ ...c, branch_id: branchId });
+          leidas.push(branchId);
+        } catch (e) {
+          fallidas.push(`sala ${branchId}: ${(e as Error).message}`);
+        }
+      }
+
+      let cambiadas = 0;
+      if (filas.length) {
+        const { data, error } = await supabase.rpc("sync_creditos_batch", { p_filas: filas });
+        if (error) {
+          console.error("[creditos-erp] refrescar_hoy:", error.message);
+          return responder({ ok: false, error: "No se pudo guardar la lectura." }, 500);
+        }
+        const r = Array.isArray(data) ? data[0] : data;
+        cambiadas = Number(r?.cambiadas ?? 0);
+      }
+      if (fallidas.length) console.error("[creditos-erp] refrescar_hoy:", fallidas.join(" · "));
+
+      // Cuándo se leyó por última vez cada sala que mira esta pantalla —leyera
+      // ésta o la de otra persona—, para que el sello de «actualizado hace…»
+      // diga la verdad.
+      const { data: sellos } = await supabase.from("creditos_lectura_sala")
+        .select("leido_el").in("branch_id", salas.map((s) => s.branchId))
+        .order("leido_el", { ascending: true }).limit(1);
+      return responder({
+        ok: fallidas.length === 0, leidas: leidas.length, cambiadas,
+        leido_el: sellos?.[0]?.leido_el ?? null,
+      });
+    }
+
     const { username, password } = getCortesCreds();
     const cookie = await getSessionCookie(username, password);
 

@@ -5387,6 +5387,32 @@ export type Database = {
           },
         ]
       }
+      creditos_lectura_sala: {
+        Row: {
+          branch_id: number
+          created_at: string
+          leido_el: string
+        }
+        Insert: {
+          branch_id: number
+          created_at?: string
+          leido_el: string
+        }
+        Update: {
+          branch_id?: number
+          created_at?: string
+          leido_el?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creditos_lectura_sala_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: true
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creditos_pagos: {
         Row: {
           branch_id: number
@@ -24407,6 +24433,10 @@ export type Database = {
           vendedor: string
           vendedor_id: string
         }[]
+      }
+      creditos_tomar_lectura: {
+        Args: { p_branch_id: number; p_segundos: number }
+        Returns: boolean
       }
       cron_auth_headers: { Args: never; Returns: Json }
       cuenta_de_carne_temporal: { Args: { p_email: string }; Returns: string }

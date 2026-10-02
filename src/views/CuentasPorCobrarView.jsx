@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AlertTriangle, Building2, CalendarClock, HandCoins, Pencil, RefreshCw, Search, ShoppingBag, UserCircle2, X } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -25,8 +25,9 @@ import {
     DIAS_DE_PLAZO, edadDelCredito, fetchCreditoDetalle, fetchCreditos, fetchCreditosDelCliente,
     fetchHistorialDelOrigen, fetchPosProveedores, fetchUltimaLectura, leerPagoDeCredito,
     pagarCreditos, pedirCorreccionDeAbono, severidadDeDias, fetchCreditosReservados,
-    subirComprobanteDeAbono,
+    refrescarCreditosDeHoy, subirComprobanteDeAbono,
 } from '@nucleo/data/creditos';
+import { escucharVisibilidad, soltarVisibilidad, visibilidad } from '../plataforma/cicloDeVida';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 /* `fechaCorta` sale de `ticketCampos` y no se reescribe acá: es la MISMA
@@ -185,15 +186,19 @@ export default function CuentasPorCobrarView() {
     const vendedores = useMemo(() => new Map(empleados.map((e) => [String(e.id), e])), [empleados]);
 
 
-    /* Sale del ESPEJO del portal, que un cron refresca cada hora. Antes se leía
+    /* Sale del ESPEJO del portal, que un cron refresca cada 10 minutos y esta
+     * misma pantalla relee mientras está abierta (más abajo). Antes se leía
      * en vivo del sistema de la caja y abrir la pantalla costaba seis
      * peticiones EN SERIE —la sucursal vive en su sesión, no se pueden hacer a
      * la vez—, o sea varios segundos de espera cada vez.
      *
      * El cobro sigue releyendo el origen: la lista se mira acá, el cobro se
      * decide allá. */
-    const cargar = useCallback(async () => {
-        setCargando(true);
+    const cargar = useCallback(async (opciones) => {
+        /* `silencioso` es la recarga que dispara la relectura de la caja: la
+         * lista ya está pintada y un esqueleto cada minuto sería parpadeo. */
+        const silencioso = opciones?.silencioso === true;
+        if (!silencioso) setCargando(true);
         const [r, l, res] = await Promise.all([
             /* Sólo «Todos» baja el histórico entero (2,387 filas). Los otros dos
              * recortes viven dentro de los que deben, así que la base manda 124
@@ -228,6 +233,31 @@ export default function CuentasPorCobrarView() {
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial y al cambiar de sala
 
+    /* ── La caja, releída mientras la pantalla está a la vista ──────────────
+     * «Se vendió al crédito y se quería abonar en el mismo momento» (2-oct): el
+     * cron de cada 10 minutos dejaba ese crédito fuera de la lista. Ahora se
+     * relee la caja al abrir, cada minuto mientras se ve, y al volver a la
+     * pestaña. Con la pantalla oculta no se pide nada.
+     *
+     * El tope lo pone el SERVIDOR (una lectura por sala por minuto, compartida
+     * entre todas las pantallas): casi siempre contesta sin tocar la caja. Sólo
+     * si algo cambió se recarga la lista. */
+    const [leidoSala, setLeidoSala] = useState(null);
+    const refrescar = useCallback(async (motivo = null) => {
+        const r = await refrescarCreditosDeHoy({ sala: sala || null, motivo });
+        if (r?.leido_el) setLeidoSala(r.leido_el);
+        if (r?.cambiadas > 0) cargar({ silencioso: true });
+        return r;
+    }, [sala, cargar]);
+
+    useEffect(() => {
+        const siSeVe = () => { if (visibilidad() === 'visible') refrescar(); };
+        siSeVe();
+        const timer = setInterval(siSeVe, 60_000);
+        escucharVisibilidad(siSeVe);
+        return () => { clearInterval(timer); soltarVisibilidad(siSeVe); };
+    }, [refrescar]);
+
     const conEdad = useMemo(
         () => creditos.map((c) => ({ ...c, ...edadDelCredito(c.fecha, c.saldo) })),
         [creditos],
@@ -235,6 +265,24 @@ export default function CuentasPorCobrarView() {
 
     // Los más viejos arriba: son los que hay que ir a cobrar (`carteraFiltrada`).
     const filtrados = useMemo(() => carteraFiltrada(conEdad, { ver, busqueda, nombreDeSala }), [conEdad, ver, busqueda, nombreDeSala]);
+
+    /* Una búsqueda que no encuentra a nadie puede ser «lo acaban de vender»:
+     * antes de quedarse con el vacío, se le pregunta a la caja (tope corto en
+     * el servidor). Una vez por término y después de que dejen de escribir. */
+    const buscado = useRef('');
+    useEffect(() => {
+        const termino = busqueda.trim();
+        if (cargando || filtrados.length || termino.length < 3 || buscado.current === termino) return undefined;
+        const t = setTimeout(() => { buscado.current = termino; refrescar('busqueda'); }, 800);
+        return () => clearTimeout(t);
+    }, [busqueda, filtrados.length, cargando, refrescar]);
+
+    /* El sello dice la lectura MÁS RECIENTE: la del cron o la de la pantalla. */
+    const leidoEl = useMemo(() => {
+        const a = lectura?.corrio_el ? Date.parse(lectura.corrio_el) : 0;
+        const b = leidoSala ? Date.parse(leidoSala) : 0;
+        return a || b ? new Date(Math.max(a, b)).toISOString() : null;
+    }, [lectura, leidoSala]);
 
     /* 50 y no 25: con 25 la sala más cargada (47 con saldo) quedaba partida en
      * dos páginas y la última fila de la primera mostraba UNA tarjeta con dos
@@ -361,10 +409,10 @@ export default function CuentasPorCobrarView() {
                             igual de bien que una fresca, así que el sello es lo
                             único que las distingue. Y se dice en horas y no con
                             un reloj: lo que importa es si está al día. */}
-                        {lectura?.corrio_el && (
+                        {leidoEl && (
                             <span className="min-w-0 flex items-center gap-1.5 text-micro text-content-3">
                                 <RefreshCw className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                                {desdeLaLectura(lectura.corrio_el)}
+                                {desdeLaLectura(leidoEl)}
                             </span>
                         )}
                     </div>

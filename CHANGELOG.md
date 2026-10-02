@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1158.0 — Cuentas por cobrar: la pantalla relee la caja mientras está abierta
+
+- **Un crédito recién vendido ya aparece para abonarlo al momento.** Antes la lista se ponía al día cada 10 minutos y un crédito vendido en ese rato no salía. Ahora la pantalla relee la caja de su sucursal al abrirse, cada minuto mientras está a la vista y al volver a la pestaña. Con la pantalla oculta no pide nada.
+- **Si la búsqueda no encuentra al cliente, se pregunta a la caja antes de decir que no hay créditos.**
+- **La caja no recibe más consultas por tener más pantallas abiertas:** se lee como máximo una vez por minuto por sucursal, compartida entre todas las personas que miran. Lo decide la base (`creditos_tomar_lectura`), y cuando no le toca la respuesta sale sin tocar la caja.
+- El sello «Al día / Leído hace…» ahora muestra la lectura más reciente, sea la automática o la de la pantalla.
+
 ## v2.1157.0 — App: cobrar un crédito
 
 - **App: cobrar un crédito, nativo.** «Recibir un pago» en la ficha del crédito: efectivo, transferencia, tarjeta, cheque o solicitar aprobación (con la forma real y el motivo). Con comprobante, la foto se lee sola y llena monto, fecha, número y POS; lo aplicado tiene que dar exacto el comprobante y puede repartirse entre los créditos del mismo cliente (a mano, «Todo» o «Repartir del más viejo»). Un comprobante a nombre de otro va a aprobación solo. No deja cobrar un crédito con un cobro esperando firma, ni si no se pudo comprobar eso. Confirma antes de escribir («un abono no se puede deshacer») y guarda borrador.

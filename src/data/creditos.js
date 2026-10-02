@@ -155,6 +155,22 @@ export async function fetchUltimaLectura() {
 }
 
 /**
+ * Releer de la caja los créditos de HOY de la sala (o de todas, con alcance
+ * total) y dejarlos en el espejo.
+ *
+ * La pantalla lo pide al abrirse, cada minuto mientras está a la vista y cuando
+ * una búsqueda no encuentra nada (`motivo: 'busqueda'`). El servidor pone el
+ * tope —una lectura por sala por minuto, compartida entre todas las pantallas—,
+ * así que llamarlo seguido es barato: casi siempre contesta sin tocar la caja.
+ *
+ * Devuelve `{ ok, leidas, cambiadas, leido_el }`; `cambiadas > 0` es la señal
+ * para recargar la lista.
+ */
+export function refrescarCreditosDeHoy({ sala = null, motivo = null } = {}) {
+    return pedir({ accion: 'refrescar_hoy', sala, motivo });
+}
+
+/**
  * Abonar a un crédito.
  *
  * `credito` es el id del CRÉDITO, no el de la factura — son dos números

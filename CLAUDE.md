@@ -737,13 +737,23 @@ es a propósito — un crédito cuya factura todavía no sincronizó entra igual
 toma el amarre en la corrida siguiente. Perder la deuda por no tener el amarre
 sería el peor de los dos errores.
 
-**El espejo se mantiene con TRES piezas, y ninguna sobra** (2026-09-02):
+**El espejo se mantiene con CUATRO piezas, y ninguna sobra** (2026-09-02; la cuarta, 2026-10-02):
 
 | | cada cuánto | qué mira | cuesta |
 |---|---|---|---|
 | pasada frecuente | 10 min, 7am-11pm | **sólo el día de hoy** | 1.8 s · 2 kB |
 | barrido completo | 1 vez, 2am SV | 2024 → hoy | 17.3 s · 1.4 MB |
 | relectura tras abonar | cada abono | esa sala, esa fecha | ~250 ms |
+| pantalla abierta (2-oct) | al abrir, cada minuto a la vista, búsqueda sin resultado | **hoy**, su sala | 1 lectura/sala/min **compartida** |
+
+**La cuarta pieza tiene el tope en la BASE, no en el navegador.**
+`creditos_tomar_lectura(sala, segundos)` reclama la lectura de forma atómica
+(`ON CONFLICT … WHERE leido_el < now() - …`): diez pantallas abiertas en una
+sala cuestan lo mismo que una, y la acción `refrescar_hoy` de `creditos-erp`
+contesta sin iniciar sesión en la caja cuando no le toca. Nació de «se vendió al
+crédito y se quería abonar en el mismo momento»: con el cron de 10 minutos ese
+crédito no estaba en la lista. La búsqueda sin resultado usa tope de 10 s
+porque ése es exactamente el caso «lo acaban de vender».
 
 **El barrido diario NO es redundante y es el que se olvida.** Un abono hecho en
 el ORIGEN sobre un crédito de hace ocho meses **no aparece en la ventana de

@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1140.2 — puntos: Avisos dice quién vendió y abre la venta con el perfil del cliente
+
+Pedido del usuario: «no sale quién lo vendió (quién le canjeó los puntos)» y
+«que al abrirlo me dé tanto la venta como el perfil de puntos de ese cliente».
+
+- **Columna «Vendió»** con foto y nombre corto. Sale del vendedor de la
+  factura (`cod_vendedor` → `employees.code`), que `puntos_panel_avisos` ahora
+  agrega a cada aviso junto con fecha, hora, total y estado de la venta. El
+  buscador también encuentra por vendedor.
+- **Tocar un aviso abre el perfil de puntos del cliente con la venta arriba**
+  (`VentaDelAviso`): qué pasó, documento, fecha, sala, total cobrado, quién
+  vendió y los productos. Si la venta se anuló después, lo dice. Va dentro del
+  mismo diálogo del perfil, no en uno apilado.
+
 ## v2.1140.1 — puntos: el canje hecho sin saldo aparece en Avisos
 
 Reporte: el aviso «Se canjearon puntos que el cliente no tenía» llegaba, pero

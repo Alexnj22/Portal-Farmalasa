@@ -42,6 +42,7 @@ import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, fechaTexto } from '@nucleo/utils/fecha';
 import { fetchPuntosCliente, ajustarPuntos } from '@nucleo/data/puntos';
 import CodigoDeAcceso from './CodigoDeAcceso';
+import VentaDelAviso from './VentaDelAviso';
 
 // `recharts` viaja en su chunk: el modal se abre sin esperarlo.
 const GraficaCliente = lazy(() => import('./GraficasPuntos').then((m) => ({ default: m.GraficaCliente })));
@@ -78,18 +79,20 @@ const nombreMes = (clave) => {
     return `${MESES[m - 1]} ${a}`;
 };
 
-export default function ClientePuntosModal({ open, customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar, onClose }) {
+// `aviso` (opcional): se abrió desde la pestaña Avisos, y la venta del aviso va
+// arriba del perfil — `{ fila, rotulo, variante, puntosTexto }`.
+export default function ClientePuntosModal({ open, customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar, onClose, aviso = null }) {
     if (!customerId) return null;
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-4xl" ariaLabel="Puntos del cliente">
             <Cuerpo key={customerId} customerId={customerId} puedeEditarFicha={puedeEditarFicha}
                 puedeAjustar={puedeAjustar} enPortal={enPortal}
-                onEditar={onEditar} onClose={onClose} />
+                onEditar={onEditar} onClose={onClose} aviso={aviso} />
         </LiquidModal>
     );
 }
 
-function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar, onClose }) {
+function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar, onClose, aviso }) {
     const showToast = useToastStore((s) => s.showToast);
     const [datos, setDatos] = useState(null);
     const [cargando, setCargando] = useState(true);
@@ -246,6 +249,10 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                     <Notice variant="warning" bloque>No se encontró el cliente.</Notice>
                 ) : (
                     <div className="flex flex-col gap-5">
+                        {aviso && (
+                            <VentaDelAviso aviso={aviso.fila} rotulo={aviso.rotulo}
+                                variante={aviso.variante} puntosTexto={aviso.puntosTexto} />
+                        )}
                         {!cliente.acumula && (
                             <Notice variant="info" bloque>
                                 Esta ficha es de un convenio: sus compras no acumulan puntos.

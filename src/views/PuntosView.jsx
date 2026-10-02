@@ -156,6 +156,8 @@ export default function PuntosView({ openModal }) {
     const [serie, setSerie] = useState([]);
     const [tablero, setTablero] = useState(null);
     const [clienteAbierto, setClienteAbierto] = useState(null);
+    // El aviso tocado: abre el perfil del cliente con la venta del aviso arriba.
+    const [avisoAbierto, setAvisoAbierto] = useState(null);
 
     // `version` sube para recargar (después de asignar una cuenta). El estado
     // ya nace «cargando» y la recarga lo prende desde el evento: prenderlo
@@ -196,7 +198,7 @@ export default function PuntosView({ openModal }) {
 
     const avisosVisibles = useMemo(() => {
         const q = busqueda.trim();
-        return !q ? avisos : avisos.filter((a) => tokenMatch(q, a.cliente, a.documento, a.sala));
+        return !q ? avisos : avisos.filter((a) => tokenMatch(q, a.cliente, a.documento, a.sala, a.vendedor));
     }, [avisos, busqueda]);
 
     /* La página vive en la DIRECCIÓN (DESIGN.md §14 · usePaginaEnUrl): la sesión
@@ -226,7 +228,7 @@ export default function PuntosView({ openModal }) {
             searchValue={pestana === 'consulta' ? busquedaClientes : busqueda}
             // Resumen no tiene lista que buscar: sin la lupa.
             onSearchChange={pestana === 'resumen' ? undefined : buscar}
-            placeholder={pestana === 'avisos' ? 'Buscar por cliente o documento…'
+            placeholder={pestana === 'avisos' ? 'Buscar por cliente, documento o vendedor…'
                 : pestana === 'consulta' ? 'Buscar cliente por nombre, DUI o teléfono…'
                 : 'Buscar por nombre, DUI o teléfono…'}
         />
@@ -262,16 +264,19 @@ export default function PuntosView({ openModal }) {
                             { key: 'que',       label: 'Qué pasó' },
                             { key: 'cliente',   label: 'Cliente' },
                             { key: 'sala',      label: 'Sala' },
+                            { key: 'vendio',    label: 'Vendió' },
                             { key: 'documento', label: 'Documento' },
                             { key: 'puntos',    label: 'Puntos' },
                         ]}
                         loading={cargando}
-                        minWidth="860px"
-                        movil={{ identidad: 'cliente', ancla: 'puntos' }}
+                        minWidth="980px"
+                        // La fila abre el perfil del cliente con la venta: es un destino real.
+                        movil={{ identidad: 'cliente', ancla: 'puntos', usarAccionDeFila: true }}
                         empty={{ icon: Inbox, message: busqueda.trim() ? 'Sin coincidencias' : 'Nada que revisar en los últimos 60 días' }}
                     >
                         {tramo(avisosVisibles, pagAvisos).map((a, i) => (
-                            <DataRow key={`${a.tipo}-${a.invoice_id}-${i}`} index={i}>
+                            <DataRow key={`${a.tipo}-${a.invoice_id}-${i}`} index={i}
+                                onClick={a.customer_id ? () => { setAvisoAbierto(a); setClienteAbierto(a.customer_id); } : undefined}>
                                 <DataCell>{fechaHora12(a.cuando)}</DataCell>
                                 <DataCell>
                                     <Badge variant={avisoDe(a).variante} tone="soft" uppercase={false}>{avisoDe(a).rotulo}</Badge>
@@ -285,6 +290,14 @@ export default function PuntosView({ openModal }) {
                                 </DataCell>
                                 <DataCell>{a.cliente || <span className="text-content-3">—</span>}</DataCell>
                                 <DataCell>{a.sala || '—'}</DataCell>
+                                <DataCell>
+                                    {a.vendedor ? (
+                                        <span className="flex items-center gap-1.5 min-w-0">
+                                            <AvatarConEstado emp={{ id: a.vendedor_id, name: a.vendedor }} px={20} radio="rounded-full" marco="" />
+                                            <span className="truncate">{shortEmployeeName({ name: a.vendedor })}</span>
+                                        </span>
+                                    ) : <span className="text-content-3">—</span>}
+                                </DataCell>
                                 <DataCell><span className="tabular-nums">{a.documento || '—'}</span></DataCell>
                                 <DataCell>
                                     <span className="tabular-nums">{avisoDe(a).puntos(a)}</span>
@@ -375,11 +388,16 @@ export default function PuntosView({ openModal }) {
                 // Con el nombre literal del permiso, para que lo vea gate:permisos.
                 puedeAjustar={hasPermission('puntos_ajustar', 'can_view')}
                 enPortal={resumen?.config?.fuente === 'portal'}
-                onClose={() => setClienteAbierto(null)}
+                aviso={avisoAbierto && avisoAbierto.customer_id === clienteAbierto ? {
+                    fila: avisoAbierto, rotulo: avisoDe(avisoAbierto).rotulo,
+                    variante: avisoDe(avisoAbierto).variante, puntosTexto: avisoDe(avisoAbierto).puntos(avisoAbierto),
+                } : null}
+                onClose={() => { setClienteAbierto(null); setAvisoAbierto(null); }}
                 // La ficha se edita en el MISMO modal que usa Clientes. Se cierra
                 // éste primero para no apilar dos diálogos.
                 onEditar={(c) => {
                     setClienteAbierto(null);
+                    setAvisoAbierto(null);
                     openModal?.('editCliente', {
                         id: c.id, nombre: c.nombre, canEdit: puedeEditarFicha,
                         onSaved: () => setVersion((v) => v + 1),

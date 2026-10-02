@@ -23,7 +23,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.1153.1 — Min·Max: descartar borradores y recalcular en un paso
 
-_(pendiente de redactar)_
+Si la sala tiene borradores sin revisar, «Recalcular» ya no sólo avisa en rojo:
+pregunta «La Popular tiene N borradores sin revisar» con dos salidas —
+**Descartar y recalcular** o **Cancelar**—. El descarte es el mismo
+`discard_stock_drafts` del botón «Descartar todo» y queda en la bitácora con
+`motivo: 'recalcular'`. «Todas las sucursales» sigue nombrando las que se
+saltaron, sin descartar nada a ciegas. (El commit dice v2.1151.3: otra sesión
+subió la versión en el medio.)
 
 ## v2.1153.0 — Marketing: conversación en hilo, calendario por estado, banco de ideas y feed
 

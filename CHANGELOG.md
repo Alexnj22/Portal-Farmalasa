@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1146.0 — App: Personal nativo
+
+- **App: Personal nativo.** El directorio por sala, en el orden del negocio, con cargos, el estado de hoy y lo que falta en el expediente; llamar y WhatsApp desde la tarjeta, búsqueda en la barra, «En la sala / No están hoy» y la sala en el menú. Tocar a alguien abre su ficha.
+- **Núcleo:** `alertasDePersona` y `pesoDeSucursal` se mudan de `EquiposView` a `src/utils/alertasDePersona.js`; el portal y la app dicen lo mismo.
+
 ## v2.1145.0 — App: Clientes — lista y ficha
 
 **Clientes en la app**: la lista y la ficha.

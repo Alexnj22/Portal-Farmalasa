@@ -31,7 +31,7 @@ import { estadoDePersona, estaAusenteHoy } from '@nucleo/utils/estadoDePersona';
 import { getRoleTheme } from '@nucleo/utils/scheduleHelpers';
 import { cadenaDeSuperiores } from '@nucleo/utils/roles';
 import { repartirSala } from '@nucleo/utils/mandoDeSala';
-import { getExpiringDocuments } from '@nucleo/utils/documentExpiry';
+import { alertasDePersona, pesoDeSucursal } from '@nucleo/utils/alertasDePersona';
 import { soloPersonalEnPlanilla, soloNoEmpleados, esFichaQueNoEsEmpleado } from '@nucleo/utils/tipoDeFicha';
 import { exportarDirectorio } from '@nucleo/utils/directorioCsv';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -39,7 +39,6 @@ import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { smartFilter } from '@nucleo/utils/searchUtils';
-import { calcAge, MINOR_AGE } from '@nucleo/utils/ageUtils';
 import { SIN_ASIGNAR } from '../../components/common/catalogos/constantes';
 
 /*
@@ -95,114 +94,16 @@ const soloDigitos = (tel) => String(tel || '').replace(/\D/g, '');
 // La fila de hoy pone pendientes, cumpleaños, aniversario y vencimiento TODAS
 // al lado del nombre, y las cuatro pelean por el mismo renglón. Acá el nombre
 // se queda solo y las alertas bajan a su propia línea.
-function alertasDe(emp) {
-  const salida = [];
-
-  const faltan = [];
-  const menor = (calcAge(emp.birth_date) ?? 99) < MINOR_AGE;
-  if (!emp.birth_date) faltan.push('fecha de nacimiento');
-
-  // ── Sólo se acusa de faltar lo que se pudo mirar ─────────────────────────
-  // El DUI, el ISSS y la AFP salieron de `employees_safe` el 2026-08-24 y hoy
-  // llegan por `get_employee_identidad`, que contesta según quien pregunta:
-  // sin `staff_detail` devuelve la fila PROPIA y nada más. Leerlos de la fila
-  // sin más daba `undefined`, y `undefined` es indistinguible de «no lo tiene»
-  // — o sea que a un cargo con el listado y sin el expediente la pantalla le
-  // decía «Faltan 2 datos» sobre las 48 fichas, todas con su DUI cargado.
-  //
-  // Y le pasaba a TODOS por un instante: `persistEmployees` borra esos campos
-  // del caché del disco, así que la primera pintura de cada recarga —la que
-  // sale del caché, antes de que `fetchBoot` conteste— los tiene vacíos.
-  //
-  // `identidad_conocida` es la respuesta del servidor, no el permiso: una fila
-  // que volvió con todo en `null` SÍ es un dato que falta. Sin ella no se
-  // acusa, que es el lado correcto en el que equivocarse — el expediente tiene
-  // la lista completa del Art. 23 y ahí el dato no se esconde.
-  if (emp.identidad_conocida) {
-    // A un menor no se le pide DUI: en El Salvador no se tramita hasta los 18,
-    // y el Art. 23 nº2 le pide el documento alterno. Pedírselo igual era una
-    // alerta que no se podía apagar cargando el dato.
-    // «número de…» y no «documento de identidad» a secas: unas líneas abajo
-    // se revisa la IMAGEN con ese mismo nombre, y la lista se muestra unida
-    // por comas — repetido, se leería como un solo dato dicho dos veces.
-    if (menor) {
-      if (!emp.alt_identity_document) faltan.push('número de documento de identidad');
-    } else if (!emp.dui) {
-      faltan.push('DUI');
-    }
-    if (!emp.isss_number && !emp.afp_number) faltan.push('ISSS / AFP');
-  }
-
-  const docs = emp.employee_documents || [];
-  const tieneIdentidad = menor
-    ? docs.some(d => d.category === 'DOCUMENTO_IDENTIDAD' && d.url)
-    : docs.some(d => d.category === 'DUI_FRENTE' && d.url) && docs.some(d => d.category === 'DUI_REVERSO' && d.url);
-  if (!tieneIdentidad) faltan.push('documento de identidad');
-  if (faltan.length) {
-    salida.push({
-      key: 'pendiente', icon: AlertCircle, variante: 'warning',
-      texto: faltan.length === 1 ? 'Falta 1 dato' : `Faltan ${faltan.length} datos`,
-      title: `Información pendiente: ${faltan.join(', ')}`,
-    });
-  }
-
-  const doc = getExpiringDocuments(docs)[0];
-  if (doc) {
-    const vencido = doc.daysLeft < 0;
-    salida.push({
-      key: 'documento', icon: ShieldAlert, variante: vencido ? 'danger' : 'warning',
-      texto: vencido ? 'Documento vencido' : `Vence en ${doc.daysLeft} d`,
-      title: `${doc.title || doc.category}: ${vencido ? 'vencido' : `vence en ${doc.daysLeft} día${doc.daysLeft === 1 ? '' : 's'}`}`,
-    });
-  }
-
-  if (emp.birth_date) {
-    const b = new Date(`${emp.birth_date}T12:00:00`);
-    const hoy = new Date(); hoy.setHours(12, 0, 0, 0);
-    if (b.getMonth() === hoy.getMonth()) {
-      const esteAnio = new Date(hoy.getFullYear(), b.getMonth(), b.getDate(), 12, 0, 0, 0);
-      const dias = Math.round((esteAnio - hoy) / 86400000);
-      if (dias >= 0) {
-        const cumple = hoy.getFullYear() - b.getFullYear();
-        salida.push({
-          key: 'cumple', icon: Cake, variante: 'chart-6',
-          texto: dias === 0 ? `¡Hoy cumple ${cumple}!` : dias === 1 ? 'Cumple mañana' : `Cumple en ${dias} días`,
-          title: `Cumple ${cumple} años el día ${b.getDate()}`,
-        });
-      }
-    }
-  }
-
-  if (emp.hire_date) {
-    const h = new Date(`${emp.hire_date}T12:00:00`);
-    const hoy = new Date();
-    if (h.getMonth() === hoy.getMonth() && h.getFullYear() < hoy.getFullYear()) {
-      const anios = hoy.getFullYear() - h.getFullYear();
-      salida.push({
-        key: 'aniversario', icon: Medal, variante: 'success',
-        texto: `${anios} año${anios === 1 ? '' : 's'} en la empresa`,
-        title: `Aniversario laboral el día ${h.getDate()} de este mes`,
-      });
-    }
-  }
-
-  return salida;
-}
+// Las alertas viven en el núcleo (`utils/alertasDePersona`, también las usa la
+// app); acá se les pega el componente del ícono.
+const ICONOS_DE_ALERTA = { AlertCircle, ShieldAlert, Cake, Medal };
+const alertasDe = (emp) => alertasDePersona(emp).map((a) => ({ ...a, icon: ICONOS_DE_ALERTA[a.icono] }));
 
 const cargosDe = (emp) => [emp.role, emp.secondary_role || emp.secondaryRole].filter(Boolean);
 
 // ── Orden de las secciones ────────────────────────────────────────────────
 // El mismo criterio que ya usa la tabla, para que cambiar de vista no cambie
 // el orden de las salas y haya que volver a buscarlas.
-const pesoDeSucursal = (nombre) => {
-  const b = (nombre || '').toUpperCase();
-  if (b.includes('POPULAR')) return 1;
-  if (b.includes('SALUD')) return 2;
-  if (b.includes('BODEGA')) return 3;
-  if (b.includes('ADMIN')) return 5;
-  if (b.includes('EXTERNO')) return 99;
-  return 4;
-};
 
 // ── La tarjeta ────────────────────────────────────────────────────────────
 // `data-surface="card"` y no un `<div>` con borde y radio a mano: dibujarla a

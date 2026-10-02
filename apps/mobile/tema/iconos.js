@@ -82,6 +82,11 @@ export const ICONOS = {
   UserCheck: i('person.crop.circle.badge.checkmark', require('@expo/material-symbols/how_to_reg.xml')),
   UserX: i('person.crop.circle.badge.xmark', require('@expo/material-symbols/person_off.xml')),
   Contact: i('person.crop.rectangle', require('@expo/material-symbols/contact_page.xml')),
+  Medal: i('medal', require('@expo/material-symbols/military_tech.xml')),
+  ShieldAlert: i('exclamationmark.shield', require('@expo/material-symbols/gpp_maybe.xml')),
+  AlertCircle: i('exclamationmark.circle', require('@expo/material-symbols/error.xml')),
+  Phone: i('phone', require('@expo/material-symbols/call.xml')),
+  MessageCircle: i('message', require('@expo/material-symbols/chat.xml')),
 };
 
 export const ICONO_GENERICO = i('square.grid.2x2', require('@expo/material-symbols/apps.xml'));

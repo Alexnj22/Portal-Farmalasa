@@ -10,12 +10,13 @@ export const PANTALLAS_DE_LA_APP = {
   '/bitacoras': true,
   '/traslados': true,
   '/ventas-hoy': true,   // no existe en el portal: es la pantalla nativa de «Ventas de hoy»
-  '/pedidos': true,
+  '/pedidos': true,       // lo de la sala (llegada y conteo); Bodega abre el portal desde ahí
   '/clientes': true,      // la lista y la ficha (ver y editar); las fichas las da de alta el punto de venta
-  '/minmax': '/minmax-producto', // la ficha de un producto en todas las salas; la revisión de la sala abre el portal       // lo de la sala (llegada y conteo); Bodega abre el portal desde ahí
+  '/minmax': '/minmax-producto', // la ficha de un producto en todas las salas; la revisión de la sala abre el portal
   '/cortes': true,        // confirmar y descartar cortes (y entregar la caja) en el teléfono
   '/bolsas-sala': true,   // no existe en el portal: las bolsas de la sala (el widget); `/bolsas` sigue siendo el módulo completo
   '/monitor-ventas': true, // el «Monitor de ventas» del portal es un modal; en la app, su pantalla
+  '/personal': true,       // el directorio por sala; la ficha de una persona abre el portal
   '/solicitudes': true,
   '/facturas-sala': true,
   // Los dos ámbitos del portal son una sola bandeja en la app.

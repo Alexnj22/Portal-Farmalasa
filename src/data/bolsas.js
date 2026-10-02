@@ -1043,7 +1043,12 @@ export async function iniciarTurno(sala, { simular = false } = {}) {
 }
 
 export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta = null,
-    fotoUrl = null, vendedor = '', conceptoCompleto = null, lectura = null, clave = null }) {
+    fotoUrl = null, vendedor = '', conceptoCompleto = null, lectura = null, clave = null,
+    aplicacion = null }) {
+    // `aplicacion` sólo con el tipo APLICACION: `{ origen, items | producto,
+    // cantidad, aplicar_ahora }`. El servidor recalcula el monto con el precio
+    // vigente y escribe las aplicaciones pagadas — ver `data/inyecciones.js`.
+    //
     // `detalle` es el concepto SIN el recorte a 50 del sistema de la caja. Va
     // igual que en la salida: un ingreso escrito largo perdía la cola por el
     // mismo motivo, y nadie iba a mirar dos veces el mismo defecto.
@@ -1057,6 +1062,7 @@ export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta
          * usa para contestar con el movimiento que ya escribió en vez de
          * escribir otro: ver `clave_envio` en `operar-caja`. */
         clave_envio: clave,
+        ...(aplicacion ? { aplicacion } : {}),
     });
 }
 

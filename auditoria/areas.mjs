@@ -417,13 +417,17 @@ export const AREAS = [
         nombre: 'Ventas',
         resumen: 'Lo vendido: anulaciones en vivo, ranking de vendedores, productos más vendidos, cuadre diario y lo que se cobra sin ser venta de productos.',
         modulos: ['ventas', 'ventas_tab_ventas', 'ventas_tab_vendedores', 'ventas_tab_productos',
-                  'ventas_tab_inyecciones',
+                  'ventas_tab_inyecciones', 'ventas_inyecciones_dosis', 'ventas_inyecciones_precios',
                   'ventas_ver_cards', 'ventas_no_producto', 'puntos'],
         rutas: ['/ventas', '/puntos'],
         archivos: [
             'src/views/VentasView.jsx',
             'src/views/ventas/',
             'src/data/ventas.js',
+            // El control de las aplicaciones de inyección pagadas (2026-10-02).
+            // Se cobran en Mi caja (`components/caja/DialogoAplicacion`, que es
+            // de Cortes) y se controlan en la pestaña Inyecciones.
+            'src/data/inyecciones.js',
             'src/components/common/AvisoSinProducto.jsx',
             // La costura con el sistema de puntos. Vive acá y no en Clientes
             // porque la sirve la misma función y el estado es de una VENTA;
@@ -462,7 +466,10 @@ export const AREAS = [
                  // Cada venta que cambió de cliente con sus puntos (2026-10-01).
                  'puntos_cambio_cliente',
                  // Los traspasos de puntos que no entraron al aprobar; se reintentan.
-                 'puntos_cambio_pendiente'],
+                 'puntos_cambio_pendiente',
+                 // Aplicaciones de inyección pagadas: el control, el precio y
+                 // cuántas trae cada presentación (2026-10-02).
+                 'inyeccion_aplicaciones', 'inyeccion_precios', 'inyeccion_dosis_producto'],
         edge: ['sync-dte-sales', 'sync-wfm-sales', 'check-sales-alerts', 'check-sales-reconciliation',
                'backfill-dte-sales', 'heal-dte-sync',
                // El programa de puntos vive en el portal desde el 2026-10-01:

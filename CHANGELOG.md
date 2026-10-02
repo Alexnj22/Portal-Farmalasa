@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1157.0 — Inyecciones: el cobro de la aplicación se amarra a la venta y queda el control de lo pagado (en pruebas)
+
+**Sólo en el entorno de pruebas. No está en producción.**
+
+Pedido del usuario (2026-10-02): al cobrar la aplicación de una inyección se
+pregunta si se compró aquí ($1) o la trajo el cliente ($2); la comprada se
+AMARRA a la venta y, si la venta trae varias, se eligen cuáles y cuántas. Lo
+pagado y no aplicado queda pendiente a nombre del cliente y se canjea después.
+
+- Mi caja → Entrada → Aplicación de inyección abre su propio diálogo: «Compró
+  aquí», «La trajo» y «Ya la pagó» (canjear). Salida «la venta no aparece
+  todavía»: se cobra como comprada y queda suelta para que supervisión la amarre.
+- El monto lo pone el servidor con el precio vigente; si no coincide con el de
+  la pantalla, frena. Las aplicaciones nacen sin confirmar y se confirman cuando
+  la caja aceptó el ingreso.
+- Las dosis por presentación son un catálogo (la factura no lo sabe: un TRI
+  PACK sale con factor 1). Rige una sugerencia hasta que supervisión confirma.
+- Inyecciones: «registrado» vs «estimado», pagadas/aplicadas por venta,
+  pendientes, amarrar/desamarrar cobros sueltos, catálogo de dosis y precios.
+- `operar-caja`: caja simulada sólo si faltan las credenciales de la caja Y la
+  base no es producción — para poder probar el cobro en pruebas.
+- SQL en `supabase/borradores/inyecciones_pagadas.sql` (aplicado en pruebas con
+  `execute_sql`; a producción va por `apply_migration`).
+
+
+
 ## v2.1156.0 — Salida de efectivo: la bolsa primero y la caja pone el resto
 
 - **Una salida ya no se traba porque ni la bolsa ni la caja alcanzan solas.** Reportado en Salud 4: una remesa de $150 con $130 en billetes en la bolsa y el resto en el cajón no se podía registrar («el cajón entra entero o no entra»). Ahora, cuando ninguno de los dos alcanza solo pero juntos sí, la bolsa da lo que tiene y la caja pone el resto, anotado como vale del turno. Si la caja alcanza sola, sigue saliendo entera de ahí; si las bolsas alcanzan, no se toca la caja.

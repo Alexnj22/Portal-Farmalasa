@@ -141,6 +141,12 @@ const GRUPOS_CRUDOS = [
                 // supervisión: la jefatura de sala NO la ve (decisión del usuario,
                 // 2026-09-23), porque nombra a su propio equipo.
                 { key: 'ventas_tab_inyecciones', label: 'Inyecciones', tipo: 'tab' },
+                // El control de aplicaciones pagadas (2026-10-02). Dos llaves y
+                // no una: confirmar cuántas aplicaciones trae un producto y
+                // amarrar un cobro suelto es trabajo de supervisión; el precio
+                // de la aplicación lo decide gerencia (decisión del usuario).
+                { key: 'ventas_inyecciones_dosis',   label: 'Inyecciones: confirmar aplicaciones por producto y amarrar cobros', tipo: 'cap' },
+                { key: 'ventas_inyecciones_precios', label: 'Inyecciones: cambiar el precio de la aplicación', tipo: 'cap' },
                 { key: 'ventas_ver_cards',      label: 'Ver las tarjetas de resumen', tipo: 'cap' },
                 // El aviso de «esto no es venta de productos». Va como permiso
                 // propio y no montado en `ventas_ver_cards` porque el aviso

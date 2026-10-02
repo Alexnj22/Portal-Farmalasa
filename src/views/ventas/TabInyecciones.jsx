@@ -8,7 +8,14 @@ import FilterBar from '../../components/common/FilterBar';
 import PeriodPicker from '../../components/common/PeriodPicker';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import Button from '../../components/common/Button';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
+import InyeccionesControl from './InyeccionesControl';
+import AmarrarCobroModal from './AmarrarCobroModal';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { desvincularCobro } from '@nucleo/data/inyecciones';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { fetchInyeccionesAplicadas } from '@nucleo/data/ventas';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -31,6 +38,11 @@ import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
  * Los cobros que no encontraron venta se muestran aparte y NO se esconden: casi
  * siempre son de alguien que trajo su inyección o la compró otro día, y sumarlos
  * o callarlos cambiaría la respuesta a la pregunta de la pestaña.
+ *
+ * Desde el 2026-10-02 el cobro se AMARRA a la venta al cobrarse (Mi caja →
+ * Aplicación de inyección) y el cruce por hora queda sólo para lo de antes y lo
+ * que se cobró suelto. Cada venta dice cuál le tocó (`vinculo`): «registrado»
+ * es un hecho, «estimado» es una suposición y se muestra como tal.
  */
 
 // Desde este día la aplicación se anota en el portal, con hora y persona. Antes
@@ -71,6 +83,11 @@ export default function TabInyecciones({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [estado, setEstado] = useState('todas');
+    const [amarrando, setAmarrando] = useState(null);
+    const [vuelta, setVuelta] = useState(0);
+    const { hasPermission } = useAuth();
+    const puedeAmarrar = hasPermission('ventas_inyecciones_dosis');
+    const showToast = useToastStore((s) => s.showToast);
     const genRef = useRef(0);
     const [fini, ffin] = monthRange.split('|');
 
@@ -92,6 +109,18 @@ export default function TabInyecciones({
     }, [fini, ffin, filterBranch]);
 
     useEffect(() => { cargar(); }, [cargar]);
+    const recargar = () => { setVuelta((n) => n + 1); cargar(); };
+
+    const desamarrar = async (v) => {
+        try {
+            await desvincularCobro(v.cobro.id);
+            useStaffStore.getState().appendAuditLog('INYECCION_COBRO_DESAMARRADO', String(v.cobro.id), { venta: v.id });
+            showToast('Cobro desamarrado', 'Vuelve a la lista de cobros sin venta.', 'success');
+            recargar();
+        } catch (e) {
+            showToast('No se pudo desamarrar', mensajeAmigable(e), 'error');
+        }
+    };
 
     const ventas = useMemo(() => datos?.ventas || [], [datos]);
     const sueltos = useMemo(() => datos?.cobros_sin_venta || [], [datos]);
@@ -216,9 +245,9 @@ export default function TabInyecciones({
             {error && <Notice variant="danger">{error}</Notice>}
 
             <Notice variant="info" icon={Info}>
-                Cada venta se une con el cobro de «Aplicación de inyección» registrado cerca de su hora,
-                el mismo día y en la misma sucursal. La hora de los dos y quién registró el cobro quedan
-                a la vista para poder revisarlo.
+                El cobro de la aplicación se amarra a su venta al cobrarse. Los cobros de antes, o los que
+                se cobraron sin venta, se unen por hora con la venta más cercana del mismo día y sucursal, y
+                se marcan <b>estimado</b>: la hora de los dos y quién cobró quedan a la vista para revisarlo.
             </Notice>
 
             {/* ── Por vendedor ─────────────────────────────────────────── */}
@@ -285,10 +314,20 @@ export default function TabInyecciones({
                         <DataCell>
                             {v.cobro ? (
                                 <div>
-                                    <Badge variant="success" size="sm" dot>Cobrada {formatMoney(v.cobro.monto)}</Badge>
+                                    <Badge variant={v.vinculo === 'estimado' ? 'neutral' : 'success'} size="sm" dot>
+                                        Cobrada {formatMoney(v.cobro.monto)}{v.vinculo === 'estimado' ? ' · estimado' : ''}
+                                    </Badge>
                                     <p className="text-caption text-content-3 mt-1">
                                         {hora12(v.cobro.hora)} · {nombre(v.cobro.registrado_nombre)}
                                     </p>
+                                    {v.vinculo !== 'estimado' && Number(v.dosis) > 1 && (
+                                        <p className="text-caption text-content-2">
+                                            {v.pagadas} de {v.dosis} pagadas · {v.aplicadas} aplicadas
+                                        </p>
+                                    )}
+                                    {v.vinculo === 'a_mano' && puedeAmarrar && (
+                                        <Button variant="ghost" size="sm" onClick={() => desamarrar(v)}>Desamarrar</Button>
+                                    )}
                                 </div>
                             ) : (
                                 <Badge variant="warning" size="sm" dot>Sin cobro</Badge>
@@ -321,6 +360,7 @@ export default function TabInyecciones({
                             { key: 'detalle', label: 'Detalle' },
                             { key: 'por',     label: 'Registrado por' },
                             { key: 'monto',   label: 'Monto', align: 'right' },
+                            ...(puedeAmarrar ? [{ key: 'accion', label: '' }] : []),
                         ]}
                         minWidth="520px"
                         movil={{ identidad: 'detalle', ancla: 'monto', chips: ['fecha', 'por'] }}
@@ -331,13 +371,30 @@ export default function TabInyecciones({
                                     <p className="font-semibold">{fechaCorta(c.fecha)} · {hora12(c.hora)}</p>
                                     {!filterBranch && <p className="text-caption text-content-3">{nombreSala(c.branch_id)}</p>}
                                 </DataCell>
-                                <DataCell className="text-body-sm">{c.concepto}</DataCell>
+                                <DataCell className="text-body-sm">
+                                    {c.concepto}
+                                    {c.origen === 'TRAIDA' && <Badge variant="neutral" size="sm" className="ml-2">Traída</Badge>}
+                                </DataCell>
                                 <DataCell className="text-body-sm">{nombre(c.registrado_nombre)}</DataCell>
                                 <DataCell align="right" className="font-semibold text-body-sm">{formatMoney(c.monto)}</DataCell>
+                                {puedeAmarrar && (
+                                    <DataCell align="right">
+                                        {c.origen !== 'TRAIDA' && (
+                                            <Button variant="secondary" size="sm" onClick={() => setAmarrando(c)}>Amarrar</Button>
+                                        )}
+                                    </DataCell>
+                                )}
                             </DataRow>
                         ))}
                     </DataTable>
                 </div>
+            )}
+
+            <InyeccionesControl filterBranch={filterBranch} nombreSala={nombreSala} recargar={vuelta} />
+
+            {amarrando && (
+                <AmarrarCobroModal cobro={amarrando} onClose={() => setAmarrando(null)}
+                    onHecho={() => { setAmarrando(null); recargar(); }} />
             )}
         </div>
     );

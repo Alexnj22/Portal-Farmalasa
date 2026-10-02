@@ -53,6 +53,9 @@ const SalidaDeBolsa = lazy(() => import('../components/bolsas/SalidaDeBolsa'));
 /* El abono va diferido por lo mismo: arrastra el buscador del catálogo y la
  * mayoría de las visitas a esta pantalla no apartan nada. */
 const DialogoAbono = lazy(() => import('../components/caja/DialogoAbono'));
+// La aplicación de inyección, por lo mismo: es el ingreso más frecuente, pero
+// su diálogo sólo se carga cuando alguien lo abre.
+const DialogoAplicacion = lazy(() => import('../components/caja/DialogoAplicacion'));
 import BonosPorPagar from '../components/caja/BonosPorPagar';
 import { construirComprobanteDeAbono } from '@nucleo/utils/abonoTicket';
 import { construirComprobanteDeCorte } from '@nucleo/utils/corteTicket';
@@ -1203,6 +1206,36 @@ export default function MiCajaView({ comoPestana = false }) {
                 </Suspense>
             )}
 
+            {dialogo === 'aplicacion' && (
+                <Suspense fallback={null}>
+                    <DialogoAplicacion abierto ocupado={ocupado} sala={sala}
+                        onClose={() => setDialogo(null)}
+                        onCobrar={async ({ clave, monto, aplicacion }) => {
+                            const tipo = tiposDeCaja.find((t) => t.codigo === 'APLICACION') || null;
+                            /* El concepto y el monto los rehace el servidor con la
+                             * venta y el precio vigente; lo que viaja acá es lo que
+                             * la pantalla mostró, para que frene si no coincide. */
+                            const r = await correr(
+                                () => anotarIngreso({
+                                    sala, monto, clave, tipo: 'APLICACION', aplicacion,
+                                    concepto: tipo?.etiqueta || 'Aplicacion de inyeccion',
+                                }),
+                                aplicacion.aplicar_ahora > 0 || aplicacion.origen === 'SIN_VENTA'
+                                    ? 'Aplicación cobrada.'
+                                    : 'Aplicación cobrada. Queda pendiente a nombre del cliente.',
+                            );
+                            if (r?.movimiento) {
+                                await imprimirMovimiento(r.movimiento, tipo, {
+                                    detalle: String(r.movimiento.detalle || r.movimiento.concepto || '')
+                                        .replace(/^Aplicacion de inyeccion · /, ''),
+                                    persona: '',
+                                    comoSeComprobo: null,
+                                });
+                            }
+                        }} />
+                </Suspense>
+            )}
+
             {/* Sólo la ENTRADA. La salida se mudó a `SalidaDeBolsa`, que hoy es
                 el único diálogo de salida: tenía el catálogo completo, la
                 lectura de la boleta y la identidad por carné, y con el origen
@@ -1217,7 +1250,10 @@ export default function MiCajaView({ comoPestana = false }) {
             <DialogoMovimiento key={dialogo} abierto={dialogo === 'ingreso'}
                 entra ocupado={ocupado} sala={sala} userId={user?.id}
                 tipos={tiposDeCaja}
-                onComprobante={() => setDialogo('abono')}
+                // Dos tipos llevan su propio diálogo: el abono (comprobante) y la
+                // aplicación de inyección (se amarra a la venta). Lo decide la
+                // bandera del catálogo; acá sólo se elige cuál de los dos.
+                onComprobante={(t) => setDialogo(t?.codigo === 'APLICACION' ? 'aplicacion' : 'abono')}
                 onClose={() => setDialogo(null)}
                 onAnotar={async (datos, tipoElegido, identificada) => {
                     const r = await correr(

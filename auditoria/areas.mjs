@@ -556,7 +556,7 @@ export const AREAS = [
     {
         id: 'encuestas-clientes',
         nombre: 'Encuestas a clientes',
-        resumen: 'Encuestas de satisfacción, NPS y percepción de marca. Marketing las diseña (constructor de secciones y preguntas con saltos, plantillas, dimensiones que se miden), gerencia las aprueba o las devuelve, y se publican para aplicarse por QR, entrevista o tablet en sala, con meta general o por sucursal y fecha de cierre. Lo aprobado no se edita: un trigger lo rechaza y se saca una versión nueva. Desde la fase 2 se responde por QR o tablet sin sesión (guarda: el token de cada sucursal; validación contra el cuestionario en la base) o por entrevista con el permiso encuestas_aplicar, y se cierra sola al llegar a la meta o a la fecha. Faltan incentivos y resultados.',
+        resumen: 'Encuestas de satisfacción, NPS y percepción de marca. Marketing las diseña (constructor de secciones y preguntas con saltos, plantillas, dimensiones que se miden), gerencia las aprueba o las devuelve, y se publican para aplicarse por QR, entrevista o tablet en sala, con meta general o por sucursal y fecha de cierre. Lo aprobado no se edita: un trigger lo rechaza y se saca una versión nueva. Desde la fase 2 se responde por QR o tablet sin sesión (guarda: el token de cada sucursal; validación contra el cuestionario en la base) o por entrevista con el permiso encuestas_aplicar, y se cierra sola al llegar a la meta o a la fecha. Desde la fase 3 da incentivos: puntos que entran solos al libro de Puntos como ajuste sin firma, o muestra médica que marca el entrevistador. Faltan los resultados.',
         modulos: ['encuestas_clientes', 'encuestas_aplicar'],
         rutas: ['/encuestas-clientes', '/encuestas-aplicar', '/e/:token'],
         archivos: [
@@ -565,7 +565,7 @@ export const AREAS = [
             'src/views/encuestas-clientes/',
         ],
         tablas: ['encuestas_cliente', 'encuesta_cliente_dimensiones', 'encuesta_cliente_sucursales', 'encuesta_cliente_eventos',
-                 'encuesta_cliente_respuestas'],
+                 'encuesta_cliente_respuestas', 'encuesta_cliente_incentivos'],
         edge: [],
         crons: ['encuestas-cerrar-vencidas'],
         docs: ['docs/PLAN-ENCUESTAS-A-CLIENTES-2026-10-01.md'],

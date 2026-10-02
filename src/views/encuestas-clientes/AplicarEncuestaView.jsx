@@ -10,7 +10,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { preguntasEnOrden } from '@nucleo/utils/encuestasClientes';
-import { fetchParaAplicar, guardarEntrevista } from '@nucleo/data/encuestasClientes';
+import { fetchParaAplicar, guardarEntrevista, marcarMuestraEntregada } from '@nucleo/data/encuestasClientes';
 import { salaDeHoy } from '@nucleo/data/puntos';
 import FormularioEncuesta from './FormularioEncuesta';
 
@@ -74,9 +74,11 @@ export default function AplicarEncuestaView() {
                                 Lee cada pregunta tal como está escrita y marca lo que responde el cliente, sin sugerirle la respuesta.
                             </Notice>
                             <FormularioEncuesta encuesta={encuesta} entrevista
+                                onEntregarMuestra={marcarMuestraEntregada}
                                 onEnviar={async (respuestas, contacto, segundos) => {
                                     const r = await guardarEntrevista(encuesta.id, branchId, { respuestas, contacto, segundos });
                                     if (r?.cerrada) showToast('La encuesta llegó a su meta', 'Se cerró sola. ¡Gracias!', 'success');
+                                    return r;
                                 }} />
                         </div>
                     </div>

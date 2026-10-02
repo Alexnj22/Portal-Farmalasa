@@ -10664,6 +10664,104 @@ export type Database = {
           },
         ]
       }
+      encuesta_cliente_incentivos: {
+        Row: {
+          created_at: string
+          customer_id: number | null
+          descripcion: string | null
+          encuesta_id: string
+          estado: string
+          id: string
+          lote_id: number | null
+          motivo: string | null
+          puntos: number | null
+          respuesta_id: string
+          resuelto_at: string | null
+          resuelto_por: string | null
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: number | null
+          descripcion?: string | null
+          encuesta_id: string
+          estado: string
+          id?: string
+          lote_id?: number | null
+          motivo?: string | null
+          puntos?: number | null
+          respuesta_id: string
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+          tipo: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: number | null
+          descripcion?: string | null
+          encuesta_id?: string
+          estado?: string
+          id?: string
+          lote_id?: number | null
+          motivo?: string | null
+          puntos?: number | null
+          respuesta_id?: string
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encuesta_cliente_incentivos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuesta_cliente_incentivos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "encuesta_cliente_incentivos_encuesta_id_fkey"
+            columns: ["encuesta_id"]
+            isOneToOne: false
+            referencedRelation: "encuestas_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuesta_cliente_incentivos_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "puntos_lote"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuesta_cliente_incentivos_respuesta_id_fkey"
+            columns: ["respuesta_id"]
+            isOneToOne: true
+            referencedRelation: "encuesta_cliente_respuestas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuesta_cliente_incentivos_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuesta_cliente_incentivos_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       encuesta_cliente_respuestas: {
         Row: {
           branch_id: number
@@ -24628,7 +24726,15 @@ export type Database = {
         Args: { p_branch_id: number; p_contenido: string; p_titulo: string }
         Returns: number
       }
+      encuesta_cliente_acreditar: {
+        Args: { p_customer: number; p_inc: string }
+        Returns: string
+      }
       encuesta_cliente_archivar: { Args: { p_id: string }; Returns: Json }
+      encuesta_cliente_asignar_incentivo: {
+        Args: { p_customer: number; p_inc: string }
+        Returns: Json
+      }
       encuesta_cliente_avance: { Args: { p_id: string }; Returns: Json }
       encuesta_cliente_avisar: {
         Args: {
@@ -24674,8 +24780,13 @@ export type Database = {
         Args: { p_id: string; p_nota?: string }
         Returns: Json
       }
+      encuesta_cliente_incentivos_de: { Args: { p_id: string }; Returns: Json }
       encuesta_cliente_limpiar: {
         Args: { p_cuestionario: Json; p_r: Json }
+        Returns: Json
+      }
+      encuesta_cliente_muestra_entregada: {
+        Args: { p_respuesta: string }
         Returns: Json
       }
       encuesta_cliente_poblacion: { Args: never; Returns: Json }

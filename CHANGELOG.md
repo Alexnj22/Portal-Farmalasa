@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1147.0 — Encuestas a clientes: incentivos (puntos y muestra médica)
+
+Fase 3 de cuatro: quien deja su teléfono con consentimiento recibe el
+incentivo de la encuesta, una vez por encuesta.
+
+- **Puntos**: si el teléfono corresponde a una sola ficha, se acreditan en el
+  momento. Entran al libro de Puntos como un ajuste con el motivo «Encuesta a
+  clientes: …» y sin firma de empleado, así que el cliente los ve en Mis Puntos
+  y el aviso de ajustes a mano no se dispara. Si el teléfono no apunta a una
+  sola ficha, quedan pendientes y se asignan desde **Avance → Incentivos**.
+  Las fichas que no acumulan puntos quedan como «No aplica».
+- **Muestra médica**: sólo en entrevista. Al terminar, el entrevistador ve qué
+  entregar y la marca con «Ya la entregué» (queda quién y cuándo).
+- El cliente ve al final si sus puntos quedaron acreditados o pendientes.
+
+Migración `encuestas_clientes_incentivos`, probada en el entorno de pruebas y
+aplicada en producción con el sí del usuario. `encuesta_cliente_registrar` y
+`encuesta_cliente_problemas_de` se reescribieron desde su definición viva
+(md5 comparado contra el archivo antes de aplicar).
+
 ## v2.1146.0 — App: Personal nativo
 
 - **App: Personal nativo.** El directorio por sala, en el orden del negocio, con cargos, el estado de hoy y lo que falta en el expediente; llamar y WhatsApp desde la tarjeta, búsqueda en la barra, «En la sala / No están hoy» y la sala en el menú. Tocar a alguien abre su ficha.

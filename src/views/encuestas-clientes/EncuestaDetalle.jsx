@@ -277,7 +277,7 @@ export default function EncuestaDetalle({
                     </div>
                 </div>
             ) : vista === 'avance' ? (
-                <AvanceEncuesta encuesta={encuesta} />
+                <AvanceEncuesta encuesta={encuesta} puedeEditar={puedeEditar} />
             ) : vista === 'historial' ? (
                 <Historial eventos={eventos} personas={personas} />
             ) : (

@@ -23,7 +23,8 @@ export default function AjustesEncuesta({ encuesta, sucursales, salas, poblacion
     const ticketsElegidas = sucursales.reduce((a, s) => a + (poblacion[s.branch_id] || 0), 0);
     const sugeridaTotal = muestraSugerida(ticketsElegidas);
     const meta = metaTotal(encuesta, sucursales);
-    const presencial = encuesta.canales.includes('entrevista') || encuesta.canales.includes('kiosco');
+    // La muestra la entrega quien entrevista: la tablet corre sin sesión y no hay quién firme la entrega.
+    const conEntrevista = encuesta.canales.includes('entrevista');
 
     const set = (k) => (v) => onChange({ [k]: v });
     const num = (v) => (v === '' || v == null ? null : Math.max(1, parseInt(String(v).replace(/\D/g, ''), 10) || 0) || null);
@@ -141,14 +142,14 @@ export default function AjustesEncuesta({ encuesta, sucursales, salas, poblacion
                             onChange={set('incentivo_tipo')} />
                         {encuesta.incentivo_tipo !== 'ninguno' && (
                             <Notice variant="info" compact>
-                                Sólo lo recibe quien deja su ficha o su teléfono y acepta el consentimiento, y una sola vez por encuesta.
+                                Sólo lo recibe quien deja su teléfono y acepta el consentimiento, y una sola vez por encuesta.
                                 {encuesta.incentivo_tipo === 'puntos' && ' Los puntos se acreditan solos en su cuenta.'}
-                                {encuesta.incentivo_tipo === 'muestra' && ' La entrega quien acompaña la encuesta, y la marca como entregada.'}
+                                {encuesta.incentivo_tipo === 'muestra' && ' La entrega quien entrevista, y la marca como entregada en el portal.'}
                             </Notice>
                         )}
-                        {encuesta.incentivo_tipo === 'muestra' && !presencial && (
+                        {encuesta.incentivo_tipo === 'muestra' && !conEntrevista && (
                             <Notice variant="warning" compact>
-                                La muestra médica sólo se entrega en entrevista o tablet acompañada. Marca alguno de esos canales.
+                                La muestra médica sólo se entrega en entrevista. Marca ese canal.
                             </Notice>
                         )}
                         {encuesta.incentivo_tipo === 'puntos' && (

@@ -23,7 +23,7 @@ import {
  * `reinicioAuto` (segundos): la tablet de sala vuelve sola al principio para
  * el cliente siguiente. `entrevista`: los textos le hablan a quien pregunta.
  */
-export default function FormularioEncuesta({ encuesta, onEnviar, reinicioAuto = null, entrevista = false }) {
+export default function FormularioEncuesta({ encuesta, onEnviar, onEntregarMuestra, reinicioAuto = null, entrevista = false }) {
     const secciones = useMemo(() => (encuesta?.cuestionario?.secciones || [])
         .filter((s) => (s.preguntas || []).length > 0), [encuesta?.cuestionario]);
     const conBienvenida = !!encuesta?.mensaje_bienvenida && !entrevista;
@@ -38,6 +38,8 @@ export default function FormularioEncuesta({ encuesta, onEnviar, reinicioAuto = 
     const [terminado, setTerminado] = useState(false);
     const [inicio, setInicio] = useState(() => Date.now());
     const [cuenta, setCuenta] = useState(null);
+    const [resultado, setResultado] = useState(null);
+    const [entregando, setEntregando] = useState(false);
 
     const { visibles, limpias } = useMemo(() => recorrido(encuesta?.cuestionario, respuestas), [encuesta?.cuestionario, respuestas]);
     // Las secciones que quedaron sin ninguna pregunta visible se saltan.
@@ -61,6 +63,7 @@ export default function FormularioEncuesta({ encuesta, onEnviar, reinicioAuto = 
         setErrorEnvio(null);
         setTerminado(false);
         setCuenta(null);
+        setResultado(null);
         setInicio(Date.now());
         setPaso(conBienvenida ? -1 : 0);
     };
@@ -104,8 +107,9 @@ export default function FormularioEncuesta({ encuesta, onEnviar, reinicioAuto = 
         if (!onEnviar) { setTerminado(true); return; }
         setEnviando(true);
         try {
-            await onEnviar(limpias, conDatos ? { consiente: true, telefono: c.telefono.trim(), nombre: c.nombre.trim() } : null,
+            const r = await onEnviar(limpias, conDatos ? { consiente: true, telefono: c.telefono.trim(), nombre: c.nombre.trim() } : null,
                 Math.round((Date.now() - inicio) / 1000));
+            setResultado(r || null);
             setTerminado(true);
         } catch (err) {
             setErrorEnvio(err?.message || 'No se pudo enviar. Intenta de nuevo.');
@@ -131,6 +135,19 @@ export default function FormularioEncuesta({ encuesta, onEnviar, reinicioAuto = 
                     <p className="text-body-lg font-semibold text-content">
                         {entrevista ? 'Respuesta guardada' : (encuesta.mensaje_cierre || '¡Gracias por tu opinión!')}
                     </p>
+                    <Incentivo r={resultado} entrevista={entrevista} entregando={entregando}
+                        onEntregar={onEntregarMuestra && resultado?.id ? async () => {
+                            setEntregando(true);
+                            try {
+                                await onEntregarMuestra(resultado.id);
+                                setResultado((x) => ({ ...x, incentivo: { ...x.incentivo, estado: 'entregado' } }));
+                            } catch (err) {
+                                setErrorEnvio(err?.message || 'No se pudo marcar la entrega.');
+                            } finally {
+                                setEntregando(false);
+                            }
+                        } : null} />
+                    {errorEnvio && <Notice variant="danger" icon={AlertTriangle} compact>{errorEnvio}</Notice>}
                     {cuenta != null && cuenta > 0 && (
                         <p className="text-body-sm text-content-3">Vuelve a empezar en {cuenta}…</p>
                     )}
@@ -194,6 +211,40 @@ export default function FormularioEncuesta({ encuesta, onEnviar, reinicioAuto = 
             )}
         </div>
     );
+}
+
+// ── Lo que recibe el cliente, al terminar ──────────────────────────────────
+
+function Incentivo({ r, entrevista, entregando, onEntregar }) {
+    const inc = r?.incentivo;
+    if (!inc) return null;
+    if (inc.tipo === 'puntos') {
+        if (inc.estado === 'acreditado') {
+            return <Notice variant="success" icon={Gift} compact>
+                {entrevista ? `Se acreditaron ${inc.puntos} puntos en la cuenta del cliente.` : `¡Listo! Te acreditamos ${inc.puntos} puntos.`}
+            </Notice>;
+        }
+        if (inc.estado === 'pendiente') {
+            return <Notice variant="info" icon={Gift} compact>
+                {entrevista
+                    ? `Los ${inc.puntos} puntos quedaron pendientes: el teléfono no corresponde a una sola ficha. Se asignan desde el módulo.`
+                    : `Tus ${inc.puntos} puntos quedan pendientes: los acreditamos cuando confirmemos tu cuenta.`}
+            </Notice>;
+        }
+        return null;
+    }
+    if (inc.tipo === 'muestra' && entrevista) {
+        if (inc.estado === 'entregado') {
+            return <Notice variant="success" icon={Check} compact>Muestra entregada.</Notice>;
+        }
+        return (
+            <div className="w-full space-y-2">
+                <Notice variant="warning" icon={Gift} compact>Entrégale al cliente: {inc.descripcion || 'la muestra médica'}.</Notice>
+                {onEntregar && <Button icon={Check} loading={entregando} onClick={onEntregar}>Ya la entregué</Button>}
+            </div>
+        );
+    }
+    return null;
 }
 
 // ── Una pregunta ───────────────────────────────────────────────────────────

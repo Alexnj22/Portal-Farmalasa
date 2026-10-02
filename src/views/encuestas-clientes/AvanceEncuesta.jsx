@@ -13,6 +13,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import { formatPct } from '@nucleo/utils/formatNumber';
 import { canalDe, metaTotal } from '@nucleo/utils/encuestasClientes';
 import { fetchAvance } from '@nucleo/data/encuestasClientes';
+import IncentivosEncuesta from './IncentivosEncuesta';
 
 /**
  * Cómo va la encuesta en campo: respuestas contra la meta, por sucursal y por
@@ -21,7 +22,7 @@ import { fetchAvance } from '@nucleo/data/encuestasClientes';
  * Los RESULTADOS (NPS, dimensiones, comentarios) son la fase 4: acá sólo se
  * cuenta, para saber si la muestra se está llenando.
  */
-export default function AvanceEncuesta({ encuesta }) {
+export default function AvanceEncuesta({ encuesta, puedeEditar }) {
     const showToast = useToastStore((s) => s.showToast);
     const [avance, setAvance] = useState(null);
     const [error, setError] = useState(null);
@@ -132,6 +133,7 @@ export default function AvanceEncuesta({ encuesta }) {
                     ))}
                 </div>
             </section>
+            {encuesta.incentivo_tipo !== 'ninguno' && <IncentivosEncuesta encuesta={encuesta} puedeEditar={puedeEditar} />}
         </div>
     );
 }

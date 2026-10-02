@@ -210,3 +210,26 @@ export async function guardarEntrevista(encuestaId, branchId, { respuestas, cont
 export async function fetchAvance(id) {
     return sinError(await supabase.rpc('encuesta_cliente_avance', { p_id: id }));
 }
+
+// ── Incentivos (fase 3) ────────────────────────────────────────────────────
+
+/** Los incentivos de una encuesta, con el contacto de la respuesta. */
+export async function fetchIncentivos(id) {
+    return sinError(await supabase.rpc('encuesta_cliente_incentivos_de', { p_id: id })) || [];
+}
+
+/** Quien entrevista confirma que entregó la muestra médica. */
+export async function marcarMuestraEntregada(respuestaId) {
+    const { data, error } = await supabase.rpc('encuesta_cliente_muestra_entregada', { p_respuesta: respuestaId });
+    if (error) throw mensajeDe(error);
+    anotar('ENCUESTA_CLIENTE_MUESTRA_ENTREGADA', respuestaId, {});
+    return data;
+}
+
+/** Asignar a mano la ficha de unos puntos pendientes (se acreditan en el acto). */
+export async function asignarIncentivo(incentivoId, customerId) {
+    const { data, error } = await supabase.rpc('encuesta_cliente_asignar_incentivo', { p_inc: incentivoId, p_customer: customerId });
+    if (error) throw mensajeDe(error);
+    anotar('ENCUESTA_CLIENTE_PUNTOS_ASIGNADOS', incentivoId, { customer_id: customerId, estado: data?.estado });
+    return data;
+}

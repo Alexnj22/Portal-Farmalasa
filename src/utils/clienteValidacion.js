@@ -191,3 +191,31 @@ export function validarCliente(form, original) {
         ok: Object.keys(errores).length === 0 && faltan.length === 0,
     };
 }
+
+/** Las seis categorías válidas (el servidor rechaza otra: CATEGORIA_INVALIDA). */
+export const CATEGORIAS_CLIENTE = [
+    'Consumidor', 'Contribuyente', 'Gran Contribuyente',
+    'Contribuyente Exento', 'Extranjero', 'Menor de edad',
+];
+
+/** Los campos editables de la ficha, en el orden del formulario. */
+export const CAMPOS_FICHA = [
+    'name', 'categoria', 'dui', 'nit', 'nrc', 'pasaporte', 'giro', 'phone', 'telefono2',
+    'email', 'direccion', 'departamento', 'municipio', 'distrito', 'retencion_pct', 'notes',
+];
+
+/**
+ * Lo que cambió entre la ficha y el formulario: sólo eso viaja a
+ * `update_customer_fiscal`, y un campo vaciado viaja como `null`. Vivía en
+ * `FormClienteDetail.jsx`; la app lo usa igual.
+ */
+export function cambiosDeFicha(form, cliente) {
+    if (!form || !cliente) return {};
+    const out = {};
+    for (const c of CAMPOS_FICHA) {
+        const antes = cliente[c] ?? '';
+        const ahora = form[c] ?? '';
+        if (String(antes) !== String(ahora)) out[c] = ahora === '' ? null : ahora;
+    }
+    return out;
+}

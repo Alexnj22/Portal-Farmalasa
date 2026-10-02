@@ -141,6 +141,18 @@ export async function updateCustomerFiscal(id, campos, { confirmarFiscal = false
  * con `descartado_at` y la bitácora lo muestra como "Descartado" en vez de
  * "Sin enviar al ERP". Es un estado final — ya no se reintenta.
  */
+/**
+ * Por qué no se aplicó, en palabras de la sala. La respuesta trae a veces un
+ * motivo técnico (un secreto que falta, un error de red) que no le sirve a
+ * nadie en pantalla y nombra la tubería (regla de CLAUDE.md: la pantalla habla
+ * del portal). El rechazo del sistema de la caja —«el DUI no es válido»— sí se
+ * muestra tal cual: es sobre el dato.
+ */
+export function motivoSinAplicar(r) {
+    if (r?.rechazo) return r.rechazo;
+    return 'Quedó guardado en el portal y se aplica solo en unos minutos.';
+}
+
 export async function pushClienteAlErp(id) {
     try {
         const { data, error } = await supabase.functions.invoke('push-cliente-erp', {

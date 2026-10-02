@@ -14,7 +14,7 @@ import { LoadingState } from '../common/StateViews';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import {
-    fetchCustomerDetail, updateCustomerFiscal, pushClienteAlErp,
+    fetchCustomerDetail, updateCustomerFiscal, pushClienteAlErp, motivoSinAplicar,
     codigoDeError, mensajeDeError,
 } from '@nucleo/data/customers';
 import {
@@ -22,26 +22,18 @@ import {
 } from '@nucleo/data/elSalvadorGeo';
 import {
     validarCliente, camposRequeridos, esContribuyente as esFiscal,
-    ETIQUETA_CAMPO as ETIQUETAS,
-} from '@nucleo/utils/clienteValidacion';
+    ETIQUETA_CAMPO as ETIQUETAS, CAMPOS_FICHA, CATEGORIAS_CLIENTE, cambiosDeFicha } from '@nucleo/utils/clienteValidacion';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import AvisoDeBorrador from '../common/AvisoDeBorrador';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 
-const CATEGORIAS = [
-    'Consumidor', 'Contribuyente', 'Gran Contribuyente',
-    'Contribuyente Exento', 'Extranjero', 'Menor de edad',
-];
+const CATEGORIAS = CATEGORIAS_CLIENTE;
 
 // Los campos que el ERP guarda y que esta ficha edita. El orden es el del
 // formulario, no el de la tabla.
-const CAMPOS = [
-    'name', 'categoria', 'dui', 'nit', 'nrc', 'pasaporte', 'giro',
-    'phone', 'telefono2', 'email', 'direccion',
-    'departamento', 'municipio', 'distrito', 'retencion_pct', 'notes',
-];
+const CAMPOS = CAMPOS_FICHA;
 
 const ETIQUETA_CAMPO = ETIQUETAS;
 
@@ -260,16 +252,7 @@ const FormClienteDetail = ({ formData }) => {
     // Solo viaja lo que cambió. Es lo contrario del POST del ERP —que borra lo
     // que no se le manda— y hace que la bitácora registre ediciones reales en
     // vez de una fila por campo cada vez que alguien abre y guarda.
-    const cambios = useMemo(() => {
-        if (!form || !cliente) return {};
-        const out = {};
-        for (const c of CAMPOS) {
-            const antes = cliente[c] ?? '';
-            const ahora = form[c] ?? '';
-            if (String(antes) !== String(ahora)) out[c] = ahora === '' ? null : ahora;
-        }
-        return out;
-    }, [form, cliente]);
+    const cambios = useMemo(() => cambiosDeFicha(form, cliente), [form, cliente]);
 
     const hayCambios = Object.keys(cambios).length > 0;
 
@@ -318,7 +301,7 @@ const FormClienteDetail = ({ formData }) => {
             } else {
                 useToastStore.getState().showToast(
                     'Guardado, falta aplicarlo',
-                    r?.rechazo || r?.motivo || r?.error || 'Se reintenta en el próximo guardado.',
+                    motivoSinAplicar(r),
                     'warning');
             }
             await cargar();

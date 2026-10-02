@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1145.0 — App: Clientes — lista y ficha
+
+**Clientes en la app**: la lista y la ficha.
+
+- **La lista** (`app/clientes.js`): búsqueda por nombre, DUI, NIT, NRC o
+  teléfono en la barra del sistema; categoría, estado de la ficha y «a revisar»
+  en el menú de filtros. Las ~28 mil fichas las pagina el servidor de a 25, y
+  una búsqueda que llega tarde se descarta.
+- **La ficha** (`app/cliente/[id].js`): encabezado con lo facturado y la
+  última compra; «Ficha» (editable con permiso) y «Actividad» (resumen, últimas
+  facturas y los cambios, con «Sin aplicar»). Departamento → municipio →
+  distrito en cascada con la hoja del sistema; requeridos según la categoría;
+  datos que van a Hacienda piden confirmar; guarda borrador. Al guardar se
+  aplica en el sistema de la caja sin hacer esperar.
+- **Al núcleo**: las categorías, los campos de la ficha y el «qué cambió»
+  (`utils/clienteValidacion`); el portal ya los usa.
+- **Portal y app**: si un cambio no se aplicó todavía, el aviso ya no muestra
+  el motivo técnico (nombraba un secreto interno): dice que se aplica solo en
+  unos minutos, y sólo un rechazo sobre el dato se muestra tal cual
+  (`motivoSinAplicar`).
 ## v2.1144.1 — Marketing: la pestaña Servicio se retira (queda documentada)
 
 Decisión del usuario: «no lo siento necesario por ahora, dejalo documentado pero

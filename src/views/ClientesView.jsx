@@ -1,3 +1,4 @@
+import { CATEGORIAS_CLIENTE } from '@nucleo/utils/clienteValidacion';
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import {
@@ -24,10 +25,7 @@ import { fetchCustomersPage, fetchCustomersStats } from '@nucleo/data/customers'
 import { EL_SALVADOR_GEO, municipiosDe } from '@nucleo/data/elSalvadorGeo';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 
-const CATEGORIAS = [
-    'Consumidor', 'Contribuyente', 'Gran Contribuyente',
-    'Contribuyente Exento', 'Extranjero', 'Menor de edad',
-];
+const CATEGORIAS = CATEGORIAS_CLIENTE;
 const SIN_CATEGORIA = '__sin__';
 
 // La ficha no es una casilla: lo que le falta depende de su categoría (a un

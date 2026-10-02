@@ -92,6 +92,8 @@ export async function crearEncuesta({ nombre, es_plantilla = false }) {
  * por tecla) — el historial que importa es el del ciclo.
  */
 export async function guardarDiseno(id, cambios) {
+    // Sin bitácora a propósito (exención en scripts/auditoria-barrido.mjs): es
+    // el autoguardado en cada pausa al teclear; lo que se audita es el ciclo.
     const fila = {};
     for (const k of CAMPOS_DISENO) if (k in cambios) fila[k] = cambios[k];
     if (!Object.keys(fila).length) return null;
@@ -119,6 +121,11 @@ export async function guardarSucursales(id, lista, actuales) {
     for (const s of cambian) {
         sinError(await supabase.from('encuesta_cliente_sucursales').update({ meta: s.meta ?? null })
             .eq('encuesta_id', id).eq('branch_id', s.branch_id));
+    }
+    if (quitar.length || nuevas.length || cambian.length) {
+        anotar('ENCUESTA_CLIENTE_SUCURSALES', id, {
+            quitadas: quitar, agregadas: nuevas.map((s) => s.branch_id), metas: cambian.map((s) => [s.branch_id, s.meta ?? null]),
+        });
     }
 }
 

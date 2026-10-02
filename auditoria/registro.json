@@ -1,7 +1,7 @@
 {
   "nota": "Puntajes derivados por auditoria/puntuar.mjs. Las reglas del cálculo viven ahí, no acá.",
   "iniciado": "2026-08-23",
-  "recalculado": "2026-08-23",
+  "recalculado": "2026-10-02",
   "areas": {
     "plataforma": {
       "ejes": {
@@ -2292,6 +2292,84 @@
       "hallazgos": [
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
         "[doc] tiene documento pero ningún archivo del código lo nombra: nadie va a encontrarlo"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
+    },
+    "encuestas-clientes": {
+      "ejes": {
+        "flujo": {
+          "pct": 95,
+          "evidencia": "sin pendientes declarados en memoria",
+          "hallazgos": []
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 98,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
+          "hallazgos": []
+        },
+        "resiliencia": {
+          "pct": 95,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": []
+        },
+        "observabilidad": {
+          "pct": 96,
+          "evidencia": "barrido: 0 acción(es) que escriben y no quedan en la bitácora (detector que sigue la cadena de llamada, no el archivo)",
+          "hallazgos": []
+        },
+        "vista": {
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "hallazgos": []
+        },
+        "movil": {
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
+          "hallazgos": [
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 85,
+          "evidencia": "2 de 4 módulo(s) de lógica (.js) del área nombrados por alguna prueba (50%) · 3221 pruebas en 212 archivos, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 95,
+          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/PLAN-ENCUESTAS-A-CLIENTES-2026-10-01.md",
+          "hallazgos": []
+        }
+      },
+      "pct": 95,
+      "estado": "completo",
+      "sello_sala": null,
+      "hallazgos": [
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {

@@ -124,6 +124,15 @@ const CATEGORIAS = [
         //   · `ventasPerdidas` → su vista audita, otros dos llamadores no.
         //   · `laboratorios` → sus dos pestañas auditan. Falso positivo.
         global: (indice) => {
+            // Escrituras que NO se anotan a propósito, cada una con su motivo.
+            // Por `archivo:función` y no por un comentario en el código: el
+            // índice se arma SIN comentarios, así que una marca ahí no se lee.
+            const SIN_BITACORA = {
+                // Autoguardado de un borrador en cada pausa al teclear: anotarlo
+                // llenaría la bitácora de ruido. Lo que se audita es el ciclo
+                // (creada, enviada, aprobada, publicada…), que firma la base.
+                'src/data/encuestasClientes.js:guardarDiseno': 'autoguardado del borrador',
+            };
             const salida = [];
             const consumidores = [...indice.entries()]
                 .filter(([f]) => /^src\/(views|components|store|hooks)\//.test(f));
@@ -156,6 +165,14 @@ const CATEGORIAS = [
                     // dato. Salió de abrir tres hallazgos a mano — dos de los
                     // tres eran de esta clase.
                     if (/from\('(user_dashboard_prefs|notifications)'\)/.test(cuerpo)) continue;
+                    // ── La función que se anota SOLA (2026-10-02) ────────────
+                    // Desde D3 (2026-09-28) el patrón del repo es que la
+                    // entrada la escriba la función que guarda —`anotar(…)` o
+                    // `conBitacora(…)` en su propio cuerpo—, para que cualquier
+                    // cliente la herede. El detector sólo miraba a los
+                    // LLAMADORES y acusaba justo a las que lo hacían bien.
+                    if (/\b(anotar|conBitacora)\s*\(/.test(cuerpo)) continue;
+                    if (SIN_BITACORA[`${archivo}:${nombre}`]) continue;
                     // ── Se sigue el ALIAS del import, no el nombre suelto ───
                     // `practicantesSlice.js` importa
                     // `updatePracticante as updatePracticanteData` y llama al

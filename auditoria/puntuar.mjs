@@ -348,8 +348,11 @@ const pruebasPorArea = {};
 for (const dir of ['tests/unit', 'tests/e2e']) {
     for (const f of fs.readdirSync(path.join(RAIZ, dir)).filter(x => /\.(js|jsx)$/.test(x))) {
         const src = fs.readFileSync(path.join(RAIZ, dir, f), 'utf8');
-        for (const m of src.matchAll(/['"`](?:\.\.\/)*(src\/[A-Za-z0-9_./-]+)['"`]/g)) {
-            let p = m[1];
+        // `@nucleo/…` es `src/…` (vite.config.js): desde que gate:alias obliga a
+        // importar el núcleo por alias, mirar sólo `src/` dejaba sin contar a
+        // casi todas las pruebas (2026-10-02).
+        for (const m of src.matchAll(/['"`](?:(?:\.\.\/)*(src\/[A-Za-z0-9_./-]+)|@nucleo\/([A-Za-z0-9_./-]+))['"`]/g)) {
+            let p = m[1] || `src/${m[2]}`;
             if (!/\.(js|jsx)$/.test(p)) for (const e of ['.js', '.jsx']) if (fs.existsSync(path.join(RAIZ, p + e))) { p += e; break; }
             const a = areaDeArchivo(p);
             if (!a) continue;

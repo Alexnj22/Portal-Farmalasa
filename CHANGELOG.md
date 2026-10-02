@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1154.1 — Encuestas a clientes: pruebas, bitácora y auditoría del área
+
+- **29 pruebas nuevas** de encuestas:
+  - la regla de qué preguntas ve el cliente, que tiene que decidir igual que la
+    base;
+  - la muestra sugerida, el teléfono, el CSV y la lectura del NPS;
+  - en la capa de datos, que cambiar una sucursal la ACTUALIZA y no la recrea,
+    para que el QR ya impreso siga sirviendo.
+- **Detector de escrituras sin bitácora** (`scripts/auditoria-barrido.mjs`): no
+  reconocía las funciones que se anotan solas con `anotar(…)` o
+  `conBitacora(…)`, que es el patrón del repo desde D3. Daba 71 hallazgos; con
+  la corrección quedan 11 reales. Tiene una lista de exenciones con motivo: el
+  autoguardado del borrador de una encuesta no se anota.
+- Cambiar las sucursales de una encuesta ahora queda en la bitácora.
+- **Palabras de búsqueda del menú sin tildes** (Encuestas, Galería, Marketing):
+  la regla de `pisoNoTecho.test.jsx` fallaba. La batería completa vuelve a
+  verde, 3221 pruebas.
+- `auditoria/puntuar.mjs` cuenta como cubiertos los módulos importados por
+  `@nucleo/…`, que es como gate:alias obliga a importarlos. Antes sólo veía `src/…`.
+- **Auditoría del área**: «Encuestas a clientes» entra al registro con 95%
+  (pruebas 85). Falta el sello de sala, que exige una corrida real en
+  producción.
+
+
 ## v2.1154.0 — App: Meter dinero
 
 - **App: Meter dinero.** Efectivo ahora tiene «Meter dinero» junto a «Sacar dinero»: el ingreso de caja del portal, que es lo que más se anota en la caja (POS Promerica, aplicaciones de inyección, glucosa, domicilio). Los motivos salen del catálogo y cada uno pide lo suyo (boleta, foto, quién lo trae, detalle con su ejemplo). Con foto, la foto se lee sola y llena el monto, el número y el detalle; el monto queda cerrado sólo si la boleta lo confirma. Una boleta ya anotada en la sala frena. Se anota con una clave por formulario —dos toques no anotan dos veces— y sale el comprobante.

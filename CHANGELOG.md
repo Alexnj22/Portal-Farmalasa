@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1151.1 — Ventas: la columna Puntos también al buscar
+
+Al buscar un cliente en Ventas, la columna **Puntos** salía en «—» aunque la
+venta estuviera acumulada (reportado sobre la 383858: 112 puntos en la cuenta,
+la pantalla decía nada). La búsqueda y los filtros «Receta Médica» y «Canjeó
+puntos» traen la página desde funciones de la base que no devuelven el estado
+de puntos; sólo la lista sin búsqueda lo traía. Ahora esas filas lo piden
+aparte (`fetchEstadoPuntosDeVentas`, acotado: `invoice_id` es la clave de
+`puntos_enviados`).
+
 ## v2.1151.0 — Encuestas a clientes: resultados, aviso de detractor y resumen con IA
 
 Fase 4 de cuatro: el módulo queda completo.

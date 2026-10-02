@@ -293,6 +293,28 @@ export async function fetchInvoiceItemsByIds(invoiceIds) {
  * Reusa las columnas de la lista: es exactamente lo que hace falta para leer una
  * venta entera, y una segunda lista de columnas se separaría de aquélla.
  */
+/*
+ * El estado de puntos de las filas que NO vienen de `fetchInvoicesList`.
+ *
+ * La búsqueda, «Receta Médica» y «Canjeó puntos» traen la página desde
+ * funciones de la base (`get_ventas_con_receta`, `get_ventas_con_puntos`) cuyo
+ * `RETURNS TABLE` no lleva el embed de `puntos_enviados`. Sin esto la columna
+ * Puntos quedaba en «—» justo al buscar a un cliente — que es cuando alguien
+ * quiere saber si acumuló (reportado el 2026-10-02 sobre la venta 383858, que
+ * sí estaba acumulada).
+ *
+ * Acotado por construcción: `invoice_id` es la PK de `puntos_enviados`, así
+ * que N ids traen como mucho N filas, y una página no pasa de 200.
+ */
+export async function fetchEstadoPuntosDeVentas(invoiceIds) {
+    if (!invoiceIds.length) return { data: [] };
+    const { data, error } = await supabase.from('puntos_enviados')
+        .select('invoice_id, estado_puntos')
+        .in('invoice_id', invoiceIds);
+    if (error) console.error('fetchEstadoPuntosDeVentas:', error.message);
+    return { data: data || [] };
+}
+
 export function fetchInvoiceById(invoiceId) {
     return supabase.from('sales_invoices').select(COLUMNAS_LISTA).eq('id', invoiceId).maybeSingle();
 }

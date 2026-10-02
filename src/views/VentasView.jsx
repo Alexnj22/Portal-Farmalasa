@@ -32,7 +32,7 @@ import AvisoParecidos from '../components/common/AvisoParecidos';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { useNowTick } from '@nucleo/hooks/useNowTick';
 import FilterBar from '../components/common/FilterBar';
-import { alternarProductoOcultoEnVentas, fetchAntibioticProductIds, fetchInvoiceChangelog, fetchInvoiceItemsByIds, fetchInvoiceItemsForInvoice, fetchInvoicesList, fetchLineasDeVentaDelProducto, fetchProductPreciosActivos, fetchProductPreciosDetail, fetchProductPreciosHistory, fetchPuntosCanjeados, fetchResumenDeVendedores, fetchResumenDeVentas, fetchResumenDelProductoVendido, fetchTendenciaDelProducto, fetchTotalVendidoPorProductos, fetchVendedorPorDia, fetchVendorMonthlyStats, fetchVentasConPuntos, fetchVentasConReceta, fetchVentasPorProducto, fetchVentasRecetaStats, fetchVentasSinProducto, ventasBusquedaEsAproximada } from '@nucleo/data/ventas';
+import { alternarProductoOcultoEnVentas, fetchAntibioticProductIds, fetchEstadoPuntosDeVentas, fetchInvoiceChangelog, fetchInvoiceItemsByIds, fetchInvoiceItemsForInvoice, fetchInvoicesList, fetchLineasDeVentaDelProducto, fetchProductPreciosActivos, fetchProductPreciosDetail, fetchProductPreciosHistory, fetchPuntosCanjeados, fetchResumenDeVendedores, fetchResumenDeVentas, fetchResumenDelProductoVendido, fetchTendenciaDelProducto, fetchTotalVendidoPorProductos, fetchVendedorPorDia, fetchVendorMonthlyStats, fetchVentasConPuntos, fetchVentasConReceta, fetchVentasPorProducto, fetchVentasRecetaStats, fetchVentasSinProducto, ventasBusquedaEsAproximada } from '@nucleo/data/ventas';
 import { clickable } from '@nucleo/utils/clickable';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -562,6 +562,15 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
             // Con el filtro puesto, el total del paginador es el de ESTA
             // consulta. `get_ventas_stats` no sabe de puntos y contaría todas.
             if (filterPuntosEstado) setTotalCount(count ?? 0);
+        }
+
+        // Las tres ramas que van por función no traen el embed de puntos: se
+        // completa acá para que la columna diga lo mismo con o sin búsqueda.
+        const sinEstado = fetched.filter(r => !('puntos_enviados' in r)).map(r => r.id);
+        if (sinEstado.length > 0) {
+            const { data: estados } = await fetchEstadoPuntosDeVentas(sinEstado);
+            const porId = new Map(estados.map(e => [e.invoice_id, e]));
+            fetched = fetched.map(r => ('puntos_enviados' in r ? r : { ...r, puntos_enviados: porId.get(r.id) ?? null }));
         }
 
         if (rid !== fetchRowsRef.current) return;

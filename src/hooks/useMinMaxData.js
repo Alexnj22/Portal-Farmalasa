@@ -324,12 +324,30 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         return mensajeAmigable(err, 'No se pudo calcular. Intenta de nuevo.');
     };
 
+    // `calculate_stock_params` no lanza cuando se niega: devuelve `skipped` con
+    // su motivo. Sin mirarlo, la sala con borradores pendientes salía en verde
+    // con «0 borradores generados» y nada se había recalculado.
+    const motivoDeSalto = res => {
+        if (!res?.skipped) return null;
+        if (res.reason === 'branch_has_pending_drafts')
+            return 'Tiene borradores sin revisar. Publícalos o descártalos antes de recalcular.';
+        if (res.reason === 'module_locked')
+            return `Min·Max está en mantenimiento${res.locked_by ? ` por ${res.locked_by}` : ''}.`;
+        return 'No se recalculó.';
+    };
+
     const handleRecalcular = async () => {
         const wasPublished = hasPublishedData;
         setCalculating(true); setCalcMode('single'); setConfigChanged(false);
         try {
             const { data: res, error: e } = await calcularMinMaxDeSala({ p_erp_sucursal_id: selectedErp });
             if (e) throw e;
+            const salto = motivoDeSalto(res);
+            if (salto) {
+                useToastStore.getState().showToast(ERP_NAMES[selectedErp], salto, 'error');
+                setConfigChanged(true);  // la configuración nueva sigue sin aplicarse
+                return;
+            }
             useToastStore.getState().showToast(ERP_NAMES[selectedErp], `${(res?.rows ?? 0).toLocaleString()} borradores generados`, 'success');
             await loadData(selectedErp);
             if (wasPublished) { setFilterChangesOnly(true); setFilterDraft(false); }
@@ -343,20 +361,25 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         const ids = ERP_ORDER.filter(id => id !== 6); // Bodega se actualiza sola vía trigger + publish_stock_params
         let totalRows = 0;
         const failed = [];
+        const saltadas = [];
         for (let i = 0; i < ids.length; i++) {
             const id = ids[i];
             setCalcProgress({ current: i + 1, total: ids.length, name: ERP_NAMES[id] });
             try {
                 const { data: res, error: e } = await calcularMinMaxDeSala({ p_erp_sucursal_id: id });
                 if (e) throw e;
+                if (motivoDeSalto(res)) { saltadas.push(ERP_NAMES[id]); continue; }
                 totalRows += res?.rows ?? 0;
             } catch {
                 failed.push(ERP_NAMES[id]);
             }
         }
         setCalcProgress(null);
-        if (failed.length > 0) {
-            useToastStore.getState().showToast('Calcular', `Error en: ${failed.join(', ')}`, 'error');
+        if (failed.length > 0 || saltadas.length > 0) {
+            const partes = [];
+            if (saltadas.length > 0) partes.push(`Con borradores sin revisar (no se recalcularon): ${saltadas.join(', ')}`);
+            if (failed.length > 0) partes.push(`Error en: ${failed.join(', ')}`);
+            useToastStore.getState().showToast('Calcular', partes.join('. '), 'error');
         } else {
             useToastStore.getState().showToast('Todas las sucursales', `${totalRows.toLocaleString()} borradores generados`, 'success');
         }

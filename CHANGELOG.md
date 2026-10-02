@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1151.2 — Min·Max: recalcular avisa cuando la sala se salta
+
+«Recalcular» sobre una sala con borradores sin revisar no recalculaba nada y
+mostraba en verde «0 borradores generados» (reportado sobre La Popular: se bajó
+el ciclo a 25 días, se apretó recalcular y «Catálogo al MAX» no se movió). La
+base ya se negaba con su motivo (`skipped: branch_has_pending_drafts`), pero la
+pantalla no lo leía. Ahora avisa en rojo «Tiene borradores sin revisar.
+Publícalos o descártalos antes de recalcular», deja visible el aviso de
+configuración pendiente, y en «todas las sucursales» nombra las que se
+saltaron. También cubre el candado de mantenimiento.
+
 ## v2.1151.1 — Ventas: la columna Puntos también al buscar
 
 Al buscar un cliente en Ventas, la columna **Puntos** salía en «—» aunque la

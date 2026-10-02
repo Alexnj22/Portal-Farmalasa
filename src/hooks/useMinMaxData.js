@@ -5,6 +5,7 @@
 // consolidan aquí en `openBodegaTooltip`/`closeBodegaTooltip`/`openBodegaEdit`.
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { signPhotosDeep } from '../utils/storageFiles';
+import { planDeGuardadoMinMax } from '../utils/minmaxGuardar';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { smartFilter } from '../utils/searchUtils';
@@ -613,93 +614,49 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
 
     // Guarda MIN y MAX en una sola llamada a la BD (par atómico).
     const saveDraftPair = useCallback(async (productId, sucursalId, minValue, maxValue, productName, opts = {}) => {
-        const minNum = minValue === '' ? null : parseInt(minValue, 10);
-        const maxNum = maxValue === '' ? null : parseInt(maxValue, 10);
-        if ((Number.isNaN(minNum) && minValue !== '') || (Number.isNaN(maxNum) && maxValue !== '')) return;
         const targetRow = data.find(r => r.erp_product_id === productId && r._erp_sucursal_id === sucursalId);
-
-        // Confirmar si ambos quedan en 0 y el producto es clase A/B y antes tenía valores
-        if (!opts.confirmed && (minNum === 0 || minNum === null) && (maxNum === 0 || maxNum === null)) {
-            const cls = targetRow?.draft_abc_class || targetRow?.abc_class;
-            const hadMin = (targetRow?.draft_min ?? targetRow?.effective_min ?? 0) > 0;
-            const hadMax = (targetRow?.draft_max ?? targetRow?.effective_max ?? 0) > 0;
-            if ((cls === 'A' || cls === 'B') && (hadMin || hadMax)) {
-                setZeroOutConfirm({ open: true, row: targetRow, pendingCell: null, pendingPair: [productId, sucursalId, minValue, maxValue, productName] });
-                return;
-            }
+        // La decisión —Bodega, en vivo o borrador— y lo que se escribe salen del
+        // núcleo (`utils/minmaxGuardar`), la misma función que usa la app.
+        const plan = planDeGuardadoMinMax({
+            row: targetRow, productId, sucursalId, min: minValue, max: maxValue,
+            hayPublicado: hasPublishedData, confirmado: !!opts.confirmed,
+        });
+        if (plan.sinCambio) return;
+        if (plan.error) {
+            if (plan.error !== 'Escribe números enteros.') useToastStore.getState().showToast(productName || 'Producto', plan.error, 'error');
+            return;
         }
+        if (plan.confirmarCero) {
+            setZeroOutConfirm({ open: true, row: targetRow, pendingCell: null, pendingPair: [productId, sucursalId, minValue, maxValue, productName] });
+            return;
+        }
+        const { minNum, maxNum } = plan;
 
-        // Bodega: par MIN+MAX siempre a manual_min/manual_max
-        if (targetRow?._erp_sucursal_id === 6) {
-            if (minNum === (targetRow?.effective_min ?? 0) && maxNum === (targetRow?.effective_max ?? 0)) return; // Sin cambio
-            // Floor: targetRow.pub_min ya fue actualizado por _openBodegaEdit antes de que el usuario pudiera editar
-            const floorMin = targetRow?.pub_min ?? 0;
-            const floorMax = targetRow?.pub_max ?? 0;
-            if (floorMin > 0 && (minNum ?? 0) < floorMin) {
-                useToastStore.getState().showToast(productName || 'Producto', `MIN de Bodega no puede ser menor a la Σ sucursales (${floorMin.toLocaleString()})`, 'error');
-                return;
-            }
-            if (floorMax > 0 && (maxNum ?? 0) < floorMax) {
-                useToastStore.getState().showToast(productName || 'Producto', `MAX de Bodega no puede ser menor a la Σ sucursales (${floorMax.toLocaleString()})`, 'error');
-                return;
-            }
-            // Modelo aditivo: guardar DELTA = total ingresado − sum sucursales.
-            const deltaMin = minNum - floorMin;
-            const deltaMax = maxNum - floorMax;
-            const deltaMinStore = deltaMin > 0 ? deltaMin : null;
-            const deltaMaxStore = deltaMax > 0 ? deltaMax : null;
-            const { error: e } = await upsertStockParams({ erp_product_id: productId, erp_sucursal_id: 6, manual_min: deltaMinStore, manual_max: deltaMaxStore, updated_at: new Date().toISOString() });
+        if (plan.tipo === 'bodega') {
+            const { error: e } = await upsertStockParams(plan.payload);
             if (e) { useToastStore.getState().showToast(productName || 'Producto', mensajeAmigable(e), 'error'); return; }
             setData(prev => prev.map(r => {
                 if (r.erp_product_id !== productId || r._erp_sucursal_id !== 6) return r;
-                return { ...r, effective_min: minNum ?? 0, effective_max: maxNum ?? 0, has_manual: deltaMinStore !== null || deltaMaxStore !== null, alert_status: calcAlertStatus(r.current_stock, minNum, maxNum) };
+                return { ...r, effective_min: minNum ?? 0, effective_max: maxNum ?? 0, has_manual: plan.payload.manual_min !== null || plan.payload.manual_max !== null, alert_status: calcAlertStatus(r.current_stock, minNum, maxNum) };
             }));
-            useStaff.getState().appendAuditLog('MINMAX_BODEGA_MANUAL_OVERRIDE', String(productId), {
-                field: 'min+max', product: productName, sucursal_id: 6,
-                old_min: targetRow?.effective_min ?? 0, old_max: targetRow?.effective_max ?? 0,
-                new_min: minNum, new_max: maxNum,
-                delta_min: deltaMinStore, delta_max: deltaMaxStore,
-                pub_sum_min: floorMin, pub_sum_max: floorMax,
-            });
+            useStaff.getState().appendAuditLog(plan.accion, String(productId), { ...plan.detalle, product: productName });
             return;
         }
 
-        const rowHasDraft = targetRow?.draft_status === 'pending';
-        const rowIsSparse = targetRow?.draft_status === 'sparse_data';
-        const saveLive = hasPublishedData && !rowHasDraft && !rowIsSparse;
-        // Safety cross-validation: max must be > min when both are positive
-        if (minNum > 0 && maxNum > 0 && minNum >= maxNum) {
-            useToastStore.getState().showToast(productName || 'Producto', 'MAX debe ser mayor al MIN', 'error');
-            return;
-        }
-        if (saveLive) {
-            setData(prev => prev.map(r => {
-                if (r.erp_product_id !== productId || r._erp_sucursal_id !== sucursalId) return r;
-                return { ...r, effective_min: minNum, effective_max: maxNum, draft_status: 'none', alert_status: calcAlertStatus(r.current_stock, minNum, maxNum) };
-            }));
-            const { error: e } = await upsertStockParams({ erp_product_id: productId, erp_sucursal_id: sucursalId, min_units: minNum, max_units: maxNum, draft_status: 'none', draft_min: null, draft_max: null, updated_at: new Date().toISOString() });
-            if (e) {
-                setData(prev => prev.map(r => r.erp_product_id === productId && r._erp_sucursal_id === sucursalId ? targetRow : r));
-                useToastStore.getState().showToast(productName || 'Producto', mensajeAmigable(e), 'error'); return;
-            }
-        } else {
-            setData(prev => prev.map(r => {
-                if (r.erp_product_id !== productId || r._erp_sucursal_id !== sucursalId) return r;
-                return { ...r, draft_min: minNum, draft_max: maxNum, draft_status: 'pending', alert_status: calcAlertStatus(r.current_stock, minNum, maxNum) };
-            }));
-            const { error: e } = await upsertStockParams({ erp_product_id: productId, erp_sucursal_id: sucursalId, draft_min: minNum, draft_max: maxNum, draft_status: 'pending', updated_at: new Date().toISOString() });
-            if (e) {
-                setData(prev => prev.map(r => r.erp_product_id === productId && r._erp_sucursal_id === sucursalId ? targetRow : r));
-                useToastStore.getState().showToast(productName || 'Producto', mensajeAmigable(e), 'error'); return;
-            }
+        const saveLive = plan.tipo === 'vivo';
+        setData(prev => prev.map(r => {
+            if (r.erp_product_id !== productId || r._erp_sucursal_id !== sucursalId) return r;
+            return saveLive
+                ? { ...r, effective_min: minNum, effective_max: maxNum, draft_status: 'none', alert_status: calcAlertStatus(r.current_stock, minNum, maxNum) }
+                : { ...r, draft_min: minNum, draft_max: maxNum, draft_status: 'pending', alert_status: calcAlertStatus(r.current_stock, minNum, maxNum) };
+        }));
+        const { error: e } = await upsertStockParams(plan.payload);
+        if (e) {
+            setData(prev => prev.map(r => r.erp_product_id === productId && r._erp_sucursal_id === sucursalId ? targetRow : r));
+            useToastStore.getState().showToast(productName || 'Producto', mensajeAmigable(e), 'error'); return;
         }
         refreshCosts(sucursalId);
-        useStaff.getState().appendAuditLog(saveLive ? 'MINMAX_LIVE_EDIT' : 'MINMAX_DRAFT_EDIT', String(productId), {
-            field: 'min+max', product: productName,
-            old_min: saveLive ? (targetRow?.effective_min ?? 0) : (targetRow?.draft_min ?? targetRow?.effective_min ?? 0),
-            old_max: saveLive ? (targetRow?.effective_max ?? 0) : (targetRow?.draft_max ?? targetRow?.effective_max ?? 0),
-            new_min: minNum, new_max: maxNum, sucursal_id: sucursalId,
-        });
+        useStaff.getState().appendAuditLog(plan.accion, String(productId), { ...plan.detalle, product: productName });
         warnIfOutrageous('min', minNum, targetRow);
         warnIfOutrageous('max', maxNum, targetRow);
     }, [data, hasPublishedData, refreshCosts]);

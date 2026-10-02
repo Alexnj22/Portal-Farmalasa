@@ -21,7 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.1142.0 — Encuestas a clientes: QR, tablet, entrevista y avance
+## v2.1143.1 — Marketing: octubre exento de los 10 días de anticipación
+
+La medida «10 días antes» marcaba tarde lo programado para los primeros días de
+octubre, que no pudo estar listo diez días antes porque la oferta es del 30 de
+septiembre. Como el calendario, se exige desde noviembre 2026 (decisión del
+usuario). Migración `marketing_anticipacion_exenta_en_octubre`.
+
+## v2.1143.0 — Encuestas a clientes: QR, tablet, entrevista y avance
 
 Fase 2 de cuatro: las encuestas publicadas ya reciben respuestas.
 
@@ -47,6 +54,23 @@ aplicada en producción con el sí del usuario. `anon` alcanza sólo
 `encuesta_publica` y `encuesta_publica_responder`, declaradas en
 `auditoria/superficie-anon.json`.
 
+## v2.1142.0 — App: Mín·Máx — ficha de producto por sala
+
+**Mín·Máx en la app**: la ficha de UN producto en todas las salas
+(`app/minmax-producto.js`) — existencia, MIN·MAX vigente, el borrador si lo
+hay y la alerta. Quien administra toca una sala y ajusta su par, o lo pone en
+0. La revisión de la sala entera (publicar, descartar en lote, la matriz) sigue
+en el portal y tiene un acceso directo.
+
+- **La decisión de cómo se guarda pasó al núcleo** (`utils/minmaxGuardar.js`,
+  con pruebas) y el portal la usa en `saveDraftPair`: Bodega guarda un delta
+  sobre la suma de las salas (nunca por debajo), una sala publicada y sin
+  borrador se edita en vivo, si no va al borrador, y un A o B a 0·0 pregunta.
+  Mismo comportamiento que antes.
+- `data/stockParams.salaTieneMinMaxPublicado`: la ficha pregunta por una fila
+  en vez de cargar la sala entera.
+- Probado en el entorno de pruebas: un cambio en Salud 1 quedó en vivo con su
+  bitácora; se devolvió al valor original.
 ## v2.1141.1 — puntos: el canje de una venta anulada deja de salir en Avisos
 
 Pregunta del usuario: «si se anuló, ¿por qué sigue saliendo?». Anular la

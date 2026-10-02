@@ -165,9 +165,9 @@ export default function TabServicio({ mes, mesFila, puedeAprobar, puedeEditar, y
                             estado={cumple(d.videos.aprobados, m.videos)} detalle={`${d.videos.planificados} planificados · ${d.historias} historias`} />
                         <Medida icon={MapPin} titulo="Visitas" valor={d.visitas} meta={m.visitas} estado={cumple(d.visitas, m.visitas)} />
                         <Medida icon={Timer} titulo={`${m.dias_anticipacion} días antes`}
-                            valor={evaluables ? `${d.puntualidad.a_tiempo}/${evaluables}` : '—'}
-                            estado={evaluables ? (d.puntualidad.tarde ? 'aviso' : 'ok') : undefined}
-                            detalle={`${d.puntualidad.por_vencer} todavía en plazo`} />
+                            valor={d.puntualidad.exento ? 'No aplica' : evaluables ? `${d.puntualidad.a_tiempo}/${evaluables}` : '—'}
+                            estado={!d.puntualidad.exento && evaluables ? (d.puntualidad.tarde ? 'aviso' : 'ok') : undefined}
+                            detalle={d.puntualidad.exento ? 'Se exige desde noviembre 2026' : `${d.puntualidad.por_vencer} todavía en plazo`} />
                         <Medida icon={CalendarClock} titulo="Calendario"
                             valor={cal.exento ? 'No aplica' : cal.a_tiempo == null ? 'Sin enviar' : cal.a_tiempo ? 'A tiempo' : 'Tarde'}
                             estado={cal.exento ? undefined : cal.a_tiempo ? 'ok' : cal.a_tiempo === false ? 'mal' : undefined}

@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1137.0 — App: Pedidos — confirmar llegada y contar
+
+**Pedidos en la app** (34 personas al mes): lo que la sala hace al recibir.
+
+- **La lista** (`app/pedidos.js`): los pedidos en curso de la sala, con su
+  etapa (Preparando → En camino → Llegó → Recibido) y la acción que toca. Con
+  alcance todas, la sala se elige en el menú; Generar, Rutas y Métricas siguen
+  en el portal (son de Bodega) y hay un acceso directo.
+- **Confirmar que llegó** (`app/pedido/llegada.js`): caja por caja (bien,
+  dañada, no llegó), el Electrolit, las cajas especiales, las cajas de más y
+  una nota. Escribe con `confirmarLlegadaDePedido` del núcleo, la misma del
+  portal. Guarda borrador.
+- **Contar** (`app/pedido/recibir.js`): hoja por hoja o el pedido entero, y
+  cada caja especial; por renglón se cuenta en la presentación de despacho y
+  se marca dañado, vencido u otro. «Todo llegó bien» si vino exacto. El ingreso
+  al inventario va en segundo plano; con todo contado el pedido queda recibido
+  y las diferencias se reportan a Bodega.
+- Probado de punta a punta en el entorno de pruebas con un pedido con cajas
+  especiales y Electrolit: la base quedó igual que con el portal.
 ## v2.1136.1 — Marketing: el nombre del último cambio entero en el flujo
 
 Con siete columnas en el flujo, la tarjeta es angosta y el nombre de quien hizo

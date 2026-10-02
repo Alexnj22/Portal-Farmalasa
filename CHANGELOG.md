@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1137.0 — Encuestas a clientes: diseño, plantillas y aprobación
+
+Sección nueva **Encuestas** (`/encuestas-clientes`) para que marketing mida
+atención, percepción de marca y recomendación (NPS). Fase 1 de cuatro del
+plan `docs/PLAN-ENCUESTAS-A-CLIENTES-2026-10-01.md`.
+
+- **Constructor**: secciones y preguntas de nueve tipos (NPS 0-10, caritas,
+  escala de acuerdo, opción única o múltiple, sí/no, ordenar, número y
+  abierta), cada una ligada a la dimensión que mide, y preguntas que sólo se
+  muestran según una respuesta anterior. Se guarda solo, sin botón.
+- **Ajustes**: QR, entrevista o tablet; meta general o por sucursal con la
+  muestra sugerida según las atenciones de 30 días (±5%, 95%); fechas;
+  incentivo (puntos o muestra médica, ésta sólo presencial); mensajes y
+  consentimiento.
+- **Ciclo**: borrador → en revisión → aprobada (Gerente General) → publicada
+  → cerrada. Lo que salió de borrador no se edita —lo frena la base—: se saca
+  una versión nueva. Historial con quién y cuándo, y avisos a quien aprueba y a
+  quien diseñó.
+- **Plantillas** de arranque: NPS rápido, Calidad de la atención y
+  Percepción de marca.
+- Vista previa tal como la verá el cliente en el teléfono.
+
+Migración `encuestas_clientes_base` (4 tablas nuevas, ninguna caliente),
+aplicada en producción con el sí del usuario y probada antes en el entorno de
+pruebas. La captura de respuestas, los incentivos y los resultados son las
+fases 2 a 4.
+
 ## v2.1136.1 — Marketing: el nombre del último cambio entero en el flujo
 
 Con siete columnas en el flujo, la tarjeta es angosta y el nombre de quien hizo

@@ -549,6 +549,22 @@ export const AREAS = [
         docs: [],
     },
     {
+        id: 'encuestas-clientes',
+        nombre: 'Encuestas a clientes',
+        resumen: 'Encuestas de satisfacción, NPS y percepción de marca. Marketing las diseña (constructor de secciones y preguntas con saltos, plantillas, dimensiones que se miden), gerencia las aprueba o las devuelve, y se publican para aplicarse por QR, entrevista o tablet en sala, con meta general o por sucursal y fecha de cierre. Lo aprobado no se edita: un trigger lo rechaza y se saca una versión nueva. Fase 1 de cuatro: la captura, los incentivos y los resultados vienen después.',
+        modulos: ['encuestas_clientes'],
+        rutas: ['/encuestas-clientes'],
+        archivos: [
+            'src/utils/encuestasClientes.js',
+            'src/data/encuestasClientes.js',
+            'src/views/encuestas-clientes/',
+        ],
+        tablas: ['encuestas_cliente', 'encuesta_cliente_dimensiones', 'encuesta_cliente_sucursales', 'encuesta_cliente_eventos'],
+        edge: [],
+        crons: [],
+        docs: ['docs/PLAN-ENCUESTAS-A-CLIENTES-2026-10-01.md'],
+    },
+    {
         id: 'cortes-efectivo',
         nombre: 'Cortes de caja y bolsas de efectivo',
         resumen: 'El cierre de turno de cada caja, las diferencias y su resolución, y el recorrido del dinero físico hasta administración.',

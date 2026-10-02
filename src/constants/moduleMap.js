@@ -77,6 +77,7 @@ export const MODULE_MAP = {
      * bonificación es lo que gana cada persona, que es otra cosa. */
     promociones:       { path: '/promociones',      label: 'Promociones',              icono: 'Gift'       },
     marketing:         { path: '/marketing',        label: 'Marketing',                icono: 'Megaphone'  },
+    encuestas_clientes: { path: '/encuestas-clientes', label: 'Encuestas a clientes', icono: 'ClipboardCheck' },
     galeria:           { path: '/galeria',          label: 'Galería',                  icono: 'FolderOpen' },
     entrevistas:       { path: '/entrevistas',      label: 'Entrevistas',              icono: 'Users',        comingSoon: true },
     productos:         { path: '/productos',        label: 'Productos',                icono: 'Package'       },

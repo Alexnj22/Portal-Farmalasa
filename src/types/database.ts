@@ -10585,6 +10585,304 @@ export type Database = {
           },
         ]
       }
+      encuesta_cliente_dimensiones: {
+        Row: {
+          activo: boolean
+          clave: string
+          color: string
+          created_at: string
+          descripcion: string | null
+          nombre: string
+          orden: number
+        }
+        Insert: {
+          activo?: boolean
+          clave: string
+          color?: string
+          created_at?: string
+          descripcion?: string | null
+          nombre: string
+          orden?: number
+        }
+        Update: {
+          activo?: boolean
+          clave?: string
+          color?: string
+          created_at?: string
+          descripcion?: string | null
+          nombre?: string
+          orden?: number
+        }
+        Relationships: []
+      }
+      encuesta_cliente_eventos: {
+        Row: {
+          autor_id: string | null
+          comentario: string | null
+          created_at: string
+          encuesta_id: string
+          id: number
+          tipo: string
+        }
+        Insert: {
+          autor_id?: string | null
+          comentario?: string | null
+          created_at?: string
+          encuesta_id: string
+          id?: never
+          tipo: string
+        }
+        Update: {
+          autor_id?: string | null
+          comentario?: string | null
+          created_at?: string
+          encuesta_id?: string
+          id?: never
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encuesta_cliente_eventos_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuesta_cliente_eventos_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuesta_cliente_eventos_encuesta_id_fkey"
+            columns: ["encuesta_id"]
+            isOneToOne: false
+            referencedRelation: "encuestas_cliente"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      encuesta_cliente_sucursales: {
+        Row: {
+          branch_id: number
+          created_at: string
+          encuesta_id: string
+          meta: number | null
+          token: string
+        }
+        Insert: {
+          branch_id: number
+          created_at?: string
+          encuesta_id: string
+          meta?: number | null
+          token?: string
+        }
+        Update: {
+          branch_id?: number
+          created_at?: string
+          encuesta_id?: string
+          meta?: number | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encuesta_cliente_sucursales_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuesta_cliente_sucursales_encuesta_id_fkey"
+            columns: ["encuesta_id"]
+            isOneToOne: false
+            referencedRelation: "encuestas_cliente"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      encuestas_cliente: {
+        Row: {
+          alcance: string
+          aprobada_at: string | null
+          aprobada_por: string | null
+          canales: string[]
+          cerrada_at: string | null
+          cerrada_por: string | null
+          created_at: string
+          created_by: string | null
+          cuestionario: Json
+          enviada_at: string | null
+          enviada_por: string | null
+          es_plantilla: boolean
+          estado: string
+          fecha_fin: string | null
+          fecha_inicio: string | null
+          id: string
+          incentivo_descripcion: string | null
+          incentivo_puntos: number | null
+          incentivo_tipo: string
+          mensaje_bienvenida: string | null
+          mensaje_cierre: string | null
+          meta_total: number | null
+          motivo_cierre: string | null
+          nombre: string
+          objetivo: string | null
+          origen_id: string | null
+          publicada_at: string | null
+          publicada_por: string | null
+          texto_consentimiento: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          alcance?: string
+          aprobada_at?: string | null
+          aprobada_por?: string | null
+          canales?: string[]
+          cerrada_at?: string | null
+          cerrada_por?: string | null
+          created_at?: string
+          created_by?: string | null
+          cuestionario?: Json
+          enviada_at?: string | null
+          enviada_por?: string | null
+          es_plantilla?: boolean
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          incentivo_descripcion?: string | null
+          incentivo_puntos?: number | null
+          incentivo_tipo?: string
+          mensaje_bienvenida?: string | null
+          mensaje_cierre?: string | null
+          meta_total?: number | null
+          motivo_cierre?: string | null
+          nombre: string
+          objetivo?: string | null
+          origen_id?: string | null
+          publicada_at?: string | null
+          publicada_por?: string | null
+          texto_consentimiento?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          alcance?: string
+          aprobada_at?: string | null
+          aprobada_por?: string | null
+          canales?: string[]
+          cerrada_at?: string | null
+          cerrada_por?: string | null
+          created_at?: string
+          created_by?: string | null
+          cuestionario?: Json
+          enviada_at?: string | null
+          enviada_por?: string | null
+          es_plantilla?: boolean
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          incentivo_descripcion?: string | null
+          incentivo_puntos?: number | null
+          incentivo_tipo?: string
+          mensaje_bienvenida?: string | null
+          mensaje_cierre?: string | null
+          meta_total?: number | null
+          motivo_cierre?: string | null
+          nombre?: string
+          objetivo?: string | null
+          origen_id?: string | null
+          publicada_at?: string | null
+          publicada_por?: string | null
+          texto_consentimiento?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encuestas_cliente_aprobada_por_fkey"
+            columns: ["aprobada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuestas_cliente_aprobada_por_fkey"
+            columns: ["aprobada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuestas_cliente_cerrada_por_fkey"
+            columns: ["cerrada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuestas_cliente_cerrada_por_fkey"
+            columns: ["cerrada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuestas_cliente_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuestas_cliente_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuestas_cliente_enviada_por_fkey"
+            columns: ["enviada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuestas_cliente_enviada_por_fkey"
+            columns: ["enviada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuestas_cliente_origen_id_fkey"
+            columns: ["origen_id"]
+            isOneToOne: false
+            referencedRelation: "encuestas_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuestas_cliente_publicada_por_fkey"
+            columns: ["publicada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuestas_cliente_publicada_por_fkey"
+            columns: ["publicada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       envio_linea: {
         Row: {
           aviso: string | null
@@ -23910,6 +24208,45 @@ export type Database = {
       encolar_impresion: {
         Args: { p_branch_id: number; p_contenido: string; p_titulo: string }
         Returns: number
+      }
+      encuesta_cliente_archivar: { Args: { p_id: string }; Returns: Json }
+      encuesta_cliente_avisar: {
+        Args: {
+          p_cuerpo: string
+          p_dest: string[]
+          p_id: string
+          p_titulo: string
+        }
+        Returns: number
+      }
+      encuesta_cliente_cerrar: {
+        Args: { p_id: string; p_motivo?: string }
+        Returns: Json
+      }
+      encuesta_cliente_destinatarios: {
+        Args: { p_accion: string; p_excepto?: string }
+        Returns: string[]
+      }
+      encuesta_cliente_duplicar: {
+        Args: { p_como_plantilla?: boolean; p_id: string }
+        Returns: string
+      }
+      encuesta_cliente_enviar: {
+        Args: { p_id: string; p_nota?: string }
+        Returns: Json
+      }
+      encuesta_cliente_poblacion: { Args: never; Returns: Json }
+      encuesta_cliente_problemas: { Args: { p_id: string }; Returns: string[] }
+      encuesta_cliente_problemas_de: {
+        Args: {
+          p_enc: Database["public"]["Tables"]["encuestas_cliente"]["Row"]
+        }
+        Returns: string[]
+      }
+      encuesta_cliente_publicar: { Args: { p_id: string }; Returns: Json }
+      encuesta_cliente_revisar: {
+        Args: { p_comentario?: string; p_decision: string; p_id: string }
+        Returns: Json
       }
       entregar_bolsas: {
         Args: { p_ids: number[]; p_recibido_por: string; p_vale: string }

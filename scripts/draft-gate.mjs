@@ -104,6 +104,12 @@ const EXCEPCIONES = {
     // sin el archivo no ahorra nada.
     'src/views/marketing/TabBiblioteca.jsx': 'un recurso son tres datos cortos y un archivo, que no cabe en un borrador',
     'src/views/marketing/AjustesModal.jsx': 'cada control guarda al tocarlo; sólo se escribe una fecha de cuatro campos',
+    // El constructor de encuestas a clientes AUTOGUARDA en la base unos
+    // instantes después de cada cambio (`EncuestaDetalle`), y al desmontarse
+    // escribe lo pendiente: lo que se teclea ya está en `encuestas_cliente`.
+    // Un borrador local podría además pisar el diseño con una copia vieja.
+    'src/views/encuestas-clientes/Constructor.jsx': 'autoguarda en la base a los 900 ms de cada cambio',
+    'src/views/encuestas-clientes/AjustesEncuesta.jsx': 'autoguarda en la base a los 900 ms de cada cambio',
     // Los reportes de la distribuidora no capturan nada: sus seis controles son
     // FILTROS (período, agrupación, mes, año, libro) y todos viven en la
     // dirección (`usePestanaEnUrl`), así que una recarga o una sesión cerrada

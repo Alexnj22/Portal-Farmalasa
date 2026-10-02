@@ -39,6 +39,7 @@ export const MODULE_SEARCH_KEYWORDS = {
     encuesta:           ['clima laboral', 'satisfaccion del empleado'],
     encuesta_admin:     ['gestionar encuestas', 'crear encuesta'],
     galeria:            ['material', 'whatsapp', 'estados', 'descargar diseños', 'publicaciones liberadas', 'imagenes'],
+    encuestas_clientes: ['encuestas', 'nps', 'satisfacción', 'opinión de clientes', 'entrevistas', 'percepción', 'atención al cliente', 'qr'],
     marketing:          ['redes sociales', 'publicaciones', 'calendario de contenido', 'diseñador', 'posts', 'reels', 'historias', 'pauta', 'facebook', 'instagram'],
     promociones:        ['descuentos', 'ofertas especiales', 'promos', 'rebaja', 'porcentaje de descuento', 'precio con descuento', 'promocion de producto'],
     bonificaciones:     ['incentivos', 'comisiones', 'bonos'],

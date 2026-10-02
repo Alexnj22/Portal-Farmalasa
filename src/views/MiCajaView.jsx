@@ -57,8 +57,7 @@ import BonosPorPagar from '../components/caja/BonosPorPagar';
 import { construirComprobanteDeAbono } from '@nucleo/utils/abonoTicket';
 import { construirComprobanteDeCorte } from '@nucleo/utils/corteTicket';
 import { construirComprobanteDeMovimiento } from '@nucleo/utils/movimientoTicket';
-import { conceptoDelPapel, sentidoDelPapel } from '@nucleo/utils/conceptoDelPapel';
-import { choqueDeBoleta } from '@nucleo/utils/boletaRepetida';
+import { choqueDeSentido as sentidoQueChoca, lecturaDeBoleta, PISTA_DE_DETALLE, problemaDeBoleta } from '@nucleo/utils/ingresoDeCaja';
 import { conSigno, formatMoney } from '@nucleo/utils/formatNumber';
 import { imprimirDocumento } from '@nucleo/utils/imprimirDiferido';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -97,19 +96,7 @@ const VACIO = [];
  * vez de con qué se aplicó. Vive acá y no en la tabla porque es texto de la
  * PANTALLA, no del catálogo: cambia con el diseño del formulario, no con el
  * negocio. */
-const PISTA_DE_DETALLE = {
-    APLICACION:     'Neurobion 25000',
-    GLUCOSA:        'en ayunas',
-    ABONO_CREDITO:  'de qué compra',
-    // La causa la lee la foto de la boleta del aparato; la pista es por si hay
-    // que corregirla a mano.
-    POS_PROMERICA:  'CAESS, ANDA, telefono',
-    COMPRA:         'agua fria, saldo telefonico',
-    PAGO_PROVEEDOR: 'que factura se paga',
-    ANTICIPO:       'quincena que descuenta',
-    BONIFICACION:   'de que linea',
-    DEVOLUCION:     'por que se devuelve',
-};
+// `PISTA_DE_DETALLE` vive en el núcleo (`utils/ingresoDeCaja`): la app la usa igual.
 
 /**
  * `comoPestana` — esta vista es la pestaña «Hoy» de Efectivo desde v2.914.0.
@@ -2368,27 +2355,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
      * Eso se avisa y quien registra decide. Frenarlo dejaría sin salida a quien
      * ya se equivocó, que es la peor forma de castigar un error honesto.
      */
-    const problemaDeLaBoleta = useMemo(() => {
-        const r = choqueDeBoleta(repetidaEnCaja, entra);
-        if (!r) return null;
-        const m = r.movimiento || {};
-        const cuando = String(m.fecha || '').slice(0, 10);
-        const cuanto = formatMoney(Number(m.monto) || 0);
-        if (r.bloquea) {
-            return {
-                tono: 'danger', bloquea: true,
-                texto: `La boleta ${m.numero_boleta || boleta.trim()} ya se anotó en esta sala`
-                     + `${cuando ? ` el ${cuando}` : ''} por ${cuanto}`
-                     + `${m.concepto ? ` (${m.concepto})` : ''}.`,
-            };
-        }
-        return {
-            tono: 'warning', bloquea: false,
-            texto: `Ese número ya está anotado como ${m.tipo === 'ENTRADA' ? 'ingreso' : 'salida'}`
-                 + `${cuando ? ` del ${cuando}` : ''} por ${cuanto}. `
-                 + 'Si estás corrigiendo el sentido, puedes seguir.',
-        };
-    }, [repetidaEnCaja, entra, boleta]);
+    const problemaDeLaBoleta = useMemo(() => problemaDeBoleta(repetidaEnCaja, entra, boleta), [repetidaEnCaja, entra, boleta]);
 
     const alElegirFoto = async (f) => {
         setFoto(f);
@@ -2399,87 +2366,19 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
         setLeyendo(true);
         const r = await leerBoleta(f, { entidad: null, numeroBoleta: null, monto: null });
         setLeyendo(false);
-        if (r?.error) {
-            setAviso('No se pudo leer la foto. Escribe los datos a mano.');
-            setAMano(true);
-            return;
-        }
-        const leido = r?.leido || {};
-        setLectura(r || null);
-
-        /* ── El monto se LLENA siempre; se CIERRA sólo si el papel lo confirma ──
-         *
-         * Regla del usuario (2026-09-05): «si no está seguro el resultado, debe
-         * decirlo y permitir poner el monto manualmente y marcarlo».
-         *
-         * «Seguro» es una cosa concreta y no una impresión: que la boleta
-         * imprima el total MÁS DE UNA VEZ y las dos lecturas coincidan. Una
-         * boleta de remesa lo trae arriba sin moneda y abajo con ella; ahí el
-         * papel se confirma a sí mismo y el campo se cierra, que es el pedido
-         * del 2026-08-29 y sigue en pie.
-         *
-         * Los otros dos casos NO se cierran, y son distintos entre sí:
-         *   CONTRADICHO — el papel dice dos cosas: un dígito se leyó mal y no se
-         *                 sabe cuál. Es lo que pasó con la boleta 018540.
-         *   UNICO       — el papel lo dice una sola vez, así que no hay con qué
-         *                 comprobarlo. No es un error, pero tampoco es seguro,
-         *                 y cerrarlo sería afirmar algo que nadie verificó. */
-        const confianza = r?.montoConfianza;
-        const seguro = confianza === 'CONFIRMADO';
-        const puesto = {};
-        const montoLeido = Number(leido.monto);
-        const hayMonto = Number.isFinite(montoLeido) && montoLeido > 0;
-        if (hayMonto) { setMonto(String(leido.monto)); puesto.monto = seguro; }
-        if (leido.numero_boleta) { setBoleta(String(leido.numero_boleta)); puesto.boleta = true; }
-        const texto = conceptoDelPapel(leido);
-        if (texto) { setConcepto(texto.slice(0, 50)); puesto.concepto = true; }
-        setDeLaFoto(puesto);
-
-        /* El aviso DICE el monto y DICE si está comprobado.
-         *
-         * Antes decía «La foto llenó el monto, el número y el concepto» y la
-         * cifra quedaba en un campo gris de sólo lectura, que es lo que el ojo
-         * saltea. Cotejar contra el papel es la última defensa cuando el lector
-         * se equivoca —y se equivoca: estas impresoras escriben el cero con una
-         * barra (`Ø`) que a la resolución en que la foto viaja se confunde con
-         * un 8—, así que el número tiene que estar escrito donde se lee, y al
-         * lado tiene que decir si alguien más que la máquina lo respalda. */
-        const nombres = { boleta: 'el número', concepto: 'el detalle' };
-        const faltan = ['boleta', 'concepto']
-            .filter((k) => !puesto[k] && (k !== 'boleta' || tipo?.pide_boleta))
-            .map((k) => nombres[k]);
-        const cola = faltan.length ? ` Falta ${faltan.join(' y ')}.` : '';
-        setAviso(
-            !hayMonto && !puesto.boleta && !puesto.concepto
-                ? 'La foto no se dejó leer. Escribe los datos a mano.'
-                : !hayMonto
-                    ? `La foto no leyó el monto: escríbelo.${cola}`
-                    : confianza === 'CONTRADICHO'
-                        ? `La boleta trae el monto dos veces y no dicen lo mismo: leí ${formatMoney(montoLeido)}. Escribe el que dice el papel.`
-                        : !seguro
-                            ? `Leí ${formatMoney(montoLeido)}, pero la boleta sólo lo dice una vez: compáralo con el papel y corrígelo si no es.${cola}`
-                            : `La foto leyó ${formatMoney(montoLeido)}${leido.numero_boleta ? `, boleta ${leido.numero_boleta}` : ''}, y la boleta lo confirma.${cola}`,
-        );
-        if (!hayMonto && !puesto.boleta && !puesto.concepto) setAMano(true);
-
-        /* ── ¿El papel va para el otro lado? ────────────────────────────────
-         *
-         * Una remesa SALE del cajón y el pago de un recibo ENTRA. Se anotan en
-         * la misma pantalla con un papel que se ve igual, y confundirlos ya
-         * costó tres correcciones a mano —«se realizó entrada y era remesa»—.
-         * El dato estaba desde siempre en la lectura; lo que faltaba era
-         * mirarlo.
-         *
-         * Avisa y no frena: quien tiene el papel en la mano decide. Y se calla
-         * cuando el papel no lo dice con claridad (`COMPRA`, `OTRO`), que es
-         * justo lo que evita que el aviso se vuelva ruido. */
-        const lado = sentidoDelPapel(leido);
-        const seAnota = entra ? 'ENTRADA' : 'SALIDA';
-        setChoqueDeSentido(lado && lado !== seAnota
-            ? `Revisa el motivo: el papel dice ${conceptoDelPapel(leido) || 'otra operación'}, `
-              + `y eso normalmente ${lado === 'ENTRADA' ? 'ENTRA a la caja' : 'SALE de la caja'}. `
-              + `Estás anotando ${entra ? 'un ingreso' : 'una salida'}.`
-            : null);
+        const l = lecturaDeBoleta(r, { pideBoleta: !!tipo?.pide_boleta });
+        if (l.error) { setAviso(l.aviso); setAMano(true); return; }
+        setLectura(l.lectura);
+        // Lo que se llena y cómo se avisa: `lecturaDeBoleta` (núcleo). El monto
+        // se LLENA siempre y se CIERRA sólo si el papel lo confirma.
+        if (l.monto != null) setMonto(l.monto);
+        if (l.boleta != null) setBoleta(l.boleta);
+        if (l.concepto != null) setConcepto(l.concepto);
+        setDeLaFoto(l.puesto);
+        setAviso(l.aviso);
+        if (l.aMano) setAMano(true);
+        // ¿El papel va para el otro lado? Avisa, no frena.
+        setChoqueDeSentido(sentidoQueChoca(r, entra));
     };
 
     const guardar = async () => {

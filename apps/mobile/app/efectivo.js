@@ -138,7 +138,10 @@ export default function Efectivo() {
 
         {puedeOperar && sala && !diaCerrado ? (
           <View style={{ gap: 10 }}>
-            <BotonGrande texto="Sacar dinero" color={MARCA.azul} onPress={() => router.push({ pathname: '/sacar-dinero', params: { sala } })} />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}><BotonGrande texto="Meter dinero" color={MARCA.verde} onPress={() => router.push({ pathname: '/meter-dinero', params: { sala } })} /></View>
+              <View style={{ flex: 1 }}><BotonGrande texto="Sacar dinero" color={MARCA.azul} onPress={() => router.push({ pathname: '/sacar-dinero', params: { sala } })} /></View>
+            </View>
             <BotonGrande texto="Cerrar el día" borde color={MARCA.rojo} deshabilitado={!estado || !!estado.error} onPress={cerrar} />
           </View>
         ) : null}

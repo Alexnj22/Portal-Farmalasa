@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1154.0 — App: Meter dinero
+
+- **App: Meter dinero.** Efectivo ahora tiene «Meter dinero» junto a «Sacar dinero»: el ingreso de caja del portal, que es lo que más se anota en la caja (POS Promerica, aplicaciones de inyección, glucosa, domicilio). Los motivos salen del catálogo y cada uno pide lo suyo (boleta, foto, quién lo trae, detalle con su ejemplo). Con foto, la foto se lee sola y llena el monto, el número y el detalle; el monto queda cerrado sólo si la boleta lo confirma. Una boleta ya anotada en la sala frena. Se anota con una clave por formulario —dos toques no anotan dos veces— y sale el comprobante.
+- **App:** el teléfono ya puede mandar una foto al lector de boletas (la achica a 1,400 px y la gira si hace falta, como el portal). Nueva dependencia `expo-image-manipulator`: entra con la próxima build.
+- **Núcleo:** qué se llena con lo que leyó la foto, el aviso, el choque de sentido del papel, el choque de boleta y las pistas del detalle pasan de `MiCajaView` a `src/utils/ingresoDeCaja.js`, con su prueba.
 ## v2.1153.4 — Encuestas a clientes: afiche del QR para imprimir
 
 - **Imprimir afiche** en Avance → QR y enlace: una hoja carta para pegar en la

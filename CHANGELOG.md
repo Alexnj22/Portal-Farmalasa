@@ -21,7 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.1137.0 — Encuestas a clientes: diseño, plantillas y aprobación
+## v2.1139.0 — Encuestas a clientes: diseño, plantillas y aprobación
 
 Sección nueva **Encuestas** (`/encuestas-clientes`) para que marketing mida
 atención, percepción de marca y recomendación (NPS). Fase 1 de cuatro del
@@ -48,6 +48,33 @@ aplicada en producción con el sí del usuario y probada antes en el entorno de
 pruebas. La captura de respuestas, los incentivos y los resultados son las
 fases 2 a 4.
 
+## v2.1138.0 — App: Pedidos — apoyo con carné
+
+- **Pedidos: quién ayudó a recibir** se anota en el teléfono escaneando los
+  carnés uno tras otro (145 veces y 19 personas en 30 días), como el
+  `ApoioScanModal` del portal: el servidor sólo reconoce gente de la sala.
+- **La llegada de un reenvío y las diferencias con Bodega** (menos de diez
+  veces al mes) tienen un acceso directo al portal desde la tarjeta del pedido.
+
+## v2.1137.0 — App: Pedidos — confirmar llegada y contar
+
+**Pedidos en la app** (34 personas al mes): lo que la sala hace al recibir.
+
+- **La lista** (`app/pedidos.js`): los pedidos en curso de la sala, con su
+  etapa (Preparando → En camino → Llegó → Recibido) y la acción que toca. Con
+  alcance todas, la sala se elige en el menú; Generar, Rutas y Métricas siguen
+  en el portal (son de Bodega) y hay un acceso directo.
+- **Confirmar que llegó** (`app/pedido/llegada.js`): caja por caja (bien,
+  dañada, no llegó), el Electrolit, las cajas especiales, las cajas de más y
+  una nota. Escribe con `confirmarLlegadaDePedido` del núcleo, la misma del
+  portal. Guarda borrador.
+- **Contar** (`app/pedido/recibir.js`): hoja por hoja o el pedido entero, y
+  cada caja especial; por renglón se cuenta en la presentación de despacho y
+  se marca dañado, vencido u otro. «Todo llegó bien» si vino exacto. El ingreso
+  al inventario va en segundo plano; con todo contado el pedido queda recibido
+  y las diferencias se reportan a Bodega.
+- Probado de punta a punta en el entorno de pruebas con un pedido con cajas
+  especiales y Electrolit: la base quedó igual que con el portal.
 ## v2.1136.1 — Marketing: el nombre del último cambio entero en el flujo
 
 Con siete columnas en el flujo, la tarjeta es angosta y el nombre de quien hizo

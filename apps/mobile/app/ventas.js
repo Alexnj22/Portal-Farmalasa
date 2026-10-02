@@ -31,6 +31,8 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { ordenDeSala } from '@nucleo/constants/erp';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
+import Segmentos from '../componentes/Segmentos';
+import Vendedores from '../componentes/ventas/Vendedores';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
@@ -98,6 +100,11 @@ export default function Ventas() {
   const empleados = useStaffStore((s) => s.employees);
   const todas = getScope?.('ventas') === 'ALL';
   const verCifras = hasPermission('ventas_ver_cards');
+  // Las mismas pestañas que el portal, cada una con su permiso.
+  const verFacturas = hasPermission('ventas_tab_ventas');
+  const verVendedores = hasPermission('ventas_tab_vendedores');
+  const [vistaElegida, setVista] = useState('facturas');
+  const vista = !verFacturas ? 'vendedores' : !verVendedores ? 'facturas' : vistaElegida;
   const miSala = String(user?.branchId || '');
 
   const [periodo, setPeriodo] = useState('mes');
@@ -207,8 +214,8 @@ export default function Ventas() {
     { id: 'periodo', titulo: 'Período', activa: periodo, porDefecto: 'mes', onCambiar: setPeriodo, opciones: PERIODOS },
     ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: 'todas', onCambiar: setSala,
       opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
-    { id: 'mostrar', titulo: 'Mostrar', activa: mostrar, porDefecto: 'todas', onCambiar: setMostrar,
-      opciones: [{ id: 'todas', label: 'Todas las ventas' }, { id: 'receta', label: 'Con receta médica' }, { id: 'anuladas', label: 'Sólo anuladas' }] },
+    ...(vista === 'facturas' ? [{ id: 'mostrar', titulo: 'Mostrar', activa: mostrar, porDefecto: 'todas', onCambiar: setMostrar,
+      opciones: [{ id: 'todas', label: 'Todas las ventas' }, { id: 'receta', label: 'Con receta médica' }, { id: 'anuladas', label: 'Sólo anuladas' }] }] : []),
   ];
 
   const c = cifras;
@@ -223,7 +230,7 @@ export default function Ventas() {
       <Stack.Screen options={{
         ...BARRA_NATIVA, title: 'Ventas', headerLargeTitle: true,
         headerSearchBarOptions: {
-          placeholder: 'Cliente, producto o número', hideWhenScrolling: false,
+          placeholder: vista === 'vendedores' ? 'Nombre del vendedor' : 'Cliente, producto o número', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
@@ -232,7 +239,12 @@ export default function Ventas() {
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
         <FiltrosActivos grupos={grupos} />
-        <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20, textTransform: 'capitalize' }}>{rangoTexto}</Text>
+        <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20, textTransform: fini === ffin ? 'capitalize' : 'none' }}>{rangoTexto}</Text>
+        {verFacturas && verVendedores ? (
+          <Segmentos activa={vista} onCambiar={setVista}
+            opciones={[{ id: 'facturas', label: 'Facturas' }, { id: 'vendedores', label: 'Vendedores' }]} />
+        ) : null}
+        {vista === 'vendedores' ? <Vendedores key={`${fini}|${ffin}|${sala}`} fini={fini} ffin={ffin} sala={sala} busqueda={busqueda} verCifras={verCifras} /> : (<>
         {verCifras && c ? (
           <>
             <FilaDeKpis>
@@ -263,6 +275,7 @@ export default function Ventas() {
             <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>{buscando ? 'Nada con esa búsqueda' : 'Sin ventas en este período'}</Text>
           </View>
         ) : null}
+        </>)}
       </ScrollView>
     </>
   );

@@ -39,12 +39,12 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
 import TabInyecciones from './ventas/TabInyecciones';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { diasDelRango as countDays, horaDeCorte as currentHoraCorte, mesEnCurso as currentMonthRange, periodoAnterior as computePrevRange, renglonesDeLaVenta, variacionPorDia as dailyPct } from '@nucleo/utils/ventasPeriodo';
+import { CODIGOS_ESPECIALES as SPECIAL_CODES, diasDelRango as countDays, horaDeCorte as currentHoraCorte, mesEnCurso as currentMonthRange, periodoAnterior as computePrevRange, mesAnteriorDe, puestosDelMesAnterior, rankingDeVendedores, renglonesDeLaVenta, variacionPorDia as dailyPct, ventasDiariasDelVendedor } from '@nucleo/utils/ventasPeriodo';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
 const PAGE_SIZE = 50;
-const SPECIAL_CODES = { '1000': 'Administración', '125': 'Domicilio' };
+// Los códigos que no son personas: `CODIGOS_ESPECIALES` del núcleo.
 
 // Un color por posición en un reparto (sucursales, vendedores). Sale de la
 // paleta categórica del tema —§7 de DESIGN.md— y no de colores crudos, así que
@@ -1157,26 +1157,9 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
 
     // Carga ranking del mes anterior para flechas de tendencia
     useEffect(() => {
-        const d = new Date(fini + 'T12:00');
-        d.setMonth(d.getMonth() - 1);
-        const prevMes = d.toISOString().split('T')[0].slice(0, 7) + '-01';
         const branchId = filterBranch ? Number(filterBranch) : -1;
-        const SKIP = new Set(['1000', '125']);
-        fetchVendorMonthlyStats(prevMes, branchId)
-            .then(({ data }) => {
-                const byVend = new Map();
-                for (const r of (data || [])) {
-                    const cur = byVend.get(r.cod_vendedor) || { cod_vendedor: r.cod_vendedor, total: 0 };
-                    cur.total += parseFloat(r.total_sum || 0);
-                    byVend.set(r.cod_vendedor, cur);
-                }
-                const ranked = [...byVend.values()]
-                    .filter(v => !SKIP.has(v.cod_vendedor))
-                    .sort((a, b) => b.total - a.total);
-                const m = new Map();
-                ranked.forEach((v, i) => m.set(v.cod_vendedor, i + 1));
-                setPrevRankMap(m);
-            });
+        fetchVendorMonthlyStats(mesAnteriorDe(fini), branchId)
+            .then(({ data }) => setPrevRankMap(puestosDelMesAnterior(data)));
     }, [fini, filterBranch]);
 
     const toggleExpand = async (cod) => {
@@ -1187,15 +1170,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
             p_cod_vendedor: cod, p_fini: fini, p_ffin: ffin,
         });
         if (error) console.error('toggleExpand: get_vendedor_diario failed:', error.message);
-        const byDate = new Map();
-        for (const d of (data || [])) {
-            const cur = byDate.get(d.fecha) || { fecha: d.fecha, total: 0, count: 0, branches: [] };
-            cur.total += parseFloat(d.total_ventas || 0);
-            cur.count += parseInt(d.total_facturas || 0);
-            cur.branches.push({ branch_id: d.branch_id, total: parseFloat(d.total_ventas || 0) });
-            byDate.set(d.fecha, cur);
-        }
-        setExpandedData([...byDate.values()]);
+        setExpandedData(ventasDiariasDelVendedor(data));
         setLoadingExpand(false);
     };
 
@@ -1203,32 +1178,12 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
 
     const { knownRows, unknownByBranch, isVendSearchFuzzy } = useMemo(() => {
         const s = searchTerm;
-        const consolidatedMap = new Map();
-        const unknownMap = new Map();
-        for (const r of rows) {
-            const emp = empMap.get(r.cod_vendedor);
-            const specialName = SPECIAL_CODES[r.cod_vendedor];
-            if (emp || specialName) {
-                const cur = consolidatedMap.get(r.cod_vendedor) || {
-                    cod_vendedor: r.cod_vendedor, total: 0, count: 0, branchIds: [],
-                    emp: emp || null, specialName: specialName || null,
-                };
-                cur.total += r.total;
-                cur.count += r.count;
-                if (!cur.branchIds.includes(r.branch_id)) cur.branchIds.push(r.branch_id);
-                consolidatedMap.set(r.cod_vendedor, cur);
-            } else {
-                const cur = unknownMap.get(r.branch_id) || { branch_id: r.branch_id, total: 0, count: 0 };
-                cur.total += r.total;
-                cur.count += r.count;
-                unknownMap.set(r.branch_id, cur);
-            }
-        }
-        const allKnown = [...consolidatedMap.values()].sort((a, b) => b.total - a.total);
+        const { conocidos, sinFicha } = rankingDeVendedores(rows, empMap);
+        const allKnown = conocidos.map(v => ({ ...v, specialName: v.especial }));
         const { results: known, isFuzzy: isVendFuzzy } = !s.trim()
             ? { results: allKnown, isFuzzy: false }
             : smartFilter(s, allKnown, r => [r.specialName || (r.emp ? `${r.emp.first_names} ${r.emp.last_names}` : ''), r.cod_vendedor]);
-        return { knownRows: known, unknownByBranch: unknownMap, isVendSearchFuzzy: isVendFuzzy };
+        return { knownRows: known, unknownByBranch: new Map(sinFicha.map(u => [u.branch_id, u])), isVendSearchFuzzy: isVendFuzzy };
     }, [rows, searchTerm, empMap]);
 
     // Suma sobre lo que realmente se ve en la tabla (knownRows respeta el filtro de búsqueda;

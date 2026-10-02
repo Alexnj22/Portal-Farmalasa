@@ -78,3 +78,74 @@ export function renglonesDeLaVenta(items, total) {
     const descuento = descuentos.length ? porRenglon : (porDiferencia > 0.01 ? porDiferencia : 0);
     return { productos, descuento };
 }
+
+// ── Vendedores ──────────────────────────────────────────────────────────────
+
+/** Códigos de vendedor que no son personas: se muestran con su rótulo. */
+export const CODIGOS_ESPECIALES = { '1000': 'Administración', '125': 'Domicilio' };
+
+/**
+ * El ranking del período a partir de las filas por sala y vendedor
+ * (`get_vendedores_resumen`). Un vendedor que vendió en varias salas se suma en
+ * UNA fila; un código que no es de nadie (ni ficha ni especial) no se pierde:
+ * va aparte, por sala, porque esa plata existe aunque nadie la firme.
+ *   → { conocidos: [{cod_vendedor, total, count, branchIds, emp, especial}], sinFicha: [{branch_id, total, count}], total, facturas }
+ */
+export function rankingDeVendedores(filas, porCodigo) {
+    const conocidos = new Map();
+    const sinFicha = new Map();
+    for (const r of (filas || [])) {
+        const total = parseFloat(r.total_ventas ?? r.total ?? 0);
+        const count = parseInt(r.total_facturas ?? r.count ?? 0, 10);
+        const emp = porCodigo.get(r.cod_vendedor) || null;
+        const especial = CODIGOS_ESPECIALES[r.cod_vendedor] || null;
+        if (emp || especial) {
+            const v = conocidos.get(r.cod_vendedor) || { cod_vendedor: r.cod_vendedor, total: 0, count: 0, branchIds: [], emp, especial };
+            v.total += total;
+            v.count += count;
+            if (!v.branchIds.includes(r.branch_id)) v.branchIds.push(r.branch_id);
+            conocidos.set(r.cod_vendedor, v);
+        } else {
+            const u = sinFicha.get(r.branch_id) || { branch_id: r.branch_id, total: 0, count: 0 };
+            u.total += total;
+            u.count += count;
+            sinFicha.set(r.branch_id, u);
+        }
+    }
+    const lista = [...conocidos.values()].sort((a, b) => b.total - a.total);
+    const sueltos = [...sinFicha.values()];
+    const suma = (xs, k) => xs.reduce((s, x) => s + x[k], 0);
+    return { conocidos: lista, sinFicha: sueltos, total: suma(lista, 'total') + suma(sueltos, 'total'), facturas: suma(lista, 'count') + suma(sueltos, 'count') };
+}
+
+/** El primer día del mes anterior al de `fini` («2026-10-15» → «2026-09-01»). */
+export function mesAnteriorDe(fini) {
+    const [y, m] = fini.split('-').map(Number);
+    const idx = y * 12 + (m - 1) - 1;
+    return `${Math.floor(idx / 12)}-${pad((idx % 12) + 1)}-01`;
+}
+
+/** El puesto de cada vendedor el mes anterior (sin los códigos especiales): Map cod → 1, 2, … */
+export function puestosDelMesAnterior(filas) {
+    const porVendedor = new Map();
+    for (const r of (filas || [])) {
+        if (CODIGOS_ESPECIALES[r.cod_vendedor]) continue;
+        porVendedor.set(r.cod_vendedor, (porVendedor.get(r.cod_vendedor) || 0) + parseFloat(r.total_sum || 0));
+    }
+    const puestos = new Map();
+    [...porVendedor.entries()].sort((a, b) => b[1] - a[1]).forEach(([cod], i) => puestos.set(cod, i + 1));
+    return puestos;
+}
+
+/** Las ventas de un vendedor por día, con el reparto por sala (`get_vendedor_diario`). */
+export function ventasDiariasDelVendedor(filas) {
+    const porDia = new Map();
+    for (const d of (filas || [])) {
+        const v = porDia.get(d.fecha) || { fecha: d.fecha, total: 0, count: 0, branches: [] };
+        v.total += parseFloat(d.total_ventas || 0);
+        v.count += parseInt(d.total_facturas || 0, 10);
+        v.branches.push({ branch_id: d.branch_id, total: parseFloat(d.total_ventas || 0) });
+        porDia.set(d.fecha, v);
+    }
+    return [...porDia.values()];
+}

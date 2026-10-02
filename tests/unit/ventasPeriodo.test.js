@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diasDelRango, horaDeCorte, mesEnCurso, periodoAnterior, renglonesDeLaVenta, variacionPorDia } from '@nucleo/utils/ventasPeriodo';
+import { diasDelRango, horaDeCorte, mesAnteriorDe, mesEnCurso, periodoAnterior, puestosDelMesAnterior, rankingDeVendedores, renglonesDeLaVenta, variacionPorDia, ventasDiariasDelVendedor } from '@nucleo/utils/ventasPeriodo';
 
 describe('ventasPeriodo', () => {
     it('mes en curso hasta hoy', () => {
@@ -28,5 +28,34 @@ describe('ventasPeriodo', () => {
         expect(renglonesDeLaVenta([a, d], 2.5).descuento).toBe(1.5);
         expect(renglonesDeLaVenta([a], 3).descuento).toBe(1);
         expect(renglonesDeLaVenta([a], 3.995).descuento).toBe(0);
+    });
+});
+
+describe('vendedores', () => {
+    const porCodigo = new Map([['7', { code: '7', name: 'ANA' }]]);
+    it('ranking: une salas, aparta los códigos sin ficha', () => {
+        const r = rankingDeVendedores([
+            { branch_id: 1, cod_vendedor: '7', total_ventas: '10', total_facturas: '2' },
+            { branch_id: 2, cod_vendedor: '7', total_ventas: '5', total_facturas: '1' },
+            { branch_id: 1, cod_vendedor: '1000', total_ventas: '20', total_facturas: '4' },
+            { branch_id: 2, cod_vendedor: '999', total_ventas: '3', total_facturas: '1' },
+        ], porCodigo);
+        expect(r.conocidos.map(v => [v.cod_vendedor, v.total, v.branchIds])).toEqual([['1000', 20, [1]], ['7', 15, [1, 2]]]);
+        expect(r.conocidos[0].especial).toBe('Administración');
+        expect(r.sinFicha).toEqual([{ branch_id: 2, total: 3, count: 1 }]);
+        expect([r.total, r.facturas]).toEqual([38, 8]);
+    });
+    it('mes anterior y puestos sin especiales', () => {
+        expect(mesAnteriorDe('2026-01-15')).toBe('2025-12-01');
+        const p = puestosDelMesAnterior([
+            { cod_vendedor: '7', total_sum: 5 }, { cod_vendedor: '8', total_sum: 9 }, { cod_vendedor: '1000', total_sum: 99 }, { cod_vendedor: '7', total_sum: 5 },
+        ]);
+        expect([...p]).toEqual([['7', 1], ['8', 2]]);
+    });
+    it('ventas diarias con reparto por sala', () => {
+        expect(ventasDiariasDelVendedor([
+            { fecha: '2026-10-01', branch_id: 1, total_ventas: '10', total_facturas: '2' },
+            { fecha: '2026-10-01', branch_id: 2, total_ventas: '4', total_facturas: '1' },
+        ])).toEqual([{ fecha: '2026-10-01', total: 14, count: 3, branches: [{ branch_id: 1, total: 10 }, { branch_id: 2, total: 4 }] }]);
     });
 });

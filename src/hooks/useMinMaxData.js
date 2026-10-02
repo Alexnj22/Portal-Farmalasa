@@ -128,6 +128,9 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     const [discardConfirm,  setDiscardConfirm]  = useState(false);
     const [zeroAllConfirm,  setZeroAllConfirm]  = useState({ open: false, row: null });
     const [calcularConfirm, setCalcularConfirm] = useState({ open: false, mode: null });
+    // La sala no se deja recalcular con borradores pendientes: en vez de sólo
+    // negarse, se le ofrece descartarlos y recalcular en un paso.
+    const [descartarYCalcular, setDescartarYCalcular] = useState(false);
     const [discardRowConfirm, setDiscardRowConfirm] = useState({ open: false, row: null });
     const [zeroOutConfirm,  setZeroOutConfirm]  = useState({ open: false, row: null, pendingCell: null, pendingPair: null });
     const [discardingAll,  setDiscardingAll]  = useState(false);
@@ -344,8 +347,9 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             if (e) throw e;
             const salto = motivoDeSalto(res);
             if (salto) {
-                useToastStore.getState().showToast(ERP_NAMES[selectedErp], salto, 'error');
                 setConfigChanged(true);  // la configuración nueva sigue sin aplicarse
+                if (res.reason === 'branch_has_pending_drafts') setDescartarYCalcular(true);
+                else useToastStore.getState().showToast(ERP_NAMES[selectedErp], salto, 'error');
                 return;
             }
             useToastStore.getState().showToast(ERP_NAMES[selectedErp], `${(res?.rows ?? 0).toLocaleString()} borradores generados`, 'success');
@@ -353,6 +357,24 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             if (wasPublished) { setFilterChangesOnly(true); setFilterDraft(false); }
         } catch (e) { useToastStore.getState().showToast(ERP_NAMES[selectedErp], fmtCalcError(e), 'error'); }
         finally { setCalculating(false); }
+    };
+
+    // Descarta los borradores de la sala y recalcula. Dos llamadas y no una
+    // función nueva en la base: el descarte es el mismo `discard_stock_drafts`
+    // del botón «Descartar todo», con su misma bitácora.
+    const handleDescartarYRecalcular = async () => {
+        setDescartarYCalcular(false);
+        setCalculating(true); setCalcMode('single');
+        const { data: count, error: e } = await descartarBorradoresDeMinMax({ p_erp_sucursal_id: selectedErp });
+        if (e) {
+            setCalculating(false);
+            useToastStore.getState().showToast(ERP_NAMES[selectedErp], `Error al descartar: ${mensajeAmigable(e)}`, 'error');
+            return;
+        }
+        useStaff.getState().appendAuditLog('MINMAX_DISCARD_ALL', String(selectedErp), {
+            sucursal: ERP_NAMES[selectedErp], count, motivo: 'recalcular',
+        });
+        await handleRecalcular();
     };
 
     const handleRecalcularAll = async () => {
@@ -1314,6 +1336,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         discardConfirm, setDiscardConfirm, aDescartar,
         zeroAllConfirm, setZeroAllConfirm,
         calcularConfirm, setCalcularConfirm,
+        descartarYCalcular, setDescartarYCalcular,
         discardRowConfirm, setDiscardRowConfirm,
         zeroOutConfirm, setZeroOutConfirm,
         discardingAll,
@@ -1334,6 +1357,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         loadData,
         handleRecalcular,
         handleRecalcularAll,
+        handleDescartarYRecalcular,
         hasPublishedData, draftCount, sparseCount, changesCount, bodegaPendingCount, dispatchRiskCount, stats, criticalACount,
         zeroOutRow,
         handleZeroAllBranches,

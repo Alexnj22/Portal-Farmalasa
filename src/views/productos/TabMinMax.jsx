@@ -383,6 +383,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         discardConfirm, setDiscardConfirm, aDescartar,
         zeroAllConfirm, setZeroAllConfirm,
         calcularConfirm, setCalcularConfirm,
+        descartarYCalcular, setDescartarYCalcular,
         discardRowConfirm, setDiscardRowConfirm,
         zeroOutConfirm, setZeroOutConfirm,
         discardingAll,
@@ -402,6 +403,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         loadData,
         handleRecalcular,
         handleRecalcularAll,
+        handleDescartarYRecalcular,
         hasPublishedData, draftCount, sparseCount, changesCount, bodegaPendingCount, dispatchRiskCount, stats, criticalACount,
         zeroOutRow,
         handleZeroAllBranches,
@@ -1939,6 +1941,18 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 confirmText="Calcular"
                 cancelText="Cancelar"
                 isDestructive={false}
+            />
+
+            {/* ── La sala tiene borradores: descartarlos y recalcular, o nada ── */}
+            <ConfirmModal
+                isOpen={descartarYCalcular}
+                onClose={() => setDescartarYCalcular(false)}
+                onConfirm={handleDescartarYRecalcular}
+                title={`${ERP_NAMES[selectedErp]} tiene ${draftCount} borrador${draftCount !== 1 ? 'es' : ''} sin revisar`}
+                message={`Para recalcular hay que descartarlos primero: volverán al MIN/MAX publicado actual y el cálculo nuevo generará los suyos. Esta acción no se puede deshacer.`}
+                confirmText="Descartar y recalcular"
+                cancelText="Cancelar"
+                isDestructive={true}
             />
 
             {/* ── Confirm discard individual draft modal ── */}

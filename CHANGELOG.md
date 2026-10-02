@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1153.1 — Min·Max: descartar borradores y recalcular en un paso
+
+_(pendiente de redactar)_
+
 ## v2.1153.0 — Marketing: conversación en hilo, calendario por estado, banco de ideas y feed
 
 Pedido del usuario: comentarios en el mes con respuestas, el estado en el

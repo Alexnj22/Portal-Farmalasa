@@ -361,7 +361,7 @@ export default function TabPorCobrar({
                             ...(puedeAsignar ? [{ key: 'accion', label: '' }] : []),
                         ]}
                         minWidth="520px"
-                        movil={{ identidad: 'detalle', ancla: 'monto', chips: ['fecha', 'por'] }}
+                        movil={{ identidad: 'detalle', ancla: 'monto', chips: ['fecha', 'por'], acciones: true }}
                     >
                         {sueltos.map((c, i) => (
                             <DataRow key={c.id} index={i}>

@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1159.1 — Inyecciones: arreglos de la batería de pruebas (en pruebas)
+
+**Sólo en el entorno de pruebas.** Lo que encontró la batería (44 pruebas de
+base, 18 de `operar-caja`, recorridos de escritorio y teléfono):
+
+- Canjear desde la vista con «todas las salas» dejaba la aplicación «en
+  Administración» (la sala de la ficha de quien marca). Ahora queda en la sala
+  indicada o, si no hay, en la que se pagó.
+- En el teléfono no se veía «Elegir» en Pendientes ni «Asignar» en Por cobrar.
+- Tres mensajes de error todavía decían «amarra».
+- El ícono del módulo faltaba en la pantalla de Permisos.
+- Quedan los scripts: `scripts/entorno-pruebas/probar_inyecciones_pagadas.sql`
+  y `probar_operar_caja_aplicacion.mjs`.
+
+
 ## v2.1159.0 — Inyecciones: vista propia con pendientes y bitácora; el cobro siempre asignado a su venta (en pruebas)
 
 **Sólo en el entorno de pruebas.** Pedidos del usuario al probarlo:

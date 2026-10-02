@@ -34,7 +34,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
  * nada, así que no arrastra el maquetador del rollo. Escribirla dos veces es
  * cómo dos pantallas terminan mostrando días distintos. */
 import { fechaCorta } from '@nucleo/utils/ticketCampos';
-import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { abonosDelCredito, carteraFiltrada, desdeLaLectura, pagadoPct, tituloDeDias, VER_CARTERA as VER } from '@nucleo/utils/cartera';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12 } from '@nucleo/utils/hora';
 // La regla de todo campo de dinero con máximo (ver el archivo).
@@ -103,12 +103,6 @@ const ROTULO_DE_FORMA = { [APROBACION]: 'Solicitar aprobación' };
 const FORMAS_REALES = ['Transferencia', 'Tarjeta', 'Cheque', 'Otro'];
 
 
-const VER = [
-    { value: 'DEBEN',    label: 'Con saldo' },
-    { value: 'VENCIDOS', label: 'Pasados del plazo' },
-    { value: 'TODOS',    label: 'Todos' },
-];
-
 const VACIO = [];
 
 /** Lo que cada freno significa, en palabras del mostrador.
@@ -151,33 +145,6 @@ function AvisoDeNombre({ lectura }) {
 
 /** Lo que la insignia significa, en palabras. El color solo no se puede leer —
  *  ni con daltonismo ni con un lector de pantalla. */
-function tituloDeDias(dias, saldo) {
-    const s = severidadDeDias(dias, saldo);
-    if (s.grave) return 'Más de dos meses sin pagar';
-    if (s.variant === 'danger') return 'Pasado del plazo';
-    if (s.porVencer) return 'Vence esta semana';
-    return 'Dentro del plazo';
-}
-
-/** Cuánto del crédito está pagado, en enteros. Acotado a [0,100]: un abono de
- *  más —o un total en cero— no puede pintar una barra que se sale de su caja. */
-function pagadoPct(c) {
-    const total = Number(c?.total) || 0;
-    if (total <= 0) return 0;
-    const pagado = total - (Number(c?.saldo) || 0);
-    return Math.max(0, Math.min(100, Math.round((pagado / total) * 100)));
-}
-
-/** Hace cuánto se leyó la cartera, en palabras. Un reloj exacto obliga a restar
- *  de cabeza; lo que se quiere saber es sólo si está al día. */
-function desdeLaLectura(iso) {
-    const min = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
-    if (min < 2)  return 'Al día';
-    if (min < 60) return `Leído hace ${min} min`;
-    const h = Math.round(min / 60);
-    return `Leído hace ${h} h`;
-}
-
 export default function CuentasPorCobrarView() {
     const { hasPermission, getScope, user } = useAuth();
     const branches = useStaff((s) => s.branches) || VACIO;
@@ -283,13 +250,8 @@ export default function CuentasPorCobrarView() {
         [creditos],
     );
 
-    const filtrados = useMemo(() => conEdad.filter((c) => {
-        if (ver === 'DEBEN' && c.saldo <= 0.004) return false;
-        if (ver === 'VENCIDOS' && (c.saldo <= 0.004 || !c.vencido)) return false;
-        return tokenMatch(busqueda, c.cliente, c.documento, nombreDeSala.get(c.branch_id), String(c.saldo));
-    // Los más viejos arriba: son los que hay que ir a cobrar, y es el orden en
-    // que alguien recorre la lista con el teléfono en la mano.
-    }).sort((a, b) => (b.dias ?? 0) - (a.dias ?? 0)), [conEdad, ver, busqueda, nombreDeSala]);
+    // Los más viejos arriba: son los que hay que ir a cobrar (`carteraFiltrada`).
+    const filtrados = useMemo(() => carteraFiltrada(conEdad, { ver, busqueda, nombreDeSala }), [conEdad, ver, busqueda, nombreDeSala]);
 
     /* 50 y no 25: con 25 la sala más cargada (47 con saldo) quedaba partida en
      * dos páginas y la última fila de la primera mostraba UNA tarjeta con dos
@@ -691,28 +653,9 @@ function FichaDelCredito({ credito, vendedor, puedeAbonar, enAprobacion, onClose
      * se toma quién cobró. Se emparejan por monto y fecha, que es lo único que
      * los dos lados comparten: el id del abono de allá no se guardaba acá.
      * Un abono sin pareja simplemente sale sin cara, que es la verdad. */
-    const abonos = useMemo(() => {
-        // Sin el historial del origen no hay id que borrar, así que tampoco se
-        // ofrece corregir: un botón que no puede terminar su trabajo es peor
-        // que no tenerlo.
-        if (!delOrigen) return delPortal.map((a) => ({ ...a, origen: 'portal' }));
-        const libres = [...delPortal];
-        return delOrigen.map((o) => {
-            const i = libres.findIndex((p) => Math.abs(Number(p.monto) - Number(o.monto)) < 0.005
-                && String(p.created_at).slice(0, 10) === o.fecha);
-            const par = i >= 0 ? libres.splice(i, 1)[0] : null;
-            return {
-                id: o.erp_id || `${o.fecha}-${o.monto}`,
-                erp_id_borrable: o.erp_id,
-                monto: o.monto, forma: o.forma, documento: o.documento,
-                fecha: o.fecha, hora: o.hora,
-                abonado_por: par?.abonado_por ?? null,
-                cobrado_por: par?.cobrado_por ?? null,
-                saldo_despues: par?.saldo_despues ?? null,
-                origen: par ? 'portal' : 'caja',
-            };
-        });
-    }, [delOrigen, delPortal]);
+    // Sin el historial del origen no hay id que borrar, así que tampoco se
+    // ofrece corregir. La unión de las dos fuentes: `abonosDelCredito`.
+    const abonos = useMemo(() => abonosDelCredito(delOrigen, delPortal), [delOrigen, delPortal]);
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" ariaLabel="Ficha del crédito">

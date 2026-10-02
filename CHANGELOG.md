@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1155.0 — App: Cuentas por cobrar nativa
+
+- **App: Cuentas por cobrar nativa.** La cartera: quién debe, cuánto de cuánto (con la barra de lo pagado), desde cuándo (los días en color: dentro del plazo, la última semana, pasado), quién vendió y cuándo abonó, el más viejo primero. Arriba cuánto suma lo que se ve, cuántos se pasaron del plazo y si la lista está al día. «Con saldo / Pasados / Todos», la sala en el menú y la búsqueda por cliente, documento o monto. Un crédito con un cobro esperando aprobación lo dice. Tocar uno abre su ficha: lo que debe y lleva pagado, cuándo compró, quién vendió, lo que se llevó y sus abonos —leídos de la caja y casados con quién cobró desde el portal—. Cobrar sigue en el portal, dentro de la app.
+- **Núcleo:** el filtro de la cartera, el % pagado, el nombre de la edad, «leído hace…» y la unión de abonos de la caja con los del portal pasan de `CuentasPorCobrarView` a `src/utils/cartera.js`, con su prueba.
 ## v2.1154.1 — Encuestas a clientes: pruebas, bitácora y auditoría del área
 
 - **29 pruebas nuevas** de encuestas:

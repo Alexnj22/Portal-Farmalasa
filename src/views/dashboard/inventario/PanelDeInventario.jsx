@@ -33,6 +33,9 @@ import {
   fetchFaltantesConStockEnOtraSala,
 } from '@nucleo/data/inventory';
 import { insertVentaPerdida } from '@nucleo/data/ventasPerdidas';
+import { reporteDeVentaPerdida } from '@nucleo/utils/ventasPerdidas';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import PortalInput from '../../../components/common/PortalInput';
 import { clickable } from '@nucleo/utils/clickable';
 import PhotoLightbox from '../../../components/common/PhotoLightbox';
@@ -281,19 +284,22 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
   const activo    = estatus === 'A';
 
   const submit = async () => {
-    const cantidad = parseInt(qty, 10);
-    if (!cantidad || cantidad < 1) return;
+    // La forma del reporte (y que la cantidad sea de 1 o más): `reporteDeVentaPerdida` (núcleo).
+    const fila = reporteDeVentaPerdida({
+      buscado: searchQuery, descripcion: nombre || null,
+      principioActivo: principio ? `${principio}${conc ? ` ${conc}` : ''}` : null, laboratorio: lab || null,
+      cantidad: qty, salaId: user?.branchId ?? null, empleadoId: user?.id ?? null,
+    });
+    if (!fila) return;
     setRState('saving');
-    await insertVentaPerdida({
-      producto_buscado: searchQuery,
-      descripcion:      nombre   || null,
-      principio_activo: principio ? `${principio}${conc ? ` ${conc}` : ''}` : null,
-      laboratorio:      lab      || null,
-      cantidad,
-      branch_id:     user?.branchId ?? null,
-      reportado_por: user?.id       ?? null,
-      status:        'pendiente',
-    });  // la entrada de la bitácora la anota `insertVentaPerdida`
+    // Antes no se miraba el `error`: un insert rechazado por el RLS (la sala no
+    // tenía permiso de escritura) pintaba «OK» igual, y el reporte no existía.
+    const { error } = await insertVentaPerdida(fila);  // la bitácora la anota `insertVentaPerdida`
+    if (error) {
+      setRState('idle');
+      useToastStore.getState().showToast('No se pudo reportar', mensajeAmigable(error, 'Vuelve a intentar en un momento.'), 'error');
+      return;
+    }
     setRState('done');
     setTimeout(() => { setFormOpen(false); setRState('idle'); setQty('1'); }, 2500);
   };

@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1171.1 — Tipos de la base con la búsqueda por comprobante
+
+`src/types/database.ts` regenerado tras `inyecciones_otra_sucursal` (`inyeccion_venta_por_comprobante`).
+
+---
+
 ## v2.1171.0 — Inyecciones: comprada en otra sucursal, historial de lo aplicado y bitácora con fotos
 
 Pedidos del usuario del 2026-10-03:

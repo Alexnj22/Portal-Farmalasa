@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Minus, Plus, RefreshCw, Syringe } from 'lucide-react';
+import { RefreshCw, Syringe } from 'lucide-react';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
+import Contador from './Contador';
+import PersonaConFoto from './PersonaConFoto';
 import AvatarConEstado from '../common/AvatarConEstado';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
@@ -11,13 +13,13 @@ import SegmentedControl from '../common/SegmentedControl';
 import { LoadingState } from '../common/StateViews';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import {
-    aplicarPendientes, fetchAplicacionesPendientes, fetchInyeccionesParaCobrar, fetchPreciosDeAplicacion,
+    aplicarPendientes, buscarVentaPorComprobante, fetchAplicacionesPendientes, fetchInyeccionesParaCobrar, fetchPreciosDeAplicacion,
 } from '@nucleo/data/inyecciones';
 import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { hora12 } from '@nucleo/utils/hora';
+import { fechaHora12, hora12 } from '@nucleo/utils/hora';
 import { aplicacionesPorDosis, esPorMl, fmtMl, saldoDelRenglon } from '@nucleo/utils/inyeccionDosis';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -53,6 +55,12 @@ import { useStaffStore } from '@nucleo/store/staffStore';
  * cada producto descuenta lo suyo. Decisiones del usuario: se cobra como una
  * sola y se marca al cobrar. Lo valida `inyeccion_cotizar`.
  *
+ * ── Comprada en otra sucursal (2026-10-03) ─────────────────────────────────
+ * La lista es sólo de la sala de la caja. Si el cliente compró en otra y trae
+ * el ticket, «Buscar por comprobante» encuentra esa venta por su número —es la
+ * ÚNICA forma de llegar a una venta de otra sala—. Si no trae inyección, está
+ * pagada o anulada, se dice por qué en vez de no mostrar nada.
+ *
  * ── El monto no se escribe ─────────────────────────────────────────────────
  * Sale de cuántas aplicaciones se pagan por el precio vigente, y el servidor lo
  * vuelve a calcular: si el precio cambió entre que se abrió esto y se apretó
@@ -71,19 +79,6 @@ const fechaCorta = (f) => fechaNumerica(f, { anio: false });
  * salen a nombre de «CLIENTES VARIOS». */
 const esGenerico = (n) => !n || /^(CLIENTES? VARIOS|CLIENTE FRECUENTE|CONSUMIDOR FINAL)/i.test(String(n).trim());
 const factura = (c) => String(c || '').replace(/^0+/, '');
-
-/** − n + con blanco de dedo; `max` 0 lo apaga entero. */
-function Contador({ valor, min = 0, max, onChange, etiqueta }) {
-    return (
-        <div className="flex items-center gap-1.5" role="group" aria-label={etiqueta}>
-            <Button variant="secondary" size="sm" iconOnly icon={Minus} title={`Una menos · ${etiqueta}`}
-                disabled={valor <= min} onClick={() => onChange(Math.max(min, valor - 1))} />
-            <span className="w-7 text-center text-body font-black tabular-nums text-content">{valor}</span>
-            <Button variant="secondary" size="sm" iconOnly icon={Plus} title={`Una más · ${etiqueta}`}
-                disabled={valor >= max} onClick={() => onChange(Math.min(max, valor + 1))} />
-        </div>
-    );
-}
 
 export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onCobrar }) {
     const showToast = useToastStore((s) => s.showToast);
@@ -104,6 +99,12 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
     const [vecesMezcla, setVecesMezcla] = useState(1);    // cuántas aplicaciones mezcladas
     // Sube para volver a pedir la lista: las ventas tardan hasta un minuto en llegar.
     const [vuelta, setVuelta] = useState(0);
+    // ── Comprada en otra sucursal ──
+    const [porComprobante, setPorComprobante] = useState(false);
+    const [comprobante, setComprobante] = useState('');
+    const [encontradas, setEncontradas] = useState(null);
+    const [buscandoComp, setBuscandoComp] = useState(false);
+    const [ventaExterna, setVentaExterna] = useState(null);
 
     // ── La trajo / sin venta ──
     const [producto, setProducto] = useState('');
@@ -117,7 +118,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
     const [textoPend, setTextoPend] = useState('');
     const buscarPend = useTextoRebotado(textoPend, 350);
     const [pendientes, setPendientes] = useState(null);
-    const [elegidas, setElegidas] = useState(() => new Set());
+    const [cuantasCanje, setCuantasCanje] = useState({});   // grupo → cuántas se aplican ahora
 
     /* La clave de ESTE cobro, una sola para todos sus reintentos: el servidor
      * contesta con el movimiento que ya escribió en vez de escribir otro (ver
@@ -143,7 +144,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
     }, [abierto, modo, sala, buscar, vuelta]);
 
     const cargarPendientes = useCallback(() => {
-        setElegidas(new Set());
+        setCuantasCanje({});
         return fetchAplicacionesPendientes({ buscar: buscarPend })
             .then(setPendientes)
             .catch((e) => { setPendientes([]); showToast('No se pudieron cargar las pendientes', mensajeAmigable(e), 'error'); });
@@ -153,9 +154,39 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
         if (abierto && modo === 'CANJEAR') cargarPendientes();
     }, [abierto, modo, cargarPendientes]);
 
-    const venta = useMemo(() => (ventas || []).find((v) => v.id === ventaId) || null, [ventas, ventaId]);
+    const venta = useMemo(() => (ventaExterna?.id === ventaId ? ventaExterna : null)
+        || (ventas || []).find((v) => v.id === ventaId) || null, [ventas, ventaId, ventaExterna]);
 
-    const elegirVenta = (v) => {
+    /* Las pendientes de un mismo cobro y producto son UNA fila con contador:
+     * pagó 5 y hoy se aplica 2 (en esta u otra sala) → «2 de 5». Antes eran 5
+     * filas idénticas que había que tocar una por una. */
+    const gruposPend = useMemo(() => {
+        const m = new Map();
+        for (const p of pendientes || []) {
+            const k = `${p.cobro_id}|${p.producto}|${p.dosis_ml ?? ''}`;
+            if (!m.has(k)) m.set(k, { clave: k, muestra: p, ids: [] });
+            m.get(k).ids.push(p.id);
+        }
+        return [...m.values()];
+    }, [pendientes]);
+    const idsACanjear = useMemo(() => gruposPend.flatMap((g) => g.ids.slice(0, cuantasCanje[g.clave] || 0)),
+        [gruposPend, cuantasCanje]);
+
+    const buscarComprobante = async () => {
+        if (!comprobante.trim() || !sala) return;
+        setBuscandoComp(true);
+        try {
+            setEncontradas(await buscarVentaPorComprobante({ sala, comprobante }));
+        } catch (e) {
+            setEncontradas(null);
+            showToast('No se pudo buscar el comprobante', mensajeAmigable(e), 'error');
+        } finally {
+            setBuscandoComp(false);
+        }
+    };
+
+    const elegirVenta = (v, externa = false) => {
+        setVentaExterna(externa ? v : null);
         setVentaId(v.id);
         // Con un solo renglón con saldo, una aplicación ya marcada: es el caso
         // de casi todas las ventas, y obligar a tocar el «+» es un paso de más.
@@ -244,7 +275,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
     cuerpoDeCanjear.current = async () => {
         setEnviando(true);
         try {
-            const ids = [...elegidas];
+            const ids = idsACanjear;
             const n = await aplicarPendientes(ids, sala);
             useStaffStore.getState().appendAuditLog('INYECCION_APLICADA', ids.join(','), { aplicaciones: n, sala });
             showToast(n === 1 ? 'Aplicación marcada' : `${n} aplicaciones marcadas`, 'Quedan como aplicadas por ti.', 'success');
@@ -258,11 +289,56 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
     };
     const canjear = useMemo(() => unaSolaVez(() => cuerpoDeCanjear.current()), []);
 
+    // Una tarjeta de venta: la usan la lista de la sala y la búsqueda por
+    // comprobante (`externa`: puede ser de otra sala, y lo dice).
+    const pintarVenta = (v, { externa = false } = {}) => {
+        const activa = v.id === ventaId;
+        const agotada = Number(v.disponibles) <= 0;
+        return (
+            <li key={v.id}>
+                                            <button type="button" disabled={agotada} aria-pressed={activa}
+                                                onClick={() => { if (!activa) elegirVenta(v, externa); }}
+                                                data-surface="card"
+                                                className={`w-full text-left rounded-xl p-3 min-h-[var(--tap-min)] active:scale-[0.97]
+                                                    ${activa ? 'ring-2 ring-accent' : 'ring-1 ring-border-card'}
+                                                    ${agotada ? 'opacity-50' : ''}`}>
+                                                <div className="flex items-baseline justify-between gap-2">
+                                                    <span className="text-body-sm font-bold text-content truncate">{v.cliente || 'Sin nombre'}</span>
+                                                    <span className="text-caption text-content-3 whitespace-nowrap">
+                                                        {fechaCorta(v.fecha)} · {hora12(v.hora)}
+                                                    </span>
+                                                </div>
+                                                {externa && v.sala && !v.propia && (
+                                                    <p className="text-caption font-bold text-content-2">Comprada en {v.sala}</p>
+                                                )}
+                                                <p className="text-caption text-content-3 flex items-center gap-1.5 flex-wrap">
+                                                    <span>Factura {factura(v.correlativo)} ·</span>
+                                                    {v.vendedor_nombre ? (
+                                                        <span className="inline-flex items-center gap-1.5">
+                                                            <AvatarConEstado emp={{ id: v.vendedor_id, name: v.vendedor_nombre }} px={18} radio="rounded-full" marco="" />
+                                                            {shortEmployeeName(v.vendedor_nombre)}
+                                                        </span>
+                                                    ) : '—'}
+                                                </p>
+                                                {(v.renglones || []).map((r) => (
+                                                    <p key={r.linea_num} className="text-caption text-content-2 mt-0.5">
+                                                        <span className="font-semibold">{Number(r.cantidad)}×</span> {r.descripcion}
+                                                        {' · '}
+                                                        {r.disponibles <= 0 ? 'ya pagadas'
+                                                            : esPorMl(r) && r.dosis_ml == null ? `hasta ${r.disponibles} por pagar, según la dosis`
+                                                                : `${r.disponibles} de ${r.total} por pagar${esPorMl(r) ? ` · a ${fmtMl(r.dosis_ml)} ml` : ''}`}
+                                                    </p>
+                                                ))}
+                                            </button>
+                                        </li>
+        );
+    };
+
     if (!abierto) return null;
 
     const pie = modo === 'CANJEAR' ? (
-        <Button variant="primary" loading={enviando} disabled={ocupado || elegidas.size === 0} onClick={canjear}>
-            {elegidas.size > 1 ? `Marcar ${elegidas.size} aplicadas` : 'Marcar aplicada'}
+        <Button variant="primary" loading={enviando} disabled={ocupado || idsACanjear.length === 0} onClick={canjear}>
+            {idsACanjear.length > 1 ? `Marcar ${idsACanjear.length} aplicadas` : 'Marcar aplicada'}
         </Button>
     ) : (
         <Button variant="primary" loading={enviando} disabled={ocupado || !valido} onClick={cobrar}>
@@ -299,7 +375,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                         {venta ? (
                             <div className="flex items-center justify-between gap-2">
                                 <p className="text-caption font-black uppercase tracking-widest text-content-2">Venta elegida</p>
-                                <Button variant="ghost" size="sm" onClick={() => { setVentaId(null); setCuantas({}); setMezcla(false); }}>
+                                <Button variant="ghost" size="sm" onClick={() => { setVentaId(null); setVentaExterna(null); setCuantas({}); setMezcla(false); }}>
                                     Cambiar venta
                                 </Button>
                             </div>
@@ -317,9 +393,60 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                 Actualizar
                             </Button>
                         </div>
+                        <div data-surface="card" className="rounded-xl p-3 space-y-2">
+                            <button type="button" onClick={() => setPorComprobante((x) => !x)} aria-expanded={porComprobante}
+                                className="text-body-sm font-bold text-content underline min-h-[var(--tap-min)] text-left">
+                                ¿La compró en otra sucursal? Buscar por comprobante
+                            </button>
+                            {porComprobante && (
+                                <>
+                                    <div className="flex items-end gap-2">
+                                        <div className="flex-1">
+                                            <PortalInput label="Número de comprobante del ticket" name="comprobante_inyeccion"
+                                                inputMode="numeric" value={comprobante} maxLength={40}
+                                                onChange={(e) => { setComprobante(e.target.value); setEncontradas(null); }}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') buscarComprobante(); }}
+                                                placeholder="88134" />
+                                        </div>
+                                        <Button variant="secondary" loading={buscandoComp} disabled={!comprobante.trim()}
+                                            onClick={buscarComprobante}>
+                                            Buscar
+                                        </Button>
+                                    </div>
+                                    {encontradas && encontradas.length === 0 && (
+                                        <p className="text-body-sm text-content-3">
+                                            No hay una venta con ese comprobante en los últimos 90 días. Revisa el número del ticket.
+                                        </p>
+                                    )}
+                                    {encontradas && encontradas.length > 0 && (
+                                        <ul className="space-y-2">
+                                            {/* El número se repite entre salas: si alguna sirve, sólo
+                                                ésa; las demás coincidencias sin inyección son ruido. Si
+                                                ninguna sirve, se dice por qué en cada una. */}
+                                            {(encontradas.some((v) => v.estado === 'ok') ? encontradas.filter((v) => v.estado === 'ok') : encontradas).map((v) => (v.estado === 'ok'
+                                                ? pintarVenta(v, { externa: true })
+                                                : (
+                                                    <li key={v.id} data-surface="card" className="rounded-xl p-3 ring-1 ring-border-card opacity-70">
+                                                        <p className="text-body-sm font-bold text-content">
+                                                            Factura {factura(v.correlativo)} · {v.sala}
+                                                        </p>
+                                                        <p className="text-caption text-content-2">
+                                                            {v.estado === 'sin_inyeccion' ? 'Esa venta no tiene inyecciones: no corresponde a una aplicación.'
+                                                                : v.estado === 'pagada' ? 'Esa venta ya tiene todas sus aplicaciones pagadas.'
+                                                                    : 'Esa venta está anulada.'}
+                                                        </p>
+                                                    </li>
+                                                )))}
+                                        </ul>
+                                    )}
+                                </>
+                            )}
+                        </div>
                         </>)}
                         {errorVentas && <Notice variant="danger">{errorVentas}</Notice>}
-                        {ventas == null ? <LoadingState /> : ventas.length === 0 ? (
+                        {venta ? (
+                            <ul className="space-y-2">{pintarVenta(venta, { externa: venta === ventaExterna })}</ul>
+                        ) : ventas == null ? <LoadingState /> : ventas.length === 0 ? (
                             <p className="text-body-sm text-content-3">
                                 {buscar
                                     ? 'Ninguna venta con aplicaciones por pagar coincide.'
@@ -327,47 +454,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                 {' '}Si la venta se acaba de hacer, espera un minuto y toca «Actualizar».
                             </p>
                         ) : (
-                            <ul className="space-y-2">
-                                {(venta ? [venta] : ventas).map((v) => {
-                                    const activa = v.id === ventaId;
-                                    const agotada = Number(v.disponibles) <= 0;
-                                    return (
-                                        <li key={v.id}>
-                                            <button type="button" disabled={agotada} aria-pressed={activa}
-                                                onClick={() => { if (!activa) elegirVenta(v); }}
-                                                data-surface="card"
-                                                className={`w-full text-left rounded-xl p-3 min-h-[var(--tap-min)] active:scale-[0.97]
-                                                    ${activa ? 'ring-2 ring-accent' : 'ring-1 ring-border-card'}
-                                                    ${agotada ? 'opacity-50' : ''}`}>
-                                                <div className="flex items-baseline justify-between gap-2">
-                                                    <span className="text-body-sm font-bold text-content truncate">{v.cliente || 'Sin nombre'}</span>
-                                                    <span className="text-caption text-content-3 whitespace-nowrap">
-                                                        {fechaCorta(v.fecha)} · {hora12(v.hora)}
-                                                    </span>
-                                                </div>
-                                                <p className="text-caption text-content-3 flex items-center gap-1.5 flex-wrap">
-                                                    <span>Factura {factura(v.correlativo)} ·</span>
-                                                    {v.vendedor_nombre ? (
-                                                        <span className="inline-flex items-center gap-1.5">
-                                                            <AvatarConEstado emp={{ id: v.vendedor_id, name: v.vendedor_nombre }} px={18} radio="rounded-full" marco="" />
-                                                            {shortEmployeeName(v.vendedor_nombre)}
-                                                        </span>
-                                                    ) : '—'}
-                                                </p>
-                                                {(v.renglones || []).map((r) => (
-                                                    <p key={r.linea_num} className="text-caption text-content-2 mt-0.5">
-                                                        <span className="font-semibold">{Number(r.cantidad)}×</span> {r.descripcion}
-                                                        {' · '}
-                                                        {r.disponibles <= 0 ? 'ya pagadas'
-                                                            : esPorMl(r) && r.dosis_ml == null ? `hasta ${r.disponibles} por pagar, según la dosis`
-                                                                : `${r.disponibles} de ${r.total} por pagar${esPorMl(r) ? ` · a ${fmtMl(r.dosis_ml)} ml` : ''}`}
-                                                    </p>
-                                                ))}
-                                            </button>
-                                        </li>
-                                    );
-                                })}
-                            </ul>
+                            <ul className="space-y-2">{ventas.map((v) => pintarVenta(v))}</ul>
                         )}
 
                         {venta && (
@@ -509,34 +596,43 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                             </p>
                         ) : (
                             <ul className="space-y-2 max-h-[45vh] overflow-y-auto">
-                                {pendientes.map((p) => {
-                                    const marcada = elegidas.has(p.id);
+                                {gruposPend.map(({ clave, muestra: p, ids }) => {
+                                    const n = cuantasCanje[clave] || 0;
                                     return (
-                                        <li key={p.id}>
-                                            <button type="button" aria-pressed={marcada}
-                                                onClick={() => setElegidas((s) => {
-                                                    const n = new Set(s);
-                                                    if (n.has(p.id)) n.delete(p.id); else n.add(p.id);
-                                                    return n;
-                                                })}
-                                                data-surface="card"
-                                                className={`w-full text-left rounded-xl p-3 min-h-[var(--tap-min)] active:scale-[0.97]
-                                                    ${marcada ? 'ring-2 ring-accent' : 'ring-1 ring-border-card'}`}>
-                                                <div className="flex items-baseline justify-between gap-2">
-                                                    <span className="text-body-sm font-bold text-content truncate">{p.cliente || 'Sin nombre'}</span>
-                                                    <span className="text-caption text-content-3 whitespace-nowrap">{p.sala}</span>
+                                        <li key={clave} data-surface="card"
+                                            className={`rounded-xl p-3 space-y-1 ${n > 0 ? 'ring-2 ring-accent' : 'ring-1 ring-border-card'}`}>
+                                            <div className="flex items-baseline justify-between gap-2">
+                                                <span className="text-body-sm font-bold text-content truncate">{p.cliente || 'Sin nombre'}</span>
+                                                <span className="text-caption text-content-3 whitespace-nowrap">pagada en {p.sala}</span>
+                                            </div>
+                                            <p className="text-caption text-content-2">
+                                                {p.producto}
+                                                {p.dosis_ml != null && <b className="text-content"> · {fmtMl(p.dosis_ml)} ml por aplicación</b>}
+                                                {p.mezclada && <b className="text-content"> · mezcladas en una jeringa</b>}
+                                            </p>
+                                            <p className="text-caption text-content-3">
+                                                {p.correlativo ? `Factura ${factura(p.correlativo)}${p.venta_sala ? ` (venta de ${p.venta_sala})` : ''} · ` : 'Traída · '}
+                                                pagada el {fechaCorta(String(p.pagada_at).slice(0, 10))}
+                                                {p.cobrada_por ? ` · ${shortEmployeeName(p.cobrada_por)}` : ''}
+                                            </p>
+                                            {(p.historial || []).length > 0 && (
+                                                <div className="pt-1 space-y-1">
+                                                    <p className="text-caption font-black uppercase tracking-widest text-content-3">
+                                                        Ya aplicadas de este pago · {p.historial.length}
+                                                    </p>
+                                                    {p.historial.map((h, i) => (
+                                                        <PersonaConFoto key={i} id={h.aplicada_por_id} nombre={h.aplicada_por} px={20}
+                                                            detalle={`${h.aplicada_en ? `${h.aplicada_en} · ` : ''}${fechaHora12(h.aplicada_at)}`} />
+                                                    ))}
                                                 </div>
-                                                <p className="text-caption text-content-2">
-                                                    {p.producto}
-                                                    {p.dosis_ml != null && <b className="text-content"> · {fmtMl(p.dosis_ml)} ml por aplicación</b>}
-                                                    {p.mezclada && <b className="text-content"> · mezcladas en una jeringa</b>}
-                                                </p>
-                                                <p className="text-caption text-content-3">
-                                                    {p.correlativo ? `Factura ${factura(p.correlativo)} · ` : 'Traída · '}
-                                                    pagada el {fechaCorta(String(p.pagada_at).slice(0, 10))}
-                                                    {p.cobrada_por ? ` · ${shortEmployeeName(p.cobrada_por)}` : ''}
-                                                </p>
-                                            </button>
+                                            )}
+                                            <div className="flex items-center justify-between gap-3 pt-1">
+                                                <span className="text-body-sm text-content-2">
+                                                    {ids.length === 1 ? '1 pendiente' : `${ids.length} pendientes`} · se aplican ahora
+                                                </span>
+                                                <Contador etiqueta={`aplicar ahora · ${p.producto}`} valor={n} max={ids.length}
+                                                    onChange={(v) => setCuantasCanje((c) => ({ ...c, [clave]: v }))} />
+                                            </div>
                                         </li>
                                     );
                                 })}

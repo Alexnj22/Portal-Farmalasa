@@ -46,17 +46,33 @@ export function desglosePorVale(salidasDeBolsa = []) {
 }
 
 /**
+ * Lo que el portal anotó en la caja (`caja_movimientos_portal`), por
+ * `sala:número de la caja`. Es lo que la captura no sabe de un renglón: el
+ * concepto entero, la boleta, quién y a qué hora exacta.
+ */
+export function anotadosPorMovimiento(anotados = []) {
+    const m = new Map();
+    for (const a of anotados) {
+        if (a.erp_movimiento_id == null) continue;
+        m.set(`${a.branch_id}:${a.erp_movimiento_id}`, a);
+    }
+    return m;
+}
+
+/**
  * La lista unida, la más reciente primero. Cada renglón es `{ kind: 'mov'|'cobro'|'bolsa', clave, … }`.
  * Un cobro en efectivo que casó con su movimiento va DENTRO de ese renglón
  * (`cobro`); sólo los que no casaron salen sueltos.
  */
-export function renglonesDeMovimientos({ movimientos = [], cobros = [], salidasDeBolsa = [] }) {
+export function renglonesDeMovimientos({ movimientos = [], cobros = [], salidasDeBolsa = [], anotados = [] }) {
     const { porMovimiento, sueltos } = emparejarCobrosConMovimientos(movimientos, cobros, cobroEnEfectivo);
     const porVale = desglosePorVale(salidasDeBolsa);
+    const delPortal = anotadosPorMovimiento(anotados);
     return [
         ...movimientos.map((mv) => ({
             kind: 'mov', clave: `m${mv.id}`, mv, cobro: porMovimiento.get(mv.id) || null,
             desglose: porVale.get(`${mv.branch_id}:${mv.erp_movimiento_id}`) || null,
+            anotado: delPortal.get(`${mv.branch_id}:${mv.erp_movimiento_id}`) || null,
             fecha: mv.fecha, branchId: mv.branch_id, orden: mv.created_at, desempate: mv.erp_movimiento_id,
         })),
         ...sueltos.map((cb) => ({
@@ -78,7 +94,7 @@ export function renglonesDeMovimientos({ movimientos = [], cobros = [], salidasD
  * desaparecen en la caja, así que esos dos estados los dejan fuera.
  */
 export function filtrarMovimientos(renglones, {
-    tipo = 'TODOS', estado = 'TODOS', busqueda = '', salas, cobraron, sacaron,
+    tipo = 'TODOS', estado = 'TODOS', busqueda = '', salas, cobraron, sacaron, anotaron,
     etiquetaDeSalida = (c) => c, porMov = new Map(),
 } = {}) {
     return renglones.filter((it) => {
@@ -106,6 +122,8 @@ export function filtrarMovimientos(renglones, {
         if (estado === 'DESAPARECIDOS' && !m.desaparecido_at) return false;
         if (estado === 'EDITADOS' && !fueEditado(porMov, m)) return false;
         return tokenMatch(busqueda, m.concepto, salas?.get(m.branch_id), String(m.monto), m.tipo,
+            it.anotado?.detalle, it.anotado?.numero_boleta,
+            it.anotado && anotaron?.get(it.anotado.registrado_por)?.name,
             it.cobro?.cliente, it.cobro && `crédito ${it.cobro.credito_erp}`,
             it.cobro && cobraron?.get(it.cobro.abonado_por)?.name,
             ...(it.desglose || []).flatMap((d) => [d.op.folio, d.op.entidad, etiquetaDeSalida(d.op.tipo)]));

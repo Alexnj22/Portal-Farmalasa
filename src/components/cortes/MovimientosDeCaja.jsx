@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { ArrowDownLeft, ArrowUpRight, HandCoins, History, Pencil, Scale, Search, ShoppingBag, Trash2, Wallet } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ArrowDownLeft, ArrowUpRight, ChevronRight, HandCoins, History, Paperclip, Pencil, Scale, Search, ShoppingBag, Trash2, Wallet } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
@@ -7,6 +7,8 @@ import Notice from '../common/Notice';
 import TablePagination from '../common/TablePagination';
 import { EmptyState } from '../common/StateViews';
 import AvatarConEstado from '../common/AvatarConEstado';
+import PhotoLightbox from '../common/PhotoLightbox';
+import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { filtrarMovimientos, fueEditado as fueEditadoMov, historiaDe as historiaDeMov, historiaPorMovimiento, renglonesDeMovimientos } from '@nucleo/utils/movimientosDeCaja';
@@ -137,6 +139,8 @@ export default function MovimientosDeCaja({
     salidasDeBolsa = [],
     tiposDeSalida = [],
     sacaron,
+    anotados = [],
+    anotaron,
     puedeVerBolsas = true,
     salas,
     cargando = false,
@@ -179,12 +183,12 @@ export default function MovimientosDeCaja({
      * paginar —y no al pintar cada día— porque de otro modo una fila podría
      * caer fuera de la página y desaparecer sin que nada lo diga. */
     // La lista unida y ordenada: `renglonesDeMovimientos` (núcleo).
-    const items = useMemo(() => renglonesDeMovimientos({ movimientos, cobros, salidasDeBolsa }), [movimientos, cobros, salidasDeBolsa]);
+    const items = useMemo(() => renglonesDeMovimientos({ movimientos, cobros, salidasDeBolsa, anotados }), [movimientos, cobros, salidasDeBolsa, anotados]);
 
     // El filtro (tipo, estado, búsqueda): `filtrarMovimientos` (núcleo).
     const filtrados = useMemo(() => filtrarMovimientos(items, {
-        tipo, estado, busqueda, salas, cobraron, sacaron, etiquetaDeSalida, porMov: historiaPorMov,
-    }), [items, tipo, estado, busqueda, salas, cobraron, sacaron, etiquetaDeSalida, historiaPorMov]);
+        tipo, estado, busqueda, salas, cobraron, sacaron, anotaron, etiquetaDeSalida, porMov: historiaPorMov,
+    }), [items, tipo, estado, busqueda, salas, cobraron, sacaron, anotaron, etiquetaDeSalida, historiaPorMov]);
 
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filtrados.length });
     const pagina = useMemo(
@@ -244,6 +248,13 @@ export default function MovimientosDeCaja({
                             }
                             if (it.kind === 'bolsa') {
                                 return { tipoFila: 'bolsa', it, minuto: minutosDeIso(it.op.registrado_at) };
+                            }
+                            /* Si lo anotó o lo cobró el portal, su hora es la REAL y no la
+                             * de la captura: se compara ésa contra el corte, y
+                             * «cayó después» pasa de estimación a hecho. */
+                            const real = it.anotado?.registrado_at || it.cobro?.created_at;
+                            if (real && diaDe(real) === it.mv.fecha) {
+                                return { tipoFila: 'mov', it, minuto: minutosDeIso(real) };
                             }
                             return {
                                 tipoFila: 'mov', it,
@@ -376,62 +387,47 @@ export default function MovimientosDeCaja({
             )}
 
             {dias.map((d) => (
-                <section key={d.fecha} className="space-y-3">
+                <section key={d.fecha} className="space-y-4">
                     <h3 className="text-label font-bold text-content capitalize px-1">{fechaLarga(d.fecha)}</h3>
 
                     {d.grupos.map((g) => (
-                        <div key={g.branchId} className="space-y-1.5">
-                            <div className="flex items-baseline justify-between gap-3 px-1">
+                        <div key={g.branchId} className="space-y-2">
+                            <div className="flex items-center justify-between gap-3 px-1">
                                 <h4 className="text-caption font-black uppercase tracking-widest text-content-2">
                                     {g.nombre}
                                 </h4>
-                                <span className="text-micro text-content-3">
-                                    {g.cuantos} {g.cuantos === 1 ? 'movimiento' : 'movimientos'} · neto{' '}
-                                    <span className={`tabular-nums font-bold ${
-                                        g.neto > 0 ? 'text-success-text' : g.neto < 0 ? 'text-warning-text' : 'text-content-2'
+                                <span className="flex items-center gap-2 text-caption text-content-3">
+                                    <span className="tabular-nums">
+                                        {g.cuantos} {g.cuantos === 1 ? 'movimiento' : 'movimientos'}
+                                    </span>
+                                    <span className={`tabular-nums font-bold rounded-full px-2 py-0.5 ${
+                                        g.neto > 0 ? 'bg-success/10 text-success-text'
+                                            : g.neto < 0 ? 'bg-warning/10 text-warning-text' : 'bg-content-3/10 text-content-2'
                                     }`}>
-                                        {g.neto > 0 ? '+' : g.neto < 0 ? '−' : ''}{formatMoney(Math.abs(g.neto))}
+                                        neto {g.neto > 0 ? '+' : g.neto < 0 ? '−' : ''}{formatMoney(Math.abs(g.neto))}
                                     </span>
                                 </span>
                             </div>
 
-                            <div className="space-y-1.5">
+                            {/* UNA tarjeta por sala con los renglones adentro,
+                                separados por una raya — y no una tarjeta por
+                                renglón. Cinco cajas apiladas con su borde y su
+                                sombra cada una se leían como cinco cosas
+                                sueltas; acá se leen como lo que son, la serie de
+                                un día de una caja. */}
+                            <div data-surface="card" className="rounded-2xl overflow-hidden divide-y divide-border-card">
                                 {g.filas.map((f) => {
                                     if (f.tipoFila === 'corte') {
                                         return <LineaDeCorte key={`x${f.corte.id}`} corte={f.corte} />;
                                     }
-                                    if (f.tipoFila === 'cobro') {
-                                        return (
-                                            <RenglonDeCobro
-                                                key={f.it.clave}
-                                                cobro={f.it.cb}
-                                                quien={cobraron?.get(f.it.cb.abonado_por)}
-                                            />
-                                        );
-                                    }
-                                    if (f.tipoFila === 'bolsa') {
-                                        return (
-                                            <RenglonDeBolsa
-                                                key={f.it.clave}
-                                                op={f.it.op}
-                                                etiqueta={etiquetaDeSalida(f.it.op.tipo)}
-                                                quien={sacaron?.get(f.it.op.registrado_por)}
-                                            />
-                                        );
-                                    }
+                                    const ficha = fichaDe(f.it, {
+                                        personas: anotaron || cobraron, etiquetaDeSalida,
+                                        minuto: f.minuto, editado: f.it.kind === 'mov' && fueEditado(f.it.mv),
+                                        edicion: f.it.kind === 'mov' ? ultimaEdicion(f.it.mv) : null,
+                                    });
                                     return (
-                                        <Renglon
-                                            key={f.it.clave}
-                                            mov={f.it.mv}
-                                            cobro={f.it.cobro}
-                                            quien={f.it.cobro && cobraron?.get(f.it.cobro.abonado_por)}
-                                            desglose={f.it.desglose}
-                                            etiquetaDeSalida={etiquetaDeSalida}
-                                            minuto={f.minuto}
-                                            editado={fueEditado(f.it.mv)}
-                                            edicion={ultimaEdicion(f.it.mv)}
-                                            onAbrir={() => setAbierto(f.it.mv)}
-                                        />
+                                        <FilaDeMovimiento key={f.it.clave} ficha={ficha}
+                                            onAbrir={() => setAbierto(ficha)} />
                                     );
                                 })}
                             </div>
@@ -453,364 +449,429 @@ export default function MovimientosDeCaja({
             )}
 
             <DetalleDelMovimiento
-                movimiento={abierto}
-                historia={abierto ? historiaDe(abierto) : []}
-                sala={abierto ? salas?.get(abierto.branch_id) : ''}
+                ficha={abierto}
+                historia={abierto?.mv ? historiaDe(abierto.mv) : []}
+                sala={abierto ? salas?.get(abierto.branchId) : ''}
                 onClose={() => setAbierto(null)}
             />
         </div>
     );
 }
 
+/* El ícono y el tono de cada clase. Lo que se lee antes de leer: verde entra,
+ * ámbar sale, rojo ya no está, gris no toca el cajón. */
+const TONOS = {
+    entra:  'bg-success/12 text-success-text',
+    sale:   'bg-warning/10 text-warning-text',
+    ido:    'bg-danger/10 text-danger-text',
+    neutro: 'bg-content-3/10 text-content-2',
+    cobro:  'bg-brand/10 text-brand-text',
+};
+const COLOR_MONTO = {
+    entra: 'text-success-text', sale: 'text-warning-text', ido: 'text-danger-text line-through',
+    neutro: 'text-content-3', cobro: 'text-success-text',
+};
+
+/* Cómo se obtuvo el monto de un renglón anotado en el portal. */
+const ORIGEN_DEL_MONTO = {
+    FOTO_CONFIRMADA: 'Leído de la boleta y confirmado',
+    FOTO_SIN_CONFIRMAR: 'Leído de la boleta, sin confirmar',
+    A_MANO: 'Escrito a mano',
+};
+
+/* El concepto que la caja guarda de un renglón anotado en el portal empieza con
+ * el número del portal («P3181 Aplicacion de…»): es la llave que usa la captura
+ * y para quien lee es ruido. Con el registro del portal a mano, se usa su
+ * concepto entero, que además no viene recortado a 50 caracteres. */
+const sinFolioDelPortal = (t) => String(t || '').replace(/^P\d+\s+/, '');
+
+/** «Qué · dato · dato» → el QUÉ en grande y el resto debajo. */
+const partirConcepto = (t) => {
+    const partes = String(t || '').split(' · ').map((x) => x.trim()).filter(Boolean);
+    return { principal: partes[0] || 'Sin concepto', resto: partes.slice(1).join(' · ') };
+};
+
+const montoConSigno = (entra, monto) => `${entra ? '+' : '−'}${formatMoney(Math.abs(Number(monto) || 0))}`;
+
 /**
- * El corte, dibujado como una línea que cruza la lista.
+ * Todo lo que se sabe de un renglón, armado UNA vez para la fila y para el
+ * detalle. Son tres fuentes con forma distinta —el renglón de la caja (con o
+ * sin su registro del portal y su cobro), el cobro suelto y la salida de
+ * bolsa— y escribir la fila y el detalle por fuente eran seis componentes que
+ * decían lo mismo de seis maneras.
+ */
+function fichaDe(it, { personas, etiquetaDeSalida, minuto, editado, edicion }) {
+    if (it.kind === 'cobro') {
+        const cb = it.cb;
+        const anulado = Boolean(cb.anulado_at);
+        const entra = Boolean(cb.entroAlCajon);
+        return {
+            clave: it.clave, branchId: cb.branch_id, fecha: it.fecha,
+            Icono: HandCoins, tono: anulado ? 'ido' : entra ? 'cobro' : 'neutro',
+            tipo: 'Cobro de crédito',
+            principal: 'Cobro de crédito', resto: cb.cliente || 'Sin nombre',
+            concepto: `Cobro de crédito · ${cb.cliente || 'Sin nombre'}`,
+            hora: horaDe(cb.created_at), horaExacta: true,
+            monto: cb.monto, entra: true, montoNota: Number(cb.saldo_despues) > 0.004
+                ? `queda ${formatMoney(cb.saldo_despues)}` : 'saldado',
+            quien: personas?.get(cb.abonado_por), rotuloQuien: 'Lo cobró',
+            foto: cb.comprobante_url || null,
+            marcas: [
+                anulado && ['danger', 'Anulado'],
+                !anulado && (entra ? ['warning', 'Todavía no aparece en la caja'] : ['neutral', 'No entra al cajón']),
+            ].filter(Boolean),
+            datos: datosDelCobro(cb),
+        };
+    }
+    if (it.kind === 'bolsa') {
+        const op = it.op;
+        const anulada = Boolean(op.anulada_at);
+        const parcial = op.cubiertoPorVales > 0.005;
+        return {
+            clave: it.clave, branchId: op.branch_id, fecha: it.fecha,
+            Icono: ShoppingBag, tono: anulada ? 'ido' : 'neutro',
+            tipo: 'Salida de una bolsa',
+            principal: etiquetaDeSalida(op.tipo), resto: op.entidad || '',
+            concepto: `${etiquetaDeSalida(op.tipo)}${op.entidad ? ` · ${op.entidad}` : ''}`,
+            hora: horaDe(op.registrado_at), horaExacta: true,
+            monto: op.montoSinVale, entra: false,
+            montoNota: parcial ? `de ${formatMoney(op.monto)} · el resto, en el vale` : 'de una bolsa ya cerrada',
+            quien: personas?.get(op.registrado_por), rotuloQuien: 'La hizo',
+            foto: op.foto_url || null,
+            marcas: [anulada && ['danger', 'Anulada'], ['neutral', 'Salió de una bolsa']].filter(Boolean),
+            datos: [
+                ['Motivo', etiquetaDeSalida(op.tipo)],
+                ['A nombre de', op.entidad],
+                ['Folio', op.folio],
+                ['Boleta', op.numero_boleta],
+                ['Monto de la operación', formatMoney(op.monto)],
+                ['Fuera de un vale', formatMoney(op.montoSinVale)],
+            ],
+        };
+    }
+
+    const mv = it.mv;
+    const an = it.anotado;
+    const cb = it.cobro;
+    const ido = Boolean(mv.desaparecido_at);
+    const entra = mv.tipo === 'ENTRADA';
+    const texto = cb ? `Cobro de crédito · ${cb.cliente || 'Sin nombre'}`
+        : (an?.detalle || an?.concepto || sinFolioDelPortal(mv.concepto) || 'Sin concepto');
+    const { principal, resto } = partirConcepto(texto);
+    const montoAntes = edicion && Number(edicion.monto_antes) !== Number(edicion.monto_despues)
+        ? edicion.monto_antes : null;
+    /* La hora EXACTA cuando el portal la anotó; si no, la de la captura, que
+     * es «cuándo se vio» y así se rotula (ver el ⚠️ del encabezado). */
+    const real = an?.registrado_at || cb?.created_at || null;
+    const horaExacta = Boolean(real);
+    const hora = horaExacta ? horaDe(real) : (minuto != null ? horaDe(mv.created_at) : null);
+    const quienCobro = cb && personas?.get(cb.abonado_por);
+    const quienAnoto = an && personas?.get(an.registrado_por);
+    const dudoso = an?.monto_origen && an.monto_origen !== 'FOTO_CONFIRMADA';
+
+    return {
+        clave: it.clave, branchId: mv.branch_id, fecha: it.fecha, mv,
+        Icono: ido ? Trash2 : cb ? HandCoins : entra ? ArrowDownLeft : ArrowUpRight,
+        tono: ido ? 'ido' : entra ? 'entra' : 'sale',
+        tipo: cb ? 'Cobro de crédito' : entra ? 'Entrada de efectivo' : 'Salida de efectivo',
+        principal, resto, concepto: texto,
+        hora, horaExacta,
+        monto: mv.monto, entra,
+        montoNota: montoAntes != null ? `antes ${montoConSigno(entra, montoAntes)}` : null,
+        montoNotaTachada: montoAntes != null,
+        quien: quienCobro || quienAnoto, rotuloQuien: quienCobro ? 'Lo cobró' : 'Lo anotó',
+        foto: an?.foto_url || cb?.comprobante_url || null,
+        desglose: it.desglose?.map((d) => ({ ...d, etiqueta: etiquetaDeSalida(d.op.tipo) })) || null,
+        marcas: [
+            ido && ['danger', 'Ya no está'],
+            !ido && editado && ['warning', 'Se modificó'],
+            dudoso && ['warning', ORIGEN_DEL_MONTO[an.monto_origen]],
+            it.desglose?.length > 0 && ['neutral', `${it.desglose.length} ${it.desglose.length === 1 ? 'salida' : 'salidas'} de bolsa`],
+        ].filter(Boolean),
+        datos: [
+            ['Boleta', an?.numero_boleta],
+            ['N.º en la caja', mv.erp_movimiento_id],
+            ['Monto', an?.monto_origen ? ORIGEN_DEL_MONTO[an.monto_origen] : null],
+            ['Se anotó', an ? 'desde el portal' : 'directo en la caja'],
+            ...(cb ? datosDelCobro(cb) : []),
+            ido && ['Dejó de estar', cuando(mv.desaparecido_at), true],
+        ].filter(Boolean),
+    };
+}
+
+function datosDelCobro(cb) {
+    return [
+        ['Cliente', cb.cliente],
+        ['Crédito', cb.credito_erp ? `n.º ${cb.credito_erp}` : null],
+        ['Factura', cb.factura_erp],
+        ['Forma de pago', cb.forma ? String(cb.forma).charAt(0).toUpperCase() + String(cb.forma).slice(1).toLowerCase() : null],
+        ['Documento', cb.documento],
+        ['Debía', cb.saldo_antes != null ? formatMoney(cb.saldo_antes) : null],
+        ['Queda debiendo', Number(cb.saldo_despues) > 0.004 ? formatMoney(cb.saldo_despues) : 'Nada · crédito saldado'],
+    ];
+}
+
+/**
+ * El corte, dibujado como una franja que cruza la serie.
  *
  * No es un separador decorativo: es el instante contra el que se mide todo lo
  * de arriba. Por eso lleva su cifra —el corte que cuadró justo después de un
  * ingreso es exactamente el caso que hay que poder ver— y no es pulsable: el
- * detalle de un corte vive en su pestaña, y llevar de una lista a otra al tocar
- * una línea sería un destino que nadie pidió.
+ * detalle de un corte vive en su pestaña.
  */
 function LineaDeCorte({ corte }) {
     const dif = Number(corte.diferencia_erp);
     const cuadra = !Number.isFinite(dif) || Math.abs(dif) < 0.005;
+    const tono = cuadra ? 'text-brand-text' : dif > 0 ? 'text-warning-text' : 'text-danger-text';
     return (
-        <div className="flex items-center gap-2 py-1" role="separator"
+        <div className="flex items-center gap-3 px-4 py-2 bg-brand/5" role="separator"
             aria-label={`Corte de las ${horaReloj(corte.hora)}`}>
-            <span className="h-px flex-1 bg-brand/25" aria-hidden="true" />
-            <span className="shrink-0">
-                <Badge variant={cuadra ? 'info' : dif > 0 ? 'warning' : 'danger'} size="sm" icon={Scale}>
-                    Corte {horaReloj(corte.hora)} · {formatMoney(corte.total_declarado)}
-                    {!cuadra && ` · ${dif > 0 ? '+' : '−'}${formatMoney(Math.abs(dif))}`}
-                </Badge>
+            <Scale size={14} className={`shrink-0 ${tono}`} aria-hidden="true" />
+            <span className="text-caption font-bold text-content-2">
+                Corte de las {horaReloj(corte.hora)}
             </span>
-            <span className="h-px flex-1 bg-brand/25" aria-hidden="true" />
+            <span className="h-px flex-1 bg-brand/20" aria-hidden="true" />
+            <span className="text-caption tabular-nums text-content-2">{formatMoney(corte.total_declarado)}</span>
+            <span className={`text-caption font-bold tabular-nums ${tono}`}>
+                {cuadra ? 'cuadró' : `${dif > 0 ? '+' : '−'}${formatMoney(Math.abs(dif))}`}
+            </span>
         </div>
     );
 }
 
+/** Una marca con el tono de `Badge`. */
+const marcaDe = ([variant, texto]) => (
+    <Badge key={texto} variant={variant} size="sm">{texto}</Badge>
+);
+
 /**
- * Un movimiento. La forma dice el estado; el badge sólo lo nombra.
+ * Un renglón de la serie. La forma dice el estado; las marcas sólo lo nombran.
  *
- * El carril de color de la izquierda y el glifo son lo que se ve antes de leer:
- * verde entra, ámbar sale, rojo ya no está. Un editado muestra el monto
- * anterior tachado AL LADO del nuevo — que es el dato, y estaba escondido
- * detrás de un clic.
+ * Arriba el QUÉ, debajo el dato que lo distingue (la factura, la cuenta, el
+ * cliente), y en la tercera línea cuándo y quién — con su cara. A la derecha,
+ * el monto con signo y, si cambió, el anterior tachado: es el dato, y no puede
+ * estar detrás de un clic.
  */
-function Renglon({ mov, cobro, quien, desglose, etiquetaDeSalida, minuto, editado, edicion, onAbrir }) {
-    const ido = Boolean(mov.desaparecido_at);
-    const entra = mov.tipo === 'ENTRADA';
-    const Glifo = ido ? Trash2 : entra ? ArrowDownLeft : ArrowUpRight;
-
-    const carril = ido ? 'bg-danger' : entra ? 'bg-success' : 'bg-warning';
-    const cajaGlifo = ido ? 'bg-danger/10 text-danger-text'
-        : entra ? 'bg-success/10 text-success-text' : 'bg-warning/10 text-warning-text';
-    const colorMonto = ido ? 'text-danger-text line-through'
-        : entra ? 'text-success-text' : 'text-warning-text';
-
-    const montoAntes = edicion && Number(edicion.monto_antes) !== Number(edicion.monto_despues)
-        ? edicion.monto_antes : null;
-
-    const hora = minuto != null ? horaDe(mov.created_at) : null;
-
-    const fila = (
+function FilaDeMovimiento({ ficha: f, onAbrir }) {
+    const ido = f.tono === 'ido';
+    return (
         <button type="button" onClick={onAbrir} data-interactive
-            className="w-full text-left rounded-xl overflow-hidden flex items-stretch gap-0
-                       min-h-[var(--tap-min)] active:scale-[0.99] transition-transform"
-            data-surface="card"
-            title="Ver todo lo que se le vio cambiar">
-            <span className={`w-1 shrink-0 ${carril}`} aria-hidden="true" />
-            <span className="flex items-center gap-3 flex-1 min-w-0 p-2.5">
-                <span className={`shrink-0 w-8 h-8 rounded-lg grid place-items-center ${cajaGlifo}`} aria-hidden="true">
-                    <Glifo className="w-4 h-4" />
-                </span>
+            className="w-full text-left flex items-center gap-3 px-4 py-3
+                       min-h-[var(--tap-min)] transition-colors hover:bg-surface-input/40
+                       active:scale-[0.995]"
+            title="Ver el detalle">
+            <span className={`shrink-0 w-10 h-10 rounded-full grid place-items-center ${TONOS[f.tono]}`} aria-hidden="true">
+                <f.Icono size={18} strokeWidth={2} />
+            </span>
 
-                <span className="flex-1 min-w-0">
-                    {/* El nombre de quien pagó GANA al concepto cuando lo hay.
-                        «POR ABONO A CREDITO» es la misma cadena en todos los
-                        renglones de abono: como título no distingue uno de otro,
-                        y el dato con el que alguien vuelve a encontrar un cobro
-                        es el cliente. El concepto no se pierde — baja al
-                        renglón de abajo, donde sigue diciendo de qué es. */}
-                    <span className={`block text-body-sm font-semibold truncate ${
-                        ido ? 'text-content-3 line-through' : 'text-content'}`}>
-                        {cobro ? `Cobro de crédito · ${cobro.cliente || 'Sin nombre'}`
-                            : (mov.concepto || 'Sin concepto')}
+            <span className="flex-1 min-w-0 space-y-0.5">
+                <span className={`block text-body-sm font-semibold truncate ${
+                    ido ? 'text-content-3 line-through' : 'text-content'}`}>
+                    {f.principal}
+                </span>
+                {f.resto && (
+                    <span className="block text-caption text-content-2 truncate">{f.resto}</span>
+                )}
+                <span className="flex items-center gap-x-2 gap-y-1 flex-wrap text-micro text-content-3">
+                    <span className="tabular-nums">
+                        {f.hora ? (f.horaExacta ? f.hora : `se vio ${f.hora}`) : 'sin hora comparable'}
                     </span>
-                    <span className="flex items-center gap-1.5 flex-wrap text-micro text-content-3">
-                        {ido && <Badge variant="danger" size="sm">Ya no está</Badge>}
-                        {!ido && editado && <Badge variant="warning" size="sm">Se modificó</Badge>}
-                        {(cobro || mov.origen === 'PORTAL') && <Badge variant="info" size="sm">Del portal</Badge>}
-                        {cobro && `crédito ${cobro.credito_erp} · `}
-                        {hora ? `se vio ${hora}` : 'sin hora comparable'}
-                        {ido && ` · dejó de estar ${cuando(mov.desaparecido_at)}`}
-                    </span>
-                    {/* Quién cobró. Es lo que el sistema de la caja no guarda de
-                        ningún renglón, y lo primero que se pregunta cuando un
-                        cobro no cuadra. */}
-                    {cobro && quien && (
-                        <span className="flex items-center gap-1.5 mt-1 min-w-0">
-                            <AvatarConEstado emp={quien} px={18} radio="rounded-full" marco="" />
-                            <span className="text-micro text-content-3 truncate">
-                                Lo cobró {shortEmployeeName(quien)}
-                            </span>
+                    {f.quien && (
+                        <span className="flex items-center gap-1 min-w-0">
+                            <AvatarConEstado emp={f.quien} px={16} radio="rounded-full" marco="" />
+                            <span className="truncate">{shortEmployeeName(f.quien)}</span>
                         </span>
                     )}
-                </span>
-
-                <span className="shrink-0 text-right">
-                    <span className={`block text-body font-black tabular-nums ${colorMonto}`}>
-                        {entra ? '+' : '−'}{formatMoney(mov.monto)}
-                    </span>
-                    {montoAntes != null && (
-                        <span className="block text-micro text-content-3 tabular-nums line-through">
-                            antes {entra ? '+' : '−'}{formatMoney(montoAntes)}
+                    {f.foto && (
+                        <span className="flex items-center gap-0.5">
+                            <Paperclip size={12} aria-hidden="true" /> boleta
                         </span>
                     )}
+                    {f.marcas.map(marcaDe)}
                 </span>
             </span>
+
+            <span className="shrink-0 text-right">
+                <span className={`block text-body font-black tabular-nums ${COLOR_MONTO[f.tono]}`}>
+                    {montoConSigno(f.entra, f.monto)}
+                </span>
+                {f.montoNota && (
+                    <span className={`block text-micro text-content-3 tabular-nums ${f.montoNotaTachada ? 'line-through' : ''}`}>
+                        {f.montoNota}
+                    </span>
+                )}
+            </span>
+            <ChevronRight size={16} className="shrink-0 text-content-3" aria-hidden="true" />
         </button>
     );
-
-    if (!desglose?.length) return fila;
-
-    /* ── El vale, abierto ──────────────────────────────────────────────────
-     *
-     * `VALE DE CAJA 8 (3 salidas) · $180.00` es un TOTAL, y las tres salidas
-     * que lo componen no estaban en ninguna pantalla de Efectivo. Van DEBAJO y
-     * fuera del botón: son datos, no un segundo destino — el detalle de cada
-     * salida vive en Bolsas, y llevar de una lista a otra al tocar un renglón
-     * sería un destino que nadie pidió.
-     *
-     * Cada línea lleva lo que aportó a ESTE vale y no el monto de la operación:
-     * una salida grande se reparte entre las bolsas que alcancen, así que su
-     * total puede ser mucho mayor que lo que este vale descontó. */
-    return (
-        <div className="space-y-1">
-            {fila}
-            <div className="ml-4 rounded-lg bg-surface-input/40 px-3 py-2 space-y-1">
-                {desglose.map(({ op, monto }) => (
-                    <div key={op.id} className="flex items-baseline justify-between gap-3 text-caption">
-                        <span className="text-content-2 min-w-0 truncate">
-                            {op.folio}
-                            <span className="text-content-3">
-                                {' · '}{etiquetaDeSalida ? etiquetaDeSalida(op.tipo) : op.tipo}
-                                {op.entidad ? ` · ${op.entidad}` : ''}
-                            </span>
-                        </span>
-                        <span className="flex items-baseline gap-2 shrink-0 tabular-nums">
-                            <span className="text-content-2">{formatMoney(monto)}</span>
-                            {Math.abs(Number(op.monto) - monto) > 0.005 && (
-                                <span className="text-content-3">
-                                    de {formatMoney(op.monto)}
-                                </span>
-                            )}
-                        </span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
 }
 
 /**
- * Un cobro de crédito que todavía no tiene renglón en el sistema de la caja.
+ * La ficha de un renglón: todo lo que se sabe de él y todo lo que se le vio
+ * cambiar.
  *
- * No es una fila de segunda: para los cobros que no son efectivo es la ÚNICA
- * que va a existir —allá no se anotan nunca porque no entran al cajón— y para
- * los de efectivo es la que llega primero, al minuto de cobrar, mientras la
- * captura pasa.
- *
- * Por eso el aviso de la derecha depende de la forma de pago y no de estar
- * suelto: «no entra al cajón» es una explicación y «todavía no aparece en la
- * caja» es algo que mirar. Escritos igual, el segundo se aprendería a ignorar
- * por culpa del primero, que sale todos los días.
+ * Muestra «visto por última vez» incluso cuando no pasó nada: «se confirmó que
+ * seguía ahí a tal hora» es información, y su ausencia es lo que haría dudar de
+ * un «desapareció» — la marca sólo vale si se sabe cuándo fue la última vez que
+ * se miró.
  */
-function RenglonDeCobro({ cobro, quien }) {
-    const anulado = Boolean(cobro.anulado_at);
-    const entra = Boolean(cobro.entroAlCajon);
-    const hora = horaDe(cobro.created_at);
+function DetalleDelMovimiento({ ficha: f, historia, sala, onClose }) {
+    /* La boleta se firma al abrir, no al cargar la lista: es un bucket privado
+     * y pedir un enlace por renglón sería pedir cien que nadie mira. */
+    const [foto, setFoto] = useState(null);       // { de, url } | { de, error }
+    const [ampliada, setAmpliada] = useState(null);
+    const clave = f?.clave;
+    const ruta = f?.foto;
+    useEffect(() => {
+        if (!ruta) return undefined;
+        let vivo = true;
+        getSignedFileUrl(ruta)
+            .then((url) => { if (vivo) setFoto(url ? { de: clave, url } : { de: clave, error: true }); })
+            .catch(() => { if (vivo) setFoto({ de: clave, error: true }); });
+        return () => { vivo = false; };
+    }, [clave, ruta]);
 
-    const carril = anulado ? 'bg-danger' : entra ? 'bg-success' : 'bg-content-3/40';
-    const cajaGlifo = anulado ? 'bg-danger/10 text-danger-text'
-        : entra ? 'bg-success/10 text-success-text' : 'bg-surface-input text-content-3';
+    if (!f) return null;
+    const ido = f.tono === 'ido';
+    const fotoDeEsta = foto?.de === f.clave ? foto : null;
+    const datos = [
+        ['Sala', sala],
+        ['Fecha', fechaLarga(f.fecha)],
+        // Con la persona a la vista, la hora ya va en su renglón.
+        ['Hora', f.hora && !(f.quien && f.horaExacta) ? (f.horaExacta ? f.hora : `se vio ${f.hora}`) : null],
+        ...f.datos,
+    ].filter(([, v]) => v != null && v !== '');
 
     return (
-        <div data-surface="card"
-            className="w-full rounded-xl overflow-hidden flex items-stretch gap-0 min-h-[var(--tap-min)]">
-            <span className={`w-1 shrink-0 ${carril}`} aria-hidden="true" />
-            <span className="flex items-center gap-3 flex-1 min-w-0 p-2.5">
-                <span className={`shrink-0 w-8 h-8 rounded-lg grid place-items-center ${cajaGlifo}`} aria-hidden="true">
-                    <HandCoins className="w-4 h-4" />
-                </span>
-
-                <span className="flex-1 min-w-0">
-                    <span className={`block text-body-sm font-semibold truncate ${
-                        anulado ? 'text-content-3 line-through' : 'text-content'}`}>
-                        Cobro de crédito · {cobro.cliente || 'Sin nombre'}
+        <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Detalle del movimiento de caja">
+            <LiquidModal.Header>
+                <div className="flex items-start gap-3">
+                    <span className={`shrink-0 w-12 h-12 rounded-2xl grid place-items-center ${TONOS[f.tono]}`} aria-hidden="true">
+                        <f.Icono size={22} strokeWidth={2} />
                     </span>
-                    <span className="flex items-center gap-1.5 flex-wrap text-micro text-content-3">
-                        {anulado && <Badge variant="danger" size="sm">Anulado</Badge>}
-                        <Badge variant="info" size="sm">Del portal</Badge>
-                        {!anulado && (entra
-                            ? <Badge variant="warning" size="sm">Todavía no aparece en la caja</Badge>
-                            : <Badge variant="neutral" size="sm">No entra al cajón</Badge>)}
-                        {`crédito ${cobro.credito_erp} · ${String(cobro.forma || 'sin forma').toLowerCase()}`}
-                        {hora && ` · ${hora}`}
-                    </span>
-                    {quien && (
-                        <span className="flex items-center gap-1.5 mt-1 min-w-0">
-                            <AvatarConEstado emp={quien} px={18} radio="rounded-full" marco="" />
-                            <span className="text-micro text-content-3 truncate">Lo cobró {shortEmployeeName(quien)}</span>
-                        </span>
-                    )}
-                </span>
-
-                <span className="shrink-0 text-right">
-                    {/* Apagado cuando no toca el cajón: en verde y junto a las
-                        entradas, una transferencia se lee como billetes que
-                        tienen que estar en la caja al contar. */}
-                    <span className={`block text-body font-black tabular-nums ${
-                        anulado ? 'text-danger-text line-through'
-                            : entra ? 'text-success-text' : 'text-content-3'}`}>
-                        +{formatMoney(cobro.monto)}
-                    </span>
-                    <span className="block text-micro text-content-3">
-                        {Number(cobro.saldo_despues) > 0.004
-                            ? `queda ${formatMoney(cobro.saldo_despues)}`
-                            : 'saldado'}
-                    </span>
-                </span>
-            </span>
-        </div>
-    );
-}
-
-/**
- * Una salida pagada con una bolsa de efectivo que ningún vale contó.
- *
- * ── Por qué está en una lista de movimientos de CAJA ───────────────────────
- * Porque es dinero que salió de la sala y no aparecía en ninguna pantalla de
- * Efectivo: 65 salidas y $15,072.74 medidos el 2026-09-03. El sistema de la
- * caja no la anota, y con razón — ese dinero ya había salido de la caja en un
- * corte anterior, cuando se embolsó, y ESO sí se ve (es el vale de aquel día).
- *
- * Por eso la fila NO suma al neto y lo dice en su propio rótulo. Contarla sería
- * restar dos veces el mismo dinero; esconderla era no poder rastrearlo.
- */
-function RenglonDeBolsa({ op, etiqueta, quien }) {
-    const anulada = Boolean(op.anulada_at);
-    const hora = horaDe(op.registrado_at);
-    const parcial = op.cubiertoPorVales > 0.005;
-
-    return (
-        <div data-surface="card"
-            className="w-full rounded-xl overflow-hidden flex items-stretch gap-0 min-h-[var(--tap-min)]">
-            <span className={`w-1 shrink-0 ${anulada ? 'bg-danger' : 'bg-content-3/40'}`} aria-hidden="true" />
-            <span className="flex items-center gap-3 flex-1 min-w-0 p-2.5">
-                <span className={`shrink-0 w-8 h-8 rounded-lg grid place-items-center ${
-                    anulada ? 'bg-danger/10 text-danger-text' : 'bg-surface-input text-content-3'}`}
-                    aria-hidden="true">
-                    <ShoppingBag className="w-4 h-4" />
-                </span>
-
-                <span className="flex-1 min-w-0">
-                    <span className={`block text-body-sm font-semibold truncate ${
-                        anulada ? 'text-content-3 line-through' : 'text-content'}`}>
-                        {etiqueta}{op.entidad ? ` · ${op.entidad}` : ''}
-                    </span>
-                    <span className="flex items-center gap-1.5 flex-wrap text-micro text-content-3">
-                        {anulada && <Badge variant="danger" size="sm">Anulada</Badge>}
-                        <Badge variant="neutral" size="sm">Salió de una bolsa</Badge>
-                        {op.folio}
-                        {op.numero_boleta && ` · boleta ${op.numero_boleta}`}
-                        {hora && ` · ${hora}`}
-                    </span>
-                    {quien && (
-                        <span className="flex items-center gap-1.5 mt-1 min-w-0">
-                            <AvatarConEstado emp={quien} px={18} radio="rounded-full" marco="" />
-                            <span className="text-micro text-content-3 truncate">La hizo {shortEmployeeName(quien)}</span>
-                        </span>
-                    )}
-                </span>
-
-                <span className="shrink-0 text-right">
-                    {/* Apagado, como los cobros que no tocan el cajón: en ámbar y
-                        junto a las salidas de la caja, se leería como billetes
-                        que el próximo corte va a echar de menos. */}
-                    <span className={`block text-body font-black tabular-nums ${
-                        anulada ? 'text-danger-text line-through' : 'text-content-3'}`}>
-                        −{formatMoney(op.montoSinVale)}
-                    </span>
-                    <span className="block text-micro text-content-3">
-                        {parcial
-                            ? `de ${formatMoney(op.monto)} · el resto, en el vale`
-                            : 'de una bolsa ya cerrada'}
-                    </span>
-                </span>
-            </span>
-        </div>
-    );
-}
-
-/**
- * La ficha de un movimiento y todo lo que se le vio cambiar.
- *
- * Muestra `visto_at` incluso cuando no pasó nada: «se confirmó que seguía ahí a
- * tal hora» es información, y su ausencia es lo que haría dudar de un
- * «desapareció» — la marca sólo vale si se sabe cuándo fue la última vez que se
- * miró.
- */
-function DetalleDelMovimiento({ movimiento, historia, sala, onClose }) {
-    if (!movimiento) return null;
-    const ido = Boolean(movimiento.desaparecido_at);
-
-    return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Detalle del movimiento de caja">
-            <div className="p-5 space-y-4">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                        {movimiento.tipo === 'ENTRADA'
-                            ? <ArrowDownLeft size={16} className="text-success-text" />
-                            : <ArrowUpRight size={16} className="text-warning-text" />}
-                        <span className="text-caption font-black uppercase tracking-widest text-content-2">
-                            {movimiento.tipo === 'ENTRADA' ? 'Entrada de efectivo' : 'Salida de efectivo'}
-                        </span>
-                        {ido && <Badge variant="danger" size="sm">Ya no está</Badge>}
-                    </div>
-                    <p className="text-h3 font-bold text-content">
-                        {movimiento.tipo === 'SALIDA' ? '−' : ''}{formatMoney(movimiento.monto)}
-                    </p>
-                    <p className="text-body-sm text-content-2">{movimiento.concepto || 'Sin concepto'}</p>
-                    <p className="text-caption text-content-3">
-                        {sala || '—'} · {fechaLarga(movimiento.fecha)}
-                        {movimiento.origen === 'PORTAL' && ' · anotado por el portal'}
-                    </p>
-                </div>
-
-                <div className="text-caption text-content-3 space-y-0.5">
-                    <p>Se vio por primera vez: {cuando(movimiento.created_at)}</p>
-                    <p>Visto por última vez: {cuando(movimiento.visto_at)}</p>
-                    {ido && <p className="text-danger-text font-semibold">Dejó de estar: {cuando(movimiento.desaparecido_at)}</p>}
-                </div>
-
-                <div className="space-y-2">
-                    <h4 className="text-caption font-black uppercase tracking-widest text-content-2">
-                        Qué se le vio cambiar
-                    </h4>
-                    {historia.length === 0 ? (
-                        <p className="text-body-sm text-content-3">
-                            Nada desde que se anotó. Los cambios se registran desde el 28 de agosto.
+                    <div className="min-w-0 flex-1">
+                        <p className="text-caption font-black uppercase tracking-widest text-content-3">{f.tipo}</p>
+                        <p className={`text-display font-black tabular-nums leading-tight ${COLOR_MONTO[f.tono]}`}>
+                            {montoConSigno(f.entra, f.monto)}
                         </p>
-                    ) : (
-                        <ul className="space-y-2">
-                            {historia.map((h) => {
-                                const c = CAMBIOS[h.cambio] || CAMBIOS.APARECIO;
-                                const Icono = c.icon;
-                                return (
-                                    <li key={h.id} className="flex gap-2.5">
-                                        <Icono size={14} className="mt-0.5 shrink-0 text-content-3" />
-                                        <div className="min-w-0">
+                        {f.montoNota && (
+                            <p className={`text-caption text-content-3 tabular-nums ${f.montoNotaTachada ? 'line-through' : ''}`}>
+                                {f.montoNota}
+                            </p>
+                        )}
+                    </div>
+                </div>
+                {f.marcas.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-3">{f.marcas.map(marcaDe)}</div>
+                )}
+            </LiquidModal.Header>
+
+            <LiquidModal.Body className="space-y-5">
+                <p className={`text-body font-semibold break-words ${ido ? 'text-content-3 line-through' : 'text-content'}`}>
+                    {f.concepto}
+                </p>
+
+                {f.quien && (
+                    <div className="flex items-center gap-3 rounded-xl bg-surface-input/40 px-3 py-2.5">
+                        <AvatarConEstado emp={f.quien} px={36} radio="rounded-full" marco="" />
+                        <div className="min-w-0">
+                            <p className="text-micro font-bold uppercase tracking-wider text-content-3">{f.rotuloQuien}</p>
+                            <p className="text-body-sm font-semibold text-content truncate">{shortEmployeeName(f.quien)}</p>
+                        </div>
+                        {f.hora && f.horaExacta && (
+                            <span className="ml-auto text-caption tabular-nums text-content-3">{f.hora}</span>
+                        )}
+                    </div>
+                )}
+
+                <dl className="grid grid-cols-2 gap-2">
+                    {datos.map(([rotulo, valor, alerta]) => (
+                        <div key={rotulo} className="rounded-xl bg-surface-input/40 px-3 py-2 min-w-0">
+                            <dt className="text-micro font-bold uppercase tracking-wider text-content-3">{rotulo}</dt>
+                            <dd className={`text-body-sm font-semibold break-words ${alerta ? 'text-danger-text' : 'text-content'}`}>
+                                {valor}
+                            </dd>
+                        </div>
+                    ))}
+                </dl>
+
+                {/* La boleta, ahí mismo: quien la mira la está comparando contra
+                    el monto de arriba. Ampliarla es un toque más. */}
+                {f.foto && (
+                    <div className="space-y-1.5">
+                        <h4 className="text-caption font-black uppercase tracking-widest text-content-2">Boleta</h4>
+                        {!fotoDeEsta ? (
+                            <div className="h-40 rounded-xl bg-surface-input/40 animate-pulse" />
+                        ) : fotoDeEsta.error ? (
+                            <p className="text-caption text-danger-text">No se pudo abrir la boleta. Vuelve a intentarlo.</p>
+                        ) : (
+                            <button type="button" onClick={() => setAmpliada(fotoDeEsta.url)}
+                                aria-label="Ampliar la boleta"
+                                className="block w-full rounded-xl overflow-hidden min-h-[var(--tap-min)] active:scale-[0.99]">
+                                <img src={fotoDeEsta.url} alt={`Boleta de ${f.principal}`}
+                                    className="w-full max-h-72 object-contain bg-surface-input/40" />
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {/* El vale, abierto: `VALE DE CAJA 8 (3 salidas)` es un TOTAL, y
+                    las salidas que lo componen no estaban en ninguna pantalla.
+                    Cada línea lleva lo que aportó a ESTE vale. */}
+                {f.desglose?.length > 0 && (
+                    <div className="space-y-1.5">
+                        <h4 className="text-caption font-black uppercase tracking-widest text-content-2">Lo que suma el vale</h4>
+                        <div className="rounded-xl bg-surface-input/40 px-3 py-2 divide-y divide-border-card">
+                            {f.desglose.map(({ op, monto, etiqueta }) => (
+                                <div key={op.id} className="flex items-baseline justify-between gap-3 py-1.5 text-caption">
+                                    <span className="text-content-2 min-w-0 truncate">
+                                        {op.folio}
+                                        <span className="text-content-3">
+                                            {' · '}{etiqueta || op.tipo}{op.entidad ? ` · ${op.entidad}` : ''}
+                                        </span>
+                                    </span>
+                                    <span className="flex items-baseline gap-2 shrink-0 tabular-nums">
+                                        <span className="text-content font-semibold">{formatMoney(monto)}</span>
+                                        {Math.abs(Number(op.monto) - monto) > 0.005 && (
+                                            <span className="text-content-3">de {formatMoney(op.monto)}</span>
+                                        )}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Sólo los renglones de la caja tienen historia: un cobro o una
+                    salida de bolsa no se editan ni desaparecen allá. */}
+                {f.mv && (
+                    <div className="space-y-2">
+                        <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                            <h4 className="text-caption font-black uppercase tracking-widest text-content-2">
+                                Qué se le vio cambiar
+                            </h4>
+                            <span className="text-micro text-content-3 tabular-nums">
+                                visto {cuando(f.mv.created_at)} · última vez {cuando(f.mv.visto_at)}
+                            </span>
+                        </div>
+                        {historia.length === 0 ? (
+                            <p className="text-body-sm text-content-3">
+                                Nada desde que se anotó. Los cambios se registran desde el 28 de agosto.
+                            </p>
+                        ) : (
+                            <ol className="relative space-y-3 pl-6">
+                                <span className="absolute left-[9px] top-1 bottom-1 w-px bg-border-card" aria-hidden="true" />
+                                {historia.map((h) => {
+                                    const c = CAMBIOS[h.cambio] || CAMBIOS.APARECIO;
+                                    const Icono = c.icon;
+                                    return (
+                                        <li key={h.id} className="relative">
+                                            <span className={`absolute -left-6 top-0 w-[19px] h-[19px] rounded-full grid place-items-center ${
+                                                c.variant === 'danger' ? 'bg-danger/15 text-danger-text'
+                                                    : c.variant === 'warning' ? 'bg-warning/15 text-warning-text'
+                                                        : 'bg-brand/10 text-brand-text'}`} aria-hidden="true">
+                                                <Icono size={11} strokeWidth={2.5} />
+                                            </span>
                                             <p className="text-body-sm text-content">
                                                 <span className="font-semibold">{c.texto}</span>
                                                 <span className="text-content-3"> · {cuando(h.observado_at)}</span>
@@ -825,18 +886,21 @@ function DetalleDelMovimiento({ movimiento, historia, sala, onClose }) {
                                                         && ` ${h.tipo_antes} → ${h.tipo_despues}`}
                                                 </p>
                                             )}
-                                        </div>
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    )}
-                </div>
+                                        </li>
+                                    );
+                                })}
+                            </ol>
+                        )}
+                    </div>
+                )}
+            </LiquidModal.Body>
 
-                <div className="flex justify-end">
-                    <Button variant="secondary" onClick={onClose}>Cerrar</Button>
-                </div>
-            </div>
+            <LiquidModal.Footer>
+                <span />
+                <Button variant="secondary" onClick={onClose}>Cerrar</Button>
+            </LiquidModal.Footer>
+
+            <PhotoLightbox src={ampliada} alt="Boleta del movimiento" onClose={() => setAmpliada(null)} />
         </LiquidModal>
     );
 }

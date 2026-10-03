@@ -625,6 +625,9 @@
     "inyecciones_para_cobrar": {
       "guarda": "alcance"
     },
+    "inyeccion_venta_por_comprobante": {
+      "guarda": "alcance"
+    },
     "inyecciones_pendientes": {
       "guarda": "alcance"
     },

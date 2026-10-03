@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1171.0 — Inyecciones: comprada en otra sucursal, historial de lo aplicado y bitácora con fotos
+
+Pedidos del usuario del 2026-10-03:
+
+- **Comprada en otra sucursal.** En el cobro, «¿La compró en otra sucursal?
+  Buscar por comprobante»: con el número del ticket (o el código de generación)
+  aparece esa venta, de cualquier sala —es la ÚNICA forma de llegar a una venta
+  de otra sala—. Si no trae inyección, ya está pagada o anulada, se dice por
+  qué. El número se repite entre salas (15,036 en 90 días), así que se muestra
+  la que sirve con su sala. El cobro queda en la sala donde se aplica.
+- **Pendientes agrupadas con historial.** Una fila por pago: «2 de 5» con un
+  contador para aplicar las que hagan falta, en esta u otra sala, y debajo lo
+  que ya se aplicó de ese pago — dónde, quién (con su foto) y cuándo. Igual en
+  el canje del cobro («Ya la pagó»).
+- **Bitácora con fotos.** Quién cobró y quién aplicó, con foto y nombre corto;
+  la dosis, la mezcla y «Venta de Salud 5» como etiquetas.
+
+Base: migración `inyecciones_otra_sucursal` (20261003151123), función
+`inyeccion_venta_por_comprobante` (entra por el índice trigram del correlativo:
+66 bloques en vez de 30,415).
+
+---
+
+## v2.1170.0 — Efectivo · Movimientos: una tarjeta por sala y el detalle completo
+
+- **La lista, rediseñada.** Una tarjeta por sala con los renglones adentro separados por una raya, en vez de una caja por renglón. Cada renglón: ícono en círculo por clase, el QUÉ en grande («POS Promerica», «Aplicacion de inyeccion»), el dato que lo distingue debajo (factura, cuenta, cliente), y la hora con la cara y el nombre corto de quien lo anotó o lo cobró. El corte es una franja dentro de la serie con su monto y «cuadró» o la diferencia. El neto de la sala va en una píldora.
+- **Lo que el portal anotó ahora se ve acá.** La lista leía sólo la captura de la caja —concepto recortado a 50 caracteres con el «P3181» delante, sin autor y con la hora de la captura—. Se cruza con `caja_movimientos_portal` por sala + número de la caja (`fetchAnotadosDelPortal`): concepto entero, boleta y su foto, quién, cómo se obtuvo el monto y la hora EXACTA, que también se usa para ver de qué lado del corte cayó. La búsqueda encuentra por boleta y por quien anotó.
+- **El detalle, rehecho y para TODOS los renglones** (antes sólo los de la caja se abrían): monto grande con su ícono, marcas, concepto completo, quién con su foto, los datos en fichas (sala, fecha, boleta, n.º en la caja, de dónde salió el monto; en un cobro, cliente, crédito, factura, forma de pago, debía y queda), la foto de la boleta ahí mismo, lo que suma un vale, y lo que se le vio cambiar como línea de tiempo.
+- Mi caja: los totales del panel usaban `text-h3`, que no existe en la escala; pasan a `text-title-lg`.
+## v2.1169.0 — Mi caja: movimientos que se abren y panel del día en dos cuentas
+
+- **Movimientos del día como filas que se abren.** Cada uno lleva un ícono por clase (ingreso, salida, bolsa, cobro), el qué en grande y el dato que lo distingue debajo, la hora, quién lo anotó y el monto con signo. Las marcas que no pueden esconderse (anulado, corrección pendiente, monto sin comprobar, no entra al cajón) siguen a la vista. Al abrirlo: el concepto entero y todos los datos guardados —tipo, boleta, número en la caja, cómo se obtuvo el monto, a qué corte pertenece; en un cobro, cliente, crédito, factura, forma de pago, cuánto debía y cuánto queda—, la corrección, el reparto entre bolsas, la boleta y «Corregir».
+- **El nombre de quien anotó sale del canónico** (primer nombre + primer apellido); antes se pintaba completo.
+- **Panel del día en dos cuentas lado a lado**: lo vendido por forma de pago, con barra de proporción y número de ventas, y el efectivo en caja con su total arriba y la cuenta renglón por renglón. Sin montos visibles (antes del corte), las barras miden ventas y no dinero.
+
 ## v2.1168.2 — Inyecciones: el cobro deja el botón a la vista y el buscador marca lo que ya está
 
 Dos reportes del usuario:

@@ -19,4 +19,17 @@ describe('movimientosDeCaja', () => {
         expect(filtrarMovimientos(r, { estado: 'EDITADOS', porMov })[0].mv.id).toBe(1);
         expect(filtrarMovimientos(r, { busqueda: 'agua' })[0].mv.id).toBe(2);
     });
+    it('le pega a cada renglón lo que el portal anotó, por sala y número de la caja', () => {
+        const anotados = [
+            { id: 7, branch_id: 2, erp_movimiento_id: 9, detalle: 'POS CAESS · NIC 123456', numero_boleta: '000803', registrado_por: 'e1' },
+            // Mismo número en OTRA sala: no es el mismo movimiento.
+            { id: 8, branch_id: 3, erp_movimiento_id: 43912, detalle: 'otra sala' },
+        ];
+        const r = renglonesDeMovimientos({ movimientos: movs, anotados });
+        expect(r.find((x) => x.mv.id === 1).anotado.id).toBe(7);
+        expect(r.find((x) => x.mv.id === 2).anotado).toBeNull();
+        const anotaron = new Map([['e1', { name: 'ANA PEREZ' }]]);
+        expect(filtrarMovimientos(r, { busqueda: '000803' }).map((x) => x.mv.id)).toEqual([1]);
+        expect(filtrarMovimientos(r, { busqueda: 'ana', anotaron }).map((x) => x.mv.id)).toEqual([1]);
+    });
 });

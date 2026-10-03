@@ -27,6 +27,21 @@ export async function fetchInyeccionesParaCobrar({ sala, buscar = '', dias = 7 }
     return data ?? [];
 }
 
+/**
+ * Una venta por su número de comprobante, de CUALQUIER sala (2026-10-03): el
+ * cliente compró en una sucursal y se la aplica en otra, con el ticket. Es la
+ * única forma de llegar a una venta de otra sala. Acepta el correlativo (con o
+ * sin ceros) o el código de generación. Cada coincidencia trae su `estado`:
+ * `ok` · `sin_inyeccion` · `pagada` · `anulada`.
+ */
+export async function buscarVentaPorComprobante({ sala, comprobante }) {
+    const { data, error } = await supabase.rpc('inyeccion_venta_por_comprobante', {
+        p_branch_id: Number(sala), p_comprobante: comprobante?.trim() || '',
+    });
+    if (error) throw error;
+    return data?.ventas ?? [];
+}
+
 /** Lo pagado y sin aplicar. Todas las salas: el cliente puede volver a otra. */
 export async function fetchAplicacionesPendientes({ buscar = '', sala = null } = {}) {
     const { data, error } = await supabase.rpc('inyecciones_pendientes', {

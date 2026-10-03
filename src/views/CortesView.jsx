@@ -61,7 +61,7 @@ import { fetchCobrosDelPortal } from '@nucleo/data/creditos';
 /* Las salidas pagadas con una bolsa de efectivo. Van acá porque son la tercera
  * forma en que sale dinero de una sala, y la única que no dejaba rastro en
  * ninguna pantalla de Efectivo. */
-import { fetchSalidasDeBolsaDelRango, fetchTiposDeSalida } from '@nucleo/data/bolsas';
+import { fetchAnotadosDelPortal, fetchSalidasDeBolsaDelRango, fetchTiposDeSalida } from '@nucleo/data/bolsas';
 import { conTramoPorSalaYDia, resumenDeCortes, severidad } from '@nucleo/utils/cortesDiagnostico';
 import {
     diaEnFiltro, diaEnMes, mesesDeLosDias, ordenarDias, pendientesDeRegistrar, porSigno, resolucionesDe, resumenDeDias,
@@ -373,6 +373,10 @@ const CortesView = () => {
     const [salidasDeBolsa, setSalidasDeBolsa] = useState(VACIO);
     const [tiposDeSalida, setTiposDeSalida] = useState(VACIO);
     const [sacaron, setSacaron] = useState(() => new Map());
+    /* Lo que el portal anotó en la caja: el concepto entero, la boleta, quién y
+     * a qué hora. Va por sala + número de la caja, que es como lo trae la
+     * captura. */
+    const [anotados, setAnotados] = useState(VACIO);
 
     // El catálogo de motivos, una sola vez: es una tabla chica y no cambia
     // dentro de la sesión.
@@ -429,7 +433,7 @@ const CortesView = () => {
     const cargarMovs = useCallback(async () => {
         if (!enMovimientos) return;
         setCargandoMovs(true);
-        const [filas, cambios, cobrados, salidas] = await Promise.all([
+        const [filas, cambios, cobrados, salidas, delPortal] = await Promise.all([
             fetchMovimientosDeCaja({ desde, hasta, branchId: sala || null }),
             fetchHistorialDeMovimientos({ desde, hasta, branchId: sala || null }),
             fetchCobrosDelPortal({ desde, hasta, branchId: sala || null }),
@@ -440,8 +444,10 @@ const CortesView = () => {
             puedeVerBolsas
                 ? fetchSalidasDeBolsaDelRango({ desde, hasta, branchId: sala || null })
                 : Promise.resolve(VACIO),
+            fetchAnotadosDelPortal({ desde, hasta, branchId: sala || null }),
         ]);
         setMovs(filas || VACIO);
+        setAnotados(delPortal || VACIO);
         setHistorial(cambios || VACIO);
         setCobros(cobrados || VACIO);
         setSalidasDeBolsa(salidas || VACIO);
@@ -451,6 +457,7 @@ const CortesView = () => {
         const quienes = await fetchPersonas([
             ...(cobrados || []).map((c) => c.abonado_por),
             ...(salidas || []).map((o) => o.registrado_por),
+            ...(delPortal || []).map((a) => a.registrado_por),
         ]);
         const porId = new Map((quienes || []).map((q) => [q.id, q]));
         setCobraron(porId);
@@ -1002,6 +1009,8 @@ const CortesView = () => {
                         salidasDeBolsa={salidasDeBolsa}
                         tiposDeSalida={tiposDeSalida}
                         sacaron={sacaron}
+                        anotados={anotados}
+                        anotaron={cobraron}
                         puedeVerBolsas={puedeVerBolsas}
                         salas={salasMap}
                         cargando={cargandoMovs}

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspens
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useSearchParams } from 'react-router-dom';
 import {
-    AlertTriangle, ArrowDownLeft, ArrowUpRight, Ban, Clock, DoorOpen, Landmark, Lock, Paperclip, PencilLine, PlayCircle, Printer, Scale, ShieldCheck, ShoppingBag, Wallet,
+    AlertTriangle, ArrowDownLeft, ArrowUpRight, Ban, ChevronDown, Clock, DoorOpen, Landmark, Lock, Paperclip, PencilLine, PlayCircle, Printer, Scale, ShieldCheck, ShoppingBag, Wallet,
 } from 'lucide-react';
 import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -1537,6 +1537,7 @@ function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas })
         .map((v) => ({ tipo: String(v.tipo_pago), docs: Number(v.documentos || 0), total: Number(v.total || 0) }))
         .sort((a, b) => b.total - a.total);
     const total = filas.reduce((s, f) => s + f.total, 0);
+    const docs = filas.reduce((s, f) => s + f.docs, 0);
 
     /* Las piezas del cajón, tal como las armó el servidor. `null` cuando la
      * lectura del estado no las trajo —una caja recién abierta, o el origen sin
@@ -1570,55 +1571,102 @@ function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas })
                 </div>
             )}
 
-            {estado?.abierta && (
-            <div className="space-y-2">
-                <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
-                    Vendido hoy, por forma de pago
-                </h3>
-                {filas.length === 0 ? (
-                    /* Cero ventas y «no pude leerlas» se ven igual si no se dice
-                       cuál es: acá es cero de verdad sólo si la caja acaba de
-                       abrir, así que se nombra el caso en vez de mostrar nada. */
+            {estado?.abierta && (filas.length === 0 ? (
+                /* Cero ventas y «no pude leerlas» se ven igual si no se dice
+                   cuál es: acá es cero de verdad sólo si la caja acaba de
+                   abrir, así que se nombra el caso en vez de mostrar nada. */
+                <div className="space-y-1">
+                    <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
+                        Vendido hoy
+                    </h3>
                     <p className="text-body-sm text-content-3">
                         Todavía no hay ninguna venta registrada en este día.
                     </p>
-                ) : (
-                    <>
+                </div>
+            ) : (
+                /* Dos cuentas lado a lado y no una encima de otra: lo VENDIDO
+                   (todas las formas de pago) y lo que hay en el CAJÓN (sólo
+                   efectivo). Son dos preguntas distintas, y apiladas en una sola
+                   lista se leían como una cuenta larga donde el «Total vendido»
+                   del medio parecía un subtotal del efectivo. */
+                <div className="grid gap-5 md:grid-cols-2 md:gap-0">
+                    <section className="space-y-3 md:pr-6">
+                        <div className="flex items-end justify-between gap-3">
+                            <div>
+                                <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
+                                    Vendido hoy
+                                </h3>
+                                <p className="text-caption text-content-3 tabular-nums">
+                                    {docs} venta{docs === 1 ? '' : 's'} · por forma de pago
+                                </p>
+                            </div>
+                            {veLosMontos && (
+                                <span className="text-title-lg font-black tabular-nums text-content">
+                                    {formatMoney(total)}
+                                </span>
+                            )}
+                        </div>
+
                         {/* Las formas de pago SIN monto cuando no se pueden ver.
                             Se quedan porque dicen algo que no es la respuesta:
                             cuántas ventas hubo de cada forma, que sirve para
                             saber si el día fue de tarjeta o de efectivo sin
-                            decir cuánto. */}
-                        <ul className="divide-y divide-border/60">
-                            {filas.map((f) => (
-                                <li key={f.tipo} className="flex items-baseline justify-between gap-3 py-1.5">
-                                    <span className="text-body-sm text-content">
-                                        {conMayuscula(f.tipo)}
-                                    </span>
-                                    <span className="tabular-nums font-semibold text-content">
-                                        {veLosMontos
-                                            ? formatMoney(f.total)
-                                            : `${f.docs} venta${f.docs === 1 ? '' : 's'}`}
-                                    </span>
-                                </li>
-                            ))}
+                            decir cuánto. Por eso la barra, sin montos, mide
+                            ventas y no dinero. */}
+                        <ul className="space-y-2.5">
+                            {filas.map((f) => {
+                                const base = veLosMontos ? total : docs;
+                                const parte = veLosMontos ? f.total : f.docs;
+                                const pct = base > 0 ? Math.max(2, Math.round((parte / base) * 100)) : 0;
+                                return (
+                                    <li key={f.tipo} className="space-y-1">
+                                        <div className="flex items-baseline justify-between gap-3">
+                                            <span className="text-body-sm text-content min-w-0 truncate">
+                                                {conMayuscula(f.tipo)}
+                                                <span className="text-caption text-content-3 tabular-nums">
+                                                    {` · ${f.docs} venta${f.docs === 1 ? '' : 's'}`}
+                                                </span>
+                                            </span>
+                                            <span className="tabular-nums font-semibold text-content shrink-0">
+                                                {veLosMontos ? formatMoney(f.total) : `${pct}%`}
+                                            </span>
+                                        </div>
+                                        <div className="h-1.5 rounded-full bg-content-3/15 overflow-hidden" aria-hidden
+                                            data-medida="dato">
+                                            <div className="h-full rounded-full bg-brand" style={{ width: `${pct}%` }} />
+                                        </div>
+                                    </li>
+                                );
+                            })}
                         </ul>
+                    </section>
+
+                    {/* La cuenta del CAJÓN, que es otra: lo vendido con tarjeta
+                        no deja un billete, y lo que entra y sale del cajón sin
+                        vender sí. */}
+                    <section className="space-y-3 pt-5 border-t border-border-card
+                                        md:pt-0 md:border-t-0 md:border-l md:pl-6">
                         {veLosMontos ? (
                             <>
-                                <div className="flex items-baseline justify-between gap-3 pt-1">
-                                    <span className="text-body-sm font-bold text-content">Total vendido</span>
-                                    <span className="tabular-nums font-black text-content">{formatMoney(total)}</span>
+                                <div className="flex items-end justify-between gap-3">
+                                    <div>
+                                        <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
+                                            Efectivo en caja
+                                        </h3>
+                                        <p className="text-caption text-content-3">
+                                            {puedeSumar ? 'lo que debería haber en el cajón' : 'sin la cuenta completa todavía'}
+                                        </p>
+                                    </div>
+                                    {puedeSumar && (
+                                        <span className="text-title-lg font-black tabular-nums text-brand-text">
+                                            {formatMoney(enCaja)}
+                                        </span>
+                                    )}
                                 </div>
-
-                                {/* La cuenta del CAJÓN, que es otra: lo vendido
-                                    con tarjeta no deja un billete, y lo que
-                                    entra y sale del cajón sin vender sí. Va
-                                    separada por una línea para que se lea como
-                                    una suma y no como más detalle de arriba. */}
-                                <div className="pt-2 mt-1 border-t border-border-card space-y-1">
+                                <div className="rounded-xl bg-surface-input/40 px-3 py-2.5 space-y-1.5">
                                     <Renglon rotulo="Con lo que abrió la caja"
                                         monto={estado.apertura ?? 0} apagado />
-                                    <Renglon rotulo="De lo vendido, en efectivo" monto={efectivoVendido} />
+                                    <Renglon rotulo="+ Vendido en efectivo" monto={efectivoVendido} />
                                     {puedeSumar && (
                                         <>
                                             <Renglon rotulo="+ Ingresos" monto={Number(pz.entradas || 0)} />
@@ -1630,7 +1678,7 @@ function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas })
                                             {enBolsas > 0.005 && (
                                                 <Renglon rotulo="− Guardado en bolsas" monto={enBolsas} />
                                             )}
-                                            <div className="pt-1.5 mt-1 border-t border-border-card">
+                                            <div className="pt-1.5 mt-0.5 border-t border-border-card">
                                                 <Renglon rotulo="Total en efectivo" monto={enCaja} fuerte />
                                             </div>
                                         </>
@@ -1642,15 +1690,19 @@ function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas })
                                Un total que desaparece sin explicación se lee como
                                que la pantalla falló, y el primero que lo vea va a
                                reportarlo como defecto. */
-                            <p className="text-caption text-content-3 pt-1">
-                                Los montos no se muestran antes del corte: el conteo se hace contando,
-                                y verlos de antemano sería copiarlos.
-                            </p>
+                            <div className="space-y-1">
+                                <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
+                                    Efectivo en caja
+                                </h3>
+                                <p className="text-caption text-content-3">
+                                    Los montos no se muestran antes del corte: el conteo se hace contando,
+                                    y verlos de antemano sería copiarlos.
+                                </p>
+                            </div>
                         )}
-                    </>
-                )}
-            </div>
-            )}
+                    </section>
+                </div>
+            ))}
         </div>
     );
 }
@@ -1765,6 +1817,230 @@ function Firmita({ persona, rotulo, cuando }) {
     );
 }
 
+/* El ícono y el tono de cada clase de movimiento. Uno por clase y no por tipo
+ * del catálogo: lo que hay que leer de un vistazo es si el dinero ENTRÓ, SALIÓ
+ * del cajón, salió de una BOLSA o vino de un COBRO — el tipo exacto ya lo dice
+ * el título. */
+const CLASE_DE_MOVIMIENTO = {
+    entra: { Icono: ArrowDownLeft, tono: 'bg-success/10 text-success-text' },
+    sale: { Icono: ArrowUpRight, tono: 'bg-warning/10 text-warning-text' },
+    bolsa: { Icono: ShoppingBag, tono: 'bg-warning/10 text-warning-text' },
+    cobro: { Icono: Wallet, tono: 'bg-brand/10 text-brand-text' },
+};
+
+/* Cómo se obtuvo el monto, dicho entero en el detalle. En la fila sólo se marca
+ * cuando NO está comprobado (ver `ROTULO_DE_ORIGEN`); abierto, se dice siempre,
+ * porque ahí alguien está preguntando justamente eso. */
+const ORIGEN_DEL_MONTO = {
+    FOTO_CONFIRMADA: 'leído de la boleta y confirmado',
+    FOTO_SIN_CONFIRMAR: 'leído de la boleta, sin confirmar',
+    A_MANO: 'escrito a mano',
+};
+
+/**
+ * Un movimiento del día: una fila que se lee de un vistazo y se ABRE para
+ * mirarlo entero (pedido del usuario, 2026-10-03: «que se vean más modernos,
+ * que me den más información al abrirlos»).
+ *
+ * Cerrada lleva lo que distingue a uno de otro en la lista —qué fue, a qué
+ * hora, quién, cuánto— y las marcas que no pueden esconderse detrás de un clic:
+ * anulado, corrección pendiente, monto sin comprobar, cobro que no entra al
+ * cajón. Una marca que sólo se ve abriendo es una marca que nadie ve.
+ *
+ * Abierta dice todo lo que se guardó, en pares rótulo–valor, más la boleta, la
+ * corrección y el reparto entre bolsas. «Corregir» vive adentro: es una acción
+ * sobre UN movimiento que ya se está mirando, no un botón repetido en cada fila.
+ */
+function Movimiento({ l, corte, abierto, onAlternar, quien, puedeOperar, onCorregir,
+    foto, firmando, onVerComprobante, onAmpliar }) {
+    const { Icono, tono } = l.anulado
+        ? { Icono: Ban, tono: 'bg-content-3/10 text-content-3' }
+        : (CLASE_DE_MOVIMIENTO[l.clase] || CLASE_DE_MOVIMIENTO.entra);
+
+    /* El título viene armado como «Qué · dato · dato» —así lo escribe el
+     * diálogo de anotar y así lo guarda la caja—. La primera parte es el QUÉ y
+     * va en grande; el resto es el dato que lo distingue y va debajo. */
+    const partes = String(l.titulo || '').split(' · ').map((t) => t.trim()).filter(Boolean);
+    const principal = partes[0] || '—';
+    const resto = partes.slice(1).join(' · ');
+
+    const pendiente = (l.correcciones || []).some((c) => c.estado === 'PENDING');
+    const corregido = (l.correcciones || []).some((c) => c.estado !== 'PENDING' && c.estado !== 'REJECTED');
+    const idDetalle = `mov-${l.clave}`;
+
+    const datos = [
+        ['Hora', horaLegible(l.cuando)],
+        ['Tipo', l.tipoTexto || l.origen],
+        ...(l.datos || []),
+        ['Monto', l.montoOrigen ? ORIGEN_DEL_MONTO[l.montoOrigen] || null : null,
+            l.montoOrigen && l.montoOrigen !== 'FOTO_CONFIRMADA'],
+        ['Corte', !corte ? 'sin cortar todavía'
+            : corte.tipo === 'Z' ? `después del cierre · ${hora12(corte.hora)}`
+                : `contado en el de las ${hora12(corte.hora)}`],
+        ['Estado', l.anulado ? 'anulado' : null, true],
+    ].filter(([, v]) => v != null && v !== '');
+
+    return (
+        <div data-surface="card"
+            className={`rounded-xl overflow-hidden transition-shadow ${abierto ? 'ring-1 ring-brand/30' : ''}`}>
+            <button type="button" onClick={onAlternar} aria-expanded={abierto} aria-controls={idDetalle}
+                className="w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 text-left
+                           min-h-[var(--tap-min)] active:scale-[0.995] transition-transform">
+                <span className={`shrink-0 grid place-items-center w-9 h-9 rounded-full ${tono}`}>
+                    <Icono size={16} strokeWidth={2.5} />
+                </span>
+
+                <span className="min-w-0 flex-1">
+                    <span className={`block text-body-sm font-semibold truncate ${
+                        l.anulado ? 'text-content-3 line-through' : 'text-content'}`}>
+                        {principal}
+                    </span>
+                    <span className="flex items-center gap-1.5 text-caption text-content-3 min-w-0">
+                        <span className="tabular-nums shrink-0">{horaLegible(l.cuando)}</span>
+                        {resto && <span className="truncate">· {resto}</span>}
+                        {quien && (
+                            <span className="hidden sm:flex items-center gap-1 shrink-0">
+                                <span aria-hidden>·</span>
+                                <AvatarConEstado emp={quien} px={16} radio="rounded-full" marco="" />
+                                {shortEmployeeName(quien)}
+                            </span>
+                        )}
+                    </span>
+                    {(l.anulado || pendiente || corregido || l.sinEfectivo || ROTULO_DE_ORIGEN[l.montoOrigen]) && (
+                        <span className="flex flex-wrap gap-1 mt-1">
+                            {l.anulado && <Marca tono="apagada">Anulado</Marca>}
+                            {pendiente && <Marca tono="aviso">Corrección pendiente</Marca>}
+                            {!pendiente && corregido && <Marca tono="apagada">Corregido</Marca>}
+                            {l.sinEfectivo && <Marca tono="apagada">No entra al cajón</Marca>}
+                            {ROTULO_DE_ORIGEN[l.montoOrigen] && (
+                                <Marca tono="aviso">{ROTULO_DE_ORIGEN[l.montoOrigen]}</Marca>
+                            )}
+                        </span>
+                    )}
+                </span>
+
+                {/* Apagado cuando no toca el cajón: en verde y con el resto de
+                    las entradas, un cobro con tarjeta se lee como billetes que
+                    hay que tener. */}
+                <span className={`shrink-0 tabular-nums font-bold text-body ${
+                    l.anulado || l.sinEfectivo ? 'text-content-3'
+                        : l.entra ? 'text-success-text' : 'text-warning-text'} ${l.anulado ? 'line-through' : ''}`}>
+                    {l.entra ? '+' : '−'}{formatMoney(l.monto)}
+                </span>
+                <ChevronDown size={16} aria-hidden
+                    className={`shrink-0 text-content-3 transition-transform ${abierto ? 'rotate-180' : ''}`} />
+            </button>
+
+            {abierto && (
+                <div id={idDetalle} className="px-3 sm:px-4 pb-3 pt-1 space-y-3 border-t border-border-card">
+                    {/* El concepto ENTERO: en la fila se recorta para que la
+                        lista se pueda recorrer, y acá es donde se lee. */}
+                    {partes.length > 1 && (
+                        <p className="text-body-sm text-content pt-2 break-words">{l.titulo}</p>
+                    )}
+
+                    {/* Y la corrección va ARRIBA de los datos: lo primero que hay
+                        que saber de un movimiento corregido es que el número que
+                        se está leyendo no es el que se anotó. */}
+                    {(l.correcciones || []).map((c) => (
+                        <LaCorreccion key={c.solicitud} dato={c} />
+                    ))}
+
+                    <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 pt-1">
+                        {datos.map(([rotulo, valor, resalta]) => (
+                            <div key={rotulo} className="min-w-0">
+                                <dt className="text-micro font-bold uppercase tracking-wider text-content-3">{rotulo}</dt>
+                                <dd className={`text-body-sm break-words ${resalta ? 'text-warning-text font-semibold' : 'text-content'}`}>
+                                    {valor}
+                                </dd>
+                            </div>
+                        ))}
+                        {/* Un movimiento de dinero sin autor no se puede
+                            reclamar. Con su cara, como en cortes y bolsas. */}
+                        {quien && (
+                            <div className="min-w-0">
+                                <dt className="text-micro font-bold uppercase tracking-wider text-content-3">Lo anotó</dt>
+                                <dd className="flex items-center gap-1.5 text-body-sm text-content">
+                                    <AvatarConEstado emp={quien} px={20} radio="rounded-full" marco="" />
+                                    <span className="truncate">{shortEmployeeName(quien)}</span>
+                                </dd>
+                            </div>
+                        )}
+                    </dl>
+
+                    {/* De qué bolsa salió cada parte. Una fila por bolsa, con lo
+                        que aporta y si toca el corte. Es lo que una frase no
+                        podía decir sin elegir una de las dos verdades. */}
+                    {(l.reparto || []).length > 0 && (
+                        <div className="rounded-lg bg-surface-input/40 px-3 py-2 space-y-1">
+                            {l.reparto.map((b) => (
+                                <div key={b.folio} className="flex items-baseline justify-between gap-3 text-caption">
+                                    <span className="text-content-2 min-w-0 truncate">
+                                        {b.folio}
+                                        <span className="text-content-3"> · {fechaLegible(b.fecha)}</span>
+                                    </span>
+                                    <span className="flex items-baseline gap-2 shrink-0">
+                                        <span className="tabular-nums text-content-2">{formatMoney(b.monto)}</span>
+                                        <span className={b.deHoy ? 'text-warning-text font-semibold' : 'text-content-3'}>
+                                            {b.deHoy ? 'entra al corte' : 'ya cerrada'}
+                                        </span>
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* La foto, adentro de la lista y no en otra pestaña: quien
+                        la mira está comparándola contra el monto de al lado.
+                        Ampliarla es un clic más, con el canónico de siempre. */}
+                    {foto && (
+                        foto.error ? (
+                            <p className="text-caption text-danger-text">
+                                No se pudo abrir la boleta. Vuelve a intentarlo.
+                            </p>
+                        ) : (
+                            <button type="button" onClick={() => onAmpliar(foto.url)}
+                                aria-label={`Ampliar la boleta de ${principal}`}
+                                className="block w-full rounded-lg overflow-hidden
+                                           min-h-[var(--tap-min)] active:scale-[0.99]">
+                                <img src={foto.url} alt={`Boleta de ${principal}`}
+                                    className="w-full max-h-72 object-contain bg-surface-input/40" />
+                            </button>
+                        )
+                    )}
+
+                    {(l.foto || (puedeOperar && l.movimiento && !l.anulado)) && (
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                            {l.foto && (
+                                <Button variant="secondary" size="sm" icon={Paperclip}
+                                    loading={firmando} onClick={onVerComprobante}>
+                                    {foto ? 'Ocultar boleta' : 'Ver boleta'}
+                                </Button>
+                            )}
+                            {puedeOperar && l.movimiento && !l.anulado && (
+                                <Button variant="ghost" size="sm" icon={PencilLine}
+                                    onClick={() => onCorregir(l.movimiento)}>
+                                    Corregir
+                                </Button>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
+/** Una marca chica en la fila de un movimiento. */
+function Marca({ tono, children }) {
+    return (
+        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-micro font-semibold ${
+            tono === 'aviso' ? 'bg-warning/10 text-warning-text' : 'bg-content-3/10 text-content-2'}`}>
+            {children}
+        </span>
+    );
+}
+
 function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOperar, puedeVerBolsas,
     onCorregir, anotaron, cortes, correcciones }) {
     const etiquetaDe = (codigo) =>
@@ -1781,6 +2057,8 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
     const [firmando, setFirmando] = useState(null);
     const [ampliada, setAmpliada] = useState(null);
     const [busqueda, setBusqueda] = useState('');
+    // Una sola abierta a la vez: la lista es para recorrer, el detalle para mirar UNO.
+    const [abierto, setAbierto] = useState(null);
     const verComprobante = useCallback(async (clave, url) => {
         if (foto?.clave === clave) { setFoto(null); return; }
         setFirmando(clave);
@@ -1822,6 +2100,14 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
              * pinta cuando NO está confirmado: marcar los buenos es ruido, y el
              * ruido es lo que hace que nadie mire la marca que sí importa. */
             montoOrigen: m.monto_origen || null,
+            clase: m.tipo === 'ENTRADA' ? 'entra' : 'sale',
+            tipoTexto: m.tipo === 'ENTRADA' ? 'Ingreso a la caja' : 'Salida de la caja',
+            datos: [
+                ['Boleta', m.numero_boleta || null],
+                ['En la caja', m.erp_movimiento_id
+                    ? `registrado · n.º ${m.erp_movimiento_id}`
+                    : 'todavía no llega a la caja', !m.erp_movimiento_id],
+            ],
         }));
         const deLasBolsas = (deBolsas || []).map((o) => {
             const total = Math.abs(Number(o.monto || 0));
@@ -1854,6 +2140,15 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
                 reparto: o.bolsasUsadas || [],
                 afectaElCorte: deHoy,
                 parcial: deHoy > 0.005 && deHoy < total - 0.005,
+                clase: 'bolsa',
+                tipoTexto: 'Pagado con una bolsa',
+                datos: [
+                    ['Motivo', etiquetaDe(o.tipo)],
+                    ['A nombre de', o.entidad || null],
+                    ['Folio', o.folio || null],
+                    ['Boleta', o.numero_boleta || null],
+                    ['Afecta el corte de hoy', deHoy > 0.005 ? formatMoney(deHoy) : 'no', deHoy > 0.005],
+                ],
             };
         });
         /* ── Los cobros de crédito ─────────────────────────────────────────
@@ -1894,6 +2189,19 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
                 ].filter(Boolean),
                 quien: c.abonado_por,
                 foto: c.comprobante_url || null,
+                clase: 'cobro',
+                tipoTexto: 'Cobro de un crédito',
+                datos: [
+                    ['Cliente', c.cliente || null],
+                    ['Crédito', c.credito_erp ? `n.º ${c.credito_erp}` : null],
+                    ['Factura', c.factura_erp || null],
+                    ['Forma de pago', conMayuscula(c.forma || 'otra forma')],
+                    ['Al cajón', efvo ? 'sí, en efectivo' : 'no entra al cajón', !efvo],
+                    ['Documento', c.documento || null],
+                    ['Debía', c.saldo_antes != null ? formatMoney(c.saldo_antes) : null],
+                    ['Queda debiendo', Number(c.saldo_despues) > 0.004
+                        ? formatMoney(c.saldo_despues) : 'nada · crédito saldado'],
+                ],
             };
         });
 
@@ -2021,143 +2329,19 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
                         </span>
                     </div>
 
-                    {g.lineas.map((l) => (
-                <div key={l.clave} data-surface="card" className="rounded-xl px-4 py-3 space-y-2">
-                    <div className="flex items-start justify-between gap-3 flex-wrap">
-                        <div className="min-w-0">
-                            <p className={`text-body-sm font-semibold ${l.anulado ? 'text-content-3 line-through' : 'text-content'}`}>
-                                {l.titulo}
-                            </p>
-                            {/* La HORA primero. Es lo que se busca al reclamar
-                                un movimiento —«¿cuál de las tres remesas?»— y
-                                el dato viajaba desde siempre: se usaba sólo
-                                para ordenar la lista y no se pintaba. */}
-                            <p className="text-caption text-content-3">
-                                <span className="tabular-nums">{horaLegible(l.cuando)}</span>
-                                {` · ${l.origen}`}{l.detalle.length ? ` · ${l.detalle.join(' · ')}` : ''}
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                            {/* Apagado cuando no toca el cajón: en verde y con
-                                el resto de las entradas, un cobro con tarjeta se
-                                lee como billetes que hay que tener. */}
-                            <span className="flex flex-col items-end">
-                                <span className={`tabular-nums font-bold ${
-                                    l.sinEfectivo ? 'text-content-3'
-                                        : l.entra ? 'text-success-text' : 'text-warning-text'}`}>
-                                    {l.entra ? '' : '−'}{formatMoney(l.monto)}
-                                </span>
-                                {/* De dónde salió ese número, cuando el papel no
-                                    lo respalda. Pedido del usuario (2026-09-05):
-                                    «si no está seguro el resultado, debe decirlo
-                                    y permitir poner el monto manualmente y
-                                    marcarlo». Guardados, un monto comprobado dos
-                                    veces contra la boleta y uno que nadie pudo
-                                    verificar se ven idénticos — y la diferencia
-                                    es justo la que hace falta al revisar un
-                                    corte. */}
-                                {ROTULO_DE_ORIGEN[l.montoOrigen] && (
-                                    <span className="text-micro text-content-3 leading-tight">
-                                        {ROTULO_DE_ORIGEN[l.montoOrigen]}
-                                    </span>
-                                )}
-                            </span>
-                            {puedeOperar && l.movimiento && !l.anulado && (
-                                <Button variant="ghost" size="sm" onClick={() => onCorregir(l.movimiento)}>
-                                    Corregir
-                                </Button>
-                            )}
-                        </div>
+                    <div className="space-y-1.5">
+                        {g.lineas.map((l) => (
+                            <Movimiento key={l.clave} l={l} corte={g.corte}
+                                abierto={abierto === l.clave}
+                                onAlternar={() => setAbierto((c) => (c === l.clave ? null : l.clave))}
+                                quien={anotaron?.get(l.quien)}
+                                puedeOperar={puedeOperar} onCorregir={onCorregir}
+                                foto={foto?.clave === l.clave ? foto : null}
+                                firmando={firmando === l.clave}
+                                onVerComprobante={() => verComprobante(l.clave, l.foto)}
+                                onAmpliar={setAmpliada} />
+                        ))}
                     </div>
-
-                    {/* Y la corrección va ARRIBA de la firma: lo primero que
-                        hay que saber de un movimiento corregido es que el
-                        número que se está leyendo no es el que se anotó. */}
-                    {(l.correcciones || []).map((c) => (
-                        <LaCorreccion key={c.solicitud} dato={c} />
-                    ))}
-
-                    {/* ── Quién lo anotó, y su comprobante ──────────────────
-                        Un movimiento de dinero sin autor no se puede reclamar,
-                        y sin la boleta no se puede comprobar. Los dos datos
-                        estaban guardados y ninguno se pintaba: la remesa de $50
-                        de Salud 4 se veía como una línea suelta sin hora, sin
-                        nombre y sin foto. Es el mismo bloque de firma que
-                        llevan las tarjetas de corte y de bolsa. */}
-                    {(l.quien || l.foto) && (
-                        <div className="flex items-center justify-between gap-3 flex-wrap">
-                            {l.quien && anotaron?.get(l.quien) ? (
-                                <span className="flex items-center gap-1.5 min-w-0">
-                                    <AvatarConEstado emp={anotaron.get(l.quien)} px={20}
-                                        radio="rounded-full" marco="" />
-                                    <span className="text-caption text-content-3 truncate">
-                                        Lo anotó {anotaron.get(l.quien).name}
-                                    </span>
-                                </span>
-                            ) : <span />}
-                            {l.foto && (
-                                <Button variant="ghost" size="sm" icon={Paperclip}
-                                    loading={firmando === l.clave}
-                                    onClick={() => verComprobante(l.clave, l.foto)}>
-                                    {foto?.clave === l.clave ? 'Ocultar' : 'Ver boleta'}
-                                </Button>
-                            )}
-                        </div>
-                    )}
-
-                    {/* La foto, adentro de la lista y no en otra pestaña: quien
-                        la mira está comparándola contra el monto de al lado.
-                        Ampliarla es un clic más, con el canónico de siempre. */}
-                    {foto?.clave === l.clave && (
-                        foto.error ? (
-                            <p className="text-caption text-danger-text">
-                                No se pudo abrir la boleta. Vuelve a intentarlo.
-                            </p>
-                        ) : (
-                            <button type="button" onClick={() => setAmpliada(foto.url)}
-                                aria-label={`Ampliar la boleta de ${l.titulo}`}
-                                className="block w-full rounded-lg overflow-hidden
-                                           min-h-[var(--tap-min)] active:scale-[0.99]">
-                                <img src={foto.url} alt={`Boleta de ${l.titulo}`}
-                                    className="w-full max-h-64 object-contain bg-surface-input/40" />
-                            </button>
-                        )
-                    )}
-
-                    {/* De qué bolsa salió cada parte. Una fila por bolsa, con lo
-                        que aporta y si toca el corte. Es lo que la frase no podía
-                        decir sin elegir una de las dos verdades. */}
-                    {(l.reparto || []).length > 0 && (
-                        <div className="rounded-lg bg-surface-input/40 px-3 py-2 space-y-1">
-                            {l.reparto.map((b) => (
-                                <div key={b.folio} className="flex items-baseline justify-between gap-3 text-caption">
-                                    <span className="text-content-2 min-w-0 truncate">
-                                        {b.folio}
-                                        <span className="text-content-3"> · {fechaLegible(b.fecha)}</span>
-                                    </span>
-                                    <span className="flex items-baseline gap-2 shrink-0">
-                                        <span className="tabular-nums text-content-2">{formatMoney(b.monto)}</span>
-                                        <span className={b.deHoy ? 'text-warning-text font-semibold' : 'text-content-3'}>
-                                            {b.deHoy ? 'entra al corte' : 'ya cerrada'}
-                                        </span>
-                                    </span>
-                                </div>
-                            ))}
-                            {/* La suma sólo cuando hay más de una bolsa: con una
-                                sola repetiría el monto de arriba. */}
-                            {l.reparto.length > 1 && (
-                                <div className="flex items-baseline justify-between gap-3 pt-1 border-t border-border/60
-                                                text-caption font-bold">
-                                    <span className="text-content">Afecta el corte de hoy</span>
-                                    <span className={`tabular-nums ${l.afectaElCorte > 0 ? 'text-warning-text' : 'text-content-3'}`}>
-                                        {l.afectaElCorte > 0 ? formatMoney(l.afectaElCorte) : 'nada'}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                    </div>
-                    ))}
                 </div>
             ))}
 

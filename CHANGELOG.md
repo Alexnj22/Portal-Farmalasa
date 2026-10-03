@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1164.0 — App: Vacaciones
+
+- **App: Vacaciones nativo.** El plan del año mes por mes: quién sale, de cuándo a cuándo (con hora si el extremo la tiene), cuántos días, cuántos lleva usados y en qué estado, con quien está de vacaciones hoy resaltado. Arriba los planes del año y los cambios que esperan respuesta. Año, estado y sala en el menú; búsqueda por nombre o sala. Asignar, aprobar y responder cambios sigue en el portal.
+- **Núcleo:** la cuenta de días de un período (un extremo con hora no es un día), los días usados por persona y la lista de planes ordenada y filtrada pasan de `VacationPlanView` a `src/utils/planDeVacaciones.js`, con su prueba.
+
 ## v2.1163.0 — App: Horarios
 
 - **App: Horarios nativo.** La semana de una sala, un día a la vez: quién trabaja y de qué hora a qué hora (con la pausa, la jornada nocturna y lo que está en borrador marcados), quién descansa o no tiene horario, y la semana entera de cada persona al tocarla. Flechas para cambiar de semana y la sala en el menú. El día lo resuelve `resolverTurnoDelDia`, el mismo de la planilla y el kiosco. Editar la grilla sigue en el portal.

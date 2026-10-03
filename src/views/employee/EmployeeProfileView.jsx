@@ -3,7 +3,6 @@ import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { EmptyState } from '../../components/common/StateViews';
-import { tokenMatch } from '@nucleo/utils/searchUtils';
 import {
     User, Phone, HeartPulse, Briefcase,
     Clock, Pencil, Calendar, ArrowRightLeft, Sparkles, Palmtree,
@@ -23,6 +22,7 @@ import SearchInput from '../../components/common/SearchInput';
 import EmployeeDocumentsList from '../../components/common/EmployeeDocumentsList';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { ausenciaDelDia, cumpleEn, filtrarHistorial, historialDePerfil, proximasVacaciones, semanaDelPerfil, tiempoEnLaEmpresa } from '@nucleo/utils/miPerfil';
 
 const formatDate = (d) => d
     ? fechaTexto(d, { day: '2-digit', month: 'short', year: 'numeric' })
@@ -43,11 +43,7 @@ const EVENT_THEMES = {
 };
 const DEFAULT_THEME = { bg: 'bg-surface-card-hover', text: 'text-content-2', border: 'border-border-card', dot: 'border-brand', glow: 'hover:shadow-[var(--shadow-glow-brand)]', variante: 'neutral' };
 
-const WEEK_DAYS = [
-    { id: 1, short: 'Lu' }, { id: 2, short: 'Ma' }, { id: 3, short: 'Mi' },
-    { id: 4, short: 'Ju' }, { id: 5, short: 'Vi' }, { id: 6, short: 'Sá' },
-    { id: 0, short: 'Do' },
-];
+// Los días de la semana viven con `semanaDelPerfil` (núcleo).
 
 const SectionCard = ({ children, className = '' }) => (
     <div data-surface="card" className={`p-5 transition-all duration-[var(--dur-slow)] ${className}`}>
@@ -119,89 +115,30 @@ const EmployeeProfileView = ({ openModal }) => {
     }, [user?.id]);
 
 
-    const tenure = useMemo(() => {
-        const hd = emp?.hire_date || emp?.hireDate;
-        if (!hd) return '—';
-        const h = new Date(hd + 'T12:00:00'), now = new Date();
-        let y = now.getFullYear() - h.getFullYear();
-        let m = now.getMonth() - h.getMonth();
-        if (m < 0) { y--; m += 12; }
-        if (y === 0 && m === 0) return 'Nuevo';
-        return `${y > 0 ? `${y} año${y > 1 ? 's' : ''} ` : ''}${m > 0 ? `${m} mes${m > 1 ? 'es' : ''}` : ''}`.trim();
-    }, [emp?.hire_date, emp?.hireDate]);
+    const tenure = useMemo(() => tiempoEnLaEmpresa(emp?.hire_date || emp?.hireDate), [emp?.hire_date, emp?.hireDate]);
 
-    const timeline = useMemo(() => {
-        const hd = emp?.hire_date || emp?.hireDate;
-        const synthetic = hd ? [{ id: 'hiring-event', type: 'HIRING', date: hd, isSystem: true, note: `Inicio de labores. Sucursal: ${branch?.name || 'N/A'}`, metadata: {} }] : [];
-        return [...events, ...synthetic].sort((a, b) => new Date(b.date) - new Date(a.date));
-    }, [events, emp?.hire_date, emp?.hireDate, branch]);
+    const timeline = useMemo(() => historialDePerfil(events, emp?.hire_date || emp?.hireDate, branch?.name), [events, emp?.hire_date, emp?.hireDate, branch]);
 
-    const weeklySchedule = useMemo(() => {
-        if (!emp?.weeklySchedule) return [];
-        const now = new Date(); now.setHours(0,0,0,0);
-        const day = now.getDay();
-        const monday = new Date(now);
-        monday.setDate(now.getDate() - day + (day === 0 ? -6 : 1));
-        return WEEK_DAYS.map(d => {
-            const raw = emp.weeklySchedule[d.id] ?? emp.weeklySchedule[String(d.id)];
-            const shiftId = typeof raw === 'object' ? raw?.shiftId : raw;
-            const shift = shiftId && shiftId !== 'LIBRE' ? shifts.find(s => String(s.id) === String(shiftId)) : null;
-            const offset = d.id === 0 ? 6 : d.id - 1;
-            const date = new Date(monday);
-            date.setDate(monday.getDate() + offset);
-            return { ...d, shift, date };
-        });
-    }, [emp, shifts]);
+    // De lunes a domingo, con el turno de cada día: `semanaDelPerfil` (núcleo).
+    const weeklySchedule = useMemo(() => semanaDelPerfil(emp?.weeklySchedule, shifts).map((d) => ({ ...d, shift: d.turno })), [emp, shifts]);
 
     const availableTypes = useMemo(() =>
         [...new Set(timeline.map(ev => ev.type))].filter(Boolean)
     , [timeline]);
 
     // Devuelve el evento (VACATION/DISABILITY/PERMIT) activo en una fecha dada
-    const getEventForDate = useMemo(() => (dateStr) => {
-        return events.find(ev => {
-            if (!['VACATION', 'DISABILITY', 'PERMIT'].includes(ev.type)) return false;
-            const meta = typeof ev.metadata === 'object' && ev.metadata ? ev.metadata : {};
-            const s = meta.startDate || ev.date;
-            const e = meta.endDate   || ev.date;
-            return dateStr >= s && dateStr <= e;
-        }) || null;
-    }, [events]);
+    const getEventForDate = useMemo(() => (dateStr) => ausenciaDelDia(events, dateStr), [events]);
 
     const visibleTimeline = useMemo(() => {
-        let list = timeline;
-        if (filterFrom) list = list.filter(ev => ev.date >= filterFrom);
-        if (filterTo)   list = list.filter(ev => ev.date <= filterTo);
-        if (filterType) list = list.filter(ev => ev.type === filterType);
-        if (searchQuery.trim()) {
-            list = list.filter(ev => tokenMatch(searchQuery,
-                ev.note,
-                EVENT_TYPES[ev.type]?.label,
-                ev.type
-            ));
-        }
+        let list = filtrarHistorial(timeline, { desde: filterFrom, hasta: filterTo, tipo: filterType, busqueda: searchQuery, rotulos: EVENT_TYPES });
         const hasFilter = filterFrom || filterTo || filterType || searchQuery.trim();
         if (!hasFilter && timelineLimit !== null) list = list.slice(0, timelineLimit);
         return list;
     }, [timeline, filterFrom, filterTo, filterType, searchQuery, timelineLimit]);
 
-    const nextVacation = useMemo(() => {
-        const today = hoySV();
-        return myVacPlans.find(vp => vp.end_date >= today && (vp.status === 'PLANNED' || vp.status === 'CONFIRMED')) || null;
-    }, [myVacPlans]);
+    const nextVacation = useMemo(() => proximasVacaciones(myVacPlans), [myVacPlans]);
 
-    const birthdayCountdown = useMemo(() => {
-        if (!emp?.birth_date) return null;
-        const today = new Date(); today.setHours(0,0,0,0);
-        const bd = new Date(emp.birth_date + 'T12:00:00');
-        let next = new Date(today.getFullYear(), bd.getMonth(), bd.getDate());
-        if (next < today) next.setFullYear(today.getFullYear() + 1);
-        const diff = Math.round((next - today) / (1000 * 60 * 60 * 24));
-        if (diff === 0) return '¡Hoy! 🎉';
-        if (diff === 1) return 'Mañana';
-        if (diff <= 30) return `en ${diff} días`;
-        return null;
-    }, [emp]);
+    const birthdayCountdown = useMemo(() => cumpleEn(emp?.birth_date), [emp]);
 
     if (!emp) return (
         <GlassViewLayout icon={User} title="Mi perfil" transparentBody={true}>
@@ -403,9 +340,8 @@ const EmployeeProfileView = ({ openModal }) => {
                             <div className="overflow-x-auto w-full">
                             <div className="grid grid-cols-7 gap-1.5 min-w-[320px]">
                                 {weeklySchedule.map(d => {
-                                    const todayStr = new Date().toDateString();
-                                    const isToday  = d.date?.toDateString() === todayStr;
-                                    const dateStr  = d.date?.toISOString().split('T')[0];
+                                    const isToday  = d.fecha === hoySV();
+                                    const dateStr  = d.fecha;
                                     const ev       = dateStr ? getEventForDate(dateStr) : null;
                                     const evCfg    = ev ? {
                                         VACATION:   { label: 'Vac', Icon: Palmtree,    bg: 'bg-success', light: 'bg-success/10 border-success/30', text: 'text-success-text' },
@@ -420,7 +356,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                                       : 'bg-surface-card-hover/80 border border-divider'
                                         }`}>
                                             <p className={`text-micro font-black uppercase tracking-widest ${isToday ? 'text-white/50' : evCfg ? evCfg.text : 'text-content-2'}`}>{d.short}</p>
-                                            <p className={`text-subtitle font-black leading-none mb-1 ${isToday ? 'text-white' : evCfg ? evCfg.text : 'text-content-2'}`}>{d.date?.getDate()}</p>
+                                            <p className={`text-subtitle font-black leading-none mb-1 ${isToday ? 'text-white' : evCfg ? evCfg.text : 'text-content-2'}`}>{Number(d.fecha.slice(8))}</p>
                                             {evCfg ? (
                                                 <>
                                                     <evCfg.Icon size={10} className={evCfg.text} strokeWidth={2} />

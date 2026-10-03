@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1161.0 — App: Mi perfil y Mis documentos
+
+- **App: Mi perfil nativo.** La ficha propia: foto, cargo, sala, cumpleaños cercano; cuánto llevo en la empresa y mis solicitudes en curso; mis próximas vacaciones; mi horario de esta semana (de lunes a domingo, con la vacación, incapacidad o permiso del día marcado); mis datos, mi contacto —editable para quien puede editar fichas, igual que en el portal— y mi historial. Se abre desde «Yo».
+- **App: Mis documentos nativo.** Los papeles del expediente y los de las solicitudes (incapacidades, constancias, permisos) en una lista, con su estado y cuándo vence lo que vence; por tipo en el segmentado y búsqueda. Tocar uno lo abre con una URL firmada al momento.
+- **Núcleo:** la antigüedad, el historial con el ingreso, la semana, las próximas vacaciones y el cumpleaños (`src/utils/miPerfil.js`) y la lista de documentos con sus pestañas y su filtro (`src/utils/misDocumentos.js`) pasan de las vistas del portal al núcleo, con su prueba.
 ## v2.1160.2 — Apareció en un envío ingresa el producto al inventario
 
 - **«Apareció» en un envío marcado «no llegó» ahora recibe el producto en la sala.** Antes sólo cerraba el faltante: la caja quedaba en el estante y fuera del inventario de las dos salas, sin poder venderse (bolsa E00212, Salud 5 → Salud 3). Si la recepción falla, el faltante sigue abierto.

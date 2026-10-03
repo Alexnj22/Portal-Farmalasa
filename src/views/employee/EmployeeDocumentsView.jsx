@@ -5,7 +5,6 @@ import Button from '../../components/common/Button';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import FilterBar from '../../components/common/FilterBar';
-import { tokenMatch } from '@nucleo/utils/searchUtils';
 import {
     FolderOpen, Search, X, FileCheck, Stethoscope,
     FileText, Palmtree, RefreshCw,
@@ -20,10 +19,11 @@ import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import VisorDeDocumento from '../../components/common/VisorDeDocumento';
 import { getExpiryBadge } from '@nucleo/utils/documentExpiry';
 import {
-    nombreDeDocumento, grupoDeCategoria, iconoDeCategoria,
+    grupoDeCategoria, iconoDeCategoria,
     tinteDeCategoria, descripcionDelArchivo,
 } from '../../components/common/catalogos/documentos';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { documentosDelExpediente, filtrarDocumentos, PESTANAS_DOCS as TABS, pestanasDeDocumentos, solicitudesConDocumento } from '@nucleo/utils/misDocumentos';
 
 // ─── Configuración por tipo ────────────────────────────────────────────────
 //
@@ -68,17 +68,9 @@ const fmtDate = (d) => d
     ? fechaTexto(d, { day: '2-digit', month: 'short', year: 'numeric' })
     : null;
 
-const parseMeta = (m) =>
-    typeof m === 'object' && m ? m : (() => { try { return JSON.parse(m); } catch { return {}; } })();
 
 // ─── TABS ──────────────────────────────────────────────────────────────────
-const TABS = [
-    { key: 'ALL',         label: 'Todos'       },
-    { key: 'EXPEDIENTE',  label: 'Del expediente' },
-    { key: 'DISABILITY',  label: 'Incapacidades' },
-    { key: 'CERTIFICATE', label: 'Constancias' },
-    { key: 'PERMIT',      label: 'Permisos'    },
-];
+// Las pestañas son `PESTANAS_DOCS` del núcleo (`utils/misDocumentos`).
 
 // ─── Un hecho del documento ────────────────────────────────────────────────
 //
@@ -277,9 +269,8 @@ const EmployeeDocumentsView = () => {
         // Devuelve el ARRAY —ya paginado—, no `{ data }`.
         fetchOwnApprovalRequests(user.id)
             .then((rows) => {
-                const parsed = (rows || []).map(r => ({ ...r, meta: parseMeta(r.metadata) }));
-                // Documentos relevantes: constancias + cualquier solicitud con archivo adjunto
-                setAllDocs(parsed.filter(r => r.meta?.docUrl || r.type === 'CERTIFICATE'));
+                // Constancias + cualquier solicitud con archivo adjunto: `solicitudesConDocumento`.
+                setAllDocs(solicitudesConDocumento(rows || []));
                 setLoading(false);
             })
             .catch((e) => { console.error('EmployeeDocumentsView: documentos falló:', e?.message ?? e); setLoading(false); });
@@ -306,31 +297,10 @@ const EmployeeDocumentsView = () => {
     // documentos de producción lo tienen guardado como la clave), la categoría
     // para resolver el grupo, y las tres fechas. `historial` no viaja entero:
     // sólo cuántas versiones hay, que es lo que cabe en una ficha.
-    const docsDelExpediente = useMemo(() => {
-        const mia = (employees || []).find(e => String(e.id) === String(user?.id));
-        return (mia?.employee_documents || [])
-            .filter(d => d?.url)
-            .map((d, i) => ({
-                id: `expediente-${i}`,
-                type: 'EXPEDIENTE',
-                status: 'EN_EXPEDIENTE',
-                note: null,
-                created_at: d.uploaded_at || d.issue_date || mia?.hire_date || new Date().toISOString(),
-                meta: {
-                    docUrl: d.url,
-                    nombre: nombreDeDocumento(d),
-                    categoria: d.category || null,
-                    // El nombre del archivo es un dato del archivo, no del
-                    // documento: si la fila no lo trae, se dice que hay un
-                    // adjunto y ya. Antes acá caía el `title`, que es lo que
-                    // ponía `DUI_COMPLETO` en el renglón del archivo.
-                    docName: d.file_name || null,
-                    issueDate: d.issue_date || null,
-                    expiryDate: d.expiry_date || null,
-                    versiones: Array.isArray(d.historial) ? d.historial.length : 0,
-                },
-            }));
-    }, [employees, user?.id]);
+    const docsDelExpediente = useMemo(
+        () => documentosDelExpediente((employees || []).find(e => String(e.id) === String(user?.id))),
+        [employees, user?.id],
+    );
 
     // Una sola lista: la persona no distingue «solicitud con adjunto» de
     // «documento del expediente», y no tiene por qué.
@@ -354,11 +324,7 @@ const EmployeeDocumentsView = () => {
     // `Contador` devuelve `null` en cero, así que una pestaña vacía no dibuja
     // un «0»: es la misma burbuja que usa el resto del portal (§16.2), en vez
     // del `· N` pegado al rótulo que había acá.
-    const counts = useMemo(() => {
-        const c = { ALL: todos.length };
-        TABS.slice(1).forEach(t => { c[t.key] = todos.filter(d => d.type === t.key).length; });
-        return c;
-    }, [todos]);
+    const counts = useMemo(() => Object.fromEntries(pestanasDeDocumentos(todos).map(t => [t.key, t.cuenta])), [todos]);
 
     // Una pestaña vacía no se dibuja, así que la lista que se le pasa al hook
     // tiene que ser ÉSA y no `TABS`: su contrato es «las visibles AHORA». Con la
@@ -375,28 +341,10 @@ const EmployeeDocumentsView = () => {
 
     const [tab, setTab] = usePestanaEnUrl(pestanas, 'ALL');
 
-    const filtered = useMemo(() => {
-        let list = todos;
-        if (tab !== 'ALL') list = list.filter(d => d.type === tab);
-        if (filterStatus) list = list.filter(d => d.status === filterStatus);
-        if (filterFrom)   list = list.filter(d => d.created_at.slice(0,10) >= filterFrom);
-        if (filterTo)     list = list.filter(d => d.created_at.slice(0,10) <= filterTo);
-        if (search.trim()) {
-            list = list.filter(d => tokenMatch(search,
-                d.note,
-                d.approver_note,
-                DOC_CFG[d.type]?.label,
-                // El nombre que se VE. Buscar «dui» no encontraba nada porque
-                // la lista sólo miraba el nombre del archivo y el rótulo del
-                // tipo, y ninguno de los dos dice «DUI».
-                d.meta?.nombre,
-                grupoDeCategoria(d.meta?.categoria),
-                d.meta?.docName,
-                CERT_LABELS[d.meta?.certificateType]
-            ));
-        }
-        return list;
-    }, [todos, tab, filterStatus, filterFrom, filterTo, search]);
+    const filtered = useMemo(
+        () => filtrarDocumentos(todos, { pestana: tab, estado: filterStatus, desde: filterFrom, hasta: filterTo, busqueda: search }),
+        [todos, tab, filterStatus, filterFrom, filterTo, search],
+    );
 
     const hasFilters = filterStatus || filterFrom || filterTo;
 

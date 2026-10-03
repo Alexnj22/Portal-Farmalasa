@@ -208,6 +208,28 @@ el código parece a propósito (se paga en una sala y se aplica en otra) — que
 
 ### F4 — menores, y revocaciones
 
+✅ **Cerrada el 2026-10-02** (migraciones `20261003045645`, `20261003045932`;
+desplegadas `operar-caja` y `sync-wfm-sales`). Con esto **la deuda quedó en
+cero**: 0 edge functions y 0 funciones de la base.
+
+- **Revocadas a `authenticated`** las cinco que el portal no llama, más
+  `get_stagnant_inventory` y su envoltura. Sus llamadores son DEFINER, crons o
+  service_role; el cron de dispensaciones corrió bien al minuto siguiente.
+- **MIN·MAX**, según la decisión 2: los resúmenes de costo de una sala sólo de
+  la propia (Jefe/a de Compras: Bodega), y devuelven vacío —no error— porque la
+  pestaña trata un error del resumen como fallo de la carga entera. El
+  contexto de un producto ya no lo lee cualquiera con sesión: la sala propia
+  (las solicitudes de MIN·MAX desde sala), MIN·MAX, o la bandeja. Probado como
+  Jefe/a de Compras y como Dependiente.
+- **`operar-caja`**: `corregir` ya no acepta un movimiento de otra sala, y
+  `aplicar_correccion` compara contra el alcance de quien decide. Medido: las
+  23 solicitudes de corrección que hubo eran de la propia sala.
+- **`sync-wfm-sales`** exige ver Sucursales (la llama TabStaff; sólo cargos de
+  red), y con alcance de una sala, sólo la propia.
+- `registrar_bitacora` y `productos_parados_de_sala` quedaron
+  `cruza-por-diseno` con su motivo: la bitácora anota dónde ocurrió la acción,
+  y los parados son de Inventario, que Jefe/a de Compras tiene en red.
+
 - `operar-caja` · `corregir`: el mismo caso que `pedir_correccion` (sólo crea
   una solicitud). `aplicar_correccion` compara contra lo que manda el
   navegador, no contra el alcance.

@@ -9,6 +9,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import NuevoConteoModal from '../components/inventario/NuevoConteoModal';
 import { useStaffStore } from '@nucleo/store/staffStore';
+import { ALCANCE_CONTEO } from '@nucleo/utils/conteoDeInventario';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import FilterBar from '../components/common/FilterBar';
@@ -37,7 +38,8 @@ const ESTADO_CFG = {
     CERRADO:     { icon: CheckCircle2, label: 'Cerrado',     variante: 'success' },
 };
 
-const SCOPE_LABEL = { TOTAL: 'Total', LABORATORIO: 'Por laboratorio', BAJO_RECETA: 'Bajo Receta', MANUAL: 'Manual', CICLICO: 'Cíclico del mes' };
+// Los alcances viven en el núcleo (`utils/conteoDeInventario`).
+const SCOPE_LABEL = ALCANCE_CONTEO;
 
 // El alcance y el detalle en la misma celda, y solo cuando el detalle no es el
 // de siempre: "Por lote" en todas las filas sería ruido: es lo normal. La lista

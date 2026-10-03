@@ -1,21 +1,32 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, requireAuthUser, getErpCredsByBranch } from "../_shared/security.ts";
+import { getCorsHeaders, getErpCredsByBranch, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  const user = await requireAuthUser(req);
-  if (!user) {
-    return new Response(JSON.stringify({ error: "UNAUTHORIZED" }), {
-      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  const responder = (body: unknown, status: number) => new Response(JSON.stringify(body), {
+    status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+  /* Entra al sistema de origen con las credenciales de la sala que se pida.
+   * Hasta el 2026-10-02 bastaba con tener sesión —ni siquiera ser empleado
+   * activo—. Ahora exige ver Sucursales, que es la pantalla que la llama
+   * (TabStaff) y que hoy sólo tienen cargos de red; con alcance de una sala,
+   * sólo la propia. Ver PLAN-ALCANCE-POR-SUCURSAL F4. */
+  const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const quien = await requireActiveEmployeeUser(req, admin);
+  if (!quien) return responder({ error: "UNAUTHORIZED" }, 401);
+  const permiso = await permisoDeModulo(admin, quien.id, "branches", "can_view");
+  if (permiso.roto) return responder({ error: permiso.roto }, 503);
+  if (!permiso.puede) return responder({ error: "No tienes permiso para ver las sucursales." }, 403);
 
   try {
     const { branchId, fechaI, fechaF } = await req.json();
 
     if (!branchId) throw new Error("branchId es obligatorio.");
+    if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== Number(branchId)) {
+      return responder({ error: "Solo puedes ver tu propia sucursal." }, 403);
+    }
 
     // Credentials come from Supabase Secrets (ERP_BRANCH_MAP), never from the client
     const creds = getErpCredsByBranch(Number(branchId));

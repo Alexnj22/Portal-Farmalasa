@@ -42,20 +42,14 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { COLUMNAS_DE_PRECIO, NIVELES_DE_PRECIO, nivelesVisibles } from '@nucleo/utils/preciosDeProducto';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
 
 
-const PRICE_FIELDS = [
-    { key: 'vineta',      label: 'Víneta'   },
-    { key: 'descuento_1', label: 'Desc. 1'  },
-    { key: 'vip',         label: 'VIP'      },
-    { key: 'clinica',     label: 'Clínica'  },
-    { key: 'mayoreo',     label: 'Mayoreo'  },
-    { key: 'premium',     label: 'Premium'  },
-    { key: 'precio_7',    label: 'Precio 7' },
-];
-const PRICE_LEVEL_ORDER = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo', 'premium', 'precio_7'];
-const PRICE_SELECT = PRICE_FIELDS.map(f => f.key).join(', ');
+// Los niveles de precio y cuáles ve cada cargo viven en el núcleo
+// (`utils/preciosDeProducto`): la app los muestra igual.
+const PRICE_FIELDS = NIVELES_DE_PRECIO;
+const PRICE_SELECT = COLUMNAS_DE_PRECIO;
 // premium and precio_7 are excluded from loss/margin checks (external/special price tiers)
 const MARGIN_FIELDS = PRICE_FIELDS.filter(f => f.key !== 'precio_7' && f.key !== 'premium');
 // only premium gets the special loss badge (precio_7 is fully excluded from all checks)
@@ -931,12 +925,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         srsDivider: 'border-divider',
     };
 
-    const allowedPriceFields = useMemo(() => {
-        if (!maxPriceLevel) return PRICE_FIELDS;
-        const maxIdx = PRICE_LEVEL_ORDER.indexOf(maxPriceLevel);
-        if (maxIdx === -1) return PRICE_FIELDS;
-        return PRICE_FIELDS.filter(f => PRICE_LEVEL_ORDER.indexOf(f.key) <= maxIdx);
-    }, [maxPriceLevel]);
+    const allowedPriceFields = useMemo(() => nivelesVisibles(maxPriceLevel), [maxPriceLevel]);
     const marginCheckFields = useMemo(() => allowedPriceFields.filter(f => f.key !== 'precio_7' && f.key !== 'premium'), [allowedPriceFields]);
 
     const [photoLoading, setPhotoLoading] = useState(false);
@@ -1460,12 +1449,7 @@ export default function TabCatalogo({
 }) {
     const { maxPriceLevel, hasPermission } = useAuth();
     const canSeeCosts = hasPermission('productos_ver_costos');
-    const allowedPriceFields = useMemo(() => {
-        if (!maxPriceLevel) return PRICE_FIELDS;
-        const maxIdx = PRICE_LEVEL_ORDER.indexOf(maxPriceLevel);
-        if (maxIdx === -1) return PRICE_FIELDS;
-        return PRICE_FIELDS.filter(f => PRICE_LEVEL_ORDER.indexOf(f.key) <= maxIdx);
-    }, [maxPriceLevel]);
+    const allowedPriceFields = useMemo(() => nivelesVisibles(maxPriceLevel), [maxPriceLevel]);
 
 
     // ── Theme tokens ────────────────────────────────────────────────────────────

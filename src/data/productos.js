@@ -253,6 +253,15 @@ export function fetchProductChangeAndMarginData(ids) {
     ]);
 }
 
+/** Los precios de un producto por presentación, sin costos: para quien sólo
+ *  tiene que decir cuánto cuesta (la ficha del producto en el teléfono). */
+export function fetchPreciosDelProducto(productId, columnas) {
+    return supabase.from('product_precios')
+        .select(`id_presentacion, activo, descripcion, factor, ${columnas}, presentaciones(tipo)`)
+        .eq('product_id', productId)
+        .order('activo', { ascending: false });
+}
+
 // ── Detalle expandido de un producto (prefetch + expand comparten la forma) ─
 
 export function fetchProductDetail(productId, priceSelect, canSeeCosts) {

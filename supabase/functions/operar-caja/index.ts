@@ -449,6 +449,13 @@ Deno.serve(async (req) => {
       if (errMov) throw new Error(`leyendo el movimiento: ${errMov.message}`);
       if (!mov) return json({ ok: false, error: "Ese movimiento no existe." }, 404);
       if (mov.anulado_at) return json({ ok: false, error: "Ese movimiento ya está anulado." }, 409);
+      // Con permiso de UNA sala, sólo los movimientos de la propia (2026-10-02).
+      // El movimiento se relee de la base, pero nadie comparaba SU sala con la
+      // de quien pide: se podía pedir la corrección de un movimiento de otra
+      // sucursal. Mismo hueco que `pedir_correccion` en creditos-erp.
+      if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== Number(mov.branch_id)) {
+        return json({ ok: false, error: "Ese movimiento es de otra sala." }, 403);
+      }
       /* La parte del cajón de una salida que salió primero de una bolsa no se
        * corrige de monto: el vale dice «$130 de la bolsa + $20 de la caja», y
        * cambiar una mitad deja un vale que no suma. Se anula ENTERA (y al
@@ -649,6 +656,12 @@ Deno.serve(async (req) => {
       const meta = (sol.metadata ?? {}) as Record<string, unknown>;
       if (Number(meta.branch_id) !== sala) {
         return json({ ok: false, error: "Esa corrección es de otra sala." }, 400);
+      }
+      // Y quien decide, sólo sobre su sala si su permiso es de una (2026-10-02).
+      // Lo de arriba sólo comparaba contra la `sala` que manda el navegador.
+      // Hoy deciden sólo cargos de red: está para el día que no.
+      if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== Number(meta.branch_id)) {
+        return json({ ok: false, error: "Esa corrección es de otra sala." }, 403);
       }
 
       const { data: mov, error: errMov } = await supabase

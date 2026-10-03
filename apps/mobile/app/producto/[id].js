@@ -12,6 +12,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { fetchInventoryByProductIds } from '@nucleo/data/inventory';
+import { fetchPreciosDelProducto } from '@nucleo/data/productos';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { COLUMNAS_DE_PRECIO, nivelesVisibles } from '@nucleo/utils/preciosDeProducto';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 import { lotesEnUnidades, unidadesDe } from '@nucleo/utils/unidadesInventario';
 import { diasHasta, fmtVence } from '@nucleo/utils/pedirTraslado';
 import { ERP_NAMES, ERP_ORDEN } from '@nucleo/constants/erp';
@@ -34,15 +38,23 @@ const uds = (n) => `${formatNumber(n)} ${n === 1 ? 'unidad' : 'unidades'}`;
 
 export default function Producto() {
   const { id, nombre } = useLocalSearchParams();
+  const { maxPriceLevel } = useAuth();
   const [filas, setFilas] = useState(null);
+  const [precios, setPrecios] = useState([]);
   const [error, setError] = useState(null);
   const [recargando, setRecargando] = useState(false);
 
   const cargar = useCallback(async () => {
     try {
       setError(null);
-      const r = await fetchInventoryByProductIds([Number(id)]);
+      const [r, p] = await Promise.all([
+        fetchInventoryByProductIds([Number(id)]),
+        fetchPreciosDelProducto(Number(id), COLUMNAS_DE_PRECIO),
+      ]);
       setFilas((r || []).filter((f) => !f.is_vencidos));
+      // Sólo las presentaciones vigentes; sin permiso para verlos, la base no
+      // devuelve filas y la sección no se dibuja.
+      setPrecios((p?.data || []).filter((x) => x.activo !== false));
     } catch (e) {
       setError(e?.message ?? String(e));
       setFilas([]);
@@ -111,6 +123,26 @@ export default function Producto() {
               <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 20 }}>Sin existencias en ninguna sala.</Text>
             )}
             {salas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>{uds(total)} · lo que vence primero va primero</Text> : null}
+
+            {precios.length ? (
+              <View style={{ gap: 8 }}>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16, marginTop: 8 }}>Precios</Text>
+                {precios.map((p) => (
+                  <Vidrio key={p.id_presentacion} radio={20}><View style={{ paddingHorizontal: 14, paddingVertical: 4 }}>
+                    <View style={{ flexDirection: 'row', paddingVertical: 10, alignItems: 'baseline', gap: 8 }}>
+                      <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }} numberOfLines={1}>{p.presentaciones?.tipo || p.descripcion || 'Presentación'}</Text>
+                      {Number(p.factor) > 1 ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`x${p.factor}`}</Text> : null}
+                    </View>
+                    {nivelesVisibles(maxPriceLevel).filter((n) => Number(p[n.key]) > 0).map((n) => (
+                      <View key={n.key} style={{ flexDirection: 'row', paddingVertical: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
+                        <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 15 }}>{n.label}</Text>
+                        <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: n.key === 'vineta' ? '800' : '500', fontVariant: ['tabular-nums'] }}>{formatMoney(p[n.key])}</Text>
+                      </View>
+                    ))}
+                  </View></Vidrio>
+                ))}
+              </View>
+            ) : null}
           </>
         )}
       </ScrollView>

@@ -1292,6 +1292,35 @@ export async function hacerCorte({ sala, efectivo, observaciones = null, simular
     }
 }
 
+/**
+ * Lo que el portal ANOTÓ en la caja durante un rango, para la lista de
+ * movimientos de Efectivo.
+ *
+ * Esa lista lee la captura del sistema de la caja, que de cada renglón sabe el
+ * concepto recortado a 50 caracteres, el monto y el día — y nada más. Cuando el
+ * renglón nació en el portal, acá está todo lo demás: el concepto entero, la
+ * boleta y su foto, quién lo anotó, de dónde salió el monto y la hora EXACTA
+ * (la captura sólo sabe cuándo lo vio, con su cadencia de 30 minutos). Se
+ * cruza por sala + `erp_movimiento_id`, que es el número que el portal recibió
+ * al anotarlo.
+ *
+ * Por `fetchAllRows`: un mes de las seis salas pasa de las 1000 filas.
+ */
+export function fetchAnotadosDelPortal({ desde, hasta, branchId = null }) {
+    if (!desde || !hasta) return Promise.resolve([]);
+    return fetchAllRows(() => {
+        let q = supabase.from('caja_movimientos_portal')
+            .select('id, branch_id, erp_movimiento_id, tipo, monto, concepto, detalle, numero_boleta,'
+                  + ' foto_url, monto_origen, registrado_at, registrado_por, anulado_at')
+            .gte('fecha', desde)
+            .lte('fecha', hasta)
+            .not('erp_movimiento_id', 'is', null)
+            .order('id', { ascending: false });
+        if (branchId) q = q.eq('branch_id', branchId);
+        return q;
+    });
+}
+
 /** Los movimientos del cajón que escribió el portal hoy en esta sala. */
 export async function fetchMovimientosDelPortal(sala, dia = null) {
     // El día de la CAJA, no el del reloj. A las once de la noche con la caja sin

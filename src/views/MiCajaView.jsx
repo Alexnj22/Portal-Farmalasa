@@ -1601,7 +1601,7 @@ function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas })
                                 </p>
                             </div>
                             {veLosMontos && (
-                                <span className="text-h3 font-black tabular-nums text-content">
+                                <span className="text-title-lg font-black tabular-nums text-content">
                                     {formatMoney(total)}
                                 </span>
                             )}
@@ -1658,7 +1658,7 @@ function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas })
                                         </p>
                                     </div>
                                     {puedeSumar && (
-                                        <span className="text-h3 font-black tabular-nums text-brand-text">
+                                        <span className="text-title-lg font-black tabular-nums text-brand-text">
                                             {formatMoney(enCaja)}
                                         </span>
                                     )}

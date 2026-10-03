@@ -1,6 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Hourglass, Users } from 'lucide-react';
 import Button from '../../components/common/Button';
+import Contador from '../../components/caja/Contador';
+import PersonaConFoto from '../../components/caja/PersonaConFoto';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import StatCard from '../../components/common/StatCard';
@@ -14,9 +16,9 @@ import { aplicarPendientes, fetchAplicacionesPendientes } from '@nucleo/data/iny
 import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fmtMl } from '@nucleo/utils/inyeccionDosis';
-import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaNumerica } from '@nucleo/utils/fecha';
+import { fechaHora12 } from '@nucleo/utils/hora';
 
 /*
  * Lo pagado y sin aplicar: qué tiene cada cliente a su nombre.
@@ -27,6 +29,11 @@ import { fechaNumerica } from '@nucleo/utils/fecha';
  *
  * Quien opera una caja puede marcarlas aplicadas desde acá también, igual que
  * desde Mi caja → Aplicación de inyección → «Ya la pagó».
+ *
+ * Una fila por PAGO y producto, no por aplicación (2026-10-03): pagó 5 y hoy
+ * se aplica 2 → «2 de 5» con un contador, y debajo el historial de lo que ya
+ * se aplicó de ese pago — dónde, quién (con su foto) y cuándo. Pedidos del
+ * usuario: «¿la card muestra el historial de cada una?».
  */
 
 const fechaCorta = (f) => fechaNumerica(String(f || '').slice(0, 10), { anio: false });
@@ -39,25 +46,36 @@ export default function TabPendientes({ filterBranch, setFilterBranch, branchOpt
     const puedeAplicar = hasPermission('caja_vales', 'can_edit');
     const [filas, setFilas] = useState(null);
     const [error, setError] = useState(null);
-    const [elegidas, setElegidas] = useState(() => new Set());
+    const [cuantas, setCuantas] = useState({});   // grupo → cuántas se aplican ahora
     const [enviando, setEnviando] = useState(false);
 
     const cargar = useCallback(() => fetchAplicacionesPendientes({ buscar: searchTerm, sala: filterBranch || null })
-        .then((d) => { setFilas(d); setError(null); setElegidas(new Set()); })
+        .then((d) => { setFilas(d); setError(null); setCuantas({}); })
         .catch((e) => { setFilas([]); setError(mensajeAmigable(e, 'No se pudieron cargar las pendientes')); }),
     [searchTerm, filterBranch]);
-    useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga al cambiar filtros
+    useEffect(() => { cargar(); }, [cargar]);
+
+    const grupos = useMemo(() => {
+        const m = new Map();
+        for (const p of filas || []) {
+            const k = `${p.cobro_id}|${p.producto}|${p.dosis_ml ?? ''}`;
+            if (!m.has(k)) m.set(k, { clave: k, p, ids: [] });
+            m.get(k).ids.push(p.id);
+        }
+        return [...m.values()];
+    }, [filas]);
+    const elegidas = useMemo(() => grupos.flatMap((g) => g.ids.slice(0, cuantas[g.clave] || 0)), [grupos, cuantas]);
 
     const total = useMemo(() => (filas || []).reduce((s, p) => s + Number(p.precio || 0), 0), [filas]);
     const clientes = useMemo(() => new Set((filas || []).map((p) => p.customer_id || p.cliente)).size, [filas]);
     const viejas = useMemo(() => (filas || []).filter((p) => diasDesde(p.pagada_at) >= 7).length, [filas]);
 
-    const cuerpo = useRef(null);
-    cuerpo.current = async () => {
+    // Los ids viajan como argumento: así la acción no lee estado viejo ni
+    // necesita una ref que se reescribe en cada render.
+    const aplicar = useMemo(() => unaSolaVez(async (ids, sala) => {
         setEnviando(true);
         try {
-            const ids = [...elegidas];
-            const n = await aplicarPendientes(ids, filterBranch || null);
+            const n = await aplicarPendientes(ids, sala || null);
             useStaffStore.getState().appendAuditLog('INYECCION_APLICADA', ids.join(','), { aplicaciones: n });
             showToast(n === 1 ? 'Aplicación marcada' : `${n} aplicaciones marcadas`, 'Quedan como aplicadas por ti.', 'success');
         } catch (e) {
@@ -66,14 +84,8 @@ export default function TabPendientes({ filterBranch, setFilterBranch, branchOpt
             setEnviando(false);
             cargar();
         }
-    };
-    const aplicar = useMemo(() => unaSolaVez(() => cuerpo.current()), []);
+    }), [cargar, showToast]);
 
-    const alternar = (id) => setElegidas((s) => {
-        const n = new Set(s);
-        if (n.has(id)) n.delete(id); else n.add(id);
-        return n;
-    });
 
     return (
         <div className="p-4 md:p-6 space-y-4">
@@ -102,10 +114,10 @@ export default function TabPendientes({ filterBranch, setFilterBranch, branchOpt
 
             {error && <Notice variant="danger">{error}</Notice>}
 
-            {puedeAplicar && elegidas.size > 0 && (
+            {puedeAplicar && elegidas.length > 0 && (
                 <div className="flex justify-end">
-                    <Button variant="primary" icon={CheckCircle2} loading={enviando} onClick={aplicar}>
-                        {elegidas.size > 1 ? `Marcar ${elegidas.size} aplicadas` : 'Marcar aplicada'}
+                    <Button variant="primary" icon={CheckCircle2} loading={enviando} onClick={() => aplicar(elegidas, filterBranch)}>
+                        {elegidas.length > 1 ? `Marcar ${elegidas.length} aplicadas` : 'Marcar aplicada'}
                     </Button>
                 </div>
             )}
@@ -115,8 +127,8 @@ export default function TabPendientes({ filterBranch, setFilterBranch, branchOpt
                     { key: 'cliente',  label: 'Cliente' },
                     { key: 'producto', label: 'Inyección' },
                     { key: 'pagada',   label: 'Pagada' },
-                    { key: 'monto',    label: 'Monto', align: 'right' },
-                    ...(puedeAplicar ? [{ key: 'accion', label: '' }] : []),
+                    { key: 'monto',    label: 'Pendientes', align: 'right' },
+                    ...(puedeAplicar ? [{ key: 'accion', label: 'Aplicar ahora' }] : []),
                 ]}
                 loading={filas == null}
                 skeletonRows={6}
@@ -126,36 +138,52 @@ export default function TabPendientes({ filterBranch, setFilterBranch, branchOpt
                    teléfono — es justo donde la sala marca lo que aplicó. */
                 movil={{ identidad: 'cliente', ancla: 'monto', chips: ['producto', 'pagada'], acciones: true }}
             >
-                {(filas || []).map((p, i) => {
+                {grupos.map(({ clave, p, ids }, i) => {
                     const dias = diasDesde(p.pagada_at);
+                    const n = cuantas[clave] || 0;
                     return (
-                        <DataRow key={p.id} index={i}>
+                        <DataRow key={clave} index={i}>
                             <DataCell className="text-body-sm">
-                                <p className="font-semibold">{p.cliente || 'Sin nombre'}</p>
-                                <p className="text-caption text-content-3">
-                                    {p.correlativo ? `Factura ${factura(p.correlativo)}` : 'Traída por el cliente'}
-                                    {!filterBranch && ` · ${nombreSala(p.branch_id)}`}
+                                <p className="font-semibold text-content">{p.cliente || 'Sin nombre'}</p>
+                                <p className="text-caption text-content-3 flex flex-wrap items-center gap-1.5 mt-0.5">
+                                    <span>{p.correlativo ? `Factura ${factura(p.correlativo)}` : 'Traída por el cliente'}</span>
+                                    {!filterBranch && <span>· pagada en {nombreSala(p.branch_id)}</span>}
+                                    {p.venta_sala && <Badge variant="info" size="sm">Venta de {p.venta_sala}</Badge>}
                                 </p>
                             </DataCell>
                             <DataCell className="text-body-sm">
-                                {p.producto}
-                                {/* La dosis, para quien la aplique (se cobró por ml). */}
-                                {p.dosis_ml != null && <p className="text-caption font-semibold text-content-2">{fmtMl(p.dosis_ml)} ml por aplicación</p>}
-                                {p.mezclada && <p className="text-caption font-semibold text-content-2">Mezcladas en una jeringa · una aplicación</p>}
+                                <p className="text-content">{p.producto}</p>
+                                {(p.dosis_ml != null || p.mezclada) && (
+                                    <p className="flex flex-wrap gap-1.5 mt-1">
+                                        {/* La dosis, para quien la aplique (se cobró por ml). */}
+                                        {p.dosis_ml != null && <Badge variant="info" size="sm">{fmtMl(p.dosis_ml)} ml por aplicación</Badge>}
+                                        {p.mezclada && <Badge variant="info" size="sm">Mezcladas · una aplicación</Badge>}
+                                    </p>
+                                )}
+                                {(p.historial || []).length > 0 && (
+                                    <div className="mt-2 space-y-1">
+                                        <p className="text-caption font-black uppercase tracking-widest text-content-3">
+                                            Ya aplicadas · {p.historial.length}
+                                        </p>
+                                        {p.historial.map((h, j) => (
+                                            <PersonaConFoto key={j} id={h.aplicada_por_id} nombre={h.aplicada_por} px={20}
+                                                detalle={`${h.aplicada_en ? `${h.aplicada_en} · ` : ''}${fechaHora12(h.aplicada_at)}`} />
+                                        ))}
+                                    </div>
+                                )}
                             </DataCell>
-                            <DataCell className="text-body-sm whitespace-nowrap">
-                                <p>{fechaCorta(p.pagada_at)}
-                                    {dias >= 7 && <Badge variant="warning" size="sm" className="ml-2">{dias} días</Badge>}
-                                </p>
-                                {p.cobrada_por && <p className="text-caption text-content-3">{shortEmployeeName(p.cobrada_por)}</p>}
+                            <DataCell className="whitespace-nowrap">
+                                <PersonaConFoto id={p.cobrada_por_id} nombre={p.cobrada_por} detalle={fechaCorta(p.pagada_at)} />
+                                {dias >= 7 && <Badge variant="warning" size="sm" className="mt-1">{dias} días</Badge>}
                             </DataCell>
-                            <DataCell align="right" className="font-semibold text-body-sm">{formatMoney(p.precio)}</DataCell>
+                            <DataCell align="right" className="text-body-sm whitespace-nowrap">
+                                <p className="font-black tabular-nums text-content">{ids.length}</p>
+                                <p className="text-caption text-content-3 tabular-nums">{formatMoney(Number(p.precio || 0) * ids.length)}</p>
+                            </DataCell>
                             {puedeAplicar && (
                                 <DataCell align="right">
-                                    <Button variant={elegidas.has(p.id) ? 'primary' : 'secondary'} size="sm"
-                                        aria-pressed={elegidas.has(p.id)} onClick={() => alternar(p.id)}>
-                                        {elegidas.has(p.id) ? 'Elegida' : 'Elegir'}
-                                    </Button>
+                                    <Contador etiqueta={`aplicar ahora · ${p.producto}`} valor={n} max={ids.length}
+                                        onChange={(v) => setCuantas((c) => ({ ...c, [clave]: v }))} />
                                 </DataCell>
                             )}
                         </DataRow>

@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1171.0 — Inyecciones: comprada en otra sucursal, historial de lo aplicado y bitácora con fotos
+
+Pedidos del usuario del 2026-10-03:
+
+- **Comprada en otra sucursal.** En el cobro, «¿La compró en otra sucursal?
+  Buscar por comprobante»: con el número del ticket (o el código de generación)
+  aparece esa venta, de cualquier sala —es la ÚNICA forma de llegar a una venta
+  de otra sala—. Si no trae inyección, ya está pagada o anulada, se dice por
+  qué. El número se repite entre salas (15,036 en 90 días), así que se muestra
+  la que sirve con su sala. El cobro queda en la sala donde se aplica.
+- **Pendientes agrupadas con historial.** Una fila por pago: «2 de 5» con un
+  contador para aplicar las que hagan falta, en esta u otra sala, y debajo lo
+  que ya se aplicó de ese pago — dónde, quién (con su foto) y cuándo. Igual en
+  el canje del cobro («Ya la pagó»).
+- **Bitácora con fotos.** Quién cobró y quién aplicó, con foto y nombre corto;
+  la dosis, la mezcla y «Venta de Salud 5» como etiquetas.
+
+Base: migración `inyecciones_otra_sucursal` (20261003151123), función
+`inyeccion_venta_por_comprobante` (entra por el índice trigram del correlativo:
+66 bloques en vez de 30,415).
+
+---
+
 ## v2.1170.0 — Efectivo · Movimientos: una tarjeta por sala y el detalle completo
 
 - **La lista, rediseñada.** Una tarjeta por sala con los renglones adentro separados por una raya, en vez de una caja por renglón. Cada renglón: ícono en círculo por clase, el QUÉ en grande («POS Promerica», «Aplicacion de inyeccion»), el dato que lo distingue debajo (factura, cuenta, cliente), y la hora con la cara y el nombre corto de quien lo anotó o lo cobró. El corte es una franja dentro de la serie con su monto y «cuadró» o la diferencia. El neto de la sala va en una píldora.

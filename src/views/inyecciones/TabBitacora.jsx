@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpen, CheckCircle2, Download, Hourglass, Syringe } from 'lucide-react';
 import Badge from '../../components/common/Badge';
+import PersonaConFoto from '../../components/caja/PersonaConFoto';
 import Notice from '../../components/common/Notice';
 import StatCard from '../../components/common/StatCard';
 import CarrilCards from '../../components/common/CarrilCards';
@@ -28,6 +29,10 @@ import { fechaHora12 } from '@nucleo/utils/hora';
  * al cobrarse, así que esto es un hecho y no una estimación.
  *
  * El período es el del COBRO: lo pagado en el rango, se haya aplicado o no.
+ *
+ * Quién cobró y quién aplicó van con su FOTO (pedido del usuario, 2026-10-03:
+ * «mejora visualmente la bitácora, foto del empleado, que se sienta más
+ * moderno»), y la venta dice de qué sala es cuando no es la del cobro.
  */
 
 const ESTADOS = [
@@ -81,10 +86,10 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
     const pagina = visibles.slice((page - 1) * pageSize, page * pageSize);
 
     const descargar = () => exportCsv(
-        ['COBRADA', 'SALA', 'ORIGEN', 'FACTURA', 'CLIENTE', 'INYECCION', 'PRECIO', 'COBRADA POR',
+        ['COBRADA', 'SALA', 'ORIGEN', 'FACTURA', 'VENTA DE', 'CLIENTE', 'INYECCION', 'PRECIO', 'COBRADA POR',
          'ESTADO', 'APLICADA', 'APLICADA POR', 'APLICADA EN'],
         visibles.map((f) => [
-            horaDe(f.cobrada_at), f.sala, f.origen === 'TRAIDA' ? 'TRAIDA' : 'COMPRADA', factura(f.correlativo),
+            horaDe(f.cobrada_at), f.sala, f.origen === 'TRAIDA' ? 'TRAIDA' : 'COMPRADA', factura(f.correlativo), f.venta_sala || '',
             f.cliente || '', f.dosis_ml != null ? `${f.producto} (${fmtMl(f.dosis_ml)} ml)` : f.producto, f.precio, nombre(f.cobrada_por),
             f.estado, f.aplicada_at ? horaDe(f.aplicada_at) : '', f.aplicada_por ? nombre(f.aplicada_por) : '',
             f.aplicada_en || '',
@@ -140,7 +145,7 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
 
             <DataTable
                 columns={[
-                    { key: 'cobro',    label: 'Cobrada' },
+                    { key: 'cobro',    label: 'Cobró' },
                     { key: 'cliente',  label: 'Cliente' },
                     { key: 'producto', label: 'Inyección' },
                     { key: 'precio',   label: 'Precio', align: 'right', hideBelow: 'md' },
@@ -154,34 +159,37 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
             >
                 {pagina.map((f, i) => (
                     <DataRow key={f.id} index={i}>
-                        <DataCell className="text-body-sm whitespace-nowrap">
-                            <p className="font-semibold">{horaDe(f.cobrada_at)}</p>
-                            <p className="text-caption text-content-3">
-                                {nombre(f.cobrada_por)}{!filterBranch && ` · ${f.sala}`}
+                        <DataCell>
+                            <PersonaConFoto id={f.cobrada_por_id} nombre={f.cobrada_por}
+                                detalle={`${horaDe(f.cobrada_at)}${!filterBranch ? ` · ${f.sala}` : ''}`} />
+                        </DataCell>
+                        <DataCell className="text-body-sm">
+                            <p className="font-semibold text-content">{f.cliente || 'Sin nombre'}</p>
+                            <p className="text-caption text-content-3 flex flex-wrap items-center gap-1.5 mt-0.5">
+                                {f.origen === 'TRAIDA'
+                                    ? <Badge variant="neutral" size="sm">Traída por el cliente</Badge>
+                                    : <span>Factura {factura(f.correlativo)}</span>}
+                                {f.venta_sala && <Badge variant="info" size="sm">Venta de {f.venta_sala}</Badge>}
+                                {f.asignada_a_mano && <Badge variant="neutral" size="sm">Asignada después</Badge>}
                             </p>
                         </DataCell>
                         <DataCell className="text-body-sm">
-                            <p className="font-semibold">{f.cliente || 'Sin nombre'}</p>
-                            <p className="text-caption text-content-3">
-                                {f.origen === 'TRAIDA' ? 'Traída por el cliente' : `Factura ${factura(f.correlativo)}`}
-                                {f.asignada_a_mano && ' · asignada después'}
-                            </p>
+                            <p className="text-content">{f.producto}</p>
+                            {(f.dosis_ml != null || f.mezclada) && (
+                                <p className="flex flex-wrap gap-1.5 mt-1">
+                                    {/* La dosis, para quien la aplique (se cobró por ml). */}
+                                    {f.dosis_ml != null && <Badge variant="info" size="sm">{fmtMl(f.dosis_ml)} ml por aplicación</Badge>}
+                                    {f.mezclada && <Badge variant="info" size="sm">Mezcladas · una aplicación</Badge>}
+                                </p>
+                            )}
                         </DataCell>
-                        <DataCell className="text-body-sm">
-                                {f.producto}
-                                {/* La dosis, para quien la aplique (se cobró por ml). */}
-                                {f.dosis_ml != null && <p className="text-caption font-semibold text-content-2">{fmtMl(f.dosis_ml)} ml por aplicación</p>}
-                                {f.mezclada && <p className="text-caption font-semibold text-content-2">Mezcladas en una jeringa · una aplicación</p>}
-                            </DataCell>
-                        <DataCell align="right" hideBelow="md" className="text-body-sm font-semibold">{formatMoney(f.precio)}</DataCell>
+                        <DataCell align="right" hideBelow="md" className="text-body-sm font-semibold tabular-nums">{formatMoney(f.precio)}</DataCell>
                         <DataCell>
                             {f.estado === 'APLICADA' ? (
-                                <div>
+                                <div className="space-y-1.5">
                                     <Badge variant="success" size="sm" dot>Aplicada</Badge>
-                                    <p className="text-caption text-content-3 mt-1">
-                                        {horaDe(f.aplicada_at)} · {nombre(f.aplicada_por)}
-                                        {f.aplicada_en && f.aplicada_en !== f.sala && ` · en ${f.aplicada_en}`}
-                                    </p>
+                                    <PersonaConFoto id={f.aplicada_por_id} nombre={f.aplicada_por} px={22}
+                                        detalle={`${horaDe(f.aplicada_at)}${f.aplicada_en && f.aplicada_en !== f.sala ? ` · en ${f.aplicada_en}` : ''}`} />
                                 </div>
                             ) : (
                                 <Badge variant="warning" size="sm" dot>Pendiente</Badge>

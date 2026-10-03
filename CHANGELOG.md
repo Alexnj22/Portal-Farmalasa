@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1168.0 — Inyecciones mezcladas: dos en la misma jeringa son una aplicación
+
+Pedido del usuario: «a veces se mezclan la cobalex con la tiamina, así que no
+se cobran 2 aplicaciones sino 1». Decisiones del usuario: se cobra como una
+sola y se marca al cobrar.
+
+- Con dos o más inyecciones en la venta, el cobro ofrece **«Se mezclan en la
+  misma jeringa»**: se eligen cuáles entran y cuántas veces, y se cobra UNA
+  aplicación por vez.
+- Cada producto descuenta lo suyo del saldo de la venta (se usó una ampolla de
+  cada uno), así el control no queda «por pagar» con la ampolla ya puesta.
+- Pendientes, canje y bitácora muestran la mezcla como una sola fila
+  («COBALEX 2 ml + TIAMINA 2 ml · mezcladas en una jeringa»), y canjearla
+  marca el grupo entero.
+
+Base: migración `inyecciones_mezcladas` (20261003055240), columna
+`inyeccion_aplicaciones.mezcla_de`. Probada en producción en una transacción
+revertida y de punta a punta en el entorno de pruebas.
+
+---
+
 ## v2.1167.1 — Tipos de la base con el conteo por mililitros
 
 `src/types/database.ts` regenerado tras `inyecciones_por_mililitros`

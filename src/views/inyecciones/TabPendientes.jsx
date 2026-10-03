@@ -141,6 +141,7 @@ export default function TabPendientes({ filterBranch, setFilterBranch, branchOpt
                                 {p.producto}
                                 {/* La dosis, para quien la aplique (se cobró por ml). */}
                                 {p.dosis_ml != null && <p className="text-caption font-semibold text-content-2">{fmtMl(p.dosis_ml)} ml por aplicación</p>}
+                                {p.mezclada && <p className="text-caption font-semibold text-content-2">Mezcladas en una jeringa · una aplicación</p>}
                             </DataCell>
                             <DataCell className="text-body-sm whitespace-nowrap">
                                 <p>{fechaCorta(p.pagada_at)}

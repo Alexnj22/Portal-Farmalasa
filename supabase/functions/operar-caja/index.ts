@@ -65,6 +65,9 @@ const SALIDA     = `${BASE}agregar_salida_caja.php`;
 const EDITAR     = `${BASE}editar_movimiento_caja.php`;
 const BORRAR     = `${BASE}borrar_movimiento_caja.php`;
 
+/** Para no confundir nunca el entorno de pruebas con producción. */
+const REF_PRODUCCION = "sacecdkdmsdvgqnrsett";
+
 /** El único tipo ejercido de verdad (28-ago, movimiento 43260). */
 const ID_TIPO = "1";
 
@@ -488,13 +491,46 @@ Deno.serve(async (req) => {
       return json({ ok: true, solicitud: sol.id });
     }
 
-    const entrada = getErpBranchMap().find((e) => e.branchId === sala);
-    if (!entrada) return json({ ok: false, error: "Esa sala no está configurada." }, 400);
+    /* ── LA CAJA SIMULADA DEL ENTORNO DE PRUEBAS ───────────────────────────
+     *
+     * El branch de pruebas NO tiene las credenciales de la caja real, a
+     * propósito: un ingreso anotado ahí no puede caer en el cajón de una sala
+     * de verdad. Sin ellas, esta función moría al primer `getCortesCreds` y la
+     * pantalla de caja no se podía ni abrir — o sea que nada de lo que pasa al
+     * anotar un ingreso se podía probar antes de producción.
+     *
+     * Dos condiciones, y las dos hacen falta: que falte la credencial Y que la
+     * base no sea la de producción. Si un día producción pierde el secreto, la
+     * segunda condición hace que falle como siempre en vez de «anotar» en una
+     * caja de mentira — que sería plata que el portal cree en el cajón y la
+     * caja nunca vio.
+     *
+     * Simula sólo MIRAR y anotar un INGRESO. Abrir, cortar, cerrar o sacar
+     * plata se rechazan: no hay nada que probar ahí sin la caja de verdad. */
+    const cajaSimulada = !Deno.env.get("ERP_CORTES_CREDS")
+      && !String(Deno.env.get("SUPABASE_URL") ?? "").includes(REF_PRODUCCION);
+    if (cajaSimulada && !["estado", "ingreso"].includes(accion)) {
+      return json({ ok: false, error: "En el entorno de pruebas la caja es simulada: sólo se puede mirar y anotar ingresos." }, 409);
+    }
 
-    const { username, password } = getCortesCreds();
-    const cookie = await getSessionCookie(username, password);
-    await abrirSala(cookie, entrada.erpId);
-    const estado = await estadoDeLaCaja(cookie);
+    let cookie = "";
+    let estado: Awaited<ReturnType<typeof estadoDeLaCaja>>;
+    let entrada = { branchId: sala, erpId: 0, username: "", password: "" } as ReturnType<typeof getErpBranchMap>[number];
+    if (cajaSimulada) {
+      estado = {
+        abierta: true, turnoCorriendo: true, idCaja: "PRUEBAS", idDetalle: null,
+        aper: "0", emp: "0", turno: "1", idEmple: "0",
+        registrado: null, apertura: 0, desde: null,
+      };
+    } else {
+      const deLaSala = getErpBranchMap().find((e) => e.branchId === sala);
+      if (!deLaSala) return json({ ok: false, error: "Esa sala no está configurada." }, 400);
+      entrada = deLaSala;
+      const { username, password } = getCortesCreds();
+      cookie = await getSessionCookie(username, password);
+      await abrirSala(cookie, entrada.erpId);
+      estado = await estadoDeLaCaja(cookie);
+    }
 
     // El día que la caja tiene abierto. Sale de la captura y no del reloj: a las
     // once de la noche, con la caja sin cerrar, sigue siendo el de ayer.
@@ -1163,7 +1199,8 @@ Deno.serve(async (req) => {
     if (accion === "ingreso" || accion === "salida" || accion === "abono") {
       const esEntrada = accion !== "salida";
       const esAbono = accion === "abono";
-      const monto = Number(body.monto);
+      // `let`: la aplicación de inyección lo recalcula con el precio vigente.
+      let monto = Number(body.monto);
       let concepto = String(body.concepto ?? "").trim();
       if (!(Number.isFinite(monto) && monto > 0)) return json({ ok: false, error: "Falta el monto." }, 400);
       if (!esAbono && !concepto) return json({ ok: false, error: "Falta el concepto." }, 400);
@@ -1246,6 +1283,75 @@ Deno.serve(async (req) => {
               + `${c.concepto ? ` (${c.concepto})` : ""}.`,
           }, 409);
         }
+      }
+
+      /* ── LA APLICACIÓN DE INYECCIÓN ─────────────────────────────────────
+       *
+       * Es un ingreso con un CONTROL encima, igual que el abono: además del
+       * dinero queda una fila por aplicación pagada, asignada a la venta, que
+       * después se canjea (pedido del usuario, 2026-10-02). Antes era un
+       * detalle de texto libre y la pestaña Inyecciones lo adivinaba.
+       *
+       * Dos formas, y el navegador dice cuál en `aplicacion.origen`:
+       *   COMPRADA → la venta y sus renglones: se asigna.
+       *   TRAIDA   → el cliente trajo la inyección: producto y cantidad.
+       *
+       * NO hay forma de cobrar una comprada sin su venta (usuario,
+       * 2026-10-02): la salida «la venta no aparece todavía» se quitó. Una
+       * venta recién hecha tarda hasta un minuto en llegar; se espera y se
+       * actualiza, y así toda aplicación comprada queda asignada.
+       *
+       * EL MONTO LO PONE EL SERVIDOR con el precio vigente, nunca el
+       * navegador. Si no coincide con el que la pantalla mostró —el precio
+       * cambió en el medio— se frena: cobrar otro número del que la sala le
+       * dijo al cliente es peor que pedirle que lo vuelva a abrir.
+       *
+       * Va DESPUÉS de las dos guardas de repetido: un reintento del mismo
+       * envío tiene que contestar con lo que ya se escribió, y si cotizara
+       * primero lo rechazaría por «ya no quedan» — las que pagó él mismo. */
+      type Aplicacion = { origen?: string; items?: unknown; cantidad?: number; producto?: string; aplicar_ahora?: number; cliente?: string };
+      const aplicacion = (body.aplicacion && typeof body.aplicacion === "object") ? body.aplicacion as Aplicacion : null;
+      const esAplicacion = esEntrada && !esAbono && String(body.tipo ?? "") === "APLICACION";
+      /* Exigirla depende de la BANDERA del catálogo (`lleva_comprobante` de
+       * APLICACION), no de este código: es el interruptor del circuito. Con
+       * la bandera apagada la pantalla vieja sigue cobrando como siempre; al
+       * encenderla, la pantalla abre el diálogo nuevo y esto lo exige. Así el
+       * pase a producción no deja una ventana en que la sala no pueda cobrar,
+       * y la marcha atrás es apagar una fila — no una migración. */
+      if (esAplicacion && !aplicacion) {
+        const { data: tipoApl, error: errTipo } = await supabase.from("caja_tipos_movimiento")
+          .select("lleva_comprobante").eq("codigo", "APLICACION").maybeSingle();
+        if (errTipo) console.error(`[operar-caja] aplicacion: leyendo el tipo: ${errTipo.message}`);
+        if (errTipo || tipoApl?.lleva_comprobante !== false) {
+          return json({ ok: false, error: "Falta elegir la venta, o decir que el cliente trajo la inyección." }, 400);
+        }
+      }
+      if (esAplicacion && aplicacion) {
+        const origen = String(aplicacion.origen ?? "");
+        if (!["COMPRADA", "TRAIDA"].includes(origen)) {
+          return json({ ok: false, error: "Falta decir si la inyección se compró aquí o la trajo el cliente." }, 400);
+        }
+        const { data: cot, error: errCot } = await supabase.rpc("inyeccion_cotizar", {
+          p_branch_id: sala,
+          p_origen: origen,
+          p_items: origen === "COMPRADA" ? (aplicacion.items ?? []) : null,
+          p_cantidad: origen === "COMPRADA" ? null : Number(aplicacion.cantidad ?? 0),
+          p_producto: origen === "COMPRADA" ? null : String(aplicacion.producto ?? ""),
+        });
+        if (errCot || !cot) {
+          console.error(`[operar-caja] aplicacion sala=${sala}: cotizar: ${errCot?.message}`);
+          return json({ ok: false, error: errCot?.message || "No se pudo calcular el cobro." }, 409);
+        }
+        const cotizado = Number((cot as { monto?: number }).monto);
+        if (Math.abs(cotizado - monto) > 0.004) {
+          return json({ ok: false, precio_cambio: true,
+            error: `El cobro es de $${cotizado.toFixed(2)} y la pantalla decía $${monto.toFixed(2)}. Vuelve a abrir el cobro.` }, 409);
+        }
+        monto = cotizado;
+        const etiqueta = "Aplicacion de inyeccion";
+        const detalleCot = String((cot as { detalle?: string }).detalle ?? "");
+        concepto = `${etiqueta} · ${detalleCot}`.slice(0, 50);
+        body.detalle = `${etiqueta} · ${detalleCot}`;
       }
 
       /* ── EL ABONO DE CLIENTE ────────────────────────────────────────────
@@ -1494,10 +1600,47 @@ Deno.serve(async (req) => {
         abono = fa;
       }
 
+      /* Las aplicaciones se escriben ANTES de tocar la caja, igual que el
+       * abono, y nacen SIN CONFIRMAR: si la caja rechaza, quedan ligadas a un
+       * intento y no se pueden canjear. Se confirman abajo, cuando la caja
+       * aceptó. La función vuelve a validar bajo candado: entre cotizar y
+       * esto pudo cobrarse el mismo renglón desde otra caja.
+       *
+       * Si no se pueden escribir, el movimiento se ANULA acá mismo y no se
+       * toca la caja: un cobro sin su control es justo lo que esto viene a
+       * cerrar. */
+      let aplicaciones: Record<string, unknown> | null = null;
+      if (esAplicacion && aplicacion) {
+        const { data: reg, error: errReg } = await supabase.rpc("inyeccion_registrar", {
+          p_cobro_id: fila.id,
+          p_origen: String(aplicacion.origen),
+          p_items: aplicacion.origen === "COMPRADA" ? (aplicacion.items ?? []) : null,
+          p_cantidad: aplicacion.origen === "TRAIDA" ? Number(aplicacion.cantidad ?? 0) : null,
+          p_producto: aplicacion.origen === "TRAIDA" ? String(aplicacion.producto ?? "") : null,
+          p_aplicar_ahora: Number(aplicacion.aplicar_ahora ?? 0),
+          p_por: quien.id,
+          // A nombre de quién quedan las pendientes. La pantalla lo pide cuando
+          // queda alguna; sin él, la comprada toma el nombre de la factura.
+          p_cliente: aplicacion.cliente ? String(aplicacion.cliente).slice(0, 80) : null,
+        });
+        if (errReg) {
+          console.error(`[operar-caja] aplicacion sala=${sala} fila=${fila.id}: ${errReg.message}`);
+          const { error: errAnular } = await supabase.from("caja_movimientos_portal")
+            .update({ anulado_at: new Date().toISOString(), anulado_motivo: "No se pudieron registrar las aplicaciones",
+                      updated_at: new Date().toISOString() })
+            .eq("id", fila.id);
+          if (errAnular) console.error(`[operar-caja] aplicacion fila=${fila.id}: anular: ${errAnular.message}`);
+          return json({ ok: false, error: `${errReg.message} No se movio dinero.` }, 409);
+        }
+        aplicaciones = reg as Record<string, unknown>;
+      }
+
       // El concepto lleva el número del portal adelante: es lo único que ata
       // las dos filas cuando alguien mira del otro lado, y el campo trunca a 50.
       const conceptoCaja = `P${fila.id} ${concepto}`.slice(0, 50);
-      const resp = await (await fetch(esEntrada ? INGRESO : SALIDA, {
+      // En pruebas no hay caja a la que mandarlo: se contesta como si la caja
+      // hubiera aceptado, sin número de movimiento.
+      const resp = cajaSimulada ? "" : await (await fetch(esEntrada ? INGRESO : SALIDA, {
         method: "POST",
         headers: {
           Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded",
@@ -1536,7 +1679,7 @@ Deno.serve(async (req) => {
         signal: AbortSignal.timeout(45_000),
       })).text();
 
-      if (!exito(resp)) {
+      if (!cajaSimulada && !exito(resp)) {
         console.error(`[operar-caja] ${accion} sala=${sala} fila=${fila.id}: ${resp.slice(0, 1000)}`);
         return json({
           ok: false, movimiento_del_portal: fila.id,
@@ -1545,6 +1688,21 @@ Deno.serve(async (req) => {
       }
       let idMov: number | null = null;
       try { idMov = Number(JSON.parse(resp)?.id_mov) || null; } catch { idMov = null; }
+
+      /* La caja aceptó: recién ahora las aplicaciones valen. Se confirman
+       * antes de ligar el número del sistema porque son lo que el cliente se
+       * lleva pagado; si esto falla, el dinero entró y el control no — se dice
+       * y queda en el log, para confirmarlas a mano. */
+      let avisoAplicaciones: string | null = null;
+      if (aplicaciones) {
+        const { error: errConf } = await supabase.from("inyeccion_aplicaciones")
+          .update({ confirmada: true }).eq("cobro_id", fila.id);
+        if (errConf) {
+          console.error(`[operar-caja] aplicacion fila=${fila.id}: confirmar: ${errConf.message}`);
+          avisoAplicaciones = "El cobro entró, pero las aplicaciones no quedaron confirmadas. Avisa a Sistemas.";
+        }
+      }
+
       const { error: errLigar } = await supabase.from("caja_movimientos_portal")
         .update({ erp_movimiento_id: idMov, updated_at: new Date().toISOString() })
         .eq("id", fila.id);
@@ -1552,8 +1710,8 @@ Deno.serve(async (req) => {
       // tiene la fila sin el número del sistema: se puede reintentar, pero
       // alguien tiene que enterarse.
       if (errLigar) {
-        return json({ ok: true, movimiento_del_portal: fila.id, movimiento_en_caja: idMov, abono,
-          aviso: "El movimiento se hizo, pero no se pudo enlazar con el del sistema." });
+        return json({ ok: true, movimiento_del_portal: fila.id, movimiento_en_caja: idMov, abono, aplicaciones,
+          aviso: avisoAplicaciones ?? "El movimiento se hizo, pero no se pudo enlazar con el del sistema." });
       }
 
       // El abono viaja de vuelta ENTERO: el comprobante se arma con la fila que
@@ -1564,7 +1722,8 @@ Deno.serve(async (req) => {
       // número, su fecha, su boleta—, no con lo que el formulario creía estar
       // mandando. Mismo criterio que el papel del abono.
       return json({ ok: true, movimiento_del_portal: fila.id, movimiento_en_caja: idMov, abono,
-        movimiento: fila });
+        aplicaciones, movimiento: fila, ...(avisoAplicaciones ? { aviso: avisoAplicaciones } : {}),
+        ...(cajaSimulada ? { simulado: true } : {}) });
     }
 
     // ── CERRAR EL DÍA ───────────────────────────────────────────────────────

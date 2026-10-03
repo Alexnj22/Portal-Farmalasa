@@ -10,6 +10,7 @@
 // `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.
 import {
     HandCoins,
+    Syringe,
     CalendarCheck,
     ShieldCheck,
     Monitor,
@@ -121,6 +122,7 @@ const ICONOS = {
     Gift,
     Globe2,
     HandCoins,
+    Syringe,
     Home,
     Info,
     Landmark,

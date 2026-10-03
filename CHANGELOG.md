@@ -21,6 +21,95 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1162.0 — Inyecciones: el cobro se asigna a la venta, control de lo pagado y vista propia
+
+### Agregar y quitar productos a mano
+
+Pedido del usuario: «¿puedo agregar / quitar productos por si hay alguno mal
+categorizado?». Qué es inyección lo decide el nombre (`es_inyectable`), y el
+nombre puede engañar en los dos sentidos. En Inyecciones → Ajustes:
+
+- **Quitar** un producto: deja de ofrecerse para cobrar y sale del control.
+- **Agregar un producto** con el buscador del catálogo, aunque su nombre no lo diga.
+- **Quitados a mano** con «Volver a incluir».
+
+Lo marcado a mano gana siempre (`inyeccion_producto_clasificacion` +
+`inyeccion_es_aplicable`, la única respuesta para renglones, lista del cobro,
+catálogo y Por cobrar). Supervisión (`inyecciones_dosis`); queda en bitácora.
+
+
+### El cobro asignado a la venta, el control y la vista propia
+
+Pedido del usuario (2026-10-02). Se construyó y probó en el entorno de pruebas y sale a producción en dos pasos: la migración `inyecciones_pagadas` (sin cambio visible) y `inyecciones_pagadas_encender` (enciende el circuito).
+
+### Inyecciones: el cobro de la aplicación se amarra a la venta y queda el control de lo pagado (en pruebas)
+
+Pedido del usuario (2026-10-02): al cobrar la aplicación de una inyección se
+pregunta si se compró aquí ($1) o la trajo el cliente ($2); la comprada se
+AMARRA a la venta y, si la venta trae varias, se eligen cuáles y cuántas. Lo
+pagado y no aplicado queda pendiente a nombre del cliente y se canjea después.
+
+- Mi caja → Entrada → Aplicación de inyección abre su propio diálogo: «Compró
+  aquí», «La trajo» y «Ya la pagó» (canjear). Salida «la venta no aparece
+  todavía»: se cobra como comprada y queda suelta para que supervisión la amarre.
+- El monto lo pone el servidor con el precio vigente; si no coincide con el de
+  la pantalla, frena. Las aplicaciones nacen sin confirmar y se confirman cuando
+  la caja aceptó el ingreso.
+- Las dosis por presentación son un catálogo (la factura no lo sabe: un TRI
+  PACK sale con factor 1). Rige una sugerencia hasta que supervisión confirma.
+- Inyecciones: «registrado» vs «estimado», pagadas/aplicadas por venta,
+  pendientes, amarrar/desamarrar cobros sueltos, catálogo de dosis y precios.
+- `operar-caja`: caja simulada sólo si faltan las credenciales de la caja Y la
+  base no es producción — para poder probar el cobro en pruebas.
+- SQL en `supabase/borradores/inyecciones_pagadas.sql` (aplicado en pruebas con
+  `execute_sql`; a producción va por `apply_migration`).
+
+### Inyecciones: vista propia con pendientes y bitácora; el cobro siempre asignado a su venta (en pruebas)
+
+Pedidos del usuario al probarlo:
+
+- **Vista propia «Inyecciones»** en el menú, aparte («no es solo venta ni
+  dinero»): Por cobrar (lo que era la pestaña de Ventas), Pendientes, Bitácora
+  (cada aplicación: quién cobró, quién aplicó, cuándo y dónde) y Ajustes.
+  Permisos nuevos `inyecciones` (con alcance) y sus pestañas; la sala ve
+  pendientes y bitácora de su sala, «Por cobrar» sigue siendo de supervisión.
+- **Sin cobro «sin venta»**: toda aplicación comprada queda asignada a su
+  venta. En su lugar, «Actualizar» (las ventas tardan hasta un minuto en llegar).
+- La lista del cobro muestra sólo ventas con aplicaciones por pagar (7 días) y
+  se busca también por inyección.
+- **«A nombre de»** obligatorio cuando queda alguna pendiente: casi todas las
+  ventas salen a nombre de «CLIENTES VARIOS» y una traída no tenía nombre.
+- El canje queda en la sala de la caja, no en la de la ficha de quien marca.
+- «Amarrar» → «Asignar» en todas las pantallas.
+
+### Inyecciones: arreglos de la batería de pruebas (en pruebas)
+
+Lo que encontró la batería (44 pruebas de
+base, 18 de `operar-caja`, recorridos de escritorio y teléfono):
+
+- Canjear desde la vista con «todas las salas» dejaba la aplicación «en
+  Administración» (la sala de la ficha de quien marca). Ahora queda en la sala
+  indicada o, si no hay, en la que se pagó.
+- En el teléfono no se veía «Elegir» en Pendientes ni «Asignar» en Por cobrar.
+- Tres mensajes de error todavía decían «amarra».
+- El ícono del módulo faltaba en la pantalla de Permisos.
+- Quedan los scripts: `scripts/entorno-pruebas/probar_inyecciones_pagadas.sql`
+  y `probar_operar_caja_aplicacion.mjs`.
+
+### Inyecciones: foto de quien vendió; aplicaciones por unidad base; interruptor para el pase
+
+- La foto con el nombre corto de quien vendió en el cobro, en «Asignar» y en
+  Por cobrar (pedido del usuario).
+- **Aplicaciones por unidad BASE, por producto.** Medido en producción:
+  `id_presentacion` viene vacío en el 100% de los renglones, así que la caja de
+  5 y la ampolla suelta de TRAMAL compartían clave y confirmar «5» habría hecho
+  valer 5 a la suelta. Ahora: aplicaciones = cantidad × factor × base; la base
+  sugerida es 1 si el producto se vende suelto (`product_precios` con factor >
+  1) y, si no, sale del nombre (TRI PACK = 3). En producción son 133 productos.
+- **Interruptor para el pase:** `operar-caja` exige la venta sólo con
+  `lleva_comprobante` de APLICACION encendido, y eso va en una segunda
+  migración (`inyecciones_pagadas_encender`). Marcha atrás: apagar esa fila.
+
 ## v2.1161.1 — La sala que envió se entera de lo que faltó y de lo que apareció
 
 - **El aviso de «faltaron productos» ya no se apaga solo.** En un envío, cerrar la bolsa marcaba como leído el aviso de faltante que se acababa de mandar a la sala que despachó: los 5 de la bolsa E00212 quedaron leídos 0.1 s después de crearse. En las solicitudes no pasaba.

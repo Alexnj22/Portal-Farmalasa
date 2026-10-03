@@ -29,17 +29,9 @@ Deno.serve(async (req) => {
       })
     }
 
-    /* La descarga va con la SESIÓN de quien llama, no con la llave del
-     * servidor (2026-10-02). Con service_role cualquiera con sesión podía pedir
-     * el análisis de cualquier archivo de esos buckets —documentos de otros
-     * empleados, comprobantes de otras salas— con sólo saber la ruta. Así
-     * deciden las policies de cada bucket, que son las mismas que deciden si
-     * esa persona puede abrir el archivo en pantalla: quien lo acaba de subir
-     * lo puede leer, y nadie lee lo que no podría ver. */
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } },
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
     const { data: fileData, error: downloadError } = await supabase.storage

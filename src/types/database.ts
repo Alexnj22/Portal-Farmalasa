@@ -12196,6 +12196,247 @@ export type Database = {
         }
         Relationships: []
       }
+      inyeccion_aplicaciones: {
+        Row: {
+          aplicada_at: string | null
+          aplicada_branch_id: number | null
+          aplicada_por: string | null
+          branch_id: number
+          cliente: string | null
+          cobro_id: number
+          confirmada: boolean
+          creada_por: string | null
+          created_at: string
+          customer_id: number | null
+          id: number
+          invoice_id: number | null
+          linea_num: number | null
+          origen: string
+          precio: number
+          producto: string
+          vinculada_por: string | null
+        }
+        Insert: {
+          aplicada_at?: string | null
+          aplicada_branch_id?: number | null
+          aplicada_por?: string | null
+          branch_id: number
+          cliente?: string | null
+          cobro_id: number
+          confirmada?: boolean
+          creada_por?: string | null
+          created_at?: string
+          customer_id?: number | null
+          id?: never
+          invoice_id?: number | null
+          linea_num?: number | null
+          origen: string
+          precio: number
+          producto: string
+          vinculada_por?: string | null
+        }
+        Update: {
+          aplicada_at?: string | null
+          aplicada_branch_id?: number | null
+          aplicada_por?: string | null
+          branch_id?: number
+          cliente?: string | null
+          cobro_id?: number
+          confirmada?: boolean
+          creada_por?: string | null
+          created_at?: string
+          customer_id?: number | null
+          id?: never
+          invoice_id?: number | null
+          linea_num?: number | null
+          origen?: string
+          precio?: number
+          producto?: string
+          vinculada_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inyeccion_aplicaciones_aplicada_branch_id_fkey"
+            columns: ["aplicada_branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inyeccion_aplicaciones_aplicada_por_fkey"
+            columns: ["aplicada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inyeccion_aplicaciones_aplicada_por_fkey"
+            columns: ["aplicada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inyeccion_aplicaciones_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inyeccion_aplicaciones_cobro_id_fkey"
+            columns: ["cobro_id"]
+            isOneToOne: false
+            referencedRelation: "caja_movimientos_portal"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inyeccion_aplicaciones_creada_por_fkey"
+            columns: ["creada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inyeccion_aplicaciones_creada_por_fkey"
+            columns: ["creada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inyeccion_aplicaciones_vinculada_por_fkey"
+            columns: ["vinculada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inyeccion_aplicaciones_vinculada_por_fkey"
+            columns: ["vinculada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inyeccion_dosis_producto: {
+        Row: {
+          aplicaciones: number
+          confirmado_at: string
+          confirmado_por: string | null
+          created_at: string
+          erp_product_id: number
+        }
+        Insert: {
+          aplicaciones: number
+          confirmado_at?: string
+          confirmado_por?: string | null
+          created_at?: string
+          erp_product_id: number
+        }
+        Update: {
+          aplicaciones?: number
+          confirmado_at?: string
+          confirmado_por?: string | null
+          created_at?: string
+          erp_product_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inyeccion_dosis_producto_confirmado_por_fkey"
+            columns: ["confirmado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inyeccion_dosis_producto_confirmado_por_fkey"
+            columns: ["confirmado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inyeccion_precios: {
+        Row: {
+          actualizado_at: string
+          actualizado_por: string | null
+          created_at: string
+          origen: string
+          precio: number
+        }
+        Insert: {
+          actualizado_at?: string
+          actualizado_por?: string | null
+          created_at?: string
+          origen: string
+          precio: number
+        }
+        Update: {
+          actualizado_at?: string
+          actualizado_por?: string | null
+          created_at?: string
+          origen?: string
+          precio?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inyeccion_precios_actualizado_por_fkey"
+            columns: ["actualizado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inyeccion_precios_actualizado_por_fkey"
+            columns: ["actualizado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inyeccion_producto_clasificacion: {
+        Row: {
+          cambiado_at: string
+          cambiado_por: string | null
+          created_at: string
+          erp_product_id: number
+          es_inyeccion: boolean
+        }
+        Insert: {
+          cambiado_at?: string
+          cambiado_por?: string | null
+          created_at?: string
+          erp_product_id: number
+          es_inyeccion: boolean
+        }
+        Update: {
+          cambiado_at?: string
+          cambiado_por?: string | null
+          created_at?: string
+          erp_product_id?: number
+          es_inyeccion?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inyeccion_producto_clasificacion_cambiado_por_fkey"
+            columns: ["cambiado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inyeccion_producto_clasificacion_cambiado_por_fkey"
+            columns: ["cambiado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_watermarks: {
         Row: {
           created_at: string
@@ -27148,6 +27389,100 @@ export type Database = {
         }
         Returns: number
       }
+      inyeccion_aplicaciones_por_nombre: {
+        Args: { p_descripcion: string }
+        Returns: number
+      }
+      inyeccion_aplicar: {
+        Args: { p_branch_id?: number; p_ids: number[] }
+        Returns: number
+      }
+      inyeccion_base_sugerida: {
+        Args: { p_descripcion: string; p_erp_product_id: number }
+        Returns: number
+      }
+      inyeccion_catalogo_dosis: { Args: never; Returns: Json }
+      inyeccion_clasificar_producto: {
+        Args: { p_erp_product_id: number; p_es_inyeccion: boolean }
+        Returns: undefined
+      }
+      inyeccion_cotizar: {
+        Args: {
+          p_branch_id: number
+          p_cantidad: number
+          p_items: Json
+          p_origen: string
+          p_producto: string
+        }
+        Returns: Json
+      }
+      inyeccion_desvincular_cobro: {
+        Args: { p_cobro_id: number }
+        Returns: number
+      }
+      inyeccion_es_aplicable: {
+        Args: { p_descripcion: string; p_erp_product_id: number }
+        Returns: boolean
+      }
+      inyeccion_fijar_dosis: {
+        Args: { p_aplicaciones: number; p_erp_product_id: number }
+        Returns: undefined
+      }
+      inyeccion_fijar_precio: {
+        Args: { p_origen: string; p_precio: number }
+        Returns: undefined
+      }
+      inyeccion_registrar: {
+        Args: {
+          p_aplicar_ahora: number
+          p_cantidad: number
+          p_cliente?: string
+          p_cobro_id: number
+          p_items: Json
+          p_origen: string
+          p_por: string
+          p_producto: string
+        }
+        Returns: Json
+      }
+      inyeccion_renglones_de_venta: {
+        Args: { p_invoice_ids: number[] }
+        Returns: {
+          cantidad: number
+          confirmado: boolean
+          descripcion: string
+          disponibles: number
+          erp_product_id: number
+          factor: number
+          invoice_id: number
+          linea_num: number
+          por_unidad: number
+          presentacion: string
+          total: number
+          usadas: number
+        }[]
+      }
+      inyeccion_vincular_cobro: {
+        Args: { p_cobro_id: number; p_invoice_id: number; p_linea_num: number }
+        Returns: number
+      }
+      inyecciones_bitacora: {
+        Args: {
+          p_branch_id: number
+          p_buscar?: string
+          p_desde: string
+          p_hasta: string
+        }
+        Returns: Json
+      }
+      inyecciones_para_cobrar: {
+        Args: { p_branch_id: number; p_buscar?: string; p_dias?: number }
+        Returns: Json
+      }
+      inyecciones_pendientes: {
+        Args: { p_branch_id?: number; p_buscar?: string }
+        Returns: Json
+      }
       items_sin_ingresar: {
         Args: { p_pedido_id: string; p_sucursal_id: number }
         Returns: number[]
@@ -28602,6 +28937,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      resolver_envio_aparecido: {
+        Args: { p_actor: string; p_request_id: string }
+        Returns: Json
       }
       resolver_reclamo_sancion: {
         Args: { p_estado: string; p_evento_id: string; p_resolucion?: string }

@@ -134,51 +134,6 @@ producción.
 
 ### F3 — datos personales y mensajes
 
-✅ **Cerrada el 2026-10-02, salvo F3b** (migración `20261003043302`; desplegadas
-`saly-ai`, `analyze-document`, `generate-vacation-plan`):
-
-- `saly-ai` deja sólo los dos análisis de encuestas, que son los únicos que
-  alguien llama (grep en `src/` y `apps/`). `chat`, `analyze-document`,
-  `generate-schedule`, `analyze-branch` y `analyze-history` devuelven 410.
-- `analyze-document` descarga con la **sesión de quien llama**: deciden las
-  policies del bucket, las mismas que deciden si puede abrir el archivo.
-- `generate-vacation-plan` exige `vacation_plan` con edición y alcance de red.
-  De paso: guardaba el id de la CUENTA en `vacation_plans.created_by`, que
-  apunta a la FICHA; para 33 de 42 personas eso podía fallar al guardar. El
-  único plan generado en la historia lo hizo alguien cuyos dos ids coinciden.
-- `encolar_impresion`: sólo la propia sala, salvo `impresion` en red. Medido:
-  2,293 impresiones de sala, todas en la propia.
-- `avisar_a_empleados`: el enlace tiene que ser una ruta del portal (los
-  13,534 avisos existentes lo eran) y los datos de la factura se copian sólo si
-  quien decide puede ver esa venta.
-
-Probado en producción como Dependiente, en transacciones que se deshacen:
-imprimir en otra sala y un aviso con enlace externo se rechazan; imprimir en la
-suya y un aviso con enlace interno pasan.
-
-### F3b — el bucket `payment-proofs` (pendiente, con prueba en el entorno de pruebas)
-
-Apareció al revisar `analyze-document`: su policy de lectura es
-`bucket_id = 'payment-proofs'` a secas, o sea que **cualquier empleado con
-sesión lista y descarga todos los comprobantes** —2,008 fotos de bolsas de
-efectivo y 26 de abonos a créditos, de todas las salas— con la API de archivos,
-sin pasar por ninguna función. `empleados` tiene la misma forma, pero ahí sólo
-hay fotos de perfil, que el portal muestra en todos lados: no es un hueco.
-
-No se cerró en caliente porque lo usan cinco pantallas con cinco carpetas
-(`bolsas/<sala>/`, `bolsas/cierres/`, `cortes/<sala>/`, `abonos-credito/<sala>/`,
-`invoices/<factura>/`) y todo el personal de caja todos los días: una policy
-mal escrita deja a una cajera sin ver su propio comprobante en medio del turno.
-La forma: quien lo subió lo ve siempre (`owner_id`); la sala propia según el
-módulo de cada carpeta; y el alcance de red de ese módulo, todas. Se prueba
-primero en el branch con `execute_sql`, carpeta por carpeta y cargo por cargo.
-
-**Lo cazó el gate en la misma corrida:** otra sesión estaba creando las
-funciones de inyecciones. Las cuatro nuevas con sucursal comparan la sala;
-`inyecciones_pendientes` deja a quien cobra ver las de todas las salas, que por
-el código parece a propósito (se paga en una sala y se aplica en otra) — quedó
-`cruza-por-diseno` y **falta confirmarlo con el usuario**.
-
 | dónde | qué pasa | arreglo |
 |---|---|---|
 | `analyze-document`, `saly-ai` · `analyze-document` | descargan **cualquier** archivo de `documents`/`empleados`/`payment-proofs` con la llave del servidor. `analyze-document` ni siquiera exige empleado activo | firmar con el cliente del usuario (decide la policy del bucket) o exigir el módulo del dueño del archivo |

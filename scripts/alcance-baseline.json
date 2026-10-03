@@ -1,13 +1,18 @@
 {
   "_nota": "Deudas conocidas al 2026-10-02. SÓLO BAJA: `npm run gate:alcance -- --update-baseline` quita las cerradas; nunca se agrega a mano.",
   "edge": [
+    "analyze-document",
+    "generate-vacation-plan",
     "operar-caja",
+    "saly-ai",
     "sync-wfm-sales"
   ],
   "rpc": [
     "audit_log_de_producto",
+    "avisar_a_empleados",
     "contexto_de_solicitud_minmax",
     "destinatarios_de_modulo",
+    "encolar_impresion",
     "get_draft_cost_estimate",
     "get_inventory_cost_summary",
     "get_minmax_contexto_producto",

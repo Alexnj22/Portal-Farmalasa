@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { getCorsHeaders, requireAuthUser } from "../_shared/security.ts";
 import { callGemini, parseGeminiJson } from "../_shared/gemini.ts";
 
 Deno.serve(async (req) => {
@@ -8,24 +8,12 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
-  const responder = (body: unknown, status: number) => new Response(JSON.stringify(body), {
-    status, headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-
-  /* Regenera el plan de TODA la empresa (cancela los borradores y crea otro),
-   * así que exige el módulo con edición y alcance de red. Hasta el 2026-10-02
-   * bastaba con tener sesión —ni siquiera ser empleado activo—. Hoy el módulo
-   * lo tienen cuatro cargos, todos de red. Ver PLAN-ALCANCE-POR-SUCURSAL F3. */
-  const quien = await requireActiveEmployeeUser(req, supabase);
-  if (!quien) return responder({ error: "UNAUTHORIZED" }, 401);
-  const permiso = await permisoDeModulo(supabase, quien.id, "vacation_plan", "can_edit");
-  if (permiso.roto) return responder({ error: permiso.roto }, 503);
-  if (!permiso.puede || !permiso.alcanceTodo) {
-    return responder({ error: "No tienes permiso para generar el plan de vacaciones de la empresa." }, 403);
+  const user = await requireAuthUser(req);
+  if (!user) {
+    return new Response(JSON.stringify({ error: "UNAUTHORIZED" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {
@@ -33,6 +21,11 @@ Deno.serve(async (req) => {
     if (!year || typeof year !== "number") {
       throw new Error("Se requiere el campo 'year' (número entero).");
     }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
 
     // 1. Fetch active employees with hire_date
     const { data: employees, error: empErr } = await supabase
@@ -148,7 +141,7 @@ FORMATO DE RESPUESTA:
           year,
           status: "DRAFT",
           ai_generated: true,
-          generated_by: quien.id,
+          generated_by: user.id,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "year" }
@@ -177,7 +170,7 @@ FORMATO DE RESPUESTA:
         end_date: item.end_date,
         days: item.days ?? 15,
         status: "DRAFT",
-        created_by: quien.id,
+        created_by: user.id,
       };
     });
 

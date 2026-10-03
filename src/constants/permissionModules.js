@@ -137,10 +137,8 @@ const GRUPOS_CRUDOS = [
                 { key: 'ventas_tab_ventas',     label: 'Ventas',     tipo: 'tab' },
                 { key: 'ventas_tab_vendedores', label: 'Vendedores', tipo: 'tab' },
                 { key: 'ventas_tab_productos',  label: 'Productos',  tipo: 'tab' },
-                // Las ventas con inyección y si se cobró la aplicación. Es de
-                // supervisión: la jefatura de sala NO la ve (decisión del usuario,
-                // 2026-09-23), porque nombra a su propio equipo.
-                { key: 'ventas_tab_inyecciones', label: 'Inyecciones', tipo: 'tab' },
+                // «Inyecciones» se mudó a su propia vista el 2026-10-02 — ver el
+                // módulo `inyecciones` más abajo.
                 { key: 'ventas_ver_cards',      label: 'Ver las tarjetas de resumen', tipo: 'cap' },
                 // El aviso de «esto no es venta de productos». Va como permiso
                 // propio y no montado en `ventas_ver_cards` porque el aviso
@@ -192,6 +190,19 @@ const GRUPOS_CRUDOS = [
              * `can_edit` es abonar, y abonar mete efectivo al cajón: cuenta
              * para el corte de ese día. Además NO se puede deshacer — el
              * sistema de la caja no tiene forma de anular un abono. */
+            // Las aplicaciones de inyección (2026-10-02): vista propia. El alcance
+            // decide si se ve la sala propia o todas. La sala ve pendientes y
+            // bitácora de lo suyo; «Por cobrar» nombra a su propio equipo y es de
+            // supervisión (decisión del usuario del 2026-09-23 que sigue en pie).
+            // Dos capacidades aparte: confirmar las aplicaciones por producto y
+            // asignar cobros es de supervisión; el precio, de gerencia.
+            { key: 'inyecciones', label: 'Inyecciones', desc: 'Las aplicaciones de inyección pagadas: qué venta no cobró su aplicación, qué tiene cada cliente pagado y sin aplicar, y la bitácora de quién cobró y quién aplicó', icono: 'Syringe', hasApprove: false, hasScope: true, sub: [
+                { key: 'inyecciones_tab_por_cobrar', label: 'Por cobrar', tipo: 'tab' },
+                { key: 'inyecciones_tab_pendientes', label: 'Pendientes', tipo: 'tab' },
+                { key: 'inyecciones_tab_bitacora',   label: 'Bitácora',   tipo: 'tab' },
+                { key: 'inyecciones_dosis',   label: 'Confirmar aplicaciones por producto y asignar cobros', tipo: 'cap' },
+                { key: 'inyecciones_precios', label: 'Cambiar el precio de la aplicación', tipo: 'cap' },
+            ]},
             { key: 'cuentas_por_cobrar', label: 'Cuentas por cobrar', desc: 'Quién debe, desde cuándo y cuánto, en las seis salas. Ver es mirar la cartera y el plazo del mes; editar es abonar — el efectivo entra al cajón, cuenta para el corte del día y no se puede deshacer', icono: 'HandCoins', hasApprove: false, hasScope: true },
             { key: 'bolsas',        label: 'Bolsas de efectivo', desc: 'El efectivo que la sala guarda al confirmar un corte: cuánto hay en sala, cuántos días lleva esperando el retiro, la etiqueta que va pegada a cada bolsa, y marcarlas como entregadas', icono: 'Package', hasApprove: false, hasScope: true, sub: [
                 // Módulo aparte y no una capacidad de `bolsas` porque son dos

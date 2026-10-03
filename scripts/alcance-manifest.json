@@ -6,8 +6,9 @@
       "motivo": "Analiza datos que manda el navegador; no lee la base por sala."
     },
     "analyze-document": {
-      "guarda": "sin-sala",
-      "motivo": "Descarga con la SESIÓN de quien llama (2026-10-02): deciden las policies de cada bucket, las mismas que deciden si esa persona puede abrir el archivo en pantalla."
+      "guarda": "deuda",
+      "plan": "F3",
+      "motivo": "Descarga cualquier archivo de los buckets privados con service_role; sólo pide sesión (ni siquiera empleado activo)."
     },
     "analyze-history": {
       "guarda": "sin-sala",
@@ -162,11 +163,9 @@
       "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
     },
     "generate-vacation-plan": {
-      "guarda": "modulo-de-red",
-      "modulos": [
-        "vacation_plan"
-      ],
-      "motivo": "Regenera el plan de toda la empresa: exige vacation_plan con edición y alcance de red (2026-10-02)."
+      "guarda": "deuda",
+      "plan": "F3",
+      "motivo": "Cancela los borradores de toda la empresa y genera otro plan; sólo pide sesión, sin módulo."
     },
     "hacer-corte-caja": {
       "guarda": "alcance"
@@ -260,8 +259,9 @@
       "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
     },
     "saly-ai": {
-      "guarda": "sin-sala",
-      "motivo": "Desde el 2026-10-02 sólo responde los dos análisis de encuestas, que trabajan sobre los comentarios que manda quien llama; no lee la base. Las demás acciones (chat, analyze-document, generate-schedule…) devuelven 410: no tenían quien las llamara y dos eran puertas abiertas."
+      "guarda": "deuda",
+      "plan": "F3",
+      "motivo": "`analyze-document` descarga cualquier archivo de documents/empleados/payment-proofs; `chat` lee empleados y asistencia de toda la empresa; sin permiso de módulo."
     },
     "scrape-erp-proveedores": {
       "guarda": "cron"
@@ -375,8 +375,9 @@
       "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
     },
     "avisar_a_empleados": {
-      "guarda": "cruza-por-diseno",
-      "motivo": "Un aviso va a quien tiene que decidir, que a menudo es de otra sala: los destinatarios cruzan sucursales por diseño. Lo sensible está acotado (2026-10-02): sólo cuatro tipos, máximo 10 personas, el enlace tiene que ser una ruta del portal, y los datos de la factura se copian sólo si quien decide puede ver esa venta."
+      "guarda": "deuda",
+      "plan": "F3",
+      "motivo": "Avisos push con texto libre a cualquier empleado; copia datos de cualquier factura al aviso."
     },
     "avisar_a_sucursal": {
       "guarda": "sin-sala",
@@ -450,7 +451,9 @@
       "motivo": "Devuelve uuids, sin nombres ni datos."
     },
     "encolar_impresion": {
-      "guarda": "alcance"
+      "guarda": "deuda",
+      "plan": "F3",
+      "motivo": "Imprime contenido libre en la ticketera de cualquier sala; sólo exige ser empleado."
     },
     "encuesta_cliente_comentarios": {
       "guarda": "modulo-de-red",
@@ -629,6 +632,10 @@
     "inyeccion_aplicar": {
       "guarda": "alcance"
     },
+    "inyeccion_cotizar": {
+      "guarda": "solo-servidor",
+      "motivo": "La llama sólo operar-caja (llave de servidor) antes de escribir el cobro; la sala ya la validó operar-caja contra la de quien llama."
+    },
     "inyecciones_bitacora": {
       "guarda": "alcance"
     },
@@ -636,8 +643,7 @@
       "guarda": "alcance"
     },
     "inyecciones_pendientes": {
-      "guarda": "cruza-por-diseno",
-      "motivo": "Quien cobra (caja_vales.can_edit) ve las aplicaciones pendientes de TODAS las salas: un cliente paga la inyección en una sala y se la aplica en otra, y aplicarla (`inyeccion_aplicar`) sí queda en la sala propia. Sin caja_vales, sólo la propia salvo alcance de red en `inyecciones`. Declarada el 2026-10-02 por inferencia de su código — CONFIRMAR con el usuario que el cruce es a propósito."
+      "guarda": "alcance"
     },
     "preview_metas_gasto": {
       "guarda": "modulo-de-red",

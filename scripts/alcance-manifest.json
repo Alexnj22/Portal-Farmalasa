@@ -15,9 +15,7 @@
       "motivo": "Analiza datos que manda el navegador; no lee la base por sala."
     },
     "anotar-vales-caja": {
-      "guarda": "deuda",
-      "plan": "F1",
-      "motivo": "Anota vales en la caja del origen de CUALQUIER sala; sin `sala` recorre las 7. Sólo exige caja_vales.can_edit, que tienen cargos de una sala."
+      "guarda": "alcance"
     },
     "aplicar-movimiento-inventario": {
       "guarda": "modulo-de-red",
@@ -49,14 +47,10 @@
       "guarda": "cron"
     },
     "avisar-bultos-viejos": {
-      "guarda": "deuda",
-      "plan": "F1",
-      "motivo": "Ni sesión ni secreto, y desplegada sin verify_jwt: cualquiera en internet la dispara y crea avisos."
+      "guarda": "cron"
     },
     "avisar-creditos-vencidos": {
-      "guarda": "deuda",
-      "plan": "F1",
-      "motivo": "Ni sesión ni secreto, y desplegada sin verify_jwt: cualquiera en internet la dispara y crea avisos."
+      "guarda": "cron"
     },
     "backfill-dte-related-docs": {
       "guarda": "modulo-de-red",
@@ -113,9 +107,7 @@
       "motivo": "Proxy a la consulta pública del CSSP."
     },
     "creditos-erp": {
-      "guarda": "deuda",
-      "plan": "F1",
-      "motivo": "`pagar` cobra con permiso de LECTURA (sólo `abonar` exige can_edit); `aplicar_correccion` y `resolver_otro` no comparan la sala de la solicitud (latente: hoy aprueban sólo cargos de red)."
+      "guarda": "alcance"
     },
     "descuentos-erp": {
       "guarda": "alcance"

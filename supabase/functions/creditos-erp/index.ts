@@ -52,14 +52,24 @@ Deno.serve(async (req) => {
 
     /* Módulo propio —`cuentas_por_cobrar`, la vista «Cuentas por cobrar»— y no
      * `caja_vales`: son dos preguntas distintas y las mira otra gente. Mirar la
-     * cartera es `can_view`; abonar es MOVER el cajón, así que es `can_edit`. */
-    const [modulo, capacidad] = accion === "abonar"
+     * cartera es `can_view`; abonar es MOVER el cajón, así que es `can_edit`.
+     *
+     * `pagar` también: es el cobro de hoy (un documento, uno o varios
+     * créditos) y hasta el 2026-10-02 pasaba con `can_view` porque esta lista
+     * sólo nombraba a `abonar`, que es el cobro viejo. Quien tenía la cartera
+     * en sólo lectura —Supervisor/a de Ventas, en toda la red— podía cobrar en
+     * cualquier sala mandando la petición a mano. La pantalla nunca le mostró
+     * el botón; el freno real es éste. */
+    const ESCRIBEN = ["abonar", "pagar"];
+    const [modulo, capacidad] = ESCRIBEN.includes(accion)
       ? ["cuentas_por_cobrar", "can_edit"]
       : ["cuentas_por_cobrar", "can_view"];
     const permiso = await permisoDeModulo(supabase, quien.id, modulo, capacidad as "can_view" | "can_edit");
     if (permiso.roto) return responder({ ok: false, error: permiso.roto }, 503);
     if (!permiso.puede) {
-      return responder({ ok: false, error: "No tienes permiso para ver las cuentas por cobrar." }, 403);
+      return responder({ ok: false, error: capacidad === "can_edit"
+        ? "No tienes permiso para cobrar créditos."
+        : "No tienes permiso para ver las cuentas por cobrar." }, 403);
     }
 
     const mapa = getErpBranchMap().filter((e) => e.erpId !== 6);   // Bodega no vende al crédito
@@ -284,6 +294,14 @@ Deno.serve(async (req) => {
       if (permisoDecidir.roto) return responder({ ok: false, error: permisoDecidir.roto }, 503);
       if (!permisoDecidir.puede) {
         return responder({ ok: false, error: "No tienes permiso para decidir esto." }, 403);
+      }
+
+      /* Quien decide, sólo sobre SU sala si su permiso de aprobar es de una
+       * sala. Hoy aprueban sólo cargos de toda la red, así que no frena a nadie
+       * — está para el día que se le dé el permiso a un cargo de sala: sin
+       * esto, borraría o aplicaría abonos en la caja de otra sucursal. */
+      if (!permisoDecidir.alcanceTodo && Number(permisoDecidir.emp?.branch_id) !== sala) {
+        return responder({ ok: false, error: "Esa solicitud es de otra sucursal." }, 403);
       }
 
       /* 1. ¿El abono TODAVÍA está? Si ya no está, no hay nada que corregir.
@@ -526,6 +544,13 @@ Deno.serve(async (req) => {
       const sala = Number(meta.branch_id);
       const entrada = mapa.find((e) => e.branchId === sala);
       if (!entrada) return responder({ ok: false, error: "Esa sala no está configurada." }, 400);
+      /* Quien decide, sólo sobre SU sala si su permiso de aprobar es de una
+       * sala. Hoy aprueban sólo cargos de toda la red, así que no frena a nadie
+       * — está para el día que se le dé el permiso a un cargo de sala: sin
+       * esto, borraría o aplicaría abonos en la caja de otra sucursal. */
+      if (!permisoDecidir.alcanceTodo && Number(permisoDecidir.emp?.branch_id) !== sala) {
+        return responder({ ok: false, error: "Esa solicitud es de otra sucursal." }, 403);
+      }
       const renglones = (Array.isArray(meta.creditos) ? meta.creditos : []) as
         Record<string, unknown>[];
 

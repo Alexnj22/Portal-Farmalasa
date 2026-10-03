@@ -2,10 +2,6 @@
   "_nota": "Deudas conocidas al 2026-10-02. SÓLO BAJA: `npm run gate:alcance -- --update-baseline` quita las cerradas; nunca se agrega a mano.",
   "edge": [
     "analyze-document",
-    "anotar-vales-caja",
-    "avisar-bultos-viejos",
-    "avisar-creditos-vencidos",
-    "creditos-erp",
     "generate-vacation-plan",
     "operar-caja",
     "saly-ai",

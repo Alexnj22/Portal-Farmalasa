@@ -81,6 +81,14 @@ y `npm run gate:alcance -- --update-baseline`.
 
 ### F1 — dinero, y puertas abiertas a internet (primero)
 
+✅ **Cerrada el 2026-10-02.** Desplegadas `creditos-erp` (v30), `anotar-vales-caja`
+(v8), `avisar-bultos-viejos` y `avisar-creditos-vencidos`. Verificado en vivo:
+las dos de avisos contestan **401** a una llamada sin secreto, y siguen sin
+verify_jwt porque su cron manda el secreto de invocación, no un JWT (desplegarlas
+sin `--no-verify-jwt` las habría dejado en 401 para el propio cron). No se probó
+una llamada válida porque reparte avisos de verdad: la confirmación es la corrida
+del cron de mañana (14:00 y 15:00 UTC). Deuda de edge functions: 10 → 6.
+
 | dónde | qué pasa | arreglo |
 |---|---|---|
 | `creditos-erp` · `pagar` | cobra con permiso de **lectura**; sólo `abonar` exige `can_edit`. Supervisor/a de Ventas (lectura en toda la red) puede cobrar en cualquier sala | `pagar` también con `can_edit` |

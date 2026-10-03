@@ -13,6 +13,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { aplicarPendientes, fetchAplicacionesPendientes } from '@nucleo/data/inyecciones';
 import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { fmtMl } from '@nucleo/utils/inyeccionDosis';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaNumerica } from '@nucleo/utils/fecha';
@@ -136,7 +137,11 @@ export default function TabPendientes({ filterBranch, setFilterBranch, branchOpt
                                     {!filterBranch && ` · ${nombreSala(p.branch_id)}`}
                                 </p>
                             </DataCell>
-                            <DataCell className="text-body-sm">{p.producto}</DataCell>
+                            <DataCell className="text-body-sm">
+                                {p.producto}
+                                {/* La dosis, para quien la aplique (se cobró por ml). */}
+                                {p.dosis_ml != null && <p className="text-caption font-semibold text-content-2">{fmtMl(p.dosis_ml)} ml por aplicación</p>}
+                            </DataCell>
                             <DataCell className="text-body-sm whitespace-nowrap">
                                 <p>{fechaCorta(p.pagada_at)}
                                     {dias >= 7 && <Badge variant="warning" size="sm" className="ml-2">{dias} días</Badge>}

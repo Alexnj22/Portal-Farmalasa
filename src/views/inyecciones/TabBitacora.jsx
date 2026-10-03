@@ -11,6 +11,7 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { fetchBitacoraDeAplicaciones } from '@nucleo/data/inyecciones';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { fmtMl } from '@nucleo/utils/inyeccionDosis';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { exportCsv } from '@nucleo/utils/csvExport';
@@ -84,7 +85,7 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
          'ESTADO', 'APLICADA', 'APLICADA POR', 'APLICADA EN'],
         visibles.map((f) => [
             horaDe(f.cobrada_at), f.sala, f.origen === 'TRAIDA' ? 'TRAIDA' : 'COMPRADA', factura(f.correlativo),
-            f.cliente || '', f.producto, f.precio, nombre(f.cobrada_por),
+            f.cliente || '', f.dosis_ml != null ? `${f.producto} (${fmtMl(f.dosis_ml)} ml)` : f.producto, f.precio, nombre(f.cobrada_por),
             f.estado, f.aplicada_at ? horaDe(f.aplicada_at) : '', f.aplicada_por ? nombre(f.aplicada_por) : '',
             f.aplicada_en || '',
         ]),
@@ -166,7 +167,11 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
                                 {f.asignada_a_mano && ' · asignada después'}
                             </p>
                         </DataCell>
-                        <DataCell className="text-body-sm">{f.producto}</DataCell>
+                        <DataCell className="text-body-sm">
+                                {f.producto}
+                                {/* La dosis, para quien la aplique (se cobró por ml). */}
+                                {f.dosis_ml != null && <p className="text-caption font-semibold text-content-2">{fmtMl(f.dosis_ml)} ml por aplicación</p>}
+                            </DataCell>
                         <DataCell align="right" hideBelow="md" className="text-body-sm font-semibold">{formatMoney(f.precio)}</DataCell>
                         <DataCell>
                             {f.estado === 'APLICADA' ? (

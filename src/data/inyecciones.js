@@ -63,6 +63,18 @@ export async function fijarDosis({ erpProductId, aplicaciones }) {
     if (error) throw error;
 }
 
+/**
+ * Contar un producto por mililitros: lo que trae una unidad (el vial) y las
+ * dosis que se usan. Al cobrar se elige la dosis y salen las aplicaciones.
+ * `contenidoMl` null vuelve al número fijo de aplicaciones.
+ */
+export async function fijarMililitros({ erpProductId, contenidoMl, dosisMl }) {
+    const { error } = await supabase.rpc('inyeccion_fijar_ml', {
+        p_erp_product_id: erpProductId, p_contenido_ml: contenidoMl, p_dosis_ml: contenidoMl == null ? null : dosisMl,
+    });
+    if (error) throw error;
+}
+
 export async function fijarPrecioDeAplicacion({ origen, precio }) {
     const { error } = await supabase.rpc('inyeccion_fijar_precio', { p_origen: origen, p_precio: precio });
     if (error) throw error;

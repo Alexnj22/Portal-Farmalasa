@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1165.0 — App: Productos
+
+- **App: Productos nativo.** El catálogo para consultar: foto, nombre, laboratorio y principio activo, «Bajo Receta», inactivos y categoría; busca con la regla del portal (nombre, principio activo, laboratorio) y pagina en el servidor. Activos/Todos en el segmentado, categoría en el menú.
+- **App: la ficha del producto trae los precios.** Debajo de las existencias por sala, los precios de cada presentación vigente, sólo los niveles que el cargo puede ver (su tope de precio) y nunca el costo.
+- **Núcleo:** los niveles de precio y cuáles ve cada cargo (`src/utils/preciosDeProducto.js`) —el portal los escribía dos veces en `TabCatalogo`— y `fetchPreciosDelProducto`, sin costos. Con su prueba.
 ## v2.1164.1 — Inyecciones: las pantallas de supervisión cargan en décimas
 
 El catálogo de Ajustes tardaba 2.0 s y «Por cobrar» (30 días, todas las

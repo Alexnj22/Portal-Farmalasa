@@ -89,7 +89,7 @@ const SegmentedControl = memo(({
         // para anunciar "2 de 3" en vez de leer tres botones sin relación.
         <div role="radiogroup" aria-label={label}
             className={`${enBloque
-                    ? `grid gap-2 ${columns === 3 ? 'grid-cols-3' : 'grid-cols-2'}`
+                    ? `grid gap-2 ${columns === 4 ? 'grid-cols-2 sm:grid-cols-4' : columns === 3 ? 'grid-cols-3' : 'grid-cols-2'}`
                     // `max-w-full` + `flex-wrap`: con cuatro opciones de rótulo
                     // largo el riel medía más que la pantalla y las últimas se
                     // salían —medido en Comunicados, «Todos·Sucursal·Cargo·

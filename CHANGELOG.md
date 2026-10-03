@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1172.1 — Inyecciones: «Otra sucursal» arriba, a la par de «Compró aquí»
+
+Pedidos del usuario: la búsqueda por comprobante era un enlace escondido bajo la
+lista. Ahora es la segunda opción de arriba, «Otra sucursal»: al elegirla se ve
+directo el campo del comprobante. Se cobra igual que «Compró aquí». Las cuatro
+opciones van en UNA fila: el diálogo es más ancho y `SegmentedControl` acepta
+`columns={4}` (en el teléfono quedan 2×2, porque cuatro no caben a lo ancho).
+
+---
+
 ## v2.1172.0 — App: Ventas perdidas
 
 - **App: Ventas perdidas nativa.** Los pendientes con los más pedidos arriba, los procesados, y «Listo» para atender uno. Y algo nuevo: **reportar desde el mostrador** lo que el cliente pidió y no había, con cuántas unidades y el laboratorio si lo sabe.

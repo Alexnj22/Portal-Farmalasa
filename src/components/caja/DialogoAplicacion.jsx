@@ -69,6 +69,10 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 
 const MODOS = [
     { value: 'COMPRADA', label: 'Compró aquí' },
+    // Arriba, a la par de «Compró aquí» (usuario, 2026-10-03): antes era un enlace
+    // escondido bajo la lista. Se cobra igual que una comprada; sólo cambia cómo
+    // se encuentra la venta — por el comprobante del ticket.
+    { value: 'OTRA',     label: 'Otra sucursal' },
     { value: 'TRAIDA',   label: 'La trajo' },
     { value: 'CANJEAR',  label: 'Ya la pagó' },
 ];
@@ -100,7 +104,6 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
     // Sube para volver a pedir la lista: las ventas tardan hasta un minuto en llegar.
     const [vuelta, setVuelta] = useState(0);
     // ── Comprada en otra sucursal ──
-    const [porComprobante, setPorComprobante] = useState(false);
     const [comprobante, setComprobante] = useState('');
     const [encontradas, setEncontradas] = useState(null);
     const [buscandoComp, setBuscandoComp] = useState(false);
@@ -347,7 +350,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
     );
 
     return (
-        <LiquidModal open onClose={enviando ? undefined : onClose} maxWidth="max-w-lg" ariaLabel="Aplicación de inyección">
+        <LiquidModal open onClose={enviando ? undefined : onClose} maxWidth="max-w-2xl" ariaLabel="Aplicación de inyección">
             {/* Encabezado y pie FIJOS, cuerpo con scroll (2026-10-03): con una
                 venta de varias aplicaciones el cuerpo crecía y el botón de cobrar
                 quedaba fuera de la pantalla (reporte del usuario). */}
@@ -361,13 +364,13 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                             : 'Cada aplicación pagada queda a nombre del cliente hasta que se aplica.'}
                     </p>
                 </div>
-                <SegmentedControl options={MODOS} value={modo} label="Cómo se paga" layout="block" columns={3}
-                    onChange={setModo} />
+                <SegmentedControl options={MODOS} value={modo} label="Cómo se paga" layout="block" columns={4}
+                    onChange={(m) => { setModo(m); setVentaId(null); setVentaExterna(null); setCuantas({}); setMezcla(false); }} />
             </LiquidModal.Header>
             <LiquidModal.Body className="space-y-4">
                 {errorPrecios && <Notice variant="danger">{errorPrecios}</Notice>}
 
-                {modo === 'COMPRADA' && (
+                {(modo === 'COMPRADA' || modo === 'OTRA') && (
                     <div className="space-y-3">
                         {/* Con la venta elegida, la lista se recoge a esa sola venta: las
                             demás ya no sirven y empujaban «Cuántas se pagan» fuera de la
@@ -379,7 +382,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                     Cambiar venta
                                 </Button>
                             </div>
-                        ) : (<>
+                        ) : modo === 'COMPRADA' ? (<>
                         <SearchInput value={texto} onChange={setTexto} placeholder="Cliente, factura o inyección" />
                         <div className="flex items-center justify-between gap-2">
                             <p className="text-caption font-black uppercase tracking-widest text-content-2">
@@ -393,12 +396,11 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                 Actualizar
                             </Button>
                         </div>
-                        <div data-surface="card" className="rounded-xl p-3 space-y-2">
-                            <button type="button" onClick={() => setPorComprobante((x) => !x)} aria-expanded={porComprobante}
-                                className="text-body-sm font-bold text-content underline min-h-[var(--tap-min)] text-left">
-                                ¿La compró en otra sucursal? Buscar por comprobante
-                            </button>
-                            {porComprobante && (
+                        </>) : (
+                        <div className="space-y-2">
+                            <p className="text-body-sm text-content-2">
+                                Escribe el número de comprobante del ticket. Sólo así aparece una venta de otra sucursal.
+                            </p>
                                 <>
                                     <div className="flex items-end gap-2">
                                         <div className="flex-1">
@@ -440,13 +442,12 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                         </ul>
                                     )}
                                 </>
-                            )}
                         </div>
-                        </>)}
+                        )}
                         {errorVentas && <Notice variant="danger">{errorVentas}</Notice>}
                         {venta ? (
                             <ul className="space-y-2">{pintarVenta(venta, { externa: venta === ventaExterna })}</ul>
-                        ) : ventas == null ? <LoadingState /> : ventas.length === 0 ? (
+                        ) : modo !== 'COMPRADA' ? null : ventas == null ? <LoadingState /> : ventas.length === 0 ? (
                             <p className="text-body-sm text-content-3">
                                 {buscar
                                     ? 'Ninguna venta con aplicaciones por pagar coincide.'

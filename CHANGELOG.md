@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1164.1 — Inyecciones: las pantallas de supervisión cargan en décimas
+
+El catálogo de Ajustes tardaba 2.0 s y «Por cobrar» (30 días, todas las
+salas) 1.1 s: las dos llamaban una función por renglón para decidir si era
+inyección y cuántas aplicaciones trae. Ahora es una unión y el nombre se
+evalúa una vez por producto distinto: 0.41 s y 0.44 s; la lista del cobro en
+la sala, de 168 a 46 ms. Mismas respuestas (comparado en producción antes de
+aplicar: 2,157 renglones, 80 ventas y 133 productos, cero diferencias).
+Migración `inyecciones_mas_rapido` (20261003045526).
+
+---
+
 ## v2.1164.0 — App: Vacaciones
 
 - **App: Vacaciones nativo.** El plan del año mes por mes: quién sale, de cuándo a cuándo (con hora si el extremo la tiene), cuántos días, cuántos lleva usados y en qué estado, con quien está de vacaciones hoy resaltado. Arriba los planes del año y los cambios que esperan respuesta. Año, estado y sala en el menú; búsqueda por nombre o sala. Asignar, aprobar y responder cambios sigue en el portal.

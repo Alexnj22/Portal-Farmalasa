@@ -64,7 +64,7 @@ const arg = (n) => process.argv.includes(n);
 const valorDe = (n) => { const i = process.argv.indexOf(n); return i > 0 ? process.argv[i + 1] : null; };
 
 const RUTA_MANIFIESTO = valorDe('--manifiesto') || join(RAIZ, 'scripts/alcance-manifest.json');
-const RUTA_BASELINE = join(RAIZ, 'scripts/alcance-baseline.json');
+const RUTA_BASELINE = valorDe('--baseline') || join(RAIZ, 'scripts/alcance-baseline.json');
 const MANIFIESTO = JSON.parse(readFileSync(RUTA_MANIFIESTO, 'utf8'));
 const BASELINE = JSON.parse(readFileSync(RUTA_BASELINE, 'utf8'));
 
@@ -222,6 +222,39 @@ for (const tipo of ['edge', 'rpc']) {
     if (!BASELINE[tipo].includes(n)) fallar(`${tipo} ${n}`, 'deuda NUEVA: el baseline sólo baja. Cerrarla, no declararla');
   }
 }
+/* ── Una deuda cerrada no vuelve: lo dice la HISTORIA, no el archivo ───────
+ * El 2026-10-02 otra sesión commiteó copias viejas del manifiesto y del
+ * baseline (y del código) y la fase 3 entera volvió a «deuda» — con el gate en
+ * verde, porque los dos archivos retrocedieron juntos y quedaron coherentes
+ * entre sí. Comparar contra el archivo no puede verlo; contra git sí: el
+ * commit que sacó una deuda del baseline sigue en la historia aunque después
+ * alguien suba una copia vieja. Toda deuda que alguna vez salió del baseline y
+ * hoy vuelve a estar declarada es una REAPERTURA, y falla. */
+try {
+  const { execFileSync } = await import('node:child_process');
+  const git = (args) => execFileSync('git', args, { cwd: RAIZ, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  const versiones = git(['log', '--reverse', '--format=%H', '--', 'scripts/alcance-baseline.json'])
+    .split('\n').filter(Boolean)
+    .map((h) => { try { return JSON.parse(git(['show', `${h}:scripts/alcance-baseline.json`])); } catch { return null; } })
+    .filter(Boolean);
+  for (const tipo of ['edge', 'rpc']) {
+    const cerradasAlgunaVez = new Set();
+    for (let i = 1; i < versiones.length; i++) {
+      const antes = new Set(versiones[i - 1][tipo] ?? []);
+      const despues = new Set(versiones[i][tipo] ?? []);
+      for (const n of antes) if (!despues.has(n)) cerradasAlgunaVez.add(n);
+    }
+    for (const n of deudas[tipo]) {
+      if (cerradasAlgunaVez.has(n)) {
+        fallar(`${tipo} ${n}`, 'deuda REABIERTA: ya se había cerrado (está en la historia del baseline). ¿Se commiteó una copia vieja? Ver el log de scripts/alcance-baseline.json');
+      }
+    }
+  }
+} catch (e) {
+  // Sin git (un zip, un CI sin historia) no se puede mirar: se avisa, no se inventa un verde.
+  console.log(`  ⚠ no se pudo leer la historia del baseline: ${e.message}`);
+}
+
 const cerradas = ['edge', 'rpc'].flatMap((t) => (t === 'rpc' && !midioRemoto) ? []
   : BASELINE[t].filter((n) => !deudas[t].includes(n)).map((n) => `${t} ${n}`));
 

@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1167.1 — Tipos de la base con el conteo por mililitros
+
+`src/types/database.ts` regenerado tras `inyecciones_por_mililitros`
+(tabla `inyeccion_dosis_ml`, columna `dosis_ml`, función `inyeccion_fijar_ml`).
+
+---
+
 ## v2.1167.0 — Inyecciones por mililitros: el vial y cuánto se pone
 
 Pedido del usuario sobre RUBRAVIDA: «el vial viene x 10 ml, normalmente se

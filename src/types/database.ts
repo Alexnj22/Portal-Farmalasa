@@ -12208,6 +12208,7 @@ export type Database = {
           creada_por: string | null
           created_at: string
           customer_id: number | null
+          dosis_ml: number | null
           id: number
           invoice_id: number | null
           linea_num: number | null
@@ -12227,6 +12228,7 @@ export type Database = {
           creada_por?: string | null
           created_at?: string
           customer_id?: number | null
+          dosis_ml?: number | null
           id?: never
           invoice_id?: number | null
           linea_num?: number | null
@@ -12246,6 +12248,7 @@ export type Database = {
           creada_por?: string | null
           created_at?: string
           customer_id?: number | null
+          dosis_ml?: number | null
           id?: never
           invoice_id?: number | null
           linea_num?: number | null
@@ -12314,6 +12317,48 @@ export type Database = {
           {
             foreignKeyName: "inyeccion_aplicaciones_vinculada_por_fkey"
             columns: ["vinculada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inyeccion_dosis_ml: {
+        Row: {
+          confirmado_at: string
+          confirmado_por: string | null
+          contenido_ml: number
+          created_at: string
+          dosis_ml: number[]
+          erp_product_id: number
+        }
+        Insert: {
+          confirmado_at?: string
+          confirmado_por?: string | null
+          contenido_ml: number
+          created_at?: string
+          dosis_ml: number[]
+          erp_product_id: number
+        }
+        Update: {
+          confirmado_at?: string
+          confirmado_por?: string | null
+          contenido_ml?: number
+          created_at?: string
+          dosis_ml?: number[]
+          erp_product_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inyeccion_dosis_ml_confirmado_por_fkey"
+            columns: ["confirmado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inyeccion_dosis_ml_confirmado_por_fkey"
+            columns: ["confirmado_por"]
             isOneToOne: false
             referencedRelation: "employees_safe"
             referencedColumns: ["id"]
@@ -24386,6 +24431,8 @@ export type Database = {
           supplier_id: number
         }[]
       }
+      comprobantes_de_caja_red: { Args: never; Returns: boolean }
+      comprobantes_de_caja_sala: { Args: never; Returns: string }
       confirm_pedido: {
         Args: {
           p_created_by: string
@@ -27428,6 +27475,14 @@ export type Database = {
         Args: { p_aplicaciones: number; p_erp_product_id: number }
         Returns: undefined
       }
+      inyeccion_fijar_ml: {
+        Args: {
+          p_contenido_ml: number
+          p_dosis_ml: number[]
+          p_erp_product_id: number
+        }
+        Returns: undefined
+      }
       inyeccion_fijar_precio: {
         Args: { p_origen: string; p_precio: number }
         Returns: undefined
@@ -27450,15 +27505,19 @@ export type Database = {
         Returns: {
           cantidad: number
           confirmado: boolean
+          contenido_ml: number
           descripcion: string
           disponibles: number
+          dosis_ml: number
           erp_product_id: number
           factor: number
           invoice_id: number
           linea_num: number
+          opciones_ml: number[]
           por_unidad: number
           presentacion: string
           total: number
+          unidades: number
           usadas: number
         }[]
       }

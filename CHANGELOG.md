@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1168.1 — Tipos de la base con las inyecciones mezcladas
+
+`src/types/database.ts` regenerado tras `inyecciones_mezcladas` (columna `mezcla_de`).
+
+---
+
 ## v2.1168.0 — Inyecciones mezcladas: dos en la misma jeringa son una aplicación
 
 Pedido del usuario: «a veces se mezclan la cobalex con la tiamina, así que no

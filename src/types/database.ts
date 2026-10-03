@@ -12212,6 +12212,7 @@ export type Database = {
           id: number
           invoice_id: number | null
           linea_num: number | null
+          mezcla_de: number | null
           origen: string
           precio: number
           producto: string
@@ -12232,6 +12233,7 @@ export type Database = {
           id?: never
           invoice_id?: number | null
           linea_num?: number | null
+          mezcla_de?: number | null
           origen: string
           precio: number
           producto: string
@@ -12252,6 +12254,7 @@ export type Database = {
           id?: never
           invoice_id?: number | null
           linea_num?: number | null
+          mezcla_de?: number | null
           origen?: string
           precio?: number
           producto?: string
@@ -12305,6 +12308,13 @@ export type Database = {
             columns: ["creada_por"]
             isOneToOne: false
             referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inyeccion_aplicaciones_mezcla_de_fkey"
+            columns: ["mezcla_de"]
+            isOneToOne: false
+            referencedRelation: "inyeccion_aplicaciones"
             referencedColumns: ["id"]
           },
           {

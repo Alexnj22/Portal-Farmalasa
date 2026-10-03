@@ -19,6 +19,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/monitor-ventas': true, // el «Monitor de ventas» del portal es un modal; en la app, su pantalla
   '/ventas': true,         // la lista de facturas con sus cifras; tocar una abre la venta
   '/cuentas-por-cobrar': true, // la cartera, la ficha de un crédito y el cobro
+  '/horarios': true,       // la semana de la sala día por día; editar la grilla sigue en el portal
   '/mis-documentos': true, // el expediente propio y los papeles de las solicitudes
   '/mi-perfil': true,      // la ficha propia: datos, horario, vacaciones, historial y editar contacto
   '/inventario': true,     // lo de una sala producto por producto; tocar uno abre su ficha nativa

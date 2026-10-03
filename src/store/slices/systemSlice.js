@@ -519,8 +519,15 @@ export const createSystemSlice = (set, get) => ({
                         metadata: a.metadata || null,
                     });
 
+                    /* Nombre ÚNICO por arranque. `supabase.channel(nombre)` devuelve el
+                     * canal que ya exista con ese nombre, y `removeChannel` (en
+                     * `resetBootState`) cierra de forma asíncrona: si el arranque se
+                     * repite antes —la sesión se renovó, la app volvió del fondo— se
+                     * recibía el canal VIEJO, ya suscrito, y `.on()` lanzaba «cannot
+                     * add postgres_changes callbacks … after subscribe()», que tumbaba
+                     * `fetchBoot` entero. El nombre no importa para postgres_changes. */
                     const channel = supabase
-                        .channel('announcements-live')
+                        .channel(`announcements-live-${Date.now()}`)
                         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'announcements' }, (payload) => {
                             const a = payload.new;
                             if (a.is_archived) return;

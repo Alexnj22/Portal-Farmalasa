@@ -43,7 +43,7 @@ import {
 import { fetchRostersForWeekByEmployees } from '@nucleo/data/requests';
 import PortalInput from '../components/common/PortalInput';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { soloPersonalEnPlanilla } from '@nucleo/utils/tipoDeFicha';
+import { personasDelHorario } from '@nucleo/utils/horarioDeLaSala';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -545,26 +545,8 @@ const SchedulesView = ({ openModal, setView }) => {
         fetchSales();
     }, [filterBranch, viewMode, branches]);
 
-    const employeesInView = useMemo(() => {
-        const roleWeight = (role) => {
-            const r = (role || '').toUpperCase();
-            if (r.includes('GERENTE') || (r.includes('JEFE') && !r.includes('SUB'))) return 1;
-            if (r.includes('SUBJEFE'))    return 2;
-            if (r.includes('REGENTE'))    return 3;
-            if (r.includes('DEPENDIENTE')) return 4;
-            return 5;
-        };
-        // Un horario se le publica a una PERSONA. Una cuenta técnica o un
-        // servicio externo no tienen turno que cubrir, y aparecían acá porque
-        // se leía `employees` en crudo. Ver `utils/tipoDeFicha.js`.
-        return soloPersonalEnPlanilla(employees)
-            .filter(e => String(e.branchId || e.branch_id) === String(filterBranch) && (e.status || '').toUpperCase() !== 'INACTIVO')
-            .sort((a, b) => {
-                const wA = roleWeight(a.role), wB = roleWeight(b.role);
-                if (wA !== wB) return wA - wB;
-                return (a.name || 'Sin Nombre').localeCompare(b.name || 'Sin Nombre');
-            });
-    }, [employees, filterBranch]);
+    // Planilla activa de la sala, por cargo y nombre: `personasDelHorario` (núcleo).
+    const employeesInView = useMemo(() => personasDelHorario(employees, filterBranch), [employees, filterBranch]);
 
     const filteredEmployees = useMemo(() => {
         if (!searchTerm) return employeesInView;

@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1163.0 — App: Horarios
+
+- **App: Horarios nativo.** La semana de una sala, un día a la vez: quién trabaja y de qué hora a qué hora (con la pausa, la jornada nocturna y lo que está en borrador marcados), quién descansa o no tiene horario, y la semana entera de cada persona al tocarla. Flechas para cambiar de semana y la sala en el menú. El día lo resuelve `resolverTurnoDelDia`, el mismo de la planilla y el kiosco. Editar la grilla sigue en el portal.
+- **Núcleo:** quién sale en el horario de una sala y en qué orden (`personasDelHorario`, `pesoDeCargo`) pasa de `SchedulesView` a `src/utils/horarioDeLaSala.js`, con su prueba.
+- **Arreglo:** el canal de avisos en tiempo real choca consigo mismo cuando el arranque se repite antes de cerrarse el anterior (la sesión se renueva, la app vuelve del fondo) y tumbaba la carga inicial con «cannot add postgres_changes callbacks … after subscribe()». Ahora cada arranque abre su canal con nombre propio.
 ## v2.1162.0 — Inyecciones: el cobro se asigna a la venta, control de lo pagado y vista propia
 
 ### Agregar y quitar productos a mano

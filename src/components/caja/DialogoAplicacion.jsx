@@ -17,6 +17,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
+import { aplicacionesPorDosis, esPorMl, fmtMl, saldoDelRenglon } from '@nucleo/utils/inyeccionDosis';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -36,6 +37,13 @@ import { useStaffStore } from '@nucleo/store/staffStore';
  *
  * Lo pagado y no aplicado queda PENDIENTE a nombre del cliente y se canjea
  * después desde el tercer modo, «Ya la pagó».
+ *
+ * ── Lo que se cuenta por mililitros (2026-10-03) ───────────────────────────
+ * Un vial no trae un número fijo: RUBRAVIDA de 10 ml son 5 aplicaciones a
+ * 2 ml y 4 a 2.5. Para esos productos se pregunta además CUÁNTO SE PONE, y
+ * esa dosis queda en cada aplicación: quien la aplique después la ve en el
+ * canje sin tener que preguntar. El primer cobro de la venta la fija; los
+ * siguientes de esa misma venta ya no la preguntan.
  *
  * ── El monto no se escribe ─────────────────────────────────────────────────
  * Sale de cuántas aplicaciones se pagan por el precio vigente, y el servidor lo
@@ -82,6 +90,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
     const [errorVentas, setErrorVentas] = useState(null);
     const [ventaId, setVentaId] = useState(null);
     const [cuantas, setCuantas] = useState({});           // linea_num → cuántas se pagan
+    const [dosis, setDosis] = useState({});               // linea_num → ml por aplicación (sólo los por ml)
     // Sube para volver a pedir la lista: las ventas tardan hasta un minuto en llegar.
     const [vuelta, setVuelta] = useState(0);
 
@@ -141,15 +150,27 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
         // de casi todas las ventas, y obligar a tocar el «+» es un paso de más.
         const conSaldo = (v.renglones || []).filter((r) => r.disponibles > 0);
         setCuantas(conSaldo.length === 1 ? { [conSaldo[0].linea_num]: 1 } : {});
+        // La dosis ya fijada por un cobro anterior, o la única que hay; si hay
+        // varias, se pregunta.
+        setDosis(Object.fromEntries((v.renglones || []).filter(esPorMl).map((r) => [r.linea_num,
+            r.dosis_ml != null ? Number(r.dosis_ml) : (r.opciones_ml?.length === 1 ? Number(r.opciones_ml[0]) : null)])));
         setAplicarAhora(1);
         setANombreDe(esGenerico(v.cliente) ? '' : v.cliente);
     };
 
     const origen = modo === 'TRAIDA' ? 'TRAIDA' : 'COMPRADA';
     const precio = precios ? (origen === 'TRAIDA' ? precios.TRAIDA : precios.COMPRADA) : null;
+    const renglonDe = useCallback((linea) => (venta?.renglones || []).find((r) => r.linea_num === Number(linea)), [venta]);
     const items = useMemo(() => Object.entries(cuantas)
         .filter(([, n]) => n > 0)
-        .map(([linea, n]) => ({ invoice_id: ventaId, linea_num: Number(linea), cantidad: n })), [cuantas, ventaId]);
+        .map(([linea, n]) => {
+            const r = renglonDe(linea);
+            return {
+                invoice_id: ventaId, linea_num: Number(linea), cantidad: n,
+                ...(esPorMl(r) ? { dosis_ml: dosis[linea] ?? null } : {}),
+            };
+        }), [cuantas, ventaId, dosis, renglonDe]);
+    const faltaDosis = items.some((i) => 'dosis_ml' in i && i.dosis_ml == null);
     const total = origen === 'COMPRADA' ? items.reduce((s, i) => s + i.cantidad, 0) : cantidad;
     const monto = precio != null ? Math.round(precio * total * 100) / 100 : null;
 
@@ -157,7 +178,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
     // a quién dárselo cuando vuelva (pedido del usuario: «que haya un control»).
     const quedan = total - Math.min(aplicarAhora, total);
     const valido = precio != null && total > 0 && !!sala && (
-        origen === 'COMPRADA' ? !!venta && items.length > 0 : producto.trim().length > 2
+        origen === 'COMPRADA' ? !!venta && items.length > 0 && !faltaDosis : producto.trim().length > 2
     ) && (quedan === 0 || aNombreDe.trim().length >= 3);
 
     const cuerpoDeCobrar = useRef(null);
@@ -291,9 +312,9 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                                     <p key={r.linea_num} className="text-caption text-content-2 mt-0.5">
                                                         <span className="font-semibold">{Number(r.cantidad)}×</span> {r.descripcion}
                                                         {' · '}
-                                                        {r.disponibles > 0
-                                                            ? `${r.disponibles} de ${r.total} por pagar`
-                                                            : 'ya pagadas'}
+                                                        {r.disponibles <= 0 ? 'ya pagadas'
+                                                            : esPorMl(r) && r.dosis_ml == null ? `hasta ${r.disponibles} por pagar, según la dosis`
+                                                                : `${r.disponibles} de ${r.total} por pagar${esPorMl(r) ? ` · a ${fmtMl(r.dosis_ml)} ml` : ''}`}
                                                     </p>
                                                 ))}
                                             </button>
@@ -308,20 +329,58 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                 <h4 className="text-caption font-black uppercase tracking-widest text-content-2">
                                     Cuántas se pagan
                                 </h4>
-                                {(venta.renglones || []).filter((r) => r.disponibles > 0).map((r) => (
-                                    <div key={r.linea_num} className="flex items-center justify-between gap-3">
-                                        <div className="min-w-0">
-                                            <p className="text-body-sm text-content truncate">{r.descripcion}</p>
-                                            <p className="text-caption text-content-3">
-                                                {r.total} {r.total === 1 ? 'aplicación' : 'aplicaciones'} en la venta
-                                                {!r.confirmado && r.por_unidad > 1 && ` (${r.por_unidad} por unidad, sin confirmar)`}
-                                            </p>
+                                {(venta.renglones || []).filter((r) => r.disponibles > 0).map((r) => {
+                                    const saldo = saldoDelRenglon(r, dosis[r.linea_num]);
+                                    const porMl = esPorMl(r);
+                                    return (
+                                        <div key={r.linea_num} className="space-y-2">
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <p className="text-body-sm text-content truncate">{r.descripcion}</p>
+                                                    <p className="text-caption text-content-3">
+                                                        {saldo == null
+                                                            ? `${fmtMl(r.contenido_ml)} ml por unidad · elige cuánto se pone`
+                                                            : <>
+                                                                {saldo.total} {saldo.total === 1 ? 'aplicación' : 'aplicaciones'} en la venta
+                                                                {porMl && ` · ${fmtMl(saldo.dosis)} ml cada una`}
+                                                                {!porMl && !r.confirmado && r.por_unidad > 1 && ` (${r.por_unidad} por unidad, sin confirmar)`}
+                                                            </>}
+                                                    </p>
+                                                </div>
+                                                <Contador etiqueta={r.descripcion} valor={cuantas[r.linea_num] || 0}
+                                                    max={saldo ? saldo.disponibles : 0}
+                                                    onChange={(n) => setCuantas((c) => ({ ...c, [r.linea_num]: n }))} />
+                                            </div>
+                                            {/* La dosis se pregunta una vez por venta: un cobro
+                                                anterior la deja fijada y ya no se ofrece cambiarla. */}
+                                            {porMl && r.dosis_ml != null && (
+                                                <p className="text-caption text-content-2">
+                                                    Se pone <b className="text-content">{fmtMl(r.dosis_ml)} ml</b> por aplicación
+                                                    — así se cobró la primera vez.
+                                                </p>
+                                            )}
+                                            {porMl && r.dosis_ml == null && (r.opciones_ml || []).length > 1 && (
+                                                <SegmentedControl label={`Cuánto se pone de ${r.descripcion}`}
+                                                    layout="block" columns={(r.opciones_ml || []).length}
+                                                    value={dosis[r.linea_num] != null ? String(dosis[r.linea_num]) : null}
+                                                    options={(r.opciones_ml || []).map((d) => {
+                                                        const n = Math.floor(Number(r.unidades) * aplicacionesPorDosis(r.contenido_ml, d));
+                                                        return { value: String(Number(d)), label: `${fmtMl(d)} ml · ${n} aplic.` };
+                                                    })}
+                                                    onChange={(v) => {
+                                                        const d = Number(v);
+                                                        setDosis((x) => ({ ...x, [r.linea_num]: d }));
+                                                        // Con otra dosis el saldo cambia: lo elegido no puede pasarlo.
+                                                        const tope = saldoDelRenglon(r, d)?.disponibles ?? 0;
+                                                        setCuantas((c) => ({ ...c, [r.linea_num]: Math.min(c[r.linea_num] || 0, tope) }));
+                                                    }} />
+                                            )}
                                         </div>
-                                        <Contador etiqueta={r.descripcion} valor={cuantas[r.linea_num] || 0}
-                                            max={r.disponibles}
-                                            onChange={(n) => setCuantas((c) => ({ ...c, [r.linea_num]: n }))} />
-                                    </div>
-                                ))}
+                                    );
+                                })}
+                                {faltaDosis && (
+                                    <p className="text-caption text-warning">Falta elegir cuánto se pone.</p>
+                                )}
                             </div>
                         )}
                     </div>
@@ -393,7 +452,10 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                                     <span className="text-body-sm font-bold text-content truncate">{p.cliente || 'Sin nombre'}</span>
                                                     <span className="text-caption text-content-3 whitespace-nowrap">{p.sala}</span>
                                                 </div>
-                                                <p className="text-caption text-content-2">{p.producto}</p>
+                                                <p className="text-caption text-content-2">
+                                                    {p.producto}
+                                                    {p.dosis_ml != null && <b className="text-content"> · {fmtMl(p.dosis_ml)} ml por aplicación</b>}
+                                                </p>
                                                 <p className="text-caption text-content-3">
                                                     {p.correlativo ? `Factura ${factura(p.correlativo)} · ` : 'Traída · '}
                                                     pagada el {fechaCorta(String(p.pagada_at).slice(0, 10))}

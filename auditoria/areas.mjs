@@ -473,7 +473,9 @@ export const AREAS = [
                  'puntos_cambio_pendiente',
                  // Aplicaciones de inyección pagadas: el control, el precio y
                  // cuántas trae cada presentación (2026-10-02).
-                 'inyeccion_aplicaciones', 'inyeccion_precios', 'inyeccion_dosis_producto'],
+                 'inyeccion_aplicaciones', 'inyeccion_precios', 'inyeccion_dosis_producto',
+                 // Productos marcados a mano y los que se cuentan por ml (2026-10-03).
+                 'inyeccion_producto_clasificacion', 'inyeccion_dosis_ml'],
         edge: ['sync-dte-sales', 'sync-wfm-sales', 'check-sales-alerts', 'check-sales-reconciliation',
                'backfill-dte-sales', 'heal-dte-sync',
                // El programa de puntos vive en el portal desde el 2026-10-01:

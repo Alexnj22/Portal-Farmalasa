@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ClipboardList, Minus, Plus, Save, Search, Syringe } from 'lucide-react';
+import { ClipboardList, Droplet, Minus, Plus, Save, Search, Syringe } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import PortalInput from '../../components/common/PortalInput';
@@ -9,8 +9,10 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
 import {
-    clasificarProducto, fetchCatalogoDeDosis, fetchPreciosDeAplicacion, fijarDosis, fijarPrecioDeAplicacion,
+    clasificarProducto, fetchCatalogoDeDosis, fetchPreciosDeAplicacion, fijarDosis, fijarMililitros, fijarPrecioDeAplicacion,
 } from '@nucleo/data/inyecciones';
+import { aplicacionesPorDosis, fmtMl } from '@nucleo/utils/inyeccionDosis';
+import MililitrosModal from './MililitrosModal';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -22,6 +24,9 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
  *   · Por producto (supervisión): cuántas aplicaciones trae cada presentación.
  *     La factura no lo sabe —un TRI PACK sale «CAJA X 3» con factor 1—, así
  *     que rige una sugerencia sacada del nombre hasta que alguien la confirma.
+ *   · Por mililitros (2026-10-03): un vial no trae un número fijo —RUBRAVIDA
+ *     de 10 ml son 5 a 2 ml y 4 a 2.5—. Se declara el contenido y las dosis,
+ *     y al cobrar se elige cuánto se pone.
  */
 
 export default function TabAjustes() {
@@ -102,6 +107,7 @@ function CatalogoDeDosis({ showToast }) {
     const [soloSinConfirmar, setSoloSinConfirmar] = useState(true);
     const [agregando, setAgregando] = useState(false);
     const [verQuitados, setVerQuitados] = useState(false);
+    const [porMl, setPorMl] = useState(null);       // la fila que se está declarando por ml
 
     const cargar = useCallback(() => fetchCatalogoDeDosis()
         .then(setFilas)
@@ -111,8 +117,10 @@ function CatalogoDeDosis({ showToast }) {
     const clave = (f) => String(f.erp_product_id);
     const activas = useMemo(() => (filas || []).filter((f) => f.clasificacion !== 'quitado'), [filas]);
     const quitados = useMemo(() => (filas || []).filter((f) => f.clasificacion === 'quitado'), [filas]);
+    // Contar por ml también es una confirmación: alguien dijo cuánto trae.
+    const sinDecidir = (f) => f.confirmadas == null && f.contenido_ml == null;
     const visibles = useMemo(
-        () => activas.filter((f) => !soloSinConfirmar || f.confirmadas == null),
+        () => activas.filter((f) => !soloSinConfirmar || sinDecidir(f)),
         [activas, soloSinConfirmar],
     );
 
@@ -151,7 +159,24 @@ function CatalogoDeDosis({ showToast }) {
         }
     };
 
-    const sinConfirmar = activas.filter((f) => f.confirmadas == null).length;
+    const guardarMl = async (f, valores) => {
+        setGuardando(clave(f));
+        try {
+            await fijarMililitros({ erpProductId: f.erp_product_id, ...valores });
+            useStaffStore.getState().appendAuditLog('INYECCION_ML', String(f.erp_product_id),
+                { producto: f.descripcion, contenido_ml: valores.contenidoMl, dosis_ml: valores.dosisMl ?? null });
+            showToast(valores.contenidoMl == null ? 'Vuelve a contar aplicaciones' : 'Guardado por mililitros',
+                valores.contenidoMl == null ? 'Rige el número de aplicaciones por unidad.' : 'Al cobrar se pregunta cuánto se pone.', 'success');
+            setPorMl(null);
+            await cargar();
+        } catch (e) {
+            showToast('No se pudo guardar', mensajeAmigable(e), 'error');
+        } finally {
+            setGuardando(null);
+        }
+    };
+
+    const sinConfirmar = activas.filter(sinDecidir).length;
 
     return (
         <div className="space-y-2">
@@ -163,7 +188,8 @@ function CatalogoDeDosis({ showToast }) {
                     <p className="text-body-sm text-content-3">
                         Cuántas aplicaciones trae UNA unidad suelta. Una caja multiplica por lo que trae: TRAMAL en
                         caja de 5 con 1 por unidad son 5. Lo que sólo se vende entero —un TRI PACK— es su propia
-                        unidad. Mientras no se confirma, rige la sugerencia. {filas && `${sinConfirmar} sin confirmar.`}
+                        unidad. Un vial que rinde según la dosis se cuenta «por ml». Mientras no se confirma,
+                        rige la sugerencia. {filas && `${sinConfirmar} sin confirmar.`}
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -202,6 +228,7 @@ function CatalogoDeDosis({ showToast }) {
             >
                 {visibles.slice(0, 150).map((f, i) => {
                     const n = editando[clave(f)] ?? f.confirmadas ?? f.sugeridas;
+                    const ml = f.contenido_ml != null;
                     return (
                         <DataRow key={clave(f)} index={i}>
                             <DataCell className="text-body-sm">
@@ -213,6 +240,17 @@ function CatalogoDeDosis({ showToast }) {
                             </DataCell>
                             <DataCell align="right" hideBelow="md" className="text-body-sm">{f.ventas}</DataCell>
                             <DataCell>
+                                {ml ? (
+                                    <div className="space-y-0.5">
+                                        <p className="text-body-sm font-semibold text-content">
+                                            {fmtMl(f.contenido_ml)} ml · {(f.opciones_ml || []).map((d) => `${fmtMl(d)} ml`).join(' o ')}
+                                        </p>
+                                        <p className="text-caption text-content-3">
+                                            {(f.opciones_ml || []).map((d) => aplicacionesPorDosis(f.contenido_ml, d)).join(' o ')} aplicaciones
+                                            por unidad, según la dosis{f.ml_por ? ` · ${shortEmployeeName(f.ml_por)}` : ''}
+                                        </p>
+                                    </div>
+                                ) : (
                                 <div className="flex items-center gap-2">
                                     <Button variant="secondary" size="sm" iconOnly icon={Minus} title="Una menos"
                                         disabled={n <= 1} onClick={() => setEditando((e) => ({ ...e, [clave(f)]: n - 1 }))} />
@@ -223,6 +261,7 @@ function CatalogoDeDosis({ showToast }) {
                                         ? <Badge variant="warning" size="sm">Sugerida</Badge>
                                         : <Badge variant="success" size="sm">{f.confirmado_por ? shortEmployeeName(f.confirmado_por) : 'Confirmada'}</Badge>}
                                 </div>
+                                )}
                             </DataCell>
                             <DataCell align="right">
                                 <div className="flex justify-end gap-2">
@@ -231,17 +270,30 @@ function CatalogoDeDosis({ showToast }) {
                                         onClick={() => quitar(f)}>
                                         Quitar
                                     </Button>
-                                    <Button variant="primary" size="sm" loading={guardando === clave(f)}
-                                        disabled={guardando != null || (f.confirmadas != null && n === f.confirmadas)}
-                                        onClick={() => confirmar(f)}>
-                                        Confirmar
+                                    <Button variant="secondary" size="sm" icon={Droplet} disabled={guardando != null}
+                                        title="Para un vial que rinde según cuánto se pone"
+                                        onClick={() => setPorMl(f)}>
+                                        {ml ? 'Cambiar ml' : 'Por ml'}
                                     </Button>
+                                    {!ml && (
+                                        <Button variant="primary" size="sm" loading={guardando === clave(f)}
+                                            disabled={guardando != null || (f.confirmadas != null && n === f.confirmadas)}
+                                            onClick={() => confirmar(f)}>
+                                            Confirmar
+                                        </Button>
+                                    )}
                                 </div>
                             </DataCell>
                         </DataRow>
                     );
                 })}
             </DataTable>
+
+            {porMl && (
+                <MililitrosModal fila={porMl} guardando={guardando === clave(porMl)} onClose={() => setPorMl(null)}
+                    onGuardar={(v) => guardarMl(porMl, v)}
+                    onQuitar={() => guardarMl(porMl, { contenidoMl: null })} />
+            )}
 
             {quitados.length > 0 && (
                 <div className="space-y-2">

@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1167.0 — Inyecciones por mililitros: el vial y cuánto se pone
+
+Pedido del usuario sobre RUBRAVIDA: «el vial viene x 10 ml, normalmente se
+ponen 2 ml por aplicación o 2.5; que se pueda asignar y preguntar, así si
+alguien más se la aplica puede ver cuánto es que se pone».
+
+- **Ajustes → «Por ml»**: se declara lo que trae una unidad (10 ml) y hasta
+  cuatro dosis (2 y 2.5). Se ve «5 o 4 aplicaciones por unidad».
+- **Al cobrar** se pregunta cuánto se pone, con las aplicaciones de cada dosis
+  a la vista. La dosis queda FIJADA con el primer cobro de la venta: el
+  siguiente ya no la pregunta y dice «Se pone 2.5 ml por aplicación».
+- **Pendientes, canje y bitácora** muestran «2.5 ml por aplicación» junto a la
+  inyección: quien la aplique después lo ve sin preguntar.
+
+Base: migración `inyecciones_por_mililitros` (tabla `inyeccion_dosis_ml`,
+columna `inyeccion_aplicaciones.dosis_ml`, función `inyeccion_fijar_ml`). La
+dosis la valida el servidor: que venga, que esté declarada y que coincida con
+la fijada. Probada en producción en una transacción revertida y de punta a
+punta en el entorno de pruebas.
+
+---
+
 ## v2.1166.0 — App: Conteo de inventario
 
 - **App: Conteo de inventario nativo.** La lista de conteos de la sala (los abiertos primero, con su avance en vivo) y la pantalla de **contar** de pie frente al estante: buscar o **escanear** el producto, abrir sus renglones (presentación, lote, vencimiento) y escribir cuánto hay; cada renglón se guarda solo al terminar de escribirlo y queda cerrado con «Editar». «No lo encuentro» lo da por no ubicado. Si el conteo es ciego para el cargo, la cantidad del sistema no se muestra. Finalizar pregunta qué hacer con lo que quedó sin contar, igual que el portal. Crear y aprobar siguen en el portal.

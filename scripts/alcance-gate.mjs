@@ -168,6 +168,28 @@ if (!arg('--hook')) {
       if (!porNombre.has(nombre)) fallar(`rpc ${nombre}`, 'declarada en el manifiesto y ya no existe (o ya no recibe sucursal) — sacarla');
     }
 
+    // Los buckets privados que leen TODOS los que tienen sesión. Así estaba
+    // `payment-proofs` hasta el 2026-10-02: `bucket_id = 'payment-proofs'` a
+    // secas, o sea los comprobantes de caja de las siete salas para cualquier
+    // empleado, con la API de archivos y sin pasar por ninguna función. Las
+    // funciones de arriba no lo podían ver: no hay función de por medio.
+    const abiertos = canal.consultar(`
+      select distinct (regexp_match(qual, '^\\(bucket_id = ''([^'']+)''::text\\)$'))[1] as bucket
+        from pg_policies
+       where schemaname = 'storage' and tablename = 'objects'
+         and cmd in ('SELECT', 'ALL') and roles::text ~ '(authenticated|public)'
+         and qual ~ '^\\(bucket_id = ''[^'']+''::text\\)$'`);
+    const declarados = MANIFIESTO.buckets_abiertos ?? {};
+    for (const { bucket } of abiertos) {
+      if (!bucket) continue;
+      if (!String(declarados[bucket]?.motivo ?? '').trim()) {
+        fallar(`bucket ${bucket}`, 'cualquiera con sesión lee TODOS sus archivos y no está declarado en `buckets_abiertos` con su motivo');
+      }
+    }
+    for (const b of Object.keys(declarados)) {
+      if (!abiertos.some((a) => a.bucket === b)) fallar(`bucket ${b}`, 'declarado abierto y ya no lo está — sacarlo de `buckets_abiertos`');
+    }
+
     // ¿Algún cargo de UNA sala tiene un módulo «de red»?
     const modulos = [...new Set(modulosAVerificar.map(([, m]) => m))];
     if (modulos.length) {

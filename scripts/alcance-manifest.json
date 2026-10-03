@@ -6,9 +6,8 @@
       "motivo": "Analiza datos que manda el navegador; no lee la base por sala."
     },
     "analyze-document": {
-      "guarda": "deuda",
-      "plan": "F3",
-      "motivo": "Descarga cualquier archivo de los buckets privados con service_role; sólo pide sesión (ni siquiera empleado activo)."
+      "guarda": "sin-sala",
+      "motivo": "Descarga con la SESIÓN de quien llama (2026-10-02): deciden las policies de cada bucket, las mismas que deciden si esa persona puede abrir el archivo en pantalla."
     },
     "analyze-history": {
       "guarda": "sin-sala",
@@ -163,9 +162,11 @@
       "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
     },
     "generate-vacation-plan": {
-      "guarda": "deuda",
-      "plan": "F3",
-      "motivo": "Cancela los borradores de toda la empresa y genera otro plan; sólo pide sesión, sin módulo."
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "vacation_plan"
+      ],
+      "motivo": "Regenera el plan de toda la empresa: exige vacation_plan con edición y alcance de red (2026-10-02)."
     },
     "hacer-corte-caja": {
       "guarda": "alcance"
@@ -259,9 +260,8 @@
       "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
     },
     "saly-ai": {
-      "guarda": "deuda",
-      "plan": "F3",
-      "motivo": "`analyze-document` descarga cualquier archivo de documents/empleados/payment-proofs; `chat` lee empleados y asistencia de toda la empresa; sin permiso de módulo."
+      "guarda": "sin-sala",
+      "motivo": "Desde el 2026-10-02 sólo responde los dos análisis de encuestas, que trabajan sobre los comentarios que manda quien llama; no lee la base. Las demás acciones (chat, analyze-document, generate-schedule…) devuelven 410: no tenían quien las llamara y dos eran puertas abiertas."
     },
     "scrape-erp-proveedores": {
       "guarda": "cron"
@@ -375,9 +375,8 @@
       "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
     },
     "avisar_a_empleados": {
-      "guarda": "deuda",
-      "plan": "F3",
-      "motivo": "Avisos push con texto libre a cualquier empleado; copia datos de cualquier factura al aviso."
+      "guarda": "cruza-por-diseno",
+      "motivo": "Un aviso va a quien tiene que decidir, que a menudo es de otra sala: los destinatarios cruzan sucursales por diseño. Lo sensible está acotado (2026-10-02): sólo cuatro tipos, máximo 10 personas, el enlace tiene que ser una ruta del portal, y los datos de la factura se copian sólo si quien decide puede ver esa venta."
     },
     "avisar_a_sucursal": {
       "guarda": "sin-sala",
@@ -451,9 +450,7 @@
       "motivo": "Devuelve uuids, sin nombres ni datos."
     },
     "encolar_impresion": {
-      "guarda": "deuda",
-      "plan": "F3",
-      "motivo": "Imprime contenido libre en la ticketera de cualquier sala; sólo exige ser empleado."
+      "guarda": "alcance"
     },
     "encuesta_cliente_comentarios": {
       "guarda": "modulo-de-red",
@@ -746,6 +743,20 @@
       "guarda": "deuda",
       "plan": "F4",
       "motivo": "No la llama el portal: revocar a authenticated."
+    }
+  },
+  "buckets_abiertos": {
+    "empleados": {
+      "motivo": "Sólo fotos de perfil (`<empleado>/foto_perfil/…`), que el portal muestra en todas partes junto al nombre. Medido el 2026-10-02: 47 archivos, todos fotos de perfil."
+    },
+    "photos": {
+      "motivo": "Bucket público por diseño (CLAUDE.md, regla 10): fotos que se muestran sin firmar."
+    },
+    "product-photos": {
+      "motivo": "Bucket público por diseño (CLAUDE.md, regla 10): fotos de producto del catálogo."
+    },
+    "inventario-evidencia": {
+      "motivo": "Fotos de cajas de envíos de producto (`envios/<sala>/…`), sin datos personales ni dinero: 7 archivos al 2026-10-02. Si empieza a guardar otra cosa, se acota por sala como payment-proofs."
     }
   }
 }

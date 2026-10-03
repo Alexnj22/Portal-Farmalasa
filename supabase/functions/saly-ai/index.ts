@@ -42,6 +42,22 @@ Deno.serve(async (req) => {
 
     if (!action) throw new Error("No se especificó la 'action' en el body.")
 
+    /* Sólo las acciones que el portal usa (2026-10-02). Las demás —`chat`,
+     * `analyze-document`, `generate-schedule`, `analyze-branch`,
+     * `analyze-history`— no tenían quien las llamara (grep en src/ y apps/), y
+     * dos eran puertas abiertas: `analyze-document` descargaba con la llave del
+     * servidor cualquier archivo de los buckets privados, y `chat` leía
+     * empleados, asistencia y turnos de toda la empresa sin ningún permiso.
+     * Leer un documento sigue existiendo en `analyze-document`, que ahora
+     * descarga con la sesión de quien llama. Ver PLAN-ALCANCE-POR-SUCURSAL F3. */
+    const ACCIONES_VIVAS = ['analyze-survey-comments', 'analyze-customer-survey'];
+    if (!ACCIONES_VIVAS.includes(action)) {
+      return new Response(JSON.stringify({ success: false, error: "Esa acción ya no está disponible." }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 410,
+      })
+    }
+
     // Sanitize free-text user input to prevent prompt injection
     const MAX_QUESTION_LEN = 600;
     if (payload?.question && typeof payload.question === 'string') {

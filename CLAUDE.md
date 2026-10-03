@@ -1551,8 +1551,12 @@ instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`
   pone en rojo**. Declarar `alcance` es una afirmación sobre CADA acción — el
   gate lee el archivo entero y no ve una acción sin chequeo al lado de otra que
   sí lo tiene. Las deudas viven en `scripts/alcance-baseline.json` y **sólo
-  bajan**. En el pre-commit corre la parte local cuando el commit toca
-  `supabase/functions/`. Plan: `docs/PLAN-ALCANCE-POR-SUCURSAL-2026-10-02.md`.
+  bajan**. Mira también los **buckets**: uno privado cuya policy de lectura sea
+  `bucket_id = '…'` a secas lo lee entero cualquiera con sesión —así estaban los
+  2,035 comprobantes de caja de `payment-proofs`— y tiene que estar en
+  `buckets_abiertos` con su motivo. En el pre-commit corre la parte local cuando
+  el commit toca `supabase/functions/`. Plan:
+  `docs/PLAN-ALCANCE-POR-SUCURSAL-2026-10-02.md`.
 - **`npm run gate:tipos` — la base es un CONTRATO.** `src/types/database.ts`
   son los tipos de producción y el cliente de Supabase se declara con ellos:
   una tabla, columna o parámetro de `.rpc()` que no existe da un aviso de `tsc`

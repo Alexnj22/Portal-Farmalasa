@@ -1215,9 +1215,19 @@ Deno.serve(async (req) => {
         `el cierre del faltante de ${nombre}`,
       );
 
+      /* Cuando entra el ÚLTIMO renglón que estaba en «no llegó», la bolsa pasa
+       * a aprobada y la sala que envió recibe un aviso propio («apareció lo que
+       * faltaba»). La base decide si toca —quedan otros, ya se avisó— y lo hace
+       * una sola vez; un fallo acá no deshace el ingreso, que ya ocurrió. */
+      const resolverBolsa = () => anotar(
+        admin.rpc("resolver_envio_aparecido", { p_request_id: sol.id, p_actor: actor.id }),
+        "el cierre de la bolsa que apareció",
+      );
+
       // Ya ingresado —otra persona, o un reintento—: sólo falta el cierre.
       if (l.estado === "aceptada") {
         await cerrarElFaltante();
+        await resolverBolsa();
         return json({ ok: true, ya: true, producto: nombre });
       }
       if (l.estado !== "no_llego")
@@ -1271,6 +1281,7 @@ Deno.serve(async (req) => {
           (m) => fallos.push(m),
         );
         await cerrarElFaltante();
+        if (fallos.length === 0) await resolverBolsa();
         return json({
           ok: fallos.length === 0, ya: entrada.ya, producto: nombre, id_traslado: idIda,
           ...(fallos.length

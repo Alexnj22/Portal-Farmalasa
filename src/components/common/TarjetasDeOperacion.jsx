@@ -1113,6 +1113,8 @@ const RESPUESTA = {
     NO:       { tono: 'rojo',    Icono: PackageX,     persona: 'Lo revisó' },
     RECIBIDO: { tono: 'verde',   Icono: PackageCheck, persona: 'Lo recibió' },
     DEVUELVE: { tono: 'naranja', Icono: Undo2,        persona: 'Lo recibió' },
+    // Lo que se había marcado «no llegó» y después apareció en la otra sala.
+    APARECIO: { tono: 'verde',   Icono: PackageCheck, persona: 'Lo recibió' },
 };
 const deRespuesta = (e) => RESPUESTA[e] ?? RESPUESTA.ENVIA;
 
@@ -1163,7 +1165,24 @@ export function CuerpoDeRespuesta({ datos, claseTenue, isDark, buscarEmpleado })
                 {/* El envío, dicho de corrido (usuario, 24-sep: «explica más,
                     no entiendo de qué es»): es un envío que ESTA sala mandó, y
                     la otra se quedó con una parte y devuelve el resto. */}
-                {esEnvio && (
+                {esEnvio && datos.estado === 'APARECIO' && (
+                    <Bloque rotulo={`Tu envío a ${datos.sala ?? 'la otra sala'}`} claseTenue={claseTenue}>
+                        Apareció lo que faltaba: {datos.aceptados === 1
+                            ? 'recibió el producto que había marcado como no llegado'
+                            : `recibió los ${datos.aceptados} productos que había marcado como no llegados`}.
+                        Ya no hay que buscarlo en tu sala.
+                    </Bloque>
+                )}
+                {esEnvio && datos.estado === 'APARECIO' && datos.productos.length > 0 && (
+                    <ul className="bg-surface-card-hover divide-y divide-border-card">
+                        {datos.productos.map((p, i) => (
+                            <li key={`${p.nombre}-${i}`} className="px-2.5 py-2">
+                                <p className="text-body-sm font-black break-words leading-snug">{p.nombre}</p>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+                {esEnvio && datos.estado !== 'APARECIO' && (
                     <Bloque rotulo={`Tu envío a ${datos.sala ?? 'la otra sala'}`} claseTenue={claseTenue}>
                         {[
                             datos.aceptados > 0 && `Se quedó con ${datos.aceptados === 1 ? 'un producto' : `${datos.aceptados} productos`}`,

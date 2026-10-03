@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1161.1 — La sala que envió se entera de lo que faltó y de lo que apareció
+
+- **El aviso de «faltaron productos» ya no se apaga solo.** En un envío, cerrar la bolsa marcaba como leído el aviso de faltante que se acababa de mandar a la sala que despachó: los 5 de la bolsa E00212 quedaron leídos 0.1 s después de crearse. En las solicitudes no pasaba.
+- **Cuando entra el último producto que estaba en «no llegó», la bolsa pasa a aprobada** y pierde el motivo «No llegó». Mientras quede alguno sin aparecer, no cambia.
+- **La sala que envió recibe «Apareció lo que faltaba de tu envío»**, con los productos, a las mismas personas que recibieron el aviso de faltante. Respeta el horario de avisos como todos los demás.
+- Servidor: `resolver_envio_aparecido` (sólo servidor) lo llama `enviar-producto-erp` al ingresar; `notificar_resolucion_envio` ya no repite el aviso genérico en una segunda resolución.
+
 ## v2.1161.0 — App: Mi perfil y Mis documentos
 
 - **App: Mi perfil nativo.** La ficha propia: foto, cargo, sala, cumpleaños cercano; cuánto llevo en la empresa y mis solicitudes en curso; mis próximas vacaciones; mi horario de esta semana (de lunes a domingo, con la vacación, incapacidad o permiso del día marcado); mis datos, mi contacto —editable para quien puede editar fichas, igual que en el portal— y mi historial. Se abre desde «Yo».

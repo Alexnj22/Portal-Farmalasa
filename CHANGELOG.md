@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1166.0 — App: Conteo de inventario
+
+- **App: Conteo de inventario nativo.** La lista de conteos de la sala (los abiertos primero, con su avance en vivo) y la pantalla de **contar** de pie frente al estante: buscar o **escanear** el producto, abrir sus renglones (presentación, lote, vencimiento) y escribir cuánto hay; cada renglón se guarda solo al terminar de escribirlo y queda cerrado con «Editar». «No lo encuentro» lo da por no ubicado. Si el conteo es ciego para el cargo, la cantidad del sistema no se muestra. Finalizar pregunta qué hacer con lo que quedó sin contar, igual que el portal. Crear y aprobar siguen en el portal.
+- **Núcleo:** qué estado deja un número al guardar (vacío = pendiente, número = contado, no ubicado aparte), cuándo una cantidad es válida, cuándo un conteo se puede contar, los filtros y los alcances pasan de las vistas de conteo a `src/utils/conteoDeInventario.js`, con su prueba.
+
 ## v2.1165.0 — App: Productos
 
 - **App: Productos nativo.** El catálogo para consultar: foto, nombre, laboratorio y principio activo, «Bajo Receta», inactivos y categoría; busca con la regla del portal (nombre, principio activo, laboratorio) y pagina en el servidor. Activos/Todos en el segmentado, categoría en el menú.

@@ -52,6 +52,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 import { fechaNumerica } from '@nucleo/utils/fecha';
+import { cantidadValida, conteoEditable, FILTROS_CONTEO, guardadoDelRenglon, noUbicado } from '@nucleo/utils/conteoDeInventario';
 
 const PAGE_SIZE_INICIAL = 25;
 
@@ -99,12 +100,7 @@ const SCOPE_LABEL = {
 // cifra, que es exactamente lo que el ciego evita. Lo impone la RPC además de la
 // UI (`20260730024814_conteo_v7…`): un filtro que solo se esconde en el cliente
 // es decorativo, y este módulo ya cometió ese error una vez con el `<Switch>`.
-const FILTRO_PILLS = [
-    { key: 'TODOS', label: 'Todos' },
-    { key: 'PENDIENTES', label: 'Pendientes' },
-    { key: 'DIFERENCIA', label: 'Con diferencia', soloConSistema: true },
-    { key: 'SIN_UBICAR', label: 'No ubicados', soloConSistema: true },
-];
+const FILTRO_PILLS = FILTROS_CONTEO;
 
 // Las columnas del sistema no se declaran si el conteo es ciego: la RPC ya
 // devuelve NULL ahí, así que una columna "Sistema" llena de ••• sería un hueco
@@ -458,15 +454,14 @@ function ItemRow({
     const commit = async () => {
         if (recuento) return commitRecuento();
         if (!editable) return;
-        const nextFisico = fisico === '' ? null : Number(fisico);
-        const nextNota = nota.trim() || null;
-        const nextEstado = nextFisico !== null ? 'CONTADO' : 'PENDIENTE';
+        // Vacío = PENDIENTE, un número = CONTADO: `guardadoDelRenglon` (núcleo).
+        const { fisicoCantidad: nextFisico, nota: nextNota, estadoItem: nextEstado } = guardadoDelRenglon(fisico, nota);
         const prev = lastSaved.current;
         if (prev.fisico === nextFisico && prev.nota === nextNota && prev.estado === nextEstado) return;
 
         // Un conteo físico es un entero no negativo. Sin esto, "5.5" o "-3"
         // llegaban a un parámetro integer y reventaban en el servidor.
-        if (nextFisico !== null && (!Number.isInteger(nextFisico) || nextFisico < 0)) {
+        if (!cantidadValida(nextFisico)) {
             showToast('Cantidad inválida', 'El conteo físico debe ser un número entero de 0 o más.', 'error');
             revertToLastSaved();
             return;
@@ -510,7 +505,7 @@ function ItemRow({
         if (!editable || saving) return;
         setSaving(true);
         try {
-            const result = await onSave(item.id, { fisicoCantidad: 0, nota: nota.trim() || null, estadoItem: 'SIN_UBICAR' });
+            const result = await onSave(item.id, noUbicado(nota));
             lastSaved.current = { fisico: 0, nota: nota.trim() || null, estado: 'SIN_UBICAR' };
             setFisico(0);
             setSistema(result.sistema_cantidad);
@@ -1847,7 +1842,7 @@ export default function ConteoDetailView() {
         prev.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }
     )); };
 
-    const editable = conteo && ['BORRADOR', 'EN_PROGRESO'].includes(conteo.status);
+    const editable = conteoEditable(conteo);
     // Conteo sencillo: un renglón por producto y presentación, sin lote ni
     // vencimiento. Lo decide la cabecera al crearse y ya no cambia, así que toda
     // la vista lee este único booleano en vez de adivinarlo por `item.lote`

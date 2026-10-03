@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1169.0 — Mi caja: movimientos que se abren y panel del día en dos cuentas
+
+- **Movimientos del día como filas que se abren.** Cada uno lleva un ícono por clase (ingreso, salida, bolsa, cobro), el qué en grande y el dato que lo distingue debajo, la hora, quién lo anotó y el monto con signo. Las marcas que no pueden esconderse (anulado, corrección pendiente, monto sin comprobar, no entra al cajón) siguen a la vista. Al abrirlo: el concepto entero y todos los datos guardados —tipo, boleta, número en la caja, cómo se obtuvo el monto, a qué corte pertenece; en un cobro, cliente, crédito, factura, forma de pago, cuánto debía y cuánto queda—, la corrección, el reparto entre bolsas, la boleta y «Corregir».
+- **El nombre de quien anotó sale del canónico** (primer nombre + primer apellido); antes se pintaba completo.
+- **Panel del día en dos cuentas lado a lado**: lo vendido por forma de pago, con barra de proporción y número de ventas, y el efectivo en caja con su total arriba y la cuenta renglón por renglón. Sin montos visibles (antes del corte), las barras miden ventas y no dinero.
+
 ## v2.1168.2 — Inyecciones: el cobro deja el botón a la vista y el buscador marca lo que ya está
 
 Dos reportes del usuario:

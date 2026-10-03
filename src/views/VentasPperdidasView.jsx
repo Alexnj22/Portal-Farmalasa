@@ -16,6 +16,7 @@ import {
 } from '@nucleo/data/ventasPerdidas';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { hoySV } from '@nucleo/utils/fecha';
+import { masSolicitados } from '@nucleo/utils/ventasPerdidas';
 
 const TABS = [
     { key: 'pendiente', label: 'Pendiente' },
@@ -101,17 +102,8 @@ export default function VentasPperdidasView() {
     };
 
     // Top-5 most-needed products (pending only)
-    const summary = activeTab === 'pendiente'
-        ? Object.values(
-            rows.reduce((acc, r) => {
-                const k = r.descripcion || r.producto_buscado;
-                if (!acc[k]) acc[k] = { nombre: k, veces: 0, total: 0 };
-                acc[k].veces++;
-                acc[k].total += r.cantidad;
-                return acc;
-            }, {})
-          ).sort((a, b) => b.total - a.total).slice(0, 5)
-        : [];
+    // Los cinco más pedidos entre los pendientes: `masSolicitados` (núcleo).
+    const summary = activeTab === 'pendiente' ? masSolicitados(rows) : [];
 
     const filtersContent = (
         <ViewTabBar

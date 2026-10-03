@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1172.0 — App: Ventas perdidas
+
+- **App: Ventas perdidas nativa.** Los pendientes con los más pedidos arriba, los procesados, y «Listo» para atender uno. Y algo nuevo: **reportar desde el mostrador** lo que el cliente pidió y no había, con cuántas unidades y el laboratorio si lo sabe.
+- **Portal — el reporte de venta perdida desde la búsqueda del tablero ya no dice «OK» cuando no se guardó.** No se miraba el error: si la base lo rechazaba, la tarjeta igual confirmaba. Ahora avisa.
+- **Núcleo:** el resumen de los más pedidos y la forma de un reporte nuevo pasan a `src/utils/ventasPerdidas.js`, con su prueba. Las hojas de Reportar y de Editar contacto de la app van sobre la aurora.
+## v2.1171.1 — Tipos de la base con la búsqueda por comprobante
+
+`src/types/database.ts` regenerado tras `inyecciones_otra_sucursal` (`inyeccion_venta_por_comprobante`).
+
+---
+
 ## v2.1171.0 — Inyecciones: comprada en otra sucursal, historial de lo aplicado y bitácora con fotos
 
 Pedidos del usuario del 2026-10-03:

@@ -26,6 +26,7 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
+import ConAurora from '../componentes/ConAurora';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 
@@ -56,7 +57,8 @@ function EditarContacto({ emp, abierto, onCerrar }) {
   };
   return (
     <Modal visible={abierto} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
-      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colorSistema.fondo }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ConAurora>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }} keyboardShouldPersistTaps="handled">
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>Editar contacto</Text>
@@ -74,6 +76,7 @@ function EditarContacto({ emp, abierto, onCerrar }) {
           <BotonGrande texto={guardando ? 'Guardando…' : 'Guardar'} color={MARCA.verde} deshabilitado={guardando} onPress={guardar} />
         </ScrollView>
       </KeyboardAvoidingView>
+      </ConAurora>
     </Modal>
   );
 }

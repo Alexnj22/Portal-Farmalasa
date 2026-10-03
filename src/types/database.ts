@@ -27531,6 +27531,10 @@ export type Database = {
           usadas: number
         }[]
       }
+      inyeccion_venta_por_comprobante: {
+        Args: { p_branch_id: number; p_comprobante: string }
+        Returns: Json
+      }
       inyeccion_vincular_cobro: {
         Args: { p_cobro_id: number; p_invoice_id: number; p_linea_num: number }
         Returns: number

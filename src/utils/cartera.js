@@ -8,12 +8,30 @@
 import { severidadDeDias } from '../data/creditos';
 import { tokenMatch } from './searchUtils';
 
-/** Lo que se puede ver: con saldo (el arranque), pasados del plazo, o todos. */
+/** Lo que se puede ver: con saldo (el arranque), los que vencen esta semana,
+ *  pasados del plazo, o todos. «Por vencer» es el que sirve para llamar ANTES:
+ *  son los mismos escalones de la insignia (`severidadDeDias`). */
 export const VER_CARTERA = [
     { value: 'DEBEN', label: 'Con saldo' },
-    { value: 'VENCIDOS', label: 'Pasados del plazo' },
+    { value: 'POR_VENCER', label: 'Por vencer' },
+    { value: 'VENCIDOS', label: 'Vencidos' },
     { value: 'TODOS', label: 'Todos' },
 ];
+
+/** Cómo se ordena. El arranque es el más viejo primero: es el que hay que ir a
+ *  cobrar. «Más recientes» sirve para encontrar lo que se acaba de vender, y
+ *  «Mayor saldo» para empezar por donde está la plata. */
+export const ORDEN_CARTERA = [
+    { value: 'ANTIGUOS', label: 'Más antiguos' },
+    { value: 'RECIENTES', label: 'Más recientes' },
+    { value: 'SALDO', label: 'Mayor saldo' },
+];
+
+const COMPARAR = {
+    ANTIGUOS: (a, b) => (b.dias ?? 0) - (a.dias ?? 0),
+    RECIENTES: (a, b) => (a.dias ?? 0) - (b.dias ?? 0),
+    SALDO: (a, b) => (Number(b.saldo) || 0) - (Number(a.saldo) || 0) || (b.dias ?? 0) - (a.dias ?? 0),
+};
 
 /** El nombre de la edad de un crédito, en cuatro escalones. */
 export function tituloDeDias(dias, saldo) {
@@ -41,16 +59,23 @@ export function desdeLaLectura(iso, ahora = Date.now()) {
 }
 
 /**
- * Los créditos que se ven, el más viejo primero. Recibe los créditos YA con su
- * edad (`edadDelCredito`). Con saldo exige saldo; pasados del plazo exige
- * además `vencido`. La búsqueda mira cliente, documento, sala y saldo.
+ * Los créditos que se ven, ordenados (el más viejo primero si no se dice otra
+ * cosa). Recibe los créditos YA con su edad (`edadDelCredito`). Con saldo exige
+ * saldo; por vencer y vencidos exigen además su escalón. `vendedor` es el id de
+ * quien vendió, o '' para todos. La búsqueda mira cliente, documento, sala y
+ * saldo.
  */
-export function carteraFiltrada(conEdad, { ver = 'DEBEN', busqueda = '', nombreDeSala = new Map() } = {}) {
+export function carteraFiltrada(conEdad, {
+    ver = 'DEBEN', busqueda = '', nombreDeSala = new Map(), orden = 'ANTIGUOS', vendedor = '',
+} = {}) {
     return (conEdad || []).filter((c) => {
-        if (ver === 'DEBEN' && c.saldo <= 0.004) return false;
-        if (ver === 'VENCIDOS' && (c.saldo <= 0.004 || !c.vencido)) return false;
+        const debe = c.saldo > 0.004;
+        if (ver === 'DEBEN' && !debe) return false;
+        if (ver === 'VENCIDOS' && (!debe || !c.vencido)) return false;
+        if (ver === 'POR_VENCER' && !severidadDeDias(c.dias, c.saldo).porVencer) return false;
+        if (vendedor && String(c.vendedor_id ?? '') !== String(vendedor)) return false;
         return tokenMatch(busqueda, c.cliente, c.documento, nombreDeSala.get(c.branch_id), String(c.saldo));
-    }).sort((a, b) => (b.dias ?? 0) - (a.dias ?? 0));
+    }).sort(COMPARAR[orden] || COMPARAR.ANTIGUOS);
 }
 
 /**

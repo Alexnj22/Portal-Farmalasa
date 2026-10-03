@@ -1312,8 +1312,19 @@ Deno.serve(async (req) => {
       type Aplicacion = { origen?: string; items?: unknown; cantidad?: number; producto?: string; aplicar_ahora?: number; cliente?: string };
       const aplicacion = (body.aplicacion && typeof body.aplicacion === "object") ? body.aplicacion as Aplicacion : null;
       const esAplicacion = esEntrada && !esAbono && String(body.tipo ?? "") === "APLICACION";
+      /* Exigirla depende de la BANDERA del catálogo (`lleva_comprobante` de
+       * APLICACION), no de este código: es el interruptor del circuito. Con
+       * la bandera apagada la pantalla vieja sigue cobrando como siempre; al
+       * encenderla, la pantalla abre el diálogo nuevo y esto lo exige. Así el
+       * pase a producción no deja una ventana en que la sala no pueda cobrar,
+       * y la marcha atrás es apagar una fila — no una migración. */
       if (esAplicacion && !aplicacion) {
-        return json({ ok: false, error: "Falta elegir la venta, o decir que el cliente trajo la inyección." }, 400);
+        const { data: tipoApl, error: errTipo } = await supabase.from("caja_tipos_movimiento")
+          .select("lleva_comprobante").eq("codigo", "APLICACION").maybeSingle();
+        if (errTipo) console.error(`[operar-caja] aplicacion: leyendo el tipo: ${errTipo.message}`);
+        if (errTipo || tipoApl?.lleva_comprobante !== false) {
+          return json({ ok: false, error: "Falta elegir la venta, o decir que el cliente trajo la inyección." }, 400);
+        }
       }
       if (esAplicacion && aplicacion) {
         const origen = String(aplicacion.origen ?? "");

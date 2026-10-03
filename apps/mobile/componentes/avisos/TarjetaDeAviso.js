@@ -42,6 +42,8 @@ const VISIBLES = 3;
 const ESTADO = {
   APPROVED: ['Aprobada', MARCA.verde], REJECTED: ['Rechazada', MARCA.rojo],
   PARTIAL: ['Parcial', MARCA.ambar], PARCIAL: ['Parcial', MARCA.ambar], CANCELLED: ['Cancelada', MARCA.rojo],
+  // Lo de un envío que se marcó «no llegó» y después apareció en la otra sala.
+  APARECIO: ['Apareció', MARCA.verde],
 };
 const ETAPAS = [
   { id: 'preparacion', rotulo: 'Preparando' }, { id: 'en_camino', rotulo: 'En camino' },

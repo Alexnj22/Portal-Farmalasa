@@ -72,15 +72,23 @@ BEGIN
   INSERT INTO r(prueba, ok, detalle) VALUES ('preparación: cuentas de sala y sin permiso',
     v_rol_sala IS NOT NULL AND v_rol_sin IS NOT NULL, format('rol sala %s · rol sin permiso %s', v_rol_sala, v_rol_sin));
 
-  -- ── Sugerencia de aplicaciones por unidad ───────────────────────────────
-  b := inyeccion_aplicaciones_sugeridas('NEUROBION 25,000 AMP TRI PACK', 'CAJA X 3 1x1', 1) = 3
-   AND inyeccion_aplicaciones_sugeridas('NUCLEO CMP FORTE X 3 AMPOLLAS', 'CAJA  1X1', 1) = 3
-   AND inyeccion_aplicaciones_sugeridas('ANDIDEXA-A AMPOLLA CAJA X 3', 'CAJA 1x3', 3) = 3
-   AND inyeccion_aplicaciones_sugeridas('ANDIDEXA-A AMPOLLA CAJA X 3', 'UNIDAD 1x1', 1) = 1
-   AND inyeccion_aplicaciones_sugeridas('RUBRAVIDA VIAL X 10 ML', 'FRASCO 1X1', 1) = 1
-   AND inyeccion_aplicaciones_sugeridas('DEPO PROVERA AMPOLLA X 1ML', 'UNIDAD 1x1', 1) = 1
-   AND inyeccion_aplicaciones_sugeridas('NEUROBION 25,000 AMP', 'CAJA 1X1', 1) = 1;
-  INSERT INTO r VALUES (DEFAULT, 'sugerencia: TRI PACK=3, X 3 AMPOLLAS=3, caja 1x3=3, unidad=1, vial=1', b, NULL);
+  -- ── Sugerencia de aplicaciones por unidad base ─────────────────────────
+  b := inyeccion_aplicaciones_por_nombre('NEUROBION 25,000 AMP TRI PACK') = 3
+   AND inyeccion_aplicaciones_por_nombre('NUCLEO CMP FORTE X 3 AMPOLLAS') = 3
+   AND inyeccion_aplicaciones_por_nombre('TRAMAL 100MG X 5 AMPOLLAS') = 5
+   AND inyeccion_aplicaciones_por_nombre('RUBRAVIDA VIAL X 10 ML') = 1
+   AND inyeccion_aplicaciones_por_nombre('DEPO PROVERA AMPOLLA X 1ML') = 1
+   AND inyeccion_aplicaciones_por_nombre('NEUROBION 25,000 AMP') = 1;
+  INSERT INTO r VALUES (DEFAULT, 'sugerencia por nombre: TRI PACK=3, X 3 AMPOLLAS=3, X 5 AMPOLLAS=5, vial=1', b, NULL);
+  -- Un producto que se vende SUELTO (alguna presentación con factor > 1) tiene
+  -- base 1 aunque el nombre diga «X 5»: la caja multiplica por su factor.
+  SELECT pp.product_id INTO n FROM product_precios pp WHERE pp.factor > 1 LIMIT 1;
+  IF n IS NOT NULL THEN
+    INSERT INTO r VALUES (DEFAULT, 'producto que se vende suelto → base 1 (la caja multiplica)',
+      inyeccion_base_sugerida(n, 'ALGO X 5 AMPOLLAS') = 1, format('producto %s', n));
+  ELSE
+    INSERT INTO r VALUES (DEFAULT, 'producto que se vende suelto → base 1 (la caja multiplica)', true, 'sin productos con caja en pruebas: no se pudo medir');
+  END IF;
 
   -- ── Cotizar ─────────────────────────────────────────────────────────────
   j := inyeccion_cotizar(28, 'COMPRADA', json_build_array(json_build_object('invoice_id', v_inv, 'linea_num', v_lin, 'cantidad', 2))::jsonb, NULL, NULL);
@@ -231,7 +239,7 @@ BEGIN
   INSERT INTO r VALUES (DEFAULT, 'sala: la bitácora y la tabla sólo le muestran su sala aunque pida otra', n = 0 AND m = 0, format('bitácora ajena %s · tabla ajena %s', n, m));
   BEGIN
     SET LOCAL ROLE authenticated;
-    PERFORM inyeccion_fijar_dosis(1, 0, 3);
+    PERFORM inyeccion_fijar_dosis(1, 3);
     RESET ROLE;
     INSERT INTO r VALUES (DEFAULT, 'sala: cambiar las dosis de un producto → prohibido', false, 'no rechazó');
   EXCEPTION WHEN OTHERS THEN INSERT INTO r VALUES (DEFAULT, 'sala: cambiar las dosis de un producto → prohibido', SQLERRM = 'FORBIDDEN', SQLERRM); END;
@@ -329,11 +337,10 @@ BEGIN
 
   -- Dosis confirmadas cambian el total del renglón.
   SET LOCAL ROLE authenticated;
-  PERFORM inyeccion_fijar_dosis((SELECT erp_product_id FROM sales_invoice_items WHERE invoice_id = v_inv2 AND linea_num = v_lin2),
-                                (SELECT coalesce(id_presentacion, 0) FROM sales_invoice_items WHERE invoice_id = v_inv2 AND linea_num = v_lin2), 5);
+  PERFORM inyeccion_fijar_dosis((SELECT erp_product_id FROM sales_invoice_items WHERE invoice_id = v_inv2 AND linea_num = v_lin2), 5);
   RESET ROLE;
-  SELECT por_unidad, confirmado INTO n, b FROM inyeccion_renglones_de_venta(ARRAY[v_inv2]) WHERE linea_num = v_lin2;
-  INSERT INTO r VALUES (DEFAULT, 'supervisión confirma 5 por unidad → el renglón pasa a 5 por unidad, confirmado', n = 5 AND b, format('%s %s', n, b));
+  SELECT por_unidad, confirmado, factor INTO n, b, m FROM inyeccion_renglones_de_venta(ARRAY[v_inv2]) WHERE linea_num = v_lin2;
+  INSERT INTO r VALUES (DEFAULT, 'supervisión confirma 5 por unidad → el renglón vale 5 × su factor, confirmado', n = 5 * m AND b, format('%s por unidad · factor %s · %s', n, m, b));
 
   -- ── Pestaña «Por cobrar» ───────────────────────────────────────────────
   SET LOCAL ROLE authenticated;
@@ -345,6 +352,50 @@ BEGIN
   SELECT count(*) INTO n FROM json_array_elements(j->'cobros_sin_venta') x WHERE (x->>'id')::bigint IN (c1, c4);
   SELECT count(*) INTO m FROM json_array_elements(j->'cobros_sin_venta') x WHERE (x->>'id')::bigint = c4 AND x->>'origen' = 'TRAIDA';
   INSERT INTO r VALUES (DEFAULT, 'Por cobrar: el cobro registrado no queda «sin venta»; la traída sí, marcada como traída', n = 1 AND m = 1, format('%s / %s', n, m));
+
+  -- ── Agregar / quitar productos a mano ─────────────────────────────────
+  DECLARE
+    v_prod integer; v_otro integer; v_otro_inv bigint;
+  BEGIN
+    SELECT erp_product_id INTO v_prod FROM sales_invoice_items WHERE invoice_id = v_inv2 AND linea_num = v_lin2;
+    -- Quitar: la venta deja de ofrecerse y su renglón desaparece.
+    PERFORM set_config('request.jwt.claims', json_build_object('sub', v_ger, 'role', 'authenticated')::text, true);
+    SET LOCAL ROLE authenticated;
+    PERFORM inyeccion_clasificar_producto(v_prod, false);
+    SELECT count(*) INTO n FROM json_array_elements(inyecciones_para_cobrar(28, NULL, 7)) x WHERE (x->>'id')::bigint = v_inv2;
+    RESET ROLE;
+    SELECT count(*) INTO m FROM inyeccion_renglones_de_venta(ARRAY[v_inv2]) WHERE linea_num = v_lin2;
+    INSERT INTO r VALUES (DEFAULT, 'quitar un producto: su venta ya no se ofrece para cobrar', n = 0 AND m = 0, format('lista %s · renglón %s', n, m));
+    -- Volver a lo automático: aparece de nuevo.
+    SET LOCAL ROLE authenticated;
+    PERFORM inyeccion_clasificar_producto(v_prod, NULL);
+    RESET ROLE;
+    SELECT count(*) INTO m FROM inyeccion_renglones_de_venta(ARRAY[v_inv2]) WHERE linea_num = v_lin2;
+    INSERT INTO r VALUES (DEFAULT, 'volver a lo automático: el renglón vuelve a contar', m = 1, format('%s', m));
+    -- Agregar uno que el nombre NO da por inyección.
+    SELECT ii.erp_product_id, ii.invoice_id INTO v_otro, v_otro_inv
+    FROM sales_invoices si JOIN sales_invoice_items ii ON ii.invoice_id = si.id
+    WHERE si.branch_id = 28 AND si.fecha >= hoy - 6 AND venta_valida(si.estado)
+      AND NOT es_inyectable(ii.descripcion) AND ii.erp_product_id IS NOT NULL
+    LIMIT 1;
+    SET LOCAL ROLE authenticated;
+    PERFORM inyeccion_clasificar_producto(v_otro, true);
+    SELECT count(*) INTO n FROM json_array_elements(inyeccion_catalogo_dosis()) x
+     WHERE (x->>'erp_product_id')::int = v_otro AND x->>'clasificacion' = 'incluido';
+    RESET ROLE;
+    SELECT count(*) INTO m FROM inyeccion_renglones_de_venta(ARRAY[v_otro_inv]) WHERE erp_product_id = v_otro;
+    INSERT INTO r VALUES (DEFAULT, 'agregar un producto que el nombre no reconoce: cuenta y sale en el catálogo como «agregado»',
+      n = 1 AND m >= 1, format('catálogo %s · renglones %s', n, m));
+    -- La sala no puede clasificar.
+    PERFORM set_config('request.jwt.claims', json_build_object('sub', v_sala_emp, 'role', 'authenticated')::text, true);
+    BEGIN
+      SET LOCAL ROLE authenticated;
+      PERFORM inyeccion_clasificar_producto(v_prod, false);
+      RESET ROLE;
+      INSERT INTO r VALUES (DEFAULT, 'sala: agregar/quitar productos → prohibido', false, 'no rechazó');
+    EXCEPTION WHEN OTHERS THEN INSERT INTO r VALUES (DEFAULT, 'sala: agregar/quitar productos → prohibido', SQLERRM = 'FORBIDDEN', SQLERRM); END;
+    RESET ROLE;
+  END;
 END $$;
 
 SELECT n, CASE WHEN ok THEN 'OK' ELSE 'FALLA' END AS resultado, prueba, detalle FROM r ORDER BY n;

@@ -337,6 +337,14 @@ export const recibirDevolucion = (requestId) =>
     invocar({ request_id: requestId, accion: 'recibir_devolucion' });
 
 /**
+ * Lo que se declaró «no llegó» y después apareció: se RECIBE en la sala de
+ * destino y recién entonces se cierra el faltante. Sin recibirlo, el producto
+ * queda en el estante y fuera del inventario de las dos salas.
+ */
+export const recibirAparecido = (requestId, faltanteId) =>
+    invocar({ request_id: requestId, accion: 'recibir_aparecido', faltante_id: faltanteId });
+
+/**
  * Cancela un envío que TODAVÍA NO SALIÓ.
  *
  * No pasa por la Edge Function porque no hay nada que mover: es una fila que se

@@ -8,10 +8,8 @@ import TablePagination from '../common/TablePagination';
 import { EmptyState } from '../common/StateViews';
 import AvatarConEstado from '../common/AvatarConEstado';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
-import { emparejarCobrosConMovimientos } from '@nucleo/utils/cortesDiagnostico';
-import { cobroEnEfectivo } from '@nucleo/data/creditos';
+import { filtrarMovimientos, fueEditado as fueEditadoMov, historiaDe as historiaDeMov, historiaPorMovimiento, renglonesDeMovimientos } from '@nucleo/utils/movimientosDeCaja';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 import { diaSV, fechaTexto, relojSV } from '@nucleo/utils/fecha';
@@ -107,15 +105,8 @@ const horaReloj = (t) => hora12(t) || '—';
 /** El día de El Salvador de una marca de tiempo, para comparar contra `fecha`. */
 const diaDe = (iso) => (iso ? diaSV(iso) : null);
 
-/* El último desempate del orden. Los renglones de la caja se desempatan por
- * `erp_movimiento_id`, que es un NÚMERO —comparado como texto, «9» quedaría
- * después de «43912»—, y una salida de bolsa por su id, que es un uuid. */
-const desempatar = (a, b) => {
-    const na = Number(a); const nb = Number(b);
-    return (Number.isFinite(na) && Number.isFinite(nb))
-        ? nb - na
-        : String(b ?? '').localeCompare(String(a ?? ''));
-};
+// El desempate del orden (el id de la caja comparado como NÚMERO) vive en
+// `utils/movimientosDeCaja`, con el resto del orden.
 
 /** Minutos desde medianoche, en hora de sala. Para ordenar y comparar. */
 const minutosDeIso = (iso) => {
@@ -158,27 +149,13 @@ export default function MovimientosDeCaja({
 
     // La historia agrupada por movimiento, una vez. Sin esto, marcar «editado»
     // en la lista costaría un recorrido del historial por fila.
-    const historiaPorMov = useMemo(() => {
-        const m = new Map();
-        for (const h of historial) {
-            const clave = `${h.branch_id}:${h.erp_movimiento_id}`;
-            if (!m.has(clave)) m.set(clave, []);
-            m.get(clave).push(h);
-        }
-        return m;
-    }, [historial]);
+    const historiaPorMov = useMemo(() => historiaPorMovimiento(historial), [historial]);
 
-    const historiaDe = useCallback(
-        (mov) => historiaPorMov.get(`${mov.branch_id}:${mov.erp_movimiento_id}`) || [],
-        [historiaPorMov],
-    );
+    const historiaDe = useCallback((mov) => historiaDeMov(historiaPorMov, mov), [historiaPorMov]);
 
     // «Editado» es haber cambiado DESPUÉS de anotarse: un `APARECIO` suelto es
     // la vida normal de cualquier movimiento, no un hallazgo.
-    const fueEditado = useCallback(
-        (mov) => historiaDe(mov).some((h) => h.cambio === 'EDITADO'),
-        [historiaDe],
-    );
+    const fueEditado = useCallback((mov) => fueEditadoMov(historiaPorMov, mov), [historiaPorMov]);
 
     const ultimaEdicion = useCallback(
         (mov) => historiaDe(mov).filter((h) => h.cambio === 'EDITADO').pop() || null,
@@ -189,45 +166,6 @@ export default function MovimientosDeCaja({
      * no encontraron ninguno. La regla vive en `cortesDiagnostico` —el mismo
      * archivo que reparte los movimientos por corte— y no acá: es una decisión
      * sobre DINERO, y escrita dentro de un componente no se puede probar. */
-    const { porMovimiento, sueltos } = useMemo(
-        () => emparejarCobrosConMovimientos(movimientos, cobros, cobroEnEfectivo),
-        [movimientos, cobros],
-    );
-
-    /* ── El renglón «VALE DE CAJA 8 (3 salidas)», abierto ──────────────────
-     *
-     * Ese renglón es un TOTAL: $180.00 que la caja descontó de una vez, y las
-     * tres salidas que lo componen no estaban en ninguna pantalla de Efectivo.
-     * Acá se ponen debajo, y no hay que adivinar cuál es cuál — la cadena
-     * `bolsas_movimientos.caja_vale_id → caja_vales_portal.erp_movimiento_id`
-     * es exacta (verificado sobre los 3 vales que existen: las sumas cierran al
-     * centavo). Es lo contrario del cruce por monto que hay que hacer con los
-     * cobros, y por eso acá no hay reparto que resolver.
-     *
-     * La clave lleva la SALA además del id del movimiento: `erp_movimiento_id`
-     * es del sistema de origen y se repite entre salas. */
-    const desglosePorVale = useMemo(() => {
-        const m = new Map();
-        for (const op of salidasDeBolsa) {
-            for (const [erp, monto] of op.porVale || []) {
-                const clave = `${op.branch_id}:${erp}`;
-                if (!m.has(clave)) m.set(clave, []);
-                m.get(clave).push({ op, monto });
-            }
-        }
-        for (const lista of m.values()) lista.sort((a, b) => b.monto - a.monto);
-        return m;
-    }, [salidasDeBolsa]);
-
-    /* Las salidas de bolsa que NINGÚN vale contó. Son las que hasta hoy no
-     * aparecían en ninguna pantalla de Efectivo: 65 salidas y $15,072.74
-     * medidos el 2026-09-03. Su dinero salió de la caja en un corte anterior
-     * —cuando se embolsó, que es un vale que sí se ve—, así que la fila existe
-     * para poder rastrearla y NO suma al neto. */
-    const sueltasDeBolsa = useMemo(
-        () => salidasDeBolsa.filter((op) => op.montoSinVale > 0.005),
-        [salidasDeBolsa],
-    );
 
     /** El rótulo de un motivo de salida sale de la TABLA, nunca de una lista
      *  escrita acá: un motivo nuevo aparecería en la base y no en la pantalla. */
@@ -240,71 +178,13 @@ export default function MovimientosDeCaja({
      * sueltos y las salidas de bolsa que ningún vale contó. Se mezclan ANTES de
      * paginar —y no al pintar cada día— porque de otro modo una fila podría
      * caer fuera de la página y desaparecer sin que nada lo diga. */
-    const items = useMemo(() => ([
-        ...movimientos.map((mv) => ({
-            kind: 'mov', clave: `m${mv.id}`, mv, cobro: porMovimiento.get(mv.id) || null,
-            desglose: desglosePorVale.get(`${mv.branch_id}:${mv.erp_movimiento_id}`) || null,
-            fecha: mv.fecha, branchId: mv.branch_id, orden: mv.created_at,
-            desempate: mv.erp_movimiento_id,
-        })),
-        ...sueltos.map((cb) => ({
-            kind: 'cobro', clave: `c${cb.id}`, cb,
-            fecha: diaDe(cb.created_at), branchId: cb.branch_id, orden: cb.created_at,
-            desempate: cb.id,
-        })),
-        ...sueltasDeBolsa.map((op) => ({
-            kind: 'bolsa', clave: `b${op.id}`, op,
-            fecha: diaDe(op.registrado_at), branchId: op.branch_id, orden: op.registrado_at,
-            desempate: op.id,
-        })),
-    ]).sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))
-        || String(b.orden || '').localeCompare(String(a.orden || ''))
-        || desempatar(a.desempate, b.desempate)),
-    [movimientos, sueltos, porMovimiento, desglosePorVale, sueltasDeBolsa]);
+    // La lista unida y ordenada: `renglonesDeMovimientos` (núcleo).
+    const items = useMemo(() => renglonesDeMovimientos({ movimientos, cobros, salidasDeBolsa }), [movimientos, cobros, salidasDeBolsa]);
 
-    const filtrados = useMemo(() => items.filter((it) => {
-        if (it.kind === 'cobro') {
-            const c = it.cb;
-            // Un cobro es siempre una ENTRADA de dinero; y de los tres estados
-            // que recorta la ranura —vigente, editado, ya no está— sólo el
-            // primero le cabe: los otros dos hablan de lo que pasó con un
-            // renglón del sistema de la caja, y un cobro suelto no tiene.
-            if (tipo === 'SALIDA') return false;
-            if (estado === 'VIGENTES' && c.anulado_at) return false;
-            if (estado === 'EDITADOS' || estado === 'DESAPARECIDOS') return false;
-            return tokenMatch(busqueda, c.cliente, `crédito ${c.credito_erp}`, c.forma,
-                c.documento, cobraron?.get(c.abonado_por)?.name,
-                salas?.get(c.branch_id), String(c.monto), 'ENTRADA');
-        }
-        if (it.kind === 'bolsa') {
-            const op = it.op;
-            // Sacar dinero de una bolsa es siempre una SALIDA. Y de los tres
-            // estados de la ranura sólo le cabe «vigente»: los otros dos hablan
-            // de lo que pasó con un renglón del sistema de la caja, y esto no
-            // tiene ninguno — ése es justamente el motivo de que exista la fila.
-            if (tipo === 'ENTRADA') return false;
-            if (estado === 'VIGENTES' && op.anulada_at) return false;
-            if (estado === 'EDITADOS' || estado === 'DESAPARECIDOS') return false;
-            return tokenMatch(busqueda, op.folio, etiquetaDeSalida(op.tipo), op.entidad,
-                op.numero_boleta, sacaron?.get(op.registrado_por)?.name,
-                salas?.get(op.branch_id), String(op.monto), 'SALIDA');
-        }
-        const m = it.mv;
-        if (tipo !== 'TODOS' && m.tipo !== tipo) return false;
-        if (estado === 'VIGENTES'      && m.desaparecido_at) return false;
-        if (estado === 'DESAPARECIDOS' && !m.desaparecido_at) return false;
-        if (estado === 'EDITADOS'      && !fueEditado(m)) return false;
-        // El cobro emparejado también se busca: quien escribe el nombre de la
-        // clienta tiene que encontrar el renglón que dice «POR ABONO A
-        // CREDITO», que es donde ese nombre no está escrito.
-        // El cobro emparejado y las salidas que un vale cubre también se buscan:
-        // quien escribe el nombre de la clienta —o el folio de una remesa— tiene
-        // que encontrar el renglón que las esconde detrás de un total.
-        return tokenMatch(busqueda, m.concepto, salas?.get(m.branch_id), String(m.monto), m.tipo,
-            it.cobro?.cliente, it.cobro && `crédito ${it.cobro.credito_erp}`,
-            it.cobro && cobraron?.get(it.cobro.abonado_por)?.name,
-            ...(it.desglose || []).flatMap((d) => [d.op.folio, d.op.entidad, etiquetaDeSalida(d.op.tipo)]));
-    }), [items, tipo, estado, busqueda, salas, fueEditado, cobraron, sacaron, etiquetaDeSalida]);
+    // El filtro (tipo, estado, búsqueda): `filtrarMovimientos` (núcleo).
+    const filtrados = useMemo(() => filtrarMovimientos(items, {
+        tipo, estado, busqueda, salas, cobraron, sacaron, etiquetaDeSalida, porMov: historiaPorMov,
+    }), [items, tipo, estado, busqueda, salas, cobraron, sacaron, etiquetaDeSalida, historiaPorMov]);
 
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filtrados.length });
     const pagina = useMemo(

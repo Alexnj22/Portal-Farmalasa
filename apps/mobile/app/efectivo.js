@@ -29,7 +29,33 @@ import { MenuDeFiltros } from '../componentes/Filtros';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
+import { Chip } from '../componentes/inicio/Widget';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
+
+// Las otras tres pestañas de Efectivo del portal, para quien puede MIRAR la
+// caja (`cortes_caja`): los cortes, los días con diferencia y los movimientos.
+const SECCIONES = [
+  { ruta: '/cortes', titulo: 'Cortes', icono: 'Calculator', color: MARCA.azul },
+  { ruta: '/caja-diferencias', titulo: 'Diferencias', icono: 'HandCoins', color: MARCA.ambar },
+  { ruta: '/caja-movimientos', titulo: 'Movimientos', icono: 'ArrowLeftRight', color: MARCA.violeta },
+];
+function Secciones() {
+  return (
+    <View style={{ flexDirection: 'row', gap: 10 }}>
+      {SECCIONES.map((x) => (
+        <Pressable key={x.ruta} style={({ pressed }) => ({ flex: 1, transform: [{ scale: pressed ? 0.96 : 1 }] })}
+          onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push(x.ruta); }}>
+          <Vidrio radio={18} interactivo>
+            <View style={{ alignItems: 'center', gap: 6, paddingVertical: 12 }}>
+              <Chip icono={x.icono} color={x.color} tamano={32} />
+              <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '600' }}>{x.titulo}</Text>
+            </View>
+          </Vidrio>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
 
 const ESTADO = { PENDIENTE: ['Por confirmar', MARCA.ambar], CONFIRMADO: ['Confirmado', MARCA.verde], DESCARTADO: ['Descartado', MARCA.rojo] };
 
@@ -106,6 +132,7 @@ export default function Efectivo() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        {hasPermission('cortes_caja', 'can_view') ? <Secciones /> : null}
         {!sala ? <Aviso tono="freno" texto="Tu usuario no tiene una sala con caja." /> : null}
         {estado?.error ? <Aviso tono="freno" texto={estado.error} /> : null}
         {nombre ? <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '700', marginHorizontal: 4 }}>{nombre}</Text> : null}

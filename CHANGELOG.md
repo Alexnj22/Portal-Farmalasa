@@ -21,43 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.1159.1 — Inyecciones: arreglos de la batería de pruebas (en pruebas)
+## v2.1164.1 — Inyecciones: las pantallas de supervisión cargan en décimas
 
-**Sólo en el entorno de pruebas.** Lo que encontró la batería (44 pruebas de
-base, 18 de `operar-caja`, recorridos de escritorio y teléfono):
+El catálogo de Ajustes tardaba 2.0 s y «Por cobrar» (30 días, todas las
+salas) 1.1 s: las dos llamaban una función por renglón para decidir si era
+inyección y cuántas aplicaciones trae. Ahora es una unión y el nombre se
+evalúa una vez por producto distinto: 0.41 s y 0.44 s; la lista del cobro en
+la sala, de 168 a 46 ms. Mismas respuestas (comparado en producción antes de
+aplicar: 2,157 renglones, 80 ventas y 133 productos, cero diferencias).
+Migración `inyecciones_mas_rapido` (20261003045526).
 
-- Canjear desde la vista con «todas las salas» dejaba la aplicación «en
-  Administración» (la sala de la ficha de quien marca). Ahora queda en la sala
-  indicada o, si no hay, en la que se pagó.
-- En el teléfono no se veía «Elegir» en Pendientes ni «Asignar» en Por cobrar.
-- Tres mensajes de error todavía decían «amarra».
-- El ícono del módulo faltaba en la pantalla de Permisos.
-- Quedan los scripts: `scripts/entorno-pruebas/probar_inyecciones_pagadas.sql`
-  y `probar_operar_caja_aplicacion.mjs`.
+---
+
+## v2.1164.0 — App: Vacaciones
+
+- **App: Vacaciones nativo.** El plan del año mes por mes: quién sale, de cuándo a cuándo (con hora si el extremo la tiene), cuántos días, cuántos lleva usados y en qué estado, con quien está de vacaciones hoy resaltado. Arriba los planes del año y los cambios que esperan respuesta. Año, estado y sala en el menú; búsqueda por nombre o sala. Asignar, aprobar y responder cambios sigue en el portal.
+- **Núcleo:** la cuenta de días de un período (un extremo con hora no es un día), los días usados por persona y la lista de planes ordenada y filtrada pasan de `VacationPlanView` a `src/utils/planDeVacaciones.js`, con su prueba.
+
+## v2.1163.0 — App: Horarios
+
+- **App: Horarios nativo.** La semana de una sala, un día a la vez: quién trabaja y de qué hora a qué hora (con la pausa, la jornada nocturna y lo que está en borrador marcados), quién descansa o no tiene horario, y la semana entera de cada persona al tocarla. Flechas para cambiar de semana y la sala en el menú. El día lo resuelve `resolverTurnoDelDia`, el mismo de la planilla y el kiosco. Editar la grilla sigue en el portal.
+- **Núcleo:** quién sale en el horario de una sala y en qué orden (`personasDelHorario`, `pesoDeCargo`) pasa de `SchedulesView` a `src/utils/horarioDeLaSala.js`, con su prueba.
+- **Arreglo:** el canal de avisos en tiempo real choca consigo mismo cuando el arranque se repite antes de cerrarse el anterior (la sesión se renueva, la app vuelve del fondo) y tumbaba la carga inicial con «cannot add postgres_changes callbacks … after subscribe()». Ahora cada arranque abre su canal con nombre propio.
+## v2.1162.0 — Inyecciones: el cobro se asigna a la venta, control de lo pagado y vista propia
+
+### Agregar y quitar productos a mano
+
+Pedido del usuario: «¿puedo agregar / quitar productos por si hay alguno mal
+categorizado?». Qué es inyección lo decide el nombre (`es_inyectable`), y el
+nombre puede engañar en los dos sentidos. En Inyecciones → Ajustes:
+
+- **Quitar** un producto: deja de ofrecerse para cobrar y sale del control.
+- **Agregar un producto** con el buscador del catálogo, aunque su nombre no lo diga.
+- **Quitados a mano** con «Volver a incluir».
+
+Lo marcado a mano gana siempre (`inyeccion_producto_clasificacion` +
+`inyeccion_es_aplicable`, la única respuesta para renglones, lista del cobro,
+catálogo y Por cobrar). Supervisión (`inyecciones_dosis`); queda en bitácora.
 
 
-## v2.1159.0 — Inyecciones: vista propia con pendientes y bitácora; el cobro siempre asignado a su venta (en pruebas)
+### El cobro asignado a la venta, el control y la vista propia
 
-**Sólo en el entorno de pruebas.** Pedidos del usuario al probarlo:
+Pedido del usuario (2026-10-02). Se construyó y probó en el entorno de pruebas y sale a producción en dos pasos: la migración `inyecciones_pagadas` (sin cambio visible) y `inyecciones_pagadas_encender` (enciende el circuito).
 
-- **Vista propia «Inyecciones»** en el menú, aparte («no es solo venta ni
-  dinero»): Por cobrar (lo que era la pestaña de Ventas), Pendientes, Bitácora
-  (cada aplicación: quién cobró, quién aplicó, cuándo y dónde) y Ajustes.
-  Permisos nuevos `inyecciones` (con alcance) y sus pestañas; la sala ve
-  pendientes y bitácora de su sala, «Por cobrar» sigue siendo de supervisión.
-- **Sin cobro «sin venta»**: toda aplicación comprada queda asignada a su
-  venta. En su lugar, «Actualizar» (las ventas tardan hasta un minuto en llegar).
-- La lista del cobro muestra sólo ventas con aplicaciones por pagar (7 días) y
-  se busca también por inyección.
-- **«A nombre de»** obligatorio cuando queda alguna pendiente: casi todas las
-  ventas salen a nombre de «CLIENTES VARIOS» y una traída no tenía nombre.
-- El canje queda en la sala de la caja, no en la de la ficha de quien marca.
-- «Amarrar» → «Asignar» en todas las pantallas.
-
-
-## v2.1158.0 — Inyecciones: el cobro de la aplicación se amarra a la venta y queda el control de lo pagado (en pruebas)
-
-**Sólo en el entorno de pruebas. No está en producción.**
+### Inyecciones: el cobro de la aplicación se amarra a la venta y queda el control de lo pagado (en pruebas)
 
 Pedido del usuario (2026-10-02): al cobrar la aplicación de una inyección se
 pregunta si se compró aquí ($1) o la trajo el cliente ($2); la comprada se
@@ -79,8 +86,97 @@ pagado y no aplicado queda pendiente a nombre del cliente y se canjea después.
 - SQL en `supabase/borradores/inyecciones_pagadas.sql` (aplicado en pruebas con
   `execute_sql`; a producción va por `apply_migration`).
 
+### Inyecciones: vista propia con pendientes y bitácora; el cobro siempre asignado a su venta (en pruebas)
 
+Pedidos del usuario al probarlo:
 
+- **Vista propia «Inyecciones»** en el menú, aparte («no es solo venta ni
+  dinero»): Por cobrar (lo que era la pestaña de Ventas), Pendientes, Bitácora
+  (cada aplicación: quién cobró, quién aplicó, cuándo y dónde) y Ajustes.
+  Permisos nuevos `inyecciones` (con alcance) y sus pestañas; la sala ve
+  pendientes y bitácora de su sala, «Por cobrar» sigue siendo de supervisión.
+- **Sin cobro «sin venta»**: toda aplicación comprada queda asignada a su
+  venta. En su lugar, «Actualizar» (las ventas tardan hasta un minuto en llegar).
+- La lista del cobro muestra sólo ventas con aplicaciones por pagar (7 días) y
+  se busca también por inyección.
+- **«A nombre de»** obligatorio cuando queda alguna pendiente: casi todas las
+  ventas salen a nombre de «CLIENTES VARIOS» y una traída no tenía nombre.
+- El canje queda en la sala de la caja, no en la de la ficha de quien marca.
+- «Amarrar» → «Asignar» en todas las pantallas.
+
+### Inyecciones: arreglos de la batería de pruebas (en pruebas)
+
+Lo que encontró la batería (44 pruebas de
+base, 18 de `operar-caja`, recorridos de escritorio y teléfono):
+
+- Canjear desde la vista con «todas las salas» dejaba la aplicación «en
+  Administración» (la sala de la ficha de quien marca). Ahora queda en la sala
+  indicada o, si no hay, en la que se pagó.
+- En el teléfono no se veía «Elegir» en Pendientes ni «Asignar» en Por cobrar.
+- Tres mensajes de error todavía decían «amarra».
+- El ícono del módulo faltaba en la pantalla de Permisos.
+- Quedan los scripts: `scripts/entorno-pruebas/probar_inyecciones_pagadas.sql`
+  y `probar_operar_caja_aplicacion.mjs`.
+
+### Inyecciones: foto de quien vendió; aplicaciones por unidad base; interruptor para el pase
+
+- La foto con el nombre corto de quien vendió en el cobro, en «Asignar» y en
+  Por cobrar (pedido del usuario).
+- **Aplicaciones por unidad BASE, por producto.** Medido en producción:
+  `id_presentacion` viene vacío en el 100% de los renglones, así que la caja de
+  5 y la ampolla suelta de TRAMAL compartían clave y confirmar «5» habría hecho
+  valer 5 a la suelta. Ahora: aplicaciones = cantidad × factor × base; la base
+  sugerida es 1 si el producto se vende suelto (`product_precios` con factor >
+  1) y, si no, sale del nombre (TRI PACK = 3). En producción son 133 productos.
+- **Interruptor para el pase:** `operar-caja` exige la venta sólo con
+  `lleva_comprobante` de APLICACION encendido, y eso va en una segunda
+  migración (`inyecciones_pagadas_encender`). Marcha atrás: apagar esa fila.
+
+## v2.1161.1 — La sala que envió se entera de lo que faltó y de lo que apareció
+
+- **El aviso de «faltaron productos» ya no se apaga solo.** En un envío, cerrar la bolsa marcaba como leído el aviso de faltante que se acababa de mandar a la sala que despachó: los 5 de la bolsa E00212 quedaron leídos 0.1 s después de crearse. En las solicitudes no pasaba.
+- **Cuando entra el último producto que estaba en «no llegó», la bolsa pasa a aprobada** y pierde el motivo «No llegó». Mientras quede alguno sin aparecer, no cambia.
+- **La sala que envió recibe «Apareció lo que faltaba de tu envío»**, con los productos, a las mismas personas que recibieron el aviso de faltante. Respeta el horario de avisos como todos los demás.
+- Servidor: `resolver_envio_aparecido` (sólo servidor) lo llama `enviar-producto-erp` al ingresar; `notificar_resolucion_envio` ya no repite el aviso genérico en una segunda resolución.
+
+## v2.1161.0 — App: Mi perfil y Mis documentos
+
+- **App: Mi perfil nativo.** La ficha propia: foto, cargo, sala, cumpleaños cercano; cuánto llevo en la empresa y mis solicitudes en curso; mis próximas vacaciones; mi horario de esta semana (de lunes a domingo, con la vacación, incapacidad o permiso del día marcado); mis datos, mi contacto —editable para quien puede editar fichas, igual que en el portal— y mi historial. Se abre desde «Yo».
+- **App: Mis documentos nativo.** Los papeles del expediente y los de las solicitudes (incapacidades, constancias, permisos) en una lista, con su estado y cuándo vence lo que vence; por tipo en el segmentado y búsqueda. Tocar uno lo abre con una URL firmada al momento.
+- **Núcleo:** la antigüedad, el historial con el ingreso, la semana, las próximas vacaciones y el cumpleaños (`src/utils/miPerfil.js`) y la lista de documentos con sus pestañas y su filtro (`src/utils/misDocumentos.js`) pasan de las vistas del portal al núcleo, con su prueba.
+## v2.1160.2 — Apareció en un envío ingresa el producto al inventario
+
+- **«Apareció» en un envío marcado «no llegó» ahora recibe el producto en la sala.** Antes sólo cerraba el faltante: la caja quedaba en el estante y fuera del inventario de las dos salas, sin poder venderse (bolsa E00212, Salud 5 → Salud 3). Si la recepción falla, el faltante sigue abierto.
+- **Los faltantes que ya se cerraron así muestran «Ingresar a inventario»**, en la web y en la app, y no se esconden a los 30 días mientras sigan en tránsito.
+- Servidor: `cerrar_faltante` contesta `RECIBIR_EN_CAJA` en vez de cerrar; `enviar-producto-erp` suma la acción `recibir_aparecido`, que comparte con «aceptar» la misma recepción (`recibirIda`). Las solicitudes no cambian: ahí el producto ya entró al recibir.
+
+## v2.1160.1 — Pedidos: sólo Bodega crea y despacha; la sala recibe lo suyo
+
+- **Pedidos: sólo Bodega crea, confirma el envío y despacha.** Los cargos de sala ya no veían la pestaña Generar, pero la base aceptaba la petición igual. Ahora la rechaza.
+- **La sala recibe sólo lo suyo:** confirmar la llegada, recibir y reportar diferencias quedan limitados a la propia sucursal; preparar, pausar, finalizar y corregir son de Bodega.
+- Medido antes de cerrarlo: en los últimos 90 días nadie usó esos pasos fuera de lo que ahora se permite, así que nadie pierde nada de lo que hace.
+- Cuando el freno rechaza algo, la pantalla dice «Tu permiso es solo para tu sucursal: esto le corresponde a Bodega o a otra sucursal» en vez del mensaje genérico.
+
+## v2.1160.0 — App: Efectivo completo
+
+- **App: Efectivo completo.** El menú «Efectivo» abre la pantalla nativa, y desde ahí las tres secciones que faltaban en el teléfono: **Cortes**, **Diferencias** y **Movimientos**.
+  - **Diferencias:** los días con faltante o sobrante (por separado: no se restan entre sí), cómo quedó cada uno y qué falta hacer —sin resolver, por confirmar, por cobrar, por anotar, acumulado—, con el desglose de lo recuperado y quién responde. Mes, estado y sala en el menú. Tocar un día abre su ficha con los cortes que no cuadraron y lo que se hizo con cada uno; cada corte abre su detalle. Asignar responsables o una causa con comprobante sigue en el portal.
+  - **Movimientos:** todo lo que entró y salió de las cajas —movimientos de la caja, cobros de crédito del portal y salidas pagadas con una bolsa— con lo editado después de guardarse y lo que ya no está en la caja marcado. Período, estado y sala en el menú; entradas/salidas en el segmentado; búsqueda.
+- **Núcleo:** cómo se arma y se filtra la lista de movimientos pasa de `MovimientosDeCaja` a `src/utils/movimientosDeCaja.js`, con su prueba.
+## v2.1159.0 — Cuentas por cobrar: filtros de orden, vendedor y por vencer
+
+- **Ordenar:** más antiguos (como siempre), más recientes —para encontrar lo que se acaba de vender— o mayor saldo.
+- **Ver «Por vencer»:** los créditos con saldo que cumplen el plazo esta semana, para llamar antes de que venzan. «Pasados del plazo» pasa a llamarse «Vencidos».
+- **Filtro por vendedor:** quién vendió el crédito, con su nombre corto. Sólo aparece si hay más de uno.
+- La píldora de filtros queda en el orden canónico (sucursal → vendedor → ver → orden), con desplegables compactos, y los filtros viven en la dirección: un F5 o un enlace compartido conservan lo que se estaba mirando.
+- **Seguridad:** quien ve una sola sucursal ya no puede cambiar el `?sala=` de la dirección para ver otra (antes la base ya lo impedía y mostraba la lista vacía; ahora se queda en la propia). Y pedir la corrección de un abono de otra sucursal se rechaza en el servidor.
+
+## v2.1158.0 — Cuentas por cobrar: la pantalla relee la caja mientras está abierta
+
+- **Un crédito recién vendido ya aparece para abonarlo al momento.** Antes la lista se ponía al día cada 10 minutos y un crédito vendido en ese rato no salía. Ahora la pantalla relee la caja de su sucursal al abrirse, cada minuto mientras está a la vista y al volver a la pestaña. Con la pantalla oculta no pide nada.
+- **Si la búsqueda no encuentra al cliente, se pregunta a la caja antes de decir que no hay créditos.**
+- **La caja no recibe más consultas por tener más pantallas abiertas:** se lee como máximo una vez por minuto por sucursal, compartida entre todas las personas que miran. Lo decide la base (`creditos_tomar_lectura`), y cuando no le toca la respuesta sale sin tocar la caja.
+- El sello «Al día / Leído hace…» ahora muestra la lectura más reciente, sea la automática o la de la pantalla.
 
 ## v2.1157.0 — App: cobrar un crédito
 

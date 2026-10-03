@@ -23,6 +23,18 @@ describe('cartera', () => {
         expect(carteraFiltrada(lista, { ver: 'VENCIDOS' }).map(c => c.cliente)).toEqual(['EVA']);
         expect(carteraFiltrada(lista, { ver: 'TODOS', busqueda: 'luis' }).map(c => c.cliente)).toEqual(['LUIS']);
     });
+    it('ordena, filtra por vendedor y por vencer', () => {
+        const lista = [
+            { cliente: 'ANA', saldo: 10, dias: 5, vencido: false, vendedor_id: 1 },
+            { cliente: 'EVA', saldo: 3, dias: 40, vencido: true, vendedor_id: 2 },
+            { cliente: 'RUT', saldo: 50, dias: 27, vencido: false, vendedor_id: 1 },
+        ];
+        const nombres = (o) => carteraFiltrada(lista, o).map(c => c.cliente);
+        expect(nombres({ orden: 'RECIENTES' })).toEqual(['ANA', 'RUT', 'EVA']);
+        expect(nombres({ orden: 'SALDO' })).toEqual(['RUT', 'ANA', 'EVA']);
+        expect(nombres({ vendedor: '1' })).toEqual(['RUT', 'ANA']);
+        expect(nombres({ ver: 'POR_VENCER' })).toEqual(['RUT']);
+    });
     it('abonos: la caja manda, el portal pone quién cobró', () => {
         const caja = [{ erp_id: 9, monto: 5, fecha: '2026-10-01' }, { erp_id: 10, monto: 5, fecha: '2026-10-02' }];
         const portal = [{ monto: 5, created_at: '2026-10-02T15:00:00Z', abonado_por: 'e1', cobrado_por: 'Ana' }];

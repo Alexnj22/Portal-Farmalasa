@@ -23,17 +23,16 @@ import FilterBar from '../components/common/FilterBar';
 import PeriodStepper from '../components/common/PeriodStepper';
 import RangeDatePicker from '../components/common/RangeDatePicker';
 import TimePicker12 from '../components/common/TimePicker12';
-import { smartFilter } from '@nucleo/utils/searchUtils';
 import PortalTextarea from '../components/common/PortalTextarea';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { soloPersonalEnPlanilla } from '@nucleo/utils/tipoDeFicha';
 import { hora12 } from '@nucleo/utils/hora';
-import { diasEntre, fechaTexto } from '@nucleo/utils/fecha';
+import { fechaTexto } from '@nucleo/utils/fecha';
+import { diasDeVacacion, diasUsadosPorPersona, planesVisibles } from '@nucleo/utils/planDeVacaciones';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtDate  = (d) => d ? fechaTexto(d, { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 const fmtShort = (d) => d ? fechaTexto(d, { day: '2-digit', month: 'short' }) : '—';
-const diasDelRango = (a, b) => diasEntre(a, b) + 1;
 
 /* ── Un extremo con hora NO es un día de vacación ──────────────────────────
  *
@@ -47,11 +46,7 @@ const diasDelRango = (a, b) => diasEntre(a, b) + 1;
  * puestas, el 5→21 da los 15 que corresponden. Sin horas nada cambia, que es
  * lo que son todas las filas de antes.
  */
-const diasDeVacacion = (inicio, fin, horaInicio, horaFin) => {
-    if (!inicio || !fin || fin < inicio) return 0;
-    const enteros = diasDelRango(inicio, fin) - (horaInicio ? 1 : 0) - (horaFin ? 1 : 0);
-    return Math.max(0, enteros);
-};
+// `diasDeVacacion` vive en el núcleo (`utils/planDeVacaciones`).
 
 /* «12:00» → «12:00 p. m.» (el canónico del portal). La hora sola no dice si
  * el día se trabajó antes o después, así que en la lista viaja pegada a su fecha. */
@@ -695,35 +690,12 @@ const VacationPlanView = () => {
     };
 
     // Vacation balance: only count confirmed/approved/taken — not pending or cancelled
-    const usedDaysByEmpId = useMemo(() => {
-        const map = new Map();
-        vacationPlans
-            .filter(p => p.year === year && ['APPROVED', 'CONFIRMED', 'TAKEN'].includes(p.status))
-            .forEach(p => {
-                const eid = String(p.employee_id);
-                map.set(eid, (map.get(eid) || 0) + (p.days || 0));
-            });
-        return map;
-    }, [vacationPlans, year]);
+    const usedDaysByEmpId = useMemo(() => diasUsadosPorPersona(vacationPlans, year), [vacationPlans, year]);
 
-    const vacStatusFiltered = useMemo(() =>
-        vacationPlans.filter(p => statusFilter === 'ALL' || p.status === statusFilter),
-    [vacationPlans, statusFilter]);
-
-    const { results: filtered, isFuzzy: isVacSearchFuzzy } = useMemo(() => {
-        const sortFn = (a, b) => {
-            const brA = a.branch?.name || '';
-            const brB = b.branch?.name || '';
-            if (brA !== brB) return brA.localeCompare(brB);
-            const roA = a.employee?.role || a.employee?.position || '';
-            const roB = b.employee?.role || b.employee?.position || '';
-            if (roA !== roB) return roA.localeCompare(roB);
-            return a.start_date.localeCompare(b.start_date);
-        };
-        if (!searchTerm.trim()) return { results: vacStatusFiltered.slice().sort(sortFn), isFuzzy: false };
-        const { results, isFuzzy } = smartFilter(searchTerm, vacStatusFiltered, p => [p.employee?.name, p.branch?.name]);
-        return { results: results.slice().sort(sortFn), isFuzzy };
-    }, [vacStatusFiltered, searchTerm]);
+    const { planes: filtered, aproximado: isVacSearchFuzzy } = useMemo(
+        () => planesVisibles(vacationPlans, { estado: statusFilter, busqueda: searchTerm }),
+        [vacationPlans, statusFilter, searchTerm],
+    );
 
     // ── Header: solo el buscador (§16.9) ─────────────────────────────────────
     // Esta vista REIMPLEMENTABA el buscador toggleable entero —su propio

@@ -737,13 +737,23 @@ es a propósito — un crédito cuya factura todavía no sincronizó entra igual
 toma el amarre en la corrida siguiente. Perder la deuda por no tener el amarre
 sería el peor de los dos errores.
 
-**El espejo se mantiene con TRES piezas, y ninguna sobra** (2026-09-02):
+**El espejo se mantiene con CUATRO piezas, y ninguna sobra** (2026-09-02; la cuarta, 2026-10-02):
 
 | | cada cuánto | qué mira | cuesta |
 |---|---|---|---|
 | pasada frecuente | 10 min, 7am-11pm | **sólo el día de hoy** | 1.8 s · 2 kB |
 | barrido completo | 1 vez, 2am SV | 2024 → hoy | 17.3 s · 1.4 MB |
 | relectura tras abonar | cada abono | esa sala, esa fecha | ~250 ms |
+| pantalla abierta (2-oct) | al abrir, cada minuto a la vista, búsqueda sin resultado | **hoy**, su sala | 1 lectura/sala/min **compartida** |
+
+**La cuarta pieza tiene el tope en la BASE, no en el navegador.**
+`creditos_tomar_lectura(sala, segundos)` reclama la lectura de forma atómica
+(`ON CONFLICT … WHERE leido_el < now() - …`): diez pantallas abiertas en una
+sala cuestan lo mismo que una, y la acción `refrescar_hoy` de `creditos-erp`
+contesta sin iniciar sesión en la caja cuando no le toca. Nació de «se vendió al
+crédito y se quería abonar en el mismo momento»: con el cron de 10 minutos ese
+crédito no estaba en la lista. La búsqueda sin resultado usa tope de 10 s
+porque ése es exactamente el caso «lo acaban de vender».
 
 **El barrido diario NO es redundante y es el que se olvida.** Un abono hecho en
 el ORIGEN sobre un crédito de hace ocho meses **no aparece en la ventana de
@@ -1526,6 +1536,27 @@ instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`
   vigila `npm run gate:alias` en el pre-commit (`--escribir` en
   `scripts/nucleo-alias.mjs` lo corrige solo). Es lo que deja mudar el núcleo a
   `packages/core` sin tocar pantallas.
+- **`npm run gate:alcance` — nadie toca lo de otra sucursal cambiando un
+  número.** Las edge functions usan la llave del servidor y las funciones
+  `SECURITY DEFINER` saltan el RLS: el único freno por sucursal está en su
+  código. Nació el 2026-10-02 de `pedir_correccion`, que aceptaba la sala del
+  navegador sin compararla, y al buscar el patrón apareció en recibir pedidos,
+  anotar vales y despachar desde Bodega, más dos funciones abiertas a internet.
+  **Toda edge function nueva, y toda función de la base que reciba una
+  sucursal, se declara en `scripts/alcance-manifest.json` con su guarda**
+  (`alcance`, `modulo-de-red`, `sin-sala`, `cron`, `publica`, `solo-servidor`);
+  sin declarar, el gate falla. `modulo-de-red` significa «no compara la sala
+  porque hoy sólo tienen el módulo cargos de toda la red», y el gate lo
+  comprueba contra `role_permissions`: **darle ese módulo a un cargo de sala lo
+  pone en rojo**. Declarar `alcance` es una afirmación sobre CADA acción — el
+  gate lee el archivo entero y no ve una acción sin chequeo al lado de otra que
+  sí lo tiene. Las deudas viven en `scripts/alcance-baseline.json` y **sólo
+  bajan**. Mira también los **buckets**: uno privado cuya policy de lectura sea
+  `bucket_id = '…'` a secas lo lee entero cualquiera con sesión —así estaban los
+  2,035 comprobantes de caja de `payment-proofs`— y tiene que estar en
+  `buckets_abiertos` con su motivo. En el pre-commit corre la parte local cuando
+  el commit toca `supabase/functions/`. Plan:
+  `docs/PLAN-ALCANCE-POR-SUCURSAL-2026-10-02.md`.
 - **`npm run gate:tipos` — la base es un CONTRATO.** `src/types/database.ts`
   son los tipos de producción y el cliente de Supabase se declara con ellos:
   una tabla, columna o parámetro de `.rpc()` que no existe da un aviso de `tsc`

@@ -52,17 +52,94 @@ Deno.serve(async (req) => {
 
     /* Módulo propio —`cuentas_por_cobrar`, la vista «Cuentas por cobrar»— y no
      * `caja_vales`: son dos preguntas distintas y las mira otra gente. Mirar la
-     * cartera es `can_view`; abonar es MOVER el cajón, así que es `can_edit`. */
-    const [modulo, capacidad] = accion === "abonar"
+     * cartera es `can_view`; abonar es MOVER el cajón, así que es `can_edit`.
+     *
+     * `pagar` también: es el cobro de hoy (un documento, uno o varios
+     * créditos) y hasta el 2026-10-02 pasaba con `can_view` porque esta lista
+     * sólo nombraba a `abonar`, que es el cobro viejo. Quien tenía la cartera
+     * en sólo lectura —Supervisor/a de Ventas, en toda la red— podía cobrar en
+     * cualquier sala mandando la petición a mano. La pantalla nunca le mostró
+     * el botón; el freno real es éste. */
+    const ESCRIBEN = ["abonar", "pagar"];
+    const [modulo, capacidad] = ESCRIBEN.includes(accion)
       ? ["cuentas_por_cobrar", "can_edit"]
       : ["cuentas_por_cobrar", "can_view"];
     const permiso = await permisoDeModulo(supabase, quien.id, modulo, capacidad as "can_view" | "can_edit");
     if (permiso.roto) return responder({ ok: false, error: permiso.roto }, 503);
     if (!permiso.puede) {
-      return responder({ ok: false, error: "No tienes permiso para ver las cuentas por cobrar." }, 403);
+      return responder({ ok: false, error: capacidad === "can_edit"
+        ? "No tienes permiso para cobrar créditos."
+        : "No tienes permiso para ver las cuentas por cobrar." }, 403);
     }
 
     const mapa = getErpBranchMap().filter((e) => e.erpId !== 6);   // Bodega no vende al crédito
+
+    // ── REFRESCAR HOY — la pantalla abierta relee los créditos del día ────
+    //
+    // «Se vendió al crédito y se quería abonar en el mismo momento» (usuario,
+    // 2-oct): el cron de cada 10 min dejaba hasta 10 minutos sin ver el crédito
+    // recién vendido. Ahora la pantalla lo pide al abrirse, cada minuto mientras
+    // está a la vista, y cuando una búsqueda no encuentra nada.
+    //
+    // Va ANTES del login a propósito: lo normal es que otra pantalla de la misma
+    // sala ya haya leído hace menos de un minuto, y entonces no se toca la caja
+    // en absoluto. El tope lo decide la BASE (`creditos_tomar_lectura`, atómico)
+    // y es por sala, no por persona: diez pantallas abiertas cuestan lo mismo
+    // que una. La búsqueda sin resultado usa un tope corto —es el caso «lo
+    // acaban de vender»— y es rara, así que no mueve el número.
+    if (accion === "refrescar_hoy") {
+      const tope = body.motivo === "busqueda" ? 10 : 60;
+      const salas = permiso.alcanceTodo
+        ? (body.sala ? mapa.filter((e) => e.branchId === Number(body.sala)) : mapa)
+        : mapa.filter((e) => e.branchId === Number(permiso.emp?.branch_id));
+      const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+
+      let cookie: string | null = null;
+      const filas: Record<string, unknown>[] = [];
+      const leidas: number[] = [];
+      const fallidas: string[] = [];
+      for (const { branchId, erpId } of salas) {
+        const { data: toca, error: eToca } = await supabase.rpc("creditos_tomar_lectura",
+          { p_branch_id: branchId, p_segundos: tope });
+        if (eToca) { fallidas.push(`sala ${branchId}: ${eToca.message}`); continue; }
+        if (!toca) continue;
+        try {
+          if (!cookie) {
+            const { username, password } = getCortesCreds();
+            cookie = await getSessionCookie(username, password);
+          }
+          // En serie: la sucursal vive en la SESIÓN del origen.
+          for (const c of await creditosDeLaSala(cookie, erpId, hoy, hoy)) filas.push({ ...c, branch_id: branchId });
+          leidas.push(branchId);
+        } catch (e) {
+          fallidas.push(`sala ${branchId}: ${(e as Error).message}`);
+        }
+      }
+
+      let cambiadas = 0;
+      if (filas.length) {
+        const { data, error } = await supabase.rpc("sync_creditos_batch", { p_filas: filas });
+        if (error) {
+          console.error("[creditos-erp] refrescar_hoy:", error.message);
+          return responder({ ok: false, error: "No se pudo guardar la lectura." }, 500);
+        }
+        const r = Array.isArray(data) ? data[0] : data;
+        cambiadas = Number(r?.cambiadas ?? 0);
+      }
+      if (fallidas.length) console.error("[creditos-erp] refrescar_hoy:", fallidas.join(" · "));
+
+      // Cuándo se leyó por última vez cada sala que mira esta pantalla —leyera
+      // ésta o la de otra persona—, para que el sello de «actualizado hace…»
+      // diga la verdad.
+      const { data: sellos } = await supabase.from("creditos_lectura_sala")
+        .select("leido_el").in("branch_id", salas.map((s) => s.branchId))
+        .order("leido_el", { ascending: true }).limit(1);
+      return responder({
+        ok: fallidas.length === 0, leidas: leidas.length, cambiadas,
+        leido_el: sellos?.[0]?.leido_el ?? null,
+      });
+    }
+
     const { username, password } = getCortesCreds();
     const cookie = await getSessionCookie(username, password);
 
@@ -107,6 +184,13 @@ Deno.serve(async (req) => {
       const que = String(body.que ?? "");
       const motivo = String(body.motivo ?? "").trim();
 
+      /* Con alcance de una sala, sólo se piden correcciones de la PROPIA. Sin
+       * esto, cambiar el número en la petición dejaba pedir la anulación de un
+       * abono de otra sucursal — la decide un supervisor, pero la solicitud no
+       * tendría que poder existir. Mismo freno que `historial` y `pagar`. */
+      if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
+        return responder({ ok: false, error: "Ese crédito es de otra sucursal." }, 403);
+      }
       if (!["ANULAR", "MONTO", "FORMA"].includes(que)) {
         return responder({ ok: false, error: "No se dijo qué corregir." }, 400);
       }
@@ -210,6 +294,14 @@ Deno.serve(async (req) => {
       if (permisoDecidir.roto) return responder({ ok: false, error: permisoDecidir.roto }, 503);
       if (!permisoDecidir.puede) {
         return responder({ ok: false, error: "No tienes permiso para decidir esto." }, 403);
+      }
+
+      /* Quien decide, sólo sobre SU sala si su permiso de aprobar es de una
+       * sala. Hoy aprueban sólo cargos de toda la red, así que no frena a nadie
+       * — está para el día que se le dé el permiso a un cargo de sala: sin
+       * esto, borraría o aplicaría abonos en la caja de otra sucursal. */
+      if (!permisoDecidir.alcanceTodo && Number(permisoDecidir.emp?.branch_id) !== sala) {
+        return responder({ ok: false, error: "Esa solicitud es de otra sucursal." }, 403);
       }
 
       /* 1. ¿El abono TODAVÍA está? Si ya no está, no hay nada que corregir.
@@ -452,6 +544,13 @@ Deno.serve(async (req) => {
       const sala = Number(meta.branch_id);
       const entrada = mapa.find((e) => e.branchId === sala);
       if (!entrada) return responder({ ok: false, error: "Esa sala no está configurada." }, 400);
+      /* Quien decide, sólo sobre SU sala si su permiso de aprobar es de una
+       * sala. Hoy aprueban sólo cargos de toda la red, así que no frena a nadie
+       * — está para el día que se le dé el permiso a un cargo de sala: sin
+       * esto, borraría o aplicaría abonos en la caja de otra sucursal. */
+      if (!permisoDecidir.alcanceTodo && Number(permisoDecidir.emp?.branch_id) !== sala) {
+        return responder({ ok: false, error: "Esa solicitud es de otra sucursal." }, 403);
+      }
       const renglones = (Array.isArray(meta.creditos) ? meta.creditos : []) as
         Record<string, unknown>[];
 

@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const simular = body.simular === true;
-    const soloSala: number | null = body.sala ? Number(body.sala) : null;
+    let soloSala: number | null = body.sala ? Number(body.sala) : null;
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -171,8 +171,8 @@ Deno.serve(async (req) => {
     //
     // DOS caminos, y el de la persona NO es el mismo que el del sistema. El
     // secreto de invocación es para un cron (todavía no existe ninguno). Una
-    // persona entra con su sesión y necesita el módulo `caja_vales`, que hoy
-    // tiene un solo cargo: escribir en la caja corre lo que el corte espera, y
+    // persona entra con su sesión y necesita el módulo `caja_vales` (y, si es
+    // de una sala, sólo la suya): escribir en la caja corre lo que el corte espera, y
     // eso no puede viajar de arrastre con el permiso de guardar una bolsa.
     //
     // `can_view` alcanza para SIMULAR —ver qué falta anotar no toca nada— y
@@ -195,6 +195,20 @@ Deno.serve(async (req) => {
             ? "No tienes permiso para ver los vales pendientes de la caja."
             : "No tienes permiso para anotar vales en la caja.",
         }, 403);
+      }
+      /* Con el permiso de UNA sala, sólo la propia — para anotar y también para
+       * simular, que muestra los vales de esa caja. Hasta el 2026-10-02 esto
+       * no se miraba: un cargo de sala con `caja_vales` anotaba en la caja de
+       * cualquier sucursal, y sin mandar `sala` recorría las siete. El
+       * comentario de arriba decía «un solo cargo»; hoy son cuatro, y tres son
+       * de sala. Ver PLAN-ALCANCE-POR-SUCURSAL F1. */
+      if (!permiso.alcanceTodo) {
+        const propia = Number(permiso.emp?.branch_id);
+        if (!propia) return json({ ok: false, error: "Tu ficha no tiene sucursal asignada." }, 403);
+        if (soloSala && soloSala !== propia) {
+          return json({ ok: false, error: "Sólo puedes anotar los vales de tu sucursal." }, 403);
+        }
+        soloSala = propia;
       }
       quienId = quien.id;
     }

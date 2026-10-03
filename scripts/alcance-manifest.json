@@ -1,0 +1,762 @@
+{
+  "_nota": "Cómo se protege por sucursal cada edge function y cada función SECURITY DEFINER que recibe una sucursal. Lo vigila `npm run gate:alcance` (scripts/alcance-gate.mjs). Plan: docs/PLAN-ALCANCE-POR-SUCURSAL-2026-10-02.md.",
+  "edge": {
+    "analyze-branch": {
+      "guarda": "sin-sala",
+      "motivo": "Analiza datos que manda el navegador; no lee la base por sala."
+    },
+    "analyze-document": {
+      "guarda": "sin-sala",
+      "motivo": "Descarga con la SESIÓN de quien llama (2026-10-02): deciden las policies de cada bucket, las mismas que deciden si esa persona puede abrir el archivo en pantalla."
+    },
+    "analyze-history": {
+      "guarda": "sin-sala",
+      "motivo": "Analiza datos que manda el navegador; no lee la base por sala."
+    },
+    "anotar-vales-caja": {
+      "guarda": "alcance"
+    },
+    "aplicar-movimiento-inventario": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "requests_inventario"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "aplicar-solicitud-facturacion": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "requests_facturacion"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "aplicar-traslado-inventario": {
+      "guarda": "alcance"
+    },
+    "apply-scheduled-employee-events": {
+      "guarda": "cron"
+    },
+    "auto-calculate-minmax": {
+      "guarda": "cron"
+    },
+    "auto-copy-weekly-roster": {
+      "guarda": "cron"
+    },
+    "avisar-bitacora-por-vencer": {
+      "guarda": "cron"
+    },
+    "avisar-bultos-viejos": {
+      "guarda": "cron"
+    },
+    "avisar-creditos-vencidos": {
+      "guarda": "cron"
+    },
+    "backfill-dte-related-docs": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "facturas_compra"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "backfill-dte-sales": {
+      "guarda": "cron"
+    },
+    "backfill-proveedores-dte": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "proveedores"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "backup-critical-tables": {
+      "guarda": "cron"
+    },
+    "barrer-traslados-recibidos": {
+      "guarda": "cron"
+    },
+    "bulk-create-employee-users": {
+      "guarda": "cron"
+    },
+    "check-doc-expiry": {
+      "guarda": "cron"
+    },
+    "check-employee-doc-expiry": {
+      "guarda": "cron"
+    },
+    "check-purchases-reconciliation": {
+      "guarda": "cron"
+    },
+    "check-sales-alerts": {
+      "guarda": "cron"
+    },
+    "check-sales-reconciliation": {
+      "guarda": "cron"
+    },
+    "check-sync-health-alerts": {
+      "guarda": "cron"
+    },
+    "cierre-automatico-caja": {
+      "guarda": "cron"
+    },
+    "consolidate-timesheets": {
+      "guarda": "cron"
+    },
+    "consultar-profesional-cssp": {
+      "guarda": "sin-sala",
+      "motivo": "Proxy a la consulta pública del CSSP."
+    },
+    "creditos-erp": {
+      "guarda": "alcance"
+    },
+    "descuentos-erp": {
+      "guarda": "alcance"
+    },
+    "devolver-pedido-erp": {
+      "guarda": "alcance"
+    },
+    "disable-employee-auth": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "staff_list"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "distribucion-comprobante": {
+      "guarda": "sin-sala",
+      "motivo": "Opera con el cliente del usuario (auth_can_edit_any): decide el RLS."
+    },
+    "distribucion-correo": {
+      "guarda": "sin-sala",
+      "motivo": "Opera con el cliente del usuario (auth_can_edit_any): decide el RLS."
+    },
+    "distribucion-dte": {
+      "guarda": "sin-sala",
+      "motivo": "Opera con el cliente del usuario (auth_can_edit_any): decide el RLS."
+    },
+    "emitir-carne-temporal": {
+      "guarda": "sin-sala",
+      "motivo": "Llama a la base con el cliente DEL USUARIO: decide el RLS."
+    },
+    "ensure_user_by_code": {
+      "guarda": "publica",
+      "motivo": "Es el login."
+    },
+    "enviar-producto-erp": {
+      "guarda": "alcance"
+    },
+    "erp-csv-probe": {
+      "guarda": "cron"
+    },
+    "export-purchase-dte-manifest": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "facturas_compra"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "export-purchase-dte-zip": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "facturas_compra"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "generate-vacation-plan": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "vacation_plan"
+      ],
+      "motivo": "Regenera el plan de toda la empresa: exige vacation_plan con edición y alcance de red (2026-10-02)."
+    },
+    "hacer-corte-caja": {
+      "guarda": "alcance"
+    },
+    "heal-dte-sync": {
+      "guarda": "cron"
+    },
+    "leer-boleta": {
+      "guarda": "sin-sala",
+      "motivo": "Lee la imagen que sube quien llama."
+    },
+    "leer-dte-json": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "facturas_compra"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "leer-dui": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "staff_list"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "leer-pago-de-credito": {
+      "guarda": "sin-sala",
+      "motivo": "Lee la imagen que sube quien llama."
+    },
+    "leer-traslados-erp": {
+      "guarda": "cron"
+    },
+    "maps-proxy": {
+      "guarda": "sin-sala",
+      "motivo": "Proxy de mapas."
+    },
+    "mis-puntos": {
+      "guarda": "publica",
+      "motivo": "Consulta pública de puntos del cliente, con freno por IP."
+    },
+    "no-reenviar-pedido-erp": {
+      "guarda": "alcance"
+    },
+    "notify-new-products-daily": {
+      "guarda": "cron"
+    },
+    "operar-caja": {
+      "guarda": "deuda",
+      "plan": "F4",
+      "motivo": "`corregir` crea una solicitud sobre un movimiento de otra sala; `aplicar_correccion` compara contra lo que manda el navegador, no contra el alcance."
+    },
+    "ordenar-documentos-de-personal": {
+      "guarda": "cron"
+    },
+    "oss-proxy": {
+      "guarda": "sin-sala",
+      "motivo": "Proxy externo."
+    },
+    "puntos-consulta": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "clientes"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "puntos-motor": {
+      "guarda": "cron"
+    },
+    "push-cliente-erp": {
+      "guarda": "cron"
+    },
+    "regularizar-dte": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "facturacion"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "renombrar-usuario-empleado": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "staff_list"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "responder-dato-pedido": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "facturacion"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "saly-ai": {
+      "guarda": "sin-sala",
+      "motivo": "Desde el 2026-10-02 sólo responde los dos análisis de encuestas, que trabajan sobre los comentarios que manda quien llama; no lee la base. Las demás acciones (chat, analyze-document, generate-schedule…) devuelven 410: no tenían quien las llamara y dos eran puertas abiertas."
+    },
+    "scrape-erp-proveedores": {
+      "guarda": "cron"
+    },
+    "send-push-notification": {
+      "guarda": "cron"
+    },
+    "set-employee-password": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "staff_list"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "sincronizar-fichas-clientes": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "clientes"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "soltar-captura": {
+      "guarda": "sin-sala",
+      "motivo": "Sólo suelta capturas que pidió quien llama (`solicitada_por`)."
+    },
+    "srs-proxy": {
+      "guarda": "sin-sala",
+      "motivo": "Proxy externo."
+    },
+    "subir-foto-de-captura": {
+      "guarda": "publica",
+      "motivo": "Entra con un secreto de un solo uso."
+    },
+    "sync-aperturas-caja": {
+      "guarda": "cron"
+    },
+    "sync-corte-z": {
+      "guarda": "cron"
+    },
+    "sync-cortes-caja": {
+      "guarda": "cron"
+    },
+    "sync-creditos": {
+      "guarda": "cron"
+    },
+    "sync-dte-sales": {
+      "guarda": "cron"
+    },
+    "sync-erp-purchases": {
+      "guarda": "cron"
+    },
+    "sync-numero-control": {
+      "guarda": "cron"
+    },
+    "sync-products": {
+      "guarda": "cron"
+    },
+    "sync-purchase-emails": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "facturas_compra"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "sync-sales-dte": {
+      "guarda": "cron"
+    },
+    "sync-wfm-sales": {
+      "guarda": "deuda",
+      "plan": "F4",
+      "motivo": "Cualquier sesión dispara la lectura de ventas por hora de cualquier sala en el origen; sin módulo."
+    },
+    "trasladar-pedido-erp": {
+      "guarda": "alcance"
+    },
+    "verificar-csv-libros": {
+      "guarda": "cron"
+    },
+    "wfm-ai-scheduler": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "schedules"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
+    }
+  },
+  "rpc": {
+    "agregar_extra_a_pedido": {
+      "guarda": "alcance"
+    },
+    "ajustar_resumen_promocion": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "promociones"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "aplicar_horarios_bitacora": {
+      "guarda": "alcance"
+    },
+    "audit_log_de_producto": {
+      "guarda": "deuda",
+      "plan": "F4",
+      "motivo": "Decisión del usuario (2026-10-02): Jefe/a de Compras ve MIN·MAX sólo de Bodega, no sala por sala; las otras salas sólo al desplegar un producto y dentro del pedido. Hoy estas funciones le dejan elegir cualquier sala: llevan el chequeo de sala."
+    },
+    "audit_log_de_sucursal": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "auditview"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "avisar_a_empleados": {
+      "guarda": "cruza-por-diseno",
+      "motivo": "Un aviso va a quien tiene que decidir, que a menudo es de otra sala: los destinatarios cruzan sucursales por diseño. Lo sensible está acotado (2026-10-02): sólo cuatro tipos, máximo 10 personas, el enlace tiene que ser una ruta del portal, y los datos de la factura se copian sólo si quien decide puede ver esa venta."
+    },
+    "avisar_a_sucursal": {
+      "guarda": "sin-sala",
+      "motivo": "Hoy no hace nada (devuelve 0)."
+    },
+    "bitacora_libro_pendientes": {
+      "guarda": "sin-sala",
+      "motivo": "Devuelve un número, sin datos de pacientes."
+    },
+    "caja_estado": {
+      "guarda": "alcance"
+    },
+    "calculate_stock_params": {
+      "guarda": "alcance"
+    },
+    "cerrar_mes_bitacora": {
+      "guarda": "alcance"
+    },
+    "confirm_pedido": {
+      "guarda": "alcance"
+    },
+    "confirmar_envio_pedido": {
+      "guarda": "alcance"
+    },
+    "contexto_de_solicitud_minmax": {
+      "guarda": "deuda",
+      "plan": "F4",
+      "motivo": "Ventas por mes de un producto en cualquier sala, sin chequeo."
+    },
+    "crear_codigo_de_vinculacion": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "impresion"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "crear_conteo_inventario": {
+      "guarda": "alcance"
+    },
+    "crear_metas_gasto": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "metas"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "crear_solicitud_datos": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "datos_personales"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "destinatarios_de_modulo": {
+      "guarda": "deuda",
+      "plan": "F4",
+      "motivo": "No la llama el portal: revocar a authenticated."
+    },
+    "discard_stock_drafts": {
+      "guarda": "alcance"
+    },
+    "duplicar_promocion": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "promociones"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "empleados_por_rango": {
+      "guarda": "sin-sala",
+      "motivo": "Devuelve uuids, sin nombres ni datos."
+    },
+    "encolar_impresion": {
+      "guarda": "alcance"
+    },
+    "encuesta_cliente_comentarios": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "encuestas_clientes"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "encuesta_cliente_entrevistar": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "encuestas_clientes",
+        "encuestas_aplicar"
+      ],
+      "motivo": "Decisión del usuario (2026-10-02): las encuestas sólo por permiso, y por ahora sólo administración (cargos de red). Se le quitó `encuestas_aplicar` a Jefe/a de Sala."
+    },
+    "encuesta_cliente_guardar_resumen": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "encuestas_clientes"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "encuesta_cliente_resultados": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "encuestas_clientes"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "encuesta_cliente_resumen": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "encuestas_clientes"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "explicar_meta_propuesta": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "metas"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "get_abonos_del_dia": {
+      "guarda": "alcance"
+    },
+    "get_bitacora_dia": {
+      "guarda": "alcance"
+    },
+    "get_bitacora_dispensaciones": {
+      "guarda": "alcance"
+    },
+    "get_bitacora_mes_impreso": {
+      "guarda": "alcance"
+    },
+    "get_bitacora_resumen_mes": {
+      "guarda": "alcance"
+    },
+    "get_bono_meta_sala": {
+      "guarda": "alcance"
+    },
+    "get_bonos_producto_sala": {
+      "guarda": "alcance"
+    },
+    "get_caja_piezas_del_rango": {
+      "guarda": "alcance"
+    },
+    "get_corte_z_dias": {
+      "guarda": "alcance"
+    },
+    "get_cortes_z": {
+      "guarda": "alcance"
+    },
+    "get_dispensacion_por_folio": {
+      "guarda": "alcance"
+    },
+    "get_draft_cost_estimate": {
+      "guarda": "deuda",
+      "plan": "F4",
+      "motivo": "Costo del inventario de una sala sin `auth_ve_costos()`."
+    },
+    "get_facturas_sala": {
+      "guarda": "alcance"
+    },
+    "get_inventory_cost_summary": {
+      "guarda": "deuda",
+      "plan": "F4",
+      "motivo": "Decisión del usuario (2026-10-02): Jefe/a de Compras ve MIN·MAX sólo de Bodega, no sala por sala; las otras salas sólo al desplegar un producto y dentro del pedido. Hoy estas funciones le dejan elegir cualquier sala: llevan el chequeo de sala."
+    },
+    "get_inyecciones_aplicadas": {
+      "guarda": "alcance"
+    },
+    "get_kiosk_auth_code": {
+      "guarda": "alcance"
+    },
+    "get_libro_anulados": {
+      "guarda": "alcance"
+    },
+    "get_libro_compras": {
+      "guarda": "alcance"
+    },
+    "get_libro_compras_completo": {
+      "guarda": "alcance"
+    },
+    "get_libro_percepcion": {
+      "guarda": "alcance"
+    },
+    "get_libro_retencion": {
+      "guarda": "alcance"
+    },
+    "get_libro_sujeto_excluido": {
+      "guarda": "alcance"
+    },
+    "get_libro_ventas_consumidor": {
+      "guarda": "alcance"
+    },
+    "get_libro_ventas_contribuyente": {
+      "guarda": "alcance"
+    },
+    "get_meta_sala": {
+      "guarda": "alcance"
+    },
+    "get_metas_mes_en_curso": {
+      "guarda": "alcance"
+    },
+    "get_minmax_contexto_producto": {
+      "guarda": "deuda",
+      "plan": "F4",
+      "motivo": "Ventas y existencia de un producto en cualquier sala, sin chequeo."
+    },
+    "get_minmax_solicitudes_de_producto": {
+      "guarda": "deuda",
+      "plan": "F4",
+      "motivo": "Decisión del usuario (2026-10-02): Jefe/a de Compras ve MIN·MAX sólo de Bodega, no sala por sala; las otras salas sólo al desplegar un producto y dentro del pedido. Hoy estas funciones le dejan elegir cualquier sala: llevan el chequeo de sala."
+    },
+    "get_pending_mh_invoices": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "facturacion"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "get_product_drill_lines": {
+      "guarda": "alcance"
+    },
+    "get_product_drill_summary": {
+      "guarda": "alcance"
+    },
+    "get_product_sales_agg": {
+      "guarda": "alcance"
+    },
+    "get_recetas_abiertas": {
+      "guarda": "alcance"
+    },
+    "get_recetas_recientes": {
+      "guarda": "alcance"
+    },
+    "get_resumen_fiscal": {
+      "guarda": "alcance"
+    },
+    "get_retencion_ventas": {
+      "guarda": "alcance"
+    },
+    "get_stagnant_inventory": {
+      "guarda": "deuda",
+      "plan": "F4",
+      "motivo": "Decisión del usuario (2026-10-02): Jefe/a de Compras ve MIN·MAX sólo de Bodega, no sala por sala; las otras salas sólo al desplegar un producto y dentro del pedido. Hoy estas funciones le dejan elegir cualquier sala: llevan el chequeo de sala."
+    },
+    "get_ventas_fuera_del_libro": {
+      "guarda": "alcance"
+    },
+    "get_ventas_sin_producto": {
+      "guarda": "alcance"
+    },
+    "inyeccion_aplicar": {
+      "guarda": "alcance"
+    },
+    "inyeccion_cotizar": {
+      "guarda": "solo-servidor",
+      "motivo": "La llama sólo operar-caja (llave de servidor) antes de escribir el cobro; la sala ya la validó operar-caja contra la de quien llama."
+    },
+    "inyecciones_bitacora": {
+      "guarda": "alcance"
+    },
+    "inyecciones_para_cobrar": {
+      "guarda": "alcance"
+    },
+    "inyecciones_pendientes": {
+      "guarda": "alcance"
+    },
+    "preview_metas_gasto": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "metas"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "productos_parados_de_sala": {
+      "guarda": "deuda",
+      "plan": "F4",
+      "motivo": "Decisión del usuario (2026-10-02): Jefe/a de Compras ve MIN·MAX sólo de Bodega, no sala por sala; las otras salas sólo al desplegar un producto y dentro del pedido. Hoy estas funciones le dejan elegir cualquier sala: llevan el chequeo de sala."
+    },
+    "publish_stock_params": {
+      "guarda": "alcance"
+    },
+    "puede_entregar_de": {
+      "guarda": "sin-sala",
+      "motivo": "Booleano de permiso."
+    },
+    "reabrir_mes_bitacora": {
+      "guarda": "alcance"
+    },
+    "receive_pedido_sucursal": {
+      "guarda": "alcance"
+    },
+    "reclamar_factura_compra": {
+      "guarda": "alcance"
+    },
+    "registrar_bitacora": {
+      "guarda": "deuda",
+      "plan": "F4",
+      "motivo": "Bitácora con sala/dispositivo que pone quien llama."
+    },
+    "registrar_caja_de_impresion": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "impresion"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "resumen_traslado_pedido": {
+      "guarda": "sin-sala",
+      "motivo": "Devuelve conteos de un traslado."
+    },
+    "resumen_ventas_diario": {
+      "guarda": "deuda",
+      "plan": "F4",
+      "motivo": "Sólo la usa una edge con service_role: revocar a authenticated."
+    },
+    "retiro_pendientes_en_sala": {
+      "guarda": "cruza-por-diseno",
+      "motivo": "La usa el recorrido de entrega (RetiroModal): quien maneja ve lo que espera salir de cada sala que visita, y la sala la define el último código escaneado. Acotarla a la sala propia rompería el recorrido. Devuelve códigos y productos de traslados, sin datos personales ni dinero. Exige `traslados.can_view`."
+    },
+    "sala_abierta_ahora": {
+      "guarda": "sin-sala",
+      "motivo": "Devuelve si la sala está abierta: un booleano de horario."
+    },
+    "sala_con_caja_abierta": {
+      "guarda": "sin-sala",
+      "motivo": "Booleano de estado de la caja."
+    },
+    "sala_hora_de_cierre": {
+      "guarda": "sin-sala",
+      "motivo": "Hora de cierre de la sala."
+    },
+    "sala_ya_cerro": {
+      "guarda": "sin-sala",
+      "motivo": "Booleano de horario."
+    },
+    "salas_que_cubre_ahora": {
+      "guarda": "sin-sala",
+      "motivo": "Ids de salas que cubre un turno."
+    },
+    "save_pedido_snapshot": {
+      "guarda": "deuda",
+      "plan": "F4",
+      "motivo": "No la llama el portal: revocar a authenticated."
+    },
+    "sincronizar_bitacora_dispensaciones": {
+      "guarda": "deuda",
+      "plan": "F4",
+      "motivo": "Es del cron y escribe dispensaciones de cualquier sala: revocar a authenticated."
+    },
+    "sucursal_en_conteo": {
+      "guarda": "sin-sala",
+      "motivo": "Booleano: si la sala está en conteo."
+    },
+    "update_pedido_sucursal_lifecycle": {
+      "guarda": "alcance"
+    },
+    "upsert_meta_manual": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "metas"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "verificar_hojas_pedido": {
+      "guarda": "deuda",
+      "plan": "F4",
+      "motivo": "No la llama el portal: revocar a authenticated."
+    }
+  },
+  "buckets_abiertos": {
+    "empleados": {
+      "motivo": "Sólo fotos de perfil (`<empleado>/foto_perfil/…`), que el portal muestra en todas partes junto al nombre. Medido el 2026-10-02: 47 archivos, todos fotos de perfil."
+    },
+    "photos": {
+      "motivo": "Bucket público por diseño (CLAUDE.md, regla 10): fotos que se muestran sin firmar."
+    },
+    "product-photos": {
+      "motivo": "Bucket público por diseño (CLAUDE.md, regla 10): fotos de producto del catálogo."
+    },
+    "inventario-evidencia": {
+      "motivo": "Fotos de cajas de envíos de producto (`envios/<sala>/…`), sin datos personales ni dinero: 7 archivos al 2026-10-02. Si empieza a guardar otra cosa, se acota por sala como payment-proofs."
+    }
+  }
+}

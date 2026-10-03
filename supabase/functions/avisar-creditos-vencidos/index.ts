@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { requireInvokeSecret } from '../_shared/security.ts';
 
 // ─── La venta al crédito que ya se pasó del mes ─────────────────────────────
 //
@@ -45,6 +46,11 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   const json = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
+
+  /* Sólo la llama el cron, con el secreto de invocación. Hasta el 2026-10-02
+   * no validaba nada y estaba desplegada sin verify_jwt: cualquiera en internet
+   * la podía disparar y repartir avisos. Ver PLAN-ALCANCE-POR-SUCURSAL F1. */
+  if (!requireInvokeSecret(req)) return json({ ok: false, error: 'UNAUTHORIZED' }, 401);
 
   try {
     const supabase = createClient(

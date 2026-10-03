@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Button from '../../components/common/Button';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
 import LiquidModal from '../../components/common/LiquidModal';
 import Notice from '../../components/common/Notice';
 import SearchInput from '../../components/common/SearchInput';
@@ -86,8 +87,14 @@ export default function AsignarCobroModal({ cobro, onClose, onHecho }) {
                                     <span className="text-body-sm font-bold text-content truncate">{v.cliente || 'Sin nombre'}</span>
                                     <span className="text-caption text-content-3 whitespace-nowrap">{fechaCorta(v.fecha)} · {hora12(v.hora)}</span>
                                 </div>
-                                <p className="text-caption text-content-3">
-                                    Factura {String(v.correlativo || '').replace(/^0+/, '')} · {v.vendedor_nombre ? shortEmployeeName(v.vendedor_nombre) : '—'}
+                                <p className="text-caption text-content-3 flex items-center gap-1.5 flex-wrap">
+                                    <span>Factura {String(v.correlativo || '').replace(/^0+/, '')} ·</span>
+                                    {v.vendedor_nombre ? (
+                                        <span className="inline-flex items-center gap-1.5">
+                                            <AvatarConEstado emp={{ id: v.vendedor_id, name: v.vendedor_nombre }} px={18} radio="rounded-full" marco="" />
+                                            {shortEmployeeName(v.vendedor_nombre)}
+                                        </span>
+                                    ) : '—'}
                                 </p>
                                 <div className="mt-1 space-y-1">
                                     {(v.renglones || []).map((r) => {

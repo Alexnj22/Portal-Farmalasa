@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { recibirAparecido } from './envios';
 
 // Lo que no llegó en la bolsa.
 //
@@ -108,6 +109,14 @@ export const CIERRES_DE_FALTANTE = [
  *
  * Quién firma lo resuelve la base con `auth_employee_id()`, igual que las
  * policies: un parámetro no puede decidir con el nombre de quién se cierra.
+ *
+ * **«Apareció» en un envío que sigue en tránsito es RECIBIRLO.** El renglón que
+ * se marcó «no llegó» deja su movimiento sin recibir; cerrar el faltante sin
+ * más dejaba la caja en el estante y fuera del inventario de las dos salas
+ * (bolsa E00212, 2-oct). La base se niega a cerrarlo y contesta
+ * `RECIBIR_EN_CAJA`, y acá se manda a recibir — la función cierra el faltante
+ * sólo si el sistema lo recibió. Así la web y la app hacen lo mismo con el
+ * mismo botón.
  */
 export async function cerrarFaltante(id, estado, nota = '') {
     const { data, error } = await supabase.rpc('cerrar_faltante', {
@@ -116,10 +125,23 @@ export async function cerrarFaltante(id, estado, nota = '') {
         p_nota: nota?.trim() || null,
     });
     if (error) return { ok: false, error: error.message };
+    if (data?.codigo === 'RECIBIR_EN_CAJA') return ingresarAparecido({ id, request_id: data.request_id });
     // `YA_CERRADO` no es un fallo del portal: alguien más lo cerró entre que se
     // pintó la lista y se apretó el botón. Se dice como lo que es.
     if (data?.codigo === 'YA_CERRADO') {
         return { ok: false, error: 'Alguien ya lo había cerrado.', codigo: 'YA_CERRADO' };
     }
     return { ok: data?.ok === true, error: data?.ok ? null : 'No se pudo cerrar.' };
+}
+
+/**
+ * Recibe en la sala lo que apareció de un envío marcado «no llegó». Sirve para
+ * el faltante abierto (lo llama `cerrarFaltante`) y para el que se cerró como
+ * aparecido sin recibirse —antes de que existiera esto—, que la lista marca
+ * con `falta_ingresar`. Nunca lanza.
+ */
+export async function ingresarAparecido(f) {
+    const r = await recibirAparecido(f.request_id, f.id);
+    if (r?.ok) return { ok: true, error: null };
+    return { ok: false, error: r?.error ?? 'No se pudo ingresar a inventario.', codigo: r?.codigo };
 }

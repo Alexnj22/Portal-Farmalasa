@@ -419,6 +419,18 @@ Deno.serve(async (req) => {
       empBranchId = emp?.branch_id == null ? null : Number(emp.branch_id);
     }
 
+    // ── Despachar es de Bodega ────────────────────────────────────────────
+    // Decisión del usuario (2026-10-02): los pedidos los crea y despacha
+    // Bodega; la sala sólo recibe. Hasta esa fecha `alcanceTodo` sólo se miraba
+    // en `recibir`, así que cualquier cargo de sala con edición en Pedidos podía
+    // disparar el despacho —y el simulacro— de cualquier pedido: mueve
+    // existencias de Bodega. Medido antes de cerrarlo: los 263 despachos
+    // registrados los hicieron cargos con Pedidos en toda la red, así que esto
+    // no le quita nada a nadie. El cron entra con `alcanceTodo` ya en true.
+    if (accion !== "recibir" && !alcanceTodo) {
+      return json({ ok: false, error: "Despachar un pedido es de Bodega." }, 403);
+    }
+
     // ── Origen y destino salen del mapa, nunca del cliente ────────────────
     // La ubicación es una propiedad de la sala. Pedírsela al navegador sería
     // dejar que elija de dónde sale el producto — la misma razón por la que

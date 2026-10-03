@@ -55,9 +55,10 @@ export async function fetchCatalogoDeDosis() {
     return data ?? [];
 }
 
-export async function fijarDosis({ erpProductId, idPresentacion, aplicaciones }) {
+/** Aplicaciones por UNIDAD BASE (la suelta) de un producto; la caja multiplica por su factor. */
+export async function fijarDosis({ erpProductId, aplicaciones }) {
     const { error } = await supabase.rpc('inyeccion_fijar_dosis', {
-        p_erp_product_id: erpProductId, p_id_presentacion: idPresentacion, p_aplicaciones: aplicaciones,
+        p_erp_product_id: erpProductId, p_aplicaciones: aplicaciones,
     });
     if (error) throw error;
 }
@@ -102,4 +103,15 @@ export async function fetchBitacoraDeAplicaciones({ sala = null, desde, hasta, b
     });
     if (error) throw error;
     return data ?? [];
+}
+
+/**
+ * Marcar a mano si un producto es inyección: `true` lo agrega aunque el nombre
+ * no lo diga, `false` lo quita aunque lo diga, `null` vuelve a lo automático.
+ */
+export async function clasificarProducto({ erpProductId, esInyeccion }) {
+    const { error } = await supabase.rpc('inyeccion_clasificar_producto', {
+        p_erp_product_id: erpProductId, p_es_inyeccion: esInyeccion,
+    });
+    if (error) throw error;
 }

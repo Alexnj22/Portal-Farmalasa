@@ -13,11 +13,16 @@ export const PANTALLAS_DE_LA_APP = {
   '/pedidos': true,       // lo de la sala (llegada y conteo); Bodega abre el portal desde ahí
   '/clientes': true,      // la lista y la ficha (ver y editar); las fichas las da de alta el punto de venta
   '/minmax': '/minmax-producto', // la ficha de un producto en todas las salas; la revisión de la sala abre el portal
+  '/caja': '/efectivo',     // Efectivo: hoy, y desde ahí cortes, diferencias y movimientos
   '/cortes': true,        // confirmar y descartar cortes (y entregar la caja) en el teléfono
   '/bolsas-sala': true,   // no existe en el portal: las bolsas de la sala (el widget); `/bolsas` sigue siendo el módulo completo
   '/monitor-ventas': true, // el «Monitor de ventas» del portal es un modal; en la app, su pantalla
   '/ventas': true,         // la lista de facturas con sus cifras; tocar una abre la venta
   '/cuentas-por-cobrar': true, // la cartera, la ficha de un crédito y el cobro
+  '/vacaciones': true,     // el plan del año mes por mes; asignar y aprobar siguen en el portal
+  '/horarios': true,       // la semana de la sala día por día; editar la grilla sigue en el portal
+  '/mis-documentos': true, // el expediente propio y los papeles de las solicitudes
+  '/mi-perfil': true,      // la ficha propia: datos, horario, vacaciones, historial y editar contacto
   '/inventario': true,     // lo de una sala producto por producto; tocar uno abre su ficha nativa
   '/personal': true,       // el directorio por sala; la ficha de una persona abre el portal
   '/solicitudes': true,

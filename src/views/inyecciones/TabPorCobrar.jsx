@@ -9,6 +9,7 @@ import PeriodPicker from '../../components/common/PeriodPicker';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import Button from '../../components/common/Button';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import AsignarCobroModal from './AsignarCobroModal';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -153,7 +154,7 @@ export default function TabPorCobrar({
         const m = new Map();
         for (const v of ventas) {
             const k = v.cod_vendedor || '—';
-            const a = m.get(k) || { cod: k, nombre: v.vendedor_nombre, ventas: 0, con: 0 };
+            const a = m.get(k) || { cod: k, id: v.vendedor_id, nombre: v.vendedor_nombre, ventas: 0, con: 0 };
             a.ventas += 1;
             if (v.cobro) a.con += 1;
             m.set(k, a);
@@ -266,8 +267,13 @@ export default function TabPorCobrar({
                 {porVendedor.map((r, i) => (
                     <DataRow key={r.cod} index={i}>
                         <DataCell>
-                            <p className="font-semibold text-body">{nombre(r.nombre)}</p>
-                            <p className="text-caption text-content-3">Cód. {r.cod}</p>
+                            <div className="flex items-center gap-2.5">
+                                {r.nombre && <AvatarConEstado emp={{ id: r.id, name: r.nombre }} px={32} radio="rounded-full" marco="" />}
+                                <div>
+                                    <p className="font-semibold text-body">{nombre(r.nombre)}</p>
+                                    <p className="text-caption text-content-3">Cód. {r.cod}</p>
+                                </div>
+                            </div>
                         </DataCell>
                         <DataCell align="right" className="font-semibold text-body-sm">{r.ventas}</DataCell>
                         <DataCell align="right" className="text-body-sm text-success-text font-semibold">{r.con}</DataCell>
@@ -308,7 +314,14 @@ export default function TabPorCobrar({
                                 </p>
                             ))}
                         </DataCell>
-                        <DataCell hideBelow="md" className="text-body-sm">{nombre(v.vendedor_nombre)}</DataCell>
+                        <DataCell hideBelow="md" className="text-body-sm">
+                            {v.vendedor_nombre ? (
+                                <span className="inline-flex items-center gap-2">
+                                    <AvatarConEstado emp={{ id: v.vendedor_id, name: v.vendedor_nombre }} px={24} radio="rounded-full" marco="" />
+                                    {nombre(v.vendedor_nombre)}
+                                </span>
+                            ) : '—'}
+                        </DataCell>
                         <DataCell>
                             {v.cobro ? (
                                 <div>

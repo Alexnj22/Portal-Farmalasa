@@ -2,10 +2,13 @@
 // (`FilasFaltante.jsx`): lo que no llegó en una bolsa y todavía no se aclara.
 // Se cierra con «Apareció» o «No apareció» (`cerrarFaltante`); «No apareció»
 // exige la nota de qué se hizo. Si alguien ya lo había cerrado, se dice.
+// «Apareció» en un envío marcado «no llegó» RECIBE el movimiento (lo resuelve
+// `cerrarFaltante`); lo que se cerró así sin recibirse lo marca
+// `falta_ingresar` y se ingresa con su propio botón.
 import { useCallback, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack, useFocusEffect } from 'expo-router';
-import { cerrarFaltante, fetchFaltantes } from '@nucleo/data/faltantes';
+import { cerrarFaltante, fetchFaltantes, ingresarAparecido } from '@nucleo/data/faltantes';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -30,6 +33,13 @@ function Faltante({ f, onHecho }) {
     listo(estado === 'aparecio' ? 'Apareció' : 'Cerrado como no apareció', f.descripcion);
     onHecho();
   };
+  const ingresar = async () => {
+    trabajando('Ingresando a inventario…');
+    const r = await ingresarAparecido(f);
+    if (!r.ok) { fallo('No se pudo ingresar', r.error); return; }
+    listo('Ingresado a inventario', f.descripcion);
+    onHecho();
+  };
   return (
     <View style={{ marginHorizontal: 16 }}>
       <Vidrio radio={22}>
@@ -44,6 +54,14 @@ function Faltante({ f, onHecho }) {
           {f.nota ? <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{f.nota}</Text> : null}
           {!abierto ? <Pildora texto={`${rotulo}${f.resuelto_por_nombre ? ` · ${f.resuelto_por_nombre}` : ''}`} color={color} /> : null}
           {f.resolucion ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Se resolvió: ${f.resolucion}`}</Text> : null}
+          {!abierto && f.falta_ingresar ? (
+            <View style={{ gap: 8 }}>
+              <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '600' }}>
+                {`Apareció, pero todavía no entró al inventario de ${f.destino_branch_name ?? 'la sala'}.`}
+              </Text>
+              <BotonGrande texto="Ingresar a inventario" color={MARCA.verde} onPress={ingresar} />
+            </View>
+          ) : null}
           {abierto && !cerrando ? (
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <View style={{ flex: 1 }}><BotonGrande texto="Apareció" color={MARCA.verde} onPress={() => cerrar('aparecio')} /></View>

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Minus, Plus, RefreshCw, Syringe } from 'lucide-react';
 import Button from '../common/Button';
+import AvatarConEstado from '../common/AvatarConEstado';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
@@ -277,8 +278,14 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                                         {fechaCorta(v.fecha)} · {hora12(v.hora)}
                                                     </span>
                                                 </div>
-                                                <p className="text-caption text-content-3">
-                                                    Factura {factura(v.correlativo)} · {v.vendedor_nombre ? shortEmployeeName(v.vendedor_nombre) : '—'}
+                                                <p className="text-caption text-content-3 flex items-center gap-1.5 flex-wrap">
+                                                    <span>Factura {factura(v.correlativo)} ·</span>
+                                                    {v.vendedor_nombre ? (
+                                                        <span className="inline-flex items-center gap-1.5">
+                                                            <AvatarConEstado emp={{ id: v.vendedor_id, name: v.vendedor_nombre }} px={18} radio="rounded-full" marco="" />
+                                                            {shortEmployeeName(v.vendedor_nombre)}
+                                                        </span>
+                                                    ) : '—'}
                                                 </p>
                                                 {(v.renglones || []).map((r) => (
                                                     <p key={r.linea_num} className="text-caption text-content-2 mt-0.5">

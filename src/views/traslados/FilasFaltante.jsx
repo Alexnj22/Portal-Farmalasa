@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Check, Loader2, PackageX } from 'lucide-react';
+import { Check, Loader2, PackageCheck, PackageX } from 'lucide-react';
 import Button from '../../components/common/Button';
 import PortalTextarea from '../../components/common/PortalTextarea';
-import { cerrarFaltante } from '@nucleo/data/faltantes';
+import { cerrarFaltante, ingresarAparecido } from '@nucleo/data/faltantes';
 import { fmtCuando } from '@nucleo/utils/trasladoTexto';
 
 // Lo que faltó en una bolsa, y qué se hizo con eso.
@@ -16,6 +16,12 @@ import { fmtCuando } from '@nucleo/utils/trasladoTexto';
 //
 // Mezclar las dos cosas haría que «ya lo revisé» descontara inventario sin que
 // nadie lo haya decidido.
+//
+// ── La excepción: «apareció» en un envío ───────────────────────────────────
+// Un renglón de envío marcado «no llegó» sigue en tránsito —salió de una sala y
+// no entró a la otra—. Ahí «apareció» RECIBE el movimiento (lo resuelve
+// `cerrarFaltante`), y lo que se cerró así antes de que existiera esto lo marca
+// `falta_ingresar` y se ingresa desde esta misma fila.
 
 const TONO = {
     abierto:     { caja: 'bg-danger/10 ring-danger/25 text-danger-text',   rotulo: 'sin resolver' },
@@ -38,6 +44,14 @@ export function FilaFaltante({ faltante: f, onHecho }) {
         setOcupado(false);
         if (!r.ok) { setError(r.error ?? 'No se pudo cerrar.'); return; }
         setCerrando(null); setNota('');
+        onHecho?.();
+    };
+
+    const ingresar = async () => {
+        setOcupado(true); setError('');
+        const r = await ingresarAparecido(f);
+        setOcupado(false);
+        if (!r.ok) { setError(r.error); return; }
         onHecho?.();
     };
 
@@ -85,6 +99,19 @@ export function FilaFaltante({ faltante: f, onHecho }) {
 
             {error && <p className="text-micro text-danger-text font-semibold leading-snug">{error}</p>}
 
+            {!abierto && f.falta_ingresar && (
+                <div className="flex flex-col gap-1.5">
+                    <p className="text-micro text-warning-text font-semibold leading-snug">
+                        Apareció, pero todavía no entró al inventario de {f.destino_branch_name ?? 'la sala'}.
+                    </p>
+                    <Button size="sm" variant="primary" icon={ocupado ? Loader2 : PackageCheck}
+                        className="min-h-[var(--tap-min)]"
+                        disabled={ocupado} onClick={ingresar}>
+                        {ocupado ? 'Ingresando…' : 'Ingresar a inventario'}
+                    </Button>
+                </div>
+            )}
+
             {abierto && !cerrando && (
                 <div className="flex items-center gap-1.5">
                     {/* «Apareció» no pide nota: la bolsa estaba en el mostrador
@@ -94,7 +121,7 @@ export function FilaFaltante({ faltante: f, onHecho }) {
                     <Button size="sm" variant="primary" icon={ocupado ? Loader2 : Check}
                         className="min-h-[var(--tap-min)] flex-1"
                         disabled={ocupado} onClick={() => cerrar('aparecio')}>
-                        {ocupado ? 'Cerrando…' : 'Apareció'}
+                        {ocupado ? (f.falta_ingresar ? 'Ingresando…' : 'Cerrando…') : 'Apareció'}
                     </Button>
                     <Button size="sm" variant="secondary" icon={PackageX}
                         className="min-h-[var(--tap-min)] flex-1"

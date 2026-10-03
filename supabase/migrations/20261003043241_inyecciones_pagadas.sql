@@ -1,10 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
--- Aplicaciones de inyección PAGADAS: el control (borrador, 2026-10-02)
+-- Aplicaciones de inyección PAGADAS: el control (2026-10-02)
 -- ════════════════════════════════════════════════════════════════════════════
 --
--- BORRADOR. Probado en el entorno de pruebas con `execute_sql`; NO está en
--- producción. Al pasarlo a producción va por `apply_migration` y su archivo
--- nace en `supabase/migrations/` con la versión que devuelva el servidor.
+-- Probado en el entorno de pruebas (45+ pruebas de base, 18 de operar-caja,
+-- recorridos de pantalla). Paso 1 de 2: crea todo con el interruptor APAGADO;
+-- el paso 2 es la migración `inyecciones_pagadas_encender`.
 --
 -- ── Qué resuelve ────────────────────────────────────────────────────────────
 -- Hasta hoy el cobro de una aplicación era un ingreso de caja con un detalle
@@ -13,21 +13,29 @@
 -- Medido en septiembre: 947 cobros, 181 sin producto, 140 sin venta posible.
 --
 -- Pedido del usuario (2026-10-02): al cobrar se pregunta si la inyección se
--- compró aquí ($1) o la trajo el cliente ($2); la comprada se AMARRA a la
+-- compró aquí ($1) o la trajo el cliente ($2); la comprada se ASIGNA a la
 -- venta, y si la venta trae varias se pregunta cuáles y cuántas. Lo pagado y
 -- no aplicado queda PENDIENTE a nombre del cliente y se canjea después.
 --
 -- ── Las piezas ──────────────────────────────────────────────────────────────
---   inyeccion_precios          lo que vale una aplicación, por origen
---   inyeccion_dosis_producto   cuántas aplicaciones trae cada presentación
---   inyeccion_aplicaciones     UNA fila por aplicación pagada: el control
+--   inyeccion_precios                  lo que vale una aplicación, por origen
+--   inyeccion_dosis_producto           aplicaciones por unidad base, por producto
+--   inyeccion_producto_clasificacion   productos marcados a mano (sí / no)
+--   inyeccion_aplicaciones             UNA fila por aplicación pagada: el control
 --
 -- ── Por qué las dosis son un catálogo y no una cuenta ───────────────────────
 -- La factura no lo sabe. NEUROBION TRI PACK se vende «CAJA X 3 1x1» con
--- factor 1 y son tres aplicaciones; ANDIDEXA-A se vende en «CAJA 1x3»
--- (factor 3, tres) y en «UNIDAD 1x1» (una). Por eso la clave es producto +
--- presentación, y lo que guarda es «aplicaciones por unidad vendida». Mientras
--- supervisión no confirme, rige la sugerencia sacada del nombre.
+-- factor 1 y son tres aplicaciones; TRAMAL se vende en «CAJA 1x5» (factor 5,
+-- cinco) y en «UNIDAD 1x1» (una).
+--
+-- La clave es el PRODUCTO, no la presentación: medido en producción el
+-- 2026-10-02, `sales_invoice_items.id_presentacion` viene vacío en el 100% de
+-- los renglones (7,376 de 7,376), así que la caja y la ampolla suelta de
+-- TRAMAL caerían en la misma fila y confirmar «5» haría valer 5 a la suelta.
+-- Lo que se guarda es «aplicaciones por UNIDAD BASE» (la suelta, factor 1), y
+-- el renglón multiplica por su factor:
+--     aplicaciones = cantidad × factor_unidades × aplicaciones_por_unidad_base
+-- Mientras supervisión no confirme, rige la sugerencia (ver abajo).
 --
 -- ── Por qué nace sin confirmar ──────────────────────────────────────────────
 -- `operar-caja` escribe la fila del portal ANTES de tocar la caja (si la caja
@@ -65,15 +73,13 @@ CREATE POLICY bloqueo_global ON public.inyeccion_precios AS RESTRICTIVE
 CREATE POLICY inyeccion_precios_select ON public.inyeccion_precios
   FOR SELECT TO authenticated USING (true);
 
--- ── 2. Aplicaciones por presentación ────────────────────────────────────────
+-- ── 2. Aplicaciones por unidad base, por producto ──────────────────────────
 CREATE TABLE public.inyeccion_dosis_producto (
-  erp_product_id  integer  NOT NULL,
-  id_presentacion integer  NOT NULL DEFAULT 0,   -- 0 = el renglón no traía presentación
+  erp_product_id  integer  PRIMARY KEY,
   aplicaciones    smallint NOT NULL CHECK (aplicaciones BETWEEN 1 AND 20),
   confirmado_por  uuid REFERENCES public.employees(id),
   confirmado_at   timestamptz NOT NULL DEFAULT now(),
-  created_at      timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY (erp_product_id, id_presentacion)
+  created_at      timestamptz NOT NULL DEFAULT now()
 );
 ALTER TABLE public.inyeccion_dosis_producto ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.inyeccion_dosis_producto FROM anon, authenticated;
@@ -82,6 +88,30 @@ GRANT ALL ON public.inyeccion_dosis_producto TO service_role;
 CREATE POLICY bloqueo_global ON public.inyeccion_dosis_producto AS RESTRICTIVE
   FOR ALL TO authenticated USING ((SELECT public.auth_no_bloqueado()));
 CREATE POLICY inyeccion_dosis_producto_select ON public.inyeccion_dosis_producto
+  FOR SELECT TO authenticated USING (true);
+
+-- ── 2b. Productos marcados a mano como inyección (o no) ────────────────────
+-- Qué es inyección lo decide el NOMBRE (`es_inyectable`), y un nombre puede
+-- engañar en los dos sentidos. Supervisión corrige producto por producto:
+--   es_inyeccion = true   → cuenta aunque el nombre no lo diga
+--   es_inyeccion = false  → no cuenta aunque el nombre lo diga
+--   sin fila              → manda el nombre
+-- Lo marcado a mano GANA siempre (pedido del usuario: «agregar / quitar
+-- productos por si hay alguno mal categorizado»).
+CREATE TABLE public.inyeccion_producto_clasificacion (
+  erp_product_id  integer PRIMARY KEY,
+  es_inyeccion    boolean NOT NULL,
+  cambiado_por    uuid REFERENCES public.employees(id),
+  cambiado_at     timestamptz NOT NULL DEFAULT now(),
+  created_at      timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.inyeccion_producto_clasificacion ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.inyeccion_producto_clasificacion FROM anon, authenticated;
+GRANT SELECT ON public.inyeccion_producto_clasificacion TO authenticated;
+GRANT ALL ON public.inyeccion_producto_clasificacion TO service_role;
+CREATE POLICY bloqueo_global ON public.inyeccion_producto_clasificacion AS RESTRICTIVE
+  FOR ALL TO authenticated USING ((SELECT public.auth_no_bloqueado()));
+CREATE POLICY inyeccion_producto_clasificacion_select ON public.inyeccion_producto_clasificacion
   FOR SELECT TO authenticated USING (true);
 
 -- ── 3. El control: una fila por aplicación pagada ──────────────────────────
@@ -102,7 +132,7 @@ CREATE TABLE public.inyeccion_aplicaciones (
   aplicada_por       uuid REFERENCES public.employees(id),
   aplicada_branch_id integer REFERENCES public.branches(id),
   creada_por         uuid REFERENCES public.employees(id),
-  -- Cuando la fila la creó supervisión ligando un cobro viejo a mano.
+  -- Cuando la fila la creó supervisión asignando un cobro viejo a mano.
   vinculada_por      uuid REFERENCES public.employees(id),
   created_at         timestamptz NOT NULL DEFAULT now(),
   CHECK ((origen = 'COMPRADA') = (invoice_id IS NOT NULL AND linea_num IS NOT NULL)),
@@ -137,35 +167,84 @@ CREATE POLICY inyeccion_aplicaciones_select ON public.inyeccion_aplicaciones
              OR branch_id = (SELECT public.auth_employee_branch_id())))
   );
 
--- APLICACION lleva su propio diálogo, igual que el abono: lo decide la bandera
--- del catálogo y no un `if codigo ===` en la pantalla.
-UPDATE public.caja_tipos_movimiento
-   SET lleva_comprobante = true,
-       leyenda = 'Se elige la venta, o se marca que el cliente trajo la inyección.'
- WHERE codigo = 'APLICACION';
+-- El INTERRUPTOR (`lleva_comprobante` de APLICACION) NO se enciende acá: va
+-- en la migración aparte `inyecciones_pagadas_encender`, que se aplica cuando
+-- la función y la pantalla nuevas ya están publicadas. Ver `operar-caja`.
 
--- ── Sugerencia: cuántas aplicaciones trae una unidad vendida ───────────────
--- Factor > 1: la presentación ya es un múltiplo de la ampolla (CAJA 1x3).
--- «UNIDAD …»: es la ampolla suelta de una caja, una sola.
--- Si no, se lee del nombre o la presentación: TRI PACK, «X 3 AMPOLLAS»,
--- «CAJA X 3». Es una sugerencia: supervisión la confirma.
-CREATE OR REPLACE FUNCTION public.inyeccion_aplicaciones_sugeridas(
-  p_descripcion text, p_presentacion text, p_factor integer)
+-- ── Sugerencia: cuántas aplicaciones trae la UNIDAD BASE de un producto ────
+-- Si el producto se vende SUELTO —tiene en `product_precios` una presentación
+-- con factor > 1, o sea que la caja es un múltiplo de algo—, la base es la
+-- ampolla: 1 (TRAMAL, ANDIDEXA). Si no, la unidad base es el paquete entero y
+-- se lee del nombre: TRI PACK = 3, «X 3 AMPOLLAS» = 3 (NUCLEO, ADEMAR). Es una
+-- sugerencia: supervisión la confirma.
+CREATE OR REPLACE FUNCTION public.inyeccion_aplicaciones_por_nombre(p_descripcion text)
 RETURNS integer LANGUAGE sql IMMUTABLE PARALLEL SAFE
 SET search_path = public, extensions AS $$
   SELECT CASE
-    WHEN coalesce(p_factor, 1) > 1 THEN least(p_factor, 20)
-    WHEN upper(coalesce(p_presentacion, '')) LIKE 'UNIDAD%' THEN 1
     WHEN upper(coalesce(p_descripcion, '')) ~ 'TRI\s*PACK' THEN 3
     WHEN upper(coalesce(p_descripcion, '')) ~ 'X\s*\d+\s*AMP'
       THEN least(greatest(substring(upper(p_descripcion) FROM 'X\s*(\d+)\s*AMP')::int, 1), 20)
-    WHEN upper(coalesce(p_presentacion, '')) ~ 'X\s*\d+\s'
-      THEN least(greatest(substring(upper(p_presentacion) FROM 'X\s*(\d+)\s')::int, 1), 20)
     ELSE 1
   END;
 $$;
-REVOKE EXECUTE ON FUNCTION public.inyeccion_aplicaciones_sugeridas(text, text, integer) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.inyeccion_aplicaciones_sugeridas(text, text, integer) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.inyeccion_aplicaciones_por_nombre(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.inyeccion_aplicaciones_por_nombre(text) TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.inyeccion_base_sugerida(p_erp_product_id integer, p_descripcion text)
+RETURNS integer LANGUAGE plpgsql STABLE
+SET search_path = public, extensions AS $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM product_precios pp WHERE pp.product_id = p_erp_product_id AND pp.factor > 1) THEN
+    RETURN 1;
+  END IF;
+  RETURN public.inyeccion_aplicaciones_por_nombre(p_descripcion);
+END;
+$$;
+REVOKE EXECUTE ON FUNCTION public.inyeccion_base_sugerida(integer, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.inyeccion_base_sugerida(integer, text) TO authenticated, service_role;
+
+-- ── ¿Este producto es inyección? Lo marcado a mano gana sobre el nombre ────
+-- La ÚNICA respuesta: la usan los renglones, la lista del cobro, el catálogo y
+-- la pestaña Por cobrar. Escrita en cada uno, un producto quitado seguiría
+-- apareciendo en alguna pantalla.
+CREATE OR REPLACE FUNCTION public.inyeccion_es_aplicable(p_erp_product_id integer, p_descripcion text)
+RETURNS boolean LANGUAGE plpgsql STABLE
+SET search_path = public, extensions AS $$
+DECLARE v boolean;
+BEGIN
+  IF p_erp_product_id IS NOT NULL THEN
+    SELECT es_inyeccion INTO v FROM inyeccion_producto_clasificacion WHERE erp_product_id = p_erp_product_id;
+    IF FOUND THEN RETURN v; END IF;
+  END IF;
+  RETURN public.es_inyectable(p_descripcion);
+END;
+$$;
+REVOKE EXECUTE ON FUNCTION public.inyeccion_es_aplicable(integer, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.inyeccion_es_aplicable(integer, text) TO authenticated, service_role;
+
+-- Marcar (true/false) o volver a lo automático (NULL). Supervisión.
+CREATE OR REPLACE FUNCTION public.inyeccion_clasificar_producto(p_erp_product_id integer, p_es_inyeccion boolean)
+RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path = public, extensions AS $$
+BEGIN
+  IF NOT (SELECT auth_has_module_permission('inyecciones_dosis', 'can_view')) THEN
+    RAISE EXCEPTION 'FORBIDDEN' USING ERRCODE = '42501';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM products WHERE id = p_erp_product_id) THEN
+    RAISE EXCEPTION 'Ese producto no existe.';
+  END IF;
+  IF p_es_inyeccion IS NULL THEN
+    DELETE FROM inyeccion_producto_clasificacion WHERE erp_product_id = p_erp_product_id;
+  ELSE
+    INSERT INTO inyeccion_producto_clasificacion (erp_product_id, es_inyeccion, cambiado_por, cambiado_at)
+    VALUES (p_erp_product_id, p_es_inyeccion, (SELECT auth_employee_id()), now())
+    ON CONFLICT (erp_product_id) DO UPDATE
+      SET es_inyeccion = EXCLUDED.es_inyeccion, cambiado_por = EXCLUDED.cambiado_por, cambiado_at = now();
+  END IF;
+END;
+$$;
+REVOKE EXECUTE ON FUNCTION public.inyeccion_clasificar_producto(integer, boolean) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.inyeccion_clasificar_producto(integer, boolean) TO authenticated, service_role;
 
 -- ── Los renglones inyectables de una venta, con su saldo de aplicaciones ───
 -- La ÚNICA respuesta a «cuántas quedan por pagar de este renglón». La usan la
@@ -174,22 +253,26 @@ GRANT EXECUTE ON FUNCTION public.inyeccion_aplicaciones_sugeridas(text, text, in
 -- «Usadas» cuenta las confirmadas y las que están en vuelo (sin confirmar,
 -- de los últimos 5 minutos): sin eso, dos cobros simultáneos verían el mismo
 -- saldo. Una sin confirmar más vieja es un intento que la caja rechazó.
+-- plpgsql y no `LANGUAGE sql`: con `SET search_path` una sql nace con plan
+-- genérico (CLAUDE.md, trampa 4).
 CREATE OR REPLACE FUNCTION public.inyeccion_renglones_de_venta(p_invoice_ids bigint[])
-RETURNS TABLE (invoice_id bigint, linea_num smallint, erp_product_id integer, id_presentacion integer,
-               descripcion text, presentacion text, cantidad numeric,
+RETURNS TABLE (invoice_id bigint, linea_num smallint, erp_product_id integer,
+               descripcion text, presentacion text, cantidad numeric, factor integer,
                por_unidad integer, confirmado boolean, total integer, usadas integer, disponibles integer)
-LANGUAGE sql STABLE SECURITY DEFINER
-SET search_path = public, extensions AS $$
+LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path = public, extensions
+SET plan_cache_mode = 'force_custom_plan' AS $$
+BEGIN
+  RETURN QUERY
   WITH r AS (
-    SELECT ii.invoice_id, ii.linea_num, ii.erp_product_id, coalesce(ii.id_presentacion, 0) AS id_presentacion,
-           ii.descripcion, ii.presentacion, ii.cantidad,
-           d.aplicaciones AS confirmadas_por_unidad,
-           public.inyeccion_aplicaciones_sugeridas(ii.descripcion, ii.presentacion, ii.factor_unidades) AS sugeridas
+    SELECT ii.invoice_id, ii.linea_num, ii.erp_product_id, ii.descripcion, ii.presentacion, ii.cantidad,
+           greatest(coalesce(ii.factor_unidades, 1), 1)::int AS factor,
+           d.aplicaciones AS base_confirmada,
+           public.inyeccion_base_sugerida(ii.erp_product_id, ii.descripcion) AS base_sugerida
     FROM public.sales_invoice_items ii
-    LEFT JOIN public.inyeccion_dosis_producto d
-      ON d.erp_product_id = ii.erp_product_id AND d.id_presentacion = coalesce(ii.id_presentacion, 0)
+    LEFT JOIN public.inyeccion_dosis_producto d ON d.erp_product_id = ii.erp_product_id
     WHERE ii.invoice_id = ANY (p_invoice_ids)
-      AND public.es_inyectable(ii.descripcion)
+      AND public.inyeccion_es_aplicable(ii.erp_product_id, ii.descripcion)
   ), u AS (
     SELECT a.invoice_id, a.linea_num, count(*)::int AS usadas
     FROM public.inyeccion_aplicaciones a
@@ -198,13 +281,14 @@ SET search_path = public, extensions AS $$
       AND (a.confirmada OR a.created_at > now() - interval '5 minutes')
     GROUP BY 1, 2
   )
-  SELECT r.invoice_id, r.linea_num, r.erp_product_id, r.id_presentacion, r.descripcion, r.presentacion, r.cantidad,
-         coalesce(r.confirmadas_por_unidad, r.sugeridas)::int,
-         r.confirmadas_por_unidad IS NOT NULL,
-         floor(r.cantidad * coalesce(r.confirmadas_por_unidad, r.sugeridas))::int,
+  SELECT r.invoice_id, r.linea_num, r.erp_product_id, r.descripcion, r.presentacion, r.cantidad, r.factor,
+         (r.factor * coalesce(r.base_confirmada, r.base_sugerida))::int,
+         r.base_confirmada IS NOT NULL,
+         floor(r.cantidad * r.factor * coalesce(r.base_confirmada, r.base_sugerida))::int,
          coalesce(u.usadas, 0),
-         greatest(floor(r.cantidad * coalesce(r.confirmadas_por_unidad, r.sugeridas))::int - coalesce(u.usadas, 0), 0)
-  FROM r LEFT JOIN u USING (invoice_id, linea_num);
+         greatest(floor(r.cantidad * r.factor * coalesce(r.base_confirmada, r.base_sugerida))::int - coalesce(u.usadas, 0), 0)
+  FROM r LEFT JOIN u ON u.invoice_id = r.invoice_id AND u.linea_num = r.linea_num;
+END;
 $$;
 -- Sólo interna: no tiene guarda propia, la ponen quienes la llaman.
 REVOKE EXECUTE ON FUNCTION public.inyeccion_renglones_de_venta(bigint[]) FROM PUBLIC, anon, authenticated;
@@ -236,7 +320,7 @@ BEGIN
     AND si.fecha >= (now() AT TIME ZONE 'America/El_Salvador')::date - greatest(least(coalesce(p_dias, 7), 31), 0)
     AND public.venta_valida(si.estado)
     AND EXISTS (SELECT 1 FROM sales_invoice_items ii
-                WHERE ii.invoice_id = si.id AND public.es_inyectable(ii.descripcion)
+                WHERE ii.invoice_id = si.id AND public.inyeccion_es_aplicable(ii.erp_product_id, ii.descripcion)
                   -- Se busca por cliente, por factura o por la INYECCIÓN.
                   AND (v_buscar IS NULL
                        OR upper(si.cliente) LIKE '%' || v_buscar || '%'
@@ -505,9 +589,10 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.inyeccion_aplicar(bigint[], integer) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.inyeccion_aplicar(bigint[], integer) TO authenticated, service_role;
 
--- ── Supervisión: el catálogo de aplicaciones por presentación ──────────────
--- Las presentaciones inyectables vendidas en los últimos 90 días, con lo que
--- rige hoy y si ya lo confirmó alguien.
+-- ── Supervisión: el catálogo de aplicaciones por producto ──────────────────
+-- Los productos inyectables vendidos en los últimos 90 días, con lo que rige
+-- hoy (por unidad base), en qué presentaciones se vende y si ya lo confirmó
+-- alguien.
 CREATE OR REPLACE FUNCTION public.inyeccion_catalogo_dosis()
 RETURNS json LANGUAGE plpgsql STABLE SECURITY DEFINER
 SET search_path = public, extensions AS $$
@@ -520,30 +605,51 @@ BEGIN
     WITH f AS MATERIALIZED (
       SELECT min(id) lo, max(id) hi FROM sales_invoices
       WHERE fecha >= (now() AT TIME ZONE 'America/El_Salvador')::date - 90
-    ), v AS MATERIALIZED (
-      SELECT ii.erp_product_id, coalesce(ii.id_presentacion, 0) AS id_presentacion,
-             max(ii.descripcion) AS descripcion, max(ii.presentacion) AS presentacion,
-             max(ii.factor_unidades) AS factor, count(*) AS ventas
+    ), vendidos AS MATERIALIZED (
+      -- Lo vendido en 90 días que el NOMBRE da por inyección, o que alguien
+      -- marcó a mano (en cualquier sentido: los quitados también se listan,
+      -- para poder volver a incluirlos).
+      SELECT ii.erp_product_id, max(ii.descripcion) AS descripcion, count(*) AS ventas
       FROM f JOIN sales_invoice_items ii ON ii.invoice_id BETWEEN f.lo AND f.hi
-      WHERE ii.erp_product_id IS NOT NULL AND public.es_inyectable(ii.descripcion)
-      GROUP BY 1, 2
+      WHERE ii.erp_product_id IS NOT NULL
+        AND (public.es_inyectable(ii.descripcion)
+             OR EXISTS (SELECT 1 FROM inyeccion_producto_clasificacion c WHERE c.erp_product_id = ii.erp_product_id))
+      GROUP BY 1
+    ), v AS (
+      SELECT * FROM vendidos
+      UNION ALL
+      -- Marcados a mano como inyección que no se vendieron en 90 días.
+      SELECT c.erp_product_id, p.nombre, 0
+      FROM inyeccion_producto_clasificacion c JOIN products p ON p.id = c.erp_product_id
+      WHERE c.es_inyeccion AND NOT EXISTS (SELECT 1 FROM vendidos x WHERE x.erp_product_id = c.erp_product_id)
     )
     SELECT json_agg(json_build_object(
-             'erp_product_id', v.erp_product_id, 'id_presentacion', v.id_presentacion,
-             'descripcion', v.descripcion, 'presentacion', v.presentacion, 'ventas', v.ventas,
-             'sugeridas', public.inyeccion_aplicaciones_sugeridas(v.descripcion, v.presentacion, v.factor),
+             'erp_product_id', v.erp_product_id,
+             'descripcion', coalesce(p.nombre, v.descripcion), 'ventas', v.ventas,
+             -- auto: lo decide el nombre · incluido / quitado: marcado a mano.
+             'clasificacion', CASE WHEN c.es_inyeccion IS NULL THEN 'auto'
+                                   WHEN c.es_inyeccion THEN 'incluido' ELSE 'quitado' END,
+             'clasificado_por', ec.name,
+             -- Cómo se vende: «suelta y caja de 5». Le dice a quien confirma
+             -- qué es la unidad base.
+             'factores', (SELECT array_agg(DISTINCT pp.factor ORDER BY pp.factor)
+                          FROM product_precios pp WHERE pp.product_id = v.erp_product_id AND pp.factor IS NOT NULL),
+             'sugeridas', public.inyeccion_base_sugerida(v.erp_product_id, v.descripcion),
              'confirmadas', d.aplicaciones, 'confirmado_por', e.name, 'confirmado_at', d.confirmado_at
-           ) ORDER BY (d.aplicaciones IS NOT NULL), v.ventas DESC)
+           ) ORDER BY (c.es_inyeccion IS FALSE), (d.aplicaciones IS NOT NULL), v.ventas DESC)
     FROM v
-    LEFT JOIN inyeccion_dosis_producto d USING (erp_product_id, id_presentacion)
+    LEFT JOIN products p ON p.id = v.erp_product_id
+    LEFT JOIN inyeccion_dosis_producto d ON d.erp_product_id = v.erp_product_id
     LEFT JOIN employees e ON e.id = d.confirmado_por
+    LEFT JOIN inyeccion_producto_clasificacion c ON c.erp_product_id = v.erp_product_id
+    LEFT JOIN employees ec ON ec.id = c.cambiado_por
   ), '[]'::json);
 END;
 $$;
 REVOKE EXECUTE ON FUNCTION public.inyeccion_catalogo_dosis() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.inyeccion_catalogo_dosis() TO authenticated, service_role;
 
-CREATE OR REPLACE FUNCTION public.inyeccion_fijar_dosis(p_erp_product_id integer, p_id_presentacion integer, p_aplicaciones integer)
+CREATE OR REPLACE FUNCTION public.inyeccion_fijar_dosis(p_erp_product_id integer, p_aplicaciones integer)
 RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER
 SET search_path = public, extensions AS $$
 BEGIN
@@ -551,14 +657,14 @@ BEGIN
     RAISE EXCEPTION 'FORBIDDEN' USING ERRCODE = '42501';
   END IF;
   IF coalesce(p_aplicaciones, 0) NOT BETWEEN 1 AND 20 THEN RAISE EXCEPTION 'Entre 1 y 20 aplicaciones.'; END IF;
-  INSERT INTO inyeccion_dosis_producto (erp_product_id, id_presentacion, aplicaciones, confirmado_por, confirmado_at)
-  VALUES (p_erp_product_id, coalesce(p_id_presentacion, 0), p_aplicaciones, (SELECT auth_employee_id()), now())
-  ON CONFLICT (erp_product_id, id_presentacion) DO UPDATE
+  INSERT INTO inyeccion_dosis_producto (erp_product_id, aplicaciones, confirmado_por, confirmado_at)
+  VALUES (p_erp_product_id, p_aplicaciones, (SELECT auth_employee_id()), now())
+  ON CONFLICT (erp_product_id) DO UPDATE
     SET aplicaciones = EXCLUDED.aplicaciones, confirmado_por = EXCLUDED.confirmado_por, confirmado_at = now();
 END;
 $$;
-REVOKE EXECUTE ON FUNCTION public.inyeccion_fijar_dosis(integer, integer, integer) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.inyeccion_fijar_dosis(integer, integer, integer) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.inyeccion_fijar_dosis(integer, integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.inyeccion_fijar_dosis(integer, integer) TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.inyeccion_fijar_precio(p_origen text, p_precio numeric)
 RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER
@@ -576,10 +682,10 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.inyeccion_fijar_precio(text, numeric) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.inyeccion_fijar_precio(text, numeric) TO authenticated, service_role;
 
--- ── Supervisión: amarrar a mano un cobro que quedó suelto ──────────────────
--- Para los cobros de texto libre (los de antes, y los de «la venta no aparece
--- todavía»). Crea las aplicaciones como COMPRADA, confirmadas y aplicadas al
--- momento del cobro: es lo que pasó. Cuántas: monto / precio de COMPRADA.
+-- ── Supervisión: asignar a mano un cobro que quedó suelto ──────────────────
+-- Para los cobros de texto libre (los de antes del 2026-10-02). Crea las
+-- aplicaciones como COMPRADA, confirmadas y aplicadas al momento del cobro: es
+-- lo que pasó. Cuántas: monto / precio de COMPRADA.
 CREATE OR REPLACE FUNCTION public.inyeccion_vincular_cobro(p_cobro_id bigint, p_invoice_id bigint, p_linea_num integer)
 RETURNS integer LANGUAGE plpgsql VOLATILE SECURITY DEFINER
 SET search_path = public, extensions AS $$
@@ -628,7 +734,7 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.inyeccion_vincular_cobro(bigint, bigint, integer) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.inyeccion_vincular_cobro(bigint, bigint, integer) TO authenticated, service_role;
 
--- Deshacer SÓLO lo que se amarró a mano: lo registrado al cobrar es el acto de
+-- Deshacer SÓLO lo que se asignó a mano: lo registrado al cobrar es el acto de
 -- la sala y no se borra desde una pantalla de supervisión.
 CREATE OR REPLACE FUNCTION public.inyeccion_desvincular_cobro(p_cobro_id bigint)
 RETURNS integer LANGUAGE plpgsql VOLATILE SECURITY DEFINER
@@ -705,11 +811,11 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.inyecciones_bitacora(integer, date, date, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.inyecciones_bitacora(integer, date, date, text) TO authenticated, service_role;
 
--- ── La pestaña Inyecciones: primero lo REGISTRADO, después lo estimado ─────
+-- ── La pestaña Por cobrar: primero lo REGISTRADO, después lo estimado ──────
 -- Un cobro con filas en `inyeccion_aplicaciones` ya dice a qué venta va: no
 -- entra al emparejamiento por hora y nombre. Ese emparejamiento queda sólo
--- para los cobros de texto libre (los de antes, y los de «la venta no aparece
--- todavía»), y la venta dice cuál de los dos le tocó (`vinculo`).
+-- para los cobros de texto libre (los de antes del 2026-10-02), y la venta
+-- dice cuál de los dos le tocó (`vinculo`).
 CREATE OR REPLACE FUNCTION public.get_inyecciones_aplicadas(p_branch_id integer, p_desde date, p_hasta date)
  RETURNS json
  LANGUAGE plpgsql
@@ -751,12 +857,14 @@ BEGIN
   ), rango AS MATERIALIZED (
     SELECT min(id) AS lo, max(id) AS hi FROM f
   ), renglones AS MATERIALIZED (
-    SELECT ii.invoice_id, ii.descripcion
+    SELECT ii.invoice_id, ii.descripcion, ii.erp_product_id
     FROM rango JOIN sales_invoice_items ii ON ii.invoice_id BETWEEN rango.lo AND rango.hi
   ), descripciones AS MATERIALIZED (
-    SELECT DISTINCT descripcion FROM renglones
+    SELECT DISTINCT descripcion, erp_product_id FROM renglones
   ), inyectables AS MATERIALIZED (
-    SELECT descripcion FROM descripciones WHERE es_inyectable(descripcion)
+    -- Con lo marcado a mano: un producto quitado no cuenta aunque su nombre
+    -- diga «AMPOLLA», y uno incluido cuenta aunque no lo diga.
+    SELECT DISTINCT descripcion FROM descripciones WHERE inyeccion_es_aplicable(erp_product_id, descripcion)
   )
   SELECT coalesce((SELECT array_agg(descripcion) FROM inyectables), '{}'),
          coalesce((SELECT array_agg(DISTINCT x.invoice_id)
@@ -923,6 +1031,3 @@ FROM public.role_permissions rp
 CROSS JOIN (VALUES ('inyecciones'), ('inyecciones_tab_pendientes'), ('inyecciones_tab_bitacora')) k(key)
 WHERE rp.module_key = 'caja_vales' AND rp.can_edit AND rp.scope = 'BRANCH'
 ON CONFLICT DO NOTHING;
-
--- La pestaña vieja de Ventas ya no existe en la pantalla.
-DELETE FROM public.role_permissions WHERE module_key = 'ventas_tab_inyecciones';

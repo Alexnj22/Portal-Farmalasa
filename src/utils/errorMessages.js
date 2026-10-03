@@ -144,6 +144,11 @@ const REGLAS = [
     // sola palabra en mayúsculas, sin `:` detrás): lo lanzan, entre otras,
     // `identificar_por_carne` y `get_kiosk_auth_code`.
     [/PERMISSION_DENIED|FORBIDDEN/i, 'No tienes permiso para hacer esto. Consulta con tu jefatura.'],
+    // `BRANCH_SCOPE_DENIED` = tiene el permiso, pero de UNA sala, y lo pedido es
+    // de otra o es de Bodega. Lo lanzan MIN·MAX y, desde el 2026-10-02, los
+    // pedidos (sólo Bodega crea y despacha; la sala recibe lo suyo). Con la
+    // forma `CÓDIGO: texto` caía al genérico, que no dice por qué.
+    [/BRANCH_SCOPE_DENIED/i, 'Tu permiso es solo para tu sucursal: esto le corresponde a Bodega o a otra sucursal.'],
     // `ACCION_INVALIDA` lo lanza `set_traslado_interruptor` cuando la llave del
     // freno no existe. Salía CRUDO a la pantalla: los dos frenos del sobrante
     // se veían en Mantenimiento y morían así al accionarlos, del 18 al 21-ago.

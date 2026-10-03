@@ -1,0 +1,23 @@
+{
+  "_nota": "Deudas conocidas al 2026-10-02. SÓLO BAJA: `npm run gate:alcance -- --update-baseline` quita las cerradas; nunca se agrega a mano.",
+  "edge": [
+    "operar-caja",
+    "sync-wfm-sales"
+  ],
+  "rpc": [
+    "audit_log_de_producto",
+    "contexto_de_solicitud_minmax",
+    "destinatarios_de_modulo",
+    "get_draft_cost_estimate",
+    "get_inventory_cost_summary",
+    "get_minmax_contexto_producto",
+    "get_minmax_solicitudes_de_producto",
+    "get_stagnant_inventory",
+    "productos_parados_de_sala",
+    "registrar_bitacora",
+    "resumen_ventas_diario",
+    "save_pedido_snapshot",
+    "sincronizar_bitacora_dispensaciones",
+    "verificar_hojas_pedido"
+  ]
+}

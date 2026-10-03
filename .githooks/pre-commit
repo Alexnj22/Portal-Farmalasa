@@ -100,6 +100,17 @@ if git diff --cached --name-only | grep -qE '^(src/|supabase/functions/)'; then
   node scripts/data-gate.mjs --hook || exit 1
 fi
 
+# alcance-gate: sólo si el commit toca una edge function o el manifiesto. En
+# `--hook` no sale a la red: comprueba que toda edge function esté declarada en
+# `scripts/alcance-manifest.json` y que lo declarado siga en el código (el
+# chequeo de sala, el secreto del cron, el módulo). La mitad de producción
+# —funciones de la base y cargos con módulos de red— la corre
+# `npm run gate:alcance` al cerrar. (2026-10-02: pedir una corrección, recibir
+# un pedido o anotar un vale de OTRA sucursal cambiando un número.)
+if git diff --cached --name-only | grep -qE '^(supabase/functions/|scripts/alcance-)'; then
+  node scripts/alcance-gate.mjs --hook || exit 1
+fi
+
 # undefinidos-gate: sólo si el commit toca `src/`. Corre la regla `no-undef` de
 # ESLint —y SÓLO esa— sobre lo que el índice conoce. Bloqueante en cero.
 #

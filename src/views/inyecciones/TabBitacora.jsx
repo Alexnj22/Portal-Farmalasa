@@ -171,6 +171,7 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
                                 {f.producto}
                                 {/* La dosis, para quien la aplique (se cobró por ml). */}
                                 {f.dosis_ml != null && <p className="text-caption font-semibold text-content-2">{fmtMl(f.dosis_ml)} ml por aplicación</p>}
+                                {f.mezclada && <p className="text-caption font-semibold text-content-2">Mezcladas en una jeringa · una aplicación</p>}
                             </DataCell>
                         <DataCell align="right" hideBelow="md" className="text-body-sm font-semibold">{formatMoney(f.precio)}</DataCell>
                         <DataCell>

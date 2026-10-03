@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Minus, Plus, RefreshCw, Syringe } from 'lucide-react';
 import Button from '../common/Button';
+import Checkbox from '../common/Checkbox';
 import AvatarConEstado from '../common/AvatarConEstado';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
@@ -44,6 +45,13 @@ import { useStaffStore } from '@nucleo/store/staffStore';
  * esa dosis queda en cada aplicación: quien la aplique después la ve en el
  * canje sin tener que preguntar. El primer cobro de la venta la fija; los
  * siguientes de esa misma venta ya no la preguntan.
+ *
+ * ── Mezcladas en la misma jeringa (2026-10-03) ─────────────────────────────
+ * «A veces se mezclan la COBALEX con la TIAMINA: no se cobran 2 aplicaciones
+ * sino 1». Con dos o más inyecciones en la venta se puede marcar que van
+ * mezcladas: se elige cuáles entran y cuántas veces, se cobra UNA por vez y
+ * cada producto descuenta lo suyo. Decisiones del usuario: se cobra como una
+ * sola y se marca al cobrar. Lo valida `inyeccion_cotizar`.
  *
  * ── El monto no se escribe ─────────────────────────────────────────────────
  * Sale de cuántas aplicaciones se pagan por el precio vigente, y el servidor lo
@@ -91,6 +99,9 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
     const [ventaId, setVentaId] = useState(null);
     const [cuantas, setCuantas] = useState({});           // linea_num → cuántas se pagan
     const [dosis, setDosis] = useState({});               // linea_num → ml por aplicación (sólo los por ml)
+    const [mezcla, setMezcla] = useState(false);          // van en la misma jeringa
+    const [enMezcla, setEnMezcla] = useState(() => new Set());  // linea_num que entran
+    const [vecesMezcla, setVecesMezcla] = useState(1);    // cuántas aplicaciones mezcladas
     // Sube para volver a pedir la lista: las ventas tardan hasta un minuto en llegar.
     const [vuelta, setVuelta] = useState(0);
 
@@ -154,6 +165,9 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
         // varias, se pregunta.
         setDosis(Object.fromEntries((v.renglones || []).filter(esPorMl).map((r) => [r.linea_num,
             r.dosis_ml != null ? Number(r.dosis_ml) : (r.opciones_ml?.length === 1 ? Number(r.opciones_ml[0]) : null)])));
+        setMezcla(false);
+        setEnMezcla(new Set(conSaldo.map((r) => r.linea_num)));
+        setVecesMezcla(1);
         setAplicarAhora(1);
         setANombreDe(esGenerico(v.cliente) ? '' : v.cliente);
     };
@@ -161,24 +175,40 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
     const origen = modo === 'TRAIDA' ? 'TRAIDA' : 'COMPRADA';
     const precio = precios ? (origen === 'TRAIDA' ? precios.TRAIDA : precios.COMPRADA) : null;
     const renglonDe = useCallback((linea) => (venta?.renglones || []).find((r) => r.linea_num === Number(linea)), [venta]);
-    const items = useMemo(() => Object.entries(cuantas)
-        .filter(([, n]) => n > 0)
-        .map(([linea, n]) => {
+    // Mezcladas: los elegidos, todos con la misma cantidad y la marca `mezcla`.
+    const topeMezcla = useMemo(() => {
+        const sal = [...enMezcla].map((l) => saldoDelRenglon(renglonDe(l) || {}, dosis[l]));
+        return sal.length && sal.every(Boolean) ? Math.min(...sal.map((x) => x.disponibles)) : 0;
+    }, [enMezcla, renglonDe, dosis]);
+    // Lo elegido no puede pasar del saldo: al cambiar la dosis o quién entra, el tope baja.
+    const veces = Math.min(vecesMezcla, topeMezcla);
+    const items = useMemo(() => {
+        const conDosis = (linea, n, extra) => {
             const r = renglonDe(linea);
             return {
-                invoice_id: ventaId, linea_num: Number(linea), cantidad: n,
+                invoice_id: ventaId, linea_num: Number(linea), cantidad: n, ...extra,
                 ...(esPorMl(r) ? { dosis_ml: dosis[linea] ?? null } : {}),
             };
-        }), [cuantas, ventaId, dosis, renglonDe]);
+        };
+        if (mezcla) {
+            return veces > 0 && enMezcla.size >= 2
+                ? [...enMezcla].sort((a, b) => a - b).map((l) => conDosis(l, veces, { mezcla: true })) : [];
+        }
+        return Object.entries(cuantas).filter(([, n]) => n > 0).map(([linea, n]) => conDosis(linea, n));
+    }, [mezcla, enMezcla, veces, cuantas, ventaId, dosis, renglonDe]);
     const faltaDosis = items.some((i) => 'dosis_ml' in i && i.dosis_ml == null);
-    const total = origen === 'COMPRADA' ? items.reduce((s, i) => s + i.cantidad, 0) : cantidad;
+    // Mezcladas: una aplicación por vez, no una por producto.
+    const total = origen === 'COMPRADA'
+        ? (mezcla ? (items.length ? veces : 0) : items.reduce((s, i) => s + i.cantidad, 0))
+        : cantidad;
     const monto = precio != null ? Math.round(precio * total * 100) / 100 : null;
 
     // Lo que queda pagado sin aplicar necesita a nombre de quién: sin eso no hay
     // a quién dárselo cuando vuelva (pedido del usuario: «que haya un control»).
     const quedan = total - Math.min(aplicarAhora, total);
     const valido = precio != null && total > 0 && !!sala && (
-        origen === 'COMPRADA' ? !!venta && items.length > 0 && !faltaDosis : producto.trim().length > 2
+        origen === 'COMPRADA' ? !!venta && items.length > 0 && !faltaDosis 
+            : producto.trim().length > 2
     ) && (quedan === 0 || aNombreDe.trim().length >= 3);
 
     const cuerpoDeCobrar = useRef(null);
@@ -329,6 +359,11 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                 <h4 className="text-caption font-black uppercase tracking-widest text-content-2">
                                     Cuántas se pagan
                                 </h4>
+                                {(venta.renglones || []).filter((r) => r.disponibles > 0).length >= 2 && (
+                                    <Checkbox checked={mezcla} onChange={(v) => setMezcla(v)}
+                                        label="Se mezclan en la misma jeringa"
+                                        description="Cuenta y se cobra como una sola aplicación; cada producto descuenta lo suyo." />
+                                )}
                                 {(venta.renglones || []).filter((r) => r.disponibles > 0).map((r) => {
                                     const saldo = saldoDelRenglon(r, dosis[r.linea_num]);
                                     const porMl = esPorMl(r);
@@ -347,9 +382,19 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                                             </>}
                                                     </p>
                                                 </div>
-                                                <Contador etiqueta={r.descripcion} valor={cuantas[r.linea_num] || 0}
-                                                    max={saldo ? saldo.disponibles : 0}
-                                                    onChange={(n) => setCuantas((c) => ({ ...c, [r.linea_num]: n }))} />
+                                                {mezcla ? (
+                                                    <Checkbox size="sm" checked={enMezcla.has(r.linea_num)}
+                                                        aria-label={`${r.descripcion} entra en la mezcla`}
+                                                        onChange={(v) => setEnMezcla((x) => {
+                                                            const n = new Set(x);
+                                                            if (v) n.add(r.linea_num); else n.delete(r.linea_num);
+                                                            return n;
+                                                        })} />
+                                                ) : (
+                                                    <Contador etiqueta={r.descripcion} valor={cuantas[r.linea_num] || 0}
+                                                        max={saldo ? saldo.disponibles : 0}
+                                                        onChange={(n) => setCuantas((c) => ({ ...c, [r.linea_num]: n }))} />
+                                                )}
                                             </div>
                                             {/* La dosis se pregunta una vez por venta: un cobro
                                                 anterior la deja fijada y ya no se ofrece cambiarla. */}
@@ -378,6 +423,19 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                         </div>
                                     );
                                 })}
+                                {mezcla && (
+                                    <div className="flex items-center justify-between gap-3 pt-2 border-t border-border-card">
+                                        <div>
+                                            <p className="text-body-sm text-content">Aplicaciones mezcladas</p>
+                                            <p className="text-caption text-content-3">
+                                                {enMezcla.size < 2 ? 'Elige al menos dos para mezclar.'
+                                                    : `Cada una lleva ${[...enMezcla].map((l) => renglonDe(l)?.descripcion).filter(Boolean).join(' + ')}`}
+                                            </p>
+                                        </div>
+                                        <Contador etiqueta="aplicaciones mezcladas" valor={veces} min={1}
+                                            max={topeMezcla} onChange={setVecesMezcla} />
+                                    </div>
+                                )}
                                 {faltaDosis && (
                                     <p className="text-caption text-warning">Falta elegir cuánto se pone.</p>
                                 )}
@@ -455,6 +513,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                                 <p className="text-caption text-content-2">
                                                     {p.producto}
                                                     {p.dosis_ml != null && <b className="text-content"> · {fmtMl(p.dosis_ml)} ml por aplicación</b>}
+                                                    {p.mezclada && <b className="text-content"> · mezcladas en una jeringa</b>}
                                                 </p>
                                                 <p className="text-caption text-content-3">
                                                     {p.correlativo ? `Factura ${factura(p.correlativo)} · ` : 'Traída · '}

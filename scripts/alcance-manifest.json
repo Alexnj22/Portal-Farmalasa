@@ -214,9 +214,7 @@
       "guarda": "cron"
     },
     "operar-caja": {
-      "guarda": "deuda",
-      "plan": "F4",
-      "motivo": "`corregir` crea una solicitud sobre un movimiento de otra sala; `aplicar_correccion` compara contra lo que manda el navegador, no contra el alcance."
+      "guarda": "alcance"
     },
     "ordenar-documentos-de-personal": {
       "guarda": "cron"
@@ -330,9 +328,7 @@
       "guarda": "cron"
     },
     "sync-wfm-sales": {
-      "guarda": "deuda",
-      "plan": "F4",
-      "motivo": "Cualquier sesión dispara la lectura de ventas por hora de cualquier sala en el origen; sin módulo."
+      "guarda": "alcance"
     },
     "trasladar-pedido-erp": {
       "guarda": "alcance"
@@ -363,9 +359,8 @@
       "guarda": "alcance"
     },
     "audit_log_de_producto": {
-      "guarda": "deuda",
-      "plan": "F4",
-      "motivo": "Decisión del usuario (2026-10-02): Jefe/a de Compras ve MIN·MAX sólo de Bodega, no sala por sala; las otras salas sólo al desplegar un producto y dentro del pedido. Hoy estas funciones le dejan elegir cualquier sala: llevan el chequeo de sala."
+      "guarda": "cruza-por-diseno",
+      "motivo": "Historial MIN·MAX de un producto, exige minmax o auditview. Decisión del usuario (2026-10-02): Jefe/a de Compras ve otras salas «al desplegar el producto», no sala por sala."
     },
     "audit_log_de_sucursal": {
       "guarda": "modulo-de-red",
@@ -402,9 +397,8 @@
       "guarda": "alcance"
     },
     "contexto_de_solicitud_minmax": {
-      "guarda": "deuda",
-      "plan": "F4",
-      "motivo": "Ventas por mes de un producto en cualquier sala, sin chequeo."
+      "guarda": "cruza-por-diseno",
+      "motivo": "Detalle de una solicitud de cambio de MIN·MAX: la sala propia, o MIN·MAX, o la bandeja de solicitudes. Decisión del usuario (2026-10-02): Jefe/a de Compras ve otras salas «al desplegar el producto», no sala por sala. Hasta el 2026-10-02 no pedía nada."
     },
     "crear_codigo_de_vinculacion": {
       "guarda": "modulo-de-red",
@@ -431,9 +425,8 @@
       "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
     },
     "destinatarios_de_modulo": {
-      "guarda": "deuda",
-      "plan": "F4",
-      "motivo": "No la llama el portal: revocar a authenticated."
+      "guarda": "solo-servidor",
+      "motivo": "Revocada a authenticated el 2026-10-02: la llaman sólo funciones DEFINER, crons o edge functions con la llave del servidor."
     },
     "discard_stock_drafts": {
       "guarda": "alcance"
@@ -529,17 +522,13 @@
       "guarda": "alcance"
     },
     "get_draft_cost_estimate": {
-      "guarda": "deuda",
-      "plan": "F4",
-      "motivo": "Costo del inventario de una sala sin `auth_ve_costos()`."
+      "guarda": "alcance"
     },
     "get_facturas_sala": {
       "guarda": "alcance"
     },
     "get_inventory_cost_summary": {
-      "guarda": "deuda",
-      "plan": "F4",
-      "motivo": "Decisión del usuario (2026-10-02): Jefe/a de Compras ve MIN·MAX sólo de Bodega, no sala por sala; las otras salas sólo al desplegar un producto y dentro del pedido. Hoy estas funciones le dejan elegir cualquier sala: llevan el chequeo de sala."
+      "guarda": "alcance"
     },
     "get_inyecciones_aplicadas": {
       "guarda": "alcance"
@@ -578,14 +567,12 @@
       "guarda": "alcance"
     },
     "get_minmax_contexto_producto": {
-      "guarda": "deuda",
-      "plan": "F4",
-      "motivo": "Ventas y existencia de un producto en cualquier sala, sin chequeo."
+      "guarda": "cruza-por-diseno",
+      "motivo": "Detalle de un producto en una sala. La sala propia (solicitudes de MIN·MAX desde sala), o MIN·MAX, o la bandeja de solicitudes. Decisión del usuario (2026-10-02): Jefe/a de Compras ve otras salas «al desplegar el producto», no sala por sala. Hasta el 2026-10-02 no pedía nada."
     },
     "get_minmax_solicitudes_de_producto": {
-      "guarda": "deuda",
-      "plan": "F4",
-      "motivo": "Decisión del usuario (2026-10-02): Jefe/a de Compras ve MIN·MAX sólo de Bodega, no sala por sala; las otras salas sólo al desplegar un producto y dentro del pedido. Hoy estas funciones le dejan elegir cualquier sala: llevan el chequeo de sala."
+      "guarda": "cruza-por-diseno",
+      "motivo": "Solicitudes de un producto, exige minmax. Decisión del usuario (2026-10-02): Jefe/a de Compras ve otras salas «al desplegar el producto», no sala por sala."
     },
     "get_pending_mh_invoices": {
       "guarda": "modulo-de-red",
@@ -616,9 +603,8 @@
       "guarda": "alcance"
     },
     "get_stagnant_inventory": {
-      "guarda": "deuda",
-      "plan": "F4",
-      "motivo": "Decisión del usuario (2026-10-02): Jefe/a de Compras ve MIN·MAX sólo de Bodega, no sala por sala; las otras salas sólo al desplegar un producto y dentro del pedido. Hoy estas funciones le dejan elegir cualquier sala: llevan el chequeo de sala."
+      "guarda": "solo-servidor",
+      "motivo": "No la llama nadie (ni el portal ni su envoltura _jsonb); revocada el 2026-10-02."
     },
     "get_ventas_fuera_del_libro": {
       "guarda": "alcance"
@@ -650,9 +636,8 @@
       "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
     },
     "productos_parados_de_sala": {
-      "guarda": "deuda",
-      "plan": "F4",
-      "motivo": "Decisión del usuario (2026-10-02): Jefe/a de Compras ve MIN·MAX sólo de Bodega, no sala por sala; las otras salas sólo al desplegar un producto y dentro del pedido. Hoy estas funciones le dejan elegir cualquier sala: llevan el chequeo de sala."
+      "guarda": "cruza-por-diseno",
+      "motivo": "Pestaña Parados de INVENTARIO. Exige gestion_stock o minmax, que hoy sólo tienen cargos de red y Jefe/a de Compras — que tiene `inventario` en red, o sea que ver los parados de cualquier sala es suyo por Inventario, no por MIN·MAX."
     },
     "publish_stock_params": {
       "guarda": "alcance"
@@ -671,9 +656,8 @@
       "guarda": "alcance"
     },
     "registrar_bitacora": {
-      "guarda": "deuda",
-      "plan": "F4",
-      "motivo": "Bitácora con sala/dispositivo que pone quien llama."
+      "guarda": "cruza-por-diseno",
+      "motivo": "La bitácora de todo el portal: la sala que anota es DÓNDE ocurrió la acción (administración aprobando algo de Salud 3 se anota en Salud 3), no la de quien la hace. Quién firma lo resuelve el servidor con auth_employee_id(); sólo si la cuenta no tiene ficha usa el nombre que manda el navegador."
     },
     "registrar_caja_de_impresion": {
       "guarda": "modulo-de-red",
@@ -687,9 +671,8 @@
       "motivo": "Devuelve conteos de un traslado."
     },
     "resumen_ventas_diario": {
-      "guarda": "deuda",
-      "plan": "F4",
-      "motivo": "Sólo la usa una edge con service_role: revocar a authenticated."
+      "guarda": "solo-servidor",
+      "motivo": "Revocada a authenticated el 2026-10-02: la llaman sólo funciones DEFINER, crons o edge functions con la llave del servidor."
     },
     "retiro_pendientes_en_sala": {
       "guarda": "cruza-por-diseno",
@@ -716,14 +699,12 @@
       "motivo": "Ids de salas que cubre un turno."
     },
     "save_pedido_snapshot": {
-      "guarda": "deuda",
-      "plan": "F4",
-      "motivo": "No la llama el portal: revocar a authenticated."
+      "guarda": "solo-servidor",
+      "motivo": "Revocada a authenticated el 2026-10-02: la llaman sólo funciones DEFINER, crons o edge functions con la llave del servidor."
     },
     "sincronizar_bitacora_dispensaciones": {
-      "guarda": "deuda",
-      "plan": "F4",
-      "motivo": "Es del cron y escribe dispensaciones de cualquier sala: revocar a authenticated."
+      "guarda": "solo-servidor",
+      "motivo": "Revocada a authenticated el 2026-10-02: la llaman sólo funciones DEFINER, crons o edge functions con la llave del servidor."
     },
     "sucursal_en_conteo": {
       "guarda": "sin-sala",
@@ -740,9 +721,8 @@
       "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
     },
     "verificar_hojas_pedido": {
-      "guarda": "deuda",
-      "plan": "F4",
-      "motivo": "No la llama el portal: revocar a authenticated."
+      "guarda": "solo-servidor",
+      "motivo": "Revocada a authenticated el 2026-10-02: la llaman sólo funciones DEFINER, crons o edge functions con la llave del servidor."
     }
   },
   "buckets_abiertos": {

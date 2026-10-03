@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1160.2 — Apareció en un envío ingresa el producto al inventario
+
+- **«Apareció» en un envío marcado «no llegó» ahora recibe el producto en la sala.** Antes sólo cerraba el faltante: la caja quedaba en el estante y fuera del inventario de las dos salas, sin poder venderse (bolsa E00212, Salud 5 → Salud 3). Si la recepción falla, el faltante sigue abierto.
+- **Los faltantes que ya se cerraron así muestran «Ingresar a inventario»**, en la web y en la app, y no se esconden a los 30 días mientras sigan en tránsito.
+- Servidor: `cerrar_faltante` contesta `RECIBIR_EN_CAJA` en vez de cerrar; `enviar-producto-erp` suma la acción `recibir_aparecido`, que comparte con «aceptar» la misma recepción (`recibirIda`). Las solicitudes no cambian: ahí el producto ya entró al recibir.
+
+## v2.1160.1 — Pedidos: sólo Bodega crea y despacha; la sala recibe lo suyo
+
+- **Pedidos: sólo Bodega crea, confirma el envío y despacha.** Los cargos de sala ya no veían la pestaña Generar, pero la base aceptaba la petición igual. Ahora la rechaza.
+- **La sala recibe sólo lo suyo:** confirmar la llegada, recibir y reportar diferencias quedan limitados a la propia sucursal; preparar, pausar, finalizar y corregir son de Bodega.
+- Medido antes de cerrarlo: en los últimos 90 días nadie usó esos pasos fuera de lo que ahora se permite, así que nadie pierde nada de lo que hace.
+- Cuando el freno rechaza algo, la pantalla dice «Tu permiso es solo para tu sucursal: esto le corresponde a Bodega o a otra sucursal» en vez del mensaje genérico.
+
 ## v2.1160.0 — App: Efectivo completo
 
 - **App: Efectivo completo.** El menú «Efectivo» abre la pantalla nativa, y desde ahí las tres secciones que faltaban en el teléfono: **Cortes**, **Diferencias** y **Movimientos**.

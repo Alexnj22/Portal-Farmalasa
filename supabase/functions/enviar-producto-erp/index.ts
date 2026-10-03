@@ -122,6 +122,73 @@ function lotesDeIda(l: Linea): { numero: string; vence?: string; paquetes: numbe
     .filter((x) => x.paquetes > 0);
 }
 
+/**
+ * Recibir en la sala de destino UN movimiento de ida.
+ *
+ * Lo usan dos caminos: «aceptar» al contestar la caja, y «apareció» cuando lo
+ * que se declaró como no llegado estaba después de todo en la sala. Es el mismo
+ * acto contra el sistema —leer las líneas del movimiento y darlas por
+ * recibidas—, y escrito dos veces una copia leería la pantalla distinto en
+ * cuanto la otra se toque.
+ *
+ * `ya` = el sistema ya lo tenía recibido (alguien lo hizo a mano); no se
+ * vuelve a cargar. Un fallo de la respuesta no prueba que no entró: se le
+ * pregunta al listado, que es quien sabe. Sin eso, un reintento cargaría el
+ * producto dos veces.
+ */
+async function recibirIda(
+  cookie: string,
+  estadoDe: (id: string) => Promise<string>,
+  idIda: string,
+  nombre: string,
+  concepto: string,
+  destino: number,
+): Promise<{ ok: true; ya: boolean } | { ok: false; anulado?: boolean; error: string }> {
+  const antes = await estadoDe(idIda);
+  if (antes === "anulado")
+    return { ok: false, anulado: true, error: `${nombre}: el movimiento ${idIda} está anulado, así que el producto no entró a tu sala.` };
+  if (antes === "recibido") return { ok: true, ya: true };
+
+  const pagina = await pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(idIda)}`,
+    undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
+  const filas = [...pagina.matchAll(/<tr[^>]*>[\s\S]*?<\/tr>/g)]
+    .map((m) => m[0]).filter((tr) => /class="id_p"/.test(tr));
+  if (filas.length === 0) return { ok: false, error: `El movimiento ${idIda} de ${nombre} no muestra líneas para recibir.` };
+
+  const partes: string[] = [];
+  let total = 0;
+  for (const tr of filas) {
+    const idProd = tr.match(/class="id_p">\s*([\d]+)/)?.[1] ?? "";
+    const idPres = tr.match(/<select[^>]*class=['"]sel['"][^>]*>\s*<option[^>]*value=['"](\d+)['"]/)?.[1] ?? "";
+    const compra = tr.match(/class=['"][^'"]*precio_compra[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+    const venta  = tr.match(/class=['"][^'"]*precio_venta[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+    const unidad = tr.match(/class=['"]unidad['"][^>]*value=['"](\d+)/)?.[1] ?? "1";
+    const esp    = tr.match(/class=['"][^'"]*\besp\b[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+    const vence  = tr.match(/class=['"][^'"]*\bvence\b[^'"]*['"][^>]*value=['"]([^'"]*)['"]/)?.[1] ?? "";
+    if (!idProd || !idPres) continue;
+    // ⚠️ El octavo campo acá NO es el lote: es lo ESPERADO. Mismo lugar
+    // del string que en la salida, otro significado.
+    partes.push([idProd, compra, venta, esp, unidad, vence, idPres, esp].join("|"));
+    total += Number(compra) * Number(esp);
+  }
+  if (partes.length === 0) return { ok: false, error: `No se pudo leer ni una línea del movimiento ${idIda}.` };
+
+  const resp = leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
+    process: "insert",
+    datos: partes.join("#") + "#",
+    cuantos: String(partes.length),
+    total: total.toFixed(4),
+    fecha: hoySV(),
+    concepto,
+    destino: String(destino),
+    id_traslado: idIda,
+  }), { extra: { Referer: RECIBIR } }));
+
+  if (!resp.ok && await estadoDeRecepcion(cookie, idIda) !== "recibido")
+    return { ok: false, error: `El sistema no aceptó la entrada de ${nombre}: ${resp.msg || "sin detalle"}` };
+  return { ok: true, ya: false };
+}
+
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -140,10 +207,11 @@ Deno.serve(async (req) => {
       accion = "despachar",
       decisiones = null,
       nota = "",
+      faltante_id = null,
     } = await req.json().catch(() => ({}));
 
     if (!request_id) return json({ ok: false, error: "Falta el envío." }, 400);
-    if (!["despachar", "decidir", "recibir_devolucion"].includes(String(accion)))
+    if (!["despachar", "decidir", "recibir_devolucion", "recibir_aparecido"].includes(String(accion)))
       return json({ ok: false, error: `Acción desconocida: ${accion}` }, 400);
 
     const admin = createClient(
@@ -178,8 +246,10 @@ Deno.serve(async (req) => {
      * `can_approve` —resolver sobre lo que llegó—. Son dos permisos porque son
      * dos actos distintos, y la base los separa igual (`puede_enviar_producto`
      * contra `puede_confirmar_traslado`). Recibir la devolución es del lado de
-     * quien envió, así que vuelve a ser `can_edit`. */
-    const accionPermiso = accion === "decidir" ? "can_approve" : "can_edit";
+     * quien envió, así que vuelve a ser `can_edit`. Ingresar lo que apareció
+     * es recibir en la sala de destino, o sea el mismo acto que decidir. */
+    const deDestino = accion === "decidir" || accion === "recibir_aparecido";
+    const accionPermiso = deDestino ? "can_approve" : "can_edit";
     const permiso = porCron
       // El cron ya está autorizado por su secreto, y la persona que firma es la
       // que armó el envío: su permiso se cobró cuando lo creó.
@@ -189,7 +259,7 @@ Deno.serve(async (req) => {
     if (!permiso.puede)
       return json({
         ok: false,
-        error: accion === "decidir"
+        error: deDestino
           ? "No tienes permiso para decidir sobre los envíos de tu sala."
           : "No tienes permiso para enviar producto a otra sala.",
       }, 403);
@@ -868,71 +938,22 @@ Deno.serve(async (req) => {
         // Aceptar y devolver empiezan igual: el producto tiene que estar en el
         // inventario de esta sala. Devolver algo que no entró no se puede — no
         // se trasladan existencias que el sistema no tiene.
-        let entro = false;
-        const antes = await estadoDe(idIda);
-        if (antes === "anulado") {
-          await anotar(
-            admin.from("envio_linea").update({
-              estado: "error",
-              error: `El movimiento ${idIda} está anulado en el sistema: el producto no entró a tu sala.`,
-              updated_at: new Date().toISOString(),
-            }).eq("id", l.id),
-            `el traslado anulado de ${nombre}`,
-          );
-          fallar(`${nombre}: el movimiento ${idIda} está anulado, así que el producto no entró a tu sala.`);
+        const conceptoRec = armarConcepto(`${clave} REC ${yo}`).concepto;
+        const entrada = await recibirIda(cookie, estadoDe, idIda, nombre, conceptoRec, ubicDestino);
+        if (!entrada.ok) {
+          if (entrada.anulado) {
+            await anotar(
+              admin.from("envio_linea").update({
+                estado: "error",
+                error: `El movimiento ${idIda} está anulado en el sistema: el producto no entró a tu sala.`,
+                updated_at: new Date().toISOString(),
+              }).eq("id", l.id),
+              `el traslado anulado de ${nombre}`,
+            );
+          }
+          fallar(entrada.error);
           continue;
         }
-        if (antes === "recibido") {
-          entro = true;   // alguien lo recibió por el sistema; no se vuelve a cargar
-        } else {
-          const pagina = await pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(idIda)}`,
-            undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
-          const filas = [...pagina.matchAll(/<tr[^>]*>[\s\S]*?<\/tr>/g)]
-            .map((m) => m[0]).filter((tr) => /class="id_p"/.test(tr));
-          if (filas.length === 0) { fallar(`El movimiento ${idIda} de ${nombre} no muestra líneas para recibir.`); continue; }
-
-          const partes: string[] = [];
-          let total = 0;
-          for (const tr of filas) {
-            const idProd = tr.match(/class="id_p">\s*([\d]+)/)?.[1] ?? "";
-            const idPres = tr.match(/<select[^>]*class=['"]sel['"][^>]*>\s*<option[^>]*value=['"](\d+)['"]/)?.[1] ?? "";
-            const compra = tr.match(/class=['"][^'"]*precio_compra[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
-            const venta  = tr.match(/class=['"][^'"]*precio_venta[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
-            const unidad = tr.match(/class=['"]unidad['"][^>]*value=['"](\d+)/)?.[1] ?? "1";
-            const esp    = tr.match(/class=['"][^'"]*\besp\b[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
-            const vence  = tr.match(/class=['"][^'"]*\bvence\b[^'"]*['"][^>]*value=['"]([^'"]*)['"]/)?.[1] ?? "";
-            if (!idProd || !idPres) continue;
-            // ⚠️ El octavo campo acá NO es el lote: es lo ESPERADO. Mismo lugar
-            // del string que en la salida, otro significado.
-            partes.push([idProd, compra, venta, esp, unidad, vence, idPres, esp].join("|"));
-            total += Number(compra) * Number(esp);
-          }
-          if (partes.length === 0) { fallar(`No se pudo leer ni una línea del movimiento ${idIda}.`); continue; }
-
-          const { concepto } = armarConcepto(`${clave} REC ${yo}`);
-          const resp = leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
-            process: "insert",
-            datos: partes.join("#") + "#",
-            cuantos: String(partes.length),
-            total: total.toFixed(4),
-            fecha: hoySV(),
-            concepto,
-            destino: String(ubicDestino),
-            id_traslado: idIda,
-          }), { extra: { Referer: RECIBIR } }));
-
-          if (!resp.ok) {
-            // Un fallo no prueba que no entró: se le pregunta al listado, que es
-            // quien sabe. Sin esto, un reintento cargaría el producto dos veces.
-            if (await estadoDeRecepcion(cookie, idIda) !== "recibido") {
-              fallar(`El sistema no aceptó la entrada de ${nombre}: ${resp.msg || "sin detalle"}`);
-              continue;
-            }
-          }
-          entro = true;
-        }
-
-        if (!entro) { fallar(`${nombre} no llegó a entrar a tu sala.`); continue; }
 
         if (aceptar) {
           await anotar(
@@ -1144,6 +1165,124 @@ Deno.serve(async (req) => {
           }
           : {}),
       });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // RECIBIR LO QUE APARECIÓ · en la sala que había dicho «no llegó»
+    // ══════════════════════════════════════════════════════════════════════
+    // «No llegó» deja el movimiento de ida despachado y sin recibir, y eso es
+    // la verdad mientras la caja no esté. Cuando aparece, cerrar el faltante
+    // como «apareció» SIN recibir el movimiento era el hueco: el producto quedaba
+    // en el estante y fuera del inventario de las dos salas — salió de una y
+    // nunca entró a la otra. Pasó con la bolsa E00212 (Salud 5 → Salud 3, 4
+    // productos): se cerró como aparecida el 2-oct y siguió en tránsito.
+    //
+    // Por eso «apareció» en un envío ES aceptar: se recibe el movimiento primero
+    // y recién después se cierra el faltante. Si el sistema no lo recibe, el
+    // faltante sigue abierto — nunca al revés. Y vale también para un faltante
+    // que ya se cerró como aparecido antes de este arreglo: es la forma de
+    // ponerlo al día.
+    if (accion === "recibir_aparecido") {
+      if (!faltante_id) return json({ ok: false, error: "Falta el faltante." }, 400);
+      if (!ubicDestino)
+        return json({ ok: false, error: `No se conoce la ubicación de tu sala (${erpDestino}).` }, 422);
+      if (!(await puedeObrarPor(branchDestino)))
+        return json({ ok: false, error: "Lo ingresa la sala a la que iba el producto." }, 403);
+
+      const { dato: bf, roto: bfRoto } = await leerBien<{
+        id: string; request_id: string; posicion: number; familia: string; estado: string;
+      }>(
+        admin.from("bolsa_faltante").select("id, request_id, posicion, familia, estado")
+          .eq("id", faltante_id).maybeSingle(),
+        "el faltante",
+      );
+      if (bfRoto) return json({ ok: false, error: bfRoto }, 503);
+      if (!bf || bf.request_id !== sol.id || bf.familia !== "envio")
+        return json({ ok: false, error: "Ese faltante no es de este envío." }, 404);
+      if (bf.estado === "no_aparecio")
+        return json({ ok: false, codigo: "YA_CERRADO", error: "Ese faltante se cerró como no aparecido." }, 409);
+
+      const l = lineas.find((x) => x.posicion === bf.posicion);
+      if (!l) return json({ ok: false, error: `No hay un producto en la posición ${bf.posicion}.` }, 422);
+      const nombre = l.descripcion ?? String(l.erp_product_id);
+
+      const cerrarElFaltante = () => anotar(
+        admin.from("bolsa_faltante").update({
+          estado: "aparecio",
+          resuelto_por: actor.id,
+          resuelto_at: new Date().toISOString(),
+        }).eq("id", bf.id).eq("estado", "abierto"),
+        `el cierre del faltante de ${nombre}`,
+      );
+
+      // Ya ingresado —otra persona, o un reintento—: sólo falta el cierre.
+      if (l.estado === "aceptada") {
+        await cerrarElFaltante();
+        return json({ ok: true, ya: true, producto: nombre });
+      }
+      if (l.estado !== "no_llego")
+        return json({ ok: false, error: `${nombre} está «${l.estado}»: no hay nada que ingresar.` }, 409);
+
+      const idIda = String(l.id_traslado ?? "");
+      if (!idIda)
+        return json({
+          ok: false,
+          error: `${nombre} salió sin número de movimiento: hay que buscar «${claveDe(sol.id, l.posicion)}» `
+               + `en el sistema y recibirlo a mano.`,
+        }, 422);
+
+      // Mismo candado que decidir: dos personas apretando «apareció» a la vez
+      // recibirían el mismo movimiento dos veces.
+      const { data: tomado, error: candadoErr } = await admin
+        .rpc("tomar_paso_envio", { p_request_id: sol.id, p_actor: actor.id, p_paso: "decidiendo" });
+      if (candadoErr) {
+        console.error("[enviar-producto-erp] candado aparecido:", candadoErr.message);
+        return json({ ok: false, error: "No se pudo tomar el envío para ingresarlo." }, 503);
+      }
+      if (tomado !== true)
+        return json({
+          ok: false, codigo: "YA_EN_CURSO",
+          error: "Alguien más de tu sala está contestando este envío en este momento.",
+        }, 409);
+
+      try {
+        const cookie = await sesionEn(erpDestino);
+        const entrada = await recibirIda(
+          cookie, lectorDeRecepcion(cookie), idIda, nombre,
+          armarConcepto(`${claveDe(sol.id, l.posicion)} REC ${yo}`).concepto,
+          ubicDestino,
+        );
+        if (!entrada.ok) return json({ ok: false, error: entrada.error }, 502);
+
+        // Desde acá el producto YA está en el inventario de la sala: un fallo
+        // al anotar se dice como lo que es, no como si no hubiera entrado.
+        const fallos: string[] = [];
+        await anotar(
+          admin.from("envio_linea").update({
+            estado: "aceptada",
+            recibido_at: new Date().toISOString(),
+            motivo_rechazo: null,
+            aviso: "Se había declarado que no llegó; apareció y se ingresó después.",
+            decidido_por: actor.id, decidido_at: new Date().toISOString(),
+            error: null,
+            updated_at: new Date().toISOString(),
+          }).eq("id", l.id).eq("estado", "no_llego"),
+          `el ingreso de ${nombre}`,
+          (m) => fallos.push(m),
+        );
+        await cerrarElFaltante();
+        return json({
+          ok: fallos.length === 0, ya: entrada.ya, producto: nombre, id_traslado: idIda,
+          ...(fallos.length
+            ? { error: `${nombre} entró a tu sala, pero no se pudo anotar en el portal: ${fallos.join("; ")}` }
+            : {}),
+        });
+      } finally {
+        await anotar(
+          admin.rpc("soltar_paso_envio", { p_request_id: sol.id, p_paso: "decidiendo" }),
+          "la salida del envío del ingreso",
+        );
+      }
     }
 
     // ══════════════════════════════════════════════════════════════════════

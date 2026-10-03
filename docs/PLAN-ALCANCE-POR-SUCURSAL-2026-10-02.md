@@ -98,6 +98,22 @@ del cron de mañana (14:00 y 15:00 UTC). Deuda de edge functions: 10 → 6.
 
 ### F2 — pedidos y traslados
 
+✅ **Cerrada el 2026-10-02** (migración `20261003042423`, `trasladar-pedido-erp`).
+Crear, confirmar el envío y despachar exigen Pedidos con alcance de red;
+preparar, pausar, finalizar y corregir también. Llegada, recepción y
+diferencias, sólo la propia sala. **Medido antes de cerrarlo:** en 90 días los
+pasos de Bodega los hicieron sólo cargos de red, los de sala siempre en su
+propia sala, y los 263 despachos registrados, cargos de red: no le quita nada a
+nadie. **Probado en producción** haciéndose pasar por un Dependiente y por un
+Auxiliar de Bodega, con pedidos inexistentes y dentro de transacciones que se
+deshacen: el Dependiente no puede iniciar, crear ni recibir lo de otra sala, y sí
+pasa el freno en la suya; Bodega crea. `BRANCH_SCOPE_DENIED` ahora tiene
+traducción en pantalla.
+
+`retiro_pendientes_en_sala` **no se cerró, a propósito**: la usa el recorrido de
+entrega, que existe para ver lo pendiente de cada sala que se visita. Quedó
+declarada `cruza-por-diseno` con su motivo.
+
 Los pedidos guardan la sucursal **del origen** (`erp_sucursal_id`), no
 `branches.id`. El ayudante que ya existe es `auth_employee_erp_sucursal_id()`,
 junto con `auth_can_edit_scope_all(ARRAY['pedidos'])` (así lo hacen

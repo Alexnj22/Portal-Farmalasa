@@ -24,6 +24,8 @@
  *   modulo-de-red   sólo la ejecuta quien tiene un módulo que HOY sólo tienen
  *                   cargos de toda la red (verificado contra `role_permissions`)
  *   sin-sala        no lee ni escribe nada de una sucursal (con motivo)
+ *   cruza-por-diseno  ve otras sucursales A PROPÓSITO, y el motivo dice por qué
+ *                   (el recorrido de entrega existe para moverse entre salas)
  *   cron            la llama un proceso automático con secreto (verificado)
  *   publica         abierta a propósito (con motivo)
  *   solo-servidor   (rpc) no debe poder ejecutarla `authenticated` (verificado)
@@ -66,9 +68,9 @@ const RUTA_BASELINE = join(RAIZ, 'scripts/alcance-baseline.json');
 const MANIFIESTO = JSON.parse(readFileSync(RUTA_MANIFIESTO, 'utf8'));
 const BASELINE = JSON.parse(readFileSync(RUTA_BASELINE, 'utf8'));
 
-const GUARDAS_EDGE = ['alcance', 'modulo-de-red', 'sin-sala', 'cron', 'publica', 'deuda'];
-const GUARDAS_RPC = ['alcance', 'modulo-de-red', 'sin-sala', 'solo-servidor', 'deuda'];
-const CON_MOTIVO = ['sin-sala', 'publica', 'deuda', 'modulo-de-red'];
+const GUARDAS_EDGE = ['alcance', 'modulo-de-red', 'sin-sala', 'cruza-por-diseno', 'cron', 'publica', 'deuda'];
+const GUARDAS_RPC = ['alcance', 'modulo-de-red', 'sin-sala', 'cruza-por-diseno', 'solo-servidor', 'deuda'];
+const CON_MOTIVO = ['sin-sala', 'publica', 'deuda', 'modulo-de-red', 'cruza-por-diseno'];
 
 /* Cómo se reconoce que el código compara la sala. Ayudantes del proyecto, no
  * nombres de variables cualesquiera: una regla que acepte «branch» aceptaría

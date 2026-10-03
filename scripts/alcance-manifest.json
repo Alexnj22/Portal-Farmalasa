@@ -335,9 +335,7 @@
       "motivo": "Cualquier sesión dispara la lectura de ventas por hora de cualquier sala en el origen; sin módulo."
     },
     "trasladar-pedido-erp": {
-      "guarda": "deuda",
-      "plan": "F2",
-      "motivo": "`enviar` despacha desde Bodega a cualquier sala sin exigir ser de Bodega; `alcanceTodo` sólo se usa en `recibir`."
+      "guarda": "alcance"
     },
     "verificar-csv-libros": {
       "guarda": "cron"
@@ -399,14 +397,10 @@
       "guarda": "alcance"
     },
     "confirm_pedido": {
-      "guarda": "deuda",
-      "plan": "F2",
-      "motivo": "Crea un pedido para cualquier sala; falta decidir si un cargo de sala puede pedir para otra. Decisión del usuario (2026-10-02): sólo Bodega crea y despacha pedidos; exigir alcance de red en `pedidos`."
+      "guarda": "alcance"
     },
     "confirmar_envio_pedido": {
-      "guarda": "deuda",
-      "plan": "F2",
-      "motivo": "Fija lo enviado o cierra renglones de cualquier sala; es de Bodega y lo puede un cargo de sala. Decisión del usuario (2026-10-02): sólo Bodega crea y despacha pedidos; exigir alcance de red en `pedidos`."
+      "guarda": "alcance"
     },
     "contexto_de_solicitud_minmax": {
       "guarda": "deuda",
@@ -658,9 +652,7 @@
       "guarda": "alcance"
     },
     "receive_pedido_sucursal": {
-      "guarda": "deuda",
-      "plan": "F2",
-      "motivo": "Marca recibido/diferencias en el pedido de cualquier sala; sólo exige pedidos.can_edit, que tienen 34 personas de sala. Decisión (2026-10-02): la sala sólo recibe lo suyo."
+      "guarda": "alcance"
     },
     "reclamar_factura_compra": {
       "guarda": "alcance"
@@ -687,9 +679,8 @@
       "motivo": "Sólo la usa una edge con service_role: revocar a authenticated."
     },
     "retiro_pendientes_en_sala": {
-      "guarda": "deuda",
-      "plan": "F2",
-      "motivo": "Lee traslados pendientes de retirar de cualquier sala; `traslados` es de una sala para cargos de sala."
+      "guarda": "cruza-por-diseno",
+      "motivo": "La usa el recorrido de entrega (RetiroModal): quien maneja ve lo que espera salir de cada sala que visita, y la sala la define el último código escaneado. Acotarla a la sala propia rompería el recorrido. Devuelve códigos y productos de traslados, sin datos personales ni dinero. Exige `traslados.can_view`."
     },
     "sala_abierta_ahora": {
       "guarda": "sin-sala",
@@ -726,9 +717,7 @@
       "motivo": "Booleano: si la sala está en conteo."
     },
     "update_pedido_sucursal_lifecycle": {
-      "guarda": "deuda",
-      "plan": "F2",
-      "motivo": "Cambia el estado del pedido de cualquier sala; sólo exige el módulo. Decisión (2026-10-02): la sala sólo recibe lo suyo."
+      "guarda": "alcance"
     },
     "upsert_meta_manual": {
       "guarda": "modulo-de-red",

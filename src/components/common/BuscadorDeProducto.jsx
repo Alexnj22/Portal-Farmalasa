@@ -2,6 +2,7 @@ import React, { useState, useEffect, Fragment } from 'react';
 import { Package } from 'lucide-react';
 import SearchInput from './SearchInput';
 import ListRow from './ListRow';
+import Badge from './Badge';
 import { SkeletonText } from './StateViews';
 import { buscarProductosMinMax } from '@nucleo/data/minmaxRequests';
 import AvisoParecidos from './AvisoParecidos';
@@ -56,9 +57,15 @@ import AvisoParecidos from './AvisoParecidos';
 //
 //                     Por eso el defecto es el que funciona en cualquier envase,
 //                     y la ranura es lo que se pide a propósito.
+// @param yaElegidos   `Map<id, rótulo>` opcional. Esos productos SIGUEN saliendo
+//                     en los resultados —esconderlos haría creer que el catálogo
+//                     no los tiene— pero marcados con su rótulo y sin poder
+//                     elegirse. Pedido del usuario en Inyecciones → Ajustes
+//                     (2026-10-03): «que ya se vean marcados los que ya están;
+//                     siempre que salgan pero que no permita seleccionar».
 export default function BuscadorDeProducto({
     onElegir, placeholder, invitacion, accentColor = 'var(--brand)',
-    EnvoltorioBusqueda = Fragment,
+    EnvoltorioBusqueda = Fragment, yaElegidos = null,
 }) {
     const [search,  setSearch]  = useState('');
     const [results, setResults] = useState([]);
@@ -110,10 +117,14 @@ export default function BuscadorDeProducto({
 
                 {!loading && sonParecidos && results.length > 0 && <AvisoParecidos texto={search} />}
 
-                {!loading && results.map(p => (
+                {!loading && results.map(p => {
+                    const yaEsta = yaElegidos?.get(p.id) ?? yaElegidos?.get(String(p.id)) ?? null;
+                    return (
                     <ListRow
                         key={p.id}
-                        onClick={() => onElegir(p)}
+                        onClick={yaEsta ? undefined : () => onElegir(p)}
+                        disabled={!!yaEsta}
+                        trailing={yaEsta ? <Badge variant="neutral" size="sm">{yaEsta}</Badge> : undefined}
                         leading={p.foto_url
                             ? <img src={p.foto_url} alt="" className="w-full h-full object-contain" />
                             : <Package size={14} className="text-content-3" strokeWidth={2} />}
@@ -124,7 +135,8 @@ export default function BuscadorDeProducto({
                         {p.principio_activo && <span className="block text-micro text-success-text font-semibold truncate">{p.principio_activo}</span>}
                         {p.laboratorio_nombre && <span className="block text-micro text-content-3 truncate">{p.laboratorio_nombre}</span>}
                     </ListRow>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );

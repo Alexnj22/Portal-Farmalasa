@@ -178,6 +178,13 @@ function CatalogoDeDosis({ showToast }) {
 
     const sinConfirmar = activas.filter(sinDecidir).length;
 
+    // Los que ya están en la lista salen igual al buscar, marcados y sin poder
+    // elegirse (pedido del usuario, 2026-10-03). Un quitado se vuelve a incluir
+    // desde «Quitados a mano», no desde acá.
+    const yaEnLaLista = useMemo(() => new Map((filas || []).map((f) => [
+        f.erp_product_id, f.clasificacion === 'quitado' ? 'Quitado' : 'Ya está',
+    ])), [filas]);
+
     return (
         <div className="space-y-2">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -208,6 +215,7 @@ function CatalogoDeDosis({ showToast }) {
                         Para un inyectable que no aparece porque su nombre no lo dice. Queda marcado a mano.
                     </p>
                     <BuscadorDeProducto
+                        yaElegidos={yaEnLaLista}
                         placeholder="Buscar en el catálogo…"
                         invitacion={{ icono: Search, texto: 'Escribe el nombre del producto que es inyección' }}
                         onElegir={(p) => { setAgregando(false); clasificar(p.id, true, p.nombre, 'agregar'); }} />

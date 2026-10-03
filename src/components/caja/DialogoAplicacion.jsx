@@ -272,7 +272,10 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
 
     return (
         <LiquidModal open onClose={enviando ? undefined : onClose} maxWidth="max-w-lg" ariaLabel="Aplicación de inyección">
-            <div className="p-5 space-y-4">
+            {/* Encabezado y pie FIJOS, cuerpo con scroll (2026-10-03): con una
+                venta de varias aplicaciones el cuerpo crecía y el botón de cobrar
+                quedaba fuera de la pantalla (reporte del usuario). */}
+            <LiquidModal.Header className="space-y-3">
                 <div>
                     <h3 className="text-h3 font-bold text-content">Aplicación de inyección</h3>
                     <p className="text-body-sm text-content-2 mt-1">
@@ -282,13 +285,25 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                             : 'Cada aplicación pagada queda a nombre del cliente hasta que se aplica.'}
                     </p>
                 </div>
-                {errorPrecios && <Notice variant="danger">{errorPrecios}</Notice>}
-
                 <SegmentedControl options={MODOS} value={modo} label="Cómo se paga" layout="block" columns={3}
                     onChange={setModo} />
+            </LiquidModal.Header>
+            <LiquidModal.Body className="space-y-4">
+                {errorPrecios && <Notice variant="danger">{errorPrecios}</Notice>}
 
                 {modo === 'COMPRADA' && (
                     <div className="space-y-3">
+                        {/* Con la venta elegida, la lista se recoge a esa sola venta: las
+                            demás ya no sirven y empujaban «Cuántas se pagan» fuera de la
+                            vista. «Cambiar venta» la vuelve a abrir. */}
+                        {venta ? (
+                            <div className="flex items-center justify-between gap-2">
+                                <p className="text-caption font-black uppercase tracking-widest text-content-2">Venta elegida</p>
+                                <Button variant="ghost" size="sm" onClick={() => { setVentaId(null); setCuantas({}); setMezcla(false); }}>
+                                    Cambiar venta
+                                </Button>
+                            </div>
+                        ) : (<>
                         <SearchInput value={texto} onChange={setTexto} placeholder="Cliente, factura o inyección" />
                         <div className="flex items-center justify-between gap-2">
                             <p className="text-caption font-black uppercase tracking-widest text-content-2">
@@ -302,6 +317,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                 Actualizar
                             </Button>
                         </div>
+                        </>)}
                         {errorVentas && <Notice variant="danger">{errorVentas}</Notice>}
                         {ventas == null ? <LoadingState /> : ventas.length === 0 ? (
                             <p className="text-body-sm text-content-3">
@@ -311,14 +327,14 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                 {' '}Si la venta se acaba de hacer, espera un minuto y toca «Actualizar».
                             </p>
                         ) : (
-                            <ul className="space-y-2 max-h-[45vh] overflow-y-auto">
-                                {ventas.map((v) => {
+                            <ul className="space-y-2">
+                                {(venta ? [venta] : ventas).map((v) => {
                                     const activa = v.id === ventaId;
                                     const agotada = Number(v.disponibles) <= 0;
                                     return (
                                         <li key={v.id}>
                                             <button type="button" disabled={agotada} aria-pressed={activa}
-                                                onClick={() => elegirVenta(v)}
+                                                onClick={() => { if (!activa) elegirVenta(v); }}
                                                 data-surface="card"
                                                 className={`w-full text-left rounded-xl p-3 min-h-[var(--tap-min)] active:scale-[0.97]
                                                     ${activa ? 'ring-2 ring-accent' : 'ring-1 ring-border-card'}
@@ -529,11 +545,11 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                     </div>
                 )}
 
-                <div className="flex justify-end gap-2">
-                    <Button variant="ghost" onClick={onClose} disabled={enviando}>Cancelar</Button>
-                    {pie}
-                </div>
-            </div>
+            </LiquidModal.Body>
+            <LiquidModal.Footer>
+                <Button variant="ghost" onClick={onClose} disabled={enviando}>Cancelar</Button>
+                {pie}
+            </LiquidModal.Footer>
         </LiquidModal>
     );
 }

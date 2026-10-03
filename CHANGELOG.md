@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1168.2 — Inyecciones: el cobro deja el botón a la vista y el buscador marca lo que ya está
+
+Dos reportes del usuario:
+
+- **Cobro de aplicación**: al elegir una venta seguía toda la lista abajo, y en
+  una venta de 6 el botón de cobrar quedaba fuera de la pantalla. Ahora, al
+  elegirla, la lista se recoge a esa sola venta («Cambiar venta» la vuelve a
+  abrir), y el diálogo usa el encabezado y el pie fijos del modal canónico:
+  sólo el medio hace scroll y «Cobrar» queda siempre a la vista. Medido en
+  1280×720 y en un teléfono de 390×844.
+- **Ajustes → Agregar un producto**: los que ya están en la lista salen igual
+  al buscar, marcados «Ya está» (o «Quitado») y sin poder elegirse.
+  `BuscadorDeProducto` acepta `yaElegidos` para eso; las otras tres pantallas
+  que lo usan no cambian.
+
+---
+
 ## v2.1168.1 — Tipos de la base con las inyecciones mezcladas
 
 `src/types/database.ts` regenerado tras `inyecciones_mezcladas` (columna `mezcla_de`).

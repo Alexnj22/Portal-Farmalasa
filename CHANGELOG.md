@@ -21,6 +21,62 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1178.1 — Puntos: el motor deja de reevaluar cada minuto las ventas que ya tienen sus puntos
+
+`gate:perf` (sección F) marcó `puntos_acumular`: ~31,700 bloques por llamada en
+4,594 llamadas (corre cada minuto). `ventas_elegibles_puntos` evaluaba todas las
+ventas de 3 días contra el historial de precios y recién después
+`puntos_acumular` descartaba las que ya tenían lote. Ahora se descartan primero.
+Medido en producción: 43,908 → 8,995 bloques con rollback; en las corridas
+reales ~10,400 bloques y 42 ms. Mismas ventas y mismos puntos (prueba con 3
+lotes borrados dentro de una transacción revertida: 3 / 63 en las dos
+versiones), y verificado después de aplicar: la venta 75527 de las 10:46 recibió
+sus 97 puntos en la corrida de las 10:47. Migración `puntos_elegibles_sin_lote`
+(20261005164113). Aprobado por el usuario.
+
+---
+
+## v2.1178.0 — App: Corte Z
+
+- **App: Corte Z nativo.** El Gran Z de cada sucursal mes por mes: lo que va a la declaración (factura y crédito fiscal), el cotejo contra el libro —siempre, cuadre o no—, las comprobaciones y, si difiere, qué documento lo explica y qué hacer con él. El original se puede abrir tal cual salió. Las cifras siguen detrás del permiso de ver montos; el PDF se descarga en el portal.
+- **Núcleo:** el umbral del cuadre, las causas de una diferencia, las filas de la declaración, los documentos que difieren y los totales pasan de `CorteZView` a `src/utils/corteZ.js`, con su prueba.
+## v2.1177.0 — Corte: la diferencia del tramo en Mi caja y en el papel
+
+- **El corte dice la diferencia de ESE corte, no la del día entero.** Al hacer un corte en Mi caja y en el comprobante impreso, la cifra grande era la diferencia acumulada del día, y en Cortes la del tramo — el mismo corte con dos números. La Popular, 27-sep: el de las 7:07 PM salió **+$0.55** al hacerlo y **−$0.05** en Cortes, porque el de la 1:04 PM ya había firmado +$0.60. Ahora las tres pantallas y el papel dicen **−$0.05**, y debajo «En el día: +$0.55» cuando son distintas. La base es el último corte confirmado del día; los descartados no cuentan.
+
+## v2.1176.0 — App: Puntos
+
+- **App: Puntos nativo.** Tres pestañas, cada una con su permiso como en el portal. **Resumen**: si la acumulación funciona (y avisa si lleva más de una hora quieta con las salas abiertas), lo que hay en las cuentas, los canjes del mes, el mes contra el anterior, hoy por sala y lo próximo que vence. **Consulta**: buscar un cliente por nombre, DUI o teléfono y ver su saldo; al tocarlo, su cuenta entera — el saldo en dólares, si ya puede canjear, lo que vence y cada movimiento con quién lo hizo. **Avisos**: lo que hay que revisar, con acceso a la cuenta del cliente. Ajustar puntos, el código de acceso, asignar cuentas anteriores y los traspasos siguen en el portal.
+- **Núcleo:** los rótulos de movimientos y avisos, el detalle de cada movimiento, la clave con que se busca su documento y su autor, la conversión a dólares y el aviso de acumulación quieta pasan de `PuntosView` y `ClientePuntosModal` a `src/utils/puntosTexto.js`, con su prueba.
+## v2.1175.1 — Inyecciones: el catálogo de Ajustes deja de leer 1.2 GB por apertura
+
+`gate:perf` (sección F) marcó `inyeccion_catalogo_dosis` con 1,191 MB por
+llamada en 181 llamadas. La causa era una sola línea: `min(id)` sobre las ventas
+de 90 días hacía que el planificador recorriera la llave primaria desde la venta
+más vieja y descartara 320,763 ventas. Con `min(id + 0)` entra por el índice de
+fecha: ~160,000 → 7,000 bloques, hasta 3.6 s → 129 ms, mismos 146 productos.
+Migración `inyecciones_catalogo_por_fecha` (20261005163058).
+
+En la misma revisión quedaron declarados en los manifiestos del gate dos
+hallazgos que no son defectos: `discard_stock_drafts` (escribe ~1,300 filas con
+seis índices; acción a mano y poco frecuente) y `encuesta_cliente_con_texto`
+(0.19 ms, entra por índice; el plan no depende de los argumentos).
+
+---
+
+## v2.1175.0 — App: Bolsas (administración)
+
+- **App: Bolsas — el circuito de administración nativo.** Recibir la valija (todas o las elegidas; la base sigue sin dejar que reciba quien entregó), contar bolsa por bolsa con «Cuadra» de un toque o el monto contado, con el resumen de lo anotado contra lo esperado antes de confirmar, y confirmar la tanda entera. Lo anotado queda guardado en el servidor aunque se cierre la app. La pestaña de diferencias muestra lo que no cuadró; resolverlas, depositar al banco y el historial siguen en el portal (dentro de la app). Con alcance de sala, la pantalla manda a las bolsas de la sala.
+- **Núcleo:** cuánto se contó de una bolsa y su diferencia contra el saldo pasan de `CircuitoDeBolsas` a `bolsasReparto`, con su prueba.
+
+## v2.1174.0 — App: Gestión de stock
+
+- **App: Gestión de stock nativa.** Las dos preguntas sobre la existencia de una sala, eligiendo la sala desde el menú de filtros. **Sin venta**: lo que lleva seis meses parado, agrupado por adónde mandarlo, con desde cuándo y por qué, dónde sí se vende y si tiene Min/Max; armar el envío abre el portal dentro de la app. **Sin Min/Max**: lo que se vende y el pedido no repone solo, con qué hacer con cada uno; tocar uno muestra sus seis meses y deja **pedir el Min/Max** (o aplicarlo, si el cargo aprueba) con la sugerencia ya escrita, o descartar la sugerencia.
+- **Núcleo:** agrupar los productos sin venta por destino, los totales, la sugerencia de Min/Max, sus filtros y conteos, la validación y el motivo de la solicitud pasan de las dos pestañas a `src/utils/gestionDeStock.js`, con su prueba.
+
+## v2.1173.0 — Ventas perdidas: la sala puede reportar
+
+- **La sala ya puede reportar ventas perdidas.** Crear un reporte exigía el permiso de edición del módulo, que sólo tienen cargos de toda la red: dependientes, regentes y jefes de sala no podían, y desde la búsqueda del tablero el reporte se perdía sin aviso (en toda la historia había 5, todos de la supervisión). Ahora cualquiera reporta **a su propio nombre y como pendiente**; atenderlo sigue exigiendo el permiso de edición. Probado en producción como una dependienta, en una transacción revertida: a su nombre entra, a nombre de otro o ya procesado se rechaza.
 ## v2.1172.2 — Inyecciones: la venta ya cobrada sigue en la lista, deshabilitada
 
 Reporte de Salud 1 (4 de octubre): «no salió en el listado la de 1 MESIGYNA».

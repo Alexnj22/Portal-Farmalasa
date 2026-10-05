@@ -116,6 +116,23 @@ export function saldoDeBolsa(b) {
 }
 
 /**
+ * El conteo contra el que se mide, en las DOS ventanas donde existe: la tanda
+ * ya firmada (`contado`) y la que se está contando (`conteo_marcado`). Al
+ * confirmar, `conteo_marcado` se vacía y `contado` toma su valor, así que nunca
+ * hay dos a la vez y el `??` no elige entre números que compitan.
+ * (Vivía en `CircuitoDeBolsas`; se mudó el 2026-10-05 para la app.)
+ */
+export function contadoDeBolsa(b) {
+    return b?.contado ?? b?.conteo_marcado ?? null;
+}
+
+/** Lo contado menos el saldo, al centavo; `null` si todavía no se contó. */
+export function diferenciaDeBolsa(b) {
+    const c = contadoDeBolsa(b);
+    return c == null ? null : Math.round((Number(c) - saldoDeBolsa(b)) * 100) / 100;
+}
+
+/**
  * Las que están en la sala y tienen algo, de la más vieja a la más nueva.
  *
  * El orden de preferencia del saldo importa: el mapa recién traído y después el

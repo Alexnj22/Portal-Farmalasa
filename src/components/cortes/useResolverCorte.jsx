@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchCorteParaElPapel, resolverCorte, salaConCajaAbierta, salaYaCerro } from '@nucleo/data/cortes';
+import { fetchCorteParaElPapel, fetchCortesDelDiaDeSala, resolverCorte, salaConCajaAbierta, salaYaCerro } from '@nucleo/data/cortes';
 import CerrarElDiaAhora from './CerrarElDiaAhora';
 import EntregaDeCaja from './EntregaDeCaja';
 import { cerrarElDia, fetchBolsaDeCorte } from '@nucleo/data/bolsas';
@@ -158,10 +158,17 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
              * teléfono o desde la oficina no tiene por qué ver un diálogo de
              * impresión de una computadora que no es la caja. */
             try {
-                const [{ corte: fila }, { imprimirDocumento },
-                       { construirComprobanteDeCorte }, { resultadoDeLaFila }] =
+                /* Los cortes del día van para la base del TRAMO: el papel dice
+                 * la diferencia de este corte, no la acumulada del día, igual
+                 * que la tarjeta. Si no se pudieron leer, `previo` queda en
+                 * `null` y el papel cae a la acumulada — que es la que imprime
+                 * el sistema de la caja, no un número inventado. */
+                const [{ corte: fila }, delDia, { imprimirDocumento },
+                       { construirComprobanteDeCorte },
+                       { resultadoDeLaFila, acumuladoAntesDe, conTramoDelCorte }] =
                     await Promise.all([
                         fetchCorteParaElPapel(corte.id),
+                        fetchCortesDelDiaDeSala({ branchId: corte.branch_id, fecha: corte.fecha }),
                         import('@nucleo/utils/ticketPrint'),
                         import('@nucleo/utils/corteTicket'),
                         import('@nucleo/utils/cortesDiagnostico'),
@@ -172,7 +179,9 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
                         + 'Imprímelo desde Mi caja.', 'error', 9000);
                 } else {
                     const r = await imprimirDocumento(construirComprobanteDeCorte({
-                        resultado: resultadoDeLaFila(fila),
+                        resultado: conTramoDelCorte(resultadoDeLaFila(fila),
+                            delDia.error ? null
+                                : acumuladoAntesDe(delDia.cortes, { hora: fila.hora, excluirId: fila.id })),
                         sala,
                         // Quien FIRMA el corte, que es lo que este papel prueba.
                         // No es necesariamente quien lo hizo — eso lo dice la

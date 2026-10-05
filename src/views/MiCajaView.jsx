@@ -41,7 +41,7 @@ import { fetchCortes, fetchPersonas, fetchVentasPorPago } from '@nucleo/data/cor
  * el cajón y las bolsas. Viven en `creditos` porque el cobro se decide allá;
  * acá se miran porque el dinero entra por esta caja. */
 import { cobroEnEfectivo, fetchCobrosDelPortal } from '@nucleo/data/creditos';
-import { conLaCuentaBuena, repartirPorCorte } from '@nucleo/utils/cortesDiagnostico';
+import { acumuladoAntesDe, conLaCuentaBuena, conTramoDelCorte, repartirPorCorte } from '@nucleo/utils/cortesDiagnostico';
 
 /* Sacar dinero de una bolsa se mudó acá desde Bolsas (pedido del usuario,
  * 29-ago): todo lo que mueve efectivo vive en la caja. Es el MISMO componente,
@@ -1382,7 +1382,14 @@ export default function MiCajaView({ comoPestana = false }) {
                     const bruto = await hacerCorte({ sala, efectivo });
                     setOcupado(false);
                     if (bruto.error) { showToast('No se pudo hacer el corte', mensajeAmigable(bruto.error), 'error'); return; }
-                    const r = conLaCuentaBuena(bruto);
+                    /* La diferencia que importa es la del TRAMO: lo que se
+                     * movió desde el último corte confirmado del día (usuario,
+                     * 2026-10-05). La base sale de la fila completa cuando se
+                     * puede ver el módulo de cortes, y si no de `estado.cortes`
+                     * —que no trae las piezas del tiquete y usa la diferencia
+                     * guardada, igual que `diferenciaDelCorte` sin tiquete—. */
+                    const base = cortesDelDia.length ? cortesDelDia : (estado?.cortes || []);
+                    const r = conTramoDelCorte(conLaCuentaBuena(bruto), acumuladoAntesDe(base));
                     setResultado(r);
                     cargar();
                     /* ── ACÁ NO SE IMPRIME NADA ────────────────────────────
@@ -2913,8 +2920,12 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0
     // Con resultado, la pantalla cambia de trabajo: ya no pide un número, dice
     // cómo salió. Son dos momentos y no dos diálogos porque es el mismo acto.
     if (resultado) {
-        const dif = Number(resultado.diferencia || 0);
+        /* La cifra grande es la del tramo; la acumulada del día va debajo
+         * sólo cuando dice otra cosa. Ver `conTramoDelCorte`. */
+        const acumulada = Number(resultado.diferencia || 0);
+        const dif = resultado.tramo != null ? Number(resultado.tramo) : acumulada;
         const cuadro = Math.abs(dif) < 0.005;
+        const conAcumulada = resultado.tramo != null && Math.abs(acumulada - dif) >= 0.005;
         return (
             <Marco abierto={abierto} onClose={onClose} titulo={cuadro ? 'El corte cuadró' : 'El corte tiene diferencia'}
                 pie={<>
@@ -2944,6 +2955,18 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0
                     <p className={`text-h3 font-bold tabular-nums ${cuadro ? 'text-success-text' : dif > 0 ? 'text-warning-text' : 'text-danger-text'}`}>
                         {conSigno(dif)}
                     </p>
+                    {/* Lo que el día ya traía. Sin esto, «+$0.55» en el papel de
+                        la caja y «−$0.05» acá parecerían dos cortes distintos
+                        (La Popular, 27-sep). */}
+                    {conAcumulada && (
+                        <p className="text-caption text-content-2">
+                            En el día: <b className="text-content tabular-nums">{conSigno(acumulada)}</b>
+                            {resultado.previo?.hora && (
+                                <> · el corte de las {hora12(resultado.previo.hora)} ya
+                                    había dado {conSigno(resultado.previo.valor)}</>
+                            )}
+                        </p>
+                    )}
                     {/* Por qué este número y no el que guardó el sistema de la
                         caja. Lo escribe `notaDeCifra`, que es quien decidió la
                         cifra, así que no puede contradecirla. */}

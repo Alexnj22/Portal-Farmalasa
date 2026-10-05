@@ -16,6 +16,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fetchCortesZ, fetchCorteZDias } from '@nucleo/data/corteZ';
 import { descargarCorteZPdf, direccionDe, etiquetaPeriodo } from '@nucleo/utils/corteZPrint';
 import { EMPRESA } from '@nucleo/constants/empresa';
+import { CAUSAS_CORTE_Z, CUADRA_Z, cuadraZ, documentosQueDifieren, FILAS_DECLARACION, totalesCorteZ } from '@nucleo/utils/corteZ';
 import { correrMes, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -44,9 +45,9 @@ import { correrMes, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
 // Por eso el cotejo se muestra SIEMPRE, cuadre o no.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Medio centavo: por debajo de eso es ruido de coma flotante, no una diferencia.
-const CUADRA = 0.005;
-const cuadra = (n) => Math.abs(Number(n) || 0) < CUADRA;
+// El umbral del cuadre (medio centavo): `cuadraZ` (núcleo, el mismo de la app).
+const CUADRA = CUADRA_Z;
+const cuadra = cuadraZ;
 
 // ── Una línea del cotejo ─────────────────────────────────────────────────────
 //
@@ -135,12 +136,7 @@ const SeccionTicket = ({ titulo, datos = {} }) => (
 const GRILLA_DECL = 'grid grid-cols-2 md:grid-cols-[minmax(0,1fr)_7rem_7rem] '
                   + 'gap-x-3 gap-y-0.5 items-baseline';
 
-const FILAS_DECL = [
-    ['Ventas exentas',  'exentas'],
-    ['Ventas gravadas', 'gravadas'],
-    ['Débito fiscal',   'debito'],
-    ['IVA retenido',    'retenido'],
-];
+const FILAS_DECL = FILAS_DECLARACION;
 
 const ParaDeclarar = ({ declaracion }) => {
     const cof = declaracion?.factura || {};
@@ -244,52 +240,15 @@ const Comprobaciones = ({ items }) => {
 // Qué significa cada causa que encontró el cuadre diario, y qué hacer con ella.
 // El texto es de negocio: quien lee esto está armando una declaración, no
 // depurando un sync.
-const CAUSAS = {
-    // «El sistema perdió…» se leía como si el portal fuera el que la perdió, que
-    // es justo al revés. Se dice el HECHO —la venta ya no está registrada— sin
-    // atribuirlo, que además es la regla de no nombrar de dónde viene el dato.
-    origen_perdio_fila: {
-        que: 'Venta que ya no está registrada',
-        hacer: 'Tiene sello de Hacienda y sigue siendo válida, pero su registro se perdió. Volver a traerla no la recupera: hay que reportarlo para que la restauren.',
-    },
-    anulado_sin_invalidar: {
-        que: 'Venta anulada que nunca se invalidó ante Hacienda',
-        hacer: 'Tiene sello y no está en el anexo de anulados, así que para Hacienda sigue vigente. Hay que invalidarla como corresponde, o el libro tiene que llevarla.',
-    },
-    falta_en_portal: {
-        que: 'Falta esta venta',
-        hacer: 'Se recupera volviendo a traer ese día.',
-    },
-    sin_sello: {
-        que: 'Todavía sin el sello de Hacienda',
-        hacer: 'Sin sello no entra al libro. Se resuelve solo cuando el sello llega.',
-    },
-    anulado: {
-        que: 'Documento anulado',
-        hacer: 'El libro lo excluye con razón.',
-    },
-    dte_inexistente: {
-        que: 'El documento no existe en Hacienda',
-        hacer: 'Hay que revisarlo: el libro no puede llevar una venta sin documento.',
-    },
-    monto_distinto: {
-        que: 'El monto no coincide',
-        hacer: 'Se corrige volviendo a traer ese día.',
-    },
-    sin_clasificar: {
-        que: 'Sin causa determinada',
-        hacer: 'Hay que revisarlo a mano.',
-    },
-};
+// Qué significa cada causa: `CAUSAS_CORTE_Z` (núcleo).
+const CAUSAS = CAUSAS_CORTE_Z;
 
 const PorQueDifiere = ({ fila, dias, cargandoDias, onVerDias }) => {
     const residuo = Number(fila.residuo) || 0;
     // El cuadre diario ya bajó al documento y guardó la causa. Antes esto
     // mandaba a comparar día por día A MANO contra el reporte del origen —
     // que es exactamente lo que se automatizó (2026-08-03).
-    const hallazgos = Array.isArray(fila.hallazgos) ? fila.hallazgos : [];
-    const docs = hallazgos.flatMap(h => (h.documentos ?? []).map(d => ({ ...d, fecha: h.fecha })));
-    const sinExplicar = hallazgos.reduce((s, h) => s + Math.abs(Number(h.sin_explicar) || 0), 0);
+    const { docs, sinExplicar } = documentosQueDifieren(fila);
 
     return (
         <div className="rounded-card border bg-warning/10 border-warning/30 text-warning-text p-3 space-y-2">
@@ -567,18 +526,7 @@ export default function CorteZView() {
         () => filas.map(f => ({ value: String(f.branch_id), label: f.sucursal })),
         [filas]);
 
-    const totales = useMemo(() => {
-        let total = 0, factura = 0, ccf = 0, difieren = 0;
-        // Las de ventas gravadas, igual que las tarjetas: sumar los totales del
-        // ticket dejaría el encabezado corto por la retención duplicada.
-        for (const f of filas) {
-            total   += Number(f.z_total) || 0;
-            factura += Number(f.z_factura) || 0;
-            ccf     += Number(f.z_ccf) || 0;
-            if (!cuadra(f.dif_total)) difieren++;
-        }
-        return { total, factura, ccf, difieren, sucursales: filas.length };
-    }, [filas]);
+    const totales = useMemo(() => totalesCorteZ(filas), [filas]);
 
     const verDias = useCallback(async (fila) => {
         setCargandoDias(fila.branch_id);

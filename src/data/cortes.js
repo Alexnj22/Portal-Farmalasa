@@ -108,6 +108,22 @@ export function fetchCortesResumen({ desde, hasta }) {
 }
 
 /**
+ * Los cortes de UNA sala en UN día, con las columnas justas para calcular la
+ * base del tramo (`acumuladoAntesDe`). Los pide el papel al confirmar: quien
+ * confirma desde Mi caja no trae la lista con el tramo ya calculado, y el papel
+ * tiene que decir la misma diferencia que la tarjeta. Son ~5 filas.
+ */
+export async function fetchCortesDelDiaDeSala({ branchId, fecha }) {
+    const { data, error } = await supabase.from('cortes_caja')
+        .select(CAMPOS_RESUMEN)
+        .eq('branch_id', branchId)
+        .eq('fecha', fecha)
+        .order('hora', { ascending: true });
+    if (error) console.error('cortes: fetchCortesDelDiaDeSala failed:', error.message);
+    return { cortes: data || [], error };
+}
+
+/**
  * Quién resolvió cada corte: nombre y foto, para poder mostrarlos junto a la
  * decisión. `resuelto_por` guarda el `employees.id` que puso el servidor.
  *

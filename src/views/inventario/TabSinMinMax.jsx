@@ -19,47 +19,10 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { ERP_NAMES, ERP_ORDER } from './salasDeStock';
 import { hoySV } from '@nucleo/utils/fecha';
 import { fetchVendidosSinMinMax } from '@nucleo/data/inventarioTab';
+import { conteosMinMax, FILTROS_MINMAX, motivoDeMinMax, problemaDeMinMax, sugerenciaMinMax } from '@nucleo/utils/gestionDeStock';
 
-// units_sold está en unidades comerciales (cajas/bolsas), igual que el ERP.
-// Los umbrales están calibrados para eso: 2 cajas/mes es demanda retail real.
-// Umbral mayorista: ≥10 uds/factura promedio supera lo esperable en venta retail
-// de farmacia — probablemente es un cliente que compra al por mayor.
-function sugerencia(row) {
-    const units     = Number(row.units_sold) || 0;
-    const undMes    = units / 6;
-    const revMes    = Number(row.revenue) / 6;
-    // La ventana de seis meses toca SIETE meses de calendario (del 24-mar al
-    // 24-sep son mar…sep), así que la función puede contar 7. Se tope en 6:
-    // «7 de 6 meses» salió en pantalla el 2026-09-24.
-    const months    = Math.min(6, Number(row.months_with_sales) || 0);
-    const invoices  = Number(row.invoice_count) || 1;
-    const avgPerInv = units / invoices;
-
-    if (avgPerInv >= 10) {
-        return { level: 'mayorista', label: 'Venta mayorista',
-            reason: `${avgPerInv.toFixed(1)} uds. por factura · no agregar`, months, invoices, avgPerInv };
-    }
-    if (invoices <= 3 && avgPerInv > 4) {
-        return { level: 'encargo', label: 'Posible encargo',
-            reason: `${invoices} factura${invoices !== 1 ? 's' : ''} · no agregar`, months, invoices, avgPerInv };
-    }
-    const consistent   = months >= 6;
-    const highRotation = revMes >= 15 && undMes >= 2;
-    const highVolume   = undMes >= 5;
-    const moderate     = revMes >= 5 || undMes >= 1 || months >= 4;
-    if (highRotation || highVolume || consistent) {
-        const minSug = Math.max(1, Math.round(undMes));
-        const maxSug = Math.max(2, Math.round(undMes * 2));
-        const reason = consistent && !highRotation && !highVolume ? 'Se vende todos los meses'
-            : highVolume && !highRotation ? 'Alto volumen' : 'Buena rotación';
-        return { level: 'agregar', label: `Min ${minSug} · Max ${maxSug}`, reason, minSug, maxSug, months, invoices, avgPerInv };
-    }
-    if (moderate) {
-        return { level: 'evaluar', label: 'Evaluar',
-            reason: months >= 4 ? `${months} de 6 meses con venta` : 'Rotación moderada', months, invoices, avgPerInv };
-    }
-    return { level: 'omitir', label: 'Sin acción', reason: 'Rotación insuficiente', months, invoices, avgPerInv };
-}
+// Qué hacer con cada fila: `sugerenciaMinMax` (núcleo), la misma de la app.
+const sugerencia = sugerenciaMinMax;
 
 const NIVEL = {
     agregar:   { variant: 'success', icon: PlusCircle },
@@ -69,14 +32,7 @@ const NIVEL = {
     omitir:    { variant: 'neutral', icon: Minus },
 };
 
-const FILTROS = [
-    { value: 'agregar',   label: 'Agregar Min/Max' },
-    { value: 'evaluar',   label: 'Evaluar' },
-    { value: 'encargo',   label: 'Posible encargo' },
-    { value: 'mayorista', label: 'Mayorista' },
-    { value: 'omitir',    label: 'Sin acción' },
-    { value: 'ignorado',  label: 'Descartados' },
-];
+const FILTROS = FILTROS_MINMAX;
 
 const COLUMNAS = [
     { key: 'product_name',      label: 'Producto', sortable: true },
@@ -148,14 +104,7 @@ export default function TabSinMinMax({ sala, onSala, searchTerm = '' }) {
     const elegirFiltro = (f) => { setFiltro(f); setPage(1); };
     const elegirTamano = (n) => { setPageSize(n); setPage(1); };
 
-    const conteos = useMemo(() => {
-        const c = { agregar: 0, evaluar: 0, encargo: 0, mayorista: 0, omitir: 0, ignorado: 0 };
-        for (const r of filas) {
-            if (ignorados.has(r.erp_product_id)) c.ignorado++;
-            else c[sugerencia(r).level]++;
-        }
-        return c;
-    }, [filas, ignorados]);
+    const conteos = useMemo(() => conteosMinMax(filas, ignorados), [filas, ignorados]);
 
     const filtradas = useMemo(() => {
         let rows = filtro === 'ignorado'
@@ -202,11 +151,11 @@ export default function TabSinMinMax({ sala, onSala, searchTerm = '' }) {
      * sugerencia llega escrita pero se puede cambiar antes de confirmar. */
     const confirmarAjuste = useCallback(async (row) => {
         const min = Number(editando?.min), max = Number(editando?.max);
-        if (!Number.isInteger(min) || !Number.isInteger(max) || min < 0 || max <= 0 || min > max) {
-            setAviso({ variant: 'warning', texto: 'El Min tiene que ser un número entero y no puede pasar al Max.' });
+        const problema = problemaDeMinMax(editando?.min ?? '', editando?.max ?? '');
+        if (problema) {
+            setAviso({ variant: 'warning', texto: problema });
             return;
         }
-        const s = sugerencia(row);
         setGuardando(true);
         const r = await solicitarMinMax({
             erp_product_id:    Number(row.erp_product_id),
@@ -217,8 +166,7 @@ export default function TabSinMinMax({ sala, onSala, searchTerm = '' }) {
             current_sales_6m:  Number(row.units_sold) || 0,
             requested_min:     min,
             requested_max:     max,
-            reason: `Se vende sin Min/Max (Gestión de stock): ${s.reason.toLowerCase()}, `
-                  + `${Number(row.units_sold) || 0} unidades en 6 meses en ${s.months} de 6 meses.`,
+            reason:            motivoDeMinMax(row),
             requested_by:      user?.email ?? '',
             requested_by_id:   user?.id ?? null,
             requested_by_name: user?.name ?? null,

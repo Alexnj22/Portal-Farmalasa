@@ -41,6 +41,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, fechaTexto } from '@nucleo/utils/fecha';
 import { fetchPuntosCliente, ajustarPuntos } from '@nucleo/data/puntos';
+import { claveDeMovimiento, detalleDeMovimiento, rotuloDeMovimiento } from '@nucleo/utils/puntosTexto';
 import CodigoDeAcceso from './CodigoDeAcceso';
 import VentaDelAviso from './VentaDelAviso';
 
@@ -51,20 +52,20 @@ const pts = (n) => formatQty(Number(n) || 0);
 // 100 puntos = US$1.00 (cláusula 4 del reglamento).
 const dolares = (n) => formatMoney((Number(n) || 0) / 100);
 
-// Cada tipo de movimiento con su ícono. El color va en la BURBUJA del ícono;
+// Cada tipo de movimiento con su ícono (el rótulo: `ROTULO_MOVIMIENTO`, núcleo). El color va en la BURBUJA del ícono;
 // el texto y el número quedan en tinta normal (DESIGN: el texto no lleva el
 // color de la serie).
 const TIPO = {
-    compra:      { icono: ShoppingBag, rotulo: 'Compra',      burbuja: 'bg-success/10 text-success-text' },
-    cumpleanos:  { icono: Cake,        rotulo: 'Cumpleaños',  burbuja: 'bg-brand/10 text-brand-text' },
-    ajuste:      { icono: Wrench,      rotulo: 'Ajuste',      burbuja: 'bg-surface-card-hover text-content-3' },
-    canje:       { icono: Gift,        rotulo: 'Canje',       burbuja: 'bg-warning/10 text-warning-text' },
+    compra:      { icono: ShoppingBag, burbuja: 'bg-success/10 text-success-text' },
+    cumpleanos:  { icono: Cake,        burbuja: 'bg-brand/10 text-brand-text' },
+    ajuste:      { icono: Wrench,      burbuja: 'bg-surface-card-hover text-content-3' },
+    canje:       { icono: Gift,        burbuja: 'bg-warning/10 text-warning-text' },
     // La factura del canje se anuló y los puntos volvieron (2026-09-28).
-    canje_devuelto: { icono: Undo2,    rotulo: 'Canje devuelto', burbuja: 'bg-success/10 text-success-text' },
-    anulacion:   { icono: Undo2,       rotulo: 'Compra anulada', burbuja: 'bg-danger/10 text-danger-text' },
-    vencimiento: { icono: CalendarX,   rotulo: 'Vencimiento', burbuja: 'bg-surface-card-hover text-content-3' },
+    canje_devuelto: { icono: Undo2,    burbuja: 'bg-success/10 text-success-text' },
+    anulacion:   { icono: Undo2,       burbuja: 'bg-danger/10 text-danger-text' },
+    vencimiento: { icono: CalendarX,   burbuja: 'bg-surface-card-hover text-content-3' },
     // La compra se pasó a otro cliente con una solicitud aprobada (2026-10-01).
-    cambio_cliente: { icono: ArrowLeftRight, rotulo: 'Compra pasada a otro cliente', burbuja: 'bg-danger/10 text-danger-text' },
+    cambio_cliente: { icono: ArrowLeftRight, burbuja: 'bg-danger/10 text-danger-text' },
 };
 const FILTROS = [
     { value: 'todos',  label: 'Todos' },
@@ -167,7 +168,7 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
     // El documento y quién, por movimiento (`puntos_panel_cliente.detalle`).
     // Un canje devuelto comparte los datos de su canje.
     const detalle = useMemo(() => datos?.detalle ?? {}, [datos]);
-    const infoDe = useCallback((m) => detalle[`${m.tipo === 'canje_devuelto' ? 'canje' : m.tipo}-${m.id}`] ?? {},
+    const infoDe = useCallback((m) => detalle[claveDeMovimiento(m)] ?? {},
         [detalle]);
 
     const filtrados = useMemo(() => {
@@ -582,13 +583,7 @@ function Movimiento({ m, sala, info = {} }) {
     // El rótulo ya dice «Compra» o «Canje»: del motivo se quita esa palabra
     // para no leer «Compra · compra». Y si ya se sabe el documento, se muestra
     // ése en vez del «ticket …» del sistema anterior.
-    let detalle = String(m.motivo ?? '')
-        .replace(/^(compra anulada|canje aplicado en el sistema de ventas|la factura del canje se anuló|compra|canje|cortesía cumpleaños)(\s·\s)?/i, '')
-        .trim();
-    if (info.documento) {
-        detalle = detalle.replace(/^(ticket\s+)?[0-9A-Za-z_-]+(\s·\s)?/, (x) => (x.includes(info.documento) || /ticket|DTE-|^\d/.test(x) ? '' : x)).trim();
-        detalle = [info.documento, detalle].filter(Boolean).join(' · ');
-    }
+    const detalle = detalleDeMovimiento(m, info);   // núcleo (`puntosTexto`)
     // Regla del portal: quien hizo algo sale con FOTO y nombre + apellido
     // (`AvatarConEstado` + `shortEmployeeName`). Va en su propia línea: en el
     // teléfono, pegado a la fecha y la sala, se cortaba en «Vendió Monic…».
@@ -601,7 +596,7 @@ function Movimiento({ m, sala, info = {} }) {
             </span>
             <div className="min-w-0 flex-1">
                 <p className="text-body-sm font-bold text-content truncate">
-                    {m.tipo === 'ajuste' && p > 0 ? 'Puntos dados' : m.tipo === 'ajuste' ? 'Puntos quitados' : t.rotulo}
+                    {rotuloDeMovimiento(m)}
                     {detalle ? <span className="font-normal text-content-3"> · {detalle}</span> : null}
                 </p>
                 <p className="text-caption text-content-3 tabular-nums truncate">

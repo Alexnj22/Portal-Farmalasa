@@ -32,7 +32,7 @@ import { useRefrescoEnVivo } from '@nucleo/hooks/useRefrescoEnVivo';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { rangoDeDias } from './etapas';
 import { useToastStore } from '@nucleo/store/toastStore';
-import { saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
+import { diferenciaDeBolsa, saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 import { diasEntre, fechaTexto, hoySV } from '@nucleo/utils/fecha';
@@ -260,8 +260,7 @@ const suma = (lista) => lista.reduce((a, b) => a + saldoDe(b), 0);
  * ya firmada (`contado`) y la que se está contando (`conteo_marcado`). Al
  * confirmar, `conteo_marcado` se vacía y `contado` toma su valor, así que nunca
  * hay dos a la vez y el `??` no elige entre números que compitan. */
-const contadoDe = (b) => (b.contado ?? b.conteo_marcado ?? null);
-const diferenciaDe = (b) => (contadoDe(b) == null ? null : Math.round((Number(contadoDe(b)) - saldoDe(b)) * 100) / 100);
+const diferenciaDe = diferenciaDeBolsa;   // núcleo (`bolsasReparto`), la misma de la app
 
 /**
  * Una bolsa, con lo que hay que saber de ella en cualquier etapa.

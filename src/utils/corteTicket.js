@@ -76,7 +76,13 @@ import { juntarSiEntra, recortar, selloCorto, soloAscii } from './ticketCampos';
  */
 export function construirComprobanteDeCorte({ resultado, sala, hechoPor, hechoAt }) {
     const t = resultado?.tiquete || {};
-    const dif = Number(resultado?.diferencia ?? 0);
+    /* La cifra grande es la del TRAMO —lo que se movió desde el último corte
+     * confirmado del día—, no la acumulada (usuario, 2026-10-05: «el
+     * importante es la diferencia del turno»). La acumulada va debajo sólo
+     * cuando dice otra cosa: el primer corte del día tiene las dos iguales. */
+    const acumulada = Number(resultado?.diferencia ?? 0);
+    const dif = resultado?.tramo != null ? Number(resultado.tramo) : acumulada;
+    const conAcumulada = resultado?.tramo != null && Math.abs(acumulada - dif) >= 0.005;
 
     /* Cuatro datos y no seis: se emparejan de a dos por renglon, asi que un
      * numero impar deja medio renglon vacio. La caja y el turno van juntos
@@ -185,6 +191,7 @@ export function construirComprobanteDeCorte({ resultado, sala, hechoPor, hechoAt
         totales: [
             ['Contado', formatMoney(resultado?.contado)],
             ['Diferencia', conSigno(dif), true],
+            ...(conAcumulada ? [['Acumulada del dia', conSigno(acumulada)]] : []),
         ],
         /* Sin renglon de firma, por lo mismo que el vale de bolsa: quien hizo el
          * corte no lo escribio nadie en el papel, lo puso el portal despues de

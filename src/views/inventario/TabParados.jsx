@@ -20,6 +20,7 @@ import { nombreDeDespacho, paraBodega, esPocoParaMandar } from '@nucleo/utils/un
 import { ERP_NAMES, ERP_ORDER, ERP_BODEGA, MI_ERP_POR_BRANCH, SUC_VARIANTE } from './salasDeStock';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { fetchProductosParadosDeSala } from '@nucleo/data/inventarioTab';
+import { gruposPorDestino, totalesDeParados } from '@nucleo/utils/gestionDeStock';
 
 const EnviarProductoModal = lazy(() => import('../dashboard/EnviarProductoModal'));
 
@@ -148,31 +149,9 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
 
     /* Un grupo por destino: las salas primero, de la que más productos recibe a
      * la que menos, y Bodega al final — es el destino de «ninguna lo quiere». */
-    const grupos = useMemo(() => {
-        const m = new Map();
-        for (const r of visibles) {
-            const d = Number(r.destino);
-            if (!m.has(d)) m.set(d, []);
-            m.get(d).push(r);
-        }
-        return [...m.entries()]
-            .map(([destino, rows]) => ({
-                destino,
-                filas: rows,   // ya vienen de la base por costo, de mayor a menor
-                costo: rows.reduce((s, r) => s + Number(r.costo || 0), 0),
-                unidades: rows.reduce((s, r) => s + Number(r.existencia || 0), 0),
-            }))
-            .sort((a, b) => (a.destino === ERP_BODEGA) - (b.destino === ERP_BODEGA) || b.filas.length - a.filas.length);
-    }, [visibles]);
+    const grupos = useMemo(() => gruposPorDestino(visibles, ERP_BODEGA), [visibles]);
 
-    const totales = useMemo(() => ({
-        productos: visibles.length,
-        unidades: visibles.reduce((s, r) => s + Number(r.existencia || 0), 0),
-        costo: visibles.reduce((s, r) => s + Number(r.costo || 0), 0),
-        conMinmax: filas.filter(r => r.en_minmax).length,
-        aSala: filas.filter(r => Number(r.destino) !== ERP_BODEGA).length,
-        aBodega: filas.filter(r => Number(r.destino) === ERP_BODEGA).length,
-    }), [visibles, filas]);
+    const totales = useMemo(() => totalesDeParados(visibles, filas, ERP_BODEGA), [visibles, filas]);
     const veCostos = filas.some(r => r.costo != null);
 
     const miErp = MI_ERP_POR_BRANCH[user?.branchId ?? user?.branch_id] ?? null;

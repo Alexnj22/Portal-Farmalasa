@@ -68,6 +68,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 const GraficaDiaria = lazy(() => import('./puntos/GraficasPuntos').then((m) => ({ default: m.GraficaDiaria })));
 const GraficaVencimientos = lazy(() => import('./puntos/GraficasPuntos').then((m) => ({ default: m.GraficaVencimientos })));
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { avisoDePuntos, motorQuieto } from '@nucleo/utils/puntosTexto';
 import { clickable } from '@nucleo/utils/clickable';
 
 // Cada pestaña con su permiso. La lista que se le pasa a la URL es la de las
@@ -84,42 +85,12 @@ const PESTANAS = [
 const dolares = (puntos) => formatMoney((Number(puntos) || 0) / 100);
 const pts = (n) => formatQty(Number(n) || 0);
 
-// Qué dice cada aviso. Los de movimientos fuera de lo normal traen su `nota`
-// escrita en la base (cuántas ventas, cuántos vendedores…) y quién lo hizo.
-const ptsDe = (a) => pts(a.puntos);
-const AVISOS = {
-    canje_sin_saldo:             { rotulo: 'Canje sin saldo suficiente', variante: 'danger', puntos: (a) => `Faltaron ${pts(a.faltaron)}` },
-    canje_devuelto:              { rotulo: 'Canje devuelto: la factura se anuló', variante: 'info', puntos: (a) => `${ptsDe(a)} devueltos` },
-    canje_venta_en_cero:         { rotulo: 'Canje dejó la venta en $0.00', variante: 'danger', puntos: (a) => `${ptsDe(a)} canjeados` },
-    anulada_con_puntos_gastados: { rotulo: 'Anulada con puntos ya canjeados', variante: 'warning', puntos: (a) => `${ptsDe(a)} no recuperados` },
-    muchas_ventas:               { rotulo: 'Muchas ventas a una ficha', variante: 'danger', puntos: (a) => `${ptsDe(a)} acumulados` },
-    acumulacion_alta:            { rotulo: 'Acumulación alta en un día', variante: 'warning', puntos: (a) => `${ptsDe(a)} acumulados` },
-    varias_salas:                { rotulo: 'Compras en 3 salas o más', variante: 'warning', puntos: (a) => `${ptsDe(a)} acumulados` },
-    mismo_vendedor:              { rotulo: 'Mismo vendedor, varias veces', variante: 'warning', puntos: (a) => `${ptsDe(a)} acumulados` },
-    venta_a_si_mismo:            { rotulo: 'Venta a su propia ficha', variante: 'danger', puntos: (a) => `${ptsDe(a)} acumulados` },
-    ajuste_suma:                 { rotulo: 'Puntos dados a mano', variante: 'warning', puntos: (a) => `+${ptsDe(a)}` },
-    ajuste_resta:                { rotulo: 'Puntos quitados a mano', variante: 'warning', puntos: (a) => `−${pts(Math.abs(a.puntos))}` },
-    canje_grande:                { rotulo: 'Canje grande', variante: 'warning', puntos: (a) => `${ptsDe(a)} canjeados` },
-    canje_recien_ganado:         { rotulo: 'Canje con puntos recién ganados', variante: 'warning', puntos: (a) => `${ptsDe(a)} canjeados` },
-    cambio_cliente:              { rotulo: 'Compra pasada de otro cliente', variante: 'danger', puntos: (a) => `${ptsDe(a)} recibidos` },
-    cambio_cliente_fallido:      { rotulo: 'Puntos de un cambio de cliente sin mover', variante: 'danger', puntos: (a) => `${ptsDe(a)} sin mover` },
-};
-// Un tipo que la pantalla todavía no conoce se muestra igual, no desaparece.
-const avisoDe = (a) => AVISOS[a.tipo] ?? { rotulo: 'Movimiento para revisar', variante: 'warning', puntos: ptsDe };
+// Qué dice cada aviso: `avisoDePuntos` (núcleo, el mismo de la app). La
+// severidad es la variante de `Badge`.
+const avisoDe = (a) => { const x = avisoDePuntos(a); return { ...x, variante: x.severidad }; };
 const fechaCorta = (iso) => fechaTexto(iso, { day: 'numeric', month: 'short', year: 'numeric' }, '—');
 
-// ¿La acumulación está parada? Sólo se pregunta de 8:00 a 22:00 SV: las salas
-// abren a las 7 y la primera hora puede no traer ninguna venta con puntos; de
-// noche el silencio es lo normal.
-function motorQuieto(ultima, encendido) {
-    if (!encendido || !ultima) return null;
-    // No se muestra: decide si hay salas abiertas. El Salvador es UTC−6 todo
-    // el año (sin horario de verano), así que no hace falta formatear nada.
-    const horaSV = (new Date().getUTCHours() + 18) % 24;
-    if (horaSV < 8 || horaSV >= 22) return null;
-    const minutos = Math.round((Date.now() - new Date(ultima).getTime()) / 60_000);
-    return minutos > 60 ? minutos : null;
-}
+// ¿La acumulación está parada? `motorQuieto` (núcleo).
 
 const MOTIVO_OPCIONES = [
     { value: 'TODOS', label: 'Todos' },

@@ -393,3 +393,16 @@ function esVertical(a) {
 
 /** ¿Ya tiene el OK de quien revisa? (aprobada, o después). */
 export const tieneOk = (p) => ['aprobado', 'programado', 'publicado'].includes(p?.estado);
+
+// ── La galería de las salas ─────────────────────────────────────────────────
+// Lo que Marketing liberó y ya está aprobado. Quien sólo tiene la galería no
+// ve otra cosa (lo recorta el RLS), pero quien también tiene Marketing lo
+// vería todo: por eso el recorte se repite donde se pinta.
+const ESTADOS_DE_GALERIA = ['aprobado', 'programado', 'publicado'];
+export const esDeGaleria = (p) => !!p?.liberada && ESTADOS_DE_GALERIA.includes(p.estado);
+
+/** El texto que se publica con la pieza: el copy y los hashtags. */
+export const textoParaPublicar = (p) => [p?.copy, p?.hashtags].filter(Boolean).join('\n\n');
+
+/** Los archivos vigentes de una pieza (sin los reemplazados ni los enlaces sin archivo). */
+export const mediosDe = (p) => (p?.archivos || []).filter((a) => a.url && !a.reemplazado);

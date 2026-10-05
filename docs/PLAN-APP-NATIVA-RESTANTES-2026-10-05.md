@@ -53,7 +53,7 @@ se trabaja de corrido; cada fila se marca al publicarse.
 | 28 | `/encuestas-clientes` | resultados | ✅ |
 | 29 | `/encuestas-aplicar` | aplicar una encuesta a un cliente | ✅ |
 | 30 | `/marketing` | piezas y calendario | ✅ |
-| 31 | `/galeria` | la galería | |
+| 31 | `/galeria` | la galería | ✅ |
 | 32 | `/solicitudes-datos` | solicitudes de datos personales | |
 | 33 | `/actualizacion-de-datos` | estado de la actualización | |
 | 34 | `/mantenimiento` | candados por módulo | |

@@ -35,6 +35,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/encuestas-clientes': true, // lista y resultados (NPS, temas, sucursales, comentarios)
   '/encuestas-aplicar': true, // entrevistar a un cliente desde el teléfono; modo tablet en el portal
   '/marketing': true, // el mes de contenido, las piezas con sus diseños y las solicitudes
+  '/galeria': true, // el material liberado para las salas, listo para compartir
   '/encuesta': true, // resultados del clima: índice, bloques, preguntas y comentarios
   '/nomina': true, // la quincena por sala y la boleta de cada persona; generar, aprobar e imprimir: portal
   '/auditoria-de-tiempos': true, // día por día: marcas, faltas, tardanza y señales; corregir y aprobar: portal

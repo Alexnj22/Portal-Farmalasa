@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1214.0 — App: Galería
+
+- **App: Galería nativa.** El material de redes que Marketing liberó para las salas, de los últimos seis meses, en cuadrícula y con búsqueda; tocar una pieza la abre en grande con su texto (se copia manteniéndolo presionado) y «Compartir» abre la hoja del sistema con el texto y el diseño para el estado de WhatsApp. Avisa si el archivo no sirve para un estado.
+- **Núcleo:** qué entra a la galería, el texto que se publica y los archivos vigentes pasan de `GaleriaView`/`Galeria` a `src/utils/marketing.js`, con su prueba.
 ## v2.1213.0 — App de clientes: mis compras ligadas a las ventas
 
 - **Mis compras** (app de clientes): cada venta con su sala, fecha y hora, total, los puntos que dio, lo canjeado en ella y cuántas inyecciones traía; al tocarla se despliega con sus productos. Entra desde «Mis puntos». La regla «¿cuenta como venta?» es `venta_valida`, dentro de la función `app_cliente_compras`.

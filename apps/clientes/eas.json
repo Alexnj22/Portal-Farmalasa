@@ -21,8 +21,8 @@
       "distribution": "store",
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://zkpypxvkyfyxsrnplpuy.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_rdos9vtp5Mzdn3B3gBqHRA_3gBK3Aq0"
+        "EXPO_PUBLIC_SUPABASE_URL": "https://tqhrwniwlicxnbeivnud.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_oXpPK3WWsOsOuEEKe5crjA_-SXXGLKf"
       }
     }
   },

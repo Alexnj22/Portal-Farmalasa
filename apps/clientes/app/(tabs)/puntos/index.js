@@ -6,7 +6,8 @@ import { Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo } from '../../../componentes/ui';
 import { useCuenta } from '../../../lib/cuenta';
-import { dolares, diasHasta, entero, fecha, nombrePropio } from '../../../lib/formato';
+import { diasHasta, entero, fecha, nombrePropio } from '../../../lib/formato';
+import { BarraAnimada, Entrada, NumeroAnimado } from '../../../componentes/animacion';
 import { suave, useTema } from '../../../tema/tema';
 import { colorSistema } from '../../../componentes/sistema';
 
@@ -54,77 +55,91 @@ export default function Puntos() {
 
   return (
     <Pantalla alRefrescar={refrescar} refrescando={refrescando}>
-      <Texto nivel={2} estilo={{ fontSize: 17 }}>Hola, {primerNombre}</Texto>
+      <Entrada indice={0}>
+        <Texto nivel={2} estilo={{ fontSize: 17 }}>Hola, {primerNombre}</Texto>
+      </Entrada>
 
-      <Tarjeta tono={t.color.magenta} estilo={{ paddingVertical: 22 }}>
-        <Texto nivel={2}>Tienes de descuento</Texto>
-        <Text style={{ fontSize: 46, fontWeight: '800', color: t.color.magentaTexto, fontVariant: ['tabular-nums'] }}>
-          {dolares(resumen.equivale)}
-        </Text>
-        <Texto nivel={2}>{entero(saldo)} puntos</Texto>
-        {falta > 0 ? (
-          <View style={{ gap: 6, marginTop: 6 }}>
-            <View style={{ height: 8, borderRadius: 4, backgroundColor: suave(t.color.magenta, 0.18) }}>
-              <View style={{ width: `${Math.min(100, (saldo / MINIMO_DE_CANJE) * 100)}%`, height: 8, borderRadius: 4, backgroundColor: t.color.magenta }} />
-            </View>
-            <Texto nivel={3}>Te faltan {entero(falta)} puntos para tu primer canje.</Texto>
+      {/* El saldo cuenta hacia arriba al abrir y la barra se llena con resorte:
+          lo primero que la persona ve es la cifra MOVERSE hacia lo que tiene. */}
+      <Entrada indice={1}>
+        <Tarjeta tono={t.color.magenta} estilo={{ paddingVertical: 24 }}>
+          <Texto nivel={2}>Tienes de descuento</Texto>
+          <NumeroAnimado valor={resumen.equivale} formato="dolares"
+            estilo={{ fontSize: 52, fontWeight: '800', color: t.color.magentaTexto, fontVariant: ['tabular-nums'], letterSpacing: -1 }} />
+          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+            <NumeroAnimado valor={saldo} formato="entero" estilo={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }} />
+            <Texto nivel={2}>puntos</Texto>
           </View>
-        ) : (
-          <Texto nivel={2}>Úsalo en caja: di tu nombre o muestra esta pantalla.</Texto>
-        )}
-      </Tarjeta>
+          {falta > 0 ? (
+            <View style={{ gap: 8, marginTop: 8 }}>
+              <BarraAnimada avance={saldo / MINIMO_DE_CANJE} color={t.color.magenta} fondo={suave(t.color.magenta, 0.18)} />
+              <Texto nivel={2} estilo={{ fontSize: 14 }}>Te faltan {entero(falta)} puntos para tu primer canje.</Texto>
+            </View>
+          ) : (
+            <Texto nivel={2} estilo={{ fontSize: 14, marginTop: 4 }}>Úsalo en caja: di tu nombre o muestra esta pantalla.</Texto>
+          )}
+        </Tarjeta>
+      </Entrada>
 
       {congelado ? (
         <Aviso tipo="aviso">Tu saldo está en pausa porque no aceptaste el programa. Puedes volver a aceptarlo en Cuenta.</Aviso>
       ) : null}
 
       {resumen.vencimientos?.length ? (
-        <Tarjeta>
-          <Titulo>Por vencer</Titulo>
-          {resumen.vencimientos.map((v) => {
-            const d = diasHasta(v.vence);
-            return (
-              <Fila key={v.vence} izquierda={`${fecha(v.vence)}${d != null && d <= 30 ? ` · en ${d} días` : ''}`}
-                derecha={`${entero(v.puntos)} pts`} color={d != null && d <= 30 ? colorSistema.naranja : colorSistema.texto2} />
-            );
-          })}
-        </Tarjeta>
+        <Entrada indice={2}>
+          <Tarjeta>
+            <Titulo>Por vencer</Titulo>
+            {resumen.vencimientos.map((v) => {
+              const d = diasHasta(v.vence);
+              return (
+                <Fila key={v.vence} izquierda={`${fecha(v.vence)}${d != null && d <= 30 ? ` · en ${d} días` : ''}`}
+                  derecha={`${entero(v.puntos)} pts`} color={d != null && d <= 30 ? colorSistema.naranja : colorSistema.texto2} />
+              );
+            })}
+          </Tarjeta>
+        </Entrada>
       ) : null}
 
-      <View style={{ flexDirection: 'row', gap: 12 }}>
-        <Tarjeta estilo={{ flex: 1 }}>
-          <Texto nivel={3}>Ganados</Texto>
-          <Text style={{ fontSize: 22, fontWeight: '700', color: t.color.verdeTexto }}>{entero(resumen.acumulados)}</Text>
-        </Tarjeta>
-        <Tarjeta estilo={{ flex: 1 }}>
-          <Texto nivel={3}>Usados</Texto>
-          <Text style={{ fontSize: 22, fontWeight: '700', color: t.color.magentaTexto }}>{entero(resumen.canjeados)}</Text>
-        </Tarjeta>
-      </View>
+      <Entrada indice={3} estilo={{ flexDirection: 'row', gap: 12 }}>
+        <View style={{ flex: 1 }}>
+          <Tarjeta>
+            <Texto nivel={3}>Ganados</Texto>
+            <NumeroAnimado valor={resumen.acumulados} formato="entero" estilo={{ fontSize: 24, fontWeight: '700', color: t.color.verdeTexto }} />
+          </Tarjeta>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Tarjeta>
+            <Texto nivel={3}>Usados</Texto>
+            <NumeroAnimado valor={resumen.canjeados} formato="entero" estilo={{ fontSize: 24, fontWeight: '700', color: t.color.magentaTexto }} />
+          </Tarjeta>
+        </View>
+      </Entrada>
 
-      <Tarjeta>
-        <Titulo>Movimientos</Titulo>
-        {movimientos.length === 0 ? <Texto nivel={2}>Todavía no hay movimientos.</Texto> : null}
-        {movimientos.map((m, i) => {
-          const gana = Number(m.puntos) > 0;
-          return (
-            <View key={`${m.fecha}-${i}`} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, gap: 12 }}>
-              <View style={{ flex: 1 }}>
-                <Texto>{ROTULOS[m.tipo] ?? 'Movimiento'}</Texto>
-                <Texto nivel={3}>{fecha(m.fecha)}{m.sala ? ` · ${m.sala}` : ''}</Texto>
+      <Entrada indice={4}>
+        <Tarjeta>
+          <Titulo>Movimientos</Titulo>
+          {movimientos.length === 0 ? <Texto nivel={2}>Todavía no hay movimientos.</Texto> : null}
+          {movimientos.map((m, i) => {
+            const gana = Number(m.puntos) > 0;
+            return (
+              <View key={`${m.fecha}-${i}`} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, gap: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <Texto>{ROTULOS[m.tipo] ?? 'Movimiento'}</Texto>
+                  <Texto nivel={3}>{fecha(m.fecha)}{m.sala ? ` · ${m.sala}` : ''}</Texto>
+                </View>
+                <Text style={{ fontSize: 17, fontWeight: '700', color: gana ? t.color.verdeTexto : t.color.magentaTexto, fontVariant: ['tabular-nums'] }}>
+                  {gana ? '+' : '−'}{entero(Math.abs(m.puntos))}
+                </Text>
               </View>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: gana ? t.color.verdeTexto : t.color.magentaTexto, fontVariant: ['tabular-nums'] }}>
-                {gana ? '+' : '−'}{entero(Math.abs(m.puntos))}
-              </Text>
-            </View>
-          );
-        })}
-        {!verTodo && resumen.movimientos.length > 8 ? (
-          <Text onPress={() => setVerTodo(true)} style={{ color: t.color.magentaTexto, fontWeight: '600', paddingVertical: 10 }}>
-            Ver todos ({resumen.movimientos.length})
-          </Text>
-        ) : null}
-      </Tarjeta>
+            );
+          })}
+          {!verTodo && resumen.movimientos.length > 8 ? (
+            <Text onPress={() => setVerTodo(true)} style={{ color: t.color.magentaTexto, fontWeight: '600', paddingVertical: 10 }}>
+              Ver todos ({resumen.movimientos.length})
+            </Text>
+          ) : null}
+        </Tarjeta>
+      </Entrada>
     </Pantalla>
   );
 }

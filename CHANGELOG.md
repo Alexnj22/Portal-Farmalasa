@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1210.0 — App de clientes: animaciones, aurora viva y oferta con zoom
+
+- **Aurora viva:** las manchas del logo se mueven lento detrás de toda la app, dibujadas por la GPU con Skia y animadas en el hilo de la interfaz (Reanimated 4). En la web queda la aurora quieta.
+- **Mis puntos:** el saldo cuenta hacia arriba al abrir ($0.00 → tu saldo), los puntos ganados y usados también, la barra hacia el primer canje se llena con resorte y los bloques entran escalonados. Lo mismo en Inyecciones.
+- **Ofertas:** cada tarjeta se encoge al tocarla con vibración del sistema y abre su detalle con la transición de zoom de iOS 18 (`Link.AppleZoom`); se cierra deslizando hacia abajo.
+- **Cada pestaña trae su aurora:** la barra de pestañas de iOS pone un fondo negro propio que la tapaba. La barra de título es la de iOS 26, sin desenfoque propio encima.
+- **Las entradas no usan opacidad:** el Liquid Glass no se dibuja si su contenedor nace transparente; las tarjetas quedaban invisibles. Ahora entran con desplazamiento y escala.
+- **Botón secundario** con el color del sistema (magenta sobre la aurora verde no se leía).
+- **Desarrollo:** con `EXPO_PUBLIC_PRUEBA_CODIGO` en el `.env` local la app entra sola en el simulador; sólo con `__DEV__`, nunca en una compilación de tienda.
+
 ## v2.1209.0 — App: Encuestas a clientes
 
 - **App: Encuestas a clientes nativo.** La lista —en diseño (con cuántas esperan aprobación), en campo y cerradas— con estado, preguntas, canales y cierre; y cada encuesta con sus resultados: NPS y su lectura, respuestas por canal, promotores/pasivos/detractores, puntaje por tema, NPS por sucursal y los comentarios abiertos. Diseñar, aprobar y publicar siguen en el portal. La lógica ya vivía en el núcleo (`encuestasClientes`).

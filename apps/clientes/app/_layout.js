@@ -1,12 +1,15 @@
 // La raíz: el fondo de la marca, la sesión desde el llavero y la guardia que
 // manda a la bienvenida a quien no tiene sesión.
 import { useEffect } from 'react';
-import { Platform, useColorScheme, View } from 'react-native';
+import { Platform, useColorScheme } from 'react-native';
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Aurora from '../componentes/Aurora';
+import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { useSesion } from '../lib/sesion';
+import { llamar } from '../lib/api';
 import { useCuenta } from '../lib/cuenta';
 import { useTema } from '../tema/tema';
 import { colorSistema } from '../componentes/sistema';
@@ -37,6 +40,16 @@ function Guardia() {
   const { token, lista, cargar } = useSesion();
   const segmentos = useSegments();
   useEffect(() => { cargar(); }, [cargar]);
+  // Sólo en desarrollo (`__DEV__`, nunca en una compilación de tienda), y sólo
+  // si el `.env` local trae un código de PRUEBAS: entra solo, para poder
+  // revisar pantallas en el simulador sin teclear. Igual que la app del personal.
+  useEffect(() => {
+    const codigo = process.env.EXPO_PUBLIC_PRUEBA_CODIGO;
+    if (!__DEV__ || !codigo || !lista || token) return;
+    llamar('entrar', { documento: codigo, plataforma: 'ios', dispositivo: 'simulador' })
+      .then((r) => { if (r?.ok && r.token) useSesion.getState().abrir(r.token); })
+      .catch(() => {});
+  }, [lista, token]);
   useEffect(() => {
     if (!lista) return;
     const publica = PUBLICAS.has(segmentos[0]);
@@ -53,29 +66,25 @@ export default function Raiz() {
   return (
     <ThemeProvider value={oscuro ? OSCURO : CLARO}>
       <SafeAreaProvider>
-        <View style={{ flex: 1 }}>
+        <GestureHandlerRootView style={{ flex: 1 }}>
           <Aurora />
           <Guardia />
           <StatusBar style="auto" />
           <Stack screenOptions={{
+            ...BARRA_NATIVA,
             headerTintColor: t.color.magentaTexto,
             headerBackButtonDisplayMode: 'minimal',
-            // Transparente sobre la aurora en el teléfono, donde el sistema
-            // corre el contenido debajo de la barra solo. En la web eso no
-            // pasa y el título quedaba ENCIMA del texto: ahí va sólida.
-            headerTransparent: !WEB,
-            headerBlurEffect: oscuro ? 'dark' : 'light',
-            headerShadowVisible: false,
-            headerStyle: WEB ? { backgroundColor: 'transparent' } : undefined,
             headerTitleStyle: { color: colorSistema.texto },
+            contentStyle: { backgroundColor: 'transparent' },
           }}>
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="bienvenida" options={{ headerShown: false }} />
             <Stack.Screen name="entrar" options={{ title: 'Entrar' }} />
             <Stack.Screen name="registro" options={{ title: 'Unirme' }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="oferta/[id]" options={{ title: '' }} />
           </Stack>
-        </View>
+        </GestureHandlerRootView>
       </SafeAreaProvider>
     </ThemeProvider>
   );

@@ -9,13 +9,15 @@ const ESTILO = { filled: 'glassProminent', outlined: 'glass', text: 'plain' };
 
 export default function BotonNativo({ etiqueta, alTocar, variante = 'filled', deshabilitado = false, color }) {
   return (
-    <Host matchContents={{ vertical: true }} style={{ width: '100%' }}>
+    <Host matchContents={{ vertical: true }} style={{ width: '100%' }} seedColor={variante !== 'outlined' ? color : undefined}>
       <Button
         onPress={alTocar}
         modifiers={[
           buttonStyle(ESTILO[variante] ?? 'glassProminent'),
           controlSize('large'),
-          ...(color ? [tint(color)] : []),
+          // El secundario (vidrio) va con el color del sistema: tintado de magenta
+          // sobre la aurora verde no se leía.
+          ...(color && variante !== 'outlined' ? [tint(String(color).toUpperCase())] : []),
           apagado(deshabilitado),
         ]}
       >

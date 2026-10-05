@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1179.0 — App: Facturas de compra
+
+- **App: Facturas de compra nativa.** Los documentos que llegan por correo, mes por mes, buscando por proveedor, número o por lo que se compró, y filtrando por anulados o por tipo. La ficha de cada una trae **los productos** con cantidad, precio y descuento leídos del propio documento, los totales (gravado, exento, IVA, percepción…), si el proveedor la anuló, sus notas de crédito, y **el PDF y el JSON** abiertos en el visor del teléfono. Es lo que pedía el reporte de sala del 20-ago («no puedo ver los productos, no puedo ver el pdf»). Revisión, vincular proveedor y descargar el paquete siguen en el portal.
+- **App:** el selector de mes de Corte Z pasa a un componente propio (`PasoDeMes`), y `Dato` ya no parte el rótulo letra por letra cuando el valor es largo — ahora es el valor el que baja de línea.
+- **Núcleo:** `src/utils/dteJson.js` lee los renglones y los totales del JSON de un documento tributario (el esquema de Hacienda), con su prueba.
 ## v2.1178.3 — Traslados: Faltantes pulido, búsqueda que filtra y el historial deja de pedirse en cada acción
 
 - **Faltantes, rediseñada.** Tarjetas en rejilla de dos columnas (como «En camino» y «Envíos»), con una pastilla de estado, el recorrido entre salas, el código de la bolsa, la nota de quien abrió la caja como cita y la resolución en el color de su desenlace. Arriba, un resumen con cuántos hay sin resolver, cuántos aparecieron y cuántos no.

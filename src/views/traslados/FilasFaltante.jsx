@@ -169,8 +169,11 @@ export function FilaFaltante({ faltante: f, onHecho }) {
                         <p className="text-caption text-warning-text font-semibold leading-snug">
                             Apareció, pero todavía no entró al inventario de {f.destino_branch_name ?? 'la sala'}.
                         </p>
-                        <Button size="sm" variant="primary" icon={PackageCheck}
-                            className="min-h-[var(--tap-min)] w-full" loading={ocupado}
+                        {/* `soft` y no sólido, igual que «Recibir» en «En camino»:
+                            con varias tarjetas, cuatro barras sólidas compiten
+                            entre sí y le ganan al producto (§Button · soft). */}
+                        <Button size="sm" tone="success" soft icon={PackageCheck}
+                            className="min-h-[var(--tap-min)] w-full sm:w-auto sm:self-end" loading={ocupado}
                             disabled={ocupado} onClick={ingresar}>
                             {ocupado ? 'Ingresando…' : 'Ingresar a inventario'}
                         </Button>
@@ -178,18 +181,18 @@ export function FilaFaltante({ faltante: f, onHecho }) {
                 )}
 
                 {abierto && !cerrando && (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 sm:justify-end">
                         {/* «Apareció» no pide nota: la bolsa estaba en el mostrador
                             de al lado y no hay nada más que contar. «No apareció» sí
                             —lo exige la base—, porque es el renglón que alguien va a
                             tener que leer dentro de un mes. */}
-                        <Button size="sm" variant="primary" icon={Check}
-                            className="min-h-[var(--tap-min)] flex-1" loading={ocupado}
+                        <Button size="sm" tone="success" soft icon={Check}
+                            className="min-h-[var(--tap-min)] flex-1 sm:flex-none" loading={ocupado}
                             disabled={ocupado} onClick={() => cerrar('aparecio')}>
                             {ocupado ? (f.falta_ingresar ? 'Ingresando…' : 'Cerrando…') : 'Apareció'}
                         </Button>
                         <Button size="sm" variant="secondary" icon={PackageX}
-                            className="min-h-[var(--tap-min)] flex-1"
+                            className="min-h-[var(--tap-min)] flex-1 sm:flex-none"
                             disabled={ocupado} onClick={() => setCerrando('no_aparecio')}>
                             No apareció
                         </Button>

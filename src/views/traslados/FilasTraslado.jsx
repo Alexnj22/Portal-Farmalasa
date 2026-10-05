@@ -787,8 +787,15 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                 existir es que hay traslados parados —veinte, el más viejo de más
                 de una semana— «hace 4 días» es lo que decide si hay que ir a
                 buscar la caja hoy. */}
-            <div className="mt-auto pt-2.5 border-t border-divider flex flex-col gap-2.5">
-                <div className="flex items-center justify-between gap-3 min-w-0">
+            {/* ── El pie, en UNA línea: espera, caras y la acción ─────────
+                El botón era una barra sólida de ancho completo en cada
+                tarjeta: con cuatro en pantalla eran cuatro franjas azules que
+                pesaban más que el producto, y el canon lo dice (§Button ·
+                `soft`): un sólido grita, y varios juntos compiten. Ahora es
+                `soft` y `sm`, a la derecha, como las acciones de las demás
+                tarjetas del portal. En el teléfono baja a su renglón y ocupa
+                el ancho — ahí sí es el blanco de dedo (§32). */}
+            <div className="mt-auto pt-2.5 border-t border-divider flex flex-wrap items-center gap-x-3 gap-y-2.5">
                     {/* La espera como PASTILLA, teñida cuando pasa del día:
                         es el dato que decide si hay que ir a buscar la caja
                         hoy, y en texto suelto rojo se leía como un error. */}
@@ -814,7 +821,7 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                         interactivo no llega al lector de pantalla ni al
                         teléfono, que es donde más se usa esta lista (§15.10). */}
                     {(quienPidio || quienEnvio) && (
-                        <span className="flex items-center gap-1.5 min-w-0 justify-end" role="img"
+                        <span className="flex items-center gap-1.5 min-w-0 justify-end ml-auto sm:ml-0" role="img"
                             aria-label={[quienEnvio && `Envió ${quienEnvio.name}`,
                                          quienPidio && `pidió ${quienPidio.name}`].filter(Boolean).join(', ')}>
                             {quienEnvio && <ChipPersona persona={quienEnvio} soloFoto />}
@@ -824,14 +831,11 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                             {quienPidio && <ChipPersona persona={quienPidio} soloFoto />}
                         </span>
                     )}
-                </div>
 
-                {/* Ancho completo: es la única acción de la tarjeta y en media
-                    columna un botón chico a la derecha se pierde. */}
-                <Button size="sm" icon={PackageCheck} loading={ocupado} disabled={ocupado}
-                    onClick={recibir} className="w-full">
+                <Button size="sm" tone="success" soft icon={PackageCheck} loading={ocupado} disabled={ocupado}
+                    onClick={recibir} className="w-full sm:w-auto sm:ml-auto">
                     {ocupado ? 'Recibiendo…'
-                        : (faltaron.length ? 'Recibir y anotar lo que faltó' : 'Ya llegó, recibir')}
+                        : (faltaron.length ? 'Recibir y anotar faltante' : 'Recibir')}
                 </Button>
             </div>
         </div>

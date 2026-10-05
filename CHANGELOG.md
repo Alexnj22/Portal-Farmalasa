@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1183.1 — Traslados: la acción de la tarjeta deja de ser una barra sólida
+
+- **«Recibir» pasa al pie, `soft` y chico.** Era una barra azul sólida de ancho completo en cada tarjeta: con cuatro en pantalla, cuatro franjas que pesaban más que el producto. Ahora va a la derecha, en la misma línea que la espera y las caras, como las acciones de las demás tarjetas (§Button · `soft`). En el teléfono sigue ocupando el ancho.
+- Lo mismo en Faltantes: «Ingresar a inventario» y «Apareció» dejan de ser sólidos.
+
 ## v2.1183.0 — App: Cuentas por pagar
 
 - **App: Cuentas por pagar nativa.** Cuánto se le debe a cada proveedor, lo vencido, lo en trámite y lo disponible del crédito, con los vencidos primero; tocar uno abre sus facturas pendientes con su vencimiento. En **Pagos**, Gerencia aprueba o anula los cheques desde el teléfono, con la misma función y el mismo motivo que el portal. Registrar un pago y las condiciones de crédito siguen en el portal.

@@ -326,7 +326,7 @@ Deno.serve(async (req) => {
     if (accion === "ofertas") {
       const hoy = hoySV();
       const { data: filas, error } = await admin.from("ofertas_clientes")
-        .select("id, titulo, descripcion, etiqueta, condiciones, imagen_path, inicio, fin, exclusiva, branch_ids")
+        .select("id, titulo, descripcion, etiqueta, condiciones, imagen_path, inicio, fin, exclusiva, branch_ids, descuento_tipo, descuento_monto, productos")
         .eq("publicada", true).lte("inicio", hoy).gte("fin", hoy)
         .order("orden", { ascending: true }).order("fin", { ascending: true })
         .limit(50);
@@ -359,6 +359,11 @@ Deno.serve(async (req) => {
           // serlo— pero el detalle sólo lo ve quien puede usarlo.
           descripcion: disponible ? o.descripcion : null,
           condiciones: disponible ? o.condiciones : null,
+          // La oferta de un descuento de la caja: qué rebaja y en qué productos,
+          // con el precio antes y después. Lo exclusivo no lo muestra a quien no
+          // es socio, igual que el texto.
+          descuento: o.descuento_tipo ? { tipo: o.descuento_tipo, monto: Number(o.descuento_monto) } : null,
+          productos: disponible && Array.isArray(o.productos) ? o.productos : [],
           salas: Array.isArray(o.branch_ids) && o.branch_ids.length
             ? o.branch_ids.map((id: number) => nombreSala.get(id)).filter(Boolean) : null,
         };

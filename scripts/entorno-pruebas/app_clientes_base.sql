@@ -252,3 +252,23 @@ END;
 $$;
 REVOKE EXECUTE ON FUNCTION public.app_preregistro_resolver(uuid, text, bigint) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.app_preregistro_resolver(uuid, text, bigint) TO authenticated, service_role;
+
+-- ── La oferta que nace de un descuento de la caja (2026-10-05, segunda parte) ─
+-- La oferta guarda una FOTO del descuento —tipo, monto, fechas, salas y los
+-- productos con precio antes y después— porque leerlo en vivo es entrar a la
+-- caja. La mantiene al día `descuentos-erp` (`_shared/ofertaDeDescuento.ts`).
+-- `descuento_borrado_at`: el descuento ya no existe en la caja; la oferta se
+-- retiró de la app pero se conserva (tiene imagen y texto que alguien armó).
+ALTER TABLE public.ofertas_clientes
+    ADD COLUMN descuento_erp_id     integer,
+    ADD COLUMN promocion_id         bigint REFERENCES public.promociones(id) ON DELETE SET NULL,
+    ADD COLUMN descuento_tipo       text CHECK (descuento_tipo IN ('%', '$')),
+    ADD COLUMN descuento_monto      numeric(10, 2) CHECK (descuento_monto > 0),
+    ADD COLUMN productos            jsonb NOT NULL DEFAULT '[]'::jsonb,
+    ADD COLUMN foto_at              timestamptz,
+    ADD COLUMN descuento_borrado_at timestamptz;
+-- Un descuento vivo se anuncia UNA vez: dos ofertas del mismo descuento dirían
+-- dos cosas sobre el mismo precio.
+CREATE UNIQUE INDEX ofertas_clientes_descuento_uq ON public.ofertas_clientes (descuento_erp_id)
+    WHERE descuento_erp_id IS NOT NULL AND descuento_borrado_at IS NULL;
+CREATE INDEX ofertas_clientes_promocion_idx ON public.ofertas_clientes (promocion_id);

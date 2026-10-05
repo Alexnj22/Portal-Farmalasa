@@ -719,6 +719,8 @@ export const AREAS = [
             'apps/clientes/',
             'src/views/ofertas-clientes/',
             'src/data/ofertasClientes.js',
+            'src/utils/ofertasClientes.js',
+            'supabase/functions/_shared/ofertaDeDescuento.ts',
             'supabase/functions/app-clientes/',
             'supabase/functions/_shared/consentimientoPuntos.ts',
             'scripts/entorno-pruebas/app_clientes_base.sql',

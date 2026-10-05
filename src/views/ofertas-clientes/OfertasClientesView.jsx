@@ -14,6 +14,8 @@ import FileField from '../../components/common/FileField';
 import Switch from '../../components/common/Switch';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import OfertaModal from './OfertaModal';
+import { etiquetaDeDescuento } from '@nucleo/utils/ofertasClientes';
 import { LoadingState, EmptyState } from '../../components/common/StateViews';
 import usePestanaEnUrl from '../../plataforma/usePestanaEnUrl';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -22,7 +24,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import {
-    fetchOfertas, fetchSalas, guardarOferta, publicarOferta, borrarOferta, subirImagen,
+    fetchOfertas, fetchSalas, publicarOferta, borrarOferta,
     fetchPreregistros, resolverPreregistro, buscarFichasPorDocumento,
 } from '@nucleo/data/ofertasClientes';
 
@@ -41,6 +43,7 @@ import {
  * ficha ya existía con otro) y para descartar los que no son nadie.
  */
 const estadoDeOferta = (o, hoy) => {
+    if (o.descuento_borrado_at) return { key: 'terminada', label: 'Descuento borrado', variant: 'warning' };
     if (!o.publicada) return { key: 'borrador', label: 'Sin publicar', variant: 'neutral' };
     if (o.fin < hoy) return { key: 'terminada', label: 'Terminada', variant: 'neutral' };
     if (o.inicio > hoy) return { key: 'programada', label: 'Programada', variant: 'info' };
@@ -157,7 +160,8 @@ function Ofertas({ busqueda, puedeEditar, showToast }) {
                                     <div className="min-w-0">
                                         <p className="text-body-sm font-semibold text-content truncate">{o.titulo}</p>
                                         <p className="text-micro text-content-3 truncate">
-                                            {[o.etiqueta, o.exclusiva ? 'Exclusiva para socios' : null].filter(Boolean).join(' · ') || '—'}
+                                            {[o.etiqueta, o.descuento_tipo ? `Descuento ${etiquetaDeDescuento(o.descuento_tipo, o.descuento_monto)}` : null,
+                                                o.exclusiva ? 'Exclusiva para socios' : null].filter(Boolean).join(' · ') || '—'}
                                         </p>
                                     </div>
                                 </div>
@@ -209,101 +213,6 @@ function Ofertas({ busqueda, puedeEditar, showToast }) {
                     }} />
             )}
         </>
-    );
-}
-
-function OfertaModal({ oferta, salas, onClose, onGuardada, onError }) {
-    const nueva = !oferta.id;
-    const [f, setF] = useState({
-        titulo: oferta.titulo ?? '', etiqueta: oferta.etiqueta ?? '', descripcion: oferta.descripcion ?? '',
-        condiciones: oferta.condiciones ?? '', inicio: oferta.inicio ?? hoySV(), fin: oferta.fin ?? '',
-        exclusiva: oferta.exclusiva ?? false, branch_ids: oferta.branch_ids ?? [], publicada: oferta.publicada ?? false,
-    });
-    const [archivo, setArchivo] = useState(null);
-    const [guardando, setGuardando] = useState(false);
-    const cambiar = (k) => (v) => setF((x) => ({ ...x, [k]: v }));
-    const alternarSala = (id) => setF((x) => ({
-        ...x, branch_ids: x.branch_ids.includes(id) ? x.branch_ids.filter((b) => b !== id) : [...x.branch_ids, id],
-    }));
-
-    const valido = f.titulo.trim().length >= 3 && f.inicio && f.fin && f.fin >= f.inicio;
-
-    const guardar = async () => {
-        setGuardando(true);
-        try {
-            const imagen_path = archivo ? await subirImagen(archivo) : oferta.imagen_path ?? null;
-            await guardarOferta(oferta.id, {
-                titulo: f.titulo.trim(), etiqueta: f.etiqueta.trim() || null, descripcion: f.descripcion.trim() || null,
-                condiciones: f.condiciones.trim() || null, inicio: f.inicio, fin: f.fin, exclusiva: f.exclusiva,
-                branch_ids: f.branch_ids.length ? f.branch_ids : null, publicada: f.publicada, imagen_path,
-            });
-            onGuardada();
-        } catch (err) {
-            onError(err);
-        } finally {
-            setGuardando(false);
-        }
-    };
-
-    return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel={nueva ? 'Nueva oferta' : 'Editar oferta'}>
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">{nueva ? 'Nueva oferta' : 'Editar oferta'}</h2>
-            </LiquidModal.Header>
-            <LiquidModal.Body>
-                <div className="space-y-4">
-                    <PortalInput label="Título" name="titulo" value={f.titulo} maxLength={80}
-                        onChange={(e) => cambiar('titulo')(e.target.value)} placeholder="Ej. 20% en vitaminas" />
-                    <PortalInput label="Etiqueta (opcional)" name="etiqueta" value={f.etiqueta} maxLength={16}
-                        onChange={(e) => cambiar('etiqueta')(e.target.value)} placeholder="Ej. −20% · 2×1" />
-                    <PortalTextarea label="Descripción" name="descripcion" rows={3} value={f.descripcion} maxLength={600}
-                        onChange={(e) => cambiar('descripcion')(e.target.value)} />
-                    <PortalTextarea label="Condiciones (opcional)" name="condiciones" rows={2} value={f.condiciones} maxLength={400}
-                        onChange={(e) => cambiar('condiciones')(e.target.value)} placeholder="Ej. Hasta agotar existencias. No acumulable." />
-                    <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <span className="block text-label font-semibold text-content-2 mb-1">Desde</span>
-                            <LiquidDatePicker value={f.inicio} onChange={cambiar('inicio')} />
-                        </div>
-                        <div>
-                            <span className="block text-label font-semibold text-content-2 mb-1">Hasta</span>
-                            <LiquidDatePicker value={f.fin} onChange={cambiar('fin')} />
-                        </div>
-                    </div>
-                    {f.fin && f.inicio && f.fin < f.inicio && <Notice variant="warning">La fecha final es anterior a la inicial.</Notice>}
-                    <FileField label="Imagen (opcional)" accept="image/jpeg,image/png,image/webp" file={archivo} onChange={setArchivo}
-                        hint={oferta.imagen_path && !archivo ? 'Ya tiene imagen; sube otra para reemplazarla' : 'Horizontal, 16:9, hasta 3 MB'} />
-                    <div>
-                        <span className="block text-label font-semibold text-content-2 mb-1">Salas</span>
-                        <p className="text-micro text-content-3 mb-2">Sin marcar ninguna, vale en todas.</p>
-                        <div className="flex flex-wrap gap-2">
-                            {salas.map((s) => (
-                                <Button key={s.id} size="sm" variant={f.branch_ids.includes(s.id) ? 'primary' : 'secondary'}
-                                    onClick={() => alternarSala(s.id)}>{s.name}</Button>
-                            ))}
-                        </div>
-                    </div>
-                    <label className="flex items-center justify-between gap-3">
-                        <span>
-                            <span className="block text-body-sm font-semibold text-content">Exclusiva para socios</span>
-                            <span className="block text-micro text-content-3">Los demás ven el título y una invitación a unirse.</span>
-                        </span>
-                        <Switch checked={f.exclusiva} onChange={cambiar('exclusiva')} label="Exclusiva para socios" />
-                    </label>
-                    <label className="flex items-center justify-between gap-3">
-                        <span>
-                            <span className="block text-body-sm font-semibold text-content">Publicada</span>
-                            <span className="block text-micro text-content-3">Se ve en la app entre sus fechas.</span>
-                        </span>
-                        <Switch checked={f.publicada} onChange={cambiar('publicada')} label="Publicada" />
-                    </label>
-                </div>
-            </LiquidModal.Body>
-            <LiquidModal.Footer>
-                <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-                <Button icon={Tag} loading={guardando} disabled={!valido} onClick={guardar}>Guardar</Button>
-            </LiquidModal.Footer>
-        </LiquidModal>
     );
 }
 

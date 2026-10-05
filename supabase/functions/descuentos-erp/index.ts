@@ -6,6 +6,9 @@ import {
   getSessionCookie, guardarDescuento, listarDescuentos, productosDelDescuento,
   salasDelOrigen, type DescuentoDelOrigen, type TipoDescuento,
 } from "../_shared/descuentos.ts";
+import {
+  camposDeLaFoto, refrescarOfertas, retirarOfertasDe, type DescuentoParaFoto,
+} from "../_shared/ofertaDeDescuento.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -108,6 +111,12 @@ Deno.serve(async (req) => {
         : (mapa.find((e) => e.erpId === d.erp_sucursal_id)?.branchId ?? null),
     });
 
+    /** Lo que la oferta de la app necesita de un descuento (ver `_shared/ofertaDeDescuento.ts`). */
+    const paraFoto = (d: DescuentoDelOrigen, productos: number[]): DescuentoParaFoto => ({
+      id: d.id, tipo: d.tipo, monto: d.monto, inicio: d.inicio, fin: d.fin,
+      todas_las_salas: d.todas_las_salas, branch_id: conSala(d).branch_id, productos,
+    });
+
     /** Los que esta persona puede ver: con alcance de una sala, los suyos y los de todas. */
     const visible = (d: DescuentoDelOrigen) =>
       permiso.alcanceTodo || d.todas_las_salas || d.erp_sucursal_id === miSala!.erpId;
@@ -121,10 +130,13 @@ Deno.serve(async (req) => {
       const filas = (await listarDescuentos(cookie, salas)).filter(visible);
 
       const productos = await Promise.all(
-        filas.map((d) => productosDelDescuento(cookie, d.id).catch(() => [] as number[])),
+        /* `null` = no se pudo leer. NO es lo mismo que «sin productos»: con
+           una lista vacía la oferta de la app quedaría sin productos por una
+           lectura que falló. */
+        filas.map((d) => productosDelDescuento(cookie, d.id).catch(() => null)),
       );
 
-      const todosLosIds = [...new Set(productos.flat())];
+      const todosLosIds = [...new Set(productos.flatMap((p) => p ?? []))];
       const nombres = new Map<number, string>();
       if (todosLosIds.length) {
         /* `products.id` ES el id del sistema de la caja, así que el nombre sale
@@ -148,12 +160,31 @@ Deno.serve(async (req) => {
         for (const id of (p.descuentos_erp ?? [])) dePromocion.set(Number(id), String(p.nombre));
       }
 
+      /* Las ofertas de la app que salen de estos descuentos se ponen al día
+         con lo que se acaba de leer: es lo que alcanza a un cambio hecho
+         directo en la caja, sin una petición más. Y con alcance de toda la
+         red, la lista está COMPLETA: una oferta ligada a un descuento que ya
+         no aparece es de un descuento borrado allá, y sale de la app. Con
+         alcance de una sala la lista es parcial y no se puede concluir eso. */
+      await refrescarOfertas(admin, filas.flatMap((d, i) => (productos[i] ? [paraFoto(d, productos[i]!)] : [])));
+      const { data: enApp, error: enAppErr } = await admin.from("ofertas_clientes")
+        .select("descuento_erp_id, publicada").not("descuento_erp_id", "is", null).is("descuento_borrado_at", null);
+      if (enAppErr) console.error("[descuentos-erp] ofertas_clientes:", enAppErr.message);
+      if (permiso.alcanceTodo && enApp) {
+        const vivos = new Set(filas.map((d) => d.id));
+        const huerfanas = enApp.map((o) => Number(o.descuento_erp_id)).filter((id) => !vivos.has(id));
+        await retirarOfertasDe(admin, huerfanas);
+      }
+      const estadoEnApp = new Map((enApp ?? []).map((o) => [Number(o.descuento_erp_id), o.publicada === true]));
+
       const hoy = new Date().toISOString().slice(0, 10);
       const descuentos = filas.map((d, i) => ({
         ...conSala(d),
         vigente: d.inicio <= hoy && hoy <= d.fin,
         promocion: dePromocion.get(d.id) ?? null,
-        productos: productos[i].map((id) => ({
+        /* null = no tiene oferta en la app; false = la tiene sin publicar. */
+        en_app: estadoEnApp.has(d.id) ? estadoEnApp.get(d.id) : null,
+        productos: (productos[i] ?? []).map((id) => ({
           id,
           nombre: nombres.get(id) ?? `Producto ${id}`,
         })),
@@ -188,6 +219,26 @@ Deno.serve(async (req) => {
           ...conSala(d),
           productos: d.productos.map((id) => ({ id, nombre: nombres.get(id) ?? `Producto ${id}` })),
         },
+      });
+    }
+
+    // ── FOTO PARA LA APP ───────────────────────────────────────────────────
+    // Lo que la oferta de la app toma de un descuento: fechas, salas, tipo,
+    // monto y los productos con precio antes y después (sin los de receta).
+    // La pantalla lo usa para llenar la oferta; quien la publica sólo pone la
+    // imagen y el texto.
+    if (accion === "foto_para_app") {
+      const id = Number(body.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        return responder({ ok: false, error: "Falta el descuento." }, 400);
+      }
+      const d = await detalleDelDescuento(cookie, id, salas);
+      if (!d) return responder({ ok: false, error: "Ese descuento ya no existe." }, 404);
+      if (!visible(d)) return responder({ ok: false, error: "Ese descuento no es de tu sala." }, 403);
+      const foto = await camposDeLaFoto(admin, paraFoto(d, d.productos));
+      return responder({
+        ok: true,
+        foto: { ...foto, descuento_erp_id: d.id, descuento_descripcion: d.descripcion, sin_receta: d.productos.length - foto.productos.length },
       });
     }
 
@@ -424,6 +475,13 @@ Deno.serve(async (req) => {
       });
       if (auditErr) console.error("[descuentos-erp] audit_logs:", auditErr.message);
 
+      // La oferta de la app ligada a este descuento sigue sus fechas y productos.
+      await refrescarOfertas(admin, [{
+        id: idNuevo, tipo, monto, inicio, fin, todas_las_salas: todas,
+        branch_id: todas ? null : (mapa.find((e) => e.erpId === erpSucursal)?.branchId ?? null),
+        productos,
+      }]);
+
       return responder({ ok: true, id: idNuevo });
     }
 
@@ -524,6 +582,7 @@ Deno.serve(async (req) => {
           }, 502);
         }
         cambiados.push({ id, descripcion: d.descripcion, productos: lista.length });
+        await refrescarOfertas(admin, [paraFoto(d, lista)]);
 
         const { error: auditErr } = await admin.from("audit_logs").insert({
           action: "DESCUENTO_PRODUCTOS_SINCRONIZADOS",
@@ -593,6 +652,9 @@ Deno.serve(async (req) => {
         },
       });
       if (auditErr) console.error("[descuentos-erp] audit_logs:", auditErr.message);
+
+      // Sin descuento no hay oferta que anunciar: sale de la app.
+      await retirarOfertasDe(admin, [id]);
 
       /* El id sale también de la promoción que lo creó. Sin esto la promoción
          seguía marcada «Baja el precio» —ese distintivo cuenta

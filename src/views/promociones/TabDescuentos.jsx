@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
-    AlertTriangle, Calendar, Info, Percent, Pencil, Search, Store, Tag, Trash2,
+    AlertTriangle, Calendar, Info, Percent, Pencil, Search, Smartphone, Store, Tag, Trash2,
 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -8,7 +8,11 @@ import Notice from '../../components/common/Notice';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import TituloSeccion from './TituloSeccion';
 import { EmptyState } from '../../components/common/StateViews';
-import { borrarDescuento } from '@nucleo/data/descuentos';
+import OfertaModal from '../ofertas-clientes/OfertaModal';
+import { borrarDescuento, fotoParaApp } from '@nucleo/data/descuentos';
+import { fetchOfertaDeDescuento } from '@nucleo/data/ofertasClientes';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fmtVigencia, estadoDescuento } from '@nucleo/utils/promocionesUtils';
@@ -39,6 +43,35 @@ export default function TabDescuentos({
     const [borrando, setBorrando] = useState(null);   // el descuento que se va a borrar
     const [ocupado, setOcupado] = useState(false);
     const [fallo, setFallo] = useState(null);
+    // La oferta de la app que se está armando desde un descuento (ver OfertaModal).
+    const [oferta, setOferta] = useState(null);
+    const [abriendoApp, setAbriendoApp] = useState(null);   // id del descuento que se está leyendo
+    const { hasPermission } = useAuth();
+    const puedeApp = hasPermission('ofertas_clientes', 'can_edit');
+    const showToast = useToastStore((s) => s.showToast);
+
+    /* La foto se pide AL ABRIR y no se guarda de antes: entre que se cargó la
+       lista y el clic, alguien pudo corregir el descuento. Si ya tiene oferta,
+       se abre ésa con la foto nueva encima — lo que quien la armó escribió
+       (título, texto, imagen) se conserva. */
+    const abrirEnApp = async (d) => {
+        setAbriendoApp(d.id);
+        setFallo(null);
+        try {
+            const [foto, previa] = await Promise.all([fotoParaApp(d.id), fetchOfertaDeDescuento(d.id)]);
+            setOferta(previa
+                ? { ...previa, ...foto, sin_receta: foto.sin_receta }
+                : {
+                    ...foto,
+                    titulo: d.promocion || d.descripcion,
+                    promocion_id: null,
+                });
+        } catch (e) {
+            setFallo(mensajeAmigable(e, 'No se pudo leer el descuento.'));
+        } finally {
+            setAbriendoApp(null);
+        }
+    };
 
     /* Dentro de cada sección, por fecha y en la dirección que sirve: los que
        descuentan hoy y los terminados, por el que ACABA antes —lo que vence es
@@ -123,6 +156,9 @@ export default function TabDescuentos({
                                     salas={salas}
                                     alcanceTodo={alcanceTodo}
                                     puedeEditar={puedeEditar}
+                                    puedeApp={puedeApp && clave !== 'terminados'}
+                                    abriendoApp={abriendoApp === d.id}
+                                    onApp={() => abrirEnApp(d)}
                                     onEditar={() => onEditar?.(d.id)}
                                     onBorrar={() => { setFallo(null); setBorrando(d); }}
                                 />
@@ -146,12 +182,18 @@ export default function TabDescuentos({
                     : ''}
                 confirmText="Borrar"
             />
+
+            {oferta && (
+                <OfertaModal oferta={oferta} salas={salas} onClose={() => setOferta(null)}
+                    onGuardada={() => { setOferta(null); showToast('Oferta guardada', 'La app la muestra mientras el descuento esté vigente.', 'success'); onCambio?.(); }}
+                    onError={(err) => showToast('No se pudo guardar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error')} />
+            )}
         </>
     );
 }
 
 
-function Tarjeta({ d, salas, alcanceTodo, puedeEditar, onEditar, onBorrar }) {
+function Tarjeta({ d, salas, alcanceTodo, puedeEditar, puedeApp, abriendoApp, onApp, onEditar, onBorrar }) {
     const est = estado(d);
     const productos = d.productos || [];
 
@@ -179,7 +221,12 @@ function Tarjeta({ d, salas, alcanceTodo, puedeEditar, onEditar, onBorrar }) {
                         {fmtVigencia(d.inicio, d.fin)}
                     </p>
                 </div>
-                <Badge variant={est.variant}>{est.rotulo}</Badge>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                    <Badge variant={est.variant}>{est.rotulo}</Badge>
+                    {/* `en_app`: null = sin oferta; true publicada; false armada sin publicar. */}
+                    {d.en_app === true && <Badge variant="success">En la app</Badge>}
+                    {d.en_app === false && <Badge variant="neutral">App: sin publicar</Badge>}
+                </div>
             </div>
 
             <div className="rounded-lg bg-surface-card-hover p-2.5 flex items-baseline gap-2">
@@ -222,8 +269,20 @@ function Tarjeta({ d, salas, alcanceTodo, puedeEditar, onEditar, onBorrar }) {
                 </p>
             </div>
 
-            {puedeEditar && (
+            {(puedeEditar || puedeApp) && (
                 <div className="flex gap-2 mt-auto pt-1">
+                    {puedeApp && (
+                        <Button
+                            variant="secondary" size="sm" icon={Smartphone} loading={abriendoApp}
+                            onClick={onApp} title={d.en_app == null ? 'Anunciar este descuento en la app de clientes' : 'Editar su oferta en la app'}
+                        >
+                            {d.en_app == null ? 'Mostrar en la app' : 'Oferta en la app'}
+                        </Button>
+                    )}
+                </div>
+            )}
+            {puedeEditar && (
+                <div className="flex gap-2">
                     <Button
                         variant="secondary" size="sm" icon={Pencil}
                         onClick={onEditar} className="flex-1"

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1194.0 — Ofertas de la app desde los descuentos de Promociones
+
+- **Promociones → Descuentos: «Mostrar en la app».** Cada descuento vigente o programado se puede anunciar en la app de clientes. La oferta se llena sola con las fechas, las salas y los productos con su precio antes y después; quien la publica pone el título, el texto y la imagen. La tarjeta dice si ya está «En la app».
+- **La oferta sigue al descuento:** al corregirlo, al sincronizar sus productos desde la promoción o al abrir la pestaña Descuentos (lo que alcanza a un cambio hecho directo en la caja), la oferta se pone al día; al borrarlo, sale de la app. No se reescribe si nada cambió.
+- **Lo bajo receta no se anuncia:** los productos con `es_antibiotico` no salen en la oferta, y el formulario dice cuántos quedaron fuera.
+- **App de clientes:** la oferta de un descuento muestra sus productos con el precio normal tachado y el que se paga.
+- **Base:** columnas nuevas en `ofertas_clientes` (borrador en `scripts/entorno-pruebas/app_clientes_base.sql`), probadas en el entorno de pruebas. Igual que la entrega anterior, todavía no en producción.
+
 ## v2.1193.0 — App: Auditoría de tiempos
 
 - **App: Auditoría de tiempos nativa.** Día por día, cada persona con su turno, a qué hora entró y salió, y lo que hay que mirar: marcas que faltan, tardanza, día cerrado solo por el sistema, pendiente de Talento Humano, editado, apoyo en otra sala, vacación o incapacidad; los que tienen algo salen primero, y tocar a alguien abre sus marcas. Corregir, aprobar y cerrar la quincena siguen en el portal.

@@ -17,6 +17,7 @@ export const ICONOS = {
   Smartphone: i('iphone', require('@expo/material-symbols/mobile.xml')),
   AlertTriangle: i('exclamationmark.triangle', require('@expo/material-symbols/warning.xml')),
   Hourglass: i('hourglass', require('@expo/material-symbols/hourglass.xml')),
+  Gauge: i('gauge.with.needle', require('@expo/material-symbols/speed.xml')),
   MessageSquare: i('text.bubble', require('@expo/material-symbols/chat.xml')),
   Calendar: i('calendar', require('@expo/material-symbols/calendar_month.xml')),
   CalendarCheck: i('calendar.badge.checkmark', require('@expo/material-symbols/event_available.xml')),

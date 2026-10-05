@@ -21,6 +21,9 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1209.0 — App: Encuestas a clientes
+
+- **App: Encuestas a clientes nativo.** La lista —en diseño (con cuántas esperan aprobación), en campo y cerradas— con estado, preguntas, canales y cierre; y cada encuesta con sus resultados: NPS y su lectura, respuestas por canal, promotores/pasivos/detractores, puntaje por tema, NPS por sucursal y los comentarios abiertos. Diseñar, aprobar y publicar siguen en el portal. La lógica ya vivía en el núcleo (`encuestasClientes`).
 ## v2.1208.1 — App de clientes en producción
 
 - **Base aplicada en producción** (`20261005191541_app_clientes_base`): sesiones y pre-registros de la app, `ofertas_clientes` con la foto del descuento, el bucket privado `ofertas-clientes`, el permiso `ofertas_clientes` y las funciones `app_cliente_inyecciones` y `app_preregistro_resolver`. Desde ahora «Ofertas para clientes» y «Mostrar en la app» aparecen para quien tiene el permiso.

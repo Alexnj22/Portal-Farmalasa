@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1177.0 — Corte: la diferencia del tramo en Mi caja y en el papel
+
+- **El corte dice la diferencia de ESE corte, no la del día entero.** Al hacer un corte en Mi caja y en el comprobante impreso, la cifra grande era la diferencia acumulada del día, y en Cortes la del tramo — el mismo corte con dos números. La Popular, 27-sep: el de las 7:07 PM salió **+$0.55** al hacerlo y **−$0.05** en Cortes, porque el de la 1:04 PM ya había firmado +$0.60. Ahora las tres pantallas y el papel dicen **−$0.05**, y debajo «En el día: +$0.55» cuando son distintas. La base es el último corte confirmado del día; los descartados no cuentan.
+
 ## v2.1176.0 — App: Puntos
 
 - **App: Puntos nativo.** Tres pestañas, cada una con su permiso como en el portal. **Resumen**: si la acumulación funciona (y avisa si lleva más de una hora quieta con las salas abiertas), lo que hay en las cuentas, los canjes del mes, el mes contra el anterior, hoy por sala y lo próximo que vence. **Consulta**: buscar un cliente por nombre, DUI o teléfono y ver su saldo; al tocarlo, su cuenta entera — el saldo en dólares, si ya puede canjear, lo que vence y cada movimiento con quién lo hizo. **Avisos**: lo que hay que revisar, con acceso a la cuenta del cliente. Ajustar puntos, el código de acceso, asignar cuentas anteriores y los traspasos siguen en el portal.

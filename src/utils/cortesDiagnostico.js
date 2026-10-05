@@ -135,6 +135,52 @@ export function conTramo(cortesDeLaSala) {
     });
 }
 
+/**
+ * La base contra la que se mide un corte: la diferencia acumulada del último
+ * corte CONFIRMADO del día anterior a él. Es el `previa` de `conTramo`, dicho
+ * para UN corte — el que se acaba de hacer o el que se está por imprimir.
+ *
+ * Existe por un reporte del usuario (2026-10-05): La Popular, 27-sep. El corte
+ * de las 19:07 salió en Mi caja y en el papel con **+$0.55** —la acumulada del
+ * día— y en Cortes con **−$0.05** —lo que se movió desde el de las 13:04, que ya
+ * había firmado +$0.60—. El mismo corte con dos cifras, y la que importa es la
+ * del tramo («el importante es la diferencia del turno»). Calculada acá con la
+ * misma regla de `conTramo` —sólo un confirmado corre la base, un descartado o
+ * un corte sin conteo no— para que el diálogo, el papel y la tarjeta no puedan
+ * decir tres cosas distintas.
+ *
+ * @param {Array} cortesDelDia  filas de `cortes_caja` de la sala y el día
+ * @param {object} [o]
+ * @param {string} [o.hora]       sólo cuentan los de antes de esta hora; sin
+ *   ella, todos (el corte recién hecho todavía no llegó a la tabla)
+ * @param {*} [o.excluirId]       el propio corte, si ya está en la lista
+ * @returns {{ valor: number, hora: string|null }} `valor: 0` si no hay ninguno
+ */
+export function acumuladoAntesDe(cortesDelDia, { hora = null, excluirId = null } = {}) {
+    const previos = (cortesDelDia || [])
+        .filter((c) => c.tipo === 'C' && c.estado === 'CONFIRMADO' && !noContoEfectivo(c))
+        .filter((c) => excluirId == null || String(c.id) !== String(excluirId))
+        .filter((c) => !hora || String(c.hora) < String(hora))
+        .sort((a, b) => String(a.hora).localeCompare(String(b.hora)));
+    const ultimo = previos[previos.length - 1];
+    if (!ultimo) return { valor: 0, hora: null };
+    return { valor: diferenciaDelCorte(ultimo).valor ?? 0, hora: ultimo.hora };
+}
+
+/**
+ * Le agrega a un resultado (`conLaCuentaBuena` o `resultadoDeLaFila`) la
+ * diferencia del TRAMO. `diferencia` sigue siendo la acumulada del día —es la
+ * que imprime el sistema de la caja— y `tramo` la de este corte.
+ */
+export function conTramoDelCorte(r, previo) {
+    if (!r?.ok || r.diferencia == null || !previo) return r;
+    return {
+        ...r,
+        tramo: redondear(r.diferencia - (previo.valor || 0)),
+        previo,
+    };
+}
+
 /** El día de El Salvador de un instante. La fecha de un movimiento es la de la
  *  SALA, no la del reloj de quien mira. */
 const diaDeSala = (iso) => (iso

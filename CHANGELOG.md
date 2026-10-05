@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1201.0 — App: Cierre de período
+
+- **App: Cierre de período nativo.** La cadena del remanente mes a mes —qué se paga, qué queda a favor y si pasa al mes siguiente—, con el interruptor entre el libro que se declara hoy y el declarable, y cada período con su estado, su desglose, por qué no se puede cerrar todavía y si el libro se movió después de cerrarlo. Cerrar y reabrir siguen en el portal.
+- **Núcleo:** el saldo, la cadena, los totales y la deriva pasan de `CierrePeriodoView` a `src/utils/cierrePeriodo.js`, con su prueba.
+
 ## v2.1200.0 — App: Resumen fiscal
 
 - **App: Resumen fiscal nativo.** El movimiento de IVA del mes, el pago a cuenta y el anticipo por tarjeta, y cómo se llega al movimiento renglón por renglón; con el aviso de que es un indicador y no una declaración antes de los números. Mes a mes, y por sucursal para quien ve toda la empresa.

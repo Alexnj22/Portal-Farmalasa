@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1179.2 — Inyecciones: 30 días en la lista y 90 al buscar cliente o factura
+
+- **Aplicación de inyección → Comprada aquí** muestra las ventas de los últimos **30 días** (antes 7).
+- **Al buscar por cliente o factura se miran 90 días.** La búsqueda por nombre de la inyección se queda en 30: es la que revisa renglón por renglón, y a 90 días costaba 446 ms en la sala más movida contra 86 ms por cliente/factura.
+
 ## v2.1179.1 — Traslados: lo que apareció y no entró al inventario deja de verse como resuelto
 
 - **«Apareció» sin ingresar ya no se pinta como resuelto.** Las cuatro de la bolsa E00212 salían en verde bajo «Resueltos en el último mes» con un botón de «Ingresar a inventario» adentro: la caja está en el estante y fuera de las existencias de las dos salas. Ahora tienen estado propio, «Falta ingresar» en ámbar, una sección arriba («Aparecieron, falta ingresarlos») y cuentan en el número de la pestaña.

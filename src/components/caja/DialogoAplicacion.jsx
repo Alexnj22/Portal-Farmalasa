@@ -398,7 +398,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                         <SearchInput value={texto} onChange={setTexto} placeholder="Cliente, factura o inyección" />
                         <div className="flex items-center justify-between gap-2">
                             <p className="text-caption font-black uppercase tracking-widest text-content-2">
-                                Ventas con inyección · últimos 7 días
+                                {buscar ? 'Ventas con inyección · cliente o factura, últimos 90 días' : 'Ventas con inyección · últimos 30 días'}
                             </p>
                             {/* Sin salida para cobrar «sin venta» (usuario, 2026-10-02):
                                 toda aplicación comprada queda asignada a su venta. Una
@@ -462,8 +462,8 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                         ) : modo !== 'COMPRADA' ? null : ventas == null ? <LoadingState /> : ventas.length === 0 ? (
                             <p className="text-body-sm text-content-3">
                                 {buscar
-                                    ? 'Ninguna venta con inyección coincide.'
-                                    : 'No hay ventas con inyección en los últimos 7 días.'}
+                                    ? 'Ninguna venta con inyección coincide en los últimos 90 días.'
+                                    : 'No hay ventas con inyección en los últimos 30 días.'}
                                 {' '}Si la venta se acaba de hacer, espera un minuto y toca «Actualizar».
                             </p>
                         ) : (

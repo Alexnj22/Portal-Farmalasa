@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1178.0 — App: Corte Z
+
+- **App: Corte Z nativo.** El Gran Z de cada sucursal mes por mes: lo que va a la declaración (factura y crédito fiscal), el cotejo contra el libro —siempre, cuadre o no—, las comprobaciones y, si difiere, qué documento lo explica y qué hacer con él. El original se puede abrir tal cual salió. Las cifras siguen detrás del permiso de ver montos; el PDF se descarga en el portal.
+- **Núcleo:** el umbral del cuadre, las causas de una diferencia, las filas de la declaración, los documentos que difieren y los totales pasan de `CorteZView` a `src/utils/corteZ.js`, con su prueba.
 ## v2.1177.0 — Corte: la diferencia del tramo en Mi caja y en el papel
 
 - **El corte dice la diferencia de ESE corte, no la del día entero.** Al hacer un corte en Mi caja y en el comprobante impreso, la cifra grande era la diferencia acumulada del día, y en Cortes la del tramo — el mismo corte con dos números. La Popular, 27-sep: el de las 7:07 PM salió **+$0.55** al hacerlo y **−$0.05** en Cortes, porque el de la 1:04 PM ya había firmado +$0.60. Ahora las tres pantallas y el papel dicen **−$0.05**, y debajo «En el día: +$0.55» cuando son distintas. La base es el último corte confirmado del día; los descartados no cuentan.

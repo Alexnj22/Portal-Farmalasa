@@ -21,6 +21,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/monitor-ventas': true, // el «Monitor de ventas» del portal es un modal; en la app, su pantalla
   '/ventas': true,         // la lista de facturas con sus cifras; tocar una abre la venta
   '/cuentas-por-cobrar': true, // la cartera, la ficha de un crédito y el cobro
+  '/cuentas-por-pagar': true, // lo que se debe por proveedor y los pagos (aprobar/anular); registrar un pago: portal
   '/metas': true, // el tablero del mes por sala; bono, confirmación e histórico: portal
   '/inyecciones': true, // pendientes (marcar aplicadas) y bitácora; por cobrar y ajustes: portal
   '/facturas-compra': true, // los documentos del mes; la ficha con productos y PDF (revisión y vincular: portal)

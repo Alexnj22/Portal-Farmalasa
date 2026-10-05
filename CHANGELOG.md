@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1183.0 — App: Cuentas por pagar
+
+- **App: Cuentas por pagar nativa.** Cuánto se le debe a cada proveedor, lo vencido, lo en trámite y lo disponible del crédito, con los vencidos primero; tocar uno abre sus facturas pendientes con su vencimiento. En **Pagos**, Gerencia aprueba o anula los cheques desde el teléfono, con la misma función y el mismo motivo que el portal. Registrar un pago y las condiciones de crédito siguen en el portal.
+- **Núcleo:** los totales, los estados de un pago y las formas de pago pasan de `CuentasPorPagarView` a `src/utils/cuentasPorPagar.js`, con su prueba.
 ## v2.1182.0 — Traslados: «En camino» con trayecto, chips de lote y el pulso de la cola
 
 - **El pulso arriba de la lista.** Cuántas cajas hay en camino, cuántas pasaron del día y desde cuándo espera la más vieja, en la fila donde antes la píldora de filtros flotaba sola.

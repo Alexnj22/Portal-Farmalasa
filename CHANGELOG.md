@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1198.0 — App: Gestionar avisos
+
+- **App: Gestionar avisos nativo.** Los avisos internos activos, programados y archivados, con su destino, si son urgentes y cuánta gente ya los leyó; tocar uno muestra quién falta por leer y deja archivarlo. Y se publica uno nuevo desde el teléfono (título, mensaje, todos o una sala, urgente). Quien gestiona sólo su sala, ve y publica para su sala. Avisos a un cargo o a personas sueltas, y programarlos, siguen en el portal.
+- **Núcleo:** a quién le llega un aviso, cuántos lo leyeron y en qué sección va pasan de `AnnouncementsView` a `src/utils/avisosInternos.js`, con su prueba.
 ## v2.1197.1 — Alerta de inventario: sólo tras 3 fallas seguidas, sin «revisa tu conexión»
 
 - `useSyncMonitor` ya no avisa por una corrida fallida suelta: el cron es de un

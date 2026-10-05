@@ -29,6 +29,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { EmptyState } from '../components/common/StateViews';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { avisoConLectura, seccionDeAviso } from '@nucleo/utils/avisosInternos';
 
 // Las pestañas viven acá arriba y no en línea dentro del JSX: `usePestanaEnUrl`
 // necesita la lista para validar el `?tab=` que llegue por la dirección. El
@@ -279,18 +280,6 @@ const AnnouncementsView = ({ openModal }) => {
     { id: 'EMPLOYEE', label: 'Personal' },
   ], []);
 
-  const getTargetAudience = useCallback((type, value) => {
-    const list = employees || [];
-    if (type === 'GLOBAL') return list;
-    if (type === 'BRANCH') return list.filter((e) => String(e.branchId) === String(value));
-    if (type === 'ROLE') return list.filter((e) => e.role === value);
-    if (type === 'EMPLOYEE') {
-      const ids = (value || []).map(String);
-      const set = new Set(ids);
-      return list.filter((e) => set.has(String(e.id)));
-    }
-    return [];
-  }, [employees]);
 
   const handleEditClick = useCallback((ann) => {
     setError('');
@@ -468,42 +457,15 @@ const AnnouncementsView = ({ openModal }) => {
     setSelectedEmployees((prev) => prev.filter((empId) => empId !== sid));
   };
 
-  const processedAnnouncements = useMemo(() => {
-    return (announcements || []).map((ann) => {
-      const audience = getTargetAudience(ann.targetType, ann.targetValue);
-      const totalExpected = audience.length;
-      const readIds = (ann.readBy || []).map((r) => String(typeof r === 'object' ? r.employeeId : r));
-      const readSet = new Set(readIds);
-      const isFullyRead = totalExpected > 0 && readSet.size >= totalExpected;
-      const readPercentage = totalExpected > 0 ? Math.round((readIds.length / totalExpected) * 100) : 0;
-
-      let badgeText = '';
-      if (ann.targetType === 'GLOBAL') badgeText = 'Global';
-      else if (ann.targetType === 'BRANCH') badgeText = branchNameById.get(String(ann.targetValue)) || 'Sucursal';
-      else if (ann.targetType === 'ROLE') badgeText = ann.targetValue;
-      else if (ann.targetType === 'EMPLOYEE') badgeText = `${Array.isArray(ann.targetValue) ? ann.targetValue.length : 0} Personal`;
-
-      return {
-        ...ann,
-        audience, readIds, readSet, totalExpected, readPercentage,
-        isCompleted: ann.isArchived || isFullyRead,
-        badgeText, badgeType: ann.targetType
-      };
-    });
-  }, [announcements, getTargetAudience, branchNameById]);
+  // Lectura y destino de cada aviso: `avisoConLectura` (núcleo).
+  const processedAnnouncements = useMemo(() => (announcements || []).map((ann) => avisoConLectura(ann, employees, branchNameById)), [announcements, employees, branchNameById]);
 
   // 🚨 LÓGICA DE SEPARACIÓN EN PESTAÑAS MEJORADA
   const currentListRaw = useMemo(() => {
     const now = new Date();
 
-    const baseList = processedAnnouncements.filter((a) => {
-        const isScheduled = a.scheduledFor && new Date(a.scheduledFor) > now;
-
-        if (listTab === 'ARCHIVED') return a.isCompleted;
-        if (listTab === 'SCHEDULED') return isScheduled && !a.isCompleted;
-
-        return !a.isCompleted && !isScheduled;
-    });
+    // La pestaña de cada aviso: `seccionDeAviso` (núcleo).
+    const baseList = processedAnnouncements.filter((a) => seccionDeAviso(a, now) === (listTab === 'ARCHIVED' || listTab === 'SCHEDULED' ? listTab : 'ACTIVE'));
 
     const branchFiltered = isBranchScoped && user?.branchId
         ? baseList.filter(a =>

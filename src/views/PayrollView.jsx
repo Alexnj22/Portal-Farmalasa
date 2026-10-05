@@ -28,49 +28,17 @@ import { registrarEgreso } from '@nucleo/data/egreso';
 import { abrirVentanaDeImpresion, escribirEImprimir } from '../plataforma/ventanaDeImpresion';
 import { descargarArchivo } from '../plataforma/descargas';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { ESTADO_PLANILLA, montoEnLetras, ordenDeCargo, rotuloDePeriodo } from '@nucleo/utils/planilla';
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt    = (n) => formatMoney(n || 0);
 const round2 = (n) => parseFloat((n || 0).toFixed(2));
 
 // Role hierarchy by DB id — lower index = more senior
-const ROLE_HIERARCHY = [2,3,11,12,13,22,19,20,8,23,24,9,14,16,17,18,15,26,30,27];
-const roleOrder = (emp) => {
-    const idx = ROLE_HIERARCHY.indexOf(Number(emp?.role_id ?? emp?.roleId));
-    return idx === -1 ? 999 : idx;
-};
-
-const STATUS_META = {
-    DRAFT:    { label: 'Borrador', variante: 'neutral' },
-    APPROVED: { label: 'Aprobada', variante: 'success' },
-    PAID:     { label: 'Pagada',   variante: 'chart-1' },
-};
-
-// ─── Number to words ──────────────────────────────────────────────────────────
-function numberToWords(n) {
-    const ones = ['','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez','once','doce','trece','catorce','quince','dieciséis','diecisiete','dieciocho','diecinueve'];
-    const tens = ['','','veinte','treinta','cuarenta','cincuenta','sesenta','setenta','ochenta','noventa'];
-    const hunds = ['','ciento','doscientos','trescientos','cuatrocientos','quinientos','seiscientos','setecientos','ochocientos','novecientos'];
-    if (n === 0) return 'cero';
-    if (n < 0) return 'menos ' + numberToWords(-n);
-    let s = '';
-    if (n >= 1000) { s += numberToWords(Math.floor(n / 1000)) + ' mil '; n %= 1000; }
-    if (n >= 100)  { s += hunds[Math.floor(n / 100)] + ' '; n %= 100; }
-    if (n >= 20)   { s += tens[Math.floor(n / 10)] + (n % 10 ? ' y ' + ones[n % 10] : '') + ' '; n = 0; }
-    else if (n > 0){ s += ones[n] + ' '; }
-    return s.trim();
-}
-function amountInWords(amount) {
-    const total = Math.round(amount * 100);
-    return `${numberToWords(Math.floor(total / 100)).toUpperCase()} CON ${String(total % 100).padStart(2,'0')}/100`;
-}
-function periodLabel(start, end) {
-    const s = new Date(start + 'T12:00:00');
-    const cap = (str) => str.charAt(0).toUpperCase() + str.slice(1);
-    const m = cap(s.toLocaleDateString('es-SV', { month: 'long', year: 'numeric' }));
-    if (s.getDate() === 1)  return `Primera Quincena de ${m}`;
-    if (s.getDate() === 16) return `Segunda Quincena de ${m}`;
-    return `${s.toLocaleDateString('es-SV')} — ${fechaTexto(end)}`;
-}
+// Orden por cargo, estados, el período y el monto en letras: `planilla` (núcleo, lo mismo de la app).
+const roleOrder = ordenDeCargo;
+const STATUS_META = ESTADO_PLANILLA;
+const amountInWords = montoEnLetras;
+const periodLabel = rotuloDePeriodo;
 
 // ─── Print helpers ────────────────────────────────────────────────────────────
 const PRINT_CSS = `

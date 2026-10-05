@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1195.0 — App: Nómina
+
+- **App: Nómina nativa.** La quincena elegida con su estado, el líquido a pagar y los descuentos, por sala y ordenados por cargo; cada persona abre su boleta con ingresos, descuentos, el líquido en letras y el detalle de viáticos. Generar, aprobar, pagar e imprimir siguen en el portal.
+- **Boleta impresa corregida:** el monto en letras decía «UNO MIL» por $1,000, «CIENTO» por $100 y «VEINTE Y UNO» por 21; ahora dice «MIL», «CIEN» y «VEINTIUNO» (y «VEINTIÚN MIL»).
+- **Núcleo:** el orden por cargo, los estados, el nombre de la quincena, el monto en letras y los totales pasan de `PayrollView` a `src/utils/planilla.js`, con su prueba.
 ## v2.1194.0 — Ofertas de la app desde los descuentos de Promociones
 
 - **Promociones → Descuentos: «Mostrar en la app».** Cada descuento vigente o programado se puede anunciar en la app de clientes. La oferta se llena sola con las fechas, las salas y los productos con su precio antes y después; quien la publica pone el título, el texto y la imagen. La tarjeta dice si ya está «En la app».

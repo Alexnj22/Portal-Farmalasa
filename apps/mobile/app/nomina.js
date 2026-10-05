@@ -83,7 +83,7 @@ export default function Nomina() {
         {periodo ? (
           <View style={{ marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{rotuloDePeriodo(periodo.start_date, periodo.end_date)}</Text>
-            {estado ? <Pildora texto={estado.label} color={colorDeVariante(estado.variante === 'chart-1' ? 'info' : estado.variante)} /> : null}
+            {estado ? <Pildora texto={estado.label} color={colorDeVariante(estado.variante)} /> : null}
           </View>
         ) : null}
         {periodo ? (

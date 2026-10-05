@@ -61,6 +61,8 @@ export const ICONOS = {
   FlashlightOff: i('flashlight.off.fill', require('@expo/material-symbols/flashlight_off.xml')),
   ScanLine: i('barcode.viewfinder', require('@expo/material-symbols/barcode_scanner.xml')),
   Check: i('checkmark', require('@expo/material-symbols/check.xml')),
+  CheckCircle2: i('checkmark.circle', require('@expo/material-symbols/check_circle.xml')),
+  Image: i('photo', require('@expo/material-symbols/image.xml')),
   Package: i('shippingbox', require('@expo/material-symbols/inventory_2.xml')),
   PackagePlus: i('plus.rectangle.on.rectangle', require('@expo/material-symbols/add_box.xml')),
   PackageMinus: i('minus.rectangle', require('@expo/material-symbols/inventory.xml')),

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1212.0 — App: Marketing
+
+- **App: Marketing nativo.** El mes de contenido para redes con su estado y su avance, y cada pieza día por día con su formato, hora, estado y diseño; tocar una muestra el texto, los hashtags y los diseños en grande (sólo cuando el mes ya se envió a revisión, como en el portal). Y las solicitudes al diseñador con su estado y prioridad. Planificar, aprobar, pautar y pedir siguen en el portal. La lógica ya vivía en el núcleo (`marketing`).
+- **App:** las variantes categóricas del portal (`chart-1`, `-3`, `-4`, `-6`, `-9`) ya tienen color en la app; antes salían grises («Por revisar», «Programado», «Publicado»…).
 ## v2.1211.1 — App de clientes: cerrar sesión cierra
 
 - **«Cerrar sesión» volvía a entrar solo** en el servidor de pruebas: la entrada automática de desarrollo se disparaba cada vez que no había sesión. Ahora entra sola una vez por arranque y nunca después de cerrar sesión. En una compilación de tienda nunca existió.

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1176.0 — App: Puntos
+
+- **App: Puntos nativo.** Tres pestañas, cada una con su permiso como en el portal. **Resumen**: si la acumulación funciona (y avisa si lleva más de una hora quieta con las salas abiertas), lo que hay en las cuentas, los canjes del mes, el mes contra el anterior, hoy por sala y lo próximo que vence. **Consulta**: buscar un cliente por nombre, DUI o teléfono y ver su saldo; al tocarlo, su cuenta entera — el saldo en dólares, si ya puede canjear, lo que vence y cada movimiento con quién lo hizo. **Avisos**: lo que hay que revisar, con acceso a la cuenta del cliente. Ajustar puntos, el código de acceso, asignar cuentas anteriores y los traspasos siguen en el portal.
+- **Núcleo:** los rótulos de movimientos y avisos, el detalle de cada movimiento, la clave con que se busca su documento y su autor, la conversión a dólares y el aviso de acumulación quieta pasan de `PuntosView` y `ClientePuntosModal` a `src/utils/puntosTexto.js`, con su prueba.
 ## v2.1175.1 — Inyecciones: el catálogo de Ajustes deja de leer 1.2 GB por apertura
 
 `gate:perf` (sección F) marcó `inyeccion_catalogo_dosis` con 1,191 MB por

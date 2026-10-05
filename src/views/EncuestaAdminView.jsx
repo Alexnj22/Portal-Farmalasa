@@ -28,40 +28,16 @@ import {
     fetchSurveyPreguntas, fetchSurveyResponses, actualizarEncuesta, insertSurvey,
     updateSurveyResponse, insertSurveyResponse, deleteSurveyResponse,
 } from '@nucleo/data/encuestas';
+import { promedioPorPersona, puntajeDePersona } from '@nucleo/utils/climaLaboral';
 import SearchInput from '../components/common/SearchInput';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const SCORE_MAP = { A: 4, B: 3, C: 2, D: 1 };
-
-function blockScore(answers, indices, invertedSet = new Set()) {
-    let total = 0, count = 0;
-    for (const i of (indices || [])) {
-        const v = answers?.[i];
-        if (!v) continue;
-        let raw;
-        if (SCORE_MAP[v] !== undefined) {
-            raw = SCORE_MAP[v];
-        } else {
-            const n = parseInt(v, 10);
-            if (!isNaN(n) && n >= 1 && n <= 10) {
-                raw = n >= 9 ? 4 : n >= 7 ? 3 : n >= 5 ? 2 : 1;
-            } else {
-                continue;
-            }
-        }
-        total += invertedSet.has(i) ? (5 - raw) : raw;
-        count++;
-    }
-    return count > 0 ? Math.round((total / (count * 4)) * 100) : null;
-}
-
-function avgBlockScore(respuestas, indices, invertedSet = new Set()) {
-    const scores = respuestas.map(r => blockScore(r.responses || [], indices, invertedSet)).filter(s => s != null);
-    return scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
-}
+// Puntaje por persona y su promedio: `climaLaboral` (núcleo, lo mismo de la app).
+const blockScore = puntajeDePersona;
+const avgBlockScore = promedioPorPersona;
 
 function scoreColor(s) {
     if (s == null) return 'text-content-3';

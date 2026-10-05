@@ -23,3 +23,14 @@ describe('climaLaboral', () => {
         expect(nivelDePuntaje(40).label).toBe('Crítico');
     });
 });
+
+describe('climaLaboral — por persona', () => {
+    it('el puntaje de cada persona y su promedio, redondeados', async () => {
+        const { puntajeDePersona, promedioPorPersona } = await import('@nucleo/utils/climaLaboral');
+        const inv = new Set([1]);
+        expect(puntajeDePersona(['A', 'D', 'B'], [0, 1, 2], inv)).toBe(92);
+        expect(puntajeDePersona(['D', 'A', 'D'], [0, 1, 2], inv)).toBe(25);
+        expect(puntajeDePersona([], [0])).toBeNull();
+        expect(promedioPorPersona([{ responses: ['A', 'D', 'B'] }, { responses: ['B', 'C', 'A'] }, { responses: ['D', 'A', 'D'] }], [0, 1, 2], inv)).toBe(67);
+    });
+});

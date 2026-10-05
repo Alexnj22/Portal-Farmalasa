@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1208.0 — App: Encuestas (administración)
+
+- **App: Encuestas (administración) nativo.** Todas las encuestas internas con su tipo, estado, fechas y cuántas personas respondieron; tocar una muestra el promedio general, el de cada bloque y cada persona con su puntaje, de menor a mayor. Si la encuesta es anónima, la app no muestra nombre ni avatar. Crear, editar y capturar respuestas siguen en el portal.
+- **Núcleo:** el puntaje por persona y su promedio pasan de `EncuestaAdminView` a `src/utils/climaLaboral.js` (junto a los rótulos de estado y tipo), con su prueba.
+- **Entrevistas:** marcada en el plan como sin nada que convertir — en el portal todavía es «próximamente».
+
 ## v2.1207.0 — App: Carnés del día
 
 - **App: Carnés del día nativo.** Los carnés de papel vivos ahora mismo, agrupados por la sala de quien los tiene, con quién lo entregó, por dónde salió y a qué hora vence; y anular uno con confirmación si se traspapeló. Imprimir necesita la ticketera de una computadora y sigue en el portal.

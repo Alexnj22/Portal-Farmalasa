@@ -76,3 +76,28 @@ export const indicesInvertidos = (preguntas) => new Set((preguntas || []).filter
 
 /** El índice global: todas las preguntas de todos los bloques juntas. */
 export const puntajeGlobal = (rows, bloques, invertidas) => puntajeDeBloque(rows, (bloques || []).flatMap((b) => b.indices || []), invertidas);
+
+/**
+ * El puntaje (0–100, redondeado) de UNA persona en unas preguntas — el que usa
+ * la administración de encuestas para cada fila. Ojo: no es lo mismo que
+ * `puntajeDeBloque`, que junta todas las respuestas de todos antes de dividir.
+ */
+export function puntajeDePersona(respuestas, indices, invertidas = new Set()) {
+    let total = 0, count = 0;
+    for (const i of indices || []) {
+        const raw = valorDeRespuesta(respuestas?.[i]);
+        if (raw == null) continue;
+        total += invertidas.has(i) ? (5 - raw) : raw;
+        count++;
+    }
+    return count > 0 ? Math.round((total / (count * 4)) * 100) : null;
+}
+
+/** El promedio de los puntajes por persona (redondeado), o `null` si nadie contestó. */
+export function promedioPorPersona(filas, indices, invertidas = new Set()) {
+    const s = (filas || []).map((r) => puntajeDePersona(r.responses || [], indices, invertidas)).filter((x) => x != null);
+    return s.length ? Math.round(s.reduce((a, b) => a + b, 0) / s.length) : null;
+}
+
+export const ESTADO_ENCUESTA = { borrador: 'Borrador', activa: 'Activa', cerrada: 'Cerrada', archivada: 'Archivada' };
+export const TIPO_ENCUESTA = { clima: 'Clima', satisfaccion: 'Satisfacción', desempeno: 'Desempeño', adhoc: 'Personalizada' };

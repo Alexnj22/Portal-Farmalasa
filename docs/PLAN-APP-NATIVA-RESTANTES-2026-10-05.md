@@ -48,8 +48,8 @@ se trabaja de corrido; cada fila se marca al publicarse.
 | 23 | `/permisos` | ver permisos por cargo | ✅ |
 | 24 | `/sesiones` | conexiones activas | ✅ |
 | 25 | `/carnes-del-dia` | los carnés del día | ✅ |
-| 26 | `/entrevistas` | lista y ficha | |
-| 27 | `/encuesta-admin` | resultados | |
+| 26 | `/entrevistas` | lista y ficha | ➖ no existe: en el portal está «próximamente», no hay pantalla que convertir |
+| 27 | `/encuesta-admin` | resultados | ✅ |
 | 28 | `/encuestas-clientes` | resultados | |
 | 29 | `/encuestas-aplicar` | aplicar una encuesta a un cliente | |
 | 30 | `/marketing` | piezas y calendario | |

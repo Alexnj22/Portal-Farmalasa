@@ -31,6 +31,8 @@ import {
     copiarPermisosDeCargo, cambiarSeccionDeCargo,
 } from '@nucleo/data/permissions';
 import { useToastStore } from '@nucleo/store/toastStore';
+import { cargosNivelANivel } from '@nucleo/utils/jerarquiaDeCargos';
+import { mapaDePermisos } from '@nucleo/utils/permisosDeCargo';
 
 // ─── Módulos del sistema agrupados por función ─────────────────────────────
 // MODULE_GROUPS vive en constants/permissionModules.js (lo comparte MaintenanceView).
@@ -672,23 +674,9 @@ const PermissionsView = () => {
             fetchRolesForPermissions(),
             fetchRolePermissions(),
         ]).then(([{ data: rolesData }, { data: permsData }]) => {
-            // Ordenar jerárquicamente: raíz → hijos → nietos...
+            // Nivel a nivel, raíz → hijos → nietos: `cargosNivelANivel` (núcleo).
             const rawRoles = rolesData || [];
-            const byParent = {};
-            rawRoles.forEach(r => {
-                const p = r.parent_role_id ?? 'root';
-                if (!byParent[p]) byParent[p] = [];
-                byParent[p].push(r);
-            });
-            // BFS: nivel a nivel (mayor → menor jerarquía)
-            const sorted = [];
-            const queue = (byParent['root'] || []).map(r => r);
-            while (queue.length) {
-                const r = queue.shift();
-                sorted.push(r);
-                (byParent[r.id] || []).forEach(child => queue.push(child));
-            }
-            const loadedRoles = sorted;
+            const loadedRoles = cargosNivelANivel(rawRoles);
             setOrgRoles(loadedRoles);
 
             // Niveles de precio, flag is_su y tiempo de inactividad por cargo
@@ -704,21 +692,8 @@ const PermissionsView = () => {
             setRoleIsSU(suFlags);
             setRoleIdleLimits(idles);
 
-            const map = {};
-            (permsData || []).forEach(p => {
-                map[`${p.role_id}:${p.module_key}`] = {
-                    can_view: p.can_view,
-                    can_edit: p.can_edit,
-                    can_approve: p.can_approve,
-                    scope: p.scope || 'ALL',
-                    delega_en_ausencia: !!p.delega_en_ausencia,
-                };
-            });
-            // Inicializar vacíos
-            loadedRoles.forEach(r => MODULES.forEach(m => {
-                const k = `${r.id}:${m.key}`;
-                if (!map[k]) map[k] = { can_view: false, can_edit: false, can_approve: false, scope: 'ALL', delega_en_ausencia: false };
-            }));
+            // El mapa cargo:módulo, con lo que no tiene fila apagado: `mapaDePermisos` (núcleo).
+            const map = mapaDePermisos(permsData, loadedRoles, MODULES.map(m => m.key));
             setPermissions(map);
             setLoading(false);
         });

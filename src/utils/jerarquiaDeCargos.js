@@ -37,3 +37,17 @@ export function esCargoExterno(nombre) {
     if (n.includes('ENFERMERÍA') || n.includes('ENFERMERIA')) return false;
     return n.includes('REGENTE') || n.includes('REFERENTE') || n.includes('EXTERNO') || n.includes('CONSULTOR');
 }
+
+/** Los cargos nivel a nivel (la cima, sus hijos, sus nietos…), como los lista Permisos. */
+export function cargosNivelANivel(roles) {
+    const byParent = {};
+    for (const r of roles || []) (byParent[r.parent_role_id ?? 'root'] ||= []).push(r);
+    const sorted = [];
+    const queue = [...(byParent.root || [])];
+    while (queue.length) {
+        const r = queue.shift();
+        sorted.push(r);
+        queue.push(...(byParent[r.id] || []));
+    }
+    return sorted;
+}

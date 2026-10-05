@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1205.0 — App: Permisos
+
+- **App: Permisos nativo.** Se elige un cargo y se ve, grupo por grupo, a qué módulos entra y qué puede hacer en cada uno —ver, gestionar, aprobar, con qué alcance— más las pestañas y capacidades encendidas; arriba, si es Super Usuario, cuánto aguanta su sesión sin uso y su nivel de precio. Cambiar permisos sigue en el portal.
+- **Núcleo:** el mapa cargo × módulo (con lo que no tiene fila apagado) y el orden de cargos nivel a nivel pasan de `PermissionsView` a `src/utils/permisosDeCargo.js` y `jerarquiaDeCargos.js`, con su prueba.
+
 ## v2.1204.0 — App: Cargos
 
 - **App: Cargos nativo.** El organigrama como lista, de la cima hacia abajo y sangrado por nivel, con cuántas personas ocupa cada cargo (y su tope), si es por sucursal o global y si es externo; tocar uno muestra a quién reporta y quiénes lo ocupan. Crear, editar y el organigrama visual siguen en el portal.

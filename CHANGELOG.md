@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1190.0 — App: Promociones
+
+- **App: Promociones nativa.** Las vigentes, terminadas o todas, con su vigencia, laboratorios y estado («por vencer» se lee de la fecha, igual que el portal); el detalle trae cada producto con cuánto se ha vendido en total y en cada sala, y su lote. Crear, los descuentos de la caja y los pagos siguen en el portal.
+- **App:** `colorDeVariante` traduce la severidad del núcleo (success, warning…) al color de la app, en un solo sitio.
+
 ## v2.1189.0 — App: Cotizaciones
 
 - **App: Cotizaciones nativa.** Las vigentes, anuladas o todas, buscando por número, cliente o quién la hizo; el detalle trae los productos con presentación, cantidad y precio, y los totales con IVA y retención. Crear, editar, anular e imprimir siguen en el portal.

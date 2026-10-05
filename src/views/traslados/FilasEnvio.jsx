@@ -150,7 +150,7 @@ function Cabecera({ envio, tono = 'brand', ahora = null }) {
         <div className="flex items-start gap-3.5">
             <span className={`shrink-0 w-[3.25rem] rounded-xl px-1 py-1.5 flex flex-col items-center
                               justify-center ring-1 ring-inset ${paleta}`}>
-                <span className="text-h3 font-black leading-none tabular-nums">{n}</span>
+                <span className="text-title-sm font-black leading-none tabular-nums">{n}</span>
                 <span className="mt-1 text-[0.5625rem] font-black uppercase tracking-wider leading-none opacity-80">
                     {n === 1 ? 'producto' : 'prod.'}
                 </span>

@@ -661,7 +661,7 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                     tiñe cuando el traslado lleva más de un día parado. */}
                 <span className={`shrink-0 w-[3.25rem] rounded-xl px-1 py-1.5 flex flex-col items-center justify-center
                                   ring-1 ring-inset ${trabado ? 'bg-danger/10 ring-danger/25' : 'bg-warning/10 ring-warning/20'}`}>
-                    <span className={`text-h3 font-black leading-none tabular-nums ${trabado ? 'text-danger-text' : 'text-warning-text'}`}>
+                    <span className={`text-title-sm font-black leading-none tabular-nums ${trabado ? 'text-danger-text' : 'text-warning-text'}`}>
                         {piezas?.numero ?? '—'}
                     </span>
                     <span className={`mt-1 text-[0.5625rem] font-black uppercase tracking-wider leading-none text-center

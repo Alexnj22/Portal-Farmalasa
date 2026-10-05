@@ -186,7 +186,10 @@ export default function TrasladosView() {
     const [abrirEscaneo, setAbrirEscaneo] = useState(false);
     /* El recorrido: escanear lo que uno se lleva y responder por ello. */
     const [abrirRetiro,  setAbrirRetiro]  = useState(false);
-    const [error,        setError]        = useState('');
+    /* Dos errores porque son dos cargas: el de las colas no puede borrar el
+     * del historial ni al revés. */
+    const [errorColas,   setErrorColas]   = useState('');
+    const [errorArchivo, setErrorArchivo] = useState('');
     /* En qué va cada composición: cuántas de sus salas contestaron. Las que NO
      * contestaron no están en `porRecibir` —esa lista es de lo que ya salió—,
      * así que el número no se puede contar acá y sale de su propia consulta. */
@@ -219,49 +222,72 @@ export default function TrasladosView() {
     // historial los dos extremos, y esa diferencia la resuelve cada consulta.
     const salaQueRecorta = alcanceTodas ? (sala || null) : miBranch;
 
-    // Nada de `setError('')` antes del primer `await`: sería un setState
-    // síncrono dentro del efecto que la llama, y eso encadena renders. El error
-    // se resuelve cuando llega la respuesta, que es cuando se sabe.
-    const cargar = useCallback(async () => {
-        const [b, c, d, e, g2] = await Promise.all([
+    /* ── Dos cargas, no una ───────────────────────────────────────────────
+     * Las COLAS —en camino, envíos vivos, faltantes— son lo que hay que hacer y
+     * alimentan los contadores de las pestañas: van siempre. El ARCHIVO —el
+     * historial de la semana y los envíos cerrados— sólo lo mira quien abre
+     * «Historial», que es la pestaña que menos se abre.
+     *
+     * Antes era una sola carga de cinco consultas, y `cargar` es el `onHecho`
+     * de cada tarjeta: recibir una caja, cerrar un faltante o contestar un
+     * envío volvía a pedir el historial entero (hasta 200 traslados y 200
+     * envíos con sus renglones) para una pantalla que no lo estaba mostrando.
+     * Y mover la semana del historial re-pedía las colas, que no dependen de
+     * la semana.
+     *
+     * Nada de `setError('')` antes del primer `await`: sería un setState
+     * síncrono dentro del efecto que la llama, y eso encadena renders. */
+    const cargarColas = useCallback(async () => {
+        const [b, d, g2] = await Promise.all([
             fetchTrasladosPorRecibir({ branchId: salaQueRecorta }),
-            fetchTrasladosHistorial({ branchId: salaQueRecorta, semana }),
             // Su alcance lo decide el RLS, no `salaQueRecorta`: un envío le toca
             // a las dos salas y cuál de las dos sos cambia lo que hay que hacer,
             // no si se puede ver.
             fetchEnviosVivos(),
-            /* Y los CERRADOS, que no se veían en ninguna parte. `get_envios_
-             * historial` estaba escrita desde el primer día y no la llamaba
-             * nadie: un envío desaparecía en cuanto terminaba, con su motivo y
-             * con lo que la otra sala devolvió y por qué. Es el mismo hueco que
-             * esta vista vino a tapar para el traslado el 2026-08-07. */
-            fetchEnviosHistorial(200),
             /* Los faltantes de las DOS familias en una sola lista. Su alcance
              * lo decide el RLS —el mismo que decide qué traslados se ven—, así
-             * que no lleva `salaQueRecorta`: un faltante le toca a las dos
-             * salas y cuál de las dos sos cambia lo que hay que hacer, no si se
-             * puede ver. */
+             * que no lleva `salaQueRecorta`. */
             fetchFaltantes(),
         ]);
-        const fallo = b.error ?? c.error ?? d.error ?? e.error ?? g2.error;
-        setError(fallo ? (fallo.message ?? 'No se pudo leer.') : '');
+        const fallo = b.error ?? d.error ?? g2.error;
+        setErrorColas(fallo ? (fallo.message ?? 'No se pudo leer.') : '');
         setPorRecibir(b.filas);
-        setHistorial(c.filas);
         setEnvios(d.envios);
-        setEnviosCerrados(e.envios);
         setFaltantes(g2.faltantes);
 
         /* El estado de los grupos se pide DESPUÉS y sólo por los que aparecen:
-         * es un dato de adorno para las que no tienen hermanas, y pedirlo
-         * siempre sería una consulta más en cada carga para nada. Si falla, las
-         * tarjetas se ven igual —sin el encabezado del grupo— en vez de dejar la
-         * pestaña vacía por un dato que no es el que se viene a mirar. */
+         * es un dato de adorno para las que no tienen hermanas. Si falla, las
+         * tarjetas se ven igual —sin el encabezado del grupo—. */
         const ids = (b.filas ?? []).map(f => f.metadata?.grupo_id).filter(Boolean);
         const { grupos: g } = await fetchEstadoDeGrupos(ids);
         setGrupos(g);
+    }, [salaQueRecorta]);
+
+    const cargarArchivo = useCallback(async () => {
+        const [c, e] = await Promise.all([
+            fetchTrasladosHistorial({ branchId: salaQueRecorta, semana }),
+            /* Los envíos CERRADOS. `get_envios_historial` estaba escrita desde
+             * el primer día y no la llamaba nadie: un envío desaparecía en
+             * cuanto terminaba, con su motivo y lo que la otra sala devolvió. */
+            fetchEnviosHistorial(200),
+        ]);
+        const fallo = c.error ?? e.error;
+        setErrorArchivo(fallo ? (fallo.message ?? 'No se pudo leer el historial.') : '');
+        setHistorial(c.filas);
+        setEnviosCerrados(e.envios);
     }, [salaQueRecorta, semana]);
 
-    useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
+    const enHistorial = activeTab === 'historial';
+
+    useEffect(() => { cargarColas(); }, [cargarColas]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
+    /* Cada vez que se ENTRA al historial se relee: lo que se cerró mientras uno
+     * estaba en otra pestaña tiene que estar ahí. Y mientras se está, la semana
+     * o la sala lo vuelven a pedir por sus dependencias. */
+    useEffect(() => { if (enHistorial) cargarArchivo(); }, [enHistorial, cargarArchivo]); // eslint-disable-line react-hooks/set-state-in-effect -- carga del archivo al abrir su pestaña
+
+    // Lo que llaman las tarjetas al terminar una acción: las acciones viven en
+    // las colas, así que es lo único que cambia.
+    const cargar = cargarColas;
 
     /* Los que el maestro de personal esconde. Se piden UNA vez por carga y sólo
      * los que faltan: `employees` ya trae a casi todos, y `resolverPersonas`
@@ -319,6 +345,19 @@ export default function TrasladosView() {
              ...(e.lineas ?? []).map(l => l.motivo_rechazo)].filter(Boolean).join(' '),
         ]).results;
     }, [enviosCerrados, busqueda]);
+
+    /* Los faltantes pasan por el MISMO buscador: el campo se ofrece en esta
+     * pestaña, y un buscador que no recorta la lista que está a la vista es un
+     * control que miente — escribir no hacía nada. */
+    const faltantesVistos = useMemo(() => {
+        const todos = faltantes ?? [];
+        if (!busqueda.trim()) return todos;
+        return smartFilter(busqueda, todos, f => [
+            [f.descripcion, f.origen_branch_name, f.destino_branch_name, f.codigo_bolsa,
+             f.id_traslado, f.nota, f.resolucion, f.declarado_por_nombre, f.resuelto_por_nombre]
+                .filter(Boolean).join(' '),
+        ]).results;
+    }, [faltantes, busqueda]);
 
     const vistas = useMemo(() => ({
         recibir:   filtrar(porRecibir),
@@ -382,7 +421,12 @@ export default function TrasladosView() {
      * supervisión, administración— muchas veces no tiene sala asignada. */
     const puedeEnviar = hasPermission('traslados', 'can_edit') && (alcanceTodas || Boolean(miBranch));
 
-    const cargando = porRecibir === null || historial === null || envios === null || enviosCerrados === null;
+    /* Cargando, por pestaña: Faltantes no tiene por qué esperar al historial,
+     * y el historial sólo espera lo suyo. */
+    const cargandoColas   = porRecibir === null || envios === null || faltantes === null;
+    const cargandoArchivo = historial === null || enviosCerrados === null;
+    const cargando = enHistorial ? cargandoArchivo : cargandoColas;
+    const error    = enHistorial ? (errorArchivo || errorColas) : errorColas;
 
     // El contador va en la pestaña y sale de lo que HAY, no de lo filtrado: un
     // número que baja al escribir en el buscador deja de decir cuánto falta.
@@ -422,7 +466,6 @@ export default function TrasladosView() {
 
     const lista = vistas[activeTab] ?? [];
 
-    const enHistorial = activeTab === 'historial';
     const enEnvios    = activeTab === 'envios';
     const enRecibir   = activeTab === 'recibir';
     const enFaltantes = activeTab === 'faltantes';
@@ -523,9 +566,15 @@ export default function TrasladosView() {
                     {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
                     {cargando ? <SkeletonText lines={4} /> : (
                         <FilasFaltante
-                            faltantes={faltantes ?? []}
+                            faltantes={faltantesVistos}
+                            todos={faltantes ?? []}
                             onHecho={cargar}
-                            vacio={(
+                            vacio={busqueda.trim() ? (
+                                <EmptyState
+                                    icon={PackageX}
+                                    title={`Sin coincidencias para "${busqueda}"`}
+                                />
+                            ) : (
                                 <EmptyState
                                     icon={PackageX}
                                     title="Sin faltantes"
@@ -606,7 +655,8 @@ export default function TrasladosView() {
                    por qué, y por qué la sucursal es el ORIGEN, en
                    `HistorialTraslados`. */
             enHistorial ? (
-                <div className="p-4 md:p-5">
+                <div className="p-4 md:p-5 flex flex-col gap-3">
+                    {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
                     {cargando ? <SkeletonText lines={6} /> : (
                         <Suspense fallback={<SkeletonText lines={6} />}>
                             <HistorialTraslados

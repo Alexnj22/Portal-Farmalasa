@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1178.3 — Traslados: Faltantes pulido, búsqueda que filtra y el historial deja de pedirse en cada acción
+
+- **Faltantes, rediseñada.** Tarjetas en rejilla de dos columnas (como «En camino» y «Envíos»), con una pastilla de estado, el recorrido entre salas, el código de la bolsa, la nota de quien abrió la caja como cita y la resolución en el color de su desenlace. Arriba, un resumen con cuántos hay sin resolver, cuántos aparecieron y cuántos no.
+- **El buscador ahora filtra Faltantes.** Se ofrecía en esa pestaña y escribir no hacía nada.
+- **Nombres cortos.** Faltantes pintaba el nombre completo de quien lo vio y quien lo resolvió; ahora sale de `shortEmployeeName`.
+- **El número de las tarjetas tenía tamaño.** `text-h3` no es un token del portal: el ancla de las tarjetas de traslado, envío y faltante se pintaba al tamaño heredado. Pasa a `text-title-sm`.
+- **El historial deja de pedirse en cada acción.** Era una sola carga de cinco consultas, y es el `onHecho` de cada tarjeta: recibir una caja o cerrar un faltante volvía a pedir hasta 200 traslados y 200 envíos cerrados. Ahora las colas se cargan siempre y el historial sólo al abrir su pestaña; mover la semana ya no relee las colas. Cada pestaña espera sólo lo suyo y el historial muestra su error si falla.
+
 ## v2.1178.2 — Inyecciones: pendientes de todas las salas y fotos de otra sucursal
 
 - **Pendientes muestra lo pagado en cualquier sucursal.** Quien sólo ve su sala tenía el filtro fijo en ella, y ese filtro miraba dónde se PAGÓ: el cliente que pagó en Salud 1 no aparecía en Salud 2, que es donde vino a aplicarse. Ahora se ven todas, y las de otra sucursal llevan «Pagada en …». La base tampoco recorta ya por sala (`inyecciones_pendientes`).

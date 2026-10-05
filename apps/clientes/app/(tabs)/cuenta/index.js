@@ -1,7 +1,7 @@
 // Cuenta: permisos, avisos, reglamento, cerrar sesión y borrar la cuenta
 // (Apple lo exige dentro de la app, 5.1.1(v)). Forma de Ajustes: grupos con
 // interruptores del sistema y acciones en filas, la destructiva en rojo.
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Pressable, Text } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { colorSistema, FilaInterruptor, FilaTexto, Formulario, Grupo } from '../../../componentes/sistema';
@@ -9,6 +9,7 @@ import { Aviso } from '../../../componentes/ui';
 import { useSesion } from '../../../lib/sesion';
 import { useCuenta } from '../../../lib/cuenta';
 import { pedirTokenDeAvisos } from '../../../lib/avisos';
+import { nombreBiometria, useBloqueo } from '../../../lib/bloqueo';
 import { nombrePropio } from '../../../lib/formato';
 import { useTema } from '../../../tema/tema';
 
@@ -32,6 +33,11 @@ export default function Cuenta() {
   const { pedir, cerrar } = useSesion();
   const { resumen, cargar } = useCuenta();
   const [mensaje, setMensaje] = useState(null);
+  const [biometria, setBiometria] = useState(null);
+  const bloqueoActivo = useBloqueo((x) => x.activo);
+  const encenderBloqueo = useBloqueo((x) => x.encender);
+  const apagarBloqueo = useBloqueo((x) => x.apagar);
+  useEffect(() => { nombreBiometria().then(setBiometria); }, []);
 
   useFocusEffect(useCallback(() => { if (!resumen) cargar(); }, [resumen, cargar]));
 
@@ -129,6 +135,13 @@ export default function Cuenta() {
             valor={valorDe('programa', c?.programa !== false)} alCambiar={(v) => permiso('programa', v)} color={t.color.magenta} />
           <FilaInterruptor titulo="Promociones" detalle={c?.textos?.promociones}
             valor={valorDe('promociones', c?.promociones === true)} alCambiar={(v) => permiso('promociones', v)} color={t.color.magenta} />
+        </Grupo>
+      ) : null}
+
+      {biometria ? (
+        <Grupo pie={`Pide ${biometria} al abrir la app y al volver después de un rato, para que nadie más vea tu saldo ni tu código.`}>
+          <FilaInterruptor titulo={`Bloquear con ${biometria}`} valor={bloqueoActivo}
+            alCambiar={async (v) => { if (v) await encenderBloqueo(); else await apagarBloqueo(); }} color={t.color.magenta} />
         </Grupo>
       ) : null}
 

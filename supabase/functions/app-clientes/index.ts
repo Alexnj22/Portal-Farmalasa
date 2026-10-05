@@ -427,6 +427,40 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ── El código del cliente para su tarjeta ─────────────────────────────
+    // El mismo código de 7 letras que emite la sala (`puntos_codigo_emitir`),
+    // con el mismo alfabeto sin parecidos. Si la ficha todavía no tiene, se le
+    // emite UNO la primera vez que abre la app (decisión del usuario,
+    // 2026-10-05) y queda en la bitácora como lo emitido en sala. Nunca se
+    // REEMPLAZA uno existente: reemitir cambia la credencial con que la
+    // persona entra, y eso sólo lo decide la sala.
+    async function codigoDelCliente(id: number, nombre: string): Promise<string | null> {
+      const { data: hay, error } = await admin.from("puntos_codigo_acceso").select("codigo").eq("customer_id", id).maybeSingle();
+      if (error) throw error;
+      if (hay?.codigo) return hay.codigo;
+      const ALFABETO = "ACDEFGHJKMNPQRTUVWXY34679";
+      for (let intento = 0; intento < 20; intento++) {
+        const azar = crypto.getRandomValues(new Uint8Array(7));
+        const codigo = [...azar].map((b) => ALFABETO[b % ALFABETO.length]).join("");
+        const { error: eIns } = await admin.from("puntos_codigo_acceso").insert({ customer_id: id, codigo });
+        if (!eIns) {
+          const { error: eLog } = await admin.from("audit_logs").insert({
+            action: "PUNTOS_CODIGO_EMITIDO", target_id: String(id), source: "SYSTEM", severity: "WARNING",
+            details: { cliente: nombre, veces: 1, origen: "app-clientes" },
+          });
+          if (eLog) console.error("no se pudo anotar el código emitido:", eLog.message);
+          return codigo;
+        }
+        if (eIns.code !== "23505") throw eIns;
+        // Choque: o el código ya lo tiene otro (se vuelve a tirar) o esta ficha
+        // recibió uno entretanto (otra pestaña, la sala): se usa ése.
+        const { data: otro, error: eOtro } = await admin.from("puntos_codigo_acceso").select("codigo").eq("customer_id", id).maybeSingle();
+        if (eOtro) throw eOtro;
+        if (otro?.codigo) return otro.codigo;
+      }
+      return null;
+    }
+
     if (accion === "resumen") {
       const { data: c, error: eC } = await admin.from("customers")
         .select("name, acepta_programa_puntos, acepta_promociones").eq("id", customerId).maybeSingle();
@@ -440,10 +474,21 @@ Deno.serve(async (req) => {
       const porCodigo = new Map((salas ?? []).map((b: any) => [String(b.codigo_puntos), String(b.name)]));
       const saldo = Number(est?.saldo ?? 0);
 
+      // «Socio desde»: la primera vez que ganó puntos (la ficha puede ser más
+      // nueva que su historia: se sincroniza desde la caja).
+      const { data: primero, error: ePri } = await admin.from("puntos_lote")
+        .select("ganado_el").eq("customer_id", customerId).order("ganado_el", { ascending: true }).limit(1).maybeSingle();
+      if (ePri) console.error("no se pudo leer el primer lote:", ePri.message);
+      let codigo: string | null = null;
+      try { codigo = await codigoDelCliente(customerId, c.name); }
+      catch (e) { console.error("no se pudo obtener el código:", (e as Error)?.message); }
+
       return json({
         ok: true,
         pendiente: false,
         nombre: c.name,
+        codigo,
+        socio_desde: primero?.ganado_el ?? null,
         saldo,
         equivale: Math.round(saldo) / 100,
         acumulados: Number(est?.ganados ?? 0),

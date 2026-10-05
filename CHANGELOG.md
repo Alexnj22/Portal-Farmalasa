@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1222.0 — App de clientes: tarjeta de socio con QR y bloqueo con Face ID
+
+- **Tarjeta de socio** (app de clientes): con la forma de una tarjeta de verdad —degradado con los colores del logo, chip, nombre, «socio desde» y saldo— y un brillo que se mueve con la inclinación del teléfono (giroscopio, en el hilo de la interfaz). Al tocarla gira en 3D y por detrás muestra el QR con el código de 7 letras: la misma dirección del QR del ticket (`/mis-puntos?codigo=`), así que en sala se lee igual.
+- **El código se emite solo** la primera vez que el cliente abre la app, si la sala todavía no le dio uno (decisión del usuario): mismo alfabeto que `puntos_codigo_emitir`, anotado en `audit_logs` (`PUNTOS_CODIGO_EMITIDO`, origen SYSTEM / app-clientes). Nunca reemplaza uno existente: reemitir cambia la credencial, y eso sólo lo decide la sala.
+- **Bloquear con Face ID** (o Touch ID / huella), en Cuenta, apagado por defecto: pide la biometría al abrir y al volver tras 30 s fuera; si falla, el sistema ofrece el código del teléfono. No aparece si el teléfono no tiene biometría configurada.
+- Debajo de la tarjeta, el estado del canje: avance hacia el primer canje o «¡Ya puedes canjear!» con lo que se puede descontar.
+
 ## v2.1221.0 — App: notificaciones como en el portal
 
 - **App: las notificaciones muestran lo mismo que el portal.** Reporte del usuario: «no me da la misma info que me da en el portal web, en la app todo es compacto y casi nada de info». La tarjeta de cada aviso se rehízo pieza por pieza con la de la campana del portal:

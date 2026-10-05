@@ -12,6 +12,8 @@ import { useSesion } from '../lib/sesion';
 import { llamar } from '../lib/api';
 import { useCuenta } from '../lib/cuenta';
 import { useOfertas } from '../lib/ofertas';
+import { useBloqueo, vigilarCicloDeVida } from '../lib/bloqueo';
+import PantallaBloqueo from '../componentes/PantallaBloqueo';
 import { useTema } from '../tema/tema';
 import { colorSistema } from '../componentes/sistema';
 
@@ -67,6 +69,14 @@ function Guardia() {
   return null;
 }
 
+// El bloqueo con Face ID, encima de todo, sólo con sesión abierta.
+function Bloqueo() {
+  const token = useSesion((s) => s.token);
+  const { bloqueada, cargar } = useBloqueo();
+  useEffect(() => { cargar(); return vigilarCicloDeVida(); }, [cargar]);
+  return token && bloqueada ? <PantallaBloqueo /> : null;
+}
+
 export default function Raiz() {
   const oscuro = useColorScheme() === 'dark';
   const t = useTema();
@@ -93,6 +103,7 @@ export default function Raiz() {
             <Stack.Screen name="oferta/[id]" options={{ title: '' }} />
             <Stack.Screen name="compras" options={{ title: 'Mis compras' }} />
           </Stack>
+          <Bloqueo />
         </GestureHandlerRootView>
       </SafeAreaProvider>
     </ThemeProvider>

@@ -6,7 +6,8 @@ import { Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo } from '../../../componentes/ui';
 import { useCuenta } from '../../../lib/cuenta';
-import { diasHasta, entero, fecha, nombrePropio } from '../../../lib/formato';
+import { diasHasta, dolares, entero, fecha, nombrePropio } from '../../../lib/formato';
+import TarjetaSocio from '../../../componentes/TarjetaSocio';
 import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '../../../componentes/animacion';
 import { useSesion } from '../../../lib/sesion';
 import { suave, useTema } from '../../../tema/tema';
@@ -81,36 +82,39 @@ export default function Puntos() {
         <Texto nivel={2} estilo={{ fontSize: 17 }}>Hola, {primerNombre}</Texto>
       </Entrada>
 
-      {/* El saldo cuenta hacia arriba al abrir y la barra se llena con resorte:
-          lo primero que la persona ve es la cifra MOVERSE hacia lo que tiene. */}
+      {/* La tarjeta de socio: saldo al frente, código y QR al reverso. */}
       <Entrada indice={1}>
-        <Tarjeta tono={t.color.magenta} estilo={{ paddingVertical: 24 }}>
-          <Texto nivel={2}>Tienes de descuento</Texto>
-          <NumeroAnimado valor={resumen.equivale} formato="dolares"
-            estilo={{ fontSize: 52, fontWeight: '800', color: t.color.magentaTexto, fontVariant: ['tabular-nums'], letterSpacing: -1 }} />
-          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-            <NumeroAnimado valor={saldo} formato="entero" estilo={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }} />
-            <Texto nivel={2}>puntos</Texto>
-          </View>
+        <TarjetaSocio nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
+          codigo={resumen.codigo} socioDesde={resumen.socio_desde} />
+      </Entrada>
+
+      {/* El estado del canje. El saldo cuenta hacia arriba y la barra se llena
+          con resorte: lo primero que se ve MOVERSE es lo que la persona tiene. */}
+      <Entrada indice={2}>
+        <Tarjeta tono={falta > 0 ? t.color.magenta : t.color.verde} estilo={{ gap: 10 }}>
           {falta > 0 ? (
-            <View style={{ gap: 8, marginTop: 8 }}>
+            <>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+                <NumeroAnimado valor={saldo} formato="entero" estilo={{ fontSize: 28, fontWeight: '800', color: t.color.magentaTexto }} />
+                <Texto nivel={2}>de {MINIMO_DE_CANJE} puntos para tu primer canje</Texto>
+              </View>
               <BarraAnimada avance={saldo / MINIMO_DE_CANJE} color={t.color.magenta} fondo={suave(t.color.magenta, 0.18)} />
-              <Texto nivel={2} estilo={{ fontSize: 14 }}>Te faltan {entero(falta)} puntos para tu primer canje.</Texto>
-            </View>
+              <Texto nivel={2} estilo={{ fontSize: 14 }}>Te faltan {entero(falta)} puntos.</Texto>
+            </>
           ) : (
-            <View style={{ gap: 8, marginTop: 6 }}>
-              {/* Alcanzó el mínimo: se anuncia, late y suelta confeti una vez. */}
+            <>
               <Latido estilo={{ alignSelf: 'flex-start' }}>
                 <View style={{ backgroundColor: t.color.verde, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 }}>
                   <Text style={{ fontSize: 15, fontWeight: '800', color: '#1A2600' }}>¡Ya puedes canjear!</Text>
                 </View>
               </Latido>
-              <Texto nivel={2} estilo={{ fontSize: 14 }}>En caja di tu nombre o muestra esta pantalla, y se descuenta de tu compra.</Texto>
-            </View>
+              <Texto nivel={2} estilo={{ fontSize: 14 }}>
+                Tienes <Text style={{ fontWeight: '800', color: t.color.verdeTexto }}>{dolares(resumen.equivale)}</Text> para descontar. Toca tu tarjeta y muestra el código en caja.
+              </Texto>
+            </>
           )}
         </Tarjeta>
-        {/* Fuera de la tarjeta (que recorta) y UNA vez por sesión: celebrar
-            cada vez que se vuelve a la pestaña deja de ser celebración. */}
+        {/* Fuera de la tarjeta (que recorta) y UNA vez por sesión. */}
         {falta === 0 && !confetiMostrado ? <Confeti colores={[t.color.verde, t.color.magenta, '#FFD60A', '#5AC8FA']} alTerminar={marcarConfeti} /> : null}
       </Entrada>
 
@@ -119,7 +123,7 @@ export default function Puntos() {
       ) : null}
 
       {resumen.vencimientos?.length ? (
-        <Entrada indice={2}>
+        <Entrada indice={3}>
           <Tarjeta>
             <Titulo>Por vencer</Titulo>
             {resumen.vencimientos.map((v) => {

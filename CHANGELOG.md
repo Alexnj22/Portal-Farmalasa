@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1178.1 — Puntos: el motor deja de reevaluar cada minuto las ventas que ya tienen sus puntos
+
+`gate:perf` (sección F) marcó `puntos_acumular`: ~31,700 bloques por llamada en
+4,594 llamadas (corre cada minuto). `ventas_elegibles_puntos` evaluaba todas las
+ventas de 3 días contra el historial de precios y recién después
+`puntos_acumular` descartaba las que ya tenían lote. Ahora se descartan primero.
+Medido en producción: 43,908 → 8,995 bloques con rollback; en las corridas
+reales ~10,400 bloques y 42 ms. Mismas ventas y mismos puntos (prueba con 3
+lotes borrados dentro de una transacción revertida: 3 / 63 en las dos
+versiones), y verificado después de aplicar: la venta 75527 de las 10:46 recibió
+sus 97 puntos en la corrida de las 10:47. Migración `puntos_elegibles_sin_lote`
+(20261005164113). Aprobado por el usuario.
+
+---
+
 ## v2.1178.0 — App: Corte Z
 
 - **App: Corte Z nativo.** El Gran Z de cada sucursal mes por mes: lo que va a la declaración (factura y crédito fiscal), el cotejo contra el libro —siempre, cuadre o no—, las comprobaciones y, si difiere, qué documento lo explica y qué hacer con él. El original se puede abrir tal cual salió. Las cifras siguen detrás del permiso de ver montos; el PDF se descarga en el portal.

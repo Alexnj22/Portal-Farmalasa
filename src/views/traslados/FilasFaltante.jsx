@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { AlertTriangle, Check, CheckCircle2, Clock, Eye, Hash, MessageSquareQuote, PackageCheck, PackageX } from 'lucide-react';
+import { AlertTriangle, Check, CheckCircle2, Clock, Hash, MessageSquareQuote, PackageCheck, PackageX } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { cerrarFaltante, ingresarAparecido } from '@nucleo/data/faltantes';
 import { fmtCuando } from '@nucleo/utils/trasladoTexto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { ChipPersona } from '../solicitudes/PersonasSolicitud';
 
 // Lo que faltó en una bolsa, y qué se hizo con eso.
 //
@@ -43,13 +44,19 @@ const TONO = {
 const estadoVisible = (f) =>
     (f.estado === 'aparecio' && f.falta_ingresar) ? 'por_ingresar' : f.estado;
 
-/* El nombre corto, aunque la función entregue el completo: `get_faltantes_de_bolsa`
- * trae `employees.name` y no el id, así que acá no hay ficha que pasarle a la
- * cara. Corto y no entero porque la tarjeta es media columna y la regla del
- * portal es una sola (`shortEmployeeName`). */
-const corto = (nombre) => (nombre ? shortEmployeeName(nombre) : null);
+/* Quién lo vio y quién lo resolvió: foto + nombre corto, con el canónico
+ * (`ChipPersona`). La FICHA sale del id —`declarado_por`/`resuelto_por`— y no
+ * del nombre, que es un rótulo. Si la función todavía no trae el id, o la
+ * persona no está en el maestro, queda el nombre corto sin cara: nunca una
+ * cara adivinada por coincidencia de texto. */
+function Persona({ id, nombre, personaPor }) {
+    const persona = id && personaPor ? personaPor(id) : null;
+    if (persona) return <ChipPersona persona={persona} />;
+    if (!nombre) return null;
+    return <span className="text-caption font-bold text-content-2 truncate">{shortEmployeeName(nombre)}</span>;
+}
 
-export function FilaFaltante({ faltante: f, onHecho }) {
+export function FilaFaltante({ faltante: f, onHecho, personaPor = null }) {
     const [cerrando, setCerrando] = useState(null);   // 'aparecio' | 'no_aparecio'
     const [nota, setNota] = useState('');
     const [ocupado, setOcupado] = useState(false);
@@ -59,8 +66,7 @@ export function FilaFaltante({ faltante: f, onHecho }) {
     const tono = TONO[estadoVisible(f)] ?? TONO.abierto;
     const IconoEstado = tono.icono;
     const codigo = f.codigo_bolsa || f.id_traslado || null;
-    const vio = corto(f.declarado_por_nombre);
-    const resolvio = corto(f.resuelto_por_nombre);
+    const resolvio = f.resuelto_por || f.resuelto_por_nombre;
 
     const cerrar = async (estado) => {
         setOcupado(true); setError('');
@@ -137,14 +143,18 @@ export function FilaFaltante({ faltante: f, onHecho }) {
                 </p>
             )}
 
-            {/* Cómo terminó, en el color de su desenlace. */}
-            {f.resolucion && (
+            {/* Cómo terminó, en el color de su desenlace — y quién lo cerró,
+                aunque no haya escrito nada («apareció» no pide nota). */}
+            {!abierto && (f.resolucion || resolvio) && (
                 <div className={`rounded-lg px-3 py-2 ring-1 ring-inset ${tono.caja}`}>
-                    <p className="flex items-center gap-1.5 text-micro font-black uppercase tracking-wider">
-                        <IconoEstado size={12} strokeWidth={2.5} className="shrink-0" />
-                        Se resolvió{resolvio ? ` · ${resolvio}` : ''}
-                    </p>
-                    <p className="mt-1 text-caption text-content-2 leading-snug">{f.resolucion}</p>
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                        <p className="flex items-center gap-1.5 text-micro font-black uppercase tracking-wider">
+                            <IconoEstado size={12} strokeWidth={2.5} className="shrink-0" />
+                            Se resolvió
+                        </p>
+                        {resolvio && <Persona id={f.resuelto_por} nombre={f.resuelto_por_nombre} personaPor={personaPor} />}
+                    </div>
+                    {f.resolucion && <p className="mt-1 text-caption text-content-2 leading-snug">{f.resolucion}</p>}
                 </div>
             )}
 
@@ -156,10 +166,10 @@ export function FilaFaltante({ faltante: f, onHecho }) {
                         <Clock size={12} strokeWidth={2.5} className="shrink-0" />
                         <span className="text-label font-black truncate">{fmtCuando(f.declarado_at)}</span>
                     </span>
-                    {vio && (
-                        <span className="flex items-center gap-1.5 min-w-0 text-caption font-bold">
-                            <Eye size={12} strokeWidth={2.5} className="shrink-0 text-content-3" />
-                            <span className="truncate">Lo vio {vio}</span>
+                    {(f.declarado_por || f.declarado_por_nombre) && (
+                        <span className="flex items-center gap-1.5 min-w-0">
+                            <span className="shrink-0 text-caption font-semibold text-content-3">Lo vio</span>
+                            <Persona id={f.declarado_por} nombre={f.declarado_por_nombre} personaPor={personaPor} />
                         </span>
                     )}
                 </div>
@@ -226,46 +236,20 @@ export function FilaFaltante({ faltante: f, onHecho }) {
     );
 }
 
-/* Un número por desenlace, arriba de la lista: contesta «¿cuánto hay por
- * buscar?» y «¿esto aparece o se pierde?» sin recorrer las tarjetas. Sólo se
- * muestran los que tienen algo — un cero en verde no informa nada. */
-function Resumen({ conteo }) {
-    const piezas = ['abierto', 'por_ingresar', 'aparecio', 'no_aparecio']
-        .filter(k => conteo[k] > 0)
-        .map(k => ({ k, n: conteo[k], ...TONO[k] }));
-    if (piezas.length === 0) return null;
-    return (
-        <div className="flex flex-wrap gap-2">
-            {piezas.map(({ k, n, caja, rotulo, icono: Icono }) => (
-                <span key={k} className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 ring-1 ring-inset ${caja}`}>
-                    <Icono size={14} strokeWidth={2.5} className="shrink-0" />
-                    <span className="text-body-xl font-black leading-none tabular-nums">{n}</span>
-                    <span className="text-micro font-black uppercase tracking-wider opacity-80">{rotulo}</span>
-                </span>
-            ))}
-        </div>
-    );
-}
-
 /**
  * La lista, con los abiertos arriba.
  *
  * Un faltante cerrado sigue a la vista un mes: es lo que deja mirar atrás sin
  * ir al historial, y lo que contesta «¿esto pasa seguido entre estas dos
  * salas?». La función que los trae ya hace ese corte.
- *
- * `todos` es la lista sin buscar: el resumen cuenta lo que HAY, no lo que el
- * buscador dejó — mismo criterio que el contador de la pestaña.
  */
-export default function FilasFaltante({ faltantes = [], todos = faltantes, onHecho, vacio = null }) {
+export default function FilasFaltante({ faltantes = [], onHecho, vacio = null, personaPor = null }) {
     const abiertos   = faltantes.filter(f => estadoVisible(f) === 'abierto');
     const porIngresar = faltantes.filter(f => estadoVisible(f) === 'por_ingresar');
     const cerrados   = faltantes.filter(f => !['abierto', 'por_ingresar'].includes(estadoVisible(f)));
-    const conteo = todos.reduce((acc, f) => { const k = estadoVisible(f); acc[k] = (acc[k] ?? 0) + 1; return acc; }, {});
 
     return (
         <div className="flex flex-col gap-5">
-            <Resumen conteo={conteo} />
             {faltantes.length === 0 ? vacio : (
                 <>
                     {[
@@ -279,7 +263,7 @@ export default function FilasFaltante({ faltantes = [], todos = faltantes, onHec
                                 {titulo} · {filas.length}
                             </p>
                             <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-                                {filas.map(f => <FilaFaltante key={f.id} faltante={f} onHecho={onHecho} />)}
+                                {filas.map(f => <FilaFaltante key={f.id} faltante={f} onHecho={onHecho} personaPor={personaPor} />)}
                             </div>
                         </section>
                     ))}

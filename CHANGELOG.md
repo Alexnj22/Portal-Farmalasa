@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1192.1 — Traslados: fuera los resúmenes de arriba; la persona del faltante con su foto
+
+- **Fuera los resúmenes de arriba** de «En camino» y de Faltantes (las pastillas con números). No eran un componente del portal y no aportaban: el contador ya vive en la pestaña.
+- **Quién lo vio y quién lo resolvió, con foto y nombre corto** (`ChipPersona`), resuelto por el id de la ficha y nunca por el nombre. Mientras `get_faltantes_de_bolsa` no traiga el id queda el nombre corto. Quien lo cerró se muestra aunque no haya escrito nota («Apareció» no la pide).
+
 ## v2.1192.0 — App: Monitor
 
 - **App: Monitor en tiempo real nativa.** Quién está trabajando, en pausa, sin marcar o ya terminó ahora mismo, por sala; quién llegó tarde y cuánto, con su horario y su última marca. Se refresca solo cada minuto; quien ve todas las salas elige una en el filtro.

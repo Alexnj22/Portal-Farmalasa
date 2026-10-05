@@ -24,7 +24,9 @@ const sinError = ({ data, error }) => {
 const CAMPOS = ['titulo', 'descripcion', 'etiqueta', 'condiciones', 'imagen_path', 'inicio', 'fin',
     'exclusiva', 'branch_ids', 'publicada', 'orden',
     // La foto de un descuento de la caja (ver `fotoParaApp` en descuentos.js).
-    'descuento_erp_id', 'promocion_id', 'descuento_tipo', 'descuento_monto', 'productos', 'foto_at'];
+    'descuento_erp_id', 'promocion_id', 'descuento_tipo', 'descuento_monto', 'productos', 'foto_at',
+    // El color que resalta la oferta en la app (etiqueta, velo de la foto).
+    'acento'];
 
 export async function fetchSalas() {
     return sinError(await supabase.from('branches').select('id, name').eq('type', 'FARMACIA').order('name'));
@@ -32,7 +34,7 @@ export async function fetchSalas() {
 
 export async function fetchOfertas() {
     const filas = sinError(await supabase.from('ofertas_clientes')
-        .select('id, titulo, descripcion, etiqueta, condiciones, imagen_path, inicio, fin, exclusiva, branch_ids, publicada, orden, updated_at, descuento_erp_id, promocion_id, descuento_tipo, descuento_monto, productos, foto_at, descuento_borrado_at')
+        .select('id, titulo, descripcion, etiqueta, condiciones, imagen_path, inicio, fin, exclusiva, branch_ids, publicada, orden, updated_at, descuento_erp_id, promocion_id, descuento_tipo, descuento_monto, productos, foto_at, descuento_borrado_at, acento')
         .order('fin', { ascending: false })
         .limit(500));
     // La vista previa de la imagen: firmadas en una sola llamada.
@@ -121,7 +123,7 @@ export async function buscarFichasPorDocumento(documento) {
 /** La oferta ligada a un descuento vivo, si la hay. */
 export async function fetchOfertaDeDescuento(descuentoId) {
     const filas = sinError(await supabase.from('ofertas_clientes')
-        .select('id, titulo, descripcion, etiqueta, condiciones, imagen_path, inicio, fin, exclusiva, branch_ids, publicada, orden, descuento_erp_id, promocion_id, descuento_tipo, descuento_monto, productos, foto_at')
+        .select('id, titulo, descripcion, etiqueta, condiciones, imagen_path, inicio, fin, exclusiva, branch_ids, publicada, orden, descuento_erp_id, promocion_id, descuento_tipo, descuento_monto, productos, foto_at, acento')
         .eq('descuento_erp_id', Number(descuentoId))
         .is('descuento_borrado_at', null)
         .limit(1));

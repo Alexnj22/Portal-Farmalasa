@@ -5,7 +5,7 @@ import { ScrollView, View } from 'react-native';
 import { Link, Stack, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Vidrio from '../../componentes/Vidrio';
-import { CuerpoOferta, ImagenOferta } from '../../componentes/TarjetaOferta';
+import { CuerpoOferta, PortadaOferta } from '../../componentes/TarjetaOferta';
 import { Entrada } from '../../componentes/animacion';
 import { Vacio } from '../../componentes/ui';
 import { useOfertas } from '../../lib/ofertas';
@@ -25,11 +25,11 @@ export default function Oferta() {
           contentContainerStyle={{ paddingBottom: ins.bottom + 32, width: '100%', maxWidth: 560, alignSelf: 'center' }}>
           <Link.AppleZoomTarget>
             <View>
-              {oferta.imagen ? <ImagenOferta oferta={oferta} alto={320} /> : <View style={{ height: ins.top + 56 }} />}
+              <PortadaOferta oferta={oferta} alto={380 + ins.top / 2} conTitulo={false} />
             </View>
           </Link.AppleZoomTarget>
-          <Entrada indice={0} estilo={{ margin: 16 }}>
-            <Vidrio radio={26}>
+          <Entrada indice={0} estilo={{ marginHorizontal: 16, marginTop: -36 }}>
+            <Vidrio radio={28}>
               <CuerpoOferta oferta={oferta} completa />
             </Vidrio>
           </Entrada>

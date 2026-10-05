@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 import Animated, {
   Easing, useAnimatedProps, useAnimatedStyle, useSharedValue,
-  withDelay, withSpring, withTiming,
+  withDelay, withRepeat, withSequence, withSpring, withTiming,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
@@ -101,4 +101,51 @@ export function Tocable({ alTocar, onPress, children, estilo, ...resto }) {
       <Animated.View style={[estilo, animado]}>{children}</Animated.View>
     </Pressable>
   );
+}
+
+/**
+ * Una ráfaga de confeti, UNA vez al montarse (el saldo alcanzó para canjear).
+ * Las piezas suben, se abren y caen girando; todo en el hilo de la interfaz.
+ * Discreta a propósito: 18 piezas, menos de dos segundos.
+ */
+function Pieza({ color, angulo, distancia, retraso, ancho }) {
+  const p = useSharedValue(0);
+  useEffect(() => {
+    p.value = withDelay(retraso, withTiming(1, { duration: 1500, easing: Easing.out(Easing.quad) }));
+  }, [p, retraso]);
+  const estilo = useAnimatedStyle(() => {
+    const x = Math.cos(angulo) * distancia * p.value;
+    const subida = Math.sin(angulo) * distancia * p.value;
+    const caida = 160 * p.value * p.value;
+    return {
+      opacity: p.value < 0.75 ? 1 : (1 - p.value) * 4,
+      transform: [{ translateX: x }, { translateY: -subida + caida }, { rotate: `${p.value * 540}deg` }],
+    };
+  });
+  return <Animated.View style={[{ position: 'absolute', width: ancho, height: ancho * 0.45, borderRadius: 2, backgroundColor: color }, estilo]} />;
+}
+
+export function Confeti({ colores }) {
+  const piezas = Array.from({ length: 18 }, (_, i) => ({
+    color: colores[i % colores.length],
+    angulo: Math.PI * (0.15 + 0.7 * (i / 17)) + (i % 2 ? 0.08 : -0.08),
+    distancia: 110 + (i * 37) % 90,
+    retraso: (i * 23) % 160,
+    ancho: 8 + (i % 3) * 3,
+  }));
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', left: '50%', top: '45%' }}>
+      {piezas.map((p, i) => <Pieza key={i} {...p} />)}
+    </View>
+  );
+}
+
+/** Algo que late suave (para llamar la atención sin gritar). */
+export function Latido({ children, estilo, escala = 1.05 }) {
+  const s = useSharedValue(1);
+  useEffect(() => {
+    s.value = withRepeat(withSequence(withTiming(escala, { duration: 700 }), withTiming(1, { duration: 700 })), -1);
+  }, [s, escala]);
+  const animado = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
+  return <Animated.View style={[estilo, animado]}>{children}</Animated.View>;
 }

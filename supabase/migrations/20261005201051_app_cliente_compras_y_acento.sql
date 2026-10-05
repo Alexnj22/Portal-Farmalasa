@@ -1,12 +1,3 @@
--- BORRADOR — probado en el branch de pruebas (tqhrwniwlicxnbeivnud) el 2026-10-05
--- con execute_sql. TODAVÍA NO está en producción. Orden para aplicarlo:
---   1. En producción, FUERA de la migración (no corre dentro de una transacción):
---      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_sales_invoices_cliente_fecha
---        ON public.sales_invoices (customer_id, fecha DESC, hora DESC) WHERE customer_id IS NOT NULL;
---   2. apply_migration con este archivo (el índice va con IF NOT EXISTS para que
---      un branch nuevo lo tenga) y archivarlo en supabase/migrations/.
---   3. Redesplegar app-clientes (acción `compras`).
-
 -- Las compras de UN cliente para la app (2026-10-05).
 --
 -- Una venta cuenta con `venta_valida(estado)` —el canónico de U2—, nunca con
@@ -17,14 +8,14 @@
 -- DÓNDE y CUÁNDO, no quién lo atendió.
 --
 -- Sólo `service_role`: la llama `app-clientes` con el customer_id que resolvió
--- la sesión. Las 30 más recientes; entra por `idx_sales_invoices_customer_id`
--- y los renglones por `idx_sii_invoice_covering`.
+-- la sesión. Las 5 más recientes (decisión del usuario, 2026-10-05); entra por
+-- `idx_sales_invoices_cliente_fecha` y los renglones por `idx_sii_invoice_covering`.
 SET lock_timeout = '5s';
 
 -- Sin este índice, el cliente con más facturas de producción (51,521, una ficha
 -- genérica) obligaba a leerlas TODAS para ordenarlas: 3.1 s y 12,680 bloques
 -- (medido el 2026-10-05). Con él, el plan recorre el índice en orden y para en
--- 30. Una lectura de 3 s ocupa una ranura del pool de PostgREST y dos personas
+-- 5. Una lectura de 3 s ocupa una ranura del pool de PostgREST y dos personas
 -- la llenan — ver [[feedback_una_consulta_lenta_de_lectura_tumba_el_portal_entero]].
 -- En producción se crea con CONCURRENTLY ANTES de esta migración (tabla caliente).
 CREATE INDEX IF NOT EXISTS idx_sales_invoices_cliente_fecha
@@ -53,10 +44,17 @@ BEGIN
          WHERE si.customer_id = p_customer_id
            AND public.venta_valida(si.estado)
          ORDER BY si.fecha DESC, si.hora DESC
-         LIMIT 30
+         LIMIT 5
       ) x), '[]'::json);
 END;
 $$;
 ALTER FUNCTION public.app_cliente_compras(bigint) SET plan_cache_mode = 'force_custom_plan';
 REVOKE EXECUTE ON FUNCTION public.app_cliente_compras(bigint) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.app_cliente_compras(bigint) TO service_role;
+
+-- ── El acento de color de una oferta ────────────────────────────────────────
+-- Resalta la etiqueta y el velo de la foto en la app. Los valores son los
+-- acentos del tema de la app (`apps/clientes/tema/tema.js`) y del portal
+-- (`ACENTOS_DE_OFERTA`): cambiar uno exige cambiar los tres.
+ALTER TABLE public.ofertas_clientes ADD COLUMN acento text NOT NULL DEFAULT 'magenta'
+    CHECK (acento IN ('magenta', 'verde', 'azul', 'naranja', 'rojo', 'violeta'));

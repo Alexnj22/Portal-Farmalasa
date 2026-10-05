@@ -38,6 +38,17 @@ function armar(nombre) {
       aviso: t.warning,
       avisoTexto: t['warning-text'],
     },
+    // Los acentos que una oferta puede llevar (`ofertas_clientes.acento`):
+    // `fuerte` es el relleno (la etiqueta, el velo de la foto), `texto` el
+    // que se lee sobre la tarjeta en este tema. Todos salen de los tokens.
+    acentos: {
+      magenta: { fuerte: t['logo-magenta'], texto: t['logo-magenta-text'] },
+      verde: { fuerte: t['logo-green-solid'] ?? t['logo-green'], texto: t['logo-green-text'] },
+      azul: { fuerte: t.brand, texto: t['brand-text'] },
+      naranja: { fuerte: t['warning-solid'] ?? t.warning, texto: t['warning-text'] },
+      rojo: { fuerte: t['danger-solid'] ?? t.danger, texto: t['danger-text'] },
+      violeta: { fuerte: t['brand-purple'], texto: t['brand-purple'] },
+    },
     radio: { tarjeta: medida(t['card-radius']) * 1.5, control: medida(t['input-radius']) * 1.5 },
     tam: { toque: medida(tactil['tap-min']), control: medida(tactil['control-h']) },
   };
@@ -53,4 +64,9 @@ export function suave(hex, alfa = 0.14) {
 
 export function useTema() {
   return useColorScheme() === 'dark' ? OSCURO : CLARO;
+}
+
+/** El acento de una oferta, con el magenta del logo si no trae uno conocido. */
+export function acentoDe(t, nombre) {
+  return t.acentos[nombre] ?? t.acentos.magenta;
 }

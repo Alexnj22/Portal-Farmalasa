@@ -61,20 +61,22 @@ export default function Cuenta() {
     ]);
   }
 
+  // Una sola opción, con el texto claro. Salir del programa de puntos NO va
+  // acá: ya es el interruptor de Permisos, y ponerlo dos veces confundía
+  // (usuario, 2026-10-05: «¿por qué está borrar y borrar y salir de puntos?»).
   function borrar() {
     Alert.alert(
-      'Borrar mi cuenta',
-      'Se cierra la sesión en todos tus teléfonos y dejas de recibir avisos. Tu historial de compras se conserva porque la ley lo exige para las facturas.',
+      '¿Borrar tu cuenta de la app?',
+      'Se cierra la sesión en todos tus teléfonos y dejas de recibir avisos. Tus puntos no se pierden: si vuelves a comprar con tu DUI sigues acumulando, y puedes volver a entrar cuando quieras.',
       [
         { text: 'Cancelar', style: 'cancel' },
-        { text: 'Borrar cuenta', style: 'destructive', onPress: () => confirmarBorrado(false) },
-        { text: 'Borrar y salir del programa', style: 'destructive', onPress: () => confirmarBorrado(true) },
+        { text: 'Borrar cuenta', style: 'destructive', onPress: () => confirmarBorrado() },
       ],
     );
   }
 
-  async function confirmarBorrado(retirar) {
-    const r = await pedir('borrar_cuenta', { retirar_permisos: retirar });
+  async function confirmarBorrado() {
+    const r = await pedir('borrar_cuenta');
     if (r?.ok) await cerrar();
     else setMensaje(r?.mensaje ?? 'No se pudo borrar la cuenta.');
   }

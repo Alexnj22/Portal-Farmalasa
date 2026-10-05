@@ -40,6 +40,8 @@ const TOPE_FALLOS = 8;
 const TOPE_FALLOS_CODIGO = 5;
 const ES_CODIGO = /^[ACDEFGHJKMNPQRTUVWXY34679]{7}$/;
 const DIAS_SESION = 180;
+const POR_PAGINA_INICIAL = 10;
+const POR_PAGINA = 20;
 const VERSION_AVISO = `${TEXTOS.version} · ${TEXTOS.aviso}`;
 
 const NO_ENCONTRADO = {
@@ -326,7 +328,7 @@ Deno.serve(async (req) => {
     if (accion === "ofertas") {
       const hoy = hoySV();
       const { data: filas, error } = await admin.from("ofertas_clientes")
-        .select("id, titulo, descripcion, etiqueta, condiciones, imagen_path, inicio, fin, exclusiva, branch_ids, descuento_tipo, descuento_monto, productos")
+        .select("id, titulo, descripcion, etiqueta, condiciones, imagen_path, inicio, fin, exclusiva, branch_ids, descuento_tipo, descuento_monto, productos, acento")
         .eq("publicada", true).lte("inicio", hoy).gte("fin", hoy)
         .order("orden", { ascending: true }).order("fin", { ascending: true })
         .limit(50);
@@ -353,7 +355,7 @@ Deno.serve(async (req) => {
         }
         const disponible = !o.exclusiva || socio;
         return {
-          id: o.id, titulo: o.titulo, etiqueta: o.etiqueta, imagen, inicio: o.inicio, fin: o.fin,
+          id: o.id, titulo: o.titulo, etiqueta: o.etiqueta, imagen, inicio: o.inicio, fin: o.fin, acento: o.acento ?? "magenta",
           exclusiva: o.exclusiva, disponible,
           // Lo exclusivo se ANUNCIA a quien no es socio —es la invitación a
           // serlo— pero el detalle sólo lo ve quien puede usarlo.
@@ -404,10 +406,14 @@ Deno.serve(async (req) => {
         acumulados: Number(est?.ganados ?? 0),
         canjeados: Number(est?.usados ?? 0),
         vencimientos: (est?.vencimientos ?? []).map((v: any) => ({ vence: v.vence_el, puntos: Number(v.puntos) })).slice(0, 3),
-        movimientos: (est?.movimientos ?? []).map((m: any) => ({
+        // Paginados: los primeros 10 acá y el resto con `movimientos` de a 20.
+        // Un cliente de años tiene cientos y la app no debe bajar ni pintar
+        // una lista infinita.
+        movimientos: (est?.movimientos ?? []).slice(0, POR_PAGINA_INICIAL).map((m: any) => ({
           tipo: m.tipo, fecha: m.fecha, puntos: Number(m.puntos),
           sala: porCodigo.get(String(m.sucursal ?? "")) ?? null,
         })),
+        movimientos_total: (est?.movimientos ?? []).length,
         consentimiento: {
           programa: c.acepta_programa_puntos ?? null,
           promociones: c.acepta_promociones ?? null,
@@ -426,10 +432,31 @@ Deno.serve(async (req) => {
       return json({ ok: true, compras: data ?? [] });
     }
 
+    // Más movimientos, de a 20 desde `desde`.
+    if (accion === "movimientos") {
+      const desde = Math.max(0, Number(body?.desde) || 0);
+      const { data: est, error } = await admin.rpc("puntos_estado_cuenta", { p_customer_id: customerId });
+      if (error) throw error;
+      const { data: salas, error: eSalas } = await admin.from("branches").select("codigo_puntos, name");
+      if (eSalas) console.error("no se pudieron leer las salas:", eSalas.message);
+      const porCodigo = new Map((salas ?? []).map((b: any) => [String(b.codigo_puntos), String(b.name)]));
+      const todos = est?.movimientos ?? [];
+      return json({
+        ok: true,
+        total: todos.length,
+        movimientos: todos.slice(desde, desde + POR_PAGINA).map((m: any) => ({
+          tipo: m.tipo, fecha: m.fecha, puntos: Number(m.puntos),
+          sala: porCodigo.get(String(m.sucursal ?? "")) ?? null,
+        })),
+      });
+    }
+
+    // Sólo las PENDIENTES: lo que el cliente necesita saber es qué le falta
+    // aplicarse y dónde puede ir. Las aplicadas son historia de la sala.
     if (accion === "inyecciones") {
       const { data, error } = await admin.rpc("app_cliente_inyecciones", { p_customer_id: customerId });
       if (error) throw error;
-      return json({ ok: true, ...(data as any) });
+      return json({ ok: true, disponibles: (data as any)?.disponibles ?? [] });
     }
 
     if (accion === "permisos") {

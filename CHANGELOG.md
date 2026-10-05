@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1218.0 — App de clientes: ofertas de vitrina, inyecciones pendientes, canje y paginación
+
+- **Ofertas de vitrina:** la foto ocupa la tarjeta y entra con un zoom lento; la etiqueta («2×1», «−20%») va grande en el color de ACENTO de la oferta y aparece con un rebote; un velo del mismo color sostiene el título; «quedan N días» late cuando faltan 3 o menos; la primera oferta va destacada. Sin foto, un degradado del acento con la etiqueta como ilustración.
+- **Acento de color por oferta** (`ofertas_clientes.acento`: magenta, verde, azul, naranja, rojo, violeta), elegible en el portal al crear o editar la oferta.
+- **Inyecciones:** sólo las PENDIENTES, con un contador que late y cada una en su tarjeta; una mezcla se muestra como una sola aplicación con cada parte y su dosis.
+- **Mis puntos:** al alcanzar el mínimo, «¡Ya puedes canjear!» late y suelta confeti una vez. Los movimientos se paginan (10 y luego de 20 en 20).
+- **Mis compras:** sólo las últimas 5.
+- **Borrar mi cuenta:** una sola opción, con el texto claro. Salir del programa ya es el interruptor de Permisos.
+- **En producción:** índice `idx_sales_invoices_cliente_fecha` (creado con CONCURRENTLY; la ficha de 51,521 facturas pasa de 3.1 s a 31 ms), migración `20261005201051_app_cliente_compras_y_acento` y `app-clientes` redesplegada.
+
 ## v2.1217.0 — App: Mantenimiento
 
 - **App: Mantenimiento nativo.** Los frenos del movimiento de mercadería con su interruptor y desde cuándo están en pausa, y los módulos que se pueden poner en mantenimiento con lo que le queda a cada candado; todo cambio pide confirmación. El motivo, la duración y el aviso del portal se ajustan en el portal.

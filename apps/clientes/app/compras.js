@@ -42,6 +42,7 @@ export default function Compras() {
 
   return (
     <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
+      <Texto nivel={2} estilo={{ fontSize: 14, marginHorizontal: 4 }}>Tus últimas 5 compras.</Texto>
       {datos.compras.map((c, i) => (
         <Entrada key={c.id} indice={i}>
           <Tocable alTocar={() => setAbierta(abierta === c.id ? null : c.id)}>

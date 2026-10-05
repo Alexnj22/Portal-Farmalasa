@@ -11,7 +11,7 @@ import Switch from '../../components/common/Switch';
 import { hoySV, fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { guardarOferta, subirImagen } from '@nucleo/data/ofertasClientes';
-import { etiquetaDeDescuento } from '@nucleo/utils/ofertasClientes';
+import { ACENTOS_DE_OFERTA, etiquetaDeDescuento } from '@nucleo/utils/ofertasClientes';
 
 /**
  * Crear o editar una oferta de la app.
@@ -31,6 +31,7 @@ export default function OfertaModal({ oferta, salas, onClose, onGuardada, onErro
         titulo: oferta.titulo ?? '', etiqueta: oferta.etiqueta ?? '', descripcion: oferta.descripcion ?? '',
         condiciones: oferta.condiciones ?? '', inicio: oferta.inicio ?? hoySV(), fin: oferta.fin ?? '',
         exclusiva: oferta.exclusiva ?? false, branch_ids: oferta.branch_ids ?? [], publicada: oferta.publicada ?? false,
+        acento: oferta.acento ?? 'magenta',
     });
     const [archivo, setArchivo] = useState(null);
     const [guardando, setGuardando] = useState(false);
@@ -50,6 +51,7 @@ export default function OfertaModal({ oferta, salas, onClose, onGuardada, onErro
             await guardarOferta(oferta.id, {
                 titulo: f.titulo.trim(), etiqueta: f.etiqueta.trim() || null, descripcion: f.descripcion.trim() || null,
                 condiciones: f.condiciones.trim() || null, exclusiva: f.exclusiva, publicada: f.publicada, imagen_path,
+                acento: f.acento,
                 ...(deDescuento ? {
                     // La foto tal cual vino del descuento: fechas y salas incluidas.
                     descuento_erp_id: oferta.descuento_erp_id, promocion_id: oferta.promocion_id ?? null,
@@ -137,6 +139,18 @@ export default function OfertaModal({ oferta, salas, onClose, onGuardada, onErro
                             {f.fin && f.inicio && f.fin < f.inicio && <Notice variant="warning">La fecha final es anterior a la inicial.</Notice>}
                         </>
                     )}
+                    <div>
+                        <span className="block text-label font-semibold text-content-2 mb-1">Color de acento</span>
+                        <p className="text-micro text-content-3 mb-2">Resalta la etiqueta y el velo de la foto en la app.</p>
+                        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Color de acento">
+                            {ACENTOS_DE_OFERTA.map((a) => (
+                                <button key={a.valor} type="button" role="radio" aria-checked={f.acento === a.valor}
+                                    title={a.rotulo} aria-label={a.rotulo} onClick={() => cambiar('acento')(a.valor)}
+                                    data-interactive
+                                    className={`w-9 h-9 min-w-[var(--tap-min)] min-h-[var(--tap-min)] rounded-full ${a.clase} ring-offset-2 ring-offset-surface-card ${f.acento === a.valor ? 'ring-2 ring-content' : ''}`} />
+                            ))}
+                        </div>
+                    </div>
                     <FileField label="Imagen (opcional)" accept="image/jpeg,image/png,image/webp" file={archivo} onChange={setArchivo}
                         hint={oferta.imagen_path && !archivo ? 'Ya tiene imagen; sube otra para reemplazarla' : 'Horizontal, 16:9, hasta 3 MB'} />
                     {!deDescuento && (

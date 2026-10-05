@@ -29,7 +29,7 @@ export default function Ofertas() {
           <Link href={`/oferta/${o.id}`} asChild>
             <Tocable>
               <Link.AppleZoom>
-                <TarjetaOferta oferta={o} />
+                <TarjetaOferta oferta={o} destacada={i === 0} />
               </Link.AppleZoom>
             </Tocable>
           </Link>

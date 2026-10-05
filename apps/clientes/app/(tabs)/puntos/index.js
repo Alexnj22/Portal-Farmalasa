@@ -7,7 +7,8 @@ import { router, useFocusEffect } from 'expo-router';
 import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo } from '../../../componentes/ui';
 import { useCuenta } from '../../../lib/cuenta';
 import { diasHasta, entero, fecha, nombrePropio } from '../../../lib/formato';
-import { BarraAnimada, Entrada, NumeroAnimado, Tocable } from '../../../componentes/animacion';
+import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '../../../componentes/animacion';
+import { useSesion } from '../../../lib/sesion';
 import { suave, useTema } from '../../../tema/tema';
 import { colorSistema } from '../../../componentes/sistema';
 
@@ -22,10 +23,13 @@ export default function Puntos() {
   const t = useTema();
   const { resumen, error, cargar } = useCuenta();
   const [refrescando, setRefrescando] = useState(false);
-  const [verTodo, setVerTodo] = useState(false);
+  const pedir = useSesion((s) => s.pedir);
+  const [mas, setMas] = useState([]);
+  const [cargandoMas, setCargandoMas] = useState(false);
 
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
-  useEffect(() => { setVerTodo(false); }, [resumen?.nombre]);
+  // Al refrescar el resumen, lo cargado de más se descarta: vuelve a empezar.
+  useEffect(() => { setMas([]); }, [resumen]);
 
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 
@@ -50,7 +54,14 @@ export default function Puntos() {
   const saldo = Number(resumen.saldo ?? 0);
   const falta = Math.max(0, MINIMO_DE_CANJE - saldo);
   const congelado = resumen.consentimiento?.programa === false;
-  const movimientos = verTodo ? resumen.movimientos : resumen.movimientos.slice(0, 8);
+  const movimientos = [...resumen.movimientos, ...mas];
+  const total = resumen.movimientos_total ?? movimientos.length;
+  const verMas = async () => {
+    setCargandoMas(true);
+    const r = await pedir('movimientos', { desde: movimientos.length });
+    if (r?.ok) setMas((x) => [...x, ...r.movimientos]);
+    setCargandoMas(false);
+  };
   const primerNombre = nombrePropio(String(resumen.nombre ?? '').split(' ')[0]);
 
   return (
@@ -76,8 +87,17 @@ export default function Puntos() {
               <Texto nivel={2} estilo={{ fontSize: 14 }}>Te faltan {entero(falta)} puntos para tu primer canje.</Texto>
             </View>
           ) : (
-            <Texto nivel={2} estilo={{ fontSize: 14, marginTop: 4 }}>Úsalo en caja: di tu nombre o muestra esta pantalla.</Texto>
+            <View style={{ gap: 8, marginTop: 6 }}>
+              {/* Alcanzó el mínimo: se anuncia, late y suelta confeti una vez. */}
+              <Latido estilo={{ alignSelf: 'flex-start' }}>
+                <View style={{ backgroundColor: t.color.verde, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 }}>
+                  <Text style={{ fontSize: 15, fontWeight: '800', color: '#1A2600' }}>¡Ya puedes canjear!</Text>
+                </View>
+              </Latido>
+              <Texto nivel={2} estilo={{ fontSize: 14 }}>En caja di tu nombre o muestra esta pantalla, y se descuenta de tu compra.</Texto>
+            </View>
           )}
+          {falta === 0 ? <Confeti colores={[t.color.verde, t.color.magenta, '#FFD60A', '#5AC8FA']} /> : null}
         </Tarjeta>
       </Entrada>
 
@@ -146,9 +166,9 @@ export default function Puntos() {
               </View>
             );
           })}
-          {!verTodo && resumen.movimientos.length > 8 ? (
-            <Text onPress={() => setVerTodo(true)} style={{ color: t.color.magentaTexto, fontWeight: '600', paddingVertical: 10 }}>
-              Ver todos ({resumen.movimientos.length})
+          {movimientos.length < total ? (
+            <Text onPress={cargandoMas ? undefined : verMas} style={{ color: t.color.magentaTexto, fontWeight: '600', paddingVertical: 10 }}>
+              {cargandoMas ? 'Cargando…' : `Ver más · ${movimientos.length} de ${total}`}
             </Text>
           ) : null}
         </Tarjeta>

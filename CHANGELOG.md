@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1218.1 — El corte y el cierre del día muestran la espera
+
+- **Mi caja:** mientras el corte (o el cierre del día) se registra, el diálogo pasa a una espera con indicador, el paso en curso, los segundos que lleva, una barra de avance estimado y el aviso «No cierres esta ventana ni recargues». Antes sólo se apagaba el botón y «Cancelar» seguía vivo.
+- El diálogo **no se puede cerrar** durante la espera (Escape, fondo y botón), y recargar la pestaña pide confirmación: cerrar a mitad no deshace el corte, lo deja sin resolver y sin el resultado a la vista.
+- Medido: el corte tarda ~10 s (p50 10.2 s, p90 11.7 s en 29 cortes); casi todo es el sistema de la caja armando y guardando el corte, no el portal.
+
 ## v2.1218.0 — App de clientes: ofertas de vitrina, inyecciones pendientes, canje y paginación
 
 - **Ofertas de vitrina:** la foto ocupa la tarjeta y entra con un zoom lento; la etiqueta («2×1», «−20%») va grande en el color de ACENTO de la oferta y aparece con un rebote; un velo del mismo color sostiene el título; «quedan N días» late cuando faltan 3 o menos; la primera oferta va destacada. Sin foto, un degradado del acento con la etiqueta como ilustración.

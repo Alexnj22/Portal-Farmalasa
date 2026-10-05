@@ -57,6 +57,7 @@ const DialogoAbono = lazy(() => import('../components/caja/DialogoAbono'));
 // su diálogo sólo se carga cuando alguien lo abre.
 const DialogoAplicacion = lazy(() => import('../components/caja/DialogoAplicacion'));
 import BonosPorPagar from '../components/caja/BonosPorPagar';
+import EsperaDeLaCaja from '../components/caja/EsperaDeLaCaja';
 import { construirComprobanteDeAbono } from '@nucleo/utils/abonoTicket';
 import { construirComprobanteDeCorte } from '@nucleo/utils/corteTicket';
 import { construirComprobanteDeMovimiento } from '@nucleo/utils/movimientoTicket';
@@ -2842,6 +2843,23 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
     );
 }
 
+/* Rótulos por TIEMPO, no por avance real: el servidor no informa por dónde va.
+ * Siguen el orden de `hacer-corte-caja` y su reparto medido (~1 s entrar a la
+ * caja, el resto lo hace el sistema de la caja). */
+const NADA = () => {};
+const PASOS_DEL_CORTE = [
+    { desde: 0, texto: 'Entrando a la caja…' },
+    { desde: 1.5, texto: 'Revisando el día…' },
+    { desde: 3, texto: 'Registrando el corte en la caja…' },
+    { desde: 8, texto: 'Leyendo el comprobante…' },
+];
+const PASOS_DEL_CIERRE = [
+    { desde: 0, texto: 'Entrando a la caja…' },
+    { desde: 2, texto: 'Revisando que todo esté contado…' },
+    { desde: 4, texto: 'Emitiendo el cierre del día…' },
+    { desde: 10, texto: 'Cerrando el turno…' },
+];
+
 function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0, bolsasDeHoy = 0,
     resolviendo = false, sinResolver = VACIO, sinResolverFilas = VACIO,
     onResolver, onResolverPendiente, onClose, onCortar, onImprimir }) {
@@ -3051,6 +3069,18 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0
         );
     }
 
+    /* Mientras la caja registra el corte, el diálogo no se cierra: hacerlo no
+     * lo deshace, lo deja sin resolver y sin el resultado a la vista. Ver
+     * `EsperaDeLaCaja`. */
+    if (ocupado) {
+        return (
+            <Marco abierto={abierto} onClose={NADA} titulo="Haciendo el corte">
+                <EsperaDeLaCaja pasos={PASOS_DEL_CORTE}
+                    aviso="El corte ya se está registrando en la caja. Si cierras ahora, queda hecho pero sin resolver." />
+            </Marco>
+        );
+    }
+
     return (
         <Marco abierto={abierto} onClose={onClose} titulo="Hacer el corte"
             bajada="Cuenta SÓLO el efectivo que hay en el cajón ahora. Lo que ya está en las bolsas de hoy lo suma el portal."
@@ -3217,6 +3247,15 @@ function DialogoCerrar({ ocupado, sinCorte, sinConfirmar, sinResolver = VACIO, f
                         <Button variant="primary" onClick={onClose}>Entendido</Button>
                     </div>
                 )}
+            </Marco>
+        );
+    }
+
+    if (ocupado) {
+        return (
+            <Marco abierto onClose={NADA} titulo="Cerrando el día">
+                <EsperaDeLaCaja pasos={PASOS_DEL_CIERRE} estimadoSeg={12}
+                    aviso="El cierre ya se está registrando en la caja y no se deshace. Espera a que confirme." />
             </Marco>
         );
     }

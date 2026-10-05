@@ -21,6 +21,9 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1188.0 — App: Compras
+
+- **App: Compras nativa.** Las compras registradas del mes, con proveedor, ítems y total, buscando por proveedor o número; el detalle trae cada producto con cantidad, costo, lote y vencimiento, y los totales. El resumen por producto sigue en el portal.
 ## v2.1187.1 — Traslados: el ancla del envío ya no se desborda
 
 - El rótulo «PRODUCTO» del número de cada envío se salía de su recuadro; el recuadro pasa de 3.25 a 3.75 rem.

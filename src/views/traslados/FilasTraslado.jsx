@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { AlertTriangle, ArrowLeftRight, ArrowRight, Building2, CalendarClock, Clock, Hash, Loader2, PackageCheck, Printer, Truck } from 'lucide-react';
+import { ArrowLeftRight, CalendarClock, Hash, Loader2, PackageCheck, Printer, Truck } from 'lucide-react';
+import { Trayecto, PildoraEspera } from './PiezasTraslado';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -42,26 +43,6 @@ export function Recorrido({ meta, className = '' }) {
     return (
         <span className={`truncate ${className}`}>
             {meta?.origen_branch_name ?? 'La otra sala'} → {meta?.branch_name ?? 'destino'}
-        </span>
-    );
-}
-
-/* ─── El trayecto, como dos lugares y no como una frase ───────────────────────
- *
- * Era «Salud 5 → Salud 4» en gris, del mismo peso que el resto: había que leer
- * la línea entera para saber si el traslado era de uno. Dos chips con la flecha
- * en medio se leen de un vistazo, y el DESTINO va teñido porque es la sala que
- * tiene que hacer algo —recibir—. */
-export function Trayecto({ desde, hasta, className = '' }) {
-    return (
-        <span className={`flex items-center gap-1.5 min-w-0 ${className}`}>
-            <Badge variant="neutral" uppercase={false} icon={Building2} className="min-w-0 gap-1">
-                <span className="truncate">{desde ?? 'otra sala'}</span>
-            </Badge>
-            <ArrowRight size={12} strokeWidth={2.5} className="shrink-0 text-content-3" />
-            <Badge variant="info" uppercase={false} icon={Building2} className="min-w-0 gap-1">
-                <span className="truncate">{hasta ?? 'destino'}</span>
-            </Badge>
         </span>
     );
 }
@@ -796,20 +777,8 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                 tarjetas del portal. En el teléfono baja a su renglón y ocupa
                 el ancho — ahí sí es el blanco de dedo (§32). */}
             <div className="mt-auto pt-2.5 border-t border-divider flex flex-wrap items-center gap-x-3 gap-y-2.5">
-                    {/* La espera como PASTILLA, teñida cuando pasa del día:
-                        es el dato que decide si hay que ir a buscar la caja
-                        hoy, y en texto suelto rojo se leía como un error. */}
-                    <span className={`inline-flex items-center gap-1.5 min-w-0 shrink-0 rounded-full px-2.5 py-1
-                                      ring-1 ring-inset
-                                      ${trabado ? 'bg-danger/10 ring-danger/20 text-danger-text'
-                                                : 'bg-surface-input ring-divider text-content-2'}`}>
-                        {trabado
-                            ? <AlertTriangle size={12} strokeWidth={2.5} className="shrink-0" />
-                            : <Clock size={12} strokeWidth={2.5} className="shrink-0" />}
-                        <span className="text-caption font-black truncate">
-                            {espera ? `${espera} en camino` : `Salió ${fmtCuando(salio)}`}
-                        </span>
-                    </span>
+                    <PildoraEspera trabado={trabado}
+                        texto={espera ? `${espera} en camino` : `Salió ${fmtCuando(salio)}`} />
 
                     {/* Las caras, sin rótulo: la flecha entre las dos ya dice
                         quién pidió y quién despachó, en el mismo sentido en que

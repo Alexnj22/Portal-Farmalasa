@@ -637,8 +637,11 @@ export default function TrasladosView() {
                 <div className="p-4 md:p-5 flex flex-col gap-4">
                     {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
 
+                    {/* A la derecha, en su propia fila, como las acciones de las
+                        otras pestañas: suelto a la izquierda se leía como un
+                        título más. */}
                     {puedeEnviar && (
-                        <div>
+                        <div className="flex justify-end">
                             <Button variant="secondary" icon={Send}
                                 className="min-h-[var(--tap-min)]"
                                 onClick={() => setAbrirEnvio(true)}>
@@ -673,7 +676,7 @@ export default function TrasladosView() {
                         !cargando && porMomento[clave].length > 0 && (
                             <div key={clave} className="flex flex-col gap-2">
                                 <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
-                                    {titulo}
+                                    {titulo} · {porMomento[clave].length}
                                 </p>
                                 {/* Misma rejilla que «En camino»: en un monitor,
                                     una columna estira cada tarjeta a 1.700 px

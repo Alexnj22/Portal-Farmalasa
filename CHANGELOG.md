@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1186.0 — Traslados: las tarjetas de envío, rediseñadas
+
+- **Envíos con la misma cara que «En camino».** Trayecto en chips (con «Área de Vencidos» cuando sale de ahí), la espera como pastilla arriba a la derecha, el motivo con su insignia y su texto al lado, y un pie con la acción a la derecha en verde tenue.
+- **Cada producto es una fila** con su nombre, su cuenta y su estado como insignia (`se la quedaron`, `te la devuelven`, `no llegó`…), en vez de una línea de 9 px pegada con puntos.
+- **«Me la quedo / Devolver / No llegó» es un `SegmentedControl`** (§15.3) con el color de cada respuesta. Eran tres botones que cambiaban a `variant="danger"`/`"warning"` al elegir, y esas variantes no existen en `Button`: lo elegido no se distinguía.
+- **La insignia del motivo era gris por error**: usaba `variant="brand"`, que `Badge` no tiene. Ahora es `info`.
+- El pie dice cuántos productos ya decidiste («1 de 3 decididos»), y la explicación de las tres respuestas pasa de tres renglones de prosa a una línea con el color de cada una.
+- La ruta y la pastilla de espera viven en `traslados/PiezasTraslado.jsx`, compartidas con «En camino».
+
 ## v2.1185.0 — App: Proveedores
 
 - **App: Proveedores nativa.** El directorio con su nombre comercial, NIT, categoría, documentos recibidos y última compra; busca por nombre, alias o NIT y filtra por categoría. La ficha trae los datos fiscales y, si se le debe algo, lo que se le debe con acceso directo a sus facturas pendientes. Clasificar y la deducibilidad del IVA siguen en el portal.

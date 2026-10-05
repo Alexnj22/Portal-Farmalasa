@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1192.0 — App: Monitor
+
+- **App: Monitor en tiempo real nativa.** Quién está trabajando, en pausa, sin marcar o ya terminó ahora mismo, por sala; quién llegó tarde y cuánto, con su horario y su última marca. Se refresca solo cada minuto; quien ve todas las salas elige una en el filtro.
+- **Núcleo:** el estado de asistencia de una persona y el orden del tablero pasan de `AttendanceMonitorView` a `src/utils/estadoDeAsistencia.js`, con su prueba.
 ## v2.1191.0 — App de clientes Puntos Salud: base, ofertas y pre-registros
 
 - **App nueva `apps/clientes` (Puntos Salud).** El cliente entra una sola vez con documento + teléfono (o el código del ticket) y ve su saldo en dólares, lo que vence, sus movimientos, las ofertas vigentes, las inyecciones que pagó y le faltan aplicar, y su cuenta: permisos, avisos, cerrar sesión y borrar la cuenta.

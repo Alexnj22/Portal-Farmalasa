@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1184.0 — App: Laboratorios
+
+- **App: Laboratorios nativa.** Dónde está cada laboratorio en la sala —vitrina o estante y peldaño, y su estante en la bodega—, por sección (principales, insumos, cosméticos) o buscando por nombre o por mueble. Tocar uno deja corregir su ubicación ahí mismo. La política de vencimiento sigue en el portal.
+- **Núcleo:** la forma de una ubicación, cómo se dice en palabras, la fila que se guarda y la sección de un laboratorio pasan de `TabLaboratorios` a `src/utils/ubicacionLaboratorio.js`, con su prueba.
 ## v2.1183.1 — Traslados: la acción de la tarjeta deja de ser una barra sólida
 
 - **«Recibir» pasa al pie, `soft` y chico.** Era una barra azul sólida de ancho completo en cada tarjeta: con cuatro en pantalla, cuatro franjas que pesaban más que el producto. Ahora va a la derecha, en la misma línea que la espera y las caras, como las acciones de las demás tarjetas (§Button · `soft`). En el teléfono sigue ocupando el ancho.

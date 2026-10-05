@@ -6,6 +6,7 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { fetchLaboratoriosBasic, fetchLabLocations, upsertLabLocation } from '@nucleo/data/laboratorios';
+import { filaDeUbicacion, seccionDeLaboratorio, tieneBodega, tieneSala, tieneUbicacion, ubicacionVacia } from '@nucleo/utils/ubicacionLaboratorio';
 import {
     FlaskConical, MapPin, Check, X, Pencil, Loader2,
     ChevronDown, Building2, Package, ShoppingBag,
@@ -17,19 +18,12 @@ import Badge from '../../components/common/Badge';
 import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
-function emptyLoc() {
-    return { vitrina: '', estante: '', peldano: '', bodega_numero: '', bodega_peldano: '' };
-}
-
-function hasAnySala(d)   { return !!(d.vitrina?.trim() || d.estante?.trim() || d.peldano?.trim()); }
-function hasAnyBodega(d) { return !!(d.bodega_numero?.trim() || d.bodega_peldano?.trim()); }
-function hasAny(d)       { return hasAnySala(d) || hasAnyBodega(d); }
-
-function classifyLab(nombre) {
-    if (/^\d/.test(nombre)) return 'insumos';
-    if (/^z/i.test(nombre)) return 'cosmeticos';
-    return 'principales';
-}
+// La forma de una ubicación y la sección de un laboratorio: `ubicacionLaboratorio` (núcleo, la misma de la app).
+const emptyLoc = ubicacionVacia;
+const hasAnySala = tieneSala;
+const hasAnyBodega = tieneBodega;
+const hasAny = tieneUbicacion;
+const classifyLab = seccionDeLaboratorio;
 
 const SECTIONS = [
     { key: 'principales', label: 'Laboratorios principales',    dot: 'bg-chart-9',   pill: 'bg-chart-9/10 text-chart-9-text border-chart-9/30'   },
@@ -91,16 +85,7 @@ export default function TabLaboratorios({ searchTerm = '' }) {
     useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
     const handleSave = async (labId, branchId, fields) => {
-        const payload = {
-            lab_id:         labId,
-            branch_id:      branchId,
-            vitrina:        fields.vitrina?.trim()        || null,
-            estante:        fields.estante?.trim()        || null,
-            peldano:        fields.peldano?.trim()        || null,
-            bodega_numero:  fields.bodega_numero?.trim()  || null,
-            bodega_peldano: fields.bodega_peldano?.trim() || null,
-            updated_at:     new Date().toISOString(),
-        };
+        const payload = filaDeUbicacion(labId, branchId, fields);
         const lab = labs.find(l => l.id === labId);
         const { error } = await upsertLabLocation(payload, { lab: lab?.nombre });
         if (error) { useToastStore.getState().showToast('Error', mensajeAmigable(error), 'error'); return false; }

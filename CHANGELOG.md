@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1174.0 — App: Gestión de stock
+
+- **App: Gestión de stock nativa.** Las dos preguntas sobre la existencia de una sala, eligiendo la sala desde el menú de filtros. **Sin venta**: lo que lleva seis meses parado, agrupado por adónde mandarlo, con desde cuándo y por qué, dónde sí se vende y si tiene Min/Max; armar el envío abre el portal dentro de la app. **Sin Min/Max**: lo que se vende y el pedido no repone solo, con qué hacer con cada uno; tocar uno muestra sus seis meses y deja **pedir el Min/Max** (o aplicarlo, si el cargo aprueba) con la sugerencia ya escrita, o descartar la sugerencia.
+- **Núcleo:** agrupar los productos sin venta por destino, los totales, la sugerencia de Min/Max, sus filtros y conteos, la validación y el motivo de la solicitud pasan de las dos pestañas a `src/utils/gestionDeStock.js`, con su prueba.
+
 ## v2.1173.0 — Ventas perdidas: la sala puede reportar
 
 - **La sala ya puede reportar ventas perdidas.** Crear un reporte exigía el permiso de edición del módulo, que sólo tienen cargos de toda la red: dependientes, regentes y jefes de sala no podían, y desde la búsqueda del tablero el reporte se perdía sin aviso (en toda la historia había 5, todos de la supervisión). Ahora cualquiera reporta **a su propio nombre y como pendiente**; atenderlo sigue exigiendo el permiso de edición. Probado en producción como una dependienta, en una transacción revertida: a su nombre entra, a nombre de otro o ya procesado se rechaza.

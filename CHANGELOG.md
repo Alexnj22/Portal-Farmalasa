@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1172.2 — Inyecciones: la venta ya cobrada sigue en la lista, deshabilitada
+
+Reporte de Salud 1 (4 de octubre): «no salió en el listado la de 1 MESIGYNA».
+Estaba bien —la cobró otra persona cinco minutos después de la venta—, pero la
+lista sólo mostraba ventas con algo por pagar, así que para quien llegó después
+la venta «no existía». Ahora la venta ya cobrada entera sigue en la lista, en
+gris y sin poder elegirse, con «Ya cobrada», quién y cuándo. La lista se llama
+«Ventas con inyección · últimos 7 días» y su tope sube de 80 a 150.
+
+Migración `inyecciones_cobradas_visibles` (20261005155504).
+
+---
+
 ## v2.1172.1 — Inyecciones: «Otra sucursal» arriba, a la par de «Compró aquí»
 
 Pedidos del usuario: la búsqueda por comprobante era un enlace escondido bajo la

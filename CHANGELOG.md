@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1197.1 — Alerta de inventario: sólo tras 3 fallas seguidas, sin «revisa tu conexión»
+
+- `useSyncMonitor` ya no avisa por una corrida fallida suelta: el cron es de un
+  minuto y el 2026-10-05 una falla de Salud 4 (1 de 480 en la hora) se
+  recuperó 13 s después, pero igual llegó como notificación del sistema.
+  Ahora avisa al tercer intento seguido sin entrar, una sola vez por caída.
+- El timeout ya no dice «Revisa tu conexión» (no era la conexión de quien lee):
+  dice que la sucursal no está respondiendo y que se sigue reintentando.
+
 ## v2.1197.0 — Prueba de clima laboral corregida
 
 - **Prueba:** una expectativa mal calculada en `climaLaboral.test.js` (sin invertir, el bloque da 62.5 y no 50); el código estaba bien.

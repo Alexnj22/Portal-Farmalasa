@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1185.0 — App: Proveedores
+
+- **App: Proveedores nativa.** El directorio con su nombre comercial, NIT, categoría, documentos recibidos y última compra; busca por nombre, alias o NIT y filtra por categoría. La ficha trae los datos fiscales y, si se le debe algo, lo que se le debe con acceso directo a sus facturas pendientes. Clasificar y la deducibilidad del IVA siguen en el portal.
+
 ## v2.1184.0 — App: Laboratorios
 
 - **App: Laboratorios nativa.** Dónde está cada laboratorio en la sala —vitrina o estante y peldaño, y su estante en la bodega—, por sección (principales, insumos, cosméticos) o buscando por nombre o por mueble. Tocar uno deja corregir su ubicación ahí mismo. La política de vencimiento sigue en el portal.

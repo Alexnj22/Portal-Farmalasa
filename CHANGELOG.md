@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1222.2 — App de clientes: compilar y subir a TestFlight desde la Mac, sin EAS
+
+- **`apps/clientes/subir-ios.sh`:** compila Puntos Salud en la Mac con Xcode (`expo prebuild` + `xcodebuild archive`), firma en la nube con una llave de API de App Store Connect y sube a TestFlight, sin los servidores de Expo (EAS): sin costo por versión. Sube el número de compilación solo y fuerza las variables de PRODUCCIÓN (nunca el código de pruebas). La llave vive en `~/.claves-farmalasa/`, fuera del repositorio. Compilación nativa Release verificada en esta Mac (BUILD SUCCEEDED).
+
 ## v2.1222.1 — App de clientes: lista para la tienda
 
 - **App de clientes lista para TestFlight:** proyecto EAS `@farmasalud/farmalasa-clientes`, ícono de tienda 1024×1024 sin transparencia (Apple rechaza el transparente), pantalla de arranque propia en claro y oscuro (antes salía la de Expo) y perfil de envío a App Store Connect. La primera compilación pide iniciar sesión con el Apple ID para crear el identificador y los certificados.

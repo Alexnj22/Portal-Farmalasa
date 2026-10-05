@@ -13,7 +13,8 @@
       "config": {
         "usesNonExemptEncryption": false
       },
-      "appleTeamId": "ZZWA3Q7Q35"
+      "appleTeamId": "ZZWA3Q7Q35",
+      "buildNumber": "1"
     },
     "android": {
       "package": "lat.farmasalud.clientes",

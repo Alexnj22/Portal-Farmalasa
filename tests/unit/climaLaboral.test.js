@@ -13,7 +13,7 @@ describe('climaLaboral', () => {
     it('una pregunta invertida se puntúa al revés', () => {
         const inv = indicesInvertidos([{ idx: 1, invertida: true }, { idx: 0 }]);
         expect(puntajeDeBloque(rows, [0, 1], inv)).toBe(75);
-        expect(puntajeDeBloque(rows, [0, 1])).toBe(50);
+        expect(puntajeDeBloque(rows, [0, 1])).toBe(62.5);
         expect(puntajeGlobal(rows, [{ indices: [0, 1] }, { indices: [2] }], inv)).toBe(75);
         expect(puntajeDeBloque([], [0])).toBeNull();
     });

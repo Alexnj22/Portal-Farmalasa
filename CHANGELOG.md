@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1197.0 — Prueba de clima laboral corregida
+
+- **Prueba:** una expectativa mal calculada en `climaLaboral.test.js` (sin invertir, el bloque da 62.5 y no 50); el código estaba bien.
+
 ## v2.1196.0 — App: Clima organizacional
 
 - **App: Clima organizacional nativo.** Los resultados de la encuesta: el índice global con su nivel, quiénes participaron, el puntaje de cada bloque con su barra y, al tocarlo, cómo se repartieron las respuestas de cada pregunta (las invertidas, al revés); y los comentarios. Quien sólo ve su sala ve su sala. El resumen con IA, los segmentos y los individuos siguen en el portal.

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshCw, Syringe } from 'lucide-react';
+import Badge from '../common/Badge';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import Contador from './Contador';
@@ -304,7 +305,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                                 data-surface="card"
                                                 className={`w-full text-left rounded-xl p-3 min-h-[var(--tap-min)] active:scale-[0.97]
                                                     ${activa ? 'ring-2 ring-accent' : 'ring-1 ring-border-card'}
-                                                    ${agotada ? 'opacity-50' : ''}`}>
+                                                    ${agotada ? 'opacity-60 cursor-not-allowed' : ''}`}>
                                                 <div className="flex items-baseline justify-between gap-2">
                                                     <span className="text-body-sm font-bold text-content truncate">{v.cliente || 'Sin nombre'}</span>
                                                     <span className="text-caption text-content-3 whitespace-nowrap">
@@ -332,6 +333,17 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                                                 : `${r.disponibles} de ${r.total} por pagar${esPorMl(r) ? ` · a ${fmtMl(r.dosis_ml)} ml` : ''}`}
                                                     </p>
                                                 ))}
+                                                {/* Cobrada entera: sigue en la lista para que nadie crea que la
+                                                    venta no llegó (Salud 1, 2026-10-04), pero no se puede elegir. */}
+                                                {agotada && (
+                                                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                                                        <Badge variant="success" size="sm" dot>Ya cobrada</Badge>
+                                                        {v.ultimo_cobro?.por && (
+                                                            <PersonaConFoto id={v.ultimo_cobro.por_id} nombre={v.ultimo_cobro.por} px={18}
+                                                                detalle={fechaHora12(v.ultimo_cobro.at)} />
+                                                        )}
+                                                    </div>
+                                                )}
                                             </button>
                                         </li>
         );
@@ -386,7 +398,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                         <SearchInput value={texto} onChange={setTexto} placeholder="Cliente, factura o inyección" />
                         <div className="flex items-center justify-between gap-2">
                             <p className="text-caption font-black uppercase tracking-widest text-content-2">
-                                Con aplicaciones por pagar · últimos 7 días
+                                Ventas con inyección · últimos 7 días
                             </p>
                             {/* Sin salida para cobrar «sin venta» (usuario, 2026-10-02):
                                 toda aplicación comprada queda asignada a su venta. Una
@@ -450,8 +462,8 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                         ) : modo !== 'COMPRADA' ? null : ventas == null ? <LoadingState /> : ventas.length === 0 ? (
                             <p className="text-body-sm text-content-3">
                                 {buscar
-                                    ? 'Ninguna venta con aplicaciones por pagar coincide.'
-                                    : 'No hay ventas con aplicaciones por pagar en los últimos 7 días.'}
+                                    ? 'Ninguna venta con inyección coincide.'
+                                    : 'No hay ventas con inyección en los últimos 7 días.'}
                                 {' '}Si la venta se acaba de hacer, espera un minuto y toca «Actualizar».
                             </p>
                         ) : (

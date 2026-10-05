@@ -629,7 +629,8 @@
       "guarda": "alcance"
     },
     "inyecciones_pendientes": {
-      "guarda": "alcance"
+      "guarda": "cruza-por-diseno",
+      "motivo": "Lo pagado y sin aplicar de TODAS las salas, de sólo lectura: el cliente paga en una sucursal y se aplica en otra. Pedido del usuario (2026-10-05): «si ya está pagado y va de Salud 1 a Salud 2, en Salud 2 no aparece». p_branch_id es un filtro, no un candado."
     },
     "preview_metas_gasto": {
       "guarda": "modulo-de-red",

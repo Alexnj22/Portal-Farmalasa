@@ -626,8 +626,11 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                             <p className="text-caption text-content-3">
                                                 {p.correlativo ? `Factura ${factura(p.correlativo)}${p.venta_sala ? ` (venta de ${p.venta_sala})` : ''} · ` : 'Traída · '}
                                                 pagada el {fechaCorta(String(p.pagada_at).slice(0, 10))}
-                                                {p.cobrada_por ? ` · ${shortEmployeeName(p.cobrada_por)}` : ''}
                                             </p>
+                                            {/* Quién cobró: foto y nombre corto, en su propia línea. */}
+                                            {p.cobrada_por && (
+                                                <PersonaConFoto id={p.cobrada_por_id} nombre={p.cobrada_por} px={20} detalle="cobró" />
+                                            )}
                                             {(p.historial || []).length > 0 && (
                                                 <div className="pt-1 space-y-1">
                                                     <p className="text-caption font-black uppercase tracking-widest text-content-3">

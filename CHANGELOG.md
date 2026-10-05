@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1178.2 — Inyecciones: pendientes de todas las salas y fotos de otra sucursal
+
+- **Pendientes muestra lo pagado en cualquier sucursal.** Quien sólo ve su sala tenía el filtro fijo en ella, y ese filtro miraba dónde se PAGÓ: el cliente que pagó en Salud 1 no aparecía en Salud 2, que es donde vino a aplicarse. Ahora se ven todas, y las de otra sucursal llevan «Pagada en …». La base tampoco recorta ya por sala (`inyecciones_pendientes`).
+- **La foto de quien cobró o aplicó en otra sucursal.** El avatar buscaba la foto sólo entre los empleados cargados, que para una sala son los suyos: salía la inicial. Ahora, si la persona no está, la pide a la base (una vez por persona). Vale para todo el portal.
+- **«Ya la pagó» en la aplicación de inyección:** quién cobró va con foto y nombre, no sólo el nombre.
+
 ## v2.1178.1 — Puntos: el motor deja de reevaluar cada minuto las ventas que ya tienen sus puntos
 
 `gate:perf` (sección F) marcó `puntos_acumular`: ~31,700 bloques por llamada en

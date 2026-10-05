@@ -26,11 +26,11 @@ import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { abrirVentanaDeImpresion, escribirEImprimir } from '../plataforma/ventanaDeImpresion';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { desgloseConIva, totalesDeCotizacion, UMBRAL_RETENCION } from '@nucleo/utils/cotizacion';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
-const IVA_RATE       = 0.13;
-const RETENTION_RATE = 0.01;
-const RETENTION_THRESHOLD = 100;
+// Las tasas y la aritmética: `cotizacion` (núcleo, la misma de la app).
+const RETENTION_THRESHOLD = UMBRAL_RETENCION;
 
 const PRICE_COLS = [
     { key: 'vineta',      label: 'Viñeta'     },
@@ -60,26 +60,8 @@ const DOC_OPTS = [
 const fmt    = (n) => formatMoney(n || 0);
 const fmtD   = (d) => d ? fechaTexto(d, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
 
-const desglose = (precioConIva, cantidad = 1) => {
-    const unitSinIva = precioConIva / (1 + IVA_RATE);
-    const unitIva    = precioConIva - unitSinIva;
-    return {
-        unitSinIva,
-        unitIva,
-        subtotalSinIva: unitSinIva * cantidad,
-        subtotalIva:    unitIva    * cantidad,
-        total:          precioConIva * cantidad,
-    };
-};
-
-const calcTotals = (items, applies) => {
-    const gross     = items.reduce((s, i) => s + (parseFloat(i.subtotal) || 0), 0);
-    const base      = gross / (1 + IVA_RATE);
-    const iva       = gross - base;
-    const retention = applies ? base * RETENTION_RATE : 0;
-    const total     = gross - retention;
-    return { gross, base, iva, retention, total };
-};
+const desglose = desgloseConIva;
+const calcTotals = totalesDeCotizacion;
 
 // ─── Print HTML ───────────────────────────────────────────────────────────────
 // Auditoría 2026-07 Fase 3: escapa texto libre/de negocio antes de interpolarlo
@@ -90,11 +72,8 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&
 
 const buildPrintHTML = (cot, itemsArr, branchName) => {
     const applies = cot.applies_retention;
-    const gross   = itemsArr.reduce((s, i) => s + parseFloat(i.subtotal || 0), 0);
-    const base    = gross / 1.13;
-    const iva     = gross - base;
-    const ret     = applies ? base * 0.01 : 0;
-    const total   = gross - ret;
+    // La misma cuenta que la pantalla (antes era una segunda copia escrita a mano).
+    const { base, iva, retention: ret, total } = calcTotals(itemsArr, applies);
     const isCCF   = cot.document_type === 'CCF';
 
     const lineRows = itemsArr.map((it, i) => {

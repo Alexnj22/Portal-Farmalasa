@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1189.0 — App: Cotizaciones
+
+- **App: Cotizaciones nativa.** Las vigentes, anuladas o todas, buscando por número, cliente o quién la hizo; el detalle trae los productos con presentación, cantidad y precio, y los totales con IVA y retención. Crear, editar, anular e imprimir siguen en el portal.
+- **Portal:** el cálculo de IVA y retención de una cotización estaba escrito dos veces —en la pantalla y en el papel impreso—; ahora es uno solo.
+- **Núcleo:** `src/utils/cotizacion.js` (desglose del IVA y totales), con su prueba.
+
 ## v2.1188.0 — App: Compras
 
 - **App: Compras nativa.** Las compras registradas del mes, con proveedor, ítems y total, buscando por proveedor o número; el detalle trae cada producto con cantidad, costo, lote y vencimiento, y los totales. El resumen por producto sigue en el portal.

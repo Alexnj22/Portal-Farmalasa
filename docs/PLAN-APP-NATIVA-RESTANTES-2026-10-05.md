@@ -32,7 +32,7 @@ se trabaja de corrido; cada fila se marca al publicarse.
 | 7 | `/laboratorios` | directorio y ficha | ✅ |
 | 8 | `/sucursales` | directorio y ficha | ✅ |
 | 9 | `/compras` | lista y detalle | ✅ |
-| 10 | `/cotizaciones` | lista y detalle | |
+| 10 | `/cotizaciones` | lista y detalle | ✅ |
 | 11 | `/promociones` | las vigentes y su detalle | |
 | 12 | `/monitor` | quién está y el estado de las salas | |
 | 13 | `/auditoria-de-tiempos` | marcaciones del día y sus observaciones | |

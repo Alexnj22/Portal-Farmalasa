@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1211.0 — App: Aplicar encuesta
+
+- **App: Aplicar encuesta nativo.** Las encuestas publicadas que se aplican por entrevista, con la sucursal (la de hoy si la encuesta va ahí) y cuántas respuestas lleva; «Entrevistar» abre el cuestionario en el teléfono —una sección por pantalla, con las preguntas condicionadas, los nueve tipos de pregunta y lo obligatorio—, y al final los datos del cliente con su consentimiento. Al guardar dice qué incentivo corresponde y deja marcar la muestra entregada. El modo tablet sigue en el portal.
+- **Núcleo:** la regla de cuándo se pueden guardar los datos del cliente pasa de `FormularioEncuesta` a `motivoParaNoGuardarContacto` en `src/utils/encuestasClientes.js`, con su prueba.
 ## v2.1210.0 — App de clientes: animaciones, aurora viva y oferta con zoom
 
 - **Aurora viva:** las manchas del logo se mueven lento detrás de toda la app, dibujadas por la GPU con Skia y animadas en el hilo de la interfaz (Reanimated 4). En la web queda la aurora quieta.

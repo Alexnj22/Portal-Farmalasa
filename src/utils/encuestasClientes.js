@@ -237,6 +237,18 @@ export function telefonoValido(texto) {
     return /^[267]\d{7}$/.test(d);
 }
 
+/**
+ * ¿Se pueden guardar los datos de contacto? Devuelve el motivo para no
+ * hacerlo, o `null`. Sin consentimiento no se guarda nada; con él, hace falta
+ * el teléfono o el nombre, y el teléfono, si viene, tiene que ser válido.
+ */
+export function motivoParaNoGuardarContacto(c) {
+    if (!c?.consiente) return 'Para guardar los datos hay que aceptar el consentimiento.';
+    if (!String(c.telefono || '').trim() && !String(c.nombre || '').trim()) return 'Escribe el teléfono o el nombre, o envía sin datos.';
+    if (String(c.telefono || '').trim() && !telefonoValido(c.telefono)) return 'El teléfono debe tener 8 dígitos.';
+    return null;
+}
+
 /** ¿Falta contestar alguna obligatoria visible? Devuelve la primera. */
 export function primeraSinContestar(preguntas, respuestas = {}) {
     return preguntas.find((p) => {

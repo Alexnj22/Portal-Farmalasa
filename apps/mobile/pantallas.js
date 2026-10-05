@@ -33,6 +33,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/carnes-del-dia': true, // carnés de papel vivos y anularlos; imprimir en el portal
   '/encuesta-admin': true, // las encuestas internas y sus puntajes por persona
   '/encuestas-clientes': true, // lista y resultados (NPS, temas, sucursales, comentarios)
+  '/encuestas-aplicar': true, // entrevistar a un cliente desde el teléfono; modo tablet en el portal
   '/encuesta': true, // resultados del clima: índice, bloques, preguntas y comentarios
   '/nomina': true, // la quincena por sala y la boleta de cada persona; generar, aprobar e imprimir: portal
   '/auditoria-de-tiempos': true, // día por día: marcas, faltas, tardanza y señales; corregir y aprobar: portal

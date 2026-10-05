@@ -58,7 +58,7 @@ se trabaja de corrido; cada fila se marca al publicarse.
 | 33 | `/actualizacion-de-datos` | estado de la actualización | ✅ |
 | 34 | `/mantenimiento` | candados por módulo | ✅ |
 | 35 | `/auditoria-del-sistema` | el informe | ✅ |
-| 36 | `/cargar-compra` | portal (captura de escritorio) — decidir al leerla | |
-| 37 | `/impresion` | portal: prueba de la ticketera de una computadora | |
-| 38 | `/prueba-ios` | portal: herramienta de diagnóstico | |
-| 39 | `/objetos-huerfanos` | portal: herramienta de administración | |
+| 36 | `/cargar-compra` | portal (captura de escritorio) — decidir al leerla | ➖ se queda en el portal: se revisan decenas de renglones mientras se teclean en el otro sistema; es trabajo de escritorio |
+| 37 | `/impresion` | portal: prueba de la ticketera de una computadora | ➖ se queda en el portal: prueba la ticketera conectada a una computadora |
+| 38 | `/prueba-ios` | portal: herramienta de diagnóstico | ➖ se queda en el portal: diagnóstico del portal en Safari; dentro de la app no prueba nada |
+| 39 | `/objetos-huerfanos` | portal: herramienta de administración | ➖ se queda en el portal: herramienta de administración de archivos, de escritorio |

@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1220.0 — Bitácora restaurada
+
+- **Corrección:** la publicación de la Auditoría nativa (v2.1219.0) sobrescribió `src/utils/bitacora.js` —que ya existía con `armarEntrada`, la entrada canónica de la bitácora— en vez de agregarle lo nuevo. Se restauró el archivo completo y el filtro y el orden de la pantalla de Auditoría quedan como una sección más. Las 20 pruebas de `bitacoraDeAcciones` y `capaDeCompras` vuelven a pasar. Las acciones que anotan en la bitácora no se perdieron en el despliegue intermedio sólo si nadie cargó la versión rota: conviene revisar `audit_logs` entre v2.1219.0 y ésta.
+- Plan de la app nativa: las cuatro rutas de escritorio (cargar compra, impresión, prueba iOS y objetos huérfanos) quedan decididas como portal dentro de la app, con su motivo en el plan.
+
 ## v2.1219.0 — App: Auditoría del sistema
 
 - **App: Auditoría del sistema nativo.** La bitácora de lo que se hizo en el portal y el kiosco, la más reciente arriba, con quién, la acción, su severidad, de dónde vino y en qué sala; se filtra por acción y por período (hoy, 7 días, todo) y se busca; tocar un registro muestra su detalle. Exportar sigue en el portal.

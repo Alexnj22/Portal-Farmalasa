@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1180.0 — App: Inyecciones
+
+- **App: Inyecciones nativa.** **Pendientes**: lo pagado y sin aplicar, una tarjeta por pago y producto con lo ya aplicado de ese pago, de todas las salas (el cliente puede volver a otra); quien opera una caja elige cuántas aplica ahora con un contador y las marca. **Bitácora**: cada aplicación de hoy, 7 o 30 días, quién cobró y quién aplicó, con su foto. «Por cobrar» y «Precios y dosis» abren el portal dentro de la app.
+- **App:** «Inicio» y «Mis avisos» del menú abren sus pestañas nativas.
+- **Núcleo:** agrupar las pendientes por pago, elegir cuáles marcar y las cifras de arriba pasan de `TabPendientes` a `src/utils/inyeccionesPendientes.js`, con su prueba.
+- **Plan:** `docs/PLAN-APP-NATIVA-RESTANTES-2026-10-05.md` lista las 39 pantallas del menú que faltan en la app, con su alcance, y se marca a medida que salen.
 ## v2.1179.3 — Anular un CCF sin sello exige el rechazo de Hacienda, y el cierre se escribe después de anular
 
 - **El atajo «CCF a quien no es contribuyente» ya no se toma sin la respuesta de Hacienda.** Hasta hoy bastaba con «sin sello + CCF + cliente sin NRC»: si el envío previo no contestaba a tiempo, la venta se anulaba igual y un CCF que sí había entrado quedaba vigente ante Hacienda. Ahora hace falta el rechazo de ESE envío, escrito, y por el NRC del receptor. Un rechazo por otra cosa se corrige y se reenvía.

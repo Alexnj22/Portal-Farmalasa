@@ -7,6 +7,8 @@ import { router } from 'expo-router';
 // El orden sale de cuánta gente distinta usa cada una (bitácora de acciones,
 // 30 días al 2026-09-28): bitácoras 34, traslados 36, efectivo 34, pedidos 23.
 export const PANTALLAS_DE_LA_APP = {
+  '/inicio': true,             // es la pestaña Inicio (los grupos de expo-router no cuentan en la ruta)
+  '/mis-avisos': '/avisos',    // es la pestaña de avisos; OJO: `/avisos` del PORTAL es «Gestionar avisos», otra cosa
   '/bitacoras': true,
   '/traslados': true,
   '/ventas-hoy': true,   // no existe en el portal: es la pantalla nativa de «Ventas de hoy»
@@ -19,6 +21,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/monitor-ventas': true, // el «Monitor de ventas» del portal es un modal; en la app, su pantalla
   '/ventas': true,         // la lista de facturas con sus cifras; tocar una abre la venta
   '/cuentas-por-cobrar': true, // la cartera, la ficha de un crédito y el cobro
+  '/inyecciones': true, // pendientes (marcar aplicadas) y bitácora; por cobrar y ajustes: portal
   '/facturas-compra': true, // los documentos del mes; la ficha con productos y PDF (revisión y vincular: portal)
   '/corte-z': true, // el Gran Z mensual con su cotejo; el PDF, en el portal
   '/puntos': true, // resumen, consulta del saldo y avisos (asignar cuentas y traspasos: portal)

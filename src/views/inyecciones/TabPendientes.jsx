@@ -19,6 +19,7 @@ import { fmtMl } from '@nucleo/utils/inyeccionDosis';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { fechaHora12 } from '@nucleo/utils/hora';
+import { diasDesde, gruposDePendientes, idsElegidos, resumenDePendientes } from '@nucleo/utils/inyeccionesPendientes';
 
 /*
  * Lo pagado y sin aplicar: qué tiene cada cliente a su nombre.
@@ -43,7 +44,6 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 
 const fechaCorta = (f) => fechaNumerica(String(f || '').slice(0, 10), { anio: false });
 const factura = (c) => String(c || '').replace(/^0+/, '');
-const diasDesde = (f) => Math.max(0, Math.floor((Date.now() - new Date(f).getTime()) / 86_400_000));
 
 export default function TabPendientes({ filterBranch, setFilterBranch, branchOptions, branchLocked, searchTerm, nombreSala }) {
     const { hasPermission } = useAuth();
@@ -63,22 +63,10 @@ export default function TabPendientes({ filterBranch, setFilterBranch, branchOpt
     [searchTerm, salaFiltro]);
     useEffect(() => { cargar(); }, [cargar]);
 
-    const grupos = useMemo(() => {
-        const m = new Map();
-        for (const p of filas || []) {
-            const k = `${p.cobro_id}|${p.producto}|${p.dosis_ml ?? ''}`;
-            if (!m.has(k)) m.set(k, { clave: k, p, ids: [] });
-            m.get(k).ids.push(p.id);
-        }
-        return [...m.values()];
-    }, [filas]);
-    const elegidas = useMemo(() => grupos.flatMap((g) => g.ids.slice(0, cuantas[g.clave] || 0)), [grupos, cuantas]);
-
-    const total = useMemo(() => (filas || []).reduce((s, p) => s + Number(p.precio || 0), 0), [filas]);
-    const clientes = useMemo(() => new Set((filas || []).map((p) => p.customer_id || p.cliente)).size, [filas]);
-    const viejas = useMemo(() => (filas || []).filter((p) => diasDesde(p.pagada_at) >= 7).length, [filas]);
-    const deOtras = useMemo(() => (salaPropia ? (filas || []).filter((p) => p.branch_id !== salaPropia).length : 0),
-        [filas, salaPropia]);
+    // Agrupar por pago y contar: `inyeccionesPendientes` (núcleo, el mismo de la app).
+    const grupos = useMemo(() => gruposDePendientes(filas), [filas]);
+    const elegidas = useMemo(() => idsElegidos(grupos, cuantas), [grupos, cuantas]);
+    const { total, clientes, viejas, deOtras } = useMemo(() => resumenDePendientes(filas, salaPropia), [filas, salaPropia]);
 
     // Los ids viajan como argumento: así la acción no lee estado viejo ni
     // necesita una ref que se reescribe en cada render.

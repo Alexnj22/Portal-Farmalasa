@@ -18,6 +18,7 @@ const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: '
 const OSCURO = { ...DarkTheme, colors: { ...DarkTheme.colors, background: 'transparent' } };
 const PUBLICAS = new Set(['bienvenida', 'entrar', 'registro']);
 const WEB = Platform.OS === 'web';
+let entradaAutomaticaHecha = false;
 
 // En el navegador (la vista previa con `expo start --web`) el documento tiene
 // su propio fondo, que es lo que Safari pinta bajo la barra de estado y bajo
@@ -41,11 +42,14 @@ function Guardia() {
   const segmentos = useSegments();
   useEffect(() => { cargar(); }, [cargar]);
   // Sólo en desarrollo (`__DEV__`, nunca en una compilación de tienda), y sólo
-  // si el `.env` local trae un código de PRUEBAS: entra solo, para poder
-  // revisar pantallas en el simulador sin teclear. Igual que la app del personal.
+  // si el `.env` local trae un código de PRUEBAS: entra solo UNA vez al abrir,
+  // para revisar pantallas en el simulador sin teclear. Una vez por arranque y
+  // no «cada vez que no hay sesión»: si no, «Cerrar sesión» volvía a entrar
+  // solo al instante y parecía que no cerraba (usuario, 2026-10-05).
   useEffect(() => {
     const codigo = process.env.EXPO_PUBLIC_PRUEBA_CODIGO;
-    if (!__DEV__ || !codigo || !lista || token) return;
+    if (!__DEV__ || !codigo || !lista || token || entradaAutomaticaHecha) return;
+    entradaAutomaticaHecha = true;
     llamar('entrar', { documento: codigo, plataforma: 'ios', dispositivo: 'simulador' })
       .then((r) => { if (r?.ok && r.token) useSesion.getState().abrir(r.token); })
       .catch(() => {});

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1211.1 — App de clientes: cerrar sesión cierra
+
+- **«Cerrar sesión» volvía a entrar solo** en el servidor de pruebas: la entrada automática de desarrollo se disparaba cada vez que no había sesión. Ahora entra sola una vez por arranque y nunca después de cerrar sesión. En una compilación de tienda nunca existió.
+
 ## v2.1211.0 — App: Aplicar encuesta
 
 - **App: Aplicar encuesta nativo.** Las encuestas publicadas que se aplican por entrevista, con la sucursal (la de hoy si la encuesta va ahí) y cuántas respuestas lleva; «Entrevistar» abre el cuestionario en el teléfono —una sección por pantalla, con las preguntas condicionadas, los nueve tipos de pregunta y lo obligatorio—, y al final los datos del cliente con su consentimiento. Al guardar dice qué incentivo corresponde y deja marcar la muestra entregada. El modo tablet sigue en el portal.

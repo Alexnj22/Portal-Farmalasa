@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1219.0 — App: Auditoría del sistema
+
+- **App: Auditoría del sistema nativo.** La bitácora de lo que se hizo en el portal y el kiosco, la más reciente arriba, con quién, la acción, su severidad, de dónde vino y en qué sala; se filtra por acción y por período (hoy, 7 días, todo) y se busca; tocar un registro muestra su detalle. Exportar sigue en el portal.
+- **Corrección (portal):** el filtro de fechas de la auditoría usaba el día UTC, así que lo hecho después de las 6 p. m. caía en el día siguiente y no salía en «hoy». Ahora usa el día de El Salvador.
+- **Núcleo:** las acciones, el filtro y el orden de la bitácora pasan de `AuditView` a `src/utils/bitacora.js`, con su prueba.
 ## v2.1218.1 — El corte y el cierre del día muestran la espera
 
 - **Mi caja:** mientras el corte (o el cierre del día) se registra, el diálogo pasa a una espera con indicador, el paso en curso, los segundos que lleva, una barra de avance estimado y el aviso «No cierres esta ventana ni recargues». Antes sólo se apagaba el botón y «Cancelar» seguía vivo.

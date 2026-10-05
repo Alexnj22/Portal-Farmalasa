@@ -24,3 +24,27 @@ export function diasHasta(v) {
 export function nombrePropio(v) {
   return String(v ?? '').toLowerCase().replace(/(^|[\s'-])(\p{L})/gu, (_, sep, l) => sep + l.toUpperCase());
 }
+
+/**
+ * El documento mientras se escribe. Con exactamente 9 dígitos es un DUI y se
+ * pone el guion (12345678-9); con más (un NIT tiene 14) se deja tal cual. Antes
+ * se cortaba a 9 y quien se registró con NIT no podía entrar nunca.
+ */
+export function documentoEscrito(v) {
+  if (/[A-Za-z]/.test(v)) return v.toUpperCase().slice(0, 20);
+  const d = v.replace(/\D/g, '').slice(0, 14);
+  return d.length === 9 ? `${d.slice(0, 8)}-${d.slice(8)}` : d;
+}
+
+/** 'DD/MM/AAAA' → 'AAAA-MM-DD' si es una fecha REAL entre 1900 y hoy; '' si vacía; null si inválida. */
+export function fechaDeNacimiento(texto) {
+  const t = String(texto ?? '').trim();
+  if (!t) return '';
+  const m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return null;
+  const [d, mes, a] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const f = new Date(Date.UTC(a, mes - 1, d));
+  const real = f.getUTCFullYear() === a && f.getUTCMonth() === mes - 1 && f.getUTCDate() === d;
+  if (!real || a < 1900 || f.getTime() > Date.now()) return null;
+  return `${a}-${String(mes).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}

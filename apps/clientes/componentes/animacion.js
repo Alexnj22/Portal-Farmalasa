@@ -2,7 +2,7 @@
 // (Reanimated): nada se anima con temporizadores de JavaScript, que es lo que
 // hace que una app de React Native se sienta trabada.
 import { useEffect } from 'react';
-import { Pressable, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import Animated, {
   Easing, useAnimatedProps, useAnimatedStyle, useSharedValue,
   withDelay, withRepeat, withSequence, withSpring, withTiming,
@@ -28,14 +28,26 @@ export function NumeroAnimado({ valor, formato = 'dolares', duracion = 900, esti
       : Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     return { text: texto, defaultValue: texto };
   });
+  const final = formato === 'dolares'
+    ? `$${(Number(valor) || 0).toFixed(2)}`
+    : Math.round(Number(valor) || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  // El texto que cambia por `animatedProps` no vuelve a medir el layout: el
+  // ancho quedaba el de «0» y «1,234» se recortaba. Un Text invisible con la
+  // cifra FINAL reserva el espacio, y el campo animado va encima. Además es
+  // lo que lee VoiceOver: el campo de texto se anunciaba «atenuado».
   return (
-    <TextoAnimado
-      editable={false}
-      pointerEvents="none"
-      underlineColorAndroid="transparent"
-      animatedProps={props}
-      style={[{ padding: 0, margin: 0 }, estilo]}
-    />
+    <View accessible accessibilityRole="text" accessibilityLabel={final}>
+      <Text style={[estilo, { opacity: 0 }]} importantForAccessibility="no">{final}</Text>
+      <TextoAnimado
+        editable={false}
+        pointerEvents="none"
+        underlineColorAndroid="transparent"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        animatedProps={props}
+        style={[{ padding: 0, margin: 0, position: 'absolute', left: 0, top: 0, right: 0 }, estilo]}
+      />
+    </View>
   );
 }
 
@@ -88,11 +100,13 @@ export function Entrada({ indice = 0, children, estilo }) {
 /** Algo que se toca: se encoge un poco con resorte y da el toque háptico del sistema. */
 // `onPress` también se acepta: es el que pone `<Link asChild>` para navegar, y
 // sin encadenarlo aquí el toque háptico se perdía.
-export function Tocable({ alTocar, onPress, children, estilo, ...resto }) {
+export function Tocable({ alTocar, onPress, children, estilo, etiqueta, ...resto }) {
   const s = useSharedValue(1);
   const animado = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={etiqueta}
       {...resto}
       onPressIn={() => { s.value = withSpring(0.97, { damping: 20, stiffness: 400 }); }}
       onPressOut={() => { s.value = withSpring(1, { damping: 14, stiffness: 300 }); }}
@@ -125,7 +139,11 @@ function Pieza({ color, angulo, distancia, retraso, ancho }) {
   return <Animated.View style={[{ position: 'absolute', width: ancho, height: ancho * 0.45, borderRadius: 2, backgroundColor: color }, estilo]} />;
 }
 
-export function Confeti({ colores }) {
+export function Confeti({ colores, alTerminar }) {
+  useEffect(() => {
+    const reloj = setTimeout(() => alTerminar?.(), 1800);
+    return () => clearTimeout(reloj);
+  }, [alTerminar]);
   const piezas = Array.from({ length: 18 }, (_, i) => ({
     color: colores[i % colores.length],
     angulo: Math.PI * (0.15 + 0.7 * (i / 17)) + (i % 2 ? 0.08 : -0.08),

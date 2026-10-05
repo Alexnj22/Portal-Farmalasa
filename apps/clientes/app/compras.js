@@ -32,7 +32,7 @@ export default function Compras() {
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 
   if (!datos) return <Cargando />;
-  if (!datos.ok) return <Pantalla conPestanas={false}><Aviso>{datos.mensaje}</Aviso></Pantalla>;
+  if (!datos.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}><Aviso>{datos.mensaje}</Aviso></Pantalla>;
   if (datos.pendiente) {
     return <Pantalla conPestanas={false}><Vacio titulo="Todavía no hay compras">Cuando completes tu registro en sala verás aquí cada compra.</Vacio></Pantalla>;
   }
@@ -45,7 +45,7 @@ export default function Compras() {
       <Texto nivel={2} estilo={{ fontSize: 14, marginHorizontal: 4 }}>Tus últimas 5 compras.</Texto>
       {datos.compras.map((c, i) => (
         <Entrada key={c.id} indice={i}>
-          <Tocable alTocar={() => setAbierta(abierta === c.id ? null : c.id)}>
+          <Tocable etiqueta={`Compra en ${c.sala}, ${c.total} dólares`} alTocar={() => setAbierta(abierta === c.id ? null : c.id)}>
             <Compra compra={c} abierta={abierta === c.id} />
           </Tocable>
         </Entrada>

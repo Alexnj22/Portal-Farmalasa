@@ -1,7 +1,7 @@
 // Mis puntos. Se habla en DÓLARES primero —«$4.20 de descuento» se entiende,
 // «420 puntos» no— y el número de puntos va como el detalle de la cifra.
 // Misma decisión que /mis-puntos de la web.
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo } from '../../../componentes/ui';
@@ -13,6 +13,8 @@ import { suave, useTema } from '../../../tema/tema';
 import { colorSistema } from '../../../componentes/sistema';
 
 const MINIMO_DE_CANJE = 100;
+let confetiMostrado = false;
+const marcarConfeti = () => { confetiMostrado = true; };
 // El signo sale del NÚMERO, no del tipo: un ajuste puede sumar o restar.
 const ROTULOS = {
   compra: 'Compra', canje: 'Canje', vencimiento: 'Vencieron', anulacion: 'Compra anulada', ajuste: 'Ajuste',
@@ -21,17 +23,20 @@ const ROTULOS = {
 
 export default function Puntos() {
   const t = useTema();
-  const { resumen, error, cargar } = useCuenta();
+  const { resumen, error, cargar, generacion } = useCuenta();
   const [refrescando, setRefrescando] = useState(false);
   const pedir = useSesion((s) => s.pedir);
   const [mas, setMas] = useState([]);
   const [cargandoMas, setCargandoMas] = useState(false);
+  const pidiendo = useRef(false);
 
+  // Al volver a la pestaña sólo se pide si el resumen tiene más de un minuto.
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
-  // Al refrescar el resumen, lo cargado de más se descarta: vuelve a empezar.
-  useEffect(() => { setMas([]); }, [resumen]);
+  // Lo cargado de más se descarta sólo con un resumen NUEVO (otra generación),
+  // no cada vez que se vuelve a la pestaña.
+  useEffect(() => { setMas([]); }, [generacion]);
 
-  const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
+  const refrescar = async () => { setRefrescando(true); await cargar({ forzar: true }); setRefrescando(false); };
 
   if (!resumen && !error) return <Cargando />;
   if (!resumen) return <Pantalla alRefrescar={refrescar} refrescando={refrescando}><Aviso>{error}</Aviso></Pantalla>;
@@ -56,11 +61,17 @@ export default function Puntos() {
   const congelado = resumen.consentimiento?.programa === false;
   const movimientos = [...resumen.movimientos, ...mas];
   const total = resumen.movimientos_total ?? movimientos.length;
+  // Una página a la vez (la ref frena el doble toque), y si mientras tanto
+  // llegó un resumen nuevo, la respuesta vieja se descarta.
   const verMas = async () => {
+    if (pidiendo.current) return;
+    pidiendo.current = true;
     setCargandoMas(true);
+    const gen = generacion;
     const r = await pedir('movimientos', { desde: movimientos.length });
-    if (r?.ok) setMas((x) => [...x, ...r.movimientos]);
+    if (r?.ok && useCuenta.getState().generacion === gen) setMas((x) => [...x, ...r.movimientos]);
     setCargandoMas(false);
+    pidiendo.current = false;
   };
   const primerNombre = nombrePropio(String(resumen.nombre ?? '').split(' ')[0]);
 
@@ -97,8 +108,10 @@ export default function Puntos() {
               <Texto nivel={2} estilo={{ fontSize: 14 }}>En caja di tu nombre o muestra esta pantalla, y se descuenta de tu compra.</Texto>
             </View>
           )}
-          {falta === 0 ? <Confeti colores={[t.color.verde, t.color.magenta, '#FFD60A', '#5AC8FA']} /> : null}
         </Tarjeta>
+        {/* Fuera de la tarjeta (que recorta) y UNA vez por sesión: celebrar
+            cada vez que se vuelve a la pestaña deja de ser celebración. */}
+        {falta === 0 && !confetiMostrado ? <Confeti colores={[t.color.verde, t.color.magenta, '#FFD60A', '#5AC8FA']} alTerminar={marcarConfeti} /> : null}
       </Entrada>
 
       {congelado ? (
@@ -167,7 +180,8 @@ export default function Puntos() {
             );
           })}
           {movimientos.length < total ? (
-            <Text onPress={cargandoMas ? undefined : verMas} style={{ color: t.color.magentaTexto, fontWeight: '600', paddingVertical: 10 }}>
+            <Text onPress={cargandoMas ? undefined : verMas} accessibilityRole="button"
+              style={{ color: t.color.magentaTexto, fontWeight: '600', paddingVertical: 12, minHeight: 44 }}>
               {cargandoMas ? 'Cargando…' : `Ver más · ${movimientos.length} de ${total}`}
             </Text>
           ) : null}

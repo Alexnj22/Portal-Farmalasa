@@ -5,17 +5,14 @@
 // Forma del sistema: formulario agrupado y los permisos como interruptores
 // (iOS no tiene casillas de verificación).
 import { useEffect, useState } from 'react';
+import { Text } from 'react-native';
 import * as Device from 'expo-device';
 import { BotonSistema, FilaCampo, FilaInterruptor, Formulario, Grupo } from '../componentes/sistema';
 import { Aviso } from '../componentes/ui';
 import { llamar } from '../lib/api';
 import { plataforma, useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
-
-function conGuion(v) {
-  const d = v.replace(/\D/g, '').slice(0, 9);
-  return d.length > 8 ? `${d.slice(0, 8)}-${d.slice(8)}` : d;
-}
+import { documentoEscrito, fechaDeNacimiento } from '../lib/formato';
 
 export default function Registro() {
   const t = useTema();
@@ -29,24 +26,28 @@ export default function Registro() {
   const cambiar = (k) => (v) => setF((x) => ({ ...x, [k]: v }));
 
   // Los textos de los permisos vienen del servidor: lo que se archiva como
-  // prueba es el texto que la persona tuvo delante (Art. 27 c).
-  useEffect(() => { llamar('textos').then((r) => r?.ok && setTextos(r.textos)); }, []);
+  // prueba es el texto que la persona tuvo delante (Art. 27 c). Sin señal, se
+  // dice y se puede reintentar: antes «Unirme» quedaba apagado sin explicación.
+  const [sinTextos, setSinTextos] = useState(false);
+  const pedirTextos = () => {
+    setSinTextos(false);
+    llamar('textos').then((r) => (r?.ok ? setTextos(r.textos) : setSinTextos(true)));
+  };
+  useEffect(() => { pedirTextos(); }, []);
 
-  // DD/MM/AAAA → AAAA-MM-DD; vacío o mal escrito no se manda.
-  const nacimiento = (() => {
-    const m = f.fecha_nacimiento.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    return m ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` : null;
-  })();
+  // '' = no la dio (es opcional); null = la escribió mal, y se dice.
+  const nacimiento = fechaDeNacimiento(f.fecha_nacimiento);
+  const fechaMala = nacimiento === null;
 
   const listo = f.nombre.trim().length >= 3 && f.documento.length >= 7
-    && f.telefono.replace(/\D/g, '').length >= 8 && programa && !!textos;
+    && f.telefono.replace(/\D/g, '').length >= 8 && programa && !!textos && !fechaMala;
 
   async function enviar() {
     if (!listo || enviando) return;
     setError(null);
     setEnviando(true);
     const r = await llamar('registrar', {
-      ...f, fecha_nacimiento: nacimiento, acepta_programa: programa, acepta_promociones: promos,
+      ...f, fecha_nacimiento: nacimiento || null, acepta_programa: programa, acepta_promociones: promos,
       plataforma, dispositivo: Device.modelName ?? null,
     });
     setEnviando(false);
@@ -60,11 +61,11 @@ export default function Registro() {
         <FilaCampo placeholder="Nombre completo" value={f.nombre} onChangeText={cambiar('nombre')} autoCapitalize="words" textContentType="name" />
         <FilaCampo placeholder="DUI" value={f.documento} autoCapitalize="characters" autoCorrect={false}
           keyboardType="numbers-and-punctuation"
-          onChangeText={(v) => cambiar('documento')(/[A-Za-z]/.test(v) ? v.toUpperCase() : conGuion(v))} />
+          onChangeText={(v) => cambiar('documento')(documentoEscrito(v))} />
         <FilaCampo placeholder="Teléfono" value={f.telefono} keyboardType="phone-pad" textContentType="telephoneNumber"
           onChangeText={(v) => cambiar('telefono')(v.replace(/[^\d ]/g, '').slice(0, 9))} />
       </Grupo>
-      <Grupo titulo="Opcional" pie="La fecha es para tu regalo de cumpleaños.">
+      <Grupo titulo="Opcional" pie={fechaMala ? 'Esa fecha no existe. Escríbela como DD/MM/AAAA.' : 'La fecha es para tu regalo de cumpleaños.'}>
         <FilaCampo placeholder="Correo" value={f.email} onChangeText={cambiar('email')} keyboardType="email-address" autoCapitalize="none" textContentType="emailAddress" />
         <FilaCampo placeholder="Nacimiento (DD/MM/AAAA)" value={f.fecha_nacimiento} onChangeText={cambiar('fecha_nacimiento')} keyboardType="numbers-and-punctuation" />
       </Grupo>
@@ -72,6 +73,11 @@ export default function Registro() {
         <FilaInterruptor titulo="Programa de puntos" detalle={textos?.programa} valor={programa} alCambiar={setPrograma} color={t.color.magenta} />
         <FilaInterruptor titulo="Promociones" detalle={textos?.promociones} valor={promos} alCambiar={setPromos} color={t.color.magenta} />
       </Grupo>
+      {sinTextos ? (
+        <Aviso tipo="aviso">No se pudieron cargar tus permisos. Revisa tu señal y{' '}
+          <Text onPress={pedirTextos} style={{ fontWeight: '700', textDecorationLine: 'underline' }}>vuelve a intentar</Text>.
+        </Aviso>
+      ) : null}
       {error ? <Aviso>{error}</Aviso> : null}
       <BotonSistema etiqueta={enviando ? 'Enviando…' : 'Unirme'} alTocar={enviar} deshabilitado={!listo || enviando} color={t.color.magenta} />
     </Formulario>

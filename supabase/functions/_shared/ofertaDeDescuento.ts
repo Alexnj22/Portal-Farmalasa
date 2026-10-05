@@ -49,12 +49,25 @@ const redondear = (n: number) => Math.round(n * 100) / 100;
 /** Los productos del descuento con su precio antes y después, sin los de receta. */
 export async function productosDeLaFoto(admin: Admin, d: DescuentoParaFoto): Promise<ProductoDeLaFoto[]> {
   if (!d.productos.length) return [];
-  const [{ data: prods, error: eP }, { data: precios, error: ePr }] = await Promise.all([
-    admin.from("products").select("id, nombre, es_antibiotico").in("id", d.productos),
-    admin.from("product_precios").select("product_id, vineta, activo").in("product_id", d.productos),
-  ]);
-  if (eP) throw eP;
-  if (ePr) throw ePr;
+  // Por tandas de 100 productos. `product_precios` tiene una fila por
+  // PRESENTACIÓN, así que `.in("product_id", …)` no acota la respuesta: un
+  // descuento de 300 productos con 4 presentaciones pasa de las 1000 filas y
+  // PostgREST corta en silencio —los últimos quedaban sin precio—. Con 100
+  // productos por tanda haría falta más de 10 presentaciones por producto.
+  const tandas: number[][] = [];
+  for (let i = 0; i < d.productos.length; i += 100) tandas.push(d.productos.slice(i, i + 100));
+  const resultados = await Promise.all(tandas.map((ids) => Promise.all([
+    admin.from("products").select("id, nombre, es_antibiotico").in("id", ids),
+    admin.from("product_precios").select("product_id, vineta, activo").in("product_id", ids),
+  ])));
+  const prods: { id: number; nombre: string; es_antibiotico: boolean | null }[] = [];
+  const precios: { product_id: number; vineta: number; activo: boolean | null }[] = [];
+  for (const [{ data: p, error: eP }, { data: pr, error: ePr }] of resultados) {
+    if (eP) throw eP;
+    if (ePr) throw ePr;
+    prods.push(...(p ?? []));
+    precios.push(...(pr ?? []));
+  }
 
   const minimo = new Map<number, number>();
   for (const p of precios ?? []) {

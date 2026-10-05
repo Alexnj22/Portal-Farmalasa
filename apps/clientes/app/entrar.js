@@ -9,16 +9,11 @@ import { Aviso, Texto } from '../componentes/ui';
 import { llamar } from '../lib/api';
 import { plataforma, useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
+import { documentoEscrito } from '../lib/formato';
 
 // El alfabeto del código no tiene letras ni números que se confundan
 // (sin O/0, I/1, S/5…), igual que el que emite la sala.
 const ALFABETO = /[^ACDEFGHJKMNPQRTUVWXY34679]/g;
-
-/** 12345678-9 mientras se escribe: así se lee como en el documento. */
-function conGuion(v) {
-  const d = v.replace(/\D/g, '').slice(0, 9);
-  return d.length > 8 ? `${d.slice(0, 8)}-${d.slice(8)}` : d;
-}
 
 export default function Entrar() {
   const t = useTema();
@@ -63,7 +58,7 @@ export default function Entrar() {
             autoCorrect={false}
             autoCapitalize="characters"
             value={documento}
-            onChangeText={(v) => setDocumento(/[A-Za-z]/.test(v) ? v.toUpperCase() : conGuion(v))}
+            onChangeText={(v) => setDocumento(documentoEscrito(v))}
             returnKeyType="next"
           />
           <FilaCampo

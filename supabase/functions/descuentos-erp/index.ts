@@ -173,7 +173,13 @@ Deno.serve(async (req) => {
       if (permiso.alcanceTodo && enApp) {
         const vivos = new Set(filas.map((d) => d.id));
         const huerfanas = enApp.map((o) => Number(o.descuento_erp_id)).filter((id) => !vivos.has(id));
-        await retirarOfertasDe(admin, huerfanas);
+        // Freno: una lista VACÍA o una que deja huérfanas a más de 3 a la vez
+        // no se cree. Una sesión vencida en la caja devuelve una lista vacía
+        // válida, y sin este freno retiraba de la app TODAS las ofertas —y no
+        // vuelven solas: `refrescarOfertas` no toca las ya retiradas—. Un
+        // borrado de verdad pasa por la acción `borrar`, que retira la suya.
+        if (filas.length > 0 && huerfanas.length <= 3) await retirarOfertasDe(admin, huerfanas);
+        else if (huerfanas.length) console.error("[descuentos-erp] no se retiran", huerfanas.length, "ofertas: lista sospechosa");
       }
       const estadoEnApp = new Map((enApp ?? []).map((o) => [Number(o.descuento_erp_id), o.publicada === true]));
 

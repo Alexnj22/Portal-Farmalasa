@@ -11,6 +11,7 @@ import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { useSesion } from '../lib/sesion';
 import { llamar } from '../lib/api';
 import { useCuenta } from '../lib/cuenta';
+import { useOfertas } from '../lib/ofertas';
 import { useTema } from '../tema/tema';
 import { colorSistema } from '../componentes/sistema';
 
@@ -57,7 +58,10 @@ function Guardia() {
   useEffect(() => {
     if (!lista) return;
     const publica = PUBLICAS.has(segmentos[0]);
-    if (!token && !publica) { useCuenta.getState().limpiar(); router.replace('/bienvenida'); }
+    // Sin sesión se limpia TODO lo que la sesión anterior dejó en memoria: en un
+    // teléfono compartido, el siguiente cliente no debe ver ni un instante las
+    // ofertas exclusivas ni el saldo del anterior.
+    if (!token && !publica) { useCuenta.getState().limpiar(); useOfertas.getState().limpiar(); router.replace('/bienvenida'); }
     if (token && (publica || !segmentos.length)) router.replace('/puntos');
   }, [token, lista, segmentos]);
   return null;

@@ -18,7 +18,11 @@ export async function llamar(accion, datos = {}) {
       body: JSON.stringify({ accion, ...datos }),
     });
     const cuerpo = await r.json().catch(() => null);
-    if (r.status === 401 || cuerpo?.motivo === 'sin_sesion') {
+    // La sesión se da por terminada SÓLO si la función lo dice. Un 401 a secas
+    // puede venir del gateway (una llave rotada, un redeploy con JWT) y no
+    // significa que este cliente perdió su sesión: tratarlo así borraba el
+    // token de TODOS los teléfonos a la vez.
+    if (cuerpo?.motivo === 'sin_sesion') {
       return { ok: false, sinSesion: true, mensaje: 'Tu sesión terminó. Vuelve a entrar.' };
     }
     if (!cuerpo) return { ok: false, mensaje: 'No se pudo consultar. Intenta en un rato.' };

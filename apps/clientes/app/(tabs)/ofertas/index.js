@@ -14,7 +14,7 @@ export default function Ofertas() {
   const [refrescando, setRefrescando] = useState(false);
 
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
-  const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
+  const refrescar = async () => { setRefrescando(true); await cargar({ forzar: true }); setRefrescando(false); };
 
   if (!datos) return <Cargando />;
   if (!datos.ok) return <Pantalla alRefrescar={refrescar} refrescando={refrescando}><Aviso>{datos.mensaje}</Aviso></Pantalla>;
@@ -26,12 +26,15 @@ export default function Ofertas() {
       ) : null}
       {datos.ofertas.map((o, i) => (
         <Entrada key={o.id} indice={i}>
+          {/* `Link.AppleZoom` va directo dentro del Link y envuelve a lo que se
+              toca: anidado más adentro, el zoom no se registraba o capturaba
+              la tarjeta encogida por el toque. */}
           <Link href={`/oferta/${o.id}`} asChild>
-            <Tocable>
-              <Link.AppleZoom>
+            <Link.AppleZoom>
+              <Tocable etiqueta={`Oferta: ${o.titulo}`}>
                 <TarjetaOferta oferta={o} destacada={i === 0} />
-              </Link.AppleZoom>
-            </Tocable>
+              </Tocable>
+            </Link.AppleZoom>
           </Link>
         </Entrada>
       ))}

@@ -97,11 +97,13 @@ export function PortadaOferta({ oferta: o, alto = 230, conTitulo = true }) {
           </Animated.View>
         ) : <View />}
         {o.exclusiva ? (
-          <Vidrio radio={999}>
+          // Fondo propio y no vidrio: sobre una foto clara el vidrio desaparece
+          // y quedaba texto blanco suelto encima de la imagen.
+          <View style={{ backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 999, borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' }}>
             <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFFFFF', paddingHorizontal: 12, paddingVertical: 6 }}>
               ★ Exclusiva socios
             </Text>
-          </Vidrio>
+          </View>
         ) : null}
       </View>
       {conTitulo ? (
@@ -171,11 +173,18 @@ function Productos({ productos, todos, color }) {
 
 /** La tarjeta de la lista: portada a todo lo ancho + pie de vidrio. `destacada` = la primera, más alta. */
 export default function TarjetaOferta({ oferta, destacada = false }) {
+  const t = useTema();
+  const a = acentoDe(t, oferta.acento);
+  // El pie lleva un tinte del acento: el vidrio solo, sobre la aurora clara,
+  // desaparecía y el pie parecía flotar fuera de la tarjeta (revisado en modo
+  // claro el 2026-10-05).
   return (
-    <View style={{ borderRadius: 28, overflow: 'hidden' }}>
+    <View style={{ borderRadius: 28, overflow: 'hidden', borderWidth: 0.5, borderColor: suave(a.fuerte, 0.35) }}>
       <PortadaOferta oferta={oferta} alto={destacada ? 300 : 220} />
-      <Vidrio radio={0}>
-        <CuerpoOferta oferta={oferta} />
+      <Vidrio radio={0} tinte={suave(a.fuerte, t.oscuro ? 0.25 : 0.12)}>
+        <View style={{ backgroundColor: t.oscuro ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.55)' }}>
+          <CuerpoOferta oferta={oferta} />
+        </View>
       </Vidrio>
     </View>
   );

@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1220.2 — App de clientes: revisión — 20 ajustes de seguridad, datos y accesibilidad
+
+Revisión completa de la app de clientes y de `app-clientes` (22 hallazgos; corregidos los de código).
+
+- **Seguridad:** un 401 del gateway ya no borra la sesión de todos los teléfonos (sólo `motivo: sin_sesion` la cierra); el freno usa `cf-connecting-ip`, que el cliente no puede falsear; cada alta nueva cuenta contra el tope por IP (antes se podían crear pre-registros sin límite con DUIs ajenos); un documento con registro pendiente responde un mensaje genérico; «Borrar mi cuenta» borra también el pre-registro ya vinculado.
+- **Datos:** el NIT (14 dígitos) ya no se corta a 9 al escribirlo; la fecha de nacimiento se valida de verdad en la app y en el servidor (31/02 daba un 503); los precios de la foto de un descuento se leen por tandas de 100 productos (`product_precios` tiene una fila por presentación y pasaba de 1000 filas en silencio); una lista vacía o con más de 3 «huérfanas» ya no retira de la app las ofertas ligadas a descuentos.
+- **Paginación:** los movimientos cargados sobreviven al cambio de pestaña; doble toque y respuestas viejas ya no duplican ni dejan huecos. El resumen se vuelve a pedir a lo sumo cada minuto y las ofertas cada 5; las fotos se firman en lote por 12 h (antes, una petición por oferta y una URL nueva en cada apertura).
+- **Pantallas:** el detalle de una oferta abierto desde un enlace carga en vez de decir «ya no está»; el zoom de iOS va anidado como pide expo-router; Compras se puede reintentar tras un error; el confeti sale una vez por sesión y fuera de la tarjeta; sin señal, «Unirme» dice por qué y deja reintentar.
+- **Cuenta:** interruptores optimistas con candado mientras guardan; quitar el programa pide confirmación; enlace al aviso de privacidad (Apple 5.1.1(i)).
+- **Accesibilidad:** las cifras animadas reservan el ancho final (no se recortan) y VoiceOver las lee; lo que se toca tiene rol de botón y etiqueta; «Ver más» con blanco de 44 pt.
+- **Modo claro:** el pie de la tarjeta de oferta lleva el tinte de su acento (el vidrio solo desaparecía) y «Exclusiva socios» tiene fondo propio.
+
 ## v2.1220.1 — Nota del changelog corregida
 
 - Nota del changelog de v2.1220.0 corregida: la v2.1219.0 nunca llegó a producción (su compilación falló), así que no hay registros de bitácora que revisar.

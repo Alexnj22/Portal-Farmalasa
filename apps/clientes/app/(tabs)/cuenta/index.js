@@ -13,6 +13,9 @@ import { nombrePropio } from '../../../lib/formato';
 import { useTema } from '../../../tema/tema';
 
 const REGLAMENTO = 'https://portal.farmasalud.lat/reglamento-puntos';
+// Apple pide el enlace a la política de privacidad DENTRO de la app (5.1.1(i)):
+// la app pide el DUI, que es un dato sensible.
+const PRIVACIDAD = 'https://portal.farmasalud.lat/privacidad.html';
 
 /** Una fila que se toca, como «Cerrar sesión» en Ajustes. */
 function FilaAccion({ texto, color, alTocar }) {
@@ -34,14 +37,40 @@ export default function Cuenta() {
 
   const c = resumen?.consentimiento;
 
-  async function permiso(campo, valor) {
+  // Optimista y con candado: el interruptor cambia al instante y no acepta
+  // otro toque hasta que el servidor contesta. Antes volvía a su valor viejo
+  // mientras se guardaba (parpadeo) y dos toques mandaban pedidos cruzados.
+  const [guardando, setGuardando] = useState(null);
+  const [local, setLocal] = useState({});
+  const valorDe = (campo, delServidor) => (campo in local ? local[campo] : delServidor);
+
+  async function guardarPermiso(campo, valor) {
     setMensaje(null);
+    setGuardando(campo);
+    setLocal((x) => ({ ...x, [campo]: valor }));
     const r = await pedir('permisos', { [campo]: valor });
     if (!r?.ok) setMensaje(r?.mensaje ?? 'No se pudo guardar.');
-    await cargar();
+    await cargar({ forzar: true });
+    setLocal((x) => { const { [campo]: _, ...resto } = x; return resto; });
+    setGuardando(null);
+  }
+
+  function permiso(campo, valor) {
+    if (guardando) return;
+    // Quitar el programa congela el saldo: se pregunta antes.
+    if (campo === 'programa' && !valor) {
+      Alert.alert('¿Salir del programa de puntos?',
+        'Tu saldo queda en pausa: no se pierde, pero no acumulas ni canjeas hasta que vuelvas a activarlo.', [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Salir del programa', style: 'destructive', onPress: () => guardarPermiso(campo, valor) },
+        ]);
+      return;
+    }
+    guardarPermiso(campo, valor);
   }
 
   async function avisos(valor) {
+    if (guardando) return;
     setMensaje(null);
     let push_token = null;
     if (valor) {
@@ -49,9 +78,13 @@ export default function Cuenta() {
       if (r.error) { setMensaje(r.error); return; }
       push_token = r.token;
     }
+    setGuardando('avisos');
+    setLocal((x) => ({ ...x, avisos: valor }));
     const r = await pedir('avisos', { acepta: valor, push_token });
     if (!r?.ok) setMensaje(r?.mensaje ?? 'No se pudo guardar.');
-    await cargar();
+    await cargar({ forzar: true });
+    setLocal((x) => { const { avisos: _, ...resto } = x; return resto; });
+    setGuardando(null);
   }
 
   function salir() {
@@ -93,19 +126,20 @@ export default function Cuenta() {
       {resumen && !resumen.pendiente ? (
         <Grupo titulo="Permisos" pie="Si quitas el programa, tu saldo queda en pausa; no se pierde.">
           <FilaInterruptor titulo="Programa de puntos" detalle={c?.textos?.programa}
-            valor={c?.programa !== false} alCambiar={(v) => permiso('programa', v)} color={t.color.magenta} />
+            valor={valorDe('programa', c?.programa !== false)} alCambiar={(v) => permiso('programa', v)} color={t.color.magenta} />
           <FilaInterruptor titulo="Promociones" detalle={c?.textos?.promociones}
-            valor={c?.promociones === true} alCambiar={(v) => permiso('promociones', v)} color={t.color.magenta} />
+            valor={valorDe('promociones', c?.promociones === true)} alCambiar={(v) => permiso('promociones', v)} color={t.color.magenta} />
         </Grupo>
       ) : null}
 
       <Grupo pie="Ofertas nuevas y puntos por vencer.">
-        <FilaInterruptor titulo="Avisos en este teléfono" valor={resumen?.acepta_avisos === true}
+        <FilaInterruptor titulo="Avisos en este teléfono" valor={valorDe('avisos', resumen?.acepta_avisos === true)}
           alCambiar={avisos} color={t.color.magenta} />
       </Grupo>
 
       <Grupo>
         <FilaAccion texto="Reglamento del programa" color={t.color.magentaTexto} alTocar={() => Linking.openURL(REGLAMENTO)} />
+        <FilaAccion texto="Aviso de privacidad" color={t.color.magentaTexto} alTocar={() => Linking.openURL(PRIVACIDAD)} />
       </Grupo>
 
       <Grupo>

@@ -44,6 +44,27 @@ const POR_PAGINA_INICIAL = 10;
 const POR_PAGINA = 20;
 const VERSION_AVISO = `${TEXTOS.version} · ${TEXTOS.aviso}`;
 
+// Para el alta que no se puede hacer desde la app (el documento ya tiene un
+// registro pendiente con otro teléfono). No dice por qué: confirmar que ese
+// documento está registrado sería regalar el dato.
+const NO_SE_PUDO_REGISTRAR = {
+  ok: false,
+  motivo: "no_se_pudo",
+  mensaje: "No pudimos registrarte desde la app. Pasa a cualquiera de nuestras salas y te ayudamos.",
+};
+
+/** 'AAAA-MM-DD' de una fecha REAL entre 1900 y hoy; null si viene vacía; false si es inválida. */
+function fechaDeNacimiento(v: unknown): string | null | false {
+  const t = String(v ?? "").trim();
+  if (!t) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t);
+  if (!m) return false;
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  const real = d.getUTCFullYear() === +m[1] && d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3];
+  if (!real || +m[1] < 1900 || d.getTime() > Date.now()) return false;
+  return t;
+}
+
 const NO_ENCONTRADO = {
   ok: false,
   motivo: "no_encontrado",
@@ -76,7 +97,13 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "solo POST" }, 405);
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "desconocida";
+  // La IP para el freno: la que pone Cloudflare (`cf-connecting-ip`), que el
+  // cliente no puede falsear. Si no viene, el primer valor de
+  // `x-forwarded-for`, igual que `mis-puntos`. El último no: puede ser un proxy
+  // interno, y entonces TODOS los clientes compartirían un mismo tope.
+  const ip = (req.headers.get("cf-connecting-ip")
+    ?? (req.headers.get("x-forwarded-for") ?? "").split(",")[0]
+    ?? "").trim() || "desconocida";
   const body = await req.json().catch(() => ({} as any));
   const accion = String(body?.accion ?? "");
 
@@ -174,8 +201,10 @@ Deno.serve(async (req) => {
       const tel = limpiarTel(body?.telefono);
       const nombre = String(body?.nombre ?? "").replace(/\s+/g, " ").trim();
       const email = String(body?.email ?? "").trim().toLowerCase() || null;
-      const nacimiento = /^\d{4}-\d{2}-\d{2}$/.test(String(body?.fecha_nacimiento ?? ""))
-        ? String(body.fecha_nacimiento) : null;
+      const nacimiento = fechaDeNacimiento(body?.fecha_nacimiento);
+      if (nacimiento === false) {
+        return json({ ok: false, motivo: "datos", mensaje: "Revisa tu fecha de nacimiento." });
+      }
       const aceptaPromos = body?.acepta_promociones === true;
 
       if (body?.acepta_programa !== true) {
@@ -215,7 +244,7 @@ Deno.serve(async (req) => {
         // Mismo teléfono: es la misma persona volviendo, entra a su registro.
         // Otro teléfono: no se dice nada más — confirmar que ese documento
         // está registrado sería regalar el dato.
-        if (previo.telefono !== tel) return json(NO_ENCONTRADO);
+        if (previo.telefono !== tel) return json(NO_SE_PUDO_REGISTRAR);
         await anotarAcierto(doc);
         return json({ ok: true, token: await abrirSesion({ preregistro_id: previo.id }) });
       }
@@ -225,7 +254,9 @@ Deno.serve(async (req) => {
         acepta_programa: true, acepta_promociones: aceptaPromos, version_aviso: VERSION_AVISO,
       }).select("id").single();
       if (eIns) throw eIns;
-      await anotarAcierto(doc);
+      // A propósito NO se anota como acierto: cada alta nueva cuenta contra el
+      // tope de la IP (8 en 15 min). Sin esto, desde un solo teléfono se podían
+      // crear pre-registros sin límite con documentos ajenos.
       return json({ ok: true, token: await abrirSesion({ preregistro_id: nuevo.id }), pendiente: true });
     }
 
@@ -255,7 +286,9 @@ Deno.serve(async (req) => {
     }
 
     // Un pre-registro se vincula solo el día que la sala crea la ficha con el
-    // mismo documento y teléfono. Se intenta en cada consulta mientras espera.
+    // mismo documento y teléfono. La búsqueda de la ficha recorre `customers`,
+    // así que se intenta sólo al pedir el RESUMEN (al abrir la app), no en cada
+    // pantalla.
     let customerId: number | null = ses.customer_id;
     if (!customerId && ses.preregistro_id) {
       const { data: pre, error } = await admin.from("app_cliente_preregistros")
@@ -265,7 +298,7 @@ Deno.serve(async (req) => {
       if (!pre || pre.estado === "descartado") return json({ ok: false, motivo: "sin_sesion" }, 401);
       if (pre.estado === "vinculado" && pre.customer_id) {
         customerId = pre.customer_id;
-      } else {
+      } else if (accion === "resumen") {
         const cli = await buscarCliente(pre.documento, pre.telefono);
         if (cli) {
           customerId = cli.id;
@@ -304,9 +337,15 @@ Deno.serve(async (req) => {
         if (error) throw error;
         if (body?.retirar_permisos === true) await guardarPermisos(customerId, false, false);
       }
+      // El pre-registro se borra aunque ya esté VINCULADO: sus datos (nombre,
+      // documento, teléfono, correo, nacimiento) ya viven en la ficha, y
+      // guardarlos aparte después de «borrar mi cuenta» no tiene motivo.
       if (ses.preregistro_id) {
-        const { error } = await admin.from("app_cliente_preregistros")
-          .delete().eq("id", ses.preregistro_id).eq("estado", "pendiente");
+        const { error } = await admin.from("app_cliente_preregistros").delete().eq("id", ses.preregistro_id);
+        if (error) throw error;
+      }
+      if (customerId) {
+        const { error } = await admin.from("app_cliente_preregistros").delete().eq("customer_id", customerId);
         if (error) throw error;
       }
       const { error: eYo } = await admin.from("app_cliente_sesiones")
@@ -345,14 +384,18 @@ Deno.serve(async (req) => {
       if (eB) console.error("no se pudieron leer las salas:", eB.message);
       const nombreSala = new Map((salas ?? []).map((b: any) => [b.id, b.name]));
 
-      const ofertas = await Promise.all((filas ?? []).map(async (o: any) => {
-        let imagen: string | null = null;
-        if (o.imagen_path) {
-          const { data: f, error: eF } = await admin.storage.from("ofertas-clientes")
-            .createSignedUrl(o.imagen_path, 3600);
-          if (eF) console.error("no se pudo firmar la imagen:", eF.message);
-          imagen = f?.signedUrl ?? null;
-        }
+      // Firmadas en UNA llamada y por 12 horas: firmar una por una costaba una
+      // petición a Storage por oferta en cada apertura, y una URL nueva cada vez
+      // hacía que el teléfono volviera a bajar la misma foto.
+      const rutas = (filas ?? []).map((o: any) => o.imagen_path).filter(Boolean);
+      const firmadas = new Map<string, string>();
+      if (rutas.length) {
+        const { data: fs, error: eF } = await admin.storage.from("ofertas-clientes").createSignedUrls(rutas, 12 * 3600);
+        if (eF) console.error("no se pudieron firmar las imágenes:", eF.message);
+        for (const f of fs ?? []) if (f.path && f.signedUrl) firmadas.set(f.path, f.signedUrl);
+      }
+      const ofertas = (filas ?? []).map((o: any) => {
+        const imagen = o.imagen_path ? firmadas.get(o.imagen_path) ?? null : null;
         const disponible = !o.exclusiva || socio;
         return {
           id: o.id, titulo: o.titulo, etiqueta: o.etiqueta, imagen, inicio: o.inicio, fin: o.fin, acento: o.acento ?? "magenta",
@@ -369,7 +412,7 @@ Deno.serve(async (req) => {
           salas: Array.isArray(o.branch_ids) && o.branch_ids.length
             ? o.branch_ids.map((id: number) => nombreSala.get(id)).filter(Boolean) : null,
         };
-      }));
+      });
       return json({ ok: true, ofertas, socio });
     }
 

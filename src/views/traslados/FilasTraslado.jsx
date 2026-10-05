@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeftRight, Clock, Loader2, PackageCheck, Printer, Truck } from 'lucide-react';
+import { AlertTriangle, ArrowLeftRight, ArrowRight, Building2, CalendarClock, Clock, Hash, Loader2, PackageCheck, Printer, Truck } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -42,6 +42,49 @@ export function Recorrido({ meta, className = '' }) {
     return (
         <span className={`truncate ${className}`}>
             {meta?.origen_branch_name ?? 'La otra sala'} → {meta?.branch_name ?? 'destino'}
+        </span>
+    );
+}
+
+/* ─── El trayecto, como dos lugares y no como una frase ───────────────────────
+ *
+ * Era «Salud 5 → Salud 4» en gris, del mismo peso que el resto: había que leer
+ * la línea entera para saber si el traslado era de uno. Dos chips con la flecha
+ * en medio se leen de un vistazo, y el DESTINO va teñido porque es la sala que
+ * tiene que hacer algo —recibir—. */
+export function Trayecto({ desde, hasta, className = '' }) {
+    return (
+        <span className={`flex items-center gap-1.5 min-w-0 ${className}`}>
+            <Badge variant="neutral" uppercase={false} icon={Building2} className="min-w-0 gap-1">
+                <span className="truncate">{desde ?? 'otra sala'}</span>
+            </Badge>
+            <ArrowRight size={12} strokeWidth={2.5} className="shrink-0 text-content-3" />
+            <Badge variant="info" uppercase={false} icon={Building2} className="min-w-0 gap-1">
+                <span className="truncate">{hasta ?? 'destino'}</span>
+            </Badge>
+        </span>
+    );
+}
+
+/* Un lote en una línea de chips: el número (es lo que se coteja contra la caja),
+ * el vencimiento y cuántas unidades. Antes era «GENERICO · 01 feb 29 — 30
+ * unidades» en tinta terciaria de 9 px. */
+function ChipsDeLote({ lote: l }) {
+    return (
+        <span className="flex flex-wrap items-center gap-1 text-micro font-bold text-content-2">
+            <span className="inline-flex items-center gap-1 rounded-md bg-surface-input px-1.5 py-0.5 ring-1 ring-inset ring-divider">
+                <Hash size={10} strokeWidth={2.5} className="shrink-0 text-content-3" />
+                <span className="font-mono">{l.lote || 'sin lote'}</span>
+            </span>
+            {l.vence && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-surface-input px-1.5 py-0.5 ring-1 ring-inset ring-divider">
+                    <CalendarClock size={10} strokeWidth={2.5} className="shrink-0 text-content-3" />
+                    {fmtFechaLarga(l.vence)}
+                </span>
+            )}
+            <span className="tabular-nums text-content-3">
+                {l.unidades} {l.unidades === 1 ? 'unidad' : 'unidades'}
+            </span>
         </span>
     );
 }
@@ -680,7 +723,12 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                         que un nombre de dos líneas al lado de uno de una dejaba
                         a la corta con un hueco. Reservar el alto acá lo reparte
                         parejo en vez de acumularlo abajo. */}
-                    <p className="text-body font-black text-content leading-snug line-clamp-2 min-h-[2.5em]"
+                    {/* Sin `min-h` de dos renglones: reservaba el alto de un
+                        nombre largo en TODAS, y en las de un renglón dejaba un
+                        hueco entre el nombre y la ruta. La rejilla ya iguala las
+                        tarjetas de una fila y el `mt-auto` del pie alinea los
+                        botones, así que la reserva no compraba nada. */}
+                    <p className="text-body font-black text-content leading-snug line-clamp-2"
                         title={piezas?.nombre ?? resumenItems(meta)}>
                         {piezas?.nombre ?? resumenItems(meta)}
                     </p>
@@ -691,11 +739,7 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                         había que leer entera para saber si el traslado era
                         tuyo. Va SIEMPRE: con alcance de todas las sucursales
                         esta lista mezcla las siete. */}
-                    <p className="mt-1 text-label font-bold text-content-2 truncate">
-                        {meta?.origen_branch_name ?? 'otra sala'}
-                        <span className="text-content-3 font-medium"> → </span>
-                        {meta?.branch_name ?? 'destino'}
-                    </p>
+                    <Trayecto desde={meta?.origen_branch_name} hasta={meta?.branch_name} className="mt-2" />
 
                     {/* Qué trae la caja. Quien recibe es el único que puede
                         comprobarlo — pero en la tarjeta va TOPADO: un traslado
@@ -713,13 +757,9 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                             <ListaRenglones renglones={renglones} tope={LOTES_EN_TARJETA} />
                         </div>
                     ) : lotes.length > 0 && (
-                        <div className="mt-1.5 flex flex-col gap-0.5">
+                        <div className="mt-2 flex flex-col gap-1">
                             {lotes.slice(0, LOTES_EN_TARJETA).map((l, i) => (
-                                <p key={i} className="text-micro text-content-2 font-semibold">
-                                    <span className="font-mono text-content-3">{l.lote || 'sin lote'}</span>
-                                    {l.vence && <span className="text-content-3"> · {fmtFechaLarga(l.vence)}</span>}
-                                    {' — '}{l.unidades} {l.unidades === 1 ? 'unidad' : 'unidades'}
-                                </p>
+                                <ChipsDeLote key={i} lote={l} />
                             ))}
                             {lotesDeMas > 0 && (
                                 <p className="text-micro font-bold text-brand-text">
@@ -749,10 +789,17 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                 buscar la caja hoy. */}
             <div className="mt-auto pt-2.5 border-t border-divider flex flex-col gap-2.5">
                 <div className="flex items-center justify-between gap-3 min-w-0">
-                    <span className={`flex items-center gap-1.5 min-w-0 shrink-0
-                                      ${trabado ? 'text-danger-text' : 'text-content-2'}`}>
-                        <Clock size={12} strokeWidth={2.5} className="shrink-0" />
-                        <span className="text-label font-black truncate">
+                    {/* La espera como PASTILLA, teñida cuando pasa del día:
+                        es el dato que decide si hay que ir a buscar la caja
+                        hoy, y en texto suelto rojo se leía como un error. */}
+                    <span className={`inline-flex items-center gap-1.5 min-w-0 shrink-0 rounded-full px-2.5 py-1
+                                      ring-1 ring-inset
+                                      ${trabado ? 'bg-danger/10 ring-danger/20 text-danger-text'
+                                                : 'bg-surface-input ring-divider text-content-2'}`}>
+                        {trabado
+                            ? <AlertTriangle size={12} strokeWidth={2.5} className="shrink-0" />
+                            : <Clock size={12} strokeWidth={2.5} className="shrink-0" />}
+                        <span className="text-caption font-black truncate">
                             {espera ? `${espera} en camino` : `Salió ${fmtCuando(salio)}`}
                         </span>
                     </span>

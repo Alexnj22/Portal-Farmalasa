@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1182.0 — Traslados: «En camino» con trayecto, chips de lote y el pulso de la cola
+
+- **El pulso arriba de la lista.** Cuántas cajas hay en camino, cuántas pasaron del día y desde cuándo espera la más vieja, en la fila donde antes la píldora de filtros flotaba sola.
+- **El trayecto como dos lugares.** «Salud 5 → Salud 4» era una línea gris; ahora son dos chips con la flecha en medio, y el destino —la sala que tiene que recibir— va teñido.
+- **El lote, el vencimiento y las unidades como chips** en vez de una línea de 9 px en tinta terciaria.
+- **La espera es una pastilla**, roja con un aviso cuando pasa del día, en vez de texto rojo suelto que se leía como un error.
+- **Sin hueco bajo el nombre.** La tarjeta reservaba dos renglones para el nombre aunque ocupara uno.
+- La misma tarjeta es la de la baldosa del Inicio, así que el cambio llega a los dos sitios.
+
 ## v2.1181.0 — App: Metas
 
 - **App: Metas nativa.** El tablero del mes por sala: cuánto lleva, el % de la meta, la barra con la proyección como sombra, en qué tramo va y cuánto le falta; arriba lo vendido y la proyección de todas las salas con meta. Mes a mes con flechas. Bono, pago semestral, confirmación, gastos e histórico siguen en el portal.

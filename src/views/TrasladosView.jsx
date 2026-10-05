@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
-import { ArrowLeftRight, History, PackageCheck, PackageX, ScanLine, Send, Truck } from 'lucide-react';
+import { AlertTriangle, ArrowLeftRight, History, Hourglass, PackageCheck, PackageX, ScanLine, Send, Truck } from 'lucide-react';
 import Button from '../components/common/Button';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -31,7 +31,7 @@ const RetiroModal        = lazy(() => import('./traslados/RetiroModal'));
 /* Mismo motivo que las tarjetas de arriba: la lista de faltantes se dibuja sólo
    cuando su consulta volvió con algo, y lo normal es que no haya ninguno. */
 const FilasFaltante      = lazy(() => import('./traslados/FilasFaltante'));
-import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
+import { buscadorDePersonas, desdeHace } from '@nucleo/utils/movimientoTexto';
 import { textoBuscable } from '@nucleo/utils/trasladoTexto';
 import { fetchTrasladosPorRecibir, fetchTrasladosHistorial, fetchEstadoDeGrupos } from '@nucleo/data/traslados';
 import { fetchEnviosVivos, fetchEnviosHistorial, momentoDelEnvio } from '@nucleo/data/envios';
@@ -415,6 +415,21 @@ export default function TrasladosView() {
         return g;
     }, [envios, miBranch, busqueda]);
 
+    /* El pulso de «En camino», arriba de la lista: cuántas cajas hay, cuántas
+     * pasaron del día y desde cuándo espera la más vieja. Sobre la lista
+     * ENTERA y no la buscada — mismo criterio que el contador de la pestaña. El
+     * umbral del día es el mismo que tiñe la tarjeta (`FilaPorRecibir`). */
+    const pulso = useMemo(() => {
+        const filas = porRecibir ?? [];
+        const salidas = filas.map(f => new Date(f.updated_at ?? f.created_at).getTime()).filter(Number.isFinite);
+        const masVieja = salidas.length ? Math.min(...salidas) : null;
+        return {
+            total: filas.length,
+            trabados: salidas.filter(t => ahora - t > 86400000).length,
+            espera: masVieja ? desdeHace(new Date(masVieja).toISOString(), ahora) : null,
+        };
+    }, [porRecibir, ahora]);
+
     /* Enviar es `can_edit` —sacar producto de una sala— y no `can_approve`, que
      * es decidir sobre lo que llega. La sala propia hace falta sólo sin alcance
      * sobre todas: con alcance se elige por renglón, y quien lo tiene —
@@ -494,7 +509,33 @@ export default function TrasladosView() {
                 que justo el usuario de sala, que es el que recibe, se quedaba
                 sin la barra y sin la acción. */}
             {(alcanceTodas || enHistorial || enRecibir) && !enEnvios && !enFaltantes && (
-              <div className="flex justify-end px-4 md:px-5 pt-4">
+              <div className="flex flex-wrap items-center justify-end gap-3 px-4 md:px-5 pt-4">
+                {/* El pulso a la izquierda y la píldora a la derecha: la fila
+                    que antes era sólo la píldora flotando sobre un hueco. */}
+                {enRecibir && !cargandoColas && pulso.total > 0 && (
+                    <div className="mr-auto flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center gap-2 rounded-xl px-3 py-2 ring-1 ring-inset
+                                         bg-warning/10 ring-warning/20 text-warning-text">
+                            <Truck size={14} strokeWidth={2.5} className="shrink-0" />
+                            <span className="text-body-xl font-black leading-none tabular-nums">{pulso.total}</span>
+                            <span className="text-micro font-black uppercase tracking-wider opacity-80">en camino</span>
+                        </span>
+                        {pulso.trabados > 0 && (
+                            <span className="inline-flex items-center gap-2 rounded-xl px-3 py-2 ring-1 ring-inset
+                                             bg-danger/10 ring-danger/25 text-danger-text">
+                                <AlertTriangle size={14} strokeWidth={2.5} className="shrink-0" />
+                                <span className="text-body-xl font-black leading-none tabular-nums">{pulso.trabados}</span>
+                                <span className="text-micro font-black uppercase tracking-wider opacity-80">más de un día</span>
+                            </span>
+                        )}
+                        {pulso.espera && (
+                            <span className="inline-flex items-center gap-1.5 text-caption font-bold text-content-3">
+                                <Hourglass size={12} strokeWidth={2.5} className="shrink-0" />
+                                La más vieja salió {pulso.espera}
+                            </span>
+                        )}
+                    </div>
+                )}
                 <FilterBar activeCount={filtrosPuestos} onClear={limpiarTodo}
                     acciones={enRecibir ? [
                         {

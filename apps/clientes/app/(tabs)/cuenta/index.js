@@ -1,23 +1,34 @@
-// Cuenta: permisos, avisos, cerrar sesión y borrar la cuenta (Apple lo exige
-// dentro de la app, 5.1.1(v)).
+// Cuenta: permisos, avisos, reglamento, cerrar sesión y borrar la cuenta
+// (Apple lo exige dentro de la app, 5.1.1(v)). Forma de Ajustes: grupos con
+// interruptores del sistema y acciones en filas, la destructiva en rojo.
 import { useCallback, useState } from 'react';
-import { Alert, Linking, Switch, View } from 'react-native';
+import { Alert, Linking, Pressable, Text } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { Aviso, Boton, Pantalla, Tarjeta, Texto, Titulo } from '../../../componentes/ui';
+import { colorSistema, FilaInterruptor, FilaTexto, Formulario, Grupo } from '../../../componentes/sistema';
+import { Aviso } from '../../../componentes/ui';
 import { useSesion } from '../../../lib/sesion';
 import { useCuenta } from '../../../lib/cuenta';
 import { pedirTokenDeAvisos } from '../../../lib/avisos';
-import { useTema } from '../../../tema/tema';
 import { nombrePropio } from '../../../lib/formato';
+import { useTema } from '../../../tema/tema';
 
 const REGLAMENTO = 'https://portal.farmasalud.lat/reglamento-puntos';
+
+/** Una fila que se toca, como «Cerrar sesión» en Ajustes. */
+function FilaAccion({ texto, color, alTocar }) {
+  return (
+    <Pressable accessibilityRole="button" onPress={alTocar}
+      style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
+      <FilaTexto color={color}>{texto}</FilaTexto>
+    </Pressable>
+  );
+}
 
 export default function Cuenta() {
   const t = useTema();
   const { pedir, cerrar } = useSesion();
   const { resumen, cargar } = useCuenta();
   const [mensaje, setMensaje] = useState(null);
-  const [ocupado, setOcupado] = useState(false);
 
   useFocusEffect(useCallback(() => { if (!resumen) cargar(); }, [resumen, cargar]));
 
@@ -26,7 +37,7 @@ export default function Cuenta() {
   async function permiso(campo, valor) {
     setMensaje(null);
     const r = await pedir('permisos', { [campo]: valor });
-    if (!r?.ok) setMensaje({ tipo: 'error', texto: r?.mensaje ?? 'No se pudo guardar.' });
+    if (!r?.ok) setMensaje(r?.mensaje ?? 'No se pudo guardar.');
     await cargar();
   }
 
@@ -35,23 +46,25 @@ export default function Cuenta() {
     let push_token = null;
     if (valor) {
       const r = await pedirTokenDeAvisos();
-      if (r.error) { setMensaje({ tipo: 'aviso', texto: r.error }); return; }
+      if (r.error) { setMensaje(r.error); return; }
       push_token = r.token;
     }
     const r = await pedir('avisos', { acepta: valor, push_token });
-    if (!r?.ok) setMensaje({ tipo: 'error', texto: r?.mensaje ?? 'No se pudo guardar.' });
+    if (!r?.ok) setMensaje(r?.mensaje ?? 'No se pudo guardar.');
     await cargar();
   }
 
-  async function salir() {
-    await pedir('salir');
-    await cerrar();
+  function salir() {
+    Alert.alert('¿Cerrar sesión?', 'Para volver a entrar vas a necesitar tu DUI y teléfono, o el código de tu ticket.', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Cerrar sesión', style: 'destructive', onPress: async () => { await pedir('salir'); await cerrar(); } },
+    ]);
   }
 
   function borrar() {
     Alert.alert(
       'Borrar mi cuenta',
-      'Se cierra la sesión en todos tus teléfonos y dejas de recibir avisos. Tu historial de compras se conserva porque la ley lo exige para las facturas. ¿Quieres también salir del programa de puntos y de las promociones?',
+      'Se cierra la sesión en todos tus teléfonos y dejas de recibir avisos. Tu historial de compras se conserva porque la ley lo exige para las facturas.',
       [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Borrar cuenta', style: 'destructive', onPress: () => confirmarBorrado(false) },
@@ -61,57 +74,42 @@ export default function Cuenta() {
   }
 
   async function confirmarBorrado(retirar) {
-    setOcupado(true);
     const r = await pedir('borrar_cuenta', { retirar_permisos: retirar });
-    setOcupado(false);
     if (r?.ok) await cerrar();
-    else setMensaje({ tipo: 'error', texto: r?.mensaje ?? 'No se pudo borrar la cuenta.' });
+    else setMensaje(r?.mensaje ?? 'No se pudo borrar la cuenta.');
   }
 
   return (
-    <Pantalla>
-      {resumen?.nombre ? <Titulo estilo={{ fontSize: 20 }}>{nombrePropio(resumen.nombre)}</Titulo> : null}
-      {mensaje ? <Aviso tipo={mensaje.tipo}>{mensaje.texto}</Aviso> : null}
+    <Formulario>
+      {resumen?.nombre ? (
+        <Text style={{ fontSize: 22, fontWeight: '700', color: colorSistema.texto, marginHorizontal: 32 }}>
+          {nombrePropio(resumen.nombre)}
+        </Text>
+      ) : null}
+      {mensaje ? <Aviso>{mensaje}</Aviso> : null}
 
       {resumen && !resumen.pendiente ? (
-        <Tarjeta>
-          <Titulo>Permisos</Titulo>
-          <Interruptor titulo="Programa de puntos" detalle={c?.textos?.programa}
-            valor={c?.programa !== false} alCambiar={(v) => permiso('programa', v)} />
-          <Interruptor titulo="Promociones" detalle={c?.textos?.promociones}
-            valor={c?.promociones === true} alCambiar={(v) => permiso('promociones', v)} />
-        </Tarjeta>
+        <Grupo titulo="Permisos" pie="Si quitas el programa, tu saldo queda en pausa; no se pierde.">
+          <FilaInterruptor titulo="Programa de puntos" detalle={c?.textos?.programa}
+            valor={c?.programa !== false} alCambiar={(v) => permiso('programa', v)} color={t.color.magenta} />
+          <FilaInterruptor titulo="Promociones" detalle={c?.textos?.promociones}
+            valor={c?.promociones === true} alCambiar={(v) => permiso('promociones', v)} color={t.color.magenta} />
+        </Grupo>
       ) : null}
 
-      <Tarjeta>
-        <Interruptor titulo="Avisos en este teléfono" detalle="Ofertas nuevas y puntos por vencer."
-          valor={resumen?.acepta_avisos === true} alCambiar={avisos} />
-      </Tarjeta>
+      <Grupo pie="Ofertas nuevas y puntos por vencer.">
+        <FilaInterruptor titulo="Avisos en este teléfono" valor={resumen?.acepta_avisos === true}
+          alCambiar={avisos} color={t.color.magenta} />
+      </Grupo>
 
-      <Tarjeta>
-        <Texto onPress={() => Linking.openURL(REGLAMENTO)} estilo={{ color: t.color.magentaTexto, fontWeight: '600', paddingVertical: 8 }}>
-          Reglamento del programa
-        </Texto>
-      </Tarjeta>
+      <Grupo>
+        <FilaAccion texto="Reglamento del programa" color={t.color.magentaTexto} alTocar={() => Linking.openURL(REGLAMENTO)} />
+      </Grupo>
 
-      <View style={{ gap: 12, marginTop: 8 }}>
-        <Boton tipo="secundario" alTocar={salir}>Cerrar sesión</Boton>
-        <Boton tipo="peligro" alTocar={borrar} cargando={ocupado}>Borrar mi cuenta</Boton>
-      </View>
-    </Pantalla>
-  );
-}
-
-function Interruptor({ titulo, detalle, valor, alCambiar }) {
-  const t = useTema();
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 }}>
-      <View style={{ flex: 1, gap: 2 }}>
-        <Texto estilo={{ fontWeight: '600' }}>{titulo}</Texto>
-        {detalle ? <Texto nivel={3} estilo={{ fontSize: 13, lineHeight: 18 }}>{detalle}</Texto> : null}
-      </View>
-      <Switch value={valor} onValueChange={alCambiar} trackColor={{ true: t.color.magenta, false: t.color.borde }}
-        thumbColor="#FFFFFF" activeThumbColor="#FFFFFF" ios_backgroundColor={t.color.borde} />
-    </View>
+      <Grupo>
+        <FilaAccion texto="Cerrar sesión" color={t.color.magentaTexto} alTocar={salir} />
+        <FilaAccion texto="Borrar mi cuenta" color={colorSistema.rojo} alTocar={borrar} />
+      </Grupo>
+    </Formulario>
   );
 }

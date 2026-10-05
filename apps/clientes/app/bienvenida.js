@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Boton, Tarjeta, Texto } from '../componentes/ui';
 import { suave, useTema } from '../tema/tema';
+import { colorSistema } from '../componentes/sistema';
 
 const QUE_TRAE = [
   { simbolo: '★', titulo: 'Tus puntos', detalle: 'Tu saldo en dólares y lo que vence.', tono: 'verde' },
@@ -27,7 +28,7 @@ export default function Bienvenida() {
       <View style={{ gap: 22 }}>
         <View style={{ alignItems: 'center', gap: 14 }}>
           <Image source={require('../assets/icono.png')} style={{ width: 84, height: 84, borderRadius: 20 }} />
-          <Text style={{ fontSize: 32, fontWeight: '800', letterSpacing: -0.5, color: t.color.texto, textAlign: 'center' }}>
+          <Text style={{ fontSize: 32, fontWeight: '800', letterSpacing: -0.5, color: colorSistema.texto, textAlign: 'center' }}>
             Puntos Salud
           </Text>
           <Texto nivel={2} estilo={{ textAlign: 'center', fontSize: 16, lineHeight: 23, maxWidth: 300 }}>
@@ -48,7 +49,7 @@ export default function Bienvenida() {
                   <Text style={{ fontSize: 19, fontWeight: '800', color: texto }}>{f.simbolo}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 16, fontWeight: '700', color: t.color.texto }}>{f.titulo}</Text>
+                  <Text style={{ fontSize: 16, fontWeight: '600', color: colorSistema.texto }}>{f.titulo}</Text>
                   <Texto nivel={2} estilo={{ fontSize: 14 }}>{f.detalle}</Texto>
                 </View>
               </View>

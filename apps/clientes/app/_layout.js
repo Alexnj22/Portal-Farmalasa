@@ -9,6 +9,7 @@ import Aurora from '../componentes/Aurora';
 import { useSesion } from '../lib/sesion';
 import { useCuenta } from '../lib/cuenta';
 import { useTema } from '../tema/tema';
+import { colorSistema } from '../componentes/sistema';
 
 const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent' } };
 const OSCURO = { ...DarkTheme, colors: { ...DarkTheme.colors, background: 'transparent' } };
@@ -66,7 +67,7 @@ export default function Raiz() {
             headerBlurEffect: oscuro ? 'dark' : 'light',
             headerShadowVisible: false,
             headerStyle: WEB ? { backgroundColor: 'transparent' } : undefined,
-            headerTitleStyle: { color: t.color.texto },
+            headerTitleStyle: { color: colorSistema.texto },
           }}>
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="bienvenida" options={{ headerShown: false }} />

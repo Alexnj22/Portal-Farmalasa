@@ -8,6 +8,7 @@ import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo } from '../../../comp
 import { useCuenta } from '../../../lib/cuenta';
 import { dolares, diasHasta, entero, fecha, nombrePropio } from '../../../lib/formato';
 import { suave, useTema } from '../../../tema/tema';
+import { colorSistema } from '../../../componentes/sistema';
 
 const MINIMO_DE_CANJE = 100;
 // El signo sale del NÚMERO, no del tipo: un ajuste puede sumar o restar.
@@ -84,7 +85,7 @@ export default function Puntos() {
             const d = diasHasta(v.vence);
             return (
               <Fila key={v.vence} izquierda={`${fecha(v.vence)}${d != null && d <= 30 ? ` · en ${d} días` : ''}`}
-                derecha={`${entero(v.puntos)} pts`} color={d != null && d <= 30 ? t.color.avisoTexto : t.color.texto2} />
+                derecha={`${entero(v.puntos)} pts`} color={d != null && d <= 30 ? colorSistema.naranja : colorSistema.texto2} />
             );
           })}
         </Tarjeta>

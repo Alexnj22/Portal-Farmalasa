@@ -7,6 +7,7 @@ import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo, Vacio } from '../../
 import { useSesion } from '../../../lib/sesion';
 import { dolares, fecha } from '../../../lib/formato';
 import { suave, useTema } from '../../../tema/tema';
+import { colorSistema } from '../../../componentes/sistema';
 
 export default function Ofertas() {
   const t = useTema();
@@ -75,10 +76,10 @@ function Productos({ productos }) {
     <View style={{ gap: 6, marginTop: 4 }}>
       {visibles.map((p) => (
         <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Text style={{ flex: 1, fontSize: 14, color: t.color.texto2 }} numberOfLines={2}>{p.nombre}</Text>
+          <Text style={{ flex: 1, fontSize: 14, color: colorSistema.texto2 }} numberOfLines={2}>{p.nombre}</Text>
           {p.precio != null ? (
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ fontSize: 12, color: t.color.texto3, textDecorationLine: 'line-through', fontVariant: ['tabular-nums'] }}>
+              <Text style={{ fontSize: 12, color: colorSistema.texto3, textDecorationLine: 'line-through', fontVariant: ['tabular-nums'] }}>
                 {dolares(p.precio)}
               </Text>
               <Text style={{ fontSize: 16, fontWeight: '800', color: t.color.magentaTexto, fontVariant: ['tabular-nums'] }}>

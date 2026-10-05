@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1205.1 — App de clientes: controles nativos del sistema
+
+- **La app de clientes usa el canon de la app del personal:** formularios agrupados como Ajustes (`componentes/sistema.js`), colores del sistema que siguen el modo oscuro, superficies de Liquid Glass en iOS 26 (desenfoque del sistema antes, tarjeta Material en Android), el control segmentado de SwiftUI, interruptores del sistema en lugar de casillas (iOS no tiene casillas), confirmaciones con la alerta del sistema y el botón nativo a todo el ancho con el estilo de vidrio de iOS 26.
+- **Cuenta** tiene ahora la forma de Ajustes: permisos y avisos como interruptores, «Cerrar sesión» y «Borrar mi cuenta» como filas, la segunda en rojo.
+- **Fuera de iPhone** (Android y vista previa web) los colores de respaldo siguen el modo oscuro: el título salía negro sobre la aurora oscura.
+
 ## v2.1205.0 — App: Permisos
 
 - **App: Permisos nativo.** Se elige un cargo y se ve, grupo por grupo, a qué módulos entra y qué puede hacer en cada uno —ver, gestionar, aprobar, con qué alcance— más las pestañas y capacidades encendidas; arriba, si es Super Usuario, cuánto aguanta su sesión sin uso y su nivel de precio. Cambiar permisos sigue en el portal.

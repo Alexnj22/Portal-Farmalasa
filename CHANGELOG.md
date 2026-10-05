@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1207.0 — App: Carnés del día
+
+- **App: Carnés del día nativo.** Los carnés de papel vivos ahora mismo, agrupados por la sala de quien los tiene, con quién lo entregó, por dónde salió y a qué hora vence; y anular uno con confirmación si se traspapeló. Imprimir necesita la ticketera de una computadora y sigue en el portal.
+- **Núcleo:** cada carné con su persona y su sala, y el orden por sucursal, pasan de `CarnesDelDiaView` a `src/utils/carnesDelDia.js`, con su prueba.
+
 ## v2.1206.0 — App: Conexiones
 
 - **App: Conexiones nativo.** Quién tiene el portal abierto y en qué dispositivos, cuándo se movió por última vez y con cuánto tiempo sin uso se cierra cada conexión; filtros de activas hoy y olvidadas. Tocar a alguien muestra sus conexiones (la de este equipo primero) y deja cerrar una o todas con confirmación; si se cierra la propia, la app sale. Bloquear sigue en el portal. La lógica ya vivía en el núcleo (`data/sesiones`).

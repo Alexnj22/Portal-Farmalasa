@@ -183,7 +183,10 @@ function Cabecera({ envio, tono = 'brand', ahora = null }) {
 
     return (
         <div className="flex items-start gap-3.5">
-            <span className={`shrink-0 w-[3.25rem] rounded-xl px-1 py-1.5 flex flex-col items-center
+            {/* `3.75rem` y no los `3.25` de las otras tarjetas: «PRODUCTO» en
+                versalitas mide más que el ancla del traslado («CAJA», «GOTAS»)
+                y se salía por los dos lados. */}
+            <span className={`shrink-0 w-[3.75rem] rounded-xl px-1 py-1.5 flex flex-col items-center
                               justify-center ring-1 ring-inset ${paleta}`}>
                 <span className="text-title-sm font-black leading-none tabular-nums">{n}</span>
                 <span className="mt-1 text-[0.5625rem] font-black uppercase tracking-wider leading-none opacity-80">

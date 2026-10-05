@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1187.1 — Traslados: el ancla del envío ya no se desborda
+
+- El rótulo «PRODUCTO» del número de cada envío se salía de su recuadro; el recuadro pasa de 3.25 a 3.75 rem.
+
 ## v2.1187.0 — App: Sucursales
 
 - **App: Sucursales nativa.** Cada sucursal por tipo: si está abierta ahora, su horario de hoy, cuánta gente tiene y sus alertas. La ficha trae las alertas una por una (permisos por vencer, falta regente o jefe, pagos de servicios atrasados), la dirección, los teléfonos —tocar llama—, la semana entera de horario, el personal y qué tan completo está su perfil. Editar sigue en el portal.

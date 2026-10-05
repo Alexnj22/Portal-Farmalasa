@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1199.0 — App: Facturación
+
+- **App: Facturación nativa.** Las colas para revisarlas desde el teléfono: lo que sigue sin sello de Hacienda con los días que lleva esperando y la categoría del cliente, las observaciones abiertas (con lo que contestó Hacienda palabra por palabra) y las anuladas por solventar. Quien ve una sola sala, ve su sala; los montos sólo con el permiso de verlos. Solventar, saltos y pagos no efectivo siguen en el portal.
+- **Núcleo:** el catálogo de observaciones, cuáles se pueden solventar a mano y cómo se separa lo pendiente de lo resuelto pasan de `FacturacionView` a `src/utils/colasDeFacturacion.js`, con su prueba.
 ## v2.1198.1 — App de clientes: sesión que se borraba sola, entrar con código y pulido visual
 
 - **La sesión se borraba al abrir la app.** La pantalla de puntos pedía el resumen antes de leer el token del llavero; el servidor contestaba «sin sesión» y la app borraba el token guardado. Ahora toda llamada espera esa lectura, y sólo se cierra la sesión si el servidor rechazó ese mismo token.

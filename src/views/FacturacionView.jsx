@@ -51,6 +51,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 // existe; esto es la otra mitad: que un fallo se VEA.
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { diasEntre, hoySV, relojSV } from '@nucleo/utils/fecha';
+import { conteoDeObservaciones, esSolventable, metaObs, OBSERVACIONES, observacionesPendientes, sinResolver } from '@nucleo/utils/colasDeFacturacion';
 function avisarFalloAlSolventar(error, contexto) {
     console.error(`${contexto}: insert resolution failed:`, error.message);
     useToastStore.getState().showToast(
@@ -1207,7 +1208,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
 
         // Exclude already-resolved invoices from the pending list
         const resolvedIds = new Set((allResolutions || []).map(r => r.invoice_id));
-        const filteredPend = (pendData || []).filter(r => !resolvedIds.has(r.id));
+        const filteredPend = sinResolver(pendData, allResolutions);
 
         // Build resolution map (all resolutions)
         const resMap = {};
@@ -2458,40 +2459,8 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
 // mira el plazo, mira que Hacienda ya contestó que no y que el reintento
 // automático ya se ejercitó. Una factura así no está esperando nada — no se
 // arregla sola, y la frontera de esta pestaña siempre fue ésa.
-const OBSERVACIONES = {
-    SELLO_INVALIDO:        { label: 'Sello inválido',  variant: 'danger'  },
-    RECHAZADA_POR_HACIENDA:{ label: 'Rechazada MH',    variant: 'danger'  },
-    SIN_CODIGO_VENCIDO:    { label: 'Sin código',      variant: 'warning' },
-    ESTADO_DESCONOCIDO:    { label: 'Estado inválido', variant: 'danger'  },
-    TIPO_DOC_DESCONOCIDO:  { label: 'Tipo inválido',   variant: 'warning' },
-    SIN_CORRELATIVO:       { label: 'Sin correlativo', variant: 'warning' },
-    TOTAL_INVALIDO:        { label: 'Total inválido',  variant: 'danger'  },
-    SUMA_NO_CUADRA:        { label: 'No cuadra',       variant: 'warning' },
-};
-
-// Observaciones que NO se pueden dar por solventadas a mano.
-//
-// `sales_observation_resolutions` se lleva por `invoice_id` **a secas**, no por
-// código: solventar saca la factura de la pestaña ENTERA, con todas sus
-// observaciones. Para las siete reglas de forma eso está bien —«ya lo revisé»
-// es una respuesta legítima a «la suma no cuadra»—, pero no para una factura
-// que Hacienda rechazó y sigue sin sello: ahí «alguien la miró» y «se envió»
-// son cosas distintas, y confundirlas es exactamente lo que dejó al
-// `0000002848_COF` un año figurando como confirmada después de marcarlo
-// solventado.
-//
-// Esta observación se cierra sola el día que llegue el sello de 40 caracteres,
-// que es el único hecho que prueba que entró. Y si la factura ya tenía una
-// resolución vieja por otra cosa, vuelve a aparecer igual: la resolución no la
-// puede tapar.
-const NO_SOLVENTABLES = new Set(['RECHAZADA_POR_HACIENDA']);
-const esSolventable = (r) => !(r.observaciones || []).some(c => NO_SOLVENTABLES.has(c));
-
-// Un código que este mapa no conoce NO se oculta: se muestra crudo, en warning.
-// Es la misma idea que los catch-alls del RPC — si el servidor empieza a
-// reportar una clase nueva, tiene que llegar a la pantalla aunque nadie haya
-// tocado el frontend todavía. Ocultarla sería repetir el defecto original.
-const metaObs = (code) => OBSERVACIONES[code] || { label: code, variant: 'warning' };
+// El catálogo de observaciones y qué se puede solventar: `colasDeFacturacion`
+// (núcleo, lo mismo de la app).
 
 // Rango completo a propósito: las observaciones son raras (~190 sobre 338 mil
 // facturas) y lo que hace falta es verlas TODAS, no las del mes en curso.
@@ -2582,9 +2551,7 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
     // `|| !esSolventable(r)`: una resolución vieja no puede tapar un rechazo de
     // Hacienda que llegó después. La tabla no distingue por código, así que la
     // distinción se hace acá.
-    const pendientes = useMemo(() =>
-        rows.filter(r => !resueltasMap.has(r.id) || !esSolventable(r)),
-        [rows, resueltasMap]);
+    const pendientes = useMemo(() => observacionesPendientes(rows, resoluciones), [rows, resoluciones]);
 
     const resueltas = useMemo(() =>
         rows.filter(r => resueltasMap.has(r.id) && esSolventable(r))
@@ -2592,11 +2559,7 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
             .sort((a, b) => String(b.resolution?.resolved_at || '').localeCompare(String(a.resolution?.resolved_at || ''))),
         [rows, resueltasMap]);
 
-    const conteos = useMemo(() => {
-        const m = new Map();
-        for (const r of pendientes) for (const o of (r.observaciones || [])) m.set(o, (m.get(o) || 0) + 1);
-        return [...m.entries()].sort((a, b) => b[1] - a[1]);
-    }, [pendientes]);
+    const conteos = useMemo(() => conteoDeObservaciones(pendientes), [pendientes]);
 
     // Los conteos suben a la píldora, que es quien dibuja la ranura. `conteos`
     // es un memo estable, así que el efecto corre sólo cuando cambian de verdad.

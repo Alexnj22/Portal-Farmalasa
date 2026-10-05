@@ -1,0 +1,67 @@
+/**
+ * Las colas de Facturación: qué observaciones existen, cuáles se pueden dar
+ * por solventadas a mano y cómo se separa lo pendiente de lo ya resuelto.
+ * Vivía en `FacturacionView`; se mudó el 2026-10-05 para que la app muestre
+ * las mismas colas con la misma regla.
+ */
+
+/** El catálogo de observaciones que devuelve `get_invoice_observations`. */
+export const OBSERVACIONES = {
+    SELLO_INVALIDO:         { label: 'Sello inválido',  variant: 'danger'  },
+    RECHAZADA_POR_HACIENDA: { label: 'Rechazada MH',    variant: 'danger'  },
+    SIN_CODIGO_VENCIDO:     { label: 'Sin código',      variant: 'warning' },
+    ESTADO_DESCONOCIDO:     { label: 'Estado inválido', variant: 'danger'  },
+    TIPO_DOC_DESCONOCIDO:   { label: 'Tipo inválido',   variant: 'warning' },
+    SIN_CORRELATIVO:        { label: 'Sin correlativo', variant: 'warning' },
+    TOTAL_INVALIDO:         { label: 'Total inválido',  variant: 'danger'  },
+    SUMA_NO_CUADRA:         { label: 'No cuadra',       variant: 'warning' },
+};
+
+// Observaciones que NO se pueden dar por solventadas a mano.
+//
+// `sales_observation_resolutions` se lleva por `invoice_id` **a secas**, no por
+// código: solventar saca la factura de la pestaña ENTERA, con todas sus
+// observaciones. Para las siete reglas de forma eso está bien —«ya lo revisé»
+// es una respuesta legítima a «la suma no cuadra»—, pero no para una factura
+// que Hacienda rechazó y sigue sin sello: ahí «alguien la miró» y «se envió»
+// son cosas distintas, y confundirlas es exactamente lo que dejó al
+// `0000002848_COF` un año figurando como confirmada después de marcarlo
+// solventado.
+//
+// Esta observación se cierra sola el día que llegue el sello de 40 caracteres,
+// que es el único hecho que prueba que entró. Y si la factura ya tenía una
+// resolución vieja por otra cosa, vuelve a aparecer igual: la resolución no la
+// puede tapar.
+export const NO_SOLVENTABLES = new Set(['RECHAZADA_POR_HACIENDA']);
+
+export const esSolventable = (r) => !(r.observaciones || []).some((c) => NO_SOLVENTABLES.has(c));
+
+// Un código que este mapa no conoce NO se oculta: se muestra crudo, en warning.
+// Es la misma idea que los catch-alls del RPC — si el servidor empieza a
+// reportar una clase nueva, tiene que llegar a la pantalla aunque nadie haya
+// tocado el frontend todavía. Ocultarla sería repetir el defecto original.
+export const metaObs = (code) => OBSERVACIONES[code] || { label: code, variant: 'warning' };
+
+/**
+ * Las observaciones pendientes. Una factura puede tener varias resoluciones
+ * (la tabla es append-only); `resoluciones` llega ordenada por `resolved_at`
+ * desc. `|| !esSolventable(r)`: una resolución vieja no puede tapar un rechazo
+ * de Hacienda que llegó después.
+ */
+export function observacionesPendientes(rows, resoluciones) {
+    const resueltas = new Set((resoluciones || []).map((x) => x.invoice_id));
+    return (rows || []).filter((r) => !resueltas.has(r.id) || !esSolventable(r));
+}
+
+/** Cuántas pendientes hay de cada observación, de la más frecuente a la menos. */
+export function conteoDeObservaciones(pendientes) {
+    const m = new Map();
+    for (const r of pendientes || []) for (const o of (r.observaciones || [])) m.set(o, (m.get(o) || 0) + 1);
+    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+/** Lo que sigue en una cola: todo lo que no tiene una resolución por `invoice_id`. */
+export function sinResolver(rows, resoluciones, clave = 'invoice_id') {
+    const hechas = new Set((resoluciones || []).map((x) => x[clave]));
+    return (rows || []).filter((r) => !hechas.has(r.id));
+}

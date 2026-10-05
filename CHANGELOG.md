@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1217.0 — App: Mantenimiento
+
+- **App: Mantenimiento nativo.** Los frenos del movimiento de mercadería con su interruptor y desde cuándo están en pausa, y los módulos que se pueden poner en mantenimiento con lo que le queda a cada candado; todo cambio pide confirmación. El motivo, la duración y el aviso del portal se ajustan en el portal.
+- **Corrección (portal y app):** el freno «Anular una caja que no llegó» (`anular`, del «No reenviar» de Pedidos, 2026-09-17) salía como «Movimiento sin nombre» en Mantenimiento: entró al CHECK de la base sin entrar al mapa de nombres. Ya tiene nombre, y una prueba recorre la lista del CHECK para que el próximo no se escape.
+- **Núcleo:** los nombres de los frenos, el tiempo restante y las horas del candado pasan de `MaintenanceView` a `src/utils/mantenimiento.js`, con su prueba.
+
 ## v2.1216.0 — App: Actualización de datos
 
 - **App: Actualización de datos nativo.** Cada dato que se actualiza solo (productos, Min/Max, compras, respaldo) con su última corrida y, si falló, desde cuándo no tiene una buena; abajo, las corridas recientes con su alcance y el detalle del error. Se refresca sola cada 30 segundos.

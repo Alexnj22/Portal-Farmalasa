@@ -19,6 +19,7 @@ import { fetchTrasladoSwitch, setTrasladoSwitch } from '@nucleo/data/trasladoSwi
 import AvisoDelPortal from '../components/mantenimiento/AvisoDelPortal';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
+import { horasDelCandado, rotuloDeInterruptor, tiempoRestante } from '@nucleo/utils/mantenimiento';
 
 /**
  * Sistema › Mantenimiento — poner un módulo en solo lectura para el resto.
@@ -39,82 +40,12 @@ const HORAS = [1, 2, 4, 8, 12, 24].map(h => ({ value: String(h), label: h === 1 
 
 const info = (key) => MODULE_INFO[key] || { label: key, desc: '', group: 'Otros' };
 
-// Los cuatro interruptores de movimiento de mercadería, con su nombre en
-// palabras del negocio. Es un mapa y no un ternario porque ya son cuatro: el
-// ternario que había pintaba «Recibir en la sala» sobre cualquier acción que no
-// fuera `enviar`, así que los dos de devolución habrían salido con el rótulo del
-// otro proceso — y quien lea la pantalla no tiene cómo saber que está mintiendo.
-const INTERRUPTOR = {
-    enviar: {
-        titulo:  'Sacar mercadería de bodega',
-        detalle: 'Al finalizar un pedido, la mercadería sale sola.',
-        pausa:   'No va a salir mercadería hasta que lo reanudes.',
-        reanuda: 'La mercadería vuelve a salir al finalizar un pedido.',
-    },
-    recibir: {
-        titulo:  'Recibir en la sala',
-        detalle: 'Al confirmar una caja, la mercadería entra sola.',
-        pausa:   'No se va a poder recibir hasta que lo reanudes.',
-        reanuda: 'Las salas ya pueden recibir.',
-    },
-    devolver_enviar: {
-        titulo:  'Sacar una devolución de la sala',
-        detalle: 'Cuando bodega acepta una devolución, el producto sale de la sala.',
-        pausa:   'Las devoluciones aceptadas no van a salir de la sala.',
-        reanuda: 'Las devoluciones aceptadas vuelven a salir.',
-    },
-    devolver_recibir: {
-        titulo:  'Recibir una devolución en bodega',
-        detalle: 'Bodega confirma la entrada de lo que la sala devolvió.',
-        pausa:   'Lo devuelto no va a poder entrar a bodega: queda en el camino.',
-        reanuda: 'Bodega ya puede confirmar lo devuelto.',
-    },
-    // El sobrante: la sala recibió de más y se acordó que bodega le mande esa
-    // unidad. Nacieron en pausa el 2026-08-18 con el motivo «Sin estrenar»
-    // porque ese brazo todavía no está construido, y hasta hoy salían a
-    // pantalla con su llave de base de datos —`sobrante_enviar`— por no estar
-    // en este mapa.
-    sobrante_enviar: {
-        titulo:  'Mandar el sobrante a la sala',
-        detalle: 'Cuando se acuerda un sobrante, bodega manda la unidad.',
-        pausa:   'Los sobrantes acordados no van a salir de bodega.',
-        reanuda: 'Bodega vuelve a mandar los sobrantes acordados.',
-    },
-    sobrante_recibir: {
-        titulo:  'Recibir el sobrante en la sala',
-        detalle: 'La sala confirma la entrada de la unidad que le mandaron.',
-        pausa:   'El sobrante no va a poder entrar a la sala: queda en el camino.',
-        reanuda: 'Las salas ya pueden recibir el sobrante.',
-    },
-};
-
-// Un interruptor que no está en el mapa es un olvido de quien lo agregó, no un
-// caso a soportar: el CHECK de `traslado_interruptor` enumera las acciones, así
-// que sumar una y no nombrarla acá deja su LLAVE en pantalla. Pasó con los dos
-// del sobrante, que estuvieron tres días diciendo `sobrante_enviar` a quien
-// abriera Mantenimiento. La red es un rótulo neutro —nunca la llave cruda, que
-// no le dice nada a quien lee— y un aviso que igual se entiende.
-const SIN_NOMBRE = {
-    titulo:  'Movimiento sin nombre',
-    detalle: 'Este freno todavía no tiene nombre en esta pantalla.',
-    pausa:   'Quedó en pausa.',
-    reanuda: 'Volvió a andar.',
-};
-
-const rotulo = (accion) => INTERRUPTOR[accion] ?? SIN_NOMBRE;
-
+// Los interruptores de mercadería, su rótulo, lo que falta del candado y sus
+// horas: `mantenimiento` (núcleo, lo mismo de la app).
+const rotulo = rotuloDeInterruptor;
 const hora = (iso) => hora12(iso);
-
-function restante(expiresAt) {
-    const ms = new Date(expiresAt) - Date.now();
-    if (ms <= 0) return 'vencido';
-    const min = Math.floor(ms / 60000);
-    if (min < 60) return `faltan ${min} min`;
-    return `faltan ${Math.floor(min / 60)} h ${min % 60} min`;
-}
-
-const horasDe = (lock) =>
-    String(Math.max(1, Math.round((new Date(lock.expires_at) - new Date(lock.locked_at)) / 3600_000)));
+const restante = tiempoRestante;
+const horasDe = horasDelCandado;
 
 export default function MaintenanceView() {
     const { moduleLocks, refreshModuleLocks, rolePerms, isModuleLocked } = useAuth();

@@ -38,6 +38,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/galeria': true, // el material liberado para las salas, listo para compartir
   '/solicitudes-datos': true, // los plazos de las solicitudes ARCO; imprimir y responder en el portal
   '/actualizacion-de-datos': true, // el estado de cada dato que se actualiza solo
+  '/mantenimiento': true, // frenos de mercadería y candados de módulo, con confirmación
   '/encuesta': true, // resultados del clima: índice, bloques, preguntas y comentarios
   '/nomina': true, // la quincena por sala y la boleta de cada persona; generar, aprobar e imprimir: portal
   '/auditoria-de-tiempos': true, // día por día: marcas, faltas, tardanza y señales; corregir y aprobar: portal

@@ -56,7 +56,7 @@ se trabaja de corrido; cada fila se marca al publicarse.
 | 31 | `/galeria` | la galería | ✅ |
 | 32 | `/solicitudes-datos` | solicitudes de datos personales | ✅ |
 | 33 | `/actualizacion-de-datos` | estado de la actualización | ✅ |
-| 34 | `/mantenimiento` | candados por módulo | |
+| 34 | `/mantenimiento` | candados por módulo | ✅ |
 | 35 | `/auditoria-del-sistema` | el informe | |
 | 36 | `/cargar-compra` | portal (captura de escritorio) — decidir al leerla | |
 | 37 | `/impresion` | portal: prueba de la ticketera de una computadora | |

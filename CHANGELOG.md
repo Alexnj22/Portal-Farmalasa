@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1193.0 — App: Auditoría de tiempos
+
+- **App: Auditoría de tiempos nativa.** Día por día, cada persona con su turno, a qué hora entró y salió, y lo que hay que mirar: marcas que faltan, tardanza, día cerrado solo por el sistema, pendiente de Talento Humano, editado, apoyo en otra sala, vacación o incapacidad; los que tienen algo salen primero, y tocar a alguien abre sus marcas. Corregir, aprobar y cerrar la quincena siguen en el portal.
+- **Núcleo:** la auditoría de un día (marcas esperadas, faltas, tardanza y señales) pasa del componente del día de `AttendanceAuditView` a `src/utils/auditoriaDeTiempos.js`, con su prueba.
 ## v2.1192.1 — Traslados: fuera los resúmenes de arriba; la persona del faltante con su foto
 
 - **Fuera los resúmenes de arriba** de «En camino» y de Faltantes (las pastillas con números). No eran un componente del portal y no aportaban: el contador ya vive en la pestaña.

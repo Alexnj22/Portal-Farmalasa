@@ -35,7 +35,7 @@ se trabaja de corrido; cada fila se marca al publicarse.
 | 10 | `/cotizaciones` | lista y detalle | ✅ |
 | 11 | `/promociones` | las vigentes y su detalle | ✅ |
 | 12 | `/monitor` | quién está y el estado de las salas | ✅ |
-| 13 | `/auditoria-de-tiempos` | marcaciones del día y sus observaciones | |
+| 13 | `/auditoria-de-tiempos` | marcaciones del día y sus observaciones | ✅ |
 | 14 | `/nomina` | la planilla del período (lectura) | |
 | 15 | `/encuesta` | responder el clima organizacional | |
 | 16 | `/avisos` | gestionar avisos: lista y publicar | |

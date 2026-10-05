@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1215.0 — App: Solicitudes de datos
+
+- **App: Solicitudes sobre datos personales nativo.** Las solicitudes en trámite, resueltas o todas, cada una con su formulario, quién la pide, qué derechos ejerce y cuántos días hábiles le quedan; arriba, cuántas vencieron y cuántas vencen en tres días o menos; tocar una muestra fechas, vencimiento, documento y lo que pide. Imprimir el formulario numerado y registrar la respuesta siguen en el portal.
+- **Núcleo:** el filtro por pestaña, estado, fechas y búsqueda, y el conteo de alarmas de plazo, pasan de `SolicitudesDatosView` a `src/data/solicitudesDatos.js`, con su prueba.
+
 ## v2.1214.0 — App: Galería
 
 - **App: Galería nativa.** El material de redes que Marketing liberó para las salas, de los últimos seis meses, en cuadrícula y con búsqueda; tocar una pieza la abre en grande con su texto (se copia manteniéndolo presionado) y «Compartir» abre la hoja del sistema con el texto y el diseño para el estado de WhatsApp. Avisa si el archivo no sirve para un estado.

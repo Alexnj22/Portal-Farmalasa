@@ -94,6 +94,38 @@ export function plazoDe(solicitud, ahora = new Date()) {
     };
 }
 
+/**
+ * Las solicitudes que se ven con estos filtros. La pestaña «En trámite» es
+ * todo lo que no está resuelto ni anulado. Se filtra por la fecha del ACUSE
+ * cuando existe, y por la de impresión cuando no: una hoja que todavía no
+ * volvió no tiene fecha de recepción, y descartarla la haría invisible.
+ */
+export function filtrarSolicitudes(filas, { pestana = 'todas', estado = 'TODOS', desde = '', hasta = '', texto = '' } = {}, coincide = null) {
+    const q = String(texto || '').trim();
+    return (filas || []).filter((s) => {
+        if (pestana === 'resueltas' && s.estado !== 'RESUELTA') return false;
+        if (pestana === 'tramite' && (s.estado === 'RESUELTA' || s.estado === 'ANULADA')) return false;
+        if (estado !== 'TODOS' && s.estado !== estado) return false;
+        if (desde || hasta) {
+            const d = String(s.recibida_at ?? s.impresa_at ?? '').slice(0, 10);
+            if (desde && d < desde) return false;
+            if (hasta && d > hasta) return false;
+        }
+        return !q || !coincide || coincide(q, s.folio_txt, s.solicitante_nombre, s.solicitante_numero, s.descripcion);
+    });
+}
+
+/** Cuántas solicitudes ya vencieron y cuántas vencen en tres días hábiles o menos. */
+export function alarmasDePlazo(filas, ahora = new Date()) {
+    let vencidas = 0, apremian = 0;
+    for (const s of filas || []) {
+        const p = plazoDe(s, ahora);
+        if (p?.vencida) vencidas++;
+        else if (p?.apremia) apremian++;
+    }
+    return { vencidas, apremian };
+}
+
 // ── Lecturas y escrituras ──────────────────────────────────────────────────
 
 /**

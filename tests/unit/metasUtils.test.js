@@ -150,3 +150,16 @@ describe('las constantes del módulo', () => {
         expect(YM_INICIO_HISTORIA).toMatch(/^\d{4}-\d{2}$/);
     });
 });
+
+describe('resumenDeMetas', () => {
+    it('suma sólo las salas con meta y cuenta los tramos', async () => {
+        const { resumenDeMetas } = await import('@nucleo/utils/metasUtils');
+        const r = resumenDeMetas([
+            { monto_meta: 100, venta_acumulada: 50, proyeccion: 110, bono_tier: 'completo' },
+            { monto_meta: 200, venta_acumulada: 20, proyeccion: 150, bono_tier: 'nada' },
+            { monto_meta: null, venta_acumulada: 999, proyeccion: 999 },
+        ]);
+        expect(r).toEqual({ meta: 300, vendidoConMeta: 70, proy: 260, tiers: { completo: 1, medio: 0, nada: 1 }, conMeta: 2, sinMeta: 1 });
+        expect(resumenDeMetas(null).conMeta).toBe(0);
+    });
+});

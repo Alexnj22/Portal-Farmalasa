@@ -26,7 +26,7 @@ se trabaja de corrido; cada fila se marca al publicarse.
 | 1 | `/inicio` | ya es la pestaña Inicio: sólo el mapa | ✅ |
 | 2 | `/mis-avisos` | ya es la pestaña Notificaciones: sólo el mapa | ✅ |
 | 3 | `/inyecciones` | lo de la sala: lista, aplicar | ✅ |
-| 4 | `/metas` | avance de metas por sala/persona | |
+| 4 | `/metas` | avance de metas por sala/persona | ✅ |
 | 5 | `/cuentas-por-pagar` | lo que se debe, por proveedor y vencimiento | |
 | 6 | `/proveedores` | directorio y ficha | |
 | 7 | `/laboratorios` | directorio y ficha | |

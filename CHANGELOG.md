@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1181.0 — App: Metas
+
+- **App: Metas nativa.** El tablero del mes por sala: cuánto lleva, el % de la meta, la barra con la proyección como sombra, en qué tramo va y cuánto le falta; arriba lo vendido y la proyección de todas las salas con meta. Mes a mes con flechas. Bono, pago semestral, confirmación, gastos e histórico siguen en el portal.
+- **Núcleo:** las cifras de arriba del tablero pasan de `TabTablero` a `resumenDeMetas` (`metasUtils`), con su prueba.
 ## v2.1180.1 — gate:tipos vuelve a correr, y en verde
 
 - **El gate no podía correr en esta máquina**: `typescript` estaba en `package.json` y en el lock, pero no en `node_modules`. Se instaló la versión del lock (5.9.3) sin tocar ninguno de los dos.

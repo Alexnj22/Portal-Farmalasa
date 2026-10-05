@@ -96,6 +96,26 @@ export function tramoLabel(tramo, bonoActivo) {
     return bonoActivo ? cfg.label : cfg.sinBono;
 }
 
+/**
+ * Las cifras de arriba del tablero: la meta y lo vendido SÓLO de las salas con
+ * meta (sumar lo vendido de una sin meta inflaría el % de cumplimiento), la
+ * proyección, cuántas van en cada tramo y cuántas no tienen meta.
+ * (Vivía en `TabTablero`; se mudó el 2026-10-05 para la app.)
+ */
+export function resumenDeMetas(rows) {
+    const conMeta = (rows || []).filter((r) => r.monto_meta != null);
+    const tiers = { completo: 0, medio: 0, nada: 0 };
+    conMeta.forEach((r) => { if (tiers[r.bono_tier] != null) tiers[r.bono_tier] += 1; });
+    return {
+        meta: conMeta.reduce((s, r) => s + Number(r.monto_meta), 0),
+        vendidoConMeta: conMeta.reduce((s, r) => s + Number(r.venta_acumulada || 0), 0),
+        proy: conMeta.reduce((s, r) => s + Number(r.proyeccion || 0), 0),
+        tiers,
+        conMeta: conMeta.length,
+        sinMeta: (rows || []).length - conMeta.length,
+    };
+}
+
 // ── Semestres del bono ───────────────────────────────────────────────────────
 // 'AAAA-S1' = enero–junio, se paga en la 1ª quincena de julio.
 // 'AAAA-S2' = julio–diciembre, se paga en la 1ª quincena de enero del año

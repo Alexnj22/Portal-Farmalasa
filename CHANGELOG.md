@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1202.0 — App: Libro de compras completo
+
+- **App: Libro de compras completo nativo.** Qué compró la farmacia en el mes —lo registrado más los documentos que llegaron del proveedor y nunca se registraron— y, en «Declarable», qué de eso puede reclamarse como crédito fiscal: lo que no cuenta con su motivo, el crédito trabado por falta de confirmar y los documentos repetidos. Mes a mes, con búsqueda; los montos sólo con el permiso de verlos. La descarga sigue en el portal.
+- **Núcleo:** la pestaña y los totales de las dos preguntas pasan de `LibroComprasCompletoView` a `src/utils/libroComprasCompleto.js`, con su prueba.
+
 ## v2.1201.0 — App: Cierre de período
 
 - **App: Cierre de período nativo.** La cadena del remanente mes a mes —qué se paga, qué queda a favor y si pasa al mes siguiente—, con el interruptor entre el libro que se declara hoy y el declarable, y cada período con su estado, su desglose, por qué no se puede cerrar todavía y si el libro se movió después de cerrarlo. Cerrar y reabrir siguen en el portal.

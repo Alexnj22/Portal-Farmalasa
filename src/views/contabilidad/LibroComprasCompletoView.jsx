@@ -20,6 +20,7 @@ import { exportCsv } from '@nucleo/utils/csvExport';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fetchLibroComprasCompleto, fetchLibroComprasDeclarable } from '@nucleo/data/libroComprasCompleto';
 import { correrMes, etiquetaMes, fechaNumerica, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
+import { filasDeLaPestana, totalesDeclarable, totalesDelLibro } from '@nucleo/utils/libroComprasCompleto';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Libro de compras COMPLETO — vista propia, no una pestaña de Libros IVA.
@@ -190,53 +191,14 @@ export default function LibroComprasCompletoView({ openModal }) {
         (id) => branches.find(b => b.id === id)?.name ?? (id ? `Suc. ${id}` : 'Sin sucursal'),
         [branches]);
 
-    const delTab = useMemo(
-        () => (activeTab === 'sin_compra' ? filas.filter(r => r.origen !== 'registrada') : filas),
-        [filas, activeTab]);
+    // La pestaña y los totales: `libroComprasCompleto` (núcleo, lo mismo de la app).
+    const delTab = useMemo(() => filasDeLaPestana(filas, activeTab), [filas, activeTab]);
 
     // Totales del declarable. `credito_fiscal` ya viene con su signo del
     // servidor —la nota de crédito llega en negativo— así que sumar alcanza.
     // `trabado` es el que acciona: lo que se destrabaría al confirmar la
     // clasificación de esos proveedores.
-    const totDecl = useMemo(() => {
-        const acc = { docs: 0, credito: 0, sinCuenta: 0, trabado: 0, motivos: new Map(),
-                      repRenglones: 0, repDocs: 0, repCredito: 0 };
-        if (!esDecl) return acc;
-        for (const r of filas) {
-            acc.docs++;
-            acc.credito += Number(r.credito_fiscal || 0);
-
-            // ── El documento que entró dos veces ──────────────────────────
-            // El servidor ya contó cuántos renglones del libro son el MISMO
-            // documento fiscal (`veces_en_el_libro`); acá sólo se agrega.
-            //
-            // Se reparte cada renglón entre sus copias en vez de agruparlos a
-            // mano: `1/veces` suma exactamente 1 por documento y
-            // `credito × (veces−1)/veces` da el crédito que sobra —exacto
-            // cuando las copias son idénticas, que es el caso real—. Agrupar
-            // por número de documento del lado del cliente no serviría: cuando
-            // el documento no se pudo identificar, dos copias pueden llegar con
-            // números distintos y quedarían sin agrupar.
-            const veces = Number(r.veces_en_el_libro || 1);
-            if (veces > 1) {
-                acc.repRenglones++;
-                acc.repDocs    += 1 / veces;
-                acc.repCredito += Number(r.credito_fiscal || 0) * (veces - 1) / veces;
-            }
-
-            if (r.computa_credito) continue;
-            acc.sinCuenta++;
-            acc.motivos.set(r.motivo, (acc.motivos.get(r.motivo) || 0) + 1);
-            // El IVA que NO se contó: el servidor lo puso en cero, así que se
-            // estima desde el total. Es una referencia de cuánto está en juego,
-            // no una cifra para declarar — por eso el rótulo dice «aprox.».
-            if (String(r.motivo || '').startsWith('Falta confirmar')) {
-                const t = Math.abs(Number(r.total || 0));
-                acc.trabado += t - t / 1.13;
-            }
-        }
-        return acc;
-    }, [filas, esDecl]);
+    const totDecl = useMemo(() => (esDecl ? totalesDeclarable(filas) : totalesDeclarable([])), [filas, esDecl]);
 
     const filasVistas = useMemo(() => {
         if (!busqueda.trim()) return delTab;
@@ -248,19 +210,7 @@ export default function LibroComprasCompletoView({ openModal }) {
             Number(r.veces_en_el_libro || 1) > 1 ? 'repetido' : null));
     }, [delTab, busqueda]);
 
-    const totales = useMemo(() => {
-        const acc = { docs: 0, credito: 0, total: 0, sinCompra: 0, creditoSinCompra: 0 };
-        for (const r of filas) {
-            acc.docs++;
-            acc.credito += Number(r.credito_fiscal || 0);
-            acc.total   += Number(r.total || 0);
-            if (r.origen !== 'registrada') {
-                acc.sinCompra++;
-                acc.creditoSinCompra += Number(r.credito_fiscal || 0);
-            }
-        }
-        return acc;
-    }, [filas]);
+    const totales = useMemo(() => totalesDelLibro(filas), [filas]);
 
     const totalPaginas = Math.max(1, Math.ceil(filasVistas.length / tamPagina));
     const paginadas = useMemo(() => {

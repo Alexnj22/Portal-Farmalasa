@@ -72,6 +72,8 @@ export const ICONOS = {
   ReceiptText: i('doc.text', require('@expo/material-symbols/receipt_long.xml')),
   FileText: i('doc.text', require('@expo/material-symbols/description.xml')),
   BookOpen: i('book', require('@expo/material-symbols/menu_book.xml')),
+  SearchX: i('magnifyingglass', require('@expo/material-symbols/search_off.xml')),
+  Percent: i('percent', require('@expo/material-symbols/percent.xml')),
   Landmark: i('building.columns', require('@expo/material-symbols/account_balance.xml')),
   Calculator: i('plus.forwardslash.minus', require('@expo/material-symbols/calculate.xml')),
   ShoppingCart: i('cart', require('@expo/material-symbols/shopping_cart.xml')),

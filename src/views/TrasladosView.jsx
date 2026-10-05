@@ -440,7 +440,10 @@ export default function TrasladosView() {
             // Sólo los SIN RESOLVER: los cerrados siguen a la vista un mes y
             // contarlos haría que el número no bajara nunca al resolverlos, que
             // es exactamente lo que un contador de cola tiene que hacer.
-            : t.key === 'faltantes' ? (faltantes ?? []).filter(f => f.estado === 'abierto').length
+            // Más los que aparecieron y no entraron al inventario: también
+            // esperan que alguien apriete un botón.
+            : t.key === 'faltantes' ? (faltantes ?? []).filter(f => f.estado === 'abierto'
+                || (f.estado === 'aparecio' && f.falta_ingresar)).length
             : 0;
         return { ...t, label: total > 0 ? `${t.label} · ${total}` : t.label };
     });

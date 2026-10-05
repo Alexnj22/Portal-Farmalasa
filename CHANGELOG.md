@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1179.1 — Traslados: lo que apareció y no entró al inventario deja de verse como resuelto
+
+- **«Apareció» sin ingresar ya no se pinta como resuelto.** Las cuatro de la bolsa E00212 salían en verde bajo «Resueltos en el último mes» con un botón de «Ingresar a inventario» adentro: la caja está en el estante y fuera de las existencias de las dos salas. Ahora tienen estado propio, «Falta ingresar» en ámbar, una sección arriba («Aparecieron, falta ingresarlos») y cuentan en el número de la pestaña.
+- «No apareció» pasa a gris: es un cierre, no una alerta.
+
 ## v2.1179.0 — App: Facturas de compra
 
 - **App: Facturas de compra nativa.** Los documentos que llegan por correo, mes por mes, buscando por proveedor, número o por lo que se compró, y filtrando por anulados o por tipo. La ficha de cada una trae **los productos** con cantidad, precio y descuento leídos del propio documento, los totales (gravado, exento, IVA, percepción…), si el proveedor la anuló, sus notas de crédito, y **el PDF y el JSON** abiertos en el visor del teléfono. Es lo que pedía el reporte de sala del 20-ago («no puedo ver los productos, no puedo ver el pdf»). Revisión, vincular proveedor y descargar el paquete siguen en el portal.

@@ -31,8 +31,17 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 const TONO = {
     abierto:     { caja: 'bg-danger/10 ring-danger/25 text-danger-text',    variant: 'danger',  rotulo: 'Sin resolver', icono: AlertTriangle },
     aparecio:    { caja: 'bg-success/10 ring-success/20 text-success-text', variant: 'success', rotulo: 'Apareció',     icono: CheckCircle2 },
-    no_aparecio: { caja: 'bg-warning/10 ring-warning/20 text-warning-text', variant: 'warning', rotulo: 'No apareció',  icono: PackageX },
+    /* «Apareció» que todavía no entró al inventario NO está resuelto: la caja
+     * está en el estante y fuera de las existencias de las dos salas. Pintarlo
+     * verde bajo «Resueltos» —como se pintaba— escondía justo los que piden
+     * una acción (las cuatro de la bolsa E00212, medido el 2026-10-05). */
+    por_ingresar: { caja: 'bg-warning/10 ring-warning/20 text-warning-text', variant: 'warning', rotulo: 'Falta ingresar', icono: PackageCheck },
+    no_aparecio:  { caja: 'bg-content-3/10 ring-divider text-content-2',     variant: 'neutral', rotulo: 'No apareció',    icono: PackageX },
 };
+
+/** El estado que se PINTA: el de la base, salvo «apareció» sin ingresar. */
+const estadoVisible = (f) =>
+    (f.estado === 'aparecio' && f.falta_ingresar) ? 'por_ingresar' : f.estado;
 
 /* El nombre corto, aunque la función entregue el completo: `get_faltantes_de_bolsa`
  * trae `employees.name` y no el id, así que acá no hay ficha que pasarle a la
@@ -47,7 +56,7 @@ export function FilaFaltante({ faltante: f, onHecho }) {
     const [error, setError] = useState('');
 
     const abierto = f.estado === 'abierto';
-    const tono = TONO[f.estado] ?? TONO.abierto;
+    const tono = TONO[estadoVisible(f)] ?? TONO.abierto;
     const IconoEstado = tono.icono;
     const codigo = f.codigo_bolsa || f.id_traslado || null;
     const vio = corto(f.declarado_por_nombre);
@@ -157,7 +166,7 @@ export function FilaFaltante({ faltante: f, onHecho }) {
 
                 {!abierto && f.falta_ingresar && (
                     <div className="flex flex-col gap-1.5">
-                        <p className="text-micro text-warning-text font-semibold leading-snug">
+                        <p className="text-caption text-warning-text font-semibold leading-snug">
                             Apareció, pero todavía no entró al inventario de {f.destino_branch_name ?? 'la sala'}.
                         </p>
                         <Button size="sm" variant="primary" icon={PackageCheck}
@@ -218,7 +227,7 @@ export function FilaFaltante({ faltante: f, onHecho }) {
  * buscar?» y «¿esto aparece o se pierde?» sin recorrer las tarjetas. Sólo se
  * muestran los que tienen algo — un cero en verde no informa nada. */
 function Resumen({ conteo }) {
-    const piezas = ['abierto', 'aparecio', 'no_aparecio']
+    const piezas = ['abierto', 'por_ingresar', 'aparecio', 'no_aparecio']
         .filter(k => conteo[k] > 0)
         .map(k => ({ k, n: conteo[k], ...TONO[k] }));
     if (piezas.length === 0) return null;
@@ -246,9 +255,10 @@ function Resumen({ conteo }) {
  * buscador dejó — mismo criterio que el contador de la pestaña.
  */
 export default function FilasFaltante({ faltantes = [], todos = faltantes, onHecho, vacio = null }) {
-    const abiertos = faltantes.filter(f => f.estado === 'abierto');
-    const cerrados = faltantes.filter(f => f.estado !== 'abierto');
-    const conteo = todos.reduce((acc, f) => { acc[f.estado] = (acc[f.estado] ?? 0) + 1; return acc; }, {});
+    const abiertos   = faltantes.filter(f => estadoVisible(f) === 'abierto');
+    const porIngresar = faltantes.filter(f => estadoVisible(f) === 'por_ingresar');
+    const cerrados   = faltantes.filter(f => !['abierto', 'por_ingresar'].includes(estadoVisible(f)));
+    const conteo = todos.reduce((acc, f) => { const k = estadoVisible(f); acc[k] = (acc[k] ?? 0) + 1; return acc; }, {});
 
     return (
         <div className="flex flex-col gap-5">
@@ -257,6 +267,7 @@ export default function FilasFaltante({ faltantes = [], todos = faltantes, onHec
                 <>
                     {[
                         { clave: 'abiertos', titulo: 'Sin resolver', filas: abiertos },
+                        { clave: 'por_ingresar', titulo: 'Aparecieron, falta ingresarlos', filas: porIngresar },
                         { clave: 'cerrados', titulo: 'Resueltos en el último mes', filas: cerrados },
                     ].map(({ clave, titulo, filas }) => filas.length > 0 && (
                         <section key={clave} className="flex flex-col gap-2">

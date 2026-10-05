@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1175.0 — App: Bolsas (administración)
+
+- **App: Bolsas — el circuito de administración nativo.** Recibir la valija (todas o las elegidas; la base sigue sin dejar que reciba quien entregó), contar bolsa por bolsa con «Cuadra» de un toque o el monto contado, con el resumen de lo anotado contra lo esperado antes de confirmar, y confirmar la tanda entera. Lo anotado queda guardado en el servidor aunque se cierre la app. La pestaña de diferencias muestra lo que no cuadró; resolverlas, depositar al banco y el historial siguen en el portal (dentro de la app). Con alcance de sala, la pantalla manda a las bolsas de la sala.
+- **Núcleo:** cuánto se contó de una bolsa y su diferencia contra el saldo pasan de `CircuitoDeBolsas` a `bolsasReparto`, con su prueba.
+
 ## v2.1174.0 — App: Gestión de stock
 
 - **App: Gestión de stock nativa.** Las dos preguntas sobre la existencia de una sala, eligiendo la sala desde el menú de filtros. **Sin venta**: lo que lleva seis meses parado, agrupado por adónde mandarlo, con desde cuándo y por qué, dónde sí se vende y si tiene Min/Max; armar el envío abre el portal dentro de la app. **Sin Min/Max**: lo que se vende y el pedido no repone solo, con qué hacer con cada uno; tocar uno muestra sus seis meses y deja **pedir el Min/Max** (o aplicarlo, si el cargo aprueba) con la sugerencia ya escrita, o descartar la sugerencia.

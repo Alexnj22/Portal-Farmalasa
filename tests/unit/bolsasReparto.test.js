@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { disponibles, elegirBolsas, elegirOrigen, saldoDeBolsa, totalDisponible } from '@nucleo/utils/bolsasReparto';
+import { contadoDeBolsa, diferenciaDeBolsa, disponibles, elegirBolsas, elegirOrigen, saldoDeBolsa, totalDisponible } from '@nucleo/utils/bolsasReparto';
 
 // De qué bolsa sale el dinero. La regla del usuario es «la más vieja que
 // alcance SOLA» — no vaciar la vieja primero, que es la respuesta intuitiva y
@@ -325,5 +325,16 @@ describe('de dónde sale: bolsa y cajón juntos', () => {
 
     it('sin nada en las bolsas no es mixta: es que no alcanza', () => {
         expect(mixta(10, 150, []).origen).toBe('BOLSAS');
+    });
+});
+
+describe('contado y diferencia de una bolsa', () => {
+    it('lo contado sale de la tanda firmada o de la que se está contando', () => {
+        expect(contadoDeBolsa({})).toBeNull();
+        expect(contadoDeBolsa({ conteo_marcado: 60 })).toBe(60);
+        expect(contadoDeBolsa({ contado: 61.1, conteo_marcado: null })).toBe(61.1);
+        expect(diferenciaDeBolsa({ saldo: 61.1 })).toBeNull();
+        expect(diferenciaDeBolsa({ saldo: 61.1, conteo_marcado: 60 })).toBe(-1.1);
+        expect(diferenciaDeBolsa({ saldo: 152.65, contado: 152.65 })).toBe(0);
     });
 });

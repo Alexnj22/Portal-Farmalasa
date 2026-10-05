@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1216.0 — App: Actualización de datos
+
+- **App: Actualización de datos nativo.** Cada dato que se actualiza solo (productos, Min/Max, compras, respaldo) con su última corrida y, si falló, desde cuándo no tiene una buena; abajo, las corridas recientes con su alcance y el detalle del error. Se refresca sola cada 30 segundos.
+- **Núcleo:** los rótulos, el alcance de una corrida y el estado por dominio pasan de `SyncHealthView` a `src/data/syncHealth.js`, con su prueba.
+
 ## v2.1215.0 — App: Solicitudes de datos
 
 - **App: Solicitudes sobre datos personales nativo.** Las solicitudes en trámite, resueltas o todas, cada una con su formulario, quién la pide, qué derechos ejerce y cuántos días hábiles le quedan; arriba, cuántas vencieron y cuántas vencen en tres días o menos; tocar una muestra fechas, vencimiento, documento y lo que pide. Imprimir el formulario numerado y registrar la respuesta siguen en el portal.

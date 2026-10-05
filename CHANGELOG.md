@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1187.0 — App: Sucursales
+
+- **App: Sucursales nativa.** Cada sucursal por tipo: si está abierta ahora, su horario de hoy, cuánta gente tiene y sus alertas. La ficha trae las alertas una por una (permisos por vencer, falta regente o jefe, pagos de servicios atrasados), la dirección, los teléfonos —tocar llama—, la semana entera de horario, el personal y qué tan completo está su perfil. Editar sigue en el portal.
+- **Núcleo:** horario, apertura, completitud del perfil y alertas de una sucursal pasan de `BranchesView` a `src/utils/sucursales.js` (los íconos viajan por nombre), con su prueba.
 ## v2.1186.0 — Traslados: las tarjetas de envío, rediseñadas
 
 - **Envíos con la misma cara que «En camino».** Trayecto en chips (con «Área de Vencidos» cuando sale de ahí), la espera como pastilla arriba a la derecha, el motivo con su insignia y su texto al lado, y un pie con la acción a la derecha en verde tenue.

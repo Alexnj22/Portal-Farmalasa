@@ -3,11 +3,11 @@
 // Misma decisión que /mis-puntos de la web.
 import { useCallback, useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo } from '../../../componentes/ui';
 import { useCuenta } from '../../../lib/cuenta';
 import { diasHasta, entero, fecha, nombrePropio } from '../../../lib/formato';
-import { BarraAnimada, Entrada, NumeroAnimado } from '../../../componentes/animacion';
+import { BarraAnimada, Entrada, NumeroAnimado, Tocable } from '../../../componentes/animacion';
 import { suave, useTema } from '../../../tema/tema';
 import { colorSistema } from '../../../componentes/sistema';
 
@@ -115,7 +115,20 @@ export default function Puntos() {
         </View>
       </Entrada>
 
+      {/* Las compras, con sus productos: de ahí salen los puntos y las inyecciones. */}
       <Entrada indice={4}>
+        <Tocable alTocar={() => router.push('/compras')}>
+          <Tarjeta estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ gap: 2 }}>
+              <Titulo>Mis compras</Titulo>
+              <Texto nivel={2} estilo={{ fontSize: 14 }}>Qué compraste, dónde y cuántos puntos te dio.</Texto>
+            </View>
+            <Text style={{ fontSize: 22, color: colorSistema.texto3 }}>›</Text>
+          </Tarjeta>
+        </Tocable>
+      </Entrada>
+
+      <Entrada indice={5}>
         <Tarjeta>
           <Titulo>Movimientos</Titulo>
           {movimientos.length === 0 ? <Texto nivel={2}>Todavía no hay movimientos.</Texto> : null}

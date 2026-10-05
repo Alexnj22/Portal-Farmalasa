@@ -87,6 +87,7 @@ export default function Raiz() {
             <Stack.Screen name="registro" options={{ title: 'Unirme' }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="oferta/[id]" options={{ title: '' }} />
+            <Stack.Screen name="compras" options={{ title: 'Mis compras' }} />
           </Stack>
         </GestureHandlerRootView>
       </SafeAreaProvider>

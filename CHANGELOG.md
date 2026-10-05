@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1213.0 — App de clientes: mis compras ligadas a las ventas
+
+- **Mis compras** (app de clientes): cada venta con su sala, fecha y hora, total, los puntos que dio, lo canjeado en ella y cuántas inyecciones traía; al tocarla se despliega con sus productos. Entra desde «Mis puntos». La regla «¿cuenta como venta?» es `venta_valida`, dentro de la función `app_cliente_compras`.
+- **Entorno de pruebas:** la ficha de Edwin cuenta una historia completa ligada a ventas — cinco facturas con sus renglones, los puntos de cada una (`puntos_lote.invoice_id`), un canje, el cumpleaños e inyecciones COMPRADAS ligadas al renglón de su factura (dos aplicadas, una por aplicar y una mezcla).
+- **Pendiente de producción:** la función y un índice nuevo de `sales_invoices` (cliente + fecha). Sin el índice, el cliente con más facturas (51,521) tardaba 3.1 s; con él el plan para en 30. Borrador con el orden de aplicación en `scripts/entorno-pruebas/app_cliente_compras.sql`. Hasta entonces «Mis compras» no funciona en producción.
+
 ## v2.1212.0 — App: Marketing
 
 - **App: Marketing nativo.** El mes de contenido para redes con su estado y su avance, y cada pieza día por día con su formato, hora, estado y diseño; tocar una muestra el texto, los hashtags y los diseños en grande (sólo cuando el mes ya se envió a revisión, como en el portal). Y las solicitudes al diseñador con su estado y prioridad. Planificar, aprobar, pautar y pedir siguen en el portal. La lógica ya vivía en el núcleo (`marketing`).

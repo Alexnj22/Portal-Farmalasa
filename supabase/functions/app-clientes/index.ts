@@ -417,6 +417,15 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Las compras del cliente con sus productos, los puntos que dio cada una y
+    // lo canjeado en ella. La regla «¿cuenta como venta?» vive en la base
+    // (`venta_valida`, dentro de `app_cliente_compras`), no acá.
+    if (accion === "compras") {
+      const { data, error } = await admin.rpc("app_cliente_compras", { p_customer_id: customerId });
+      if (error) throw error;
+      return json({ ok: true, compras: data ?? [] });
+    }
+
     if (accion === "inyecciones") {
       const { data, error } = await admin.rpc("app_cliente_inyecciones", { p_customer_id: customerId });
       if (error) throw error;

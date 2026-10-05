@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1200.0 — App: Resumen fiscal
+
+- **App: Resumen fiscal nativo.** El movimiento de IVA del mes, el pago a cuenta y el anticipo por tarjeta, y cómo se llega al movimiento renglón por renglón; con el aviso de que es un indicador y no una declaración antes de los números. Mes a mes, y por sucursal para quien ve toda la empresa.
+- **Núcleo:** el orden y el signo de los renglones, y la tasa en texto, pasan de `ResumenFiscalView` a `src/utils/resumenFiscal.js`, con su prueba.
+
 ## v2.1199.0 — App: Facturación
 
 - **App: Facturación nativa.** Las colas para revisarlas desde el teléfono: lo que sigue sin sello de Hacienda con los días que lleva esperando y la categoría del cliente, las observaciones abiertas (con lo que contestó Hacienda palabra por palabra) y las anuladas por solventar. Quien ve una sola sala, ve su sala; los montos sólo con el permiso de verlos. Solventar, saltos y pagos no efectivo siguen en el portal.

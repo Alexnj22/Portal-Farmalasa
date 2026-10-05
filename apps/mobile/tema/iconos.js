@@ -35,6 +35,7 @@ export const ICONOS = {
   Ghost: i('questionmark.folder', require('@expo/material-symbols/help_center.xml')),
   Wrench: i('wrench.and.screwdriver', require('@expo/material-symbols/build.xml')),
   TrendingUp: i('chart.line.uptrend.xyaxis', require('@expo/material-symbols/trending_up.xml')),
+  TrendingDown: i('chart.line.downtrend.xyaxis', require('@expo/material-symbols/trending_down.xml')),
   Wallet: i('wallet.bifold', require('@expo/material-symbols/account_balance_wallet.xml')),
   Search: i('magnifyingglass', require('@expo/material-symbols/search.xml')),
   Archive: i('archivebox', require('@expo/material-symbols/archive.xml')),

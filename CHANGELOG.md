@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1175.1 — Inyecciones: el catálogo de Ajustes deja de leer 1.2 GB por apertura
+
+`gate:perf` (sección F) marcó `inyeccion_catalogo_dosis` con 1,191 MB por
+llamada en 181 llamadas. La causa era una sola línea: `min(id)` sobre las ventas
+de 90 días hacía que el planificador recorriera la llave primaria desde la venta
+más vieja y descartara 320,763 ventas. Con `min(id + 0)` entra por el índice de
+fecha: ~160,000 → 7,000 bloques, hasta 3.6 s → 129 ms, mismos 146 productos.
+Migración `inyecciones_catalogo_por_fecha` (20261005163058).
+
+En la misma revisión quedaron declarados en los manifiestos del gate dos
+hallazgos que no son defectos: `discard_stock_drafts` (escribe ~1,300 filas con
+seis índices; acción a mano y poco frecuente) y `encuesta_cliente_con_texto`
+(0.19 ms, entra por índice; el plan no depende de los argumentos).
+
+---
+
 ## v2.1175.0 — App: Bolsas (administración)
 
 - **App: Bolsas — el circuito de administración nativo.** Recibir la valija (todas o las elegidas; la base sigue sin dejar que reciba quien entregó), contar bolsa por bolsa con «Cuadra» de un toque o el monto contado, con el resumen de lo anotado contra lo esperado antes de confirmar, y confirmar la tanda entera. Lo anotado queda guardado en el servidor aunque se cierre la app. La pestaña de diferencias muestra lo que no cuadró; resolverlas, depositar al banco y el historial siguen en el portal (dentro de la app). Con alcance de sala, la pantalla manda a las bolsas de la sala.

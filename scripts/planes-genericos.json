@@ -1,7 +1,7 @@
 {
  "_comment": "Funciones LANGUAGE sql con parámetros y CTEs SIN plan_cache_mode. Producción exponiendo una que no esté acá FALLA gate:perf. Ver docs/planes-cerrados/PLAN-PLANES-GENERICOS-2026-08-25.md. `ms: null` es deuda declarada — NO se rellena con un número estimado.",
- "actualizado": "2026-09-28",
- "medidas": 44,
+ "actualizado": "2026-10-05",
+ "medidas": 45,
  "sin_medir": 24,
  "funciones": {
   "auth_module_scope": {
@@ -57,6 +57,12 @@
    "casos": "crédito 691 · 10 créditos del mismo cliente en Salud 1",
    "divergencia": "imposible",
    "nota": "medida el 2026-09-03: 3.0 ms por la función contra 1.0 ms con literales, y el plan es el MISMO —Index Scan por la PK para el CTE `base`, BitmapAnd de `creditos_clientes_con_saldo_idx` + `creditos_clientes_branch_idx` para el resto—. El plan NO puede depender del argumento: `p_credito_id` sólo entra como Index Cond de una clave primaria que devuelve exactamente 1 fila, y `branch_id`/`customer_id` salen de ESA fila en tiempo de ejecución, nunca como constantes. Conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción y forzar el personalizado sólo agregaría el costo de replanificar"
+  },
+  "encuesta_cliente_con_texto": {
+   "ms": "0.19",
+   "casos": "la encuesta con más respuestas · 1 bloque (tabla de respuestas vacía hoy)",
+   "divergencia": null,
+   "nota": "medida el 2026-10-05 con literales: 0.192 ms, Index Scan sobre encuesta_cliente_respuestas_encuesta_idx (encuesta_id, created_at) y encuestas_cliente_pkey. Los parámetros son una igualdad de llave y un rango de fecha sobre el mismo índice: el genérico entra igual por índice, así que forzar el personalizado sólo agregaría replanificar. Remedir cuando haya miles de respuestas."
   },
   "envios_por_continuar": {
    "ms": null,

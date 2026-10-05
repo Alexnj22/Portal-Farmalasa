@@ -89,6 +89,10 @@
       "bloques": 20000,
       "motivo": "AUDITADA el 2026-09-02 (el plan es correcto: el costo eran 8,222 sondeos por clave primaria sobre la ventana de 7 días) y CORREGIDA el 2026-09-22 (migración 20260922170243, F7 del plan de regreso). La auditoría había dicho que bajarlo era una decisión sobre el comportamiento, y el usuario la tomó: cada minuto se miran 2 días y sólo facturas SIN fila en la bitácora (`p_reevaluar = false`), y en el minuto 0 de cada hora los 7 días con las `sin_enviar`. Medido en la corrida real: 46,149 → 10,796 bloques por minuto; la corrida completa de cada hora sigue costando ~46,000, así que el promedio queda en ~11,400 y el techo lleva margen para esa mezcla."
     },
+    "discard_stock_drafts": {
+      "bloques": 60000,
+      "motivo": "Revisada el 2026-10-05: no lee mal, ESCRIBE. Descarta los borradores de MIN·MAX de una sala — un UPDATE de ~1,300 filas de product_stock_params (la tabla entera pesa 8.6 MB, ~1,100 bloques) que reescribe cada fila y sus seis índices. Medido: 41,062 bloques y 113 ms por llamada, 14 llamadas desde que existe. Es una acción a mano y poco frecuente; techo con margen para la sala con más productos."
+    },
     "productos_parados_de_sala": {
       "bloques": 43000,
       "motivo": "Nueva el 2026-09-24: el juez del aviso de productos sin venta y de la pestaña «Stock retenido». Medida en Salud 5, la sala con más productos (1,938): 32,948 bloques y 687 ms. Lo caro son las ventas de seis meses de TODOS los productos de la sala en las seis salas (~18,000 bloques), que es el trabajo real: sin eso no se sabe adónde mandarlos. Ya con el piso de ids de factura — sin él leía 535,000 bloques y tardaba 8.5 s (migración 20260924210959). Corre una vez por semana por sala desde el aviso y a pedido desde la pestaña."

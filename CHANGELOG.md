@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1180.1 — gate:tipos vuelve a correr, y en verde
+
+- **El gate no podía correr en esta máquina**: `typescript` estaba en `package.json` y en el lock, pero no en `node_modules`. Se instaló la versión del lock (5.9.3) sin tocar ninguno de los dos.
+- **Mientras estuvo ciego se juntaron 58 avisos nuevos en 15 archivos del núcleo.** Se corrigieron todos sin cambiar el comportamiento: restas de fechas con `getTime()`, el tipo de lo que devuelven las funciones `json` (faltantes, inyecciones, encuestas, bolsas), JSDoc de opciones que tsc no veía (`subirArchivo`, `fechaNumerica`, `renglonContado`, `filtrarMovimientos`, `subirDiseno`) y un `@param` mal escrito en `solicitudPersonal`.
+- El baseline bajó de 530 a 497: seis archivos quedaron mejor que antes.
+
 ## v2.1180.0 — App: Inyecciones
 
 - **App: Inyecciones nativa.** **Pendientes**: lo pagado y sin aplicar, una tarjeta por pago y producto con lo ya aplicado de ese pago, de todas las salas (el cliente puede volver a otra); quien opera una caja elige cuántas aplica ahora con un contador y las marca. **Bitácora**: cada aplicación de hoy, 7 o 30 días, quién cobró y quién aplicó, con su foto. «Por cobrar» y «Precios y dosis» abren el portal dentro de la app.

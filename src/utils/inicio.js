@@ -33,7 +33,7 @@ export function problemaDeSucursal(b) {
     if (!b?.address) return 'Sin dirección registrada';
     if (!b.phone && !b.cell) return 'Sin teléfono de contacto';
     if (b.propertyType === 'RENTED' && b.rent?.contract?.endDate) {
-        const d = Math.ceil((new Date(b.rent.contract.endDate) - new Date()) / 86400000);
+        const d = Math.ceil((new Date(b.rent.contract.endDate).getTime() - Date.now()) / 86400000);
         if (d <= 60) return `Contrato vence en ${d} días`;
     }
     return null;

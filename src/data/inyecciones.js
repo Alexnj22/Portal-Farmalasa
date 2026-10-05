@@ -41,7 +41,7 @@ export async function buscarVentaPorComprobante({ sala, comprobante }) {
         p_branch_id: Number(sala), p_comprobante: comprobante?.trim() || '',
     });
     if (error) throw error;
-    return data?.ventas ?? [];
+    return /** @type {{ ventas?: any[] } | null} */ (data)?.ventas ?? [];
 }
 
 /** Lo pagado y sin aplicar. Todas las salas: el cliente puede volver a otra. */

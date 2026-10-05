@@ -29,7 +29,7 @@ export function diasDe(inicio, fin) {
     if (!inicio || !fin) return 0;
     const a = new Date(`${inicio}T00:00:00`);
     const b = new Date(`${fin}T00:00:00`);
-    return Math.round((b - a) / 86400000) + 1;
+    return Math.round((b.getTime() - a.getTime()) / 86400000) + 1;
 }
 
 /** El último día de una incapacidad de `dias` días que empieza en `inicio`. */
@@ -49,14 +49,14 @@ export function antiguedadDe(hireDate, ahora = new Date()) {
     const hoy = new Date(ahora); hoy.setHours(0, 0, 0, 0);
     const ingreso = new Date(`${hireDate}T12:00:00`); ingreso.setHours(0, 0, 0, 0);
     const msAnio = 365.25 * 24 * 3600 * 1000;
-    const aniosExactos = (hoy - ingreso) / msAnio;
-    const mesesTotales = Math.floor((hoy - ingreso) / (30.44 * 24 * 3600 * 1000));
+    const aniosExactos = (hoy.getTime() - ingreso.getTime()) / msAnio;
+    const mesesTotales = Math.floor((hoy.getTime() - ingreso.getTime()) / (30.44 * 24 * 3600 * 1000));
     const anios = Math.floor(aniosExactos);
     const meses = mesesTotales - anios * 12;
 
     if (aniosExactos < 1) {
         const primerAniv = new Date(ingreso); primerAniv.setFullYear(ingreso.getFullYear() + 1);
-        const faltan = Math.ceil((primerAniv - hoy) / (24 * 3600 * 1000));
+        const faltan = Math.ceil((primerAniv.getTime() - hoy.getTime()) / (24 * 3600 * 1000));
         return { habilitado: false, anios, meses, faltan, ingreso: hireDate };
     }
     const ultimoAniv = new Date(ingreso); ultimoAniv.setFullYear(ingreso.getFullYear() + anios);
@@ -94,8 +94,8 @@ export const choqueEnRango = (incapacidades, desde, hasta) =>
  * El motivo por el que la solicitud NO se puede enviar, o `null` si se puede.
  * Los mismos textos que mostraba el portal.
  *
- * @param ctx { empleadoId, tipo, payload, nota, antiguedad, vacacionAprobada,
- *              incapacidades, companeroOcupado, anioActual }
+ * @param {object} ctx — empleadoId, tipo, payload, nota, antiguedad,
+ *   vacacionAprobada, incapacidades, companeroOcupado, anioActual
  */
 export function motivoParaNoEnviar({
     empleadoId, tipo, payload = {}, nota = '', antiguedad, vacacionAprobada = false,

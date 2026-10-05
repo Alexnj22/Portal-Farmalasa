@@ -166,6 +166,9 @@ export function fechaTexto(valor, opciones = {}, vacio = '') {
  * `25/09/2026`, o `25/09/26` con `anio: 'corto'`, o `25/09` con `anio: false`.
  * Es la forma de las tablas y del papel: se arma con dígitos y no depende del
  * idioma del navegador.
+ *
+ * @param {any} valor
+ * @param {{ anio?: 'completo' | 'corto' | false, vacio?: string }} [opciones]
  */
 export function fechaNumerica(valor, { anio = 'completo', vacio = '' } = {}) {
     const dia = diaDe(valor);

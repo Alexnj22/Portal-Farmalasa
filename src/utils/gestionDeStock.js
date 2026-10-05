@@ -24,7 +24,7 @@ export function gruposPorDestino(filas, bodega) {
             costo: rows.reduce((s, r) => s + Number(r.costo || 0), 0),
             unidades: rows.reduce((s, r) => s + Number(r.existencia || 0), 0),
         }))
-        .sort((a, b) => (a.destino === bodega) - (b.destino === bodega) || b.filas.length - a.filas.length);
+        .sort((a, b) => Number(a.destino === bodega) - Number(b.destino === bodega) || b.filas.length - a.filas.length);
 }
 
 /** Los totales de las tarjetas: los productos/unidades/costo son de lo VISIBLE; el resto, de todo. */

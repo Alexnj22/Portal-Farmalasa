@@ -31,6 +31,7 @@ export function nombreCorto(e) {
 
 const vendedor = (nombre, codigo) => (nombre ? nombreCorto({ name: nombre }) : `Cód. ${codigo ?? '?'}`);
 
+/** @returns {[string, string][]} */
 const renglonesDeItems = (items) => (Array.isArray(items) ? items : []).map((it) => [
     String(it?.descripcion ?? 'Producto'),
     `${it?.cantidad ?? '?'} ${String(it?.presentacion_tipo ?? '').toLowerCase()}`.trim(),

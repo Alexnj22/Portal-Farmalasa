@@ -176,5 +176,5 @@ export function reglasDeBandeja({ miId, soloMio, canApprove, hasPermission }) {
  * pasar. Es además el orden que ya usa Traslados en sus tres pestañas. */
 export const ordenarCola = (lista) => [...lista].sort((a, b) =>
     a.status === 'PENDING' && b.status === 'PENDING'
-        ? new Date(a.created_at) - new Date(b.created_at)
-        : new Date(b.created_at) - new Date(a.created_at));
+        ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        : new Date(b.created_at).getTime() - new Date(a.created_at).getTime());

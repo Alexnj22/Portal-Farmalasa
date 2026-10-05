@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1179.3 — Anular un CCF sin sello exige el rechazo de Hacienda, y el cierre se escribe después de anular
+
+- **El atajo «CCF a quien no es contribuyente» ya no se toma sin la respuesta de Hacienda.** Hasta hoy bastaba con «sin sello + CCF + cliente sin NRC»: si el envío previo no contestaba a tiempo, la venta se anulaba igual y un CCF que sí había entrado quedaba vigente ante Hacienda. Ahora hace falta el rechazo de ESE envío, escrito, y por el NRC del receptor. Un rechazo por otra cosa se corrige y se reenvía.
+- **El cierre interno se escribe después de anular, no antes.** Si la anulación fallaba, la factura quedaba viva y fuera del barrido de la noche.
+- Lo destapó la revisión de `0000000115_CCF` de Salud 5 (5-oct), que sí estaba bien cerrado: Hacienda lo había rechazado por el NRC. Nueva `solventado_interno_aplica` (decide, no escribe); `marcar_solventado_internamente` pasa por ella.
+
 ## v2.1179.2 — Inyecciones: 30 días en la lista y 90 al buscar cliente o factura
 
 - **Aplicación de inyección → Comprada aquí** muestra las ventas de los últimos **30 días** (antes 7).

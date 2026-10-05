@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1196.0 — App: Clima organizacional
+
+- **App: Clima organizacional nativo.** Los resultados de la encuesta: el índice global con su nivel, quiénes participaron, el puntaje de cada bloque con su barra y, al tocarlo, cómo se repartieron las respuestas de cada pregunta (las invertidas, al revés); y los comentarios. Quien sólo ve su sala ve su sala. El resumen con IA, los segmentos y los individuos siguen en el portal.
+- **Núcleo:** cómo se puntúa una respuesta, un bloque, una pregunta y el índice global, y cómo se leen las filas de la base, pasan de `EncuestaView` a `src/utils/climaLaboral.js`, con su prueba.
+
 ## v2.1195.0 — App: Nómina
 
 - **App: Nómina nativa.** La quincena elegida con su estado, el líquido a pagar y los descuentos, por sala y ordenados por cargo; cada persona abre su boleta con ingresos, descuentos, el líquido en letras y el detalle de viáticos. Generar, aprobar, pagar e imprimir siguen en el portal.

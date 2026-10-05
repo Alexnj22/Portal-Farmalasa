@@ -37,7 +37,7 @@ se trabaja de corrido; cada fila se marca al publicarse.
 | 12 | `/monitor` | quién está y el estado de las salas | ✅ |
 | 13 | `/auditoria-de-tiempos` | marcaciones del día y sus observaciones | ✅ |
 | 14 | `/nomina` | la planilla del período (lectura) | ✅ |
-| 15 | `/encuesta` | responder el clima organizacional | |
+| 15 | `/encuesta` | responder el clima organizacional | ✅ resultados |
 | 16 | `/avisos` | gestionar avisos: lista y publicar | |
 | 17 | `/facturacion` | facturas del día y su estado ante Hacienda | |
 | 18 | `/libros-iva` | resumen por libro y mes | |

@@ -1,33 +1,84 @@
-import { Image, Text, View } from 'react-native';
+// La primera pantalla de quien no tiene sesión. Dice qué trae la app en tres
+// renglones y las dos reglas del programa —las mismas del afiche de la
+// vitrina: verde lo que se gana, magenta lo que se usa—.
+import { Image, ScrollView, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Boton, Tarjeta, Texto } from '../componentes/ui';
-import { useTema } from '../tema/tema';
+import { suave, useTema } from '../tema/tema';
+
+const QUE_TRAE = [
+  { simbolo: '★', titulo: 'Tus puntos', detalle: 'Tu saldo en dólares y lo que vence.', tono: 'verde' },
+  { simbolo: '%', titulo: 'Ofertas', detalle: 'Descuentos de la semana, algunos sólo para socios.', tono: 'magenta' },
+  { simbolo: '+', titulo: 'Tus inyecciones', detalle: 'Las que ya pagaste y te faltan aplicar.', tono: 'verde' },
+];
 
 export default function Bienvenida() {
   const t = useTema();
   const ins = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, padding: 24, paddingTop: ins.top + 48, paddingBottom: ins.bottom + 24, justifyContent: 'space-between' }}>
-      <View style={{ gap: 18, alignItems: 'center' }}>
-        <Image source={require('../assets/icono.png')} style={{ width: 96, height: 96, borderRadius: 22 }} />
-        <Text style={{ fontSize: 30, fontWeight: '800', color: t.color.texto, textAlign: 'center' }}>Puntos Salud</Text>
-        <Texto nivel={2} estilo={{ textAlign: 'center', fontSize: 16, lineHeight: 23 }}>
-          Tu saldo, tus ofertas y tus inyecciones, en tu teléfono.
-        </Texto>
-        <Tarjeta estilo={{ width: '100%', marginTop: 12 }}>
-          <Regla color={t.color.verdeTexto} titulo="$1 de compra = 1 punto" />
-          <Regla color={t.color.magentaTexto} titulo="100 puntos = $1 de descuento" />
+    <ScrollView
+      contentContainerStyle={{
+        flexGrow: 1, padding: 24, paddingTop: ins.top + 40, paddingBottom: ins.bottom + 24,
+        justifyContent: 'space-between', gap: 28,
+        width: '100%', maxWidth: 520, alignSelf: 'center',
+      }}
+    >
+      <View style={{ gap: 22 }}>
+        <View style={{ alignItems: 'center', gap: 14 }}>
+          <Image source={require('../assets/icono.png')} style={{ width: 84, height: 84, borderRadius: 20 }} />
+          <Text style={{ fontSize: 32, fontWeight: '800', letterSpacing: -0.5, color: t.color.texto, textAlign: 'center' }}>
+            Puntos Salud
+          </Text>
+          <Texto nivel={2} estilo={{ textAlign: 'center', fontSize: 16, lineHeight: 23, maxWidth: 300 }}>
+            Cada compra suma. Míralo todo desde tu teléfono.
+          </Texto>
+        </View>
+
+        <Tarjeta estilo={{ gap: 14, paddingVertical: 18 }}>
+          {QUE_TRAE.map((f) => {
+            const color = f.tono === 'verde' ? t.color.verde : t.color.magenta;
+            const texto = f.tono === 'verde' ? t.color.verdeTexto : t.color.magentaTexto;
+            return (
+              <View key={f.titulo} style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
+                <View style={{
+                  width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: suave(color, t.oscuro ? 0.28 : 0.16),
+                }}>
+                  <Text style={{ fontSize: 19, fontWeight: '800', color: texto }}>{f.simbolo}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 16, fontWeight: '700', color: t.color.texto }}>{f.titulo}</Text>
+                  <Texto nivel={2} estilo={{ fontSize: 14 }}>{f.detalle}</Texto>
+                </View>
+              </View>
+            );
+          })}
         </Tarjeta>
+
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <Regla color={t.color.verde} texto={t.color.verdeTexto} grande="$1" chico="de compra = 1 punto" />
+          <Regla color={t.color.magenta} texto={t.color.magentaTexto} grande="100 pts" chico="= $1 de descuento" />
+        </View>
       </View>
+
       <View style={{ gap: 12 }}>
         <Boton alTocar={() => router.push('/entrar')}>Ya soy cliente</Boton>
         <Boton tipo="secundario" alTocar={() => router.push('/registro')}>Quiero unirme</Boton>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
-function Regla({ color, titulo }) {
-  return <Text style={{ fontSize: 16, fontWeight: '700', color, textAlign: 'center' }}>{titulo}</Text>;
+function Regla({ color, texto, grande, chico }) {
+  const t = useTema();
+  return (
+    <View style={{
+      flex: 1, borderRadius: t.radio.tarjeta, padding: 14, gap: 2,
+      backgroundColor: suave(color, t.oscuro ? 0.2 : 0.12), borderWidth: 1, borderColor: suave(color, 0.3),
+    }}>
+      <Text style={{ fontSize: 22, fontWeight: '800', color: texto }}>{grande}</Text>
+      <Text style={{ fontSize: 13, fontWeight: '600', color: texto }}>{chico}</Text>
+    </View>
+  );
 }

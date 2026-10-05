@@ -47,11 +47,13 @@ export default function Registro() {
         Deja tus datos y en tu próxima compra en sala te pedimos tu DUI para completar tu ficha. Desde ese momento
         empiezas a acumular.
       </Texto>
+      <Tarjeta estilo={{ gap: 16 }}>
       <Campo etiqueta="Nombre completo" value={f.nombre} onChangeText={cambiar('nombre')} autoCapitalize="words" textContentType="name" />
       <Campo etiqueta="DUI o documento" placeholder="00000000-0" value={f.documento} onChangeText={cambiar('documento')} autoCapitalize="characters" autoCorrect={false} />
       <Campo etiqueta="Teléfono" placeholder="7000 0000" value={f.telefono} onChangeText={cambiar('telefono')} keyboardType="phone-pad" textContentType="telephoneNumber" />
       <Campo etiqueta="Correo (opcional)" value={f.email} onChangeText={cambiar('email')} keyboardType="email-address" autoCapitalize="none" textContentType="emailAddress" />
       <Campo etiqueta="Fecha de nacimiento (opcional)" placeholder="DD/MM/AAAA" value={f.fecha_nacimiento} onChangeText={cambiar('fecha_nacimiento')} keyboardType="numbers-and-punctuation" ayuda="Para tu regalo de cumpleaños." />
+      </Tarjeta>
       <Tarjeta>
         <Titulo>Tus permisos</Titulo>
         <Casilla marcada={programa} alCambiar={setPrograma}>{textos?.programa ?? '…'}</Casilla>

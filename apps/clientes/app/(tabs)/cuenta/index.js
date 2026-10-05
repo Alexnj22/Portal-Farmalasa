@@ -8,6 +8,7 @@ import { useSesion } from '../../../lib/sesion';
 import { useCuenta } from '../../../lib/cuenta';
 import { pedirTokenDeAvisos } from '../../../lib/avisos';
 import { useTema } from '../../../tema/tema';
+import { nombrePropio } from '../../../lib/formato';
 
 const REGLAMENTO = 'https://portal.farmasalud.lat/reglamento-puntos';
 
@@ -69,7 +70,7 @@ export default function Cuenta() {
 
   return (
     <Pantalla>
-      {resumen?.nombre ? <Titulo>{resumen.nombre}</Titulo> : null}
+      {resumen?.nombre ? <Titulo estilo={{ fontSize: 20 }}>{nombrePropio(resumen.nombre)}</Titulo> : null}
       {mensaje ? <Aviso tipo={mensaje.tipo}>{mensaje.texto}</Aviso> : null}
 
       {resumen && !resumen.pendiente ? (
@@ -109,7 +110,8 @@ function Interruptor({ titulo, detalle, valor, alCambiar }) {
         <Texto estilo={{ fontWeight: '600' }}>{titulo}</Texto>
         {detalle ? <Texto nivel={3} estilo={{ fontSize: 13, lineHeight: 18 }}>{detalle}</Texto> : null}
       </View>
-      <Switch value={valor} onValueChange={alCambiar} trackColor={{ true: t.color.magenta }} />
+      <Switch value={valor} onValueChange={alCambiar} trackColor={{ true: t.color.magenta, false: t.color.borde }}
+        thumbColor="#FFFFFF" activeThumbColor="#FFFFFF" ios_backgroundColor={t.color.borde} />
     </View>
   );
 }

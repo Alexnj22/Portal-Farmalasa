@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1198.1 — App de clientes: sesión que se borraba sola, entrar con código y pulido visual
+
+- **La sesión se borraba al abrir la app.** La pantalla de puntos pedía el resumen antes de leer el token del llavero; el servidor contestaba «sin sesión» y la app borraba el token guardado. Ahora toda llamada espera esa lectura, y sólo se cierra la sesión si el servidor rechazó ese mismo token.
+- **Entrar con el código del ticket:** selector «DUI y teléfono» / «Código del ticket». El código se escribe grande, sólo con las letras que el ticket usa. El DUI se formatea solo (00000000-0).
+- **Pulido visual:** la aurora cubre toda la pantalla también en el navegador, el título ya no se encima sobre el contenido en la web, campos con foco del color de la marca y fondo distinto al de la tarjeta, bienvenida con lo que trae la app, contenido con ancho máximo en pantallas anchas, nombre del cliente en mayúsculas y minúsculas, y rótulos para «Regalo de cumpleaños» y «Canje devuelto».
+
 ## v2.1198.0 — App: Gestionar avisos
 
 - **App: Gestionar avisos nativo.** Los avisos internos activos, programados y archivados, con su destino, si son urgentes y cuánta gente ya los leyó; tocar uno muestra quién falta por leer y deja archivarlo. Y se publica uno nuevo desde el teléfono (título, mensaje, todos o una sala, urgente). Quien gestiona sólo su sala, ve y publica para su sala. Avisos a un cargo o a personas sueltas, y programarlos, siguen en el portal.

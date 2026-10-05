@@ -1,6 +1,6 @@
 // El fondo de toda la app: manchas suaves con el verde y el magenta del logo.
 // Misma idea que la app del personal, con los dos colores del programa.
-import { StyleSheet, useColorScheme, View } from 'react-native';
+import { Platform, StyleSheet, useColorScheme, View } from 'react-native';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import tokens from '@nucleo/constants/tokens.json';
 
@@ -16,7 +16,9 @@ export default function Aurora() {
   const base = oscuro ? '#0A090E' : '#F5F4F8';
   const fuerza = oscuro ? 0.32 : 0.22;
   return (
-    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: base }]}>
+    // En la web, `fixed` y no `absolute`: con `absolute` la aurora mide lo que
+    // mide el contenido y se corta donde termina la pantalla más corta.
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, Platform.OS === 'web' && { position: 'fixed' }, { backgroundColor: base }]}>
       <Svg width="100%" height="100%">
         <Defs>
           {MANCHAS.map((m) => (

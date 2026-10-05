@@ -26,6 +26,7 @@ function armar(nombre) {
       magenta: t['logo-magenta'],
       magentaTexto: t['logo-magenta-text'],
       marca: t.brand,
+      fondo: t['bg-page'],
       tarjeta: t['surface-card'],
       borde: t['border-card'],
       texto: t['text-primary'],

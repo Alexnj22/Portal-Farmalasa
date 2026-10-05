@@ -6,12 +6,15 @@ import { Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo } from '../../../componentes/ui';
 import { useCuenta } from '../../../lib/cuenta';
-import { dolares, diasHasta, entero, fecha } from '../../../lib/formato';
+import { dolares, diasHasta, entero, fecha, nombrePropio } from '../../../lib/formato';
 import { suave, useTema } from '../../../tema/tema';
 
 const MINIMO_DE_CANJE = 100;
 // El signo sale del NÚMERO, no del tipo: un ajuste puede sumar o restar.
-const ROTULOS = { compra: 'Compra', canje: 'Canje', vencimiento: 'Vencieron', anulacion: 'Compra anulada', ajuste: 'Ajuste' };
+const ROTULOS = {
+  compra: 'Compra', canje: 'Canje', vencimiento: 'Vencieron', anulacion: 'Compra anulada', ajuste: 'Ajuste',
+  cumpleanos: 'Regalo de cumpleaños', canje_devuelto: 'Canje devuelto',
+};
 
 export default function Puntos() {
   const t = useTema();
@@ -46,11 +49,11 @@ export default function Puntos() {
   const falta = Math.max(0, MINIMO_DE_CANJE - saldo);
   const congelado = resumen.consentimiento?.programa === false;
   const movimientos = verTodo ? resumen.movimientos : resumen.movimientos.slice(0, 8);
-  const primerNombre = String(resumen.nombre ?? '').split(' ')[0];
+  const primerNombre = nombrePropio(String(resumen.nombre ?? '').split(' ')[0]);
 
   return (
     <Pantalla alRefrescar={refrescar} refrescando={refrescando}>
-      <Texto nivel={2}>Hola, {primerNombre.charAt(0) + primerNombre.slice(1).toLowerCase()}</Texto>
+      <Texto nivel={2} estilo={{ fontSize: 17 }}>Hola, {primerNombre}</Texto>
 
       <Tarjeta tono={t.color.magenta} estilo={{ paddingVertical: 22 }}>
         <Texto nivel={2}>Tienes de descuento</Texto>

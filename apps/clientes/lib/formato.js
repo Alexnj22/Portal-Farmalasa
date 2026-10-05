@@ -19,3 +19,8 @@ export function diasHasta(v) {
   const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
   return Math.round((Date.parse(`${m[0]}T00:00:00Z`) - Date.parse(`${hoy}T00:00:00Z`)) / 86400_000);
 }
+
+/** «CARLOS MARÍA PÉREZ ROMERO» → «Carlos María Pérez Romero»: la ficha guarda mayúsculas. */
+export function nombrePropio(v) {
+  return String(v ?? '').toLowerCase().replace(/(^|[\s'-])(\p{L})/gu, (_, sep, l) => sep + l.toUpperCase());
+}

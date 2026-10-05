@@ -46,7 +46,7 @@ se trabaja de corrido; cada fila se marca al publicarse.
 | 21 | `/libro-compras-completo` | el libro del mes | ✅ |
 | 22 | `/cargos` | cargos y organigrama | ✅ |
 | 23 | `/permisos` | ver permisos por cargo | ✅ |
-| 24 | `/sesiones` | conexiones activas | |
+| 24 | `/sesiones` | conexiones activas | ✅ |
 | 25 | `/carnes-del-dia` | los carnés del día | |
 | 26 | `/entrevistas` | lista y ficha | |
 | 27 | `/encuesta-admin` | resultados | |

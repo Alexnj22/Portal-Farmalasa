@@ -21,6 +21,9 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1206.0 — App: Conexiones
+
+- **App: Conexiones nativo.** Quién tiene el portal abierto y en qué dispositivos, cuándo se movió por última vez y con cuánto tiempo sin uso se cierra cada conexión; filtros de activas hoy y olvidadas. Tocar a alguien muestra sus conexiones (la de este equipo primero) y deja cerrar una o todas con confirmación; si se cierra la propia, la app sale. Bloquear sigue en el portal. La lógica ya vivía en el núcleo (`data/sesiones`).
 ## v2.1205.1 — App de clientes: controles nativos del sistema
 
 - **La app de clientes usa el canon de la app del personal:** formularios agrupados como Ajustes (`componentes/sistema.js`), colores del sistema que siguen el modo oscuro, superficies de Liquid Glass en iOS 26 (desenfoque del sistema antes, tarjeta Material en Android), el control segmentado de SwiftUI, interruptores del sistema en lugar de casillas (iOS no tiene casillas), confirmaciones con la alerta del sistema y el botón nativo a todo el ancho con el estilo de vidrio de iOS 26.

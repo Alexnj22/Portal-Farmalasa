@@ -723,7 +723,6 @@ export const AREAS = [
             'supabase/functions/_shared/ofertaDeDescuento.ts',
             'supabase/functions/app-clientes/',
             'supabase/functions/_shared/consentimientoPuntos.ts',
-            'scripts/entorno-pruebas/app_clientes_base.sql',
         ],
         tablas: ['app_cliente_sesiones', 'app_cliente_preregistros', 'ofertas_clientes'],
         edge: ['app-clientes'],

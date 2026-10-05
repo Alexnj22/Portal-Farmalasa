@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1208.1 — App de clientes en producción
+
+- **Base aplicada en producción** (`20261005191541_app_clientes_base`): sesiones y pre-registros de la app, `ofertas_clientes` con la foto del descuento, el bucket privado `ofertas-clientes`, el permiso `ofertas_clientes` y las funciones `app_cliente_inyecciones` y `app_preregistro_resolver`. Desde ahora «Ofertas para clientes» y «Mostrar en la app» aparecen para quien tiene el permiso.
+- **Funciones desplegadas:** `app-clientes` (nueva, sin JWT: valida su propia sesión), `mis-puntos` (los textos de consentimiento pasan al módulo compartido, sin cambio de contenido) y `descuentos-erp` (mantiene al día las ofertas ligadas a un descuento).
+
 ## v2.1208.0 — App: Encuestas (administración)
 
 - **App: Encuestas (administración) nativo.** Todas las encuestas internas con su tipo, estado, fechas y cuántas personas respondieron; tocar una muestra el promedio general, el de cada bloque y cada persona con su puntaje, de menor a mayor. Si la encuesta es anónima, la app no muestra nombre ni avatar. Crear, editar y capturar respuestas siguen en el portal.

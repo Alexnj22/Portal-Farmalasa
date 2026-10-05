@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1222.1 — App de clientes: lista para la tienda
+
+- **App de clientes lista para TestFlight:** proyecto EAS `@farmasalud/farmalasa-clientes`, ícono de tienda 1024×1024 sin transparencia (Apple rechaza el transparente), pantalla de arranque propia en claro y oscuro (antes salía la de Expo) y perfil de envío a App Store Connect. La primera compilación pide iniciar sesión con el Apple ID para crear el identificador y los certificados.
+
 ## v2.1222.0 — App de clientes: tarjeta de socio con QR y bloqueo con Face ID
 
 - **Tarjeta de socio** (app de clientes): con la forma de una tarjeta de verdad —degradado con los colores del logo, chip, nombre, «socio desde» y saldo— y un brillo que se mueve con la inclinación del teléfono (giroscopio, en el hilo de la interfaz). Al tocarla gira en 3D y por detrás muestra el QR con el código de 7 letras: la misma dirección del QR del ticket (`/mis-puntos?codigo=`), así que en sala se lee igual.

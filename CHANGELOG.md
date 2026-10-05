@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1204.0 — App: Cargos
+
+- **App: Cargos nativo.** El organigrama como lista, de la cima hacia abajo y sangrado por nivel, con cuántas personas ocupa cada cargo (y su tope), si es por sucursal o global y si es externo; tocar uno muestra a quién reporta y quiénes lo ocupan. Crear, editar y el organigrama visual siguen en el portal.
+- **App:** las píldoras violetas ahora se leen — la letra va en un violeta más claro sobre el fondo oscuro (afectaba a varias pantallas).
+- **Núcleo:** la profundidad, el orden por jerarquía, el superior, los ocupantes y qué cargo es externo pasan de `RolesView` a `src/utils/jerarquiaDeCargos.js`, con su prueba.
+
 ## v2.1203.0 — App: Libros de IVA
 
 - **App: Libros de IVA nativo.** Para el mes —y la sucursal, a quien ve todas— cada libro en resumen: documentos, gravadas, el impuesto y el total de consumidor, contribuyentes, compras, anulados, percepción, retención, retención que nos hicieron, renta y notas; el débito y el crédito del mes arriba, y el aviso de las ventas que se quedaron fuera del libro por no tener sello válido. El detalle y las descargas siguen en el portal.

@@ -44,7 +44,7 @@ se trabaja de corrido; cada fila se marca al publicarse.
 | 19 | `/resumen-fiscal` | el resumen del mes | ✅ |
 | 20 | `/cierre-periodo` | el estado del cierre | ✅ |
 | 21 | `/libro-compras-completo` | el libro del mes | ✅ |
-| 22 | `/cargos` | cargos y organigrama | |
+| 22 | `/cargos` | cargos y organigrama | ✅ |
 | 23 | `/permisos` | ver permisos por cargo | |
 | 24 | `/sesiones` | conexiones activas | |
 | 25 | `/carnes-del-dia` | los carnés del día | |

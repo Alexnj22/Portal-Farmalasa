@@ -44,10 +44,14 @@ export function Insignia({ icono, color = MARCA.azulClaro, tamano = 44 }) {
   );
 }
 
+// El violeta de la marca es oscuro: como TEXTO sobre el fondo oscuro de la app
+// no se lee (medido en Cargos). El fondo conserva el tono; la letra va aclarada.
+const LETRA_LEGIBLE = { [MARCA.violeta]: MARCA.violetaClaro };
+
 export function Pildora({ texto, color }) {
   return (
     <View style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: `${color}2E` }}>
-      <Text style={{ color, fontSize: 13, fontWeight: '700' }}>{texto}</Text>
+      <Text style={{ color: LETRA_LEGIBLE[color] ?? color, fontSize: 13, fontWeight: '700' }}>{texto}</Text>
     </View>
   );
 }

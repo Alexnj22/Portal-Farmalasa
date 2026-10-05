@@ -40,7 +40,7 @@ se trabaja de corrido; cada fila se marca al publicarse.
 | 15 | `/encuesta` | responder el clima organizacional | ✅ resultados |
 | 16 | `/avisos` | gestionar avisos: lista y publicar | ✅ |
 | 17 | `/facturacion` | facturas del día y su estado ante Hacienda | ✅ |
-| 18 | `/libros-iva` | resumen por libro y mes | |
+| 18 | `/libros-iva` | resumen por libro y mes | ✅ |
 | 19 | `/resumen-fiscal` | el resumen del mes | ✅ |
 | 20 | `/cierre-periodo` | el estado del cierre | ✅ |
 | 21 | `/libro-compras-completo` | el libro del mes | ✅ |

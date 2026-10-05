@@ -26,6 +26,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/resumen-fiscal': true, // el movimiento de IVA del mes, renglón por renglón
   '/cierre-periodo': true, // la cadena del remanente; cerrar y reabrir en el portal
   '/libro-compras-completo': true, // qué se compró y qué es declarable; el CSV en el portal
+  '/libros-iva': true, // cada libro del mes en resumen; detalle y descargas en el portal
   '/encuesta': true, // resultados del clima: índice, bloques, preguntas y comentarios
   '/nomina': true, // la quincena por sala y la boleta de cada persona; generar, aprobar e imprimir: portal
   '/auditoria-de-tiempos': true, // día por día: marcas, faltas, tardanza y señales; corregir y aprobar: portal

@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1203.0 — App: Libros de IVA
+
+- **App: Libros de IVA nativo.** Para el mes —y la sucursal, a quien ve todas— cada libro en resumen: documentos, gravadas, el impuesto y el total de consumidor, contribuyentes, compras, anulados, percepción, retención, retención que nos hicieron, renta y notas; el débito y el crédito del mes arriba, y el aviso de las ventas que se quedaron fuera del libro por no tener sello válido. El detalle y las descargas siguen en el portal.
+- **Núcleo:** el débito de consumidor y los totales de cada libro pasan de `LibrosIvaView` a `src/utils/librosIva.js` (los usan la pantalla y el ZIP), con su prueba.
+
 ## v2.1202.0 — App: Libro de compras completo
 
 - **App: Libro de compras completo nativo.** Qué compró la farmacia en el mes —lo registrado más los documentos que llegaron del proveedor y nunca se registraron— y, en «Declarable», qué de eso puede reclamarse como crédito fiscal: lo que no cuenta con su motivo, el crédito trabado por falta de confirmar y los documentos repetidos. Mes a mes, con búsqueda; los montos sólo con el permiso de verlos. La descarga sigue en el portal.

@@ -21,6 +21,9 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1173.0 — Ventas perdidas: la sala puede reportar
+
+- **La sala ya puede reportar ventas perdidas.** Crear un reporte exigía el permiso de edición del módulo, que sólo tienen cargos de toda la red: dependientes, regentes y jefes de sala no podían, y desde la búsqueda del tablero el reporte se perdía sin aviso (en toda la historia había 5, todos de la supervisión). Ahora cualquiera reporta **a su propio nombre y como pendiente**; atenderlo sigue exigiendo el permiso de edición. Probado en producción como una dependienta, en una transacción revertida: a su nombre entra, a nombre de otro o ya procesado se rechaza.
 ## v2.1172.2 — Inyecciones: la venta ya cobrada sigue en la lista, deshabilitada
 
 Reporte de Salud 1 (4 de octubre): «no salió en el listado la de 1 MESIGYNA».

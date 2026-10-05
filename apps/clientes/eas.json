@@ -1,0 +1,36 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "base": {
+      "node": "24.9.0"
+    },
+    "clientes": {
+      "extends": "base",
+      "distribution": "store",
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://sacecdkdmsdvgqnrsett.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_cdFHhrbNAqfoA7FIsEgL3A_COHXzBoz"
+      }
+    },
+    "clientes-pruebas": {
+      "extends": "base",
+      "distribution": "store",
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://zkpypxvkyfyxsrnplpuy.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_rdos9vtp5Mzdn3B3gBqHRA_3gBK3Aq0"
+      }
+    }
+  },
+  "submit": {
+    "clientes": {
+      "android": {
+        "track": "internal"
+      }
+    }
+  }
+}

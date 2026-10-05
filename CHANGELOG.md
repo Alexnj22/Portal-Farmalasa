@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1191.0 — App de clientes Puntos Salud: base, ofertas y pre-registros
+
+- **App nueva `apps/clientes` (Puntos Salud).** El cliente entra una sola vez con documento + teléfono (o el código del ticket) y ve su saldo en dólares, lo que vence, sus movimientos, las ofertas vigentes, las inyecciones que pagó y le faltan aplicar, y su cuenta: permisos, avisos, cerrar sesión y borrar la cuenta.
+- **Unirse desde la app:** deja un pre-registro que se vincula solo cuando la sala crea la ficha con el mismo documento y teléfono. No crea fichas.
+- **Portal: «Ofertas para clientes»** (`/ofertas-clientes`, permiso nuevo `ofertas_clientes`): crear, publicar y retirar ofertas con imagen, fechas, salas y si son exclusivas para socios; y la pestaña de pre-registros para vincular o descartar.
+- **Servidor:** función `app-clientes` (sesión por token, sólo su huella en la base; mismo freno por intentos que `/mis-puntos`). Los textos de los permisos pasan a `_shared/consentimientoPuntos.ts`, compartidos con `mis-puntos`.
+- **Base:** probada en el entorno de pruebas; **todavía no aplicada en producción** (borrador en `scripts/entorno-pruebas/app_clientes_base.sql`). Hasta entonces el módulo no tiene a nadie con permiso y no aparece en el menú.
+
 ## v2.1190.0 — App: Promociones
 
 - **App: Promociones nativa.** Las vigentes, terminadas o todas, con su vigencia, laboratorios y estado («por vencer» se lee de la fecha, igual que el portal); el detalle trae cada producto con cuánto se ha vendido en total y en cada sala, y su lote. Crear, los descuentos de la caja y los pagos siguen en el portal.

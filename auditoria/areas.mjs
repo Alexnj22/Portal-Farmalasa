@@ -705,6 +705,29 @@ export const AREAS = [
         crons: ['dist-vencer-reservas', 'dist-aviso-cartera-atrasada'],
         docs: ['docs/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md'],
     },
+    {
+        // Área aparte y no dentro de `facturacion-dte` (donde vive /mis-puntos):
+        // ésta es la cara del CLIENTE en su teléfono, con su propia sesión, su
+        // propia vitrina y su propio pre-registro. Un cambio acá no debe
+        // descongelar la facturación, y al revés.
+        id: 'app-clientes',
+        nombre: 'App de clientes (Puntos Salud)',
+        resumen: 'La app del cliente: entra con documento + teléfono una sola vez (sesión por token, sólo su huella en la base), ve su saldo y movimientos de puntos, las ofertas publicadas (las exclusivas sólo para socios), las inyecciones que pagó y le faltan aplicar, sus permisos y avisos, y puede borrar su cuenta. Quien no tiene ficha deja un pre-registro que se vincula solo cuando la sala lo registra con el mismo documento y teléfono.',
+        modulos: ['ofertas_clientes'],
+        rutas: ['/ofertas-clientes'],
+        archivos: [
+            'apps/clientes/',
+            'src/views/ofertas-clientes/',
+            'src/data/ofertasClientes.js',
+            'supabase/functions/app-clientes/',
+            'supabase/functions/_shared/consentimientoPuntos.ts',
+            'scripts/entorno-pruebas/app_clientes_base.sql',
+        ],
+        tablas: ['app_cliente_sesiones', 'app_cliente_preregistros', 'ofertas_clientes'],
+        edge: ['app-clientes'],
+        crons: [],
+        docs: ['docs/APP-CLIENTES-2026-10-05.md'],
+    },
 
     // ═══ PRODUCTO Y EXISTENCIA ══════════════════════════════════════════════
     {

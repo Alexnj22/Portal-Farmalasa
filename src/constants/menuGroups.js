@@ -90,6 +90,9 @@ export const MENU_GROUPS = [
     // Encuestas a clientes (2026-10-01): sección propia por pedido del usuario,
     // no una pestaña de Marketing.
     { key: 'encuestas_clientes', label: 'Encuestas', icono: 'ClipboardCheck', modules: ['encuestas_clientes', 'encuestas_aplicar'] },
+    // La app de clientes Puntos Salud (2026-10-05): su vitrina de ofertas y los
+    // pre-registros. Sección propia: lo que se edita acá lo ve el CLIENTE.
+    { key: 'app_clientes', label: 'App de clientes', icono: 'Smartphone', modules: ['ofertas_clientes'] },
     { key: 'producto',     label: 'Producto',      icono: 'Package',       modules: ['productos', 'laboratorios'] },
     { key: 'pedidos_sucursales', label: 'Pedidos a sucursales', icono: 'ClipboardList', modules: ['pedidos'] },
     // `inventario` y `gestion_stock` van PRIMERO y no al final de la lista

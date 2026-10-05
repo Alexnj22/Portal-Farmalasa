@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "Puntos Salud",
+    "slug": "farmalasa-clientes",
+    "scheme": "puntossalud",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icono.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "lat.farmasalud.clientes",
+      "config": { "usesNonExemptEncryption": false },
+      "appleTeamId": "ZZWA3Q7Q35"
+    },
+    "android": {
+      "package": "lat.farmasalud.clientes",
+      "adaptiveIcon": { "backgroundColor": "#ffffff", "foregroundImage": "./assets/icono.png" }
+    },
+    "web": { "favicon": "./assets/icono.png", "bundler": "metro", "output": "single" },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      ["expo-notifications", { "color": "#981D97", "mode": "production" }]
+    ]
+  }
+}

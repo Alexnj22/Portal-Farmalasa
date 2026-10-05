@@ -93,6 +93,7 @@ const PromocionesView = lazy(IMPORTADORES.PromocionesView);
 const MarketingView = lazy(IMPORTADORES.MarketingView);
 const GaleriaView = lazy(IMPORTADORES.GaleriaView);
 const EncuestasClientesView = lazy(IMPORTADORES.EncuestasClientesView);
+const OfertasClientesView = lazy(IMPORTADORES.OfertasClientesView);
 const AplicarEncuestaView = lazy(IMPORTADORES.AplicarEncuestaView);
 const EncuestaPublicaView = lazy(IMPORTADORES.EncuestaPublicaView);
 const ProveedoresView = lazy(IMPORTADORES.ProveedoresView);
@@ -949,6 +950,7 @@ function MainApp() {
                                     <Route path="galeria" element={<PermissionGuard moduleKey="galeria"><GaleriaView /></PermissionGuard>} />
                                     <Route path="encuestas-clientes" element={<PermissionGuard moduleKey="encuestas_clientes"><EncuestasClientesView /></PermissionGuard>} />
                                     <Route path="encuestas-aplicar" element={<PermissionGuard moduleKey="encuestas_aplicar"><AplicarEncuestaView /></PermissionGuard>} />
+                                    <Route path="ofertas-clientes" element={<PermissionGuard moduleKey="ofertas_clientes"><OfertasClientesView /></PermissionGuard>} />
                                     <Route path="proveedores" element={<PermissionGuard moduleKey="proveedores"><ProveedoresView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="conteo-inventario" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoInventarioView /></PermissionGuard>} />
                                     <Route path="bitacoras" element={<PermissionGuard moduleKey="bitacoras"><BitacorasView /></PermissionGuard>} />
@@ -1156,6 +1158,7 @@ const ROUTE_TITLES = {
     '/marketing':         'Marketing',
     '/encuestas-clientes': 'Encuestas a clientes',
     '/encuestas-aplicar': 'Aplicar encuesta',
+    '/ofertas-clientes':  'Ofertas para clientes',
     '/galeria':           'Galería',
     '/productos':         'Productos',
     '/laboratorios':      'Laboratorios',

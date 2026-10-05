@@ -193,3 +193,52 @@ export function Fichas({ textos, color = MARCA.azulClaro }) {
     </View>
   );
 }
+
+// Las cifras de resumen en una línea que se envuelve: «3 traslados · 6
+// unidades · 2 salas» — el `Panel` de `TarjetasDeOperacion` del portal. Cada
+// cifra baja entera, nunca partida.
+export function Panel({ datos }) {
+  const lista = (datos || []).filter(Boolean);
+  if (!lista.length) return null;
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 16, rowGap: 4, borderRadius: 14, backgroundColor: FONDO, paddingHorizontal: 12, paddingVertical: 9 }}>
+      {lista.map((d) => (
+        <Text key={d.etiqueta}>
+          <Text style={{ color: d.color ?? colorSistema.texto, fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{d.valor}</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>{`  ${d.etiqueta}`}</Text>
+        </Text>
+      ))}
+    </View>
+  );
+}
+
+// Un renglón con cara (o ícono) a la izquierda, dos líneas de texto y una
+// píldora o cifra a la derecha — la fila de traslado, de corte pendiente o de
+// sala del portal.
+export function Renglon({ izquierda, titulo, detalle, derecha, primero }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador }}>
+      {izquierda}
+      <View style={{ flex: 1, gap: 1 }}>
+        <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{titulo}</Text>
+        {detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{detalle}</Text> : null}
+      </View>
+      {derecha}
+    </View>
+  );
+}
+
+// Una caja de renglones sobre el fondo de la tarjeta.
+export function Caja({ children }) {
+  return <View style={{ borderRadius: 14, backgroundColor: FONDO, paddingHorizontal: 12, paddingVertical: 2 }}>{children}</View>;
+}
+
+// Una advertencia dentro de la tarjeta (el MAX que no alcanza, lo que quedó fuera).
+export function Advertencia({ texto, color = MARCA.rojo }) {
+  if (!texto) return null;
+  return (
+    <View style={{ borderRadius: 14, backgroundColor: `${color}22`, paddingHorizontal: 12, paddingVertical: 9 }}>
+      <Text style={{ color, fontSize: 13, fontWeight: '700' }}>{texto}</Text>
+    </View>
+  );
+}

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1221.0 — App: notificaciones como en el portal
+
+- **App: las notificaciones muestran lo mismo que el portal.** Reporte del usuario: «no me da la misma info que me da en el portal web, en la app todo es compacto y casi nada de info». La tarjeta de cada aviso se rehízo pieza por pieza con la de la campana del portal:
+  - **Cierres:** del día, del mes y de la empresa con su tabla de vendedores y los que más vendieron; faltante de caja con su anillo, arrastre y quién confirmó; diferencias pendientes; aperturas de la mañana sala por sala; créditos vencidos con su barra por sala.
+  - **Operación:** el corte con quién lo hizo; el reloj de la bitácora; los traslados por respaldo; Min·Máx con las ventas de 6 meses y del último mes, las presentaciones y el despacho, y el aviso cuando el MAX no alcanza; también la bolsa, el depósito, las alertas de venta, las facturas, los cortes pendientes y los pasos del pedido.
+  - **Solicitudes:** quién lo pide con su cara, sus datos y sus productos; respuestas y decisiones; diferencias del pedido, conteo, Hacienda, promociones, metas por aprobar, reinicio y productos sin venta.
+  - **Lo que la tarjeta hace:** «Ver detalle» despliega la solicitud ahí mismo (renglones, venta, Min·Máx de antes y propuesto, fotos, motivo, historial); «Ver los N productos/traslados» despliega la lista; **Aprobar / Rechazar** deciden desde la bandeja con la misma regla de quién puede que el portal; quién lo mandó y de qué sala, y la acción del toque al lado de la hora.
+- Los datos salen de las mismas funciones del núcleo que usa el portal.
 ## v2.1220.2 — App de clientes: revisión — 20 ajustes de seguridad, datos y accesibilidad
 
 Revisión completa de la app de clientes y de `app-clientes` (22 hallazgos; corregidos los de código).

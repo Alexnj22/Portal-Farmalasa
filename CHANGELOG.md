@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1235.0 — App: historias de 24 h, reservas con pago y entrega, arreglo al girar la tarjeta
+
+- **Girar la tarjeta cerraba la app** (compilación 10): la reacción del giro capturaba `brilloQr` antes de que existiera y llamaba `runOnJS(undefined)`. Ahora la función va antes de la reacción.
+- **Las historias de prueba no salían**: a sus imágenes les faltaba «.jpg» en la ruta y el servidor las descartaba al firmarlas.
+- **Las historias duran 24 horas** desde que se publican (`app_historias.publicada_at`, lo sella un trigger al publicar). En el portal ya no se elige fecha: la tabla dice «Se ve hasta» con día y hora, y una que terminó se vuelve a publicar con el ojo (otras 24 horas).
+- **Mis reservas, rediseñada**: cada tarjeta dice si es **Promoción** (con el nombre de la oferta y cuánto ahorras) o **Producto**; **Retiro en sucursal** con dirección y «Cómo llegar», o **A domicilio** con la dirección; **Pago**: pendiente, anticipo, pagado o devuelto, con el método y la hora; fecha y hora de la reserva, y el total. Las anteriores muestran tipo y si quedó pagada. Columnas nuevas en `app_reservas`: `pago_estado`, `pago_metodo`, `pagado_at`, `entrega`, `direccion_entrega` (hoy todas: retiro y pago al retirar; listas para el pago en línea y el domicilio). Marcar «retirada» en el portal la deja pagada.
+
 ## v2.1234.0 — Plan de la app: estado de la segunda tanda
 
 - Plan de paridad de la app: estado al cierre de la segunda tanda (build 26) y lo que sigue en el portal.

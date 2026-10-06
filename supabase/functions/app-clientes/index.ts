@@ -429,10 +429,11 @@ Deno.serve(async (req) => {
     // firmada. Con ficha, se suman sus muestras.
     // deno-lint-ignore no-explicit-any
     const historiasPara = async (customerId: number | null): Promise<any> => {
-      const hoy = hoySV();
+      // Duran 24 horas desde que se publican (`publicada_at` lo pone la base).
+      const hace24h = new Date(Date.now() - 24 * 3600_000).toISOString();
       const { data: filas, error } = await admin.from("app_historias")
-        .select("id, titulo, texto, imagen_path, enlace, boton, inicio, fin, oferta_id")
-        .eq("publicada", true).lte("inicio", hoy).gte("fin", hoy)
+        .select("id, titulo, texto, imagen_path, enlace, boton, inicio, fin, oferta_id, publicada_at")
+        .eq("publicada", true).gte("publicada_at", hace24h)
         .order("orden", { ascending: true }).order("created_at", { ascending: false }).limit(20);
       if (error) throw error;
       const muestras = await muestrasDe(admin, customerId, "historia");
@@ -637,14 +638,26 @@ Deno.serve(async (req) => {
 
     if (accion === "mis_reservas") {
       const { data, error } = await admin.from("app_reservas")
-        .select("id, estado, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at")
+        .select("id, estado, origen, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega")
         .eq("customer_id", customerId).gte("created_at", new Date(Date.now() - 45 * 86400_000).toISOString())
         .order("created_at", { ascending: false }).limit(30);
       if (error) throw error;
-      const { data: salas, error: eS } = await admin.from("branches").select("id, name");
+      const { data: salas, error: eS } = await admin.from("branches").select("id, name, address");
       if (eS) throw eS;
-      const nombre = new Map((salas ?? []).map((b: any) => [Number(b.id), sucursal(b.name)]));
-      return json({ ok: true, reservas: (data ?? []).map((r: any) => ({ ...r, codigo: `R-${String(r.id).padStart(6, "0")}`, sala: nombre.get(Number(r.branch_id)) ?? null })) });
+      const sala = new Map((salas ?? []).map((b: any) => [Number(b.id), b]));
+      return json({
+        ok: true,
+        reservas: (data ?? []).map((r: any) => {
+          const b: any = sala.get(Number(r.branch_id));
+          return {
+            ...r, codigo: `R-${String(r.id).padStart(6, "0")}`,
+            sala: b ? sucursal(b.name) : null, sala_direccion: b?.address ?? null,
+            // Promoción (con oferta) o producto a precio normal.
+            tipo: r.oferta_titulo ? "promocion" : "producto",
+            total: Math.round(Number(r.precio_unitario ?? 0) * Number(r.cantidad ?? 1) * 100) / 100,
+          };
+        }),
+      });
     }
 
     if (accion === "reservar") {

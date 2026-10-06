@@ -5,7 +5,6 @@ import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import Button from '../../components/common/Button';
 import LiquidModal from '../../components/common/LiquidModal';
-import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import FileField from '../../components/common/FileField';
@@ -14,10 +13,10 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { LoadingState } from '../../components/common/StateViews';
-import { estadoDeOferta } from '@nucleo/utils/ofertasClientes';
+import { estadoDeHistoria, venceHistoria } from '@nucleo/utils/ofertasClientes';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { borrarHistoria, fetchHistorias, fetchOfertasParaHistoria, fetchQuienesVieron, fetchVistasHistorias, guardarHistoria, publicarHistoria, subirImagen } from '@nucleo/data/ofertasClientes';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { hora12 } from '@nucleo/utils/hora';
@@ -47,7 +46,6 @@ export default function HistoriasPanel({ busqueda, puedeEditar, showToast }) {
     const [borrando, setBorrando] = useState(null);
     const [vistas, setVistas] = useState(new Map());
     const [viendo, setViendo] = useState(null);
-    const hoy = hoySV();
 
     const cargar = useCallback(async () => {
         try {
@@ -65,14 +63,18 @@ export default function HistoriasPanel({ busqueda, puedeEditar, showToast }) {
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- la carga inicial
 
     const filas = useMemo(() => (historias ?? [])
-        .filter((h) => !fEstado || estadoDeOferta(h, hoy).key === fEstado)
-        .filter((h) => !busqueda || tokenMatch(`${h.titulo} ${h.texto ?? ''}`, busqueda)), [historias, fEstado, busqueda, hoy]);
+        .filter((h) => !fEstado || estadoDeHistoria(h).key === fEstado)
+        .filter((h) => !busqueda || tokenMatch(`${h.titulo} ${h.texto ?? ''}`, busqueda)), [historias, fEstado, busqueda]);
 
-    const alternar = async (h) => {
+    // Una que ya terminó se vuelve a publicar: se retira y se publica, y la base
+    // le renueva las 24 horas.
+    const alternar = async (h, renovar = false) => {
         try {
-            await publicarHistoria(h.id, !h.publicada);
-            showToast(h.publicada ? 'Historia retirada' : 'Historia publicada',
-                h.publicada ? 'Ya no se ve en la app.' : 'Se ve en la app durante sus fechas.', 'success');
+            if (renovar) await publicarHistoria(h.id, false);
+            const publicar = renovar || !h.publicada;
+            await publicarHistoria(h.id, publicar);
+            showToast(publicar ? 'Historia publicada' : 'Historia retirada',
+                publicar ? 'Se ve en la app durante 24 horas.' : 'Ya no se ve en la app.', 'success');
             cargar();
         } catch (err) {
             showToast('No se pudo cambiar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
@@ -94,8 +96,7 @@ export default function HistoriasPanel({ busqueda, puedeEditar, showToast }) {
                     <FilterBar.Section label="estado" active={!!fEstado} onClear={() => setFEstado('')}>
                         <FilterBar.Opciones value={fEstado} onChange={(v) => setFEstado(v || '')} label="Estado" placeholder="Estado" umbral={0}
                             options={[{ value: '', label: 'Estado' }, { value: 'vigente', label: 'En la app' },
-                                { value: 'programada', label: 'Programada' }, { value: 'borrador', label: 'Sin publicar' },
-                                { value: 'terminada', label: 'Terminada' }]} />
+                                { value: 'borrador', label: 'Sin publicar' }, { value: 'terminada', label: 'Terminó' }]} />
                     </FilterBar.Section>
                 </FilterBar>
             </div>
@@ -104,14 +105,15 @@ export default function HistoriasPanel({ busqueda, puedeEditar, showToast }) {
                     { key: 'historia', label: 'Historia' },
                     { key: 'estado', label: 'Estado' },
                     { key: 'vistas', label: 'Vistas', align: 'right' },
-                    { key: 'fechas', label: 'Fechas', hideBelow: 'sm' },
+                    { key: 'fechas', label: 'Se ve hasta', hideBelow: 'sm' },
                     ...(puedeEditar ? [{ key: 'acciones', label: '', align: 'right' }] : []),
                 ]}
                 movil={{ usarAccionDeFila: true, acciones: 'mantener' }}
                 empty={{ icon: CircleDashed, message: 'Sin historias. Crea una para que aparezca en la app.' }}
                 minWidth="560px">
                 {filas.map((h, i) => {
-                    const est = estadoDeOferta(h, hoy);
+                    const est = estadoDeHistoria(h);
+                    const vence = venceHistoria(h);
                     return (
                         <DataRow key={h.id} index={i} onClick={puedeEditar ? () => setEditando(h) : undefined}>
                             <DataCell>
@@ -133,15 +135,15 @@ export default function HistoriasPanel({ busqueda, puedeEditar, showToast }) {
                             </DataCell>
                             <DataCell>
                                 <span className="text-body-sm text-content-2">
-                                    {fechaTexto(h.inicio, { day: 'numeric', month: 'short' })} – {fechaTexto(h.fin, { day: 'numeric', month: 'short' })}
+                                    {vence ? `${fechaTexto(vence, { day: 'numeric', month: 'short' })} · ${hora12(vence)}` : '—'}
                                 </span>
                             </DataCell>
                             {puedeEditar && (
                                 <DataCell align="right">
                                     <div className="flex justify-end gap-1">
-                                        <Button variant="ghost" iconOnly icon={h.publicada ? EyeOff : Eye}
-                                            title={h.publicada ? 'Retirar de la app' : 'Publicar en la app'}
-                                            onClick={(e) => { e.stopPropagation(); alternar(h); }} />
+                                        <Button variant="ghost" iconOnly icon={est.key === 'vigente' ? EyeOff : Eye}
+                                            title={est.key === 'vigente' ? 'Retirar de la app' : (est.key === 'terminada' ? 'Publicar otras 24 horas' : 'Publicar en la app')}
+                                            onClick={(e) => { e.stopPropagation(); alternar(h, est.key === 'terminada'); }} />
                                         <Button variant="ghost" iconOnly icon={Pencil} title="Editar"
                                             onClick={(e) => { e.stopPropagation(); setEditando(h); }} />
                                         <Button variant="ghost" iconOnly icon={Trash2} title="Borrar"
@@ -191,8 +193,7 @@ function HistoriaModal({ historia, onClose, onGuardada, onError }) {
     const [archivo, setArchivo] = useState(null);
     const [guardando, setGuardando] = useState(false);
     const cambiar = (k) => (v) => setF((x) => ({ ...x, [k]: v }));
-    const inicio = historia.inicio ?? hoySV();
-    const valido = f.titulo.trim().length >= 3 && f.fin && f.fin >= inicio && (archivo || historia.imagen_path);
+    const valido = f.titulo.trim().length >= 3 && (archivo || historia.imagen_path);
 
     const guardar = async () => {
         setGuardando(true);
@@ -200,7 +201,8 @@ function HistoriaModal({ historia, onClose, onGuardada, onError }) {
             const imagen_path = archivo ? await subirImagen(archivo) : historia.imagen_path;
             const destino = DESTINOS.find((d) => d.valor === f.enlace) ?? DESTINOS[0];
             await guardarHistoria(historia.id, {
-                titulo: f.titulo.trim(), texto: f.texto.trim() || null, imagen_path, inicio, fin: f.fin,
+                // Duran 24 horas desde que se publican; `inicio`/`fin` sólo cumplen con la tabla.
+                titulo: f.titulo.trim(), texto: f.texto.trim() || null, imagen_path, inicio: hoySV(), fin: sumarDias(hoySV(), 1),
                 enlace: destino.valor || null, boton: destino.boton, publicada: f.publicada,
                 oferta_id: f.oferta_id || null,
             });
@@ -239,15 +241,10 @@ function HistoriaModal({ historia, onClose, onGuardada, onError }) {
                                 value: o.id, label: `${o.titulo}${o.publicada ? '' : ' (sin publicar)'}`,
                             }))]} />
                     </div>
-                    <div>
-                        <span className="block text-label font-semibold text-content-2 mb-1">Se ve hasta</span>
-                        <LiquidDatePicker value={f.fin} onChange={cambiar('fin')} />
-                        {f.fin && f.fin < inicio && <Notice variant="warning">La fecha ya pasó.</Notice>}
-                    </div>
                     <label className="flex items-center justify-between gap-3">
                         <span>
                             <span className="block text-body-sm font-semibold text-content">Publicada</span>
-                            <span className="block text-micro text-content-3">Se ve en la app hasta la fecha final.</span>
+                            <span className="block text-micro text-content-3">Se ve en la app 24 horas desde que se publica.</span>
                         </span>
                         <Switch checked={f.publicada} onChange={cambiar('publicada')} label="Publicada" />
                     </label>

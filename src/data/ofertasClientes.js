@@ -143,8 +143,8 @@ export async function fetchOfertaDeDescuento(descuentoId) {
 
 export async function fetchHistorias() {
     const filas = sinError(await supabase.from('app_historias')
-        .select('id, titulo, texto, imagen_path, enlace, boton, inicio, fin, publicada, orden, updated_at, oferta_id')
-        .order('fin', { ascending: false })
+        .select('id, titulo, texto, imagen_path, enlace, boton, inicio, fin, publicada, orden, updated_at, oferta_id, publicada_at')
+        .order('updated_at', { ascending: false })
         .limit(200));
     const rutas = filas.map((f) => f.imagen_path).filter(Boolean);
     if (!rutas.length) return filas;

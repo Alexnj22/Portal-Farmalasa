@@ -91,10 +91,6 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
     vibrar(false);
     giro.value = withSpring(giro.value > 0.5 ? 0 : 1, GIRO);
   };
-  // La vibración fuerte cuando la otra cara queda al frente (a mitad del giro).
-  useAnimatedReaction(() => giro.value > 0.5, (ahora, antes) => {
-    if (antes !== null && ahora !== antes) { runOnJS(vibrar)(true); runOnJS(brilloQr)(ahora); }
-  });
   // Con el QR a la vista, la pantalla al máximo (como Wallet), para que el
   // lector de la caja lo lea a la primera; al girarla de vuelta, como estaba.
   const brilloAntes = useRef(null);
@@ -110,6 +106,14 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
     } catch { /* sin permiso o sin brillo: no importa */ }
   };
   useEffect(() => () => { if (brilloAntes.current != null) Brightness.setBrightnessAsync(brilloAntes.current).catch(() => {}); }, []);
+  // A mitad del giro: la vibración fuerte y el brillo. Va DESPUÉS de definir
+  // `brilloQr`: el worklet captura las funciones al crearse, y declarada más
+  // abajo llegaba vacía — `runOnJS(undefined)` cerraba la app al girar
+  // (compilación 10, 2026-10-06).
+  const alCruzar = (ahora) => { vibrar(true); brilloQr(ahora); };
+  useAnimatedReaction(() => giro.value > 0.5, (ahora, antes) => {
+    if (antes !== null && ahora !== antes) runOnJS(alCruzar)(ahora);
+  });
 
   // Arrastrar de lado la inclina; un deslizamiento rápido la gira. Lo vertical
   // se lo deja a la pantalla (que hace scroll).

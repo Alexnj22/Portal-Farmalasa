@@ -36,6 +36,16 @@ export const estadoDeOferta = (o, hoy) => {
     return { key: 'vigente', label: 'En la app', variant: 'success' };
 };
 
+/** Las historias duran 24 horas desde `publicada_at` (lo sella la base al publicar). */
+export const HORAS_DE_HISTORIA = 24;
+export const venceHistoria = (h) => (h.publicada_at ? new Date(new Date(h.publicada_at).getTime() + HORAS_DE_HISTORIA * 3600_000) : null);
+export const estadoDeHistoria = (h, ahora = Date.now()) => {
+    if (!h.publicada) return { key: 'borrador', label: 'Sin publicar', variant: 'neutral' };
+    const vence = venceHistoria(h);
+    if (!vence || vence.getTime() <= ahora) return { key: 'terminada', label: 'Terminó', variant: 'neutral' };
+    return { key: 'vigente', label: 'En la app', variant: 'success' };
+};
+
 export const ESTADOS_DE_OFERTA = [
     { value: 'vigente', label: 'En la app' }, { value: 'programada', label: 'Programada' },
     { value: 'borrador', label: 'Sin publicar' }, { value: 'terminada', label: 'Terminada' },

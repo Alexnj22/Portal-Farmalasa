@@ -1,8 +1,9 @@
-// Mis reservas (2026-10-06): lo que el cliente apartó de las ofertas, en qué
-// va y hasta cuándo puede retirarlo. Una reserva «lista» muestra la cuenta
-// regresiva de las 24 horas; una pendiente o lista se puede cancelar.
+// Mis reservas (2026-10-06): lo que el cliente apartó, si es de una promoción o
+// un producto normal, en qué va, cómo se entrega (retiro en qué sucursal, o a
+// domicilio), cómo se paga y si ya está pagado. Una reserva «lista» muestra la
+// cuenta regresiva de las 24 horas; una pendiente o lista se puede cancelar.
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Cargando, Pantalla, Tarjeta, Vacio } from '../componentes/ui';
@@ -11,7 +12,7 @@ import { Entrada, Latido } from '../componentes/animacion';
 import { colorSistema } from '../componentes/sistema';
 import { useSesion } from '../lib/sesion';
 import { dolares, fecha } from '../lib/formato';
-import { useTema } from '../tema/tema';
+import { suave, useTema } from '../tema/tema';
 
 // Colores del tema (cambian con el modo oscuro y se leen sobre el vidrio).
 const ESTADO_BASE = {
@@ -80,45 +81,108 @@ export default function Reservas() {
       {cerradas.length ? (
         <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4, marginTop: 8 }}>Anteriores</Text>
       ) : null}
-      {cerradas.map((r, i) => {
-        const e = estadoDe(t, r.estado);
-        return (
-          <Entrada key={r.id} indice={Math.min(abiertas.length + i, 8)}>
-            <Tarjeta estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Icono sf={r.estado === 'retirada' ? 'checkmark.circle.fill' : 'xmark.circle'} respaldo="•" tam={22} color={e.color} />
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }} numberOfLines={1}>{r.cantidad} × {r.producto_nombre}</Text>
-                <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>{e.texto} · {r.sala} · {fecha(String(r.cerrada_at ?? r.created_at).slice(0, 10))}</Text>
-              </View>
-            </Tarjeta>
-          </Entrada>
-        );
-      })}
+      {cerradas.map((r, i) => (
+        <Entrada key={r.id} indice={Math.min(abiertas.length + i, 8)}>
+          <ReservaCerrada r={r} />
+        </Entrada>
+      ))}
     </Pantalla>
   );
 }
 
-// Una reserva en curso: lo que se reservó, dónde, cuánto se paga y en qué paso
-// va (Recibida → Lista → Retirada), con la cuenta regresiva cuando está lista.
+// Promoción o producto normal, cómo se paga y cómo se entrega (2026-10-06).
+const PAGO = {
+  pendiente: { texto: 'Pendiente de pago', tono: 'aviso', sf: 'clock' },
+  anticipo: { texto: 'Anticipo pagado', tono: 'aviso', sf: 'circle.lefthalf.filled' },
+  pagado: { texto: 'Pagado', tono: 'exito', sf: 'checkmark.seal.fill' },
+  devuelto: { texto: 'Devuelto', tono: 'neutro', sf: 'arrow.uturn.backward' },
+};
+const METODO = {
+  al_retirar: 'En caja, al retirar', efectivo: 'Efectivo', tarjeta: 'Tarjeta',
+  en_linea: 'En línea', transferencia: 'Transferencia',
+};
+const tonoColor = (t, tono) => ({ aviso: t.color.avisoTexto, exito: t.color.exitoTexto, peligro: t.color.peligroTexto, neutro: colorSistema.texto2 }[tono]);
+const fechaHora = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const h = d.getHours(), m = String(d.getMinutes()).padStart(2, '0');
+  // El día en la hora del teléfono (no el de UTC: de noche ya sería mañana).
+  const dia = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return `${fecha(dia)}, ${h % 12 || 12}:${m} ${h < 12 ? 'a. m.' : 'p. m.'}`;
+};
+const mapa = (r) => {
+  const q = encodeURIComponent(`Farmacia ${r.sala}, ${r.sala_direccion ?? ''}, El Salvador`);
+  return Platform.OS === 'ios' ? `maps://?q=${q}` : `https://www.google.com/maps/search/?api=1&query=${q}`;
+};
+
+// Promoción (con el nombre de la oferta) o producto a precio normal.
+function Tipo({ r }) {
+  const t = useTema();
+  const promo = r.tipo === 'promocion';
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4,
+      backgroundColor: promo ? suave(t.color.magenta, t.oscuro ? 0.28 : 0.14) : (t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)') }}>
+      <Icono sf={promo ? 'tag.fill' : 'shippingbox.fill'} respaldo="" tam={11} color={promo ? t.color.magentaTexto : colorSistema.texto2} />
+      <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 12, fontWeight: '800', color: promo ? t.color.magentaTexto : colorSistema.texto2 }}>
+        {promo ? 'Promoción' : 'Producto'}
+      </Text>
+    </View>
+  );
+}
+
+// Un renglón de datos: ícono, rótulo, valor y, si hace falta, una acción.
+function Dato({ sf, rotulo, valor, detalle, color, accion }) {
+  const t = useTema();
+  return (
+    <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start', paddingVertical: 10 }}>
+      <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center',
+        backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }}>
+        <Icono sf={sf} respaldo="•" tam={15} color={color ?? colorSistema.texto2} />
+      </View>
+      <View style={{ flex: 1, gap: 1 }}>
+        <Text style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto3 }}>{rotulo}</Text>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: color ?? colorSistema.texto }}>{valor}</Text>
+        {detalle ? <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto2 }}>{detalle}</Text> : null}
+      </View>
+      {accion ? (
+        <Pressable onPress={accion.alTocar} hitSlop={8} accessibilityRole="button" accessibilityLabel={accion.texto}
+          style={{ minHeight: 44, justifyContent: 'center' }}>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>{accion.texto}</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+const Separador = () => <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 42 }} />;
+
+// Una reserva en curso: qué es (promoción o producto), en qué paso va
+// (Recibida → Lista → Retirada), cómo se entrega, cómo se paga y cuánto.
 function ReservaAbierta({ r, ahora, alCancelar }) {
   const t = useTema();
   const lista = r.estado === 'lista';
   const e = estadoDe(t, r.estado);
   const pasos = ['Recibida', 'Lista', 'Retirada'];
   const actual = lista ? 1 : 0;
+  const pago = PAGO[r.pago_estado] ?? PAGO.pendiente;
+  const domicilio = r.entrega === 'domicilio';
+  const ahorro = r.precio_normal != null && r.precio_unitario != null && r.precio_normal > r.precio_unitario
+    ? (r.precio_normal - r.precio_unitario) * r.cantidad : 0;
   return (
     <Tarjeta tono={lista ? t.color.verde : undefined} estilo={{ gap: 14 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        {lista ? <Latido><Pildora e={e} /></Latido> : <Pildora e={e} />}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', flex: 1 }}>
+          {lista ? <Latido><Pildora e={e} /></Latido> : <Pildora e={e} />}
+          <Tipo r={r} />
+        </View>
         <Text style={{ fontSize: 13, fontWeight: '800', color: colorSistema.texto3, fontVariant: ['tabular-nums'] }}>{r.codigo}</Text>
       </View>
 
       <View style={{ gap: 4 }}>
         <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto, letterSpacing: -0.3 }}>{r.producto_nombre}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Icono sf="storefront" respaldo="🏪" tam={14} color={colorSistema.texto2} />
-          <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>{r.sala}</Text>
-        </View>
+        {r.tipo === 'promocion' && r.oferta_titulo ? (
+          <Text style={{ fontSize: 14, fontWeight: '600', color: t.color.magentaTexto }} numberOfLines={1}>{r.oferta_titulo}</Text>
+        ) : null}
       </View>
 
       {/* Los pasos: dónde va la reserva. */}
@@ -140,26 +204,48 @@ function ReservaAbierta({ r, ahora, alCancelar }) {
         ))}
       </View>
 
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <View style={{ gap: 2 }}>
-          <Text style={{ fontSize: 12, fontWeight: '700', color: colorSistema.texto3 }}>{r.cantidad} {r.cantidad === 1 ? 'UNIDAD' : 'UNIDADES'} · PAGAS AL RETIRAR</Text>
-          {r.precio_unitario != null ? (
-            <Text style={{ fontSize: 24, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(r.precio_unitario * r.cantidad)}</Text>
-          ) : null}
+      {lista && r.vence_at ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 14, padding: 12, backgroundColor: 'rgba(52,199,89,0.16)' }}>
+          <Icono sf="timer" respaldo="⏱" tam={16} color={t.color.exitoTexto} />
+          <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: t.color.exitoTexto }}>
+            Lista para {domicilio ? 'entregar' : 'retirar'}: {restante(r.vence_at, ahora)}
+          </Text>
         </View>
-        {lista && r.vence_at ? (
-          <View style={{ alignItems: 'flex-end' }}>
-            <Text style={{ fontSize: 12, fontWeight: '700', color: colorSistema.texto3 }}>PARA RETIRARLA</Text>
-            <Text style={{ fontSize: 16, fontWeight: '900', color: t.color.exitoTexto }}>{restante(r.vence_at, ahora)}</Text>
-          </View>
-        ) : null}
-      </View>
-
-      {!lista ? (
+      ) : (
         <Text style={{ fontSize: 14, lineHeight: 20, color: colorSistema.texto2 }}>
           La sucursal la está preparando. Te avisamos cuando esté lista{r.oferta_fin ? `; la oferta vale hasta el ${fecha(r.oferta_fin)}` : ''}.
         </Text>
-      ) : null}
+      )}
+
+      <View>
+        {domicilio ? (
+          <Dato sf="house.fill" rotulo="Entrega" valor="A domicilio" detalle={r.direccion_entrega} />
+        ) : (
+          <Dato sf="storefront.fill" rotulo="Retiro en sucursal" valor={r.sala ?? 'Sucursal'} detalle={r.sala_direccion}
+            accion={r.sala ? { texto: 'Cómo llegar', alTocar: () => Linking.openURL(mapa(r)).catch(() => {}) } : null} />
+        )}
+        <Separador />
+        <Dato sf={pago.sf} rotulo="Pago" valor={pago.texto} color={tonoColor(t, pago.tono)}
+          detalle={`${METODO[r.pago_metodo] ?? 'En caja, al retirar'}${r.pago_estado === 'anticipo' && r.anticipo ? ` · anticipo ${dolares(r.anticipo)}` : ''}${r.pagado_at ? ` · ${fechaHora(r.pagado_at)}` : ''}`} />
+        <Separador />
+        <Dato sf="calendar" rotulo="Reservada" valor={fechaHora(r.created_at)} />
+      </View>
+
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end',
+        paddingTop: 12, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
+        <View style={{ gap: 2 }}>
+          <Text style={{ fontSize: 12, fontWeight: '700', color: colorSistema.texto3 }}>
+            {r.cantidad} {r.cantidad === 1 ? 'UNIDAD' : 'UNIDADES'}{r.precio_unitario != null ? ` × ${dolares(r.precio_unitario)}` : ''}
+          </Text>
+          {ahorro > 0 ? <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.magentaTexto }}>Ahorras {dolares(ahorro)}</Text> : null}
+        </View>
+        {r.precio_unitario != null ? (
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: colorSistema.texto3 }}>{r.pago_estado === 'pagado' ? 'PAGASTE' : 'TOTAL'}</Text>
+            <Text style={{ fontSize: 24, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(r.total ?? r.precio_unitario * r.cantidad)}</Text>
+          </View>
+        ) : null}
+      </View>
 
       <Pressable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
         <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.rojo }}>Cancelar reserva</Text>
@@ -168,10 +254,43 @@ function ReservaAbierta({ r, ahora, alCancelar }) {
   );
 }
 
+// Una reserva terminada: compacta, con lo que importa después.
+function ReservaCerrada({ r }) {
+  const t = useTema();
+  const e = estadoDe(t, r.estado);
+  const pago = PAGO[r.pago_estado] ?? PAGO.pendiente;
+  const retirada = r.estado === 'retirada';
+  return (
+    <Tarjeta estilo={{ gap: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Icono sf={retirada ? 'checkmark.circle.fill' : 'xmark.circle'} respaldo="•" tam={24} color={e.color} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }} numberOfLines={1}>{r.cantidad} × {r.producto_nombre}</Text>
+          <Text style={{ fontSize: 13, color: colorSistema.texto3 }} numberOfLines={1}>
+            {e.texto} · {r.entrega === 'domicilio' ? 'A domicilio' : r.sala} · {fechaHora(r.cerrada_at ?? r.created_at)}
+          </Text>
+        </View>
+        {r.precio_unitario != null ? (
+          <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(r.total ?? r.precio_unitario * r.cantidad)}</Text>
+        ) : null}
+      </View>
+      <View style={{ flexDirection: 'row', gap: 6, marginLeft: 36, flexWrap: 'wrap' }}>
+        <Tipo r={r} />
+        {retirada || r.pago_estado !== 'pendiente' ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4, backgroundColor: FONDOS[pago.tono] }}>
+            <Icono sf={pago.sf} respaldo="" tam={11} color={tonoColor(t, pago.tono)} />
+            <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 12, fontWeight: '800', color: tonoColor(t, pago.tono) }}>{pago.texto}</Text>
+          </View>
+        ) : null}
+      </View>
+    </Tarjeta>
+  );
+}
+
 function Pildora({ e }) {
   return (
     <View style={{ alignSelf: 'flex-start', backgroundColor: e.fondo, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
-      <Text style={{ fontSize: 12, fontWeight: '800', color: e.color }}>{e.texto}</Text>
+      <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 12, fontWeight: '800', color: e.color }}>{e.texto}</Text>
     </View>
   );
 }

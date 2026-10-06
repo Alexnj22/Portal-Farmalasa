@@ -22,6 +22,6 @@ case "$VERCEL_GIT_COMMIT_REF" in
 esac
 git diff --quiet HEAD^ HEAD -- . \
   ':(exclude)apps' ':(exclude)supabase' ':(exclude)scripts' ':(exclude)docs' \
-  ':(exclude)auditoria' ':(exclude)CHANGELOG.md' ':(exclude)src/version.js' \
+  ':(exclude)auditoria' ':(exclude)*.md' ':(exclude)src/version.js' \
   && exit 0
 exit 1

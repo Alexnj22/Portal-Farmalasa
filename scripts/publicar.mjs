@@ -11,7 +11,7 @@ import { execSync } from 'node:child_process';
 
 const sh = (c) => execSync(c, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 const soloVer = process.argv.includes('--ver');
-const FUERA = ['apps', 'supabase', 'scripts', 'docs', 'auditoria', 'CHANGELOG.md', 'src/version.js']
+const FUERA = ['apps', 'supabase', 'scripts', 'docs', 'auditoria', '*.md', 'src/version.js']
   .map((x) => `':(exclude)${x}'`).join(' ');
 
 sh('git fetch -q origin main produccion');

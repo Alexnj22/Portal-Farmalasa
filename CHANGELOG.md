@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.0 — App: promociones y mi perfil
+
+- **App: Promociones como el portal.** Activas / Descuentos / Excedentes / Pagos / Histórico; las tarjetas (activas, por vencer, en borrador, productos abiertos y cuántos bajan el precio) que filtran; filtros de estado, tipo y laboratorio; cada promoción con su vigencia («quedan N días») y sus cifras. Mantener presionada: volver a borrador / activar, duplicar y ver el seguimiento.
+- **Detalle de la promoción**: el seguimiento (unidades, documentos, vendedores, bono; el avance de cada producto contra su lote, el reparto del bono, las barras por sala y «Quién vendió» con caras) y, en las de laboratorio, la matriz (nivel de cada sala, cuánto le falta, cuánto cuesta). **Excedentes**: aprobar o negar con motivo.
+- **Mi perfil**: el plan de vacaciones, cada dato con su ícono, la cuenta regresiva del cumpleaños, la sucursal, el expediente en línea, el historial con búsqueda, tipo y fechas, y el horario de la semana legible.
+- Núcleo: `conteoDePromociones`, `resumenDeSeguimiento`, `vendedoresPorSala`, `estadoDePlan`; el portal los usa.
 ## v2.1231.2 — Sucursales con foto
 
 - **Sucursales con foto:** cada tarjeta lleva la foto arriba con el nombre, la hora de cierre y el estado encima. Mientras cada sucursal no tenga la suya (`branches.settings.foto_app`, ruta en el bucket `ofertas-clientes`, que `app-clientes` firma), se alternan dos fotos de stock de Unsplash (licencia libre) incluidas en la app.

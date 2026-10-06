@@ -22,7 +22,7 @@ import SearchInput from '../../components/common/SearchInput';
 import EmployeeDocumentsList from '../../components/common/EmployeeDocumentsList';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
-import { ausenciaDelDia, cumpleEn, filtrarHistorial, historialDePerfil, proximasVacaciones, semanaDelPerfil, tiempoEnLaEmpresa } from '@nucleo/utils/miPerfil';
+import { ESTADO_DE_PLAN, ausenciaDelDia, cumpleEn, filtrarHistorial, historialDePerfil, proximasVacaciones, semanaDelPerfil, tiempoEnLaEmpresa } from '@nucleo/utils/miPerfil';
 
 const formatDate = (d) => d
     ? fechaTexto(d, { day: '2-digit', month: 'short', year: 'numeric' })
@@ -161,9 +161,9 @@ const EmployeeProfileView = ({ openModal }) => {
     );
 
     const VAC_STATUS = {
-        PLANNED:   { label: 'Planificado', bg: 'bg-chart-1/10',    text: 'text-chart-1-text',    border: 'border-chart-1/30'    , variante: 'chart-1' },
-        CONFIRMED: { label: 'Confirmado',  bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30' , variante: 'success' },
-        TAKEN:     { label: 'Completado',  bg: 'bg-surface-card-hover',  text: 'text-content-3',   border: 'border-divider'   , variante: 'neutral' },
+        PLANNED:   { label: ESTADO_DE_PLAN.PLANNED.label, bg: 'bg-chart-1/10',    text: 'text-chart-1-text',    border: 'border-chart-1/30'    , variante: 'chart-1' },
+        CONFIRMED: { label: ESTADO_DE_PLAN.CONFIRMED.label, bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30' , variante: 'success' },
+        TAKEN:     { label: ESTADO_DE_PLAN.TAKEN.label, bg: 'bg-surface-card-hover',  text: 'text-content-3',   border: 'border-divider'   , variante: 'neutral' },
     };
 
     const headerLeft = (

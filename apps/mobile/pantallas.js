@@ -41,6 +41,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/mantenimiento': true, // frenos de mercadería y candados de módulo, con confirmación
   '/auditoria-del-sistema': true, // la bitácora del sistema; exportar en el portal
   '/notificaciones': true, // el historial: leídas y quitadas, con la misma tarjeta
+  '/ofertas-clientes': true, // ofertas de Puntos Salud y pre-registros
   '/encuesta': true, // resultados del clima: índice, bloques, preguntas y comentarios
   '/nomina': true, // la quincena por sala y la boleta de cada persona; generar, aprobar e imprimir: portal
   '/auditoria-de-tiempos': true, // día por día: marcas, faltas, tardanza y señales; corregir y aprobar: portal

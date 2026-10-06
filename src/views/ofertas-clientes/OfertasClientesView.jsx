@@ -15,7 +15,7 @@ import Switch from '../../components/common/Switch';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import OfertaModal from './OfertaModal';
-import { etiquetaDeDescuento } from '@nucleo/utils/ofertasClientes';
+import { estadoDeOferta, etiquetaDeDescuento } from '@nucleo/utils/ofertasClientes';
 import { LoadingState, EmptyState } from '../../components/common/StateViews';
 import usePestanaEnUrl from '../../plataforma/usePestanaEnUrl';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -42,13 +42,7 @@ import {
  * pestaña existe para los que no coinciden (escribió mal el teléfono, o la
  * ficha ya existía con otro) y para descartar los que no son nadie.
  */
-const estadoDeOferta = (o, hoy) => {
-    if (o.descuento_borrado_at) return { key: 'terminada', label: 'Descuento borrado', variant: 'warning' };
-    if (!o.publicada) return { key: 'borrador', label: 'Sin publicar', variant: 'neutral' };
-    if (o.fin < hoy) return { key: 'terminada', label: 'Terminada', variant: 'neutral' };
-    if (o.inicio > hoy) return { key: 'programada', label: 'Programada', variant: 'info' };
-    return { key: 'vigente', label: 'En la app', variant: 'success' };
-};
+// El estado de una oferta: núcleo (`estadoDeOferta`), el mismo de la app.
 
 export default function OfertasClientesView() {
     const { hasPermission } = useAuth();

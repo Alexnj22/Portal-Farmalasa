@@ -49,12 +49,18 @@ export async function fetchOfertas() {
     return filas.map((f) => ({ ...f, imagen_url: f.imagen_path ? porRuta.get(f.imagen_path) ?? null : null }));
 }
 
-/** Sube la imagen y devuelve su ruta en el bucket. */
+/**
+ * Sube la imagen y devuelve su ruta en el bucket. Recibe un `File` del
+ * navegador, o lo que arma la app: `{ datos: ArrayBuffer, tipo, nombre }`
+ * (en el teléfono no hay `File`, y `crypto.randomUUID` no siempre existe).
+ */
 export async function subirImagen(archivo) {
-    const ext = (archivo.name?.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
-    const ruta = `${new Date().toISOString().slice(0, 7)}/${crypto.randomUUID()}.${ext}`;
-    sinError(await supabase.storage.from(BUCKET).upload(ruta, archivo, {
-        contentType: archivo.type || 'image/jpeg', upsert: false,
+    const nombre = archivo.name ?? archivo.nombre ?? '';
+    const ext = (nombre.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    const id = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const ruta = `${new Date().toISOString().slice(0, 7)}/${id}.${ext}`;
+    sinError(await supabase.storage.from(BUCKET).upload(ruta, archivo.datos ?? archivo, {
+        contentType: archivo.type || archivo.tipo || 'image/jpeg', upsert: false,
     }));
     return ruta;
 }

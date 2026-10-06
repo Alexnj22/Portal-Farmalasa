@@ -21,3 +21,22 @@ export const ACENTOS_DE_OFERTA = [
     { valor: 'rojo', rotulo: 'Rojo', clase: 'bg-danger' },
     { valor: 'violeta', rotulo: 'Violeta', clase: 'bg-brand-purple' },
 ];
+
+/**
+ * En qué estado está una oferta HOY — el mismo rótulo en el portal y en la app.
+ * Una oferta se ve en la app si está publicada y hoy cae entre su inicio y su
+ * fin; una de un descuento borrado en la caja ya no se ve aunque siga publicada.
+ * `tono` es neutro a propósito: cada pantalla lo traduce a su color.
+ */
+export const estadoDeOferta = (o, hoy) => {
+    if (o.descuento_borrado_at) return { key: 'terminada', label: 'Descuento borrado', variant: 'warning' };
+    if (!o.publicada) return { key: 'borrador', label: 'Sin publicar', variant: 'neutral' };
+    if (o.fin < hoy) return { key: 'terminada', label: 'Terminada', variant: 'neutral' };
+    if (o.inicio > hoy) return { key: 'programada', label: 'Programada', variant: 'info' };
+    return { key: 'vigente', label: 'En la app', variant: 'success' };
+};
+
+export const ESTADOS_DE_OFERTA = [
+    { value: 'vigente', label: 'En la app' }, { value: 'programada', label: 'Programada' },
+    { value: 'borrador', label: 'Sin publicar' }, { value: 'terminada', label: 'Terminada' },
+];

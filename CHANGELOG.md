@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1225.0 — App: ofertas para clientes nativas
+
+- **App: «Ofertas para clientes» ya es nativa** (antes abría el portal). La lista muestra cada oferta como la ve el cliente: su foto, la etiqueta en su color y el estado (En la app / Programada / Sin publicar / Terminada), con tarjetas que filtran. Tocar abre el editor; mantener presionada ofrece publicar, retirar y borrar; el «+» crea una.
+- Editor nativo: foto 16:9 desde la galería con recorte, título, etiqueta, descripción, condiciones, color, fechas con el calendario del sistema, salas, exclusiva y publicada. Las ofertas que siguen a un descuento de la caja muestran sus fechas, salas y productos sin dejarlos editar (los pone al día la caja).
+- Pre-registros: buscar la ficha por documento y vincularla, o descartarlo.
+- Núcleo: `estadoDeOferta` (el portal lo importa) y `subirImagen` acepta la foto del teléfono.
 ## v2.1224.1 — App de clientes: el QR del ticket abre la app
 
 - **Enlace universal:** `public/.well-known/apple-app-site-association` declara que `portal.farmasalud.lat/mis-puntos` pertenece a Puntos Salud (`ZZWA3Q7Q35.lat.farmasalud.clientes`), servido como JSON (`vercel.json`). Con la app instalada, el QR del ticket abre la app; sin ella, la web de siempre.

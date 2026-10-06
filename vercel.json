@@ -1,5 +1,5 @@
 {
-  "ignoreCommand": "case \"$VERCEL_GIT_COMMIT_REF\" in sesion/nucleo) exit 1;; sesion/*) exit 0;; *) git diff --quiet HEAD^ HEAD -- . ':(exclude)apps' ':(exclude)supabase' ':(exclude)scripts' ':(exclude)docs' ':(exclude)auditoria' ':(exclude)CHANGELOG.md' ':(exclude)src/version.js' && exit 0 || exit 1;; esac",
+  "ignoreCommand": "bash scripts/vercel-ignorar.sh",
   "rewrites": [
     { "source": "/api/oss-proxy/:path*", "destination": "/api/oss-proxy" },
     { "source": "/reglamento-puntos", "destination": "/reglamento-puntos.html" },

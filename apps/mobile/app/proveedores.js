@@ -4,14 +4,19 @@
 // nombre, alias o NIT; filtra por categoría. Tocar uno abre su ficha
 // (`proveedor/[id]`) con lo que le debemos.
 //
-// Clasificar, la deducibilidad del IVA y vincular con el registro de compras
-// se hacen en el portal.
+// Filtros del portal: categoría, clase contable, vínculo con el registro de
+// compras, deducibilidad del IVA (sin clasificar / propuesta / confirmada) e
+// inactivos; y los mismos órdenes (documentos, última compra, nombre,
+// categoría). La ficha edita lo mismo que el portal. Lo que queda allá: la
+// asignación de categoría en lote y la revisión de deducibilidad por regla.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchProveedorCategorias, fetchProveedoresMaestro } from '@nucleo/data/proveedores';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { CLASE_LABELS } from '@nucleo/utils/proveedorFicha';
+import { ESTADO_CLASIF } from '@nucleo/utils/f07Catalogos';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
@@ -32,6 +37,10 @@ export default function Proveedores() {
   const [texto, setTexto] = useState('');
   const [categoria, setCategoria] = useState('todas');
   const [activos, setActivos] = useState('activos');
+  const [clase, setClase] = useState('todas');
+  const [vinculo, setVinculo] = useState('todos');
+  const [deduc, setDeduc] = useState('todas');
+  const [orden, setOrden] = useState('docs');
   const [mostrar, setMostrar] = useState(POR_PAGINA);
   const [recargando, setRecargando] = useState(false);
 
@@ -43,21 +52,39 @@ export default function Proveedores() {
     } catch (e) { setError(mensajeAmigable(e)); setFilas([]); }
   }, []);
   useEffect(() => { cargar(); }, [cargar]);
-  useEffect(() => { setMostrar(POR_PAGINA); }, [texto, categoria, activos]);
+  useEffect(() => { setMostrar(POR_PAGINA); }, [texto, categoria, activos, clase, vinculo, deduc, orden]);
+  const claseDe = useMemo(() => new Map(categorias.map((c) => [String(c.id), c.clase])), [categorias]);
 
   const q = texto.trim();
   const visibles = useMemo(() => (filas || []).filter((r) => {
     if (activos === 'activos' && r.activo === false) return false;
     if (categoria === 'sin' && r.categoria_id) return false;
     if (categoria !== 'todas' && categoria !== 'sin' && String(r.categoria_id) !== categoria) return false;
+    if (clase !== 'todas' && claseDe.get(String(r.categoria_id)) !== clase) return false;
+    if (vinculo === 'si' && !r.supplier_id) return false;
+    if (vinculo === 'no' && r.supplier_id) return false;
+    if (deduc !== 'todas' && (r.clasificacion_estado || 'pendiente') !== deduc) return false;
     return !q || tokenMatch(q, r.nombre, r.alias, r.nombre_comercial, r.nit, r.nrc);
-  }).sort((a, b) => (Number(b.docs_count) || 0) - (Number(a.docs_count) || 0)), [filas, q, categoria, activos]);
+  }).sort((a, b) => {
+    if (orden === 'nombre') return String(a.alias || a.nombre).localeCompare(String(b.alias || b.nombre), 'es');
+    if (orden === 'categoria') return String(a.categoria_nombre || 'zzz').localeCompare(String(b.categoria_nombre || 'zzz'), 'es');
+    if (orden === 'ultima') return String(b.ultima_vez_visto || '').localeCompare(String(a.ultima_vez_visto || ''));
+    return (Number(b.docs_count) || 0) - (Number(a.docs_count) || 0);
+  }), [filas, q, categoria, activos, clase, vinculo, deduc, orden, claseDe]);
 
   const grupos = [
     { id: 'categoria', titulo: 'Categoría', activa: categoria, porDefecto: 'todas', onCambiar: setCategoria,
       opciones: [{ id: 'todas', label: 'Todas' }, { id: 'sin', label: 'Sin categoría' }, ...categorias.map((c) => ({ id: String(c.id), label: c.nombre }))] },
+    { id: 'clase', titulo: 'Clase', activa: clase, porDefecto: 'todas', onCambiar: setClase,
+      opciones: [{ id: 'todas', label: 'Todas' }, ...Object.entries(CLASE_LABELS).map(([k, v]) => ({ id: k, label: v }))] },
+    { id: 'vinculo', titulo: 'Vínculo', activa: vinculo, porDefecto: 'todos', onCambiar: setVinculo,
+      opciones: [{ id: 'todos', label: 'Todos' }, { id: 'si', label: 'Vinculados' }, { id: 'no', label: 'Sin vincular' }] },
+    { id: 'deduc', titulo: 'Deducibilidad', activa: deduc, porDefecto: 'todas', onCambiar: setDeduc,
+      opciones: [{ id: 'todas', label: 'Todas' }, ...Object.entries(ESTADO_CLASIF).map(([k, v]) => ({ id: k, label: v.label }))] },
     { id: 'activos', titulo: 'Estado', activa: activos, porDefecto: 'activos', onCambiar: setActivos,
-      opciones: [{ id: 'activos', label: 'Activos' }, { id: 'todos', label: 'Todos' }] },
+      opciones: [{ id: 'activos', label: 'Activos' }, { id: 'todos', label: 'Incluir inactivos' }] },
+    { id: 'orden', titulo: 'Ordenar', activa: orden, porDefecto: 'docs', onCambiar: setOrden,
+      opciones: [{ id: 'docs', label: 'Más documentos' }, { id: 'ultima', label: 'Última compra' }, { id: 'nombre', label: 'Nombre' }, { id: 'categoria', label: 'Categoría' }] },
   ];
 
   return (
@@ -81,13 +108,16 @@ export default function Proveedores() {
             style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
             <Vidrio radio={18} interactivo>
               <View style={{ padding: 12, gap: 4 }}>
-                <Text style={{ color: r.activo === false ? colorSistema.texto2 : colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={2}>{r.alias || r.nombre_comercial || r.nombre}</Text>
-                {(r.alias || r.nombre_comercial) && r.nombre ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={1}>{r.nombre}</Text> : null}
-                <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>
+                <Text style={{ color: r.activo === false ? colorSistema.texto2 : colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{r.alias || r.nombre_comercial || r.nombre}</Text>
+                {(r.alias || r.nombre_comercial) && r.nombre ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{r.nombre}</Text> : null}
+                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
                   {[r.nit ? `NIT ${r.nit}` : null, `${Number(r.docs_count || 0).toLocaleString('es-SV')} docs`, r.ultima_vez_visto ? `última ${fechaTexto(r.ultima_vez_visto, { day: 'numeric', month: 'short', year: 'numeric' })}` : null].filter(Boolean).join(' · ')}
                 </Text>
                 <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
                   {r.categoria_nombre ? <Pildora texto={r.categoria_nombre} color={MARCA.azulClaro} /> : <Pildora texto="Sin categoría" color={MARCA.ambar} />}
+                  {r.clasificacion_estado && r.clasificacion_estado !== 'confirmada' ? <Pildora texto={`IVA: ${ESTADO_CLASIF[r.clasificacion_estado]?.label ?? r.clasificacion_estado}`} color={r.clasificacion_estado === 'pendiente' ? MARCA.ambar : MARCA.azulClaro} /> : null}
+                  {r.iva_deducible === false ? <Pildora texto="No deducible" color={colorSistema.texto2} /> : null}
+                  {!r.supplier_id ? <Pildora texto="Sin vincular" color={MARCA.ambar} /> : null}
                   {r.activo === false ? <Pildora texto="Inactivo" color={colorSistema.texto2} /> : null}
                 </View>
               </View>
@@ -98,10 +128,6 @@ export default function Proveedores() {
         {filas && !visibles.length && !error ? (
           <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>{q ? 'Ningún proveedor con esa búsqueda' : 'Sin proveedores'}</Text>
         ) : null}
-        <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-          <BotonGrande texto="Clasificar y deducibilidad (portal)" borde color={colorSistema.texto2}
-            onPress={() => router.push({ pathname: '/portal', params: { ruta: '/proveedores', nombre: 'Proveedores' } })} />
-        </View>
       </ScrollView>
     </>
   );

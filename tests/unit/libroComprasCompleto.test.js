@@ -25,3 +25,18 @@ describe('libroComprasCompleto', () => {
         expect(t.trabado).toBeCloseTo(13, 6);
     });
 });
+
+describe('el CSV del libro completo y del declarable', () => {
+    it('vacío no es cero en percepción, y lleva la fila de totales', async () => {
+        const { csvDelLibroCompleto, csvDelDeclarable } = await import('@nucleo/utils/libroComprasCompleto');
+        const c = csvDelLibroCompleto([{ fecha: '2026-09-03', origen: 'registrada', branch_id: 4, compras_gravadas: 10, credito_fiscal: 1.3, total: 11.3, percepcion_iva: null }], { credito: 1.3, total: 11.3 }, () => 'Salud 1', '2026-09');
+        expect(c.headers).toHaveLength(15);
+        expect(c.rows[0][12]).toBe('');
+        expect(c.rows[0][2]).toBe('Salud 1');
+        expect(c.rows.at(-1)[0]).toBe('TOTALES');
+        const d = csvDelDeclarable([{ computa_credito: false, veces_en_el_libro: 2, motivo: 'Sin sello' }], { credito: 0 }, '2026-09');
+        expect(d.rows[0][9]).toBe('NO');
+        expect(d.rows[0][10]).toBe('SI x2');
+        expect(d.archivo).toBe('libro-compras-declarable_2026-09');
+    });
+});

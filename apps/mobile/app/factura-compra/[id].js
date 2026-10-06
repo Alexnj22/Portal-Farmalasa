@@ -5,8 +5,9 @@
 // proveedor la anuló, sus notas de crédito, y el PDF y el JSON con el visor del
 // teléfono (URL firmada al momento, `openStoredFile`).
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { fetchPurchaseDteDocuments } from '@nucleo/data/facturasCompra';
 import { getSignedFileUrl, openStoredFile } from '@nucleo/utils/storageFiles';
 import { renglonesDelDte, totalesDelDte } from '@nucleo/utils/dteJson';
@@ -27,6 +28,11 @@ const cant = (n) => (n == null ? '' : String(Math.round(n * 1000) / 1000));
 
 export default function FacturaCompra() {
   const { id, fecha } = useLocalSearchParams();
+  const abrirOtro = (d) => {
+    if (!d?.id) return;
+    Haptics.selectionAsync().catch(() => {});
+    router.push({ pathname: '/factura-compra/[id]', params: { id: String(d.id), fecha: d.fecha_emision ?? fecha } });
+  };
   const [doc, setDoc] = useState(() => documentoGuardado(id));
   const [json, setJson] = useState(undefined);   // undefined = cargando · null = no se pudo
   const [error, setError] = useState(null);
@@ -127,10 +133,21 @@ export default function FacturaCompra() {
               {doc.received_at ? <Dato rotulo="Llegó" valor={fechaTexto(doc.received_at, { day: 'numeric', month: 'short', year: 'numeric' })} /> : null}
             </Seccion>
 
+            {/* Las notas de crédito y el documento que una nota corrige se abren
+                al tocarlos, como «Ver original» del portal. */}
+            {doc.documento_relacionado ? (
+              <Seccion titulo="Corrige a">
+                <Pressable onPress={() => abrirOtro(doc.documento_relacionado)} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+                  <Dato primero rotulo={dteTypeLabel(doc.documento_relacionado.tipo_dte)} valor={`${doc.documento_relacionado.codigo_generacion ? `…${String(doc.documento_relacionado.codigo_generacion).slice(-8)}` : 'Ver'}  ›`} />
+                </Pressable>
+              </Seccion>
+            ) : null}
             {(doc.notas_credito || []).length ? (
               <Seccion titulo="Notas de crédito">
                 {doc.notas_credito.map((n, i) => (
-                  <Dato key={n.id ?? i} primero={i === 0} rotulo={n.numero_control ? `…${String(n.numero_control).slice(-8)}` : `Nota ${i + 1}`} valor={formatMoney(n.monto_total)} />
+                  <Pressable key={n.id ?? i} disabled={!n.id} onPress={() => abrirOtro(n)} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+                    <Dato primero={i === 0} rotulo={n.numero_control ? `…${String(n.numero_control).slice(-8)}` : `Nota ${i + 1}`} valor={`− ${formatMoney(n.monto_total)}${n.id ? '  ›' : ''}`} />
+                  </Pressable>
                 ))}
               </Seccion>
             ) : null}

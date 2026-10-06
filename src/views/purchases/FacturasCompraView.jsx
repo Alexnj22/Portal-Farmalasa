@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { tarjetasDeDocumentosDeCompra } from '@nucleo/utils/tarjetasDeCompras';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { useSearchParams } from 'react-router-dom';
@@ -663,26 +664,8 @@ function TabDocumentos({
     // silencio. Las Notas de Crédito (tipo 05) entran en negativo — es la
     // única corrección con signo que trae el propio documento; Notas de
     // Débito y el resto de tipos sí suman en positivo.
-    const cardStats = useMemo(() => {
-        let totalCompras = 0, creditoFiscal = 0, comprasNetas = 0;
-        let invalidadosCount = 0, invalidadosMonto = 0, sinProveedorCount = 0;
-        for (const r of rowsDelTipo) {
-            const monto = parseFloat(r.monto_total) || 0;
-            const iva = parseFloat(r.total_iva) || 0;
-            if (r.invalidado) {
-                invalidadosCount++;
-                invalidadosMonto += monto;
-            } else {
-                const sign = r.tipo_dte === '05' ? -1 : 1;
-                totalCompras += monto;
-                creditoFiscal += sign * iva;
-                comprasNetas += sign * monto;
-            }
-            // H4: solo cuenta como pendiente lo que el sync PUEDE emparejar.
-            if (!r.proveedor_id && dteAdmiteProveedor(r.tipo_dte)) sinProveedorCount++;
-        }
-        return { totalCompras, creditoFiscal, comprasNetas, invalidadosCount, invalidadosMonto, sinProveedorCount };
-    }, [rowsDelTipo]);
+    // La cuenta de las tarjetas: núcleo (`tarjetasDeDocumentosDeCompra`), la misma de la app.
+    const cardStats = useMemo(() => tarjetasDeDocumentosDeCompra(rowsDelTipo), [rowsDelTipo]);
 
     // Los tipos que APARECEN en el período, con su conteo — no el catálogo
     // entero: de los 11 tipos de Hacienda, un mes trae tres o cuatro, y ofrecer

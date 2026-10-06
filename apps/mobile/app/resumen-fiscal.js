@@ -69,6 +69,9 @@ export default function ResumenFiscal() {
               <Kpi icono={aFavor ? 'TrendingDown' : 'TrendingUp'} rotulo="Movimiento de IVA" valor={formatMoney(Math.abs(movimiento))} color={aFavor ? MARCA.verde : MARCA.ambar} apoyo={aFavor ? 'a favor' : 'a pagar'} />
               <Kpi icono="Landmark" rotulo="Pago a cuenta" valor={formatMoney(pac.monto)} color={MARCA.azul} apoyo={`${tasaEnTexto(pac.tasa)} de las ventas`} />
             </FilaDeKpis>
+            <FilaDeKpis>
+              <Kpi icono="CreditCard" rotulo="Anticipo por tarjeta" valor={formatMoney(tar.monto)} color={MARCA.violeta} apoyo={`${tasaEnTexto(tar.tasa)} de lo cobrado con tarjeta · estimado`} />
+            </FilaDeKpis>
             <Seccion titulo="Cómo se llega ahí">
               {lineas.map((l) => (
                 <View key={l.etiqueta} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 6, borderTopWidth: l.fuerte ? 0.5 : 0, borderTopColor: colorSistema.separador, marginTop: l.fuerte ? 4 : 0 }}>

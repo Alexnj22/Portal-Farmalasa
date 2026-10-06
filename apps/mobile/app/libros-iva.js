@@ -5,10 +5,17 @@
 // ventas que se quedaron fuera del libro por no tener sello válido.
 //
 // Los totales salen del núcleo (`librosIva`), los mismos del portal y del ZIP.
-// El detalle renglón por renglón y las descargas siguen en el portal.
+// Tocar un libro abre su detalle renglón por renglón con sus avisos de
+// cumplimiento y «Exportar CSV» (`componentes/fiscal/DetalleDeLibro`). Los
+// permisos son los del portal: cada libro con su `libros_iva_tab_*`, las
+// tarjetas de dinero con `libros_iva_ver_montos` y el CSV con
+// `libros_iva_descargar`. El paquete del mes (ZIP de todas las salas) sigue
+// en el portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Stack } from 'expo-router';
+import * as Haptics from 'expo-haptics';
+import DetalleDeLibro from '../componentes/fiscal/DetalleDeLibro';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
@@ -23,26 +30,31 @@ import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import PasoDeMes from '../componentes/PasoDeMes';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Dato } from '../componentes/formulario/Piezas';
+import { Aviso, Dato } from '../componentes/formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 
 // Cada libro: qué se llama el impuesto en él y si es de ventas o de compras.
+// `tab` es la pestaña del portal que da el permiso (`libros_iva_tab_<tab>`).
 const LIBROS = [
-  { k: 'consumidor', t: 'Ventas a consumidor', imp: 'Débito fiscal', docs: 'documentos' },
-  { k: 'contribuyente', t: 'Ventas a contribuyentes', imp: 'Débito fiscal', docs: 'CCF' },
-  { k: 'compras', t: 'Compras', imp: 'Crédito fiscal', docs: 'documentos' },
-  { k: 'anulados', t: 'Anulados', imp: null, docs: 'documentos' },
-  { k: 'percepcion', t: 'Percepción', imp: 'Percepción', docs: 'documentos', base: 'Sujeto' },
-  { k: 'retencion', t: 'Retención', imp: 'Retención', docs: 'documentos', base: 'Sujeto' },
-  { k: 'retencionVentas', t: 'Retención que nos hicieron', imp: 'Retenido', docs: 'documentos', base: 'Sujeto' },
-  { k: 'renta', t: 'Retención de renta', imp: 'Retención 10%', docs: 'documentos', base: 'Base' },
-  { k: 'notas', t: 'Notas de crédito y débito', imp: 'IVA neto', docs: 'documentos', base: 'Monto neto' },
+  { k: 'consumidor', tab: 'consumidor', t: 'Ventas a consumidor', imp: 'Débito fiscal', docs: 'días' },
+  { k: 'contribuyente', tab: 'contribuyente', t: 'Ventas a contribuyentes', imp: 'Débito fiscal', docs: 'CCF' },
+  { k: 'compras', tab: 'compras', t: 'Compras', imp: 'Crédito fiscal', docs: 'documentos' },
+  { k: 'anulados', tab: 'anulados', t: 'Anulados', imp: null, docs: 'documentos' },
+  { k: 'percepcion', tab: 'percepcion', t: 'Percepción', imp: 'Percepción', docs: 'documentos', base: 'Sujeto' },
+  { k: 'retencion', tab: 'retencion', t: 'Retención', imp: 'Retención', docs: 'documentos', base: 'Sujeto' },
+  { k: 'retencionVentas', tab: 'retencion', t: 'Retención que nos hicieron', imp: 'Retenido', docs: 'documentos', base: 'Sujeto' },
+  { k: 'renta', tab: 'renta', t: 'Retención de renta', imp: 'Retención 10%', docs: 'documentos', base: 'Base' },
+  { k: 'notas', tab: 'notas', t: 'Notas de crédito y débito', imp: 'IVA neto', docs: 'documentos', base: 'Monto neto' },
 ];
 
 export default function LibrosIva() {
-  const { user, getScope } = useAuth();
+  const { user, getScope, hasPermission } = useAuth();
+  const verMontos = hasPermission('libros_iva_ver_montos');
+  const puedeExportar = hasPermission('libros_iva_descargar');
+  const libros = LIBROS.filter((l) => hasPermission(`libros_iva_tab_${l.tab}`));
+  const [abierto, setAbierto] = useState(null);
   const sucursales = useStaffStore((s) => s.branches);
   const todas = getScope?.('libros_iva') === 'ALL';
   const [mes, setMes] = useState(mesSV);
@@ -65,7 +77,9 @@ export default function LibrosIva() {
     const [c, k, a, co, pe, re, nc, rt, fu, rv] = r.map((x) => x.data || []);
     setDatos({ libros: { consumidor: c, contribuyente: k, anulados: a, compras: co, percepcion: pe, retencion: re, notas: nc, renta: rt, retencionVentas: rv }, fuera: fu[0] ?? null });
   }, [mes, sala]);
-  useEffect(() => { setDatos(null); cargar(); }, [cargar]);
+  useEffect(() => { setDatos(null); setAbierto(null); cargar(); }, [cargar]);
+  const nombreSala = useCallback((id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? '', [sucursales]);
+  const sufijo = `${mes}${sala ? `_${nombreSala(sala).replace(/\s+/g, '-')}` : ''}`;
 
   const t = useMemo(() => (datos ? calcularTotales(datos.libros) : null), [datos]);
   const debito = t ? t.consumidor.debito + t.contribuyente.debito : 0;
@@ -83,25 +97,31 @@ export default function LibrosIva() {
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {t == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
           <>
-            <FilaDeKpis>
-              <Kpi icono="TrendingUp" rotulo="Débito fiscal" valor={formatMoney(debito)} color={MARCA.ambar} apoyo="de las ventas" />
-              <Kpi icono="TrendingDown" rotulo="Crédito fiscal" valor={formatMoney(t.compras.debito)} color={MARCA.verde} apoyo={`${t.compras.docs} compras`} />
-            </FilaDeKpis>
+            {verMontos ? (
+              <FilaDeKpis>
+                <Kpi icono="TrendingUp" rotulo="Débito fiscal" valor={formatMoney(debito)} color={MARCA.ambar} apoyo="de las ventas" />
+                <Kpi icono="TrendingDown" rotulo="Crédito fiscal" valor={formatMoney(t.compras.debito)} color={MARCA.verde} apoyo={`${t.compras.docs} compras`} />
+              </FilaDeKpis>
+            ) : null}
+            {!libros.length ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Tu cargo no tiene ningún libro asignado." /></View> : null}
             {(datos.fuera?.documentos ?? 0) > 0 ? (
               <View style={{ marginHorizontal: 16 }}>
                 <Aviso tono="cuidado" texto={`${datos.fuera.documentos} venta(s) por ${formatMoney(datos.fuera.monto)} se quedaron fuera del libro: ${datos.fuera.sin_sello ?? 0} sin sello y ${datos.fuera.sello_invalido ?? 0} con sello inválido.`} />
               </View>
             ) : null}
-            {LIBROS.map((l) => {
+            {libros.map((l) => {
               const x = t[l.k];
               if (!x) return null;
+              const open = abierto === l.k;
               return (
-                <View key={l.k} style={{ marginHorizontal: 16 }}>
-                  <Vidrio radio={18}>
+                <View key={l.k} style={{ gap: 10 }}>
+                <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierto(open ? null : l.k); }}
+                  style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+                  <Vidrio radio={18} interactivo tinte={open ? 'rgba(59,130,246,0.14)' : undefined}>
                     <View style={{ padding: 12, gap: 2 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
                         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{l.t}</Text>
-                        <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${x.docs} ${l.docs}`}</Text>
+                        <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${x.docs} ${l.k === 'consumidor' && !sala ? 'renglones (día · sala)' : l.docs}  ${open ? '▴' : '›'}`}</Text>
                       </View>
                       {x.exentas ? <Dato rotulo="Exentas" valor={formatMoney(x.exentas)} primero /> : null}
                       {l.k !== 'anulados' ? <Dato rotulo={l.base ?? 'Gravadas'} valor={formatMoney(x.gravadas)} primero={!x.exentas} /> : null}
@@ -110,15 +130,13 @@ export default function LibrosIva() {
                       {!l.base ? <Dato rotulo="Total" valor={formatMoney(x.total)} fuerte primero={l.k === 'anulados'} /> : null}
                     </View>
                   </Vidrio>
+                </Pressable>
+                {open ? <DetalleDeLibro tab={l.k} titulo={l.t} libros={datos.libros} totales={t} mes={mes} sufijo={sufijo} nombreSala={nombreSala} puedeExportar={puedeExportar} /> : null}
                 </View>
               );
             })}
           </>
         )}
-        <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-          <BotonGrande texto="Detalle y descargas (portal)" borde color={MARCA.azulClaro}
-            onPress={() => router.push({ pathname: '/portal', params: { ruta: '/libros-iva', nombre: 'Libros de IVA' } })} />
-        </View>
       </ScrollView>
     </>
   );

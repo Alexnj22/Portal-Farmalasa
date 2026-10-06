@@ -53,7 +53,7 @@ export default function Compra() {
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{it.descripcion}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
-                  {[verMontos ? `${formatQty(it.cantidad)} × ${formatMoney(it.precio_unitario)}` : `${formatQty(it.cantidad)} u.`, it.lote && it.lote !== 'GENERICO' ? `lote ${it.lote}` : null, it.fecha_vencimiento ? `vence ${fechaNumerica(it.fecha_vencimiento)}` : null].filter(Boolean).join(' · ')}
+                  {[verMontos ? `${formatQty(it.cantidad)} × ${formatMoney(it.precio_unitario)}` : `${formatQty(it.cantidad)} u.`, it.lote && it.lote !== 'GENERICO' ? `lote ${it.lote}` : null, it.erp_product_id ? `cód. ${it.erp_product_id}` : null, it.linea_num != null ? `línea ${it.linea_num}` : null, it.fecha_vencimiento ? `vence ${fechaNumerica(it.fecha_vencimiento)}` : null].filter(Boolean).join(' · ')}
                 </Text>
               </View>
               {verMontos ? <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{formatMoney(it.total_linea)}</Text> : null}

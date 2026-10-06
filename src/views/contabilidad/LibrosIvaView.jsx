@@ -18,7 +18,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { formatearNit, formatearNrc } from '@nucleo/utils/nitUtils';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { exportCsv, buildCsvText } from '@nucleo/utils/csvExport';
-import { fmtFecha, soloNumero, csvRetencionVentas, CSV_RET_VENTAS_HEADERS,
+import { fmtFecha, soloNumero, csvRetencionVentas, CSV_RET_VENTAS_HEADERS, faltantesDelLibro,
          construirLibro } from '@nucleo/utils/libroIva';
 import {
     fetchAnexoRetencionRenta,
@@ -870,9 +870,10 @@ export default function LibrosIvaView({ openModal }) {
 
     // Cuántos CCF del período van a salir sin NRC. Es el dato que decide si el
     // libro de contribuyentes se puede presentar tal cual.
-    const ccfSinNrc = useMemo(
-        () => contribuyente.filter(r => !r.nrc).length,
-        [contribuyente]);
+    // Los conteos de los avisos: núcleo (`faltantesDelLibro`), los mismos de la app.
+    const faltantes = useMemo(() => faltantesDelLibro({ consumidor, contribuyente, compras, anulados }),
+        [consumidor, contribuyente, compras, anulados]);
+    const ccfSinNrc = faltantes.ccfSinNrc;
 
     // ¿Este período tiene retención de IVA? Decide si la columna existe — sobre
     // el período completo y no sobre la página que se está mirando.
@@ -894,31 +895,19 @@ export default function LibrosIvaView({ openModal }) {
 
     // Lo mismo del lado de compras: sin NRC del proveedor el Art. 86 no se
     // cumple. Hoy son 2 proveedores del ERP a los que les falta el dato.
-    const comprasSinNrc = useMemo(
-        () => compras.filter(r => !r.nrc).length,
-        [compras]);
+    const comprasSinNrc = faltantes.comprasSinNrc;
 
     // Documentos que el sync trajo antes de que existieran las columnas del
     // libro. NULL no es cero: si queda alguno, el libro está incompleto y hay
     // que resincronizar ese período — no presentarlo así.
-    const comprasSinSincronizar = useMemo(
-        () => compras.filter(r => r.documento_numero == null).length,
-        [compras]);
+    const comprasSinSincronizar = faltantes.comprasSinSincronizar;
 
     // El número de control se trae documento por documento y puede quedar a
     // medias: si el origen se cae, lo que falte queda en NULL. Cuenta la
     // pestaña que se está mirando, porque cada libro lo lleva en su propia
     // columna —consumidor en dos, el del primero y el del último del día— y un
     // faltante en uno no dice nada del otro.
-    const sinNumeroControl = useMemo(() => {
-        if (activeTab === 'consumidor')
-            return consumidor.filter(r => !r.numero_control_del || !r.numero_control_al).length;
-        if (activeTab === 'contribuyente')
-            return contribuyente.filter(r => !r.numero_control).length;
-        if (activeTab === 'anulados')
-            return anulados.filter(r => !r.numero_control).length;
-        return 0;
-    }, [activeTab, consumidor, contribuyente, anulados]);
+    const sinNumeroControl = faltantes.sinNumeroControl[activeTab] ?? 0;
 
     const sufijoArchivo = `${mes}${filterBranch ? `_${nombreSucursal(Number(filterBranch)).replace(/\s+/g, '-')}` : ''}`;
 

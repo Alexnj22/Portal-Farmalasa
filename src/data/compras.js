@@ -59,3 +59,20 @@ export function fetchSuppliersBasic() {
 export function fetchUnlinkedPurchaseReceiptsCount() {
     return supabase.from('purchase_receipts').select('id', { count: 'exact', head: true }).is('supplier_id', null);
 }
+
+/**
+ * Los nombres de un puñado de productos, por id. La pestaña Productos de
+ * Compras trae sólo el código (`product_purchase_summary`); la app los pone
+ * con su nombre. `products.id` es ÚNICO, así que tandas de ≤500 ids no pueden
+ * pasar de 500 filas (la regla de las 1000 de CLAUDE.md, patrón A).
+ */
+export async function fetchNombresDeProductos(ids) {
+    const unicos = [...new Set((ids || []).filter((x) => x != null))];
+    const mapa = new Map();
+    for (let i = 0; i < unicos.length; i += 500) {
+        const { data, error } = await supabase.from('products').select('id, nombre').in('id', unicos.slice(i, i + 500));
+        if (error) { console.error('compras: fetchNombresDeProductos', error.message); continue; }
+        for (const p of data || []) mapa.set(String(p.id), p.nombre);
+    }
+    return mapa;
+}

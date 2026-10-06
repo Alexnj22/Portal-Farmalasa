@@ -51,7 +51,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 // existe; esto es la otra mitad: que un fallo se VEA.
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { diasEntre, hoySV, relojSV } from '@nucleo/utils/fecha';
-import { conteoDeObservaciones, esSolventable, metaObs, OBSERVACIONES, observacionesPendientes, sinResolver } from '@nucleo/utils/colasDeFacturacion';
+import { conteoDeObservaciones, esSolventable, metaObs, NON_CASH_TYPES, OBSERVACIONES, diasQuedanDelMes, observacionesPendientes, resumenDeRegularizacion, resumenDeRegularizarUna, sinResolver } from '@nucleo/utils/colasDeFacturacion';
 function avisarFalloAlSolventar(error, contexto) {
     console.error(`${contexto}: insert resolution failed:`, error.message);
     useToastStore.getState().showToast(
@@ -73,7 +73,7 @@ const Monto = ({ v }) => {
     const { hasPermission } = useAuth();
     return hasPermission('facturacion_ver_montos') ? fmt(v) : '—';
 };
-const NON_CASH_TYPES = ['tarjeta', 'credito', 'transferencia', 'bitcoin', 'cheque'];
+// NON_CASH_TYPES: núcleo (`colasDeFacturacion`).
 const IMMEDIATE_TIPOS = ['tarjeta', 'transferencia', 'cheque', 'bitcoin'];
 const CREDIT_TIPOS    = ['credito'];
 
@@ -525,25 +525,10 @@ async function solventarTodas({ filterBranch, bolsa, onDone }) {
         useToastStore.getState().showToast('No se pudo completar', mensajeAmigable(r.error), 'error');
         return;
     }
-    // Se dice lo que pasó, no "listo": una corrida que resolvió 3 de 8 no es
-    // un éxito, y una que resolvió 0 porque no había nada tampoco es un fallo.
-    const partes = [`${r.resueltas} de ${r.revisadas}`];
-    // Que hubo que TOCAR la ficha del cliente no es un detalle interno: es
-    // la diferencia entre «entró» y «entró porque le arreglamos el dato», y
-    // sin decirlo el cambio en la ficha ocurre sin que nadie se entere.
-    if (r.fichas_corregidas) partes.push(`${r.fichas_corregidas} ficha${r.fichas_corregidas !== 1 ? 's' : ''} de cliente corregida${r.fichas_corregidas !== 1 ? 's' : ''}`);
-    if (r.con_observaciones) partes.push(`${r.con_observaciones} con observaciones de Hacienda`);
-    if (r.fallidas)          partes.push(`${r.fallidas} sin resolver`);
-    // Si quedó cola hay que decirlo. Callarla es lo que hace que un tope se
-    // lea como "ya está todo".
-    if (r.restantes > 0)     partes.push(`quedan ${r.restantes} para la próxima tanda`);
-    useToastStore.getState().showToast(
-        r.revisadas === 0 ? 'No había nada pendiente'
-          : r.restantes > 0 ? 'Tanda enviada a Hacienda'
-          : 'Trámite enviado a Hacienda',
-        partes.join(' · '),
-        (r.fallidas || r.restantes > 0) ? 'warning' : 'success',
-    );
+    // Qué se dice, con sus razones: `resumenDeRegularizacion` (núcleo, lo
+    // mismo que la app).
+    const { titulo, texto, tono } = resumenDeRegularizacion(r);
+    useToastStore.getState().showToast(titulo, texto, tono);
     onDone?.();
 }
 
@@ -1119,7 +1104,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
 
     const now      = relojSV();
     const todayStr = now.toISOString().slice(0, 10);
-    const daysLeft = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate();
+    const daysLeft = diasQuedanDelMes(now);
 
     const getBranch   = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
     const copyErpId   = (erpId) => {
@@ -1287,21 +1272,10 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
             useToastStore.getState().showToast('No se pudo enviar', mensajeAmigable(res.error), 'error');
             return;
         }
-        if (res.resueltas > 0) {
-            const partes = [r.correlativo];
-            if (res.fichas_corregidas) partes.push('se corrigió la ficha del cliente');
-            if (res.con_observaciones) partes.push('Hacienda la recibió con observaciones');
-            useToastStore.getState().showToast('Enviado a Hacienda', partes.join(' · '), 'success');
-        } else {
-            // El motivo de Hacienda, palabra por palabra. Un «no se pudo» sin el
-            // texto obliga a ir a buscarlo a otra pantalla.
-            const fallo = (res.detalle || []).find(d => !d.ok);
-            useToastStore.getState().showToast(
-                'Hacienda no la aceptó',
-                fallo?.error || 'No quedó registrado el motivo.',
-                'warning',
-            );
-        }
+        // El texto sale del núcleo (`resumenDeRegularizarUna`): el motivo de
+        // Hacienda, palabra por palabra, si no entró.
+        const { titulo, texto, tono } = resumenDeRegularizarUna(res, r.correlativo);
+        useToastStore.getState().showToast(titulo, texto, tono);
         loadData();
     };
 

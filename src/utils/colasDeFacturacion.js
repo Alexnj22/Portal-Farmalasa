@@ -65,3 +65,51 @@ export function sinResolver(rows, resoluciones, clave = 'invoice_id') {
     const hechas = new Set((resoluciones || []).map((x) => x[clave]));
     return (rows || []).filter((r) => !hechas.has(r.id));
 }
+
+/* ── Lo que la pantalla de Facturación decía dentro de la vista del portal ──
+ * Mudado el 2026-10-06 para que la app diga exactamente lo mismo. */
+
+/** Las formas de pago que no pasan por la caja y se confirman a mano. */
+export const NON_CASH_TYPES = ['tarjeta', 'credito', 'transferencia', 'bitcoin', 'cheque'];
+
+/** Días que le quedan al mes para mandar a Hacienda (0 = último día). */
+export function diasQuedanDelMes(ahora) {
+    return new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0).getDate() - ahora.getDate();
+}
+
+/** El tono de esos días: rojo con dos o menos, ámbar hasta cinco. */
+export const tonoDeDiasQuedan = (d) => (d <= 2 ? 'danger' : d <= 5 ? 'warning' : 'success');
+
+/**
+ * Qué decir después de un envío a Hacienda por lote (`regularizarDte`). Se
+ * dice lo que pasó y no «listo»: una corrida que resolvió 3 de 8 no es un
+ * éxito, una que resolvió 0 porque no había nada tampoco es un fallo, y si
+ * quedó cola hay que decirlo — callarla es lo que hace que un tope se lea como
+ * «ya está todo».
+ */
+export function resumenDeRegularizacion(r) {
+    const partes = [`${r.resueltas} de ${r.revisadas}`];
+    if (r.fichas_corregidas) partes.push(`${r.fichas_corregidas} ficha${r.fichas_corregidas !== 1 ? 's' : ''} de cliente corregida${r.fichas_corregidas !== 1 ? 's' : ''}`);
+    if (r.con_observaciones) partes.push(`${r.con_observaciones} con observaciones de Hacienda`);
+    if (r.fallidas)          partes.push(`${r.fallidas} sin resolver`);
+    if (r.restantes > 0)     partes.push(`quedan ${r.restantes} para la próxima tanda`);
+    return {
+        titulo: r.revisadas === 0 ? 'No había nada pendiente'
+              : r.restantes > 0 ? 'Tanda enviada a Hacienda'
+              : 'Trámite enviado a Hacienda',
+        texto: partes.join(' · '),
+        tono: (r.fallidas || r.restantes > 0) ? 'warning' : 'success',
+    };
+}
+
+/** Lo mismo para UNA factura: el motivo de Hacienda palabra por palabra si no entró. */
+export function resumenDeRegularizarUna(res, correlativo) {
+    if (res.resueltas > 0) {
+        const partes = [correlativo];
+        if (res.fichas_corregidas) partes.push('se corrigió la ficha del cliente');
+        if (res.con_observaciones) partes.push('Hacienda la recibió con observaciones');
+        return { titulo: 'Enviado a Hacienda', texto: partes.filter(Boolean).join(' · '), tono: 'success' };
+    }
+    const fallo = (res.detalle || []).find((d) => !d.ok);
+    return { titulo: 'Hacienda no la aceptó', texto: fallo?.error || 'No quedó registrado el motivo.', tono: 'warning' };
+}

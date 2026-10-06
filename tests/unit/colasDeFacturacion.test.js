@@ -22,3 +22,28 @@ describe('colasDeFacturacion', () => {
         expect(sinResolver(null, null)).toEqual([]);
     });
 });
+
+describe('lo que dice Facturación tras enviar a Hacienda', () => {
+    it('cuenta lo que pasó y avisa la cola', async () => {
+        const { resumenDeRegularizacion } = await import('@nucleo/utils/colasDeFacturacion');
+        const r = resumenDeRegularizacion({ resueltas: 3, revisadas: 8, fallidas: 5, restantes: 2, fichas_corregidas: 1 });
+        expect(r.titulo).toBe('Tanda enviada a Hacienda');
+        expect(r.texto).toContain('3 de 8');
+        expect(r.texto).toContain('1 ficha de cliente corregida');
+        expect(r.texto).toContain('quedan 2');
+        expect(r.tono).toBe('warning');
+        expect(resumenDeRegularizacion({ resueltas: 0, revisadas: 0 }).titulo).toBe('No había nada pendiente');
+    });
+    it('una sola: el motivo de Hacienda si no entró', async () => {
+        const { resumenDeRegularizarUna } = await import('@nucleo/utils/colasDeFacturacion');
+        expect(resumenDeRegularizarUna({ resueltas: 0, detalle: [{ ok: false, error: 'NRC inválido' }] }, 'CCF 9').texto).toBe('NRC inválido');
+        expect(resumenDeRegularizarUna({ resueltas: 1 }, 'CCF 9').titulo).toBe('Enviado a Hacienda');
+    });
+    it('días que quedan del mes', async () => {
+        const { diasQuedanDelMes, tonoDeDiasQuedan } = await import('@nucleo/utils/colasDeFacturacion');
+        expect(diasQuedanDelMes(new Date(2026, 9, 31))).toBe(0);
+        expect(diasQuedanDelMes(new Date(2026, 9, 26))).toBe(5);
+        expect(tonoDeDiasQuedan(2)).toBe('danger');
+        expect(tonoDeDiasQuedan(5)).toBe('warning');
+    });
+});

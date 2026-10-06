@@ -8,7 +8,9 @@
 //     cheques» —, con la misma función y el mismo motivo del portal.
 //
 // Registrar un pago (repartirlo factura por factura) y las condiciones de
-// crédito se hacen en el portal. Los totales salen del núcleo.
+// crédito se hacen en la ficha del proveedor (`cxp-proveedor/[nit]`), como el
+// panel del portal. El período («todo» / desde junio 2026) va en el menú de
+// filtros. Los totales salen del núcleo.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
@@ -21,6 +23,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import Segmentos from '../componentes/Segmentos';
+import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
@@ -42,12 +45,13 @@ export default function CuentasPorPagar() {
   const [error, setError] = useState(null);
   const [texto, setTexto] = useState('');
   const [recargando, setRecargando] = useState(false);
+  const [desde, setDesde] = useState('todo');
 
   const cargar = useCallback(async () => {
-    const [a, b] = await Promise.all([fetchCuentasPorPagar(null), fetchPagos(null, 180)]);
+    const [a, b] = await Promise.all([fetchCuentasPorPagar(desde === 'todo' ? null : desde), fetchPagos(null, 180)]);
     setFilas(a.filas); setPagos(b.filas);
     setError(a.error?.message || b.error?.message || null);
-  }, []);
+  }, [desde]);
   useEffect(() => { cargar(); }, [cargar]);
 
   const t = useMemo(() => totalesCuentasPorPagar(filas), [filas]);
@@ -56,6 +60,12 @@ export default function CuentasPorPagar() {
     .sort((a, b) => Number(b.vencido || 0) - Number(a.vencido || 0) || Number(b.saldo || 0) - Number(a.saldo || 0)), [filas, q]);
   const pagosVisibles = useMemo(() => (pagos || []).filter((p) => !q || tokenMatch(q, p.proveedor, p.referencia)), [pagos, q]);
   const pendientes = (pagos || []).filter((p) => p.estado === 'pendiente');
+
+  // El mismo corte de período que el portal (`PERIODOS`).
+  const grupos = [{
+    id: 'desde', titulo: 'Período', activa: desde, porDefecto: 'todo', onCambiar: setDesde,
+    opciones: [{ id: 'todo', label: 'Todo lo que se debe' }, { id: '2026-06-01', label: 'Desde junio 2026' }],
+  }];
 
   const decidir = (accion, p) => {
     const aprobar = accion === 'aprobar';
@@ -82,6 +92,7 @@ export default function CuentasPorPagar() {
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
+      <MenuDeFiltros grupos={grupos} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
@@ -89,15 +100,26 @@ export default function CuentasPorPagar() {
           { id: 'proveedores', label: 'Por proveedor' },
           { id: 'pagos', label: pendientes.length ? `Pagos · ${pendientes.length}` : 'Pagos' },
         ]} />
+        <FiltrosActivos grupos={grupos} />
         {filas ? (
-          <FilaDeKpis>
-            <Kpi icono="Wallet" rotulo="Debemos" valor={formatMoney(t.saldo)} color={MARCA.violeta} apoyo={`${t.proveedores} proveedores · ${formatMoney(t.tramite)} en trámite`} />
-            <Kpi icono="AlertTriangle" rotulo="Vencido" valor={formatMoney(t.vencido)} color={t.vencido > 0 ? MARCA.ambar : MARCA.verde} apoyo={`${t.conVencido} proveedores`} />
-          </FilaDeKpis>
+          <>
+            <FilaDeKpis>
+              <Kpi icono="Wallet" rotulo="Debemos" valor={formatMoney(t.saldo)} color={MARCA.violeta} apoyo={`${t.proveedores} proveedores`} />
+              <Kpi icono="AlertTriangle" rotulo="Vencido" valor={formatMoney(t.vencido)} color={t.vencido > 0 ? MARCA.ambar : MARCA.verde} pide={t.vencido > 0} apoyo={`${t.conVencido} proveedores`} />
+            </FilaDeKpis>
+            <FilaDeKpis>
+              <Kpi icono="Clock" rotulo="En trámite" valor={formatMoney(t.tramite)} color={MARCA.azulClaro}
+                apoyo={pendientes.length ? `${pendientes.length} pago${pendientes.length === 1 ? '' : 's'} sin aprobar` : 'nada sin aprobar'}
+                onPress={pendientes.length ? () => setTab('pagos') : undefined} />
+            </FilaDeKpis>
+          </>
+        ) : null}
+        {tab === 'proveedores' && pendientes.length ? (
+          <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${pendientes.length} pago${pendientes.length === 1 ? '' : 's'} esperan la aprobación de Gerencia: su monto está en trámite y no baja la deuda todavía.`} /></View>
         ) : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {filas && t.sinPlazo > 0 && tab === 'proveedores' ? (
-          <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${t.sinPlazo} proveedor(es) sin días de crédito: sus facturas no pueden decir si están vencidas. Se definen en el portal.`} /></View>
+          <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${t.sinPlazo} proveedor(es) sin días de crédito: sus facturas no pueden decir si están vencidas. Se definen tocando al proveedor.`} /></View>
         ) : null}
         {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : tab === 'proveedores' ? provVisibles.map((f) => (
           <Pressable key={f.emisor_nit} onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/cxp-proveedor/[nit]', params: { nit: f.emisor_nit, nombre: f.proveedor } }); }}
@@ -105,7 +127,7 @@ export default function CuentasPorPagar() {
             <Vidrio radio={18} interactivo tinte={Number(f.vencido) > 0 ? 'rgba(247,144,9,0.10)' : undefined}>
               <View style={{ padding: 12, gap: 4 }}>
                 <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={2}>{f.proveedor}</Text>
+                  <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{f.proveedor}</Text>
                   <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '800' }}>{formatMoney(f.saldo)}</Text>
                 </View>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
@@ -127,7 +149,7 @@ export default function CuentasPorPagar() {
               <Vidrio radio={18} tinte={p.estado === 'pendiente' ? 'rgba(247,144,9,0.10)' : undefined}>
                 <View style={{ padding: 12, gap: 6 }}>
                   <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-                    <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={2}>{p.proveedor}</Text>
+                    <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{p.proveedor}</Text>
                     <Text style={{ color: p.estado === 'anulado' ? colorSistema.texto2 : colorSistema.texto, fontSize: 17, fontWeight: '800', textDecorationLine: p.estado === 'anulado' ? 'line-through' : 'none' }}>{formatMoney(p.monto)}</Text>
                   </View>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
@@ -153,12 +175,6 @@ export default function CuentasPorPagar() {
           <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>
             {q ? 'Nada con esa búsqueda' : tab === 'proveedores' ? 'No le debemos nada a nadie' : 'Sin pagos en los últimos seis meses'}
           </Text>
-        ) : null}
-        {hasPermission('cuentas_por_pagar', 'can_edit') ? (
-          <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-            <BotonGrande texto="Registrar un pago (portal)" borde color={MARCA.azulClaro}
-              onPress={() => router.push({ pathname: '/portal', params: { ruta: '/cuentas-por-pagar', nombre: 'Cuentas por pagar' } })} />
-          </View>
         ) : null}
       </ScrollView>
     </>

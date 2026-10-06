@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1228.1 — App: facturación, cuentas por pagar y libros fiscales
+
+- **App: Facturación como el portal.** Las cinco colas (cada una con su permiso) con sus tarjetas: Pendientes / CCF urgentes / Días restantes, Facturas / Más antigua, Pendientes / Solventadas. CCF primero y en rojo, filtro por código de observación, páginas de 40 (ya no se corta en 150). **Solventar** una (con el motivo de Hacienda si no entró), **Marcar como resuelta** con nota, **Solventar todas** con confirmación. **No efectivo**: confirmar el pago con nota y foto del comprobante. Saltos en lectura.
+- **Cuentas por pagar**: «En trámite», condiciones de crédito y **registrar un pago** repartido por factura (forma, referencia, fecha) desde la ficha del proveedor, con tope en el saldo menos lo que está en trámite.
+- **Facturas de compra**: tarjetas Total / Crédito IVA / Compras netas / Invalidados / Sin proveedor (con su permiso de montos), insignias, órdenes y notas de crédito tocables. **Compras**: pestaña Productos, filtro por proveedor, aviso de facturas sin proveedor. **Proveedores**: ficha completa con llamar / WhatsApp / correo, crédito, régimen, deducibilidad y edición. **Laboratorios**: la política de vencimiento.
+- **Libros de IVA**: el detalle de cada libro renglón por renglón con los avisos de cumplimiento (NRC, número de control) y **Exportar CSV** (el mismo archivo del portal). **Cierre de período**: Cerrar / Reabrir con motivo y «El remanente, mes a mes». **Libro de compras completo**: tarjetas, NRC, gravadas, CSV, sin corte.
+- **Pestañas que no caben**: el control segmentado del sistema corta lo que no cabe («Haciend…»). Ahora, si el rótulo más largo no entra, pasa solo a píldoras que se desplazan de lado. Vale para toda la app.
+- Núcleo: `colasDeFacturacion`, `proveedorFicha`, `tarjetasDeCompras`, `faltantesDelLibro`, CSV del libro completo; el portal los usa.
+
 ## v2.1228.0 — App: ficha de producto, Min·Máx y traslados
 
 - **App: la ficha de producto, como el portal.** Foto grande (tomar o cambiar), aviso de pérdida / margen bajo, cada presentación con su costo, factor, precios y margen (el precio que cambió, tachado con su fecha), Devolutivo/ND, categoría (con buscar y crear), principios activos, ubicaciones y los historiales de compras, precios y cambios. Costos y márgenes con su permiso.

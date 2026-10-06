@@ -74,7 +74,8 @@
       ],
       "./plugins/ciclo-por-escenas",
       "@bacons/apple-targets",
-      "@sentry/react-native"
+      "@sentry/react-native",
+      "expo-image"
     ],
     "owner": "farmasalud",
     "extra": {

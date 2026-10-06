@@ -336,3 +336,56 @@ export function estadoDescuento(d, hoy = hoySV()) {
     return { clave: 'activos', rotulo: 'Descontando', variant: 'success' };
 }
 
+
+/* ── Lo que la app y el portal cuentan igual (2026-10-06) ────────────────────
+   Vivían dentro de los componentes del portal (`PromocionesView`,
+   `TabSeguimiento`); la app los necesita idénticos — una copia se separa en
+   silencio y las dos pantallas terminan diciendo números distintos. */
+
+/** Las tarjetas de Activas sobre las promociones vivas que se están mirando. */
+export function conteoDePromociones(vivas = []) {
+    const porEstado = (clave) => vivas.filter((p) => estadoVisible(p).clave === clave).length;
+    return {
+        activas: porEstado('activa'),
+        porVencer: porEstado('por_vencer'),
+        borrador: porEstado('borrador'),
+        abiertos: vivas.reduce((a, p) => a + (Number(p.abiertos) || 0), 0),
+        bajanPrecio: vivas.filter((p) => Number(p.descuentos) > 0).length,
+    };
+}
+
+/** El resumen de Seguimiento de una promoción por producto (`get_promocion`). */
+export function resumenDeSeguimiento(detalle) {
+    const renglones = Array.isArray(detalle?.renglones) ? detalle.renglones : [];
+    const vendedores = Array.isArray(detalle?.vendedores) ? detalle.vendedores : [];
+    return {
+        unidades: renglones.reduce((a, r) => a + (Number(r.vendido_base) || 0), 0),
+        documentos: renglones.reduce((a, r) => a + (Number(r.documentos) || 0), 0),
+        vendedores: vendedores.length,
+        bono: vendedores.reduce((a, v) => a + (Number(v.bono) || 0), 0),
+        conBono: renglones.some((r) => r.tiene_bono),
+    };
+}
+
+/**
+ * «Quién vendió», agrupado por sala y ordenado por unidades. El bono de quien
+ * vendió con un código que no da con nadie (`sin_dueno`) NO suma a la sala:
+ * no se paga ni se reparte entre los demás.
+ */
+export function vendedoresPorSala(vendedores = []) {
+    const mapa = new Map();
+    for (const v of vendedores) {
+        const sala = v.sala || 'Sin sala';
+        if (!mapa.has(sala)) mapa.set(sala, { sala, gente: [], unidades: 0, bono: 0 });
+        const g = mapa.get(sala);
+        g.gente.push(v);
+        g.unidades += Number(v.unidades) || 0;
+        g.bono += v.sin_dueno ? 0 : Number(v.bono) || 0;
+    }
+    return [...mapa.values()]
+        .map((g) => ({ ...g, gente: g.gente.sort((a, b) => (b.unidades || 0) - (a.unidades || 0)) }))
+        .sort((a, b) => a.sala.localeCompare(b.sala, 'es', { numeric: true }));
+}
+
+/** El tono del avance contra el lote: completo, cerca (≥80%) o en curso. */
+export const tonoDeAvance = (pct) => (pct >= 100 ? 'success' : pct >= 80 ? 'warning' : 'info');

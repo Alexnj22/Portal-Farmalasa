@@ -11,13 +11,14 @@
 //     se ve el detalle de ese mes.
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Tarjeta, Texto, Titulo } from './ui';
 import { Latido, NumeroAnimado } from './animacion';
 import { colorSistema } from './sistema';
 import { diasHasta, dolares, entero, fecha } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
+import Icono from './Icono';
 
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const VENTANA_DIAS = 90;
@@ -89,7 +90,7 @@ export default function Vencimientos({ vencimientos }) {
       ) : (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: suave(t.color.verde, 0.3), alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 18, fontWeight: '900', color: t.color.verdeTexto }}>✓</Text>
+            <Icono sf="checkmark" respaldo="✓" tam={17} color={t.color.verdeTexto} />
           </View>
           <View style={{ flex: 1 }}>
             <Texto estilo={{ fontWeight: '700' }}>Nada vence en los próximos 3 meses</Texto>
@@ -126,7 +127,7 @@ function Barra({ barra, indice, maximo, elegida, color, alTocar }) {
   const alto = useSharedValue(0);
   const realce = useSharedValue(0);
   useEffect(() => {
-    alto.value = withDelay(150 + indice * 90, withSpring(barra.puntos / maximo, { damping: 13, stiffness: 120 }));
+    alto.value = withDelay(150 + indice * 90, withTiming(barra.puntos / maximo, { duration: 500, easing: Easing.out(Easing.cubic) }));
   }, [barra.puntos, maximo, indice, alto]);
   useEffect(() => { realce.value = withTiming(elegida ? 1 : 0, { duration: 180 }); }, [elegida, realce]);
   const estiloBarra = useAnimatedStyle(() => ({

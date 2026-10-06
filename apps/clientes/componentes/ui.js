@@ -61,7 +61,7 @@ export function Boton({ children, alTocar, tipo = 'principal', cargando = false,
   const variante = tipo === 'principal' ? 'filled' : tipo === 'peligro' ? 'text' : 'outlined';
   return (
     <BotonNativo etiqueta={cargando ? 'Un momento…' : String(children)} alTocar={alTocar} variante={variante}
-      deshabilitado={deshabilitado || cargando} color={tipo === 'peligro' ? '#FF3B30' : t.color.magenta} />
+      deshabilitado={deshabilitado || cargando} color={tipo === 'peligro' ? colorSistema.rojo : t.color.magenta} />
   );
 }
 

@@ -21,6 +21,8 @@ export const useOfertas = create((set, get) => ({
     const r = useSesion.getState().token
       ? await useSesion.getState().pedir('ofertas')
       : await llamar('ofertas_publicas');
+    // Si falla y ya había ofertas de este mismo «quién mira», se conservan.
+    if (!r?.ok && datos?.ok && de === ahora) return datos;
     set({ datos: r, de: ahora, cargadoAt: r?.ok ? Date.now() : 0 });
     return r;
   },

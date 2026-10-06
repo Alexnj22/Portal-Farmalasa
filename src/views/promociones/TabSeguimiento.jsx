@@ -14,7 +14,7 @@ import MatrizLaboratorio from './MatrizLaboratorio';
 import TituloSeccion from './TituloSeccion';
 import {
     fmtMoneda, fmtUnidades, porLaboratorio, rotuloPresentacion, MOTIVO_CIERRE,
-    esLaboratorio, estadoVisible, fmtVigencia, rotuloMes, mensajeDeCarga,
+    esLaboratorio, estadoVisible, fmtVigencia, rotuloMes, mensajeDeCarga, vendedoresPorSala,
 } from '@nucleo/utils/promocionesUtils';
 
 /**
@@ -74,7 +74,7 @@ export default function TabSeguimiento({
     const vendedores = useMemo(() => detalle?.vendedores ?? [], [detalle]);
     const sinDueno   = detalle?.sin_dueno;
     const grupos     = useMemo(() => porLaboratorio(renglones), [renglones]);
-    const salasVend  = useMemo(() => porSala(vendedores), [vendedores]);
+    const salasVend  = useMemo(() => vendedoresPorSala(vendedores), [vendedores]);
     const conBono    = useMemo(() => renglones.some((r) => r.tiene_bono), [renglones]);
 
     /* Las tarjetas de arriba las pinta la vista, pero los números salen de ACÁ:
@@ -370,20 +370,7 @@ function BarrasPorSala({ reparto }) {
 
 /* Los vendedores, agrupados por sala y ordenados por nombre de sala —el mismo
  * orden que el resto del portal—; adentro, quien más vendió primero. */
-function porSala(vendedores) {
-    const mapa = new Map();
-    for (const v of vendedores) {
-        const sala = v.sala || 'Sin sala';
-        if (!mapa.has(sala)) mapa.set(sala, { sala, gente: [], unidades: 0, bono: 0 });
-        const g = mapa.get(sala);
-        g.gente.push(v);
-        g.unidades += Number(v.unidades) || 0;
-        g.bono += v.sin_dueno ? 0 : Number(v.bono) || 0;
-    }
-    return [...mapa.values()]
-        .map((g) => ({ ...g, gente: g.gente.sort((a, b) => (b.unidades || 0) - (a.unidades || 0)) }))
-        .sort((a, b) => a.sala.localeCompare(b.sala, 'es', { numeric: true }));
-}
+// «Quién vendió» por sala: núcleo (`vendedoresPorSala`), el mismo de la app.
 
 function SeccionSala({ g, conBono }) {
     const mayor = Math.max(1, ...g.gente.map((v) => Number(v.unidades) || 0));

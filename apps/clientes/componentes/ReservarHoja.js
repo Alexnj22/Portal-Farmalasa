@@ -14,22 +14,27 @@ import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colorSistema } from './sistema';
+import BotonNativo from './BotonNativo';
+import Icono from './Icono';
 import { useSesion } from '../lib/sesion';
+import { useBloqueo } from '../lib/bloqueo';
 import { dolares } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
 
 const CLAVE_TERMINOS = 'puntos_salud_terminos_reserva';
-const NIVEL = {
-  hay: { texto: 'Hay', color: '#1E7B34', fondo: 'rgba(52,199,89,0.16)' },
-  pocas: { texto: 'Quedan pocas', color: '#B35C00', fondo: 'rgba(255,159,10,0.18)' },
-  sin: { texto: 'Te avisamos cuando llegue', color: '#6B6475', fondo: 'rgba(120,110,130,0.14)' },
-};
+// Los colores salen del tema (cambian con el modo oscuro).
+const nivelDe = (t, n) => ({
+  hay: { texto: 'Hay', color: t.color.exitoTexto, fondo: 'rgba(52,199,89,0.16)' },
+  pocas: { texto: 'Quedan pocas', color: t.color.avisoTexto, fondo: 'rgba(255,159,10,0.18)' },
+  sin: { texto: 'Te avisamos cuando llegue', color: colorSistema.texto2, fondo: 'rgba(120,110,130,0.14)' },
+}[n] ?? { texto: 'Te avisamos cuando llegue', color: colorSistema.texto2, fondo: 'rgba(120,110,130,0.14)' });
 
 export default function ReservarHoja({ oferta, producto, alCerrar }) {
   const t = useTema();
   const ins = useSafeAreaInsets();
   const pedir = useSesion((s) => s.pedir);
   const [paso, setPaso] = useState('cargando');
+  const bloqueada = useBloqueo((s) => s.bloqueada);
   const [terminos, setTerminos] = useState(null);
   const [sucursales, setSucursales] = useState([]);
   const [sala, setSala] = useState(null);
@@ -40,8 +45,10 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
   const fondo = t.oscuro ? '#121016' : '#F5F4F8';
   const superficie = t.oscuro ? '#1E1B24' : '#FFFFFF';
 
+  const [intento, setIntento] = useState(0);
   useEffect(() => {
     (async () => {
+      setPaso('cargando');
       const [term, ex, aceptada] = await Promise.all([
         pedir('reserva_terminos'),
         pedir('reserva_existencias', { producto_id: producto.id }),
@@ -51,9 +58,13 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
       const lista = (ex?.sucursales ?? []).filter((s) => !oferta.salas || oferta.salas.includes(s.sala));
       setSucursales(lista);
       setSala(lista.find((s) => s.nivel !== 'sin')?.branch_id ?? lista[0]?.branch_id ?? null);
-      setPaso(term?.ok && aceptada !== term.version ? 'terminos' : 'elegir');
+      // Sin condiciones o sin sucursales no se puede reservar: se dice y se
+      // ofrece reintentar (antes la hoja podía quedar en blanco).
+      if (!term?.ok || !ex?.ok) { setError((!ex?.ok ? ex?.mensaje : term?.mensaje) ?? 'Revisa tu conexión.'); setPaso('error'); return; }
+      setError(null);
+      setPaso(aceptada !== term.version ? 'terminos' : 'elegir');
     })();
-  }, [pedir, producto.id, oferta.salas]);
+  }, [pedir, producto.id, oferta.salas, intento]);
 
   const aceptar = async () => {
     Haptics.selectionAsync().catch(() => {});
@@ -73,11 +84,12 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
       setHecha(r);
       setPaso('hecha');
     } else {
-      if (r?.motivo === 'terminos') setPaso('terminos');
+      if (r?.motivo === 'terminos' && terminos) setPaso('terminos');
       setError(r?.mensaje ?? 'No se pudo reservar. Intenta de nuevo.');
     }
   };
   const elegida = sucursales.find((s) => s.branch_id === sala);
+  if (bloqueada) return null;
 
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={alCerrar}>
@@ -92,6 +104,14 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
         </View>
 
         {paso === 'cargando' ? <ActivityIndicator style={{ marginTop: 40 }} /> : null}
+
+        {paso === 'error' ? (
+          <View style={{ padding: 28, gap: 14, alignItems: 'center' }}>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: colorSistema.texto }}>No se pudo preparar la reserva</Text>
+            <Text style={{ fontSize: 15, color: colorSistema.texto2, textAlign: 'center' }}>{error}</Text>
+            <View style={{ alignSelf: 'stretch' }}><BotonNativo etiqueta="Reintentar" alTocar={() => setIntento((x) => x + 1)} color={t.color.magenta} /></View>
+          </View>
+        ) : null}
 
         {paso === 'terminos' && terminos ? (
           <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: ins.bottom + 24, gap: 14 }}>
@@ -127,7 +147,7 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
             <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4 }}>¿Dónde lo retiras?</Text>
             <View style={{ backgroundColor: superficie, borderRadius: 18, overflow: 'hidden' }}>
               {sucursales.map((s, i) => {
-                const n = NIVEL[s.nivel] ?? NIVEL.sin;
+                const n = nivelDe(t, s.nivel);
                 const activa = s.branch_id === sala;
                 return (
                   <Pressable key={s.branch_id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setSala(s.branch_id); }}
@@ -174,7 +194,7 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
 
         {paso === 'hecha' && hecha ? (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 14 }}>
-            <Text style={{ fontSize: 70 }}>🛍️</Text>
+            <Icono sf="bag.fill.badge.plus" respaldo="🛍️" tam={64} color={t.color.magenta} />
             <Text style={{ fontSize: 26, fontWeight: '900', color: colorSistema.texto, textAlign: 'center' }}>Tu reserva {hecha.codigo}</Text>
             <Text style={{ fontSize: 16, lineHeight: 22, color: colorSistema.texto2, textAlign: 'center' }}>
               Te avisamos cuando {elegida?.sala ?? 'la sucursal'} la tenga lista. Desde ese aviso tienes 24 horas para retirarla.
@@ -189,23 +209,19 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
   );
 }
 
+// El botón del sistema (vidrio de iOS 26), el mismo del resto de la app.
 function Boton({ texto, color, alTocar, deshabilitado }) {
-  return (
-    <Pressable onPress={deshabilitado ? undefined : alTocar} accessibilityRole="button" accessibilityState={{ disabled: !!deshabilitado }}
-      style={({ pressed }) => ({ backgroundColor: color, borderRadius: 999, paddingVertical: 16, alignItems: 'center',
-        opacity: deshabilitado ? 0.5 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-      <Text style={{ color: '#FFF', fontSize: 17, fontWeight: '800' }}>{texto}</Text>
-    </Pressable>
-  );
+  return <BotonNativo etiqueta={texto} alTocar={alTocar} color={color} deshabilitado={!!deshabilitado} />;
 }
 
 function Paso({ texto, alTocar, deshabilitado }) {
+  const t = useTema();
   return (
     <Pressable onPress={deshabilitado ? undefined : () => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} hitSlop={8}
       accessibilityRole="button" accessibilityLabel={texto === '+' ? 'Más' : 'Menos'}
       style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
-        backgroundColor: 'rgba(155,33,155,0.12)', opacity: deshabilitado ? 0.35 : 1 }}>
-      <Text style={{ fontSize: 22, fontWeight: '800', color: '#9B219B' }}>{texto}</Text>
+        backgroundColor: suave(t.color.magenta, 0.12), opacity: deshabilitado ? 0.35 : 1 }}>
+      <Text style={{ fontSize: 22, fontWeight: '800', color: t.color.magentaTexto }}>{texto}</Text>
     </Pressable>
   );
 }

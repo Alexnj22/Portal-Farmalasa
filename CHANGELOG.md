@@ -21,11 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.1231.1 — Pedidos · Generar: tarjetas de sucursal neutras con barra de urgencia
+## v2.1232.0 — App: promociones y mi perfil
 
-- **Tarjetas de sucursal**: el fondo ya no se pinta con la urgencia (con todas entre 43% y 67% salían las seis naranjas y la elegida no se distinguía). Fondo neutro, el % rotulado como «Urgencia» con una barra, y una casilla siempre visible que se llena al elegir. Más bajas: en el teléfono las seis entran en una pantalla y media en vez de tres.
-- **Acciones ordenadas**: «Distribución global» pasa a interruptor y queda junto a «Seleccionar todas», arriba a la derecha. Abajo, un pie con el resumen de lo elegido (sucursales y productos con stock en Bodega) y «Generar y confirmar» a la derecha.
-- **Sin stock en Bodega**: el título va en la cabecera de la tabla. El total deja de ir en rojo y «Ventas 6m» pierde la flecha de tendencia, que no medía una tendencia.
+- **App: Promociones como el portal.** Activas / Descuentos / Excedentes / Pagos / Histórico; las tarjetas (activas, por vencer, en borrador, productos abiertos y cuántos bajan el precio) que filtran; filtros de estado, tipo y laboratorio; cada promoción con su vigencia («quedan N días») y sus cifras. Mantener presionada: volver a borrador / activar, duplicar y ver el seguimiento.
+- **Detalle de la promoción**: el seguimiento (unidades, documentos, vendedores, bono; el avance de cada producto contra su lote, el reparto del bono, las barras por sala y «Quién vendió» con caras) y, en las de laboratorio, la matriz (nivel de cada sala, cuánto le falta, cuánto cuesta). **Excedentes**: aprobar o negar con motivo.
+- **Mi perfil**: el plan de vacaciones, cada dato con su ícono, la cuenta regresiva del cumpleaños, la sucursal, el expediente en línea, el historial con búsqueda, tipo y fechas, y el horario de la semana legible.
+- Núcleo: `conteoDePromociones`, `resumenDeSeguimiento`, `vendedoresPorSala`, `estadoDePlan`; el portal los usa.
+## v2.1231.2 — Sucursales con foto
+
+- **Sucursales con foto:** cada tarjeta lleva la foto arriba con el nombre, la hora de cierre y el estado encima. Mientras cada sucursal no tenga la suya (`branches.settings.foto_app`, ruta en el bucket `ofertas-clientes`, que `app-clientes` firma), se alternan dos fotos de stock de Unsplash (licencia libre) incluidas en la app.
+
+## v2.1231.1 — App de clientes: revisión general (privacidad, fluidez, iOS, accesibilidad)
+
+Revisión general de la app de clientes (40 hallazgos de una revisión de código; aplicados casi todos):
+- **Privacidad:** con Face ID activo, al salir de la app se tapa el contenido (la foto del selector de apps mostraba saldo y QR); los modales (historias, cumpleaños, reservar) se ocultan mientras está bloqueada.
+- **Datos que no se pierden:** un fallo de red al volver a una pantalla conserva lo que ya se veía (ofertas, inyecciones, compras, reservas, notificaciones, sucursales) y todas se pueden refrescar deslizando. La oferta distingue «no se pudo cargar» (con Reintentar) de «ya no está». La hoja de reserva muestra el error con Reintentar en vez de quedar en blanco; quien está pre-registrado ya no ve «Reservar». Cancelar una reserva y Apple Wallet avisan si fallan. Si la sesión vence, la app lo dice al volver a entrar. Un aviso tocado no se vuelve a abrir solo.
+- **Fluidez y batería:** la aurora de cada pestaña y la tarjeta (giroscopio, luz) sólo se mueven mientras se ven y con la app activa; con «Reducir movimiento», quietas. Entradas más cortas y sin rebote, con tope en listas largas; los pulsos laten 3 veces y paran; resortes con menos rebote (tarjeta, etiqueta de oferta, pastel, barras). Historias y campana no se piden en cada visita (≥60 s, o al refrescar). Fotos con `expo-image` y clave estable: no se vuelven a bajar aunque la URL firmada cambie. Notificaciones en lista virtual.
+- **iOS:** íconos del sistema (SF Symbols) en lugar de emojis y caracteres (campana, flechas, cerrar, sucursales, invitar, bienvenida, notificaciones); botones del sistema en la hoja de reserva; colores del tema en estados y niveles; toques de 44 pt; enlaces legales en la hoja de Safari dentro de la app y también en el registro; «Siguiente» del teclado pasa al teléfono. Horario de sucursales con una animación corta sin rebote.
+- **QR en caja:** al girar la tarjeta, la pantalla sube al brillo máximo y vuelve al girarla de nuevo.
+- **Accesibilidad:** historias manejables con VoiceOver (no avanzan solas; acciones Siguiente/Anterior/Cerrar); etiquetas en tocables; textos de tamaño fijo no se desbordan con letra grande.
+- Pendiente de esa revisión: el botón oficial de Apple Wallet (`PKAddPassButton`), el selector de fecha del sistema en el registro y la campana en la barra de título.
 
 ## v2.1231.0 — App: cobros, clientes, cotizaciones, sucursales y administración
 

@@ -9,6 +9,7 @@ import { Aviso } from '../../../componentes/ui';
 import { useSesion } from '../../../lib/sesion';
 import { useCuenta } from '../../../lib/cuenta';
 import { pedirTokenDeAvisos } from '../../../lib/avisos';
+import * as WebBrowser from 'expo-web-browser';
 import { abrirPase, agregarPase, tienePase, walletDisponible } from '../../../modules/wallet';
 import { nombreBiometria, useBloqueo } from '../../../lib/bloqueo';
 import { nombrePropio } from '../../../lib/formato';
@@ -39,9 +40,8 @@ export default function Cuenta() {
   const wallet = async () => {
     if (enWallet && abrirPase(serialW)) return;
     const r = await pedirW('wallet_pase');
-    if (r?.ok && r.pase) {
-      try { if (await agregarPase(r.pase)) setEnWallet(true); } catch { /* cerrada */ }
-    }
+    if (!r?.ok || !r.pase) { Alert.alert('No se pudo preparar la tarjeta', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
+    try { if (await agregarPase(r.pase)) setEnWallet(true); } catch { /* cerrada */ }
   };
   const { pedir, cerrar } = useSesion();
   const { resumen, cargar } = useCuenta();
@@ -130,7 +130,7 @@ export default function Cuenta() {
   async function confirmarBorrado() {
     const r = await pedir('borrar_cuenta');
     if (r?.ok) await cerrar();
-    else setMensaje(r?.mensaje ?? 'No se pudo borrar la cuenta.');
+    else Alert.alert('No se pudo borrar la cuenta', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
   }
 
   return (
@@ -154,7 +154,10 @@ export default function Cuenta() {
       {biometria ? (
         <Grupo pie={`Pide ${biometria} al abrir la app y al volver después de un rato, para que nadie más vea tu saldo ni tu código.`}>
           <FilaInterruptor titulo={`Bloquear con ${biometria}`} valor={bloqueoActivo}
-            alCambiar={async (v) => { if (v) await encenderBloqueo(); else await apagarBloqueo(); }} color={t.color.magenta} />
+            alCambiar={async (v) => {
+              if (!v) { await apagarBloqueo(); return; }
+              if (!(await encenderBloqueo())) Alert.alert(`No se activó ${biometria}`, 'Para activarlo hay que confirmar con tu cara o tu huella.');
+            }} color={t.color.magenta} />
         </Grupo>
       ) : null}
 
@@ -178,8 +181,8 @@ export default function Cuenta() {
       </Grupo>
 
       <Grupo>
-        <FilaAccion texto="Reglamento del programa" color={t.color.magentaTexto} alTocar={() => Linking.openURL(REGLAMENTO)} />
-        <FilaAccion texto="Aviso de privacidad" color={t.color.magentaTexto} alTocar={() => Linking.openURL(PRIVACIDAD)} />
+        <FilaAccion texto="Reglamento del programa" color={t.color.magentaTexto} alTocar={() => WebBrowser.openBrowserAsync(REGLAMENTO).catch(() => {})} />
+        <FilaAccion texto="Aviso de privacidad" color={t.color.magentaTexto} alTocar={() => WebBrowser.openBrowserAsync(PRIVACIDAD).catch(() => {})} />
       </Grupo>
 
       <Grupo>

@@ -18,7 +18,7 @@ import { fetchDescuentos } from '@nucleo/data/descuentos';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { estadoVisible, esLaboratorio, textoBuscable, mensajeDeCarga, estadoDescuento } from '@nucleo/utils/promocionesUtils';
+import { conteoDePromociones, estadoVisible, esLaboratorio, textoBuscable, mensajeDeCarga, estadoDescuento } from '@nucleo/utils/promocionesUtils';
 import { hoySV } from '@nucleo/utils/fecha';
 import { exportCsv } from '@nucleo/utils/csvExport';
 import TabActivas from './TabActivas';
@@ -363,17 +363,18 @@ export default function PromocionesView() {
         }
 
         // Activas — y también el estado por defecto de la vista.
-        const porEstado = (clave) => vivas.filter((p) => estadoVisible(p).clave === clave).length;
+        // Las cuentas salen del núcleo (`conteoDePromociones`), las mismas de la app.
+        const c = conteoDePromociones(vivas);
         return [
-            { key: 'act', icon: Tag, label: 'Activas', value: porEstado('activa'),
+            { key: 'act', icon: Tag, label: 'Activas', value: c.activas,
               iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
-            { key: 'ven', icon: CalendarClock, label: 'Por vencer', value: porEstado('por_vencer'),
+            { key: 'ven', icon: CalendarClock, label: 'Por vencer', value: c.porVencer,
               iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text' },
-            { key: 'bor', icon: FileText, label: 'En borrador', value: porEstado('borrador') },
+            { key: 'bor', icon: FileText, label: 'En borrador', value: c.borrador },
             { key: 'abi', icon: Package, label: 'Productos abiertos',
-              value: vivas.reduce((a, p) => a + (p.abiertos || 0), 0) },
+              value: c.abiertos },
             { key: 'des', icon: Percent, label: 'Bajan el precio',
-              value: vivas.filter((p) => p.descuentos > 0).length },
+              value: c.bajanPrecio },
         ];
     }, [resumenTab, tab, descuentosFiltrados, terminadas, vivas]);
 

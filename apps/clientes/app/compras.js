@@ -27,7 +27,7 @@ export default function Compras() {
   const [abierta, setAbierta] = useState(null);
   const [refrescando, setRefrescando] = useState(false);
 
-  const cargar = useCallback(async () => { setDatos(await pedir('compras')); }, [pedir]);
+  const cargar = useCallback(async () => { const r = await pedir('compras'); setDatos((ant) => (r?.ok || !ant?.ok ? r : ant)); }, [pedir]);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 

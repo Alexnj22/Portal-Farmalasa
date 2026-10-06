@@ -1,7 +1,7 @@
 // Entrar: con los dos datos de la ficha (documento + teléfono) o con el código
 // de 7 letras del ticket. La forma es la del sistema: control segmentado,
 // formulario agrupado como Ajustes y el botón nativo (ver componentes/sistema.js).
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import * as Device from 'expo-device';
 import Segmentos from '../componentes/Segmentos';
@@ -26,6 +26,9 @@ export default function Entrar() {
   const [telefono, setTelefono] = useState('');
   const [codigo, setCodigo] = useState(delQr ? String(delQr) : '');
   const [error, setError] = useState(null);
+  const telRef = useRef(null);
+  // La sesión terminó sola (venció o se cerró en el servidor): se dice por qué.
+  const motivo = useSesion((s) => s.motivoCierre);
   const [enviando, setEnviando] = useState(false);
 
   const listo = modo === 'codigo'
@@ -53,6 +56,7 @@ export default function Entrar() {
         alCambiar={(m) => { setModo(m); setError(null); }}
         opciones={[{ valor: 'dui', rotulo: 'DUI y teléfono' }, { valor: 'codigo', rotulo: 'Código del ticket' }]}
       />
+      {motivo === 'vencida' ? <Aviso tipo="aviso">Tu sesión terminó. Vuelve a entrar para ver tus puntos.</Aviso> : null}
       {modo === 'dui' ? (
         <Grupo pie="Los dos datos que dejaste en tu ficha. Si te registraste con NIT o pasaporte, escríbelo en lugar del DUI.">
           <FilaCampo
@@ -63,8 +67,11 @@ export default function Entrar() {
             value={documento}
             onChangeText={(v) => setDocumento(documentoEscrito(v))}
             returnKeyType="next"
+            onSubmitEditing={() => telRef.current?.focus()}
+            blurOnSubmit={false}
           />
           <FilaCampo
+            ref={telRef}
             placeholder="Teléfono"
             keyboardType="phone-pad"
             textContentType="telephoneNumber"

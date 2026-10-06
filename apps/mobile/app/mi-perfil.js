@@ -1,7 +1,8 @@
 // Mi perfil, NATIVO — la vista «Mi perfil» del portal (`EmployeeProfileView`):
 // quién soy en la empresa (cargo, sala, cuánto llevo), mis datos y contactos,
 // mi horario de esta semana (con la ausencia del día si la hay), mis próximas
-// vacaciones, mi expediente y mi historial. Las cuentas son del núcleo
+// vacaciones y todo mi plan, mi expediente en línea, y mi historial con buscar,
+// tipo y desde/hasta (`filtrarHistorial`, la misma regla del portal). Las cuentas son del núcleo
 // (`miPerfil`): las mismas que hace el portal.
 //
 // Editar el contacto (celular y contacto de emergencia) sólo se ofrece a quien
@@ -12,7 +13,6 @@ import { KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, Scrol
 import { router, Stack } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { EVENT_TYPES } from '@nucleo/data/constants';
 import { fetchOwnEventsFull, fetchOwnPendingRequestsCount, fetchOwnVacationPlansActive } from '@nucleo/data/employeeSelfService';
 import { ausenciaDelDia, cumpleEn, historialDePerfil, proximasVacaciones, semanaDelPerfil, tiempoEnLaEmpresa } from '@nucleo/utils/miPerfil';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
@@ -21,7 +21,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { BotonGrande, Campo, Dato, Seccion } from '../componentes/formulario/Piezas';
+import { BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Avatar from '../componentes/Avatar';
@@ -29,9 +29,9 @@ import Vidrio from '../componentes/Vidrio';
 import ConAurora from '../componentes/ConAurora';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
+import { ExpedienteEnLinea, FilaConIcono, Historial, PlanDeVacaciones } from '../componentes/perfil/Piezas';
 
 const fecha = (f) => (f ? fechaTexto(String(f).slice(0, 10), { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
-const COLOR_EVENTO = { VACATION: MARCA.verde, PERMIT: MARCA.verde, DISABILITY: MARCA.rojo, SHIFT_CHANGE: MARCA.violeta, SALARY: MARCA.violeta, TRANSFER: MARCA.azulClaro, HIRING: MARCA.verde };
 const AUSENCIA = { VACATION: 'Vac', DISABILITY: 'Incap.', PERMIT: 'Perm.' };
 // «7:00 a. m.» → «7a», como lo abrevia el portal en la semana.
 const horaCorta = (h) => (hora12(h) || '').replace(':00', '').replace(/\s?a\.\s?m\./, 'a').replace(/\s?p\.\s?m\./, 'p');
@@ -92,7 +92,6 @@ export default function MiPerfil() {
   const [eventos, setEventos] = useState([]);
   const [activas, setActivas] = useState(0);
   const [planes, setPlanes] = useState([]);
-  const [cuantos, setCuantos] = useState(8);
   const [editando, setEditando] = useState(false);
   const [recargando, setRecargando] = useState(false);
 
@@ -161,8 +160,10 @@ export default function MiPerfil() {
                     backgroundColor: esHoy ? MARCA.azul : aus ? 'rgba(18,183,106,0.18)' : d.turno ? 'rgba(127,127,127,0.14)' : 'transparent' }}>
                     <Text style={{ color: esHoy ? '#fff' : colorSistema.texto2, fontSize: 11, fontWeight: '700' }}>{d.short}</Text>
                     <Text style={{ color: esHoy ? '#fff' : colorSistema.texto, fontSize: 16, fontWeight: '800' }}>{Number(d.fecha.slice(8))}</Text>
-                    <Text style={{ color: esHoy ? '#fff' : aus ? MARCA.verde : colorSistema.texto2, fontSize: 9, fontWeight: '600' }} numberOfLines={1}>
-                      {aus ? AUSENCIA[aus.type] : d.turno ? `${horaCorta(d.turno.start)}–${horaCorta(d.turno.end)}` : 'Libre'}
+                    {/* Entrada y salida en dos renglones de 11 pt: en uno solo, a
+                        9 pt y cortado, no se leía la hora. */}
+                    <Text style={{ color: esHoy ? '#fff' : aus ? MARCA.verde : colorSistema.texto2, fontSize: 11, fontWeight: '600', textAlign: 'center' }}>
+                      {aus ? AUSENCIA[aus.type] : d.turno ? `${horaCorta(d.turno.start)}\n${horaCorta(d.turno.end)}` : 'Libre'}
                     </Text>
                   </View>
                 );
@@ -171,18 +172,21 @@ export default function MiPerfil() {
           </Seccion>
         ) : null}
 
+        <PlanDeVacaciones planes={planes} hoy={hoy} />
+
         <Seccion titulo="Mis datos">
-          <Dato primero rotulo="Nacimiento" valor={fecha(emp.birth_date)} />
-          <Dato rotulo="Documento (DUI)" valor={emp.dui || '—'} />
-          <Dato rotulo="Tipo de sangre" valor={emp.blood_type || '—'} />
-          {emp.contract_type ? <Dato rotulo="Tipo de contrato" valor={emp.contract_type} /> : null}
-          {emp.weekly_hours ? <Dato rotulo="Horas por semana" valor={String(emp.weekly_hours)} /> : null}
+          <FilaConIcono primero icono="Cake" color={MARCA.violetaClaro} rotulo="Nacimiento" valor={fecha(emp.birth_date)} extra={cumple ? `Cumpleaños ${cumple}` : null} />
+          <FilaConIcono icono="IdCard" rotulo="Documento (DUI)" valor={emp.dui || '—'} />
+          <FilaConIcono icono="Stethoscope" color={MARCA.rojo} rotulo="Tipo de sangre" valor={emp.blood_type || '—'} />
+          {emp.contract_type ? <FilaConIcono icono="FileText" rotulo="Tipo de contrato" valor={emp.contract_type} /> : null}
+          {emp.weekly_hours ? <FilaConIcono icono="Clock" rotulo="Horas por semana" valor={String(emp.weekly_hours)} /> : null}
         </Seccion>
 
         <Seccion titulo="Contacto">
-          <Dato primero rotulo="Celular" valor={emp.phone || '—'} />
-          <Dato rotulo="Avisar a" valor={emp.emergency_contact_name || '—'} />
-          <Dato rotulo="Teléfono de emergencia" valor={emp.emergency_contact_phone || '—'} />
+          <FilaConIcono primero icono="Home" rotulo="Sucursal" valor={sala?.name || '—'} />
+          <FilaConIcono icono="Phone" color={MARCA.verde} rotulo="Celular" valor={emp.phone || '—'} />
+          <FilaConIcono icono="Contact" color={MARCA.ambar} rotulo="Avisar a" valor={emp.emergency_contact_name || '—'} />
+          <FilaConIcono icono="Phone" color={MARCA.ambar} rotulo="Teléfono de emergencia" valor={emp.emergency_contact_phone || '—'} />
           {puedeEditar ? (
             <Pressable onPress={() => setEditando(true)} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
               <Text style={{ color: MARCA.azulClaro, fontSize: 16, fontWeight: '600' }}>Editar contacto</Text>
@@ -191,27 +195,12 @@ export default function MiPerfil() {
         </Seccion>
 
         {hasPermission('emp_documents') ? (
-          <BotonGrande texto={`Mi expediente${(emp.employee_documents || []).length ? ` · ${(emp.employee_documents || []).length}` : ''}`} borde color={MARCA.azulClaro}
-            onPress={() => router.push('/mis-documentos')} />
+          (emp.employee_documents || []).some((d) => d?.url) ? <ExpedienteEnLinea empleado={emp} /> : (
+            <BotonGrande texto="Mi expediente" borde color={MARCA.azulClaro} onPress={() => router.push('/mis-documentos')} />
+          )
         ) : null}
 
-        <Seccion titulo={`Mi historial · ${historial.length}`}>
-          {historial.slice(0, cuantos).map((ev, i) => (
-            <View key={ev.id ?? i} style={{ flexDirection: 'row', gap: 10, paddingTop: i ? 10 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
-              <View style={{ width: 10, height: 10, borderRadius: 5, marginTop: 5, backgroundColor: COLOR_EVENTO[ev.type] ?? colorSistema.texto2 }} />
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{EVENT_TYPES[ev.type]?.label ?? (ev.type === 'HIRING' ? 'Ingreso' : ev.type)}</Text>
-                {ev.note ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{ev.note}</Text> : null}
-              </View>
-              <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{fecha(ev.date)}</Text>
-            </View>
-          ))}
-          {historial.length > cuantos ? (
-            <Pressable onPress={() => setCuantos((n) => n + 20)} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
-              <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Ver más</Text>
-            </Pressable>
-          ) : null}
-        </Seccion>
+        <Historial historial={historial} />
       </ScrollView>
       <EditarContacto emp={emp} abierto={editando} onCerrar={() => setEditando(false)} />
     </>

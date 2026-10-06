@@ -8,25 +8,30 @@
 import { useEffect } from 'react';
 import { StyleSheet, useColorScheme, useWindowDimensions, View } from 'react-native';
 import { BlurMask, Canvas, Circle, Group } from '@shopify/react-native-skia';
-import { Easing, useDerivedValue, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import { cancelAnimation, Easing, useDerivedValue, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import tokens from '@nucleo/constants/tokens.json';
 
 const T = tokens.temas.solid;
 
-function useVaiven(duracion) {
+// `activa`: se pausa donde quedó cuando no se ve (otra pestaña, app en
+// segundo plano) o con «Reducir movimiento»; al volver sigue desde ahí.
+function useVaiven(duracion, activa) {
   const v = useSharedValue(0);
   useEffect(() => {
-    v.value = withRepeat(withTiming(1, { duration: duracion, easing: Easing.inOut(Easing.sin) }), -1, true);
-  }, [v, duracion]);
+    if (!activa) { cancelAnimation(v); return; }
+    v.value = withRepeat(withTiming(v.value > 0.5 ? 0 : 1, { duration: duracion, easing: Easing.inOut(Easing.sin) }), -1, true);
+  }, [v, duracion, activa]);
   return v;
 }
 
-export default function Aurora() {
+export default function Aurora({ activa = true }) {
   const oscuro = useColorScheme() === 'dark';
+  const reducir = useReducedMotion();
   const { width: w, height: h } = useWindowDimensions();
-  const a = useVaiven(18000);
-  const b = useVaiven(23000);
-  const c = useVaiven(26000);
+  const mover = activa && !reducir;
+  const a = useVaiven(18000, mover);
+  const b = useVaiven(23000, mover);
+  const c = useVaiven(26000, mover);
   const r = Math.max(w, h) * 0.42;
 
   const verdeX = useDerivedValue(() => w * (0.05 + 0.25 * a.value));

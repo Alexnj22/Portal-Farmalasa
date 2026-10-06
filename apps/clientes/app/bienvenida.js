@@ -3,19 +3,22 @@
 // vitrina: verde lo que se gana, magenta lo que se usa—.
 import { Image, ScrollView, Text, View } from 'react-native';
 import { router } from 'expo-router';
+import { useSesion } from '../lib/sesion';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Boton, Tarjeta, Texto } from '../componentes/ui';
 import { suave, useTema } from '../tema/tema';
 import { colorSistema } from '../componentes/sistema';
+import Icono from '../componentes/Icono';
 
 const QUE_TRAE = [
-  { simbolo: '★', titulo: 'Tus puntos', detalle: 'Tu saldo en dólares y lo que vence.', tono: 'verde' },
-  { simbolo: '%', titulo: 'Ofertas', detalle: 'Descuentos de la semana, algunos sólo para socios.', tono: 'magenta' },
-  { simbolo: '+', titulo: 'Tus inyecciones', detalle: 'Las que ya pagaste y te faltan aplicar.', tono: 'verde' },
+  { sf: 'star.fill', simbolo: '★', titulo: 'Tus puntos', detalle: 'Tu saldo en dólares y lo que vence.', tono: 'verde' },
+  { sf: 'tag.fill', simbolo: '%', titulo: 'Ofertas', detalle: 'Descuentos de la semana, algunos sólo para socios.', tono: 'magenta' },
+  { sf: 'syringe.fill', simbolo: '+', titulo: 'Tus inyecciones', detalle: 'Las que ya pagaste y te faltan aplicar.', tono: 'verde' },
 ];
 
 export default function Bienvenida() {
   const t = useTema();
+  const motivo = useSesion((s) => s.motivoCierre);
   const ins = useSafeAreaInsets();
   return (
     <ScrollView
@@ -46,7 +49,7 @@ export default function Bienvenida() {
                   width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
                   backgroundColor: suave(color, t.oscuro ? 0.28 : 0.16),
                 }}>
-                  <Text style={{ fontSize: 19, fontWeight: '800', color: texto }}>{f.simbolo}</Text>
+                  <Icono sf={f.sf} respaldo={f.simbolo} tam={19} color={texto} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 16, fontWeight: '600', color: colorSistema.texto }}>{f.titulo}</Text>
@@ -64,6 +67,7 @@ export default function Bienvenida() {
       </View>
 
       <View style={{ gap: 12 }}>
+        {motivo === 'vencida' ? <Texto nivel={2} estilo={{ textAlign: 'center' }}>Tu sesión terminó. Vuelve a entrar para ver tus puntos.</Texto> : null}
         <Boton alTocar={() => router.push('/entrar')}>Ya soy cliente</Boton>
         <Boton tipo="secundario" alTocar={() => router.push('/registro')}>Quiero unirme</Boton>
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 28, marginTop: 4 }}>

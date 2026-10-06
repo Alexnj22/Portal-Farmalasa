@@ -13,12 +13,19 @@ import { useSesion } from '../lib/sesion';
 import { dolares, fecha } from '../lib/formato';
 import { useTema } from '../tema/tema';
 
-const ESTADO = {
-  pendiente: { texto: 'Preparando', color: '#B35C00', fondo: 'rgba(255,159,10,0.18)' },
-  lista: { texto: '¡Lista para retirar!', color: '#1E7B34', fondo: 'rgba(52,199,89,0.2)' },
-  retirada: { texto: 'Retirada', color: '#4A4552', fondo: 'rgba(120,110,130,0.14)' },
-  vencida: { texto: 'Venció', color: '#B3261E', fondo: 'rgba(255,59,48,0.14)' },
-  cancelada: { texto: 'Cancelada', color: '#4A4552', fondo: 'rgba(120,110,130,0.14)' },
+// Colores del tema (cambian con el modo oscuro y se leen sobre el vidrio).
+const ESTADO_BASE = {
+  pendiente: { texto: 'Preparando', tono: 'aviso' },
+  lista: { texto: '¡Lista para retirar!', tono: 'exito' },
+  retirada: { texto: 'Retirada', tono: 'neutro' },
+  vencida: { texto: 'Venció', tono: 'peligro' },
+  cancelada: { texto: 'Cancelada', tono: 'neutro' },
+};
+const FONDOS = { aviso: 'rgba(255,159,10,0.18)', exito: 'rgba(52,199,89,0.2)', peligro: 'rgba(255,59,48,0.14)', neutro: 'rgba(120,110,130,0.16)' };
+const estadoDe = (t, e) => {
+  const b = ESTADO_BASE[e] ?? ESTADO_BASE.pendiente;
+  const color = { aviso: t.color.avisoTexto, exito: t.color.exitoTexto, peligro: t.color.peligroTexto, neutro: colorSistema.texto2 }[b.tono];
+  return { texto: b.texto, color, fondo: FONDOS[b.tono] };
 };
 
 function restante(iso, ahora) {
@@ -33,21 +40,24 @@ export default function Reservas() {
   const pedir = useSesion((s) => s.pedir);
   const [d, setD] = useState(null);
   const [ahora, setAhora] = useState(Date.now());
-  const cargar = useCallback(() => pedir('mis_reservas').then(setD), [pedir]);
+  const [refrescando, setRefrescando] = useState(false);
+  const cargar = useCallback(() => pedir('mis_reservas').then((r) => setD((ant) => (r?.ok || !ant?.ok ? r : ant))), [pedir]);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
+  const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
   useEffect(() => { const id = setInterval(() => setAhora(Date.now()), 30000); return () => clearInterval(id); }, []);
 
   const cancelar = (r) => Alert.alert('Cancelar reserva', `¿Cancelar ${r.producto_nombre}?`, [
     { text: 'No', style: 'cancel' },
     { text: 'Cancelar reserva', style: 'destructive', onPress: async () => {
-      Haptics.selectionAsync().catch(() => {});
-      await pedir('cancelar_reserva', { id: r.id });
+      const res = await pedir('cancelar_reserva', { id: r.id });
+      if (res?.ok) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      else Alert.alert('No se pudo cancelar', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
       cargar();
     } },
   ]);
 
   if (!d) return <Cargando />;
-  if (!d.ok) return <Pantalla conPestanas={false}><Vacio titulo="Reservas">{d.mensaje}</Vacio></Pantalla>;
+  if (!d.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}><Vacio titulo="No se pudieron cargar">{d.mensaje ?? 'Revisa tu conexión y desliza hacia abajo para reintentar.'}</Vacio></Pantalla>;
   if (!d.reservas.length) {
     return (
       <Pantalla conPestanas={false}>
@@ -61,7 +71,7 @@ export default function Reservas() {
   const abiertas = d.reservas.filter((r) => r.estado === 'pendiente' || r.estado === 'lista');
   const cerradas = d.reservas.filter((r) => r.estado !== 'pendiente' && r.estado !== 'lista');
   return (
-    <Pantalla conPestanas={false}>
+    <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
       {abiertas.map((r, i) => (
         <Entrada key={r.id} indice={Math.min(i, 8)}>
           <ReservaAbierta r={r} ahora={ahora} alCancelar={() => cancelar(r)} />
@@ -71,7 +81,7 @@ export default function Reservas() {
         <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4, marginTop: 8 }}>Anteriores</Text>
       ) : null}
       {cerradas.map((r, i) => {
-        const e = ESTADO[r.estado] ?? ESTADO.cancelada;
+        const e = estadoDe(t, r.estado);
         return (
           <Entrada key={r.id} indice={Math.min(abiertas.length + i, 8)}>
             <Tarjeta estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -93,7 +103,7 @@ export default function Reservas() {
 function ReservaAbierta({ r, ahora, alCancelar }) {
   const t = useTema();
   const lista = r.estado === 'lista';
-  const e = ESTADO[r.estado];
+  const e = estadoDe(t, r.estado);
   const pasos = ['Recibida', 'Lista', 'Retirada'];
   const actual = lista ? 1 : 0;
   return (
@@ -140,7 +150,7 @@ function ReservaAbierta({ r, ahora, alCancelar }) {
         {lista && r.vence_at ? (
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={{ fontSize: 12, fontWeight: '700', color: colorSistema.texto3 }}>PARA RETIRARLA</Text>
-            <Text style={{ fontSize: 16, fontWeight: '900', color: t.oscuro ? '#7EE08F' : '#1E7B34' }}>{restante(r.vence_at, ahora)}</Text>
+            <Text style={{ fontSize: 16, fontWeight: '900', color: t.color.exitoTexto }}>{restante(r.vence_at, ahora)}</Text>
           </View>
         ) : null}
       </View>
@@ -151,7 +161,7 @@ function ReservaAbierta({ r, ahora, alCancelar }) {
         </Text>
       ) : null}
 
-      <Pressable onPress={alCancelar} hitSlop={8} style={{ alignSelf: 'flex-start' }}>
+      <Pressable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
         <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.rojo }}>Cancelar reserva</Text>
       </Pressable>
     </Tarjeta>

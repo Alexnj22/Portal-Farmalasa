@@ -1,18 +1,28 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import StatCard from '../../components/common/StatCard';
 import CarrilCards from '../../components/common/CarrilCards';
-import Button from '../../components/common/Button';
-import { SkeletonText, EmptyState } from '../../components/common/StateViews';
+import FilterBar from '../../components/common/FilterBar';
+import { EmptyState } from '../../components/common/StateViews';
+import { useSearchParams } from 'react-router-dom';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import {
     BarChart2, Clock, Truck, PackageCheck,
-    Pause, TrendingUp, Building2, RefreshCw, Search,
+    Pause, ClipboardList, Building2, RefreshCw, Search,
 } from 'lucide-react';
 import { ERP_NAMES } from '@nucleo/constants/erp';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { fetchIndicadoresDePedidos, fetchRazonesDePausa } from '@nucleo/data/pedidos';
 import { indicadoresDePedidos, minutosLegibles } from '@nucleo/utils/tableroDePedidos';
+import { PAUSE_REASONS } from '@nucleo/constants/pedidos';
+
+// Rediseño 2026-10-06 — la pestaña no seguía el canon de las demás vistas:
+// un encabezado propio («Métricas de eficiencia» + «Refrescar» suelto), el
+// rango en su propio renglón, cada columna de la tabla en un color distinto
+// sin que el color significara nada, y los motivos de pausa con la CLAVE
+// cruda («interrupcion», sin tilde). Hoy es la fila de §17.0 —carril de
+// tarjetas + `FilterBar` con el rango como ranura y «Actualizar» como acción—
+// y dos `DataTable` con los números en neutro.
 
 const COLS_SUCURSAL = [
     { key: 'sucursal',  label: 'Sucursal' },
@@ -23,6 +33,16 @@ const COLS_SUCURSAL = [
     { key: 'recuento',  label: 'Recuento',   align: 'center' },
     { key: 'pausas',    label: 'Pausas',     align: 'center' },
 ];
+
+const COLS_RAZONES = [
+    { key: 'razon',    label: 'Motivo' },
+    { key: 'conteo',   label: 'Veces' },
+    { key: 'promedio', label: 'Duración prom.', align: 'right' },
+];
+
+// La base guarda la CLAVE del motivo; el rótulo es el del modal de pausa.
+const ROTULO_RAZON = Object.fromEntries(PAUSE_REASONS.map(r => [r.key, r.label]));
+const rotuloRazon = (razon) => ROTULO_RAZON[razon] ?? razon;
 
 // Los rótulos eran «Últimos NN días»: tres veces la misma palabra para decir
 // lo que el rótulo del control («Rango») ya dice, y 270px de riel que no
@@ -42,7 +62,14 @@ function toDateStr(date) {
 const fmtMin = minutosLegibles;
 
 export default function TabMetricas({ searchTerm = '' }) {
-    const [range,       setRange]       = useState('30d');
+    // El rango vive en la dirección, como la pestaña: F5 no lo devuelve a 30.
+    const [params, setParams] = useSearchParams();
+    const range = RANGES.some(r => r.key === params.get('rango')) ? params.get('rango') : '30d';
+    const setRange = useCallback((key) => setParams(p => {
+        if (key === '30d') p.delete('rango'); else p.set('rango', key);
+        return p;
+    }, { replace: true }), [setParams]);
+
     const [kpis,        setKpis]        = useState([]);
     const [razones,     setRazones]     = useState([]);
     const [loading,     setLoading]     = useState(true);
@@ -74,19 +101,11 @@ export default function TabMetricas({ searchTerm = '' }) {
         }
     }, []);
 
-    useEffect(() => {
-        const days = RANGES.find(r => r.key === range)?.days ?? 30;
-        load(days);
-    }, [range, load]);
+    const days = RANGES.find(r => r.key === range)?.days ?? 30;
+    useEffect(() => { load(days); }, [days, load]);
 
     // Métricas globales y por sucursal — núcleo.
     const ind = indicadoresDePedidos(kpis, (id) => ERP_NAMES[id] ?? `Suc. ${id}`);
-    const totalPedidos  = ind.pedidos;
-    const avgPrep       = fmtMin(ind.prep);
-    const avgTransito   = fmtMin(ind.transito);
-    const avgRecuento   = fmtMin(ind.recuento);
-    const avgPausado    = fmtMin(ind.pausado);
-    const totalPausas   = ind.pausas;
     const sucursalStats = ind.porSucursal;
 
     const filteredSucs = useMemo(() => {
@@ -94,141 +113,127 @@ export default function TabMetricas({ searchTerm = '' }) {
         return smartFilter(searchTerm, sucursalStats, s => [s.nombre]).results;
     }, [sucursalStats, searchTerm]);
 
-    if (loading) {
-        return (
-            <div className="py-16"><SkeletonText lines={5} /></div>
-        );
-    }
+    const maxConteo = razones[0]?.conteo || 1;
+    const sinDatos  = !loading && kpis.length === 0;
 
     return (
-        <div className="space-y-4 p-4">
-
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <BarChart2 size={14} className="text-chart-1-text" />
-                    <span className="text-body-sm font-semibold text-content-2">Métricas de eficiencia</span>
+        <div className="p-3 md:p-5 flex flex-col gap-4">
+            {/* ── Indicadores y filtros — una fila (§17.0) ── */}
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <CarrilCards className="flex-1" ariaLabel="Tiempos de los pedidos">
+                    <StatCard icon={ClipboardList} label="Pedidos" value={ind.pedidos} loading={loading}
+                        iconBg="bg-brand/10" iconCls="text-brand-text" sub={`últimos ${days} días`} />
+                    <StatCard icon={Clock} label="Preparación" value={fmtMin(ind.prep)} loading={loading}
+                        sub="promedio, sin pausas" />
+                    <StatCard icon={Truck} label="Tránsito" value={fmtMin(ind.transito)} loading={loading}
+                        sub="de bodega a la sala" />
+                    <StatCard icon={PackageCheck} label="Recuento" value={fmtMin(ind.recuento)} loading={loading}
+                        sub="de la llegada al ingreso" />
+                    <StatCard icon={Pause} label="Pausas" value={fmtMin(ind.pausado)} loading={loading}
+                        sub={`${ind.pausas} en total`} />
+                </CarrilCards>
+                <div className="flex justify-end min-w-0">
+                    <FilterBar
+                        onClear={() => setRange('30d')}
+                        activeCount={range !== '30d' ? 1 : 0}
+                        acciones={[{ key: 'actualizar', icon: RefreshCw, label: 'Actualizar', soloIcono: true,
+                            disabled: refreshing, onClick: () => load(days) }]}
+                    >
+                        <FilterBar.Section active={range !== '30d'} onClear={() => setRange('30d')} label="período">
+                            <SegmentedControl
+                                size="sm" tone="brand" label="Período"
+                                options={RANGES.map(r => ({ value: r.key, label: r.label }))}
+                                value={range} onChange={setRange} />
+                        </FilterBar.Section>
+                    </FilterBar>
                 </div>
-                <Button variant="ghost" icon={RefreshCw} disabled={refreshing} onClick={() => load(RANGES.find(r => r.key === range)?.days ?? 30)}>Refrescar</Button>
             </div>
 
-            {/* Selector de rango */}
-            <div className="flex gap-1.5">
-                <SegmentedControl
-                    size="sm" tone="chart-1"
-                    options={RANGES.map(r => ({ value: r.key, label: r.label }))}
-                    value={range} onChange={setRange} label="Rango" />
-            </div>
-
-            {kpis.length === 0 ? (
+            {sinDatos ? (
                 <div data-surface="card">
                     <EmptyState
                         compact
                         icon={BarChart2}
                         title="Sin tiempos registrados"
-                        subtitle="Los tiempos se registran al despachar y recibir pedidos."
+                        subtitle={`No hay pedidos despachados en los últimos ${days} días. Prueba con un período más largo.`}
                     />
                 </div>
             ) : (
                 <>
-                    {/* Summary cards */}
-                    <CarrilCards ariaLabel="Métricas de pedidos">
-                        <StatCard icon={TrendingUp}   label="Con datos" value={totalPedidos} iconBg="bg-chart-1/10" iconCls="text-chart-1-text"    />
-                        <StatCard icon={Clock}        label="Prep. neto prom."  value={avgPrep} iconBg="bg-chart-3/10" iconCls="text-chart-3-text"  sub="sin contar pausas" />
-                        <StatCard icon={Truck}        label="Tránsito prom."    value={avgTransito} iconBg="bg-chart-3/10" iconCls="text-chart-3-text"  />
-                        <StatCard icon={PackageCheck} label="Recuento prom."    value={avgRecuento} iconBg="bg-chart-9/10" iconCls="text-chart-9-text"    />
-                        <StatCard icon={Pause}        label="Pausa prom."       value={avgPausado} iconBg="bg-warning/10" iconCls="text-warning-text"   sub={`${totalPausas} pausas totales`} />
-                    </CarrilCards>
-
-                    {/* Tabla por sucursal */}
-                    <div data-surface="card">
-                        <div className="px-4 py-3 border-b border-divider">
-                            <p className="text-body-sm font-semibold text-content-2 flex items-center gap-2">
-                                <Building2 size={13} className="text-content-3" />
+                    {/* ── Por sucursal ── */}
+                    {/* Siete columnas de números no entran en 390px. En el
+                        teléfono cada sucursal cae a ficha: el nombre arriba,
+                        los pedidos a la derecha —que es el número por el que
+                        se abre esta pantalla— y los dos tiempos que más se
+                        miran en la línea de contexto. El ancla se declara
+                        porque acá no hay ninguna columna alineada a la
+                        derecha, y sin eso la inferencia tomaría la última,
+                        que es el conteo de pausas. */}
+                    {/* §26.2 — el vacío por búsqueda se arregla borrando el
+                        término; el vacío de verdad, despachando pedidos. */}
+                    <DataTable
+                        columns={COLS_SUCURSAL}
+                        dense minWidth="640px"
+                        loading={loading}
+                        toolbar={(
+                            <span className="flex items-center gap-2 text-body font-semibold text-content">
+                                <Building2 size={15} className="text-content-3" aria-hidden="true" />
                                 Por sucursal
-                            </p>
-                        </div>
-                        {/* Siete columnas de números no entran en 390px. En el
-                            teléfono cada sucursal cae a ficha: el nombre arriba,
-                            los pedidos a la derecha —que es el número por el que
-                            se abre esta pantalla— y los dos tiempos que más se
-                            miran en la línea de contexto. El ancla se declara
-                            porque acá no hay ninguna columna alineada a la
-                            derecha, y sin eso la inferencia tomaría la última,
-                            que es el conteo de pausas. `plano` porque la sección
-                            ya vive dentro de su propia tarjeta con encabezado. */}
-                        {/* §26.2 — el vacío por búsqueda se arregla borrando el
-                            término; el vacío de verdad, despachando pedidos. La
-                            tabla no distinguía los dos y con un término que no
-                            coincidía se quedaba en blanco, sin decir nada. */}
+                            </span>
+                        )}
+                        empty={searchTerm.trim()
+                            ? { icon: Search, message: `Ninguna sucursal coincide con "${searchTerm}"` }
+                            : { icon: Building2, message: 'Sin sucursales con tiempos' }}
+                        movil={{ identidad: 'sucursal', ancla: 'pedidos', chips: ['prep', 'transito'] }}
+                    >
+                        {filteredSucs.map((s, i) => (
+                            <DataRow key={s.id} index={i}>
+                                <DataCell className="font-semibold text-content">{s.nombre}</DataCell>
+                                <DataCell align="center" className="text-content tabular-nums font-semibold">{s.pedidos}</DataCell>
+                                <DataCell align="center" className="text-content-2 tabular-nums">{fmtMin(s.prep)}</DataCell>
+                                <DataCell align="center" className="text-content-2 tabular-nums">{fmtMin(s.pausado)}</DataCell>
+                                <DataCell align="center" className="text-content-2 tabular-nums">{fmtMin(s.transito)}</DataCell>
+                                <DataCell align="center" className="text-content-2 tabular-nums">{fmtMin(s.recuento)}</DataCell>
+                                <DataCell align="center" className="text-content-2 tabular-nums">
+                                    {s.pausas > 0 ? s.pausas : <span className="text-content-3">—</span>}
+                                </DataCell>
+                            </DataRow>
+                        ))}
+                    </DataTable>
+
+                    {/* ── Motivos de pausa ── */}
+                    {razones.length > 0 && (
                         <DataTable
-                            columns={COLS_SUCURSAL}
-                            plano dense minWidth="640px"
-                            empty={searchTerm.trim()
-                                ? { icon: Search, message: `Ninguna sucursal coincide con "${searchTerm}"` }
-                                : { icon: Building2, message: 'Sin sucursales con tiempos' }}
-                            movil={{ identidad: 'sucursal', ancla: 'pedidos', chips: ['prep', 'transito'] }}
+                            columns={COLS_RAZONES}
+                            dense minWidth="420px"
+                            toolbar={(
+                                <span className="flex items-center gap-2 text-body font-semibold text-content">
+                                    <Pause size={15} className="text-content-3" aria-hidden="true" />
+                                    Motivos de pausa
+                                </span>
+                            )}
+                            empty={{ icon: Pause, message: 'Sin pausas en el período' }}
+                            movil={{ identidad: 'razon', ancla: 'promedio', chips: ['conteo'] }}
                         >
-                            {filteredSucs.map((s, i) => (
-                                <DataRow key={s.id} index={i}>
-                                    <DataCell className="font-semibold text-content-2">{s.nombre}</DataCell>
-                                    <DataCell align="center" className="text-content-2 tabular-nums">{s.pedidos}</DataCell>
-                                    <DataCell align="center" className="font-medium text-chart-3-text tabular-nums">{fmtMin(s.prep)}</DataCell>
-                                    <DataCell align="center" className="font-medium text-warning tabular-nums">{fmtMin(s.pausado)}</DataCell>
-                                    <DataCell align="center" className="font-medium text-chart-3-text tabular-nums">{fmtMin(s.transito)}</DataCell>
-                                    <DataCell align="center" className="font-medium text-chart-9-text tabular-nums">{fmtMin(s.recuento)}</DataCell>
-                                    <DataCell align="center" className="tabular-nums">
-                                        {s.pausas > 0 ? (
-                                            <span className="inline-flex items-center gap-0.5 text-warning font-semibold">
-                                                <Pause size={9} />
-                                                {s.pausas}
+                            {razones.map((r, i) => (
+                                <DataRow key={r.razon} index={i}>
+                                    <DataCell className="font-semibold text-content">{rotuloRazon(r.razon)}</DataCell>
+                                    <DataCell>
+                                        <span className="flex items-center gap-2">
+                                            <span className="text-content tabular-nums font-semibold w-6 text-right">{r.conteo}</span>
+                                            {/* El ancho ES el dato (§32.8 regla 1). */}
+                                            <span data-medida="dato" className="flex-1 max-w-[220px] h-1.5 rounded-full bg-surface-card-hover overflow-hidden">
+                                                <span className="block h-full rounded-full bg-chart-1"
+                                                    style={{ width: `${Math.min(100, (r.conteo / maxConteo) * 100)}%` }} />
                                             </span>
-                                        ) : (
-                                            <span className="text-content-3">—</span>
-                                        )}
+                                        </span>
+                                    </DataCell>
+                                    <DataCell align="right" className="text-content-2 tabular-nums">
+                                        {r.min_promedio != null ? fmtMin(r.min_promedio) : '—'}
                                     </DataCell>
                                 </DataRow>
                             ))}
                         </DataTable>
-                    </div>
-
-                    {/* Razones de pausa */}
-                    {razones.length > 0 && (
-                        <div data-surface="card">
-                            <div className="px-4 py-3 border-b border-divider">
-                                <p className="text-body-sm font-semibold text-content-2 flex items-center gap-2">
-                                    <Pause size={13} className="text-warning" />
-                                    Razones de pausa
-                                </p>
-                            </div>
-                            <div className="px-4 py-3 space-y-2">
-                                {razones.map(r => (
-                                    <div key={r.razon} className="flex items-center gap-3">
-                                        {/* `min-w-0`: sin él un flex-item no baja de su
-                                            contenido y una razón larga empuja la barra
-                                            y el promedio fuera del renglón. */}
-                                        <span className="text-body-sm text-content-2 font-medium flex-1 min-w-0">{r.razon}</span>
-                                        <div className="flex items-center gap-2 shrink-0">
-                                            <span className="text-label font-bold text-warning tabular-nums w-6 text-right">{r.conteo}</span>
-                                            {/* 96px de barra + el conteo + el promedio dejaban
-                                                menos de la mitad del renglón para la razón, que
-                                                es lo único que hay que leer acá. */}
-                                            <div className="w-14 sm:w-24 h-2 bg-surface-card-hover rounded-full overflow-hidden">
-                                                <div
-                                                    className="h-full bg-warning rounded-full"
-                                                    style={{ width: `${Math.min(100, (r.conteo / razones[0].conteo) * 100)}%` }}
-                                                />
-                                            </div>
-                                            {r.min_promedio != null && (
-                                                <span className="text-caption text-content-3 w-14 text-right tabular-nums">
-                                                    ~{fmtMin(r.min_promedio)}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
                     )}
                 </>
             )}

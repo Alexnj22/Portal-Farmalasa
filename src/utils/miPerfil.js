@@ -89,3 +89,12 @@ export function cumpleEn(birthDate, hoy = hoySV()) {
     if (faltan <= 30) return `en ${faltan} días`;
     return null;
 }
+
+/** Los estados de un plan de vacaciones, con el mismo rótulo en el portal y la
+ *  app. `variante` es la palabra con que cada pantalla elige su color. */
+export const ESTADO_DE_PLAN = {
+    PLANNED:   { label: 'Planificado', variante: 'chart-1' },
+    CONFIRMED: { label: 'Confirmado',  variante: 'success' },
+    TAKEN:     { label: 'Completado',  variante: 'neutral' },
+};
+export const estadoDePlan = (status) => ESTADO_DE_PLAN[status] ?? ESTADO_DE_PLAN.PLANNED;

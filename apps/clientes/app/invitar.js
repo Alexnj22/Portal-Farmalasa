@@ -15,6 +15,7 @@ import { Entrada, NumeroAnimado } from '../componentes/animacion';
 import { colorSistema } from '../componentes/sistema';
 import { useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
+import Icono from '../componentes/Icono';
 
 export default function Invitar() {
   const t = useTema();
@@ -36,7 +37,7 @@ export default function Invitar() {
       <Entrada indice={0}>
         <LinearGradient colors={['#2B0B3A', t.color.magenta, '#5B1E9C']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={{ borderRadius: 26, padding: 22, gap: 10, alignItems: 'center' }}>
-          <Text style={{ fontSize: 44 }}>🤝</Text>
+          <Icono sf="person.2.fill" respaldo="🤝" tam={44} color="#FFFFFF" />
           <Text style={{ fontSize: 24, fontWeight: '800', color: '#FFFFFF', textAlign: 'center' }}>
             Invita y ganen {d.puntos} puntos cada uno
           </Text>

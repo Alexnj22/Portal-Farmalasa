@@ -24,7 +24,9 @@ import { Cargando, Vacio } from '../../componentes/ui';
 import { colorSistema } from '../../componentes/sistema';
 import { useOfertas } from '../../lib/ofertas';
 import { useSesion } from '../../lib/sesion';
+import { useCuenta } from '../../lib/cuenta';
 import ReservarHoja from '../../componentes/ReservarHoja';
+import Icono from '../../componentes/Icono';
 import { dolares, fecha } from '../../lib/formato';
 import { acentoDe, suave, useTema } from '../../tema/tema';
 
@@ -34,6 +36,8 @@ export default function Oferta() {
   const t = useTema();
   const datos = useOfertas((s) => s.datos);
   const token = useSesion((s) => s.token);
+  // Pre-registrado (todavía sin ficha): no puede reservar; ni se le ofrece.
+  const preRegistro = useCuenta((s) => !!s.resumen?.pendiente);
   const [reservando, setReservando] = useState(null);
   const cargar = useOfertas((s) => s.cargar);
   const o = datos?.ofertas?.find((x) => String(x.id) === String(id));
@@ -46,6 +50,17 @@ export default function Oferta() {
   const cerrar = () => { Haptics.selectionAsync().catch(() => {}); router.back(); };
 
   if (!datos) return <View style={{ flex: 1, backgroundColor: fondo }}><Cargando /></View>;
+  // Falló la red: no es «ya no está». Se dice y se puede reintentar.
+  if (!datos.ok) {
+    return (
+      <View style={{ flex: 1, backgroundColor: fondo, justifyContent: 'center' }}>
+        <Vacio titulo="No se pudo cargar">{datos.mensaje ?? 'Revisa tu conexión.'}</Vacio>
+        <Pressable onPress={() => cargar({ forzar: true })} accessibilityRole="button" style={{ alignSelf: 'center', padding: 14 }}>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: t.color.magentaTexto }}>Reintentar</Text>
+        </Pressable>
+      </View>
+    );
+  }
   if (!o) {
     return (
       <View style={{ flex: 1, backgroundColor: fondo }}>
@@ -55,7 +70,7 @@ export default function Oferta() {
   }
   const a = acentoDe(t, o.acento);
   // Reservar: con sesión y oferta disponible (lo exclusivo, sólo socios).
-  const puedeReservar = !!token && o.disponible;
+  const puedeReservar = !!token && o.disponible && !preRegistro;
   const ahorroMax = Math.max(0, ...(o.productos ?? []).map((p) => (p.precio ?? 0) - (p.precio_descuento ?? 0)));
 
   return (
@@ -120,7 +135,7 @@ export default function Oferta() {
                         ) : null}
                       </View>
                       {puedeReservar ? (
-                        <Pressable onPress={() => setReservando(p)} accessibilityRole="button" accessibilityLabel={`Reservar ${p.nombre}`}
+                        <Pressable onPress={() => setReservando(p)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Reservar ${p.nombre}`}
                           style={({ pressed }) => ({ backgroundColor: a.fuerte, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
                           <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '800' }}>Reservar</Text>
                         </Pressable>
@@ -165,7 +180,7 @@ export default function Oferta() {
           backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center',
           transform: [{ scale: pressed ? 0.92 : 1 }],
         })}>
-        <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '800' }}>✕</Text>
+        <Icono sf="xmark" respaldo="✕" tam={15} color="#FFFFFF" />
       </Pressable>
     </View>
   );

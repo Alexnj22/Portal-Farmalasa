@@ -8,14 +8,15 @@ import { colorSistema } from './sistema';
 import { nombreBiometria, useBloqueo } from '../lib/bloqueo';
 import { useTema } from '../tema/tema';
 
-export default function PantallaBloqueo() {
+export default function PantallaBloqueo({ soloCubrir = false }) {
   const t = useTema();
   const desbloquear = useBloqueo((s) => s.desbloquear);
   const [nombre, setNombre] = useState('Face ID');
   useEffect(() => {
+    if (soloCubrir) return;
     nombreBiometria().then((n) => n && setNombre(n));
     desbloquear();
-  }, [desbloquear]);
+  }, [desbloquear, soloCubrir]);
   return (
     <View style={[StyleSheet.absoluteFill, { zIndex: 100 }]}>
       <Aurora />
@@ -23,9 +24,11 @@ export default function PantallaBloqueo() {
         <Image source={require('../assets/icono.png')} style={{ width: 84, height: 84, borderRadius: 20 }} />
         <Text style={{ fontSize: 24, fontWeight: '800', color: colorSistema.texto }}>Puntos Salud</Text>
         <Text style={{ fontSize: 15, color: colorSistema.texto2, textAlign: 'center' }}>Está bloqueada para cuidar tu saldo y tu código.</Text>
-        <View style={{ width: '100%', marginTop: 12 }}>
-          <BotonNativo etiqueta={`Desbloquear con ${nombre}`} alTocar={desbloquear} color={t.color.magenta} />
-        </View>
+        {soloCubrir ? null : (
+          <View style={{ width: '100%', marginTop: 12 }}>
+            <BotonNativo etiqueta={`Desbloquear con ${nombre}`} alTocar={desbloquear} color={t.color.magenta} />
+          </View>
+        )}
       </View>
     </View>
   );

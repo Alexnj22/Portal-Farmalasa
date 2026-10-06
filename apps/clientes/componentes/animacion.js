@@ -76,9 +76,11 @@ export function BarraAnimada({ avance, color, fondo, alto = 8 }) {
 function entradaSinOpacidad(retraso) {
   return () => {
     'worklet';
-    const resorte = { damping: 18, stiffness: 140, mass: 0.9 };
+    // Más corta y sin rebote (revisión 2026-10-06: con muchas tarjetas a la
+    // vez se sentía exagerado).
+    const resorte = { damping: 24, stiffness: 180, mass: 0.9 };
     return {
-      initialValues: { transform: [{ translateY: 28 }, { scale: 0.97 }] },
+      initialValues: { transform: [{ translateY: 12 }, { scale: 0.985 }] },
       animations: {
         transform: [
           { translateY: withDelay(retraso, withSpring(0, resorte)) },
@@ -91,7 +93,8 @@ function entradaSinOpacidad(retraso) {
 
 export function Entrada({ indice = 0, children, estilo }) {
   return (
-    <Animated.View style={estilo} entering={entradaSinOpacidad(60 + indice * 70)}>
+    // Con tope: en listas largas las últimas ya no esperan más de medio segundo.
+    <Animated.View style={estilo} entering={entradaSinOpacidad(40 + Math.min(indice, 6) * 55)}>
       {children}
     </Animated.View>
   );
@@ -158,11 +161,15 @@ export function Confeti({ colores, alTerminar }) {
   );
 }
 
-/** Algo que late suave (para llamar la atención sin gritar). */
+/**
+ * Algo que late suave para llamar la atención: TRES latidos al aparecer y
+ * después quieto. Un pulso que no para nunca distrae y gasta batería (iOS no lo
+ * hace; revisión 2026-10-06).
+ */
 export function Latido({ children, estilo, escala = 1.05 }) {
   const s = useSharedValue(1);
   useEffect(() => {
-    s.value = withRepeat(withSequence(withTiming(escala, { duration: 700 }), withTiming(1, { duration: 700 })), -1);
+    s.value = withDelay(400, withRepeat(withSequence(withTiming(escala, { duration: 600 }), withTiming(1, { duration: 600 })), 3));
   }, [s, escala]);
   const animado = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
   return <Animated.View style={[estilo, animado]}>{children}</Animated.View>;

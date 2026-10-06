@@ -2,7 +2,7 @@
 // «420 puntos» no— y el número de puntos va como el detalle de la cifra.
 // Misma decisión que /mis-puntos de la web.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Platform, Pressable, Text, View } from 'react-native';
+import { Alert, AppState, Platform, Pressable, Text, View } from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo } from '../../../componentes/ui';
 import { useCuenta } from '../../../lib/cuenta';
@@ -13,6 +13,7 @@ import Vencimientos from '../../../componentes/Vencimientos';
 import Cumpleanos from '../../../componentes/Cumpleanos';
 import Historias from '../../../componentes/Historias';
 import Icono from '../../../componentes/Icono';
+import { useVisible } from '../../../lib/visible';
 import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '../../../componentes/animacion';
 import { useSesion } from '../../../lib/sesion';
 import { abrirPase, agregarPase, tienePase, walletDisponible } from '../../../modules/wallet';
@@ -32,6 +33,7 @@ export default function Puntos() {
   const t = useTema();
   const { cumple } = useLocalSearchParams();
   const { resumen, error, cargar, generacion } = useCuenta();
+  const visible = useVisible();
   const [refrescando, setRefrescando] = useState(false);
   const pedir = useSesion((s) => s.pedir);
   const [mas, setMas] = useState([]);
@@ -87,16 +89,16 @@ export default function Puntos() {
     <Pantalla alRefrescar={refrescar} refrescando={refrescando}>
       <Cumpleanos activo={!!resumen.cumpleanos} forzar={cumple === '1'} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
       <Entrada indice={0} estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Texto nivel={2} estilo={{ fontSize: 17 }}>{resumen.cumpleanos ? `¡Feliz cumpleaños, ${primerNombre}! 🎂` : `Hola, ${primerNombre}`}</Texto>
-        <Campana />
+        <Texto nivel={2} estilo={{ fontSize: 17 }}>{resumen.cumpleanos ? `¡Feliz cumpleaños, ${primerNombre}!` : `Hola, ${primerNombre}`}</Texto>
+        <Campana generacion={generacion} />
       </Entrada>
 
       {/* Historias: promociones e información, tipo estados. */}
-      <Historias />
+      <Historias generacion={generacion} />
 
       {/* La tarjeta de socio: saldo al frente, código y QR al reverso. */}
       <Entrada indice={1}>
-        <TarjetaSocio nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
+        <TarjetaSocio activa={visible} nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
           codigo={resumen.codigo} socioDesde={resumen.socio_desde} />
       </Entrada>
 
@@ -164,14 +166,14 @@ export default function Puntos() {
 
       {/* Invitar: 50 puntos para cada uno (ver app/invitar.js). */}
       <Entrada indice={4}>
-        <Tocable alTocar={() => router.push('/invitar')}>
+        <Tocable alTocar={() => router.push('/invitar')} etiqueta="Invita y ganen 50 puntos">
           <Tarjeta tono={t.color.verde} estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Text style={{ fontSize: 30 }}>🤝</Text>
+            <Icono sf="person.2.fill" respaldo="🤝" tam={26} color={t.color.verdeTexto} />
             <View style={{ flex: 1, gap: 2 }}>
               <Titulo>Invita y ganen 50 puntos</Titulo>
               <Texto nivel={2} estilo={{ fontSize: 14 }}>Cada uno, con la primera compra de tu amigo.</Texto>
             </View>
-            <Text style={{ fontSize: 22, color: colorSistema.texto3 }}>›</Text>
+            <Icono sf="chevron.right" respaldo="›" tam={15} color={colorSistema.texto3} />
           </Tarjeta>
         </Tocable>
       </Entrada>
@@ -181,12 +183,12 @@ export default function Puntos() {
         <Entrada indice={4}>
           <Tocable alTocar={() => router.push('/reservas')} etiqueta="Mis reservas">
             <Tarjeta tono={t.color.verde} estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Text style={{ fontSize: 28 }}>🛍️</Text>
+              <Icono sf="bag.fill" respaldo="🛍️" tam={26} color={t.color.verdeTexto} />
               <View style={{ flex: 1, gap: 2 }}>
                 <Titulo>{resumen.reservas_listas ? `${resumen.reservas_listas} lista${resumen.reservas_listas > 1 ? 's' : ''} para retirar` : 'Tus reservas'}</Titulo>
                 <Texto nivel={2} estilo={{ fontSize: 14 }}>{resumen.reservas_abiertas} reserva{resumen.reservas_abiertas > 1 ? 's' : ''} activa{resumen.reservas_abiertas > 1 ? 's' : ''}</Texto>
               </View>
-              <Text style={{ fontSize: 22, color: colorSistema.texto3 }}>›</Text>
+              <Icono sf="chevron.right" respaldo="›" tam={15} color={colorSistema.texto3} />
             </Tarjeta>
           </Tocable>
         </Entrada>
@@ -199,26 +201,26 @@ export default function Puntos() {
             style={{ borderRadius: 26, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 14, overflow: 'hidden' }}>
             <Text style={{ position: 'absolute', right: 40, top: -30, fontSize: 130, fontWeight: '900', color: 'rgba(255,255,255,0.08)' }}>+</Text>
             <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 26 }}>📍</Text>
+              <Icono sf="mappin.and.ellipse" respaldo="📍" tam={24} color="#FFFFFF" />
             </View>
             <View style={{ flex: 1, gap: 2 }}>
               <Text style={{ fontSize: 19, fontWeight: '800', color: '#FFFFFF' }}>Nuestras sucursales</Text>
               <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.88)' }}>Horarios, cómo llegar y WhatsApp</Text>
             </View>
-            <Text style={{ fontSize: 26, color: '#FFFFFF' }}>›</Text>
+            <Icono sf="chevron.right" respaldo="›" tam={16} color="#FFFFFF" />
           </LinearGradient>
         </Tocable>
       </Entrada>
 
       {/* Las compras, con sus productos: de ahí salen los puntos y las inyecciones. */}
       <Entrada indice={4}>
-        <Tocable alTocar={() => router.push('/compras')}>
+        <Tocable alTocar={() => router.push('/compras')} etiqueta="Mis compras">
           <Tarjeta estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ gap: 2 }}>
               <Titulo>Mis compras</Titulo>
               <Texto nivel={2} estilo={{ fontSize: 14 }}>Qué compraste, dónde y cuántos puntos te dio.</Texto>
             </View>
-            <Text style={{ fontSize: 22, color: colorSistema.texto3 }}>›</Text>
+            <Icono sf="chevron.right" respaldo="›" tam={15} color={colorSistema.texto3} />
           </Tarjeta>
         </Tocable>
       </Entrada>
@@ -279,6 +281,8 @@ function BotonWallet({ serial }) {
     const r = await pedir('wallet_pase');
     if (r?.ok && r.pase) {
       try { if (await agregarPase(r.pase)) setTiene(true); } catch { /* la hoja se cerró o falló */ }
+    } else {
+      Alert.alert('No se pudo preparar la tarjeta', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
     }
     setCargando(false);
   };
@@ -298,11 +302,20 @@ function BotonWallet({ serial }) {
 }
 
 // La campana: abre la bandeja; el número son los avisos sin leer.
-function Campana() {
+let campanaAt = 0;
+let campanaUltimo = 0;
+let campanaGen = -1;
+function Campana({ generacion }) {
   const t = useTema();
   const pedir = useSesion((s) => s.pedir);
-  const [sinLeer, setSinLeer] = useState(0);
-  useFocusEffect(useCallback(() => { pedir('bandeja').then((r) => setSinLeer(r?.sin_leer ?? 0)); }, [pedir]));
+  const [sinLeer, setSinLeer] = useState(campanaUltimo);
+  // Al volver a la pestaña, a lo sumo una vez por minuto; con un resumen nuevo
+  // (deslizar para refrescar), siempre.
+  useFocusEffect(useCallback(() => {
+    if (generacion === campanaGen && Date.now() - campanaAt < 60_000) return;
+    campanaGen = generacion; campanaAt = Date.now();
+    pedir('bandeja').then((r) => { if (r?.ok) { campanaUltimo = r.sin_leer ?? 0; setSinLeer(campanaUltimo); } });
+  }, [pedir, generacion]));
   return (
     <Pressable onPress={() => router.push('/notificaciones')} hitSlop={10} accessibilityRole="button"
       accessibilityLabel={sinLeer ? `Notificaciones, ${sinLeer} sin leer` : 'Notificaciones'}
@@ -312,7 +325,7 @@ function Campana() {
       {sinLeer ? (
         <View style={{ position: 'absolute', top: 4, right: 4, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4,
           backgroundColor: '#FF3B30', alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: '#FFF', fontSize: 11, fontWeight: '800' }}>{sinLeer > 9 ? '9+' : sinLeer}</Text>
+          <Text maxFontSizeMultiplier={1.2} style={{ color: '#FFF', fontSize: 11, fontWeight: '800' }}>{sinLeer > 9 ? '9+' : sinLeer}</Text>
         </View>
       ) : null}
     </Pressable>

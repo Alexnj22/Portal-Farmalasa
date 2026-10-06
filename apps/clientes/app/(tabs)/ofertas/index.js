@@ -10,6 +10,7 @@ import { useTema } from '../../../tema/tema';
 import { Entrada, Tocable } from '../../../componentes/animacion';
 import TarjetaOferta from '../../../componentes/TarjetaOferta';
 import { useOfertas } from '../../../lib/ofertas';
+import Icono from '../../../componentes/Icono';
 
 export default function Ofertas({ invitacion = false }) {
   const t = useTema();
@@ -28,12 +29,12 @@ export default function Ofertas({ invitacion = false }) {
         <Entrada indice={0}>
           <Tocable etiqueta="Unirme al programa" alTocar={() => router.push('/registro')}>
             <Tarjeta tono={t.color.verde} estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Text style={{ fontSize: 28 }}>🎁</Text>
+              <Icono sf="gift.fill" respaldo="🎁" tam={26} color={t.color.verdeTexto} />
               <View style={{ flex: 1, gap: 2 }}>
                 <Titulo>Únete gratis</Titulo>
                 <Texto nivel={2} estilo={{ fontSize: 14 }}>Acumula puntos en cada compra y desbloquea las ofertas exclusivas.</Texto>
               </View>
-              <Text style={{ fontSize: 22, color: colorSistema.texto3 }}>›</Text>
+              <Icono sf="chevron.right" respaldo="›" tam={15} color={colorSistema.texto3} />
             </Tarjeta>
           </Tocable>
         </Entrada>

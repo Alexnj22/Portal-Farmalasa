@@ -19,16 +19,17 @@
 //   · la sombra se corre al lado contrario de la inclinación;
 //   · tocarla, o deslizarla rápido de lado, la GIRA: se levanta, se encoge un
 //     poco a mitad del giro y vibra cuando muestra la otra cara.
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
-  Easing, interpolate, runOnJS, useAnimatedReaction, useAnimatedStyle, useDerivedValue, useSharedValue,
+  cancelAnimation, Easing, interpolate, runOnJS, useReducedMotion, useAnimatedReaction, useAnimatedStyle, useDerivedValue, useSharedValue,
   withDelay, withRepeat, withSequence, withSpring, withTiming,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import QRCode from 'react-native-qrcode-svg';
 import * as Haptics from 'expo-haptics';
+import * as Brightness from 'expo-brightness';
 import tokens from '@nucleo/constants/tokens.json';
 import useInclinacion from './useInclinacion';
 import BrilloTarjeta from './BrilloTarjeta';
@@ -43,17 +44,23 @@ const desde = (f) => {
 const QR_DE = (codigo) => `https://portal.farmasalud.lat/mis-puntos?codigo=${codigo}`;
 const GIRO = { damping: 15, stiffness: 110, mass: 1 };
 const SUAVE = { damping: 20, stiffness: 90 };
-const SOLTAR = { damping: 9, stiffness: 140 };
+const SOLTAR = { damping: 18, stiffness: 160 };
 const limitar = (v) => { 'worklet'; return Math.max(-1, Math.min(1, v)); };
 const vibrar = (fuerte) => Haptics.impactAsync(fuerte ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 
-export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde }) {
+export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, activa = true }) {
+  // Con «Reducir movimiento» del iPhone: sin giroscopio, sin luz que pasa.
+  const reducir = useReducedMotion();
   const giro = useSharedValue(0);              // 0 = frente, 1 = reverso
   const entrada = useSharedValue(0);
   const barrido = useSharedValue(0);
   const dedoX = useSharedValue(0);
   const dedoY = useSharedValue(0);
-  const { x: sx, y: sy } = useInclinacion();
+  // El giroscopio vive en un hijo que sólo se monta con la tarjeta a la vista
+  // (pestaña enfocada y app activa): antes leía cada 16 ms aunque estuvieras
+  // en otra pestaña (revisión 2026-10-06).
+  const sx = useSharedValue(0);
+  const sy = useSharedValue(0);
 
   // El giroscopio pasa por un resorte (sin él, el brillo temblaba) y se le
   // suma el dedo. Resultado en −1…1.
@@ -66,14 +73,19 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
   const x = useDerivedValue(() => limitar(suaveX.value + dedoX.value));
   const y = useDerivedValue(() => limitar(suaveY.value + dedoY.value));
 
+  // Entrada sobria: sube un poco y aparece, sin rebote ni giro.
   useEffect(() => {
-    entrada.value = withSpring(1, { damping: 14, stiffness: 90, mass: 1.1 });
-    // La franja de luz: una vez al llegar, y después cada ~5 s.
+    entrada.value = withTiming(1, { duration: 450, easing: Easing.out(Easing.cubic) });
+  }, [entrada]);
+  // La franja de luz: al llegar y cada ~6 s, sólo mientras se ve.
+  useEffect(() => {
+    if (!activa || reducir) { cancelAnimation(barrido); return; }
+    barrido.value = 0;
     barrido.value = withDelay(500, withRepeat(withSequence(
       withTiming(1, { duration: 1300, easing: Easing.inOut(Easing.cubic) }),
-      withDelay(4200, withTiming(0, { duration: 0 })),
+      withDelay(5000, withTiming(0, { duration: 0 })),
     ), -1));
-  }, [entrada, barrido]);
+  }, [activa, reducir, barrido]);
 
   const voltear = () => {
     vibrar(false);
@@ -81,8 +93,23 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
   };
   // La vibración fuerte cuando la otra cara queda al frente (a mitad del giro).
   useAnimatedReaction(() => giro.value > 0.5, (ahora, antes) => {
-    if (antes !== null && ahora !== antes) runOnJS(vibrar)(true);
+    if (antes !== null && ahora !== antes) { runOnJS(vibrar)(true); runOnJS(brilloQr)(ahora); }
   });
+  // Con el QR a la vista, la pantalla al máximo (como Wallet), para que el
+  // lector de la caja lo lea a la primera; al girarla de vuelta, como estaba.
+  const brilloAntes = useRef(null);
+  const brilloQr = async (mostrando) => {
+    try {
+      if (mostrando) {
+        if (brilloAntes.current == null) brilloAntes.current = await Brightness.getBrightnessAsync();
+        await Brightness.setBrightnessAsync(1);
+      } else if (brilloAntes.current != null) {
+        await Brightness.setBrightnessAsync(brilloAntes.current);
+        brilloAntes.current = null;
+      }
+    } catch { /* sin permiso o sin brillo: no importa */ }
+  };
+  useEffect(() => () => { if (brilloAntes.current != null) Brightness.setBrightnessAsync(brilloAntes.current).catch(() => {}); }, []);
 
   // Arrastrar de lado la inclina; un deslizamiento rápido la gira. Lo vertical
   // se lo deja a la pantalla (que hace scroll).
@@ -106,10 +133,10 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
       opacity: entrada.value,
       transform: [
         { perspective: 1000 },
-        { translateY: (1 - entrada.value) * 60 - medio * 10 },
-        { rotateX: `${(1 - entrada.value) * 35 - y.value * 12}deg` },
+        { translateY: (1 - entrada.value) * 16 - medio * 10 },
+        { rotateX: `${-y.value * 12}deg` },
         { rotateY: `${x.value * 14}deg` },
-        { scale: (0.92 + entrada.value * 0.08) * (1 - medio * 0.06) },
+        { scale: (0.97 + entrada.value * 0.03) * (1 - medio * 0.06) },
       ],
     };
   });
@@ -130,6 +157,8 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
   const nombreTarjeta = p.length >= 4 ? `${p[0]} ${p[2]}` : p.length === 3 ? `${p[0]} ${p[1]}` : p.join(' ');
 
   return (
+    <>
+    {activa && !reducir ? <Sensor salidaX={sx} salidaY={sy} /> : null}
     <GestureDetector gesture={gestos}>
       <Animated.View style={[{ aspectRatio: 1.586, width: '100%' }, estilos.sombra, sombra, ladeo]}
         accessible accessibilityRole="button"
@@ -162,9 +191,9 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Image source={require('../assets/icono.png')} style={{ width: 30, height: 30, borderRadius: 8 }} />
-                <Text style={estilos.marca}>PUNTOS SALUD</Text>
+                <Text maxFontSizeMultiplier={1.3} style={estilos.marca}>PUNTOS SALUD</Text>
               </View>
-              <Text style={estilos.socio}>SOCIO</Text>
+              <Text maxFontSizeMultiplier={1.3} style={estilos.socio}>SOCIO</Text>
             </View>
 
             {/* El «chip», como en una tarjeta de verdad. */}
@@ -172,12 +201,12 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
 
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
               <View style={{ flex: 1, gap: 2 }}>
-                <Text style={estilos.nombre} numberOfLines={1}>{nombreTarjeta.toUpperCase()}</Text>
-                {desde(socioDesde) ? <Text style={estilos.desde}>Socio desde {desde(socioDesde)}</Text> : null}
+                <Text maxFontSizeMultiplier={1.3} style={estilos.nombre} numberOfLines={1}>{nombreTarjeta.toUpperCase()}</Text>
+                {desde(socioDesde) ? <Text maxFontSizeMultiplier={1.3} style={estilos.desde}>Socio desde {desde(socioDesde)}</Text> : null}
               </View>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={estilos.saldo}>{dolares(equivale)}</Text>
-                <Text style={estilos.puntos}>{entero(saldo)} pts</Text>
+                <Text maxFontSizeMultiplier={1.3} adjustsFontSizeToFit numberOfLines={1} style={estilos.saldo}>{dolares(equivale)}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={estilos.puntos}>{entero(saldo)} pts</Text>
               </View>
             </View>
           </View>
@@ -192,15 +221,24 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
               {codigo ? <QRCode value={QR_DE(codigo)} size={118} color="#1A0822" backgroundColor="#FFFFFF" /> : null}
             </View>
             <View style={{ flex: 1, gap: 6 }}>
-              <Text style={estilos.socio}>TU CÓDIGO</Text>
-              <Text style={estilos.codigo} adjustsFontSizeToFit numberOfLines={1}>{codigo ?? '—'}</Text>
-              <Text style={estilos.ayuda}>Muéstralo en caja para usar tus puntos.</Text>
+              <Text maxFontSizeMultiplier={1.3} style={estilos.socio}>TU CÓDIGO</Text>
+              <Text maxFontSizeMultiplier={1.3} style={estilos.codigo} adjustsFontSizeToFit numberOfLines={1}>{codigo ?? '—'}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={estilos.ayuda}>Muéstralo en caja para usar tus puntos.</Text>
             </View>
           </View>
         </Animated.View>
       </Animated.View>
     </GestureDetector>
+    </>
   );
+}
+
+// El giroscopio, montado sólo mientras la tarjeta se ve: al desmontarse, el
+// sensor se suelta y deja de leer.
+function Sensor({ salidaX, salidaY }) {
+  const { x, y } = useInclinacion();
+  useAnimatedReaction(() => [x.value, y.value], ([a, b]) => { salidaX.value = a; salidaY.value = b; });
+  return null;
 }
 
 const estilos = StyleSheet.create({

@@ -9,8 +9,9 @@
 //     pausa, deslizar hacia abajo cierra; y si la historia lleva enlace, un
 //     botón para ir (a una oferta, a sucursales…).
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image as ImagenCache } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
@@ -19,24 +20,37 @@ import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-g
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colorSistema } from './sistema';
 import { useSesion } from '../lib/sesion';
+import { useBloqueo } from '../lib/bloqueo';
 import { llamar } from '../lib/api';
 import { useTema } from '../tema/tema';
+import Icono from './Icono';
 
 const CLAVE = 'puntos_salud_historias_vistas';
 const DURACION = 6000;
 
-export default function Historias() {
+// Cuándo se pidieron por última vez: al volver a la pestaña no se piden de
+// nuevo antes de un minuto (cada pedido firmaba las fotos otra vez).
+let pedidasAt = 0;
+let pedidasPara = null;
+
+export default function Historias({ generacion = 0 }) {
   const t = useTema();
   const token = useSesion((s) => s.token);
   const pedir = useSesion((s) => s.pedir);
   const [lista, setLista] = useState([]);
   const [vistas, setVistas] = useState(new Set());
   const [abierta, setAbierta] = useState(null);
+  // Bloqueada con Face ID: el visor se oculta (un Modal queda por encima del bloqueo).
+  const bloqueada = useBloqueo((s) => s.bloqueada);
 
   useFocusEffect(useCallback(() => {
+    const clave = `${token ?? ''}|${generacion}`;
+    if (lista.length && pedidasPara === clave && Date.now() - pedidasAt < 60_000) return;
+    pedidasPara = clave;
+    pedidasAt = Date.now();
     (token ? pedir('historias') : llamar('historias_publicas')).then((r) => { if (r?.ok) setLista(r.historias ?? []); });
     SecureStore.getItemAsync(CLAVE).catch(() => null).then((v) => { try { setVistas(new Set(JSON.parse(v ?? '[]'))); } catch { /* vacío */ } });
-  }, [token, pedir]));
+  }, [token, pedir, generacion])); // eslint-disable-line react-hooks/exhaustive-deps -- `lista` sólo decide si hace falta pedir
 
   const marcar = (id) => setVistas((prev) => {
     if (prev.has(String(id))) return prev;
@@ -61,7 +75,7 @@ export default function Historias() {
               <LinearGradient colors={vista ? ['#9A9AA2', '#9A9AA2'] : ['#FFD60A', t.color.magenta, '#5B1E9C']}
                 start={{ x: 0, y: 1 }} end={{ x: 1, y: 0 }} style={{ padding: 3, borderRadius: 40 }}>
                 <View style={{ padding: 2.5, borderRadius: 37, backgroundColor: t.oscuro ? '#121016' : '#F5F4F8' }}>
-                  <Image source={{ uri: h.imagen }} style={{ width: 64, height: 64, borderRadius: 32 }} />
+                  <ImagenCache source={{ uri: h.imagen, cacheKey: h.imagen_clave ?? undefined }} cachePolicy="memory-disk" transition={150} style={{ width: 64, height: 64, borderRadius: 32 }} />
                 </View>
               </LinearGradient>
               <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: vista ? '500' : '700', color: vista ? colorSistema.texto3 : colorSistema.texto }}>{h.titulo}</Text>
@@ -69,7 +83,7 @@ export default function Historias() {
           );
         })}
       </ScrollView>
-      {abierta != null ? (
+      {abierta != null && !bloqueada ? (
         <Visor historias={abierta.lista} inicio={abierta.i} alVer={marcar} alCerrar={() => setAbierta(null)} />
       ) : null}
     </>
@@ -84,6 +98,9 @@ function Visor({ historias, inicio, alVer, alCerrar }) {
   const caida = useSharedValue(0);
   const h = historias[i];
   const siguienteRef = useRef(null);
+  // Con VoiceOver no avanza sola: se pasa con las acciones «Siguiente»/«Anterior».
+  const lectorRef = useRef(false);
+  useEffect(() => { AccessibilityInfo.isScreenReaderEnabled().then((v) => { lectorRef.current = v; if (v) cancelAnimation(avance); }).catch(() => {}); }, [avance]);
 
   const cerrar = useCallback(() => alCerrar(), [alCerrar]);
   const ir = useCallback((n) => {
@@ -96,12 +113,13 @@ function Visor({ historias, inicio, alVer, alCerrar }) {
   const siguiente = () => siguienteRef.current?.();
 
   const arrancar = () => {
+    if (lectorRef.current) return; // con VoiceOver no avanza sola
     avance.value = withTiming(1, { duration: DURACION * (1 - avance.value), easing: Easing.linear }, (fin) => { if (fin) runOnJS(siguiente)(); });
   };
   useEffect(() => {
     alVer(h.id);
     avance.value = 0;
-    if (historias[i + 1]?.imagen) Image.prefetch(historias[i + 1].imagen).catch(() => {});
+    if (historias[i + 1]?.imagen) ImagenCache.prefetch(historias[i + 1].imagen, 'memory-disk').catch(() => {});
     arrancar();
     return () => cancelAnimation(avance);
   }, [i]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -135,8 +153,12 @@ function Visor({ historias, inicio, alVer, alCerrar }) {
     <Modal visible transparent animationType="fade" onRequestClose={cerrar} statusBarTranslucent>
       <GestureHandlerRootView style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)' }}>
         <GestureDetector gesture={gestos}>
-          <Animated.View style={[{ flex: 1, overflow: 'hidden', backgroundColor: '#000' }, estiloCaida]}>
-            <Image source={{ uri: h.imagen }} resizeMode="cover" style={StyleSheet.absoluteFill} />
+          <Animated.View style={[{ flex: 1, overflow: 'hidden', backgroundColor: '#000' }, estiloCaida]}
+            accessible accessibilityLabel={`Historia ${i + 1} de ${historias.length}: ${h.titulo}. ${h.texto ?? ''}`}
+            accessibilityActions={[{ name: 'increment', label: 'Siguiente' }, { name: 'decrement', label: 'Anterior' }, { name: 'escape', label: 'Cerrar' }]}
+            onAccessibilityAction={(e) => { const a = e.nativeEvent.actionName; if (a === 'increment') ir(i + 1); else if (a === 'decrement') ir(i - 1); else cerrar(); }}
+            onAccessibilityEscape={cerrar}>
+            <ImagenCache source={{ uri: h.imagen, cacheKey: h.imagen_clave ?? undefined }} cachePolicy="memory-disk" contentFit="cover" transition={180} style={StyleSheet.absoluteFill} />
             <LinearGradient colors={['rgba(0,0,0,0.55)', 'transparent']} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 160 }} />
             <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 320 }} />
 
@@ -156,7 +178,7 @@ function Visor({ historias, inicio, alVer, alCerrar }) {
                   <Text style={{ color: '#FFF', fontWeight: '800', fontSize: 14 }}>Farmacia Salud</Text>
                 </View>
                 <Pressable onPress={cerrar} hitSlop={14} accessibilityRole="button" accessibilityLabel="Cerrar">
-                  <Text style={{ color: '#FFF', fontSize: 22, fontWeight: '700' }}>✕</Text>
+                  <Icono sf="xmark" respaldo="✕" tam={20} color="#FFFFFF" />
                 </Pressable>
               </View>
             </View>

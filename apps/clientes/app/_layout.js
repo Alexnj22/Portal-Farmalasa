@@ -1,12 +1,13 @@
 // La raíz: el fondo de la marca, la sesión desde el llavero y la guardia que
 // manda a la bienvenida a quien no tiene sesión.
-import { useEffect } from 'react';
-import { Platform, useColorScheme } from 'react-native';
+import { useEffect, useState } from 'react';
+import { AppState, Platform, useColorScheme } from 'react-native';
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Aurora from '../componentes/Aurora';
+import { useAppActiva } from '../lib/visible';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { useSesion } from '../lib/sesion';
 import { conReporte } from '../lib/errores';
@@ -83,6 +84,8 @@ function AbrirAviso() {
     const ir = (r) => {
       const url = r?.notification?.request?.content?.data?.url;
       if (typeof url === 'string' && url.startsWith('/')) router.push(url);
+      // Atendido: que no se vuelva a abrir al entrar de nuevo en esta ejecución.
+      Notifications.clearLastNotificationResponseAsync?.().catch?.(() => {});
     };
     Notifications.getLastNotificationResponseAsync().then(ir).catch(() => {});
     const sub = Notifications.addNotificationResponseReceivedListener(ir);
@@ -91,12 +94,31 @@ function AbrirAviso() {
   return null;
 }
 
+// La aurora de la raíz: detrás de las pestañas la tapan las suyas, así que ahí
+// se pausa; y siempre con la app en segundo plano.
+function AuroraRaiz() {
+  const segmentos = useSegments();
+  const activa = useAppActiva();
+  return <Aurora activa={activa && segmentos[0] !== '(tabs)'} />;
+}
+
 // El bloqueo con Face ID, encima de todo, sólo con sesión abierta.
 function Bloqueo() {
   const token = useSesion((s) => s.token);
-  const { bloqueada, cargar } = useBloqueo();
+  const { bloqueada, activo, cargar } = useBloqueo();
+  // Con el bloqueo encendido, al salir de la app se tapa el contenido: la foto
+  // que iOS toma para el selector de apps mostraba el saldo y el QR aunque la
+  // app «estuviera bloqueada» (revisión 2026-10-06). Igual que Wallet o un banco.
+  const [cubierta, setCubierta] = useState(false);
   useEffect(() => { cargar(); return vigilarCicloDeVida(); }, [cargar]);
-  return token && bloqueada ? <PantallaBloqueo /> : null;
+  useEffect(() => {
+    if (!activo) return undefined;
+    const sub = AppState.addEventListener('change', (e) => setCubierta(e !== 'active'));
+    return () => sub.remove();
+  }, [activo]);
+  if (!token) return null;
+  if (bloqueada) return <PantallaBloqueo />;
+  return cubierta ? <PantallaBloqueo soloCubrir /> : null;
 }
 
 function Raiz() {
@@ -107,7 +129,7 @@ function Raiz() {
     <ThemeProvider value={oscuro ? OSCURO : CLARO}>
       <SafeAreaProvider>
         <GestureHandlerRootView style={{ flex: 1 }}>
-          <Aurora />
+          <AuroraRaiz />
           <Guardia />
           <AbrirAviso />
           <StatusBar style="auto" />

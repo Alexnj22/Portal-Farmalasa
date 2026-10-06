@@ -18,6 +18,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Confeti } from './animacion';
 import { dolares } from '../lib/formato';
+import { useBloqueo } from '../lib/bloqueo';
 import { useTema } from '../tema/tema';
 
 const CLAVE = 'puntos_salud_cumple_visto';
@@ -26,6 +27,7 @@ const COLORES_GLOBO = ['#FF2D55', '#FFD60A', '#5AC8FA', '#AF52DE', '#34C759', '#
 
 export default function Cumpleanos({ activo, nombre, puntos, forzar = false }) {
   const [visible, setVisible] = useState(false);
+  const bloqueada = useBloqueo((s) => s.bloqueada);
   const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
 
   useEffect(() => {
@@ -44,7 +46,7 @@ export default function Cumpleanos({ activo, nombre, puntos, forzar = false }) {
     SecureStore.setItemAsync(CLAVE, hoy).catch(() => {});
     setVisible(false);
   };
-  if (!visible) return null;
+  if (!visible || bloqueada) return null;
   return (
     <Modal transparent animationType="fade" visible onRequestClose={cerrar}>
       <Fiesta nombre={nombre} puntos={puntos} alCerrar={cerrar} />
@@ -58,12 +60,12 @@ function Fiesta({ nombre, puntos, alCerrar }) {
   const latido = useSharedValue(1);
   const texto = useSharedValue(0);
   useEffect(() => {
-    pastel.value = withDelay(200, withSpring(1, { damping: 8, stiffness: 120 }));
-    latido.value = withDelay(1200, withRepeat(withSequence(withTiming(1.08, { duration: 500 }), withTiming(1, { duration: 500 })), -1));
+    pastel.value = withDelay(200, withSpring(1, { damping: 14, stiffness: 140 }));
+    latido.value = withDelay(1200, withRepeat(withSequence(withTiming(1.06, { duration: 500 }), withTiming(1, { duration: 500 })), 4));
     texto.value = withDelay(450, withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) }));
   }, [pastel, latido, texto]);
   const estiloPastel = useAnimatedStyle(() => ({
-    transform: [{ scale: pastel.value * latido.value }, { rotate: `${(1 - pastel.value) * -25}deg` }],
+    transform: [{ scale: pastel.value * latido.value }, { rotate: `${(1 - pastel.value) * -10}deg` }],
   }));
   const estiloTexto = useAnimatedStyle(() => ({ opacity: texto.value, transform: [{ translateY: (1 - texto.value) * 24 }] }));
 

@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1222.3 — Subir a TestFlight desde la Mac: las dos apps, con sus permisos
+
+- **`scripts/subir-ios.mjs <carpeta> <perfil>`:** compila con Xcode en la Mac y sube a TestFlight, sin EAS, para Puntos Salud (`apps/clientes`) y la app del personal (`apps/mobile`). El número de compilación sale de App Store Connect (último + 1), así no choca con lo que subió EAS.
+- **Firma sin iPhone registrado:** se archiva sin firmar (firmar el archivo exige un perfil de desarrollo, y Apple no lo genera si el equipo no tiene dispositivos) y la exportación firma para distribución en la nube con la llave de API.
+- **Los permisos no se pierden:** el archivo sin firmar salía SIN `aps-environment`, o sea sin avisos. Antes de exportar se firma ad-hoc cada paquete (extensiones y app) con su `.entitlements`. Verificado con `codesign -d --entitlements` sobre el .ipa: `aps-environment = production`. Puntos Salud compilación 1 subida así el 2026-10-06.
+
 ## v2.1222.2 — App de clientes: compilar y subir a TestFlight desde la Mac, sin EAS
 
 - **`apps/clientes/subir-ios.sh`:** compila Puntos Salud en la Mac con Xcode (`expo prebuild` + `xcodebuild archive`), firma en la nube con una llave de API de App Store Connect y sube a TestFlight, sin los servidores de Expo (EAS): sin costo por versión. Sube el número de compilación solo y fuerza las variables de PRODUCCIÓN (nunca el código de pruebas). La llave vive en `~/.claves-farmalasa/`, fuera del repositorio. Compilación nativa Release verificada en esta Mac (BUILD SUCCEEDED).

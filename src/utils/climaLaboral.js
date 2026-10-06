@@ -101,3 +101,18 @@ export function promedioPorPersona(filas, indices, invertidas = new Set()) {
 
 export const ESTADO_ENCUESTA = { borrador: 'Borrador', activa: 'Activa', cerrada: 'Cerrada', archivada: 'Archivada' };
 export const TIPO_ENCUESTA = { clima: 'Clima', satisfaccion: 'Satisfacción', desempeno: 'Desempeño', adhoc: 'Personalizada' };
+
+/**
+ * La categoría de antigüedad de la pregunta 1 (A <1 año, B <3, C <5, D 5+),
+ * que el formulario de respuesta llena solo desde la fecha de ingreso. Vivía
+ * dentro de `EncuestaAdminView`; la app captura respuestas con la misma regla.
+ */
+export function categoriaDeAntiguedad(fechaIngreso, ahora = Date.now()) {
+    if (!fechaIngreso) return null;
+    const meses = (ahora - new Date(fechaIngreso).getTime()) / (1000 * 60 * 60 * 24 * 30.44);
+    if (Number.isNaN(meses)) return null;
+    if (meses < 12) return 'A';
+    if (meses < 36) return 'B';
+    if (meses < 60) return 'C';
+    return 'D';
+}

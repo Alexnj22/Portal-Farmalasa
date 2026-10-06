@@ -389,3 +389,93 @@ export function vendedoresPorSala(vendedores = []) {
 
 /** El tono del avance contra el lote: completo, cerca (≥80%) o en curso. */
 export const tonoDeAvance = (pct) => (pct >= 100 ? 'success' : pct >= 80 ? 'warning' : 'info');
+
+// ── Promoción por LABORATORIO: el formulario ──────────────────────────────
+// Vivía dentro de `PromocionLaboratorioModal`; la app crea y edita con lo
+// mismo. `umbrales` es `{ '<branchId>:<nivel>': '4250' }` tal como se escribe.
+
+/** Los cuatro niveles con que nace una promoción nueva. */
+export const nivelesIniciales = () => [1, 2, 3, 4].map((nivel) => ({ nivel, monto: '' }));
+
+/**
+ * Lo que hay que avisar ANTES de mandar. Los umbrales de cada sala tienen que
+ * SUBIR con el nivel: el cálculo paga «el más alto cuyo umbral se cumplió», así
+ * que un nivel 3 más barato que el 2 pagaría uno que no se alcanzó.
+ */
+export function problemasDePromocionLaboratorio({ nombre, mes, labs, niveles, umbrales, salas, paga, supplierId }) {
+    const out = [];
+    if (!String(nombre ?? '').trim()) out.push('Falta el nombre.');
+    if (!mes) out.push('Falta el mes.');
+    if (!labs?.length) out.push('Elige al menos un laboratorio.');
+    if (!niveles?.length) out.push('Tiene que haber al menos un nivel.');
+    if ((niveles || []).some((n) => !(numeroEscrito(n.monto) > 0))) {
+        out.push('Cada nivel necesita un monto mayor que cero.');
+    }
+    const u = umbrales || {};
+    const conUmbral = (salas || []).filter((s) =>
+        (niveles || []).some((n) => numeroEscrito(u[`${s.id}:${n.nivel}`]) > 0));
+    if (!conUmbral.length) out.push('Ninguna sala tiene umbral: nadie podría alcanzar un nivel.');
+    for (const s of conUmbral) {
+        let previo = null;
+        for (const n of niveles) {
+            const v = numeroEscrito(u[`${s.id}:${n.nivel}`]);
+            if (!(v > 0)) continue;
+            if (previo !== null && v <= previo) {
+                out.push(`En ${s.name} el nivel ${n.nivel} no pide más venta que el anterior.`);
+                break;
+            }
+            previo = v;
+        }
+    }
+    /* Un umbral escrito que no es número se descartaba en silencio y la sala
+       quedaba sin ese nivel. */
+    const ilegibles = Object.entries(u).filter(([, v]) => String(v ?? '').trim() !== '' && numeroEscrito(v) == null);
+    if (ilegibles.length) out.push(`Hay ${ilegibles.length === 1 ? 'un umbral escrito' : `${ilegibles.length} umbrales escritos`} que no se entienden como monto.`);
+    if (paga === 'proveedor' && !supplierId) out.push('Elige el proveedor que paga.');
+    return out;
+}
+
+/** Lo que reciben `crearPromocionLaboratorio` / `editarPromocionLaboratorio` (sin `mes` ni `id`). */
+export function payloadDePromocionLaboratorio({ nombre, labs, niveles, umbrales, paga, supplierId, nota }) {
+    return {
+        nombre: String(nombre ?? '').trim(),
+        laboratorios: (labs || []).map((l) => Number(l.id)),
+        niveles: (niveles || []).map((n) => ({ nivel: n.nivel, monto: numeroEscrito(n.monto) })),
+        umbrales: Object.entries(umbrales || {})
+            .filter(([, v]) => numeroEscrito(v) > 0)
+            .map(([k, v]) => {
+                const [branch_id, nivel] = k.split(':').map(Number);
+                return { branch_id, nivel, umbral: numeroEscrito(v) };
+            }),
+        paga: paga || null,
+        supplierId: paga === 'proveedor' && supplierId ? Number(supplierId) : null,
+        nota: String(nota ?? '').trim() || null,
+    };
+}
+
+/** Quitar un nivel renumera los niveles Y sus umbrales: sin hueco (1, 3, 4) ni umbrales huérfanos. */
+export function quitarNivelDePromocion(niveles, umbrales, nivel) {
+    const quedan = niveles.filter((n) => n.nivel !== nivel);
+    const orden = quedan.map((n) => n.nivel);
+    const salida = {};
+    for (const [k, v] of Object.entries(umbrales || {})) {
+        const [b, nv] = k.split(':').map(Number);
+        const i = orden.indexOf(nv);
+        if (i >= 0) salida[`${b}:${i + 1}`] = v;
+    }
+    return { niveles: quedan.map((n, i) => ({ ...n, nivel: i + 1 })), umbrales: salida };
+}
+
+/** Copia los umbrales de una sala a las que no tienen ninguno; las que ya tienen algo NO se pisan. */
+export function copiarUmbralesDeSala(umbrales, salas, niveles, desde) {
+    const salida = { ...(umbrales || {}) };
+    for (const s of salas || []) {
+        if (String(s.id) === String(desde)) continue;
+        if (niveles.some((n) => numeroEscrito(salida[`${s.id}:${n.nivel}`]) > 0)) continue;
+        for (const n of niveles) {
+            const v = salida[`${desde}:${n.nivel}`];
+            if (v) salida[`${s.id}:${n.nivel}`] = v;
+        }
+    }
+    return salida;
+}

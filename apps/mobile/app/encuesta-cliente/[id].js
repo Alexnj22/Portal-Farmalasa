@@ -6,10 +6,17 @@
 //
 // Todo se cuenta en la base (`encuesta_cliente_resultados`) y la lectura del
 // NPS sale del núcleo (`lecturaNps`), lo mismo del portal.
-import { useEffect, useState } from 'react';
+//
+// Además, las acciones del ciclo (`CicloDeEncuesta`: enviar a revisión,
+// aprobar, devolver, publicar, cerrar, nueva versión, archivar), lo que falta
+// para enviarla, el comentario de la última devolución, la pregunta por
+// pregunta con barras y el historial con quién hizo cada paso.
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
-import { fetchComentarios, fetchEncuesta, fetchResultados } from '@nucleo/data/encuestasClientes';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { fetchComentarios, fetchEncuesta, fetchEventos, fetchPersonas, fetchProblemas, fetchResultados } from '@nucleo/data/encuestasClientes';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { hora12 } from '@nucleo/utils/hora';
 import { estadoDe, lecturaNps, resumenDeCierre } from '@nucleo/utils/encuestasClientes';
 import { formatPct } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -22,6 +29,13 @@ import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { colorDeVariante } from '../../componentes/colorDeVariante';
+import CicloDeEncuesta from '../../componentes/encuestas/Ciclo';
+import PreguntaPorPregunta from '../../componentes/encuestas/Distribucion';
+
+const EVENTO = {
+  creada: 'creó la encuesta', enviada: 'la envió a revisión', aprobada: 'la aprobó', rechazada: 'la devolvió con cambios',
+  publicada: 'la publicó', cerrada: 'la cerró', archivada: 'la archivó', duplicada: 'la creó como copia',
+};
 
 const CANAL = { qr: 'QR', kiosco: 'tablet', entrevista: 'entrevista' };
 
@@ -33,15 +47,32 @@ export default function EncuestaCliente() {
   const [vista, setVista] = useState('resultados');
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const [problemas, setProblemas] = useState([]);
+  const [eventos, setEventos] = useState([]);
+  const [personas, setPersonas] = useState({});
+
+  const cargar = useCallback(() => {
     fetchEncuesta(id).then((e) => {
       setEncuesta(e || false);
       if (e && ['publicada', 'cerrada', 'archivada'].includes(e.estado)) {
         fetchResultados(id).then(setDatos).catch((x) => setError(x?.message || 'No se pudieron cargar los resultados.'));
         fetchComentarios(id).then(setComentarios).catch(() => setComentarios([]));
       }
+      if (e?.estado === 'borrador') fetchProblemas(id).then(setProblemas).catch(() => setProblemas([]));
+      fetchEventos(id).then(async (ev) => {
+        setEventos(ev || []);
+        try { setPersonas(await fetchPersonas((ev || []).map((x) => x.autor_id))); } catch { /* el historial se pinta sin caras */ }
+      }).catch(() => setEventos([]));
     }).catch((x) => { setError(x?.message || 'No se pudo cargar la encuesta.'); setEncuesta(false); });
   }, [id]);
+  useEffect(() => { cargar(); }, [cargar]);
+
+  // Tras una acción: la copia nueva se abre; si no, se relee ésta.
+  const hecho = (r) => {
+    if (typeof r === 'string' && r !== String(id)) router.replace({ pathname: '/encuesta-cliente/[id]', params: { id: r } });
+    else cargar();
+  };
+  const devuelta = encuesta?.estado === 'borrador' ? eventos.find((e) => e.tipo === 'rechazada' || e.tipo === 'enviada') : null;
 
   const est = encuesta ? estadoDe(encuesta.estado) : null;
   const nps = datos?.nps;
@@ -64,6 +95,19 @@ export default function EncuestaCliente() {
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${resumenDeCierre(encuesta, encuesta.sucursales || [], fechaTexto)}. ${est.texto}`}</Text>
             </View>
             {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
+            {devuelta?.tipo === 'rechazada' && devuelta.comentario ? (
+              <View style={{ marginHorizontal: 16 }}>
+                <Aviso tono="cuidado" texto={`Devuelta por ${personas[devuelta.autor_id]?.name ? shortEmployeeName(personas[devuelta.autor_id].name) : 'gerencia'}: ${devuelta.comentario}`} />
+              </View>
+            ) : null}
+            {encuesta.estado === 'borrador' && problemas.length ? (
+              <View style={{ marginHorizontal: 16 }}>
+                <Seccion titulo="Falta para enviarla">
+                  {problemas.map((p) => <Text key={p} style={{ color: colorSistema.texto, fontSize: 14 }}>{`• ${p}`}</Text>)}
+                </Seccion>
+              </View>
+            ) : null}
+            <CicloDeEncuesta encuesta={encuesta} sinProblemas={!problemas.length} onHecho={hecho} />
             {!['publicada', 'cerrada', 'archivada'].includes(encuesta.estado) ? (
               <View style={{ marginHorizontal: 16 }}><Aviso texto="Los resultados aparecen cuando la encuesta se publica y empieza a recibir respuestas." /></View>
             ) : !datos && !error ? <ActivityIndicator style={{ marginTop: 24 }} /> : datos && !datos.total ? (
@@ -117,6 +161,11 @@ export default function EncuestaCliente() {
                         ))}
                       </Seccion>
                     ) : null}
+                    {datos.por_pregunta?.some((p) => p.tipo !== 'texto') ? (
+                      <Seccion titulo="Pregunta por pregunta">
+                        <PreguntaPorPregunta preguntas={datos.por_pregunta} />
+                      </Seccion>
+                    ) : null}
                   </>
                 ) : (
                   <View style={{ marginHorizontal: 16, gap: 8 }}>
@@ -131,6 +180,24 @@ export default function EncuestaCliente() {
                   </View>
                 )}
               </>
+            ) : null}
+            {eventos.length ? (
+              <View style={{ marginHorizontal: 16 }}>
+                <Seccion titulo="Historial">
+                  {eventos.map((e, i) => {
+                    const quien = personas[e.autor_id];
+                    return (
+                      <View key={e.id ?? i} style={{ gap: 2, paddingTop: i ? 8 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
+                        <Text style={{ color: colorSistema.texto, fontSize: 14 }}>
+                          <Text style={{ fontWeight: '700' }}>{quien?.name ? shortEmployeeName(quien.name) : 'Sistema'}</Text>{` ${EVENTO[e.tipo] || e.tipo}`}
+                        </Text>
+                        {e.comentario ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`«${e.comentario}»`}</Text> : null}
+                        <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${fechaTexto(e.created_at, { day: 'numeric', month: 'short', year: 'numeric' })} · ${hora12(e.created_at)}`}</Text>
+                      </View>
+                    );
+                  })}
+                </Seccion>
+              </View>
             ) : null}
           </>
         )}

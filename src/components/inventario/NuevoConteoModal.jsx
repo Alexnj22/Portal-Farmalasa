@@ -13,50 +13,39 @@ import SegmentedControl from '../common/SegmentedControl';
 import PortalInput from '../common/PortalInput';
 import Notice from '../common/Notice';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import {
+    ALCANCES_DE_CONTEO, MODOS_DE_CONTEO, FUENTES_DE_CONTEO, TAMANO_CICLICO_DEFAULT,
+    SEGMENTO_DE_MUESTRA_LABEL, SEGMENTO_DE_MUESTRA_ORDEN, pedidoDeConteo,
+} from '@nucleo/utils/conteoDeInventario';
 
 // Etiquetas de UNA línea: en `layout="block"` la píldora es de alto fijo (h-11),
 // así que un label que envuelve no crece — se desborda. Van en text-caption
 // uppercase con tracking-widest, que ensancha mucho: lo que en prosa parece
 // corto acá ocupa el doble. El paréntesis explicativo se movió al aviso.
-const SCOPE_OPTIONS = [
-    { value: 'CICLICO', label: 'Cíclico del mes', icon: Repeat },
-    { value: 'TOTAL', label: 'Todo el inventario', icon: ListChecks },
-    { value: 'LABORATORIO', label: 'Por laboratorio', icon: FlaskConical },
-    { value: 'BAJO_RECETA', label: 'Bajo Receta', icon: ShieldAlert },
-    { value: 'MANUAL', label: 'Selección manual', icon: Search },
-];
+// Los ejes del conteo y su filtro: núcleo (`conteoDeInventario`), los mismos de la app.
+const ICONO_DE_ALCANCE = { CICLICO: Repeat, TOTAL: ListChecks, LABORATORIO: FlaskConical, BAJO_RECETA: ShieldAlert, MANUAL: Search };
+const SCOPE_OPTIONS = ALCANCES_DE_CONTEO.map((o) => ({ ...o, icon: ICONO_DE_ALCANCE[o.value] }));
 
 // El detalle del renglón es un eje APARTE del alcance: se puede querer un
 // cíclico sencillo o un total por lote. Por eso son dos controles y no siete
 // opciones de alcance — mezclarlos obligaría a inventar "Total sencillo",
 // "Cíclico sencillo", etc., que es la misma decisión escrita dos veces.
-const MODO_OPTIONS = [
-    { value: 'LOTE', label: 'Por lote y vencimiento', icon: Layers },
-    { value: 'SIMPLE', label: 'Solo cantidades', icon: Hash },
-];
+const MODO_OPTIONS = MODOS_DE_CONTEO.map((o) => ({ ...o, icon: o.value === 'LOTE' ? Layers : Hash }));
 
 // Y un tercer eje: contra QUÉ existencia se compara lo que se cuenta. Hasta
 // ahora había uno solo —el de la existencia del momento— y no se decía en
 // ninguna parte, así que una venta hecha entre imprimir la hoja y teclearla
 // aparecía como una diferencia del estante.
-const FUENTE_OPTIONS = [
-    { value: 'HOJA', label: 'Según la hoja', icon: Printer },
-    { value: 'VIVO', label: 'En vivo', icon: Radio },
-];
+const FUENTE_OPTIONS = FUENTES_DE_CONTEO.map((o) => ({ ...o, icon: o.value === 'HOJA' ? Printer : Radio }));
 
-const TAMANO_DEFAULT = 200;
+const TAMANO_DEFAULT = TAMANO_CICLICO_DEFAULT;
 
 // El reparto lo decide el servidor; acá solo se explica, para que quien arma el
 // conteo sepa qué está pidiendo antes de pedirlo.
-const SEGMENTO_LABEL = {
-    BAJO_RECETA: 'Bajo Receta',
-    A: 'Clase A',
-    B: 'Clase B',
-    C: 'Clase C / sin clasificar',
-};
+const SEGMENTO_LABEL = SEGMENTO_DE_MUESTRA_LABEL;
 // El servidor devuelve un objeto JSON y su orden de claves es arbitrario — salía
 // "B, C, Bajo Receta, A". Se muestran en el orden en que se sortean.
-const SEGMENTO_ORDEN = ['BAJO_RECETA', 'A', 'B', 'C'];
+const SEGMENTO_ORDEN = SEGMENTO_DE_MUESTRA_ORDEN;
 
 const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]";
 const fieldLabel = "text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between";
@@ -170,10 +159,9 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
             const conteoId = await crearConteoInventario({
                 branchId: parseInt(branchId, 10),
                 scopeType,
-                scopeFilter: scopeType === 'LABORATORIO' ? { laboratorio_id: parseInt(laboratorioId, 10) }
-                    : scopeType === 'CICLICO' ? { tamano: tamanoNum }
-                        : null,
-                erpProductIds: scopeType === 'MANUAL' ? manualSelected.map((p) => p.id) : null,
+                // El filtro del alcance: núcleo (`pedidoDeConteo`).
+                ...(({ scopeFilter, erpProductIds }) => ({ scopeFilter, erpProductIds }))(
+                    pedidoDeConteo({ scopeType, laboratorioId, tamano, productos: manualSelected })),
                 modo,
                 fuenteSistema,
             });

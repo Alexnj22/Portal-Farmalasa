@@ -10,10 +10,7 @@ import useCapturaDeCarne from '../../plataforma/useCapturaDeCarne';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { Campo, CajaFecha } from './camposDeConteo';
-import {
-    searchActiveProductsForConteo, fetchProductPresentacionesForConteo,
-    fetchErpSucursalIdsForBranch, fetchInventoryLotesForProduct,
-} from '@nucleo/data/conteoInventario';
+import { searchActiveProductsForConteo, opcionesParaAgregarAlConteo } from '@nucleo/data/conteoInventario';
 
 // Mismo motivo que en la vista: `@zxing` sólo hace falta al tocar «Escanear», y
 // este formulario ya viaja diferido. Estático lo volvería a meter en el paquete
@@ -117,25 +114,11 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
         setLoteOpts([]);
         if (!found) return;
 
-        const [{ data: precios, error: preciosErr }, { data: erpMap, error: erpMapErr }] = await Promise.all([
-            fetchProductPresentacionesForConteo(found.id),
-            fetchErpSucursalIdsForBranch(branchId),
-        ]);
-        if (preciosErr) console.error('seleccionarProducto: fetch product_precios failed:', preciosErr.message);
-        if (erpMapErr) console.error('seleccionarProducto: fetch erp_sucursal_map failed:', erpMapErr.message);
-        const tipos = [...new Set((precios || []).map((p) => p.presentaciones?.tipo).filter(Boolean))];
-        setPresentacionOpts(tipos.map((t) => ({ value: t, label: t })));
-
-        // Los lotes solo se piden si el conteo los lleva: en sencillo esta
-        // consulta no alimentaría ningún campo.
-        const erpIds = (erpMap || []).map((m) => m.erp_sucursal_id);
-        if (erpIds.length && !simple) {
-            const { data: lotes, error: lotesErr } = await fetchInventoryLotesForProduct(found.id, erpIds);
-            if (lotesErr) console.error('seleccionarProducto: fetch lotes failed:', lotesErr.message);
-            const seen = new Map();
-            (lotes || []).forEach((l) => { if (!seen.has(l.lote)) seen.set(l.lote, l.fecha_vencimiento); });
-            setLoteOpts(Array.from(seen.entries()).map(([value, fecha]) => ({ value, fecha })));
-        }
+        // Presentaciones y lotes de la sala: núcleo (`opcionesParaAgregarAlConteo`),
+        // lo mismo que usa la app.
+        const { presentaciones, lotes } = await opcionesParaAgregarAlConteo(found.id, branchId, simple);
+        setPresentacionOpts(presentaciones.map((t) => ({ value: t, label: t })));
+        setLoteOpts(lotes.map((l) => ({ value: l.lote, fecha: l.fecha })));
     }, [branchId, simple]);
 
     const handleSelectProduct = (val) => {

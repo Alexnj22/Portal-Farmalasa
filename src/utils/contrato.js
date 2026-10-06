@@ -286,3 +286,13 @@ export const MEDIO_PAGO_OPTIONS = [
     { value: 'TRANSFERENCIA', label: 'Transferencia o depósito' },
     { value: 'CHEQUE',        label: 'Cheque' },
 ];
+
+/** Los tres tipos de contrato del alta — el formulario del portal y el de la app. */
+export const TIPOS_DE_CONTRATO = [
+    { value: 'INDEFINIDO', label: 'Indefinido (Fijo)' },
+    { value: 'TEMPORAL', label: 'Temporal' },
+    { value: 'SERVICIOS', label: 'Servicios profesionales' },
+];
+
+/** El temporal y el de servicios tienen plazo: llevan fecha de fin. */
+export const contratoConPlazo = (tipo) => tipo === 'TEMPORAL' || tipo === 'SERVICIOS';

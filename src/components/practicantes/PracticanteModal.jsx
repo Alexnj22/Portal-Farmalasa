@@ -12,9 +12,9 @@ import { inputHoverClass } from '@nucleo/utils/inputStyles';
 import { fetchInstitucionCatalogValues } from '@nucleo/data/practicantes';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
-import { isValidDUIAlgorithm, maskDui } from '@nucleo/utils/duiUtils';
-import { calcAge, MINOR_AGE } from '@nucleo/utils/ageUtils';
-import { OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '@nucleo/utils/educationCatalogs';
+import { calcAge } from '@nucleo/utils/ageUtils';
+import { ESTADOS_DE_PRACTICANTE, FORMULARIO_PRACTICANTE_VACIO, filaDePracticante, formularioDePracticante, validarPracticante } from '@nucleo/utils/practicanteFormulario';
+import { isCatalogOther, buildCatalogOptions } from '@nucleo/utils/educationCatalogs';
 import FileField from '../common/FileField';
 import PortalTextarea from '../common/PortalTextarea';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -22,11 +22,9 @@ import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
 
-const ESTADO_OPTIONS = [
-    { value: 'ACTIVO', label: 'Activo' },
-    { value: 'FINALIZADO', label: 'Finalizado' },
-    { value: 'CANCELADO', label: 'Cancelado' },
-];
+// Estados, formulario, validación y fila: núcleo (`practicanteFormulario`), la
+// misma regla que usa la app.
+const ESTADO_OPTIONS = ESTADOS_DE_PRACTICANTE;
 
 // Mismo agrupado por tipo de sucursal que usa EmployeeFormModal (Farmacias /
 // Bodega / Administración / Personal Externo) — separadores no-seleccionables
@@ -57,12 +55,7 @@ const IslandHeader = ({ icon: Icon, title }) => (
 const fieldLabel = "text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between";
 const reqBadge = <Badge variant="danger" uppercase={false}>Requerido</Badge>;
 
-const emptyForm = {
-    first_names: '', last_names: '', birth_date: '', dui: '', alt_identity_document: '', phone: '',
-    branch_id: '', institucion_educativa: '', tutor_nombre: '', tutor_telefono: '',
-    supervisor_employee_id: '', fecha_inicio: '', fecha_fin: '',
-    horas_requeridas: '', estado: 'ACTIVO', notas: '',
-};
+const emptyForm = FORMULARIO_PRACTICANTE_VACIO;
 
 export default function PracticanteModal({ isOpen, onClose, practicante, onSaved }) {
     const montadoParaSalida = useMontadoParaSalida(isOpen);
@@ -92,24 +85,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
     useEffect(() => {
         if (!isOpen) return;
         setConvenioFile(null);
-        setForm(practicante ? {
-            first_names: practicante.first_names || '',
-            last_names: practicante.last_names || '',
-            birth_date: practicante.birth_date || '',
-            dui: practicante.dui || '',
-            alt_identity_document: practicante.alt_identity_document || '',
-            phone: practicante.phone || '',
-            branch_id: practicante.branch_id != null ? String(practicante.branch_id) : '',
-            institucion_educativa: practicante.institucion_educativa || '',
-            tutor_nombre: practicante.tutor_nombre || '',
-            tutor_telefono: practicante.tutor_telefono || '',
-            supervisor_employee_id: practicante.supervisor_employee_id || '',
-            fecha_inicio: practicante.fecha_inicio || '',
-            fecha_fin: practicante.fecha_fin || '',
-            horas_requeridas: practicante.horas_requeridas != null ? String(practicante.horas_requeridas) : '',
-            estado: practicante.estado || 'ACTIVO',
-            notas: practicante.notas || '',
-        } : emptyForm);
+        setForm(formularioDePracticante(practicante));
     }, [isOpen, practicante]);
 
     /* ── El alta de un practicante se guarda sola ────────────────────────────
@@ -148,18 +124,11 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
     // 23.2 CT: el DUI no se tramita hasta los 18. Sin fecha, se asume adulto
     // (mismo comportamiento por defecto que EmployeeFormModal).
     const age = calcAge(form.birth_date);
-    const isMinor = age !== null && age < MINOR_AGE;
-
-    const duiInvalid = !isMinor && !!form.dui && !isValidDUIAlgorithm(form.dui);
-    const altIdMissing = isMinor && !form.alt_identity_document.trim();
-    const fechasInvalid = !!form.fecha_inicio && !!form.fecha_fin
-        && new Date(`${form.fecha_fin}T00:00:00`) <= new Date(`${form.fecha_inicio}T00:00:00`);
     const convenioMissing = !convenioFile && !practicante?.convenio_url;
-    const institucionMissing = !form.institucion_educativa || form.institucion_educativa === OTRA_ESPECIALIDAD;
-
-    const isValid = form.first_names.trim() && form.last_names.trim() && form.branch_id
-        && !institucionMissing && form.tutor_nombre.trim()
-        && form.fecha_inicio && form.fecha_fin && !fechasInvalid && !duiInvalid && !altIdMissing && !convenioMissing;
+    const {
+        esMenor: isMinor, duiInvalido: duiInvalid, faltaDocumentoAlterno: altIdMissing,
+        fechasInvalidas: fechasInvalid, faltaInstitucion: institucionMissing, valido: isValid,
+    } = validarPracticante(form, { tieneConvenio: !convenioMissing });
 
     const handleClose = () => { onClose(); };
 
@@ -175,25 +144,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                 convenioUrl = (await subirArchivo('documents', path, convenioFile)) || convenioUrl;
             }
 
-            const payload = {
-                first_names: form.first_names.trim(),
-                last_names: form.last_names.trim(),
-                birth_date: form.birth_date || null,
-                dui: !isMinor && form.dui ? maskDui(form.dui) : null,
-                alt_identity_document: isMinor ? form.alt_identity_document.trim() : (form.alt_identity_document.trim() || null),
-                phone: form.phone.trim() || null,
-                branch_id: parseInt(form.branch_id, 10),
-                institucion_educativa: form.institucion_educativa.trim(),
-                tutor_nombre: form.tutor_nombre.trim(),
-                tutor_telefono: form.tutor_telefono.trim() || null,
-                supervisor_employee_id: form.supervisor_employee_id || null,
-                fecha_inicio: form.fecha_inicio,
-                fecha_fin: form.fecha_fin,
-                horas_requeridas: form.horas_requeridas !== '' ? Number(form.horas_requeridas) : null,
-                estado: form.estado,
-                notas: form.notas.trim() || null,
-                convenio_url: convenioUrl,
-            };
+            const payload = filaDePracticante(form, convenioUrl);
 
             if (isEditMode) {
                 await updatePracticante(practicante.id, payload);

@@ -136,10 +136,16 @@ export default function Promociones() {
   const menu = (p) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     const pausable = p.estado !== 'finalizada';
-    const opciones = [...(pausable ? [p.estado === 'activa' ? 'Volver a borrador' : 'Activar'] : []), 'Duplicar', 'Ver el seguimiento', 'Cancelar'];
-    ActionSheetIOS.showActionSheetWithOptions({ title: p.nombre, options: opciones, cancelButtonIndex: opciones.length - 1, destructiveButtonIndex: pausable && p.estado === 'activa' ? 0 : undefined }, (i) => {
+    // Reactivar: las terminadas de producto (la de laboratorio vive por mes: se duplica).
+    const reactivable = p.estado === 'finalizada' && !esLaboratorio(p);
+    // Editar en la app: la de laboratorio (la de producto, con lotes y reparto, sigue en el portal).
+    const editable = esLaboratorio(p) && p.estado !== 'finalizada';
+    const opciones = [...(editable ? ['Editar'] : []), ...(pausable ? [p.estado === 'activa' ? 'Volver a borrador' : 'Activar'] : []), ...(reactivable ? ['Reactivar'] : []), 'Duplicar', 'Ver el seguimiento', 'Cancelar'];
+    ActionSheetIOS.showActionSheetWithOptions({ title: p.nombre, options: opciones, cancelButtonIndex: opciones.length - 1, destructiveButtonIndex: pausable && p.estado === 'activa' ? opciones.indexOf('Volver a borrador') : undefined }, (i) => {
       const o = opciones[i];
+      if (o === 'Editar') { router.push({ pathname: '/promocion-laboratorio/[id]', params: { id: String(p.id) } }); return; }
       if (o === 'Volver a borrador' || o === 'Activar') alternarPromocion(p, cargar);
+      else if (o === 'Reactivar') { guardarPromocion(p); router.push({ pathname: '/promocion-reactivar/[id]', params: { id: String(p.id) } }); }
       else if (o === 'Duplicar') duplicarConPreguntas(p, branches, cargar);
       else if (o === 'Ver el seguimiento') abrir(p);
     });
@@ -184,7 +190,7 @@ export default function Promociones() {
                     : terminadas.length ? 'Sin promociones vigentes: las demás están en Histórico' : 'Todavía no hay promociones'}
                 </Text>
               ) : null}
-              {puedeEditar && vivas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>Mantén presionada una promoción para pausarla, activarla o duplicarla.</Text> : null}
+              {puedeEditar && vivas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>Mantén presionada una promoción para editarla, pausarla, activarla o duplicarla.</Text> : null}
             </>
           )
         ) : null}
@@ -209,7 +215,11 @@ export default function Promociones() {
 
         {puedeEditar ? (
           <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-            <BotonGrande texto="Crear o editar una promoción (portal)" borde color={MARCA.azulClaro}
+            <View style={{ marginBottom: 10 }}>
+              <BotonGrande texto="Nueva promoción por laboratorio" color={MARCA.azul}
+                onPress={() => router.push({ pathname: '/promocion-laboratorio/[id]', params: { id: 'nueva' } })} />
+            </View>
+            <BotonGrande texto="Promoción por producto (portal)" borde color={MARCA.azulClaro}
               onPress={() => router.push({ pathname: '/portal', params: { ruta: '/promociones', nombre: 'Promociones' } })} />
           </View>
         ) : null}

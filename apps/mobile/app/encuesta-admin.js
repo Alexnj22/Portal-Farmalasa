@@ -7,11 +7,17 @@
 // Si la encuesta es ANÓNIMA, la app no muestra nombre ni avatar (las iniciales
 // delatan a la persona), aunque el portal se los muestre a la administración.
 //
-// Los puntajes salen del núcleo (`climaLaboral`), los mismos del portal. Crear,
-// editar, abrir o cerrar una encuesta y capturar respuestas siguen en el portal.
-import { useEffect, useMemo, useState } from 'react';
+// Los puntajes salen del núcleo (`climaLaboral`), los mismos del portal.
+//
+// Con `encuesta_admin` para editar: crear y editar la encuesta
+// (`encuesta-interna/editar`) y capturar o corregir la respuesta de una persona
+// (`encuesta-interna/respuesta`). Elegir a quién va (sucursales, personas)
+// sigue en el portal.
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { router, Stack, useFocusEffect } from 'expo-router';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { guardarEncuestaInterna } from '../componentes/encuestas/interna';
 import * as Haptics from 'expo-haptics';
 import { fetchSurveyBloques, fetchSurveyPreguntas, fetchSurveyResponseCounts, fetchSurveyResponses, fetchSurveys } from '@nucleo/data/encuestas';
 import { ESTADO_ENCUESTA, indicesInvertidos, nivelDePuntaje, preguntaDeLaBase, promedioPorPersona, puntajeDePersona, TIPO_ENCUESTA } from '@nucleo/utils/climaLaboral';
@@ -31,7 +37,7 @@ const COLOR_ESTADO = { activa: MARCA.verde, cerrada: MARCA.azulClaro, borrador: 
 const puntos = (s) => (s == null ? '—' : String(s));
 const colorDe = (s) => (s == null ? colorSistema.texto2 : colorDeVariante(nivelDePuntaje(s).severidad));
 
-function Detalle({ encuesta }) {
+function Detalle({ encuesta, puedeEditar }) {
   const [d, setD] = useState(null);
   useEffect(() => {
     Promise.all([fetchSurveyBloques(encuesta.id), fetchSurveyPreguntas(encuesta.id), fetchSurveyResponses(encuesta.id)]).then(([b, p, r]) => {
@@ -52,28 +58,45 @@ function Detalle({ encuesta }) {
       {personas.map(({ r, s }) => {
         const emp = r.employee ? { id: r.employee.id, name: `${r.employee.first_names ?? ''} ${r.employee.last_names ?? ''}`.trim() } : { name: r.display_name || '—' };
         return (
-          <View key={r.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Pressable key={r.id} disabled={!puedeEditar}
+            onPress={() => { Haptics.selectionAsync().catch(() => {}); guardarEncuestaInterna(encuesta, r); router.push('/encuesta-interna/respuesta'); }}
+            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, opacity: pressed ? 0.6 : 1 })}>
             {encuesta.anonima ? null : <Avatar empleado={emp} tamano={24} />}
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14 }} numberOfLines={1}>
               {`${encuesta.anonima ? 'Anónimo' : shortEmployeeName(emp)}${r.is_jefe ? ' · jefe' : ''}${r.employee?.branch?.name ? ` · ${r.employee.branch.name}` : ''}`}
             </Text>
             <Text style={{ color: colorDe(s), fontSize: 15, fontWeight: '800' }}>{puntos(s)}</Text>
-          </View>
+          </Pressable>
         );
       })}
       {!personas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Nadie respondió todavía.</Text> : null}
+      {puedeEditar ? (
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
+          <View style={{ flex: 1 }}>
+            <BotonGrande texto="Editar" borde color={MARCA.azulClaro}
+              onPress={() => { guardarEncuestaInterna(encuesta); router.push({ pathname: '/encuesta-interna/editar', params: { id: String(encuesta.id) } }); }} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <BotonGrande texto="Agregar respuesta" color={MARCA.azul}
+              onPress={() => { guardarEncuestaInterna(encuesta); router.push('/encuesta-interna/respuesta'); }} />
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }
 
 export default function EncuestaAdmin() {
+  const { hasPermission } = useAuth();
+  const puedeEditar = hasPermission('encuesta_admin', 'can_edit');
+  const [version, setVersion] = useState(0);
   const [encuestas, setEncuestas] = useState(null);
   const [cuentas, setCuentas] = useState({});
   const [estado, setEstado] = useState('todas');
   const [abierta, setAbierta] = useState(null);
   const [recargando, setRecargando] = useState(false);
 
-  const cargar = async () => {
+  const cargar = useCallback(async () => {
     const { data } = await fetchSurveys();
     const lista = data || [];
     setEncuestas(lista);
@@ -83,8 +106,10 @@ export default function EncuestaAdmin() {
       for (const x of c || []) m[x.survey_id] = (m[x.survey_id] || 0) + 1;
       setCuentas(m);
     }
-  };
-  useEffect(() => { cargar(); }, []);
+    setVersion((v) => v + 1);
+  }, []);
+  // Al volver de editar o capturar se relee (y el detalle abierto también).
+  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   const visibles = (encuestas || []).filter((e) => estado === 'todas' || e.estado === estado);
 
   return (
@@ -113,7 +138,7 @@ export default function EncuestaAdmin() {
                       {[e.fecha_inicio ? `desde ${fechaTexto(e.fecha_inicio)}` : null, e.fecha_fin ? `hasta ${fechaTexto(e.fecha_fin)}` : null].filter(Boolean).join(' · ')}
                     </Text>
                   ) : null}
-                  {abiertaEsta ? <Detalle encuesta={e} /> : null}
+                  {abiertaEsta ? <Detalle key={`${e.id}-${version}`} encuesta={e} puedeEditar={puedeEditar} /> : null}
                 </View>
               </Vidrio>
             </Pressable>
@@ -121,7 +146,13 @@ export default function EncuestaAdmin() {
         })}
         {encuestas && !visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Sin encuestas aquí</Text> : null}
         <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-          <BotonGrande texto="Crear y editar (portal)" borde color={MARCA.azulClaro}
+          {puedeEditar ? (
+            <View style={{ marginBottom: 10 }}>
+              <BotonGrande texto="Nueva encuesta" color={MARCA.azul}
+                onPress={() => { guardarEncuestaInterna(null); router.push({ pathname: '/encuesta-interna/editar', params: { id: 'nueva' } }); }} />
+            </View>
+          ) : null}
+          <BotonGrande texto="A quién va y más (portal)" borde color={MARCA.azulClaro}
             onPress={() => router.push({ pathname: '/portal', params: { ruta: '/encuesta-admin', nombre: 'Encuestas' } })} />
         </View>
       </ScrollView>

@@ -3,7 +3,8 @@
 // neto, y arriba las cuatro tarjetas del portal —Conteos, Abiertos, Por
 // aprobar, Sin ajustar—, que filtran al tocarlas. Las cuentas son del núcleo
 // (`resumenDeConteos`, `FOCOS_CONTEO`). Tocar uno abre la pantalla de contar.
-// Crear un conteo, aprobarlo y registrar el ajuste se hacen en el portal.
+// «Nuevo conteo» abre `conteo/nuevo`; aprobar, recontar y registrar el ajuste
+// viven en la pantalla del conteo.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
@@ -120,8 +121,8 @@ export default function Conteos() {
         ) : null}
         {hasPermission('conteo_inventario', 'can_edit') ? (
           <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-            <BotonGrande texto="Crear o aprobar un conteo (portal)" borde color={MARCA.azulClaro}
-              onPress={() => router.push({ pathname: '/portal', params: { ruta: '/conteo-inventario', nombre: 'Conteo de inventario' } })} />
+            <BotonGrande texto="Nuevo conteo" color={MARCA.azul}
+              onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push('/conteo/nuevo'); }} />
           </View>
         ) : null}
       </ScrollView>

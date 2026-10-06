@@ -6,7 +6,7 @@ import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import Checkbox from '../../components/common/Checkbox';
 import { reactivarPromocion } from '@nucleo/data/promociones';
-import { fetchDescuento, fetchIdsDeDescuentosDePromocion, moverFinDeDescuento } from '@nucleo/data/descuentos';
+import { fetchDescuentosDePromocion, moverDescuentosA } from '@nucleo/data/descuentos';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hoySV, mesSV, ultimoDiaDelMes } from '@nucleo/utils/fecha';
 import { fmtVigencia } from '@nucleo/utils/promocionesUtils';
@@ -70,8 +70,7 @@ export default function ReactivarPromocionModal({ promo, open, onClose, onReacti
         let vivo = true;
         (async () => {
             try {
-                const ids = await fetchIdsDeDescuentosDePromocion(promo.id);
-                const filas = await Promise.all(ids.map((id) => fetchDescuento(id)));
+                const filas = await fetchDescuentosDePromocion(promo.id);
                 if (vivo) setDescuentos(filas);
             } catch (e) {
                 if (vivo) {
@@ -88,20 +87,8 @@ export default function ReactivarPromocionModal({ promo, open, onClose, onReacti
 
     /* Mueve los que se le pidan y devuelve los que no entraron, con su motivo.
        Uno que falla no frena a los demás: cada uno es una escritura aparte. */
-    const moverDescuentos = async (lista) => {
-        const quedan = [];
-        for (const d of lista) {
-            try {
-                // Sólo se fuerza lo que ya mostró avisos y quien aprieta leyó;
-                // un reintento por error de red vuelve a pasar por los avisos.
-                const r = await moverFinDeDescuento(d.id, fin, { forzar: !!d.avisos });
-                if (r.avisos) quedan.push({ ...d, avisos: r.avisos.map((a) => a.texto) });
-            } catch (e) {
-                quedan.push({ ...d, error: mensajeAmigable(e, 'No se pudo mover el descuento.') });
-            }
-        }
-        return quedan;
-    };
+    const moverDescuentos = (lista) => moverDescuentosA(lista, fin,
+        (e) => mensajeAmigable(e, 'No se pudo mover el descuento.'));
 
     const guardar = async () => {
         setFallo(null);

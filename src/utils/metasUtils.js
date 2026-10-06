@@ -229,3 +229,52 @@ export function rankingDeVendedores(data, orden = 'total') {
         total: filas.reduce((s, v) => s + v[clave], 0),
     };
 }
+
+// ── Agregar una meta a mano y confirmarla (portal y app) ────────────────────
+// Vivían en `MetaModal` y `TabConfirmacion`.
+
+/**
+ * Qué pasa al guardar a mano sobre la meta que ya existe en ese mes y esa sala.
+ * El servidor decide igual (`upsert_meta_manual` tiene el candado); esto es
+ * para leer el motivo ANTES de apretar Guardar. `tono`: 'info' | 'warning'.
+ */
+export function situacionDeMetaManual(estado, ym, ymActual) {
+    if (!estado) {
+        return { puede: true, tono: 'info',
+            texto: 'Este mes no tiene meta registrada para esta sala. Se guarda como meta oficial.' };
+    }
+    if (estado === 'confirmada_supervisor') {
+        return { puede: false, tono: 'warning',
+            texto: 'Esta meta ya fue confirmada y espera al gerente. Para cambiarle el monto, él tiene que devolverla primero.' };
+    }
+    if (estado === 'oficial' && ym >= ymActual) {
+        return { puede: false, tono: 'warning',
+            texto: 'Esta meta ya está aprobada y la sala la está persiguiendo. Para corregirla, el gerente tiene que devolverla.' };
+    }
+    if (estado === 'oficial') {
+        return { puede: true, tono: 'warning', pideNota: true,
+            texto: 'Este mes ya cerró con su meta. Corregirla cambia el cumplimiento y el bono que dio ese mes, así que hay que dejar dicho por qué.' };
+    }
+    return { puede: true, tono: 'info',
+        texto: 'Esta meta está en revisión. Se cambia el monto y sigue su camino normal: confirmar y aprobar.' };
+}
+
+/** Un toque = 1% sobre la base, y el recorrido se topa en ±10%. */
+export const PASO_AJUSTE_META = 0.01;
+export const PASOS_MAX_META = 10;
+
+/** La base sobre la que corre el ajuste: lo propuesto, o el monto si se creó a mano. */
+export const baseDeMeta = (r) => Number(r?.monto_base ?? r?.monto_propuesto ?? 0);
+
+/** El monto con `pasos` toques de ajuste, redondeado a centavos. */
+export function montoAjustadoDeMeta(r, pasos = 0) {
+    const base = baseDeMeta(r);
+    return base > 0 ? Math.round(base * (1 + PASO_AJUSTE_META * pasos) * 100) / 100 : 0;
+}
+
+export const ESTADO_DE_META = {
+    propuesta: { label: 'Propuesta', variante: 'chart-1' },
+    confirmada_supervisor: { label: 'Espera aprobación', variante: 'warning' },
+    devuelta: { label: 'Devuelta', variante: 'danger' },
+    oficial: { label: 'Oficial', variante: 'success' },
+};

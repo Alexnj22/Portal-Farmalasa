@@ -32,7 +32,7 @@ import {
 } from '@nucleo/data/permissions';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { cargosNivelANivel } from '@nucleo/utils/jerarquiaDeCargos';
-import { mapaDePermisos } from '@nucleo/utils/permisosDeCargo';
+import { MAX_INACTIVIDAD, MIN_INACTIVIDAD, filasCopiadasDe, mapaDePermisos, planDeCambioDePermiso } from '@nucleo/utils/permisosDeCargo';
 
 // ─── Módulos del sistema agrupados por función ─────────────────────────────
 // MODULE_GROUPS vive en constants/permissionModules.js (lo comparte MaintenanceView).
@@ -95,12 +95,8 @@ const MAIN_MODULES = MODULES.filter(m => !m.isTab);
  * `traslados` y `minmax` entran aunque vivan en su propio módulo: en la
  * pantalla el usuario ve un cuadro de cuatro, y que el maestro gobierne sólo
  * dos de ellas sería peor que no gobernar ninguna. */
-const HIJOS_DE_APROBAR = ['requests_facturacion', 'requests_inventario',
-                          'requests_minmax', 'requests_caja', 'traslados'];
-
-const SUBS_DE = Object.fromEntries(
-    MODULE_GROUPS.flatMap(g => g.modules.map(m => [m.key, (m.sub || []).map(s => s.key)])),
-);
+// Las familias de «Aprobar» y los sub-permisos de cada módulo: núcleo
+// (`HIJOS_DE_APROBAR`, `subsDeModulos`, dentro de `planDeCambioDePermiso`).
 
 // El cargo elegido usa UN acento, siempre el mismo. Antes había una paleta de 7
 // colores repartida cíclicamente por índice (`ROLE_COLORS[idx % 7]`), así que
@@ -218,8 +214,7 @@ const FAMILIAS_DECIDIR = [
 // Se guarda al SALIR del campo o con Enter, no en cada tecla: escribir «120»
 // pasa por «1» y por «12», y guardar eso dejaría el cargo en un minuto —por
 // debajo del piso— o en doce, que nadie pidió.
-const MIN_INACTIVIDAD = 5;
-const MAX_INACTIVIDAD = 1440;
+// Los límites del tiempo sin uso: núcleo (los mismos de la app).
 
 // El mismo número dicho como lo diría una persona. Sirve de confirmación: quien
 // escribe 240 quiere leer «4 horas» antes de irse del campo.
@@ -705,161 +700,33 @@ const PermissionsView = () => {
         if (!roleId) return;
         const k = `${roleId}:${moduleKey}`;
 
-        // Apagar "Ver" de un módulo arrastra sus sub-permisos (ver SUBS_DE).
-        const arrastra = permType === 'can_view' && !value ? (SUBS_DE[moduleKey] || []) : [];
-
-        // ── Los widgets del tablero arrastran a «Inicio» ────────────────────
-        // Un widget encendido sin `overview` no se ve en ninguna parte: el
-        // permiso de la vista es el que deja entrar. Y al revés, un «Inicio»
-        // encendido sin un solo widget es una pantalla vacía con barra de
-        // pestañas. Así que el vínculo va en los dos sentidos —decisión del
-        // usuario, 2026-08-07— y se calcula sobre el estado que va a quedar,
-        // no sobre el actual: el que se está apagando todavía figura encendido.
-        const esWidget = moduleKey.startsWith('dash_');
-        const kInicio = `${roleId}:overview`;
-        let inicioPasaA = null;
-        if (esWidget && permType === 'can_view') {
-            if (value) {
-                if (!permissions[kInicio]?.can_view) inicioPasaA = true;
-            } else {
-                const quedaAlguno = MODULES.some(m =>
-                    m.key.startsWith('dash_') && m.key !== moduleKey
-                    && permissions[`${roleId}:${m.key}`]?.can_view);
-                if (!quedaAlguno && permissions[kInicio]?.can_view) inicioPasaA = false;
-            }
-        }
-
-        // ── Las cuatro familias y su maestro, en los dos sentidos ───────────
-        // Mismo criterio que los widgets de arriba, y por el mismo motivo: se
-        // calcula sobre el estado que VA A QUEDAR, no sobre el actual — el que
-        // se está apagando todavía figura encendido en `permissions`.
-        const kMaestro   = `${roleId}:requests`;
-        const esMaestro  = moduleKey === 'requests' && permType === 'can_approve';
-        const esFamilia  = HIJOS_DE_APROBAR.includes(moduleKey) && permType === 'can_approve';
-        const familiasPasanA = esMaestro ? value : null;
-        let   maestroPasaA   = null;
-        if (esFamilia) {
-            if (value) {
-                if (!permissions[kMaestro]?.can_approve) maestroPasaA = true;
-            } else {
-                const quedaAlguna = HIJOS_DE_APROBAR.some(h =>
-                    h !== moduleKey && permissions[`${roleId}:${h}`]?.can_approve);
-                if (!quedaAlguna && permissions[kMaestro]?.can_approve) maestroPasaA = false;
-            }
-        }
-
-        setPermissions(prev => {
-            const next = { ...prev };
-            const cur = { ...prev[k] };
-            cur[permType] = value;
-            if (permType === 'can_view' && !value) { cur.can_edit = false; cur.can_approve = false; }
-            next[k] = cur;
-            for (const sk of arrastra) {
-                next[`${roleId}:${sk}`] = { ...(prev[`${roleId}:${sk}`] || {}), can_view: false, can_edit: false, can_approve: false };
-            }
-            if (inicioPasaA !== null) {
-                const ini = { ...(prev[kInicio] || {}), can_view: inicioPasaA };
-                if (!inicioPasaA) { ini.can_edit = false; ini.can_approve = false; }
-                next[kInicio] = ini;
-            }
-            if (familiasPasanA !== null) {
-                for (const h of HIJOS_DE_APROBAR) {
-                    const kh = `${roleId}:${h}`;
-                    next[kh] = { ...(prev[kh] || { can_view: false, can_edit: false, scope: 'ALL' }),
-                                 can_approve: familiasPasanA };
-                }
-            }
-            if (maestroPasaA !== null) {
-                next[kMaestro] = { ...(prev[kMaestro] || {}), can_approve: maestroPasaA };
-            }
-            return next;
-        });
-
+        // La cascada (apagar «Ver» arrastra los sub-permisos; widgets ↔
+        // «Inicio»; el maestro de Aprobar ↔ sus familias) vive en el núcleo
+        // (`planDeCambioDePermiso`): la app nativa cambia permisos con la MISMA
+        // regla. Se calcula sobre el estado que VA A QUEDAR.
+        const plan = planDeCambioDePermiso({ permisos: permissions, roleId, moduleKey, permType, value, moduleGroups: MODULE_GROUPS });
+        setPermissions(plan.estado);
         setSaving(prev => ({ ...prev, [k]: true }));
-
-        const cur = permissions[k] || {};
-        const next = { ...cur, [permType]: value };
-        if (permType === 'can_view' && !value) { next.can_edit = false; next.can_approve = false; }
 
         // La bitácora (`PERMISOS_CAMBIO`) la anota `guardarPermisoDeCargo`,
         // también si falla: es justo donde más importa saber quién le dio
         // acceso a quién — hallazgo P0 de la auditoría del 2026-08-03.
-        const { error } = await guardarPermisoDeCargo({
-            role_id: roleId,
-            module_key: moduleKey,
-            can_view: next.can_view ?? false,
-            can_edit: next.can_edit ?? false,
-            can_approve: next.can_approve ?? false,
-            scope: next.scope || 'ALL',
-            delega_en_ausencia: next.delega_en_ausencia ?? false,
-            updated_at: new Date().toISOString(),
-        }, {
+        const { error } = await guardarPermisoDeCargo(plan.principal, {
             cargo: orgRoles.find(r => r.id === roleId)?.name,
             permiso: permType, valor: value,
-            arrastro: arrastra.length || undefined,
+            arrastro: plan.arrastra.length || undefined,
             // Queda en la bitácora porque es un cambio de acceso que el
             // administrador no pidió explícitamente: si «Inicio» aparece o
             // desaparece de un cargo, tiene que poder rastrearse por qué.
-            inicio: inicioPasaA === null ? undefined : (inicioPasaA ? 'encendido' : 'apagado'),
+            inicio: plan.inicioPasaA === null ? undefined : (plan.inicioPasaA ? 'encendido' : 'apagado'),
         });
 
-        /* Persistir la cascada. Va aparte del upsert de arriba y no dentro,
-         * porque son filas de OTROS módulos: `upsertRolePermission` escribe una
-         * sola. Y se manda sólo si la principal entró — si esa falló, propagar
-         * el cambio a cuatro filas más dejaría el cuadro diciendo una cosa y el
-         * módulo que se tocó diciendo otra. */
-        if (!error && (familiasPasanA !== null || maestroPasaA !== null)) {
-            const filas = [];
-            if (familiasPasanA !== null) {
-                for (const h of HIJOS_DE_APROBAR) {
-                    const pv = permissions[`${roleId}:${h}`] || {};
-                    filas.push({
-                        role_id: roleId, module_key: h,
-                        can_view: pv.can_view ?? false,
-                        can_edit: pv.can_edit ?? false,
-                        can_approve: familiasPasanA,
-                        scope: pv.scope || 'ALL',
-                        delega_en_ausencia: pv.delega_en_ausencia ?? false,
-                        updated_at: new Date().toISOString(),
-                    });
-                }
-            }
-            if (maestroPasaA !== null) {
-                const pv = permissions[kMaestro] || {};
-                filas.push({
-                    role_id: roleId, module_key: 'requests',
-                    can_view: pv.can_view ?? false,
-                    can_edit: pv.can_edit ?? false,
-                    can_approve: maestroPasaA,
-                    scope: pv.scope || 'ALL',
-                    delega_en_ausencia: pv.delega_en_ausencia ?? false,
-                    updated_at: new Date().toISOString(),
-                });
-            }
-            await upsertRolePermissionsBulk(filas);
-        }
-
-        if (!error && arrastra.length > 0) {
-            await upsertRolePermissionsBulk(arrastra.map(sk => ({
-                role_id: roleId, module_key: sk,
-                can_view: false, can_edit: false, can_approve: false,
-                scope: permissions[`${roleId}:${sk}`]?.scope || 'ALL',
-                updated_at: new Date().toISOString(),
-            })));
-        }
-
-        if (!error && inicioPasaA !== null) {
-            const iniPrevio = permissions[kInicio] || {};
-            await upsertRolePermission({
-                role_id: roleId,
-                module_key: 'overview',
-                can_view: inicioPasaA,
-                can_edit: inicioPasaA ? (iniPrevio.can_edit ?? false) : false,
-                can_approve: inicioPasaA ? (iniPrevio.can_approve ?? false) : false,
-                scope: iniPrevio.scope || 'ALL',
-                updated_at: new Date().toISOString(),
-            });
-        }
+        /* La cascada va aparte y sólo si la principal entró: son filas de OTROS
+         * módulos, y propagar un cambio que no se guardó dejaría el cuadro
+         * diciendo una cosa y el módulo tocado otra. */
+        if (!error && plan.cascada.length) await upsertRolePermissionsBulk(plan.cascada);
+        if (!error && plan.apagadas.length) await upsertRolePermissionsBulk(plan.apagadas);
+        if (!error && plan.inicio) await upsertRolePermission(plan.inicio);
 
         setSaving(prev => ({ ...prev, [k]: false }));
         if (!error) {
@@ -991,22 +858,8 @@ const PermissionsView = () => {
     const handleCopyFrom = useCallback(async (sourceRoleId) => {
         if (!selectedRoleId || sourceRoleId === selectedRoleId) return;
         setCopyingFrom(true);
-        const rows = MODULES.map(m => {
-            const src = permissions[`${sourceRoleId}:${m.key}`] || {};
-            return {
-                role_id: selectedRoleId,
-                module_key: m.key,
-                can_view: src.can_view ?? false,
-                can_edit: src.can_edit ?? false,
-                can_approve: src.can_approve ?? false,
-                scope: src.scope || 'ALL',
-                // Copiar un cargo sin su delegación dejaría dos cargos que se
-                // ven iguales en la pantalla y se comportan distinto el día que
-                // alguien se va de vacaciones.
-                delega_en_ausencia: src.delega_en_ausencia ?? false,
-                updated_at: new Date().toISOString(),
-            };
-        });
+        // Las filas: núcleo (`filasCopiadasDe`), las mismas que copia la app.
+        const rows = filasCopiadasDe(permissions, sourceRoleId, selectedRoleId, MODULE_GROUPS);
         const srcLevel = rolePriceLevels[sourceRoleId] ?? null;
         const { error } = await copiarPermisosDeCargo(selectedRoleId, rows, srcLevel, {
             cargo: orgRoles.find(r => r.id === selectedRoleId)?.name,

@@ -9,11 +9,12 @@
 //   · Histórico: cada mes con su cumplimiento y sus dos gráficas.
 //
 // Las cuentas salen del núcleo (`metasUtils`), las mismas del portal. Agregar
-// o aprobar una meta, confirmar, gastos y el pago semestral siguen en el
-// portal: son escrituras con reglas de aprobación que no se mudaron.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+// una meta (`meta-nueva`) y la Confirmación (ajustar, confirmar, aprobar,
+// devolver, registrar la autorización) son nativas. Pago semestral y gastos
+// siguen en el portal.
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -35,6 +36,7 @@ import { Termometro } from '../componentes/metas/Graficas';
 import Bono from '../componentes/metas/Bono';
 import Historico from '../componentes/metas/Historico';
 import PasoYm from '../componentes/metas/PasoYm';
+import Confirmacion from '../componentes/metas/Confirmacion';
 
 function Tablero({ ym, setYm, sala, todas, user, salaNombre }) {
   const ymActual = ymHoySV();
@@ -174,6 +176,12 @@ export default function Metas() {
   const [llave, setLlave] = useState(0);
   const [recargando, setRecargando] = useState(false);
   useEffect(() => { fetchMetasConfig().then(setConfig).catch(() => setConfig(null)); }, [llave]);
+  // Al volver de agregar una meta, lo que se ve se relee (no en la primera vez).
+  const primeraVez = useRef(true);
+  useFocusEffect(useCallback(() => {
+    if (primeraVez.current) { primeraVez.current = false; return; }
+    setLlave((k) => k + 1);
+  }, []));
 
   const salaNombre = useCallback((id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? `Sala ${id}`, [sucursales]);
   const opcionesSala = useMemo(() => SALAS_VENTA.map((id) => ({ id: String(id), label: salaNombre(id) })).sort((a, b) => a.label.localeCompare(b.label)), [salaNombre]);
@@ -186,7 +194,9 @@ export default function Metas() {
         ...(todas ? [grupoSala] : []),
         { id: 'meses', titulo: 'Qué meses', opciones: [{ id: 'todos', label: 'Todos los meses' }, { id: 'con_meta', label: 'Solo con meta' }], activa: conMeta, porDefecto: 'todos', onCambiar: setConMeta },
       ];
-  const editar = hasPermission('metas', 'can_edit') || hasPermission('metas', 'can_approve');
+  const puedeEditar = hasPermission('metas', 'can_edit');
+  const puedeAprobar = hasPermission('metas', 'can_approve');
+  const editar = puedeEditar || puedeAprobar;
 
   return (
     <>
@@ -195,7 +205,11 @@ export default function Metas() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={() => { setRecargando(true); setLlave((k) => k + 1); setTimeout(() => setRecargando(false), 600); }} />}>
-        <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'tablero', label: 'Tablero' }, { id: 'bono', label: 'Bono' }, { id: 'historico', label: 'Histórico' }]} />
+        <Segmentos activa={pestana} onCambiar={setPestana} opciones={[
+          { id: 'tablero', label: 'Tablero' }, { id: 'bono', label: 'Bono' },
+          ...(editar ? [{ id: 'confirmacion', label: 'Confirmación' }] : []),
+          { id: 'historico', label: 'Histórico' },
+        ]} />
         <FiltrosActivos grupos={grupos} />
         {pestana === 'tablero' ? (
           <Tablero key={llave} ym={ym} setYm={setYm} sala={sala === 'todas' ? null : sala} todas={todas} user={user} salaNombre={salaNombre} />
@@ -204,12 +218,19 @@ export default function Metas() {
             <PasoYm ym={ymBono} onCambiar={setYmBono} min={YM_INICIO_HISTORIA} max={ymActual} actual={ymActual} />
             <Bono key={llave} sala={todas ? salaBono : String(user?.branchId)} salaNombre={salaNombre} ym={ymBono} esMesActual={ymBono === ymActual} config={config} />
           </>
+        ) : pestana === 'confirmacion' ? (
+          <Confirmacion key={llave} salaNombre={salaNombre} canEdit={puedeEditar} canApprove={puedeAprobar} onCambio={() => setLlave((k) => k + 1)} />
         ) : (
           <Historico key={llave} sala={sala === 'todas' ? null : sala} soloConMeta={conMeta === 'con_meta'} salaNombre={salaNombre} salasVisibles={salasVisibles} />
         )}
-        {editar ? (
+        {puedeEditar ? (
           <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-            <BotonGrande texto="Agregar, confirmar y pago semestral (portal)" borde color={MARCA.azulClaro}
+            <BotonGrande texto="Agregar meta" onPress={() => router.push({ pathname: '/meta-nueva', params: { ym: pestana === 'tablero' ? ym : ymActual, sala: sala === 'todas' ? '' : sala } })} />
+          </View>
+        ) : null}
+        {editar ? (
+          <View style={{ marginHorizontal: 16 }}>
+            <BotonGrande texto="Pago semestral y gastos (portal)" borde color={MARCA.azulClaro}
               onPress={() => router.push({ pathname: '/portal', params: { ruta: '/metas', nombre: 'Metas' } })} />
           </View>
         ) : null}

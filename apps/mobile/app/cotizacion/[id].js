@@ -8,9 +8,9 @@
 // núcleo) y lo pasa a la hoja de compartir o a AirPrint, con el permiso
 // `cotizaciones_descargar`; es una salida de datos y se anota (`registrarEgreso`).
 // «Anular» —con `cotizaciones` editar y la cotización activa— pide confirmación.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -50,7 +50,8 @@ export default function Cotizacion() {
     const { data, error: e } = await fetchCotizacionItems(id);
     setItems(data || []); setError(e ? mensajeAmigable(e) : null);
   }, [id]);
-  useEffect(() => { cargar(); }, [cargar]);
+  // Al volver de editarla: el encabezado y los renglones se releen.
+  useFocusEffect(useCallback(() => { setC((x) => cotizacionGuardada(id) ?? x); cargar(); }, [id, cargar]));
 
   const sala = useMemo(() => (branches || []).find((b) => Number(b.id) === Number(c?.branch_id))?.name ?? '', [branches, c]);
   const esCCF = c?.document_type === 'CCF';
@@ -146,6 +147,7 @@ export default function Cotizacion() {
         ) : null}
         {c?.notes ? <Seccion titulo="Notas"><Text style={{ color: colorSistema.texto, fontSize: 15 }}>{c.notes}</Text></Seccion> : null}
         {c && items && puedeDescargar ? <BotonGrande texto={ocupado ? 'Un momento…' : 'Compartir o imprimir'} onPress={menu} deshabilitado={ocupado} /> : null}
+        {c && !anulada && puedeEditar ? <BotonGrande texto="Editar cotización" borde color={MARCA.azulClaro} onPress={() => router.push({ pathname: '/cotizacion/nueva', params: { id: String(c.id) } })} deshabilitado={ocupado} /> : null}
         {c && !anulada && puedeEditar ? <BotonGrande texto="Anular cotización" color={MARCA.rojo} borde onPress={anular} deshabilitado={ocupado} /> : null}
       </ScrollView>
     </>

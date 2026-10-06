@@ -108,3 +108,17 @@ export async function editarCotizacion(cotId, patch, rows) {
 export function anularCotizacion(cotId) {
     return conBitacora(updateCotizacion(cotId, { status: 'ANULADA' }), 'ANULAR_COTIZACION', cotId, {});
 }
+
+/**
+ * Los precios activos de UN producto, con la misma forma que la carga entera.
+ * El teléfono no baja todo el catálogo de precios (miles de filas) para armar
+ * una cotización de cinco renglones: pide los del producto que se agrega.
+ */
+export function fetchPreciosParaCotizar(productId) {
+    return supabase
+        .from('product_precios')
+        .select('product_id, id_presentacion, descripcion, vineta, descuento_1, vip, clinica, mayoreo, premium, precio_7, presentaciones(tipo)')
+        .eq('activo', true)
+        .eq('product_id', productId)
+        .order('id_presentacion', { ascending: true });
+}

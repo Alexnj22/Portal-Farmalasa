@@ -165,3 +165,33 @@ export async function fotoParaApp(id) {
     if (data.ok !== true) throw new Error(data.error || 'No se pudo leer el descuento.');
     return data.foto;
 }
+
+/**
+ * Los descuentos ligados de una promoción, leídos del origen (para reactivarla
+ * y mover también su descuento). Vivía en `ReactivarPromocionModal`; la app
+ * reactiva con lo mismo.
+ */
+export async function fetchDescuentosDePromocion(promocionId) {
+    const ids = await fetchIdsDeDescuentosDePromocion(promocionId);
+    return Promise.all(ids.map((id) => fetchDescuento(id)));
+}
+
+/**
+ * Mueve el fin de varios descuentos y devuelve los que NO entraron, con su
+ * motivo (`avisos` del origen o `error`). Uno que falla no frena a los demás:
+ * cada uno es una escritura aparte. Sólo se fuerza lo que ya mostró avisos y
+ * quien aprieta leyó; un reintento por error de red vuelve a pasar por los
+ * avisos. `mensaje(e)` traduce el error para la pantalla.
+ */
+export async function moverDescuentosA(lista, fin, mensaje = (e) => e?.message || 'No se pudo mover el descuento.') {
+    const quedan = [];
+    for (const d of lista || []) {
+        try {
+            const r = await moverFinDeDescuento(d.id, fin, { forzar: !!d.avisos });
+            if (r.avisos) quedan.push({ ...d, avisos: r.avisos.map((a) => a.texto), error: undefined });
+        } catch (e) {
+            quedan.push({ ...d, error: mensaje(e) });
+        }
+    }
+    return quedan;
+}

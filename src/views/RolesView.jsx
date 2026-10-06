@@ -23,7 +23,7 @@ import { smartFilter } from '@nucleo/utils/searchUtils';
 import PortalInput from '../components/common/PortalInput';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
-import { esCargoExterno, nombreDelSuperior, ocupantesDelCargo, ordenarPorJerarquia } from '@nucleo/utils/jerarquiaDeCargos';
+import { AMBITOS_DE_CARGO, bloqueoParaEliminarCargo, errorDeCargo, esCargoExterno, nombreDelSuperior, ocupantesDelCargo, ordenarPorJerarquia } from '@nucleo/utils/jerarquiaDeCargos';
 
 // Las dos pestañas viven acá arriba y no en línea dentro del JSX: `usePestanaEnUrl`
 // necesita la lista para validar el `?tab=` que llegue por la dirección.
@@ -32,10 +32,8 @@ const ROLE_TABS = [
     { key: 'chart', label: 'Visual',  icon: LayoutTemplate },
 ];
 
-const SCOPE_OPTIONS = [
-    { value: 'BRANCH', label: 'Por sucursal' },
-    { value: 'GLOBAL', label: 'Global' }
-];
+// Los ámbitos y las reglas de guardar/eliminar: núcleo (las mismas de la app).
+const SCOPE_OPTIONS = AMBITOS_DE_CARGO;
 
 // ============================================================================
 // 🚀 VISTA PRINCIPAL ROLES
@@ -214,23 +212,9 @@ const RolesView = ({ openModal }) => {
         e.stopPropagation();
         setError('');
 
-        const roleEmps = getEmployeesInRole(role.id);
-        if (roleEmps.length > 0) {
-            setAlertDialog({
-                isOpen: true,
-                title: 'Operación prohibida',
-                message: `No puedes eliminar el cargo "${role.name}" porque tiene ${roleEmps.length} empleado(es) asignado(s). Reasígnalos primero.`
-            });
-            return;
-        }
-
-        const hasChildren = roles.some(r => r.parent_role_id === role.id || r.secondary_parent_role_id === role.id);
-        if (hasChildren) {
-            setAlertDialog({
-                isOpen: true,
-                title: 'Operación bloqueada',
-                message: `El cargo "${role.name}" tiene otros puestos que dependen de él en el organigrama. Mueve los cargos dependientes antes de eliminarlo.`
-            });
+        const bloqueo = bloqueoParaEliminarCargo(role, roles, employees);
+        if (bloqueo) {
+            setAlertDialog({ isOpen: true, title: bloqueo.titulo, message: bloqueo.mensaje });
             return;
         }
 
@@ -253,24 +237,9 @@ const RolesView = ({ openModal }) => {
     const handleSubmit = async () => {
         setError('');
 
-        if (!newRole.trim()) {
-            setError('El cargo necesita un nombre.');
-            return;
-        }
-
-        const hasRootRole = roles.some(r => !r.parent_role_id && r.id !== editingRoleId);
-        if (hasRootRole && !parentRoleId) {
-            setError('Ya hay un cargo en Nivel Raíz. Asígnale un superior a este cargo.');
-            return;
-        }
-
-        if (parentRoleId && parentRoleId === secondaryParentRoleId) {
-            setError('El reporte principal y matricial no pueden ser la misma persona.');
-            return;
-        }
-        
-        if (maxLimit < 1) {
-            setError('El límite de plazas debe ser al menos 1.');
+        const falla = errorDeCargo({ nombre: newRole, parentId: parentRoleId, secundarioId: secondaryParentRoleId, maxLimit, editandoId: editingRoleId }, roles);
+        if (falla) {
+            setError(falla);
             return;
         }
 

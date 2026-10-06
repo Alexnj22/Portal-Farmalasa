@@ -10,9 +10,9 @@
 //
 // Arriba, lo que se puede hacer desde donde se la mira: volver a borrador /
 // activar y duplicar, con las mismas funciones y confirmaciones del portal.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchPromocion } from '@nucleo/data/promociones';
@@ -134,7 +134,8 @@ export default function Promocion() {
     try { setDetalle(await fetchPromocion(id)); setError(null); }
     catch (e) { setError(mensajeDeCarga(e, 'No se pudo calcular el avance.')); }
   }, [id, esLab]);
-  useEffect(() => { cargar(); }, [cargar]);
+  // Al volver (por ejemplo, de reactivarla) se relee el avance.
+  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
 
   const porCodigo = useMemo(() => new Map((employees || []).map((e) => [String(e.code ?? ''), e])), [employees]);
   const personaDe = useCallback((cod) => (cod != null ? porCodigo.get(String(cod)) ?? null : null), [porCodigo]);
@@ -168,6 +169,15 @@ export default function Promocion() {
               <Accion texto={fila.estado === 'activa' ? 'Volver a borrador' : 'Activar'} icono={fila.estado === 'activa' ? 'Clock' : 'Check'}
                 color={fila.estado === 'activa' ? MARCA.ambar : MARCA.verde}
                 onPress={() => alternarPromocion(fila, () => { fila.estado = fila.estado === 'activa' ? 'borrador' : 'activa'; tras(); })} />
+            ) : null}
+            {esLab && fila.estado !== 'finalizada' ? (
+              <Accion texto="Editar" icono="PenLine"
+                onPress={() => router.push({ pathname: '/promocion-laboratorio/[id]', params: { id: String(fila.id) } })} />
+            ) : null}
+            {/* Reactivar: sólo las de producto (la de laboratorio vive por MES: se duplica). */}
+            {fila.estado === 'finalizada' && !esLab ? (
+              <Accion texto="Reactivar" icono="RefreshCw" color={MARCA.verde}
+                onPress={() => router.push({ pathname: '/promocion-reactivar/[id]', params: { id: String(fila.id) } })} />
             ) : null}
             <Accion texto="Duplicar" icono="ClipboardList" onPress={() => duplicarConPreguntas(fila, branches, null)} />
           </View>

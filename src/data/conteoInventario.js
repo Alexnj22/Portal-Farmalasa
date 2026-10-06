@@ -102,3 +102,30 @@ export function fetchInventoryLotesForProduct(productId, erpSucursalIds) {
         .in('erp_sucursal_id', erpSucursalIds)
         .not('lote', 'is', null);
 }
+
+/**
+ * Con qué se puede agregar un producto a mano a un conteo: sus presentaciones
+ * (los TIPOS, que es lo que guarda el renglón) y —si el conteo es por lote—
+ * los lotes que la sala tiene de él, cada uno con su vencimiento. Lo usan el
+ * alta manual del portal (`AddManualItemForm`) y la de la app.
+ * Devuelve `{ presentaciones: string[], lotes: [{ lote, fecha }] }`.
+ */
+export async function opcionesParaAgregarAlConteo(productId, branchId, simple = false) {
+    const [{ data: precios, error: e1 }, { data: mapa, error: e2 }] = await Promise.all([
+        fetchProductPresentacionesForConteo(productId),
+        fetchErpSucursalIdsForBranch(branchId),
+    ]);
+    if (e1) console.error('opcionesParaAgregarAlConteo: product_precios', e1.message);
+    if (e2) console.error('opcionesParaAgregarAlConteo: erp_sucursal_map', e2.message);
+    const presentaciones = [...new Set((precios || []).map((p) => p.presentaciones?.tipo).filter(Boolean))];
+    const erpIds = (mapa || []).map((m) => m.erp_sucursal_id);
+    let lotes = [];
+    if (erpIds.length && !simple) {
+        const { data, error } = await fetchInventoryLotesForProduct(productId, erpIds);
+        if (error) console.error('opcionesParaAgregarAlConteo: lotes', error.message);
+        const vistos = new Map();
+        (data || []).forEach((l) => { if (!vistos.has(l.lote)) vistos.set(l.lote, l.fecha_vencimiento); });
+        lotes = [...vistos.entries()].map(([lote, fecha]) => ({ lote, fecha }));
+    }
+    return { presentaciones, lotes };
+}

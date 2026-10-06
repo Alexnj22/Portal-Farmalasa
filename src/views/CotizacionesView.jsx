@@ -27,35 +27,20 @@ import { abrirVentanaDeImpresion, escribirEImprimir } from '../plataforma/ventan
 import { buildPrintHTML } from '@nucleo/utils/cotizacionPapel';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
-import { desgloseConIva, totalesDeCotizacion, UMBRAL_RETENCION } from '@nucleo/utils/cotizacion';
+import {
+    desgloseConIva, totalesDeCotizacion, UMBRAL_RETENCION, COLUMNAS_DE_PRECIO, FORMAS_DE_PAGO_COTIZACION,
+    TIPOS_DE_DOCUMENTO_COTIZACION, nivelesPermitidos, mapaDePreciosDeCotizacion, renglonNuevo, actualizarRenglon,
+    renglonesParaGuardar, renglonDesdeGuardado, payloadDeCotizacion,
+} from '@nucleo/utils/cotizacion';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 // Las tasas y la aritmética: `cotizacion` (núcleo, la misma de la app).
 const RETENTION_THRESHOLD = UMBRAL_RETENCION;
 
-const PRICE_COLS = [
-    { key: 'vineta',      label: 'Viñeta'     },
-    { key: 'descuento_1', label: 'Descuento 1' },
-    { key: 'vip',         label: 'VIP'        },
-    { key: 'clinica',     label: 'Clínica'    },
-    { key: 'mayoreo',     label: 'Mayoreo'    },
-    { key: 'premium',     label: 'Premium'    },
-    { key: 'precio_7',    label: 'Precio 7'   },
-];
-// Orden canónico para control de acceso por nivel
-const PRICE_LEVEL_ORDER = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo', 'premium', 'precio_7'];
-
-const PAY_OPTS = [
-    { value: 'EFECTIVO',      label: 'Efectivo'      },
-    { value: 'TARJETA',       label: 'Tarjeta'       },
-    { value: 'TRANSFERENCIA', label: 'Transferencia' },
-    { value: 'CHEQUE',        label: 'Cheque'        },
-];
-
-const DOC_OPTS = [
-    { value: 'COF', label: 'COF' },
-    { value: 'CCF', label: 'CCF' },
-];
+// Niveles, formas de pago y documentos: núcleo (`cotizacion`), los mismos de la app.
+const PRICE_COLS = COLUMNAS_DE_PRECIO;
+const PAY_OPTS = FORMAS_DE_PAGO_COTIZACION;
+const DOC_OPTS = TIPOS_DE_DOCUMENTO_COTIZACION;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmt    = (n) => formatMoney(n || 0);
@@ -171,12 +156,7 @@ export default function CotizacionesView() {
     const cotScope  = getScope('cotizaciones');
 
     // Filtrar columnas de precio según el nivel máximo permitido al cargo
-    const allowedPriceCols = useMemo(() => {
-        if (!maxPriceLevel) return PRICE_COLS;
-        const maxIdx = PRICE_LEVEL_ORDER.indexOf(maxPriceLevel);
-        if (maxIdx === -1) return PRICE_COLS;
-        return PRICE_COLS.filter(c => PRICE_LEVEL_ORDER.indexOf(c.key) <= maxIdx);
-    }, [maxPriceLevel]);
+    const allowedPriceCols = useMemo(() => nivelesPermitidos(maxPriceLevel), [maxPriceLevel]);
 
     // modo: 'list' | 'new' | 'edit' | 'view'
     const [mode, setMode]       = useState('list');
@@ -249,29 +229,8 @@ export default function CotizacionesView() {
 
             // Prices load in background — doesn't block the form
             const pricesData = await loadAllPrices();
-            const capFirst = s => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
-            const map = {};
-            pricesData.forEach(p => {
-                const pid = String(p.product_id);
-                if (!map[pid]) map[pid] = [];
-                const tipoLabel = capFirst(p.presentaciones?.tipo || '') || `Pres. ${p.id_presentacion}`;
-                const subdesc   = p.descripcion || '';  // per-product, from product_precios
-                const desc      = subdesc ? `${tipoLabel} (${subdesc})` : tipoLabel;
-                map[pid].push({
-                    presentacion_id: p.id_presentacion,
-                    tipoLabel,
-                    subdesc,
-                    desc,
-                    vineta:      p.vineta,
-                    descuento_1: p.descuento_1,
-                    vip:         p.vip,
-                    clinica:     p.clinica,
-                    mayoreo:     p.mayoreo,
-                    premium:     p.premium,
-                    precio_7:    p.precio_7,
-                });
-            });
-            // Order comes from the DB query (id_presentacion ASC) — no custom sort
+            // Las presentaciones con sus precios: núcleo (`mapaDePreciosDeCotizacion`).
+            const map = mapaDePreciosDeCotizacion(pricesData);
             setPricesMap(map);
         };
         load();
@@ -347,48 +306,13 @@ export default function CotizacionesView() {
         if (!productId) return;
         const product = productResults.find(p => String(p.id) === String(productId));
         if (!product) return;
-        const presArr   = pricesMap[String(productId)] || [];
-        const firstPres = presArr[0];
-        const unitPrice = firstPres ? parseFloat(firstPres['vineta'] || 0) : 0;
-        setItems(prev => [...prev, {
-            _id:              Date.now() + Math.random(),
-            productId:        String(productId),
-            productName:      product.nombre,
-            presentacionId:   firstPres ? String(firstPres.presentacion_id) : '',
-            presentacionDesc: firstPres?.desc || '',
-            priceType:        'vineta',
-            cantidad:         1,
-            precioUnitario:   unitPrice,
-            subtotal:         unitPrice,
-        }]);
+        setItems(prev => [...prev, renglonNuevo(product, pricesMap[String(productId)] || [])]);
         setAddProdId('');
     }, [productResults, pricesMap]);
 
     const updateItem = useCallback((id, field, value) => {
-        setItems(prev => prev.map(item => {
-            if (item._id !== id) return item;
-            const u = { ...item, [field]: value };
-            if (field === 'presentacionId') {
-                const pres = (pricesMap[item.productId] || []).find(p => String(p.presentacion_id) === String(value));
-                u.presentacionDesc = pres?.desc || '';
-                u.precioUnitario   = parseFloat(pres?.[u.priceType] || 0);
-                u.subtotal         = u.precioUnitario * u.cantidad;
-            }
-            if (field === 'priceType') {
-                const pres = (pricesMap[item.productId] || []).find(p => String(p.presentacion_id) === String(item.presentacionId));
-                u.precioUnitario = parseFloat(pres?.[value] || 0);
-                u.subtotal       = u.precioUnitario * u.cantidad;
-            }
-            if (field === 'cantidad') {
-                u.cantidad = Math.max(0, parseFloat(value) || 0);
-                u.subtotal = u.cantidad * u.precioUnitario;
-            }
-            if (field === 'precioUnitario') {
-                u.precioUnitario = Math.max(0, parseFloat(value) || 0);
-                u.subtotal       = u.precioUnitario * u.cantidad;
-            }
-            return u;
-        }));
+        setItems(prev => prev.map(item => (item._id !== id ? item
+            : actualizarRenglon(item, field, value, pricesMap[item.productId] || []))));
     }, [pricesMap]);
 
     const removeItem = useCallback((id) => setItems(prev => prev.filter(i => i._id !== id)), []);
@@ -430,39 +354,13 @@ export default function CotizacionesView() {
     };
 
     // ── Shared payload builder ────────────────────────────────────────────────
-    const buildPayload = () => {
-        return {
-            fecha,
-            customer_id:       customerId || null,
-            customer_name:     selectedCustomer?.name || 'Consumidor Final',
-            customer_nit:      selectedCustomer?.nit  || null,
-            document_type:     docType,
-            payment_type:      paymentType,
-            applies_retention: appliesRetention,
-            subtotal_gravado:  totals.base,
-            iva_amount:        totals.iva,
-            retention_amount:  totals.retention,
-            total:             totals.total,
-            notes:             notes || null,
-            branch_id:         formBranchId ? parseInt(formBranchId) : (user?.branchId || null),
-            created_by:        user?.id    || null,
-            created_by_name:   user?.name  || null,
-            created_by_photo:  user?.photo || null,
-        };
-    };
+    const buildPayload = () => payloadDeCotizacion({
+        fecha, docType, paymentType, appliesRetention, notes, items, branchId: formBranchId, user,
+        cliente: customerId ? { id: customerId, name: selectedCustomer?.name, nit: selectedCustomer?.nit } : null,
+    });
 
     // Sin `cotizacion_id`: lo pone la función de datos al guardar.
-    const buildItemRows = () => items.map((it, idx) => ({
-        product_id:        parseInt(it.productId),
-        product_nombre:    it.productName,
-        presentacion_id:   it.presentacionId ? parseInt(it.presentacionId) : null,
-        presentacion_desc: it.presentacionDesc || null,
-        price_type:        it.priceType,
-        cantidad:          it.cantidad,
-        precio_unitario:   it.precioUnitario,
-        subtotal:          it.subtotal,
-        sort_order:        idx,
-    }));
+    const buildItemRows = () => renglonesParaGuardar(items);
 
     // ── Guardar nueva ─────────────────────────────────────────────────────────
     const handleSave = async () => {
@@ -519,17 +417,7 @@ export default function CotizacionesView() {
         setNotes(cot.notes || '');
         setFormBranchId(cot.branch_id ? String(cot.branch_id) : '');
         setEditingId(cot.id);
-        setItems((itemsData || []).map(it => ({
-            _id:              Date.now() + Math.random() + it.id,
-            productId:        String(it.product_id),
-            productName:      it.product_nombre,
-            presentacionId:   it.presentacion_id ? String(it.presentacion_id) : '',
-            presentacionDesc: it.presentacion_desc || '',
-            priceType:        it.price_type || 'vineta',
-            cantidad:         parseFloat(it.cantidad),
-            precioUnitario:   parseFloat(it.precio_unitario),
-            subtotal:         parseFloat(it.subtotal),
-        })));
+        setItems((itemsData || []).map(renglonDesdeGuardado));
         setMode('edit');
     };
 

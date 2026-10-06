@@ -12,7 +12,7 @@ import { ACREDITACIONES, acreditacionesDe, pendientesPrevisionales, ESTADO_PREVI
     TIPO_ACREDITACION_OPTIONS, tipoDeAcreditacion, promoverADefinitiva, fijarTipoAcreditacion } from '@nucleo/utils/acreditaciones';
 import { LUGAR_PAGO_OPTIONS, REGLAMENTO_LUGAR_PAGO,
     estadoRemisionMtps, estadoFirmaDelContrato, horarioParaElContrato, esContratoCivil, ART20_ADVERTENCIA,
-         FORMA_ESTIPULACION_OPTIONS, PLAZO_DE_PAGO, MEDIO_PAGO_OPTIONS } from '@nucleo/utils/contrato';
+         FORMA_ESTIPULACION_OPTIONS, PLAZO_DE_PAGO, MEDIO_PAGO_OPTIONS, TIPOS_DE_CONTRATO } from '@nucleo/utils/contrato';
 
 // La clave del borrador del alta. Una sola, porque el alta es una sola: dos
 // pestañas dando de alta a dos personas a la vez no es un caso real, y una
@@ -264,7 +264,8 @@ const MARITAL_STATUS_OPTIONS = [{ value: 'SOLTERO', label: 'Soltero/a' }, { valu
 // Se deja fuera de la lista pero el valor 'PRACTICAS' sigue reconociéndose al
 // LEER una ficha vieja: quitarlo de golpe dejaría el tipo de contrato en blanco
 // en quien lo tuviera, sin que nadie lo note.
-const CONTRACT_TYPE_OPTIONS = [{ value: 'INDEFINIDO', label: 'Indefinido (Fijo)' }, { value: 'TEMPORAL', label: 'Temporal' }, { value: 'SERVICIOS', label: 'Servicios profesionales' }];
+// Los tipos de contrato: núcleo (`TIPOS_DE_CONTRATO`), los mismos de la app.
+const CONTRACT_TYPE_OPTIONS = TIPOS_DE_CONTRATO;
 // "Prácticas" = Contrato de Aprendizaje (Art. 61-70 CT): igual que Temporal
 // tiene fecha de fin obligatoria, pero su base legal no es el Art. 25 (plazo
 // fijo) sino el régimen especial de aprendices — por eso NO usa

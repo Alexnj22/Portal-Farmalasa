@@ -6,9 +6,9 @@
 // Estados, grupos, canales y el resumen de cierre salen del núcleo
 // (`encuestasClientes`), los mismos del portal. Diseñar, aprobar y publicar
 // siguen en el portal.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchEncuestas } from '@nucleo/data/encuestasClientes';
@@ -36,7 +36,9 @@ export default function EncuestasClientes() {
   const cargar = useCallback(async () => {
     try { setEncuestas(await fetchEncuestas()); setError(null); } catch (e) { setError(e?.message || 'No se pudieron cargar las encuestas.'); setEncuestas([]); }
   }, []);
-  useEffect(() => { cargar(); }, [cargar]);
+  // Al volver de una encuesta se relee: lo aprobado o publicado allá tiene que
+  // verse acá.
+  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
 
   const reales = useMemo(() => (encuestas || []).filter((e) => !e.es_plantilla), [encuestas]);
   const cuenta = (g) => reales.filter((e) => GRUPOS[g].includes(e.estado)).length;
@@ -83,7 +85,7 @@ export default function EncuestasClientes() {
         })}
         {encuestas && !filas.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>{grupo === 'campo' ? 'Ninguna encuesta en campo' : grupo === 'cerradas' ? 'Ninguna cerrada todavía' : 'Ninguna en diseño'}</Text> : null}
         <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-          <BotonGrande texto="Diseñar y publicar (portal)" borde color={MARCA.azulClaro}
+          <BotonGrande texto="Diseñar las preguntas (portal)" borde color={MARCA.azulClaro}
             onPress={() => router.push({ pathname: '/portal', params: { ruta: '/encuestas-clientes', nombre: 'Encuestas a clientes' } })} />
         </View>
       </ScrollView>

@@ -21,12 +21,15 @@ import {
 } from '@nucleo/data/metas';
 import ExplicacionMeta from './ExplicacionMeta';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { ymHoySV, ymSumar, ymLabel, ymLabelCorto, diaHoySV, TRAMO_CFG } from '@nucleo/utils/metasUtils';
+import {
+    ymHoySV, ymSumar, ymLabel, ymLabelCorto, diaHoySV, TRAMO_CFG,
+    PASOS_MAX_META, baseDeMeta, montoAjustadoDeMeta, ESTADO_DE_META,
+} from '@nucleo/utils/metasUtils';
 
 // Un toque = 1% sobre la propuesta, y el recorrido se topa en ±10%: más que eso
 // no es ajustar una meta, es escribir otra — y para eso está devolverla.
-const PASO_FACTOR = 0.01;
-const PASOS_MAX = 10;
+// El paso del ajuste y su tope: núcleo (`metasUtils`), los mismos de la app.
+const PASOS_MAX = PASOS_MAX_META;
 
 // Cómo se lee cada evento de `metas_historial` en la línea de «Cambios». Uno
 // que no esté acá se muestra con su nombre, sin guiones: mejor eso que
@@ -49,7 +52,7 @@ const EVENTO_TXT = {
 const EVENTO_SIN_MONTO = new Set(['devuelta']);
 
 // La base de venta sobre la que corre el ajuste (ver `montoDe`).
-const baseDe = (r) => Number(r.monto_base ?? r.monto_propuesto ?? 0);
+const baseDe = baseDeMeta;
 
 // El relleno de la barra de la meta anterior, del color de cómo le fue — el
 // mismo reparto que `TRAMO_CFG` y que el alfiler de `BarraAvance`.
@@ -62,12 +65,7 @@ const RELLENO_TRAMO = { completo: 'bg-success', medio: 'bg-warning', nada: 'bg-d
 // punto en la leyenda (reporte del usuario, 2026-09-28).
 const COLORES_SALA = ['bg-chart-1', 'bg-chart-3', 'bg-chart-4', 'bg-chart-6', 'bg-chart-9', 'bg-content-2'];
 
-const ESTADO_CFG = {
-    propuesta:             { label: 'Propuesta',              variante: 'chart-1' },
-    confirmada_supervisor: { label: 'Espera aprobación',      variante: 'warning' },
-    devuelta:              { label: 'Devuelta',               variante: 'danger' },
-    oficial:               { label: 'Oficial',                variante: 'success' },
-};
+const ESTADO_CFG = ESTADO_DE_META;
 
 // El ciclo del mes siguiente: el supervisor ajusta y confirma, el gerente
 // aprueba o devuelve con nota. También muestra el mes en curso si quedó
@@ -201,9 +199,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
     // también ese gasto, que no se negocia. Y arranca de la base actual, no de
     // la propuesta original: una meta reabierta por un gasto ya venía ajustada.
     const montoDe = useCallback((r) => {
-        const base = baseDe(r);
-        const pasos = ajustes[r.id] ?? 0;
-        return base > 0 ? Math.round(base * (1 + PASO_FACTOR * pasos) * 100) / 100 : 0;
+        return montoAjustadoDeMeta(r, ajustes[r.id] ?? 0);
     }, [ajustes]);
 
     // Lo que la sala va a perseguir: la base ajustada más lo que ya traiga de

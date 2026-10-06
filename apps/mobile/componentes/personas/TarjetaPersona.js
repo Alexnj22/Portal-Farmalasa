@@ -118,10 +118,13 @@ const ESTADO_PRACTICANTE = { ACTIVO: ['Activo', MARCA.verde], FINALIZADO: ['Fina
 const dma = (d) => { if (!d) return '—'; const [y, m, dd] = String(d).split('-'); return `${dd}/${m}/${y}`; };
 
 /** Un practicante: horas sociales, sin planilla ni expediente (otra tabla). */
-export function TarjetaPracticante({ p, nombreDeSala }) {
+export function TarjetaPracticante({ p, nombreDeSala, puedeEditar = false }) {
   const [texto, color] = ESTADO_PRACTICANTE[p.estado] || ESTADO_PRACTICANTE.ACTIVO;
+  // Con permiso de edición, tocar abre su formulario (editar, estado, eliminar).
   return (
-    <View style={{ marginHorizontal: 16 }}>
+    <Pressable disabled={!puedeEditar}
+      onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/empleado/practicante', params: { id: String(p.id) } }); }}
+      style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
       <Vidrio radio={22}>
         <View style={{ padding: 14, gap: 6 }}>
           <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{`${p.first_names || ''} ${p.last_names || ''}`.trim()}</Text>
@@ -134,6 +137,6 @@ export function TarjetaPracticante({ p, nombreDeSala }) {
           {nombreDeSala ? <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>{nombreDeSala}</Text> : null}
         </View>
       </Vidrio>
-    </View>
+    </Pressable>
   );
 }

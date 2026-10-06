@@ -6,17 +6,26 @@
 //
 // Estados, formatos, el resumen del mes y el orden por día salen del núcleo
 // (`marketing`), lo mismo del portal. Los diseños los firma la base y sólo se
-// ven cuando el mes ya se envió a revisión. Planificar, aprobar, pautar y
-// pedir siguen en el portal.
+// ven cuando el mes ya se envió a revisión.
+//
+// Desde el teléfono además se ENVÍA el mes a revisión (quien edita) y se
+// APRUEBA (quien aprueba), con la nota opcional del portal; y tocar una pieza
+// abre su detalle (`marketing-pieza/[id]`) para aprobarla o pedir cambios,
+// enviarla sola, ver su historial y conversar. Las tarjetas son las del
+// portal: piezas, aprobadas, con cambios y las que se pautan, con el
+// presupuesto del mes. Diseñar, pautar y pedir siguen en el portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { ActivityIndicator, Alert, Image, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { fetchMes, fetchPiezas, fetchSolicitudes, firmarDisenos } from '@nucleo/data/marketing';
+import { aprobarMes, fetchMes, fetchPiezas, fetchSolicitudes, firmarDisenos, publicarMes } from '@nucleo/data/marketing';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import {
-  ESTADOS_MES, estadoDe, estadoSolicitudDe, formatoDe, piezasPorDia, prioridadDe, resumenDelMes, ROTULO_CORTO, tipoDeArchivo,
+  ESTADOS_MES, estadoDe, estadoSolicitudDe, formatoDe, piezasPorDia, prioridadDe, resumenDelMes, ROTULO_CORTO, tipoDeArchivo, totalesDePauta,
 } from '@nucleo/utils/marketing';
-import { fechaTexto, mesSV } from '@nucleo/utils/fecha';
+import { etiquetaMes, fechaTexto, mesSV } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import PasoDeMes from '../componentes/PasoDeMes';
 import Segmentos from '../componentes/Segmentos';
@@ -28,8 +37,14 @@ import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { colorDeVariante } from '../componentes/colorDeVariante';
+import { guardarPieza } from '../componentes/marketing/elegida';
+import { fallo, listo } from '../componentes/Progreso';
 
 export default function Marketing() {
+  const { hasPermission } = useAuth();
+  const puedeEditar = hasPermission('marketing', 'can_edit');
+  const puedeAprobar = hasPermission('marketing', 'can_approve');
+  const [ocupado, setOcupado] = useState(false);
   const [mes, setMes] = useState(mesSV);
   const [vista, setVista] = useState('calendario');
   const [datos, setDatos] = useState(null);
@@ -47,7 +62,9 @@ export default function Marketing() {
       setError(null);
     } catch (e) { setError(e?.message || 'No se pudo cargar el mes.'); setDatos({ fila: null, piezas: [], firmas: new Map() }); }
   }, [mes]);
-  useEffect(() => { setDatos(null); setAbierta(null); cargar(); }, [cargar]);
+  useEffect(() => { setDatos(null); setAbierta(null); }, [mes]);
+  // Al volver de una pieza se relee: lo aprobado allá tiene que verse acá.
+  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   useEffect(() => { fetchSolicitudes().then(setSolicitudes).catch(() => setSolicitudes([])); }, []);
 
   const resumen = useMemo(() => resumenDelMes(datos?.piezas), [datos]);
@@ -55,6 +72,41 @@ export default function Marketing() {
   const dias = Object.keys(porDia).sort();
   const estadoMes = datos?.fila ? ESTADOS_MES[datos.fila.estado] : null;
   const abiertasSol = (solicitudes || []).filter((s) => s.estado === 'nueva' || s.estado === 'aceptada').length;
+  const fila = datos?.fila;
+  const publicado = !!fila?.publicado_at;
+  const aprobadas = resumen.por.aprobado + resumen.por.programado + resumen.por.publicado;
+  const pauta = useMemo(() => totalesDePauta((datos?.piezas || []).map((p) => p.pauta).filter(Boolean), fila?.presupuesto_pauta), [datos, fila?.presupuesto_pauta]);
+  // Las mismas condiciones del portal para enviar y aprobar el mes.
+  const puedeEnviarMes = puedeEditar && fila && resumen.total > 0 && fila.estado !== 'en_revision';
+  const puedeAprobarMes = puedeAprobar && publicado && fila && fila.estado !== 'aprobado';
+
+  const decidirMes = (modo) => {
+    const enviar = modo === 'publicar';
+    const reenvio = enviar && fila.version > 0;
+    const etiqueta = etiquetaMes(fila.mes);
+    const titulo = enviar ? (reenvio ? `Reenviar ${etiqueta}` : `Enviar ${etiqueta} a revisión`) : `Aprobar ${etiqueta}`;
+    const cuerpo = enviar
+      ? `Quien revisa recibe el aviso y desde ese momento ve los diseños de las ${resumen.total} piezas.${resumen.abiertas ? ` Hay ${resumen.abiertas} sin terminar: se ven con su estado.` : ''} Nota (opcional):`
+      : `Se aprueban de una vez las piezas finalizadas y el calendario queda listo para publicar.${resumen.abiertas ? ` Quedan ${resumen.abiertas} sin terminar o con cambios.` : ''} Comentario (opcional):`;
+    Alert.prompt(titulo, cuerpo, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: enviar ? 'Enviar' : 'Aprobar', onPress: async (nota) => {
+        setOcupado(true);
+        try {
+          if (enviar) { await publicarMes(fila.id, nota); listo(reenvio ? 'Calendario reenviado' : 'Calendario enviado a revisión', etiqueta); }
+          else { const r = await aprobarMes(fila.id, nota); listo('Calendario aprobado', `${r?.piezas_aprobadas ?? 0} pieza(s) aprobadas de una vez`); }
+          cargar();
+        } catch (e) {
+          fallo(enviar ? 'No se pudo enviar' : 'No se pudo aprobar', mensajeAmigable(e, 'Intenta de nuevo.'));
+        } finally { setOcupado(false); }
+      } },
+    ], 'plain-text');
+  };
+  const abrirPieza = (p) => {
+    Haptics.selectionAsync().catch(() => {});
+    guardarPieza(p, fila, datos.firmas);
+    router.push({ pathname: '/marketing-pieza/[id]', params: { id: String(p.id) } });
+  };
 
   return (
     <>
@@ -77,9 +129,20 @@ export default function Marketing() {
                   </View>
                 ) : null}
                 <FilaDeKpis>
-                  <Kpi icono="Image" rotulo="Piezas" valor={String(resumen.total)} color={MARCA.azul} apoyo={`${resumen.pautadas} con pauta`} />
-                  <Kpi icono="CheckCircle2" rotulo="Avance" valor={`${Math.round(resumen.avance * 100)}%`} color={resumen.abiertas ? MARCA.ambar : MARCA.verde} apoyo={`${resumen.abiertas} por hacer`} />
+                  <Kpi icono="Image" rotulo="Piezas" valor={String(resumen.total)} color={MARCA.azul} apoyo={`${Math.round(resumen.avance * 100)}% listas`} />
+                  <Kpi icono="CheckCircle2" rotulo="Aprobadas" valor={`${aprobadas}/${resumen.total}`} color={resumen.total && aprobadas === resumen.total ? MARCA.verde : MARCA.azulClaro} apoyo={`${resumen.por.finalizado} por revisar`} />
                 </FilaDeKpis>
+                <FilaDeKpis>
+                  <Kpi icono="AlertTriangle" rotulo="Con cambios" valor={String(resumen.por.cambios)} color={resumen.por.cambios ? MARCA.ambar : MARCA.verde} pide={resumen.por.cambios > 0} apoyo={`${resumen.abiertas} sin terminar`} />
+                  <Kpi icono="Megaphone" rotulo="Se pautan" valor={String(resumen.pautadas)} color={MARCA.violeta} apoyo={pauta.presupuestoMes ? `${formatMoney(pauta.presupuesto)} de ${formatMoney(pauta.presupuestoMes)}` : (pauta.presupuesto ? formatMoney(pauta.presupuesto) : 'Sin inversión')} />
+                </FilaDeKpis>
+                {fila.objetivo ? <View style={{ marginHorizontal: 20 }}><Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Objetivo del mes: ${fila.objetivo}`}</Text></View> : null}
+                {puedeEnviarMes || puedeAprobarMes ? (
+                  <View style={{ marginHorizontal: 16, flexDirection: 'row', gap: 10 }}>
+                    {puedeEnviarMes ? <View style={{ flex: 1 }}><BotonGrande texto={fila.version > 0 ? 'Reenviar el mes' : 'Enviar a revisión'} color={MARCA.azul} borde onPress={() => decidirMes('publicar')} deshabilitado={ocupado} /></View> : null}
+                    {puedeAprobarMes ? <View style={{ flex: 1 }}><BotonGrande texto="Aprobar el mes" color={MARCA.verde} onPress={() => decidirMes('aprobar')} deshabilitado={ocupado} /></View> : null}
+                  </View>
+                ) : null}
                 {dias.map((d) => (
                   <View key={d} style={{ gap: 8 }}>
                     <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>
@@ -90,7 +153,7 @@ export default function Marketing() {
                       const imagenes = (p.archivos || []).filter((a) => tipoDeArchivo(a) === 'imagen' && datos.firmas.get(a.url));
                       const abiertaEsta = abierta === p.id;
                       return (
-                        <Pressable key={p.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(abiertaEsta ? null : p.id); }} style={{ marginHorizontal: 16 }}>
+                        <Pressable key={p.id} onPress={() => abrirPieza(p)} onLongPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(abiertaEsta ? null : p.id); }} delayLongPress={300} style={{ marginHorizontal: 16 }}>
                           <Vidrio radio={18} interactivo>
                             <View style={{ padding: 12, gap: 6 }}>
                               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -146,7 +209,7 @@ export default function Marketing() {
           </View>
         )}
         <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-          <BotonGrande texto="Planificar, aprobar y pedir (portal)" borde color={MARCA.azulClaro}
+          <BotonGrande texto="Planificar, diseñar y pedir (portal)" borde color={MARCA.azulClaro}
             onPress={() => router.push({ pathname: '/portal', params: { ruta: '/marketing', nombre: 'Marketing' } })} />
         </View>
       </ScrollView>

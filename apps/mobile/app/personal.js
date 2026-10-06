@@ -9,13 +9,15 @@
 //
 // Vistas del portal: Todos / Activos / Ausentes en el segmentado; Practicantes
 // y Externos y sistema en el menú de filtros, junto con la sala. Tocar a
-// alguien abre su ficha NATIVA (`empleado/[id]`). Altas, edición rápida y
-// recontratar siguen en el portal.
+// alguien abre su ficha NATIVA (`empleado/[id]`), y desde ahí se edita
+// (`empleado/editar`). El «+» de la barra da de alta a un empleado —o a un
+// practicante, en esa vista—; tocar un practicante lo edita. Recontratar sigue
+// en el portal.
 //
 // Mismo alcance que el portal: sin `staff_list` en ALL se ve sólo la sala propia.
 import { useEffect, useMemo, useState } from 'react';
 import { SectionList, Text, View } from 'react-native';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { soloNoEmpleados, soloPersonalEnPlanilla, esFichaQueNoEsEmpleado } from '@nucleo/utils/tipoDeFicha';
@@ -44,7 +46,8 @@ function pulso(personas) {
 }
 
 export default function Personal() {
-  const { user, getScope } = useAuth();
+  const { user, getScope, hasPermission } = useAuth();
+  const puedeEditar = hasPermission('staff_list', 'can_edit');
   const empleados = useStaffStore((s) => s.employees);
   const sucursales = useStaffStore((s) => s.branches);
   const roles = useStaffStore((s) => s.roles);
@@ -129,7 +132,10 @@ export default function Personal() {
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
-      <MenuDeFiltros grupos={grupos} />
+      <MenuDeFiltros grupos={grupos} extra={puedeEditar && tipo !== 'externos' ? {
+        icono: 'plus', etiqueta: tipo === 'practicantes' ? 'Nuevo practicante' : 'Nuevo empleado',
+        onPress: () => router.push(tipo === 'practicantes' ? '/empleado/practicante' : '/empleado/editar'),
+      } : null} />
       <SectionList
         sections={secciones}
         keyExtractor={(f) => f.k}
@@ -162,7 +168,7 @@ export default function Personal() {
         renderItem={({ item: f }) => {
           if (f.titulo) return <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>{f.titulo}</Text>;
           if (f.vacante) return <PuestoVacante cargo={f.vacante} />;
-          if (f.practicante) return <TarjetaPracticante p={f.practicante} />;
+          if (f.practicante) return <TarjetaPracticante p={f.practicante} puedeEditar={puedeEditar} />;
           return <TarjetaPersona emp={f.emp} roles={roles} destacada={f.destacada} conSuperior={f.conSuperior} />;
         }}
         ListEmptyComponent={(

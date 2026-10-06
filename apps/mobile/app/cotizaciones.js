@@ -4,10 +4,8 @@
 // retención, calculados con la misma cuenta del portal (`cotizacion`).
 //
 // Arriba las tarjetas del portal: Total, Activas, Anuladas y Monto (la suma de
-// las activas). Anular y compartir el PDF viven en el detalle. Crear y editar
-// siguen en el portal: el formulario arma cada renglón con el nivel de precio
-// del cargo y la búsqueda de productos del servidor, y no tiene una función
-// del núcleo que lo resuma.
+// las activas). Anular, editar y compartir el PDF viven en el detalle; crear,
+// en `cotizacion/nueva`, con las mismas reglas del portal (núcleo `cotizacion`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
@@ -32,7 +30,7 @@ import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import { useStaffStore } from '@nucleo/store/staffStore';
 
 export default function Cotizaciones() {
-  const { getScope, user } = useAuth();
+  const { getScope, user, hasPermission } = useAuth();
   const sala = getScope?.('cotizaciones') === 'ALL' ? null : (user?.branchId ?? null);
   const [filas, setFilas] = useState(null);
   const [error, setError] = useState(null);
@@ -115,10 +113,11 @@ export default function Cotizaciones() {
         {filas && !visibles.length && !error ? (
           <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>{q ? 'Ninguna cotización con esa búsqueda' : 'Sin cotizaciones'}</Text>
         ) : null}
-        <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-          <BotonGrande texto="Nueva cotización (portal)" borde color={MARCA.azulClaro}
-            onPress={() => router.push({ pathname: '/portal', params: { ruta: '/cotizaciones', nombre: 'Cotizaciones' } })} />
-        </View>
+        {hasPermission('cotizaciones', 'can_edit') ? (
+          <View style={{ marginHorizontal: 16, marginTop: 8 }}>
+            <BotonGrande texto="Nueva cotización" onPress={() => router.push('/cotizacion/nueva')} />
+          </View>
+        ) : null}
       </ScrollView>
     </>
   );

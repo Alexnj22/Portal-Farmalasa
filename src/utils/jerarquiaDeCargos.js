@@ -51,3 +51,91 @@ export function cargosNivelANivel(roles) {
     }
     return sorted;
 }
+
+// ── Crear, editar y eliminar un cargo: las reglas ───────────────────────────
+// Vivían en `RolesView` (portal). La app nativa crea, edita y elimina cargos
+// con las MISMAS reglas, así que viven acá y el portal las importa.
+
+/** Los ámbitos de un cargo, con su rótulo. */
+export const AMBITOS_DE_CARGO = [
+    { value: 'BRANCH', label: 'Por sucursal' },
+    { value: 'GLOBAL', label: 'Global' },
+];
+
+/**
+ * Qué impide guardar el cargo, en palabras; `null` si se puede. Los ids se
+ * comparan como texto: el formulario los trae como cadena y la tabla como número.
+ */
+export function errorDeCargo({ nombre, parentId, secundarioId, maxLimit, editandoId = null }, roles) {
+    if (!String(nombre || '').trim()) return 'El cargo necesita un nombre.';
+    const hayRaiz = (roles || []).some((r) => !r.parent_role_id && String(r.id) !== String(editandoId ?? ''));
+    if (hayRaiz && !parentId) return 'Ya hay un cargo en Nivel Raíz. Asígnale un superior a este cargo.';
+    if (parentId && String(parentId) === String(secundarioId || '')) return 'El reporte principal y matricial no pueden ser la misma persona.';
+    if (!(Number(maxLimit) >= 1)) return 'El límite de plazas debe ser al menos 1.';
+    return null;
+}
+
+/**
+ * Por qué un cargo NO se puede eliminar ({ titulo, mensaje }), o `null` si se
+ * puede: con gente asignada, o con cargos que dependen de él en el organigrama.
+ */
+export function bloqueoParaEliminarCargo(rol, roles, empleados) {
+    const gente = ocupantesDelCargo(empleados, rol.id);
+    if (gente.length > 0) {
+        return { titulo: 'Operación prohibida', mensaje: `No puedes eliminar el cargo "${rol.name}" porque tiene ${gente.length} empleado(es) asignado(s). Reasígnalos primero.` };
+    }
+    if ((roles || []).some((r) => r.parent_role_id === rol.id || r.secondary_parent_role_id === rol.id)) {
+        return { titulo: 'Operación bloqueada', mensaje: `El cargo "${rol.name}" tiene otros puestos que dependen de él en el organigrama. Mueve los cargos dependientes antes de eliminarlo.` };
+    }
+    return null;
+}
+
+/**
+ * El organigrama como dibujo: cada cargo con su caja (x, y en unidades de
+ * casilla) y las líneas a su superior —principal y matricial—. Árbol clásico:
+ * las hojas se reparten de izquierda a derecha y cada padre se centra sobre sus
+ * hijos. Un ciclo o un superior que no existe se trata como raíz (no se pierde
+ * ningún cargo del dibujo).
+ */
+export function disposicionDelOrganigrama(roles) {
+    const lista = roles || [];
+    const ids = new Set(lista.map((r) => r.id));
+    const hijos = {};
+    const raices = [];
+    for (const r of lista) {
+        if (r.parent_role_id && ids.has(r.parent_role_id) && r.parent_role_id !== r.id) (hijos[r.parent_role_id] ||= []).push(r);
+        else raices.push(r);
+    }
+    const porNombre = (a, b) => String(a.name).localeCompare(String(b.name), 'es');
+    Object.values(hijos).forEach((h) => h.sort(porNombre));
+    raices.sort(porNombre);
+    const nodos = [];
+    const visto = new Set();
+    let siguienteHoja = 0;
+    const colocar = (r, nivel) => {
+        visto.add(r.id);
+        const propios = (hijos[r.id] || []).filter((h) => !visto.has(h.id));
+        let x;
+        if (!propios.length) x = siguienteHoja++;
+        else {
+            const xs = propios.map((h) => colocar(h, nivel + 1));
+            x = (xs[0] + xs[xs.length - 1]) / 2;
+        }
+        nodos.push({ id: r.id, name: r.name, scope: r.scope, x, y: nivel });
+        return x;
+    };
+    raices.forEach((r) => colocar(r, 0));
+    // Lo que un ciclo dejó afuera entra como raíz suelta.
+    for (const r of lista) if (!visto.has(r.id)) colocar(r, 0);
+    const pos = Object.fromEntries(nodos.map((n) => [n.id, n]));
+    const lineas = [];
+    for (const r of lista) {
+        if (r.parent_role_id && pos[r.parent_role_id] && r.parent_role_id !== r.id) lineas.push({ desde: r.parent_role_id, hasta: r.id, tipo: 'principal' });
+        if (r.secondary_parent_role_id && pos[r.secondary_parent_role_id]) lineas.push({ desde: r.secondary_parent_role_id, hasta: r.id, tipo: 'matricial' });
+    }
+    return {
+        nodos, lineas,
+        ancho: Math.max(1, siguienteHoja),
+        alto: nodos.reduce((m, n) => Math.max(m, n.y + 1), 1),
+    };
+}

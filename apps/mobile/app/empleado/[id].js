@@ -9,7 +9,9 @@
 // marca `salario_conocido`); el DUI, el ISSS y la AFP sólo con la llave de
 // identidad (`identidad_conocida`). Sin la llave la sección no se pinta.
 //
-// Editar el expediente sigue en el portal: el botón del pie lo abre ahí.
+// «Editar la ficha» abre la edición nativa (`empleado/editar`: nombre, código,
+// cargos, sala, contacto, contrato); el resto del expediente sigue en el
+// portal, y el botón del pie lo abre ahí.
 import { useMemo, useState } from 'react';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -188,8 +190,11 @@ export default function Empleado() {
           ) : null}
         </Seccion>
 
+        {hasPermission?.('staff_list', 'can_edit') && !['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'].includes(emp.status) ? (
+          <BotonGrande texto="Editar la ficha" onPress={() => router.push({ pathname: '/empleado/editar', params: { id: String(emp.id) } })} />
+        ) : null}
         {hasPermission?.('staff_detail', 'can_view') ? (
-          <BotonGrande texto="Abrir el expediente (portal)" borde color={MARCA.azulClaro}
+          <BotonGrande texto="Expediente completo (portal)" borde color={MARCA.azulClaro}
             onPress={() => router.push({ pathname: '/portal', params: { ruta: `/personal/empleado/${emp.id}`, nombre: shortEmployeeName(emp) } })} />
         ) : null}
       </ScrollView>

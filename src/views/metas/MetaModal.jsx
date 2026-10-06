@@ -8,34 +8,13 @@ import Notice from '../../components/common/Notice';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { guardarMetaManual, fetchMetasRows } from '@nucleo/data/metas';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA } from '@nucleo/utils/metasUtils';
+import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, situacionDeMetaManual } from '@nucleo/utils/metasUtils';
 
 const squircleClass = 'w-12 h-12 rounded-2xl bg-surface-card-hover border border-border-card shadow-sm flex items-center justify-center shrink-0';
 
-// Qué pasa al guardar sobre la meta que ya existe en ese mes y esa sala. El
-// servidor decide igual (`upsert_meta_manual` tiene el candado), pero enterarse
-// DESPUÉS de apretar Guardar es enterarse tarde: acá el motivo se lee antes.
-function situacion(estado, ym, ymActual) {
-    if (!estado) {
-        return { puede: true, tono: 'info',
-            texto: 'Este mes no tiene meta registrada para esta sala. Se guarda como meta oficial.' };
-    }
-    if (estado === 'confirmada_supervisor') {
-        return { puede: false, tono: 'warning',
-            texto: 'Esta meta ya fue confirmada y espera al gerente. Para cambiarle el monto, él tiene que devolverla primero.' };
-    }
-    if (estado === 'oficial' && ym >= ymActual) {
-        return { puede: false, tono: 'warning',
-            texto: 'Esta meta ya está aprobada y la sala la está persiguiendo. Para corregirla, el gerente tiene que devolverla.' };
-    }
-    if (estado === 'oficial') {
-        return { puede: true, tono: 'warning', pideNota: true,
-            texto: 'Este mes ya cerró con su meta. Corregirla cambia el cumplimiento y el bono que dio ese mes, así que hay que dejar dicho por qué.' };
-    }
-    // propuesta | devuelta
-    return { puede: true, tono: 'info',
-        texto: 'Esta meta está en revisión. Se cambia el monto y sigue su camino normal: confirmar y aprobar.' };
-}
+// Qué pasa al guardar sobre la meta que ya existe: núcleo
+// (`situacionDeMetaManual`), lo mismo que lee la app.
+const situacion = situacionDeMetaManual;
 
 // Ingreso manual de una meta: el histórico que el usuario tiene anotado, o la
 // corrección del monto de una propuesta en revisión.

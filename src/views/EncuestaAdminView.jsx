@@ -28,7 +28,7 @@ import {
     fetchSurveyPreguntas, fetchSurveyResponses, actualizarEncuesta, insertSurvey,
     updateSurveyResponse, insertSurveyResponse, deleteSurveyResponse,
 } from '@nucleo/data/encuestas';
-import { promedioPorPersona, puntajeDePersona } from '@nucleo/utils/climaLaboral';
+import { categoriaDeAntiguedad, promedioPorPersona, puntajeDePersona } from '@nucleo/utils/climaLaboral';
 import SearchInput from '../components/common/SearchInput';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -137,14 +137,8 @@ function PersonAvatar({ src, name, isJefe, size = 28 }) {
 // caso más claro de por qué D3.3 existe: no es que faltara el componente, es
 // que nadie lo buscó antes de escribir otro. (2026-07-28)
 
-function computeTenureCategory(hireDateStr) {
-    if (!hireDateStr) return null;
-    const months = (Date.now() - new Date(hireDateStr).getTime()) / (1000 * 60 * 60 * 24 * 30.44);
-    if (months < 12) return 'A';
-    if (months < 36) return 'B';
-    if (months < 60) return 'C';
-    return 'D';
-}
+// La categoría de antigüedad (P1): núcleo, `categoriaDeAntiguedad` (la usa también la app).
+const computeTenureCategory = (fecha) => categoriaDeAntiguedad(fecha);
 
 // ─── Main view ────────────────────────────────────────────────────────────────
 export default function EncuestaAdminView() {

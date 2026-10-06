@@ -16,7 +16,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { cantidadValida, conteoEditable, ESTADO_CONTEO, FILTROS_CONTEO, guardadoDelRenglon, noUbicado } from '@nucleo/utils/conteoDeInventario';
+import { cantidadValida, conteoEditable, ESTADO_CONTEO, FILTROS_CONTEO, faltaAjusteDelConteo, guardadoDelRenglon, noUbicado } from '@nucleo/utils/conteoDeInventario';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
@@ -32,13 +32,15 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import Resumen from '../../componentes/conteos/Resumen';
 import Historial from '../../componentes/conteos/Historial';
+import AgregarRenglon from '../../componentes/conteos/AgregarRenglon';
+import AccionDeRenglon from '../../componentes/conteos/AccionDeRenglon';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fmtHM } from '@nucleo/utils/tableroDePedidos';
 
 const POR_PAGINA = 20;
 const vence = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'short', year: '2-digit' }) : 'sin fecha');
 
-function Renglon({ it, editable, onGuardado, onHistorial }) {
+function Renglon({ it, editable, onGuardado, onHistorial, onLote, onRecontar }) {
   const guardarConteoItem = useStaffStore((s) => s.guardarConteoItem);
   const [valor, setValor] = useState(it.fisico_cantidad ?? '');
   const [abierto, setAbierto] = useState(it.estado_item === 'PENDIENTE');
@@ -113,6 +115,21 @@ function Renglon({ it, editable, onGuardado, onHistorial }) {
           </Text>
         </Pressable>
       ) : null}
+      {onLote || onRecontar ? (
+        <View style={{ flexDirection: 'row', gap: 18 }}>
+          {onLote ? (
+            <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onLote(it); }} hitSlop={6} style={({ pressed }) => ({ minHeight: 32, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
+              <Text style={{ color: MARCA.azulClaro, fontSize: 13, fontWeight: '600' }}>Corregir lote</Text>
+            </Pressable>
+          ) : null}
+          {onRecontar ? (
+            <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onRecontar(it); }} hitSlop={6} style={({ pressed }) => ({ minHeight: 32, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
+              <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '600' }}>{it.recontado_at ? 'Recontar otra vez' : 'Recontar'}</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
+      {it.recontado_at ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Recontado${it.fisico_primer_conteo != null ? ` · primer conteo ${it.fisico_primer_conteo}` : ''}`}</Text> : null}
     </View>
   );
 }
@@ -126,6 +143,10 @@ export default function Conteo() {
   const fetchConteoItemsForProducts = useStaffStore((s) => s.fetchConteoItemsForProducts);
   const finalizarConteoInventario = useStaffStore((s) => s.finalizarConteoInventario);
   const fetchConteoResumen = useStaffStore((s) => s.fetchConteoResumen);
+  const aprobarConteoInventario = useStaffStore((s) => s.aprobarConteoInventario);
+  const marcarAjusteErp = useStaffStore((s) => s.marcarAjusteErp);
+  const [agregando, setAgregando] = useState(false);
+  const [accion, setAccion] = useState(null);   // { item, modo: 'lote' | 'recuento' }
   const [conteo, setConteo] = useState(null);
   const [resumen, setResumen] = useState(null);
   const [texto, setTexto] = useState('');
@@ -169,7 +190,11 @@ export default function Conteo() {
     fetchConteoItemsForProducts(id, [abierto]).then((filas) => setItems((m) => ({ ...m, [abierto]: filas }))).catch(() => {});
   }, [abierto, id, items, fetchConteoItemsForProducts]);
 
-  const editable = conteoEditable(conteo) && hasPermission('conteo_inventario', 'can_edit');
+  const puedeEditar = hasPermission('conteo_inventario', 'can_edit');
+  const editable = conteoEditable(conteo) && puedeEditar;
+  // Mismas condiciones que el portal: aprobar y recontar, finalizado y con can_approve.
+  const puedeAprobar = conteo?.status === 'FINALIZADO' && hasPermission('conteo_inventario', 'can_approve');
+  const simple = conteo?.modo === 'SIMPLE';
   const verSistema = resumen?.ver_sistema ?? productos.filas.some((p) => p.ver_sistema);
   const filtros = FILTROS_CONTEO.filter((f) => !f.soloConSistema || verSistema);
   const sala = (sucursales || []).find((b) => String(b.id) === String(conteo?.branch_id))?.name;
@@ -186,6 +211,44 @@ export default function Conteo() {
     const contadosDelProducto = nuevos.filter((it) => it.estado_item !== 'PENDIENTE').length;
     setProductos((p) => ({ ...p, filas: p.filas.map((f) => (f.erp_product_id === erp ? { ...f, contados_count: contadosDelProducto } : f)) }));
     cargarConteo();
+  };
+
+  // Lo que devolvió el servidor al corregir el lote o recontar, sin recargar la página.
+  const alAccion = (itemId, cambio) => {
+    setItems((m) => Object.fromEntries(Object.entries(m).map(([erp, filas]) => [erp, filas.map((it) => (it.id === itemId ? { ...it, ...cambio } : it))])));
+    cargarConteo();
+  };
+
+  const aprobar = () => {
+    Alert.prompt('Aprobar conteo', 'Queda cerrado y con firma auditable. No puedes aprobar un conteo que finalizaste tú mismo.', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Aprobar', onPress: async (nota) => {
+          trabajando('Aprobando el conteo…');
+          try {
+            await aprobarConteoInventario(id, (nota || '').trim() || null);
+            listo('Conteo aprobado', 'Queda cerrado y con firma auditable.');
+            cargarConteo();
+          } catch (e) { fallo('No se pudo aprobar', mensajeAmigable(e)); }
+        },
+      },
+    ], 'plain-text', '', 'default');
+  };
+
+  const registrarAjuste = () => {
+    Alert.prompt('Registrar ajuste aplicado', 'Esto no modifica existencias: sólo deja constancia de que el ajuste ya se aplicó, para que este conteo no quede como pendiente. Escribe la referencia si la tienes.', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Ya lo apliqué', onPress: async (nota) => {
+          trabajando('Registrando el ajuste…');
+          try {
+            await marcarAjusteErp(id, (nota || '').trim() || null);
+            listo('Ajuste registrado', 'Queda constancia de que el ajuste ya se aplicó.');
+            cargarConteo();
+          } catch (e) { fallo('No se pudo registrar', mensajeAmigable(e)); }
+        },
+      },
+    ], 'plain-text', '', 'default');
   };
 
   const finalizar = () => {
@@ -239,10 +302,32 @@ export default function Conteo() {
             </View>
           ) : null}
           {conteo ? <Resumen resumen={resumen} abierto={conteoEditable(conteo)} verMontos={hasPermission('conteo_inventario_ver_montos')} /> : null}
-          {conteo && !editable ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="Este conteo ya no se puede contar." /></View> : null}
+          {conteo && !editable && !puedeAprobar ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="Este conteo ya no se puede contar." /></View> : null}
+          {puedeAprobar ? (
+            <View style={{ marginHorizontal: 16, gap: 10 }}>
+              <Aviso tono="nota" texto="Finalizado: puedes recontar un renglón antes de aprobar. Quien lo contó no puede recontarlo." />
+              <BotonGrande texto="Aprobar el conteo" color={MARCA.verde} onPress={aprobar} />
+            </View>
+          ) : null}
+          {/* El conteo firma la diferencia; el stock se corrige afuera. Hasta que
+              alguien registre que lo aplicó, tiene que estar a la vista. */}
+          {conteo?.status === 'CERRADO' ? (
+            <View style={{ marginHorizontal: 16, gap: 10 }}>
+              {conteo.ajuste_erp_aplicado ? (
+                <Aviso tono="nota" texto={`Ajuste aplicado el ${fechaTexto(conteo.ajuste_erp_at, { day: 'numeric', month: 'short', year: 'numeric' })} a las ${fmtHM(conteo.ajuste_erp_at)}.${conteo.ajuste_erp_nota ? ` — «${conteo.ajuste_erp_nota}»` : ''}`} />
+              ) : faltaAjusteDelConteo(conteo) ? (
+                <>
+                  <Aviso tono="cuidado" texto={`Ajuste pendiente de aplicar: ${conteo.total_diferencias} línea(s). Aplícalo y regístralo aquí.`} />
+                  {puedeEditar ? <BotonGrande texto="Registrar ajuste" borde color={MARCA.ambar} onPress={registrarAjuste} /> : null}
+                </>
+              ) : <Aviso tono="nota" texto="Sin diferencias: no hay ajuste que aplicar." />}
+            </View>
+          ) : null}
           {editable ? (
             <View style={{ marginHorizontal: 16 }}>
               <BotonGrande texto="Escanear un producto" color={MARCA.azul} onPress={() => setEscaneando(true)} />
+              <View style={{ height: 10 }} />
+              <BotonGrande texto="Agregar un renglón a mano" borde color={MARCA.azulClaro} onPress={() => setAgregando(true)} />
             </View>
           ) : null}
           <Segmentos activa={filtro} onCambiar={setFiltro} opciones={filtros.map((f) => ({ id: f.key, label: f.key === 'DIFERENCIA' ? 'Diferencia' : f.label }))} />
@@ -267,7 +352,9 @@ export default function Conteo() {
                   {abiertoAqui ? (
                     <View style={{ paddingHorizontal: 14, paddingBottom: 12 }}>
                       {!items[p.erp_product_id] ? <ActivityIndicator style={{ marginVertical: 10 }} />
-                        : items[p.erp_product_id].map((it) => <Renglon key={it.id} it={it} editable={editable} onGuardado={alGuardar(p.erp_product_id)} onHistorial={setHistorial} />)}
+                        : items[p.erp_product_id].map((it) => <Renglon key={it.id} it={it} editable={editable} onGuardado={alGuardar(p.erp_product_id)} onHistorial={setHistorial}
+                          onLote={editable && !simple ? (x) => setAccion({ item: x, modo: 'lote' }) : null}
+                          onRecontar={puedeAprobar ? (x) => setAccion({ item: x, modo: 'recuento' }) : null} />)}
                     </View>
                   ) : null}
                 </Vidrio>
@@ -289,6 +376,9 @@ export default function Conteo() {
         </ScrollView>
       </KeyboardAvoidingView>
       <Historial item={historial} simple={conteo?.modo === 'SIMPLE'} onCerrar={() => setHistorial(null)} />
+      <AccionDeRenglon item={accion?.item ?? null} modo={accion?.modo} onCerrar={() => setAccion(null)} onHecho={alAccion} />
+      <AgregarRenglon visible={agregando} conteoId={id} branchId={conteo?.branch_id} simple={simple} onCerrar={() => setAgregando(false)}
+        onAgregado={(prod) => { setItems((m) => { const n = { ...m }; delete n[prod.id]; return n; }); setFiltro('TODOS'); setTexto(prod.nombre); setPagina(1); cargar(); cargarConteo(); }} />
       <Escaner visible={escaneando} titulo="Buscar en el conteo" ayuda="Apunta al código de barras del producto"
         onCodigo={(c) => { setEscaneando(false); setFiltro('TODOS'); setTexto(String(c)); }} onCerrar={() => setEscaneando(false)} />
     </>

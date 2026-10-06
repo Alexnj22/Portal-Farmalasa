@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1237.0 — App: crear y editar desde el teléfono
+
+- **App: crear y editar desde el teléfono.** Cotizaciones (crear, editar y compartir el PDF), Metas (agregar meta y la pestaña Confirmación), Conteos (crear, aprobar, registrar ajuste, recontar, agregar renglón, corregir lote), Personal (alta y edición de empleados y practicantes), Permisos (editar por cargo, copiar de otro cargo), Cargos (crear, editar, eliminar y organigrama), Promociones (por laboratorio y reactivar), Encuestas (ciclo de aprobación, crear y capturar respuestas) y Marketing (aprobar piezas y el mes, conversación).
+- La lógica de cada formulario vive en el núcleo y el portal la usa.
+
 ## v2.1236.0 — App: editar horarios y cerrar quincena
 
 - **App: editar el horario desde el teléfono.** Tocar a una persona y un día abre el editor nativo: libre, un turno del catálogo que cabe en el horario de la sala ese día, u horas propias, con almuerzo y lactancia; no deja guardar con reparos (entrada igual a salida, descansos, horario de la sala). Guarda con `guardarDiaDeHorario` (no toca la publicación; avisa si la semana ya está publicada). Agregar a quien viene a cubrir de otra sala, editar su día y quitarlo.

@@ -42,6 +42,13 @@ function fmtTimeSince(iso) {
     return `hace ${Math.floor(d / 30)}m`;
 }
 
+// Cortes de urgencia — ver `getUrgLevel`. Productos que Bodega puede mandar.
+const URG_ROJO_BAJO_MIN    = 50;
+const URG_ROJO_EN_CERO     = 25;
+const URG_NARANJA_BAJO_MIN = 25;
+const URG_ROTULO = { high: 'Urgente', mid: 'Reponer pronto', low: 'Al día' };
+const URG_VARIANTE = { high: 'danger', mid: 'warning', low: 'success' };
+
 const SIN_BODEGA_COLS = [
     { key: 'product_name',    label: 'Producto',    align: 'left',  sortable: true },
     { key: 'laboratorio',     label: 'Laboratorio', align: 'left',  sortable: true },
@@ -277,8 +284,20 @@ export default function TabGenerar({ searchTerm = '' }) {
         setSelected(todasElegiblesSeleccionadas ? new Set() : new Set(sucursalesElegibles));
     };
 
-    // urgLevel: 'high' ≥65% depleción · 'mid' ≥40% · 'low' <40% · 'none' sin datos
+    // La urgencia se mide en PRODUCTOS bajo su mínimo que Bodega puede mandar
+    // (2026-10-06). Antes era `avg_urgencia_pct` —qué tan vacíos están, en
+    // promedio, los que faltan— y ordenaba al revés: 43 productos a medio
+    // llenar salían naranja y 13 casi vacíos, rojo. Los cortes salen de 35
+    // días de `inventory_daily` en las seis salas: con ellos hay en promedio
+    // UNA sala roja por día (17% rojo · 55% naranja · 28% verde).
+    // Sin los campos nuevos —la consulta vieja— cae al porcentaje de antes.
     const getUrgLevel = (stat) => {
+        if (stat?.bajo_min_productos != null) {
+            const bajo = stat.bajo_min_productos, cero = stat.en_cero_productos ?? 0;
+            if (bajo >= URG_ROJO_BAJO_MIN || cero >= URG_ROJO_EN_CERO) return 'high';
+            if (bajo >= URG_NARANJA_BAJO_MIN) return 'mid';
+            return 'low';
+        }
         const pct = stat?.avg_urgencia_pct;
         if (pct == null) return 'none';
         if (pct >= 65) return 'high';
@@ -336,7 +355,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                     <div className="min-w-0">
                         <h3 className="font-semibold text-content text-subtitle">Sucursales a reponer</h3>
                         <p className="text-label text-content-3 mt-0.5">
-                            La urgencia es cuánto le falta a cada sala para llegar a su máximo.
+                            La urgencia cuenta los productos bajo su mínimo que Bodega puede mandar.
                         </p>
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
@@ -432,7 +451,19 @@ export default function TabGenerar({ searchTerm = '' }) {
 
                                 {stat && !dashLoading ? (
                                     <>
-                                        {urgPct != null && (
+                                        {stat.bajo_min_productos != null ? (
+                                            <span className="flex flex-col items-start gap-1">
+                                                <Badge variant={URG_VARIANTE[urgLevel]} size="sm" uppercase={false}>
+                                                    {URG_ROTULO[urgLevel]}
+                                                </Badge>
+                                                <span className="text-caption text-content-2 tabular-nums">
+                                                    <span className={`font-bold ${urgText}`}>{stat.bajo_min_productos}</span> bajo mínimo
+                                                    {stat.en_cero_productos > 0 && (
+                                                        <> · <span className={`font-bold ${urgText}`}>{stat.en_cero_productos}</span> en cero</>
+                                                    )}
+                                                </span>
+                                            </span>
+                                        ) : urgPct != null && (
                                             <span className="block">
                                                 <span className="flex items-baseline justify-between gap-2 text-caption">
                                                     <span className="text-content-3">Urgencia</span>

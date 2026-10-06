@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
         customer_id: id, tipo: "cumpleanos", ref: "prueba",
         titulo: `¡Feliz cumpleaños, ${primerNombre(c?.name ?? "")}! 🎂`,
         cuerpo: `Te regalamos ${cfg?.puntos_cumpleanos ?? 50} puntos para celebrar. Ábrela y míralos.`,
-        url: "/puntos",
+        url: "/puntos?cumple=1",
       }]);
       return json({ ok: true, prueba: true, ...r });
     }
@@ -102,7 +102,8 @@ Deno.serve(async (req) => {
         : l.origen === "referido"
           ? ["¡Tu invitación funcionó! 🎉", `Ganaste ${pts} puntos por invitar a un amigo.`]
           : [`Ganaste ${pts} puntos`, "Gracias por tu compra. Mira tu saldo en la app."];
-      candidatos.push({ customer_id: l.customer_id, tipo: "ganado", ref: `lote:${l.id}`, titulo, cuerpo, url: "/puntos" });
+      candidatos.push({ customer_id: l.customer_id, tipo: "ganado", ref: `lote:${l.id}`, titulo, cuerpo,
+        url: l.origen === "cumpleanos" ? "/puntos?cumple=1" : "/puntos" });
     }
 
     // ── Vence: lo que vence dentro de 15 días (ventana de 2 por si una vuelta falla)

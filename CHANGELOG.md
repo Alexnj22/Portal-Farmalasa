@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1226.7 — Cumpleaños: el aviso abre la celebración
+
+- **Cumpleaños:** la celebración sale una vez al día, así que tocar el aviso de cumpleaños abría la app y no pasaba nada si ya se había visto. El aviso ahora lleva `/puntos?cumple=1` y eso la muestra siempre.
+
 ## v2.1226.6 — Wallet: «Saldo de puntos»
 
 - **Tarjeta de Wallet:** el rótulo del saldo dice «Saldo de puntos» (antes «Saldo para descontar»), pedido del usuario.

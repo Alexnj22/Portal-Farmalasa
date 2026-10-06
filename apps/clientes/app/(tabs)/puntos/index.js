@@ -3,7 +3,7 @@
 // Misma decisión que /mis-puntos de la web.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Platform, Pressable, Text, View } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo } from '../../../componentes/ui';
 import { useCuenta } from '../../../lib/cuenta';
 import { dolares, entero, fecha, nombrePropio } from '../../../lib/formato';
@@ -27,6 +27,7 @@ const ROTULOS = {
 
 export default function Puntos() {
   const t = useTema();
+  const { cumple } = useLocalSearchParams();
   const { resumen, error, cargar, generacion } = useCuenta();
   const [refrescando, setRefrescando] = useState(false);
   const pedir = useSesion((s) => s.pedir);
@@ -81,7 +82,7 @@ export default function Puntos() {
 
   return (
     <Pantalla alRefrescar={refrescar} refrescando={refrescando}>
-      <Cumpleanos activo={!!resumen.cumpleanos} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
+      <Cumpleanos activo={!!resumen.cumpleanos} forzar={cumple === '1'} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
       <Entrada indice={0}>
         <Texto nivel={2} estilo={{ fontSize: 17 }}>{resumen.cumpleanos ? `¡Feliz cumpleaños, ${primerNombre}! 🎂` : `Hola, ${primerNombre}`}</Texto>
       </Entrada>

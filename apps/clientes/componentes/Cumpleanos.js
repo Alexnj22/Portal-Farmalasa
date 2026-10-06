@@ -24,19 +24,21 @@ const CLAVE = 'puntos_salud_cumple_visto';
 const GLOBOS = ['🎈', '🎈', '🎈', '🎉', '🎈', '🎁', '🎈', '🎈'];
 const COLORES_GLOBO = ['#FF2D55', '#FFD60A', '#5AC8FA', '#AF52DE', '#34C759', '#FF9F0A', '#FF375F', '#64D2FF'];
 
-export default function Cumpleanos({ activo, nombre, puntos }) {
+export default function Cumpleanos({ activo, nombre, puntos, forzar = false }) {
   const [visible, setVisible] = useState(false);
   const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
 
   useEffect(() => {
     if (!activo) return;
+    // `forzar`: llegó tocando el aviso de cumpleaños — se muestra aunque ya
+    // se haya visto hoy (si no, el aviso abría la app y no pasaba nada).
     SecureStore.getItemAsync(CLAVE).catch(() => null).then((visto) => {
-      if (visto !== hoy) {
+      if (forzar || visto !== hoy) {
         setVisible(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       }
     });
-  }, [activo, hoy]);
+  }, [activo, hoy, forzar]);
 
   const cerrar = () => {
     SecureStore.setItemAsync(CLAVE, hoy).catch(() => {});

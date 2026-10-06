@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1226.8 — Vercel: no compilar el portal por cambios que no son de la web
+
+- **`vercel.json` `ignoreCommand`:** en `main`, Vercel salta el despliegue si el commit sólo toca `apps/`, `supabase/`, `scripts/`, `docs/`, `auditoria/`, `CHANGELOG.md` o `src/version.js`. El 2026-10-06 hubo 24 despliegues y ~20 eran de las apps o de funciones; Vercel avisó de un límite. Probado contra commits del día: el de Wallet salta, el de la boleta (`src/utils`) y el del enlace universal (`public/`, `vercel.json`) compilan. Consecuencia aceptada: la versión que muestra el portal sólo avanza cuando hay un cambio de la web.
+
 ## v2.1226.7 — Cumpleaños: el aviso abre la celebración
 
 - **Cumpleaños:** la celebración sale una vez al día, así que tocar el aviso de cumpleaños abría la app y no pasaba nada si ya se había visto. El aviso ahora lleva `/puntos?cumple=1` y eso la muestra siempre.

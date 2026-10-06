@@ -95,3 +95,34 @@ export function motorQuieto(ultima, encendido, ahora = Date.now()) {
     const minutos = Math.round((ahora - new Date(ultima).getTime()) / 60_000);
     return minutos > 60 ? minutos : null;
 }
+
+/* Qué pasa con los puntos de una venta cuando cambia de cliente — el TEXTO del
+ * recuadro de la solicitud, para el portal (`PuntosDelCambio`) y la app. Antes
+ * de aprobar describe la `vista` que devuelve `puntos_cambio_de_cliente` en
+ * modo consulta; después, lo que la aprobación dejó en `erp_aplicado.puntos`.
+ * `null` cuando no hay nada que decir (venta sin puntos, o ya eran suyos antes
+ * de aprobar). `tono` es la variante del aviso: 'info' | 'warning' | 'success'. */
+export function avisoDeCambioDeCliente({ vista = null, aplicado = null } = {}) {
+    const pts = puntosTexto;
+    if (aplicado) {
+        const a = aplicado;
+        if (!a.hay_puntos) return null;
+        if (a.ya_es_suyo) return { tono: 'info', texto: `Los ${pts(a.puntos)} puntos de esta venta ya eran de ${a.a_nombre}.` };
+        return {
+            tono: a.no_recuperados > 0 ? 'warning' : 'success',
+            texto: `Puntos: se le quitaron ${pts(a.se_quitaron)} a ${a.de_nombre}`
+                + (a.recibio > 0 ? ` y ${a.a_nombre} recibió ${pts(a.recibio)}.` : `. ${a.a_nombre} no acumula puntos, así que no recibió nada.`)
+                + (a.de_otras_compras > 0 ? ` ${pts(a.de_otras_compras)} salieron de sus otros puntos porque ya había usado los de esta compra.` : '')
+                + (a.no_recuperados > 0 ? ` ${pts(a.no_recuperados)} ya los había gastado y no se pudieron recuperar.` : ''),
+        };
+    }
+    if (!vista || !vista.hay_puntos || vista.ya_es_suyo) return null;
+    return {
+        tono: vista.ya_gastados > 0 ? 'warning' : 'info',
+        texto: `Esta venta le dio ${pts(vista.puntos)} puntos a ${vista.de_nombre}. Al aprobar`
+            + (vista.se_quitan > 0 ? `, se le quitan ${pts(vista.se_quitan)}` : ', no se le puede quitar ninguno')
+            + (vista.recibe > 0 ? ` y ${vista.a_nombre} recibe ${pts(vista.recibe)}.` : `. ${vista.a_nombre} no acumula puntos, así que no recibe nada.`)
+            + (vista.de_otras_compras > 0 ? ` ${pts(vista.de_otras_compras)} saldrían de sus otros puntos porque ya usó los de esta compra.` : '')
+            + (vista.ya_gastados > 0 ? ` ${pts(vista.ya_gastados)} ya los gastó: no se le pueden quitar.` : ''),
+    };
+}

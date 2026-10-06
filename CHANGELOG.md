@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1225.1 — App: solicitudes a la par del portal
+
+- **App: Solicitudes a la par del portal.**
+  - Bandeja: Pendientes / Aprobadas / Rechazadas / Todas, «De quién: Todos / Sólo yo», sala y tipo en el menú de filtros, el historial por semana con flechas (ya no un recorte fijo de 30 días), agrupada por tipo con encabezados que se pliegan. Cada tarjeta con la cara de quien pidió, el tipo y la sala, la espera (ámbar desde 2 días) y quién la tiene o quién decidió.
+  - Detalle: quién pidió y en manos de quién está; el contexto con que se decide (ventas de Min·Máx, la venta, lo aplicado, lo recibido, el historial), el motivo de anulación, el cambio de forma de pago y los puntos de un cambio de cliente.
+  - **Aprobación parcial**: marcar qué productos entran y bajar cantidades con −/+ («Entran 4 de 5»), con el motivo obligatorio y «Aplicar lo marcado»; en un abono, por crédito. **Cancelar** una solicitud propia. Ya no manda al portal.
+- Núcleo: `decisionDeSolicitud.js` (la regla del parcial; el portal la usa) y `avisoDeCambioDeCliente` en `puntosTexto.js`.
+
 ## v2.1225.0 — App: ofertas para clientes nativas
 
 - **App: «Ofertas para clientes» ya es nativa** (antes abría el portal). La lista muestra cada oferta como la ve el cliente: su foto, la etiqueta en su color y el estado (En la app / Programada / Sin publicar / Terminada), con tarjetas que filtran. Tocar abre el editor; mantener presionada ofrece publicar, retirar y borrar; el «+» crea una.

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Target } from 'lucide-react';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fetchMetaSala } from '@nucleo/data/metas';
+import { avanceDeMetaDelDia } from '@nucleo/utils/cajaDelDia';
 import { useAuth } from '@nucleo/context/AuthContext';
 
 /**
@@ -58,14 +59,8 @@ export default function MetaDelDia({ branchId }) {
 
     const avance = useMemo(() => {
         if (branchId == null || meta?.branchId !== branchId) return null;
-        const metaMes = Number(meta?.row?.monto_meta);
-        const dias    = Number(meta?.row?.dias_mes);
-        const vendido = Number(meta?.row?.venta_hoy);
-        if (!Number.isFinite(metaMes) || metaMes <= 0) return null;
-        if (!Number.isFinite(dias) || dias <= 0) return null;
-        if (!Number.isFinite(vendido)) return null;
-        const metaDia = metaMes / dias;
-        return { meta: metaDia, vendido, pct: Math.round(vendido / metaDia * 100) };
+        // La cuenta es del núcleo: la app nativa dibuja la misma barra.
+        return avanceDeMetaDelDia(meta?.row);
     }, [meta, branchId]);
 
     if (!avance) return null;

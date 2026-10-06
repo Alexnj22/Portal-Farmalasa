@@ -31,6 +31,7 @@ import { useNowTick } from '@nucleo/hooks/useNowTick';
 import { useRefrescoEnVivo } from '@nucleo/hooks/useRefrescoEnVivo';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { rangoDeDias } from './etapas';
+import { DIAS_DE_ALARMA_BOLSA, laMasVieja } from '@nucleo/utils/bolsasTexto';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { diferenciaDeBolsa, saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -149,7 +150,8 @@ const fechaLarga = (f) => (f ? fechaTexto(f, {
     day: 'numeric', month: 'long' }) : '');
 const diasDesde = (f) => Math.max(0, diasEntre(f, hoySV()));
 
-const DIAS_DE_ALARMA = 4;
+// El umbral es del núcleo: la app pinta la misma alarma.
+const DIAS_DE_ALARMA = DIAS_DE_ALARMA_BOLSA;
 
 
 /* ── El día SIEMPRE dice su fecha ───────────────────────────────────────────
@@ -1993,9 +1995,8 @@ export default function CircuitoDeBolsas({
         // antigüedad se cuenta desde la fecha del corte, que es cuando ese
         // efectivo dejó de estar en la caja.
         const pendientes = [...enSala, ...enCamino, ...porContar];
-        const masVieja = pendientes.reduce(
-            (peor, b) => (peor && String(peor.fecha) <= String(b.fecha) ? peor : b), null);
-        const diasMasVieja = masVieja ? diasDesde(masVieja.fecha) : 0;
+        // La regla es del núcleo (`laMasVieja`): la app nativa dice la misma.
+        const { bolsa: masVieja, dias: diasMasVieja } = laMasVieja(pendientes);
 
         return [
             { clave: 'circulacion', icon: HandCoins, label: 'Sin recibir',

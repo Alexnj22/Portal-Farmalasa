@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1226.2 — App: efectivo, cortes y bolsas a la par del portal
+
+- **App: Efectivo muestra cómo se llega a la cifra**, como el portal: las cuatro tarjetas (en la caja, abierta/cerrada y quién la abrió, último corte, confirmado), la meta del día, por qué manos pasó la caja, lo vendido por forma de pago con barras, la cuenta del cajón renglón por renglón (abrió + vendido en efectivo + ingresos − vales − bolsas = total), los bonos por pagar y los movimientos del día agrupados por el corte que los contó, con firmas, correcciones y la foto del comprobante.
+- **Fuga cerrada**: la app mostraba el monto «en la caja» a cualquiera. Ahora sigue la regla del conteo a ciegas del portal (sólo con alcance de cortes en todas las salas).
+- **Cortes**: Sin confirmar / Cuadraron / Exceso / Faltante que filtran, cuatro estados, diferencia/sala/período con calendario, búsqueda y páginas. El detalle explica la cuenta paso a paso (lo vendido por forma de pago, lo que debía haber, lo contado, el acumulado) y quién firmó.
+- **Bolsas**: las cinco etapas (Sala, Recibir, Contar, Contadas, Cuadre), las métricas del circuito (sin recibir, la más vieja, sin cuadrar) y el detalle de cada bolsa en una hoja.
+- Núcleo: `cajaDelDia.js`, `filtrarCortes` y lo de bolsas en `bolsasTexto.js`; el portal los usa. Las acciones que mueven dinero (hacer corte, abrir caja, resolver diferencias) siguen en el portal.
+- El papel de la boleta ya no lleva gris (`gate:design`).
+
 ## v2.1226.1 — App: pedidos y conteos con su detalle
 
 - **App: Pedidos con su ficha completa.** Tocar un pedido abre: la etapa y el estado de la sala, cajas/productos/unidades, la línea de vida con cara y nombre de quien hizo cada paso y cuánto tardó (pausas con motivo y duración, quién apoyó), cómo llegó, las diferencias (sólo lectura, para decidir sigue el portal) y los productos por laboratorio con pedido → enviado → recibido. La lista filtra por estado, período y sala, cuenta los del mes por sala y trae los completados y anulados. Pestaña **Tiempos** (con su permiso): preparación, pausa, tránsito y recuento por sucursal en 7/30/90 días, con barras y «Por qué se pausan».

@@ -6,6 +6,7 @@
 
 import { conSigno, formatMoney } from './formatNumber';
 import { diaSV } from './fecha';
+import { tokenMatch } from './searchUtils';
 
 const CENTAVO = 0.005;
 const redondear = (n) => Math.round(n * 100) / 100;
@@ -535,6 +536,38 @@ export function resumenDeCortes(cortesConTramo) {
         else r.faltante += 1;
     }
     return r;
+}
+
+/**
+ * Los cortes que deja ver la lista de Cortes con sus filtros: sala, estado,
+ * diferencia y búsqueda. Vive acá porque la lista del portal y la de la app
+ * tienen que dejar pasar EXACTAMENTE los mismos.
+ *
+ * Una lectura (X) o un cierre (Z) no contaron dinero: con un filtro de estado
+ * o de diferencia puesto no entran — su `estado` nace PENDIENTE y se quedaría
+ * para siempre en «Sin confirmar» sin botón que lo saque. La búsqueda va por
+ * quien CORTÓ (`hizo`) y no por el nombre de la cuenta de la sala.
+ *
+ * @param cortesConTramo ya pasados por `conTramoPorSalaYDia`
+ * @param nombreSala `{ [branch_id]: nombre }`
+ */
+export function filtrarCortes(cortesConTramo, {
+    sala = '', estado = 'TODOS', diferencia = 'TODAS', busqueda = '', nombreSala = {},
+} = {}) {
+    return (cortesConTramo || []).filter((c) => {
+        if (sala && String(c.branch_id) !== String(sala)) return false;
+        if (c.tipo !== 'C') {
+            if (estado !== 'TODOS' || diferencia !== 'TODAS') return false;
+        } else {
+            if (estado !== 'TODOS' && c.estado !== estado) return false;
+            if (diferencia !== 'TODAS' && severidad(c.tramo) !== diferencia) return false;
+        }
+        if (!String(busqueda || '').trim()) return true;
+        return tokenMatch(busqueda,
+            nombreSala[c.branch_id], c.hizo?.name, c.fecha, c.hora,
+            String(c.total_declarado ?? ''), String(c.tramo ?? ''),
+            String(c.erp_corte_id ?? ''), c.motivo_descarte);
+    });
 }
 
 /**

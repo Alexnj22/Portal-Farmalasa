@@ -102,7 +102,7 @@ export function buildBoletaHTML(entry, period, branches) {
 <div style="text-align:center;font-size:10px">CANTIDAD EN LETRAS: ${montoEnLetras(entry.net_pay)}</div>
 <hr/>
 ${entry.viaticos_detail?`<div style="font-size:10px;margin:4px 0"><b>CONCEPTO DE VIÁTICOS:</b> ${esc(entry.viaticos_detail)}</div>`:''}
-${(entry.edit_history||[]).length>0?`<div style="font-size:9px;color:#555;margin-top:4px">Boleta editada. Última edición: ${esc(entry.edit_history[entry.edit_history.length-1]?.by)} — ${esc(entry.edit_history[entry.edit_history.length-1]?.reason)}</div>`:''}
+${(entry.edit_history||[]).length>0?`<div style="font-size:9px;margin-top:4px">Boleta editada. Última edición: ${esc(entry.edit_history[entry.edit_history.length-1]?.by)} — ${esc(entry.edit_history[entry.edit_history.length-1]?.reason)}</div>`:''}
 <div class="sig"><div>F. ____________________<br/>PATRONO</div><div>F. ____________________<br/>EMPLEADO</div></div>`;
 }
 

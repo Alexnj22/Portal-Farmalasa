@@ -44,8 +44,8 @@ function Renglon({ titulo, detalle, monto, entra, tachado, pildoras = [], quien,
         <View style={{ flexDirection: 'row', gap: 12, padding: 13 }}>
           <View style={{ width: 4, borderRadius: 2, backgroundColor: tachado ? MARCA.rojo : entra ? MARCA.verde : MARCA.ambar }} />
           <View style={{ flex: 1, gap: 4 }}>
-            <Text style={{ color: tachado ? colorSistema.texto2 : colorSistema.texto, fontSize: 15, fontWeight: '600', textDecorationLine: tachado ? 'line-through' : 'none' }} numberOfLines={2}>{titulo}</Text>
-            <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>{[sala, detalle].filter(Boolean).join(' · ')}</Text>
+            <Text style={{ color: tachado ? colorSistema.texto2 : colorSistema.texto, fontSize: 15, fontWeight: '600', textDecorationLine: tachado ? 'line-through' : 'none' }}>{titulo}</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{[sala, detalle].filter(Boolean).join(' · ')}</Text>
             {pildoras.length ? <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>{pildoras.map(([t, c]) => <Pildora key={t} texto={t} color={c} />)}</View> : null}
             {quien ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>

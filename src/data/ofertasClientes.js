@@ -143,7 +143,7 @@ export async function fetchOfertaDeDescuento(descuentoId) {
 
 export async function fetchHistorias() {
     const filas = sinError(await supabase.from('app_historias')
-        .select('id, titulo, texto, imagen_path, enlace, boton, inicio, fin, publicada, orden, updated_at')
+        .select('id, titulo, texto, imagen_path, enlace, boton, inicio, fin, publicada, orden, updated_at, oferta_id')
         .order('fin', { ascending: false })
         .limit(200));
     const rutas = filas.map((f) => f.imagen_path).filter(Boolean);
@@ -157,7 +157,27 @@ export async function fetchHistorias() {
     return filas.map((f) => ({ ...f, imagen_url: porRuta.get(f.imagen_path) ?? null }));
 }
 
-const CAMPOS_HISTORIA = ['titulo', 'texto', 'imagen_path', 'enlace', 'boton', 'inicio', 'fin', 'publicada', 'orden'];
+const CAMPOS_HISTORIA = ['titulo', 'texto', 'imagen_path', 'enlace', 'boton', 'inicio', 'fin', 'publicada', 'orden', 'oferta_id'];
+
+/** Por historia: cuántos la vieron (con cuenta y visitantes) y cuántos tocaron un botón. */
+export async function fetchVistasHistorias() {
+    const filas = sinError(await supabase.rpc('app_historias_vistas_resumen')) ?? [];
+    return new Map(filas.map((f) => [f.historia_id, f]));
+}
+
+/** Quién vio una historia: los clientes con cuenta, la más reciente primero (hasta 500). */
+export async function fetchQuienesVieron(historiaId) {
+    return sinError(await supabase.rpc('app_historia_quienes_vieron', { p_historia: historiaId })) ?? [];
+}
+
+/** Las ofertas que una historia puede mandar a reservar: las que no terminaron. */
+export async function fetchOfertasParaHistoria(hoy) {
+    return sinError(await supabase.from('ofertas_clientes')
+        .select('id, titulo, fin, publicada')
+        .gte('fin', hoy)
+        .order('fin', { ascending: true })
+        .limit(200));
+}
 
 export async function guardarHistoria(id, datos) {
     const fila = Object.fromEntries(CAMPOS_HISTORIA.filter((k) => k in datos).map((k) => [k, datos[k]]));

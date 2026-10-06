@@ -47,6 +47,9 @@ const POR_PAGINA = 20;
 // Las condiciones de la reserva, tal como las lee el cliente. Cambiar el texto
 // exige cambiar la `version`: la app vuelve a pedir que las acepte y cada
 // reserva guarda la versión que aceptó.
+// El WhatsApp de contacto de la empresa (número global), con código de país.
+const WHATSAPP_EMPRESA = "50323010013";
+
 const TERMINOS_RESERVA = {
   version: "2026-10-06",
   titulo: "Así funciona tu reserva",
@@ -428,7 +431,7 @@ Deno.serve(async (req) => {
     const historiasPara = async (customerId: number | null): Promise<any> => {
       const hoy = hoySV();
       const { data: filas, error } = await admin.from("app_historias")
-        .select("id, titulo, texto, imagen_path, enlace, boton, inicio, fin")
+        .select("id, titulo, texto, imagen_path, enlace, boton, inicio, fin, oferta_id")
         .eq("publicada", true).lte("inicio", hoy).gte("fin", hoy)
         .order("orden", { ascending: true }).order("created_at", { ascending: false }).limit(20);
       if (error) throw error;
@@ -446,10 +449,31 @@ Deno.serve(async (req) => {
         historias: todas.filter((h) => firmadas.has(h.imagen_path)).map((h) => ({
           id: h.id, titulo: h.titulo, texto: h.texto ?? null, imagen: firmadas.get(h.imagen_path), imagen_clave: h.imagen_path,
           enlace: h.enlace ?? null, boton: h.boton ?? null, fin: h.fin,
+          // «Reservar» abre esta oferta; «Más información» va al WhatsApp de la empresa.
+          oferta_id: h.oferta_id ?? null,
         })),
+        whatsapp: WHATSAPP_EMPRESA,
       };
     };
     if (accion === "historias_publicas") return json(await historiasPara(null));
+
+    // Quién vio cada historia (2026-10-06): el portal cuenta las vistas y quién
+    // tocó el botón. Sin cuenta, por un identificador aleatorio del teléfono.
+    // Las muestras (`muestra-…`) no se anotan.
+    // deno-lint-ignore no-explicit-any
+    const anotarVista = async (b: any, customerId: number | null) => {
+      const id = String(b?.id ?? "");
+      if (!/^[0-9a-f-]{36}$/i.test(id)) return json({ ok: true, anotada: false });
+      const disp = typeof b?.dispositivo === "string" && /^[A-Za-z0-9-]{8,64}$/.test(b.dispositivo) ? b.dispositivo : null;
+      if (!customerId && !disp) return json({ ok: true, anotada: false });
+      const { error } = await admin.rpc("app_historia_registrar_vista", {
+        p_historia: id, p_customer: customerId, p_dispositivo: disp, p_boton: b?.boton === true,
+      });
+      // Una historia borrada entre que se cargó y se vio: no es un error de la app.
+      if (error && error.code !== "23503") throw error;
+      return json({ ok: true, anotada: !error });
+    };
+    if (accion === "historia_vista_publica") return await anotarVista(body, null);
 
     // Las salas: dirección, teléfonos y horario, y si está abierta AHORA (hora
     // de El Salvador). Pública: se ve también sin cuenta.
@@ -592,6 +616,7 @@ Deno.serve(async (req) => {
     // ── Ofertas: las ve también quien está pendiente ──────────────────────
     if (accion === "ofertas") return json(await ofertasPara(customerId));
     if (accion === "historias") return json(await historiasPara(customerId));
+    if (accion === "historia_vista") return await anotarVista(body, customerId);
 
     // ── Reservas de productos en oferta (2026-10-06) ──────────────────────
     // Reglas en TERMINOS_RESERVA (se muestran antes de la primera reserva y se

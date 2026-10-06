@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { CircleDashed, Plus, Eye, EyeOff, Trash2, Pencil, Image as ImageIcon } from 'lucide-react';
+import { CircleDashed, Plus, Eye, EyeOff, Trash2, Pencil, Image as ImageIcon, Users } from 'lucide-react';
 import FilterBar from '../../components/common/FilterBar';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
@@ -18,7 +18,9 @@ import { estadoDeOferta } from '@nucleo/utils/ofertasClientes';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
-import { borrarHistoria, fetchHistorias, guardarHistoria, publicarHistoria, subirImagen } from '@nucleo/data/ofertasClientes';
+import { borrarHistoria, fetchHistorias, fetchOfertasParaHistoria, fetchQuienesVieron, fetchVistasHistorias, guardarHistoria, publicarHistoria, subirImagen } from '@nucleo/data/ofertasClientes';
+import LiquidSelect from '../../components/common/LiquidSelect';
+import { hora12 } from '@nucleo/utils/hora';
 
 /**
  * Historias de la app de clientes (2026-10-06): imágenes tipo «estados» con
@@ -43,11 +45,18 @@ export default function HistoriasPanel({ busqueda, puedeEditar, showToast }) {
     const [fEstado, setFEstado] = useState('');
     const [editando, setEditando] = useState(null);
     const [borrando, setBorrando] = useState(null);
+    const [vistas, setVistas] = useState(new Map());
+    const [viendo, setViendo] = useState(null);
     const hoy = hoySV();
 
     const cargar = useCallback(async () => {
         try {
-            setHistorias(await fetchHistorias());
+            const [hs, vs] = await Promise.all([fetchHistorias(), fetchVistasHistorias().catch((err) => {
+                console.error('HistoriasPanel: no se pudieron contar las vistas', err);
+                return new Map();
+            })]);
+            setHistorias(hs);
+            setVistas(vs);
             setError(null);
         } catch (err) {
             setError(mensajeAmigable(err, 'No se pudieron cargar las historias.'));
@@ -94,6 +103,7 @@ export default function HistoriasPanel({ busqueda, puedeEditar, showToast }) {
                 columns={[
                     { key: 'historia', label: 'Historia' },
                     { key: 'estado', label: 'Estado' },
+                    { key: 'vistas', label: 'Vistas', align: 'right' },
                     { key: 'fechas', label: 'Fechas', hideBelow: 'sm' },
                     ...(puedeEditar ? [{ key: 'acciones', label: '', align: 'right' }] : []),
                 ]}
@@ -118,6 +128,9 @@ export default function HistoriasPanel({ busqueda, puedeEditar, showToast }) {
                                 </div>
                             </DataCell>
                             <DataCell><Badge variant={est.variant}>{est.label}</Badge></DataCell>
+                            <DataCell align="right">
+                                <ConteoVistas v={vistas.get(h.id)} onVer={() => setViendo(h)} />
+                            </DataCell>
                             <DataCell>
                                 <span className="text-body-sm text-content-2">
                                     {fechaTexto(h.inicio, { day: 'numeric', month: 'short' })} – {fechaTexto(h.fin, { day: 'numeric', month: 'short' })}
@@ -145,6 +158,7 @@ export default function HistoriasPanel({ busqueda, puedeEditar, showToast }) {
                     onGuardada={() => { setEditando(null); cargar(); showToast('Historia guardada', '', 'success'); }}
                     onError={(err) => showToast('No se pudo guardar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error')} />
             )}
+            {viendo && <VistasModal historia={viendo} resumen={vistas.get(viendo.id)} onClose={() => setViendo(null)} />}
             {borrando && (
                 <ConfirmModal isOpen title="Borrar historia" message={`«${borrando.titulo}» deja de verse en la app y se borra su imagen.`}
                     confirmText="Borrar" onClose={() => setBorrando(null)}
@@ -167,8 +181,13 @@ function HistoriaModal({ historia, onClose, onGuardada, onError }) {
     const nueva = !historia.id;
     const [f, setF] = useState({
         titulo: historia.titulo ?? '', texto: historia.texto ?? '', enlace: historia.enlace ?? '',
-        fin: historia.fin ?? '', publicada: historia.publicada ?? false,
+        fin: historia.fin ?? '', publicada: historia.publicada ?? false, oferta_id: historia.oferta_id ?? '',
     });
+    const [ofertas, setOfertas] = useState([]);
+    useEffect(() => {
+        fetchOfertasParaHistoria(hoySV()).then(setOfertas)
+            .catch((err) => console.error('HistoriaModal: no se pudieron cargar las ofertas', err));
+    }, []);
     const [archivo, setArchivo] = useState(null);
     const [guardando, setGuardando] = useState(false);
     const cambiar = (k) => (v) => setF((x) => ({ ...x, [k]: v }));
@@ -183,6 +202,7 @@ function HistoriaModal({ historia, onClose, onGuardada, onError }) {
             await guardarHistoria(historia.id, {
                 titulo: f.titulo.trim(), texto: f.texto.trim() || null, imagen_path, inicio, fin: f.fin,
                 enlace: destino.valor || null, boton: destino.boton, publicada: f.publicada,
+                oferta_id: f.oferta_id || null,
             });
             onGuardada();
         } catch (err) {
@@ -212,6 +232,14 @@ function HistoriaModal({ historia, onClose, onGuardada, onError }) {
                             options={DESTINOS.map((d) => ({ value: d.valor, label: d.rotulo }))} />
                     </div>
                     <div>
+                        <span className="block text-label font-semibold text-content-2 mb-1">Oferta para reservar</span>
+                        <p className="text-micro text-content-3 mb-2">Con una oferta, la historia muestra «Reservar» en lugar del botón. «Más información» (WhatsApp de la empresa) sale siempre.</p>
+                        <LiquidSelect value={f.oferta_id} onChange={cambiar('oferta_id')} placeholder="Ninguna"
+                            options={[{ value: '', label: 'Ninguna' }, ...ofertas.map((o) => ({
+                                value: o.id, label: `${o.titulo}${o.publicada ? '' : ' (sin publicar)'}`,
+                            }))]} />
+                    </div>
+                    <div>
                         <span className="block text-label font-semibold text-content-2 mb-1">Se ve hasta</span>
                         <LiquidDatePicker value={f.fin} onChange={cambiar('fin')} />
                         {f.fin && f.fin < inicio && <Notice variant="warning">La fecha ya pasó.</Notice>}
@@ -228,6 +256,66 @@ function HistoriaModal({ historia, onClose, onGuardada, onError }) {
             <LiquidModal.Footer>
                 <Button variant="secondary" onClick={onClose}>Cancelar</Button>
                 <Button icon={CircleDashed} loading={guardando} disabled={!valido} onClick={guardar}>Guardar</Button>
+            </LiquidModal.Footer>
+        </LiquidModal>
+    );
+}
+
+// Cuántos la vieron: el número toca para ver quiénes.
+function ConteoVistas({ v, onVer }) {
+    if (!v?.vistas) return <span className="text-body-sm text-content-3">—</span>;
+    return (
+        <button type="button" onClick={(e) => { e.stopPropagation(); onVer(); }}
+            className="inline-flex flex-col items-end min-h-[var(--tap-min)] justify-center rounded-md px-1 active:scale-[0.97] hover:text-accent-text"
+            title="Ver quién la vio">
+            <span className="text-body-sm font-semibold text-content tabular-nums">{v.vistas.toLocaleString('es-SV')}</span>
+            {v.tocaron > 0 && <span className="text-micro text-content-3 tabular-nums">{v.tocaron} tocaron</span>}
+        </button>
+    );
+}
+
+function VistasModal({ historia, resumen, onClose }) {
+    const [lista, setLista] = useState(null);
+    const [error, setError] = useState(null);
+    useEffect(() => {
+        fetchQuienesVieron(historia.id).then(setLista)
+            .catch((err) => setError(mensajeAmigable(err, 'No se pudo cargar quién la vio.')));
+    }, [historia.id]);
+    return (
+        <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Quién vio la historia">
+            <LiquidModal.Header>
+                <h2 className="text-body-xl font-semibold text-content">{historia.titulo}</h2>
+                <p className="text-body-sm text-content-3">
+                    {resumen?.vistas ?? 0} la vieron · {resumen?.con_cuenta ?? 0} con cuenta · {resumen?.visitantes ?? 0} sin cuenta · {resumen?.tocaron ?? 0} tocaron un botón
+                </p>
+            </LiquidModal.Header>
+            <LiquidModal.Body>
+                {error ? <Notice variant="danger">{error}</Notice>
+                    : !lista ? <LoadingState label="Cargando" />
+                        : !lista.length ? <p className="text-body-sm text-content-3">Todavía no la ha visto ningún cliente con cuenta.</p>
+                            : (
+                                <ul className="divide-y divide-border-subtle">
+                                    {lista.map((p) => (
+                                        <li key={p.customer_id} className="flex items-center justify-between gap-3 py-2">
+                                            <span className="min-w-0">
+                                                <span className="block text-body-sm font-semibold text-content truncate">{p.cliente}</span>
+                                                <span className="block text-micro text-content-3">
+                                                    {fechaTexto(p.visto_at, { day: 'numeric', month: 'short' })} · {hora12(p.visto_at)}
+                                                </span>
+                                            </span>
+                                            {p.toco_boton && <Badge variant="success">Tocó un botón</Badge>}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                {resumen?.visitantes > 0 && (
+                    <p className="text-micro text-content-3 mt-3 flex items-center gap-1.5">
+                        <Users size={12} /> Los que la vieron sin cuenta se cuentan, pero no tienen nombre.
+                    </p>
+                )}
+            </LiquidModal.Body>
+            <LiquidModal.Footer>
+                <Button variant="secondary" onClick={onClose}>Cerrar</Button>
             </LiquidModal.Footer>
         </LiquidModal>
     );

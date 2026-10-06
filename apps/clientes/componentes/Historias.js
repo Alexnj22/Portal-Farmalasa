@@ -7,9 +7,11 @@
 //   · al tocar, pantalla completa con barras de progreso: avanza sola a los
 //     6 s, tocar a la derecha pasa, a la izquierda vuelve, mantener presionado
 //     pausa, deslizar hacia abajo cierra; y si la historia lleva enlace, un
-//     botón para ir (a una oferta, a sucursales…).
+//     botón para ir (a una oferta, a sucursales…); con oferta, «Reservar»;
+//     y siempre «Más información» por WhatsApp con la empresa.
+//   · cada vista se anota en el servidor: el portal cuenta quién la vio.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Dimensions, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image as ImagenCache } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
@@ -22,6 +24,7 @@ import { colorSistema } from './sistema';
 import { useSesion } from '../lib/sesion';
 import { useBloqueo } from '../lib/bloqueo';
 import { llamar } from '../lib/api';
+import { idDispositivo } from '../lib/dispositivo';
 import { useTema } from '../tema/tema';
 import Icono from './Icono';
 
@@ -48,12 +51,20 @@ export default function Historias({ generacion = 0 }) {
     if (lista.length && pedidasPara === clave && Date.now() - pedidasAt < 60_000) return;
     pedidasPara = clave;
     pedidasAt = Date.now();
-    (token ? pedir('historias') : llamar('historias_publicas')).then((r) => { if (r?.ok) setLista(r.historias ?? []); });
+    (token ? pedir('historias') : llamar('historias_publicas')).then((r) => { if (r?.ok) { setLista(r.historias ?? []); if (r.whatsapp) whatsapp = r.whatsapp; } });
     SecureStore.getItemAsync(CLAVE).catch(() => null).then((v) => { try { setVistas(new Set(JSON.parse(v ?? '[]'))); } catch { /* vacío */ } });
   }, [token, pedir, generacion])); // eslint-disable-line react-hooks/exhaustive-deps -- `lista` sólo decide si hace falta pedir
 
+  // Anota en el servidor que se vio (o que se tocó un botón), para que el
+  // portal sepa cuántos la vieron. Sin cuenta, con el id aleatorio del teléfono.
+  const anotar = async (id, boton = false) => {
+    const dispositivo = await idDispositivo();
+    const b = { id, boton, dispositivo };
+    (token ? pedir('historia_vista', b) : llamar('historia_vista_publica', b)).catch(() => {});
+  };
   const marcar = (id) => setVistas((prev) => {
     if (prev.has(String(id))) return prev;
+    anotar(id);
     const nuevo = new Set(prev).add(String(id));
     SecureStore.setItemAsync(CLAVE, JSON.stringify([...nuevo].slice(-100))).catch(() => {});
     return nuevo;
@@ -84,13 +95,13 @@ export default function Historias({ generacion = 0 }) {
         })}
       </ScrollView>
       {abierta != null && !bloqueada ? (
-        <Visor historias={abierta.lista} inicio={abierta.i} alVer={marcar} alCerrar={() => setAbierta(null)} />
+        <Visor historias={abierta.lista} inicio={abierta.i} alVer={marcar} alTocarBoton={(id) => anotar(id, true)} alCerrar={() => setAbierta(null)} />
       ) : null}
     </>
   );
 }
 
-function Visor({ historias, inicio, alVer, alCerrar }) {
+function Visor({ historias, inicio, alVer, alTocarBoton, alCerrar }) {
   const ins = useSafeAreaInsets();
   const { width: W, height: H } = Dimensions.get('window');
   const [i, setI] = useState(inicio);
@@ -187,17 +198,48 @@ function Visor({ historias, inicio, alVer, alCerrar }) {
             <View style={{ position: 'absolute', left: 20, right: 20, bottom: ins.bottom + 28, gap: 10 }}>
               <Text style={{ color: '#FFF', fontSize: 28, fontWeight: '900', letterSpacing: -0.5 }}>{h.titulo}</Text>
               {h.texto ? <Text style={{ color: 'rgba(255,255,255,0.92)', fontSize: 17, lineHeight: 23 }}>{h.texto}</Text> : null}
-              {h.enlace ? (
-                <Pressable onPress={() => { cerrar(); setTimeout(() => router.push(h.enlace), 250); }} accessibilityRole="button"
-                  style={({ pressed }) => ({ marginTop: 8, alignSelf: 'stretch', backgroundColor: '#FFF', borderRadius: 999, paddingVertical: 15,
-                    alignItems: 'center', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-                  <Text style={{ color: '#2B0B3A', fontSize: 17, fontWeight: '800' }}>{h.boton || 'Ver más'}</Text>
-                </Pressable>
-              ) : null}
+              {/* Con oferta: «Reservar» la abre lista para reservar. Si no, el
+                  botón propio de la historia. Y siempre «Más información», que
+                  abre WhatsApp con la empresa y el nombre de la historia. */}
+              <View style={{ marginTop: 8, gap: 10 }}>
+                {h.oferta_id || h.enlace ? (
+                  <BotonHistoria principal sf={h.oferta_id ? 'bag.fill' : 'arrow.right'} texto={h.oferta_id ? 'Reservar' : (h.boton || 'Ver más')}
+                    alTocar={() => {
+                      alTocarBoton?.(h.id);
+                      const destino = h.oferta_id ? `/oferta/${h.oferta_id}?reservar=1` : h.enlace;
+                      cerrar(); setTimeout(() => router.push(destino), 250);
+                    }} />
+                ) : null}
+                <BotonHistoria sf="message.fill" texto="Más información"
+                  alTocar={() => {
+                    alTocarBoton?.(h.id);
+                    pausar();
+                    const msg = encodeURIComponent(`Hola, quiero más información sobre «${h.titulo}».`);
+                    Linking.openURL(`https://wa.me/${whatsapp}?text=${msg}`).catch(() => {});
+                  }} />
+              </View>
             </View>
           </Animated.View>
         </GestureDetector>
       </GestureHandlerRootView>
     </Modal>
+  );
+}
+
+// El WhatsApp de la empresa: lo manda el servidor; éste es el de respaldo.
+let whatsapp = '50323010013';
+
+function BotonHistoria({ principal, sf, texto, alTocar }) {
+  return (
+    <Pressable onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); alTocar(); }}
+      accessibilityRole="button" accessibilityLabel={texto}
+      style={({ pressed }) => ({
+        flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', minHeight: 50, borderRadius: 999,
+        backgroundColor: principal ? '#FFFFFF' : 'rgba(255,255,255,0.18)',
+        borderWidth: principal ? 0 : 1, borderColor: 'rgba(255,255,255,0.45)', transform: [{ scale: pressed ? 0.97 : 1 }],
+      })}>
+      <Icono sf={sf} respaldo="" tam={17} color={principal ? '#2B0B3A' : '#FFFFFF'} />
+      <Text maxFontSizeMultiplier={1.3} style={{ color: principal ? '#2B0B3A' : '#FFFFFF', fontSize: 17, fontWeight: '800' }}>{texto}</Text>
+    </Pressable>
   );
 }

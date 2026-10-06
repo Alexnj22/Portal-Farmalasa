@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1233.0 — Historias: quién las vio, Reservar y Más información
+
+- **Quién vio cada historia.** Nueva tabla `app_historias_vistas` (una fila por persona e historia; sin cuenta, por un identificador aleatorio del teléfono, sin nombre) que escribe sólo `app-clientes` (`historia_vista` / `historia_vista_publica` → `app_historia_registrar_vista`). En Ofertas para clientes → Historias, columna **Vistas** con cuántos tocaron un botón; al tocar el número, la lista de clientes con fecha y hora (`app_historia_quienes_vieron`, con el permiso del módulo). Cuenta desde la compilación 11 de la app.
+- **«Reservar» y «Más información» en las historias.** Una historia puede llevar a una oferta (`app_historias.oferta_id`, elegida en el editor): la app muestra **Reservar**, que abre la oferta y, si tiene un solo producto, la hoja de reserva directamente. Toda historia tiene **Más información**, que abre WhatsApp con la empresa (2301-0013) y el nombre de la historia.
+- Las historias de prueba tienen imágenes verticales: antes eran fotos horizontales recortadas a pantalla completa y sólo se veía el fondo de color.
+
 ## v2.1232.0 — App: promociones y mi perfil
 
 - **App: Promociones como el portal.** Activas / Descuentos / Excedentes / Pagos / Histórico; las tarjetas (activas, por vencer, en borrador, productos abiertos y cuántos bajan el precio) que filtran; filtros de estado, tipo y laboratorio; cada promoción con su vigencia («quedan N días») y sus cifras. Mantener presionada: volver a borrador / activar, duplicar y ver el seguimiento.

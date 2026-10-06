@@ -13,7 +13,7 @@
 //   2. hasta cuándo, dónde y para quién (tres datos en fila);
 //   3. los productos con el precio antes, el de ahora y CUÁNTO se ahorra;
 //   4. las condiciones, y cómo se usa: «se aplica en caja».
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,7 +31,7 @@ import { dolares, fecha } from '../../lib/formato';
 import { acentoDe, suave, useTema } from '../../tema/tema';
 
 export default function Oferta() {
-  const { id } = useLocalSearchParams();
+  const { id, reservar } = useLocalSearchParams();
   const ins = useSafeAreaInsets();
   const t = useTema();
   const datos = useOfertas((s) => s.datos);
@@ -39,6 +39,7 @@ export default function Oferta() {
   // Pre-registrado (todavía sin ficha): no puede reservar; ni se le ofrece.
   const preRegistro = useCuenta((s) => !!s.resumen?.pendiente);
   const [reservando, setReservando] = useState(null);
+  const autoAbierta = useRef(false);
   const cargar = useOfertas((s) => s.cargar);
   const o = datos?.ofertas?.find((x) => String(x.id) === String(id));
   // Abierta desde un enlace o un aviso, en frío, la lista todavía no está en
@@ -71,6 +72,12 @@ export default function Oferta() {
   const a = acentoDe(t, o.acento);
   // Reservar: con sesión y oferta disponible (lo exclusivo, sólo socios).
   const puedeReservar = !!token && o.disponible && !preRegistro;
+  // Desde «Reservar» de una historia: con un solo producto, la hoja se abre
+  // sola; con varios, cada uno tiene su botón.
+  if (reservar === '1' && puedeReservar && o.productos?.length === 1 && !reservando && !autoAbierta.current) {
+    autoAbierta.current = true;
+    setTimeout(() => setReservando(o.productos[0]), 350);
+  }
   const ahorroMax = Math.max(0, ...(o.productos ?? []).map((p) => (p.precio ?? 0) - (p.precio_descuento ?? 0)));
 
   return (

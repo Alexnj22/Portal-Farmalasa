@@ -455,8 +455,18 @@ Deno.serve(async (req) => {
     // de El Salvador). Pública: se ve también sin cuenta.
     if (accion === "salas") {
       const { data, error } = await admin.from("branches")
-        .select("id, name, address, phone, cell, weekly_hours").eq("type", "FARMACIA").order("name");
+        .select("id, name, address, phone, cell, weekly_hours, settings").eq("type", "FARMACIA").order("name");
       if (error) throw error;
+      // La foto REAL de cada sucursal, cuando se suba: `branches.settings.foto_app`
+      // (ruta en el bucket ofertas-clientes). Mientras no esté, la app pone una
+      // de stock.
+      const rutasFoto = (data ?? []).map((b: any) => b.settings?.foto_app).filter(Boolean);
+      const fotos = new Map<string, string>();
+      if (rutasFoto.length) {
+        const { data: fs, error: eF } = await admin.storage.from("ofertas-clientes").createSignedUrls(rutasFoto, 12 * 3600);
+        if (eF) console.error("no se pudieron firmar las fotos de sucursales:", eF.message);
+        for (const f of fs ?? []) if (f.path && f.signedUrl) fotos.set(f.path, f.signedUrl);
+      }
       const sv = new Date(Date.now() - 6 * 3600_000);
       const dia = sv.getUTCDay();
       const ahora = sv.getUTCHours() * 60 + sv.getUTCMinutes();
@@ -471,7 +481,8 @@ Deno.serve(async (req) => {
         const hoy = horario[dia];
         const a = minutos(hoy.abre ?? ""), c = minutos(hoy.cierra ?? "");
         return {
-          id: b.id, nombre: sucursal(b.name), direccion: b.address, telefono: b.phone, celular: b.cell, horario,
+          id: b.id, nombre: sucursal(b.name), direccion: b.address,
+          foto: b.settings?.foto_app ? fotos.get(b.settings.foto_app) ?? null : null, foto_clave: b.settings?.foto_app ?? null, telefono: b.phone, celular: b.cell, horario,
           abierta: a != null && c != null && ahora >= a && ahora < c,
           cierra_hoy: hoy.cierra, abre_hoy: hoy.abre,
         };

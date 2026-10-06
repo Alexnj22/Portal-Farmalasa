@@ -7,16 +7,22 @@
 // veía raro). Pública.
 import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { Linking, Platform, Pressable, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image as ImagenCache } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import Vidrio from '../componentes/Vidrio';
 import * as Haptics from 'expo-haptics';
 import Animated, { Easing, FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { Aviso, Cargando, Pantalla, Tarjeta } from '../componentes/ui';
+import { Aviso, Cargando, Pantalla } from '../componentes/ui';
 import Icono from '../componentes/Icono';
 import { Entrada } from '../componentes/animacion';
 import { colorSistema } from '../componentes/sistema';
 import { llamar } from '../lib/api';
 import { useTema } from '../tema/tema';
 
+// Fotos de stock (Unsplash, licencia libre) mientras cada sucursal no tenga la
+// suya en `branches.settings.foto_app`. Se alternan para que no se vean iguales.
+const STOCK = [require('../assets/sucursal-1.jpg'), require('../assets/sucursal-2.jpg')];
 const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const hora = (h) => {
   const m = String(h ?? '').match(/(\d{1,2}):(\d{2})/);
@@ -48,14 +54,14 @@ export default function Sucursales() {
       </Entrada>
       {datos.salas.map((s, i) => (
         <Entrada key={s.id} indice={i + 1}>
-          <TarjetaSucursal s={s} />
+          <TarjetaSucursal s={s} indice={i} />
         </Entrada>
       ))}
     </Pantalla>
   );
 }
 
-function TarjetaSucursal({ s }) {
+function TarjetaSucursal({ s, indice }) {
   const t = useTema();
   const [abierta, setAbierta] = useState(false);
   const rotacion = useSharedValue(0);
@@ -73,14 +79,21 @@ function TarjetaSucursal({ s }) {
     // rebote) y el horario aparece con un fundido suave. La primera versión
     // usaba un resorte sobre la tarjeta entera y se veía raro.
     <Animated.View layout={LinearTransition.duration(220).easing(Easing.out(Easing.cubic))}>
-    <Tarjeta estilo={{ gap: 12 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-        <Text style={{ flex: 1, fontSize: 21, fontWeight: '800', color: colorSistema.texto, letterSpacing: -0.3 }}>{s.nombre}</Text>
-        <Estado abierta={s.abierta} />
+    <Vidrio radio={26}>
+      {/* La foto: la real de la sucursal cuando se suba; mientras, una de stock. */}
+      <View style={{ height: 150, overflow: 'hidden' }}>
+        <ImagenCache source={s.foto ? { uri: s.foto, cacheKey: s.foto_clave ?? undefined } : STOCK[indice % STOCK.length]}
+          cachePolicy="memory-disk" contentFit="cover" transition={200} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={['rgba(0,0,0,0.05)', 'rgba(0,0,0,0.15)', 'rgba(0,0,0,0.72)']} locations={[0, 0.45, 1]} style={StyleSheet.absoluteFill} />
+        <View style={{ position: 'absolute', top: 12, right: 12 }}><Estado abierta={s.abierta} /></View>
+        <View style={{ position: 'absolute', left: 16, right: 16, bottom: 12, gap: 2 }}>
+          <Text style={{ fontSize: 22, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.3 }} numberOfLines={1}>{s.nombre}</Text>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.9)' }}>
+            {s.abierta ? `Cierra a las ${hora(s.cierra_hoy)}` : s.abre_hoy ? `Abre a las ${hora(s.abre_hoy)}` : 'Cerrada hoy'}
+          </Text>
+        </View>
       </View>
-      <Text style={{ fontSize: 14, fontWeight: '600', color: s.abierta ? t.color.exitoTexto : colorSistema.texto2 }}>
-        {s.abierta ? `Abierta · cierra a las ${hora(s.cierra_hoy)}` : s.abre_hoy ? `Cerrada · abre a las ${hora(s.abre_hoy)}` : 'Cerrada hoy'}
-      </Text>
+    <View style={{ padding: 16, gap: 12 }}>
       <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
         <Icono sf="mappin.and.ellipse" respaldo="📍" tam={16} color={colorSistema.texto2} />
         <Text style={{ flex: 1, fontSize: 15, lineHeight: 21, color: colorSistema.texto2 }}>{s.direccion}</Text>
@@ -115,16 +128,17 @@ function TarjetaSucursal({ s }) {
           })}
         </Animated.View>
       ) : null}
-    </Tarjeta>
+    </View>
+    </Vidrio>
     </Animated.View>
   );
 }
 
 function Estado({ abierta }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: abierta ? 'rgba(52,199,89,0.16)' : 'rgba(255,59,48,0.12)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
-      <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: abierta ? '#34C759' : '#FF3B30' }} />
-      <Text style={{ fontSize: 12, fontWeight: '800', color: colorSistema.texto }}>{abierta ? 'Abierta' : 'Cerrada'}</Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 }}>
+      <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: abierta ? '#34C759' : '#FF453A' }} />
+      <Text style={{ fontSize: 12, fontWeight: '800', color: '#FFFFFF' }}>{abierta ? 'Abierta' : 'Cerrada'}</Text>
     </View>
   );
 }

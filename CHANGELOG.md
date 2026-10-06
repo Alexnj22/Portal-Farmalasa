@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1231.2 — Sucursales con foto
+
+- **Sucursales con foto:** cada tarjeta lleva la foto arriba con el nombre, la hora de cierre y el estado encima. Mientras cada sucursal no tenga la suya (`branches.settings.foto_app`, ruta en el bucket `ofertas-clientes`, que `app-clientes` firma), se alternan dos fotos de stock de Unsplash (licencia libre) incluidas en la app.
+
 ## v2.1231.1 — App de clientes: revisión general (privacidad, fluidez, iOS, accesibilidad)
 
 Revisión general de la app de clientes (40 hallazgos de una revisión de código; aplicados casi todos):

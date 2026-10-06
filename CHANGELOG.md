@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1226.6 — Wallet: «Saldo de puntos»
+
+- **Tarjeta de Wallet:** el rótulo del saldo dice «Saldo de puntos» (antes «Saldo para descontar»), pedido del usuario.
+
 ## v2.1226.5 — Wallet: franja sin bordes y Cliente VIP
 
 - **Tarjeta de Wallet:** la franja nace y muere en el color del fondo del pase (sin bordes), sin la cruz cortada, con luz magenta, resplandor verde, brillo holográfico y grabado fino. «Socio» → «Cliente VIP» y «Cliente desde» (pedido del usuario). El alto lo fija Apple para toda tarjeta de lealtad con QR.

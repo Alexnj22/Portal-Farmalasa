@@ -80,7 +80,7 @@ export async function armarPase(d: DatosPase): Promise<Uint8Array> {
     backgroundColor: "rgb(52, 14, 66)",
     storeCard: {
       headerFields: [{ key: "puntos", label: "PUNTOS", value: Math.round(d.saldo), textAlignment: "PKTextAlignmentRight" }],
-      primaryFields: [{ key: "saldo", label: "SALDO PARA DESCONTAR", value: d.equivale, currencyCode: "USD",
+      primaryFields: [{ key: "saldo", label: "SALDO DE PUNTOS", value: d.equivale, currencyCode: "USD",
         // Lo que dice la pantalla bloqueada cuando la tarjeta se actualiza.
         changeMessage: "Tu saldo de Puntos Salud ahora es %@" }],
       secondaryFields: [

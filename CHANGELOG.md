@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1226.12 — Base de historias y bandeja de avisos; main ya no despliega
+
+- **Base (sin pantallas todavía):** tabla `app_historias` (carrusel tipo estados para la app, editable con el permiso `ofertas_clientes`) y columnas `url`/`leido_at` en `app_cliente_avisos` para la bandeja de notificaciones.
+- **Vercel:** con «Production Branch» = `produccion` (lo cambió el usuario), `main` ya no despliega nunca; se publica con `npm run publicar`.
+
 ## v2.1226.11 — publicar: los .md no cuentan como web
 
 - `publicar` y `vercel-ignorar.sh`: cualquier `*.md` (CLAUDE.md, DESIGN.md, el changelog) deja de contar como cambio de la web.

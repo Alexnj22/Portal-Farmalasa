@@ -728,7 +728,7 @@ export const AREAS = [
             'supabase/functions/_shared/imagenesPase.ts',
             'supabase/functions/_shared/consentimientoPuntos.ts',
         ],
-        tablas: ['app_cliente_sesiones', 'app_cliente_preregistros', 'ofertas_clientes', 'app_cliente_muestras', 'app_cliente_referido_codigo', 'app_cliente_referidos', 'app_cliente_avisos', 'wallet_registros'],
+        tablas: ['app_cliente_sesiones', 'app_cliente_preregistros', 'ofertas_clientes', 'app_cliente_muestras', 'app_cliente_referido_codigo', 'app_cliente_referidos', 'app_cliente_avisos', 'wallet_registros', 'app_historias'],
         edge: ['app-clientes', 'avisos-clientes', 'wallet-pases'],
         crons: ['puntos-referidos-hora', 'purge-app-cliente-avisos', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto'],
         docs: ['docs/APP-CLIENTES-2026-10-05.md'],

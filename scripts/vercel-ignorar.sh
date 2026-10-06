@@ -11,17 +11,9 @@
 #
 # · produccion:    siempre (llegar ahí ya es la decisión de publicar).
 # · sesion/nucleo: siempre (es la rama de dev.farmasalud.lat).
-# · main: TRANSICIÓN — mientras Vercel siga publicando `main` como producción,
-#   despliega sólo si el commit toca la web. Cuando «Production Branch» en
-#   Vercel sea `produccion`, esta rama pasa a `exit 0` (no se despliega sola).
-# · el resto de sesion/*: nunca.
+# · main y todo lo demás: nunca. `main` es donde se integra; desde el
+#   2026-10-06 la rama de producción en Vercel es `produccion`.
 case "$VERCEL_GIT_COMMIT_REF" in
   produccion|sesion/nucleo) exit 1 ;;
-  main) ;;
   *) exit 0 ;;
 esac
-git diff --quiet HEAD^ HEAD -- . \
-  ':(exclude)apps' ':(exclude)supabase' ':(exclude)scripts' ':(exclude)docs' \
-  ':(exclude)auditoria' ':(exclude)*.md' ':(exclude)src/version.js' \
-  && exit 0
-exit 1

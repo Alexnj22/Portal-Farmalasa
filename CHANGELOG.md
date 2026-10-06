@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1231.1 — Pedidos · Generar: tarjetas de sucursal neutras con barra de urgencia
+
+- **Tarjetas de sucursal**: el fondo ya no se pinta con la urgencia (con todas entre 43% y 67% salían las seis naranjas y la elegida no se distinguía). Fondo neutro, el % rotulado como «Urgencia» con una barra, y una casilla siempre visible que se llena al elegir. Más bajas: en el teléfono las seis entran en una pantalla y media en vez de tres.
+- **Acciones ordenadas**: «Distribución global» pasa a interruptor y queda junto a «Seleccionar todas», arriba a la derecha. Abajo, un pie con el resumen de lo elegido (sucursales y productos con stock en Bodega) y «Generar y confirmar» a la derecha.
+- **Sin stock en Bodega**: el título va en la cabecera de la tabla. El total deja de ir en rojo y «Ventas 6m» pierde la flecha de tendencia, que no medía una tendencia.
+
 ## v2.1231.0 — App: cobros, clientes, cotizaciones, sucursales y administración
 
 - **App: Cuentas por cobrar** se refresca contra la caja como el portal (al abrir, cada minuto a la vista y cuando una búsqueda no encuentra: el crédito recién vendido), con Saldo / Por vencer / Vencidos / Todos, orden, filtro de vendedor, páginas y **pedir corrección** de un abono desde la ficha.

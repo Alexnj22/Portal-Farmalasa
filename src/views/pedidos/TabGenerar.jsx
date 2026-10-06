@@ -2,11 +2,12 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import Notice from '../../components/common/Notice';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
+import Switch from '../../components/common/Switch';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import {
-    Building2, ClipboardList, CheckCircle2,
-    Package, Info,
-    TriangleAlert, TrendingUp,
+    ClipboardList,
+    Package,
+    TriangleAlert,
     Check, Search, PackageX, Repeat,
 } from 'lucide-react';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -15,7 +16,6 @@ import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { printPerSucursal, buildPedidoCodigo, fefoProject, getExactPageGroups } from '@nucleo/utils/pedidoPrint';
 import { ERP_NAMES, SUCURSALES } from '@nucleo/constants/erp';
-import Contador from '../../components/common/Contador';
 import { confirmarPedido, fetchActiveEmployeesBasic, fetchPedidoIdsSinceExcluding, fetchPedidoItemsForPrintCapture, fetchPedidoNumero, fetchPedidoSucursalStatusForPedidos, fetchTableroParaGenerarPedido, fetchVistaPreviaDePedido, iniciarCodigosDeSucursalesDelPedido, tieneEtiquetaDeDespacho, updatePedidoSucursalStatus } from '@nucleo/data/pedidos';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 
@@ -277,18 +277,6 @@ export default function TabGenerar({ searchTerm = '' }) {
         setSelected(todasElegiblesSeleccionadas ? new Set() : new Set(sucursalesElegibles));
     };
 
-    // Ranking de urgencia — mayor avg_urgencia_pct primero
-    const urgRankMap = useMemo(() => {
-        const sorted = [...SUCURSALES].sort((a, b) => {
-            const pa = statMap[a]?.avg_urgencia_pct ?? -1;
-            const pb = statMap[b]?.avg_urgencia_pct ?? -1;
-            return pb - pa;
-        });
-        const m = {};
-        sorted.forEach((id, i) => { m[id] = i + 1; });
-        return m;
-    }, [statMap]);
-
     // urgLevel: 'high' ≥65% depleción · 'mid' ≥40% · 'low' <40% · 'none' sin datos
     const getUrgLevel = (stat) => {
         const pct = stat?.avg_urgencia_pct;
@@ -326,54 +314,56 @@ export default function TabGenerar({ searchTerm = '' }) {
         setSinPage(1);
     }, []);
 
+    const productosElegidos = useMemo(
+        () => [...selected].reduce((acc, id) => acc + (statMap[id]?.con_bodega_productos ?? 0), 0),
+        [selected, statMap],
+    );
+
     // ── Dashboard screen ────────────────────────────────────────
     return (
         <div className="space-y-5 p-4">
 
 
             {/* ── Sucursal selector ──────────────────────────── */}
+            {/* Rediseño 2026-10-06. Antes cada tarjeta pintaba su FONDO con el
+                color de la urgencia: con las seis entre 43% y 67% las seis
+                salían naranjas, así que todo se leía como alerta y la tarjeta
+                elegida no se distinguía de las demás. Hoy el fondo es neutro y
+                el color se reserva para dos cosas: la barra de urgencia (que
+                es un dato) y el borde de la elegida (que es el estado). */}
             <div data-surface="card" className="p-4">
-                {/* `gap-2` + `flex-wrap`: a 390px el título y el botón no entran
-                    en un renglón, y sin envolver el botón se salía de la caja. */}
-                <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
-                    <h3 className="font-semibold text-content-2 text-subtitle">Selecciona las sucursales a reponer</h3>
-                    {/* El rótulo se calculaba sobre TODAS las sucursales y la acción
-                        sólo sobre las seleccionables: con una pendiente de MIN/MAX
-                        el botón decía «Seleccionar todas» aunque ya estuvieran todas
-                        las elegibles marcadas, y volver a apretarlo no hacía nada. */}
-                    <Button variant="ghost" onClick={toggleAll}>{todasElegiblesSeleccionadas ? 'Quitar la selección' : 'Seleccionar todas'}</Button>
-                </div>
-                <p className="text-label text-content-3 mb-2 flex items-center gap-1">
-                    <Info size={11} />
-                    Elige las sucursales a reponer y genera el pedido directamente.
-                </p>
-
-                {/* Modos */}
-                <div className="flex items-center gap-2 mb-3 flex-wrap">
-                    {/* El bug de contraste que documentaba el comentario de aquí
-                        (pastilla blanca con texto invisible en dark, v2.62.4) deja de
-                        ser posible: el color lo pone el tema vía `tone`, no un
-                        `bg-surface-card` opaco escrito a mano. */}
-                    <Button
-                        size="sm"
-                        aria-pressed={globalMode}
-                        variant="secondary"
-                        tone={globalMode ? 'chart-3' : null}
-                        onClick={() => setGlobalMode(v => !v)}
-                    >
-                        Distribución global de bodega
-                        {globalMode && <Check size={11} />}
-                    </Button>
+                <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+                    <div className="min-w-0">
+                        <h3 className="font-semibold text-content text-subtitle">Sucursales a reponer</h3>
+                        <p className="text-label text-content-3 mt-0.5">
+                            La urgencia es cuánto le falta a cada sala para llegar a su máximo.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                        {/* Un `<label>` envolviendo el interruptor: el texto
+                            también lo acciona y el blanco de dedo crece solo. */}
+                        <label className="inline-flex items-center gap-2 text-body-sm text-content-2 cursor-pointer select-none min-h-[var(--tap-min)]">
+                            <Switch size="sm" variant="chart-3" checked={globalMode}
+                                onChange={setGlobalMode} label="Distribución global de bodega" />
+                            Distribución global
+                        </label>
+                        {/* El rótulo se calculaba sobre TODAS las sucursales y la acción
+                            sólo sobre las seleccionables: con una pendiente de MIN/MAX
+                            el botón decía «Seleccionar todas» aunque ya estuvieran todas
+                            las elegibles marcadas, y volver a apretarlo no hacía nada. */}
+                        <Button variant="secondary" size="sm" onClick={toggleAll}>
+                            {todasElegiblesSeleccionadas ? 'Quitar la selección' : 'Seleccionar todas'}
+                        </Button>
+                    </div>
                 </div>
 
                 {globalMode && (
-                    <p className="text-caption text-chart-3-text mb-2 flex items-center gap-1">
-                        <Info size={10} />
+                    <Notice variant="info" className="mb-3">
                         La bodega se distribuye considerando las necesidades de TODAS las sucursales, pero el pedido solo incluye las marcadas.
-                    </p>
+                    </Notice>
                 )}
 
-                {/* ── Sucursal cards — liquid glass ──────────── */}
+                {/* ── Sucursal cards ─────────────────────────── */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                     {visibleSucursales.map((id) => {
                         const stat      = statMap[id];
@@ -386,44 +376,35 @@ export default function TabGenerar({ searchTerm = '' }) {
                             return (
                                 <div
                                     key={id}
-                                    data-surface="card" className="relative flex flex-col items-center gap-1 px-3 py-4 text-center overflow-hidden bg-surface-card-hover/60 opacity-60 cursor-not-allowed"
+                                    data-surface="card" className="relative flex flex-col gap-2 p-3 text-left bg-surface-card-hover/60 opacity-60 cursor-not-allowed"
                                 >
-                                    <span className="absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-[var(--shimmer-sweep)] to-transparent pointer-events-none" />
-                                    <Building2 size={20} className="text-content-3 mt-1" />
-                                    <span className="text-body-sm font-bold leading-tight text-content-3">{ERP_NAMES[id]}</span>
+                                    <span className="text-body font-bold leading-tight text-content-3">{ERP_NAMES[id]}</span>
                                     {dashLoading ? (
-                                        <div className="h-6 w-14 rounded-lg bg-surface-card-hover animate-pulse mt-0.5" />
+                                        <div className="h-5 w-20 rounded-lg bg-surface-card-hover animate-pulse" />
                                     ) : (
-                                        <Badge variant="warning" size="sm" uppercase={false} className="mt-0.5">Pendiente MIN/MAX</Badge>
+                                        <Badge variant="warning" size="sm" uppercase={false} className="self-start">Pendiente MIN/MAX</Badge>
                                     )}
                                 </div>
                             );
                         }
 
-                        // Base: always urgency-based, never changes on selection
-                        // El stop blanco de estas 4 variantes era el fondo real de la
-                        // tarjeta, no un reflejo: en dark quedaban 6 pastillas blancas
-                        // sobre la vista oscura. Ahora --card-tint-base[-soft] (v2.62.4).
-                        const baseCls = urgLevel === 'high'
-                            ? 'bg-gradient-to-b from-danger/10 to-[var(--card-tint-base-soft)] border-danger/30'
-                            : urgLevel === 'mid'
-                                ? 'bg-gradient-to-b from-warning/10 to-[var(--card-tint-base-soft)] border-warning/30'
-                                : urgLevel === 'low'
-                                    ? 'bg-gradient-to-b from-success/10 to-[var(--card-tint-base-soft)] border-success/30'
-                                    : 'bg-gradient-to-b from-[var(--card-tint-base)] to-[var(--card-tint-base-soft)] border-divider';
+                        // Literales, no `bg-${x}`: Tailwind escanea texto.
+                        const urgBar  = urgLevel === 'high' ? 'bg-danger-solid'
+                            : urgLevel === 'mid' ? 'bg-warning-solid' : 'bg-success-solid';
+                        const urgText = urgLevel === 'high' ? 'text-danger-text'
+                            : urgLevel === 'mid' ? 'text-warning-text' : 'text-success-text';
 
-                        // Selection adds a glow ring; no-selection adds hover effects
                         const stateCls = isOn
-                            ? 'suc-pop border-chart-1/80 shadow-[var(--shadow-glass-3)] ring-2 ring-chart-1/45 ring-offset-0'
-                            : urgLevel === 'high'
-                                ? 'hover:border-danger/40 hover:shadow-[var(--shadow-glow-danger)] transition-all duration-[var(--dur-base)]'
-                                : urgLevel === 'mid'
-                                    ? 'hover:border-warning/40 hover:shadow-[var(--shadow-glow-warning)] transition-all duration-[var(--dur-base)]'
-                                    : 'hover:border-divider hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-[var(--dur-base)]';
+                            ? 'suc-pop border-chart-1/70 ring-2 ring-chart-1/45 shadow-[var(--shadow-glass-3)] bg-[var(--card-tint-base)]'
+                            : 'border-divider bg-[var(--card-tint-base-soft)] hover:border-content-3/30 hover:shadow-[var(--shadow-elevation-sm)]';
 
-                        // El nivel de urgencia, como nombre de variante.
-                        const urgVariante = urgLevel === 'high' ? 'danger'
-                            : urgLevel === 'mid' ? 'warning' : 'success';
+                        const ultimo = stat ? fmtTimeSince(stat.last_pedido_at) : null;
+                        const dias = stat?.last_pedido_at
+                            ? Math.floor((Date.now() - new Date(stat.last_pedido_at)) / 86_400_000)
+                            : null;
+                        const ultimoCls = dias == null ? 'text-content-3'
+                            : dias <= 7 ? 'text-success-text'
+                            : dias <= 14 ? 'text-warning-text' : 'text-danger-text';
 
                         return (
                             <button
@@ -431,107 +412,89 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 aria-pressed={isOn}
                                 onClick={() => toggleSuc(id)}
                                 // El acuse del toque: elegir sucursales es LO que se
-                                // hace en esta pestaña, y las seis tarjetas sólo
-                                // respondían al puntero. Va afuera de `stateCls`
-                                // para que también acuse la que ya está elegida —
+                                // hace en esta pestaña. Va afuera de `stateCls` para
+                                // que también acuse la que ya está elegida —
                                 // des-elegir es la mitad del control.
-                                className={`relative flex flex-col items-center gap-1 rounded-2xl px-3 py-4 border text-center group overflow-hidden active:scale-[0.99] ${baseCls} ${stateCls}`}
+                                className={`relative flex flex-col gap-2 rounded-2xl p-3 border text-left transition-all duration-[var(--dur-base)] active:scale-[0.98] ${stateCls}`}
                             >
-                                {/* Shimmer line — siempre visible, más brillante al seleccionar */}
-                                <span className={`absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent ${isOn ? 'via-[var(--shimmer-sweep-strong)]' : 'via-[var(--shimmer-sweep)]'} to-transparent pointer-events-none`} />
-
-                                {/* Ranking + urgency % badge — top-left, siempre visible */}
-                                {stat && !dashLoading && urgPct != null && urgPct > 0 && (
-                                    <span className="absolute top-2 left-2 flex items-center gap-1 z-base">
-                                        <Contador valor={urgRankMap[id]} tono="neutral" size="md"
-                                            aria-label={`Puesto ${urgRankMap[id]} por urgencia`} />
-                                        <Badge variant={urgVariante} size="sm" uppercase={false}>{urgPct}%</Badge>
+                                <span className="flex items-start justify-between gap-2">
+                                    <span className="text-body font-bold leading-tight text-content">
+                                        {ERP_NAMES[id]}
                                     </span>
-                                )}
-
-                                {/* Checkmark — top-right cuando está seleccionado */}
-                                {isOn && (
-                                    <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-chart-1 flex items-center justify-center shadow-[var(--shadow-glow-brand)]">
-                                        <CheckCircle2 size={10} className="text-white" />
+                                    {/* La casilla está SIEMPRE: vacía dice «se puede
+                                        elegir», llena dice «elegida». Antes sólo
+                                        aparecía al marcar. */}
+                                    <span aria-hidden="true"
+                                        className={`shrink-0 w-5 h-5 rounded-full border grid place-items-center transition-colors duration-[var(--dur-base)] ${isOn ? 'bg-chart-1 border-chart-1' : 'border-divider bg-surface-card'}`}>
+                                        {isOn && <Check size={12} strokeWidth={3} className="text-white" />}
                                     </span>
-                                )}
-
-                                <Building2
-                                    size={20}
-                                    className="text-content-3 group-hover:text-content-2 transition-colors relative z-base mt-1"
-                                />
-                                <span className="text-body-sm font-bold leading-tight relative z-base text-content">
-                                    {ERP_NAMES[id]}
                                 </span>
 
                                 {stat && !dashLoading ? (
                                     <>
-                                        {/* Los glifos ✓/✗ eran texto: no escalan con
-                                            el tipo, no los lee un lector de pantalla
-                                            y el ✗ no existe en toda fuente. El
-                                            canónico ya trae ranura de ícono. */}
-                                        <div className="flex items-center gap-1.5 mt-0.5 relative z-base">
-                                            <Badge variant="success" size="sm" uppercase={false} icon={Check}
-                                                title={`${stat.con_bodega_productos ?? 0} con stock en Bodega`}>
-                                                {(stat.con_bodega_productos ?? 0)}
-                                            </Badge>
-                                            <Badge variant="danger" size="sm" uppercase={false} icon={PackageX}
-                                                title={`${stat.sin_bodega_productos ?? 0} sin stock en Bodega`}>
-                                                {(stat.sin_bodega_productos ?? 0)}
-                                            </Badge>
-                                        </div>
-                                        {/* Último pedido */}
-                                        {(() => {
-                                            const label = fmtTimeSince(stat.last_pedido_at);
-                                            if (!label) return (
-                                                <span className="text-micro relative z-base text-content-3">sin pedidos</span>
-                                            );
-                                            const days = stat.last_pedido_at
-                                                ? Math.floor((Date.now() - new Date(stat.last_pedido_at)) / 86_400_000)
-                                                : 999;
-                                            const timeCls = days <= 7  ? 'text-success'
-                                                          : days <= 14 ? 'text-warning'
-                                                          : 'text-danger';
-                                            return (
-                                                <span className={`text-micro font-medium relative z-base ${timeCls}`}>
-                                                    {label}
+                                        {urgPct != null && (
+                                            <span className="block">
+                                                <span className="flex items-baseline justify-between gap-2 text-caption">
+                                                    <span className="text-content-3">Urgencia</span>
+                                                    <span className={`font-bold tabular-nums ${urgText}`}>{urgPct}%</span>
                                                 </span>
-                                            );
-                                        })()}
+                                                {/* El ancho ES el dato (§32.8 regla 1). */}
+                                                <span data-medida="dato" className="mt-1 block h-1.5 rounded-full bg-surface-card-hover overflow-hidden">
+                                                    <span className={`block h-full rounded-full ${urgBar}`}
+                                                        style={{ width: `${Math.min(100, Math.max(0, urgPct))}%` }} />
+                                                </span>
+                                            </span>
+                                        )}
+                                        <span className="flex items-center justify-between flex-wrap gap-x-2 gap-y-0.5 text-caption">
+                                            {/* Los glifos ✓/✗ eran texto: no escalan con
+                                                el tipo ni los lee un lector de pantalla. */}
+                                            <span className="inline-flex items-center gap-2 tabular-nums font-semibold">
+                                                <span className="inline-flex items-center gap-0.5 text-success-text">
+                                                    <Check size={11} strokeWidth={2.5} aria-hidden="true" />
+                                                    {stat.con_bodega_productos ?? 0}
+                                                    <span className="sr-only"> con stock en Bodega</span>
+                                                </span>
+                                                <span className="inline-flex items-center gap-0.5 text-danger-text">
+                                                    <PackageX size={11} aria-hidden="true" />
+                                                    {stat.sin_bodega_productos ?? 0}
+                                                    <span className="sr-only"> sin stock en Bodega</span>
+                                                </span>
+                                            </span>
+                                            <span className={`whitespace-nowrap ${ultimoCls}`}>
+                                                <span className="sr-only">Último pedido: </span>
+                                                {ultimo ?? 'sin pedidos'}
+                                            </span>
+                                        </span>
                                     </>
                                 ) : (
-                                    <div className="h-6 w-14 rounded-lg bg-surface-card-hover animate-pulse mt-0.5" />
+                                    <span className="block space-y-2">
+                                        <span className="block h-3 w-full rounded bg-surface-card-hover animate-pulse" />
+                                        <span className="block h-3 w-2/3 rounded bg-surface-card-hover animate-pulse" />
+                                    </span>
                                 )}
                             </button>
                         );
                     })}
                 </div>
 
-                {/* ── Generar button ─────────────────────────── */}
-                <div className="mt-4 flex flex-col items-center gap-2">
+                {/* ── Generar ────────────────────────────────── */}
+                {/* Pie con el resumen a la izquierda y la acción a la derecha:
+                    centrado y solo, el botón apagado se leía como un adorno. */}
+                <div className="mt-4 pt-4 border-t border-divider flex items-center justify-between gap-3 flex-wrap">
+                    <span className="text-body-sm text-content-3">
+                        {selected.size === 0
+                            ? 'Elige al menos una sucursal para generar el pedido.'
+                            : `${selected.size} sucursal${selected.size > 1 ? 'es' : ''} · ${productosElegidos.toLocaleString()} producto${productosElegidos === 1 ? '' : 's'} con stock en Bodega`}
+                    </span>
                     <Button tone="success" size="lg" onClick={handleGenerarDirecto} icon={ClipboardList}
+                        className="w-full sm:w-auto"
                         disabled={confirming || selected.size === 0} loading={confirming}>
-                        {confirming
-                            ? 'Confirmando…'
-                            : `Generar y confirmar${selected.size > 0 ? ` (${selected.size} sucursal${selected.size > 1 ? 'es' : ''})` : ''}`}
+                        {confirming ? 'Confirmando…' : 'Generar y confirmar'}
                     </Button>
                     {/* `Notice` y no un span con su ícono a mano: es el canónico
-                        del aviso inline (§15.6), y ya estaba importado en este
-                        archivo para el aviso de búsqueda difusa. */}
+                        del aviso inline (§15.6). */}
                     {error && <Notice variant="danger" className="w-full">{error}</Notice>}
                 </div>
-            </div>
-
-            {/* ── Productos sin stock en Bodega ──────────────── */}
-            <div data-surface="card" className="px-4 py-3 flex items-center gap-2 flex-wrap">
-                <TriangleAlert size={15} className="text-danger shrink-0" />
-                <span className="font-semibold text-content-2 text-body-lg">Productos sin stock en Bodega</span>
-                {sinBodega.length > 0 && (
-                    <Badge variant="danger" uppercase={false}>{sinBodega.length.toLocaleString()} productos</Badge>
-                )}
-                {searchTerm && (
-                    <span className="ml-auto text-label text-content-3">"{searchTerm}"</span>
-                )}
             </div>
 
             {isSinFuzzy && searchTerm && (
@@ -553,6 +516,18 @@ export default function TabGenerar({ searchTerm = '' }) {
                         : 'No hay productos sin stock en Bodega',
                 }}
                 minWidth="560px"
+                toolbar={(
+                    <div className="flex items-center gap-2 flex-wrap min-w-0">
+                        <TriangleAlert size={15} className="text-danger shrink-0" aria-hidden="true" />
+                        <span className="font-semibold text-content text-body-lg">Productos sin stock en Bodega</span>
+                        {sinBodega.length > 0 && (
+                            <Badge variant="danger" size="sm" uppercase={false}>{sinBodega.length.toLocaleString()}</Badge>
+                        )}
+                        <span className="basis-full text-label text-content-3">
+                            Lo que piden las sucursales y Bodega no tiene para despachar.
+                        </span>
+                    </div>
+                )}
             >
                 {filteredSinBodega.map((row, i) => (
                     <DataRow key={row.erp_product_id} index={i}>
@@ -565,9 +540,9 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 {(row.sucursales || []).map(s => (
                                     <LiquidTooltip key={s.erp_sucursal_id} content={`${ERP_NAMES[s.erp_sucursal_id]}: necesita ${s.reponer}${s.ventas_6m > 0 ? ` · ${Math.round(s.ventas_6m)} ventas en 6m` : ''}`}>
                                         <span
-                                            className="inline-flex items-center gap-1 text-caption px-2 py-0.5 rounded-full bg-surface-card-hover border border-divider whitespace-nowrap">
+                                            className="inline-flex items-center gap-1 text-caption px-2 py-0.5 rounded-full bg-surface-card-hover whitespace-nowrap">
                                             <span className="font-medium text-content-2">{ERP_NAMES[s.erp_sucursal_id]}</span>
-                                            <span className="text-danger font-semibold">{s.reponer}</span>
+                                            <span className="text-danger-text font-semibold tabular-nums">{s.reponer}</span>
                                             {s.ventas_6m > 0 && (
                                                 <span className="text-content-3 inline-flex items-center gap-0.5">
                                                     <Repeat size={9} aria-hidden="true" />
@@ -580,12 +555,11 @@ export default function TabGenerar({ searchTerm = '' }) {
                             </div>
                         </DataCell>
                         <DataCell align="center" hideBelow="sm">
-                            <span className="text-body font-bold text-danger-text tabular-nums">{row.total_necesidad}</span>
+                            <span className="text-body font-bold text-content tabular-nums">{row.total_necesidad}</span>
                         </DataCell>
                         <DataCell align="center" hideBelow="sm">
                             {row.total_ventas_6m > 0 ? (
-                                <span className="inline-flex items-center justify-center gap-1 text-body-sm text-success-text font-semibold tabular-nums">
-                                    <TrendingUp size={11} />
+                                <span className="text-body-sm text-content-2 font-semibold tabular-nums">
                                     {Math.round(row.total_ventas_6m).toLocaleString()}
                                 </span>
                             ) : (

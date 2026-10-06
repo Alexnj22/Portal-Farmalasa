@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1223.6 — App: la boleta de pago cuadra con el papel
+
+- **App: la boleta de pago decía otra cosa que el papel.** Las horas extra y nocturnas se guardan como HORAS y la app las pintaba como dinero (tres horas extra = «$3.00»), y su subtotal era el A con las partidas del B listadas encima, o sea que la suma no daba. Hoy la boleta tiene las mismas secciones que el papel del portal —A sujetos a retención, B otros ingresos (cada hora ya convertida con el sueldo por hora y su recargo, con las horas al lado), C retenciones y descuentos, y (A − C) + B—, más la base (mensual, diario, por hora).
+- El sueldo se lee de la ficha viva: entrando directo a Nómina, la fila se armaba antes de que llegaran los salarios y las horas valían $0.
+- **Compartir o imprimir** la boleta desde el teléfono: el MISMO papel del portal en PDF («Boleta Ana Pérez Segunda Quincena…»), a la hoja de compartir o a AirPrint. Se anota como egreso.
+- Núcleo: `partidasDeBoleta` (planilla.js) y `boletaDePapel.js` (el HTML del papel, que el portal ahora importa). App: `componentes/pdf.js` para todo PDF que venga después; `expo-print` y `expo-file-system` (necesitan build nueva).
+
 ## v2.1223.5 — App: los montos de compras respetan su permiso
 
 - **App: Compras y Facturas de compra respetan los permisos de montos**, como el portal. Sin `compras_ver_montos` la lista y la ficha de una compra muestran proveedor, productos, cantidades y lotes, pero ningún total, subtotal, IVA ni costo. Sin `facturas_compra_ver_montos` no sale la tarjeta «Monto». Antes la app los mostraba a cualquiera que entrara.

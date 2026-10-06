@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { montoEnLetras, numeroEnLetras, ordenDeCargo, rotuloDePeriodo, totalesDePlanilla } from '@nucleo/utils/planilla';
+import { montoEnLetras, numeroEnLetras, ordenDeCargo, partidasDeBoleta, rotuloDePeriodo, totalesDePlanilla } from '@nucleo/utils/planilla';
 
 describe('planilla', () => {
     it('el monto en letras de la boleta', () => {
@@ -22,5 +22,24 @@ describe('planilla', () => {
     });
     it('totales', () => {
         expect(totalesDePlanilla([{ net_pay: 10, total_deductions: 2, ordinary_salary: 12 }, { net_pay: '5' }])).toEqual({ personas: 2, liquido: 15, descuentos: 2, ordinario: 12 });
+    });
+});
+
+describe('partidasDeBoleta', () => {
+    it('convierte las horas en dinero con el sueldo por hora del papel', () => {
+        // $600/mes → diario 20.00 → por hora 2.50
+        const p = partidasDeBoleta({ extra_hours_diurnal: 3, night_hours_ordinary: 4, subtotal_a: 300, subtotal_b: 20, ordinary_salary: 300, days_worked: 15 }, 600);
+        expect(p.porHora).toBe(2.5);
+        const extra = p.noSujetos.find((x) => x.rotulo.startsWith('Horas extra diurnas'));
+        expect(extra.horas).toBe(3);
+        expect(extra.monto).toBe(15);
+        expect(p.noSujetos.find((x) => x.rotulo.startsWith('Horas nocturnas ordinarias')).monto).toBe(2.5);
+        expect(p.subtotalA).toBe(300);
+        expect(p.subtotalB).toBe(20);
+    });
+    it('omite las partidas en cero', () => {
+        const p = partidasDeBoleta({ ordinary_salary: 100 }, 300);
+        expect(p.noSujetos).toEqual([]);
+        expect(p.otrosDescuentos).toEqual([]);
     });
 });

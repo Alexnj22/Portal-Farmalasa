@@ -315,7 +315,7 @@ export const AREAS = [
         modulos: ['payroll', 'payroll_descargar'],
         rutas: ['/nomina'],
         archivos: [
-            'src/views/PayrollView.jsx',
+            'src/views/PayrollView.jsx', 'src/utils/boletaDePapel.js',
             'src/data/payroll.js',
             'src/store/slices/payrollSlice.js',
             'src/components/forms/FormNewPayrollPeriod.jsx', 'src/components/forms/FormEditPayrollEntry.jsx',

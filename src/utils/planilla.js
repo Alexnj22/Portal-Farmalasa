@@ -69,3 +69,52 @@ export function totalesDePlanilla(entries) {
     }
     return t;
 }
+
+/* Las partidas de una boleta, con la MISMA regla que el papel del portal.
+ * La fila guarda las horas extra y nocturnas como HORAS, no como dinero: el
+ * monto sale de multiplicarlas por el sueldo por hora y su recargo (sueldo
+ * base / 30 / 8, los dos redondeados a centavos como en el papel). La app las
+ * pintaba con `formatMoney` tal cual — tres horas extra salían como $3.00 — y
+ * su subtotal era el A con las partidas del B listadas encima, o sea que la
+ * suma no daba. Los subtotales A y B son los de la fila, nunca recalculados:
+ * es lo que se pagó. */
+const r2 = (n) => parseFloat((Number(n) || 0).toFixed(2));
+export function partidasDeBoleta(entry, baseSalary) {
+    const e = entry || {};
+    const diario = r2((Number(baseSalary) || 0) / 30);
+    const porHora = r2(diario / 8);
+    // Una partida con horas y sin monto (sueldo desconocido) se queda: esconderla
+    // haría desaparecer horas trabajadas sin decir nada.
+    const sinCero = (lista) => lista.filter((p) => p.monto || p.horas);
+    return {
+        diario,
+        porHora,
+        sujetos: [
+            { rotulo: `Salario ordinario · ${r2(e.days_worked)} días × ${diario.toFixed(2)}`, monto: r2(e.ordinary_salary) },
+        ],
+        subtotalA: r2(e.subtotal_a),
+        noSujetos: sinCero([
+            { rotulo: 'Horas nocturnas ordinarias (25%)', horas: r2(e.night_hours_ordinary), monto: r2(e.night_hours_ordinary * porHora * 0.25) },
+            { rotulo: 'Horas nocturnas extra (50%)',      horas: r2(e.night_hours_extra),    monto: r2(e.night_hours_extra * porHora * 0.5) },
+            { rotulo: 'Horas extra diurnas (×2)',         horas: r2(e.extra_hours_diurnal),  monto: r2(e.extra_hours_diurnal * porHora * 2) },
+            { rotulo: 'Horas extra nocturnas (×2.25)',    horas: r2(e.extra_hours_nocturnal), monto: r2(e.extra_hours_nocturnal * porHora * 2.25) },
+            { rotulo: 'Recargo de asuetos',     monto: r2(e.holiday_surcharge) },
+            { rotulo: 'Bonificaciones',         monto: r2(e.bonifications) },
+            { rotulo: 'Bono vacacional (30%)',  monto: r2(e.vacation_bonus) },
+            { rotulo: 'Viáticos',               monto: r2(e.viaticos) },
+        ]),
+        subtotalB: r2(e.subtotal_b),
+        retenciones: sinCero([
+            { rotulo: `ISSS · ${r2(e.ordinary_salary).toFixed(2)} × 3%`,    monto: r2(e.isss_deduction) },
+            { rotulo: `AFP · ${r2(e.ordinary_salary).toFixed(2)} × 7.25%`,  monto: r2(e.afp_deduction) },
+            { rotulo: 'Renta',                                              monto: r2(e.renta_deduction) },
+        ]),
+        otrosDescuentos: sinCero([
+            { rotulo: 'Orden de descuento', monto: r2(e.order_discount) },
+            { rotulo: 'Otros descuentos',   monto: r2(e.other_discounts) },
+            { rotulo: 'Adelanto salarial',  monto: r2(e.salary_advance) },
+        ]),
+        totalDescuentos: r2(e.total_deductions),
+        liquido: r2(e.net_pay),
+    };
+}

@@ -21,6 +21,9 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1223.0 — App del personal abre en iOS 27
+
+- **App del personal: abre en iOS 27.** Compilada con Xcode 27, la app se cerraba al abrirla en iOS 27 (`_UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption`): iOS 27 exige el ciclo de vida por escenas y la plantilla de Expo no lo conecta. Se agrega el mismo plugin que la app de clientes (`plugins/ciclo-por-escenas.js`): declara la escena con `ExpoAppSceneDelegate` y el AppDelegate deja de crear su propia ventana. La build 23 de TestFlight no lo tenía; la 24 sí.
 ## v2.1222.4 — subir-ios: extensiones sin permisos
 
 - **`scripts/subir-ios.mjs`:** una extensión sin archivo `.entitlements` (la de Avisos de la app del personal) se firma ad-hoc sin permisos en vez de abortar; dos o más archivos para el mismo paquete siguen abortando.

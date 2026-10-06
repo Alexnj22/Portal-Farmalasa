@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1223.1 — Puntos Salud abre en iOS 27: ciclo de vida por escenas
+
+- **Puntos Salud se cerraba al abrir** (TestFlight, compilación 1): iOS 27 exige el ciclo de vida por escenas cuando la app se compila con su SDK (Xcode 27, la Mac); UIKit corta con EXC_BREAKPOINT en `_UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption`. Las compilaciones de EAS usaban otro Xcode y no lo sufrían.
+- **`apps/clientes/plugins/ciclo-por-escenas.js`:** conecta `ExpoAppSceneDelegate` (ya viene en Expo 57, la plantilla no lo usa): declara la escena en Info.plist y el AppDelegate deja de crear su ventana y expone la fábrica por `ExpoReactNativeFactoryProvider`. Lanza si la plantilla cambia, para borrarlo el día que ya lo traiga. Verificado: la versión Release abre en el simulador iOS 27; compilación 2 subida.
+
 ## v2.1223.0 — App del personal abre en iOS 27
 
 - **App del personal: abre en iOS 27.** Compilada con Xcode 27, la app se cerraba al abrirla en iOS 27 (`_UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption`): iOS 27 exige el ciclo de vida por escenas y la plantilla de Expo no lo conecta. Se agrega el mismo plugin que la app de clientes (`plugins/ciclo-por-escenas.js`): declara la escena con `ExpoAppSceneDelegate` y el AppDelegate deja de crear su propia ventana. La build 23 de TestFlight no lo tenía; la 24 sí.

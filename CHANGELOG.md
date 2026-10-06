@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.1 — Pedidos: Generar y Métricas rediseñados, y siembra de pruebas
+
+**Generar**
+
+- **Tarjetas de sucursal**: el fondo ya no se pinta con la urgencia (con todas entre 43% y 67% salían las seis naranjas y la elegida no se distinguía). Fondo neutro, el % rotulado como «Urgencia» con una barra, y una casilla siempre visible que se llena al elegir. Más bajas: en el teléfono las seis entran en una pantalla y media en vez de tres.
+- **Acciones ordenadas**: «Distribución global» pasa a interruptor y queda junto a «Seleccionar todas», arriba a la derecha. Abajo, un pie con el resumen de lo elegido (sucursales y productos con stock en Bodega) y «Generar y confirmar» a la derecha.
+- **Sin stock en Bodega**: el título va en la cabecera de la tabla. El total deja de ir en rojo y «Ventas 6m» pierde la flecha de tendencia, que no medía una tendencia.
+
+**Métricas**
+
+- **Métricas sigue el canon de las demás vistas** (§17.0): una sola fila con las cinco tarjetas y la barra de filtros; el período (7 / 30 / 90 días) es una ranura de la barra y queda en la dirección, así que F5 no lo devuelve a 30; «Actualizar» es la acción de la barra. Se fueron el encabezado propio y el «Refrescar» suelto.
+- **Tablas canónicas**: «Por sucursal» y «Motivos de pausa» son `DataTable` con su título en la cabecera. Los números van en neutro —antes cada columna tenía un color que no significaba nada— y los motivos se leen con su nombre («Interrupción externa», no `interrupcion`).
+- **Entorno de pruebas**: `scripts/entorno-pruebas/semilla_pedidos_completa.sql` siembra 22 pedidos en todas las etapas, cinco rutas (una en ruta) y pausas, para poder revisar Pedidos, Rutas y Métricas. Idempotente, marca `[demo]`, con freno contra producción.
+
 ## v2.1232.0 — App: promociones y mi perfil
 
 - **App: Promociones como el portal.** Activas / Descuentos / Excedentes / Pagos / Histórico; las tarjetas (activas, por vencer, en borrador, productos abiertos y cuántos bajan el precio) que filtran; filtros de estado, tipo y laboratorio; cada promoción con su vigencia («quedan N días») y sus cifras. Mantener presionada: volver a borrador / activar, duplicar y ver el seguimiento.

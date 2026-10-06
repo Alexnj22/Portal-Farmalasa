@@ -7,7 +7,7 @@
 // del personal el 2026-09-29, el de @expo/ui avisaba el cambio una tecla tarde.
 // El de React Native ES el UITextField del sistema.
 import { Children, forwardRef, isValidElement } from 'react';
-import { Appearance, Platform, PlatformColor, ScrollView, Text, TextInput, View } from 'react-native';
+import { Appearance, KeyboardAvoidingView, Platform, PlatformColor, ScrollView, Text, TextInput, View } from 'react-native';
 import { Host, Switch } from '@expo/ui';
 import BotonNativo from './BotonNativo';
 import Vidrio from './Vidrio';
@@ -39,14 +39,20 @@ for (const [k, [nativo, web]] of Object.entries(COLORES)) {
   Object.defineProperty(colorSistema, k, { enumerable: true, get: ios && nativo ? () => PlatformColor(nativo) : web });
 }
 
+// El teclado se acomoda ENCOGIENDO la vista (KeyboardAvoidingView), no con
+// `automaticallyAdjustKeyboardInsets`: ése reemplaza el margen de arriba que
+// pone la barra transparente, y al tocar el primer campo todo el formulario
+// subía y quedaba escondido bajo el título (Unirme y Entrar, 2026-10-06).
 export function Formulario({ children, contentContainerStyle, ...props }) {
   return (
-    <ScrollView style={{ flex: 1 }}
-      contentContainerStyle={[{ paddingVertical: 20, gap: 24, width: '100%', maxWidth: 560, alignSelf: 'center' }, contentContainerStyle]}
-      keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="on-drag"
-      contentInsetAdjustmentBehavior="automatic" {...props}>
-      {children}
-    </ScrollView>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView style={{ flex: 1 }}
+        contentContainerStyle={[{ paddingVertical: 20, gap: 24, width: '100%', maxWidth: 560, alignSelf: 'center' }, contentContainerStyle]}
+        keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive"
+        contentInsetAdjustmentBehavior="automatic" {...props}>
+        {children}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

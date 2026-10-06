@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1238.0 — App: entrada con Face ID, avisos que no se apagan, historial de inyecciones y ajustes de la revisión
+
+Cambios pedidos por el usuario sobre la compilación 12 de la app de clientes:
+- **Entrada:** «Ver ofertas» y «Sucursales» son ahora dos tarjetas visibles en la bienvenida, no dos enlaces al pie. **Entrar con Face ID**: después de entrar una vez, los datos quedan cifrados en el llavero del teléfono y la pantalla de entrar ofrece Face ID sola (`lib/entradaGuardada.js`); si el servidor ya no los reconoce, se olvidan. El DUI se escribe con teclado numérico. Al tocar un campo en Unirme o Entrar el formulario ya no salta bajo el título (`Formulario` usa `KeyboardAvoidingView` en vez de `automaticallyAdjustKeyboardInsets`, que pisaba el margen de la barra transparente).
+- **Reglamento y privacidad dentro de la app** (`app/legal.js`, `react-native-webview`): la misma página del portal, sin abrir el navegador.
+- **Avisos que se apagaban solos:** el permiso vive por SESIÓN en el servidor y cada vez que se volvía a entrar la sesión nueva nacía sin avisos. Ahora la decisión se recuerda en el teléfono y, con el permiso del sistema dado, se vuelven a encender solos y se refresca el token (`sincronizarAvisos`).
+- **Cuenta:** filas con ícono y texto en el color del sistema (sin rosa), flecha donde lleva a otra pantalla, rojo sólo en «Borrar mi cuenta».
+- **Mis compras:** sin animación de entrada ni de layout sobre el vidrio, que a veces dejaba tarjetas transparentes.
+- **Inyecciones:** el aviso «si trajiste de otra farmacia no aparece» se cambió por un **Historial** del último año (fecha, sucursal, si la trajiste) y una invitación a anotarla con el DUI. En **Mi caja**, al cobrar una inyección traída, se puede buscar la **ficha del cliente** (nombre, DUI o teléfono); `operar-caja` la liga a esas aplicaciones y entran a su historial y a su app. `app_cliente_inyecciones` devuelve `origen`.
+- **Historias:** rótulo corto debajo del círculo (`app_historias.rotulo`, 12 caracteres, editable en el portal; sin él, la primera palabra del título).
+- **WhatsApp:** el logo de WhatsApp (no la burbuja de mensaje) en «Más información» de las historias y en sucursales.
+- La tarjeta de socio ya no se levanta al tocarla (tapaba la campana) y el saludo con la campana queda por encima.
+- `reservas_de_sucursal` compara la sala en su propio cuerpo y devuelve pago y entrega; las dos funciones de reservas quedan declaradas en `scripts/alcance-manifest.json`.
+
 ## v2.1237.0 — App: crear y editar desde el teléfono
 
 - **App: crear y editar desde el teléfono.** Cotizaciones (crear, editar y compartir el PDF), Metas (agregar meta y la pestaña Confirmación), Conteos (crear, aprobar, registrar ajuste, recontar, agregar renglón, corregir lote), Personal (alta y edición de empleados y practicantes), Permisos (editar por cargo, copiar de otro cargo), Cargos (crear, editar, eliminar y organigrama), Promociones (por laboratorio y reactivar), Encuestas (ciclo de aprobación, crear y capturar respuestas) y Marketing (aprobar piezas y el mes, conversación).

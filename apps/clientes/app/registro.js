@@ -5,11 +5,10 @@
 // Forma del sistema: formulario agrupado y los permisos como interruptores
 // (iOS no tiene casillas de verificación).
 import { useEffect, useState } from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from 'react-native';
 import * as Device from 'expo-device';
 import { BotonSistema, colorSistema, FilaCampo, FilaInterruptor, Formulario, Grupo } from '../componentes/sistema';
-import * as WebBrowser from 'expo-web-browser';
 import { Aviso } from '../componentes/ui';
 import { llamar } from '../lib/api';
 import { plataforma, useSesion } from '../lib/sesion';
@@ -62,8 +61,8 @@ export default function Registro() {
     <Formulario>
       <Grupo titulo="Tus datos" pie="En tu próxima compra en sala te pedimos el DUI para completar tu ficha. Desde esa compra empiezas a acumular.">
         <FilaCampo placeholder="Nombre completo" value={f.nombre} onChangeText={cambiar('nombre')} autoCapitalize="words" textContentType="name" />
-        <FilaCampo placeholder="DUI" value={f.documento} autoCapitalize="characters" autoCorrect={false}
-          keyboardType="numbers-and-punctuation"
+        <FilaCampo placeholder="DUI" value={f.documento} autoCorrect={false}
+          keyboardType="number-pad"
           onChangeText={(v) => cambiar('documento')(documentoEscrito(v))} />
         <FilaCampo placeholder="Teléfono" value={f.telefono} keyboardType="phone-pad" textContentType="telephoneNumber"
           onChangeText={(v) => cambiar('telefono')(v.replace(/[^\d ]/g, '').slice(0, 9))} />
@@ -80,14 +79,14 @@ export default function Registro() {
         <FilaInterruptor titulo="Programa de puntos" detalle={textos?.programa} valor={programa} alCambiar={setPrograma} color={t.color.magenta} />
         <FilaInterruptor titulo="Promociones" detalle={textos?.promociones} valor={promos} alCambiar={setPromos} color={t.color.magenta} />
       </Grupo>
-      {/* Antes de aceptar, que se pueda leer lo que se acepta (en la hoja de Safari, sin salir de la app). */}
+      {/* Antes de aceptar, que se pueda leer lo que se acepta, dentro de la app. */}
       <Text style={{ fontSize: 14, lineHeight: 20, color: colorSistema.texto2, marginHorizontal: 32 }}>
         Lee el{' '}
-        <Text onPress={() => WebBrowser.openBrowserAsync('https://portal.farmasalud.lat/reglamento-puntos').catch(() => {})}
-          style={{ color: t.color.magentaTexto, fontWeight: '700' }} accessibilityRole="link">reglamento del programa</Text>
+        <Text onPress={() => router.push('/legal?doc=reglamento')}
+          style={{ color: colorSistema.texto, fontWeight: '700', textDecorationLine: 'underline' }} accessibilityRole="link">reglamento del programa</Text>
         {' '}y el{' '}
-        <Text onPress={() => WebBrowser.openBrowserAsync('https://portal.farmasalud.lat/privacidad.html').catch(() => {})}
-          style={{ color: t.color.magentaTexto, fontWeight: '700' }} accessibilityRole="link">aviso de privacidad</Text>.
+        <Text onPress={() => router.push('/legal?doc=privacidad')}
+          style={{ color: colorSistema.texto, fontWeight: '700', textDecorationLine: 'underline' }} accessibilityRole="link">aviso de privacidad</Text>.
       </Text>
       {sinTextos ? (
         <Aviso tipo="aviso">No se pudieron cargar tus permisos. Revisa tu señal y{' '}

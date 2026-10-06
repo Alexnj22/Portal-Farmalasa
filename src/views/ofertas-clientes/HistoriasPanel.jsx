@@ -182,7 +182,7 @@ export default function HistoriasPanel({ busqueda, puedeEditar, showToast }) {
 function HistoriaModal({ historia, onClose, onGuardada, onError }) {
     const nueva = !historia.id;
     const [f, setF] = useState({
-        titulo: historia.titulo ?? '', texto: historia.texto ?? '', enlace: historia.enlace ?? '',
+        titulo: historia.titulo ?? '', rotulo: historia.rotulo ?? '', texto: historia.texto ?? '', enlace: historia.enlace ?? '',
         fin: historia.fin ?? '', publicada: historia.publicada ?? false, oferta_id: historia.oferta_id ?? '',
     });
     const [ofertas, setOfertas] = useState([]);
@@ -202,7 +202,7 @@ function HistoriaModal({ historia, onClose, onGuardada, onError }) {
             const destino = DESTINOS.find((d) => d.valor === f.enlace) ?? DESTINOS[0];
             await guardarHistoria(historia.id, {
                 // Duran 24 horas desde que se publican; `inicio`/`fin` sólo cumplen con la tabla.
-                titulo: f.titulo.trim(), texto: f.texto.trim() || null, imagen_path, inicio: hoySV(), fin: sumarDias(hoySV(), 1),
+                titulo: f.titulo.trim(), rotulo: f.rotulo.trim() || null, texto: f.texto.trim() || null, imagen_path, inicio: hoySV(), fin: sumarDias(hoySV(), 1),
                 enlace: destino.valor || null, boton: destino.boton, publicada: f.publicada,
                 oferta_id: f.oferta_id || null,
             });
@@ -225,6 +225,9 @@ function HistoriaModal({ historia, onClose, onGuardada, onError }) {
                         hint={historia.imagen_path && !archivo ? 'Ya tiene imagen; sube otra para reemplazarla' : 'Vertical (9:16, como un estado), hasta 3 MB'} />
                     <PortalInput label="Título" name="titulo" value={f.titulo} maxLength={60}
                         onChange={(e) => cambiar('titulo')(e.target.value)} placeholder="Ej. Semana del bebé" />
+                    <PortalInput label="Rótulo corto" name="rotulo" value={f.rotulo} maxLength={12}
+                        onChange={(e) => cambiar('rotulo')(e.target.value)} placeholder="Ej. Bebé"
+                        helperText="Va debajo del círculo en la app. Una o dos palabras; si lo dejas vacío, se usa la primera del título." />
                     <PortalTextarea label="Texto (opcional)" name="texto" rows={2} value={f.texto} maxLength={240}
                         onChange={(e) => cambiar('texto')(e.target.value)} placeholder="Una o dos líneas: se leen sobre la foto." />
                     <div>

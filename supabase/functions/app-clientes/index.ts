@@ -432,7 +432,7 @@ Deno.serve(async (req) => {
       // Duran 24 horas desde que se publican (`publicada_at` lo pone la base).
       const hace24h = new Date(Date.now() - 24 * 3600_000).toISOString();
       const { data: filas, error } = await admin.from("app_historias")
-        .select("id, titulo, texto, imagen_path, enlace, boton, inicio, fin, oferta_id, publicada_at")
+        .select("id, titulo, rotulo, texto, imagen_path, enlace, boton, inicio, fin, oferta_id, publicada_at")
         .eq("publicada", true).gte("publicada_at", hace24h)
         .order("orden", { ascending: true }).order("created_at", { ascending: false }).limit(20);
       if (error) throw error;
@@ -448,7 +448,7 @@ Deno.serve(async (req) => {
       return {
         ok: true,
         historias: todas.filter((h) => firmadas.has(h.imagen_path)).map((h) => ({
-          id: h.id, titulo: h.titulo, texto: h.texto ?? null, imagen: firmadas.get(h.imagen_path), imagen_clave: h.imagen_path,
+          id: h.id, titulo: h.titulo, rotulo: h.rotulo ?? null, texto: h.texto ?? null, imagen: firmadas.get(h.imagen_path), imagen_clave: h.imagen_path,
           enlace: h.enlace ?? null, boton: h.boton ?? null, fin: h.fin,
           // «Reservar» abre esta oferta; «Más información» va al WhatsApp de la empresa.
           oferta_id: h.oferta_id ?? null,
@@ -890,7 +890,13 @@ Deno.serve(async (req) => {
       const { data, error } = await admin.rpc("app_cliente_inyecciones", { p_customer_id: customerId });
       if (error) throw error;
       const muestras = (await muestrasDe(admin, customerId, "inyeccion")).map((m: any) => ({ ...m, id: `muestra-${m.id}` }));
-      return json({ ok: true, disponibles: conSucursal([...((data as any)?.disponibles ?? []), ...muestras]) });
+      // Y las ya aplicadas del último año (también las que trajo de otra farmacia,
+      // si la sala eligió su ficha): el control completo de sus inyecciones.
+      return json({
+        ok: true,
+        disponibles: conSucursal([...((data as any)?.disponibles ?? []), ...muestras]),
+        aplicadas: conSucursal((data as any)?.aplicadas ?? []),
+      });
     }
 
     // El enlace para agregar la tarjeta a Apple Wallet (ver el GET de arriba).

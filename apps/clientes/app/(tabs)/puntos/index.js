@@ -16,6 +16,7 @@ import Icono from '../../../componentes/Icono';
 import { useVisible } from '../../../lib/visible';
 import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '../../../componentes/animacion';
 import { useSesion } from '../../../lib/sesion';
+import { sincronizarAvisos } from '../../../lib/avisos';
 import { abrirPase, agregarPase, tienePase, walletDisponible } from '../../../modules/wallet';
 import { suave, useTema } from '../../../tema/tema';
 import { colorSistema } from '../../../componentes/sistema';
@@ -45,6 +46,11 @@ export default function Puntos() {
   // Lo cargado de más se descarta sólo con un resumen NUEVO (otra generación),
   // no cada vez que se vuelve a la pestaña.
   useEffect(() => { setMas([]); }, [generacion]);
+  // Los avisos de este teléfono: si ya los había aceptado, la sesión nueva los
+  // retoma sola (ver lib/avisos.js).
+  const acepta = resumen?.acepta_avisos;
+  const conResumen = !!resumen && !resumen.pendiente;
+  useEffect(() => { if (conResumen) sincronizarAvisos(pedir, acepta === true); }, [conResumen, acepta, pedir]);
 
   const refrescar = async () => { setRefrescando(true); await cargar({ forzar: true }); setRefrescando(false); };
 
@@ -88,7 +94,8 @@ export default function Puntos() {
   return (
     <Pantalla alRefrescar={refrescar} refrescando={refrescando}>
       <Cumpleanos activo={!!resumen.cumpleanos} forzar={cumple === '1'} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
-      <Entrada indice={0} estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+      {/* Encima de todo (zIndex): la tarjeta de abajo gira y se escala, y no puede tapar la campana. */}
+      <Entrada indice={0} estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 2 }}>
         <Texto nivel={2} estilo={{ fontSize: 17 }}>{resumen.cumpleanos ? `¡Feliz cumpleaños, ${primerNombre}!` : `Hola, ${primerNombre}`}</Texto>
         <Campana generacion={generacion} />
       </Entrada>

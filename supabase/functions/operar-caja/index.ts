@@ -1322,7 +1322,7 @@ Deno.serve(async (req) => {
        * Va DESPUÉS de las dos guardas de repetido: un reintento del mismo
        * envío tiene que contestar con lo que ya se escribió, y si cotizara
        * primero lo rechazaría por «ya no quedan» — las que pagó él mismo. */
-      type Aplicacion = { origen?: string; items?: unknown; cantidad?: number; producto?: string; aplicar_ahora?: number; cliente?: string };
+      type Aplicacion = { origen?: string; items?: unknown; cantidad?: number; producto?: string; aplicar_ahora?: number; cliente?: string; customer_id?: number };
       const aplicacion = (body.aplicacion && typeof body.aplicacion === "object") ? body.aplicacion as Aplicacion : null;
       const esAplicacion = esEntrada && !esAbono && String(body.tipo ?? "") === "APLICACION";
       /* Exigirla depende de la BANDERA del catálogo (`lleva_comprobante` de
@@ -1646,6 +1646,22 @@ Deno.serve(async (req) => {
           return json({ ok: false, error: `${errReg.message} No se movio dinero.` }, 409);
         }
         aplicaciones = reg as Record<string, unknown>;
+
+        /* La que trajo el cliente, ligada a su FICHA si la sala la eligió
+         * (2026-10-06): así entra a su historial y la ve en la app. Las
+         * compradas ya la toman de la factura. Que falle esto no deshace el
+         * cobro —el dinero y las aplicaciones ya quedaron bien—: se avisa en
+         * el registro y la aplicación queda con el nombre escrito, como antes. */
+        const fichaId = Number(aplicacion.customer_id);
+        if (aplicacion.origen === "TRAIDA" && Number.isInteger(fichaId) && fichaId > 0) {
+          const { data: ficha, error: errFicha } = await supabase.from("customers").select("id").eq("id", fichaId).maybeSingle();
+          if (errFicha) console.error(`[operar-caja] aplicacion fila=${fila.id}: ficha ${fichaId}: ${errFicha.message}`);
+          else if (ficha) {
+            const { error: errLiga } = await supabase.from("inyeccion_aplicaciones")
+              .update({ customer_id: fichaId }).eq("cobro_id", fila.id).is("customer_id", null);
+            if (errLiga) console.error(`[operar-caja] aplicacion fila=${fila.id}: ligar ficha ${fichaId}: ${errLiga.message}`);
+          }
+        }
       }
 
       // El concepto lleva el número del portal adelante: es lo único que ata

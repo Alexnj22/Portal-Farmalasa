@@ -24,6 +24,7 @@ import { fechaHora12, hora12 } from '@nucleo/utils/hora';
 import { aplicacionesPorDosis, esPorMl, fmtMl, saldoDelRenglon } from '@nucleo/utils/inyeccionDosis';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { useToastStore } from '@nucleo/store/toastStore';
+import { buscarClientes } from '@nucleo/data/customers';
 import { useStaffStore } from '@nucleo/store/staffStore';
 
 /**
@@ -116,6 +117,9 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
 
     const [aplicarAhora, setAplicarAhora] = useState(1);
     const [aNombreDe, setANombreDe] = useState('');
+    // La que trajo el cliente: su FICHA, para que quede en su historial y en su
+    // app (usuario, 2026-10-06: «siempre llevar el control»). Opcional.
+    const [ficha, setFicha] = useState(null);
     const [enviando, setEnviando] = useState(false);
 
     // ── Ya la pagó ──
@@ -257,7 +261,8 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                     origen,
                     ...(origen === 'COMPRADA' ? { items } : { producto: producto.trim(), cantidad }),
                     aplicar_ahora: Math.min(aplicarAhora, total),
-                    cliente: quedan > 0 ? aNombreDe.trim() : null,
+                    cliente: quedan > 0 ? aNombreDe.trim() : (ficha ? ficha.name : null),
+                    ...(origen === 'TRAIDA' && ficha ? { customer_id: ficha.id } : {}),
                 },
             });
         } catch (e) {
@@ -377,7 +382,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                     </p>
                 </div>
                 <SegmentedControl options={MODOS} value={modo} label="Cómo se paga" layout="block" columns={4}
-                    onChange={(m) => { setModo(m); setVentaId(null); setVentaExterna(null); setCuantas({}); setMezcla(false); }} />
+                    onChange={(m) => { setModo(m); setVentaId(null); setVentaExterna(null); setCuantas({}); setMezcla(false); setFicha(null); }} />
             </LiquidModal.Header>
             <LiquidModal.Body className="space-y-4">
                 {errorPrecios && <Notice variant="danger">{errorPrecios}</Notice>}
@@ -568,6 +573,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                             <span className="text-body-sm text-content-2">Cuántas aplicaciones se pagan</span>
                             <Contador etiqueta="aplicaciones" valor={cantidad} min={1} max={10} onChange={setCantidad} />
                         </div>
+                        <BuscarFicha ficha={ficha} onElegir={(c) => { setFicha(c); if (c) setANombreDe(c.name); }} />
                     </div>
                 )}
 
@@ -663,5 +669,64 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                 {pie}
             </LiquidModal.Footer>
         </LiquidModal>
+    );
+}
+
+/**
+ * La ficha del cliente que trajo su inyección: con ella la aplicación entra a
+ * su historial y la ve en la app de puntos. Se busca por nombre, DUI o
+ * teléfono; si no aparece, se cobra igual con el nombre escrito.
+ */
+function BuscarFicha({ ficha, onElegir }) {
+    const [texto, setTexto] = useState('');
+    const q = useTextoRebotado(texto, 300);
+    const [resultados, setResultados] = useState([]);
+    const [buscando, setBuscando] = useState(false);
+    useEffect(() => {
+        let vivo = true;
+        if (ficha || q.trim().length < 3) { setResultados([]); return undefined; } // eslint-disable-line react-hooks/set-state-in-effect -- vaciar al borrar
+        setBuscando(true);
+        buscarClientes(q, { select: 'id, name, dui, phone', limite: 6 }).then(({ data, error }) => {
+            if (!vivo) return;
+            setBuscando(false);
+            if (error) console.error('BuscarFicha: no se pudo buscar', error);
+            setResultados(data ?? []);
+        });
+        return () => { vivo = false; };
+    }, [q, ficha]);
+
+    if (ficha) {
+        return (
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2">
+                <div className="min-w-0">
+                    <p className="text-caption text-content-3">Queda en el historial de</p>
+                    <p className="text-body-sm font-semibold text-content truncate">{ficha.name}</p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => { onElegir(null); setTexto(''); }}>Cambiar</Button>
+            </div>
+        );
+    }
+    return (
+        <div className="space-y-1.5">
+            <SearchInput value={texto} onChange={setTexto} placeholder="Cliente: nombre, DUI o teléfono"
+                ariaLabel="Buscar la ficha del cliente" />
+            <p className="text-caption text-content-3">
+                Con su ficha, la aplicación queda en su historial y la ve en su app. Si no tiene, se cobra igual.
+            </p>
+            {buscando && <p className="text-caption text-content-3">Buscando…</p>}
+            {resultados.length > 0 && (
+                <ul className="rounded-lg border border-border-subtle divide-y divide-border-subtle">
+                    {resultados.map((c) => (
+                        <li key={c.id}>
+                            <button type="button" onClick={() => onElegir(c)}
+                                className="w-full text-left px-3 py-2 min-h-[var(--tap-min)] hover:bg-surface-card-hover active:scale-[0.99]">
+                                <span className="block text-body-sm font-semibold text-content truncate">{c.name}</span>
+                                <span className="block text-caption text-content-3">{[c.dui, c.phone].filter(Boolean).join(' · ') || 'Sin documento'}</span>
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
     );
 }

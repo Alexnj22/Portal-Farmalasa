@@ -1,7 +1,8 @@
-// Inyecciones: SÓLO las pendientes —las que ya pagaste y te faltan aplicar—.
-// Las aplicadas son historia de la sala; al cliente le sirve saber qué le
-// queda y dónde puede ir (en cualquier sala: el servidor no las ata a la sala
-// donde pagó). Una mezcla se muestra como una sola aplicación con sus partes.
+// Inyecciones: arriba las pendientes —las que ya pagaste y te faltan aplicar,
+// en cualquier sala—, y abajo el HISTORIAL del último año con fecha, sucursal
+// y si la compraste aquí o la trajiste (usuario, 2026-10-06: «siempre llevar
+// el control»; las traídas aparecen cuando la sala elige tu ficha al cobrar).
+// Una mezcla se muestra como una sola aplicación con sus partes.
 import { useCallback, useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
@@ -12,6 +13,7 @@ import { colorSistema } from '../../../componentes/sistema';
 import { useSesion } from '../../../lib/sesion';
 import { fecha } from '../../../lib/formato';
 import { suave, useTema } from '../../../tema/tema';
+import Icono from '../../../componentes/Icono';
 
 /** Un anillo que se expande y se desvanece detrás del número: «tienes algo pendiente». */
 function Anillo({ color }) {
@@ -59,6 +61,7 @@ export default function Inyecciones() {
   }
 
   const pendientes = datos.disponibles ?? [];
+  const aplicadas = datos.aplicadas ?? [];
   const verde = t.color.verde;
 
   return (
@@ -106,7 +109,7 @@ export default function Inyecciones() {
                   </View>
                 ))}
                 <Texto nivel={2} estilo={{ fontSize: 14 }}>
-                  Pagada el {fecha(a.pagada_at)}{a.sala ? ` en ${a.sala}` : ''}
+                  {a.origen === 'TRAIDA' ? 'La trajiste · pagada' : 'Pagada'} el {fecha(a.pagada_at)}{a.sala ? ` en ${a.sala}` : ''}
                 </Texto>
               </View>
             </Tarjeta>
@@ -114,11 +117,42 @@ export default function Inyecciones() {
         );
       })}
 
-      {pendientes.length ? (
-        <Texto nivel={3} estilo={{ fontSize: 13, textAlign: 'center', marginTop: 4 }}>
-          Si trajiste tu medicamento de otra farmacia, esa aplicación no aparece aquí.
-        </Texto>
+      {aplicadas.length ? (
+        <>
+          <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4, marginTop: 8 }}>
+            Historial
+          </Text>
+          <Tarjeta estilo={{ padding: 0, gap: 0 }}>
+            {aplicadas.map((a, i) => (
+              <View key={`${a.aplicada_at}-${i}`}>
+                {i > 0 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 58 }} /> : null}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12 }}>
+                  <View style={{ width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(verde, 0.2) }}>
+                    <Icono sf="checkmark" respaldo="✓" tam={13} color={t.color.verdeTexto} />
+                  </View>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto }} numberOfLines={2}>
+                      {partes(a.producto).map((p) => titulo(p.nombre)).join(' + ')}
+                    </Text>
+                    <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>
+                      {fecha(a.aplicada_at)}{a.sala ? ` · ${a.sala}` : ''}{a.origen === 'TRAIDA' ? ' · la trajiste' : ''}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </Tarjeta>
+        </>
       ) : null}
+
+      {/* Lo que antes era una advertencia ahora es una invitación: traída o
+          comprada, si la sala elige tu ficha, queda aquí. */}
+      <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginHorizontal: 8, marginTop: 4 }}>
+        <Icono sf="info.circle" respaldo="i" tam={15} color={colorSistema.texto3} />
+        <Texto nivel={3} estilo={{ flex: 1, fontSize: 13 }}>
+          ¿Traes tu propio medicamento? Te lo aplicamos en cualquier sucursal. Pide que lo anoten con tu DUI y también queda en tu historial.
+        </Texto>
+      </View>
     </Pantalla>
   );
 }

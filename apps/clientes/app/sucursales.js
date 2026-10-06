@@ -15,6 +15,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { Easing, FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Aviso, Cargando, Pantalla } from '../componentes/ui';
 import Icono from '../componentes/Icono';
+import IconoWhatsapp from '../componentes/IconoWhatsapp';
 import { Entrada } from '../componentes/animacion';
 import { colorSistema } from '../componentes/sistema';
 import { llamar } from '../lib/api';
@@ -101,15 +102,15 @@ function TarjetaSucursal({ s, indice }) {
 
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <Accion sf="map.fill" respaldo="🧭" texto="Cómo llegar" alTocar={() => abrir(mapa())} />
-        {s.celular ? <Accion sf="message.fill" respaldo="💬" texto="WhatsApp" alTocar={() => abrir(`https://wa.me/503${soloDigitos(s.celular)}`)} /> : null}
+        {s.celular ? <Accion icono={<IconoWhatsapp tam={21} />} texto="WhatsApp" alTocar={() => abrir(`https://wa.me/503${soloDigitos(s.celular)}`)} /> : null}
         {s.telefono || s.celular ? <Accion sf="phone.fill" respaldo="📞" texto="Llamar" alTocar={() => abrir(`tel:${soloDigitos(s.celular ?? s.telefono)}`)} /> : null}
       </View>
 
       <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta((x) => !x); }} accessibilityRole="button"
         style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={{ fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>Horario de la semana</Text>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>Horario de la semana</Text>
         <Animated.View style={giro}>
-          <Icono sf="chevron.down" respaldo="▼" tam={14} color={t.color.magentaTexto} />
+          <Icono sf="chevron.down" respaldo="▼" tam={14} color={colorSistema.texto2} />
         </Animated.View>
       </Pressable>
       {abierta ? (
@@ -143,7 +144,7 @@ function Estado({ abierta }) {
   );
 }
 
-function Accion({ sf, respaldo, texto, alTocar }) {
+function Accion({ sf, respaldo, icono, texto, alTocar }) {
   const t = useTema();
   return (
     <Pressable onPress={alTocar} accessibilityRole="button" accessibilityLabel={texto}
@@ -151,7 +152,7 @@ function Accion({ sf, respaldo, texto, alTocar }) {
         flex: 1, minHeight: 60, borderRadius: 16, alignItems: 'center', justifyContent: 'center', gap: 5,
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', transform: [{ scale: pressed ? 0.96 : 1 }],
       })}>
-      <Icono sf={sf} respaldo={respaldo} tam={20} color={t.color.magentaTexto} />
+      {icono ?? <Icono sf={sf} respaldo={respaldo} tam={20} color={colorSistema.texto} />}
       <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto }}>{texto}</Text>
     </Pressable>
   );

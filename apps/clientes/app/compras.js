@@ -5,14 +5,15 @@
 import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import Animated, { LinearTransition } from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Vacio } from '../componentes/ui';
-import { Entrada, Tocable } from '../componentes/animacion';
+import { Tocable } from '../componentes/animacion';
 import { Pildora } from '../componentes/TarjetaOferta';
 import { colorSistema } from '../componentes/sistema';
 import { useSesion } from '../lib/sesion';
 import { dolares, entero, fecha } from '../lib/formato';
 import { useTema } from '../tema/tema';
+import Icono from '../componentes/Icono';
 
 const hora12 = (h) => {
   const m = /^(\d{1,2}):(\d{2})/.exec(String(h ?? ''));
@@ -43,12 +44,14 @@ export default function Compras() {
   return (
     <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
       <Texto nivel={2} estilo={{ fontSize: 14, marginHorizontal: 4 }}>Tus últimas 5 compras.</Texto>
-      {datos.compras.map((c, i) => (
-        <Entrada key={c.id} indice={i}>
-          <Tocable etiqueta={`Compra en ${c.sala}, ${c.total} dólares`} alTocar={() => setAbierta(abierta === c.id ? null : c.id)}>
-            <Compra compra={c} abierta={abierta === c.id} />
-          </Tocable>
-        </Entrada>
+      {/* Sin animación de entrada ni de layout: el vidrio de iOS 26 no siempre
+          se dibuja si nace dentro de una vista que se está animando, y algunas
+          tarjetas quedaban TRANSPARENTES (usuario, 2026-10-06). Lo que se
+          despliega aparece con un fundido, y eso sí no toca el vidrio. */}
+      {datos.compras.map((c) => (
+        <Tocable key={c.id} etiqueta={`Compra en ${c.sala}, ${c.total} dólares`} alTocar={() => setAbierta(abierta === c.id ? null : c.id)}>
+          <Compra compra={c} abierta={abierta === c.id} />
+        </Tocable>
       ))}
     </Pantalla>
   );
@@ -58,8 +61,7 @@ function Compra({ compra: c, abierta }) {
   const t = useTema();
   const inyecciones = (c.productos ?? []).filter((p) => p.inyectable).length;
   return (
-    <Animated.View layout={LinearTransition.springify().damping(20)}>
-      <Tarjeta>
+    <Tarjeta>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>{c.sala}</Text>
@@ -73,23 +75,22 @@ function Compra({ compra: c, abierta }) {
           {inyecciones ? <Pildora color={t.color.magenta} texto={inyecciones === 1 ? '1 inyección' : `${inyecciones} inyecciones`} /> : null}
         </View>
         {abierta ? (
-          <View style={{ gap: 8, marginTop: 6, paddingTop: 10, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
+          <Animated.View entering={FadeIn.duration(180)} style={{ gap: 8, marginTop: 6, paddingTop: 10, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
             {(c.productos ?? []).map((p, i) => (
               <View key={i} style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
                 <Text style={{ width: 28, fontSize: 15, color: colorSistema.texto2, fontVariant: ['tabular-nums'] }}>{Number(p.cantidad)}×</Text>
                 <Text style={{ flex: 1, fontSize: 15, color: colorSistema.texto }} numberOfLines={2}>{p.descripcion}</Text>
-                {p.inyectable ? <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.magentaTexto }}>Inyección</Text> : null}
+                {p.inyectable ? <Icono sf="syringe.fill" respaldo="" tam={13} color={t.color.verdeTexto} /> : null}
                 <Text style={{ fontSize: 15, color: colorSistema.texto2, fontVariant: ['tabular-nums'] }}>{dolares(p.total)}</Text>
               </View>
             ))}
             <Texto nivel={3} estilo={{ fontSize: 13 }}>Factura {c.correlativo}</Texto>
-          </View>
+          </Animated.View>
         ) : (
           <Texto nivel={3} estilo={{ fontSize: 13 }}>
             {(c.productos ?? []).length} {(c.productos ?? []).length === 1 ? 'producto' : 'productos'} · toca para ver
           </Texto>
         )}
-      </Tarjeta>
-    </Animated.View>
+    </Tarjeta>
   );
 }

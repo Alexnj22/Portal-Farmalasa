@@ -2,30 +2,35 @@
 // (Apple lo exige dentro de la app, 5.1.1(v)). Forma de Ajustes: grupos con
 // interruptores del sistema y acciones en filas, la destructiva en rojo.
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Linking, Pressable, Text } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { colorSistema, FilaInterruptor, FilaTexto, Formulario, Grupo } from '../../../componentes/sistema';
 import { Aviso } from '../../../componentes/ui';
 import { useSesion } from '../../../lib/sesion';
 import { useCuenta } from '../../../lib/cuenta';
-import { pedirTokenDeAvisos } from '../../../lib/avisos';
-import * as WebBrowser from 'expo-web-browser';
+import { pedirTokenDeAvisos, recordarAvisos } from '../../../lib/avisos';
 import { abrirPase, agregarPase, tienePase, walletDisponible } from '../../../modules/wallet';
 import { nombreBiometria, useBloqueo } from '../../../lib/bloqueo';
+import { olvidarEntrada } from '../../../lib/entradaGuardada';
 import { nombrePropio } from '../../../lib/formato';
 import { useTema } from '../../../tema/tema';
+import Icono from '../../../componentes/Icono';
 
-const REGLAMENTO = 'https://portal.farmasalud.lat/reglamento-puntos';
-// Apple pide el enlace a la política de privacidad DENTRO de la app (5.1.1(i)):
-// la app pide el DUI, que es un dato sensible.
-const PRIVACIDAD = 'https://portal.farmasalud.lat/privacidad.html';
 
-/** Una fila que se toca, como «Cerrar sesión» en Ajustes. */
-function FilaAccion({ texto, color, alTocar }) {
+/**
+ * Una fila que se toca, como en Ajustes: ícono, texto en el color del sistema
+ * y la flecha si lleva a otra pantalla. Sin el rosa de la marca en el texto
+ * (usuario, 2026-10-06: «la letra rosa no me gusta»); el rojo sólo en lo
+ * destructivo.
+ */
+function FilaAccion({ texto, sf, color, flecha = true, alTocar }) {
   return (
     <Pressable accessibilityRole="button" onPress={alTocar}
-      style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
-      <FilaTexto color={color}>{texto}</FilaTexto>
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingLeft: sf ? 16 : 0, paddingRight: 16,
+        backgroundColor: pressed ? colorSistema.separador : 'transparent' })}>
+      {sf ? <Icono sf={sf} respaldo="" tam={18} color={color ?? colorSistema.texto2} /> : null}
+      <View style={{ flex: 1 }}><FilaTexto color={color}>{texto}</FilaTexto></View>
+      {flecha && !color ? <Icono sf="chevron.right" respaldo="›" tam={13} color={colorSistema.texto3} /> : null}
     </Pressable>
   );
 }
@@ -101,6 +106,7 @@ export default function Cuenta() {
     setLocal((x) => ({ ...x, avisos: valor }));
     const r = await pedir('avisos', { acepta: valor, push_token });
     if (!r?.ok) setMensaje(r?.mensaje ?? 'No se pudo guardar.');
+    else await recordarAvisos(valor);
     await cargar({ forzar: true });
     setLocal((x) => { const { avisos: _, ...resto } = x; return resto; });
     setGuardando(null);
@@ -129,7 +135,7 @@ export default function Cuenta() {
 
   async function confirmarBorrado() {
     const r = await pedir('borrar_cuenta');
-    if (r?.ok) await cerrar();
+    if (r?.ok) { await olvidarEntrada(); await cerrar(); }
     else Alert.alert('No se pudo borrar la cuenta', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
   }
 
@@ -168,25 +174,25 @@ export default function Cuenta() {
 
       <Grupo>
         {resumen && !resumen.pendiente ? (
-          <FilaAccion texto="Invitar a un amigo · 50 puntos" color={t.color.magentaTexto} alTocar={() => router.push('/invitar')} />
+          <FilaAccion sf="person.2.fill" texto="Invitar a un amigo · 50 puntos" alTocar={() => router.push('/invitar')} />
         ) : null}
         {resumen && !resumen.pendiente ? (
-          <FilaAccion texto="Mis reservas" color={t.color.magentaTexto} alTocar={() => router.push('/reservas')} />
+          <FilaAccion sf="bag.fill" texto="Mis reservas" alTocar={() => router.push('/reservas')} />
         ) : null}
-        <FilaAccion texto="Nuestras sucursales" color={t.color.magentaTexto} alTocar={() => router.push('/sucursales')} />
+        <FilaAccion sf="mappin.and.ellipse" texto="Nuestras sucursales" alTocar={() => router.push('/sucursales')} />
         {resumen?.wallet_serial && walletDisponible() ? (
-          <FilaAccion texto={enWallet ? 'Ver mi tarjeta en Apple Wallet' : 'Agregar mi tarjeta a Apple Wallet'}
-            color={t.color.magentaTexto} alTocar={wallet} />
+          <FilaAccion sf="wallet.pass.fill" texto={enWallet ? 'Ver mi tarjeta en Apple Wallet' : 'Agregar mi tarjeta a Apple Wallet'}
+            alTocar={wallet} />
         ) : null}
       </Grupo>
 
       <Grupo>
-        <FilaAccion texto="Reglamento del programa" color={t.color.magentaTexto} alTocar={() => WebBrowser.openBrowserAsync(REGLAMENTO).catch(() => {})} />
-        <FilaAccion texto="Aviso de privacidad" color={t.color.magentaTexto} alTocar={() => WebBrowser.openBrowserAsync(PRIVACIDAD).catch(() => {})} />
+        <FilaAccion sf="doc.text.fill" texto="Reglamento del programa" alTocar={() => router.push('/legal?doc=reglamento')} />
+        <FilaAccion sf="hand.raised.fill" texto="Aviso de privacidad" alTocar={() => router.push('/legal?doc=privacidad')} />
       </Grupo>
 
       <Grupo>
-        <FilaAccion texto="Cerrar sesión" color={t.color.magentaTexto} alTocar={salir} />
+        <FilaAccion texto="Cerrar sesión" flecha={false} alTocar={salir} />
         <FilaAccion texto="Borrar mi cuenta" color={colorSistema.rojo} alTocar={borrar} />
       </Grupo>
     </Formulario>

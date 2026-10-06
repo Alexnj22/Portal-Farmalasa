@@ -143,7 +143,7 @@ export async function fetchOfertaDeDescuento(descuentoId) {
 
 export async function fetchHistorias() {
     const filas = sinError(await supabase.from('app_historias')
-        .select('id, titulo, texto, imagen_path, enlace, boton, inicio, fin, publicada, orden, updated_at, oferta_id, publicada_at')
+        .select('id, titulo, rotulo, texto, imagen_path, enlace, boton, inicio, fin, publicada, orden, updated_at, oferta_id, publicada_at')
         .order('updated_at', { ascending: false })
         .limit(200));
     const rutas = filas.map((f) => f.imagen_path).filter(Boolean);
@@ -157,7 +157,7 @@ export async function fetchHistorias() {
     return filas.map((f) => ({ ...f, imagen_url: porRuta.get(f.imagen_path) ?? null }));
 }
 
-const CAMPOS_HISTORIA = ['titulo', 'texto', 'imagen_path', 'enlace', 'boton', 'inicio', 'fin', 'publicada', 'orden', 'oferta_id'];
+const CAMPOS_HISTORIA = ['titulo', 'rotulo', 'texto', 'imagen_path', 'enlace', 'boton', 'inicio', 'fin', 'publicada', 'orden', 'oferta_id'];
 
 /** Por historia: cuántos la vieron (con cuenta y visitantes) y cuántos tocaron un botón. */
 export async function fetchVistasHistorias() {

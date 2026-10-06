@@ -137,7 +137,8 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
       opacity: entrada.value,
       transform: [
         { perspective: 1000 },
-        { translateY: (1 - entrada.value) * 16 - medio * 10 },
+        // Sin levantarla al girar: subía 10 pt y tapaba lo de arriba (la campana).
+        { translateY: (1 - entrada.value) * 16 },
         { rotateX: `${-y.value * 12}deg` },
         { rotateY: `${x.value * 14}deg` },
         { scale: (0.97 + entrada.value * 0.03) * (1 - medio * 0.06) },

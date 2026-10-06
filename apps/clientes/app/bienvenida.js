@@ -1,7 +1,8 @@
 // La primera pantalla de quien no tiene sesión. Dice qué trae la app en tres
 // renglones y las dos reglas del programa —las mismas del afiche de la
 // vitrina: verde lo que se gana, magenta lo que se usa—.
-import { Image, ScrollView, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, Text, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useSesion } from '../lib/sesion';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -60,6 +61,13 @@ export default function Bienvenida() {
           })}
         </Tarjeta>
 
+        {/* Sin cuenta también se puede mirar: ofertas y sucursales, bien
+            visibles (antes eran dos enlaces chicos al pie). */}
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <Mirar sf="tag.fill" titulo="Ver ofertas" detalle="Las de esta semana" alTocar={() => router.push('/vitrina')} />
+          <Mirar sf="mappin.and.ellipse" titulo="Sucursales" detalle="Horarios y cómo llegar" alTocar={() => router.push('/sucursales')} />
+        </View>
+
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <Regla color={t.color.verde} texto={t.color.verdeTexto} grande="$1" chico="de compra = 1 punto" />
           <Regla color={t.color.magenta} texto={t.color.magentaTexto} grande="100 pts" chico="= $1 de descuento" />
@@ -70,12 +78,7 @@ export default function Bienvenida() {
         {motivo === 'vencida' ? <Texto nivel={2} estilo={{ textAlign: 'center' }}>Tu sesión terminó. Vuelve a entrar para ver tus puntos.</Texto> : null}
         <Boton alTocar={() => router.push('/entrar')}>Ya soy cliente</Boton>
         <Boton tipo="secundario" alTocar={() => router.push('/registro')}>Quiero unirme</Boton>
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 28, marginTop: 4 }}>
-          <Text onPress={() => router.push('/vitrina')} accessibilityRole="link"
-            style={{ fontSize: 16, fontWeight: '700', color: t.color.magentaTexto, paddingVertical: 12 }}>Ver ofertas</Text>
-          <Text onPress={() => router.push('/sucursales')} accessibilityRole="link"
-            style={{ fontSize: 16, fontWeight: '700', color: t.color.magentaTexto, paddingVertical: 12 }}>Sucursales</Text>
-        </View>
+
       </View>
     </ScrollView>
   );
@@ -91,5 +94,28 @@ function Regla({ color, texto, grande, chico }) {
       <Text style={{ fontSize: 22, fontWeight: '800', color: texto }}>{grande}</Text>
       <Text style={{ fontSize: 13, fontWeight: '600', color: texto }}>{chico}</Text>
     </View>
+  );
+}
+
+// Un acceso para mirar sin cuenta: vidrio, ícono y una línea de qué hay.
+function Mirar({ sf, titulo, detalle, alTocar }) {
+  const t = useTema();
+  return (
+    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} accessibilityRole="button" accessibilityLabel={titulo}
+      style={({ pressed }) => ({ flex: 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+      <Tarjeta estilo={{ gap: 10, paddingVertical: 16 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ width: 38, height: 38, borderRadius: 11, alignItems: 'center', justifyContent: 'center',
+            backgroundColor: suave(t.color.magenta, t.oscuro ? 0.28 : 0.14) }}>
+            <Icono sf={sf} respaldo="" tam={18} color={t.color.magentaTexto} />
+          </View>
+          <Icono sf="chevron.right" respaldo="›" tam={13} color={colorSistema.texto3} />
+        </View>
+        <View style={{ gap: 1 }}>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: colorSistema.texto }}>{titulo}</Text>
+          <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>{detalle}</Text>
+        </View>
+      </Tarjeta>
+    </Pressable>
   );
 }

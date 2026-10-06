@@ -3,6 +3,7 @@
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
+import { olvidarSincronizacion } from './avisos';
 import { llamar } from './api';
 
 const CLAVE = 'puntos_salud_sesion';
@@ -40,6 +41,7 @@ export const useSesion = create((set, get) => ({
 
   abrir: async (token) => {
     await almacen.guardar(token);
+    olvidarSincronizacion(); // la sesión nueva retoma los avisos del teléfono
     set({ token, lista: true, motivoCierre: null });
   },
 

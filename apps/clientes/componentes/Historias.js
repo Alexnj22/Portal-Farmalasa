@@ -27,6 +27,7 @@ import { llamar } from '../lib/api';
 import { idDispositivo } from '../lib/dispositivo';
 import { useTema } from '../tema/tema';
 import Icono from './Icono';
+import IconoWhatsapp from './IconoWhatsapp';
 
 const CLAVE = 'puntos_salud_historias_vistas';
 const DURACION = 6000;
@@ -89,7 +90,10 @@ export default function Historias({ generacion = 0 }) {
                   <ImagenCache source={{ uri: h.imagen, cacheKey: h.imagen_clave ?? undefined }} cachePolicy="memory-disk" transition={150} style={{ width: 64, height: 64, borderRadius: 32 }} />
                 </View>
               </LinearGradient>
-              <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: vista ? '500' : '700', color: vista ? colorSistema.texto3 : colorSistema.texto }}>{h.titulo}</Text>
+              {/* El rótulo corto (o la primera palabra): el título entero no cabía. */}
+              <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={{ fontSize: 12, fontWeight: vista ? '500' : '700', color: vista ? colorSistema.texto3 : colorSistema.texto }}>
+                {h.rotulo || String(h.titulo ?? '').split(/\s+/)[0]}
+              </Text>
             </Pressable>
           );
         })}
@@ -210,7 +214,7 @@ function Visor({ historias, inicio, alVer, alTocarBoton, alCerrar }) {
                       cerrar(); setTimeout(() => router.push(destino), 250);
                     }} />
                 ) : null}
-                <BotonHistoria sf="message.fill" texto="Más información"
+                <BotonHistoria icono={<IconoWhatsapp tam={18} color="#FFFFFF" />} texto="Más información"
                   alTocar={() => {
                     alTocarBoton?.(h.id);
                     pausar();
@@ -229,7 +233,7 @@ function Visor({ historias, inicio, alVer, alTocarBoton, alCerrar }) {
 // El WhatsApp de la empresa: lo manda el servidor; éste es el de respaldo.
 let whatsapp = '50323010013';
 
-function BotonHistoria({ principal, sf, texto, alTocar }) {
+function BotonHistoria({ principal, sf, icono, texto, alTocar }) {
   return (
     <Pressable onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); alTocar(); }}
       accessibilityRole="button" accessibilityLabel={texto}
@@ -238,7 +242,7 @@ function BotonHistoria({ principal, sf, texto, alTocar }) {
         backgroundColor: principal ? '#FFFFFF' : 'rgba(255,255,255,0.18)',
         borderWidth: principal ? 0 : 1, borderColor: 'rgba(255,255,255,0.45)', transform: [{ scale: pressed ? 0.97 : 1 }],
       })}>
-      <Icono sf={sf} respaldo="" tam={17} color={principal ? '#2B0B3A' : '#FFFFFF'} />
+      {icono ?? <Icono sf={sf} respaldo="" tam={17} color={principal ? '#2B0B3A' : '#FFFFFF'} />}
       <Text maxFontSizeMultiplier={1.3} style={{ color: principal ? '#2B0B3A' : '#FFFFFF', fontSize: 17, fontWeight: '800' }}>{texto}</Text>
     </Pressable>
   );

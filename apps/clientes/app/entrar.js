@@ -1,7 +1,7 @@
 // Entrar: con los dos datos de la ficha (documento + teléfono) o con el código
 // de 7 letras del ticket. La forma es la del sistema: control segmentado,
 // formulario agrupado como Ajustes y el botón nativo (ver componentes/sistema.js).
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import * as Device from 'expo-device';
 import Segmentos from '../componentes/Segmentos';
@@ -11,6 +11,7 @@ import { llamar } from '../lib/api';
 import { plataforma, useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
 import { documentoEscrito } from '../lib/formato';
+import { datosConBiometria, entradaDisponible, guardarEntrada, olvidarEntrada } from '../lib/entradaGuardada';
 
 // El alfabeto del código no tiene letras ni números que se confundan
 // (sin O/0, I/1, S/5…), igual que el que emite la sala.
@@ -30,23 +31,44 @@ export default function Entrar() {
   // La sesión terminó sola (venció o se cerró en el servidor): se dice por qué.
   const motivo = useSesion((s) => s.motivoCierre);
   const [enviando, setEnviando] = useState(false);
+  // Entrar con Face ID: si ya entró antes en este teléfono.
+  const [rapida, setRapida] = useState(null);
+  // Y se ofrece sola al abrir la pantalla, una vez: es lo que se espera del gesto.
+  const ofrecida = useRef(false);
+  useEffect(() => { entradaDisponible().then(setRapida); }, []);
+  useEffect(() => {
+    if (rapida && !ofrecida.current && !delQr) { ofrecida.current = true; entrarRapido(); }
+  }, [rapida]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const listo = modo === 'codigo'
     ? codigo.length === 7
     : documento.replace(/[^A-Za-z0-9]/g, '').length >= 7 && telefono.replace(/\D/g, '').length >= 8;
 
-  async function entrar() {
-    if (!listo || enviando) return;
+  async function entrarCon(datos) {
     setError(null);
     setEnviando(true);
-    const r = await llamar('entrar', {
-      documento: modo === 'codigo' ? codigo : documento,
-      telefono: modo === 'codigo' ? '' : telefono,
-      plataforma, dispositivo: Device.modelName ?? null,
-    });
+    const r = await llamar('entrar', { ...datos, plataforma, dispositivo: Device.modelName ?? null });
     setEnviando(false);
-    if (r?.ok && r.token) await abrir(r.token);
-    else setError(r?.mensaje ?? 'No se pudo entrar.');
+    if (r?.ok && r.token) {
+      await guardarEntrada(datos);
+      await abrir(r.token);
+      return true;
+    }
+    setError(r?.mensaje ?? 'No se pudo entrar.');
+    return false;
+  }
+
+  async function entrar() {
+    if (!listo || enviando) return;
+    await entrarCon({ documento: modo === 'codigo' ? codigo : documento, telefono: modo === 'codigo' ? '' : telefono });
+  }
+
+  async function entrarRapido() {
+    if (enviando || !rapida) return;
+    const datos = await datosConBiometria(rapida.biometria);
+    if (!datos) return;
+    // Si el servidor ya no reconoce esos datos, se olvidan: la próxima vez se escriben.
+    if (!(await entrarCon(datos))) { await olvidarEntrada(); setRapida(null); }
   }
 
   return (
@@ -57,13 +79,16 @@ export default function Entrar() {
         opciones={[{ valor: 'dui', rotulo: 'DUI y teléfono' }, { valor: 'codigo', rotulo: 'Código del ticket' }]}
       />
       {motivo === 'vencida' ? <Aviso tipo="aviso">Tu sesión terminó. Vuelve a entrar para ver tus puntos.</Aviso> : null}
+      {rapida ? (
+        <BotonSistema etiqueta={enviando ? 'Entrando…' : `Entrar con ${rapida.biometria}`} alTocar={entrarRapido}
+          deshabilitado={enviando} color={t.color.magenta} />
+      ) : null}
       {modo === 'dui' ? (
-        <Grupo pie="Los dos datos que dejaste en tu ficha. Si te registraste con NIT o pasaporte, escríbelo en lugar del DUI.">
+        <Grupo pie="Los dos datos que dejaste en tu ficha. Sólo números: el guion se pone solo. Si te registraste con NIT, escríbelo en lugar del DUI.">
           <FilaCampo
             placeholder="DUI"
-            keyboardType="numbers-and-punctuation"
+            keyboardType="number-pad"
             autoCorrect={false}
-            autoCapitalize="characters"
             value={documento}
             onChangeText={(v) => setDocumento(documentoEscrito(v))}
             returnKeyType="next"

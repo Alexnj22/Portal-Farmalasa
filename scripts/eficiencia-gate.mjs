@@ -125,6 +125,14 @@ function techoDeclarado(d, filas, horas) {
  * gate lo dice con el número viejo y el nuevo a la vista. */
 const CRONS = [
   {
+    job: 'wallet-pases-minuto', slug: 'wallet-pases', cadencia: '* * * * *',
+    corridasDia: 1440, sistema: 0,
+    motivo: 'La tarjeta de Wallet que se actualiza sola: cada minuto busca tarjetas cuyo saldo '
+          + 'cambió y le avisa a Apple (APNs). El propio cron sólo dispara si hay ALGÚN teléfono '
+          + 'registrado (`WHERE EXISTS`), y la función sale enseguida si nada cambió. No habla con '
+          + 'el ERP; APNs es gratis.',
+  },
+  {
     job: 'avisos-clientes-minuto', slug: 'avisos-clientes', cadencia: '* 14-23,0-1 * * *',
     corridasDia: 720, sistema: 0,
     motivo: 'Avisos INMEDIATOS de la app de clientes: puntos ganados y oferta nueva, cada minuto '

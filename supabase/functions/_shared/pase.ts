@@ -13,8 +13,7 @@
 //
 // Qué lleva: el QR con la MISMA dirección que el ticket y la tarjeta de la app
 // (`/mis-puntos?codigo=`), el saldo en dólares al frente, los puntos y el
-// nombre. Es una FOTO del momento: para ver el saldo nuevo se vuelve a agregar
-// desde la app (la actualización automática pide un servicio aparte).
+// nombre. Se ACTUALIZA SOLA: `wallet-pases` es el servicio web de PassKit.
 import forge from "npm:node-forge@1.3.1";
 import { zipSync } from "npm:fflate@0.8.2";
 import { IMAGENES_PASE } from "./imagenesPase.ts";
@@ -52,7 +51,11 @@ const aBinario = (b: Uint8Array) => {
 };
 const pem = (b64: string) => new TextDecoder().decode(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)));
 
-export function armarPase(d: DatosPase): Uint8Array {
+export const TIPO_PASE = PASS_TYPE;
+export const serialDe = (customerId: number) => `socio-${customerId}`;
+export const clienteDelSerial = (serial: string) => Number(String(serial).replace(/^socio-/, "")) || null;
+
+export async function armarPase(d: DatosPase): Promise<Uint8Array> {
   const certB64 = Deno.env.get("WALLET_CERT_B64"), keyB64 = Deno.env.get("WALLET_KEY_B64"), wwdrB64 = Deno.env.get("WALLET_WWDR_B64");
   if (!certB64 || !keyB64 || !wwdrB64) throw new Error("faltan los certificados de Wallet");
 
@@ -61,7 +64,11 @@ export function armarPase(d: DatosPase): Uint8Array {
     formatVersion: 1,
     passTypeIdentifier: PASS_TYPE,
     teamIdentifier: EQUIPO,
-    serialNumber: `socio-${d.customerId}`,
+    serialNumber: serialDe(d.customerId),
+    // Servicio web de PassKit (`wallet-pases`): el iPhone se registra al
+    // agregarla y baja la versión nueva cuando cambian los puntos.
+    webServiceURL: `${Deno.env.get("SUPABASE_URL")}/functions/v1/wallet-pases`,
+    authenticationToken: await tokenDePase(serialDe(d.customerId)),
     organizationName: "Farmacia Salud",
     description: "Tarjeta de socio Puntos Salud",
     logoText: "Puntos Salud",
@@ -73,14 +80,16 @@ export function armarPase(d: DatosPase): Uint8Array {
     backgroundColor: "rgb(52, 14, 66)",
     storeCard: {
       headerFields: [{ key: "puntos", label: "PUNTOS", value: Math.round(d.saldo), textAlignment: "PKTextAlignmentRight" }],
-      primaryFields: [{ key: "saldo", label: "SALDO PARA DESCONTAR", value: d.equivale, currencyCode: "USD" }],
+      primaryFields: [{ key: "saldo", label: "SALDO PARA DESCONTAR", value: d.equivale, currencyCode: "USD",
+        // Lo que dice la pantalla bloqueada cuando la tarjeta se actualiza.
+        changeMessage: "Tu saldo de Puntos Salud ahora es %@" }],
       secondaryFields: [
         { key: "nombre", label: "SOCIO", value: corto(d.nombre) },
         { key: "desde", label: "DESDE", value: desde(d.socioDesde), textAlignment: "PKTextAlignmentRight" },
       ],
       backFields: [
         { key: "como", label: "Cómo se usa", value: "Muestra el código en caja: acumulas en cada compra y canjeas desde 100 puntos ($1)." },
-        { key: "foto", label: "Saldo", value: "El saldo de esta tarjeta es el del día en que la agregaste. El actualizado siempre está en la app Puntos Salud." },
+        { key: "foto", label: "Saldo", value: "Se actualiza solo cada vez que ganas o usas puntos." },
         { key: "codigo", label: "Tu código", value: d.codigo ?? "—" },
         { key: "reglamento", label: "Reglamento", value: "https://portal.farmasalud.lat/reglamento-puntos" },
       ],
@@ -135,6 +144,11 @@ async function hmac(texto: string): Promise<string> {
   return btoa(String.fromCharCode(...new Uint8Array(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
+/** El token con que el iPhone se presenta ante `wallet-pases` («ApplePass …»). Sin tabla: se deriva del serial. */
+export async function tokenDePase(serial: string): Promise<string> {
+  return await hmac(`pase:${serial}`);
+}
+
 export async function enlaceDePase(customerId: number): Promise<string> {
   const vence = Math.floor(Date.now() / 1000) + 600;
   const cuerpo = `${customerId}.${vence}`;
@@ -147,4 +161,23 @@ export async function clienteDelEnlace(token: string): Promise<number | null> {
   if (Number(vence) < Date.now() / 1000) return null;
   if ((await hmac(`${id}.${vence}`)) !== firma) return null;
   return Number(id) || null;
+}
+
+/** La tarjeta de una ficha, leyendo sus datos (la usan `app-clientes` y `wallet-pases`). */
+// deno-lint-ignore no-explicit-any
+export async function paseDeCliente(admin: any, id: number): Promise<{ pase: Uint8Array; cambio: string | null }> {
+  const [{ data: c, error: eC }, { data: est, error: eE }, { data: cod, error: eK }, { data: pri, error: eP }, { data: cta, error: eT }] = await Promise.all([
+    admin.from("customers").select("name").eq("id", id).maybeSingle(),
+    admin.rpc("puntos_estado_cuenta", { p_customer_id: id }),
+    admin.from("puntos_codigo_acceso").select("codigo").eq("customer_id", id).maybeSingle(),
+    admin.from("puntos_lote").select("ganado_el").eq("customer_id", id).order("ganado_el", { ascending: true }).limit(1).maybeSingle(),
+    admin.from("puntos_cuenta").select("updated_at").eq("customer_id", id).maybeSingle(),
+  ]);
+  if (eC) throw eC; if (eE) throw eE; if (eK) throw eK; if (eP) throw eP; if (eT) throw eT;
+  const saldo = Number(est?.saldo ?? 0);
+  const pase = await armarPase({
+    customerId: id, nombre: c?.name ?? "", saldo, equivale: Math.round(saldo) / 100,
+    codigo: cod?.codigo ?? null, socioDesde: pri?.ganado_el ?? null,
+  });
+  return { pase, cambio: cta?.updated_at ?? null };
 }

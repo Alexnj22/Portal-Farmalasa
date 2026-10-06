@@ -30,7 +30,7 @@
 // aviso al teléfono, su sesión.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { TEXTOS_CONSENTIMIENTO as TEXTOS } from "../_shared/consentimientoPuntos.ts";
-import { armarPase, clienteDelEnlace, enlaceDePase } from "../_shared/pase.ts";
+import { clienteDelEnlace, enlaceDePase, paseDeCliente } from "../_shared/pase.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -117,20 +117,8 @@ Deno.serve(async (req) => {
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
   // La tarjeta de Wallet de una ficha, firmada (ver `_shared/pase.ts`).
-  const paseDe = async (id: number) => {
-      const [{ data: c, error: eC }, { data: est, error: eE }, { data: cod, error: eK }, { data: pri, error: eP }] = await Promise.all([
-        admin.from("customers").select("name").eq("id", id).maybeSingle(),
-        admin.rpc("puntos_estado_cuenta", { p_customer_id: id }),
-        admin.from("puntos_codigo_acceso").select("codigo").eq("customer_id", id).maybeSingle(),
-        admin.from("puntos_lote").select("ganado_el").eq("customer_id", id).order("ganado_el", { ascending: true }).limit(1).maybeSingle(),
-      ]);
-      if (eC) throw eC; if (eE) throw eE; if (eK) throw eK; if (eP) throw eP;
-      const saldo = Number(est?.saldo ?? 0);
-      return armarPase({
-        customerId: id, nombre: c?.name ?? "", saldo, equivale: Math.round(saldo) / 100,
-        codigo: cod?.codigo ?? null, socioDesde: pri?.ganado_el ?? null,
-      });
-  };
+  const paseDe = async (id: number) => (await paseDeCliente(admin, id)).pase;
+
 
   if (enlaceWallet) {
     try {

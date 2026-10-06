@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1226.4 — Wallet: la tarjeta se actualiza sola
+
+- **`wallet-pases`, servicio web de PassKit:** el pase lleva `webServiceURL` y un `authenticationToken` por tarjeta (HMAC del serial, sin tabla). El iPhone se registra al agregarla (`wallet_registros`), pregunta qué cambió y baja la tarjeta nueva.
+- **Aviso a Apple:** cron `wallet-pases-minuto` (sólo si hay teléfonos registrados) busca tarjetas cuyo `puntos_cuenta.updated_at` pasó a su `notificado_at` y manda el aviso por APNs con el certificado del pase (HTTP/2, `Deno.createHttpClient`). Probado: APNs aceptó el certificado (respondió `BadDeviceToken` a un token falso, que se borró solo). La pantalla bloqueada dice «Tu saldo de Puntos Salud ahora es $X».
+- La tarjeta ya agregada antes de este cambio no tiene el servicio: hay que quitarla y agregarla de nuevo una vez.
+
 ## v2.1226.3 — Wallet: tarjeta con franja y hoja nativa de Apple
 
 Revisión del usuario en TestFlight (2026-10-06):

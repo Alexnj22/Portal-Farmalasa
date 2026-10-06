@@ -203,6 +203,10 @@
       "guarda": "sin-sala",
       "motivo": "Proxy de mapas."
     },
+    "wallet-pases": {
+      "guarda": "publica",
+      "motivo": "Servicio web de PassKit: lo llama el iPhone, no una sesión. Cada tarjeta se presenta con «ApplePass <token>», un HMAC del serial con secreto del servidor: sin él, 401. La ficha sale del serial firmado, nunca del cuerpo. `/avisar` exige x-cron-secret."
+    },
     "avisos-clientes": {
       "guarda": "cron",
       "motivo": "Avisos al teléfono de los clientes: lo llama sólo el cron `avisos-clientes-15min` con x-cron-secret; no recibe sala ni ficha del cuerpo (salvo la prueba de cumpleaños, que también exige el secreto)."

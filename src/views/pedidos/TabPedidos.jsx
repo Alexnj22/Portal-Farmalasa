@@ -21,9 +21,10 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import SegmentedControl from '../../components/common/SegmentedControl';
-import SucPill from './tabpedidos/SucPill';
+import { ERP_NAMES } from '@nucleo/constants/erp';
 import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, estadoDeLaSala, claveParada, puedePrepararse, puedeDespacharse, faltantesDeLaSala, describirFaltantes } from '@nucleo/utils/tableroDePedidos';
 import ItemSections from './tabpedidos/ItemSections';
+import AvanceCompacto from './tabpedidos/AvanceCompacto';
 import LifecycleTimeline from './tabpedidos/LifecycleTimeline';
 import DifSection from './tabpedidos/DifSection';
 import PostCompletionSection from './tabpedidos/PostCompletionSection';
@@ -349,6 +350,11 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const elapsedPause = stage === 'pausado'    ? fmtMin(elapsed(row.pausado_at)) : null;
                             const elapsedTrans = stage === 'transito'   ? fmtMin(elapsed(row.finalizado_at)) : null;
 
+                            const tiempoEnEtapa = elapsedPrep  ? `${elapsedPrep} preparando`
+                                                : elapsedPause ? `${elapsedPause} en pausa`
+                                                : elapsedTrans ? `${elapsedTrans} en ruta`
+                                                : null;
+
                             const apoyoBucket  = apoyoMap[cardKey] ?? { preparacion: [], recepcion: [] };
                             const prepApoyo    = apoyoBucket.preparacion ?? [];
                             const recepApoyo   = apoyoBucket.recepcion   ?? [];
@@ -401,34 +407,115 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     )}
                                     aria-expanded={isExp}
                                 >
-                                    {/* Header */}
-                                    <div className="flex items-center gap-2 px-3 py-2 flex-wrap">
-                                        {stage === 'pausado' && (
-                                            <Badge variant="warning" tone="solid" uppercase={false} icon={Pause}>Pausado</Badge>
-                                        )}
-                                        <span className="text-body font-black text-content tabular-nums shrink-0">
-                                            {row.codigo ?? `#${row.numero}`}
-                                        </span>
-                                        <SucPill sucId={row.erp_sucursal_id} />
-                                        {/* El rótulo es de la SALA, no del pedido — `estadoDeLaSala`.
-                                            Con `pedido_status`, el pedido 137 del 2026-08-24 ponía
-                                            «En ruta» sobre Salud 2, que no se había ni empezado a
-                                            preparar: el pedido sí iba en ruta, esa sala no. */}
-                                        <Badge
-                                            variant={PEDIDO_BADGE[estadoSala]?.variant ?? 'neutral'}
-                                            uppercase={false}
-                                            className="shrink-0"
-                                        >
-                                            {PEDIDO_BADGE[estadoSala]?.label ?? estadoSala}
-                                        </Badge>
-                                        <span className="ml-auto text-caption text-content-3 tabular-nums shrink-0">{fmtRelative(row.enviado_at ?? row.created_at)}</span>
-                                        {isExp ? <ChevronDown size={13} className="text-content-3 shrink-0" /> : <ChevronRight size={13} className="text-content-3 shrink-0" />}
+                                    {/* ── Zona 1: quién y en qué está ──────────────────
+                                        Rediseño 2026-10-06. La SALA es el título —es lo
+                                        que se busca con la vista— y el código va al lado
+                                        en gris: antes el título era `33-061026-1-S4` y
+                                        la sala una pastilla chica. El estado se dice UNA
+                                        vez, con su tiempo en la etapa; antes se repetía
+                                        en la etiqueta, en la línea y en el pie. */}
+                                    <div className="flex items-start gap-x-3 gap-y-1 px-3 pt-2.5 pb-1 flex-wrap">
+                                        {/* `basis-64 grow`: en el teléfono el estado baja a
+                                            su propio renglón en vez de apretar el nombre. */}
+                                        <div className="min-w-0 basis-64 grow">
+                                            <div className="flex items-baseline gap-2 flex-wrap">
+                                                <span className="text-body-lg font-bold text-content leading-tight">
+                                                    {ERP_NAMES[row.erp_sucursal_id] ?? `Sucursal ${row.erp_sucursal_id}`}
+                                                </span>
+                                                <span className="text-caption text-content-3 tabular-nums">{row.codigo ?? `#${row.numero}`}</span>
+                                            </div>
+                                            {row.notes && <p className="text-caption text-content-3 mt-0.5">{row.notes}</p>}
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            {/* El rótulo es de la SALA, no del pedido — `estadoDeLaSala`.
+                                                Con `pedido_status`, el pedido 137 del 2026-08-24 ponía
+                                                «En ruta» sobre Salud 2, que no se había ni empezado a
+                                                preparar: el pedido sí iba en ruta, esa sala no. */}
+                                            {stage === 'pausado' ? (
+                                                <Badge variant="warning" tone="solid" uppercase={false} icon={Pause}>Pausado</Badge>
+                                            ) : (
+                                                <Badge variant={PEDIDO_BADGE[estadoSala]?.variant ?? 'neutral'} uppercase={false}>
+                                                    {PEDIDO_BADGE[estadoSala]?.label ?? estadoSala}
+                                                </Badge>
+                                            )}
+                                            {tiempoEnEtapa && (
+                                                <span className={`text-caption font-semibold tabular-nums ${stage === 'pausado' ? 'text-warning-text' : 'text-content-2'}`}>
+                                                    {tiempoEnEtapa}
+                                                </span>
+                                            )}
+                                            <span className="hidden sm:inline text-caption text-content-3 tabular-nums">{fmtRelative(row.enviado_at ?? row.created_at)}</span>
+                                            {isExp ? <ChevronDown size={14} className="text-content-3" /> : <ChevronRight size={14} className="text-content-3" />}
+                                        </div>
                                     </div>
-                                    {row.notes && <p className="px-3 pb-1.5 text-label text-content-2 italic">{row.notes}</p>}
 
-                                    {/* Stats pills */}
-                                    {cardStats[cardKey] && (
-                                        <div className="flex items-center gap-1 px-3 pb-1.5 flex-wrap" onClick={e => e.stopPropagation()}>
+                                    {/* Apoyo preparación (bodega) — el GEMELO de «Apoyo en
+                                        recepción» de `LifecycleTimeline`: misma lista
+                                        (`apoyoMap`, otro cubo), misma anatomía, y hasta el
+                                        2026-08-15 dibujada distinto y con un bug propio.
+                                        Leía `a.photo_url` a secas, que es la URL CRUDA: el
+                                        bucket de fotos es privado, así que la que se puede
+                                        pintar es la firmada y vive en `photo` (la pone
+                                        `signPhotosDeep` en `usePedidosData`). O sea que
+                                        estas caras salían como monigote gris mientras las
+                                        de recepción, dos renglones abajo, salían bien.
+                                        Ahora comparte el canónico con su gemelo: `Badge`
+                                        neutro + `LiquidAvatar`. */}
+                                    {prepApoyo.length > 0 && (
+                                        <div className="flex items-center gap-1.5 px-3 pb-1.5 flex-wrap">
+                                            <span className="text-caption font-semibold text-content-2 uppercase tracking-wide shrink-0">Prep:</span>
+                                            {prepApoyo.map(a => (
+                                                <Badge key={a.id} variant="neutral" uppercase={false} className="pl-1">
+                                                    <AvatarConEstado emp={a} px={20} radio="rounded-full" marco="" />
+                                                    {shortEmployeeName(a)}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* ── Zona 2: el avance ──────────────────────────────
+                                        Cerrada, una línea de puntos (`AvanceCompacto`);
+                                        abierta, la línea completa con quién y a qué hora.
+                                        Siempre abierta hacía cada tarjeta de ~270px. */}
+                                    <div className={`px-3 ${isExp ? 'border-t border-divider pt-2 pb-1.5' : 'pt-1.5 pb-2'}`}>
+                                        {(() => {
+                                            // La parada de ESTA tarjeta. El mapa de rutas vivas va
+                                            // por (pedido, sala) —`claveParada`— pero olvida las
+                                            // rutas de ayer, así que el paso «Entregado» amanecía en
+                                            // blanco. `entregaMap` es el registro del pedido: va por
+                                            // (pedido, sucursal) y no caduca. La ruta viva manda
+                                            // porque se actualiza en el momento en que el conductor
+                                            // marca la entrega.
+                                            //
+                                            // El `?? rutaInfo?.stop` que cerraba esta cadena era el
+                                            // último resto de la llave por pedido: le prestaba a esta
+                                            // tarjeta la parada de OTRA sala, y por eso el nodo
+                                            // «Entregado» de Salud 2 mostraba la cara del conductor
+                                            // de Salud 1 (pedido 137, 2026-08-24). Sin parada propia
+                                            // el nodo va vacío, que es la verdad.
+                                            const rutaInfo = pedidoRutaMap.get(claveParada(row.pedido_id, sucDeLaTarjeta));
+                                            const entrega  = entregaMap[cardKey] ?? null;
+                                            const rtStop   = rutaInfo?.stop ?? entrega ?? null;
+                                            const condId   = rutaInfo?.ruta?.conductor_id ?? entrega?.ruta?.conductor_id ?? null;
+                                            const rtCond   = condId ? empMap.get(condId) ?? null : null;
+                                            if (!isExp) return <AvanceCompacto row={row} stage={stage} rutaStop={rtStop} />;
+                                            return (
+                                                <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} reenvioEmp={reenvioEmp} erpEmp={erpEmp} difsEmp={difsEmp} corrConfEmp={corrConfEmp} receptionApoyo={recepApoyo} isBranch={isBranch} empMap={empMap} pauses={row.pauses ?? []} rutaStop={rtStop} rutaCondEmp={rtCond} />
+                                            );
+                                        })()}
+                                    </div>
+
+                                    {/* ── Zona 3: datos y acciones — una sola fila ──────
+                                        Izquierda, los datos de la sala (antes en dos y tres
+                                        renglones sueltos). Derecha, las acciones: UNA
+                                        principal —el siguiente paso del flujo— y el resto en
+                                        gris. Antes cada botón tenía su color (naranja, rosa,
+                                        morado, verde, rojo) y todos pesaban igual. Las
+                                        condiciones de cada botón NO cambiaron. */}
+                                    <div className="flex items-center gap-x-2 gap-y-2 px-3 pb-2.5 pt-2 border-t border-divider flex-wrap" onClick={e => e.stopPropagation()}>
+                                      <div className="flex items-center gap-1 flex-wrap min-w-0">
+                                        {/* Lo que dice la base de esta sala: enviados, sistema, inventario. */}
+                                        {cardStats[cardKey] && (
+                                            <>
                                             <Badge uppercase={false}>{cardStats[cardKey].enviados} enviados</Badge>
                                             {(() => {
                                                 // El traslado al sistema. Sólo se pinta si el
@@ -501,63 +588,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {cardStats[cardKey].porRegla > 0 && (
                                                 <Badge icon={AlertTriangle} uppercase={false}>{cardStats[cardKey].porRegla} por regla</Badge>
                                             )}
-                                        </div>
-                                    )}
-
-                                    {/* Apoyo preparación (bodega) — el GEMELO de «Apoyo en
-                                        recepción» de `LifecycleTimeline`: misma lista
-                                        (`apoyoMap`, otro cubo), misma anatomía, y hasta el
-                                        2026-08-15 dibujada distinto y con un bug propio.
-                                        Leía `a.photo_url` a secas, que es la URL CRUDA: el
-                                        bucket de fotos es privado, así que la que se puede
-                                        pintar es la firmada y vive en `photo` (la pone
-                                        `signPhotosDeep` en `usePedidosData`). O sea que
-                                        estas caras salían como monigote gris mientras las
-                                        de recepción, dos renglones abajo, salían bien.
-                                        Ahora comparte el canónico con su gemelo: `Badge`
-                                        neutro + `LiquidAvatar`. */}
-                                    {prepApoyo.length > 0 && (
-                                        <div className="flex items-center gap-1.5 px-3 pb-1.5 flex-wrap">
-                                            <span className="text-caption font-semibold text-content-2 uppercase tracking-wide shrink-0">Prep:</span>
-                                            {prepApoyo.map(a => (
-                                                <Badge key={a.id} variant="neutral" uppercase={false} className="pl-1">
-                                                    <AvatarConEstado emp={a} px={20} radio="rounded-full" marco="" />
-                                                    {shortEmployeeName(a)}
-                                                </Badge>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {/* Lifecycle Timeline */}
-                                    <div className="border-t border-divider px-3 pt-2 pb-1.5">
-                                        {(() => {
-                                            // La parada de ESTA tarjeta. El mapa de rutas vivas va
-                                            // por (pedido, sala) —`claveParada`— pero olvida las
-                                            // rutas de ayer, así que el paso «Entregado» amanecía en
-                                            // blanco. `entregaMap` es el registro del pedido: va por
-                                            // (pedido, sucursal) y no caduca. La ruta viva manda
-                                            // porque se actualiza en el momento en que el conductor
-                                            // marca la entrega.
-                                            //
-                                            // El `?? rutaInfo?.stop` que cerraba esta cadena era el
-                                            // último resto de la llave por pedido: le prestaba a esta
-                                            // tarjeta la parada de OTRA sala, y por eso el nodo
-                                            // «Entregado» de Salud 2 mostraba la cara del conductor
-                                            // de Salud 1 (pedido 137, 2026-08-24). Sin parada propia
-                                            // el nodo va vacío, que es la verdad.
-                                            const rutaInfo = pedidoRutaMap.get(claveParada(row.pedido_id, sucDeLaTarjeta));
-                                            const entrega  = entregaMap[cardKey] ?? null;
-                                            const rtStop   = rutaInfo?.stop ?? entrega ?? null;
-                                            const condId   = rutaInfo?.ruta?.conductor_id ?? entrega?.ruta?.conductor_id ?? null;
-                                            const rtCond   = condId ? empMap.get(condId) ?? null : null;
-                                            return (
-                                                <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} reenvioEmp={reenvioEmp} erpEmp={erpEmp} difsEmp={difsEmp} corrConfEmp={corrConfEmp} receptionApoyo={recepApoyo} isBranch={isBranch} empMap={empMap} pauses={row.pauses ?? []} rutaStop={rtStop} rutaCondEmp={rtCond} />
-                                            );
-                                        })()}
-                                    </div>
-
-                                    {/* Actions + status strip */}
-                                    <div className="flex items-center gap-2 px-3 pb-2 flex-wrap" onClick={e => e.stopPropagation()}>
+                                        </>
+                                        )}
                                         {row.total_cajas > 0 && (
                                             <Badge icon={Box} uppercase={false}>{row.total_cajas} caja{row.total_cajas !== 1 ? 's' : ''}</Badge>
                                         )}
@@ -617,13 +649,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 {difsDeLaSala === 1 ? '1 dif. pendiente' : `${difsDeLaSala} difs. pendientes`}
                                             </Badge>
                                         )}
-                                        {elapsedPrep  && <span className="text-caption text-content-2 tabular-nums">{elapsedPrep}</span>}
-                                        {elapsedPause && (
-                                            <span className="text-caption text-warning-text font-semibold tabular-nums animate-pulse">
-                                                {elapsedPause} en pausa
-                                            </span>
-                                        )}
-                                        {elapsedTrans && <span className="text-caption text-chart-3-text tabular-nums">{elapsedTrans} en ruta</span>}
+                                      </div>
                                         <div className="ml-auto flex items-center gap-1.5 flex-wrap">
                                             {/* El botón se pedía además con `!isApoyoBodega`,
                                                 o sea «que YO no esté ya de apoyo» — y esto
@@ -648,8 +674,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             )}
                                             {canActuar && !isBranch && stage === 'preparado' && (
                                                 <Button
-                                                    size="sm"
-                                                    tone="chart-3"
+                                                    variant="secondary"
                                                     icon={CalendarClock}
                                                     onClick={e => { e.stopPropagation(); setProgramarModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, currentAt: row.entrega_programada_at ?? null, historial: row.entrega_programada_historial ?? [] }); }}
                                                 >
@@ -662,17 +687,17 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 const isConductorHere = !!(user?.id && ruta.conductor_id && user.id === ruta.conductor_id);
                                                 if (!isConductorHere || !!stop?.entregado_at || ruta.status !== 'en_ruta') return null;
                                                 return (
-                                                    <Button tone="success" icon={CheckCircle2} onClick={e => { e.stopPropagation(); handleEntregarStop(stop.id, ruta.id, stop.erp_sucursal_id); }}>Entregué</Button>
+                                                    <Button variant="primary" icon={CheckCircle2} onClick={e => { e.stopPropagation(); handleEntregarStop(stop.id, ruta.id, stop.erp_sucursal_id); }}>Entregué</Button>
                                                 );
                                             })()}
-                                            {canIniciar      && <Button tone="chart-1" icon={Play}      loading={isLCBusy} onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}>Iniciar</Button>}
-                                            {canPausar       && <Button tone="warning" icon={Pause}     loading={isLCBusy} onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}>Pausar</Button>}
-                                            {canFinalizar    && <Button tone="chart-6" icon={Flag}      loading={isLCBusy || busyAction === `finalizar_load_${cardKey}`} onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)}>Finalizar</Button>}
-                                            {canReanudar     && <Button tone="success" icon={RotateCcw} loading={isLCBusy} onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}>Reanudar</Button>}
+                                            {canIniciar      && <Button variant="primary" icon={Play}      loading={isLCBusy} onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}>Iniciar</Button>}
+                                            {canPausar       && <Button variant="secondary" icon={Pause}     loading={isLCBusy} onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}>Pausar</Button>}
+                                            {canFinalizar    && <Button variant="primary" icon={Flag}      loading={isLCBusy || busyAction === `finalizar_load_${cardKey}`} onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)}>Finalizar</Button>}
+                                            {canReanudar     && <Button variant="primary" icon={RotateCcw} loading={isLCBusy} onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}>Reanudar</Button>}
                                             {canAnular && (
                                                 <Button variant="destructive" icon={Ban} onClick={e => { e.stopPropagation(); const st = pedidoStageMap.get(row.pedido_id) ?? {}; setAnularModal({ pedidoId: row.pedido_id, numero: row.numero, requiresReason: !!(st.anyActive) }); }}>Anular</Button>
                                             )}
-                                            {canMarcarEnRuta && <Button tone="chart-3" icon={Truck} onClick={() => setCrearRutaOpen([])}>Crear ruta</Button>}
+                                            {canMarcarEnRuta && <Button variant="primary" icon={Truck} onClick={() => setCrearRutaOpen([])}>Crear ruta</Button>}
                                             {(() => {
                                                 const rutaActiva       = pedidoRutaMap.get(claveParada(row.pedido_id, row.erp_sucursal_id))?.ruta;
                                                 const conductorEnRuta  = rutaActiva?.status === 'en_ruta' && !rutaActiva?.vuelta_base_at;
@@ -688,7 +713,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                     </Notice>
                                                 );
                                                 return (
-                                                    <Button variant="destructive" icon={Truck} loading={busyAction === 'reenvio'} onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: faltan.cajas, electrolits: faltan.electrolits, productos: faltan.productosEspeciales, noReenviar: [] })}>Reenviar caja</Button>
+                                                    <Button variant="primary" icon={Truck} loading={busyAction === 'reenvio'} onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: faltan.cajas, electrolits: faltan.electrolits, productos: faltan.productosEspeciales, noReenviar: [] })}>Reenviar caja</Button>
                                                 );
                                             })()}
                                         </div>
@@ -896,8 +921,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 }
                                             </div>
                                             <div className="flex items-center gap-2 mt-0.5">
-                                                <span className="text-label text-content-3">{shortEmployeeName(conductorEmp || ruta.conductor_nombre)}</span>
-                                                <span className="text-caption text-content-3 tabular-nums">{entregadas}/{total} entregas</span>
+                                                <span className="text-label text-content-3 truncate">{shortEmployeeName(conductorEmp || ruta.conductor_nombre)}</span>
+                                                <span className="text-caption text-content-3 tabular-nums whitespace-nowrap">{entregadas}/{total} entregas</span>
                                             </div>
                                         </div>
                                         {/* Acciones */}
@@ -932,7 +957,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                         {/* Barra de progreso solo cuando activa */}
                                         {!isCompletada && (
-                                            <div className="w-16 h-1.5 rounded-full bg-surface-card-hover overflow-hidden shrink-0">
+                                            <div className="hidden sm:block w-16 h-1.5 rounded-full bg-surface-card-hover overflow-hidden shrink-0">
                                                 <div className="h-full bg-chart-3 rounded-full transition-all duration-[var(--dur-lento)]" style={{ width: `${pct}%` }} />
                                             </div>
                                         )}

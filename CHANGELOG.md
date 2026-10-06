@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.5 — Pedidos: la tarjeta en tres zonas
+
+- **La tarjeta de cada pedido se ordena en tres zonas.** Arriba, la **sucursal** como título (el código queda en gris al lado) y el estado de la sala con su tiempo en la etapa, dicho una sola vez. En el medio, el **avance en una línea de puntos**: la línea completa con quién y a qué hora se abre al tocar la tarjeta. Abajo, **una sola fila** con los datos (enviados, cajas, faltantes, diferencias) y las acciones.
+- **Una acción principal por tarjeta**, en el color de marca: el siguiente paso (Iniciar, Finalizar, Reanudar, Crear ruta, Entregué, Reenviar caja). Pausar, Programar, Apoyo y PDF van en gris; Anular sigue en rojo. Antes cada botón tenía su color y todos pesaban igual. Las condiciones de cada botón no cambiaron.
+- Cada tarjeta pasa de ~270px a ~150px cerrada: entran el doble de pedidos por pantalla.
+
 ## v2.1232.4 — Login: Tab desde el usuario va a la contraseña
 
 - **Login**: Tab desde el usuario ahora va a la contraseña. El botón del ojo estaba antes del campo en la página y se llevaba el foco; se sigue viendo en el mismo lugar.

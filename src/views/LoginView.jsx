@@ -1046,7 +1046,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     { ref: userPasswordRef, id: 'password', type: 'password', placeholder: 'Contraseña',      autoComplete: 'current-password', Icon: Lock },
                 ].map(({ ref, id, type, placeholder, autoComplete, Icon }) => (
                     <div key={id} className="relative group flex items-center">
-                        {id === 'password' && <BotonVerClave visible={verClave} onToggle={() => setVerClave(v => !v)} />}
                         <Icon size={compact?16:18} strokeWidth={2} className="absolute left-4 text-content-3 group-focus-within:text-brand-text transition-colors pointer-events-none z-base" />
                         <input aria-label={placeholder} ref={ref} id={id} name={id} type={id === 'password' && verClave ? 'text' : type} placeholder={placeholder}
                             autoCapitalize={id === 'password' ? 'none' : undefined} autoCorrect="off"
@@ -1080,6 +1079,11 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             onCopy={id === 'password' ? (e => e.preventDefault()) : undefined}
                             onCut={id === 'password' ? (e => e.preventDefault()) : undefined}
                             className={`${inputCls} ${compact?'pl-11 py-3 text-body-xl':'pl-12 py-4 text-body-xl'} ${id === 'password' ? 'pr-14' : compact ? 'pr-4' : 'pr-5'} rounded-card`} />
+                        {/* El ojo va DESPUÉS del campo: el orden del Tab es
+                            el del documento, y escrito antes, Tab desde el
+                            usuario caía en el ojo y no en la contraseña. Se
+                            ve en el mismo sitio porque es `absolute`. */}
+                        {id === 'password' && <BotonVerClave visible={verClave} onToggle={() => setVerClave(v => !v)} />}
                     </div>
                 ))}
                 {error && (

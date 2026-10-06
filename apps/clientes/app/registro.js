@@ -8,7 +8,8 @@ import { useEffect, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { Text } from 'react-native';
 import * as Device from 'expo-device';
-import { BotonSistema, FilaCampo, FilaInterruptor, Formulario, Grupo } from '../componentes/sistema';
+import { BotonSistema, colorSistema, FilaCampo, FilaInterruptor, Formulario, Grupo } from '../componentes/sistema';
+import * as WebBrowser from 'expo-web-browser';
 import { Aviso } from '../componentes/ui';
 import { llamar } from '../lib/api';
 import { plataforma, useSesion } from '../lib/sesion';
@@ -79,6 +80,15 @@ export default function Registro() {
         <FilaInterruptor titulo="Programa de puntos" detalle={textos?.programa} valor={programa} alCambiar={setPrograma} color={t.color.magenta} />
         <FilaInterruptor titulo="Promociones" detalle={textos?.promociones} valor={promos} alCambiar={setPromos} color={t.color.magenta} />
       </Grupo>
+      {/* Antes de aceptar, que se pueda leer lo que se acepta (en la hoja de Safari, sin salir de la app). */}
+      <Text style={{ fontSize: 14, lineHeight: 20, color: colorSistema.texto2, marginHorizontal: 32 }}>
+        Lee el{' '}
+        <Text onPress={() => WebBrowser.openBrowserAsync('https://portal.farmasalud.lat/reglamento-puntos').catch(() => {})}
+          style={{ color: t.color.magentaTexto, fontWeight: '700' }} accessibilityRole="link">reglamento del programa</Text>
+        {' '}y el{' '}
+        <Text onPress={() => WebBrowser.openBrowserAsync('https://portal.farmasalud.lat/privacidad.html').catch(() => {})}
+          style={{ color: t.color.magentaTexto, fontWeight: '700' }} accessibilityRole="link">aviso de privacidad</Text>.
+      </Text>
       {sinTextos ? (
         <Aviso tipo="aviso">No se pudieron cargar tus permisos. Revisa tu señal y{' '}
           <Text onPress={pedirTextos} style={{ fontWeight: '700', textDecorationLine: 'underline' }}>vuelve a intentar</Text>.

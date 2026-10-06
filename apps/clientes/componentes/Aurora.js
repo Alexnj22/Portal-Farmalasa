@@ -11,7 +11,7 @@ const MANCHAS = [
   { id: 'verde2', color: T['logo-green'], cx: '80%', cy: '95%', r: '55%' },
 ];
 
-export default function Aurora() {
+export default function Aurora(_props) {
   const oscuro = useColorScheme() === 'dark';
   const base = oscuro ? '#0A090E' : '#F5F4F8';
   const fuerza = oscuro ? 0.32 : 0.22;

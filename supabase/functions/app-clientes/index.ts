@@ -389,7 +389,7 @@ Deno.serve(async (req) => {
         const imagen = o.imagen_path ? firmadas.get(o.imagen_path) ?? null : null;
         const disponible = !o.exclusiva || socio;
         return {
-          id: o.id, titulo: o.titulo, etiqueta: o.etiqueta, imagen, inicio: o.inicio, fin: o.fin, acento: o.acento ?? "magenta",
+          id: o.id, titulo: o.titulo, etiqueta: o.etiqueta, imagen, imagen_clave: o.imagen_path ?? null, inicio: o.inicio, fin: o.fin, acento: o.acento ?? "magenta",
           exclusiva: o.exclusiva, disponible,
           // Lo exclusivo se ANUNCIA a quien no es socio —es la invitación a
           // serlo— pero el detalle sólo lo ve quien puede usarlo.
@@ -408,7 +408,7 @@ Deno.serve(async (req) => {
         const disponible = !m.exclusiva || socio;
         ofertas.push({
           id: `muestra-${m.id}`, titulo: m.titulo, etiqueta: m.etiqueta ?? null,
-          imagen: m.imagen_path ? firmadas.get(m.imagen_path) ?? null : null,
+          imagen: m.imagen_path ? firmadas.get(m.imagen_path) ?? null : null, imagen_clave: m.imagen_path ?? null,
           inicio: m.inicio, fin: m.fin, acento: m.acento ?? "magenta", exclusiva: !!m.exclusiva, disponible,
           descripcion: disponible ? m.descripcion ?? null : null,
           condiciones: disponible ? m.condiciones ?? null : null,
@@ -444,7 +444,7 @@ Deno.serve(async (req) => {
       return {
         ok: true,
         historias: todas.filter((h) => firmadas.has(h.imagen_path)).map((h) => ({
-          id: h.id, titulo: h.titulo, texto: h.texto ?? null, imagen: firmadas.get(h.imagen_path),
+          id: h.id, titulo: h.titulo, texto: h.texto ?? null, imagen: firmadas.get(h.imagen_path), imagen_clave: h.imagen_path,
           enlace: h.enlace ?? null, boton: h.boton ?? null, fin: h.fin,
         })),
       };

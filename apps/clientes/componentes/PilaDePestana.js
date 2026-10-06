@@ -9,6 +9,7 @@ import { Platform, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import Aurora from './Aurora';
+import { useVisible } from '../lib/visible';
 
 const IOS26 = Platform.OS === 'ios' && isLiquidGlassAvailable();
 export const BARRA_NATIVA = Platform.OS === 'ios'
@@ -22,9 +23,11 @@ export const BARRA_NATIVA = Platform.OS === 'ios'
   : { headerShadowVisible: false, headerStyle: { backgroundColor: 'transparent' } };
 
 export default function PilaDePestana({ titulo }) {
+  // La aurora de esta pestaña sólo se mueve mientras se ve.
+  const visible = useVisible();
   return (
     <View style={{ flex: 1 }}>
-      <Aurora />
+      <Aurora activa={visible} />
       <Stack screenOptions={{ headerLargeTitle: Platform.OS === 'ios', contentStyle: { backgroundColor: 'transparent' }, ...BARRA_NATIVA }}>
         <Stack.Screen name="index" options={{ title: titulo }} />
       </Stack>

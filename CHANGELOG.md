@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1231.1 — App de clientes: revisión general (privacidad, fluidez, iOS, accesibilidad)
+
+Revisión general de la app de clientes (40 hallazgos de una revisión de código; aplicados casi todos):
+- **Privacidad:** con Face ID activo, al salir de la app se tapa el contenido (la foto del selector de apps mostraba saldo y QR); los modales (historias, cumpleaños, reservar) se ocultan mientras está bloqueada.
+- **Datos que no se pierden:** un fallo de red al volver a una pantalla conserva lo que ya se veía (ofertas, inyecciones, compras, reservas, notificaciones, sucursales) y todas se pueden refrescar deslizando. La oferta distingue «no se pudo cargar» (con Reintentar) de «ya no está». La hoja de reserva muestra el error con Reintentar en vez de quedar en blanco; quien está pre-registrado ya no ve «Reservar». Cancelar una reserva y Apple Wallet avisan si fallan. Si la sesión vence, la app lo dice al volver a entrar. Un aviso tocado no se vuelve a abrir solo.
+- **Fluidez y batería:** la aurora de cada pestaña y la tarjeta (giroscopio, luz) sólo se mueven mientras se ven y con la app activa; con «Reducir movimiento», quietas. Entradas más cortas y sin rebote, con tope en listas largas; los pulsos laten 3 veces y paran; resortes con menos rebote (tarjeta, etiqueta de oferta, pastel, barras). Historias y campana no se piden en cada visita (≥60 s, o al refrescar). Fotos con `expo-image` y clave estable: no se vuelven a bajar aunque la URL firmada cambie. Notificaciones en lista virtual.
+- **iOS:** íconos del sistema (SF Symbols) en lugar de emojis y caracteres (campana, flechas, cerrar, sucursales, invitar, bienvenida, notificaciones); botones del sistema en la hoja de reserva; colores del tema en estados y niveles; toques de 44 pt; enlaces legales en la hoja de Safari dentro de la app y también en el registro; «Siguiente» del teclado pasa al teléfono. Horario de sucursales con una animación corta sin rebote.
+- **QR en caja:** al girar la tarjeta, la pantalla sube al brillo máximo y vuelve al girarla de nuevo.
+- **Accesibilidad:** historias manejables con VoiceOver (no avanzan solas; acciones Siguiente/Anterior/Cerrar); etiquetas en tocables; textos de tamaño fijo no se desbordan con letra grande.
+- Pendiente de esa revisión: el botón oficial de Apple Wallet (`PKAddPassButton`), el selector de fecha del sistema en el registro y la campana en la barra de título.
+
 ## v2.1231.0 — App: cobros, clientes, cotizaciones, sucursales y administración
 
 - **App: Cuentas por cobrar** se refresca contra la caja como el portal (al abrir, cada minuto a la vista y cuando una búsqueda no encuentra: el crédito recién vendido), con Saldo / Por vencer / Vencidos / Todos, orden, filtro de vendedor, páginas y **pedir corrección** de un abono desde la ficha.

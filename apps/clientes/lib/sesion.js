@@ -40,7 +40,7 @@ export const useSesion = create((set, get) => ({
 
   abrir: async (token) => {
     await almacen.guardar(token);
-    set({ token, lista: true });
+    set({ token, lista: true, motivoCierre: null });
   },
 
   cerrar: async () => {
@@ -57,7 +57,7 @@ export const useSesion = create((set, get) => ({
     const token = get().token;
     if (!token) return { ok: false, sinSesion: true, mensaje: 'Vuelve a entrar.' };
     const r = await llamar(accion, { ...datos, token });
-    if (r?.sinSesion && get().token === token) await get().cerrar();
+    if (r?.sinSesion && get().token === token) { set({ motivoCierre: 'vencida' }); await get().cerrar(); }
     return r;
   },
 }));

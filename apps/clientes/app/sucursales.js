@@ -3,10 +3,13 @@
 // Antonio», ya traducido por el servidor), si está abierta AHORA con la hora
 // de cierre, la dirección y tres acciones de un toque — cómo llegar (Mapas en
 // iPhone, Google Maps en Android), WhatsApp y llamar —. El horario de la
-// semana se despliega sin animación: con resorte se veía raro. Pública.
-import { useEffect, useState } from 'react';
+// semana se despliega con una animación corta y sin rebote (con resorte se
+// veía raro). Pública.
+import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { Linking, Platform, Pressable, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import Animated, { Easing, FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Aviso, Cargando, Pantalla, Tarjeta } from '../componentes/ui';
 import Icono from '../componentes/Icono';
 import { Entrada } from '../componentes/animacion';
@@ -25,14 +28,19 @@ const soloDigitos = (t) => String(t ?? '').replace(/\D/g, '');
 
 export default function Sucursales() {
   const [datos, setDatos] = useState(null);
-  useEffect(() => { llamar('salas').then(setDatos); }, []);
+  const [refrescando, setRefrescando] = useState(false);
+  // Al volver a la pantalla se pide de nuevo («abierta» cambia con la hora), y
+  // un fallo de red no borra lo que ya se veía.
+  const cargar = useCallback(async () => { const r = await llamar('salas'); setDatos((ant) => (r?.ok || !ant?.ok ? r : ant)); }, []);
+  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
+  const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 
   if (!datos) return <Cargando />;
-  if (!datos.ok) return <Pantalla conPestanas={false}><Aviso>No se pudieron cargar las sucursales.</Aviso></Pantalla>;
+  if (!datos.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}><Aviso>No se pudieron cargar las sucursales. Desliza hacia abajo para reintentar.</Aviso></Pantalla>;
   const abiertas = datos.salas.filter((s) => s.abierta).length;
 
   return (
-    <Pantalla conPestanas={false}>
+    <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
       <Entrada indice={0}>
         <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto2, marginLeft: 4 }}>
           {abiertas ? `${abiertas} de ${datos.salas.length} abiertas ahora` : 'Todas cerradas en este momento'}
@@ -50,6 +58,9 @@ export default function Sucursales() {
 function TarjetaSucursal({ s }) {
   const t = useTema();
   const [abierta, setAbierta] = useState(false);
+  const rotacion = useSharedValue(0);
+  useEffect(() => { rotacion.value = withTiming(abierta ? 1 : 0, { duration: 220, easing: Easing.out(Easing.cubic) }); }, [abierta, rotacion]);
+  const giro = useAnimatedStyle(() => ({ transform: [{ rotate: `${rotacion.value * 180}deg` }] }));
   const hoy = new Date(Date.now() - 6 * 3600_000).getUTCDay();
   const abrir = (url) => { Haptics.selectionAsync().catch(() => {}); Linking.openURL(url).catch(() => {}); };
   const mapa = () => {
@@ -58,12 +69,16 @@ function TarjetaSucursal({ s }) {
   };
 
   return (
+    // La tarjeta acompaña el cambio de alto con una curva corta (220 ms, sin
+    // rebote) y el horario aparece con un fundido suave. La primera versión
+    // usaba un resorte sobre la tarjeta entera y se veía raro.
+    <Animated.View layout={LinearTransition.duration(220).easing(Easing.out(Easing.cubic))}>
     <Tarjeta estilo={{ gap: 12 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
         <Text style={{ flex: 1, fontSize: 21, fontWeight: '800', color: colorSistema.texto, letterSpacing: -0.3 }}>{s.nombre}</Text>
         <Estado abierta={s.abierta} />
       </View>
-      <Text style={{ fontSize: 14, fontWeight: '600', color: s.abierta ? (t.oscuro ? '#7EE08F' : '#1E7B34') : colorSistema.texto2 }}>
+      <Text style={{ fontSize: 14, fontWeight: '600', color: s.abierta ? t.color.exitoTexto : colorSistema.texto2 }}>
         {s.abierta ? `Abierta · cierra a las ${hora(s.cierra_hoy)}` : s.abre_hoy ? `Cerrada · abre a las ${hora(s.abre_hoy)}` : 'Cerrada hoy'}
       </Text>
       <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
@@ -78,12 +93,14 @@ function TarjetaSucursal({ s }) {
       </View>
 
       <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta((x) => !x); }} accessibilityRole="button"
-        style={{ minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Text style={{ fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>Horario de la semana</Text>
-        <Icono sf={abierta ? 'chevron.up' : 'chevron.down'} respaldo={abierta ? '▲' : '▼'} tam={14} color={t.color.magentaTexto} />
+        <Animated.View style={giro}>
+          <Icono sf="chevron.down" respaldo="▼" tam={14} color={t.color.magentaTexto} />
+        </Animated.View>
       </Pressable>
       {abierta ? (
-        <View style={{ gap: 6 }}>
+        <Animated.View entering={FadeIn.duration(220).delay(60)} exiting={FadeOut.duration(120)} style={{ gap: 6 }}>
           {[1, 2, 3, 4, 5, 6, 0].map((d) => {
             const h = s.horario.find((x) => x.dia === d);
             const esHoy = d === hoy;
@@ -96,9 +113,10 @@ function TarjetaSucursal({ s }) {
               </View>
             );
           })}
-        </View>
+        </Animated.View>
       ) : null}
     </Tarjeta>
+    </Animated.View>
   );
 }
 

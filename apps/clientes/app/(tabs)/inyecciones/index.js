@@ -17,7 +17,7 @@ import { suave, useTema } from '../../../tema/tema';
 function Anillo({ color }) {
   const p = useSharedValue(0);
   useEffect(() => {
-    p.value = withRepeat(withTiming(1, { duration: 2200, easing: Easing.out(Easing.cubic) }), -1);
+    p.value = withRepeat(withTiming(1, { duration: 2200, easing: Easing.out(Easing.cubic) }), 3);
   }, [p]);
   const estilo = useAnimatedStyle(() => ({
     opacity: 0.5 * (1 - p.value),
@@ -42,7 +42,9 @@ export default function Inyecciones() {
   const [datos, setDatos] = useState(null);
   const [refrescando, setRefrescando] = useState(false);
 
-  const cargar = useCallback(async () => { setDatos(await pedir('inyecciones')); }, [pedir]);
+  // Si falla la red y ya había datos, se conservan: un tropiezo al cambiar de
+  // pestaña no puede cambiar la lista por una pantalla de error.
+  const cargar = useCallback(async () => { const r = await pedir('inyecciones'); setDatos((ant) => (r?.ok || !ant?.ok ? r : ant)); }, [pedir]);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 

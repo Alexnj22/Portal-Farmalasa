@@ -10,6 +10,7 @@
 import { useEffect, useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image as ImagenCache } from 'expo-image';
 import Animated, {
   Easing, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming,
 } from 'react-native-reanimated';
@@ -18,6 +19,7 @@ import { Texto, Titulo } from './ui';
 import { colorSistema } from './sistema';
 import { dolares, diasHasta, fecha } from '../lib/formato';
 import { acentoDe, suave, useTema } from '../tema/tema';
+import Icono from './Icono';
 
 export function Pildora({ color, texto, solida = false }) {
   const t = useTema();
@@ -37,18 +39,19 @@ export function Pildora({ color, texto, solida = false }) {
 
 /** «Quedan 3 días» / «Último día». Late cuando el plazo es corto. */
 export function Plazo({ fin, color }) {
+  const t = useTema();
   const d = diasHasta(fin);
   const pulso = useSharedValue(1);
   const corto = d != null && d <= 3;
   useEffect(() => {
     if (!corto) return;
-    pulso.value = withRepeat(withSequence(withTiming(1.08, { duration: 600 }), withTiming(1, { duration: 600 })), -1);
+    pulso.value = withRepeat(withSequence(withTiming(1.06, { duration: 600 }), withTiming(1, { duration: 600 })), 3);
   }, [corto, pulso]);
   const estilo = useAnimatedStyle(() => ({ transform: [{ scale: pulso.value }] }));
   const texto = d == null ? '' : d <= 0 ? 'Último día' : d === 1 ? 'Queda 1 día' : d <= 14 ? `Quedan ${d} días` : `Hasta el ${fecha(fin)}`;
   return (
     <Animated.View style={[{ flexDirection: 'row', alignItems: 'center', gap: 6 }, estilo]}>
-      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: corto ? '#FF9F0A' : color }} />
+      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: corto ? t.color.aviso : color }} />
       <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto2 }}>{texto}</Text>
     </Animated.View>
   );
@@ -62,16 +65,18 @@ export function PortadaOferta({ oferta: o, alto = 230, conTitulo = true }) {
   const etiqueta = useSharedValue(0);
   useEffect(() => {
     zoom.value = withTiming(1, { duration: 1400, easing: Easing.out(Easing.cubic) });
-    etiqueta.value = withDelay(250, withSpring(1, { damping: 11, stiffness: 160 }));
+    etiqueta.value = withDelay(200, withSpring(1, { damping: 20, stiffness: 200 }));
   }, [zoom, etiqueta]);
   const estiloFoto = useAnimatedStyle(() => ({ transform: [{ scale: zoom.value }] }));
-  const estiloEtiqueta = useAnimatedStyle(() => ({ transform: [{ scale: etiqueta.value }, { rotate: `${(1 - etiqueta.value) * -8}deg` }] }));
+  const estiloEtiqueta = useAnimatedStyle(() => ({ transform: [{ scale: 0.85 + etiqueta.value * 0.15 }] }));
 
   return (
     <View style={{ height: alto, overflow: 'hidden', backgroundColor: a.fuerte }}>
       {o.imagen ? (
         <Animated.View style={[StyleSheet.absoluteFill, estiloFoto]}>
-          <Image source={{ uri: o.imagen }} resizeMode="cover" style={[StyleSheet.absoluteFill, { opacity: o.disponible ? 1 : 0.5 }]} />
+          {/* expo-image con clave estable: la URL firmada cambia, la foto no se vuelve a bajar. */}
+          <ImagenCache source={{ uri: o.imagen, cacheKey: o.imagen_clave ?? undefined }} cachePolicy="memory-disk" contentFit="cover" transition={200}
+            style={[StyleSheet.absoluteFill, { opacity: o.disponible ? 1 : 0.5 }]} />
         </Animated.View>
       ) : (
         <LinearGradient colors={[a.fuerte, suave(a.fuerte, 0.55)]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill}>
@@ -100,9 +105,10 @@ export function PortadaOferta({ oferta: o, alto = 230, conTitulo = true }) {
           // Fondo propio y no vidrio: sobre una foto clara el vidrio desaparece
           // y quedaba texto blanco suelto encima de la imagen.
           <View style={{ backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 999, borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' }}>
-            <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFFFFF', paddingHorizontal: 12, paddingVertical: 6 }}>
-              ★ Exclusiva socios
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 6 }}>
+              <Icono sf="star.fill" respaldo="★" tam={11} color="#FFD60A" />
+              <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFFFFF' }}>Exclusiva socios</Text>
+            </View>
           </View>
         ) : null}
       </View>
@@ -164,7 +170,7 @@ function Productos({ productos, todos, color }) {
         </View>
       ))}
       {!abiertos && productos.length > 3 ? (
-        <Text onPress={() => setAbiertos(true)} style={{ color, fontWeight: '600', paddingVertical: 6 }}>Y {productos.length - 3} más</Text>
+        <Text onPress={() => setAbiertos(true)} accessibilityRole="button" style={{ color, fontWeight: '600', paddingVertical: 12, minHeight: 44 }}>Y {productos.length - 3} más</Text>
       ) : null}
       {todos ? <Texto nivel={3} estilo={{ fontSize: 12 }}>Precio desde, por unidad. El descuento se aplica en caja.</Texto> : null}
     </View>

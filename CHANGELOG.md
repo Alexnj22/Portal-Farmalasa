@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1225.2 — App de clientes: tarjeta en Apple Wallet y reporte de errores
+
+- **Apple Wallet:** «Agregar a Apple Wallet» en Mis puntos. El servidor (`app-clientes`, `_shared/pase.ts`) arma el .pkpass y lo firma con el certificado Pass Type ID `pass.lat.farmasalud.puntos` + la cadena WWDR G4 (PKCS#7 separado, node-forge); la firma valida con `openssl smime -verify`. El enlace de descarga va firmado con HMAC y dura 10 minutos. La tarjeta lleva el saldo en dólares, los puntos, el nombre corto y el MISMO QR del ticket. Es una foto del momento; actualizarla sola pide un servicio de actualización aparte. Certificado vence el 2027-11-05; los PEM viven en secretos de la función, nunca en el repo.
+- **Sentry encendido** en la compilación de tienda (`EXPO_PUBLIC_SENTRY_DSN` en `eas.json`, perfil `clientes`), sin datos personales.
+
 ## v2.1225.1 — App: solicitudes a la par del portal
 
 - **App: Solicitudes a la par del portal.**

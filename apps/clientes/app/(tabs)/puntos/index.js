@@ -2,7 +2,7 @@
 // «420 puntos» no— y el número de puntos va como el detalle de la cifra.
 // Misma decisión que /mis-puntos de la web.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Linking, Platform, Pressable, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo } from '../../../componentes/ui';
 import { useCuenta } from '../../../lib/cuenta';
@@ -90,6 +90,13 @@ export default function Puntos() {
         <TarjetaSocio nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
           codigo={resumen.codigo} socioDesde={resumen.socio_desde} />
       </Entrada>
+
+      {/* Apple Wallet: la tarjeta en la Cartera, para mostrarla en caja sin abrir la app. */}
+      {Platform.OS === 'ios' ? (
+        <Entrada indice={1}>
+          <BotonWallet />
+        </Entrada>
+      ) : null}
 
       {/* El estado del canje. El saldo cuenta hacia arriba y la barra se llena
           con resorte: lo primero que se ve MOVERSE es lo que la persona tiene. */}
@@ -200,5 +207,30 @@ export default function Puntos() {
         </Tarjeta>
       </Entrada>
     </Pantalla>
+  );
+}
+
+// «Agregar a Apple Wallet»: el servidor firma la tarjeta y Safari la ofrece
+// (ver `_shared/pase.ts`). Negro, como el botón oficial de Apple.
+function BotonWallet() {
+  const pedir = useSesion((s) => s.pedir);
+  const [cargando, setCargando] = useState(false);
+  const agregar = async () => {
+    if (cargando) return;
+    setCargando(true);
+    const r = await pedir('wallet_enlace');
+    setCargando(false);
+    if (r?.ok && r.url) Linking.openURL(r.url).catch(() => {});
+  };
+  return (
+    <Pressable onPress={agregar} accessibilityRole="button" accessibilityLabel="Agregar a Apple Wallet"
+      style={({ pressed }) => ({
+        alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#000000',
+        borderRadius: 12, paddingHorizontal: 18, minHeight: 48, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
+        opacity: cargando ? 0.6 : 1, transform: [{ scale: pressed ? 0.97 : 1 }],
+      })}>
+      <Text style={{ fontSize: 20 }}>💳</Text>
+      <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>{cargando ? 'Preparando…' : 'Agregar a Apple Wallet'}</Text>
+    </Pressable>
   );
 }

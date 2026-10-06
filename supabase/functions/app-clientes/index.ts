@@ -30,6 +30,7 @@
 // aviso al teléfono, su sesión.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { TEXTOS_CONSENTIMIENTO as TEXTOS } from "../_shared/consentimientoPuntos.ts";
+import { armarPase, clienteDelEnlace, enlaceDePase } from "../_shared/pase.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -108,9 +109,39 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   const json = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
-  if (req.method !== "POST") return json({ error: "solo POST" }, 405);
+  // La tarjeta de Wallet: Safari abre este enlace (lo da la acción
+  // `wallet_enlace`, firmado y válido 10 min) y ofrece «Agregar a Wallet».
+  const enlaceWallet = req.method === "GET" ? new URL(req.url).searchParams.get("wallet") : null;
+  if (req.method !== "POST" && !enlaceWallet) return json({ error: "solo POST" }, 405);
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+  if (enlaceWallet) {
+    try {
+      const id = await clienteDelEnlace(enlaceWallet);
+      if (!id) return new Response("Este enlace ya venció. Vuelve a tocar «Agregar a Wallet» en la app.", { status: 410, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+      const [{ data: c, error: eC }, { data: est, error: eE }, { data: cod, error: eK }, { data: pri, error: eP }] = await Promise.all([
+        admin.from("customers").select("name").eq("id", id).maybeSingle(),
+        admin.rpc("puntos_estado_cuenta", { p_customer_id: id }),
+        admin.from("puntos_codigo_acceso").select("codigo").eq("customer_id", id).maybeSingle(),
+        admin.from("puntos_lote").select("ganado_el").eq("customer_id", id).order("ganado_el", { ascending: true }).limit(1).maybeSingle(),
+      ]);
+      if (eC) throw eC; if (eE) throw eE; if (eK) throw eK; if (eP) throw eP;
+      const saldo = Number(est?.saldo ?? 0);
+      const pkpass = armarPase({
+        customerId: id, nombre: c?.name ?? "", saldo, equivale: Math.round(saldo) / 100,
+        codigo: cod?.codigo ?? null, socioDesde: pri?.ganado_el ?? null,
+      });
+      return new Response(pkpass, { headers: {
+        "Content-Type": "application/vnd.apple.pkpass",
+        "Content-Disposition": "attachment; filename=PuntosSalud.pkpass",
+        "Cache-Control": "no-store",
+      } });
+    } catch (e) {
+      console.error("[wallet]", (e as Error)?.message ?? e);
+      return new Response("No se pudo crear la tarjeta.", { status: 500 });
+    }
+  }
   // La IP para el freno: la que pone Cloudflare (`cf-connecting-ip`), que el
   // cliente no puede falsear. Si no viene, el primer valor de
   // `x-forwarded-for`, igual que `mis-puntos`. El último no: puede ser un proxy
@@ -641,6 +672,12 @@ Deno.serve(async (req) => {
       if (error) throw error;
       const muestras = (await muestrasDe(admin, customerId, "inyeccion")).map((m: any) => ({ ...m, id: `muestra-${m.id}` }));
       return json({ ok: true, disponibles: [...((data as any)?.disponibles ?? []), ...muestras] });
+    }
+
+    // El enlace para agregar la tarjeta a Apple Wallet (ver el GET de arriba).
+    if (accion === "wallet_enlace") {
+      const base = Deno.env.get("SUPABASE_URL")!;
+      return json({ ok: true, url: `${base}/functions/v1/app-clientes?wallet=${await enlaceDePase(customerId)}` });
     }
 
     // Invitar a un amigo: el código propio (se crea la primera vez) y cómo va.

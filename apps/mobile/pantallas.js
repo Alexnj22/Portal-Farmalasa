@@ -68,7 +68,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/mis-documentos': true, // el expediente propio y los papeles de las solicitudes
   '/mi-perfil': true,      // la ficha propia: datos, horario, vacaciones, historial y editar contacto
   '/inventario': true,     // lo de una sala producto por producto; tocar uno abre su ficha nativa
-  '/personal': true,       // el directorio por sala; la ficha de una persona abre el portal
+  '/personal': true,       // el directorio por sala; la ficha de una persona es /empleado/[id]
   '/solicitudes': true,
   '/facturas-sala': true,
   // Los dos ámbitos del portal son una sola bandeja en la app.
@@ -95,6 +95,10 @@ export function abrirRuta(url) {
   // `/solicitudes?solicitud=…` nombra UNA: se abre ésa, no la bandeja.
   const una = ruta.startsWith('/solicitudes') ? url.match(/[?&]solicitud=([^&#]+)/) : null;
   if (una) return abrirSolicitud(decodeURIComponent(una[1]));
+  // Una persona (`/personal/empleado/<id>` o `/personal?empleado=<id>`): su
+  // ficha nativa, no el directorio entero.
+  const persona = url.match(/^\/personal\/empleado\/([^/?#]+)/) || (ruta === '/personal' ? url.match(/[?&]empleado=([^&#]+)/) : null);
+  if (persona) return router.push({ pathname: '/empleado/[id]', params: { id: decodeURIComponent(persona[1]) } });
   // La pantalla nativa recibe la misma dirección con sus parámetros
   // (`/ventas-hoy?sala=3` abre esa sala).
   const nativa = nativaDe(ruta);

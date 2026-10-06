@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1230.0 — App: nómina, tiempos, horarios y personal
+
+- **App: Nómina** con la lista de quincenas (estado y fecha de pago), filtro por estado, los cuatro totales del portal (ordinario, extras/otros, deducciones, total), el aviso «N timesheets sin aprobar», el cargo en cada fila, **Aprobar** y **Marcar pagada** con confirmación, y «Todas las boletas» en PDF o impresas.
+- **Auditoría de tiempos**: Día y **Quincena** (regulares, extra, nocturnas, ausencias y tardanza por persona, subtotal por sala), «Aprobar todo», confirmar o rechazar turnos extra, «Revisado», y el calendario del sistema para elegir el día.
+- **Horarios**: horas de la semana contra 44 por persona, conflictos del día, huecos y almuerzos que dejan la sala sola, quién viene a cubrir, **Publicar (N)** y la gráfica de transacciones por día y por hora. La semana de una persona en una hoja legible.
+- **Personal**: por sala con la jefatura arriba, «Sin jefatura», «Puesto sin cubrir», «Responde a», «vuelve el…», y Todos / Activos / Ausentes / Practicantes / Externos. **Ficha nativa de cada persona** (estado, cargos, horario de la semana, datos laborales y personales; identidad y salario sólo con su permiso). Los enlaces `/personal/empleado/…` y `/personal?empleado=…` de avisos y del portal la abren.
+- **Vacaciones**: aprobar o rechazar (con motivo) los cambios pedidos, lo que le queda a cada persona y la vista del año. **Monitor**: los seis contadores que filtran, las últimas marcas, almuerzo y lactancia, en vivo cada 30 s.
+- Núcleo: `resumenDeQuincena`, `coberturaDelDia`, `ventasPorHora`, `reparosDeLaSemana`; el portal los usa.
 ## v2.1229.0 — Reservas de productos en oferta: app y sucursal
 
 Primera pieza del plan de la siguiente fase (decisión del usuario: por ahora sólo productos en oferta; el catálogo completo, después).

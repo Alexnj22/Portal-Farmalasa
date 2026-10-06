@@ -1,25 +1,37 @@
-// Horarios, NATIVO — el horario de la semana de una sala (la pestaña
-// «Horarios» de `SchedulesView`), pensado para mirarlo en el teléfono: un día a
-// la vez, quién trabaja y de qué hora a qué hora, quién descansa, y la semana
-// de cada persona al tocarla. Se cambia de semana con las flechas.
+// Horarios, NATIVO — el horario de la semana de una sala (`SchedulesView`),
+// pensado para el teléfono: un día a la vez, quién trabaja y de qué hora a qué
+// hora, quién descansa y por qué (vacación, incapacidad, permiso, asueto,
+// apoyo), y por persona sus horas de la semana contra las 44 del reglamento.
 //
-// El día de cada persona lo resuelve `resolverTurnoDelDia` (el MISMO que usan
-// la planilla, el kiosco y los avisos de sala: un día de horario se resuelve en
-// un solo sitio). La gente y su orden salen de `personasDelHorario`. Editar el
-// horario se hace en el portal (dentro de la app): la grilla de la semana no
-// cabe en un teléfono.
+// Lo que el portal muestra sobre la grilla también está acá, con la MISMA
+// regla del núcleo:
+//   · la cobertura del día (`evaluarCoberturaDelDia`): horas de mucha venta con
+//     menos de tres personas, y el almuerzo que deja la sala sola o corta;
+//   · quién viene de otra sala a cubrir y quién sale a apoyar a otra;
+//   · la gráfica de transacciones (`estadisticasDeVentaPorHora`);
+//   · «Publicar (N)», con los reparos de la semana (`reparosDeLaSemana`) y la
+//     misma acción del store (`publishWeekRosters`).
+// La semana de una persona se abre en una hoja, legible. El día de cada uno lo
+// resuelve `resolverTurnoDelDia` (un día de horario se resuelve en UN sitio).
+// Editar una celda sigue en el portal: la grilla de la semana no cabe acá.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
+import { fetchBranchHourlySales, fetchScheduleCoverageAtBranch, fetchScheduleCoverageFromBranch } from '@nucleo/data/schedules';
 import { personasDelHorario } from '@nucleo/utils/horarioDeLaSala';
-import { resolverTurnoDelDia } from '@nucleo/utils/turnoDelDia';
+import { resolverTurnoDelDia, HORAS_SEMANA_DIURNA } from '@nucleo/utils/turnoDelDia';
+import { calculateEmployeeWeeklyHoursLocal, getDayConflictLocal } from '@nucleo/utils/scheduleHelpers';
+import { evaluarCoberturaDelDia } from '@nucleo/utils/coberturaDelDia';
+import { estadisticasDeVentaPorHora } from '@nucleo/utils/ventasPorHora';
+import { reparosDeLaSemana } from '@nucleo/utils/reparosDeLaSemana';
 import { formatWeekRange, getLocalMonday, shiftWeek } from '@nucleo/utils/semana';
-import { hoySV, sumarDias } from '@nucleo/utils/fecha';
+import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { ordenDeSala } from '@nucleo/constants/erp';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
@@ -28,22 +40,19 @@ import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
+import ConAurora from '../componentes/ConAurora';
 import { MARCA } from '../componentes/inicio/marca';
+import { BarraContra, Encabezado, PasoDePeriodo } from '../componentes/personas/Piezas';
+import GraficaTx from '../componentes/personas/GraficaTx';
+import { fallo, listo, trabajando } from '../componentes/Progreso';
 
-const DIAS = [{ id: 1, corto: 'Lu' }, { id: 2, corto: 'Ma' }, { id: 3, corto: 'Mi' }, { id: 4, corto: 'Ju' }, { id: 5, corto: 'Vi' }, { id: 6, corto: 'Sá' }, { id: 0, corto: 'Do' }];
+const DIAS = [{ id: 1, corto: 'Lu', largo: 'Lunes' }, { id: 2, corto: 'Ma', largo: 'Martes' }, { id: 3, corto: 'Mi', largo: 'Miércoles' },
+  { id: 4, corto: 'Ju', largo: 'Jueves' }, { id: 5, corto: 'Vi', largo: 'Viernes' }, { id: 6, corto: 'Sá', largo: 'Sábado' }, { id: 0, corto: 'Do', largo: 'Domingo' }];
 const offset = (id) => (id === 0 ? 6 : id - 1);
-// «7:00 a. m.» → «7a», «1:30 p. m.» → «1:30p»: lo que cabe junto a un nombre.
 const corta = (h) => (hora12(h) || '').replace(':00', '').replace(/\s?a\.\s?m\./, 'a').replace(/\s?p\.\s?m\./, 'p');
 const rango = (r) => `${corta(r.inicio)} – ${corta(r.fin)}`;
-
-function Flecha({ texto, onPress }) {
-  return (
-    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }} hitSlop={8}
-      style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
-      <Text style={{ color: MARCA.azulClaro, fontSize: 26, fontWeight: '300' }}>{texto}</Text>
-    </Pressable>
-  );
-}
+const COLOR_CONFLICTO = { Vacaciones: MARCA.verde, Incapacidad: MARCA.rojo, Permiso: MARCA.violetaClaro, Asueto: MARCA.azulClaro };
+const hace90 = () => sumarDias(hoySV(), -90);
 
 export default function Horarios() {
   const { user, getScope, hasPermission } = useAuth();
@@ -51,7 +60,9 @@ export default function Horarios() {
   const sucursales = useStaffStore((s) => s.branches);
   const turnos = useStaffStore((s) => s.shifts);
   const fetchWeekRosters = useStaffStore((s) => s.fetchWeekRosters);
+  const publishWeekRosters = useStaffStore((s) => s.publishWeekRosters);
   const todas = getScope?.('schedules') === 'ALL';
+  const puedePublicar = !!hasPermission?.('schedules', 'can_edit') && todas;
   const salas = useMemo(() => [...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)), [sucursales]);
   const salaPorDefecto = !todas && user?.branchId ? String(user.branchId)
     : String((salas.find((b) => b.name.toLowerCase().includes('popular')) || salas[0])?.id ?? '');
@@ -61,27 +72,89 @@ export default function Horarios() {
   const [lunes, setLunes] = useState(() => getLocalMonday());
   const [dia, setDia] = useState(() => new Date(`${hoy}T12:00:00Z`).getUTCDay());
   const [semana, setSemana] = useState(null);
-  const [abierto, setAbierto] = useState(null);
+  const [vienen, setVienen] = useState([]);
+  const [salen, setSalen] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [hoja, setHoja] = useState(null);
   const [recargando, setRecargando] = useState(false);
+  const [publicando, setPublicando] = useState(false);
+
+  const personas = useMemo(() => personasDelHorario(empleados, sala), [empleados, sala]);
+  const fechas = useMemo(() => DIAS.map((d) => sumarDias(lunes, offset(d.id))).sort(), [lunes]);
 
   const cargar = useCallback(async () => {
     if (!sala) return;
     setSemana(null);
-    setSemana(await fetchWeekRosters(lunes, sala));
-  }, [lunes, sala, fetchWeekRosters]);
+    const [sem, at] = await Promise.all([fetchWeekRosters(lunes, sala), fetchScheduleCoverageAtBranch(sala, lunes)]);
+    setSemana(sem);
+    setVienen(at?.data || []);
+    const ids = personas.map((p) => p.id);
+    if (ids.length) { const { data } = await fetchScheduleCoverageFromBranch(ids, lunes); setSalen(data || []); } else setSalen([]);
+  }, [lunes, sala, fetchWeekRosters, personas]);
   useEffect(() => { cargar(); }, [cargar]);
 
-  const personas = useMemo(() => personasDelHorario(empleados, sala), [empleados, sala]);
+  // Las ventas de los últimos 3 meses (no cambian con la semana).
+  useEffect(() => {
+    if (!sala) return undefined;
+    let vivo = true;
+    setStats(null);
+    fetchBranchHourlySales(sala, hace90()).then(({ data }) => {
+      if (!vivo) return;
+      const suc = (sucursales || []).find((b) => String(b.id) === String(sala));
+      setStats(estadisticasDeVentaPorHora(data || [], suc));
+    }).catch(() => { if (vivo) setStats({ days: [], generalHours: [], specificHours: {} }); });
+    return () => { vivo = false; };
+  }, [sala, sucursales]);
+
   const fecha = sumarDias(lunes, offset(dia));
-  const delDia = useMemo(() => personas.map((p) => ({
-    p, r: resolverTurnoDelDia(semana?.rosters?.[p.id]?.[String(dia)], turnos || []),
-    publicado: semana?.publishedIds?.has(String(p.id)), tieneHorario: !!semana?.rosters?.[p.id],
-  })), [personas, semana, dia, turnos]);
-  const trabajan = delDia.filter((x) => x.r.trabaja).sort((a, b) => String(a.r.inicio).localeCompare(String(b.r.inicio)));
-  const descansan = delDia.filter((x) => !x.r.trabaja);
+  const rosterDe = (id) => semana?.rosters?.[id] || {};
+  const horasDe = useCallback((p) => calculateEmployeeWeeklyHoursLocal(semana?.rosters?.[p.id] || {}, turnos || [], p.history, fechas), [semana, turnos, fechas]);
+  const nombreSala = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? 'otra sala';
+
+  const delDia = useMemo(() => personas.map((p) => {
+    const apoyo = salen.find((c) => String(c.employee_id) === String(p.id) && Number(c.day_of_week) === dia);
+    return {
+      p, r: resolverTurnoDelDia(semana?.rosters?.[p.id]?.[String(dia)], turnos || []),
+      conflicto: getDayConflictLocal(fecha, p.history),
+      apoyo: apoyo ? nombreSala(apoyo.coverage_branch_id) : null,
+      publicado: semana?.publishedIds?.has(String(p.id)), tieneHorario: !!semana?.rosters?.[p.id],
+    };
+  }), [personas, semana, dia, turnos, fecha, salen]); // eslint-disable-line react-hooks/exhaustive-deps
+  const trabajan = delDia.filter((x) => x.r.trabaja && !(x.conflicto && x.conflicto.type !== 'SUPPORT')).sort((a, b) => String(a.r.inicio).localeCompare(String(b.r.inicio)));
+  const descansan = delDia.filter((x) => !trabajan.includes(x));
+  const cubren = useMemo(() => vienen.filter((c) => Number(c.day_of_week) === dia).map((c) => {
+    const e = (empleados || []).find((x) => String(x.id) === String(c.employee_id));
+    return e ? { e, r: resolverTurnoDelDia(c.schedule_data, turnos || []) } : null;
+  }).filter(Boolean), [vienen, dia, empleados, turnos]);
+  const cobertura = useMemo(() => {
+    if (!semana) return { huecosCriticos: [], avisos: [] };
+    const horarios = personas.map((p) => ({ ...rosterDe(p.id), name: shortEmployeeName(p) }));
+    return evaluarCoberturaDelDia(dia, horarios, turnos || [], stats?.specificHours?.[dia] || []);
+  }, [semana, personas, dia, turnos, stats]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const publicar = () => {
+    const { reparos, porPublicar } = reparosDeLaSemana({ personas, rosters: semana?.rosters || {}, turnos: turnos || [], fechas, publicados: semana?.publishedIds || new Set() });
+    const que = porPublicar === 1 ? 'Se publicará 1 horario' : `Se publicarán ${porPublicar} horarios`;
+    Alert.alert(reparos.length ? 'La semana tiene reparos' : 'La semana está completa',
+      `${reparos.length ? `${reparos.join('\n')}\n\n` : ''}${que} de la semana del ${fechaTexto(lunes, { day: 'numeric', month: 'long' })}.${reparos.length ? ' ¿Publicar de todas formas?' : ''}`, [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: reparos.length ? 'Publicar con reparos' : 'Publicar horarios', style: reparos.length ? 'destructive' : 'default', onPress: async () => {
+          setPublicando(true);
+          trabajando('Publicando…');
+          try {
+            const cuantos = await publishWeekRosters(lunes, sala);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+            listo('Horarios publicados', `${cuantos === 1 ? '1 horario' : `${cuantos} horarios`} de la semana.`);
+            await cargar();
+          } catch (e) { fallo('No se pudieron publicar', mensajeAmigable(e, 'Intenta de nuevo.')); }
+          finally { setPublicando(false); }
+        } },
+      ]);
+  };
 
   const grupos = todas ? [{ id: 'sala', titulo: 'Sala', activa: sala, porDefecto: salaPorDefecto, onCambiar: setSala,
     opciones: salas.map((b) => ({ id: String(b.id), label: b.name })) }] : [];
+  const nombreDia = DIAS.find((d) => d.id === dia)?.largo;
 
   return (
     <>
@@ -91,14 +164,9 @@ export default function Horarios() {
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 12 }}>
-          <Flecha texto="‹" onPress={() => setLunes((l) => shiftWeek(l, -1))} />
-          <Pressable style={{ flex: 1, alignItems: 'center' }} onPress={() => { setLunes(getLocalMonday()); setDia(new Date(`${hoy}T12:00:00Z`).getUTCDay()); }}>
-            <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{formatWeekRange(lunes)}</Text>
-            {lunes !== getLocalMonday() ? <Text style={{ color: MARCA.azulClaro, fontSize: 12 }}>Volver a esta semana</Text> : null}
-          </Pressable>
-          <Flecha texto="›" onPress={() => setLunes((l) => shiftWeek(l, 1))} />
-        </View>
+        <PasoDePeriodo titulo={formatWeekRange(lunes)} apoyo={lunes !== getLocalMonday() ? 'Toca para volver a esta semana' : 'Esta semana'}
+          onTocar={() => { setLunes(getLocalMonday()); setDia(new Date(`${hoy}T12:00:00Z`).getUTCDay()); }}
+          onAtras={() => setLunes((l) => shiftWeek(l, -1))} onAdelante={() => setLunes((l) => shiftWeek(l, 1))} />
 
         <View style={{ flexDirection: 'row', gap: 5, marginHorizontal: 16 }}>
           {DIAS.map((d) => {
@@ -119,66 +187,107 @@ export default function Horarios() {
         </View>
 
         {semana?.fallo ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={semana.fallo} /></View> : null}
-        {semana && semana.borradores > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${semana.borradores} horario${semana.borradores === 1 ? '' : 's'} de esta semana sin publicar.`} /></View> : null}
+        {semana && semana.borradores > 0 ? (
+          <View style={{ marginHorizontal: 16, gap: 8 }}>
+            <Aviso tono="cuidado" texto={`${semana.borradores} horario${semana.borradores === 1 ? '' : 's'} de esta semana sin publicar.`} />
+            {puedePublicar ? <BotonGrande texto={publicando ? 'Publicando…' : `Publicar (${semana.borradores})`} onPress={publicar} deshabilitado={publicando} /> : null}
+          </View>
+        ) : null}
+
+        {/* La cobertura del día: lo que el portal pinta sobre la columna. */}
+        {cobertura.huecosCriticos.length || cobertura.avisos.length ? (
+          <View style={{ marginHorizontal: 16 }}>
+            <Vidrio radio={18} tinte="rgba(240,68,56,0.10)">
+              <View style={{ padding: 12, gap: 6 }}>
+                {cobertura.huecosCriticos.length ? (
+                  <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '700' }}>
+                    {`Menos de 3 personas en horas de mucha venta: ${cobertura.huecosCriticos.map((h) => h.time).join(', ')}`}
+                  </Text>
+                ) : null}
+                {cobertura.avisos.map((a) => (
+                  <Text key={a.texto} style={{ color: a.tipo === 'danger' ? MARCA.rojo : MARCA.ambar, fontSize: 13, fontWeight: '600' }}>{a.texto}</Text>
+                ))}
+              </View>
+            </Vidrio>
+          </View>
+        ) : null}
+
         {!semana ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
           <>
-            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20 }}>
-              {`Trabajan · ${trabajan.length}`}
-            </Text>
-            {trabajan.map(({ p, r, publicado }) => (
-              <Pressable key={p.id} onPress={() => setAbierto(abierto === p.id ? null : p.id)} style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-                <Vidrio radio={20} interactivo>
-                  <View style={{ padding: 14, gap: 10 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                      <Avatar empleado={p} tamano={40} />
-                      <View style={{ flex: 1, gap: 2 }}>
-                        <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }} numberOfLines={1}>{shortEmployeeName(p)}</Text>
-                        <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>{[p.role, r.nombre || (r.esManual ? 'Horario propio' : null)].filter(Boolean).join(' · ')}</Text>
-                      </View>
-                      <View style={{ alignItems: 'flex-end', gap: 3 }}>
-                        <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{rango(r)}</Text>
-                        <View style={{ flexDirection: 'row', gap: 4 }}>
-                          {r.esJornadaNocturna ? <Pildora texto="Nocturna" color={MARCA.violeta} /> : null}
-                          {!publicado ? <Pildora texto="Borrador" color={MARCA.ambar} /> : null}
+            <Encabezado>{`${nombreDia} · trabajan ${trabajan.length}`}</Encabezado>
+            {trabajan.map(({ p, r, publicado, apoyo }) => {
+              const horas = horasDe(p);
+              const dif = Number((horas - HORAS_SEMANA_DIURNA).toFixed(1));
+              return (
+                <Pressable key={p.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setHoja(p); }} style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+                  <Vidrio radio={20} interactivo>
+                    <View style={{ padding: 14, gap: 8 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        <Avatar empleado={p} tamano={40} />
+                        <View style={{ flex: 1, gap: 2 }}>
+                          <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{shortEmployeeName(p)}</Text>
+                          <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{[p.role, r.nombre || (r.esManual ? 'Horario propio' : null)].filter(Boolean).join(' · ')}</Text>
+                        </View>
+                        <View style={{ alignItems: 'flex-end', gap: 3 }}>
+                          <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{rango(r)}</Text>
+                          <View style={{ flexDirection: 'row', gap: 4 }}>
+                            {r.esJornadaNocturna ? <Pildora texto="Nocturna" color={MARCA.violeta} /> : null}
+                            {!publicado ? <Pildora texto="Borrador" color={MARCA.ambar} /> : null}
+                          </View>
                         </View>
                       </View>
-                    </View>
-                    {r.pausa ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Pausa ${hora12(r.pausa.inicio)} · ${r.pausa.minutos} min`}</Text> : null}
-                    {abierto === p.id ? (
-                      <View style={{ flexDirection: 'row', gap: 4, paddingTop: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
-                        {DIAS.map((d) => {
-                          const rd = resolverTurnoDelDia(semana?.rosters?.[p.id]?.[String(d.id)], turnos || []);
-                          return (
-                            <View key={d.id} style={{ flex: 1, alignItems: 'center', gap: 2 }}>
-                              <Text style={{ color: d.id === dia ? MARCA.azulClaro : colorSistema.texto2, fontSize: 11, fontWeight: '700' }}>{d.corto}</Text>
-                              <Text style={{ color: rd.trabaja ? colorSistema.texto : colorSistema.texto2, fontSize: 10, textAlign: 'center' }}>
-                                {rd.trabaja ? `${corta(rd.inicio)}\n${corta(rd.fin)}` : 'Libre'}
-                              </Text>
-                            </View>
-                          );
-                        })}
+                      {r.pausa ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Almuerzo ${hora12(r.pausa.inicio)} · ${r.pausa.minutos} min`}</Text> : null}
+                      {apoyo ? <Pildora texto={`Apoya en ${apoyo}`} color={MARCA.azulClaro} /> : null}
+                      <View style={{ gap: 4 }}>
+                        <View style={{ flexDirection: 'row' }}>
+                          <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 12 }}>{`Semana: ${horas} h de ${HORAS_SEMANA_DIURNA}`}</Text>
+                          {dif ? <Text style={{ color: dif > 0 ? MARCA.rojo : MARCA.ambar, fontSize: 12, fontWeight: '700' }}>{`${dif > 0 ? '+' : '−'}${Math.abs(dif)} h`}</Text> : <Text style={{ color: MARCA.verde, fontSize: 12, fontWeight: '700' }}>Completa</Text>}
+                        </View>
+                        <BarraContra valor={horas} meta={HORAS_SEMANA_DIURNA} color={dif > 0 ? MARCA.rojo : dif < 0 ? MARCA.ambar : MARCA.verde} />
                       </View>
-                    ) : null}
-                  </View>
-                </Vidrio>
-              </Pressable>
-            ))}
+                    </View>
+                  </Vidrio>
+                </Pressable>
+              );
+            })}
             {!trabajan.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>Nadie tiene turno este día.</Text> : null}
+
+            {cubren.length ? (
+              <>
+                <Encabezado>{`Vienen a cubrir · ${cubren.length}`}</Encabezado>
+                <View style={{ marginHorizontal: 16 }}>
+                  <Vidrio radio={20} tinte="rgba(59,130,246,0.12)">
+                    <View style={{ padding: 14, gap: 10 }}>
+                      {cubren.map(({ e, r }) => (
+                        <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                          <Avatar empleado={e} tamano={32} />
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{shortEmployeeName(e)}</Text>
+                            <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`De ${nombreSala(e.branchId ?? e.branch_id)}`}</Text>
+                          </View>
+                          <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{r.trabaja ? rango(r) : '—'}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </Vidrio>
+                </View>
+              </>
+            ) : null}
 
             {descansan.length ? (
               <>
-                <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20, marginTop: 6 }}>
-                  {`Descansan · ${descansan.length}`}
-                </Text>
+                <Encabezado>{`No trabajan · ${descansan.length}`}</Encabezado>
                 <View style={{ marginHorizontal: 16 }}>
                   <Vidrio radio={20}>
                     <View style={{ padding: 14, gap: 10 }}>
-                      {descansan.map(({ p, tieneHorario }) => (
-                        <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                          <Avatar empleado={p} tamano={28} />
-                          <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }} numberOfLines={1}>{shortEmployeeName(p)}</Text>
-                          <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{tieneHorario ? 'Libre' : 'Sin horario'}</Text>
-                        </View>
+                      {descansan.map(({ p, tieneHorario, conflicto, apoyo }) => (
+                        <Pressable key={p.id} onPress={() => setHoja(p)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                          <Avatar empleado={p} tamano={30} />
+                          <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{shortEmployeeName(p)}</Text>
+                          {conflicto ? <Pildora texto={conflicto.label} color={COLOR_CONFLICTO[conflicto.label] ?? MARCA.azulClaro} />
+                            : apoyo ? <Pildora texto={`Apoya en ${apoyo}`} color={MARCA.azulClaro} />
+                              : <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{tieneHorario ? 'Libre' : 'Sin horario'}</Text>}
+                        </Pressable>
                       ))}
                     </View>
                   </Vidrio>
@@ -188,6 +297,8 @@ export default function Horarios() {
           </>
         )}
 
+        <GraficaTx stats={stats} dia={dia} nombreDelDia={nombreDia} />
+
         {hasPermission('schedules', 'can_edit') ? (
           <View style={{ marginHorizontal: 16, marginTop: 8 }}>
             <BotonGrande texto="Editar el horario (portal)" borde color={MARCA.azulClaro}
@@ -195,6 +306,44 @@ export default function Horarios() {
           </View>
         ) : null}
       </ScrollView>
+
+      {/* La semana de una persona, legible: un renglón por día. */}
+      <Modal visible={!!hoja} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setHoja(null)}>
+        {hoja ? (
+          <ConAurora>
+            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
+              <Avatar empleado={hoja} tamano={44} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '800' }}>{shortEmployeeName(hoja)}</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${formatWeekRange(lunes)} · ${horasDe(hoja)} h de ${HORAS_SEMANA_DIURNA}`}</Text>
+              </View>
+              <Pressable onPress={() => setHoja(null)} hitSlop={10}><Text style={{ color: MARCA.azulClaro, fontSize: 17, fontWeight: '600' }}>Listo</Text></Pressable>
+            </View>
+            <ScrollView contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: 40 }}>
+              {DIAS.map((d) => {
+                const f = sumarDias(lunes, offset(d.id));
+                const rd = resolverTurnoDelDia(rosterDe(hoja.id)[String(d.id)], turnos || []);
+                const cf = getDayConflictLocal(f, hoja.history);
+                return (
+                  <Vidrio key={d.id} radio={16} tinte={d.id === dia ? 'rgba(0,82,204,0.25)' : undefined}>
+                    <View style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <View style={{ width: 92 }}>
+                        <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{d.largo}</Text>
+                        <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{fechaTexto(f, { day: 'numeric', month: 'short' })}</Text>
+                      </View>
+                      <View style={{ flex: 1, gap: 2 }}>
+                        <Text style={{ color: rd.trabaja ? colorSistema.texto : colorSistema.texto2, fontSize: 16, fontWeight: '700' }}>{rd.trabaja ? rango(rd) : 'Libre'}</Text>
+                        {rd.trabaja ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[rd.nombre || (rd.esManual ? 'Horario propio' : null), rd.pausa ? `almuerzo ${hora12(rd.pausa.inicio)}` : null].filter(Boolean).join(' · ')}</Text> : null}
+                      </View>
+                      {cf ? <Pildora texto={cf.label} color={COLOR_CONFLICTO[cf.label] ?? MARCA.azulClaro} /> : null}
+                    </View>
+                  </Vidrio>
+                );
+              })}
+            </ScrollView>
+          </ConAurora>
+        ) : null}
+      </Modal>
     </>
   );
 }

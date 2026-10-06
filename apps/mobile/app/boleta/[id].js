@@ -82,6 +82,7 @@ export default function Boleta() {
           <View style={{ padding: 18, gap: 6, alignItems: 'center' }}>
             <Avatar empleado={e.employee ?? { name: '?' }} tamano={56} />
             <Text style={{ color: colorSistema.texto, fontSize: 19, fontWeight: '800' }}>{e.employee ? shortEmployeeName(e.employee) : 'Sin ficha'}</Text>
+            {empleado.role ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>{empleado.role}</Text> : null}
             <Text style={{ color: colorSistema.texto2, fontSize: 13, textAlign: 'center' }}>
               {[periodo ? rotuloDePeriodo(periodo.start_date, periodo.end_date) : null, `${formatQty(e.days_worked ?? 0)} días trabajados`].filter(Boolean).join(' · ')}
             </Text>

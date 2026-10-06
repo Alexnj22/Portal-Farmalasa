@@ -42,7 +42,7 @@ import { getMondayOfCurrentWeek, fmtTimeCSTStr, formatTime12h, isEditedPunch, is
     from '@nucleo/utils/quincena';
 import { descargarArchivo } from '../plataforma/descargas';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { auditarDia, marcasEsperadas, ROTULO_MARCA, TIPOS_DE_ENTRADA, TIPOS_DE_SALIDA } from '@nucleo/utils/auditoriaDeTiempos';
+import { auditarDia, marcasEsperadas, resumenDeQuincena, RESUMEN_VACIO, ROTULO_MARCA, TIPOS_DE_ENTRADA, TIPOS_DE_SALIDA } from '@nucleo/utils/auditoriaDeTiempos';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const EMPTY_ARRAY = [];
@@ -853,21 +853,9 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   const isCurrentQuincena = useMemo(() => selectedQuincena === getCurrentQuincenaStart(), [selectedQuincena]);
   const isQuincenaPast = useMemo(() => selectedQuincena < getCurrentQuincenaStart(), [selectedQuincena]);
 
-  const quincenaByEmployee = useMemo(() => {
-    const map = new Map();
-    quincenaTS.forEach(ts => {
-      const eid = String(ts.employee_id);
-      if (!map.has(eid)) map.set(eid, { regular: 0, overtime: 0, late: 0, absent: 0, approved: 0, total: 0 });
-      const acc = map.get(eid);
-      acc.regular += ts.regular_hours || 0;
-      acc.overtime += ts.overtime_hours || 0;
-      acc.late += ts.late_minutes || 0;
-      if (ts.is_absent) acc.absent += 1;
-      if (ts.status === 'APPROVED') acc.approved += 1;
-      acc.total += 1;
-    });
-    return map;
-  }, [quincenaTS]);
+  // La suma de la quincena por persona: núcleo (`resumenDeQuincena`), la
+  // misma de la app.
+  const quincenaByEmployee = useMemo(() => resumenDeQuincena(quincenaTS).porPersona, [quincenaTS]);
 
   const quincenaSummary = useMemo(() => {
     let filtered = filterBranch
@@ -876,7 +864,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
     if (search.trim()) filtered = smartFilter(search, filtered, e => [e.name]).results;
     return filtered.map(emp => ({
       emp,
-      stats: quincenaByEmployee.get(String(emp.id)) || { regular: 0, overtime: 0, late: 0, absent: 0, approved: 0, total: 0 },
+      stats: quincenaByEmployee.get(String(emp.id)) || RESUMEN_VACIO,
     })).sort((a, b) => getRoleOrder(a.emp.role) - getRoleOrder(b.emp.role));
   }, [employees, filterBranch, search, quincenaByEmployee]);
 

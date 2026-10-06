@@ -5,14 +5,21 @@
 // algo salen primero. Tocar a alguien abre sus marcas del día.
 //
 // La regla de cada día sale del núcleo (`auditarDia`), la misma del portal.
-// Corregir marcas, aprobar y cerrar la quincena siguen en el portal.
+//
+// Dos vistas, como el portal: el DÍA (con flechas o el calendario del sistema)
+// y la QUINCENA (`componentes/personas/Quincena`): horas regulares, extra,
+// nocturnas, tardanza y ausencias por persona y por sala, «Aprobar todo» y los
+// turnos extra declarados. En el día, las marcas pendientes de Talento Humano
+// se dan por revisadas (`marcarMarcajesRevisados`). Corregir marcas y cerrar
+// la quincena siguen en el portal.
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { fetchQuincenaTimesheets } from '@nucleo/data/attendanceAudit';
+import { fetchQuincenaTimesheets, marcarMarcajesRevisados } from '@nucleo/data/attendanceAudit';
+import { isPendingPunch } from '@nucleo/utils/quincena';
 import { auditarDia, ROTULO_MARCA } from '@nucleo/utils/auditoriaDeTiempos';
 import { fmtTimeCSTStr } from '@nucleo/utils/quincena';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
@@ -28,6 +35,11 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
+import Segmentos from '../componentes/Segmentos';
+import Fecha from '../componentes/formulario/Fecha';
+import Quincena from '../componentes/personas/Quincena';
+import { PasoDePeriodo } from '../componentes/personas/Piezas';
+import { fallo, listo } from '../componentes/Progreso';
 
 /** Lo que hay que mirar de un día, en píldoras. */
 function senales(a) {
@@ -44,7 +56,11 @@ function senales(a) {
 }
 
 export default function AuditoriaDeTiempos() {
-  const { user, getScope } = useAuth();
+  const { user, getScope, hasPermission } = useAuth();
+  const puedeEditar = !!hasPermission?.('time_audit', 'can_edit');
+  const [vista, setVista] = useState('dia');
+  const [revisados, setRevisados] = useState(() => new Set());
+  const [eligiendoDia, setEligiendoDia] = useState(false);
   const empleados = useStaffStore((s) => s.employees);
   const sucursales = useStaffStore((s) => s.branches);
   const turnos = useStaffStore((s) => s.shifts);
@@ -76,11 +92,26 @@ export default function AuditoriaDeTiempos() {
       .filter((e) => sala === 'ALL' || String(e.branchId ?? e.branch_id) === sala)
       .filter((e) => !texto.trim() || tokenMatch(texto.trim(), e.name, e.code, e.role))
       .map((e) => {
-        const a = auditarDia({ dateStr: dia, emp: e, shiftById, timesheets: ts, homeBranchId: e.branchId ?? e.branch_id, branchNameById, now });
+        const a = auditarDia({ dateStr: dia, emp: e, shiftById, timesheets: ts, homeBranchId: e.branchId ?? e.branch_id, branchNameById, reviewedPunchIds: revisados, now });
         return { e, a, s: senales(a) };
       })
       .sort((x, y) => (y.s.length - x.s.length) || (ordenDeSala(Number(x.e.branchId)) - ordenDeSala(Number(y.e.branchId))) || String(x.e.name).localeCompare(String(y.e.name)));
-  }, [empleados, ts, dia, sala, texto, shiftById, branchNameById]);
+  }, [empleados, ts, dia, sala, texto, shiftById, branchNameById, revisados]);
+  // Las personas de la sala (para la quincena, sin el cálculo del día).
+  const personas = useMemo(() => (empleados || [])
+    .filter((e) => (e.status || '').toUpperCase() !== 'INACTIVO')
+    .filter((e) => sala === 'ALL' || String(e.branchId ?? e.branch_id) === sala)
+    .filter((e) => !texto.trim() || tokenMatch(texto.trim(), e.name, e.code, e.role)), [empleados, sala, texto]);
+  const revisar = async (e) => {
+    // Las marcas del DÍA que esperan a Talento Humano (las mismas que pinta la fila).
+    const delDia = filas.find((f) => f.e.id === e.id)?.a.dayPunches.filter((p) => isPendingPunch(p) && !revisados.has(p.id)) ?? [];
+    if (!delDia.length) return;
+    try {
+      await marcarMarcajesRevisados(delDia, { employeeId: e.id, date: dia, revisadoPor: user?.name });
+      setRevisados((prev) => new Set([...prev, ...delDia.map((p) => p.id)]));
+      listo('Revisado', `${delDia.length} marcaje(s) de ${shortEmployeeName(e)}.`);
+    } catch (err) { fallo('No se pudo marcar como revisado', err?.message || ''); }
+  };
   const conAlgo = filas.filter((f) => f.s.length).length;
   const grupos = todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: 'ALL', onCambiar: setSala,
     opciones: [{ id: 'ALL', label: 'Todas las salas' }, ...[...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)).map((b) => ({ id: String(b.id), label: b.name }))] }] : [];
@@ -100,15 +131,17 @@ export default function AuditoriaDeTiempos() {
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargarAsistencia?.(35); setRecargando(false); }} />}>
         {grupos.length ? <FiltrosActivos grupos={grupos} /> : null}
-        <View style={{ marginHorizontal: 16 }}>
-          <Vidrio radio={22}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Pressable onPress={() => ir(-1)} hitSlop={8} style={{ minWidth: 52, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: MARCA.azulClaro, fontSize: 24 }}>‹</Text></Pressable>
-              <Text style={{ flex: 1, textAlign: 'center', color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{dia === hoySV() ? 'Hoy' : fechaTexto(dia, { weekday: 'long', day: 'numeric', month: 'long' })}</Text>
-              <Pressable disabled={dia >= hoySV()} onPress={() => ir(1)} hitSlop={8} style={{ minWidth: 52, minHeight: 48, alignItems: 'center', justifyContent: 'center', opacity: dia >= hoySV() ? 0.3 : 1 }}><Text style={{ color: MARCA.azulClaro, fontSize: 24 }}>›</Text></Pressable>
-            </View>
-          </Vidrio>
-        </View>
+        <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'dia', label: 'Día' }, { id: 'quincena', label: 'Quincena' }]} />
+        {vista === 'quincena' ? <Quincena empleados={personas} sucursales={sucursales} puedeEditar={puedeEditar} usuario={user} /> : (
+        <>
+        <PasoDePeriodo titulo={dia === hoySV() ? 'Hoy' : fechaTexto(dia, { weekday: 'long', day: 'numeric', month: 'long' })}
+          apoyo="Toca para elegir otro día" onTocar={() => setEligiendoDia((v) => !v)}
+          onAtras={() => ir(-1)} onAdelante={() => ir(1)} puedeAdelante={dia < hoySV()} />
+        {eligiendoDia ? (
+          <View style={{ marginHorizontal: 16, alignItems: 'center' }}>
+            <Fecha valor={dia} hasta={hoySV()} onCambiar={(d) => { setDia(d); setAbierto(null); setEligiendoDia(false); }} />
+          </View>
+        ) : null}
         {ts ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${filas.length} personas · ${conAlgo} con algo que mirar`}</Text> : null}
         {ts == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : filas.map(({ e, a, s }) => {
           const abiertoEste = abierto === e.id;
@@ -120,8 +153,8 @@ export default function AuditoriaDeTiempos() {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <Avatar empleado={e} tamano={34} />
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }} numberOfLines={1}>{shortEmployeeName(e)}</Text>
-                      <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={1}>
+                      <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{shortEmployeeName(e)}</Text>
+                      <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
                         {[a.isOff ? (a.isNoSchedule ? 'Sin turno' : 'Libre') : a.shiftStart ? `${hora12(a.shiftStart)} – ${hora12(a.shiftEnd)}` : null,
                           a.entryPunch ? `entró ${fmtTimeCSTStr(a.entryPunch.timestamp)}` : null,
                           a.exitPunch ? `salió ${fmtTimeCSTStr(a.exitPunch.timestamp)}` : null].filter(Boolean).join(' · ')}
@@ -140,6 +173,12 @@ export default function AuditoriaDeTiempos() {
                       {a.inconsistencies.map((i) => (
                         <Text key={i.type} style={{ color: MARCA.rojo, fontSize: 13 }}>{`Falta: ${i.label} (${fmtTimeCSTStr(i.expected)})`}</Text>
                       ))}
+                      {puedeEditar && a.isPendDay ? (
+                        <Pressable onPress={() => revisar(e)}
+                          style={({ pressed }) => ({ alignSelf: 'flex-start', marginTop: 6, minHeight: 34, paddingHorizontal: 14, borderRadius: 17, justifyContent: 'center', backgroundColor: `${MARCA.ambar}2E`, opacity: pressed ? 0.7 : 1 })}>
+                          <Text style={{ color: MARCA.ambar, fontSize: 14, fontWeight: '700' }}>Revisado</Text>
+                        </Pressable>
+                      ) : null}
                     </View>
                   ) : null}
                 </View>
@@ -147,8 +186,10 @@ export default function AuditoriaDeTiempos() {
             </Pressable>
           );
         })}
+        </>
+        )}
         <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-          <BotonGrande texto="Corregir, aprobar y cerrar quincena (portal)" borde color={MARCA.azulClaro}
+          <BotonGrande texto="Corregir marcas y cerrar quincena (portal)" borde color={MARCA.azulClaro}
             onPress={() => router.push({ pathname: '/portal', params: { ruta: '/auditoria-de-tiempos', nombre: 'Auditoría de tiempos' } })} />
         </View>
       </ScrollView>

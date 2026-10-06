@@ -92,3 +92,31 @@ export function auditarDia({ dateStr, emp, shiftById, timesheets = [], homeBranc
         isAutoDay, isPendDay, isEditedDay, editedInfo, crossBranchName, lateMin,
     };
 }
+
+/**
+ * La quincena de cada persona sumada desde sus timesheets: horas regulares,
+ * extra, nocturnas (y extra nocturnas), minutos de tardanza, ausencias y
+ * cuántos días están aprobados de cuántos. Era el `quincenaByEmployee` de
+ * `AttendanceAuditView`; vive acá para que la app sume con la misma regla.
+ * Devuelve un `Map` por `employee_id` (texto) y el total de todas las filas.
+ */
+export const RESUMEN_VACIO = Object.freeze({ regular: 0, overtime: 0, nocturnal: 0, nocturnalOT: 0, late: 0, absent: 0, approved: 0, total: 0 });
+export function resumenDeQuincena(timesheets = []) {
+    const porPersona = new Map();
+    const total = { ...RESUMEN_VACIO };
+    for (const ts of timesheets) {
+        const eid = String(ts.employee_id);
+        if (!porPersona.has(eid)) porPersona.set(eid, { ...RESUMEN_VACIO });
+        for (const acc of [porPersona.get(eid), total]) {
+            acc.regular += ts.regular_hours || 0;
+            acc.overtime += ts.overtime_hours || 0;
+            acc.nocturnal += ts.nocturnal_hours || 0;
+            acc.nocturnalOT += ts.nocturnal_overtime_hours || 0;
+            acc.late += ts.late_minutes || 0;
+            if (ts.is_absent) acc.absent += 1;
+            if (ts.status === 'APPROVED') acc.approved += 1;
+            acc.total += 1;
+        }
+    }
+    return { porPersona, total };
+}

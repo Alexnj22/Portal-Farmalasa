@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.3 — Pedidos · Generar: la urgencia vuelve a % con barra
+
+- **La urgencia se ve como % con barra y color, sin etiquetas.** El % es qué tan cerca está la sala de ser urgente: 100% = 50 productos bajo mínimo o 25 en cero; 50% = 25 bajo mínimo. Rojo con la barra llena, naranja desde la mitad, verde por debajo. Debajo, el conteo: «35 bajo mínimo · 32 en cero».
+
 ## v2.1232.2 — Pedidos · Generar: la urgencia se cuenta en productos bajo mínimo
 
 - **La urgencia de cada sucursal ya no es un porcentaje**: cuenta los productos **bajo su mínimo que Bodega puede mandar**, y los que están **en cero**. El % de antes medía qué tan vacíos estaban en promedio, no cuántos: 43 productos a medio llenar salían naranja y 13 casi vacíos, rojo.

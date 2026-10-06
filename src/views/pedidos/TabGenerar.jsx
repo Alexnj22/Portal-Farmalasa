@@ -46,8 +46,17 @@ function fmtTimeSince(iso) {
 const URG_ROJO_BAJO_MIN    = 50;
 const URG_ROJO_EN_CERO     = 25;
 const URG_NARANJA_BAJO_MIN = 25;
-const URG_ROTULO = { high: 'Urgente', mid: 'Reponer pronto', low: 'Al día' };
-const URG_VARIANTE = { high: 'danger', mid: 'warning', low: 'success' };
+
+// El % de urgencia: qué tan cerca está la sala del rojo. 100% = 50 bajo
+// mínimo o 25 en cero (lo que llegue antes); 50% = 25 bajo mínimo. Así la
+// barra y el color dicen lo mismo: rojo con la barra llena, naranja desde la
+// mitad. Sin los campos nuevos —la consulta vieja— es el % de antes.
+function urgenciaPct(stat) {
+    if (stat?.bajo_min_productos == null) return stat?.avg_urgencia_pct ?? null;
+    const porBajo = stat.bajo_min_productos / URG_ROJO_BAJO_MIN;
+    const porCero = (stat.en_cero_productos ?? 0) / URG_ROJO_EN_CERO;
+    return Math.min(100, Math.round(Math.max(porBajo, porCero) * 100));
+}
 
 const SIN_BODEGA_COLS = [
     { key: 'product_name',    label: 'Producto',    align: 'left',  sortable: true },
@@ -293,9 +302,9 @@ export default function TabGenerar({ searchTerm = '' }) {
     // Sin los campos nuevos —la consulta vieja— cae al porcentaje de antes.
     const getUrgLevel = (stat) => {
         if (stat?.bajo_min_productos != null) {
-            const bajo = stat.bajo_min_productos, cero = stat.en_cero_productos ?? 0;
-            if (bajo >= URG_ROJO_BAJO_MIN || cero >= URG_ROJO_EN_CERO) return 'high';
-            if (bajo >= URG_NARANJA_BAJO_MIN) return 'mid';
+            const pct = urgenciaPct(stat);
+            if (pct >= 100) return 'high';
+            if (pct >= (URG_NARANJA_BAJO_MIN / URG_ROJO_BAJO_MIN) * 100) return 'mid';
             return 'low';
         }
         const pct = stat?.avg_urgencia_pct;
@@ -355,7 +364,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                     <div className="min-w-0">
                         <h3 className="font-semibold text-content text-subtitle">Sucursales a reponer</h3>
                         <p className="text-label text-content-3 mt-0.5">
-                            La urgencia cuenta los productos bajo su mínimo que Bodega puede mandar.
+                            La urgencia sube con los productos bajo su mínimo que Bodega puede mandar.
                         </p>
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
@@ -389,7 +398,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                         const isOn      = selected.has(id);
                         const pending   = isSucPending(id);
                         const urgLevel  = getUrgLevel(stat);
-                        const urgPct    = stat?.avg_urgencia_pct ?? null;
+                        const urgPct    = urgenciaPct(stat);
 
                         if (pending) {
                             return (
@@ -451,19 +460,7 @@ export default function TabGenerar({ searchTerm = '' }) {
 
                                 {stat && !dashLoading ? (
                                     <>
-                                        {stat.bajo_min_productos != null ? (
-                                            <span className="flex flex-col items-start gap-1">
-                                                <Badge variant={URG_VARIANTE[urgLevel]} size="sm" uppercase={false}>
-                                                    {URG_ROTULO[urgLevel]}
-                                                </Badge>
-                                                <span className="text-caption text-content-2 tabular-nums">
-                                                    <span className={`font-bold ${urgText}`}>{stat.bajo_min_productos}</span> bajo mínimo
-                                                    {stat.en_cero_productos > 0 && (
-                                                        <> · <span className={`font-bold ${urgText}`}>{stat.en_cero_productos}</span> en cero</>
-                                                    )}
-                                                </span>
-                                            </span>
-                                        ) : urgPct != null && (
+                                        {urgPct != null && (
                                             <span className="block">
                                                 <span className="flex items-baseline justify-between gap-2 text-caption">
                                                     <span className="text-content-3">Urgencia</span>
@@ -474,6 +471,12 @@ export default function TabGenerar({ searchTerm = '' }) {
                                                     <span className={`block h-full rounded-full ${urgBar}`}
                                                         style={{ width: `${Math.min(100, Math.max(0, urgPct))}%` }} />
                                                 </span>
+                                                {stat.bajo_min_productos != null && (
+                                                    <span className="mt-1 block text-caption text-content-3 tabular-nums">
+                                                        {stat.bajo_min_productos} bajo mínimo
+                                                        {stat.en_cero_productos > 0 && ` · ${stat.en_cero_productos} en cero`}
+                                                    </span>
+                                                )}
                                             </span>
                                         )}
                                         <span className="flex items-center justify-between flex-wrap gap-x-2 gap-y-0.5 text-caption">

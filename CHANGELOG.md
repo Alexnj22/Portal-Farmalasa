@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.2 — Pedidos · Generar: la urgencia se cuenta en productos bajo mínimo
+
+- **La urgencia de cada sucursal ya no es un porcentaje**: cuenta los productos **bajo su mínimo que Bodega puede mandar**, y los que están **en cero**. El % de antes medía qué tan vacíos estaban en promedio, no cuántos: 43 productos a medio llenar salían naranja y 13 casi vacíos, rojo.
+- **Tres estados con nombre**: *Urgente* (50+ bajo mínimo o 25+ en cero), *Reponer pronto* (25–49) y *Al día*. Los cortes salen de 35 días de existencias reales de las seis salas: dan en promedio una sala urgente por día.
+- Necesita la versión nueva de `get_pedido_generar_dashboard` (agrega `bajo_min_productos` y `en_cero_productos`); mientras no esté, la tarjeta sigue mostrando el % de antes.
+
 ## v2.1232.1 — Pedidos: Generar y Métricas rediseñados, y siembra de pruebas
 
 **Generar**

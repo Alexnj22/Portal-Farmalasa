@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1223.2 — Depósito al banco: anotar lo que entra de afuera después ya no deja el monto recortado
+
+- **DEP-261005-1 salió con $425 de remanente que sí se remesaron.** Se escribió «Al banco» $25,145 antes de anotar los $425 de la venta de la motocicleta; el campo lo recortó a $24,720 (el máximo sin el aporte) y al anotar el aporte el número no volvía. Registro corregido en producción: al banco $25,145.00, remanente $0.00, con nota.
+- **El tope ahora se aplica al leer, no al escribir:** el formulario guarda lo que se tecleó y lo completa solo cuando sube el máximo. El orden en que se llenan los campos deja de importar. Si las dos partes no caben, cede la que se tocó última, y el campo dice cuánto se escribió y cuánto alcanza.
+
 ## v2.1223.1 — Puntos Salud abre en iOS 27: ciclo de vida por escenas
 
 - **Puntos Salud se cerraba al abrir** (TestFlight, compilación 1): iOS 27 exige el ciclo de vida por escenas cuando la app se compila con su SDK (Xcode 27, la Mac); UIKit corta con EXC_BREAKPOINT en `_UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption`. Las compilaciones de EAS usaban otro Xcode y no lo sufrían.

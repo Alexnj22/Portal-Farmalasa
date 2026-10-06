@@ -8,8 +8,10 @@ import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo } from '../../../comp
 import { useCuenta } from '../../../lib/cuenta';
 import { dolares, entero, fecha, nombrePropio } from '../../../lib/formato';
 import TarjetaSocio from '../../../componentes/TarjetaSocio';
+import { LinearGradient } from 'expo-linear-gradient';
 import Vencimientos from '../../../componentes/Vencimientos';
 import Cumpleanos from '../../../componentes/Cumpleanos';
+import Historias from '../../../componentes/Historias';
 import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '../../../componentes/animacion';
 import { useSesion } from '../../../lib/sesion';
 import { abrirPase, agregarPase, tienePase, walletDisponible } from '../../../modules/wallet';
@@ -83,9 +85,13 @@ export default function Puntos() {
   return (
     <Pantalla alRefrescar={refrescar} refrescando={refrescando}>
       <Cumpleanos activo={!!resumen.cumpleanos} forzar={cumple === '1'} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
-      <Entrada indice={0}>
+      <Entrada indice={0} estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Texto nivel={2} estilo={{ fontSize: 17 }}>{resumen.cumpleanos ? `¡Feliz cumpleaños, ${primerNombre}! 🎂` : `Hola, ${primerNombre}`}</Texto>
+        <Campana />
       </Entrada>
+
+      {/* Historias: promociones e información, tipo estados. */}
+      <Historias />
 
       {/* La tarjeta de socio: saldo al frente, código y QR al reverso. */}
       <Entrada indice={1}>
@@ -166,6 +172,24 @@ export default function Puntos() {
             </View>
             <Text style={{ fontSize: 22, color: colorSistema.texto3 }}>›</Text>
           </Tarjeta>
+        </Tocable>
+      </Entrada>
+
+      {/* Sucursales: entrada llamativa (pedido del usuario, 2026-10-06). */}
+      <Entrada indice={4}>
+        <Tocable alTocar={() => router.push('/sucursales')} etiqueta="Nuestras sucursales">
+          <LinearGradient colors={['#4B1E8C', t.color.magenta]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            style={{ borderRadius: 26, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 14, overflow: 'hidden' }}>
+            <Text style={{ position: 'absolute', right: 40, top: -30, fontSize: 130, fontWeight: '900', color: 'rgba(255,255,255,0.08)' }}>+</Text>
+            <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 26 }}>📍</Text>
+            </View>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={{ fontSize: 19, fontWeight: '800', color: '#FFFFFF' }}>Nuestras sucursales</Text>
+              <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.88)' }}>Horarios, cómo llegar y WhatsApp</Text>
+            </View>
+            <Text style={{ fontSize: 26, color: '#FFFFFF' }}>›</Text>
+          </LinearGradient>
         </Tocable>
       </Entrada>
 
@@ -250,6 +274,28 @@ function BotonWallet({ serial }) {
       <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>
         {cargando ? 'Preparando…' : tiene ? 'Ver en Apple Wallet' : 'Agregar a Apple Wallet'}
       </Text>
+    </Pressable>
+  );
+}
+
+// La campana: abre la bandeja; el número son los avisos sin leer.
+function Campana() {
+  const t = useTema();
+  const pedir = useSesion((s) => s.pedir);
+  const [sinLeer, setSinLeer] = useState(0);
+  useFocusEffect(useCallback(() => { pedir('bandeja').then((r) => setSinLeer(r?.sin_leer ?? 0)); }, [pedir]));
+  return (
+    <Pressable onPress={() => router.push('/notificaciones')} hitSlop={10} accessibilityRole="button"
+      accessibilityLabel={sinLeer ? `Notificaciones, ${sinLeer} sin leer` : 'Notificaciones'}
+      style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
+        backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)', transform: [{ scale: pressed ? 0.92 : 1 }] })}>
+      <Text style={{ fontSize: 20 }}>🔔</Text>
+      {sinLeer ? (
+        <View style={{ position: 'absolute', top: 4, right: 4, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4,
+          backgroundColor: '#FF3B30', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: '#FFF', fontSize: 11, fontWeight: '800' }}>{sinLeer > 9 ? '9+' : sinLeer}</Text>
+        </View>
+      ) : null}
     </Pressable>
   );
 }

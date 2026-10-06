@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
 
     // Anotar primero: lo que ya estaba anotado NO vuelve (la UNIQUE lo frena).
     const { data: nuevos, error: eA } = await admin.from("app_cliente_avisos")
-      .upsert(candidatos.map(({ url: _u, ...a }) => a), { onConflict: "customer_id,tipo,ref", ignoreDuplicates: true })
+      .upsert(candidatos, { onConflict: "customer_id,tipo,ref", ignoreDuplicates: true })
       .select("id, customer_id, tipo, ref");
     if (eA) throw eA;
     const llave = (a: { customer_id: number; tipo: string; ref: string }) => `${a.customer_id}|${a.tipo}|${a.ref}`;

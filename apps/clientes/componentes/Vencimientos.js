@@ -64,7 +64,7 @@ export default function Vencimientos({ vencimientos }) {
   return (
     <Tarjeta estilo={{ gap: 14 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Titulo>Por vencer</Titulo>
+        <Titulo>Puntos por vencer</Titulo>
         {pronto.puntos > 0 && diasProximo != null && diasProximo <= 30 ? (
           <Latido>
             <View style={{ backgroundColor: NARANJA, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>

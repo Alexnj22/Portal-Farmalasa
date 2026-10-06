@@ -150,6 +150,14 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
             style={StyleSheet.absoluteFill} />
           <BrilloTarjeta x={x} y={y} barrido={barrido} />
 
+          {/* El logo al centro: llena el espacio entre el chip y el nombre
+              (pedido del usuario, 2026-10-06), con un halo suave. */}
+          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
+            <View style={estilos.halo}>
+              <Image source={require('../assets/icono.png')} style={{ width: 64, height: 64, borderRadius: 16 }} />
+            </View>
+          </View>
+
           <View style={estilos.contenido}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -202,6 +210,10 @@ const estilos = StyleSheet.create({
   marca: { color: '#FFFFFF', fontSize: 15, fontWeight: '800', letterSpacing: 2 },
   socio: { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '800', letterSpacing: 2.5 },
   chip: { width: 46, height: 34, borderRadius: 7 },
+  halo: {
+    padding: 6, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
+    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },
+  },
   nombre: { color: '#FFFFFF', fontSize: 17, fontWeight: '700', letterSpacing: 1.5 },
   desde: { color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: '600' },
   saldo: { color: '#FFFFFF', fontSize: 30, fontWeight: '900', letterSpacing: -0.5, fontVariant: ['tabular-nums'] },

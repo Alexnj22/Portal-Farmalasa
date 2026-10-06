@@ -135,3 +135,54 @@ export async function fetchOfertaDeDescuento(descuentoId) {
         .limit(1));
     return filas[0] ?? null;
 }
+
+// ── Historias (carrusel tipo estados de la app) ─────────────────────────────
+// Tabla `app_historias` (migración `app_clientes_historias_y_bandeja`). Mismo
+// permiso y mismo bucket que las ofertas; la app las recibe firmadas desde
+// `app-clientes`. Pocas decenas: sin paginar.
+
+export async function fetchHistorias() {
+    const filas = sinError(await supabase.from('app_historias')
+        .select('id, titulo, texto, imagen_path, enlace, boton, inicio, fin, publicada, orden, updated_at')
+        .order('fin', { ascending: false })
+        .limit(200));
+    const rutas = filas.map((f) => f.imagen_path).filter(Boolean);
+    if (!rutas.length) return filas;
+    const { data: firmadas, error } = await supabase.storage.from(BUCKET).createSignedUrls(rutas, 3600);
+    if (error) {
+        console.error('ofertasClientes.js: no se pudieron firmar las historias', error);
+        return filas;
+    }
+    const porRuta = new Map((firmadas ?? []).map((f) => [f.path, f.signedUrl]));
+    return filas.map((f) => ({ ...f, imagen_url: porRuta.get(f.imagen_path) ?? null }));
+}
+
+const CAMPOS_HISTORIA = ['titulo', 'texto', 'imagen_path', 'enlace', 'boton', 'inicio', 'fin', 'publicada', 'orden'];
+
+export async function guardarHistoria(id, datos) {
+    const fila = Object.fromEntries(CAMPOS_HISTORIA.filter((k) => k in datos).map((k) => [k, datos[k]]));
+    if (id) {
+        sinError(await supabase.from('app_historias')
+            .update({ ...fila, updated_at: new Date().toISOString() }).eq('id', id).select('id').single());
+        anotar('HISTORIA_APP_EDITAR', id, fila);
+        return id;
+    }
+    const nueva = sinError(await supabase.from('app_historias').insert(fila).select('id').single());
+    anotar('HISTORIA_APP_CREAR', nueva.id, fila);
+    return nueva.id;
+}
+
+export async function publicarHistoria(id, publicada) {
+    sinError(await supabase.from('app_historias')
+        .update({ publicada, updated_at: new Date().toISOString() }).eq('id', id).select('id').single());
+    anotar(publicada ? 'HISTORIA_APP_PUBLICAR' : 'HISTORIA_APP_RETIRAR', id, { publicada });
+}
+
+export async function borrarHistoria(h) {
+    sinError(await supabase.from('app_historias').delete().eq('id', h.id).select('id').single());
+    if (h.imagen_path) {
+        const { error } = await supabase.storage.from(BUCKET).remove([h.imagen_path]);
+        if (error) console.error('ofertasClientes.js: la imagen de la historia quedó huérfana', error);
+    }
+    anotar('HISTORIA_APP_BORRAR', h.id, { titulo: h.titulo });
+}

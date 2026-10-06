@@ -69,8 +69,8 @@ export default function Bienvenida() {
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 28, marginTop: 4 }}>
           <Text onPress={() => router.push('/vitrina')} accessibilityRole="link"
             style={{ fontSize: 16, fontWeight: '700', color: t.color.magentaTexto, paddingVertical: 12 }}>Ver ofertas</Text>
-          <Text onPress={() => router.push('/salas')} accessibilityRole="link"
-            style={{ fontSize: 16, fontWeight: '700', color: t.color.magentaTexto, paddingVertical: 12 }}>Nuestras salas</Text>
+          <Text onPress={() => router.push('/sucursales')} accessibilityRole="link"
+            style={{ fontSize: 16, fontWeight: '700', color: t.color.magentaTexto, paddingVertical: 12 }}>Sucursales</Text>
         </View>
       </View>
     </ScrollView>

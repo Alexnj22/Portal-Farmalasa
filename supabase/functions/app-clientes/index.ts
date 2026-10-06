@@ -44,6 +44,23 @@ const DIAS_SESION = 180;
 const POR_PAGINA_INICIAL = 10;
 const POR_PAGINA = 20;
 
+// Cómo se llama cada sucursal PARA EL CLIENTE (decisión del usuario,
+// 2026-10-06): el barrio, no el número interno. Lo demás pasa tal cual.
+const NOMBRE_SUCURSAL: Record<string, string> = {
+  "Salud 1": "Salud - San Antonio",
+  "Salud 2": "Salud - El Calvario",
+  "Salud 3": "Salud - Totolco",
+  "Salud 4": "Salud - El Paraíso",
+  "Salud 5": "Salud - Nueva Concepción",
+};
+const sucursal = (n: unknown) => (n == null ? n : NOMBRE_SUCURSAL[String(n)] ?? String(n));
+// deno-lint-ignore no-explicit-any
+const conSucursal = (x: any): any =>
+  Array.isArray(x) ? x.map(conSucursal)
+  : x && typeof x === "object"
+    ? Object.fromEntries(Object.entries(x).map(([k, v]) => [k, k === "sala" ? sucursal(v) : conSucursal(v)]))
+    : x;
+
 // Las MUESTRAS de una ficha (`app_cliente_muestras`, 2026-10-06): ofertas,
 // inyecciones y vencimientos de muestra que sólo ve esa persona, para revisar
 // el diseño con datos que producción no tiene. Nunca tumban la respuesta: si
@@ -338,7 +355,7 @@ Deno.serve(async (req) => {
       }
       const { data: salas, error: eB } = await admin.from("branches").select("id, name");
       if (eB) console.error("no se pudieron leer las salas:", eB.message);
-      const nombreSala = new Map((salas ?? []).map((b: any) => [b.id, b.name]));
+      const nombreSala = new Map((salas ?? []).map((b: any) => [b.id, sucursal(b.name)]));
 
       // Firmadas en UNA llamada y por 12 horas: firmar una por una costaba una
       // petición a Storage por oferta en cada apertura, y una URL nueva cada vez
@@ -380,13 +397,42 @@ Deno.serve(async (req) => {
           condiciones: disponible ? m.condiciones ?? null : null,
           descuento: m.descuento ?? null,
           productos: disponible && Array.isArray(m.productos) ? m.productos : [],
-          salas: Array.isArray(m.salas) && m.salas.length ? m.salas : null,
+          salas: Array.isArray(m.salas) && m.salas.length ? m.salas.map(sucursal) : null,
         });
       }
       return { ok: true, ofertas, socio };
     };
 
     if (accion === "ofertas_publicas") return json(await ofertasPara(null));
+
+    // Las HISTORIAS (carrusel tipo estados): vigentes y publicadas, con la foto
+    // firmada. Con ficha, se suman sus muestras.
+    // deno-lint-ignore no-explicit-any
+    const historiasPara = async (customerId: number | null): Promise<any> => {
+      const hoy = hoySV();
+      const { data: filas, error } = await admin.from("app_historias")
+        .select("id, titulo, texto, imagen_path, enlace, boton, inicio, fin")
+        .eq("publicada", true).lte("inicio", hoy).gte("fin", hoy)
+        .order("orden", { ascending: true }).order("created_at", { ascending: false }).limit(20);
+      if (error) throw error;
+      const muestras = await muestrasDe(admin, customerId, "historia");
+      const todas = [...(filas ?? []), ...muestras.map((m) => ({ ...m, id: `muestra-${m.id}` }))];
+      const rutas = todas.map((h) => h.imagen_path).filter(Boolean);
+      const firmadas = new Map<string, string>();
+      if (rutas.length) {
+        const { data: fs, error: eF } = await admin.storage.from("ofertas-clientes").createSignedUrls(rutas, 12 * 3600);
+        if (eF) console.error("no se pudieron firmar las historias:", eF.message);
+        for (const f of fs ?? []) if (f.path && f.signedUrl) firmadas.set(f.path, f.signedUrl);
+      }
+      return {
+        ok: true,
+        historias: todas.filter((h) => firmadas.has(h.imagen_path)).map((h) => ({
+          id: h.id, titulo: h.titulo, texto: h.texto ?? null, imagen: firmadas.get(h.imagen_path),
+          enlace: h.enlace ?? null, boton: h.boton ?? null, fin: h.fin,
+        })),
+      };
+    };
+    if (accion === "historias_publicas") return json(await historiasPara(null));
 
     // Las salas: dirección, teléfonos y horario, y si está abierta AHORA (hora
     // de El Salvador). Pública: se ve también sin cuenta.
@@ -408,7 +454,7 @@ Deno.serve(async (req) => {
         const hoy = horario[dia];
         const a = minutos(hoy.abre ?? ""), c = minutos(hoy.cierra ?? "");
         return {
-          id: b.id, nombre: b.name, direccion: b.address, telefono: b.phone, celular: b.cell, horario,
+          id: b.id, nombre: sucursal(b.name), direccion: b.address, telefono: b.phone, celular: b.cell, horario,
           abierta: a != null && c != null && ahora >= a && ahora < c,
           cierra_hoy: hoy.cierra, abre_hoy: hoy.abre,
         };
@@ -517,6 +563,25 @@ Deno.serve(async (req) => {
 
     // ── Ofertas: las ve también quien está pendiente ──────────────────────
     if (accion === "ofertas") return json(await ofertasPara(customerId));
+    if (accion === "historias") return json(await historiasPara(customerId));
+
+    // La BANDEJA: los avisos que ya se le mandaron, para verlos en la app.
+    if (accion === "bandeja" && !customerId) return json({ ok: true, avisos: [], sin_leer: 0 });
+    if (accion === "bandeja_leida" && !customerId) return json({ ok: true });
+    if (accion === "bandeja") {
+      const { data, error } = await admin.from("app_cliente_avisos")
+        .select("id, tipo, titulo, cuerpo, url, created_at, leido_at")
+        .eq("customer_id", customerId).eq("enviado", true)
+        .order("created_at", { ascending: false }).limit(50);
+      if (error) throw error;
+      return json({ ok: true, avisos: data ?? [], sin_leer: (data ?? []).filter((a) => !a.leido_at).length });
+    }
+    if (accion === "bandeja_leida") {
+      const { error } = await admin.from("app_cliente_avisos").update({ leido_at: new Date().toISOString() })
+        .eq("customer_id", customerId).is("leido_at", null);
+      if (error) throw error;
+      return json({ ok: true });
+    }
 
     // ── Lo demás necesita ficha ────────────────────────────────────────────
     if (!customerId) {
@@ -573,7 +638,7 @@ Deno.serve(async (req) => {
       if (eEst) throw eEst;
       const { data: salas, error: eSalas } = await admin.from("branches").select("codigo_puntos, name");
       if (eSalas) console.error("no se pudieron leer las salas:", eSalas.message);
-      const porCodigo = new Map((salas ?? []).map((b: any) => [String(b.codigo_puntos), String(b.name)]));
+      const porCodigo = new Map((salas ?? []).map((b: any) => [String(b.codigo_puntos), sucursal(b.name)]));
       const saldo = Number(est?.saldo ?? 0);
 
       // «Socio desde»: la primera vez que ganó puntos (la ficha puede ser más
@@ -637,7 +702,7 @@ Deno.serve(async (req) => {
     if (accion === "compras") {
       const { data, error } = await admin.rpc("app_cliente_compras", { p_customer_id: customerId });
       if (error) throw error;
-      return json({ ok: true, compras: data ?? [] });
+      return json({ ok: true, compras: conSucursal(data ?? []) });
     }
 
     // Más movimientos, de a 20 desde `desde`.
@@ -647,7 +712,7 @@ Deno.serve(async (req) => {
       if (error) throw error;
       const { data: salas, error: eSalas } = await admin.from("branches").select("codigo_puntos, name");
       if (eSalas) console.error("no se pudieron leer las salas:", eSalas.message);
-      const porCodigo = new Map((salas ?? []).map((b: any) => [String(b.codigo_puntos), String(b.name)]));
+      const porCodigo = new Map((salas ?? []).map((b: any) => [String(b.codigo_puntos), sucursal(b.name)]));
       const todos = est?.movimientos ?? [];
       return json({
         ok: true,
@@ -665,7 +730,7 @@ Deno.serve(async (req) => {
       const { data, error } = await admin.rpc("app_cliente_inyecciones", { p_customer_id: customerId });
       if (error) throw error;
       const muestras = (await muestrasDe(admin, customerId, "inyeccion")).map((m: any) => ({ ...m, id: `muestra-${m.id}` }));
-      return json({ ok: true, disponibles: [...((data as any)?.disponibles ?? []), ...muestras] });
+      return json({ ok: true, disponibles: conSucursal([...((data as any)?.disponibles ?? []), ...muestras]) });
     }
 
     // El enlace para agregar la tarjeta a Apple Wallet (ver el GET de arriba).

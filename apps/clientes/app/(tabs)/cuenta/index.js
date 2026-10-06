@@ -154,7 +154,7 @@ export default function Cuenta() {
         {resumen && !resumen.pendiente ? (
           <FilaAccion texto="Invitar a un amigo · 50 puntos" color={t.color.magentaTexto} alTocar={() => router.push('/invitar')} />
         ) : null}
-        <FilaAccion texto="Nuestras salas y horarios" color={t.color.magentaTexto} alTocar={() => router.push('/salas')} />
+        <FilaAccion texto="Nuestras sucursales" color={t.color.magentaTexto} alTocar={() => router.push('/sucursales')} />
       </Grupo>
 
       <Grupo>

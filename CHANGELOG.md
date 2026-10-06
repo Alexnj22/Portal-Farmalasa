@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1227.0 — App de clientes: historias, notificaciones y sucursales
+
+Pedido del usuario (2026-10-06):
+- **Historias** (carrusel tipo estados): círculos arriba de Mis puntos con aro de color si no se han visto; visor a pantalla completa con barras de progreso (6 s), tocar para avanzar/volver, mantener para pausar, deslizar para cerrar y botón a una pantalla de la app. En el portal, pestaña **Historias** en Ofertas para clientes (imagen vertical, título, texto, botón de una lista cerrada, fecha final, publicar). Acciones `historias`/`historias_publicas` en `app-clientes`; muestras para la ficha de prueba.
+- **Bandeja de notificaciones:** campana con el número sin leer en Mis puntos y pantalla con los avisos recibidos (`app_cliente_avisos` ahora guarda a dónde lleva cada uno y si se leyó); tocar uno lleva a su pantalla.
+- **Sucursales** (antes «salas»): los nombres para el cliente son el barrio — Salud - San Antonio, El Calvario, Totolco, El Paraíso, Nueva Concepción — en todo lo que manda `app-clientes`. Pantalla rediseñada: tarjeta con cabecera de color, estado que late si está abierta, acciones grandes y horario que se despliega; entrada llamativa en Mis puntos.
+- «Por vencer» → «Puntos por vencer»; el logo al centro de la tarjeta de socio.
+- `OfertaModal` guarda borrador (gate:borradores).
+
 ## v2.1226.12 — Base de historias y bandeja de avisos; main ya no despliega
 
 - **Base (sin pantallas todavía):** tabla `app_historias` (carrusel tipo estados para la app, editable con el permiso `ofertas_clientes`) y columnas `url`/`leido_at` en `app_cliente_avisos` para la bandeja de notificaciones.

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { Tag, Info } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
@@ -27,7 +28,10 @@ import { ACENTOS_DE_OFERTA, etiquetaDeDescuento } from '@nucleo/utils/ofertasCli
 export default function OfertaModal({ oferta, salas, onClose, onGuardada, onError }) {
     const nueva = !oferta.id;
     const deDescuento = !!oferta.descuento_erp_id;
-    const [f, setF] = useState({
+    // Borrador: el formulario tiene 7 campos y la sesión se cierra sola por
+    // inactividad (gate:borradores). Por oferta, o «nueva».
+    const claveBorrador = `oferta_cliente_${oferta.id ?? 'nueva'}`;
+    const [f, setF] = useState(() => loadDraft(claveBorrador) ?? {
         titulo: oferta.titulo ?? '', etiqueta: oferta.etiqueta ?? '', descripcion: oferta.descripcion ?? '',
         condiciones: oferta.condiciones ?? '', inicio: oferta.inicio ?? hoySV(), fin: oferta.fin ?? '',
         exclusiva: oferta.exclusiva ?? false, branch_ids: oferta.branch_ids ?? [], publicada: oferta.publicada ?? false,
@@ -35,6 +39,7 @@ export default function OfertaModal({ oferta, salas, onClose, onGuardada, onErro
     });
     const [archivo, setArchivo] = useState(null);
     const [guardando, setGuardando] = useState(false);
+    useEffect(() => { saveDraft(claveBorrador, f); }, [claveBorrador, f]);
     const cambiar = (k) => (v) => setF((x) => ({ ...x, [k]: v }));
     const alternarSala = (id) => setF((x) => ({
         ...x, branch_ids: x.branch_ids.includes(id) ? x.branch_ids.filter((b) => b !== id) : [...x.branch_ids, id],
@@ -62,6 +67,7 @@ export default function OfertaModal({ oferta, salas, onClose, onGuardada, onErro
                     inicio: f.inicio, fin: f.fin, branch_ids: f.branch_ids.length ? f.branch_ids : null,
                 }),
             });
+            clearDraft(claveBorrador);
             onGuardada();
         } catch (err) {
             onError(err);

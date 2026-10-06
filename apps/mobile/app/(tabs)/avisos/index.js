@@ -18,12 +18,13 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { cargarFilaDeAviso, esAvisoDeMinMax } from '@nucleo/data/solicitudDeAviso';
 import { detalleDeMinMax, detalleDeSolicitud, recortar } from '@nucleo/utils/tarjetaDeSolicitud';
 import { colorSistema } from '../../../componentes/Formulario';
-import { abrirRuta, abrirSolicitud } from '../../../pantallas';
+import { abrirRuta } from '../../../pantallas';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
 import { usePorDecidir } from '../../../componentes/porDecidir';
 import TarjetaPorDecidir from '../../../componentes/TarjetaPorDecidir';
 import TarjetaDeAviso from '../../../componentes/avisos/TarjetaDeAviso';
+import { abrirAviso } from '../../../componentes/avisos/abrir';
 
 
 // El detalle se pide para los avisos que nombran una solicitud todavía abierta.
@@ -74,16 +75,7 @@ export default function Notificaciones() {
     return () => { vivo = false; };
   }, [avisos, detalles]);
 
-  const abrir = (n) => {
-    marcarLeido(n.id);
-    // Un corte nuevo abre ESE corte, listo para confirmar.
-    if (n.type === 'CORTE_NUEVO' && n.metadata?.corte_id) {
-      return router.push({ pathname: '/corte/[id]', params: { id: String(n.metadata.corte_id), fecha: n.metadata.fecha ?? '' } });
-    }
-    const id = n.metadata?.request_id;
-    if (id) return abrirSolicitud(esAvisoDeMinMax(n) ? `minmax:${id}` : id);
-    if (n.link) abrirRuta(n.link);
-  };
+  const abrir = abrirAviso;
 
   return (
     <>
@@ -116,7 +108,7 @@ export default function Notificaciones() {
           </View>
         )}
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 24, paddingTop: 8 }}>
-          <Pressable onPress={() => abrirRuta('/notificaciones')}><Text style={{ color: colorSistema.acento, fontSize: 15 }}>Historial</Text></Pressable>
+          <Pressable onPress={() => router.push('/notificaciones')}><Text style={{ color: colorSistema.acento, fontSize: 15 }}>Historial</Text></Pressable>
           <Pressable onPress={() => abrirRuta('/mis-avisos')}><Text style={{ color: colorSistema.acento, fontSize: 15 }}>Comunicados</Text></Pressable>
         </View>
       </ScrollView>

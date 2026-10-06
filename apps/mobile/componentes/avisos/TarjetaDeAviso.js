@@ -83,7 +83,7 @@ function Fallback({ n, detalle, expandida }) {
   );
 }
 
-export default function TarjetaDeAviso({ n, detalle, onAbrir }) {
+export default function TarjetaDeAviso({ n, detalle, onAbrir, pie = null, sinAcciones = false }) {
   const { user, hasPermission } = useAuth();
   const sucursales = useStaffStore((s) => s.branches);
   const marcarResuelto = useStaffStore((s) => s.marcarAvisoDeSolicitudResuelto);
@@ -107,8 +107,9 @@ export default function TarjetaDeAviso({ n, detalle, onAbrir }) {
     ?? (largo ? { cerrado: 'Ver mensaje completo', abierto: 'Ocultar mensaje' } : null);
 
   // Decidir desde la tarjeta: la misma regla de quién puede que el portal.
-  const decidible = !resuelta && puedeDecidirAviso(n, hasPermission);
-  const traslado = !resuelta && trasladoPorResolver(n, hasPermission);
+  // En la papelera del historial no se decide: un aviso quitado se lee.
+  const decidible = !sinAcciones && !resuelta && puedeDecidirAviso(n, hasPermission);
+  const traslado = !sinAcciones && !resuelta && trasladoPorResolver(n, hasPermission);
   const dif = datosDeDiferencia(n);
   // La tarjeta ya trae la persona (o la sala va en el título): el pie no la repite.
   const conPersona = Boolean(datosDeSolicitud(n) || datosDeRespuesta(n) || datosDeDecision(n) || dif || datosDeDiferenciasPendientes(n));
@@ -164,9 +165,10 @@ export default function TarjetaDeAviso({ n, detalle, onAbrir }) {
             </View>
           ) : traslado ? (
             <Boton texto="Revisar el traslado" principal onPress={onAbrir} />
-          ) : difMeToca ? (
+          ) : !sinAcciones && difMeToca ? (
             <Boton texto="Resolver la diferencia" principal onPress={onAbrir} />
           ) : null}
+          {pie}
         </View>
       </Vidrio>
     </Pressable>

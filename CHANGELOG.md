@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1223.4 — App: historial de notificaciones nativo
+
+- **App: el historial de notificaciones ya es nativo.** Todo lo de los últimos 60 días —leído, sin leer y lo que se quitó de la bandeja—, paginado contra el servidor, con búsqueda en la barra y la MISMA tarjeta de la bandeja (detalle, Aprobar/Rechazar). Lo quitado se puede devolver con un toque.
+- El toque de un aviso vive en un solo sitio (`componentes/avisos/abrir.js`) para la bandeja y el historial.
+- Plan nuevo: `docs/PLAN-APP-NATIVA-PARIDAD-2026-10-06.md` — lo que falta pasar a nativo y la auditoría de paridad de las 60 pantallas.
+
 ## v2.1223.3 — App de clientes: tarjeta viva, textos legibles, Face ID, vencimientos y muestras
 
 Revisión en TestFlight del usuario (2026-10-06):

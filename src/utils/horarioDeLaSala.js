@@ -24,3 +24,10 @@ export function personasDelHorario(empleados, salaId) {
         .filter((e) => String(e.branchId || e.branch_id) === String(salaId) && (e.status || '').toUpperCase() !== 'INACTIVO')
         .sort((a, b) => (pesoDeCargo(a.role) - pesoDeCargo(b.role)) || (a.name || 'Sin Nombre').localeCompare(b.name || 'Sin Nombre'));
 }
+
+/** Quién puede venir a cubrir a una sala: la gente de planilla, activa, de las OTRAS salas, por nombre. */
+export function personasParaCubrir(empleados, salaId) {
+    return soloPersonalEnPlanilla(empleados || [])
+        .filter((e) => String(e.branchId || e.branch_id) !== String(salaId) && (e.status || '').toUpperCase() !== 'INACTIVO')
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+}

@@ -18,6 +18,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { datosDelDiaParaGuardar, limitesDeLaSalaElDia, turnosQueCabenElDia } from '@nucleo/utils/edicionDeHorario';
 
 // «16:00» → «4:00 p. m.», del canónico.
 const formatTime12hStr = (time24) => hora12(time24);
@@ -67,40 +68,11 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
         : null;
 
     // ── El horario de atención de la sala ese día ────────────────────────────
+    // Núcleo (`limitesDeLaSalaElDia`): la misma cuenta que la app.
     const branchLimits = useMemo(() => {
-        let minO = 1440; 
-        let maxC = 0;
-        let isClosedToday = false;
-        let hasValidHours = false;
-
         const b = branches?.find(br => String(br.id) === String(filterBranch));
-        if (b) {
-            let sch = b.weekly_hours || b.settings?.schedule;
-            if (typeof sch === 'string') {
-                try { sch = JSON.parse(sch); } catch { sch = null; }
-            }
-
-            if (sch && typeof sch === 'object') {
-                const dayConfig = sch[dayId]; 
-                
-                if (dayConfig && !dayConfig.isClosed && !dayConfig.isOff && dayConfig.isOpen !== false) {
-                    const cleanStart = String(dayConfig.start || dayConfig.open || '').replace(/[^0-9:]/g, '').trim();
-                    const cleanEnd = String(dayConfig.end || dayConfig.close || '').replace(/[^0-9:]/g, '').trim();
-
-                    if (cleanStart && cleanEnd) {
-                        minO = timeToMins(cleanStart);
-                        maxC = timeToMins(cleanEnd);
-                        if (maxC < minO) maxC += 1440;
-                        hasValidHours = true;
-                    }
-                } else if (dayConfig && (dayConfig.isClosed || dayConfig.isOff || dayConfig.isOpen === false)) {
-                    isClosedToday = true;
-                    hasValidHours = true; 
-                }
-            }
-        }
-        
-        return { minOpen: minO, maxClose: maxC, isClosedToday, hasValidHours, branchName: b?.name || 'la sucursal' };
+        const l = limitesDeLaSalaElDia(b, dayId);
+        return { minOpen: l.apertura, maxClose: l.cierre, isClosedToday: l.cerrada, hasValidHours: l.hayHorario, branchName: l.nombre };
     }, [branches, filterBranch, dayId]);
 
 
@@ -130,31 +102,12 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
             : {});
     }, [resuelto, showTimePickers, customStart, customEnd, branchLimits]);
 
+    // Los turnos que caben ese día: núcleo (`turnosQueCabenElDia`), el mismo de la app.
     const filteredShifts = useMemo(() => {
         if (!shifts || !filterBranch) return [];
-        
-        const globalShifts = shifts.filter(s => {
-            const isGlobal = !s.branch_id && !s.branchId || String(s.branch_id) === 'null' || String(s.branchId) === 'null';
-            const isActive = s.is_active !== false && s.isActive !== false;
-            return isGlobal && isActive;
-        });
-
-        if (!branchLimits.hasValidHours || branchLimits.isClosedToday) return [];
-
-        const inRange = globalShifts.filter(s => {
-            const sStartMins = timeToMins(s.start_time?.substring(0, 5) || s.start);
-            let sEndMins = timeToMins(s.end_time?.substring(0, 5) || s.end);
-            if (sEndMins < sStartMins) sEndMins += 1440;
-            return sStartMins >= branchLimits.minOpen && sEndMins <= branchLimits.maxClose;
-        });
-
-        // Deduplicate by name+start+end — same grouping key as TabShifts catalog
-        const seen = new Map();
-        return inRange.filter(s => {
-            const key = `${s.name}_${s.start_time || s.start}_${s.end_time || s.end}`;
-            if (seen.has(key)) return false;
-            seen.set(key, true);
-            return true;
+        return turnosQueCabenElDia(shifts, {
+            apertura: branchLimits.minOpen, cierre: branchLimits.maxClose,
+            cerrada: branchLimits.isClosedToday, hayHorario: branchLimits.hasValidHours,
         });
     }, [shifts, filterBranch, branchLimits]);
 
@@ -229,20 +182,11 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
     };
 
     const handleSave = () => {
-        const isOffSelected = shiftId === 'OFF';
-        const finalShiftId = (isOffSelected || shiftId === 'NO_SHIFTS') ? '' : shiftId;
-        const finalIsOff = isOffSelected || (!finalShiftId && !customStart);
-
-        onSave(dayId, {
-            shiftId: finalShiftId,
-            customStart: finalIsOff ? '' : customStart,
-            customEnd: finalIsOff ? '' : customEnd,
-            hasLunch: finalIsOff ? false : hasLunch,
-            lunchStart: (hasLunch && !finalIsOff) ? lunchStart : null,
-            hasLactation: finalIsOff ? false : hasLactation,
-            lactationStart: (hasLactation && !finalIsOff) ? lactationStart : null,
-            isOff: finalIsOff
-        });
+        // La forma de lo que se guarda: núcleo (`datosDelDiaParaGuardar`).
+        onSave(dayId, datosDelDiaParaGuardar({
+            turno: shiftId, inicio: customStart, fin: customEnd,
+            conPausa: hasLunch, pausa: lunchStart, conLactancia: hasLactation, lactancia: lactationStart,
+        }));
         onClose();
     };
 

@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, memo } from 'react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
-import { tokenMatch } from '@nucleo/utils/searchUtils';
 import {
     X, Archive, Target, Pencil, Copy,
     AlertTriangle, Search, RotateCcw, Save, Send, Globe, AlertCircle,
@@ -12,7 +11,7 @@ import { formatTime12h } from '@nucleo/utils/helpers';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import {
-    formatHourAMPM, timeToMins, resolverTurnoDelDia, reparosDelDia,
+    formatHourAMPM, timeToMins, resolverTurnoDelDia,
     HORAS_JORNADA_DIURNA, MINUTOS_DE_PAUSA,
 } from '@nucleo/utils/scheduleHelpers';
 import usePulsacionLarga from '@nucleo/hooks/usePulsacionLarga';
@@ -27,6 +26,7 @@ import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { EmptyState } from '../../components/common/StateViews';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { gruposDelCatalogo, revisionDelTurno } from '@nucleo/utils/edicionDeHorario';
 import { clickable } from '@nucleo/utils/clickable';
 
 const minsToTimeStr = (mins) => {
@@ -342,79 +342,16 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
             .slice(0, 6);
     }, [validBranches, shifts, editingGroup, currentForm.start, getBranchLimits, dismissedSugs]);
 
-    const { autoName, activeAlerts, hasBlockingError, primerReparo } = useMemo(() => {
-        let clasificacion = 'Turno estándar';
-        const alerts = [];
-        let bloqueante = false;
-
-        if (currentForm.start && currentForm.end) {
-            const sMins = timeToMins(currentForm.start);
-            let eMins   = timeToMins(currentForm.end);
-            if (eMins < sMins) eMins += 1440;
-
-            if (sMins <= 480)       clasificacion = 'Apertura';
-            else if (eMins >= 1020) clasificacion = 'Cierre';
-            else                    clasificacion = 'Enlace';
-
-            // Los reparos salen del reglamento, no de un número suelto: el tope
-            // diario es de 8 h (7 si la jornada es nocturna, Art. 16) sobre las
-            // horas PAGADAS, y la pausa tiene que caer dentro de la jornada.
-            const r = resolverTurnoDelDia({
-                customStart: currentForm.start, customEnd: currentForm.end,
-                hasLunch: Boolean(currentForm.lunchStart),
-                lunchStart: currentForm.lunchStart,
-                lunchMinutes: currentForm.lunchMinutes,
-            }, []);
-            reparosDelDia(r).forEach(texto => alerts.push({ type: 'warning', text: texto }));
-
-            const isDuplicate = shifts.some(s => {
-                if (s.is_active === false || s.isActive === false) return false;
-                const sStart = s.start_time?.substring(0, 5) || s.start;
-                const sEnd   = s.end_time?.substring(0, 5)   || s.end;
-                const isNotCurrent = editingGroup ? !editingGroup.all_ids.includes(s.id) : true;
-                return sStart === currentForm.start && sEnd === currentForm.end && isNotCurrent;
-            });
-            if (isDuplicate) {
-                alerts.push({ type: 'error', text: 'Ya existe un turno con exactamente estas mismas horas.' });
-                bloqueante = true;
-            }
-        }
-        return {
-            autoName: clasificacion,
-            activeAlerts: alerts,
-            hasBlockingError: bloqueante,
-            primerReparo: alerts.find(a => a.type === 'error')?.text || alerts[0]?.text || null,
-        };
-    }, [currentForm, shifts, editingGroup]);
+    // La revisión del turno (nombre automático, reglamento, repetidos):
+    // núcleo (`revisionDelTurno`), la misma de la app.
+    const { autoName, activeAlerts, hasBlockingError, primerReparo } = useMemo(
+        () => revisionDelTurno(currentForm, shifts, editingGroup), [currentForm, shifts, editingGroup]);
 
     // ── FILTERED + SORTED SHIFTS ─────────────────────────────────────────────
-    const globalShifts = useMemo(() => {
-        if (!shifts) return [];
-        return shifts
-            .filter(s => {
-                const isActive    = s.is_active !== false && s.isActive !== false;
-                const matchesTab  = (shiftTab === 'ACTIVE' && isActive) || (shiftTab === 'ARCHIVED' && !isActive);
-                const matchesSearch = !searchTerm || tokenMatch(searchTerm, s.name);
-                return matchesTab && matchesSearch;
-            })
-            .reduce((map, s) => {
-                const key = `${s.name}_${s.start_time || s.start}_${s.end_time || s.end}`;
-                if (!map[key]) map[key] = {
-                    groupId: key, name: s.name,
-                    start: (s.start_time || s.start || '').substring(0, 5),
-                    end:   (s.end_time   || s.end   || '').substring(0, 5),
-                    lunchStart: s.lunch_start ? String(s.lunch_start).substring(0, 5) : '',
-                    lunchMinutes: s.lunch_minutes ?? 60,
-                    all_ids: [s.id], shifts_data: [s],
-                };
-                else { map[key].all_ids.push(s.id); map[key].shifts_data.push(s); }
-                return map;
-            }, {});
-    }, [shifts, shiftTab, searchTerm]);
-
-    const sortedShifts = useMemo(() =>
-        Object.values(globalShifts).sort((a, b) => timeToMins(a.start) - timeToMins(b.start)),
-    [globalShifts]);
+    // El catálogo agrupado (nombre + horas) y ordenado: núcleo (`gruposDelCatalogo`).
+    const sortedShifts = useMemo(
+        () => gruposDelCatalogo(shifts, { archivados: shiftTab === 'ARCHIVED', busqueda: searchTerm }),
+        [shifts, shiftTab, searchTerm]);
 
     // ── ACCIONES ─────────────────────────────────────────────────────────────
     const applySuggestion = useCallback((action) => {

@@ -6,12 +6,16 @@
 //
 // Acciones con las funciones del portal: «Aprobar todo» por persona
 // (`approveTimesheetsBulk`) y Confirmar / Rechazar con motivo un turno extra
-// (`resolverTurnoExtra`). Cerrar la quincena y corregir marcas siguen en el
-// portal. La suma sale del núcleo (`resumenDeQuincena`).
+// (`resolverTurnoExtra`). «Cerrar quincena» aprueba todos los días que
+// quedan sin aprobar (`closeQuincenaTimesheets`, la del portal) de las personas
+// que se ven —la sala elegida, o todas—: pide escribir CERRAR, porque desde ahí
+// la planilla se arma con esas horas. La suma sale del núcleo
+// (`resumenDeQuincena`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { approveTimesheetsBulk, fetchPendingShiftExceptions, fetchQuincenaTimesheets, resolverTurnoExtra } from '@nucleo/data/attendanceAudit';
+import { approveTimesheetsBulk, closeQuincenaTimesheets, fetchPendingShiftExceptions, fetchQuincenaTimesheets, resolverTurnoExtra } from '@nucleo/data/attendanceAudit';
+import { useStaffStore } from '@nucleo/store/staffStore';
 import { getCurrentQuincenaStart, getQuincenaEnd, nextQuincena, prevQuincena } from '@nucleo/utils/quincena';
 import { resumenDeQuincena, RESUMEN_VACIO } from '@nucleo/utils/auditoriaDeTiempos';
 import { ordenDeCargo } from '@nucleo/utils/planilla';
@@ -22,6 +26,7 @@ import { ordenDeSala } from '@nucleo/constants/erp';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
+import { BotonGrande } from '../formulario/Piezas';
 import Avatar from '../Avatar';
 import Vidrio from '../Vidrio';
 import { fallo, listo } from '../Progreso';
@@ -38,7 +43,8 @@ function Cifra({ valor, rotulo, color }) {
   );
 }
 
-export default function Quincena({ empleados, sucursales, puedeEditar, usuario, onRecargar }) {
+export default function Quincena({ empleados, sucursales, puedeEditar, usuario, onRecargar, salaNombre = null }) {
+  const anotar = useStaffStore((s) => s.appendAuditLog);
   const [inicio, setInicio] = useState(() => getCurrentQuincenaStart());
   const fin = getQuincenaEnd(inicio);
   const [ts, setTs] = useState(null);
@@ -88,6 +94,30 @@ export default function Quincena({ empleados, sucursales, puedeEditar, usuario, 
     ]);
   };
 
+  // Lo que falta aprobar de las personas que se ven (no de otras salas).
+  const sinAprobar = useMemo(() => (ts || []).filter((t) => ids.has(String(t.employee_id)) && t.status !== 'APPROVED'), [ts, ids]);
+  const rotuloQuincena = `${fechaTexto(inicio, { day: 'numeric' })} – ${fechaTexto(fin, { day: 'numeric', month: 'long' })}`;
+  const cerrar = () => {
+    if (!sinAprobar.length) return;
+    const quien = salaNombre ? `de ${salaNombre}` : 'de todas las salas que ves';
+    Alert.prompt('Cerrar la quincena',
+      `Se aprueban ${sinAprobar.length} día${sinAprobar.length === 1 ? '' : 's'} sin aprobar ${quien} (${rotuloQuincena}). La planilla se arma con esas horas.\n\nEscribe CERRAR para confirmar.`, [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Cerrar quincena', style: 'destructive', onPress: async (txt) => {
+          if (String(txt || '').trim().toUpperCase() !== 'CERRAR') { fallo('No se cerró', 'Escribe CERRAR para confirmar.'); return; }
+          setOcupado('cerrar');
+          const lista = sinAprobar.map((t) => t.id);
+          const { error } = await closeQuincenaTimesheets(lista);
+          setOcupado(null);
+          if (error) { fallo('No se pudo cerrar', mensajeAmigable(error, 'Intenta de nuevo.')); return; }
+          anotar?.('CERRAR_QUINCENA', inicio, { timeline_title: 'Quincena cerrada', dimension: 'HR', new_value: `${lista.length} días aprobados ${quien}`, desde: 'app' });
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          setTs((prev) => (prev || []).map((t) => (lista.includes(t.id) ? { ...t, status: 'APPROVED' } : t)));
+          listo('Quincena cerrada', `${lista.length} día(s) aprobados.`);
+        } },
+      ], 'plain-text');
+  };
+
   const resolver = async (req, aprobar, motivo = '') => {
     const m = req.metadata || {};
     setOcupado(req.id);
@@ -130,6 +160,14 @@ export default function Quincena({ empleados, sucursales, puedeEditar, usuario, 
             <Kpi icono="TrendingUp" rotulo="Horas extra" valor={h(total.overtime)} color={MARCA.violetaClaro} apoyo={total.nocturnalOT ? `${h(total.nocturnalOT)} extra nocturnas` : null} />
             <Kpi icono="UserX" rotulo="Ausencias" valor={String(total.absent)} color={total.absent ? MARCA.rojo : colorSistema.texto2} apoyo={total.late ? `${total.late} min de tardanza` : 'sin tardanzas'} />
           </FilaDeKpis>
+
+          {puedeEditar && total.total ? (
+            <View style={{ marginHorizontal: 16 }}>
+              {sinAprobar.length
+                ? <BotonGrande texto={ocupado === 'cerrar' ? 'Cerrando…' : `Cerrar quincena · ${sinAprobar.length} día${sinAprobar.length === 1 ? '' : 's'} sin aprobar`} color={MARCA.verde} onPress={cerrar} deshabilitado={!!ocupado} />
+                : <Text style={{ color: MARCA.verde, fontSize: 15, fontWeight: '700', textAlign: 'center' }}>Quincena cerrada: todo aprobado</Text>}
+            </View>
+          ) : null}
 
           {turnosExtra.length ? (
             <View style={{ gap: 8 }}>

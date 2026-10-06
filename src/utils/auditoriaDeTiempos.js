@@ -120,3 +120,29 @@ export function resumenDeQuincena(timesheets = []) {
     }
     return { porPersona, total };
 }
+
+/**
+ * Las marcas que se pueden agregar al corregir un día: entrada, salida, salida
+ * anticipada y gestión externa siempre; las del almuerzo sólo si el día tiene
+ * pausa, y las de lactancia sólo si tiene lactancia. Es la lista del modal del
+ * portal (`DayCorrectionModal`) y de la app.
+ */
+export function tiposDeMarcaParaCorregir(dayConfig) {
+    const base = [
+        { value: 'IN', label: 'Entrada' },
+        { value: 'OUT', label: 'Salida' },
+        { value: 'OUT_EARLY', label: 'Salida anticipada' },
+        { value: 'OUT_BUSINESS', label: 'Gestión externa' },
+    ];
+    if (dayConfig?.hasLunch || dayConfig?.lunchStart) {
+        base.splice(2, 0,
+            { value: 'OUT_LUNCH', label: 'Salida almuerzo' },
+            { value: 'IN_LUNCH', label: 'Regreso almuerzo' });
+    }
+    if (dayConfig?.hasLactation || dayConfig?.lactationStart) {
+        base.push(
+            { value: 'OUT_LACTATION', label: 'Salida lactancia' },
+            { value: 'IN_LACTATION', label: 'Regreso lactancia' });
+    }
+    return base;
+}

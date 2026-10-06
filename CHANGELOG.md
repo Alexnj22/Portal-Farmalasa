@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1236.0 — App: editar horarios y cerrar quincena
+
+- **App: editar el horario desde el teléfono.** Tocar a una persona y un día abre el editor nativo: libre, un turno del catálogo que cabe en el horario de la sala ese día, u horas propias, con almuerzo y lactancia; no deja guardar con reparos (entrada igual a salida, descansos, horario de la sala). Guarda con `guardarDiaDeHorario` (no toca la publicación; avisa si la semana ya está publicada). Agregar a quien viene a cubrir de otra sala, editar su día y quitarlo.
+- **Catálogo de turnos** (activos y archivados: crear, editar, duplicar, archivar, reactivar) y **Feriados** (por año: agregar nacional o municipal y recurrente, quitar).
+- **Auditoría de tiempos**: «Corregir» un día (agregar una marca con tipo, hora y motivo) y **Cerrar quincena** de las personas en pantalla, con confirmación escrita y anotado en la bitácora.
+- Núcleo: `edicionDeHorario.js`, `tiposDeMarcaParaCorregir`, `personasParaCubrir`; el portal los usa (InlineDayEditor, TabShifts, AttendanceAuditView).
 ## v2.1235.0 — App: historias de 24 h, reservas con pago y entrega, arreglo al girar la tarjeta
 
 - **Girar la tarjeta cerraba la app** (compilación 10): la reacción del giro capturaba `brilloQr` antes de que existiera y llamaba `runOnJS(undefined)`. Ahora la función va antes de la reacción.

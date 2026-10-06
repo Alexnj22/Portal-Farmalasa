@@ -42,7 +42,7 @@ import { getMondayOfCurrentWeek, fmtTimeCSTStr, formatTime12h, isEditedPunch, is
     from '@nucleo/utils/quincena';
 import { descargarArchivo } from '../plataforma/descargas';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { auditarDia, marcasEsperadas, resumenDeQuincena, RESUMEN_VACIO, ROTULO_MARCA, TIPOS_DE_ENTRADA, TIPOS_DE_SALIDA } from '@nucleo/utils/auditoriaDeTiempos';
+import { auditarDia, marcasEsperadas, resumenDeQuincena, RESUMEN_VACIO, ROTULO_MARCA, tiposDeMarcaParaCorregir, TIPOS_DE_ENTRADA, TIPOS_DE_SALIDA } from '@nucleo/utils/auditoriaDeTiempos';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const EMPTY_ARRAY = [];
@@ -186,27 +186,8 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
   useEffect(() => { if (isOpen) { setNewType(''); setNewTime(''); setReason(''); } }, [isOpen]);
 
   // Must be before early return — Rules of Hooks
-  const availablePunchTypes = useMemo(() => {
-    const base = [
-      { value: 'IN',           label: 'Entrada' },
-      { value: 'OUT',          label: 'Salida' },
-      { value: 'OUT_EARLY',    label: 'Salida anticipada' },
-      { value: 'OUT_BUSINESS', label: 'Gestión externa' },
-    ];
-    if (dayConfig?.hasLunch || dayConfig?.lunchStart) {
-      base.splice(2, 0,
-        { value: 'OUT_LUNCH', label: 'Salida almuerzo' },
-        { value: 'IN_LUNCH',  label: 'Regreso almuerzo' },
-      );
-    }
-    if (dayConfig?.hasLactation || dayConfig?.lactationStart) {
-      base.push(
-        { value: 'OUT_LACTATION', label: 'Salida lactancia' },
-        { value: 'IN_LACTATION',  label: 'Regreso lactancia' },
-      );
-    }
-    return base;
-  }, [dayConfig]);
+  // La lista de marcas que se pueden agregar: núcleo (`tiposDeMarcaParaCorregir`), la misma de la app.
+  const availablePunchTypes = useMemo(() => tiposDeMarcaParaCorregir(dayConfig), [dayConfig]);
 
   if (!isOpen || !emp || !dateStr) return null;
 

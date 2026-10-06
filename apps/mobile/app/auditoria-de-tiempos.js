@@ -10,11 +10,12 @@
 // y la QUINCENA (`componentes/personas/Quincena`): horas regulares, extra,
 // nocturnas, tardanza y ausencias por persona y por sala, «Aprobar todo» y los
 // turnos extra declarados. En el día, las marcas pendientes de Talento Humano
-// se dan por revisadas (`marcarMarcajesRevisados`). Corregir marcas y cerrar
-// la quincena siguen en el portal.
+// se dan por revisadas (`marcarMarcajesRevisados`) y se CORRIGEN agregando una
+// marca con su motivo (`componentes/personas/CorregirMarcas`, la acción del
+// portal). Cerrar la quincena está en la vista de Quincena.
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -30,7 +31,6 @@ import { ordenDeSala } from '@nucleo/constants/erp';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { BotonGrande } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
@@ -38,6 +38,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import Segmentos from '../componentes/Segmentos';
 import Fecha from '../componentes/formulario/Fecha';
 import Quincena from '../componentes/personas/Quincena';
+import CorregirMarcas from '../componentes/personas/CorregirMarcas';
 import { PasoDePeriodo } from '../componentes/personas/Piezas';
 import { fallo, listo } from '../componentes/Progreso';
 
@@ -73,6 +74,7 @@ export default function AuditoriaDeTiempos() {
   const [texto, setTexto] = useState('');
   const [abierto, setAbierto] = useState(null);
   const [recargando, setRecargando] = useState(false);
+  const [corrigiendo, setCorrigiendo] = useState(null); // { persona, dia, a }
 
   useEffect(() => { cargarAsistencia?.(35); }, [cargarAsistencia]);
   useEffect(() => {
@@ -132,7 +134,8 @@ export default function AuditoriaDeTiempos() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargarAsistencia?.(35); setRecargando(false); }} />}>
         {grupos.length ? <FiltrosActivos grupos={grupos} /> : null}
         <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'dia', label: 'Día' }, { id: 'quincena', label: 'Quincena' }]} />
-        {vista === 'quincena' ? <Quincena empleados={personas} sucursales={sucursales} puedeEditar={puedeEditar} usuario={user} /> : (
+        {vista === 'quincena' ? <Quincena empleados={personas} sucursales={sucursales} puedeEditar={puedeEditar} usuario={user}
+          salaNombre={sala === 'ALL' ? null : (sucursales || []).find((b) => String(b.id) === sala)?.name} /> : (
         <>
         <PasoDePeriodo titulo={dia === hoySV() ? 'Hoy' : fechaTexto(dia, { weekday: 'long', day: 'numeric', month: 'long' })}
           apoyo="Toca para elegir otro día" onTocar={() => setEligiendoDia((v) => !v)}
@@ -173,11 +176,21 @@ export default function AuditoriaDeTiempos() {
                       {a.inconsistencies.map((i) => (
                         <Text key={i.type} style={{ color: MARCA.rojo, fontSize: 13 }}>{`Falta: ${i.label} (${fmtTimeCSTStr(i.expected)})`}</Text>
                       ))}
-                      {puedeEditar && a.isPendDay ? (
-                        <Pressable onPress={() => revisar(e)}
-                          style={({ pressed }) => ({ alignSelf: 'flex-start', marginTop: 6, minHeight: 34, paddingHorizontal: 14, borderRadius: 17, justifyContent: 'center', backgroundColor: `${MARCA.ambar}2E`, opacity: pressed ? 0.7 : 1 })}>
-                          <Text style={{ color: MARCA.ambar, fontSize: 14, fontWeight: '700' }}>Revisado</Text>
-                        </Pressable>
+                      {puedeEditar ? (
+                        <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
+                          {!a.isFuture ? (
+                            <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setCorrigiendo({ persona: e, dia, a }); }}
+                              style={({ pressed }) => ({ minHeight: 34, paddingHorizontal: 14, borderRadius: 17, justifyContent: 'center', backgroundColor: `${MARCA.azulClaro}2E`, opacity: pressed ? 0.7 : 1 })}>
+                              <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>Corregir</Text>
+                            </Pressable>
+                          ) : null}
+                          {a.isPendDay ? (
+                            <Pressable onPress={() => revisar(e)}
+                              style={({ pressed }) => ({ minHeight: 34, paddingHorizontal: 14, borderRadius: 17, justifyContent: 'center', backgroundColor: `${MARCA.ambar}2E`, opacity: pressed ? 0.7 : 1 })}>
+                              <Text style={{ color: MARCA.ambar, fontSize: 14, fontWeight: '700' }}>Revisado</Text>
+                            </Pressable>
+                          ) : null}
+                        </View>
                       ) : null}
                     </View>
                   ) : null}
@@ -188,11 +201,9 @@ export default function AuditoriaDeTiempos() {
         })}
         </>
         )}
-        <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-          <BotonGrande texto="Corregir marcas y cerrar quincena (portal)" borde color={MARCA.azulClaro}
-            onPress={() => router.push({ pathname: '/portal', params: { ruta: '/auditoria-de-tiempos', nombre: 'Auditoría de tiempos' } })} />
-        </View>
       </ScrollView>
+      <CorregirMarcas objetivo={corrigiendo} usuario={user}
+        onCerrar={(guardo) => { setCorrigiendo(null); if (guardo) cargarAsistencia?.(35); }} />
     </>
   );
 }

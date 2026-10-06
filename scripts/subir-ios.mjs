@@ -111,14 +111,17 @@ const entitlements = execSync(`find "${ios}" -name "*.entitlements" -not -path "
 const permisosDe = (paquete) => {
   const nombre = paquete.split('/').pop().replace(/\.(app|appex)$/, '');
   const propio = entitlements.filter((e) => e.split('/').slice(-2, -1)[0] === nombre);
-  if (propio.length !== 1) throw new Error(`No sé qué permisos lleva ${nombre}: ${propio.length} archivos .entitlements en ios/${nombre}/`);
-  return propio[0];
+  // Sin archivo = sin permisos (la extensión Avisos de la app del personal no
+  // lleva ninguno). Dos o más = no se adivina cuál.
+  if (propio.length > 1) throw new Error(`No sé qué permisos lleva ${nombre}: ${propio.length} archivos .entitlements en ios/${nombre}/`);
+  return propio[0] ?? null;
 };
 const appArchivada = join(salida, 'app.xcarchive', 'Products', 'Applications', readdirSync(join(salida, 'app.xcarchive', 'Products', 'Applications'))[0]);
 const extensiones = existsSync(join(appArchivada, 'PlugIns'))
   ? readdirSync(join(appArchivada, 'PlugIns')).filter((f) => f.endsWith('.appex')).map((f) => join(appArchivada, 'PlugIns', f)) : [];
 for (const paquete of [...extensiones, appArchivada]) {
-  execSync(`codesign -f -s - --entitlements "${permisosDe(paquete)}" "${paquete}"`, { stdio: 'inherit' });
+  const permisos = permisosDe(paquete);
+  execSync(`codesign -f -s - ${permisos ? `--entitlements "${permisos}" ` : ''}"${paquete}"`, { stdio: 'inherit' });
 }
 
 writeFileSync(join(salida, 'ExportOptions.plist'), `<?xml version="1.0" encoding="UTF-8"?>

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1222.4 — subir-ios: extensiones sin permisos
+
+- **`scripts/subir-ios.mjs`:** una extensión sin archivo `.entitlements` (la de Avisos de la app del personal) se firma ad-hoc sin permisos en vez de abortar; dos o más archivos para el mismo paquete siguen abortando.
+
 ## v2.1222.3 — Subir a TestFlight desde la Mac: las dos apps, con sus permisos
 
 - **`scripts/subir-ios.mjs <carpeta> <perfil>`:** compila con Xcode en la Mac y sube a TestFlight, sin EAS, para Puntos Salud (`apps/clientes`) y la app del personal (`apps/mobile`). El número de compilación sale de App Store Connect (último + 1), así no choca con lo que subió EAS.

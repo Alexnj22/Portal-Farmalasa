@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.4 — Login: Tab desde el usuario va a la contraseña
+
+- **Login**: Tab desde el usuario ahora va a la contraseña. El botón del ojo estaba antes del campo en la página y se llevaba el foco; se sigue viendo en el mismo lugar.
+
 ## v2.1232.3 — Pedidos · Generar: la urgencia vuelve a % con barra
 
 - **La urgencia se ve como % con barra y color, sin etiquetas.** El % es qué tan cerca está la sala de ser urgente: 100% = 50 productos bajo mínimo o 25 en cero; 50% = 25 bajo mínimo. Rojo con la barra llena, naranja desde la mitad, verde por debajo. Debajo, el conteo: «35 bajo mínimo · 32 en cero».

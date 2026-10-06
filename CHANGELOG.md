@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1224.1 — App de clientes: el QR del ticket abre la app
+
+- **Enlace universal:** `public/.well-known/apple-app-site-association` declara que `portal.farmasalud.lat/mis-puntos` pertenece a Puntos Salud (`ZZWA3Q7Q35.lat.farmasalud.clientes`), servido como JSON (`vercel.json`). Con la app instalada, el QR del ticket abre la app; sin ella, la web de siempre.
+- **`app/mis-puntos.js`:** con sesión va a sus puntos; sin sesión abre «Entrar» con el código ya escrito, pero NO entra solo (un QR de un ticket ajeno no abre la cuenta de otro sin confirmar).
+- App ID: Associated Domains y App Groups activados por la API de App Store Connect; registrado `lat.farmasalud.clientes.widget` para el widget.
+
 ## v2.1224.0 — App de clientes: avisos, referidos, cumpleaños, salas, vitrina, widget y ofertas en hoja
 
 Pedido del usuario (2026-10-06) sobre la lista de «qué falta»:

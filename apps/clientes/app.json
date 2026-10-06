@@ -19,7 +19,10 @@
         "com.apple.security.application-groups": [
           "group.lat.farmasalud.clientes"
         ]
-      }
+      },
+      "associatedDomains": [
+        "applinks:portal.farmasalud.lat"
+      ]
     },
     "android": {
       "package": "lat.farmasalud.clientes",

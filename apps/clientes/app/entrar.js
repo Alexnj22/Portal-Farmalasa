@@ -2,6 +2,7 @@
 // de 7 letras del ticket. La forma es la del sistema: control segmentado,
 // formulario agrupado como Ajustes y el botón nativo (ver componentes/sistema.js).
 import { useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import * as Device from 'expo-device';
 import Segmentos from '../componentes/Segmentos';
 import { BotonSistema, colorSistema, FilaCampo, Formulario, Grupo } from '../componentes/sistema';
@@ -18,10 +19,12 @@ const ALFABETO = /[^ACDEFGHJKMNPQRTUVWXY34679]/g;
 export default function Entrar() {
   const t = useTema();
   const abrir = useSesion((s) => s.abrir);
-  const [modo, setModo] = useState('dui');
+  // Llegando desde el QR del ticket (app/mis-puntos.js), con el código escrito.
+  const { codigo: delQr } = useLocalSearchParams();
+  const [modo, setModo] = useState(delQr ? 'codigo' : 'dui');
   const [documento, setDocumento] = useState('');
   const [telefono, setTelefono] = useState('');
-  const [codigo, setCodigo] = useState('');
+  const [codigo, setCodigo] = useState(delQr ? String(delQr) : '');
   const [error, setError] = useState(null);
   const [enviando, setEnviando] = useState(false);
 

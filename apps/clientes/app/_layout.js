@@ -23,7 +23,7 @@ const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: '
 const OSCURO = { ...DarkTheme, colors: { ...DarkTheme.colors, background: 'transparent' } };
 const PUBLICAS = new Set(['bienvenida', 'entrar', 'registro']);
 // Se ven con o sin sesión: la vitrina, las salas y el detalle de una oferta.
-const ABIERTAS = new Set(['vitrina', 'salas', 'oferta']);
+const ABIERTAS = new Set(['vitrina', 'salas', 'oferta', 'mis-puntos']);
 const WEB = Platform.OS === 'web';
 let entradaAutomaticaHecha = false;
 
@@ -128,6 +128,7 @@ function Raiz() {
             <Stack.Screen name="salas" options={{ title: 'Nuestras salas' }} />
             <Stack.Screen name="vitrina" options={{ title: 'Ofertas' }} />
             <Stack.Screen name="invitar" options={{ title: 'Invitar a un amigo' }} />
+            <Stack.Screen name="mis-puntos" options={{ headerShown: false }} />
           </Stack>
           <Bloqueo />
         </GestureHandlerRootView>

@@ -5,7 +5,7 @@
 // consolidan aquí en `openBodegaTooltip`/`closeBodegaTooltip`/`openBodegaEdit`.
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { signPhotosDeep } from '../utils/storageFiles';
-import { planDeGuardadoMinMax } from '../utils/minmaxGuardar';
+import { planDeGuardadoMinMax, planDeRestaurarMinMax } from '../utils/minmaxGuardar';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { smartFilter } from '../utils/searchUtils';
@@ -725,9 +725,12 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
 
     const resetToCalc = useCallback(async (row) => {
         // Bodega: "Restaurar" significa limpiar el override manual → vuelve a Σ sucursales automáticamente
-        if (row._erp_sucursal_id === 6) {
-            if (!row.has_manual) return;
-            const { error: e } = await updateStockParams(row.erp_product_id, 6, { manual_min: null, manual_max: null, updated_at: new Date().toISOString() });
+        // Qué se escribe lo decide el núcleo (`planDeRestaurarMinMax`), la misma
+        // regla que usa la ficha del teléfono.
+        const plan = planDeRestaurarMinMax({ row, productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, hayPublicado: hasPublishedData });
+        if (plan.sinCambio) return;
+        if (plan.tipo === 'bodega') {
+            const { error: e } = await updateStockParams(row.erp_product_id, 6, plan.patch);
             if (e) { useToastStore.getState().showToast(row.product_name, `Error: ${mensajeAmigable(e)}`, 'error'); return; }
             // Re-leer desde DB: pub_min local puede ser stale si sucursales publicaron después del último fetch
             const { data: fresh } = await fetchStockParams(row.erp_product_id, 6, 'min_units, max_units, draft_min, draft_max, draft_status');
@@ -753,10 +756,9 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             });
             return;
         }
-        if (row.calc_min == null && row.calc_max == null) {
+        if (plan.tipo === 'limpiar') {
             // Sin valores calculados: limpia borrador y manual dejando -- (null)
-            const { error: e } = await updateStockParams(row.erp_product_id, row._erp_sucursal_id,
-                { draft_min: null, draft_max: null, draft_status: 'none', manual_min: null, manual_max: null, updated_at: new Date().toISOString() });
+            const { error: e } = await updateStockParams(row.erp_product_id, row._erp_sucursal_id, plan.patch);
             if (e) { useToastStore.getState().showToast(row.product_name, `Error: ${mensajeAmigable(e)}`, 'error'); return; }
             setData(prev => prev.map(r =>
                 r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
@@ -770,13 +772,10 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             });
             return;
         }
-        const cMin = row.calc_min ?? 0;
-        const cMax = row.calc_max ?? 0;
-        const saveLive = hasPublishedData && row.draft_status !== 'pending';
-        const upsertData = saveLive
-            ? { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, min_units: cMin, max_units: cMax, manual_min: null, manual_max: null, updated_at: new Date().toISOString() }
-            : { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, draft_min: cMin, draft_max: cMax, draft_status: 'pending', updated_at: new Date().toISOString() };
-        const { error: e } = await upsertStockParams(upsertData);
+        const cMin = plan.min;
+        const cMax = plan.max;
+        const saveLive = plan.tipo === 'vivo';
+        const { error: e } = await upsertStockParams(plan.payload);
         if (e) { useToastStore.getState().showToast(row.product_name, `Error al restaurar: ${mensajeAmigable(e)}`, 'error'); return; }
         setData(prev => prev.map(r => {
             if (r.erp_product_id !== row.erp_product_id || r._erp_sucursal_id !== row._erp_sucursal_id) return r;

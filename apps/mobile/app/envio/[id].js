@@ -11,20 +11,25 @@
 //   · por_despachar          — no salió: reintentar (`despacharEnvio`) o
 //                              cancelar con motivo (`cancelarEnvio`), esto
 //                              último sólo si ningún renglón salió.
-//   · lo demás               — de sólo lectura.
+//   · lo demás               — de sólo lectura. Un envío ya CERRADO también se
+//                              abre (sale de `fetchEnviosHistorial`): dice qué
+//                              pasó con cada renglón, en tercera persona, porque
+//                              lo mira cualquiera de las salas.
+// Las fotos del daño (`evidencia_urls`) se ven siempre: viajan con la caja.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { cancelarEnvio, DECISIONES_ENVIO, decidirEnvio, despacharEnvio, fetchEnviosVivos, momentoDelEnvio, MOTIVOS_RECHAZO_ENVIO, recibirDevolucion } from '@nucleo/data/envios';
+import { cancelarEnvio, DECISIONES_ENVIO, decidirEnvio, despacharEnvio, fetchEnviosHistorial, fetchEnviosVivos, momentoDelEnvio, MOTIVOS_RECHAZO_ENVIO, recibirDevolucion } from '@nucleo/data/envios';
 import { buscadorDePersonas, desdeHace } from '@nucleo/utils/movimientoTexto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import Vidrio from '../../componentes/Vidrio';
 import Avatar from '../../componentes/Avatar';
 import { Pildora, Ruta } from '../../componentes/traslados/Tarjeta';
+import Evidencia from '../../componentes/traslados/Evidencia';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -35,6 +40,11 @@ const ESTADO = {
   por_enviar: ['Sin salir', MARCA.ambar], error: ['No salió', MARCA.rojo], enviada: ['En camino', MARCA.azulClaro],
   aceptada: ['Aceptado', MARCA.verde], devuelta: ['Devuelto', MARCA.rojo], devuelta_recibida: ['Devolución recibida', '#8E8E93'],
   no_llego: ['No llegó', MARCA.rojo],
+};
+// Cerrado, lo mira cualquiera de las salas: el desenlace va en tercera persona
+// (el portal hace lo mismo en `HistorialTraslados`).
+const DESENLACE = {
+  aceptada: ['Se quedó', MARCA.verde], devuelta: ['Devuelta', MARCA.rojo], devuelta_recibida: ['Volvió al origen', MARCA.rojo],
 };
 
 const OPCIONES = [
@@ -71,17 +81,23 @@ export default function Envio() {
   const [motivoCancelar, setMotivoCancelar] = useState('');
   const [ocupado, setOcupado] = useState(false);
 
+  const [cerrado, setCerrado] = useState(false);
   const cargar = useCallback(async () => {
     const r = await fetchEnviosVivos();
-    setEnvio((r.envios || []).find((e) => String(e.id) === String(id)) ?? null);
+    const vivo = (r.envios || []).find((e) => String(e.id) === String(id));
+    if (vivo) { setCerrado(false); setEnvio(vivo); return; }
+    // No está entre los vivos: puede estar cerrado (se abre desde el historial).
+    const h = await fetchEnviosHistorial(200);
+    setCerrado(true);
+    setEnvio((h.envios || []).find((e) => String(e.id) === String(id)) ?? null);
   }, [id]);
   useEffect(() => { cargar(); }, [cargar]);
 
   if (envio === undefined) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Envío' }} /><Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 140 }}>Cargando…</Text></>;
-  if (!envio) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Envío' }} /><Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 140, paddingHorizontal: 32 }}>Este envío ya se cerró o no es de tu sala.</Text></>;
+  if (!envio) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Envío' }} /><Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 140, paddingHorizontal: 32 }}>No encontramos este envío, o no es de tu sala.</Text></>;
 
   const todas = getScope?.('traslados') === 'ALL';
-  const momento = momentoDelEnvio(envio, todas ? null : salaDelUsuario(user));
+  const momento = cerrado ? 'cerrado' : momentoDelEnvio(envio, todas ? null : salaDelUsuario(user));
   const lineas = envio.lineas || [];
   const porDecidir = lineas.filter((l) => l.estado === 'enviada');
   const quien = persona(envio.employee_id);
@@ -155,8 +171,11 @@ export default function Envio() {
             </View></Vidrio>
           ) : null}
 
+          {cerrado ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Este envío ya se cerró: así terminó cada producto.</Text> : null}
+          <Evidencia urls={envio.evidencia_urls} />
+
           {lineas.map((l) => {
-            const [et, col] = ESTADO[l.estado] ?? [l.estado, '#8E8E93'];
+            const [et, col] = (cerrado ? DESENLACE[l.estado] : null) ?? ESTADO[l.estado] ?? [l.estado, '#8E8E93'];
             const d = decision[l.posicion] || {};
             const decide = momento === 'por_decidir' && l.estado === 'enviada';
             return (

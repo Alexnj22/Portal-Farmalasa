@@ -102,7 +102,7 @@ function Ofertas({ busqueda, puedeEditar, showToast }) {
     const nombreSala = useMemo(() => new Map(salas.map((s) => [s.id, s.name])), [salas]);
     const filas = useMemo(() => (ofertas ?? [])
         .filter((o) => !fEstado || estadoDeOferta(o, hoy).key === fEstado)
-        .filter((o) => !busqueda || tokenMatch(`${o.titulo} ${o.etiqueta ?? ''}`, busqueda)), [ofertas, fEstado, busqueda, hoy]);
+        .filter((o) => !busqueda || tokenMatch(busqueda, o.titulo, o.etiqueta ?? '')), [ofertas, fEstado, busqueda, hoy]);
 
     const alternar = async (o) => {
         try {
@@ -232,7 +232,7 @@ function Preregistros({ busqueda, puedeEditar, showToast }) {
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- la carga inicial
 
     const visibles = useMemo(() => (filas ?? [])
-        .filter((p) => !busqueda || tokenMatch(`${p.nombre} ${p.documento} ${p.telefono}`, busqueda)), [filas, busqueda]);
+        .filter((p) => !busqueda || tokenMatch(busqueda, p.nombre, p.documento, p.telefono)), [filas, busqueda]);
 
     if (error) return <Notice variant="danger">{error}</Notice>;
     if (!filas) return <LoadingState label="Cargando pre-registros" />;

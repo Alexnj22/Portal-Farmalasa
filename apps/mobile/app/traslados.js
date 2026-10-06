@@ -8,30 +8,35 @@
 //   · Envíos       — lo que una sala MANDA sin que se lo pidan: te enviaron,
 //                    sin salir, te devuelven, enviaste. Cada uno abre
 //                    `envio/[id]`, donde se decide renglón por renglón.
-//   · Historial    — recibidos y rechazados de la semana.
+//   · Historial    — lo cerrado: traslados recibidos y rechazados de la semana
+//                    que se elija (con flechas, la consulta pide ESA semana),
+//                    filtrables por desenlace y —con alcance de todas— por
+//                    sala; y abajo los envíos cerrados, que se abren para ver
+//                    cómo terminó cada producto y las fotos del daño.
 //
 // La barra tiene el escáner (recibir una caja con la cámara) y el «+»: pedir a
-// otra sala, o abrir en el portal lo que todavía no es nativo (mandar
-// producto, llevar productos, faltantes).
+// otra sala, recibir una caja, enviar producto, llevar productos y faltantes —
+// todo nativo.
 //
 // Los datos son las mismas lecturas del portal (`data/traslados`,
 // `data/envios`) y el alcance es el mismo: con «todas las salas» se ven todas;
 // si no, la mía más las que estoy cubriendo ahora.
-import { useCallback, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActionSheetIOS, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useComposicionTraslado } from '@nucleo/store/composicionTraslado';
 import { fetchSalasQueCubro, fetchTrasladosHistorial, fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir, fetchTrasladoPorCodigo } from '@nucleo/data/traslados';
-import { fetchEnviosVivos, momentoDelEnvio } from '@nucleo/data/envios';
+import { fetchEnviosHistorial, fetchEnviosVivos, momentoDelEnvio } from '@nucleo/data/envios';
 import { buscadorDePersonas, motivoDeRechazoCorto } from '@nucleo/utils/movimientoTexto';
 import { textoBuscable } from '@nucleo/utils/trasladoTexto';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import { getLocalMonday } from '@nucleo/utils/semana';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import Segmentos from '../componentes/Segmentos';
+import PasoDeSemana from '../componentes/solicitudes/PasoDeSemana';
 import Escaner from '../componentes/Escaner';
 import TarjetaTraslado, { Pildora, Ruta } from '../componentes/traslados/Tarjeta';
 import Vidrio from '../componentes/Vidrio';
@@ -76,10 +81,10 @@ function TarjetaEnvio({ envio, color, onPress }) {
             <View style={{ flex: 1 }}><Ruta desde={envio.origen_branch_name} hacia={envio.branch_name} /></View>
             {envio.codigo_bolsa ? <Pildora texto={envio.codigo_bolsa} color={color} /> : null}
           </View>
-          <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }} numberOfLines={2}>
+          <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>
             {lineas.length === 1 ? `${lineas[0].cantidad} ${lineas[0].presentacion_tipo ?? ''} · ${lineas[0].descripcion}` : `${lineas.length} productos`}
           </Text>
-          {envio.motivo_tipo ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={2}>{envio.motivo_tipo}{envio.reason ? ` · ${envio.reason}` : ''}</Text> : null}
+          {envio.motivo_tipo ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{envio.motivo_tipo}{envio.reason ? ` · ${envio.reason}` : ''}</Text> : null}
         </View>
       </Vidrio>
     </Pressable>
@@ -89,6 +94,7 @@ function TarjetaEnvio({ envio, color, onPress }) {
 export default function Traslados() {
   const { user, hasPermission, getScope } = useAuth();
   const empleados = useStaffStore((s) => s.employees);
+  const sucursales = useStaffStore((s) => s.branches);
   const enLaSolicitud = useComposicionTraslado((s) => s.renglones.length);
   const decide = hasPermission('traslados', 'can_approve');
   // `null` = la que corresponde: «Te piden» si la persona contesta, si no «Recibir».
@@ -96,6 +102,10 @@ export default function Traslados() {
   const vista = elegida ?? (decide ? 'piden' : 'recibir');
   const [datos, setDatos] = useState(null);
   const [historial, setHistorial] = useState(null);
+  const [enviosCerrados, setEnviosCerrados] = useState(null);
+  const [semana, setSemana] = useState(() => getLocalMonday());
+  const [salaFiltro, setSalaFiltro] = useState(null);
+  const [desenlace, setDesenlace] = useState('todos');
   const [recargando, setRecargando] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   const [escaneando, setEscaneando] = useState(false);
@@ -116,10 +126,19 @@ export default function Traslados() {
     setDatos({ piden: c.filas || [], recibir: r.filas || [], envios: e.envios || [] });
   }, [todas, miSala, decide]);
 
+  // El historial pide la SEMANA elegida (y la sala) a la consulta: arriba hay
+  // un tope de filas, y un tope se aplica antes del filtro. Recortar acá afuera
+  // devolvería «las de esa semana entre las 200 más nuevas».
+  const salaHistorial = todas ? salaFiltro : miSala;
   const cargarHistorial = useCallback(async () => {
-    const r = await fetchTrasladosHistorial({ branchId: todas ? null : miSala, semana: getLocalMonday() });
-    setHistorial((r.filas || r.data || []).filter((f) => f.status === 'REJECTED' || f.metadata?.erp_recibido));
-  }, [todas, miSala]);
+    const [r, e] = await Promise.all([
+      fetchTrasladosHistorial({ branchId: salaHistorial, semana }),
+      fetchEnviosHistorial(200),
+    ]);
+    setHistorial(r.filas || r.data || []);
+    setEnviosCerrados(e.envios || []);
+  }, [salaHistorial, semana]);
+  useEffect(() => { if (vista === 'historial') cargarHistorial(); }, [vista, cargarHistorial]);
 
   // Al volver de contestar o recibir, la lista tiene que dejar de ofrecerlo.
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
@@ -154,11 +173,26 @@ export default function Traslados() {
   const opciones = [
     decide && { id: 'piden', label: datos?.piden?.length ? `Te piden (${datos.piden.length})` : 'Te piden' },
     { id: 'recibir', label: datos?.recibir?.length ? `Recibir (${datos.recibir.length})` : 'Recibir' },
-    { id: 'envios', label: 'Envíos' },
+    { id: 'envios', label: envios.length ? `Envíos (${envios.length})` : 'Envíos' },
     { id: 'historial', label: 'Historial' },
   ].filter(Boolean);
 
   const abrir = (f) => router.push({ pathname: '/traslado/[id]', params: { id: String(f.id) } });
+
+  const historialVisto = filtrar(historial ?? []).filter((f) => desenlace === 'todos' || f.status === desenlace);
+  // Los envíos cerrados: los 200 más recientes, como en el portal. NO se
+  // recortan por semana ni por sala acá afuera: la consulta trae un tope, y
+  // recortar después de un tope esconde sin avisar (la regla de las 1000 filas).
+  const enviosVistos = (enviosCerrados ?? []).filter((e) => {
+    if (!busqueda.trim()) return true;
+    return smartFilter(busqueda, [e], (x) => [[x.origen_branch_name, x.branch_name, x.motivo_tipo, x.reason, ...(x.lineas || []).map((l) => l.descripcion)].filter(Boolean).join(' ')]).results.length > 0;
+  });
+  const nombreDeSala = (sid) => (sucursales || []).find((b) => String(b.id) === String(sid))?.name ?? `Sala ${sid}`;
+  const elegirSala = () => {
+    const salas = (sucursales || []).filter((b) => b.type === 'FARMACIA' || b.type === 'BODEGA');
+    ActionSheetIOS.showActionSheetWithOptions({ title: 'Sala', options: ['Todas las salas', ...salas.map((b) => b.name), 'Cancelar'], cancelButtonIndex: salas.length + 1 },
+      (i) => { if (i === 0) setSalaFiltro(null); else if (i <= salas.length) setSalaFiltro(String(salas[i - 1].id)); });
+  };
   const escanear = () => { Haptics.selectionAsync().catch(() => {}); setAviso(null); setEscaneando(true); };
 
   return (
@@ -192,7 +226,7 @@ export default function Traslados() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, paddingBottom: 40, gap: 12 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
-        <Segmentos opciones={opciones} activa={vista} onCambiar={(v) => { setVista(v); if (v === 'historial' && !historial) cargarHistorial(); }} />
+        <Segmentos opciones={opciones} activa={vista} onCambiar={setVista} />
 
         {vista === 'piden' ? (
           piden.length ? piden.map((f) => (
@@ -226,12 +260,38 @@ export default function Traslados() {
         ) : null}
 
         {vista === 'historial' ? (
-          historial?.length ? filtrar(historial).map((f) => (
-            <TarjetaTraslado key={f.id} fila={f} persona={persona(f.employee_id)} desdeCuando={f.updated_at} onPress={() => abrir(f)}
-              estado={f.status === 'REJECTED'
-                ? { texto: motivoDeRechazoCorto(f) || 'Rechazado', color: MARCA.rojo }
-                : { texto: 'Recibido', color: MARCA.verde }} />
-          )) : historial ? <Vacio titulo="Nada esta semana" /> : null
+          <>
+            <PasoDeSemana semana={semana} onCambiar={setSemana} />
+            <Segmentos activa={desenlace} onCambiar={setDesenlace} opciones={[
+              { id: 'todos', label: 'Todos' }, { id: 'APPROVED', label: 'Recibidos' }, { id: 'REJECTED', label: 'Rechazados' },
+            ]} />
+            {todas ? (
+              <Pressable onPress={elegirSala} style={({ pressed }) => ({ alignSelf: 'center', minHeight: 36, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+                <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>{salaFiltro ? `Sala: ${nombreDeSala(salaFiltro)}  ✕` : 'Todas las salas ▾'}</Text>
+              </Pressable>
+            ) : null}
+            {historial == null ? null : historialVisto.length ? (
+              <>
+                <Titulo texto="Traslados" n={historialVisto.length} />
+                {historialVisto.map((f) => (
+                  <TarjetaTraslado key={f.id} fila={f} persona={persona(f.employee_id)} desdeCuando={f.updated_at} onPress={() => abrir(f)}
+                    estado={f.status === 'REJECTED'
+                      ? { texto: motivoDeRechazoCorto(f) || 'Rechazado', color: MARCA.rojo }
+                      : f.metadata?.erp_recibido ? { texto: 'Recibido', color: MARCA.verde } : { texto: 'En camino', color: MARCA.azulClaro }} />
+                ))}
+              </>
+            ) : <Vacio titulo="Nada esa semana" detalle="Usa las flechas para mirar otra semana." />}
+            {desenlace === 'todos' && enviosVistos.length ? (
+              <>
+                <Titulo texto="Envíos cerrados · los más recientes" n={enviosVistos.length} />
+                {enviosVistos.map((e) => {
+                  const devueltas = (e.lineas || []).filter((l) => String(l.estado).startsWith('devuelta')).length;
+                  return <TarjetaEnvio key={e.id} envio={e} color={devueltas ? MARCA.rojo : MARCA.verde}
+                    onPress={() => router.push({ pathname: '/envio/[id]', params: { id: String(e.id) } })} />;
+                })}
+              </>
+            ) : null}
+          </>
         ) : null}
       </ScrollView>
 

@@ -68,3 +68,78 @@ export function planDeGuardadoMinMax({ row, productId, sucursalId, min, max, hay
         },
     };
 }
+
+/**
+ * Qué se escribe al RESTAURAR el par de una sala a lo calculado — la decisión
+ * de `resetToCalc` de `hooks/useMinMaxData.js`, pura (2026-10-06, para que la
+ * ficha del teléfono restaure igual que el portal):
+ *
+ *   · Bodega: restaurar es quitar el ajuste manual; vuelve a Σ de las salas.
+ *     Sin ajuste manual no hay nada que hacer.
+ *   · Sin valores calculados: se limpian borrador y manual, el par queda «—».
+ *   · Con calculado: EN VIVO si la sala publicó y no hay borrador pendiente;
+ *     si no, al borrador.
+ *
+ * `row` lleva `calc_min/max`, `draft_status`, `has_manual` (o `manual_min/max`),
+ * `effective_min/max` y `draft_min/max`.
+ *
+ * Devuelve { sinCambio } | { tipo: 'bodega'|'limpiar', patch, accion, detalle }
+ *        | { tipo: 'vivo'|'borrador', payload, accion, detalle, min, max }.
+ */
+export function planDeRestaurarMinMax({ row, productId, sucursalId, hayPublicado, ahora = new Date().toISOString() }) {
+    const tieneManual = row?.has_manual ?? (row?.manual_min != null || row?.manual_max != null);
+    if (Number(sucursalId) === ERP_BODEGA_MINMAX) {
+        if (!tieneManual) return { sinCambio: true };
+        return {
+            tipo: 'bodega',
+            patch: { manual_min: null, manual_max: null, updated_at: ahora },
+            accion: 'MINMAX_BODEGA_RESET_MANUAL',
+            detalle: { field: 'min+max', sucursal_id: ERP_BODEGA_MINMAX, old_min: row?.effective_min ?? 0, old_max: row?.effective_max ?? 0 },
+        };
+    }
+    if (row?.calc_min == null && row?.calc_max == null) {
+        return {
+            tipo: 'limpiar', min: null, max: null,
+            patch: { draft_min: null, draft_max: null, draft_status: 'none', manual_min: null, manual_max: null, updated_at: ahora },
+            accion: 'MINMAX_RESET_CLEAR',
+            detalle: {
+                field: 'min+max', sucursal_id: sucursalId,
+                old_min: row?.draft_min ?? row?.effective_min ?? 0, old_max: row?.draft_max ?? row?.effective_max ?? 0,
+                new_min: null, new_max: null,
+            },
+        };
+    }
+    const cMin = row.calc_min ?? 0;
+    const cMax = row.calc_max ?? 0;
+    const vivo = !!hayPublicado && row.draft_status !== 'pending';
+    return {
+        tipo: vivo ? 'vivo' : 'borrador', min: cMin, max: cMax,
+        payload: vivo
+            ? { erp_product_id: productId, erp_sucursal_id: sucursalId, min_units: cMin, max_units: cMax, manual_min: null, manual_max: null, updated_at: ahora }
+            : { erp_product_id: productId, erp_sucursal_id: sucursalId, draft_min: cMin, draft_max: cMax, draft_status: 'pending', updated_at: ahora },
+        accion: 'MINMAX_RESET_CALC',
+        detalle: {
+            field: 'min+max', sucursal_id: sucursalId, mode: vivo ? 'live' : 'draft',
+            old_min: vivo ? (row.effective_min ?? 0) : (row.draft_min ?? row.effective_min ?? 0),
+            old_max: vivo ? (row.effective_max ?? 0) : (row.draft_max ?? row.effective_max ?? 0),
+            new_min: cMin, new_max: cMax, calc_min: cMin, calc_max: cMax,
+        },
+    };
+}
+
+/** La proyección de existencia a N días con la velocidad diaria; nunca bajo 0. */
+export const proyeccionDeExistencia = (stock, velocidad, dias) => Math.max(0, Math.round((Number(stock) || 0) - (Number(velocidad) || 0) * dias));
+
+/**
+ * La proyección para PINTAR: las unidades redondeadas y si de verdad se agota.
+ * «Se agota» se decide con lo que queda SIN redondear: 2 unidades a 0.06/día
+ * dejan 0.2 a los 30 días — redondeado es 0, pero se agota el día 33, no antes.
+ * Pintar «0 se agota» al lado de «33 días de cobertura» era contradecirse.
+ */
+export function estadoDeProyeccion(stock, velocidad, dias) {
+    const queda = (Number(stock) || 0) - (Number(velocidad) || 0) * dias;
+    return { unidades: Math.max(0, Math.round(queda)), agotado: queda <= 0, casi: queda > 0 && queda < 1 };
+}
+
+/** Cuántos días alcanza lo que hay a esta velocidad, o `null` sin venta. */
+export const diasDeCobertura = (stock, velocidad) => (Number(velocidad) > 0 ? (Number(stock) || 0) / Number(velocidad) : null);

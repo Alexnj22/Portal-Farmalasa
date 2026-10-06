@@ -9,7 +9,7 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import { SkeletonText } from '../../components/common/StateViews';
 import { fetchQuiebresSala } from '@nucleo/data/stockParams';
 import { ERP_NAMES, ERP_ORDER } from './tabminmax/constants';
-import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { filtrarQuiebres, resumenDeQuiebres } from '@nucleo/utils/quiebres';
 import { formatQty } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
 
@@ -57,15 +57,9 @@ export default function TabQuiebres({ searchTerm = '', lockedErpId = null }) {
     const diasFoto = resp?.dias_foto ?? 0;
     const todas    = useMemo(() => resp?.filas ?? [], [resp]);
 
-    const filtradas = useMemo(() => {
-        const t = searchTerm.trim();
-        return todas.filter(f => {
-            if (soloConMinMax && !(f.max_units > 0)) return false;
-            if (soloSinNada   && f.dias_sin !== diasFoto) return false;
-            if (t && !tokenMatch(t, f.descripcion)) return false;
-            return true;
-        });
-    }, [todas, soloConMinMax, soloSinNada, searchTerm, diasFoto]);
+    const filtradas = useMemo(
+        () => filtrarQuiebres(todas, { diasFoto, soloConMinMax, soloSinNada, busca: searchTerm }),
+        [todas, soloConMinMax, soloSinNada, searchTerm, diasFoto]);
 
     // La página se acota en el render y no en un efecto: al buscar, la lista se
     // achica y la página en curso puede quedar fuera de rango. Los filtros y el
@@ -77,11 +71,7 @@ export default function TabQuiebres({ searchTerm = '', lockedErpId = null }) {
         () => filtradas.slice((paginaActual - 1) * PAGINA, paginaActual * PAGINA),
         [filtradas, paginaActual]);
 
-    const resumen = useMemo(() => ({
-        total:      todas.length,
-        sinNada:    todas.filter(f => f.dias_sin === diasFoto).length,
-        reingreso:  todas.filter(f => f.hay_ahora).length,
-    }), [todas, diasFoto]);
+    const resumen = useMemo(() => resumenDeQuiebres(todas, diasFoto), [todas, diasFoto]);
 
     const activos = [soloConMinMax, soloSinNada].filter(Boolean).length;
 

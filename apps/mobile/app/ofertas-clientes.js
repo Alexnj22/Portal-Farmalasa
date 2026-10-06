@@ -68,8 +68,8 @@ export default function OfertasClientes() {
   const cuenta = (k) => conEstado.filter((o) => o._estado.key === k).length;
   const visibles = conEstado
     .filter((o) => estado === 'todas' || o._estado.key === estado)
-    .filter((o) => !texto.trim() || tokenMatch(`${o.titulo} ${o.etiqueta ?? ''}`, texto));
-  const preVisibles = (pre ?? []).filter((p) => !texto.trim() || tokenMatch(`${p.nombre} ${p.documento} ${p.telefono}`, texto));
+    .filter((o) => !texto.trim() || tokenMatch(texto, o.titulo, o.etiqueta ?? ''));
+  const preVisibles = (pre ?? []).filter((p) => !texto.trim() || tokenMatch(texto, p.nombre, p.documento, p.telefono));
 
   const grupos = pestana === 'ofertas' ? [{
     id: 'estado', titulo: 'Estado', activa: estado, porDefecto: 'todas', onCambiar: setEstado,

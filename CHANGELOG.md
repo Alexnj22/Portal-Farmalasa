@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1228.0 — App: ficha de producto, Min·Máx y traslados
+
+- **App: la ficha de producto, como el portal.** Foto grande (tomar o cambiar), aviso de pérdida / margen bajo, cada presentación con su costo, factor, precios y margen (el precio que cambió, tachado con su fecha), Devolutivo/ND, categoría (con buscar y crear), principios activos, ubicaciones y los historiales de compras, precios y cambios. Costos y márgenes con su permiso.
+- **Min·Máx de un producto**: por sala la barra de existencia contra MIN/MAX, ABC·XYZ y venta por día; al tocar una sala, la cobertura contra el ciclo, la proyección a 30/60/90 días, el historial y Guardar / Restaurar / Poner 0 / Ocultar; lotes por vencer con el plazo para Bodega, últimas compras y ventas. Pantalla nueva **Agotados que venden**.
+- **La proyección ya no se contradice**: 2 unidades a 0.06/día dejaban 0.2 a los 30 días y se pintaba «0 · se agota» junto a «33 días de cobertura». «Se agota» se decide sin redondear (`estadoDeProyeccion`); lo que queda bajo 1 dice «< 1». Igual en el portal.
+- **Traslados**: historial por semana con flechas, Todos / Recibidos / Rechazados y sala, los envíos cerrados, fotos de daño y evidencia, y el trayecto con caras. **Inventario**: los lotes de la sala al tocar un producto y el área de vencidos en Bodega.
+- La búsqueda de Ofertas (app y portal) pasaba los argumentos al revés a `tokenMatch`.
+- Núcleo: `preciosDeProducto`, `minmaxGuardar`, `quiebres.js`, `plazoDeDevolucion.js`, `fetchFichaDeProducto`/`fetchNombreDeProducto`; el portal los usa.
 ## v2.1227.0 — App de clientes: historias, notificaciones y sucursales
 
 Pedido del usuario (2026-10-06):

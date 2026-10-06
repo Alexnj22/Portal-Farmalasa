@@ -18,6 +18,9 @@
       "entitlements": {
         "com.apple.security.application-groups": [
           "group.lat.farmasalud.clientes"
+        ],
+        "com.apple.developer.pass-type-identifiers": [
+          "ZZWA3Q7Q35.*"
         ]
       },
       "associatedDomains": [

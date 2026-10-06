@@ -42,6 +42,14 @@ const corto = (n: string) => {
   const x = p.length >= 4 ? [p[0], p[2]] : p.length === 3 ? [p[0], p[1]] : p;
   return x.map((w) => w[0].toUpperCase() + w.slice(1).toLowerCase()).join(" ");
 };
+// Bytes → «cadena binaria» de forge, por tramos: `forge.util.binary.raw.encode`
+// usa `String.fromCharCode.apply` de un golpe y con la franja @3x (~180 KB)
+// revienta la pila («Maximum call stack size exceeded», medido 2026-10-06).
+const aBinario = (b: Uint8Array) => {
+  let t = "";
+  for (let i = 0; i < b.length; i += 0x8000) t += String.fromCharCode(...b.subarray(i, i + 0x8000));
+  return t;
+};
 const pem = (b64: string) => new TextDecoder().decode(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)));
 
 export function armarPase(d: DatosPase): Uint8Array {
@@ -57,9 +65,12 @@ export function armarPase(d: DatosPase): Uint8Array {
     organizationName: "Farmacia Salud",
     description: "Tarjeta de socio Puntos Salud",
     logoText: "Puntos Salud",
+    // El fondo continúa el tono oscuro de la franja (scripts/wallet/imagenes.py),
+    // y los rótulos van en el verde del logo: así la franja y el cuerpo se leen
+    // como UNA tarjeta y no como un rectángulo pegado sobre otro.
     foregroundColor: "rgb(255, 255, 255)",
-    labelColor: "rgb(214, 240, 160)",
-    backgroundColor: "rgb(122, 26, 128)",
+    labelColor: "rgb(180, 228, 80)",
+    backgroundColor: "rgb(52, 14, 66)",
     storeCard: {
       headerFields: [{ key: "puntos", label: "PUNTOS", value: Math.round(d.saldo), textAlignment: "PKTextAlignmentRight" }],
       primaryFields: [{ key: "saldo", label: "SALDO PARA DESCONTAR", value: d.equivale, currencyCode: "USD" }],
@@ -85,7 +96,7 @@ export function armarPase(d: DatosPase): Uint8Array {
   const manifiesto: Record<string, string> = {};
   for (const [n, bytes] of Object.entries(archivos)) {
     const md = forge.md.sha1.create();
-    md.update(forge.util.binary.raw.encode(bytes));
+    md.update(aBinario(bytes));
     manifiesto[n] = md.digest().toHex();
   }
   const manifiestoBytes = new TextEncoder().encode(JSON.stringify(manifiesto));
@@ -93,7 +104,7 @@ export function armarPase(d: DatosPase): Uint8Array {
 
   // signature: PKCS#7 separado, con la cadena de Apple.
   const p7 = forge.pkcs7.createSignedData();
-  p7.content = forge.util.createBuffer(forge.util.binary.raw.encode(manifiestoBytes));
+  p7.content = forge.util.createBuffer(aBinario(manifiestoBytes));
   const cert = forge.pki.certificateFromPem(pem(certB64));
   p7.addCertificate(cert);
   p7.addCertificate(forge.pki.certificateFromPem(pem(wwdrB64)));

@@ -116,10 +116,8 @@ Deno.serve(async (req) => {
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-  if (enlaceWallet) {
-    try {
-      const id = await clienteDelEnlace(enlaceWallet);
-      if (!id) return new Response("Este enlace ya venció. Vuelve a tocar «Agregar a Wallet» en la app.", { status: 410, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  // La tarjeta de Wallet de una ficha, firmada (ver `_shared/pase.ts`).
+  const paseDe = async (id: number) => {
       const [{ data: c, error: eC }, { data: est, error: eE }, { data: cod, error: eK }, { data: pri, error: eP }] = await Promise.all([
         admin.from("customers").select("name").eq("id", id).maybeSingle(),
         admin.rpc("puntos_estado_cuenta", { p_customer_id: id }),
@@ -128,10 +126,17 @@ Deno.serve(async (req) => {
       ]);
       if (eC) throw eC; if (eE) throw eE; if (eK) throw eK; if (eP) throw eP;
       const saldo = Number(est?.saldo ?? 0);
-      const pkpass = armarPase({
+      return armarPase({
         customerId: id, nombre: c?.name ?? "", saldo, equivale: Math.round(saldo) / 100,
         codigo: cod?.codigo ?? null, socioDesde: pri?.ganado_el ?? null,
       });
+  };
+
+  if (enlaceWallet) {
+    try {
+      const id = await clienteDelEnlace(enlaceWallet);
+      if (!id) return new Response("Este enlace ya venció. Vuelve a tocar «Agregar a Wallet» en la app.", { status: 410, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+      const pkpass = await paseDe(id);
       return new Response(pkpass, { headers: {
         "Content-Type": "application/vnd.apple.pkpass",
         "Content-Disposition": "attachment; filename=PuntosSalud.pkpass",
@@ -607,6 +612,7 @@ Deno.serve(async (req) => {
         pendiente: false,
         nombre: c.name,
         cumpleanos,
+        wallet_serial: `socio-${customerId}`,
         regalo_cumpleanos: Number(cfgP?.puntos_cumpleanos ?? 0),
         codigo,
         socio_desde: primero?.ganado_el ?? null,
@@ -675,6 +681,15 @@ Deno.serve(async (req) => {
     }
 
     // El enlace para agregar la tarjeta a Apple Wallet (ver el GET de arriba).
+    // La tarjeta en base64, para la hoja nativa de Apple dentro de la app
+    // (modules/wallet): sin enlaces ni Safari de por medio.
+    if (accion === "wallet_pase") {
+      const bytes = await paseDe(customerId);
+      let bin = "";
+      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      return json({ ok: true, pase: btoa(bin), serial: `socio-${customerId}` });
+    }
+
     if (accion === "wallet_enlace") {
       const base = Deno.env.get("SUPABASE_URL")!;
       return json({ ok: true, url: `${base}/functions/v1/app-clientes?wallet=${await enlaceDePase(customerId)}` });

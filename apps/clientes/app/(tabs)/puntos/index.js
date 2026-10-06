@@ -2,7 +2,7 @@
 // «420 puntos» no— y el número de puntos va como el detalle de la cifra.
 // Misma decisión que /mis-puntos de la web.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Linking, Platform, Pressable, Text, View } from 'react-native';
+import { AppState, Platform, Pressable, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo } from '../../../componentes/ui';
 import { useCuenta } from '../../../lib/cuenta';
@@ -12,6 +12,7 @@ import Vencimientos from '../../../componentes/Vencimientos';
 import Cumpleanos from '../../../componentes/Cumpleanos';
 import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '../../../componentes/animacion';
 import { useSesion } from '../../../lib/sesion';
+import { abrirPase, agregarPase, tienePase, walletDisponible } from '../../../modules/wallet';
 import { suave, useTema } from '../../../tema/tema';
 import { colorSistema } from '../../../componentes/sistema';
 
@@ -94,7 +95,7 @@ export default function Puntos() {
       {/* Apple Wallet: la tarjeta en la Cartera, para mostrarla en caja sin abrir la app. */}
       {Platform.OS === 'ios' ? (
         <Entrada indice={1}>
-          <BotonWallet />
+          <BotonWallet serial={resumen.wallet_serial} />
         </Entrada>
       ) : null}
 
@@ -210,27 +211,44 @@ export default function Puntos() {
   );
 }
 
-// «Agregar a Apple Wallet»: el servidor firma la tarjeta y Safari la ofrece
-// (ver `_shared/pase.ts`). Negro, como el botón oficial de Apple.
-function BotonWallet() {
+// Apple Wallet. La tarjeta se agrega con la HOJA de Apple dentro de la app
+// (modules/wallet): el servidor la firma y la manda en base64 — sin abrir
+// Safari ni mostrar la dirección del servidor. Si ya está en Wallet, el botón
+// cambia a «Ver en Wallet» (antes seguía ofreciendo agregarla, 2026-10-06).
+function BotonWallet({ serial }) {
   const pedir = useSesion((s) => s.pedir);
   const [cargando, setCargando] = useState(false);
-  const agregar = async () => {
+  const [tiene, setTiene] = useState(() => (serial ? tienePase(serial) : false));
+  // Al volver a la app (pudo quitarla en Wallet) se vuelve a preguntar.
+  useEffect(() => {
+    if (!serial) return undefined;
+    setTiene(tienePase(serial));
+    const sub = AppState.addEventListener('change', (e) => { if (e === 'active') setTiene(tienePase(serial)); });
+    return () => sub.remove();
+  }, [serial]);
+  if (!walletDisponible()) return null;
+
+  const tocar = async () => {
     if (cargando) return;
+    if (tiene && abrirPase(serial)) return;
     setCargando(true);
-    const r = await pedir('wallet_enlace');
+    const r = await pedir('wallet_pase');
+    if (r?.ok && r.pase) {
+      try { if (await agregarPase(r.pase)) setTiene(true); } catch { /* la hoja se cerró o falló */ }
+    }
     setCargando(false);
-    if (r?.ok && r.url) Linking.openURL(r.url).catch(() => {});
   };
   return (
-    <Pressable onPress={agregar} accessibilityRole="button" accessibilityLabel="Agregar a Apple Wallet"
+    <Pressable onPress={tocar} accessibilityRole="button" accessibilityLabel={tiene ? 'Ver en Apple Wallet' : 'Agregar a Apple Wallet'}
       style={({ pressed }) => ({
         alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#000000',
         borderRadius: 12, paddingHorizontal: 18, minHeight: 48, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
         opacity: cargando ? 0.6 : 1, transform: [{ scale: pressed ? 0.97 : 1 }],
       })}>
-      <Text style={{ fontSize: 20 }}>💳</Text>
-      <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>{cargando ? 'Preparando…' : 'Agregar a Apple Wallet'}</Text>
+      <Text style={{ fontSize: 20 }}>{tiene ? '✅' : '💳'}</Text>
+      <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>
+        {cargando ? 'Preparando…' : tiene ? 'Ver en Apple Wallet' : 'Agregar a Apple Wallet'}
+      </Text>
     </Pressable>
   );
 }

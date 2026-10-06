@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1226.3 — Wallet: tarjeta con franja y hoja nativa de Apple
+
+Revisión del usuario en TestFlight (2026-10-06):
+- **«Agregar a Wallet» abría un enlace con la dirección del servidor:** ahora la tarjeta llega en base64 (acción `wallet_pase`) y se agrega con la HOJA nativa de Apple (`PKAddPassesViewController`), en un módulo local (`apps/clientes/modules/wallet`).
+- **Ya agregada, el botón seguía ofreciendo agregarla:** ahora pregunta a la biblioteca de Wallet (`PKPassLibrary`, con el permiso `pass-type-identifiers` y la capability WALLET activada por la API) y cambia a «Ver en Apple Wallet»; se vuelve a preguntar al volver a la app.
+- **La tarjeta se veía plana:** franja de 375×144 (`scripts/wallet/imagenes.py`) con el degradado de la marca, resplandor verde, brillo holográfico en diagonal y la cruz del logo como marca de agua; fondo y rótulos a juego.
+- **Firma:** `forge.util.binary.raw.encode` reventaba la pila con la franja @3x (~180 KB); conversión por tramos. Verificado con `openssl smime -verify` y los SHA-1 del manifiesto.
+
 ## v2.1226.2 — App: efectivo, cortes y bolsas a la par del portal
 
 - **App: Efectivo muestra cómo se llega a la cifra**, como el portal: las cuatro tarjetas (en la caja, abierta/cerrada y quién la abrió, último corte, confirmado), la meta del día, por qué manos pasó la caja, lo vendido por forma de pago con barras, la cuenta del cajón renglón por renglón (abrió + vendido en efectivo + ingresos − vales − bolsas = total), los bonos por pagar y los movimientos del día agrupados por el corte que los contó, con firmas, correcciones y la foto del comprobante.

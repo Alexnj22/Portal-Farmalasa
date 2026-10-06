@@ -312,6 +312,7 @@ const EXCEPTIONS = {
   'src/components/forms/FormAiSchedulerPreview.jsx': ['color'],
   // Mapas/canvas/PDF — colores hex directos por naturaleza de la tecnología
   'src/views/CotizacionesView.jsx': ['color', 'hex'],
+  'src/utils/cotizacionPapel.js': ['hex'],   // el papel de la cotización (se mudó de CotizacionesView): no tiene tema
   'src/views/pedidos/CrearRutaModal.jsx': ['color', 'white', 'hex', 'inline-color'], // marcadores Leaflet (L.divIcon HTML)
   // La boleta y la planilla se imprimen con estilos propios (color, hex). Su
   // dinero pasa por `formatMoney` desde el 2026-09-25, con separador de miles

@@ -23,7 +23,7 @@ import {
     tinteDeCategoria, descripcionDelArchivo,
 } from '../../components/common/catalogos/documentos';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { documentosDelExpediente, filtrarDocumentos, PESTANAS_DOCS as TABS, pestanasDeDocumentos, solicitudesConDocumento } from '@nucleo/utils/misDocumentos';
+import { datosDelDocumento, documentosDelExpediente, filtrarDocumentos, PESTANAS_DOCS as TABS, pestanasDeDocumentos, solicitudesConDocumento } from '@nucleo/utils/misDocumentos';
 
 // ─── Configuración por tipo ────────────────────────────────────────────────
 //
@@ -146,36 +146,13 @@ const DocCard = ({ doc, alAbrir }) => {
         ? (grupoDeCategoria(doc.meta.categoria) || 'Del expediente')
         : (title === cfg.label ? 'Solicitud' : cfg.label);
 
-    const periodo = doc.meta?.startDate
-        ? `${fmtDate(doc.meta.startDate)}${doc.meta.endDate ? ` — ${fmtDate(doc.meta.endDate)}` : ''}`
-        : null;
-
-    // ── Los hechos, en el orden en que se preguntan ───────────────────────
-    // Se arman como lista y no como JSX suelto para que la ficha de una
-    // incapacidad y la de un DUI tengan la misma forma aunque no tengan los
-    // mismos datos: lo que falta no deja un hueco, deja una celda menos.
-    const datos = [];
-    if (periodo) datos.push({ rotulo: delExpediente ? 'Vigencia' : 'Período', valor: periodo });
-    if (doc.meta?.permissionDates?.length) {
-        datos.push({ rotulo: 'Días', valor: `${doc.meta.permissionDates.length} día${doc.meta.permissionDates.length !== 1 ? 's' : ''}` });
-    }
-    datos.push({
-        rotulo: delExpediente ? 'Guardado' : 'Solicitado',
-        valor: fechaTexto(doc.created_at, { day: '2-digit', month: 'short', year: 'numeric' }),
-    });
-    if (doc.meta?.issueDate) datos.push({ rotulo: 'Emitido', valor: fmtDate(doc.meta.issueDate) });
-    if (doc.meta?.expiryDate) {
-        datos.push({
-            rotulo: 'Vence', valor: fmtDate(doc.meta.expiryDate),
-            tono: vence ? (vence.variant === 'danger' ? 'text-danger-text' : 'text-warning-text') : 'text-content',
-        });
-    }
-    if (doc.meta?.versiones > 0) {
-        datos.push({
-            rotulo: 'Anteriores',
-            valor: `${doc.meta.versiones} versi${doc.meta.versiones === 1 ? 'ón' : 'ones'}`,
-        });
-    }
+    // Los hechos de la ficha: núcleo (`datosDelDocumento`), los mismos de la app.
+    const TONO = { danger: 'text-danger-text', warning: 'text-warning-text' };
+    const datos = datosDelDocumento(doc, {
+        fmtDate,
+        fmtInstante: (f) => fechaTexto(f, { day: '2-digit', month: 'short', year: 'numeric' }),
+        vence,
+    }).map(d => (d.rotulo === 'Vence' ? { ...d, tono: d.tono ? (d.tono === 'danger' ? TONO.danger : TONO.warning) : 'text-content' } : d));
 
     const abre = !!doc.meta?.docUrl;
     const Tag  = abre ? 'button' : 'div';

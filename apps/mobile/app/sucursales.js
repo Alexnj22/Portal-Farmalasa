@@ -6,11 +6,16 @@
 //
 // Horario, apertura y alertas salen del núcleo (`sucursales`), los mismos del
 // portal. Crear, editar y el análisis con IA se hacen en el portal.
-import { useMemo, useState } from 'react';
+//
+// Como el portal: los kioscos activos «N / 3» de cada una, la dirección con
+// municipio y departamento, y en el menú «Alquiladas / Propias». Inactiva =
+// sin nadie asignado Y sin kioscos (no sólo sin gente).
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
+import { fetchBranchKiosks } from '@nucleo/data/branches';
 import { abiertaAhora, ahoraEnSV, alertasDeSucursal, horarioDeHoy, ORDEN_DE_TIPOS, TIPOS_DE_SUCURSAL } from '@nucleo/utils/sucursales';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
@@ -26,6 +31,14 @@ export default function Sucursales() {
   const empleados = useStaffStore((s) => s.employees);
   const [texto, setTexto] = useState('');
   const [filtro, setFiltro] = useState('ALL');
+  const [kioscos, setKioscos] = useState({});
+  useEffect(() => {
+    let vivo = true;
+    Promise.all((sucursales || []).map((b) => fetchBranchKiosks(b.id)
+      .then(({ data }) => [b.id, (data || []).filter((k) => k.status === 'ACTIVE').length]).catch(() => [b.id, 0])))
+      .then((pares) => { if (vivo) setKioscos(Object.fromEntries(pares)); });
+    return () => { vivo = false; };
+  }, [sucursales]);
   const { dia, hora } = ahoraEnSV();
   const ahora = Date.now();
 
@@ -38,12 +51,16 @@ export default function Sucursales() {
   const q = texto.trim();
   const visibles = filas.filter(({ b, alertas, gente }) => {
     if (filtro === 'ALERTS' && !alertas.hasAlerts) return false;
-    if (filtro === 'INACTIVE' && gente.length) return false;   // inactiva = sin nadie asignado
-    return !q || tokenMatch(q, b.name, b.address, b.code);
+    if (filtro === 'INACTIVE' && (gente.length || kioscos[b.id])) return false;   // inactiva = sin gente y sin kioscos
+    const tenencia = b.propertyType || b.settings?.propertyType;
+    if (filtro === 'RENTED' && tenencia !== 'RENTED') return false;
+    if (filtro === 'OWNED' && tenencia !== 'OWNED') return false;
+    return !q || tokenMatch(q, b.name, b.address, b.code, b.settings?.location?.municipality, b.settings?.location?.department);
   });
   const porTipo = ORDEN_DE_TIPOS.map((t) => [t, visibles.filter(({ b }) => (b.type || 'FARMACIA') === t)]).filter(([, l]) => l.length);
   const grupos = [{ id: 'filtro', titulo: 'Mostrar', activa: filtro, porDefecto: 'ALL', onCambiar: setFiltro,
-    opciones: [{ id: 'ALL', label: 'Todas' }, { id: 'ALERTS', label: 'Con alertas' }, { id: 'INACTIVE', label: 'Inactivas' }] }];
+    opciones: [{ id: 'ALL', label: 'Todas' }, { id: 'ALERTS', label: 'Con alertas' }, { id: 'INACTIVE', label: 'Inactivas' },
+      { id: 'RENTED', label: 'Alquiladas' }, { id: 'OWNED', label: 'Propias' }] }];
   const COLOR_ESTADO = { OPEN: MARCA.verde, CLOSED: colorSistema.texto2, UNKNOWN: MARCA.ambar };
 
   return (
@@ -69,12 +86,12 @@ export default function Sucursales() {
                 <Vidrio radio={18} interactivo tinte={alertas.critica ? 'rgba(240,68,56,0.10)' : undefined}>
                   <View style={{ padding: 12, gap: 5 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }} numberOfLines={1}>{b.name}</Text>
+                      <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{b.name}</Text>
                       {tipo === 'FARMACIA' ? <Pildora texto={abierta.label} color={COLOR_ESTADO[abierta.status]} /> : null}
                     </View>
-                    {b.address ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>{b.address}</Text> : null}
+                    {b.address ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{[b.address, b.settings?.location?.municipality, b.settings?.location?.department].filter(Boolean).join(', ')}</Text> : null}
                     <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                      {[tipo === 'FARMACIA' ? `Hoy ${horarioDeHoy(b, dia)}` : null, `${gente.length} persona${gente.length === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}
+                      {[tipo === 'FARMACIA' ? `Hoy ${horarioDeHoy(b, dia)}` : null, `${gente.length} persona${gente.length === 1 ? '' : 's'}`, kioscos[b.id] != null ? `${kioscos[b.id]}/3 kioscos` : null].filter(Boolean).join(' · ')}
                     </Text>
                     {alertas.hasAlerts ? <Pildora texto={alertas.message} color={alertas.critica ? MARCA.rojo : MARCA.ambar} /> : null}
                   </View>

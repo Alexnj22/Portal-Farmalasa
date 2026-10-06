@@ -19,7 +19,7 @@ import { fetchTrasladoSwitch, setTrasladoSwitch } from '@nucleo/data/trasladoSwi
 import AvisoDelPortal from '../components/mantenimiento/AvisoDelPortal';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
-import { horasDelCandado, rotuloDeInterruptor, tiempoRestante } from '@nucleo/utils/mantenimiento';
+import { HORAS_DE_CANDADO, horasDelCandado, rotuloDeInterruptor, tiempoRestante } from '@nucleo/utils/mantenimiento';
 
 /**
  * Sistema › Mantenimiento — poner un módulo en solo lectura para el resto.
@@ -36,7 +36,7 @@ import { horasDelCandado, rotuloDeInterruptor, tiempoRestante } from '@nucleo/ut
 
 // El servidor acota a [1, 24] igual (LEAST/GREATEST en lock_module); esto es para
 // no escribir el número a mano.
-const HORAS = [1, 2, 4, 8, 12, 24].map(h => ({ value: String(h), label: h === 1 ? '1 hora' : `${h} horas` }));
+const HORAS = HORAS_DE_CANDADO;   // núcleo (`mantenimiento`), las mismas de la app
 
 const info = (key) => MODULE_INFO[key] || { label: key, desc: '', group: 'Otros' };
 

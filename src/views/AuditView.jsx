@@ -20,7 +20,7 @@ import { smartFilter } from '@nucleo/utils/searchUtils';
 import Badge from '../components/common/Badge';
 import { hora12, hora12ConSegundos } from '@nucleo/utils/hora';
 import { hoySV } from '@nucleo/utils/fecha';
-import { ACCIONES_DE_BITACORA, filtrarBitacora, ordenarBitacora } from '@nucleo/utils/bitacora';
+import { ACCIONES_DE_BITACORA, COLUMNAS_CSV_BITACORA, filasCsvDeBitacora, filtrarBitacora, ordenarBitacora } from '@nucleo/utils/bitacora';
 
 // Acciones, filtro y orden: `bitacora` (núcleo, lo mismo de la app).
 const ACTION_OPTIONS = ACCIONES_DE_BITACORA;
@@ -187,28 +187,9 @@ const AuditView = ({ openModal }) => {
         setIsExporting(true);
         setTimeout(() => {
             const escape = (text) => `"${String(text || '').replace(/"/g, '""')}"`;
-            const headers = [
-                "Fecha", "Hora", "Usuario", "Acción", "Severidad",
-                "Origen", "Sucursal", "Dispositivo", "Método de Ingreso",
-                "ID Objetivo", "Detalles JSON"
-            ];
-
-            const rows = processedLogs.map(log => {
-                const dateObj = new Date(log.created_at);
-                return [
-                    escape(dateObj.toLocaleDateString()),
-                    escape(hora12ConSegundos(dateObj)),
-                    escape(log.user_name),
-                    escape(log.action),
-                    escape(log.severity),
-                    escape(log.source),
-                    escape(log.branch_name),
-                    escape(log.device_name),
-                    escape(log.input_method),
-                    escape(log.target_id),
-                    escape(JSON.stringify(log.details || {}))
-                ].join(",");
-            });
+            // Columnas y filas: núcleo (`bitacora`), las mismas de la app.
+            const headers = COLUMNAS_CSV_BITACORA;
+            const rows = filasCsvDeBitacora(processedLogs, hora12ConSegundos).map(fila => fila.map(escape).join(","));
             const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.join("\n");
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");

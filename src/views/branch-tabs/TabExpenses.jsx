@@ -4,6 +4,7 @@ import { Landmark, Zap, Droplet, Wifi, Smartphone, Receipt, DollarSign, AlertCir
 
 import { fetchBranchExpensesHistory } from '@nucleo/data/branches';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { estadoDeServicio, gastosPorMes, totalOperativo, variacionDeGastos } from '@nucleo/utils/gastosDeSucursal';
 
 // El dibujo arrastra `recharts` (95 kB gzip) y estaba en el cierre estático de
 // `BranchDetailView`: se bajaba al abrir cualquier sucursal para una gráfica de
@@ -13,44 +14,20 @@ const GraficaGastos = lazy(() => import('./GraficaGastos'));
 // ============================================================================
 // MOTOR DE ESTADOS FINANCIEROS
 // ============================================================================
+// El estado de cada servicio sale del núcleo (`gastosDeSucursal`), el mismo de
+// la app; acá sólo se le pone el color de la tarjeta.
+const CLASE_DE_ESTADO = {
+    unknown: 'border-divider bg-surface-card-hover/50 text-content-3',
+    pending_receipt: 'border-chart-6 bg-chart-6/10 text-chart-6-text shadow-[var(--shadow-glow-chart-6-md)] ring-1 ring-chart-6/30',
+    paid: 'border-success bg-success/10 text-success-text shadow-[var(--shadow-glow-success-md)] ring-1 ring-success/30',
+    pending: 'border-warning bg-warning/10 text-warning-text shadow-[var(--shadow-glow-warning-md)] ring-1 ring-warning/30',
+    expired: 'border-danger bg-danger/10 text-danger-text shadow-[var(--shadow-glow-danger-md)] ring-1 ring-danger/30',
+};
 const getServiceStatus = (dueDay, paidThrough, isReceiptPending) => {
-    if (!dueDay || !paidThrough) return { state: 'unknown', label: 'Sin configurar', colorClass: 'border-divider bg-surface-card-hover/50 text-content-3' };
-
-    if (isReceiptPending) {
-        return {
-            state: 'pending_receipt',
-            label: 'Recibo pendiente',
-            colorClass: 'border-chart-6 bg-chart-6/10 text-chart-6-text shadow-[var(--shadow-glow-chart-6-md)] ring-1 ring-chart-6/30'
-        };
-    }
-
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth() + 1;
-    const currentDay = today.getDate();
-
-    const [ptYearStr, ptMonthStr] = paidThrough.split('-');
-    const ptYear = parseInt(ptYearStr, 10);
-    const ptMonth = parseInt(ptMonthStr, 10);
-
-    if (ptYear > currentYear || (ptYear === currentYear && ptMonth >= currentMonth)) {
-        return { state: 'paid', label: 'Al día', colorClass: 'border-success bg-success/10 text-success-text shadow-[var(--shadow-glow-success-md)] ring-1 ring-success/30' };
-    }
-
-    if (ptYear === currentYear && ptMonth === currentMonth - 1) {
-        if (currentDay > dueDay) {
-            return { state: 'expired', label: 'Vencido', colorClass: 'border-danger bg-danger/10 text-danger-text shadow-[var(--shadow-glow-danger-md)] ring-1 ring-danger/30' };
-        } else {
-            return { state: 'pending', label: 'Vence pronto', colorClass: 'border-warning bg-warning/10 text-warning-text shadow-[var(--shadow-glow-warning-md)] ring-1 ring-warning/30' };
-        }
-    }
-
-    return { state: 'expired', label: 'Vencido', colorClass: 'border-danger bg-danger/10 text-danger-text shadow-[var(--shadow-glow-danger-md)] ring-1 ring-danger/30' };
+    const e = estadoDeServicio(dueDay, paidThrough, isReceiptPending);
+    return { ...e, colorClass: CLASE_DE_ESTADO[e.state] };
 };
 
-// ============================================================================
-// TARJETA DE SERVICIO (LIQUID GLASS BENTO)
-// ============================================================================
 const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isReceiptPending, icon: Icon, onAction, onUploadReceipt, delay = 0, colorTheme = 'blue' }) => {
     const statusObj = getServiceStatus(dueDay, paidThrough, isReceiptPending);
     const isConfigured = dueDay && paidThrough;
@@ -154,21 +131,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                 if (error) throw error;
 
                 // Agrupamos por mes (billing_month)
-                const groupedData = data.reduce((acc, curr) => {
-                    const monthKey = curr.billing_month; 
-                    if (!acc[monthKey]) {
-                        const [year, month] = monthKey.split('-');
-                        const dateObj = new Date(year, parseInt(month) - 1, 1);
-                        const label = dateObj.toLocaleDateString('es-SV', { month: 'short', year: '2-digit' }).replace('.', '').replace(' ', ' ');
-                        
-                        acc[monthKey] = { name: label.toUpperCase(), total: 0, rawMonth: monthKey };
-                    }
-                    acc[monthKey].total += Number(curr.amount);
-                    return acc;
-                }, {});
-
-                // Convertimos el objeto a un arreglo y tomamos solo los últimos 6 meses
-                let chartData = Object.values(groupedData).sort((a, b) => a.rawMonth.localeCompare(b.rawMonth)).slice(-6);
+                let chartData = gastosPorMes(data);
 
                 // Si no hay datos suficientes, rellenamos para que el gráfico no se vea vacío
                 if (chartData.length === 0) {
@@ -204,51 +167,11 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
         openModal('registerPayment', { ...liveBranch, _currentService: serviceKey, _isUploadingPendingReceipt: true });
     };
 
-    const totalMonthlyEst = useMemo(() => {
-        let total = 0;
-        const isRented = liveBranch?.settings?.propertyType === 'RENTED' || liveBranch?.propertyType === 'RENTED' || liveBranch?.propertyType === 'ALQUILADO';
-
-        if (isRented && rentData.amount) total += Number(rentData.amount) || 0;
-        if (hasServices && svcData.light?.amount) total += Number(svcData.light.amount) || 0;
-        if (hasServices && svcData.water?.amount) total += Number(svcData.water.amount) || 0;
-        if (hasServices && svcData.internet?.amount) total += Number(svcData.internet.amount) || 0;
-        if (svcData.phone?.amount) total += Number(svcData.phone.amount) || 0;
-        if (svcData.taxes?.amount) total += Number(svcData.taxes.amount) || 0;
-
-        return total;
-    }, [rentData, svcData, liveBranch, hasServices]);
+    const totalMonthlyEst = useMemo(() => totalOperativo(liveBranch), [liveBranch]);
 
 
     // Cálculo de estadísticas basado en datos reales
-    const stats = useMemo(() => {
-        if (!historicalData || historicalData.length < 2) {
-            return { variation: 0, isUp: false, highestService: 'Sin datos suficientes' };
-        }
-        const currentMonth = historicalData[historicalData.length - 1].total;
-        const lastMonth = historicalData[historicalData.length - 2].total;
-        const variation = lastMonth > 0 ? ((currentMonth - lastMonth) / lastMonth) * 100 : 0;
-        
-        // Determinar el servicio más caro de la configuración actual
-        let maxServiceStr = 'Arrendamiento';
-        let maxVal = rentData.amount ? Number(rentData.amount) : 0;
-
-        const checkService = (key, name) => {
-            const val = svcData[key]?.amount ? Number(svcData[key].amount) : 0;
-            if (val > maxVal) { maxVal = val; maxServiceStr = name; }
-        };
-
-        checkService('light', 'Energía eléctrica');
-        checkService('water', 'Agua potable');
-        checkService('internet', 'Internet fijo');
-        checkService('phone', 'Plan celular');
-        checkService('taxes', 'Impuestos');
-
-        return {
-            variation,
-            isUp: variation > 0,
-            highestService: maxVal > 0 ? maxServiceStr : 'Sin pagos'
-        };
-    }, [historicalData, rentData, svcData]);
+    const stats = useMemo(() => variacionDeGastos(historicalData, liveBranch), [historicalData, liveBranch]);
 
 
     return (

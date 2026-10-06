@@ -7,6 +7,7 @@ import PortalInput from '../common/PortalInput';
 import Notice from '../common/Notice';
 import useSobreviveAlCierre from '@nucleo/hooks/useSobreviveAlCierre';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { DURACIONES_DE_BLOQUEO, hastaDeBloqueo } from '@nucleo/data/sesiones';
 
 // Bloquear a alguien es más grave que cerrarle una conexión, y el diálogo tiene
 // que decirlo: cerrar una conexión sólo impide renovar el acceso, mientras que
@@ -16,13 +17,8 @@ import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 // Las duraciones son opciones y no un campo de fecha libre: quien bloquea está
 // reaccionando a algo y no quiere calcular una fecha. «Indefinido» es explícito
 // —no el valor por defecto— porque es el que no se deshace solo.
-const DURACIONES = [
-    { value: '1',    label: '1 hora' },
-    { value: '8',    label: '8 horas' },
-    { value: '24',   label: '1 día' },
-    { value: '168',  label: '1 semana' },
-    { value: 'inf',  label: 'Indefinido, hasta que lo quite' },
-];
+// Las duraciones y la fecha que resultan: núcleo (`data/sesiones`), las mismas de la app.
+const DURACIONES = DURACIONES_DE_BLOQUEO;
 
 export default function BloqueoModal({ persona, onCancelar, onConfirmar, procesando }) {
     // `persona` es a la vez «está abierto» y «a quién». Al cancelar pasa a null
@@ -34,9 +30,7 @@ export default function BloqueoModal({ persona, onCancelar, onConfirmar, procesa
     const [motivo, setMotivo] = useState('');
 
     const confirmar = () => {
-        const hasta = duracion === 'inf'
-            ? null   // null = indefinido, así lo entiende `block_employee`
-            : new Date(Date.now() + Number(duracion) * 3_600_000).toISOString();
+        const hasta = hastaDeBloqueo(duracion);   // null = indefinido, así lo entiende `block_employee`
         onConfirmar(hasta, motivo);
     };
 

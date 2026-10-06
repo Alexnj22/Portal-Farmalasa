@@ -10,23 +10,26 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import AlertModal from '../../components/common/AlertModal';
 import SearchInput from '../../components/common/SearchInput';
 import { EmptyState } from '../../components/common/StateViews';
-import { CATEGORIAS_DOCUMENTO, categoriaDeDocumento } from '../../components/common/catalogos/constantes';
+import { CATEGORIAS_DOCUMENTO } from '../../components/common/catalogos/constantes';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { documentosDeSucursal, estadoDeDocumento } from '@nucleo/utils/expedienteDeSucursal';
 
 // ============================================================================
 // 🎨 HELPER: ESTADOS DEL DOCUMENTO Y FECHAS
 // ============================================================================
-const getDocStatus = (url, expDate) => {
-    if (!url) return { type: 'MISSING', label: 'Falta documento', color: 'text-warning bg-warning/10 border-warning/30', icon: AlertCircle };
-
-    if (expDate) {
-        const diff = Math.ceil((new Date(expDate) - new Date()) / (1000 * 60 * 60 * 24));
-        if (diff < 0) return { type: 'EXPIRED', label: 'Vencido', color: 'text-danger bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger-md)]', icon: AlertTriangle };
-        if (diff <= 45) return { type: 'WARNING', label: `Vence en ${diff}d`, color: 'text-chart-4-text bg-chart-4/10 border-chart-4/30', icon: Clock };
-    }
-
-    return { type: 'OK', label: 'Al día', color: 'text-success bg-success/10 border-success/30', icon: CheckCircle2 };
+// El estado sale del núcleo (`expedienteDeSucursal`), el mismo de la app; acá
+// sólo se le pone color e ícono.
+const ESTILO_DE_ESTADO = {
+    MISSING: { color: 'text-warning bg-warning/10 border-warning/30', icon: AlertCircle },
+    EXPIRED: { color: 'text-danger bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger-md)]', icon: AlertTriangle },
+    WARNING: { color: 'text-chart-4-text bg-chart-4/10 border-chart-4/30', icon: Clock },
+    OK: { color: 'text-success bg-success/10 border-success/30', icon: CheckCircle2 },
 };
+const getDocStatus = (url, expDate) => {
+    const e = estadoDeDocumento(url, expDate);
+    return { ...e, ...ESTILO_DE_ESTADO[e.type] };
+};
+
 
 const formatDate = (dateStr) => {
     if (!dateStr) return null;
@@ -218,76 +221,14 @@ const TabExpediente = ({ liveBranch, openModal, puedeEditar = false }) => {
         setDeleteModalOpen(true);
     };
 
-    const legal = liveBranch?.settings?.legal || {};
-    const rent = liveBranch?.settings?.rent || {};
-    const propertyType = liveBranch?.settings?.propertyType || liveBranch?.propertyType || 'OWNED';
-    const nurses = legal.nursingRegents || [];
-    const customDocs = liveBranch?.settings?.customDocs || [];
-    const hasInjections = !!legal.injections;
-    const hasControlledBooks = !!legal.controlledBooks;
 
-    // 🚨 1. RECOPILAR DOCUMENTOS
-    let permisosDocs = [
-        { id: 'srs', title: 'Licencia CSSP / DNM', url: legal.srsPermitUrl, expDate: legal.srsExpiration, hasExpiration: true, modal: 'editSrsPermit' },
-        { id: 'alcaldia', title: 'Solvencia Municipal', url: legal.municipalUrl, expDate: legal.municipalExpiration, hasExpiration: true, modal: 'editBranchLegal' },
-    ];
-    if (hasControlledBooks) permisosDocs.push({ id: 'libros', title: 'Resolución Libros Controlados', url: legal.controlledBooksUrl, expDate: null, modal: 'editBranchLegal' });
-    if (hasInjections) permisosDocs.push({ id: 'inyecciones', title: 'Permiso Área Inyecciones', url: legal.nursingServicePermitUrl, expDate: legal.nursingServicePermitExp, hasExpiration: true, modal: 'editNursingRegents' });
-
-    let personalDocs = [
-        { id: 'regente_cred', title: 'Credencial JVQF (Regente)', url: legal.regentCredentialUrl, expDate: legal.regentCredentialExp, hasExpiration: true, modal: 'editPharmacyRegent' },
-        { id: 'regente_insc', title: 'Inscripción CSSP (Regente)', url: legal.regentInscriptionUrl, expDate: null, modal: 'editPharmacyRegent' },
-        { id: 'farmaco', title: 'Autorización Farmacovigilancia', url: legal.farmacovigilanciaAuthUrl, expDate: legal.pharmacovigilanceExp, hasExpiration: true, modal: 'editPharmacovigilance' },
-    ];
-    if (hasInjections) {
-        nurses.forEach((nurse, i) => {
-            personalDocs.push({ id: `nurse_carne_${i}`, title: `Carné JVQE (Enfermería ${i + 1})`, url: nurse.carneUrl, expDate: null, modal: 'editNursingRegents' });
-            personalDocs.push({ id: `nurse_lic_${i}`, title: `Licencia (Enfermería ${i + 1})`, url: nurse.licenciaUrl, expDate: null, modal: 'editNursingRegents' });
-            personalDocs.push({ id: `nurse_anualidad_${i}`, title: `Anualidad (Enfermería ${i + 1})`, url: nurse.anualidadUrl, expDate: null, modal: 'editNursingRegents' });
-        });
-    }
-
-    let infraDocs = [];
-    if (propertyType === 'RENTED' || propertyType === 'ALQUILADO') {
-        infraDocs.push({ id: 'arrendamiento', title: 'Contrato de Arrendamiento', url: rent.contract?.documentUrl, expDate: rent.contract?.endDate, hasExpiration: true, modal: 'editBranchInmueble' });
-    }
-    if (hasInjections) {
-        infraDocs.push({ id: 'desechos', title: 'Contrato Desechos Bioinfecciosos', url: legal.wasteUrl, expDate: legal.wasteExpiration, hasExpiration: true, modal: 'editBranchLegal' });
-    }
-
-    infraDocs.push({
-        id: 'fumigacion',
-        title: 'Certificado de Fumigación',
-        url: legal.fumigationUrl,
-        issueDate: legal.lastFumigationDate,
-        hasIssueDate: true,
-        modal: 'editBranchLegal',
-        aiSummary: legal.fumigationUrl ? "Certificación de plagas activa. El proveedor reportó cero anomalías en la última inspección. Químicos aprobados clase A." : null
-    });
-
-    const parsedCustomDocs = customDocs.map(doc => ({
-        id: doc.id,
-        title: doc.title,
-        url: doc.url,
-        hasExpiration: doc.hasExpiration,
-        expDate: doc.hasExpiration ? doc.expDate : null,
-        hasIssueDate: doc.hasIssueDate,
-        issueDate: doc.hasIssueDate ? doc.issueDate : null,
-        // Las secciones de abajo agrupan por la CLAVE de la categoría. Lo
-        // guardado antes de v2.590.2 es el rótulo, así que se resuelve acá:
-        // sin esto un documento viejo no caería en ninguna sección y
-        // desaparecería de la pantalla sin dar error.
-        category: categoriaDeDocumento(doc.category),
-        modal: 'editCustomDocument',
-        aiSummary: doc.aiSummary,
-        isCustom: true
-    }));
-
-    // 2. CÁLCULO DE PROGRESO
-    const allRealDocs = [...permisosDocs, ...personalDocs, ...infraDocs, ...parsedCustomDocs];
-    const totalDocs = allRealDocs.length;
-    const uploadedDocs = allRealDocs.filter(d => d.url).length;
-    const progress = totalDocs === 0 ? 100 : Math.round((uploadedDocs / totalDocs) * 100);
+    // 1-2. Los documentos y el avance: núcleo (`documentosDeSucursal`).
+    const expediente = documentosDeSucursal(liveBranch);
+    let permisosDocs = expediente.permisos;
+    let personalDocs = expediente.personal;
+    let infraDocs = expediente.infra;
+    const parsedCustomDocs = expediente.propios;
+    const progress = expediente.avance;
 
     // 3. FUNCIÓN DE FILTRADO
     const filterDocs = (docsList) => {

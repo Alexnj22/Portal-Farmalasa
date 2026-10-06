@@ -17,6 +17,7 @@ import { hora12 } from '@nucleo/utils/hora';
 // 🚨 IMPORTACIÓN ESTANDARIZADA
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { rotuloDelRegistro } from '@nucleo/utils/historialDeSucursal';
 import { analizarHistorial } from '@nucleo/data/ia';
 
 // ============================================================================
@@ -98,15 +99,8 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
         return combined.sort((a, b) => b.sortDate - a.sortDate);
     }, [propHistory, openDateStr]);
 
-    const getActionLabel = useCallback((item) => {
-        if (item.isSynthetic) return item.action?.replace(/_/g, ' ');
-        if (item.isDoc) return 'ARCHIVO HISTÓRICO';
-        const parsedDetails = typeof item.details === 'string' ? safeJsonParse(item.details, {}) : (item.details || {});
-        if (parsedDetails.dimension) return parsedDetails.dimension;
-        if (item.action === 'PAGO_REGISTRADO') return 'PAGO REGISTRADO';
-        if (item.action === 'EDITAR_SUCURSAL') return 'ACTUALIZACIÓN DE DATOS';
-        return item.action?.replace(/_/g, ' ') || 'REGISTRO DE SISTEMA';
-    }, []);
+    // El rótulo sale del núcleo (`historialDeSucursal`), el mismo de la app.
+    const getActionLabel = useCallback((item) => rotuloDelRegistro(item), []);
 
     // FILTRADO MULTIPLE
     const filteredHistoryRaw = useMemo(() => {

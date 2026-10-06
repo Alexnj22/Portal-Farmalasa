@@ -65,3 +65,31 @@ export function filtrarDocumentos(todos, { pestana = 'ALL', estado = '', desde =
     }
     return lista;
 }
+
+/**
+ * Los datos de la ficha de un documento, en el orden en que se preguntan:
+ * vigencia o período, días, guardado o solicitado, emitido, vence y versiones
+ * anteriores. Lista y no JSX para que la ficha de una incapacidad y la de un DUI
+ * tengan la misma forma: lo que falta no deja hueco, deja una celda menos. El
+ * portal y la app arman la ficha con esto.
+ *
+ * `fmtDate` da formato a un día de calendario y `fmtInstante` a un instante
+ * (`created_at`). `vence` es `getExpiryBadge(expiryDate)` o null; el `tono` de
+ * «Vence» sale de ahí.
+ */
+export function datosDelDocumento(doc, { fmtDate, fmtInstante, vence = null }) {
+    const delExpediente = doc?.type === 'EXPEDIENTE';
+    const meta = doc?.meta || {};
+    const datos = [];
+    if (meta.startDate) {
+        datos.push({ rotulo: delExpediente ? 'Vigencia' : 'Período', valor: `${fmtDate(meta.startDate)}${meta.endDate ? ` — ${fmtDate(meta.endDate)}` : ''}` });
+    }
+    if (meta.permissionDates?.length) {
+        datos.push({ rotulo: 'Días', valor: `${meta.permissionDates.length} día${meta.permissionDates.length !== 1 ? 's' : ''}` });
+    }
+    datos.push({ rotulo: delExpediente ? 'Guardado' : 'Solicitado', valor: fmtInstante(doc.created_at) });
+    if (meta.issueDate) datos.push({ rotulo: 'Emitido', valor: fmtDate(meta.issueDate) });
+    if (meta.expiryDate) datos.push({ rotulo: 'Vence', valor: fmtDate(meta.expiryDate), tono: vence ? vence.variant : null });
+    if (meta.versiones > 0) datos.push({ rotulo: 'Anteriores', valor: `${meta.versiones} versi${meta.versiones === 1 ? 'ón' : 'ones'}` });
+    return datos;
+}

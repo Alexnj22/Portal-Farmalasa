@@ -5,9 +5,13 @@
 // cobró (`abonosDelCredito`, del núcleo). Sólo lectura: el historial de la caja
 // se PIDE, no se escribe.
 //
-// «Recibir un pago» abre el cobro nativo (`cobrar-credito`).
+// «Recibir un pago» abre el cobro nativo (`cobrar-credito`). Con el permiso de
+// abonar, cada abono que la caja deja borrar lleva «Corregir»: abre la
+// solicitud de corrección (`credito/corregir`), como el lápiz del portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { guardar } from '../../componentes/comercial/elegido';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -117,11 +121,22 @@ export default function Credito() {
                 {a.abonado_por ? <Avatar empleado={porId.get(String(a.abonado_por)) ?? { name: a.cobrado_por }} tamano={28} /> : null}
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatMoney(a.monto)}</Text>
-                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
                     {[`${fecha(a.fecha)}${a.hora ? `, ${hora12(a.hora) || a.hora}` : ''}`, a.cobrado_por || 'cobrado en la caja', a.forma].filter(Boolean).join(' · ')}
                   </Text>
+                  {a.saldo_despues != null ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`quedó ${formatMoney(a.saldo_despues)}`}</Text> : null}
                 </View>
-                {a.saldo_despues != null ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`quedó ${formatMoney(a.saldo_despues)}`}</Text> : null}
+                {puedeAbonar && a.erp_id_borrable ? (
+                  <Pressable hitSlop={8} accessibilityLabel="Pedir que se corrija o se anule"
+                    onPress={() => {
+                      Haptics.selectionAsync().catch(() => {});
+                      guardar('abono-a-corregir', { abono: a, credito: { branch_id: Number(p.sala), credito: p.credito, cliente: p.cliente } });
+                      router.push('/credito/corregir');
+                    }}
+                    style={({ pressed }) => ({ minHeight: 32, paddingHorizontal: 12, borderRadius: 999, justifyContent: 'center', backgroundColor: 'rgba(59,130,246,0.18)', opacity: pressed ? 0.7 : 1 })}>
+                    <Text style={{ color: MARCA.azulClaro, fontSize: 13, fontWeight: '700' }}>Corregir</Text>
+                  </Pressable>
+                ) : null}
               </View>
             )) : (
               <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>

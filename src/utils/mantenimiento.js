@@ -91,3 +91,6 @@ export function tiempoRestante(expiresAt, ahora = Date.now()) {
 /** Cuántas horas dura un candado (redondeado, al menos 1), como texto para el selector. */
 export const horasDelCandado = (lock) =>
     String(Math.max(1, Math.round((new Date(lock.expires_at) - new Date(lock.locked_at)) / 3600_000)));
+
+/** Cuánto puede durar un candado: las mismas opciones en el portal y en la app. */
+export const HORAS_DE_CANDADO = [1, 2, 4, 8, 12, 24].map((h) => ({ value: String(h), label: h === 1 ? '1 hora' : `${h} horas` }));

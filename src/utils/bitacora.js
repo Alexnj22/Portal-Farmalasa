@@ -1,4 +1,4 @@
-import { diaSV } from './fecha';
+import { diaSV, fechaNumerica } from './fecha';
 // La entrada de la bitácora, armada en UN solo sitio.
 //
 // Vivía dentro de `store/slices/auditSlice.js`, así que sólo podía anotar quien
@@ -203,3 +203,25 @@ export const varianteDeSeveridad = (s) => (s === 'CRITICAL' ? 'danger' : s === '
 
 /** De dónde vino el registro, en palabras. */
 export const ROTULO_DE_ORIGEN = { KIOSK: 'Kiosco', SYSTEM: 'Sistema', ADMIN_PANEL: 'Portal' };
+
+/**
+ * Las columnas y filas del CSV de la bitácora — el portal y la app exportan lo
+ * mismo. Cada fila son valores crudos; el escape lo pone quien escribe el
+ * archivo.
+ */
+export const COLUMNAS_CSV_BITACORA = [
+    'Fecha', 'Hora', 'Usuario', 'Acción', 'Severidad',
+    'Origen', 'Sucursal', 'Dispositivo', 'Método de Ingreso',
+    'ID Objetivo', 'Detalles JSON',
+];
+export function filasCsvDeBitacora(logs, hora12ConSegundos) {
+    return (logs || []).map((log) => {
+        const d = new Date(log.created_at);
+        return [
+            // La fecha en El Salvador y con el formato de toda la app (gate:hora).
+            fechaNumerica(log.created_at), hora12ConSegundos ? hora12ConSegundos(d) : d.toISOString().slice(11, 19),
+            log.user_name, log.action, log.severity, log.source, log.branch_name,
+            log.device_name, log.input_method, log.target_id, JSON.stringify(log.details || {}),
+        ].map((v) => String(v ?? ''));
+    });
+}

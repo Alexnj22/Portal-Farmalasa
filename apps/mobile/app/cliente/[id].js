@@ -17,6 +17,7 @@ import { codigoDeError, fetchCustomerDetail, mensajeDeError, motivoSinAplicar, p
 import { DEPARTAMENTOS, conciliarGeo, distritosDe, municipiosDe, normalizarGeo } from '@nucleo/data/elSalvadorGeo';
 import { CAMPOS_FICHA, CATEGORIAS_CLIENTE, ETIQUETA_CAMPO, cambiosDeFicha, camposRequeridos, validarCliente } from '@nucleo/utils/clienteValidacion';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
@@ -228,9 +229,15 @@ export default function FichaCliente() {
                   <View key={i} style={{ gap: 2, paddingVertical: 6, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{ETIQUETA_CAMPO[h.campo] || h.campo}</Text>
-                      {h.descartado_at ? <Pildora texto="Descartado" color={colorSistema.texto2} /> : !h.erp_synced_at ? <Pildora texto="Sin aplicar" color={MARCA.ambar} /> : null}
+                      {h.descartado_at ? <Pildora texto="Descartado: ya había otro valor" color={colorSistema.texto2} /> : !h.erp_synced_at ? <Pildora texto="Sin aplicar" color={MARCA.ambar} /> : null}
                     </View>
-                    <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${corta(h.changed_at)}${h.changed_by_nombre ? ` · ${h.changed_by_nombre}` : ''}`}</Text>
+                    {/* Qué había y qué quedó, como el portal. */}
+                    <Text style={{ fontSize: 13 }}>
+                      <Text style={{ color: colorSistema.texto2, textDecorationLine: 'line-through' }}>{h.valor_anterior || '(vacío)'}</Text>
+                      <Text style={{ color: colorSistema.texto2 }}>{'  →  '}</Text>
+                      <Text style={{ color: colorSistema.texto, fontWeight: '700' }}>{h.valor_nuevo || '(vacío)'}</Text>
+                    </Text>
+                    <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${corta(h.changed_at)}${h.changed_at ? `, ${hora12(h.changed_at) || ''}` : ''}${h.changed_by_nombre ? ` · ${h.changed_by_nombre}` : ''}`}</Text>
                   </View>
                 )) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>La ficha no se ha editado desde el portal.</Text>}
               </Seccion>

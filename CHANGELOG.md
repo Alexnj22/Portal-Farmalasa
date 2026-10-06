@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1231.0 — App: cobros, clientes, cotizaciones, sucursales y administración
+
+- **App: Cuentas por cobrar** se refresca contra la caja como el portal (al abrir, cada minuto a la vista y cuando una búsqueda no encuentra: el crédito recién vendido), con Saldo / Por vencer / Vencidos / Todos, orden, filtro de vendedor, páginas y **pedir corrección** de un abono desde la ficha.
+- **Clientes**: las cinco tarjetas del portal, la pestaña **Por revisar** con Descartar, filtros de departamento, municipio, código y mostrador, orden, y en la ficha cada cambio con su valor anterior → nuevo y la hora.
+- **Cotizaciones**: tarjetas Total / Activas / Anuladas / Monto, sucursal, NIT, IVA por línea en CCF, **compartir el PDF** (el mismo papel del portal) y anular con confirmación.
+- **Sucursales**: kioscos N/3, abrir en Mapas, copiar dirección, WhatsApp, y en la ficha Historial, Expediente con vencimientos y Gastos con su gráfica.
+- **Avisos** (leyeron / faltan con cargo, eliminar y archivar con confirmación), **Sesiones** (IP, app o navegador, bloquear y quitar bloqueo), **Mantenimiento** (motivo, duración y la franja de aviso del portal), **Auditoría del sistema** (páginas, rango de fechas, ficha del registro, CSV) y **Mis documentos** (vigencias y filtros).
+- Núcleo: `clientesPorRevisar`, `cotizacionPapel`, `expedienteDeSucursal`, `gastosDeSucursal`, `historialDeSucursal` y lo agregado a `bitacora`, `mantenimiento`, `misDocumentos` y `sesiones`; el portal los usa.
 ## v2.1230.1 — App de clientes: arreglos de historias, sucursales, reservas y Wallet
 
 Revisión del usuario en TestFlight (compilación 8):

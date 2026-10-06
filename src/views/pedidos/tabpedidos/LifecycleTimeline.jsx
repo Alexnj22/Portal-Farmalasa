@@ -3,7 +3,7 @@
 // its pause badge, shown inside each expanded pedido card.
 import React from 'react';
 import { Pause } from 'lucide-react';
-import { fmtMin, elapsed, fmtHM } from '@nucleo/utils/tableroDePedidos';
+import { fmtMin, elapsed, fmtHM, pasosDelPedido, PASO_DE_LA_ETAPA } from '@nucleo/utils/tableroDePedidos';
 import Badge from '../../../components/common/Badge';
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -26,7 +26,7 @@ const tlBorder = () => 'border-chart-3/60';
 const tlGlow   = () => 'color-mix(in srgb, var(--chart-3) 50%, transparent)';
 
 // ruta_entregado se inserta en índice 4; Llegada→5, Finalizado→6, extras→≥7
-const TL_STAGE_IDX = { sin_iniciar: 0, preparando: 1, pausado: 1, preparado: 2, transito: 3, contando: 5, erp: 6 };
+const TL_STAGE_IDX = PASO_DE_LA_ETAPA;
 
 function PauseBadge({ pause, isPaused, empMap = new Map() }) {
     const mins     = pause ? elapsed(pause.pausado_at, pause.reanudado_at ?? undefined) : null;
@@ -77,54 +77,16 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
     const hasPause  = (row.min_pausado_total ?? 0) > 0;
     const isPaused  = stage === 'pausado';
     const activeIdx = TL_STAGE_IDX[stage] ?? 0;
-    const hasDif    = !!row.diferencias_reportadas_at;
 
-    // Quién entregó: preferir entregado_por lookup, fallback al conductor
-    const entregadorEmp = rutaStop?.entregado_por
-        ? (empMap.get(rutaStop.entregado_por) ?? rutaCondEmp)
-        : rutaCondEmp;
-    const nodes = [
-        { key: 'confirmado',     label: 'Confirmado', time: row.created_at,           emp: creatorEmp    },
-        { key: 'iniciado',       label: 'Inicio',     time: row.iniciado_at,          emp: iniciadorEmp  },
-        { key: 'preparado',      label: 'Listo',      time: row.finalizado_at,        emp: finalizadorEmp },
-        { key: 'enviado',        label: 'En ruta',    time: row.enviado_at,           emp: enviadorEmp    },
-        { key: 'ruta_entregado', label: 'Entregado',  time: rutaStop?.entregado_at ?? null, emp: entregadorEmp, isRutaNode: true },
-        // El apoyo NO cuelga de estos dos pasos: es del pedido, y ponerlo en los
-        // dos dibujaba la misma lista dos veces —una de ellas debajo de
-        // «Finalizado», un paso que todavía no había ocurrido—. Va con nombre en
-        // su propia fila, al pie de la línea de tiempo.
-        { key: 'llegada',        label: 'Llegada',    time: row.llegada_fisica_at,    emp: llegadaEmp    },
-        { key: 'erp',            label: 'Finalizado', time: row.recibido_erp_at,      emp: erpEmp        },
-    ];
-    if (row.falta_caja_at) {
-        // Label descriptivo según tipo
-        const problemaLabel = row.llegada_tipo === 'mixto'      ? 'Dañada + Falta'
-                            : row.llegada_tipo === 'caja_danada' ? 'Caja dañada'
-                            :                                       'Falta caja';
-        nodes.push({ key: 'falta_caja', label: problemaLabel, time: row.falta_caja_at, emp: llegadaEmp });
-
-        // Ciclos de reenvío desde reenvios_historial (nuevo)
-        const historial = row.reenvios_historial ?? [];
-        if (historial.length > 0) {
-            historial.forEach((ciclo, i) => {
-                const lbl = historial.length > 1 ? `Reenvío ${ciclo.ciclo}` : 'Reenvío';
-                nodes.push({ key: `reenvio_${i}`, label: lbl, time: ciclo.sent_at, emp: reenvioEmp });
-                if (ciclo.arrived_at) {
-                    const llegadaLbl    = historial.length > 1 ? `Llegada R.${ciclo.ciclo}` : '2ª Llegada';
-                    const segLlegadaEmp = ciclo.arrived_por ? empMap.get(ciclo.arrived_por) ?? null : null;
-                    nodes.push({ key: `seg_llegada_${i}`, label: llegadaLbl, time: ciclo.arrived_at, emp: segLlegadaEmp });
-                }
-            });
-        } else {
-            // Compat con pedidos anteriores sin reenvios_historial
-            if (row.reenvio_bodega_at) nodes.push({ key: 'reenvio', label: 'Reenvío', time: row.reenvio_bodega_at, emp: reenvioEmp });
-            if (row.segunda_llegada_at) nodes.push({ key: 'seg_llegada', label: '2ª Llegada', time: row.segunda_llegada_at });
-        }
-    }
-    if (hasDif) {
-        nodes.push({ key: 'diferencias', label: 'Diferencias', time: row.diferencias_reportadas_at, emp: difsEmp });
-        nodes.push({ key: 'corregido',   label: 'Corregido',   time: row.confirmado_correccion_at,  emp: corrConfEmp });
-    }
+    // Los pasos —en orden, con su hora y quién— salen del núcleo
+    // (`pasosDelPedido`): la app nativa dibuja la misma línea de vida. Las
+    // personas se resuelven por id contra `empMap`, que es de donde salen
+    // también las que esta función recibe por prop.
+    const nodes = pasosDelPedido(row, {
+        quien: (id) => empMap.get(id) ?? null,
+        entrega: rutaStop,
+        conductor: rutaCondEmp,
+    });
 
     return (
         // ── En el teléfono el timeline va en CARRIL ────────────────────────────

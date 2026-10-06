@@ -50,11 +50,12 @@ export async function fetchFaltantes() {
  * parámetro — igual que el resto de las escrituras del portal.
  */
 export async function declararFaltanteTardio(requestId, faltantes) {
-    const { data, error } = await supabase.rpc('declarar_faltante_tardio', {
+    const { data: crudo, error } = await supabase.rpc('declarar_faltante_tardio', {
         p_request_id: requestId,
         p_faltantes: faltantes,
     });
     if (error) return { ok: false, error: error.message };
+    const data = /** @type {{ ok?: boolean, error?: string, codigo?: string, declarados?: number } | null} */ (crudo);
     if (data?.ok === false) return { ok: false, error: data.error, codigo: data.codigo };
     return { ok: true, declarados: data?.declarados ?? 0 };
 }
@@ -119,12 +120,13 @@ export const CIERRES_DE_FALTANTE = [
  * mismo botón.
  */
 export async function cerrarFaltante(id, estado, nota = '') {
-    const { data, error } = await supabase.rpc('cerrar_faltante', {
+    const { data: crudo, error } = await supabase.rpc('cerrar_faltante', {
         p_id: id,
         p_estado: estado,
         p_nota: nota?.trim() || null,
     });
     if (error) return { ok: false, error: error.message };
+    const data = /** @type {{ ok?: boolean, codigo?: string, request_id?: string } | null} */ (crudo);
     if (data?.codigo === 'RECIBIR_EN_CAJA') return ingresarAparecido({ id, request_id: data.request_id });
     // `YA_CERRADO` no es un fallo del portal: alguien más lo cerró entre que se
     // pintó la lista y se apretó el botón. Se dice como lo que es.

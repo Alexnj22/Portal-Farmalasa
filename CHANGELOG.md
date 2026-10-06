@@ -21,6 +21,578 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1231.1 — Pedidos · Generar: tarjetas de sucursal neutras con barra de urgencia
+
+- **Tarjetas de sucursal**: el fondo ya no se pinta con la urgencia (con todas entre 43% y 67% salían las seis naranjas y la elegida no se distinguía). Fondo neutro, el % rotulado como «Urgencia» con una barra, y una casilla siempre visible que se llena al elegir. Más bajas: en el teléfono las seis entran en una pantalla y media en vez de tres.
+- **Acciones ordenadas**: «Distribución global» pasa a interruptor y queda junto a «Seleccionar todas», arriba a la derecha. Abajo, un pie con el resumen de lo elegido (sucursales y productos con stock en Bodega) y «Generar y confirmar» a la derecha.
+- **Sin stock en Bodega**: el título va en la cabecera de la tabla. El total deja de ir en rojo y «Ventas 6m» pierde la flecha de tendencia, que no medía una tendencia.
+
+## v2.1231.0 — App: cobros, clientes, cotizaciones, sucursales y administración
+
+- **App: Cuentas por cobrar** se refresca contra la caja como el portal (al abrir, cada minuto a la vista y cuando una búsqueda no encuentra: el crédito recién vendido), con Saldo / Por vencer / Vencidos / Todos, orden, filtro de vendedor, páginas y **pedir corrección** de un abono desde la ficha.
+- **Clientes**: las cinco tarjetas del portal, la pestaña **Por revisar** con Descartar, filtros de departamento, municipio, código y mostrador, orden, y en la ficha cada cambio con su valor anterior → nuevo y la hora.
+- **Cotizaciones**: tarjetas Total / Activas / Anuladas / Monto, sucursal, NIT, IVA por línea en CCF, **compartir el PDF** (el mismo papel del portal) y anular con confirmación.
+- **Sucursales**: kioscos N/3, abrir en Mapas, copiar dirección, WhatsApp, y en la ficha Historial, Expediente con vencimientos y Gastos con su gráfica.
+- **Avisos** (leyeron / faltan con cargo, eliminar y archivar con confirmación), **Sesiones** (IP, app o navegador, bloquear y quitar bloqueo), **Mantenimiento** (motivo, duración y la franja de aviso del portal), **Auditoría del sistema** (páginas, rango de fechas, ficha del registro, CSV) y **Mis documentos** (vigencias y filtros).
+- Núcleo: `clientesPorRevisar`, `cotizacionPapel`, `expedienteDeSucursal`, `gastosDeSucursal`, `historialDeSucursal` y lo agregado a `bitacora`, `mantenimiento`, `misDocumentos` y `sesiones`; el portal los usa.
+## v2.1230.1 — App de clientes: arreglos de historias, sucursales, reservas y Wallet
+
+Revisión del usuario en TestFlight (compilación 8):
+- **Historias se cerraban al pasarlas:** el gesto de tocar llamaba `Dimensions` desde el hilo de la interfaz (worklet) y eso tumba la app. El ancho se lee en JS. Además el visor congela el orden al abrir (marcar una como vista reordenaba la lista y saltaba).
+- **Campana:** SF Symbol del sistema (`bell` / `bell.badge`), como los de la barra de abajo (`componentes/Icono.js`, `expo-symbols`).
+- **Wallet:** «Agregar a Apple Wallet» sólo aparece si la tarjeta no está; ver o agregar también desde Cuenta.
+- **Sucursales:** todas en el mismo vidrio del sistema, sin colores distintos; íconos del sistema; el horario se despliega sin animación; nombres «La Salud - San Antonio», etc.
+- **Mis reservas:** rediseño con los pasos (Recibida → Lista → Retirada), total a pagar, cuenta regresiva y anteriores aparte. Aviso de confirmación «Recibimos tu reserva R-…» en menos de un minuto.
+- **Portal:** pestaña **Reservas** en Ofertas para clientes con todas las sucursales (quien edita ofertas); `reservas_de_sucursal(NULL)` devuelve todas con el nombre de la sala.
+
+## v2.1230.0 — App: nómina, tiempos, horarios y personal
+
+- **App: Nómina** con la lista de quincenas (estado y fecha de pago), filtro por estado, los cuatro totales del portal (ordinario, extras/otros, deducciones, total), el aviso «N timesheets sin aprobar», el cargo en cada fila, **Aprobar** y **Marcar pagada** con confirmación, y «Todas las boletas» en PDF o impresas.
+- **Auditoría de tiempos**: Día y **Quincena** (regulares, extra, nocturnas, ausencias y tardanza por persona, subtotal por sala), «Aprobar todo», confirmar o rechazar turnos extra, «Revisado», y el calendario del sistema para elegir el día.
+- **Horarios**: horas de la semana contra 44 por persona, conflictos del día, huecos y almuerzos que dejan la sala sola, quién viene a cubrir, **Publicar (N)** y la gráfica de transacciones por día y por hora. La semana de una persona en una hoja legible.
+- **Personal**: por sala con la jefatura arriba, «Sin jefatura», «Puesto sin cubrir», «Responde a», «vuelve el…», y Todos / Activos / Ausentes / Practicantes / Externos. **Ficha nativa de cada persona** (estado, cargos, horario de la semana, datos laborales y personales; identidad y salario sólo con su permiso). Los enlaces `/personal/empleado/…` y `/personal?empleado=…` de avisos y del portal la abren.
+- **Vacaciones**: aprobar o rechazar (con motivo) los cambios pedidos, lo que le queda a cada persona y la vista del año. **Monitor**: los seis contadores que filtran, las últimas marcas, almuerzo y lactancia, en vivo cada 30 s.
+- Núcleo: `resumenDeQuincena`, `coberturaDelDia`, `ventasPorHora`, `reparosDeLaSemana`; el portal los usa.
+## v2.1229.0 — Reservas de productos en oferta: app y sucursal
+
+Primera pieza del plan de la siguiente fase (decisión del usuario: por ahora sólo productos en oferta; el catálogo completo, después).
+- **App:** «Reservar» en cada producto de una oferta. Hoja en tres pasos: las condiciones la primera vez (las manda el servidor con su versión), sucursal con «hay / quedan pocas / te avisamos cuando llegue» y cantidad de 1 a 5, y el código de la reserva. Pantalla **Mis reservas** con estado, cuenta regresiva de las 24 h y cancelar; acceso desde Mis puntos (cuando hay activas) y Cuenta.
+- **Reglas** (`TERMINOS_RESERVA` en `app-clientes`): 24 h para retirar desde «lista», máximo 3 activas, hasta 5 unidades, precio de oferta dentro de sus fechas, bajo receta no, 3 vencidas en 30 días bloquean 30 días, se paga al retirar.
+- **Base:** `app_reservas` (estados pendiente → lista → retirada/vencida/cancelada; ya con columnas para la reserva en sucursal con anticipo), y la sucursal la maneja SÓLO por funciones con guarda (`reservas_de_sucursal`, `reserva_cambiar_estado`, `reserva_avisada_whatsapp`): cualquier dependiente de esa sala. `reservas_vencer` cada 15 min. `app_cliente_existencias` dice hay/pocas/sin por sucursal, nunca la cantidad.
+- **Portal:** widget **Reservas de mi sala** en el Inicio (mismos cargos que ven los cortes de su sala): «Apartar y avisar» → la app avisa sola en menos de un minuto; si el cliente no tiene la app, se abre el mensaje de WhatsApp ya escrito y queda anotado quién avisó. «Retirada» y cancelar.
+- Preparada sin usar: `app_cliente_buscar_productos` (el «¿lo tienen?» del catálogo, para después).
+
+## v2.1228.1 — App: facturación, cuentas por pagar y libros fiscales
+
+- **App: Facturación como el portal.** Las cinco colas (cada una con su permiso) con sus tarjetas: Pendientes / CCF urgentes / Días restantes, Facturas / Más antigua, Pendientes / Solventadas. CCF primero y en rojo, filtro por código de observación, páginas de 40 (ya no se corta en 150). **Solventar** una (con el motivo de Hacienda si no entró), **Marcar como resuelta** con nota, **Solventar todas** con confirmación. **No efectivo**: confirmar el pago con nota y foto del comprobante. Saltos en lectura.
+- **Cuentas por pagar**: «En trámite», condiciones de crédito y **registrar un pago** repartido por factura (forma, referencia, fecha) desde la ficha del proveedor, con tope en el saldo menos lo que está en trámite.
+- **Facturas de compra**: tarjetas Total / Crédito IVA / Compras netas / Invalidados / Sin proveedor (con su permiso de montos), insignias, órdenes y notas de crédito tocables. **Compras**: pestaña Productos, filtro por proveedor, aviso de facturas sin proveedor. **Proveedores**: ficha completa con llamar / WhatsApp / correo, crédito, régimen, deducibilidad y edición. **Laboratorios**: la política de vencimiento.
+- **Libros de IVA**: el detalle de cada libro renglón por renglón con los avisos de cumplimiento (NRC, número de control) y **Exportar CSV** (el mismo archivo del portal). **Cierre de período**: Cerrar / Reabrir con motivo y «El remanente, mes a mes». **Libro de compras completo**: tarjetas, NRC, gravadas, CSV, sin corte.
+- **Pestañas que no caben**: el control segmentado del sistema corta lo que no cabe («Haciend…»). Ahora, si el rótulo más largo no entra, pasa solo a píldoras que se desplazan de lado. Vale para toda la app.
+- Núcleo: `colasDeFacturacion`, `proveedorFicha`, `tarjetasDeCompras`, `faltantesDelLibro`, CSV del libro completo; el portal los usa.
+
+## v2.1228.0 — App: ficha de producto, Min·Máx y traslados
+
+- **App: la ficha de producto, como el portal.** Foto grande (tomar o cambiar), aviso de pérdida / margen bajo, cada presentación con su costo, factor, precios y margen (el precio que cambió, tachado con su fecha), Devolutivo/ND, categoría (con buscar y crear), principios activos, ubicaciones y los historiales de compras, precios y cambios. Costos y márgenes con su permiso.
+- **Min·Máx de un producto**: por sala la barra de existencia contra MIN/MAX, ABC·XYZ y venta por día; al tocar una sala, la cobertura contra el ciclo, la proyección a 30/60/90 días, el historial y Guardar / Restaurar / Poner 0 / Ocultar; lotes por vencer con el plazo para Bodega, últimas compras y ventas. Pantalla nueva **Agotados que venden**.
+- **La proyección ya no se contradice**: 2 unidades a 0.06/día dejaban 0.2 a los 30 días y se pintaba «0 · se agota» junto a «33 días de cobertura». «Se agota» se decide sin redondear (`estadoDeProyeccion`); lo que queda bajo 1 dice «< 1». Igual en el portal.
+- **Traslados**: historial por semana con flechas, Todos / Recibidos / Rechazados y sala, los envíos cerrados, fotos de daño y evidencia, y el trayecto con caras. **Inventario**: los lotes de la sala al tocar un producto y el área de vencidos en Bodega.
+- La búsqueda de Ofertas (app y portal) pasaba los argumentos al revés a `tokenMatch`.
+- Núcleo: `preciosDeProducto`, `minmaxGuardar`, `quiebres.js`, `plazoDeDevolucion.js`, `fetchFichaDeProducto`/`fetchNombreDeProducto`; el portal los usa.
+## v2.1227.0 — App de clientes: historias, notificaciones y sucursales
+
+Pedido del usuario (2026-10-06):
+- **Historias** (carrusel tipo estados): círculos arriba de Mis puntos con aro de color si no se han visto; visor a pantalla completa con barras de progreso (6 s), tocar para avanzar/volver, mantener para pausar, deslizar para cerrar y botón a una pantalla de la app. En el portal, pestaña **Historias** en Ofertas para clientes (imagen vertical, título, texto, botón de una lista cerrada, fecha final, publicar). Acciones `historias`/`historias_publicas` en `app-clientes`; muestras para la ficha de prueba.
+- **Bandeja de notificaciones:** campana con el número sin leer en Mis puntos y pantalla con los avisos recibidos (`app_cliente_avisos` ahora guarda a dónde lleva cada uno y si se leyó); tocar uno lleva a su pantalla.
+- **Sucursales** (antes «salas»): los nombres para el cliente son el barrio — Salud - San Antonio, El Calvario, Totolco, El Paraíso, Nueva Concepción — en todo lo que manda `app-clientes`. Pantalla rediseñada: tarjeta con cabecera de color, estado que late si está abierta, acciones grandes y horario que se despliega; entrada llamativa en Mis puntos.
+- «Por vencer» → «Puntos por vencer»; el logo al centro de la tarjeta de socio.
+- `OfertaModal` guarda borrador (gate:borradores).
+
+## v2.1226.12 — Base de historias y bandeja de avisos; main ya no despliega
+
+- **Base (sin pantallas todavía):** tabla `app_historias` (carrusel tipo estados para la app, editable con el permiso `ofertas_clientes`) y columnas `url`/`leido_at` en `app_cliente_avisos` para la bandeja de notificaciones.
+- **Vercel:** con «Production Branch» = `produccion` (lo cambió el usuario), `main` ya no despliega nunca; se publica con `npm run publicar`.
+
+## v2.1226.11 — publicar: los .md no cuentan como web
+
+- `publicar` y `vercel-ignorar.sh`: cualquier `*.md` (CLAUDE.md, DESIGN.md, el changelog) deja de contar como cambio de la web.
+
+## v2.1226.10 — Publicar el portal a propósito: rama produccion y npm run publicar
+
+- **El portal se publica a propósito** (decisión del usuario): la rama `produccion` es la de portal.farmasalud.lat y se mueve con `npm run publicar` (`scripts/publicar.mjs`), que la adelanta a `origin/main` sólo si hay cambios de la web. `scripts/vercel-ignorar.sh`: `produccion` y `sesion/nucleo` despliegan; `main`, por transición, sólo si toca la web, hasta que Vercel tenga «Production Branch» = `produccion`. Regla escrita en CLAUDE.md para las demás sesiones.
+
+## v2.1226.9 — Vercel: la regla de despliegue va en un script
+
+- **El despliegue falló:** Vercel exige que `ignoreCommand` mida ≤256 caracteres y la regla anterior no cabía. Ahora es `bash scripts/vercel-ignorar.sh`, probado en un árbol aparte contra dos commits reales (el de Wallet salta, el de la boleta compila).
+
+## v2.1226.8 — Vercel: no compilar el portal por cambios que no son de la web
+
+- **`vercel.json` `ignoreCommand`:** en `main`, Vercel salta el despliegue si el commit sólo toca `apps/`, `supabase/`, `scripts/`, `docs/`, `auditoria/`, `CHANGELOG.md` o `src/version.js`. El 2026-10-06 hubo 24 despliegues y ~20 eran de las apps o de funciones; Vercel avisó de un límite. Probado contra commits del día: el de Wallet salta, el de la boleta (`src/utils`) y el del enlace universal (`public/`, `vercel.json`) compilan. Consecuencia aceptada: la versión que muestra el portal sólo avanza cuando hay un cambio de la web.
+
+## v2.1226.7 — Cumpleaños: el aviso abre la celebración
+
+- **Cumpleaños:** la celebración sale una vez al día, así que tocar el aviso de cumpleaños abría la app y no pasaba nada si ya se había visto. El aviso ahora lleva `/puntos?cumple=1` y eso la muestra siempre.
+
+## v2.1226.6 — Wallet: «Saldo de puntos»
+
+- **Tarjeta de Wallet:** el rótulo del saldo dice «Saldo de puntos» (antes «Saldo para descontar»), pedido del usuario.
+
+## v2.1226.5 — Wallet: franja sin bordes y Cliente VIP
+
+- **Tarjeta de Wallet:** la franja nace y muere en el color del fondo del pase (sin bordes), sin la cruz cortada, con luz magenta, resplandor verde, brillo holográfico y grabado fino. «Socio» → «Cliente VIP» y «Cliente desde» (pedido del usuario). El alto lo fija Apple para toda tarjeta de lealtad con QR.
+
+## v2.1226.4 — Wallet: la tarjeta se actualiza sola
+
+- **`wallet-pases`, servicio web de PassKit:** el pase lleva `webServiceURL` y un `authenticationToken` por tarjeta (HMAC del serial, sin tabla). El iPhone se registra al agregarla (`wallet_registros`), pregunta qué cambió y baja la tarjeta nueva.
+- **Aviso a Apple:** cron `wallet-pases-minuto` (sólo si hay teléfonos registrados) busca tarjetas cuyo `puntos_cuenta.updated_at` pasó a su `notificado_at` y manda el aviso por APNs con el certificado del pase (HTTP/2, `Deno.createHttpClient`). Probado: APNs aceptó el certificado (respondió `BadDeviceToken` a un token falso, que se borró solo). La pantalla bloqueada dice «Tu saldo de Puntos Salud ahora es $X».
+- La tarjeta ya agregada antes de este cambio no tiene el servicio: hay que quitarla y agregarla de nuevo una vez.
+
+## v2.1226.3 — Wallet: tarjeta con franja y hoja nativa de Apple
+
+Revisión del usuario en TestFlight (2026-10-06):
+- **«Agregar a Wallet» abría un enlace con la dirección del servidor:** ahora la tarjeta llega en base64 (acción `wallet_pase`) y se agrega con la HOJA nativa de Apple (`PKAddPassesViewController`), en un módulo local (`apps/clientes/modules/wallet`).
+- **Ya agregada, el botón seguía ofreciendo agregarla:** ahora pregunta a la biblioteca de Wallet (`PKPassLibrary`, con el permiso `pass-type-identifiers` y la capability WALLET activada por la API) y cambia a «Ver en Apple Wallet»; se vuelve a preguntar al volver a la app.
+- **La tarjeta se veía plana:** franja de 375×144 (`scripts/wallet/imagenes.py`) con el degradado de la marca, resplandor verde, brillo holográfico en diagonal y la cruz del logo como marca de agua; fondo y rótulos a juego.
+- **Firma:** `forge.util.binary.raw.encode` reventaba la pila con la franja @3x (~180 KB); conversión por tramos. Verificado con `openssl smime -verify` y los SHA-1 del manifiesto.
+
+## v2.1226.2 — App: efectivo, cortes y bolsas a la par del portal
+
+- **App: Efectivo muestra cómo se llega a la cifra**, como el portal: las cuatro tarjetas (en la caja, abierta/cerrada y quién la abrió, último corte, confirmado), la meta del día, por qué manos pasó la caja, lo vendido por forma de pago con barras, la cuenta del cajón renglón por renglón (abrió + vendido en efectivo + ingresos − vales − bolsas = total), los bonos por pagar y los movimientos del día agrupados por el corte que los contó, con firmas, correcciones y la foto del comprobante.
+- **Fuga cerrada**: la app mostraba el monto «en la caja» a cualquiera. Ahora sigue la regla del conteo a ciegas del portal (sólo con alcance de cortes en todas las salas).
+- **Cortes**: Sin confirmar / Cuadraron / Exceso / Faltante que filtran, cuatro estados, diferencia/sala/período con calendario, búsqueda y páginas. El detalle explica la cuenta paso a paso (lo vendido por forma de pago, lo que debía haber, lo contado, el acumulado) y quién firmó.
+- **Bolsas**: las cinco etapas (Sala, Recibir, Contar, Contadas, Cuadre), las métricas del circuito (sin recibir, la más vieja, sin cuadrar) y el detalle de cada bolsa en una hoja.
+- Núcleo: `cajaDelDia.js`, `filtrarCortes` y lo de bolsas en `bolsasTexto.js`; el portal los usa. Las acciones que mueven dinero (hacer corte, abrir caja, resolver diferencias) siguen en el portal.
+- El papel de la boleta ya no lleva gris (`gate:design`).
+
+## v2.1226.1 — App: pedidos y conteos con su detalle
+
+- **App: Pedidos con su ficha completa.** Tocar un pedido abre: la etapa y el estado de la sala, cajas/productos/unidades, la línea de vida con cara y nombre de quien hizo cada paso y cuánto tardó (pausas con motivo y duración, quién apoyó), cómo llegó, las diferencias (sólo lectura, para decidir sigue el portal) y los productos por laboratorio con pedido → enviado → recibido. La lista filtra por estado, período y sala, cuenta los del mes por sala y trae los completados y anulados. Pestaña **Tiempos** (con su permiso): preparación, pausa, tránsito y recuento por sucursal en 7/30/90 días, con barras y «Por qué se pausan».
+- Un producto todavía pendiente muestra «—» en recibido, no «Faltaron».
+- **App: Conteos** con las tarjetas del portal (Conteos / Abiertos / Por aprobar / Sin ajustar, que filtran), valor neto con su permiso de montos, y en el detalle sin contar, no ubicados, diferencias y faltante/sobrante en dinero; el historial de cada renglón.
+- Núcleo: `tableroDePedidos.js` y `conteoDeInventario.js`; el portal los usa.
+
+## v2.1226.0 — App: metas y puntos con sus gráficas
+
+- **App: Metas con sus gráficas, como el portal.** Tablero / Bono / Histórico. Meta del mes, vendido, proyección y semáforo; cada sala con su termómetro; «Cómo va el mes» con barras día por día contra la línea del ritmo (deslizando el dedo se ve cada valor); la venta por vendedor (Total / Por día / Por hora) con foto y su barra contra el promedio. Tocar una sala abre su detalle con «De dónde sale la meta». Bono por persona con «si cierra así»; Histórico con la línea de cumplimiento contra 95% y 100% y la meta sobre lo vendido.
+- **App: Puntos con sus gráficas.** Las tarjetas del portal (más las de la red), Puntos/Dólares, los últimos 30 días acumulados contra canjeados, el mes por sala, «Los que más tienen» y «Cuándo vencen». La consulta trae acumulados y canjeados y 7 órdenes. La cuenta del cliente: el reparto completo, el mes a mes que filtra los movimientos al tocarlo, y Todos / Acumulados / Canjes.
+- Núcleo: `resumenDelMesEnCurso` y `rankingDeVendedores` (metasUtils) y `puntosCuenta.js`; el portal los usa. Gráficas con `react-native-svg`, sin librerías nuevas.
+## v2.1225.3 — Avisos de la app de clientes: inmediatos cada minuto, recordatorios a las 9
+
+- **`avisos-clientes` en dos modos** (decisión del usuario): `inmediato` cada minuto de 8:00 a 20:00 SV (puntos ganados, oferta nueva; llega 1–2 min después de pagar porque la venta tarda ~1 min en llegar de la caja) y `diario` a las 9:00 SV (puntos que vencen en 15 días, inyección pendiente). Reemplaza el cron de 15 minutos. Ventana de lotes recortada a 2 h. Costo: ~720 invocaciones al día, sin tocar el ERP.
+
+## v2.1225.2 — App de clientes: tarjeta en Apple Wallet y reporte de errores
+
+- **Apple Wallet:** «Agregar a Apple Wallet» en Mis puntos. El servidor (`app-clientes`, `_shared/pase.ts`) arma el .pkpass y lo firma con el certificado Pass Type ID `pass.lat.farmasalud.puntos` + la cadena WWDR G4 (PKCS#7 separado, node-forge); la firma valida con `openssl smime -verify`. El enlace de descarga va firmado con HMAC y dura 10 minutos. La tarjeta lleva el saldo en dólares, los puntos, el nombre corto y el MISMO QR del ticket. Es una foto del momento; actualizarla sola pide un servicio de actualización aparte. Certificado vence el 2027-11-05; los PEM viven en secretos de la función, nunca en el repo.
+- **Sentry encendido** en la compilación de tienda (`EXPO_PUBLIC_SENTRY_DSN` en `eas.json`, perfil `clientes`), sin datos personales.
+
+## v2.1225.1 — App: solicitudes a la par del portal
+
+- **App: Solicitudes a la par del portal.**
+  - Bandeja: Pendientes / Aprobadas / Rechazadas / Todas, «De quién: Todos / Sólo yo», sala y tipo en el menú de filtros, el historial por semana con flechas (ya no un recorte fijo de 30 días), agrupada por tipo con encabezados que se pliegan. Cada tarjeta con la cara de quien pidió, el tipo y la sala, la espera (ámbar desde 2 días) y quién la tiene o quién decidió.
+  - Detalle: quién pidió y en manos de quién está; el contexto con que se decide (ventas de Min·Máx, la venta, lo aplicado, lo recibido, el historial), el motivo de anulación, el cambio de forma de pago y los puntos de un cambio de cliente.
+  - **Aprobación parcial**: marcar qué productos entran y bajar cantidades con −/+ («Entran 4 de 5»), con el motivo obligatorio y «Aplicar lo marcado»; en un abono, por crédito. **Cancelar** una solicitud propia. Ya no manda al portal.
+- Núcleo: `decisionDeSolicitud.js` (la regla del parcial; el portal la usa) y `avisoDeCambioDeCliente` en `puntosTexto.js`.
+
+## v2.1225.0 — App: ofertas para clientes nativas
+
+- **App: «Ofertas para clientes» ya es nativa** (antes abría el portal). La lista muestra cada oferta como la ve el cliente: su foto, la etiqueta en su color y el estado (En la app / Programada / Sin publicar / Terminada), con tarjetas que filtran. Tocar abre el editor; mantener presionada ofrece publicar, retirar y borrar; el «+» crea una.
+- Editor nativo: foto 16:9 desde la galería con recorte, título, etiqueta, descripción, condiciones, color, fechas con el calendario del sistema, salas, exclusiva y publicada. Las ofertas que siguen a un descuento de la caja muestran sus fechas, salas y productos sin dejarlos editar (los pone al día la caja).
+- Pre-registros: buscar la ficha por documento y vincularla, o descartarlo.
+- Núcleo: `estadoDeOferta` (el portal lo importa) y `subirImagen` acepta la foto del teléfono.
+## v2.1224.1 — App de clientes: el QR del ticket abre la app
+
+- **Enlace universal:** `public/.well-known/apple-app-site-association` declara que `portal.farmasalud.lat/mis-puntos` pertenece a Puntos Salud (`ZZWA3Q7Q35.lat.farmasalud.clientes`), servido como JSON (`vercel.json`). Con la app instalada, el QR del ticket abre la app; sin ella, la web de siempre.
+- **`app/mis-puntos.js`:** con sesión va a sus puntos; sin sesión abre «Entrar» con el código ya escrito, pero NO entra solo (un QR de un ticket ajeno no abre la cuenta de otro sin confirmar).
+- App ID: Associated Domains y App Groups activados por la API de App Store Connect; registrado `lat.farmasalud.clientes.widget` para el widget.
+
+## v2.1224.0 — App de clientes: avisos, referidos, cumpleaños, salas, vitrina, widget y ofertas en hoja
+
+Pedido del usuario (2026-10-06) sobre la lista de «qué falta»:
+- **Avisos al teléfono (`avisos-clientes`, cron cada 15 min de 8:00 a 20:00 SV):** puntos ganados (compra, cumpleaños, referido), puntos que vencen en 15 días, inyección pagada hace 3 días sin aplicar y oferta nueva (sólo a quien aceptó promociones). La bitácora `app_cliente_avisos` (UNIQUE cliente+tipo+ref, retención 180 días) impide repetir. Tocar un aviso abre su pantalla. Envío por Expo (gratis); para iPhone falta subir la llave de avisos de Apple a Expo (`eas credentials`) — hasta entonces Expo contesta `InvalidCredentials`.
+- **Referidos:** 50 puntos para cada uno cuando el invitado hace su primera compra de $10+ (decisión del usuario); sólo clientes nuevos, tope 10 premios al mes, vence a los 120 días. Código propio de 6 letras (NO el de la tarjeta, que da acceso). `puntos_premiar_referidos` cada hora; origen de lote nuevo `referido`, visible en el estado de cuenta. Pantalla «Invitar a un amigo» y campo en el registro.
+- **Cumpleaños:** la app lo celebra al abrir (globos, pastel, confeti, el regalo en puntos y dólares), una vez por día. Muestra `cumpleanos` en `app_cliente_muestras` para verla sin esperar al día.
+- **Salas:** dirección, abierta/cerrada ahora con hora de cierre, horario de la semana, y «Cómo llegar», WhatsApp y Llamar de un toque. Pública.
+- **Ofertas sin cuenta (`ofertas_publicas`):** vitrina desde la bienvenida, con invitación a unirse.
+- **Detalle de oferta:** como hoja del sistema en vez del zoom (que dejaba ver la lista detrás y empujaba la foto bajo la barra de estado, desenfocada); información en orden: qué es, vigencia/dónde/para quién, productos con cuánto se ahorra, cómo se usa.
+- **Widget de saldo (iOS):** pequeño y mediano, con el saldo en dólares, los puntos y lo que vence en 3 meses; la app lo actualiza por App Group al cargar el resumen y lo borra al cerrar sesión.
+- **Sentry:** instalado y apagado hasta tener DSN (`EXPO_PUBLIC_SENTRY_DSN`); sin datos personales.
+
+## v2.1223.6 — App: la boleta de pago cuadra con el papel
+
+- **App: la boleta de pago decía otra cosa que el papel.** Las horas extra y nocturnas se guardan como HORAS y la app las pintaba como dinero (tres horas extra = «$3.00»), y su subtotal era el A con las partidas del B listadas encima, o sea que la suma no daba. Hoy la boleta tiene las mismas secciones que el papel del portal —A sujetos a retención, B otros ingresos (cada hora ya convertida con el sueldo por hora y su recargo, con las horas al lado), C retenciones y descuentos, y (A − C) + B—, más la base (mensual, diario, por hora).
+- El sueldo se lee de la ficha viva: entrando directo a Nómina, la fila se armaba antes de que llegaran los salarios y las horas valían $0.
+- **Compartir o imprimir** la boleta desde el teléfono: el MISMO papel del portal en PDF («Boleta Ana Pérez Segunda Quincena…»), a la hoja de compartir o a AirPrint. Se anota como egreso.
+- Núcleo: `partidasDeBoleta` (planilla.js) y `boletaDePapel.js` (el HTML del papel, que el portal ahora importa). App: `componentes/pdf.js` para todo PDF que venga después; `expo-print` y `expo-file-system` (necesitan build nueva).
+
+## v2.1223.5 — App: los montos de compras respetan su permiso
+
+- **App: Compras y Facturas de compra respetan los permisos de montos**, como el portal. Sin `compras_ver_montos` la lista y la ficha de una compra muestran proveedor, productos, cantidades y lotes, pero ningún total, subtotal, IVA ni costo. Sin `facturas_compra_ver_montos` no sale la tarjeta «Monto». Antes la app los mostraba a cualquiera que entrara.
+- La ficha de la compra ya no pinta «lote GENERICO».
+
+## v2.1223.4 — App: historial de notificaciones nativo
+
+- **App: el historial de notificaciones ya es nativo.** Todo lo de los últimos 60 días —leído, sin leer y lo que se quitó de la bandeja—, paginado contra el servidor, con búsqueda en la barra y la MISMA tarjeta de la bandeja (detalle, Aprobar/Rechazar). Lo quitado se puede devolver con un toque.
+- El toque de un aviso vive en un solo sitio (`componentes/avisos/abrir.js`) para la bandeja y el historial.
+- Plan nuevo: `docs/PLAN-APP-NATIVA-PARIDAD-2026-10-06.md` — lo que falta pasar a nativo y la auditoría de paridad de las 60 pantallas.
+
+## v2.1223.3 — App de clientes: tarjeta viva, textos legibles, Face ID, vencimientos y muestras
+
+Revisión en TestFlight del usuario (2026-10-06):
+- **Face ID pedía desbloquear una y otra vez:** la marca de «salió de la app» nunca se borraba, así que tras la primera ausencia de 30 s cualquier vuelta a activa —incluida la que provoca la propia hoja de Face ID— volvía a bloquear. Ahora la marca se consume, sólo cuenta el segundo plano real, se ignora la vuelta del Face ID y hay una sola verificación a la vez.
+- **Textos difíciles de leer:** `secondaryLabel`/`tertiaryLabel` son translúcidos y se lavaban sobre vidrio y aurora. Ahora son sólidos, el vidrio lleva un velo del fondo del sistema y las tarjetas con tono también.
+- **Tarjeta de socio:** entra cayendo de canto con resorte; el giroscopio va suavizado y se le suma el dedo (arrastrar la inclina, soltar rebota, deslizar rápido la gira); luz con Skia —holograma arcoíris, destello que sigue el ángulo y un barrido cada ~5 s—; la sombra se corre con la inclinación; el giro se levanta y vibra al mostrar la otra cara.
+- **Por vencer:** en vez de una lista de fechas, cuántos puntos y dólares vencen en los próximos 3 meses (o «nada vence» y lo próximo) y una gráfica animada de los próximos 6 meses, tocable. `app-clientes` manda todos los vencimientos (antes 3).
+- **Muestras (`app_cliente_muestras`):** ofertas, inyecciones y vencimientos de muestra amarrados a UNA ficha, que sólo esa persona ve en la app; el portal no las lee (policy de SELECT en `false`). Sembradas para la ficha de prueba del dueño, con fotos en `ofertas-clientes/muestras/`.
+
+## v2.1223.2 — Depósito al banco: anotar lo que entra de afuera después ya no deja el monto recortado
+
+- **DEP-261005-1 salió con $425 de remanente que sí se remesaron.** Se escribió «Al banco» $25,145 antes de anotar los $425 de la venta de la motocicleta; el campo lo recortó a $24,720 (el máximo sin el aporte) y al anotar el aporte el número no volvía. Registro corregido en producción: al banco $25,145.00, remanente $0.00, con nota.
+- **El tope ahora se aplica al leer, no al escribir:** el formulario guarda lo que se tecleó y lo completa solo cuando sube el máximo. El orden en que se llenan los campos deja de importar. Si las dos partes no caben, cede la que se tocó última, y el campo dice cuánto se escribió y cuánto alcanza.
+
+## v2.1223.1 — Puntos Salud abre en iOS 27: ciclo de vida por escenas
+
+- **Puntos Salud se cerraba al abrir** (TestFlight, compilación 1): iOS 27 exige el ciclo de vida por escenas cuando la app se compila con su SDK (Xcode 27, la Mac); UIKit corta con EXC_BREAKPOINT en `_UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption`. Las compilaciones de EAS usaban otro Xcode y no lo sufrían.
+- **`apps/clientes/plugins/ciclo-por-escenas.js`:** conecta `ExpoAppSceneDelegate` (ya viene en Expo 57, la plantilla no lo usa): declara la escena en Info.plist y el AppDelegate deja de crear su ventana y expone la fábrica por `ExpoReactNativeFactoryProvider`. Lanza si la plantilla cambia, para borrarlo el día que ya lo traiga. Verificado: la versión Release abre en el simulador iOS 27; compilación 2 subida.
+
+## v2.1223.0 — App del personal abre en iOS 27
+
+- **App del personal: abre en iOS 27.** Compilada con Xcode 27, la app se cerraba al abrirla en iOS 27 (`_UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption`): iOS 27 exige el ciclo de vida por escenas y la plantilla de Expo no lo conecta. Se agrega el mismo plugin que la app de clientes (`plugins/ciclo-por-escenas.js`): declara la escena con `ExpoAppSceneDelegate` y el AppDelegate deja de crear su propia ventana. La build 23 de TestFlight no lo tenía; la 24 sí.
+## v2.1222.4 — subir-ios: extensiones sin permisos
+
+- **`scripts/subir-ios.mjs`:** una extensión sin archivo `.entitlements` (la de Avisos de la app del personal) se firma ad-hoc sin permisos en vez de abortar; dos o más archivos para el mismo paquete siguen abortando.
+
+## v2.1222.3 — Subir a TestFlight desde la Mac: las dos apps, con sus permisos
+
+- **`scripts/subir-ios.mjs <carpeta> <perfil>`:** compila con Xcode en la Mac y sube a TestFlight, sin EAS, para Puntos Salud (`apps/clientes`) y la app del personal (`apps/mobile`). El número de compilación sale de App Store Connect (último + 1), así no choca con lo que subió EAS.
+- **Firma sin iPhone registrado:** se archiva sin firmar (firmar el archivo exige un perfil de desarrollo, y Apple no lo genera si el equipo no tiene dispositivos) y la exportación firma para distribución en la nube con la llave de API.
+- **Los permisos no se pierden:** el archivo sin firmar salía SIN `aps-environment`, o sea sin avisos. Antes de exportar se firma ad-hoc cada paquete (extensiones y app) con su `.entitlements`. Verificado con `codesign -d --entitlements` sobre el .ipa: `aps-environment = production`. Puntos Salud compilación 1 subida así el 2026-10-06.
+
+## v2.1222.2 — App de clientes: compilar y subir a TestFlight desde la Mac, sin EAS
+
+- **`apps/clientes/subir-ios.sh`:** compila Puntos Salud en la Mac con Xcode (`expo prebuild` + `xcodebuild archive`), firma en la nube con una llave de API de App Store Connect y sube a TestFlight, sin los servidores de Expo (EAS): sin costo por versión. Sube el número de compilación solo y fuerza las variables de PRODUCCIÓN (nunca el código de pruebas). La llave vive en `~/.claves-farmalasa/`, fuera del repositorio. Compilación nativa Release verificada en esta Mac (BUILD SUCCEEDED).
+
+## v2.1222.1 — App de clientes: lista para la tienda
+
+- **App de clientes lista para TestFlight:** proyecto EAS `@farmasalud/farmalasa-clientes`, ícono de tienda 1024×1024 sin transparencia (Apple rechaza el transparente), pantalla de arranque propia en claro y oscuro (antes salía la de Expo) y perfil de envío a App Store Connect. La primera compilación pide iniciar sesión con el Apple ID para crear el identificador y los certificados.
+
+## v2.1222.0 — App de clientes: tarjeta de socio con QR y bloqueo con Face ID
+
+- **Tarjeta de socio** (app de clientes): con la forma de una tarjeta de verdad —degradado con los colores del logo, chip, nombre, «socio desde» y saldo— y un brillo que se mueve con la inclinación del teléfono (giroscopio, en el hilo de la interfaz). Al tocarla gira en 3D y por detrás muestra el QR con el código de 7 letras: la misma dirección del QR del ticket (`/mis-puntos?codigo=`), así que en sala se lee igual.
+- **El código se emite solo** la primera vez que el cliente abre la app, si la sala todavía no le dio uno (decisión del usuario): mismo alfabeto que `puntos_codigo_emitir`, anotado en `audit_logs` (`PUNTOS_CODIGO_EMITIDO`, origen SYSTEM / app-clientes). Nunca reemplaza uno existente: reemitir cambia la credencial, y eso sólo lo decide la sala.
+- **Bloquear con Face ID** (o Touch ID / huella), en Cuenta, apagado por defecto: pide la biometría al abrir y al volver tras 30 s fuera; si falla, el sistema ofrece el código del teléfono. No aparece si el teléfono no tiene biometría configurada.
+- Debajo de la tarjeta, el estado del canje: avance hacia el primer canje o «¡Ya puedes canjear!» con lo que se puede descontar.
+
+## v2.1221.0 — App: notificaciones como en el portal
+
+- **App: las notificaciones muestran lo mismo que el portal.** Reporte del usuario: «no me da la misma info que me da en el portal web, en la app todo es compacto y casi nada de info». La tarjeta de cada aviso se rehízo pieza por pieza con la de la campana del portal:
+  - **Cierres:** del día, del mes y de la empresa con su tabla de vendedores y los que más vendieron; faltante de caja con su anillo, arrastre y quién confirmó; diferencias pendientes; aperturas de la mañana sala por sala; créditos vencidos con su barra por sala.
+  - **Operación:** el corte con quién lo hizo; el reloj de la bitácora; los traslados por respaldo; Min·Máx con las ventas de 6 meses y del último mes, las presentaciones y el despacho, y el aviso cuando el MAX no alcanza; también la bolsa, el depósito, las alertas de venta, las facturas, los cortes pendientes y los pasos del pedido.
+  - **Solicitudes:** quién lo pide con su cara, sus datos y sus productos; respuestas y decisiones; diferencias del pedido, conteo, Hacienda, promociones, metas por aprobar, reinicio y productos sin venta.
+  - **Lo que la tarjeta hace:** «Ver detalle» despliega la solicitud ahí mismo (renglones, venta, Min·Máx de antes y propuesto, fotos, motivo, historial); «Ver los N productos/traslados» despliega la lista; **Aprobar / Rechazar** deciden desde la bandeja con la misma regla de quién puede que el portal; quién lo mandó y de qué sala, y la acción del toque al lado de la hora.
+- Los datos salen de las mismas funciones del núcleo que usa el portal.
+## v2.1220.2 — App de clientes: revisión — 20 ajustes de seguridad, datos y accesibilidad
+
+Revisión completa de la app de clientes y de `app-clientes` (22 hallazgos; corregidos los de código).
+
+- **Seguridad:** un 401 del gateway ya no borra la sesión de todos los teléfonos (sólo `motivo: sin_sesion` la cierra); el freno usa `cf-connecting-ip`, que el cliente no puede falsear; cada alta nueva cuenta contra el tope por IP (antes se podían crear pre-registros sin límite con DUIs ajenos); un documento con registro pendiente responde un mensaje genérico; «Borrar mi cuenta» borra también el pre-registro ya vinculado.
+- **Datos:** el NIT (14 dígitos) ya no se corta a 9 al escribirlo; la fecha de nacimiento se valida de verdad en la app y en el servidor (31/02 daba un 503); los precios de la foto de un descuento se leen por tandas de 100 productos (`product_precios` tiene una fila por presentación y pasaba de 1000 filas en silencio); una lista vacía o con más de 3 «huérfanas» ya no retira de la app las ofertas ligadas a descuentos.
+- **Paginación:** los movimientos cargados sobreviven al cambio de pestaña; doble toque y respuestas viejas ya no duplican ni dejan huecos. El resumen se vuelve a pedir a lo sumo cada minuto y las ofertas cada 5; las fotos se firman en lote por 12 h (antes, una petición por oferta y una URL nueva en cada apertura).
+- **Pantallas:** el detalle de una oferta abierto desde un enlace carga en vez de decir «ya no está»; el zoom de iOS va anidado como pide expo-router; Compras se puede reintentar tras un error; el confeti sale una vez por sesión y fuera de la tarjeta; sin señal, «Unirme» dice por qué y deja reintentar.
+- **Cuenta:** interruptores optimistas con candado mientras guardan; quitar el programa pide confirmación; enlace al aviso de privacidad (Apple 5.1.1(i)).
+- **Accesibilidad:** las cifras animadas reservan el ancho final (no se recortan) y VoiceOver las lee; lo que se toca tiene rol de botón y etiqueta; «Ver más» con blanco de 44 pt.
+- **Modo claro:** el pie de la tarjeta de oferta lleva el tinte de su acento (el vidrio solo desaparecía) y «Exclusiva socios» tiene fondo propio.
+
+## v2.1220.1 — Nota del changelog corregida
+
+- Nota del changelog de v2.1220.0 corregida: la v2.1219.0 nunca llegó a producción (su compilación falló), así que no hay registros de bitácora que revisar.
+
+## v2.1220.0 — Bitácora restaurada
+
+- **Corrección:** la publicación de la Auditoría nativa (v2.1219.0) sobrescribió `src/utils/bitacora.js` —que ya existía con `armarEntrada`, la entrada canónica de la bitácora— en vez de agregarle lo nuevo. Se restauró el archivo completo y el filtro y el orden de la pantalla de Auditoría quedan como una sección más. Las 20 pruebas de `bitacoraDeAcciones` y `capaDeCompras` vuelven a pasar. La v2.1219.0 no llegó a producción: su compilación falló por el import roto y quedó vigente la anterior.
+- Plan de la app nativa: las cuatro rutas de escritorio (cargar compra, impresión, prueba iOS y objetos huérfanos) quedan decididas como portal dentro de la app, con su motivo en el plan.
+
+## v2.1219.0 — App: Auditoría del sistema
+
+- **App: Auditoría del sistema nativo.** La bitácora de lo que se hizo en el portal y el kiosco, la más reciente arriba, con quién, la acción, su severidad, de dónde vino y en qué sala; se filtra por acción y por período (hoy, 7 días, todo) y se busca; tocar un registro muestra su detalle. Exportar sigue en el portal.
+- **Corrección (portal):** el filtro de fechas de la auditoría usaba el día UTC, así que lo hecho después de las 6 p. m. caía en el día siguiente y no salía en «hoy». Ahora usa el día de El Salvador.
+- **Núcleo:** las acciones, el filtro y el orden de la bitácora pasan de `AuditView` a `src/utils/bitacora.js`, con su prueba.
+## v2.1218.1 — El corte y el cierre del día muestran la espera
+
+- **Mi caja:** mientras el corte (o el cierre del día) se registra, el diálogo pasa a una espera con indicador, el paso en curso, los segundos que lleva, una barra de avance estimado y el aviso «No cierres esta ventana ni recargues». Antes sólo se apagaba el botón y «Cancelar» seguía vivo.
+- El diálogo **no se puede cerrar** durante la espera (Escape, fondo y botón), y recargar la pestaña pide confirmación: cerrar a mitad no deshace el corte, lo deja sin resolver y sin el resultado a la vista.
+- Medido: el corte tarda ~10 s (p50 10.2 s, p90 11.7 s en 29 cortes); casi todo es el sistema de la caja armando y guardando el corte, no el portal.
+
+## v2.1218.0 — App de clientes: ofertas de vitrina, inyecciones pendientes, canje y paginación
+
+- **Ofertas de vitrina:** la foto ocupa la tarjeta y entra con un zoom lento; la etiqueta («2×1», «−20%») va grande en el color de ACENTO de la oferta y aparece con un rebote; un velo del mismo color sostiene el título; «quedan N días» late cuando faltan 3 o menos; la primera oferta va destacada. Sin foto, un degradado del acento con la etiqueta como ilustración.
+- **Acento de color por oferta** (`ofertas_clientes.acento`: magenta, verde, azul, naranja, rojo, violeta), elegible en el portal al crear o editar la oferta.
+- **Inyecciones:** sólo las PENDIENTES, con un contador que late y cada una en su tarjeta; una mezcla se muestra como una sola aplicación con cada parte y su dosis.
+- **Mis puntos:** al alcanzar el mínimo, «¡Ya puedes canjear!» late y suelta confeti una vez. Los movimientos se paginan (10 y luego de 20 en 20).
+- **Mis compras:** sólo las últimas 5.
+- **Borrar mi cuenta:** una sola opción, con el texto claro. Salir del programa ya es el interruptor de Permisos.
+- **En producción:** índice `idx_sales_invoices_cliente_fecha` (creado con CONCURRENTLY; la ficha de 51,521 facturas pasa de 3.1 s a 31 ms), migración `20261005201051_app_cliente_compras_y_acento` y `app-clientes` redesplegada.
+
+## v2.1217.0 — App: Mantenimiento
+
+- **App: Mantenimiento nativo.** Los frenos del movimiento de mercadería con su interruptor y desde cuándo están en pausa, y los módulos que se pueden poner en mantenimiento con lo que le queda a cada candado; todo cambio pide confirmación. El motivo, la duración y el aviso del portal se ajustan en el portal.
+- **Corrección (portal y app):** el freno «Anular una caja que no llegó» (`anular`, del «No reenviar» de Pedidos, 2026-09-17) salía como «Movimiento sin nombre» en Mantenimiento: entró al CHECK de la base sin entrar al mapa de nombres. Ya tiene nombre, y una prueba recorre la lista del CHECK para que el próximo no se escape.
+- **Núcleo:** los nombres de los frenos, el tiempo restante y las horas del candado pasan de `MaintenanceView` a `src/utils/mantenimiento.js`, con su prueba.
+
+## v2.1216.0 — App: Actualización de datos
+
+- **App: Actualización de datos nativo.** Cada dato que se actualiza solo (productos, Min/Max, compras, respaldo) con su última corrida y, si falló, desde cuándo no tiene una buena; abajo, las corridas recientes con su alcance y el detalle del error. Se refresca sola cada 30 segundos.
+- **Núcleo:** los rótulos, el alcance de una corrida y el estado por dominio pasan de `SyncHealthView` a `src/data/syncHealth.js`, con su prueba.
+
+## v2.1215.0 — App: Solicitudes de datos
+
+- **App: Solicitudes sobre datos personales nativo.** Las solicitudes en trámite, resueltas o todas, cada una con su formulario, quién la pide, qué derechos ejerce y cuántos días hábiles le quedan; arriba, cuántas vencieron y cuántas vencen en tres días o menos; tocar una muestra fechas, vencimiento, documento y lo que pide. Imprimir el formulario numerado y registrar la respuesta siguen en el portal.
+- **Núcleo:** el filtro por pestaña, estado, fechas y búsqueda, y el conteo de alarmas de plazo, pasan de `SolicitudesDatosView` a `src/data/solicitudesDatos.js`, con su prueba.
+
+## v2.1214.0 — App: Galería
+
+- **App: Galería nativa.** El material de redes que Marketing liberó para las salas, de los últimos seis meses, en cuadrícula y con búsqueda; tocar una pieza la abre en grande con su texto (se copia manteniéndolo presionado) y «Compartir» abre la hoja del sistema con el texto y el diseño para el estado de WhatsApp. Avisa si el archivo no sirve para un estado.
+- **Núcleo:** qué entra a la galería, el texto que se publica y los archivos vigentes pasan de `GaleriaView`/`Galeria` a `src/utils/marketing.js`, con su prueba.
+## v2.1213.0 — App de clientes: mis compras ligadas a las ventas
+
+- **Mis compras** (app de clientes): cada venta con su sala, fecha y hora, total, los puntos que dio, lo canjeado en ella y cuántas inyecciones traía; al tocarla se despliega con sus productos. Entra desde «Mis puntos». La regla «¿cuenta como venta?» es `venta_valida`, dentro de la función `app_cliente_compras`.
+- **Entorno de pruebas:** la ficha de Edwin cuenta una historia completa ligada a ventas — cinco facturas con sus renglones, los puntos de cada una (`puntos_lote.invoice_id`), un canje, el cumpleaños e inyecciones COMPRADAS ligadas al renglón de su factura (dos aplicadas, una por aplicar y una mezcla).
+- **Pendiente de producción:** la función y un índice nuevo de `sales_invoices` (cliente + fecha). Sin el índice, el cliente con más facturas (51,521) tardaba 3.1 s; con él el plan para en 30. Borrador con el orden de aplicación en `scripts/entorno-pruebas/app_cliente_compras.sql`. Hasta entonces «Mis compras» no funciona en producción.
+
+## v2.1212.0 — App: Marketing
+
+- **App: Marketing nativo.** El mes de contenido para redes con su estado y su avance, y cada pieza día por día con su formato, hora, estado y diseño; tocar una muestra el texto, los hashtags y los diseños en grande (sólo cuando el mes ya se envió a revisión, como en el portal). Y las solicitudes al diseñador con su estado y prioridad. Planificar, aprobar, pautar y pedir siguen en el portal. La lógica ya vivía en el núcleo (`marketing`).
+- **App:** las variantes categóricas del portal (`chart-1`, `-3`, `-4`, `-6`, `-9`) ya tienen color en la app; antes salían grises («Por revisar», «Programado», «Publicado»…).
+## v2.1211.1 — App de clientes: cerrar sesión cierra
+
+- **«Cerrar sesión» volvía a entrar solo** en el servidor de pruebas: la entrada automática de desarrollo se disparaba cada vez que no había sesión. Ahora entra sola una vez por arranque y nunca después de cerrar sesión. En una compilación de tienda nunca existió.
+
+## v2.1211.0 — App: Aplicar encuesta
+
+- **App: Aplicar encuesta nativo.** Las encuestas publicadas que se aplican por entrevista, con la sucursal (la de hoy si la encuesta va ahí) y cuántas respuestas lleva; «Entrevistar» abre el cuestionario en el teléfono —una sección por pantalla, con las preguntas condicionadas, los nueve tipos de pregunta y lo obligatorio—, y al final los datos del cliente con su consentimiento. Al guardar dice qué incentivo corresponde y deja marcar la muestra entregada. El modo tablet sigue en el portal.
+- **Núcleo:** la regla de cuándo se pueden guardar los datos del cliente pasa de `FormularioEncuesta` a `motivoParaNoGuardarContacto` en `src/utils/encuestasClientes.js`, con su prueba.
+## v2.1210.0 — App de clientes: animaciones, aurora viva y oferta con zoom
+
+- **Aurora viva:** las manchas del logo se mueven lento detrás de toda la app, dibujadas por la GPU con Skia y animadas en el hilo de la interfaz (Reanimated 4). En la web queda la aurora quieta.
+- **Mis puntos:** el saldo cuenta hacia arriba al abrir ($0.00 → tu saldo), los puntos ganados y usados también, la barra hacia el primer canje se llena con resorte y los bloques entran escalonados. Lo mismo en Inyecciones.
+- **Ofertas:** cada tarjeta se encoge al tocarla con vibración del sistema y abre su detalle con la transición de zoom de iOS 18 (`Link.AppleZoom`); se cierra deslizando hacia abajo.
+- **Cada pestaña trae su aurora:** la barra de pestañas de iOS pone un fondo negro propio que la tapaba. La barra de título es la de iOS 26, sin desenfoque propio encima.
+- **Las entradas no usan opacidad:** el Liquid Glass no se dibuja si su contenedor nace transparente; las tarjetas quedaban invisibles. Ahora entran con desplazamiento y escala.
+- **Botón secundario** con el color del sistema (magenta sobre la aurora verde no se leía).
+- **Desarrollo:** con `EXPO_PUBLIC_PRUEBA_CODIGO` en el `.env` local la app entra sola en el simulador; sólo con `__DEV__`, nunca en una compilación de tienda.
+
+## v2.1209.0 — App: Encuestas a clientes
+
+- **App: Encuestas a clientes nativo.** La lista —en diseño (con cuántas esperan aprobación), en campo y cerradas— con estado, preguntas, canales y cierre; y cada encuesta con sus resultados: NPS y su lectura, respuestas por canal, promotores/pasivos/detractores, puntaje por tema, NPS por sucursal y los comentarios abiertos. Diseñar, aprobar y publicar siguen en el portal. La lógica ya vivía en el núcleo (`encuestasClientes`).
+## v2.1208.1 — App de clientes en producción
+
+- **Base aplicada en producción** (`20261005191541_app_clientes_base`): sesiones y pre-registros de la app, `ofertas_clientes` con la foto del descuento, el bucket privado `ofertas-clientes`, el permiso `ofertas_clientes` y las funciones `app_cliente_inyecciones` y `app_preregistro_resolver`. Desde ahora «Ofertas para clientes» y «Mostrar en la app» aparecen para quien tiene el permiso.
+- **Funciones desplegadas:** `app-clientes` (nueva, sin JWT: valida su propia sesión), `mis-puntos` (los textos de consentimiento pasan al módulo compartido, sin cambio de contenido) y `descuentos-erp` (mantiene al día las ofertas ligadas a un descuento).
+
+## v2.1208.0 — App: Encuestas (administración)
+
+- **App: Encuestas (administración) nativo.** Todas las encuestas internas con su tipo, estado, fechas y cuántas personas respondieron; tocar una muestra el promedio general, el de cada bloque y cada persona con su puntaje, de menor a mayor. Si la encuesta es anónima, la app no muestra nombre ni avatar. Crear, editar y capturar respuestas siguen en el portal.
+- **Núcleo:** el puntaje por persona y su promedio pasan de `EncuestaAdminView` a `src/utils/climaLaboral.js` (junto a los rótulos de estado y tipo), con su prueba.
+- **Entrevistas:** marcada en el plan como sin nada que convertir — en el portal todavía es «próximamente».
+
+## v2.1207.0 — App: Carnés del día
+
+- **App: Carnés del día nativo.** Los carnés de papel vivos ahora mismo, agrupados por la sala de quien los tiene, con quién lo entregó, por dónde salió y a qué hora vence; y anular uno con confirmación si se traspapeló. Imprimir necesita la ticketera de una computadora y sigue en el portal.
+- **Núcleo:** cada carné con su persona y su sala, y el orden por sucursal, pasan de `CarnesDelDiaView` a `src/utils/carnesDelDia.js`, con su prueba.
+
+## v2.1206.0 — App: Conexiones
+
+- **App: Conexiones nativo.** Quién tiene el portal abierto y en qué dispositivos, cuándo se movió por última vez y con cuánto tiempo sin uso se cierra cada conexión; filtros de activas hoy y olvidadas. Tocar a alguien muestra sus conexiones (la de este equipo primero) y deja cerrar una o todas con confirmación; si se cierra la propia, la app sale. Bloquear sigue en el portal. La lógica ya vivía en el núcleo (`data/sesiones`).
+## v2.1205.1 — App de clientes: controles nativos del sistema
+
+- **La app de clientes usa el canon de la app del personal:** formularios agrupados como Ajustes (`componentes/sistema.js`), colores del sistema que siguen el modo oscuro, superficies de Liquid Glass en iOS 26 (desenfoque del sistema antes, tarjeta Material en Android), el control segmentado de SwiftUI, interruptores del sistema en lugar de casillas (iOS no tiene casillas), confirmaciones con la alerta del sistema y el botón nativo a todo el ancho con el estilo de vidrio de iOS 26.
+- **Cuenta** tiene ahora la forma de Ajustes: permisos y avisos como interruptores, «Cerrar sesión» y «Borrar mi cuenta» como filas, la segunda en rojo.
+- **Fuera de iPhone** (Android y vista previa web) los colores de respaldo siguen el modo oscuro: el título salía negro sobre la aurora oscura.
+
+## v2.1205.0 — App: Permisos
+
+- **App: Permisos nativo.** Se elige un cargo y se ve, grupo por grupo, a qué módulos entra y qué puede hacer en cada uno —ver, gestionar, aprobar, con qué alcance— más las pestañas y capacidades encendidas; arriba, si es Super Usuario, cuánto aguanta su sesión sin uso y su nivel de precio. Cambiar permisos sigue en el portal.
+- **Núcleo:** el mapa cargo × módulo (con lo que no tiene fila apagado) y el orden de cargos nivel a nivel pasan de `PermissionsView` a `src/utils/permisosDeCargo.js` y `jerarquiaDeCargos.js`, con su prueba.
+
+## v2.1204.0 — App: Cargos
+
+- **App: Cargos nativo.** El organigrama como lista, de la cima hacia abajo y sangrado por nivel, con cuántas personas ocupa cada cargo (y su tope), si es por sucursal o global y si es externo; tocar uno muestra a quién reporta y quiénes lo ocupan. Crear, editar y el organigrama visual siguen en el portal.
+- **App:** las píldoras violetas ahora se leen — la letra va en un violeta más claro sobre el fondo oscuro (afectaba a varias pantallas).
+- **Núcleo:** la profundidad, el orden por jerarquía, el superior, los ocupantes y qué cargo es externo pasan de `RolesView` a `src/utils/jerarquiaDeCargos.js`, con su prueba.
+
+## v2.1203.0 — App: Libros de IVA
+
+- **App: Libros de IVA nativo.** Para el mes —y la sucursal, a quien ve todas— cada libro en resumen: documentos, gravadas, el impuesto y el total de consumidor, contribuyentes, compras, anulados, percepción, retención, retención que nos hicieron, renta y notas; el débito y el crédito del mes arriba, y el aviso de las ventas que se quedaron fuera del libro por no tener sello válido. El detalle y las descargas siguen en el portal.
+- **Núcleo:** el débito de consumidor y los totales de cada libro pasan de `LibrosIvaView` a `src/utils/librosIva.js` (los usan la pantalla y el ZIP), con su prueba.
+
+## v2.1202.0 — App: Libro de compras completo
+
+- **App: Libro de compras completo nativo.** Qué compró la farmacia en el mes —lo registrado más los documentos que llegaron del proveedor y nunca se registraron— y, en «Declarable», qué de eso puede reclamarse como crédito fiscal: lo que no cuenta con su motivo, el crédito trabado por falta de confirmar y los documentos repetidos. Mes a mes, con búsqueda; los montos sólo con el permiso de verlos. La descarga sigue en el portal.
+- **Núcleo:** la pestaña y los totales de las dos preguntas pasan de `LibroComprasCompletoView` a `src/utils/libroComprasCompleto.js`, con su prueba.
+
+## v2.1201.0 — App: Cierre de período
+
+- **App: Cierre de período nativo.** La cadena del remanente mes a mes —qué se paga, qué queda a favor y si pasa al mes siguiente—, con el interruptor entre el libro que se declara hoy y el declarable, y cada período con su estado, su desglose, por qué no se puede cerrar todavía y si el libro se movió después de cerrarlo. Cerrar y reabrir siguen en el portal.
+- **Núcleo:** el saldo, la cadena, los totales y la deriva pasan de `CierrePeriodoView` a `src/utils/cierrePeriodo.js`, con su prueba.
+
+## v2.1200.0 — App: Resumen fiscal
+
+- **App: Resumen fiscal nativo.** El movimiento de IVA del mes, el pago a cuenta y el anticipo por tarjeta, y cómo se llega al movimiento renglón por renglón; con el aviso de que es un indicador y no una declaración antes de los números. Mes a mes, y por sucursal para quien ve toda la empresa.
+- **Núcleo:** el orden y el signo de los renglones, y la tasa en texto, pasan de `ResumenFiscalView` a `src/utils/resumenFiscal.js`, con su prueba.
+
+## v2.1199.0 — App: Facturación
+
+- **App: Facturación nativa.** Las colas para revisarlas desde el teléfono: lo que sigue sin sello de Hacienda con los días que lleva esperando y la categoría del cliente, las observaciones abiertas (con lo que contestó Hacienda palabra por palabra) y las anuladas por solventar. Quien ve una sola sala, ve su sala; los montos sólo con el permiso de verlos. Solventar, saltos y pagos no efectivo siguen en el portal.
+- **Núcleo:** el catálogo de observaciones, cuáles se pueden solventar a mano y cómo se separa lo pendiente de lo resuelto pasan de `FacturacionView` a `src/utils/colasDeFacturacion.js`, con su prueba.
+## v2.1198.1 — App de clientes: sesión que se borraba sola, entrar con código y pulido visual
+
+- **La sesión se borraba al abrir la app.** La pantalla de puntos pedía el resumen antes de leer el token del llavero; el servidor contestaba «sin sesión» y la app borraba el token guardado. Ahora toda llamada espera esa lectura, y sólo se cierra la sesión si el servidor rechazó ese mismo token.
+- **Entrar con el código del ticket:** selector «DUI y teléfono» / «Código del ticket». El código se escribe grande, sólo con las letras que el ticket usa. El DUI se formatea solo (00000000-0).
+- **Pulido visual:** la aurora cubre toda la pantalla también en el navegador, el título ya no se encima sobre el contenido en la web, campos con foco del color de la marca y fondo distinto al de la tarjeta, bienvenida con lo que trae la app, contenido con ancho máximo en pantallas anchas, nombre del cliente en mayúsculas y minúsculas, y rótulos para «Regalo de cumpleaños» y «Canje devuelto».
+
+## v2.1198.0 — App: Gestionar avisos
+
+- **App: Gestionar avisos nativo.** Los avisos internos activos, programados y archivados, con su destino, si son urgentes y cuánta gente ya los leyó; tocar uno muestra quién falta por leer y deja archivarlo. Y se publica uno nuevo desde el teléfono (título, mensaje, todos o una sala, urgente). Quien gestiona sólo su sala, ve y publica para su sala. Avisos a un cargo o a personas sueltas, y programarlos, siguen en el portal.
+- **Núcleo:** a quién le llega un aviso, cuántos lo leyeron y en qué sección va pasan de `AnnouncementsView` a `src/utils/avisosInternos.js`, con su prueba.
+## v2.1197.1 — Alerta de inventario: sólo tras 3 fallas seguidas, sin «revisa tu conexión»
+
+- `useSyncMonitor` ya no avisa por una corrida fallida suelta: el cron es de un
+  minuto y el 2026-10-05 una falla de Salud 4 (1 de 480 en la hora) se
+  recuperó 13 s después, pero igual llegó como notificación del sistema.
+  Ahora avisa al tercer intento seguido sin entrar, una sola vez por caída.
+- El timeout ya no dice «Revisa tu conexión» (no era la conexión de quien lee):
+  dice que la sucursal no está respondiendo y que se sigue reintentando.
+
+## v2.1197.0 — Prueba de clima laboral corregida
+
+- **Prueba:** una expectativa mal calculada en `climaLaboral.test.js` (sin invertir, el bloque da 62.5 y no 50); el código estaba bien.
+
+## v2.1196.0 — App: Clima organizacional
+
+- **App: Clima organizacional nativo.** Los resultados de la encuesta: el índice global con su nivel, quiénes participaron, el puntaje de cada bloque con su barra y, al tocarlo, cómo se repartieron las respuestas de cada pregunta (las invertidas, al revés); y los comentarios. Quien sólo ve su sala ve su sala. El resumen con IA, los segmentos y los individuos siguen en el portal.
+- **Núcleo:** cómo se puntúa una respuesta, un bloque, una pregunta y el índice global, y cómo se leen las filas de la base, pasan de `EncuestaView` a `src/utils/climaLaboral.js`, con su prueba.
+
+## v2.1195.0 — App: Nómina
+
+- **App: Nómina nativa.** La quincena elegida con su estado, el líquido a pagar y los descuentos, por sala y ordenados por cargo; cada persona abre su boleta con ingresos, descuentos, el líquido en letras y el detalle de viáticos. Generar, aprobar, pagar e imprimir siguen en el portal.
+- **Boleta impresa corregida:** el monto en letras decía «UNO MIL» por $1,000, «CIENTO» por $100 y «VEINTE Y UNO» por 21; ahora dice «MIL», «CIEN» y «VEINTIUNO» (y «VEINTIÚN MIL»).
+- **Núcleo:** el orden por cargo, los estados, el nombre de la quincena, el monto en letras y los totales pasan de `PayrollView` a `src/utils/planilla.js`, con su prueba.
+## v2.1194.0 — Ofertas de la app desde los descuentos de Promociones
+
+- **Promociones → Descuentos: «Mostrar en la app».** Cada descuento vigente o programado se puede anunciar en la app de clientes. La oferta se llena sola con las fechas, las salas y los productos con su precio antes y después; quien la publica pone el título, el texto y la imagen. La tarjeta dice si ya está «En la app».
+- **La oferta sigue al descuento:** al corregirlo, al sincronizar sus productos desde la promoción o al abrir la pestaña Descuentos (lo que alcanza a un cambio hecho directo en la caja), la oferta se pone al día; al borrarlo, sale de la app. No se reescribe si nada cambió.
+- **Lo bajo receta no se anuncia:** los productos con `es_antibiotico` no salen en la oferta, y el formulario dice cuántos quedaron fuera.
+- **App de clientes:** la oferta de un descuento muestra sus productos con el precio normal tachado y el que se paga.
+- **Base:** columnas nuevas en `ofertas_clientes` (borrador en `scripts/entorno-pruebas/app_clientes_base.sql`), probadas en el entorno de pruebas. Igual que la entrega anterior, todavía no en producción.
+
+## v2.1193.0 — App: Auditoría de tiempos
+
+- **App: Auditoría de tiempos nativa.** Día por día, cada persona con su turno, a qué hora entró y salió, y lo que hay que mirar: marcas que faltan, tardanza, día cerrado solo por el sistema, pendiente de Talento Humano, editado, apoyo en otra sala, vacación o incapacidad; los que tienen algo salen primero, y tocar a alguien abre sus marcas. Corregir, aprobar y cerrar la quincena siguen en el portal.
+- **Núcleo:** la auditoría de un día (marcas esperadas, faltas, tardanza y señales) pasa del componente del día de `AttendanceAuditView` a `src/utils/auditoriaDeTiempos.js`, con su prueba.
+## v2.1192.1 — Traslados: fuera los resúmenes de arriba; la persona del faltante con su foto
+
+- **Fuera los resúmenes de arriba** de «En camino» y de Faltantes (las pastillas con números). No eran un componente del portal y no aportaban: el contador ya vive en la pestaña.
+- **Quién lo vio y quién lo resolvió, con foto y nombre corto** (`ChipPersona`), resuelto por el id de la ficha y nunca por el nombre. Mientras `get_faltantes_de_bolsa` no traiga el id queda el nombre corto. Quien lo cerró se muestra aunque no haya escrito nota («Apareció» no la pide).
+
+## v2.1192.0 — App: Monitor
+
+- **App: Monitor en tiempo real nativa.** Quién está trabajando, en pausa, sin marcar o ya terminó ahora mismo, por sala; quién llegó tarde y cuánto, con su horario y su última marca. Se refresca solo cada minuto; quien ve todas las salas elige una en el filtro.
+- **Núcleo:** el estado de asistencia de una persona y el orden del tablero pasan de `AttendanceMonitorView` a `src/utils/estadoDeAsistencia.js`, con su prueba.
+## v2.1191.0 — App de clientes Puntos Salud: base, ofertas y pre-registros
+
+- **App nueva `apps/clientes` (Puntos Salud).** El cliente entra una sola vez con documento + teléfono (o el código del ticket) y ve su saldo en dólares, lo que vence, sus movimientos, las ofertas vigentes, las inyecciones que pagó y le faltan aplicar, y su cuenta: permisos, avisos, cerrar sesión y borrar la cuenta.
+- **Unirse desde la app:** deja un pre-registro que se vincula solo cuando la sala crea la ficha con el mismo documento y teléfono. No crea fichas.
+- **Portal: «Ofertas para clientes»** (`/ofertas-clientes`, permiso nuevo `ofertas_clientes`): crear, publicar y retirar ofertas con imagen, fechas, salas y si son exclusivas para socios; y la pestaña de pre-registros para vincular o descartar.
+- **Servidor:** función `app-clientes` (sesión por token, sólo su huella en la base; mismo freno por intentos que `/mis-puntos`). Los textos de los permisos pasan a `_shared/consentimientoPuntos.ts`, compartidos con `mis-puntos`.
+- **Base:** probada en el entorno de pruebas; **todavía no aplicada en producción** (borrador en `scripts/entorno-pruebas/app_clientes_base.sql`). Hasta entonces el módulo no tiene a nadie con permiso y no aparece en el menú.
+
+## v2.1190.0 — App: Promociones
+
+- **App: Promociones nativa.** Las vigentes, terminadas o todas, con su vigencia, laboratorios y estado («por vencer» se lee de la fecha, igual que el portal); el detalle trae cada producto con cuánto se ha vendido en total y en cada sala, y su lote. Crear, los descuentos de la caja y los pagos siguen en el portal.
+- **App:** `colorDeVariante` traduce la severidad del núcleo (success, warning…) al color de la app, en un solo sitio.
+
+## v2.1189.0 — App: Cotizaciones
+
+- **App: Cotizaciones nativa.** Las vigentes, anuladas o todas, buscando por número, cliente o quién la hizo; el detalle trae los productos con presentación, cantidad y precio, y los totales con IVA y retención. Crear, editar, anular e imprimir siguen en el portal.
+- **Portal:** el cálculo de IVA y retención de una cotización estaba escrito dos veces —en la pantalla y en el papel impreso—; ahora es uno solo.
+- **Núcleo:** `src/utils/cotizacion.js` (desglose del IVA y totales), con su prueba.
+
+## v2.1188.0 — App: Compras
+
+- **App: Compras nativa.** Las compras registradas del mes, con proveedor, ítems y total, buscando por proveedor o número; el detalle trae cada producto con cantidad, costo, lote y vencimiento, y los totales. El resumen por producto sigue en el portal.
+## v2.1187.1 — Traslados: el ancla del envío ya no se desborda
+
+- El rótulo «PRODUCTO» del número de cada envío se salía de su recuadro; el recuadro pasa de 3.25 a 3.75 rem.
+
+## v2.1187.0 — App: Sucursales
+
+- **App: Sucursales nativa.** Cada sucursal por tipo: si está abierta ahora, su horario de hoy, cuánta gente tiene y sus alertas. La ficha trae las alertas una por una (permisos por vencer, falta regente o jefe, pagos de servicios atrasados), la dirección, los teléfonos —tocar llama—, la semana entera de horario, el personal y qué tan completo está su perfil. Editar sigue en el portal.
+- **Núcleo:** horario, apertura, completitud del perfil y alertas de una sucursal pasan de `BranchesView` a `src/utils/sucursales.js` (los íconos viajan por nombre), con su prueba.
+## v2.1186.0 — Traslados: las tarjetas de envío, rediseñadas
+
+- **Envíos con la misma cara que «En camino».** Trayecto en chips (con «Área de Vencidos» cuando sale de ahí), la espera como pastilla arriba a la derecha, el motivo con su insignia y su texto al lado, y un pie con la acción a la derecha en verde tenue.
+- **Cada producto es una fila** con su nombre, su cuenta y su estado como insignia (`se la quedaron`, `te la devuelven`, `no llegó`…), en vez de una línea de 9 px pegada con puntos.
+- **«Me la quedo / Devolver / No llegó» es un `SegmentedControl`** (§15.3) con el color de cada respuesta. Eran tres botones que cambiaban a `variant="danger"`/`"warning"` al elegir, y esas variantes no existen en `Button`: lo elegido no se distinguía.
+- **La insignia del motivo era gris por error**: usaba `variant="brand"`, que `Badge` no tiene. Ahora es `info`.
+- El pie dice cuántos productos ya decidiste («1 de 3 decididos»), y la explicación de las tres respuestas pasa de tres renglones de prosa a una línea con el color de cada una.
+- La ruta y la pastilla de espera viven en `traslados/PiezasTraslado.jsx`, compartidas con «En camino».
+
+## v2.1185.0 — App: Proveedores
+
+- **App: Proveedores nativa.** El directorio con su nombre comercial, NIT, categoría, documentos recibidos y última compra; busca por nombre, alias o NIT y filtra por categoría. La ficha trae los datos fiscales y, si se le debe algo, lo que se le debe con acceso directo a sus facturas pendientes. Clasificar y la deducibilidad del IVA siguen en el portal.
+
+## v2.1184.0 — App: Laboratorios
+
+- **App: Laboratorios nativa.** Dónde está cada laboratorio en la sala —vitrina o estante y peldaño, y su estante en la bodega—, por sección (principales, insumos, cosméticos) o buscando por nombre o por mueble. Tocar uno deja corregir su ubicación ahí mismo. La política de vencimiento sigue en el portal.
+- **Núcleo:** la forma de una ubicación, cómo se dice en palabras, la fila que se guarda y la sección de un laboratorio pasan de `TabLaboratorios` a `src/utils/ubicacionLaboratorio.js`, con su prueba.
+## v2.1183.1 — Traslados: la acción de la tarjeta deja de ser una barra sólida
+
+- **«Recibir» pasa al pie, `soft` y chico.** Era una barra azul sólida de ancho completo en cada tarjeta: con cuatro en pantalla, cuatro franjas que pesaban más que el producto. Ahora va a la derecha, en la misma línea que la espera y las caras, como las acciones de las demás tarjetas (§Button · `soft`). En el teléfono sigue ocupando el ancho.
+- Lo mismo en Faltantes: «Ingresar a inventario» y «Apareció» dejan de ser sólidos.
+
+## v2.1183.0 — App: Cuentas por pagar
+
+- **App: Cuentas por pagar nativa.** Cuánto se le debe a cada proveedor, lo vencido, lo en trámite y lo disponible del crédito, con los vencidos primero; tocar uno abre sus facturas pendientes con su vencimiento. En **Pagos**, Gerencia aprueba o anula los cheques desde el teléfono, con la misma función y el mismo motivo que el portal. Registrar un pago y las condiciones de crédito siguen en el portal.
+- **Núcleo:** los totales, los estados de un pago y las formas de pago pasan de `CuentasPorPagarView` a `src/utils/cuentasPorPagar.js`, con su prueba.
+## v2.1182.0 — Traslados: «En camino» con trayecto, chips de lote y el pulso de la cola
+
+- **El pulso arriba de la lista.** Cuántas cajas hay en camino, cuántas pasaron del día y desde cuándo espera la más vieja, en la fila donde antes la píldora de filtros flotaba sola.
+- **El trayecto como dos lugares.** «Salud 5 → Salud 4» era una línea gris; ahora son dos chips con la flecha en medio, y el destino —la sala que tiene que recibir— va teñido.
+- **El lote, el vencimiento y las unidades como chips** en vez de una línea de 9 px en tinta terciaria.
+- **La espera es una pastilla**, roja con un aviso cuando pasa del día, en vez de texto rojo suelto que se leía como un error.
+- **Sin hueco bajo el nombre.** La tarjeta reservaba dos renglones para el nombre aunque ocupara uno.
+- La misma tarjeta es la de la baldosa del Inicio, así que el cambio llega a los dos sitios.
+
+## v2.1181.0 — App: Metas
+
+- **App: Metas nativa.** El tablero del mes por sala: cuánto lleva, el % de la meta, la barra con la proyección como sombra, en qué tramo va y cuánto le falta; arriba lo vendido y la proyección de todas las salas con meta. Mes a mes con flechas. Bono, pago semestral, confirmación, gastos e histórico siguen en el portal.
+- **Núcleo:** las cifras de arriba del tablero pasan de `TabTablero` a `resumenDeMetas` (`metasUtils`), con su prueba.
+## v2.1180.1 — gate:tipos vuelve a correr, y en verde
+
+- **El gate no podía correr en esta máquina**: `typescript` estaba en `package.json` y en el lock, pero no en `node_modules`. Se instaló la versión del lock (5.9.3) sin tocar ninguno de los dos.
+- **Mientras estuvo ciego se juntaron 58 avisos nuevos en 15 archivos del núcleo.** Se corrigieron todos sin cambiar el comportamiento: restas de fechas con `getTime()`, el tipo de lo que devuelven las funciones `json` (faltantes, inyecciones, encuestas, bolsas), JSDoc de opciones que tsc no veía (`subirArchivo`, `fechaNumerica`, `renglonContado`, `filtrarMovimientos`, `subirDiseno`) y un `@param` mal escrito en `solicitudPersonal`.
+- El baseline bajó de 530 a 497: seis archivos quedaron mejor que antes.
+
+## v2.1180.0 — App: Inyecciones
+
+- **App: Inyecciones nativa.** **Pendientes**: lo pagado y sin aplicar, una tarjeta por pago y producto con lo ya aplicado de ese pago, de todas las salas (el cliente puede volver a otra); quien opera una caja elige cuántas aplica ahora con un contador y las marca. **Bitácora**: cada aplicación de hoy, 7 o 30 días, quién cobró y quién aplicó, con su foto. «Por cobrar» y «Precios y dosis» abren el portal dentro de la app.
+- **App:** «Inicio» y «Mis avisos» del menú abren sus pestañas nativas.
+- **Núcleo:** agrupar las pendientes por pago, elegir cuáles marcar y las cifras de arriba pasan de `TabPendientes` a `src/utils/inyeccionesPendientes.js`, con su prueba.
+- **Plan:** `docs/PLAN-APP-NATIVA-RESTANTES-2026-10-05.md` lista las 39 pantallas del menú que faltan en la app, con su alcance, y se marca a medida que salen.
+## v2.1179.3 — Anular un CCF sin sello exige el rechazo de Hacienda, y el cierre se escribe después de anular
+
+- **El atajo «CCF a quien no es contribuyente» ya no se toma sin la respuesta de Hacienda.** Hasta hoy bastaba con «sin sello + CCF + cliente sin NRC»: si el envío previo no contestaba a tiempo, la venta se anulaba igual y un CCF que sí había entrado quedaba vigente ante Hacienda. Ahora hace falta el rechazo de ESE envío, escrito, y por el NRC del receptor. Un rechazo por otra cosa se corrige y se reenvía.
+- **El cierre interno se escribe después de anular, no antes.** Si la anulación fallaba, la factura quedaba viva y fuera del barrido de la noche.
+- Lo destapó la revisión de `0000000115_CCF` de Salud 5 (5-oct), que sí estaba bien cerrado: Hacienda lo había rechazado por el NRC. Nueva `solventado_interno_aplica` (decide, no escribe); `marcar_solventado_internamente` pasa por ella.
+
+## v2.1179.2 — Inyecciones: 30 días en la lista y 90 al buscar cliente o factura
+
+- **Aplicación de inyección → Comprada aquí** muestra las ventas de los últimos **30 días** (antes 7).
+- **Al buscar por cliente o factura se miran 90 días.** La búsqueda por nombre de la inyección se queda en 30: es la que revisa renglón por renglón, y a 90 días costaba 446 ms en la sala más movida contra 86 ms por cliente/factura.
+
+## v2.1179.1 — Traslados: lo que apareció y no entró al inventario deja de verse como resuelto
+
+- **«Apareció» sin ingresar ya no se pinta como resuelto.** Las cuatro de la bolsa E00212 salían en verde bajo «Resueltos en el último mes» con un botón de «Ingresar a inventario» adentro: la caja está en el estante y fuera de las existencias de las dos salas. Ahora tienen estado propio, «Falta ingresar» en ámbar, una sección arriba («Aparecieron, falta ingresarlos») y cuentan en el número de la pestaña.
+- «No apareció» pasa a gris: es un cierre, no una alerta.
+
+## v2.1179.0 — App: Facturas de compra
+
+- **App: Facturas de compra nativa.** Los documentos que llegan por correo, mes por mes, buscando por proveedor, número o por lo que se compró, y filtrando por anulados o por tipo. La ficha de cada una trae **los productos** con cantidad, precio y descuento leídos del propio documento, los totales (gravado, exento, IVA, percepción…), si el proveedor la anuló, sus notas de crédito, y **el PDF y el JSON** abiertos en el visor del teléfono. Es lo que pedía el reporte de sala del 20-ago («no puedo ver los productos, no puedo ver el pdf»). Revisión, vincular proveedor y descargar el paquete siguen en el portal.
+- **App:** el selector de mes de Corte Z pasa a un componente propio (`PasoDeMes`), y `Dato` ya no parte el rótulo letra por letra cuando el valor es largo — ahora es el valor el que baja de línea.
+- **Núcleo:** `src/utils/dteJson.js` lee los renglones y los totales del JSON de un documento tributario (el esquema de Hacienda), con su prueba.
+## v2.1178.3 — Traslados: Faltantes pulido, búsqueda que filtra y el historial deja de pedirse en cada acción
+
+- **Faltantes, rediseñada.** Tarjetas en rejilla de dos columnas (como «En camino» y «Envíos»), con una pastilla de estado, el recorrido entre salas, el código de la bolsa, la nota de quien abrió la caja como cita y la resolución en el color de su desenlace. Arriba, un resumen con cuántos hay sin resolver, cuántos aparecieron y cuántos no.
+- **El buscador ahora filtra Faltantes.** Se ofrecía en esa pestaña y escribir no hacía nada.
+- **Nombres cortos.** Faltantes pintaba el nombre completo de quien lo vio y quien lo resolvió; ahora sale de `shortEmployeeName`.
+- **El número de las tarjetas tenía tamaño.** `text-h3` no es un token del portal: el ancla de las tarjetas de traslado, envío y faltante se pintaba al tamaño heredado. Pasa a `text-title-sm`.
+- **El historial deja de pedirse en cada acción.** Era una sola carga de cinco consultas, y es el `onHecho` de cada tarjeta: recibir una caja o cerrar un faltante volvía a pedir hasta 200 traslados y 200 envíos cerrados. Ahora las colas se cargan siempre y el historial sólo al abrir su pestaña; mover la semana ya no relee las colas. Cada pestaña espera sólo lo suyo y el historial muestra su error si falla.
+
+## v2.1178.2 — Inyecciones: pendientes de todas las salas y fotos de otra sucursal
+
+- **Pendientes muestra lo pagado en cualquier sucursal.** Quien sólo ve su sala tenía el filtro fijo en ella, y ese filtro miraba dónde se PAGÓ: el cliente que pagó en Salud 1 no aparecía en Salud 2, que es donde vino a aplicarse. Ahora se ven todas, y las de otra sucursal llevan «Pagada en …». La base tampoco recorta ya por sala (`inyecciones_pendientes`).
+- **La foto de quien cobró o aplicó en otra sucursal.** El avatar buscaba la foto sólo entre los empleados cargados, que para una sala son los suyos: salía la inicial. Ahora, si la persona no está, la pide a la base (una vez por persona). Vale para todo el portal.
+- **«Ya la pagó» en la aplicación de inyección:** quién cobró va con foto y nombre, no sólo el nombre.
+
 ## v2.1178.1 — Puntos: el motor deja de reevaluar cada minuto las ventas que ya tienen sus puntos
 
 `gate:perf` (sección F) marcó `puntos_acumular`: ~31,700 bloques por llamada en

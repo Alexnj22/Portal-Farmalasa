@@ -19,3 +19,16 @@ describe('conteoDeInventario', () => {
         expect(noUbicado()).toEqual({ fisicoCantidad: 0, nota: null, estadoItem: 'SIN_UBICAR' });
     });
 });
+
+describe('resumen de la lista de conteos', () => {
+    it('cuenta abiertos, por aprobar y sin ajustar', async () => {
+        const { resumenDeConteos, valorNetoDelConteo } = await import('@nucleo/utils/conteoDeInventario');
+        const r = resumenDeConteos([
+            { status: 'EN_PROGRESO' }, { status: 'BORRADOR' }, { status: 'FINALIZADO' },
+            { status: 'CERRADO', total_diferencias: 3, ajuste_erp_aplicado: false },
+            { status: 'CERRADO', total_diferencias: 3, ajuste_erp_aplicado: true },
+        ]);
+        expect(r).toEqual({ total: 5, abiertos: 2, porAprobar: 1, sinAjuste: 1 });
+        expect(valorNetoDelConteo({ valor_sobrante: 10, valor_faltante: 25.5 })).toBe(-15.5);
+    });
+});

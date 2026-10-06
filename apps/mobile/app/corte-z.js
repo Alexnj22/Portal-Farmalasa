@@ -15,7 +15,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchCortesZ } from '@nucleo/data/corteZ';
 import { causaDeCorteZ, cuadraZ, documentosQueDifieren, FILAS_DECLARACION, totalesCorteZ } from '@nucleo/utils/corteZ';
 import { EMPRESA } from '@nucleo/constants/empresa';
-import { correrMes, mesSV, NOMBRES_DE_MES, rangoDelMes } from '@nucleo/utils/fecha';
+import { correrMes, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
@@ -24,9 +24,9 @@ import { Aviso, BotonGrande, Seccion } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
+import PasoDeMes, { nombreDelMes } from '../componentes/PasoDeMes';
 import { MARCA } from '../componentes/inicio/marca';
 
-const nombreDelMes = (mes) => { const [a, m] = String(mes).split('-'); return `${NOMBRES_DE_MES[Number(m) - 1]} ${a}`; };
 const dif = (n) => (cuadraZ(n) ? '—' : formatMoney(n));
 
 function Tarjeta({ f, verMontos }) {
@@ -155,7 +155,6 @@ export default function CorteZ() {
   }, [desde, hasta, sala]);
   useEffect(() => { setFilas(null); cargar(); }, [cargar]);
   const t = useMemo(() => totalesCorteZ(filas || []), [filas]);
-  const puedeAvanzar = mes < mesSV();
 
   return (
     <>
@@ -163,19 +162,7 @@ export default function CorteZ() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <View style={{ marginHorizontal: 16 }}>
-          <Vidrio radio={22}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Pressable onPress={() => setMes((m) => correrMes(m, -1))} hitSlop={8} style={{ minWidth: 52, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: MARCA.azulClaro, fontSize: 24 }}>‹</Text>
-              </Pressable>
-              <Text style={{ flex: 1, textAlign: 'center', color: colorSistema.texto, fontSize: 17, fontWeight: '700', textTransform: 'capitalize' }}>{nombreDelMes(mes)}</Text>
-              <Pressable disabled={!puedeAvanzar} onPress={() => setMes((m) => correrMes(m, 1))} hitSlop={8} style={{ minWidth: 52, minHeight: 48, alignItems: 'center', justifyContent: 'center', opacity: puedeAvanzar ? 1 : 0.3 }}>
-                <Text style={{ color: MARCA.azulClaro, fontSize: 24 }}>›</Text>
-              </Pressable>
-            </View>
-          </Vidrio>
-        </View>
+        <PasoDeMes mes={mes} onCambiar={setMes} />
         {filas && filas.length ? (
           <FilaDeKpis>
             {verMontos ? <Kpi icono="DollarSign" rotulo="Total general" valor={formatMoney(t.total)} color={MARCA.azul} apoyo={`${t.sucursales} sucursal${t.sucursales === 1 ? '' : 'es'} · CCF ${formatMoney(t.ccf)}`} />

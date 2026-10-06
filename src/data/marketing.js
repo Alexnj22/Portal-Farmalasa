@@ -104,6 +104,7 @@ export async function fetchPiezas(mesId) {
 const CAMPOS_PIEZA = ['marca_id', 'marcas', 'fecha', 'hora', 'formato', 'redes', 'pilar', 'titulo', 'copy',
     'hashtags', 'notas', 'estado', 'pautar', 'solicitud_id', 'promocion_id', 'enlace_publicado', 'publicado_en'];
 
+/** @returns {any} la fila, armada con los campos que trae `p` */
 function limpiarPieza(p) {
     const fila = {};
     for (const k of CAMPOS_PIEZA) if (k in p) fila[k] = p[k] === '' ? null : p[k];
@@ -174,6 +175,9 @@ function nombreSeguro(nombre) {
  * mes (y la de la pieza, para la galería). Con `anteriorId` es una VERSIÓN
  * nueva de ese diseño: la base le pone el número y retira la anterior.
  * `medidas` ({ tamano, ancho, alto }) las mide la pantalla al elegir el archivo.
+ *
+ * @param {{ mesId: string, piezaId: string, archivo: File, orden?: number, subidoPor?: string,
+ *           anteriorId?: string | null, medidas?: { tamano?: number, ancho?: number, alto?: number } }} p
  */
 export async function subirDiseno({ mesId, piezaId, archivo, orden, subidoPor, anteriorId = null, medidas = {} }) {
     const path = `${mesId}/${piezaId}/${Date.now()}-${nombreSeguro(archivo.name)}`;

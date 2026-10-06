@@ -20,6 +20,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 import { fechaNumerica } from '@nucleo/utils/fecha';
+import { ACCION_DE_BOLSA, COMO_SE_IDENTIFICO } from '@nucleo/utils/bolsasTexto';
 
 /**
  * Todo lo que le pasó a una bolsa, y las dos correcciones que existen.
@@ -60,37 +61,15 @@ const selloDeTiempo = (iso) => (iso ? fechaHora12(iso) : '');
  *  pantalla. Se arma a mano y no con `Date` para que el huso no la corra un día. */
 const fechaCorta = (f) => fechaNumerica(f, { vacio: '' });
 
-const COMO = { CARNE: 'carné escaneado', CLAVE: 'usuario y contraseña' };
+// Los rótulos de cómo se identificó y de cada acción de la bitácora viven en
+// el núcleo (`bolsasTexto`): la app nativa pinta la misma bitácora.
+const COMO = COMO_SE_IDENTIFICO;
 
 // Las iniciales de respaldo se fueron con el avatar suelto: hoy las resuelve
 // `AvatarConEstado` con `shortEmployeeName`, el mismo respaldo del resto
 // del portal.
 
-const ACCION = {
-    CREAR: 'Se guardó', SALIDA: 'Salió dinero', REINTEGRO: 'Volvió dinero',
-    ABRIR: 'Se abrió', ANULAR_SALIDA: 'Se anuló una salida',
-    ENTREGAR: 'Se entregó', RECIBIR: 'Se recibió', CONTAR: 'Se contó',
-    RESOLVER: 'Se resolvió la diferencia', ANULAR: 'Se anuló la bolsa',
-    // Los dos que estaban saliendo en CÓDIGO. «DEPOSITAR» es el más frecuente
-    // de la tabla —68 de los eventos— y encabezaba el historial de cada bolsa
-    // ya depositada: la línea más visible de la pantalla escrita en la jerga de
-    // la tubería. Y `ABRIR` de arriba nunca existió: la acción real se llama
-    // `REABRIR`, así que su rótulo estaba escrito para un valor que no llega.
-    DEPOSITAR: 'Se depositó', REABRIR: 'Se reabrió',
-    // El circuito no se registró en su momento y se cerró de una sola vez: la
-    // nota del evento dice qué NO se hizo, así que el rótulo no puede decir
-    // «Se contó» — sería la única línea de la bitácora que miente.
-    REGULARIZAR: 'Se regularizó',
-    // Los dos del corte que dejó de existir. Sin rótulo se pintaban con su
-    // código crudo —«CORTE_DESCARTADO»—, que es jerga de la tubería en la
-    // única pantalla donde alguien va a leer qué le pasó a este dinero.
-    CORTE_DESCARTADO: 'El corte se descartó',
-    // Ya no dice «se le sumó el efectivo de una bolsa anulada»: anular una
-    // bolsa NO le pasa su efectivo a otra —la otra es una bolsa física ya
-    // sellada— y el rótulo afirmaba en la bitácora un movimiento de dinero que
-    // nunca ocurrió. El motivo del evento dice qué pasó de verdad.
-    REAJUSTAR: 'Se corrigió el monto',
-};
+const ACCION = ACCION_DE_BOLSA;
 
 export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCambio }) {
     const { hasPermission } = useAuth();

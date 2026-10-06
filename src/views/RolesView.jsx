@@ -23,6 +23,7 @@ import { smartFilter } from '@nucleo/utils/searchUtils';
 import PortalInput from '../components/common/PortalInput';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { esCargoExterno, nombreDelSuperior, ocupantesDelCargo, ordenarPorJerarquia } from '@nucleo/utils/jerarquiaDeCargos';
 
 // Las dos pestañas viven acá arriba y no en línea dentro del JSX: `usePestanaEnUrl`
 // necesita la lista para validar el `?tab=` que llegue por la dirección.
@@ -160,54 +161,22 @@ const RolesView = ({ openModal }) => {
         return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
     }, []);
 
-    const getSuperiorName = (parentId) => {
-        if (!parentId) return "Nivel Máximo";
-        return roles.find(r => r.id === parentId)?.name || "Desconocido";
-    };
-
-    const getEmployeesInRole = (roleId) => {
-        return employees.filter(e => e.role_id === roleId || e.secondary_role_id === roleId);
-    };
-
-    const isRoleExternal = (roleName) => {
-        const nameUpper = roleName.toUpperCase();
-        if (nameUpper.includes('ENFERMERÍA') || nameUpper.includes('ENFERMERIA')) return false;
-        return nameUpper.includes('REGENTE') || nameUpper.includes('REFERENTE') || nameUpper.includes('EXTERNO') || nameUpper.includes('CONSULTOR');
-    };
-
-    const getRoleDepth = useCallback((roleId) => {
-        let depth = 0;
-        let current = roles.find(r => r.id === roleId);
-        while (current && current.parent_role_id) {
-            depth++;
-            current = roles.find(r => r.id === current.parent_role_id);
-        }
-        return depth;
-    }, [roles]);
+    // Superior, ocupantes y externo: `jerarquiaDeCargos` (núcleo).
+    const getSuperiorName = (parentId) => nombreDelSuperior(roles, parentId);
+    const getEmployeesInRole = (roleId) => ocupantesDelCargo(employees, roleId);
+    const isRoleExternal = esCargoExterno;
 
     const { filteredAndSortedRoles, isRoleSearchFuzzy } = useMemo(() => {
         const { results, isFuzzy } = !searchQuery.trim()
             ? { results: roles, isFuzzy: false }
             : smartFilter(searchQuery, roles, r => [r.name]);
         return {
-            filteredAndSortedRoles: results.slice().sort((a, b) => {
-                const depthA = getRoleDepth(a.id);
-                const depthB = getRoleDepth(b.id);
-                if (depthA !== depthB) return depthA - depthB;
-                return a.name.localeCompare(b.name);
-            }),
+            filteredAndSortedRoles: ordenarPorJerarquia(roles, results),
             isRoleSearchFuzzy: isFuzzy,
         };
-    }, [roles, searchQuery, getRoleDepth]);
+    }, [roles, searchQuery]);
 
-    const sortedRolesForDropdown = useMemo(() => {
-        return [...roles].sort((a, b) => {
-            const depthA = getRoleDepth(a.id);
-            const depthB = getRoleDepth(b.id);
-            if (depthA !== depthB) return depthA - depthB;
-            return a.name.localeCompare(b.name);
-        });
-    }, [roles, getRoleDepth]);
+    const sortedRolesForDropdown = useMemo(() => ordenarPorJerarquia(roles), [roles]);
 
     const roleOptions = useMemo(() => {
         return sortedRolesForDropdown

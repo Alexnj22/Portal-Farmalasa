@@ -91,8 +91,11 @@ export function BotonGrande({ texto, color = MARCA.azul, onPress, deshabilitado,
 export function Dato({ rotulo, valor, primero, fuerte }) {
   return (
     <View style={{ flexDirection: 'row', gap: 10, paddingTop: primero ? 0 : 9, borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador }}>
-      <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 15 }}>{rotulo}</Text>
-      <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: fuerte ? '800' : '500', fontVariant: ['tabular-nums'], flexShrink: 1, textAlign: 'right' }}>{valor ?? '—'}</Text>
+      {/* El rótulo no se encoge: con un valor largo (un número de control) era
+          el rótulo el que se partía letra por letra. Ahora el que baja de
+          línea es el valor, y el rótulo guarda hasta 170 pt. */}
+      <Text style={{ flexShrink: 0, maxWidth: 170, color: colorSistema.texto2, fontSize: 15 }}>{rotulo}</Text>
+      <Text style={{ flexGrow: 1, flexShrink: 1, color: colorSistema.texto, fontSize: 15, fontWeight: fuerte ? '800' : '500', fontVariant: ['tabular-nums'], textAlign: 'right' }}>{valor ?? '—'}</Text>
     </View>
   );
 }

@@ -298,6 +298,11 @@ Deno.serve(async (req) => {
       const avisos: string[] = [];
       const yaInvalidada = String(factura.estado ?? "").toUpperCase() === "DTE INVALIDADO EN MH";
       let interno: { motivo?: string; instruccion?: string } | null = null;
+      // El paso 0 sólo DECIDE el cierre interno; se escribe después de anular.
+      // Escrito antes —como se hacía hasta 0000000115_CCF de Salud 5, el
+      // 2026-10-05—, una anulación que fallara dejaba la factura viva y sacada
+      // del barrido nocturno.
+      let cierrePendiente = false;
 
       // ── 0 · Lo que Hacienda todavía no tiene se le manda ANTES de anular ──
       //
@@ -342,6 +347,11 @@ Deno.serve(async (req) => {
           // sin anular. La factura queda igual que antes y la solicitud sigue
           // pendiente — nunca al revés, que sería anular sobre un envío del que
           // no se supo el final.
+          //
+          // `enviadoDesde` es para que un rechazo VIEJO no cuente como la
+          // respuesta de este envío: si éste no terminó, no hay respuesta. Los
+          // 5 s de margen cubren el desfase entre el reloj de acá y el de la base.
+          const enviadoDesde = new Date(Date.now() - 5_000).toISOString();
           const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/regularizar-dte`, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${secreto}` },
@@ -373,24 +383,28 @@ Deno.serve(async (req) => {
             // caso que NUNCA va a entrar —el crédito fiscal emitido a quien no
             // es contribuyente—: ahí la transmisión es imposible por definición
             // y frenar la anulación dejaría la solicitud trabada para siempre.
-            // Acá el error ES la respuesta —la función lanza cuando el caso no
-            // encaja, con el freno que se negó en el mensaje—, pero igual se
-            // anota: sin eso, un caso que DEBERÍA haber encajado y no encajó por
-            // otra cosa (permiso, red) se ve idéntico a uno que nunca aplicó.
-            const { data: cerrado, error: intErr } = await admin
-              .rpc("marcar_solventado_internamente",
-                   { p_invoice_id: factura.id, p_actor: aprobador.name });
-            if (intErr) console.error(`marcar_solventado_internamente (paso 0, factura ${factura.id}):`, intErr.message);
-            if (cerrado?.ok) {
-              interno = cerrado;
-              avisos.push(String(cerrado.motivo ?? ""));
+            //
+            // Se pregunta, no se escribe: `solventado_interno_aplica` exige
+            // además que Hacienda haya CONTESTADO a este envío con el rechazo
+            // del NRC del receptor. Sin esa respuesta escrita —un corte de
+            // tiempo, la red— no se sabe si entró, y anular un CCF que sí
+            // entró lo deja vigente ante Hacienda.
+            const { data: decision, error: decErr } = await admin
+              .rpc("solventado_interno_aplica",
+                   { p_invoice_id: factura.id, p_rechazo_desde: enviadoDesde });
+            if (decErr) throw decErr;   // un error acá NO es un «no aplica»
+            if (decision?.ok) {
+              interno = decision;
+              cierrePendiente = true;
+              avisos.push(String(decision.motivo ?? ""));
             } else {
+              if (decision?.freno) console.warn(`solventado_interno_aplica (factura ${factura.id}): ${decision.freno}`);
               // Hacienda la rechazó y la corrección no alcanzó. **No se anula.**
               // La solicitud sigue PENDIENTE con el motivo a la vista, que es
               // exactamente lo que hay que ver: el documento todavía puede
               // entrar, y anularlo ahora lo impediría para siempre.
               const motivo = (r?.detalle as { error?: string }[] | undefined)?.[0]?.error
-                ?? r?.error ?? "Hacienda no aceptó el documento.";
+                ?? r?.error ?? decision?.error ?? "Hacienda no aceptó el documento.";
               return json({
                 ok: false,
                 codigo: "NO_ENTRO_A_HACIENDA",
@@ -410,6 +424,34 @@ Deno.serve(async (req) => {
         })));
         if (!r.ok) return json({ ok: false, error: `No se pudo anular la factura: ${r.msg}` }, 502);
         anuladaAhora = true;
+      }
+
+      // 1b · Con la venta ya anulada, recién ahora se escribe el cierre interno
+      // que el paso 0 decidió. `marcar_solventado_internamente` vuelve a pasar
+      // por los mismos frenos: si en estos segundos llegó un sello, se niega.
+      //
+      // Se reintenta porque, con la anulación hecha, lo único que puede fallar
+      // es la escritura misma. Y si igual falla no se marca APPROVED: la
+      // solicitud queda pendiente con un error que dice qué falta.
+      if (cierrePendiente) {
+        let cierreErr: { message: string } | null = null;
+        for (let i = 0; i < 3; i++) {
+          const { data: cerrado, error } = await admin
+            .rpc("marcar_solventado_internamente",
+                 { p_invoice_id: factura.id, p_actor: aprobador.name });
+          if (!error && cerrado?.ok) { interno = cerrado; cierreErr = null; break; }
+          cierreErr = error ?? { message: "la base no confirmó el cierre" };
+          await new Promise((res) => setTimeout(res, 1_000));
+        }
+        if (cierreErr) {
+          console.error(`marcar_solventado_internamente (factura ${factura.id}):`, cierreErr.message);
+          return json({
+            ok: false,
+            codigo: "CIERRE_INTERNO_SIN_ESCRIBIR",
+            error: `La venta ya se anuló en el sistema, pero no se pudo dejar escrito el ` +
+                   `cierre interno: ${cierreErr.message}. Avisa a sistemas antes de volver a aprobarla.`,
+          }, 500);
+        }
       }
 
       // 2 · Lo de Hacienda, sólo si falta y si hay algo que invalidar.

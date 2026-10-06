@@ -10,7 +10,7 @@ import { tokenMatch } from '../utils/searchUtils';
 import { ERP_NAMES, SUCURSALES as ERP_ORDER } from '../constants/erp';
 import { printFromPedidoItems } from '../utils/pedidoPrint';
 import { PAUSE_REASONS } from '../constants/pedidos';
-import { getBranchStage, estadoDeLaSala, claveParada, agruparPorRuta, currentMonthRange, necesitaAtencion, faltantesDeLaSala } from '../utils/tableroDePedidos';
+import { getBranchStage, claveParada, agruparPorRuta, currentMonthRange, necesitaAtencion, tieneObservacion, filtrarPedidos, pedidosPorSala } from '../utils/tableroDePedidos';
 import { anularPedido, avanzarEtapaDePedidoEnSala, confirmarEnvioPedido, despacharTrasladoPedido, fetchActiveRutas, fetchApoyoForPedido, fetchApoyoForPedidos, fetchAttendancePunches, fetchBranchNamesForSucursales, fetchEmployeeBranchId, fetchEntregasDePedidos, fetchItemsSinIngresar, fetchPausaHistorial, fetchPedidoItemEventosAll, fetchPedidoItemsAll, fetchPedidoItemsFaltaElectrolit, fetchPedidoItemsFaltaEspeciales, fetchPedidoSucursalStatus, fetchPedidosEnCurso, fetchResumenDeRenglonesPorPedido, fetchResumenIngresoPedidos, fetchRutaLocations, fetchSucursalIdForBranch, fetchTrasladosDePedidos, noReenviarEspeciales, recibirTrasladoPedido, resolverRenglonDePedido, tieneEtiquetaDeDespacho, updatePedidoItemsFaltaCaja, updatePedidoSucursalStatus, updateRutaPedidoEntregado, upsertRutaLocation } from '../data/pedidos';
 import {
     fetchDevolucionesDePedido, decidirDevolucion,
@@ -1544,14 +1544,9 @@ export function usePedidosData({ searchTerm = '' }) {
     // La diferencia se mira por SALA (`diferencias_reportadas_at`), no por
     // `pedido_status === 'parcial'`: ese es del pedido, y una diferencia de una
     // sala marcaba como «con observación» a todas las demás (#174, 2026-09-17).
+    // La regla vive en el núcleo (`tieneObservacion`): la app nativa filtra igual.
     const hasObservacion = useCallback((r) =>
-        (!!r.diferencias_reportadas_at && !r.confirmado_correccion_at) ||
-        (r.llegada_tipo && r.llegada_tipo !== 'completa') ||
-        (r.falta_cajas?.length  > 0) ||
-        (r.cajas_danadas?.length > 0) ||
-        (r.electrolit_ok === false) ||
-        Object.values(r.cajas_especiales_llegadas ?? {}).some(v => v === 'faltante') ||
-        ((ingresoStats[`act_${r.pedido_id}_${r.erp_sucursal_id}`]?.sin_ingresar ?? 0) > 0),
+        tieneObservacion(r, ingresoStats[`act_${r.pedido_id}_${r.erp_sucursal_id}`]?.sin_ingresar ?? 0),
     [ingresoStats]);
 
     // Group activeRows by pedido to detect if ALL sucursales for a pedido are preparado
@@ -1577,30 +1572,10 @@ export function usePedidosData({ searchTerm = '' }) {
         if (isBranch && erpSucursalId) rows = rows.filter(r => r.erp_sucursal_id === erpSucursalId);
         if (filterSuc) rows = rows.filter(r => r.erp_sucursal_id === Number(filterSuc));
 
-        if (filterStatus === 'completado') {
-            rows = rows.filter(r => r.pedido_status === 'completado');
-        } else if (filterStatus === 'observacion') {
-            // Lo que todavía no llegó es una observación viva aunque la sala ya
-            // haya contado lo demás y el pedido diga «completado».
-            rows = rows.filter(r => (hasObservacion(r) && r.pedido_status !== 'completado') || faltantesDeLaSala(r).hay);
-        } else if (filterStatus !== 'all') {
-            // «Pendientes» y «En ruta» se comparan contra el estado de la SALA,
-            // que es el que la tarjeta pinta. Contra `pedido_status`, la Salud 2
-            // del pedido 137 salía bajo «En ruta» y se escondía bajo
-            // «Pendientes» — al revés de lo que era.
-            rows = rows.filter(r => estadoDeLaSala(r) === filterStatus);
-        } else {
-            // Ocultar completados sin problemas; mantener los que tienen diferencias/observación
-            rows = rows.filter(r => r.pedido_status !== 'completado' || hasObservacion(r));
-        }
-
-        if (filterDate) {
-            const [desde, hasta] = filterDate.split('|');
-            rows = rows.filter(r => {
-                const d = r.created_at?.slice(0, 10);
-                return (!desde || d >= desde) && (!hasta || d <= hasta);
-            });
-        }
+        // Estado y período: `filtrarPedidos` (núcleo), el mismo de la app nativa.
+        // Los porqués de cada rama —«Pendientes» contra el estado de la SALA, el
+        // completado con observación que no se esconde— están ahí.
+        rows = filtrarPedidos(rows, { estado: filterStatus, rango: filterDate, observado: hasObservacion });
         if (searchTerm.trim()) rows = rows.filter(r => tokenMatch(searchTerm, String(r.numero), r.notes));
         const uid = String(user?.id ?? '');
         const stat = (r) => cardStats[`act_${r.pedido_id}_${r.erp_sucursal_id}`] ?? {};
@@ -1630,19 +1605,14 @@ export function usePedidosData({ searchTerm = '' }) {
     }, [activeRows, filterSuc, filterStatus, filterDate, searchTerm, hasObservacion, user, cardStats]); // eslint-disable-line
 
     const sucursalCounts = useMemo(() => {
-        const [desde, hasta] = (filterDate ?? '').split('|');
-        // branch: solo muestra su propia sucursal en las cards de stats
+        // branch: solo muestra su propia sucursal en las cards de stats.
+        // La cuenta por sala y período es del núcleo (`pedidosPorSala`).
         const baseRows = (isBranch && erpSucursalId)
             ? activeRows.filter(r => r.erp_sucursal_id === erpSucursalId)
             : activeRows;
-        return ERP_ORDER.map(id => {
-            const rows = baseRows.filter(r => {
-                if (r.erp_sucursal_id !== id) return false;
-                const d = r.created_at?.slice(0, 10);
-                return (!desde || d >= desde) && (!hasta || d <= hasta);
-            });
-            return { id, name: ERP_NAMES[id] ?? `Suc. ${id}`, total: rows.length };
-        }).filter(s => s.total > 0);
+        const cuenta = pedidosPorSala(baseRows, filterDate);
+        return ERP_ORDER.map(id => ({ id, name: ERP_NAMES[id] ?? `Suc. ${id}`, total: cuenta.get(id) ?? 0 }))
+            .filter(s => s.total > 0);
     }, [activeRows, filterDate, isBranch, erpSucursalId]);
 
     // Agrupa filteredRows: rutas primero (con sus paradas), luego el resto.

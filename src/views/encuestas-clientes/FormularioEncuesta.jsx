@@ -6,7 +6,7 @@ import Checkbox from '../../components/common/Checkbox';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import {
-    CARITAS, ACUERDO, recorrido, primeraSinContestar, telefonoValido,
+    CARITAS, ACUERDO, recorrido, primeraSinContestar, motivoParaNoGuardarContacto,
 } from '@nucleo/utils/encuestasClientes';
 
 /**
@@ -98,9 +98,9 @@ export default function FormularioEncuesta({ encuesta, onEnviar, onEntregarMuest
     const enviar = async (conDatos) => {
         const c = conDatos ? contacto : { consiente: false };
         if (conDatos) {
-            if (!c.consiente) { setErrorContacto('Para guardar los datos hay que aceptar el consentimiento.'); return; }
-            if (!c.telefono.trim() && !c.nombre.trim()) { setErrorContacto('Escribe el teléfono o el nombre, o envía sin datos.'); return; }
-            if (c.telefono.trim() && !telefonoValido(c.telefono)) { setErrorContacto('El teléfono debe tener 8 dígitos.'); return; }
+            // La regla del contacto: `motivoParaNoGuardarContacto` (núcleo, la misma de la app).
+            const motivo = motivoParaNoGuardarContacto(c);
+            if (motivo) { setErrorContacto(motivo); return; }
         }
         setErrorContacto(null);
         setErrorEnvio(null);

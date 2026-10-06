@@ -15,7 +15,7 @@ import {
     Scale, Zap, Briefcase, Shield, Stethoscope, Sparkles, Activity, ArrowLeft
 } from "lucide-react";
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
-import { formatTime12h } from "@nucleo/utils/helpers";
+import { abiertaAhora, alertasDeSucursal, completitudDelPerfil, horarioDefinido, horarioDeHoy, leerAjustes, ORDEN_DE_TIPOS, TIPOS_DE_SUCURSAL } from "@nucleo/utils/sucursales";
 import ConfirmModal from "../components/common/ConfirmModal";
 import AlertModal from "../components/common/AlertModal";
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -36,168 +36,33 @@ const FILTER_OPTIONS = [
 
 // `color` era la paleta SOFT de `Badge` escrita a mano; ahora es el nombre de
 // la variante y el color lo pone el canónico (2026-07-28, D3.5).
-const BRANCH_TYPE_META = {
-    FARMACIA:      { label: 'Farmacia',      variante: 'chart-1', sectionLabel: 'Farmacias' },
-    BODEGA:        { label: 'Bodega',        variante: 'warning', sectionLabel: 'Bodega' },
-    ADMINISTRATIVA:{ label: 'Administración', variante: 'chart-3', sectionLabel: 'Administración' },
-    EXTERNA:       { label: 'Externos',      variante: 'chart-9', sectionLabel: 'Personal Externo' },
-};
-const TYPE_ORDER = ['FARMACIA', 'BODEGA', 'ADMINISTRATIVA', 'EXTERNA'];
+const BRANCH_TYPE_META = TIPOS_DE_SUCURSAL;
+const TYPE_ORDER = ORDEN_DE_TIPOS;
 
-const safeParse = (obj) => {
-    if (typeof obj === 'object' && obj !== null) return obj;
-    try { return JSON.parse(obj) || {}; } catch { return {}; }
-};
-
+const safeParse = leerAjustes;   // núcleo (`sucursales`)
 const CLASS_INTERACTIVE_GLASS_ELEMENT = "bg-surface-card border border-border-card shadow-[var(--shadow-glass-1)] cursor-pointer transition-all duration-[var(--dur-slow)] hover:bg-surface-card-hover hover:shadow-[var(--shadow-glass-2)] hover:translate-y-[var(--lift-card)] active:scale-[0.97]";
 
 // ============================================================================
 // 🧠 FUNCIONES PURAS
 // ============================================================================
 
-const isScheduleDefined = (branch) => {
-    const weekly = branch?.weeklyHours || branch?.weekly_hours;
-    if (!weekly || Object.keys(weekly).length === 0) return false;
-    return Object.values(weekly).some(day => day.isOpen && day.start && day.end);
-};
-
-const isBranchOpenNow = (branch, currentDay, currentTimeStr) => {
-    const weekly = branch?.weeklyHours || branch?.weekly_hours;
-    if (!weekly || Object.keys(weekly).length === 0) return { status: 'UNKNOWN', label: 'Horario no definido' };
-
-    const currentDayInfo = weekly[String(currentDay)];
-
-    if (!currentDayInfo || currentDayInfo.isOpen === false) return { status: 'CLOSED', label: 'Cerrado hoy' };
-    if (!currentDayInfo.start || !currentDayInfo.end) return { status: 'UNKNOWN', label: 'Horario incompleto' };
-
-    if (currentTimeStr >= currentDayInfo.start && currentTimeStr < currentDayInfo.end) {
-        return { status: 'OPEN', label: 'Abierto ahora' };
-    } else {
-        return { status: 'CLOSED', label: 'Cerrado ahora' };
-    }
-};
-
-const getTodaySchedule = (branch, currentDay) => {
-    const weekly = branch?.weeklyHours || branch?.weekly_hours;
-    if (!weekly || Object.keys(weekly).length === 0) return "No definido";
-
-    const currentDayInfo = weekly[String(currentDay)];
-    if (!currentDayInfo || currentDayInfo.isOpen === false) return "CERRADO";
-    if (!currentDayInfo.start || !currentDayInfo.end) return "No definido";
-
-    return `${formatTime12h(currentDayInfo.start)} - ${formatTime12h(currentDayInfo.end)}`;
-};
-
-const getProfileCompletion = (branch) => {
-    const settings = safeParse(branch.settings);
-    const legal = settings.legal || {};
-    const rent = settings.rent || { contract: {} };
-    const services = settings.services || {};
-    const pType = branch.propertyType || settings.propertyType || null;
-    const bType = branch.type || 'FARMACIA';
-    const isFarmacia = bType === 'FARMACIA';
-
-    let legalScore = isFarmacia ? 0 : 100;
-    if (isFarmacia) {
-        if (legal.regentEmployeeId) legalScore += 40;
-        if (legal.pharmacovigilanceEmployeeId) legalScore += 20;
-        if (legal.srsPermit) legalScore += 40;
-    }
-
-    let propertyScore = 0;
-    if (pType === 'OWNED') propertyScore = 100;
-    else if (pType === 'RENTED') {
-        if (rent.landlordName) propertyScore += 25;
-        if (rent.amount) propertyScore += 25;
-        if (rent.contract?.startDate) propertyScore += 25;
-        if (rent.contract?.endDate) propertyScore += 25;
-    }
-
-    let serviceScore = isFarmacia ? 0 : 100;
-    if (isFarmacia) {
-        if (services.light?.provider || services.light?.account) serviceScore += 50;
-        if (services.water?.provider || services.water?.account) serviceScore += 50;
-    }
-
-    return { legal: Math.round(legalScore), property: Math.round(propertyScore), services: Math.round(serviceScore) };
-};
-
+// Horario, apertura, completitud y alertas: `sucursales` (núcleo, las mismas de la app).
+// Las alertas traen el NOMBRE del ícono; acá se vuelve componente y se le pone el estilo.
+const ICONOS_DE_ALERTA = { AlertTriangle, AlertCircle, Info, Clock, Users, Briefcase, Shield, Stethoscope, CheckCircle2 };
+const isScheduleDefined = horarioDefinido;
+const isBranchOpenNow = abiertaAhora;
+const getTodaySchedule = horarioDeHoy;
+const getProfileCompletion = completitudDelPerfil;
 const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
-    // Áreas no-farmacia no tienen la misma lógica de alertas operativas
-    const isFarmacia = !branch.type || branch.type === 'FARMACIA';
-    const alerts = [];
-    const settings = safeParse(branch.settings);
-    const legalData = settings.legal || {};
-    const servicesData = settings.services || {};
-    const hasInjections = legalData.injections === true;
-    const pType = branch.propertyType || settings.propertyType || null;
-
-    const today = new Date(currentTimestamp);
-    today.setHours(0, 0, 0, 0);
-
-    const evaluateDocExpiration = (dateString, label, warningDays = 45) => {
-        if (!dateString) return;
-        const [year, month, day] = dateString.split('-');
-        const targetDate = new Date(year, month - 1, day, 0, 0, 0, 0);
-        const diffDays = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
-
-        if (diffDays < 0) alerts.push({ level: 'critical', message: `${label} Vencido(a)`, icon: AlertTriangle });
-        else if (diffDays <= warningDays) alerts.push({ level: 'warning', message: `${label} vence en ${diffDays} días`, icon: AlertTriangle });
-    };
-
-    const evaluateServicePayment = (paidThrough, serviceName) => {
-        if (!paidThrough) return;
-        const [year, month] = paidThrough.split('-');
-        const targetDate = new Date(year, month, 0, 0, 0, 0, 0); 
-        const diffDays = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
-
-        if (diffDays < -15) alerts.push({ level: 'critical', message: `Pago de ${serviceName} atrasado`, icon: AlertTriangle });
-        else if (diffDays < 0) alerts.push({ level: 'warning', message: `Revisar pago de ${serviceName}`, icon: AlertCircle });
-    };
-
-    if (!pType) alerts.push({ level: 'warning', message: 'Inmueble no definido', icon: Info });
-    else if (pType === 'RENTED') {
-        if (!settings.rent?.contract?.endDate) alerts.push({ level: 'warning', message: 'Falta contrato', icon: Info });
-        else evaluateDocExpiration(settings.rent.contract.endDate, "Contrato Alquiler", 60);
-    }
-
-    if (isFarmacia) {
-        if (!legalData.srsPermit) alerts.push({ level: 'warning', message: 'Falta permiso SRS', icon: Info });
-        evaluateDocExpiration(legalData.srsExpiration, "Licencia CSSP/DNM", 60);
-        evaluateDocExpiration(legalData.regentCredentialExp, "Credencial Regente", 45);
-        evaluateDocExpiration(legalData.pharmacovigilanceExp, "Credencial Referente", 45);
-        if (legalData.controlledBooks) {
-            evaluateDocExpiration(legalData.controlledBooksExp, "Libros Controlados", 30);
-        }
-    }
-
-    const needsPhone = isFarmacia || branch.type === 'BODEGA';
-    if (!branch.address || (needsPhone && !branch.phone && !branch.cell)) alerts.push({ level: 'warning', message: 'Datos incompletos', icon: Info });
-
-    if (isFarmacia) {
-        if (!isScheduleDefined(branch)) alerts.push({ level: 'critical', message: 'Sin horarios', icon: Clock });
-        const hasJefe = branchEmployees.some(e => (e.role || '').toUpperCase().includes('JEFE') && !(e.role || '').toUpperCase().includes('SUB'));
-        if (!hasJefe) alerts.push({ level: 'critical', message: 'Falta jefe de sucursal', icon: Users });
-        if (!legalData.regentEmployeeId) alerts.push({ level: 'critical', message: 'Falta regente', icon: Briefcase });
-        if (!legalData.pharmacovigilanceEmployeeId) alerts.push({ level: 'critical', message: 'Falta referente', icon: Shield });
-        if (hasInjections && (!legalData.nurses || legalData.nurses.length === 0)) alerts.push({ level: 'critical', message: 'Falta enfermero/a', icon: Stethoscope });
-        evaluateServicePayment(servicesData.light?.paidThrough, "Luz");
-        evaluateServicePayment(servicesData.water?.paidThrough, "Agua");
-        evaluateServicePayment(servicesData.internet?.paidThrough, "Internet");
-    }
-
-    const baseCardStyles = '';
-
-    if (alerts.length === 0) {
-        return { hasAlerts: false, message: 'Operativa', cardStyles: baseCardStyles, badgeStyles: 'hidden', icon: CheckCircle2, list: [] };
-    }
-
-    const hasCritical = alerts.some(a => a.level === 'critical');
+    const r = alertasDeSucursal(branch, currentTimestamp, branchEmployees);
     return {
-        hasAlerts: true, message: alerts.length > 1 ? `${alerts.length} ALERTAS` : alerts[0].message,
-        cardStyles: baseCardStyles,
-        badgeStyles: hasCritical ? 'bg-danger-solid text-white shadow-[var(--shadow-glow-danger)] border-danger' : 'bg-warning-solid text-white shadow-[var(--shadow-glow-warning)] border-warning',
-        icon: hasCritical ? AlertTriangle : AlertCircle, list: alerts
+        ...r,
+        icon: ICONOS_DE_ALERTA[r.icono],
+        list: r.list.map((a) => ({ ...a, icon: ICONOS_DE_ALERTA[a.icono] })),
+        cardStyles: '',
+        badgeStyles: !r.hasAlerts ? 'hidden' : r.critica
+            ? 'bg-danger-solid text-white shadow-[var(--shadow-glow-danger)] border-danger'
+            : 'bg-warning-solid text-white shadow-[var(--shadow-glow-warning)] border-warning',
     };
 };
 

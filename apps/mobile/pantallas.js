@@ -7,6 +7,8 @@ import { router } from 'expo-router';
 // El orden sale de cuánta gente distinta usa cada una (bitácora de acciones,
 // 30 días al 2026-09-28): bitácoras 34, traslados 36, efectivo 34, pedidos 23.
 export const PANTALLAS_DE_LA_APP = {
+  '/inicio': true,             // es la pestaña Inicio (los grupos de expo-router no cuentan en la ruta)
+  '/mis-avisos': '/avisos',    // es la pestaña de avisos; OJO: `/avisos` del PORTAL es «Gestionar avisos», otra cosa
   '/bitacoras': true,
   '/traslados': true,
   '/ventas-hoy': true,   // no existe en el portal: es la pantalla nativa de «Ventas de hoy»
@@ -19,6 +21,41 @@ export const PANTALLAS_DE_LA_APP = {
   '/monitor-ventas': true, // el «Monitor de ventas» del portal es un modal; en la app, su pantalla
   '/ventas': true,         // la lista de facturas con sus cifras; tocar una abre la venta
   '/cuentas-por-cobrar': true, // la cartera, la ficha de un crédito y el cobro
+  '/avisos': '/gestionar-avisos', // OJO: la pestaña de la app `/avisos` son MIS avisos; esto es gestionarlos
+  '/facturacion': true, // las colas: sin sello de Hacienda, observaciones y anuladas
+  '/resumen-fiscal': true, // el movimiento de IVA del mes, renglón por renglón
+  '/cierre-periodo': true, // la cadena del remanente; cerrar y reabrir en el portal
+  '/libro-compras-completo': true, // qué se compró y qué es declarable; el CSV en el portal
+  '/libros-iva': true, // cada libro del mes en resumen; detalle y descargas en el portal
+  '/cargos': true, // el organigrama como lista; editar en el portal
+  '/permisos': true, // qué puede cada cargo, módulo por módulo; cambiarlos en el portal
+  '/sesiones': true, // conexiones abiertas y cerrarlas; bloquear en el portal
+  '/carnes-del-dia': true, // carnés de papel vivos y anularlos; imprimir en el portal
+  '/encuesta-admin': true, // las encuestas internas y sus puntajes por persona
+  '/encuestas-clientes': true, // lista y resultados (NPS, temas, sucursales, comentarios)
+  '/encuestas-aplicar': true, // entrevistar a un cliente desde el teléfono; modo tablet en el portal
+  '/marketing': true, // el mes de contenido, las piezas con sus diseños y las solicitudes
+  '/galeria': true, // el material liberado para las salas, listo para compartir
+  '/solicitudes-datos': true, // los plazos de las solicitudes ARCO; imprimir y responder en el portal
+  '/actualizacion-de-datos': true, // el estado de cada dato que se actualiza solo
+  '/mantenimiento': true, // frenos de mercadería y candados de módulo, con confirmación
+  '/auditoria-del-sistema': true, // la bitácora del sistema; exportar en el portal
+  '/notificaciones': true, // el historial: leídas y quitadas, con la misma tarjeta
+  '/ofertas-clientes': true, // ofertas de Puntos Salud y pre-registros
+  '/encuesta': true, // resultados del clima: índice, bloques, preguntas y comentarios
+  '/nomina': true, // la quincena por sala y la boleta de cada persona; generar, aprobar e imprimir: portal
+  '/auditoria-de-tiempos': true, // día por día: marcas, faltas, tardanza y señales; corregir y aprobar: portal
+  '/monitor': true, // quién trabaja, está en pausa o no ha marcado, ahora; y quién llegó tarde
+  '/promociones': true, // vigentes y su detalle con lo vendido por sala; crear, descuentos y pagos: portal
+  '/cotizaciones': true, // la lista y el detalle con sus totales; crear, editar e imprimir: portal
+  '/compras': true, // las compras del mes y su detalle con lote y vencimiento; resumen por producto: portal
+  '/sucursales': true, // por tipo: abierta ahora, horario, gente y alertas; editar: portal
+  '/proveedores': true, // el directorio y la ficha (con lo que se le debe); clasificar: portal
+  '/laboratorios': true, // dónde está cada laboratorio en la sala, y corregirlo; la política de vencimiento: portal
+  '/cuentas-por-pagar': true, // lo que se debe por proveedor y los pagos (aprobar/anular); registrar un pago: portal
+  '/metas': true, // el tablero del mes por sala; bono, confirmación e histórico: portal
+  '/inyecciones': true, // pendientes (marcar aplicadas) y bitácora; por cobrar y ajustes: portal
+  '/facturas-compra': true, // los documentos del mes; la ficha con productos y PDF (revisión y vincular: portal)
   '/corte-z': true, // el Gran Z mensual con su cotejo; el PDF, en el portal
   '/puntos': true, // resumen, consulta del saldo y avisos (asignar cuentas y traspasos: portal)
   '/bolsas': true, // el circuito de administración: recibir, contar y confirmar (la sala va a /bolsas-sala)
@@ -31,7 +68,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/mis-documentos': true, // el expediente propio y los papeles de las solicitudes
   '/mi-perfil': true,      // la ficha propia: datos, horario, vacaciones, historial y editar contacto
   '/inventario': true,     // lo de una sala producto por producto; tocar uno abre su ficha nativa
-  '/personal': true,       // el directorio por sala; la ficha de una persona abre el portal
+  '/personal': true,       // el directorio por sala; la ficha de una persona es /empleado/[id]
   '/solicitudes': true,
   '/facturas-sala': true,
   // Los dos ámbitos del portal son una sola bandeja en la app.
@@ -58,6 +95,10 @@ export function abrirRuta(url) {
   // `/solicitudes?solicitud=…` nombra UNA: se abre ésa, no la bandeja.
   const una = ruta.startsWith('/solicitudes') ? url.match(/[?&]solicitud=([^&#]+)/) : null;
   if (una) return abrirSolicitud(decodeURIComponent(una[1]));
+  // Una persona (`/personal/empleado/<id>` o `/personal?empleado=<id>`): su
+  // ficha nativa, no el directorio entero.
+  const persona = url.match(/^\/personal\/empleado\/([^/?#]+)/) || (ruta === '/personal' ? url.match(/[?&]empleado=([^&#]+)/) : null);
+  if (persona) return router.push({ pathname: '/empleado/[id]', params: { id: decodeURIComponent(persona[1]) } });
   // La pantalla nativa recibe la misma dirección con sus parámetros
   // (`/ventas-hoy?sala=3` abre esa sala).
   const nativa = nativaDe(ruta);

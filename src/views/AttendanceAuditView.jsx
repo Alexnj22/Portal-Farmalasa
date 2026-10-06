@@ -31,7 +31,6 @@ import {
     closeQuincenaTimesheets, marcarMarcajesRevisados, resolverTurnoExtra,
     buildCSTDate,
     getCSTDateStr,
-    minutosDeTardanza,
 } from '@nucleo/data/attendanceAudit';
 import NocturnalLegalInfo from '../components/common/NocturnalLegalInfo';
 import PortalTextarea from '../components/common/PortalTextarea';
@@ -43,17 +42,11 @@ import { getMondayOfCurrentWeek, fmtTimeCSTStr, formatTime12h, isEditedPunch, is
     from '@nucleo/utils/quincena';
 import { descargarArchivo } from '../plataforma/descargas';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { auditarDia, marcasEsperadas, resumenDeQuincena, RESUMEN_VACIO, ROTULO_MARCA, TIPOS_DE_ENTRADA, TIPOS_DE_SALIDA } from '@nucleo/utils/auditoriaDeTiempos';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const EMPTY_ARRAY = [];
-const PUNCH_TYPE_LABELS = {
-  IN: 'Entrada', IN_EARLY: 'Entrada Anticipada', IN_AFTER_SHIFT: 'Entrada Fuera de Turno',
-  IN_EXTRA: 'Entrada Extra', IN_RETURN: 'Regreso de Permiso',
-  IN_LUNCH: 'Regreso almuerzo', IN_LACTATION: 'Regreso lactancia',
-  OUT: 'Salida', OUT_LATE: 'Salida con Overtime', OUT_EARLY: 'Salida anticipada',
-  OUT_LUNCH: 'Salida almuerzo', OUT_LACTATION: 'Salida lactancia',
-  OUT_BUSINESS: 'Gestión externa', OUT_EXTRA: 'Salida Extra',
-};
+const PUNCH_TYPE_LABELS = ROTULO_MARCA;   // núcleo (`auditoriaDeTiempos`)
 const PUNCH_TYPE_OPTIONS = [
   { value: 'IN',            label: 'Entrada' },
   { value: 'OUT',           label: 'Salida' },
@@ -64,8 +57,8 @@ const PUNCH_TYPE_OPTIONS = [
   { value: 'OUT_EARLY',     label: 'Salida anticipada' },
   { value: 'OUT_BUSINESS',  label: 'Gestión externa' },
 ];
-const IN_TYPES  = new Set(['IN','IN_EARLY','IN_AFTER_SHIFT','IN_EXTRA','IN_RETURN','PUNCH_IN']);
-const OUT_TYPES = new Set(['OUT','OUT_LATE','OUT_EARLY','OUT_EXTRA','OUT_BUSINESS','PUNCH_OUT']);
+const IN_TYPES  = TIPOS_DE_ENTRADA;
+const OUT_TYPES = TIPOS_DE_SALIDA;
 const DAY_NAMES_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DAY_NAMES_FULL  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 
@@ -181,20 +174,7 @@ function buildMockData() {
 }
 
 // ── Day analysis ──────────────────────────────────────────────────────────────
-function getExpectedPunches(dateStr, shift, dayConfig) {
-  if (!shift) return [];
-  const shiftStart = buildCSTDate(dateStr, shift.start_time?.substring(0,5) || shift.start);
-  const shiftEnd   = buildCSTDate(dateStr, shift.end_time?.substring(0,5)   || shift.end);
-  const lunchStart = dayConfig?.lunchStart ? buildCSTDate(dateStr, dayConfig.lunchStart) : null;
-  const lunchEnd   = lunchStart ? new Date(lunchStart.getTime() + 3600000) : null;
-  const result = [{ type:'IN', label:'Entrada', expected: shiftStart }];
-  if (lunchStart) {
-    result.push({ type:'OUT_LUNCH', label:'Salida almuerzo', expected: lunchStart });
-    result.push({ type:'IN_LUNCH',  label:'Regreso almuerzo', expected: lunchEnd });
-  }
-  result.push({ type:'OUT', label:'Salida', expected: shiftEnd });
-  return result;
-}
+const getExpectedPunches = marcasEsperadas;
 
 // ── DayCorrectionModal ────────────────────────────────────────────────────────
 function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, dayConfig, isDemoMode, onSave, user, branchNameById }) {
@@ -351,84 +331,14 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
 
 // ── DayCard ───────────────────────────────────────────────────────────────────
 function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchNameById, onCorrect, onMarkReviewed, reviewedPunchIds }) {
+  // Qué pasó ese día: `auditarDia` (núcleo, la misma regla que la app).
   const now = useMemo(() => new Date(), []);
-  const dayD   = new Date(dateStr + 'T12:00:00Z');
-  const dow    = dayD.getUTCDay();
-  const isFuture   = new Date(`${dateStr}T23:59:59-06:00`) > now;
-  const isToday    = getCSTDateStr(now) === dateStr;
-
-  // Schedule for this day — domingo es "0", igual que en la tabla (ver `claveDeDia`)
-  const dayKey    = String(dow);
-  const dayConfig    = emp.weeklySchedule?.[dayKey] || emp.weeklySchedule?.[dow];
-  const isNoSchedule = !dayConfig;
-  const isExplicitOff = !isNoSchedule && (dayConfig.isOff || dayConfig.isOffDay || dayConfig.shiftId === 'LIBRE');
-  const isOff = isNoSchedule || isExplicitOff;
-  const shiftId   = dayConfig?.shiftId && dayConfig.shiftId !== 'LIBRE' ? String(dayConfig.shiftId) : null;
-  const shift     = shiftId ? shiftById.get(shiftId) : null;
-  const customStart = dayConfig?.customStart || null;
-  const customEnd   = dayConfig?.customEnd   || null;
-  const shiftStart  = customStart || shift?.start_time?.substring(0,5) || shift?.start;
-  const shiftEnd    = customEnd   || shift?.end_time?.substring(0,5)   || shift?.end;
-
-  // Punches for this day
-  const dayPunches = useMemo(() =>
-    (emp.attendance || [])
-      .filter(p => getCSTDateStr(p.timestamp) === dateStr)
-      .sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp)),
-    [emp.attendance, dateStr]
-  );
-
-  const entryPunch = dayPunches.find(p => IN_TYPES.has(p.type));
-  const exitPunch  = [...dayPunches].reverse().find(p => OUT_TYPES.has(p.type));
-  const lunchOut   = dayPunches.find(p => p.type === 'OUT_LUNCH');
-  const lunchIn    = dayPunches.find(p => p.type === 'IN_LUNCH');
-
-  // Timesheet for this day
-  const ts = timesheets.find(t => String(t.employee_id) === String(emp.id) && t.work_date === dateStr);
-
-  // Status flags
-  /* eslint-disable react-hooks/preserve-manual-memoization -- `shift` viene de shiftById.get() (Map),
-     el compiler lo trata conservadoramente como mutable aunque es const; la memoización manual sigue
-     funcionando igual */
-  const inconsistencies = useMemo(() => {
-    if (isOff || isFuture || !shift) return [];
-    const expected = getExpectedPunches(dateStr, shift, dayConfig);
-    const punched  = new Set(dayPunches.map(p => p.type));
-    return expected.filter(ep => {
-      if (ep.type === 'IN')  return !dayPunches.some(p => IN_TYPES.has(p.type));
-      if (ep.type === 'OUT') return !dayPunches.some(p => OUT_TYPES.has(p.type));
-      return !punched.has(ep.type);
-    }).filter(ep => ep.expected && ep.expected < now);
-  }, [dayPunches, isOff, isFuture, shift, dayConfig, dateStr, now]);
-  /* eslint-enable react-hooks/preserve-manual-memoization */
-
-  const isAutoDay   = !!exitPunch && isAutoPunch(exitPunch);
-  const isPendDay   = dayPunches.some(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id));
-  const isEditedDay = dayPunches.some(p => isEditedPunch(p));
-  const editedInfo  = dayPunches.find(p => isEditedPunch(p));
-
-  // Cross-branch detection — kiosk writes branchId inside details.audit_info;
-  // demo mode has it at p.branch_id directly — support both.
-  const crossBranchPunch = dayPunches.find(p => {
-    const bid = p.details?.audit_info?.branchId ?? p.branch_id;
-    return bid && String(bid) !== String(homeBranchId);
-  });
-  const crossBranchName = crossBranchPunch ? (() => {
-    const bid = crossBranchPunch.details?.audit_info?.branchId ?? crossBranchPunch.branch_id;
-    return branchNameById.get(String(bid)) || 'otra sucursal';
-  })() : null;
-
-  // Late minutes (prefer timesheet, else compute)
-  // El `||` y no `??` es deliberado, pero conviene saber qué implica: con
-  // `late_minutes` en 0 —que es «puntual», y hoy lo son las 429 filas— el
-  // timesheet se ignora y se recalcula. Las dos fórmulas dan lo mismo, así que
-  // no cambia nada visible; el día que alguien CORRIJA una tardanza a 0 en el
-  // timesheet, la pantalla la volvería a mostrar. Anotado en la auditoría del
-  // 2026-08-23 y no cambiado acá: tocarlo mueve lo que ve el usuario.
-  const lateMin = ts?.late_minutes || minutosDeTardanza(
-    entryPunch?.timestamp,
-    shiftStart ? buildCSTDate(dateStr, shiftStart) : null,
-  );
+  const {
+    dayD, dow, isFuture, isToday, dayConfig, isNoSchedule, isOff, shift, shiftStart, shiftEnd,
+    dayPunches, entryPunch, exitPunch, lunchOut, lunchIn, ts, inconsistencies,
+    isAutoDay, isPendDay, isEditedDay, editedInfo, crossBranchName, lateMin,
+  } = useMemo(() => auditarDia({ dateStr, emp, shiftById, timesheets, homeBranchId, branchNameById, reviewedPunchIds, now }),
+    [dateStr, emp, shiftById, timesheets, homeBranchId, branchNameById, reviewedPunchIds, now]);
 
   const cardBg = isToday
     ? 'bg-brand/[0.09] border-brand/25 shadow-[var(--shadow-glow-brand-sm)]'
@@ -943,21 +853,9 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   const isCurrentQuincena = useMemo(() => selectedQuincena === getCurrentQuincenaStart(), [selectedQuincena]);
   const isQuincenaPast = useMemo(() => selectedQuincena < getCurrentQuincenaStart(), [selectedQuincena]);
 
-  const quincenaByEmployee = useMemo(() => {
-    const map = new Map();
-    quincenaTS.forEach(ts => {
-      const eid = String(ts.employee_id);
-      if (!map.has(eid)) map.set(eid, { regular: 0, overtime: 0, late: 0, absent: 0, approved: 0, total: 0 });
-      const acc = map.get(eid);
-      acc.regular += ts.regular_hours || 0;
-      acc.overtime += ts.overtime_hours || 0;
-      acc.late += ts.late_minutes || 0;
-      if (ts.is_absent) acc.absent += 1;
-      if (ts.status === 'APPROVED') acc.approved += 1;
-      acc.total += 1;
-    });
-    return map;
-  }, [quincenaTS]);
+  // La suma de la quincena por persona: núcleo (`resumenDeQuincena`), la
+  // misma de la app.
+  const quincenaByEmployee = useMemo(() => resumenDeQuincena(quincenaTS).porPersona, [quincenaTS]);
 
   const quincenaSummary = useMemo(() => {
     let filtered = filterBranch
@@ -966,7 +864,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
     if (search.trim()) filtered = smartFilter(search, filtered, e => [e.name]).results;
     return filtered.map(emp => ({
       emp,
-      stats: quincenaByEmployee.get(String(emp.id)) || { regular: 0, overtime: 0, late: 0, absent: 0, approved: 0, total: 0 },
+      stats: quincenaByEmployee.get(String(emp.id)) || RESUMEN_VACIO,
     })).sort((a, b) => getRoleOrder(a.emp.role) - getRoleOrder(b.emp.role));
   }, [employees, filterBranch, search, quincenaByEmployee]);
 

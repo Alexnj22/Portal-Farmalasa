@@ -9,7 +9,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import NuevoConteoModal from '../components/inventario/NuevoConteoModal';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { ALCANCE_CONTEO } from '@nucleo/utils/conteoDeInventario';
+import { ALCANCE_CONTEO, faltaAjusteDelConteo, FOCOS_CONTEO, resumenDeConteos, valorNetoDelConteo } from '@nucleo/utils/conteoDeInventario';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import FilterBar from '../components/common/FilterBar';
@@ -203,25 +203,17 @@ export default function ConteoInventarioView() {
     // Un conteo CERRADO con diferencias y sin ajuste registrado es trabajo a
     // medias: la diferencia está medida y firmada, pero el stock del ERP sigue
     // mintiendo. Antes solo se veía fila por fila.
-    const faltaAjuste = (c) => c.status === 'CERRADO' && c.total_diferencias > 0 && !c.ajuste_erp_aplicado;
+    // La regla vive en el núcleo (`faltaAjusteDelConteo`), con la app nativa.
+    const faltaAjuste = faltaAjusteDelConteo;
 
     const resumen = useMemo(() => {
         const base = branchFilter
             ? (conteos || []).filter((c) => String(c.branch_id) === branchFilter)
             : (conteos || []);
-        return {
-            total: base.length,
-            abiertos: base.filter((c) => ['BORRADOR', 'EN_PROGRESO'].includes(c.status)).length,
-            porAprobar: base.filter((c) => c.status === 'FINALIZADO').length,
-            sinAjuste: base.filter(faltaAjuste).length,
-        };
+        return resumenDeConteos(base);
     }, [conteos, branchFilter]);
 
-    const FOCOS = {
-        ABIERTOS: (c) => ['BORRADOR', 'EN_PROGRESO'].includes(c.status),
-        POR_APROBAR: (c) => c.status === 'FINALIZADO',
-        SIN_AJUSTE: faltaAjuste,
-    };
+    const FOCOS = FOCOS_CONTEO;
 
     const { results: filtered, isFuzzy: isSearchFuzzy } = useMemo(() => {
         let base = branchFilter
@@ -362,7 +354,7 @@ export default function ConteoInventarioView() {
                     </div>
                 ) : filtered.map((c) => {
                     const es = ESTADO_CFG[c.status] || ESTADO_CFG.BORRADOR;
-                    const valorNeto = (c.valor_sobrante || 0) - (c.valor_faltante || 0);
+                    const valorNeto = valorNetoDelConteo(c);
                     return (
                         <FilaConteoMovil
                             key={c.id}
@@ -442,7 +434,7 @@ export default function ConteoInventarioView() {
             }}>
                 {filtered.map((c, i) => {
                     const es = ESTADO_CFG[c.status] || ESTADO_CFG.BORRADOR;
-                    const valorNeto = (c.valor_sobrante || 0) - (c.valor_faltante || 0);
+                    const valorNeto = valorNetoDelConteo(c);
                     return (
                         <DataRow key={c.id} index={i} onClick={() => navigate(`/conteo-inventario/${c.id}`)}>
                             <DataCell><span className="text-body-sm font-semibold text-content-2">{fmtDate(c.created_at)}</span></DataCell>

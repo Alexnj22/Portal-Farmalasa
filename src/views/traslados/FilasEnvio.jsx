@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { Ban, Check, CornerUpLeft, Loader2, PackageCheck, PackageX, Printer, Send } from 'lucide-react';
+import { Ban, Check, CornerUpLeft, Info, PackageCheck, PackageX, Printer, Send } from 'lucide-react';
+import SegmentedControl from '../../components/common/SegmentedControl';
+import { Trayecto, PildoraEspera } from './PiezasTraslado';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -39,6 +41,13 @@ const ESTADO_ROTULO = {
     // Salió del estante y nunca apareció en la caja. No es «se la quedaron» ni
     // «te la devuelven»: es el hueco que hasta hoy no tenía dónde decirse.
     no_llego: 'no llegó',
+};
+
+/* El color de cada estado en su `Badge`. Habla del renglón, no del envío: en
+ * una misma caja puede haber uno que se quedaron y otro que vuelve. */
+const ESTADO_VARIANTE = {
+    por_enviar: 'neutral', error: 'danger', enviada: 'info', aceptada: 'success',
+    devuelta: 'danger', devuelta_recibida: 'neutral', no_llego: 'warning',
 };
 
 /**
@@ -83,37 +92,62 @@ function BotonReimprimir({ envio }) {
     );
 }
 
-/** El recorrido, siempre en el mismo sentido.
+/** Qué lleva la caja, renglón por renglón — con su estado cuando ya se movió.
  *
- * Y de qué ESTANTE salió cuando no es el de siempre: dos envíos de Bodega se
- * ven idénticos si sólo se nombra la sala, y uno que sale del área donde se
- * aparta lo próximo a vencer tiene que decirlo — es lo que explica por qué
- * llegó y qué hay que mirar al abrir la caja. Sale de un booleano y no del
- * nombre de la sala: un rótulo no es una clave, y ese nombre además se busca. */
-function Recorrido({ envio }) {
+ * Una fila por producto: el nombre a la izquierda, la cuenta a la derecha y el
+ * estado como insignia. Era una sola línea de 9 px con todo pegado por puntos
+ * —«GANGLIOSIDE · 4 × CAJA · se la quedaron (Otro)»—, y en una caja de tres
+ * productos había que leerla entera para saber cuál había vuelto. */
+function ListaRenglones({ lineas, conEstado = false, conMotivo = false }) {
     return (
-        <span className="truncate">
-            {envio?.origen_branch_name ?? 'otra sala'}
-            {envio?.origen_vencidos ? ' · Área de Vencidos' : ''}
-            {' → '}{envio?.branch_name ?? 'destino'}
-        </span>
+        <ul className="flex flex-col divide-y divide-divider rounded-xl border border-divider">
+            {lineas.map(l => (
+                <li key={l.posicion} className="px-3 py-2 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                        <p className="text-body-sm font-black text-content leading-snug line-clamp-2">
+                            {l.descripcion ?? `Producto ${l.erp_product_id}`}
+                        </p>
+                        <p className="text-caption font-semibold text-content-2 tabular-nums">
+                            {l.cantidad} × {l.presentacion_tipo}
+                            {l.unidades != null && ` · ${l.unidades} ${l.unidades === 1 ? 'unidad' : 'unidades'}`}
+                        </p>
+                        {(conMotivo || conEstado) && l.motivo_rechazo && (
+                            <p className="text-caption text-content-3 leading-snug mt-0.5">
+                                {l.motivo_rechazo}{l.nota_rechazo ? `: ${l.nota_rechazo}` : ''}
+                            </p>
+                        )}
+                        {/* Cuándo lo devolvieron: es lo que dice si la caja ya
+                            debería haber llegado. */}
+                        {conMotivo && l.devuelto_at && (
+                            <p className="text-caption text-content-3 leading-snug">
+                                devuelto el {fmtFechaLarga(String(l.devuelto_at).slice(0, 10))}
+                            </p>
+                        )}
+                    </div>
+                    {conEstado && (
+                        <Badge variant={ESTADO_VARIANTE[l.estado] ?? 'neutral'} size="sm" className="shrink-0 mt-0.5">
+                            {ESTADO_ROTULO[l.estado] ?? l.estado}
+                        </Badge>
+                    )}
+                </li>
+            ))}
+        </ul>
     );
 }
 
-/** Qué lleva la caja, renglón por renglón — con su estado cuando ya se movió. */
-function ListaRenglones({ lineas, conEstado = false }) {
+/* El envoltorio de las cuatro: el mismo vidrio, el mismo relleno y el `h-full`
+ * que, con el `mt-auto` del pie, deja los botones de una fila a la misma
+ * altura — igual que las tarjetas de «En camino». */
+function Tarjeta({ children }) {
+    return <div data-surface="card" className="px-4 py-3.5 flex flex-col gap-3 h-full">{children}</div>;
+}
+
+/* El pie: la línea divisoria y, a la derecha, la acción. En el teléfono el
+ * botón baja a su renglón y ocupa el ancho — ahí es el blanco de dedo (§32). */
+function Pie({ children }) {
     return (
-        <div className="flex flex-col gap-0.5">
-            {lineas.map(l => (
-                <p key={l.posicion} className="text-micro text-content-2 font-semibold leading-snug">
-                    <span className="text-content">{l.descripcion ?? `Producto ${l.erp_product_id}`}</span>
-                    {' · '}{l.cantidad} × {l.presentacion_tipo}
-                    {conEstado && <span className="text-content-3"> · {ESTADO_ROTULO[l.estado] ?? l.estado}</span>}
-                    {conEstado && l.motivo_rechazo && (
-                        <span className="text-content-3"> ({l.motivo_rechazo})</span>
-                    )}
-                </p>
-            ))}
+        <div className="mt-auto pt-3 border-t border-divider flex flex-wrap items-center gap-x-3 gap-y-2">
+            {children}
         </div>
     );
 }
@@ -122,11 +156,8 @@ function ListaRenglones({ lineas, conEstado = false }) {
  * El encabezado que comparten las cuatro.
  *
  * ── Por qué el número manda ───────────────────────────────────────────────
- * Tenía un ícono de 13px y tres renglones del mismo peso: cuántos productos,
- * el recorrido, el motivo. Nada anclaba la mirada —«no se le ve peso a nada»—
- * y lo primero que hay que saber de una caja es CUÁNTO trae, porque es lo que
- * se cuenta contra el estante. El ícono se va: qué es esto ya lo dice el
- * encabezado de la sección, y el color del ancla ya dice en qué estado está.
+ * Lo primero que hay que saber de una caja es CUÁNTO trae, porque es lo que se
+ * cuenta contra el estante. El color del ancla dice en qué estado está.
  *
  * @param tono  El color del ancla, que habla del ESTADO y nunca del tipo:
  *              'warning' lo que espera acción tuya, 'danger' lo que vuelve,
@@ -137,8 +168,12 @@ function Cabecera({ envio, tono = 'brand', ahora = null }) {
     const unidades = (envio.lineas ?? []).reduce((s, l) => s + Number(l.unidades ?? 0), 0);
     /* El reloj llega por prop y no se lee acá: `Date.now()` en el render es una
      * llamada impura —el linter la corta— y además serían N relojes pintando el
-     * mismo minuto. Uno solo arriba, como en el traslado en camino. */
+     * mismo minuto. */
     const espera = desdeHace(envio.created_at, ahora);
+    /* Un envío sin contestar deja el producto EN TRÁNSITO —ni en una sala ni en
+     * la otra, y nadie lo puede vender—, así que la antigüedad es lo que dice si
+     * hay que levantar el teléfono. Se tiñe pasadas 24 h, igual que el traslado
+     * en camino, y a los dos días el cron manda además su recordatorio. */
     const viejo  = Boolean(ahora) && (ahora - new Date(envio.created_at).getTime()) > 86400000;
     const paleta = {
         brand:   'bg-brand/10 ring-brand/20 text-brand-text',
@@ -148,58 +183,54 @@ function Cabecera({ envio, tono = 'brand', ahora = null }) {
 
     return (
         <div className="flex items-start gap-3.5">
-            <span className={`shrink-0 w-[3.25rem] rounded-xl px-1 py-1.5 flex flex-col items-center
+            {/* `3.75rem` y no los `3.25` de las otras tarjetas: «PRODUCTO» en
+                versalitas mide más que el ancla del traslado («CAJA», «GOTAS»)
+                y se salía por los dos lados. */}
+            <span className={`shrink-0 w-[3.75rem] rounded-xl px-1 py-1.5 flex flex-col items-center
                               justify-center ring-1 ring-inset ${paleta}`}>
-                <span className="text-h3 font-black leading-none tabular-nums">{n}</span>
+                <span className="text-title-sm font-black leading-none tabular-nums">{n}</span>
                 <span className="mt-1 text-[0.5625rem] font-black uppercase tracking-wider leading-none opacity-80">
                     {n === 1 ? 'producto' : 'prod.'}
                 </span>
             </span>
 
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 flex flex-col gap-2">
                 {/* El recorrido ES el título de un envío: no hay UN producto que
-                    nombrar —son varios— y lo que distingue una tarjeta de otra
-                    es de dónde sale y a dónde va. */}
-                <p className="text-body font-black text-content leading-snug truncate">
-                    <Recorrido envio={envio} />
-                </p>
-                {/* Cuánto lleva. Un envío sin contestar deja el producto EN
-                    TRÁNSITO —ni en una sala ni en la otra, y nadie lo puede
-                    vender—, así que la antigüedad no es un adorno: es lo que
-                    dice si hay que levantar el teléfono. Se tiñe pasadas 24 h,
-                    igual que el traslado en camino, y a los dos días el cron
-                    manda además su recordatorio. */}
-                <p className="text-label font-bold text-content-2 mt-0.5 truncate">
-                    {unidades} {unidades === 1 ? 'unidad' : 'unidades'}
-                    <span className="text-content-3 font-medium"> · {fmtCuando(envio.created_at)}</span>
-                    {espera && (
-                        <span className={`font-black ${viejo ? 'text-danger-text' : 'text-content-3'}`}>
-                            {' · '}{espera}
-                        </span>
-                    )}
-                </p>
-                <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-                    <Badge variant="brand" size="sm">{envio.motivo_tipo ?? 'sin motivo'}</Badge>
+                    nombrar y lo que distingue una tarjeta de otra es de dónde
+                    sale y a dónde va. La espera, a su derecha. */}
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                    {/* De qué ESTANTE salió cuando no es el de siempre: sale de
+                        un booleano y no del nombre de la sala — un rótulo no es
+                        una clave. */}
+                    <Trayecto desde={envio?.origen_branch_name} hasta={envio?.branch_name}
+                        nota={envio?.origen_vencidos ? 'Área de Vencidos' : null} />
+                    {espera && <PildoraEspera texto={espera} trabado={viejo} />}
                 </div>
-                {/* El motivo escrito: desde el 2026-08-23 es obligatorio, así que
-                    es el renglón que de verdad explica la caja. Va en tinta de
-                    contenido y no de nota al pie. */}
-                {envio.reason && envio.reason !== envio.motivo_tipo && (
-                    <p className="text-micro text-content-2 mt-1.5 leading-snug line-clamp-2"
-                        title={envio.reason}>
-                        {envio.reason}
-                    </p>
-                )}
-                {/* La foto, cuando la hay. Va en la cabecera —y no dentro del
-                    bloque de decidir— porque el envío le aparece a las dos
-                    salas y las dos la necesitan: quien recibe para decidir, y
-                    quien mandó para saber qué mandó. Hoy sólo la lleva la
-                    avería, que es el único motivo que no se puede comprobar
-                    contra un dato: cuando la caja llega, el daño ya viajó. */}
+
+                <p className="text-label font-bold text-content-2 truncate">
+                    {unidades} {unidades === 1 ? 'unidad' : 'unidades'}
+                    <span className="text-content-3 font-medium"> · salió {fmtCuando(envio.created_at)}</span>
+                </p>
+
+                {/* El motivo: la insignia dice de qué tipo es y el texto lo
+                    explica — desde el 2026-08-23 es obligatorio, así que es el
+                    renglón que de verdad explica la caja. `info` y no `brand`:
+                    `brand` no es una variante de `Badge` y caía en gris. */}
+                <div className="flex items-start gap-2 min-w-0">
+                    <Badge variant="info" size="sm" className="shrink-0 mt-px">{envio.motivo_tipo ?? 'sin motivo'}</Badge>
+                    {envio.reason && envio.reason !== envio.motivo_tipo && (
+                        <p className="text-caption text-content-2 leading-snug line-clamp-2 min-w-0"
+                            title={envio.reason}>
+                            {envio.reason}
+                        </p>
+                    )}
+                </div>
+
+                {/* La foto, cuando la hay. En la cabecera porque el envío le
+                    aparece a las dos salas y las dos la necesitan. Hoy sólo la
+                    lleva la avería: cuando la caja llega, el daño ya viajó. */}
                 {envio.evidencia_urls?.length > 0 && (
-                    <div className="mt-2">
-                        <EvidenciaFotos urls={envio.evidencia_urls} titulo="Foto del daño" />
-                    </div>
+                    <EvidenciaFotos urls={envio.evidencia_urls} titulo="Foto del daño" />
                 )}
             </div>
         </div>
@@ -271,59 +302,55 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
         onHecho?.();
     };
 
+    const decididas = pendientes.filter(l => decision[l.posicion]?.que).length;
+    const origen = envio.origen_branch_name ?? 'la otra sala';
+
     return (
-        <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
+        <Tarjeta>
             <Cabecera envio={envio} tono="warning" ahora={ahora} />
 
-            <div className="flex flex-col gap-1.5">
+            <ul className="flex flex-col divide-y divide-divider rounded-xl border border-divider">
                 {pendientes.map(l => {
                     const d = decision[l.posicion] ?? {};
                     return (
-                        <div key={l.posicion} className="rounded-xl border border-divider px-2.5 py-2 flex flex-col gap-1.5">
-                            <div className="min-w-0">
-                                <p className="text-micro font-black text-content leading-snug">
-                                    {l.descripcion ?? `Producto ${l.erp_product_id}`}
-                                </p>
-                                <p className="text-micro text-content-2 font-semibold">
-                                    {l.cantidad} × {l.presentacion_tipo} · {l.unidades}{' '}
-                                    {l.unidades === 1 ? 'unidad' : 'unidades'}
-                                </p>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <Button size="xs"
-                                    variant={d.que === DECISIONES_ENVIO.aceptar ? 'primary' : 'secondary'}
-                                    icon={Check}
-                                    className="min-h-[var(--tap-min)] flex-1"
-                                    onClick={() => marcar(l.posicion, { que: DECISIONES_ENVIO.aceptar })}>
-                                    Me la quedo
-                                </Button>
-                                <Button size="xs"
-                                    variant={d.que === DECISIONES_ENVIO.devolver ? 'danger' : 'secondary'}
-                                    icon={CornerUpLeft}
-                                    className="min-h-[var(--tap-min)] flex-1"
-                                    onClick={() => marcar(l.posicion, { que: DECISIONES_ENVIO.devolver })}>
-                                    Devolver
-                                </Button>
-                            </div>
-                            {/* ── El tercero, y va SOLO en su renglón ────────
-                                No es una variante de los otros dos: los dos de
-                                arriba hablan de un producto que llegó, y éste
-                                dice que la caja venía sin él. Aceptarlo metería
-                                al inventario algo que no está en el estante, y
-                                devolverlo mandaría de vuelta algo que nunca
-                                salió de la otra sala.
+                        <li key={l.posicion} className="px-3 py-2.5 flex flex-col gap-2">
+                            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                                <div className="min-w-0 flex-1 basis-48">
+                                    <p className="text-body-sm font-black text-content leading-snug line-clamp-2">
+                                        {l.descripcion ?? `Producto ${l.erp_product_id}`}
+                                    </p>
+                                    <p className="text-caption text-content-2 font-semibold tabular-nums">
+                                        {l.cantidad} × {l.presentacion_tipo} · {l.unidades}{' '}
+                                        {l.unidades === 1 ? 'unidad' : 'unidades'}
+                                    </p>
+                                </div>
+                                {/* ── Una de tres, y ninguna marcada ─────────
+                                    Eran tres botones —dos arriba y «No llegó»
+                                    solo abajo— que cambiaban de variante según
+                                    lo elegido, y dos de esas variantes
+                                    (`danger`, `warning`) no existen en `Button`:
+                                    lo elegido no se distinguía. Una de N es un
+                                    `SegmentedControl` (§15.3), y cada opción
+                                    lleva su color porque el color ES el dato.
 
-                                Abajo y a lo ancho, no como tercera columna: con
-                                390 px de pantalla tres botones dejan cada
-                                rótulo en 100 px, y «Me la quedo» se parte. Y de
-                                paso queda claro que es el camino excepcional. */}
-                            <Button size="xs"
-                                variant={d.que === DECISIONES_ENVIO.noLlego ? 'warning' : 'secondary'}
-                                icon={PackageX}
-                                className="min-h-[var(--tap-min)] w-full"
-                                onClick={() => marcar(l.posicion, { que: DECISIONES_ENVIO.noLlego })}>
-                                No llegó en la caja
-                            </Button>
+                                    «No llegó» no es una variante de los otros
+                                    dos —ésos hablan de un producto que llegó—,
+                                    pero sigue siendo la misma pregunta: qué
+                                    pasa con este renglón. Nada viene marcado:
+                                    aceptar es meter el producto a tu inventario,
+                                    y eso no puede pasar por no mirar. */}
+                                <SegmentedControl
+                                    size="sm"
+                                    label={`Qué pasa con ${l.descripcion ?? 'el producto'}`}
+                                    value={d.que ?? null}
+                                    onChange={v => marcar(l.posicion, { que: v })}
+                                    options={[
+                                        { value: DECISIONES_ENVIO.aceptar,  label: 'Me la quedo', tone: 'success' },
+                                        { value: DECISIONES_ENVIO.devolver, label: 'Devolver',    tone: 'danger' },
+                                        { value: DECISIONES_ENVIO.noLlego,  label: 'No llegó',    tone: 'warning' },
+                                    ]}
+                                />
+                            </div>
                             {d.que === DECISIONES_ENVIO.devolver && (
                                 <div className="flex flex-col gap-1.5">
                                     <LiquidSelect
@@ -354,41 +381,47 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
                                     aria-label={`Qué pasó con ${l.descripcion ?? 'el producto'}`}
                                 />
                             )}
-                        </div>
+                        </li>
                     );
                 })}
-            </div>
+            </ul>
 
-            {error && <p className="text-micro text-danger-text font-semibold leading-snug">{error}</p>}
+            {/* Qué hace cada respuesta. Antes eran tres renglones de prosa al
+                pie; ahora una línea por camino, con el color de su opción. */}
+            <ul className="flex flex-col gap-1 text-caption text-content-2 leading-snug">
+                <li className="flex items-start gap-1.5">
+                    <Info size={12} strokeWidth={2.5} className="shrink-0 mt-px text-content-3" />
+                    <span>
+                        <b className="text-success-text">Me la quedo</b> entra a tu inventario ·{' '}
+                        <b className="text-danger-text">Devolver</b> sale de vuelta y {origen} lo confirma ·{' '}
+                        <b className="text-warning-text">No llegó</b> queda anotado y {origen} lo busca.
+                    </span>
+                </li>
+            </ul>
 
-            <p className="text-micro text-content-3 font-medium leading-snug">
-                Lo que te quedas entra a tu inventario. Lo que devuelves sale de vuelta en el momento y
-                {' '}{envio.origen_branch_name ?? 'la otra sala'} lo confirma cuando le llegue. Lo que no
-                llegó no entra ni sale: queda anotado y {envio.origen_branch_name ?? 'la otra sala'} lo
-                busca.
-            </p>
+            {error && <p className="text-caption text-danger-text font-semibold leading-snug">{error}</p>}
 
-            <div className="flex items-center gap-1.5">
-                {/* El atajo sólo existe cuando hay algo que atajar. Con UN
-                    renglón, «Aceptar todo» y su «Me la quedo» producen el mismo
-                    estado exacto —`aceptarTodo()` sobre un único elemento— y la
-                    tarjeta terminaba con TRES botones para una decisión que es
-                    de dos caminos. Reportado sobre una avería de un producto.
-                    No se toca la regla de al lado: nada viene marcado y
-                    «Confirmar» sigue siendo el único que escribe. */}
+            <Pie>
+                <span className="text-caption font-bold text-content-3 tabular-nums">
+                    {decididas} de {pendientes.length} {pendientes.length === 1 ? 'decidido' : 'decididos'}
+                </span>
+                {/* El atajo sólo existe cuando hay algo que atajar: con UN
+                    renglón, «Aceptar todo» y «Me la quedo» producen el mismo
+                    estado. Nada viene marcado y «Confirmar» sigue siendo el
+                    único que escribe. */}
                 {pendientes.length > 1 && (
-                    <Button size="sm" variant="ghost" className="min-h-[var(--tap-min)]"
+                    <Button size="sm" variant="ghost" icon={Check} className="min-h-[var(--tap-min)]"
                         onClick={aceptarTodo} disabled={enviando}>
                         Aceptar todo
                     </Button>
                 )}
-                <Button size="sm" variant="primary" icon={enviando ? Loader2 : Check}
-                    className="min-h-[var(--tap-min)] flex-1"
+                <Button size="sm" tone="success" soft icon={Check} loading={enviando}
+                    className="min-h-[var(--tap-min)] w-full sm:w-auto sm:ml-auto"
                     onClick={confirmar} disabled={!completa || enviando}>
                     {enviando ? 'Guardando…' : 'Confirmar'}
                 </Button>
-            </div>
-        </div>
+            </Pie>
+        </Tarjeta>
     );
 }
 
@@ -454,27 +487,20 @@ export function FilaEnvioPorDespachar({ envio, onHecho, ahora = null }) {
     };
 
     return (
-        <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
+        <Tarjeta>
             <Cabecera envio={envio} tono="warning" ahora={ahora} />
             <ListaRenglones lineas={envio.lineas ?? []} conEstado />
             {/* Lo que el sistema contestó cuando no salió. Es lo que dice si hay
                 que ir a mirar el estante o si alcanza con volver a apretar. */}
             {faltan.filter(l => l.error).map(l => (
-                <p key={l.posicion} className="text-micro text-danger-text font-semibold leading-snug">
+                <p key={l.posicion} className="text-caption text-danger-text font-semibold leading-snug">
                     {l.descripcion}: {l.error}
                 </p>
             ))}
-            {error && <p className="text-micro text-danger-text font-semibold leading-snug">{error}</p>}
-
-            {/* Reimprimir también acá: ésta es la tarjeta de la sala que TIENE la
-                bolsa en el mostrador, o sea la única que puede volver a pegarle
-                el papel. Estaba sólo en «Enviaste», que es la misma sala pero
-                cuando ya salió todo — así que un despacho parcial se quedaba sin
-                forma de reimprimir justo mientras la caja seguía ahí. */}
-            {!cancelando && <BotonReimprimir envio={envio} />}
+            {error && <p className="text-caption text-danger-text font-semibold leading-snug">{error}</p>}
 
             {cancelando ? (
-                <div className="flex flex-col gap-2">
+                <div className="mt-auto pt-3 border-t border-divider flex flex-col gap-2">
                     <PortalTextarea
                         rows={2} required
                         label="Por qué lo cancelas"
@@ -482,51 +508,59 @@ export function FilaEnvioPorDespachar({ envio, onHecho, ahora = null }) {
                         onChange={e => setMotivoCancel(e.target.value)}
                         placeholder="Ej.: me equivoqué de sala"
                     />
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center justify-end gap-1.5">
                         <Button size="sm" variant="ghost" className="min-h-[var(--tap-min)]"
                             onClick={() => { setCancelando(false); setMotivoCancel(''); }} disabled={enviando}>
                             Volver
                         </Button>
-                        <Button size="sm" variant="danger" className="min-h-[var(--tap-min)] flex-1"
+                        <Button size="sm" variant="destructive" icon={Ban} loading={enviando}
+                            className="min-h-[var(--tap-min)]"
                             onClick={cancelar} disabled={enviando || !motivoCancel.trim()}>
                             {enviando ? 'Cancelando…' : 'Cancelar el envío'}
                         </Button>
                     </div>
                 </div>
             ) : (
-                <div className="flex items-center gap-1.5">
+                <Pie>
+                    {/* Reimprimir también acá: ésta es la sala que TIENE la bolsa
+                        en el mostrador, la única que puede volver a pegarle el
+                        papel mientras un despacho parcial sigue ahí. */}
+                    <BotonReimprimir envio={envio} />
                     {/* Cancelar es la salida del envío que no puede salir: sin
-                        ella, un envío cuyo despacho falla entero se queda en la
-                        lista para siempre, y una lista con basura que no se
-                        puede limpiar se deja de mirar entera. */}
+                        ella, un despacho que falla entero se queda en la lista
+                        para siempre. Sólo si NO salió nada — en cuanto un
+                        renglón salió, ofrecerlo sería prometerlo. */}
                     {nadaSalio && (
                         <Button size="sm" variant="ghost" icon={Ban} className="min-h-[var(--tap-min)]"
                             onClick={() => setCancelando(true)} disabled={enviando}>
                             Cancelar
                         </Button>
                     )}
-                    <Button size="sm" variant="primary" icon={enviando ? Loader2 : Send}
-                        className="min-h-[var(--tap-min)] flex-1"
+                    <Button size="sm" tone="success" soft icon={Send} loading={enviando}
+                        className="min-h-[var(--tap-min)] w-full sm:w-auto sm:ml-auto"
                         onClick={reintentar} disabled={enviando}>
                         {enviando ? 'Enviando…' : `Volver a enviar ${faltan.length === 1 ? 'el producto' : `los ${faltan.length}`}`}
                     </Button>
-                </div>
+                </Pie>
             )}
-        </div>
+        </Tarjeta>
     );
 }
 
 /* ─── Lo que ya salió y esperás respuesta ─────────────────────────────────── */
 export function FilaEnvioEnCamino({ envio, ahora = null }) {
     return (
-        <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
+        <Tarjeta>
             <Cabecera envio={envio} tono="brand" ahora={ahora} />
             <ListaRenglones lineas={envio.lineas ?? []} conEstado />
-            <p className="text-micro text-content-3 font-medium leading-snug">
-                {envio.branch_name ?? 'La otra sala'} decide qué se queda cuando abra la caja.
-            </p>
-            <BotonReimprimir envio={envio} />
-        </div>
+            <Pie>
+                <span className="flex items-center gap-1.5 min-w-0 text-caption font-semibold text-content-3">
+                    <Info size={12} strokeWidth={2.5} className="shrink-0" />
+                    <span className="truncate">{envio.branch_name ?? 'La otra sala'} decide qué se queda al abrir la caja.</span>
+                </span>
+                <span className="sm:ml-auto"><BotonReimprimir envio={envio} /></span>
+            </Pie>
+        </Tarjeta>
     );
 }
 
@@ -546,30 +580,22 @@ export function FilaDevolucionPorRecibir({ envio, onHecho, ahora = null }) {
     };
 
     return (
-        <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
+        <Tarjeta>
             <Cabecera envio={envio} tono="danger" ahora={ahora} />
-            <div className="flex flex-col gap-0.5">
-                {devueltas.map(l => (
-                    <p key={l.posicion} className="text-micro text-content-2 font-semibold leading-snug">
-                        <span className="text-content">{l.descripcion ?? `Producto ${l.erp_product_id}`}</span>
-                        {' · '}{l.cantidad} × {l.presentacion_tipo}
-                        {l.motivo_rechazo ? ` — ${l.motivo_rechazo}` : ''}
-                        {l.nota_rechazo ? `: ${l.nota_rechazo}` : ''}
-                        {l.devuelto_at && (
-                            <span className="text-content-3"> · {fmtFechaLarga(String(l.devuelto_at).slice(0, 10))}</span>
-                        )}
-                    </p>
-                ))}
-            </div>
-            {error && <p className="text-micro text-danger-text font-semibold leading-snug">{error}</p>}
-            {/* El botón dice lo que hay que haber hecho ANTES de apretarlo: el
-                producto vuelve a tu inventario, así que darlo por recibido sin
-                tener la caja es declarar existencia que no está en el estante. */}
-            <Button size="sm" variant="primary" icon={enviando ? Loader2 : PackageCheck}
-                className="min-h-[var(--tap-min)]"
-                onClick={recibir} disabled={enviando}>
-                {enviando ? 'Recibiendo…' : 'Ya está de vuelta en mi sala'}
-            </Button>
-        </div>
+            {/* Con el motivo de cada uno: es lo que hay que leer antes de
+                volverlo a poner en el estante. */}
+            <ListaRenglones lineas={devueltas} conMotivo />
+            {error && <p className="text-caption text-danger-text font-semibold leading-snug">{error}</p>}
+            <Pie>
+                {/* El botón dice lo que hay que haber hecho ANTES de apretarlo:
+                    el producto vuelve a tu inventario, así que darlo por recibido
+                    sin tener la caja es declarar existencia que no está. */}
+                <Button size="sm" tone="success" soft icon={PackageCheck} loading={enviando}
+                    className="min-h-[var(--tap-min)] w-full sm:w-auto sm:ml-auto"
+                    onClick={recibir} disabled={enviando}>
+                    {enviando ? 'Recibiendo…' : 'Ya está de vuelta en mi sala'}
+                </Button>
+            </Pie>
+        </Tarjeta>
     );
 }

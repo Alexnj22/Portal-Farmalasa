@@ -29216,6 +29216,10 @@ export type Database = {
         Args: { p_endpoint: string }
         Returns: undefined
       }
+      solventado_interno_aplica: {
+        Args: { p_invoice_id: number; p_rechazo_desde?: string }
+        Returns: Json
+      }
       sucursal_en_conteo: { Args: { p_branch_id: number }; Returns: Json }
       suggest_proveedor_categoria_id: {
         Args: { p_desc_actividad: string }

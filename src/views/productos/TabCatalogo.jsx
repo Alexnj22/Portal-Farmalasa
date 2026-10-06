@@ -42,7 +42,11 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
-import { COLUMNAS_DE_PRECIO, NIVELES_DE_PRECIO, nivelesVisibles } from '@nucleo/utils/preciosDeProducto';
+import {
+    COLUMNAS_DE_PRECIO, NIVELES_DE_MARGEN, NIVELES_DE_PRECIO, nivelesVisibles,
+    calcMargin, worstMarginOf, specialLossKeys, specialLossLabel, marginLabel,
+    clasificarCompras, comprasOrdenadas, historialDePreciosSinRepetir,
+} from '@nucleo/utils/preciosDeProducto';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
 
 
@@ -50,10 +54,8 @@ import { subirArchivo } from '@nucleo/utils/storageFiles';
 // (`utils/preciosDeProducto`): la app los muestra igual.
 const PRICE_FIELDS = NIVELES_DE_PRECIO;
 const PRICE_SELECT = COLUMNAS_DE_PRECIO;
-// premium and precio_7 are excluded from loss/margin checks (external/special price tiers)
-const MARGIN_FIELDS = PRICE_FIELDS.filter(f => f.key !== 'precio_7' && f.key !== 'premium');
-// only premium gets the special loss badge (precio_7 is fully excluded from all checks)
-const SPECIAL_LOSS_FIELDS = PRICE_FIELDS.filter(f => f.key === 'premium');
+// Los niveles que cuentan para el margen (sin Premium ni Precio 7): núcleo.
+const MARGIN_FIELDS = NIVELES_DE_MARGEN;
 // internal FK fields that should never appear in the changelog UI
 const CHANGELOG_HIDDEN = new Set(['laboratorio_id']);
 
@@ -62,49 +64,6 @@ const CHANGELOG_HIDDEN = new Set(['laboratorio_id']);
 function fmtP(v) {
     if (v == null || v === '' || parseFloat(v) === 0) return '—';
     return formatMoney(v);
-}
-
-function calcMargin(price, costo) {
-    const p = parseFloat(price), c = parseFloat(costo);
-    if (!p || !c || p <= 0 || c <= 0) return null;
-    return (p - c) / p * 100;
-}
-
-function allMargins(pp, fields = PRICE_FIELDS) {
-    const costo = parseFloat(pp.costo);
-    if (!costo || costo <= 0) return {};
-    const out = {};
-    fields.forEach(f => {
-        const price = parseFloat(pp[f.key]);
-        if (price > 0) out[f.key] = (price - costo) / price * 100;
-    });
-    return out;
-}
-
-function worstMarginOf(pp, fields = PRICE_FIELDS) {
-    const vals = Object.values(allMargins(pp, fields));
-    return vals.length ? Math.min(...vals) : null;
-}
-
-// Returns which special fields (premium, precio_7) have a loss for a single precio row
-function specialLossKeys(pp) {
-    const costo = parseFloat(pp.costo);
-    if (!costo || costo <= 0) return [];
-    return SPECIAL_LOSS_FIELDS
-        .filter(f => { const p = parseFloat(pp[f.key]); return p > 0 && p < costo; })
-        .map(f => f.key);
-}
-
-// Returns human-readable label for a special loss key
-function specialLossLabel(key) {
-    return key === 'premium' ? 'Premium' : 'Precio 7';
-}
-
-function marginLabel(m) {
-    if (m === null) return null;
-    if (m < 0)  return { label: 'Pérdida',    variante: 'danger'  };
-    if (m < 15) return { label: 'Margen bajo', variante: 'warning' };
-    return null;
 }
 
 // ── MarginPct ─────────────────────────────────────────────────────────────────
@@ -650,32 +609,6 @@ function resizeImage(file, maxPx, quality) {
 
 // ── Purchase history helpers ──────────────────────────────────────────────────
 
-function classifyFromPurchases(purchases) {
-    if (!purchases || purchases.length === 0) return null;
-    const today  = new Date();
-    const cut60  = new Date(today); cut60.setDate(today.getDate() - 60);
-    const cut270 = new Date(today); cut270.setDate(today.getDate() - 270);
-
-    const dates = purchases
-        .map(p => new Date(p.purchase_receipts?.fecha))
-        .filter(d => !isNaN(d.getTime()))
-        .sort((a, b) => a - b);
-
-    if (dates.length === 0) return null;
-
-    const firstDate = dates[0];
-    const lastDate  = dates[dates.length - 1];
-
-    if (firstDate >= cut60) return 'Nuevo';
-
-    const hasRecent       = lastDate >= cut60;
-    const hasIntermediate = dates.some(d => d < cut60 && d >= cut270);
-
-    if (hasRecent && !hasIntermediate) return 'Reentrada';
-    if (hasRecent) return 'Regular';
-    return null;
-}
-
 const CLASIF_STYLE = {
     Nuevo:     { variante: 'success', Icon: Sparkles  },
     Reentrada: { variante: 'chart-3', Icon: RotateCcw },
@@ -698,12 +631,10 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true, comoPanel = fal
     if (!purchases || purchases.length === 0)
         return <p className="text-label text-content-3 italic">Sin historial de compras registrado.</p>;
 
-    const clasificacion = classifyFromPurchases(purchases);
+    const clasificacion = clasificarCompras(purchases);
     const cs = clasificacion ? CLASIF_STYLE[clasificacion] : null;
 
-    const rows = [...purchases]
-        .filter(p => p.purchase_receipts)
-        .sort((a, b) => new Date(b.purchase_receipts.fecha) - new Date(a.purchase_receipts.fecha));
+    const rows = comprasOrdenadas(purchases);
 
     const allDates  = rows.map(r => new Date(r.purchase_receipts.fecha));
     const firstDate = allDates.length ? new Date(Math.min(...allDates)) : null;
@@ -795,16 +726,7 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true, comoPanel = fal
 function PriceHistorySection({ history, allowedPriceFields, comoPanel = false }) {
     const [showAll, setShowAll] = useState(false);
 
-    const deduped = useMemo(() => {
-        const out = [];
-        const lastByPres = {};
-        for (const r of (history || [])) {
-            const key = r.id_presentacion;
-            const snap = JSON.stringify([r.vineta, r.descuento_1, r.vip, r.clinica, r.mayoreo, r.premium, r.precio_7]);
-            if (lastByPres[key] !== snap) { out.push(r); lastByPres[key] = snap; }
-        }
-        return out.sort((a, b) => new Date(b.valid_from) - new Date(a.valid_from));
-    }, [history]);
+    const deduped = useMemo(() => historialDePreciosSinRepetir(history), [history]);
 
     if (deduped.length === 0)
         return <p className="text-label text-content-3 italic">Sin historial de precios registrado.</p>;

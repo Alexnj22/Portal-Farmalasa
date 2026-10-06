@@ -12,22 +12,36 @@
 //     sala, y si la sala ya cerró su turno se ofrece cerrar el día.
 //
 // La bitácora la escribe la capa de datos (`resolverCorte`).
+//
+// ── Y se LEE como en el portal ─────────────────────────────────────────────
+// La cifra se explica paso a paso: lo que debía haber, los cobros de crédito
+// en efectivo que el comprobante no cuenta, lo que se contó y lo acumulado del
+// día. El cierre (Z) dice lo vendido por forma de pago y lo que entró en
+// efectivo —no es un conteo—; la lectura (X) dice que no cuenta dinero. Abajo,
+// quién firmó (con su cara y la hora), los cobros de crédito uno por uno con su
+// hora y «Qué revisar» (`sugerenciasDeCorte`). Todo sale del núcleo
+// (`cortesDiagnostico`), las mismas funciones del portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { fetchCortes, reabrirCorte, resolverCorte, salaConCajaAbierta, salaYaCerro } from '@nucleo/data/cortes';
+import { fetchAbonosDelDia, fetchCortes, fetchMovimientos, fetchPersonas, fetchVentasPorPago, reabrirCorte, resolverCorte, salaConCajaAbierta, salaYaCerro } from '@nucleo/data/cortes';
 import { cerrarElDia } from '@nucleo/data/bolsas';
-import { conTramoPorSalaYDia, contraste, diferenciaDelCorte, noContoEfectivo, seConfirmaDeUnClic, severidad } from '@nucleo/utils/cortesDiagnostico';
+import {
+  cobrosDeCredito, conTramoPorSalaYDia, desgloseDelCierre, diferenciaDelCorte, entroEnEfectivo, formasFueraDelComprobante,
+  noContoEfectivo, notaDeCifra, seConfirmaDeUnClic, severidad, sugerenciasDeCorte,
+} from '@nucleo/utils/cortesDiagnostico';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { hora12 } from '@nucleo/utils/hora';
+import { fechaHora12, hora12 } from '@nucleo/utils/hora';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../../componentes/formulario/Piezas';
-import { Grilla, Pildora } from '../../componentes/avisos/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion } from '../../componentes/formulario/Piezas';
+import { Pildora } from '../../componentes/avisos/Piezas';
+import Avatar from '../../componentes/Avatar';
 import Vidrio from '../../componentes/Vidrio';
 import Identidad from '../../componentes/Identidad';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -53,6 +67,10 @@ export default function Corte() {
   const [motivoSinEntrega, setMotivoSinEntrega] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const [recargando, setRecargando] = useState(false);
+  const [ventas, setVentas] = useState(null);
+  const [abonos, setAbonos] = useState(null);
+  const [movs, setMovs] = useState([]);
+  const [firmo, setFirmo] = useState(null);
 
   const cargar = useCallback(async () => {
     const fecha = String(fechaParam || hoySV());
@@ -62,6 +80,34 @@ export default function Corte() {
   }, [id, fechaParam]);
   useEffect(() => { cargar(); }, [cargar]);
 
+  // Lo que explica la cifra: las ventas por forma de pago, los cobros de
+  // crédito del día y los movimientos de la caja. Van aparte del corte —el
+  // corte se pinta sin ellos— y nunca cambian el número, sólo lo explican.
+  const branchId = corte?.branch_id ?? null;
+  const fechaCorte = corte?.fecha ?? null;
+  const resueltoPor = corte?.resuelto_por ?? null;
+  useEffect(() => {
+    if (branchId == null || !fechaCorte) return undefined;
+    let vivo = true;
+    Promise.all([
+      fetchVentasPorPago({ desde: fechaCorte, hasta: fechaCorte }).catch(() => null),
+      fetchAbonosDelDia({ branchId, fecha: fechaCorte }).catch(() => null),
+      Promise.resolve(fetchMovimientos({ branchId, fecha: fechaCorte })).catch(() => []),
+    ]).then(([v, a, m]) => {
+      if (!vivo) return;
+      setVentas((v || []).filter((x) => String(x.branch_id) === String(branchId)));
+      setAbonos(a);
+      setMovs(m || []);
+    });
+    return () => { vivo = false; };
+  }, [branchId, fechaCorte]);
+  useEffect(() => {
+    if (!resueltoPor) { setFirmo(null); return undefined; }
+    let vivo = true;
+    fetchPersonas([resueltoPor]).then((f) => { if (vivo) setFirmo(f?.[0] || null); }).catch(() => {});
+    return () => { vivo = false; };
+  }, [resueltoPor]);
+
   const sala = (sucursales || []).find((b) => Number(b.id) === Number(corte?.branch_id))?.name ?? '';
   const puedeResolver = hasPermission('cortes_caja', 'can_edit');
   const sinConteo = corte ? noContoEfectivo(corte) : false;
@@ -69,9 +115,17 @@ export default function Corte() {
   const esX = corte?.tipo === 'X';
   const pendiente = corte?.estado === 'PENDIENTE';
   const puedeFirmar = pendiente && !esZ && !esX && puedeResolver;
-  const c = useMemo(() => (corte ? contraste(corte) : null), [corte]);
-  const dif = corte ? (corte.estado === 'DESCARTADO' ? diferenciaDelCorte(corte).valor : corte.tramo) : null;
+  const descartado = corte?.estado === 'DESCARTADO';
+  const propia = useMemo(() => (corte ? diferenciaDelCorte(corte) : null), [corte]);
+  const dif = corte ? (descartado ? propia?.valor ?? null : corte.tramo) : null;
+  const esperado = descartado ? propia?.esperado : (corte?.esperadoUsado ?? corte?.esperado);
   const sev = severidad(dif);
+  const noEsConteo = esZ || esX || sinConteo;
+  const invisibles = useMemo(() => formasFueraDelComprobante(ventas), [ventas]);
+  const cobros = useMemo(() => (corte ? cobrosDeCredito(corte, abonos?.filas || []) : null), [corte, abonos]);
+  const sugerencias = useMemo(() => (corte ? sugerenciasDeCorte(corte, movs, invisibles, cobros) : []), [corte, movs, invisibles, cobros]);
+  const explicacion = useMemo(() => (corte ? notaDeCifra(corte) : null), [corte]);
+  const cierre = useMemo(() => (corte ? desgloseDelCierre(corte, ventas) : null), [corte, ventas]);
 
   // El cierre del día se ofrece igual que en el portal: con permiso de caja,
   // de la propia sala (o alcance todas), del día de hoy y con la caja abierta.
@@ -152,10 +206,14 @@ export default function Corte() {
           automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive"
           refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
 
-          <Vidrio radio={24}>
-            <View style={{ padding: 18, gap: 12 }}>
+          <Vidrio radio={24} tinte={!noEsConteo && !descartado && sev !== 'ok' ? (sev === 'falta' ? 'rgba(240,68,56,0.10)' : 'rgba(247,144,9,0.10)') : undefined}>
+            <View style={{ padding: 18, gap: 10 }}>
               <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
                 {`${fechaTexto(corte.fecha, { weekday: 'long', day: 'numeric', month: 'long' })} · ${hora12(corte.hora)}`}
+              </Text>
+              <Text style={{ color: colorSistema.texto, fontSize: 15 }}>
+                {corte.hizo?.name ? shortEmployeeName({ name: corte.hizo.name }) : (corte.empleado_texto || 'Se hizo desde la caja')}
+                {corte.recibe?.name ? <Text style={{ color: MARCA.verde, fontWeight: '700' }}>{`  →  ${shortEmployeeName({ name: corte.recibe.name })}`}</Text> : null}
               </Text>
               {esZ || esX ? (
                 <Pildora texto={esZ ? 'Cierre del día (Z)' : 'Lectura (X)'} color={MARCA.violeta} />
@@ -163,7 +221,11 @@ export default function Corte() {
                 <Text style={{ color: colorSistema.texto2, fontSize: 28, fontWeight: '800' }}>Sin conteo</Text>
               ) : (
                 <View>
-                  <Text style={{ color: TONO[sev], fontSize: 38, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{conSigno(dif ?? 0)}</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
+                    {descartado ? 'Diferencia que tenía este conteo' : corte.tramo === corte.acumulado ? 'Diferencia de este corte' : 'Diferencia desde el corte anterior'}
+                  </Text>
+                  <Text style={{ color: descartado ? colorSistema.texto2 : TONO[sev], fontSize: 38, fontWeight: '800', fontVariant: ['tabular-nums'],
+                    textDecorationLine: descartado ? 'line-through' : 'none' }}>{conSigno(dif ?? 0)}</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>{sev === 'ok' ? 'Cuadra' : sev === 'falta' ? 'Faltante' : 'Sobrante'}</Text>
                 </View>
               )}
@@ -172,19 +234,105 @@ export default function Corte() {
             </View>
           </Vidrio>
 
-          <Grilla celdas={[
-            { k: 'h', rotulo: 'Lo hizo', valor: corte.hizo?.name ?? corte.empleado_texto ?? 'Desde la caja', fila: true },
-            corte.total_declarado != null && { k: 'c', rotulo: 'Se contó', valor: formatMoney(corte.total_declarado) },
-            c?.esperado != null && { k: 'e', rotulo: 'Debía haber', valor: formatMoney(c.esperado) },
-            corte.recibe?.name && { k: 'r', rotulo: 'Lo recibió', valor: corte.recibe.name, fila: true },
-            corte.motivo_descarte && { k: 'm', rotulo: 'Por qué se descartó', valor: corte.motivo_descarte, fila: true },
-            corte.observaciones && { k: 'o', rotulo: 'Nota', valor: corte.observaciones, fila: true, lineas: 4 },
-          ]} />
+          {descartado ? <Aviso tono="nota" texto="Este conteo se descartó: no cuenta para el día ni para los cortes que siguen." /> : null}
 
-          {c?.enDisputa && !c.porCobrosCredito ? (
-            <Aviso tono="cuidado" texto="El comprobante de la caja y el sistema no dan la misma cifra. Revísalo antes de firmar." />
+          {/* El cierre NO es un conteo de caja: su monto es todo lo vendido, con
+              la tarjeta y el crédito adentro. Las formas se pintan como vengan. */}
+          {esZ && cierre ? (
+            <Seccion titulo="Se vendió en el día" pie="La tarjeta y el crédito no pasan por la caja: la tarjeta se cobra por el POS y el crédito entra cuando el cliente paga, como cobro de crédito. Los cortes del día sólo cuentan el efectivo.">
+              <Dato primero rotulo="Total" valor={formatMoney(cierre.total)} fuerte />
+              {cierre.formas.map((f) => <Dato key={f.tipo} rotulo={String(f.tipo).charAt(0).toUpperCase() + String(f.tipo).slice(1)} valor={formatMoney(f.total)} />)}
+              <Dato rotulo="Entró en efectivo" valor={formatMoney(cierre.efectivo)} fuerte />
+            </Seccion>
+          ) : esX ? (
+            <Aviso texto="Esto es una lectura, no un corte: sólo imprime las ventas del turno. No cuenta el efectivo, así que no tiene diferencia ni hay nada que confirmar." />
+          ) : sinConteo ? (
+            <Aviso tono="cuidado" texto="Este corte quedó con $0.00 de efectivo contado y aun así se dio por exacto, así que no hay diferencia que firmar. Lo que corresponde es descartarlo y volver a hacerlo contando." />
+          ) : (
+            <Seccion titulo="La cuenta">
+              <Dato primero rotulo="Debía haber en caja" valor={formatMoney(esperado)} />
+              {cobros?.sinContar > 0.005 ? (
+                <>
+                  <Dato rotulo="   Ventas y movimientos del día" valor={formatMoney(corte.tk_total_caja)} />
+                  <Dato rotulo="   Cobros de crédito en efectivo" valor={`+${formatMoney(cobros.sinContar)}`} />
+                </>
+              ) : null}
+              <Dato rotulo="Se contó" valor={formatMoney(corte.total_declarado)} fuerte />
+              {corte.tramo !== corte.acumulado ? <Dato rotulo="Acumulado hasta esta hora" valor={conSigno(corte.acumulado ?? 0)} /> : null}
+            </Seccion>
+          )}
+
+          {explicacion && !esZ ? (
+            explicacion.alerta
+              ? <Aviso tono="freno" texto={`${explicacion.titulo}. ${explicacion.detalle}`} />
+              : <Aviso texto={`${explicacion.titulo}. ${explicacion.detalle}`} />
           ) : null}
-          {corte.arrastre ? <Aviso tono="nota" texto={`Viene arrastrando ${conSigno(corte.arrastre)} de los cortes anteriores del día.`} /> : null}
+          {sev === 'ok' && pendiente && !noEsConteo ? <Aviso tono="nota" texto="Este corte cuadra al centavo. No hay nada que investigar." /> : null}
+
+          {/* Quién firmó: nombre, cara y hora. Nunca un id suelto. */}
+          {!pendiente ? (
+            <Vidrio radio={20}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}>
+                <Avatar empleado={firmo ?? { name: '?' }} tamano={42} />
+                <View style={{ flex: 1, gap: 3 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <Pildora texto={corte.estado === 'CONFIRMADO' ? 'Confirmado' : 'Descartado'} color={corte.estado === 'CONFIRMADO' ? MARCA.verde : colorSistema.texto2} />
+                    {corte.resuelto_at ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{fechaHora12(corte.resuelto_at)}</Text> : null}
+                  </View>
+                  <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{firmo?.name ? shortEmployeeName(firmo) : 'Sin registrar quién'}</Text>
+                  {corte.motivo_descarte || corte.observaciones ? (
+                    <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{[corte.motivo_descarte, corte.observaciones].filter(Boolean).join(' · ')}</Text>
+                  ) : null}
+                </View>
+              </View>
+            </Vidrio>
+          ) : corte.observaciones ? <Aviso texto={`Nota: ${corte.observaciones}`} /> : null}
+
+          {!esZ && invisibles.length ? (
+            <Aviso texto={`Este día se cobraron ${invisibles.map((f) => `${formatMoney(Math.abs(f.total))} por ${f.tipo}`).join(' y ')}. Ese dinero no pasa por la caja, así que no entra en la cuenta del día.`} />
+          ) : null}
+
+          {/* Los cobros de crédito con su hora: el comprobante los imprime como
+              un solo número del día, y desde el portal la hora es un dato. */}
+          {!noEsConteo && cobros && (cobros.cobros > 0 || cobros.antes.length > 0 || cobros.despues.length > 0) ? (
+            <Seccion titulo={`Cobros de crédito · ${formatMoney(cobros.antes.length ? cobros.hasta : (cobros.cobros ?? 0))}`}>
+              {abonos && !abonos.pude ? (
+                <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>No puedes ver el detalle de estos cobros. El total ya está sumado.</Text>
+              ) : !cobros.antes.length && !cobros.despues.length ? (
+                <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Ninguno se cobró desde el portal, así que no se sabe a qué hora entró cada uno.</Text>
+              ) : (
+                <>
+                  {cobros.antes.map((a, i) => (
+                    <View key={a.id} style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, paddingTop: i ? 8 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
+                      <Text style={{ color: colorSistema.texto2, fontSize: 13, fontVariant: ['tabular-nums'] }}>{hora12(a.hora)}</Text>
+                      <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14 }}>{a.cliente}</Text>
+                      {!entroEnEfectivo(a) ? <Text style={{ color: MARCA.ambar, fontSize: 13 }}>{a.forma}</Text> : null}
+                      <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatMoney(a.monto)}</Text>
+                    </View>
+                  ))}
+                  {cobros.despues.length ? (
+                    <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${cobros.despues.length} cobro${cobros.despues.length === 1 ? '' : 's'} después de este corte: los cuenta el siguiente.`}</Text>
+                  ) : null}
+                </>
+              )}
+            </Seccion>
+          ) : null}
+
+          {sugerencias.length ? (
+            <Seccion titulo="Qué revisar">
+              {sugerencias.map((x, i) => (
+                <View key={`${i}-${x.titulo}`} style={{ flexDirection: 'row', gap: 10, paddingTop: i ? 9 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
+                  <View style={{ width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: `${MARCA.azulClaro}2E` }}>
+                    <Text style={{ color: MARCA.azulClaro, fontSize: 13, fontWeight: '800' }}>{i + 1}</Text>
+                  </View>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{x.titulo}</Text>
+                    <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{x.detalle}</Text>
+                  </View>
+                </View>
+              ))}
+            </Seccion>
+          ) : null}
 
           {!puedeResolver ? null : modo === 'entrega' ? (
             <Seccion titulo="Entrega de la caja">

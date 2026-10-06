@@ -4,7 +4,7 @@ import { Skeleton } from '../../components/common/StateViews';
 import BarraAvance from './BarraAvance';
 import AvisoSinProducto from '../../components/common/AvisoSinProducto';
 import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
-import { TRAMO_CFG } from '@nucleo/utils/metasUtils';
+import { TRAMO_CFG, resumenDelMesEnCurso } from '@nucleo/utils/metasUtils';
 
 // El dibujo vive en `GraficaMesDias.jsx` para que `recharts` (95 kB gzip) no
 // entre en el cierre estático de Metas; leer su encabezado antes de tocarlo.
@@ -52,33 +52,11 @@ export default function GraficaMes({ data, vista, onVista }) {
     // del ancho y dos tercios de nada: el mes que todavía no pasó ocupaba más
     // lugar que el que sí. Ahora las barras se reparten el ancho y lo que falta
     // se dice en la franja de la derecha — un dato, no un hueco.
-    const diasMes = Number(data?.dias_mes || 30);
-    const diaHoy = Math.min(diasMes, Math.max(1, Number(data?.dia_hoy || diasMes)));
-    const porVenir = Math.max(0, diasMes - diaHoy);   // los que no empezaron; hoy NO cuenta, ya tiene barra
-
-    const dias = useMemo(() => {
-        const porDia = new Map((data?.dias || []).map((d) => [Number(d.dia), d]));
-        return Array.from({ length: diaHoy }, (_, i) => {
-            const n = i + 1;
-            const d = porDia.get(n);
-            return { dia: n, venta: d ? Number(d.venta) : null, esHoy: !!d?.es_hoy };
-        });
-    }, [data, diaHoy]);
-
-    const ritmo = Number(data?.ritmo_diario || 0);
-    const cerrados = dias.filter((d) => d.venta != null && !d.esHoy);
-    const sobreRitmo = cerrados.filter((d) => d.venta >= ritmo).length;
-
-    const meta = Number(data?.meta || 0);
-    const acum = Number(data?.acumulado || 0);
-    const proy = data?.proyeccion != null ? Number(data.proyeccion) : null;
-    const pct = meta > 0 ? (acum / meta) * 100 : null;
-    const pctProy = meta > 0 && proy != null ? (proy / meta) * 100 : null;
-    const tramoProy = pctProy == null ? null
-        : pctProy >= Number(data.umbral_total) ? 'completo'
-        : pctProy >= Number(data.umbral_medio) ? 'medio' : 'nada';
-    const falta = meta - acum;
-    const diasRestantes = Math.max(0, Number(data?.dias_mes || 0) - Number(data?.dia_hoy || 0) + 1);
+    // Las cuentas del mes salen del núcleo: la app dibuja los mismos días.
+    const {
+        dias, porVenir, ritmo, sobreRitmo, cerrados: nCerrados,
+        meta, acum, proy, pct, pctProy, tramoProy, falta, diasRestantes,
+    } = useMemo(() => resumenDelMesEnCurso(data), [data]);
 
     return (
         <div data-surface="card" className="p-5">
@@ -89,7 +67,7 @@ export default function GraficaMes({ data, vista, onVista }) {
                     </p>
                     <p className="text-label font-semibold text-content-2 mt-0.5 tabular-nums">
                         {vistaReal === 'dias'
-                            ? <><strong className="text-content">{sobreRitmo} de {cerrados.length}</strong> días cerrados por encima del ritmo</>
+                            ? <><strong className="text-content">{sobreRitmo} de {nCerrados}</strong> días cerrados por encima del ritmo</>
                             : <>Día {data?.dia_hoy} de {data?.dias_mes} · faltan {formatMoney(Math.max(0, falta))}</>}
                     </p>
                 </div>

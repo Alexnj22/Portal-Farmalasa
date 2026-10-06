@@ -7,7 +7,7 @@ import { LoadingState } from '../../components/common/StateViews';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { correrMes, mesSV } from '@nucleo/utils/fecha';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { FORMATOS, esDeMarca } from '@nucleo/utils/marketing';
+import { FORMATOS, esDeGaleria, esDeMarca } from '@nucleo/utils/marketing';
 import { fetchCatalogos, fetchGaleria, firmarDisenos } from '@nucleo/data/marketing';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import Galeria from './Galeria';
@@ -41,7 +41,7 @@ export default function GaleriaView() {
             ]);
             // La sala ve sólo lo liberado y aprobado; quien también tiene
             // Marketing lo vería todo, así que acá se recorta igual.
-            const liberadas = ps.filter((p) => p.liberada && ['aprobado', 'programado', 'publicado'].includes(p.estado));
+            const liberadas = ps.filter(esDeGaleria);
             setMarcas(Object.fromEntries(cat.marcas.map((m) => [m.id, m])));
             setPiezas(liberadas);
             setFirmadas(await firmarDisenos(liberadas));

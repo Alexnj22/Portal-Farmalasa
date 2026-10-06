@@ -10,7 +10,6 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
-import { hastaElTope } from '@nucleo/utils/hastaElTope';
 
 /**
  * Lo que sigue después de confirmar el conteo: cuánto se lleva al banco.
@@ -123,17 +122,38 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, on
     );
 
     const nAporte = Number(String(aporte).replace(',', '.')) || 0;
-    const nMonto = Number(String(monto).replace(',', '.')) || 0;
-    const nEfectivo = Number(String(montoEfectivo).replace(',', '.')) || 0;
     const disponible = Math.round((contado + nAporte) * 100) / 100;
+    /* Cada parte llega hasta lo que la otra deja libre (la regla de todo campo
+     * de dinero, DESIGN.md §15.11.2, usuario 2026-09-29): escribir de más pone
+     * el máximo en vez de trabar el cierre.
+     *
+     * Pero el tope se aplica al LEER, no al escribir: el estado guarda lo que
+     * la persona tecleó. DEP-261005-1 (2026-10-05): se escribieron $25,145 al
+     * banco ANTES de anotar los $425 de afuera; el campo los recortó a $24,720
+     * en el estado, y cuando el aporte subió el máximo el número ya no volvía.
+     * Los $425 —que sí se remesaron— quedaron como remanente. Guardando lo
+     * escrito, anotar el aporte después completa solo el monto: el orden en que
+     * se llenan los campos deja de importar.
+     *
+     * Cuando las dos partes no caben, cede la que se tocó ÚLTIMA: la otra ya
+     * estaba decidida. */
+    const [ultimo, setUltimo] = useState('banco');
+    const escritoBanco = Number(String(monto).replace(',', '.')) || 0;
+    const escritoEfectivo = Number(String(montoEfectivo).replace(',', '.')) || 0;
+    const recortar = (n, tope) => Math.max(0, Math.min(n, Math.round(tope * 100) / 100));
+    let nMonto, nEfectivo;
+    if (ultimo === 'efectivo') {
+        nMonto = recortar(escritoBanco, disponible);
+        nEfectivo = recortar(escritoEfectivo, disponible - nMonto);
+    } else {
+        nEfectivo = recortar(escritoEfectivo, disponible);
+        nMonto = recortar(escritoBanco, disponible - nEfectivo);
+    }
+    const bancoRecortado = escritoBanco - nMonto > 0.004;
+    const efectivoRecortado = escritoEfectivo - nEfectivo > 0.004;
     const reparto = Math.round((nMonto + nEfectivo) * 100) / 100;
     const remanente = Math.round((disponible - reparto) * 100) / 100;
     const noAlcanza = remanente < 0;
-    /* Cada parte llega hasta lo que la otra deja libre (la regla de todo campo
-     * de dinero, DESIGN.md §15.11.2, usuario 2026-09-29): escribir de más pone
-     * el máximo en vez de trabar el cierre. Para llevar MÁS de lo contado se
-     * anota primero lo que entra de afuera, que es lo que sube el máximo. El
-     * aviso de «no alcanza» queda para cuando el aporte se baja después. */
     const topeBanco = Math.round((disponible - nEfectivo) * 100) / 100;
     const topeEfectivo = Math.round((disponible - nMonto) * 100) / 100;
     const faltaNota = nAporte > 0 && !aporteNota.trim();
@@ -235,10 +255,11 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, on
                         <PortalInput
                             id="dep-monto" name="dep-monto"
                             inputMode="decimal" maskType="DECIMAL"
-                            value={monto} onChange={(e) => setMonto(hastaElTope(e.target.value, topeBanco).valor)}
-                            helperText={topeBanco > 0
-                                ? `Hasta ${formatMoney(topeBanco)}. Para llevar más, anota antes lo que entra de afuera.`
-                                : undefined}
+                            value={bancoRecortado ? nMonto.toFixed(2) : monto}
+                            onChange={(e) => { setMonto(e.target.value); setUltimo('banco'); }}
+                            helperText={bancoRecortado
+                                ? `Escribiste ${formatMoney(escritoBanco)} y alcanza hasta ${formatMoney(topeBanco)}. Si entra dinero de afuera, anótalo abajo y se completa solo.`
+                                : topeBanco > 0 ? `Hasta ${formatMoney(topeBanco)}.` : undefined}
                             placeholder="0.00"
                             inputClassName="tabular-nums"
                         />
@@ -268,8 +289,11 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, on
                         <PortalInput
                             id="dep-efectivo" name="dep-efectivo"
                             inputMode="decimal" maskType="DECIMAL"
-                            value={montoEfectivo} onChange={(e) => setMontoEfectivo(hastaElTope(e.target.value, topeEfectivo).valor)}
-                            helperText={topeEfectivo > 0 ? `Hasta ${formatMoney(topeEfectivo)}.` : undefined}
+                            value={efectivoRecortado ? nEfectivo.toFixed(2) : montoEfectivo}
+                            onChange={(e) => { setMontoEfectivo(e.target.value); setUltimo('efectivo'); }}
+                            helperText={efectivoRecortado
+                                ? `Escribiste ${formatMoney(escritoEfectivo)} y alcanza hasta ${formatMoney(topeEfectivo)}.`
+                                : topeEfectivo > 0 ? `Hasta ${formatMoney(topeEfectivo)}.` : undefined}
                             placeholder="0.00"
                             inputClassName="tabular-nums"
                         />

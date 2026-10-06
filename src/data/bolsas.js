@@ -885,6 +885,8 @@ export async function fetchSalidasDeBolsa(bolsaId) {
  *
  * `saldo_despues` de cada línea es el de DESPUÉS de ese movimiento y no el de
  * hoy, así que una reimpresión dice lo mismo que dijo el papel original.
+ *
+ * @returns {Promise<any>} la función devuelve `json`, sin forma declarada
  */
 export async function fetchOperacionDeBolsa(operacionId) {
     const { data, error } = await supabase.rpc('get_operacion_de_bolsa', { p_operacion_id: operacionId });

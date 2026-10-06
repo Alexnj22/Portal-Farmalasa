@@ -51,7 +51,7 @@ export function alertasDePersona(emp, ahora = new Date()) {
         const hoy = new Date(ahora); hoy.setHours(12, 0, 0, 0);
         if (b.getMonth() === hoy.getMonth()) {
             const esteAnio = new Date(hoy.getFullYear(), b.getMonth(), b.getDate(), 12, 0, 0, 0);
-            const dias = Math.round((esteAnio - hoy) / 86400000);
+            const dias = Math.round((esteAnio.getTime() - hoy.getTime()) / 86400000);
             if (dias >= 0) {
                 const cumple = hoy.getFullYear() - b.getFullYear();
                 salida.push({

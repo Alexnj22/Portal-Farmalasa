@@ -33,7 +33,7 @@ export function searchCustomersByName(term) {
 export function fetchCotizacionesList(scopeBranchId) {
     let q = supabase
         .from('cotizaciones')
-        .select('id, numero, fecha, customer_name, document_type, payment_type, total, status, created_by_name, created_by_photo, branch_id')
+        .select('id, numero, fecha, customer_name, document_type, payment_type, total, status, created_by, created_by_name, created_by_photo, branch_id, applies_retention, notes')
         .order('created_at', { ascending: false })
         .limit(300);
     if (scopeBranchId) q = q.eq('branch_id', scopeBranchId);

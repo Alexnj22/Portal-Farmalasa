@@ -20,6 +20,7 @@ import {
     fetchCuentasPorPagar, fetchDetalleProveedor, fetchPagos,
     registrarPago, aprobarPago, anularPago, guardarCondicionesProveedor,
 } from '@nucleo/data/cuentasPorPagar';
+import { FORMAS_DE_PAGO, totalesCuentasPorPagar } from '@nucleo/utils/cuentasPorPagar';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -78,12 +79,7 @@ const COLS_PAGOS = [
     { key: 'accion',     label: '',           align: 'right'  },
 ];
 
-const FORMAS = [
-    { value: 'cheque',        label: 'Cheque'        },
-    { value: 'transferencia', label: 'Transferencia' },
-    { value: 'efectivo',      label: 'Efectivo'      },
-    { value: 'otro',          label: 'Otro'          },
-];
+const FORMAS = FORMAS_DE_PAGO;
 
 const PERIODOS = [
     { value: '',           label: 'Todo lo que se debe' },
@@ -344,18 +340,8 @@ export default function CuentasPorPagarView() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- el filtro cambió, la página vieja ya no existe
     useEffect(() => { setPagina(1); }, [busca, tab, desde]);
 
-    const totales = useMemo(() => {
-        const t = { saldo: 0, vencido: 0, tramite: 0, proveedores: 0, conVencido: 0, sinPlazo: 0 };
-        for (const f of filas ?? []) {
-            t.proveedores++;
-            t.saldo   += Number(f.saldo || 0);
-            t.vencido += Number(f.vencido || 0);
-            t.tramite += Number(f.en_tramite || 0);
-            if (Number(f.vencido) > 0) t.conVencido++;
-            if (f.dias_credito == null) t.sinPlazo++;
-        }
-        return t;
-    }, [filas]);
+    // Los totales de arriba: `totalesCuentasPorPagar` (núcleo, el mismo de la app).
+    const totales = useMemo(() => totalesCuentasPorPagar(filas), [filas]);
 
     const pendientes = useMemo(
         () => (pagos ?? []).filter(p => p.estado === 'pendiente'), [pagos]);

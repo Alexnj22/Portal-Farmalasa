@@ -392,3 +392,31 @@ export const construirLibro = (tab, d, tot) => {
     }
     return null;
 };
+
+/**
+ * Lo que le falta a un libro para poder presentarse — los avisos de
+ * cumplimiento de la pantalla de Libros de IVA, contados una sola vez para el
+ * portal y la app (2026-10-06):
+ *   · `ccfSinNrc`              — CCF sin NRC del cliente (Art. 85).
+ *   · `comprasSinNrc`          — compras sin NRC del proveedor (Art. 86).
+ *   · `comprasSinSincronizar`  — compras sin número ni percepción: NULL no es
+ *                                cero, el período está incompleto.
+ *   · `sinNumeroControl[tab]`  — filas sin número de control en ESE libro
+ *                                (consumidor lo lleva en dos columnas).
+ */
+export function faltantesDelLibro(d) {
+    const consumidor = d?.consumidor ?? [];
+    const contribuyente = d?.contribuyente ?? [];
+    const compras = d?.compras ?? [];
+    const anulados = d?.anulados ?? [];
+    return {
+        ccfSinNrc: contribuyente.filter(r => !r.nrc).length,
+        comprasSinNrc: compras.filter(r => !r.nrc).length,
+        comprasSinSincronizar: compras.filter(r => r.documento_numero == null).length,
+        sinNumeroControl: {
+            consumidor: consumidor.filter(r => !r.numero_control_del || !r.numero_control_al).length,
+            contribuyente: contribuyente.filter(r => !r.numero_control).length,
+            anulados: anulados.filter(r => !r.numero_control).length,
+        },
+    };
+}

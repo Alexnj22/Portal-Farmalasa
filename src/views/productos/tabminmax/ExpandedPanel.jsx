@@ -15,18 +15,11 @@ import AbcXyzBadge from './AbcXyzBadge';
 import { fetchLotesPorVencer, marcarAccionStockMuerto, fetchPoliticaDeVencimiento, fetchProductCostHistory, fetchResumenDelProductoPorSala, fetchStockParamsHistory, fetchUltimasVentasDelProducto } from '@nucleo/data/stockParams';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { limiteDeEnvioABodega } from '@nucleo/utils/plazoDeDevolucion';
+import { estadoDeProyeccion } from '@nucleo/utils/minmaxGuardar';
 
-// 7B.2 — regla (g) de Bodega: la cuenta regresiva es sobre la política en
-// meses, NO el mes de vencimiento — el envío llega ~1 mes después de
-// mandarse (regla h: se manda 25-30 del mes, llega primeros 15 días del mes
-// siguiente). Ej.: vence diciembre, política 2 meses → el límite de envío
-// es la última semana de SEPTIEMBRE (no octubre, que sería la resta ingenua).
-function computeSendDeadline(fechaVencimiento, mesesDevolucion) {
-    const d = new Date(fechaVencimiento);
-    d.setMonth(d.getMonth() - (mesesDevolucion + 1));
-    d.setDate(25); // ventana de envío real: 25-30 del mes (regla h)
-    return d;
-}
+// El plazo de envío a Bodega de un lote por vencer: núcleo (`plazoDeDevolucion`).
+const computeSendDeadline = limiteDeEnvioABodega;
 
 export default function ExpandedPanel({ row, cycleDays }) {
     const { hasPermission } = useAuth();
@@ -540,15 +533,15 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                     {(!row.is_dead_stock && row.daily_velocity > 0 && stock > 0) ? (
                                         <div className="flex items-center gap-6 flex-wrap">
                                             {[30, 60, 90].map(days => {
-                                                const projected = Math.max(0, Math.round(stock - row.daily_velocity * days));
-                                                const depleted  = projected === 0;
-                                                const low       = projected > 0 && projected < minN;
+                                                // Núcleo: «se agota» con lo que queda sin redondear (0.2 no es agotado).
+                                                const { unidades: projected, agotado: depleted, casi } = estadoDeProyeccion(stock, row.daily_velocity, days);
+                                                const low       = !depleted && (casi || projected < minN);
                                                 const color     = depleted ? 'text-danger' : low ? 'text-chart-4-text' : 'text-success';
                                                 return (
                                                     <div key={days} className="flex flex-col items-center gap-0.5">
                                                         <span className="text-micro text-content-3 font-semibold">+{days}d</span>
                                                         <span className={`text-subtitle font-black tabular-nums leading-none ${color}`}>
-                                                            {depleted ? '0 ✗' : projected.toLocaleString()}
+                                                            {depleted ? '0 ✗' : casi ? '< 1' : projected.toLocaleString()}
                                                         </span>
                                                         <span className="text-micro text-content-3">und</span>
                                                     </div>

@@ -15,6 +15,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fetchPeriodosFiscales, cerrarPeriodoFiscal, reabrirPeriodoFiscal } from '@nucleo/data/cierrePeriodo';
 import { etiquetaMes, NOMBRES_DE_MES } from '@nucleo/utils/fecha';
+import { cadenaDelRemanente, derivoDelCierre, totalesDeLaCadena } from '@nucleo/utils/cierrePeriodo';
 
 /**
  * Cierre de período fiscal — la cadena del remanente.
@@ -44,16 +45,7 @@ import { etiquetaMes, NOMBRES_DE_MES } from '@nucleo/utils/fecha';
 
 const mesCorto = (iso) => NOMBRES_DE_MES[Number(String(iso).slice(5, 7)) - 1];
 
-// El saldo del período con el libro elegido. Es la MISMA fórmula que
-// `cerrar_periodo_fiscal`, y por eso lo que se congela sale del servidor: acá
-// sólo se previsualiza para que la cadena se pueda ver antes de decidir.
-function saldoDe(p, usarDeclarable, entra) {
-    const credito = Number(usarDeclarable ? p.credito_declarable : p.credito_fiscal) || 0;
-    const saldo = Number(p.debito_fiscal || 0) - credito
-        - Number(p.percepcion_pagada || 0) - Number(p.retencion_sufrida || 0) - entra;
-    const r = Math.round(saldo * 100) / 100;
-    return { credito, aPagar: r > 0 ? r : 0, remanente: r < 0 ? -r : 0 };
-}
+// El saldo, la cadena y la deriva: `cierrePeriodo` (núcleo, lo mismo de la app).
 
 // ── Un eslabón de la cadena ─────────────────────────────────────────────────
 function Eslabon({ fila, siguiente }) {
@@ -88,8 +80,7 @@ function Periodo({ fila, usarDeclarable, canEdit, busy, onCerrar, onReabrir }) {
     const paga = fila.aPagar > 0;
     const cerrado = fila.estado === 'cerrado';
     const deltaCred = Math.round((Number(fila.credito_declarable || 0) - Number(fila.credito_fiscal || 0)) * 100) / 100;
-    const derivo = cerrado && (Math.abs(Number(fila.deriva_debito || 0)) > 0.005
-                            || Math.abs(Number(fila.deriva_credito || 0)) > 0.005);
+    const derivo = derivoDelCierre(fila);
 
     const dato = (k, v, extra) => (
         <div data-surface="card" className={`px-3 py-2.5 ${extra ? 'ring-1 ring-brand/30' : ''}`}>
@@ -211,28 +202,9 @@ export default function CierrePeriodoView() {
     // La cadena: cada mes arranca del remanente del anterior. Un mes CERRADO
     // conserva el suyo congelado —es lo que se declaró— y sólo los abiertos se
     // recalculan con el libro elegido.
-    const cadena = useMemo(() => {
-        let entra = 0;
-        return filas.map(p => {
-            const cerrado = p.estado === 'cerrado';
-            const base = cerrado
-                ? { credito: Number(p.cong_credito || 0),
-                    aPagar: Number(p.cong_a_pagar || 0),
-                    remanente: Number(p.cong_remanente_sale || 0) }
-                : saldoDe(p, usarDeclarable, entra);
-            const fila = { ...p, ...base, entra: cerrado ? Number(p.cong_entra || 0) : entra };
-            if (!p.en_curso) entra = base.remanente;
-            return fila;
-        });
-    }, [filas, usarDeclarable]);
+    const cadena = useMemo(() => cadenaDelRemanente(filas, usarDeclarable), [filas, usarDeclarable]);
 
-    const totales = useMemo(() => {
-        const cerrados = cadena.filter(f => f.estado === 'cerrado').length;
-        const perdido = cadena
-            .filter(f => !f.en_curso && f.estado !== 'cerrado' && f.remanente > 0)
-            .reduce((s, f) => s + f.remanente, 0);
-        return { cerrados, abiertos: cadena.filter(f => !f.en_curso && f.estado !== 'cerrado').length, perdido };
-    }, [cadena]);
+    const totales = useMemo(() => totalesDeLaCadena(cadena), [cadena]);
 
     const confirmarYCerrar = useCallback(async (fila) => {
         setBusy(true);

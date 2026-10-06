@@ -3,6 +3,7 @@ import { Users } from 'lucide-react';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { EmptyState } from '../../components/common/StateViews';
 import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
+import { ORDENES_RANKING, SUFIJO_RANKING, rankingDeVendedores } from '@nucleo/utils/metasUtils';
 
 // Quién está vendiendo este mes. Top 2 resaltado, el resto en gris, y en ROJO
 // quien está bajo el promedio de la sala (decisión del usuario 2026-08-05).
@@ -28,22 +29,10 @@ import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
 // «días» sigue siendo los días en que efectivamente vendió: es el único dato de
 // presencia que existe. El día que se registren incapacidades y vacaciones, el
 // servidor cambia el denominador y esta pantalla no se entera.
-const ORDENES = [
-    { value: 'total', label: 'Total' },
-    { value: 'dia',   label: 'Por día' },
-    { value: 'hora',  label: 'Por hora' },
-];
+// Orden, claves y promedio: núcleo (`rankingDeVendedores`), lo mismo de la app.
+const ORDENES = ORDENES_RANKING;
+const SUFIJO = SUFIJO_RANKING;
 
-// Las tres vistas dicen lo mismo tres veces —qué columna ordena, con qué
-// promedio se compara y cómo se lee en la línea del encabezado—, así que viven
-// en un solo mapa. Estaban repetidas dentro y fuera del `useMemo`, que es
-// exactamente el par que se desincroniza al agregar la tercera.
-const CLAVE    = { total: 'venta',          dia: 'venta_dia',    hora: 'venta_hora'    };
-const PROMEDIO = { total: 'promedio_venta', dia: 'promedio_dia', hora: 'promedio_hora' };
-const SUFIJO   = { total: '',               dia: ' por día',     hora: ' por hora'     };
-
-// 87.5 h se escribe con el decimal; 96.0 h, sin él. `toFixed(1)` solo dejaría
-// «96.0», que en una línea de seis datos es un decimal que no informa nada.
 const horasCortas = (h) => Number(Number(h).toFixed(1));
 
 // `vistaCompleta` (permiso `dash_vendedores_vista_completa` en el widget del
@@ -60,38 +49,8 @@ export default function RankingVendedores({ data, compacto = false, vistaComplet
     // sus horas, otros por nada— y eso no es un ranking, es dos rankings
     // superpuestos. El servidor manda el conteo (`con_horario` de `personas`)
     // en vez de dejar que la pantalla lo deduzca de los nulos.
-    const horaDisponible = Number(data?.personas || 0) > 0
-        && Number(data?.con_horario || 0) === Number(data?.personas);
-    // Si el horario deja de cubrir a todos entre dos refrescos, la vista cae
-    // sola a «Total» en vez de quedarse ordenando por una columna vacía.
-    const ordenActivo = orden === 'hora' && !horaDisponible ? 'total' : orden;
-
-    const { filas, promedio, maximo, total } = useMemo(() => {
-        const clave = CLAVE[ordenActivo];
-        const base = (data?.vendedores || []).map((v) => ({
-            ...v,
-            venta: Number(v.venta),
-            ticket: Number(v.ticket),
-            dias: Number(v.dias),
-            venta_dia: Number(v.venta_dia),
-            horas: Number(v.horas || 0),
-            dias_horario: Number(v.dias_horario || 0),
-            // `|| 0` y no `Number(null)`: sin horario `venta_hora` viene nulo y
-            // `NaN` rompería el orden entero, no sólo esa fila.
-            venta_hora: Number(v.venta_hora || 0),
-            dias_sin_turno: Number(v.dias_sin_turno || 0),
-        }));
-        const prom = Number(data?.[PROMEDIO[ordenActivo]] || 0);
-        const ord = [...base].sort((a, b) => b[clave] - a[clave]);
-        return {
-            filas: ord,
-            promedio: prom,
-            maximo: ord.length ? ord[0][clave] : 0,
-            // La suma de la columna que se está ordenando: es el denominador de
-            // la participación de cada quien cuando no se muestran montos.
-            total: ord.reduce((s, v) => s + v[clave], 0),
-        };
-    }, [data, ordenActivo]);
+    const { filas, promedio, maximo, total, clave, ordenActivo, horaDisponible } = useMemo(
+        () => rankingDeVendedores(data, orden), [data, orden]);
 
     // Dentro de un widget la tarjeta la pone el `WidgetCard`, y el título
     // también: hasta el 2026-08-10 este componente dibujaba SU tarjeta y SU
@@ -115,7 +74,6 @@ export default function RankingVendedores({ data, compacto = false, vistaComplet
         );
     }
 
-    const clave  = CLAVE[ordenActivo];
     const sufijo = SUFIJO[ordenActivo];
 
     // La opción «Por hora» se OFRECE apagada sólo donde hay a quién decirle qué

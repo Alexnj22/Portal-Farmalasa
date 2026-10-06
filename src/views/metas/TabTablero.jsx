@@ -14,7 +14,7 @@ import GraficaMes from './GraficaMes';
 import RankingVendedores from './RankingVendedores';
 import { fetchMetasDashboard, fetchMetasRows, fetchMesEnCurso, fetchBonoActivo } from '@nucleo/data/metas';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, TRAMO_CFG, tramoLabel } from '@nucleo/utils/metasUtils';
+import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, TRAMO_CFG, tramoLabel, resumenDeMetas } from '@nucleo/utils/metasUtils';
 
 const fmtPct = (v) => formatPct(v);
 
@@ -114,15 +114,8 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
         return base;
     }, [rows, salaMes, searchTerm, salaNombre]);
 
-    const resumen = useMemo(() => {
-        const conMeta = rows.filter((r) => r.monto_meta != null);
-        const meta = conMeta.reduce((s, r) => s + Number(r.monto_meta), 0);
-        const vendidoConMeta = conMeta.reduce((s, r) => s + Number(r.venta_acumulada || 0), 0);
-        const proy = conMeta.reduce((s, r) => s + Number(r.proyeccion || 0), 0);
-        const tiers = { completo: 0, medio: 0, nada: 0 };
-        conMeta.forEach((r) => { if (tiers[r.bono_tier] != null) tiers[r.bono_tier] += 1; });
-        return { meta, vendidoConMeta, proy, tiers, conMeta: conMeta.length, sinMeta: rows.length - conMeta.length };
-    }, [rows]);
+    // Las cifras de arriba: `resumenDeMetas` (núcleo, el mismo de la app).
+    const resumen = useMemo(() => resumenDeMetas(rows), [rows]);
 
     return (
         <div className="space-y-4">

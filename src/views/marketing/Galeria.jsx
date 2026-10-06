@@ -9,7 +9,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { downloadStoredFile } from '@nucleo/utils/storageFiles';
-import { formatoDe, tipoDeArchivo, aptoParaWhatsApp } from '@nucleo/utils/marketing';
+import { formatoDe, tipoDeArchivo, aptoParaWhatsApp, esDeGaleria, mediosDe, textoParaPublicar } from '@nucleo/utils/marketing';
 import { registrarEgreso } from '@nucleo/data/egreso';
 import { puntoDeMarca } from './iconos';
 
@@ -46,14 +46,14 @@ export default function Galeria({ piezas, marcas, firmadas, gestion = false, pue
 function TarjetaDeGaleria({ pieza, marcas, firmadas, gestion, puedeLiberar, onLiberar, onAbrir }) {
     const showToast = useToastStore((s) => s.showToast);
     const [ocupado, setOcupado] = useState(false);
-    const medios = (pieza.archivos || []).filter((a) => a.url && !a.reemplazado);
+    const medios = mediosDe(pieza);
     const portada = medios.find((a) => ['imagen', 'video'].includes(tipoDeArchivo(a))) || medios[0];
     const src = portada ? firmadas?.get?.(portada.url) : null;
-    const texto = [pieza.copy, pieza.hashtags].filter(Boolean).join('\n\n');
+    const texto = textoParaPublicar(pieza);
     const susMarcas = (pieza.marcas?.length ? pieza.marcas : [pieza.marca_id]).map((id) => marcas[id]).filter(Boolean);
     const whatsapp = medios.map(aptoParaWhatsApp);
     const apta = medios.length > 0 && whatsapp.every((w) => w.apto);
-    const aprobada = ['aprobado', 'programado', 'publicado'].includes(pieza.estado);
+    const aprobada = esDeGaleria({ ...pieza, liberada: true });
     const puedeCompartir = typeof navigator !== 'undefined' && typeof navigator.canShare === 'function';
 
     const descargar = async () => {

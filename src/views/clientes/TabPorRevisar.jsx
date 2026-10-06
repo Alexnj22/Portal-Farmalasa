@@ -10,16 +10,10 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { fetchClientesPorRevisar, descartarClientePorRevisar } from '@nucleo/data/customers';
+import { MOTIVO_POR_REVISAR } from '@nucleo/utils/clientesPorRevisar';
 
-// Los rótulos hablan del PORTAL, nunca del sistema de origen ni de la tubería:
-// "congelado" y "repetido" son términos del negocio; "SALTADO (categoría
-// Contribuyente)" es jerga del script que llenó la tabla y no sale a pantalla.
-const MOTIVO = {
-    fiscal_congelado: { label: 'Fiscal congelado', variant: 'info'    },
-    nombre_repetido:  { label: 'Nombre repetido',  variant: 'warning' },
-    dui_repetido:     { label: 'DUI repetido',     variant: 'warning' },
-    nit_repetido:     { label: 'NIT repetido',     variant: 'warning' },
-};
+// El rótulo de cada motivo: núcleo (`clientesPorRevisar`), el mismo de la app.
+const MOTIVO = MOTIVO_POR_REVISAR;
 
 const COLS = [
     { key: 'nombre',  label: 'Cliente', align: 'left' },

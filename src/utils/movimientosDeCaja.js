@@ -92,6 +92,12 @@ export function renglonesDeMovimientos({ movimientos = [], cobros = [], salidasD
  * El filtro. `tipo`: TODOS | ENTRADA | SALIDA. `estado`: TODOS | VIGENTES |
  * EDITADOS | DESAPARECIDOS — un cobro o una salida de bolsa no se editan ni
  * desaparecen en la caja, así que esos dos estados los dejan fuera.
+ *
+ * @param {any[]} renglones
+ * @param {{ tipo?: string, estado?: string, busqueda?: string,
+ *           salas?: Map<any, string>, cobraron?: Map<any, { name?: string }>,
+ *           sacaron?: Map<any, { name?: string }>, anotaron?: Map<any, any>,
+ *           etiquetaDeSalida?: (c: any) => any, porMov?: Map<any, any> }} [filtro]
  */
 export function filtrarMovimientos(renglones, {
     tipo = 'TODOS', estado = 'TODOS', busqueda = '', salas, cobraron, sacaron, anotaron,

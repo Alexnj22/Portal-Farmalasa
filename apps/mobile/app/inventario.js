@@ -6,8 +6,13 @@
 // Todo lo cuenta el servidor (`inventory_grouped`, de a 25) y la aritmética de
 // unidades y vencimientos sale del núcleo (`inventarioDeSala`), así que el
 // teléfono y el portal dicen el mismo número. Arranca en la sala de quien la
-// abre; la sala, la categoría y el orden van en el menú de la barra. Tocar un
-// producto abre su ficha: cuánto hay en cada sala y en qué lotes.
+// abre; la sala, la categoría y el orden van en el menú de la barra.
+//
+// Tocar un producto despliega SUS lotes en ESA sala —los regulares y, aparte,
+// los del área de vencidos— sin salir de la lista (`fetchInventoryDetail`, lo
+// mismo que expande la fila del portal), con un enlace a la ficha completa.
+// En Bodega, la tarjeta «Área vencidos» cuenta los productos que hay en esa
+// ubicación y filtra. Debajo de las cifras, cuándo se actualizó la sala.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
@@ -15,8 +20,9 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import {
   fetchAllVencidosInventory, fetchExpiredInventoryCount, fetchInventarioAgrupado,
-  fetchInventarioInversion, fetchInventarioProximosAVencer, fetchProductCategories,
+  fetchInventarioInversion, fetchInventarioProximosAVencer, fetchInventoryDetail, fetchInventorySyncLog, fetchProductCategories,
 } from '@nucleo/data/inventarioTab';
+import { desdeHace } from '@nucleo/utils/movimientoTexto';
 import { buscarIdsDeProducto } from '@nucleo/data/busquedaProductos';
 import { loteAMostrar, unidadesVencidasPorProducto, vencimientoDe } from '@nucleo/utils/inventarioDeSala';
 import { BRANCH_A_ERP, ERP_BODEGA, ERP_NAMES, ERP_ORDEN } from '@nucleo/constants/erp';
@@ -39,23 +45,63 @@ const POR_PAGINA = 25;
 const FRANJA = { vencido: MARCA.rojo, pronto: MARCA.ambar, trimestre: MARCA.ambar, semestre: MARCA.violeta };
 const fechaCorta = (f) => fechaTexto(String(f).slice(0, 10), { day: 'numeric', month: 'short', year: '2-digit' });
 
+function Lotes({ titulo, filas, color }) {
+  if (!filas?.length) return null;
+  return (
+    <View style={{ gap: 4 }}>
+      <Text style={{ color: color ?? colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.4 }}>{titulo}</Text>
+      {filas.map((l, i) => {
+        const v = vencimientoDe(l.fecha_vencimiento);
+        return (
+          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{[l.presentacion, l.detalle].filter(Boolean).join(' · ') || '—'}</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Lote ${l.lote || '—'}`}</Text>
+            </View>
+            <Text style={{ color: v?.vencido ? MARCA.rojo : v && FRANJA[v.franja] ? FRANJA[v.franja] : colorSistema.texto2, fontSize: 13 }}>
+              {l.fecha_vencimiento ? fechaCorta(l.fecha_vencimiento) : 'sin fecha'}
+            </Text>
+            <Text style={{ minWidth: 40, textAlign: 'right', color: colorSistema.texto, fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{Number(l.cantidad).toLocaleString('es-SV')}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 function Tarjeta({ g, conSala, vencidas }) {
+  const [abierta, setAbierta] = useState(false);
+  const [lotes, setLotes] = useState(null);
   const unidades = Number(g.total_unidades) || 0;
   const venc = vencimientoDe(g.earliest_venc);
   const lote = loteAMostrar(g);
   const pres = g.presentaciones || [];
-  const abrir = () => {
+  const alternar = async () => {
+    Haptics.selectionAsync().catch(() => {});
+    setAbierta((a) => !a);
+    if (lotes) return;
+    try {
+      const [{ data }, { data: venc2 }] = await Promise.all([
+        fetchInventoryDetail(g.erp_sucursal_id, g.erp_product_id, false),
+        fetchInventoryDetail(g.erp_sucursal_id, g.erp_product_id, true),
+      ]);
+      setLotes({ regulares: data || [], vencidos: venc2 || [] });
+    } catch {
+      setLotes({ regulares: [], vencidos: [], error: true });
+    }
+  };
+  const ficha = () => {
     Haptics.selectionAsync().catch(() => {});
     router.push({ pathname: '/producto/[id]', params: { id: String(g.erp_product_id), nombre: g.descripcion } });
   };
   return (
-    <Pressable onPress={abrir} style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+    <Pressable onPress={alternar} style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
       <Vidrio radio={20} interactivo>
         <View style={{ padding: 14, gap: 8 }}>
           <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
             <View style={{ flex: 1, gap: 3 }}>
-              <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }} numberOfLines={2}>{g.descripcion || '—'}</Text>
-              <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>
+              <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{g.descripcion || '—'}</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
                 {[conSala ? ERP_NAMES[g.erp_sucursal_id] : null, g.laboratorio, lote !== '—' ? `Lote ${lote}` : null].filter(Boolean).join(' · ')}
               </Text>
             </View>
@@ -73,8 +119,22 @@ function Tarjeta({ g, conSala, vencidas }) {
             ) : null}
             {vencidas ? <Pildora color={MARCA.rojo} texto={`${vencidas.toLocaleString('es-SV')} en vencidos`} /> : null}
             {g.es_antibiotico ? <Pildora color={MARCA.violeta} texto="Bajo Receta" /> : null}
-            {pres.slice(0, 3).map((p) => <Pildora key={p} color={colorSistema.texto2} texto={p} />)}
+            {pres.map((p) => <Pildora key={p} color={colorSistema.texto2} texto={p} />)}
           </View>
+          {abierta ? (
+            <View style={{ gap: 10, paddingTop: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
+              {lotes == null ? <ActivityIndicator /> : lotes.error ? <Aviso tono="freno" texto="No se pudieron cargar los lotes." /> : (
+                <>
+                  <Lotes titulo={`LOTES EN ${String(ERP_NAMES[g.erp_sucursal_id] ?? 'LA SALA').toUpperCase()}`} filas={lotes.regulares} />
+                  <Lotes titulo="EN EL ÁREA DE VENCIDOS" filas={lotes.vencidos} color={MARCA.rojo} />
+                  {!lotes.regulares.length && !lotes.vencidos.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin lotes con existencia.</Text> : null}
+                </>
+              )}
+              <Pressable onPress={ficha} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
+                <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>Ver la ficha del producto ›</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
       </Vidrio>
     </Pressable>
@@ -96,6 +156,7 @@ export default function Inventario() {
   const [cifras, setCifras] = useState(null);
   const [vencidasPorProducto, setVencidas] = useState({});
   const [categorias, setCategorias] = useState([]);
+  const [sincronias, setSincronias] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [recargando, setRecargando] = useState(false);
   const [error, setError] = useState(null);
@@ -109,6 +170,7 @@ export default function Inventario() {
 
   useEffect(() => {
     fetchProductCategories().then(({ data }) => setCategorias((data || []).map((r) => r.nombre))).catch(() => {});
+    fetchInventorySyncLog().then(({ data }) => setSincronias(data || [])).catch(() => {});
   }, []);
   useEffect(() => {
     let vivo = true;
@@ -173,6 +235,14 @@ export default function Inventario() {
       opciones: [{ id: 'laboratorio', label: 'Laboratorio' }, { id: 'descripcion', label: 'Producto' }, { id: 'unidades', label: 'Más unidades' }] },
   ];
   const quedan = datos.total > datos.filas.length;
+  // Cuándo se actualizó la sala (la última corrida buena del inventario). Con
+  // todas las salas, la que más tiempo lleva sin actualizarse.
+  const sincronia = (() => {
+    const buenas = sincronias.filter((x) => x.success !== false);
+    const ultimaDe = (id) => buenas.find((x) => Number(x.erp_sucursal_id) === Number(id));
+    if (erp != null) return ultimaDe(erp);
+    return ERP_ORDEN.map(ultimaDe).filter(Boolean).sort((a, b) => new Date(a.synced_at) - new Date(b.synced_at))[0];
+  })();
 
   return (
     <>
@@ -200,7 +270,18 @@ export default function Inventario() {
               <Kpi icono="Boxes" rotulo="Productos" valor={datos.total.toLocaleString('es-SV')} color={MARCA.azul} />
               <Kpi icono="Wallet" rotulo="Inversión" apoyo="costo sin IVA" valor={formatMoney(cifras.inversion, { decimales: 0 })} color={MARCA.verde} />
             </FilaDeKpis>
+            {esBodega ? (
+              <FilaDeKpis>
+                <Kpi icono="Archive" rotulo="Área vencidos" apoyo="ubicación en Bodega" valor={Object.keys(vencidasPorProducto).length.toLocaleString('es-SV')} color={MARCA.rojo}
+                  onPress={() => setAreaVencidos(areaVencidos === 'si' ? 'no' : 'si')} />
+              </FilaDeKpis>
+            ) : null}
           </>
+        ) : null}
+        {sincronia ? (
+          <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
+            {`${erp == null ? `La más vieja: ${ERP_NAMES[sincronia.erp_sucursal_id]} · ` : ''}actualizado ${desdeHace(sincronia.synced_at, Date.now())}${sincronia.items_count != null ? ` · ${Number(sincronia.items_count).toLocaleString('es-SV')} renglones` : ''}`}
+          </Text>
         ) : null}
         <Segmentos activa={vista} onCambiar={setVista}
           opciones={[{ id: 'todo', label: 'Todo' }, { id: 'proximos', label: 'Por vencer' }, { id: 'vencidos', label: 'Vencidos' }]} />

@@ -287,3 +287,30 @@ export function fetchProductDetail(productId, priceSelect, canSeeCosts) {
             .order('valid_from', { ascending: true }),
     ]);
 }
+
+/**
+ * La fila de UN producto para su ficha: lo mismo que trae una fila del
+ * catálogo (`CATALOGO_SELECT`) más si es perecedero. La ficha del teléfono no
+ * pasa por la lista del catálogo, así que la pide sola.
+ */
+export function fetchFichaDeProducto(productId) {
+    return supabase.from('products')
+        .select(`${CATALOGO_SELECT}, perecedero, codigo_barras`)
+        .eq('id', productId)
+        .maybeSingle();
+}
+
+/** Las ubicaciones guardadas del producto en cada sala (vitrina/estante y bodega). */
+export function fetchUbicacionesDeProducto(productId) {
+    return supabase.from('product_locations')
+        .select('branch_id, vitrina, estante, peldano, bodega_numero, bodega_peldano')
+        .eq('product_id', productId);
+}
+
+/** El nombre de un producto, para la pantalla que llega con el id y nada más
+ *  (un enlace o un aviso). `null` si no existe o si falla. */
+export async function fetchNombreDeProducto(productId) {
+    const { data, error } = await supabase.from('products').select('nombre').eq('id', productId).maybeSingle();
+    if (error) { console.error('productos: fetchNombreDeProducto', error.message); return null; }
+    return data?.nombre ?? null;
+}

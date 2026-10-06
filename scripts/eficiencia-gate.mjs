@@ -125,6 +125,47 @@ function techoDeclarado(d, filas, horas) {
  * gate lo dice con el número viejo y el nuevo a la vista. */
 const CRONS = [
   {
+    job: 'reservas-vencer-15min', slug: null, cadencia: '*/15 * * * *',
+    corridasDia: 96, sistema: 0,
+    motivo: 'Vence las reservas de la app: «lista» con el plazo de 24 h cumplido, o «pendiente» cuya '
+          + 'oferta ya terminó. Un UPDATE sobre la propia tabla (decenas de filas a lo sumo).',
+  },
+  {
+    job: 'wallet-pases-minuto', slug: 'wallet-pases', cadencia: '* * * * *',
+    corridasDia: 1440, sistema: 0,
+    motivo: 'La tarjeta de Wallet que se actualiza sola: cada minuto busca tarjetas cuyo saldo '
+          + 'cambió y le avisa a Apple (APNs). El propio cron sólo dispara si hay ALGÚN teléfono '
+          + 'registrado (`WHERE EXISTS`), y la función sale enseguida si nada cambió. No habla con '
+          + 'el ERP; APNs es gratis.',
+  },
+  {
+    job: 'avisos-clientes-minuto', slug: 'avisos-clientes', cadencia: '* 14-23,0-1 * * *',
+    corridasDia: 720, sistema: 0,
+    motivo: 'Avisos INMEDIATOS de la app de clientes: puntos ganados y oferta nueva, cada minuto '
+          + 'de 8:00 a 20:00 SV (decisión del usuario, 2026-10-06: la venta tarda ~1 min en llegar '
+          + 'de la caja, así que el aviso llega 1–2 min después de pagar). `sistema: 0`: no habla '
+          + 'con el ERP; lee la propia base (sesiones con avisos + lotes de las últimas 2 h) y sale '
+          + 'antes si nadie tiene avisos. Envía por Expo, gratis. La bitácora impide repetir.',
+  },
+  {
+    job: 'avisos-clientes-diario', slug: 'avisos-clientes', cadencia: '0 15 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Recordatorios de la app de clientes a las 9:00 SV: puntos que vencen en 15 días e '
+          + 'inyección pagada hace 3 días sin aplicar. Una vez al día, a hora fija.',
+  },
+
+  {
+    job: 'puntos-referidos-hora', slug: null, cadencia: '20 * * * *',
+    corridasDia: 24, sistema: 0,
+    motivo: 'Premia los referidos de la app (50+50 con la primera compra de $10 del invitado). '
+          + 'SQL puro sobre la propia base; sólo recorre las invitaciones pendientes.',
+  },
+  {
+    job: 'purge-app-cliente-avisos', slug: null, cadencia: '40 9 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Retención de 180 días de la bitácora de avisos de la app de clientes.',
+  },
+  {
     job: 'refresh-product-last-sale-daily', slug: null, cadencia: '45 6 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'Recalcula `product_last_sale` —la fecha de la última venta de cada producto en cada '

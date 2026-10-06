@@ -209,7 +209,8 @@ export async function guardarEntrevista(encuestaId, branchId, { respuestas, cont
         p_contacto: contacto || null, p_duracion: segundos ?? null,
     });
     if (error) throw mensajeDe(error);
-    anotar('ENCUESTA_CLIENTE_ENTREVISTA', data?.id, { encuesta: encuestaId, sucursal: branchId });
+    const r = /** @type {{ id?: string } | null} */ (data);
+    anotar('ENCUESTA_CLIENTE_ENTREVISTA', r?.id, { encuesta: encuestaId, sucursal: branchId });
     return data;
 }
 
@@ -237,7 +238,8 @@ export async function marcarMuestraEntregada(respuestaId) {
 export async function asignarIncentivo(incentivoId, customerId) {
     const { data, error } = await supabase.rpc('encuesta_cliente_asignar_incentivo', { p_inc: incentivoId, p_customer: customerId });
     if (error) throw mensajeDe(error);
-    anotar('ENCUESTA_CLIENTE_PUNTOS_ASIGNADOS', incentivoId, { customer_id: customerId, estado: data?.estado });
+    const r = /** @type {{ estado?: string } | null} */ (data);
+    anotar('ENCUESTA_CLIENTE_PUNTOS_ASIGNADOS', incentivoId, { customer_id: customerId, estado: r?.estado });
     return data;
 }
 

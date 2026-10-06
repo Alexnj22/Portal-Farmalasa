@@ -62,7 +62,7 @@ import { fetchCobrosDelPortal } from '@nucleo/data/creditos';
  * forma en que sale dinero de una sala, y la única que no dejaba rastro en
  * ninguna pantalla de Efectivo. */
 import { fetchAnotadosDelPortal, fetchSalidasDeBolsaDelRango, fetchTiposDeSalida } from '@nucleo/data/bolsas';
-import { conTramoPorSalaYDia, resumenDeCortes, severidad } from '@nucleo/utils/cortesDiagnostico';
+import { conTramoPorSalaYDia, filtrarCortes, resumenDeCortes, severidad } from '@nucleo/utils/cortesDiagnostico';
 import {
     diaEnFiltro, diaEnMes, mesesDeLosDias, ordenarDias, pendientesDeRegistrar, porSigno, resolucionesDe, resumenDeDias,
 } from '@nucleo/utils/diferenciasDeCaja';
@@ -614,36 +614,13 @@ const CortesView = () => {
         [diasVisibles, paginaDifActual, porPaginaDif],
     );
 
-    const filtrados = useMemo(() => conTramoTodos.filter((c) => {
-        if (sala && String(c.branch_id) !== String(sala)) return false;
-
-        // Lo que NO contó efectivo —el cierre del día (Z) y las lecturas (X)—
-        // no se confirma y no tiene diferencia: sólo aparece como contexto,
-        // cuando no hay ningún recorte de estado ni de cifra. Bajo «Sin
-        // confirmar» no significaría nada.
-        //
-        // Y para la X no es sólo que no signifique: su `estado` nace en
-        // PENDIENTE como el de cualquier fila, así que sin esto se quedaría
-        // para siempre en «Sin confirmar» sin ningún botón que la saque —
-        // además de contradecir al contador de arriba, que ya cuenta sólo las
-        // de tipo 'C'. La condición es «esto contó dinero», no «es el cierre»:
-        // eran lo mismo mientras sólo hubiera dos tipos.
-        if (c.tipo !== 'C') {
-            if (estado !== 'TODOS' || diferencia !== 'TODAS') return false;
-        } else {
-            if (estado !== 'TODOS' && c.estado !== estado) return false;
-            if (diferencia !== 'TODAS' && severidad(c.tramo) !== diferencia) return false;
-        }
-
-        if (!busqueda.trim()) return true;
-        // Se busca por quien CORTÓ, no por el nombre de la cuenta de la sala:
-        // con `empleado_texto` acá, buscar a una persona devolvía los cortes de
-        // las tres salas cuya cuenta lleva su nombre y que ella no hizo.
-        return tokenMatch(busqueda,
-            nombreSala[c.branch_id], c.hizo?.name, c.fecha, c.hora,
-            String(c.total_declarado ?? ''), String(c.tramo ?? ''),
-            String(c.erp_corte_id ?? ''), c.motivo_descarte);
-    }), [conTramoTodos, estado, diferencia, busqueda, sala, nombreSala]);
+    // El filtro es del núcleo (`filtrarCortes`): la lista de la app deja pasar
+    // los mismos. Por qué la X y la Z no entran con un filtro puesto, y por qué
+    // se busca por quien CORTÓ, está escrito allá.
+    const filtrados = useMemo(
+        () => filtrarCortes(conTramoTodos, { sala, estado, diferencia, busqueda, nombreSala }),
+        [conTramoTodos, estado, diferencia, busqueda, sala, nombreSala],
+    );
 
     const totalPaginas = Math.max(1, Math.ceil(filtrados.length / porPagina));
     const pagActual = Math.min(pagina, totalPaginas);

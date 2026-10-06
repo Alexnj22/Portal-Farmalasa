@@ -40,8 +40,9 @@ import { fetchCortes, fetchPersonas, fetchVentasPorPago } from '@nucleo/data/cor
 /* Los cobros de crédito son la TERCERA fuente de efectivo del día, junto con
  * el cajón y las bolsas. Viven en `creditos` porque el cobro se decide allá;
  * acá se miran porque el dinero entra por esta caja. */
-import { cobroEnEfectivo, fetchCobrosDelPortal } from '@nucleo/data/creditos';
+import { fetchCobrosDelPortal } from '@nucleo/data/creditos';
 import { acumuladoAntesDe, conLaCuentaBuena, conTramoDelCorte, repartirPorCorte } from '@nucleo/utils/cortesDiagnostico';
+import { conMayuscula, cuentaDelCajon, lineasDelDia, netoDelTramo, ORIGEN_DEL_MONTO, ROTULO_DE_ORIGEN, tituloDeCorreccion } from '@nucleo/utils/cajaDelDia';
 
 /* Sacar dinero de una bolsa se mudó acá desde Bolsas (pedido del usuario,
  * 29-ago): todo lo que mueve efectivo vive en la caja. Es el MISMO componente,
@@ -57,6 +58,7 @@ const DialogoAbono = lazy(() => import('../components/caja/DialogoAbono'));
 // su diálogo sólo se carga cuando alguien lo abre.
 const DialogoAplicacion = lazy(() => import('../components/caja/DialogoAplicacion'));
 import BonosPorPagar from '../components/caja/BonosPorPagar';
+import EsperaDeLaCaja from '../components/caja/EsperaDeLaCaja';
 import { construirComprobanteDeAbono } from '@nucleo/utils/abonoTicket';
 import { construirComprobanteDeCorte } from '@nucleo/utils/corteTicket';
 import { construirComprobanteDeMovimiento } from '@nucleo/utils/movimientoTicket';
@@ -1476,10 +1478,7 @@ const horaLegible = (cuando) => (cuando ? hora12(cuando) : '');
 
 
 /** Sale del dato, no de una lista escrita a mano: `efectivo` → `Efectivo`. */
-const conMayuscula = (t) => {
-    const s = String(t || '').trim();
-    return s ? s[0].toUpperCase() + s.slice(1) : '—';
-};
+// `conMayuscula` vive en el núcleo (`cajaDelDia`): la app la usa igual.
 
 /** Un renglón de la cuenta del efectivo: rótulo a la izquierda, monto a la
  *  derecha. Existe porque son seis y escritos a mano se desalinean solos. */
@@ -1540,25 +1539,9 @@ function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas })
     const hayEntrega = (entregas || []).length > 0;
     if (!estado?.abierta && !hayEntrega) return null;
 
-    const filas = [...(ventas || [])]
-        .map((v) => ({ tipo: String(v.tipo_pago), docs: Number(v.documentos || 0), total: Number(v.total || 0) }))
-        .sort((a, b) => b.total - a.total);
-    const total = filas.reduce((s, f) => s + f.total, 0);
-    const docs = filas.reduce((s, f) => s + f.docs, 0);
-
-    /* Las piezas del cajón, tal como las armó el servidor. `null` cuando la
-     * lectura del estado no las trajo —una caja recién abierta, o el origen sin
-     * contestar—: ahí la cuenta no se rearma acá, se muestran las dos líneas de
-     * siempre y no se afirma ningún total. Un total inventado sobre piezas que
-     * faltan es peor que no darlo. */
-    const pz = estado?.efectivo_piezas || null;
-    const enCaja = estado?.efectivo ?? null;
-    const puedeSumar = !!pz && enCaja != null;
-    // El respaldo cuando no hay piezas: lo vendido en efectivo sale del
-    // desglose de arriba, que es la única fuente que queda.
-    const efectivoVendido = pz ? Number(pz.ventas_efectivo || 0)
-        : (filas.find((f) => f.tipo.toLowerCase() === 'efectivo')?.total ?? 0);
-    const enBolsas = Number(pz?.en_bolsas || 0);
+    // La cuenta sale del núcleo (`cuentaDelCajon`): la app nativa pinta la misma.
+    const { formas: filas, total, docs, pz, enCaja, puedeSumar, efectivoVendido, enBolsas } =
+        cuentaDelCajon({ estado, ventas });
 
     /* La fila de «Caja · Abierta desde · La abrió · Monto de apertura» se fue de
      * acá: decía LO MISMO que las tarjetas de arriba, tres centímetros más
@@ -1734,10 +1717,7 @@ function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas })
  * `FOTO_CONFIRMADA` no está y es a propósito: es el caso normal y rotularlo
  * sería ponerle una etiqueta a casi todas las líneas. Una marca que aparece
  * siempre deja de leerse, y entonces tampoco se lee la que importa. */
-const ROTULO_DE_ORIGEN = {
-    A_MANO: 'monto escrito a mano',
-    FOTO_SIN_CONFIRMAR: 'monto sin comprobar',
-};
+// `ROTULO_DE_ORIGEN` viene del núcleo (`cajaDelDia`).
 
 /**
  * La corrección que se le pidió a un movimiento, contada entera.
@@ -1768,14 +1748,7 @@ function LaCorreccion({ dato }) {
     /* «Anular» no es un cambio de valor: escrito como par —«$18.28 → —»— se lee
      * como que quedó en cero, y lo que queda es NADA. Es la misma regla que ya
      * sigue la ficha de la solicitud. */
-    const titulo = pendiente
-        ? (anula ? 'Se pidió anularlo'
-                 : `Se pidió cambiarlo a ${formatMoney(dato.monto_despues)}`)
-        : rechazada
-            ? (anula ? 'No se anuló: la corrección se rechazó'
-                     : `No se cambió a ${formatMoney(dato.monto_despues)}: se rechazó`)
-            : (anula ? `Se anuló · eran ${formatMoney(dato.monto_antes)}`
-                     : `Se corrigió el monto · antes decía ${formatMoney(dato.monto_antes)}`);
+    const titulo = tituloDeCorreccion(dato);
 
     return (
         <div className="rounded-lg bg-surface-input/40 px-3 py-2 space-y-1.5">
@@ -1838,11 +1811,7 @@ const CLASE_DE_MOVIMIENTO = {
 /* Cómo se obtuvo el monto, dicho entero en el detalle. En la fila sólo se marca
  * cuando NO está comprobado (ver `ROTULO_DE_ORIGEN`); abierto, se dice siempre,
  * porque ahí alguien está preguntando justamente eso. */
-const ORIGEN_DEL_MONTO = {
-    FOTO_CONFIRMADA: 'leído de la boleta y confirmado',
-    FOTO_SIN_CONFIRMAR: 'leído de la boleta, sin confirmar',
-    A_MANO: 'escrito a mano',
-};
+// `ORIGEN_DEL_MONTO` viene del núcleo (`cajaDelDia`).
 
 /**
  * Un movimiento del día: una fila que se lee de un vistazo y se ABRE para
@@ -2078,143 +2047,10 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
         setFirmando(null);
     }, [foto]);
 
-    const lineas = useMemo(() => {
-        const delCajon = (movimientos || []).map((m) => ({
-            clave: `caja-${m.id}`,
-            cuando: m.registrado_at,
-            /* El COMPLETO cuando lo hay. `concepto` es lo que le cupo al
-             * sistema de la caja —50 caracteres— y por eso la remesa de $50 de
-             * Salud 4 se leía «… · MONEYGRAM · PAGO D». Las filas anteriores al
-             * 2026-09-02 no tienen el completo y caen al recortado, que es todo
-             * lo que se guardó de ellas. */
-            titulo: m.detalle || m.concepto,
-            entra: m.tipo === 'ENTRADA',
-            monto: Number(m.monto || 0),
-            anulado: !!m.anulado_at,
-            origen: 'De la caja',
-            detalle: [
-                m.numero_boleta ? `boleta ${m.numero_boleta}` : null,
-                m.erp_movimiento_id ? null : 'sin llegar a la caja',
-            ].filter(Boolean),
-            quien: m.registrado_por,
-            foto: m.foto_url || null,
-            movimiento: m,
-            /* Lo que se le pidió corregir. Sólo el cajón lo tiene: una salida de
-             * bolsa se corrige por otro camino, y un cobro de crédito por el
-             * suyo. */
-            correcciones: correcciones?.get(m.id) || VACIO,
-            /* Si el papel respalda ese monto, o si lo puso una persona. Sólo se
-             * pinta cuando NO está confirmado: marcar los buenos es ruido, y el
-             * ruido es lo que hace que nadie mire la marca que sí importa. */
-            montoOrigen: m.monto_origen || null,
-            clase: m.tipo === 'ENTRADA' ? 'entra' : 'sale',
-            tipoTexto: m.tipo === 'ENTRADA' ? 'Ingreso a la caja' : 'Salida de la caja',
-            datos: [
-                ['Boleta', m.numero_boleta || null],
-                ['En la caja', m.erp_movimiento_id
-                    ? `registrado · n.º ${m.erp_movimiento_id}`
-                    : 'todavía no llega a la caja', !m.erp_movimiento_id],
-            ],
-        }));
-        const deLasBolsas = (deBolsas || []).map((o) => {
-            const total = Math.abs(Number(o.monto || 0));
-            const deHoy = Number(o.montoDeHoy || 0);
-            return {
-                clave: `bolsa-${o.id}`,
-                cuando: o.registrado_at,
-                titulo: `${etiquetaDe(o.tipo)}${o.entidad ? ` · ${o.entidad}` : ''}`,
-                entra: false,
-                monto: total,
-                anulado: !!o.anulada_at,
-                origen: 'De una bolsa',
-                avisa: o.tocaLaCaja,
-                detalle: [o.folio, o.numero_boleta ? `boleta ${o.numero_boleta}` : null].filter(Boolean),
-                quien: o.registrado_por,
-                foto: o.foto_url || null,
-                /* La misma marca que el cajón. Las dos fuentes se leen en ESTA
-                 * lista, así que marcar una y la otra no haría que la ausencia
-                 * de marca se leyera como «monto comprobado». */
-                montoOrigen: o.monto_origen || null,
-                /* El DESGLOSE, no una frase.
-                 *
-                 * Una salida grande se reparte entre las bolsas que alcancen, y
-                 * de días distintos: la remesa REM-1058 son $500 en tres bolsas
-                 * —$119.38 de hoy y $380.62 de dos del 31-ago— y sólo la primera
-                 * parte toca el corte que viene. Escrito como frase única, la
-                 * pantalla tenía que elegir UNA de las dos verdades y decía «de
-                 * una bolsa de hoy» sobre los $500 enteros. Bolsa por bolsa no
-                 * hay que elegir. */
-                reparto: o.bolsasUsadas || [],
-                afectaElCorte: deHoy,
-                parcial: deHoy > 0.005 && deHoy < total - 0.005,
-                clase: 'bolsa',
-                tipoTexto: 'Pagado con una bolsa',
-                datos: [
-                    ['Motivo', etiquetaDe(o.tipo)],
-                    ['A nombre de', o.entidad || null],
-                    ['Folio', o.folio || null],
-                    ['Boleta', o.numero_boleta || null],
-                    ['Afecta el corte de hoy', deHoy > 0.005 ? formatMoney(deHoy) : 'no', deHoy > 0.005],
-                ],
-            };
-        });
-        /* ── Los cobros de crédito ─────────────────────────────────────────
-         *
-         * Son la tercera fuente, y hasta hoy no se veían por ningún lado. El
-         * dinero de un cobro en efectivo entra a ESTE cajón —el corte lo va a
-         * pedir en billetes, y por eso `cortes_caja.cobros_portal_efectivo` se
-         * lo suma al esperado— así que su sitio es esta lista y no otra
-         * pantalla.
-         *
-         * Lo que el sistema de la caja anota de un cobro es un renglón que dice
-         * `POR ABONO A CREDITO` y nada más: sin cliente, sin crédito y sin
-         * quién cobró. Acá van los tres, que es lo que convierte «entró plata»
-         * en «se le cobró a fulana el crédito 2288».
-         *
-         * ⚠️ **El que no es efectivo NO toca el cajón** y por eso lleva
-         * `sinEfectivo`: sale en la lista —se hizo, y hay que poder verlo— pero
-         * fuera de la suma del tramo. Sumado, inventaría un sobrante del
-         * tamaño de la transferencia. */
-        const deCreditos = (cobros || []).map((c) => {
-            const efvo = cobroEnEfectivo(c);
-            return {
-                clave: `cobro-${c.id}`,
-                cuando: c.created_at,
-                titulo: `Cobro de crédito · ${c.cliente || 'Sin nombre'}`,
-                entra: true,
-                monto: Number(c.monto || 0),
-                anulado: !!c.anulado_at,
-                origen: 'Cobro de un crédito',
-                sinEfectivo: !efvo,
-                detalle: [
-                    `crédito ${c.credito_erp}`,
-                    efvo ? 'en efectivo' : `${String(c.forma || 'otra forma').toLowerCase()} · no entra al cajón`,
-                    c.documento ? `documento ${c.documento}` : null,
-                    Number(c.saldo_despues) > 0.004
-                        ? `queda debiendo ${formatMoney(c.saldo_despues)}`
-                        : 'crédito saldado',
-                ].filter(Boolean),
-                quien: c.abonado_por,
-                foto: c.comprobante_url || null,
-                clase: 'cobro',
-                tipoTexto: 'Cobro de un crédito',
-                datos: [
-                    ['Cliente', c.cliente || null],
-                    ['Crédito', c.credito_erp ? `n.º ${c.credito_erp}` : null],
-                    ['Factura', c.factura_erp || null],
-                    ['Forma de pago', conMayuscula(c.forma || 'otra forma')],
-                    ['Al cajón', efvo ? 'sí, en efectivo' : 'no entra al cajón', !efvo],
-                    ['Documento', c.documento || null],
-                    ['Debía', c.saldo_antes != null ? formatMoney(c.saldo_antes) : null],
-                    ['Queda debiendo', Number(c.saldo_despues) > 0.004
-                        ? formatMoney(c.saldo_despues) : 'nada · crédito saldado'],
-                ],
-            };
-        });
-
-        return [...delCajon, ...deLasBolsas, ...deCreditos]
-            .sort((a, b) => String(b.cuando || '').localeCompare(String(a.cuando || '')));
-    }, [movimientos, deBolsas, cobros, tipos, correcciones]); // eslint-disable-line react-hooks/exhaustive-deps -- `etiquetaDe` sale de `tipos`
+    // La lista sale del núcleo (`lineasDelDia`): la app nativa arma la MISMA.
+    const lineas = useMemo(() => lineasDelDia({
+        movimientos, deBolsas, cobros, etiquetaDe, correcciones,
+    }), [movimientos, deBolsas, cobros, tipos, correcciones]); // eslint-disable-line react-hooks/exhaustive-deps -- `etiquetaDe` sale de `tipos`
 
     /* ── El buscador ───────────────────────────────────────────────────────
      *
@@ -2329,10 +2165,7 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
                             {/* `sinEfectivo` fuera de la suma: es lo que se cobró
                                 con tarjeta o transferencia, y ese dinero no está
                                 en el cajón que el corte va a contar. */}
-                            {!g.corte && ` · ${conSigno(g.lineas.reduce(
-                                (t, l) => t + ((l.anulado || l.sinEfectivo) ? 0
-                                    : (l.entra ? l.monto : -l.monto)), 0,
-                            ))}`}
+                            {!g.corte && ` · ${conSigno(netoDelTramo(g.lineas))}`}
                         </span>
                     </div>
 
@@ -2842,6 +2675,23 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
     );
 }
 
+/* Rótulos por TIEMPO, no por avance real: el servidor no informa por dónde va.
+ * Siguen el orden de `hacer-corte-caja` y su reparto medido (~1 s entrar a la
+ * caja, el resto lo hace el sistema de la caja). */
+const NADA = () => {};
+const PASOS_DEL_CORTE = [
+    { desde: 0, texto: 'Entrando a la caja…' },
+    { desde: 1.5, texto: 'Revisando el día…' },
+    { desde: 3, texto: 'Registrando el corte en la caja…' },
+    { desde: 8, texto: 'Leyendo el comprobante…' },
+];
+const PASOS_DEL_CIERRE = [
+    { desde: 0, texto: 'Entrando a la caja…' },
+    { desde: 2, texto: 'Revisando que todo esté contado…' },
+    { desde: 4, texto: 'Emitiendo el cierre del día…' },
+    { desde: 10, texto: 'Cerrando el turno…' },
+];
+
 function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0, bolsasDeHoy = 0,
     resolviendo = false, sinResolver = VACIO, sinResolverFilas = VACIO,
     onResolver, onResolverPendiente, onClose, onCortar, onImprimir }) {
@@ -3051,6 +2901,18 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0
         );
     }
 
+    /* Mientras la caja registra el corte, el diálogo no se cierra: hacerlo no
+     * lo deshace, lo deja sin resolver y sin el resultado a la vista. Ver
+     * `EsperaDeLaCaja`. */
+    if (ocupado) {
+        return (
+            <Marco abierto={abierto} onClose={NADA} titulo="Haciendo el corte">
+                <EsperaDeLaCaja pasos={PASOS_DEL_CORTE}
+                    aviso="El corte ya se está registrando en la caja. Si cierras ahora, queda hecho pero sin resolver." />
+            </Marco>
+        );
+    }
+
     return (
         <Marco abierto={abierto} onClose={onClose} titulo="Hacer el corte"
             bajada="Cuenta SÓLO el efectivo que hay en el cajón ahora. Lo que ya está en las bolsas de hoy lo suma el portal."
@@ -3217,6 +3079,15 @@ function DialogoCerrar({ ocupado, sinCorte, sinConfirmar, sinResolver = VACIO, f
                         <Button variant="primary" onClick={onClose}>Entendido</Button>
                     </div>
                 )}
+            </Marco>
+        );
+    }
+
+    if (ocupado) {
+        return (
+            <Marco abierto onClose={NADA} titulo="Cerrando el día">
+                <EsperaDeLaCaja pasos={PASOS_DEL_CIERRE} estimadoSeg={12}
+                    aviso="El cierre ya se está registrando en la caja y no se deshace. Espera a que confirme." />
             </Marco>
         );
     }

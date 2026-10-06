@@ -1,3 +1,4 @@
+import { diaSV, fechaNumerica } from './fecha';
 // La entrada de la bitácora, armada en UN solo sitio.
 //
 // Vivía dentro de `store/slices/auditSlice.js`, así que sólo podía anotar quien
@@ -158,4 +159,69 @@ export function armarEntrada(actionOrObj, targetId = null, details = {}, nombre 
     device_name: ctx.device_name,
     input_method: ctx.input_method,
   };
+}
+
+// ── La pantalla de Auditoría: filtro y orden (2026-10-05) ───────────────────
+// Vivía en `AuditView`; se mudó para que la app filtre igual. El día de un
+// registro es el de El Salvador (`diaSV`), NO el del UTC: con `toISOString()`,
+// lo que pasó después de las 6 p. m. caía en el día siguiente y desaparecía
+// del filtro «hoy».
+
+export const ACCIONES_DE_BITACORA = [
+    { value: 'ALL', label: 'Todas' },
+    { value: 'REGISTRO_ASISTENCIA', label: 'Asistencias' },
+    { value: 'CREAR_EMPLEADO', label: 'Creaciones' },
+    { value: 'EDITAR_EMPLEADO', label: 'Ediciones' },
+    { value: 'ELIMINAR_EMPLEADO', label: 'Eliminaciones' },
+];
+
+export function filtrarBitacora(logs, { accion = 'ALL', desde = '', hasta = '' } = {}) {
+    return (logs || []).filter((log) => {
+        if (accion !== 'ALL' && log.action !== accion) return false;
+        if (desde || hasta) {
+            const dia = diaSV(log.created_at);
+            if (desde && dia < desde) return false;
+            if (hasta && dia > hasta) return false;
+        }
+        return true;
+    });
+}
+
+/** Ordena por una columna; la fecha como instante y lo demás como texto sin mayúsculas. */
+export function ordenarBitacora(logs, { key = 'created_at', direction = 'desc' } = {}) {
+    const valor = (l) => (key === 'created_at' ? new Date(l.created_at || 0).getTime() : String(l[key] || '').toLowerCase());
+    return [...(logs || [])].sort((a, b) => {
+        const x = valor(a), y = valor(b);
+        if (x < y) return direction === 'asc' ? -1 : 1;
+        if (x > y) return direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+}
+
+/** La severidad de un registro, como variante de `Badge`. */
+export const varianteDeSeveridad = (s) => (s === 'CRITICAL' ? 'danger' : s === 'WARNING' ? 'warning' : 'info');
+
+/** De dónde vino el registro, en palabras. */
+export const ROTULO_DE_ORIGEN = { KIOSK: 'Kiosco', SYSTEM: 'Sistema', ADMIN_PANEL: 'Portal' };
+
+/**
+ * Las columnas y filas del CSV de la bitácora — el portal y la app exportan lo
+ * mismo. Cada fila son valores crudos; el escape lo pone quien escribe el
+ * archivo.
+ */
+export const COLUMNAS_CSV_BITACORA = [
+    'Fecha', 'Hora', 'Usuario', 'Acción', 'Severidad',
+    'Origen', 'Sucursal', 'Dispositivo', 'Método de Ingreso',
+    'ID Objetivo', 'Detalles JSON',
+];
+export function filasCsvDeBitacora(logs, hora12ConSegundos) {
+    return (logs || []).map((log) => {
+        const d = new Date(log.created_at);
+        return [
+            // La fecha en El Salvador y con el formato de toda la app (gate:hora).
+            fechaNumerica(log.created_at), hora12ConSegundos ? hora12ConSegundos(d) : d.toISOString().slice(11, 19),
+            log.user_name, log.action, log.severity, log.source, log.branch_name,
+            log.device_name, log.input_method, log.target_id, JSON.stringify(log.details || {}),
+        ].map((v) => String(v ?? ''));
+    });
 }

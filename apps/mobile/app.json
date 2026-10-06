@@ -73,7 +73,8 @@
           "photosPermission": "Farmalasa usa tus fotos para adjuntar la evidencia de una solicitud (producto dañado, boleta).",
           "cameraPermission": "Farmalasa usa la cámara para escanear cajas y fotografiar la evidencia de una solicitud."
         }
-      ]
+      ],
+      "./plugins/ciclo-por-escenas"
     ],
     "experiments": {
       "typedRoutes": false

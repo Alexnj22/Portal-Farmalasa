@@ -20,14 +20,10 @@ import { smartFilter } from '@nucleo/utils/searchUtils';
 import Badge from '../components/common/Badge';
 import { hora12, hora12ConSegundos } from '@nucleo/utils/hora';
 import { hoySV } from '@nucleo/utils/fecha';
+import { ACCIONES_DE_BITACORA, COLUMNAS_CSV_BITACORA, filasCsvDeBitacora, filtrarBitacora, ordenarBitacora } from '@nucleo/utils/bitacora';
 
-const ACTION_OPTIONS = [
-    { value: "ALL", label: "Todas" },
-    { value: "REGISTRO_ASISTENCIA", label: "Asistencias" },
-    { value: "CREAR_EMPLEADO", label: "Creaciones" },
-    { value: "EDITAR_EMPLEADO", label: "Ediciones" },
-    { value: "ELIMINAR_EMPLEADO", label: "Eliminaciones" },
-];
+// Acciones, filtro y orden: `bitacora` (núcleo, lo mismo de la app).
+const ACTION_OPTIONS = ACCIONES_DE_BITACORA;
 
 // ============================================================================
 // 🎨 FUNCIONES AUXILIARES (MODO PRO)
@@ -176,35 +172,12 @@ const AuditView = ({ openModal }) => {
         setStartDate(''); setEndDate(''); setActionFilter('ALL');
     }, [setRawSearchTerm]);
 
-    const processedLogsBase = useMemo(() => {
-        if (!Array.isArray(auditLog)) return [];
-        return auditLog.filter(log => {
-            const matchesType = actionFilter === 'ALL' || log.action === actionFilter;
-            let matchesDate = true;
-            if (startDate || endDate) {
-                const logDateStr = new Date(log.created_at).toISOString().split('T')[0];
-                if (startDate && logDateStr < startDate) matchesDate = false;
-                if (endDate && logDateStr > endDate) matchesDate = false;
-            }
-            return matchesType && matchesDate;
-        });
-    }, [auditLog, actionFilter, startDate, endDate]);
+    const processedLogsBase = useMemo(
+        () => (Array.isArray(auditLog) ? filtrarBitacora(auditLog, { accion: actionFilter, desde: startDate, hasta: endDate }) : []),
+        [auditLog, actionFilter, startDate, endDate]);
 
     const { results: processedLogs, isFuzzy: isLogSearchFuzzy } = useMemo(() => {
-        const base = processedLogsBase.slice().sort((a, b) => {
-            let aValue = a[sortConfig.key] || '';
-            let bValue = b[sortConfig.key] || '';
-            if (sortConfig.key === 'created_at') {
-                aValue = new Date(a.created_at || 0).getTime();
-                bValue = new Date(b.created_at || 0).getTime();
-            } else {
-                aValue = aValue.toString().toLowerCase();
-                bValue = bValue.toString().toLowerCase();
-            }
-            if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-            if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-            return 0;
-        });
+        const base = ordenarBitacora(processedLogsBase, sortConfig);
         if (!debouncedSearchTerm.trim()) return { results: base, isFuzzy: false };
         return smartFilter(debouncedSearchTerm, base, log => [log.user_name, log.action, log.branch_name, log.device_name]);
     }, [processedLogsBase, debouncedSearchTerm, sortConfig]);
@@ -214,28 +187,9 @@ const AuditView = ({ openModal }) => {
         setIsExporting(true);
         setTimeout(() => {
             const escape = (text) => `"${String(text || '').replace(/"/g, '""')}"`;
-            const headers = [
-                "Fecha", "Hora", "Usuario", "Acción", "Severidad",
-                "Origen", "Sucursal", "Dispositivo", "Método de Ingreso",
-                "ID Objetivo", "Detalles JSON"
-            ];
-
-            const rows = processedLogs.map(log => {
-                const dateObj = new Date(log.created_at);
-                return [
-                    escape(dateObj.toLocaleDateString()),
-                    escape(hora12ConSegundos(dateObj)),
-                    escape(log.user_name),
-                    escape(log.action),
-                    escape(log.severity),
-                    escape(log.source),
-                    escape(log.branch_name),
-                    escape(log.device_name),
-                    escape(log.input_method),
-                    escape(log.target_id),
-                    escape(JSON.stringify(log.details || {}))
-                ].join(",");
-            });
+            // Columnas y filas: núcleo (`bitacora`), las mismas de la app.
+            const headers = COLUMNAS_CSV_BITACORA;
+            const rows = filasCsvDeBitacora(processedLogs, hora12ConSegundos).map(fila => fila.map(escape).join(","));
             const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.join("\n");
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");

@@ -12,7 +12,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { DataTable, DataRow, DataCell } from '../../../components/common/DataTable';
 import TablePagination from '../../../components/common/TablePagination';
 import ConfirmModal from '../../../components/common/ConfirmModal';
-import { calcSolicitado } from '@nucleo/utils/tableroDePedidos';
+import { calcSolicitado, rotuloDePresentacion, seccionesDeRenglones } from '@nucleo/utils/tableroDePedidos';
 import SearchInput from '../../../components/common/SearchInput';
 import { useSearchToggle } from '../../../plataforma/useSearchToggle';
 import { fetchStockParamsForRevision, guardarMinMaxDesdePedido, effectiveMinMaxPair } from '@nucleo/data/stockParams';
@@ -31,22 +31,13 @@ function renderProd(row) {
         </div>
     );
 }
+// El texto sale del núcleo (`rotuloDePresentacion`): la ficha de la app lo
+// rotula igual. Sólo la «Unidad» suelta va sin píldora.
 function renderPresentacion(row) {
-    const tipo   = row.dispatch_tipo;
-    const factor = row.dispatch_factor || row.factor || 1;
-    const TIPO_LABELS = { caja: 'Caja', blister: 'Blíster', multiplo: 'Unid', multiplo_unidades: 'Unid', solo_cajas: 'Caja' };
-    if (!tipo) {
-        if (factor > 1) return <Badge uppercase={false}>×{factor} unid</Badge>;
-        return <span className="text-content-3 text-label">Unidad</span>;
-    }
-    const label      = TIPO_LABELS[tipo] ?? tipo;
-    const showFactor = factor > 1 && ['caja','blister','solo_cajas'].includes(tipo);
-    return (
-        <Badge uppercase={false}>{label}{showFactor ? ` ×${factor}` : ''}{['multiplo','multiplo_unidades'].includes(tipo) ? ` ×${factor}` : ''}</Badge>
-    );
+    const texto = rotuloDePresentacion(row);
+    if (texto === 'Unidad') return <span className="text-content-3 text-label">Unidad</span>;
+    return <Badge uppercase={false}>{texto}</Badge>;
 }
-// Para la sección "Revisar regla": muestra la unidad de stock (lo que pidió la sucursal),
-// no la unidad de despacho. Así "Solicitado=4" lee como "4 Unidad", no "4 CAJA".
 function renderPresStock(row) {
     const factor     = row.factor || 1;
     const dispFactor = row.dispatch_factor || factor;
@@ -403,11 +394,8 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
 
     if (loading) return <div className="flex justify-center py-5 border-t border-divider"><SkeletonText lines={4} className="w-full max-w-md" /></div>;
 
-    const enviados    = allItems.filter(i => i.cantidad_asignada > 0);
-    const agotamiento = allItems.filter(i => i.agotamiento);
-    const sinStock    = allItems.filter(i => i.sin_stock);
-    const porRegla    = allItems.filter(i => i.revision_minmax);
-    const total       = allItems.length;
+    // El reparto es del núcleo: la ficha del pedido en la app parte igual.
+    const { enviados, agotamiento, sinStock, porRegla, total } = seccionesDeRenglones(allItems);
 
     if (total === 0) return <div className="border-t border-divider py-4 text-center text-label text-content-3">Sin ítems.</div>;
 

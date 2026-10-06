@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeftRight, Clock, Loader2, PackageCheck, Printer, Truck } from 'lucide-react';
+import { ArrowLeftRight, CalendarClock, Hash, Loader2, PackageCheck, Printer, Truck } from 'lucide-react';
+import { Trayecto, PildoraEspera } from './PiezasTraslado';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -42,6 +43,29 @@ export function Recorrido({ meta, className = '' }) {
     return (
         <span className={`truncate ${className}`}>
             {meta?.origen_branch_name ?? 'La otra sala'} → {meta?.branch_name ?? 'destino'}
+        </span>
+    );
+}
+
+/* Un lote en una línea de chips: el número (es lo que se coteja contra la caja),
+ * el vencimiento y cuántas unidades. Antes era «GENERICO · 01 feb 29 — 30
+ * unidades» en tinta terciaria de 9 px. */
+function ChipsDeLote({ lote: l }) {
+    return (
+        <span className="flex flex-wrap items-center gap-1 text-micro font-bold text-content-2">
+            <span className="inline-flex items-center gap-1 rounded-md bg-surface-input px-1.5 py-0.5 ring-1 ring-inset ring-divider">
+                <Hash size={10} strokeWidth={2.5} className="shrink-0 text-content-3" />
+                <span className="font-mono">{l.lote || 'sin lote'}</span>
+            </span>
+            {l.vence && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-surface-input px-1.5 py-0.5 ring-1 ring-inset ring-divider">
+                    <CalendarClock size={10} strokeWidth={2.5} className="shrink-0 text-content-3" />
+                    {fmtFechaLarga(l.vence)}
+                </span>
+            )}
+            <span className="tabular-nums text-content-3">
+                {l.unidades} {l.unidades === 1 ? 'unidad' : 'unidades'}
+            </span>
         </span>
     );
 }
@@ -661,7 +685,7 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                     tiñe cuando el traslado lleva más de un día parado. */}
                 <span className={`shrink-0 w-[3.25rem] rounded-xl px-1 py-1.5 flex flex-col items-center justify-center
                                   ring-1 ring-inset ${trabado ? 'bg-danger/10 ring-danger/25' : 'bg-warning/10 ring-warning/20'}`}>
-                    <span className={`text-h3 font-black leading-none tabular-nums ${trabado ? 'text-danger-text' : 'text-warning-text'}`}>
+                    <span className={`text-title-sm font-black leading-none tabular-nums ${trabado ? 'text-danger-text' : 'text-warning-text'}`}>
                         {piezas?.numero ?? '—'}
                     </span>
                     <span className={`mt-1 text-[0.5625rem] font-black uppercase tracking-wider leading-none text-center
@@ -680,7 +704,12 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                         que un nombre de dos líneas al lado de uno de una dejaba
                         a la corta con un hueco. Reservar el alto acá lo reparte
                         parejo en vez de acumularlo abajo. */}
-                    <p className="text-body font-black text-content leading-snug line-clamp-2 min-h-[2.5em]"
+                    {/* Sin `min-h` de dos renglones: reservaba el alto de un
+                        nombre largo en TODAS, y en las de un renglón dejaba un
+                        hueco entre el nombre y la ruta. La rejilla ya iguala las
+                        tarjetas de una fila y el `mt-auto` del pie alinea los
+                        botones, así que la reserva no compraba nada. */}
+                    <p className="text-body font-black text-content leading-snug line-clamp-2"
                         title={piezas?.nombre ?? resumenItems(meta)}>
                         {piezas?.nombre ?? resumenItems(meta)}
                     </p>
@@ -691,11 +720,7 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                         había que leer entera para saber si el traslado era
                         tuyo. Va SIEMPRE: con alcance de todas las sucursales
                         esta lista mezcla las siete. */}
-                    <p className="mt-1 text-label font-bold text-content-2 truncate">
-                        {meta?.origen_branch_name ?? 'otra sala'}
-                        <span className="text-content-3 font-medium"> → </span>
-                        {meta?.branch_name ?? 'destino'}
-                    </p>
+                    <Trayecto desde={meta?.origen_branch_name} hasta={meta?.branch_name} className="mt-2" />
 
                     {/* Qué trae la caja. Quien recibe es el único que puede
                         comprobarlo — pero en la tarjeta va TOPADO: un traslado
@@ -713,13 +738,9 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                             <ListaRenglones renglones={renglones} tope={LOTES_EN_TARJETA} />
                         </div>
                     ) : lotes.length > 0 && (
-                        <div className="mt-1.5 flex flex-col gap-0.5">
+                        <div className="mt-2 flex flex-col gap-1">
                             {lotes.slice(0, LOTES_EN_TARJETA).map((l, i) => (
-                                <p key={i} className="text-micro text-content-2 font-semibold">
-                                    <span className="font-mono text-content-3">{l.lote || 'sin lote'}</span>
-                                    {l.vence && <span className="text-content-3"> · {fmtFechaLarga(l.vence)}</span>}
-                                    {' — '}{l.unidades} {l.unidades === 1 ? 'unidad' : 'unidades'}
-                                </p>
+                                <ChipsDeLote key={i} lote={l} />
                             ))}
                             {lotesDeMas > 0 && (
                                 <p className="text-micro font-bold text-brand-text">
@@ -747,15 +768,17 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                 existir es que hay traslados parados —veinte, el más viejo de más
                 de una semana— «hace 4 días» es lo que decide si hay que ir a
                 buscar la caja hoy. */}
-            <div className="mt-auto pt-2.5 border-t border-divider flex flex-col gap-2.5">
-                <div className="flex items-center justify-between gap-3 min-w-0">
-                    <span className={`flex items-center gap-1.5 min-w-0 shrink-0
-                                      ${trabado ? 'text-danger-text' : 'text-content-2'}`}>
-                        <Clock size={12} strokeWidth={2.5} className="shrink-0" />
-                        <span className="text-label font-black truncate">
-                            {espera ? `${espera} en camino` : `Salió ${fmtCuando(salio)}`}
-                        </span>
-                    </span>
+            {/* ── El pie, en UNA línea: espera, caras y la acción ─────────
+                El botón era una barra sólida de ancho completo en cada
+                tarjeta: con cuatro en pantalla eran cuatro franjas azules que
+                pesaban más que el producto, y el canon lo dice (§Button ·
+                `soft`): un sólido grita, y varios juntos compiten. Ahora es
+                `soft` y `sm`, a la derecha, como las acciones de las demás
+                tarjetas del portal. En el teléfono baja a su renglón y ocupa
+                el ancho — ahí sí es el blanco de dedo (§32). */}
+            <div className="mt-auto pt-2.5 border-t border-divider flex flex-wrap items-center gap-x-3 gap-y-2.5">
+                    <PildoraEspera trabado={trabado}
+                        texto={espera ? `${espera} en camino` : `Salió ${fmtCuando(salio)}`} />
 
                     {/* Las caras, sin rótulo: la flecha entre las dos ya dice
                         quién pidió y quién despachó, en el mismo sentido en que
@@ -767,7 +790,7 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                         interactivo no llega al lector de pantalla ni al
                         teléfono, que es donde más se usa esta lista (§15.10). */}
                     {(quienPidio || quienEnvio) && (
-                        <span className="flex items-center gap-1.5 min-w-0 justify-end" role="img"
+                        <span className="flex items-center gap-1.5 min-w-0 justify-end ml-auto sm:ml-0" role="img"
                             aria-label={[quienEnvio && `Envió ${quienEnvio.name}`,
                                          quienPidio && `pidió ${quienPidio.name}`].filter(Boolean).join(', ')}>
                             {quienEnvio && <ChipPersona persona={quienEnvio} soloFoto />}
@@ -777,14 +800,11 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                             {quienPidio && <ChipPersona persona={quienPidio} soloFoto />}
                         </span>
                     )}
-                </div>
 
-                {/* Ancho completo: es la única acción de la tarjeta y en media
-                    columna un botón chico a la derecha se pierde. */}
-                <Button size="sm" icon={PackageCheck} loading={ocupado} disabled={ocupado}
-                    onClick={recibir} className="w-full">
+                <Button size="sm" tone="success" soft icon={PackageCheck} loading={ocupado} disabled={ocupado}
+                    onClick={recibir} className="w-full sm:w-auto sm:ml-auto">
                     {ocupado ? 'Recibiendo…'
-                        : (faltaron.length ? 'Recibir y anotar lo que faltó' : 'Ya llegó, recibir')}
+                        : (faltaron.length ? 'Recibir y anotar faltante' : 'Recibir')}
                 </Button>
             </div>
         </div>

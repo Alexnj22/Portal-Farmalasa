@@ -37,7 +37,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { abrirVentanaDeImpresion, escribirEImprimir, VENTANA_BLOQUEADA } from '../plataforma/ventanaDeImpresion';
 import { papelDeSolicitudDeDatos } from '../generated/formularioDatos';
-import { fetchSolicitudes, crearSolicitud, plazoDe, DERECHOS, ESTADOS } from '@nucleo/data/solicitudesDatos';
+import { fetchSolicitudes, crearSolicitud, plazoDe, DERECHOS, ESTADOS, filtrarSolicitudes, alarmasDePlazo } from '@nucleo/data/solicitudesDatos';
 import SolicitudModal from './datos/SolicitudModal';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 
@@ -101,27 +101,11 @@ export default function SolicitudesDatosView() {
         return () => { vivo = false; };
     }, [showToast]);
 
-    const visibles = useMemo(() => {
-        const q = busqueda.trim();
-        return filas.filter((s) => {
-            if (pestana === 'resueltas' && s.estado !== 'RESUELTA') return false;
-            if (pestana === 'tramite' && (s.estado === 'RESUELTA' || s.estado === 'ANULADA')) return false;
-            if (estado !== 'TODOS' && s.estado !== estado) return false;
-            if (desde || hasta) {
-                // Se filtra por la fecha del ACUSE cuando existe, y por la de
-                // impresión cuando no: una hoja que todavía no volvió no tiene
-                // fecha de recepción, y descartarla la haría invisible.
-                const d = (s.recibida_at ?? s.impresa_at).slice(0, 10);
-                if (desde && d < desde) return false;
-                if (hasta && d > hasta) return false;
-            }
-            if (!q) return true;
-            return tokenMatch(q, s.folio_txt, s.solicitante_nombre, s.solicitante_numero, s.descripcion);
-        });
-    }, [filas, pestana, estado, desde, hasta, busqueda]);
+    // Pestaña, estado, fechas y búsqueda: `filtrarSolicitudes` (núcleo, lo mismo de la app).
+    const visibles = useMemo(() => filtrarSolicitudes(filas, { pestana, estado, desde, hasta, texto: busqueda }, tokenMatch),
+        [filas, pestana, estado, desde, hasta, busqueda]);
 
-    const vencidas = useMemo(() => filas.filter((s) => plazoDe(s)?.vencida).length, [filas]);
-    const apremian = useMemo(() => filas.filter((s) => plazoDe(s)?.apremia).length, [filas]);
+    const { vencidas, apremian } = useMemo(() => alarmasDePlazo(filas), [filas]);
 
     /**
      * Manda un papel a la impresora.

@@ -19,6 +19,7 @@ import { fmtMl } from '@nucleo/utils/inyeccionDosis';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { fechaHora12 } from '@nucleo/utils/hora';
+import { diasDesde, gruposDePendientes, idsElegidos, resumenDePendientes } from '@nucleo/utils/inyeccionesPendientes';
 
 /*
  * Lo pagado y sin aplicar: qué tiene cada cliente a su nombre.
@@ -34,11 +35,15 @@ import { fechaHora12 } from '@nucleo/utils/hora';
  * se aplica 2 → «2 de 5» con un contador, y debajo el historial de lo que ya
  * se aplicó de ese pago — dónde, quién (con su foto) y cuándo. Pedidos del
  * usuario: «¿la card muestra el historial de cada una?».
+ *
+ * De TODAS las salas, también para quien sólo ve la suya (2026-10-05): el
+ * filtro de sala comparaba la sala del PAGO, así que el cliente que pagó en
+ * Salud 1 no aparecía en Salud 2, que es donde vino a aplicarse. La sala
+ * propia sirve para marcar lo que es de otra sucursal, no para esconderlo.
  */
 
 const fechaCorta = (f) => fechaNumerica(String(f || '').slice(0, 10), { anio: false });
 const factura = (c) => String(c || '').replace(/^0+/, '');
-const diasDesde = (f) => Math.max(0, Math.floor((Date.now() - new Date(f).getTime()) / 86_400_000));
 
 export default function TabPendientes({ filterBranch, setFilterBranch, branchOptions, branchLocked, searchTerm, nombreSala }) {
     const { hasPermission } = useAuth();
@@ -49,26 +54,19 @@ export default function TabPendientes({ filterBranch, setFilterBranch, branchOpt
     const [cuantas, setCuantas] = useState({});   // grupo → cuántas se aplican ahora
     const [enviando, setEnviando] = useState(false);
 
-    const cargar = useCallback(() => fetchAplicacionesPendientes({ buscar: searchTerm, sala: filterBranch || null })
+    // Con la sala fija (quien sólo ve la suya) NO se filtra: ver arriba.
+    const salaFiltro = branchLocked ? null : (filterBranch || null);
+    const salaPropia = branchLocked ? Number(filterBranch) || null : null;
+    const cargar = useCallback(() => fetchAplicacionesPendientes({ buscar: searchTerm, sala: salaFiltro })
         .then((d) => { setFilas(d); setError(null); setCuantas({}); })
         .catch((e) => { setFilas([]); setError(mensajeAmigable(e, 'No se pudieron cargar las pendientes')); }),
-    [searchTerm, filterBranch]);
+    [searchTerm, salaFiltro]);
     useEffect(() => { cargar(); }, [cargar]);
 
-    const grupos = useMemo(() => {
-        const m = new Map();
-        for (const p of filas || []) {
-            const k = `${p.cobro_id}|${p.producto}|${p.dosis_ml ?? ''}`;
-            if (!m.has(k)) m.set(k, { clave: k, p, ids: [] });
-            m.get(k).ids.push(p.id);
-        }
-        return [...m.values()];
-    }, [filas]);
-    const elegidas = useMemo(() => grupos.flatMap((g) => g.ids.slice(0, cuantas[g.clave] || 0)), [grupos, cuantas]);
-
-    const total = useMemo(() => (filas || []).reduce((s, p) => s + Number(p.precio || 0), 0), [filas]);
-    const clientes = useMemo(() => new Set((filas || []).map((p) => p.customer_id || p.cliente)).size, [filas]);
-    const viejas = useMemo(() => (filas || []).filter((p) => diasDesde(p.pagada_at) >= 7).length, [filas]);
+    // Agrupar por pago y contar: `inyeccionesPendientes` (núcleo, el mismo de la app).
+    const grupos = useMemo(() => gruposDePendientes(filas), [filas]);
+    const elegidas = useMemo(() => idsElegidos(grupos, cuantas), [grupos, cuantas]);
+    const { total, clientes, viejas, deOtras } = useMemo(() => resumenDePendientes(filas, salaPropia), [filas, salaPropia]);
 
     // Los ids viajan como argumento: así la acción no lee estado viejo ni
     // necesita una ref que se reescribe en cada render.
@@ -114,6 +112,14 @@ export default function TabPendientes({ filterBranch, setFilterBranch, branchOpt
 
             {error && <Notice variant="danger">{error}</Notice>}
 
+            {salaPropia && (
+                <p className="text-caption text-content-3">
+                    Se ven las de <b className="text-content-2">todas las sucursales</b>: el cliente puede venir a
+                    aplicarse aquí aunque haya pagado en otra.
+                    {deOtras > 0 && ` ${deOtras === 1 ? '1 es' : `${deOtras} son`} de otra sucursal.`}
+                </p>
+            )}
+
             {puedeAplicar && elegidas.length > 0 && (
                 <div className="flex justify-end">
                     <Button variant="primary" icon={CheckCircle2} loading={enviando} onClick={() => aplicar(elegidas, filterBranch)}>
@@ -141,13 +147,18 @@ export default function TabPendientes({ filterBranch, setFilterBranch, branchOpt
                 {grupos.map(({ clave, p, ids }, i) => {
                     const dias = diasDesde(p.pagada_at);
                     const n = cuantas[clave] || 0;
+                    const otraSala = salaPropia && p.branch_id !== salaPropia;
                     return (
                         <DataRow key={clave} index={i}>
                             <DataCell className="text-body-sm">
                                 <p className="font-semibold text-content">{p.cliente || 'Sin nombre'}</p>
                                 <p className="text-caption text-content-3 flex flex-wrap items-center gap-1.5 mt-0.5">
                                     <span>{p.correlativo ? `Factura ${factura(p.correlativo)}` : 'Traída por el cliente'}</span>
-                                    {!filterBranch && <span>· pagada en {nombreSala(p.branch_id)}</span>}
+                                    {/* La sala del pago: siempre que no sea la propia, y en
+                                        «todas» para todas. Una de otra sucursal se marca. */}
+                                    {otraSala
+                                        ? <Badge variant="warning" size="sm">Pagada en {nombreSala(p.branch_id)}</Badge>
+                                        : !salaFiltro && !salaPropia && <span>· pagada en {nombreSala(p.branch_id)}</span>}
                                     {p.venta_sala && <Badge variant="info" size="sm">Venta de {p.venta_sala}</Badge>}
                                 </p>
                             </DataCell>

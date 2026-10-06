@@ -17,9 +17,11 @@ export async function fetchPreciosDeAplicacion() {
 
 /**
  * Las ventas con inyección de la sala, con lo que le queda por pagar a cada
- * renglón. `buscar` filtra por cliente o número de factura.
+ * renglón. Sin buscar, los últimos 30 días; `buscar` por cliente o factura mira
+ * hasta 90 días, y por nombre de la inyección se queda en la ventana normal
+ * (2026-10-05, la base decide el alcance).
  */
-export async function fetchInyeccionesParaCobrar({ sala, buscar = '', dias = 7 }) {
+export async function fetchInyeccionesParaCobrar({ sala, buscar = '', dias = 30 }) {
     const { data, error } = await supabase.rpc('inyecciones_para_cobrar', {
         p_branch_id: Number(sala), p_buscar: buscar?.trim() || null, p_dias: dias,
     });
@@ -39,7 +41,7 @@ export async function buscarVentaPorComprobante({ sala, comprobante }) {
         p_branch_id: Number(sala), p_comprobante: comprobante?.trim() || '',
     });
     if (error) throw error;
-    return data?.ventas ?? [];
+    return /** @type {{ ventas?: any[] } | null} */ (data)?.ventas ?? [];
 }
 
 /** Lo pagado y sin aplicar. Todas las salas: el cliente puede volver a otra. */

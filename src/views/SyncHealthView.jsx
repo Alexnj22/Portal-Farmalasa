@@ -6,17 +6,13 @@ import ViewTabBar from '../components/common/ViewTabBar';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import TablePagination from '../components/common/TablePagination';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
-import { fetchSyncHealthRecent, SYNC_HEALTH_DOMAINS } from '@nucleo/data/syncHealth';
+import { alcanceDeCorrida, fetchSyncHealthRecent, ROTULO_DE_DOMINIO, SYNC_HEALTH_DOMAINS } from '@nucleo/data/syncHealth';
 import { ERP_NAMES } from '@nucleo/constants/erp';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { hora12 } from '@nucleo/utils/hora';
 
-const DOMAIN_LABELS = {
-    products: 'Productos',
-    minmax: 'Min / Max',
-    purchases: 'Compras',
-    backup: 'Respaldo',
-};
+// Rótulos y alcance: `data/syncHealth` (núcleo, lo mismo de la app).
+const DOMAIN_LABELS = ROTULO_DE_DOMINIO;
 
 const TABS = [
     { key: 'todos', label: 'Todos' },
@@ -26,11 +22,7 @@ const TABS = [
 const POLL_MS = 30_000;
 const EMPTY_ARRAY = [];
 
-function scopeLabel(row, branchMap) {
-    if (row.erp_sucursal_id != null) return ERP_NAMES[row.erp_sucursal_id] || `Sucursal ${row.erp_sucursal_id}`;
-    if (row.branch_id != null) return branchMap[row.branch_id] || `Sucursal ${row.branch_id}`;
-    return 'Global';
-}
+const scopeLabel = (row, branchMap) => alcanceDeCorrida(row, branchMap, ERP_NAMES);
 
 const SyncHealthView = () => {
     const branches = useStaff(state => state.branches) || EMPTY_ARRAY;

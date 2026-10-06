@@ -24,12 +24,7 @@ import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import FilterBar from '../components/common/FilterBar';
 import PeriodStepper from '../components/common/PeriodStepper';
 
-import {
-    formatDateLocal, DAY_NAMES, calculateEmployeeWeeklyHoursLocal, timeToMins, formatHourAMPM,
-    resolverTurnoDelDia, claveDeDia, descansoInsuficiente,
-    HORAS_SEMANA_DIURNA, DESCANSOS_POR_SEMANA,
-} from '@nucleo/utils/scheduleHelpers';
-import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { formatDateLocal, DAY_NAMES } from '@nucleo/utils/scheduleHelpers';
 import { getLocalMonday, formatWeekRange } from '@nucleo/utils/semana';
 
 import InlineDayEditor from './schedule-tabs/components/InlineDayEditor';
@@ -41,6 +36,8 @@ import {
     fetchBranchHourlySales, deleteScheduleCoverage, upsertScheduleCoverage,
 } from '@nucleo/data/schedules';
 import { fetchRostersForWeekByEmployees } from '@nucleo/data/requests';
+import { estadisticasDeVentaPorHora } from '@nucleo/utils/ventasPorHora';
+import { reparosDeLaSemana } from '@nucleo/utils/reparosDeLaSemana';
 import PortalInput from '../components/common/PortalInput';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { personasDelHorario } from '@nucleo/utils/horarioDeLaSala';
@@ -431,111 +428,10 @@ const SchedulesView = ({ openModal, setView }) => {
 
                 if (error) throw error;
 
-                let openH = 7; let closeH = 18;
+                // La cuenta (horas de apertura, promedios, niveles): núcleo,
+                // `estadisticasDeVentaPorHora`, la misma de la app.
                 const currentBranch = branches.find(b => String(b.id) === String(filterBranch));
-
-                if (currentBranch) {
-                    let sch = currentBranch.weekly_hours || currentBranch.settings?.schedule;
-                    if (typeof sch === 'string') { try { sch = JSON.parse(sch); } catch { sch = null; } }
-                    if (sch && typeof sch === 'object') {
-                        let minOpen = 1440; let maxClose = 0;
-                        Object.values(sch).forEach(d => {
-                            if (d && d.isOpen !== false && !d.isClosed && !d.isOff) {
-                                const cleanStart = String(d.start || d.open || '').replace(/[^0-9:]/g, '').trim();
-                                const cleanEnd   = String(d.end   || d.close || '').replace(/[^0-9:]/g, '').trim();
-                                if (cleanStart && cleanEnd) {
-                                    const oMins = timeToMins(cleanStart);
-                                    let cMins   = timeToMins(cleanEnd);
-                                    if (cMins < oMins) cMins += 1440;
-                                    if (oMins < minOpen)  minOpen  = oMins;
-                                    if (cMins > maxClose) maxClose = cMins;
-                                }
-                            }
-                        });
-                        if (minOpen  < 1440) openH  = Math.floor(minOpen / 60);
-                        if (maxClose > 0)    closeH = Math.ceil(maxClose / 60) - 1;
-                    }
-                }
-
-                if (closeH <= openH) closeH = openH + 11;
-
-                const daysMap          = { 1:0,2:0,3:0,4:0,5:0,6:0,0:0 };
-                const hourlyMap        = {};
-                const specificHourlyMap = { 1:{},2:{},3:{},4:{},5:{},6:{},0:{} };
-                const uniqueDatesByDay  = { 1:new Set(),2:new Set(),3:new Set(),4:new Set(),5:new Set(),6:new Set(),0:new Set() };
-                const uniqueDates       = new Set();
-
-                const validData = (rawSalesData || []).filter(row => {
-                    const hour = Number(row.sale_hour);
-                    return hour >= openH && hour <= closeH;
-                });
-
-                validData.forEach(row => {
-                    const h    = Number(row.sale_hour);
-                    const dStr = row.sale_date;
-                    const dNum = new Date(dStr + 'T00:00:00').getDay();
-                    const count= Number(row.transaction_count || 0);
-                    daysMap[dNum] += count;
-                    if (!hourlyMap[h]) hourlyMap[h] = 0;
-                    hourlyMap[h] += count;
-                    if (!specificHourlyMap[dNum][h]) specificHourlyMap[dNum][h] = 0;
-                    specificHourlyMap[dNum][h] += count;
-                    uniqueDates.add(dStr);
-                    uniqueDatesByDay[dNum].add(dStr);
-                });
-
-                const finalDays = [1,2,3,4,5,6,0].map(d => {
-                    const dc  = uniqueDatesByDay[d].size || 1;
-                    const hrs = [];
-                    for (let h = openH; h <= closeH; h++) hrs.push(Math.round((specificHourlyMap[d][h] || 0) / dc));
-                    hrs.sort((a,b) => a-b);
-                    const p75 = hrs[Math.floor(hrs.length * 0.75)] || 0;
-                    return { day: d, avg: p75, label: DAY_NAMES[d] };
-                });
-
-                const totalDays = uniqueDates.size || 1;
-                const finalGeneralHours = [];
-                for (let h = openH; h <= closeH; h++) {
-                    finalGeneralHours.push({ hour: h, avg: Math.round((hourlyMap[h] || 0) / totalDays), label: formatHourAMPM(h) });
-                }
-
-                const finalSpecificHours = {};
-                [1,2,3,4,5,6,0].forEach(d => {
-                    finalSpecificHours[d] = [];
-                    const dCount = uniqueDatesByDay[d].size || 1;
-                    for (let h = openH; h <= closeH; h++) {
-                        finalSpecificHours[d].push({ hour: h, avg: Math.round((specificHourlyMap[d][h] || 0) / dCount), label: formatHourAMPM(h) });
-                    }
-                });
-
-                const applyColors = (arr) => {
-                    const max = Math.max(...arr.map(o => o.avg), 1);
-                    return arr.map(item => {
-                        const txPerHr = item.avg;
-                        let color = 'var(--txvol-muerta)';
-                        if      (txPerHr > 18) color = 'var(--txvol-critica)';
-                        else if (txPerHr > 12) color = 'var(--txvol-pico)';
-                        else if (txPerHr >  4) color = 'var(--txvol-normal)';
-                        const hi = item.avg / max;
-                        item.height = hi > 0 ? `${Math.max(hi * 100, 15)}%` : '0%';
-                        item.color  = color;
-                        return item;
-                    });
-                };
-
-                setSalesStats({
-                    days: applyColors(finalDays),
-                    generalHours: applyColors(finalGeneralHours),
-                    specificHours: {
-                        1: applyColors(finalSpecificHours[1]),
-                        2: applyColors(finalSpecificHours[2]),
-                        3: applyColors(finalSpecificHours[3]),
-                        4: applyColors(finalSpecificHours[4]),
-                        5: applyColors(finalSpecificHours[5]),
-                        6: applyColors(finalSpecificHours[6]),
-                        0: applyColors(finalSpecificHours[0]),
-                    }
-                });
+                setSalesStats(estadisticasDeVentaPorHora(rawSalesData, currentBranch));
             } catch (err) {
                 console.error("Error cargando ventas WFM:", err);
             } finally {
@@ -640,38 +536,10 @@ const SchedulesView = ({ openModal, setView }) => {
      * una jornada y el inicio de la siguiente (Art. 21) — que con turnos
      * rotativos es el que más se escapa. */
     const triggerPublishAudit = () => {
-        let incompletos = 0, excedidos = 0, sinDescanso = 0;
-        const seguidos = [];
-
-        employeesInView.forEach(emp => {
-            const raw = weeklyRosters[emp.id] || {};
-            const sch = (typeof raw === 'string') ? JSON.parse(raw || '{}') : raw;
-            const horas = calculateEmployeeWeeklyHoursLocal(sch, shifts, emp.history, calendarDates);
-
-            const dias = calendarDates.map(fecha => ({
-                fecha,
-                resuelto: resolverTurnoDelDia(sch[claveDeDia(new Date(fecha + 'T00:00:00'))], shifts),
-            }));
-            const descansos = dias.filter(d => !d.resuelto.trabaja).length;
-
-            if (descansos === 0) sinDescanso++;
-            else if (horas > HORAS_SEMANA_DIURNA) excedidos++;
-            else if (horas < HORAS_SEMANA_DIURNA || descansos > DESCANSOS_POR_SEMANA) incompletos++;
-
-            if (descansoInsuficiente(dias).length > 0) seguidos.push(shortEmployeeName(emp));
+        // La revisión de la semana: núcleo (`reparosDeLaSemana`), la misma de la app.
+        const { reparos, porPublicar: cuantos } = reparosDeLaSemana({
+            personas: employeesInView, rosters: weeklyRosters, turnos: shifts, fechas: calendarDates, publicados: publishedIds,
         });
-
-        const reparos = [];
-        if (sinDescanso > 0) reparos.push(`${sinDescanso} sin ningún día de descanso.`);
-        if (excedidos > 0)   reparos.push(`${excedidos} con más de ${HORAS_SEMANA_DIURNA} horas.`);
-        if (incompletos > 0) reparos.push(`${incompletos} con la semana incompleta.`);
-        if (seguidos.length > 0) {
-            reparos.push(seguidos.length === 1
-                ? `${seguidos[0]} entra a menos de 8 horas de haber salido.`
-                : `${seguidos.length} personas entran a menos de 8 horas de haber salido.`);
-        }
-
-        const cuantos = employeesInView.filter(e => !publishedIds.has(String(e.id))).length;
         const queSeVaAPublicar = cuantos === 1
             ? 'Se publicará 1 horario'
             : `Se publicarán ${cuantos} horarios`;

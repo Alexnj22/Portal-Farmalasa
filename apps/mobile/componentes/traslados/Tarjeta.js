@@ -50,7 +50,7 @@ export default function TarjetaTraslado({ fila, persona, estado, alerta = false,
 
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 30, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{p?.numero ?? '—'}</Text>
-            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '600' }} numberOfLines={2}>
+            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '600' }}>
               {p?.varios ? `productos · ${p.unidades} unidades` : `${p?.unidad ?? ''} · ${p?.nombre ?? ''}`}
             </Text>
           </View>
@@ -59,7 +59,7 @@ export default function TarjetaTraslado({ fila, persona, estado, alerta = false,
             <View style={{ gap: 3 }}>
               {renglones.slice(0, 3).map((r) => (
                 <View key={r.idx} style={{ flexDirection: 'row', gap: 8 }}>
-                  <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>{r.nombre}</Text>
+                  <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>{r.nombre}</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13, fontVariant: ['tabular-nums'] }}>{r.cantidad} {r.presentacion}</Text>
                 </View>
               ))}

@@ -1,10 +1,29 @@
-import React, { useMemo, useEffect, useSyncExternalStore } from 'react';
+import React, { useMemo, useEffect, useState, useSyncExternalStore } from 'react';
 import { Palmtree, Stethoscope, Baby, Clock, Briefcase, UserMinus, UserX, HelpCircle, Ban } from 'lucide-react';
 import LiquidAvatar from './LiquidAvatar';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { estadoDePersona, estadoDesdeClave, normalizarPersona } from '@nucleo/utils/estadoDePersona';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { leerEstado, pedirEstado, suscribirse } from '@nucleo/data/estadosDePersonas';
+import { fetchFotoDeEmpleado } from '@nucleo/data/notifications';
+import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
+
+/* La foto firmada de alguien que NO está en el store, por id. Un pedido por
+ * persona y por sesión: `fetchFotoDeEmpleado` ya guarda la cruda, y acá se
+ * guarda la promesa de la firmada para que una lista de 40 filas con la misma
+ * cajera no firme 40 veces. */
+const firmadasPorId = new Map();
+const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function fotoFirmadaDe(id) {
+  const clave = String(id);
+  if (!firmadasPorId.has(clave)) {
+    firmadasPorId.set(clave, fetchFotoDeEmpleado(clave)
+      .then((cruda) => (cruda ? getSignedFileUrl(cruda, 43200) : null))
+      .then((u) => u || null)
+      .catch(() => null));
+  }
+  return firmadasPorId.get(clave);
+}
 
 /**
  * AvatarConEstado — la foto de una persona, y si esa persona está o no.
@@ -167,6 +186,22 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
   // motivo preciso a quien ya podía verlo y un «AUSENTE» a secas al resto: que
   // el aro nunca calle no puede costar que toda la empresa se entere de que
   // alguien está de incapacidad.
+  // ── Y si tampoco está en el store, se le pregunta a la base (2026-10-05) ──
+  //
+  // El store está ACOTADO a la sala propia para quien no ve la lista de
+  // personal, así que la cajera de Salud 1 no existe para quien mira desde
+  // Salud 2. Reportado en Inyecciones: el pago hecho en otra sucursal salía
+  // con la INICIAL y el nombre. `foto_de_empleado` es DEFINER y devuelve sólo
+  // la URL de la foto, que es lo que ya muestra cualquier avatar.
+  const faltaEnTodo = !!emp?.id && !ficha && !emp.photo && !emp.photo_url && ES_UUID.test(String(emp.id));
+  const [fotoRemota, setFotoRemota] = useState(null);
+  useEffect(() => {
+    if (!faltaEnTodo) return undefined;
+    let vivo = true;
+    fotoFirmadaDe(emp.id).then((u) => { if (vivo) setFotoRemota(u); });
+    return () => { vivo = false; };
+  }, [faltaEnTodo, emp?.id]);
+
   const historialCompleto = useStaffStore(s => s.historialCompleto);
   const local = useMemo(() => estadoDePersona(ficha || emp), [ficha, emp]);
 
@@ -239,7 +274,7 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
       <span className={`block h-full w-full overflow-hidden ${radio}
         ${marca ? `${grosor} ${marca.anillo}` : marco}`}>
         <LiquidAvatar
-          src={ficha?.photo || ficha?.photo_url || emp?.photo || emp?.photo_url}
+          src={ficha?.photo || ficha?.photo_url || emp?.photo || emp?.photo_url || (faltaEnTodo ? fotoRemota : null)}
           alt={emp?.name || 'Empleado'}
           fallbackText={shortEmployeeName(emp)}
           className="h-full w-full"

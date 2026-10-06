@@ -17,9 +17,11 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { formatearNit, formatearNrc } from '@nucleo/utils/nitUtils';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { exportCsv } from '@nucleo/utils/csvExport';
+import { csvDelDeclarable, csvDelLibroCompleto } from '@nucleo/utils/libroComprasCompleto';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fetchLibroComprasCompleto, fetchLibroComprasDeclarable } from '@nucleo/data/libroComprasCompleto';
 import { correrMes, etiquetaMes, fechaNumerica, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
+import { filasDeLaPestana, totalesDeclarable, totalesDelLibro } from '@nucleo/utils/libroComprasCompleto';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Libro de compras COMPLETO — vista propia, no una pestaña de Libros IVA.
@@ -57,10 +59,7 @@ const fmtFecha = (iso) => fechaNumerica(iso, { vacio: '' });
 // El dinero va SIEMPRE con dos decimales. Sin esto el CSV escribía el número
 // crudo de JavaScript: `5` en vez de `5.00`, y en la fila de totales
 // `30549.219999999994` — la suma de flotantes asomando en un archivo contable.
-const num = (n) => (Number(n) || 0).toFixed(2);
-// Vacío ≠ 0.00: NULL significa "no sabemos si hubo percepción", y escribir cero
-// sería afirmar que no la hubo. Misma regla que en el libro de compras.
-const numOpcional = (n) => (n == null ? '' : num(n));
+// `numOpcional` (vacío ≠ 0.00) vive con el armado del CSV, en el núcleo.
 
 // Los rótulos hablan del PORTAL: nunca se nombra el sistema de origen ni la
 // procedencia del dato (ver CLAUDE.md). Lo que la vista quiere decir no es "de
@@ -190,53 +189,14 @@ export default function LibroComprasCompletoView({ openModal }) {
         (id) => branches.find(b => b.id === id)?.name ?? (id ? `Suc. ${id}` : 'Sin sucursal'),
         [branches]);
 
-    const delTab = useMemo(
-        () => (activeTab === 'sin_compra' ? filas.filter(r => r.origen !== 'registrada') : filas),
-        [filas, activeTab]);
+    // La pestaña y los totales: `libroComprasCompleto` (núcleo, lo mismo de la app).
+    const delTab = useMemo(() => filasDeLaPestana(filas, activeTab), [filas, activeTab]);
 
     // Totales del declarable. `credito_fiscal` ya viene con su signo del
     // servidor —la nota de crédito llega en negativo— así que sumar alcanza.
     // `trabado` es el que acciona: lo que se destrabaría al confirmar la
     // clasificación de esos proveedores.
-    const totDecl = useMemo(() => {
-        const acc = { docs: 0, credito: 0, sinCuenta: 0, trabado: 0, motivos: new Map(),
-                      repRenglones: 0, repDocs: 0, repCredito: 0 };
-        if (!esDecl) return acc;
-        for (const r of filas) {
-            acc.docs++;
-            acc.credito += Number(r.credito_fiscal || 0);
-
-            // ── El documento que entró dos veces ──────────────────────────
-            // El servidor ya contó cuántos renglones del libro son el MISMO
-            // documento fiscal (`veces_en_el_libro`); acá sólo se agrega.
-            //
-            // Se reparte cada renglón entre sus copias en vez de agruparlos a
-            // mano: `1/veces` suma exactamente 1 por documento y
-            // `credito × (veces−1)/veces` da el crédito que sobra —exacto
-            // cuando las copias son idénticas, que es el caso real—. Agrupar
-            // por número de documento del lado del cliente no serviría: cuando
-            // el documento no se pudo identificar, dos copias pueden llegar con
-            // números distintos y quedarían sin agrupar.
-            const veces = Number(r.veces_en_el_libro || 1);
-            if (veces > 1) {
-                acc.repRenglones++;
-                acc.repDocs    += 1 / veces;
-                acc.repCredito += Number(r.credito_fiscal || 0) * (veces - 1) / veces;
-            }
-
-            if (r.computa_credito) continue;
-            acc.sinCuenta++;
-            acc.motivos.set(r.motivo, (acc.motivos.get(r.motivo) || 0) + 1);
-            // El IVA que NO se contó: el servidor lo puso en cero, así que se
-            // estima desde el total. Es una referencia de cuánto está en juego,
-            // no una cifra para declarar — por eso el rótulo dice «aprox.».
-            if (String(r.motivo || '').startsWith('Falta confirmar')) {
-                const t = Math.abs(Number(r.total || 0));
-                acc.trabado += t - t / 1.13;
-            }
-        }
-        return acc;
-    }, [filas, esDecl]);
+    const totDecl = useMemo(() => (esDecl ? totalesDeclarable(filas) : totalesDeclarable([])), [filas, esDecl]);
 
     const filasVistas = useMemo(() => {
         if (!busqueda.trim()) return delTab;
@@ -248,19 +208,7 @@ export default function LibroComprasCompletoView({ openModal }) {
             Number(r.veces_en_el_libro || 1) > 1 ? 'repetido' : null));
     }, [delTab, busqueda]);
 
-    const totales = useMemo(() => {
-        const acc = { docs: 0, credito: 0, total: 0, sinCompra: 0, creditoSinCompra: 0 };
-        for (const r of filas) {
-            acc.docs++;
-            acc.credito += Number(r.credito_fiscal || 0);
-            acc.total   += Number(r.total || 0);
-            if (r.origen !== 'registrada') {
-                acc.sinCompra++;
-                acc.creditoSinCompra += Number(r.credito_fiscal || 0);
-            }
-        }
-        return acc;
-    }, [filas]);
+    const totales = useMemo(() => totalesDelLibro(filas), [filas]);
 
     const totalPaginas = Math.max(1, Math.ceil(filasVistas.length / tamPagina));
     const paginadas = useMemo(() => {
@@ -276,30 +224,11 @@ export default function LibroComprasCompletoView({ openModal }) {
         // El declarable exporta SUS columnas, no las del completo. Reusar las
         // otras dejaría afuera el motivo —lo único que explica por qué una fila
         // suma cero— y escribiría una sucursal que este libro no tiene.
+        // Las filas del archivo: núcleo (`csvDelDeclarable` / `csvDelLibroCompleto`),
+        // las mismas que comparte la app.
         if (esDecl) {
-            exportCsv(
-                // «REPETIDO» viaja al CSV: quien arma la declaración trabaja
-                // sobre el archivo, no sobre la pantalla, y ahí el aviso rojo no
-                // existe. Una columna vacía en 300 filas y un «SI ×2» en dos es
-                // exactamente lo que hay que ver antes de presentar.
-                ['FECHA', 'TIPO', 'DOCUMENTO', 'NRC', 'NIT', 'PROVEEDOR',
-                 'GRAVADAS', 'CREDITO FISCAL', 'TOTAL', 'CUENTA', 'REPETIDO',
-                 'MOTIVO', 'CLASIFICACION'],
-                [
-                    ...filas.map(r => [
-                        fmtFecha(r.fecha), r.documento_tipo || '', r.documento_completo || '',
-                        r.nrc || '', r.nit || '', r.proveedor || '',
-                        num(r.compras_gravadas), num(r.credito_fiscal), num(r.total),
-                        r.computa_credito ? 'SI' : 'NO',
-                        Number(r.veces_en_el_libro || 1) > 1 ? `SI x${r.veces_en_el_libro}` : '',
-                        r.motivo || '', r.clasificacion || '',
-                    ]),
-                    ['TOTALES', '', '', '', '', '', '',
-                     num(totDecl.credito), '', '', '', '', ''],
-                ],
-                `libro-compras-declarable_${desde.slice(0, 7)}.csv`,
-                'libro_compras_declarable',
-            );
+            const csv = csvDelDeclarable(filas, totDecl, desde.slice(0, 7));
+            exportCsv(csv.headers, csv.rows, `${csv.archivo}.csv`, 'libro_compras_declarable');
             useStaffStore.getState().appendAuditLog('LIBRO_COMPRAS_DECLARABLE_EXPORT', mes, {
                 documentos: totDecl.docs, credito_fiscal: totDecl.credito,
                 sin_contar: totDecl.sinCuenta,
@@ -314,33 +243,8 @@ export default function LibroComprasCompletoView({ openModal }) {
         // del archivo como fila de encabezado y hacía `"…".map(...)` sobre una
         // cadena: TypeError antes de generar un solo byte. El botón no daba
         // ningún aviso — el error moría en la consola y no pasaba nada.
-        exportCsv(
-            ['FECHA', 'REGISTRO', 'SUCURSAL', 'TIPO', 'DOCUMENTO', 'NRC', 'NIT', 'PROVEEDOR',
-             'EXENTAS', 'GRAVADAS', 'CREDITO FISCAL', 'TOTAL', 'PERCEPCION', 'RETENCION', 'ANULADA'],
-            [
-                ...filas.map(r => [
-                    fmtFecha(r.fecha),
-                    r.origen === 'registrada' ? 'Registrada' : 'Sin registrar',
-                    nombreSucursal(r.branch_id),
-                    r.documento_tipo || '',
-                    // El COMPLETO, no el cortado a 20 del ERP: es justamente lo
-                    // que este libro hace mejor que su origen.
-                    r.documento_completo || '',
-                    r.nrc || '', r.nit || '', r.proveedor || '',
-                    num(r.compras_exentas), num(r.compras_gravadas),
-                    num(r.credito_fiscal), num(r.total),
-                    numOpcional(r.percepcion_iva),
-                    numOpcional(r.retencion_iva),
-                    r.anulada ? 'SI' : '',
-                ]),
-                ['TOTALES', '', '', '', '', '', '', '', '', '',
-                 num(totales.credito), num(totales.total), '', '', ''],
-            ],
-            // Con la extensión: sin ella el navegador guarda un archivo sin tipo
-            // y Excel no lo abre con doble click.
-            `libro-compras-completo_${desde.slice(0, 7)}.csv`,
-            'libro_compras_completo',
-        );
+        const csv = csvDelLibroCompleto(filas, totales, nombreSucursal, desde.slice(0, 7));
+        exportCsv(csv.headers, csv.rows, `${csv.archivo}.csv`, 'libro_compras_completo');
         useStaffStore.getState().appendAuditLog('LIBRO_COMPRAS_COMPLETO_EXPORT', mes, {
             documentos: totales.docs, credito_fiscal: totales.credito,
             sin_registrar: totales.sinCompra,

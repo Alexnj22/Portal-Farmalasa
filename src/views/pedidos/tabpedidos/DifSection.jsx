@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Button from '../../../components/common/Button';
 import { AlertCircle, CheckCircle2, X, Loader2, Check, ChevronDown, ChevronUp, ArrowRight, Clock } from 'lucide-react';
-import { calcSolicitado, fmtRelative, fmtDia, fmtHM } from '@nucleo/utils/tableroDePedidos';
+import { calcSolicitado, fmtRelative, fmtDia, fmtHM, TIPO_DE_DIFERENCIA, RESOLUCION_DE_DIFERENCIA, EVENTO_DE_DIFERENCIA } from '@nucleo/utils/tableroDePedidos';
 import { ERP_NAMES } from '@nucleo/constants/erp';
 import Badge from '../../../components/common/Badge';
 import Notice from '../../../components/common/Notice';
@@ -15,15 +15,8 @@ import DecisionDiferencia from './DecisionDiferencia';
 import { fetchOpcionesDiferencia, opcionElegida } from '@nucleo/data/diferencias';
 import { tengoAlgoQueHacer } from '@nucleo/utils/decisionDiferencia';
 
-const ERROR_TIPO_LABEL = {
-    faltante:     { label: 'Faltante',        variante: 'danger'           },
-    sobrante:     { label: 'Sobrante',        variante: 'success' },
-    danado:       { label: 'Dañado',          variante: 'neutral'   },
-    vencido:      { label: 'Vencido',         variante: 'neutral'   },
-    presentacion: { label: 'Pres. distinta',  variante: 'neutral'         },
-    otro:         { label: 'Otro',            variante: 'neutral'      },
-    diferencia:   { label: 'Diferencia',      variante: 'warning'      },
-};
+// Los tipos de diferencia son del núcleo: la ficha del pedido en la app los rotula igual.
+const ERROR_TIPO_LABEL = TIPO_DE_DIFERENCIA;
 
 // La lista de salidas ya NO se escribe acá. Vive en `diferencia_opcion` y la
 // pantalla la lee: es la misma que la base usa para validar, así que el valor
@@ -33,45 +26,11 @@ const ERROR_TIPO_LABEL = {
 
 // Los rótulos de las resoluciones VIEJAS. Se quedan para poder leer lo que ya
 // está guardado; las nuevas traen su rótulo desde la tabla.
-const RESOLUCION_LABEL = {
-    envio_fisico:        'Enviar producto',
-    ajuste_sistema:      'Ajuste en sistema',
-    aceptar_sobrante:    'Sucursal queda con sobrante',
-    devolver_bodega:     'Devolver a bodega',
-    devolucion_aceptada: 'Devolución aceptada',
-    devolucion_negada:   'Devolución negada',
-    aceptar_dif_pres:    'Dif. presentación aceptada',
-    resuelto:            'Resuelto',
-    no_aplica:           'Sin solución',
-};
+// Los rótulos viejos viven en el núcleo (`RESOLUCION_DE_DIFERENCIA`).
+const RESOLUCION_LABEL = RESOLUCION_DE_DIFERENCIA;
 
-const EVENTO_LABEL = {
-    resolucion_propuesta:    'propuso resolución',
-    resolucion_confirmada:   'confirmó resolución',
-    resolucion_rechazada:    'rechazó resolución',
-    // Cortos, pero que digan qué pasó. «propuso cómo se arregla» y «estuvo de
-    // acuerdo» no decían con QUÉ, y el paso siguiente quedaba colgado del
-    // anterior para entenderse.
-    diferencia_proponer:     'propuso qué hacer',
-    diferencia_contraproponer:'propuso la otra salida',
-    diferencia_aceptar:      'aceptó la propuesta',
-    diferencia_escalada:     'no estuvo de acuerdo — pasó a supervisión',
-    diferencia_supervisar:   'lo decidió supervisión',
-    diferencia_llegada:      'confirmó que lo tiene',
-    devolucion_solicitada:   'pidió la devolución',
-    devolucion_aceptada:     'aceptó la devolución',
-    devolucion_rechazada:    'no aceptó la devolución',
-    devolucion_recibida:     'recibió la devolución en bodega',
-    correccion_conteo:       'corrigió lo contado',
-    // Los tres de abajo faltaban y salían CRUDOS a la pantalla: la actividad
-    // del pedido #150 mostraba «traslado_recibido» tal cual, que además nombra
-    // la tubería y no el negocio. Un rótulo que falta no da error: imprime la
-    // clave interna y parece un dato.
-    traslado_recibido:       'confirmó la entrada al inventario',
-    extra_anotado:           'anotó un producto que llegó de más',
-    extra_quitado:           'quitó lo que había anotado de más',
-    no_reenviado:            'decidió no reenviar la caja que no llegó',
-};
+// Los rótulos de los eventos son del núcleo (`EVENTO_DE_DIFERENCIA`): la app los lee igual.
+const EVENTO_LABEL = EVENTO_DE_DIFERENCIA;
 
 const DIF_MAX = 3;
 

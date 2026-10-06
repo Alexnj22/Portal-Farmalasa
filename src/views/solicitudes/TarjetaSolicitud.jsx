@@ -12,12 +12,16 @@ import { ICONO_POR_TIPO } from '../../components/common/catalogos/tiposDeAviso';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { CaraPersona, ChipPersona } from './PersonasSolicitud';
 import {
-    resumenMovimiento, esMovimiento, lineasDe, esParcial,
+    resumenMovimiento, esMovimiento, esParcial,
     fmtDiaMes as fmtDate, fmtHora, fmtFechaHora, desdeHace,
     personasDe, cuandoSeDecidio, salaQueEspera, areaQueDecide, motivoDeRechazoCorto,
 } from '@nucleo/utils/movimientoTexto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import {
+    acotarCantidad, ajustesPosibles, cantidadesIniciales, esAbonoPorConfirmar as esAbono,
+    faltaMotivo as faltaMotivoDe, lineasDeDecision, resumenDeDecision, seleccionInicial,
+} from '@nucleo/utils/decisionDeSolicitud';
 
 // La tarjeta y el modal de una solicitud — el canónico, para las TRES pantallas
 // que muestran solicitudes.
@@ -350,15 +354,12 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
     const bloqueDecision    = useRef(null);
     const { hasPermission } = useAuth();
 
-    const meta      = (typeof req.metadata === 'object' && req.metadata) ? req.metadata : {};
     /* Un abono en aprobación se decide crédito por crédito, y sus renglones no
      * viven en `items` sino en `creditos`: el mismo mecanismo de casillas, otra
      * clave. Se resuelve acá y no adentro para que `seleccion`, `fuera` y
      * `parcial` —que ya sabían contar renglones— sirvan sin tocarlos. */
-    const esAbonoPorConfirmar = req.type === 'ABONO_APROBACION';
-    const lineas    = esAbonoPorConfirmar
-        ? (Array.isArray(meta.creditos) ? meta.creditos : [])
-        : lineasDe(meta);
+    const esAbonoPorConfirmar = esAbono(req);
+    const lineas    = lineasDeDecision(req);
     const esTraslado = req.type === 'INVENTORY_TRANSFER_REQUEST';
     /* El traslado NO pasa por la decisión genérica, y nunca pasó: aprobarlo con
      * `approveRequest` lo marcaría APROBADO sin mover un solo producto. Lo que
@@ -394,13 +395,11 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
      * recortar y las casillas sólo confundirían. */
     /* Un abono entra o no entra: no hay cantidad que recortar —el monto lo fijó
      * el comprobante—, así que lleva casillas y no los `+/−`. */
-    const editable = decidible && (esMovimiento(req.type) || esAbonoPorConfirmar) && modo !== 'reject';
-    const conCantidad = editable && !esAbonoPorConfirmar;
-    const porLinea = editable && lineas.length > 1;
+    // La regla vive en el núcleo (`decisionDeSolicitud`): la app decide igual.
+    const { editable, conCantidad, porLinea } = ajustesPosibles(req, { decidible, rechazando: modo === 'reject' });
 
-    const [seleccion, setSeleccion] = useState(() => new Set(lineas.map((_, i) => i)));
-    const [cantidades, setCantidades] = useState(
-        () => new Map(lineas.map((l, i) => [i, Number(l.cantidad) || 0])));
+    const [seleccion, setSeleccion] = useState(() => seleccionInicial(lineas));
+    const [cantidades, setCantidades] = useState(() => cantidadesIniciales(lineas));
 
     const alternar = (i) => setSeleccion(prev => {
         const s = new Set(prev);
@@ -408,26 +407,15 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
         return s;
     });
     const fijarCantidad = (i, n) => setCantidades(prev => {
-        const tope = Number(lineas[i]?.cantidad) || 0;
         const m = new Map(prev);
-        m.set(i, Math.max(1, Math.min(tope, n)));   // nunca 0 ni más de lo pedido
+        m.set(i, acotarCantidad(lineas[i], n));   // nunca 0 ni más de lo pedido
         return m;
     });
 
-    const fuera    = lineas.length - seleccion.size;
-    const recortes = conCantidad
-        ? [...seleccion].filter(i => (cantidades.get(i) ?? 0) < (Number(lineas[i]?.cantidad) || 0)).length
-        : 0;
-    // «Parcial» es cualquier cosa que no sea exactamente lo que pidieron: falta
-    // un renglón, o falta cantidad en alguno.
-    const parcial  = editable && seleccion.size > 0 && (fuera > 0 || recortes > 0);
+    const { parcial, nadaSeleccionado, aceptadas, aviso } = resumenDeDecision({
+        req, lineas, seleccion, cantidades, editable, conCantidad, porLinea });
 
-    // Aprobar sin nada seleccionado no es aprobar: es rechazar con otro nombre,
-    // y se dice en vez de dejar apretar un botón que no hace lo que promete.
-    const nadaSeleccionado = porLinea && seleccion.size === 0;
-
-    const faltaMotivo = (modo === 'reject' && !nota.trim())
-                     || (modo === null && parcial && !nota.trim());
+    const faltaMotivo = faltaMotivoDe({ rechazando: modo === 'reject', parcial, nota });
 
     const confirmar = (modoElegido) => onDecidir({
         req, modo: modoElegido, nota: nota.trim(),
@@ -438,12 +426,7 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
         // El abono manda los índices PELADOS: su renglón no tiene cantidad, y
         // un `{i, cantidad: 0}` diría que entra por cero, que no es lo mismo
         // que «se devuelve».
-        aceptadas: parcial
-            ? [...seleccion].sort((a, b) => a - b)
-                .map(i => (esAbonoPorConfirmar
-                    ? i
-                    : { i, cantidad: cantidades.get(i) ?? (Number(lineas[i]?.cantidad) || 0) }))
-            : null,
+        aceptadas,
     });
 
     /* En el teléfono el detalle es más alto que la pantalla, así que al entrar a
@@ -555,28 +538,7 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                                 entra, es dinero que se le DEVUELVE al cliente y
                                 un saldo que vuelve a subir. Dos textos, un solo
                                 mecanismo. */}
-                            <Notice variant={nadaSeleccionado ? 'danger' : parcial ? 'warning' : 'info'} icon={Check}>
-                                {esAbonoPorConfirmar
-                                    ? (nadaSeleccionado
-                                        ? 'No dejaste ningún crédito marcado. Si no se confirma ninguno, rechazá la solicitud: se le devuelve todo.'
-                                        : parcial
-                                            ? (fuera === 1
-                                                ? 'Un crédito queda sin confirmar: ese abono se deshace y el saldo vuelve a subir. Cuenta por qué abajo.'
-                                                : `${fuera} créditos quedan sin confirmar: esos abonos se deshacen y sus saldos vuelven a subir. Cuenta por qué abajo.`)
-                                            : 'Se confirman todos.')
-                                    : nadaSeleccionado
-                                        ? 'No dejaste ninguna línea marcada. Si no entra nada, rechazá la solicitud.'
-                                        : parcial
-                                            ? [
-                                                fuera > 0 && (fuera === 1
-                                                    ? 'Queda 1 producto afuera'
-                                                    : `Quedan ${fuera} productos afuera`),
-                                                recortes > 0 && (recortes === 1
-                                                    ? 'a 1 le bajaste la cantidad'
-                                                    : `a ${recortes} les bajaste la cantidad`),
-                                              ].filter(Boolean).join(' y ') + '. Cuenta por qué abajo.'
-                                            : 'Entra todo lo que se pidió, completo.'}
-                            </Notice>
+                            <Notice variant={aviso.tono} icon={Check}>{aviso.texto}</Notice>
                         </div>
                     )}
 

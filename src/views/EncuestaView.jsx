@@ -25,6 +25,7 @@ import { clickable } from '@nucleo/utils/clickable';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { preguntarASaly } from '@nucleo/data/ia';
+import { bloqueDeLaBase, distribucionDePregunta, indicesInvertidos, preguntaDeLaBase, puntajeDeBloque, puntajeGlobal, respuestaDeLaBase } from '@nucleo/utils/climaLaboral';
 
 // Jefe inmediato de cada sucursal — configuración de org-chart
 const SUPERVISOR_DE_JEFE = {
@@ -39,7 +40,6 @@ const SUPERVISOR_DE_JEFE = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const SCORE_MAP = { A: 4, B: 3, C: 2, D: 1 };
 const OPT_COLORS = {
     A: { on: 'bg-success-solid text-white', off: 'bg-surface-card-hover text-content-3', variante: 'success' },
     B: { on: 'bg-chart-1-solid text-white', off: 'bg-surface-card-hover text-content-3', variante: 'chart-1' },
@@ -60,37 +60,9 @@ const PCT_COLORS = {
     slate:   { bar: 'bg-content-3',   text: 'text-content-2',   bg: 'bg-surface-card-hover',   border: 'border-border-card',   variante: 'neutral' },
 };
 
-function scoreVal(v) {
-    if (!v || v === '-') return null;
-    if (SCORE_MAP[v.toUpperCase()] !== undefined) return SCORE_MAP[v.toUpperCase()];
-    const n = parseInt(v, 10);
-    if (!isNaN(n) && n >= 1 && n <= 10) return n >= 9 ? 4 : n >= 7 ? 3 : n >= 5 ? 2 : 1;
-    return null;
-}
-
-function blockScore(rows, indices, invertedSet = new Set()) {
-    let total = 0, count = 0;
-    for (const row of rows) {
-        for (const i of indices) {
-            const v = scoreVal(row.r[i]);
-            if (v !== null) {
-                total += invertedSet.has(i) ? (5 - v) : v;
-                count++;
-            }
-        }
-    }
-    return count > 0 ? (total / (count * 4)) * 100 : null;
-}
-
-function questionDist(rows, idx) {
-    const d = { A: 0, B: 0, C: 0, D: 0 };
-    let total = 0;
-    for (const r of rows) {
-        const v = r.r[idx];
-        if (v && d[v] !== undefined) { d[v]++; total++; }
-    }
-    return { ...d, total };
-}
+// Puntuar: `climaLaboral` (núcleo, lo mismo de la app).
+const blockScore = puntajeDeBloque;
+const questionDist = distribucionDePregunta;
 
 function scoreLabel(pct) {
     if (pct >= 85) return { label: 'Excelente', color: 'text-success', Icon: Smile };
@@ -399,41 +371,9 @@ export default function EncuestaView() {
             fetchSurveyResponsesForView(selectedSurveyId),
         ]).then(async ([bRes, pRes, rRes]) => {
             await signPhotosDeep(rRes.data || []);
-            setBloques((bRes.data || []).map(b => ({
-                id: b.numero,
-                _dbId: b.id,
-                nombre: b.nombre,
-                color: b.color,
-                desc: b.descripcion,
-                indices: b.indices,
-                ctx: b.ctx_dirigido ? {
-                    dirigido: b.ctx_dirigido,
-                    tipo: b.ctx_tipo,
-                    badge: b.ctx_badge,
-                    nota: b.ctx_nota,
-                } : null,
-            })));
-            setPreguntas((pRes.data || []).map(p => ({
-                id: p.numero,
-                bloque: p.bloque_id ? (bRes.data || []).find(b => b.id === p.bloque_id)?.numero ?? null : null,
-                idx: p.indice,
-                texto: p.texto,
-                opciones: p.opciones,
-                tipo: p.tipo,
-                invertida: p.invertida,
-            })));
-            setRespuestas((rRes.data || []).map(r => {
-                const fn = (r.employee?.first_names || '').split(' ')[0];
-                const ln = (r.employee?.last_names  || '').split(' ')[0];
-                return {
-                    nombre: `${fn} ${ln}`.trim() || r.display_name || '',
-                    isJefe: r.is_jefe,
-                    sucursal: r.employee?.branch?.name || '',
-                    photo: r.employee?.photo_url || null,
-                    r: r.responses,
-                    comentario: r.comentario,
-                };
-            }));
+            setBloques((bRes.data || []).map(bloqueDeLaBase));
+            setPreguntas((pRes.data || []).map((p) => preguntaDeLaBase(p, bRes.data || [])));
+            setRespuestas((rRes.data || []).map(respuestaDeLaBase));
             setLoading(false);
         });
     }, [selectedSurveyId]);
@@ -479,10 +419,7 @@ export default function EncuestaView() {
 
     const sucursales = useMemo(() => [...new Set(RESPUESTAS.map(r => r.sucursal))].sort(), [RESPUESTAS]);
 
-    const invertedIndices = useMemo(
-        () => new Set(PREGUNTAS.filter(p => p.invertida).map(p => p.idx)),
-        [PREGUNTAS]
-    );
+    const invertedIndices = useMemo(() => indicesInvertidos(PREGUNTAS), [PREGUNTAS]);
 
     const selfRatingIdx = useMemo(() => {
         const p = PREGUNTAS.find(p => p.tipo === 'numerica');
@@ -513,10 +450,7 @@ export default function EncuestaView() {
         BLOQUES.map(b => ({ ...b, score: blockScore(filteredRows, b.indices, invertedIndices) })),
     [filteredRows, BLOQUES, invertedIndices]);
 
-    const globalScore = useMemo(() => {
-        const allIdx = BLOQUES.flatMap(b => b.indices);
-        return blockScore(filteredRows, allIdx, invertedIndices);
-    }, [filteredRows, BLOQUES, invertedIndices]);
+    const globalScore = useMemo(() => puntajeGlobal(filteredRows, BLOQUES, invertedIndices), [filteredRows, BLOQUES, invertedIndices]);
 
     // Distribución P31 (autocalificación — puede ser A/B/C/D legacy o número 1-10)
     const selfRatings = useMemo(() => {

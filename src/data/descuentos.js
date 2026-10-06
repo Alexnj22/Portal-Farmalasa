@@ -154,3 +154,14 @@ export async function fetchPreciosDeProductos(ids) {
     if (error) throw error;
     return data ?? [];
 }
+
+/**
+ * Lo que la oferta de la app toma de un descuento: fechas, salas, tipo, monto
+ * y los productos con precio antes y después, sin los de receta. Después la
+ * mantiene al día `descuentos-erp` (`_shared/ofertaDeDescuento.ts`).
+ */
+export async function fotoParaApp(id) {
+    const data = await llamar({ accion: 'foto_para_app', id: Number(id) });
+    if (data.ok !== true) throw new Error(data.error || 'No se pudo leer el descuento.');
+    return data.foto;
+}

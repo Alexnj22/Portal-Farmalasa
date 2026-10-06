@@ -1256,6 +1256,25 @@ queda fuera del commit, corre `version-gate` siempre y `migration-gate` cuando e
 commit toca `supabase/migrations`. `git commit --no-verify` lo saltea: es para una
 emergencia real, no para silenciar un hallazgo.
 
+## REGLA: pushear a `main` NO publica el portal — `npm run publicar` (2026-10-06)
+
+Cada commit a `main` desplegaba portal.farmasalud.lat entero en Vercel: el
+2026-10-06 fueron 24 despliegues, ~20 de cambios que ni tocaban la web (apps,
+funciones de Supabase), y el ciclo llegó a **$22.92 de minutos de compilación**
+con cargos extra. Decisión del usuario: se publica a propósito.
+
+- Producción es la rama **`produccion`**. Se mueve con **`npm run publicar`**
+  (`scripts/publicar.mjs`): la adelanta a `origin/main` sólo si hay cambios de
+  la web, y no toca el árbol de trabajo. `-- --ver` dice qué saldría.
+- **Publicar cuando el cambio de la web tenga que verse** (un arreglo para
+  sala, una pantalla terminada), no después de cada commit. Varios commits de
+  la web se juntan en un solo despliegue.
+- Lo que no es web (`apps/`, `supabase/`, `scripts/`, `docs/`, `auditoria/`,
+  `CHANGELOG.md`, `src/version.js`) no se despliega nunca por Vercel: las
+  funciones van por `supabase functions deploy` y las apps por `subir-ios`.
+- La regla vive en `scripts/vercel-ignorar.sh` (el `ignoreCommand` de
+  `vercel.json` no admite más de 256 caracteres — un despliegue falló por eso).
+
 ## REGLA CRÍTICA: lo que ya se auditó no se toca sin preguntar (2026-08-23)
 
 El portal está repartido en **25 áreas** (`auditoria/areas.mjs`) y cada una lleva

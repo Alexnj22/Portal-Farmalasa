@@ -18,7 +18,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { formatearNit, formatearNrc } from '@nucleo/utils/nitUtils';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { exportCsv, buildCsvText } from '@nucleo/utils/csvExport';
-import { fmtFecha, soloNumero, csvRetencionVentas, CSV_RET_VENTAS_HEADERS,
+import { fmtFecha, soloNumero, csvRetencionVentas, CSV_RET_VENTAS_HEADERS, faltantesDelLibro,
          construirLibro } from '@nucleo/utils/libroIva';
 import {
     fetchAnexoRetencionRenta,
@@ -31,6 +31,7 @@ import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 
 import { registrarEgreso } from '@nucleo/data/egreso';
 import { descargarArchivo } from '../../plataforma/descargas';
+import { calcularTotales, debitoDeConsumidor } from '@nucleo/utils/librosIva';
 import { correrMes, etiquetaMes, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
 // ─────────────────────────────────────────────────────────────────────────────
 // Los siete libros y anexos de IVA del ERP, generados desde el portal:
@@ -60,13 +61,8 @@ import { correrMes, etiquetaMes, mesSV, rangoDelMes } from '@nucleo/utils/fecha'
 // que es lo que la contadora ya sabe abrir.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const IVA_TASA = 0.13;
-
-// El débito fiscal de las ventas a consumidor no está en ninguna columna: se
-// calcula, porque el precio al público YA lleva el IVA adentro. Art. 83 lo pide
-// explícitamente ("un resumen de cálculo del débito fiscal ... el cual se
-// trasladará al libro de operaciones con contribuyentes").
-const debitoDeConsumidor = (gravadas) => gravadas * IVA_TASA / (1 + IVA_TASA);
+// El débito de consumidor y los totales de cada libro: `librosIva` (núcleo,
+// lo mismo de la app).
 
 // El orden es el del ERP: primero los libros de ventas, después compras, y al
 // final los anexos. Quien arma la declaración los recorre en ese orden.
@@ -663,71 +659,6 @@ function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, nom
     );
 }
 
-// ── Totales de un juego de libros ────────────────────────────────────────────
-//
-// A nivel de módulo y no dentro del componente porque el ZIP los necesita **por
-// sucursal**: cada archivo del paquete lleva su propia fila de TOTALES, y
-// calcularla sobre el total del mes le pondría a cada sucursal el número de
-// todas.
-const calcularTotales = (d) => {
-    const suma = (filas, campo) => filas.reduce((s, r) => s + Number(r[campo] || 0), 0);
-    const gravadasCons = suma(d.consumidor, 'ventas_gravadas');
-
-    return {
-        consumidor:    { docs: suma(d.consumidor, 'documentos'),
-                         exentas: suma(d.consumidor, 'ventas_exentas'),
-                         gravadas: gravadasCons,
-                         debito: debitoDeConsumidor(gravadasCons),
-                         total: suma(d.consumidor, 'total_diario') },
-        contribuyente: { docs: d.contribuyente.length,
-                         exentas: suma(d.contribuyente, 'ventas_exentas'),
-                         gravadas: suma(d.contribuyente, 'ventas_gravadas'),
-                         debito: suma(d.contribuyente, 'debito_fiscal'),
-                         // El 1% que retuvo el cliente. No baja la venta ni el
-                         // débito: es impuesto ya enterado por él, y por eso el
-                         // total del documento es menor que gravadas + débito.
-                         retencion: suma(d.contribuyente, 'retencion_iva'),
-                         total: suma(d.contribuyente, 'total') },
-        anulados:      { docs: d.anulados.length, exentas: 0, gravadas: 0, debito: 0,
-                         total: suma(d.anulados, 'total') },
-        // En compras la tercera tarjeta es el crédito fiscal, no el débito:
-        // es el impuesto que se resta, no el que se paga.
-        compras:       { docs: d.compras.length,
-                         exentas:  suma(d.compras, 'compras_exentas'),
-                         gravadas: suma(d.compras, 'compras_gravadas'),
-                         debito:   suma(d.compras, 'credito_fiscal'),
-                         total:    suma(d.compras, 'total') },
-        percepcion:    { docs: d.percepcion.length, exentas: 0,
-                         gravadas: suma(d.percepcion, 'monto_sujeto'),
-                         debito:   suma(d.percepcion, 'percepcion_iva'),
-                         total:    suma(d.percepcion, 'monto_sujeto') },
-        renta:         { docs: d.renta.length, exentas: 0,
-                         gravadas: suma(d.renta, 'base_sin_iva'),
-                         debito:   suma(d.renta, 'retencion_10'),
-                         total:    suma(d.renta, 'base_sin_iva') },
-        retencion:     { docs: d.retencion.length, exentas: 0,
-                         gravadas: suma(d.retencion, 'monto_sujeto'),
-                         debito:   suma(d.retencion, 'retencion_iva'),
-                         total:    suma(d.retencion, 'monto_sujeto') },
-        // El IVA que nos retuvieron. `debito` va SIN los anulados: es el que se
-        // acredita, y es el que muestra el carril de la pestaña.
-        retencionVentas: { docs: (d.retencionVentas || []).length, exentas: 0,
-                         gravadas: suma(d.retencionVentas || [], 'monto_sujeto'),
-                         debito:   suma((d.retencionVentas || []).filter(r => !r.anulada), 'retencion_iva'),
-                         total:    suma(d.retencionVentas || [], 'monto_sujeto') },
-        // El IVA va NETO: las notas de crédito bajan el crédito fiscal y las
-        // de débito lo suben, así que sumarlas todas juntas daría un ajuste
-        // mayor al real. Es el número que contabilidad tiene que mover.
-        notas:         { docs: d.notas.length, exentas: 0,
-                         gravadas: suma(d.notas.filter(r => r.tipo_dte === '05'), 'monto')
-                                 - suma(d.notas.filter(r => r.tipo_dte === '06'), 'monto'),
-                         debito:   suma(d.notas.filter(r => r.tipo_dte === '05'), 'iva')
-                                 - suma(d.notas.filter(r => r.tipo_dte === '06'), 'iva'),
-                         total:    suma(d.notas, 'monto') },
-    };
-};
-
-
 // ── El paquete del mes: un ZIP con carpeta por libro y un CSV por sucursal ───
 //
 // Lo que contabilidad hace hoy es entrar ocho veces, cambiar la sucursal seis
@@ -939,9 +870,10 @@ export default function LibrosIvaView({ openModal }) {
 
     // Cuántos CCF del período van a salir sin NRC. Es el dato que decide si el
     // libro de contribuyentes se puede presentar tal cual.
-    const ccfSinNrc = useMemo(
-        () => contribuyente.filter(r => !r.nrc).length,
-        [contribuyente]);
+    // Los conteos de los avisos: núcleo (`faltantesDelLibro`), los mismos de la app.
+    const faltantes = useMemo(() => faltantesDelLibro({ consumidor, contribuyente, compras, anulados }),
+        [consumidor, contribuyente, compras, anulados]);
+    const ccfSinNrc = faltantes.ccfSinNrc;
 
     // ¿Este período tiene retención de IVA? Decide si la columna existe — sobre
     // el período completo y no sobre la página que se está mirando.
@@ -963,31 +895,19 @@ export default function LibrosIvaView({ openModal }) {
 
     // Lo mismo del lado de compras: sin NRC del proveedor el Art. 86 no se
     // cumple. Hoy son 2 proveedores del ERP a los que les falta el dato.
-    const comprasSinNrc = useMemo(
-        () => compras.filter(r => !r.nrc).length,
-        [compras]);
+    const comprasSinNrc = faltantes.comprasSinNrc;
 
     // Documentos que el sync trajo antes de que existieran las columnas del
     // libro. NULL no es cero: si queda alguno, el libro está incompleto y hay
     // que resincronizar ese período — no presentarlo así.
-    const comprasSinSincronizar = useMemo(
-        () => compras.filter(r => r.documento_numero == null).length,
-        [compras]);
+    const comprasSinSincronizar = faltantes.comprasSinSincronizar;
 
     // El número de control se trae documento por documento y puede quedar a
     // medias: si el origen se cae, lo que falte queda en NULL. Cuenta la
     // pestaña que se está mirando, porque cada libro lo lleva en su propia
     // columna —consumidor en dos, el del primero y el del último del día— y un
     // faltante en uno no dice nada del otro.
-    const sinNumeroControl = useMemo(() => {
-        if (activeTab === 'consumidor')
-            return consumidor.filter(r => !r.numero_control_del || !r.numero_control_al).length;
-        if (activeTab === 'contribuyente')
-            return contribuyente.filter(r => !r.numero_control).length;
-        if (activeTab === 'anulados')
-            return anulados.filter(r => !r.numero_control).length;
-        return 0;
-    }, [activeTab, consumidor, contribuyente, anulados]);
+    const sinNumeroControl = faltantes.sinNumeroControl[activeTab] ?? 0;
 
     const sufijoArchivo = `${mes}${filterBranch ? `_${nombreSucursal(Number(filterBranch)).replace(/\s+/g, '-')}` : ''}`;
 

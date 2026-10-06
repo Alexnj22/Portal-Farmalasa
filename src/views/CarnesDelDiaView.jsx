@@ -13,9 +13,9 @@ import { fetchCarnesVigentes, anularCarneTemporal } from '@nucleo/data/carneTemp
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { carnesConPersona, carnesPorSala, SIN_SUCURSAL } from '@nucleo/utils/carnesDelDia';
 
 const VACIO = [];
-const SIN_SUCURSAL = 'Sin sucursal';
 
 /**
  * Sistema → Carnés del día: emitir uno y ver los que están vivos para matarlos.
@@ -67,34 +67,11 @@ const CarnesDelDiaView = () => {
 
     useEffect(() => { releer(); }, [releer]);
 
-    const porId = useMemo(() => new Map(employees.map(e => [e.id, e])), [employees]);
     const nombreDeSala = useCallback(
         (id) => branches.find(b => String(b.id) === String(id))?.name || '',
         [branches]);
-
-    const filas = useMemo(() => vigentes.map(c => {
-        const emp = porId.get(c.employee_id);
-        const quien = porId.get(c.emitido_por);
-        return {
-            ...c,
-            nombre: emp ? shortEmployeeName(emp) : 'Alguien que ya no está en la lista',
-            cargo: emp?.role || '',
-            foto: emp?.photo || null,
-            // La sucursal por la que se decide el orden es la de la PERSONA, no
-            // la de la ticketera por donde salió el papel: lo que se busca acá
-            // es «quién de tal sala anda con papel», y un carné se puede
-            // imprimir desde administración para alguien de otra sala.
-            sala: nombreDeSala(emp?.branchId) || SIN_SUCURSAL,
-            // Por dónde SALIÓ el papel, que no es la sucursal de la persona.
-            // `impreso_en` en null significa «la computadora de quien lo
-            // emitió» — se dice así y no se deja el renglón en blanco: una
-            // línea que falta se lee como «no se sabe», y acá sí se sabe.
-            impresoEn: c.impreso_en
-                ? (nombreDeSala(c.impreso_en) || `Sucursal ${c.impreso_en}`)
-                : 'La computadora de quien lo emitió',
-            loEntrego: quien ? shortEmployeeName(quien) : '—',
-        };
-    }), [vigentes, porId, nombreDeSala]);
+    // Cada carné con su persona, su sala y por dónde salió: `carnesDelDia` (núcleo).
+    const filas = useMemo(() => carnesConPersona(vigentes, employees, branches), [vigentes, employees, branches]);
 
     const filasVisibles = useMemo(() => {
         if (!busqueda.trim()) return filas;
@@ -111,23 +88,7 @@ const CarnesDelDiaView = () => {
      *
      * «Sin sucursal» va al final: es la excepción, no una sala más.
      */
-    const grupos = useMemo(() => {
-        const mapa = new Map();
-        for (const c of filasVisibles) {
-            if (!mapa.has(c.sala)) mapa.set(c.sala, []);
-            mapa.get(c.sala).push(c);
-        }
-        return [...mapa.entries()]
-            .map(([sala, items]) => ({
-                sala,
-                items: [...items].sort((a, b) => a.nombre.localeCompare(b.nombre)),
-            }))
-            .sort((a, b) => {
-                if (a.sala === SIN_SUCURSAL) return 1;
-                if (b.sala === SIN_SUCURSAL) return -1;
-                return a.sala.localeCompare(b.sala);
-            });
-    }, [filasVisibles]);
+    const grupos = useMemo(() => carnesPorSala(filasVisibles), [filasVisibles]);
 
     // Sólo personal activo: a alguien de baja el servidor no le emite carné, así
     // que ofrecerlo sería ofrecer un botón que siempre falla.

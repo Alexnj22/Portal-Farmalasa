@@ -21,6 +21,11 @@ const STORAGE_PATH_RE = /\/storage\/v1\/object\/(?:public|sign|authenticated)\/(
  * La subida estaba escrita a mano en catorce lugares —cinco pantallas y nueve
  * funciones del núcleo—, cada uno con su manejo del error y de la URL. Es la
  * pieza que la app del teléfono necesita tal cual (F3 del núcleo portable).
+ *
+ * @param {string} bucket
+ * @param {string} path
+ * @param {Blob} archivo
+ * @param {{ upsert?: boolean, contentType?: string }} [opciones]
  */
 export async function subirArchivo(bucket, path, archivo, { upsert = false, contentType } = {}) {
     const { error } = await supabase.storage.from(bucket)

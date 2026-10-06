@@ -3,6 +3,7 @@ import Button from '../common/Button';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Check, Phone, Mail, MapPin, FileText, ExternalLink, Tag, Building2, CheckCircle2, Scale, Landmark } from 'lucide-react';
 import { guardarCondicionesProveedor } from '@nucleo/data/cuentasPorPagar';
+import { CLASE_LABELS, optionToPercibe, PERCIBE_OPTIONS, percibeToOption, REGIMEN_HINT, REGIMEN_LABELS } from '@nucleo/utils/proveedorFicha';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { updateProveedorManual, setProveedorCategoria, setProveedorSupplier, setProveedorClasificacionFiscal } from '@nucleo/data/proveedores';
 import { departamentoLabel } from '@nucleo/utils/svCatalogs';
@@ -33,25 +34,14 @@ const SI_NO = [{ value: 'si', label: 'Sí' }, { value: 'no', label: 'No' }];
 // Sí/No = corrección manual que congela el campo contra futuros DTE. Antes era
 // un booleano plano y CUALQUIER guardado lo fijaba, aunque el usuario hubiera
 // venido a cambiar el teléfono — sin forma de volver a automático.
-const PERCIBE_OPTIONS = [
-    { value: 'auto', label: 'Automático (según sus DTE)' },
-    { value: 'si',   label: 'Sí, percibe 1%' },
-    { value: 'no',   label: 'No percibe' },
-];
-const percibeToOption = (override) => override === null || override === undefined ? 'auto' : (override ? 'si' : 'no');
-const optionToPercibe = (v) => v === 'auto' ? null : v === 'si';
+// PERCIBE_OPTIONS y sus conversiones: núcleo (`proveedorFicha`), lo mismo de la app.
 
 // Categoría Contable (Costo/Gasto del form del ERP viejo, PLAN-PROVEEDORES-2026-07.md
 // §2): NO es un campo propio — se deriva de la `clase` de la categoría asignada.
 // Sin categoría todavía, no hay clase que derivar. Antes esto vivía mal
 // etiquetado como "Tipo de Proveedor" — es la clasificación del GASTO, no del
 // proveedor (corregido 2026-07-22, ver regimen_fiscal abajo para el tipo real).
-const CLASE_LABELS = {
-    costo: 'Costo (Inventario)',
-    gasto_operativo: 'Gasto operativo',
-    gasto_admin: 'Gasto administrativo',
-    otro: 'Otro',
-};
+// CLASE_LABELS: núcleo (`proveedorFicha`).
 
 // Tipo de Proveedor REAL — régimen fiscal (Código Tributario), derivado
 // server-side en get_proveedores_maestro a partir de si tiene NRC (nunca se
@@ -61,14 +51,7 @@ const CLASE_LABELS = {
 //   - 'sujeto_excluido': sin NRC (Art. 119 CT), emite Factura de Sujeto
 //     Excluido — NO da crédito fiscal, y si es persona natural prestando un
 //     servicio, aplica retención de Renta del 10% (Art. 156 CT).
-const REGIMEN_LABELS = {
-    contribuyente: 'Contribuyente de IVA',
-    sujeto_excluido: 'Sujeto Excluido de IVA',
-};
-const REGIMEN_HINT = {
-    contribuyente: 'Tiene NRC — da derecho a crédito fiscal de IVA (Art. 65 Ley IVA)',
-    sujeto_excluido: 'Sin NRC — no da crédito fiscal (Art. 119 CT); si es persona natural por un servicio, aplica retención de Renta 10% (Art. 156 CT)',
-};
+// REGIMEN_LABELS y REGIMEN_HINT: núcleo (`proveedorFicha`).
 
 // Los catálogos del F-07 y los tres estados se mudaron a `utils/f07Catalogos`
 // el 2026-08-13: los usa también el panel de revisión por regla, y dos copias

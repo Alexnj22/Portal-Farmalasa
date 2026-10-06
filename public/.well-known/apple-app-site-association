@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["ZZWA3Q7Q35.lat.farmasalud.clientes"],
+        "components": [
+          { "/": "/mis-puntos", "comment": "El QR del ticket: con la app instalada abre la app; sin ella, la web de siempre." },
+          { "/": "/mis-puntos/*" }
+        ]
+      }
+    ]
+  }
+}

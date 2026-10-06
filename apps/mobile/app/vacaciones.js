@@ -5,9 +5,12 @@
 // los días usados y la lista salen del núcleo (`planDeVacaciones`), los mismos
 // del portal.
 //
-// Asignar, aprobar o responder un cambio se hace en el portal (dentro de la
-// app): el formulario de asignación revisa elegibilidad, feriados y saldo, y
-// no se repite acá.
+// Las solicitudes de cambio se aprueban o rechazan acá (con motivo), con la
+// misma acción del portal (`processChangeRequest`). Cada persona lleva su
+// saldo del año (15 menos los días usados) y el comentario del plan, y el año
+// entero se ve como una línea de tiempo por persona (el Gantt del portal).
+// Asignar un plan sigue en el portal: el formulario revisa elegibilidad,
+// feriados y saldo, y no se repite acá.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
@@ -28,6 +31,8 @@ import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
+import { GanttDelAnio, SolicitudesDeCambio } from '../componentes/personas/Vacaciones';
+import Segmentos from '../componentes/Segmentos';
 
 const COLOR_PLAN = { DRAFT: colorSistema.texto2, PRE_APPROVED: MARCA.azulClaro, CHANGE_REQUESTED: MARCA.ambar, APPROVED: MARCA.verde,
   PLANNED: MARCA.azulClaro, CONFIRMED: MARCA.verde, TAKEN: colorSistema.texto2, CANCELLED: MARCA.rojo };
@@ -41,6 +46,8 @@ export default function Vacaciones() {
   const cambios = useStaffStore((s) => s.vacationChangeRequests);
   const fetchVacationPlans = useStaffStore((s) => s.fetchVacationPlans);
   const fetchVacationChangeRequests = useStaffStore((s) => s.fetchVacationChangeRequests);
+  const processChangeRequest = useStaffStore((s) => s.processChangeRequest);
+  const [vista, setVista] = useState('lista');
   const todas = getScope?.('vacation_plan') === 'ALL';
   const anioActual = Number(hoySV().slice(0, 4));
   const [anio, setAnio] = useState(anioActual);
@@ -102,8 +109,12 @@ export default function Vacaciones() {
           <Kpi icono="RefreshCw" rotulo="Cambios pedidos" valor={String(cambiosPendientes)} color={cambiosPendientes ? MARCA.ambar : MARCA.azul}
             apoyo={cambiosPendientes ? 'esperan respuesta' : 'ninguno pendiente'} />
         </FilaDeKpis>
+        <SolicitudesDeCambio cambios={(cambios || []).filter((c) => c.status === 'PENDING')} puedeDecidir={hasPermission('vacation_plan', 'can_edit')}
+          procesar={processChangeRequest} aprobadorId={user?.id} alTerminar={cargar} />
+        <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'lista', label: 'Por mes' }, { id: 'anio', label: 'El año' }]} />
+        {vista === 'anio' ? <GanttDelAnio planes={visibles} anio={anio} colorDe={(st) => COLOR_PLAN[st] ?? colorSistema.texto2} /> : null}
         {aproximado && texto ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="No hay coincidencia exacta: se muestran nombres parecidos." /></View> : null}
-        {cargandoPlanes && !delAnio.length ? <ActivityIndicator style={{ marginTop: 24 }} /> : porMes.map(([mes, lista]) => (
+        {cargandoPlanes && !delAnio.length ? <ActivityIndicator style={{ marginTop: 24 }} /> : vista === 'anio' ? null : porMes.map(([mes, lista]) => (
           <View key={mes} style={{ gap: 10 }}>
             <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>
               {`${NOMBRES_DE_MES[mes - 1]} · ${lista.length}`}
@@ -116,18 +127,25 @@ export default function Vacaciones() {
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}>
                       <Avatar empleado={p.employee ?? { name: '?' }} tamano={40} />
                       <View style={{ flex: 1, gap: 3 }}>
-                        <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }} numberOfLines={1}>{p.employee ? shortEmployeeName(p.employee) : 'Sin ficha'}</Text>
-                        <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>
+                        <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{p.employee ? shortEmployeeName(p.employee) : 'Sin ficha'}</Text>
+                        <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
                           {[`${corta(p.start_date)}${p.start_time ? ` ${hora12(p.start_time)}` : ''} – ${corta(p.end_date)}${p.end_time ? ` ${hora12(p.end_time)}` : ''}`, sala === 'ALL' ? p.branch?.name : null].filter(Boolean).join(' · ')}
                         </Text>
                         <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
                           <Pildora texto={ESTADO_PLAN[p.status] ?? p.status} color={COLOR_PLAN[p.status] ?? colorSistema.texto2} />
                           {ahora ? <Pildora texto="De vacaciones" color={MARCA.verde} /> : null}
                         </View>
+                        {p.notes ? <Text style={{ color: colorSistema.texto2, fontSize: 12, fontStyle: 'italic' }}>{`“${p.notes}”`}</Text> : null}
                       </View>
                       <View style={{ alignItems: 'flex-end' }}>
                         <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{p.days ?? '—'}</Text>
-                        <Text style={{ color: colorSistema.texto2, fontSize: 11 }}>{`días · usó ${usados.get(String(p.employee_id)) || 0}`}</Text>
+                        <Text style={{ color: colorSistema.texto2, fontSize: 11 }}>días</Text>
+                        {(() => {
+                          // El saldo del año: 15 menos lo usado (la cuenta del portal).
+                          const usado = usados.get(String(p.employee_id)) || 0;
+                          const resta = 15 - usado;
+                          return <Text style={{ color: resta < 0 ? MARCA.rojo : resta === 0 ? colorSistema.texto2 : MARCA.verde, fontSize: 11, fontWeight: '700' }}>{`quedan ${resta}`}</Text>;
+                        })()}
                       </View>
                     </View>
                   </Vidrio>
@@ -143,7 +161,7 @@ export default function Vacaciones() {
         ) : null}
         {hasPermission('vacation_plan', 'can_edit') ? (
           <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-            <BotonGrande texto="Asignar o aprobar (portal)" borde color={MARCA.azulClaro}
+            <BotonGrande texto="Asignar un plan (portal)" borde color={MARCA.azulClaro}
               onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/portal', params: { ruta: '/vacaciones', nombre: 'Vacaciones' } }); }} />
           </View>
         ) : null}

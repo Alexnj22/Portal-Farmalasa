@@ -1,0 +1,40 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "base": {
+      "node": "24.9.0"
+    },
+    "clientes": {
+      "extends": "base",
+      "distribution": "store",
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://sacecdkdmsdvgqnrsett.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_cdFHhrbNAqfoA7FIsEgL3A_COHXzBoz",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://1aeedd5d6ee3a35176a8cde77da2c3ed@o4512210266161152.ingest.us.sentry.io/4512210293817344"
+      }
+    },
+    "clientes-pruebas": {
+      "extends": "base",
+      "distribution": "store",
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://tqhrwniwlicxnbeivnud.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_oXpPK3WWsOsOuEEKe5crjA_-SXXGLKf"
+      }
+    }
+  },
+  "submit": {
+    "clientes": {
+      "android": {
+        "track": "internal"
+      },
+      "ios": {
+        "appleTeamId": "ZZWA3Q7Q35"
+      }
+    }
+  }
+}

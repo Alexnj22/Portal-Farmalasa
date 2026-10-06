@@ -36,8 +36,10 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fetchResumenFiscal } from '@nucleo/data/resumenFiscal';
 import { correrMes, etiquetaMes, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
+import { lineasDelResumen, tasaEnTexto } from '@nucleo/utils/resumenFiscal';
 
-const pct = (t) => `${(Number(t || 0) * 100).toFixed(2).replace(/\.?0+$/, '')}%`;
+// La tasa en texto y los renglones del desglose: `resumenFiscal` (núcleo).
+const pct = tasaEnTexto;
 
 // Una fila del desglose. `signo` es lo que se muestra, no una operación: el
 // servidor ya mandó el movimiento calculado, y acá sólo se explica cómo llegó.
@@ -93,8 +95,6 @@ export default function ResumenFiscalView() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- `cargar` enciende el skeleton antes de pedir el resumen; es carga inicial y re-fetch al cambiar mes/sucursal
     useEffect(() => { cargar(); }, [cargar]);
 
-    const v   = datos?.ventas ?? {};
-    const c   = datos?.compras ?? {};
     const pac = datos?.pago_a_cuenta ?? {};
     const tar = datos?.anticipo_tarjeta ?? {};
 
@@ -174,31 +174,7 @@ export default function ResumenFiscalView() {
                             Cómo se llega ahí
                         </p>
 
-                        <Linea etiqueta="Débito fiscal — ventas del mes"
-                            detalle={`${v.documentos ?? 0} documentos con sello`}
-                            monto={v.debito_fiscal} signo="+" />
-                        <Linea etiqueta="Crédito fiscal — compras registradas"
-                            detalle={`${c.documentos_registrados ?? 0} compras`}
-                            monto={c.credito_registrado} signo="−" />
-                        <Linea etiqueta="Crédito fiscal — documentos sin registrar"
-                            detalle={`${c.documentos_sin_registrar ?? 0} llegaron del proveedor y no están como compra`}
-                            monto={c.credito_sin_registrar} signo="−" />
-                        <Linea etiqueta="Notas de débito"
-                            detalle={`${c.notas_debito_docs ?? 0} documentos`}
-                            monto={c.notas_debito_iva} signo="−" />
-                        <Linea etiqueta="Notas de crédito"
-                            detalle={`${c.notas_credito_docs ?? 0} documentos — reducen el crédito`}
-                            monto={c.notas_credito_iva} signo="+" />
-                        <Linea etiqueta="Percepción pagada a proveedores"
-                            detalle="Anticipo que se acredita"
-                            monto={c.percepcion_pagada} signo="−" />
-                        <Linea etiqueta="Retención que le hicieron a la empresa"
-                            detalle="Anticipo que se acredita"
-                            monto={v.retencion_recibida} signo="−" />
-
-                        <Linea
-                            etiqueta={aFavor ? 'Movimiento del mes — a favor' : 'Movimiento del mes — a pagar'}
-                            monto={movimiento} signo="" fuerte />
+                        {lineasDelResumen(datos).map((l) => <Linea key={l.etiqueta} {...l} />)}
                     </div>
                 )}
 

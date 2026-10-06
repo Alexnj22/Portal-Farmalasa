@@ -34,6 +34,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   SQL_LOTES_VIVOS, lotesConVencimiento, porVencimiento,
 } from "../_shared/puntosLotes.ts";
+import { TEXTOS_CONSENTIMIENTO } from "../_shared/consentimientoPuntos.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -68,17 +69,8 @@ const ES_CODIGO = /^[ACDEFGHJKMNPQRTUVWXY34679]{7}$/;
 // Y son DOS porque son dos finalidades distintas. El Art. 27 letra b) pide que
 // el consentimiento sea específico: una sola casilla para las dos cosas no
 // serviría para ninguna.
-const TEXTOS = {
-  version: "consentimiento-2026-09-05",
-  aviso: "aviso-2026-09-04",
-  programa:
-    "Acepto seguir en el Programa de Puntos Salud. Para administrarlo, la " +
-    "Empresa usa mi nombre, mi documento, mi teléfono y el historial de mis " +
-    "compras y canjes.",
-  promociones:
-    "Acepto recibir promociones y descuentos especiales al teléfono o al " +
-    "correo que tengo registrados.",
-};
+// Viven en `_shared/consentimientoPuntos.ts`: la app de clientes los pide igual.
+const TEXTOS = TEXTOS_CONSENTIMIENTO;
 
 function conf() {
   const host = Deno.env.get("PUNTOS_MYSQL_HOST");

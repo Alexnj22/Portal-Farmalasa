@@ -1,0 +1,140 @@
+// Una encuesta a clientes, NATIVO — sus resultados (`ResultadosEncuesta`): el
+// NPS con su lectura, cuántos respondieron y por qué canal, promotores contra
+// detractores, el puntaje de cada tema y el NPS de cada sucursal; y los
+// comentarios abiertos más recientes. Antes de publicarse dice en qué estado
+// está y qué sigue.
+//
+// Todo se cuenta en la base (`encuesta_cliente_resultados`) y la lectura del
+// NPS sale del núcleo (`lecturaNps`), lo mismo del portal.
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { Stack, useLocalSearchParams } from 'expo-router';
+import { fetchComentarios, fetchEncuesta, fetchResultados } from '@nucleo/data/encuestasClientes';
+import { estadoDe, lecturaNps, resumenDeCierre } from '@nucleo/utils/encuestasClientes';
+import { formatPct } from '@nucleo/utils/formatNumber';
+import { fechaTexto } from '@nucleo/utils/fecha';
+import Segmentos from '../../componentes/Segmentos';
+import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { colorSistema } from '../../componentes/Formulario';
+import { Aviso, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Pildora } from '../../componentes/avisos/Piezas';
+import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
+import Vidrio from '../../componentes/Vidrio';
+import { MARCA } from '../../componentes/inicio/marca';
+import { colorDeVariante } from '../../componentes/colorDeVariante';
+
+const CANAL = { qr: 'QR', kiosco: 'tablet', entrevista: 'entrevista' };
+
+export default function EncuestaCliente() {
+  const { id } = useLocalSearchParams();
+  const [encuesta, setEncuesta] = useState(null);
+  const [datos, setDatos] = useState(null);
+  const [comentarios, setComentarios] = useState(null);
+  const [vista, setVista] = useState('resultados');
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchEncuesta(id).then((e) => {
+      setEncuesta(e || false);
+      if (e && ['publicada', 'cerrada', 'archivada'].includes(e.estado)) {
+        fetchResultados(id).then(setDatos).catch((x) => setError(x?.message || 'No se pudieron cargar los resultados.'));
+        fetchComentarios(id).then(setComentarios).catch(() => setComentarios([]));
+      }
+    }).catch((x) => { setError(x?.message || 'No se pudo cargar la encuesta.'); setEncuesta(false); });
+  }, [id]);
+
+  const est = encuesta ? estadoDe(encuesta.estado) : null;
+  const nps = datos?.nps;
+  const lectura = nps ? lecturaNps(nps.puntaje) : null;
+  const pct = (n) => (nps?.respuestas ? (n / nps.respuestas) * 100 : 0);
+
+  return (
+    <>
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: encuesta?.nombre ?? 'Encuesta', headerLargeTitle: false }} />
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
+        {encuesta == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : !encuesta ? (
+          <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error || 'Esa encuesta no existe o no tienes acceso.'} /></View>
+        ) : (
+          <>
+            <View style={{ marginHorizontal: 20, gap: 6 }}>
+              <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
+                <Pildora texto={est.label} color={colorDeVariante(est.variant)} />
+                {encuesta.version > 1 ? <Pildora texto={`v${encuesta.version}`} color={MARCA.violeta} /> : null}
+              </View>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${resumenDeCierre(encuesta, encuesta.sucursales || [], fechaTexto)}. ${est.texto}`}</Text>
+            </View>
+            {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
+            {!['publicada', 'cerrada', 'archivada'].includes(encuesta.estado) ? (
+              <View style={{ marginHorizontal: 16 }}><Aviso texto="Los resultados aparecen cuando la encuesta se publica y empieza a recibir respuestas." /></View>
+            ) : !datos && !error ? <ActivityIndicator style={{ marginTop: 24 }} /> : datos && !datos.total ? (
+              <View style={{ marginHorizontal: 16 }}><Aviso texto="Todavía no hay respuestas." /></View>
+            ) : datos ? (
+              <>
+                <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'resultados', label: 'Resultados' }, { id: 'comentarios', label: comentarios?.length ? `Comentarios · ${comentarios.length}` : 'Comentarios' }]} />
+                {vista === 'resultados' ? (
+                  <>
+                    <FilaDeKpis>
+                      <Kpi icono="Gauge" rotulo="NPS" valor={String(nps.puntaje ?? '—')} color={colorDeVariante(lectura.variant)} apoyo={lectura.label} />
+                      <Kpi icono="Users" rotulo="Respuestas" valor={String(datos.total)} color={MARCA.azul}
+                        apoyo={Object.entries(datos.por_canal || {}).map(([c, n]) => `${n} ${CANAL[c] ?? c}`).join(' · ')} />
+                    </FilaDeKpis>
+                    {nps.respuestas > 0 ? (
+                      <Seccion titulo="Recomendación">
+                        <View style={{ flexDirection: 'row', height: 12, borderRadius: 6, overflow: 'hidden', backgroundColor: colorSistema.separador }}>
+                          <View style={{ width: `${pct(nps.promotores)}%`, backgroundColor: MARCA.verde }} />
+                          <View style={{ width: `${pct(nps.pasivos)}%`, backgroundColor: MARCA.ambar }} />
+                          <View style={{ width: `${pct(nps.detractores)}%`, backgroundColor: MARCA.rojo }} />
+                        </View>
+                        <Dato rotulo="Promotores (9-10)" valor={`${nps.promotores} · ${formatPct(pct(nps.promotores), { decimales: 0 })}`} />
+                        <Dato rotulo="Pasivos (7-8)" valor={`${nps.pasivos} · ${formatPct(pct(nps.pasivos), { decimales: 0 })}`} />
+                        <Dato rotulo="Detractores (0-6)" valor={`${nps.detractores} · ${formatPct(pct(nps.detractores), { decimales: 0 })}`} />
+                      </Seccion>
+                    ) : null}
+                    {datos.por_dimension?.length ? (
+                      <Seccion titulo="Por tema (0 a 100)">
+                        {datos.por_dimension.map((d, i) => (
+                          <View key={d.clave} style={{ gap: 4, paddingTop: i ? 8 : 0 }}>
+                            <View style={{ flexDirection: 'row' }}>
+                              <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14 }}>{d.nombre}</Text>
+                              <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{d.puntaje ?? '—'}</Text>
+                            </View>
+                            <View style={{ height: 6, borderRadius: 3, backgroundColor: colorSistema.separador, overflow: 'hidden' }}>
+                              <View style={{ width: `${Math.max(0, Math.min(100, d.puntaje || 0))}%`, height: 6, backgroundColor: MARCA.azulClaro }} />
+                            </View>
+                            <Text style={{ color: colorSistema.texto2, fontSize: 11 }}>{`${d.respuestas} respuesta(s)`}</Text>
+                          </View>
+                        ))}
+                      </Seccion>
+                    ) : null}
+                    {datos.por_sucursal?.length > 1 ? (
+                      <Seccion titulo="NPS por sucursal">
+                        {datos.por_sucursal.map((s, i) => (
+                          <View key={s.branch_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: i ? 8 : 0 }}>
+                            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14 }}>{s.nombre}</Text>
+                            <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${s.respuestas} resp.`}</Text>
+                            <Pildora texto={String(s.nps ?? '—')} color={colorDeVariante(lecturaNps(s.nps).variant)} />
+                          </View>
+                        ))}
+                      </Seccion>
+                    ) : null}
+                  </>
+                ) : (
+                  <View style={{ marginHorizontal: 16, gap: 8 }}>
+                    {comentarios == null ? <ActivityIndicator /> : comentarios.length ? comentarios.slice(0, 100).map((c, i) => (
+                      <Vidrio key={c.id ?? i} radio={16}>
+                        <View style={{ padding: 12, gap: 4 }}>
+                          <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{c.texto ?? ''}</Text>
+                          <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[c.pregunta, c.sucursal, c.nps != null ? `NPS ${c.nps}` : null, c.created_at ? fechaTexto(String(c.created_at).slice(0, 10), { day: 'numeric', month: 'short' }) : null].filter(Boolean).join(' · ')}</Text>
+                        </View>
+                      </Vidrio>
+                    )) : <Aviso texto="Nadie dejó comentarios." />}
+                  </View>
+                )}
+              </>
+            ) : null}
+          </>
+        )}
+      </ScrollView>
+    </>
+  );
+}

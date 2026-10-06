@@ -542,7 +542,7 @@ export async function fetchResumenTraslado(pedidoId, sucId) {
 // ya armaba antes; acá solo se centraliza el query builder.
 
 export function fetchPedidoSucursalStatus(pedidoId, sucId, columns) {
-    return supabase.from('pedido_sucursal_status').select(columns)
+    return supabase.from('pedido_sucursal_status').select(/** @type {'*'} */ (columns))
         .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle();
 }
 

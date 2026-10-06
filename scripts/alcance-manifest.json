@@ -203,6 +203,18 @@
       "guarda": "sin-sala",
       "motivo": "Proxy de mapas."
     },
+    "wallet-pases": {
+      "guarda": "publica",
+      "motivo": "Servicio web de PassKit: lo llama el iPhone, no una sesión. Cada tarjeta se presenta con «ApplePass <token>», un HMAC del serial con secreto del servidor: sin él, 401. La ficha sale del serial firmado, nunca del cuerpo. `/avisar` exige x-cron-secret."
+    },
+    "avisos-clientes": {
+      "guarda": "cron",
+      "motivo": "Avisos al teléfono de los clientes: lo llama sólo el cron `avisos-clientes-15min` con x-cron-secret; no recibe sala ni ficha del cuerpo (salvo la prueba de cumpleaños, que también exige el secreto)."
+    },
+    "app-clientes": {
+      "guarda": "publica",
+      "motivo": "La app del cliente: entra con documento + teléfono (mismo freno por IP que mis-puntos) y desde ahí la ficha sale SIEMPRE de la sesión, nunca del cuerpo."
+    },
     "mis-puntos": {
       "guarda": "publica",
       "motivo": "Consulta pública de puntos del cliente, con freno por IP."
@@ -629,7 +641,8 @@
       "guarda": "alcance"
     },
     "inyecciones_pendientes": {
-      "guarda": "alcance"
+      "guarda": "cruza-por-diseno",
+      "motivo": "Lo pagado y sin aplicar de TODAS las salas, de sólo lectura: el cliente paga en una sucursal y se aplica en otra. Pedido del usuario (2026-10-05): «si ya está pagado y va de Salud 1 a Salud 2, en Salud 2 no aparece». p_branch_id es un filtro, no un candado."
     },
     "preview_metas_gasto": {
       "guarda": "modulo-de-red",

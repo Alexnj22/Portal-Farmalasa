@@ -246,3 +246,21 @@ export function estaBloqueado(hasta) {
     const t = Date.parse(hasta);
     return Number.isFinite(t) && t > Date.now();
 }
+
+// ── Cuánto dura un bloqueo ──────────────────────────────────────────────────
+// Opciones y no una fecha libre: quien bloquea está reaccionando a algo y no
+// quiere calcular una fecha. «Indefinido» es explícito —no el valor por
+// defecto— porque es el que no se deshace solo. Vivían en `BloqueoModal`; las
+// usa también la app.
+export const DURACIONES_DE_BLOQUEO = [
+    { value: '1',    label: '1 hora' },
+    { value: '8',    label: '8 horas' },
+    { value: '24',   label: '1 día' },
+    { value: '168',  label: '1 semana' },
+    { value: 'inf',  label: 'Indefinido, hasta que lo quite' },
+];
+
+/** El `hasta` que espera `block_employee`: null = indefinido. */
+export function hastaDeBloqueo(duracion, ahora = Date.now()) {
+    return duracion === 'inf' ? null : new Date(ahora + Number(duracion) * 3_600_000).toISOString();
+}

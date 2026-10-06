@@ -1,0 +1,87 @@
+{
+  "expo": {
+    "name": "Puntos Salud",
+    "slug": "farmalasa-clientes",
+    "scheme": "puntossalud",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icono-tienda.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "lat.farmasalud.clientes",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "appleTeamId": "ZZWA3Q7Q35",
+      "buildNumber": "1",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.lat.farmasalud.clientes"
+        ],
+        "com.apple.developer.pass-type-identifiers": [
+          "ZZWA3Q7Q35.*"
+        ]
+      },
+      "associatedDomains": [
+        "applinks:portal.farmasalud.lat"
+      ]
+    },
+    "android": {
+      "package": "lat.farmasalud.clientes",
+      "adaptiveIcon": {
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/icono.png"
+      },
+      "permissions": [
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/icono.png",
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#981D97",
+          "mode": "production"
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Puntos Salud usa Face ID para que sólo tú veas tu saldo y tu código."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icono.png",
+          "imageWidth": 150,
+          "backgroundColor": "#F5F4F8",
+          "dark": {
+            "image": "./assets/icono.png",
+            "backgroundColor": "#0A090E"
+          }
+        }
+      ],
+      "./plugins/ciclo-por-escenas",
+      "@bacons/apple-targets",
+      "@sentry/react-native"
+    ],
+    "owner": "farmasalud",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8061eb79-1917-46b4-8851-c50f43db1a0d"
+      }
+    }
+  }
+}

@@ -41,6 +41,10 @@ export function renglonTodoOk(r) {
  * Si la cantidad no cuadra con lo enviado, el tipo sale solo (faltante o
  * sobrante) salvo que la persona haya dicho cuál: lo que ELIGE gana, excepto
  * «otro» con una cantidad distinta, que se nombra por la cuenta.
+ *
+ * @param {object} r
+ * @param {{ fQty?: number, fPres?: number, problema?: string | null,
+ *           nota?: string | null, cantProblema?: number | null }} [contado]
  */
 export function renglonContado(r, { fQty, fPres, problema = null, nota = null, cantProblema = null } = {}) {
     const erpFactor = Number(r.factor) || 1;

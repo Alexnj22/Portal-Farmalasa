@@ -29,6 +29,7 @@ import { fmtVence } from '@nucleo/utils/pedirTraslado';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import Vidrio from '../../componentes/Vidrio';
 import Avatar from '../../componentes/Avatar';
+import Evidencia from '../../componentes/traslados/Evidencia';
 import { Pildora, Ruta } from '../../componentes/traslados/Tarjeta';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
@@ -273,7 +274,7 @@ export default function Traslado() {
               {llegaron.map((l) => (
                 <View key={l.posicion} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: colorSistema.texto, fontSize: 15 }} numberOfLines={2}>{l.descripcion}</Text>
+                    <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{l.descripcion}</Text>
                     <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>salieron {l.cantidad}</Text>
                   </View>
                   <Cantidad valor={faltan[l.posicion] ?? '0'} max={l.cantidad} etiqueta={`faltaron de ${l.descripcion}`}
@@ -292,11 +293,34 @@ export default function Traslado() {
               <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{motivoDeRechazo(fila) || 'Sin motivo'}</Text>
             </Bloque>
           ) : null}
-          {m.erp_traslado ? (
-            <Bloque titulo="Seguimiento">
-              <Text style={{ color: colorSistema.texto, fontSize: 15 }}>Envió {m.erp_traslado.by_name ?? '—'} · {desdeHace(m.erp_traslado.at, Date.now())}</Text>
-              {m.erp_recibido ? <Text style={{ color: colorSistema.texto, fontSize: 15 }}>Recibió {m.erp_recibido.by_name ?? '—'} · {desdeHace(m.erp_recibido.at, Date.now())}</Text> : null}
-              {m.erp_traslado.parcial ? <Text style={{ color: MARCA.ambar, fontSize: 13 }}>Salió incompleto{fila.approver_note ? `: ${fila.approver_note}` : ''}</Text> : null}
+          {m.evidencia_urls?.length ? <Evidencia urls={m.evidencia_urls} titulo="Evidencia" /> : null}
+          {m.erp_traslado || fila.status === 'REJECTED' ? (
+            <Bloque titulo="Trayecto">
+              {/* Cada paso con la cara y el nombre corto de quien lo dio, como
+                  el registro del portal: pidió → despachó (o rechazó) → recibió. */}
+              {[
+                { paso: 'Pidió', id: fila.employee_id, nombre: null, at: fila.created_at, color: MARCA.azulClaro },
+                fila.status === 'REJECTED'
+                  ? { paso: 'Rechazó', id: fila.approver_id, nombre: null, at: fila.updated_at, color: MARCA.rojo }
+                  : { paso: m.erp_traslado?.parcial ? 'Despachó incompleto' : 'Despachó', id: m.erp_traslado?.by, nombre: m.erp_traslado?.by_name, at: m.erp_traslado?.at, color: m.erp_traslado?.parcial ? MARCA.ambar : MARCA.verde },
+                m.erp_recibido ? { paso: 'Recibió', id: m.erp_recibido.by, nombre: m.erp_recibido.by_name, at: m.erp_recibido.at, color: MARCA.verde } : null,
+              ].filter(Boolean).map((p, i, todos) => {
+                const quien = p.id ? persona(p.id) : null;
+                return (
+                  <View key={p.paso} style={{ flexDirection: 'row', gap: 12 }}>
+                    <View style={{ alignItems: 'center' }}>
+                      <Avatar empleado={quien ?? { name: p.nombre ?? '?' }} tamano={36} />
+                      {i < todos.length - 1 ? <View style={{ width: 2, flex: 1, minHeight: 14, backgroundColor: colorSistema.separador, marginVertical: 3 }} /> : null}
+                    </View>
+                    <View style={{ flex: 1, paddingBottom: i < todos.length - 1 ? 10 : 0 }}>
+                      <Text style={{ color: p.color, fontSize: 13, fontWeight: '800' }}>{p.paso}</Text>
+                      <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{quien ? shortEmployeeName(quien) : (p.nombre ?? '—')}</Text>
+                      {p.at ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{desdeHace(p.at, Date.now())}</Text> : null}
+                    </View>
+                  </View>
+                );
+              })}
+              {m.erp_traslado?.parcial && fila.approver_note ? <Text style={{ color: MARCA.ambar, fontSize: 13 }}>{`Salió incompleto: ${fila.approver_note}`}</Text> : null}
             </Bloque>
           ) : null}
         </ScrollView>

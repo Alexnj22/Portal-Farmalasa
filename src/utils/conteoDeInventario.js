@@ -38,3 +38,45 @@ export function guardadoDelRenglon(valor, nota = '') {
     return { fisicoCantidad: fisico, nota: String(nota || '').trim() || null, estadoItem: fisico !== null ? 'CONTADO' : 'PENDIENTE' };
 }
 export const noUbicado = (nota = '') => ({ fisicoCantidad: 0, nota: String(nota || '').trim() || null, estadoItem: 'SIN_UBICAR' });
+
+// ── La lista de conteos: resumen, focos y valor (2026-10-06) ────────────────
+// Vivía en `ConteoInventarioView`. La app nativa muestra las mismas tarjetas:
+// escritas dos veces, «Sin ajustar» podría contar distinto en cada pantalla.
+
+/**
+ * Un conteo CERRADO con diferencias y sin ajuste registrado es trabajo a
+ * medias: la diferencia está medida y firmada, pero el stock del sistema sigue
+ * mintiendo.
+ */
+export const faltaAjusteDelConteo = (c) => !!c && c.status === 'CERRADO' && c.total_diferencias > 0 && !c.ajuste_erp_aplicado;
+
+/** Los focos de la lista (las tarjetas que filtran). */
+export const FOCOS_CONTEO = {
+    ABIERTOS:    (c) => ['BORRADOR', 'EN_PROGRESO'].includes(c.status),
+    POR_APROBAR: (c) => c.status === 'FINALIZADO',
+    SIN_AJUSTE:  faltaAjusteDelConteo,
+};
+
+/** Las cuatro tarjetas: Conteos, Abiertos, Por aprobar, Sin ajustar. */
+export function resumenDeConteos(conteos) {
+    const base = conteos ?? [];
+    return {
+        total:      base.length,
+        abiertos:   base.filter(FOCOS_CONTEO.ABIERTOS).length,
+        porAprobar: base.filter(FOCOS_CONTEO.POR_APROBAR).length,
+        sinAjuste:  base.filter(FOCOS_CONTEO.SIN_AJUSTE).length,
+    };
+}
+
+/** Sobrante menos faltante, en dinero: negativo = se perdió producto. */
+export const valorNetoDelConteo = (c) => (Number(c?.valor_sobrante) || 0) - (Number(c?.valor_faltante) || 0);
+
+/** Qué pasó en cada fila del historial de un renglón (columna `evento`). */
+export const EVENTO_DE_CONTEO = {
+    CAPTURA:  { label: 'Capturó',           variante: 'success' },
+    EDICION:  { label: 'Editó',             variante: 'warning' },
+    BORRADO:  { label: 'Borró la cantidad', variante: 'danger'  },
+    RECUENTO: { label: 'Recontó',           variante: 'chart-1' },
+    LOTE:     { label: 'Corrigió el lote',  variante: 'chart-9' },
+    CIERRE:   { label: 'Cerró sin ubicar',  variante: 'neutral' },
+};

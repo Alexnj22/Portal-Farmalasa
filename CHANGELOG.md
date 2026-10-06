@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1230.1 — App de clientes: arreglos de historias, sucursales, reservas y Wallet
+
+Revisión del usuario en TestFlight (compilación 8):
+- **Historias se cerraban al pasarlas:** el gesto de tocar llamaba `Dimensions` desde el hilo de la interfaz (worklet) y eso tumba la app. El ancho se lee en JS. Además el visor congela el orden al abrir (marcar una como vista reordenaba la lista y saltaba).
+- **Campana:** SF Symbol del sistema (`bell` / `bell.badge`), como los de la barra de abajo (`componentes/Icono.js`, `expo-symbols`).
+- **Wallet:** «Agregar a Apple Wallet» sólo aparece si la tarjeta no está; ver o agregar también desde Cuenta.
+- **Sucursales:** todas en el mismo vidrio del sistema, sin colores distintos; íconos del sistema; el horario se despliega sin animación; nombres «La Salud - San Antonio», etc.
+- **Mis reservas:** rediseño con los pasos (Recibida → Lista → Retirada), total a pagar, cuenta regresiva y anteriores aparte. Aviso de confirmación «Recibimos tu reserva R-…» en menos de un minuto.
+- **Portal:** pestaña **Reservas** en Ofertas para clientes con todas las sucursales (quien edita ofertas); `reservas_de_sucursal(NULL)` devuelve todas con el nombre de la sala.
+
 ## v2.1230.0 — App: nómina, tiempos, horarios y personal
 
 - **App: Nómina** con la lista de quincenas (estado y fecha de pago), filtro por estado, los cuatro totales del portal (ordinario, extras/otros, deducciones, total), el aviso «N timesheets sin aprobar», el cargo en cada fila, **Aprobar** y **Marcar pagada** con confirmación, y «Todas las boletas» en PDF o impresas.

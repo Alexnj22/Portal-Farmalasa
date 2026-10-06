@@ -33,10 +33,11 @@ const REFRESCO_MS = 2 * 60 * 1000;
 const MAX_FILAS = 6;
 
 
-export default function WidgetReservas() {
+export default function WidgetReservas({ todas = false }) {
     const { user } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
-    const miSala = user?.branchId ?? user?.branch_id ?? null;
+    // `todas`: la pestaña Reservas de Ofertas para clientes — todas las salas.
+    const miSala = todas ? null : (user?.branchId ?? user?.branch_id ?? null);
     const branches = useStaff((st) => st.branches);
     const nombreSala = (branches || []).find((b) => String(b.id) === String(miSala))?.name ?? '';
 
@@ -46,7 +47,7 @@ export default function WidgetReservas() {
     const [whatsapp, setWhatsapp] = useState(null);
 
     const cargar = useCallback(async () => {
-        if (!miSala) { setCargando(false); return; }
+        if (!miSala && !todas) { setCargando(false); return; }
         try {
             setFilas(await fetchReservasDeSucursal(miSala, true));
         } catch (err) {
@@ -54,7 +55,7 @@ export default function WidgetReservas() {
         } finally {
             setCargando(false);
         }
-    }, [miSala]);
+    }, [miSala, todas]);
 
     useEffect(() => {
         // Carga inicial y refresco cada 2 min.
@@ -69,7 +70,7 @@ export default function WidgetReservas() {
             await cambiarEstadoReserva(r.id, estado);
             if (estado === 'lista') {
                 if (r.tiene_app) showToast('Reserva lista', 'Le avisamos al cliente en la app.', 'success');
-                else setWhatsapp({ ...r, estado: 'lista', mensaje: mensajeDeReservaLista(r, nombreSala) });
+                else setWhatsapp({ ...r, estado: 'lista', mensaje: mensajeDeReservaLista(r, r.sala ?? nombreSala) });
             } else {
                 showToast(estado === 'retirada' ? 'Reserva retirada' : 'Reserva cancelada', '', 'success');
             }
@@ -82,7 +83,7 @@ export default function WidgetReservas() {
     };
 
     if (cargando) return <SkeletonText lines={3} />;
-    if (!miSala) {
+    if (!miSala && !todas) {
         return <EmptyState icon={ShoppingBag} compact title="Sin sala asignada" subtitle="Las reservas son de una sala de ventas." />;
     }
     if (!filas.length) {
@@ -99,7 +100,7 @@ export default function WidgetReservas() {
                 </p>
             )}
             <ul className="space-y-1.5 min-w-0">
-                {filas.slice(0, MAX_FILAS).map((r) => (
+                {(todas ? filas : filas.slice(0, MAX_FILAS)).map((r) => (
                     <li key={r.id}>
                         <ListRow
                             surface="card"
@@ -107,7 +108,7 @@ export default function WidgetReservas() {
                             tone={r.estado === 'pendiente' ? 'warning' : null}
                             icon={r.estado === 'lista' ? PackageCheck : ShoppingBag}
                             title={`${r.cantidad} × ${r.producto}`}
-                            subtitle={`${codigoDeReserva(r.id)} · ${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}${
+                            subtitle={`${todas && r.sala ? `${r.sala} · ` : ''}${codigoDeReserva(r.id)} · ${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}${
                                 r.estado === 'lista' ? ` · retira antes de las ${hora12(r.vence_at)}` : ''}${
                                 r.avisado_via === 'whatsapp' ? ' · avisado por WhatsApp' : ''}`}
                             trailing={(
@@ -119,7 +120,7 @@ export default function WidgetReservas() {
                                         <>
                                             {!r.tiene_app && (
                                                 <Button variant="ghost" size="xs" iconOnly icon={MessageCircle} title="Avisar por WhatsApp"
-                                                    onClick={() => setWhatsapp({ ...r, mensaje: mensajeDeReservaLista(r, nombreSala) })} />
+                                                    onClick={() => setWhatsapp({ ...r, mensaje: mensajeDeReservaLista(r, r.sala ?? nombreSala) })} />
                                             )}
                                             <Button variant="secondary" size="xs" icon={CheckCircle2} loading={ocupada === r.id}
                                                 onClick={() => mover(r, 'retirada')}>Retirada</Button>
@@ -133,7 +134,7 @@ export default function WidgetReservas() {
                     </li>
                 ))}
             </ul>
-            {filas.length > MAX_FILAS && (
+            {!todas && filas.length > MAX_FILAS && (
                 <span className="text-label text-content-3 mt-auto">y {filas.length - MAX_FILAS} más</span>
             )}
             {whatsapp && (

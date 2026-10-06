@@ -9,6 +9,7 @@ import { Aviso } from '../../../componentes/ui';
 import { useSesion } from '../../../lib/sesion';
 import { useCuenta } from '../../../lib/cuenta';
 import { pedirTokenDeAvisos } from '../../../lib/avisos';
+import { abrirPase, agregarPase, tienePase, walletDisponible } from '../../../modules/wallet';
 import { nombreBiometria, useBloqueo } from '../../../lib/bloqueo';
 import { nombrePropio } from '../../../lib/formato';
 import { useTema } from '../../../tema/tema';
@@ -30,6 +31,18 @@ function FilaAccion({ texto, color, alTocar }) {
 
 export default function Cuenta() {
   const t = useTema();
+  const pedirW = useSesion((s) => s.pedir);
+  const serialW = useCuenta((s) => s.resumen?.wallet_serial);
+  const [enWallet, setEnWallet] = useState(false);
+  useFocusEffect(useCallback(() => { if (serialW) setEnWallet(tienePase(serialW)); }, [serialW]));
+  // Ya agregada: se abre en Wallet. Si no: se arma y se ofrece la hoja de Apple.
+  const wallet = async () => {
+    if (enWallet && abrirPase(serialW)) return;
+    const r = await pedirW('wallet_pase');
+    if (r?.ok && r.pase) {
+      try { if (await agregarPase(r.pase)) setEnWallet(true); } catch { /* cerrada */ }
+    }
+  };
   const { pedir, cerrar } = useSesion();
   const { resumen, cargar } = useCuenta();
   const [mensaje, setMensaje] = useState(null);
@@ -158,6 +171,10 @@ export default function Cuenta() {
           <FilaAccion texto="Mis reservas" color={t.color.magentaTexto} alTocar={() => router.push('/reservas')} />
         ) : null}
         <FilaAccion texto="Nuestras sucursales" color={t.color.magentaTexto} alTocar={() => router.push('/sucursales')} />
+        {resumen?.wallet_serial && walletDisponible() ? (
+          <FilaAccion texto={enWallet ? 'Ver mi tarjeta en Apple Wallet' : 'Agregar mi tarjeta a Apple Wallet'}
+            color={t.color.magentaTexto} alTocar={wallet} />
+        ) : null}
       </Grupo>
 
       <Grupo>

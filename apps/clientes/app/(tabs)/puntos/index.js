@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Vencimientos from '../../../componentes/Vencimientos';
 import Cumpleanos from '../../../componentes/Cumpleanos';
 import Historias from '../../../componentes/Historias';
+import Icono from '../../../componentes/Icono';
 import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '../../../componentes/animacion';
 import { useSesion } from '../../../lib/sesion';
 import { abrirPase, agregarPase, tienePase, walletDisponible } from '../../../modules/wallet';
@@ -267,7 +268,9 @@ function BotonWallet({ serial }) {
     const sub = AppState.addEventListener('change', (e) => { if (e === 'active') setTiene(tienePase(serial)); });
     return () => sub.remove();
   }, [serial]);
-  if (!walletDisponible()) return null;
+  // Ya está en Wallet: el botón se va (se abre desde Cuenta). Sólo invita a
+  // agregarla mientras no esté (pedido del usuario, 2026-10-06).
+  if (!walletDisponible() || tiene) return null;
 
   const tocar = async () => {
     if (cargando) return;
@@ -286,9 +289,9 @@ function BotonWallet({ serial }) {
         borderRadius: 12, paddingHorizontal: 18, minHeight: 48, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
         opacity: cargando ? 0.6 : 1, transform: [{ scale: pressed ? 0.97 : 1 }],
       })}>
-      <Text style={{ fontSize: 20 }}>{tiene ? '✅' : '💳'}</Text>
+      <Icono sf="wallet.pass.fill" respaldo="💳" tam={20} color="#FFFFFF" />
       <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>
-        {cargando ? 'Preparando…' : tiene ? 'Ver en Apple Wallet' : 'Agregar a Apple Wallet'}
+        {cargando ? 'Preparando…' : 'Agregar a Apple Wallet'}
       </Text>
     </Pressable>
   );
@@ -305,7 +308,7 @@ function Campana() {
       accessibilityLabel={sinLeer ? `Notificaciones, ${sinLeer} sin leer` : 'Notificaciones'}
       style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)', transform: [{ scale: pressed ? 0.92 : 1 }] })}>
-      <Text style={{ fontSize: 20 }}>🔔</Text>
+      <Icono sf={sinLeer ? 'bell.badge' : 'bell'} respaldo="🔔" tam={21} color={t.color.magentaTexto} />
       {sinLeer ? (
         <View style={{ position: 'absolute', top: 4, right: 4, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4,
           backgroundColor: '#FF3B30', alignItems: 'center', justifyContent: 'center' }}>

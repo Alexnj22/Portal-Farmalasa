@@ -64,11 +64,11 @@ const TERMINOS_RESERVA = {
 // Cómo se llama cada sucursal PARA EL CLIENTE (decisión del usuario,
 // 2026-10-06): el barrio, no el número interno. Lo demás pasa tal cual.
 const NOMBRE_SUCURSAL: Record<string, string> = {
-  "Salud 1": "Salud - San Antonio",
-  "Salud 2": "Salud - El Calvario",
-  "Salud 3": "Salud - Totolco",
-  "Salud 4": "Salud - El Paraíso",
-  "Salud 5": "Salud - Nueva Concepción",
+  "Salud 1": "La Salud - San Antonio",
+  "Salud 2": "La Salud - El Calvario",
+  "Salud 3": "La Salud - Totolco",
+  "Salud 4": "La Salud - El Paraíso",
+  "Salud 5": "La Salud - Nueva Concepción",
 };
 const sucursal = (n: unknown) => (n == null ? n : NOMBRE_SUCURSAL[String(n)] ?? String(n));
 // deno-lint-ignore no-explicit-any

@@ -140,6 +140,23 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ── Reserva recibida: la confirmación al reservar (últimas 2 h) ───────
+    if (inmediato) {
+      const { data: nuevas, error: eNu } = await admin.from("app_reservas")
+        .select("id, customer_id, producto_nombre, cantidad")
+        .in("customer_id", clientes).eq("estado", "pendiente")
+        .gte("created_at", new Date(Date.now() - 2 * 3600_000).toISOString());
+      if (eNu) throw eNu;
+      for (const r of nuevas ?? []) {
+        candidatos.push({
+          customer_id: r.customer_id, tipo: "reserva", ref: `reserva-recibida:${r.id}`,
+          titulo: `Recibimos tu reserva R-${String(r.id).padStart(6, "0")}`,
+          cuerpo: `${r.cantidad} × ${r.producto_nombre}. Te avisamos cuando la sucursal la tenga lista.`,
+          url: "/reservas",
+        });
+      }
+    }
+
     // ── Reserva lista: la sucursal la apartó (últimas 2 h) ────────────────
     if (inmediato) {
       const { data: listas, error: eRes } = await admin.from("app_reservas")

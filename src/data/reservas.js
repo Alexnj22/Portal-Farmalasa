@@ -18,7 +18,8 @@ const sinError = ({ data, error }) => {
 };
 
 export async function fetchReservasDeSucursal(branchId, abiertas = true) {
-    return sinError(await supabase.rpc('reservas_de_sucursal', { p_branch_id: Number(branchId), p_abiertas: abiertas })) ?? [];
+    // `branchId` null = todas las salas (sólo quien edita Ofertas para clientes).
+    return sinError(await supabase.rpc('reservas_de_sucursal', { p_branch_id: branchId == null ? null : Number(branchId), p_abiertas: abiertas })) ?? [];
 }
 
 /** `estado`: 'lista' (apartada y avisada), 'retirada' o 'cancelada'. */

@@ -55,7 +55,7 @@ export default function Historias() {
         {orden.map((h, i) => {
           const vista = vistas.has(String(h.id));
           return (
-            <Pressable key={h.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(i); }}
+            <Pressable key={h.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta({ i, lista: orden }); }}
               accessibilityRole="button" accessibilityLabel={`Historia: ${h.titulo}`}
               style={({ pressed }) => ({ alignItems: 'center', width: 76, gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
               <LinearGradient colors={vista ? ['#9A9AA2', '#9A9AA2'] : ['#FFD60A', t.color.magenta, '#5B1E9C']}
@@ -70,7 +70,7 @@ export default function Historias() {
         })}
       </ScrollView>
       {abierta != null ? (
-        <Visor historias={orden} inicio={abierta} alVer={marcar} alCerrar={() => setAbierta(null)} />
+        <Visor historias={abierta.lista} inicio={abierta.i} alVer={marcar} alCerrar={() => setAbierta(null)} />
       ) : null}
     </>
   );
@@ -78,7 +78,7 @@ export default function Historias() {
 
 function Visor({ historias, inicio, alVer, alCerrar }) {
   const ins = useSafeAreaInsets();
-  const { height: H } = Dimensions.get('window');
+  const { width: W, height: H } = Dimensions.get('window');
   const [i, setI] = useState(inicio);
   const avance = useSharedValue(0);
   const caida = useSharedValue(0);
@@ -101,7 +101,7 @@ function Visor({ historias, inicio, alVer, alCerrar }) {
   useEffect(() => {
     alVer(h.id);
     avance.value = 0;
-    Image.prefetch?.(historias[i + 1]?.imagen ?? '').catch?.(() => {});
+    if (historias[i + 1]?.imagen) Image.prefetch(historias[i + 1].imagen).catch(() => {});
     arrancar();
     return () => cancelAnimation(avance);
   }, [i]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -109,8 +109,12 @@ function Visor({ historias, inicio, alVer, alCerrar }) {
   const pausar = () => cancelAnimation(avance);
   const seguir = () => arrancar();
 
+  // El ancho se lee AQUÍ, en el hilo de JavaScript: el gesto corre en el
+  // hilo de la interfaz, y llamar `Dimensions` desde ahí cerraba la app al
+  // tocar para pasar (probado en TestFlight el 2026-10-06).
+  const tercio = W / 3;
   const toque = Gesture.Tap().maxDuration(250).onEnd((e) => {
-    runOnJS(ir)(e.absoluteX < Dimensions.get('window').width / 3 ? i - 1 : i + 1);
+    runOnJS(ir)(e.absoluteX < tercio ? i - 1 : i + 1);
   });
   const mantener = Gesture.LongPress().minDuration(200).onStart(() => runOnJS(pausar)()).onEnd(() => runOnJS(seguir)());
   const deslizar = Gesture.Pan().activeOffsetY(12)

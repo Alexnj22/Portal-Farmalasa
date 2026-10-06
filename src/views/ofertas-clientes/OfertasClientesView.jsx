@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Tag, Plus, Image as ImageIcon, Eye, EyeOff, Trash2, Pencil, UserPlus, Link2, XCircle, Smartphone, CircleDashed } from 'lucide-react';
+import { Tag, Plus, Image as ImageIcon, Eye, EyeOff, Trash2, Pencil, UserPlus, Link2, XCircle, Smartphone, CircleDashed, ShoppingBag } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
@@ -16,6 +16,7 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import OfertaModal from './OfertaModal';
 import HistoriasPanel from './HistoriasPanel';
+import WidgetReservas from '../dashboard/WidgetReservas';
 import { estadoDeOferta, etiquetaDeDescuento } from '@nucleo/utils/ofertasClientes';
 import { LoadingState, EmptyState } from '../../components/common/StateViews';
 import usePestanaEnUrl from '../../plataforma/usePestanaEnUrl';
@@ -54,8 +55,9 @@ export default function OfertasClientesView() {
     const tabs = useMemo(() => [
         { key: 'ofertas', label: 'Ofertas', icon: Tag },
         { key: 'historias', label: 'Historias', icon: CircleDashed },
+        ...(puedeEditar ? [{ key: 'reservas', label: 'Reservas', icon: ShoppingBag }] : []),
         ...(veClientes ? [{ key: 'preregistros', label: 'Pre-registros', icon: UserPlus }] : []),
-    ], [veClientes]);
+    ], [veClientes, puedeEditar]);
     const [tab, setTab] = usePestanaEnUrl(tabs, 'ofertas');
     const [busqueda, setBusqueda] = useState('');
 
@@ -68,6 +70,8 @@ export default function OfertasClientesView() {
             <div className="p-4 md:p-6 space-y-6">
                 {tab === 'preregistros'
                     ? <Preregistros busqueda={busqueda} puedeEditar={hasPermission('clientes', 'can_edit')} showToast={showToast} />
+                    : tab === 'reservas'
+                        ? <WidgetReservas todas />
                     : tab === 'historias'
                         ? <HistoriasPanel busqueda={busqueda} puedeEditar={puedeEditar} showToast={showToast} />
                         : <Ofertas busqueda={busqueda} puedeEditar={puedeEditar} showToast={showToast} />}

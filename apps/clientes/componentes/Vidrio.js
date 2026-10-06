@@ -11,9 +11,14 @@ const HAY_VIDRIO = Platform.OS === 'ios' && (() => { try { return isLiquidGlassA
 export default function Vidrio({ style, children, radio = 22, interactivo = false, tinte }) {
   const oscuro = useColorScheme() === 'dark';
   const forma = { borderRadius: radio, overflow: 'hidden' };
+  // Sin tinte propio, un velo del fondo del sistema: el Liquid Glass «regular»
+  // es casi transparente y sobre la aurora el texto quedaba encima del color
+  // (probado en TestFlight el 2026-10-06). Con el velo se sigue viendo vidrio,
+  // pero el texto tiene fondo.
+  const velo = oscuro ? 'rgba(18,16,24,0.55)' : 'rgba(255,255,255,0.62)';
   if (HAY_VIDRIO) {
     return (
-      <GlassView glassEffectStyle="regular" isInteractive={interactivo} tintColor={tinte}
+      <GlassView glassEffectStyle="regular" isInteractive={interactivo} tintColor={tinte ?? velo}
         style={[forma, style]}>
         {children}
       </GlassView>
@@ -21,7 +26,8 @@ export default function Vidrio({ style, children, radio = 22, interactivo = fals
   }
   if (Platform.OS === 'ios') {
     return (
-      <BlurView intensity={60} tint={oscuro ? 'systemMaterialDark' : 'systemMaterialLight'} style={[forma, style]}>
+      <BlurView intensity={70} tint={oscuro ? 'systemThickMaterialDark' : 'systemThickMaterialLight'} style={[forma, style]}>
+        {tinte ? <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: tinte }} /> : null}
         {children}
       </BlurView>
     );

@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1223.3 — App de clientes: tarjeta viva, textos legibles, Face ID, vencimientos y muestras
+
+Revisión en TestFlight del usuario (2026-10-06):
+- **Face ID pedía desbloquear una y otra vez:** la marca de «salió de la app» nunca se borraba, así que tras la primera ausencia de 30 s cualquier vuelta a activa —incluida la que provoca la propia hoja de Face ID— volvía a bloquear. Ahora la marca se consume, sólo cuenta el segundo plano real, se ignora la vuelta del Face ID y hay una sola verificación a la vez.
+- **Textos difíciles de leer:** `secondaryLabel`/`tertiaryLabel` son translúcidos y se lavaban sobre vidrio y aurora. Ahora son sólidos, el vidrio lleva un velo del fondo del sistema y las tarjetas con tono también.
+- **Tarjeta de socio:** entra cayendo de canto con resorte; el giroscopio va suavizado y se le suma el dedo (arrastrar la inclina, soltar rebota, deslizar rápido la gira); luz con Skia —holograma arcoíris, destello que sigue el ángulo y un barrido cada ~5 s—; la sombra se corre con la inclinación; el giro se levanta y vibra al mostrar la otra cara.
+- **Por vencer:** en vez de una lista de fechas, cuántos puntos y dólares vencen en los próximos 3 meses (o «nada vence» y lo próximo) y una gráfica animada de los próximos 6 meses, tocable. `app-clientes` manda todos los vencimientos (antes 3).
+- **Muestras (`app_cliente_muestras`):** ofertas, inyecciones y vencimientos de muestra amarrados a UNA ficha, que sólo esa persona ve en la app; el portal no las lee (policy de SELECT en `false`). Sembradas para la ficha de prueba del dueño, con fotos en `ofertas-clientes/muestras/`.
+
 ## v2.1223.2 — Depósito al banco: anotar lo que entra de afuera después ya no deja el monto recortado
 
 - **DEP-261005-1 salió con $425 de remanente que sí se remesaron.** Se escribió «Al banco» $25,145 antes de anotar los $425 de la venta de la motocicleta; el campo lo recortó a $24,720 (el máximo sin el aporte) y al anotar el aporte el número no volvía. Registro corregido en producción: al banco $25,145.00, remanente $0.00, con nota.

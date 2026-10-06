@@ -20,10 +20,15 @@ const oscuro = () => Appearance.getColorScheme() === 'dark';
 // se leen como GETTERS: cada render pide el del modo actual (antes eran fijos
 // de modo claro y el título salía negro sobre la aurora oscura).
 const respaldo = (claro, noche) => () => (oscuro() ? noche : claro);
+// `texto2` y `texto3` NO usan `secondaryLabel`/`tertiaryLabel`: ésos son
+// TRANSLÚCIDOS (60% y 30% de opacidad), pensados para fondo liso. Sobre vidrio
+// y aurora de color se lavaban hasta no leerse (probado en TestFlight el
+// 2026-10-06: «muchos textos cuesta verlos»). Sólidos y más oscuros, con
+// contraste ≥ 4.5:1 sobre el vidrio en los dos modos.
 const COLORES = {
   texto: ['label', respaldo('#1C1B1F', '#F2F2F7')],
-  texto2: ['secondaryLabel', respaldo('#49454F', 'rgba(235,235,245,0.68)')],
-  texto3: ['tertiaryLabel', respaldo('#79747E', 'rgba(235,235,245,0.42)')],
+  texto2: [null, respaldo('#2E2A33', '#E4E2EA')],
+  texto3: [null, respaldo('#4A4552', '#BDB9C6')],
   placeholder: ['placeholderText', respaldo('#79747E', 'rgba(235,235,245,0.36)')],
   separador: ['separator', respaldo('rgba(60,60,67,0.29)', 'rgba(84,84,88,0.6)')],
   rojo: ['systemRed', respaldo('#B3261E', '#FF453A')],
@@ -31,7 +36,7 @@ const COLORES = {
 };
 export const colorSistema = {};
 for (const [k, [nativo, web]] of Object.entries(COLORES)) {
-  Object.defineProperty(colorSistema, k, { enumerable: true, get: ios ? () => PlatformColor(nativo) : web });
+  Object.defineProperty(colorSistema, k, { enumerable: true, get: ios && nativo ? () => PlatformColor(nativo) : web });
 }
 
 export function Formulario({ children, contentContainerStyle, ...props }) {

@@ -1,6 +1,6 @@
 // Las piezas de las pantallas de contenido (puntos, ofertas, inyecciones).
 // Canon: superficies de VIDRIO sobre la aurora (Liquid Glass en iOS 26),
-// texto en los colores del sistema (`label`, `secondaryLabel`), el botón del
+// texto en los colores del sistema (`label`; los secundarios, sólidos — ver sistema.js), el botón del
 // sistema, y los colores del logo SÓLO para lo que es de la marca: lo que se
 // gana (verde) y lo que se usa (magenta).
 import { ActivityIndicator, Platform, ScrollView, Text, View, RefreshControl } from 'react-native';
@@ -31,9 +31,13 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
 
 /** Una tarjeta de vidrio. `tono` la tiñe (verde o magenta) cuando ES de la marca. */
 export function Tarjeta({ children, estilo, tono }) {
+  const t = useTema();
+  // Con tono, el tinte de la marca va ENCIMA de un velo del fondo: sólo el
+  // tinte dejaba el texto sobre magenta translúcido, difícil de leer.
   return (
     <Vidrio radio={26} tinte={tono ? suave(tono, 0.22) : undefined}>
-      <View style={[{ padding: 18, gap: 8 }, estilo]}>{children}</View>
+      <View style={[{ padding: 18, gap: 8 },
+        tono && { backgroundColor: t.oscuro ? 'rgba(18,16,24,0.4)' : 'rgba(255,255,255,0.5)' }, estilo]}>{children}</View>
     </Vidrio>
   );
 }
@@ -44,7 +48,7 @@ export function Titulo({ children, estilo }) {
 
 export function Texto({ children, nivel = 1, estilo, ...resto }) {
   const color = nivel === 1 ? colorSistema.texto : nivel === 2 ? colorSistema.texto2 : colorSistema.texto3;
-  return <Text style={[{ fontSize: nivel === 1 ? 17 : 15, color, lineHeight: nivel === 1 ? 22 : 20 }, estilo]} {...resto}>{children}</Text>;
+  return <Text style={[{ fontSize: nivel === 1 ? 17 : 15, color, lineHeight: nivel === 1 ? 22 : 20, fontWeight: nivel === 1 ? '400' : '500' }, estilo]} {...resto}>{children}</Text>;
 }
 
 /**

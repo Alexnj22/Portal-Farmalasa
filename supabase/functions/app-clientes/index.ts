@@ -42,6 +42,20 @@ const ES_CODIGO = /^[ACDEFGHJKMNPQRTUVWXY34679]{7}$/;
 const DIAS_SESION = 180;
 const POR_PAGINA_INICIAL = 10;
 const POR_PAGINA = 20;
+
+// Las MUESTRAS de una ficha (`app_cliente_muestras`, 2026-10-06): ofertas,
+// inyecciones y vencimientos de muestra que sólo ve esa persona, para revisar
+// el diseño con datos que producción no tiene. Nunca tumban la respuesta: si
+// no se pueden leer, la app se ve con lo real y nada más.
+// deno-lint-ignore no-explicit-any
+async function muestrasDe(admin: any, customerId: number | null, tipo: string): Promise<any[]> {
+  if (!customerId) return [];
+  const { data, error } = await admin.from("app_cliente_muestras")
+    .select("id, datos").eq("customer_id", customerId).eq("tipo", tipo).order("id");
+  if (error) { console.error("no se pudieron leer las muestras:", error.message); return []; }
+  // deno-lint-ignore no-explicit-any
+  return (data ?? []).map((m: any) => ({ id: m.id, ...m.datos }));
+}
 const VERSION_AVISO = `${TEXTOS.version} · ${TEXTOS.aviso}`;
 
 // Para el alta que no se puede hacer desde la app (el documento ya tiene un
@@ -387,7 +401,8 @@ Deno.serve(async (req) => {
       // Firmadas en UNA llamada y por 12 horas: firmar una por una costaba una
       // petición a Storage por oferta en cada apertura, y una URL nueva cada vez
       // hacía que el teléfono volviera a bajar la misma foto.
-      const rutas = (filas ?? []).map((o: any) => o.imagen_path).filter(Boolean);
+      const muestras = await muestrasDe(admin, customerId, "oferta");
+      const rutas = [...(filas ?? []), ...muestras].map((o: any) => o.imagen_path).filter(Boolean);
       const firmadas = new Map<string, string>();
       if (rutas.length) {
         const { data: fs, error: eF } = await admin.storage.from("ofertas-clientes").createSignedUrls(rutas, 12 * 3600);
@@ -413,6 +428,19 @@ Deno.serve(async (req) => {
             ? o.branch_ids.map((id: number) => nombreSala.get(id)).filter(Boolean) : null,
         };
       });
+      for (const m of muestras) {
+        const disponible = !m.exclusiva || socio;
+        ofertas.push({
+          id: `muestra-${m.id}`, titulo: m.titulo, etiqueta: m.etiqueta ?? null,
+          imagen: m.imagen_path ? firmadas.get(m.imagen_path) ?? null : null,
+          inicio: m.inicio, fin: m.fin, acento: m.acento ?? "magenta", exclusiva: !!m.exclusiva, disponible,
+          descripcion: disponible ? m.descripcion ?? null : null,
+          condiciones: disponible ? m.condiciones ?? null : null,
+          descuento: m.descuento ?? null,
+          productos: disponible && Array.isArray(m.productos) ? m.productos : [],
+          salas: Array.isArray(m.salas) && m.salas.length ? m.salas : null,
+        });
+      }
       return json({ ok: true, ofertas, socio });
     }
 
@@ -493,7 +521,12 @@ Deno.serve(async (req) => {
         equivale: Math.round(saldo) / 100,
         acumulados: Number(est?.ganados ?? 0),
         canjeados: Number(est?.usados ?? 0),
-        vencimientos: (est?.vencimientos ?? []).map((v: any) => ({ vence: v.vence_el, puntos: Number(v.puntos) })).slice(0, 3),
+        // Todos (con tope), ordenados: la app arma la gráfica de los próximos
+        // meses y el aviso de lo que vence en 90 días. Antes iban sólo 3.
+        vencimientos: [
+          ...(est?.vencimientos ?? []).map((v: any) => ({ vence: v.vence_el, puntos: Number(v.puntos) })),
+          ...(await muestrasDe(admin, customerId, "vencimiento")).map((v: any) => ({ vence: v.vence, puntos: Number(v.puntos) })),
+        ].sort((a, b) => String(a.vence).localeCompare(String(b.vence))).slice(0, 36),
         // Paginados: los primeros 10 acá y el resto con `movimientos` de a 20.
         // Un cliente de años tiene cientos y la app no debe bajar ni pintar
         // una lista infinita.
@@ -544,7 +577,8 @@ Deno.serve(async (req) => {
     if (accion === "inyecciones") {
       const { data, error } = await admin.rpc("app_cliente_inyecciones", { p_customer_id: customerId });
       if (error) throw error;
-      return json({ ok: true, disponibles: (data as any)?.disponibles ?? [] });
+      const muestras = (await muestrasDe(admin, customerId, "inyeccion")).map((m: any) => ({ ...m, id: `muestra-${m.id}` }));
+      return json({ ok: true, disponibles: [...((data as any)?.disponibles ?? []), ...muestras] });
     }
 
     if (accion === "permisos") {

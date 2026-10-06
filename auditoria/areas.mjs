@@ -724,7 +724,7 @@ export const AREAS = [
             'supabase/functions/app-clientes/',
             'supabase/functions/_shared/consentimientoPuntos.ts',
         ],
-        tablas: ['app_cliente_sesiones', 'app_cliente_preregistros', 'ofertas_clientes'],
+        tablas: ['app_cliente_sesiones', 'app_cliente_preregistros', 'ofertas_clientes', 'app_cliente_muestras'],
         edge: ['app-clientes'],
         crons: [],
         docs: ['docs/APP-CLIENTES-2026-10-05.md'],

@@ -6,8 +6,9 @@ import { Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo } from '../../../componentes/ui';
 import { useCuenta } from '../../../lib/cuenta';
-import { diasHasta, dolares, entero, fecha, nombrePropio } from '../../../lib/formato';
+import { dolares, entero, fecha, nombrePropio } from '../../../lib/formato';
 import TarjetaSocio from '../../../componentes/TarjetaSocio';
+import Vencimientos from '../../../componentes/Vencimientos';
 import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '../../../componentes/animacion';
 import { useSesion } from '../../../lib/sesion';
 import { suave, useTema } from '../../../tema/tema';
@@ -124,16 +125,7 @@ export default function Puntos() {
 
       {resumen.vencimientos?.length ? (
         <Entrada indice={3}>
-          <Tarjeta>
-            <Titulo>Por vencer</Titulo>
-            {resumen.vencimientos.map((v) => {
-              const d = diasHasta(v.vence);
-              return (
-                <Fila key={v.vence} izquierda={`${fecha(v.vence)}${d != null && d <= 30 ? ` · en ${d} días` : ''}`}
-                  derecha={`${entero(v.puntos)} pts`} color={d != null && d <= 30 ? colorSistema.naranja : colorSistema.texto2} />
-              );
-            })}
-          </Tarjeta>
+          <Vencimientos vencimientos={resumen.vencimientos} />
         </Entrada>
       ) : null}
 
@@ -192,14 +184,5 @@ export default function Puntos() {
         </Tarjeta>
       </Entrada>
     </Pantalla>
-  );
-}
-
-function Fila({ izquierda, derecha, color }) {
-  return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
-      <Text style={{ fontSize: 15, color }}>{izquierda}</Text>
-      <Text style={{ fontSize: 15, fontWeight: '700', color, fontVariant: ['tabular-nums'] }}>{derecha}</Text>
-    </View>
   );
 }

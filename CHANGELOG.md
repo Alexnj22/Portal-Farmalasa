@@ -21,6 +21,9 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1234.0 — Plan de la app: estado de la segunda tanda
+
+- Plan de paridad de la app: estado al cierre de la segunda tanda (build 26) y lo que sigue en el portal.
 ## v2.1233.0 — Historias: quién las vio, Reservar y Más información
 
 - **Quién vio cada historia.** Nueva tabla `app_historias_vistas` (una fila por persona e historia; sin cuenta, por un identificador aleatorio del teléfono, sin nombre) que escribe sólo `app-clientes` (`historia_vista` / `historia_vista_publica` → `app_historia_registrar_vista`). En Ofertas para clientes → Historias, columna **Vistas** con cuántos tocaron un botón; al tocar el número, la lista de clientes con fecha y hora (`app_historia_quienes_vieron`, con el permiso del módulo). Cuenta desde la compilación 11 de la app.

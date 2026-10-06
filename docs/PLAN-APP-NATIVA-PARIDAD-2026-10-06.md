@@ -15,7 +15,7 @@ la tarjeta nativa dibujaba un resumen y el portal todo (corregido en v2.1221.0).
 | ruta | qué es | estado |
 |---|---|---|
 | `/notificaciones` | historial de avisos (leídos y quitados), con la tarjeta nueva | ✅ v2.1225 |
-| `/ofertas-clientes` | ofertas de la app de clientes | |
+| `/ofertas-clientes` | ofertas de la app de clientes | ✅ v2.1225 |
 | `/cargar-compra` | revisar la compra armada desde la factura del correo y confirmar el diccionario | |
 | `/objetos-huerfanos` | archivos sin dueño en Storage | |
 | `/impresion` | ajustes de impresión de esta computadora: en el teléfono, mostrar y probar lo que aplique | |
@@ -51,18 +51,18 @@ pantalla del grupo Compras/fiscal tiene gráficas en el portal; el resto sí.
 Leyenda: A = alta · M = media · B = baja. ☐ pendiente · ✅ hecho.
 
 ### Ventas y caja
-- ☐ A **Efectivo**: hacer corte (`DialogoCorte`), abrir caja / iniciar turno, pedir corrección; `PanelDelDia` (abrió + vendido + ingresos − vales − bolsas = efectivo); `MovimientosDelDia` con firmas; `MetaDelDia`, `EntregaDelTurno`, `BonosPorPagar`, `FichasDeCaja`.
+- ◐ A **Efectivo** (✅ información v2.1229; ☐ acciones de dinero): hacer corte (`DialogoCorte`), abrir caja / iniciar turno, pedir corrección; `PanelDelDia` (abrió + vendido + ingresos − vales − bolsas = efectivo); `MovimientosDelDia` con firmas; `MetaDelDia`, `EntregaDelTurno`, `BonosPorPagar`, `FichasDeCaja`.
 - ☐ A **Diferencias de caja**: reponer/retirar/justificar (`ResolverDiferencia`), responsables y abonos (`AbonosDeDiferencia`), `AsentarDiferencias`.
-- ☐ A **Cortes**: métricas Sin confirmar/Cuadraron/Exceso/Faltante que filtran; estados Confirmados/Descartados; período libre; detalle paso a paso (vendido por forma de pago, lo que debía haber, acumulado) de `CorteDetalleModal`.
-- ☐ A **Bolsas**: etapas En la sala y Finalizadas; métricas del circuito; detalle de bolsa (`DetalleDeBolsa`); conteos y depósitos al banco; filtros; reimprimir etiqueta.
+- ✅ A **Cortes** (v2.1229): métricas Sin confirmar/Cuadraron/Exceso/Faltante que filtran; estados Confirmados/Descartados; período libre; detalle paso a paso (vendido por forma de pago, lo que debía haber, acumulado) de `CorteDetalleModal`.
+- ◐ A **Bolsas** (✅ etapas, métricas, detalle v2.1229; ☐ depósitos, conteos): etapas En la sala y Finalizadas; métricas del circuito; detalle de bolsa (`DetalleDeBolsa`); conteos y depósitos al banco; filtros; reimprimir etiqueta.
 - ☐ M **Ventas**: nivel de precio por renglón; historial de cambios de la factura; filtros laboratorio/puntos/período libre; ordenar; ocultar producto; gráficas por sucursal y tendencia mensual en la ficha de producto.
 - ☐ M **Corte Z**: tabla «por día» de por qué difiere; KPI crédito fiscal; ticket por secciones; PDF; filtro de sala.
 - ☐ B **Inicio**: personalizar widgets; top 10. **Facturas en sala**: resumen de antigüedad. **Bolsas sala**: detalle de bolsa. **Ventas hoy**: horas según el horario de la sala.
 
 ### Inventario
-- ☐ A **Pedidos**: productos del pedido; línea de vida con personas (`LifecycleTimeline`); completados/anulados; diferencias (`DifSection`) y llegada de reenvío; filtros; métricas de tiempos; mapa de ruta.
+- ◐ A **Pedidos** (✅ ficha, línea de vida, filtros, tiempos v2.1228; ☐ decidir diferencias, mapa de ruta): productos del pedido; línea de vida con personas (`LifecycleTimeline`); completados/anulados; diferencias (`DifSection`) y llegada de reenvío; filtros; métricas de tiempos; mapa de ruta.
 - ☐ A **Producto**: margen por nivel y alerta de pérdida; costo por presentación; historial de compras y de precios; devolutivo, categoría, ubicaciones, principios activos; editar foto y ficha; pestaña Presentaciones.
-- ☐ A **Conteos**: KPIs (abiertos/por aprobar/sin ajustar, faltante/sobrante en $); crear, aprobar, ajuste ERP, recontar, agregar renglón, corregir lote; imprimir/exportar.
+- ◐ A **Conteos** (✅ tarjetas y detalle v2.1228; ☐ crear/aprobar/ajuste, papel): KPIs (abiertos/por aprobar/sin ajustar, faltante/sobrante en $); crear, aprobar, ajuste ERP, recontar, agregar renglón, corregir lote; imprimir/exportar.
 - ☐ A **Min·Máx**: barras cobertura/existencia, ABC/XYZ, proyección 30/60/90, ventas y compras recientes, historial; pestaña Agotados; revisión de la sala (publicar/descartar borradores).
 - ☐ M **Traslados**: historial por semana con filtros y envíos cerrados; reimprimir ticket; fotos de evidencia; trayecto con personas.
 - ☐ M **Inyecciones**: KPIs de la bitácora, rango/estado/sala, Por cobrar y Precios y dosis.
@@ -70,10 +70,10 @@ Leyenda: A = alta · M = media · B = baja. ☐ pendiente · ✅ hecho.
 - ☐ B **Ventas perdidas**: CSV, top 5 como lista.
 
 ### Clientes y comercial
-- ☐ A **Metas**: detalle por sala con gráficas (días, termómetro, ranking); Bono, Pago semestral, Confirmación, Gastos, Histórico.
+- ◐ A **Metas** (✅ tablero, gráficas, ranking, bono, histórico v2.1227; ☐ agregar, confirmación, gastos, semestral): detalle por sala con gráficas (días, termómetro, ranking); Bono, Pago semestral, Confirmación, Gastos, Histórico.
 - ☐ A **Promociones**: Seguimiento (quién vendió, bono), matriz de laboratorio, Descuentos, Excedentes, Pagos; pausar/editar/duplicar; avance del lote.
 - ☐ A **Cuentas por cobrar**: refrescar contra la caja; Por vencer; orden; filtro vendedor; pedir corrección de un abono.
-- ☐ A **Puntos**: KPIs, «los que más tienen», gráficas (`GraficasPuntos`), cuentas por asignar, traspasos pendientes, ajustar y código de acceso.
+- ◐ A **Puntos** (✅ tarjetas, gráficas, cuenta v2.1227; ☐ por asignar, traspasos, ajustar): KPIs, «los que más tienen», gráficas (`GraficasPuntos`), cuentas por asignar, traspasos pendientes, ajustar y código de acceso.
 - ☐ M **Clientes**: KPIs, Por revisar, filtros depto/municipio, orden, valor anterior→nuevo. **Cotizaciones**: KPIs, IVA por línea, crear/editar/anular, PDF. **Encuestas de clientes**: resultados por pregunta con barras, avance, incentivos, aprobar/publicar/cerrar. **Marketing**: KPIs del mes, aprobar piezas y el mes, pestañas.
 - ☐ B **Aplicar encuesta**: incentivo, modo tablet. **Galería**: marca, guardar en Fotos, compartir todo.
 
@@ -93,13 +93,35 @@ Leyenda: A = alta · M = media · B = baja. ☐ pendiente · ✅ hecho.
 - ☐ M **Vacaciones**: solicitudes de cambio con aprobar/rechazar, saldo, Gantt. **Monitor**: horas extra, marcas, tablero por estado. **Encuesta / admin**: resumen, segmentos, anillo, crear. **Cargos**: organigrama. **Permisos**: rótulos, apagadas, editar.
 
 ### Sistema
-- ☐ A **Solicitudes**: aprobación parcial por línea, cancelar propia, Aprobadas/Rechazadas, «Sólo yo», semana; detalle con ContextoMinMax, venta, puntos, personas, historial.
+- ✅ A **Solicitudes** (v2.1226): aprobación parcial por línea, cancelar propia, Aprobadas/Rechazadas, «Sólo yo», semana; detalle con ContextoMinMax, venta, puntos, personas, historial.
 - ☐ A **Sucursales**: kioscos N/3, Historial, Personal, Expediente, Gastos con gráfica; abrir en Maps; editar.
 - ☐ M **Avisos**: leyeron/faltan con cargo, editar/eliminar, cargo/persona, programar. **Mi perfil**, **Sesiones** (bloquear, IP), **Solicitudes de datos**, **Mantenimiento** (motivo, duración, franja).
 - ☐ B **Mis documentos**, **Carnés del día**, **Actualización de datos**, **Auditoría del sistema** (CSV, paginar, ficha).
 
 ### Diseño, en todas
 - Flechas «‹ ›» de texto → SF Symbols; `numberOfLines={1}` que corta datos; detalles que se despliegan dentro de la tarjeta → pantalla propia; listas largas en `ScrollView`+`map`; botón «(portal)» al pie → acciones nativas.
+
+## Estado al cierre de la segunda tanda (2026-10-06, build 26)
+
+Publicado y probado en el simulador contra el entorno de pruebas: historial de
+notificaciones, ofertas, solicitudes (parcial), efectivo/cortes/bolsas
+(información), pedidos, conteos, metas, puntos, boleta, ficha de producto,
+Min·Máx, traslados, inventario, facturación, cuentas por pagar, compras,
+proveedores, laboratorios, libros IVA, cierre, nómina, auditoría de tiempos,
+horarios, personal (+ ficha nativa), vacaciones, monitor, cuentas por cobrar,
+clientes, cotizaciones, sucursales, avisos, sesiones, mantenimiento,
+auditoría, mis documentos, promociones y mi perfil. El portal web se revisó en
+el navegador contra pruebas (~25 pantallas, sin regresiones) y está publicado.
+
+Lo que sigue en el portal (con su botón «(portal)»), por decisión o por no
+poder probarse sin tocar dinero real:
+- Mover dinero: hacer corte, abrir caja, resolver diferencias, depósitos y
+  conteos de bolsas.
+- Crear/editar: promociones, cotizaciones, metas, conteos, pedidos (generar,
+  rutas), horarios (celda, catálogo, feriados), nómina (generar/editar),
+  cerrar quincena, altas de personal, permisos, cargos, encuestas, marketing.
+- Revisión de facturas de compra (emparejar PDF/JSON), saltos de correlativo.
+- Torogoz (fase D, sin empezar).
 
 ## Fase C — cerrar las brechas
 

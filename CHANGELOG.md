@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1226.5 — Wallet: franja sin bordes y Cliente VIP
+
+- **Tarjeta de Wallet:** la franja nace y muere en el color del fondo del pase (sin bordes), sin la cruz cortada, con luz magenta, resplandor verde, brillo holográfico y grabado fino. «Socio» → «Cliente VIP» y «Cliente desde» (pedido del usuario). El alto lo fija Apple para toda tarjeta de lealtad con QR.
+
 ## v2.1226.4 — Wallet: la tarjeta se actualiza sola
 
 - **`wallet-pases`, servicio web de PassKit:** el pase lleva `webServiceURL` y un `authenticationToken` por tarjeta (HMAC del serial, sin tabla). El iPhone se registra al agregarla (`wallet_registros`), pregunta qué cambió y baja la tarjeta nueva.

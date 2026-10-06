@@ -70,7 +70,7 @@ export async function armarPase(d: DatosPase): Promise<Uint8Array> {
     webServiceURL: `${Deno.env.get("SUPABASE_URL")}/functions/v1/wallet-pases`,
     authenticationToken: await tokenDePase(serialDe(d.customerId)),
     organizationName: "Farmacia Salud",
-    description: "Tarjeta de socio Puntos Salud",
+    description: "Tarjeta Cliente VIP · Puntos Salud",
     logoText: "Puntos Salud",
     // El fondo continúa el tono oscuro de la franja (scripts/wallet/imagenes.py),
     // y los rótulos van en el verde del logo: así la franja y el cuerpo se leen
@@ -84,8 +84,8 @@ export async function armarPase(d: DatosPase): Promise<Uint8Array> {
         // Lo que dice la pantalla bloqueada cuando la tarjeta se actualiza.
         changeMessage: "Tu saldo de Puntos Salud ahora es %@" }],
       secondaryFields: [
-        { key: "nombre", label: "SOCIO", value: corto(d.nombre) },
-        { key: "desde", label: "DESDE", value: desde(d.socioDesde), textAlignment: "PKTextAlignmentRight" },
+        { key: "nombre", label: "CLIENTE VIP", value: corto(d.nombre) },
+        { key: "desde", label: "CLIENTE DESDE", value: desde(d.socioDesde), textAlignment: "PKTextAlignmentRight" },
       ],
       backFields: [
         { key: "como", label: "Cómo se usa", value: "Muestra el código en caja: acumulas en cada compra y canjeas desde 100 puntos ($1)." },

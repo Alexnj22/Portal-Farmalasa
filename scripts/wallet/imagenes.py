@@ -20,57 +20,59 @@ def png(img):
 def mezclar(a, b, t):
     return tuple(int(a[i] + (b[i] - a[i]) * t) for i in range(3))
 
-def franja(escala):
-    w, h = 375 * escala, 144 * escala
-    # Degradado diagonal: ciruela oscuro → magenta del logo → violeta.
-    paradas = [(0.0, (43, 11, 58)), (0.55, (156, 33, 156)), (1.0, (91, 30, 156))]
-    img = Image.new('RGB', (w, h))
-    px = img.load()
-    for y in range(h):
-        for x in range(w):
-            t = (x / w) * 0.8 + (y / h) * 0.2
-            for i in range(len(paradas) - 1):
-                (t0, c0), (t1, c1) = paradas[i], paradas[i + 1]
-                if t0 <= t <= t1:
-                    px[x, y] = mezclar(c0, c1, (t - t0) / (t1 - t0)); break
-    img = img.convert('RGBA')
+FONDO = (52, 14, 66)   # = backgroundColor del pase (_shared/pase.ts): la franja se funde con él.
 
-    # Resplandor verde del logo, abajo a la derecha.
-    glow = Image.new('RGBA', (w, h), (0, 0, 0, 0))
-    d = ImageDraw.Draw(glow)
-    r = int(h * 1.1)
-    d.ellipse((w - r * 0.9, h - r * 0.55, w + r * 0.6, h + r * 0.9), fill=(142, 195, 15, 120))
-    img = Image.alpha_composite(img, glow.filter(ImageFilter.GaussianBlur(28 * escala)))
+def franja(escala):
+    """La franja sin bordes: nace y muere en el color del fondo del pase, así
+    que la tarjeta se lee como UNA pieza (la primera versión era un rectángulo
+    pegado, con una cruz cortada a la derecha — probado en el iPhone el
+    2026-10-06). Adentro: luz magenta, un resplandor verde del logo, el brillo
+    holográfico en diagonal y un fino patrón de líneas, como el grabado de una
+    tarjeta de verdad."""
+    w, h = 375 * escala, 144 * escala
+    img = Image.new('RGBA', (w, h), FONDO + (255,))
+
+    def capa(dibujar, desenfoque):
+        c = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+        dibujar(ImageDraw.Draw(c))
+        return c.filter(ImageFilter.GaussianBlur(desenfoque * escala)) if desenfoque else c
+
+    # Luz magenta del logo, amplia, centrada un poco a la derecha.
+    img = Image.alpha_composite(img, capa(lambda d: d.ellipse((w * 0.15, -h * 0.6, w * 1.15, h * 1.5), fill=(170, 40, 175, 150)), 46))
+    # Resplandor verde, abajo a la derecha.
+    img = Image.alpha_composite(img, capa(lambda d: d.ellipse((w * 0.62, h * 0.35, w * 1.1, h * 1.4), fill=(142, 195, 15, 85)), 34))
+    # Violeta arriba a la izquierda, para que el degradado tenga profundidad.
+    img = Image.alpha_composite(img, capa(lambda d: d.ellipse((-w * 0.2, -h * 0.8, w * 0.45, h * 0.7), fill=(91, 30, 156, 120)), 40))
 
     # Brillo holográfico: bandas de arcoíris tenues en diagonal.
-    holo = Image.new('RGBA', (w, h), (0, 0, 0, 0))
-    d = ImageDraw.Draw(holo)
     colores = [(255, 90, 170), (255, 214, 10), (120, 255, 160), (90, 200, 250), (175, 120, 255)]
-    ancho = 22 * escala
-    for i, c in enumerate(colores):
-        x0 = int(w * 0.30) + i * ancho
-        d.polygon([(x0, 0), (x0 + ancho, 0), (x0 + ancho - h * 0.6, h), (x0 - h * 0.6, h)], fill=c + (34,))
-    img = Image.alpha_composite(img, holo.filter(ImageFilter.GaussianBlur(10 * escala)))
+    ancho = 18 * escala
+    def holo(d):
+        for i, c in enumerate(colores):
+            x0 = int(w * 0.42) + i * ancho
+            d.polygon([(x0, 0), (x0 + ancho, 0), (x0 + ancho - h * 0.7, h), (x0 - h * 0.7, h)], fill=c + (30,))
+    img = Image.alpha_composite(img, capa(holo, 9))
+    # Destello blanco fino.
+    def destello(d):
+        x0 = int(w * 0.30)
+        d.polygon([(x0, 0), (x0 + 10 * escala, 0), (x0 + 10 * escala - h * 0.7, h), (x0 - h * 0.7, h)], fill=(255, 255, 255, 60))
+    img = Image.alpha_composite(img, capa(destello, 4))
 
-    # Un destello blanco suave cruzando.
-    luz = Image.new('RGBA', (w, h), (0, 0, 0, 0))
-    d = ImageDraw.Draw(luz)
-    x0 = int(w * 0.18)
-    d.polygon([(x0, 0), (x0 + 26 * escala, 0), (x0 + 26 * escala - h * 0.6, h), (x0 - h * 0.6, h)], fill=(255, 255, 255, 46))
-    img = Image.alpha_composite(img, luz.filter(ImageFilter.GaussianBlur(6 * escala)))
+    # Grabado: líneas diagonales finísimas, como el guilloché de una tarjeta.
+    def grabado(d):
+        paso = 7 * escala
+        for x in range(-h, w + h, paso):
+            d.line([(x, 0), (x - h * 0.7, h)], fill=(255, 255, 255, 10), width=max(1, escala // 2))
+    img = Image.alpha_composite(img, capa(grabado, 0))
 
-    # La cruz del logo como marca de agua, a la derecha.
-    logo = Image.open(LOGO).convert('RGBA').resize((int(h * 1.25),) * 2, Image.LANCZOS)
-    a = logo.getchannel('A').point(lambda v: int(v * 0.16))
-    blanco = Image.new('RGBA', logo.size, (255, 255, 255, 0)); blanco.putalpha(a)
-    img.alpha_composite(blanco, (int(w - h * 1.0), int(-h * 0.12)))
-
-    # Viñeta abajo, para que el saldo en blanco se lea siempre.
-    vin = Image.new('RGBA', (w, h), (0, 0, 0, 0))
-    d = ImageDraw.Draw(vin)
+    # Fundido arriba y abajo hacia el color del fondo: sin bordes.
+    fundido = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(fundido)
     for y in range(h):
-        d.line([(0, y), (w, y)], fill=(20, 4, 28, int(90 * (y / h) ** 2)))
-    img = Image.alpha_composite(img, vin)
+        t = y / (h - 1)
+        a = max(0.0, 1 - t / 0.22) if t < 0.22 else max(0.0, (t - 0.72) / 0.28)
+        d.line([(0, y), (w, y)], fill=FONDO + (int(255 * min(1.0, a) ** 1.4),))
+    img = Image.alpha_composite(img, fundido)
     return img.convert('RGB')
 
 imgs = {}

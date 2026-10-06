@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1226.10 — Publicar el portal a propósito: rama produccion y npm run publicar
+
+- **El portal se publica a propósito** (decisión del usuario): la rama `produccion` es la de portal.farmasalud.lat y se mueve con `npm run publicar` (`scripts/publicar.mjs`), que la adelanta a `origin/main` sólo si hay cambios de la web. `scripts/vercel-ignorar.sh`: `produccion` y `sesion/nucleo` despliegan; `main`, por transición, sólo si toca la web, hasta que Vercel tenga «Production Branch» = `produccion`. Regla escrita en CLAUDE.md para las demás sesiones.
+
 ## v2.1226.9 — Vercel: la regla de despliegue va en un script
 
 - **El despliegue falló:** Vercel exige que `ignoreCommand` mida ≤256 caracteres y la regla anterior no cabía. Ahora es `bash scripts/vercel-ignorar.sh`, probado en un árbol aparte contra dos commits reales (el de Wallet salta, el de la boleta compila).

@@ -2,15 +2,23 @@
 # `ignoreCommand` de Vercel (vercel.json lo llama; ahí no caben más de 256
 # caracteres). Salir con 0 = NO desplegar; con 1 = desplegar.
 #
-# · sesion/nucleo: siempre se despliega (es la rama de dev.farmasalud.lat).
-# · otras sesion/*: nunca.
-# · main: sólo si el commit toca algo de la WEB. Lo de las apps, las funciones
-#   de Supabase, scripts, docs, la auditoría y el changelog no cambian el
-#   portal: compilarlo por eso costaba minutos de compilación en vano (el
-#   2026-10-06, ~20 de 24 despliegues; Vercel cobró $22.92 en el ciclo).
+# Producción se publica A PROPÓSITO, no con cada commit (decisión del usuario,
+# 2026-10-06: el ciclo iba en $22.92 de minutos de compilación con ~24
+# despliegues al día). La rama `produccion` es la que Vercel publica en
+# portal.farmasalud.lat, y se mueve con `npm run publicar`
+# (scripts/publicar.mjs), que la adelanta a `main` sólo si hay cambios de la
+# web.
+#
+# · produccion:    siempre (llegar ahí ya es la decisión de publicar).
+# · sesion/nucleo: siempre (es la rama de dev.farmasalud.lat).
+# · main: TRANSICIÓN — mientras Vercel siga publicando `main` como producción,
+#   despliega sólo si el commit toca la web. Cuando «Production Branch» en
+#   Vercel sea `produccion`, esta rama pasa a `exit 0` (no se despliega sola).
+# · el resto de sesion/*: nunca.
 case "$VERCEL_GIT_COMMIT_REF" in
-  sesion/nucleo) exit 1 ;;
-  sesion/*) exit 0 ;;
+  produccion|sesion/nucleo) exit 1 ;;
+  main) ;;
+  *) exit 0 ;;
 esac
 git diff --quiet HEAD^ HEAD -- . \
   ':(exclude)apps' ':(exclude)supabase' ':(exclude)scripts' ':(exclude)docs' \

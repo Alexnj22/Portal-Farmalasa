@@ -268,6 +268,20 @@ Deno.serve(async (req) => {
         acepta_programa: true, acepta_promociones: aceptaPromos, version_aviso: VERSION_AVISO,
       }).select("id").single();
       if (eIns) throw eIns;
+      // Llegó invitado: se anota quién lo invitó. El premio lo decide la base
+      // (`puntos_premiar_referidos`) cuando haga su primera compra de $10.
+      // Un código que no existe no frena el alta: se ignora.
+      const ref = String(body?.referido ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (ref.length === 6) {
+        const { data: quien, error: eR } = await admin.from("app_cliente_referido_codigo")
+          .select("customer_id").eq("codigo", ref).maybeSingle();
+        if (eR) console.error("no se pudo leer el código de invitación:", eR.message);
+        if (quien) {
+          const { error: eRef } = await admin.from("app_cliente_referidos")
+            .insert({ referidor_id: quien.customer_id, preregistro_id: nuevo.id, codigo: ref });
+          if (eRef) console.error("no se pudo anotar la invitación:", eRef.message);
+        }
+      }
       // A propósito NO se anota como acierto: cada alta nueva cuenta contra el
       // tope de la IP (8 en 15 min). Sin esto, desde un solo teléfono se podían
       // crear pre-registros sin límite con documentos ajenos.
@@ -276,6 +290,106 @@ Deno.serve(async (req) => {
 
     if (accion === "textos") {
       return json({ ok: true, textos: { programa: TEXTOS.programa, promociones: TEXTOS.promociones } });
+    }
+
+    // Las ofertas vigentes. Con `customerId` null es la vitrina PÚBLICA (sin
+    // cuenta, desde la bienvenida): lo exclusivo se anuncia sin detalle y no
+    // hay muestras. Es el gancho para unirse (2026-10-06).
+    // deno-lint-ignore no-explicit-any
+    const ofertasPara = async (customerId: number | null): Promise<any> => {
+      const hoy = hoySV();
+      const { data: filas, error } = await admin.from("ofertas_clientes")
+        .select("id, titulo, descripcion, etiqueta, condiciones, imagen_path, inicio, fin, exclusiva, branch_ids, descuento_tipo, descuento_monto, productos, acento")
+        .eq("publicada", true).lte("inicio", hoy).gte("fin", hoy)
+        .order("orden", { ascending: true }).order("fin", { ascending: true })
+        .limit(50);
+      if (error) throw error;
+
+      let socio = false;
+      if (customerId) {
+        const { data: c, error: eC } = await admin.from("customers")
+          .select("acepta_programa_puntos, acumula_puntos").eq("id", customerId).maybeSingle();
+        if (eC) throw eC;
+        socio = c?.acepta_programa_puntos !== false && c?.acumula_puntos !== false;
+      }
+      const { data: salas, error: eB } = await admin.from("branches").select("id, name");
+      if (eB) console.error("no se pudieron leer las salas:", eB.message);
+      const nombreSala = new Map((salas ?? []).map((b: any) => [b.id, b.name]));
+
+      // Firmadas en UNA llamada y por 12 horas: firmar una por una costaba una
+      // petición a Storage por oferta en cada apertura, y una URL nueva cada vez
+      // hacía que el teléfono volviera a bajar la misma foto.
+      const muestras = await muestrasDe(admin, customerId, "oferta");
+      const rutas = [...(filas ?? []), ...muestras].map((o: any) => o.imagen_path).filter(Boolean);
+      const firmadas = new Map<string, string>();
+      if (rutas.length) {
+        const { data: fs, error: eF } = await admin.storage.from("ofertas-clientes").createSignedUrls(rutas, 12 * 3600);
+        if (eF) console.error("no se pudieron firmar las imágenes:", eF.message);
+        for (const f of fs ?? []) if (f.path && f.signedUrl) firmadas.set(f.path, f.signedUrl);
+      }
+      const ofertas = (filas ?? []).map((o: any) => {
+        const imagen = o.imagen_path ? firmadas.get(o.imagen_path) ?? null : null;
+        const disponible = !o.exclusiva || socio;
+        return {
+          id: o.id, titulo: o.titulo, etiqueta: o.etiqueta, imagen, inicio: o.inicio, fin: o.fin, acento: o.acento ?? "magenta",
+          exclusiva: o.exclusiva, disponible,
+          // Lo exclusivo se ANUNCIA a quien no es socio —es la invitación a
+          // serlo— pero el detalle sólo lo ve quien puede usarlo.
+          descripcion: disponible ? o.descripcion : null,
+          condiciones: disponible ? o.condiciones : null,
+          // La oferta de un descuento de la caja: qué rebaja y en qué productos,
+          // con el precio antes y después. Lo exclusivo no lo muestra a quien no
+          // es socio, igual que el texto.
+          descuento: o.descuento_tipo ? { tipo: o.descuento_tipo, monto: Number(o.descuento_monto) } : null,
+          productos: disponible && Array.isArray(o.productos) ? o.productos : [],
+          salas: Array.isArray(o.branch_ids) && o.branch_ids.length
+            ? o.branch_ids.map((id: number) => nombreSala.get(id)).filter(Boolean) : null,
+        };
+      });
+      for (const m of muestras) {
+        const disponible = !m.exclusiva || socio;
+        ofertas.push({
+          id: `muestra-${m.id}`, titulo: m.titulo, etiqueta: m.etiqueta ?? null,
+          imagen: m.imagen_path ? firmadas.get(m.imagen_path) ?? null : null,
+          inicio: m.inicio, fin: m.fin, acento: m.acento ?? "magenta", exclusiva: !!m.exclusiva, disponible,
+          descripcion: disponible ? m.descripcion ?? null : null,
+          condiciones: disponible ? m.condiciones ?? null : null,
+          descuento: m.descuento ?? null,
+          productos: disponible && Array.isArray(m.productos) ? m.productos : [],
+          salas: Array.isArray(m.salas) && m.salas.length ? m.salas : null,
+        });
+      }
+      return { ok: true, ofertas, socio };
+    };
+
+    if (accion === "ofertas_publicas") return json(await ofertasPara(null));
+
+    // Las salas: dirección, teléfonos y horario, y si está abierta AHORA (hora
+    // de El Salvador). Pública: se ve también sin cuenta.
+    if (accion === "salas") {
+      const { data, error } = await admin.from("branches")
+        .select("id, name, address, phone, cell, weekly_hours").eq("type", "FARMACIA").order("name");
+      if (error) throw error;
+      const sv = new Date(Date.now() - 6 * 3600_000);
+      const dia = sv.getUTCDay();
+      const ahora = sv.getUTCHours() * 60 + sv.getUTCMinutes();
+      const minutos = (h: string) => { const m = String(h ?? "").match(/(\d{1,2}):(\d{2})/); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
+      // deno-lint-ignore no-explicit-any
+      const salas = (data ?? []).map((b: any) => {
+        const horas = b.weekly_hours ?? {};
+        // deno-lint-ignore no-explicit-any
+        const horario = [0, 1, 2, 3, 4, 5, 6].map((d) => { const h: any = horas[d] ?? horas[String(d)] ?? {}; return {
+          dia: d, abre: h.isOpen ? String(h.start ?? "").slice(0, 5) : null, cierra: h.isOpen ? String(h.end ?? "").slice(0, 5) : null,
+        }; });
+        const hoy = horario[dia];
+        const a = minutos(hoy.abre ?? ""), c = minutos(hoy.cierra ?? "");
+        return {
+          id: b.id, nombre: b.name, direccion: b.address, telefono: b.phone, celular: b.cell, horario,
+          abierta: a != null && c != null && ahora >= a && ahora < c,
+          cierra_hoy: hoy.cierra, abre_hoy: hoy.abre,
+        };
+      });
+      return json({ ok: true, salas });
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -378,71 +492,7 @@ Deno.serve(async (req) => {
     }
 
     // ── Ofertas: las ve también quien está pendiente ──────────────────────
-    if (accion === "ofertas") {
-      const hoy = hoySV();
-      const { data: filas, error } = await admin.from("ofertas_clientes")
-        .select("id, titulo, descripcion, etiqueta, condiciones, imagen_path, inicio, fin, exclusiva, branch_ids, descuento_tipo, descuento_monto, productos, acento")
-        .eq("publicada", true).lte("inicio", hoy).gte("fin", hoy)
-        .order("orden", { ascending: true }).order("fin", { ascending: true })
-        .limit(50);
-      if (error) throw error;
-
-      let socio = false;
-      if (customerId) {
-        const { data: c, error: eC } = await admin.from("customers")
-          .select("acepta_programa_puntos, acumula_puntos").eq("id", customerId).maybeSingle();
-        if (eC) throw eC;
-        socio = c?.acepta_programa_puntos !== false && c?.acumula_puntos !== false;
-      }
-      const { data: salas, error: eB } = await admin.from("branches").select("id, name");
-      if (eB) console.error("no se pudieron leer las salas:", eB.message);
-      const nombreSala = new Map((salas ?? []).map((b: any) => [b.id, b.name]));
-
-      // Firmadas en UNA llamada y por 12 horas: firmar una por una costaba una
-      // petición a Storage por oferta en cada apertura, y una URL nueva cada vez
-      // hacía que el teléfono volviera a bajar la misma foto.
-      const muestras = await muestrasDe(admin, customerId, "oferta");
-      const rutas = [...(filas ?? []), ...muestras].map((o: any) => o.imagen_path).filter(Boolean);
-      const firmadas = new Map<string, string>();
-      if (rutas.length) {
-        const { data: fs, error: eF } = await admin.storage.from("ofertas-clientes").createSignedUrls(rutas, 12 * 3600);
-        if (eF) console.error("no se pudieron firmar las imágenes:", eF.message);
-        for (const f of fs ?? []) if (f.path && f.signedUrl) firmadas.set(f.path, f.signedUrl);
-      }
-      const ofertas = (filas ?? []).map((o: any) => {
-        const imagen = o.imagen_path ? firmadas.get(o.imagen_path) ?? null : null;
-        const disponible = !o.exclusiva || socio;
-        return {
-          id: o.id, titulo: o.titulo, etiqueta: o.etiqueta, imagen, inicio: o.inicio, fin: o.fin, acento: o.acento ?? "magenta",
-          exclusiva: o.exclusiva, disponible,
-          // Lo exclusivo se ANUNCIA a quien no es socio —es la invitación a
-          // serlo— pero el detalle sólo lo ve quien puede usarlo.
-          descripcion: disponible ? o.descripcion : null,
-          condiciones: disponible ? o.condiciones : null,
-          // La oferta de un descuento de la caja: qué rebaja y en qué productos,
-          // con el precio antes y después. Lo exclusivo no lo muestra a quien no
-          // es socio, igual que el texto.
-          descuento: o.descuento_tipo ? { tipo: o.descuento_tipo, monto: Number(o.descuento_monto) } : null,
-          productos: disponible && Array.isArray(o.productos) ? o.productos : [],
-          salas: Array.isArray(o.branch_ids) && o.branch_ids.length
-            ? o.branch_ids.map((id: number) => nombreSala.get(id)).filter(Boolean) : null,
-        };
-      });
-      for (const m of muestras) {
-        const disponible = !m.exclusiva || socio;
-        ofertas.push({
-          id: `muestra-${m.id}`, titulo: m.titulo, etiqueta: m.etiqueta ?? null,
-          imagen: m.imagen_path ? firmadas.get(m.imagen_path) ?? null : null,
-          inicio: m.inicio, fin: m.fin, acento: m.acento ?? "magenta", exclusiva: !!m.exclusiva, disponible,
-          descripcion: disponible ? m.descripcion ?? null : null,
-          condiciones: disponible ? m.condiciones ?? null : null,
-          descuento: m.descuento ?? null,
-          productos: disponible && Array.isArray(m.productos) ? m.productos : [],
-          salas: Array.isArray(m.salas) && m.salas.length ? m.salas : null,
-        });
-      }
-      return json({ ok: true, ofertas, socio });
-    }
+    if (accion === "ofertas") return json(await ofertasPara(customerId));
 
     // ── Lo demás necesita ficha ────────────────────────────────────────────
     if (!customerId) {
@@ -511,10 +561,22 @@ Deno.serve(async (req) => {
       try { codigo = await codigoDelCliente(customerId, c.name); }
       catch (e) { console.error("no se pudo obtener el código:", (e as Error)?.message); }
 
+      // ¿Es su cumpleaños hoy (hora de El Salvador)? La app lo celebra. La
+      // muestra `cumpleanos` lo fuerza, para ver la tarjeta sin esperar al día.
+      const hoyMD = new Date(Date.now() - 6 * 3600_000).toISOString().slice(5, 10);
+      const { data: nac, error: eNac } = await admin.from("customers").select("fecha_nacimiento").eq("id", customerId).maybeSingle();
+      if (eNac) console.error("no se pudo leer el cumpleaños:", eNac.message);
+      const { data: cfgP, error: eCfg } = await admin.from("puntos_config").select("puntos_cumpleanos").limit(1).maybeSingle();
+      if (eCfg) console.error("no se pudo leer la configuración:", eCfg.message);
+      const cumpleanos = String(nac?.fecha_nacimiento ?? "").slice(5, 10) === hoyMD
+        || (await muestrasDe(admin, customerId, "cumpleanos")).length > 0;
+
       return json({
         ok: true,
         pendiente: false,
         nombre: c.name,
+        cumpleanos,
+        regalo_cumpleanos: Number(cfgP?.puntos_cumpleanos ?? 0),
         codigo,
         socio_desde: primero?.ganado_el ?? null,
         saldo,
@@ -579,6 +641,42 @@ Deno.serve(async (req) => {
       if (error) throw error;
       const muestras = (await muestrasDe(admin, customerId, "inyeccion")).map((m: any) => ({ ...m, id: `muestra-${m.id}` }));
       return json({ ok: true, disponibles: [...((data as any)?.disponibles ?? []), ...muestras] });
+    }
+
+    // Invitar a un amigo: el código propio (se crea la primera vez) y cómo va.
+    if (accion === "referido") {
+      let { data: cod, error: eC } = await admin.from("app_cliente_referido_codigo")
+        .select("codigo").eq("customer_id", customerId).maybeSingle();
+      if (eC) throw eC;
+      if (!cod) {
+        // Sin letras que se confunden al dictarlas (O/0, I/1, L).
+        const ABC = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+        for (let i = 0; i < 6 && !cod; i++) {
+          const azar = crypto.getRandomValues(new Uint8Array(6));
+          const codigo = Array.from(azar, (n) => ABC[n % ABC.length]).join("");
+          const { data, error } = await admin.from("app_cliente_referido_codigo")
+            .insert({ customer_id: customerId, codigo }).select("codigo").maybeSingle();
+          if (!error) cod = data;
+          else if (error.code !== "23505") throw error;
+          else {
+            // Choque: o el código ya era de otro, o esta persona lo creó en paralelo.
+            const { data: ya, error: eYa } = await admin.from("app_cliente_referido_codigo").select("codigo").eq("customer_id", customerId).maybeSingle();
+            if (eYa) throw eYa;
+            if (ya) cod = ya;
+          }
+        }
+      }
+      const { data: refs, error: eRefs } = await admin.from("app_cliente_referidos")
+        .select("estado, motivo").eq("referidor_id", customerId);
+      if (eRefs) throw eRefs;
+      // deno-lint-ignore no-explicit-any
+      const premiados = (refs ?? []).filter((r: any) => r.estado === "premiado" && !r.motivo).length;
+      return json({
+        ok: true, codigo: cod?.codigo ?? null, puntos: 50, minimo: 10,
+        // deno-lint-ignore no-explicit-any
+        invitados: (refs ?? []).length, pendientes: (refs ?? []).filter((r: any) => r.estado === "pendiente").length,
+        premiados, ganados: premiados * 50,
+      });
     }
 
     if (accion === "permisos") {

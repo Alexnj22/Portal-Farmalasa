@@ -9,17 +9,21 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Aurora from '../componentes/Aurora';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { useSesion } from '../lib/sesion';
+import { conReporte } from '../lib/errores';
 import { llamar } from '../lib/api';
 import { useCuenta } from '../lib/cuenta';
 import { useOfertas } from '../lib/ofertas';
 import { useBloqueo, vigilarCicloDeVida } from '../lib/bloqueo';
 import PantallaBloqueo from '../componentes/PantallaBloqueo';
+import * as Notifications from 'expo-notifications';
 import { useTema } from '../tema/tema';
 import { colorSistema } from '../componentes/sistema';
 
 const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent' } };
 const OSCURO = { ...DarkTheme, colors: { ...DarkTheme.colors, background: 'transparent' } };
 const PUBLICAS = new Set(['bienvenida', 'entrar', 'registro']);
+// Se ven con o sin sesión: la vitrina, las salas y el detalle de una oferta.
+const ABIERTAS = new Set(['vitrina', 'salas', 'oferta']);
 const WEB = Platform.OS === 'web';
 let entradaAutomaticaHecha = false;
 
@@ -59,6 +63,7 @@ function Guardia() {
   }, [lista, token]);
   useEffect(() => {
     if (!lista) return;
+    if (ABIERTAS.has(segmentos[0])) return;
     const publica = PUBLICAS.has(segmentos[0]);
     // Sin sesión se limpia TODO lo que la sesión anterior dejó en memoria: en un
     // teléfono compartido, el siguiente cliente no debe ver ni un instante las
@@ -66,6 +71,23 @@ function Guardia() {
     if (!token && !publica) { useCuenta.getState().limpiar(); useOfertas.getState().limpiar(); router.replace('/bienvenida'); }
     if (token && (publica || !segmentos.length)) router.replace('/puntos');
   }, [token, lista, segmentos]);
+  return null;
+}
+
+// Tocar un aviso abre la pantalla de la que habla (`data.url`: /puntos,
+// /inyecciones, /oferta/…). También el aviso que abrió la app en frío.
+function AbrirAviso() {
+  const token = useSesion((s) => s.token);
+  useEffect(() => {
+    if (WEB || !token) return undefined;
+    const ir = (r) => {
+      const url = r?.notification?.request?.content?.data?.url;
+      if (typeof url === 'string' && url.startsWith('/')) router.push(url);
+    };
+    Notifications.getLastNotificationResponseAsync().then(ir).catch(() => {});
+    const sub = Notifications.addNotificationResponseReceivedListener(ir);
+    return () => sub.remove();
+  }, [token]);
   return null;
 }
 
@@ -77,7 +99,7 @@ function Bloqueo() {
   return token && bloqueada ? <PantallaBloqueo /> : null;
 }
 
-export default function Raiz() {
+function Raiz() {
   const oscuro = useColorScheme() === 'dark';
   const t = useTema();
   usarFondoDelDocumento(oscuro ? '#0A090E' : '#F5F4F8');
@@ -87,6 +109,7 @@ export default function Raiz() {
         <GestureHandlerRootView style={{ flex: 1 }}>
           <Aurora />
           <Guardia />
+          <AbrirAviso />
           <StatusBar style="auto" />
           <Stack screenOptions={{
             ...BARRA_NATIVA,
@@ -100,8 +123,11 @@ export default function Raiz() {
             <Stack.Screen name="entrar" options={{ title: 'Entrar' }} />
             <Stack.Screen name="registro" options={{ title: 'Unirme' }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="oferta/[id]" options={{ title: '' }} />
+            <Stack.Screen name="oferta/[id]" options={{ presentation: 'modal', headerShown: false }} />
             <Stack.Screen name="compras" options={{ title: 'Mis compras' }} />
+            <Stack.Screen name="salas" options={{ title: 'Nuestras salas' }} />
+            <Stack.Screen name="vitrina" options={{ title: 'Ofertas' }} />
+            <Stack.Screen name="invitar" options={{ title: 'Invitar a un amigo' }} />
           </Stack>
           <Bloqueo />
         </GestureHandlerRootView>
@@ -109,3 +135,5 @@ export default function Raiz() {
     </ThemeProvider>
   );
 }
+
+export default conReporte(Raiz);

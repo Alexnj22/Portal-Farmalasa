@@ -1,6 +1,7 @@
 // Lo que el servidor sabe de esta persona, cacheado para que Puntos y Cuenta
 // lean lo mismo sin pedirlo dos veces.
 import { create } from 'zustand';
+import { borrarDelWidget, publicarEnWidget } from './widget';
 import { useSesion } from './sesion';
 
 // `generacion` sube con cada resumen nuevo: la lista paginada de movimientos
@@ -21,8 +22,9 @@ export const useCuenta = create((set, get) => ({
     set({ cargando: true, error: null });
     const r = await useSesion.getState().pedir('resumen');
     if (r?.ok) set((x) => ({ resumen: r, cargando: false, cargadoAt: Date.now(), generacion: x.generacion + 1 }));
+    if (r?.ok) publicarEnWidget(r);
     else set({ error: r?.mensaje ?? 'No se pudo consultar.', cargando: false });
     return r;
   },
-  limpiar: () => set({ resumen: null, error: null, cargadoAt: 0 }),
+  limpiar: () => { borrarDelWidget(); set({ resumen: null, error: null, cargadoAt: 0 }); },
 }));

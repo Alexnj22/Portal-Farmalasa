@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1224.0 — App de clientes: avisos, referidos, cumpleaños, salas, vitrina, widget y ofertas en hoja
+
+Pedido del usuario (2026-10-06) sobre la lista de «qué falta»:
+- **Avisos al teléfono (`avisos-clientes`, cron cada 15 min de 8:00 a 20:00 SV):** puntos ganados (compra, cumpleaños, referido), puntos que vencen en 15 días, inyección pagada hace 3 días sin aplicar y oferta nueva (sólo a quien aceptó promociones). La bitácora `app_cliente_avisos` (UNIQUE cliente+tipo+ref, retención 180 días) impide repetir. Tocar un aviso abre su pantalla. Envío por Expo (gratis); para iPhone falta subir la llave de avisos de Apple a Expo (`eas credentials`) — hasta entonces Expo contesta `InvalidCredentials`.
+- **Referidos:** 50 puntos para cada uno cuando el invitado hace su primera compra de $10+ (decisión del usuario); sólo clientes nuevos, tope 10 premios al mes, vence a los 120 días. Código propio de 6 letras (NO el de la tarjeta, que da acceso). `puntos_premiar_referidos` cada hora; origen de lote nuevo `referido`, visible en el estado de cuenta. Pantalla «Invitar a un amigo» y campo en el registro.
+- **Cumpleaños:** la app lo celebra al abrir (globos, pastel, confeti, el regalo en puntos y dólares), una vez por día. Muestra `cumpleanos` en `app_cliente_muestras` para verla sin esperar al día.
+- **Salas:** dirección, abierta/cerrada ahora con hora de cierre, horario de la semana, y «Cómo llegar», WhatsApp y Llamar de un toque. Pública.
+- **Ofertas sin cuenta (`ofertas_publicas`):** vitrina desde la bienvenida, con invitación a unirse.
+- **Detalle de oferta:** como hoja del sistema en vez del zoom (que dejaba ver la lista detrás y empujaba la foto bajo la barra de estado, desenfocada); información en orden: qué es, vigencia/dónde/para quién, productos con cuánto se ahorra, cómo se usa.
+- **Widget de saldo (iOS):** pequeño y mediano, con el saldo en dólares, los puntos y lo que vence en 3 meses; la app lo actualiza por App Group al cargar el resumen y lo borra al cerrar sesión.
+- **Sentry:** instalado y apagado hasta tener DSN (`EXPO_PUBLIC_SENTRY_DSN`); sin datos personales.
+
 ## v2.1223.6 — App: la boleta de pago cuadra con el papel
 
 - **App: la boleta de pago decía otra cosa que el papel.** Las horas extra y nocturnas se guardan como HORAS y la app las pintaba como dinero (tres horas extra = «$3.00»), y su subtotal era el A con las partidas del B listadas encima, o sea que la suma no daba. Hoy la boleta tiene las mismas secciones que el papel del portal —A sujetos a retención, B otros ingresos (cada hora ya convertida con el sueldo por hora y su recargo, con las horas al lado), C retenciones y descuentos, y (A − C) + B—, más la base (mensual, diario, por hora).

@@ -76,7 +76,13 @@ const numero = String(ultimo + 1);
 console.log(`→ ${appJson.name} (${bundle}) · versión ${appJson.version} · compilación ${numero}`);
 
 // ── Compilar ────────────────────────────────────────────────────────────────
-const correr = (cmd, cwd = app) => execSync(cmd, { cwd, stdio: 'inherit', env: { ...process.env, ...env, EXPO_PUBLIC_PRUEBA_CODIGO: '' } });
+// SENTRY_DISABLE_AUTO_UPLOAD: el plugin de Sentry sube los símbolos al
+// compilar y, sin `SENTRY_AUTH_TOKEN`, rompe el archivo. Se enciende cuando
+// esté el token.
+const correr = (cmd, cwd = app) => execSync(cmd, { cwd, stdio: 'inherit', env: {
+  ...process.env, ...env, EXPO_PUBLIC_PRUEBA_CODIGO: '',
+  ...(process.env.SENTRY_AUTH_TOKEN ? {} : { SENTRY_DISABLE_AUTO_UPLOAD: 'true' }),
+} });
 correr('npx expo prebuild -p ios --clean');
 
 // El número en TODOS los Info.plist generados (app y extensiones: Apple exige
@@ -106,11 +112,13 @@ correr(`xcodebuild -workspace "${workspace}" -scheme "${scheme}" -configuration 
 // cada paquete con su archivo de permisos, de adentro hacia afuera
 // (extensiones primero, después la app); la exportación cambia esa firma por
 // la de distribución y conserva los permisos.
-const entitlements = execSync(`find "${ios}" -name "*.entitlements" -not -path "*/Pods/*" -not -path "*/build/*"`, { encoding: 'utf8' })
+// Los de las extensiones de @bacons/apple-targets viven en `<app>/targets/<x>/`
+// (carpeta en minúsculas, el paquete con el `name` de la config).
+const entitlements = execSync(`find "${ios}" "${join(app, 'targets')}" -name "*.entitlements" -not -path "*/Pods/*" -not -path "*/build/*" 2>/dev/null || true`, { encoding: 'utf8' })
   .trim().split('\n').filter(Boolean);
 const permisosDe = (paquete) => {
-  const nombre = paquete.split('/').pop().replace(/\.(app|appex)$/, '');
-  const propio = entitlements.filter((e) => e.split('/').slice(-2, -1)[0] === nombre);
+  const nombre = paquete.split('/').pop().replace(/\.(app|appex)$/, '').toLowerCase();
+  const propio = entitlements.filter((e) => e.split('/').slice(-2, -1)[0].toLowerCase() === nombre);
   // Sin archivo = sin permisos (la extensión Avisos de la app del personal no
   // lleva ninguno). Dos o más = no se adivina cuál.
   if (propio.length > 1) throw new Error(`No sé qué permisos lleva ${nombre}: ${propio.length} archivos .entitlements en ios/${nombre}/`);

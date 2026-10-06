@@ -9,6 +9,7 @@ import { useCuenta } from '../../../lib/cuenta';
 import { dolares, entero, fecha, nombrePropio } from '../../../lib/formato';
 import TarjetaSocio from '../../../componentes/TarjetaSocio';
 import Vencimientos from '../../../componentes/Vencimientos';
+import Cumpleanos from '../../../componentes/Cumpleanos';
 import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '../../../componentes/animacion';
 import { useSesion } from '../../../lib/sesion';
 import { suave, useTema } from '../../../tema/tema';
@@ -20,7 +21,7 @@ const marcarConfeti = () => { confetiMostrado = true; };
 // El signo sale del NÚMERO, no del tipo: un ajuste puede sumar o restar.
 const ROTULOS = {
   compra: 'Compra', canje: 'Canje', vencimiento: 'Vencieron', anulacion: 'Compra anulada', ajuste: 'Ajuste',
-  cumpleanos: 'Regalo de cumpleaños', canje_devuelto: 'Canje devuelto',
+  cumpleanos: 'Regalo de cumpleaños', canje_devuelto: 'Canje devuelto', referido: 'Por invitar a un amigo',
 };
 
 export default function Puntos() {
@@ -79,8 +80,9 @@ export default function Puntos() {
 
   return (
     <Pantalla alRefrescar={refrescar} refrescando={refrescando}>
+      <Cumpleanos activo={!!resumen.cumpleanos} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
       <Entrada indice={0}>
-        <Texto nivel={2} estilo={{ fontSize: 17 }}>Hola, {primerNombre}</Texto>
+        <Texto nivel={2} estilo={{ fontSize: 17 }}>{resumen.cumpleanos ? `¡Feliz cumpleaños, ${primerNombre}! 🎂` : `Hola, ${primerNombre}`}</Texto>
       </Entrada>
 
       {/* La tarjeta de socio: saldo al frente, código y QR al reverso. */}
@@ -142,6 +144,20 @@ export default function Puntos() {
             <NumeroAnimado valor={resumen.canjeados} formato="entero" estilo={{ fontSize: 24, fontWeight: '700', color: t.color.magentaTexto }} />
           </Tarjeta>
         </View>
+      </Entrada>
+
+      {/* Invitar: 50 puntos para cada uno (ver app/invitar.js). */}
+      <Entrada indice={4}>
+        <Tocable alTocar={() => router.push('/invitar')}>
+          <Tarjeta tono={t.color.verde} estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <Text style={{ fontSize: 30 }}>🤝</Text>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Titulo>Invita y ganen 50 puntos</Titulo>
+              <Texto nivel={2} estilo={{ fontSize: 14 }}>Cada uno, con la primera compra de tu amigo.</Texto>
+            </View>
+            <Text style={{ fontSize: 22, color: colorSistema.texto3 }}>›</Text>
+          </Tarjeta>
+        </Tocable>
       </Entrada>
 
       {/* Las compras, con sus productos: de ahí salen los puntos y las inyecciones. */}

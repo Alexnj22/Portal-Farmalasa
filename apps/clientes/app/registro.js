@@ -5,6 +5,7 @@
 // Forma del sistema: formulario agrupado y los permisos como interruptores
 // (iOS no tiene casillas de verificación).
 import { useEffect, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import { Text } from 'react-native';
 import * as Device from 'expo-device';
 import { BotonSistema, FilaCampo, FilaInterruptor, Formulario, Grupo } from '../componentes/sistema';
@@ -17,7 +18,8 @@ import { documentoEscrito, fechaDeNacimiento } from '../lib/formato';
 export default function Registro() {
   const t = useTema();
   const abrir = useSesion((s) => s.abrir);
-  const [f, setF] = useState({ nombre: '', documento: '', telefono: '', email: '', fecha_nacimiento: '' });
+  const { ref } = useLocalSearchParams();
+  const [f, setF] = useState({ nombre: '', documento: '', telefono: '', email: '', fecha_nacimiento: '', referido: String(ref ?? '').toUpperCase().slice(0, 6) });
   const [programa, setPrograma] = useState(false);
   const [promos, setPromos] = useState(false);
   const [textos, setTextos] = useState(null);
@@ -68,6 +70,10 @@ export default function Registro() {
       <Grupo titulo="Opcional" pie={fechaMala ? 'Esa fecha no existe. Escríbela como DD/MM/AAAA.' : 'La fecha es para tu regalo de cumpleaños.'}>
         <FilaCampo placeholder="Correo" value={f.email} onChangeText={cambiar('email')} keyboardType="email-address" autoCapitalize="none" textContentType="emailAddress" />
         <FilaCampo placeholder="Nacimiento (DD/MM/AAAA)" value={f.fecha_nacimiento} onChangeText={cambiar('fecha_nacimiento')} keyboardType="numbers-and-punctuation" />
+      </Grupo>
+      <Grupo titulo="¿Te invitaron?" pie="Escribe el código de quien te invitó: con tu primera compra de $10 o más, los dos ganan 50 puntos.">
+        <FilaCampo placeholder="Código de invitación" value={f.referido} autoCapitalize="characters" autoCorrect={false}
+          onChangeText={(v) => cambiar('referido')(v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))} />
       </Grupo>
       <Grupo titulo="Tus permisos" pie="El programa es necesario para acumular. Las promociones son opcionales y las puedes quitar cuando quieras.">
         <FilaInterruptor titulo="Programa de puntos" detalle={textos?.programa} valor={programa} alCambiar={setPrograma} color={t.color.magenta} />

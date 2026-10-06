@@ -3,7 +3,7 @@
 // interruptores del sistema y acciones en filas, la destructiva en rojo.
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Pressable, Text } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { colorSistema, FilaInterruptor, FilaTexto, Formulario, Grupo } from '../../../componentes/sistema';
 import { Aviso } from '../../../componentes/ui';
 import { useSesion } from '../../../lib/sesion';
@@ -148,6 +148,13 @@ export default function Cuenta() {
       <Grupo pie="Ofertas nuevas y puntos por vencer.">
         <FilaInterruptor titulo="Avisos en este teléfono" valor={valorDe('avisos', resumen?.acepta_avisos === true)}
           alCambiar={avisos} color={t.color.magenta} />
+      </Grupo>
+
+      <Grupo>
+        {resumen && !resumen.pendiente ? (
+          <FilaAccion texto="Invitar a un amigo · 50 puntos" color={t.color.magentaTexto} alTocar={() => router.push('/invitar')} />
+        ) : null}
+        <FilaAccion texto="Nuestras salas y horarios" color={t.color.magentaTexto} alTocar={() => router.push('/salas')} />
       </Grupo>
 
       <Grupo>

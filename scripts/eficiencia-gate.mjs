@@ -125,6 +125,26 @@ function techoDeclarado(d, filas, horas) {
  * gate lo dice con el número viejo y el nuevo a la vista. */
 const CRONS = [
   {
+    job: 'avisos-clientes-15min', slug: 'avisos-clientes', cadencia: '*/15 14-23,0-1 * * *',
+    corridasDia: 48, sistema: 0,
+    motivo: 'Avisos al teléfono de los clientes de Puntos Salud (puntos ganados, vencen en 15 '
+          + 'días, inyección pendiente, oferta nueva). Sólo de 8:00 a 20:00 SV: de noche no se le '
+          + 'escribe a nadie. `sistema: 0` porque no habla con el ERP: lee la propia base y le '
+          + 'manda al servicio de avisos de Expo, que es gratis. La bitácora `app_cliente_avisos` '
+          + 'impide repetir, así que las ventanas de búsqueda son más anchas que la cadencia.',
+  },
+  {
+    job: 'puntos-referidos-hora', slug: null, cadencia: '20 * * * *',
+    corridasDia: 24, sistema: 0,
+    motivo: 'Premia los referidos de la app (50+50 con la primera compra de $10 del invitado). '
+          + 'SQL puro sobre la propia base; sólo recorre las invitaciones pendientes.',
+  },
+  {
+    job: 'purge-app-cliente-avisos', slug: null, cadencia: '40 9 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Retención de 180 días de la bitácora de avisos de la app de clientes.',
+  },
+  {
     job: 'refresh-product-last-sale-daily', slug: null, cadencia: '45 6 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'Recalcula `product_last_sale` —la fecha de la última venta de cada producto en cada '

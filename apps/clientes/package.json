@@ -10,9 +10,11 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@bacons/apple-targets": "^5.0.0",
     "@expo/material-symbols": "^0.1.1",
     "@expo/metro-runtime": "~57.0.16",
     "@expo/ui": "~57.0.21",
+    "@sentry/react-native": "~7.11.0",
     "@shopify/react-native-skia": "2.6.2",
     "expo": "~57.0.25",
     "expo-blur": "~57.0.3",

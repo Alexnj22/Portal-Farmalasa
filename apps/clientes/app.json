@@ -14,7 +14,12 @@
         "usesNonExemptEncryption": false
       },
       "appleTeamId": "ZZWA3Q7Q35",
-      "buildNumber": "1"
+      "buildNumber": "1",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.lat.farmasalud.clientes"
+        ]
+      }
     },
     "android": {
       "package": "lat.farmasalud.clientes",
@@ -61,7 +66,9 @@
           }
         }
       ],
-      "./plugins/ciclo-por-escenas"
+      "./plugins/ciclo-por-escenas",
+      "@bacons/apple-targets",
+      "@sentry/react-native"
     ],
     "owner": "farmasalud",
     "extra": {

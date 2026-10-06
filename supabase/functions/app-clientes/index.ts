@@ -44,6 +44,23 @@ const DIAS_SESION = 180;
 const POR_PAGINA_INICIAL = 10;
 const POR_PAGINA = 20;
 
+// Las condiciones de la reserva, tal como las lee el cliente. Cambiar el texto
+// exige cambiar la `version`: la app vuelve a pedir que las acepte y cada
+// reserva guarda la versión que aceptó.
+const TERMINOS_RESERVA = {
+  version: "2026-10-06",
+  titulo: "Así funciona tu reserva",
+  puntos: [
+    "Por ahora puedes reservar productos que estén en oferta.",
+    "Te avisamos cuando la sucursal la tenga lista. Desde ese aviso tienes 24 horas para retirarla.",
+    "El precio de oferta vale si la retiras dentro de las fechas de la oferta.",
+    "Puedes tener hasta 3 reservas activas y hasta 5 unidades por producto.",
+    "Si no la retiras a tiempo, el producto vuelve a la venta. Con 3 reservas sin retirar en 30 días, no podrás reservar por 30 días.",
+    "Los productos bajo receta no se reservan.",
+    "Pagas al retirar, en la sucursal.",
+  ],
+};
+
 // Cómo se llama cada sucursal PARA EL CLIENTE (decisión del usuario,
 // 2026-10-06): el barrio, no el número interno. Lo demás pasa tal cual.
 const NOMBRE_SUCURSAL: Record<string, string> = {
@@ -565,6 +582,94 @@ Deno.serve(async (req) => {
     if (accion === "ofertas") return json(await ofertasPara(customerId));
     if (accion === "historias") return json(await historiasPara(customerId));
 
+    // ── Reservas de productos en oferta (2026-10-06) ──────────────────────
+    // Reglas en TERMINOS_RESERVA (se muestran antes de la primera reserva y se
+    // guardan con su versión). La sucursal las maneja desde el portal.
+    if (accion === "reserva_terminos") return json({ ok: true, ...TERMINOS_RESERVA });
+
+    if (accion === "reserva_existencias") {
+      const productoId = Number(body?.producto_id);
+      if (!productoId) return json({ ok: false, mensaje: "Producto inválido." }, 400);
+      const { data, error } = await admin.rpc("app_cliente_existencias", { p_producto_id: productoId });
+      if (error) throw error;
+      return json({ ok: true, sucursales: conSucursal(data ?? []) });
+    }
+
+    if (accion === "mis_reservas" || accion === "reservar" || accion === "cancelar_reserva") {
+      if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
+    }
+
+    if (accion === "mis_reservas") {
+      const { data, error } = await admin.from("app_reservas")
+        .select("id, estado, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at")
+        .eq("customer_id", customerId).gte("created_at", new Date(Date.now() - 45 * 86400_000).toISOString())
+        .order("created_at", { ascending: false }).limit(30);
+      if (error) throw error;
+      const { data: salas, error: eS } = await admin.from("branches").select("id, name");
+      if (eS) throw eS;
+      const nombre = new Map((salas ?? []).map((b: any) => [Number(b.id), sucursal(b.name)]));
+      return json({ ok: true, reservas: (data ?? []).map((r: any) => ({ ...r, codigo: `R-${String(r.id).padStart(6, "0")}`, sala: nombre.get(Number(r.branch_id)) ?? null })) });
+    }
+
+    if (accion === "reservar") {
+      const ofertaId = String(body?.oferta_id ?? "");
+      const productoId = Number(body?.producto_id);
+      const branchId = Number(body?.branch_id);
+      const cantidad = Math.trunc(Number(body?.cantidad));
+      if (body?.acepta_terminos !== TERMINOS_RESERVA.version) {
+        return json({ ok: false, motivo: "terminos", mensaje: "Acepta las condiciones de la reserva para continuar." });
+      }
+      if (!productoId || !branchId || !(cantidad >= 1 && cantidad <= 5)) {
+        return json({ ok: false, mensaje: "Revisa la sucursal y la cantidad (de 1 a 5)." });
+      }
+      // La oferta: publicada, vigente, con ese producto. Una MUESTRA (sólo la
+      // ficha de prueba) se reserva igual, para poder ver el circuito completo.
+      const hoy = hoySV();
+      let o: any = null;
+      if (ofertaId.startsWith("muestra-")) {
+        const m = (await muestrasDe(admin, customerId, "oferta")).find((x) => `muestra-${x.id}` === ofertaId);
+        if (m && m.fin >= hoy) o = { id: null, titulo: m.titulo, fin: m.fin, productos: m.productos ?? [], branch_ids: null };
+      } else {
+        const { data, error: eO } = await admin.from("ofertas_clientes")
+          .select("id, titulo, fin, exclusiva, productos, branch_ids")
+          .eq("id", ofertaId).eq("publicada", true).lte("inicio", hoy).gte("fin", hoy).maybeSingle();
+        if (eO) throw eO;
+        o = data;
+      }
+      if (!o) return json({ ok: false, mensaje: "Esta oferta ya no está vigente." });
+      const p = (Array.isArray(o.productos) ? o.productos : []).find((x: any) => Number(x.id) === productoId);
+      if (!p) return json({ ok: false, mensaje: "Ese producto no está en la oferta." });
+      if (Array.isArray(o.branch_ids) && o.branch_ids.length && !o.branch_ids.map(Number).includes(branchId)) {
+        return json({ ok: false, mensaje: "La oferta no aplica en esa sucursal." });
+      }
+      const { data: prod, error: eP } = await admin.from("products").select("es_antibiotico, requiere_receta").eq("id", productoId).maybeSingle();
+      if (eP) throw eP;
+      if (prod?.es_antibiotico || prod?.requiere_receta) return json({ ok: false, mensaje: "Los productos bajo receta no se reservan." });
+      // Tope de activas y bloqueo por vencidas.
+      const { data: suyas, error: eR } = await admin.from("app_reservas").select("estado, cerrada_at")
+        .eq("customer_id", customerId).or(`estado.in.(pendiente,lista),and(estado.eq.vencida,cerrada_at.gte.${new Date(Date.now() - 30 * 86400_000).toISOString()})`);
+      if (eR) throw eR;
+      const activas = (suyas ?? []).filter((r: any) => r.estado === "pendiente" || r.estado === "lista").length;
+      const vencidas = (suyas ?? []).filter((r: any) => r.estado === "vencida").length;
+      if (vencidas >= 3) return json({ ok: false, mensaje: "Tienes 3 reservas que no se retiraron este mes. Podrás reservar de nuevo en 30 días." });
+      if (activas >= 3) return json({ ok: false, mensaje: "Ya tienes 3 reservas activas. Retira o cancela una para reservar otra." });
+      const { data: nueva, error: eI } = await admin.from("app_reservas").insert({
+        customer_id: customerId, branch_id: branchId, oferta_id: o.id, oferta_titulo: o.titulo, oferta_fin: o.fin,
+        producto_id: productoId, producto_nombre: String(p.nombre), cantidad,
+        precio_unitario: p.precio_descuento ?? null, precio_normal: p.precio ?? null, terminos_version: TERMINOS_RESERVA.version,
+      }).select("id").single();
+      if (eI) throw eI;
+      return json({ ok: true, id: nueva.id, codigo: `R-${String(nueva.id).padStart(6, "0")}` });
+    }
+
+    if (accion === "cancelar_reserva") {
+      const { data, error } = await admin.from("app_reservas")
+        .update({ estado: "cancelada", cerrada_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq("id", Number(body?.id)).eq("customer_id", customerId).in("estado", ["pendiente", "lista"]).select("id");
+      if (error) throw error;
+      return json(data?.length ? { ok: true } : { ok: false, mensaje: "Esa reserva ya no se puede cancelar." });
+    }
+
     // La BANDEJA: los avisos que ya se le mandaron, para verlos en la app.
     if (accion === "bandeja" && !customerId) return json({ ok: true, avisos: [], sin_leer: 0 });
     if (accion === "bandeja_leida" && !customerId) return json({ ok: true });
@@ -660,11 +765,17 @@ Deno.serve(async (req) => {
       const cumpleanos = String(nac?.fecha_nacimiento ?? "").slice(5, 10) === hoyMD
         || (await muestrasDe(admin, customerId, "cumpleanos")).length > 0;
 
+      const { data: resAb, error: eRA } = await admin.from("app_reservas").select("estado")
+        .eq("customer_id", customerId).in("estado", ["pendiente", "lista"]);
+      if (eRA) console.error("no se pudieron leer las reservas:", eRA.message);
+
       return json({
         ok: true,
         pendiente: false,
         nombre: c.name,
         cumpleanos,
+        reservas_abiertas: (resAb ?? []).length,
+        reservas_listas: (resAb ?? []).filter((r: any) => r.estado === "lista").length,
         wallet_serial: `socio-${customerId}`,
         regalo_cumpleanos: Number(cfgP?.puntos_cumpleanos ?? 0),
         codigo,

@@ -30,7 +30,7 @@ import {
   BarChart2, UserX, Gift, Loader2, Clock, GripVertical, RotateCcw, Maximize2,
   FileText, Package, Receipt, ShoppingCart, Zap, Target, PackageMinus, ArrowLeftRight,
   ReceiptText, Upload, Eye, Lock, Thermometer, Pill,
-  Wallet, Mail
+  Wallet, Mail, ShoppingBag
 } from 'lucide-react';
 import { DAY_NAMES, formatHourAMPM } from '@nucleo/utils/scheduleHelpers';
 // Los mapas del sistema de origen se mudaron a `constants/erp` el 2026-08-11:
@@ -56,6 +56,7 @@ import WidgetFacturasSala from './dashboard/WidgetFacturasSala';
 import WidgetDatoPedido from './dashboard/WidgetDatoPedido';
 import WidgetBitacoras from './dashboard/WidgetBitacoras';
 import WidgetRecetasPendientes from './dashboard/WidgetRecetasPendientes';
+import WidgetReservas from './dashboard/WidgetReservas';
 import WidgetTransferRequests from './dashboard/WidgetTransferRequests';
 import WidgetMetaSala from './dashboard/WidgetMetaSala';
 /* Las dos baldosas del dinero se bajan al PINTARSE, no al entrar al Inicio.
@@ -615,6 +616,7 @@ const WIDGET_DEFS = [
   { id: 'facturas_sala',label: 'Facturas de mi sala',     permission: 'dash_facturas_sala',icon: ReceiptText,  category: 'productos' },
   { id: 'bitacoras',    label: 'Bitácoras de mi sala',     permission: 'dash_bitacoras',    icon: Thermometer,  category: 'productos' },
   { id: 'recetas_pend', label: 'Recetas pendientes de mi sala', permission: 'dash_recetas_pendientes', icon: Pill, category: 'productos' },
+  { id: 'reservas',     label: 'Reservas de mi sala',     permission: 'dash_reservas',     icon: ShoppingBag,  category: 'ventas'    },
   { id: 'meta_sala',    label: 'Meta del mes',            permission: 'dash_meta_sala',    icon: Target,       category: 'ventas'    },
   { id: 'vendedores',   label: 'Venta por vendedor',       permission: 'dash_vendedores',   icon: Users,        category: 'ventas'    },
   { id: 'cortes_sala',  label: 'Cortes de caja de mi sala', permission: 'dash_cortes_sala', icon: Wallet,       category: 'ventas'    },
@@ -3326,6 +3328,17 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('recetas_pend',
         <WidgetCard title="Recetas pendientes" icon={Pill} category="productos">
           <WidgetRecetasPendientes />
+        </WidgetCard>
+      , staggerIdx);
+    }
+
+    /* ── RESERVAS DE MI SALA ── */
+    // Lo que los clientes apartaron desde la app; se prepara en la sala.
+    if (wid === 'reservas') {
+      if (!showWidget('reservas', 'dash_reservas')) return null;
+      return wrapWidget('reservas',
+        <WidgetCard title="Reservas de la app" icon={ShoppingBag} category="ventas">
+          <WidgetReservas />
         </WidgetCard>
       , staggerIdx);
     }

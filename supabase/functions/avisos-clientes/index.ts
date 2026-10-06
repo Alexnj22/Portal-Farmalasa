@@ -140,6 +140,25 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ── Reserva lista: la sucursal la apartó (últimas 2 h) ────────────────
+    if (inmediato) {
+      const { data: listas, error: eRes } = await admin.from("app_reservas")
+        .select("id, customer_id, producto_nombre, vence_at, branch_id")
+        .in("customer_id", clientes).eq("estado", "lista")
+        .gte("lista_at", new Date(Date.now() - 2 * 3600_000).toISOString());
+      if (eRes) throw eRes;
+      for (const r of listas ?? []) {
+        const hasta = new Date(Date.parse(r.vence_at) - 6 * 3600_000);
+        const h = hasta.getUTCHours(), m = String(hasta.getUTCMinutes()).padStart(2, "0");
+        candidatos.push({
+          customer_id: r.customer_id, tipo: "reserva", ref: `reserva-lista:${r.id}`,
+          titulo: "Tu reserva está lista 🛍️",
+          cuerpo: `${r.producto_nombre} te espera. Pasa a retirarlo antes de mañana a las ${h % 12 || 12}:${m} ${h < 12 ? "a. m." : "p. m."}`,
+          url: "/reservas",
+        });
+      }
+    }
+
     // ── Oferta nueva: sólo a quien aceptó promociones ─────────────────────
     const { data: ofertas, error: eO } = !inmediato ? { data: [], error: null } : await admin.from("ofertas_clientes")
       .select("id, titulo, etiqueta, exclusiva")

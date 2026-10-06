@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1229.0 — Reservas de productos en oferta: app y sucursal
+
+Primera pieza del plan de la siguiente fase (decisión del usuario: por ahora sólo productos en oferta; el catálogo completo, después).
+- **App:** «Reservar» en cada producto de una oferta. Hoja en tres pasos: las condiciones la primera vez (las manda el servidor con su versión), sucursal con «hay / quedan pocas / te avisamos cuando llegue» y cantidad de 1 a 5, y el código de la reserva. Pantalla **Mis reservas** con estado, cuenta regresiva de las 24 h y cancelar; acceso desde Mis puntos (cuando hay activas) y Cuenta.
+- **Reglas** (`TERMINOS_RESERVA` en `app-clientes`): 24 h para retirar desde «lista», máximo 3 activas, hasta 5 unidades, precio de oferta dentro de sus fechas, bajo receta no, 3 vencidas en 30 días bloquean 30 días, se paga al retirar.
+- **Base:** `app_reservas` (estados pendiente → lista → retirada/vencida/cancelada; ya con columnas para la reserva en sucursal con anticipo), y la sucursal la maneja SÓLO por funciones con guarda (`reservas_de_sucursal`, `reserva_cambiar_estado`, `reserva_avisada_whatsapp`): cualquier dependiente de esa sala. `reservas_vencer` cada 15 min. `app_cliente_existencias` dice hay/pocas/sin por sucursal, nunca la cantidad.
+- **Portal:** widget **Reservas de mi sala** en el Inicio (mismos cargos que ven los cortes de su sala): «Apartar y avisar» → la app avisa sola en menos de un minuto; si el cliente no tiene la app, se abre el mensaje de WhatsApp ya escrito y queda anotado quién avisó. «Retirada» y cancelar.
+- Preparada sin usar: `app_cliente_buscar_productos` (el «¿lo tienen?» del catálogo, para después).
+
 ## v2.1228.1 — App: facturación, cuentas por pagar y libros fiscales
 
 - **App: Facturación como el portal.** Las cinco colas (cada una con su permiso) con sus tarjetas: Pendientes / CCF urgentes / Días restantes, Facturas / Más antigua, Pendientes / Solventadas. CCF primero y en rojo, filtro por código de observación, páginas de 40 (ya no se corta en 150). **Solventar** una (con el motivo de Hacienda si no entró), **Marcar como resuelta** con nota, **Solventar todas** con confirmación. **No efectivo**: confirmar el pago con nota y foto del comprobante. Saltos en lectura.

@@ -125,6 +125,12 @@ function techoDeclarado(d, filas, horas) {
  * gate lo dice con el número viejo y el nuevo a la vista. */
 const CRONS = [
   {
+    job: 'reservas-vencer-15min', slug: null, cadencia: '*/15 * * * *',
+    corridasDia: 96, sistema: 0,
+    motivo: 'Vence las reservas de la app: «lista» con el plazo de 24 h cumplido, o «pendiente» cuya '
+          + 'oferta ya terminó. Un UPDATE sobre la propia tabla (decenas de filas a lo sumo).',
+  },
+  {
     job: 'wallet-pases-minuto', slug: 'wallet-pases', cadencia: '* * * * *',
     corridasDia: 1440, sistema: 0,
     motivo: 'La tarjeta de Wallet que se actualiza sola: cada minuto busca tarjetas cuyo saldo '

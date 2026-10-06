@@ -13,7 +13,7 @@
 //   2. hasta cuándo, dónde y para quién (tres datos en fila);
 //   3. los productos con el precio antes, el de ahora y CUÁNTO se ahorra;
 //   4. las condiciones, y cómo se usa: «se aplica en caja».
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,6 +23,8 @@ import { Entrada } from '../../componentes/animacion';
 import { Cargando, Vacio } from '../../componentes/ui';
 import { colorSistema } from '../../componentes/sistema';
 import { useOfertas } from '../../lib/ofertas';
+import { useSesion } from '../../lib/sesion';
+import ReservarHoja from '../../componentes/ReservarHoja';
 import { dolares, fecha } from '../../lib/formato';
 import { acentoDe, suave, useTema } from '../../tema/tema';
 
@@ -31,6 +33,8 @@ export default function Oferta() {
   const ins = useSafeAreaInsets();
   const t = useTema();
   const datos = useOfertas((s) => s.datos);
+  const token = useSesion((s) => s.token);
+  const [reservando, setReservando] = useState(null);
   const cargar = useOfertas((s) => s.cargar);
   const o = datos?.ofertas?.find((x) => String(x.id) === String(id));
   // Abierta desde un enlace o un aviso, en frío, la lista todavía no está en
@@ -50,6 +54,8 @@ export default function Oferta() {
     );
   }
   const a = acentoDe(t, o.acento);
+  // Reservar: con sesión y oferta disponible (lo exclusivo, sólo socios).
+  const puedeReservar = !!token && o.disponible;
   const ahorroMax = Math.max(0, ...(o.productos ?? []).map((p) => (p.precio ?? 0) - (p.precio_descuento ?? 0)));
 
   return (
@@ -113,6 +119,12 @@ export default function Oferta() {
                           </Text>
                         ) : null}
                       </View>
+                      {puedeReservar ? (
+                        <Pressable onPress={() => setReservando(p)} accessibilityRole="button" accessibilityLabel={`Reservar ${p.nombre}`}
+                          style={({ pressed }) => ({ backgroundColor: a.fuerte, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                          <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '800' }}>Reservar</Text>
+                        </Pressable>
+                      ) : null}
                       {p.precio != null ? (
                         <View style={{ alignItems: 'flex-end' }}>
                           <Text style={{ fontSize: 13, color: colorSistema.texto3, textDecorationLine: 'line-through', fontVariant: ['tabular-nums'] }}>{dolares(p.precio)}</Text>
@@ -131,6 +143,7 @@ export default function Oferta() {
             <View style={{ backgroundColor: superficie, borderRadius: 18, padding: 16, gap: 10 }}>
               <Paso numero="1" texto="Ve a la sala y elige tus productos." color={a.fuerte} />
               <Paso numero="2" texto="Al pagar, el descuento se aplica en caja." color={a.fuerte} />
+              <Paso numero="3" texto="¿Prefieres apartarlo? Toca «Reservar» en el producto y pásalo a retirar." color={a.fuerte} />
               {o.condiciones ? (
                 <>
                   <View style={{ height: 0.5, backgroundColor: colorSistema.separador }} />
@@ -142,6 +155,8 @@ export default function Oferta() {
           </Entrada>
         </View>
       </ScrollView>
+
+      {reservando ? <ReservarHoja oferta={o} producto={reservando} alCerrar={() => setReservando(null)} /> : null}
 
       {/* Cerrar: además del gesto de deslizar la hoja. */}
       <Pressable onPress={cerrar} accessibilityRole="button" accessibilityLabel="Cerrar" hitSlop={10}

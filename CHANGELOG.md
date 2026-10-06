@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1225.3 — Avisos de la app de clientes: inmediatos cada minuto, recordatorios a las 9
+
+- **`avisos-clientes` en dos modos** (decisión del usuario): `inmediato` cada minuto de 8:00 a 20:00 SV (puntos ganados, oferta nueva; llega 1–2 min después de pagar porque la venta tarda ~1 min en llegar de la caja) y `diario` a las 9:00 SV (puntos que vencen en 15 días, inyección pendiente). Reemplaza el cron de 15 minutos. Ventana de lotes recortada a 2 h. Costo: ~720 invocaciones al día, sin tocar el ERP.
+
 ## v2.1225.2 — App de clientes: tarjeta en Apple Wallet y reporte de errores
 
 - **Apple Wallet:** «Agregar a Apple Wallet» en Mis puntos. El servidor (`app-clientes`, `_shared/pase.ts`) arma el .pkpass y lo firma con el certificado Pass Type ID `pass.lat.farmasalud.puntos` + la cadena WWDR G4 (PKCS#7 separado, node-forge); la firma valida con `openssl smime -verify`. El enlace de descarga va firmado con HMAC y dura 10 minutos. La tarjeta lleva el saldo en dólares, los puntos, el nombre corto y el MISMO QR del ticket. Es una foto del momento; actualizarla sola pide un servicio de actualización aparte. Certificado vence el 2027-11-05; los PEM viven en secretos de la función, nunca en el repo.

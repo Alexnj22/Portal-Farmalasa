@@ -125,14 +125,21 @@ function techoDeclarado(d, filas, horas) {
  * gate lo dice con el número viejo y el nuevo a la vista. */
 const CRONS = [
   {
-    job: 'avisos-clientes-15min', slug: 'avisos-clientes', cadencia: '*/15 14-23,0-1 * * *',
-    corridasDia: 48, sistema: 0,
-    motivo: 'Avisos al teléfono de los clientes de Puntos Salud (puntos ganados, vencen en 15 '
-          + 'días, inyección pendiente, oferta nueva). Sólo de 8:00 a 20:00 SV: de noche no se le '
-          + 'escribe a nadie. `sistema: 0` porque no habla con el ERP: lee la propia base y le '
-          + 'manda al servicio de avisos de Expo, que es gratis. La bitácora `app_cliente_avisos` '
-          + 'impide repetir, así que las ventanas de búsqueda son más anchas que la cadencia.',
+    job: 'avisos-clientes-minuto', slug: 'avisos-clientes', cadencia: '* 14-23,0-1 * * *',
+    corridasDia: 720, sistema: 0,
+    motivo: 'Avisos INMEDIATOS de la app de clientes: puntos ganados y oferta nueva, cada minuto '
+          + 'de 8:00 a 20:00 SV (decisión del usuario, 2026-10-06: la venta tarda ~1 min en llegar '
+          + 'de la caja, así que el aviso llega 1–2 min después de pagar). `sistema: 0`: no habla '
+          + 'con el ERP; lee la propia base (sesiones con avisos + lotes de las últimas 2 h) y sale '
+          + 'antes si nadie tiene avisos. Envía por Expo, gratis. La bitácora impide repetir.',
   },
+  {
+    job: 'avisos-clientes-diario', slug: 'avisos-clientes', cadencia: '0 15 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Recordatorios de la app de clientes a las 9:00 SV: puntos que vencen en 15 días e '
+          + 'inyección pagada hace 3 días sin aplicar. Una vez al día, a hora fija.',
+  },
+
   {
     job: 'puntos-referidos-hora', slug: null, cadencia: '20 * * * *',
     corridasDia: 24, sistema: 0,

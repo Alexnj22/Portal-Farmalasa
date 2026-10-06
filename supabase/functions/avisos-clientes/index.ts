@@ -1,8 +1,12 @@
 // Avisos al teléfono de los clientes de Puntos Salud (2026-10-06).
 //
-// Lo llama un cron cada 15 minutos, de 8:00 a 20:00 de El Salvador (de noche
-// no se le escribe a nadie). Cada vuelta busca lo que pasó y le avisa a quien
-// tiene la app con los avisos encendidos:
+// Dos crons, de 8:00 a 20:00 de El Salvador (de noche no se escribe a nadie):
+//   · `modo: "inmediato"`, CADA MINUTO: lo que acaba de pasar — puntos ganados
+//     y oferta nueva. La venta tarda ~1 min en llegar de la caja, así que el
+//     aviso llega 1–2 min después de pagar (decisión del usuario, 2026-10-06).
+//   · `modo: "diario"`, a las 9:00: los recordatorios — puntos por vencer e
+//     inyección pendiente. Una vez al día y a una hora fija, no a cualquier rato.
+// Cada vuelta busca lo que pasó y le avisa a quien tiene los avisos encendidos:
 //
 //   · ganado      — cada lote nuevo: una compra, el regalo de cumpleaños, un
 //                   referido que se premió.
@@ -79,15 +83,17 @@ Deno.serve(async (req) => {
     const clientes = [...tokens.keys()];
     if (!clientes.length) return json({ ok: true, avisos: 0, motivo: "nadie con avisos encendidos" });
 
+    const modo = body?.modo === "inmediato" || body?.modo === "diario" ? body.modo : "todo";
+    const inmediato = modo !== "diario", diario = modo !== "inmediato";
     const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
     const masDias = (n: number) => new Date(Date.parse(`${hoy}T00:00:00Z`) + n * 86400_000).toISOString().slice(0, 10);
     const candidatos: Aviso[] = [];
 
-    // ── Ganado: lotes de las últimas 6 horas ──────────────────────────────
-    const { data: lotes, error: eL } = await admin.from("puntos_lote")
+    // ── Ganado: lotes de las últimas 2 horas (la bitácora impide repetir) ──
+    const { data: lotes, error: eL } = !inmediato ? { data: [], error: null } : await admin.from("puntos_lote")
       .select("id, customer_id, origen, puntos, sucursal")
       .in("customer_id", clientes).in("origen", ["venta", "cumpleanos", "referido"])
-      .gte("created_at", new Date(Date.now() - 6 * 3600_000).toISOString());
+      .gte("created_at", new Date(Date.now() - 2 * 3600_000).toISOString());
     if (eL) throw eL;
     for (const l of lotes ?? []) {
       const pts = Number(l.puntos);
@@ -100,7 +106,7 @@ Deno.serve(async (req) => {
     }
 
     // ── Vence: lo que vence dentro de 15 días (ventana de 2 por si una vuelta falla)
-    const { data: vence, error: eV } = await admin.from("puntos_lote")
+    const { data: vence, error: eV } = !diario ? { data: [], error: null } : await admin.from("puntos_lote")
       .select("customer_id, vence_el, restantes")
       .in("customer_id", clientes).gt("restantes", 0)
       .gte("vence_el", masDias(14)).lte("vence_el", masDias(15));
@@ -122,7 +128,7 @@ Deno.serve(async (req) => {
     }
 
     // ── Inyección pendiente: pagada hace 3 días ───────────────────────────
-    const { data: iny, error: eI } = await admin.rpc("app_cliente_inyecciones_por_recordar", { p_clientes: clientes });
+    const { data: iny, error: eI } = !diario ? { data: [], error: null } : await admin.rpc("app_cliente_inyecciones_por_recordar", { p_clientes: clientes });
     if (eI) console.error("no se pudieron leer las inyecciones:", eI.message);
     for (const a of (iny ?? []) as { id: number; customer_id: number; producto: string; sala: string }[]) {
       candidatos.push({
@@ -134,7 +140,7 @@ Deno.serve(async (req) => {
     }
 
     // ── Oferta nueva: sólo a quien aceptó promociones ─────────────────────
-    const { data: ofertas, error: eO } = await admin.from("ofertas_clientes")
+    const { data: ofertas, error: eO } = !inmediato ? { data: [], error: null } : await admin.from("ofertas_clientes")
       .select("id, titulo, etiqueta, exclusiva")
       .eq("publicada", true).lte("inicio", hoy).gte("fin", hoy)
       .gte("updated_at", new Date(Date.now() - 2 * 86400_000).toISOString());

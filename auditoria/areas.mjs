@@ -727,7 +727,7 @@ export const AREAS = [
         ],
         tablas: ['app_cliente_sesiones', 'app_cliente_preregistros', 'ofertas_clientes', 'app_cliente_muestras', 'app_cliente_referido_codigo', 'app_cliente_referidos', 'app_cliente_avisos'],
         edge: ['app-clientes', 'avisos-clientes'],
-        crons: ['puntos-referidos-hora', 'purge-app-cliente-avisos', 'avisos-clientes-15min'],
+        crons: ['puntos-referidos-hora', 'purge-app-cliente-avisos', 'avisos-clientes-minuto', 'avisos-clientes-diario'],
         docs: ['docs/APP-CLIENTES-2026-10-05.md'],
     },
 

@@ -52,7 +52,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 import { fechaNumerica } from '@nucleo/utils/fecha';
-import { cantidadValida, conteoEditable, FILTROS_CONTEO, guardadoDelRenglon, noUbicado } from '@nucleo/utils/conteoDeInventario';
+import { cantidadValida, conteoEditable, EVENTO_DE_CONTEO, FILTROS_CONTEO, guardadoDelRenglon, noUbicado } from '@nucleo/utils/conteoDeInventario';
 
 const PAGE_SIZE_INICIAL = 25;
 
@@ -286,14 +286,8 @@ function LiveBadge() {
 // Qué pasó en cada fila del historial. El discriminador lo escribe la BD
 // (columna `evento`); antes las cuatro clases de evento se veían idénticas y el
 // único indicio era el texto de la nota, que el usuario puede pisar.
-const EVENTO_CFG = {
-    CAPTURA:  { label: 'Capturó',           variante: 'success' },
-    EDICION:  { label: 'Editó',             variante: 'warning' },
-    BORRADO:  { label: 'Borró la cantidad', variante: 'danger'  },
-    RECUENTO: { label: 'Recontó',           variante: 'chart-1' },
-    LOTE:     { label: 'Corrigió el lote',  variante: 'chart-9' },
-    CIERRE:   { label: 'Cerró sin ubicar',  variante: 'neutral' },
-};
+// Los eventos son del núcleo: la app nativa muestra el mismo historial.
+const EVENTO_CFG = EVENTO_DE_CONTEO;
 
 // Máscara del recuento: el supervisor no ve ni el sistema ni el primer conteo
 // hasta registrar el suyo. El ciego del conteo normal ya no pasa por acá — el

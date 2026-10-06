@@ -30,11 +30,15 @@ import Segmentos from '../../componentes/Segmentos';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
+import Resumen from '../../componentes/conteos/Resumen';
+import Historial from '../../componentes/conteos/Historial';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { fmtHM } from '@nucleo/utils/tableroDePedidos';
 
 const POR_PAGINA = 20;
 const vence = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'short', year: '2-digit' }) : 'sin fecha');
 
-function Renglon({ it, editable, onGuardado }) {
+function Renglon({ it, editable, onGuardado, onHistorial }) {
   const guardarConteoItem = useStaffStore((s) => s.guardarConteoItem);
   const [valor, setValor] = useState(it.fisico_cantidad ?? '');
   const [abierto, setAbierto] = useState(it.estado_item === 'PENDIENTE');
@@ -99,7 +103,16 @@ function Renglon({ it, editable, onGuardado }) {
           <Text style={{ color: MARCA.ambar, fontSize: 14, fontWeight: '600' }}>No lo encuentro</Text>
         </Pressable>
       ) : null}
-      {it.contado_por_nombre && contado ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Contó ${it.contado_por_nombre}`}</Text> : null}
+      {/* Quién lo contó, y su historial a un toque — `AutorLinea` del portal. */}
+      {contado ? (
+        <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onHistorial(it); }} hitSlop={6}
+          style={({ pressed }) => ({ minHeight: 32, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
+          <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
+            {`${it.contado_por_nombre ? `Contó ${shortEmployeeName(it.contado_por_nombre)}` : 'Contado'}${it.contado_at ? ` · ${fmtHM(it.contado_at)}` : ''}  `}
+            <Text style={{ color: MARCA.azulClaro, fontWeight: '600' }}>Ver historial</Text>
+          </Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -124,6 +137,7 @@ export default function Conteo() {
   const [abierto, setAbierto] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [escaneando, setEscaneando] = useState(false);
+  const [historial, setHistorial] = useState(null);
   const pedido = useRef(0);
 
   const cargarConteo = useCallback(async () => {
@@ -224,6 +238,7 @@ export default function Conteo() {
               </Vidrio>
             </View>
           ) : null}
+          {conteo ? <Resumen resumen={resumen} abierto={conteoEditable(conteo)} verMontos={hasPermission('conteo_inventario_ver_montos')} /> : null}
           {conteo && !editable ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="Este conteo ya no se puede contar." /></View> : null}
           {editable ? (
             <View style={{ marginHorizontal: 16 }}>
@@ -252,7 +267,7 @@ export default function Conteo() {
                   {abiertoAqui ? (
                     <View style={{ paddingHorizontal: 14, paddingBottom: 12 }}>
                       {!items[p.erp_product_id] ? <ActivityIndicator style={{ marginVertical: 10 }} />
-                        : items[p.erp_product_id].map((it) => <Renglon key={it.id} it={it} editable={editable} onGuardado={alGuardar(p.erp_product_id)} />)}
+                        : items[p.erp_product_id].map((it) => <Renglon key={it.id} it={it} editable={editable} onGuardado={alGuardar(p.erp_product_id)} onHistorial={setHistorial} />)}
                     </View>
                   ) : null}
                 </Vidrio>
@@ -273,6 +288,7 @@ export default function Conteo() {
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
+      <Historial item={historial} simple={conteo?.modo === 'SIMPLE'} onCerrar={() => setHistorial(null)} />
       <Escaner visible={escaneando} titulo="Buscar en el conteo" ayuda="Apunta al código de barras del producto"
         onCodigo={(c) => { setEscaneando(false); setFiltro('TODOS'); setTexto(String(c)); }} onCerrar={() => setEscaneando(false)} />
     </>

@@ -12,6 +12,7 @@ import { ERP_NAMES } from '@nucleo/constants/erp';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { fetchIndicadoresDePedidos, fetchRazonesDePausa } from '@nucleo/data/pedidos';
+import { indicadoresDePedidos, minutosLegibles } from '@nucleo/utils/tableroDePedidos';
 
 const COLS_SUCURSAL = [
     { key: 'sucursal',  label: 'Sucursal' },
@@ -36,19 +37,9 @@ function toDateStr(date) {
     return date.toISOString().split('T')[0];
 }
 
-function fmtMin(min) {
-    if (min == null || min < 0) return '—';
-    if (min < 60) return `${min} min`;
-    const h = Math.floor(min / 60);
-    const m = min % 60;
-    return m > 0 ? `${h}h ${m}m` : `${h}h`;
-}
-
-function avg(arr) {
-    const valid = arr.filter(v => v != null && v >= 0);
-    if (!valid.length) return null;
-    return Math.round(valid.reduce((s, v) => s + v, 0) / valid.length);
-}
+// El formato de minutos y los promedios son del núcleo (`indicadoresDePedidos`):
+// la app nativa muestra las mismas métricas.
+const fmtMin = minutosLegibles;
 
 export default function TabMetricas({ searchTerm = '' }) {
     const [range,       setRange]       = useState('30d');
@@ -88,34 +79,15 @@ export default function TabMetricas({ searchTerm = '' }) {
         load(days);
     }, [range, load]);
 
-    // Métricas globales
-    const totalPedidos  = new Set(kpis.map(k => k.pedido_id)).size;
-    const avgPrep       = fmtMin(avg(kpis.map(k => k.tiempo_prep_neto_min)));
-    const avgTransito   = fmtMin(avg(kpis.map(k => k.tiempo_transito_min)));
-    const avgRecuento   = fmtMin(avg(kpis.map(k => k.tiempo_recuento_min)));
-    const avgPausado    = fmtMin(avg(kpis.map(k => k.tiempo_pausado_min)));
-    const totalPausas   = kpis.reduce((s, k) => s + (k.num_pausas ?? 0), 0);
-
-    // Métricas por sucursal
-    const sucursalGroups = kpis.reduce((acc, k) => {
-        const id = k.erp_sucursal_id;
-        if (!acc[id]) acc[id] = [];
-        acc[id].push(k);
-        return acc;
-    }, {});
-
-    const sucursalStats = Object.entries(sucursalGroups)
-        .map(([idStr, rows]) => ({
-            id:           Number(idStr),
-            nombre:       ERP_NAMES[Number(idStr)] ?? `Suc. ${idStr}`,
-            pedidos:      new Set(rows.map(r => r.pedido_id)).size,
-            avgPrep:      avg(rows.map(r => r.tiempo_prep_neto_min)),
-            avgPausado:   avg(rows.map(r => r.tiempo_pausado_min)),
-            avgTransito:  avg(rows.map(r => r.tiempo_transito_min)),
-            avgRecuento:  avg(rows.map(r => r.tiempo_recuento_min)),
-            numPausas:    rows.reduce((s, r) => s + (r.num_pausas ?? 0), 0),
-        }))
-        .sort((a, b) => b.pedidos - a.pedidos);
+    // Métricas globales y por sucursal — núcleo.
+    const ind = indicadoresDePedidos(kpis, (id) => ERP_NAMES[id] ?? `Suc. ${id}`);
+    const totalPedidos  = ind.pedidos;
+    const avgPrep       = fmtMin(ind.prep);
+    const avgTransito   = fmtMin(ind.transito);
+    const avgRecuento   = fmtMin(ind.recuento);
+    const avgPausado    = fmtMin(ind.pausado);
+    const totalPausas   = ind.pausas;
+    const sucursalStats = ind.porSucursal;
 
     const filteredSucs = useMemo(() => {
         if (!searchTerm.trim()) return sucursalStats;
@@ -201,15 +173,15 @@ export default function TabMetricas({ searchTerm = '' }) {
                                 <DataRow key={s.id} index={i}>
                                     <DataCell className="font-semibold text-content-2">{s.nombre}</DataCell>
                                     <DataCell align="center" className="text-content-2 tabular-nums">{s.pedidos}</DataCell>
-                                    <DataCell align="center" className="font-medium text-chart-3-text tabular-nums">{fmtMin(s.avgPrep)}</DataCell>
-                                    <DataCell align="center" className="font-medium text-warning tabular-nums">{fmtMin(s.avgPausado)}</DataCell>
-                                    <DataCell align="center" className="font-medium text-chart-3-text tabular-nums">{fmtMin(s.avgTransito)}</DataCell>
-                                    <DataCell align="center" className="font-medium text-chart-9-text tabular-nums">{fmtMin(s.avgRecuento)}</DataCell>
+                                    <DataCell align="center" className="font-medium text-chart-3-text tabular-nums">{fmtMin(s.prep)}</DataCell>
+                                    <DataCell align="center" className="font-medium text-warning tabular-nums">{fmtMin(s.pausado)}</DataCell>
+                                    <DataCell align="center" className="font-medium text-chart-3-text tabular-nums">{fmtMin(s.transito)}</DataCell>
+                                    <DataCell align="center" className="font-medium text-chart-9-text tabular-nums">{fmtMin(s.recuento)}</DataCell>
                                     <DataCell align="center" className="tabular-nums">
-                                        {s.numPausas > 0 ? (
+                                        {s.pausas > 0 ? (
                                             <span className="inline-flex items-center gap-0.5 text-warning font-semibold">
                                                 <Pause size={9} />
-                                                {s.numPausas}
+                                                {s.pausas}
                                             </span>
                                         ) : (
                                             <span className="text-content-3">—</span>

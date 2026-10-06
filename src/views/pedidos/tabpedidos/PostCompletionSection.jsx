@@ -3,6 +3,7 @@ import { useRef, useEffect } from 'react';
 import Badge from '../../../components/common/Badge';
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { resumenDeRecepcion } from '@nucleo/utils/tableroDePedidos';
 import { Truck, CheckCircle2, AlertCircle, Check, AlertTriangle, PackageX } from 'lucide-react';
 
 // El tipo de llegada, como variante del canónico `Badge`. Era un par
@@ -27,9 +28,10 @@ export default function PostCompletionSection({ row, difItems = [], empMap = new
     }, [itemsLoaded, onNeedItems]);
 
     const tipoInfo = LLEGADA_TIPO_INFO[row.llegada_tipo] ?? null;
-    const reenvios = (row.reenvios_historial ?? []);
-    const difResueltas   = difItems.filter(d => d.resolucion_status === 'confirmada').length;
-    const difPendientes  = difItems.filter(d => d.resolucion_status !== 'confirmada').length;
+    // Las cuentas son del núcleo (`resumenDeRecepcion`), las mismas de la app.
+    const resumen = resumenDeRecepcion(row, difItems);
+    const reenvios = resumen.reenvios;
+    const { difResueltas, difPendientes } = resumen;
     const hasCajasDanadas = (row.cajas_danadas ?? []).length > 0;
     const llegadaEmp = row.llegada_fisica_por ? empMap.get(row.llegada_fisica_por) : null;
 
@@ -72,8 +74,8 @@ export default function PostCompletionSection({ row, difItems = [], empMap = new
                 {hasCajasDanadas && (
                     <Badge variant="warning" uppercase={false} icon={AlertTriangle}>Caja{row.cajas_danadas.length > 1 ? 's' : ''} {row.cajas_danadas.map(n => `#${n}`).join(', ')} dañada{row.cajas_danadas.length > 1 ? 's' : ''}</Badge>
                 )}
-                {reenvios.length > 0 && (
-                    <Badge variant="chart-3" icon={Truck} uppercase={false}>{reenvios.length} reenvío{reenvios.length > 1 ? 's' : ''}</Badge>
+                {reenvios > 0 && (
+                    <Badge variant="chart-3" icon={Truck} uppercase={false}>{reenvios} reenvío{reenvios > 1 ? 's' : ''}</Badge>
                 )}
                 {difResueltas > 0 && (
                     <Badge variant="success" icon={CheckCircle2} uppercase={false}>{difResueltas} dif. resuelta{difResueltas > 1 ? 's' : ''}</Badge>

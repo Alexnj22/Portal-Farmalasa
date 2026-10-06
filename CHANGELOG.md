@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1226.1 — App: pedidos y conteos con su detalle
+
+- **App: Pedidos con su ficha completa.** Tocar un pedido abre: la etapa y el estado de la sala, cajas/productos/unidades, la línea de vida con cara y nombre de quien hizo cada paso y cuánto tardó (pausas con motivo y duración, quién apoyó), cómo llegó, las diferencias (sólo lectura, para decidir sigue el portal) y los productos por laboratorio con pedido → enviado → recibido. La lista filtra por estado, período y sala, cuenta los del mes por sala y trae los completados y anulados. Pestaña **Tiempos** (con su permiso): preparación, pausa, tránsito y recuento por sucursal en 7/30/90 días, con barras y «Por qué se pausan».
+- Un producto todavía pendiente muestra «—» en recibido, no «Faltaron».
+- **App: Conteos** con las tarjetas del portal (Conteos / Abiertos / Por aprobar / Sin ajustar, que filtran), valor neto con su permiso de montos, y en el detalle sin contar, no ubicados, diferencias y faltante/sobrante en dinero; el historial de cada renglón.
+- Núcleo: `tableroDePedidos.js` y `conteoDeInventario.js`; el portal los usa.
+
 ## v2.1226.0 — App: metas y puntos con sus gráficas
 
 - **App: Metas con sus gráficas, como el portal.** Tablero / Bono / Histórico. Meta del mes, vendido, proyección y semáforo; cada sala con su termómetro; «Cómo va el mes» con barras día por día contra la línea del ritmo (deslizando el dedo se ve cada valor); la venta por vendedor (Total / Por día / Por hora) con foto y su barra contra el promedio. Tocar una sala abre su detalle con «De dónde sale la meta». Bono por persona con «si cierra así»; Histórico con la línea de cumplimiento contra 95% y 100% y la meta sobre lo vendido.

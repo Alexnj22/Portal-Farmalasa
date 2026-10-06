@@ -316,3 +316,302 @@ export function currentMonthRange() {
     const ffin = `${y}-${pad(m + 1)}-${pad(last.getDate())}`;
     return `${fini}|${ffin}`;
 }
+
+// ── Lo que el tablero y la app nativa leen IGUAL (2026-10-06) ───────────────
+// Vivía repartido en `usePedidosData`, `LifecycleTimeline`, `ItemSections`,
+// `PostCompletionSection`, `DifSection` y `TabMetricas`. La app nativa abre el
+// mismo pedido en el teléfono: escrito dos veces, un paso nuevo de la línea de
+// vida o un estado nuevo del filtro aparecería en una pantalla y no en la otra.
+
+/** El rango de un mes como `desde|hasta` (0 = este mes, -1 = el anterior). */
+export function rangoDeMes(desplazamiento = 0, hoy = new Date()) {
+    const pad = n => String(n).padStart(2, '0');
+    const ini = new Date(hoy.getFullYear(), hoy.getMonth() + desplazamiento, 1);
+    const fin = new Date(ini.getFullYear(), ini.getMonth() + 1, 0);
+    return `${ini.getFullYear()}-${pad(ini.getMonth() + 1)}-01|${fin.getFullYear()}-${pad(fin.getMonth() + 1)}-${pad(fin.getDate())}`;
+}
+
+/** Los filtros de estado del tablero — los de `FilterPill`. */
+export const ESTADOS_DEL_TABLERO = [
+    { value: 'all',         label: 'Todos los estados' },
+    { value: 'confirmado',  label: 'Pendientes' },
+    { value: 'enviado',     label: 'En ruta' },
+    { value: 'observacion', label: 'Con observación' },
+    { value: 'completado',  label: 'Completados' },
+];
+
+/** El rótulo del estado de la sala (`estadoDeLaSala`) — `PEDIDO_BADGE`. */
+export const ROTULO_DE_ESTADO = {
+    confirmado: 'Por despachar', enviado: 'En ruta', parcial: 'Con diferencias',
+    completado: 'Completado', anulado: 'Anulado',
+};
+
+/**
+ * ¿Esta sala tiene algo que mirar? Una diferencia abierta, una llegada que no
+ * fue completa, cajas que faltaron o llegaron dañadas, el Electrolit o una caja
+ * especial que no vino, o renglones que no entraron al inventario. Es lo que
+ * hace que un pedido completado NO se esconda del filtro por defecto. El
+ * porqué de cada término está en `usePedidosData` (`hasObservacion`).
+ */
+export function tieneObservacion(r, sinIngresar = 0) {
+    if (!r) return false;
+    return (!!r.diferencias_reportadas_at && !r.confirmado_correccion_at) ||
+        (!!r.llegada_tipo && r.llegada_tipo !== 'completa') ||
+        (r.falta_cajas?.length > 0) ||
+        (r.cajas_danadas?.length > 0) ||
+        (r.electrolit_ok === false) ||
+        Object.values(r.cajas_especiales_llegadas ?? {}).some(v => v === 'faltante') ||
+        (sinIngresar ?? 0) > 0;
+}
+
+/**
+ * El filtro de estado y de período del tablero. `observado(r)` dice si la sala
+ * tiene observación (el tablero le suma lo que quedó sin ingresar).
+ * `'all'` esconde los completados SIN observación: el que tiene algo abierto
+ * sigue a la vista aunque diga «completado».
+ */
+export function filtrarPedidos(rows, { estado = 'all', rango = null, observado = r => tieneObservacion(r) } = {}) {
+    let filas = rows ?? [];
+    if (estado === 'completado') {
+        filas = filas.filter(r => r.pedido_status === 'completado');
+    } else if (estado === 'observacion') {
+        filas = filas.filter(r => (observado(r) && r.pedido_status !== 'completado') || faltantesDeLaSala(r).hay);
+    } else if (estado !== 'all') {
+        filas = filas.filter(r => estadoDeLaSala(r) === estado);
+    } else {
+        filas = filas.filter(r => r.pedido_status !== 'completado' || observado(r));
+    }
+    if (rango) {
+        const [desde, hasta] = rango.split('|');
+        filas = filas.filter(r => {
+            const d = r.created_at?.slice(0, 10);
+            return (!desde || d >= desde) && (!hasta || d <= hasta);
+        });
+    }
+    return filas;
+}
+
+/**
+ * Los pasos de la vida de un pedido en una sala, en orden, con su hora y quién
+ * lo hizo: Confirmado → Inicio → Listo → En ruta → Entregado → Llegada →
+ * Finalizado, y después los extras (la caja que faltó, cada reenvío y su
+ * llegada, la diferencia y su corrección).
+ *
+ * `quien(id)` resuelve una persona por id (o null). `entrega` es la parada de
+ * esta sala en una ruta (`{ entregado_at, entregado_por }`) y `conductor` la
+ * persona que manejaba: quien entregó es `entregado_por` y, sin él, el
+ * conductor.
+ *
+ * Cada paso trae `extra: true` cuando no es de los siete fijos; los fijos se
+ * marcan hechos por posición contra la etapa (`PASO_DE_LA_ETAPA`).
+ */
+export const PASO_DE_LA_ETAPA = { sin_iniciar: 0, preparando: 1, pausado: 1, preparado: 2, transito: 3, contando: 5, erp: 6 };
+
+export function pasosDelPedido(row, { quien = () => null, entrega = null, conductor = null } = {}) {
+    if (!row) return [];
+    const p = id => (id ? quien(id) ?? null : null);
+    const entregador = entrega?.entregado_por ? (p(entrega.entregado_por) ?? conductor) : conductor;
+    const pasos = [
+        { key: 'confirmado',     label: 'Confirmado', time: row.created_at,          emp: p(row.created_by) },
+        { key: 'iniciado',       label: 'Inicio',     time: row.iniciado_at,         emp: p(row.iniciado_por) },
+        { key: 'preparado',      label: 'Listo',      time: row.finalizado_at,       emp: p(row.finalizado_por) },
+        { key: 'enviado',        label: 'En ruta',    time: row.enviado_at,          emp: p(row.enviado_por) },
+        { key: 'ruta_entregado', label: 'Entregado',  time: entrega?.entregado_at ?? null, emp: entregador, isRutaNode: true },
+        { key: 'llegada',        label: 'Llegada',    time: row.llegada_fisica_at,   emp: p(row.llegada_fisica_por) },
+        { key: 'erp',            label: 'Finalizado', time: row.recibido_erp_at,     emp: p(row.recibido_erp_por) },
+    ];
+    if (row.falta_caja_at) {
+        const problema = row.llegada_tipo === 'mixto' ? 'Dañada + Falta'
+            : row.llegada_tipo === 'caja_danada' ? 'Caja dañada' : 'Falta caja';
+        pasos.push({ key: 'falta_caja', label: problema, time: row.falta_caja_at, emp: p(row.llegada_fisica_por), extra: true });
+        const historial = row.reenvios_historial ?? [];
+        if (historial.length > 0) {
+            historial.forEach((ciclo, i) => {
+                pasos.push({ key: `reenvio_${i}`, label: historial.length > 1 ? `Reenvío ${ciclo.ciclo}` : 'Reenvío', time: ciclo.sent_at, emp: p(row.reenvio_por), extra: true });
+                if (ciclo.arrived_at) {
+                    pasos.push({ key: `seg_llegada_${i}`, label: historial.length > 1 ? `Llegada R.${ciclo.ciclo}` : '2ª Llegada', time: ciclo.arrived_at, emp: p(ciclo.arrived_por), extra: true });
+                }
+            });
+        } else {
+            if (row.reenvio_bodega_at) pasos.push({ key: 'reenvio', label: 'Reenvío', time: row.reenvio_bodega_at, emp: p(row.reenvio_por), extra: true });
+            if (row.segunda_llegada_at) pasos.push({ key: 'seg_llegada', label: '2ª Llegada', time: row.segunda_llegada_at, emp: null, extra: true });
+        }
+    }
+    if (row.diferencias_reportadas_at) {
+        pasos.push({ key: 'diferencias', label: 'Diferencias', time: row.diferencias_reportadas_at, emp: p(row.diferencias_reportadas_por), extra: true });
+        pasos.push({ key: 'corregido',   label: 'Corregido',   time: row.confirmado_correccion_at,  emp: p(row.confirmado_correccion_por), extra: true });
+    }
+    return pasos;
+}
+
+/** Los renglones de un pedido partidos como los muestra el tablero. */
+export function seccionesDeRenglones(items) {
+    const todos = items ?? [];
+    return {
+        enviados:    todos.filter(i => i.cantidad_asignada > 0),
+        agotamiento: todos.filter(i => i.agotamiento),
+        sinStock:    todos.filter(i => i.sin_stock),
+        porRegla:    todos.filter(i => i.revision_minmax),
+        total:       todos.length,
+    };
+}
+
+/** Los renglones con diferencia de una sala (los que lee `DifSection`). */
+export const renglonesConDiferencia = items => (items ?? []).filter(r => r.status === 'con_diferencia' || r.error_tipo);
+
+/** Cómo llegó el pedido a la sala — `PostCompletionSection`. */
+export const LLEGADA_TIPO = {
+    completa:    'Recibido sin novedad',
+    caja_danada: 'Caja dañada',
+    falta_caja:  'Caja faltante',
+    mixto:       'Daños y faltantes',
+};
+
+export function resumenDeRecepcion(row, difItems = []) {
+    return {
+        llegada:       row?.llegada_tipo ? (LLEGADA_TIPO[row.llegada_tipo] ?? null) : null,
+        cajasDanadas:  row?.cajas_danadas ?? [],
+        reenvios:      (row?.reenvios_historial ?? []).length,
+        difResueltas:  difItems.filter(d => d.resolucion_status === 'confirmada').length,
+        difPendientes: difItems.filter(d => d.resolucion_status !== 'confirmada').length,
+    };
+}
+
+/** Qué clase de diferencia es un renglón (`error_tipo`). */
+export const TIPO_DE_DIFERENCIA = {
+    faltante:     { label: 'Faltante',       variante: 'danger'  },
+    sobrante:     { label: 'Sobrante',       variante: 'success' },
+    danado:       { label: 'Dañado',         variante: 'neutral' },
+    vencido:      { label: 'Vencido',        variante: 'neutral' },
+    presentacion: { label: 'Pres. distinta', variante: 'neutral' },
+    otro:         { label: 'Otro',           variante: 'neutral' },
+    diferencia:   { label: 'Diferencia',     variante: 'warning' },
+};
+
+/** En qué punto está la conversación de una diferencia (`resolucion_status`). */
+export function estadoDeDiferencia(item) {
+    const s = item?.resolucion_status;
+    if (s === 'confirmada')      return 'Resuelta';
+    if (s === 'propuesta')       return 'Contesta bodega';
+    if (s === 'contrapropuesta') return 'Contesta la sala';
+    if (s === 'escalada')        return 'Lo ve supervisión';
+    return 'Sin resolver';
+}
+
+/** Solicitado → enviado → contado de un renglón, y cuánto falta o sobra. */
+export function cifrasDelRenglon(item) {
+    const solicitado = calcSolicitado(item);
+    const enviado = item?.cantidad_enviada ?? item?.cantidad_asignada ?? null;
+    const contado = item?.cantidad_recibida ?? null;
+    const delta = contado == null || enviado == null ? null : contado - enviado;
+    return { solicitado, enviado, contado, delta };
+}
+
+/**
+ * Los tiempos del despacho en un rango — `TabMetricas`. Entra la respuesta de
+ * `get_pedido_kpis` (una fila por pedido y sala, en minutos) y sale el
+ * promedio general y por sucursal. `nombre(id)` rotula la sucursal.
+ */
+const promedio = arr => {
+    const v = arr.filter(x => x != null && x >= 0);
+    return v.length ? Math.round(v.reduce((s, x) => s + x, 0) / v.length) : null;
+};
+export function indicadoresDePedidos(kpis, nombre = id => `Suc. ${id}`) {
+    const filas = kpis ?? [];
+    const grupos = filas.reduce((acc, k) => { (acc[k.erp_sucursal_id] ??= []).push(k); return acc; }, {});
+    return {
+        pedidos:     new Set(filas.map(k => k.pedido_id)).size,
+        prep:        promedio(filas.map(k => k.tiempo_prep_neto_min)),
+        transito:    promedio(filas.map(k => k.tiempo_transito_min)),
+        recuento:    promedio(filas.map(k => k.tiempo_recuento_min)),
+        pausado:     promedio(filas.map(k => k.tiempo_pausado_min)),
+        pausas:      filas.reduce((s, k) => s + (k.num_pausas ?? 0), 0),
+        porSucursal: Object.entries(grupos).map(([id, rows]) => ({
+            id:        Number(id),
+            nombre:    nombre(Number(id)),
+            pedidos:   new Set(rows.map(r => r.pedido_id)).size,
+            prep:      promedio(rows.map(r => r.tiempo_prep_neto_min)),
+            pausado:   promedio(rows.map(r => r.tiempo_pausado_min)),
+            transito:  promedio(rows.map(r => r.tiempo_transito_min)),
+            recuento:  promedio(rows.map(r => r.tiempo_recuento_min)),
+            pausas:    rows.reduce((s, r) => s + (r.num_pausas ?? 0), 0),
+        })).sort((a, b) => b.pedidos - a.pedidos),
+    };
+}
+
+/** «45 min», «2h 5m», «—» — el formato de los promedios de `TabMetricas`. */
+export function minutosLegibles(min) {
+    if (min == null || min < 0) return '—';
+    if (min < 60) return `${min} min`;
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+/** Cuántos pedidos tiene cada sala en un rango `desde|hasta` (las tarjetas del tablero). */
+export function pedidosPorSala(rows, rango = null) {
+    const [desde, hasta] = (rango ?? '').split('|');
+    const cuenta = new Map();
+    (rows ?? []).forEach(r => {
+        const d = r.created_at?.slice(0, 10);
+        if ((desde && d < desde) || (hasta && d > hasta)) return;
+        cuenta.set(r.erp_sucursal_id, (cuenta.get(r.erp_sucursal_id) ?? 0) + 1);
+    });
+    return cuenta;
+}
+
+/** Cómo se despacha un renglón: «Caja ×12», «Blíster ×10», «Unid ×3», «Unidad». */
+const TIPO_DE_DESPACHO = { caja: 'Caja', blister: 'Blíster', multiplo: 'Unid', multiplo_unidades: 'Unid', solo_cajas: 'Caja' };
+export function rotuloDePresentacion(row) {
+    const tipo = row?.dispatch_tipo;
+    const factor = row?.dispatch_factor || row?.factor || 1;
+    if (!tipo) return factor > 1 ? `×${factor} unid` : 'Unidad';
+    const conFactor = factor > 1 && ['caja', 'blister', 'solo_cajas'].includes(tipo);
+    const multiplo = ['multiplo', 'multiplo_unidades'].includes(tipo);
+    return `${TIPO_DE_DESPACHO[tipo] ?? tipo}${conFactor ? ` ×${factor}` : ''}${multiplo ? ` ×${factor}` : ''}`;
+}
+
+// Los rótulos de la conversación de una diferencia — vivían en `DifSection`.
+// Las resoluciones nuevas traen su rótulo desde `diferencia_opcion`; éstas son
+// las VIEJAS, para poder leer lo que ya está guardado. Un rótulo que falta no
+// da error: imprime la clave interna y parece un dato.
+export const RESOLUCION_DE_DIFERENCIA = {
+    envio_fisico:        'Enviar producto',
+    ajuste_sistema:      'Ajuste en sistema',
+    aceptar_sobrante:    'Sucursal queda con sobrante',
+    devolver_bodega:     'Devolver a bodega',
+    devolucion_aceptada: 'Devolución aceptada',
+    devolucion_negada:   'Devolución negada',
+    aceptar_dif_pres:    'Dif. presentación aceptada',
+    resuelto:            'Resuelto',
+    no_aplica:           'Sin solución',
+};
+
+export const EVENTO_DE_DIFERENCIA = {
+    resolucion_propuesta:    'propuso resolución',
+    resolucion_confirmada:   'confirmó resolución',
+    resolucion_rechazada:    'rechazó resolución',
+    // Cortos, pero que digan qué pasó. «propuso cómo se arregla» y «estuvo de
+    // acuerdo» no decían con QUÉ, y el paso siguiente quedaba colgado del
+    // anterior para entenderse.
+    diferencia_proponer:     'propuso qué hacer',
+    diferencia_contraproponer:'propuso la otra salida',
+    diferencia_aceptar:      'aceptó la propuesta',
+    diferencia_escalada:     'no estuvo de acuerdo — pasó a supervisión',
+    diferencia_supervisar:   'lo decidió supervisión',
+    diferencia_llegada:      'confirmó que lo tiene',
+    devolucion_solicitada:   'pidió la devolución',
+    devolucion_aceptada:     'aceptó la devolución',
+    devolucion_rechazada:    'no aceptó la devolución',
+    devolucion_recibida:     'recibió la devolución en bodega',
+    correccion_conteo:       'corrigió lo contado',
+    // Los tres de abajo faltaban y salían CRUDOS a la pantalla: la actividad
+    // del pedido #150 mostraba «traslado_recibido» tal cual, que además nombra
+    // la tubería y no el negocio. Un rótulo que falta no da error: imprime la
+    // clave interna y parece un dato.
+    traslado_recibido:       'confirmó la entrada al inventario',
+    extra_anotado:           'anotó un producto que llegó de más',
+    extra_quitado:           'quitó lo que había anotado de más',
+    no_reenviado:            'decidió no reenviar la caja que no llegó',
+};
+

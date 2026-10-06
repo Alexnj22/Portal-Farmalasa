@@ -23,6 +23,7 @@ import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
+import { useAuth } from '@nucleo/context/AuthContext';
 import Vidrio from '../componentes/Vidrio';
 import PasoDeMes from '../componentes/PasoDeMes';
 import { MARCA } from '../componentes/inicio/marca';
@@ -31,6 +32,9 @@ import { guardarDocumentos } from '../componentes/compras/documentos';
 const POR_PAGINA = 40;
 
 export default function FacturasCompra() {
+  // El total de la cabecera es de quien tiene `facturas_compra_ver_montos`,
+  // como las tarjetas del portal.
+  const verMontos = useAuth().hasPermission('facturas_compra_ver_montos');
   const [mes, setMes] = useState(mesSV);
   const [filas, setFilas] = useState(null);
   const [error, setError] = useState(null);
@@ -88,7 +92,7 @@ export default function FacturasCompra() {
         {filas ? (
           <FilaDeKpis>
             <Kpi icono="FileText" rotulo="Documentos" valor={visibles.length.toLocaleString('es-SV')} color={MARCA.azul} apoyo={anulados ? `${anulados} anulado${anulados === 1 ? '' : 's'}` : 'ninguno anulado'} />
-            <Kpi icono="DollarSign" rotulo="Monto" valor={formatMoney(total)} color={MARCA.violeta} apoyo="sin los anulados" />
+            {verMontos ? <Kpi icono="DollarSign" rotulo="Monto" valor={formatMoney(total)} color={MARCA.violeta} apoyo="sin los anulados" /> : null}
           </FilaDeKpis>
         ) : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}

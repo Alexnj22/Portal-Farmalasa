@@ -21,10 +21,13 @@ import Vidrio from '../componentes/Vidrio';
 import PasoDeMes from '../componentes/PasoDeMes';
 import { MARCA } from '../componentes/inicio/marca';
 import { guardarCompras } from '../componentes/compras/compras';
+import { useAuth } from '@nucleo/context/AuthContext';
 
 const POR_PAGINA = 30;
 
 export default function Compras() {
+  // Sin `compras_ver_montos` la lista no lleva dinero (igual que el portal).
+  const verMontos = useAuth().hasPermission('compras_ver_montos');
   const [mes, setMes] = useState(mesSV);
   const [texto, setTexto] = useState('');
   const busqueda = useTextoRebotado(texto, 350).trim();
@@ -67,7 +70,7 @@ export default function Compras() {
         <PasoDeMes mes={mes} onCambiar={setMes} />
         {!cargando || datos.filas.length ? (
           <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
-            {`${datos.total.toLocaleString('es-SV')} compra${datos.total === 1 ? '' : 's'}${datos.filas.length === datos.total && datos.total ? ` · ${formatMoney(totalMes)}` : ''}`}
+            {`${datos.total.toLocaleString('es-SV')} compra${datos.total === 1 ? '' : 's'}${verMontos && datos.filas.length === datos.total && datos.total ? ` · ${formatMoney(totalMes)}` : ''}`}
           </Text>
         ) : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
@@ -81,7 +84,7 @@ export default function Compras() {
                 <View style={{ padding: 12, gap: 4 }}>
                   <View style={{ flexDirection: 'row', gap: 10 }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={2}>{proveedor}</Text>
-                    <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '800' }}>{formatMoney(r.total)}</Text>
+                    {verMontos ? <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '800' }}>{formatMoney(r.total)}</Text> : null}
                   </View>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
                     {[fechaTexto(r.fecha, { day: 'numeric', month: 'short' }), r.erp_purchase_id ? `N.º ${r.erp_purchase_id}` : null, `${items} ítem${items === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}

@@ -12,8 +12,12 @@ import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, Dato, Seccion } from '../../componentes/formulario/Piezas';
 import { compraGuardada } from '../../componentes/compras/compras';
+import { useAuth } from '@nucleo/context/AuthContext';
 
 export default function Compra() {
+  // Los montos son de quien tiene `compras_ver_montos`, como en el portal:
+  // sin él se ven los productos, sus cantidades y lotes, nunca el dinero.
+  const verMontos = useAuth().hasPermission('compras_ver_montos');
   const { id } = useLocalSearchParams();
   const c = compraGuardada(id);
   const [items, setItems] = useState(null);
@@ -32,10 +36,10 @@ export default function Compra() {
           <View style={{ gap: 4, marginHorizontal: 4 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{c.suppliers?.nombre || c.proveedor || 'Sin proveedor'}</Text>
             <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{[fechaTexto(c.fecha, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }), c.erp_purchase_id ? `N.º ${c.erp_purchase_id}` : null].filter(Boolean).join(' · ')}</Text>
-            <Text style={{ color: colorSistema.texto, fontSize: 32, fontWeight: '800', marginTop: 4 }}>{formatMoney(c.total)}</Text>
+            {verMontos ? <Text style={{ color: colorSistema.texto, fontSize: 32, fontWeight: '800', marginTop: 4 }}>{formatMoney(c.total)}</Text> : null}
           </View>
         ) : null}
-        {c ? (
+        {c && verMontos ? (
           <Seccion titulo="Totales">
             <Dato primero rotulo="Subtotal" valor={formatMoney(c.subtotal)} />
             <Dato rotulo="IVA" valor={formatMoney(c.iva)} />
@@ -49,10 +53,10 @@ export default function Compra() {
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{it.descripcion}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
-                  {[`${formatQty(it.cantidad)} × ${formatMoney(it.precio_unitario)}`, it.lote ? `lote ${it.lote}` : null, it.fecha_vencimiento ? `vence ${fechaNumerica(it.fecha_vencimiento)}` : null].filter(Boolean).join(' · ')}
+                  {[verMontos ? `${formatQty(it.cantidad)} × ${formatMoney(it.precio_unitario)}` : `${formatQty(it.cantidad)} u.`, it.lote && it.lote !== 'GENERICO' ? `lote ${it.lote}` : null, it.fecha_vencimiento ? `vence ${fechaNumerica(it.fecha_vencimiento)}` : null].filter(Boolean).join(' · ')}
                 </Text>
               </View>
-              <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{formatMoney(it.total_linea)}</Text>
+              {verMontos ? <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{formatMoney(it.total_linea)}</Text> : null}
             </View>
           )) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin productos.</Text>}
         </Seccion>

@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1223.5 — App: los montos de compras respetan su permiso
+
+- **App: Compras y Facturas de compra respetan los permisos de montos**, como el portal. Sin `compras_ver_montos` la lista y la ficha de una compra muestran proveedor, productos, cantidades y lotes, pero ningún total, subtotal, IVA ni costo. Sin `facturas_compra_ver_montos` no sale la tarjeta «Monto». Antes la app los mostraba a cualquiera que entrara.
+- La ficha de la compra ya no pinta «lote GENERICO».
+
 ## v2.1223.4 — App: historial de notificaciones nativo
 
 - **App: el historial de notificaciones ya es nativo.** Todo lo de los últimos 60 días —leído, sin leer y lo que se quitó de la bandeja—, paginado contra el servidor, con búsqueda en la barra y la MISMA tarjeta de la bandeja (detalle, Aprobar/Rechazar). Lo quitado se puede devolver con un toque.

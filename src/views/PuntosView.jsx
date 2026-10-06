@@ -56,6 +56,7 @@ import {
     fetchResumenDePuntos, fetchAvisosDePuntos, fetchCuentasPorAsignar, QUE_HACER_POR_MOTIVO,
     fetchSerieDePuntos, fetchClientesConPuntos, fetchTableroDePuntos,
 } from '@nucleo/data/puntos';
+import { cambioContraAnterior } from '@nucleo/utils/puntosCuenta';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import AsignarCuentaModal from './puntos/AsignarCuentaModal';
@@ -481,12 +482,7 @@ function Resumen({ resumen, serie, tablero, cargando, irA, onAbrirCliente, veTar
     // anterior, que es lo único justo a mitad de mes.
     const mesAnt = tablero?.mes_anterior_hasta
         ? fechaTexto(tablero.mes_anterior_hasta, { month: 'short' }).replace('.', '') : '';
-    const cambio = (a, b) => {
-        const x = Number(a) || 0; const y = Number(b) || 0;
-        if (!y) return null;
-        const pct = Math.round(((x - y) / y) * 100);
-        return `${pct > 0 ? '+' : pct < 0 ? '−' : ''}${Math.abs(pct)}% vs. ${mesAnt}`;
-    };
+    const cambio = (a, b) => cambioContraAnterior(a, b, mesAnt);
     const tasa = Number(act.acumulado) > 0
         ? Math.round((Number(act.canjeado) / Number(act.acumulado)) * 100) : null;
 

@@ -1,22 +1,24 @@
 // Puntos, NATIVO — el programa visto desde el teléfono (`PuntosView`):
 //
-//   · Resumen: ¿funciona? Lo que se debe en puntos, lo acumulado y canjeado en
-//     el mes contra el anterior, hoy por sala y lo próximo que vence.
-//   · Consulta: los clientes con su saldo, para revisarlo antes de un canje.
-//     Tocar uno abre su cuenta (`puntos-cliente/[id]`).
+//   · Resumen: ¿funciona? Las cifras del día y del mes, los últimos 30 días,
+//     el mes por sala, los que más tienen y cuándo vence lo que se debe, en
+//     puntos o en dólares (`componentes/puntos/Resumen`).
+//   · Consulta: los clientes con su saldo, lo acumulado y lo canjeado,
+//     ordenados como la tabla del portal. Tocar uno abre su cuenta
+//     (`puntos-cliente/[id]`).
 //   · Avisos: lo que hay que revisar (canjes sin saldo, anulaciones con puntos
 //     gastados, movimientos fuera de lo normal).
 //
 // Cada pestaña con su permiso, como en el portal; la base lo vuelve a comprobar.
 // Asignar cuentas del sistema anterior y los traspasos siguen en el portal.
 // Los rótulos salen del núcleo (`puntosTexto`).
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { fetchAvisosDePuntos, fetchClientesConPuntos, fetchResumenDePuntos, fetchTableroDePuntos } from '@nucleo/data/puntos';
-import { avisoDePuntos, dolaresDePuntos, motorQuieto, puntosTexto } from '@nucleo/utils/puntosTexto';
+import { fetchAvisosDePuntos, fetchClientesConPuntos } from '@nucleo/data/puntos';
+import { avisoDePuntos, dolaresDePuntos, puntosTexto } from '@nucleo/utils/puntosTexto';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { fechaHora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -24,78 +26,27 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Dato, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
-import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
+import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
+import Resumen, { COLOR_ACUMULADO, COLOR_CANJEADO } from '../componentes/puntos/Resumen';
 
 const COLOR = { danger: MARCA.rojo, warning: MARCA.ambar, info: MARCA.azulClaro };
 const POR_PAGINA = 30;
 
-function Resumen() {
-  const [r, setR] = useState(null);
-  const [t, setT] = useState(null);
-  const [error, setError] = useState(null);
-  const cargar = useCallback(async () => {
-    try {
-      const [a, b] = await Promise.all([fetchResumenDePuntos(), fetchTableroDePuntos()]);
-      setR(a); setT(b); setError(null);
-    } catch (e) { setError(mensajeAmigable(e)); }
-  }, []);
-  useEffect(() => { cargar(); }, [cargar]);
-  if (error) return <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View>;
-  if (!r || !t) return <ActivityIndicator style={{ marginTop: 24 }} />;
-  const encendido = !!r.config?.encendido;
-  const quieto = motorQuieto(r.ultima_acumulacion, encendido);
-  const mes = t.mes_actual || {};
-  const ant = t.mes_anterior || {};
-  const prox = (t.vencimientos || [])[0];
-  return (
-    <>
-      <View style={{ marginHorizontal: 16 }}>
-        {!encendido ? <Aviso tono="freno" texto="La acumulación de puntos está apagada." />
-          : quieto ? <Aviso tono="freno" texto={`No se acumulan puntos desde hace ${quieto} minutos, con las salas abiertas.`} />
-            : <Aviso tono="nota" texto={r.ultima_acumulacion ? `Funcionando · última acumulación ${fechaHora12(r.ultima_acumulacion)}` : 'Funcionando.'} />}
-      </View>
-      <FilaDeKpis>
-        <Kpi icono="Wallet" rotulo="En las cuentas" valor={dolaresDePuntos(t.deuda?.puntos)} color={MARCA.violeta}
-          apoyo={`${puntosTexto(t.deuda?.clientes)} clientes · ${puntosTexto(t.deuda?.listos_clientes)} ya pueden canjear`} />
-        <Kpi icono="Gift" rotulo="Canjes del mes" valor={puntosTexto(mes.canjes)} color={MARCA.ambar}
-          apoyo={`${dolaresDePuntos(mes.canjeado)} · ${puntosTexto(mes.clientes_canjearon)} clientes`} />
-      </FilaDeKpis>
-      <View style={{ marginHorizontal: 16, gap: 10 }}>
-      <Seccion titulo={`${fechaTexto(t.mes, { month: 'long', year: 'numeric' })} contra el mes anterior`}>
-        <Dato primero rotulo="Acumulado" valor={`${dolaresDePuntos(mes.acumulado)} · antes ${dolaresDePuntos(ant.acumulado)}`} />
-        <Dato rotulo="Canjeado" valor={`${dolaresDePuntos(mes.canjeado)} · antes ${dolaresDePuntos(ant.canjeado)}`} />
-        <Dato rotulo="Clientes que acumularon" valor={puntosTexto(mes.clientes_acumularon)} />
-      </Seccion>
-      <Seccion titulo="Hoy por sala">
-        {(r.por_sala || []).map((s, i) => (
-          <Dato key={s.sucursal} primero={i === 0} rotulo={s.sala} valor={`+${dolaresDePuntos(s.acumulado)} · −${dolaresDePuntos(s.canjeado)}`} />
-        ))}
-      </Seccion>
-      </View>
-      <View style={{ marginHorizontal: 16 }}>
-        <Aviso tono="nota" texto={prox
-          ? `Lo próximo que vence: ${puntosTexto(prox.puntos)} puntos (${dolaresDePuntos(prox.puntos)}) en ${fechaTexto(prox.mes, { month: 'long', year: 'numeric' })}.`
-          : 'No hay puntos por vencer.'} />
-      </View>
-    </>
-  );
-}
-
-function Consulta({ busqueda }) {
+function Consulta({ busqueda, orden, dir }) {
   const [datos, setDatos] = useState({ total: 0, filas: [] });
   const [desde, setDesde] = useState(0);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const pedido = useRef(0);
-  useEffect(() => { setDesde(0); }, [busqueda]);
+  useEffect(() => { setDesde(0); }, [busqueda, orden, dir]);
   useEffect(() => {
     const yo = ++pedido.current;
     setCargando(true);
-    fetchClientesConPuntos({ busqueda: busqueda || null, limite: POR_PAGINA, desde })
+    fetchClientesConPuntos({ busqueda: busqueda || null, limite: POR_PAGINA, desde, orden, dir })
       .then((r) => {
         if (yo !== pedido.current) return;
         setError(null);
@@ -103,7 +54,7 @@ function Consulta({ busqueda }) {
       })
       .catch((e) => { if (yo === pedido.current) setError(mensajeAmigable(e)); })
       .finally(() => { if (yo === pedido.current) setCargando(false); });
-  }, [busqueda, desde]);
+  }, [busqueda, desde, orden, dir]);
   return (
     <>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
@@ -117,6 +68,10 @@ function Consulta({ busqueda }) {
                 <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={1}>{c.nombre}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>
                   {[c.dui, c.telefono, c.ultima_acumulacion ? `acumuló ${fechaTexto(c.ultima_acumulacion, { day: 'numeric', month: 'short' })}` : null].filter(Boolean).join(' · ') || 'Sin datos de contacto'}
+                </Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
+                  <Text style={{ color: COLOR_ACUMULADO, fontWeight: '700' }}>{`+${puntosTexto(c.acumulados)}`}</Text>{' acumulados · '}
+                  <Text style={{ color: COLOR_CANJEADO, fontWeight: '700' }}>{`−${puntosTexto(c.canjeados)}`}</Text>{' canjeados'}
                 </Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
@@ -186,6 +141,19 @@ export default function Puntos() {
   const [texto, setTexto] = useState('');
   const busqueda = useTextoRebotado(texto, 350).trim();
   const [llave, setLlave] = useState(0);
+  // El orden de la consulta, el mismo que la tabla del portal deja elegir
+  // (`puntos_panel_clientes` ordena en la base).
+  const [orden, setOrden] = useState('saldo.desc');
+  const [ordenCol, ordenDir] = orden.split('.');
+  const grupos = pestana === 'consulta' ? [{
+    id: 'orden', titulo: 'Ordenar por', activa: orden, porDefecto: 'saldo.desc', onCambiar: setOrden,
+    opciones: [
+      { id: 'saldo.desc', label: 'Más puntos' }, { id: 'saldo.asc', label: 'Menos puntos' },
+      { id: 'acumulados.desc', label: 'Más acumulados' }, { id: 'canjeados.desc', label: 'Más canjeados' },
+      { id: 'ultima.desc', label: 'Acumuló hace menos' }, { id: 'ultima.asc', label: 'Acumuló hace más' },
+      { id: 'nombre.asc', label: 'Nombre (A–Z)' },
+    ],
+  }] : [];
   const [recargando, setRecargando] = useState(false);
 
   return (
@@ -197,13 +165,15 @@ export default function Puntos() {
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         } : undefined,
       }} />
+      <MenuDeFiltros grupos={grupos} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={() => { setRecargando(true); setLlave((k) => k + 1); setTimeout(() => setRecargando(false), 600); }} />}>
         {pestanas.length > 1 ? <Segmentos activa={pestana} onCambiar={setPestana} opciones={pestanas} /> : null}
+        <FiltrosActivos grupos={grupos} />
         {!pestana ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto="Tu cargo no tiene acceso a Puntos." /></View>
-          : pestana === 'resumen' ? <Resumen key={llave} />
-            : pestana === 'consulta' ? <Consulta key={llave} busqueda={busqueda} />
+          : pestana === 'resumen' ? <Resumen key={llave} onIrA={(p) => { if (pestanas.some((x) => x.id === p)) setPestana(p); }} />
+            : pestana === 'consulta' ? <Consulta key={llave} busqueda={busqueda} orden={ordenCol} dir={ordenDir} />
               : <Avisos key={llave} />}
       </ScrollView>
     </>

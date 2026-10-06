@@ -42,6 +42,7 @@ import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, fechaTexto } from '@nucleo/utils/fecha';
 import { fetchPuntosCliente, ajustarPuntos } from '@nucleo/data/puntos';
 import { claveDeMovimiento, detalleDeMovimiento, rotuloDeMovimiento } from '@nucleo/utils/puntosTexto';
+import { FILTROS_DE_MOVIMIENTO, mesesDeCuenta, movimientoPasaFiltro, repartoDeCuenta } from '@nucleo/utils/puntosCuenta';
 import CodigoDeAcceso from './CodigoDeAcceso';
 import VentaDelAviso from './VentaDelAviso';
 
@@ -67,11 +68,7 @@ const TIPO = {
     // La compra se pasó a otro cliente con una solicitud aprobada (2026-10-01).
     cambio_cliente: { icono: ArrowLeftRight, burbuja: 'bg-danger/10 text-danger-text' },
 };
-const FILTROS = [
-    { value: 'todos',  label: 'Todos' },
-    { value: 'entran', label: 'Acumulados' },
-    { value: 'salen',  label: 'Canjes' },
-];
+const FILTROS = FILTROS_DE_MOVIMIENTO;
 const DE_A = 40;
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto',
     'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -131,39 +128,12 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
 
     // En qué se fue lo acumulado. Se cuenta desde los movimientos y no desde
     // `usados`, que suma canjes y vencimientos en un solo número.
-    const reparto = useMemo(() => {
-        let canjeado = 0; let vencido = 0; let anulado = 0;
-        for (const m of movimientos) {
-            const p = Math.abs(Number(m.puntos) || 0);
-            if (m.tipo === 'canje') canjeado += p;
-            else if (m.tipo === 'vencimiento') vencido += p;
-            else if (m.tipo === 'anulacion') anulado += p;
-        }
-        return { canjeado, vencido, anulado };
-    }, [movimientos]);
+    const reparto = useMemo(() => repartoDeCuenta(movimientos), [movimientos]);
 
     // La historia por mes, con el saldo al cierre de cada uno. El saldo se
     // reconstruye HACIA ATRÁS desde el de hoy: es el único dato firme, y así el
     // último mes cierra exactamente en lo que dice la tarjeta de arriba.
-    const meses = useMemo(() => {
-        const porMes = new Map();
-        for (const m of movimientos) {
-            const clave = String(m.fecha).slice(0, 7);
-            const fila = porMes.get(clave) ?? { mes: clave, acumulado: 0, canjeado: 0, neto: 0 };
-            const p = Number(m.puntos) || 0;
-            // Un canje devuelto no es algo ganado: resta de lo canjeado del mes.
-            if (m.tipo === 'canje_devuelto') fila.canjeado -= p;
-            else if (p > 0) fila.acumulado += p;
-            if (m.tipo === 'canje') fila.canjeado += -p;
-            fila.neto += p;
-            porMes.set(clave, fila);
-        }
-        const lista = [...porMes.values()].sort((a, b) => b.mes.localeCompare(a.mes));
-        let saldo = Number(cuenta?.saldo) || 0;
-        for (const f of lista) { f.saldo = saldo; saldo -= f.neto; }
-        // Los últimos 18 meses con movimiento: más no entra legible en el modal.
-        return lista.slice(0, 18).reverse();
-    }, [movimientos, cuenta]);
+    const meses = useMemo(() => mesesDeCuenta(movimientos, cuenta?.saldo, 18), [movimientos, cuenta]);
 
     // El documento y quién, por movimiento (`puntos_panel_cliente.detalle`).
     // Un canje devuelto comparte los datos de su canje.
@@ -175,9 +145,7 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
         const q = busqueda.trim();
         return movimientos.filter((m) => {
             const p = Number(m.puntos) || 0;
-            if (filtro === 'entran' && p <= 0) return false;
-            if (filtro === 'salen' && m.tipo !== 'canje') return false;
-            if (mesElegido && String(m.fecha).slice(0, 7) !== mesElegido) return false;
+            if (!movimientoPasaFiltro(m, filtro, mesElegido)) return false;
             if (!q) return true;
             // Por documento, número de movimiento, quién, sala o motivo.
             const i = infoDe(m);

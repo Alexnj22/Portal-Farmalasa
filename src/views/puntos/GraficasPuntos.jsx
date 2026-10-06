@@ -21,6 +21,7 @@ import {
 } from 'recharts';
 import ChartContainer from '../../components/common/ChartContainer';
 import { formatQty, formatMoney, formatMoneyCorto } from '@nucleo/utils/formatNumber';
+import { serieDeVencimientos } from '@nucleo/utils/puntosCuenta';
 
 const COLOR = {
     acumulado: 'var(--chart-1)',
@@ -107,18 +108,8 @@ export function GraficaDiaria({ serie, unidad = 'puntos' }) {
  * tiempo no decía eso.
  */
 export function GraficaVencimientos({ lista, hoy, unidad = 'puntos' }) {
-    const porMes = new Map((lista ?? []).map((v) => [String(v.mes).slice(0, 7), v]));
-    const inicio = String(hoy ?? new Date().toISOString()).slice(0, 7);
-    const ultimo = [...porMes.keys()].sort().pop() ?? inicio;
-    const datos = [];
-    let [a, m] = inicio.split('-').map(Number);
-    for (let i = 0; i < 24; i += 1) {
-        const clave = `${a}-${String(m).padStart(2, '0')}`;
-        const v = porMes.get(clave);
-        datos.push({ clave, etiqueta: mes(`${clave}-01`), puntos: Number(v?.puntos) || 0, clientes: Number(v?.clientes) || 0 });
-        if (clave >= ultimo) break;
-        m += 1; if (m > 12) { m = 1; a += 1; }
-    }
+    // Los meses vacíos en el medio también van: núcleo, `serieDeVencimientos`.
+    const datos = serieDeVencimientos(lista, hoy).map((d) => ({ ...d, etiqueta: mes(`${d.clave}-01`) }));
     return (
         <ChartContainer minHeight={220}>
             <BarChart data={datos} margin={{ top: 8, right: 8, left: -8, bottom: 0 }} barCategoryGap="18%">

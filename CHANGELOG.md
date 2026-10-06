@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1226.0 — App: metas y puntos con sus gráficas
+
+- **App: Metas con sus gráficas, como el portal.** Tablero / Bono / Histórico. Meta del mes, vendido, proyección y semáforo; cada sala con su termómetro; «Cómo va el mes» con barras día por día contra la línea del ritmo (deslizando el dedo se ve cada valor); la venta por vendedor (Total / Por día / Por hora) con foto y su barra contra el promedio. Tocar una sala abre su detalle con «De dónde sale la meta». Bono por persona con «si cierra así»; Histórico con la línea de cumplimiento contra 95% y 100% y la meta sobre lo vendido.
+- **App: Puntos con sus gráficas.** Las tarjetas del portal (más las de la red), Puntos/Dólares, los últimos 30 días acumulados contra canjeados, el mes por sala, «Los que más tienen» y «Cuándo vencen». La consulta trae acumulados y canjeados y 7 órdenes. La cuenta del cliente: el reparto completo, el mes a mes que filtra los movimientos al tocarlo, y Todos / Acumulados / Canjes.
+- Núcleo: `resumenDelMesEnCurso` y `rankingDeVendedores` (metasUtils) y `puntosCuenta.js`; el portal los usa. Gráficas con `react-native-svg`, sin librerías nuevas.
 ## v2.1225.3 — Avisos de la app de clientes: inmediatos cada minuto, recordatorios a las 9
 
 - **`avisos-clientes` en dos modos** (decisión del usuario): `inmediato` cada minuto de 8:00 a 20:00 SV (puntos ganados, oferta nueva; llega 1–2 min después de pagar porque la venta tarda ~1 min en llegar de la caja) y `diario` a las 9:00 SV (puntos que vencen en 15 días, inyección pendiente). Reemplaza el cron de 15 minutos. Ventana de lotes recortada a 2 h. Costo: ~720 invocaciones al día, sin tocar el ERP.

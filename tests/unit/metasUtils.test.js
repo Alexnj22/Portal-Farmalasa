@@ -163,3 +163,30 @@ describe('resumenDeMetas', () => {
         expect(resumenDeMetas(null).conMeta).toBe(0);
     });
 });
+
+describe('resumenDelMesEnCurso y rankingDeVendedores', () => {
+    it('dibuja hasta hoy y no cuenta hoy como día cerrado', async () => {
+        const { resumenDelMesEnCurso } = await import('@nucleo/utils/metasUtils');
+        const r = resumenDelMesEnCurso({
+            dias_mes: 30, dia_hoy: 3, ritmo_diario: 100, meta: 3000, acumulado: 250, proyeccion: 2900,
+            umbral_total: 100, umbral_medio: 95,
+            dias: [{ dia: 1, venta: 120 }, { dia: 2, venta: 80 }, { dia: 3, venta: 50, es_hoy: true }],
+        });
+        expect(r.dias).toHaveLength(3);
+        expect(r.porVenir).toBe(27);
+        expect(r.cerrados).toBe(2);
+        expect(r.sobreRitmo).toBe(1);
+        expect(r.tramoProy).toBe('medio');      // 2900/3000 = 96.7%
+        expect(r.diasRestantes).toBe(28);
+    });
+    it('«por hora» cae a total si alguien no tiene horario', async () => {
+        const { rankingDeVendedores } = await import('@nucleo/utils/metasUtils');
+        const data = { personas: 2, con_horario: 1, promedio_venta: 150,
+            vendedores: [{ employee_id: 'a', venta: 100, venta_hora: 9 }, { employee_id: 'b', venta: 200, venta_hora: 1 }] };
+        const r = rankingDeVendedores(data, 'hora');
+        expect(r.ordenActivo).toBe('total');
+        expect(r.filas[0].employee_id).toBe('b');
+        expect(r.promedio).toBe(150);
+        expect(r.total).toBe(300);
+    });
+});

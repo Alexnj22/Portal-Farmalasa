@@ -140,3 +140,92 @@ export function semestrePagoLabel(sem) {
     const y = Number(sem.slice(0, 4));
     return sem.endsWith('1') ? `1ª quincena de julio ${y}` : `1ª quincena de enero ${y + 1}`;
 }
+
+// ── El mes en curso de una sala (`get_metas_mes_en_curso`) ───────────────────
+// Lo que dibujan «Día por día» y el termómetro. Vivía en `GraficaMes`; se mudó
+// el 2026-10-06 para que la app dibuje los MISMOS días, el mismo ritmo y el
+// mismo tramo proyectado que el portal.
+//
+// Los días llegan sólo hasta hoy (los que no empezaron no tienen barra: se
+// dicen como «días por venir»). Hoy va marcado porque todavía no termina, y NO
+// cuenta para «días cerrados por encima del ritmo».
+export function resumenDelMesEnCurso(data) {
+    const diasMes = Number(data?.dias_mes || 30);
+    const diaHoy = Math.min(diasMes, Math.max(1, Number(data?.dia_hoy || diasMes)));
+    const porDia = new Map((data?.dias || []).map((d) => [Number(d.dia), d]));
+    const dias = Array.from({ length: diaHoy }, (_, i) => {
+        const n = i + 1;
+        const d = porDia.get(n);
+        return { dia: n, venta: d ? Number(d.venta) : null, esHoy: !!d?.es_hoy };
+    });
+    const ritmo = Number(data?.ritmo_diario || 0);
+    const cerrados = dias.filter((d) => d.venta != null && !d.esHoy);
+    const meta = Number(data?.meta || 0);
+    const acum = Number(data?.acumulado || 0);
+    const proy = data?.proyeccion != null ? Number(data.proyeccion) : null;
+    const pctProy = meta > 0 && proy != null ? (proy / meta) * 100 : null;
+    const diasRestantes = Math.max(0, Number(data?.dias_mes || 0) - Number(data?.dia_hoy || 0) + 1);
+    return {
+        dias,
+        diasMes,
+        diaHoy,
+        porVenir: Math.max(0, diasMes - diaHoy),
+        ritmo,
+        cerrados: cerrados.length,
+        sobreRitmo: cerrados.filter((d) => d.venta >= ritmo).length,
+        meta,
+        acum,
+        proy,
+        pct: meta > 0 ? (acum / meta) * 100 : null,
+        pctProy,
+        tramoProy: pctProy == null ? null
+            : pctProy >= Number(data.umbral_total) ? 'completo'
+            : pctProy >= Number(data.umbral_medio) ? 'medio' : 'nada',
+        falta: meta - acum,
+        diasRestantes,
+        porDiaParaLlegar: meta - acum > 0 && diasRestantes > 0 ? (meta - acum) / diasRestantes : null,
+        umbralMedio: Number(data?.umbral_medio ?? 95),
+        umbralTotal: Number(data?.umbral_total ?? 100),
+    };
+}
+
+// ── El ranking de vendedores del mes ─────────────────────────────────────────
+// Tres maneras de ordenar la MISMA lista. «Por hora» sólo existe cuando TODOS
+// tienen horario: con uno sin horas, su venta por hora sería 0 y saldría último
+// por un dato que falta, no por vender poco. (Vivía en `RankingVendedores`.)
+export const ORDENES_RANKING = [
+    { value: 'total', label: 'Total' },
+    { value: 'dia',   label: 'Por día' },
+    { value: 'hora',  label: 'Por hora' },
+];
+const CLAVE_RANKING    = { total: 'venta',          dia: 'venta_dia',    hora: 'venta_hora'    };
+const PROMEDIO_RANKING = { total: 'promedio_venta', dia: 'promedio_dia', hora: 'promedio_hora' };
+export const SUFIJO_RANKING = { total: '', dia: ' por día', hora: ' por hora' };
+
+export function rankingDeVendedores(data, orden = 'total') {
+    const horaDisponible = Number(data?.personas || 0) > 0
+        && Number(data?.con_horario || 0) === Number(data?.personas);
+    const ordenActivo = orden === 'hora' && !horaDisponible ? 'total' : orden;
+    const clave = CLAVE_RANKING[ordenActivo];
+    const base = (data?.vendedores || []).map((v) => ({
+        ...v,
+        venta: Number(v.venta),
+        ticket: Number(v.ticket),
+        dias: Number(v.dias),
+        venta_dia: Number(v.venta_dia),
+        horas: Number(v.horas || 0),
+        dias_horario: Number(v.dias_horario || 0),
+        venta_hora: Number(v.venta_hora || 0),
+        dias_sin_turno: Number(v.dias_sin_turno || 0),
+    }));
+    const filas = [...base].sort((a, b) => b[clave] - a[clave]);
+    return {
+        filas,
+        clave,
+        ordenActivo,
+        horaDisponible,
+        promedio: Number(data?.[PROMEDIO_RANKING[ordenActivo]] || 0),
+        maximo: filas.length ? filas[0][clave] : 0,
+        total: filas.reduce((s, v) => s + v[clave], 0),
+    };
+}

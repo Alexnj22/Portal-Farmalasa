@@ -37,9 +37,10 @@ function fmtTimeSince(iso) {
     const d = Math.floor((Date.now() - new Date(iso)) / 86_400_000);
     if (d === 0) return 'hoy';
     if (d === 1) return 'ayer';
-    if (d < 14)  return `hace ${d}d`;
-    if (d < 60)  return `hace ${Math.floor(d / 7)}sem`;
-    return `hace ${Math.floor(d / 30)}m`;
+    // Palabras completas: «hace 3m» se leía como minutos.
+    if (d < 14)  return `hace ${d} días`;
+    if (d < 60)  return `hace ${Math.floor(d / 7)} semanas`;
+    return `hace ${Math.floor(d / 30)} meses`;
 }
 
 // Cortes de urgencia — ver `getUrgLevel`. Productos que Bodega puede mandar.
@@ -495,8 +496,8 @@ export default function TabGenerar({ searchTerm = '' }) {
                                                 </span>
                                             </span>
                                             <span className={`whitespace-nowrap ${ultimoCls}`}>
-                                                <span className="sr-only">Último pedido: </span>
-                                                {ultimo ?? 'sin pedidos'}
+                                                {/* Rotulado: un «hoy» suelto no decía de qué era. */}
+                                                {ultimo ? `Último pedido ${ultimo}` : 'Sin pedidos aún'}
                                             </span>
                                         </span>
                                     </>

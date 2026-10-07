@@ -730,7 +730,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {canPausar       && <Button variant="secondary" icon={Pause}     loading={isLCBusy} onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}>Pausar</Button>}
                                             {canFinalizar    && <Button variant="primary" icon={Flag}      loading={isLCBusy || busyAction === `finalizar_load_${cardKey}`} onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)}>Finalizar</Button>}
                                             {canReanudar     && <Button variant="primary" icon={RotateCcw} loading={isLCBusy} onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}>Reanudar</Button>}
-                                            {canMarcarEnRuta && <Button variant="primary" icon={Truck} onClick={() => setCrearRutaOpen([])}>Crear ruta</Button>}
+                                            {canMarcarEnRuta && <Button variant="primary" icon={Truck} onClick={() => setCrearRutaOpen([`${row.pedido_id}__${row.erp_sucursal_id}`])}>Crear ruta</Button>}
                                             {(() => {
                                                 const rutaActiva       = pedidoRutaMap.get(claveParada(row.pedido_id, row.erp_sucursal_id))?.ruta;
                                                 const conductorEnRuta  = rutaActiva?.status === 'en_ruta' && !rutaActiva?.vuelta_base_at;

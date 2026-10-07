@@ -11,9 +11,9 @@
 // aprobar, devolver, publicar, cerrar, nueva versión, archivar), lo que falta
 // para enviarla, el comentario de la última devolución, la pregunta por
 // pregunta con barras y el historial con quién hizo cada paso.
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { fetchComentarios, fetchEncuesta, fetchEventos, fetchPersonas, fetchProblemas, fetchResultados } from '@nucleo/data/encuestasClientes';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12 } from '@nucleo/utils/hora';
@@ -23,7 +23,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import Segmentos from '../../componentes/Segmentos';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato, Seccion } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Vidrio from '../../componentes/Vidrio';
@@ -66,6 +66,12 @@ export default function EncuestaCliente() {
     }).catch((x) => { setError(x?.message || 'No se pudo cargar la encuesta.'); setEncuesta(false); });
   }, [id]);
   useEffect(() => { cargar(); }, [cargar]);
+  // Al volver de diseñar las preguntas, «Falta para enviarla» se relee.
+  const primera = useRef(true);
+  useFocusEffect(useCallback(() => {
+    if (primera.current) { primera.current = false; return; }
+    cargar();
+  }, [cargar]));
 
   // Tras una acción: la copia nueva se abre; si no, se relee ésta.
   const hecho = (r) => {
@@ -107,6 +113,10 @@ export default function EncuestaCliente() {
                 </Seccion>
               </View>
             ) : null}
+            <View style={{ marginHorizontal: 16 }}>
+              <BotonGrande texto={encuesta.estado === 'borrador' ? 'Diseñar las preguntas' : 'Ver las preguntas'} borde color={MARCA.azulClaro}
+                onPress={() => router.push({ pathname: '/encuesta-cliente/disenar', params: { id: String(encuesta.id) } })} />
+            </View>
             <CicloDeEncuesta encuesta={encuesta} sinProblemas={!problemas.length} onHecho={hecho} />
             {!['publicada', 'cerrada', 'archivada'].includes(encuesta.estado) ? (
               <View style={{ marginHorizontal: 16 }}><Aviso texto="Los resultados aparecen cuando la encuesta se publica y empieza a recibir respuestas." /></View>

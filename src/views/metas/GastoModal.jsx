@@ -12,14 +12,13 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
 import { crearMetaGasto, previewMetaGasto } from '@nucleo/data/metas';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { ymHoySV, ymSumar, ymLabel, ymLabelCorto } from '@nucleo/utils/metasUtils';
+import { MESES_PARA_RECUPERAR, mesesParaArrancarGasto, metasQueReabreElGasto, salasDelGasto, ymHoySV, ymLabelCorto, ymSumar } from '@nucleo/utils/metasUtils';
 
 const squircleClass = 'w-12 h-12 rounded-2xl bg-surface-card-hover border border-border-card shadow-sm flex items-center justify-center shrink-0';
 
-// Hasta 24 meses: más que eso deja de ser «recuperar un gasto» y es otra cosa.
-const MESES_OPCIONES = [1, 2, 3, 4, 6, 9, 12, 18, 24].map((n) => ({
-    value: String(n), label: n === 1 ? 'Un solo mes' : `${n} meses`,
-}));
+// Hasta 24 meses, los meses para arrancar, las salas válidas y qué metas
+// reabre: núcleo (`metasUtils`), lo mismo que la app.
+const MESES_OPCIONES = MESES_PARA_RECUPERAR;
 
 // Cargar un gasto que se suma a la meta de una o varias salas. El reparto y la
 // conversión los hace el servidor: acá no se calcula ni un centavo — la vista
@@ -69,13 +68,7 @@ export default function GastoModal({ isOpen, onClose, onSaved, salaOptions, meta
     // Doce meses hacia adelante desde el siguiente. Los meses ya arrancados no
     // están en la lista: la regla se aplica sacando la opción, no explicándola
     // con un error después de guardar.
-    const mesOptions = useMemo(
-        () => Array.from({ length: 12 }, (_, i) => {
-            const v = ymSumar(ymMin, i);
-            return { value: v, label: ymLabel(v) };
-        }),
-        [ymMin],
-    );
+    const mesOptions = useMemo(() => mesesParaArrancarGasto(ymHoySV()), []);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -84,12 +77,7 @@ export default function GastoModal({ isOpen, onClose, onSaved, salaOptions, meta
         setPreview(null);
     }, [isOpen, ymMin]);
 
-    const salasValidas = useMemo(
-        () => filas
-            .map((f) => ({ branch_id: Number(f.branchId), monto: parseFloat(String(f.monto).replace(/,/g, '')) }))
-            .filter((f) => f.branch_id > 0 && Number.isFinite(f.monto) && f.monto > 0),
-        [filas],
-    );
+    const salasValidas = useMemo(() => salasDelGasto(filas), [filas]);
 
     const total = salasValidas.reduce((s, f) => s + f.monto, 0);
     const listoParaPreview = salasValidas.length > 0 && !!ym && Number(meses) > 0;
@@ -112,21 +100,7 @@ export default function GastoModal({ isOpen, onClose, onSaved, salaOptions, meta
     // Cuáles de las metas afectadas ya estaban confirmadas o aprobadas: esas
     // vuelven a revisión, y decirlo antes de guardar es la diferencia entre un
     // aviso y una sorpresa.
-    const reabre = useMemo(() => {
-        if (!preview?.cuotas) return [];
-        const vistas = new Set();
-        const out = [];
-        for (const c of preview.cuotas) {
-            const clave = `${c.branch_id}|${c.year_month}`;
-            if (vistas.has(clave)) continue;
-            vistas.add(clave);
-            const estado = metasPorClave?.[clave];
-            if (estado === 'confirmada_supervisor' || estado === 'oficial') {
-                out.push(`${c.sala} en ${ymLabelCorto(c.year_month).toLowerCase()}`);
-            }
-        }
-        return out;
-    }, [preview, metasPorClave]);
+    const reabre = useMemo(() => metasQueReabreElGasto(preview, metasPorClave), [preview, metasPorClave]);
 
     const setFila = useCallback((i, patch) => {
         setFilas((fs) => fs.map((f, idx) => (idx === i ? { ...f, ...patch } : f)));

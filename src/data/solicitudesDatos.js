@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { anotar } from './audit';
+import { correoValido, duiValido, telefonoValido } from '../utils/clienteValidacion';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Las solicitudes que una persona presenta sobre sus propios datos.
@@ -340,5 +341,159 @@ export async function resumenDeCliente(customerId) {
         compras: actividad.data ?? null,
         puntos: puntos.data ?? null,
         creditoPendiente: creditos.error ? null : saldoCredito,
+    };
+}
+
+// ── El formulario que transcribe el delegado (portal y app) ────────────────
+// Lo usan `SolicitudModal` del portal y `solicitud-datos/[id]` de la app: la
+// misma hoja, las mismas validaciones y el mismo registro.
+
+export const VIAS_DE_RESPUESTA = [
+    { value: 'SALA',    label: 'En la sala de ventas' },
+    { value: 'CORREO',  label: 'Por correo electrónico' },
+    { value: 'IMPRESA', label: 'Impresa' },
+];
+
+export const DOCUMENTOS_DE_IDENTIDAD = [
+    { value: 'DUI',       label: 'Documento Único de Identidad' },
+    { value: 'PASAPORTE', label: 'Pasaporte' },
+    { value: 'CARNE',     label: 'Carné de residente' },
+];
+
+/** Cómo se rotula, en la lista de candidatos, el sitio donde apareció la persona. */
+export const ORIGEN_DE_PERSONA = {
+    cliente: 'cliente', empleado: 'personal', practicante: 'horas sociales',
+    proveedor: 'proveedor', receta: 'receta',
+};
+
+/**
+ * Los valores del formulario a partir de la fila. `recibida_at` queda tal cual
+ * (un instante ISO o vacío): cada pantalla lo pone en su propio control.
+ */
+export function formularioDeSolicitud(s) {
+    return {
+        recibida_at:           s?.recibida_at           ?? '',
+        solicitante_nombre:    s?.solicitante_nombre    ?? '',
+        solicitante_documento: s?.solicitante_documento ?? '',
+        solicitante_numero:    s?.solicitante_numero    ?? '',
+        solicitante_direccion: s?.solicitante_direccion ?? '',
+        solicitante_telefono:  s?.solicitante_telefono  ?? '',
+        solicitante_correo:    s?.solicitante_correo    ?? '',
+        por_representacion:    !!s?.por_representacion,
+        representacion_doc:    s?.representacion_doc    ?? '',
+        derechos:              s?.derechos              ?? [],
+        descripcion:           s?.descripcion           ?? '',
+        via_respuesta:         s?.via_respuesta         ?? 'SALA',
+        identidad_documento:   s?.identidad_documento   ?? 'DUI',
+        identidad_numero:      s?.identidad_numero      ?? '',
+        resolucion:            s?.resolucion            ?? '',
+        notas:                 s?.notas                 ?? '',
+    };
+}
+
+/**
+ * Los campos que tienen FORMA, validados con el canónico de clientes (que ya
+ * sabe el dígito verificador del DUI): un segundo criterio acá sería el día
+ * que difieran y nadie sepa cuál manda.
+ */
+export function erroresDeForma(f) {
+    return {
+        malDui: !!f.solicitante_numero?.trim() && f.solicitante_documento === 'DUI' && !duiValido(f.solicitante_numero),
+        malTel: !!f.solicitante_telefono?.trim() && !telefonoValido(f.solicitante_telefono),
+        malCorreo: !!f.solicitante_correo?.trim() && !correoValido(f.solicitante_correo),
+        malIdent: !!f.identidad_numero?.trim() && f.identidad_documento === 'DUI' && !duiValido(f.identidad_numero),
+    };
+}
+
+/**
+ * Lo que falta para que la hoja impresa pase a ser una solicitud en trámite:
+ * quién pide, qué pide, cuándo se recibió y con qué documento se comprobó que
+ * es quien dice — más que lo escrito tenga forma.
+ */
+export function faltaParaRecibir(f) {
+    const { malDui, malTel, malCorreo, malIdent } = erroresDeForma(f);
+    const faltan = [];
+    if (!f.recibida_at)                 faltan.push('la fecha del acuse');
+    if (!f.solicitante_nombre?.trim())  faltan.push('el nombre');
+    if (!(f.derechos?.length))          faltan.push('qué solicita');
+    if (!f.identidad_numero?.trim())    faltan.push('el número del documento cotejado');
+    if (malDui)    faltan.push('un DUI válido');
+    if (malIdent)  faltan.push('un DUI cotejado válido');
+    if (malTel)    faltan.push('un teléfono de ocho dígitos');
+    if (malCorreo) faltan.push('un correo con forma de correo');
+    return faltan;
+}
+
+/** Lo que se escribe en la fila al guardar (`RECIBIDA`) o al resolver (`RESUELTA`). */
+export function camposDeSolicitud(f, estado, ahora = new Date()) {
+    const campos = {
+        estado,
+        recibida_at: f.recibida_at ? new Date(f.recibida_at).toISOString() : null,
+        solicitante_nombre:    f.solicitante_nombre?.trim()    || null,
+        solicitante_documento: f.solicitante_documento?.trim() || null,
+        solicitante_numero:    f.solicitante_numero?.trim()    || null,
+        solicitante_direccion: f.solicitante_direccion?.trim() || null,
+        solicitante_telefono:  f.solicitante_telefono?.trim()  || null,
+        solicitante_correo:    f.solicitante_correo?.trim()    || null,
+        por_representacion:    !!f.por_representacion,
+        representacion_doc:    f.representacion_doc?.trim()    || null,
+        derechos:              f.derechos ?? [],
+        descripcion:           f.descripcion?.trim()           || null,
+        via_respuesta:         f.via_respuesta                 || null,
+        identidad_documento:   f.identidad_documento           || null,
+        identidad_numero:      f.identidad_numero?.trim()      || null,
+        notas:                 f.notas?.trim()                 || null,
+    };
+    if (estado === 'RESUELTA') {
+        campos.resolucion  = f.resolucion?.trim() || null;
+        campos.resuelta_at = ahora.toISOString();
+    }
+    return campos;
+}
+
+/** Qué se busca lo decide lo escrito: nueve dígitos es un DUI, ocho un teléfono, lo demás un nombre. */
+export function terminoDeBusqueda(t) {
+    const digitos = String(t || '').replace(/\D/g, '');
+    return {
+        numero: digitos.length === 9 ? t : '',
+        telefono: digitos.length === 8 ? t : '',
+        nombre: digitos.length === 9 || digitos.length === 8 ? '' : t,
+    };
+}
+
+/**
+ * Aplana una fila de cualquiera de los sitios a lo que pide el formulario.
+ * Cada tabla guarda lo mismo con otro nombre; traducir acá es lo que permite
+ * que elegir a una persona llene los campos sin importar de dónde salió.
+ */
+export function comoPersona(clave, x) {
+    const base = { origen: clave };
+    if (clave === 'practicante') return { ...base,
+        nombre: `${x.first_names ?? ''} ${x.last_names ?? ''}`.trim(),
+        documento: 'DUI', numero: x.dui, telefono: x.phone, correo: '', direccion: '' };
+    if (clave === 'proveedor') return { ...base,
+        nombre: x.nombre, documento: x.dui ? 'DUI' : 'NIT', numero: x.dui || x.nit,
+        telefono: x.telefono, correo: x.correo, direccion: x.direccion };
+    if (clave === 'receta') return { ...base,
+        nombre: x.paciente_nombre, documento: 'DUI', numero: x.paciente_documento,
+        telefono: '', correo: '', direccion: '' };
+    if (clave === 'empleado') return { ...base,
+        nombre: x.name, documento: 'DUI', numero: x.dui,
+        telefono: x.phone, correo: x.email, direccion: x.address };
+    return { ...base, nombre: x.name, documento: x.dui ? 'DUI' : 'NIT',
+        numero: x.dui || x.nit, telefono: x.phone, correo: x.email, direccion: x.direccion };
+}
+
+/** Elegir a alguien LLENA los campos: es el punto de todo el selector. */
+export function llenarConPersona(f, c) {
+    return {
+        ...f,
+        solicitante_nombre:    c.nombre    || f.solicitante_nombre,
+        solicitante_documento: c.documento || f.solicitante_documento,
+        solicitante_numero:    c.numero    || f.solicitante_numero,
+        solicitante_telefono:  c.telefono  || f.solicitante_telefono,
+        solicitante_correo:    c.correo    || f.solicitante_correo,
+        solicitante_direccion: c.direccion || f.solicitante_direccion,
+        identidad_numero:      f.identidad_numero || (c.documento === 'DUI' ? c.numero : ''),
     };
 }

@@ -357,3 +357,76 @@ export function tablaDeRespuestas(cuestionario, filas, { fechaHora }) {
     ]);
     return { headers, rows };
 }
+
+// ── Editar el cuestionario (el `Constructor` del portal y el de la app) ─────
+// Todas devuelven un cuestionario NUEVO; ninguna cambia el que recibe.
+
+const seccionesDe = (c) => (c?.secciones || []);
+const conSecciones = (c, secciones) => ({ ...(c || {}), secciones });
+
+/** Cambia los datos de una sección (título, descripción, preguntas). */
+export function cambiarSeccion(cuestionario, si, cambios) {
+    return conSecciones(cuestionario, seccionesDe(cuestionario).map((s, j) => (j === si ? { ...s, ...cambios } : s)));
+}
+
+/** Reemplaza una pregunta de una sección. */
+export function cambiarPregunta(cuestionario, si, pi, nueva) {
+    const s = seccionesDe(cuestionario)[si];
+    return cambiarSeccion(cuestionario, si, { preguntas: (s?.preguntas || []).map((p, j) => (j === pi ? nueva : p)) });
+}
+
+export function agregarSeccion(cuestionario) {
+    return conSecciones(cuestionario, [...seccionesDe(cuestionario), nuevaSeccion(idsDe(cuestionario))]);
+}
+
+/** Agrega una pregunta del tipo dado al final de la sección; devuelve también su id. */
+export function agregarPregunta(cuestionario, si, tipo) {
+    const p = nuevaPregunta(tipo, idsDe(cuestionario));
+    const s = seccionesDe(cuestionario)[si];
+    return { cuestionario: cambiarSeccion(cuestionario, si, { preguntas: [...(s?.preguntas || []), p] }), id: p.id };
+}
+
+/** Duplica una pregunta justo debajo de ella; devuelve también el id de la copia. */
+export function duplicarPregunta(cuestionario, si, pi) {
+    const ps = [...(seccionesDe(cuestionario)[si]?.preguntas || [])];
+    const copia = { ...JSON.parse(JSON.stringify(ps[pi])), id: idNuevo(idsDe(cuestionario)) };
+    ps.splice(pi + 1, 0, copia);
+    return { cuestionario: cambiarSeccion(cuestionario, si, { preguntas: ps }), id: copia.id };
+}
+
+/**
+ * Sube (`d = -1`) o baja (`d = 1`) una pregunta. Al pasar el borde de una
+ * sección entra a la vecina: al final de la de arriba o al principio de la de abajo.
+ */
+export function moverPregunta(cuestionario, si, pi, d) {
+    const secciones = seccionesDe(cuestionario);
+    const ps = secciones[si]?.preguntas || [];
+    if (pi + d >= 0 && pi + d < ps.length) return cambiarSeccion(cuestionario, si, { preguntas: mover(ps, pi, d) });
+    const destino = si + d;
+    if (destino < 0 || destino >= secciones.length) return cuestionario;
+    const p = ps[pi];
+    return conSecciones(cuestionario, secciones.map((s, j) => {
+        if (j === si) return { ...s, preguntas: ps.filter((_, k) => k !== pi) };
+        if (j === destino) return { ...s, preguntas: d > 0 ? [p, ...(s.preguntas || [])] : [...(s.preguntas || []), p] };
+        return s;
+    }));
+}
+
+/** Quita una sección con sus preguntas (y las condiciones que dependían de ellas). */
+export function quitarSeccion(cuestionario, si) {
+    let q = cuestionario;
+    for (const p of seccionesDe(cuestionario)[si]?.preguntas || []) q = quitarPregunta(q, p.id);
+    return conSecciones(q, seccionesDe(q).filter((_, j) => j !== si));
+}
+
+/** Con qué valor arranca una condición que mira a esa pregunta. */
+export function valorInicialDeCondicion(p) {
+    if (p.tipo === 'nps') return 6;
+    if (p.tipo === 'csat' || p.tipo === 'likert') return 2;
+    if (p.tipo === 'si_no') return false;
+    if (p.opciones?.length) return p.opciones[0].id;
+    return 0;
+}
+
+/** La condición «mostrar sólo si» que mira a la pregunta `c`, con su primer operador. */
+export const condicionSobre = (c) => ({ pregunta: c.id, operador: operadoresPara(c.tipo)[0].value, valor: valorInicialDeCondicion(c) });

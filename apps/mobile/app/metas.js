@@ -10,8 +10,9 @@
 //
 // Las cuentas salen del núcleo (`metasUtils`), las mismas del portal. Agregar
 // una meta (`meta-nueva`) y la Confirmación (ajustar, confirmar, aprobar,
-// devolver, registrar la autorización) son nativas. Pago semestral y gastos
-// siguen en el portal.
+// devolver, registrar la autorización) son nativas, y también el Pago
+// semestral (decidir por quien ya no trabaja, aprobar, reabrir) y los Gastos
+// por recuperar (agregar en `meta-gasto`, quitar con motivo).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
@@ -22,6 +23,8 @@ import { fetchBonoActivo, fetchMesEnCurso, fetchMetasConfig, fetchMetasDashboard
 import { SALAS_VENTA, YM_INICIO_HISTORIA, resumenDeMetas, tramoLabel, ymHoySV, ymLabel, ymSumar } from '@nucleo/utils/metasUtils';
 import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import Semestral from '../componentes/metas/Semestral';
+import Gastos from '../componentes/metas/Gastos';
 import Segmentos from '../componentes/Segmentos';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
@@ -207,7 +210,9 @@ export default function Metas() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={() => { setRecargando(true); setLlave((k) => k + 1); setTimeout(() => setRecargando(false), 600); }} />}>
         <Segmentos activa={pestana} onCambiar={setPestana} opciones={[
           { id: 'tablero', label: 'Tablero' }, { id: 'bono', label: 'Bono' },
+          ...(todas ? [{ id: 'semestral', label: 'Semestral' }] : []),
           ...(editar ? [{ id: 'confirmacion', label: 'Confirmación' }] : []),
+          ...(puedeEditar ? [{ id: 'gastos', label: 'Gastos' }] : []),
           { id: 'historico', label: 'Histórico' },
         ]} />
         <FiltrosActivos grupos={grupos} />
@@ -218,6 +223,10 @@ export default function Metas() {
             <PasoYm ym={ymBono} onCambiar={setYmBono} min={YM_INICIO_HISTORIA} max={ymActual} actual={ymActual} />
             <Bono key={llave} sala={todas ? salaBono : String(user?.branchId)} salaNombre={salaNombre} ym={ymBono} esMesActual={ymBono === ymActual} config={config} />
           </>
+        ) : pestana === 'semestral' ? (
+          <Semestral key={llave} canApprove={puedeAprobar} />
+        ) : pestana === 'gastos' ? (
+          <Gastos key={llave} canEdit={puedeEditar} onCambio={() => setLlave((k) => k + 1)} />
         ) : pestana === 'confirmacion' ? (
           <Confirmacion key={llave} salaNombre={salaNombre} canEdit={puedeEditar} canApprove={puedeAprobar} onCambio={() => setLlave((k) => k + 1)} />
         ) : (
@@ -226,12 +235,6 @@ export default function Metas() {
         {puedeEditar ? (
           <View style={{ marginHorizontal: 16, marginTop: 8 }}>
             <BotonGrande texto="Agregar meta" onPress={() => router.push({ pathname: '/meta-nueva', params: { ym: pestana === 'tablero' ? ym : ymActual, sala: sala === 'todas' ? '' : sala } })} />
-          </View>
-        ) : null}
-        {editar ? (
-          <View style={{ marginHorizontal: 16 }}>
-            <BotonGrande texto="Pago semestral y gastos (portal)" borde color={MARCA.azulClaro}
-              onPress={() => router.push({ pathname: '/portal', params: { ruta: '/metas', nombre: 'Metas' } })} />
           </View>
         ) : null}
       </ScrollView>

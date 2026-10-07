@@ -11,8 +11,11 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import IconoPorNombre from '../../components/common/IconoPorNombre';
 import { EmptyState } from '../../components/common/StateViews';
 import {
-    TIPOS_PREGUNTA, tipoDe, idsDe, idNuevo, nuevaPregunta, nuevaSeccion, nuevaOpcion, mover, preguntasEnOrden,
+    TIPOS_PREGUNTA, tipoDe, nuevaOpcion, mover, preguntasEnOrden,
     cambiarTipo, quitarPregunta, sinCondicion, operadoresPara, puedeSerCondicion, textoDeCondicion,
+    cambiarSeccion as cambiarSeccionDe, cambiarPregunta as cambiarPreguntaDe, agregarSeccion as agregarSeccionA,
+    agregarPregunta as agregarPreguntaA, duplicarPregunta as duplicarPreguntaDe, moverPregunta as moverPreguntaDe,
+    quitarSeccion as quitarSeccionDe, condicionSobre,
 } from '@nucleo/utils/encuestasClientes';
 import { ICONOS, tintaDeDimension } from './iconos';
 
@@ -30,45 +33,24 @@ export default function Constructor({ cuestionario, dimensiones, soloLectura, on
     const dimPorClave = useMemo(() => Object.fromEntries(dimensiones.map((d) => [d.clave, d])), [dimensiones]);
     const [abierta, setAbierta] = useState(null);
 
+    // Las operaciones sobre el cuestionario: núcleo (`encuestasClientes`), las
+    // mismas que usa la app.
     const cambiar = (nuevas) => onChange({ ...cuestionario, secciones: nuevas });
-    const cambiarSeccion = (i, cambios) => cambiar(secciones.map((s, j) => (j === i ? { ...s, ...cambios } : s)));
-    const cambiarPregunta = (si, pi, nueva) => cambiarSeccion(si, {
-        preguntas: secciones[si].preguntas.map((p, j) => (j === pi ? nueva : p)),
-    });
-
-    const agregarSeccion = () => cambiar([...secciones, nuevaSeccion(idsDe(cuestionario))]);
+    const cambiarSeccion = (i, cambios) => onChange(cambiarSeccionDe(cuestionario, i, cambios));
+    const cambiarPregunta = (si, pi, nueva) => onChange(cambiarPreguntaDe(cuestionario, si, pi, nueva));
+    const agregarSeccion = () => onChange(agregarSeccionA(cuestionario));
     const agregarPregunta = (si, tipo) => {
-        const p = nuevaPregunta(tipo, idsDe(cuestionario));
-        cambiarSeccion(si, { preguntas: [...(secciones[si].preguntas || []), p] });
-        setAbierta(p.id);
+        const r = agregarPreguntaA(cuestionario, si, tipo);
+        onChange(r.cuestionario);
+        setAbierta(r.id);
     };
     const duplicarPregunta = (si, pi) => {
-        const orig = secciones[si].preguntas[pi];
-        const copia = { ...structuredClone(orig), id: idNuevo(idsDe(cuestionario)) };
-        const ps = [...secciones[si].preguntas];
-        ps.splice(pi + 1, 0, copia);
-        cambiarSeccion(si, { preguntas: ps });
-        setAbierta(copia.id);
+        const r = duplicarPreguntaDe(cuestionario, si, pi);
+        onChange(r.cuestionario);
+        setAbierta(r.id);
     };
-    // Mover entre secciones también: al pasar el borde de una sección, la
-    // pregunta entra a la vecina.
-    const moverPregunta = (si, pi, d) => {
-        const ps = secciones[si].preguntas;
-        if (pi + d >= 0 && pi + d < ps.length) { cambiarSeccion(si, { preguntas: mover(ps, pi, d) }); return; }
-        const destino = si + d;
-        if (destino < 0 || destino >= secciones.length) return;
-        const p = ps[pi];
-        cambiar(secciones.map((s, j) => {
-            if (j === si) return { ...s, preguntas: ps.filter((_, k) => k !== pi) };
-            if (j === destino) return { ...s, preguntas: d > 0 ? [p, ...(s.preguntas || [])] : [...(s.preguntas || []), p] };
-            return s;
-        }));
-    };
-    const quitarSeccion = (si) => {
-        let q = cuestionario;
-        for (const p of secciones[si].preguntas || []) q = quitarPregunta(q, p.id);
-        onChange({ ...q, secciones: q.secciones.filter((_, j) => j !== si) });
-    };
+    const moverPregunta = (si, pi, d) => onChange(moverPreguntaDe(cuestionario, si, pi, d));
+    const quitarSeccion = (si) => onChange(quitarSeccionDe(cuestionario, si));
 
     if (!secciones.length) {
         return (
@@ -275,8 +257,7 @@ function PreguntaEditor({
                             label="Mostrar sólo si"
                             onChange={(on) => {
                                 if (!on) { onChange(sinCondicion(p)); return; }
-                                const c = candidatas[candidatas.length - 1];
-                                onChange({ ...p, condicion: { pregunta: c.id, operador: operadoresPara(c.tipo)[0].value, valor: valorInicial(c) } });
+                                onChange({ ...p, condicion: condicionSobre(candidatas[candidatas.length - 1]) });
                             }} />
                         </ConRotulo>
                     </div>
@@ -287,7 +268,7 @@ function PreguntaEditor({
                                 options={candidatas.map((c) => ({ value: c.id, label: `${c.numero}. ${c.texto || 'Sin texto'}` }))}
                                 onChange={(v) => {
                                     const c = candidatas.find((x) => x.id === v);
-                                    if (c) onChange({ ...p, condicion: { pregunta: c.id, operador: operadoresPara(c.tipo)[0].value, valor: valorInicial(c) } });
+                                    if (c) onChange({ ...p, condicion: condicionSobre(c) });
                                 }} />
                             {mirada && (
                                 <>
@@ -316,13 +297,6 @@ function ConRotulo({ texto, children }) {
     );
 }
 
-function valorInicial(p) {
-    if (p.tipo === 'nps') return 6;
-    if (p.tipo === 'csat' || p.tipo === 'likert') return 2;
-    if (p.tipo === 'si_no') return false;
-    if (p.opciones?.length) return p.opciones[0].id;
-    return 0;
-}
 
 function ValorDeCondicion({ pregunta, valor, onChange }) {
     if (pregunta.tipo === 'si_no') {

@@ -5,14 +5,18 @@
 // prórroga). Arriba, cuántas vencieron y cuántas vencen en tres días o menos.
 //
 // El plazo y los filtros salen del núcleo (`data/solicitudesDatos`), lo mismo
-// del portal. Imprimir el formulario numerado y registrar la respuesta siguen
-// en el portal: la hoja sale por la impresora y la identidad se verifica con
-// el documento en la mano.
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+// del portal. «Nueva solicitud» toma el correlativo y saca el formulario
+// numerado (el mismo papel del portal, `papelDeSolicitudDeDatos`) por AirPrint
+// o en PDF; cada solicitud se reimprime, se registra y se resuelve en
+// `solicitud-datos/[id]`, donde se arma también la respuesta.
+import { useCallback, useMemo, useState } from 'react';
+import { ActionSheetIOS, ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { alarmasDePlazo, DERECHOS, ESTADOS, fetchSolicitudes, filtrarSolicitudes, plazoDe } from '@nucleo/data/solicitudesDatos';
+import { alarmasDePlazo, crearSolicitud, DERECHOS, ESTADOS, fetchSolicitudes, filtrarSolicitudes, plazoDe } from '@nucleo/data/solicitudesDatos';
+import { papelDeSolicitudDeDatos } from '@nucleo/generated/formularioDatos';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import Segmentos from '../componentes/Segmentos';
@@ -22,12 +26,31 @@ import { Aviso, BotonGrande, Dato } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
+import { fallo } from '../componentes/Progreso';
+import { compartirPdf, imprimirPapel } from '../componentes/pdf';
 
 const ROTULO = Object.fromEntries(DERECHOS.map((d) => [d.clave, d.rotulo]));
 // Un instante (timestamptz o Date): `fechaTexto` lo lleva al día de El Salvador.
 const fecha = (v) => (v ? fechaTexto(v, { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 
+// El formulario numerado sale por AirPrint o como PDF para mandarlo a otra impresora.
+function sacarFormulario(folio) {
+  const html = papelDeSolicitudDeDatos(folio);
+  ActionSheetIOS.showActionSheetWithOptions(
+    { title: `Formulario ${folio}`, options: ['Imprimir', 'Compartir en PDF', 'Cancelar'], cancelButtonIndex: 2 },
+    async (i) => {
+      try {
+        if (i === 0) await imprimirPapel(html);
+        else if (i === 1) await compartirPdf({ html, nombre: `Solicitud ${folio}` });
+      } catch (e) {
+        fallo('No se pudo imprimir', mensajeAmigable(e));
+      }
+    },
+  );
+}
+
 export default function SolicitudesDatos() {
+  const { user } = useAuth();
   const [filas, setFilas] = useState(null);
   const [error, setError] = useState(null);
   const [pestana, setPestana] = useState('tramite');
@@ -38,7 +61,23 @@ export default function SolicitudesDatos() {
   const cargar = useCallback(async () => {
     try { setFilas(await fetchSolicitudes()); setError(null); } catch (e) { setError(e?.message || 'No se pudo cargar.'); setFilas([]); }
   }, []);
-  useEffect(() => { cargar(); }, [cargar]);
+  // Al volver de registrar o resolver una, la lista se relee.
+  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
+
+  const nueva = () => Alert.alert('Nueva solicitud',
+    'Se toma el siguiente número de formulario y se imprime la hoja para que la persona la llene.', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Tomar número', onPress: async () => {
+        try {
+          // `crearSolicitud` anota `IMPRIMIR_SOLICITUD_DATOS` al nacer la hoja.
+          const fila = await crearSolicitud(user?.branchId ?? null);
+          await cargar();
+          sacarFormulario(fila.folio_txt);
+        } catch (e) {
+          fallo('No se pudo crear la solicitud', mensajeAmigable(e));
+        }
+      } },
+    ]);
 
   const visibles = useMemo(() => filtrarSolicitudes(filas, { pestana, texto }, tokenMatch), [filas, pestana, texto]);
   const { vencidas, apremian } = useMemo(() => alarmasDePlazo(filas), [filas]);
@@ -88,6 +127,15 @@ export default function SolicitudesDatos() {
                       {s.resuelta_at ? <Dato rotulo="Resuelta" valor={fecha(s.resuelta_at)} /> : null}
                       {s.solicitante_numero ? <Dato rotulo="Documento" valor={s.solicitante_numero} /> : null}
                       {s.descripcion ? <Text style={{ color: colorSistema.texto, fontSize: 14, marginTop: 8 }}>{s.descripcion}</Text> : null}
+                      <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+                        <View style={{ flex: 1 }}>
+                          <BotonGrande texto="Reimprimir" borde onPress={() => sacarFormulario(s.folio_txt)} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <BotonGrande texto={s.estado === 'RESUELTA' ? 'Ver' : s.estado === 'IMPRESA' ? 'Registrar' : 'Abrir'} color={MARCA.azul}
+                            onPress={() => router.push({ pathname: '/solicitud-datos/[id]', params: { id: String(s.id) } })} />
+                        </View>
+                      </View>
                     </View>
                   ) : null}
                 </View>
@@ -97,8 +145,7 @@ export default function SolicitudesDatos() {
         })}
         {filas && !visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>{texto.trim() ? 'Sin coincidencias' : 'Sin solicitudes aquí'}</Text> : null}
         <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-          <BotonGrande texto="Imprimir y registrar (portal)" borde color={MARCA.azulClaro}
-            onPress={() => router.push({ pathname: '/portal', params: { ruta: '/solicitudes-datos', nombre: 'Solicitudes de datos' } })} />
+          <BotonGrande texto="Nueva solicitud" onPress={nueva} />
         </View>
       </ScrollView>
     </>

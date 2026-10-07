@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React from 'react';
+import { OPCIONES_DE_EXTINTOR } from '@nucleo/utils/edicionDeSucursal';
 import Badge from '../common/Badge';
 import { Building2, Home, Trash2, User, Phone, DollarSign, CalendarDays, Landmark, FileText, AlertCircle, Flame, BugOff, Info } from 'lucide-react';
 import { LazyInput, Switch, FileUploader, clampInt, formatPhoneMask } from './BranchHelpers';
@@ -27,14 +28,8 @@ const BranchTabInmueble = ({
     const islandHoverClass = "transition-[transform,box-shadow,background-color,border-color] duration-[var(--dur-lento)] ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-border-card";
     const inputHoverClass = "transition-[box-shadow,border-color] duration-[var(--dur-slow)] hover:shadow-md hover:border-brand/30 focus-within:ring-4 focus-within:ring-brand/10";
 
-    const extinguisherOptions = useMemo(() => [
-        { value: 'ABC', label: 'Polvo químico seco (ABC)' },
-        { value: 'CO2', label: 'Dióxido de carbono (CO2)' },
-        { value: 'AGUA', label: 'Agua presurizada' },
-        { value: 'ESPUMA', label: 'Espuma (AFFF)' },
-        { value: 'K', label: 'Acetato de potasio (clase K)' },
-        { value: 'MIXTO', label: 'Múltiples tipos' },
-    ], []);
+    // Los tipos de extintor: núcleo (`OPCIONES_DE_EXTINTOR`), los mismos de la app.
+    const extinguisherOptions = OPCIONES_DE_EXTINTOR;
 
     // 🚨 REGLA DE NEGOCIO: Si tiene inyecciones, los desechos son obligatorios
     const hasInjections = !!legal.injections;

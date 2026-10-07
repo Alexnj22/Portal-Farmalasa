@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1241.0 — App: sucursales, metas, encuestas y solicitudes de datos
+
+- **App: Sucursales editables**: horarios (por día, con «Igual que …»), legal, inmueble y servicios, con confirmación.
+- **Metas**: pago semestral (pagar o no a cada persona con motivo, aprobar y reabrir el semestre) y gastos (agregar con vista previa del servidor y borrador, quitar con motivo).
+- **Encuestas**: diseñador nativo de preguntas (secciones, tipos, opciones, condiciones), destinatarios de la encuesta interna (todos, salas, jefaturas o personas) con quién falta, y el **análisis de clima** en Resumen / Segmentos / Individuos con barras.
+- **Solicitudes de datos**: nueva solicitud con su formulario numerado (AirPrint o PDF), transcribir, registrar recibida, dar por resuelta e imprimir o compartir la respuesta.
+- Núcleo: `edicionDeSucursal.js` y lo agregado a metas, encuestas, clima y solicitudes de datos; el portal los usa.
+
 ## v2.1240.1 — App: corrige un import roto
 
 - App: corrige la ruta del import de `volver` en las pantallas de acción de las subcarpetas (pedido, nómina, vacaciones, promoción por producto); la app no compilaba.

@@ -11,16 +11,16 @@
 //
 // Con `encuesta_admin` para editar: crear y editar la encuesta
 // (`encuesta-interna/editar`) y capturar o corregir la respuesta de una persona
-// (`encuesta-interna/respuesta`). Elegir a quién va (sucursales, personas)
-// sigue en el portal.
+// (`encuesta-interna/respuesta`), con a quién va (todos, sucursales,
+// jefaturas, personas). El detalle dice quiénes faltan por responder.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { guardarEncuestaInterna } from '../componentes/encuestas/interna';
 import * as Haptics from 'expo-haptics';
-import { fetchSurveyBloques, fetchSurveyPreguntas, fetchSurveyResponseCounts, fetchSurveyResponses, fetchSurveys } from '@nucleo/data/encuestas';
-import { ESTADO_ENCUESTA, indicesInvertidos, nivelDePuntaje, preguntaDeLaBase, promedioPorPersona, puntajeDePersona, TIPO_ENCUESTA } from '@nucleo/utils/climaLaboral';
+import { fetchEmployeesForSurvey, fetchSurveyBloques, fetchSurveyPreguntas, fetchSurveyResponseCounts, fetchSurveyResponses, fetchSurveys } from '@nucleo/data/encuestas';
+import { ESTADO_ENCUESTA, indicesInvertidos, nivelDePuntaje, pendientesDelAlcance, preguntaDeLaBase, promedioPorPersona, puntajeDePersona, TIPO_ENCUESTA } from '@nucleo/utils/climaLaboral';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import Segmentos from '../componentes/Segmentos';
@@ -40,8 +40,8 @@ const colorDe = (s) => (s == null ? colorSistema.texto2 : colorDeVariante(nivelD
 function Detalle({ encuesta, puedeEditar }) {
   const [d, setD] = useState(null);
   useEffect(() => {
-    Promise.all([fetchSurveyBloques(encuesta.id), fetchSurveyPreguntas(encuesta.id), fetchSurveyResponses(encuesta.id)]).then(([b, p, r]) => {
-      setD({ bloques: b.data || [], preguntas: (p.data || []).map((x) => preguntaDeLaBase(x, b.data || [])), filas: r.data || [] });
+    Promise.all([fetchSurveyBloques(encuesta.id), fetchSurveyPreguntas(encuesta.id), fetchSurveyResponses(encuesta.id), fetchEmployeesForSurvey()]).then(([b, p, r, e]) => {
+      setD({ bloques: b.data || [], preguntas: (p.data || []).map((x) => preguntaDeLaBase(x, b.data || [])), filas: r.data || [], empleados: e.data || [] });
     });
   }, [encuesta.id]);
   const inv = useMemo(() => indicesInvertidos(d?.preguntas), [d]);
@@ -50,6 +50,9 @@ function Detalle({ encuesta, puedeEditar }) {
   const personas = d.filas.map((r) => ({ r, s: puntajeDePersona(r.responses || [], todos, inv) }))
     .sort((a, b) => (a.s ?? 999) - (b.s ?? 999));
   const general = promedioPorPersona(d.filas, todos, inv);
+  // Quiénes deberían responder y todavía no (sólo cuando va a sucursales,
+  // jefaturas o personas: con «todos» sería el personal entero).
+  const pendientes = pendientesDelAlcance(encuesta, d.empleados, new Set(d.filas.map((r) => r.employee_id)));
   return (
     <View style={{ gap: 6, marginTop: 4 }}>
       <Dato rotulo="Promedio general" valor={puntos(general)} fuerte primero />
@@ -70,6 +73,12 @@ function Detalle({ encuesta, puedeEditar }) {
         );
       })}
       {!personas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Nadie respondió todavía.</Text> : null}
+      {pendientes.length ? (
+        <>
+          <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600', textTransform: 'uppercase', marginTop: 8 }}>{`Faltan por responder · ${pendientes.length}`}</Text>
+          <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{pendientes.map((p) => shortEmployeeName(p)).join(', ')}</Text>
+        </>
+      ) : null}
       {puedeEditar ? (
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
           <View style={{ flex: 1 }}>
@@ -152,8 +161,6 @@ export default function EncuestaAdmin() {
                 onPress={() => { guardarEncuestaInterna(null); router.push({ pathname: '/encuesta-interna/editar', params: { id: 'nueva' } }); }} />
             </View>
           ) : null}
-          <BotonGrande texto="A quién va y más (portal)" borde color={MARCA.azulClaro}
-            onPress={() => router.push({ pathname: '/portal', params: { ruta: '/encuesta-admin', nombre: 'Encuestas' } })} />
         </View>
       </ScrollView>
     </>

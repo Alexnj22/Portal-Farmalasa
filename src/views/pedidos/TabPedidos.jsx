@@ -286,10 +286,11 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                         </div>
                         <div className="text-caption text-content-3 tabular-nums truncate">{row.codigo ?? `#${row.numero}`}</div>
                     </div>
-                    {/* Abierta, la MISMA línea baja a su propio renglón a todo
-                        el ancho: así caben la hora, la foto y el nombre de cada
-                        paso sin repetir la línea. */}
-                    <div className={`hidden lg:block min-w-0 ${isExp ? 'lg:col-span-5 lg:order-last pt-2 pb-1' : ''}`}>
+                    {/* Abierta o cerrada, la línea se queda en SU columna: así sus
+                        puntos siguen bajo los nombres del encabezado (a todo el
+                        ancho se desalineaba). Abierta, crece hacia abajo con la
+                        hora y la persona de cada paso. */}
+                    <div className={`hidden lg:block min-w-0 self-start ${isExp ? 'pb-1' : ''}`}>
                         <AvanceCompacto row={row} stage={stage} rutaStop={rtStop} conductor={rtCond} rotulos="activo"
                             detalle={isExp} quien={id => empMap.get(id) ?? null}
                             apoyo={{ bodega: prepApoyo, sala: recepApoyo }} />

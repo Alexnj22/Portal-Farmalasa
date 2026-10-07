@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.17 — Pedidos (lista): la fila abierta queda alineada con el encabezado
+
+- **Al abrir una fila, su línea de pasos se queda en su columna**, alineada con el encabezado (antes pasaba a todo el ancho y se desalineaba). Crece hacia abajo con la hora, la foto y el nombre de cada paso; los títulos de tramo no se repiten adentro.
+
 ## v2.1232.16 — Pedidos (lista): encabezado con columnas, secciones marcadas y rutas agrupadas
 
 - **Encabezado de la lista con columnas** (*Sala · Bodega y transporte · Sucursal · Estado*), con ícono por tramo, nombres de pasos más legibles y alineados con los puntos.

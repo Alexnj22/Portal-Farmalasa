@@ -95,7 +95,8 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
         activo: !cerrado && !paso.isRutaNode && idx === activeIdx,
     }));
     const tramos = ['bodega', 'sala'].map(lado => estado.filter(e => e.lado === lado));
-    const conTitulos = rotulos === 'siempre' || detalle;  // en 'activo' los dice el encabezado
+    // En la lista ('activo') los títulos los dice el encabezado, abierta o no.
+    const conTitulos = rotulos === 'siempre' || (detalle && rotulos !== 'activo');
 
     const renderPaso = (e, i, lista) => {
         const t = TRAMO[e.lado];
@@ -146,9 +147,12 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
                     </span>
                 )}
                 {detalle && e.paso.emp && (
-                    <span className="mt-1 flex items-center gap-1 whitespace-nowrap">
+                    // Foto arriba y nombre debajo (hasta dos renglones): en la
+                    // columna de la fila los pasos van a ~65px y foto+nombre en
+                    // una línea se pisaban con el vecino.
+                    <span className={`mt-1 flex flex-col gap-0.5 ${alineaDe(i, lista.length) === 'fin' ? 'items-end' : alineaDe(i, lista.length) === 'inicio' ? 'items-start' : 'items-center'}`}>
                         <AvatarConEstado emp={e.paso.emp} px={20} radio="rounded-full" marco="" mostrarChip={false} />
-                        <span className="text-micro text-content-2 leading-tight">{shortEmployeeName(e.paso.emp)}</span>
+                        <span className="text-micro text-content-2 leading-tight max-w-[4.5rem] whitespace-normal">{shortEmployeeName(e.paso.emp)}</span>
                     </span>
                 )}
                 {detalle && e.paso.key === 'iniciado' && (row.min_pausado_total ?? 0) > 0 && (

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.9 — Pedidos: la lista de reenvíos de crear ruta carga
+
+- La consulta de reenvíos pendientes de «Nueva ruta» armaba mal el filtro sobre `jsonb` y el modal salía vacío. Ahora carga; y un error al cargar se ve como error, no como «no hay pedidos».
+
 ## v2.1232.8 — Pedidos: el reenvío de cajas sale en una ruta
 
 - **El reenvío de cajas faltantes sale en una ruta.** «Reenviar caja» ya no lo da por enviado en el momento: queda **por despachar** y la tarjeta lo dice. La sala ve «Bodega ya preparó el reenvío: sale en la próxima ruta».

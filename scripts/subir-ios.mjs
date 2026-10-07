@@ -71,7 +71,14 @@ if (!env.EXPO_PUBLIC_SUPABASE_URL.includes('sacecdkdmsdvgqnrsett')) {
 const { data: apps } = await apiAsc(`/v1/apps?filter[bundleId]=${encodeURIComponent(bundle)}`);
 if (!apps.length) { console.error(`App Store Connect no tiene una app con ${bundle}. Créala primero.`); process.exit(1); }
 const { data: builds } = await apiAsc(`/v1/builds?filter[app]=${apps[0].id}&limit=200&fields[builds]=version`);
-const ultimo = Math.max(0, ...builds.map((b) => Number(b.attributes.version) || 0), Number(appJson.ios.buildNumber) || 0);
+// App Store Connect NO lista una compilación mientras Apple la procesa (10–30
+// min): dos subidas seguidas sacaban el mismo número y la segunda quedaba
+// repetida (pasó con la 16 de Puntos Salud, 2026-10-07). Por eso también se
+// recuerda, en este equipo, el último número que se subió de cada app.
+const REGISTRO = join(CLAVES, 'compilaciones-subidas.json');
+const subidas = existsSync(REGISTRO) ? JSON.parse(readFileSync(REGISTRO, 'utf8')) : {};
+const ultimo = Math.max(0, ...builds.map((b) => Number(b.attributes.version) || 0), Number(appJson.ios.buildNumber) || 0,
+  Number(subidas[bundle]) || 0);
 const numero = String(ultimo + 1);
 console.log(`→ ${appJson.name} (${bundle}) · versión ${appJson.version} · compilación ${numero}`);
 
@@ -144,4 +151,5 @@ writeFileSync(join(salida, 'ExportOptions.plist'), `<?xml version="1.0" encoding
 `);
 correr(`xcodebuild -exportArchive -archivePath "${salida}/app.xcarchive" -exportOptionsPlist "${salida}/ExportOptions.plist" -exportPath "${salida}/export" ${auth}`, ios);
 
+writeFileSync(REGISTRO, JSON.stringify({ ...subidas, [bundle]: Number(numero) }, null, 2) + '\n');
 console.log(`✓ ${appJson.name} ${appJson.version} (${numero}) subida. Aparece en TestFlight en 10–30 minutos.`);

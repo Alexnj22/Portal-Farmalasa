@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1243.1 — subir-ios recuerda el último número subido
+
+- `scripts/subir-ios.mjs`: el número de compilación también sale del último que se subió desde este equipo (`~/.claves-farmalasa/compilaciones-subidas.json`). App Store Connect no lista una compilación mientras la procesa, y dos subidas seguidas repetían el número (la 16 de Puntos Salud salió dos veces; la segunda se volvió a subir como 17).
+
 ## v2.1243.0 — Torogoz nativo en la app
 
 - **Torogoz en la app, nativo.** La distribuidora entra desde el Menú (tarjeta «Distribuidora») y abre su menú con «Nueva venta» y las catorce secciones del portal: Inicio con sus gráficas, Rutas y camiones, Pedidos, Facturación, Cuentas por cobrar, Caja y liquidación, Clientes, Catálogo, Compras y proveedores, Inventario (lotes, reposición, conteo y bajas, cuarentena, existencias en las sucursales), Ventas perdidas, Reportes y libros, Solicitudes de descuento y Empresa.

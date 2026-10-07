@@ -278,7 +278,7 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
             <div key={cardKey} data-surface="card" className="select-none"
                 {...clickable(() => toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id), { label: `Pedido ${row.codigo ?? row.numero}` })}
                 aria-expanded={isExp}>
-                <div className="grid items-center gap-x-5 gap-y-2 pl-4 pr-3 py-3.5 grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[10rem_minmax(22rem,1fr)_11rem_8.5rem_1rem]">
+                <div className="grid items-center gap-x-5 gap-y-2 pl-4 pr-3 py-3.5 grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[9rem_minmax(24rem,1fr)_17rem_1rem]">
                     <div className="min-w-0">
                         <div className="flex items-center gap-1.5 text-body font-bold text-content leading-tight min-w-0">
                             {marca && <marca.Icono size={14} className={`shrink-0 ${marca.cls}`} aria-label={marca.txt} />}
@@ -298,7 +298,13 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                     {/* El estado como TEXTO con su color, sin pastilla: la
                         pastilla repetía lo que ya dice el paso en curso, y
                         era la mitad del ruido de la fila. */}
-                    <div className="flex flex-col items-end lg:items-start gap-0.5 min-w-0">
+                    {/* Estado y acción comparten UNA columna (estado a la izquierda,
+                        botón a la derecha). Eran dos columnas fijas y en las filas
+                        sin botón la de la acción quedaba vacía: ese ancho ahora es
+                        de la línea de pasos. En el teléfono, `contents` deja que
+                        cada uno vaya a su lugar de siempre. */}
+                    <div className="contents lg:flex lg:items-center lg:gap-3 lg:min-w-0">
+                    <div className="flex flex-col items-end lg:items-start gap-0.5 min-w-0 lg:flex-1">
                         <span className={`text-body-sm font-semibold truncate ${TEXTO_VARIANTE[stage === 'pausado' ? 'warning' : etiqueta.variant] ?? 'text-content-2'}`}>
                             {stage === 'pausado' ? 'Pausado' : etiqueta.label}
                         </span>
@@ -314,8 +320,9 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                     {/* Columnas de ancho FIJO: así los puntos de todas las filas
                         caen bajo los nombres del encabezado. Por eso, abierta, la
                         barra completa de acciones baja al detalle. */}
-                    <div className="col-span-2 lg:col-span-1 flex items-center justify-end gap-1.5 flex-wrap empty:hidden" onClick={e => e.stopPropagation()}>
+                    <div className="col-span-2 lg:col-span-1 lg:shrink-0 flex items-center justify-end gap-1.5 flex-wrap empty:hidden" onClick={e => e.stopPropagation()}>
                         {!isExp && accionesJSX}
+                    </div>
                     </div>
                     {/* La flecha sólo en escritorio: en el teléfono la fila
                         entera se toca para abrirla. */}
@@ -1052,7 +1059,7 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                     // de la página debajo lo vuelve opaco del todo.
                                     background: 'linear-gradient(var(--thead-bg), var(--thead-bg)), var(--bg-page)',
                                 }}
-                                className="hidden lg:grid lg:sticky z-tabs rounded-xl gap-x-5 pl-4 pr-3 pt-3 pb-2.5 shadow-[var(--shadow-elevation-sm)] lg:grid-cols-[10rem_minmax(22rem,1fr)_11rem_8.5rem_1rem]">
+                                className="hidden lg:grid lg:sticky z-tabs rounded-xl gap-x-5 pl-4 pr-3 pt-3 pb-2.5 shadow-[var(--shadow-elevation-sm)] lg:grid-cols-[9rem_minmax(24rem,1fr)_17rem_1rem]">
                                 <span className="self-end text-caption font-semibold text-content-2">Sala</span>
                                 <EncabezadoDeAvance />
                                 <span className="self-end text-caption font-semibold text-content-2">Estado</span>

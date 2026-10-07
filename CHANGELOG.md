@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.18 — Pedidos (lista): estado y acción en una columna, más aire para los pasos
+
+- **Estado y acción comparten una sola columna** (estado a la izquierda, botón a la derecha). Eran dos columnas fijas y en las filas sin botón quedaba un hueco vacío a la derecha; ese ancho ahora es de la línea de pasos.
+
 ## v2.1232.17 — Pedidos (lista): la fila abierta queda alineada con el encabezado
 
 - **Al abrir una fila, su línea de pasos se queda en su columna**, alineada con el encabezado (antes pasaba a todo el ancho y se desalineaba). Crece hacia abajo con la hora, la foto y el nombre de cada paso; los títulos de tramo no se repiten adentro.

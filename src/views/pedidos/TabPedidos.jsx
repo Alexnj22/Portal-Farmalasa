@@ -14,7 +14,7 @@ import {
     Truck, Pause, Play, Home,
     X, Send, Check, RotateCcw, Flag,
     ClipboardList, UserPlus, Inbox, FileDown, Box, Zap, Map as MapIcon,
-    CalendarClock, Ban, Star, Search, Radio, RefreshCw, PackageX,
+    CalendarClock, Ban, Star, Search, Radio, RefreshCw, PackageX, PackageCheck, Store,
 } from 'lucide-react';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -266,18 +266,23 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
         // El estado se marca con una FRANJA fina a la izquierda, no con el borde
         // entero: con tres filas con problema seguidas, el borde rojo de cada
         // una dominaba la pantalla (lo pidió el usuario, 2026-10-07).
-        const franja = stage === 'pausado' ? 'bg-warning-solid' : (faltan.hay || difsDeLaSala > 0) ? 'bg-danger-solid' : null;
+        // Ni borde de color ni franja lateral (el canon prohíbe la franja a un
+        // lado de una tarjeta): lo que tiene problema lleva un ÍCONO junto al
+        // nombre de la sala, en el color del problema.
+        const marca = stage === 'pausado' ? { Icono: Pause, cls: 'text-warning-text', txt: 'En pausa' }
+            : (faltan.hay || difsDeLaSala > 0) ? { Icono: AlertTriangle, cls: 'text-danger-text', txt: 'Con problema' }
+            : null;
         // Sin el agrupamiento por ruta de la tarjeta, la fila dice en cuál va.
         const rutaDeLaFila = stage === 'transito' ? pedidoRutaMap.get(claveParada(row.pedido_id, row.erp_sucursal_id))?.ruta : null;
         return (
-            <div key={cardKey} data-surface="card" className="select-none relative overflow-hidden"
+            <div key={cardKey} data-surface="card" className="select-none"
                 {...clickable(() => toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id), { label: `Pedido ${row.codigo ?? row.numero}` })}
                 aria-expanded={isExp}>
-                {franja && <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1 ${franja}`} />}
                 <div className="grid items-center gap-x-5 gap-y-2 pl-4 pr-3 py-3.5 grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[10rem_minmax(22rem,1fr)_11rem_8.5rem_1rem]">
                     <div className="min-w-0">
-                        <div className="text-body font-bold text-content leading-tight truncate">
-                            {ERP_NAMES[row.erp_sucursal_id] ?? `Sucursal ${row.erp_sucursal_id}`}
+                        <div className="flex items-center gap-1.5 text-body font-bold text-content leading-tight min-w-0">
+                            {marca && <marca.Icono size={14} className={`shrink-0 ${marca.cls}`} aria-label={marca.txt} />}
+                            <span className="truncate">{ERP_NAMES[row.erp_sucursal_id] ?? `Sucursal ${row.erp_sucursal_id}`}</span>
                         </div>
                         <div className="text-caption text-content-3 tabular-nums truncate">{row.codigo ?? `#${row.numero}`}</div>
                     </div>
@@ -342,14 +347,14 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
     // Los grupos de la lista: «¿qué toca hacer?», en orden de urgencia. Lo que
     // tiene un problema abierto va primero, sea cual sea su etapa.
     const GRUPOS_LISTA = [
-        { key: 'problemas',   label: 'Con problemas' },
-        { key: 'pausado',     label: 'En pausa' },
-        { key: 'sin_iniciar', label: 'Por preparar' },
-        { key: 'preparando',  label: 'En preparación' },
-        { key: 'preparado',   label: 'Listos para salir' },
-        { key: 'transito',    label: 'En camino' },
-        { key: 'contando',    label: 'En la sala' },
-        { key: 'erp',         label: 'Completados' },
+        { key: 'problemas',   label: 'Con problemas',     Icono: AlertTriangle, tono: 'text-danger-text' },
+        { key: 'pausado',     label: 'En pausa',          Icono: Pause,         tono: 'text-warning-text' },
+        { key: 'sin_iniciar', label: 'Por preparar',      Icono: ClipboardList, tono: 'text-content' },
+        { key: 'preparando',  label: 'En preparación',    Icono: Package,       tono: 'text-content' },
+        { key: 'preparado',   label: 'Listos para salir', Icono: PackageCheck,  tono: 'text-content' },
+        { key: 'transito',    label: 'En camino',         Icono: Truck,         tono: 'text-content' },
+        { key: 'contando',    label: 'En la sala',        Icono: Store,         tono: 'text-content' },
+        { key: 'erp',         label: 'Completados',       Icono: CheckCircle2,  tono: 'text-content-3' },
     ];
     const grupoDeLaFila = (row) => {
         const ck = `act_${row.pedido_id}_${row.erp_sucursal_id}`;
@@ -1032,7 +1037,7 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                     )
                 ) : (
                     vista === 'lista' ? (
-                        <div className="space-y-7">
+                        <div className="space-y-8">
                             {/* Los nombres de los pasos, UNA vez, alineados con los
                                 puntos: antes se repetían en cada fila. Usa las
                                 mismas columnas que la fila. */}
@@ -1046,19 +1051,57 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                     // de la página debajo lo vuelve opaco del todo.
                                     background: 'linear-gradient(var(--thead-bg), var(--thead-bg)), var(--bg-page)',
                                 }}
-                                className="hidden lg:grid lg:sticky z-tabs rounded-xl gap-x-5 pl-4 pr-3 py-2 lg:grid-cols-[10rem_minmax(22rem,1fr)_11rem_8.5rem_1rem]">
-                                <span />
+                                className="hidden lg:grid lg:sticky z-tabs rounded-xl gap-x-5 pl-4 pr-3 pt-3 pb-2.5 shadow-[var(--shadow-elevation-sm)] lg:grid-cols-[10rem_minmax(22rem,1fr)_11rem_8.5rem_1rem]">
+                                <span className="self-end text-caption font-semibold text-content-2">Sala</span>
                                 <EncabezadoDeAvance />
+                                <span className="self-end text-caption font-semibold text-content-2">Estado</span>
                             </div>
                             {GRUPOS_LISTA.map(g => {
                                 const filas = filteredRows.filter(r => grupoDeLaFila(r) === g.key);
                                 if (!filas.length) return null;
+                                // Dentro de «En camino», las salas de una misma ruta van
+                                // juntas bajo el encabezado de su ruta: el conductor, las
+                                // entregas y el mapa son de la RUTA, no de cada sala.
+                                const porRuta = g.key === 'transito'
+                                    ? Object.values(filas.reduce((acc, r) => {
+                                        const ruta = pedidoRutaMap.get(claveParada(r.pedido_id, r.erp_sucursal_id))?.ruta ?? null;
+                                        const k = ruta?.id ?? 'sin-ruta';
+                                        (acc[k] ??= { ruta, filas: [] }).filas.push(r);
+                                        return acc;
+                                    }, {}))
+                                    : null;
                                 return (
                                     <section key={g.key} className="space-y-2" aria-label={g.label}>
-                                        <h3 className={`text-caption font-black uppercase tracking-widest flex items-center gap-2 px-1 ${g.key === 'problemas' ? 'text-danger-text' : 'text-content-3'}`}>
-                                            {g.label}<span className="tabular-nums font-semibold">{filas.length}</span>
+                                        {/* Encabezado de sección con ícono, nombre, cuenta y una
+                                            línea que la separa: antes era un rótulo gris chico y
+                                            las secciones casi no se distinguían. */}
+                                        <h3 className={`flex items-center gap-2.5 px-1 pt-1 text-body-sm font-bold ${g.tono}`}>
+                                            <g.Icono size={16} aria-hidden="true" />
+                                            {g.label}
+                                            <span className="px-2 py-0.5 rounded-full bg-surface-card-hover text-caption font-semibold text-content-2 tabular-nums">{filas.length}</span>
+                                            <span aria-hidden="true" className="flex-1 h-px bg-divider" />
                                         </h3>
-                                        {filas.map(r => renderSala(r))}
+                                        {porRuta ? porRuta.map(({ ruta, filas: fr }) => {
+                                            const conductor = ruta?.conductor_id ? empMap.get(ruta.conductor_id) : null;
+                                            const entregadas = (ruta?.ruta_pedidos ?? []).filter(rp => rp.entregado_at).length;
+                                            return (
+                                                <div key={ruta?.id ?? 'sin-ruta'} className="space-y-1.5">
+                                                    <div className="flex items-center gap-2 px-2 pt-1 text-caption text-content-2 min-w-0">
+                                                        <Truck size={13} className="text-chart-3-text shrink-0" aria-hidden="true" />
+                                                        {ruta ? (
+                                                            <>
+                                                                <span className="font-bold text-content">Ruta #{ruta.numero}</span>
+                                                                {conductor && <AvatarConEstado emp={conductor} px={18} radio="rounded-full" marco="" mostrarChip={false} />}
+                                                                <span className="truncate">{shortEmployeeName(conductor || ruta.conductor_nombre)}</span>
+                                                                <span className="text-content-3 tabular-nums">· {entregadas}/{(ruta.ruta_pedidos ?? []).length} entregadas</span>
+                                                                <Button variant="ghost" size="xs" icon={MapIcon} className="ml-auto" onClick={() => setRutaMapOpen(ruta)}>Mapa</Button>
+                                                            </>
+                                                        ) : <span className="font-semibold">Sin ruta</span>}
+                                                    </div>
+                                                    {fr.map(r => renderSala(r))}
+                                                </div>
+                                            );
+                                        }) : filas.map(r => renderSala(r))}
                                     </section>
                                 );
                             })}

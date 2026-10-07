@@ -17,7 +17,7 @@
 // siete pasos del flujo: los extra (falta caja, reenvío, diferencias) los dice
 // la fila de datos con su número.
 import React from 'react';
-import { Check, Pause } from 'lucide-react';
+import { Check, Pause, Warehouse, Store } from 'lucide-react';
 import { pasosDelPedido, PASO_DE_LA_ETAPA, fmtHM, fmtMin, elapsed } from '@nucleo/utils/tableroDePedidos';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
@@ -27,9 +27,20 @@ import AvatarConEstado from '../../../components/common/AvatarConEstado';
 const EN_CURSO = { confirmado: 'Por preparar', iniciado: 'Preparando', preparado: 'Listo', enviado: 'En ruta', llegada: 'Recibiendo' };
 
 // Literales: Tailwind escanea texto.
+// Cómo se alinea lo que va bajo cada punto: el primero del tramo a la
+// izquierda, el último a la derecha (si no, choca con el tramo siguiente o lo
+// corta el borde) y los del medio CENTRADOS bajo su punto (`left-2` = la mitad
+// del punto de 16px). El encabezado usa la misma regla.
+const ALINEA = {
+    inicio: 'items-start text-left',
+    fin:    'items-end text-right',
+    centro: 'items-center text-center self-start w-max relative left-2 -translate-x-1/2',
+};
+const alineaDe = (i, n) => (i === 0 ? 'inicio' : i === n - 1 ? 'fin' : 'centro');
+
 const TRAMO = {
-    bodega: { titulo: 'Bodega y transporte', punto: 'bg-chart-3', borde: 'border-chart-3', linea: 'bg-chart-3/60', texto: 'text-chart-3-text' },
-    sala:   { titulo: 'Sucursal',            punto: 'bg-chart-9', borde: 'border-chart-9', linea: 'bg-chart-9/60', texto: 'text-chart-9-text' },
+    bodega: { titulo: 'Bodega y transporte', Icono: Warehouse, punto: 'bg-chart-3', borde: 'border-chart-3', linea: 'bg-chart-3/60', texto: 'text-chart-3-text' },
+    sala:   { titulo: 'Sucursal',            Icono: Store,     punto: 'bg-chart-9', borde: 'border-chart-9', linea: 'bg-chart-9/60', texto: 'text-chart-9-text' },
 };
 const LADO = { confirmado: 'bodega', iniciado: 'bodega', preparado: 'bodega', enviado: 'bodega', ruta_entregado: 'bodega', llegada: 'sala', erp: 'sala' };
 
@@ -50,13 +61,18 @@ export function EncabezadoDeAvance() {
                 <React.Fragment key={lado}>
                     {ti > 0 && <span className="self-stretch w-px shrink-0" />}
                     <div className={`min-w-0 ${ti === 0 ? 'flex-[5]' : 'flex-[2]'}`}>
-                        <p className={`text-micro font-semibold uppercase tracking-wider mb-1 ${TRAMO[lado].texto}`}>{TRAMO[lado].titulo}</p>
+                        <p className={`flex items-center gap-1.5 text-micro font-bold uppercase tracking-wider mb-1.5 ${TRAMO[lado].texto}`}>
+                            {React.createElement(TRAMO[lado].Icono, { size: 12, 'aria-hidden': true })}{TRAMO[lado].titulo}
+                        </p>
                         <div className="flex w-full">
-                            {nombres.map((n, i) => (
-                                i === nombres.length - 1
-                                    ? <span key={n} className="w-4 shrink-0 flex justify-end overflow-visible"><span className="text-micro text-content-3 leading-tight whitespace-nowrap">{n}</span></span>
-                                    : <span key={n} className="flex-1 min-w-0 truncate text-micro text-content-3 leading-tight pr-1 whitespace-nowrap">{n}</span>
-                            ))}
+                            {nombres.map((n, i) => {
+                                const a = alineaDe(i, nombres.length);
+                                return (
+                                    <span key={n} className={`flex ${a === 'fin' ? 'w-4 shrink-0 justify-end' : 'flex-1 min-w-0'}`}>
+                                        <span className={`text-caption font-semibold text-content-2 leading-tight whitespace-nowrap ${a === 'centro' ? 'relative left-2 -translate-x-1/2' : ''}`}>{n}</span>
+                                    </span>
+                                );
+                            })}
                         </div>
                     </div>
                 </React.Fragment>
@@ -117,10 +133,8 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
                         </span>
                     )}
                 </span>
-                {/* El rótulo puede bajar a dos renglones antes que pisar al
-                    vecino: en un tramo angosto «Por preparar» se pegaba a
-                    «Inicio». */}
-                <span className={`mt-1 pr-1 text-micro leading-tight ${ultimo || e.activo || !detalle ? 'whitespace-nowrap' : 'break-words'} ${
+                <div className={`flex flex-col mt-1 ${ALINEA[alineaDe(i, lista.length)]}`}>
+                <span className={`text-micro leading-tight whitespace-nowrap ${
                     e.activo ? `font-bold ${pausado ? 'text-warning-text' : t.texto}`
                     : e.hecho ? 'text-content-2' : 'text-content-3'
                 } ${verRotulo ? '' : ocultarRotulo ? 'invisible' : 'hidden sm:block'}`}>
@@ -132,9 +146,9 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
                     </span>
                 )}
                 {detalle && e.paso.emp && (
-                    <span className={`mt-1 flex items-center gap-1 min-w-0 ${ultimo ? 'whitespace-nowrap' : ''}`}>
+                    <span className="mt-1 flex items-center gap-1 whitespace-nowrap">
                         <AvatarConEstado emp={e.paso.emp} px={20} radio="rounded-full" marco="" mostrarChip={false} />
-                        <span className="text-micro text-content-2 leading-tight truncate">{shortEmployeeName(e.paso.emp)}</span>
+                        <span className="text-micro text-content-2 leading-tight">{shortEmployeeName(e.paso.emp)}</span>
                     </span>
                 )}
                 {detalle && e.paso.key === 'iniciado' && (row.min_pausado_total ?? 0) > 0 && (
@@ -142,6 +156,7 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
                         {fmtMin(row.min_pausado_total)} en pausa
                     </span>
                 )}
+                </div>
             </li>
         );
     };

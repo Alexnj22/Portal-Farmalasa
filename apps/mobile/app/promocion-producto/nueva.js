@@ -10,7 +10,7 @@
 // quedaría un descuento vivo bajándole el precio a productos reales. Si el
 // descuento falla, se reintenta sólo esa mitad (no se crea otra promoción).
 // Todo lo que se arma sale del núcleo (`promocionesUtils`), lo mismo del portal.
-import { volver } from '../componentes/volver';
+import { volver } from '../../componentes/volver';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActionSheetIOS, Alert, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { router, Stack } from 'expo-router';

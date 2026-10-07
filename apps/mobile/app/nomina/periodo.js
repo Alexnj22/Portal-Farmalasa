@@ -3,7 +3,7 @@
 // (`quincenaPorDefecto`, núcleo) y muestra el rótulo con que va a quedar
 // («Primera Quincena de octubre 2026»). Guarda con `createPayrollPeriod`, la
 // misma función del portal, que deja la apertura en la bitácora.
-import { volver } from '../componentes/volver';
+import { volver } from '../../componentes/volver';
 import { useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';

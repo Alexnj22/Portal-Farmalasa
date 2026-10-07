@@ -3,7 +3,7 @@
 // formato (y el tamaño si es impresa), para cuándo y la prioridad. Lo manda
 // `crearSolicitud` del núcleo, la misma del portal, y el diseñador recibe el
 // aviso. Guarda borrador como el portal.
-import { volver } from 'componentes/volver';
+import { volver } from '../componentes/volver';
 import { useEffect, useRef, useState } from 'react';
 import { ActionSheetIOS, Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';

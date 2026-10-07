@@ -9,7 +9,7 @@
 // Con `?id` edita el plan (fechas, horas, nota) y pide confirmación. Guarda
 // con `createVacationPlan` / `updateVacationPlan`, las funciones del portal:
 // ellas revisan la ventana del aniversario y los traslapes y avisan.
-import { volver } from '../componentes/volver';
+import { volver } from '../../componentes/volver';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';

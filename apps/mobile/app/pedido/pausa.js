@@ -2,7 +2,7 @@
 // motivo (el almuerzo, una sola vez por pedido), un comentario (obligatorio en
 // «Otro…») y el historial de pausas de esta sala. Guarda con el mismo texto
 // que el portal (`textoDePausa`, núcleo).
-import { volver } from '../componentes/volver';
+import { volver } from '../../componentes/volver';
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';

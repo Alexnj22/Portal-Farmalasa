@@ -10,7 +10,7 @@
 // que el portal. El reparto no puede pasar del saldo.
 //
 // Lo escrito se guarda solo como borrador (por fila) hasta que se guarda.
-import { volver } from '../../componentes/volver';
+import { volver } from '../../../componentes/volver';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';

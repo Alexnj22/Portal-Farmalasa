@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1240.1 — App: corrige un import roto
+
+- App: corrige la ruta del import de `volver` en las pantallas de acción de las subcarpetas (pedido, nómina, vacaciones, promoción por producto); la app no compilaba.
+
 ## v2.1240.0 — App: pedidos, nómina, vacaciones, expediente y promociones por producto
 
 - **App: Pedidos desde el teléfono.** Generar el pedido (salas con su urgencia, distribución global de Bodega, códigos por sala igual que el portal; el papel sigue saliendo en la computadora de Bodega), y en el detalle las acciones de Bodega: iniciar, reanudar, pausar con motivo, programar la entrega y anular. **Llegó el reenvío**: caja por caja, Electrolit y especiales.

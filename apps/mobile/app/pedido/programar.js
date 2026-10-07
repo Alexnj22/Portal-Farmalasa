@@ -2,7 +2,7 @@
 // del portal: fecha y hora con los selectores del sistema, y el historial de
 // cada vez que se programó, con quién. Guarda con `programarEntregaDePedido`
 // (núcleo), que agrega el cambio al historial en vez de pisarlo.
-import { volver } from '../componentes/volver';
+import { volver } from '../../componentes/volver';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';

@@ -3,7 +3,7 @@
 // impresiones, interacciones, mensajes, clics). Un resultado vacío es «todavía
 // no se anotó», no cero: `guardarPauta` del núcleo lo guarda así. El
 // presupuesto no puede pasar el tope del mes (lo fija gerencia).
-import { volver } from 'componentes/volver';
+import { volver } from '../componentes/volver';
 import { useEffect, useMemo, useState } from 'react';
 import { ActionSheetIOS, Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { router, Stack } from 'expo-router';

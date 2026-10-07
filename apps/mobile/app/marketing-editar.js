@@ -7,7 +7,7 @@
 //
 // Llega con `?mes=AAAA-MM` para una nueva (si el mes no existe, se crea al
 // guardar) o con la pieza elegida en la lista para editarla.
-import { volver } from 'componentes/volver';
+import { volver } from '../componentes/volver';
 import { useEffect, useMemo, useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';

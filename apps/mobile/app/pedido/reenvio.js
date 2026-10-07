@@ -6,7 +6,7 @@
 // portal: cierra el ciclo en el historial y deja `falta_caja` sólo en lo que
 // sigue sin llegar. El aviso a Bodega si todavía falta algo lo escribe la base.
 // Si llegaron renglones por contar, se sigue directo al conteo.
-import { volver } from '../componentes/volver';
+import { volver } from '../../componentes/volver';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';

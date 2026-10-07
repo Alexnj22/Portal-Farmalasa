@@ -6,7 +6,7 @@
 // (núcleo), lo mismo que el portal. Lo único que NO hace es imprimir: el papel
 // sale de la computadora de Bodega (Pedidos → PDF), que es donde está la
 // impresora. Una sala sin MIN·MAX publicado no se puede elegir.
-import { volver } from '../componentes/volver';
+import { volver } from '../../componentes/volver';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Switch, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';

@@ -9,7 +9,7 @@ import {
     Package, FlaskConical, Check, Loader2,
     ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, Info,
     Camera, TrendingDown, ShieldAlert, Plus, X, Building2, Tag,
-    Sparkles, History, MapPin, Search, Clipboard, Eye, RotateCcw, Ban,
+    Sparkles, History, MapPin, Search, Clipboard, Eye, RotateCcw, Ban, EyeOff, Smartphone,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import FilterBar from '../../components/common/FilterBar';
@@ -32,7 +32,7 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import {
     guardarPrincipiosActivos,
     updateProductCategoria, insertProductCategory, guardarUbicacionesProducto,
-    updateProductDevolutivo, updateProductFoto, fetchProductPreciosMarginPage, fetchProductCounts,
+    updateProductDevolutivo, updateProductFoto, fetchVisibleEnApp, setVisibleEnApp, fetchProductPreciosMarginPage, fetchProductCounts,
     fetchChangelogPage, fetchProductsList, fetchProductChangeAndMarginData, fetchProductDetail,
 } from '@nucleo/data/productos';
 import PortalInput from '../../components/common/PortalInput';
@@ -872,6 +872,28 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
 
     useEffect(() => { setDevolutivo(!!product.devolutivo); }, [product.devolutivo]);
 
+    // ¿Se ve en el catálogo de la app de clientes? (2026-10-07)
+    const [enApp, setEnApp] = useState(null);
+    const [savingEnApp, setSavingEnApp] = useState(false);
+    useEffect(() => {
+        let vivo = true;
+        fetchVisibleEnApp(product.id).then((v) => { if (vivo) setEnApp(v); })
+            .catch((err) => console.error('TabCatalogo: no se pudo leer si se ve en la app', err));
+        return () => { vivo = false; };
+    }, [product.id]);
+    const toggleEnApp = async () => {
+        if (savingEnApp || enApp == null) return;
+        setSavingEnApp(true);
+        try {
+            await setVisibleEnApp(product.id, !enApp, { producto: product.nombre });
+            setEnApp(!enApp);
+        } catch (err) {
+            useToastStore.getState().showToast('Error', mensajeAmigable(err), 'error');
+        } finally {
+            setSavingEnApp(false);
+        }
+    };
+
     const toggleDevolutivo = async () => {
         if (savingDevolutivo) return;
         setSavingDevolutivo(true);
@@ -1017,6 +1039,24 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                     >
                         {savingDevolutivo ? <Loader2 size={12} className="animate-spin" /> : !devolutivo ? <Ban size={12} /> : <RotateCcw size={12} />}
                         {!devolutivo ? 'No devolutivo (ND)' : 'Devolutivo'}
+                    </Button>
+
+                    {/* ── En la app de clientes: se muestra o no en su catálogo ── */}
+                    <Button
+                        size="sm"
+                        aria-pressed={enApp === false}
+                        loading={savingEnApp}
+                        disabled={enApp == null}
+                        variant="secondary"
+                        tone={enApp === false ? 'warning' : null}
+                        soft
+                        icon={enApp === false ? EyeOff : Smartphone}
+                        onClick={toggleEnApp}
+                        title={enApp === false
+                            ? 'Oculto en el catálogo de la app de clientes. Clic para mostrarlo.'
+                            : 'Se muestra en el catálogo de la app de clientes (con precio y precio VIP). Clic para ocultarlo.'}
+                    >
+                        {enApp === false ? 'Oculto en la app' : 'Se ve en la app'}
                     </Button>
 
                     {/* ── Main layout: two columns ── */}

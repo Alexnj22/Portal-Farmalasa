@@ -199,6 +199,783 @@ export type Database = {
           },
         ]
       }
+      app_banners: {
+        Row: {
+          creada_por: string | null
+          created_at: string
+          enlace: string | null
+          fin: string
+          id: string
+          imagen_path: string
+          inicio: string
+          oferta_id: string | null
+          orden: number
+          publicada: boolean
+          titulo: string
+          titulo_visible: boolean
+          updated_at: string
+        }
+        Insert: {
+          creada_por?: string | null
+          created_at?: string
+          enlace?: string | null
+          fin: string
+          id?: string
+          imagen_path: string
+          inicio?: string
+          oferta_id?: string | null
+          orden?: number
+          publicada?: boolean
+          titulo: string
+          titulo_visible?: boolean
+          updated_at?: string
+        }
+        Update: {
+          creada_por?: string | null
+          created_at?: string
+          enlace?: string | null
+          fin?: string
+          id?: string
+          imagen_path?: string
+          inicio?: string
+          oferta_id?: string | null
+          orden?: number
+          publicada?: boolean
+          titulo?: string
+          titulo_visible?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_banners_oferta_id_fkey"
+            columns: ["oferta_id"]
+            isOneToOne: false
+            referencedRelation: "ofertas_clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_catalogo_destacados: {
+        Row: {
+          created_at: string
+          posicion: number
+          product_id: number
+          unidades: number
+        }
+        Insert: {
+          created_at?: string
+          posicion: number
+          product_id: number
+          unidades: number
+        }
+        Update: {
+          created_at?: string
+          posicion?: number
+          product_id?: number
+          unidades?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_catalogo_destacados_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_catalogo_destacados_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_catalogo_ocultos: {
+        Row: {
+          created_at: string
+          ocultado_por: string | null
+          product_id: number
+        }
+        Insert: {
+          created_at?: string
+          ocultado_por?: string | null
+          product_id: number
+        }
+        Update: {
+          created_at?: string
+          ocultado_por?: string | null
+          product_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_catalogo_ocultos_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_catalogo_ocultos_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_cliente_avisos: {
+        Row: {
+          created_at: string
+          cuerpo: string
+          customer_id: number
+          enviado: boolean
+          id: number
+          leido_at: string | null
+          ref: string
+          tipo: string
+          titulo: string
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          cuerpo: string
+          customer_id: number
+          enviado?: boolean
+          id?: never
+          leido_at?: string | null
+          ref: string
+          tipo: string
+          titulo: string
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          cuerpo?: string
+          customer_id?: number
+          enviado?: boolean
+          id?: never
+          leido_at?: string | null
+          ref?: string
+          tipo?: string
+          titulo?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_cliente_avisos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_avisos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+        ]
+      }
+      app_cliente_muestras: {
+        Row: {
+          created_at: string
+          customer_id: number
+          datos: Json
+          id: number
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: number
+          datos: Json
+          id?: never
+          tipo: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: number
+          datos?: Json
+          id?: never
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_cliente_muestras_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_muestras_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+        ]
+      }
+      app_cliente_preregistros: {
+        Row: {
+          acepta_programa: boolean
+          acepta_promociones: boolean
+          created_at: string
+          customer_id: number | null
+          documento: string
+          email: string | null
+          estado: string
+          fecha_nacimiento: string | null
+          id: string
+          nombre: string
+          resuelto_at: string | null
+          resuelto_por: string | null
+          telefono: string
+          version_aviso: string
+        }
+        Insert: {
+          acepta_programa: boolean
+          acepta_promociones: boolean
+          created_at?: string
+          customer_id?: number | null
+          documento: string
+          email?: string | null
+          estado?: string
+          fecha_nacimiento?: string | null
+          id?: string
+          nombre: string
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+          telefono: string
+          version_aviso: string
+        }
+        Update: {
+          acepta_programa?: boolean
+          acepta_promociones?: boolean
+          created_at?: string
+          customer_id?: number | null
+          documento?: string
+          email?: string | null
+          estado?: string
+          fecha_nacimiento?: string | null
+          id?: string
+          nombre?: string
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+          telefono?: string
+          version_aviso?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_cliente_preregistros_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_preregistros_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "app_cliente_preregistros_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_preregistros_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_cliente_referido_codigo: {
+        Row: {
+          codigo: string
+          created_at: string
+          customer_id: number
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          customer_id: number
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          customer_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_cliente_referido_codigo_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_referido_codigo_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+        ]
+      }
+      app_cliente_referidos: {
+        Row: {
+          codigo: string
+          created_at: string
+          estado: string
+          id: number
+          invitado_id: number | null
+          invoice_id: number | null
+          motivo: string | null
+          premiado_at: string | null
+          preregistro_id: string | null
+          referidor_id: number
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          estado?: string
+          id?: never
+          invitado_id?: number | null
+          invoice_id?: number | null
+          motivo?: string | null
+          premiado_at?: string | null
+          preregistro_id?: string | null
+          referidor_id: number
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          estado?: string
+          id?: never
+          invitado_id?: number | null
+          invoice_id?: number | null
+          motivo?: string | null
+          premiado_at?: string | null
+          preregistro_id?: string | null
+          referidor_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_cliente_referidos_invitado_id_fkey"
+            columns: ["invitado_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_referidos_invitado_id_fkey"
+            columns: ["invitado_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "app_cliente_referidos_preregistro_id_fkey"
+            columns: ["preregistro_id"]
+            isOneToOne: true
+            referencedRelation: "app_cliente_preregistros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_referidos_referidor_id_fkey"
+            columns: ["referidor_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_referidos_referidor_id_fkey"
+            columns: ["referidor_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+        ]
+      }
+      app_cliente_sesiones: {
+        Row: {
+          acepta_avisos: boolean | null
+          created_at: string
+          customer_id: number | null
+          dispositivo: string | null
+          id: string
+          plataforma: string | null
+          preregistro_id: string | null
+          push_token: string | null
+          revocada_at: string | null
+          token_hash: string
+          ultimo_uso_at: string
+        }
+        Insert: {
+          acepta_avisos?: boolean | null
+          created_at?: string
+          customer_id?: number | null
+          dispositivo?: string | null
+          id?: string
+          plataforma?: string | null
+          preregistro_id?: string | null
+          push_token?: string | null
+          revocada_at?: string | null
+          token_hash: string
+          ultimo_uso_at?: string
+        }
+        Update: {
+          acepta_avisos?: boolean | null
+          created_at?: string
+          customer_id?: number | null
+          dispositivo?: string | null
+          id?: string
+          plataforma?: string | null
+          preregistro_id?: string | null
+          push_token?: string | null
+          revocada_at?: string | null
+          token_hash?: string
+          ultimo_uso_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_cliente_sesiones_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_sesiones_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "app_cliente_sesiones_preregistro_id_fkey"
+            columns: ["preregistro_id"]
+            isOneToOne: false
+            referencedRelation: "app_cliente_preregistros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_historias: {
+        Row: {
+          boton: string | null
+          creada_por: string | null
+          created_at: string
+          enlace: string | null
+          fin: string
+          id: string
+          imagen_path: string
+          inicio: string
+          oferta_id: string | null
+          orden: number
+          publicada: boolean
+          publicada_at: string | null
+          rotulo: string | null
+          texto: string | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          boton?: string | null
+          creada_por?: string | null
+          created_at?: string
+          enlace?: string | null
+          fin: string
+          id?: string
+          imagen_path: string
+          inicio?: string
+          oferta_id?: string | null
+          orden?: number
+          publicada?: boolean
+          publicada_at?: string | null
+          rotulo?: string | null
+          texto?: string | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          boton?: string | null
+          creada_por?: string | null
+          created_at?: string
+          enlace?: string | null
+          fin?: string
+          id?: string
+          imagen_path?: string
+          inicio?: string
+          oferta_id?: string | null
+          orden?: number
+          publicada?: boolean
+          publicada_at?: string | null
+          rotulo?: string | null
+          texto?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_historias_oferta_id_fkey"
+            columns: ["oferta_id"]
+            isOneToOne: false
+            referencedRelation: "ofertas_clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_historias_vistas: {
+        Row: {
+          created_at: string
+          customer_id: number | null
+          dispositivo: string | null
+          historia_id: string
+          id: number
+          toco_boton: boolean
+          visto_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: number | null
+          dispositivo?: string | null
+          historia_id: string
+          id?: never
+          toco_boton?: boolean
+          visto_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: number | null
+          dispositivo?: string | null
+          historia_id?: string
+          id?: never
+          toco_boton?: boolean
+          visto_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_historias_vistas_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_historias_vistas_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "app_historias_vistas_historia_id_fkey"
+            columns: ["historia_id"]
+            isOneToOne: false
+            referencedRelation: "app_historias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_reservas: {
+        Row: {
+          anticipo: number
+          avisado_at: string | null
+          avisado_por: string | null
+          avisado_via: string | null
+          branch_id: number
+          cantidad: number
+          cerrada_at: string | null
+          cerrada_por: string | null
+          constancia_url: string | null
+          created_at: string
+          customer_id: number
+          direccion_entrega: string | null
+          entrega: string
+          estado: string
+          id: number
+          lista_at: string | null
+          oferta_fin: string | null
+          oferta_id: string | null
+          oferta_titulo: string | null
+          origen: string
+          pagado_at: string | null
+          pago_estado: string
+          pago_metodo: string
+          precio_normal: number | null
+          precio_unitario: number | null
+          preparada_por: string | null
+          producto_id: number
+          producto_nombre: string
+          terminos_version: string
+          updated_at: string
+          vence_at: string | null
+        }
+        Insert: {
+          anticipo?: number
+          avisado_at?: string | null
+          avisado_por?: string | null
+          avisado_via?: string | null
+          branch_id: number
+          cantidad: number
+          cerrada_at?: string | null
+          cerrada_por?: string | null
+          constancia_url?: string | null
+          created_at?: string
+          customer_id: number
+          direccion_entrega?: string | null
+          entrega?: string
+          estado?: string
+          id?: never
+          lista_at?: string | null
+          oferta_fin?: string | null
+          oferta_id?: string | null
+          oferta_titulo?: string | null
+          origen?: string
+          pagado_at?: string | null
+          pago_estado?: string
+          pago_metodo?: string
+          precio_normal?: number | null
+          precio_unitario?: number | null
+          preparada_por?: string | null
+          producto_id: number
+          producto_nombre: string
+          terminos_version: string
+          updated_at?: string
+          vence_at?: string | null
+        }
+        Update: {
+          anticipo?: number
+          avisado_at?: string | null
+          avisado_por?: string | null
+          avisado_via?: string | null
+          branch_id?: number
+          cantidad?: number
+          cerrada_at?: string | null
+          cerrada_por?: string | null
+          constancia_url?: string | null
+          created_at?: string
+          customer_id?: number
+          direccion_entrega?: string | null
+          entrega?: string
+          estado?: string
+          id?: never
+          lista_at?: string | null
+          oferta_fin?: string | null
+          oferta_id?: string | null
+          oferta_titulo?: string | null
+          origen?: string
+          pagado_at?: string | null
+          pago_estado?: string
+          pago_metodo?: string
+          precio_normal?: number | null
+          precio_unitario?: number | null
+          preparada_por?: string | null
+          producto_id?: number
+          producto_nombre?: string
+          terminos_version?: string
+          updated_at?: string
+          vence_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_reservas_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_reservas_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_reservas_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "app_reservas_oferta_id_fkey"
+            columns: ["oferta_id"]
+            isOneToOne: false
+            referencedRelation: "ofertas_clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_reservas_pagos: {
+        Row: {
+          codigo_autorizacion: string | null
+          created_at: string
+          detalle: Json | null
+          enlace_id: number | null
+          enlace_url: string | null
+          es_real: boolean | null
+          estado: string
+          forma_pago: string | null
+          id: number
+          id_transaccion: string | null
+          identificador: string
+          monto: number
+          pagado_at: string | null
+          reserva_id: number
+        }
+        Insert: {
+          codigo_autorizacion?: string | null
+          created_at?: string
+          detalle?: Json | null
+          enlace_id?: number | null
+          enlace_url?: string | null
+          es_real?: boolean | null
+          estado?: string
+          forma_pago?: string | null
+          id?: never
+          id_transaccion?: string | null
+          identificador: string
+          monto: number
+          pagado_at?: string | null
+          reserva_id: number
+        }
+        Update: {
+          codigo_autorizacion?: string | null
+          created_at?: string
+          detalle?: Json | null
+          enlace_id?: number | null
+          enlace_url?: string | null
+          es_real?: boolean | null
+          estado?: string
+          forma_pago?: string | null
+          id?: never
+          id_transaccion?: string | null
+          identificador?: string
+          monto?: number
+          pagado_at?: string | null
+          reserva_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_reservas_pagos_reserva_id_fkey"
+            columns: ["reserva_id"]
+            isOneToOne: false
+            referencedRelation: "app_reservas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       approval_requests: {
         Row: {
           approvals: Json
@@ -14551,6 +15328,106 @@ export type Database = {
           },
         ]
       }
+      ofertas_clientes: {
+        Row: {
+          acento: string
+          branch_ids: number[] | null
+          condiciones: string | null
+          creada_por: string | null
+          created_at: string
+          descripcion: string | null
+          descuento_borrado_at: string | null
+          descuento_erp_id: number | null
+          descuento_monto: number | null
+          descuento_tipo: string | null
+          etiqueta: string | null
+          exclusiva: boolean
+          fin: string
+          foto_at: string | null
+          id: string
+          imagen_path: string | null
+          inicio: string
+          orden: number
+          productos: Json
+          promocion_id: number | null
+          publicada: boolean
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          acento?: string
+          branch_ids?: number[] | null
+          condiciones?: string | null
+          creada_por?: string | null
+          created_at?: string
+          descripcion?: string | null
+          descuento_borrado_at?: string | null
+          descuento_erp_id?: number | null
+          descuento_monto?: number | null
+          descuento_tipo?: string | null
+          etiqueta?: string | null
+          exclusiva?: boolean
+          fin: string
+          foto_at?: string | null
+          id?: string
+          imagen_path?: string | null
+          inicio: string
+          orden?: number
+          productos?: Json
+          promocion_id?: number | null
+          publicada?: boolean
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          acento?: string
+          branch_ids?: number[] | null
+          condiciones?: string | null
+          creada_por?: string | null
+          created_at?: string
+          descripcion?: string | null
+          descuento_borrado_at?: string | null
+          descuento_erp_id?: number | null
+          descuento_monto?: number | null
+          descuento_tipo?: string | null
+          etiqueta?: string | null
+          exclusiva?: boolean
+          fin?: string
+          foto_at?: string | null
+          id?: string
+          imagen_path?: string | null
+          inicio?: string
+          orden?: number
+          productos?: Json
+          promocion_id?: number | null
+          publicada?: boolean
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ofertas_clientes_creada_por_fkey"
+            columns: ["creada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ofertas_clientes_creada_por_fkey"
+            columns: ["creada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ofertas_clientes_promocion_id_fkey"
+            columns: ["promocion_id"]
+            isOneToOne: false
+            referencedRelation: "promociones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orphan_objects_registry: {
         Row: {
           created_at: string
@@ -18560,6 +19437,7 @@ export type Database = {
         Row: {
           acumulacion_activa: boolean
           avisar_fallas_a: string | null
+          cupon_presupuesto_mensual: number
           fuente: string
           id: boolean
           inicio: string | null
@@ -18572,6 +19450,7 @@ export type Database = {
         Insert: {
           acumulacion_activa?: boolean
           avisar_fallas_a?: string | null
+          cupon_presupuesto_mensual?: number
           fuente?: string
           id?: boolean
           inicio?: string | null
@@ -18584,6 +19463,7 @@ export type Database = {
         Update: {
           acumulacion_activa?: boolean
           avisar_fallas_a?: string | null
+          cupon_presupuesto_mensual?: number
           fuente?: string
           id?: boolean
           inicio?: string | null
@@ -18877,8 +19757,10 @@ export type Database = {
           id: number
           invoice_id: number | null
           motivo: string | null
+          nivel: string | null
           origen: string
           puntos: number
+          puntos_base: number | null
           ref_anterior: number | null
           restantes: number
           sucursal: string | null
@@ -18893,8 +19775,10 @@ export type Database = {
           id?: number
           invoice_id?: number | null
           motivo?: string | null
+          nivel?: string | null
           origen: string
           puntos: number
+          puntos_base?: number | null
           ref_anterior?: number | null
           restantes: number
           sucursal?: string | null
@@ -18909,8 +19793,10 @@ export type Database = {
           id?: number
           invoice_id?: number | null
           motivo?: string | null
+          nivel?: string | null
           origen?: string
           puntos?: number
+          puntos_base?: number | null
           ref_anterior?: number | null
           restantes?: number
           sucursal?: string | null
@@ -18966,6 +19852,13 @@ export type Database = {
             referencedRelation: "ventas_sin_producto"
             referencedColumns: ["invoice_id"]
           },
+          {
+            foreignKeyName: "puntos_lote_nivel_fkey"
+            columns: ["nivel"]
+            isOneToOne: false
+            referencedRelation: "puntos_niveles"
+            referencedColumns: ["clave"]
+          },
         ]
       }
       puntos_motor_fallas: {
@@ -18986,6 +19879,45 @@ export type Database = {
           detalle?: Json | null
           error?: string
           id?: never
+        }
+        Relationships: []
+      }
+      puntos_niveles: {
+        Row: {
+          clave: string
+          created_at: string
+          cupon_mensual: number
+          desde: number
+          factor: number
+          horas_reserva: number
+          nombre: string
+          orden: number
+          puntos_cumpleanos: number
+          updated_at: string
+        }
+        Insert: {
+          clave: string
+          created_at?: string
+          cupon_mensual?: number
+          desde: number
+          factor: number
+          horas_reserva?: number
+          nombre: string
+          orden: number
+          puntos_cumpleanos: number
+          updated_at?: string
+        }
+        Update: {
+          clave?: string
+          created_at?: string
+          cupon_mensual?: number
+          desde?: number
+          factor?: number
+          horas_reserva?: number
+          nombre?: string
+          orden?: number
+          puntos_cumpleanos?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -22467,6 +23399,51 @@ export type Database = {
           },
         ]
       }
+      wallet_registros: {
+        Row: {
+          created_at: string
+          customer_id: number
+          dispositivo: string
+          id: number
+          notificado_at: string
+          push_token: string
+          serial: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: number
+          dispositivo: string
+          id?: never
+          notificado_at?: string
+          push_token: string
+          serial: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: number
+          dispositivo?: string
+          id?: never
+          notificado_at?: string
+          push_token?: string
+          serial?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_registros_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_registros_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+        ]
+      }
       wfm_snapshots: {
         Row: {
           base_staff_hours: number
@@ -23766,6 +24743,61 @@ export type Database = {
       aplicar_horarios_bitacora: {
         Args: { p_branch_id: number; p_franjas?: Json; p_limpiezas?: Json }
         Returns: number
+      }
+      app_catalogo: {
+        Args: { p_desde?: number; p_limite?: number; p_q: string }
+        Returns: Json
+      }
+      app_catalogo_producto: { Args: { p_id: number }; Returns: Json }
+      app_catalogo_rehacer_destacados: { Args: never; Returns: number }
+      app_cliente_buscar_productos: { Args: { p_q: string }; Returns: Json }
+      app_cliente_compras: { Args: { p_customer_id: number }; Returns: Json }
+      app_cliente_existencias: {
+        Args: { p_producto_id: number }
+        Returns: Json
+      }
+      app_cliente_inyecciones: {
+        Args: { p_customer_id: number }
+        Returns: Json
+      }
+      app_cliente_inyecciones_por_recordar: {
+        Args: { p_clientes: number[] }
+        Returns: {
+          customer_id: number
+          id: number
+          producto: string
+          sala: string
+        }[]
+      }
+      app_historia_quienes_vieron: {
+        Args: { p_historia: string }
+        Returns: Json
+      }
+      app_historia_registrar_vista: {
+        Args: {
+          p_boton: boolean
+          p_customer: number
+          p_dispositivo: string
+          p_historia: string
+        }
+        Returns: undefined
+      }
+      app_historias_vistas_resumen: { Args: never; Returns: Json }
+      app_preregistro_resolver: {
+        Args: { p_accion: string; p_customer_id?: number; p_id: string }
+        Returns: Json
+      }
+      app_reserva_pago_confirmar: {
+        Args: {
+          p_codigo: string
+          p_detalle: Json
+          p_es_real: boolean
+          p_forma: string
+          p_id_transaccion: string
+          p_identificador: string
+          p_monto: number
+        }
+        Returns: Json
       }
       apply_proveedores_categoria_sugerida: {
         Args: { p_ids: number[] }
@@ -28308,6 +29340,10 @@ export type Database = {
       puntos_codigo_emitir: { Args: { p_customer_id: number }; Returns: Json }
       puntos_codigo_estado: { Args: { p_customer_id: number }; Returns: Json }
       puntos_codigo_ver: { Args: { p_customer_id: number }; Returns: Json }
+      puntos_compra_12m: {
+        Args: { p_customer_id: number; p_excluir?: number; p_hasta: string }
+        Returns: number
+      }
       puntos_consulta_registrar: {
         Args: { p_acerto: boolean; p_huella_dui: string; p_ip: string }
         Returns: number
@@ -28321,6 +29357,10 @@ export type Database = {
         Returns: Json
       }
       puntos_dar_cumpleanos: {
+        Args: { p_dia?: string; p_simular?: boolean }
+        Returns: Json
+      }
+      puntos_dar_cupones: {
         Args: { p_dia?: string; p_simular?: boolean }
         Returns: Json
       }
@@ -28379,6 +29419,27 @@ export type Database = {
         }
         Returns: Json
       }
+      puntos_nivel_de: {
+        Args: { p_compra: number }
+        Returns: {
+          clave: string
+          created_at: string
+          cupon_mensual: number
+          desde: number
+          factor: number
+          horas_reserva: number
+          nombre: string
+          orden: number
+          puntos_cumpleanos: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "puntos_niveles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       puntos_panel_asignar: {
         Args: {
           p_customer_id: number
@@ -28408,6 +29469,7 @@ export type Database = {
       puntos_panel_resumen: { Args: never; Returns: Json }
       puntos_panel_serie: { Args: { p_dias?: number }; Returns: Json }
       puntos_panel_tablero: { Args: never; Returns: Json }
+      puntos_premiar_referidos: { Args: { p_simular?: boolean }; Returns: Json }
       puntos_registrar_canje: {
         Args: { p_invoice_id: number; p_simular?: boolean }
         Returns: Json
@@ -28814,7 +29876,18 @@ export type Database = {
         Args: { p_decided_by?: string; p_note?: string; p_request_id: number }
         Returns: Json
       }
+      reserva_avisada_whatsapp: { Args: { p_id: number }; Returns: undefined }
+      reserva_cambiar_estado: {
+        Args: { p_estado: string; p_id: number; p_motivo?: string }
+        Returns: Json
+      }
+      reserva_puede_manejar: { Args: { p_branch_id: number }; Returns: boolean }
       reservar_pago_bono: { Args: { p_item: string }; Returns: Json }
+      reservas_de_sucursal: {
+        Args: { p_abiertas?: boolean; p_branch_id: number }
+        Returns: Json
+      }
+      reservas_vencer: { Args: never; Returns: number }
       resolve_pedido_item: {
         Args: {
           p_action: string
@@ -29452,6 +30525,14 @@ export type Database = {
         Returns: Json
       }
       vigilar_reinicio_de_la_base: { Args: never; Returns: undefined }
+      wallet_registros_por_avisar: {
+        Args: never
+        Returns: {
+          cambio_at: string
+          id: number
+          push_token: string
+        }[]
+      }
       zero_out_product_all_branches: {
         Args: { p_erp_product_id: number; p_motivo?: string; p_nota?: string }
         Returns: Json

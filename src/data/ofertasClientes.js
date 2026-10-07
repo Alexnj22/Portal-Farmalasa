@@ -73,7 +73,8 @@ export async function guardarOferta(id, datos) {
         anotar('OFERTA_CLIENTE_EDITAR', id, fila);
         return id;
     }
-    const nueva = sinError(await supabase.from('ofertas_clientes').insert(fila).select('id').single());
+    // La fila sale de una lista de campos permitidos: el tipo no la puede deducir.
+    const nueva = sinError(await supabase.from('ofertas_clientes').insert(/** @type {any} */ (fila)).select('id').single());
     anotar('OFERTA_CLIENTE_CREAR', nueva.id, fila);
     return nueva.id;
 }
@@ -187,7 +188,7 @@ export async function guardarHistoria(id, datos) {
         anotar('HISTORIA_APP_EDITAR', id, fila);
         return id;
     }
-    const nueva = sinError(await supabase.from('app_historias').insert(fila).select('id').single());
+    const nueva = sinError(await supabase.from('app_historias').insert(/** @type {any} */ (fila)).select('id').single());
     anotar('HISTORIA_APP_CREAR', nueva.id, fila);
     return nueva.id;
 }
@@ -237,7 +238,7 @@ export async function guardarBanner(id, datos) {
         anotar('BANNER_APP_EDITAR', id, fila);
         return id;
     }
-    const nuevo = sinError(await supabase.from('app_banners').insert(fila).select('id').single());
+    const nuevo = sinError(await supabase.from('app_banners').insert(/** @type {any} */ (fila)).select('id').single());
     anotar('BANNER_APP_CREAR', nuevo.id, fila);
     return nuevo.id;
 }

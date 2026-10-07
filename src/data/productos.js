@@ -78,6 +78,22 @@ export function updateProductDevolutivo(productId, value, contexto = {}) {
         'PRODUCTO_DEVOLUTIVO', productId, { devolutivo: value, ...contexto });
 }
 
+/** ¿Se muestra en el catálogo de la app de clientes? Por defecto sí; una fila en `app_catalogo_ocultos` lo oculta. */
+export async function fetchVisibleEnApp(productId) {
+    const { data, error } = await supabase.from('app_catalogo_ocultos').select('product_id').eq('product_id', productId).maybeSingle();
+    if (error) throw error;
+    return !data;
+}
+
+export async function setVisibleEnApp(productId, visible, contexto = {}) {
+    const q = visible
+        ? supabase.from('app_catalogo_ocultos').delete().eq('product_id', productId)
+        : supabase.from('app_catalogo_ocultos').upsert({ product_id: productId }, { onConflict: 'product_id', ignoreDuplicates: true });
+    const { error } = await q;
+    if (error) throw error;
+    anotar(visible ? 'PRODUCTO_MOSTRAR_EN_APP' : 'PRODUCTO_OCULTAR_EN_APP', productId, { visible, ...contexto });
+}
+
 export function updateProductFoto(productId, fotoUrl) {
     return supabase.from('products').update({ foto_url: fotoUrl }).eq('id', productId);
 }

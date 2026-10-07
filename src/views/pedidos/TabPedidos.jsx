@@ -309,10 +309,14 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                         cada uno vaya a su lugar de siempre. */}
                     <div className="contents lg:flex lg:items-center lg:gap-3 lg:min-w-0">
                     <div className="flex flex-col items-end lg:items-start gap-0.5 min-w-0 lg:flex-1">
-                        <span className={`text-body-sm font-semibold truncate ${TEXTO_VARIANTE[stage === 'pausado' ? 'warning' : etiqueta.variant] ?? 'text-content-2'}`}>
+                        <span className={`text-body-sm font-semibold truncate max-w-full ${TEXTO_VARIANTE[stage === 'pausado' ? 'warning' : etiqueta.variant] ?? 'text-content-2'}`}>
                             {stage === 'pausado' ? 'Pausado' : etiqueta.label}
                         </span>
-                        <span className={`text-caption tabular-nums truncate ${stage === 'pausado' ? 'text-warning-text' : 'text-content-3'}`}>
+                        {/* Hasta dos renglones y nunca debajo del botón: con `items-start`
+                            el texto medía lo que su contenido y `truncate` no
+                            cortaba (lo tapaba el botón). `max-w-full` lo ata a la
+                            columna. */}
+                        <span className={`text-caption tabular-nums max-w-full line-clamp-2 break-words ${stage === 'pausado' ? 'text-warning-text' : 'text-content-3'}`}>
                             {faltan.porDespachar ? 'Reenvío por salir'
                                 : faltan.enCamino ? `Reenvío en camino: ${describirFaltantes(faltan).join(' · ') || 'cajas faltantes'}`
                                 : faltan.hay ? `Falta: ${describirFaltantes(faltan).join(' · ')}`

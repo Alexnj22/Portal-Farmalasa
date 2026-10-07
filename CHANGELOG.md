@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.13 — Pedidos (lista): menos ruido y fotos de quién hizo cada paso
+
+- **Los nombres de los pasos y de los tramos van UNA vez, arriba de la lista**, alineados con los puntos; en cada fila sólo los puntos y el paso en curso. Antes se repetían en todas las filas.
+- **El estado es un texto con su color**, sin pastilla: la pastilla repetía lo que dice el paso en curso.
+- **Más aire** entre filas y entre grupos.
+- **Al abrir una fila, la línea de avance pasa a todo el ancho** con la hora, **la foto** y el nombre de quién hizo cada paso, la duración de cada tramo y **el apoyo de bodega y de sucursal con su foto**. Las acciones completas bajan al detalle.
+
 ## v2.1232.12 — Pedidos (lista): franja de estado, avance en dos tramos y detalle en la misma línea
 
 - **El estado de la fila se marca con una franja fina a la izquierda**, no con el borde entero: con varias filas con problema seguidas, los bordes de color dominaban la pantalla.

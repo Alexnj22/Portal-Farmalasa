@@ -24,7 +24,7 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import { ERP_NAMES } from '@nucleo/constants/erp';
 import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, estadoDeLaSala, claveParada, puedePrepararse, puedeDespacharse, faltantesDeLaSala, describirFaltantes } from '@nucleo/utils/tableroDePedidos';
 import ItemSections from './tabpedidos/ItemSections';
-import AvanceCompacto from './tabpedidos/AvanceCompacto';
+import AvanceCompacto, { EncabezadoDeAvance } from './tabpedidos/AvanceCompacto';
 import LifecycleTimeline from './tabpedidos/LifecycleTimeline';
 import DifSection from './tabpedidos/DifSection';
 import PostCompletionSection from './tabpedidos/PostCompletionSection';
@@ -91,6 +91,11 @@ const ETIQUETA_ETAPA = {
     transito:    { label: 'En ruta',              variant: 'chart-3' },
     contando:    { label: 'Recibiendo',           variant: 'chart-9' },
     erp:         { label: 'Completado',           variant: 'success' },
+};
+// El color del estado como texto (vista lista). Literales: Tailwind escanea.
+const TEXTO_VARIANTE = {
+    neutral: 'text-content-2', danger: 'text-danger-text', warning: 'text-warning-text', success: 'text-success-text',
+    'chart-1': 'text-chart-1-text', 'chart-3': 'text-chart-3-text', 'chart-9': 'text-chart-9-text',
 };
 function etiquetaDeLaSala(estadoSala, stage, entregada, difsPendientes = 0) {
     if (estadoSala === 'anulado') return PEDIDO_BADGE.anulado;
@@ -239,7 +244,7 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
     // cambia cómo se dibuja. Cerrada: sala, avance, estado y la acción
     // principal. Abierta: lo mismo que la tarjeta abierta.
     const renderFilaLista = ({ row, cardKey, isExp, stage, etiqueta, tiempoEnEtapa, rtStop, rtCond,
-        recepApoyo, faltan, difsDeLaSala, datosJSX, accionesJSX, seccionesJSX }) => {
+        prepApoyo, recepApoyo, faltan, difsDeLaSala, datosJSX, accionesJSX, seccionesJSX }) => {
         // El estado se marca con una FRANJA fina a la izquierda, no con el borde
         // entero: con tres filas con problema seguidas, el borde rojo de cada
         // una dominaba la pantalla (lo pidió el usuario, 2026-10-07).
@@ -251,22 +256,29 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                 {...clickable(() => toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id), { label: `Pedido ${row.codigo ?? row.numero}` })}
                 aria-expanded={isExp}>
                 {franja && <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1 ${franja}`} />}
-                <div className="grid items-center gap-x-4 gap-y-2 px-3 py-2.5 grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(8rem,11rem)_minmax(20rem,1fr)_minmax(10rem,13rem)_auto_auto]">
+                <div className="grid items-center gap-x-5 gap-y-2 pl-4 pr-3 py-3.5 grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[10rem_minmax(22rem,1fr)_11rem_8.5rem_1rem]">
                     <div className="min-w-0">
                         <div className="text-body font-bold text-content leading-tight truncate">
                             {ERP_NAMES[row.erp_sucursal_id] ?? `Sucursal ${row.erp_sucursal_id}`}
                         </div>
                         <div className="text-caption text-content-3 tabular-nums truncate">{row.codigo ?? `#${row.numero}`}</div>
                     </div>
-                    <div className="hidden lg:block min-w-0">
-                        <AvanceCompacto row={row} stage={stage} rutaStop={rtStop} conductor={rtCond} rotulos="siempre"
-                            detalle={isExp} quien={id => empMap.get(id) ?? null} />
+                    {/* Abierta, la MISMA línea baja a su propio renglón a todo
+                        el ancho: así caben la hora, la foto y el nombre de cada
+                        paso sin repetir la línea. */}
+                    <div className={`hidden lg:block min-w-0 ${isExp ? 'lg:col-span-5 lg:order-last pt-2 pb-1' : ''}`}>
+                        <AvanceCompacto row={row} stage={stage} rutaStop={rtStop} conductor={rtCond} rotulos="activo"
+                            detalle={isExp} quien={id => empMap.get(id) ?? null}
+                            apoyo={{ bodega: prepApoyo, sala: recepApoyo }} />
                     </div>
+                    {/* El estado como TEXTO con su color, sin pastilla: la
+                        pastilla repetía lo que ya dice el paso en curso, y
+                        era la mitad del ruido de la fila. */}
                     <div className="flex flex-col items-end lg:items-start gap-0.5 min-w-0">
-                        <Badge variant={stage === 'pausado' ? 'warning' : etiqueta.variant} uppercase={false} icon={stage === 'pausado' ? Pause : undefined}>
+                        <span className={`text-body-sm font-semibold truncate ${TEXTO_VARIANTE[stage === 'pausado' ? 'warning' : etiqueta.variant] ?? 'text-content-2'}`}>
                             {stage === 'pausado' ? 'Pausado' : etiqueta.label}
-                        </Badge>
-                        <span className={`text-caption tabular-nums truncate ${stage === 'pausado' ? 'text-warning-text font-semibold' : 'text-content-3'}`}>
+                        </span>
+                        <span className={`text-caption tabular-nums truncate ${stage === 'pausado' ? 'text-warning-text' : 'text-content-3'}`}>
                             {faltan.porDespachar ? 'Reenvío por salir'
                                 : faltan.hay ? `Falta: ${describirFaltantes(faltan).join(' · ')}`
                                 : difsDeLaSala > 0 ? `${difsDeLaSala} diferencia${difsDeLaSala > 1 ? 's' : ''} por resolver`
@@ -275,8 +287,11 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                     </div>
                     {/* `empty:hidden`: sin acción, en el teléfono no queda un
                         renglón vacío. */}
+                    {/* Columnas de ancho FIJO: así los puntos de todas las filas
+                        caen bajo los nombres del encabezado. Por eso, abierta, la
+                        barra completa de acciones baja al detalle. */}
                     <div className="col-span-2 lg:col-span-1 flex items-center justify-end gap-1.5 flex-wrap empty:hidden" onClick={e => e.stopPropagation()}>
-                        {accionesJSX}
+                        {!isExp && accionesJSX}
                     </div>
                     {/* La flecha sólo en escritorio: en el teléfono la fila
                         entera se toca para abrirla. */}
@@ -293,13 +308,11 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                             En el teléfono la fila no la muestra, así que va acá. */}
                         <div className="lg:hidden px-3 pt-2 pb-1">
                             <AvanceCompacto row={row} stage={stage} rutaStop={rtStop} conductor={rtCond} rotulos="siempre"
-                                detalle quien={id => empMap.get(id) ?? null} />
+                                detalle quien={id => empMap.get(id) ?? null} apoyo={{ bodega: prepApoyo, sala: recepApoyo }} />
                         </div>
-                        <div className="flex items-center gap-1 flex-wrap px-3 pt-2 pb-2">
-                            {datosJSX}
-                            {recepApoyo.length > 0 && (
-                                <Badge variant="neutral" uppercase={false}>Apoyo en recepción: {recepApoyo.map(a => shortEmployeeName(a)).join(', ')}</Badge>
-                            )}
+                        <div className="flex items-center gap-x-3 gap-y-2 flex-wrap pl-4 pr-3 pt-3 pb-3">
+                            <div className="flex items-center gap-1 flex-wrap min-w-0">{datosJSX}</div>
+                            <div className="ml-auto flex items-center gap-1.5 flex-wrap">{accionesJSX}</div>
                         </div>
                         <ItemSections allItems={items[cardKey] ?? []} loading={loadingItems && !items[cardKey]} canEditMinMax={canEditMinMax} />
                     </div>
@@ -779,7 +792,7 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
 
                             if (vista === 'lista') return renderFilaLista({
                                 row, cardKey, isExp, stage, etiqueta, tiempoEnEtapa, rtStop, rtCond,
-                                recepApoyo, faltan, difsDeLaSala,
+                                prepApoyo, recepApoyo, faltan, difsDeLaSala,
                                 datosJSX, accionesJSX, seccionesJSX,
                             });
 
@@ -1001,12 +1014,19 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                     )
                 ) : (
                     vista === 'lista' ? (
-                        <div className="space-y-5">
+                        <div className="space-y-7">
+                            {/* Los nombres de los pasos, UNA vez, alineados con los
+                                puntos: antes se repetían en cada fila. Usa las
+                                mismas columnas que la fila. */}
+                            <div className="hidden lg:grid gap-x-5 pl-4 pr-3 pb-1 lg:grid-cols-[10rem_minmax(22rem,1fr)_11rem_8.5rem_1rem]">
+                                <span />
+                                <EncabezadoDeAvance />
+                            </div>
                             {GRUPOS_LISTA.map(g => {
                                 const filas = filteredRows.filter(r => grupoDeLaFila(r) === g.key);
                                 if (!filas.length) return null;
                                 return (
-                                    <section key={g.key} className="space-y-1.5" aria-label={g.label}>
+                                    <section key={g.key} className="space-y-2" aria-label={g.label}>
                                         <h3 className={`text-caption font-black uppercase tracking-widest flex items-center gap-2 px-1 ${g.key === 'problemas' ? 'text-danger-text' : 'text-content-3'}`}>
                                             {g.label}<span className="tabular-nums font-semibold">{filas.length}</span>
                                         </h3>

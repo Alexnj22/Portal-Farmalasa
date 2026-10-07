@@ -32,6 +32,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { TEXTOS_CONSENTIMIENTO as TEXTOS } from "../_shared/consentimientoPuntos.ts";
 import { clienteDelEnlace, enlaceDePase, paseDeCliente } from "../_shared/pase.ts";
 import { nivelDeCliente } from "../_shared/nivel.ts";
+import { crearEnlace } from "../_shared/wompi.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -52,7 +53,7 @@ const POR_PAGINA = 20;
 const WHATSAPP_EMPRESA = "50323010013";
 
 const TERMINOS_RESERVA = {
-  version: "2026-10-06",
+  version: "2026-10-07",
   titulo: "Así funciona tu reserva",
   puntos: [
     "Por ahora puedes reservar productos que estén en oferta.",
@@ -61,7 +62,9 @@ const TERMINOS_RESERVA = {
     "Puedes tener hasta 3 reservas activas y hasta 5 unidades por producto.",
     "Si no la retiras a tiempo, el producto vuelve a la venta. Con 3 reservas sin retirar en 30 días, no podrás reservar por 30 días.",
     "Los productos bajo receta no se reservan.",
-    "Pagas al retirar, en la sucursal.",
+    "Puedes pagarla en línea desde la app o al retirarla en la sucursal.",
+    "Si la pagaste en línea, tienes 7 días para retirarla desde que esté lista. Pasado ese plazo el producto vuelve a la venta, pero tu pago se conserva y la sucursal la aparta de nuevo cuando vengas.",
+    "Una reserva pagada en línea no se cancela desde la app: escríbele a la sucursal.",
   ],
 };
 
@@ -676,7 +679,7 @@ Deno.serve(async (req) => {
       return json({ ok: true, sucursales: conSucursal(data ?? []) });
     }
 
-    if (accion === "mis_reservas" || accion === "reservar" || accion === "cancelar_reserva") {
+    if (accion === "mis_reservas" || accion === "reservar" || accion === "cancelar_reserva" || accion === "pagar_reserva") {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
 
@@ -758,9 +761,55 @@ Deno.serve(async (req) => {
     if (accion === "cancelar_reserva") {
       const { data, error } = await admin.from("app_reservas")
         .update({ estado: "cancelada", cerrada_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-        .eq("id", Number(body?.id)).eq("customer_id", customerId).in("estado", ["pendiente", "lista"]).select("id");
+        .eq("id", Number(body?.id)).eq("customer_id", customerId).in("estado", ["pendiente", "lista"])
+        // Pagada en línea no se cancela desde la app: habría que devolver el
+        // dinero, y eso lo hace una persona desde el panel de Wompi.
+        .neq("pago_estado", "pagado").select("id");
       if (error) throw error;
-      return json(data?.length ? { ok: true } : { ok: false, mensaje: "Esa reserva ya no se puede cancelar." });
+      return json(data?.length ? { ok: true } : { ok: false, mensaje: "Esa reserva ya no se puede cancelar. Si la pagaste en línea, escríbele a la sucursal." });
+    }
+
+    // ── Pagar una reserva en línea, con Wompi (2026-10-07) ────────────────
+    // Crea un enlace de pago de UN cobro con el total de la reserva —calculado
+    // acá, nunca el que mande la app— y devuelve su URL. La app la abre en una
+    // hoja del navegador; el pago se confirma en `wompi-pagos`, que es la
+    // única que marca «pagado». Se puede pagar apenas reservada o ya lista.
+    if (accion === "pagar_reserva") {
+      const { data: r, error } = await admin.from("app_reservas")
+        .select("id, estado, pago_estado, producto_nombre, cantidad, precio_unitario, branch_id")
+        .eq("id", Number(body?.id)).eq("customer_id", customerId).maybeSingle();
+      if (error) throw error;
+      if (!r || !["pendiente", "lista"].includes(r.estado)) return json({ ok: false, mensaje: "Esta reserva ya no se puede pagar." });
+      if (r.pago_estado === "pagado") return json({ ok: false, mensaje: "Esta reserva ya está pagada." });
+      const total = Math.round(Number(r.precio_unitario ?? 0) * Number(r.cantidad) * 100) / 100;
+      if (!(total > 0)) return json({ ok: false, mensaje: "Esta reserva se paga al retirarla en la sucursal." });
+      const codigo = `R-${String(r.id).padStart(6, "0")}`;
+      // Un identificador por INTENTO: Wompi no deja repetirlo, y el cliente
+      // puede cerrar la hoja y volver a tocar «Pagar».
+      const identificador = `${codigo}-${Date.now().toString(36)}`;
+      const { data: salaFila, error: eS } = await admin.from("branches").select("name").eq("id", r.branch_id).maybeSingle();
+      if (eS) throw eS;
+      const { error: eP } = await admin.from("app_reservas_pagos").insert({ reserva_id: r.id, identificador, monto: total });
+      if (eP) throw eP;
+      const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/wompi-pagos`;
+      let enlace;
+      try {
+        enlace = await crearEnlace({
+          identificador, monto: total,
+          producto: `${r.producto_nombre}${r.cantidad > 1 ? ` (${r.cantidad} unidades)` : ""}`,
+          descripcion: `Reserva ${codigo} · retiro en ${sucursal(salaFila?.name) ?? "sucursal"}`,
+          urlRedirect: `${base}?ref=${encodeURIComponent(identificador)}`,
+          urlWebhook: base,
+          minutos: 30,
+        });
+      } catch (e) {
+        console.error("app-clientes: wompi no creó el enlace:", (e as Error)?.message ?? e);
+        return json({ ok: false, mensaje: "El pago en línea no está disponible ahora. Intenta en un rato o paga al retirar." });
+      }
+      const { error: eU } = await admin.from("app_reservas_pagos")
+        .update({ enlace_id: enlace.idEnlace, enlace_url: enlace.urlEnlaceLargo || enlace.urlEnlace }).eq("identificador", identificador);
+      if (eU) console.error("app-clientes: no se guardó el enlace:", eU.message);
+      return json({ ok: true, url: enlace.urlEnlaceLargo || enlace.urlEnlace, total, prueba: !enlace.estaProductivo });
     }
 
     // La BANDEJA: los avisos que ya se le mandaron, para verlos en la app.

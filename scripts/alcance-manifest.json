@@ -215,6 +215,10 @@
       "guarda": "publica",
       "motivo": "La app del cliente: entra con documento + teléfono (mismo freno por IP que mis-puntos) y desde ahí la ficha sale SIEMPRE de la sesión, nunca del cuerpo."
     },
+    "wompi-pagos": {
+      "guarda": "publica",
+      "motivo": "Regreso del cobro en línea de Wompi: el aviso (webhook) y la vuelta del navegador. No recibe sala ni ficha: lo único que toma es el identificador del enlace y el id de la transacción, y el veredicto sale de consultar la transacción en la API de Wompi. Una transacción paga una sola reserva (id_transaccion UNIQUE) y el monto tiene que coincidir."
+    },
     "mis-puntos": {
       "guarda": "publica",
       "motivo": "Consulta pública de puntos del cliente, con freno por IP."

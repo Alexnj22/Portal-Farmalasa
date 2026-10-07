@@ -113,6 +113,10 @@ export default function WidgetReservas({ todas = false }) {
                                 r.avisado_via === 'whatsapp' ? ' · avisado por WhatsApp' : ''}`}
                             trailing={(
                                 <div className="flex items-center gap-1">
+                                    {/* Pagada en línea desde la app (Wompi): en caja NO se cobra. */}
+                                    {r.pago_estado === 'pagado' && (
+                                        <Badge variant="success" uppercase={false}>Pagada en línea</Badge>
+                                    )}
                                     {r.estado === 'pendiente' ? (
                                         <Button variant="primary" size="xs" icon={PackageCheck} loading={ocupada === r.id}
                                             onClick={() => mover(r, 'lista')}>Apartar y avisar</Button>

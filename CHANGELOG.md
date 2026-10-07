@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1240.0 — Pago en línea de las reservas con Wompi
+
+- **Pagar desde la app:** botón «Pagar en línea» en cada reserva abierta (apenas reservada o ya lista). El servidor arma un enlace de pago de Wompi de un solo cobro con el total calculado allá, solo tarjeta y QuickPay, y la pantalla de Wompi se abre en una hoja sobre la app (`pagar_reserva` en `app-clientes`).
+- **La confirmación sale del servidor:** función nueva `wompi-pagos` (sin JWT) que recibe el aviso de Wompi y la vuelta del navegador. El veredicto sale de consultar la transacción en la API de Wompi; el aviso se valida además con su HMAC. Una transacción paga una sola reserva y el monto tiene que coincidir (`app_reserva_pago_confirmar`).
+- **7 días para retirar una reserva pagada:** pasado el plazo vuelve a «pendiente», el producto se libera y el pago se conserva. Una reserva pagada no la vence el fin de la oferta y no se cancela desde la app.
+- **Portal:** la reserva pagada lleva la marca «Pagada en línea» para que la sucursal no la cobre en caja.
+- Tabla `app_reservas_pagos` (un intento de pago por fila). Wompi sigue en modo de pruebas: los pagos de prueba se aceptan solo con el secreto `WOMPI_ACEPTA_PRUEBAS=1`, que hay que borrar al pasar a producción.
+
 ## v2.1239.0 — App: niveles Plata, Oro y Platino, catálogo con precio VIP y ajustes
 
 - **Niveles del programa de puntos (aprobados):** Cliente VIP, Plata ($500 en 12 meses, ×1.25), Oro ($1,000, ×1.5) y Platino ($2,000, ×2). Tabla `puntos_niveles` (editable con permiso de puntos), `puntos_compra_12m` y `puntos_nivel_de`. El motor (`puntos_acumular`) multiplica cada compra según lo comprado en los 12 meses anteriores —sin contar la compra misma— y guarda en el lote `puntos_base` y `nivel`. Cumpleaños por nivel (50/75/100/100) y 48 h para retirar reservas en Oro y Platino. Hoy: 495 Plata, 133 Oro, 63 Platino.

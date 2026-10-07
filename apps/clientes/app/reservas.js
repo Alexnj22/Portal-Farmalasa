@@ -6,7 +6,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Platform, Pressable, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Cargando, Pantalla, Tarjeta, Vacio } from '../componentes/ui';
+import * as WebBrowser from 'expo-web-browser';
+import { Boton, Cargando, Pantalla, Tarjeta, Vacio } from '../componentes/ui';
 import Icono from '../componentes/Icono';
 import { Entrada, Latido } from '../componentes/animacion';
 import { colorSistema } from '../componentes/sistema';
@@ -57,6 +58,32 @@ export default function Reservas() {
     } },
   ]);
 
+  // Pagar en línea (Wompi, 2026-10-07): el servidor arma el cobro con el total
+  // de la reserva y la pantalla de Wompi se abre en una hoja sobre la app.
+  // Al pagar, Wompi vuelve a `puntossalud://reservas` y la hoja se cierra
+  // sola. Quien marca «pagado» es el servidor, nunca esta pantalla: acá sólo
+  // se vuelve a leer, un par de veces, por si el aviso de Wompi se atrasa.
+  const [pagando, setPagando] = useState(null);
+  const pagar = async (r) => {
+    setPagando(r.id);
+    try {
+      const res = await pedir('pagar_reserva', { id: r.id });
+      if (!res?.ok) { Alert.alert('No se pudo abrir el pago', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
+      await WebBrowser.openAuthSessionAsync(res.url, 'puntossalud://reservas');
+      for (let i = 0; i < 4; i++) {
+        const nuevo = await pedir('mis_reservas');
+        if (nuevo?.ok) setD(nuevo);
+        if (nuevo?.reservas?.find((x) => x.id === r.id)?.pago_estado === 'pagado') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          break;
+        }
+        await new Promise((ok) => setTimeout(ok, 1500));
+      }
+    } finally {
+      setPagando(null);
+    }
+  };
+
   if (!d) return <Cargando />;
   if (!d.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}><Vacio titulo="No se pudieron cargar">{d.mensaje ?? 'Revisa tu conexión y desliza hacia abajo para reintentar.'}</Vacio></Pantalla>;
   if (!d.reservas.length) {
@@ -75,7 +102,7 @@ export default function Reservas() {
     <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
       {abiertas.map((r, i) => (
         <Entrada key={r.id} indice={Math.min(i, 8)}>
-          <ReservaAbierta r={r} ahora={ahora} alCancelar={() => cancelar(r)} />
+          <ReservaAbierta r={r} ahora={ahora} alCancelar={() => cancelar(r)} alPagar={() => pagar(r)} pagando={pagando === r.id} />
         </Entrada>
       ))}
       {cerradas.length ? (
@@ -158,7 +185,7 @@ const Separador = () => <View style={{ height: 0.5, backgroundColor: colorSistem
 
 // Una reserva en curso: qué es (promoción o producto), en qué paso va
 // (Recibida → Lista → Retirada), cómo se entrega, cómo se paga y cuánto.
-function ReservaAbierta({ r, ahora, alCancelar }) {
+function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando }) {
   const t = useTema();
   const lista = r.estado === 'lista';
   const e = estadoDe(t, r.estado);
@@ -247,9 +274,24 @@ function ReservaAbierta({ r, ahora, alCancelar }) {
         ) : null}
       </View>
 
-      <Pressable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
-        <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.rojo }}>Cancelar reserva</Text>
-      </Pressable>
+      {r.pago_estado === 'pendiente' && Number(r.total) > 0 ? (
+        <View style={{ gap: 6 }}>
+          <Boton alTocar={alPagar} cargando={pagando}>{`Pagar en línea ${dolares(r.total)}`}</Boton>
+          <Text style={{ fontSize: 12, textAlign: 'center', color: colorSistema.texto3 }}>
+            O paga al retirar, en la sucursal. Pagada en línea tienes 7 días para retirarla.
+          </Text>
+        </View>
+      ) : null}
+
+      {r.pago_estado === 'pagado' ? (
+        <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto2 }}>
+          Ya está pagada. Para cancelarla, escríbele a la sucursal.
+        </Text>
+      ) : (
+        <Pressable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.rojo }}>Cancelar reserva</Text>
+        </Pressable>
+      )}
     </Tarjeta>
   );
 }

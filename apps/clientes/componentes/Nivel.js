@@ -15,7 +15,7 @@ import Icono from './Icono';
 export const BENEFICIOS = {
   vip: ['1 punto por cada $1', 'Ofertas exclusivas', 'Regalo de cumpleaños'],
   plata: ['1.25 puntos por cada $1', 'Cumpleaños de 75 puntos'],
-  oro: ['1.5 puntos por cada $1', 'Cumpleaños de 100 puntos', '48 h para retirar reservas'],
+  oro: ['1.5 puntos por cada $1', 'Cupón mensual', 'Cumpleaños de 100 puntos', '48 h para retirar reservas'],
   platino: ['2 puntos por cada $1', 'Cupón mensual', 'Cumpleaños de 100 puntos', '48 h para retirar reservas'],
 };
 

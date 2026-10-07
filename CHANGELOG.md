@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1250.0 — App: Wallet por Safari, raspable con vibración, cupón Oro y herramientas del modo de prueba
+
+- **Agregar a Wallet por Safari:** la app pide un enlace firmado (`wallet_enlace`) y lo abre; Safari baja la tarjeta e iOS muestra su propia pantalla para agregarla. Ya no depende de presentar la hoja de Apple dentro de la app. Verificado: el enlace sin cabeceras devuelve `application/vnd.apple.pkpass` con la firma válida; en modo de prueba, con el nivel elegido (`&nivel=`).
+- **El raspado se siente:** toque al empezar y uno leve cada ~40 pt de recorrido; vibración de éxito al descubrir. Los botones del sistema (BotonNativo) y las filas de Cuenta también vibran al tocarlos.
+- **Oro también recibe cupón raspable:** 100, 200 o 500 puntos (50/35/15 %, ~195 esperados). Con Oro, el costo esperado es ~10,430 puntos/mes; el tope mensual sube de 10,000 a 15,000 ($150) para que nadie quede fuera (simulado: 42 clientes).
+- **Modo de prueba:** «Volver a tapar el cupón» (Oro y Platino), ver la pantalla de cumpleaños y la de subir de nivel, y **avisos de prueba** reales (cumpleaños, puntos, cupón, nivel, reserva) a la campana y al teléfono (`prueba_aviso`, sólo la cuenta de prueba).
+
 ## v2.1249.1 — App: la oferta y el producto vuelven a abrir (pantalla negra)
 
 - **App: la oferta y el producto salían en negro** (compilación 22): la hoja del sistema (`formSheet`) no le daba alto al contenido con `flex: 1`. Vuelven al modal clásico, y jalar hacia abajo estando arriba del todo también los cierra.

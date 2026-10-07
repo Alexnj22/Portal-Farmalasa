@@ -2,6 +2,7 @@
 // (Apple lo exige dentro de la app, 5.1.1(v)). Forma de Ajustes: grupos con
 // interruptores del sistema y acciones en filas, la destructiva en rojo.
 import { useCallback, useEffect, useState } from 'react';
+import * as Haptics from 'expo-haptics';
 import { Alert, Pressable, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { colorSistema, FilaInterruptor, FilaTexto, Formulario, Grupo } from '../../../componentes/sistema';
@@ -9,7 +10,7 @@ import { Aviso } from '../../../componentes/ui';
 import { useSesion } from '../../../lib/sesion';
 import { useCuenta } from '../../../lib/cuenta';
 import { pedirTokenDeAvisos, recordarAvisos } from '../../../lib/avisos';
-import { abrirPase, agregarPase, tienePase, walletDisponible } from '../../../modules/wallet';
+import { abrirPase, agregarPorSafari, tienePase, walletDisponible } from '../../../modules/wallet';
 import { nombreBiometria, useBloqueo } from '../../../lib/bloqueo';
 import { olvidarEntrada } from '../../../lib/entradaGuardada';
 import { NIVELES_PRUEBA, useModoPrueba } from '../../../lib/prueba';
@@ -28,7 +29,7 @@ import { navegar } from '../../../lib/navegar';
  */
 function FilaAccion({ texto, sf, color, flecha = true, alTocar }) {
   return (
-    <Pressable accessibilityRole="button" onPress={alTocar}
+    <Pressable accessibilityRole="button" onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingLeft: sf ? 16 : 0, paddingRight: 16,
         backgroundColor: pressed ? colorSistema.separador : 'transparent' })}>
       {sf ? <Icono sf={sf} respaldo="" tam={18} color={color ?? colorSistema.texto2} /> : null}
@@ -52,10 +53,10 @@ export default function Cuenta() {
   const wallet = async ({ abrir = true } = {}) => {
     if (abrir && enWallet && abrirPase(serialW)) return;
     const enPrueba = !!resumen?.prueba && prueba.activo;
-    const r = await pedirW('wallet_pase', enPrueba ? { nivel_prueba: prueba.nivel } : {});
-    if (!r?.ok || !r.pase) { Alert.alert('No se pudo preparar la tarjeta', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
-    try { await agregarPase(r.pase); } catch { /* cerrada */ }
-    setEnWallet(tienePase(serialW));
+    // Por Safari: iOS muestra su propia pantalla para agregarla (2026-10-07).
+    if (!(await agregarPorSafari(pedirW, enPrueba ? prueba.nivel : null))) {
+      Alert.alert('No se pudo preparar la tarjeta', 'Revisa tu conexión e intenta de nuevo.');
+    }
   };
   const { pedir, cerrar } = useSesion();
   const { resumen, cargar } = useCuenta();
@@ -201,6 +202,7 @@ export default function Cuenta() {
       {/* Modo de prueba: sólo la cuenta de prueba. Ver la tarjeta, el nivel, el
           cupón y Wallet como cada nivel, sin comprar. */}
       {resumen?.prueba ? (
+        <>
         <Grupo titulo="Modo de prueba" pie="Sólo en esta cuenta de prueba. Cambia cómo se ve la app (tarjeta, nivel, cupón y la tarjeta de Wallet que se agrega); no cambia puntos ni datos.">
           <FilaInterruptor titulo="Ver la app como otro nivel" valor={prueba.activo}
             alCambiar={(v) => prueba.poner({ activo: v })} color={t.color.magenta} />
@@ -210,7 +212,22 @@ export default function Cuenta() {
                 opciones={NIVELES_PRUEBA.map((n) => ({ valor: n.clave, rotulo: n.clave === 'vip' ? 'VIP' : n.nombre }))} />
             </View>
           ) : null}
+          {prueba.activo && ['oro', 'platino'].includes(prueba.nivel) ? (
+            <FilaAccion sf="arrow.counterclockwise" texto="Volver a tapar el cupón" alTocar={() => { prueba.reiniciarCupon(); navegar('/puntos'); }} />
+          ) : null}
+          <FilaAccion sf="gift.fill" texto="Ver la pantalla de cumpleaños" alTocar={() => navegar('/puntos?cumple=1')} />
+          <FilaAccion sf="crown.fill" texto="Ver la pantalla de subir de nivel" alTocar={() => navegar('/puntos?nivel=1')} />
         </Grupo>
+        <Grupo titulo="Avisos de prueba" pie="Llegan de verdad a este teléfono (con los avisos activados) y a la campana. Toca el aviso para ver la pantalla que abre.">
+          {[['cumpleanos', 'gift.fill', 'Cumpleaños'], ['puntos', 'star.fill', 'Ganaste puntos'], ['cupon', 'ticket.fill', 'Cupón del mes'],
+            ['nivel', 'crown.fill', 'Subiste de nivel'], ['reserva', 'bag.fill', 'Reserva lista']].map(([tipo, sf, texto]) => (
+            <FilaAccion key={tipo} sf={sf} texto={`Recibir aviso: ${texto}`} flecha={false} alTocar={async () => {
+              const r = await pedir('prueba_aviso', { tipo });
+              Alert.alert(r?.ok ? 'Aviso enviado' : 'No se envió', r?.ok ? 'Llega en unos segundos. Bloquea el teléfono para verlo como notificación.' : (r?.mensaje ?? 'Revisa tu conexión.'));
+            }} />
+          ))}
+        </Grupo>
+        </>
       ) : null}
 
       <Grupo>

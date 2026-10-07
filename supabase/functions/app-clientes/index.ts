@@ -174,7 +174,10 @@ Deno.serve(async (req) => {
     try {
       const id = await clienteDelEnlace(enlaceWallet);
       if (!id) return new Response("Este enlace ya venció. Vuelve a tocar «Agregar a Wallet» en la app.", { status: 410, headers: { "Content-Type": "text/plain; charset=utf-8" } });
-      const pkpass = await paseDe(id);
+      // Modo de prueba: la cuenta de prueba puede pedir la tarjeta con otro nivel.
+      const nivelQ = new URL(req.url).searchParams.get("nivel") ?? "";
+      const nivelPrueba = NOMBRE_NIVEL[nivelQ] && await esDePrueba(id) ? NOMBRE_NIVEL[nivelQ] : undefined;
+      const pkpass = await paseDe(id, nivelPrueba);
       return new Response(pkpass, { headers: {
         "Content-Type": "application/vnd.apple.pkpass",
         "Content-Disposition": "attachment; filename=PuntosSalud.pkpass",
@@ -916,6 +919,35 @@ Deno.serve(async (req) => {
       return json(data?.length ? { ok: true } : { ok: false, mensaje: "Ese encargo ya no se puede cancelar desde la app. Escríbele a la sucursal." });
     }
 
+    // ── Modo de prueba: avisos de muestra al teléfono (2026-10-07) ───────
+    // Sólo la cuenta de prueba. Manda el aviso de verdad (bandeja + push) para
+    // ver la notificación y la pantalla que abre.
+    if (accion === "prueba_aviso") {
+      if (!(await esDePrueba(customerId))) return json({ ok: false, mensaje: "Sólo en la cuenta de prueba." });
+      const TIPOS: Record<string, { tipo: string; titulo: string; cuerpo: string; url: string }> = {
+        cumpleanos: { tipo: "cumpleanos", titulo: "¡Feliz cumpleaños! 🎂", cuerpo: "Te regalamos puntos para celebrar. Ábrela y míralos.", url: "/puntos?cumple=1" },
+        puntos: { tipo: "ganado", titulo: "Ganaste 25 puntos", cuerpo: "Gracias por tu compra. Mira tu saldo en la app.", url: "/puntos" },
+        cupon: { tipo: "ganado", titulo: "Tu cupón del mes 🎟️", cuerpo: "Ya llegó: ráscalo en la app para descubrir cuánto ganaste.", url: "/puntos" },
+        nivel: { tipo: "nivel", titulo: "¡Subiste de nivel! 👑", cuerpo: "Desde ahora ganas más puntos con cada compra.", url: "/puntos?nivel=1" },
+        reserva: { tipo: "reserva", titulo: "Tu reserva está lista", cuerpo: "Pasa a retirarla con tu código.", url: "/reservas" },
+      };
+      const a = TIPOS[String(body?.tipo ?? "")];
+      if (!a) return json({ ok: false, mensaje: "Tipo de aviso desconocido." });
+      const { error: eA } = await admin.from("app_cliente_avisos").insert({ customer_id: customerId, tipo: a.tipo, ref: `prueba:${Date.now()}`,
+        titulo: a.titulo, cuerpo: a.cuerpo, url: a.url, enviado: true });
+      if (eA) throw eA;
+      const { data: sesiones, error: eS } = await admin.from("app_cliente_sesiones").select("push_token")
+        .eq("customer_id", customerId).is("revocada_at", null).eq("acepta_avisos", true).not("push_token", "is", null);
+      if (eS) throw eS;
+      const tokens = (sesiones ?? []).map((x: any) => x.push_token);
+      if (!tokens.length) return json({ ok: false, mensaje: "Activa los avisos en Cuenta para recibirlo." });
+      const r = await fetch("https://exp.host/--/api/v2/push/send", {
+        method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(15_000),
+        body: JSON.stringify(tokens.map((to: string) => ({ to, title: a.titulo, body: a.cuerpo, sound: "default", data: { url: a.url } }))),
+      });
+      return json({ ok: r.ok, enviados: tokens.length });
+    }
+
     // Los datos fiscales de la ficha, para pedir un crédito fiscal: si están
     // completos la app sólo los muestra; si falta algo, los pide.
     if (accion === "mis_datos_fiscales") {
@@ -1286,7 +1318,8 @@ Deno.serve(async (req) => {
 
     if (accion === "wallet_enlace") {
       const base = Deno.env.get("SUPABASE_URL")!;
-      return json({ ok: true, url: `${base}/functions/v1/app-clientes?wallet=${await enlaceDePase(customerId)}` });
+      const nivel = NOMBRE_NIVEL[String(body?.nivel_prueba ?? "")] ? `&nivel=${String(body.nivel_prueba)}` : "";
+      return json({ ok: true, url: `${base}/functions/v1/app-clientes?wallet=${await enlaceDePase(customerId)}${nivel}` });
     }
 
     // Invitar a un amigo: el código propio (se crea la primera vez) y cómo va.

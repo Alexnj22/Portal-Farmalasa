@@ -18,8 +18,10 @@ import Icono from './Icono';
 const CLAVE = 'puntos_salud_ultimo_nivel';
 const ORDEN = { vip: 0, plata: 1, oro: 2, platino: 3 };
 
-export default function SubisteDeNivel({ nivel }) {
+export default function SubisteDeNivel({ nivel, forzar = false }) {
   const [mostrar, setMostrar] = useState(null);
+  // Modo de prueba / el aviso «subiste de nivel»: se muestra aunque ya se haya visto.
+  useEffect(() => { if (forzar && nivel?.clave) setMostrar(nivel); }, [forzar]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!nivel?.clave) return;
     let vivo = true;

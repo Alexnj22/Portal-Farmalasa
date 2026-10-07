@@ -4,6 +4,7 @@
 // Tamaño grande, todo el ancho, y el estilo de vidrio de iOS 26.
 import { Button, Host, Text } from '@expo/ui/swift-ui';
 import { buttonStyle, controlSize, disabled as apagado, frame, tint } from '@expo/ui/swift-ui/modifiers';
+import * as Haptics from 'expo-haptics';
 
 const ESTILO = { filled: 'glassProminent', outlined: 'glass', text: 'plain' };
 
@@ -11,7 +12,7 @@ export default function BotonNativo({ etiqueta, alTocar, variante = 'filled', de
   return (
     <Host matchContents={{ vertical: true }} style={{ width: '100%' }} seedColor={variante !== 'outlined' ? color : undefined}>
       <Button
-        onPress={alTocar}
+        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); alTocar?.(); }}
         modifiers={[
           buttonStyle(ESTILO[variante] ?? 'glassProminent'),
           controlSize('large'),

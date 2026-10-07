@@ -97,6 +97,7 @@ function Raspable({ alDescubrir }) {
   const [tam, setTam] = useState(null);
   const [trazo, setTrazo] = useState(() => Skia.Path.Make());
   const largo = useRef(0);
+  const desdeToque = useRef(0);
   const ultimo = useRef(null);
   const listo = useRef(false);
   const capa = useSharedValue(1);
@@ -105,8 +106,15 @@ function Raspable({ alDescubrir }) {
   const agregar = (x, y, nuevo) => {
     if (listo.current || !tam) return;
     const p = trazo.copy();
-    if (nuevo || !ultimo.current) { p.moveTo(x, y); p.lineTo(x + 0.1, y + 0.1); }
-    else { p.lineTo(x, y); largo.current += Math.hypot(x - ultimo.current.x, y - ultimo.current.y); }
+    if (nuevo || !ultimo.current) { p.moveTo(x, y); p.lineTo(x + 0.1, y + 0.1); Haptics.selectionAsync().catch(() => {}); }
+    else {
+      p.lineTo(x, y);
+      const d = Math.hypot(x - ultimo.current.x, y - ultimo.current.y);
+      largo.current += d;
+      // Se SIENTE raspar: un toque leve cada ~40 pt de recorrido (2026-10-07).
+      desdeToque.current += d;
+      if (desdeToque.current > 40) { desdeToque.current = 0; Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); }
+    }
     ultimo.current = { x, y };
     setTrazo(p);
     if (largo.current > (tam.w * tam.h) / GROSOR * 0.5) {

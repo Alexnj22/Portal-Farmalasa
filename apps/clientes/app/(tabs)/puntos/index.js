@@ -21,7 +21,7 @@ import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '
 import { useSesion } from '../../../lib/sesion';
 import { sincronizarAvisos } from '../../../lib/avisos';
 import { cuponDePrueba, nivelDePrueba, useModoPrueba } from '../../../lib/prueba';
-import { abrirPase, agregarPase, tienePase, walletDisponible } from '../../../modules/wallet';
+import { abrirPase, agregarPorSafari, tienePase, walletDisponible } from '../../../modules/wallet';
 import { suave, useTema } from '../../../tema/tema';
 import { colorSistema } from '../../../componentes/sistema';
 import { navegar } from '../../../lib/navegar';
@@ -37,14 +37,14 @@ const ROTULOS = {
 
 export default function Puntos() {
   const t = useTema();
-  const { cumple } = useLocalSearchParams();
+  const { cumple, nivel: verNivel } = useLocalSearchParams();
   const { resumen: real, error, cargar, generacion } = useCuenta();
   // Modo de prueba (sólo la cuenta de prueba): se ve como el nivel elegido.
   const prueba = useModoPrueba();
   const enPrueba = !!real?.prueba && prueba.activo;
   // El cupón de prueba se arma UNA vez (su premio es al azar).
-  const cuponPrueba = useMemo(() => cuponDePrueba(), []);
-  const resumen = enPrueba ? { ...real, nivel: nivelDePrueba(prueba.nivel), cupon: prueba.nivel === 'platino' ? cuponPrueba : null } : real;
+  const cuponPrueba = useMemo(() => cuponDePrueba(prueba.nivel, prueba.semilla), [prueba.nivel, prueba.semilla]);
+  const resumen = enPrueba ? { ...real, nivel: nivelDePrueba(prueba.nivel), cupon: ['oro', 'platino'].includes(prueba.nivel) ? cuponPrueba : null } : real;
   const visible = useVisible();
   const [refrescando, setRefrescando] = useState(false);
   const pedir = useSesion((s) => s.pedir);
@@ -111,7 +111,7 @@ export default function Puntos() {
           <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {resumen.nivel.nombre.toUpperCase()}</Text>
         </Pressable>
       ) : null}
-      <SubisteDeNivel nivel={resumen.nivel} />
+      <SubisteDeNivel nivel={resumen.nivel} forzar={verNivel === '1'} />
       <Cumpleanos activo={!!resumen.cumpleanos} forzar={cumple === '1'} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
       {/* Encima de todo (zIndex): la tarjeta de abajo gira y se escala, y no puede tapar la campana. */}
       <Entrada indice={0} estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 2 }}>
@@ -315,12 +315,9 @@ function BotonWallet({ serial, nivelPrueba }) {
     if (cargando) return;
     if (tiene && abrirPase(serial)) return;
     setCargando(true);
-    const r = await pedir('wallet_pase', nivelPrueba ? { nivel_prueba: nivelPrueba } : {});
-    if (r?.ok && r.pase) {
-      try { await agregarPase(r.pase); } catch { /* la hoja se cerró o falló */ }
-      setTiene(tienePase(serial));
-    } else {
-      Alert.alert('No se pudo preparar la tarjeta', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
+    // Por Safari: iOS muestra su propia pantalla para agregarla (2026-10-07).
+    if (!(await agregarPorSafari(pedir, nivelPrueba))) {
+      Alert.alert('No se pudo preparar la tarjeta', 'Revisa tu conexión e intenta de nuevo.');
     }
     setCargando(false);
   };

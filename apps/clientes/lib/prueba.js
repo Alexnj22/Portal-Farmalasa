@@ -17,6 +17,9 @@ export const NIVELES_PRUEBA = [
 export const useModoPrueba = create((set) => ({
   activo: false,
   nivel: 'oro',
+  // Cambia con «Volver a tapar el cupón»: un id nuevo se puede raspar otra vez.
+  semilla: Date.now().toString(36),
+  reiniciarCupon: () => set({ semilla: Date.now().toString(36) }),
   cargar: async () => {
     try {
       const v = JSON.parse((await SecureStore.getItemAsync(CLAVE)) ?? 'null');
@@ -43,17 +46,14 @@ export function nivelDePrueba(clave) {
   };
 }
 
-const idDePrueba = Date.now().toString(36);
-
-/** Un cupón de muestra para el nivel Platino. */
-export function cuponDePrueba() {
+/** Un cupón de muestra (Oro o Platino). `semilla` cambia con «Volver a tapar». */
+export function cuponDePrueba(nivel, semilla) {
   const hoy = new Date();
   const fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
   const vence = `${fin.getFullYear()}-${String(fin.getMonth() + 1).padStart(2, '0')}-${String(fin.getDate()).padStart(2, '0')}`;
-  // Un id NUEVO por apertura: en modo de prueba el cupón siempre se puede raspar.
-  const premios = [300, 500, 1000];
+  const premios = nivel === 'oro' ? [100, 200, 500] : [300, 500, 1000];
   const puntos = premios[Math.floor(Math.random() * premios.length)];
-  return { id: `prueba-${idDePrueba}`, puntos, restantes: puntos, vence, titulo: 'Cupón Platino del mes' };
+  return { id: `prueba-${nivel}-${semilla}`, puntos, restantes: puntos, vence, titulo: `Cupón ${nivel === 'oro' ? 'Oro' : 'Platino'} del mes` };
 }
 
 // Se lee lo guardado al abrir la app.

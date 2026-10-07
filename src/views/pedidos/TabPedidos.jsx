@@ -78,6 +78,29 @@ const PEDIDO_BADGE = {
     anulado:    { label: 'Anulado',         variant: 'danger'  },
 };
 
+// La etiqueta de la tarjeta dice en qué paso va LA SALA, el mismo que marca
+// su avance (2026-10-07). Salía sólo de `estadoDeLaSala` —cinco valores— y
+// por eso una sala que ya había recibido sus cajas, o a la que el conductor
+// ya le entregó, seguía diciendo «En ruta» con el avance en «Llegada». Los
+// tres estados que NO son un paso (anulado, con diferencias, completado)
+// siguen mandando; para lo demás manda la etapa.
+const ETIQUETA_ETAPA = {
+    sin_iniciar: { label: 'Por preparar',         variant: 'neutral' },
+    preparando:  { label: 'En preparación',       variant: 'chart-1' },
+    preparado:   { label: 'Listo para despachar', variant: 'chart-1' },
+    transito:    { label: 'En ruta',              variant: 'chart-3' },
+    contando:    { label: 'Recibiendo',           variant: 'chart-9' },
+    erp:         { label: 'Completado',           variant: 'success' },
+};
+function etiquetaDeLaSala(estadoSala, stage, entregada, difsPendientes = 0) {
+    if (estadoSala === 'anulado') return PEDIDO_BADGE.anulado;
+    // «Completado» con «2 difs. pendientes» al lado se contradecía.
+    if (difsPendientes > 0 || estadoSala === 'parcial') return PEDIDO_BADGE.parcial;
+    if (estadoSala === 'completado') return PEDIDO_BADGE.completado;
+    if (stage === 'transito' && entregada) return { label: 'Entregado', variant: 'chart-9' };
+    return ETIQUETA_ETAPA[stage] ?? PEDIDO_BADGE[estadoSala] ?? { label: estadoSala, variant: 'neutral' };
+}
+
 // PAUSE_REASONS: extraído a ./tabpedidos/constants.js (Bloque 6.C) —
 // importado arriba.
 
@@ -350,9 +373,14 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const elapsedPause = stage === 'pausado'    ? fmtMin(elapsed(row.pausado_at)) : null;
                             const elapsedTrans = stage === 'transito'   ? fmtMin(elapsed(row.finalizado_at)) : null;
 
+                            // La parada de esta sala en su ruta: dice si ya la entregaron.
+                            const paradaSala = pedidoRutaMap.get(claveParada(row.pedido_id, sucDeLaTarjeta))?.stop
+                                ?? entregaMap[cardKey] ?? null;
+                            const entregada  = !!paradaSala?.entregado_at;
+                            const etiqueta   = etiquetaDeLaSala(estadoSala, stage, entregada, difsDeLaSala);
                             const tiempoEnEtapa = elapsedPrep  ? `${elapsedPrep} preparando`
                                                 : elapsedPause ? `${elapsedPause} en pausa`
-                                                : elapsedTrans ? `${elapsedTrans} en ruta`
+                                                : elapsedTrans && !entregada ? `${elapsedTrans} en ruta`
                                                 : null;
 
                             const apoyoBucket  = apoyoMap[cardKey] ?? { preparacion: [], recepcion: [] };
@@ -434,9 +462,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {stage === 'pausado' ? (
                                                 <Badge variant="warning" tone="solid" uppercase={false} icon={Pause}>Pausado</Badge>
                                             ) : (
-                                                <Badge variant={PEDIDO_BADGE[estadoSala]?.variant ?? 'neutral'} uppercase={false}>
-                                                    {PEDIDO_BADGE[estadoSala]?.label ?? estadoSala}
-                                                </Badge>
+                                                <Badge variant={etiqueta.variant} uppercase={false}>{etiqueta.label}</Badge>
                                             )}
                                             {tiempoEnEtapa && (
                                                 <span className={`text-caption font-semibold tabular-nums ${stage === 'pausado' ? 'text-warning-text' : 'text-content-2'}`}>
@@ -651,6 +677,13 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         )}
                                       </div>
                                         <div className="ml-auto flex items-center gap-1.5 flex-wrap">
+                                            {/* Anular va PRIMERO y separado: es irreversible, y junto
+                                                a Finalizar o Iniciar —el botón que más se aprieta— un
+                                                clic de más anulaba el pedido. Sigue en rojo (§15.2: una
+                                                acción irreversible no se atenúa). */}
+                                            {canAnular && (
+                                                <Button variant="destructive" icon={Ban} className="mr-2" onClick={e => { e.stopPropagation(); const st = pedidoStageMap.get(row.pedido_id) ?? {}; setAnularModal({ pedidoId: row.pedido_id, numero: row.numero, requiresReason: !!(st.anyActive) }); }}>Anular</Button>
+                                            )}
                                             {/* El botón se pedía además con `!isApoyoBodega`,
                                                 o sea «que YO no esté ya de apoyo» — y esto
                                                 no es «me apunto»: abre el escáner y anota a
@@ -694,9 +727,6 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {canPausar       && <Button variant="secondary" icon={Pause}     loading={isLCBusy} onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}>Pausar</Button>}
                                             {canFinalizar    && <Button variant="primary" icon={Flag}      loading={isLCBusy || busyAction === `finalizar_load_${cardKey}`} onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)}>Finalizar</Button>}
                                             {canReanudar     && <Button variant="primary" icon={RotateCcw} loading={isLCBusy} onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}>Reanudar</Button>}
-                                            {canAnular && (
-                                                <Button variant="destructive" icon={Ban} onClick={e => { e.stopPropagation(); const st = pedidoStageMap.get(row.pedido_id) ?? {}; setAnularModal({ pedidoId: row.pedido_id, numero: row.numero, requiresReason: !!(st.anyActive) }); }}>Anular</Button>
-                                            )}
                                             {canMarcarEnRuta && <Button variant="primary" icon={Truck} onClick={() => setCrearRutaOpen([])}>Crear ruta</Button>}
                                             {(() => {
                                                 const rutaActiva       = pedidoRutaMap.get(claveParada(row.pedido_id, row.erp_sucursal_id))?.ruta;

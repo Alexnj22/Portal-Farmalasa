@@ -12,7 +12,7 @@
 --     (inicio, pausas, fin, salida, primera firma, ingreso), que es lo que
 --     leen `get_pedido_kpis` y `get_pausa_razones_stats`;
 --   · un pedido anulado;
---   · una ruta EN RUTA hoy y cuatro completadas.
+--   · una ruta por cada pedido despachado (la de hoy y la de ayer, EN RUTA).
 --
 -- Todo lleva `[demo]` en `notes` y se borra al volver a correr: es
 -- idempotente. Se corre con `execute_sql` sobre el branch de pruebas, NUNCA
@@ -244,20 +244,29 @@ BEGIN
       VALUES (ruta, 14.0389, -88.9372, now() - interval '1 minute');
       -- Que el pedido quede «salido» a la misma hora que la ruta
       UPDATE public.pedidos SET enviado_at = now() - interval '50 minutes' WHERE id = ped;
-    ELSIF spec.status = 'completado' AND spec.dias IN (4, 11, 19, 27) THEN
+    -- Todo lo que salió de bodega salió en una ruta: el portal toma «salió»
+    -- de la ruta (`get_pedidos_en_curso` → `salida.salio_at`), no de
+    -- `pedidos.enviado_at`. Sin ruta, una sala que ya recibió se leía «Por
+    -- despachar». Si alguna sala del pedido sigue en tránsito, la ruta va EN
+    -- RUTA; si no, completada.
+    ELSIF t_env IS NOT NULL THEN
       ruta := gen_random_uuid();
       INSERT INTO public.rutas (id, conductor_id, conductor_nombre, salida_at, vuelta_base_at, status,
                                 distancia_total_m, duracion_estimada_min, notes, created_by, created_at)
       VALUES (ruta, NULL, (SELECT name FROM public.employees WHERE id = emps[12]),
-              t_env, t_env + interval '3 hours', 'completada',
+              t_env,
+              CASE WHEN 'transito' = ANY(spec.etapas) THEN NULL ELSE t_env + interval '3 hours' END,
+              CASE WHEN 'transito' = ANY(spec.etapas) THEN 'en_ruta' ELSE 'completada' END,
               30000 + (random() * 40000)::int, 80 + (random() * 60)::int,
-              '[demo] Ruta de muestra', emps[1], t_env - interval '20 minutes');
+              '[demo] Ruta de muestra', emps[1], t_env);
       INSERT INTO public.ruta_pedidos (ruta_id, pedido_id, erp_sucursal_id, orden_entrega,
                                        distancia_desde_anterior_m, duracion_desde_anterior_min,
                                        entregado_at, entregado_por, confirmado_suc_at, confirmado_suc_por)
       SELECT ruta, ped, s.suc, s.ord, 9000 + (random() * 20000)::int, 20 + (random() * 30)::int,
-             t_env + make_interval(mins => (30 * s.ord)::int), emps[1],
-             t_env + make_interval(mins => (30 * s.ord + 10)::int), emps[1]
+             CASE WHEN spec.etapas[s.ord] <> 'transito' THEN t_env + make_interval(mins => (30 * s.ord)::int) END,
+             CASE WHEN spec.etapas[s.ord] <> 'transito' THEN emps[1] END,
+             CASE WHEN spec.etapas[s.ord] <> 'transito' THEN t_env + make_interval(mins => (30 * s.ord + 10)::int) END,
+             CASE WHEN spec.etapas[s.ord] <> 'transito' THEN emps[1] END
         FROM unnest(spec.sucs) WITH ORDINALITY AS s(suc, ord);
     END IF;
   END LOOP;

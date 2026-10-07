@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.16 — Pedidos (lista): encabezado con columnas, secciones marcadas y rutas agrupadas
+
+- **Encabezado de la lista con columnas** (*Sala · Bodega y transporte · Sucursal · Estado*), con ícono por tramo, nombres de pasos más legibles y alineados con los puntos.
+- **Sin franja lateral** (el canon la prohíbe): lo que tiene un problema lleva un ícono junto al nombre de la sala, en su color.
+- **Secciones marcadas**: ícono, nombre, cuenta y una línea que las separa.
+- **En «En camino», las salas de una misma ruta van juntas** bajo el encabezado de su ruta: número, conductor con foto, entregas y botón de mapa.
+- Al abrir una fila, la hora, la foto y el nombre quedan **centrados bajo cada punto** (el primero de cada tramo a la izquierda y el último a la derecha).
+
 ## v2.1232.15 — Pedidos: cinco fallas de los modales de recepción, llegada y finalizar
 
 - **Recepción: los extras anotados ya no desaparecen al volver a abrir el modal.** Estaban guardados, pero al abrir la lista se reiniciaba vacía y la sala podía anotarlos otra vez.

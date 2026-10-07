@@ -12,7 +12,7 @@ import { useTema } from '../tema/tema';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icono from './Icono';
 
-const BENEFICIOS = {
+export const BENEFICIOS = {
   vip: ['1 punto por cada $1', 'Ofertas exclusivas', 'Regalo de cumpleaños'],
   plata: ['1.25 puntos por cada $1', 'Cumpleaños de 75 puntos'],
   oro: ['1.5 puntos por cada $1', 'Cumpleaños de 100 puntos', '48 h para retirar reservas'],
@@ -65,6 +65,24 @@ export default function Nivel({ nivel }) {
           </View>
         ))}
       </View>
+      {/* Lo que gana al subir: la razón para llegar al siguiente. */}
+      {sig && BENEFICIOS[sig.clave] ? (
+        <View style={{ gap: 6, borderRadius: 16, padding: 12, backgroundColor: t.oscuro ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <LinearGradient colors={(COLORES_NIVEL[sig.clave] ?? paleta).frente} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={{ width: 22, height: 22, borderRadius: 7, alignItems: 'center', justifyContent: 'center' }}>
+              <Icono sf="arrow.up" respaldo="↑" tam={11} color="#FFFFFF" />
+            </LinearGradient>
+            <Text style={{ fontSize: 14, fontWeight: '800', color: colorSistema.texto }}>Al llegar a {sig.nombre} ganas</Text>
+          </View>
+          {BENEFICIOS[sig.clave].map((b) => (
+            <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 4 }}>
+              <Icono sf="sparkles" respaldo="✦" tam={11} color={t.color.magentaTexto} />
+              <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>{b}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
       <Texto nivel={3} estilo={{ fontSize: 12 }}>Según lo que compraste en los últimos 12 meses: {dolares(nivel.compra)}.</Texto>
     </Tarjeta>
   );

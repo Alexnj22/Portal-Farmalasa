@@ -117,6 +117,13 @@ export default function WidgetReservas({ todas = false }) {
                     {delPedido.every((r) => r.pago_estado === 'pagado') ? ' · pagado en línea' : ' · se cobra en caja'}
                 </p>
             )}
+            {delPedido[0]?.documento === 'credito_fiscal' && delPedido[0]?.datos_fiscales && (
+                <div className="rounded-lg border border-border-subtle px-3 py-2 text-caption text-content-2">
+                    <p className="font-semibold text-content">Facturar con crédito fiscal</p>
+                    <p>{delPedido[0].datos_fiscales.nombre} · NIT {delPedido[0].datos_fiscales.nit} · NRC {delPedido[0].datos_fiscales.nrc}</p>
+                    <p>{delPedido[0].datos_fiscales.giro} · {delPedido[0].datos_fiscales.direccion}</p>
+                </div>
+            )}
             {buscado && !visibles.length && <p className="text-body-sm text-content-3">No hay una reserva abierta con ese código en esta sala.</p>}
             <ul className="space-y-1.5 min-w-0">
                 {visibles.map((r) => (
@@ -135,6 +142,10 @@ export default function WidgetReservas({ todas = false }) {
                                     {/* Pagada en línea desde la app (Wompi): en caja NO se cobra. */}
                                     {r.pago_estado === 'pagado' && (
                                         <Badge variant="success" uppercase={false}>Pagada en línea</Badge>
+                                    )}
+                                    {r.documento === 'credito_fiscal' && (
+                                        <Badge variant="info" uppercase={false}
+                                            title={r.datos_fiscales ? `${r.datos_fiscales.nombre} · NIT ${r.datos_fiscales.nit} · NRC ${r.datos_fiscales.nrc}` : undefined}>CCF</Badge>
                                     )}
                                     {r.estado === 'pendiente' ? (
                                         <Button variant="primary" size="xs" icon={PackageCheck} loading={ocupada === r.id}

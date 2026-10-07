@@ -10,6 +10,7 @@ import { dolares, entero, fecha, nombrePropio } from '../../../lib/formato';
 import TarjetaSocio from '../../../componentes/TarjetaSocio';
 import Nivel from '../../../componentes/Nivel';
 import Cupon from '../../../componentes/Cupon';
+import SubisteDeNivel from '../../../componentes/SubisteDeNivel';
 import { LinearGradient } from 'expo-linear-gradient';
 import Vencimientos from '../../../componentes/Vencimientos';
 import Cumpleanos from '../../../componentes/Cumpleanos';
@@ -107,6 +108,7 @@ export default function Puntos() {
           <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {resumen.nivel.nombre.toUpperCase()}</Text>
         </Pressable>
       ) : null}
+      <SubisteDeNivel nivel={resumen.nivel} />
       <Cumpleanos activo={!!resumen.cumpleanos} forzar={cumple === '1'} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
       {/* Encima de todo (zIndex): la tarjeta de abajo gira y se escala, y no puede tapar la campana. */}
       <Entrada indice={0} estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 2 }}>
@@ -122,6 +124,14 @@ export default function Puntos() {
         <TarjetaSocio activa={visible} nivel={resumen.nivel?.clave} nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
           codigo={resumen.codigo} socioDesde={resumen.socio_desde} />
       </Entrada>
+
+      {/* El nivel: Cliente VIP, Plata, Oro o Platino, y cuánto falta. Justo
+          debajo de la tarjeta (usuario, 2026-10-07). */}
+      {resumen.nivel ? (
+        <Entrada indice={1}>
+          <Nivel nivel={resumen.nivel} />
+        </Entrada>
+      ) : null}
 
       {/* Apple Wallet: la tarjeta en la Cartera, para mostrarla en caja sin abrir la app. */}
       {Platform.OS === 'ios' ? (
@@ -146,13 +156,6 @@ export default function Puntos() {
           detalle={resumen.reservas_listas ? `${resumen.reservas_listas} lista${resumen.reservas_listas === 1 ? '' : 's'} para retirar` : resumen.reservas_abiertas ? `${resumen.reservas_abiertas} en curso` : 'Ninguna activa'}
           resaltar={resumen.reservas_listas > 0} alTocar={() => router.push('/reservas')} />
       </Entrada>
-
-      {/* El nivel: Cliente VIP, Plata, Oro o Platino, y cuánto falta. */}
-      {resumen.nivel ? (
-        <Entrada indice={2}>
-          <Nivel nivel={resumen.nivel} />
-        </Entrada>
-      ) : null}
 
       {/* El estado del canje. El saldo cuenta hacia arriba y la barra se llena
           con resorte: lo primero que se ve MOVERSE es lo que la persona tiene. */}

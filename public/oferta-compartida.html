@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Oferta · Farmacia Salud</title>
+<style>
+  :root { --fondo:#F5F4F8; --tarjeta:#fff; --texto:#1A1320; --texto2:#5E5866; --marca:#B5308C; }
+  @media (prefers-color-scheme: dark) { :root { --fondo:#0A090E; --tarjeta:#1E1B24; --texto:#F5F2F8; --texto2:#B6AFC0; } }
+  * { box-sizing:border-box; } body { margin:0; font-family:-apple-system,system-ui,sans-serif; background:var(--fondo); color:var(--texto); }
+  main { max-width:520px; margin:0 auto; padding:24px 16px 48px; }
+  .marca { display:flex; align-items:center; gap:10px; font-weight:800; font-size:17px; margin-bottom:18px; }
+  .marca img { width:36px; height:36px; border-radius:9px; }
+  .tarjeta { background:var(--tarjeta); border-radius:24px; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,.08); }
+  .foto { width:100%; aspect-ratio:16/10; object-fit:cover; display:block; background:linear-gradient(135deg,#2B0B3A,#B5308C); }
+  .cuerpo { padding:18px; } .etiqueta { display:inline-block; background:var(--marca); color:#fff; font-weight:900; border-radius:999px; padding:4px 12px; }
+  h1 { font-size:24px; margin:10px 0 6px; } p { color:var(--texto2); line-height:1.45; margin:6px 0; }
+  .boton { display:block; text-align:center; margin-top:14px; padding:15px; border-radius:999px; font-weight:800; text-decoration:none; }
+  .principal { background:var(--marca); color:#fff; } .secundario { background:transparent; color:var(--texto); border:1px solid rgba(127,127,127,.3); }
+</style>
+</head>
+<body>
+<main>
+  <div class="marca"><img src="/logo-la-salud.png" alt="">Farmacia Salud</div>
+  <div class="tarjeta" id="t"><div class="cuerpo"><p>Cargando la oferta…</p></div></div>
+  <a class="boton principal" id="abrir" href="puntossalud://ofertas">Abrir en la app Puntos Salud</a>
+  <a class="boton secundario" href="/mis-puntos">Mis puntos</a>
+  <p style="text-align:center;font-size:13px;margin-top:18px">Pregunta por esta oferta en cualquiera de nuestras sucursales La Salud.</p>
+</main>
+<script>
+// La oferta que alguien compartió desde la app (2026-10-07). Con la app
+// instalada, iOS abre la app directo (enlace universal /o/<id>); esta página es
+// para quien no la tiene. Lee la vitrina pública, la misma que ve la app sin cuenta.
+(function () {
+  var id = decodeURIComponent((location.pathname.split('/o/')[1] || '').split('/')[0]);
+  document.getElementById('abrir').href = 'puntossalud://oferta/' + encodeURIComponent(id);
+  var t = document.getElementById('t');
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  fetch('https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/app-clientes', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', apikey: 'sb_publishable_cdFHhrbNAqfoA7FIsEgL3A_COHXzBoz', Authorization: 'Bearer sb_publishable_cdFHhrbNAqfoA7FIsEgL3A_COHXzBoz' },
+    body: JSON.stringify({ accion: 'ofertas_publicas' }),
+  }).then(function (r) { return r.json(); }).then(function (d) {
+    var o = (d && d.ofertas || []).filter(function (x) { return String(x.id) === id; })[0];
+    if (!o) { t.innerHTML = '<div class="cuerpo"><h1>Esta oferta ya terminó</h1><p>Mira las ofertas vigentes en la app Puntos Salud.</p></div>'; return; }
+    document.title = o.titulo + ' · Farmacia Salud';
+    t.innerHTML = (o.imagen ? '<img class="foto" src="' + esc(o.imagen) + '" alt="">' : '<div class="foto"></div>')
+      + '<div class="cuerpo">' + (o.etiqueta ? '<span class="etiqueta">' + esc(o.etiqueta) + '</span>' : '')
+      + '<h1>' + esc(o.titulo) + '</h1>' + (o.descripcion ? '<p>' + esc(o.descripcion) + '</p>' : '')
+      + (o.exclusiva ? '<p><b>Exclusiva para socios de Puntos Salud.</b></p>' : '')
+      + (o.fin ? '<p>Válida hasta el ' + esc(o.fin.split('-').reverse().join('/')) + '.</p>' : '') + '</div>';
+  }).catch(function () { t.innerHTML = '<div class="cuerpo"><p>No se pudo cargar la oferta. Revisa tu conexión.</p></div>'; });
+})();
+</script>
+</body>
+</html>

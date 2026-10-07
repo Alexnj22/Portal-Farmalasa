@@ -20,6 +20,7 @@
 //   · tocarla, o deslizarla rápido de lado, la GIRA: se levanta, se encoge un
 //     poco a mitad del giro y vibra cuando muestra la otra cara.
 import { useEffect, useRef } from 'react';
+import EfectoNivel from './EfectoNivel';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -52,9 +53,11 @@ const vibrar = (fuerte) => Haptics.impactAsync(fuerte ? Haptics.ImpactFeedbackSt
 // plata, dorada y platino. El texto queda blanco en las cuatro.
 export const COLORES_NIVEL = {
   vip: { frente: ['#2B0B3A', T['logo-magenta'], '#5B1E9C'], reverso: ['#1A0822', '#3A1048'], rotulo: 'SOCIO VIP' },
-  plata: { frente: ['#3B414C', '#A3ABB8', '#59616E'], reverso: ['#262B33', '#454C57'], rotulo: 'PLATA' },
-  oro: { frente: ['#4A2E04', '#C99A2E', '#6E4A0C'], reverso: ['#2E1D03', '#5A3D0A'], rotulo: 'ORO' },
-  platino: { frente: ['#151A24', '#7D8AA3', '#283142'], reverso: ['#0E121A', '#2A3242'], rotulo: 'PLATINO' },
+  // Más distintos entre sí (2026-10-07): plata clara y metálica, oro intenso,
+  // platino negro titanio con holograma.
+  plata: { frente: ['#59606C', '#C3CAD4', '#7C8492'], reverso: ['#2F343C', '#5A616C'], rotulo: 'PLATA' },
+  oro: { frente: ['#6B4300', '#E5AE34', '#8A5A05'], reverso: ['#3D2600', '#7A5208'], rotulo: 'ORO' },
+  platino: { frente: ['#06080D', '#2C3445', '#0A0D14'], reverso: ['#030406', '#1C2230'], rotulo: 'PLATINO' },
 };
 
 export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel = 'vip', activa = true }) {
@@ -192,6 +195,8 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
             colors={['transparent', 'transparent', 'rgba(142,195,15,0.45)']}
             locations={[0, 0.55, 1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFill} />
+          {/* El acabado del nivel: cepillado, destellos u holograma. */}
+          <EfectoNivel nivel={nivel} activa={activa && !reducir} x={x} />
           <BrilloTarjeta x={x} y={y} barrido={barrido} />
 
           {/* El logo al centro: llena el espacio entre el chip y el nombre

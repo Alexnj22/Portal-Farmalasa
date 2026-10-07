@@ -4,7 +4,7 @@
 // producto. Hoja del sistema que se cierra deslizando hacia abajo.
 import { useEffect, useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, Text, View } from 'react-native';
-import { useCarrito } from '../../lib/carrito';
+import { MAX_UNIDADES, useCarrito } from '../../lib/carrito';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -29,6 +29,9 @@ export default function Producto() {
   const ins = useSafeAreaInsets();
   const t = useTema();
   const [d, setD] = useState(null);
+  // Lo que se va a agregar: la presentación (por factor) y cuántas.
+  const [sel, setSel] = useState(null);
+  const [cant, setCant] = useState(1);
   const cargar = () => { setD(null); llamar('catalogo_producto', { id: Number(id) }).then((r) => setD(r ?? { ok: false })); };
   useEffect(() => { cargar(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -58,13 +61,16 @@ export default function Producto() {
   };
   // La presentación mayor (la de mayor factor): la que agrega el botón de abajo.
   const mayor = [...(p.presentaciones ?? [])].sort((a, b) => (b.factor ?? 1) - (a.factor ?? 1))[0];
-  const agregar = (x) => {
+  const elegida_factor = sel ?? mayor?.factor ?? 1;
+  const elegidaP = (p.presentaciones ?? []).find((x) => (x.factor ?? 1) === elegida_factor) ?? mayor;
+  const agregar = (x, n = 1) => {
     if (!x) return;
     if (p.bajo_receta) { Alert.alert('Bajo receta', 'Este producto se compra en la sucursal presentando la receta.'); return; }
-    const ok = useCarrito.getState().agregar({ id: p.id, nombre: p.nombre, foto: p.foto, tipo: x.tipo, factor: x.factor ?? 1, precio: x.precio, precio_vip: x.precio_vip });
+    const ok = useCarrito.getState().agregar({ id: p.id, nombre: p.nombre, foto: p.foto, tipo: x.tipo, factor: x.factor ?? 1, precio: x.precio, precio_vip: x.precio_vip }, n);
     if (!ok) { Alert.alert('Carrito lleno', 'El carrito admite hasta 10 productos distintos.'); return; }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    Alert.alert('Agregado al carrito', `${nombreProducto(p.nombre)} · ${nombreProducto(x.tipo)}`, [
+    setCant(1);
+    Alert.alert('Agregado al carrito', `${n} × ${nombreProducto(p.nombre)} · ${nombreProducto(x.tipo)}`, [
       { text: 'Seguir viendo', style: 'cancel' },
       { text: 'Ir al carrito', onPress: () => { router.back(); setTimeout(() => router.push('/carrito'), 300); } },
     ]);
@@ -93,26 +99,26 @@ export default function Producto() {
           {p.laboratorio ? <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto3 }}>{nombreProducto(p.laboratorio)}</Text> : null}
         </View>
 
-        {/* Precios: cada presentación con el de viñeta y el VIP. */}
-        <Titular texto="Precios" />
+        {/* Precios: cada presentación con el de viñeta y el VIP; se toca la que se quiere. */}
+        <Titular texto={p.bajo_receta ? 'Precios' : 'Elige la presentación'} />
         <View style={{ marginHorizontal: 16, borderRadius: 20, backgroundColor: superficie, overflow: 'hidden' }}>
           {(p.presentaciones ?? []).map((x, i) => {
             const ahorro = x.precio_vip != null ? x.precio - x.precio_vip : 0;
+            const elegida = (x.factor ?? 1) === (elegida_factor ?? -1);
             return (
               <View key={i}>
                 {i > 0 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 16 }} /> : null}
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14 }}>
+                <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setSel(x.factor ?? 1); }} disabled={p.bajo_receta}
+                  accessibilityRole="radio" accessibilityState={{ selected: elegida }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14,
+                    backgroundColor: elegida ? suave(t.color.magenta, t.oscuro ? 0.18 : 0.08) : 'transparent' }}>
+                  {!p.bajo_receta ? <Icono sf={elegida ? 'checkmark.circle.fill' : 'circle'} respaldo="" tam={22} color={elegida ? t.color.magenta : colorSistema.texto3} /> : null}
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text style={{ fontSize: 16, fontWeight: '600', color: colorSistema.texto }}>{nombreProducto(x.tipo)}</Text>
                     {ahorro >= 0.01 ? (
                       <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.verdeTexto }}>Ahorras {dolares(ahorro)} con tu tarjeta</Text>
                     ) : null}
                   </View>
-                  <Pressable onPress={() => agregar(x)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`Agregar ${nombreProducto(x.tipo)} al carrito`}
-                    style={({ pressed }) => ({ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
-                      backgroundColor: suave(t.color.magenta, t.oscuro ? 0.3 : 0.14), transform: [{ scale: pressed ? 0.9 : 1 }] })}>
-                    <Icono sf="cart.badge.plus" respaldo="+" tam={16} color={t.color.magentaTexto} />
-                  </Pressable>
                   <View style={{ alignItems: 'flex-end' }}>
                     {x.precio_vip != null ? (
                       <>
@@ -126,7 +132,7 @@ export default function Producto() {
                       <Text style={{ fontSize: 20, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(x.precio)}</Text>
                     )}
                   </View>
-                </View>
+                </Pressable>
               </View>
             );
           })}
@@ -165,13 +171,30 @@ export default function Producto() {
             <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto2, textAlign: 'center' }}>Bajo receta: se compra en la sucursal</Text>
           </View>
         ) : (
-          <Pressable onPress={() => agregar(mayor)} disabled={!mayor} accessibilityRole="button" accessibilityLabel="Agregar al carrito"
-            style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 54, borderRadius: 999,
-              backgroundColor: t.color.magenta, transform: [{ scale: pressed ? 0.97 : 1 }],
-              shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } })}>
-            <Icono sf="cart.badge.plus" respaldo="+" tam={18} color="#FFFFFF" />
-            <Text style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '800' }}>Agregar al carrito</Text>
-          </Pressable>
+          <>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 999, paddingHorizontal: 6, minHeight: 54,
+              backgroundColor: t.oscuro ? '#2A2630' : '#FFFFFF', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } }}>
+              <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setCant((c) => Math.max(1, c - 1)); }} disabled={cant <= 1}
+                accessibilityRole="button" accessibilityLabel="Menos" style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center', opacity: cant <= 1 ? 0.3 : 1 }}>
+                <Icono sf="minus" respaldo="−" tam={15} color={colorSistema.texto} />
+              </Pressable>
+              <Text style={{ fontSize: 18, fontWeight: '900', color: colorSistema.texto, minWidth: 18, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{cant}</Text>
+              <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setCant((c) => Math.min(MAX_UNIDADES, c + 1)); }} disabled={cant >= MAX_UNIDADES}
+                accessibilityRole="button" accessibilityLabel="Más" style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center', opacity: cant >= MAX_UNIDADES ? 0.3 : 1 }}>
+                <Icono sf="plus" respaldo="+" tam={15} color={colorSistema.texto} />
+              </Pressable>
+            </View>
+            <Pressable onPress={() => agregar(elegidaP, cant)} disabled={!elegidaP} accessibilityRole="button"
+              accessibilityLabel={`Agregar ${cant} al carrito por ${elegidaP ? dolares((elegidaP.precio_vip ?? elegidaP.precio) * cant) : ''}`}
+              style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 54, borderRadius: 999,
+                backgroundColor: t.color.magenta, transform: [{ scale: pressed ? 0.97 : 1 }],
+                shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } })}>
+              <Icono sf="cart.badge.plus" respaldo="+" tam={17} color="#FFFFFF" />
+              <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
+                Agregar{elegidaP ? ` · ${dolares((elegidaP.precio_vip ?? elegidaP.precio) * cant)}` : ''}
+              </Text>
+            </Pressable>
+          </>
         )}
         <Pressable onPress={consultar} accessibilityRole="button" accessibilityLabel="Consultar por WhatsApp"
           style={({ pressed }) => ({ width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center',

@@ -3,7 +3,9 @@
 // reservar, la sucursal recibe el aviso para tenerlo listo y el cliente un
 // código (QR) que la sala escanea para prepararlo y facturarlo.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import { errorFiscal, nitEscrito, nrcEscrito } from '../../../lib/fiscal';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -33,6 +35,22 @@ export default function Carrito() {
   const [enviando, setEnviando] = useState(false);
   const [terminos, setTerminos] = useState(null);
   const [hecho, setHecho] = useState(null);
+  // Cómo paga y qué documento quiere (2026-10-07).
+  const [pago, setPago] = useState('en_linea');
+  const [documento, setDocumento] = useState('consumidor_final');
+  const [fiscales, setFiscales] = useState(null);       // { completos, datos } de la ficha
+  const [editarFiscales, setEditarFiscales] = useState(false);
+  const [f, setF] = useState({ nombre: '', nit: '', nrc: '', giro: '', direccion: '' });
+  useEffect(() => {
+    if (documento !== 'credito_fiscal' || fiscales) return;
+    pedir('mis_datos_fiscales').then((r) => {
+      if (!r?.ok) return;
+      setFiscales(r);
+      setF({ nombre: r.datos.nombre ?? '', nit: r.datos.nit ?? '', nrc: r.datos.nrc ?? '', giro: r.datos.giro ?? '', direccion: r.datos.direccion ?? '' });
+      setEditarFiscales(!r.completos);
+    });
+  }, [documento, fiscales, pedir]);
+  const problemaFiscal = documento === 'credito_fiscal' ? errorFiscal(f) : null;
 
   // Dónde hay de cada producto: se vuelve a preguntar al entrar y si cambia el carrito.
   const ids = useMemo(() => [...new Set(items.map((x) => x.id))].sort().join(','), [items]);
@@ -57,6 +75,7 @@ export default function Carrito() {
 
   const reservar = async () => {
     if (enviando || !sala) return;
+    if (problemaFiscal) { Alert.alert('Faltan datos del crédito fiscal', problemaFiscal); return; }
     if (pendiente) { Alert.alert('Falta completar tu registro', 'Completa tu registro en cualquier sucursal para reservar.'); return; }
     // Las condiciones, una vez (las mismas de las reservas de ofertas).
     const [term, aceptada] = await Promise.all([pedir('reserva_terminos'), SecureStore.getItemAsync(CLAVE_TERMINOS).catch(() => null)]);
@@ -69,14 +88,28 @@ export default function Carrito() {
     setTerminos(null);
     setEnviando(true);
     const r = await pedir('reservar_carrito', {
-      branch_id: sala, acepta_terminos: version,
+      branch_id: sala, acepta_terminos: version, pago, documento,
+      datos_fiscales: documento === 'credito_fiscal' ? f : null,
       items: items.map((x) => ({ producto_id: x.id, factor: x.factor, cantidad: x.cantidad })),
     });
     setEnviando(false);
     if (!r?.ok) { Alert.alert('No se pudo reservar', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    setHecho({ pedido: r.pedido, total: r.total, sala: salas?.find((s) => s.id === sala)?.sala });
     vaciar();
+    const base = { pedido: r.pedido, total: r.total, sala: salas?.find((s) => s.id === sala)?.sala, pagado: false, enLinea: pago === 'en_linea' };
+    // Pagar en línea: la hoja de Wompi; el pago lo confirma el servidor.
+    if (pago === 'en_linea' && r.pago?.url) {
+      await WebBrowser.openAuthSessionAsync(r.pago.url, 'puntossalud://reservas');
+      for (let i = 0; i < 4; i++) {
+        const mr = await pedir('mis_reservas');
+        const delPedido = (mr?.reservas ?? []).filter((x) => x.pedido === r.pedido);
+        if (delPedido.length && delPedido.every((x) => x.pago_estado === 'pagado')) { base.pagado = true; break; }
+        await new Promise((ok) => setTimeout(ok, 1500));
+      }
+    } else if (pago === 'en_linea') {
+      Alert.alert('El pago en línea no está disponible', 'Tu pedido quedó reservado: lo pagas al retirar o desde Mis reservas.');
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    setHecho(base);
   };
 
   if (hecho) {
@@ -91,7 +124,9 @@ export default function Carrito() {
             {hecho.sala ?? 'La sucursal'} ya recibió tu pedido y lo va a preparar. Te avisamos cuando esté listo.
           </Texto>
           <CodigoReserva codigo={hecho.pedido} />
-          <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>Total: {dolares(hecho.total)}</Text>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>
+            Total: {dolares(hecho.total)} · {hecho.pagado ? 'pagado' : hecho.enLinea ? 'pago pendiente (puedes pagarlo en Mis reservas)' : 'pagas al retirar'}
+          </Text>
         </Tarjeta>
         <Boton alTocar={() => { setHecho(null); router.push('/reservas'); }}>Ver mis reservas</Boton>
         <Boton tipo="secundario" alTocar={() => setHecho(null)}>Seguir comprando</Boton>
@@ -155,15 +190,59 @@ export default function Carrito() {
         })}
       </Tarjeta>
 
+      {/* Cómo pagas. */}
+      <Seccion texto="Cómo pagas" />
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <Opcion sf="creditcard.fill" titulo="En línea ahora" detalle="Tarjeta, seguro con Wompi" elegida={pago === 'en_linea'} alTocar={() => setPago('en_linea')} />
+        <Opcion sf="banknote.fill" titulo="Al retirar" detalle="Efectivo o tarjeta en caja" elegida={pago === 'al_retirar'} alTocar={() => setPago('al_retirar')} />
+      </View>
+
+      {/* Qué documento quieres. */}
+      <Seccion texto="Documento" />
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <Opcion sf="doc.text.fill" titulo="Consumidor final" detalle="Factura normal" elegida={documento === 'consumidor_final'} alTocar={() => setDocumento('consumidor_final')} />
+        <Opcion sf="building.2.fill" titulo="Crédito fiscal" detalle="Para tu negocio (CCF)" elegida={documento === 'credito_fiscal'} alTocar={() => setDocumento('credito_fiscal')} />
+      </View>
+      {documento === 'credito_fiscal' ? (
+        <Tarjeta estilo={{ gap: 10 }}>
+          {!fiscales ? <ActivityIndicator /> : !editarFiscales ? (
+            <>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{f.nombre}</Text>
+              <Texto nivel={2} estilo={{ fontSize: 14 }}>NIT {f.nit} · NRC {f.nrc}</Texto>
+              <Texto nivel={2} estilo={{ fontSize: 14 }}>{f.giro}</Texto>
+              <Texto nivel={3} estilo={{ fontSize: 13 }}>{f.direccion}</Texto>
+              <Pressable onPress={() => setEditarFiscales(true)} accessibilityRole="button" style={{ minHeight: 40, justifyContent: 'center' }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto }}>Usar otros datos</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Texto nivel={2} estilo={{ fontSize: 13 }}>
+                {fiscales.completos ? 'Escribe los datos del contribuyente.' : 'Tu ficha no tiene los datos completos del crédito fiscal. Escríbelos como aparecen en tu tarjeta de IVA:'}
+              </Texto>
+              <Campo etiqueta="Nombre o razón social" valor={f.nombre} alCambiar={(v) => setF((x) => ({ ...x, nombre: v }))} />
+              <Campo etiqueta="NIT" valor={f.nit} teclado="number-pad" alCambiar={(v) => setF((x) => ({ ...x, nit: nitEscrito(v) }))} />
+              <Campo etiqueta="NRC" valor={f.nrc} teclado="number-pad" alCambiar={(v) => setF((x) => ({ ...x, nrc: nrcEscrito(v) }))} />
+              <Campo etiqueta="Actividad económica (giro)" valor={f.giro} alCambiar={(v) => setF((x) => ({ ...x, giro: v }))} />
+              <Campo etiqueta="Dirección" valor={f.direccion} alCambiar={(v) => setF((x) => ({ ...x, direccion: v }))} multilinea />
+              {problemaFiscal ? <Text style={{ fontSize: 13, color: t.color.avisoTexto }}>{problemaFiscal}</Text>
+                : <Text style={{ fontSize: 13, color: t.color.exitoTexto }}>✓ Datos completos</Text>}
+            </>
+          )}
+        </Tarjeta>
+      ) : null}
+
       <Tarjeta estilo={{ gap: 6 }}>
         <Fila etiqueta="Precio normal" valor={dolares(normal)} tachado />
         {normal - total >= 0.01 ? <Fila etiqueta="Ahorro con tu tarjeta" valor={`−${dolares(normal - total)}`} color={t.color.verdeTexto} /> : null}
         <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginVertical: 4 }} />
         <Fila etiqueta="Total" valor={dolares(total)} grande />
-        <Texto nivel={3} estilo={{ fontSize: 12 }}>Pagas al retirar (o en línea desde Mis reservas). El precio se confirma al reservar.</Texto>
+        <Texto nivel={3} estilo={{ fontSize: 12 }}>El precio se confirma al reservar. La sucursal recibe tu pedido al instante y te avisamos cuando esté listo.</Texto>
       </Tarjeta>
 
-      <Boton alTocar={reservar} cargando={enviando} deshabilitado={!sala}>Reservar para retirar</Boton>
+      <Boton alTocar={reservar} cargando={enviando} deshabilitado={!sala || !!problemaFiscal}>
+        {pago === 'en_linea' ? `Pagar ${dolares(total)}` : 'Reservar · pagar al retirar'}
+      </Boton>
 
       <Modal visible={!!terminos} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setTerminos(null)}>
         <Terminos terminos={terminos} alAceptar={async () => {
@@ -225,6 +304,42 @@ function Terminos({ terminos, alAceptar, alCerrar }) {
         ))}
         <Boton alTocar={alAceptar}>Aceptar y reservar</Boton>
       </ScrollView>
+    </View>
+  );
+}
+
+function Seccion({ texto }) {
+  return <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4, marginTop: 6 }}>{texto}</Text>;
+}
+
+// Una opción elegible en tarjeta: ícono, título y una línea.
+function Opcion({ sf, titulo, detalle, elegida, alTocar }) {
+  const t = useTema();
+  return (
+    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} accessibilityRole="radio" accessibilityState={{ selected: elegida }}
+      style={({ pressed }) => ({ flex: 1, borderRadius: 20, padding: 14, gap: 8, borderWidth: 2,
+        borderColor: elegida ? t.color.magenta : 'transparent',
+        backgroundColor: elegida ? suave(t.color.magenta, t.oscuro ? 0.18 : 0.08) : (t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.8)'),
+        transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+        <Icono sf={sf} respaldo="" tam={20} color={elegida ? t.color.magentaTexto : colorSistema.texto2} />
+        <Icono sf={elegida ? 'checkmark.circle.fill' : 'circle'} respaldo="" tam={18} color={elegida ? t.color.magenta : colorSistema.texto3} />
+      </View>
+      <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto }}>{titulo}</Text>
+      <Text style={{ fontSize: 12, color: colorSistema.texto2 }}>{detalle}</Text>
+    </Pressable>
+  );
+}
+
+function Campo({ etiqueta, valor, alCambiar, teclado, multilinea }) {
+  const t = useTema();
+  return (
+    <View style={{ gap: 4 }}>
+      <Text style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto3 }}>{etiqueta}</Text>
+      <TextInput value={valor} onChangeText={alCambiar} keyboardType={teclado ?? 'default'} multiline={!!multilinea}
+        autoCorrect={false} autoCapitalize={teclado ? 'none' : 'characters'}
+        style={{ fontSize: 16, color: colorSistema.texto, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, minHeight: multilinea ? 64 : 44,
+          backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }} />
     </View>
   );
 }

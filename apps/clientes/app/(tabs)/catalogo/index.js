@@ -69,6 +69,25 @@ export default function Catalogo() {
       {/* Categorías: mosaicos con su color y su ícono; tocar uno busca y
           tocarlo otra vez lo quita. */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 2, paddingVertical: 2 }}>
+        {/* «Todo»: quita la categoría o la búsqueda y vuelve a lo más vendido. */}
+        {(() => {
+          const activa = !texto;
+          return (
+            <Pressable key="todo" onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(''); }}
+              accessibilityRole="button" accessibilityLabel="Todo, quitar el filtro" accessibilityState={{ selected: activa }}
+              style={({ pressed }) => ({ width: 78, alignItems: 'center', gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
+              <View style={{ padding: 2.5, borderRadius: 22, borderWidth: 2, borderColor: activa ? t.color.magenta : 'transparent' }}>
+                <View style={{ width: 60, height: 60, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: t.oscuro ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.07)' }}>
+                  <Icono sf={activa ? 'square.grid.2x2.fill' : 'xmark'} respaldo="" tam={24} color={colorSistema.texto} />
+                </View>
+              </View>
+              <Text maxFontSizeMultiplier={1.2} style={{ fontSize: 12, lineHeight: 15, fontWeight: activa ? '800' : '600', textAlign: 'center', color: activa ? colorSistema.texto : colorSistema.texto2 }}>
+                {activa ? 'Todo' : 'Quitar filtro'}
+              </Text>
+            </Pressable>
+          );
+        })()}
         {BUSQUEDAS.map((b, i) => {
           const activa = q === b.q && texto === b.q;
           const [c1, c2] = tonoDe(i);

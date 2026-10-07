@@ -32,6 +32,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { TEXTOS_CONSENTIMIENTO as TEXTOS } from "../_shared/consentimientoPuntos.ts";
 import { clienteDelEnlace, enlaceDePase, paseDeCliente } from "../_shared/pase.ts";
 import { nivelDeCliente } from "../_shared/nivel.ts";
+import { validarFiscales } from "../_shared/fiscal.ts";
 import { crearEnlace } from "../_shared/wompi.ts";
 
 const cors = {
@@ -719,7 +720,7 @@ Deno.serve(async (req) => {
 
     if (accion === "mis_reservas") {
       const { data, error } = await admin.from("app_reservas")
-        .select("id, estado, origen, pedido, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega")
+        .select("id, estado, origen, pedido, documento, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega")
         .eq("customer_id", customerId).gte("created_at", new Date(Date.now() - 45 * 86400_000).toISOString())
         .order("created_at", { ascending: false }).limit(30);
       if (error) throw error;
@@ -811,6 +812,40 @@ Deno.serve(async (req) => {
       return json({ ok: true, existencias: data ?? [], salas: (salas ?? []).map((b: any) => ({ id: b.id, sala: sucursal(b.name), direccion: b.address })) });
     }
 
+    // Un enlace de Wompi por el total de un PEDIDO (una sola transacción).
+    // deno-lint-ignore no-explicit-any
+    async function enlaceDePago({ pedido, total, branchId, descripcion }: { pedido: string; total: number; branchId: any; descripcion: string }) {
+      const identificador = `${pedido}-${Date.now().toString(36)}`;
+      const { data: salaFila, error: eS } = await admin.from("branches").select("name").eq("id", branchId).maybeSingle();
+      if (eS) throw eS;
+      const { error: eP } = await admin.from("app_reservas_pagos").insert({ pedido, identificador, monto: total });
+      if (eP) throw eP;
+      const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/wompi-pagos`;
+      try {
+        const enlace = await crearEnlace({
+          identificador, monto: total, producto: `Pedido ${pedido} (${descripcion})`,
+          descripcion: `Pedido ${pedido} · retiro en ${sucursal(salaFila?.name) ?? "sucursal"}`,
+          urlRedirect: `${base}?ref=${encodeURIComponent(identificador)}`, urlWebhook: base, minutos: 30,
+        });
+        const url = enlace.urlEnlaceLargo || enlace.urlEnlace;
+        const { error: eU } = await admin.from("app_reservas_pagos").update({ enlace_id: enlace.idEnlace, enlace_url: url }).eq("identificador", identificador);
+        if (eU) console.error("app-clientes: no se guardó el enlace del pedido:", eU.message);
+        return { url, total, prueba: !enlace.estaProductivo };
+      } catch (e) {
+        console.error("app-clientes: wompi no creó el enlace del pedido:", (e as Error)?.message ?? e);
+        return null;
+      }
+    }
+
+    // Los datos fiscales de la ficha, para pedir un crédito fiscal: si están
+    // completos la app sólo los muestra; si falta algo, los pide.
+    if (accion === "mis_datos_fiscales") {
+      const { data: c, error } = await admin.from("customers").select("name, nit, nrc, giro, direccion").eq("id", customerId).maybeSingle();
+      if (error) throw error;
+      const v = validarFiscales({ nombre: c?.name, nit: c?.nit, nrc: c?.nrc, giro: c?.giro, direccion: c?.direccion });
+      return json({ ok: true, completos: v.ok, datos: { nombre: c?.name ?? "", nit: c?.nit ?? "", nrc: c?.nrc ?? "", giro: c?.giro ?? "", direccion: c?.direccion ?? "" } });
+    }
+
     if (accion === "reservar_carrito") {
       if (body?.acepta_terminos !== TERMINOS_RESERVA.version) {
         return json({ ok: false, motivo: "terminos", mensaje: "Acepta las condiciones de la reserva para continuar." });
@@ -821,6 +856,15 @@ Deno.serve(async (req) => {
         id: Number(x?.producto_id), factor: Number(x?.factor) || 1, cantidad: Math.trunc(Number(x?.cantidad)),
       })).filter((x: any) => Number.isInteger(x.id) && x.id > 0);
       if (!items.length || items.length > 10) return json({ ok: false, mensaje: "El carrito puede tener de 1 a 10 productos." });
+      // Documento: consumidor final o crédito fiscal (con sus datos validados).
+      const documento = body?.documento === "credito_fiscal" ? "credito_fiscal" : "consumidor_final";
+      let datosFiscales = null;
+      if (documento === "credito_fiscal") {
+        const v = validarFiscales(body?.datos_fiscales);
+        if (!v.ok) return json({ ok: false, motivo: "fiscales", mensaje: v.mensaje });
+        datosFiscales = v.datos;
+      }
+      const pagoEnLinea = body?.pago === "en_linea";
       if (items.some((x: any) => !(x.cantidad >= 1 && x.cantidad <= 5))) return json({ ok: false, mensaje: "Cada producto va de 1 a 5 unidades." });
       const { data: sala, error: eSala } = await admin.from("branches").select("id").eq("id", branchId).eq("type", "FARMACIA").maybeSingle();
       if (eSala) throw eSala;
@@ -851,6 +895,7 @@ Deno.serve(async (req) => {
           customer_id: customerId, branch_id: branchId, producto_id: x.id,
           producto_nombre: `${p.nombre}${pr.presentaciones?.tipo ? ` · ${pr.presentaciones.tipo}` : ""}`.slice(0, 200),
           cantidad: x.cantidad, precio_unitario: vip ?? vineta, precio_normal: vineta, terminos_version: TERMINOS_RESERVA.version,
+          documento, datos_fiscales: datosFiscales,
         });
       }
       const { data: suyas, error: eR } = await admin.from("app_reservas").select("id, estado, cerrada_at, pedido")
@@ -865,7 +910,11 @@ Deno.serve(async (req) => {
       const { data: nuevas, error: eI } = await admin.from("app_reservas").insert(filas.map((f) => ({ ...f, pedido }))).select("id");
       if (eI) throw eI;
       const total = Math.round(filas.reduce((s, f) => s + f.precio_unitario * f.cantidad, 0) * 100) / 100;
-      return json({ ok: true, pedido, reservas: (nuevas ?? []).map((n: any) => n.id), total });
+      // Pagar en línea: UN cobro por todo el pedido. Si Wompi no responde, el
+      // pedido queda igual (se paga al retirar o luego desde Mis reservas).
+      let pago = null;
+      if (pagoEnLinea && total > 0) pago = await enlaceDePago({ pedido, total, branchId, descripcion: `${filas.length} productos` });
+      return json({ ok: true, pedido, reservas: (nuevas ?? []).map((n: any) => n.id), total, pago });
     }
 
     if (accion === "cancelar_reserva") {
@@ -886,9 +935,20 @@ Deno.serve(async (req) => {
     // única que marca «pagado». Se puede pagar apenas reservada o ya lista.
     if (accion === "pagar_reserva") {
       const { data: r, error } = await admin.from("app_reservas")
-        .select("id, estado, pago_estado, producto_nombre, cantidad, precio_unitario, branch_id")
+        .select("id, estado, pago_estado, producto_nombre, cantidad, precio_unitario, branch_id, pedido")
         .eq("id", Number(body?.id)).eq("customer_id", customerId).maybeSingle();
       if (error) throw error;
+      // Una reserva de un pedido del carrito se paga con TODO el pedido (2026-10-07).
+      if (r?.pedido) {
+        const { data: filasP, error: eFp } = await admin.from("app_reservas").select("estado, pago_estado, precio_unitario, cantidad")
+          .eq("pedido", r.pedido).eq("customer_id", customerId).in("estado", ["pendiente", "lista"]);
+        if (eFp) throw eFp;
+        if (!filasP?.length) return json({ ok: false, mensaje: "Este pedido ya no se puede pagar." });
+        if (filasP.every((f: any) => f.pago_estado === "pagado")) return json({ ok: false, mensaje: "Este pedido ya está pagado." });
+        const totalP = Math.round(filasP.reduce((t: number, f: any) => t + Number(f.precio_unitario ?? 0) * Number(f.cantidad), 0) * 100) / 100;
+        const pagoP = await enlaceDePago({ pedido: r.pedido, total: totalP, branchId: r.branch_id, descripcion: `${filasP.length} productos` });
+        return json(pagoP ? { ok: true, ...pagoP } : { ok: false, mensaje: "El pago en línea no está disponible ahora. Intenta en un rato o paga al retirar." });
+      }
       if (!r || !["pendiente", "lista"].includes(r.estado)) return json({ ok: false, mensaje: "Esta reserva ya no se puede pagar." });
       if (r.pago_estado === "pagado") return json({ ok: false, mensaje: "Esta reserva ya está pagada." });
       const total = Math.round(Number(r.precio_unitario ?? 0) * Number(r.cantidad) * 100) / 100;
@@ -1042,7 +1102,9 @@ Deno.serve(async (req) => {
           const { count, error: eIn } = await admin.from("inyeccion_aplicaciones").select("id", { count: "exact", head: true })
             .eq("customer_id", customerId).eq("confirmada", true).is("aplicada_at", null).is("mezcla_de", null);
           if (eIn) throw eIn;
-          return count ?? 0;
+          // Más las de muestra (cuenta de prueba): la pantalla las muestra, y el
+          // Inicio decía «Al día» mientras adentro había 3 (2026-10-07).
+          return (count ?? 0) + (await muestrasDe(admin, customerId, "inyeccion")).length;
         })(),
         // Cuenta de prueba: la app ofrece el «modo de prueba» en Cuenta.
         prueba: await esDePrueba(customerId),

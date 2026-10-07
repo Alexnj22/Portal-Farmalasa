@@ -21,7 +21,7 @@ export default function Pestanas() {
       </NativeTabs.Trigger>
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="catalogo">
         <NativeTabs.Trigger.Icon sf={{ default: 'pills', selected: 'pills.fill' }} md="medication" />
-        <NativeTabs.Trigger.Label>Catálogo</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Tienda</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       {/* El carrito, con cuántos productos lleva. Inyecciones pasó al Inicio. */}
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="carrito">

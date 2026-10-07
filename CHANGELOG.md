@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1245.0 — App: pago del carrito de una vez con documento, efectos por nivel, subir de nivel, compartir ofertas y Tienda
+
+- **El carrito se paga de una vez:** al reservar se elige dónde recoger, **cómo pagar** (en línea ahora con Wompi, o al retirar) y **qué documento** (consumidor final o crédito fiscal). Un solo cobro por todo el pedido (`app_reservas_pagos.pedido`; `app_reserva_pago_confirmar` marca pagadas todas las filas del pedido). Pagar una reserva que es parte de un pedido cobra el pedido entero.
+- **Crédito fiscal:** si la ficha tiene los datos completos se muestran; si falta algo, la app los pide y los valida (NIT de 14 dígitos o DUI homologado con su dígito verificador, NRC con guion, giro, dirección; `_shared/fiscal.ts`, igual en la app). Se guardan en `app_reservas.documento` / `datos_fiscales` y el tablero de reservas del portal los muestra («CCF» y los datos para facturar).
+- **Ficha del producto:** se elige la presentación tocándola y la cantidad con +/−; el botón dice «Agregar · $total».
+- **Tarjeta por nivel:** colores más distintos (plata clara, oro intenso, platino negro titanio) y acabados: metal cepillado (Plata), destellos (Oro), holograma que sigue la inclinación + destellos (Platino) (`EfectoNivel.js`). El nivel va justo debajo de la tarjeta y muestra lo que se gana al llegar al siguiente.
+- **¡Subiste de nivel!:** pantalla completa con los colores y el acabado del nivel, confeti y sus beneficios, la primera vez que la app ve un nivel más alto (también en modo de prueba).
+- **Compartir ofertas:** botón «Compartir» en la oferta con la FOTO y un enlace (Instagram Historias, WhatsApp, Facebook…). El enlace `portal.farmasalud.lat/o/<id>` abre la oferta en la app (enlace universal) o, sin la app, una página con la oferta (`public/oferta-compartida.html`).
+- **Wallet:** si Wallet ya tiene la tarjeta (también oculta), la app la reemplaza y la abre en vez de mostrar la hoja vacía.
+- «Catálogo» pasa a llamarse **Tienda**; en las categorías, «Todo / Quitar filtro»; Inyecciones en el Inicio cuenta lo mismo que la pantalla.
+
 ## v2.1244.0 — App: carrito, Inicio con inyecciones, modo de prueba, código para retirar y aviso a la sucursal
 
 - **Carrito** (pestaña nueva, con el número de productos en el ícono): desde la ficha de un producto, «Agregar al carrito» (la presentación mayor, o cualquiera desde su renglón). El carrito vive en el teléfono (hasta 10 productos, 5 unidades c/u), muestra el precio VIP y el ahorro, ordena las sucursales por «tiene todo» y **reserva todo junto para retirar** como un pedido `P-XXXXXX` (`reservar_carrito`: el precio lo calcula el servidor; bajo receta no se reserva; un pedido cuenta como UNA reserva en el tope de 3). Columna `app_reservas.pedido`, `app_carrito_existencias`.

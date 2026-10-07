@@ -52,12 +52,13 @@ const vibrar = (fuerte) => Haptics.impactAsync(fuerte ? Haptics.ImpactFeedbackSt
 // Los colores de cada nivel (plan aprobado 2026-10-07): morada (Cliente VIP),
 // plata, dorada y platino. El texto queda blanco en las cuatro.
 export const COLORES_NIVEL = {
-  vip: { frente: ['#2B0B3A', T['logo-magenta'], '#5B1E9C'], reverso: ['#1A0822', '#3A1048'], rotulo: 'SOCIO VIP' },
-  // Más distintos entre sí (2026-10-07): plata clara y metálica, oro intenso,
-  // platino negro titanio con holograma.
-  plata: { frente: ['#59606C', '#C3CAD4', '#7C8492'], reverso: ['#2F343C', '#5A616C'], rotulo: 'PLATA' },
-  oro: { frente: ['#6B4300', '#E5AE34', '#8A5A05'], reverso: ['#3D2600', '#7A5208'], rotulo: 'ORO' },
-  platino: { frente: ['#06080D', '#2C3445', '#0A0D14'], reverso: ['#030406', '#1C2230'], rotulo: 'PLATINO' },
+  // Cada nivel con su propio tono, no variaciones de gris (2026-10-07):
+  //   VIP morado de la marca · Plata hielo azulado · Oro dorado cálido ·
+  //   Platino negro grafito con holograma.
+  vip: { frente: ['#2B0B3A', T['logo-magenta'], '#5B1E9C'], reverso: ['#1A0822', '#3A1048'], rotulo: 'SOCIO VIP', sombra: '#5B1E9C' },
+  plata: { frente: ['#5D7086', '#D9E4EF', '#7E93AA'], reverso: ['#2E3B4B', '#53667C'], rotulo: 'PLATA', sombra: '#5D7086' },
+  oro: { frente: ['#8A5200', '#FFCC4D', '#B9780A'], reverso: ['#4A2C00', '#8F5C06'], rotulo: 'ORO', sombra: '#B9780A' },
+  platino: { frente: ['#05060A', '#363C4C', '#05060A'], reverso: ['#000000', '#1A1E28'], rotulo: 'PLATINO', sombra: '#000000' },
 };
 
 export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel = 'vip', activa = true }) {
@@ -178,7 +179,7 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
     <>
     {activa && !reducir ? <Sensor salidaX={sx} salidaY={sy} /> : null}
     <GestureDetector gesture={gestos}>
-      <Animated.View style={[{ aspectRatio: 1.586, width: '100%' }, estilos.sombra, sombra, ladeo]}
+      <Animated.View style={[{ aspectRatio: 1.586, width: '100%' }, estilos.sombra, { shadowColor: paleta.sombra }, sombra, ladeo]}
         accessible accessibilityRole="button"
         accessibilityLabel={`Tu tarjeta ${paleta.rotulo.toLowerCase()}. Saldo ${dolares(equivale)}. Toca para ver tu código.`}
         accessibilityHint="Gira la tarjeta" onAccessibilityTap={voltear}>
@@ -265,16 +266,16 @@ const estilos = StyleSheet.create({
   cara: { borderRadius: 22, overflow: 'hidden', backfaceVisibility: 'hidden' },
   sombra: { shadowColor: '#2B0B3A', shadowRadius: 22, borderRadius: 22 },
   contenido: { flex: 1, padding: 20, justifyContent: 'space-between' },
-  marca: { color: '#FFFFFF', fontSize: 15, fontWeight: '800', letterSpacing: 2 },
+  marca: { color: '#FFFFFF', fontSize: 15, fontWeight: '800', letterSpacing: 2, textShadowColor: 'rgba(0,0,0,0.3)', textShadowRadius: 5 },
   socio: { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '800', letterSpacing: 2.5 },
   chip: { width: 46, height: 34, borderRadius: 7 },
   halo: {
     padding: 6, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
     shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },
   },
-  nombre: { color: '#FFFFFF', fontSize: 17, fontWeight: '700', letterSpacing: 1.5 },
+  nombre: { color: '#FFFFFF', fontSize: 17, fontWeight: '700', letterSpacing: 1.5, textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 6 },
   desde: { color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: '600' },
-  saldo: { color: '#FFFFFF', fontSize: 30, fontWeight: '900', letterSpacing: -0.5, fontVariant: ['tabular-nums'] },
+  saldo: { color: '#FFFFFF', fontSize: 30, fontWeight: '900', letterSpacing: -0.5, fontVariant: ['tabular-nums'], textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 8 },
   puntos: { color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '700' },
   qr: { backgroundColor: '#FFFFFF', padding: 10, borderRadius: 14 },
   codigo: { color: '#FFFFFF', fontSize: 32, fontWeight: '900', letterSpacing: 6, fontVariant: ['tabular-nums'] },

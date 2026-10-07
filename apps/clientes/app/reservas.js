@@ -44,7 +44,31 @@ export default function Reservas() {
   const [d, setD] = useState(null);
   const [ahora, setAhora] = useState(Date.now());
   const [refrescando, setRefrescando] = useState(false);
-  const cargar = useCallback(() => pedir('mis_reservas').then((r) => setD((ant) => (r?.ok || !ant?.ok ? r : ant))), [pedir]);
+  const [encargos, setEncargos] = useState([]);
+  const cargar = useCallback(() => Promise.all([
+    pedir('mis_reservas').then((r) => setD((ant) => (r?.ok || !ant?.ok ? r : ant))),
+    pedir('mis_encargos').then((r) => { if (r?.ok) setEncargos(r.encargos); }),
+  ]), [pedir]);
+  // Pagar el anticipo de un encargo confirmado (Wompi, como las reservas).
+  const pagarEncargo = async (e) => {
+    const res = await pedir('pagar_encargo', { id: e.id });
+    if (!res?.ok) { Alert.alert('No se pudo abrir el pago', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
+    await WebBrowser.openAuthSessionAsync(res.url, 'puntossalud://reservas');
+    for (let i = 0; i < 4; i++) {
+      const r = await pedir('mis_encargos');
+      if (r?.ok) setEncargos(r.encargos);
+      if (r?.encargos?.find((x) => x.id === e.id)?.pago_estado === 'pagado') { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); break; }
+      await new Promise((ok) => setTimeout(ok, 1500));
+    }
+  };
+  const cancelarEncargo = (e) => Alert.alert('Cancelar encargo', `¿Cancelar ${e.producto_nombre}?`, [
+    { text: 'No', style: 'cancel' },
+    { text: 'Cancelar encargo', style: 'destructive', onPress: async () => {
+      const res = await pedir('cancelar_encargo', { id: e.id });
+      if (!res?.ok) Alert.alert('No se pudo cancelar', res?.mensaje ?? 'Revisa tu conexión.');
+      cargar();
+    } },
+  ]);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
   useEffect(() => { const id = setInterval(() => setAhora(Date.now()), 30000); return () => clearInterval(id); }, []);
@@ -87,7 +111,7 @@ export default function Reservas() {
 
   if (!d) return <Cargando />;
   if (!d.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}><Vacio titulo="No se pudieron cargar">{d.mensaje ?? 'Revisa tu conexión y desliza hacia abajo para reintentar.'}</Vacio></Pantalla>;
-  if (!d.reservas.length) {
+  if (!d.reservas.length && !encargos.length) {
     return (
       <Pantalla conPestanas={false}>
         <Vacio titulo="Sin reservas">Aparta productos de las ofertas y pásalos a retirar sin hacer fila.</Vacio>
@@ -101,6 +125,13 @@ export default function Reservas() {
   const cerradas = d.reservas.filter((r) => r.estado !== 'pendiente' && r.estado !== 'lista');
   return (
     <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
+      {encargos.length ? (
+        <>
+          <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4 }}>Encargos</Text>
+          {encargos.map((e) => <Encargo key={e.id} e={e} alPagar={() => pagarEncargo(e)} alCancelar={() => cancelarEncargo(e)} />)}
+          {abiertas.length ? <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4, marginTop: 8 }}>Reservas</Text> : null}
+        </>
+      ) : null}
       {abiertas.map((r, i) => (
         <Entrada key={r.id} indice={Math.min(i, 8)}>
           <ReservaAbierta r={r} ahora={ahora} alCancelar={() => cancelar(r)} alPagar={() => pagar(r)} pagando={pagando === r.id} />
@@ -350,5 +381,58 @@ function Pildora({ e }) {
     <View style={{ alignSelf: 'flex-start', backgroundColor: e.fondo, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
       <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 12, fontWeight: '800', color: e.color }}>{e.texto}</Text>
     </View>
+  );
+}
+
+// Un encargo (2026-10-07): en qué paso va, el precio y la fecha cuando la
+// sucursal confirma, y pagar el anticipo para asegurarlo.
+const PASOS_ENCARGO = ['solicitado', 'confirmado', 'aceptado', 'pedido', 'listo'];
+const TEXTO_ENCARGO = {
+  solicitado: 'La sucursal está revisando si lo puede conseguir',
+  confirmado: 'Se puede conseguir: confírmalo pagando el anticipo',
+  aceptado: 'Pagado: ya lo estamos pidiendo',
+  pedido: 'Pedido al proveedor',
+  listo: '¡Llegó! Pasa a retirarlo',
+  entregado: 'Entregado',
+  rechazado: 'No se pudo conseguir',
+  cancelado: 'Cancelado',
+};
+function Encargo({ e, alPagar, alCancelar }) {
+  const t = useTema();
+  const paso = PASOS_ENCARGO.indexOf(e.estado);
+  const cerrado = paso < 0;
+  return (
+    <Tarjeta tono={e.estado === 'listo' ? t.color.verde : e.estado === 'confirmado' ? t.color.magenta : undefined} estilo={{ gap: 12, opacity: cerrado ? 0.7 : 1 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Icono sf="shippingbox.fill" respaldo="" tam={14} color={colorSistema.texto2} />
+          <Text style={{ fontSize: 12, fontWeight: '800', letterSpacing: 0.5, color: colorSistema.texto2 }}>ENCARGO</Text>
+        </View>
+        <Text style={{ fontSize: 13, fontWeight: '800', color: colorSistema.texto3, fontVariant: ['tabular-nums'] }}>{e.codigo}</Text>
+      </View>
+      <Text style={{ fontSize: 18, fontWeight: '800', color: colorSistema.texto }}>{e.cantidad} × {e.producto_nombre}</Text>
+      {!cerrado ? (
+        <View style={{ flexDirection: 'row', gap: 4 }}>
+          {PASOS_ENCARGO.map((p, i) => (
+            <View key={p} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: i <= paso ? (e.estado === 'listo' ? '#34C759' : t.color.magenta) : (t.oscuro ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)') }} />
+          ))}
+        </View>
+      ) : null}
+      <Text style={{ fontSize: 14, fontWeight: '600', color: colorSistema.texto }}>{TEXTO_ENCARGO[e.estado] ?? e.estado}</Text>
+      {e.precio_unitario != null ? (
+        <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>
+          {dolares(e.anticipo)} en total{e.fecha_estimada ? ` · llega aprox. el ${fecha(e.fecha_estimada)}` : ''} · retiro en {e.sala}
+        </Text>
+      ) : <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>Retiro en {e.sala}</Text>}
+      {e.nota_sucursal ? <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>«{e.nota_sucursal}»</Text> : null}
+      {e.estado === 'confirmado' && e.pago_estado !== 'pagado' ? (
+        <Boton alTocar={alPagar}>{`Confirmar y pagar ${dolares(e.anticipo)}`}</Boton>
+      ) : null}
+      {(e.estado === 'solicitado' || e.estado === 'confirmado') && e.pago_estado !== 'pagado' ? (
+        <Pressable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center' }}>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.rojo }}>Cancelar encargo</Text>
+        </Pressable>
+      ) : null}
+    </Tarjeta>
   );
 }

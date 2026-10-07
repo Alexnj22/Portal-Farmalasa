@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { MAX_UNIDADES, useCarrito } from '../../lib/carrito';
+import EncargoHoja from '../../componentes/EncargoHoja';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -32,6 +33,7 @@ export default function Producto() {
   // Lo que se va a agregar: la presentación (por factor) y cuántas.
   const [sel, setSel] = useState(null);
   const [cant, setCant] = useState(1);
+  const [encargando, setEncargando] = useState(false);
   const cargar = () => { setD(null); llamar('catalogo_producto', { id: Number(id) }).then((r) => setD(r ?? { ok: false })); };
   useEffect(() => { cargar(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -165,7 +167,16 @@ export default function Producto() {
 
       {/* Abajo, fijos: agregar al carrito (la presentación mayor) y consultar. */}
       <View style={{ position: 'absolute', left: 16, right: 16, bottom: ins.bottom + 12, flexDirection: 'row', gap: 10 }}>
-        {p.bajo_receta ? (
+        {!p.bajo_receta && !(p.existencias ?? []).length ? (
+          // No hay en ninguna sucursal: se pide por encargo (2026-10-07).
+          <Pressable onPress={() => setEncargando(true)} accessibilityRole="button" accessibilityLabel="Pedir por encargo"
+            style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 54, borderRadius: 999,
+              backgroundColor: t.color.magenta, transform: [{ scale: pressed ? 0.97 : 1 }],
+              shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } })}>
+            <Icono sf="shippingbox.fill" respaldo="📦" tam={17} color="#FFFFFF" />
+            <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '800' }}>Pedir por encargo</Text>
+          </Pressable>
+        ) : p.bajo_receta ? (
           <View style={{ flex: 1, minHeight: 54, borderRadius: 999, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14,
             backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)' }}>
             <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto2, textAlign: 'center' }}>Bajo receta: se compra en la sucursal</Text>
@@ -204,6 +215,7 @@ export default function Producto() {
         </Pressable>
       </View>
 
+      {encargando ? <EncargoHoja producto={p} presentacion={elegidaP} salas={p.salas} alCerrar={() => setEncargando(false)} /> : null}
       <Pressable onPress={cerrar} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cerrar"
         style={{ position: 'absolute', top: 14, right: 14, width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center',
           backgroundColor: 'rgba(0,0,0,0.45)' }}>

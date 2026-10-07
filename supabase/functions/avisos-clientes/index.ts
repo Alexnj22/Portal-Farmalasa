@@ -108,6 +108,22 @@ Deno.serve(async (req) => {
         url: l.origen === "cumpleanos" ? "/puntos?cumple=1" : "/puntos" });
     }
 
+    // ── Encargos: la sucursal respondió o ya llegó (2026-10-07) ──
+    const { data: encs, error: eE } = !inmediato ? { data: [], error: null } : await admin.from("app_encargos")
+      .select("id, customer_id, estado, producto_nombre, anticipo, fecha_estimada, nota_sucursal")
+      .in("customer_id", clientes).in("estado", ["confirmado", "rechazado", "listo"])
+      .gte("updated_at", new Date(Date.now() - 2 * 3600_000).toISOString());
+    if (eE) throw eE;
+    for (const e of encs ?? []) {
+      const cod = `E-${String(e.id).padStart(6, "0")}`;
+      const [titulo, cuerpo] = e.estado === "confirmado"
+        ? [`Tu encargo ${cod} se puede conseguir`, `${e.producto_nombre}: llega aprox. el ${String(e.fecha_estimada).split("-").reverse().join("/")}. Confírmalo pagando el anticipo de $${Number(e.anticipo).toFixed(2)}.`]
+        : e.estado === "rechazado"
+          ? [`Tu encargo ${cod} no se pudo conseguir`, e.nota_sucursal ?? "Por ahora no lo podemos conseguir."]
+          : [`¡Tu encargo ${cod} ya llegó!`, `${e.producto_nombre} te espera en la sucursal.`];
+      candidatos.push({ customer_id: e.customer_id, tipo: "encargo", ref: `encargo:${e.id}:${e.estado}`, titulo, cuerpo, url: "/reservas" });
+    }
+
     // ── Vence: lo que vence dentro de 15 días (ventana de 2 por si una vuelta falla)
     const { data: vence, error: eV } = !diario ? { data: [], error: null } : await admin.from("puntos_lote")
       .select("customer_id, vence_el, restantes")

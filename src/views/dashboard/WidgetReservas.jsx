@@ -4,6 +4,7 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import ListRow from '../../components/common/ListRow';
 import SearchInput from '../../components/common/SearchInput';
+import WidgetEncargos from './WidgetEncargos';
 import LiquidModal from '../../components/common/LiquidModal';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
@@ -12,6 +13,7 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 import {
     cambiarEstadoReserva, codigoDeReserva, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp,
     mensajeDeReservaLista, whatsappDe,
@@ -41,6 +43,9 @@ export default function WidgetReservas({ todas = false }) {
     const miSala = todas ? null : (user?.branchId ?? user?.branch_id ?? null);
     const branches = useStaff((st) => st.branches);
     const nombreSala = (branches || []).find((b) => String(b.id) === String(miSala))?.name ?? '';
+    // Bodega no tiene reservas propias, pero ve TODOS los encargos (2026-10-07).
+    const esBodega = (branches || []).find((b) => String(b.id) === String(miSala))?.type === 'BODEGA';
+    const salaEncargos = todas || esBodega ? null : miSala;
 
     const [filas, setFilas] = useState([]);
     const [cargando, setCargando] = useState(true);
@@ -91,7 +96,12 @@ export default function WidgetReservas({ todas = false }) {
         return <EmptyState icon={ShoppingBag} compact title="Sin sala asignada" subtitle="Las reservas son de una sala de ventas." />;
     }
     if (!filas.length) {
-        return <EmptyState icon={CheckCircle2} compact title="Sin reservas" subtitle="Cuando un cliente aparte algo desde la app, aparece aquí." />;
+        return (
+            <div className="flex flex-col h-full">
+                {!esBodega && <EmptyState icon={CheckCircle2} compact title="Sin reservas" subtitle="Cuando un cliente aparte algo desde la app, aparece aquí." />}
+                <WidgetEncargos branchId={salaEncargos} />
+            </div>
+        );
     }
 
     const pendientes = filas.filter((r) => r.estado === 'pendiente').length;
@@ -113,7 +123,7 @@ export default function WidgetReservas({ todas = false }) {
                 ariaLabel="Buscar una reserva por su código" />
             {delPedido.length > 0 && (
                 <p className="text-body-sm text-content">
-                    <b>Pedido {buscado}</b> · {delPedido.length} {delPedido.length === 1 ? 'producto' : 'productos'} · {String(delPedido[0].cliente ?? '').split(/\s+/)[0]} · total ${totalPedido.toFixed(2)}
+                    <b>Pedido {buscado}</b> · {delPedido.length} {delPedido.length === 1 ? 'producto' : 'productos'} · {String(delPedido[0].cliente ?? '').split(/\s+/)[0]} · total {formatMoney(totalPedido)}
                     {delPedido.every((r) => r.pago_estado === 'pagado') ? ' · pagado en línea' : ' · se cobra en caja'}
                 </p>
             )}
@@ -171,6 +181,7 @@ export default function WidgetReservas({ todas = false }) {
             {!todas && !buscado && filas.length > MAX_FILAS && (
                 <span className="text-label text-content-3 mt-auto">y {filas.length - MAX_FILAS} más</span>
             )}
+            <WidgetEncargos branchId={salaEncargos} />
             {whatsapp && (
                 <AvisoWhatsapp reserva={whatsapp} onCerrar={() => setWhatsapp(null)}
                     onEnviado={async () => {

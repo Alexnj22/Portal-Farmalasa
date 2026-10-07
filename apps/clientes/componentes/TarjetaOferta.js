@@ -8,7 +8,7 @@
 //   · la etiqueta aparece con un rebote, un poco después;
 //   · si quedan 3 días o menos, el aviso de «quedan N días» late.
 import { useEffect, useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image as ImagenCache } from 'expo-image';
 import Animated, {
@@ -20,6 +20,7 @@ import { colorSistema } from './sistema';
 import { dolares, diasHasta, fecha } from '../lib/formato';
 import { acentoDe, suave, useTema } from '../tema/tema';
 import Icono from './Icono';
+import { compartirOferta } from '../lib/compartir';
 
 export function Pildora({ color, texto, solida = false }) {
   const t = useTema();
@@ -58,7 +59,7 @@ export function Plazo({ fin, color }) {
 }
 
 /** La foto (o el degradado del acento) con la etiqueta y el título encima. */
-export function PortadaOferta({ oferta: o, alto = 230, conTitulo = true }) {
+export function PortadaOferta({ oferta: o, alto = 230, conTitulo = true, compartible = true }) {
   const t = useTema();
   const a = acentoDe(t, o.acento);
   const zoom = useSharedValue(1.12);
@@ -101,6 +102,7 @@ export function PortadaOferta({ oferta: o, alto = 230, conTitulo = true }) {
             <Text style={{ fontSize: 24, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.5 }}>{o.etiqueta}</Text>
           </Animated.View>
         ) : <View />}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         {o.exclusiva ? (
           // Fondo propio y no vidrio: sobre una foto clara el vidrio desaparece
           // y quedaba texto blanco suelto encima de la imagen.
@@ -111,6 +113,15 @@ export function PortadaOferta({ oferta: o, alto = 230, conTitulo = true }) {
             </View>
           </View>
         ) : null}
+        {/* Compartir sin abrir la oferta (2026-10-07). En el detalle va arriba, junto a cerrar. */}
+        {compartible ? (
+          <Pressable onPress={() => compartirOferta(o)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Compartir ${o.titulo}`}
+            style={({ pressed }) => ({ width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center',
+              backgroundColor: 'rgba(0,0,0,0.45)', transform: [{ scale: pressed ? 0.9 : 1 }] })}>
+            <Icono sf="square.and.arrow.up" respaldo="↗" tam={14} color="#FFFFFF" />
+          </Pressable>
+        ) : null}
+        </View>
       </View>
       {conTitulo ? (
         <View style={{ position: 'absolute', left: 18, right: 18, bottom: 16, gap: 4 }}>

@@ -458,6 +458,14 @@
       "guarda": "sin-sala",
       "motivo": "Devuelve uuids, sin nombres ni datos."
     },
+    "encargo_puede_manejar": {
+      "guarda": "alcance",
+      "motivo": "Es la guarda misma: la sala del retiro (auth_employee_branch_id), Bodega, o quien edita ofertas_clientes."
+    },
+    "encargos_de_sucursal": {
+      "guarda": "alcance",
+      "motivo": "Con sala: la propia (auth_employee_branch_id), Bodega u ofertas_clientes. Sin sala (todas): sólo Bodega u ofertas_clientes."
+    },
     "encolar_impresion": {
       "guarda": "alcance"
     },

@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1248.0 — Encargos de productos que no hay, Wallet sin hoja negra, compartir desde la lista y colores por nivel
+
+- **Encargos** (lo que no hay en ninguna sucursal): en la ficha del producto, «Pedir por encargo» con cantidad, sucursal de retiro y nota. Le llega a la sala y a Bodega (aviso en el portal y el teléfono); en el tablero de reservas confirman **precio y fecha estimada** (con aviso si el producto no es devolutivo o nunca se vendió: visto bueno del gerente) o dicen que no se puede. El cliente recibe el aviso y **confirma pagando el anticipo del 100 %** (Wompi); después se marca pedido, llegó y entregado, y el cliente ve cada paso en Mis reservas. Tabla `app_encargos`, `encargos_de_sucursal`, `encargo_responder`, `app_encargos_avisar`; `app_reservas_pagos.encargo_id` y su rama en `app_reserva_pago_confirmar`; avisos al cliente en `avisos-clientes`.
+- **Wallet ya no sale en negro:** la tarjeta del servidor estaba bien (firma válida, certificado hasta 2027); lo que fallaba era presentar la hoja de Apple sobre las pestañas nativas. Ahora se usa la alerta del sistema (`PKPassLibrary.addPasses`) y la hoja sólo si el sistema pide revisarla.
+- **Compartir** también desde la lista de ofertas, sin abrirlas; en el detalle, el botón va junto a cerrar y ya no tapa el descuento (`lib/compartir.js`).
+- Inicio: Mis reservas aparecía dos veces; queda sólo el acceso de arriba. Colores por nivel más distintos (Plata hielo azulado, Oro dorado cálido, Platino negro grafito) con la sombra del color del nivel y texto con sombra para leerse sobre los claros.
+
 ## v2.1247.0 — Ruta en vivo con la app cerrada
 
 - **La ruta se sigue viendo en vivo con la app cerrada.** Al iniciar una ruta de reparto o de Torogoz, la app pide la ubicación «Siempre» y manda la posición desde el segundo plano (reparto cada 30 s / 50 m, Torogoz cada 60 s / 100 m), con el indicador azul de iOS. Una sola tarea de fondo para los dos rastreos (`plataforma/rastreoDeFondo.js`); qué ruta toca escribir y cuándo lo decide el núcleo (`src/utils/rastreoDeFondo.js`). Se apaga sola al terminar la ruta, volver a base, cambiar de día o cerrar sesión, y al abrir la app si la ruta ya no está en curso. Con sólo «mientras se usa», la ruta inicia igual en primer plano y un aviso lleva a Ajustes.

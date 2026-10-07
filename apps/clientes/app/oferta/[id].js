@@ -14,8 +14,8 @@
 //   3. los productos con el precio antes, el de ahora y CUÁNTO se ahorra;
 //   4. las condiciones, y cómo se usa: «se aplica en caja».
 import { useEffect, useRef, useState } from 'react';
-import * as FS from 'expo-file-system/legacy';
-import { Share, Pressable, ScrollView, Text, View } from 'react-native';
+import { compartirOferta } from '../../lib/compartir';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -50,27 +50,6 @@ export default function Oferta() {
   const fondo = t.oscuro ? '#121016' : '#F5F4F8';
   const superficie = t.oscuro ? '#1E1B24' : '#FFFFFF';
   const cerrar = () => { Haptics.selectionAsync().catch(() => {}); router.back(); };
-  // Compartir (2026-10-07): la hoja del sistema con la FOTO de la oferta y el
-  // enlace. Con la foto, Instagram ofrece «Historias»; WhatsApp y Facebook la
-  // mandan con el texto. El enlace abre la oferta en la app (enlace universal
-  // /o/<id>) y, sin la app, una página con la oferta.
-  const [compartiendo, setCompartiendo] = useState(false);
-  const compartir = async (oferta) => {
-    if (compartiendo) return;
-    setCompartiendo(true);
-    Haptics.selectionAsync().catch(() => {});
-    const enlace = `https://portal.farmasalud.lat/o/${oferta.id}`;
-    const mensaje = `${oferta.titulo}${oferta.etiqueta ? ` (${oferta.etiqueta})` : ''} en Farmacia Salud. Mírala en la app Puntos Salud: ${enlace}`;
-    try {
-      let url;
-      if (oferta.imagen) {
-        const destino = `${FS.cacheDirectory}oferta-${String(oferta.id).replace(/[^\w-]/g, '')}.jpg`;
-        url = (await FS.downloadAsync(oferta.imagen, destino)).uri;
-      }
-      await Share.share(url ? { url, message: mensaje } : { message: mensaje, url: enlace });
-    } catch { /* cancelado o sin red: no pasa nada */ }
-    setCompartiendo(false);
-  };
 
   if (!datos) return <View style={{ flex: 1, backgroundColor: fondo }}><Cargando /></View>;
   // Falló la red: no es «ya no está». Se dice y se puede reintentar.
@@ -106,7 +85,7 @@ export default function Oferta() {
     <View style={{ flex: 1, backgroundColor: fondo }}>
       <ScrollView contentInsetAdjustmentBehavior="never"
         contentContainerStyle={{ paddingBottom: ins.bottom + 32, width: '100%', maxWidth: 560, alignSelf: 'center' }}>
-        <PortadaOferta oferta={o} alto={260} conTitulo={false} />
+        <PortadaOferta compartible={false} oferta={o} alto={260} conTitulo={false} />
 
         <View style={{ paddingHorizontal: 20, paddingTop: 18, gap: 16 }}>
           <Entrada indice={0} estilo={{ gap: 6 }}>
@@ -203,14 +182,13 @@ export default function Oferta() {
       {reservando ? <ReservarHoja oferta={o} producto={reservando} alCerrar={() => setReservando(null)} /> : null}
 
       {/* Cerrar: además del gesto de deslizar la hoja. */}
-      <Pressable onPress={() => compartir(o)} accessibilityRole="button" accessibilityLabel="Compartir oferta" hitSlop={10}
+      {/* Compartir: junto a cerrar, sin tapar la etiqueta del descuento. */}
+      <Pressable onPress={() => compartirOferta(o)} accessibilityRole="button" accessibilityLabel="Compartir oferta" hitSlop={10}
         style={({ pressed }) => ({
-          position: 'absolute', top: 14, left: 14, height: 34, borderRadius: 17, paddingHorizontal: 12, flexDirection: 'row', gap: 6,
-          backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center',
-          opacity: compartiendo ? 0.6 : 1, transform: [{ scale: pressed ? 0.94 : 1 }],
+          position: 'absolute', top: 14, right: 58, width: 34, height: 34, borderRadius: 17,
+          backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.92 : 1 }],
         })}>
         <Icono sf="square.and.arrow.up" respaldo="↗" tam={14} color="#FFFFFF" />
-        <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '700' }}>Compartir</Text>
       </Pressable>
       <Pressable onPress={cerrar} accessibilityRole="button" accessibilityLabel="Cerrar" hitSlop={10}
         style={({ pressed }) => ({

@@ -714,7 +714,7 @@ Deno.serve(async (req) => {
       return json({ ok: true, sucursales: conSucursal(data ?? []) });
     }
 
-    if (accion === "mis_reservas" || accion === "reservar" || accion === "cancelar_reserva" || accion === "pagar_reserva" || accion === "reservar_carrito") {
+    if (["mis_reservas", "reservar", "cancelar_reserva", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo"].includes(accion)) {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
 
@@ -835,6 +835,85 @@ Deno.serve(async (req) => {
         console.error("app-clientes: wompi no creó el enlace del pedido:", (e as Error)?.message ?? e);
         return null;
       }
+    }
+
+    // ── Encargos (2026-10-07): lo que no hay en ninguna sucursal se solicita.
+    // La sala del retiro y Bodega confirman precio y fecha (trigger
+    // `app_encargos_avisar`); el cliente acepta pagando el anticipo (100 %).
+    if (accion === "encargar") {
+      const productId = Number(body?.product_id);
+      const cantidad = Math.trunc(Number(body?.cantidad));
+      const branchId = Number(body?.branch_id);
+      if (!Number.isInteger(productId) || !(cantidad >= 1 && cantidad <= 20)) return json({ ok: false, mensaje: "Revisa el producto y la cantidad." });
+      const [{ data: p, error: eP }, { data: sala, error: eS }, { data: oc, error: eO }] = await Promise.all([
+        admin.from("products").select("id, nombre, activo, oculto_en_ventas, es_antibiotico, requiere_receta").eq("id", productId).maybeSingle(),
+        admin.from("branches").select("id").eq("id", branchId).eq("type", "FARMACIA").maybeSingle(),
+        admin.from("app_catalogo_ocultos").select("product_id").eq("product_id", productId).maybeSingle(),
+      ]);
+      if (eP) throw eP; if (eS) throw eS; if (eO) throw eO;
+      if (!p || p.activo === false || p.oculto_en_ventas || oc) return json({ ok: false, mensaje: "Este producto ya no está en la tienda." });
+      if (p.es_antibiotico || p.requiere_receta) return json({ ok: false, mensaje: "Los productos bajo receta se encargan en la sucursal, con la receta." });
+      if (!sala) return json({ ok: false, mensaje: "Elige la sucursal donde lo vas a retirar." });
+      const { count, error: eC } = await admin.from("app_encargos").select("id", { count: "exact", head: true })
+        .eq("customer_id", customerId).in("estado", ["solicitado", "confirmado", "aceptado", "pedido", "listo"]);
+      if (eC) throw eC;
+      if ((count ?? 0) >= 3) return json({ ok: false, mensaje: "Ya tienes 3 encargos en curso. Cuando llegue uno, podrás pedir otro." });
+      const { data: pr, error: ePr } = await admin.from("product_precios").select("factor, presentaciones(tipo)").eq("product_id", productId).eq("activo", true)
+        .eq("factor", Number(body?.factor) || 1).order("vineta", { ascending: false }).limit(1).maybeSingle();
+      if (ePr) throw ePr;
+      const nombre = `${p.nombre}${(pr as any)?.presentaciones?.tipo ? ` · ${(pr as any).presentaciones.tipo}` : ""}`.slice(0, 200);
+      const { data: nuevo, error: eI } = await admin.from("app_encargos").insert({
+        customer_id: customerId, branch_id: branchId, product_id: productId, producto_nombre: nombre,
+        factor: Number(body?.factor) || 1, cantidad, nota_cliente: body?.nota ? String(body.nota).slice(0, 300) : null,
+      }).select("id").single();
+      if (eI) throw eI;
+      return json({ ok: true, id: nuevo.id, codigo: `E-${String(nuevo.id).padStart(6, "0")}` });
+    }
+
+    if (accion === "mis_encargos") {
+      const { data, error } = await admin.from("app_encargos")
+        .select("id, estado, pago_estado, producto_nombre, cantidad, precio_unitario, anticipo, fecha_estimada, nota_sucursal, branch_id, created_at")
+        .eq("customer_id", customerId).gte("created_at", new Date(Date.now() - 90 * 86400_000).toISOString())
+        .order("created_at", { ascending: false }).limit(20);
+      if (error) throw error;
+      const { data: salas, error: eS } = await admin.from("branches").select("id, name");
+      if (eS) throw eS;
+      const nombre = new Map((salas ?? []).map((b: any) => [Number(b.id), sucursal(b.name)]));
+      return json({ ok: true, encargos: (data ?? []).map((e: any) => ({ ...e, codigo: `E-${String(e.id).padStart(6, "0")}`, sala: nombre.get(Number(e.branch_id)) ?? null })) });
+    }
+
+    if (accion === "pagar_encargo") {
+      const { data: e, error } = await admin.from("app_encargos").select("id, estado, pago_estado, anticipo, producto_nombre, branch_id")
+        .eq("id", Number(body?.id)).eq("customer_id", customerId).maybeSingle();
+      if (error) throw error;
+      if (!e || e.estado !== "confirmado") return json({ ok: false, mensaje: "Este encargo todavía no está confirmado por la sucursal." });
+      if (e.pago_estado === "pagado") return json({ ok: false, mensaje: "Este encargo ya está pagado." });
+      const codigo = `E-${String(e.id).padStart(6, "0")}`;
+      const identificador = `${codigo}-${Date.now().toString(36)}`;
+      const { error: eP } = await admin.from("app_reservas_pagos").insert({ encargo_id: e.id, identificador, monto: Number(e.anticipo) });
+      if (eP) throw eP;
+      const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/wompi-pagos`;
+      try {
+        const enlace = await crearEnlace({
+          identificador, monto: Number(e.anticipo), producto: `Encargo ${codigo}: ${e.producto_nombre}`.slice(0, 120),
+          descripcion: `Anticipo del encargo ${codigo}`, urlRedirect: `${base}?ref=${encodeURIComponent(identificador)}`, urlWebhook: base, minutos: 30,
+        });
+        const url = enlace.urlEnlaceLargo || enlace.urlEnlace;
+        const { error: eU } = await admin.from("app_reservas_pagos").update({ enlace_id: enlace.idEnlace, enlace_url: url }).eq("identificador", identificador);
+        if (eU) console.error("app-clientes: no se guardó el enlace del encargo:", eU.message);
+        return json({ ok: true, url, total: Number(e.anticipo), prueba: !enlace.estaProductivo });
+      } catch (err) {
+        console.error("app-clientes: wompi no creó el enlace del encargo:", (err as Error)?.message ?? err);
+        return json({ ok: false, mensaje: "El pago en línea no está disponible ahora. Intenta en un rato." });
+      }
+    }
+
+    if (accion === "cancelar_encargo") {
+      const { data, error } = await admin.from("app_encargos")
+        .update({ estado: "cancelado", cerrado_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq("id", Number(body?.id)).eq("customer_id", customerId).in("estado", ["solicitado", "confirmado"]).neq("pago_estado", "pagado").select("id");
+      if (error) throw error;
+      return json(data?.length ? { ok: true } : { ok: false, mensaje: "Ese encargo ya no se puede cancelar desde la app. Escríbele a la sucursal." });
     }
 
     // Los datos fiscales de la ficha, para pedir un crédito fiscal: si están

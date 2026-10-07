@@ -226,22 +226,6 @@ export default function Puntos() {
         </Tocable>
       </Entrada>
 
-      {/* Mis reservas: sólo cuando hay alguna abierta. */}
-      {resumen.reservas_abiertas ? (
-        <Entrada indice={4}>
-          <Tocable alTocar={() => router.push('/reservas')} etiqueta="Mis reservas">
-            <Tarjeta tono={t.color.verde} estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Icono sf="bag.fill" respaldo="🛍️" tam={26} color={t.color.verdeTexto} />
-              <View style={{ flex: 1, gap: 2 }}>
-                <Titulo>{resumen.reservas_listas ? `${resumen.reservas_listas} lista${resumen.reservas_listas > 1 ? 's' : ''} para retirar` : 'Tus reservas'}</Titulo>
-                <Texto nivel={2} estilo={{ fontSize: 14 }}>{resumen.reservas_abiertas} reserva{resumen.reservas_abiertas > 1 ? 's' : ''} activa{resumen.reservas_abiertas > 1 ? 's' : ''}</Texto>
-              </View>
-              <Icono sf="chevron.right" respaldo="›" tam={15} color={colorSistema.texto3} />
-            </Tarjeta>
-          </Tocable>
-        </Entrada>
-      ) : null}
-
       {/* Sucursales: entrada llamativa (pedido del usuario, 2026-10-06). */}
       <Entrada indice={4}>
         <Tocable alTocar={() => router.push('/sucursales')} etiqueta="Nuestras sucursales">

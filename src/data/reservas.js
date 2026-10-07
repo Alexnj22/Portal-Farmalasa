@@ -49,3 +49,19 @@ export function whatsappDe(telefono) {
     if (d.length === 11 && d.startsWith('503')) return d;
     return null;
 }
+
+// ── Encargos (2026-10-07) ────────────────────────────────────────────────────
+// Lo que el cliente pide desde la app porque no hay en ninguna sucursal. Lo
+// ven la sala del retiro y Bodega (con `null`, todos: Bodega o quien maneja
+// ofertas para clientes).
+
+export const codigoDeEncargo = (id) => `E-${String(id).padStart(6, '0')}`;
+
+export async function fetchEncargos(branchId, abiertos = true) {
+    return sinError(await supabase.rpc('encargos_de_sucursal', { p_branch_id: branchId == null ? null : Number(branchId), p_abiertos: abiertos })) ?? [];
+}
+
+/** `accion`: confirmar (con precio y fecha), rechazar (con nota), pedido, listo o entregado. */
+export async function responderEncargo(id, accion, { precio = null, fecha = null, nota = null } = {}) {
+    return sinError(await supabase.rpc('encargo_responder', { p_id: id, p_accion: accion, p_precio: precio, p_fecha: fecha, p_nota: nota }));
+}

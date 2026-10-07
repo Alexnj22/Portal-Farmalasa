@@ -1,7 +1,9 @@
 // El catálogo (2026-10-07): todos los productos con su precio de viñeta y su
 // precio VIP —el que paga el socio—, y si hay en alguna sucursal. Sin buscar,
 // lo más vendido de los últimos 60 días; con la barra del sistema, por nombre
-// o principio activo. Al tocar un producto se abre su ficha.
+// o principio activo. Al tocar un producto se abre su ficha. Por PÁGINAS de 20
+// con «Anterior / Siguiente» abajo (usuario, 2026-10-07: «una lista infinita
+// no es bonito»).
 //
 // Las tarjetas NO son de vidrio: son muchas en una lista que se desplaza, y el
 // vidrio de iOS 26 cuesta por cada una. Un fondo translúcido sólido se ve igual
@@ -20,6 +22,8 @@ import { dolares } from '../../../lib/formato';
 import { BUSQUEDAS, nombreProducto } from '../../../lib/catalogo';
 import { suave, useTema } from '../../../tema/tema';
 
+const POR_PAGINA = 20;
+
 export default function Catalogo() {
   const t = useTema();
   const [texto, setTexto] = useState('');
@@ -27,28 +31,34 @@ export default function Catalogo() {
   const [lista, setLista] = useState(null);
   const [hayMas, setHayMas] = useState(false);
   const [error, setError] = useState(false);
-  const [cargandoMas, setCargandoMas] = useState(false);
+  const [pagina, setPagina] = useState(0);
+  const [cambiando, setCambiando] = useState(false);
   const pedido = useRef(0);
+  const listaRef = useRef(null);
 
   // La búsqueda sale 300 ms después de la última tecla.
   useEffect(() => { const id = setTimeout(() => setQ(texto.trim()), 300); return () => clearTimeout(id); }, [texto]);
 
-  const cargar = useCallback(async (desde = 0) => {
+  const cargar = useCallback(async (p) => {
     const n = ++pedido.current;
-    if (desde === 0) setError(false);
-    const r = await llamar('catalogo', { q, desde });
+    setError(false);
+    const r = await llamar('catalogo', { q, desde: p * POR_PAGINA, limite: POR_PAGINA });
     if (n !== pedido.current) return; // llegó tarde: ya se pidió otra cosa
-    if (!r?.ok) { if (desde === 0) setError(true); return; }
-    setLista((ant) => (desde === 0 ? r.productos : [...(ant ?? []), ...r.productos]));
+    if (!r?.ok) { setError(true); return; }
+    setLista(r.productos);
     setHayMas(!!r.hay_mas);
+    setPagina(p);
   }, [q]);
+  // Otra búsqueda: de vuelta a la página 1.
   useEffect(() => { setLista(null); cargar(0); }, [cargar]);
 
-  const mas = async () => {
-    if (!hayMas || cargandoMas || !lista) return;
-    setCargandoMas(true);
-    await cargar(lista.length);
-    setCargandoMas(false);
+  const irA = async (p) => {
+    if (cambiando || p < 0) return;
+    Haptics.selectionAsync().catch(() => {});
+    setCambiando(true);
+    await cargar(p);
+    setCambiando(false);
+    listaRef.current?.scrollToOffset({ offset: 0, animated: true });
   };
 
   const encabezado = (
@@ -89,6 +99,7 @@ export default function Catalogo() {
         },
       }} />
       <FlatList
+        ref={listaRef}
         data={lista ?? []}
         keyExtractor={(p) => String(p.id)}
         numColumns={2}
@@ -98,8 +109,6 @@ export default function Catalogo() {
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={encabezado}
-        onEndReached={mas}
-        onEndReachedThreshold={0.6}
         initialNumToRender={8}
         windowSize={7}
         removeClippedSubviews
@@ -109,7 +118,9 @@ export default function Catalogo() {
             : !lista ? <ActivityIndicator style={{ marginTop: 40 }} />
               : <Vacio titulo="Sin resultados">Prueba con otro nombre o con el principio activo.</Vacio>
         }
-        ListFooterComponent={cargandoMas ? <ActivityIndicator style={{ marginVertical: 16 }} /> : null}
+        ListFooterComponent={lista?.length && (pagina > 0 || hayMas) ? (
+          <Paginas pagina={pagina} hayMas={hayMas} cargando={cambiando} alAnterior={() => irA(pagina - 1)} alSiguiente={() => irA(pagina + 1)} />
+        ) : null}
       />
     </>
   );
@@ -172,5 +183,32 @@ function TarjetaProducto({ p }) {
         )}
       </View>
     </Pressable>
+  );
+}
+
+// «‹ Anterior · Página 2 · Siguiente ›», como un paginador del sistema.
+function Paginas({ pagina, hayMas, cargando, alAnterior, alSiguiente }) {
+  const t = useTema();
+  const boton = (habilitado) => ({ pressed }) => ({
+    flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 16, borderRadius: 999,
+    backgroundColor: t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)',
+    opacity: habilitado ? 1 : 0.35, transform: [{ scale: pressed && habilitado ? 0.96 : 1 }],
+  });
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+      <Pressable onPress={alAnterior} disabled={pagina === 0 || cargando} accessibilityRole="button" accessibilityLabel="Página anterior"
+        style={boton(pagina > 0 && !cargando)}>
+        <Icono sf="chevron.left" respaldo="‹" tam={13} color={colorSistema.texto} />
+        <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>Anterior</Text>
+      </Pressable>
+      {cargando ? <ActivityIndicator /> : (
+        <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto2, fontVariant: ['tabular-nums'] }}>Página {pagina + 1}</Text>
+      )}
+      <Pressable onPress={alSiguiente} disabled={!hayMas || cargando} accessibilityRole="button" accessibilityLabel="Página siguiente"
+        style={boton(hayMas && !cargando)}>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>Siguiente</Text>
+        <Icono sf="chevron.right" respaldo="›" tam={13} color={colorSistema.texto} />
+      </Pressable>
+    </View>
   );
 }

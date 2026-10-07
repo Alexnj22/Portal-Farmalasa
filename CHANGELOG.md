@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1242.4 — Catálogo de la app por páginas
+
+- **Catálogo de la app por páginas** de 20, con «Anterior · Página N · Siguiente» al pie (antes era una lista infinita). `catalogo` acepta `limite` (1–50).
+
 ## v2.1242.3 — Interruptor «Se ve en la app» en la ficha del producto
 
 - **Productos: «Se ve en la app» / «Oculto en la app».** Botón en la ficha del producto (Productos → Catálogo, junto a Devolutivo) que decide si el producto aparece en el catálogo de la app de clientes. Por defecto todos se ven; ocultar deja una fila en `app_catalogo_ocultos` (tabla aparte para no hacer DDL sobre `products`, que el sync escribe cada minuto), con quién lo ocultó y bitácora. `app_catalogo` y `app_catalogo_producto` lo respetan.

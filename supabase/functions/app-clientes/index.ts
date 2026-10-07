@@ -511,7 +511,8 @@ Deno.serve(async (req) => {
     if (accion === "catalogo") {
       const q = String(body?.q ?? "").slice(0, 60);
       const desde = Math.max(0, Math.min(1000, Number(body?.desde) || 0));
-      const { data, error } = await admin.rpc("app_catalogo", { p_q: q, p_desde: desde, p_limite: 30 });
+      const limite = Math.max(1, Math.min(50, Number(body?.limite) || 30));
+      const { data, error } = await admin.rpc("app_catalogo", { p_q: q, p_desde: desde, p_limite: limite });
       if (error) throw error;
       return json({ ok: true, ...(data as any) });
     }

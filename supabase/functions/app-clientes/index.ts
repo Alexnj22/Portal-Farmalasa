@@ -904,6 +904,11 @@ Deno.serve(async (req) => {
       if (eNac) console.error("no se pudo leer el cumpleaños:", eNac.message);
       const { data: cfgP, error: eCfg } = await admin.from("puntos_config").select("puntos_cumpleanos").limit(1).maybeSingle();
       const nivel = await nivelDeCliente(admin, customerId);
+      // El cupón del mes (Platino): puntos que vencen a fin de mes.
+      const inicioMes = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 8) + "01";
+      const { data: cup, error: eCup } = await admin.from("puntos_lote").select("puntos, restantes, vence_el, motivo")
+        .eq("customer_id", customerId).eq("origen", "cupon").gte("ganado_el", inicioMes).maybeSingle();
+      if (eCup) throw eCup;
       if (eCfg) console.error("no se pudo leer la configuración:", eCfg.message);
       const cumpleanos = String(nac?.fecha_nacimiento ?? "").slice(5, 10) === hoyMD
         || (await muestrasDe(admin, customerId, "cumpleanos")).length > 0;
@@ -922,6 +927,7 @@ Deno.serve(async (req) => {
         wallet_serial: `socio-${customerId}`,
         // El nivel (Plata/Oro/Platino) y cuánto falta para el siguiente.
         nivel,
+        cupon: cup ? { puntos: Number(cup.puntos), restantes: Number(cup.restantes), vence: cup.vence_el, titulo: cup.motivo } : null,
         regalo_cumpleanos: nivel.clave === "vip" ? Number(cfgP?.puntos_cumpleanos ?? 0) : nivel.cumpleanos,
         codigo,
         socio_desde: primero?.ganado_el ?? null,

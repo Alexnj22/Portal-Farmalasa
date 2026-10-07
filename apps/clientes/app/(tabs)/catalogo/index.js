@@ -14,10 +14,11 @@ import { colorSistema } from '../../../componentes/sistema';
 import { Vacio } from '../../../componentes/ui';
 import Icono from '../../../componentes/Icono';
 import FotoProducto from '../../../componentes/FotoProducto';
+import BannerPromos from '../../../componentes/BannerPromos';
 import { llamar } from '../../../lib/api';
 import { dolares } from '../../../lib/formato';
 import { BUSQUEDAS, nombreProducto } from '../../../lib/catalogo';
-import { useTema } from '../../../tema/tema';
+import { suave, useTema } from '../../../tema/tema';
 
 export default function Catalogo() {
   const t = useTema();
@@ -52,6 +53,8 @@ export default function Catalogo() {
 
   const encabezado = (
     <View style={{ gap: 12, marginBottom: 6 }}>
+      {/* Promociones arriba (las mismas ofertas del portal), sólo sin buscar. */}
+      {!q ? <BannerPromos /> : null}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 2 }}>
         {BUSQUEDAS.map((b) => {
           const activa = q === b.q && texto === b.q;
@@ -137,15 +140,25 @@ function TarjetaProducto({ p }) {
       </View>
       <View style={{ gap: 2, paddingHorizontal: 2 }}>
         <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto, lineHeight: 18 }} numberOfLines={2}>{nombreProducto(p.nombre)}</Text>
+        {/* El precio es el de la presentación MAYOR (la caja); si hay más, se dice. */}
         <Text style={{ fontSize: 12, color: colorSistema.texto3 }} numberOfLines={1}>
-          {p.disponible ? (p.presentaciones > 1 ? `${p.presentaciones} presentaciones` : nombreProducto(p.presentacion ?? '')) : 'Sin existencia'}
+          {p.disponible ? nombreProducto(p.presentacion || 'Unidad') : 'Sin existencia'}
         </Text>
+        {p.presentaciones > 1 ? (
+          <View style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2, borderRadius: 999,
+            paddingHorizontal: 8, paddingVertical: 3, backgroundColor: suave(t.color.magenta, t.oscuro ? 0.28 : 0.12) }}>
+            <Icono sf="square.stack.3d.up.fill" respaldo="" tam={10} color={t.color.magentaTexto} />
+            <Text maxFontSizeMultiplier={1.2} style={{ fontSize: 11, fontWeight: '800', color: t.color.magentaTexto }}>
+              +{p.presentaciones - 1} {p.presentaciones - 1 === 1 ? 'presentación' : 'presentaciones'}
+            </Text>
+          </View>
+        ) : null}
       </View>
       <View style={{ gap: 0, paddingHorizontal: 2 }}>
         {p.precio_vip != null ? (
           <>
             <Text style={{ fontSize: 12, color: colorSistema.texto3, textDecorationLine: 'line-through', fontVariant: ['tabular-nums'] }}>
-              {p.presentaciones > 1 ? 'Desde ' : ''}{dolares(p.precio)}
+              {dolares(p.precio)}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 5 }}>
               <Text style={{ fontSize: 19, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(p.precio_vip)}</Text>
@@ -154,7 +167,7 @@ function TarjetaProducto({ p }) {
           </>
         ) : (
           <Text style={{ fontSize: 19, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>
-            {p.presentaciones > 1 ? <Text style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto3 }}>Desde </Text> : null}{dolares(p.precio)}
+            {dolares(p.precio)}
           </Text>
         )}
       </View>

@@ -92,13 +92,15 @@ Deno.serve(async (req) => {
     // ── Ganado: lotes de las últimas 2 horas (la bitácora impide repetir) ──
     const { data: lotes, error: eL } = !inmediato ? { data: [], error: null } : await admin.from("puntos_lote")
       .select("id, customer_id, origen, puntos, sucursal")
-      .in("customer_id", clientes).in("origen", ["venta", "cumpleanos", "referido"])
+      .in("customer_id", clientes).in("origen", ["venta", "cumpleanos", "referido", "cupon"])
       .gte("created_at", new Date(Date.now() - 2 * 3600_000).toISOString());
     if (eL) throw eL;
     for (const l of lotes ?? []) {
       const pts = Number(l.puntos);
       const [titulo, cuerpo] = l.origen === "cumpleanos"
         ? ["¡Feliz cumpleaños! 🎂", `Te regalamos ${pts} puntos para celebrar.`]
+        : l.origen === "cupon"
+          ? ["Tu cupón del mes 🎟️", `Tienes ${pts} puntos ($${(pts / 100).toFixed(2)}) para usar en caja este mes.`]
         : l.origen === "referido"
           ? ["¡Tu invitación funcionó! 🎉", `Ganaste ${pts} puntos por invitar a un amigo.`]
           : [`Ganaste ${pts} puntos`, "Gracias por tu compra. Mira tu saldo en la app."];

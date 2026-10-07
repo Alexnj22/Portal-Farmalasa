@@ -734,7 +734,7 @@ export const AREAS = [
         ],
         tablas: ['app_cliente_sesiones', 'app_cliente_preregistros', 'ofertas_clientes', 'app_cliente_muestras', 'app_cliente_referido_codigo', 'app_cliente_referidos', 'app_cliente_avisos', 'wallet_registros', 'app_historias', 'app_historias_vistas', 'app_reservas', 'app_reservas_pagos', 'app_catalogo_destacados'],
         edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'wompi-pagos'],
-        crons: ['puntos-referidos-hora', 'purge-app-cliente-avisos', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min', 'app-catalogo-destacados'],
+        crons: ['puntos-referidos-hora', 'purge-app-cliente-avisos', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min', 'app-catalogo-destacados', 'puntos-cupones-diario'],
         docs: ['docs/APP-CLIENTES-2026-10-05.md'],
     },
 

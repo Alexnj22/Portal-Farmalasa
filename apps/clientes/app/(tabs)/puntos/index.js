@@ -9,6 +9,7 @@ import { useCuenta } from '../../../lib/cuenta';
 import { dolares, entero, fecha, nombrePropio } from '../../../lib/formato';
 import TarjetaSocio from '../../../componentes/TarjetaSocio';
 import Nivel from '../../../componentes/Nivel';
+import Cupon from '../../../componentes/Cupon';
 import { LinearGradient } from 'expo-linear-gradient';
 import Vencimientos from '../../../componentes/Vencimientos';
 import Cumpleanos from '../../../componentes/Cumpleanos';
@@ -114,6 +115,13 @@ export default function Puntos() {
       {Platform.OS === 'ios' ? (
         <Entrada indice={1}>
           <BotonWallet serial={resumen.wallet_serial} />
+        </Entrada>
+      ) : null}
+
+      {/* El cupón del mes (Platino): saldo de regalo que vence a fin de mes. */}
+      {resumen.cupon?.restantes > 0 ? (
+        <Entrada indice={2}>
+          <Cupon cupon={resumen.cupon} nivel={resumen.nivel?.clave} fondo={t.oscuro ? '#0A090E' : '#F5F4F8'} />
         </Entrada>
       ) : null}
 

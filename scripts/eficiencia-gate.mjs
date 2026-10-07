@@ -125,6 +125,12 @@ function techoDeclarado(d, filas, horas) {
  * gate lo dice con el número viejo y el nuevo a la vista. */
 const CRONS = [
   {
+    job: 'puntos-cupones-diario', slug: null, cadencia: '15 13 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Da el cupón mensual del nivel Platino (puntos que vencen a fin de mes). El día 1 a todos; '
+          + 'los demás días sólo a quien llegó a Platino en el mes (índice único por mes). Sólo la base propia.',
+  },
+  {
     job: 'app-catalogo-destacados', slug: null, cadencia: '40 8 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'Rehace «lo más vendido» del catálogo de la app (60 días, 300 productos) de noche, '

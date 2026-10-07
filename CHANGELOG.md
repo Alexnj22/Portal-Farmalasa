@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1241.0 — App: cupón Platino, banner de promociones, niveles por lo que acumula y catálogo por presentación mayor
+
+- **El nivel se mide con lo que ACUMULA** (decisión del usuario): `puntos_compra_12m` suma los puntos base de las compras que dieron puntos —motor (`venta`) y sistema anterior (`migracion` «compra · ticket»)—, no todo lo comprado; lo vendido por debajo del precio VIP no cuenta. Hoy: 4,178 VIP, 83 Plata, 34 Oro, 8 Platino (contando todo eran 495/133/63).
+- **Cupón mensual de Platino:** 500 puntos ($5) que vencen a fin de mes, con tope de presupuesto mensual (`puntos_niveles.cupon_mensual`, `puntos_config.cupon_presupuesto_mensual` = 10,000 pts). `puntos_dar_cupones` + cron `puntos-cupones-diario` (7:15 SV; el 1 a todos, el resto del mes a quien llega a Platino). Se usa en caja como cualquier saldo; aviso al teléfono y tarjeta «Tu cupón del mes» en Puntos.
+- **Catálogo:** una presentación por factor (la de mayor precio: Neurobion 25,000 ya no sale dos veces) y la tarjeta muestra el precio de la presentación MAYOR con «+N presentaciones». Banner de promociones arriba (las ofertas vigentes del portal, se pasan con el dedo). Ícono de la pestaña: pastillas.
+
 ## v2.1240.0 — Pago en línea de las reservas con Wompi
 
 - **Pagar desde la app:** botón «Pagar en línea» en cada reserva abierta (apenas reservada o ya lista). El servidor arma un enlace de pago de Wompi de un solo cobro con el total calculado allá, solo tarjeta y QuickPay, y la pantalla de Wompi se abre en una hoja sobre la app (`pagar_reserva` en `app-clientes`).

@@ -229,6 +229,24 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
     // `auth_es_supervision()`; acá sólo se elige qué botón se pinta.
     const esSupervision = esCargoDeSupervision(user?.rango);
 
+    // Dónde se pega el encabezado de los pasos (vista lista): justo debajo del
+    // encabezado de la vista, que también es pegajoso y cuyo alto cambia con
+    // la densidad y las pestañas. Se MIDE en vez de adivinarse.
+    const [topEncabezado, setTopEncabezado] = React.useState(96);
+    React.useLayoutEffect(() => {
+        if (vista !== 'lista') return undefined;
+        const hdr = document.querySelector('[data-surface="page-header"]');
+        if (!hdr) return undefined;
+        const medir = () => {
+            const top = parseFloat(getComputedStyle(hdr).top) || 0;
+            setTopEncabezado(Math.round(top + hdr.getBoundingClientRect().height + 8));
+        };
+        medir();
+        const ro = new ResizeObserver(medir);
+        ro.observe(hdr);
+        return () => ro.disconnect();
+    }, [vista]);
+
     // ── Render ────────────────────────────────────────────────────────────────
 
     if (loading) {
@@ -329,7 +347,7 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
         { key: 'sin_iniciar', label: 'Por preparar' },
         { key: 'preparando',  label: 'En preparación' },
         { key: 'preparado',   label: 'Listos para salir' },
-        { key: 'transito',    label: 'En la calle' },
+        { key: 'transito',    label: 'En camino' },
         { key: 'contando',    label: 'En la sala' },
         { key: 'erp',         label: 'Completados' },
     ];
@@ -1018,7 +1036,17 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                             {/* Los nombres de los pasos, UNA vez, alineados con los
                                 puntos: antes se repetían en cada fila. Usa las
                                 mismas columnas que la fila. */}
-                            <div className="hidden lg:grid gap-x-5 pl-4 pr-3 pb-1 lg:grid-cols-[10rem_minmax(22rem,1fr)_11rem_8.5rem_1rem]">
+                            {/* Pegajoso: al bajar, los nombres de los pasos se quedan
+                                a la vista. `data-pegajoso` le da fondo opaco (§15.1):
+                                una superficie pegajosa tiene que tapar. */}
+                            <div data-pegajoso style={{
+                                    top: topEncabezado,
+                                    // `--thead-bg` es 97-98% opaco: con un botón azul
+                                    // pasando por debajo, se alcanzaba a ver. El fondo
+                                    // de la página debajo lo vuelve opaco del todo.
+                                    background: 'linear-gradient(var(--thead-bg), var(--thead-bg)), var(--bg-page)',
+                                }}
+                                className="hidden lg:grid lg:sticky z-tabs rounded-xl gap-x-5 pl-4 pr-3 py-2 lg:grid-cols-[10rem_minmax(22rem,1fr)_11rem_8.5rem_1rem]">
                                 <span />
                                 <EncabezadoDeAvance />
                             </div>

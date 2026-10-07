@@ -9,19 +9,15 @@ import useBorrador from '@nucleo/hooks/useBorrador';
 import { guardarProveedor } from '@nucleo/data/distribucionCompras';
 import { mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import Interruptor from './Interruptor';
+import { leerFormularioDeProveedor, mensajeDeProveedor, proveedorAFormulario } from '@nucleo/utils/distribucionComercial';
 
 // Alta y edición de un proveedor de la distribuidora. `inicial` puede venir
 // del documento electrónico del proveedor (nombre, NIT y NRC ya leídos), así
 // que registrar uno nuevo desde una compra es confirmar, no escribir.
 
-const soloDigitos = (s) => String(s ?? '').replace(/\D/g, '');
-
 export default function ProveedorModal({ emisorId, inicial = {}, onClose, onGuardado }) {
     const nuevo = !inicial.id;
-    const [f, setF] = useState(() => ({
-        nombre: '', nit: '', nrc: '', telefono: '', correo: '', relacionada: false, gran_contribuyente: false,
-        ...inicial, plazo_dias: String(inicial.plazo_dias ?? 0),
-    }));
+    const [f, setF] = useState(() => proveedorAFormulario(inicial));
     const [guardando, setGuardando] = useState(false);
     const [error, setError] = useState('');
     const set = (k) => (v) => setF(x => ({ ...x, [k]: v }));
@@ -35,13 +31,8 @@ export default function ProveedorModal({ emisorId, inicial = {}, onClose, onGuar
         setF(x => ({ ...x, ...recuperado }));
     }, [recuperado]);
 
-    const nit = soloDigitos(f.nit);
-    const nrc = soloDigitos(f.nrc);
-    const plazo = Number(f.plazo_dias);
-    const errNit = nit !== '' && !/^\d{9,14}$/.test(nit);
-    const errNrc = nrc !== '' && !/^\d{2,8}$/.test(nrc);
-    const errPlazo = !Number.isInteger(plazo) || plazo < 0 || plazo > 180;
-    const listo = f.nombre.trim() !== '' && !errNit && !errNrc && !errPlazo && !guardando;
+    const { nit, nrc, plazo, errNit, errNrc, errPlazo, listo: valido } = leerFormularioDeProveedor(f);
+    const listo = valido && !guardando;
 
     const guardar = async () => {
         setGuardando(true);
@@ -53,8 +44,7 @@ export default function ProveedorModal({ emisorId, inicial = {}, onClose, onGuar
             descartar();
             onGuardado(id);
         } catch (e) {
-            const t = e?.message ?? '';
-            setError(t.includes('dist_proveedores_nit') ? 'Ya hay un proveedor con ese NIT.' : mensajeDeDistribucion(e));
+            setError(mensajeDeProveedor(e, mensajeDeDistribucion));
         } finally {
             setGuardando(false);
         }

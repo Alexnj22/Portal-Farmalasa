@@ -16,6 +16,7 @@ import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { fetchCatalogo, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { fetchCompras, fetchProveedores } from '@nucleo/data/distribucionCompras';
 import { TIPOS_COMPRA } from './compras';
+import { resumenDeCompras } from '@nucleo/utils/distribucionComercial';
 import CompraModal from './CompraModal';
 import ProveedorModal from './ProveedorModal';
 
@@ -110,15 +111,7 @@ export default function TabCompras({ emisor, puedeConfigurar, buscar, vista = 'r
     }, []);
 
     const mes = hoySV().slice(0, 7);
-    const resumen = useMemo(() => {
-        const delMes = compras.filter(c => c.estado === 'recibida' && String(c.fecha).startsWith(mes));
-        return {
-            comprado: delMes.reduce((a, c) => a + Number(c.total), 0),
-            credito: delMes.filter(c => c.tipo_doc === '03').reduce((a, c) => a + Number(c.iva), 0),
-            documentos: delMes.length,
-            borradores: compras.filter(c => c.estado === 'borrador').length,
-        };
-    }, [compras, mes]);
+    const resumen = useMemo(() => resumenDeCompras(compras, mes), [compras, mes]);
 
     const filtradas = useMemo(() => {
         const q = (buscar ?? '').trim();

@@ -20,7 +20,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { ticketDeRecibo, ticketDeEstadoDeCuenta } from '@nucleo/utils/distribucionDocumento';
 import { fetchEstadoCuenta, cobrar, anularRecibo, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { FORMA_PAGO, leerMonto } from './comun';
-import { repartirCobro } from './cartera';
+import { repartoDelCobro, problemaDelCobro, cambioDelCobro } from './cartera';
 import { MARCA_PAPEL } from './marca';
 import useBorrador from '@nucleo/hooks/useBorrador';
 
@@ -79,25 +79,16 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
 
     // El reparto: a mano (lo escrito por cuenta) o el automático de la base.
     const n = leerMonto(monto) ?? 0;
-    const reparto = useMemo(() => {
-        if (!aMano) return repartirCobro(abiertas, n).reparto;
-        return abiertas.map(x => ({ cxc_id: x.id, monto: leerMonto(manual[x.id]) ?? 0, saldo: Number(x.saldo), queda: Number(x.saldo) - (leerMonto(manual[x.id]) ?? 0) }))
-            .filter(r => r.monto > 0);
-    }, [aMano, abiertas, n, manual]);
+    const reparto = useMemo(() => repartoDelCobro(abiertas, { aMano, monto: n, manual, leer: leerMonto }), [aMano, abiertas, n, manual]);
     const totalManual = reparto.reduce((a, r) => a + aC(r.monto), 0) / 100;
     const montoFinal = aMano ? totalManual : n;
     const porCuenta = new Map(reparto.map(r => [r.cxc_id, r]));
     const recibidoN = leerMonto(recibido);
-    const cambio = forma === '01' && recibidoN != null ? (aC(recibidoN) - aC(montoFinal)) / 100 : null;
+    const cambio = cambioDelCobro(forma, recibidoN, montoFinal);
 
     // Lo que impide cobrar, dicho antes de apretar.
-    const problema = !puedeCobrar ? 'No tienes permiso para cobrar.'
-        : !(montoFinal > 0) ? null
-        : aC(montoFinal) > aC(saldo) ? `El cliente debe ${formatMoney(saldo)}: no se puede cobrar más.`
-        : aMano && reparto.some(r => aC(r.monto) > aC(r.saldo)) ? 'A una cuenta se le abona más de lo que debe.'
-        : ['04', '05'].includes(forma) && !referencia.trim() ? 'Un cheque o una transferencia llevan su número.'
-        : cambio != null && cambio < 0 ? 'Lo entregado no alcanza.'
-        : null;
+    // Lo que impide cobrar, dicho antes de apretar (la misma regla que la app).
+    const problema = problemaDelCobro({ puedeCobrar, montoFinal, saldo, aMano, reparto, forma, referencia, cambio });
     const listo = montoFinal > 0 && !problema && !cobrando;
 
     const hacerCobro = async () => {

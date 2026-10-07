@@ -18,12 +18,5 @@ export async function enviarDocumentoPorCorreo(dte, { destinatario = null } = {}
     return enviarCorreoDocumento(dte.id, pdf, { destinatario });
 }
 
-/** Qué decir del correo de un documento, en una línea. */
-export function estadoDelCorreo(correo) {
-    const c = Array.isArray(correo) ? correo[0] : correo;
-    if (!c) return { clave: 'ninguno', texto: 'Todavía no se le envió', variant: 'neutral' };
-    if (c.estado === 'enviado') return { clave: 'enviado', texto: `Enviado a ${c.destinatario}`, variant: 'success' };
-    if (c.estado === 'sin_correo') return { clave: 'sin_correo', texto: 'El cliente no tiene correo en su ficha', variant: 'warning' };
-    if (c.estado === 'fallido') return { clave: 'fallido', texto: `No se pudo enviar a ${c.destinatario}`, variant: 'danger' };
-    return { clave: 'pendiente', texto: `Pendiente de enviar a ${c.destinatario}`, variant: 'warning' };
-}
+/** Qué decir del correo de un documento: vive en el núcleo (la app dice lo mismo). */
+export { estadoDelCorreo } from '@nucleo/utils/distribucionFacturacion';

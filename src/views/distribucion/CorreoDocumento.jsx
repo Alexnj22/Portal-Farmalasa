@@ -10,23 +10,22 @@ import { hora12 } from '@nucleo/utils/hora';
 import { mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { ES_PRUEBAS } from '../../entorno';
 import { enviarDocumentoPorCorreo, estadoDelCorreo } from './correo';
+import { correoValido, destinoDelCorreo } from '@nucleo/utils/distribucionFacturacion';
 
 // El correo al cliente, dentro del documento (borrador 0019): a quién se le
 // mandó, si falló, y el botón. Hacienda exige entregarle el documento SELLADO,
 // así que antes del sello no se ofrece enviar (en el entorno de pruebas sí: ahí
 // nada se sella y el envío es simulado).
 
-const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
 export default function CorreoDocumento({ dte, puedeEnviar, onEnviado }) {
     const showToast = useToastStore(s => s.showToast);
     const vigente = Array.isArray(dte.correo) ? dte.correo[0] : dte.correo;
     const est = estadoDelCorreo(vigente);
-    const [destino, setDestino] = useState(vigente?.destinatario ?? dte.dist_clientes?.correo ?? '');
+    const [destino, setDestino] = useState(() => destinoDelCorreo(dte));
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState('');
     const sellado = dte.estado === 'sellado';
-    const valido = CORREO.test(destino.trim());
+    const valido = correoValido(destino);
 
     const enviar = async () => {
         setEnviando(true);

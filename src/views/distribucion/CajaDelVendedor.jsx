@@ -13,6 +13,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { abrirCaja, movimientoCaja, anularMovimientoCaja, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { leerMonto } from './comun';
+import { TIPOS_MOVIMIENTO_CAJA, ROTULO_MOVIMIENTO_CAJA as ROTULO, tiposDeMovimiento, movimientoListo, avisoDeEntrega, ejemploDeConcepto } from '@nucleo/utils/distribucionCaja';
 
 // La caja del día de un vendedor (borrador 0024): el fondo de cambio que se le
 // entregó, los gastos de ruta, las entregas parciales (el «corte» a media
@@ -22,12 +23,9 @@ import { leerMonto } from './comun';
 // Abrir y recibir una entrega es de quien administra; el gasto lo anota el
 // vendedor. El esperado de un corte lo calcula la base, no se escribe.
 
-const TIPOS = [
-    { value: 'gasto', label: 'Gasto de ruta', icon: Fuel },
-    { value: 'entrega', label: 'Entrega parcial', icon: HandCoins },
-    { value: 'ingreso', label: 'Otro ingreso', icon: PlusCircle },
-];
-const ROTULO = { gasto: 'Gasto', entrega: 'Entrega parcial', ingreso: 'Ingreso' };
+// Los tipos y sus reglas viven en el núcleo (la app los ofrece igual); acá, el ícono.
+const ICONO = { gasto: Fuel, entrega: HandCoins, ingreso: PlusCircle };
+const TIPOS = TIPOS_MOVIMIENTO_CAJA.map(t => ({ ...t, icon: ICONO[t.value] }));
 
 export default function CajaDelVendedor({ liq, fecha, esHoy, puedeAdministrar, onCambio }) {
     const showToast = useToastStore(s => s.showToast);
@@ -54,10 +52,12 @@ export default function CajaDelVendedor({ liq, fecha, esHoy, puedeAdministrar, o
     const caja = liq?.caja;
     const e = liq?.efectivo ?? {};
     const abierta = caja?.estado === 'abierta';
-    const tipos = TIPOS.filter(t => puedeAdministrar || t.value === 'gasto');
-    const nMonto = leerMonto(monto);
-    const nContado = leerMonto(contado);
-    const listo = nMonto > 0 && concepto.trim() !== '' && (tipo !== 'entrega' || nContado != null) && !ocupado;
+    const permitidos = new Set(tiposDeMovimiento(puedeAdministrar).map(t => t.value));
+    const tipos = TIPOS.filter(t => permitidos.has(t.value));
+    const mov = movimientoListo({ tipo, monto, concepto, contado });
+    const nMonto = mov.monto;
+    const nContado = mov.contado;
+    const listo = mov.listo && !ocupado;
 
     const correr = async (clave, fn, ok) => {
         setOcupado(clave);
@@ -79,8 +79,9 @@ export default function CajaDelVendedor({ liq, fecha, esHoy, puedeAdministrar, o
     });
     const registrar = () => correr('mov', () => movimientoCaja(caja.id, tipo, nMonto, concepto.trim(), tipo === 'entrega' ? nContado : null), (r) => {
         useStaff.getState().appendAuditLog('DISTRIBUCION_CAJA_MOVIMIENTO', String(r?.id ?? ''), { caja: caja.id, tipo, monto: nMonto, concepto: concepto.trim() });
-        if (tipo === 'entrega' && r?.esperado != null && nContado != null && Math.round((nContado - Number(r.esperado)) * 100) !== 0) {
-            showToast('Entrega registrada', `Al contar tenía ${formatMoney(nContado)} y debía tener ${formatMoney(Number(r.esperado))}.`, 'warning');
+        const descuadre = tipo === 'entrega' ? avisoDeEntrega(r, nContado, formatMoney) : null;
+        if (descuadre) {
+            showToast('Entrega registrada', descuadre, 'warning');
         } else {
             showToast(`${ROTULO[tipo]} registrado`, formatMoney(nMonto), 'success');
         }
@@ -170,7 +171,7 @@ export default function CajaDelVendedor({ liq, fecha, esHoy, puedeAdministrar, o
                         <PortalInput label="Monto" name="monto-mov" inputMode="decimal" value={monto} onChange={(ev) => setMonto(ev.target.value)}
                             className="w-32" hasError={monto !== '' && !(nMonto > 0)} errorMessage="Monto" />
                         <PortalInput label="Concepto" name="concepto-mov" value={concepto} onChange={(ev) => setConcepto(ev.target.value)}
-                            placeholder={tipo === 'gasto' ? 'Combustible, parqueo…' : tipo === 'entrega' ? 'Corte del mediodía' : 'Qué es'} className="flex-1 min-w-[160px]" />
+                            placeholder={ejemploDeConcepto(tipo)} className="flex-1 min-w-[160px]" />
                         {tipo === 'entrega' && (
                             <PortalInput label="Contado en mano" name="contado-mov" inputMode="decimal" value={contado} onChange={(ev) => setContado(ev.target.value)}
                                 className="w-36" helperText={`Debería: ${formatMoney(Number(e.esperado))}`} />

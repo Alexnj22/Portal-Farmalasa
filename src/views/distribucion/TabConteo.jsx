@@ -12,7 +12,6 @@ import Campo from './Campo';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import useBorrador from '@nucleo/hooks/useBorrador';
-import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -21,6 +20,7 @@ import {
     fetchBajas, solicitarBaja, resolverBaja, mensajeDeDistribucion,
 } from '@nucleo/data/distribucion';
 import { fetchLotes } from '@nucleo/data/distribucionInventario';
+import { MOTIVOS_BAJA, leerEntero, resumenDeConteo, renglonesDeConteo, rotuloMotivoBaja, estadoDeBaja, valorDeBajas } from '@nucleo/utils/distribucionBodega';
 
 // Conteo físico y bajas (borrador 0026).
 //
@@ -32,13 +32,7 @@ import { fetchLotes } from '@nucleo/data/distribucionInventario';
 // Bajas: se piden acá y las aprueba quien administra; recién aprobadas salen
 // del lote.
 
-const MOTIVOS_BAJA = [
-    { value: 'vencido', label: 'Vencido' },
-    { value: 'danado', label: 'Dañado' },
-    { value: 'muestra', label: 'Muestra' },
-    { value: 'otro', label: 'Otro' },
-];
-const entero = (t) => { const s = String(t ?? '').trim(); return /^\d+$/.test(s) ? Number(s) : null; };
+const entero = leerEntero;
 
 function RenglonConteo({ it, veSistema, abierto, onGuardado }) {
     const [valor, setValor] = useState(it.contado != null ? String(it.contado) : '');
@@ -112,22 +106,9 @@ export default function TabConteo({ puedeVender, puedeConfigurar, buscar }) {
     }, []);
     useEffect(() => { cargar(); }, [cargar]);
 
-    const items = useMemo(() => {
-        const q = (buscar ?? '').trim();
-        return (conteo?.items ?? []).filter(it => (!soloSinContar || it.contado == null) && (!q || tokenMatch(q, it.nombre, it.lote)));
-    }, [conteo, buscar, soloSinContar]);
-    const contados = (conteo?.items ?? []).filter(it => it.contado != null).length;
-    const total = conteo?.items?.length ?? 0;
-    const dif = useMemo(() => {
-        let faltante = 0, sobrante = 0, conDif = 0;
-        for (const it of conteo?.items ?? []) {
-            if (it.contado == null || it.sistema == null) continue;
-            const d = it.contado - it.sistema;
-            if (d) conDif += 1;
-            if (d < 0) faltante += -d * Number(it.costo || 0); else sobrante += d * Number(it.costo || 0);
-        }
-        return { faltante, sobrante, conDif };
-    }, [conteo]);
+    const items = useMemo(() => renglonesDeConteo(conteo, { buscar, soloSinContar }), [conteo, buscar, soloSinContar]);
+    const dif = useMemo(() => resumenDeConteo(conteo), [conteo]);
+    const { contados, total } = dif;
     const alGuardar = (id, n) => setConteo(c => ({ ...c, items: c.items.map(it => (it.id === id ? { ...it, contado: n } : it)) }));
 
     const correr = async (clave, fn, ok) => {
@@ -161,7 +142,7 @@ export default function TabConteo({ puedeVender, puedeConfigurar, buscar }) {
         useStaff.getState().appendAuditLog(aprobar ? 'DISTRIBUCION_BAJA_APROBADA' : 'DISTRIBUCION_BAJA_RECHAZADA', String(b.id), { unidades: b.unidades });
     });
     const pendientes = bajas.filter(b => b.estado === 'pendiente');
-    const valorBajas = bajas.filter(b => b.estado === 'aprobada').reduce((a, b) => a + b.unidades * Number(b.costo_unitario || 0), 0);
+    const valorBajas = valorDeBajas(bajas);
 
     return (
         <div className="p-5 md:p-6 space-y-5">
@@ -260,9 +241,9 @@ export default function TabConteo({ puedeVender, puedeConfigurar, buscar }) {
                         {bajas.slice(0, 20).map(b => (
                             <li key={b.id} className="py-2 flex flex-col gap-1" data-baja={b.estado}>
                                 <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <span className="min-w-0 truncate text-body-sm"><b className="text-content-2">{b.products?.nombre}</b> · lote {b.dist_lotes?.lote} · {b.unidades} u · {MOTIVOS_BAJA.find(m => m.value === b.motivo)?.label}</span>
+                                    <span className="min-w-0 truncate text-body-sm"><b className="text-content-2">{b.products?.nombre}</b> · lote {b.dist_lotes?.lote} · {b.unidades} u · {rotuloMotivoBaja(b.motivo)}</span>
                                     <Badge size="sm" variant={b.estado === 'aprobada' ? 'danger' : b.estado === 'rechazada' ? 'neutral' : 'warning'} uppercase={false}>
-                                        {b.estado === 'pendiente' ? 'Por aprobar' : b.estado === 'aprobada' ? `Aprobada · ${formatMoney(b.unidades * Number(b.costo_unitario || 0))}` : 'Rechazada'}
+                                        {estadoDeBaja(b, formatMoney)}
                                     </Badge>
                                 </div>
                                 <span className="text-caption text-content-3">{b.detalle} · pidió {shortEmployeeName(b.solicitante?.name)} el {fechaNumerica(b.created_at)}{b.nota_resolucion ? ` · ${b.nota_resolucion}` : ''}</span>

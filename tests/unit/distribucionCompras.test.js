@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { leerDteDelProveedor, problemasDeCompra, totalesCalculados, cambiarUnidadesPor, totalEsperado, evaluarPrecioRelacionada } from '../../src/views/distribucion/compras.js';
+import { leerDteDelProveedor, problemasDeCompra, totalesCalculados, cambiarUnidadesPor, totalEsperado, evaluarPrecioRelacionada } from '@nucleo/utils/distribucionCompras';
 
 // Las cuentas de la pantalla son las de `dist_recibir_compra` (borrador 0015):
 // los mismos casos (IVA mal, total mal) se corrieron contra la base.

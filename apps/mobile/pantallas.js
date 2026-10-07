@@ -42,6 +42,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/auditoria-del-sistema': true, // la bitácora del sistema; exportar en el portal
   '/notificaciones': true, // el historial: leídas y quitadas, con la misma tarjeta
   '/ofertas-clientes': true, // ofertas de Puntos Salud y pre-registros
+  '/torogoz': true, // la distribuidora: su menú y sus secciones (`/torogoz/<seccion>`)
   '/encuesta': true, // resultados del clima: índice, bloques, preguntas y comentarios
   '/nomina': true, // la quincena por sala y la boleta de cada persona; generar, aprobar e imprimir: portal
   '/auditoria-de-tiempos': true, // día por día: marcas, faltas, tardanza y señales; corregir y aprobar: portal
@@ -95,6 +96,8 @@ export function abrirRuta(url) {
   // `/solicitudes?solicitud=…` nombra UNA: se abre ésa, no la bandeja.
   const una = ruta.startsWith('/solicitudes') ? url.match(/[?&]solicitud=([^&#]+)/) : null;
   if (una) return abrirSolicitud(decodeURIComponent(una[1]));
+  // Torogoz: `/torogoz/<seccion>` (y `/torogoz/venta/<id>`) es la misma ruta nativa.
+  if (url.startsWith('/torogoz/')) return router.push(url);
   // Una persona (`/personal/empleado/<id>` o `/personal?empleado=<id>`): su
   // ficha nativa, no el directorio entero.
   const persona = url.match(/^\/personal\/empleado\/([^/?#]+)/) || (ruta === '/personal' ? url.match(/[?&]empleado=([^&#]+)/) : null);

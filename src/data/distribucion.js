@@ -719,8 +719,17 @@ async function aBase64(archivo) {
  * si el lector no está o falla, devuelve `sinLector` y la pantalla sigue a mano.
  */
 export async function leerComprobante(archivo, montoEsperado, forma) {
+    return leerComprobanteBase64(await aBase64(archivo), archivo.type || 'image/jpeg', montoEsperado, forma);
+}
+
+/**
+ * Lo mismo con el archivo ya en base64 (sin prefijo). Es la puerta de la app,
+ * que tiene la foto como `uri` y no como `File`; la regla es la misma: nunca
+ * lanza por la lectura.
+ */
+export async function leerComprobanteBase64(imagenBase64, mimeType, montoEsperado, forma) {
     const { data, error } = await supabase.functions.invoke('distribucion-comprobante', {
-        body: { imagenBase64: await aBase64(archivo), mimeType: archivo.type || 'image/jpeg', esperado: { monto: montoEsperado, forma } },
+        body: { imagenBase64, mimeType: mimeType || 'image/jpeg', esperado: { monto: montoEsperado, forma } },
     });
     if (error) return { sinLector: true, leido: null, coincide: null, error: error.message };
     return data;

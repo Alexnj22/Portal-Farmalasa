@@ -7,10 +7,10 @@ import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
-import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { formatearNit, formatearNrc } from '@nucleo/utils/nitUtils';
-import { hoySV, sumarDias } from '@nucleo/utils/fecha';
+import { hoySV } from '@nucleo/utils/fecha';
+import { estadoLicencia, filtrarClientes, resumenDeClientes } from '@nucleo/utils/distribucionComercial';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { fetchClientes } from '@nucleo/data/distribucion';
@@ -25,14 +25,6 @@ const COLS = [
     { key: 'ruta',      label: 'Ruta',      align: 'left', hideBelow: 'lg' },
     { key: 'credito',   label: 'Crédito',   align: 'right', hideBelow: 'sm' },
 ];
-
-/** La licencia de la SRS decide si se le puede vender: es la columna que importa. */
-function estadoLicencia(c, hoy) {
-    if (!c.licencia_srs) return { variant: 'danger', label: 'Sin licencia' };
-    if (c.licencia_srs_vence && c.licencia_srs_vence < hoy) return { variant: 'danger', label: 'Vencida' };
-    if (c.licencia_srs_vence && c.licencia_srs_vence <= sumarDias(hoy, 30)) return { variant: 'warning', label: 'Vence pronto' };
-    return { variant: 'success', label: 'Vigente' };
-}
 
 export default function TabClientes({ emisor, puedeVender, buscar }) {
     const [clientes, setClientes] = useState([]);
@@ -61,23 +53,10 @@ export default function TabClientes({ emisor, puedeVender, buscar }) {
     }, []);
     useEffect(() => { cargar(); }, [cargar]);
 
-    const filtrados = useMemo(() => {
-        const q = buscar.trim();
-        const qd = q.replace(/\D/g, '');
-        return clientes.filter(c => (!tipo || c.tipo === tipo)
-            && (!soloSinLicencia || estadoLicencia(c, hoy).variant !== 'success')
-            // Los documentos se comparan por sus DÍGITOS: «0407-150390» y
-            // «0407150390» son el mismo NIT escrito de dos maneras.
-            && (!q || tokenMatch(q, c.nombre, c.nombre_comercial, c.ruta)
-                || (qd.length >= 3 && tokenMatch(qd, c.num_documento?.replace(/\D/g, ''), c.nrc))));
-    }, [clientes, buscar, tipo, soloSinLicencia, hoy]);
+    const filtrados = useMemo(() => filtrarClientes(clientes, { buscar, tipo, soloSinLicencia, hoy }),
+        [clientes, buscar, tipo, soloSinLicencia, hoy]);
 
-    const stats = useMemo(() => ({
-        activos: clientes.filter(c => c.activo).length,
-        contribuyentes: clientes.filter(c => c.activo && c.contribuyente).length,
-        sinLicencia: clientes.filter(c => c.activo && estadoLicencia(c, hoy).variant !== 'success').length,
-        credito: clientes.filter(c => c.activo && c.plazo_dias > 0).length,
-    }), [clientes, hoy]);
+    const stats = useMemo(() => resumenDeClientes(clientes, hoy), [clientes, hoy]);
 
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filtrados.length });
     useEffect(() => { setPage(1); }, [buscar, tipo, soloSinLicencia]); // eslint-disable-line react-hooks/exhaustive-deps

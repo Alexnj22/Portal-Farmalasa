@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { armarFactura, armarCreditoFiscal } from '../../supabase/functions/_shared/dte/documentos.ts';
 import { ticketDeVenta, definicionPdf, leerDocumento, urlConsultaPublica, nombreDelPdf, jsonParaElCliente } from '@nucleo/utils/distribucionDocumento.js';
 import { seccionesParaElPrograma, COLUMNAS_TICKET } from '@nucleo/utils/ticketPrint';
+import { documentoHtml } from '@nucleo/utils/distribucionDocumentoHtml';
 
 // El ticket y el PDF de un documento de Distribución.
 //
@@ -169,3 +170,28 @@ describe('JSON para el cliente', () => {
     });
 });
 
+
+// La hoja del teléfono (`documentoHtml`): la MISMA representación que el PDF
+// del portal, leída del mismo `leerDocumento`. Lo que la norma exige tiene que
+// estar en las dos.
+
+describe('la hoja del documento en el teléfono', () => {
+    it('lleva lo mismo que el PDF: emisor, receptor, controles, renglones y total', () => {
+        const d = leerDocumento(ccf);
+        const html = documentoHtml(ccf, { urlConsulta: urlConsultaPublica(ccf) });
+        for (const dato of [d.emisor.nombre, d.receptor.nombre, d.numeroControl, d.codigoGeneracion, d.sello, 'TOTAL A PAGAR', 'Valor en letras']) {
+            expect(html).toContain(dato.replace(/&/g, '&amp;'));
+        }
+        expect(html).toContain('CAJA SUERO X 24');
+        expect(html).toContain('consultaPublica');
+    });
+    it('sin sello lo dice, y en pruebas lleva la marca de agua', () => {
+        const html = documentoHtml(factura);
+        expect(html).toContain('PENDIENTE');
+        expect(html).toContain('SIN VALIDEZ FISCAL');
+    });
+    it('escapa lo que viene del JSON', () => {
+        const raro = { ...factura, json: { ...factura.json, receptor: { ...factura.json.receptor, nombre: 'A <b> & C' } } };
+        expect(documentoHtml(raro)).toContain('A &lt;b&gt; &amp; C');
+    });
+});

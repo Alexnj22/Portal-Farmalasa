@@ -27,7 +27,9 @@ import {
 import FilterBar from '../../components/common/FilterBar';
 import FiltroDia from './FiltroDia';
 import CajaDelVendedor from './CajaDelVendedor';
-import { FORMA_PAGO, leerMonto, TIPO_DOCUMENTO } from './comun';
+import { TIPO_DOCUMENTO } from './comun';
+import { nombreFormaPago as rotuloForma } from '@nucleo/utils/distribucionFacturacion';
+import { formasDeLaLiquidacion, cuentaDelCierre, resumenDelCamion, vendedoresParaElegir, rotuloDiferencia } from '@nucleo/utils/distribucionCaja';
 import { MARCA_PAPEL } from './marca';
 
 // La liquidación diaria del vendedor (borrador 0020): lo que vendió, lo que
@@ -44,26 +46,18 @@ const COLS_VENTAS = [
     { key: 'hora', label: 'Hora', align: 'left', hideBelow: 'md' },
     { key: 'total', label: 'Total', align: 'right' },
 ];
-const rotuloForma = (f) => (f === '13' ? 'A crédito' : FORMA_PAGO.find(x => x.value === f)?.label ?? f);
 
 // La mercadería del camión ese día (0031): el efectivo de esas ventas ya está
 // en la liquidación; esto dice si lo que salió de bodega volvió o se vendió.
 function CamionDelDia({ cargas }) {
-    const t = cargas.reduce((a, g) => ({
-        cargado: a.cargado + Number(g.cargado), vendido: a.vendido + Number(g.vendido), devuelto: a.devuelto + Number(g.devuelto),
-        queda: a.queda + Number(g.queda), faltante: a.faltante + Number(g.faltante), costo: a.costo + Number(g.faltante_costo),
-    }), { cargado: 0, vendido: 0, devuelto: 0, queda: 0, faltante: 0, costo: 0 });
-    const abierta = cargas.some(g => g.estado === 'abierta');
-    const filas = [
-        ['Cargado', t.cargado], ['Vendido', t.vendido], ['Volvió a bodega', t.devuelto],
-        ...(abierta ? [['Sigue en el camión', t.queda]] : []),
-    ];
+    const t = resumenDelCamion(cargas);
+    const { abierta, filas } = t;
     return (
         <section data-surface="card" className="p-4 flex flex-col gap-3" aria-label="Camión del día" data-camion-del-dia>
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="text-body font-black text-content flex items-center gap-2"><Truck size={16} className="text-brand-text" /> Camión</h3>
                 <span className="text-caption text-content-3">
-                    {cargas.map(g => g.nota_remision ? `NR ${g.nota_remision.slice(-6)}` : 'sin Nota de Remisión').join(' · ')}
+                    {t.notas}
                     {abierta ? ' · todavía no se descarga' : ''}
                 </span>
             </div>
@@ -78,7 +72,7 @@ function CamionDelDia({ cargas }) {
             {t.faltante > 0 && (
                 <Notice variant="warning" icon={AlertTriangle} compact data-faltante-camion={t.faltante}>
                     Faltaron {formatQty(t.faltante)} unidades del camión ({formatMoney(t.costo)} al costo)
-                    {cargas.find(g => g.nota_cierre)?.nota_cierre ? `: ${cargas.find(g => g.nota_cierre).nota_cierre}` : ''}.
+                    {t.notaDeCierre ? `: ${t.notaDeCierre}` : ''}.
                 </Notice>
             )}
         </section>
@@ -133,18 +127,12 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
     useEffect(() => { setContado(''); setNota(''); setReabriendo(false); }, [fecha, vendedorId]);
 
     const esperado = Number(liq?.efectivo?.esperado ?? 0);
-    const cont = leerMonto(contado);
-    const dif = cont == null ? null : Math.round((cont - esperado) * 100) / 100;
-    const listo = cont != null && (dif === 0 || nota.trim() !== '') && !ocupado;
-    const formas = useMemo(() => {
-        const m = new Map();
-        for (const f of liq?.por_forma ?? []) {
-            const x = m.get(f.forma) ?? { forma: f.forma, ventas: 0, cobros: 0 };
-            x[f.origen] += Number(f.monto);
-            m.set(f.forma, x);
-        }
-        return [...m.values()];
-    }, [liq]);
+    // La cuenta del cierre y las formas de pago salen del núcleo: la app cuenta igual.
+    const cuenta = cuentaDelCierre(esperado, contado, nota);
+    const cont = cuenta.contado;
+    const dif = cuenta.diferencia;
+    const listo = cuenta.listo && !ocupado;
+    const formas = useMemo(() => formasDeLaLiquidacion(liq), [liq]);
 
     const cerrar = async () => {
         setOcupado('cerrar');
@@ -208,7 +196,7 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
                             <FilterBar.Section active={!!params.get('vendedor')} onClear={() => cambiar('vendedor', '')} label="vendedor">
                                 <FilterBar.Opciones label="Vendedor" icon={UserRound} umbral={1} ancho="200px"
                                     value={vendedorId ?? delDia[0]?.id ?? ''} onChange={(v) => cambiar('vendedor', v || '')}
-                                    options={[...delDia, ...vendedores.filter(v => !delDia.some(d => d.id === v.id))]
+                                    options={vendedoresParaElegir(delDia, vendedores)
                                         .map(v => ({ value: v.id, label: shortEmployeeName(v.name) }))} />
                             </FilterBar.Section>
                         )}
@@ -291,7 +279,7 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
                                 <dt className="text-content-3">Contado</dt><dd className="text-right tabular-nums">{formatMoney(Number(c.contado))}</dd>
                                 <dt className="text-content-3">Diferencia</dt>
                                 <dd className={`text-right tabular-nums font-black ${Number(c.diferencia) === 0 ? 'text-success-text' : 'text-danger-text'}`} data-diferencia>
-                                    {Number(c.diferencia) === 0 ? 'Sin diferencia' : `${Number(c.diferencia) > 0 ? 'Sobrante' : 'Faltante'} ${formatMoney(Math.abs(Number(c.diferencia)))}`}
+                                    {rotuloDiferencia(c.diferencia, formatMoney)}
                                 </dd>
                             </dl>
                             {c.nota && <p className="text-caption text-content-2">Motivo: {c.nota}</p>}

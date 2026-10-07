@@ -18,7 +18,9 @@ const raiz = path.resolve(app, '../..');
 const config = getDefaultConfig(app);
 
 const nucleo = path.join(raiz, 'src') + path.sep;
-config.watchFolders = [nucleo];
+// El motor de la venta de Torogoz (`utils/distribucionMotor.js`) usa las MISMAS
+// cuentas que el documento para Hacienda, que viven con las edge functions.
+config.watchFolders = [nucleo, path.join(raiz, 'supabase', 'functions', '_shared', 'dte')];
 
 const ALIAS = {
   '@nucleo/': path.join(raiz, 'src') + '/',

@@ -9,14 +9,13 @@ import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import Interruptor from './Interruptor';
 import useBorrador from '@nucleo/hooks/useBorrador';
-import { isValidDUIAlgorithm } from '@nucleo/utils/duiUtils';
-import { formatearNit } from '@nucleo/utils/nitUtils';
+import { CLIENTE_VACIO, clienteAFormulario, clienteParaGuardar, erroresDeCliente } from '@nucleo/utils/distribucionComercial';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { departamentosMH, municipiosMH, distritosMH } from '@nucleo/data/geoCodigosMH';
 import { guardarCliente, mensajeDeDistribucion, fetchRutas } from '@nucleo/data/distribucion';
 import { Route } from 'lucide-react';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
-import { DOC_IDENTIDAD, TIPO_CLIENTE, cargarActividades, leerMonto, soloVentaLibre } from './comun';
+import { DOC_IDENTIDAD, TIPO_CLIENTE, cargarActividades, soloVentaLibre } from './comun';
 
 // La ficha de un cliente de ruta.
 //
@@ -28,22 +27,9 @@ import { DOC_IDENTIDAD, TIPO_CLIENTE, cargarActividades, leerMonto, soloVentaLib
 // La actividad económica es el catálogo de Hacienda (774 códigos): se carga
 // con `import()` al abrir el formulario, no con la vista.
 
-const VACIO = {
-    tipo: 'tienda', nombre: '', nombre_comercial: '', tipo_documento: '13', num_documento: '',
-    nrc: '', cod_actividad: '', desc_actividad: '', gran_contribuyente: false,
-    departamento: '04', municipio: '', distrito: '', complemento: '', telefono: '', correo: '',
-    licencia_srs: '', licencia_srs_vence: '', limite_credito: '0', plazo_dias: '0', ruta: '', ruta_id: '', notas: '', activo: true,
-};
-
-const aFormulario = (c) => ({
-    ...VACIO, ...Object.fromEntries(Object.entries(c).map(([k, v]) => [k, v ?? VACIO[k] ?? ''])),
-    num_documento: c.tipo_documento === '36' ? formatearNit(c.num_documento) : (c.num_documento ?? ''),
-    limite_credito: String(c.limite_credito ?? 0), plazo_dias: String(c.plazo_dias ?? 0),
-});
-
 export default function ClienteModal({ cliente, emisorId, puedeEditar, onClose, onGuardado }) {
     const nuevo = !cliente?.id;
-    const [f, setF] = useState(() => (nuevo ? { ...VACIO } : aFormulario(cliente)));
+    const [f, setF] = useState(() => (nuevo ? { ...CLIENTE_VACIO } : clienteAFormulario(cliente)));
     const [actividades, setActividades] = useState([]);
     const [guardando, setGuardando] = useState(false);
     const [error, setError] = useState('');
@@ -65,52 +51,18 @@ export default function ClienteModal({ cliente, emisorId, puedeEditar, onClose, 
     useEffect(() => {
         if (repuesto.current || !recuperado) return;
         repuesto.current = true;
-        setF({ ...VACIO, ...recuperado });
+        setF({ ...CLIENTE_VACIO, ...recuperado });
     }, [recuperado]);
 
     const contribuyente = !!f.nrc.trim();
-    const digitosDoc = f.num_documento.replace(/\D/g, '');
-    const errores = useMemo(() => {
-        const e = {};
-        if (!f.nombre.trim()) e.nombre = 'Falta el nombre.';
-        if (f.num_documento.trim()) {
-            if (f.tipo_documento === '13' && !isValidDUIAlgorithm(f.num_documento)) e.num_documento = 'Ese DUI no pasa su dígito verificador.';
-            if (f.tipo_documento === '36' && ![9, 14].includes(digitosDoc.length)) e.num_documento = 'Un NIT tiene 9 o 14 dígitos.';
-        }
-        if (f.nrc.trim() && !/^\d{2,8}$/.test(f.nrc.replace(/\D/g, ''))) e.nrc = 'El NRC son de 2 a 8 dígitos.';
-        if (contribuyente) {
-            if (f.tipo_documento !== '36' || !digitosDoc) e.num_documento = 'Un contribuyente necesita su NIT para recibir Crédito Fiscal.';
-            if (!f.cod_actividad) e.cod_actividad = 'Un contribuyente necesita su actividad económica.';
-            if (!f.municipio || !f.distrito || !f.complemento.trim()) e.direccion = 'Un contribuyente necesita la dirección completa.';
-        }
-        if (f.telefono && f.telefono.replace(/\D/g, '').length !== 8) e.telefono = 'Un teléfono son ocho dígitos.';
-        if (leerMonto(f.limite_credito) === null) e.limite_credito = 'Escribe un monto, por ejemplo 1500.00';
-        const plazo = leerMonto(f.plazo_dias);
-        if (plazo === null || !Number.isInteger(plazo) || plazo > 120) e.plazo_dias = 'De 0 a 120 días.';
-        return e;
-    }, [f, contribuyente, digitosDoc]);
+    const errores = useMemo(() => erroresDeCliente(f), [f]);
     const hayErrores = Object.keys(errores).length > 0;
 
     const guardar = async () => {
         setGuardando(true);
         setError('');
         try {
-            const nit = f.tipo_documento === '36' ? digitosDoc : f.num_documento.trim();
-            const id = await guardarCliente({
-                id: cliente?.id, emisor_id: emisorId, tipo: f.tipo, nombre: f.nombre.trim(),
-                nombre_comercial: f.nombre_comercial.trim() || null,
-                tipo_documento: nit ? f.tipo_documento : null, num_documento: nit || null,
-                nrc: f.nrc.replace(/\D/g, '') || null,
-                cod_actividad: f.cod_actividad || null, desc_actividad: f.desc_actividad || null,
-                gran_contribuyente: contribuyente && f.gran_contribuyente,
-                departamento: f.departamento || null, municipio: f.municipio || null, distrito: f.distrito || null,
-                complemento: f.complemento.trim() || null, telefono: f.telefono.replace(/\D/g, '') || null,
-                correo: f.correo.trim() || null, licencia_srs: f.licencia_srs.trim() || null,
-                licencia_srs_vence: f.licencia_srs_vence || null,
-                limite_credito: leerMonto(f.limite_credito), plazo_dias: leerMonto(f.plazo_dias),
-                // El texto de la ruta lo pone la base desde `ruta_id`.
-                ruta_id: f.ruta_id ? Number(f.ruta_id) : null, ruta: null, notas: f.notas.trim() || null, activo: f.activo,
-            });
+            const id = await guardarCliente(clienteParaGuardar(f, { id: cliente?.id, emisorId }));
             descartar();
             // El id va de vuelta: la venta lo usa para dejar elegido al cliente recién creado.
             onGuardado?.(id);

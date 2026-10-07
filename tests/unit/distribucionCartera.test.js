@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { repartirCobro, tramoDe } from '../../src/views/distribucion/cartera.js';
+import { repartirCobro, tramoDe } from '@nucleo/utils/distribucionCartera';
 
 // El reparto de la pantalla tiene que dar lo mismo que `dist_cobrar` (0014):
 // primero lo que vence antes. Los mismos casos se corrieron contra la base.

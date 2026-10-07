@@ -17,7 +17,8 @@ import { fechaNumerica } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fetchTablero, mensajeDeDistribucion } from '@nucleo/data/distribucion';
-import { FORMA_PAGO, rotuloTipoCliente, rangoDe } from './comun';
+import { rotuloTipoCliente, rangoDe } from './comun';
+import { variacionPct as variacion, repartoDeFormas, maximoDe } from '@nucleo/utils/distribucionTablero';
 import { rutaSeccion, rutaVentaA } from './rutas';
 
 // El Inicio de la distribuidora. Pedido del usuario (2026-09-29): «un
@@ -44,8 +45,6 @@ const GraficaHoras = lazy(() => import('./GraficasTablero').then(m => ({ default
 const PUNTOS = ['bg-chart-1', 'bg-success', 'bg-chart-3', 'bg-chart-4', 'bg-chart-9', 'bg-chart-6', 'bg-warning', 'bg-chart-8'];
 
 const num = (v) => Number(v) || 0;
-/** Variación contra el período anterior, o null si antes no hubo nada con qué comparar. */
-const variacion = (actual, antes) => (num(antes) > 0 ? ((num(actual) - num(antes)) / num(antes)) * 100 : null);
 
 function Variacion({ actual, antes }) {
     const v = variacion(actual, antes);
@@ -141,8 +140,8 @@ export default function TabTablero({ periodo = '30d' }) {
     const productos = datos?.top_productos ?? [];
     const clientes = datos?.top_clientes ?? [];
     const formas = datos?.formas_pago ?? [];
-    const maxDe = (lista, k = 'ventas') => Math.max(1, ...lista.map(x => num(x[k])));
-    const totalFormas = formas.reduce((s, f) => s + num(f.monto), 0) || 1;
+    const maxDe = maximoDe;
+    const reparto = repartoDeFormas(formas);
     const nombreVendedor = (id) => shortEmployeeName(datos?.filtros?.vendedores?.find(v => v.id === id)) || 'Vendedor';
     const hayFiltro = !!ruta || !!vendedor;
     const VISIBLES = 5;
@@ -317,19 +316,17 @@ export default function TabTablero({ periodo = '30d' }) {
                         <p className="text-micro font-bold uppercase tracking-wide text-content-3">Formas de pago</p>
                         {/* Una barra apilada: el ancho de cada tramo ES la proporción. */}
                         <div className="flex h-3 rounded-full overflow-hidden bg-surface-card-hover" data-medida="dato">
-                            {formas.map((f, i) => (
-                                <span key={f.forma} className={PUNTOS[i % PUNTOS.length]} style={{ width: `${(num(f.monto) / totalFormas) * 100}%` }} />
+                            {reparto.map((f, i) => (
+                                <span key={f.forma} className={PUNTOS[i % PUNTOS.length]} style={{ width: `${f.proporcion * 100}%` }} />
                             ))}
                         </div>
-                        {formas.map((f, i) => (
+                        {reparto.map((f, i) => (
                             <div key={f.forma} className="flex items-center justify-between gap-2 text-caption">
                                 <span className="flex items-center gap-1.5 min-w-0">
                                     <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${PUNTOS[i % PUNTOS.length]}`} />
-                                    <span className="truncate text-content-2 font-bold">
-                                        {f.forma === '13' ? 'A crédito' : (FORMA_PAGO.find(x => x.value === f.forma)?.label ?? f.forma)}
-                                    </span>
+                                    <span className="truncate text-content-2 font-bold">{f.rotulo}</span>
                                 </span>
-                                <span className="tabular-nums text-content-2">{formatMoneyCorto(num(f.monto))} · {Math.round((num(f.monto) / totalFormas) * 100)}%</span>
+                                <span className="tabular-nums text-content-2">{formatMoneyCorto(f.monto)} · {f.pct}%</span>
                             </div>
                         ))}
                     </div>

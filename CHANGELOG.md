@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1243.0 — Torogoz nativo en la app
+
+- **Torogoz en la app, nativo.** La distribuidora entra desde el Menú (tarjeta «Distribuidora») y abre su menú con «Nueva venta» y las catorce secciones del portal: Inicio con sus gráficas, Rutas y camiones, Pedidos, Facturación, Cuentas por cobrar, Caja y liquidación, Clientes, Catálogo, Compras y proveedores, Inventario (lotes, reposición, conteo y bajas, cuarentena, existencias en las sucursales), Ventas perdidas, Reportes y libros, Solicitudes de descuento y Empresa.
+- **La venta en ruta** arma la venta igual que el portal (cliente con su crédito, productos con escáner, lotes, descuentos, reservas) y la guarda como preventa.
+- **Por ahora es de consulta en lo que mueve dinero o Hacienda** (decisión del usuario): facturar, reenviar o invalidar, contingencia, nota de crédito, cobros, caja del vendedor, liquidación, depósitos, cerrar el día y cargar camión se hacen desde el portal. Se encienden con `ACCIONES_DE_DINERO` en `componentes/torogoz/soloConsulta.js`.
+- **El portal usa la misma lógica**: las cuentas de la venta, el tablero, las rutas, los pedidos, la facturación, la cartera, la caja, la bodega y los reportes viven en `src/utils/distribucion*.js` y la cola sin señal en `src/data/distribucionSinSenal.js`.
 ## v2.1242.4 — Catálogo de la app por páginas
 
 - **Catálogo de la app por páginas** de 20, con «Anterior · Página N · Siguiente» al pie (antes era una lista infinita). `catalogo` acepta `limite` (1–50).

@@ -402,8 +402,12 @@ const EXCEPTIONS = {
   // La marca de la distribuidora: el dibujo del icono y los colores que usa el
   // PDF. Es un logo, no una superficie del portal — no puede depender del tema
   // (el PDF no tiene CSS) y en pantalla los colores ya viven como tokens bajo
-  // `:root[data-marca="distribucion"]` en index.css.
-  'src/views/distribucion/marca.js': ['hex'],
+  // `:root[data-marca="distribucion"]` en index.css. Se mudó al núcleo el
+  // 2026-10-07 (la app nativa arma los mismos papeles con la misma marca).
+  'src/utils/distribucionMarca.js': ['hex'],
+  // La hoja del mismo DTE en HTML, para el teléfono (expo-print la vuelve PDF):
+  // la gemela de `distribucionDocumento.js`, con sus mismos grises y la marca.
+  'src/utils/distribucionDocumentoHtml.js': ['hex'],
   // <meta name="theme-color"> necesita un color SÓLIDO; --bg-page es un
   // gradiente, así que no se puede derivar del token con getComputedStyle.
   'src/plataforma/ThemeContext.jsx': ['hex'],

@@ -13,7 +13,7 @@ import { fechaNumerica } from '@nucleo/utils/fecha';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { fetchCartera, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { rotuloTipoCliente } from './comun';
-import { TRAMOS, tramoDe } from './cartera';
+import { TRAMOS, clientesDeLaCartera, usoDelLimite } from './cartera';
 import CarteraClienteModal from './CarteraClienteModal';
 
 // Cuentas por cobrar de la distribuidora: quién debe, desde cuándo, y cobrarle.
@@ -65,11 +65,7 @@ export default function TabCobros({ emisor, puedeVender, puedeConfigurar, buscar
 
     const filtrados = useMemo(() => {
         const q = (buscar ?? '').trim();
-        return clientes.filter(c =>
-            (vista !== 'vencidos' || Number(c.vencido) > 0)
-            && (vista !== 'limite' || Number(c.saldo) > Number(c.limite_credito))
-            && (!tramo || tramoDe(c.dias_atraso) === tramo)
-            && (!q || tokenMatch(q, c.nombre, c.ruta)));
+        return clientesDeLaCartera(clientes, { vista, tramo, coincide: q ? (c) => tokenMatch(q, c.nombre, c.ruta) : null });
     }, [clientes, vista, tramo, buscar]);
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filtrados.length });
     useEffect(() => { setPage(1); }, [vista, tramo, buscar]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -136,10 +132,7 @@ export default function TabCobros({ emisor, puedeVender, puedeConfigurar, buscar
                             : { icon: CheckCircle2, message: 'Sin saldos', subtext: 'Nadie le debe a la distribuidora.' }}
             >
                 {pagina.map((c, i) => {
-                    const saldo = Number(c.saldo);
-                    const limite = Number(c.limite_credito) || 0;
-                    const uso = limite > 0 ? Math.min(1, saldo / limite) : 1;
-                    const sobre = saldo > limite;
+                    const { saldo, limite, uso, sobre } = usoDelLimite(c);
                     return (
                         <DataRow key={c.id} index={i} onClick={() => setAbierto(c)}>
                             <DataCell>

@@ -13,6 +13,7 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fetchSolicitudesDescuento, resolverDescuento, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { rutaVenta } from './rutas';
+import { ESTADO_SOLICITUD_DESCUENTO } from '@nucleo/utils/distribucionComercial';
 
 // Las solicitudes de descuento de la distribuidora: el vendedor pide un
 // descuento que no puede dar solo y la venta espera como preventa (borrador
@@ -23,12 +24,8 @@ import { rutaVenta } from './rutas';
 // firma, avisa al vendedor y no deja que quien pidió se lo apruebe. Acá se
 // esconde el botón en ese caso para no ofrecer lo que la base va a rechazar.
 
-const ESTADO = {
-    PENDING:   { variant: 'warning', label: 'Por decidir', icon: Clock },
-    APPROVED:  { variant: 'success', label: 'Aprobado', icon: CheckCircle2 },
-    REJECTED:  { variant: 'danger',  label: 'Rechazado', icon: XCircle },
-    CANCELLED: { variant: 'neutral', label: 'Retirada', icon: XCircle },
-};
+const ICONO_ESTADO = { PENDING: Clock, APPROVED: CheckCircle2, REJECTED: XCircle, CANCELLED: XCircle };
+const ESTADO = Object.fromEntries(Object.entries(ESTADO_SOLICITUD_DESCUENTO).map(([k, v]) => [k, { ...v, icon: ICONO_ESTADO[k] }]));
 
 const FILTROS = [
     { value: 'pendientes', label: 'Por decidir' },

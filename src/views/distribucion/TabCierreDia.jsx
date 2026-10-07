@@ -23,7 +23,8 @@ import { imprimirDocumento } from '@nucleo/utils/ticketPrint';
 import { ticketDeCierreDia } from '@nucleo/utils/distribucionDocumento';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fetchCierreDia, registrarDeposito, cerrarDia, reabrirDia, mensajeDeDistribucion } from '@nucleo/data/distribucion';
-import { FORMA_PAGO, leerMonto } from './comun';
+import { nombreFormaPago as rotuloForma } from '@nucleo/utils/distribucionFacturacion';
+import { cuentaDelDia, formasDelDia, depositoListo, preguntaDelCierre } from '@nucleo/utils/distribucionCaja';
 import { rutaSeccion } from './rutas';
 import { MARCA_PAPEL } from './marca';
 
@@ -35,8 +36,6 @@ import { MARCA_PAPEL } from './marca';
 // No se cierra con cajas sin liquidar, y lo que no se depositó exige decir
 // dónde quedó. Cerrado, las liquidaciones de ese día ya no se reabren sin
 // reabrir antes el cierre.
-
-const rotuloForma = (f) => (f === '13' ? 'A crédito' : FORMA_PAGO.find(x => x.value === f)?.label ?? f);
 
 export default function TabCierreDia({ emisor }) {
     const showToast = useToastStore(s => s.showToast);
@@ -78,16 +77,12 @@ export default function TabCierreDia({ emisor }) {
     }, [fecha]);
     useEffect(() => { cargar(); }, [cargar]);
 
-    const recibido = Number(d?.efectivo_recibido ?? 0);
-    const depositado = Number(d?.depositado ?? 0);
-    const queda = Math.round((recibido - depositado) * 100) / 100;
-    const formas = useMemo(() => {
-        const m = new Map();
-        for (const f of d?.por_forma ?? []) m.set(f.forma, (m.get(f.forma) ?? 0) + Number(f.monto));
-        return [...m.entries()];
-    }, [d]);
+    // La conciliación sale del núcleo: la app cuenta igual.
+    const { recibido, depositado, queda } = cuentaDelDia(d);
+    const formas = useMemo(() => formasDelDia(d), [d]);
     const cerrado = !!d?.cierre;
-    const nDep = leerMonto(dep.monto);
+    const deposito = depositoListo(dep);
+    const nDep = deposito.monto;
 
     const correr = async (clave, fn, ok) => {
         setOcupado(clave);
@@ -197,7 +192,7 @@ export default function TabCierreDia({ emisor }) {
                                 </div>
                                 <PortalInput label="Número de boleta" name="dep-referencia" value={dep.referencia} onChange={(e) => setDep(x => ({ ...x, referencia: e.target.value }))} />
                                 <Button variant="secondary" icon={ocupado === 'dep' ? Loader2 : PlusCircle}
-                                    disabled={!(nDep > 0) || !dep.banco.trim() || !dep.referencia.trim() || !!ocupado} onClick={depositar}>Registrar depósito</Button>
+                                    disabled={!deposito.listo || !!ocupado} onClick={depositar}>Registrar depósito</Button>
                             </div>
                         )}
 
@@ -214,7 +209,7 @@ export default function TabCierreDia({ emisor }) {
                                 </>) : <div><Button size="sm" variant="ghost" icon={Unlock} onClick={() => setReabriendo(true)}>Reabrir el día</Button></div>}
                             </>) : (<>
                                 {queda !== 0 && (
-                                    <PortalInput label={queda > 0 ? `Quedan ${formatMoney(queda)} sin depositar: ¿dónde?` : 'Se depositó más de lo recibido: ¿por qué?'}
+                                    <PortalInput label={preguntaDelCierre(queda, formatMoney)}
                                         name="nota-cierre-dia" value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Caja fuerte, fondo de mañana…" />
                                 )}
                                 {queda === 0 && d.pendientes === 0 && <p className="text-caption text-success-text flex items-center gap-1.5"><CheckCircle2 size={14} /> Todo lo recibido está depositado.</p>}

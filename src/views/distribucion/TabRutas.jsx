@@ -27,6 +27,7 @@ import { rutaVentaA } from './rutas';
 import { useEnRuta, esApp } from './rastreo';
 import { hora12 } from '@nucleo/utils/hora';
 import { rotuloTipoCliente } from './comun';
+import { DIAS_RUTA, ROTULO_RESULTADO, avanceDeRuta, comoLlegar, diasDeRuta, alternarDia, moverEnLista, enElMapa } from '@nucleo/utils/distribucionRutas';
 
 // Rutas y visitas (borrador 0027). «Hoy»: los clientes de las rutas que tocan
 // ese día, en su orden, con lo que conviene saber antes de entrar —qué debe,
@@ -39,8 +40,7 @@ const RESULTADOS = [
     { value: 'no_estaba', label: 'No estaba', icon: UserX },
     { value: 'cobro', label: 'Sólo cobro', icon: HandCoins },
 ];
-const DIAS = [{ n: 1, c: 'L' }, { n: 2, c: 'M' }, { n: 3, c: 'Mi' }, { n: 4, c: 'J' }, { n: 5, c: 'V' }, { n: 6, c: 'S' }, { n: 7, c: 'D' }];
-const ROTULO_RESULTADO = Object.fromEntries(RESULTADOS.map(r => [r.value, r.label]));
+const DIAS = DIAS_RUTA;
 
 // La ubicación de la visita se pide SÓLO en la app (Capacitor) y SÓLO al
 // registrar la visita de la ruta (decisión del usuario, 2026-10-01: «solo para
@@ -69,9 +69,6 @@ async function ubicacion() {
         return null;
     }
 }
-const comoLlegar = (c) => (c.lat != null && c.lng != null
-    ? `https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`
-    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c.nombre} ${c.direccion ?? ''} Chalatenango El Salvador`)}`);
 
 function Hoy({ puedeConfigurar }) {
     const { user } = useAuth();
@@ -101,7 +98,7 @@ function Hoy({ puedeConfigurar }) {
     useEffect(() => { if (puedeConfigurar) fetchVendedores().then(setVendedores).catch(() => {}); }, [puedeConfigurar]);
 
     const clientes = useMemo(() => datos?.clientes ?? [], [datos]);
-    const n = { total: clientes.length, venta: clientes.filter(c => c.estado === 'venta').length, visitados: clientes.filter(c => c.estado !== 'pendiente').length };
+    const n = avanceDeRuta(clientes);
     const esHoy = fecha === hoySV();
     const esMio = vendedorId === user?.id;
 
@@ -139,7 +136,7 @@ function Hoy({ puedeConfigurar }) {
                     <StatCard icon={MapPin} label="Por visitar" value={formatQty(n.total - n.visitados)} loading={cargando}
                         iconBg="bg-brand/10" iconCls="text-brand-text" sub={`de ${formatQty(n.total)} clientes`} />
                     <StatCard icon={ShoppingBag} label="Con venta" value={formatQty(n.venta)} loading={cargando}
-                        iconBg="bg-success/10" iconCls="text-success" sub={n.visitados ? `${Math.round((n.venta / n.visitados) * 100)}% de los visitados` : 'Todavía nadie'} />
+                        iconBg="bg-success/10" iconCls="text-success" sub={n.pctVenta != null ? `${n.pctVenta}% de los visitados` : 'Todavía nadie'} />
                     <StatCard icon={CheckCircle2} label="Visitados" value={formatQty(n.visitados)} loading={cargando}
                         iconBg="bg-chart-3/10" iconCls="text-chart-3" sub={datos?.fuera_de_ruta ? `+ ${datos.fuera_de_ruta} ventas fuera de ruta` : 'Venta o visita registrada'} />
                 </CarrilCards>
@@ -173,7 +170,7 @@ function Hoy({ puedeConfigurar }) {
                     <MapPin size={14} className="text-brand-text" />
                     Última ubicación a las {hora12(recorrido.ultima.at)} · {formatQty(recorrido.puntos?.length ?? 0)} puntos del recorrido
                     <a className="font-bold text-brand-text underline" target="_blank" rel="noreferrer"
-                        href={`https://www.google.com/maps/search/?api=1&query=${recorrido.ultima.lat},${recorrido.ultima.lng}`}>Ver en el mapa</a>
+                        href={enElMapa(recorrido.ultima)}>Ver en el mapa</a>
                 </p>
             )}
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
@@ -252,7 +249,7 @@ function Armar() {
         setSel(r ? { id: r.id, nombre: r.nombre, vendedorId: r.vendedor_id ?? '', dias: r.dias ?? [], activo: r.activo } : { id: null, nombre: '', vendedorId: '', dias: [], activo: true });
         setClientes(r ? await fetchClientesDeRuta(r.id).catch(() => []) : []);
     };
-    const mover = (i, d) => setClientes(cs => { const n = [...cs]; const j = i + d; if (j < 0 || j >= n.length) return cs; [n[i], n[j]] = [n[j], n[i]]; return n; });
+    const mover = (i, d) => setClientes(cs => moverEnLista(cs, i, d));
     const guardar = async () => {
         setOcupado('guardar');
         setError('');
@@ -284,7 +281,7 @@ function Armar() {
                                 className={`w-full text-left py-2 px-2 rounded-xl min-h-[var(--tap-min)] active:scale-[0.99] ${sel?.id === r.id ? 'bg-brand/10' : 'hover:bg-surface-card-hover'}`}>
                                 <span className="block text-body-sm font-bold text-content-2">{r.nombre}{!r.activo && ' (inactiva)'}</span>
                                 <span className="block text-caption text-content-3">
-                                    {r.vendedor?.name ? shortEmployeeName(r.vendedor.name) : 'Sin vendedor'} · {r.dias?.length ? DIAS.filter(d => r.dias.includes(d.n)).map(d => d.c).join(' ') : 'sin días'}
+                                    {r.vendedor?.name ? shortEmployeeName(r.vendedor.name) : 'Sin vendedor'} · {diasDeRuta(r.dias)}
                                 </span>
                             </button>
                         </li>
@@ -307,7 +304,7 @@ function Armar() {
                             const on = sel.dias.includes(d.n);
                             return (
                                 <button key={d.n} type="button" aria-pressed={on} data-dia={d.n}
-                                    onClick={() => setSel(s => ({ ...s, dias: on ? s.dias.filter(x => x !== d.n) : [...s.dias, d.n].sort() }))}
+                                    onClick={() => setSel(s => ({ ...s, dias: alternarDia(s.dias, d.n) }))}
                                     className={`w-10 h-10 min-h-[var(--tap-min)] rounded-full text-caption font-black border active:scale-[0.95] ${on ? 'bg-brand text-white border-brand' : 'border-divider text-content-2 hover:bg-surface-card-hover'}`}>
                                     {d.c}
                                 </button>

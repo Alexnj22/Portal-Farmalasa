@@ -13,22 +13,19 @@ import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, rangoDelMes, hoySV } from '@nucleo/utils/fecha';
 import { exportCsv } from '@nucleo/utils/csvExport';
 import { useToastStore } from '@nucleo/store/toastStore';
-import { construirLibro } from '@nucleo/utils/libroIva';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { fetchUtilidad, fetchLibroCompras, fetchLibrosVentas, fetchRelacionadas } from '@nucleo/data/distribucionCompras';
-import { evaluarPrecioRelacionada } from './compras';
 import { armarPaqueteDelMes } from './paquete';
 import { descargarArchivo } from '@plataforma/descargas';
 import { registrarEgreso } from '@nucleo/data/egreso';
-import { csvRetencionVentas, CSV_RET_VENTAS_HEADERS } from '@nucleo/utils/libroIva';
 import FilterBar from '../../components/common/FilterBar';
 import { PERIODOS, rangoDe } from './comun';
 import { TIPOS_COMPRA } from './compras';
 import {
-    AGRUPAR_UTILIDAD, margen, mesesRecientes, comprasParaLibro, totalesDelLibro, LIBROS_VENTAS, totalesContribuyente, totalesConsumidor, aniosRecientes,
-    retencionesDeClientes, percepcionesAClientes, CSV_PERCEPCION_CLIENTES_HEADERS, csvPercepcionClientes, anexoDeCompras, resumenFiscal,
+    AGRUPAR_UTILIDAD, margen, mesesRecientes, totalesDelLibro, LIBROS_VENTAS, totalesContribuyente, totalesConsumidor, aniosRecientes, resumenFiscal,
+    gruposDeUtilidad, filasRelacionadas, csvRelacionadas, archivoDeLibroDeVentas, archivoDeLibroDeCompras, listadosDeRetenciones, archivoDeRetencion,
 } from './reportes';
 import { TIPO_DOCUMENTO } from './comun';
 
@@ -98,8 +95,7 @@ function ReporteUtilidad({ buscar }) {
     const venta = Number(r.venta ?? 0);
     const costo = Number(r.costo ?? 0);
     const filas = useMemo(() => {
-        const q = (buscar ?? '').trim();
-        return (datos?.grupos ?? []).filter(g => g.por === agrupar && (!q || tokenMatch(q, g.nombre)));
+        return gruposDeUtilidad(datos, agrupar, buscar);
     }, [datos, agrupar, buscar]);
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filas.length });
     useEffect(() => { setPage(1); }, [agrupar, periodo, buscar]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -224,8 +220,8 @@ function LibroCompras({ buscar }) {
     const fuera = filas.filter(f => !f.en_libro).length;
 
     const exportar = () => {
-        const libro = construirLibro('compras', { compras: comprasParaLibro(filas) });
-        exportCsv(libro.headers, libro.rows, `libro-compras-torogoz-${mes}.csv`, 'distribucion');
+        const a = archivoDeLibroDeCompras(filas, mes);
+        exportCsv(a.headers, a.rows, a.nombre, 'distribucion');
     };
 
     return (
@@ -342,8 +338,8 @@ function LibrosVentas({ buscar }) {
     const sinArchivo = (datos?.[libro] ?? []).some(f => f.sin_archivo);
 
     const exportar = () => {
-        const l = construirLibro(libro, { [libro]: datos?.[libro] ?? [] });
-        exportCsv(l.headers, l.rows, `${l.base}-torogoz-${mes}.csv`, 'distribucion');
+        const a = archivoDeLibroDeVentas(libro, datos, mes);
+        exportCsv(a.headers, a.rows, a.nombre, 'distribucion');
     };
 
     return (
@@ -494,21 +490,14 @@ function ReporteRelacionadas({ buscar }) {
     useEffect(() => { cargar(); }, [cargar]);
 
     const filas = useMemo(() => {
-        const q = (buscar ?? '').trim();
-        return (datos?.productos ?? [])
-            .map(p => ({ ...p, ref: datos?.referencias?.[p.product_id] ?? null }))
-            .map(p => ({ ...p, avisos: evaluarPrecioRelacionada(p.pagado_u, p.ref) }))
-            .filter(p => !q || tokenMatch(q, p.nombre));
+        return filasRelacionadas(datos, buscar);
     }, [datos, buscar]);
     const conAviso = filas.filter(f => f.avisos.length).length;
     const r = datos?.resumen ?? {};
 
     const exportar = () => {
-        const m = (n) => (n == null ? '' : Number(n).toFixed(4));
-        exportCsv(['PRODUCTO', 'UNIDADES', 'PAGADO TOTAL', 'PAGADO C/U SIN IVA', 'COSTO FARMALASA C/U', 'MAYOREO FARMALASA C/U SIN IVA', 'VENTA TOROGOZ C/U SIN IVA', 'AVISOS'],
-            filas.map(f => [f.nombre, f.unidades, Number(f.pagado).toFixed(2), m(f.pagado_u), m(f.ref?.costo_farmalasa), m(f.ref?.mayoreo_sin_iva),
-                m(f.ref?.precio_torogoz_sin_iva), f.avisos.map(a => a.texto).join(' | ')]),
-            `compras-relacionadas-torogoz-${anio}.csv`, 'distribucion');
+        const a = csvRelacionadas(filas, anio);
+        exportCsv(a.headers, a.rows, a.nombre, 'distribucion');
     };
 
     return (
@@ -614,33 +603,13 @@ function ReporteRetenciones() {
     }, [mes]);
     useEffect(() => { cargar(); }, [cargar]);
 
-    const ret = useMemo(() => retencionesDeClientes(ventas?.contribuyente), [ventas]);
-    const perc = useMemo(() => percepcionesAClientes(ventas?.contribuyente), [ventas]);
-    const percProv = useMemo(() => anexoDeCompras(compras, 'percepcion'), [compras]);
-    const retProv = useMemo(() => anexoDeCompras(compras, 'retencion'), [compras]);
     const r = useMemo(() => resumenFiscal({ tc: totalesContribuyente(ventas?.contribuyente), tf: totalesConsumidor(ventas?.consumidor), compras }), [ventas, compras]);
-    const suma = (xs, k) => xs.reduce((a, x) => a + Number(x[k] || 0), 0);
+    const LISTADOS = useMemo(() => listadosDeRetenciones(ventas, compras), [ventas, compras]);
 
     const bajar = (clave) => {
-        const archivo = `-torogoz-${mes}.csv`;
-        if (clave === 'ret') exportCsv(CSV_RET_VENTAS_HEADERS, csvRetencionVentas(ret), `iva-retenido-sobre-ventas${archivo}`, 'distribucion');
-        if (clave === 'perc') exportCsv(CSV_PERCEPCION_CLIENTES_HEADERS, csvPercepcionClientes(perc), `iva-percibido-a-clientes${archivo}`, 'distribucion');
-        if (clave === 'percProv' || clave === 'retProv') {
-            const tab = clave === 'percProv' ? 'percepcion' : 'retencion';
-            const l = construirLibro(tab, { [tab]: clave === 'percProv' ? percProv : retProv });
-            exportCsv(l.headers, l.rows, `${l.base}${archivo}`, 'distribucion');
-        }
+        const a = archivoDeRetencion(LISTADOS.find(l => l.clave === clave), mes);
+        exportCsv(a.headers, a.rows, a.nombre, 'distribucion');
     };
-    const LISTADOS = [
-        { clave: 'ret', titulo: 'IVA que nos retuvieron', sub: 'Clientes grandes contribuyentes (1 %) — anticipo', n: ret.length, total: suma(ret, 'retencion_iva'),
-          filas: ret.map(f => [f.cliente, f.numero_control, f.retencion_iva]) },
-        { clave: 'perc', titulo: 'IVA que percibimos', sub: 'A clientes, como agente de percepción — se entera', n: perc.length, total: suma(perc, 'percibido'),
-          filas: perc.map(f => [f.cliente, f.numero_control, f.percibido]) },
-        { clave: 'percProv', titulo: 'Percepción que nos cobraron', sub: 'Proveedores grandes contribuyentes — anticipo', n: percProv.length, total: suma(percProv, 'percepcion_iva'),
-          filas: percProv.map(f => [f.proveedor, f.documento_numero, f.percepcion_iva]) },
-        { clave: 'retProv', titulo: 'Retención que hicimos', sub: 'A proveedores — se entera', n: retProv.length, total: suma(retProv, 'retencion_iva'),
-          filas: retProv.map(f => [f.proveedor, f.documento_numero, f.retencion_iva]) },
-    ];
 
     return (
         <div className="flex flex-col gap-4">

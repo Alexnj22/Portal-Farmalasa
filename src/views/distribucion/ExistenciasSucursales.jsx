@@ -6,6 +6,7 @@ import Badge from '../../components/common/Badge';
 import { buscarInventarioGlobalV2 } from '@nucleo/data/inventory';
 import { ERP_NAMES, ERP_ORDEN } from '@nucleo/constants/erp';
 import { formatQty } from '@nucleo/utils/formatNumber';
+import { existenciasPorProducto } from '@nucleo/utils/distribucionBodega';
 
 // «¿Hay en alguna sala?» — la existencia de un producto en TODAS las
 // sucursales (las siete, Bodega incluida), sin salir de la venta. Pedido del
@@ -41,19 +42,7 @@ export default function ExistenciasSucursales({ terminoInicial = '', onClose }) 
         return () => clearTimeout(t);
     }, [termino]);
 
-    // producto → sala → unidades (una fila por lote y presentación: se suma).
-    const productos = useMemo(() => {
-        const m = new Map();
-        for (const f of filas ?? []) {
-            if (f.is_vencidos) continue;
-            const k = f.erp_product_id;
-            if (!m.has(k)) m.set(k, { id: k, nombre: f.descripcion, salas: new Map() });
-            const salas = m.get(k).salas;
-            const unidades = Number(f.cantidad || 0) * Number(f.factor || 1);
-            salas.set(f.erp_sucursal_id, (salas.get(f.erp_sucursal_id) ?? 0) + unidades);
-        }
-        return [...m.values()].sort((a, b) => a.nombre.localeCompare(b.nombre));
-    }, [filas]);
+    const productos = useMemo(() => existenciasPorProducto(filas), [filas]);
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" ariaLabel="Existencias en todas las sucursales">

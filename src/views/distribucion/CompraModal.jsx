@@ -24,6 +24,9 @@ import {
     evaluarPrecioRelacionada,
 } from './compras';
 import ProveedorModal from './ProveedorModal';
+import {
+    compraConLectura, compraConMontosCalculados, compraDesdeDetalle, compraVacia, costoSinIvaDeRenglon, payloadDeCompra, renglonDeCompraVacio,
+} from '@nucleo/utils/distribucionComercial';
 
 // Una compra a proveedor, de la captura a la bodega.
 //
@@ -37,15 +40,10 @@ import ProveedorModal from './ProveedorModal';
 // mueve inventario y costo promedio, y no se deshace: se anula, sólo mientras
 // todo lo que entró siga en bodega.
 
-const vacio = () => ({
-    client_uuid: crypto.randomUUID(), proveedor_id: '', tipo_doc: '03', numero: '', codigo_generacion: '', fecha: hoySV(),
-    condicion: 1, vence: '', gravada: '', exenta: '', iva: '', percepcion: '', retencion: '', total: '', nota: '', items: [],
-});
-const renglonVacio = () => ({ key: crypto.randomUUID(), product_id: null, cantidad: '', costo_unitario: '', lote: '', vence: '' });
+const vacio = () => compraVacia(hoySV());
 // Los rótulos que no son de un PortalInput, con la misma forma que los de él.
 const ROTULO = rotuloCampo();
 const num = (v) => { const n = Number(String(v ?? '').replace(',', '.')); return Number.isFinite(n) ? n : 0; };
-const monto = (v) => (v === '' || v === null || v === undefined ? '' : String(v));
 
 function CampoMonto({ label, name, value, onChange, esperado, disabled }) {
     const ok = esperado === undefined || value === '' || Math.abs(num(value) - esperado) <= 0.01;
@@ -88,17 +86,7 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
             if (!vivo) return;
             setDetalle(d);
             setEstado(d.estado);
-            setC({
-                id: d.id, client_uuid: d.client_uuid, proveedor_id: String(d.proveedor_id), tipo_doc: d.tipo_doc, numero: d.numero,
-                codigo_generacion: d.codigo_generacion ?? '', fecha: d.fecha, condicion: d.condicion, vence: d.vence ?? '',
-                gravada: monto(d.gravada), exenta: monto(d.exenta), iva: monto(d.iva), percepcion: monto(d.percepcion),
-                retencion: monto(d.retencion), total: monto(d.total), nota: d.nota ?? '',
-                items: (d.dist_compra_items ?? []).sort((a, b) => a.id - b.id).map(i => ({
-                    key: String(i.id), product_id: i.product_id, codigo_proveedor: i.codigo_proveedor, descripcion_proveedor: i.descripcion_proveedor,
-                    cantidad: String(i.cantidad), costo_unitario: String(Number(i.costo_unitario)), lote: i.lote ?? '', vence: i.vence ?? '',
-                    lote_id: i.lote_id, nombre: i.products?.nombre,
-                })),
-            });
+            setC(compraDesdeDetalle(d));
         }).catch(e => { if (vivo) setError(mensajeDeDistribucion(e)); });
         return () => { vivo = false; };
     }, [compraId]);
@@ -137,7 +125,7 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
     const avisosPrecio = useMemo(() => {
         if (!proveedor?.relacionada || !c) return [];
         return c.items.map(it => evaluarPrecioRelacionada(
-            c.tipo_doc === '03' ? num(it.costo_unitario) : num(it.costo_unitario) / 1.13, refs[it.product_id]));
+            costoSinIvaDeRenglon(it, c.tipo_doc), refs[it.product_id]));
     }, [proveedor?.relacionada, c, refs]);
     const conAviso = avisosPrecio.filter(a => a.length).length;
     const problemas = useMemo(() => (c ? problemasDeCompra(c) : []), [c]);
@@ -148,16 +136,9 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
         const pre = leerDteDelProveedor(json);
         const prov = pre.emisor.nit ? provs.find(p => p.nit === pre.emisor.nit) : null;
         const mem = prov ? await fetchMemoriaProveedor(prov.id).catch(() => ({})) : {};
-        const { compra, items } = leerDteDelProveedor(json, { memoria: mem });
+        const leida = leerDteDelProveedor(json, { memoria: mem });
         setEmisorDelJson(prov ? null : pre.emisor);
-        setC(x => ({
-            ...x, ...compra, proveedor_id: prov ? String(prov.id) : x.proveedor_id,
-            codigo_generacion: compra.codigo_generacion ?? '',
-            gravada: monto(compra.gravada), exenta: monto(compra.exenta), iva: monto(compra.iva),
-            percepcion: monto(compra.percepcion), retencion: monto(compra.retencion), total: monto(compra.total),
-            vence: compra.condicion === 2 && prov?.plazo_dias ? sumarDias(compra.fecha, prov.plazo_dias) : '',
-            items: items.map(it => ({ ...it, key: crypto.randomUUID(), cantidad: String(it.cantidad), costo_unitario: String(it.costo_unitario) })),
-        }));
+        setC(x => compraConLectura(x, leida, prov));
     }, [proveedores]);
 
     const cargarArchivo = async (e) => {
@@ -174,25 +155,9 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
         }
     };
 
-    const copiarCalculado = () => setC(x => {
-        const gravada = calc.productos;
-        const iva = x.tipo_doc === '03' ? calc.iva : 0;
-        return { ...x, gravada: String(gravada), exenta: x.exenta || '0', iva: String(iva),
-            total: String(totalEsperado({ ...x, gravada, iva })) };
-    });
+    const copiarCalculado = () => setC(compraConMontosCalculados);
 
-    const payload = () => ({
-        id: c.id ?? null, client_uuid: c.client_uuid, proveedor_id: Number(c.proveedor_id), tipo_doc: c.tipo_doc,
-        numero: c.numero.trim(), codigo_generacion: c.codigo_generacion?.trim() || null, fecha: c.fecha,
-        condicion: Number(c.condicion), vence: Number(c.condicion) === 2 ? c.vence || null : null,
-        gravada: num(c.gravada), exenta: num(c.exenta), iva: num(c.iva), percepcion: num(c.percepcion), retencion: num(c.retencion), total: num(c.total),
-        nota: c.nota,
-        items: c.items.filter(it => it.product_id).map(it => ({
-            product_id: Number(it.product_id), codigo_proveedor: it.codigo_proveedor ?? null, descripcion_proveedor: it.descripcion_proveedor ?? null,
-            unidades_por: it.unidades_por ?? 1, cantidad: Math.round(num(it.cantidad)), costo_unitario: num(it.costo_unitario),
-            lote: String(it.lote ?? '').trim().toUpperCase(), vence: it.vence || null,
-        })),
-    });
+    const payload = () => payloadDeCompra(c);
 
     const guardar = async ({ recibir = false } = {}) => {
         setOcupado(recibir ? 'recibir' : 'guardar');
@@ -340,7 +305,7 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
                         <section className="flex flex-col gap-2" aria-label="Productos de la compra">
                             <div className="flex items-center justify-between gap-2">
                                 <h3 className="text-body font-black text-content">Productos</h3>
-                                {editable && <Button size="sm" variant="secondary" icon={Plus} onClick={() => setC(x => ({ ...x, items: [...x.items, renglonVacio()] }))}>Agregar producto</Button>}
+                                {editable && <Button size="sm" variant="secondary" icon={Plus} onClick={() => setC(x => ({ ...x, items: [...x.items, renglonDeCompraVacio()] }))}>Agregar producto</Button>}
                             </div>
                             {c.items.length === 0 ? (
                                 <p className="text-caption text-content-3 py-3">Sin productos todavía. Carga el JSON del proveedor o agrégalos a mano.</p>

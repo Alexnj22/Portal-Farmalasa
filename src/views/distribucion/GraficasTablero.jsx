@@ -17,6 +17,7 @@ import {
 } from 'recharts';
 import ChartContainer from '../../components/common/ChartContainer';
 import { formatMoney, formatMoneyCorto, formatQty } from '@nucleo/utils/formatNumber';
+import { diaCorto, serieDiaria, semanaCompleta, horasDelDia } from '@nucleo/utils/distribucionTablero';
 
 // La paleta vigente de DESIGN.md §6 (chart-2, -5 y -7 están retirados).
 const COLORES = ['var(--chart-1)', 'var(--success)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-9)',
@@ -28,10 +29,8 @@ const TOOLTIP = {
     background: 'var(--surface-modal)', border: '1px solid var(--border-modal)',
     borderRadius: '0.75rem', fontSize: 12, color: 'var(--text-primary)', backdropFilter: 'blur(20px)',
 };
-const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-const DIAS = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-// «2026-09-25» → «25 sep», sin pasar por `new Date` en UTC (retrocede un día).
-const dia = (iso) => { const [, m, d] = String(iso).slice(0, 10).split('-').map(Number); return `${d} ${MESES[m - 1]}`; };
+// Los días, las horas y la serie salen del núcleo: la app pinta los mismos.
+const dia = diaCorto;
 const dinero = (v) => formatMoney(Number(v) || 0);
 const dineroCorto = (v) => formatMoneyCorto(Number(v) || 0);
 
@@ -41,7 +40,7 @@ const dineroCorto = (v) => formatMoneyCorto(Number(v) || 0);
  * dice «así íbamos entonces» sin importar qué fecha era.
  */
 export function GraficaVentasDiarias({ serie, metrica = 'ventas' }) {
-    const datos = (serie ?? []).map(d => ({ ...d, etiqueta: dia(d.fecha), ventas: Number(d.ventas), anterior: Number(d.anterior), documentos: Number(d.documentos) }));
+    const datos = serieDiaria(serie);
     const esDinero = metrica === 'ventas';
     return (
         <ChartContainer minHeight={240}>
@@ -125,9 +124,7 @@ export function GraficaDona({ datos, clave, valor = 'ventas', activo = null, onE
 
 /** Ventas por día de la semana (lunes a domingo, los que no tienen van en cero). */
 export function GraficaSemana({ datos }) {
-    const por = new Map((datos ?? []).map(d => [Number(d.dia), d]));
-    const filas = [1, 2, 3, 4, 5, 6, 7].map(n => ({ etiqueta: DIAS[n], ventas: Number(por.get(n)?.ventas) || 0, documentos: Number(por.get(n)?.documentos) || 0 }));
-    const max = Math.max(...filas.map(f => f.ventas));
+    const filas = semanaCompleta(datos);
     return (
         <ChartContainer minHeight={170}>
             <BarChart data={filas} margin={{ top: 8, right: 8, left: -4, bottom: 0 }} barCategoryGap="22%">
@@ -138,7 +135,7 @@ export function GraficaSemana({ datos }) {
                     formatter={(v, _n, p) => [`${dinero(v)} · ${formatQty(p?.payload?.documentos)} documentos`, 'Ventas']} />
                 <Bar dataKey="ventas" radius={[4, 4, 0, 0]} maxBarSize={34} isAnimationActive={false}>
                     {/* El mejor día resalta: es lo que se busca en esta gráfica. */}
-                    {filas.map(f => <Cell key={f.etiqueta} fill={f.ventas === max && max > 0 ? 'var(--success)' : 'var(--chart-1)'} />)}
+                    {filas.map(f => <Cell key={f.etiqueta} fill={f.mejor ? 'var(--success)' : 'var(--chart-1)'} />)}
                 </Bar>
             </BarChart>
         </ChartContainer>
@@ -147,11 +144,7 @@ export function GraficaSemana({ datos }) {
 
 /** Documentos por hora del día (de 6 a 20). */
 export function GraficaHoras({ datos }) {
-    const por = new Map((datos ?? []).map(d => [Number(d.hora), d]));
-    const filas = [];
-    for (let h = 6; h <= 20; h += 1) {
-        filas.push({ etiqueta: `${h > 12 ? h - 12 : h}${h >= 12 ? 'p' : 'a'}`, documentos: Number(por.get(h)?.documentos) || 0, ventas: Number(por.get(h)?.ventas) || 0 });
-    }
+    const filas = horasDelDia(datos);
     return (
         <ChartContainer minHeight={170}>
             <BarChart data={filas} margin={{ top: 8, right: 8, left: -12, bottom: 0 }} barCategoryGap="16%">

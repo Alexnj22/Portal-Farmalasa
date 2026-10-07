@@ -14,12 +14,11 @@ import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
-import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { fetchCatalogo, guardarPrecio, agregarAlCatalogo, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { buscarProductos } from '@nucleo/data/busquedaProductos';
-import { leerMonto } from './comun';
+import { filtrarCatalogo, leerFormularioDePrecio, resumenDeCatalogo } from '@nucleo/utils/distribucionComercial';
 import { descuentoDelCatalogo } from './precios';
 import Campo from './Campo';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
@@ -77,28 +76,12 @@ function PrecioModal({ item, emisorId, emisorTope, onClose, onGuardado }) {
     const controlado = nuevo
         ? !!(producto && (producto.es_antibiotico || producto.requiere_receta || producto.regulado))
         : item.controlado;
-    // Con IVA y en centavos: es lo que paga el cliente, y la columna no guarda
-    // más de dos decimales (un tercero se redondearía sin avisar).
-    const leido = leerMonto(precio);
-    const precioNum = leido !== null && Math.abs(leido * 100 - Math.round(leido * 100)) < 1e-9 ? leido : null;
-    const pctNum = descPct.trim() === '' ? 0 : leerMonto(descPct);
-    const pctMalo = pctNum === null || pctNum < 0 || pctNum > 100;
-    const topeNum = tope.trim() === '' ? null : leerMonto(tope);
-    const topeMalo = tope.trim() !== '' && (topeNum === null || topeNum < 0 || topeNum > 100);
-    const fechasMal = !!(descDesde && descHasta && descDesde > descHasta);
     // ¿Con el descuento queda bajo el costo? El costo es sin IVA y por unidad
-    // (0015); el precio es con IVA. Avisa, no bloquea: una liquidación de
-    // vencimiento bajo el costo puede ser justo lo que se quiere.
+    // (0015). Las cuentas viven en el núcleo, las mismas de la app.
     const costo = nuevo ? null : Number(item.costo_promedio ?? 0) || null;
-    const finalSinIva = precioNum !== null && !pctMalo ? (precioNum * (1 - (pctNum || 0) / 100)) / 1.13 : null;
-    const bajoCosto = costo !== null && finalSinIva !== null && finalSinIva < costo - 0.0001;
-    const listo = (nuevo ? !!producto : true) && precioNum !== null && !pctMalo && !topeMalo && !fechasMal && !guardando;
-    const descuento = {
-        descuento_pct: pctNum || 0,
-        descuento_desde: pctNum ? descDesde || null : null,
-        descuento_hasta: pctNum ? descHasta || null : null,
-        descuento_max_pct: topeNum,
-    };
+    const { precioNum, pctNum, pctMalo, topeMalo, fechasMal, finalSinIva, bajoCosto, valido, descuento } =
+        leerFormularioDePrecio({ precio, descPct, tope, descDesde, descHasta, costo });
+    const listo = (nuevo ? !!producto : true) && valido && !guardando;
 
     // Lo escrito sobrevive a que la sesión se cierre sola (gate:borradores).
     const { recuperado, descartar } = useBorrador(!nuevo ? `distribucion-precio-${emisorId}-${item.product_id}` : null,
@@ -236,21 +219,9 @@ export default function TabCatalogo({ emisor, puedeConfigurar, buscar }) {
     useEffect(() => { cargar(); }, [cargar]);
 
     const hoy = hoySV();
-    const filtrados = useMemo(() => {
-        const q = buscar.trim();
-        return items.filter(p => (!q || tokenMatch(q, p.nombre))
-            && (!canal || (canal === 'libre' ? p.venta_libre && !p.controlado
-                : canal === 'farmacia' ? !p.venta_libre || p.controlado
-                : canal === 'descuento' ? descuentoDelCatalogo(p, hoy) > 0
-                : !p.activo)));
-    }, [items, buscar, canal, hoy]);
+    const filtrados = useMemo(() => filtrarCatalogo(items, { buscar, canal, hoy }), [items, buscar, canal, hoy]);
 
-    const stats = useMemo(() => ({
-        total: items.filter(p => p.activo).length,
-        libre: items.filter(p => p.activo && p.venta_libre && !p.controlado).length,
-        farmacia: items.filter(p => p.activo && (!p.venta_libre || p.controlado)).length,
-        descuento: items.filter(p => p.activo && descuentoDelCatalogo(p, hoy) > 0).length,
-    }), [items, hoy]);
+    const stats = useMemo(() => resumenDeCatalogo(items, hoy), [items, hoy]);
 
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filtrados.length });
     useEffect(() => { setPage(1); }, [buscar, canal]); // eslint-disable-line react-hooks/exhaustive-deps

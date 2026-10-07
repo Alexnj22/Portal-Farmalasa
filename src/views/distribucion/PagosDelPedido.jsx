@@ -9,19 +9,15 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { fetchPagos, subirComprobante, adjuntarComprobante, mensajeDeDistribucion, LLEVA_COMPROBANTE } from '@nucleo/data/distribucion';
 import ComprobantePago from './ComprobantePago';
-import { FORMA_PAGO } from './comun';
+import { nombreFormaPago, VERIFICACION_PAGO } from '@nucleo/utils/distribucionFacturacion';
 
 // Las formas de pago de un pedido y sus comprobantes, para verlos y para
 // adjuntar DESPUÉS el que faltó al vender. La forma y el monto ya no se tocan
 // si el pedido está facturado (están en el documento): sólo el comprobante.
 
-const NOMBRE_FORMA = Object.fromEntries([...FORMA_PAGO.map(f => [f.value, f.label]), ['13', 'A crédito'], ['99', 'Otra']]);
-const VERIF = {
-    coincide: { variant: 'success', icon: CheckCircle2, label: 'Coincide' },
-    sin_lectura: { variant: 'info', icon: CheckCircle2, label: 'Confirmado a mano' },
-    diferencia_aceptada: { variant: 'warning', icon: AlertTriangle, label: 'Con diferencia' },
-    pendiente: { variant: 'warning', icon: Clock, label: 'Falta el comprobante' },
-};
+// El rótulo y el tono salen del núcleo (la app los dice igual); acá, el ícono.
+const ICONO_VERIF = { coincide: CheckCircle2, sin_lectura: CheckCircle2, diferencia_aceptada: AlertTriangle, pendiente: Clock };
+const VERIF = Object.fromEntries(Object.entries(VERIFICACION_PAGO).map(([k, v]) => [k, { ...v, icon: ICONO_VERIF[k] }]));
 
 export default function PagosDelPedido({ pedidoId, puedeEditar, onCambio }) {
     const showToast = useToastStore(s => s.showToast);
@@ -66,7 +62,7 @@ export default function PagosDelPedido({ pedidoId, puedeEditar, onCambio }) {
                     <div key={p.id} className="px-4 py-2.5 border-b border-divider last:border-b-0 flex flex-col gap-2">
                         <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
-                                <p className="text-body-sm text-content-2">{NOMBRE_FORMA[p.forma] ?? p.forma}{p.referencia ? ` · ${p.referencia}` : ''}</p>
+                                <p className="text-body-sm text-content-2">{nombreFormaPago(p.forma)}{p.referencia ? ` · ${p.referencia}` : ''}</p>
                                 {p.nota && <p className="text-caption text-content-3">{p.nota}</p>}
                             </div>
                             <div className="flex items-center gap-2 shrink-0">

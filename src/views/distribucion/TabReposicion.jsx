@@ -11,12 +11,12 @@ import PortalInput from '../../components/common/PortalInput';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
-import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { exportCsv } from '@nucleo/utils/csvExport';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { fetchReposicion, fijarMinMax, mensajeDeDistribucion } from '@nucleo/data/distribucion';
+import { enteroOpcional, filasDeReposicion, resumenDeReposicion, pedidoSugeridoCsv } from '@nucleo/utils/distribucionBodega';
 
 // Qué comprar y a quién, antes de que falte (borrador 0025). El mínimo y el
 // máximo salen de la velocidad de venta (días de cobertura de la empresa) o se
@@ -32,7 +32,7 @@ const COLS = [
     { key: 'sugerido', label: 'Comprar', align: 'right' },
     { key: 'proveedor', label: 'Proveedor habitual', align: 'left', hideBelow: 'lg' },
 ];
-const entero = (t) => { const s = String(t ?? '').trim(); return s === '' ? null : /^\d+$/.test(s) ? Number(s) : NaN; };
+const entero = enteroOpcional;
 
 function MinMaxModal({ producto, onClose, onGuardado }) {
     const [min, setMin] = useState(producto.manual ? String(producto.minimo) : '');
@@ -94,40 +94,31 @@ export default function TabReposicion({ puedeConfigurar, buscar }) {
     }, []);
     useEffect(() => { cargar(); }, [cargar]);
 
-    const todos = useMemo(() => datos?.productos ?? [], [datos]);
-    const bajo = useMemo(() => todos.filter(p => p.sugerido > 0), [todos]);
-    const filas = useMemo(() => {
-        const q = (buscar ?? '').trim();
-        return (soloBajo ? bajo : todos).filter(p => !q || tokenMatch(q, p.nombre, p.proveedor));
-    }, [todos, bajo, soloBajo, buscar]);
+    const filas = useMemo(() => filasDeReposicion(datos, { soloBajo, buscar }), [datos, soloBajo, buscar]);
+    const resumen = useMemo(() => resumenDeReposicion(datos), [datos]);
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filas.length });
     useEffect(() => { setPage(1); }, [soloBajo, buscar]); // eslint-disable-line react-hooks/exhaustive-deps
     const pagina = filas.slice((page - 1) * pageSize, page * pageSize);
-    const costoSugerido = bajo.reduce((a, p) => a + p.sugerido * Number(p.costo || 0), 0);
-    const vencidos = todos.filter(p => p.vencido > 0);
 
     const exportar = () => {
-        const orden = [...bajo].sort((a, b) => String(a.proveedor ?? 'ZZZ').localeCompare(String(b.proveedor ?? 'ZZZ')) || a.nombre.localeCompare(b.nombre));
-        exportCsv(['PROVEEDOR', 'PRODUCTO', 'DISPONIBLE', 'MINIMO', 'MAXIMO', 'COMPRAR', 'ULTIMO COSTO C/U', 'ESTIMADO'],
-            orden.map(p => [p.proveedor ?? 'Sin proveedor', p.nombre, p.disponible, p.minimo, p.maximo, p.sugerido,
-                p.costo ? Number(p.costo).toFixed(4) : '', p.costo ? (p.sugerido * Number(p.costo)).toFixed(2) : '']),
-            'pedido-sugerido-torogoz.csv', 'distribucion');
+        const a = pedidoSugeridoCsv(datos);
+        exportCsv(a.headers, a.rows, a.nombre, 'distribucion');
     };
 
     return (
         <div className="p-5 md:p-6 space-y-5">
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de reposición">
-                    <StatCard icon={TrendingDown} label="Bajo el mínimo" value={formatQty(bajo.length)} loading={cargando}
-                        iconBg="bg-danger/10" iconCls="text-danger" valueCls={bajo.length ? 'text-danger-text' : undefined} sub={`de ${formatQty(todos.length)} productos`}
+                    <StatCard icon={TrendingDown} label="Bajo el mínimo" value={formatQty(resumen.bajo)} loading={cargando}
+                        iconBg="bg-danger/10" iconCls="text-danger" valueCls={resumen.bajo ? 'text-danger-text' : undefined} sub={`de ${formatQty(resumen.todos)} productos`}
                         active={soloBajo} tono="danger" onClick={() => setSoloBajo(v => !v)} />
-                    <StatCard icon={ShoppingCart} label="Compra sugerida" value={formatMoney(costoSugerido)} loading={cargando}
+                    <StatCard icon={ShoppingCart} label="Compra sugerida" value={formatMoney(resumen.costoSugerido)} loading={cargando}
                         iconBg="bg-brand/10" iconCls="text-brand-text" sub="Al último costo, sin IVA" />
-                    <StatCard icon={CalendarX2} label="Con lotes vencidos" value={formatQty(vencidos.length)} loading={cargando}
+                    <StatCard icon={CalendarX2} label="Con lotes vencidos" value={formatQty(resumen.vencidos)} loading={cargando}
                         iconBg="bg-warning/10" iconCls="text-warning" sub="No cuentan como disponibles" />
                 </CarrilCards>
                 <FilterBar onClear={() => setSoloBajo(false)} activeCount={soloBajo ? 1 : 0}
-                    acciones={[{ key: 'csv', icon: Download, label: 'Pedido sugerido', variant: 'secondary', onClick: exportar, disabled: !bajo.length }]}>
+                    acciones={[{ key: 'csv', icon: Download, label: 'Pedido sugerido', variant: 'secondary', onClick: exportar, disabled: !resumen.bajo }]}>
                     <FilterBar.Chip active={soloBajo} onToggle={() => setSoloBajo(v => !v)} tone="brand">Sólo bajo el mínimo</FilterBar.Chip>
                 </FilterBar>
             </div>

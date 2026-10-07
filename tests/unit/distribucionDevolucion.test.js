@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { totalDevolucion } from '../../src/views/distribucion/devolucion.js';
+import { totalDevolucion } from '@nucleo/utils/distribucionFacturacion';
 
 // La misma cuenta que `dist_preparar_devolucion` (0017): unidades × precio con
 // IVA menos su parte del descuento, por renglón y lote.

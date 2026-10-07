@@ -28,6 +28,9 @@ const EN_LA_BARRA = new Set(['overview', 'emp_announcements', 'emp_profile', 'em
 // del menú sin leer. Son los de la marca y los de gráficas del portal.
 const COLORES = ['#0052CC', '#12B76A', '#F79009', '#6929C4', '#E0457B', '#0BA5EC', '#F04438', '#8EC30F', '#981D97'];
 
+// El petróleo de la marca de la distribuidora (COLORES_DISTRIBUIDORA.petroleo).
+const COLOR_TOROGOZ = '#0f6e7d';
+
 function Renglon({ m, color, primero }) {
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); abrirModulo(m); }}
@@ -63,6 +66,10 @@ export default function Menu() {
     return acc;
   }, []), [grupos]);
 
+  // Torogoz no está en los grupos de las farmacias (otro NIT; en el portal
+  // tiene su propia entrada en `/torogoz`), así que va en su propia tarjeta.
+  const torogoz = hasPermission('distribucion') ? { key: 'distribucion', ...MODULE_MAP.distribucion } : null;
+
   if (!user) return null;
 
   return (
@@ -81,6 +88,16 @@ export default function Menu() {
           </Vidrio>
         </View>
       ))}
+      {torogoz ? (
+        <View style={{ gap: 7, marginHorizontal: 16 }}>
+          <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>Distribuidora</Text>
+          <Vidrio radio={22}>
+            <View style={{ paddingVertical: 2 }}>
+              <Renglon m={torogoz} primero color={COLOR_TOROGOZ} />
+            </View>
+          </Vidrio>
+        </View>
+      ) : null}
     </ScrollView>
   );
 }

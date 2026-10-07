@@ -19,7 +19,8 @@ import { useNavigate } from 'react-router-dom';
 import { fetchDocumentos, fetchDocumento, reintentarDocumento, enviarContingencia, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { enviarDocumentoPorCorreo } from './correo';
 import DocumentoModal from './DocumentoModal';
-import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO, CUBETAS_FACTURACION as CUBETAS, revisionHacienda, pideAccion, selloValido } from './comun';
+import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO, CUBETAS_FACTURACION as CUBETAS, revisionHacienda } from './comun';
+import { DIAS_DE_FACTURACION, gruposDeFacturacion, documentosDeLaCubeta, faltaElCertificado, resumenDelReenvio, resumenDeContingencia } from '@nucleo/utils/distribucionFacturacion';
 import { rutaVenta } from './rutas';
 
 // Facturación de la distribuidora: el control con Hacienda. Pedido del usuario
@@ -42,8 +43,6 @@ const COLS = [
     { key: 'total',     label: 'Total',     align: 'right' },
 ];
 
-const esPorEnviar = (d) => revisionHacienda(d)?.accion === 'reenviar';
-
 export default function TabDocumentos({ puedeVender, buscar }) {
     const navigate = useNavigate();
     const showToast = useToastStore(s => s.showToast);
@@ -63,7 +62,7 @@ export default function TabDocumentos({ puedeVender, buscar }) {
         setCargando(true);
         setError('');
         try {
-            const r = await fetchDocumentos({ desde: sumarDias(hoySV(), -120) });
+            const r = await fetchDocumentos({ desde: sumarDias(hoySV(), -DIAS_DE_FACTURACION) });
             if (mio === pedidoRef.current) setDocs(r);
         } catch (e) {
             if (mio !== pedidoRef.current) return;
@@ -75,32 +74,13 @@ export default function TabDocumentos({ puedeVender, buscar }) {
     }, []);
     useEffect(() => { cargar(); }, [cargar]);
 
-    const grupos = useMemo(() => {
-        const accion = docs.filter(pideAccion);
-        return {
-            accion,
-            porEnviar: accion.filter(esPorEnviar),
-            rechazados: accion.filter(d => d.estado === 'rechazado'),
-            invalidaciones: accion.filter(d => ['pendiente', 'rechazada'].includes(d.invalidacion_estado)),
-            contingencia: accion.filter(d => d.estado === 'contingencia'),
-            sellados: docs.filter(d => d.estado === 'sellado' && selloValido(d.sello_recibido)),
-            vendido: docs.filter(d => d.estado === 'sellado' && (d.tipo === '01' || d.tipo === '03'))
-                .reduce((a, d) => a + Number(d.total_pagar), 0),
-            // Sellados que todavía no le llegaron al cliente (borrador 0019).
-            sinEntregar: docs.filter(d => d.estado === 'sellado' && ['pendiente', 'fallido', 'sin_correo'].includes(d.correo?.[0]?.estado)),
-        };
-    }, [docs]);
+    // Los grupos y la cubeta salen del núcleo: la app cuenta igual.
+    const grupos = useMemo(() => gruposDeFacturacion(docs), [docs]);
 
     const filtrados = useMemo(() => {
         const q = buscar.trim();
-        let base = cubeta === 'accion' ? grupos.accion
-            : cubeta === 'sellados' ? grupos.sellados
-            : cubeta === 'invalidados' ? docs.filter(d => d.estado === 'invalidado')
-            : docs;
-        if (cubeta === 'accion' && sub === 'por_enviar') base = grupos.porEnviar;
-        if (cubeta === 'accion' && sub === 'rechazados') base = grupos.rechazados;
-        if (cubeta === 'accion' && sub === 'invalidaciones') base = grupos.invalidaciones;
-        return base.filter(d => (!tipo || d.tipo === tipo) && (!q || tokenMatch(q, d.dist_clientes?.nombre, d.numero_control, d.codigo_generacion)));
+        return documentosDeLaCubeta(docs, grupos, { cubeta, sub, tipo,
+            coincide: q ? (d) => tokenMatch(q, d.dist_clientes?.nombre, d.numero_control, d.codigo_generacion) : null });
     }, [docs, grupos, cubeta, sub, buscar, tipo]);
 
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filtrados.length });
@@ -121,7 +101,7 @@ export default function TabDocumentos({ puedeVender, buscar }) {
                 else if (r?.estado === 'rechazado') cuenta.rechazado += 1;
                 else cuenta.pendiente += 1;
                 // Sin certificado no hay nada que reintentar: los demás darían lo mismo.
-                if (r?.estado === 'sin_firmar' && /certificado/i.test(r?.aviso ?? '')) {
+                if (faltaElCertificado(r)) {
                     setAvisoFirma(r.aviso);
                     break;
                 }
@@ -133,8 +113,7 @@ export default function TabDocumentos({ puedeVender, buscar }) {
         }
         useStaff.getState().appendAuditLog('DISTRIBUCION_DTE_REENVIO_EN_BLOQUE', null, { total: lista.length, ...cuenta });
         setReenvio(null);
-        showToast('Reenvío terminado',
-            `${cuenta.sellado} recibidos por Hacienda · ${cuenta.rechazado} rechazados · ${cuenta.pendiente + cuenta.error} siguen pendientes`,
+        showToast('Reenvío terminado', resumenDelReenvio(cuenta),
             cuenta.rechazado || cuenta.error ? 'warning' : 'success');
         cargar();
     };
@@ -146,9 +125,8 @@ export default function TabDocumentos({ puedeVender, buscar }) {
         try {
             const r = await enviarContingencia();
             useStaff.getState().appendAuditLog('DISTRIBUCION_CONTINGENCIA_AVISO', null, { avisos: r?.avisos?.length ?? 0, sellados: r?.sellados });
-            const rechazado = (r?.avisos ?? []).find(a => a.estado === 'rechazado');
-            if (rechazado) showToast('Hacienda rechazó el aviso de contingencia', rechazado.mensaje ?? '', 'error');
-            else showToast('Aviso de contingencia enviado', `${r?.sellados ?? 0} recibidos por Hacienda · ${r?.pendientes ?? 0} pendientes`, 'success');
+            const aviso = resumenDeContingencia(r);
+            showToast(aviso.titulo, aviso.texto, aviso.bien ? 'success' : 'error');
         } catch (e) {
             setAvisoFirma(mensajeDeDistribucion(e));
         } finally {
@@ -156,12 +134,12 @@ export default function TabDocumentos({ puedeVender, buscar }) {
             cargar();
         }
     };
-    const sinAviso = grupos.contingencia.filter(d => !d.contingencia_id);
+    const sinAviso = grupos.sinAvisoDeContingencia;
 
     const todoBien = !cargando && grupos.accion.length === 0;
 
     const [enviandoCorreos, setEnviandoCorreos] = useState(null); // { hecho, total }
-    const enviables = grupos.sinEntregar.filter(d => d.correo?.[0]?.estado !== 'sin_correo');
+    const enviables = grupos.enviables;
     /** Manda, de a uno, los correos pendientes. Cada PDF se arma acá. */
     const enviarCorreos = async () => {
         if (!enviables.length) return;
@@ -201,7 +179,7 @@ export default function TabDocumentos({ puedeVender, buscar }) {
                             </p>
                             <p className="text-caption text-content-2">
                                 {todoBien
-                                    ? `Los ${formatQty(grupos.sellados.length)} documentos de los últimos 120 días tienen código de generación y sello de recepción.`
+                                    ? `Los ${formatQty(grupos.sellados.length)} documentos de los últimos ${DIAS_DE_FACTURACION} días tienen código de generación y sello de recepción.`
                                     : [
                                         grupos.porEnviar.length && `${formatQty(grupos.porEnviar.length)} sin sello de Hacienda`,
                                         grupos.rechazados.length && `${formatQty(grupos.rechazados.length)} rechazado${grupos.rechazados.length === 1 ? '' : 's'} por corregir`,

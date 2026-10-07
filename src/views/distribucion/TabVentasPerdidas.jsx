@@ -7,7 +7,6 @@ import Notice from '../../components/common/Notice';
 import TablePagination from '../../components/common/TablePagination';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
-import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -15,6 +14,7 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { fetchVentasPerdidas, resolverVentaPerdida, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import VentaPerdidaModal from './VentaPerdidaModal';
+import { ORIGEN_PERDIDA, filtrarVentasPerdidas } from '@nucleo/utils/distribucionBodega';
 
 // Ventas perdidas de la distribuidora: lo que los clientes pidieron y no se les
 // pudo vender. Es la lista de compras — quien administra la marca «atendida»
@@ -23,11 +23,8 @@ import VentaPerdidaModal from './VentaPerdidaModal';
 // aquí. Pedido del usuario, 2026-09-29.
 
 
-const ORIGEN = {
-    catalogo: { label: 'Sin existencia', icon: Package, variant: 'warning' },
-    srs:      { label: 'Medicamento (SRS)', icon: Pill, variant: 'info' },
-    insumo:   { label: 'Insumo', icon: Package, variant: 'neutral' },
-};
+const ICONOS_ORIGEN = { catalogo: Package, srs: Pill, insumo: Package };
+const ORIGEN = Object.fromEntries(Object.entries(ORIGEN_PERDIDA).map(([k, o]) => [k, { ...o, icon: ICONOS_ORIGEN[k] }]));
 
 const COLS = [
     { key: 'producto', label: 'Producto', align: 'left', className: 'w-[260px]' },
@@ -60,10 +57,7 @@ export default function TabVentasPerdidas({ emisor, puedeVender, puedeConfigurar
     }, [vista]);
     useEffect(() => { cargar(); }, [cargar]);
 
-    const filtrados = useMemo(() => {
-        const q = (buscar ?? '').trim();
-        return q ? filas.filter(f => tokenMatch(q, f.producto, f.principio_activo, f.dist_clientes?.nombre, f.laboratorio)) : filas;
-    }, [filas, buscar]);
+    const filtrados = useMemo(() => filtrarVentasPerdidas(filas, buscar), [filas, buscar]);
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filtrados.length });
     const pagina = filtrados.slice((page - 1) * pageSize, page * pageSize);
 

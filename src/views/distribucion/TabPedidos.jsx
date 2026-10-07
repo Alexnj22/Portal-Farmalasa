@@ -8,7 +8,6 @@ import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
-import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -16,7 +15,8 @@ import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { fetchPedidos, contarPagosSinComprobante } from '@nucleo/data/distribucion';
 import DocumentoModal from './DocumentoModal';
 import PedidoModal from './PedidoModal';
-import { ESTADO_PEDIDO, ESTADO_DOCUMENTO, TIPO_DOCUMENTO, rotuloTipoCliente, VISTAS_PEDIDOS } from './comun';
+import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO, rotuloTipoCliente } from './comun';
+import { VENTANA_PEDIDOS_DIAS, estadoDePedido, pedidosDeLaVista, resumenDePedidos, controlCorto } from '@nucleo/utils/distribucionPedidos';
 import { rutaVenta } from './rutas';
 import { totalDePedido } from './motor';
 
@@ -32,7 +32,7 @@ const COLS = [
 
 // Se trae una ventana de 60 días: la preventa se factura el mismo día o el
 // siguiente, y lo viejo vive en Documentos.
-const VENTANA_DIAS = 60;
+const VENTANA_DIAS = VENTANA_PEDIDOS_DIAS;
 
 export default function TabPedidos({ emisor, puedeVender, buscar, vista = 'pendientes', onVista }) {
     const navigate = useNavigate();
@@ -65,20 +65,10 @@ export default function TabPedidos({ emisor, puedeVender, buscar, vista = 'pendi
     }, []);
     useEffect(() => { cargar(); }, [cargar]);
 
-    const filtrados = useMemo(() => {
-        const q = buscar.trim();
-        const estados = (VISTAS_PEDIDOS.find(v => v.key === vista) ?? VISTAS_PEDIDOS[0]).estados;
-        return pedidos.filter(p => estados.includes(p.estado)
-            && (!q || tokenMatch(q, p.dist_clientes?.nombre, String(p.id), p.dist_dte?.numero_control)));
-    }, [pedidos, buscar, vista]);
+    const filtrados = useMemo(() => pedidosDeLaVista(pedidos, vista, buscar), [pedidos, buscar, vista]);
 
     const hoy = hoySV();
-    const stats = useMemo(() => ({
-        porFacturar: pedidos.filter(p => p.estado === 'confirmado').length,
-        facturadosHoy: pedidos.filter(p => p.estado !== 'anulado' && p.dist_dte && p.created_at.slice(0, 10) === hoy).length,
-        sinSello: pedidos.filter(p => p.dist_dte && ['sin_firmar', 'firmado', 'contingencia'].includes(p.dist_dte.estado)).length,
-        rechazados: pedidos.filter(p => p.dist_dte?.estado === 'rechazado').length,
-    }), [pedidos, hoy]);
+    const stats = useMemo(() => resumenDePedidos(pedidos, hoy), [pedidos, hoy]);
 
     // Recién facturado desde la vista de venta: llega con `?documento=` (y
     // `&imprimir=1` si se pidió el ticket). Se abre el documento UNA vez y se
@@ -139,11 +129,8 @@ export default function TabPedidos({ emisor, puedeVender, buscar, vista = 'pendi
                         : { icon: ClipboardList, message: vista === 'anulados' ? 'Sin anulados' : 'Sin pedidos finalizados' }}
             >
                 {pagina.map((p, i) => {
-                    // Una preventa con un descuento pedido espera a que lo decidan:
-                    // no está «por facturar» todavía, y se dice así.
-                    const est = p.estado === 'confirmado' && p.descuento_solicitud_id
-                        ? { variant: 'warning', label: 'Descuento por aprobar' }
-                        : ESTADO_PEDIDO[p.estado] ?? ESTADO_PEDIDO.confirmado;
+                    // Una preventa con un descuento pedido espera a que lo decidan.
+                    const est = estadoDePedido(p);
                     const dte = p.dist_dte;
                     const estDte = dte ? ESTADO_DOCUMENTO[dte.estado] : null;
                     return (
@@ -166,7 +153,7 @@ export default function TabPedidos({ emisor, puedeVender, buscar, vista = 'pendi
                                 {dte
                                     ? <div className="min-w-0">
                                         <p className="text-caption text-content-2">{TIPO_DOCUMENTO[dte.tipo]?.largo}</p>
-                                        <p className="font-mono text-caption text-content-3 truncate">{dte.numero_control.slice(-15).replace(/^0+/, '#')}</p>
+                                        <p className="font-mono text-caption text-content-3 truncate">{controlCorto(dte.numero_control)}</p>
                                     </div>
                                     : <span className="text-content-3 text-label">—</span>}
                             </DataCell>

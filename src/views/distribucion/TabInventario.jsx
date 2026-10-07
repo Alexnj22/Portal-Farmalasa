@@ -16,7 +16,8 @@ import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { fechaNumerica, diasHasta } from '@nucleo/utils/fecha';
+import { fechaNumerica } from '@nucleo/utils/fecha';
+import { POR_VENCER, TIPO_MOVIMIENTO, estadoDeVencimiento, leerEntero, costosDelCatalogo, lotesConDias, filtrarLotes, resumenDeLotes } from '@nucleo/utils/distribucionBodega';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
@@ -34,8 +35,6 @@ import useBorrador from '@nucleo/hooks/useBorrador';
 // escrita a mano sería una venta sin documento. Lo que no cuadra con lo que
 // hay en la bodega se corrige con un ajuste, que exige su motivo.
 
-const POR_VENCER = 90; // días
-
 const COLS = [
     { key: 'producto',   label: 'Producto',   align: 'left', className: 'w-[280px]' },
     { key: 'lote',       label: 'Lote',       align: 'left' },
@@ -44,29 +43,6 @@ const COLS = [
 ];
 // El costo sólo lo ve quien administra: es el margen de la empresa.
 const COL_COSTO = { key: 'costo', label: 'Al costo', align: 'right', hideBelow: 'md' };
-
-const TIPO_MOVIMIENTO = {
-    entrada: { label: 'Entrada', variant: 'success' },
-    ajuste: { label: 'Ajuste', variant: 'warning' },
-    venta: { label: 'Venta', variant: 'neutral' },
-    liberacion: { label: 'Liberado', variant: 'info' },
-    devolucion: { label: 'Devuelto', variant: 'info' },
-    compra: { label: 'Compra', variant: 'success' },
-    compra_anulada: { label: 'Compra anulada', variant: 'danger' },
-};
-
-function estadoDeVencimiento(vence) {
-    if (!vence) return { variant: 'neutral', texto: 'Sin fecha' };
-    const d = diasHasta(vence);
-    if (d < 0) return { variant: 'danger', texto: `Vencido hace ${-d} d` };
-    if (d <= POR_VENCER) return { variant: 'warning', texto: d === 0 ? 'Vence hoy' : `En ${d} d` };
-    return { variant: 'success', texto: `En ${d} d` };
-}
-
-const leerEntero = (t) => {
-    const s = String(t ?? '').trim();
-    return /^\d+$/.test(s) ? Number(s) : null;
-};
 
 function EntradaModal({ emisorId, onClose, onGuardado }) {
     const [catalogo, setCatalogo] = useState([]);
@@ -306,7 +282,7 @@ export default function TabInventario({ emisor, puedeVender, puedeConfigurar, bu
                 setLotes(r.filter(l => !l.en_camion_de));
                 setCuarentena(cua);
                 // Costo promedio por producto (sin IVA), lo mantienen las compras (borrador 0015).
-                setCostos(new Map(cat.filter(p => p.costo_promedio !== null).map(p => [`${p.emisor_id}:${p.product_id}`, Number(p.costo_promedio)])));
+                setCostos(costosDelCatalogo(cat));
             }
         } catch (e) {
             if (mio !== pedidoRef.current) return;
@@ -318,30 +294,10 @@ export default function TabInventario({ emisor, puedeVender, puedeConfigurar, bu
     }, [puedeConfigurar]);
     useEffect(() => { cargar(); }, [cargar]);
 
-    const conDias = useMemo(() => lotes.map(l => {
-        const costo = costos.get(`${l.emisor_id}:${l.product_id}`);
-        return { ...l, dias: l.vence ? diasHasta(l.vence) : null, costo: costo ?? null, valor: costo !== undefined ? costo * l.existencia : null };
-    }), [lotes, costos]);
+    const conDias = useMemo(() => lotesConDias(lotes, costos), [lotes, costos]);
 
-    const filtrados = useMemo(() => {
-        const q = buscar.trim();
-        return conDias.filter(l => (!q || tokenMatch(q, `${l.nombre} ${l.lote}`))
-            && (filtro === 'agotados' ? l.existencia === 0 : l.existencia > 0)
-            && (filtro !== 'porVencer' || (l.dias !== null && l.dias >= 0 && l.dias <= POR_VENCER))
-            && (filtro !== 'vencidos' || (l.dias !== null && l.dias < 0)));
-    }, [conDias, buscar, filtro]);
-
-    const stats = useMemo(() => {
-        const vivos = conDias.filter(l => l.existencia > 0);
-        return {
-            productos: new Set(vivos.map(l => l.product_id)).size,
-            unidades: vivos.reduce((t, l) => t + l.existencia, 0),
-            porVencer: vivos.filter(l => l.dias !== null && l.dias >= 0 && l.dias <= POR_VENCER).length,
-            vencidos: vivos.filter(l => l.dias !== null && l.dias < 0).length,
-            valor: vivos.reduce((t, l) => t + (l.valor ?? 0), 0),
-            sinCosto: new Set(vivos.filter(l => l.costo === null).map(l => l.product_id)).size,
-        };
-    }, [conDias]);
+    const filtrados = useMemo(() => filtrarLotes(conDias, { buscar, filtro }), [conDias, buscar, filtro]);
+    const stats = useMemo(() => resumenDeLotes(conDias), [conDias]);
 
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filtrados.length });
     useEffect(() => { setPage(1); }, [buscar, filtro]); // eslint-disable-line react-hooks/exhaustive-deps

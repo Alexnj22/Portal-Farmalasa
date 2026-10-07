@@ -7,6 +7,7 @@ import PortalInput from '../../components/common/PortalInput';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { leerComprobante } from '@nucleo/data/distribucion';
 import { leerMonto } from './comun';
+import { revisionDelComprobante, TEXTO_FORMA_COMPROBANTE as TEXTO_FORMA } from '@nucleo/utils/distribucionFacturacion';
 
 // Adjuntar el comprobante de un pago y decidir qué pasa si no cuadra.
 //
@@ -19,8 +20,6 @@ import { leerMonto } from './comun';
 //     queda marcado como verificado.
 //
 // Devuelve con `onListo({ archivo, lectura, montoLeido, verificacion, nota, montoNuevo })`.
-
-const TEXTO_FORMA = { '02': 'de la tarjeta', '03': 'de la tarjeta', '04': 'del cheque', '05': 'de la transferencia', '08': 'del pago electrónico', '99': 'del pago' };
 
 export default function ComprobantePago({ forma, montoEsperado, puedeCambiarMonto = false, onListo }) {
     const [archivo, setArchivo] = useState(null);
@@ -47,12 +46,10 @@ export default function ComprobantePago({ forma, montoEsperado, puedeCambiarMont
         }
     };
 
-    const leido = resultado?.leido;
-    const hubieronDatos = resultado && !resultado.sinLector && leido?.es_comprobante && leido?.legible !== false && Number.isFinite(Number(leido?.monto));
-    const noEsComprobante = resultado && !resultado.sinLector && leido && leido.es_comprobante === false;
-    const montoLeido = hubieronDatos ? Number(leido.monto) : leerMonto(montoPapel);
-    const esperado = montoEsperado == null ? null : Number(montoEsperado);
-    const cuadra = montoLeido != null && esperado != null && Math.abs(montoLeido - esperado) < 0.005;
+    // Qué pasa con el comprobante lo decide el núcleo: la app lo cuadra igual.
+    const rev = revisionDelComprobante(resultado, { montoEsperado, montoPapel: leerMonto(montoPapel) });
+    const { leido, hubieronDatos, noEsComprobante, montoLeido, esperado } = rev;
+    const cuadra = rev.estado === 'coincide';
     const sinComparar = esperado == null; // «el resto»: el monto final lo calcula el documento
 
     const terminar = ({ verificacion, notaFinal, montoNuevo = null }) => onListo?.({

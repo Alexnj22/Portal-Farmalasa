@@ -687,6 +687,9 @@ export const AREAS = [
             'src/views/DistribucionView.jsx', 'src/views/DistribucionVentaView.jsx', 'src/views/distribucion/',
             'src/data/distribucion.js', 'src/data/distribucionInventario.js', 'src/data/distribucionCompras.js', 'src/data/geoCodigosMH.js', 'src/data/actividadesMH.js',
             'src/utils/distribucionDocumento.js', 'tests/unit/distribucionDocumento.test.js',
+            'src/utils/distribucionTablero.js', 'src/utils/distribucionRutas.js', 'src/utils/distribucionPedidos.js', 'tests/unit/distribucionTableroRutasPedidos.test.js',
+            'src/utils/distribucionVenta.js', 'src/utils/distribucionMotor.js', 'src/utils/distribucionLotes.js', 'src/utils/distribucionPagos.js', 'src/data/distribucionSinSenal.js', 'tests/unit/distribucionVenta.test.js',
+            'src/utils/distribucionComun.js', 'src/utils/distribucionPrecios.js', 'src/utils/distribucionCompras.js', 'src/utils/distribucionComercial.js', 'tests/unit/distribucionComercial.test.js',
             'tests/e2e/distribucion.spec.js', 'tests/e2e/distribucion-movil.spec.js', 'tests/e2e/distribucionEntrar.js',
             'supabase/functions/_shared/dte/',
             'supabase/functions/distribucion-dte/', 'supabase/functions/distribucion-comprobante/', 'supabase/functions/distribucion-correo/',
@@ -697,6 +700,8 @@ export const AREAS = [
             'tests/unit/distribucionCartera.test.js', 'tests/unit/distribucionCompras.test.js', 'tests/unit/distribucionReportes.test.js', 'tests/unit/distribucionDevolucion.test.js', 'tests/unit/distribucionLiquidacion.test.js',
             'scripts/entorno-pruebas/distribucion.mjs',
             'tests/fixtures/dte-reales-2026-09.json',
+            'src/utils/distribucionBodega.js', 'src/utils/distribucionReportes.js', 'tests/unit/distribucionBodega.test.js',
+            'src/utils/distribucionFacturacion.js', 'src/utils/distribucionCaja.js', 'src/utils/distribucionCartera.js', 'src/utils/distribucionMarca.js', 'src/utils/distribucionDocumentoHtml.js', 'tests/unit/distribucionFacturacionCaja.test.js',
         ],
         // Las 43 tablas dist_* de los borradores (todavía no en producción:
         // hasta entonces el gate sólo avisa «declarada y no en el snapshot»).

@@ -8,16 +8,14 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { resolverCuarentena, mensajeDeDistribucion } from '@nucleo/data/distribucion';
+import { ACCIONES_CUARENTENA } from '@nucleo/utils/distribucionBodega';
 
 // Lo devuelto que no volvió a la venta (borrador 0017): dañado, vencido o
 // dudoso. No cuenta en la existencia hasta que alguien decida. Reingresar
 // exige que el lote no esté vencido — la base lo vuelve a mirar.
 
-const ACCIONES = [
-    { estado: 'reingresada', label: 'Reingresar', icon: PackageCheck, toast: 'Volvió a la existencia de su lote.' },
-    { estado: 'devuelta_proveedor', label: 'Al proveedor', icon: Truck, toast: 'Anotado como devuelto al proveedor.' },
-    { estado: 'destruida', label: 'Destruir', icon: Trash2, toast: 'Anotado como destruido.' },
-];
+const ICONOS = { reingresada: PackageCheck, devuelta_proveedor: Truck, destruida: Trash2 };
+const ACCIONES = ACCIONES_CUARENTENA.map(a => ({ ...a, icon: ICONOS[a.estado] }));
 
 export default function CuarentenaModal({ filas, puedeResolver, onClose, onCambio }) {
     const showToast = useToastStore(s => s.showToast);

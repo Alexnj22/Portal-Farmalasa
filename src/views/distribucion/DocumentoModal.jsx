@@ -14,7 +14,7 @@ import CorreoDocumento from './CorreoDocumento';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { fechaTexto, fechaNumerica } from '@nucleo/utils/fecha';
+import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import {
     fetchDocumento, fetchPagos, reintentarDocumento, descartarDocumento, mensajeDeDistribucion,
@@ -28,7 +28,8 @@ import {
     ticketDeVenta, imprimirTicketDeVenta, pdfDelDocumento, nombreDelPdf, urlConsultaPublica, jsonParaElCliente, leerDocumento,
 } from '@nucleo/utils/distribucionDocumento';
 import { MARCA_PAPEL } from './marca';
-import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO, FORMA_PAGO } from './comun';
+import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO } from './comun';
+import { nombreFormaPago as nombreForma, accionesDelDocumento, avisoDelPlazo, ayudaDelSellado, avisoDeAccion, resumenDeContingencia } from '@nucleo/utils/distribucionFacturacion';
 import EstadoHacienda from './EstadoHacienda';
 import { useNavigate } from 'react-router-dom';
 import { rutaVolverAVender } from './rutas';
@@ -58,8 +59,6 @@ const VISTAS = [
     { value: 'pdf', label: 'PDF' },
     { value: 'datos', label: 'Datos' },
 ];
-
-const nombreForma = (f) => (f === '13' ? 'A crédito' : FORMA_PAGO.find(x => x.value === f)?.label ?? f);
 
 /** Una fila rótulo · valor del detalle. */
 function Fila({ rotulo, valor, fuerte = false, tono = '' }) {
@@ -172,35 +171,12 @@ function VistaPdf({ url, error }) {
 // El plazo para invalidar, dicho antes de que alguien lo intente. Los estados
 // salen de `dist_plazo_invalidacion` (borrador 0028).
 function AvisoPlazo({ plazo, tipo }) {
-    const limite = fechaNumerica(plazo.limite);
-    if (plazo.estado === 'vencido') {
-        return (
-            <Notice variant="danger" compact data-plazo="vencido">
-                Venció el plazo para invalidarlo ({limite}).{tipo === '03'
-                    ? ' Si hay que corregirlo, usa «Devolución»: emite una nota de crédito.'
-                    : ' Ya no se puede corregir ni deshacer ante Hacienda.'}
-            </Notice>
-        );
+    const a = avisoDelPlazo(plazo, tipo);
+    if (!a) return null;
+    if (!['vencido', 'gracia', 'medicamentos'].includes(plazo.estado)) {
+        return <p className={`text-caption ${a.tono === 'cuidado' ? 'text-warning-text font-bold' : 'text-content-3'}`} data-plazo="vigente">{a.texto}</p>;
     }
-    if (plazo.estado === 'gracia') {
-        return (
-            <Notice variant="warning" compact data-plazo="gracia">
-                El plazo para invalidarlo era el {limite}. Puede que Hacienda todavía lo acepte si hubo asuetos; si lo rechaza, corrige con nota de crédito.
-            </Notice>
-        );
-    }
-    if (plazo.estado === 'medicamentos') {
-        return (
-            <Notice variant="warning" compact data-plazo="medicamentos">
-                Pasaron los 3 meses para invalidar una factura ({limite}). Sólo se puede si la venta es de medicamentos, hasta el {fechaNumerica(plazo.limite_medicamentos)}.
-            </Notice>
-        );
-    }
-    return (
-        <p className={`text-caption ${plazo.dias <= 3 ? 'text-warning-text font-bold' : 'text-content-3'}`} data-plazo="vigente">
-            Se puede corregir o deshacer ante Hacienda hasta el {limite}{plazo.dias <= 3 ? ` · quedan ${plazo.dias === 0 ? 'horas' : `${plazo.dias} día${plazo.dias === 1 ? '' : 's'}`}` : ''}.
-        </p>
-    );
+    return <Notice variant={a.tono === 'freno' ? 'danger' : 'warning'} compact data-plazo={plazo.estado}>{a.texto}</Notice>;
 }
 
 export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = false, onClose, onCambio, onCorregirPedido }) {
@@ -272,7 +248,8 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
         try {
             const r = await fn();
             useStaff.getState().appendAuditLog(auditoria, String(id), { estado: r?.estado });
-            showToast(ESTADO_DOCUMENTO[r?.estado]?.label ?? 'Listo', r?.aviso ?? r?.mensaje ?? '', r?.estado === 'sellado' ? 'success' : 'warning');
+            const aviso = avisoDeAccion(r, ESTADO_DOCUMENTO);
+            showToast(aviso.titulo, aviso.texto, aviso.bien ? 'success' : 'warning');
             return r;
         } catch (e) {
             setError(mensajeDeDistribucion(e));
@@ -312,9 +289,8 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
         try {
             const r = await enviarContingencia();
             useStaff.getState().appendAuditLog('DISTRIBUCION_CONTINGENCIA_AVISO', String(id), { avisos: r?.avisos?.length ?? 0, sellados: r?.sellados });
-            const rechazado = (r?.avisos ?? []).find(a => a.estado === 'rechazado');
-            if (rechazado) showToast('Hacienda rechazó el aviso de contingencia', rechazado.mensaje ?? '', 'error');
-            else showToast('Aviso de contingencia enviado', `${r?.sellados ?? 0} sellados · ${r?.pendientes ?? 0} pendientes · ${r?.rechazados ?? 0} rechazados`, 'success');
+            const aviso = resumenDeContingencia(r);
+            showToast(aviso.titulo, aviso.texto, aviso.bien ? 'success' : 'error');
         } catch (e) {
             setError(mensajeDeDistribucion(e));
         } finally {
@@ -341,16 +317,9 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
     };
 
     const est = d ? ESTADO_DOCUMENTO[d.estado] : null;
-    const sinSello = d && ['sin_firmar', 'firmado', 'contingencia'].includes(d.estado);
-    const conArchivo = !!d?.json?.identificacion;
-    const invalidando = d?.invalidacion_estado === 'pendiente' || d?.invalidacion_estado === 'procesada';
-    // Pasado el plazo, Hacienda no sella el evento: ni «Corregir» (que invalida
-    // el sellado) ni «Deshacer» sirven. Queda la Nota de Crédito.
-    const vencido = d?.estado === 'sellado' && plazo?.estado === 'vencido';
-    const puedeCorregir = puedeVender && d?.pedido_id && (sinSello || d.estado === 'rechazado' || (d.estado === 'sellado' && !invalidando && !vencido));
-    const puedeDeshacer = puedeVender && d?.estado === 'sellado' && !invalidando && !vencido;
-    // Devolución parcial: Nota de Crédito, que sólo corrige un Crédito Fiscal (borrador 0017).
-    const puedeDevolver = puedeVender && d?.tipo === '03' && d?.estado === 'sellado' && !invalidando;
+    // Qué se puede hacer, con la MISMA regla que la app (núcleo): pasado el
+    // plazo, ni «Corregir» ni «Deshacer»; la devolución es Nota de Crédito.
+    const { conArchivo, invalidando, vencido, puedeCorregir, puedeDeshacer, puedeDevolver, conCorreo } = accionesDelDocumento(d, { puedeVender, plazo });
 
     return (
         <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-3xl" ariaLabel="Documento">
@@ -390,7 +359,7 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                         {conArchivo && vista === 'detalle' && <VistaDetalle dte={d} pagos={pagos} />}
                         {conArchivo && vista === 'ticket' && <VistaTicket dte={d} pagos={pagos ?? []} />}
                         {conArchivo && vista === 'pdf' && <VistaPdf url={pdf.url} error={pdf.error} />}
-                        {conArchivo && vista === 'detalle' && ['01', '03', '05'].includes(d.tipo) && d.estado !== 'invalidado' && (
+                        {conArchivo && vista === 'detalle' && conCorreo && (
                             <CorreoDocumento key={d.correo?.[0]?.enviado_at ?? d.id} dte={d} puedeEnviar={puedeVender} onEnviado={cargar} />
                         )}
                         {vista === 'datos' && (
@@ -410,13 +379,7 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                         )}
                         {d.estado === 'sellado' && !invalidando && plazo && <AvisoPlazo plazo={plazo} tipo={d.tipo} />}
                         {d.estado === 'sellado' && puedeVender && !invalidando && !vencido && (
-                            <p className="text-caption text-content-3">
-                                Con sello, «Corregir» emite un documento nuevo que reemplaza a éste, y éste se invalida ante Hacienda.
-                                Si la venta no se hizo, usa «Deshacer la venta».
-                                {d.tipo === '03'
-                                    ? ' Si el cliente regresa sólo una parte, «Devolución» emite una nota de crédito por eso.'
-                                    : ' A una Factura no se le hace nota de crédito: si el cliente regresa una parte, «Corregir» y deja sólo lo que se queda.'}
-                            </p>
+                            <p className="text-caption text-content-3">{ayudaDelSellado(d.tipo)}</p>
                         )}
                         {deshaciendo && (
                             <PortalInput label="¿Por qué se deshace la venta? (lo lee Hacienda)" name="motivo-invalidacion" value={motivo}

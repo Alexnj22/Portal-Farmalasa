@@ -20,8 +20,10 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const fuente = fs.readFileSync(
-    path.join(process.cwd(), 'src/components/forms/EmployeeFormModal.jsx'), 'utf8');
+// Las secciones viven en el núcleo y la lista de acreditaciones en el
+// formulario: se leen los dos.
+const fuente = ['src/utils/documentosDelExpediente.js', 'src/components/forms/EmployeeFormModal.jsx']
+    .map(f => fs.readFileSync(path.join(process.cwd(), f), 'utf8')).join('\n');
 
 /* Recorta un arreglo por sus CORCHETES, contándolos.
  *

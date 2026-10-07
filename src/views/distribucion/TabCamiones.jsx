@@ -24,6 +24,7 @@ import {
 } from '@nucleo/data/distribucion';
 import { fetchLotes } from '@nucleo/data/distribucionInventario';
 import { ESTADO_DOCUMENTO } from './comun';
+import { cargaSinNota, resumenDeCamiones, lotesCargables, yaEnLaCarga, validarUnidadesDeCarga, cuentaDeDescarga } from '@nucleo/utils/distribucionRutas';
 
 // Autoventa (borrador 0030): lo que lleva cada camión.
 //
@@ -66,17 +67,15 @@ function CargarModal({ vendedores, vendedorInicial, onClose, onListo }) {
     useEffect(() => {
         let vivo = true;
         fetchLotes()
-            .then(r => { if (vivo) setLotes(r.filter(l => !l.en_camion_de && Number(l.existencia) > 0)); })
+            .then(r => { if (vivo) setLotes(lotesCargables(r)); })
             .catch(e => { if (vivo) setError(mensajeDeDistribucion(e)); });
         return () => { vivo = false; };
     }, []);
 
     const porId = useMemo(() => new Map((lotes ?? []).map(l => [String(l.id), l])), [lotes]);
-    const yaPuesto = (id) => items.filter(i => i.lote_id === Number(id)).reduce((t, i) => t + i.unidades, 0);
+    const yaPuesto = (id) => yaEnLaCarga(items, id);
     const sel = porId.get(lote);
-    const libre = sel ? Number(sel.existencia) - yaPuesto(sel.id) : 0;
-    const n = Number(unidades);
-    const nMalo = unidades !== '' && (!Number.isInteger(n) || n <= 0 || n > libre);
+    const { n, libre, malo: nMalo } = validarUnidadesDeCarga(sel, items, unidades);
 
     const agregar = () => {
         if (!sel || nMalo || !n) return;
@@ -179,12 +178,9 @@ function DescargarModal({ camion, onClose, onListo }) {
     const [nota, setNota] = useState('');
     const [ocupado, setOcupado] = useState(false);
     const [error, setError] = useState('');
-    const malos = lotesConAlgo.filter(l => {
-        const v = contado[l.lote_id];
-        return v === '' || !Number.isInteger(Number(v)) || Number(v) < 0 || Number(v) > Number(l.queda);
-    });
-    const faltan = lotesConAlgo.reduce((t, l) => t + Math.max(0, Number(l.queda) - (Number(contado[l.lote_id]) || 0)), 0);
-    const listo = !malos.length && (faltan === 0 || nota.trim() !== '') && !ocupado;
+    const cuenta = cuentaDeDescarga(camion.lotes, contado, nota);
+    const { malos, faltan } = cuenta;
+    const listo = cuenta.listo && !ocupado;
 
     const descargar = async () => {
         setOcupado(true);
@@ -292,11 +288,7 @@ export default function TabCamiones({ puedeConfigurar, buscar }) {
 
     const q = (buscar ?? '').trim();
     const visibles = camiones.map(c => ({ ...c, lotes: (c.lotes ?? []).filter(l => !q || tokenMatch(q, l.nombre, l.lote)) }));
-    const totales = useMemo(() => ({
-        camiones: camiones.filter(c => c.carga).length,
-        unidades: camiones.reduce((t, c) => t + (c.lotes ?? []).reduce((s, l) => s + Number(l.queda || 0), 0), 0),
-        sinNota: camiones.filter(c => c.carga && (!c.carga.dte || ['descartado', 'rechazado', 'invalidado'].includes(c.carga.dte.estado))).length,
-    }), [camiones]);
+    const totales = useMemo(() => resumenDeCamiones(camiones), [camiones]);
 
     const acciones = puedeConfigurar
         ? [{ key: 'cargar', icon: Plus, label: 'Cargar camión', variant: 'primary', onClick: () => setCargar({}) }]
@@ -324,7 +316,7 @@ export default function TabCamiones({ puedeConfigurar, buscar }) {
             )}
 
             {visibles.map(c => {
-                const sinNota = c.carga && (!c.carga.dte || ['descartado', 'rechazado', 'invalidado'].includes(c.carga.dte.estado));
+                const sinNota = cargaSinNota(c.carga);
                 const est = c.carga?.dte ? ESTADO_DOCUMENTO[c.carga.dte.estado] : null;
                 return (
                     <section key={c.vendedor_id} data-surface="card" className="p-4 flex flex-col gap-3" aria-label={`Camión de ${shortEmployeeName(c.vendedor)}`} data-camion={c.vendedor_id}>

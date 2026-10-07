@@ -17,6 +17,7 @@ import {
 import { ESTADO_PEDIDO, ESTADO_DOCUMENTO, TIPO_DOCUMENTO, FORMA_PAGO, rotuloTipoCliente } from './comun';
 import PagosDelPedido from './PagosDelPedido';
 import { calcularVenta } from './motor';
+import { accionesDePedido } from '@nucleo/utils/distribucionPedidos';
 import { useNavigate } from 'react-router-dom';
 import { rutaVolverAVender } from './rutas';
 
@@ -43,8 +44,9 @@ export default function PedidoModal({ pedido, puedeVender, onClose, onCambio, on
     const est = ESTADO_PEDIDO[pedido.estado] ?? ESTADO_PEDIDO.confirmado;
     const dte = pedido.dist_dte;
     const estDte = dte ? ESTADO_DOCUMENTO[dte.estado] : null;
-    const puedeFacturar = puedeVender && pedido.estado === 'confirmado';
-    const puedeReintentar = puedeVender && dte && ['sin_firmar', 'firmado'].includes(dte.estado);
+    const puede = accionesDePedido(pedido, puedeVender);
+    const puedeFacturar = puede.facturar;
+    const puedeReintentar = puede.reintentar;
 
     const accion = async (clave, fn, auditoria) => {
         setOcupado(clave);

@@ -9,6 +9,7 @@ import { buscarEnSrs } from '@nucleo/data/srs';
 import { anotarVentaPerdida, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { leerMonto } from './comun';
+import { medicamentoDeSrs } from '@nucleo/utils/distribucionBodega';
 
 // «Venta perdida»: lo que un cliente pidió y no se le pudo vender. Pedido del
 // usuario (2026-09-29), como el botón de la caja: «si ingreso un producto y no
@@ -24,26 +25,7 @@ import { leerMonto } from './comun';
 //                número de registro salen de ahí, no de lo que se escribió).
 //   · insumo   — lo que no está en la SRS (gasas, jeringas…): el nombre a mano.
 
-/** Quita la basura invisible que trae el registro (igual que el buscador de la SRS). */
-function limpiar(v) {
-    if (v == null) return '';
-    const s = typeof v === 'object' ? String(v.nombre ?? v.name ?? v.value ?? '') : String(v);
-    // eslint-disable-next-line no-control-regex -- intencional: limpia caracteres de control y del área privada
-    return s.replace(new RegExp('[\u0000-\u0008\u000B\u000C\u000E-\u001F\uE000-\uF8FF\uFFF0-\uFFFF]', 'g'), '').replace(/\u00A0/g, ' ').trim();
-}
-
-function deSrs(p) {
-    const principio = limpiar(p.principio_activo ?? p.formula);
-    const conc = limpiar(p.concentracion);
-    return {
-        nombre: limpiar(p.nombre_comercial ?? p.nombreComercial),
-        principio: principio ? `${principio}${conc ? ` ${conc}` : ''}` : '',
-        laboratorio: limpiar(p.laboratorio),
-        registro: limpiar(p.noregistro),
-        forma: limpiar(p.NOMBRE_FORMA_FARMACEUTICA),
-        activo: limpiar(p.estatus ?? p.Activo) === 'A',
-    };
-}
+const deSrs = medicamentoDeSrs;
 
 export default function VentaPerdidaModal({ emisorId, cliente, pedidoId = null, producto = null, cantidad = 1, buscado = '', onClose, onGuardado }) {
     const desdeCatalogo = !!producto;

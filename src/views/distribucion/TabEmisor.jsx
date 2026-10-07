@@ -10,7 +10,7 @@ import Interruptor from './Interruptor';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
-import { formatearNit } from '@nucleo/utils/nitUtils';
+import { EMISOR_VACIO, TIPO_ESTABLECIMIENTO, emisorAFormulario, emisorParaGuardar, erroresDeEmisor } from '@nucleo/utils/distribucionComercial';
 import { departamentosMH, municipiosMH, distritosMH } from '@nucleo/data/geoCodigosMH';
 import { guardarEmisor, mensajeDeDistribucion, fetchPuntosVenta } from '@nucleo/data/distribucion';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -23,20 +23,6 @@ import { cargarActividades } from './comun';
 //
 // El certificado de firma y la contraseña de Hacienda NO se escriben acá: son
 // secretos del servidor y quien los tenga puede firmar a nombre de la empresa.
-
-const TIPO_ESTABLECIMIENTO = [
-    { value: '04', label: 'Bodega' },
-    { value: '02', label: 'Casa matriz' },
-    { value: '01', label: 'Sucursal' },
-    { value: '07', label: 'Patio' },
-];
-
-const VACIO = {
-    nombre: '', nombre_comercial: '', nit: '', nrc: '', cod_actividad: '', desc_actividad: '',
-    departamento: '04', municipio: '', distrito: '', complemento: '', telefono: '', correo: '',
-    establecimiento: 'B001', punto_venta: 'P001', tipo_establecimiento: '04',
-    cod_estable_mh: '', cod_punto_venta_mh: '', ambiente: '00', gran_contribuyente: false,
-};
 
 // Un punto de venta por vendedor (Normativa DTE v2.0: el punto de venta es el
 // dispositivo que emite, y no hay tope). Se crea solo la primera vez que el
@@ -76,16 +62,14 @@ function PuntosDeVenta({ emisorId, oficina }) {
 
 export default function TabEmisor({ emisor, puedeConfigurar, onGuardado }) {
     const showToast = useToastStore(s => s.showToast);
-    const [f, setF] = useState(VACIO);
+    const [f, setF] = useState(EMISOR_VACIO);
     const [actividades, setActividades] = useState([]);
     const [guardando, setGuardando] = useState(false);
     const [error, setError] = useState('');
     const set = (k, v) => setF(p => ({ ...p, [k]: v }));
 
     useEffect(() => {
-        setF(emisor
-            ? { ...VACIO, ...Object.fromEntries(Object.entries(emisor).map(([k, v]) => [k, v ?? VACIO[k] ?? ''])), nit: formatearNit(emisor.nit) }
-            : VACIO);
+        setF(emisorAFormulario(emisor));
     }, [emisor]);
     useEffect(() => {
         cargarActividades().then(setActividades).catch(e => console.error('TabEmisor: actividades', e));
@@ -98,25 +82,10 @@ export default function TabEmisor({ emisor, puedeConfigurar, onGuardado }) {
     useEffect(() => {
         if (repuesto.current || !recuperado || emisor) return;
         repuesto.current = true;
-        setF({ ...VACIO, ...recuperado });
+        setF({ ...EMISOR_VACIO, ...recuperado });
     }, [recuperado, emisor]);
 
-    const nit = f.nit.replace(/\D/g, '');
-    const errores = useMemo(() => {
-        const e = {};
-        if (!f.nombre.trim()) e.nombre = 'Falta la razón social.';
-        if (![9, 14].includes(nit.length)) e.nit = 'El NIT tiene 9 o 14 dígitos.';
-        if (!/^\d{2,8}$/.test(f.nrc.replace(/\D/g, ''))) e.nrc = 'El NRC son de 2 a 8 dígitos.';
-        if (!f.cod_actividad) e.cod_actividad = 'Falta la actividad económica.';
-        if (!f.municipio || !f.distrito || !f.complemento.trim()) e.direccion = 'Falta la dirección completa.';
-        if (f.telefono.replace(/\D/g, '').length !== 8) e.telefono = 'Un teléfono son ocho dígitos.';
-        if (!/^\S+@\S+\.\S+$/.test(f.correo.trim())) e.correo = 'Revisa el correo.';
-        if (!/^[MBSP]\d{3}$/.test(f.establecimiento)) e.establecimiento = 'Una letra (M, B, S o P) y tres dígitos. Ej.: B001';
-        if (!/^P\d{3}$/.test(f.punto_venta)) e.punto_venta = 'P y tres dígitos. Ej.: P001';
-        if (f.cod_estable_mh && f.cod_estable_mh.length !== 4) e.cod_estable_mh = 'Son 4 caracteres.';
-        if (f.cod_punto_venta_mh && f.cod_punto_venta_mh.length !== 4) e.cod_punto_venta_mh = 'Son 4 caracteres.';
-        return e;
-    }, [f, nit]);
+    const errores = useMemo(() => erroresDeEmisor(f), [f]);
     const hayErrores = Object.keys(errores).length > 0;
     const pasaAProduccion = emisor && emisor.ambiente === '00' && f.ambiente === '01';
 
@@ -124,15 +93,7 @@ export default function TabEmisor({ emisor, puedeConfigurar, onGuardado }) {
         setGuardando(true);
         setError('');
         try {
-            const cambios = {
-                nombre: f.nombre.trim(), nombre_comercial: f.nombre_comercial.trim() || null, nit,
-                nrc: f.nrc.replace(/\D/g, ''), cod_actividad: f.cod_actividad, desc_actividad: f.desc_actividad,
-                departamento: f.departamento, municipio: f.municipio, distrito: f.distrito, complemento: f.complemento.trim(),
-                telefono: f.telefono.replace(/\D/g, ''), correo: f.correo.trim(),
-                establecimiento: f.establecimiento, punto_venta: f.punto_venta, tipo_establecimiento: f.tipo_establecimiento,
-                cod_estable_mh: f.cod_estable_mh || null, cod_punto_venta_mh: f.cod_punto_venta_mh || null,
-                ambiente: f.ambiente, gran_contribuyente: f.gran_contribuyente,
-            };
+            const cambios = emisorParaGuardar(f);
             await guardarEmisor(emisor?.id, cambios);
             useStaff.getState().appendAuditLog('DISTRIBUCION_EMISOR', emisor ? String(emisor.id) : 'nuevo',
                 { ambiente: f.ambiente, antes: emisor ? { ambiente: emisor.ambiente, nit: emisor.nit } : null });

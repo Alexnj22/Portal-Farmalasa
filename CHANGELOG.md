@@ -23,7 +23,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.1242.1 — Plazo en las llamadas a Wompi
 
-_(pendiente de redactar)_
+- `_shared/wompi.ts`: las dos llamadas a Wompi (token y API) se cortan a los 15 y 20 s. Si Wompi se pone lento, la app recibe «el pago no está disponible» en vez de quedarse colgada, y el aviso de pago se reintenta. Ya está desplegado en `wompi-pagos`.
 
 ## v2.1242.0 — Pago en línea de las reservas con Wompi; cupón Platino, banner de promociones y nivel por lo que acumula
 

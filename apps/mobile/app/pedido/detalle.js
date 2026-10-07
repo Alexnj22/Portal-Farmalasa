@@ -5,18 +5,19 @@
 //
 // Todo de lectura, con las mismas reglas del portal (núcleo: `pasosDelPedido`,
 // `seccionesDeRenglones`, `resumenDeRecepcion`, `renglonesConDiferencia`).
-// Confirmar la llegada y contar abren las pantallas nativas de siempre;
-// decidir una diferencia y lo de Bodega siguen en el portal.
+// Confirmar la llegada, contar y la llegada de un reenvío abren pantallas
+// nativas; Bodega inicia, pausa, programa o anula desde aquí
+// (`AccionesDeBodega`). Decidir una diferencia y finalizar siguen en el portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import {
   fetchApoyoForPedido, fetchEntregasDePedidos, fetchPedidoItemEventosAll, fetchPedidoItemsAll, fetchPedidosEnCurso,
 } from '@nucleo/data/pedidos';
 import {
-  estadoDeLaSala, faltantesDeLaSala, describirFaltantes, renglonesConDiferencia, resumenDeRecepcion, ROTULO_DE_ESTADO, seccionesDeRenglones,
+  estadoDeLaSala, etapasPorPedido, faltantesDeLaSala, describirFaltantes, renglonesConDiferencia, resumenDeRecepcion, ROTULO_DE_ESTADO, seccionesDeRenglones,
 } from '@nucleo/utils/tableroDePedidos';
 import { ERP_NAMES } from '@nucleo/constants/erp';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -34,6 +35,7 @@ import Renglones from '../../componentes/pedidos/Renglones';
 import Diferencias from '../../componentes/pedidos/Diferencias';
 import { idsDelPedido, usePersonas } from '../../componentes/pedidos/personas';
 import { ETAPA, etapaDeLaTarjeta, PASOS, pasoDeLaEtapa } from '../../componentes/pedidos/etapa';
+import AccionesDeBodega from '../../componentes/pedidos/AccionesDeBodega';
 
 const COLOR_ESTADO = { confirmado: MARCA.azulClaro, enviado: MARCA.violetaClaro, parcial: MARCA.ambar, completado: MARCA.verde, anulado: MARCA.rojo };
 
@@ -74,6 +76,7 @@ export default function DetalleDePedido() {
   const puede = hasPermission('pedidos', 'can_edit');
   const esSala = getScope?.('pedidos') !== 'ALL';
   const [row, setRow] = useState(undefined);
+  const [todasLasFilas, setTodasLasFilas] = useState([]);
   const [items, setItems] = useState(null);
   const [eventos, setEventos] = useState([]);
   const [apoyo, setApoyo] = useState({ preparacion: [], recepcion: [] });
@@ -90,6 +93,7 @@ export default function DetalleDePedido() {
     ]);
     if (e1) { setError('No se pudo cargar el pedido.'); setRow(null); return; }
     setError(null);
+    setTodasLasFilas(filas ?? []);
     setRow((filas ?? []).find((r) => String(r.pedido_id) === String(pedidoId) && Number(r.erp_sucursal_id) === suc) ?? null);
     setItems(renglones ?? []);
     await signPhotosDeep(apo ?? []).catch(() => {});
@@ -102,9 +106,11 @@ export default function DetalleDePedido() {
     setApoyo(porTipo);
     setEntrega((ents ?? []).find((x) => Number(x.erp_sucursal_id) === suc) ?? null);
   }, [pedidoId, suc]);
-  useEffect(() => { cargar(); }, [cargar]);
+  // Al volver de pausar o programar, la ficha se relee.
+  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
 
   const difs = useMemo(() => renglonesConDiferencia(items), [items]);
+  const etapas = useMemo(() => etapasPorPedido(todasLasFilas), [todasLasFilas]);
   useEffect(() => {
     if (!difs.length) return undefined;
     let vivo = true;
@@ -166,6 +172,8 @@ export default function DetalleDePedido() {
               ) : null}
               {puede && etapa === 'transito' ? <BotonGrande texto="Confirmar que llegó" color={MARCA.azul} onPress={() => ir('/pedido/llegada')} /> : null}
               {puede && etapa === 'contando' ? <BotonGrande texto="Contar lo que llegó" color={MARCA.verde} onPress={() => ir('/pedido/recibir')} /> : null}
+              {puede && faltan?.enCamino ? <BotonGrande texto="Llegó el reenvío" color={MARCA.azul} borde onPress={() => ir('/pedido/reenvio')} /> : null}
+              {puede && !esSala ? <AccionesDeBodega row={row} etapa={etapa} etapas={etapas} onCambio={cargar} /> : null}
             </Bloque>
 
             <Bloque titulo="Cómo va">

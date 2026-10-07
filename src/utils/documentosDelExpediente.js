@@ -231,3 +231,132 @@ const ICONOS = {
 
 /** El ícono de la categoría. `FileText` para lo que no tiene uno propio. */
 export const nombreDelIconoDeCategoria = (categoria) => ICONOS[categoria] || 'FileText';
+
+
+// ── El expediente que se edita (portal y app) ──────────────────────────────
+// Se mudaron de `EmployeeFormModal` el 2026-10-07 para que la app edite el
+// expediente con las MISMAS secciones, la misma regla de versiones y los
+// mismos niveles de estudio.
+
+export const SECCIONES_DE_DOCUMENTOS = [
+    {
+        id: 'ingreso',
+        titulo: 'Al entrar',
+        bajada: 'Lo que la empresa pide para admitir a alguien y lo que exige el contrato.',
+        claves: ['SOLICITUD_EMPLEO', 'CV', 'CONTRATO', 'ACUSE_MTPS', 'COPIA_NIT'],
+    },
+    {
+        id: 'anual',
+        titulo: 'Cada año',
+        bajada: 'Caducan: hay que volver a traerlos, y el portal avisa antes de que venzan.',
+        claves: ['CERTIFICADO_MEDICO_ANUAL', 'EXAMEN_MEDICO', 'ANUALIDAD_JVPQF', 'ANUALIDAD_JVPE'],
+    },
+    {
+        /* El ISSS y la AFP son su propia sección, y no un apartado de «ejercer
+         * la profesión» como estuvieron un rato. Lo señaló el usuario: «no tiene
+         * sentido el ISSS y AFP ahí».
+         *
+         * No habilitan a nadie a ejercer nada — los tiene cualquier persona que
+         * trabaja, sea regente o dependiente. Y no se tramitan igual, que es la
+         * distinción que el portal ya hace en Contrato: al ISSS lo inscribe el
+         * PATRONO, la AFP la elige el TRABAJADOR. */
+        id: 'prevision',
+        titulo: 'ISSS y AFP',
+        bajada: 'La copia de cada tarjeta es la prueba de la afiliación. Al ISSS lo inscribe la empresa; la AFP la elige la persona.',
+        claves: ['TARJETA_ISSS', 'TARJETA_AFP'],
+    },
+    {
+        id: 'ejercer',
+        titulo: 'Para ejercer su profesión',
+        bajada: 'Lo que habilita a la persona ante su junta de vigilancia.',
+        claves: ['CONTRATO_REGENCIA'],
+    },
+    {
+        /* La certificación de discapacidad se movió acá desde «ejercer la
+         * profesión», donde tampoco pertenecía: no habilita a ejercer nada, es
+         * una condición de la persona con efectos legales propios. */
+        id: 'siaplica',
+        titulo: 'Sólo si aplica',
+        bajada: 'Dependen de la persona: aparecen cuando su ficha dice que los tiene.',
+        claves: ['LICENCIA_MOTO', 'LICENCIA_CARRO', 'CERTIFICACION_DISCAPACIDAD'],
+    },
+];
+
+export const HISTORIAL_MAXIMO = 10;
+
+/* ── Cuáles guardan el ARCHIVO anterior, y cuáles sólo la traza ─────────
+ *
+ * La lista creció el 2026-08-31, y conviene el registro porque **cambia una
+ * decisión anterior del mismo usuario**.
+ *
+ * Antes decía: *«esto sólo es necesario para el médico, y nada más como
+ * historial de texto —cuándo se actualizó y quién— para los otros»*. El
+ * razonamiento era que el contrato o una licencia sólo importan en su
+ * versión vigente.
+ *
+ * Lo que faltaba era una palabra: **recontrataciones**. *«Archivos que se
+ * van anexando como historial: solicitud de empleo, contrato de trabajo,
+ * acuse de recibido del MT, certificado médico anual, anualidad. Los demás
+ * sólo se actualiza el documento y se guarda la fecha / historial de
+ * actualización. Ya que pueden haber recontrataciones, y otros temas.»*
+ *
+ * Y ahí el contrato deja de tener «una versión vigente»: alguien que entra,
+ * sale y vuelve tiene DOS contratos, y los dos son ciertos. El de 2024 no
+ * es una versión vieja del de 2026 — es el que prueba lo que pasó en 2024,
+ * y es el que pide una inspección o una demanda. Lo mismo la solicitud de
+ * cada ingreso y el acuse de cada uno.
+ *
+ * El criterio que separa las dos listas, dicho de una vez: **¿el papel de
+ * antes sigue probando algo por su cuenta?** El certificado médico de 2025
+ * prueba que ese año se cumplió; el contrato de la primera contratación
+ * prueba esa relación laboral; la anualidad de cada año prueba ese año. En
+ * cambio una licencia de conducir vencida o un DUI reemplazado no prueban
+ * nada que el vigente no diga mejor.
+ *
+ * Los que no están acá conservan igual la TRAZA —cuándo se cambió y quién—,
+ * que pesa dos campos y contesta «¿esto quién lo tocó?». */
+export const CON_ARCHIVO_ANTERIOR = new Set([
+    'SOLICITUD_EMPLEO', 'CONTRATO', 'ACUSE_MTPS',
+    'CERTIFICADO_MEDICO_ANUAL', 'EXAMEN_MEDICO',
+    'ANUALIDAD_JVPQF', 'ANUALIDAD_JVPE',
+]);
+
+export const EDUCATION_OPTIONS = [
+    { value: 'BASICA', label: 'Educación básica' },
+    { value: 'BACHILLERATO_GENERAL', label: 'Bachillerato general' },
+    { value: 'BACHILLERATO_TECNICO', label: 'Bachillerato técnico' },
+    { value: 'TECNICO_SUPERIOR', label: 'Técnico superior' },
+    { value: 'UNIVERSITARIO', label: 'Universitario' },
+];
+// Niveles donde el select de Especialidad aplica
+export const LEVELS_WITH_SPECIALTY = ['BACHILLERATO_TECNICO', 'TECNICO_SUPERIOR'];
+// Niveles donde "¿Actualmente estudiando?" siempre se muestra
+export const LEVELS_WITH_STUDY_TOGGLE = ['BACHILLERATO_TECNICO', 'TECNICO_SUPERIOR', 'UNIVERSITARIO'];
+// Niveles donde el campo Profesión/Título se muestra — Bachillerato Técnico y
+// Técnico Superior quedan fuera: su "título" ya es la especialidad de arriba,
+// no una profesión aparte.
+export const LEVELS_WITH_PROFESSION = ['UNIVERSITARIO'];
+
+/**
+ * Pone un archivo (o un cambio) en un documento del expediente y devuelve la
+ * lista nueva. Se archiva sólo cuando de verdad se REEMPLAZA un archivo por
+ * otro: la traza (cuándo y quién) va siempre; el archivo anterior, sólo en los
+ * documentos de `CON_ARCHIVO_ANTERIOR`. Quitar un archivo no archiva nada.
+ */
+export function documentoReemplazado(lista, categoria, patch, { quien = '', hoy, listaDeLaFicha = [] } = {}) {
+    const docs = [...(lista || [])];
+    const idx = docs.findIndex(d => d.category === categoria);
+    const base = idx >= 0 ? docs[idx] : { category: categoria, title: rotuloDelDocumento(categoria, listaDeLaFicha), file_name: '', url: null, expiry_date: '' };
+    const llegaOtro = Object.prototype.hasOwnProperty.call(patch, 'url') && !!patch.url && !!base.url && patch.url !== base.url;
+    const traza = {
+        reemplazado_el: hoy,
+        por: quien || '',
+        ...(CON_ARCHIVO_ANTERIOR.has(categoria)
+            ? { url: base.url, file_name: base.file_name || '', expiry_date: base.expiry_date || '' }
+            : {}),
+    };
+    const historial = llegaOtro ? [traza, ...(base.historial || [])].slice(0, HISTORIAL_MAXIMO) : (base.historial || []);
+    const nuevo = { ...base, ...patch, historial };
+    if (idx >= 0) docs[idx] = nuevo; else docs.push(nuevo);
+    return docs;
+}

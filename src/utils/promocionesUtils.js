@@ -479,3 +479,138 @@ export function copiarUmbralesDeSala(umbrales, salas, niveles, desde) {
     }
     return salida;
 }
+
+// ─── Promoción POR PRODUCTO: el formulario de alta ───────────────────────────
+// Vivía dentro de `PromocionModal`; la app la necesita igual — lo que se
+// pregunta una vez, cómo nace cada producto, qué viaja a `crear_promocion` y a
+// qué sala va el descuento—, así que vive acá, una vez.
+
+/**
+ * Lo que se pregunta UNA vez y vale para todos los productos. `fin` nace vacío
+ * para que se ELIJA (es NOT NULL en la base: `problemasDeLaPromocion` lo dice).
+ * Ninguna sala marcada = todas.
+ */
+export const generalDePromocionNuevo = (salas = []) => ({
+    inicio: hoySV(),
+    fin: '',
+    lote_total: '',
+    tiene_bono: true,
+    paga: 'proveedor',
+    supplier_id: '',
+    bono_vendedor: '1.00',
+    bono_adm: '0.25',
+    bono_bodega: '0.25',
+    unidades_por_bono: '1',
+    salas: Object.fromEntries(salas.map((s) => [s.id, false])),
+    reparto: Object.fromEntries(salas.map((s) => [s.id, ''])),
+});
+
+/**
+ * Un producto nace con los valores generales ya puestos y confirmado. `ajustado`
+ * marca si alguien lo tocó a mano: cambiar el general después no lo pisa.
+ */
+export const renglonDePromocionNuevo = (prod, general) => ({
+    erp_product_id: prod.id,
+    producto: prod.nombre,
+    laboratorio: prod.laboratorio_nombre || 'Sin laboratorio',
+    factor_unidades: null,
+    inicio: general.inicio,
+    fin: general.fin,
+    lote_total: general.lote_total,
+    tiene_bono: general.tiene_bono,
+    paga: general.paga,
+    supplier_id: general.supplier_id,
+    bono_vendedor: general.bono_vendedor,
+    bono_adm: general.bono_adm,
+    bono_bodega: general.bono_bodega,
+    unidades_por_bono: general.unidades_por_bono,
+    salas: { ...(general.salas || {}) },
+    reparto: { ...(general.reparto || {}) },
+    confirmado: true,
+    ajustado: false,
+});
+
+/**
+ * Los renglones con la forma que espera `crear_promocion`. Vacío viaja como
+ * vacío y no como cero (la base distingue «no se sabe» de «cero»); una fila de
+ * reparto POR SALA MARCADA, con sus unidades o 0 («aplica acá, sin lote»).
+ */
+export const renglonesParaCrear = (renglones) => (renglones || []).map((r) => ({
+    erp_product_id: r.erp_product_id,
+    factor_unidades: r.factor_unidades,
+    inicio: r.inicio,
+    fin: r.fin,
+    lote_total: r.lote_total === '' ? null : numeroEscrito(r.lote_total),
+    tiene_bono: !!r.tiene_bono,
+    paga: r.tiene_bono ? r.paga : null,
+    supplier_id: r.tiene_bono && r.paga === 'proveedor'
+        ? (r.supplier_id === '' ? null : Number(r.supplier_id))
+        : null,
+    bono_vendedor: r.tiene_bono ? numeroEscrito(r.bono_vendedor) ?? 0 : 0,
+    bono_adm: r.tiene_bono ? numeroEscrito(r.bono_adm) ?? 0 : 0,
+    bono_bodega: r.tiene_bono ? numeroEscrito(r.bono_bodega) ?? 0 : 0,
+    unidades_por_bono: numeroEscrito(r.unidades_por_bono) || 1,
+    reparto: Object.entries(r.salas || {})
+        .filter(([, marcada]) => marcada)
+        .map(([branch_id]) => ({
+            branch_id: Number(branch_id),
+            unidades: numeroEscrito(r.reparto?.[branch_id]) || 0,
+        })),
+}));
+
+/**
+ * A qué sala va el descuento de la promoción. El sistema de ventas admite UN
+ * descuento por producto y ventana en toda la cadena: con una sala marcada va
+ * ahí; con ninguna, a todas; con varias, lo que se eligió en el bloque.
+ * `marcadas` es `{ [branchId]: true }`.
+ */
+export function destinoDelDescuento(salas, marcadas, desc) {
+    const elegidas = (salas || []).filter((x) => marcadas?.[x.id]);
+    const unaSola = elegidas.length === 1 ? elegidas[0] : null;
+    const todas = unaSola ? false : (elegidas.length === 0 ? true : !!desc?.todas);
+    const branchId = unaSola
+        ? unaSola.id
+        : (todas ? (salas?.[0]?.id ?? null) : Number(desc?.branchId) || null);
+    return { todas_las_salas: todas, branch_id: branchId };
+}
+
+/**
+ * Los productos que se AGREGAN a una promoción que ya existe, con la forma de
+ * `agregar_renglones_a_promocion`. Heredan la vigencia de la promoción (el
+ * primer inicio y el último fin de sus renglones), sus salas en 0 («aplica
+ * acá, sin lote») y el bono del primer renglón: es la misma campaña, y nacer en
+ * $0 con «tiene bono» diría que paga algo cuando no paga nada.
+ *
+ * La ficha trae el NOMBRE del proveedor, no su id, así que se resuelve contra
+ * la lista; si no da con uno, devuelve `{ error }` y no se escribe (la base lo
+ * rechazaría con un mensaje que no dice nada).
+ */
+export function renglonesParaAgregar(promo, prods, proveedores = []) {
+    const renglones = promo?.renglones ?? [];
+    const inicio = renglones.map((x) => x.inicio).filter(Boolean).sort()[0] || promo?.inicio;
+    const fines = renglones.map((x) => x.fin).filter(Boolean).sort();
+    const fin = fines[fines.length - 1] || promo?.fin || null;
+    const reparto = (promo?.salas ?? []).map((b) => ({ branch_id: Number(b), unidades: 0 }));
+    const modelo = renglones[0] ?? {};
+    const pagaProveedor = modelo.tiene_bono && (modelo.paga || 'proveedor') === 'proveedor';
+    const proveedorId = pagaProveedor ? (proveedores.find((x) => x.label === modelo.proveedor)?.value ?? null) : null;
+    if (pagaProveedor && proveedorId == null) {
+        return { error: `No se pudo identificar al proveedor «${modelo.proveedor || 'sin nombre'}» del primer producto. Revisa ese producto y vuelve a agregar.` };
+    }
+    return {
+        renglones: (prods || []).map((p) => ({
+            erp_product_id: p.id,
+            inicio,
+            fin,
+            lote_total: '',
+            tiene_bono: modelo.tiene_bono ?? false,
+            paga: modelo.tiene_bono ? (modelo.paga || 'proveedor') : null,
+            supplier_id: proveedorId,
+            bono_vendedor: modelo.tiene_bono ? (Number(modelo.bono_vendedor) || 0) : 0,
+            bono_adm: modelo.tiene_bono ? (Number(modelo.bono_adm) || 0) : 0,
+            bono_bodega: modelo.tiene_bono ? (Number(modelo.bono_bodega) || 0) : 0,
+            unidades_por_bono: Number(modelo.unidades_por_bono) || 1,
+            reparto,
+        })),
+    };
+}

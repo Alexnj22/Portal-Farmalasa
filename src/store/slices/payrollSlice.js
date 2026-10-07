@@ -5,6 +5,7 @@ import {
     fetchOvertimeBankRows, deleteEarnedOvertimeBank, insertOvertimeBank,
 } from '../../data/payroll';
 import { esPersonalEnPlanilla } from '../../utils/tipoDeFicha';
+import { rotuloDePeriodo } from '../../utils/planilla';
 
 // Lo escrito sobre este módulo:
 // `docs/NOMINA-COMO-SE-ARMA-UNA-QUINCENA-2026-08-24.md` — por qué las secciones
@@ -147,8 +148,11 @@ export const createPayrollSlice = (set, get) => ({
 
     createPayrollPeriod: async (periodData) => {
         const user = get().user;
+        // `name` es NOT NULL y el formulario del portal no lo mandaba: el
+        // rótulo se calcula acá («Primera Quincena de octubre 2026»), el mismo
+        // que se pinta en pantalla.
         const { data, error } = await insertPayrollPeriod({
-            name:        periodData.name,
+            name:        periodData.name || rotuloDePeriodo(periodData.start_date, periodData.end_date),
             period_type: periodData.period_type || 'QUINCENA',
             start_date:  periodData.start_date,
             end_date:    periodData.end_date,

@@ -20,7 +20,7 @@ import { guardarDescuento, sincronizarProductosDelDescuento } from '@nucleo/data
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
-import { fmtUnidades, fmtVigencia, MOTIVO_CIERRE, descuentoDesdeLaPromocion, estadoVisible, mensajeDeCarga, numeroEscrito } from '@nucleo/utils/promocionesUtils';
+import { fmtUnidades, fmtVigencia, MOTIVO_CIERRE, descuentoDesdeLaPromocion, estadoVisible, mensajeDeCarga, numeroEscrito, renglonesParaAgregar } from '@nucleo/utils/promocionesUtils';
 import DescuentoEnVentas from './DescuentoEnVentas';
 import AgregarProductos from './AgregarProductos';
 import Campo from './Campo';
@@ -197,46 +197,11 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
         setFallo(null);
         setAgregando(true);
         try {
-            const inicio = (promo.renglones ?? []).map((x) => x.inicio).filter(Boolean).sort()[0]
-                || promo.inicio;
-            const fines = (promo.renglones ?? []).map((x) => x.fin).filter(Boolean).sort();
-            const fin = fines[fines.length - 1] || promo.fin || null;
-            const reparto = (promo.salas ?? []).map((b) => ({ branch_id: Number(b), unidades: 0 }));
-
-            /* El bono se HEREDA del primer renglón, no se pone en cero. Es la
-               misma campaña: un producto que entra a mitad de mes se negoció con
-               las mismas condiciones que sus hermanos, y nacer en $0 con
-               «tiene bono» puesto dice que paga algo cuando no paga nada.
-               El proveedor no se hereda porque la ficha devuelve su NOMBRE y no
-               su id — se elige renglón por renglón, que es donde ya se hace. */
-            const modelo = (promo.renglones ?? [])[0] ?? {};
-            /* El proveedor SÍ se hereda (2026-10-01): sin él, una promoción que
-               paga un proveedor rechazaba TODO producto agregado —la base exige
-               el proveedor— con un «fuera del rango permitido» que no decía
-               nada. La ficha trae su nombre, así que se resuelve contra la
-               lista; si no da con uno, no se escribe y se dice por qué. */
-            const pagaProveedor = modelo.tiene_bono && (modelo.paga || 'proveedor') === 'proveedor';
-            const proveedorId = pagaProveedor
-                ? (proveedores.find((x) => x.label === modelo.proveedor)?.value ?? null)
-                : null;
-            if (pagaProveedor && proveedorId == null) {
-                setFallo(`No se pudo identificar al proveedor «${modelo.proveedor || 'sin nombre'}» del primer producto. Revisa ese producto y vuelve a agregar.`);
-                return;
-            }
-            const r2 = await agregarRenglonesAPromocion(promocionId, prods.map((p) => ({
-                erp_product_id: p.id,
-                inicio,
-                fin,
-                lote_total: '',
-                tiene_bono: modelo.tiene_bono ?? false,
-                paga: modelo.tiene_bono ? (modelo.paga || 'proveedor') : null,
-                supplier_id: proveedorId,
-                bono_vendedor: modelo.tiene_bono ? (Number(modelo.bono_vendedor) || 0) : 0,
-                bono_adm: modelo.tiene_bono ? (Number(modelo.bono_adm) || 0) : 0,
-                bono_bodega: modelo.tiene_bono ? (Number(modelo.bono_bodega) || 0) : 0,
-                unidades_por_bono: Number(modelo.unidades_por_bono) || 1,
-                reparto,
-            })));
+            // El cuerpo (vigencia, salas y bono heredados; el proveedor
+            // resuelto por nombre): núcleo, `renglonesParaAgregar`, igual que la app.
+            const cuerpo = renglonesParaAgregar(promo, prods, proveedores);
+            if (cuerpo.error) { setFallo(cuerpo.error); return; }
+            const r2 = await agregarRenglonesAPromocion(promocionId, cuerpo.renglones);
             if (!r2.agregados) {
                 setFallo('Esos productos ya estaban en la promoción.');
                 return;

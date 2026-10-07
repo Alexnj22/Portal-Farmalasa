@@ -406,3 +406,39 @@ export const textoParaPublicar = (p) => [p?.copy, p?.hashtags].filter(Boolean).j
 
 /** Los archivos vigentes de una pieza (sin los reemplazados ni los enlaces sin archivo). */
 export const mediosDe = (p) => (p?.archivos || []).filter((a) => a.url && !a.reemplazado);
+
+// ─── El formulario de una pieza ─────────────────────────────────────────────
+// Vivía en `PiezaModal`; la app arma la misma pieza, así que vive acá.
+
+/** Una pieza nueva, vacía. `monto` es lo que se le asigna de pauta. */
+export const PIEZA_VACIA = {
+    marcas: [], fecha: '', hora: '', formato: 'post', redes: [], pilar: '', titulo: '', promocion_id: '',
+    copy: '', hashtags: '', notas: '', estado: 'pendiente', pautar: false, enlace_publicado: '', monto: '',
+};
+
+/**
+ * Lo que falta para poder guardar: título, fecha, marca y formato, y que lo
+ * asignado de pauta no pase el tope del mes (lo fija gerencia; la base tampoco
+ * deja pasarse). `otros` es lo ya asignado a las demás piezas.
+ */
+export function faltaEnPieza(form, { limite = 0, otros = 0 } = {}) {
+    const monto = Number(form.monto) || 0;
+    const pasado = !!form.pautar && monto > 0 && (Number(limite) || 0) - (Number(otros) || 0) - monto < 0;
+    return !String(form.titulo || '').trim() || !form.fecha || !(form.marcas || []).length || !form.formato || pasado;
+}
+
+/**
+ * La fila que va a `guardarPieza`: sin el `monto` (la pauta va aparte, a su
+ * tabla), los vacíos como null y la primera marca como `marca_id`. Si se marca
+ * publicada por primera vez, se anota cuándo.
+ */
+export function datosDePieza(form, pieza = null) {
+    // eslint-disable-next-line no-unused-vars
+    const { monto, ...resto } = form;
+    const datos = {
+        ...resto, hora: form.hora || null, pilar: form.pilar || null, promocion_id: form.promocion_id || null,
+        marca_id: (form.marcas || [])[0],
+    };
+    if (datos.estado === 'publicado' && !pieza?.publicado_en) datos.publicado_en = new Date().toISOString();
+    return datos;
+}

@@ -13,7 +13,8 @@
 // abre su detalle (`marketing-pieza/[id]`) para aprobarla o pedir cambios,
 // enviarla sola, ver su historial y conversar. Las tarjetas son las del
 // portal: piezas, aprobadas, con cambios y las que se pautan, con el
-// presupuesto del mes. Diseñar, pautar y pedir siguen en el portal.
+// presupuesto del mes. Crear y editar piezas (`marketing-editar`), su pauta
+// (`marketing-pauta`) y pedir un diseño (`marketing-solicitud`) también.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
@@ -209,8 +210,12 @@ export default function Marketing() {
           </View>
         )}
         <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-          <BotonGrande texto="Planificar, diseñar y pedir (portal)" borde color={MARCA.azulClaro}
-            onPress={() => router.push({ pathname: '/portal', params: { ruta: '/marketing', nombre: 'Marketing' } })} />
+          {puedeEditar ? (
+            <View style={{ marginBottom: 10 }}>
+              <BotonGrande texto="Nueva pieza" color={MARCA.azul} onPress={() => router.push({ pathname: '/marketing-editar', params: { mes } })} />
+            </View>
+          ) : null}
+          <BotonGrande texto="Pedir un diseño" borde color={MARCA.azulClaro} onPress={() => router.push('/marketing-solicitud')} />
         </View>
       </ScrollView>
     </>

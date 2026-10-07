@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1240.0 — App: pedidos, nómina, vacaciones, expediente y promociones por producto
+
+- **App: Pedidos desde el teléfono.** Generar el pedido (salas con su urgencia, distribución global de Bodega, códigos por sala igual que el portal; el papel sigue saliendo en la computadora de Bodega), y en el detalle las acciones de Bodega: iniciar, reanudar, pausar con motivo, programar la entrega y anular. **Llegó el reenvío**: caja por caja, Electrolit y especiales.
+- **Min·Máx de la sala completa**: todos los productos con su borrador, filtros ABC/XYZ/alerta, publicar o descartar en lote o uno por uno, recalcular, respetando el candado de mantenimiento.
+- **Nómina**: abrir quincena, generar o regenerar (avisa los timesheets sin aprobar), editar una fila con motivo y banco de horas, y el CSV del banco. **Vacaciones**: asignar, editar, confirmar y cancelar planes con su elegibilidad. **Expediente**: foto, documentos (ver, subir, vencimiento), estudios y cuenta de planilla.
+- **Promoción por producto**: crear y editar (productos, lote, reparto, bono, descuento en la venta). **Marketing**: nueva pieza o editarla, diseños desde Fotos, pauta, pedir un diseño y duplicar a otro mes. **Corte Z**: compartir el PDF por sucursal o de todas.
+- Correcciones: «Nueva quincena» del portal no mandaba el nombre del período; el generar pedido llamaba `.catch` directo sobre una consulta (no lo tiene) y fallaba después de crear el pedido; volver de una pantalla abierta por enlace ya no falla.
+- Núcleo: `accionesDePedido`, `codigoDePedido` (sin pdfmake), `revisionDeSala`, `planilla`, `planDeVacaciones`, `documentosDelExpediente`, `corteZHtml`, promociones y marketing; el portal los usa.
 ## v2.1239.0 — App: niveles Plata, Oro y Platino, catálogo con precio VIP y ajustes
 
 - **Niveles del programa de puntos (aprobados):** Cliente VIP, Plata ($500 en 12 meses, ×1.25), Oro ($1,000, ×1.5) y Platino ($2,000, ×2). Tabla `puntos_niveles` (editable con permiso de puntos), `puntos_compra_12m` y `puntos_nivel_de`. El motor (`puntos_acumular`) multiplica cada compra según lo comprado en los 12 meses anteriores —sin contar la compra misma— y guarda en el lote `puntos_base` y `nivel`. Cumpleaños por nivel (50/75/100/100) y 48 h para retirar reservas en Oro y Platino. Hoy: 495 Plata, 133 Oro, 63 Platino.

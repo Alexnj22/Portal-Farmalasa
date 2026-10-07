@@ -35,6 +35,7 @@ const MisPuntosView = lazy(() => import("./views/MisPuntosView"));
 import LiquidToast from './components/common/LiquidToast';
 import { LoadingState } from './components/common/StateViews';
 import { hoySV } from '@nucleo/utils/fecha';
+import { quincenaPorDefecto } from '@nucleo/utils/planilla';
 
 // Vistas — code-split por ruta (React.lazy). Antes 51 imports estáticos
 // empaquetaban las 40+ vistas en un solo chunk eager de 5.24MB/1.74MB gzip.
@@ -476,15 +477,8 @@ function MainApp() {
         } else if (type === "vacationRecall") {
             setFormData({ employee: data?.employee || data || {} });
         } else if (type === "newPayrollPeriod") {
-            const today = new Date();
-            const day = today.getDate(), year = today.getFullYear(), month = today.getMonth();
-            const start_date = day <= 15
-                ? `${year}-${String(month+1).padStart(2,'0')}-01`
-                : `${year}-${String(month+1).padStart(2,'0')}-16`;
-            const end_date = day <= 15
-                ? `${year}-${String(month+1).padStart(2,'0')}-15`
-                : new Date(year, month+1, 0).toISOString().split('T')[0];
-            setFormData({ start_date, end_date, pay_date: '', ...(data || {}) });
+            // La quincena que corre hoy: núcleo (`quincenaPorDefecto`), la misma de la app.
+            setFormData({ ...quincenaPorDefecto(hoySV()), pay_date: '', ...(data || {}) });
         } else if (type === "editPayrollEntry") {
             const entry = data || {};
             setFormData({

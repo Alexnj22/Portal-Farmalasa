@@ -118,3 +118,61 @@ export function partidasDeBoleta(entry, baseSalary) {
         liquido: r2(e.net_pay),
     };
 }
+
+/**
+ * La quincena que se propone al abrir un período nuevo: la que corre hoy.
+ * Del 1 al 15, o del 16 al último día del mes. `hoy` es 'AAAA-MM-DD' (hora de
+ * El Salvador); el último día se calcula sin `toISOString`, que en UTC puede
+ * caer en el mes siguiente.
+ */
+export function quincenaPorDefecto(hoy) {
+    const [a, m, d] = String(hoy).split('-').map(Number);
+    const mm = String(m).padStart(2, '0');
+    if (d <= 15) return { start_date: `${a}-${mm}-01`, end_date: `${a}-${mm}-15` };
+    const ultimo = new Date(Date.UTC(a, m, 0)).getUTCDate();
+    return { start_date: `${a}-${mm}-16`, end_date: `${a}-${mm}-${String(ultimo).padStart(2, '0')}` };
+}
+
+/** Los campos de una fila que se editan a mano, en el orden del formulario. */
+export const CAMPOS_EDITABLES_DE_PLANILLA = [
+    { key: 'night_hours_ordinary',  label: 'Horas nocturnas ordinarias (25%)', grupo: 'horas' },
+    { key: 'night_hours_extra',     label: 'Horas nocturnas extra (50%)',      grupo: 'horas' },
+    { key: 'extra_hours_diurnal',   label: 'Horas extra diurnas',              grupo: 'horas' },
+    { key: 'extra_hours_nocturnal', label: 'Horas extra nocturnas',            grupo: 'horas' },
+    { key: 'holiday_surcharge',     label: 'Recargo de asuetos ($)',           grupo: 'ingresos' },
+    { key: 'bonifications',         label: 'Bonificaciones ($)',               grupo: 'ingresos' },
+    { key: 'vacation_bonus',        label: 'Bono vacacional ($)',              grupo: 'ingresos' },
+    { key: 'viaticos',              label: 'Viáticos ($)',                     grupo: 'ingresos' },
+    { key: 'order_discount',        label: 'Orden de descuento ($)',           grupo: 'descuentos' },
+    { key: 'other_discounts',       label: 'Otros descuentos ($)',             grupo: 'descuentos' },
+    { key: 'salary_advance',        label: 'Adelanto salarial ($)',            grupo: 'descuentos' },
+];
+
+/**
+ * Lo que queda en el banco de horas extra de una persona, por tipo. Cada fila
+ * suma si se GANÓ y resta si se canjeó; nunca baja de cero.
+ */
+export function saldoDeBancoDeHoras(filas) {
+    let diurnal = 0, nocturnal = 0;
+    for (const row of filas || []) {
+        const sign = row.type === 'EARNED' ? 1 : -1;
+        if (row.subtype === 'NOCTURNAL') nocturnal += sign * Number(row.hours || 0);
+        else diurnal += sign * Number(row.hours || 0);
+    }
+    const r = (n) => parseFloat(Math.max(0, n).toFixed(2));
+    return { diurnal: r(diurnal), nocturnal: r(nocturnal) };
+}
+
+/**
+ * Las filas del CSV que se lleva el banco: nombre, banco, cuenta, tipo y
+ * monto. Sin la llave de aprobar la planilla, la cuenta sale como `****`.
+ */
+export function csvDelBanco(entries, { cuentasVisibles }) {
+    const r2 = (n) => parseFloat((Number(n) || 0).toFixed(2));
+    const filas = (entries || []).map((e) => {
+        const emp = e.employee || {};
+        const acct = cuentasVisibles ? (emp.account_number || '') : '****';
+        return `${emp.name || ''},${emp.bank_name || ''},${acct},${emp.account_type || ''},${r2(e.net_pay).toFixed(2)}`;
+    });
+    return `Nombre,Banco,Cuenta,Tipo,Monto\n${filas.join('\n')}`;
+}

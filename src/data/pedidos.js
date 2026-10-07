@@ -613,10 +613,36 @@ export function fetchPedidosDisponiblesParaRuta() {
         .in('status', ['confirmado', 'enviado', 'parcial']).order('numero');
 }
 
-export function fetchPedidoSucursalStatusFinalizados() {
-    return supabase.from('pedido_sucursal_status')
-        .select('pedido_id, erp_sucursal_id, total_cajas, cajas_electrolit, cajas_especiales, finalizado_at')
-        .not('finalizado_at', 'is', null);
+// Las salas que se pueden poner en una ruta NUEVA: preparadas, que no
+// salieron en ninguna ruta y que no llegaron (2026-10-07).
+//
+// Antes traía TODA sala finalizada de la historia y el modal sólo cruzaba
+// contra los pedidos abiertos, así que ofrecía salas que ya iban en otra
+// ruta, ya entregadas o ya recibidas: medido en producción ese día, el modal
+// ofrecía 3 y sólo 1 se podía despachar. Regla del usuario: *«si el pedido ya
+// se fue en una ruta, está entregado o recibido, no debe poderse agregar en
+// otra ruta»*.
+//
+// Y sin acotar por pedido leía las 186 filas finalizadas de la historia, que
+// al pasar de 1000 se habrían truncado en silencio (CLAUDE.md, límite de
+// PostgREST). Acotado a los pedidos abiertos son unas pocas: siete salas como
+// mucho por pedido.
+export async function fetchSalasListasParaRuta(pedidoIds) {
+    const ids = [...new Set(pedidoIds ?? [])];
+    if (!ids.length) return { data: [], error: null };
+    const [pss, enRuta] = await Promise.all([
+        supabase.from('pedido_sucursal_status')
+            .select('pedido_id, erp_sucursal_id, total_cajas, cajas_electrolit, cajas_especiales, finalizado_at')
+            .in('pedido_id', ids)
+            .not('finalizado_at', 'is', null)
+            .is('llegada_fisica_at', null)
+            .is('recibido_erp_at', null),
+        supabase.from('ruta_pedidos').select('pedido_id, erp_sucursal_id').in('pedido_id', ids),
+    ]);
+    if (pss.error)    return { data: null, error: pss.error };
+    if (enRuta.error) return { data: null, error: enRuta.error };
+    const yaSalieron = new Set((enRuta.data ?? []).map(r => `${r.pedido_id}__${r.erp_sucursal_id}`));
+    return { data: (pss.data ?? []).filter(r => !yaSalieron.has(`${r.pedido_id}__${r.erp_sucursal_id}`)), error: null };
 }
 
 export function fetchSucursalesConCoords() {

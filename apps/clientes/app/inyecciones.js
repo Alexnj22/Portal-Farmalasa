@@ -7,13 +7,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, Easing } from 'react-native-reanimated';
-import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Vacio } from '../../../componentes/ui';
-import { Entrada, NumeroAnimado } from '../../../componentes/animacion';
-import { colorSistema } from '../../../componentes/sistema';
-import { useSesion } from '../../../lib/sesion';
-import { fecha } from '../../../lib/formato';
-import { suave, useTema } from '../../../tema/tema';
-import Icono from '../../../componentes/Icono';
+import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Vacio } from '../componentes/ui';
+import { Entrada, NumeroAnimado } from '../componentes/animacion';
+import { colorSistema } from '../componentes/sistema';
+import { useSesion } from '../lib/sesion';
+import { fecha } from '../lib/formato';
+import { suave, useTema } from '../tema/tema';
+import Icono from '../componentes/Icono';
 
 /** Un anillo que se expande y se desvanece detrás del número: «tienes algo pendiente». */
 function Anillo({ color }) {
@@ -51,10 +51,10 @@ export default function Inyecciones() {
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 
   if (!datos) return <Cargando />;
-  if (!datos.ok) return <Pantalla alRefrescar={refrescar} refrescando={refrescando}><Aviso>{datos.mensaje}</Aviso></Pantalla>;
+  if (!datos.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}><Aviso>{datos.mensaje}</Aviso></Pantalla>;
   if (datos.pendiente) {
     return (
-      <Pantalla alRefrescar={refrescar} refrescando={refrescando}>
+      <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
         <Vacio titulo="Disponible al completar tu ficha">Cuando completes tu registro en sala verás aquí tus inyecciones.</Vacio>
       </Pantalla>
     );
@@ -65,7 +65,7 @@ export default function Inyecciones() {
   const verde = t.color.verde;
 
   return (
-    <Pantalla alRefrescar={refrescar} refrescando={refrescando}>
+    <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
       <Entrada indice={0}>
         <Tarjeta tono={verde} estilo={{ alignItems: 'center', paddingVertical: 28, gap: 10 }}>
           <View style={{ width: 96, height: 96, alignItems: 'center', justifyContent: 'center' }}>

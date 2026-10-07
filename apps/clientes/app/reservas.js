@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
 import { Boton, Cargando, Pantalla, Tarjeta, Vacio } from '../componentes/ui';
 import Icono from '../componentes/Icono';
+import CodigoReserva from '../componentes/CodigoReserva';
 import { Entrada, Latido } from '../componentes/animacion';
 import { colorSistema } from '../componentes/sistema';
 import { useSesion } from '../lib/sesion';
@@ -195,6 +196,10 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando }) {
   const domicilio = r.entrega === 'domicilio';
   const ahorro = r.precio_normal != null && r.precio_unitario != null && r.precio_normal > r.precio_unitario
     ? (r.precio_normal - r.precio_unitario) * r.cantidad : 0;
+  // El código para retirar (2026-10-07): el del pedido del carrito o el de la
+  // reserva. En la sucursal lo escanean para encontrarla, prepararla y facturarla.
+  const [verCodigo, setVerCodigo] = useState(lista);
+  const codigo = r.pedido ?? r.codigo;
   return (
     <Tarjeta tono={lista ? t.color.verde : undefined} estilo={{ gap: 14 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
@@ -282,6 +287,17 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando }) {
           </Text>
         </View>
       ) : null}
+
+      {/* El código para retirar: se muestra solo cuando está lista. */}
+      <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setVerCodigo((x) => !x); }} accessibilityRole="button"
+        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Icono sf="qrcode" respaldo="" tam={16} color={colorSistema.texto} />
+          <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{r.pedido ? `Pedido ${r.pedido}` : `Código ${r.codigo}`}</Text>
+        </View>
+        <Icono sf={verCodigo ? 'chevron.up' : 'chevron.down'} respaldo="" tam={12} color={colorSistema.texto3} />
+      </Pressable>
+      {verCodigo ? <CodigoReserva codigo={codigo} tam={140} /> : null}
 
       {r.pago_estado === 'pagado' ? (
         <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto2 }}>

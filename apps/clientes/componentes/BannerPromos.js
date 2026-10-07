@@ -6,7 +6,8 @@
 // No avanza solo: un carrusel que se mueve mientras uno lee distrae y gasta
 // batería. Los puntos de abajo dicen cuántas hay.
 import { useCallback, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import Animated, { Extrapolation, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { router, useFocusEffect } from 'expo-router';
 import { Image as ImagenCache } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,7 +24,10 @@ export default function BannerPromos() {
   const t = useTema();
   const { width } = useWindowDimensions();
   const { datos, cargar } = useOfertas();
-  const [pagina, setPagina] = useState(0);
+  // El desplazamiento, en el hilo de la interfaz: los puntos lo siguen con el
+  // dedo, sin saltar al soltar (usuario, 2026-10-07).
+  const x = useSharedValue(0);
+  const alDesplazar = useAnimatedScrollHandler((e) => { x.value = e.contentOffset.x; });
   const [banners, setBanners] = useState(null);
   useFocusEffect(useCallback(() => {
     cargar();
@@ -43,7 +47,7 @@ export default function BannerPromos() {
 
   return (
     <View style={{ gap: 8 }}>
-      <FlatList
+      <Animated.FlatList
         data={ofertas}
         keyExtractor={(o) => String(o.id)}
         horizontal
@@ -52,7 +56,8 @@ export default function BannerPromos() {
         snapToInterval={ancho + 10}
         showsHorizontalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={{ width: 10 }} />}
-        onMomentumScrollEnd={(e) => setPagina(Math.round(e.nativeEvent.contentOffset.x / (ancho + 10)))}
+        onScroll={alDesplazar}
+        scrollEventThrottle={16}
         renderItem={({ item: o }) => {
           const a = acentoDe(t, o.acento);
           // El banner del portal ya trae su diseño: proporción 2.4 : 1, como se subió.
@@ -89,12 +94,21 @@ export default function BannerPromos() {
       />
       {ofertas.length > 1 ? (
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6 }}>
-          {ofertas.map((o, i) => (
-            <View key={o.id} style={{ width: i === pagina ? 18 : 6, height: 6, borderRadius: 3,
-              backgroundColor: i === pagina ? colorSistema.texto2 : colorSistema.texto3, opacity: i === pagina ? 1 : 0.4 }} />
-          ))}
+          {ofertas.map((o, i) => <Punto key={o.id} i={i} x={x} paso={ancho + 10} />)}
         </View>
       ) : null}
     </View>
   );
+}
+
+// Un punto del indicador: se ensancha y se aclara según cuánto se ve su banner.
+function Punto({ i, x, paso }) {
+  const estilo = useAnimatedStyle(() => {
+    const p = x.value / paso;
+    return {
+      width: interpolate(p, [i - 1, i, i + 1], [6, 18, 6], Extrapolation.CLAMP),
+      opacity: interpolate(p, [i - 1, i, i + 1], [0.35, 1, 0.35], Extrapolation.CLAMP),
+    };
+  });
+  return <Animated.View style={[{ height: 6, borderRadius: 3, backgroundColor: colorSistema.texto2 }, estilo]} />;
 }

@@ -19,7 +19,8 @@ import FotoProducto from '../../../componentes/FotoProducto';
 import BannerPromos from '../../../componentes/BannerPromos';
 import { llamar } from '../../../lib/api';
 import { dolares } from '../../../lib/formato';
-import { BUSQUEDAS, nombreProducto } from '../../../lib/catalogo';
+import { BUSQUEDAS, nombreProducto, tonoDe } from '../../../lib/catalogo';
+import { LinearGradient } from 'expo-linear-gradient';
 import { suave, useTema } from '../../../tema/tema';
 
 const POR_PAGINA = 20;
@@ -65,17 +66,26 @@ export default function Catalogo() {
     <View style={{ gap: 12, marginBottom: 6 }}>
       {/* Promociones arriba (las mismas ofertas del portal), sólo sin buscar. */}
       {!q ? <BannerPromos /> : null}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 2 }}>
-        {BUSQUEDAS.map((b) => {
+      {/* Categorías: mosaicos con su color y su ícono; tocar uno busca y
+          tocarlo otra vez lo quita. */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 2, paddingVertical: 2 }}>
+        {BUSQUEDAS.map((b, i) => {
           const activa = q === b.q && texto === b.q;
+          const [c1, c2] = tonoDe(i);
           return (
             <Pressable key={b.q} onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(activa ? '' : b.q); }}
-              accessibilityRole="button" accessibilityLabel={b.texto}
-              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingHorizontal: 12, borderRadius: 999,
-                backgroundColor: activa ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.75)'),
-                transform: [{ scale: pressed ? 0.96 : 1 }] })}>
-              <Icono sf={b.sf} respaldo="" tam={13} color={activa ? '#FFFFFF' : colorSistema.texto2} />
-              <Text style={{ fontSize: 14, fontWeight: '600', color: activa ? '#FFFFFF' : colorSistema.texto }}>{b.texto}</Text>
+              accessibilityRole="button" accessibilityLabel={b.texto} accessibilityState={{ selected: activa }}
+              style={({ pressed }) => ({ width: 78, alignItems: 'center', gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
+              <View style={{ padding: 2.5, borderRadius: 22, borderWidth: 2, borderColor: activa ? t.color.magenta : 'transparent' }}>
+                <LinearGradient colors={[c1, c2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                  style={{ width: 60, height: 60, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}>
+                  <Icono sf={b.sf} respaldo="" tam={26} color="#FFFFFF" />
+                </LinearGradient>
+              </View>
+              <Text numberOfLines={2} maxFontSizeMultiplier={1.2}
+                style={{ fontSize: 12, lineHeight: 15, fontWeight: activa ? '800' : '600', textAlign: 'center', color: activa ? colorSistema.texto : colorSistema.texto2 }}>
+                {b.texto}
+              </Text>
             </Pressable>
           );
         })}

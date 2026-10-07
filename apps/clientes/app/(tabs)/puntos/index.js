@@ -19,6 +19,7 @@ import { useVisible } from '../../../lib/visible';
 import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '../../../componentes/animacion';
 import { useSesion } from '../../../lib/sesion';
 import { sincronizarAvisos } from '../../../lib/avisos';
+import { cuponDePrueba, nivelDePrueba, useModoPrueba } from '../../../lib/prueba';
 import { abrirPase, agregarPase, tienePase, walletDisponible } from '../../../modules/wallet';
 import { suave, useTema } from '../../../tema/tema';
 import { colorSistema } from '../../../componentes/sistema';
@@ -35,7 +36,11 @@ const ROTULOS = {
 export default function Puntos() {
   const t = useTema();
   const { cumple } = useLocalSearchParams();
-  const { resumen, error, cargar, generacion } = useCuenta();
+  const { resumen: real, error, cargar, generacion } = useCuenta();
+  // Modo de prueba (sólo la cuenta de prueba): se ve como el nivel elegido.
+  const prueba = useModoPrueba();
+  const enPrueba = !!real?.prueba && prueba.activo;
+  const resumen = enPrueba ? { ...real, nivel: nivelDePrueba(prueba.nivel), cupon: prueba.nivel === 'platino' ? cuponDePrueba() : null } : real;
   const visible = useVisible();
   const [refrescando, setRefrescando] = useState(false);
   const pedir = useSesion((s) => s.pedir);
@@ -95,6 +100,13 @@ export default function Puntos() {
 
   return (
     <Pantalla alRefrescar={refrescar} refrescando={refrescando}>
+      {enPrueba ? (
+        <Pressable onPress={() => router.push('/cuenta')} accessibilityRole="button"
+          style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FF9F0A', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
+          <Icono sf="testtube.2" respaldo="" tam={12} color="#1A1000" />
+          <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {resumen.nivel.nombre.toUpperCase()}</Text>
+        </Pressable>
+      ) : null}
       <Cumpleanos activo={!!resumen.cumpleanos} forzar={cumple === '1'} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
       {/* Encima de todo (zIndex): la tarjeta de abajo gira y se escala, y no puede tapar la campana. */}
       <Entrada indice={0} estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 2 }}>
@@ -114,7 +126,7 @@ export default function Puntos() {
       {/* Apple Wallet: la tarjeta en la Cartera, para mostrarla en caja sin abrir la app. */}
       {Platform.OS === 'ios' ? (
         <Entrada indice={1}>
-          <BotonWallet serial={resumen.wallet_serial} />
+          <BotonWallet serial={resumen.wallet_serial} nivelPrueba={enPrueba ? prueba.nivel : null} />
         </Entrada>
       ) : null}
 
@@ -124,6 +136,16 @@ export default function Puntos() {
           <Cupon cupon={resumen.cupon} nivel={resumen.nivel?.clave} fondo={t.oscuro ? '#0A090E' : '#F5F4F8'} />
         </Entrada>
       ) : null}
+
+      {/* Accesos: inyecciones (antes era una pestaña) y reservas. */}
+      <Entrada indice={2} estilo={{ flexDirection: 'row', gap: 10 }}>
+        <Acceso sf="syringe.fill" titulo="Inyecciones" color={t.color.verde}
+          detalle={resumen.inyecciones_pendientes ? `${resumen.inyecciones_pendientes} por aplicar` : 'Al día'}
+          resaltar={resumen.inyecciones_pendientes > 0} alTocar={() => router.push('/inyecciones')} />
+        <Acceso sf="bag.fill" titulo="Mis reservas" color={t.color.magenta}
+          detalle={resumen.reservas_listas ? `${resumen.reservas_listas} lista${resumen.reservas_listas === 1 ? '' : 's'} para retirar` : resumen.reservas_abiertas ? `${resumen.reservas_abiertas} en curso` : 'Ninguna activa'}
+          resaltar={resumen.reservas_listas > 0} alTocar={() => router.push('/reservas')} />
+      </Entrada>
 
       {/* El nivel: Cliente VIP, Plata, Oro o Platino, y cuánto falta. */}
       {resumen.nivel ? (
@@ -282,7 +304,7 @@ export default function Puntos() {
 // (modules/wallet): el servidor la firma y la manda en base64 — sin abrir
 // Safari ni mostrar la dirección del servidor. Si ya está en Wallet, el botón
 // cambia a «Ver en Wallet» (antes seguía ofreciendo agregarla, 2026-10-06).
-function BotonWallet({ serial }) {
+function BotonWallet({ serial, nivelPrueba }) {
   const pedir = useSesion((s) => s.pedir);
   const [cargando, setCargando] = useState(false);
   const [tiene, setTiene] = useState(() => (serial ? tienePase(serial) : false));
@@ -293,17 +315,20 @@ function BotonWallet({ serial }) {
     const sub = AppState.addEventListener('change', (e) => { if (e === 'active') setTiene(tienePase(serial)); });
     return () => sub.remove();
   }, [serial]);
+  useFocusEffect(useCallback(() => { if (serial) setTiene(tienePase(serial)); }, [serial]));
   // Ya está en Wallet: el botón se va (se abre desde Cuenta). Sólo invita a
   // agregarla mientras no esté (pedido del usuario, 2026-10-06).
-  if (!walletDisponible() || tiene) return null;
+  // En modo de prueba se muestra siempre: es para ver la tarjeta de cada nivel.
+  if (!walletDisponible() || (tiene && !nivelPrueba)) return null;
 
   const tocar = async () => {
     if (cargando) return;
     if (tiene && abrirPase(serial)) return;
     setCargando(true);
-    const r = await pedir('wallet_pase');
+    const r = await pedir('wallet_pase', nivelPrueba ? { nivel_prueba: nivelPrueba } : {});
     if (r?.ok && r.pase) {
-      try { if (await agregarPase(r.pase)) setTiene(true); } catch { /* la hoja se cerró o falló */ }
+      try { await agregarPase(r.pase); } catch { /* la hoja se cerró o falló */ }
+      setTiene(tienePase(serial));
     } else {
       Alert.alert('No se pudo preparar la tarjeta', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
     }
@@ -351,6 +376,28 @@ function Campana({ generacion }) {
           <Text maxFontSizeMultiplier={1.2} style={{ color: '#FFF', fontSize: 11, fontWeight: '800' }}>{sinLeer > 9 ? '9+' : sinLeer}</Text>
         </View>
       ) : null}
+    </Pressable>
+  );
+}
+
+// Un acceso del Inicio: ícono, nombre y una línea de cómo va.
+function Acceso({ sf, titulo, detalle, color, resaltar, alTocar }) {
+  const t = useTema();
+  return (
+    <Pressable onPress={alTocar} accessibilityRole="button" accessibilityLabel={`${titulo}: ${detalle}`}
+      style={({ pressed }) => ({ flex: 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+      <Tarjeta estilo={{ gap: 10, paddingVertical: 14 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(color, t.oscuro ? 0.28 : 0.16) }}>
+            <Icono sf={sf} respaldo="" tam={17} color={color} />
+          </View>
+          {resaltar ? <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: '#FF3B30' }} /> : null}
+        </View>
+        <View style={{ gap: 1 }}>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: colorSistema.texto }}>{titulo}</Text>
+          <Text style={{ fontSize: 13, color: resaltar ? colorSistema.texto : colorSistema.texto2, fontWeight: resaltar ? '600' : '400' }} numberOfLines={1}>{detalle}</Text>
+        </View>
+      </Tarjeta>
     </Pressable>
   );
 }

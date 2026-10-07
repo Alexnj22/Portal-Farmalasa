@@ -1,5 +1,5 @@
 import PilaDePestana from '../../../componentes/PilaDePestana';
 
 export default function Pila() {
-  return <PilaDePestana titulo="Mis puntos" />;
+  return <PilaDePestana titulo="Inicio" />;
 }

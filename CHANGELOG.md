@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1244.0 — App: carrito, Inicio con inyecciones, modo de prueba, código para retirar y aviso a la sucursal
+
+- **Carrito** (pestaña nueva, con el número de productos en el ícono): desde la ficha de un producto, «Agregar al carrito» (la presentación mayor, o cualquiera desde su renglón). El carrito vive en el teléfono (hasta 10 productos, 5 unidades c/u), muestra el precio VIP y el ahorro, ordena las sucursales por «tiene todo» y **reserva todo junto para retirar** como un pedido `P-XXXXXX` (`reservar_carrito`: el precio lo calcula el servidor; bajo receta no se reserva; un pedido cuenta como UNA reserva en el tope de 3). Columna `app_reservas.pedido`, `app_carrito_existencias`.
+- **La sucursal se entera al instante:** trigger por sentencia en `app_reservas` (`app_reservas_avisar_sucursal`): aviso en el portal y en el teléfono a quien trabaja en la sala, uno por pedido.
+- **Código para retirar:** la app muestra el QR del pedido o de la reserva (abierto cuando está lista); en el tablero de reservas del portal hay un buscador «Escanea o escribe el código» —el lector de la caja escribe como un teclado— que muestra los productos del pedido, el total y si se pagó en línea.
+- **Menú de abajo:** Inicio (antes Puntos) · Ofertas · Catálogo · Carrito · Cuenta. Inyecciones pasa a una pantalla que se abre desde el Inicio (con cuántas faltan; `inyecciones_pendientes` en el resumen), junto a Mis reservas.
+- **Modo de prueba** (sólo la cuenta de prueba, la que tiene muestras): en Cuenta, ver la app como VIP, Plata, Oro o Platino —tarjeta, nivel, cupón y la tarjeta de Wallet con ese nivel (`wallet_pase` con `nivel_prueba`)—, con una píldora «MODO DE PRUEBA» en el Inicio.
+- **Wallet:** la app vuelve a preguntar si la tarjeta está al volver a la pestaña, y en Cuenta hay «Volver a agregar la tarjeta a Wallet» (si se borró u ocultó y el teléfono todavía la ve).
+- Catálogo: categorías como mosaicos de color con ícono; el indicador del banner sigue al dedo.
+
 ## v2.1243.1 — subir-ios recuerda el último número subido
 
 - `scripts/subir-ios.mjs`: el número de compilación también sale del último que se subió desde este equipo (`~/.claves-farmalasa/compilaciones-subidas.json`). App Store Connect no lista una compilación mientras la procesa, y dos subidas seguidas repetían el número (la 16 de Puntos Salud salió dos veces; la segunda se volvió a subir como 17).

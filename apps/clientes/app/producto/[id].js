@@ -3,7 +3,8 @@
 // qué sucursal hay. «Consultar» abre WhatsApp con la empresa y el nombre del
 // producto. Hoja del sistema que se cierra deslizando hacia abajo.
 import { useEffect, useState } from 'react';
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { useCarrito } from '../../lib/carrito';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -55,6 +56,19 @@ export default function Producto() {
     const msg = encodeURIComponent(`Hola, quiero consultar por ${nombre}.`);
     Linking.openURL(`https://wa.me/${d.whatsapp ?? '50323010013'}?text=${msg}`).catch(() => {});
   };
+  // La presentación mayor (la de mayor factor): la que agrega el botón de abajo.
+  const mayor = [...(p.presentaciones ?? [])].sort((a, b) => (b.factor ?? 1) - (a.factor ?? 1))[0];
+  const agregar = (x) => {
+    if (!x) return;
+    if (p.bajo_receta) { Alert.alert('Bajo receta', 'Este producto se compra en la sucursal presentando la receta.'); return; }
+    const ok = useCarrito.getState().agregar({ id: p.id, nombre: p.nombre, foto: p.foto, tipo: x.tipo, factor: x.factor ?? 1, precio: x.precio, precio_vip: x.precio_vip });
+    if (!ok) { Alert.alert('Carrito lleno', 'El carrito admite hasta 10 productos distintos.'); return; }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    Alert.alert('Agregado al carrito', `${nombreProducto(p.nombre)} · ${nombreProducto(x.tipo)}`, [
+      { text: 'Seguir viendo', style: 'cancel' },
+      { text: 'Ir al carrito', onPress: () => { router.back(); setTimeout(() => router.push('/carrito'), 300); } },
+    ]);
+  };
   const colorTono = (tono) => ({ exito: t.color.exitoTexto, aviso: t.color.avisoTexto, neutro: colorSistema.texto3 }[tono]);
 
   return (
@@ -94,6 +108,11 @@ export default function Producto() {
                       <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.verdeTexto }}>Ahorras {dolares(ahorro)} con tu tarjeta</Text>
                     ) : null}
                   </View>
+                  <Pressable onPress={() => agregar(x)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`Agregar ${nombreProducto(x.tipo)} al carrito`}
+                    style={({ pressed }) => ({ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
+                      backgroundColor: suave(t.color.magenta, t.oscuro ? 0.3 : 0.14), transform: [{ scale: pressed ? 0.9 : 1 }] })}>
+                    <Icono sf="cart.badge.plus" respaldo="+" tam={16} color={t.color.magentaTexto} />
+                  </Pressable>
                   <View style={{ alignItems: 'flex-end' }}>
                     {x.precio_vip != null ? (
                       <>
@@ -138,14 +157,27 @@ export default function Producto() {
         </Text>
       </ScrollView>
 
-      {/* Consultar: fijo abajo. */}
-      <View style={{ position: 'absolute', left: 16, right: 16, bottom: ins.bottom + 12 }}>
+      {/* Abajo, fijos: agregar al carrito (la presentación mayor) y consultar. */}
+      <View style={{ position: 'absolute', left: 16, right: 16, bottom: ins.bottom + 12, flexDirection: 'row', gap: 10 }}>
+        {p.bajo_receta ? (
+          <View style={{ flex: 1, minHeight: 54, borderRadius: 999, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14,
+            backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)' }}>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto2, textAlign: 'center' }}>Bajo receta: se compra en la sucursal</Text>
+          </View>
+        ) : (
+          <Pressable onPress={() => agregar(mayor)} disabled={!mayor} accessibilityRole="button" accessibilityLabel="Agregar al carrito"
+            style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 54, borderRadius: 999,
+              backgroundColor: t.color.magenta, transform: [{ scale: pressed ? 0.97 : 1 }],
+              shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } })}>
+            <Icono sf="cart.badge.plus" respaldo="+" tam={18} color="#FFFFFF" />
+            <Text style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '800' }}>Agregar al carrito</Text>
+          </Pressable>
+        )}
         <Pressable onPress={consultar} accessibilityRole="button" accessibilityLabel="Consultar por WhatsApp"
-          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 54, borderRadius: 999,
-            backgroundColor: VERDE_WHATSAPP, transform: [{ scale: pressed ? 0.97 : 1 }],
+          style={({ pressed }) => ({ width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center',
+            backgroundColor: VERDE_WHATSAPP, transform: [{ scale: pressed ? 0.94 : 1 }],
             shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } })}>
-          <IconoWhatsapp tam={22} color="#FFFFFF" />
-          <Text style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '800' }}>Consultar por WhatsApp</Text>
+          <IconoWhatsapp tam={24} color="#FFFFFF" />
         </Pressable>
       </View>
 

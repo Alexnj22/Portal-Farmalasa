@@ -3,6 +3,7 @@ import { CheckCircle2, MessageCircle, PackageCheck, ShoppingBag, XCircle } from 
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import ListRow from '../../components/common/ListRow';
+import SearchInput from '../../components/common/SearchInput';
 import LiquidModal from '../../components/common/LiquidModal';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
@@ -45,6 +46,9 @@ export default function WidgetReservas({ todas = false }) {
     const [cargando, setCargando] = useState(true);
     const [ocupada, setOcupada] = useState(null);
     const [whatsapp, setWhatsapp] = useState(null);
+    // El código que el cliente muestra en la app (R-000123 o el pedido del
+    // carrito P-XXXXXX): el lector de la caja lo escribe como un teclado.
+    const [codigo, setCodigo] = useState('');
 
     const cargar = useCallback(async () => {
         if (!miSala && !todas) { setCargando(false); return; }
@@ -91,6 +95,12 @@ export default function WidgetReservas({ todas = false }) {
     }
 
     const pendientes = filas.filter((r) => r.estado === 'pendiente').length;
+    const buscado = codigo.trim().toUpperCase();
+    const visibles = buscado
+        ? filas.filter((r) => codigoDeReserva(r.id).includes(buscado) || String(r.pedido ?? '').includes(buscado))
+        : (todas ? filas : filas.slice(0, MAX_FILAS));
+    const delPedido = buscado.startsWith('P-') ? visibles.filter((r) => r.pedido === buscado) : [];
+    const totalPedido = delPedido.reduce((t, r) => t + Number(r.precio ?? 0) * Number(r.cantidad ?? 1), 0);
 
     return (
         <div className="flex flex-col gap-2 h-full">
@@ -99,8 +109,17 @@ export default function WidgetReservas({ todas = false }) {
                     {pendientes} {pendientes === 1 ? 'reserva espera' : 'reservas esperan'} que alguien las aparte
                 </p>
             )}
+            <SearchInput value={codigo} onChange={setCodigo} placeholder="Escanea o escribe el código (R-… o P-…)"
+                ariaLabel="Buscar una reserva por su código" />
+            {delPedido.length > 0 && (
+                <p className="text-body-sm text-content">
+                    <b>Pedido {buscado}</b> · {delPedido.length} {delPedido.length === 1 ? 'producto' : 'productos'} · {String(delPedido[0].cliente ?? '').split(/\s+/)[0]} · total ${totalPedido.toFixed(2)}
+                    {delPedido.every((r) => r.pago_estado === 'pagado') ? ' · pagado en línea' : ' · se cobra en caja'}
+                </p>
+            )}
+            {buscado && !visibles.length && <p className="text-body-sm text-content-3">No hay una reserva abierta con ese código en esta sala.</p>}
             <ul className="space-y-1.5 min-w-0">
-                {(todas ? filas : filas.slice(0, MAX_FILAS)).map((r) => (
+                {visibles.map((r) => (
                     <li key={r.id}>
                         <ListRow
                             surface="card"
@@ -108,7 +127,7 @@ export default function WidgetReservas({ todas = false }) {
                             tone={r.estado === 'pendiente' ? 'warning' : null}
                             icon={r.estado === 'lista' ? PackageCheck : ShoppingBag}
                             title={`${r.cantidad} × ${r.producto}`}
-                            subtitle={`${todas && r.sala ? `${r.sala} · ` : ''}${codigoDeReserva(r.id)} · ${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}${
+                            subtitle={`${todas && r.sala ? `${r.sala} · ` : ''}${r.pedido ? `${r.pedido} · ` : ''}${codigoDeReserva(r.id)} · ${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}${
                                 r.estado === 'lista' ? ` · retira antes de las ${hora12(r.vence_at)}` : ''}${
                                 r.avisado_via === 'whatsapp' ? ' · avisado por WhatsApp' : ''}`}
                             trailing={(
@@ -138,7 +157,7 @@ export default function WidgetReservas({ todas = false }) {
                     </li>
                 ))}
             </ul>
-            {!todas && filas.length > MAX_FILAS && (
+            {!todas && !buscado && filas.length > MAX_FILAS && (
                 <span className="text-label text-content-3 mt-auto">y {filas.length - MAX_FILAS} más</span>
             )}
             {whatsapp && (

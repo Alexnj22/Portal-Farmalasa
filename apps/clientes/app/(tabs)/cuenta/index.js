@@ -12,6 +12,8 @@ import { pedirTokenDeAvisos, recordarAvisos } from '../../../lib/avisos';
 import { abrirPase, agregarPase, tienePase, walletDisponible } from '../../../modules/wallet';
 import { nombreBiometria, useBloqueo } from '../../../lib/bloqueo';
 import { olvidarEntrada } from '../../../lib/entradaGuardada';
+import { NIVELES_PRUEBA, useModoPrueba } from '../../../lib/prueba';
+import Segmentos from '../../../componentes/Segmentos';
 import { nombrePropio } from '../../../lib/formato';
 import { useTema } from '../../../tema/tema';
 import Icono from '../../../componentes/Icono';
@@ -42,11 +44,17 @@ export default function Cuenta() {
   const [enWallet, setEnWallet] = useState(false);
   useFocusEffect(useCallback(() => { if (serialW) setEnWallet(tienePase(serialW)); }, [serialW]));
   // Ya agregada: se abre en Wallet. Si no: se arma y se ofrece la hoja de Apple.
-  const wallet = async () => {
-    if (enWallet && abrirPase(serialW)) return;
-    const r = await pedirW('wallet_pase');
+  const prueba = useModoPrueba();
+  // `abrir`: si ya está, se abre; si no (o al «volver a agregar»), se arma y
+  // se ofrece la hoja de Apple. Volver a agregar sirve si se borró o se ocultó
+  // en Wallet y la app todavía la ve (usuario, 2026-10-07).
+  const wallet = async ({ abrir = true } = {}) => {
+    if (abrir && enWallet && abrirPase(serialW)) return;
+    const enPrueba = !!resumen?.prueba && prueba.activo;
+    const r = await pedirW('wallet_pase', enPrueba ? { nivel_prueba: prueba.nivel } : {});
     if (!r?.ok || !r.pase) { Alert.alert('No se pudo preparar la tarjeta', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
-    try { if (await agregarPase(r.pase)) setEnWallet(true); } catch { /* cerrada */ }
+    try { await agregarPase(r.pase); } catch { /* cerrada */ }
+    setEnWallet(tienePase(serialW));
   };
   const { pedir, cerrar } = useSesion();
   const { resumen, cargar } = useCuenta();
@@ -182,9 +190,27 @@ export default function Cuenta() {
         <FilaAccion sf="mappin.and.ellipse" texto="Nuestras sucursales" alTocar={() => router.push('/sucursales')} />
         {resumen?.wallet_serial && walletDisponible() ? (
           <FilaAccion sf="wallet.pass.fill" texto={enWallet ? 'Ver mi tarjeta en Apple Wallet' : 'Agregar mi tarjeta a Apple Wallet'}
-            alTocar={wallet} />
+            alTocar={() => wallet()} />
+        ) : null}
+        {resumen?.wallet_serial && walletDisponible() && enWallet ? (
+          <FilaAccion sf="arrow.clockwise" texto="Volver a agregar la tarjeta a Wallet" alTocar={() => wallet({ abrir: false })} />
         ) : null}
       </Grupo>
+
+      {/* Modo de prueba: sólo la cuenta de prueba. Ver la tarjeta, el nivel, el
+          cupón y Wallet como cada nivel, sin comprar. */}
+      {resumen?.prueba ? (
+        <Grupo titulo="Modo de prueba" pie="Sólo en esta cuenta de prueba. Cambia cómo se ve la app (tarjeta, nivel, cupón y la tarjeta de Wallet que se agrega); no cambia puntos ni datos.">
+          <FilaInterruptor titulo="Ver la app como otro nivel" valor={prueba.activo}
+            alCambiar={(v) => prueba.poner({ activo: v })} color={t.color.magenta} />
+          {prueba.activo ? (
+            <View style={{ padding: 12 }}>
+              <Segmentos valor={prueba.nivel} alCambiar={(n) => prueba.poner({ nivel: n })}
+                opciones={NIVELES_PRUEBA.map((n) => ({ valor: n.clave, rotulo: n.clave === 'vip' ? 'VIP' : n.nombre }))} />
+            </View>
+          ) : null}
+        </Grupo>
+      ) : null}
 
       <Grupo>
         <FilaAccion sf="doc.text.fill" texto="Reglamento del programa" alTocar={() => router.push('/legal?doc=reglamento')} />

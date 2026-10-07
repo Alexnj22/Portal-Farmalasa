@@ -158,7 +158,15 @@ Deno.serve(async (req) => {
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
   // La tarjeta de Wallet de una ficha, firmada (ver `_shared/pase.ts`).
-  const paseDe = async (id: number) => (await paseDeCliente(admin, id)).pase;
+  const paseDe = async (id: number, nivelDePrueba?: string) => (await paseDeCliente(admin, id, nivelDePrueba)).pase;
+  // La cuenta de PRUEBA es la que tiene muestras (`app_cliente_muestras`): la
+  // única que puede ver la app «como» otro nivel (modo de prueba).
+  const esDePrueba = async (id: number) => {
+    const { count, error } = await admin.from("app_cliente_muestras").select("id", { count: "exact", head: true }).eq("customer_id", id);
+    if (error) throw error;
+    return (count ?? 0) > 0;
+  };
+  const NOMBRE_NIVEL: Record<string, string> = { vip: "Cliente VIP", plata: "Plata", oro: "Oro", platino: "Platino" };
 
 
   if (enlaceWallet) {
@@ -705,13 +713,13 @@ Deno.serve(async (req) => {
       return json({ ok: true, sucursales: conSucursal(data ?? []) });
     }
 
-    if (accion === "mis_reservas" || accion === "reservar" || accion === "cancelar_reserva" || accion === "pagar_reserva") {
+    if (accion === "mis_reservas" || accion === "reservar" || accion === "cancelar_reserva" || accion === "pagar_reserva" || accion === "reservar_carrito") {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
 
     if (accion === "mis_reservas") {
       const { data, error } = await admin.from("app_reservas")
-        .select("id, estado, origen, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega")
+        .select("id, estado, origen, pedido, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega")
         .eq("customer_id", customerId).gte("created_at", new Date(Date.now() - 45 * 86400_000).toISOString())
         .order("created_at", { ascending: false }).limit(30);
       if (error) throw error;
@@ -768,11 +776,12 @@ Deno.serve(async (req) => {
       if (eP) throw eP;
       if (prod?.es_antibiotico || prod?.requiere_receta) return json({ ok: false, mensaje: "Los productos bajo receta no se reservan." });
       // Tope de activas y bloqueo por vencidas.
-      const { data: suyas, error: eR } = await admin.from("app_reservas").select("estado, cerrada_at")
+      const { data: suyas, error: eR } = await admin.from("app_reservas").select("id, estado, cerrada_at, pedido")
         .eq("customer_id", customerId).or(`estado.in.(pendiente,lista),and(estado.eq.vencida,cerrada_at.gte.${new Date(Date.now() - 30 * 86400_000).toISOString()})`);
       if (eR) throw eR;
-      const activas = (suyas ?? []).filter((r: any) => r.estado === "pendiente" || r.estado === "lista").length;
-      const vencidas = (suyas ?? []).filter((r: any) => r.estado === "vencida").length;
+      // Un pedido del carrito cuenta como UNA reserva (2026-10-07).
+      const activas = new Set((suyas ?? []).filter((r: any) => r.estado === "pendiente" || r.estado === "lista").map((r: any) => r.pedido ?? `r${r.id}`)).size;
+      const vencidas = new Set((suyas ?? []).filter((r: any) => r.estado === "vencida").map((r: any) => r.pedido ?? `r${r.id}`)).size;
       if (vencidas >= 3) return json({ ok: false, mensaje: "Tienes 3 reservas que no se retiraron este mes. Podrás reservar de nuevo en 30 días." });
       if (activas >= 3) return json({ ok: false, mensaje: "Ya tienes 3 reservas activas. Retira o cancela una para reservar otra." });
       const { data: nueva, error: eI } = await admin.from("app_reservas").insert({
@@ -782,6 +791,81 @@ Deno.serve(async (req) => {
       }).select("id").single();
       if (eI) throw eI;
       return json({ ok: true, id: nueva.id, codigo: `R-${String(nueva.id).padStart(6, "0")}` });
+    }
+
+    // ── El carrito (2026-10-07) ─────────────────────────────────────────
+    // `carrito_existencias`: dónde hay de cada producto, para elegir sala.
+    // `reservar_carrito`: reserva TODO el carrito en una sala, como un pedido
+    // (`P-XXXXXX`): una fila de `app_reservas` por producto. El precio lo
+    // calcula el servidor —nunca el que mande la app—: el VIP de esa
+    // presentación (el socio paga VIP) o el de viñeta si no tiene.
+    if (accion === "carrito_existencias") {
+      const ids = (Array.isArray(body?.ids) ? body.ids : []).map(Number).filter((n: number) => Number.isInteger(n) && n > 0).slice(0, 20);
+      if (!ids.length) return json({ ok: true, existencias: [], salas: [] });
+      const [{ data, error }, { data: salas, error: eS }] = await Promise.all([
+        admin.rpc("app_carrito_existencias", { p_ids: ids }),
+        admin.from("branches").select("id, name, address").eq("type", "FARMACIA").order("name"),
+      ]);
+      if (error) throw error;
+      if (eS) throw eS;
+      return json({ ok: true, existencias: data ?? [], salas: (salas ?? []).map((b: any) => ({ id: b.id, sala: sucursal(b.name), direccion: b.address })) });
+    }
+
+    if (accion === "reservar_carrito") {
+      if (body?.acepta_terminos !== TERMINOS_RESERVA.version) {
+        return json({ ok: false, motivo: "terminos", mensaje: "Acepta las condiciones de la reserva para continuar." });
+      }
+      const branchId = Number(body?.branch_id);
+      // deno-lint-ignore no-explicit-any
+      const items = (Array.isArray(body?.items) ? body.items : []).map((x: any) => ({
+        id: Number(x?.producto_id), factor: Number(x?.factor) || 1, cantidad: Math.trunc(Number(x?.cantidad)),
+      })).filter((x: any) => Number.isInteger(x.id) && x.id > 0);
+      if (!items.length || items.length > 10) return json({ ok: false, mensaje: "El carrito puede tener de 1 a 10 productos." });
+      if (items.some((x: any) => !(x.cantidad >= 1 && x.cantidad <= 5))) return json({ ok: false, mensaje: "Cada producto va de 1 a 5 unidades." });
+      const { data: sala, error: eSala } = await admin.from("branches").select("id").eq("id", branchId).eq("type", "FARMACIA").maybeSingle();
+      if (eSala) throw eSala;
+      if (!sala) return json({ ok: false, mensaje: "Elige la sucursal donde vas a retirar." });
+      const ids = [...new Set(items.map((x: any) => x.id))];
+      const [{ data: prods, error: eP }, { data: precios, error: ePr }, { data: ocultos, error: eO }] = await Promise.all([
+        admin.from("products").select("id, nombre, activo, oculto_en_ventas, es_antibiotico, requiere_receta").in("id", ids),
+        admin.from("product_precios").select("product_id, vineta, vip, factor, presentaciones(tipo)").in("product_id", ids).eq("activo", true).gt("vineta", 0),
+        admin.from("app_catalogo_ocultos").select("product_id").in("product_id", ids),
+      ]);
+      if (eP) throw eP;
+      if (ePr) throw ePr;
+      if (eO) throw eO;
+      const oculto = new Set((ocultos ?? []).map((o: any) => Number(o.product_id)));
+      const porId = new Map((prods ?? []).map((p: any) => [Number(p.id), p]));
+      const filas = [];
+      for (const x of items) {
+        const p: any = porId.get(x.id);
+        if (!p || p.activo === false || p.oculto_en_ventas || oculto.has(x.id)) return json({ ok: false, mensaje: "Un producto del carrito ya no está en el catálogo. Quítalo e intenta de nuevo." });
+        if (p.es_antibiotico || p.requiere_receta) return json({ ok: false, mensaje: `«${p.nombre}» es bajo receta: se compra en la sucursal con la receta.` });
+        // La presentación: la de mayor precio entre las de ese factor (la misma regla del catálogo).
+        const pr: any = (precios ?? []).filter((q: any) => Number(q.product_id) === x.id && (Number(q.factor) || 1) === x.factor)
+          .sort((a: any, b: any) => Number(b.vineta) - Number(a.vineta))[0];
+        if (!pr) return json({ ok: false, mensaje: `«${p.nombre}» cambió de presentación. Quítalo y agrégalo de nuevo.` });
+        const vineta = Math.round(Number(pr.vineta) * 100) / 100;
+        const vip = Number(pr.vip) > 0 && Number(pr.vip) < Number(pr.vineta) ? Math.round(Number(pr.vip) * 100) / 100 : null;
+        filas.push({
+          customer_id: customerId, branch_id: branchId, producto_id: x.id,
+          producto_nombre: `${p.nombre}${pr.presentaciones?.tipo ? ` · ${pr.presentaciones.tipo}` : ""}`.slice(0, 200),
+          cantidad: x.cantidad, precio_unitario: vip ?? vineta, precio_normal: vineta, terminos_version: TERMINOS_RESERVA.version,
+        });
+      }
+      const { data: suyas, error: eR } = await admin.from("app_reservas").select("id, estado, cerrada_at, pedido")
+        .eq("customer_id", customerId).or(`estado.in.(pendiente,lista),and(estado.eq.vencida,cerrada_at.gte.${new Date(Date.now() - 30 * 86400_000).toISOString()})`);
+      if (eR) throw eR;
+      const activas = new Set((suyas ?? []).filter((r: any) => r.estado === "pendiente" || r.estado === "lista").map((r: any) => r.pedido ?? `r${r.id}`)).size;
+      const vencidas = new Set((suyas ?? []).filter((r: any) => r.estado === "vencida").map((r: any) => r.pedido ?? `r${r.id}`)).size;
+      if (vencidas >= 3) return json({ ok: false, mensaje: "Tienes 3 reservas que no se retiraron este mes. Podrás reservar de nuevo en 30 días." });
+      if (activas >= 3) return json({ ok: false, mensaje: "Ya tienes 3 reservas activas. Retira o cancela una para reservar otra." });
+      const ABC = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+      const pedido = "P-" + Array.from(crypto.getRandomValues(new Uint8Array(6)), (n) => ABC[n % ABC.length]).join("");
+      const { data: nuevas, error: eI } = await admin.from("app_reservas").insert(filas.map((f) => ({ ...f, pedido }))).select("id");
+      if (eI) throw eI;
+      const total = Math.round(filas.reduce((s, f) => s + f.precio_unitario * f.cantidad, 0) * 100) / 100;
+      return json({ ok: true, pedido, reservas: (nuevas ?? []).map((n: any) => n.id), total });
     }
 
     if (accion === "cancelar_reserva") {
@@ -953,6 +1037,15 @@ Deno.serve(async (req) => {
         wallet_serial: `socio-${customerId}`,
         // El nivel (Plata/Oro/Platino) y cuánto falta para el siguiente.
         nivel,
+        // Inyecciones por aplicar: el Inicio las muestra (ya no son pestaña).
+        inyecciones_pendientes: await (async () => {
+          const { count, error: eIn } = await admin.from("inyeccion_aplicaciones").select("id", { count: "exact", head: true })
+            .eq("customer_id", customerId).eq("confirmada", true).is("aplicada_at", null).is("mezcla_de", null);
+          if (eIn) throw eIn;
+          return count ?? 0;
+        })(),
+        // Cuenta de prueba: la app ofrece el «modo de prueba» en Cuenta.
+        prueba: await esDePrueba(customerId),
         cupon: cup ? { puntos: Number(cup.puntos), restantes: Number(cup.restantes), vence: cup.vence_el, titulo: cup.motivo } : null,
         regalo_cumpleanos: nivel.clave === "vip" ? Number(cfgP?.puntos_cumpleanos ?? 0) : nivel.cumpleanos,
         codigo,
@@ -1031,7 +1124,9 @@ Deno.serve(async (req) => {
     // La tarjeta en base64, para la hoja nativa de Apple dentro de la app
     // (modules/wallet): sin enlaces ni Safari de por medio.
     if (accion === "wallet_pase") {
-      const bytes = await paseDe(customerId);
+      const pedido = String(body?.nivel_prueba ?? "");
+      const nivelPrueba = NOMBRE_NIVEL[pedido] && await esDePrueba(customerId) ? NOMBRE_NIVEL[pedido] : undefined;
+      const bytes = await paseDe(customerId, nivelPrueba);
       let bin = "";
       for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
       return json({ ok: true, pase: btoa(bin), serial: `socio-${customerId}` });

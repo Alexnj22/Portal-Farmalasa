@@ -1,5 +1,5 @@
 import PilaDePestana from '../../../componentes/PilaDePestana';
 
 export default function Pila() {
-  return <PilaDePestana titulo="Inyecciones" />;
+  return <PilaDePestana titulo="Carrito" />;
 }

@@ -2,16 +2,18 @@
 // igual que la app del personal.
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useTema } from '../../tema/tema';
+import { useCarrito } from '../../lib/carrito';
 
 const TRANSPARENTE = { backgroundColor: 'transparent' };
 
 export default function Pestanas() {
   const t = useTema();
+  const enCarrito = useCarrito((s) => s.items.length);
   return (
     <NativeTabs tintColor={t.color.magenta}>
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="puntos">
-        <NativeTabs.Trigger.Icon sf={{ default: 'star.circle', selected: 'star.circle.fill' }} md="stars" />
-        <NativeTabs.Trigger.Label>Puntos</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
+        <NativeTabs.Trigger.Label>Inicio</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="ofertas">
         <NativeTabs.Trigger.Icon sf={{ default: 'tag', selected: 'tag.fill' }} md="sell" />
@@ -21,9 +23,11 @@ export default function Pestanas() {
         <NativeTabs.Trigger.Icon sf={{ default: 'pills', selected: 'pills.fill' }} md="medication" />
         <NativeTabs.Trigger.Label>Catálogo</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="inyecciones">
-        <NativeTabs.Trigger.Icon sf={{ default: 'syringe', selected: 'syringe.fill' }} md="vaccines" />
-        <NativeTabs.Trigger.Label>Inyecciones</NativeTabs.Trigger.Label>
+      {/* El carrito, con cuántos productos lleva. Inyecciones pasó al Inicio. */}
+      <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="carrito">
+        <NativeTabs.Trigger.Icon sf={{ default: 'cart', selected: 'cart.fill' }} md="shopping_cart" />
+        <NativeTabs.Trigger.Label>Carrito</NativeTabs.Trigger.Label>
+        {enCarrito ? <NativeTabs.Trigger.Badge>{String(enCarrito)}</NativeTabs.Trigger.Badge> : null}
       </NativeTabs.Trigger>
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="cuenta">
         <NativeTabs.Trigger.Icon sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }} md="account_circle" />

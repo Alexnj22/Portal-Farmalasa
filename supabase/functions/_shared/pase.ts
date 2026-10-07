@@ -172,7 +172,9 @@ export async function clienteDelEnlace(token: string): Promise<number | null> {
 
 /** La tarjeta de una ficha, leyendo sus datos (la usan `app-clientes` y `wallet-pases`). */
 // deno-lint-ignore no-explicit-any
-export async function paseDeCliente(admin: any, id: number): Promise<{ pase: Uint8Array; cambio: string | null }> {
+// `nivelDePrueba`: sólo para la cuenta de prueba (modo de prueba de la app), que
+// pide ver la tarjeta con otro nivel. Nunca para un cliente real.
+export async function paseDeCliente(admin: any, id: number, nivelDePrueba?: string): Promise<{ pase: Uint8Array; cambio: string | null }> {
   const [{ data: c, error: eC }, { data: est, error: eE }, { data: cod, error: eK }, { data: pri, error: eP }, { data: cta, error: eT }] = await Promise.all([
     admin.from("customers").select("name").eq("id", id).maybeSingle(),
     admin.rpc("puntos_estado_cuenta", { p_customer_id: id }),
@@ -185,7 +187,7 @@ export async function paseDeCliente(admin: any, id: number): Promise<{ pase: Uin
   const saldo = Number(est?.saldo ?? 0);
   const pase = await armarPase({
     customerId: id, nombre: c?.name ?? "", saldo, equivale: Math.round(saldo) / 100,
-    codigo: cod?.codigo ?? null, socioDesde: pri?.ganado_el ?? null, nivel: nivel.nombre,
+    codigo: cod?.codigo ?? null, socioDesde: pri?.ganado_el ?? null, nivel: nivelDePrueba ?? nivel.nombre,
   });
   return { pase, cambio: cta?.updated_at ?? null };
 }

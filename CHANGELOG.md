@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1247.0 — Ruta en vivo con la app cerrada
+
+- **La ruta se sigue viendo en vivo con la app cerrada.** Al iniciar una ruta de reparto o de Torogoz, la app pide la ubicación «Siempre» y manda la posición desde el segundo plano (reparto cada 30 s / 50 m, Torogoz cada 60 s / 100 m), con el indicador azul de iOS. Una sola tarea de fondo para los dos rastreos (`plataforma/rastreoDeFondo.js`); qué ruta toca escribir y cuándo lo decide el núcleo (`src/utils/rastreoDeFondo.js`). Se apaga sola al terminar la ruta, volver a base, cambiar de día o cerrar sesión, y al abrir la app si la ruta ya no está en curso. Con sólo «mientras se usa», la ruta inicia igual en primer plano y un aviso lleva a Ajustes.
+
 ## v2.1246.0 — GPS, mapas, archivos y kioscos en la app
 
 - **Rutas con GPS y mapas en la app.** Torogoz: «Iniciar ruta / Terminar ruta» con rastreo en primer plano (la misma regla del portal, ahora en `src/data/distribucionRastreo.js`), visitas con coordenadas y el mapa de los clientes de la ruta con el recorrido del día. Pedidos: las rutas de reparto y su mapa (bodega, paradas, el camión en vivo) pasan a ser nativas; quien conduce anota su posición mientras tiene la pantalla abierta. Armar una ruta sigue en el portal.

@@ -690,3 +690,6 @@ export const anularPedido = (params) => supabase.rpc('anular_pedido', params);
 
 /** Resuelve la novedad de un renglón de pedido. */
 export const resolverRenglonDePedido = (params) => supabase.rpc('resolve_pedido_item', params);
+
+/** El estado de una ruta de reparto ('pendiente' | 'en_ruta' | 'completada'); lo usa el rastreo de fondo de la app. */
+export const fetchEstadoDeRuta = (rutaId) => supabase.from('rutas').select('status').eq('id', rutaId).maybeSingle();

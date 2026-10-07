@@ -15,6 +15,9 @@ import BotonCampana from '../componentes/BotonCampana';
 import { CapaDeProgreso } from '../componentes/Progreso';
 import Aurora from '../componentes/Aurora';
 import { escucharToques, registrarAvisos } from '../componentes/avisos';
+// Define la tarea del GPS de fondo de las rutas: iOS relanza la app sin pantalla
+// para entregar posiciones, y la tarea tiene que existir desde el arranque.
+import { revisarRastreoDeFondo } from '../plataforma/rastreoDeFondo';
 
 // Lo que hace `App.jsx` del portal alrededor de las pantallas:
 //  - al entrar, cargar salas, personal y catálogos al store (`fetchBoot`); sin
@@ -30,6 +33,8 @@ function GuardiaDeSesion() {
   // Con sesión, el teléfono recibe los avisos de esta persona.
   useEffect(() => { if (isAuthenticated) registrarAvisos(); }, [isAuthenticated]);
   useEffect(() => (isAuthenticated ? escucharToques() : undefined), [isAuthenticated]);
+  // Una ruta que ya terminó (o de ayer) no deja el GPS encendido; una viva se reanuda.
+  useEffect(() => { if (isAuthenticated) Promise.resolve(revisarRastreoDeFondo()).catch(() => {}); }, [isAuthenticated]);
   useEffect(() => {
     if (loading) return;
     const enEntrada = !segmentos.length || segmentos[0] === 'entrar' || segmentos[0] === 'index';

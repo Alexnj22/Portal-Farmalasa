@@ -7,7 +7,8 @@
 // puesto; «Registrar visita» pregunta qué pasó (el diálogo ES la confirmación).
 // La visita lleva la ubicación del teléfono si la da en 8 segundos (como el
 // portal en la app); sin ella cuenta igual. «Iniciar ruta» anota el recorrido
-// —un punto por minuto— mientras la app está abierta; ver `rastreo.js`.
+// —un punto por minuto— aun con la app cerrada si hay permiso «siempre»; si
+// no, mientras la app está abierta. Ver `rastreo.js`.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Linking, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
@@ -31,6 +32,7 @@ import PasoDeDia from './PasoDeDia';
 import Etiqueta from './Etiqueta';
 import MapaDeRuta from './MapaDeRuta';
 import { iniciarRuta, terminarRuta, useRastreoDeRuta } from './rastreo';
+import AvisoUbicacionSiempre from '../../AvisoUbicacionSiempre';
 
 const PROBLEMA_GPS = {
   denegado: 'El teléfono no da permiso de ubicación: la ruta sigue, pero sin recorrido. Se activa en Ajustes › Farmalasa › Ubicación.',
@@ -116,14 +118,14 @@ export default function Hoy({ puedeConfigurar, fecha, vendedorElegido, onFecha, 
 
   // Anotar el recorrido es escribir: se confirma, igual que en el portal.
   const pedirIniciar = () => {
-    Alert.alert('Iniciar ruta', 'Mientras la app esté abierta, se anota tu ubicación cada minuto hasta que termines la ruta.', [
+    Alert.alert('Iniciar ruta', 'Se anota tu ubicación cada minuto, aun con la app cerrada, hasta que termines la ruta.', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Iniciar', onPress: async () => {
-        iniciarRuta(user?.id);
-        useStaffStore.getState().appendAuditLog?.('DISTRIBUCION_RUTA_INICIADA', String(user?.id ?? ''), { fecha, desde: 'app' });
+        const modo = await Promise.resolve(iniciarRuta(user?.id)).catch(() => 'sin-fondo');
+        useStaffStore.getState().appendAuditLog?.('DISTRIBUCION_RUTA_INICIADA', String(user?.id ?? ''), { fecha, desde: 'app', fondo: modo === 'fondo' });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         // Si el permiso ya estaba negado, se dice UNA vez, acá.
-        if (await ubicacionNegada()) Alert.alert('Sin permiso de ubicación', PROBLEMA_GPS.denegado);
+        if (modo === 'denegado' || await ubicacionNegada()) Alert.alert('Sin permiso de ubicación', PROBLEMA_GPS.denegado);
       } },
     ]);
   };
@@ -131,7 +133,7 @@ export default function Hoy({ puedeConfigurar, fecha, vendedorElegido, onFecha, 
     Alert.alert('Terminar ruta', 'Se deja de anotar tu ubicación.', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Terminar', style: 'destructive', onPress: () => {
-        terminarRuta(user?.id);
+        Promise.resolve(terminarRuta(user?.id)).catch(() => {});
         useStaffStore.getState().appendAuditLog?.('DISTRIBUCION_RUTA_TERMINADA', String(user?.id ?? ''), { fecha, desde: 'app' });
         Haptics.selectionAsync().catch(() => {});
       } },
@@ -184,8 +186,13 @@ export default function Hoy({ puedeConfigurar, fecha, vendedorElegido, onFecha, 
       {esMio && esHoy ? (
         <View style={{ marginHorizontal: 16, gap: 8 }}>
           {rastreo.enRuta ? (
-            <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '600', marginHorizontal: 4 }}>En ruta: tu ubicación se anota cada minuto mientras la app esté abierta. Al terminar, toca «Terminar ruta».</Text>
+            <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '600', marginHorizontal: 4 }}>
+              {rastreo.fondo
+                ? 'En ruta: tu ubicación se anota cada minuto, aun con la app cerrada. Al terminar, toca «Terminar ruta».'
+                : 'En ruta: tu ubicación se anota cada minuto mientras la app esté abierta. Al terminar, toca «Terminar ruta».'}
+            </Text>
           ) : null}
+          {rastreo.sinFondo && rastreo.sinFondo !== 'denegado' && !rastreo.problema ? <AvisoUbicacionSiempre /> : null}
           {rastreo.problema ? <Aviso tono="cuidado" texto={PROBLEMA_GPS[rastreo.problema] ?? PROBLEMA_GPS['sin-gps']} /> : null}
           <View style={{ flexDirection: 'row' }}>
             {rastreo.enRuta

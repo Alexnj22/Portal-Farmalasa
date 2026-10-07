@@ -23,6 +23,8 @@ import { encuadre } from '@nucleo/utils/encuadreDelMapa';
 import { hora12 } from '@nucleo/utils/hora';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { seguirPosicion } from '@plataforma/ubicacion';
+import { activarRutaDeFondo, escucharFondo, fondoActivo, quitarRutaDeFondo, rutasDeFondo } from '../../../plataforma/rastreoDeFondo';
+import AvisoUbicacionSiempre from '../../../componentes/AvisoUbicacionSiempre';
 import { BARRA_NATIVA } from '../../../componentes/PilaDePestana';
 import { colorSistema } from '../../../componentes/Formulario';
 import { Aviso, BotonGrande, Seccion } from '../../../componentes/formulario/Piezas';
@@ -58,6 +60,8 @@ export default function RutaDeReparto() {
   const [coords, setCoords] = useState({ porSucursal: {}, bodega: null });
   const [mio, setMio] = useState(null);          // mi posición (conductor)
   const [gps, setGps] = useState(null);          // problema del GPS
+  const [fondo, setFondo] = useState(() => fondoActivo('reparto'));   // ¿la tarea de fondo anota esta ruta?
+  const [sinFondo, setSinFondo] = useState(null); // por qué no: 'en-uso' | 'denegado' | 'sin-fondo'
   const [camion, setCamion] = useState(null);    // { lat, lng, at } visto por los demás
   const [ocupado, setOcupado] = useState(null);
   const mapa = useRef(null);
@@ -84,7 +88,27 @@ export default function RutaDeReparto() {
 
   const conductor = !!(ruta && user?.id && String(ruta.conductor_id) === String(user.id));
 
+  // ── Conductor con la ruta en marcha: el GPS de FONDO (app cerrada) ────────
+  // Iniciar la ruta lo arranca; si la ruta se inició antes (en el portal, o con
+  // una versión vieja de la app), se arranca al abrir esta pantalla. Una ruta
+  // que ya no está «en ruta» lo suelta. Ver `plataforma/rastreoDeFondo.js`.
+  useEffect(() => escucharFondo(() => setFondo(fondoActivo('reparto'))), []);
+  const enRuta = ruta?.status === 'en_ruta';
+  useEffect(() => {
+    if (!conductor || !ruta) return;
+    const mia = rutasDeFondo().reparto?.rutaId === String(id);
+    if (enRuta && !mia) {
+      Promise.resolve(activarRutaDeFondo('reparto', { rutaId: String(id) }))
+        .then((r) => setSinFondo(r === 'fondo' ? null : r))
+        .catch(() => setSinFondo('sin-fondo'));
+    } else if (!enRuta && mia) {
+      Promise.resolve(quitarRutaDeFondo('reparto')).catch(() => {});
+    }
+  }, [conductor, ruta, enRuta, id]);
+
   // ── Conductor: su GPS mientras la pantalla está abierta ─────────────────
+  // Con el fondo corriendo, esta pantalla sólo MUESTRA la posición: no escribe
+  // (sin posiciones duplicadas). Sin fondo, es el respaldo de siempre.
   useEffect(() => {
     if (!conductor) return undefined;
     let detener = null;
@@ -94,13 +118,13 @@ export default function RutaDeReparto() {
       ultima.current = p;
       setMio(p);
       setGps(null);
-      if (primera) { primera = false; Promise.resolve(upsertRutaLocation(id, p.lat, p.lng)).catch(() => {}); }
+      if (primera && !fondoActivo('reparto')) { primera = false; Promise.resolve(upsertRutaLocation(id, p.lat, p.lng)).catch(() => {}); }
     }, { mensaje: 'Rastreando tu posición para la entrega.', alFallar: setGps })
       .then((d) => { if (cerrado) d(); else detener = d; })
       .catch(() => setGps('sin-gps'));
     const reloj = setInterval(() => {
       const p = ultima.current;
-      if (p) Promise.resolve(upsertRutaLocation(id, p.lat, p.lng)).catch(() => {});
+      if (p && !fondoActivo('reparto')) Promise.resolve(upsertRutaLocation(id, p.lat, p.lng)).catch(() => {});
     }, INTERVALO_POSICION_CONDUCTOR_MS);
     return () => { cerrado = true; detener?.(); clearInterval(reloj); };
   }, [conductor, id]);
@@ -141,10 +165,21 @@ export default function RutaDeReparto() {
   };
   const entregar = (p) => hacer(`Entregar en ${p.suc_name}`, 'La sala recibe el aviso de que llegaste.', 'Entregué',
     () => updateRutaPedidoEntregado(p.id, user?.id, { sucursal_id: p.erp_sucursal_id, desde: 'app' }), 'Parada entregada');
-  const iniciar = () => hacer(`Iniciar ruta #${ruta.numero}`, 'Las salas reciben el aviso de que vas en camino.', 'Iniciar',
-    () => iniciarRuta(ruta.id, { desde: 'app' }), 'Ruta iniciada');
-  const volver = () => hacer('Volver a base', 'Se cierra la ruta: todas las paradas están entregadas.', 'Cerrar ruta',
-    () => completarRuta(ruta.id, { desde: 'app' }), 'Ruta cerrada');
+  const iniciar = () => hacer(`Iniciar ruta #${ruta.numero}`, 'Las salas reciben el aviso de que vas en camino, y tu ubicación se ve en el mapa aun con la app cerrada hasta que vuelvas a base.', 'Iniciar',
+    async () => {
+      const r = await iniciarRuta(ruta.id, { desde: 'app' });
+      if (!r?.error) {
+        const modo = await Promise.resolve(activarRutaDeFondo('reparto', { rutaId: String(ruta.id) })).catch(() => 'sin-fondo');
+        setSinFondo(modo === 'fondo' ? null : modo);
+      }
+      return r;
+    }, 'Ruta iniciada');
+  const volver = () => hacer('Volver a base', 'Se cierra la ruta: todas las paradas están entregadas. Se deja de anotar tu ubicación.', 'Cerrar ruta',
+    async () => {
+      const r = await completarRuta(ruta.id, { desde: 'app' });
+      if (!r?.error) await Promise.resolve(quitarRutaDeFondo('reparto')).catch(() => {});
+      return r;
+    }, 'Ruta cerrada');
 
   const estado = ruta ? estadoDeRuta(ruta.status) : null;
   return (
@@ -202,6 +237,8 @@ export default function RutaDeReparto() {
               <View style={{ marginHorizontal: 16 }}><Aviso texto="Las salas de esta ruta todavía no tienen ubicación en el mapa." /></View>
             )}
             {conductor && gps ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={MOTIVO_GPS[gps] ?? MOTIVO_GPS['sin-gps']} /></View> : null}
+            {conductor && enRuta && fondo ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Tu ubicación se ve en el mapa aun con la app cerrada, hasta que vuelvas a base." /></View> : null}
+            {conductor && enRuta && !fondo && sinFondo && sinFondo !== 'denegado' && !gps ? <View style={{ marginHorizontal: 16 }}><AvisoUbicacionSiempre /></View> : null}
             {conductor && mio ? (
               <Text style={{ color: colorSistema.texto2, fontSize: 12, marginHorizontal: 20 }}>Mientras esta pantalla esté abierta, Bodega ve dónde vas.</Text>
             ) : null}

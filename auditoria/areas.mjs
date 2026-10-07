@@ -691,6 +691,7 @@ export const AREAS = [
             'src/utils/distribucionTablero.js', 'src/utils/distribucionRutas.js', 'src/utils/distribucionPedidos.js', 'tests/unit/distribucionTableroRutasPedidos.test.js',
             'src/utils/distribucionVenta.js', 'src/utils/distribucionMotor.js', 'src/utils/distribucionLotes.js', 'src/utils/distribucionPagos.js', 'src/data/distribucionSinSenal.js', 'tests/unit/distribucionVenta.test.js',
             'src/data/distribucionRastreo.js', 'src/utils/encuadreDelMapa.js', 'tests/unit/rastreoYRutasDeEntrega.test.js',
+            'src/utils/rastreoDeFondo.js', 'tests/unit/rastreoDeFondo.test.js',
             'src/utils/distribucionComun.js', 'src/utils/distribucionPrecios.js', 'src/utils/distribucionCompras.js', 'src/utils/distribucionComercial.js', 'tests/unit/distribucionComercial.test.js',
             'tests/e2e/distribucion.spec.js', 'tests/e2e/distribucion-movil.spec.js', 'tests/e2e/distribucionEntrar.js',
             'supabase/functions/_shared/dte/',

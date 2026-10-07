@@ -71,7 +71,7 @@ export default function Torogoz() {
   const puedeVender = !!hasPermission?.('distribucion', 'can_edit');
   // Como el marco de Torogoz en el portal: si el teléfono quedó en ruta hoy,
   // el recorrido se retoma al entrar (ver `componentes/torogoz/rutas/rastreo.js`).
-  const { enRuta } = useRastreoDeRuta(puedeVender ? user?.id : null);
+  const { enRuta, fondo } = useRastreoDeRuta(puedeVender ? user?.id : null);
   const puedeConfigurar = !!hasPermission?.('distribucion_config', 'can_edit');
   const [cuentas, setCuentas] = useState({ descuentos: 0, facturacion: 0, grave: false });
   const [recargando, setRecargando] = useState(false);
@@ -99,7 +99,7 @@ export default function Torogoz() {
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>La distribuidora: ventas en ruta, facturación y bodega.</Text>
         {enRuta ? (
           <Pressable onPress={() => router.push('/torogoz/rutas')} accessibilityRole="button" accessibilityLabel="En ruta: ver la ruta de hoy">
-            <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '600', marginHorizontal: 4 }}>● En ruta: se anota tu recorrido mientras la app esté abierta ›</Text>
+            <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '600', marginHorizontal: 4 }}>{fondo ? '● En ruta: se anota tu recorrido, aun con la app cerrada ›' : '● En ruta: se anota tu recorrido mientras la app esté abierta ›'}</Text>
           </Pressable>
         ) : null}
         {puedeVender ? <BotonGrande texto="Nueva venta" color={PETROLEO} onPress={() => router.push('/torogoz/venta')} /> : null}

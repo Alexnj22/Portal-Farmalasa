@@ -3,10 +3,11 @@
 // devuelve la función que lo detiene, y `posicionActual()` da una lectura o
 // `null` (una visita cuenta igual sin ubicación).
 //
-// Con `expo-location` en PRIMER PLANO: mide mientras la app está abierta. El
-// portal en Capacitor sigue con la pantalla apagada; acá no, a propósito — el
-// permiso «siempre» y el modo de fondo son otra decisión y otra revisión de
-// Apple. `mensaje` no aplica (es el aviso fijo de Android en segundo plano).
+// Con `expo-location` en PRIMER PLANO: mide mientras la app está abierta. Con
+// la app cerrada mide la tarea de fondo de `rastreoDeFondo.js` (permiso
+// «siempre»); esto queda para la pantalla abierta y como respaldo cuando la
+// persona sólo dio «mientras se usa». `mensaje` no aplica (es el aviso fijo de
+// Android en segundo plano).
 import * as Location from 'expo-location';
 
 // El permiso se pide UNA vez por sesión: si se negó, no se vuelve a preguntar

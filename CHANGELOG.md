@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.10 — Pedidos: Rutas con filtros; último pedido rotulado
+
+- **Rutas de entrega con cifras y filtros** (§17.0): *En la calle* (con paradas entregadas), *Por salir* y *Completadas hoy*. Por defecto sólo las **activas**; las completadas se piden por estado, período (hoy · 7 · 30 días) y conductor, y entran cerradas. Los filtros quedan en la dirección. «Crear ruta» es la acción de la barra.
+- **Generar**: la fecha del último pedido sale rotulada («Último pedido hace 3 días»). Antes decía «hoy» o «hace 3m» suelto, y «3m» se leía como minutos.
+- **Pedidos**: «Crear ruta» desde una tarjeta abre el modal con esa sala ya marcada.
+
 ## v2.1232.9 — Pedidos: la lista de reenvíos de crear ruta carga
 
 - La consulta de reenvíos pendientes de «Nueva ruta» armaba mal el filtro sobre `jsonb` y el modal salía vacío. Ahora carga; y un error al cargar se ve como error, no como «no hay pedidos».

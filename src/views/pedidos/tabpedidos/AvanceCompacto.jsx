@@ -20,6 +20,7 @@ import React from 'react';
 import { Check, Pause } from 'lucide-react';
 import { pasosDelPedido, PASO_DE_LA_ETAPA, fmtHM, fmtMin, elapsed } from '@nucleo/utils/tableroDePedidos';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import AvatarConEstado from '../../../components/common/AvatarConEstado';
 
 // El rótulo del paso EN CURSO dice lo que está pasando, no el nombre del hito
 // que lo abrió: preparando es «Preparando», no «Inicio».
@@ -33,12 +34,38 @@ const TRAMO = {
 const LADO = { confirmado: 'bodega', iniciado: 'bodega', preparado: 'bodega', enviado: 'bodega', ruta_entregado: 'bodega', llegada: 'sala', erp: 'sala' };
 
 /**
- * `rotulos`: 'siempre' (la lista), o 'sm' — en la tarjeta del teléfono sólo
- *   se rotula el paso en curso, porque siete rótulos en 330px se pisaban.
- * `detalle`: la fila abierta — hora, persona y duración de cada tramo.
+ * `rotulos`: 'siempre', 'activo' (sólo el paso en curso: la lista, que dice
+ *   los nombres UNA vez en su encabezado) o 'sm' (la tarjeta: en el teléfono
+ *   sólo el paso en curso, porque siete rótulos en 330px se pisaban).
+ * `detalle`: la fila abierta — hora, foto, persona y duración de cada tramo.
  * `quien`: id → empleado, para el detalle.
+ * `apoyo`: `{ bodega: [...], sala: [...] }` — quién apoyó en cada lado.
  */
-export default function AvanceCompacto({ row, stage, rutaStop = null, conductor = null, rotulos = 'sm', detalle = false, quien = () => null }) {
+export function EncabezadoDeAvance() {
+    // Los nombres de los pasos y de los tramos, una vez, alineados con los
+    // puntos de las filas: usa el MISMO reparto (5 : 2, `flex-1` por paso).
+    return (
+        <div className="flex items-end w-full gap-3" aria-hidden="true">
+            {[['bodega', ['Confirmado', 'Inicio', 'Listo', 'En ruta', 'Entregado']], ['sala', ['Llegada', 'Finalizado']]].map(([lado, nombres], ti) => (
+                <React.Fragment key={lado}>
+                    {ti > 0 && <span className="self-stretch w-px shrink-0" />}
+                    <div className={`min-w-0 ${ti === 0 ? 'flex-[5]' : 'flex-[2]'}`}>
+                        <p className={`text-micro font-semibold uppercase tracking-wider mb-1 ${TRAMO[lado].texto}`}>{TRAMO[lado].titulo}</p>
+                        <div className="flex w-full">
+                            {nombres.map((n, i) => (
+                                i === nombres.length - 1
+                                    ? <span key={n} className="w-4 shrink-0 flex justify-end overflow-visible"><span className="text-micro text-content-3 leading-tight whitespace-nowrap">{n}</span></span>
+                                    : <span key={n} className="flex-1 min-w-0 truncate text-micro text-content-3 leading-tight pr-1 whitespace-nowrap">{n}</span>
+                            ))}
+                        </div>
+                    </div>
+                </React.Fragment>
+            ))}
+        </div>
+    );
+}
+
+export default function AvanceCompacto({ row, stage, rutaStop = null, conductor = null, rotulos = 'sm', detalle = false, quien = () => null, apoyo = null }) {
     const pasos     = pasosDelPedido(row, { entrega: rutaStop, quien, conductor }).slice(0, 7);
     const activeIdx = PASO_DE_LA_ETAPA[stage] ?? 0;
     const pausado   = stage === 'pausado';
@@ -52,7 +79,7 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
         activo: !cerrado && !paso.isRutaNode && idx === activeIdx,
     }));
     const tramos = ['bodega', 'sala'].map(lado => estado.filter(e => e.lado === lado));
-    const conTitulos = rotulos === 'siempre' || detalle;
+    const conTitulos = rotulos === 'siempre' || detalle;  // en 'activo' los dice el encabezado
 
     const renderPaso = (e, i, lista) => {
         const t = TRAMO[e.lado];
@@ -61,9 +88,16 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
         const tramoHecho = e.hecho && sig?.paso.time != null;
         const dur = detalle && e.paso.time && sig?.paso.time ? fmtMin(elapsed(e.paso.time, sig.paso.time)) : null;
         const rotulo = e.activo ? (pausado ? 'Pausado' : EN_CURSO[e.paso.key] ?? e.paso.label) : e.paso.label;
-        const verRotulo = rotulos === 'siempre' || e.activo;
+        const verRotulo = rotulos === 'siempre' || detalle || e.activo;
+        const ocultarRotulo = !verRotulo && rotulos === 'activo';
         return (
-            <li key={e.paso.key} className={`flex flex-col min-w-0 ${ultimo ? 'shrink-0' : 'flex-1'}`}
+            // El último paso mide lo mismo que su punto (`w-4`) y su rótulo
+            // desborda: si midiera lo que su rótulo, los puntos de cada fila
+            // caerían en otro lugar que los nombres del encabezado.
+            // Su rótulo se alinea a la DERECHA del punto y desborda hacia la
+            // izquierda: hacia la derecha chocaba con el tramo siguiente
+            // («EntregadoLlegada») o lo cortaba el borde de la tarjeta.
+            <li key={e.paso.key} className={`flex flex-col ${ultimo ? 'w-4 shrink-0 overflow-visible items-end text-right' : 'flex-1 min-w-0'}`}
                 aria-current={e.activo ? 'step' : undefined}>
                 <span className="flex items-center w-full">
                     <span className={`shrink-0 w-4 h-4 rounded-full grid place-items-center ${
@@ -86,10 +120,10 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
                 {/* El rótulo puede bajar a dos renglones antes que pisar al
                     vecino: en un tramo angosto «Por preparar» se pegaba a
                     «Inicio». */}
-                <span className={`mt-1 pr-1 text-micro leading-tight break-words ${
+                <span className={`mt-1 pr-1 text-micro leading-tight ${ultimo || e.activo || !detalle ? 'whitespace-nowrap' : 'break-words'} ${
                     e.activo ? `font-bold ${pausado ? 'text-warning-text' : t.texto}`
                     : e.hecho ? 'text-content-2' : 'text-content-3'
-                } ${verRotulo ? '' : 'hidden sm:block'}`}>
+                } ${verRotulo ? '' : ocultarRotulo ? 'invisible' : 'hidden sm:block'}`}>
                     {rotulo}
                 </span>
                 {detalle && e.paso.time && (
@@ -98,8 +132,9 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
                     </span>
                 )}
                 {detalle && e.paso.emp && (
-                    <span className="text-micro text-content-3 leading-tight truncate max-w-[7rem]">
-                        {shortEmployeeName(e.paso.emp)}
+                    <span className={`mt-1 flex items-center gap-1 min-w-0 ${ultimo ? 'whitespace-nowrap' : ''}`}>
+                        <AvatarConEstado emp={e.paso.emp} px={20} radio="rounded-full" marco="" mostrarChip={false} />
+                        <span className="text-micro text-content-2 leading-tight truncate">{shortEmployeeName(e.paso.emp)}</span>
                     </span>
                 )}
                 {detalle && e.paso.key === 'iniciado' && (row.min_pausado_total ?? 0) > 0 && (
@@ -127,6 +162,17 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
                             <ol className={`flex items-start w-full ${detalle ? 'pt-3' : ''}`}>
                                 {lista.map((e, i) => renderPaso(e, i, lista))}
                             </ol>
+                            {detalle && (apoyo?.[lado] ?? []).length > 0 && (
+                                <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-micro text-content-3 uppercase tracking-wider">Apoyo</span>
+                                    {apoyo[lado].map(a => (
+                                        <span key={a.id ?? a.employee_id} className="flex items-center gap-1">
+                                            <AvatarConEstado emp={a} px={20} radio="rounded-full" marco="" mostrarChip={false} />
+                                            <span className="text-micro text-content-2">{shortEmployeeName(a)}</span>
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </React.Fragment>
                 );

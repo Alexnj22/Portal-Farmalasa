@@ -269,8 +269,12 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
         // Ni borde de color ni franja lateral (el canon prohíbe la franja a un
         // lado de una tarjeta): lo que tiene problema lleva un ÍCONO junto al
         // nombre de la sala, en el color del problema.
+        const danadas = Array.isArray(row.cajas_danadas) ? row.cajas_danadas : [];
         const marca = stage === 'pausado' ? { Icono: Pause, cls: 'text-warning-text', txt: 'En pausa' }
+            // Con el reenvío ya en camino no hay nada que resolver: se espera.
+            : faltan.enCamino ? { Icono: Truck, cls: 'text-info-text', txt: 'Reenvío en camino' }
             : (faltan.hay || difsDeLaSala > 0) ? { Icono: AlertTriangle, cls: 'text-danger-text', txt: 'Con problema' }
+            : danadas.length > 0 ? { Icono: AlertTriangle, cls: 'text-warning-text', txt: 'Caja dañada' }
             : null;
         // Sin el agrupamiento por ruta de la tarjeta, la fila dice en cuál va.
         const rutaDeLaFila = stage === 'transito' ? pedidoRutaMap.get(claveParada(row.pedido_id, row.erp_sucursal_id))?.ruta : null;
@@ -310,7 +314,10 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                         </span>
                         <span className={`text-caption tabular-nums truncate ${stage === 'pausado' ? 'text-warning-text' : 'text-content-3'}`}>
                             {faltan.porDespachar ? 'Reenvío por salir'
+                                : faltan.enCamino ? `Reenvío en camino: ${describirFaltantes(faltan).join(' · ') || 'cajas faltantes'}`
                                 : faltan.hay ? `Falta: ${describirFaltantes(faltan).join(' · ')}`
+                                : danadas.length > 0 ? `Dañada${danadas.length > 1 ? 's' : ''}: ${danadas.map(n => `#${n}`).join(', ')}`
+                                : stage === 'preparado' && row.entrega_programada_at ? `Sale ${fmtEntrega(row.entrega_programada_at).replace(/^\p{Lu}/u, c => c.toLowerCase())}`
                                 : difsDeLaSala > 0 ? `${difsDeLaSala} diferencia${difsDeLaSala > 1 ? 's' : ''} por resolver`
                                 : [rutaDeLaFila ? `Ruta #${rutaDeLaFila.numero}` : null, tiempoEnEtapa ?? fmtRelative(row.enviado_at ?? row.created_at)].filter(Boolean).join(' · ')}
                         </span>
@@ -462,7 +469,7 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                         {/* Lo que dice la base de esta sala: enviados, sistema, inventario. */}
                                         {cardStats[cardKey] && (
                                             <>
-                                            <Badge uppercase={false}>{cardStats[cardKey].enviados} enviados</Badge>
+                                            <Badge uppercase={false}>{cardStats[cardKey].enviados} {['sin_iniciar', 'preparando', 'preparado', 'pausado'].includes(stage) ? 'productos' : 'enviados'}</Badge>
                                             {(() => {
                                                 // El traslado al sistema. Sólo se pinta si el
                                                 // pedido llegó a intentarlo: en los que se
@@ -559,7 +566,10 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                             <Badge variant="warning" icon={AlertTriangle} uppercase={false}>Dañada{row.cajas_danadas.length > 1 ? 's' : ''}: {row.cajas_danadas.map(n => `#${n}`).join(', ')}</Badge>
                                         )}
                                         {(row.falta_cajas ?? []).length > 0 && (
-                                            <Badge variant="danger" icon={Package} uppercase={false}>Faltante{row.falta_cajas.length > 1 ? 's' : ''}: {row.falta_cajas.map(n => `#${n}`).join(', ')}</Badge>
+                                            // Con el reenvío en la calle deja de ser un pendiente: se espera.
+                                            faltan.enCamino
+                                                ? <Badge variant="info" icon={Truck} uppercase={false}>Reenvío en camino: {row.falta_cajas.map(n => `#${n}`).join(', ')}</Badge>
+                                                : <Badge variant="danger" icon={Package} uppercase={false}>Faltante{row.falta_cajas.length > 1 ? 's' : ''}: {row.falta_cajas.map(n => `#${n}`).join(', ')}</Badge>
                                         )}
                                         {/* La caja especial que no llegó, con su producto. Sin
                                             esta etiqueta, el único rastro era el botón rojo de

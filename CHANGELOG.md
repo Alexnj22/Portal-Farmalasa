@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.19 — Pedidos: reenvío en camino, caja dañada y entrega programada se distinguen en la lista
+
+- **Reenvío en camino** ya no se marca como problema: la fila lleva un camión y dice «Reenvío en camino: Caja #3», y la etiqueta roja «Faltante» pasa a «Reenvío en camino».
+- **Caja dañada** se marca en la fila (ícono de alerta y «Dañada: #2»); antes sólo se veía al abrirla.
+- **Entrega programada**: la sala lista dice cuándo sale («Sale mañana 9:00 a. m.»).
+- Antes de despachar, la cuenta dice «productos» y no «enviados».
+- Entorno de pruebas: `semilla_pedidos_escenarios.sql` siembra un pedido por cada situación (reenvío por despachar, en camino y recibido; caja dañada; Electrolit; caja especial faltante y no reenviada; caja de más; diferencia corregida; entrega programada; apoyo).
+
 ## v2.1232.18 — Pedidos (lista): estado y acción en una columna, más aire para los pasos
 
 - **Estado y acción comparten una sola columna** (estado a la izquierda, botón a la derecha). Eran dos columnas fijas y en las filas sin botón quedaba un hueco vacío a la derecha; ese ancho ahora es de la línea de pasos.

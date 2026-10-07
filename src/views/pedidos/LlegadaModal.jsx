@@ -76,7 +76,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
     const espFaltantes = cajasEspeciales.filter(e => espEstados[e.label] === 'faltante').map(e => e.label);
     const electrolitPendiente = electrolitAparte > 0 && electrolitFaltantes === null;
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         // Validar cajas extra: si no tiene rotulación, requerir número de caja
         for (let i = 0; i < cajasExtra; i++) {
             const d = cajasExtraData[i] ?? {};
@@ -87,8 +87,8 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
         }
         setExtraError(null);
         setSubmitting(true);
-        if (draftKey) clearDraft(draftKey);
-        onConfirm({
+        // Espera a que se guarde: si falla, sigue abierto y el borrador intacto.
+        const ok = await onConfirm({
             cajasOk, cajasDanadas, cajasFaltantes, nota: nota.trim(),
             electrolitFaltantes:    electrolitAparte > 0 ? electrolitFaltantes : null,
             especialesLlegadas:     cajasEspeciales.length > 0
@@ -97,6 +97,8 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
             cajasExtra:             cajasExtra > 0 ? cajasExtra : 0,
             cajasExtraNotas:        cajasExtra > 0 ? cajasExtraNotas : null,
         });
+        if (ok === false) { setSubmitting(false); return; }
+        if (draftKey) clearDraft(draftKey);
     };
 
     // Serializar cajasExtraData a notas de texto para el handler existente

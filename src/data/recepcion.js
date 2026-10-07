@@ -21,7 +21,7 @@ export function fetchProductPreciosOptsForProducts(productIds) {
     return fetchAllRows(() =>
         supabase.from('product_precios')
             .select('product_id, factor, descripcion, presentaciones!id_presentacion(tipo)')
-            .in('product_id', productIds).eq('activo', true).order('factor')
+            .in('product_id', productIds).eq('activo', true).order('factor').order('id')  // `id` desempata: paginar sin orden único repite o salta filas
     );
 }
 

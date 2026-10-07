@@ -21,7 +21,7 @@ import { confirmarLlegadaDePedido } from '../data/llegadaDePedido';
 import { seguirPosicion } from '@plataforma/ubicacion';
 
 import { mensajeAmigable } from '../utils/errorMessages';
-import { cajasDeRenglon, construirCajasEspeciales, renglonesQueSalen } from '../utils/cajasEspeciales';
+import { cajasDeRenglon, construirCajasEspeciales, renglonesQueSalen, renglonesDeCajasFaltantes } from '../utils/cajasEspeciales';
 import { fetchEmployeesPublicByIds } from '../data/employees';
 import { escucharCambios } from '../data/tiempoReal';
 
@@ -694,7 +694,6 @@ export function usePedidosData({ searchTerm = '' }) {
         // especial, no doce.
         const cajasEspeciales = construirCajasEspeciales(rowsQueSalen);
 
-        setFinalizarModal(null);
         setBusyAction('finalizar');
         try {
             // 1. Qué sale de verdad. Va ANTES de finalizar porque la RPC solo
@@ -756,10 +755,16 @@ export function usePedidosData({ searchTerm = '' }) {
                 );
             }
 
+            // Cerrar recién acá: lo escrito ya está en la base. Antes se cerraba
+            // ANTES de escribir y un error se llevaba todo lo que se había
+            // anotado en el modal (2026-10-07).
+            setFinalizarModal(null);
             await loadActive();
+            return true;
         } catch (e) {
             console.error('handleFinalizarConCajas:', e);
             useToastStore.getState().showToast('No se pudo finalizar', mensajeAmigable(e, 'Intenta de nuevo.'), 'error');
+            return false;
         } finally { setBusyAction(null); }
     }, [finalizarModal, user, loadActive]);
 
@@ -777,7 +782,6 @@ export function usePedidosData({ searchTerm = '' }) {
     const handleLlegadaConfirm = useCallback(async ({ cajasDanadas, cajasFaltantes, nota, electrolitFaltantes = null, especialesLlegadas = null, cajasExtra = 0, cajasExtraNotas = null }) => {
         if (!llegadaModal) return;
         const { pedidoId, sucId, key, rows } = llegadaModal;
-        setLlegadaModal(null);
         setBusyAction('llegada');
         try {
             // La lógica vive en el núcleo (`data/llegadaDePedido`): la app del
@@ -795,13 +799,19 @@ export function usePedidosData({ searchTerm = '' }) {
             //    (`avisar_camino_del_pedido`, 2026-09-28). Una app que confirme la
             //    llegada no puede olvidarlos.
 
+            // Cerrar recién acá: lo escrito ya está en la base. Antes se cerraba
+            // ANTES de escribir y un error se llevaba todo lo que se había
+            // anotado en el modal (2026-10-07).
+            setLlegadaModal(null);
             await loadActive();
             await fetchItems(key, pedidoId, sucId);
+            return true;
         } catch (e) {
             // Y se dice. Un `console.error` a secas dejaba a quien recibe
             // creyendo que la llegada quedó registrada.
             console.error('llegada confirm:', e);
             useToastStore.getState().showToast('No se pudo confirmar la llegada', mensajeAmigable(e), 'error');
+            return false;
         } finally { setBusyAction(null); }
     }, [llegadaModal, user, branchName, loadActive, fetchItems]);
 
@@ -910,7 +920,6 @@ export function usePedidosData({ searchTerm = '' }) {
     const handleReenvioLlegadaConfirm = useCallback(async ({ cajasOk, cajasDanadas, cajasFaltantes, nota, electrolitOk = true, especialesAun = [] }) => {
         if (!reenvioLlegadaModal) return;
         const { pedidoId, sucId, key, ciclo, historial, electrolitCount = 0, especialesList = [] } = reenvioLlegadaModal;
-        setReenvioLlegadaModal(null);
         setBusyAction('segunda_llegada');
         try {
             const now = new Date().toISOString();
@@ -944,7 +953,7 @@ export function usePedidosData({ searchTerm = '' }) {
 
             // Cargar mapa de páginas + estado actual de especiales para merge
             const { data: pss, error: pssErr } = await fetchPedidoSucursalStatus(pedidoId, sucId,
-                'caja_map, pagina_items, paginas, hojas_recibidas, cajas_danadas, cajas_especiales_llegadas');
+                'caja_map, pagina_items, paginas, hojas_recibidas, cajas_danadas, cajas_especiales_llegadas, cajas_especiales');
             if (pssErr) throw pssErr;
             const cajaMapDb     = pss?.caja_map    ?? {};
             const paginaItemsDb = pss?.pagina_items ?? {};
@@ -999,10 +1008,20 @@ export function usePedidosData({ searchTerm = '' }) {
                     const faltaEsp = await fetchPedidoItemsFaltaEspeciales(pedidoId, sucId);
                     if (faltaEsp === null) throw new Error('No se pudieron leer los renglones de cajas especiales marcados como faltantes.');
                     if (faltaEsp.length > 0) {
-                        // Si todas llegaron → limpiar todos; si algunas aún faltan → limpiar solo las que llegaron (proporcionalmente)
+                        // Si todas llegaron → limpiar todos. Si algunas aún faltan →
+                        // limpiar los renglones de las ETIQUETAS que llegaron, nunca
+                        // los de una que sigue faltando. Antes se cortaba la lista por
+                        // posición (`slice` proporcional): llegaba E2 y se daba por
+                        // recibido el producto de E1 (2026-10-07). La etiqueta → renglón
+                        // sale de `cajas_especiales`, igual que en la primera llegada.
+                        const marcar = (labels) => Object.fromEntries(labels.map(l => [l, 'faltante']));
+                        const { ids: idsLlegaron } = renglonesDeCajasFaltantes(pss?.cajas_especiales ?? [], marcar(espLlegaron));
+                        const { ids: idsAun }      = renglonesDeCajasFaltantes(pss?.cajas_especiales ?? [], marcar(especialesAun));
+                        const sigueFaltando = new Set(idsAun);
+                        const pendientes    = new Set(faltaEsp.map(r => r.id));
                         const idsToClean = especialesAun.length === 0
                             ? faltaEsp.map(r => r.id)
-                            : faltaEsp.slice(0, Math.round(faltaEsp.length * espLlegaron.length / (especialesList ?? []).length)).map(r => r.id);
+                            : idsLlegaron.filter(id => pendientes.has(id) && !sigueFaltando.has(id));
                         if (idsToClean.length > 0) {
                             const { error: cleanErr } = await updatePedidoItemsFaltaCaja(idsToClean, false);
                             if (cleanErr) throw cleanErr;
@@ -1015,6 +1034,10 @@ export function usePedidosData({ searchTerm = '' }) {
             // `segunda_llegada_at` (`avisar_camino_del_pedido`). Antes lo mandaba
             // esta pantalla, y a la sala equivocada: la propia.
 
+            // Cerrar recién acá: lo escrito ya está en la base. Antes se cerraba
+            // ANTES de escribir y un error se llevaba todo lo que se había
+            // anotado en el modal (2026-10-07).
+            setReenvioLlegadaModal(null);
             await loadActive();
             const freshItems = await fetchItems(key, pedidoId, sucId);
 
@@ -1040,9 +1063,11 @@ export function usePedidosData({ searchTerm = '' }) {
                     itemsYaContados: (freshItems || []).filter(r => r.status !== 'pendiente').map(r => r.id),
                 });
             }
+            return true;
         } catch (e) {
             console.error(e);
             useToastStore.getState().showToast('No se pudo confirmar la llegada del reenvío', mensajeAmigable(e), 'error');
+            return false;
         } finally { setBusyAction(null); }
     }, [reenvioLlegadaModal, user, branchName, loadActive, fetchItems, activeRows]);
 

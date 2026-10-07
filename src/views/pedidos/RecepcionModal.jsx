@@ -663,7 +663,11 @@ export default function RecepcionModal({
     // encuentra. Antes era `useState([])` puro y este modal se monta como
     // `{modal && <RecepcionModal/>}`: cualquier cierre se llevaba lo anotado
     // sin un error y sin dejar nada escrito.
-    const [extras, setExtras] = useState(() =>
+    // Los extras ya guardados se leen de los renglones `es_extra`. Es UNA
+    // función porque se usa dos veces —al montar y al abrir— y la segunda
+    // decía `setExtras([])`: reabrir el modal mostraba la lista vacía con los
+    // extras guardados en la base (2026-10-07).
+    const extrasGuardados = useCallback(() =>
         rows.filter(r => r.es_extra && r.status !== 'anulado').map(r => ({
             id: r.id,
             erp_product_id: r.erp_product_id,
@@ -674,7 +678,8 @@ export default function RecepcionModal({
             // Con una propuesta en curso la cantidad es la que aceptó la otra
             // parte: se muestra, no se toca.
             bloqueado: r.resolucion_status != null,
-        })));
+        })), [rows]);
+    const [extras, setExtras] = useState(extrasGuardados);
     const [extraError, setExtraError] = useState(null);
     const [extraSearch,  setExtraSearch]  = useState('');
     const [extraResults, setExtraResults] = useState([]);
@@ -914,7 +919,7 @@ export default function RecepcionModal({
         setSaveError(null);
         setCorrecciones({}); setCorrigiendoId(null); setHuboCorreccion(false); setConfirmadosQ('');
         setPresMap({});
-        setExtras([]); setExtraSearch(''); setExtraResults([]);
+        setExtras(extrasGuardados()); setExtraSearch(''); setExtraResults([]);
         setProdSearch(''); setShowSearch(false); setPrevScreen(null);
 
         const fQ = {}, fP = {}, notas = {}, errs = {};

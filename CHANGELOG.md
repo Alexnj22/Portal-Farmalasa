@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.15 — Pedidos: cinco fallas de los modales de recepción, llegada y finalizar
+
+- **Recepción: los extras anotados ya no desaparecen al volver a abrir el modal.** Estaban guardados, pero al abrir la lista se reiniciaba vacía y la sala podía anotarlos otra vez.
+- **Pedidos de más de 1000 renglones cargan completos y sin repetidos**: la carga por páginas no tenía un orden fijo, así que entre página y página podían repetirse o faltar filas sin error. Igual en las presentaciones de Recepción.
+- **Reenvío: las cajas especiales que llegaron se marcan por etiqueta**, no por posición. Antes, si llegaba E2 y no E1, podía darse por recibido el producto de E1.
+- **Asignar cajas, Llegada y Reenvío ya no se cierran antes de guardar.** Si algo falla, el modal sigue abierto con lo anotado y el borrador intacto; antes un error de red se llevaba todo (por ejemplo, el reparto de 20 páginas en cajas).
+- **No se puede finalizar mientras se revisan las existencias**: el botón dice «Revisando existencias…». Si la revisión falla o tarda más de 2 minutos, se puede confirmar igual ajustando a mano. El sondeo ya no corre sin tope.
+
 ## v2.1232.14 — Pedidos (lista): encabezado de pasos fijo y «En camino»
 
 - **El encabezado de los pasos se queda fijo** al bajar, justo debajo del encabezado de la vista (se mide, no se adivina: cambia con la densidad), con fondo opaco para que las filas no se lean a través.

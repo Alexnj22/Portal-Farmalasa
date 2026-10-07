@@ -819,10 +819,14 @@ export function usePedidosData({ searchTerm = '' }) {
             if (pssErr) throw pssErr;
             const historial = pss?.reenvios_historial ?? [];
             const ciclo     = historial.length + 1;
-            const nuevoCiclo = { ciclo, cajas: cajasFaltantes, electrolits: electrolitsFaltantes, especiales: especialesLabels, sent_at: now, sent_by: user?.id ?? null, arrived_at: null, arrived_tipo: null, cajas_ok: [], cajas_danadas: [], cajas_aun_faltantes: [] };
+            // El ciclo nace PENDIENTE (2026-10-07): `sent_at` nulo y sin tocar
+            // `reenvio_bodega_at`. Antes se daba por enviado al apretar el botón
+            // y la sala recibía «Reenvío en camino» con la caja todavía en
+            // bodega. Ahora sale con una ruta: cuando la ruta sale, la base le
+            // pone `sent_at` y avisa (`avisar_salida_de_ruta`).
+            const nuevoCiclo = { ciclo, cajas: cajasFaltantes, electrolits: electrolitsFaltantes, especiales: especialesLabels, sent_at: null, sent_by: null, solicitado_at: now, solicitado_por: user?.id ?? null, arrived_at: null, arrived_tipo: null, cajas_ok: [], cajas_danadas: [], cajas_aun_faltantes: [] };
 
             const { error: reenvioErr } = await updatePedidoSucursalStatus(pedidoId, sucId, {
-                reenvio_bodega_at:  now,
                 reenvio_por:        user?.id ?? null,
                 reenvios_historial: [...historial, nuevoCiclo],
             });
@@ -830,10 +834,10 @@ export function usePedidosData({ searchTerm = '' }) {
 
             useStaff.getState().appendAuditLog('PEDIDO_REENVIO_CAJA', pedidoId, { sucursal_id: sucId, ciclo, cajas: cajasFaltantes, electrolits: electrolitsFaltantes, especiales: especialesLabels });
 
-            // El aviso «reenvío en camino» a la sala lo escribe la base al ver
-            // `reenvio_bodega_at` (`avisar_camino_del_pedido`).
+            // El aviso «reenvío en camino» lo escribe la base cuando la ruta
+            // SALE. Se abre «Nueva ruta» con el reenvío ya marcado.
             await loadActive();
-            setCrearRutaOpen([`${pedidoId}__${sucId}`]);
+            setCrearRutaOpen([`${pedidoId}__${sucId}__r${ciclo}`]);
         } catch (e) {
             console.error(e);
             useToastStore.getState().showToast('No se pudo registrar el reenvío', mensajeAmigable(e), 'error');
@@ -881,7 +885,8 @@ export function usePedidosData({ searchTerm = '' }) {
     // Abre el modal de confirmación de llegada de reenvío (sustituye el botón ciego anterior)
     const handleSegundaLlegada = useCallback((pedidoId, sucId, key, reenviosHistorial, faltaCajasLegacy = [], cajaMap = {}) => {
         const historial = reenviosHistorial ?? [];
-        const cicloIdx  = historial.findIndex(c => !c.arrived_at);
+        // Sólo un ciclo que SALIÓ puede llegar: uno pendiente sigue en bodega.
+        const cicloIdx  = historial.findIndex(c => c.sent_at && !c.arrived_at);
         const ciclo     = cicloIdx >= 0 ? historial[cicloIdx] : historial[historial.length - 1];
         if (!ciclo) {
             if (faltaCajasLegacy.length > 0) {

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.8 — Pedidos: el reenvío de cajas sale en una ruta
+
+- **El reenvío de cajas faltantes sale en una ruta.** «Reenviar caja» ya no lo da por enviado en el momento: queda **por despachar** y la tarjeta lo dice. La sala ve «Bodega ya preparó el reenvío: sale en la próxima ruta».
+- **«Nueva ruta de entrega» muestra los reenvíos arriba, como prioridad y ya marcados**, con qué cajas llevan. Son paradas como cualquiera, con el mismo optimizador.
+- **El aviso «Reenvío en camino» sale cuando la ruta sale**, con conductor y hora. Antes salía al apretar el botón, con la caja todavía en bodega. La parada de reenvío no manda además el aviso genérico «Tu pedido salió».
+- Una caja pedida y sin ruta no puede confirmarse como llegada, y no se puede pedir dos veces.
+- **Necesita la migración `reenvio_sale_en_ruta`** (columna `ruta_pedidos.reenvio_ciclo`, `crear_ruta` y `avisar_salida_de_ruta`). Va a producción ANTES que este portal: sin ella, un reenvío pedido nunca saldría.
+
 ## v2.1232.7 — Pedidos: crear ruta sólo ofrece salas que no salieron
 
 - **«Nueva ruta de entrega» sólo ofrece salas que se pueden despachar**: preparadas, que no salieron en ninguna ruta y que no llegaron. Antes ofrecía también las que ya iban en otra ruta, ya entregadas o ya recibidas — medido en producción: ofrecía 3 y sólo 1 era real.

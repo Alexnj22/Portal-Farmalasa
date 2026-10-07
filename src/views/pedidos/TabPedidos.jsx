@@ -670,6 +670,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             cerrada: la viva era de La Popular, la otra sala del
                                             mismo pedido. Es el mismo defecto que ya costó el
                                             rótulo de arriba (`estadoDeLaSala`). */}
+                                        {faltan.porDespachar && (
+                                            <Badge variant="warning" icon={RotateCcw} uppercase={false}>Reenvío por despachar</Badge>
+                                        )}
                                         {difsDeLaSala > 0 && !(row.cajas_danadas?.length > 0 || row.falta_cajas?.length > 0) && (
                                             <Badge icon={ClipboardList} uppercase={false}>
                                                 {difsDeLaSala === 1 ? '1 dif. pendiente' : `${difsDeLaSala} difs. pendientes`}
@@ -732,6 +735,11 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 const rutaActiva       = pedidoRutaMap.get(claveParada(row.pedido_id, row.erp_sucursal_id))?.ruta;
                                                 const conductorEnRuta  = rutaActiva?.status === 'en_ruta' && !rutaActiva?.vuelta_base_at;
                                                 if (!canActuar || isBranch || !faltan.hay || faltan.enCamino) return null;
+                                                // Ya se pidió el reenvío: falta la ruta. Volver a ofrecer
+                                                // «Reenviar caja» abría un segundo ciclo por las mismas cajas.
+                                                if (faltan.porDespachar) return (
+                                                    <Button variant="primary" icon={Truck} onClick={() => setCrearRutaOpen([])}>Crear ruta</Button>
+                                                );
                                                 /* Era un `div` con `role="img"` —que le promete
                                                    a un lector de pantalla una imagen— y con el
                                                    motivo escondido en `title`, o sea sólo para
@@ -760,7 +768,10 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         <div className="px-3 pb-2">
                                             <Notice variant="danger" icon={PackageX} bloque>
                                                 <strong>Pendiente — no llegó:</strong>{' '}
-                                                {describirFaltantes(faltan).join(' · ')}. Bodega tiene que reenviarlo; te llega un aviso cuando salga.
+                                                {describirFaltantes(faltan).join(' · ')}.{' '}
+                                                {faltan.porDespachar
+                                                    ? 'Bodega ya preparó el reenvío: sale en la próxima ruta y te llega un aviso cuando salga.'
+                                                    : 'Bodega tiene que reenviarlo; te llega un aviso cuando salga.'}
                                             </Notice>
                                         </div>
                                     )}

@@ -15,6 +15,10 @@ import React from 'react';
 import { Check, Pause } from 'lucide-react';
 import { pasosDelPedido, PASO_DE_LA_ETAPA } from '@nucleo/utils/tableroDePedidos';
 
+// El rótulo del paso EN CURSO dice lo que está pasando, no el nombre del hito
+// que lo abrió: preparando es «Preparando», no «Inicio».
+const EN_CURSO = { confirmado: 'Por preparar', iniciado: 'Preparando', preparado: 'Listo', enviado: 'En ruta', llegada: 'Recibiendo' };
+
 export default function AvanceCompacto({ row, stage, rutaStop = null }) {
     const pasos     = pasosDelPedido(row, { entrega: rutaStop }).slice(0, 7);
     const activeIdx = PASO_DE_LA_ETAPA[stage] ?? 0;
@@ -50,7 +54,7 @@ export default function AvanceCompacto({ row, stage, rutaStop = null }) {
                         <span className={`mt-1 text-micro leading-tight whitespace-nowrap self-start ${
                             activo ? `font-bold ${pausado ? 'text-warning-text' : 'text-chart-3-text'}`
                             : hecho ? 'text-content-2 hidden sm:block' : 'text-content-3 hidden sm:block'}`}>
-                            {activo && pausado ? 'Pausado' : paso.label}
+                            {activo ? (pausado ? 'Pausado' : EN_CURSO[paso.key] ?? paso.label) : paso.label}
                         </span>
                     </li>
                 );

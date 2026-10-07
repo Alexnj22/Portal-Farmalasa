@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.6 — Pedidos: la etiqueta dice el paso de la sala y Anular va aparte
+
+- **La etiqueta de cada tarjeta dice en qué paso va la sala**, igual que su avance: *Por preparar, En preparación, Pausado, Listo para despachar, En ruta, Entregado, Recibiendo, Completado*. Antes salía del estado del pedido y una sala que ya había recibido, o a la que ya le habían entregado, seguía diciendo «En ruta».
+- **Con diferencias pendientes manda «Con diferencias»**: decía «Completado» con «2 difs. pendientes» al lado.
+- **Anular va primero y separado** de la acción principal: junto a Finalizar o Iniciar, un clic de más anulaba el pedido. Sigue en rojo.
+- En el avance compacto, el paso en curso dice lo que está pasando: *Preparando*, no *Inicio*.
+- Entorno de pruebas: todo pedido despachado de la siembra tiene su ruta (el portal toma «salió» de la ruta).
+
 ## v2.1232.5 — Pedidos: la tarjeta en tres zonas
 
 - **La tarjeta de cada pedido se ordena en tres zonas.** Arriba, la **sucursal** como título (el código queda en gris al lado) y el estado de la sala con su tiempo en la etapa, dicho una sola vez. En el medio, el **avance en una línea de puntos**: la línea completa con quién y a qué hora se abre al tocar la tarjeta. Abajo, **una sola fila** con los datos (enviados, cajas, faltantes, diferencias) y las acciones.

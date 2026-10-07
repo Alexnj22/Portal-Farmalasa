@@ -313,7 +313,10 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando }) {
 
       {r.pago_estado === 'pendiente' && Number(r.total) > 0 ? (
         <View style={{ gap: 6 }}>
-          <Boton alTocar={alPagar} cargando={pagando}>{`Pagar en línea ${dolares(r.total)}`}</Boton>
+          {/* Un pedido del carrito se cobra entero: sus productos + el envío. */}
+          <Boton alTocar={alPagar} cargando={pagando}>{r.total_pedido != null
+            ? `Pagar el pedido ${dolares(r.total_pedido)}${Number(r.costo_envio) > 0 ? ' (con envío)' : ''}`
+            : `Pagar en línea ${dolares(r.total)}`}</Boton>
           <Text style={{ fontSize: 12, textAlign: 'center', color: colorSistema.texto3 }}>
             O paga al retirar, en la sucursal. Pagada en línea tienes 7 días para retirarla.
           </Text>

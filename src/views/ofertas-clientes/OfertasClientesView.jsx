@@ -18,6 +18,7 @@ import OfertaModal from './OfertaModal';
 import HistoriasPanel from './HistoriasPanel';
 import BannersPanel from './BannersPanel';
 import WidgetReservas from '../dashboard/WidgetReservas';
+import EnvioPanel from './EnvioPanel';
 import { estadoDeOferta, etiquetaDeDescuento } from '@nucleo/utils/ofertasClientes';
 import { LoadingState, EmptyState } from '../../components/common/StateViews';
 import usePestanaEnUrl from '../../plataforma/usePestanaEnUrl';
@@ -73,7 +74,7 @@ export default function OfertasClientesView() {
                 {tab === 'preregistros'
                     ? <Preregistros busqueda={busqueda} puedeEditar={hasPermission('clientes', 'can_edit')} showToast={showToast} />
                     : tab === 'reservas'
-                        ? <WidgetReservas todas />
+                        ? <><EnvioPanel puedeEditar={puedeEditar} showToast={showToast} /><WidgetReservas todas /></>
                     : tab === 'banners'
                         ? <BannersPanel busqueda={busqueda} puedeEditar={puedeEditar} showToast={showToast} />
                     : tab === 'historias'

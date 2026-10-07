@@ -729,16 +729,26 @@ Deno.serve(async (req) => {
 
     if (accion === "mis_reservas") {
       const { data, error } = await admin.from("app_reservas")
-        .select("id, estado, origen, pedido, documento, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega")
+        .select("id, estado, origen, pedido, documento, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega, costo_envio")
         .eq("customer_id", customerId).gte("created_at", new Date(Date.now() - 45 * 86400_000).toISOString())
         .order("created_at", { ascending: false }).limit(30);
       if (error) throw error;
       const { data: salas, error: eS } = await admin.from("branches").select("id, name, address");
       if (eS) throw eS;
       const sala = new Map((salas ?? []).map((b: any) => [Number(b.id), b]));
+      // Lo que se cobra de un pedido del carrito: sus renglones abiertos + el envío una vez.
+      const porPedido = new Map<string, { suma: number; envio: number }>();
+      for (const r of data ?? []) {
+        if (!r.pedido || !["pendiente", "lista"].includes(r.estado)) continue;
+        const t = porPedido.get(r.pedido) ?? { suma: 0, envio: 0 };
+        t.suma += Number(r.precio_unitario ?? 0) * Number(r.cantidad ?? 1);
+        t.envio = Math.max(t.envio, Number(r.costo_envio ?? 0));
+        porPedido.set(r.pedido, t);
+      }
       return json({
         ok: true,
         reservas: (data ?? []).map((r: any) => {
+          const tp = r.pedido ? porPedido.get(r.pedido) : null;
           const b: any = sala.get(Number(r.branch_id));
           return {
             ...r, codigo: `R-${String(r.id).padStart(6, "0")}`,
@@ -746,6 +756,7 @@ Deno.serve(async (req) => {
             // Promoción (con oferta) o producto a precio normal.
             tipo: r.oferta_titulo ? "promocion" : "producto",
             total: Math.round(Number(r.precio_unitario ?? 0) * Number(r.cantidad ?? 1) * 100) / 100,
+            total_pedido: tp ? Math.round((tp.suma + tp.envio) * 100) / 100 : null,
           };
         }),
       });
@@ -809,16 +820,27 @@ Deno.serve(async (req) => {
     // (`P-XXXXXX`): una fila de `app_reservas` por producto. El precio lo
     // calcula el servidor —nunca el que mande la app—: el VIP de esa
     // presentación (el socio paga VIP) o el de viñeta si no tiene.
+    // El envío a domicilio (2026-10-07): lo configura el portal en `app_ajustes`.
+    const ajustesEnvio = async () => {
+      const { data, error } = await admin.from("app_ajustes").select("envio_activo, envio_costo, envio_gratis_desde, envio_nota").maybeSingle();
+      if (error) console.error("app_ajustes:", error.message);
+      return data ? { activo: !!data.envio_activo, costo: Number(data.envio_costo), gratis_desde: data.envio_gratis_desde == null ? null : Number(data.envio_gratis_desde), nota: data.envio_nota }
+        : { activo: false, costo: 0, gratis_desde: null, nota: "" };
+    };
+    const costoDeEnvio = (cfg: { costo: number; gratis_desde: number | null }, subtotal: number) =>
+      cfg.gratis_desde != null && subtotal >= cfg.gratis_desde ? 0 : cfg.costo;
+
     if (accion === "carrito_existencias") {
       const ids = (Array.isArray(body?.ids) ? body.ids : []).map(Number).filter((n: number) => Number.isInteger(n) && n > 0).slice(0, 20);
-      if (!ids.length) return json({ ok: true, existencias: [], salas: [] });
+      const envio = await ajustesEnvio();
+      if (!ids.length) return json({ ok: true, existencias: [], salas: [], envio });
       const [{ data, error }, { data: salas, error: eS }] = await Promise.all([
         admin.rpc("app_carrito_existencias", { p_ids: ids }),
         admin.from("branches").select("id, name, address").eq("type", "FARMACIA").order("name"),
       ]);
       if (error) throw error;
       if (eS) throw eS;
-      return json({ ok: true, existencias: data ?? [], salas: (salas ?? []).map((b: any) => ({ id: b.id, sala: sucursal(b.name), direccion: b.address })) });
+      return json({ ok: true, envio, existencias: data ?? [], salas: (salas ?? []).map((b: any) => ({ id: b.id, sala: sucursal(b.name), direccion: b.address })) });
     }
 
     // Un enlace de Wompi por el total de un PEDIDO (una sola transacción).
@@ -1082,6 +1104,12 @@ Deno.serve(async (req) => {
         datosFiscales = v.datos;
       }
       const pagoEnLinea = body?.pago === "en_linea";
+      // A domicilio (2026-10-07): sale de la sucursal elegida, con dirección.
+      const aDomicilio = body?.entrega === "domicilio";
+      const direccion = aDomicilio ? String(body?.direccion ?? "").replace(/\s+/g, " ").trim().slice(0, 300) : null;
+      const envioCfg = aDomicilio ? await ajustesEnvio() : null;
+      if (aDomicilio && !envioCfg?.activo) return json({ ok: false, mensaje: "La entrega a domicilio no está disponible ahora." });
+      if (aDomicilio && (direccion ?? "").length < 10) return json({ ok: false, motivo: "direccion", mensaje: "Escribe la dirección completa, con una referencia." });
       // Sin existencia en esa sala no se cobra (2026-10-07): se envía para que
       // la sucursal confirme, y se paga al retirar.
       if (pagoEnLinea) {
@@ -1124,6 +1152,7 @@ Deno.serve(async (req) => {
           producto_nombre: `${p.nombre}${pr.presentaciones?.tipo ? ` · ${pr.presentaciones.tipo}` : ""}`.slice(0, 200),
           cantidad: x.cantidad, precio_unitario: vip ?? vineta, precio_normal: vineta, terminos_version: TERMINOS_RESERVA.version,
           documento, datos_fiscales: datosFiscales,
+          entrega: aDomicilio ? "domicilio" : "retiro", direccion_entrega: direccion,
         });
       }
       const { data: suyas, error: eR } = await admin.from("app_reservas").select("id, estado, cerrada_at, pedido")
@@ -1135,14 +1164,16 @@ Deno.serve(async (req) => {
       if (activas >= 3) return json({ ok: false, mensaje: "Ya tienes 3 reservas activas. Retira o cancela una para reservar otra." });
       const ABC = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
       const pedido = "P-" + Array.from(crypto.getRandomValues(new Uint8Array(6)), (n) => ABC[n % ABC.length]).join("");
-      const { data: nuevas, error: eI } = await admin.from("app_reservas").insert(filas.map((f) => ({ ...f, pedido }))).select("id");
+      const subtotal = Math.round(filas.reduce((s, f) => s + f.precio_unitario * f.cantidad, 0) * 100) / 100;
+      const envio = aDomicilio && envioCfg ? costoDeEnvio(envioCfg, subtotal) : 0;
+      const { data: nuevas, error: eI } = await admin.from("app_reservas").insert(filas.map((f) => ({ ...f, pedido, costo_envio: envio }))).select("id");
       if (eI) throw eI;
-      const total = Math.round(filas.reduce((s, f) => s + f.precio_unitario * f.cantidad, 0) * 100) / 100;
+      const total = Math.round((subtotal + envio) * 100) / 100;
       // Pagar en línea: UN cobro por todo el pedido. Si Wompi no responde, el
       // pedido queda igual (se paga al retirar o luego desde Mis reservas).
       let pago = null;
       if (pagoEnLinea && total > 0) pago = await enlaceDePago({ pedido, total, branchId, descripcion: `${filas.length} productos` });
-      return json({ ok: true, pedido, reservas: (nuevas ?? []).map((n: any) => n.id), total, pago });
+      return json({ ok: true, pedido, reservas: (nuevas ?? []).map((n: any) => n.id), total, envio, pago });
     }
 
     if (accion === "cancelar_reserva") {
@@ -1168,12 +1199,13 @@ Deno.serve(async (req) => {
       if (error) throw error;
       // Una reserva de un pedido del carrito se paga con TODO el pedido (2026-10-07).
       if (r?.pedido) {
-        const { data: filasP, error: eFp } = await admin.from("app_reservas").select("estado, pago_estado, precio_unitario, cantidad")
+        const { data: filasP, error: eFp } = await admin.from("app_reservas").select("estado, pago_estado, precio_unitario, cantidad, costo_envio")
           .eq("pedido", r.pedido).eq("customer_id", customerId).in("estado", ["pendiente", "lista"]);
         if (eFp) throw eFp;
         if (!filasP?.length) return json({ ok: false, mensaje: "Este pedido ya no se puede pagar." });
         if (filasP.every((f: any) => f.pago_estado === "pagado")) return json({ ok: false, mensaje: "Este pedido ya está pagado." });
-        const totalP = Math.round(filasP.reduce((t: number, f: any) => t + Number(f.precio_unitario ?? 0) * Number(f.cantidad), 0) * 100) / 100;
+        const envioP = Math.max(0, ...filasP.map((f: any) => Number(f.costo_envio ?? 0)));
+        const totalP = Math.round((filasP.reduce((t: number, f: any) => t + Number(f.precio_unitario ?? 0) * Number(f.cantidad), 0) + envioP) * 100) / 100;
         const pagoP = await enlaceDePago({ pedido: r.pedido, total: totalP, branchId: r.branch_id, descripcion: `${filasP.length} productos` });
         return json(pagoP ? { ok: true, ...pagoP } : { ok: false, mensaje: "El pago en línea no está disponible ahora. Intenta en un rato o paga al retirar." });
       }

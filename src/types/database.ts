@@ -199,6 +199,39 @@ export type Database = {
           },
         ]
       }
+      app_ajustes: {
+        Row: {
+          created_at: string
+          envio_activo: boolean
+          envio_costo: number
+          envio_gratis_desde: number | null
+          envio_nota: string
+          id: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          envio_activo?: boolean
+          envio_costo?: number
+          envio_gratis_desde?: number | null
+          envio_nota?: string
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          envio_activo?: boolean
+          envio_costo?: number
+          envio_gratis_desde?: number | null
+          envio_nota?: string
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       app_banners: {
         Row: {
           creada_por: string | null
@@ -669,6 +702,111 @@ export type Database = {
           },
         ]
       }
+      app_encargos: {
+        Row: {
+          anticipo: number | null
+          branch_id: number
+          cantidad: number
+          cerrado_at: string | null
+          created_at: string
+          customer_id: number
+          estado: string
+          factor: number
+          fecha_estimada: string | null
+          id: number
+          nota_cliente: string | null
+          nota_sucursal: string | null
+          pagado_at: string | null
+          pago_estado: string
+          precio_unitario: number | null
+          product_id: number
+          producto_nombre: string
+          respondido_at: string | null
+          respondido_por: string | null
+          updated_at: string
+        }
+        Insert: {
+          anticipo?: number | null
+          branch_id: number
+          cantidad: number
+          cerrado_at?: string | null
+          created_at?: string
+          customer_id: number
+          estado?: string
+          factor?: number
+          fecha_estimada?: string | null
+          id?: never
+          nota_cliente?: string | null
+          nota_sucursal?: string | null
+          pagado_at?: string | null
+          pago_estado?: string
+          precio_unitario?: number | null
+          product_id: number
+          producto_nombre: string
+          respondido_at?: string | null
+          respondido_por?: string | null
+          updated_at?: string
+        }
+        Update: {
+          anticipo?: number | null
+          branch_id?: number
+          cantidad?: number
+          cerrado_at?: string | null
+          created_at?: string
+          customer_id?: number
+          estado?: string
+          factor?: number
+          fecha_estimada?: string | null
+          id?: never
+          nota_cliente?: string | null
+          nota_sucursal?: string | null
+          pagado_at?: string | null
+          pago_estado?: string
+          precio_unitario?: number | null
+          product_id?: number
+          producto_nombre?: string
+          respondido_at?: string | null
+          respondido_por?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_encargos_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_encargos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_encargos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "app_encargos_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_encargos_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_historias: {
         Row: {
           boton: string | null
@@ -797,9 +935,12 @@ export type Database = {
           cerrada_at: string | null
           cerrada_por: string | null
           constancia_url: string | null
+          costo_envio: number
           created_at: string
           customer_id: number
+          datos_fiscales: Json | null
           direccion_entrega: string | null
+          documento: string
           entrega: string
           estado: string
           id: number
@@ -811,6 +952,7 @@ export type Database = {
           pagado_at: string | null
           pago_estado: string
           pago_metodo: string
+          pedido: string | null
           precio_normal: number | null
           precio_unitario: number | null
           preparada_por: string | null
@@ -830,9 +972,12 @@ export type Database = {
           cerrada_at?: string | null
           cerrada_por?: string | null
           constancia_url?: string | null
+          costo_envio?: number
           created_at?: string
           customer_id: number
+          datos_fiscales?: Json | null
           direccion_entrega?: string | null
+          documento?: string
           entrega?: string
           estado?: string
           id?: never
@@ -844,6 +989,7 @@ export type Database = {
           pagado_at?: string | null
           pago_estado?: string
           pago_metodo?: string
+          pedido?: string | null
           precio_normal?: number | null
           precio_unitario?: number | null
           preparada_por?: string | null
@@ -863,9 +1009,12 @@ export type Database = {
           cerrada_at?: string | null
           cerrada_por?: string | null
           constancia_url?: string | null
+          costo_envio?: number
           created_at?: string
           customer_id?: number
+          datos_fiscales?: Json | null
           direccion_entrega?: string | null
+          documento?: string
           entrega?: string
           estado?: string
           id?: never
@@ -877,6 +1026,7 @@ export type Database = {
           pagado_at?: string | null
           pago_estado?: string
           pago_metodo?: string
+          pedido?: string | null
           precio_normal?: number | null
           precio_unitario?: number | null
           preparada_por?: string | null
@@ -922,6 +1072,7 @@ export type Database = {
           codigo_autorizacion: string | null
           created_at: string
           detalle: Json | null
+          encargo_id: number | null
           enlace_id: number | null
           enlace_url: string | null
           es_real: boolean | null
@@ -932,12 +1083,14 @@ export type Database = {
           identificador: string
           monto: number
           pagado_at: string | null
-          reserva_id: number
+          pedido: string | null
+          reserva_id: number | null
         }
         Insert: {
           codigo_autorizacion?: string | null
           created_at?: string
           detalle?: Json | null
+          encargo_id?: number | null
           enlace_id?: number | null
           enlace_url?: string | null
           es_real?: boolean | null
@@ -948,12 +1101,14 @@ export type Database = {
           identificador: string
           monto: number
           pagado_at?: string | null
-          reserva_id: number
+          pedido?: string | null
+          reserva_id?: number | null
         }
         Update: {
           codigo_autorizacion?: string | null
           created_at?: string
           detalle?: Json | null
+          encargo_id?: number | null
           enlace_id?: number | null
           enlace_url?: string | null
           es_real?: boolean | null
@@ -964,15 +1119,83 @@ export type Database = {
           identificador?: string
           monto?: number
           pagado_at?: string | null
-          reserva_id?: number
+          pedido?: string | null
+          reserva_id?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "app_reservas_pagos_encargo_id_fkey"
+            columns: ["encargo_id"]
+            isOneToOne: false
+            referencedRelation: "app_encargos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "app_reservas_pagos_reserva_id_fkey"
             columns: ["reserva_id"]
             isOneToOne: false
             referencedRelation: "app_reservas"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_tratamientos: {
+        Row: {
+          created_at: string
+          customer_id: number
+          estado: string
+          id: number
+          intervalo_dias: number
+          motivo: string | null
+          nombre: string
+          product_id: number
+          suspendido_at: string | null
+          ultima_compra: string
+          updated_at: string
+          veces: number
+        }
+        Insert: {
+          created_at?: string
+          customer_id: number
+          estado?: string
+          id?: number
+          intervalo_dias: number
+          motivo?: string | null
+          nombre: string
+          product_id: number
+          suspendido_at?: string | null
+          ultima_compra: string
+          updated_at?: string
+          veces: number
+        }
+        Update: {
+          created_at?: string
+          customer_id?: number
+          estado?: string
+          id?: number
+          intervalo_dias?: number
+          motivo?: string | null
+          nombre?: string
+          product_id?: number
+          suspendido_at?: string | null
+          ultima_compra?: string
+          updated_at?: string
+          veces?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_tratamientos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_tratamientos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
           },
         ]
       }
@@ -19887,6 +20110,7 @@ export type Database = {
           clave: string
           created_at: string
           cupon_mensual: number
+          cupon_premios: Json | null
           desde: number
           factor: number
           horas_reserva: number
@@ -19899,6 +20123,7 @@ export type Database = {
           clave: string
           created_at?: string
           cupon_mensual?: number
+          cupon_premios?: Json | null
           desde: number
           factor: number
           horas_reserva?: number
@@ -19911,6 +20136,7 @@ export type Database = {
           clave?: string
           created_at?: string
           cupon_mensual?: number
+          cupon_premios?: Json | null
           desde?: number
           factor?: number
           horas_reserva?: number
@@ -24744,6 +24970,7 @@ export type Database = {
         Args: { p_branch_id: number; p_franjas?: Json; p_limpiezas?: Json }
         Returns: number
       }
+      app_carrito_existencias: { Args: { p_ids: number[] }; Returns: Json }
       app_catalogo: {
         Args: { p_desde?: number; p_limite?: number; p_q: string }
         Returns: Json
@@ -24783,6 +25010,14 @@ export type Database = {
         Returns: undefined
       }
       app_historias_vistas_resumen: { Args: never; Returns: Json }
+      app_niveles_de: {
+        Args: { p_clientes: number[] }
+        Returns: {
+          clave: string
+          customer_id: number
+          nombre: string
+        }[]
+      }
       app_preregistro_resolver: {
         Args: { p_accion: string; p_customer_id?: number; p_id: string }
         Returns: Json
@@ -24798,6 +25033,31 @@ export type Database = {
           p_monto: number
         }
         Returns: Json
+      }
+      app_tratamiento_cambiar: {
+        Args: {
+          p_activo: boolean
+          p_customer: number
+          p_id: number
+          p_motivo: string
+        }
+        Returns: Json
+      }
+      app_tratamientos_de: { Args: { p_customer: number }; Returns: Json }
+      app_tratamientos_detectar: {
+        Args: { p_clientes: number[] }
+        Returns: number
+      }
+      app_tratamientos_por_recordar: {
+        Args: { p_clientes: number[] }
+        Returns: {
+          customer_id: number
+          id: number
+          nombre: string
+          product_id: number
+          se_acaba: string
+          ultima_compra: string
+        }[]
       }
       apply_proveedores_categoria_sugerida: {
         Args: { p_ids: number[] }
@@ -26331,9 +26591,40 @@ export type Database = {
         Returns: string[]
       }
       employee_esta_bloqueado: { Args: { p_user_id: string }; Returns: boolean }
+      encargo_puede_manejar: { Args: { p_branch_id: number }; Returns: boolean }
+      encargo_responder: {
+        Args: {
+          p_accion: string
+          p_fecha?: string
+          p_id: number
+          p_nota?: string
+          p_precio?: number
+        }
+        Returns: Json
+      }
+      encargos_de_sucursal: {
+        Args: { p_abiertos?: boolean; p_branch_id: number }
+        Returns: Json
+      }
       encolar_impresion: {
         Args: { p_branch_id: number; p_contenido: string; p_titulo: string }
         Returns: number
+      }
+      encuesta_app_disponibles: { Args: { p_customer: number }; Returns: Json }
+      encuesta_app_puntos: {
+        Args: {
+          p_enc: Database["public"]["Tables"]["encuestas_cliente"]["Row"]
+        }
+        Returns: number
+      }
+      encuesta_app_responder: {
+        Args: {
+          p_customer: number
+          p_duracion: number
+          p_id: string
+          p_respuestas: Json
+        }
+        Returns: Json
       }
       encuesta_cliente_acreditar: {
         Args: { p_customer: number; p_inc: string }
@@ -29425,6 +29716,7 @@ export type Database = {
           clave: string
           created_at: string
           cupon_mensual: number
+          cupon_premios: Json | null
           desde: number
           factor: number
           horas_reserva: number
@@ -29470,6 +29762,10 @@ export type Database = {
       puntos_panel_serie: { Args: { p_dias?: number }; Returns: Json }
       puntos_panel_tablero: { Args: never; Returns: Json }
       puntos_premiar_referidos: { Args: { p_simular?: boolean }; Returns: Json }
+      puntos_premio_al_azar: {
+        Args: { p_defecto: number; p_premios: Json }
+        Returns: number
+      }
       puntos_registrar_canje: {
         Args: { p_invoice_id: number; p_simular?: boolean }
         Returns: Json
@@ -29879,6 +30175,19 @@ export type Database = {
       reserva_avisada_whatsapp: { Args: { p_id: number }; Returns: undefined }
       reserva_cambiar_estado: {
         Args: { p_estado: string; p_id: number; p_motivo?: string }
+        Returns: Json
+      }
+      reserva_en_sucursal_crear: {
+        Args: {
+          p_anticipo: number
+          p_branch_id: number
+          p_cantidad: number
+          p_customer_id: number
+          p_metodo: string
+          p_precio: number
+          p_producto_id: number
+          p_producto_nombre: string
+        }
         Returns: Json
       }
       reserva_puede_manejar: { Args: { p_branch_id: number }; Returns: boolean }

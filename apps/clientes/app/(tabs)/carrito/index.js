@@ -38,6 +38,10 @@ export default function Carrito() {
   const [hecho, setHecho] = useState(null);
   // Cómo paga y qué documento quiere (2026-10-07).
   const [pago, setPago] = useState('en_linea');
+  // Entrega (2026-10-07): retiro en sucursal o a domicilio (sale de esa sucursal).
+  const [entrega, setEntrega] = useState('retiro');
+  const [direccion, setDireccion] = useState('');
+  const [envioCfg, setEnvioCfg] = useState(null);
   const [documento, setDocumento] = useState('consumidor_final');
   const [fiscales, setFiscales] = useState(null);       // { completos, datos } de la ficha
   const [editarFiscales, setEditarFiscales] = useState(false);
@@ -62,6 +66,7 @@ export default function Carrito() {
     if (!ids) { setSalas([]); return; }
     const r = await pedir('carrito_existencias', { ids: ids.split(',').map(Number) });
     if (!r?.ok) { setSalas(null); return; }
+    setEnvioCfg(r.envio ?? null);
     const hay = new Map();
     for (const e of r.existencias) hay.set(`${e.product_id}|${e.branch_id}`, Number(e.cantidad));
     const lista = r.salas.map((s) => {
@@ -75,11 +80,16 @@ export default function Carrito() {
   useFocusEffect(useCallback(() => { cargarSalas(); }, [cargarSalas]));
 
   const normal = items.reduce((s, x) => s + x.precio * x.cantidad, 0);
-  const total = items.reduce((s, x) => s + (x.precio_vip ?? x.precio) * x.cantidad, 0);
+  const subtotal = items.reduce((s, x) => s + (x.precio_vip ?? x.precio) * x.cantidad, 0);
+  const aDomicilio = entrega === 'domicilio' && !!envioCfg?.activo;
+  const envio = aDomicilio ? (envioCfg.gratis_desde != null && subtotal >= envioCfg.gratis_desde ? 0 : envioCfg.costo) : 0;
+  const total = subtotal + envio;
+  const faltaDireccion = aDomicilio && direccion.trim().length < 10;
 
   const reservar = async () => {
     if (enviando || !sala) return;
     if (problemaFiscal) { Alert.alert('Faltan datos del crédito fiscal', problemaFiscal); return; }
+    if (faltaDireccion) { Alert.alert('Falta la dirección', 'Escribe la dirección completa, con una referencia para encontrarte.'); return; }
     if (pendiente) { Alert.alert('Falta completar tu registro', 'Completa tu registro en cualquier sucursal para reservar.'); return; }
     // Las condiciones, una vez (las mismas de las reservas de ofertas).
     const [term, aceptada] = await Promise.all([pedir('reserva_terminos'), SecureStore.getItemAsync(CLAVE_TERMINOS).catch(() => null)]);
@@ -93,13 +103,15 @@ export default function Carrito() {
     setEnviando(true);
     const r = await pedir('reservar_carrito', {
       branch_id: sala, acepta_terminos: version, pago: pagoReal, documento,
+      entrega: aDomicilio ? 'domicilio' : 'retiro', direccion: aDomicilio ? direccion.trim() : null,
       datos_fiscales: documento === 'credito_fiscal' ? f : null,
       items: items.map((x) => ({ producto_id: x.id, factor: x.factor, cantidad: x.cantidad })),
     });
     setEnviando(false);
     if (!r?.ok) { Alert.alert('No se pudo reservar', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
     vaciar();
-    const base = { pedido: r.pedido, total: r.total, sala: salas?.find((s) => s.id === sala)?.sala, pagado: false, enLinea: pagoReal === 'en_linea', porConfirmar: faltan > 0 };
+    const base = { pedido: r.pedido, total: r.total, sala: salas?.find((s) => s.id === sala)?.sala, pagado: false, enLinea: pagoReal === 'en_linea', porConfirmar: faltan > 0, domicilio: aDomicilio };
+    setDireccion('');
     // Pagar en línea: la hoja de Wompi; el pago lo confirma el servidor.
     if (pagoReal === 'en_linea' && r.pago?.url) {
       await WebBrowser.openAuthSessionAsync(r.pago.url, 'puntossalud://reservas');
@@ -127,11 +139,12 @@ export default function Carrito() {
           <Texto nivel={2} estilo={{ textAlign: 'center' }}>
             {hecho.porConfirmar
               ? `${hecho.sala ?? 'La sucursal'} recibió tu pedido y va a confirmar los productos que no tenía a la mano. Te avisamos; pagas al retirar.`
+              : hecho.domicilio ? `${hecho.sala ?? 'La sucursal'} ya recibió tu pedido. Te avisamos cuando salga hacia tu casa.`
               : `${hecho.sala ?? 'La sucursal'} ya recibió tu pedido y lo va a preparar. Te avisamos cuando esté listo.`}
           </Texto>
           <CodigoReserva codigo={hecho.pedido} />
           <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>
-            Total: {dolares(hecho.total)} · {hecho.pagado ? 'pagado' : hecho.enLinea ? 'pago pendiente (puedes pagarlo en Mis reservas)' : 'pagas al retirar'}
+            Total: {dolares(hecho.total)} · {hecho.pagado ? 'pagado' : hecho.enLinea ? 'pago pendiente (puedes pagarlo en Mis reservas)' : hecho.domicilio ? 'pagas al recibir' : 'pagas al retirar'}
           </Text>
         </Tarjeta>
         <Boton alTocar={() => { setHecho(null); navegar('/reservas'); }}>Ver mis reservas</Boton>
@@ -172,9 +185,31 @@ export default function Carrito() {
         </Tarjeta>
       ))}
 
+      {/* Cómo lo recibes: retiro o a domicilio (si el portal lo tiene activo). */}
+      {envioCfg?.activo ? (
+        <>
+          <Seccion texto="Cómo lo recibes" />
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <Opcion sf="bag.fill" titulo="Retiro en sucursal" detalle="Sin costo" elegida={entrega === 'retiro'} alTocar={() => setEntrega('retiro')} />
+            <Opcion sf="shippingbox.fill" titulo="A domicilio"
+              detalle={envioCfg.gratis_desde != null && subtotal >= envioCfg.gratis_desde ? 'Envío gratis' : `Envío ${dolares(envioCfg.costo)}`}
+              elegida={entrega === 'domicilio'} alTocar={() => setEntrega('domicilio')} />
+          </View>
+          {aDomicilio ? (
+            <Tarjeta estilo={{ gap: 8 }}>
+              <Campo etiqueta="Dirección de entrega" valor={direccion} alCambiar={(v) => setDireccion(v.slice(0, 300))} multilinea />
+              <Texto nivel={3} estilo={{ fontSize: 12 }}>
+                Con una referencia (color de la casa, frente a…). {envioCfg.nota}
+                {envioCfg.gratis_desde != null && subtotal < envioCfg.gratis_desde ? ` Envío gratis desde ${dolares(envioCfg.gratis_desde)}.` : ''}
+              </Texto>
+            </Tarjeta>
+          ) : null}
+        </>
+      ) : null}
+
       {/* Dónde retirar: primero la sucursal que tiene todo. */}
       <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4, marginTop: 6 }}>
-        Retirar en
+        {aDomicilio ? 'Sale desde' : 'Retirar en'}
       </Text>
       <Tarjeta estilo={{ padding: 0, gap: 0 }}>
         {salas == null ? <ActivityIndicator style={{ margin: 18 }} /> : salas.map((s, i) => {
@@ -201,7 +236,7 @@ export default function Carrito() {
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <Opcion sf="creditcard.fill" titulo="En línea ahora" detalle={faltan ? 'No disponible: falta existencia' : 'Tarjeta, seguro con Wompi'}
           elegida={pagoReal === 'en_linea'} deshabilitada={faltan > 0} alTocar={() => setPago('en_linea')} />
-        <Opcion sf="banknote.fill" titulo="Al retirar" detalle="Efectivo o tarjeta en caja" elegida={pagoReal === 'al_retirar'} alTocar={() => setPago('al_retirar')} />
+        <Opcion sf="banknote.fill" titulo={aDomicilio ? 'Al recibir' : 'Al retirar'} detalle={aDomicilio ? 'Efectivo al entregarte' : 'Efectivo o tarjeta en caja'} elegida={pagoReal === 'al_retirar'} alTocar={() => setPago('al_retirar')} />
       </View>
       {faltan ? (
         <Texto nivel={2} estilo={{ fontSize: 13, marginHorizontal: 4 }}>
@@ -246,14 +281,15 @@ export default function Carrito() {
 
       <Tarjeta estilo={{ gap: 6 }}>
         <Fila etiqueta="Precio normal" valor={dolares(normal)} tachado />
-        {normal - total >= 0.01 ? <Fila etiqueta="Ahorro con tu tarjeta" valor={`−${dolares(normal - total)}`} color={t.color.verdeTexto} /> : null}
+        {normal - subtotal >= 0.01 ? <Fila etiqueta="Ahorro con tu tarjeta" valor={`−${dolares(normal - subtotal)}`} color={t.color.verdeTexto} /> : null}
+        {aDomicilio ? <Fila etiqueta="Envío a domicilio" valor={envio ? dolares(envio) : 'Gratis'} /> : null}
         <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginVertical: 4 }} />
         <Fila etiqueta="Total" valor={dolares(total)} grande />
         <Texto nivel={3} estilo={{ fontSize: 12 }}>El precio se confirma al reservar. La sucursal recibe tu pedido al instante y te avisamos cuando esté listo.</Texto>
       </Tarjeta>
 
-      <Boton alTocar={reservar} cargando={enviando} deshabilitado={!sala || !!problemaFiscal}>
-        {faltan ? 'Enviar para confirmar' : pagoReal === 'en_linea' ? `Pagar ${dolares(total)}` : 'Reservar · pagar al retirar'}
+      <Boton alTocar={reservar} cargando={enviando} deshabilitado={!sala || !!problemaFiscal || faltaDireccion}>
+        {faltan ? 'Enviar para confirmar' : pagoReal === 'en_linea' ? `Pagar ${dolares(total)}` : aDomicilio ? 'Pedir · pagar al recibir' : 'Reservar · pagar al retirar'}
       </Boton>
 
       <Modal visible={!!terminos} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setTerminos(null)}>

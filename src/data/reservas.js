@@ -65,3 +65,41 @@ export async function fetchEncargos(branchId, abiertos = true) {
 export async function responderEncargo(id, accion, { precio = null, fecha = null, nota = null } = {}) {
     return sinError(await supabase.rpc('encargo_responder', { p_id: id, p_accion: accion, p_precio: precio, p_fecha: fecha, p_nota: nota }));
 }
+
+// ── Reserva hecha en la sucursal, con anticipo (2026-10-07) ────────────────
+// Política: anticipo de al menos el 50 % y 7 días para retirarla. La guarda
+// vive en `reserva_en_sucursal_crear` (sólo un dependiente de ESA sala).
+
+/** Las presentaciones con precio de un producto, de la menor a la mayor. */
+export async function preciosDeProducto(productId) {
+    const filas = sinError(await supabase.from('product_precios')
+        .select('vineta, factor, presentaciones(tipo)')
+        .eq('product_id', Number(productId)).eq('activo', true).gt('vineta', 0)
+        .order('factor', { ascending: true }));
+    return (filas ?? []).map((f) => ({
+        precio: Number(f.vineta), factor: Number(f.factor) || 1, tipo: f.presentaciones?.tipo ?? 'Unidad',
+    }));
+}
+
+export async function crearReservaEnSucursal({ branchId, customerId, productoId, productoNombre, cantidad, precio, anticipo, metodo }) {
+    return sinError(await supabase.rpc('reserva_en_sucursal_crear', {
+        p_branch_id: Number(branchId), p_customer_id: Number(customerId), p_producto_id: Number(productoId),
+        p_producto_nombre: productoNombre, p_cantidad: Number(cantidad), p_precio: Number(precio),
+        p_anticipo: Number(anticipo), p_metodo: metodo,
+    }));
+}
+
+/** El envío a domicilio de la app (una fila en `app_ajustes`). */
+export async function fetchAjustesEnvio() {
+    return sinError(await supabase.from('app_ajustes')
+        .select('envio_activo, envio_costo, envio_gratis_desde, envio_nota, updated_at').eq('id', true).maybeSingle());
+}
+
+export async function guardarAjustesEnvio({ activo, costo, gratisDesde, nota }, employeeId) {
+    const filas = sinError(await supabase.from('app_ajustes').update({
+        envio_activo: !!activo, envio_costo: Number(costo), envio_gratis_desde: gratisDesde == null || gratisDesde === '' ? null : Number(gratisDesde),
+        envio_nota: String(nota ?? '').trim(), updated_at: new Date().toISOString(), updated_by: employeeId ?? null,
+    }).eq('id', true).select('id'));
+    // Sin policy que lo deje, el UPDATE devuelve 0 filas sin error: se dice.
+    if (!filas?.length) throw new Error('No tienes permiso para cambiar el envío a domicilio.');
+}

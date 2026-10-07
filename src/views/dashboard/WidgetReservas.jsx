@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { CheckCircle2, MessageCircle, PackageCheck, ShoppingBag, XCircle } from 'lucide-react';
+import { CheckCircle2, MessageCircle, PackageCheck, Plus, ShoppingBag, Truck, XCircle } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import ListRow from '../../components/common/ListRow';
 import SearchInput from '../../components/common/SearchInput';
 import WidgetEncargos from './WidgetEncargos';
+import NuevaReservaSucursal from './NuevaReservaSucursal';
 import LiquidModal from '../../components/common/LiquidModal';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
@@ -54,6 +55,7 @@ export default function WidgetReservas({ todas = false }) {
     // El código que el cliente muestra en la app (R-000123 o el pedido del
     // carrito P-XXXXXX): el lector de la caja lo escribe como un teclado.
     const [codigo, setCodigo] = useState('');
+    const [nueva, setNueva] = useState(false);
 
     const cargar = useCallback(async () => {
         if (!miSala && !todas) { setCargando(false); return; }
@@ -73,10 +75,12 @@ export default function WidgetReservas({ todas = false }) {
         return () => clearInterval(t);
     }, [cargar]);
 
+    // Un pedido del carrito se mueve ENTERO: todos sus renglones a la vez.
     const mover = async (r, estado) => {
         setOcupada(r.id);
         try {
-            await cambiarEstadoReserva(r.id, estado);
+            const ids = r.renglones ? r.renglones.filter((x) => x.estado === r.estado || estado === 'cancelada').map((x) => x.id) : [r.id];
+            for (const id of ids) await cambiarEstadoReserva(id, estado);
             if (estado === 'lista') {
                 if (r.tiene_app) showToast('Reserva lista', 'Le avisamos al cliente en la app.', 'success');
                 else setWhatsapp({ ...r, estado: 'lista', mensaje: mensajeDeReservaLista(r, r.sala ?? nombreSala) });
@@ -91,6 +95,13 @@ export default function WidgetReservas({ todas = false }) {
         }
     };
 
+    const botonNueva = !todas && miSala && !esBodega ? (
+        <Button variant="secondary" size="xs" icon={Plus} onClick={() => setNueva(true)}>Reservar con anticipo</Button>
+    ) : null;
+    const modalNueva = nueva ? (
+        <NuevaReservaSucursal branchId={miSala} sala={nombreSala} onClose={() => setNueva(false)} onCreada={cargar} />
+    ) : null;
+
     if (cargando) return <SkeletonText lines={3} />;
     if (!miSala && !todas) {
         return <EmptyState icon={ShoppingBag} compact title="Sin sala asignada" subtitle="Las reservas son de una sala de ventas." />;
@@ -99,6 +110,8 @@ export default function WidgetReservas({ todas = false }) {
         return (
             <div className="flex flex-col h-full">
                 {!esBodega && <EmptyState icon={CheckCircle2} compact title="Sin reservas" subtitle="Cuando un cliente aparte algo desde la app, aparece aquí." />}
+                {botonNueva && <div className="flex justify-center">{botonNueva}</div>}
+                {modalNueva}
                 <WidgetEncargos branchId={salaEncargos} />
             </div>
         );
@@ -110,15 +123,23 @@ export default function WidgetReservas({ todas = false }) {
         ? filas.filter((r) => codigoDeReserva(r.id).includes(buscado) || String(r.pedido ?? '').includes(buscado))
         : (todas ? filas : filas.slice(0, MAX_FILAS));
     const delPedido = buscado.startsWith('P-') ? visibles.filter((r) => r.pedido === buscado) : [];
+    // Un pedido del carrito es UNA tarjeta con todos sus productos (2026-10-07).
+    const grupos = [];
+    for (const r of visibles) {
+        const g = r.pedido ? grupos.find((x) => x.pedido === r.pedido) : null;
+        if (g) { g.renglones.push(r); continue; }
+        grupos.push(r.pedido ? { ...r, renglones: [r] } : r);
+    }
     const totalPedido = delPedido.reduce((t, r) => t + Number(r.precio ?? 0) * Number(r.cantidad ?? 1), 0);
 
     return (
         <div className="flex flex-col gap-2 h-full">
-            {pendientes > 0 && (
+            <div className="flex items-center justify-between gap-2">
                 <p className="text-label text-content-2">
-                    {pendientes} {pendientes === 1 ? 'reserva espera' : 'reservas esperan'} que alguien las aparte
+                    {pendientes > 0 ? `${pendientes} ${pendientes === 1 ? 'reserva espera' : 'reservas esperan'} que alguien las aparte` : ''}
                 </p>
-            )}
+                {botonNueva}
+            </div>
             <SearchInput value={codigo} onChange={setCodigo} placeholder="Escanea o escribe el código (R-… o P-…)"
                 ariaLabel="Buscar una reserva por su código" />
             {delPedido.length > 0 && (
@@ -136,22 +157,30 @@ export default function WidgetReservas({ todas = false }) {
             )}
             {buscado && !visibles.length && <p className="text-body-sm text-content-3">No hay una reserva abierta con ese código en esta sala.</p>}
             <ul className="space-y-1.5 min-w-0">
-                {visibles.map((r) => (
-                    <li key={r.id}>
+                {grupos.map((r) => (
+                    <li key={r.pedido ?? r.id}>
                         <ListRow
                             surface="card"
                             density="sm"
                             tone={r.estado === 'pendiente' ? 'warning' : null}
-                            icon={r.estado === 'lista' ? PackageCheck : ShoppingBag}
-                            title={`${r.cantidad} × ${r.producto}`}
-                            subtitle={`${todas && r.sala ? `${r.sala} · ` : ''}${r.pedido ? `${r.pedido} · ` : ''}${codigoDeReserva(r.id)} · ${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}${
+                            icon={r.entrega === 'domicilio' ? Truck : r.estado === 'lista' ? PackageCheck : ShoppingBag}
+                            title={r.renglones && r.renglones.length > 1
+                                ? `Pedido ${r.pedido} · ${r.renglones.length} productos · ${formatMoney(r.renglones.reduce((t, x) => t + Number(x.precio ?? 0) * Number(x.cantidad ?? 1), 0) + Number(r.costo_envio ?? 0))}`
+                                : `${r.cantidad} × ${r.producto}`}
+                            subtitle={`${r.renglones && r.renglones.length > 1 ? `${r.renglones.map((x) => `${x.cantidad} × ${x.producto}`).join(' · ')} — ` : ''}${
+                                todas && r.sala ? `${r.sala} · ` : ''}${r.pedido && !(r.renglones?.length > 1) ? `${r.pedido} · ` : ''}${r.pedido ? '' : `${codigoDeReserva(r.id)} · `}${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}${
+                                r.entrega === 'domicilio' ? ` · A DOMICILIO: ${r.direccion_entrega ?? ''}${Number(r.costo_envio) > 0 ? ` (envío ${formatMoney(Number(r.costo_envio))})` : ''}` : ''}${
                                 r.estado === 'lista' ? ` · retira antes de las ${hora12(r.vence_at)}` : ''}${
                                 r.avisado_via === 'whatsapp' ? ' · avisado por WhatsApp' : ''}`}
                             trailing={(
                                 <div className="flex items-center gap-1">
                                     {/* Pagada en línea desde la app (Wompi): en caja NO se cobra. */}
                                     {r.pago_estado === 'pagado' && (
-                                        <Badge variant="success" uppercase={false}>Pagada en línea</Badge>
+                                        <Badge variant="success" uppercase={false}>{r.origen === 'sucursal' ? 'Pagada' : 'Pagada en línea'}</Badge>
+                                    )}
+                                    {r.pago_estado === 'anticipo' && Number(r.anticipo) > 0 && (
+                                        <Badge variant="warning" uppercase={false}
+                                            title={`Saldo al retirar: ${formatMoney(Number(r.precio ?? 0) * Number(r.cantidad ?? 1) - Number(r.anticipo))}`}>Anticipo {formatMoney(Number(r.anticipo))}</Badge>
                                     )}
                                     {r.documento === 'credito_fiscal' && (
                                         <Badge variant="info" uppercase={false}
@@ -182,6 +211,7 @@ export default function WidgetReservas({ todas = false }) {
                 <span className="text-label text-content-3 mt-auto">y {filas.length - MAX_FILAS} más</span>
             )}
             <WidgetEncargos branchId={salaEncargos} />
+            {modalNueva}
             {whatsapp && (
                 <AvisoWhatsapp reserva={whatsapp} onCerrar={() => setWhatsapp(null)}
                     onEnviado={async () => {

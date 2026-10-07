@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1254.0 — Entrega a domicilio, reserva en sucursal con anticipo y pedidos agrupados
+
+- **App: entrega a domicilio.** En el carrito, «Cómo lo recibes»: retiro en sucursal o **a domicilio** (sale de la sucursal elegida, con dirección y referencia). El costo del envío y desde cuánto es gratis se configuran en **Ofertas para clientes → Reservas → Entrega a domicilio** (`app_ajustes`; arranca en $1.50, gratis desde $25). El servidor vuelve a calcular el envío al reservar; se guarda en cada renglón del pedido (`costo_envio`) y se cobra una vez. «Mis reservas» muestra y cobra el total del pedido completo, con envío.
+- **Portal: reservar en la sucursal con anticipo.** Botón «Reservar con anticipo» en el tablero de reservas de la sala: cliente, producto y presentación, cantidad, anticipo (mínimo 50 %) y cómo lo dejó. Queda apartada **7 días** y se imprime la **constancia** en la ticketera (código en barras, total, anticipo, saldo, hasta cuándo). `reserva_en_sucursal_crear` sólo deja reservar en la propia sala (declarada en `alcance-manifest`).
+- **Portal: los pedidos del carrito se agrupan** en una sola tarjeta con todos sus productos y el total; «Apartar», «Retirada» y «Cancelar» mueven el pedido entero. Las tarjetas muestran domicilio + dirección + envío y el anticipo con su saldo.
+- Tipos de la base regenerados (`src/types/database.ts`). `gate:tipos` ya fallaba antes de este cambio por 20 archivos de otras áreas (con estos tipos bajan a 19).
+
 ## v2.1253.0 — App: recordatorio de tratamiento, aviso de nivel y ofertas antes que nadie para Platino
 
 - **Recordatorio de tratamiento:** `app_tratamientos` toma como tratamiento lo que el cliente compra con regularidad (3+ compras en 240 días, cada 14–60 días, sin saltos de más del doble). El pase diario de `avisos-clientes` lo recalcula para quien tiene la app y avisa desde 3 días antes de que se acabe (un aviso por ciclo). En la app, **Cuenta → Mis tratamientos**: «Reservar» lleva al producto y **«Ya no lo tomo»** lo apaga con un motivo (terminé, el médico lo cambió, lo compro en otro lugar, otro); si lo vuelve a comprar, se reactiva solo. Medido sobre 300 clientes reales: 262 tratamientos (Eutirox c/42 d, bisoprolol c/28 d…), 275 ms.

@@ -72,7 +72,8 @@ export default function Oferta() {
   }
   const a = acentoDe(t, o.acento);
   // Reservar: con sesión y oferta disponible (lo exclusivo, sólo socios).
-  const puedeReservar = !!token && o.disponible && !preRegistro;
+  // Platino la ve antes («pronto»): se mira, pero se reserva desde que empieza.
+  const puedeReservar = !!token && o.disponible && !preRegistro && !o.pronto;
   // Desde «Reservar» de una historia: con un solo producto, la hoja se abre
   // sola; con varios, cada uno tiene su botón.
   if (reservar === '1' && puedeReservar && o.productos?.length === 1 && !reservando && !autoAbierta.current) {
@@ -90,6 +91,11 @@ export default function Oferta() {
 
         <View style={{ paddingHorizontal: 20, paddingTop: 18, gap: 16 }}>
           <Entrada indice={0} estilo={{ gap: 6 }}>
+            {o.pronto ? (
+              <View style={{ alignSelf: 'flex-start', flexDirection: 'row', gap: 6, alignItems: 'center', backgroundColor: '#14161C', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
+                <Text style={{ fontSize: 13, fontWeight: '800', color: '#E9EDF5' }}>👑 Antes que nadie · empieza el {fecha(o.inicio)}</Text>
+              </View>
+            ) : null}
             <Text style={{ fontSize: 28, fontWeight: '800', letterSpacing: -0.5, color: colorSistema.texto }}>{o.titulo}</Text>
             {o.disponible && o.descripcion ? (
               <Text style={{ fontSize: 17, lineHeight: 23, color: colorSistema.texto2 }}>{o.descripcion}</Text>

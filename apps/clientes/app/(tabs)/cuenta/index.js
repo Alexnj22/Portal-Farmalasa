@@ -192,6 +192,9 @@ export default function Cuenta() {
         {resumen && !resumen.pendiente ? (
           <FilaAccion sf="doc.text.fill" texto="Mis facturas" alTocar={() => navegar('/facturas')} />
         ) : null}
+        {resumen && !resumen.pendiente ? (
+          <FilaAccion sf="pills.fill" texto="Mis tratamientos" alTocar={() => navegar('/tratamientos')} />
+        ) : null}
         <FilaAccion sf="mappin.and.ellipse" texto="Nuestras sucursales" alTocar={() => navegar('/sucursales')} />
         {resumen?.wallet_serial && walletDisponible() ? (
           <FilaAccion sf="wallet.pass.fill" texto={enWallet ? 'Ver mi tarjeta en Apple Wallet' : 'Agregar mi tarjeta a Apple Wallet'}
@@ -223,7 +226,7 @@ export default function Cuenta() {
         </Grupo>
         <Grupo titulo="Avisos de prueba" pie="Llegan de verdad a este teléfono (con los avisos activados) y a la campana. Toca el aviso para ver la pantalla que abre.">
           {[['cumpleanos', 'gift.fill', 'Cumpleaños'], ['puntos', 'star.fill', 'Ganaste puntos'], ['cupon', 'ticket.fill', 'Cupón del mes'],
-            ['nivel', 'crown.fill', 'Subiste de nivel'], ['reserva', 'bag.fill', 'Reserva lista']].map(([tipo, sf, texto]) => (
+            ['nivel', 'crown.fill', 'Subiste de nivel'], ['tratamiento', 'pills.fill', 'Tratamiento'], ['reserva', 'bag.fill', 'Reserva lista']].map(([tipo, sf, texto]) => (
             <FilaAccion key={tipo} sf={sf} texto={`Recibir aviso: ${texto}`} flecha={false} alTocar={async () => {
               const r = await pedir('prueba_aviso', { tipo });
               Alert.alert(r?.ok ? 'Aviso enviado' : 'No se envió', r?.ok ? 'Llega en unos segundos. Bloquea el teléfono para verlo como notificación.' : (r?.mensaje ?? 'Revisa tu conexión.'));

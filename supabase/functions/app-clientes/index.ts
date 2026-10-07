@@ -378,9 +378,12 @@ Deno.serve(async (req) => {
     // deno-lint-ignore no-explicit-any
     const ofertasPara = async (customerId: number | null): Promise<any> => {
       const hoy = hoySV();
+      // Platino ve las ofertas 2 días ANTES que nadie (2026-10-07), marcadas «pronto».
+      const platino = customerId ? (await nivelDeCliente(admin, customerId)).clave === "platino" : false;
+      const tope = platino ? new Date(Date.parse(`${hoy}T12:00:00Z`) + 2 * 86400_000).toISOString().slice(0, 10) : hoy;
       const { data: filas, error } = await admin.from("ofertas_clientes")
         .select("id, titulo, descripcion, etiqueta, condiciones, imagen_path, inicio, fin, exclusiva, branch_ids, descuento_tipo, descuento_monto, productos, acento")
-        .eq("publicada", true).lte("inicio", hoy).gte("fin", hoy)
+        .eq("publicada", true).lte("inicio", tope).gte("fin", hoy)
         .order("orden", { ascending: true }).order("fin", { ascending: true })
         .limit(50);
       if (error) throw error;
@@ -412,7 +415,7 @@ Deno.serve(async (req) => {
         const disponible = !o.exclusiva || socio;
         return {
           id: o.id, titulo: o.titulo, etiqueta: o.etiqueta, imagen, imagen_clave: o.imagen_path ?? null, inicio: o.inicio, fin: o.fin, acento: o.acento ?? "magenta",
-          exclusiva: o.exclusiva, disponible,
+          exclusiva: o.exclusiva, disponible, pronto: o.inicio > hoy,
           // Lo exclusivo se ANUNCIA a quien no es socio —es la invitación a
           // serlo— pero el detalle sólo lo ve quien puede usarlo.
           descripcion: disponible ? o.descripcion : null,
@@ -720,7 +723,7 @@ Deno.serve(async (req) => {
       return json({ ok: true, sucursales: conSucursal(data ?? []) });
     }
 
-    if (["mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo"].includes(accion)) {
+    if (["mis_tratamientos", "tratamiento_cambiar", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo"].includes(accion)) {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
 
@@ -922,6 +925,20 @@ Deno.serve(async (req) => {
       return json(data?.length ? { ok: true } : { ok: false, mensaje: "Ese encargo ya no se puede cancelar desde la app. Escríbele a la sucursal." });
     }
 
+    // ── Recordatorios de tratamiento (2026-10-07) ───────────────────────
+    if (accion === "mis_tratamientos") {
+      const { data, error } = await admin.rpc("app_tratamientos_de", { p_customer: customerId });
+      if (error) throw error;
+      return json({ ok: true, tratamientos: data ?? [] });
+    }
+    if (accion === "tratamiento_cambiar") {
+      const { error } = await admin.rpc("app_tratamiento_cambiar", {
+        p_customer: customerId, p_id: Number(body?.id), p_activo: body?.activo === true, p_motivo: String(body?.motivo ?? ""),
+      });
+      if (error) return json({ ok: false, mensaje: error.message || "No se pudo guardar." });
+      return json({ ok: true });
+    }
+
     // ── Encuestas en la app (2026-10-07): las publicadas con el canal «app»
     // que este cliente no ha respondido; responder acredita los puntos solo.
     if (accion === "mis_encuestas") {
@@ -1017,6 +1034,7 @@ Deno.serve(async (req) => {
         puntos: { tipo: "ganado", titulo: "Ganaste 25 puntos", cuerpo: "Gracias por tu compra. Mira tu saldo en la app.", url: "/puntos" },
         cupon: { tipo: "ganado", titulo: "Tu cupón del mes 🎟️", cuerpo: "Ya llegó: ráscalo en la app para descubrir cuánto ganaste.", url: "/puntos" },
         nivel: { tipo: "nivel", titulo: "¡Subiste de nivel! 👑", cuerpo: "Desde ahora ganas más puntos con cada compra.", url: "/puntos?nivel=1" },
+        tratamiento: { tipo: "tratamiento", titulo: "¿Ya te toca otra vez? 💊", cuerpo: "Se te está por acabar tu medicamento. Resérvalo y lo tenemos listo.", url: "/tratamientos" },
         reserva: { tipo: "reserva", titulo: "Tu reserva está lista", cuerpo: "Pasa a retirarla con tu código.", url: "/reservas" },
       };
       const a = TIPOS[String(body?.tipo ?? "")];

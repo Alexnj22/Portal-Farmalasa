@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1253.0 — App: recordatorio de tratamiento, aviso de nivel y ofertas antes que nadie para Platino
+
+- **Recordatorio de tratamiento:** `app_tratamientos` toma como tratamiento lo que el cliente compra con regularidad (3+ compras en 240 días, cada 14–60 días, sin saltos de más del doble). El pase diario de `avisos-clientes` lo recalcula para quien tiene la app y avisa desde 3 días antes de que se acabe (un aviso por ciclo). En la app, **Cuenta → Mis tratamientos**: «Reservar» lleva al producto y **«Ya no lo tomo»** lo apaga con un motivo (terminé, el médico lo cambió, lo compro en otro lugar, otro); si lo vuelve a comprar, se reactiva solo. Medido sobre 300 clientes reales: 262 tratamientos (Eutirox c/42 d, bisoprolol c/28 d…), 275 ms.
+- **Aviso «Subiste de nivel»:** cuando una compra lo sube a Plata, Oro o Platino; abre la pantalla de nivel. Uno por nivel y cliente; quien ya estaba en su nivel no recibe un aviso retroactivo. `app_niveles_de(clientes[])` calcula los niveles en una llamada.
+- **Platino ve las ofertas antes que nadie:** las que empiezan en los próximos 2 días le aparecen con «👑 Antes que nadie · empieza el …» y le llega un aviso; se pueden mirar pero se reservan desde que empiezan.
+- Modo de prueba: aviso de prueba «Tratamiento».
+
 ## v2.1252.0 — Encuestas en la app de clientes (25 puntos)
 
 - **Encuestas en la app:** canal nuevo **«App de clientes»** en el editor de encuestas del portal. Una encuesta publicada con ese canal aparece en el Inicio de la app («Gana 25 puntos») y se responde ahí; una sola respuesta por cliente (índice único + candado), con las mismas condiciones y validación que el resto de canales (`encuesta_cliente_limpiar`), y los puntos se acreditan solos por `encuesta_cliente_acreditar`. Si la encuesta no define puntos, la app paga **25**. La sucursal de la respuesta es la de su última compra dentro de las de la encuesta.

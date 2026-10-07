@@ -109,6 +109,20 @@ Deno.serve(async (req) => {
         url: l.origen === "cumpleanos" ? "/puntos?cumple=1" : "/puntos" });
     }
 
+    // ── Subiste de nivel (2026-10-07): sólo quien acaba de comprar puede
+    // haber subido. Un aviso por nivel y por cliente (la llave es el nivel).
+    const compraron = [...new Set((lotes ?? []).filter((l) => l.origen === "venta").map((l) => Number(l.customer_id)))];
+    if (compraron.length) {
+      const { data: niv, error: eN } = await admin.rpc("app_niveles_de", { p_clientes: compraron });
+      if (eN) console.error("no se pudieron leer los niveles:", eN.message);
+      for (const n of (niv ?? []) as { customer_id: number; clave: string; nombre: string }[]) {
+        if (n.clave === "vip") continue;
+        candidatos.push({ customer_id: n.customer_id, tipo: "nivel", ref: `nivel:${n.clave}`,
+          titulo: `¡Subiste a ${n.nombre}! 👑`, cuerpo: "Desde ahora ganas más puntos con cada compra. Mira tus beneficios.",
+          url: "/puntos?nivel=1" });
+      }
+    }
+
     // ── Encargos: la sucursal respondió o ya llegó (2026-10-07) ──
     const { data: encs, error: eE } = !inmediato ? { data: [], error: null } : await admin.from("app_encargos")
       .select("id, customer_id, estado, producto_nombre, anticipo, fecha_estimada, nota_sucursal")
@@ -157,6 +171,24 @@ Deno.serve(async (req) => {
         cuerpo: `${a.producto} ya está pagada${a.sala ? ` en ${a.sala}` : ""}. Pasa cuando quieras a aplicártela.`,
         url: "/inyecciones",
       });
+    }
+
+    // ── Tratamiento: se le está por acabar algo que compra con regularidad ──
+    // (2026-10-07). Primero se recalculan los tratamientos de quien tiene la
+    // app; la llave lleva la fecha de la última compra: un aviso por ciclo.
+    if (diario) {
+      const { error: eD } = await admin.rpc("app_tratamientos_detectar", { p_clientes: clientes });
+      if (eD) console.error("no se pudieron detectar los tratamientos:", eD.message);
+      const { data: trat, error: eT } = await admin.rpc("app_tratamientos_por_recordar", { p_clientes: clientes });
+      if (eT) console.error("no se pudieron leer los tratamientos:", eT.message);
+      for (const a of (trat ?? []) as { id: number; customer_id: number; nombre: string; ultima_compra: string }[]) {
+        candidatos.push({
+          customer_id: a.customer_id, tipo: "tratamiento", ref: `trat:${a.id}:${a.ultima_compra}`,
+          titulo: "¿Ya te toca otra vez? 💊",
+          cuerpo: `Se te está por acabar ${a.nombre}. Resérvalo y lo tenemos listo.`,
+          url: "/tratamientos",
+        });
+      }
     }
 
     // ── Reserva recibida: la confirmación al reservar (últimas 2 h) ───────
@@ -210,6 +242,28 @@ Deno.serve(async (req) => {
           customer_id: c.id, tipo: "oferta", ref: `oferta:${o.id}`,
           titulo: o.etiqueta ? `${o.etiqueta} · ${o.titulo}` : o.titulo,
           cuerpo: o.exclusiva ? "Oferta exclusiva para socios. Mírala en la app." : "Nueva oferta en Farmacia Salud. Mírala en la app.",
+          url: `/oferta/${o.id}`,
+        });
+      }
+    }
+
+    // ── Platino: la oferta antes que nadie (2026-10-07) ───────────────────
+    // Las que empiezan en los próximos 2 días, sólo a Platino con promociones.
+    const { data: pronto, error: ePr } = !diario ? { data: [], error: null } : await admin.from("ofertas_clientes")
+      .select("id, titulo, inicio").eq("publicada", true).gt("inicio", hoy)
+      .lte("inicio", new Date(Date.parse(`${hoy}T12:00:00Z`) + 2 * 86400_000).toISOString().slice(0, 10));
+    if (ePr) console.error("no se pudieron leer las próximas ofertas:", ePr.message);
+    if (pronto?.length) {
+      const { data: promo, error: eP } = await admin.from("customers").select("id").in("id", clientes).eq("acepta_promociones", true);
+      if (eP) throw eP;
+      const { data: niv, error: eN } = promo?.length
+        ? await admin.rpc("app_niveles_de", { p_clientes: promo.map((c: any) => c.id) }) : { data: [], error: null };
+      if (eN) console.error("no se pudieron leer los niveles:", eN.message);
+      for (const c of ((niv ?? []) as { customer_id: number; clave: string }[]).filter((n) => n.clave === "platino")) {
+        for (const o of pronto) candidatos.push({
+          customer_id: c.customer_id, tipo: "oferta", ref: `oferta-pronto:${o.id}`,
+          titulo: `Antes que nadie 👑 · ${o.titulo}`,
+          cuerpo: "Por ser Platino la ves desde hoy. Empieza para todos en unos días.",
           url: `/oferta/${o.id}`,
         });
       }

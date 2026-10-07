@@ -103,6 +103,11 @@ export function PortadaOferta({ oferta: o, alto = 230, conTitulo = true, compart
           </Animated.View>
         ) : <View />}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        {o.pronto ? (
+          <View style={{ backgroundColor: 'rgba(8,9,12,0.8)', borderRadius: 999, borderWidth: 1, borderColor: 'rgba(233,237,245,0.4)', paddingHorizontal: 12, paddingVertical: 6 }}>
+            <Text style={{ fontSize: 12, fontWeight: '800', color: '#E9EDF5' }}>👑 Antes que nadie</Text>
+          </View>
+        ) : null}
         {o.exclusiva ? (
           // Fondo propio y no vidrio: sobre una foto clara el vidrio desaparece
           // y quedaba texto blanco suelto encima de la imagen.

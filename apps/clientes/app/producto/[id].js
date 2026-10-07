@@ -91,7 +91,10 @@ export default function Producto() {
 
   return (
     <View style={{ flex: 1, backgroundColor: fondo }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: ins.bottom + 110 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: ins.bottom + 110 }}
+        // Jalar hacia abajo estando arriba del todo también la cierra: el gesto de la
+        // hoja a veces se lo queda el ScrollView (2026-10-07).
+        onScrollEndDrag={(e) => { if (e.nativeEvent.contentOffset.y < -80) router.back(); }} scrollEventThrottle={16}>
         <View style={{ padding: 16, paddingTop: 20 }}>
           <FotoProducto id={p.id} nombre={p.nombre} foto={p.foto} alto={240} radio={24} grande />
         </View>

@@ -145,18 +145,18 @@ function Raiz() {
             contentStyle: { backgroundColor: 'transparent' },
           }}>
             <Stack.Screen name="index" options={{ headerShown: false }} />
-            {/* Oferta y producto como hoja del sistema (formSheet): deslizar hacia
-                abajo la cierra aunque el contenido esté desplazado; con el
-                modal clásico a veces el gesto se lo quedaba el ScrollView
-                (2026-10-07). */}
+            {/* Oferta y producto: modal clásico. Con `formSheet` la pantalla
+                salía NEGRA (compilación 22, 2026-10-07): el contenido con
+                flex: 1 no tomaba alto. Para cerrar deslizando con el
+                contenido desplazado, ver `CerrarDeslizando`. */}
             {/* Sin gesto de volver: detrás de las pestañas quedaba Entrar y
                 deslizar mandaba un segundo al login (2026-10-07). */}
             <Stack.Screen name="bienvenida" options={{ headerShown: false, gestureEnabled: false }} />
             <Stack.Screen name="entrar" options={{ title: 'Entrar' }} />
             <Stack.Screen name="registro" options={{ title: 'Unirme' }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false, gestureEnabled: false }} />
-            <Stack.Screen name="oferta/[id]" options={{ presentation: 'formSheet', headerShown: false, sheetAllowedDetents: [1], sheetGrabberVisible: true, sheetCornerRadius: 28, sheetExpandsWhenScrolledToEdge: false, gestureEnabled: true }} />
-            <Stack.Screen name="producto/[id]" options={{ presentation: 'formSheet', headerShown: false, sheetAllowedDetents: [1], sheetGrabberVisible: true, sheetCornerRadius: 28, sheetExpandsWhenScrolledToEdge: false, gestureEnabled: true }} />
+            <Stack.Screen name="oferta/[id]" options={{ presentation: 'modal', headerShown: false, gestureEnabled: true }} />
+            <Stack.Screen name="producto/[id]" options={{ presentation: 'modal', headerShown: false, gestureEnabled: true }} />
             <Stack.Screen name="o/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="compras" options={{ title: 'Mis compras' }} />
             <Stack.Screen name="sucursales" options={{ title: 'Nuestras sucursales' }} />

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1249.1 — App: la oferta y el producto vuelven a abrir (pantalla negra)
+
+- **App: la oferta y el producto salían en negro** (compilación 22): la hoja del sistema (`formSheet`) no le daba alto al contenido con `flex: 1`. Vuelven al modal clásico, y jalar hacia abajo estando arriba del todo también los cierra.
+
 ## v2.1249.0 — App: cupón raspable, tienda con filas, sin doble apertura, hojas que cierran y colores por nivel
 
 - **Sin doble apertura:** dos toques rápidos abrían la oferta dos veces. Todas las navegaciones de la app pasan por `lib/navegar.js`, que ignora un segundo toque mientras abre (700 ms).

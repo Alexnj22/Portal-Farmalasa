@@ -84,6 +84,7 @@ export default function Oferta() {
   return (
     <View style={{ flex: 1, backgroundColor: fondo }}>
       <ScrollView contentInsetAdjustmentBehavior="never"
+        onScrollEndDrag={(e) => { if (e.nativeEvent.contentOffset.y < -80) router.back(); }} scrollEventThrottle={16}
         contentContainerStyle={{ paddingBottom: ins.bottom + 32, width: '100%', maxWidth: 560, alignSelf: 'center' }}>
         <PortadaOferta compartible={false} oferta={o} alto={260} conTitulo={false} />
 

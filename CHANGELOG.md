@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.14 — Pedidos (lista): encabezado de pasos fijo y «En camino»
+
+- **El encabezado de los pasos se queda fijo** al bajar, justo debajo del encabezado de la vista (se mide, no se adivina: cambia con la densidad), con fondo opaco para que las filas no se lean a través.
+- El grupo «En la calle» pasa a llamarse **«En camino»**.
+
 ## v2.1232.13 — Pedidos (lista): menos ruido y fotos de quién hizo cada paso
 
 - **Los nombres de los pasos y de los tramos van UNA vez, arriba de la lista**, alineados con los puntos; en cada fila sólo los puntos y el paso en curso. Antes se repetían en todas las filas.

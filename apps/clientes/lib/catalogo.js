@@ -41,3 +41,7 @@ export async function recordarVisto(p) {
   lista.unshift({ id: p.id, nombre: p.nombre, foto: p.foto ?? null, precio: p.precio ?? null, precio_vip: p.precio_vip ?? null });
   await SecureStore.setItemAsync(CLAVE_VISTOS, JSON.stringify(lista.slice(0, 12))).catch(() => {});
 }
+
+export async function olvidarVistos() {
+  await SecureStore.deleteItemAsync(CLAVE_VISTOS).catch(() => {});
+}

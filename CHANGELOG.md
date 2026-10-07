@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1250.1 — Tienda: categorías bajo el banner y limpiar vistos
+
+- Tienda: las categorías van siempre justo debajo del banner; «Mayor ahorro» y «Vistos recientemente» debajo de ellas, y «Vistos recientemente» se puede limpiar.
+
 ## v2.1250.0 — App: Wallet por Safari, raspable con vibración, cupón Oro y herramientas del modo de prueba
 
 - **Agregar a Wallet por Safari:** la app pide un enlace firmado (`wallet_enlace`) y lo abre; Safari baja la tarjeta e iOS muestra su propia pantalla para agregarla. Ya no depende de presentar la hoja de Apple dentro de la app. Verificado: el enlace sin cabeceras devuelve `application/vnd.apple.pkpass` con la firma válida; en modo de prueba, con el nivel elegido (`&nivel=`).

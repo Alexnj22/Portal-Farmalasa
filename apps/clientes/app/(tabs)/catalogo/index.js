@@ -20,7 +20,7 @@ import BannerPromos from '../../../componentes/BannerPromos';
 import FilaProductos from '../../../componentes/FilaProductos';
 import { llamar } from '../../../lib/api';
 import { dolares } from '../../../lib/formato';
-import { BUSQUEDAS, leerVistos, nombreProducto, tonoDe } from '../../../lib/catalogo';
+import { BUSQUEDAS, leerVistos, nombreProducto, olvidarVistos, tonoDe } from '../../../lib/catalogo';
 import { LinearGradient } from 'expo-linear-gradient';
 import { suave, useTema } from '../../../tema/tema';
 import { navegar } from '../../../lib/navegar';
@@ -79,8 +79,6 @@ export default function Catalogo() {
     <View style={{ gap: 12, marginBottom: 6 }}>
       {/* Promociones arriba (las mismas ofertas del portal), sólo sin buscar. */}
       {!q ? <BannerPromos /> : null}
-      {!q ? <FilaProductos titulo="Mayor ahorro con tu tarjeta" sf="tag.fill" productos={ahorro} /> : null}
-      {!q ? <FilaProductos titulo="Vistos recientemente" sf="clock.arrow.circlepath" productos={vistos} /> : null}
       {/* Categorías: mosaicos con su color y su ícono; tocar uno busca y
           tocarlo otra vez lo quita. */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 2, paddingVertical: 2 }}>
@@ -124,6 +122,10 @@ export default function Catalogo() {
           );
         })}
       </ScrollView>
+      {/* Debajo de las categorías (usuario, 2026-10-07: «la categoría siempre abajo del banner»). */}
+      {!q ? <FilaProductos titulo="Mayor ahorro con tu tarjeta" sf="tag.fill" productos={ahorro} /> : null}
+      {!q ? <FilaProductos titulo="Vistos recientemente" sf="clock.arrow.circlepath" productos={vistos}
+        accion={{ texto: 'Limpiar', alTocar: () => { olvidarVistos(); setVistos([]); } }} /> : null}
       <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4 }}>
         {q ? `Resultados para «${q}»` : 'Lo más vendido'}
       </Text>

@@ -11,14 +11,20 @@ import { dolares } from '../lib/formato';
 import { nombreProducto } from '../lib/catalogo';
 import { useTema } from '../tema/tema';
 
-export default function FilaProductos({ titulo, sf, productos }) {
+export default function FilaProductos({ titulo, sf, productos, accion }) {
   const t = useTema();
   if (!productos?.length) return null;
   return (
     <View style={{ gap: 10 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 4 }}>
         <Icono sf={sf} respaldo="" tam={14} color={t.color.magentaTexto} />
-        <Text style={{ fontSize: 17, fontWeight: '800', color: colorSistema.texto }}>{titulo}</Text>
+        <Text style={{ flex: 1, fontSize: 17, fontWeight: '800', color: colorSistema.texto }}>{titulo}</Text>
+        {accion ? (
+          <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); accion.alTocar(); }} hitSlop={10} accessibilityRole="button"
+            style={{ minHeight: 32, justifyContent: 'center', paddingHorizontal: 6 }}>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto2 }}>{accion.texto}</Text>
+          </Pressable>
+        ) : null}
       </View>
       <FlatList horizontal data={productos} keyExtractor={(p) => String(p.id)} showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ gap: 10, paddingHorizontal: 2 }}

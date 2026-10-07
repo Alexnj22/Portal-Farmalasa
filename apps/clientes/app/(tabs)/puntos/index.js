@@ -150,6 +150,24 @@ export default function Puntos() {
         </Entrada>
       ) : null}
 
+      {/* Una encuesta por responder: paga puntos. */}
+      {resumen.encuesta ? (
+        <Entrada indice={2}>
+          <Tocable alTocar={() => navegar(`/encuesta?id=${resumen.encuesta.id}`)}>
+            <Tarjeta estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={{ width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.magenta, t.oscuro ? 0.28 : 0.15) }}>
+                <Icono sf="checklist" respaldo="📝" tam={20} color={t.color.magentaTexto} />
+              </View>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={{ fontSize: 16, fontWeight: '800', color: colorSistema.texto }}>Gana {entero(resumen.encuesta.puntos)} puntos</Text>
+                <Text style={{ fontSize: 14, color: colorSistema.texto2 }} numberOfLines={2}>Responde «{resumen.encuesta.nombre}» en un par de minutos.</Text>
+              </View>
+              <Icono sf="chevron.right" respaldo="›" tam={14} color={colorSistema.texto2} />
+            </Tarjeta>
+          </Tocable>
+        </Entrada>
+      ) : null}
+
       {/* Accesos: inyecciones (antes era una pestaña) y reservas. */}
       <Entrada indice={2} estilo={{ flexDirection: 'row', gap: 10 }}>
         <Acceso sf="syringe.fill" titulo="Inyecciones" color={t.color.verde}

@@ -71,6 +71,7 @@ export const CANALES = [
     { value: 'qr',         label: 'QR o enlace',  icono: 'QrCode',     ayuda: 'El cliente responde desde su teléfono, sin iniciar sesión.' },
     { value: 'entrevista', label: 'Entrevista',   icono: 'Mic',        ayuda: 'Alguien del equipo la aplica desde el portal.' },
     { value: 'kiosco',     label: 'Tablet en sala', icono: 'Tablet',   ayuda: 'Un dispositivo en el mostrador donde el cliente responde.' },
+    { value: 'app',        label: 'App de clientes', icono: 'Smartphone', ayuda: 'Aparece en la app Puntos Salud; una respuesta por cliente, y los puntos se acreditan solos.' },
 ];
 export const canalDe = (v) => CANALES.find((c) => c.value === v) || { value: v, label: v };
 

@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1252.0 — Encuestas en la app de clientes (25 puntos)
+
+- **Encuestas en la app:** canal nuevo **«App de clientes»** en el editor de encuestas del portal. Una encuesta publicada con ese canal aparece en el Inicio de la app («Gana 25 puntos») y se responde ahí; una sola respuesta por cliente (índice único + candado), con las mismas condiciones y validación que el resto de canales (`encuesta_cliente_limpiar`), y los puntos se acreditan solos por `encuesta_cliente_acreditar`. Si la encuesta no define puntos, la app paga **25**. La sucursal de la respuesta es la de su última compra dentro de las de la encuesta.
+- Probado en una transacción deshecha: aparece, acredita 25 (67 → 92), descarta la pregunta cuya condición no se cumple y rechaza la segunda respuesta.
+
 ## v2.1251.0 — App: Mis facturas con PDF, JSON y consulta de Hacienda
 
 - **App: Mis facturas** (Cuenta → Mis facturas): consumidor final y crédito fiscal del último año, filtro por tipo, y por cada una el **PDF** (se abre en la app, con compartir), el **JSON** (para la contabilidad) y la **consulta pública de Hacienda**. Sale del archivo que el portal guarda en `sales-dte`; si un documento todavía no estaba guardado, `factura_documento` lo baja, lo valida (PDF real / DTE con número de control), lo guarda y lo firma. Sólo facturas del propio cliente.

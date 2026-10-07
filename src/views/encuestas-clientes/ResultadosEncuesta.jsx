@@ -137,7 +137,7 @@ export default function ResultadosEncuesta({ encuesta }) {
                         <StatCard icon={Gauge} label="NPS" value={nps.puntaje ?? '—'} sub={lectura.label}
                             valueCls={lectura.variant === 'danger' ? 'text-danger' : lectura.variant === 'success' ? 'text-success' : undefined} />
                         <StatCard icon={Users} label="Respuestas" value={datos.total}
-                            sub={Object.entries(datos.por_canal || {}).map(([c, n]) => `${n} ${c === 'qr' ? 'QR' : c === 'kiosco' ? 'tablet' : 'entrevista'}`).join(' · ')} />
+                            sub={Object.entries(datos.por_canal || {}).map(([c, n]) => `${n} ${c === 'qr' ? 'QR' : c === 'kiosco' ? 'tablet' : c === 'app' ? 'app' : 'entrevista'}`).join(' · ')} />
                         <StatCard icon={Smile} label="Promotores" value={formatPct(pct(nps.promotores), { decimales: 0 })} sub={`${nps.promotores} dieron 9 o 10`} />
                         <StatCard icon={Frown} label="Detractores" value={formatPct(pct(nps.detractores), { decimales: 0 })}
                             valueCls={nps.detractores ? 'text-danger' : undefined} sub={`${nps.detractores} dieron 0 a 6`} />

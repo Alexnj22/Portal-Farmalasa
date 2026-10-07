@@ -720,7 +720,7 @@ Deno.serve(async (req) => {
       return json({ ok: true, sucursales: conSucursal(data ?? []) });
     }
 
-    if (["mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo"].includes(accion)) {
+    if (["mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo"].includes(accion)) {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
 
@@ -920,6 +920,22 @@ Deno.serve(async (req) => {
         .eq("id", Number(body?.id)).eq("customer_id", customerId).in("estado", ["solicitado", "confirmado"]).neq("pago_estado", "pagado").select("id");
       if (error) throw error;
       return json(data?.length ? { ok: true } : { ok: false, mensaje: "Ese encargo ya no se puede cancelar desde la app. Escríbele a la sucursal." });
+    }
+
+    // ── Encuestas en la app (2026-10-07): las publicadas con el canal «app»
+    // que este cliente no ha respondido; responder acredita los puntos solo.
+    if (accion === "mis_encuestas") {
+      const { data, error } = await admin.rpc("encuesta_app_disponibles", { p_customer: customerId });
+      if (error) throw error;
+      return json({ ok: true, encuestas: data ?? [] });
+    }
+    if (accion === "responder_encuesta") {
+      const { data, error } = await admin.rpc("encuesta_app_responder", {
+        p_customer: customerId, p_id: String(body?.id ?? ""), p_respuestas: body?.respuestas ?? {},
+        p_duracion: Number.isFinite(Number(body?.duracion)) ? Math.round(Number(body.duracion)) : null,
+      });
+      if (error) return json({ ok: false, mensaje: error.message || "No se pudo enviar." });
+      return json(data);
     }
 
     // ── Mis facturas (2026-10-07): consumidor final y crédito fiscal del
@@ -1292,6 +1308,13 @@ Deno.serve(async (req) => {
         // El nivel (Plata/Oro/Platino) y cuánto falta para el siguiente.
         nivel,
         // Inyecciones por aplicar: el Inicio las muestra (ya no son pestaña).
+        // Encuestas por responder (para la tarjeta del Inicio).
+        encuesta: await (async () => {
+          const { data, error } = await admin.rpc("encuesta_app_disponibles", { p_customer: customerId });
+          if (error) { console.error("resumen encuesta:", error.message); return null; }
+          const e = (data ?? [])[0];
+          return e ? { id: e.id, nombre: e.nombre, puntos: e.puntos } : null;
+        })(),
         inyecciones_pendientes: await (async () => {
           const { count, error: eIn } = await admin.from("inyeccion_aplicaciones").select("id", { count: "exact", head: true })
             .eq("customer_id", customerId).eq("confirmada", true).is("aplicada_at", null).is("mezcla_de", null);

@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.7 — Pedidos: crear ruta sólo ofrece salas que no salieron
+
+- **«Nueva ruta de entrega» sólo ofrece salas que se pueden despachar**: preparadas, que no salieron en ninguna ruta y que no llegaron. Antes ofrecía también las que ya iban en otra ruta, ya entregadas o ya recibidas — medido en producción: ofrecía 3 y sólo 1 era real.
+- La consulta va acotada a los pedidos abiertos: antes leía toda sala finalizada de la historia (186 filas hoy) y al pasar de 1000 se habría cortado sin aviso. Un error al cargar ya no se lee como «no hay pedidos para despachar».
+
 ## v2.1232.6 — Pedidos: la etiqueta dice el paso de la sala y Anular va aparte
 
 - **La etiqueta de cada tarjeta dice en qué paso va la sala**, igual que su avance: *Por preparar, En preparación, Pausado, Listo para despachar, En ruta, Entregado, Recibiendo, Completado*. Antes salía del estado del pedido y una sala que ya había recibido, o a la que ya le habían entregado, seguía diciendo «En ruta».

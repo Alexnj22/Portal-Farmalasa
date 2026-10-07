@@ -10,7 +10,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import PedidoModal from './PedidoModal';
 import { optimizeRoute, optimizarPorCarretera, armarRuta, tramoEnLineaRecta, totalRoute, getDirectionsREST } from '@nucleo/utils/routeOptimizer';
 import { loadGoogleMaps, loadLeaflet, matrizPorCarretera } from '../../plataforma/mapas';
-import { crearRuta, fetchEmployeeDriverInfo, fetchPedidoSucursalStatusFinalizados, fetchPedidosDisponiblesParaRuta, fetchSucursalesConCoords, updateRutaStatus } from '@nucleo/data/pedidos';
+import { crearRuta, fetchEmployeeDriverInfo, fetchSalasListasParaRuta, fetchPedidosDisponiblesParaRuta, fetchSucursalesConCoords, updateRutaStatus } from '@nucleo/data/pedidos';
 
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
@@ -99,11 +99,18 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
         });
     }
 
-    Promise.all([
-      fetchPedidosDisponiblesParaRuta(),
-      fetchPedidoSucursalStatusFinalizados(),
-      fetchSucursalesConCoords(),
-    ]).then(([pedRes, pssRes, coordRes]) => {
+    // Primero los pedidos abiertos y DESPUÉS sus salas: así la segunda
+    // consulta va acotada a esos pedidos y descarta las que ya salieron.
+    fetchPedidosDisponiblesParaRuta().then(async (pedRes) => {
+      const [pssRes, coordRes] = await Promise.all([
+        fetchSalasListasParaRuta((pedRes.data ?? []).map(p => p.id)),
+        fetchSucursalesConCoords(),
+      ]);
+      // Un error no puede pasar por «no hay pedidos para despachar».
+      if (pedRes.error) throw pedRes.error;
+      if (pssRes.error) throw pssRes.error;
+      return [pedRes, pssRes, coordRes];
+    }).then(([pedRes, pssRes, coordRes]) => {
       const pedidoMap = {};
       for (const p of (pedRes.data ?? [])) pedidoMap[p.id] = p;
 

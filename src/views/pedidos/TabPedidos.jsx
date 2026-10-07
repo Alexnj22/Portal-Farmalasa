@@ -239,23 +239,29 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
     // cambia cómo se dibuja. Cerrada: sala, avance, estado y la acción
     // principal. Abierta: lo mismo que la tarjeta abierta.
     const renderFilaLista = ({ row, cardKey, isExp, stage, etiqueta, tiempoEnEtapa, rtStop, rtCond,
-        creator, iniciador, finalizador, enviador, llegadaEmp, conteoEmp, reenvioEmp, erpEmp, difsEmp, corrConfEmp,
         recepApoyo, faltan, difsDeLaSala, datosJSX, accionesJSX, seccionesJSX }) => {
-        const tono = stage === 'pausado' ? 'warning' : (faltan.hay || difsDeLaSala > 0) ? 'danger' : undefined;
+        // El estado se marca con una FRANJA fina a la izquierda, no con el borde
+        // entero: con tres filas con problema seguidas, el borde rojo de cada
+        // una dominaba la pantalla (lo pidió el usuario, 2026-10-07).
+        const franja = stage === 'pausado' ? 'bg-warning-solid' : (faltan.hay || difsDeLaSala > 0) ? 'bg-danger-solid' : null;
         // Sin el agrupamiento por ruta de la tarjeta, la fila dice en cuál va.
         const rutaDeLaFila = stage === 'transito' ? pedidoRutaMap.get(claveParada(row.pedido_id, row.erp_sucursal_id))?.ruta : null;
         return (
-            <div key={cardKey} data-surface="card" data-tono={tono} className="select-none"
+            <div key={cardKey} data-surface="card" className="select-none relative overflow-hidden"
                 {...clickable(() => toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id), { label: `Pedido ${row.codigo ?? row.numero}` })}
                 aria-expanded={isExp}>
-                <div className="grid items-center gap-x-4 gap-y-2 px-3 py-2.5 grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(9rem,13rem)_minmax(14rem,1fr)_minmax(11rem,15rem)_auto_auto]">
+                {franja && <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1 ${franja}`} />}
+                <div className="grid items-center gap-x-4 gap-y-2 px-3 py-2.5 grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(8rem,11rem)_minmax(20rem,1fr)_minmax(10rem,13rem)_auto_auto]">
                     <div className="min-w-0">
                         <div className="text-body font-bold text-content leading-tight truncate">
                             {ERP_NAMES[row.erp_sucursal_id] ?? `Sucursal ${row.erp_sucursal_id}`}
                         </div>
                         <div className="text-caption text-content-3 tabular-nums truncate">{row.codigo ?? `#${row.numero}`}</div>
                     </div>
-                    <div className="hidden lg:block min-w-0"><AvanceCompacto row={row} stage={stage} rutaStop={rtStop} soloActivo /></div>
+                    <div className="hidden lg:block min-w-0">
+                        <AvanceCompacto row={row} stage={stage} rutaStop={rtStop} conductor={rtCond} rotulos="siempre"
+                            detalle={isExp} quien={id => empMap.get(id) ?? null} />
+                    </div>
                     <div className="flex flex-col items-end lg:items-start gap-0.5 min-w-0">
                         <Badge variant={stage === 'pausado' ? 'warning' : etiqueta.variant} uppercase={false} icon={stage === 'pausado' ? Pause : undefined}>
                             {stage === 'pausado' ? 'Pausado' : etiqueta.label}
@@ -283,10 +289,18 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                 {isExp && seccionesJSX}
                 {isExp && (
                     <div className="border-t border-divider" onClick={e => e.stopPropagation()}>
-                        <div className="px-3 pt-2 pb-1.5">
-                            <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} reenvioEmp={reenvioEmp} erpEmp={erpEmp} difsEmp={difsEmp} corrConfEmp={corrConfEmp} receptionApoyo={recepApoyo} isBranch={isBranch} empMap={empMap} pauses={row.pauses ?? []} rutaStop={rtStop} rutaCondEmp={rtCond} />
+                        {/* La línea con hora y persona ya está ARRIBA, en la fila.
+                            En el teléfono la fila no la muestra, así que va acá. */}
+                        <div className="lg:hidden px-3 pt-2 pb-1">
+                            <AvanceCompacto row={row} stage={stage} rutaStop={rtStop} conductor={rtCond} rotulos="siempre"
+                                detalle quien={id => empMap.get(id) ?? null} />
                         </div>
-                        <div className="flex items-center gap-1 flex-wrap px-3 pb-2">{datosJSX}</div>
+                        <div className="flex items-center gap-1 flex-wrap px-3 pt-2 pb-2">
+                            {datosJSX}
+                            {recepApoyo.length > 0 && (
+                                <Badge variant="neutral" uppercase={false}>Apoyo en recepción: {recepApoyo.map(a => shortEmployeeName(a)).join(', ')}</Badge>
+                            )}
+                        </div>
                         <ItemSections allItems={items[cardKey] ?? []} loading={loadingItems && !items[cardKey]} canEditMinMax={canEditMinMax} />
                     </div>
                 )}
@@ -765,8 +779,7 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
 
                             if (vista === 'lista') return renderFilaLista({
                                 row, cardKey, isExp, stage, etiqueta, tiempoEnEtapa, rtStop, rtCond,
-                                creator, iniciador, finalizador, enviador, llegadaEmp, conteoEmp, reenvioEmp,
-                                erpEmp, difsEmp, corrConfEmp, recepApoyo, faltan, difsDeLaSala,
+                                recepApoyo, faltan, difsDeLaSala,
                                 datosJSX, accionesJSX, seccionesJSX,
                             });
 

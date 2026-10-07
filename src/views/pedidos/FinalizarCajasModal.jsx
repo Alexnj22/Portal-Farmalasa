@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { ChevronLeft, Loader2, X, Package, PackageCheck, RotateCcw, TriangleAlert, Search, RotateCw } from 'lucide-react';
@@ -96,10 +96,22 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
 
     // Sondeo cada 3 s hasta que deje de estar en curso. Un fallo de red no corta
     // el sondeo — se reintenta en el siguiente tick.
+    //
+    // Con TOPE (2026-10-07): sin él, una revisión trabada en «en curso» sondeaba
+    // hasta cerrar el modal y dejaba el botón de finalizar bloqueado para
+    // siempre. A los 2 minutos se da por no respondida y se puede confirmar
+    // igual, ajustando a mano — lo mismo que cuando la revisión falla.
+    const intentosSimu = useRef(0);
     useEffect(() => {
         if (!simuId || (simu && simu.estado !== 'en_curso')) return;
         let vivo = true;
         const t = setInterval(async () => {
+            intentosSimu.current += 1;
+            if (intentosSimu.current > 40) {
+                clearInterval(t);
+                if (vivo) setSimuError('la revisión tardó demasiado');
+                return;
+            }
             try {
                 const { data } = await fetchTrasladoErp(simuId);
                 if (vivo && data) setSimu(data);
@@ -107,6 +119,23 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
         }, 3000);
         return () => { vivo = false; clearInterval(t); };
     }, [simuId, simu]);
+
+    // No se finaliza mientras se revisa la existencia (2026-10-07): lo que el
+    // sistema dice que no hay arranca en cero cuando llega la revisión, y
+    // confirmar antes mandaba esos productos con lo asignado y hacía fallar el
+    // traslado entero. Si la revisión falla o tarda, se puede confirmar igual.
+    const verificando = !simuError && (!simu || simu.estado === 'en_curso');
+    // Y si la revisión ni siquiera arranca (sin respuesta del lanzamiento), el
+    // mismo tope: el botón nunca queda bloqueado más de 2 minutos.
+    const verificandoRef = useRef(verificando);
+    useEffect(() => { verificandoRef.current = verificando; }, [verificando]);
+    useEffect(() => {
+        if (!open) return undefined;
+        const t = setTimeout(() => {
+            if (verificandoRef.current) setSimuError(e => e ?? 'la revisión tardó demasiado');
+        }, 120_000);
+        return () => clearTimeout(t);
+    }, [open]);
 
     // Lo que el sistema no pudo resolver arranca en CERO: si dice que no hay
     // existencia, mandarlo igual hace fallar el traslado entero. Queda editable
@@ -171,10 +200,12 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
 
     const noEnviados = ajustesLista.filter(a => a.cantidad_enviada === 0).length;
 
-    const handleConfirm = () => {
+    // Espera a que se guarde: si falla, el modal sigue abierto con lo anotado
+    // y el borrador intacto. Antes se borraba el borrador y se cerraba antes
+    // de saber si se había guardado (2026-10-07).
+    const handleConfirm = async () => {
         if (submitting || !isValid) return;
         setSubmitting(true);
-        if (draftKey) clearDraft(draftKey);
 
         const cajaMap = {};
         for (let i = 1; i <= cajaCount; i++) cajaMap[String(i)] = [];
@@ -189,7 +220,9 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
         const paginaItems = {};
         pageGroups.forEach((pg, idx) => { paginaItems[String(idx + 1)] = pg.ids; });
 
-        onConfirm({ totalCajas: cajaCount, cajaMap, paginaItems, ajustesEnvio: ajustesLista });
+        const ok = await onConfirm({ totalCajas: cajaCount, cajaMap, paginaItems, ajustesEnvio: ajustesLista });
+        if (ok === false) { setSubmitting(false); return; }
+        if (draftKey) clearDraft(draftKey);
     };
 
     const setCantidad = (itemId, valor, motivo) => {
@@ -511,11 +544,11 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                         Siguiente <span className="opacity-60">→</span>
                     </Button>
                 ) : (
-                    <Button tone="chart-3" disabled={submitting || !isValid} onClick={handleConfirm}>{submitting
+                    <Button tone="chart-3" disabled={submitting || !isValid || verificando} onClick={handleConfirm}>{submitting || verificando
                             ? <Loader2 size={12} className="animate-spin" />
                             : <PackageCheck size={13} />
                         }
-                        Confirmar y Finalizar</Button>
+                        {verificando ? 'Revisando existencias…' : 'Confirmar y Finalizar'}</Button>
                 )}
             </div>
         </PedidoModal>

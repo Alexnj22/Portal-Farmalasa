@@ -48,9 +48,10 @@ export default function ReenvioLlegadaModal({
     // Electrolit debe ser respondido antes de poder confirmar
     const electrolitPending = electrolitCount > 0 && electrolitOk === null;
 
-    const handleConfirm = () => {
+    // Espera a que se guarde: si falla, el modal sigue abierto con lo marcado.
+    const handleConfirm = async () => {
         setSubmitting(true);
-        onConfirm({
+        const ok = await onConfirm({
             cajasOk,
             cajasDanadas,
             cajasFaltantes,
@@ -58,6 +59,7 @@ export default function ReenvioLlegadaModal({
             electrolitOk:  electrolitCount > 0 ? (electrolitOk === true) : true,
             especialesAun: especialesList.length > 0 ? espFaltantes : [],
         });
+        if (ok === false) setSubmitting(false);
     };
 
     const handleClose = () => {

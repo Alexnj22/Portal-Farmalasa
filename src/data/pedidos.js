@@ -258,7 +258,10 @@ export function fetchPedidoItemsAll(pedidoId, sucFilter) {
     return fetchAllRows(() => {
         let q = supabase.from('pedido_items').select(ITEMS_SELECT).eq('pedido_id', pedidoId);
         if (sucFilter) q = q.eq('erp_sucursal_id', sucFilter);
-        return q;
+        // Orden FIJO: sin él, entre una página y la siguiente la base puede
+        // devolver las filas en otro orden y un pedido de más de 1000 renglones
+        // carga filas repetidas y le faltan otras, sin error (2026-10-07).
+        return q.order('id');
     });
 }
 

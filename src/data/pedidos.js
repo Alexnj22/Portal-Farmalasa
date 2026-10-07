@@ -638,7 +638,9 @@ export function fetchPedidosDisponiblesParaRuta() {
 export async function fetchReenviosPorDespachar() {
     const { data, error } = await supabase.from('pedido_sucursal_status')
         .select('pedido_id, erp_sucursal_id, reenvios_historial, pedidos!inner(numero, status)')
-        .contains('reenvios_historial', [{ sent_at: null }])
+        // `.contains()` con un arreglo lo manda como arreglo de Postgres
+        // (`{…}`) y sobre `jsonb` falla: «invalid input syntax for type json».
+        .filter('reenvios_historial', 'cs', JSON.stringify([{ sent_at: null }]))
         .neq('pedidos.status', 'anulado');
     if (error) return { data: null, error };
     const filas = data ?? [];

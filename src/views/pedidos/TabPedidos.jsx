@@ -119,7 +119,7 @@ function etiquetaDeLaSala(estadoSala, stage, entregada, difsPendientes = 0) {
 // Bloque 6.C (continuación): el estado/fetch de este componente vive en el
 // hook usePedidosData (./tabpedidos/usePedidosData.js) — mismos nombres,
 // misma lógica, extracción mecánica. Este archivo queda solo con el JSX.
-export default function TabPedidos({ searchTerm = '' }) {
+export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
     const { hasPermission, isSU } = useAuth();
     // `pedidos_descargar` gatea la REIMPRESIÓN de un pedido ya generado, no la
     // impresión que sale al generarlo: esa es el entregable del flujo de bodega
@@ -232,102 +232,88 @@ export default function TabPedidos({ searchTerm = '' }) {
         );
     }
 
-    return (
-        <div className="space-y-4 p-4">
-
-            {/* `Notice` y no una caja con su propio par bg/borde/texto: es el
-                canónico del aviso inline (§15.6), y el botón de descarte va en
-                su ranura `action`. La exclamación se va por §26.7 — el portal no
-                festeja en el feedback del sistema; la lista de los tres sitios
-                donde sí va es cerrada y esto no está en ella. */}
-            <AnimatePresence>
-                {newAlert && (
-                    <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
-                        <Notice
-                            variant="info"
-                            icon={Send}
-                            action={<Button variant="ghost" icon={X} iconOnly aria-label="Descartar aviso" onClick={() => setNewAlert(null)} />}
-                        >
-                            Pedido #{newAlert.numero} en camino a {branchName}
-                        </Notice>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* ── FILTROS + CARDS SUCURSALES ─────────────────────────── */}
-            <div>
-                {/* Fila única: cards por sucursal (izq) + FilterPill (der) */}
-                <div className="flex items-center gap-3 mb-3">
-                <CarrilCards className="flex-1" ariaLabel="Pedidos por sucursal">
-                    {/* Bodega / alcance todos: card clicable por sucursal */}
-                    {!isBranch && sucursalCounts.map(({ id, name, total }) => {
-                        const active = filterSuc === String(id);
-                        return (
-                            <StatCard
-                                key={id}
-                                icon={Building2} iconBg={active ? 'bg-surface-card' : 'bg-chart-3/10'} iconCls="text-chart-3-text"
-                                label={name} sub="pedidos este mes"
-                                value={total} valueCls={active ? 'text-chart-3-text' : 'text-content-2'}
-                                tono="brand" active={active}
-                                onClick={() => setFilterSuc(v => v === String(id) ? '' : String(id))}
-                            />
-                        );
-                    })}
-                    {/* Sucursal (BRANCH): card propia, solo informativa */}
-                    {isBranch && sucursalCounts.length > 0 && (() => {
-                        const own = sucursalCounts[0];
-                        return (
-                            <StatCard
-                                icon={Building2} iconBg="bg-chart-3/10" iconCls="text-chart-3-text"
-                                label={own.name} value={own.total} sub="pedidos este mes"
-                            />
-                        );
-                    })()}
-                </CarrilCards>
-                    <div className="flex justify-end min-w-0">
-                        <FilterPill isBranch={isBranch} filterSuc={filterSuc} setFilterSuc={setFilterSuc} filterStatus={filterStatus} setFilterStatus={setFilterStatus} filterOptions={filterOptions} filterDate={filterDate} setFilterDate={setFilterDate} />
+    // ── Vista LISTA (en prueba, 2026-10-07) ──────────────────────────────
+    // Una fila por sala, agrupadas por lo que toca hacer. Usa las MISMAS
+    // piezas que la tarjeta (`datosJSX`, `accionesJSX`, `seccionesJSX`), así
+    // que botones, condiciones, recepción y diferencias son idénticos: sólo
+    // cambia cómo se dibuja. Cerrada: sala, avance, estado y la acción
+    // principal. Abierta: lo mismo que la tarjeta abierta.
+    const renderFilaLista = ({ row, cardKey, isExp, stage, etiqueta, tiempoEnEtapa, rtStop, rtCond,
+        creator, iniciador, finalizador, enviador, llegadaEmp, conteoEmp, reenvioEmp, erpEmp, difsEmp, corrConfEmp,
+        recepApoyo, faltan, difsDeLaSala, datosJSX, accionesJSX, seccionesJSX }) => {
+        const tono = stage === 'pausado' ? 'warning' : (faltan.hay || difsDeLaSala > 0) ? 'danger' : undefined;
+        // Sin el agrupamiento por ruta de la tarjeta, la fila dice en cuál va.
+        const rutaDeLaFila = stage === 'transito' ? pedidoRutaMap.get(claveParada(row.pedido_id, row.erp_sucursal_id))?.ruta : null;
+        return (
+            <div key={cardKey} data-surface="card" data-tono={tono} className="select-none"
+                {...clickable(() => toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id), { label: `Pedido ${row.codigo ?? row.numero}` })}
+                aria-expanded={isExp}>
+                <div className="grid items-center gap-x-4 gap-y-2 px-3 py-2.5 grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(9rem,13rem)_minmax(14rem,1fr)_minmax(11rem,15rem)_auto_auto]">
+                    <div className="min-w-0">
+                        <div className="text-body font-bold text-content leading-tight truncate">
+                            {ERP_NAMES[row.erp_sucursal_id] ?? `Sucursal ${row.erp_sucursal_id}`}
+                        </div>
+                        <div className="text-caption text-content-3 tabular-nums truncate">{row.codigo ?? `#${row.numero}`}</div>
                     </div>
+                    <div className="hidden lg:block min-w-0"><AvanceCompacto row={row} stage={stage} rutaStop={rtStop} soloActivo /></div>
+                    <div className="flex flex-col items-end lg:items-start gap-0.5 min-w-0">
+                        <Badge variant={stage === 'pausado' ? 'warning' : etiqueta.variant} uppercase={false} icon={stage === 'pausado' ? Pause : undefined}>
+                            {stage === 'pausado' ? 'Pausado' : etiqueta.label}
+                        </Badge>
+                        <span className={`text-caption tabular-nums truncate ${stage === 'pausado' ? 'text-warning-text font-semibold' : 'text-content-3'}`}>
+                            {faltan.porDespachar ? 'Reenvío por salir'
+                                : faltan.hay ? `Falta: ${describirFaltantes(faltan).join(' · ')}`
+                                : difsDeLaSala > 0 ? `${difsDeLaSala} diferencia${difsDeLaSala > 1 ? 's' : ''} por resolver`
+                                : [rutaDeLaFila ? `Ruta #${rutaDeLaFila.numero}` : null, tiempoEnEtapa ?? fmtRelative(row.enviado_at ?? row.created_at)].filter(Boolean).join(' · ')}
+                        </span>
+                    </div>
+                    {/* `empty:hidden`: sin acción, en el teléfono no queda un
+                        renglón vacío. */}
+                    <div className="col-span-2 lg:col-span-1 flex items-center justify-end gap-1.5 flex-wrap empty:hidden" onClick={e => e.stopPropagation()}>
+                        {accionesJSX}
+                    </div>
+                    {/* La flecha sólo en escritorio: en el teléfono la fila
+                        entera se toca para abrirla. */}
+                    <span className="hidden lg:flex text-content-3" aria-hidden="true">
+                        {isExp ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    </span>
                 </div>
+                {/* Recepción y diferencias se abren con la fila: la fila ya
+                    dice «Falta…» o «N diferencias por resolver». */}
+                {isExp && seccionesJSX}
+                {isExp && (
+                    <div className="border-t border-divider" onClick={e => e.stopPropagation()}>
+                        <div className="px-3 pt-2 pb-1.5">
+                            <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} reenvioEmp={reenvioEmp} erpEmp={erpEmp} difsEmp={difsEmp} corrConfEmp={corrConfEmp} receptionApoyo={recepApoyo} isBranch={isBranch} empMap={empMap} pauses={row.pauses ?? []} rutaStop={rtStop} rutaCondEmp={rtCond} />
+                        </div>
+                        <div className="flex items-center gap-1 flex-wrap px-3 pb-2">{datosJSX}</div>
+                        <ItemSections allItems={items[cardKey] ?? []} loading={loadingItems && !items[cardKey]} canEditMinMax={canEditMinMax} />
+                    </div>
+                )}
+            </div>
+        );
+    };
 
-                {/* §26.2 — «Sin pedidos activos» también salía cuando el
-                    buscador o un filtro no encontraban nada, que es otro estado
-                    y se arregla de otra forma: borrando el filtro, no
-                    despachando un pedido. */}
-                {filteredRows.length === 0 ? (
-                    searchTerm.trim() ? (
-                        <EmptyState
-                            compact
-                            icon={Search}
-                            title="Sin resultados"
-                            subtitle={`Ningún pedido coincide con "${searchTerm}".`}
-                        />
-                    ) : (
-                        <EmptyState
-                            compact
-                            icon={Inbox}
-                            iconClass="text-chart-1-text"
-                            glowClass="bg-chart-1/30"
-                            title="Sin pedidos activos"
-                            subtitle={filterSuc || filterStatus
-                                ? 'Ningún pedido cumple con los filtros aplicados.'
-                                : undefined}
-                        />
-                    )
-                ) : (
-                    <div className="space-y-3">
-                    {renderGroups.map((group) => {
-                        // Dentro de una ruta: no-entregadas primero (por orden), entregadas al fondo
-                        const displayRows = group.isRuta
-                            ? [...group.rows].sort((a, b) => {
-                                const sa = pedidoRutaMap.get(claveParada(a.pedido_id, a.erp_sucursal_id))?.stop;
-                                const sb = pedidoRutaMap.get(claveParada(b.pedido_id, b.erp_sucursal_id))?.stop;
-                                const doneA = sa?.entregado_at ? 1 : 0;
-                                const doneB = sb?.entregado_at ? 1 : 0;
-                                if (doneA !== doneB) return doneA - doneB;
-                                return (sa?.orden_entrega ?? 99) - (sb?.orden_entrega ?? 99);
-                            })
-                            : group.rows;
-                        const cards = displayRows.map(row => {
+    // Los grupos de la lista: «¿qué toca hacer?», en orden de urgencia. Lo que
+    // tiene un problema abierto va primero, sea cual sea su etapa.
+    const GRUPOS_LISTA = [
+        { key: 'problemas',   label: 'Con problemas' },
+        { key: 'pausado',     label: 'En pausa' },
+        { key: 'sin_iniciar', label: 'Por preparar' },
+        { key: 'preparando',  label: 'En preparación' },
+        { key: 'preparado',   label: 'Listos para salir' },
+        { key: 'transito',    label: 'En la calle' },
+        { key: 'contando',    label: 'En la sala' },
+        { key: 'erp',         label: 'Completados' },
+    ];
+    const grupoDeLaFila = (row) => {
+        const ck = `act_${row.pedido_id}_${row.erp_sucursal_id}`;
+        const f = faltantesDeLaSala(row);
+        if ((f.hay && !f.enCamino) || (cardStats[ck]?.sinResolver ?? 0) > 0) return 'problemas';
+        return getBranchStage(row);
+    };
+
+    const renderSala = (row) => {
                             const stage      = getBranchStage(row);
                             const estadoSala = estadoDeLaSala(row);
                             // Lo que no llegó, de una sola fuente para la etiqueta,
@@ -387,6 +373,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const prepApoyo    = apoyoBucket.preparacion ?? [];
                             const recepApoyo   = apoyoBucket.recepcion   ?? [];
 
+                            // En la lista, lo secundario aparece al abrir la fila.
+                            const verSecundarias = vista !== 'lista' || isExp;
                             const canFinalizar = canActuar && !isBranch && stage === 'preparando';
 
                             const canApoyo = !isBranch && ['sin_iniciar','preparando','pausado'].includes(stage);
@@ -403,142 +391,16 @@ export default function TabPedidos({ searchTerm = '' }) {
                             // llegar no es un pedido cerrado, y apagarlo lo escondía.
                             const isFadedOut = row.pedido_status === 'completado' && !!row.recibido_erp_at && !faltan.hay;  // sutil: solo baja un poco la opacidad
 
-                            return (
-                                <motion.div
-                                    key={cardKey}
-                                    layout
-                                    initial={{ opacity: 0, scale: 0.97 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.95 }}
-                                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                                    /* La superficie sale del canónico. Estaba escrita a
-                                       mano en la const `GLASS` —repetida en tres
-                                       pestañas—, y por vivir en una constante de string
-                                       el gate `vidrio-a-mano` no la veía. */
-                                    data-surface="card"
-                                    className={`select-none ${
-                                        stage === 'pausado'
-                                            ? 'ring-2 ring-warning/45 shadow-[var(--shadow-glow-warning-lg)]'
-                                            : (hasObservacion(row) && row.pedido_status !== 'completado') || faltan.hay
-                                                ? 'ring-2 ring-chart-4/45 shadow-[var(--shadow-glow-chart-4)]'
-                                                : isFadedOut
-                                                    ? 'opacity-80'
-                                                    : ''
-                                    }`}
-                                    style={{ overflow: 'visible' }}
-                                    /* Desplegar el pedido es la acción de la tarjeta:
-                                       por `clickable()` gana foco, teclado y el gel del
-                                       material, que un `onClick` suelto no da. */
-                                    {...clickable(
-                                        () => toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id),
-                                        { label: `Pedido ${row.codigo ?? row.numero}` },
-                                    )}
-                                    aria-expanded={isExp}
-                                >
-                                    {/* ── Zona 1: quién y en qué está ──────────────────
-                                        Rediseño 2026-10-06. La SALA es el título —es lo
-                                        que se busca con la vista— y el código va al lado
-                                        en gris: antes el título era `33-061026-1-S4` y
-                                        la sala una pastilla chica. El estado se dice UNA
-                                        vez, con su tiempo en la etapa; antes se repetía
-                                        en la etiqueta, en la línea y en el pie. */}
-                                    <div className="flex items-start gap-x-3 gap-y-1 px-3 pt-2.5 pb-1 flex-wrap">
-                                        {/* `basis-64 grow`: en el teléfono el estado baja a
-                                            su propio renglón en vez de apretar el nombre. */}
-                                        <div className="min-w-0 basis-64 grow">
-                                            <div className="flex items-baseline gap-2 flex-wrap">
-                                                <span className="text-body-lg font-bold text-content leading-tight">
-                                                    {ERP_NAMES[row.erp_sucursal_id] ?? `Sucursal ${row.erp_sucursal_id}`}
-                                                </span>
-                                                <span className="text-caption text-content-3 tabular-nums">{row.codigo ?? `#${row.numero}`}</span>
-                                            </div>
-                                            {row.notes && <p className="text-caption text-content-3 mt-0.5">{row.notes}</p>}
-                                        </div>
-                                        <div className="flex items-center gap-2 shrink-0">
-                                            {/* El rótulo es de la SALA, no del pedido — `estadoDeLaSala`.
-                                                Con `pedido_status`, el pedido 137 del 2026-08-24 ponía
-                                                «En ruta» sobre Salud 2, que no se había ni empezado a
-                                                preparar: el pedido sí iba en ruta, esa sala no. */}
-                                            {stage === 'pausado' ? (
-                                                <Badge variant="warning" tone="solid" uppercase={false} icon={Pause}>Pausado</Badge>
-                                            ) : (
-                                                <Badge variant={etiqueta.variant} uppercase={false}>{etiqueta.label}</Badge>
-                                            )}
-                                            {tiempoEnEtapa && (
-                                                <span className={`text-caption font-semibold tabular-nums ${stage === 'pausado' ? 'text-warning-text' : 'text-content-2'}`}>
-                                                    {tiempoEnEtapa}
-                                                </span>
-                                            )}
-                                            <span className="hidden sm:inline text-caption text-content-3 tabular-nums">{fmtRelative(row.enviado_at ?? row.created_at)}</span>
-                                            {isExp ? <ChevronDown size={14} className="text-content-3" /> : <ChevronRight size={14} className="text-content-3" />}
-                                        </div>
-                                    </div>
-
-                                    {/* Apoyo preparación (bodega) — el GEMELO de «Apoyo en
-                                        recepción» de `LifecycleTimeline`: misma lista
-                                        (`apoyoMap`, otro cubo), misma anatomía, y hasta el
-                                        2026-08-15 dibujada distinto y con un bug propio.
-                                        Leía `a.photo_url` a secas, que es la URL CRUDA: el
-                                        bucket de fotos es privado, así que la que se puede
-                                        pintar es la firmada y vive en `photo` (la pone
-                                        `signPhotosDeep` en `usePedidosData`). O sea que
-                                        estas caras salían como monigote gris mientras las
-                                        de recepción, dos renglones abajo, salían bien.
-                                        Ahora comparte el canónico con su gemelo: `Badge`
-                                        neutro + `LiquidAvatar`. */}
-                                    {prepApoyo.length > 0 && (
-                                        <div className="flex items-center gap-1.5 px-3 pb-1.5 flex-wrap">
-                                            <span className="text-caption font-semibold text-content-2 uppercase tracking-wide shrink-0">Prep:</span>
-                                            {prepApoyo.map(a => (
-                                                <Badge key={a.id} variant="neutral" uppercase={false} className="pl-1">
-                                                    <AvatarConEstado emp={a} px={20} radio="rounded-full" marco="" />
-                                                    {shortEmployeeName(a)}
-                                                </Badge>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {/* ── Zona 2: el avance ──────────────────────────────
-                                        Cerrada, una línea de puntos (`AvanceCompacto`);
-                                        abierta, la línea completa con quién y a qué hora.
-                                        Siempre abierta hacía cada tarjeta de ~270px. */}
-                                    <div className={`px-3 ${isExp ? 'border-t border-divider pt-2 pb-1.5' : 'pt-1.5 pb-2'}`}>
-                                        {(() => {
-                                            // La parada de ESTA tarjeta. El mapa de rutas vivas va
-                                            // por (pedido, sala) —`claveParada`— pero olvida las
-                                            // rutas de ayer, así que el paso «Entregado» amanecía en
-                                            // blanco. `entregaMap` es el registro del pedido: va por
-                                            // (pedido, sucursal) y no caduca. La ruta viva manda
-                                            // porque se actualiza en el momento en que el conductor
-                                            // marca la entrega.
-                                            //
-                                            // El `?? rutaInfo?.stop` que cerraba esta cadena era el
-                                            // último resto de la llave por pedido: le prestaba a esta
-                                            // tarjeta la parada de OTRA sala, y por eso el nodo
-                                            // «Entregado» de Salud 2 mostraba la cara del conductor
-                                            // de Salud 1 (pedido 137, 2026-08-24). Sin parada propia
-                                            // el nodo va vacío, que es la verdad.
                                             const rutaInfo = pedidoRutaMap.get(claveParada(row.pedido_id, sucDeLaTarjeta));
                                             const entrega  = entregaMap[cardKey] ?? null;
                                             const rtStop   = rutaInfo?.stop ?? entrega ?? null;
                                             const condId   = rutaInfo?.ruta?.conductor_id ?? entrega?.ruta?.conductor_id ?? null;
                                             const rtCond   = condId ? empMap.get(condId) ?? null : null;
-                                            if (!isExp) return <AvanceCompacto row={row} stage={stage} rutaStop={rtStop} />;
-                                            return (
-                                                <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} reenvioEmp={reenvioEmp} erpEmp={erpEmp} difsEmp={difsEmp} corrConfEmp={corrConfEmp} receptionApoyo={recepApoyo} isBranch={isBranch} empMap={empMap} pauses={row.pauses ?? []} rutaStop={rtStop} rutaCondEmp={rtCond} />
-                                            );
-                                        })()}
-                                    </div>
 
-                                    {/* ── Zona 3: datos y acciones — una sola fila ──────
-                                        Izquierda, los datos de la sala (antes en dos y tres
-                                        renglones sueltos). Derecha, las acciones: UNA
-                                        principal —el siguiente paso del flujo— y el resto en
-                                        gris. Antes cada botón tenía su color (naranja, rosa,
-                                        morado, verde, rojo) y todos pesaban igual. Las
-                                        condiciones de cada botón NO cambiaron. */}
-                                    <div className="flex items-center gap-x-2 gap-y-2 px-3 pb-2.5 pt-2 border-t border-divider flex-wrap" onClick={e => e.stopPropagation()}>
-                                      <div className="flex items-center gap-1 flex-wrap min-w-0">
+                            // Las piezas que comparten las dos formas de dibujar la sala
+                            // (tarjeta y lista, 2026-10-07): mismos datos, mismos botones
+                            // con las mismas condiciones, mismas secciones.
+                            const datosJSX = (<>
                                         {/* Lo que dice la base de esta sala: enviados, sistema, inventario. */}
                                         {cardStats[cardKey] && (
                                             <>
@@ -678,13 +540,13 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 {difsDeLaSala === 1 ? '1 dif. pendiente' : `${difsDeLaSala} difs. pendientes`}
                                             </Badge>
                                         )}
-                                      </div>
-                                        <div className="ml-auto flex items-center gap-1.5 flex-wrap">
+                            </>);
+                            const accionesJSX = (<>
                                             {/* Anular va PRIMERO y separado: es irreversible, y junto
                                                 a Finalizar o Iniciar —el botón que más se aprieta— un
                                                 clic de más anulaba el pedido. Sigue en rojo (§15.2: una
                                                 acción irreversible no se atenúa). */}
-                                            {canAnular && (
+                                            {verSecundarias && canAnular && (
                                                 <Button variant="destructive" icon={Ban} className="mr-2" onClick={e => { e.stopPropagation(); const st = pedidoStageMap.get(row.pedido_id) ?? {}; setAnularModal({ pedidoId: row.pedido_id, numero: row.numero, requiresReason: !!(st.anyActive) }); }}>Anular</Button>
                                             )}
                                             {/* El botón se pedía además con `!isApoyoBodega`,
@@ -698,17 +560,17 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 gemelo de recepción nunca tuvo esa condición.
                                                 Los repetidos los frena el modal, que para
                                                 eso recibe `existingApoyo`. */}
-                                            {canApoyo && (
+                                            {verSecundarias && canApoyo && (
                                                 <Button variant="secondary" icon={UserPlus} disabled={isLCBusy} onClick={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, cardKey, tipo: 'preparacion' })}>Apoyo</Button>
                                             )}
                                             {/* `icon` + `loading` del canónico, en vez de armar
                                                 el intercambio ícono/spinner a mano en cada
                                                 botón: `Button` ya lo hace, y además apaga el
                                                 click y marca `aria-busy` mientras corre. */}
-                                            {canActuar && canDownload && (
+                                            {verSecundarias && canActuar && canDownload && (
                                                 <Button variant="secondary" icon={FileDown} loading={printingPdf === row.pedido_id} onClick={e => { e.stopPropagation(); handlePrintPdf(row.pedido_id, row.numero, row.erp_sucursal_id, cardKey, row.codigo); }}>PDF</Button>
                                             )}
-                                            {canActuar && !isBranch && stage === 'preparado' && (
+                                            {verSecundarias && canActuar && !isBranch && stage === 'preparado' && (
                                                 <Button
                                                     variant="secondary"
                                                     icon={CalendarClock}
@@ -727,7 +589,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 );
                                             })()}
                                             {canIniciar      && <Button variant="primary" icon={Play}      loading={isLCBusy} onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}>Iniciar</Button>}
-                                            {canPausar       && <Button variant="secondary" icon={Pause}     loading={isLCBusy} onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}>Pausar</Button>}
+                                            {verSecundarias && canPausar && <Button variant="secondary" icon={Pause}     loading={isLCBusy} onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}>Pausar</Button>}
                                             {canFinalizar    && <Button variant="primary" icon={Flag}      loading={isLCBusy || busyAction === `finalizar_load_${cardKey}`} onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)}>Finalizar</Button>}
                                             {canReanudar     && <Button variant="primary" icon={RotateCcw} loading={isLCBusy} onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}>Reanudar</Button>}
                                             {canMarcarEnRuta && <Button variant="primary" icon={Truck} onClick={() => setCrearRutaOpen([`${row.pedido_id}__${row.erp_sucursal_id}`])}>Crear ruta</Button>}
@@ -754,10 +616,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                     <Button variant="primary" icon={Truck} loading={busyAction === 'reenvio'} onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: faltan.cajas, electrolits: faltan.electrolits, productos: faltan.productosEspeciales, noReenviar: [] })}>Reenviar caja</Button>
                                                 );
                                             })()}
-                                        </div>
-                                    </div>
-
-
+                            </>);
+                            const seccionesJSX = (<>
                                     {/* Lo que no llegó, dicho a la SALA. En cuanto terminaba
                                         de contar lo demás, el bloque de Recepción se cerraba y
                                         la tarjeta decía «Completado» a secas: nada le avisaba
@@ -901,6 +761,139 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                     )}
 
+                            </>);
+
+                            if (vista === 'lista') return renderFilaLista({
+                                row, cardKey, isExp, stage, etiqueta, tiempoEnEtapa, rtStop, rtCond,
+                                creator, iniciador, finalizador, enviador, llegadaEmp, conteoEmp, reenvioEmp,
+                                erpEmp, difsEmp, corrConfEmp, recepApoyo, faltan, difsDeLaSala,
+                                datosJSX, accionesJSX, seccionesJSX,
+                            });
+
+                            return (
+                                <motion.div
+                                    key={cardKey}
+                                    layout
+                                    initial={{ opacity: 0, scale: 0.97 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                    /* La superficie sale del canónico. Estaba escrita a
+                                       mano en la const `GLASS` —repetida en tres
+                                       pestañas—, y por vivir en una constante de string
+                                       el gate `vidrio-a-mano` no la veía. */
+                                    data-surface="card"
+                                    className={`select-none ${
+                                        stage === 'pausado'
+                                            ? 'ring-2 ring-warning/45 shadow-[var(--shadow-glow-warning-lg)]'
+                                            : (hasObservacion(row) && row.pedido_status !== 'completado') || faltan.hay
+                                                ? 'ring-2 ring-chart-4/45 shadow-[var(--shadow-glow-chart-4)]'
+                                                : isFadedOut
+                                                    ? 'opacity-80'
+                                                    : ''
+                                    }`}
+                                    style={{ overflow: 'visible' }}
+                                    /* Desplegar el pedido es la acción de la tarjeta:
+                                       por `clickable()` gana foco, teclado y el gel del
+                                       material, que un `onClick` suelto no da. */
+                                    {...clickable(
+                                        () => toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id),
+                                        { label: `Pedido ${row.codigo ?? row.numero}` },
+                                    )}
+                                    aria-expanded={isExp}
+                                >
+                                    {/* ── Zona 1: quién y en qué está ──────────────────
+                                        Rediseño 2026-10-06. La SALA es el título —es lo
+                                        que se busca con la vista— y el código va al lado
+                                        en gris: antes el título era `33-061026-1-S4` y
+                                        la sala una pastilla chica. El estado se dice UNA
+                                        vez, con su tiempo en la etapa; antes se repetía
+                                        en la etiqueta, en la línea y en el pie. */}
+                                    <div className="flex items-start gap-x-3 gap-y-1 px-3 pt-2.5 pb-1 flex-wrap">
+                                        {/* `basis-64 grow`: en el teléfono el estado baja a
+                                            su propio renglón en vez de apretar el nombre. */}
+                                        <div className="min-w-0 basis-64 grow">
+                                            <div className="flex items-baseline gap-2 flex-wrap">
+                                                <span className="text-body-lg font-bold text-content leading-tight">
+                                                    {ERP_NAMES[row.erp_sucursal_id] ?? `Sucursal ${row.erp_sucursal_id}`}
+                                                </span>
+                                                <span className="text-caption text-content-3 tabular-nums">{row.codigo ?? `#${row.numero}`}</span>
+                                            </div>
+                                            {row.notes && <p className="text-caption text-content-3 mt-0.5">{row.notes}</p>}
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            {/* El rótulo es de la SALA, no del pedido — `estadoDeLaSala`.
+                                                Con `pedido_status`, el pedido 137 del 2026-08-24 ponía
+                                                «En ruta» sobre Salud 2, que no se había ni empezado a
+                                                preparar: el pedido sí iba en ruta, esa sala no. */}
+                                            {stage === 'pausado' ? (
+                                                <Badge variant="warning" tone="solid" uppercase={false} icon={Pause}>Pausado</Badge>
+                                            ) : (
+                                                <Badge variant={etiqueta.variant} uppercase={false}>{etiqueta.label}</Badge>
+                                            )}
+                                            {tiempoEnEtapa && (
+                                                <span className={`text-caption font-semibold tabular-nums ${stage === 'pausado' ? 'text-warning-text' : 'text-content-2'}`}>
+                                                    {tiempoEnEtapa}
+                                                </span>
+                                            )}
+                                            <span className="hidden sm:inline text-caption text-content-3 tabular-nums">{fmtRelative(row.enviado_at ?? row.created_at)}</span>
+                                            {isExp ? <ChevronDown size={14} className="text-content-3" /> : <ChevronRight size={14} className="text-content-3" />}
+                                        </div>
+                                    </div>
+
+                                    {/* Apoyo preparación (bodega) — el GEMELO de «Apoyo en
+                                        recepción» de `LifecycleTimeline`: misma lista
+                                        (`apoyoMap`, otro cubo), misma anatomía, y hasta el
+                                        2026-08-15 dibujada distinto y con un bug propio.
+                                        Leía `a.photo_url` a secas, que es la URL CRUDA: el
+                                        bucket de fotos es privado, así que la que se puede
+                                        pintar es la firmada y vive en `photo` (la pone
+                                        `signPhotosDeep` en `usePedidosData`). O sea que
+                                        estas caras salían como monigote gris mientras las
+                                        de recepción, dos renglones abajo, salían bien.
+                                        Ahora comparte el canónico con su gemelo: `Badge`
+                                        neutro + `LiquidAvatar`. */}
+                                    {prepApoyo.length > 0 && (
+                                        <div className="flex items-center gap-1.5 px-3 pb-1.5 flex-wrap">
+                                            <span className="text-caption font-semibold text-content-2 uppercase tracking-wide shrink-0">Prep:</span>
+                                            {prepApoyo.map(a => (
+                                                <Badge key={a.id} variant="neutral" uppercase={false} className="pl-1">
+                                                    <AvatarConEstado emp={a} px={20} radio="rounded-full" marco="" />
+                                                    {shortEmployeeName(a)}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* ── Zona 2: el avance ──────────────────────────────
+                                        Cerrada, una línea de puntos (`AvanceCompacto`);
+                                        abierta, la línea completa con quién y a qué hora.
+                                        Siempre abierta hacía cada tarjeta de ~270px. */}
+                                    <div className={`px-3 ${isExp ? 'border-t border-divider pt-2 pb-1.5' : 'pt-1.5 pb-2'}`}>
+                                        {!isExp
+                                            ? <AvanceCompacto row={row} stage={stage} rutaStop={rtStop} />
+                                            : <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} reenvioEmp={reenvioEmp} erpEmp={erpEmp} difsEmp={difsEmp} corrConfEmp={corrConfEmp} receptionApoyo={recepApoyo} isBranch={isBranch} empMap={empMap} pauses={row.pauses ?? []} rutaStop={rtStop} rutaCondEmp={rtCond} />}
+                                    </div>
+
+                                    {/* ── Zona 3: datos y acciones — una sola fila ──────
+                                        Izquierda, los datos de la sala (antes en dos y tres
+                                        renglones sueltos). Derecha, las acciones: UNA
+                                        principal —el siguiente paso del flujo— y el resto en
+                                        gris. Antes cada botón tenía su color (naranja, rosa,
+                                        morado, verde, rojo) y todos pesaban igual. Las
+                                        condiciones de cada botón NO cambiaron. */}
+                                    <div className="flex items-center gap-x-2 gap-y-2 px-3 pb-2.5 pt-2 border-t border-divider flex-wrap" onClick={e => e.stopPropagation()}>
+                                      <div className="flex items-center gap-1 flex-wrap min-w-0">
+                                        {datosJSX}
+                                      </div>
+                                        <div className="ml-auto flex items-center gap-1.5 flex-wrap">
+                                            {accionesJSX}
+                                        </div>
+                                    </div>
+
+
+                                    {seccionesJSX}
+
                                     <AnimatePresence>
                                         {isExp && (
                                             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden" onClick={e => e.stopPropagation()}>
@@ -910,7 +903,120 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     </AnimatePresence>
                                 </motion.div>
                             );
-                        });
+    };
+
+    return (
+        <div className="space-y-4 p-4">
+
+            {/* `Notice` y no una caja con su propio par bg/borde/texto: es el
+                canónico del aviso inline (§15.6), y el botón de descarte va en
+                su ranura `action`. La exclamación se va por §26.7 — el portal no
+                festeja en el feedback del sistema; la lista de los tres sitios
+                donde sí va es cerrada y esto no está en ella. */}
+            <AnimatePresence>
+                {newAlert && (
+                    <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
+                        <Notice
+                            variant="info"
+                            icon={Send}
+                            action={<Button variant="ghost" icon={X} iconOnly aria-label="Descartar aviso" onClick={() => setNewAlert(null)} />}
+                        >
+                            Pedido #{newAlert.numero} en camino a {branchName}
+                        </Notice>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* ── FILTROS + CARDS SUCURSALES ─────────────────────────── */}
+            <div>
+                {/* Fila única: cards por sucursal (izq) + FilterPill (der) */}
+                <div className="flex items-center gap-3 mb-3">
+                <CarrilCards className="flex-1" ariaLabel="Pedidos por sucursal">
+                    {/* Bodega / alcance todos: card clicable por sucursal */}
+                    {!isBranch && sucursalCounts.map(({ id, name, total }) => {
+                        const active = filterSuc === String(id);
+                        return (
+                            <StatCard
+                                key={id}
+                                icon={Building2} iconBg={active ? 'bg-surface-card' : 'bg-chart-3/10'} iconCls="text-chart-3-text"
+                                label={name} sub="pedidos este mes"
+                                value={total} valueCls={active ? 'text-chart-3-text' : 'text-content-2'}
+                                tono="brand" active={active}
+                                onClick={() => setFilterSuc(v => v === String(id) ? '' : String(id))}
+                            />
+                        );
+                    })}
+                    {/* Sucursal (BRANCH): card propia, solo informativa */}
+                    {isBranch && sucursalCounts.length > 0 && (() => {
+                        const own = sucursalCounts[0];
+                        return (
+                            <StatCard
+                                icon={Building2} iconBg="bg-chart-3/10" iconCls="text-chart-3-text"
+                                label={own.name} value={own.total} sub="pedidos este mes"
+                            />
+                        );
+                    })()}
+                </CarrilCards>
+                    <div className="flex justify-end min-w-0">
+                        <FilterPill isBranch={isBranch} filterSuc={filterSuc} setFilterSuc={setFilterSuc} filterStatus={filterStatus} setFilterStatus={setFilterStatus} filterOptions={filterOptions} filterDate={filterDate} setFilterDate={setFilterDate} />
+                    </div>
+                </div>
+
+                {/* §26.2 — «Sin pedidos activos» también salía cuando el
+                    buscador o un filtro no encontraban nada, que es otro estado
+                    y se arregla de otra forma: borrando el filtro, no
+                    despachando un pedido. */}
+                {filteredRows.length === 0 ? (
+                    searchTerm.trim() ? (
+                        <EmptyState
+                            compact
+                            icon={Search}
+                            title="Sin resultados"
+                            subtitle={`Ningún pedido coincide con "${searchTerm}".`}
+                        />
+                    ) : (
+                        <EmptyState
+                            compact
+                            icon={Inbox}
+                            iconClass="text-chart-1-text"
+                            glowClass="bg-chart-1/30"
+                            title="Sin pedidos activos"
+                            subtitle={filterSuc || filterStatus
+                                ? 'Ningún pedido cumple con los filtros aplicados.'
+                                : undefined}
+                        />
+                    )
+                ) : (
+                    vista === 'lista' ? (
+                        <div className="space-y-5">
+                            {GRUPOS_LISTA.map(g => {
+                                const filas = filteredRows.filter(r => grupoDeLaFila(r) === g.key);
+                                if (!filas.length) return null;
+                                return (
+                                    <section key={g.key} className="space-y-1.5" aria-label={g.label}>
+                                        <h3 className={`text-caption font-black uppercase tracking-widest flex items-center gap-2 px-1 ${g.key === 'problemas' ? 'text-danger-text' : 'text-content-3'}`}>
+                                            {g.label}<span className="tabular-nums font-semibold">{filas.length}</span>
+                                        </h3>
+                                        {filas.map(r => renderSala(r))}
+                                    </section>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                    <div className="space-y-3">
+                    {renderGroups.map((group) => {
+                        // Dentro de una ruta: no-entregadas primero (por orden), entregadas al fondo
+                        const displayRows = group.isRuta
+                            ? [...group.rows].sort((a, b) => {
+                                const sa = pedidoRutaMap.get(claveParada(a.pedido_id, a.erp_sucursal_id))?.stop;
+                                const sb = pedidoRutaMap.get(claveParada(b.pedido_id, b.erp_sucursal_id))?.stop;
+                                const doneA = sa?.entregado_at ? 1 : 0;
+                                const doneB = sb?.entregado_at ? 1 : 0;
+                                if (doneA !== doneB) return doneA - doneB;
+                                return (sa?.orden_entrega ?? 99) - (sb?.orden_entrega ?? 99);
+                            })
+                            : group.rows;
+                        const cards = displayRows.map(row => renderSala(row));
                         if (group.isRuta) {
                             const { ruta, driverOnline: dl } = group;
                             const entregadas = ruta.ruta_pedidos.filter(rp => rp.entregado_at).length;
@@ -1015,6 +1121,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                         return <div key="normal" className="space-y-2.5">{cards}</div>;
                     })}
                     </div>
+                    )
                 )}
             </div>
 

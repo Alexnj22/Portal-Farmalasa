@@ -1,7 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { useBusqueda } from '@nucleo/hooks/useBusqueda';
 import { useSearchParams } from 'react-router-dom';
-import { ClipboardList, Loader2, Settings2, BarChart2, Package, Truck } from 'lucide-react';
+import { ClipboardList, Loader2, Settings2, BarChart2, Package, Truck, List } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
 import { useAuth }     from '@nucleo/context/AuthContext';
@@ -37,6 +37,10 @@ const Cargando = () => (
 const TABS = [
     { key: 'generar',  label: 'Generar',           icon: ClipboardList, permKey: 'pedidos_tab_generar'   },
     { key: 'pedidos',  label: 'Pedidos',            icon: Package,       permKey: 'pedidos_tab_historial' },
+    // TEMPORAL (2026-10-07): la misma pestaña dibujada como lista, para que el
+    // usuario compare las dos formas con datos reales y elija. Mismo componente
+    // y mismos botones (`TabPedidos vista="lista"`). Se quita al decidir.
+    { key: 'pedidos_lista', label: 'Pedidos (lista)', icon: List,         permKey: 'pedidos_tab_historial' },
     // «Historial Rutas» decía dos cosas mal: la pestaña muestra también las
     // rutas ACTIVAS —no es un historial— y el catálogo de permisos ya nombra
     // esta misma superficie «Rutas de entrega». Un nombre por cosa.
@@ -50,6 +54,7 @@ const VALID = new Set(TABS.map(t => t.key));
 const SEARCH_PLACEHOLDER = {
     generar:  'Buscar producto en el pedido…',
     pedidos:  'Buscar pedido…',
+    pedidos_lista: 'Buscar pedido…',
     rutas:    'Buscar conductor o ruta…',
     metricas: 'Buscar sucursal…',
     reglas:   'Buscar producto en reglas…',
@@ -91,6 +96,7 @@ export default function PedidosView() {
             <Suspense fallback={<Cargando />}>
                 {activeTab === 'generar'  && <TabGenerar  searchTerm={debouncedSearch} />}
                 {activeTab === 'pedidos'  && <TabPedidos  searchTerm={debouncedSearch} />}
+                {activeTab === 'pedidos_lista' && <TabPedidos searchTerm={debouncedSearch} vista="lista" />}
                 {activeTab === 'rutas'    && <TabRutas    searchTerm={debouncedSearch} />}
                 {activeTab === 'metricas' && <TabMetricas searchTerm={debouncedSearch} />}
                 {activeTab === 'reglas'   && <TabReglas   searchTerm={debouncedSearch} />}

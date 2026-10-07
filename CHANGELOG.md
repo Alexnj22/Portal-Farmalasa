@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.11 — Pedidos: pestaña de prueba con la vista en lista
+
+- **Pestaña temporal «Pedidos (lista)»** para comparar con la de tarjetas y elegir: una fila por sala, agrupadas por lo que toca hacer (*Con problemas · En pausa · Por preparar · En preparación · Listos para salir · En la calle · En la sala · Completados*). La fila cerrada muestra sala, avance, estado y la acción principal; abierta, lo mismo que la tarjeta abierta.
+- Las dos usan el mismo componente y las mismas piezas (datos, acciones, recepción y diferencias), así que botones y condiciones son idénticos. Se quita la que no se elija.
+
 ## v2.1232.10 — Pedidos: Rutas con filtros; último pedido rotulado
 
 - **Rutas de entrega con cifras y filtros** (§17.0): *En la calle* (con paradas entregadas), *Por salir* y *Completadas hoy*. Por defecto sólo las **activas**; las completadas se piden por estado, período (hoy · 7 · 30 días) y conductor, y entran cerradas. Los filtros quedan en la dirección. «Crear ruta» es la acción de la barra.

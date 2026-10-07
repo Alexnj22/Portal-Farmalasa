@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.20 — Pedidos (lista): el texto del estado ya no queda debajo del botón
+
+- El detalle del estado («Falta: E1 · YASMIN X 21 COMPRIMIDOS») quedaba tapado por el botón de acción. Ahora se ajusta a su columna y baja hasta dos renglones.
+
 ## v2.1232.19 — Pedidos: reenvío en camino, caja dañada y entrega programada se distinguen en la lista
 
 - **Reenvío en camino** ya no se marca como problema: la fila lleva un camión y dice «Reenvío en camino: Caja #3», y la etiqueta roja «Faltante» pasa a «Reenvío en camino».

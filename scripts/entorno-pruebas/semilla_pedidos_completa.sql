@@ -283,3 +283,16 @@ SELECT p.numero, p.status, p.created_at::date AS dia, s.erp_sucursal_id AS sala,
  WHERE p.notes LIKE '[demo]%'
  ORDER BY p.created_at DESC, s.erp_sucursal_id
  LIMIT 15;
+
+-- Un REENVÍO pendiente (2026-10-07): a la sala que todavía está contando del
+-- pedido «parcial» le faltó la caja 3, bodega ya pidió el reenvío y espera
+-- ruta. Es el caso que pinta «Reenvío por despachar» en la tarjeta y la
+-- sección de prioridad en «Nueva ruta de entrega».
+UPDATE public.pedido_sucursal_status s
+   SET falta_cajas = '[3]'::jsonb, llegada_tipo = 'falta_caja', falta_caja_at = s.llegada_fisica_at,
+       reenvios_historial = jsonb_build_array(jsonb_build_object('ciclo',1,'cajas','[3]'::jsonb,'electrolits',0,'especiales','[]'::jsonb,
+         'sent_at',NULL,'sent_by',NULL,'solicitado_at',now() - interval '30 minutes','solicitado_por',NULL,'arrived_at',NULL,
+         'arrived_tipo',NULL,'cajas_ok','[]'::jsonb,'cajas_danadas','[]'::jsonb,'cajas_aun_faltantes','[]'::jsonb))
+  FROM public.pedidos p
+ WHERE p.id = s.pedido_id AND p.notes LIKE '[demo]%' AND p.status = 'parcial'
+   AND s.llegada_fisica_at IS NOT NULL AND s.recibido_erp_at IS NULL;

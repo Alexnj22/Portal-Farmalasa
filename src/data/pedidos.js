@@ -627,6 +627,43 @@ export function fetchPedidosDisponiblesParaRuta() {
 // al pasar de 1000 se habrían truncado en silencio (CLAUDE.md, límite de
 // PostgREST). Acotado a los pedidos abiertos son unas pocas: siete salas como
 // mucho por pedido.
+// Los reenvíos de cajas faltantes que esperan ruta (2026-10-07): ciclos de
+// `reenvios_historial` sin `sent_at`. Salen ARRIBA en «Nueva ruta», ya
+// marcados — regla del usuario: el reenvío va en otra ruta y como prioridad.
+//
+// Se filtra en la base por contención (`@> [{"sent_at": null}]`), así que
+// llegan sólo las salas con algo pendiente, de pedidos de cualquier estado:
+// un pedido «completado» puede deber una caja. Y se descartan los ciclos que
+// ya están en una ruta que todavía no salió, para no ofrecerlos dos veces.
+export async function fetchReenviosPorDespachar() {
+    const { data, error } = await supabase.from('pedido_sucursal_status')
+        .select('pedido_id, erp_sucursal_id, reenvios_historial, pedidos!inner(numero, status)')
+        .contains('reenvios_historial', [{ sent_at: null }])
+        .neq('pedidos.status', 'anulado');
+    if (error) return { data: null, error };
+    const filas = data ?? [];
+    if (!filas.length) return { data: [], error: null };
+    const { data: enRuta, error: e2 } = await supabase.from('ruta_pedidos')
+        .select('pedido_id, erp_sucursal_id, reenvio_ciclo')
+        .in('pedido_id', [...new Set(filas.map(f => f.pedido_id))])
+        .not('reenvio_ciclo', 'is', null);
+    if (e2) return { data: null, error: e2 };
+    const tomados = new Set((enRuta ?? []).map(r => `${r.pedido_id}__${r.erp_sucursal_id}__r${r.reenvio_ciclo}`));
+    const out = [];
+    for (const f of filas) {
+        for (const c of (Array.isArray(f.reenvios_historial) ? f.reenvios_historial : [])) {
+            if (!c || c.sent_at || c.arrived_at) continue;
+            const key = `${f.pedido_id}__${f.erp_sucursal_id}__r${c.ciclo}`;
+            if (tomados.has(key)) continue;
+            out.push({
+                key, pedido_id: f.pedido_id, erp_sucursal_id: f.erp_sucursal_id, numero: f.pedidos?.numero,
+                reenvio_ciclo: c.ciclo, cajas: c.cajas ?? [], electrolits: c.electrolits ?? 0, especiales: c.especiales ?? [],
+            });
+        }
+    }
+    return { data: out, error: null };
+}
+
 export async function fetchSalasListasParaRuta(pedidoIds) {
     const ids = [...new Set(pedidoIds ?? [])];
     if (!ids.length) return { data: [], error: null };

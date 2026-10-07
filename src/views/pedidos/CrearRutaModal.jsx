@@ -4,13 +4,14 @@ import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
-import { X, Truck, ChevronUp, ChevronDown, MapPin, User, Package, Clock, ArrowRight, CheckCircle2, Loader2, Navigation, Warehouse, Plus, Trash2, Building2, AlertTriangle } from 'lucide-react';
+import { X, Truck, ChevronUp, ChevronDown, MapPin, User, Package, Clock, ArrowRight, CheckCircle2, Loader2, Navigation, Warehouse, Plus, Trash2, Building2, AlertTriangle, RotateCcw } from 'lucide-react';
 import { signPhotosDeep } from '@nucleo/utils/storageFiles';
 import { useAuth } from '@nucleo/context/AuthContext';
 import PedidoModal from './PedidoModal';
 import { optimizeRoute, optimizarPorCarretera, armarRuta, tramoEnLineaRecta, totalRoute, getDirectionsREST } from '@nucleo/utils/routeOptimizer';
 import { loadGoogleMaps, loadLeaflet, matrizPorCarretera } from '../../plataforma/mapas';
-import { crearRuta, fetchEmployeeDriverInfo, fetchSalasListasParaRuta, fetchPedidosDisponiblesParaRuta, fetchSucursalesConCoords, updateRutaStatus } from '@nucleo/data/pedidos';
+import { crearRuta, fetchEmployeeDriverInfo, fetchSalasListasParaRuta, fetchReenviosPorDespachar, fetchPedidosDisponiblesParaRuta, fetchSucursalesConCoords, updateRutaStatus } from '@nucleo/data/pedidos';
+import { describirFaltantes } from '@nucleo/utils/tableroDePedidos';
 
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
@@ -102,15 +103,17 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
     // Primero los pedidos abiertos y DESPUÉS sus salas: así la segunda
     // consulta va acotada a esos pedidos y descarta las que ya salieron.
     fetchPedidosDisponiblesParaRuta().then(async (pedRes) => {
-      const [pssRes, coordRes] = await Promise.all([
+      const [pssRes, coordRes, reenRes] = await Promise.all([
         fetchSalasListasParaRuta((pedRes.data ?? []).map(p => p.id)),
         fetchSucursalesConCoords(),
+        fetchReenviosPorDespachar(),
       ]);
       // Un error no puede pasar por «no hay pedidos para despachar».
       if (pedRes.error) throw pedRes.error;
       if (pssRes.error) throw pssRes.error;
-      return [pedRes, pssRes, coordRes];
-    }).then(([pedRes, pssRes, coordRes]) => {
+      if (reenRes.error) throw reenRes.error;
+      return [pedRes, pssRes, coordRes, reenRes];
+    }).then(([pedRes, pssRes, coordRes, reenRes]) => {
       const pedidoMap = {};
       for (const p of (pedRes.data ?? [])) pedidoMap[p.id] = p;
 
@@ -146,9 +149,26 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
           cajas_especiales: pss.cajas_especiales  ?? [],
         });
       }
-      setPedidosDisp(items);
-      if (initialKeys?.length) {
-        const validKeys = new Set(initialKeys.filter(k => items.some(i => i.key === k)));
+      // Reenvíos de cajas faltantes: van PRIMERO y ya marcados (regla del
+      // usuario, 2026-10-07). Son paradas como cualquiera —mismo optimizador de
+      // ruta— pero viajan con su `reenvio_ciclo`, que es lo que hace que la
+      // base las dé por salidas cuando la ruta sale.
+      const reenvios = (reenRes.data ?? []).map(r => ({
+        ...r,
+        esReenvio:        true,
+        suc_name:         snm[r.erp_sucursal_id] ?? `Suc. ${r.erp_sucursal_id}`,
+        total_cajas:      (r.cajas ?? []).length + (r.especiales ?? []).length,
+        cajas_electrolit: r.electrolits ?? 0,
+        cajas_especiales: [],
+      }));
+      setPedidosDisp([...reenvios, ...items]);
+      const todos = [...reenvios, ...items];
+      const preKeys = new Set([
+        ...reenvios.map(r => r.key),
+        ...(initialKeys ?? []).filter(k => todos.some(i => i.key === k)),
+      ]);
+      if (preKeys.size) {
+        const validKeys = preKeys;
         if (validKeys.size) setSelected(validKeys);
       }
     }).catch(err => {
@@ -426,6 +446,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
             orden_entrega:   stop.orden,
             dist_m:          stop.dist_m  ?? null,
             dur_min:         stop.dur_min ?? null,
+            reenvio_ciclo:   item.reenvio_ciclo ?? null,
           }))
         );
 
@@ -526,9 +547,18 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                 </div>
               ) : (
                 <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
-                  {pedidosDisp.map(item => {
+                  {pedidosDisp.map((item, idx) => {
                     const isSel = selected.has(item.key);
+                    // Encabezados de sección: los reenvíos arriba, como prioridad.
+                    const primeroNormal = !item.esReenvio && idx > 0 && pedidosDisp[idx - 1].esReenvio;
+                    const encabezado = item.esReenvio && idx === 0
+                      ? <p key={`h-${item.key}`} className="text-caption font-semibold text-warning-text flex items-center gap-1.5 pt-1"><RotateCcw size={11} aria-hidden="true" />Reenvíos de cajas faltantes · prioridad</p>
+                      : primeroNormal
+                        ? <p key={`h-${item.key}`} className="text-caption font-semibold text-content-3 pt-2">Pedidos listos</p>
+                        : null;
                     return (
+                      <React.Fragment key={item.key}>
+                      {encabezado}
                       <ListRow
                         key={item.key}
                         onClick={() => toggleItem(item.key)}
@@ -546,7 +576,12 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                               <span className="text-body-sm font-bold text-content-2">#{item.numero}</span>
                               <span className="text-label text-content-3 font-medium">— {item.suc_name}</span>
                             </span>
-                            {item.total_cajas > 0 && (
+                            {item.esReenvio && (
+                              <span className="block text-caption text-warning-text font-semibold">
+                                Reenvío: {describirFaltantes({ cajas: item.cajas, electrolits: item.electrolits, especiales: (item.especiales ?? []).map(l => ({ label: l })) }).join(' · ')}
+                              </span>
+                            )}
+                            {!item.esReenvio && item.total_cajas > 0 && (
                               <span className="block text-caption text-content-3">
                                 {item.total_cajas} caja{item.total_cajas !== 1 ? 's' : ''}
                                 {item.cajas_electrolit > 0 && ` · ${item.cajas_electrolit} Electrolit`}
@@ -555,6 +590,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                           </span>
                         </span>
                       </ListRow>
+                      </React.Fragment>
                     );
                   })}
                 </div>
@@ -669,7 +705,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                               </div>
                               {!enc && (
                                 <p className="text-caption text-content-3 mt-px">
-                                  Pedido{stop.items.length > 1 ? 's' : ''} {stop.items.map(it => `#${it.numero}`).join(', ')}
+                                  Pedido{stop.items.length > 1 ? 's' : ''} {stop.items.map(it => `#${it.numero}${it.esReenvio ? ' (reenvío)' : ''}`).join(', ')}
                                 </p>
                               )}
                               {enc && (

@@ -214,6 +214,10 @@ export function faltantesDeLaSala(row) {
         productosEspeciales: [...porRenglon.values()],
         hay: cajas.length > 0 || electrolits > 0 || especiales.length > 0,
         enCamino: (row?.reenvios_historial ?? []).some(c => c?.sent_at && !c?.arrived_at),
+        // Reenvío pedido y todavía sin ruta (2026-10-07): el ciclo nace sin
+        // `sent_at` y lo toma cuando la ruta sale. Ni «hay que reenviar» —ya se
+        // pidió— ni «en camino» —sigue en bodega—.
+        porDespachar: (row?.reenvios_historial ?? []).some(c => c && !c.sent_at && !c.arrived_at),
     };
 }
 

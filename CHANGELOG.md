@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.12 — Pedidos (lista): franja de estado, avance en dos tramos y detalle en la misma línea
+
+- **El estado de la fila se marca con una franja fina a la izquierda**, no con el borde entero: con varias filas con problema seguidas, los bordes de color dominaban la pantalla.
+- **El avance siempre dice qué es cada paso** y va **en dos tramos con su color**: *Bodega y transporte* (confirmado, inicio, listo, en ruta, entregado) y *Sucursal* (llegada, finalizado), separados por un corte.
+- **Al abrir la fila, la hora, la persona y la duración de cada tramo salen en la MISMA línea de arriba**; ya no se repite una segunda línea de tiempo debajo. Debajo quedan los datos, el apoyo en recepción y los productos.
+
 ## v2.1232.11 — Pedidos: pestaña de prueba con la vista en lista
 
 - **Pestaña temporal «Pedidos (lista)»** para comparar con la de tarjetas y elegir: una fila por sala, agrupadas por lo que toca hacer (*Con problemas · En pausa · Por preparar · En preparación · Listos para salir · En la calle · En la sala · Completados*). La fila cerrada muestra sala, avance, estado y la acción principal; abierta, lo mismo que la tarjeta abierta.

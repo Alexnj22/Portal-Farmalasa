@@ -19,6 +19,7 @@ import PantallaBloqueo from '../componentes/PantallaBloqueo';
 import * as Notifications from 'expo-notifications';
 import { useTema } from '../tema/tema';
 import { colorSistema } from '../componentes/sistema';
+import { navegar } from '../lib/navegar';
 
 const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent' } };
 const OSCURO = { ...DarkTheme, colors: { ...DarkTheme.colors, background: 'transparent' } };
@@ -86,7 +87,7 @@ function AbrirAviso() {
     if (WEB || !token) return undefined;
     const ir = (r) => {
       const url = r?.notification?.request?.content?.data?.url;
-      if (typeof url === 'string' && url.startsWith('/')) router.push(url);
+      if (typeof url === 'string' && url.startsWith('/')) navegar(url);
       // Atendido: que no se vuelva a abrir al entrar de nuevo en esta ejecución.
       Notifications.clearLastNotificationResponseAsync?.().catch?.(() => {});
     };
@@ -144,14 +145,18 @@ function Raiz() {
             contentStyle: { backgroundColor: 'transparent' },
           }}>
             <Stack.Screen name="index" options={{ headerShown: false }} />
+            {/* Oferta y producto como hoja del sistema (formSheet): deslizar hacia
+                abajo la cierra aunque el contenido esté desplazado; con el
+                modal clásico a veces el gesto se lo quedaba el ScrollView
+                (2026-10-07). */}
             {/* Sin gesto de volver: detrás de las pestañas quedaba Entrar y
                 deslizar mandaba un segundo al login (2026-10-07). */}
             <Stack.Screen name="bienvenida" options={{ headerShown: false, gestureEnabled: false }} />
             <Stack.Screen name="entrar" options={{ title: 'Entrar' }} />
             <Stack.Screen name="registro" options={{ title: 'Unirme' }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false, gestureEnabled: false }} />
-            <Stack.Screen name="oferta/[id]" options={{ presentation: 'modal', headerShown: false }} />
-            <Stack.Screen name="producto/[id]" options={{ presentation: 'modal', headerShown: false }} />
+            <Stack.Screen name="oferta/[id]" options={{ presentation: 'formSheet', headerShown: false, sheetAllowedDetents: [1], sheetGrabberVisible: true, sheetCornerRadius: 28, sheetExpandsWhenScrolledToEdge: false, gestureEnabled: true }} />
+            <Stack.Screen name="producto/[id]" options={{ presentation: 'formSheet', headerShown: false, sheetAllowedDetents: [1], sheetGrabberVisible: true, sheetCornerRadius: 28, sheetExpandsWhenScrolledToEdge: false, gestureEnabled: true }} />
             <Stack.Screen name="o/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="compras" options={{ title: 'Mis compras' }} />
             <Stack.Screen name="sucursales" options={{ title: 'Nuestras sucursales' }} />

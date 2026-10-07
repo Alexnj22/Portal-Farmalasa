@@ -52,21 +52,23 @@ function Celebracion({ nivel, alCerrar }) {
     <Modal visible transparent animationType="fade" onRequestClose={alCerrar} statusBarTranslucent>
       <LinearGradient colors={paleta.frente} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
         <EfectoNivel nivel={nivel.clave} activa x={null} />
+        {/* Un velo oscuro para que el texto blanco se lea sobre plata y oro. */}
+        <LinearGradient colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.45)']} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 18, paddingTop: ins.top + 20 }}>
           <Animated.View style={[{ width: 120, height: 120, borderRadius: 60, alignItems: 'center', justifyContent: 'center',
             backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)' }, eCorona]}>
             <Icono sf="crown.fill" respaldo="👑" tam={56} color="#FFFFFF" />
           </Animated.View>
           <Animated.View style={[{ alignItems: 'center', gap: 10 }, eTexto]}>
-            <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 15, fontWeight: '800', letterSpacing: 3 }}>¡SUBISTE DE NIVEL!</Text>
+            <Text style={{ color: paleta.acento ?? '#FFFFFF', fontSize: 15, fontWeight: '900', letterSpacing: 3, textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 8 }}>¡SUBISTE DE NIVEL!</Text>
             <Text style={{ color: '#FFFFFF', fontSize: 44, fontWeight: '900', letterSpacing: -1, textShadowColor: 'rgba(0,0,0,0.3)', textShadowRadius: 12 }}>{nivel.nombre}</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 16, textAlign: 'center', maxWidth: 300 }}>
+            <Text style={{ color: '#FFFFFF', fontSize: 16, textAlign: 'center', maxWidth: 300, textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 6 }}>
               Gracias por tu preferencia. Desde ahora ganas más con cada compra:
             </Text>
-            <View style={{ gap: 8, marginTop: 6, alignSelf: 'stretch', backgroundColor: 'rgba(0,0,0,0.22)', borderRadius: 20, padding: 16 }}>
+            <View style={{ gap: 8, marginTop: 6, alignSelf: 'stretch', backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20, padding: 16 }}>
               {(BENEFICIOS[nivel.clave] ?? []).map((b) => (
                 <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <Icono sf="checkmark.seal.fill" respaldo="✓" tam={16} color="#FFFFFF" />
+                  <Icono sf="checkmark.seal.fill" respaldo="✓" tam={16} color={paleta.acento ?? '#FFFFFF'} />
                   <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600' }}>{b}</Text>
                 </View>
               ))}
@@ -76,7 +78,7 @@ function Celebracion({ nivel, alCerrar }) {
         <Pressable onPress={alCerrar} accessibilityRole="button"
           style={({ pressed }) => ({ marginHorizontal: 24, marginBottom: ins.bottom + 20, minHeight: 54, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
             backgroundColor: '#FFFFFF', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-          <Text style={{ color: paleta.frente[0], fontSize: 17, fontWeight: '900' }}>¡Genial!</Text>
+          <Text style={{ color: '#1A1320', fontSize: 17, fontWeight: '900' }}>¡Genial!</Text>
         </Pressable>
         <Confeti colores={colores} alTerminar={() => {}} />
       </LinearGradient>

@@ -2,7 +2,7 @@
 // se cierra deslizando hacia abajo. Las EXCLUSIVAS se anuncian a todos —es la invitación a unirse—
 // pero su detalle sólo lo ve quien es socio del programa.
 import { useCallback, useState } from 'react';
-import { router, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { Text, View } from 'react-native';
 import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo, Vacio } from '../../../componentes/ui';
 import { colorSistema } from '../../../componentes/sistema';
@@ -11,6 +11,7 @@ import { Entrada, Tocable } from '../../../componentes/animacion';
 import TarjetaOferta from '../../../componentes/TarjetaOferta';
 import { useOfertas } from '../../../lib/ofertas';
 import Icono from '../../../componentes/Icono';
+import { navegar } from '../../../lib/navegar';
 
 export default function Ofertas({ invitacion = false }) {
   const t = useTema();
@@ -27,7 +28,7 @@ export default function Ofertas({ invitacion = false }) {
     <Pantalla alRefrescar={refrescar} refrescando={refrescando}>
       {invitacion ? (
         <Entrada indice={0}>
-          <Tocable etiqueta="Unirme al programa" alTocar={() => router.push('/registro')}>
+          <Tocable etiqueta="Unirme al programa" alTocar={() => navegar('/registro')}>
             <Tarjeta tono={t.color.verde} estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <Icono sf="gift.fill" respaldo="🎁" tam={26} color={t.color.verdeTexto} />
               <View style={{ flex: 1, gap: 2 }}>
@@ -46,7 +47,7 @@ export default function Ofertas({ invitacion = false }) {
         <Entrada key={o.id} indice={i + (invitacion ? 1 : 0)}>
           {/* Abre el detalle como HOJA (ver app/oferta/[id].js: el zoom de la
               tarjeta dejaba ver la lista detrás y se veía raro). */}
-          <Tocable etiqueta={`Oferta: ${o.titulo}`} alTocar={() => router.push(`/oferta/${o.id}`)}>
+          <Tocable etiqueta={`Oferta: ${o.titulo}`} alTocar={() => navegar(`/oferta/${o.id}`)}>
             <TarjetaOferta oferta={o} destacada={i === 0} />
           </Tocable>
         </Entrada>

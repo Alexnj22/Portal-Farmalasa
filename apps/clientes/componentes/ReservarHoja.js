@@ -9,7 +9,6 @@
 // Pagar es en la sucursal, al retirar.
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
-import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +19,7 @@ import { useSesion } from '../lib/sesion';
 import { useBloqueo } from '../lib/bloqueo';
 import { dolares } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
+import { navegar } from '../lib/navegar';
 
 const CLAVE_TERMINOS = 'puntos_salud_terminos_reserva';
 // Los colores salen del tema (cambian con el modo oscuro).
@@ -200,7 +200,7 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
               Te avisamos cuando {elegida?.sala ?? 'la sucursal'} la tenga lista. Desde ese aviso tienes 24 horas para retirarla.
             </Text>
             <View style={{ alignSelf: 'stretch', gap: 10, marginTop: 10 }}>
-              <Boton texto="Ver mis reservas" color={t.color.magenta} alTocar={() => { alCerrar(); setTimeout(() => router.push('/reservas'), 300); }} />
+              <Boton texto="Ver mis reservas" color={t.color.magenta} alTocar={() => { alCerrar(); setTimeout(() => navegar('/reservas'), 300); }} />
             </View>
           </View>
         ) : null}

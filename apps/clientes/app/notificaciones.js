@@ -6,12 +6,13 @@ import { useCallback, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icono from '../componentes/Icono';
-import { router, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { Cargando, Pantalla, Tarjeta, Vacio } from '../componentes/ui';
 import { Entrada } from '../componentes/animacion';
 import { colorSistema } from '../componentes/sistema';
 import { useSesion } from '../lib/sesion';
 import { suave, useTema } from '../tema/tema';
+import { navegar } from '../lib/navegar';
 
 // SF Symbols del sistema (respaldo de texto fuera de iPhone).
 const ICONO = {
@@ -63,7 +64,7 @@ export default function Notificaciones() {
         const [sf, respaldo] = ICONO[a.tipo] ?? ['bell.fill', '•'];
         return (
           <Entrada indice={Math.min(i, 6)}>
-            <Pressable disabled={!a.url} onPress={() => a.url && router.push(a.url)} accessibilityRole={a.url ? 'button' : undefined}
+            <Pressable disabled={!a.url} onPress={() => a.url && navegar(a.url)} accessibilityRole={a.url ? 'button' : undefined}
               accessibilityLabel={`${a.titulo}. ${a.cuerpo}`}
               style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }] })}>
               <Tarjeta tono={!a.leido_at ? t.color.magenta : undefined} estilo={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>

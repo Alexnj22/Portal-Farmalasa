@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { errorFiscal, nitEscrito, nrcEscrito } from '../../../lib/fiscal';
-import { router, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
@@ -21,6 +21,7 @@ import { useSesion } from '../../../lib/sesion';
 import { dolares } from '../../../lib/formato';
 import { nombreProducto } from '../../../lib/catalogo';
 import { suave, useTema } from '../../../tema/tema';
+import { navegar } from '../../../lib/navegar';
 
 const CLAVE_TERMINOS = 'puntos_salud_terminos_reserva';
 
@@ -51,6 +52,9 @@ export default function Carrito() {
     });
   }, [documento, fiscales, pedir]);
   const problemaFiscal = documento === 'credito_fiscal' ? errorFiscal(f) : null;
+  // A la sucursal elegida le falta algo: no se cobra; se envía para confirmar.
+  const faltan = salas?.find((x) => x.id === sala)?.faltan ?? 0;
+  const pagoReal = faltan ? 'al_retirar' : pago;
 
   // Dónde hay de cada producto: se vuelve a preguntar al entrar y si cambia el carrito.
   const ids = useMemo(() => [...new Set(items.map((x) => x.id))].sort().join(','), [items]);
@@ -88,16 +92,16 @@ export default function Carrito() {
     setTerminos(null);
     setEnviando(true);
     const r = await pedir('reservar_carrito', {
-      branch_id: sala, acepta_terminos: version, pago, documento,
+      branch_id: sala, acepta_terminos: version, pago: pagoReal, documento,
       datos_fiscales: documento === 'credito_fiscal' ? f : null,
       items: items.map((x) => ({ producto_id: x.id, factor: x.factor, cantidad: x.cantidad })),
     });
     setEnviando(false);
     if (!r?.ok) { Alert.alert('No se pudo reservar', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
     vaciar();
-    const base = { pedido: r.pedido, total: r.total, sala: salas?.find((s) => s.id === sala)?.sala, pagado: false, enLinea: pago === 'en_linea' };
+    const base = { pedido: r.pedido, total: r.total, sala: salas?.find((s) => s.id === sala)?.sala, pagado: false, enLinea: pagoReal === 'en_linea', porConfirmar: faltan > 0 };
     // Pagar en línea: la hoja de Wompi; el pago lo confirma el servidor.
-    if (pago === 'en_linea' && r.pago?.url) {
+    if (pagoReal === 'en_linea' && r.pago?.url) {
       await WebBrowser.openAuthSessionAsync(r.pago.url, 'puntossalud://reservas');
       for (let i = 0; i < 4; i++) {
         const mr = await pedir('mis_reservas');
@@ -105,7 +109,7 @@ export default function Carrito() {
         if (delPedido.length && delPedido.every((x) => x.pago_estado === 'pagado')) { base.pagado = true; break; }
         await new Promise((ok) => setTimeout(ok, 1500));
       }
-    } else if (pago === 'en_linea') {
+    } else if (pagoReal === 'en_linea') {
       Alert.alert('El pago en línea no está disponible', 'Tu pedido quedó reservado: lo pagas al retirar o desde Mis reservas.');
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -121,14 +125,16 @@ export default function Carrito() {
           </View>
           <Text style={{ fontSize: 22, fontWeight: '900', color: colorSistema.texto }}>¡Pedido reservado!</Text>
           <Texto nivel={2} estilo={{ textAlign: 'center' }}>
-            {hecho.sala ?? 'La sucursal'} ya recibió tu pedido y lo va a preparar. Te avisamos cuando esté listo.
+            {hecho.porConfirmar
+              ? `${hecho.sala ?? 'La sucursal'} recibió tu pedido y va a confirmar los productos que no tenía a la mano. Te avisamos; pagas al retirar.`
+              : `${hecho.sala ?? 'La sucursal'} ya recibió tu pedido y lo va a preparar. Te avisamos cuando esté listo.`}
           </Texto>
           <CodigoReserva codigo={hecho.pedido} />
           <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>
             Total: {dolares(hecho.total)} · {hecho.pagado ? 'pagado' : hecho.enLinea ? 'pago pendiente (puedes pagarlo en Mis reservas)' : 'pagas al retirar'}
           </Text>
         </Tarjeta>
-        <Boton alTocar={() => { setHecho(null); router.push('/reservas'); }}>Ver mis reservas</Boton>
+        <Boton alTocar={() => { setHecho(null); navegar('/reservas'); }}>Ver mis reservas</Boton>
         <Boton tipo="secundario" alTocar={() => setHecho(null)}>Seguir comprando</Boton>
       </Pantalla>
     );
@@ -138,7 +144,7 @@ export default function Carrito() {
     return (
       <Pantalla>
         <Vacio titulo="Tu carrito está vacío">Agrega productos desde el catálogo y resérvalos para retirar en la sucursal que prefieras.</Vacio>
-        <Boton alTocar={() => router.push('/catalogo')}>Ver el catálogo</Boton>
+        <Boton alTocar={() => navegar('/catalogo')}>Ver el catálogo</Boton>
       </Pantalla>
     );
   }
@@ -193,9 +199,15 @@ export default function Carrito() {
       {/* Cómo pagas. */}
       <Seccion texto="Cómo pagas" />
       <View style={{ flexDirection: 'row', gap: 10 }}>
-        <Opcion sf="creditcard.fill" titulo="En línea ahora" detalle="Tarjeta, seguro con Wompi" elegida={pago === 'en_linea'} alTocar={() => setPago('en_linea')} />
-        <Opcion sf="banknote.fill" titulo="Al retirar" detalle="Efectivo o tarjeta en caja" elegida={pago === 'al_retirar'} alTocar={() => setPago('al_retirar')} />
+        <Opcion sf="creditcard.fill" titulo="En línea ahora" detalle={faltan ? 'No disponible: falta existencia' : 'Tarjeta, seguro con Wompi'}
+          elegida={pagoReal === 'en_linea'} deshabilitada={faltan > 0} alTocar={() => setPago('en_linea')} />
+        <Opcion sf="banknote.fill" titulo="Al retirar" detalle="Efectivo o tarjeta en caja" elegida={pagoReal === 'al_retirar'} alTocar={() => setPago('al_retirar')} />
       </View>
+      {faltan ? (
+        <Texto nivel={2} estilo={{ fontSize: 13, marginHorizontal: 4 }}>
+          A esta sucursal le {faltan === 1 ? 'falta 1 producto' : `faltan ${faltan} productos`}: la sucursal te confirma antes de cobrar. Si prefieres pagar ahora, elige una sucursal que tenga todo.
+        </Texto>
+      ) : null}
 
       {/* Qué documento quieres. */}
       <Seccion texto="Documento" />
@@ -241,7 +253,7 @@ export default function Carrito() {
       </Tarjeta>
 
       <Boton alTocar={reservar} cargando={enviando} deshabilitado={!sala || !!problemaFiscal}>
-        {pago === 'en_linea' ? `Pagar ${dolares(total)}` : 'Reservar · pagar al retirar'}
+        {faltan ? 'Enviar para confirmar' : pagoReal === 'en_linea' ? `Pagar ${dolares(total)}` : 'Reservar · pagar al retirar'}
       </Boton>
 
       <Modal visible={!!terminos} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setTerminos(null)}>
@@ -313,11 +325,12 @@ function Seccion({ texto }) {
 }
 
 // Una opción elegible en tarjeta: ícono, título y una línea.
-function Opcion({ sf, titulo, detalle, elegida, alTocar }) {
+function Opcion({ sf, titulo, detalle, elegida, alTocar, deshabilitada = false }) {
   const t = useTema();
   return (
-    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} accessibilityRole="radio" accessibilityState={{ selected: elegida }}
-      style={({ pressed }) => ({ flex: 1, borderRadius: 20, padding: 14, gap: 8, borderWidth: 2,
+    <Pressable onPress={() => { if (deshabilitada) return; Haptics.selectionAsync().catch(() => {}); alTocar(); }} disabled={deshabilitada}
+      accessibilityRole="radio" accessibilityState={{ selected: elegida, disabled: deshabilitada }}
+      style={({ pressed }) => ({ flex: 1, borderRadius: 20, padding: 14, gap: 8, borderWidth: 2, opacity: deshabilitada ? 0.45 : 1,
         borderColor: elegida ? t.color.magenta : 'transparent',
         backgroundColor: elegida ? suave(t.color.magenta, t.oscuro ? 0.18 : 0.08) : (t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.8)'),
         transform: [{ scale: pressed ? 0.97 : 1 }] })}>

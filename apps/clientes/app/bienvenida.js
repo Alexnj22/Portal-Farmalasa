@@ -3,13 +3,13 @@
 // vitrina: verde lo que se gana, magenta lo que se usa—.
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
 import { useSesion } from '../lib/sesion';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Boton, Tarjeta, Texto } from '../componentes/ui';
 import { suave, useTema } from '../tema/tema';
 import { colorSistema } from '../componentes/sistema';
 import Icono from '../componentes/Icono';
+import { navegar } from '../lib/navegar';
 
 const QUE_TRAE = [
   { sf: 'star.fill', simbolo: '★', titulo: 'Tus puntos', detalle: 'Tu saldo en dólares y lo que vence.', tono: 'verde' },
@@ -64,8 +64,8 @@ export default function Bienvenida() {
         {/* Sin cuenta también se puede mirar: ofertas y sucursales, bien
             visibles (antes eran dos enlaces chicos al pie). */}
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <Mirar sf="tag.fill" titulo="Ver ofertas" detalle="Las de esta semana" alTocar={() => router.push('/vitrina')} />
-          <Mirar sf="mappin.and.ellipse" titulo="Sucursales" detalle="Horarios y cómo llegar" alTocar={() => router.push('/sucursales')} />
+          <Mirar sf="tag.fill" titulo="Ver ofertas" detalle="Las de esta semana" alTocar={() => navegar('/vitrina')} />
+          <Mirar sf="mappin.and.ellipse" titulo="Sucursales" detalle="Horarios y cómo llegar" alTocar={() => navegar('/sucursales')} />
         </View>
 
         <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -76,8 +76,8 @@ export default function Bienvenida() {
 
       <View style={{ gap: 12 }}>
         {motivo === 'vencida' ? <Texto nivel={2} estilo={{ textAlign: 'center' }}>Tu sesión terminó. Vuelve a entrar para ver tus puntos.</Texto> : null}
-        <Boton alTocar={() => router.push('/entrar')}>Ya soy cliente</Boton>
-        <Boton tipo="secundario" alTocar={() => router.push('/registro')}>Quiero unirme</Boton>
+        <Boton alTocar={() => navegar('/entrar')}>Ya soy cliente</Boton>
+        <Boton tipo="secundario" alTocar={() => navegar('/registro')}>Quiero unirme</Boton>
 
       </View>
     </ScrollView>

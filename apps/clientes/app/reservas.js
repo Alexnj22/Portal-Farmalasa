@@ -4,7 +4,7 @@
 // cuenta regresiva de las 24 horas; una pendiente o lista se puede cancelar.
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Platform, Pressable, Text, View } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
 import { Boton, Cargando, Pantalla, Tarjeta, Vacio } from '../componentes/ui';
@@ -15,6 +15,7 @@ import { colorSistema } from '../componentes/sistema';
 import { useSesion } from '../lib/sesion';
 import { dolares, fecha } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
+import { navegar } from '../lib/navegar';
 
 // Colores del tema (cambian con el modo oscuro y se leen sobre el vidrio).
 const ESTADO_BASE = {
@@ -115,7 +116,7 @@ export default function Reservas() {
     return (
       <Pantalla conPestanas={false}>
         <Vacio titulo="Sin reservas">Aparta productos de las ofertas y pásalos a retirar sin hacer fila.</Vacio>
-        <Pressable onPress={() => router.push('/ofertas')} style={{ alignSelf: 'center', padding: 12 }}>
+        <Pressable onPress={() => navegar('/ofertas')} style={{ alignSelf: 'center', padding: 12 }}>
           <Text style={{ fontSize: 16, fontWeight: '700', color: t.color.magentaTexto }}>Ver ofertas</Text>
         </Pressable>
       </Pantalla>

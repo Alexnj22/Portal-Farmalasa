@@ -8,7 +8,7 @@
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { Extrapolation, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
-import { router, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { Image as ImagenCache } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -16,6 +16,7 @@ import { useOfertas } from '../lib/ofertas';
 import { llamar } from '../lib/api';
 import { colorSistema } from './sistema';
 import { acentoDe, useTema } from '../tema/tema';
+import { navegar } from '../lib/navegar';
 
 let ultimos = null;
 let pedidosAt = 0;
@@ -62,7 +63,7 @@ export default function BannerPromos() {
           const a = acentoDe(t, o.acento);
           // El banner del portal ya trae su diseño: proporción 2.4 : 1, como se subió.
           return (
-            <Pressable onPress={() => { if (!o.destino) return; Haptics.selectionAsync().catch(() => {}); router.push(o.destino); }}
+            <Pressable onPress={() => { if (!o.destino) return; Haptics.selectionAsync().catch(() => {}); navegar(o.destino); }}
               accessibilityRole="button" accessibilityLabel={`Oferta: ${o.titulo}`}
               style={({ pressed }) => ({ width: ancho, height: Math.round(ancho / 2.4), borderRadius: 24, overflow: 'hidden', transform: [{ scale: pressed ? 0.98 : 1 }] })}>
               {o.imagen ? (

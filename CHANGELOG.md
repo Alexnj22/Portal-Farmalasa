@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1249.0 — App: cupón raspable, tienda con filas, sin doble apertura, hojas que cierran y colores por nivel
+
+- **Sin doble apertura:** dos toques rápidos abrían la oferta dos veces. Todas las navegaciones de la app pasan por `lib/navegar.js`, que ignora un segundo toque mientras abre (700 ms).
+- **Cupón raspable:** el cupón del mes llega tapado con una capa plateada que se raspa con el dedo (Skia); debajo, un premio al azar (300, 500 o 1,000 puntos; `puntos_niveles.cupon_premios` con pesos, valor esperado ~475). Vigente: brillo que lo cruza; usado: gris con sello «USADO» (o lo que queda, si se usó una parte). El aviso al teléfono no dice el premio. En modo de prueba se puede raspar siempre.
+- **Tienda:** filas «Mayor ahorro con tu tarjeta» (los de mayor % VIP entre lo más vendido) y «Vistos recientemente» (en el teléfono) arriba de la cuadrícula.
+- **Oferta y producto se cierran deslizando** siempre: son hojas del sistema (`formSheet`) en vez de modal clásico.
+- **Sin existencia no se cobra:** si a la sucursal elegida le falta un producto, el pago en línea se desactiva, el botón dice «Enviar para confirmar» y se paga al retirar; el servidor también lo rechaza (`reservar_carrito`).
+- **Niveles:** el color manda (VIP morado, Plata gris metálico, Oro dorado, Platino negro) y el holograma del Platino es apenas un brillo. La pantalla «¡Subiste de nivel!» lleva un velo oscuro y texto con sombra para leerse sobre plata y oro.
+
 ## v2.1248.0 — Encargos de productos que no hay, Wallet sin hoja negra, compartir desde la lista y colores por nivel
 
 - **Encargos** (lo que no hay en ninguna sucursal): en la ficha del producto, «Pedir por encargo» con cantidad, sucursal de retiro y nota. Le llega a la sala y a Bodega (aviso en el portal y el teléfono); en el tablero de reservas confirman **precio y fecha estimada** (con aviso si el producto no es devolutivo o nunca se vendió: visto bueno del gerente) o dicen que no se puede. El cliente recibe el aviso y **confirma pagando el anticipo del 100 %** (Wompi); después se marca pedido, llegó y entregado, y el cliente ve cada paso en Mis reservas. Tabla `app_encargos`, `encargos_de_sucursal`, `encargo_responder`, `app_encargos_avisar`; `app_reservas_pagos.encargo_id` y su rama en `app_reserva_pago_confirmar`; avisos al cliente en `avisos-clientes`.

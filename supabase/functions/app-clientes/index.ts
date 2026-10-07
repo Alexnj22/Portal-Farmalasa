@@ -944,6 +944,17 @@ Deno.serve(async (req) => {
         datosFiscales = v.datos;
       }
       const pagoEnLinea = body?.pago === "en_linea";
+      // Sin existencia en esa sala no se cobra (2026-10-07): se envía para que
+      // la sucursal confirme, y se paga al retirar.
+      if (pagoEnLinea) {
+        const idsP = [...new Set(items.map((x: any) => x.id))];
+        const { data: ex, error: eEx } = await admin.rpc("app_carrito_existencias", { p_ids: idsP });
+        if (eEx) throw eEx;
+        const hay = new Set((ex ?? []).filter((e: any) => Number(e.branch_id) === branchId && Number(e.cantidad) > 0).map((e: any) => Number(e.product_id)));
+        if (idsP.some((id) => !hay.has(id))) {
+          return json({ ok: false, motivo: "sin_existencia", mensaje: "Esa sucursal no tiene todos los productos: envía el pedido para que lo confirmen y pagas al retirar." });
+        }
+      }
       if (items.some((x: any) => !(x.cantidad >= 1 && x.cantidad <= 5))) return json({ ok: false, mensaje: "Cada producto va de 1 a 5 unidades." });
       const { data: sala, error: eSala } = await admin.from("branches").select("id").eq("id", branchId).eq("type", "FARMACIA").maybeSingle();
       if (eSala) throw eSala;
@@ -1155,7 +1166,7 @@ Deno.serve(async (req) => {
       const nivel = await nivelDeCliente(admin, customerId);
       // El cupón del mes (Platino): puntos que vencen a fin de mes.
       const inicioMes = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 8) + "01";
-      const { data: cup, error: eCup } = await admin.from("puntos_lote").select("puntos, restantes, vence_el, motivo")
+      const { data: cup, error: eCup } = await admin.from("puntos_lote").select("id, puntos, restantes, vence_el, motivo")
         .eq("customer_id", customerId).eq("origen", "cupon").gte("ganado_el", inicioMes).maybeSingle();
       if (eCup) throw eCup;
       if (eCfg) console.error("no se pudo leer la configuración:", eCfg.message);
@@ -1187,7 +1198,7 @@ Deno.serve(async (req) => {
         })(),
         // Cuenta de prueba: la app ofrece el «modo de prueba» en Cuenta.
         prueba: await esDePrueba(customerId),
-        cupon: cup ? { puntos: Number(cup.puntos), restantes: Number(cup.restantes), vence: cup.vence_el, titulo: cup.motivo } : null,
+        cupon: cup ? { id: cup.id, puntos: Number(cup.puntos), restantes: Number(cup.restantes), vence: cup.vence_el, titulo: cup.motivo } : null,
         regalo_cumpleanos: nivel.clave === "vip" ? Number(cfgP?.puntos_cumpleanos ?? 0) : nivel.cumpleanos,
         codigo,
         socio_desde: primero?.ganado_el ?? null,

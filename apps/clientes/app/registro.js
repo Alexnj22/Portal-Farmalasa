@@ -5,7 +5,7 @@
 // Forma del sistema: formulario agrupado y los permisos como interruptores
 // (iOS no tiene casillas de verificación).
 import { useEffect, useState } from 'react';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Text } from 'react-native';
 import * as Device from 'expo-device';
 import { BotonSistema, colorSistema, FilaCampo, FilaInterruptor, Formulario, Grupo } from '../componentes/sistema';
@@ -15,6 +15,7 @@ import { plataforma, useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
 import { documentoEscrito, fechaDeNacimiento } from '../lib/formato';
 import { useBloqueo } from '../lib/bloqueo';
+import { navegar } from '../lib/navegar';
 
 export default function Registro() {
   const t = useTema();
@@ -83,10 +84,10 @@ export default function Registro() {
       {/* Antes de aceptar, que se pueda leer lo que se acepta, dentro de la app. */}
       <Text style={{ fontSize: 14, lineHeight: 20, color: colorSistema.texto2, marginHorizontal: 32 }}>
         Lee el{' '}
-        <Text onPress={() => router.push('/legal?doc=reglamento')}
+        <Text onPress={() => navegar('/legal?doc=reglamento')}
           style={{ color: colorSistema.texto, fontWeight: '700', textDecorationLine: 'underline' }} accessibilityRole="link">reglamento del programa</Text>
         {' '}y el{' '}
-        <Text onPress={() => router.push('/legal?doc=privacidad')}
+        <Text onPress={() => navegar('/legal?doc=privacidad')}
           style={{ color: colorSistema.texto, fontWeight: '700', textDecorationLine: 'underline' }} accessibilityRole="link">aviso de privacidad</Text>.
       </Text>
       {sinTextos ? (

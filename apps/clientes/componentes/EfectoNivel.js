@@ -19,7 +19,7 @@ const DESTELLOS = [
 export default function EfectoNivel({ nivel, activa, x }) {
   if (nivel === 'plata') return <Cepillado />;
   if (nivel === 'oro') return <Destellos activa={activa} color="#FFF6D5" />;
-  if (nivel === 'platino') return (<><Holograma x={x} /><Destellos activa={activa} color="#FFFFFF" /></>);
+  if (nivel === 'platino') return (<><Holograma x={x} /><Destellos activa={activa} color="#E8ECF2" /></>);
   return null;
 }
 
@@ -63,13 +63,14 @@ function Destello({ izq, arriba, tam, i, activa, color }) {
 
 function Holograma({ x }) {
   const estilo = useAnimatedStyle(() => ({
-    opacity: 0.18 + Math.min(0.32, Math.abs(x?.value ?? 0) * 0.6),
+    // Sutil: el negro del Platino tiene que seguir siendo negro.
+    opacity: 0.05 + Math.min(0.12, Math.abs(x?.value ?? 0) * 0.25),
     transform: [{ translateX: (x?.value ?? 0) * 60 }, { rotate: '-20deg' }, { scale: 1.6 }],
   }));
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]}>
       <Animated.View style={[StyleSheet.absoluteFill, estilo]}>
-        <LinearGradient colors={['#FF6EC7', '#7DF9FF', '#B4FF7D', '#FFE66E', '#C99BFF', '#FF6EC7']}
+        <LinearGradient colors={['#F2D7FF', '#D5F6FF', '#FFF1D2', '#E6E0FF', '#F2D7FF']}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
       </Animated.View>
     </View>

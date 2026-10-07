@@ -3,7 +3,7 @@
 // interruptores del sistema y acciones en filas, la destructiva en rojo.
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { colorSistema, FilaInterruptor, FilaTexto, Formulario, Grupo } from '../../../componentes/sistema';
 import { Aviso } from '../../../componentes/ui';
 import { useSesion } from '../../../lib/sesion';
@@ -17,6 +17,7 @@ import Segmentos from '../../../componentes/Segmentos';
 import { nombrePropio } from '../../../lib/formato';
 import { useTema } from '../../../tema/tema';
 import Icono from '../../../componentes/Icono';
+import { navegar } from '../../../lib/navegar';
 
 
 /**
@@ -182,12 +183,12 @@ export default function Cuenta() {
 
       <Grupo>
         {resumen && !resumen.pendiente ? (
-          <FilaAccion sf="person.2.fill" texto="Invitar a un amigo · 50 puntos" alTocar={() => router.push('/invitar')} />
+          <FilaAccion sf="person.2.fill" texto="Invitar a un amigo · 50 puntos" alTocar={() => navegar('/invitar')} />
         ) : null}
         {resumen && !resumen.pendiente ? (
-          <FilaAccion sf="bag.fill" texto="Mis reservas" alTocar={() => router.push('/reservas')} />
+          <FilaAccion sf="bag.fill" texto="Mis reservas" alTocar={() => navegar('/reservas')} />
         ) : null}
-        <FilaAccion sf="mappin.and.ellipse" texto="Nuestras sucursales" alTocar={() => router.push('/sucursales')} />
+        <FilaAccion sf="mappin.and.ellipse" texto="Nuestras sucursales" alTocar={() => navegar('/sucursales')} />
         {resumen?.wallet_serial && walletDisponible() ? (
           <FilaAccion sf="wallet.pass.fill" texto={enWallet ? 'Ver mi tarjeta en Apple Wallet' : 'Agregar mi tarjeta a Apple Wallet'}
             alTocar={() => wallet()} />
@@ -213,8 +214,8 @@ export default function Cuenta() {
       ) : null}
 
       <Grupo>
-        <FilaAccion sf="doc.text.fill" texto="Reglamento del programa" alTocar={() => router.push('/legal?doc=reglamento')} />
-        <FilaAccion sf="hand.raised.fill" texto="Aviso de privacidad" alTocar={() => router.push('/legal?doc=privacidad')} />
+        <FilaAccion sf="doc.text.fill" texto="Reglamento del programa" alTocar={() => navegar('/legal?doc=reglamento')} />
+        <FilaAccion sf="hand.raised.fill" texto="Aviso de privacidad" alTocar={() => navegar('/legal?doc=privacidad')} />
       </Grupo>
 
       <Grupo>

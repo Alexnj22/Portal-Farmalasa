@@ -1,9 +1,9 @@
 // Mis puntos. Se habla en DÓLARES primero —«$4.20 de descuento» se entiende,
 // «420 puntos» no— y el número de puntos va como el detalle de la cifra.
 // Misma decisión que /mis-puntos de la web.
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useMemo, useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, AppState, Platform, Pressable, Text, View } from 'react-native';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo } from '../../../componentes/ui';
 import { useCuenta } from '../../../lib/cuenta';
 import { dolares, entero, fecha, nombrePropio } from '../../../lib/formato';
@@ -24,6 +24,7 @@ import { cuponDePrueba, nivelDePrueba, useModoPrueba } from '../../../lib/prueba
 import { abrirPase, agregarPase, tienePase, walletDisponible } from '../../../modules/wallet';
 import { suave, useTema } from '../../../tema/tema';
 import { colorSistema } from '../../../componentes/sistema';
+import { navegar } from '../../../lib/navegar';
 
 const MINIMO_DE_CANJE = 100;
 let confetiMostrado = false;
@@ -41,7 +42,9 @@ export default function Puntos() {
   // Modo de prueba (sólo la cuenta de prueba): se ve como el nivel elegido.
   const prueba = useModoPrueba();
   const enPrueba = !!real?.prueba && prueba.activo;
-  const resumen = enPrueba ? { ...real, nivel: nivelDePrueba(prueba.nivel), cupon: prueba.nivel === 'platino' ? cuponDePrueba() : null } : real;
+  // El cupón de prueba se arma UNA vez (su premio es al azar).
+  const cuponPrueba = useMemo(() => cuponDePrueba(), []);
+  const resumen = enPrueba ? { ...real, nivel: nivelDePrueba(prueba.nivel), cupon: prueba.nivel === 'platino' ? cuponPrueba : null } : real;
   const visible = useVisible();
   const [refrescando, setRefrescando] = useState(false);
   const pedir = useSesion((s) => s.pedir);
@@ -102,7 +105,7 @@ export default function Puntos() {
   return (
     <Pantalla alRefrescar={refrescar} refrescando={refrescando}>
       {enPrueba ? (
-        <Pressable onPress={() => router.push('/cuenta')} accessibilityRole="button"
+        <Pressable onPress={() => navegar('/cuenta')} accessibilityRole="button"
           style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FF9F0A', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
           <Icono sf="testtube.2" respaldo="" tam={12} color="#1A1000" />
           <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {resumen.nivel.nombre.toUpperCase()}</Text>
@@ -141,9 +144,9 @@ export default function Puntos() {
       ) : null}
 
       {/* El cupón del mes (Platino): saldo de regalo que vence a fin de mes. */}
-      {resumen.cupon?.restantes > 0 ? (
+      {resumen.cupon ? (
         <Entrada indice={2}>
-          <Cupon cupon={resumen.cupon} nivel={resumen.nivel?.clave} fondo={t.oscuro ? '#0A090E' : '#F5F4F8'} />
+          <Cupon cupon={resumen.cupon} nivel={resumen.nivel?.clave} activa={visible} fondo={t.oscuro ? '#0A090E' : '#F5F4F8'} />
         </Entrada>
       ) : null}
 
@@ -151,10 +154,10 @@ export default function Puntos() {
       <Entrada indice={2} estilo={{ flexDirection: 'row', gap: 10 }}>
         <Acceso sf="syringe.fill" titulo="Inyecciones" color={t.color.verde}
           detalle={resumen.inyecciones_pendientes ? `${resumen.inyecciones_pendientes} por aplicar` : 'Al día'}
-          resaltar={resumen.inyecciones_pendientes > 0} alTocar={() => router.push('/inyecciones')} />
+          resaltar={resumen.inyecciones_pendientes > 0} alTocar={() => navegar('/inyecciones')} />
         <Acceso sf="bag.fill" titulo="Mis reservas" color={t.color.magenta}
           detalle={resumen.reservas_listas ? `${resumen.reservas_listas} lista${resumen.reservas_listas === 1 ? '' : 's'} para retirar` : resumen.reservas_abiertas ? `${resumen.reservas_abiertas} en curso` : 'Ninguna activa'}
-          resaltar={resumen.reservas_listas > 0} alTocar={() => router.push('/reservas')} />
+          resaltar={resumen.reservas_listas > 0} alTocar={() => navegar('/reservas')} />
       </Entrada>
 
       {/* El estado del canje. El saldo cuenta hacia arriba y la barra se llena
@@ -214,7 +217,7 @@ export default function Puntos() {
 
       {/* Invitar: 50 puntos para cada uno (ver app/invitar.js). */}
       <Entrada indice={4}>
-        <Tocable alTocar={() => router.push('/invitar')} etiqueta="Invita y ganen 50 puntos">
+        <Tocable alTocar={() => navegar('/invitar')} etiqueta="Invita y ganen 50 puntos">
           <Tarjeta tono={t.color.verde} estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Icono sf="person.2.fill" respaldo="🤝" tam={26} color={t.color.verdeTexto} />
             <View style={{ flex: 1, gap: 2 }}>
@@ -228,7 +231,7 @@ export default function Puntos() {
 
       {/* Sucursales: entrada llamativa (pedido del usuario, 2026-10-06). */}
       <Entrada indice={4}>
-        <Tocable alTocar={() => router.push('/sucursales')} etiqueta="Nuestras sucursales">
+        <Tocable alTocar={() => navegar('/sucursales')} etiqueta="Nuestras sucursales">
           <LinearGradient colors={['#4B1E8C', t.color.magenta]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             style={{ borderRadius: 26, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 14, overflow: 'hidden' }}>
             <Text style={{ position: 'absolute', right: 40, top: -30, fontSize: 130, fontWeight: '900', color: 'rgba(255,255,255,0.08)' }}>+</Text>
@@ -246,7 +249,7 @@ export default function Puntos() {
 
       {/* Las compras, con sus productos: de ahí salen los puntos y las inyecciones. */}
       <Entrada indice={4}>
-        <Tocable alTocar={() => router.push('/compras')} etiqueta="Mis compras">
+        <Tocable alTocar={() => navegar('/compras')} etiqueta="Mis compras">
           <Tarjeta estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ gap: 2 }}>
               <Titulo>Mis compras</Titulo>
@@ -352,7 +355,7 @@ function Campana({ generacion }) {
     pedir('bandeja').then((r) => { if (r?.ok) { campanaUltimo = r.sin_leer ?? 0; setSinLeer(campanaUltimo); } });
   }, [pedir, generacion]));
   return (
-    <Pressable onPress={() => router.push('/notificaciones')} hitSlop={10} accessibilityRole="button"
+    <Pressable onPress={() => navegar('/notificaciones')} hitSlop={10} accessibilityRole="button"
       accessibilityLabel={sinLeer ? `Notificaciones, ${sinLeer} sin leer` : 'Notificaciones'}
       style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)', transform: [{ scale: pressed ? 0.92 : 1 }] })}>

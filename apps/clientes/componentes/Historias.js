@@ -14,7 +14,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Dimensions, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image as ImagenCache } from 'expo-image';
-import { router, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import Animated, { cancelAnimation, Easing, runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
@@ -28,6 +28,7 @@ import { idDispositivo } from '../lib/dispositivo';
 import { useTema } from '../tema/tema';
 import Icono from './Icono';
 import IconoWhatsapp from './IconoWhatsapp';
+import { navegar } from '../lib/navegar';
 
 const CLAVE = 'puntos_salud_historias_vistas';
 const DURACION = 6000;
@@ -213,7 +214,7 @@ function Visor({ historias, inicio, alVer, alTocarBoton, alCerrar }) {
                     alTocar={() => {
                       alTocarBoton?.(h.id);
                       const destino = h.oferta_id ? `/oferta/${h.oferta_id}?reservar=1` : h.enlace;
-                      cerrar(); setTimeout(() => router.push(destino), 250);
+                      cerrar(); setTimeout(() => navegar(destino), 250);
                     }} />
                 ) : null}
                 <BotonHistoria icono={<IconoWhatsapp tam={18} color="#FFFFFF" />} texto="Más información"

@@ -16,8 +16,9 @@ import IconoWhatsapp, { VERDE_WHATSAPP } from '../../componentes/IconoWhatsapp';
 import FotoProducto from '../../componentes/FotoProducto';
 import { llamar } from '../../lib/api';
 import { dolares } from '../../lib/formato';
-import { nombreProducto } from '../../lib/catalogo';
+import { nombreProducto, recordarVisto } from '../../lib/catalogo';
 import { suave, useTema } from '../../tema/tema';
+import { navegar } from '../../lib/navegar';
 
 const ESTADO = {
   hay: { texto: 'Disponible', sf: 'checkmark.circle.fill', tono: 'exito' },
@@ -34,7 +35,16 @@ export default function Producto() {
   const [sel, setSel] = useState(null);
   const [cant, setCant] = useState(1);
   const [encargando, setEncargando] = useState(false);
-  const cargar = () => { setD(null); llamar('catalogo_producto', { id: Number(id) }).then((r) => setD(r ?? { ok: false })); };
+  const cargar = () => {
+    setD(null);
+    llamar('catalogo_producto', { id: Number(id) }).then((r) => {
+      setD(r ?? { ok: false });
+      if (r?.ok) {
+        const pm = [...(r.producto.presentaciones ?? [])].sort((a, b) => (b.factor ?? 1) - (a.factor ?? 1))[0];
+        recordarVisto({ id: r.producto.id, nombre: r.producto.nombre, foto: r.producto.foto, precio: pm?.precio, precio_vip: pm?.precio_vip });
+      }
+    });
+  };
   useEffect(() => { cargar(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fondo = t.oscuro ? '#121016' : '#F5F4F8';
@@ -74,7 +84,7 @@ export default function Producto() {
     setCant(1);
     Alert.alert('Agregado al carrito', `${n} × ${nombreProducto(p.nombre)} · ${nombreProducto(x.tipo)}`, [
       { text: 'Seguir viendo', style: 'cancel' },
-      { text: 'Ir al carrito', onPress: () => { router.back(); setTimeout(() => router.push('/carrito'), 300); } },
+      { text: 'Ir al carrito', onPress: () => { router.back(); setTimeout(() => navegar('/carrito'), 300); } },
     ]);
   };
   const colorTono = (tono) => ({ exito: t.color.exitoTexto, aviso: t.color.avisoTexto, neutro: colorSistema.texto3 }[tono]);

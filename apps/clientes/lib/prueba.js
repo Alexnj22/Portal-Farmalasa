@@ -43,12 +43,17 @@ export function nivelDePrueba(clave) {
   };
 }
 
+const idDePrueba = Date.now().toString(36);
+
 /** Un cupón de muestra para el nivel Platino. */
 export function cuponDePrueba() {
   const hoy = new Date();
   const fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
   const vence = `${fin.getFullYear()}-${String(fin.getMonth() + 1).padStart(2, '0')}-${String(fin.getDate()).padStart(2, '0')}`;
-  return { puntos: 500, restantes: 500, vence, titulo: 'Cupón Platino del mes' };
+  // Un id NUEVO por apertura: en modo de prueba el cupón siempre se puede raspar.
+  const premios = [300, 500, 1000];
+  const puntos = premios[Math.floor(Math.random() * premios.length)];
+  return { id: `prueba-${idDePrueba}`, puntos, restantes: puntos, vence, titulo: 'Cupón Platino del mes' };
 }
 
 // Se lee lo guardado al abrir la app.

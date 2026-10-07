@@ -52,13 +52,13 @@ const vibrar = (fuerte) => Haptics.impactAsync(fuerte ? Haptics.ImpactFeedbackSt
 // Los colores de cada nivel (plan aprobado 2026-10-07): morada (Cliente VIP),
 // plata, dorada y platino. El texto queda blanco en las cuatro.
 export const COLORES_NIVEL = {
-  // Cada nivel con su propio tono, no variaciones de gris (2026-10-07):
-  //   VIP morado de la marca · Plata hielo azulado · Oro dorado cálido ·
-  //   Platino negro grafito con holograma.
-  vip: { frente: ['#2B0B3A', T['logo-magenta'], '#5B1E9C'], reverso: ['#1A0822', '#3A1048'], rotulo: 'SOCIO VIP', sombra: '#5B1E9C' },
-  plata: { frente: ['#5D7086', '#D9E4EF', '#7E93AA'], reverso: ['#2E3B4B', '#53667C'], rotulo: 'PLATA', sombra: '#5D7086' },
-  oro: { frente: ['#8A5200', '#FFCC4D', '#B9780A'], reverso: ['#4A2C00', '#8F5C06'], rotulo: 'ORO', sombra: '#B9780A' },
-  platino: { frente: ['#05060A', '#363C4C', '#05060A'], reverso: ['#000000', '#1A1E28'], rotulo: 'PLATINO', sombra: '#000000' },
+  // El COLOR dice el nivel; los efectos sólo lo acompañan, suaves (2026-10-07):
+  //   VIP morado de la marca · Plata gris metálico · Oro dorado ·
+  //   Platino negro (la «black card»), con un brillo apenas iridiscente.
+  vip: { frente: ['#2B0B3A', T['logo-magenta'], '#5B1E9C'], reverso: ['#1A0822', '#3A1048'], rotulo: 'SOCIO VIP', sombra: '#5B1E9C', acento: '#E06BC2' },
+  plata: { frente: ['#4A525E', '#A9B2BE', '#5E6774'], reverso: ['#2A3038', '#4A525E'], rotulo: 'PLATA', sombra: '#4A525E', acento: '#DCE3EC' },
+  oro: { frente: ['#7A4A00', '#E0A93A', '#9A6408'], reverso: ['#3F2600', '#7A4A00'], rotulo: 'ORO', sombra: '#9A6408', acento: '#FFD978' },
+  platino: { frente: ['#08090C', '#262A33', '#08090C'], reverso: ['#000000', '#16181E'], rotulo: 'PLATINO', sombra: '#000000', acento: '#E8ECF2' },
 };
 
 export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel = 'vip', activa = true }) {

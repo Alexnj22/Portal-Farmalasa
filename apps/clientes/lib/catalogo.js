@@ -1,3 +1,5 @@
+import * as SecureStore from 'expo-secure-store';
+
 // Lo que comparten el catálogo y la ficha de un producto (2026-10-07).
 
 /** «ACETAMINOFEN 500MG X 100 TAB» → «Acetaminofen 500mg x 100 Tab». Con número, en minúscula. */
@@ -26,3 +28,16 @@ export const BUSQUEDAS = [
   { q: 'crema', texto: 'Piel', sf: 'hand.raised.fill' },
   { q: 'omeprazol', texto: 'Estómago', sf: 'cross.case.fill' },
 ];
+
+// Vistos recientemente (2026-10-07): los últimos 12 productos abiertos, en el
+// teléfono, para volver a ellos desde la Tienda.
+const CLAVE_VISTOS = 'puntos_salud_vistos';
+export async function leerVistos() {
+  try { return JSON.parse((await SecureStore.getItemAsync(CLAVE_VISTOS)) ?? '[]'); } catch { return []; }
+}
+export async function recordarVisto(p) {
+  if (!p?.id) return;
+  const lista = (await leerVistos()).filter((x) => x.id !== p.id);
+  lista.unshift({ id: p.id, nombre: p.nombre, foto: p.foto ?? null, precio: p.precio ?? null, precio_vip: p.precio_vip ?? null });
+  await SecureStore.setItemAsync(CLAVE_VISTOS, JSON.stringify(lista.slice(0, 12))).catch(() => {});
+}

@@ -10,18 +10,20 @@
 // de limpio y se desplaza fluido.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { useFocusEffect, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { colorSistema } from '../../../componentes/sistema';
 import { Vacio } from '../../../componentes/ui';
 import Icono from '../../../componentes/Icono';
 import FotoProducto from '../../../componentes/FotoProducto';
 import BannerPromos from '../../../componentes/BannerPromos';
+import FilaProductos from '../../../componentes/FilaProductos';
 import { llamar } from '../../../lib/api';
 import { dolares } from '../../../lib/formato';
-import { BUSQUEDAS, nombreProducto, tonoDe } from '../../../lib/catalogo';
+import { BUSQUEDAS, leerVistos, nombreProducto, tonoDe } from '../../../lib/catalogo';
 import { LinearGradient } from 'expo-linear-gradient';
 import { suave, useTema } from '../../../tema/tema';
+import { navegar } from '../../../lib/navegar';
 
 const POR_PAGINA = 20;
 
@@ -36,6 +38,17 @@ export default function Catalogo() {
   const [cambiando, setCambiando] = useState(false);
   const pedido = useRef(0);
   const listaRef = useRef(null);
+  // Las filas de arriba (sin buscar): mayor ahorro VIP y vistos recientemente.
+  const [ahorro, setAhorro] = useState([]);
+  const [vistos, setVistos] = useState([]);
+  useEffect(() => {
+    llamar('catalogo', { q: '', desde: 0, limite: 50 }).then((r) => {
+      if (!r?.ok) return;
+      setAhorro(r.productos.filter((p) => p.precio_vip != null && p.disponible)
+        .sort((a, b) => (b.precio - b.precio_vip) / b.precio - (a.precio - a.precio_vip) / a.precio).slice(0, 10));
+    });
+  }, []);
+  useFocusEffect(useCallback(() => { leerVistos().then(setVistos); }, []));
 
   // La búsqueda sale 300 ms después de la última tecla.
   useEffect(() => { const id = setTimeout(() => setQ(texto.trim()), 300); return () => clearTimeout(id); }, [texto]);
@@ -66,6 +79,8 @@ export default function Catalogo() {
     <View style={{ gap: 12, marginBottom: 6 }}>
       {/* Promociones arriba (las mismas ofertas del portal), sólo sin buscar. */}
       {!q ? <BannerPromos /> : null}
+      {!q ? <FilaProductos titulo="Mayor ahorro con tu tarjeta" sf="tag.fill" productos={ahorro} /> : null}
+      {!q ? <FilaProductos titulo="Vistos recientemente" sf="clock.arrow.circlepath" productos={vistos} /> : null}
       {/* Categorías: mosaicos con su color y su ícono; tocar uno busca y
           tocarlo otra vez lo quita. */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 2, paddingVertical: 2 }}>
@@ -159,7 +174,7 @@ function TarjetaProducto({ p }) {
   const t = useTema();
   const ahorro = p.precio_vip != null ? p.precio - p.precio_vip : 0;
   return (
-    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push(`/producto/${p.id}`); }}
+    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${p.id}`); }}
       accessibilityRole="button" accessibilityLabel={`${nombreProducto(p.nombre)}. Precio ${dolares(p.precio)}${p.precio_vip != null ? `, VIP ${dolares(p.precio_vip)}` : ''}`}
       style={({ pressed }) => ({ flex: 1, maxWidth: '50%', borderRadius: 22, padding: 10, gap: 8,
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.82)',

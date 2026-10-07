@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1251.0 — App: Mis facturas con PDF, JSON y consulta de Hacienda
+
+- **App: Mis facturas** (Cuenta → Mis facturas): consumidor final y crédito fiscal del último año, filtro por tipo, y por cada una el **PDF** (se abre en la app, con compartir), el **JSON** (para la contabilidad) y la **consulta pública de Hacienda**. Sale del archivo que el portal guarda en `sales-dte`; si un documento todavía no estaba guardado, `factura_documento` lo baja, lo valida (PDF real / DTE con número de control), lo guarda y lo firma. Sólo facturas del propio cliente.
+
 ## v2.1250.1 — Tienda: categorías bajo el banner y limpiar vistos
 
 - Tienda: las categorías van siempre justo debajo del banner; «Mayor ahorro» y «Vistos recientemente» debajo de ellas, y «Vistos recientemente» se puede limpiar.

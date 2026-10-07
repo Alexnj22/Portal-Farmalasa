@@ -166,6 +166,7 @@ function Raiz() {
             <Stack.Screen name="invitar" options={{ title: 'Invitar a un amigo' }} />
             <Stack.Screen name="legal" options={{ title: '' }} />
             <Stack.Screen name="inyecciones" options={{ title: 'Mis inyecciones' }} />
+            <Stack.Screen name="facturas" options={{ title: 'Mis facturas' }} />
             <Stack.Screen name="mis-puntos" options={{ headerShown: false }} />
           </Stack>
           <Bloqueo />

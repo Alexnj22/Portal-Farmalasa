@@ -189,6 +189,9 @@ export default function Cuenta() {
         {resumen && !resumen.pendiente ? (
           <FilaAccion sf="bag.fill" texto="Mis reservas" alTocar={() => navegar('/reservas')} />
         ) : null}
+        {resumen && !resumen.pendiente ? (
+          <FilaAccion sf="doc.text.fill" texto="Mis facturas" alTocar={() => navegar('/facturas')} />
+        ) : null}
         <FilaAccion sf="mappin.and.ellipse" texto="Nuestras sucursales" alTocar={() => navegar('/sucursales')} />
         {resumen?.wallet_serial && walletDisponible() ? (
           <FilaAccion sf="wallet.pass.fill" texto={enWallet ? 'Ver mi tarjeta en Apple Wallet' : 'Agregar mi tarjeta a Apple Wallet'}

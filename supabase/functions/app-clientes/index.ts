@@ -128,6 +128,9 @@ const NO_ENCONTRADO = {
   mensaje: "No encontramos ese registro. Revisa los datos.",
 };
 
+// La misma regla que `public.venta_valida(estado)`: anulada o invalidada no cuenta.
+const venta_valida_js = (estado: unknown) => !["NULA", "DTE INVALIDADO EN MH"].includes(String(estado ?? "").toUpperCase());
+
 async function sha256(texto: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(texto));
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -717,7 +720,7 @@ Deno.serve(async (req) => {
       return json({ ok: true, sucursales: conSucursal(data ?? []) });
     }
 
-    if (["mis_reservas", "reservar", "cancelar_reserva", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo"].includes(accion)) {
+    if (["mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo"].includes(accion)) {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
 
@@ -917,6 +920,75 @@ Deno.serve(async (req) => {
         .eq("id", Number(body?.id)).eq("customer_id", customerId).in("estado", ["solicitado", "confirmado"]).neq("pago_estado", "pagado").select("id");
       if (error) throw error;
       return json(data?.length ? { ok: true } : { ok: false, mensaje: "Ese encargo ya no se puede cancelar desde la app. Escríbele a la sucursal." });
+    }
+
+    // ── Mis facturas (2026-10-07): consumidor final y crédito fiscal del
+    // último año, con el PDF y el JSON del documento (el archivo que el
+    // portal guarda en `sales-dte`) y la consulta pública de Hacienda.
+    if (accion === "mis_facturas") {
+      const { data, error } = await admin.from("sales_invoices")
+        .select("id, fecha, hora, tipo_documento, correlativo, total, codigo_generacion, recibido_mh, branch_id, estado")
+        .eq("customer_id", customerId).gte("fecha", new Date(Date.now() - 365 * 86400_000).toISOString().slice(0, 10))
+        .order("fecha", { ascending: false }).order("hora", { ascending: false }).limit(60);
+      if (error) throw error;
+      const { data: salas, error: eS } = await admin.from("branches").select("id, name");
+      if (eS) throw eS;
+      const nombre = new Map((salas ?? []).map((b: any) => [Number(b.id), sucursal(b.name)]));
+      const filas = (data ?? []).filter((f: any) => f.codigo_generacion);
+      const rutas = filas.flatMap((f: any) => {
+        const [a, m] = String(f.fecha).split("-"); const cg = String(f.codigo_generacion).toUpperCase();
+        return [`${a}/${m}/${cg}.pdf`, `${a}/${m}/${cg}.json`];
+      });
+      const firmadas = new Map<string, string>();
+      if (rutas.length) {
+        const { data: fs, error: eF } = await admin.storage.from("sales-dte").createSignedUrls(rutas, 3600);
+        if (eF) console.error("mis_facturas: no se firmaron:", eF.message);
+        for (const f of fs ?? []) if (f.path && f.signedUrl && !f.error) firmadas.set(f.path, f.signedUrl);
+      }
+      return json({
+        ok: true,
+        facturas: filas.map((f: any) => {
+          const [a, m] = String(f.fecha).split("-"); const cg = String(f.codigo_generacion).toUpperCase();
+          return {
+            id: f.id, fecha: f.fecha, hora: f.hora, total: Number(f.total), correlativo: f.correlativo,
+            tipo: f.tipo_documento === "CCF" ? "credito_fiscal" : f.tipo_documento === "NC" || f.tipo_documento === "NCR" ? "nota_credito" : "consumidor_final",
+            anulada: !venta_valida_js(f.estado),
+            sala: nombre.get(Number(f.branch_id)) ?? null, codigo: cg,
+            pdf: firmadas.get(`${a}/${m}/${cg}.pdf`) ?? null, json: firmadas.get(`${a}/${m}/${cg}.json`) ?? null,
+            hacienda: `https://admin.factura.gob.sv/consultaPublica?ambiente=01&codGen=${cg}&fechaEmi=${f.fecha}`,
+          };
+        }),
+      });
+    }
+
+    // El PDF o el JSON de una factura que todavía no estaba guardada: se baja,
+    // se guarda (igual que `sync-sales-dte`) y se firma. Sólo del cliente.
+    if (accion === "factura_documento") {
+      const formato = body?.formato === "json" ? "json" : "pdf";
+      const { data: f, error } = await admin.from("sales_invoices").select("id, fecha, codigo_generacion")
+        .eq("id", Number(body?.id)).eq("customer_id", customerId).maybeSingle();
+      if (error) throw error;
+      if (!f?.codigo_generacion) return json({ ok: false, mensaje: "Esta factura no tiene documento electrónico." });
+      const cg = String(f.codigo_generacion).toUpperCase();
+      const [a, m] = String(f.fecha).split("-");
+      const ruta = `${a}/${m}/${cg}.${formato}`;
+      let firmada = (await admin.storage.from("sales-dte").createSignedUrl(ruta, 3600)).data?.signedUrl ?? null;
+      if (!firmada) {
+        const origen = `https://clientesdte3.oss.com.sv/farma_salud/downloads/dteqr_${formato}.php?codigoGeneracion=${cg}`;
+        let buf: Uint8Array | null = null;
+        try {
+          const res = await fetch(origen, { signal: AbortSignal.timeout(30_000) });
+          if (res.ok) buf = new Uint8Array(await res.arrayBuffer());
+        } catch (e) { console.error("factura_documento:", (e as Error)?.message); }
+        const valido = buf && buf.byteLength > 4 && (formato === "pdf"
+          ? buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46
+          : (() => { try { return Boolean(JSON.parse(new TextDecoder().decode(buf!))?.identificacion?.numeroControl); } catch { return false; } })());
+        if (!valido) return json({ ok: false, mensaje: "El documento todavía no está disponible. Intenta más tarde o pídelo en la sucursal." });
+        const { error: eU } = await admin.storage.from("sales-dte").upload(ruta, buf!, { contentType: formato === "pdf" ? "application/pdf" : "application/json", upsert: true });
+        if (eU) throw eU;
+        firmada = (await admin.storage.from("sales-dte").createSignedUrl(ruta, 3600)).data?.signedUrl ?? null;
+      }
+      return json(firmada ? { ok: true, url: firmada } : { ok: false, mensaje: "No se pudo preparar el documento." });
     }
 
     // ── Modo de prueba: avisos de muestra al teléfono (2026-10-07) ───────

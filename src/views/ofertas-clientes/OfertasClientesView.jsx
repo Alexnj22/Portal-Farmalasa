@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Tag, Plus, Image as ImageIcon, Eye, EyeOff, Trash2, Pencil, UserPlus, Link2, XCircle, Smartphone, CircleDashed, ShoppingBag } from 'lucide-react';
+import { Tag, Plus, Image as ImageIcon, Eye, EyeOff, Trash2, Pencil, UserPlus, Link2, XCircle, Smartphone, CircleDashed, ShoppingBag, GalleryHorizontal } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
@@ -16,6 +16,7 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import OfertaModal from './OfertaModal';
 import HistoriasPanel from './HistoriasPanel';
+import BannersPanel from './BannersPanel';
 import WidgetReservas from '../dashboard/WidgetReservas';
 import { estadoDeOferta, etiquetaDeDescuento } from '@nucleo/utils/ofertasClientes';
 import { LoadingState, EmptyState } from '../../components/common/StateViews';
@@ -55,6 +56,7 @@ export default function OfertasClientesView() {
     const tabs = useMemo(() => [
         { key: 'ofertas', label: 'Ofertas', icon: Tag },
         { key: 'historias', label: 'Historias', icon: CircleDashed },
+        { key: 'banners', label: 'Banners', icon: GalleryHorizontal },
         ...(puedeEditar ? [{ key: 'reservas', label: 'Reservas', icon: ShoppingBag }] : []),
         ...(veClientes ? [{ key: 'preregistros', label: 'Pre-registros', icon: UserPlus }] : []),
     ], [veClientes, puedeEditar]);
@@ -65,13 +67,15 @@ export default function OfertasClientesView() {
         <GlassViewLayout icon={Smartphone} title="Ofertas para clientes" filtersContent={(
             <ViewTabBar tabs={tabs} activeTab={tab} onTabChange={setTab}
                 searchValue={busqueda} onSearchChange={setBusqueda}
-                placeholder={tab === 'ofertas' ? 'Buscar oferta…' : tab === 'historias' ? 'Buscar historia…' : 'Buscar por nombre o documento…'} />
+                placeholder={tab === 'ofertas' ? 'Buscar oferta…' : tab === 'historias' ? 'Buscar historia…' : tab === 'banners' ? 'Buscar banner…' : 'Buscar por nombre o documento…'} />
         )} transparentBody>
             <div className="p-4 md:p-6 space-y-6">
                 {tab === 'preregistros'
                     ? <Preregistros busqueda={busqueda} puedeEditar={hasPermission('clientes', 'can_edit')} showToast={showToast} />
                     : tab === 'reservas'
                         ? <WidgetReservas todas />
+                    : tab === 'banners'
+                        ? <BannersPanel busqueda={busqueda} puedeEditar={puedeEditar} showToast={showToast} />
                     : tab === 'historias'
                         ? <HistoriasPanel busqueda={busqueda} puedeEditar={puedeEditar} showToast={showToast} />
                         : <Ofertas busqueda={busqueda} puedeEditar={puedeEditar} showToast={showToast} />}

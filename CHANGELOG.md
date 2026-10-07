@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1242.2 — Banners de la app desde el portal, con el formato de cada imagen
+
+- **Banners de la app desde el portal:** pestaña nueva **Banners** en Ofertas para clientes (tabla `app_banners`, mismo permiso y bucket). Imagen horizontal de **1200 × 500 px (2.4 : 1)**, título (con interruptor para escribirlo sobre la imagen o no, si ya trae texto), a dónde lleva (una oferta o una pantalla) y fechas. La app los muestra arriba del catálogo (`banners` en `app-clientes`); sin banners vigentes, muestra las ofertas publicadas.
+- **El formato correcto, a la vista y medido:** al subir la imagen de un banner o de una historia, el portal dice el formato (historia **1080 × 1920 px, 9 : 16**, con las zonas que tapan el nombre y los botones) y mide la imagen elegida: avisa si tiene otra forma (se va a recortar) o si es pequeña (`FormatoImagen.jsx`).
+
 ## v2.1242.1 — Plazo en las llamadas a Wompi
 
 - `_shared/wompi.ts`: las dos llamadas a Wompi (token y API) se cortan a los 15 y 20 s. Si Wompi se pone lento, la app recibe «el pago no está disponible» en vez de quedarse colgada, y el aviso de pago se reintenta. Ya está desplegado en `wompi-pagos`.

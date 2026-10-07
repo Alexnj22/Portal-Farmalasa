@@ -481,6 +481,31 @@ Deno.serve(async (req) => {
     };
     if (accion === "historia_vista_publica") return await anotarVista(body, null);
 
+    // ── Banners (2026-10-07): las imágenes horizontales de arriba del
+    // catálogo, que se suben en el portal. Públicos, con su foto firmada.
+    if (accion === "banners") {
+      const hoy = hoySV();
+      const { data: filas, error } = await admin.from("app_banners")
+        .select("id, titulo, titulo_visible, imagen_path, oferta_id, enlace")
+        .eq("publicada", true).lte("inicio", hoy).gte("fin", hoy)
+        .order("orden", { ascending: true }).order("created_at", { ascending: false }).limit(10);
+      if (error) throw error;
+      const rutas = (filas ?? []).map((b: any) => b.imagen_path);
+      const firmadas = new Map<string, string>();
+      if (rutas.length) {
+        const { data: fs, error: eF } = await admin.storage.from("ofertas-clientes").createSignedUrls(rutas, 12 * 3600);
+        if (eF) console.error("no se pudieron firmar los banners:", eF.message);
+        for (const f of fs ?? []) if (f.path && f.signedUrl) firmadas.set(f.path, f.signedUrl);
+      }
+      return json({
+        ok: true,
+        banners: (filas ?? []).filter((b: any) => firmadas.has(b.imagen_path)).map((b: any) => ({
+          id: b.id, titulo: b.titulo, titulo_visible: b.titulo_visible, imagen: firmadas.get(b.imagen_path),
+          imagen_clave: b.imagen_path, oferta_id: b.oferta_id ?? null, enlace: b.enlace ?? null,
+        })),
+      });
+    }
+
     // ── Catálogo (2026-10-07): precio de viñeta y precio VIP, y dónde hay.
     // Público como la vitrina: no hace falta cuenta para mirar precios.
     if (accion === "catalogo") {

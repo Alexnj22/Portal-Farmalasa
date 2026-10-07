@@ -206,3 +206,53 @@ export async function borrarHistoria(h) {
     }
     anotar('HISTORIA_APP_BORRAR', h.id, { titulo: h.titulo });
 }
+
+// ── Banners (2026-10-07) ─────────────────────────────────────────────────────
+// Imágenes horizontales arriba del catálogo de la app. Mismo permiso y bucket
+// que las ofertas y las historias; tienen fechas (no el plazo de 24 h).
+
+const CAMPOS_BANNER = ['titulo', 'titulo_visible', 'imagen_path', 'oferta_id', 'enlace', 'inicio', 'fin', 'publicada', 'orden'];
+
+export async function fetchBanners() {
+    const filas = sinError(await supabase.from('app_banners')
+        .select('id, titulo, titulo_visible, imagen_path, oferta_id, enlace, inicio, fin, publicada, orden, updated_at')
+        .order('fin', { ascending: false })
+        .limit(200));
+    const rutas = filas.map((f) => f.imagen_path).filter(Boolean);
+    if (!rutas.length) return filas;
+    const { data: firmadas, error } = await supabase.storage.from(BUCKET).createSignedUrls(rutas, 3600);
+    if (error) {
+        console.error('ofertasClientes.js: no se pudieron firmar los banners', error);
+        return filas;
+    }
+    const porRuta = new Map((firmadas ?? []).map((f) => [f.path, f.signedUrl]));
+    return filas.map((f) => ({ ...f, imagen_url: porRuta.get(f.imagen_path) ?? null }));
+}
+
+export async function guardarBanner(id, datos) {
+    const fila = Object.fromEntries(CAMPOS_BANNER.filter((k) => k in datos).map((k) => [k, datos[k]]));
+    if (id) {
+        sinError(await supabase.from('app_banners')
+            .update({ ...fila, updated_at: new Date().toISOString() }).eq('id', id).select('id').single());
+        anotar('BANNER_APP_EDITAR', id, fila);
+        return id;
+    }
+    const nuevo = sinError(await supabase.from('app_banners').insert(fila).select('id').single());
+    anotar('BANNER_APP_CREAR', nuevo.id, fila);
+    return nuevo.id;
+}
+
+export async function publicarBanner(id, publicada) {
+    sinError(await supabase.from('app_banners')
+        .update({ publicada, updated_at: new Date().toISOString() }).eq('id', id).select('id').single());
+    anotar(publicada ? 'BANNER_APP_PUBLICAR' : 'BANNER_APP_RETIRAR', id, { publicada });
+}
+
+export async function borrarBanner(b) {
+    sinError(await supabase.from('app_banners').delete().eq('id', b.id).select('id').single());
+    if (b.imagen_path) {
+        const { error } = await supabase.storage.from(BUCKET).remove([b.imagen_path]);
+        if (error) console.error('ofertasClientes.js: la imagen del banner quedó huérfana', error);
+    }
+    anotar('BANNER_APP_BORRAR', b.id, { titulo: b.titulo });
+}

@@ -20,6 +20,7 @@ import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { borrarHistoria, fetchHistorias, fetchOfertasParaHistoria, fetchQuienesVieron, fetchVistasHistorias, guardarHistoria, publicarHistoria, subirImagen } from '@nucleo/data/ofertasClientes';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { hora12 } from '@nucleo/utils/hora';
+import FormatoImagen from './FormatoImagen';
 
 /**
  * Historias de la app de clientes (2026-10-06): imágenes tipo «estados» con
@@ -222,7 +223,8 @@ function HistoriaModal({ historia, onClose, onGuardada, onError }) {
             <LiquidModal.Body>
                 <div className="space-y-4">
                     <FileField label="Imagen" accept="image/jpeg,image/png,image/webp" file={archivo} onChange={setArchivo}
-                        hint={historia.imagen_path && !archivo ? 'Ya tiene imagen; sube otra para reemplazarla' : 'Vertical (9:16, como un estado), hasta 3 MB'} />
+                        hint={historia.imagen_path && !archivo ? 'Ya tiene imagen; sube otra para reemplazarla' : 'Vertical, 1080 × 1920 px'} />
+                    <FormatoImagen tipo="historia" archivo={archivo} />
                     <PortalInput label="Título" name="titulo" value={f.titulo} maxLength={60}
                         onChange={(e) => cambiar('titulo')(e.target.value)} placeholder="Ej. Semana del bebé" />
                     <PortalInput label="Rótulo corto" name="rotulo" value={f.rotulo} maxLength={12}

@@ -4,7 +4,7 @@
 // qty siempre en PACKS (cajas/blisters/frascos), no en unidades.
 
 import { fetchErpSucursalAddressMap } from '../data/pedidos';
-import { ERP_NAMES, SUCURSALES, ERP_CODIGOS } from '../constants/erp';
+import { ERP_NAMES, SUCURSALES } from '../constants/erp';
 import { hora12Papel } from './hora';
 import { fechaTexto } from './fecha';
 
@@ -15,6 +15,12 @@ import { fechaTexto } from './fecha';
 // fefoProject, toDispatch…) que 3 de sus 4 importadores usan SIN imprimir nada;
 // con el import estático esos tres pagaban las fuentes igual.
 // Lo vigila `npm run gate:bundle` (auditoría 2026-07-30).
+// La matemática de generar un pedido (FEFO y el código por sala) vive en
+// `codigoDePedido`, sin pdfmake: la usa también la app del teléfono.
+import { fefoProject } from './codigoDePedido';
+export { fefoProject };
+export { buildPedidoCodigo } from './codigoDePedido';
+
 let pdfMakePromise = null;
 function getPdfMake() {
     if (!pdfMakePromise) {
@@ -40,8 +46,6 @@ function getPdfMake() {
 // de sala sin saber que la hoja de despacho ya imprimía el suyo.
 const ERP_NAMES_DEFAULT = ERP_NAMES;
 const SUCURSALES_ORDER  = SUCURSALES;
-const SUCURSAL_CODES    = ERP_CODIGOS;
-const TOTAL_NON_BODEGA = 6;
 const CUSTOM_LABELS    = ['CAJA', 'ESTUCHE', 'BOLSA'];
 
 // Va a "Cajas Adicionales" solo si dispatch_label='CAJA' (Electrolit) o caja_especial. ESTUCHE/BOLSA van en tabla normal.
@@ -95,17 +99,6 @@ async function getAddressMap() {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-export function fefoProject(lotes, qty) {
-    if (!lotes || !lotes.length || qty <= 0) return [];
-    let rem = qty;
-    const result = [];
-    for (const lot of lotes) {
-        if (rem <= 0) break;
-        const take = Math.min(Number(lot.packs), rem);
-        if (take > 0) { result.push({ ...lot, take }); rem -= take; }
-    }
-    return result;
-}
 
 // `fecha_vencimiento` es una fecha SIN hora ('2027-11-01'). `new Date()` la lee
 // como UTC y `toLocaleDateString` la pinta en hora local: en El Salvador (UTC−6)
@@ -558,19 +551,6 @@ export async function getExactPageGroups(sucId, rawItems) {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-// countsBySuc: { [erp_sucursal_id]: numero_mensual_por_sucursal }
-export function buildPedidoCodigo(countsBySuc, date, nSelected) {
-    const d      = date instanceof Date ? date : new Date();
-    const dd     = String(d.getDate()).padStart(2, '0');
-    const mm     = String(d.getMonth() + 1).padStart(2, '0');
-    const yy     = String(d.getFullYear()).slice(-2);
-    const aabbcc = `${dd}${mm}${yy}`;
-    const dist   = nSelected >= TOTAL_NON_BODEGA ? '3' : nSelected > 1 ? '2' : '1';
-    return (sucId) => {
-        const nn = String(countsBySuc[sucId] ?? 1).padStart(2, '0');
-        return `${nn}-${aabbcc}-${dist}-${SUCURSAL_CODES[sucId] ?? `S${sucId}`}`;
-    };
-}
 
 export function toDispatch(qty, erpFactor, dispFactor) {
     if (!dispFactor || dispFactor === erpFactor) return qty;

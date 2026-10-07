@@ -5,7 +5,7 @@
 // semana entera y la lista de alertas.
 //
 // Horario, apertura y alertas salen del núcleo (`sucursales`), los mismos del
-// portal. Crear, editar y el análisis con IA se hacen en el portal.
+// portal. Editar una se hace desde su ficha; crearla y el análisis con IA, en el portal.
 //
 // Como el portal: los kioscos activos «N / 3» de cada una, la dirección con
 // municipio y departamento, y en el menú «Alquiladas / Propias». Inactiva =
@@ -21,7 +21,6 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { BotonGrande } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
@@ -101,10 +100,7 @@ export default function Sucursales() {
           </View>
         ))}
         {!visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Ninguna sucursal con ese filtro</Text> : null}
-        <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-          <BotonGrande texto="Editar sucursales (portal)" borde color={colorSistema.texto2}
-            onPress={() => router.push({ pathname: '/portal', params: { ruta: '/sucursales', nombre: 'Sucursales' } })} />
-        </View>
+        {/* Editar una sucursal: desde su ficha (horarios, legal, inmueble y servicios). */}
       </ScrollView>
     </>
   );

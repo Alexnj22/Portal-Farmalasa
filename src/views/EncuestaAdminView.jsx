@@ -28,7 +28,7 @@ import {
     fetchSurveyPreguntas, fetchSurveyResponses, actualizarEncuesta, insertSurvey,
     updateSurveyResponse, insertSurveyResponse, deleteSurveyResponse,
 } from '@nucleo/data/encuestas';
-import { categoriaDeAntiguedad, promedioPorPersona, puntajeDePersona } from '@nucleo/utils/climaLaboral';
+import { ALCANCES_DE_ENCUESTA, categoriaDeAntiguedad, idsDelAlcance, pendientesDelAlcance, promedioPorPersona, puntajeDePersona } from '@nucleo/utils/climaLaboral';
 import SearchInput from '../components/common/SearchInput';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -104,12 +104,8 @@ const ESTADO_TABS = [
     { id: 'archivada', label: 'Archivada' },
 ];
 
-const SCOPE_TABS = [
-    { id: 'all',       label: 'Todos' },
-    { id: 'branches',  label: 'Sucursales' },
-    { id: 'roles',     label: 'Jefaturas' },
-    { id: 'employees', label: 'Personal' },
-];
+// Las formas de dirigir una encuesta: núcleo (`climaLaboral`), las mismas de la app.
+const SCOPE_TABS = ALCANCES_DE_ENCUESTA;
 
 const TIPO_STYLE = {
     clima:        'bg-chart-3/10 text-chart-3-text',
@@ -318,7 +314,7 @@ export default function EncuestaAdminView() {
             nombre: sfNombre.trim(), año: Number(sfAño), tipo: sfTipo, estado: sfEstado,
             descripcion: sfDescripcion.trim() || null, anonima: sfAnonima,
             compartir_resultados: sfCompartir, scope_tipo: sfScope,
-            scope_ids: (sfScope === 'all' || sfScope === 'roles') ? [] : sfScopeIds,
+            scope_ids: idsDelAlcance(sfScope, sfScopeIds),
             fecha_inicio: sfFechaInicio || null, fecha_fin: sfFechaFin || null,
         };
         if (editingSurvey?.id) {
@@ -467,18 +463,7 @@ export default function EncuestaAdminView() {
         return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
     }, [respuestas]);
 
-    const pendingEmployees = useMemo(() => {
-        if (!selectedSurvey) return [];
-        let pool = employees;
-        if (selectedSurvey.scope_tipo === 'roles' && selectedSurvey.scope_ids?.length)
-            pool = pool.filter(e => selectedSurvey.scope_ids.includes(e.role_id));
-        else if (selectedSurvey.scope_tipo === 'branches' && selectedSurvey.scope_ids?.length)
-            pool = pool.filter(e => selectedSurvey.scope_ids.some(id => e.branch?.id === id));
-        else if (selectedSurvey.scope_tipo === 'employees' && selectedSurvey.scope_ids?.length)
-            pool = pool.filter(e => selectedSurvey.scope_ids.includes(e.id));
-        else return [];
-        return pool.filter(e => !respondedIds.has(e.id));
-    }, [selectedSurvey, employees, respondedIds]);
+    const pendingEmployees = useMemo(() => pendientesDelAlcance(selectedSurvey, employees, respondedIds), [selectedSurvey, employees, respondedIds]);
 
     const formPreguntas = preguntas.filter(p => p.tipo !== 'sucursal');
     const rfAnsweredCount = formPreguntas.filter(p => rfAnswers[p.indice] !== null).length;

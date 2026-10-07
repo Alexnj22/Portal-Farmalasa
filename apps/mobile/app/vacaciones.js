@@ -9,10 +9,12 @@
 // misma acción del portal (`processChangeRequest`). Cada persona lleva su
 // saldo del año (15 menos los días usados) y el comentario del plan, y el año
 // entero se ve como una línea de tiempo por persona (el Gantt del portal).
-// Asignar un plan sigue en el portal: el formulario revisa elegibilidad,
-// feriados y saldo, y no se repite acá.
+// Con la llave de editar el plan: «Asignar vacaciones» (`vacaciones/plan`, con
+// la elegibilidad y el saldo del portal) y, manteniendo presionado un plan
+// planificado o confirmado, Editar, Confirmar y Cancelar — con las mismas
+// funciones del portal (`updateVacationPlanStatus`, `deleteVacationPlan`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -26,6 +28,7 @@ import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { fallo, listo } from '../componentes/Progreso';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Avatar from '../componentes/Avatar';
@@ -47,6 +50,8 @@ export default function Vacaciones() {
   const fetchVacationPlans = useStaffStore((s) => s.fetchVacationPlans);
   const fetchVacationChangeRequests = useStaffStore((s) => s.fetchVacationChangeRequests);
   const processChangeRequest = useStaffStore((s) => s.processChangeRequest);
+  const updateVacationPlanStatus = useStaffStore((s) => s.updateVacationPlanStatus);
+  const deleteVacationPlan = useStaffStore((s) => s.deleteVacationPlan);
   const [vista, setVista] = useState('lista');
   const todas = getScope?.('vacation_plan') === 'ALL';
   const anioActual = Number(hoySV().slice(0, 4));
@@ -89,6 +94,31 @@ export default function Vacaciones() {
       opciones: [{ id: 'ALL', label: 'Todas las salas' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
   ];
 
+  const puedeEditar = hasPermission('vacation_plan', 'can_edit');
+  // Editar, confirmar o cancelar un plan, como los botones de la fila del
+  // portal (sólo planificado o confirmado; confirmar, sólo planificado).
+  const acciones = (p) => {
+    if (!puedeEditar || !['PLANNED', 'CONFIRMED'].includes(p.status)) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    const quien = p.employee ? shortEmployeeName(p.employee) : 'esta persona';
+    const ops = [['Editar', () => router.push({ pathname: '/vacaciones/plan', params: { id: String(p.id) } })]];
+    if (p.status === 'PLANNED') ops.push(['Confirmar', async () => {
+      try { await updateVacationPlanStatus(p.id, 'CONFIRMED'); listo('Vacaciones confirmadas', quien); cargar(); }
+      catch (e) { fallo('No se pudo confirmar', e?.message || ''); }
+    }]);
+    ops.push(['Cancelar el plan', () => Alert.alert('Cancelar vacaciones', `Se cancela el plan de ${quien} (${corta(p.start_date)} – ${corta(p.end_date)}).`, [
+      { text: 'No', style: 'cancel' },
+      { text: 'Cancelar el plan', style: 'destructive', onPress: async () => {
+        const ok = await deleteVacationPlan(p.id);
+        if (ok) { listo('Plan cancelado', quien); cargar(); } else fallo('No se pudo cancelar el plan', '');
+      } },
+    ])]);
+    ActionSheetIOS.showActionSheetWithOptions(
+      { title: quien, options: [...ops.map((o) => o[0]), 'Cerrar'], cancelButtonIndex: ops.length, destructiveButtonIndex: ops.length - 1 },
+      (i) => { if (i < ops.length) ops[i][1](); },
+    );
+  };
+
   return (
     <>
       <Stack.Screen options={{
@@ -122,7 +152,7 @@ export default function Vacaciones() {
             {lista.map((p) => {
               const ahora = p.start_date <= hoy && p.end_date >= hoy && !['CANCELLED', 'DRAFT'].includes(p.status);
               return (
-                <View key={p.id} style={{ marginHorizontal: 16 }}>
+                <Pressable key={p.id} onLongPress={() => acciones(p)} delayLongPress={350} style={{ marginHorizontal: 16 }}>
                   <Vidrio radio={20} tinte={ahora ? 'rgba(18,183,106,0.14)' : undefined}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}>
                       <Avatar empleado={p.employee ?? { name: '?' }} tamano={40} />
@@ -149,7 +179,7 @@ export default function Vacaciones() {
                       </View>
                     </View>
                   </Vidrio>
-                </View>
+                </Pressable>
               );
             })}
           </View>
@@ -159,10 +189,11 @@ export default function Vacaciones() {
             {texto ? 'Nadie con esa búsqueda' : `Sin vacaciones planificadas en ${anio}`}
           </Text>
         ) : null}
-        {hasPermission('vacation_plan', 'can_edit') ? (
-          <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-            <BotonGrande texto="Asignar un plan (portal)" borde color={MARCA.azulClaro}
-              onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/portal', params: { ruta: '/vacaciones', nombre: 'Vacaciones' } }); }} />
+        {puedeEditar ? (
+          <View style={{ marginHorizontal: 16, marginTop: 8, gap: 8 }}>
+            <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>Mantén presionado un plan para editarlo, confirmarlo o cancelarlo.</Text>
+            <BotonGrande texto="Asignar vacaciones" color={MARCA.azul}
+              onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/vacaciones/plan', params: { anio: String(anio) } }); }} />
           </View>
         ) : null}
       </ScrollView>

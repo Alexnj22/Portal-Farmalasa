@@ -10,8 +10,9 @@
 // identidad (`identidad_conocida`). Sin la llave la sección no se pinta.
 //
 // «Editar la ficha» abre la edición nativa (`empleado/editar`: nombre, código,
-// cargos, sala, contacto, contrato); el resto del expediente sigue en el
-// portal, y el botón del pie lo abre ahí.
+// cargos, sala, contacto, contrato) y «Expediente» la del expediente
+// (`empleado/expediente`: foto, documentos por sección, estudios y la cuenta
+// de la planilla).
 import { useMemo, useState } from 'react';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -194,8 +195,8 @@ export default function Empleado() {
           <BotonGrande texto="Editar la ficha" onPress={() => router.push({ pathname: '/empleado/editar', params: { id: String(emp.id) } })} />
         ) : null}
         {hasPermission?.('staff_detail', 'can_view') ? (
-          <BotonGrande texto="Expediente completo (portal)" borde color={MARCA.azulClaro}
-            onPress={() => router.push({ pathname: '/portal', params: { ruta: `/personal/empleado/${emp.id}`, nombre: shortEmployeeName(emp) } })} />
+          <BotonGrande texto="Expediente: foto, documentos, estudios y cuenta" borde color={MARCA.azulClaro}
+            onPress={() => router.push({ pathname: '/empleado/expediente', params: { id: String(emp.id) } })} />
         ) : null}
       </ScrollView>
     </>

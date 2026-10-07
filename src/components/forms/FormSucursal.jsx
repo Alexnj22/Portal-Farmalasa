@@ -2,6 +2,7 @@ import React, { useMemo, useCallback, Suspense } from 'react';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { WEEK_DAYS } from '@nucleo/data/constants';
 import { EL_SALVADOR_GEO } from './BranchHelpers';
+import { candidatosLegales, finDeContrato, limpiarAjustes, limpiarHorario } from '@nucleo/utils/edicionDeSucursal';
 
 const BranchTabGeneral = React.lazy(() => import('./BranchTabGeneral'));
 const BranchTabLegal = React.lazy(() => import('./BranchTabLegal'));
@@ -9,49 +10,11 @@ const BranchTabInmueble = React.lazy(() => import('./BranchTabInmueble'));
 const BranchTabServicios = React.lazy(() => import('./BranchTabServicios'));
 const BranchTabHorarios = React.lazy(() => import('./BranchTabHorarios'));
 
-const purifySettings = (raw) => {
-    let s = raw;
-    for (let i = 0; i < 3; i++) {
-        if (typeof s === 'string') {
-            try { s = JSON.parse(s); } catch { break; }
-        }
-    }
-    if (!s || typeof s !== 'object') s = {};
-    return JSON.parse(JSON.stringify(s)); 
-};
-
-const purifyHours = (raw) => {
-    let h = raw;
-    for (let i = 0; i < 3; i++) {
-        if (typeof h === 'string') {
-            try { h = JSON.parse(h); } catch { break; }
-        }
-    }
-    if (!h || typeof h !== 'object') h = {};
-    
-    h = JSON.parse(JSON.stringify(h));
-
-    if (Object.keys(h).length === 0) {
-        WEEK_DAYS.forEach(day => { h[day.id] = { isOpen: false, start: "", end: "" }; });
-    }
-    return h;
-};
-
-// CORRECCIÓN MATEMÁTICA DE ZONA HORARIA
-const calculateEndDate = (startDateStr, durationMonths) => {
-    if (!startDateStr || !durationMonths) return null;
-    
-    const [year, month, day] = startDateStr.split('-');
-    
-    const date = new Date(year, month - 1, day, 12, 0, 0); 
-    date.setMonth(date.getMonth() + parseInt(durationMonths, 10));
-    
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    
-    return `${y}-${m}-${d}`;
-};
+// Desenvolver ajustes y horario, y el fin del contrato: núcleo
+// (`edicionDeSucursal`), lo mismo que usa la app.
+const purifySettings = limpiarAjustes;
+const purifyHours = limpiarHorario;
+const calculateEndDate = finDeContrato;
 
 const EMPTY_EMPLOYEES = [];
 const EMPTY_OBJ = {};
@@ -120,9 +83,11 @@ const FormSucursal = ({ formData, setFormData, section = "general" }) => {
         }
     }, [safeDay, setDay]);
 
-    const availableRegents = useMemo(() => employees.filter(e => e.role && e.role.toUpperCase().includes('REGENTE') && !e.role.toUpperCase().includes('ENFERMER')), [employees]);
-    const availablePharmacovigilance = useMemo(() => employees.filter(e => e.role && e.role.toUpperCase().includes('FARMACOVIGILANCIA')), [employees]);
-    const availableNurses = useMemo(() => employees.filter(e => e.role && e.role.toUpperCase().includes('ENFERMER')), [employees]);
+    // Quién puede figurar en el legal: núcleo (`candidatosLegales`), lo mismo que la app.
+    const candidatos = useMemo(() => candidatosLegales(employees), [employees]);
+    const availableRegents = candidatos.regentes;
+    const availablePharmacovigilance = candidatos.farmacovigilancia;
+    const availableNurses = candidatos.enfermeria;
 
     const toggleNurse = (empId) => {
         const currentNurses = legal.nurses || [];

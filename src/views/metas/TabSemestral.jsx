@@ -25,22 +25,13 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import {
     ymHoySV, ymLabelCorto, semestreDe, semestreSumar, semestreLabel, semestrePagoLabel,
+    SEMESTRE_INICIO, ESTADO_MES_SEMESTRAL, ROTULO_DE_BAJA, resumenDelSemestre,
 } from '@nucleo/utils/metasUtils';
 
-// El primer semestre con la foto del cierre: julio y agosto de 2026 se tomaron
-// el 22-sep al crear el módulo. Enero–junio 2026 se pagó en julio fuera del
-// portal, así que no hay nada que mostrar antes de acá.
-const SEMESTRE_INICIO = '2026-S2';
-
-const ESTADO_MES = {
-    cerrado:     { variant: 'success', rotulo: 'cerrado' },
-    provisional: { variant: 'warning', rotulo: 'en curso' },
-    futuro:      { variant: 'neutral', rotulo: 'pendiente' },
-};
-
-const STATUS_ROTULO = {
-    INACTIVO: 'Inactivo', BAJA: 'De baja', LIQUIDADO: 'Liquidado', SUSPENDIDO: 'Suspendido',
-};
+// El primer semestre, el estado de cada mes, el rótulo de una baja y la cuenta
+// de la hoja: núcleo (`metasUtils`), lo mismo que la app.
+const ESTADO_MES = ESTADO_MES_SEMESTRAL;
+const STATUS_ROTULO = ROTULO_DE_BAJA;
 
 /**
  * El pago semestral del bono de meta — docs/planes-cerrados/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md.
@@ -102,22 +93,15 @@ export default function TabSemestral({ canApprove, searchTerm = '' }) {
         return shortEmployeeName(emp || { name: p.nombre });
     }, [empleados]);
 
-    const meses = useMemo(() => (Array.isArray(hoja?.meses) ? hoja.meses : []), [hoja]);
-    const todas = useMemo(() => (Array.isArray(hoja?.personas) ? hoja.personas : []), [hoja]);
+    const r = useMemo(() => resumenDelSemestre(hoja, ymActual), [hoja, ymActual]);
+    const { meses, aprobado, terminado, todosCerrados, informativo, aPagar, porDecidir, hayInactivos } = r;
+    const todas = r.personas;
     // Los totales de arriba cuentan a TODOS; la búsqueda sólo recorta la tabla.
     const personas = todas;
     const filtradas = useMemo(() => {
         if (!searchTerm.trim()) return todas;
         return todas.filter((p) => tokenMatch(searchTerm, p.nombre, p.code));
     }, [todas, searchTerm]);
-    const aprobado = hoja?.estado === 'aprobado';
-    const terminado = meses.length === 6 && meses[5].ym < ymActual;
-    const todosCerrados = meses.length === 6 && meses.every((m) => m.estado === 'cerrado');
-    const informativo = meses.some((m) => m.estado !== 'futuro' && m.informativo);
-
-    const aPagar = personas.filter((p) => p.pagar).reduce((a, p) => a + Number(p.total || 0), 0);
-    const porDecidir = personas.filter((p) => !p.activo && !p.decision).length;
-    const hayInactivos = personas.some((p) => !p.activo);
 
     const { page, pageSize, totalPages, setPage, setPageSize } = usePaginaEnUrl({ total: filtradas.length });
     const visibles = useMemo(

@@ -13,7 +13,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
 import { fetchMetasGastos, anularMetaGasto } from '@nucleo/data/metas';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { ymHoySV, ymLabel, ymLabelCorto } from '@nucleo/utils/metasUtils';
+import { resumenDeGastos, ymHoySV, ymLabel, ymLabelCorto } from '@nucleo/utils/metasUtils';
 
 const COLS = [
     { key: 'mes',   label: 'Mes' },
@@ -54,15 +54,8 @@ export default function TabGastos({ canEdit, reloadKey, onChanged, onAgregarGast
             tokenMatch(searchTerm, g.concepto, ...(g.salas || []).map((s) => s.sala)));
     }, [gastos, searchTerm]);
 
-    const resumen = useMemo(() => {
-        const vivos = gastos.filter((g) => g.estado === 'activo');
-        return {
-            cuantos: vivos.length,
-            porRecuperar: vivos.reduce((s, g) => s + Number(g.monto_total || 0), 0),
-            agregaAMetas: vivos.reduce((s, g) => s + Number(g.venta_viva || 0), 0),
-            margen: gastos[0]?.margen_pct ?? 25,
-        };
-    }, [gastos]);
+    // Las tarjetas: núcleo (`resumenDeGastos`), lo mismo que la app.
+    const resumen = useMemo(() => resumenDeGastos(gastos), [gastos]);
 
     const quitar = async (g) => {
         setBusy(g.id);

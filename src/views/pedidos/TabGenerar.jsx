@@ -13,10 +13,12 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { printPerSucursal, buildPedidoCodigo, fefoProject, getExactPageGroups } from '@nucleo/utils/pedidoPrint';
+import { printPerSucursal, getExactPageGroups } from '@nucleo/utils/pedidoPrint';
+import { generarPedidoDirecto } from '@nucleo/data/accionesDePedido';
+import { nivelDeUrgencia, salaSinMinMaxPublicado } from '@nucleo/utils/tableroDePedidos';
 import { ERP_NAMES, SUCURSALES } from '@nucleo/constants/erp';
 import Contador from '../../components/common/Contador';
-import { confirmarPedido, fetchActiveEmployeesBasic, fetchPedidoIdsSinceExcluding, fetchPedidoItemsForPrintCapture, fetchPedidoNumero, fetchPedidoSucursalStatusForPedidos, fetchTableroParaGenerarPedido, fetchVistaPreviaDePedido, iniciarCodigosDeSucursalesDelPedido, tieneEtiquetaDeDespacho, updatePedidoSucursalStatus } from '@nucleo/data/pedidos';
+import { fetchActiveEmployeesBasic, fetchPedidoItemsForPrintCapture, fetchTableroParaGenerarPedido, tieneEtiquetaDeDespacho, updatePedidoSucursalStatus } from '@nucleo/data/pedidos';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 
 function friendlyError(e) {
@@ -112,85 +114,21 @@ export default function TabGenerar({ searchTerm = '' }) {
         if (selected.size === 0) return;
         setConfirming(true); setError(null);
         try {
-            const rpcParams = globalMode
-                ? { p_sucursal_ids: SUCURSALES, p_target_ids: [...selected] }
-                : { p_sucursal_ids: [...selected] };
-            const { data, error: rpcErr } = await fetchVistaPreviaDePedido(rpcParams);
-            if (rpcErr) throw rpcErr;
-            const rows = Array.isArray(data) ? data : [];
-            if (rows.length === 0) {
+            // Calcular, confirmar y poner los códigos: núcleo (`generarPedidoDirecto`),
+            // lo mismo que hace la app del teléfono. Acá además se imprime.
+            const esEmpleado = employees.some(e => e.id === user?.id);
+            const gen = await generarPedidoDirecto({
+                salas: [...selected], globalMode, userId: user?.id ?? null, responsableId: esEmpleado ? user.id : null,
+            });
+            if (!gen) {
                 const msg = 'Las sucursales seleccionadas están abastecidas — no hay nada que pedir.';
                 setError(msg);
                 showToast('Sin necesidades', msg, 'info');
                 return;
             }
-            const pItems = rows.map(row => ({
-                erp_sucursal_id:       row.erp_sucursal_id,
-                erp_product_id:        row.erp_product_id,
-                erp_presentacion_id:   row.erp_presentacion_id,
-                cantidad_asignada:     row.cantidad_asignada,
-                sin_stock:             row.sin_stock,
-                revision_minmax:       row.revision_minmax,
-                agotamiento:           row.agotamiento ?? false,
-                stock_packs_snapshot:  Number(row.stock_packs),
-                max_qty_snapshot:      row.max_qty,
-                min_qty_snapshot:      row.min_qty,
-                urgencia_pct_snapshot: row.urgencia_pct,
-                lotes_asignados:       fefoProject(row.lotes_bodega, row.cantidad_asignada),
-                factor:                row.factor,
-                dispatch_tipo:         row.dispatch_tipo,
-                dispatch_factor:       row.dispatch_factor,
-                // confirm_pedido ya lo leía del payload, pero nadie se lo mandaba:
-                // el COALESCE lo dejaba en 1 para todo el catálogo aunque la regla
-                // dijera otra cosa (391 reglas tienen un múltiplo distinto de 1).
-                dispatch_multiplo:     row.dispatch_multiplo ?? 1,
-                caja_especial:         row.caja_especial ?? false,
-            }));
-            const esEmpleado = employees.some(e => e.id === user?.id);
-            const { data: pedidoId, error: confErr } = await confirmarPedido({
-                p_created_by:     user?.id ?? null,
-                p_notes:          null,
-                p_items:          pItems,
-                p_responsable_id: esEmpleado ? user.id : null,
-                p_revisado_por:   null,
-                p_sucursal_ids:   [...selected],
-            }, { directo: true });
-            if (confErr) throw confErr;
-            const { data: ped } = await fetchPedidoNumero(pedidoId);
-
-            const map = {};
-            for (const row of rows) {
-                const s = row.erp_sucursal_id;
-                if (!map[s]) map[s] = { normal: [], revision: [], sinStock: [], agotamiento: [] };
-                if (row.sin_stock)            map[s].sinStock.push(row);
-                else if (row.revision_minmax) map[s].revision.push(row);
-                else if (row.agotamiento)     map[s].agotamiento.push(row);
-                else                          map[s].normal.push(row);
-            }
-            const sucIds     = SUCURSALES.filter(id => map[id]);
-            const meta       = { responsable: user?.name ?? null, revisor: null, generadoPor: user?.name ?? null, pedidoNumero: ped?.numero };
-
-            // Numero por sucursal por mes: cuántos pedidos previos tiene cada sucursal este mes + 1
-            const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-            const { data: pedidosMes } = await fetchPedidoIdsSinceExcluding(monthStart, pedidoId);
-            const pedidoIdsMes = (pedidosMes ?? []).map(p => p.id);
-            const countsBySuc = {};
-            for (const id of sucIds) countsBySuc[id] = 1;
-            if (pedidoIdsMes.length > 0) {
-                const { data: sucRecs } = await fetchPedidoSucursalStatusForPedidos(pedidoIdsMes, sucIds);
-                for (const r of (sucRecs ?? [])) {
-                    if (countsBySuc[r.erp_sucursal_id] !== undefined) countsBySuc[r.erp_sucursal_id]++;
-                }
-            }
-
-            const codigoFn   = buildPedidoCodigo(countsBySuc, new Date(), globalMode ? SUCURSALES.length : sucIds.length);
-            const codigosMap = {};
-            for (const id of sucIds) codigosMap[id] = codigoFn(id);
-
-            iniciarCodigosDeSucursalesDelPedido({
-                p_pedido_id: pedidoId,
-                p_codigos:   sucIds.map(id => ({ erp_sucursal_id: id, codigo: codigosMap[id] })),
-            }).then(() => {}).catch(() => {});
+            const { pedidoId, map, sucIds, codigoFn, items: pItems } = gen;
+            const ped = { numero: gen.numero };
+            const meta = { responsable: user?.name ?? null, revisor: null, generadoPor: user?.name ?? null, pedidoNumero: ped?.numero };
 
             printPerSucursal(map, sucIds, r => r.cantidad_asignada, codigoFn, meta);
 
@@ -261,11 +199,9 @@ export default function TabGenerar({ searchTerm = '' }) {
     // se muestran como "pendiente" — inactivas, no seleccionables.
     const visibleSucursales = SUCURSALES;
 
-    const isSucPending = (id) => {
-        if (dashLoading) return false;
-        const s = statMap[id];
-        return !s || ((s.con_bodega_productos ?? 0) + (s.sin_bodega_productos ?? 0)) === 0;
-    };
+    // Sin MIN·MAX publicado no se elige: núcleo (`salaSinMinMaxPublicado`).
+    const isSucPending = (id) => !dashLoading && salaSinMinMaxPublicado(statMap[id]);
+
 
     // Las que se pueden elegir de verdad: una sucursal sin MIN/MAX publicado
     // se pinta inactiva y no entra ni en la acción ni en el rótulo del botón.
@@ -290,13 +226,9 @@ export default function TabGenerar({ searchTerm = '' }) {
     }, [statMap]);
 
     // urgLevel: 'high' ≥65% depleción · 'mid' ≥40% · 'low' <40% · 'none' sin datos
-    const getUrgLevel = (stat) => {
-        const pct = stat?.avg_urgencia_pct;
-        if (pct == null) return 'none';
-        if (pct >= 65) return 'high';
-        if (pct >= 40) return 'mid';
-        return 'low';
-    };
+    // Los cortes de urgencia: núcleo (`nivelDeUrgencia`), los mismos de la app.
+    const getUrgLevel = (stat) => nivelDeUrgencia(stat?.avg_urgencia_pct);
+
 
     // ── Sin-bodega — client-side filter + sort + paginate ─────
     const { results: sinFiltered, isFuzzy: isSinFuzzy } = useMemo(() => {

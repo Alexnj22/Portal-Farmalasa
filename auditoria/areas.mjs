@@ -840,7 +840,7 @@ export const AREAS = [
             'src/data/pedidos.js', 'src/data/devoluciones.js', 'src/data/diferencias.js', 'src/data/llegadaDePedido.js',
             'src/data/dispatchRules.js', 'src/data/recepcion.js',
             'src/hooks/useResolverDiferencia.js', 'src/hooks/usePedidosData.js',
-            'src/utils/tableroDePedidos.js', 'src/constants/pedidos.js',
+            'src/utils/tableroDePedidos.js', 'src/data/accionesDePedido.js', 'src/constants/pedidos.js',
             'src/utils/pedidoPrint.js', 'src/utils/hojasRecepcion.js',
             'src/utils/routeOptimizer.js', 'src/utils/decisionDiferencia.js',
         ],

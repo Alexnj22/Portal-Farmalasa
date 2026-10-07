@@ -28,7 +28,8 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Campo from './Campo';
 import {
     fmtUnidades, rotuloPresentacion, descuentoDesdeLaPromocion, problemasDelDescuento,
-    problemasDeLaPromocion, numeroEscrito,
+    problemasDeLaPromocion,
+    generalDePromocionNuevo, renglonDePromocionNuevo, renglonesParaCrear, destinoDelDescuento,
 } from '@nucleo/utils/promocionesUtils';
 import { hoySV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -65,59 +66,10 @@ const useSalasDeVenta = () => {
  * llegar en fechas distintas—. Lo que cambia es de dónde salen: se rellenan
  * desde acá, y el que necesite otra cosa se ajusta uno por uno.
  */
-const generalNuevo = (salas = []) => ({
-    inicio: hoySV(),
-    // Vacío para que se ELIJA, no porque se pueda guardar así: `fin` es NOT
-    // NULL en la base (medido el 2026-10-01). Hasta esa fecha este comentario
-    // decía lo contrario y el guardado reventaba con un error genérico;
-    // `problemasDeLaPromocion` lo dice antes.
-    fin: '',
-    lote_total: '',
-    tiene_bono: true,
-    paga: 'proveedor',
-    supplier_id: '',
-    bono_vendedor: '1.00',
-    bono_adm: '0.25',
-    bono_bodega: '0.25',
-    unidades_por_bono: '1',
-    /* Las salas donde APLICA. Ninguna marcada = todas, y es el caso más común.
-       Marcarlas acota las dos mitades: qué ventas cuentan para el bono (la base
-       filtra por `promocion_reparto` desde el 2026-09-05) y dónde baja el
-       precio en la venta. */
-    salas: Object.fromEntries(salas.map((s) => [s.id, false])),
-    /* Cuántas unidades del lote le tocan a cada sala marcada. Opcional: 0 vale
-       como «aplica acá, sin lote asignado». Si se reparte, la base exige que la
-       suma dé exactamente el lote. */
-    reparto: Object.fromEntries(salas.map((s) => [s.id, ''])),
-});
-
-/* Un producto nace con los valores generales YA puestos y **confirmado**: antes
-   cada uno abría su propio formulario y había que cerrarlo, que es justo lo que
-   volvía inviable agregar doce. El que necesite algo distinto se abre con
-   «Ajustar». */
-const renglonNuevo = (prod, salas, general) => ({
-    erp_product_id: prod.id,
-    producto: prod.nombre,
-    laboratorio: prod.laboratorio_nombre || 'Sin laboratorio',
-    factor_unidades: null,
-    inicio: general.inicio,
-    fin: general.fin,
-    lote_total: general.lote_total,
-    tiene_bono: general.tiene_bono,
-    paga: general.paga,
-    supplier_id: general.supplier_id,
-    bono_vendedor: general.bono_vendedor,
-    bono_adm: general.bono_adm,
-    bono_bodega: general.bono_bodega,
-    unidades_por_bono: general.unidades_por_bono,
-    salas: { ...(general.salas || {}) },
-    reparto: { ...(general.reparto || {}) },
-    confirmado: true,
-    /* Marca si alguien lo tocó a mano. Sin esto, cambiar la fecha general
-       después de agregar productos pisaría en silencio el ajuste que alguien ya
-       hizo — y no habría cómo notarlo. */
-    ajustado: false,
-});
+// Lo general, cómo nace un producto, el cuerpo de `crear_promocion` y la sala
+// del descuento: núcleo (`promocionesUtils`), lo mismo que usa la app.
+const generalNuevo = generalDePromocionNuevo;
+const renglonNuevo = (prod, _salas, general) => renglonDePromocionNuevo(prod, general);
 
 /**
  * Nueva promoción.
@@ -293,18 +245,11 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
            el 2026-09-05: el mismo producto con las mismas fechas en otra sala
            lo rechaza—. Con una sala marcada va ahí; con ninguna, a todas; con
            varias, manda lo que se eligió en el bloque del descuento. */
-        const marcadas = salas.filter((x) => general.salas?.[x.id]);
-        const unaSola = marcadas.length === 1 ? marcadas[0] : null;
-        const todas = unaSola ? false : (marcadas.length === 0 ? true : !!desc.todas);
-        const branchId = unaSola
-            ? unaSola.id
-            : (todas ? (salas[0]?.id ?? null) : Number(desc.branchId) || null);
-
+        const destino = destinoDelDescuento(salas, general.salas, desc);
         const r = await guardarDescuento({
             ...descuentoDesdeLaPromocion(renglones, desc),
             descripcion: nombre.trim(),
-            todas_las_salas: todas,
-            branch_id: branchId,
+            ...destino,
             promocion_id: promoId,
             forzar,
         });
@@ -354,37 +299,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
             const creada = await crearPromocion({
                 nombre,
                 nota,
-                renglones: renglones.map((r) => ({
-                    erp_product_id: r.erp_product_id,
-                    factor_unidades: r.factor_unidades,
-                    inicio: r.inicio,
-                    fin: r.fin,
-                    // Vacío viaja como vacío, no como cero: la base distingue
-                    // «no se sabe» de «cero», y `Number('')` daría 0.
-                    lote_total: r.lote_total === '' ? null : numeroEscrito(r.lote_total),
-                    tiene_bono: !!r.tiene_bono,
-                    paga: r.tiene_bono ? r.paga : null,
-                    supplier_id: r.tiene_bono && r.paga === 'proveedor'
-                        ? (r.supplier_id === '' ? null : Number(r.supplier_id))
-                        : null,
-                    // `numeroEscrito` acepta «1,5»; lo que no es número ya lo
-                    // frenó `problemasDeLaPromocion`, así que el `?? 0` sólo
-                    // cubre el campo vacío.
-                    bono_vendedor: r.tiene_bono ? numeroEscrito(r.bono_vendedor) ?? 0 : 0,
-                    bono_adm: r.tiene_bono ? numeroEscrito(r.bono_adm) ?? 0 : 0,
-                    bono_bodega: r.tiene_bono ? numeroEscrito(r.bono_bodega) ?? 0 : 0,
-                    unidades_por_bono: numeroEscrito(r.unidades_por_bono) || 1,
-                    /* Una fila POR SALA MARCADA, con sus unidades o 0. El 0 no
-                       es relleno: la base lo lee como «aplica acá, sin lote
-                       asignado» y por eso acota el bono. Sin ninguna marcada no
-                       va ninguna fila, que es «todas las salas». */
-                    reparto: Object.entries(r.salas || {})
-                        .filter(([, marcada]) => marcada)
-                        .map(([branch_id]) => ({
-                            branch_id: Number(branch_id),
-                            unidades: numeroEscrito(r.reparto?.[branch_id]) || 0,
-                        })),
-                })),
+                renglones: renglonesParaCrear(renglones),
             });
 
             /* Encenderla, si se pidió. Si esto falla la promoción ya existe en

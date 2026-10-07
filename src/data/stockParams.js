@@ -361,3 +361,16 @@ export async function salaTieneMinMaxPublicado(erpSucursalId) {
     if (error) return { publicado: null, error };
     return { publicado: (data ?? []).length > 0, error: null };
 }
+
+/**
+ * Descartar el borrador de UNA fila: vuelve al número vigente y queda sin
+ * borrador. Lo usan la tabla del portal y la revisión de la sala en la app.
+ * Devuelve el par al que volvió, para pintarlo sin recargar.
+ */
+export async function descartarBorradorDeFila(row) {
+    const min = row.effective_min ?? 0;
+    const max = row.effective_max ?? 0;
+    const { error } = await updateStockParams(row.erp_product_id, row._erp_sucursal_id,
+        { draft_min: min, draft_max: max, draft_status: 'none', updated_at: new Date().toISOString() });
+    return { min, max, error };
+}

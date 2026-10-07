@@ -28,6 +28,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import {
     FORMATOS, PILARES, ESTADOS_PIEZA, ESTADOS_DEL_DISENADOR, ESTADOS_DE_SALIDA, estadoDe, objetivoDe,
     asignadoEnPauta, aptoParaWhatsApp, formatoDe,
+    PIEZA_VACIA, faltaEnPieza, datosDePieza,
 } from '@nucleo/utils/marketing';
 import {
     guardarPieza, borrarPieza, subirDiseno, agregarEnlace, quitarArchivo, revisarPieza, moverPieza,
@@ -47,10 +48,9 @@ import AnotadorModal from './AnotadorModal';
 import VersionesModal from './VersionesModal';
 import { medirArchivo } from './medir';
 
-const VACIA = {
-    marcas: [], fecha: '', hora: '', formato: 'post', redes: [], pilar: '', titulo: '', promocion_id: '',
-    copy: '', hashtags: '', notas: '', estado: 'pendiente', pautar: false, enlace_publicado: '', monto: '',
-};
+// La pieza vacía, lo que falta para guardar y la fila que se manda: núcleo
+// (`marketing`), lo mismo que usa la app.
+const VACIA = PIEZA_VACIA;
 // Lo que la red muestra antes del «más»: lo importante va antes.
 const CORTE_DEL_TEXTO = 125;
 
@@ -153,7 +153,7 @@ export default function PiezaModal({
     const pasado = form.pautar && monto > 0 && disponible < 0;
 
     const largoTexto = (form.copy || '').length;
-    const falta = !form.titulo?.trim() || !form.fecha || !form.marcas.length || !form.formato || pasado;
+    const falta = faltaEnPieza(form, { limite, otros });
 
     const subirUno = async (piezaId, mesId, item, orden) => {
         if (item.tipo === 'archivo') {
@@ -168,12 +168,7 @@ export default function PiezaModal({
         if (falta) return;
         setGuardando(true);
         try {
-            const { monto: _monto, ...resto } = form;
-            const datos = {
-                ...resto, hora: form.hora || null, pilar: form.pilar || null, promocion_id: form.promocion_id || null,
-                marca_id: form.marcas[0],
-            };
-            if (datos.estado === 'publicado' && !pieza?.publicado_en) datos.publicado_en = new Date().toISOString();
+            const datos = datosDePieza(form, pieza);
             const fila = await guardarPieza(mes.id, datos);
             // La pauta va aparte (su propia tabla y su tope). Desmarcar «se
             // pautará» libera lo asignado.

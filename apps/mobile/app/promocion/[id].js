@@ -170,9 +170,9 @@ export default function Promocion() {
                 color={fila.estado === 'activa' ? MARCA.ambar : MARCA.verde}
                 onPress={() => alternarPromocion(fila, () => { fila.estado = fila.estado === 'activa' ? 'borrador' : 'activa'; tras(); })} />
             ) : null}
-            {esLab && fila.estado !== 'finalizada' ? (
+            {fila.estado !== 'finalizada' ? (
               <Accion texto="Editar" icono="PenLine"
-                onPress={() => router.push({ pathname: '/promocion-laboratorio/[id]', params: { id: String(fila.id) } })} />
+                onPress={() => router.push({ pathname: esLab ? '/promocion-laboratorio/[id]' : '/promocion-producto/[id]', params: { id: String(fila.id) } })} />
             ) : null}
             {/* Reactivar: sólo las de producto (la de laboratorio vive por MES: se duplica). */}
             {fila.estado === 'finalizada' && !esLab ? (

@@ -8,17 +8,25 @@
 // (`updatePayrollPeriodStatus`) y con confirmación: Aprobar (borrador con
 // renglones) y Marcar pagada (aprobada). «Todas las boletas» arma el MISMO
 // papel del portal (`documentoDeBoletas`) en un PDF para compartir o imprimir,
-// y se anota como egreso. Generar, regenerar y editar una fila siguen en el
-// portal: escriben la planilla entera y piden el formulario completo.
+// y se anota como egreso.
+//
+// También, con la llave de aprobar o editar la nómina: abrir una quincena
+// (`nomina/periodo`), Generar / Regenerar con `generatePayrollEntries` (con
+// confirmación y avisando antes las horas sin aprobar; regenerar respeta las
+// filas ya editadas, como en el portal), editar la fila de una persona
+// (mantener presionada → `nomina/fila/[id]`) y el CSV del banco
+// (`csvDelBanco`, el MISMO texto que baja el portal; sin la llave de aprobar
+// las cuentas salen como ****).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Share, Text, View } from 'react-native';
+import { File, Paths } from 'expo-file-system';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchUnapprovedTimesheetsCount } from '@nucleo/data/payroll';
 import { registrarEgreso } from '@nucleo/data/egreso';
-import { ESTADO_PLANILLA, ordenDeCargo, rotuloDePeriodo, totalesDePlanilla } from '@nucleo/utils/planilla';
+import { ESTADO_PLANILLA, csvDelBanco, ordenDeCargo, rotuloDePeriodo, totalesDePlanilla } from '@nucleo/utils/planilla';
 import { documentoDeBoletas } from '@nucleo/utils/boletaDePapel';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -55,8 +63,12 @@ export default function Nomina() {
   const fetchPayrollPeriods = useStaffStore((s) => s.fetchPayrollPeriods);
   const fetchPayrollEntries = useStaffStore((s) => s.fetchPayrollEntries);
   const updatePayrollPeriodStatus = useStaffStore((s) => s.updatePayrollPeriodStatus);
+  const generatePayrollEntries = useStaffStore((s) => s.generatePayrollEntries);
+  const puedeVerCuentas = !!hasPermission?.('payroll', 'can_approve');
   const todas = getScope?.('payroll') === 'ALL';
   const puedeDescargar = !!hasPermission?.('payroll_descargar');
+  // Crear una quincena exige EDITAR (la policy de payroll_periods pide can_edit).
+  const puedeEditar = !!hasPermission?.('payroll', 'can_edit');
   const puedeDecidir = !!(hasPermission?.('payroll', 'can_approve') || hasPermission?.('payroll', 'can_edit'));
   const [periodoId, setPeriodoId] = useState(null);
   const [estadoFiltro, setEstadoFiltro] = useState('ALL');
@@ -140,6 +152,58 @@ export default function Nomina() {
     ]);
   };
 
+  // Generar (o regenerar) la planilla del período. Escribe todas las filas:
+  // confirmación siempre, y si hay horas sin aprobar se avisa ANTES, porque
+  // la planilla saldría armada sobre un dato que nadie revisó.
+  const generar = () => {
+    const re = conRenglones;
+    const nombre = periodo.name || rotuloDePeriodo(periodo.start_date, periodo.end_date);
+    const alcance = sala === 'ALL' ? 'todas las salas' : nombreSala(sala);
+    const avisoHoras = sinAprobar > 0 ? `\n\nHay ${sinAprobar} timesheet${sinAprobar === 1 ? '' : 's'} sin aprobar en este período.` : '';
+    Alert.alert(re ? 'Regenerar la planilla' : 'Generar la planilla',
+      `«${nombre}», ${alcance}. ${re ? 'Se recalculan las filas que no se editaron a mano.' : 'Se arma una fila por persona con sus horas aprobadas.'}${avisoHoras}`, [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: re ? 'Regenerar' : 'Generar', style: sinAprobar > 0 ? 'destructive' : 'default', onPress: async () => {
+          setOcupado(true);
+          trabajando(re ? 'Regenerando…' : 'Generando…');
+          try {
+            const r = await generatePayrollEntries(periodo.id, sala === 'ALL' ? null : sala);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+            if (r?.warnings?.length) {
+              listo('Planilla generada con advertencias', `${r.warnings.length} persona(s) sin salario base: ${r.warnings.slice(0, 2).join(', ')}${r.warnings.length > 2 ? ' y más…' : ''}`);
+            } else listo('Planilla generada', nombre);
+          } catch (e) {
+            fallo('No se pudo generar', mensajeAmigable(e, 'Intenta de nuevo.'));
+          } finally { setOcupado(false); }
+        } },
+      ]);
+  };
+
+  // El CSV del banco: el mismo texto del portal (`csvDelBanco`), compartido
+  // con la hoja del sistema y anotado como la salida más sensible que es.
+  const csvBanco = async () => {
+    if (!visibles.length || !periodo) return;
+    try {
+      const nombre = `planilla-banco-${String(periodo.name || rotuloDePeriodo(periodo.start_date, periodo.end_date)).replace(/[\\/:*?"<>|]+/g, '-')}.csv`;
+      const f = new File(Paths.cache, nombre);
+      if (f.exists) f.delete();
+      f.create();
+      f.write(csvDelBanco(visibles, { cuentasVisibles: puedeVerCuentas }));
+      const r = await Share.share({ url: f.uri, title: nombre });
+      if (r.action === Share.sharedAction) {
+        registrarEgreso('planilla_banco', { formato: 'csv', filas: visibles.length, detalle: { periodo: periodo.name || null, cuentas_visibles: puedeVerCuentas, via: 'app' } });
+      }
+    } catch (e) { fallo('No se pudo armar el CSV', e?.message || ''); }
+  };
+
+  const papeles = () => {
+    Haptics.selectionAsync().catch(() => {});
+    ActionSheetIOS.showActionSheetWithOptions(
+      { options: ['Todas las boletas', 'CSV del banco', 'Cancelar'], cancelButtonIndex: 2 },
+      (i) => { if (i === 0) boletas(); else if (i === 1) csvBanco(); },
+    );
+  };
+
   const boletas = () => {
     if (!visibles.length || !periodo) return;
     const html = () => documentoDeBoletas(visibles, periodo, sucursales || []);
@@ -165,7 +229,8 @@ export default function Nomina() {
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
-      <MenuDeFiltros grupos={grupos} extra={puedeDescargar && conRenglones ? { icono: 'printer', etiqueta: 'Todas las boletas', onPress: boletas } : null} />
+      <MenuDeFiltros grupos={grupos} extra={puedeDescargar && conRenglones ? { icono: 'printer', etiqueta: 'Boletas y banco', onPress: papeles }
+        : puedeEditar ? { icono: 'plus', etiqueta: 'Nueva quincena', onPress: () => router.push('/nomina/periodo') } : null} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
@@ -232,6 +297,12 @@ export default function Nomina() {
           </>
         ) : null}
 
+        {periodo && puedeDecidir && (estadoKey === 'DRAFT' || estadoKey === 'APPROVED') ? (
+          <View style={{ marginHorizontal: 16 }}>
+            <BotonGrande texto={conRenglones ? 'Regenerar la planilla' : 'Generar la planilla'} borde color={MARCA.azulClaro} onPress={generar} deshabilitado={ocupado} />
+          </View>
+        ) : null}
+
         {periodo && puedeDecidir && conRenglones && (estadoKey === 'DRAFT' || estadoKey === 'APPROVED') ? (
           <View style={{ marginHorizontal: 16 }}>
             {estadoKey === 'DRAFT'
@@ -250,6 +321,8 @@ export default function Nomina() {
                 <View style={{ padding: 12, gap: 10 }}>
                   {l.map((e, i) => (
                     <Pressable key={e.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/boleta/[id]', params: { id: String(e.id) } }); }}
+                      onLongPress={puedeDecidir && estadoKey !== 'PAID' ? () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}); router.push({ pathname: '/nomina/fila/[id]', params: { id: String(e.id) } }); } : undefined}
+                      delayLongPress={350}
                       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 10 : 0, opacity: pressed ? 0.7 : 1 })}>
                       <Avatar empleado={e.employee ?? { name: '?' }} tamano={36} />
                       <View style={{ flex: 1 }}>
@@ -270,10 +343,12 @@ export default function Nomina() {
         ))}
         {periodos && !periodo ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>{estadoFiltro === 'ALL' ? 'Todavía no hay planillas' : 'Ninguna planilla en ese estado'}</Text> : null}
         {periodo && !cargando && !visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Esta planilla todavía no tiene personas</Text> : null}
-        <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-          <BotonGrande texto="Generar y editar (portal)" borde color={MARCA.azulClaro}
-            onPress={() => router.push({ pathname: '/portal', params: { ruta: '/nomina', nombre: 'Nómina' } })} />
-        </View>
+        {puedeDecidir && periodo ? (
+          <View style={{ marginHorizontal: 16, marginTop: 8, gap: 10 }}>
+            {conRenglones && estadoKey !== 'PAID' ? <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>Mantén presionada a una persona para editar su fila.</Text> : null}
+            <BotonGrande texto="Nueva quincena" borde color={MARCA.azulClaro} onPress={() => router.push('/nomina/periodo')} />
+          </View>
+        ) : null}
       </ScrollView>
     </>
   );

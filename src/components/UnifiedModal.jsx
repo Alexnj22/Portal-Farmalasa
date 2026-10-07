@@ -1,4 +1,5 @@
 import React, { Suspense, useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { horarioIncompleto } from '@nucleo/utils/edicionDeSucursal';
 import Button from './common/Button';
 import {
     X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus,
@@ -738,16 +739,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 }
 
                 if (type === "editBranchHorarios") {
-                    const extractedHours = typeof (payloadToSave.weeklyHours || payloadToSave.weekly_hours) === 'string'
-                        ? JSON.parse((payloadToSave.weeklyHours || payloadToSave.weekly_hours) || '{}')
-                        : (payloadToSave.weeklyHours || payloadToSave.weekly_hours || {});
-
-                    let hasInvalidHours = false;
-                    Object.values(extractedHours).forEach(day => {
-                        if (day.isOpen && (!day.start || !day.end)) hasInvalidHours = true;
-                    });
-
-                    if (hasInvalidHours) {
+                    // Núcleo (`horarioIncompleto`): la misma regla que la app.
+                    if (horarioIncompleto(payloadToSave.weeklyHours || payloadToSave.weekly_hours)) {
                         setValidationError("Existen días marcados como 'Abiertos' que no tienen hora asignada.");
                         setIsSaving(false);
                         return;

@@ -10,13 +10,14 @@
 //                 barras (`gastosDeSucursal`).
 //   · Historial — lo que se registró de la sala, con antes → nuevo y quién
 //                 (`historialDeSucursal`), filtrable por dimensión.
-// Todo lo que decide sale del núcleo, el mismo del portal. Editar la ficha,
-// registrar un pago o subir un documento sigue en el portal.
+// Todo lo que decide sale del núcleo, el mismo del portal. La ficha se edita
+// en `sucursal/editar`; registrar un pago o subir un documento sigue en el portal.
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchBranchExpensesHistory, fetchBranchKiosks } from '@nucleo/data/branches';
 import { abiertaAhora, ahoraEnSV, alertasDeSucursal, completitudDelPerfil, TIPOS_DE_SUCURSAL } from '@nucleo/utils/sucursales';
 import { documentosDeSucursal, estadoDeDocumento, vencimientoEfectivo } from '@nucleo/utils/expedienteDeSucursal';
@@ -273,6 +274,7 @@ function Historial({ b, empleados }) {
 
 export default function Sucursal() {
   const { id } = useLocalSearchParams();
+  const puedeEditar = useAuth().hasPermission('branches', 'can_edit');
   const branches = useStaffStore((s) => s.branches);
   const empleados = useStaffStore((s) => s.employees);
   const b = useMemo(() => (branches || []).find((x) => String(x.id) === String(id)), [branches, id]);
@@ -304,9 +306,16 @@ export default function Sucursal() {
         {pestana === 'expediente' ? <Expediente b={b} /> : null}
         {pestana === 'gastos' ? <Gastos b={b} /> : null}
         {pestana === 'historial' ? <Historial b={b} empleados={empleados} /> : null}
-        <Pressable onPress={() => router.push({ pathname: '/portal', params: { ruta: `/sucursales/${b.id}`, nombre: 'Sucursales' } })}>
-          <Text style={{ color: colorSistema.texto2, fontSize: 13, textAlign: 'center', marginTop: 8 }}>Editar la ficha, registrar un pago o subir un documento: en el portal ›</Text>
-        </Pressable>
+        {puedeEditar ? (
+          <Seccion titulo="Editar">
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {[['horarios', 'Horarios'], ['legal', 'Legal'], ['inmueble', 'Inmueble'], ['servicios', 'Servicios']].map(([k, t]) => (
+                <Boton key={k} texto={t} onPress={() => router.push({ pathname: '/sucursal/editar', params: { id: String(b.id), seccion: k } })} />
+              ))}
+            </View>
+          </Seccion>
+        ) : null}
+        <Text style={{ color: colorSistema.texto2, fontSize: 13, textAlign: 'center', marginTop: 4 }}>Registrar un pago o subir un documento: en el portal.</Text>
       </ScrollView>
     </>
   );

@@ -12,7 +12,7 @@ import { smartFilter } from '../utils/searchUtils';
 import { normXyz, hasDispatchRisk } from '../utils/minmaxTabla';
 import { ERP_NAMES, ERP_ORDEN as ERP_ORDER } from '../constants/erp';
 import { ALERTA_ETIQUETA, ESTADOS_DE_STOCK, ESTADOS_DE_AJUSTE } from '../constants/minmax';
-import { calcularMinMaxDeSala, descartarBorradoresDeMinMax, effectiveMinMaxPair, fetchAjustesManuales, fetchAnalisisDeStock, fetchAuditLogsForProduct, fetchCostoEstimadoDelBorrador, fetchEmployeeByEmail, fetchEmployeesBasic, fetchResumenDeCostoDelInventario, fetchResumenDelProductoPorSala, fetchStockConfig, fetchStockParams, fetchStockParamsUpdates, ponerEnCeroProductoEnTodasLasSalas, publicarMinMax, updateStockParams, updateStockParamsBulk, upsertStockParams, upsertStockParamsBulk, upsertStockParamsReturning } from '../data/stockParams';
+import { calcularMinMaxDeSala, descartarBorradorDeFila, descartarBorradoresDeMinMax, effectiveMinMaxPair, fetchAjustesManuales, fetchAnalisisDeStock, fetchAuditLogsForProduct, fetchCostoEstimadoDelBorrador, fetchEmployeeByEmail, fetchEmployeesBasic, fetchResumenDeCostoDelInventario, fetchResumenDelProductoPorSala, fetchStockConfig, fetchStockParams, fetchStockParamsUpdates, ponerEnCeroProductoEnTodasLasSalas, publicarMinMax, updateStockParams, updateStockParamsBulk, upsertStockParams, upsertStockParamsBulk, upsertStockParamsReturning } from '../data/stockParams';
 import { fetchSolicitudesDeProducto } from '../data/minmaxRequests';
 
 // Warns (but does NOT block) when a saved value is 4× above or 4× below the calculated reference.
@@ -40,51 +40,10 @@ const warnIfOutrageous = (field, numVal, row) => {
     }
 };
 
-/**
- * En cuál de los cuatro estados está un ajuste puesto por una persona.
- *
- * `a_mano` es el más flojo y los otros tres son SELLADOS: vienen de una
- * solicitud aprobada o de un motivo declarado. Esa separación es la misma que
- * hace el freno de publicar, y hasta el 2026-09-04 no existía acá: bastaba
- * `manual_at` + un borrador distinto para gritar EN CONFLICTO, o sea que
- * cualquier fila que alguien tocó alguna vez y que el cálculo vuelve a proponer
- * salía marcada. En Salud 2 eran **59 de 65 filas**, y un indicador que marca
- * casi todo no indica nada.
- *
- * (La otra mitad de ese arreglo está en la base: publicar ahora limpia
- * `manual_at`, así que la firma describe el número de HOY y no cualquier cosa
- * que se hizo hace tres meses. Eran 926 filas arrastrando una firma vieja.)
- *
- * El orden importa: «volvió a moverse» gana sobre «en conflicto» porque dice
- * algo más fuerte —el motivo que se declaró dejó de ser cierto— y quien lo mire
- * va a querer resolver eso antes que el desacuerdo de números.
- */
-export const estadoAjuste = (r) => {
-    if (!r?._manual_at) return null;
-
-    // Sin sello, la fila sólo dice «este número lo puso una persona y todavía no
-    // se publicó encima». Es información, no una decisión pendiente: el cálculo
-    // del mes que viene la va a reemplazar como a cualquier otra.
-    if (!r._ajuste_solicitud_id && !r._manual_motivo) return 'a_mano';
-
-    // El motivo era «ya no rota» y el producto volvió a venderse después de que
-    // alguien lo dijera. `last_sale_date` es una fecha sin hora: se compara
-    // contra el DÍA del ajuste para no hacerla retroceder al leerla como UTC.
-    if (r._manual_motivo === 'ya_no_rota' && r.last_sale_date) {
-        const diaAjuste = String(r._manual_at).slice(0, 10);
-        if (String(r.last_sale_date).slice(0, 10) > diaAjuste) return 'volvio_a_moverse';
-    }
-
-    // El cálculo propone algo distinto de lo que quedó vigente. Puede venir de
-    // un borrador sin publicar o del último valor calculado.
-    const hayBorradorDistinto = r.draft_status === 'pending'
-        && (r.draft_min !== r.effective_min || r.draft_max !== r.effective_max);
-    const calculoDistinto = r.calc_min != null
-        && (r.calc_min !== r.effective_min || r.calc_max !== r.effective_max);
-    if (hayBorradorDistinto || calculoDistinto) return 'en_conflicto';
-
-    return 'respetado';
-};
+// `estadoAjuste` y el filtro de la sala viven en el núcleo (`revisionDeSala`):
+// la app del teléfono revisa la sala con las mismas reglas.
+import { estadoAjuste, filaPasaFiltros, cuentaADescartar, motivoDeSaltoDelCalculo, mensajeDePublicacion } from '../utils/revisionDeSala';
+export { estadoAjuste };
 
 export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     const [selectedErp,  setSelectedErp]  = useState(lockedErpId ?? 5);
@@ -330,14 +289,8 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     // `calculate_stock_params` no lanza cuando se niega: devuelve `skipped` con
     // su motivo. Sin mirarlo, la sala con borradores pendientes salía en verde
     // con «0 borradores generados» y nada se había recalculado.
-    const motivoDeSalto = res => {
-        if (!res?.skipped) return null;
-        if (res.reason === 'branch_has_pending_drafts')
-            return 'Tiene borradores sin revisar. Publícalos o descártalos antes de recalcular.';
-        if (res.reason === 'module_locked')
-            return `Min·Max está en mantenimiento${res.locked_by ? ` por ${res.locked_by}` : ''}.`;
-        return 'No se recalculó.';
-    };
+    const motivoDeSalto = motivoDeSaltoDelCalculo;
+
 
     const handleRecalcular = async () => {
         const wasPublished = hasPublishedData;
@@ -796,10 +749,8 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
 
     // Descarta el borrador de un producto individual: revierte draft al valor publicado actual.
     const discardDraft = useCallback(async (row) => {
-        const revertMin = row.effective_min ?? 0;
-        const revertMax = row.effective_max ?? 0;
-        const { error: e } = await updateStockParams(row.erp_product_id, row._erp_sucursal_id,
-            { draft_min: revertMin, draft_max: revertMax, draft_status: 'none', updated_at: new Date().toISOString() });
+        // La escritura: núcleo (`descartarBorradorDeFila`), la misma de la app.
+        const { min: revertMin, max: revertMax, error: e } = await descartarBorradorDeFila(row);
         if (e) { useToastStore.getState().showToast(row.product_name, `Error: ${mensajeAmigable(e)}`, 'error'); return; }
         setData(prev => prev.map(r =>
             r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
@@ -825,15 +776,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
      * Los ocultos entran igual: el RPC no los filtra, así que contarlos afuera
      * dejaría un resto sin explicar.
      */
-    const aDescartar = useMemo(() => {
-        let borradores = 0, sinDatos = 0;
-        for (const r of data) {
-            if (r._erp_sucursal_id !== selectedErp) continue;
-            if (r.draft_status === 'pending')     borradores++;
-            if (r.draft_status === 'sparse_data') sinDatos++;
-        }
-        return { borradores, sinDatos, total: borradores + sinDatos };
-    }, [data, selectedErp]);
+    const aDescartar = useMemo(() => cuentaADescartar(data, selectedErp), [data, selectedErp]);
 
     // Descarta todos los borradores de la sucursal actual usando el RPC discard_stock_drafts.
     const handleDiscardAll = useCallback(async () => {
@@ -1037,30 +980,10 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                 product_ids: productIds ?? null,
             });
             await loadData(selectedErp);
-            const n        = res?.published ?? 0;
-            const frenadas = res?.omitidas_por_ajuste_manual ?? 0;
-            // «Borradores» siempre, aunque se hayan mandado ids: es la palabra
-            // que usa esta pantalla. Decir «3 productos» acá obliga a traducir.
-            const label = `${n.toLocaleString()} borrador${n !== 1 ? 'es' : ''}`;
-            // Lo que quedó quieto se DICE, y se dice de quién fue la decisión.
-            // Callarlo haría leer «publicó todo» donde no publicó todo, que es
-            // el silencio con el que desaparecieron 567 ajustes sin que nadie lo
-            // notara; nombrarlo mal —«las ajustó alguien a mano» sobre borradores
-            // que acababa de teclear quien publicaba— es el error contrario.
-            //
-            // `frenadas` es la rama que ya casi no ocurre: el diálogo manda ids
-            // explícitos, y con ids la base no frena nada. Queda por si alguien
-            // publica sin pasar por ahí.
-            const cola = dejadasAparte > 0
-                ? ` · ${dejadasAparte.toLocaleString()} quedaron igual, como elegiste`
-                : frenadas > 0
-                    ? ` · ${frenadas.toLocaleString()} no, vienen de una solicitud`
-                    : '';
-            useToastStore.getState().showToast(
-                ERP_NAMES[selectedErp],
-                `Se publicaron ${label}${cola}`,
-                (frenadas > 0 || dejadasAparte > 0) ? 'info' : 'success',
-            );
+            // Qué quedó quieto se DICE, y de quién fue la decisión: núcleo
+            // (`mensajeDePublicacion`), el mismo texto que la app.
+            const m = mensajeDePublicacion(res, dejadasAparte);
+            useToastStore.getState().showToast(ERP_NAMES[selectedErp], m.texto, m.aviso ? 'info' : 'success');
         } catch (e) { useToastStore.getState().showToast('Error al publicar', mensajeAmigable(e), 'error'); }
         finally { setPublishing(false); }
     }, [selectedErp, loadData]);
@@ -1097,23 +1020,13 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     const neverCalc     = data.length > 0 && data.filter(d => !d.is_catalog_only).every(d => d.is_dead_stock || d.alert_status === 'no_data');
 
     const filteredBase = useMemo(() => {
-        if (filterHidden) return data.filter(r => hiddenIds.has(r.erp_product_id));
-        return data.filter(r => {
-            if (hiddenIds.has(r.erp_product_id))                                                                             return false;
-            if (filterSparse && r.draft_status !== 'sparse_data')                                                            return false;
-            if (filterDraft && r.draft_status !== 'pending')                                                                 return false;
-            if (filterChangesOnly && !(r.draft_status === 'pending' && (r.draft_min !== r.effective_min || r.draft_max !== r.effective_max))) return false;
-            if (filterDispatchRisk && !hasDispatchRisk(r.effective_max, r.dispatch_pres_factor, r.dispatch_multiplo))          return false;
-            if (filterAjuste !== 'all') {
-                const est = estadoAjuste(r);
-                if (filterAjuste === 'any' ? !est : est !== filterAjuste)                                                    return false;
-            }
-            if (r.is_catalog_only && filterAlert !== 'no_data' && !searchTerm)                                               return false;
-            if (filterAbc !== 'all' && (r.draft_abc_class || r.abc_class) !== filterAbc)                                    return false;
-            if (filterXyz !== 'all' && normXyz(r.draft_demand_variability || r.demand_variability) !== filterXyz)           return false;
-            if (filterAlert !== 'all' && r.alert_status !== filterAlert)                                                     return false;
-            return true;
-        });
+        // El predicado: núcleo (`filaPasaFiltros`), el mismo que usa la app.
+        const f = {
+            ocultos: hiddenIds, soloOcultos: filterHidden, soloSinDatos: filterSparse, soloBorradores: filterDraft,
+            soloCambios: filterChangesOnly, riesgoDeDespacho: filterDispatchRisk, ajuste: filterAjuste,
+            abc: filterAbc, xyz: filterXyz, alerta: filterAlert, hayBusqueda: !!searchTerm,
+        };
+        return data.filter(r => filaPasaFiltros(r, f));
     }, [data, filterAbc, filterXyz, filterAlert, searchTerm, filterDraft, filterSparse, filterChangesOnly, filterDispatchRisk, filterAjuste, hiddenIds, filterHidden]);
 
     const { filtered, isSearchFuzzy, searchHiddenByFilter } = useMemo(() => {

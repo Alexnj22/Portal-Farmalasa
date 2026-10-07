@@ -6,10 +6,11 @@
 // Lo que se muestra es lo que DECLARÓ la sucursal; el número del portal va al
 // lado como cotejo. El cotejo se ancla en las ventas gravadas del ticket, no en
 // su total (ver `CorteZView`). Las cifras van detrás de `corte_z_ver_montos`
-// también acá. El PDF se descarga en el portal.
+// también acá. El PDF es el MISMO papel del portal (`corteZHtml` traduce su
+// documento) y sale a la hoja de compartir: una sucursal o todas, una por hoja.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { ActionSheetIOS, ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchCortesZ } from '@nucleo/data/corteZ';
@@ -26,6 +27,10 @@ import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
 import PasoDeMes, { nombreDelMes } from '../componentes/PasoDeMes';
 import { MARCA } from '../componentes/inicio/marca';
+import { corteZHtml, etiquetaPeriodo } from '@nucleo/utils/corteZPrint';
+import { registrarEgreso } from '@nucleo/data/egreso';
+import { compartirPdf } from '../componentes/pdf';
+import { fallo } from '../componentes/Progreso';
 
 const dif = (n) => (cuadraZ(n) ? '—' : formatMoney(n));
 
@@ -156,6 +161,29 @@ export default function CorteZ() {
   useEffect(() => { setFilas(null); cargar(); }, [cargar]);
   const t = useMemo(() => totalesCorteZ(filas || []), [filas]);
 
+  // El PDF: una sucursal o todas (una por hoja), el mismo papel del portal.
+  const [pdfeando, setPdfeando] = useState(false);
+  const pdfDe = async (lista, nombre) => {
+    setPdfeando(true);
+    try {
+      if (await compartirPdf({ html: corteZHtml(lista), nombre })) {
+        registrarEgreso('corte_z', { formato: 'pdf', filas: lista.length, detalle: { mes, sucursales: lista.map((f) => f.sucursal), via: 'app' } });
+      }
+    } catch (e) {
+      fallo('No se pudo armar el PDF', mensajeAmigable(e, ''));
+    } finally {
+      setPdfeando(false);
+    }
+  };
+  const elegirPdf = () => {
+    Haptics.selectionAsync().catch(() => {});
+    const opciones = [`Todas las sucursales (${filas.length})`, ...filas.map((f) => f.sucursal), 'Cancelar'];
+    ActionSheetIOS.showActionSheetWithOptions({ title: `Corte Z · ${etiquetaPeriodo(desde)}`, options: opciones, cancelButtonIndex: opciones.length - 1 }, (i) => {
+      if (i === 0) pdfDe(filas, `Corte Z ${etiquetaPeriodo(desde)} · todas las sucursales`);
+      else if (i > 0 && i <= filas.length) pdfDe([filas[i - 1]], `Corte Z ${etiquetaPeriodo(desde)} · ${filas[i - 1].sucursal}`);
+    });
+  };
+
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Corte Z', headerLargeTitle: true }} />
@@ -183,8 +211,7 @@ export default function CorteZ() {
         ) : null}
         {hasPermission('corte_z_descargar') && filas?.length ? (
           <View style={{ marginHorizontal: 16 }}>
-            <BotonGrande texto="Descargar el PDF (portal)" borde color={MARCA.azulClaro}
-              onPress={() => router.push({ pathname: '/portal', params: { ruta: '/corte-z', nombre: 'Corte Z' } })} />
+            <BotonGrande texto={pdfeando ? 'Armando el PDF…' : 'Compartir el PDF'} deshabilitado={pdfeando} onPress={elegirPdf} />
           </View>
         ) : null}
       </ScrollView>

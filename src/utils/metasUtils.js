@@ -278,3 +278,96 @@ export const ESTADO_DE_META = {
     devuelta: { label: 'Devuelta', variante: 'danger' },
     oficial: { label: 'Oficial', variante: 'success' },
 };
+
+// ── Pago semestral (TabSemestral del portal y la app) ───────────────────────
+
+/** El primer semestre con la foto del cierre (julio y agosto 2026 se tomaron
+ *  el 22-sep al crear el módulo); antes de este no hay nada que mostrar. */
+export const SEMESTRE_INICIO = '2026-S2';
+
+export const ESTADO_MES_SEMESTRAL = {
+    cerrado:     { variant: 'success', rotulo: 'cerrado' },
+    provisional: { variant: 'warning', rotulo: 'en curso' },
+    futuro:      { variant: 'neutral', rotulo: 'pendiente' },
+};
+
+export const ROTULO_DE_BAJA = {
+    INACTIVO: 'Inactivo', BAJA: 'De baja', LIQUIDADO: 'Liquidado', SUSPENDIDO: 'Suspendido',
+};
+
+/**
+ * Lo que la hoja del semestre dice de sí misma: si ya se aprobó, si terminó,
+ * cuánto se paga y a cuántos les falta la decisión de gerencia (quienes ya no
+ * trabajan no se pagan ni se niegan solos). Sin decisiones pendientes y con los
+ * seis meses cerrados, se puede aprobar.
+ */
+export function resumenDelSemestre(hoja, ymActual) {
+    const meses = Array.isArray(hoja?.meses) ? hoja.meses : [];
+    const personas = Array.isArray(hoja?.personas) ? hoja.personas : [];
+    const aprobado = hoja?.estado === 'aprobado';
+    const terminado = meses.length === 6 && meses[5].ym < ymActual;
+    const todosCerrados = meses.length === 6 && meses.every((m) => m.estado === 'cerrado');
+    const porDecidir = personas.filter((p) => !p.activo && !p.decision).length;
+    return {
+        meses, personas, aprobado, terminado, todosCerrados,
+        informativo: meses.some((m) => m.estado !== 'futuro' && m.informativo),
+        aPagar: personas.filter((p) => p.pagar).reduce((a, p) => a + Number(p.total || 0), 0),
+        cuantosCobran: personas.filter((p) => p.pagar).length,
+        porDecidir,
+        hayInactivos: personas.some((p) => !p.activo),
+        cerrados: meses.filter((m) => m.estado === 'cerrado').length,
+        sePuedeAprobar: !aprobado && terminado && todosCerrados && porDecidir === 0,
+    };
+}
+
+// ── Gastos por recuperar (TabGastos / GastoModal del portal y la app) ───────
+
+/** En cuántos meses se puede recuperar un gasto (hasta 24). */
+export const MESES_PARA_RECUPERAR = [1, 2, 3, 4, 6, 9, 12, 18, 24].map((n) => ({
+    value: String(n), label: n === 1 ? 'Un solo mes' : `${n} meses`,
+}));
+
+/** Los meses en que puede arrancar un gasto: desde el siguiente, doce hacia
+ *  adelante. Un gasto no entra a un mes que ya arrancó. */
+export function mesesParaArrancarGasto(ymActual) {
+    const desde = ymSumar(ymActual, 1);
+    return Array.from({ length: 12 }, (_, i) => {
+        const v = ymSumar(desde, i);
+        return { value: v, label: ymLabel(v) };
+    });
+}
+
+/** Las filas de sala válidas del formulario de gasto, como las pide el servidor. */
+export function salasDelGasto(filas) {
+    return (filas || [])
+        .map((f) => ({ branch_id: Number(f.branchId), monto: parseFloat(String(f.monto).replace(/,/g, '')) }))
+        .filter((f) => f.branch_id > 0 && Number.isFinite(f.monto) && f.monto > 0);
+}
+
+/** Cuáles metas ya confirmadas u oficiales vuelven a revisión con este gasto. */
+export function metasQueReabreElGasto(preview, metasPorClave) {
+    if (!preview?.cuotas) return [];
+    const vistas = new Set();
+    const out = [];
+    for (const c of preview.cuotas) {
+        const clave = `${c.branch_id}|${c.year_month}`;
+        if (vistas.has(clave)) continue;
+        vistas.add(clave);
+        const estado = metasPorClave?.[clave];
+        if (estado === 'confirmada_supervisor' || estado === 'oficial') {
+            out.push(`${c.sala} en ${ymLabelCorto(c.year_month).toLowerCase()}`);
+        }
+    }
+    return out;
+}
+
+/** Lo que dicen las tarjetas de gastos: por recuperar, lo que agrega a las metas y el margen. */
+export function resumenDeGastos(gastos) {
+    const vivos = (gastos || []).filter((g) => g.estado === 'activo');
+    return {
+        cuantos: vivos.length,
+        porRecuperar: vivos.reduce((s, g) => s + Number(g.monto_total || 0), 0),
+        agregaAMetas: vivos.reduce((s, g) => s + Number(g.venta_viva || 0), 0),
+        margen: gastos?.[0]?.margen_pct ?? 25,
+    };
+}

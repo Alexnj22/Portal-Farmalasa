@@ -4,14 +4,15 @@
 // (`encuesta-cliente/[id]`).
 //
 // Estados, grupos, canales y el resumen de cierre salen del núcleo
-// (`encuestasClientes`), los mismos del portal. Diseñar, aprobar y publicar
-// siguen en el portal.
+// (`encuestasClientes`), los mismos del portal. Crear una y diseñar sus
+// preguntas es nativo (`encuesta-cliente/disenar`).
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { fetchEncuestas } from '@nucleo/data/encuestasClientes';
+import { crearEncuesta, fetchEncuestas } from '@nucleo/data/encuestasClientes';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { canalDe, estadoDe, GRUPOS, preguntasEnOrden, resumenDeCierre } from '@nucleo/utils/encuestasClientes';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -23,10 +24,26 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { colorDeVariante } from '../componentes/colorDeVariante';
+import { fallo } from '../componentes/Progreso';
 
 export default function EncuestasClientes() {
   const { hasPermission } = useAuth();
   const puedeAprobar = hasPermission('encuestas_clientes', 'can_approve');
+  const puedeEditar = hasPermission('encuestas_clientes', 'can_edit');
+  // Crear una en borrador y abrir su diseño (como «Nueva encuesta» del portal).
+  const nueva = () => Alert.prompt('Nueva encuesta', '¿Cómo se llama?', [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Crear', onPress: async (texto) => {
+      const nombre = String(texto || '').trim();
+      if (!nombre) return;
+      try {
+        const id = await crearEncuesta({ nombre });
+        router.push({ pathname: '/encuesta-cliente/disenar', params: { id: String(id) } });
+      } catch (e) {
+        fallo('No se pudo crear', mensajeAmigable(e, 'Intenta de nuevo.'));
+      }
+    } },
+  ], 'plain-text');
   const [encuestas, setEncuestas] = useState(null);
   const [error, setError] = useState(null);
   const [grupo, setGrupo] = useState('campo');
@@ -84,10 +101,11 @@ export default function EncuestasClientes() {
           );
         })}
         {encuestas && !filas.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>{grupo === 'campo' ? 'Ninguna encuesta en campo' : grupo === 'cerradas' ? 'Ninguna cerrada todavía' : 'Ninguna en diseño'}</Text> : null}
-        <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-          <BotonGrande texto="Diseñar las preguntas (portal)" borde color={MARCA.azulClaro}
-            onPress={() => router.push({ pathname: '/portal', params: { ruta: '/encuestas-clientes', nombre: 'Encuestas a clientes' } })} />
-        </View>
+        {puedeEditar ? (
+          <View style={{ marginHorizontal: 16, marginTop: 8 }}>
+            <BotonGrande texto="Nueva encuesta" onPress={nueva} />
+          </View>
+        ) : null}
       </ScrollView>
     </>
   );

@@ -11,7 +11,10 @@
 // El filtro es el del portal (`filtrarPedidos`, núcleo): «Todos» esconde los
 // completados SIN observación; el que tiene algo abierto sigue a la vista.
 // Con alcance de una sala se ven sólo los suyos; con alcance todas, la sala se
-// elige en el menú. Generar, preparar, rutas y reglas siguen en el portal.
+// elige en el menú. Bodega genera el pedido (`pedido/generar`) y, en la
+// ficha, inicia, pausa, programa la entrega o anula; la llegada de un reenvío
+// se confirma en `pedido/reenvio`. Finalizar (las cajas), rutas y reglas siguen
+// en el portal.
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
@@ -73,10 +76,8 @@ function Tarjeta({ r, todas, puede }) {
           ) : null}
           {puede && etapa === 'transito' ? <BotonGrande texto="Confirmar que llegó" color={MARCA.azul} onPress={() => abrir('/pedido/llegada')} /> : null}
           {puede && etapa === 'contando' ? <BotonGrande texto="Contar lo que llegó" color={MARCA.verde} onPress={() => abrir('/pedido/recibir')} /> : null}
-          {/* La llegada de un reenvío sigue en el portal, dentro de la app: pasa
-              menos de diez veces al mes. */}
-          {(r.reenvios_historial ?? []).some((c) => c.sent_at && !c.arrived_at) ? (
-            <BotonGrande texto="Llegó el reenvío (portal)" borde onPress={() => router.push({ pathname: '/portal', params: { ruta: '/pedidos', nombre: 'Pedidos' } })} />
+          {puede && (r.reenvios_historial ?? []).some((c) => c.sent_at && !c.arrived_at) ? (
+            <BotonGrande texto="Llegó el reenvío" color={MARCA.azul} borde onPress={() => abrir('/pedido/reenvio')} />
           ) : null}
         </View>
       </Vidrio>
@@ -174,9 +175,11 @@ export default function Pedidos() {
                   {estado === 'all' ? 'No hay pedidos en curso en este período.' : 'Ningún pedido con este filtro.'}
                 </Text>
               )}
-            {todas ? (
-              <View style={{ marginHorizontal: 16 }}>
-                <BotonGrande texto="Generar y rutas (portal)" borde
+            {todas && puede ? (
+              <View style={{ marginHorizontal: 16, gap: 8 }}>
+                <BotonGrande texto="Generar pedido" color={MARCA.azul} onPress={() => router.push('/pedido/generar')} />
+                {/* Las rutas piden el mapa y el optimizador de recorrido: siguen en la computadora. */}
+                <BotonGrande texto="Rutas (portal)" borde
                   onPress={() => router.push({ pathname: '/portal', params: { ruta: '/pedidos', nombre: 'Pedidos' } })} />
               </View>
             ) : null}

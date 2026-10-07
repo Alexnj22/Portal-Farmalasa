@@ -21,20 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.1241.0 — App: cupón Platino, banner de promociones, niveles por lo que acumula y catálogo por presentación mayor
+## v2.1242.0 — Pago en línea de las reservas con Wompi; cupón Platino, banner de promociones y nivel por lo que acumula
 
-- **El nivel se mide con lo que ACUMULA** (decisión del usuario): `puntos_compra_12m` suma los puntos base de las compras que dieron puntos —motor (`venta`) y sistema anterior (`migracion` «compra · ticket»)—, no todo lo comprado; lo vendido por debajo del precio VIP no cuenta. Hoy: 4,178 VIP, 83 Plata, 34 Oro, 8 Platino (contando todo eran 495/133/63).
-- **Cupón mensual de Platino:** 500 puntos ($5) que vencen a fin de mes, con tope de presupuesto mensual (`puntos_niveles.cupon_mensual`, `puntos_config.cupon_presupuesto_mensual` = 10,000 pts). `puntos_dar_cupones` + cron `puntos-cupones-diario` (7:15 SV; el 1 a todos, el resto del mes a quien llega a Platino). Se usa en caja como cualquier saldo; aviso al teléfono y tarjeta «Tu cupón del mes» en Puntos.
-- **Catálogo:** una presentación por factor (la de mayor precio: Neurobion 25,000 ya no sale dos veces) y la tarjeta muestra el precio de la presentación MAYOR con «+N presentaciones». Banner de promociones arriba (las ofertas vigentes del portal, se pasan con el dedo). Ícono de la pestaña: pastillas.
-
-## v2.1240.0 — Pago en línea de las reservas con Wompi
+Dos sesiones en el mismo número (origin ya había usado v2.1240.0 y v2.1241.0): van juntas.
 
 - **Pagar desde la app:** botón «Pagar en línea» en cada reserva abierta (apenas reservada o ya lista). El servidor arma un enlace de pago de Wompi de un solo cobro con el total calculado allá, solo tarjeta y QuickPay, y la pantalla de Wompi se abre en una hoja sobre la app (`pagar_reserva` en `app-clientes`).
 - **La confirmación sale del servidor:** función nueva `wompi-pagos` (sin JWT) que recibe el aviso de Wompi y la vuelta del navegador. El veredicto sale de consultar la transacción en la API de Wompi; el aviso se valida además con su HMAC. Una transacción paga una sola reserva y el monto tiene que coincidir (`app_reserva_pago_confirmar`).
 - **7 días para retirar una reserva pagada:** pasado el plazo vuelve a «pendiente», el producto se libera y el pago se conserva. Una reserva pagada no la vence el fin de la oferta y no se cancela desde la app.
 - **Portal:** la reserva pagada lleva la marca «Pagada en línea» para que la sucursal no la cobre en caja.
 - Tabla `app_reservas_pagos` (un intento de pago por fila). Wompi sigue en modo de pruebas: los pagos de prueba se aceptan solo con el secreto `WOMPI_ACEPTA_PRUEBAS=1`, que hay que borrar al pasar a producción.
+- **El nivel se mide con lo que ACUMULA** (decisión del usuario): `puntos_compra_12m` suma los puntos base de las compras que dieron puntos —motor (`venta`) y sistema anterior (`migracion` «compra · ticket»)—, no todo lo comprado; lo vendido por debajo del precio VIP no cuenta. Hoy: 4,178 VIP, 83 Plata, 34 Oro, 8 Platino (contando todo eran 495/133/63).
+- **Cupón mensual de Platino:** 500 puntos ($5) que vencen a fin de mes, con tope de presupuesto mensual (`puntos_niveles.cupon_mensual`, `puntos_config.cupon_presupuesto_mensual` = 10,000 pts). `puntos_dar_cupones` + cron `puntos-cupones-diario` (7:15 SV; el 1 a todos, el resto del mes a quien llega a Platino). Se usa en caja como cualquier saldo; aviso al teléfono y tarjeta «Tu cupón del mes» en Puntos.
+- **Catálogo:** una presentación por factor (la de mayor precio: Neurobion 25,000 ya no sale dos veces) y la tarjeta muestra el precio de la presentación MAYOR con «+N presentaciones». Banner de promociones arriba (las ofertas vigentes del portal, se pasan con el dedo). Ícono de la pestaña: pastillas.
 
+## v2.1241.0 — App: sucursales, metas, encuestas y solicitudes de datos
+
+- **App: Sucursales editables**: horarios (por día, con «Igual que …»), legal, inmueble y servicios, con confirmación.
+- **Metas**: pago semestral (pagar o no a cada persona con motivo, aprobar y reabrir el semestre) y gastos (agregar con vista previa del servidor y borrador, quitar con motivo).
+- **Encuestas**: diseñador nativo de preguntas (secciones, tipos, opciones, condiciones), destinatarios de la encuesta interna (todos, salas, jefaturas o personas) con quién falta, y el **análisis de clima** en Resumen / Segmentos / Individuos con barras.
+- **Solicitudes de datos**: nueva solicitud con su formulario numerado (AirPrint o PDF), transcribir, registrar recibida, dar por resuelta e imprimir o compartir la respuesta.
+- Núcleo: `edicionDeSucursal.js` y lo agregado a metas, encuestas, clima y solicitudes de datos; el portal los usa.
+
+## v2.1240.1 — App: corrige un import roto
+
+- App: corrige la ruta del import de `volver` en las pantallas de acción de las subcarpetas (pedido, nómina, vacaciones, promoción por producto); la app no compilaba.
+
+## v2.1240.0 — App: pedidos, nómina, vacaciones, expediente y promociones por producto
+
+- **App: Pedidos desde el teléfono.** Generar el pedido (salas con su urgencia, distribución global de Bodega, códigos por sala igual que el portal; el papel sigue saliendo en la computadora de Bodega), y en el detalle las acciones de Bodega: iniciar, reanudar, pausar con motivo, programar la entrega y anular. **Llegó el reenvío**: caja por caja, Electrolit y especiales.
+- **Min·Máx de la sala completa**: todos los productos con su borrador, filtros ABC/XYZ/alerta, publicar o descartar en lote o uno por uno, recalcular, respetando el candado de mantenimiento.
+- **Nómina**: abrir quincena, generar o regenerar (avisa los timesheets sin aprobar), editar una fila con motivo y banco de horas, y el CSV del banco. **Vacaciones**: asignar, editar, confirmar y cancelar planes con su elegibilidad. **Expediente**: foto, documentos (ver, subir, vencimiento), estudios y cuenta de planilla.
+- **Promoción por producto**: crear y editar (productos, lote, reparto, bono, descuento en la venta). **Marketing**: nueva pieza o editarla, diseños desde Fotos, pauta, pedir un diseño y duplicar a otro mes. **Corte Z**: compartir el PDF por sucursal o de todas.
+- Correcciones: «Nueva quincena» del portal no mandaba el nombre del período; el generar pedido llamaba `.catch` directo sobre una consulta (no lo tiene) y fallaba después de crear el pedido; volver de una pantalla abierta por enlace ya no falla.
+- Núcleo: `accionesDePedido`, `codigoDePedido` (sin pdfmake), `revisionDeSala`, `planilla`, `planDeVacaciones`, `documentosDelExpediente`, `corteZHtml`, promociones y marketing; el portal los usa.
 ## v2.1239.0 — App: niveles Plata, Oro y Platino, catálogo con precio VIP y ajustes
 
 - **Niveles del programa de puntos (aprobados):** Cliente VIP, Plata ($500 en 12 meses, ×1.25), Oro ($1,000, ×1.5) y Platino ($2,000, ×2). Tabla `puntos_niveles` (editable con permiso de puntos), `puntos_compra_12m` y `puntos_nivel_de`. El motor (`puntos_acumular`) multiplica cada compra según lo comprado en los 12 meses anteriores —sin contar la compra misma— y guarda en el lote `puntos_base` y `nivel`. Cumpleaños por nivel (50/75/100/100) y 48 h para retirar reservas en Oro y Platino. Hoy: 495 Plata, 133 Oro, 63 Platino.

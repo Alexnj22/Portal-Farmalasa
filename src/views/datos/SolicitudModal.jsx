@@ -26,13 +26,16 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { DERECHOS, guardarSolicitud, plazoDe, buscarPersona, resumenDeCliente } from '@nucleo/data/solicitudesDatos';
+import {
+    DERECHOS, guardarSolicitud, plazoDe, buscarPersona, resumenDeCliente, VIAS_DE_RESPUESTA, DOCUMENTOS_DE_IDENTIDAD,
+    ORIGEN_DE_PERSONA, formularioDeSolicitud, erroresDeForma, faltaParaRecibir as faltaParaRecibirDe, camposDeSolicitud,
+    terminoDeBusqueda, comoPersona as comoPersonaDe, llenarConPersona,
+} from '@nucleo/data/solicitudesDatos';
 import { papelDeRespuesta, filasParaPortabilidad } from '@nucleo/utils/respuestaDeDatos';
 import { abrirVentanaDeImpresion, escribirEImprimir, VENTANA_BLOQUEADA } from '../../plataforma/ventanaDeImpresion';
 import { exportCsv } from '@nucleo/utils/csvExport';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { duiValido, telefonoValido, correoValido } from '@nucleo/utils/clienteValidacion';
 import { fechaTexto } from '@nucleo/utils/fecha';
 
 const paraInput = (iso) => {
@@ -42,22 +45,13 @@ const paraInput = (iso) => {
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 };
 
-const VIAS = [
-    { value: 'SALA',    label: 'En la sala de ventas' },
-    { value: 'CORREO',  label: 'Por correo electrónico' },
-    { value: 'IMPRESA', label: 'Impresa' },
-];
+// Las vías, los documentos, los orígenes, la validación y el registro son del
+// núcleo (`solicitudesDatos`), los mismos de la app.
+const VIAS = VIAS_DE_RESPUESTA;
 
-const ORIGEN = {
-    cliente: 'cliente', empleado: 'personal', practicante: 'horas sociales',
-    proveedor: 'proveedor', receta: 'receta',
-};
+const ORIGEN = ORIGEN_DE_PERSONA;
 
-const DOCUMENTOS = [
-    { value: 'DUI',       label: 'Documento Único de Identidad' },
-    { value: 'PASAPORTE', label: 'Pasaporte' },
-    { value: 'CARNE',     label: 'Carné de residente' },
-];
+const DOCUMENTOS = DOCUMENTOS_DE_IDENTIDAD;
 
 /**
  * El envoltorio existe sólo para MONTAR el cuerpo con `key`.
@@ -86,22 +80,8 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
     // El borrador se recupera al montar. La sesión de sala se cierra sola a los
     // cinco minutos, y transcribir una hoja entera lleva más que eso.
     const [f, setF] = useState(() => loadDraft(claveBorrador) ?? {
+        ...formularioDeSolicitud(solicitud),
         recibida_at: paraInput(solicitud.recibida_at) || paraInput(new Date().toISOString()),
-        solicitante_nombre:    solicitud.solicitante_nombre    ?? '',
-        solicitante_documento: solicitud.solicitante_documento ?? '',
-        solicitante_numero:    solicitud.solicitante_numero    ?? '',
-        solicitante_direccion: solicitud.solicitante_direccion ?? '',
-        solicitante_telefono:  solicitud.solicitante_telefono  ?? '',
-        solicitante_correo:    solicitud.solicitante_correo    ?? '',
-        por_representacion:    !!solicitud.por_representacion,
-        representacion_doc:    solicitud.representacion_doc    ?? '',
-        derechos:              solicitud.derechos              ?? [],
-        descripcion:           solicitud.descripcion           ?? '',
-        via_respuesta:         solicitud.via_respuesta         ?? 'SALA',
-        identidad_documento:   solicitud.identidad_documento   ?? 'DUI',
-        identidad_numero:      solicitud.identidad_numero      ?? '',
-        resolucion:            solicitud.resolucion            ?? '',
-        notas:                 solicitud.notas                 ?? '',
     });
     const [guardando, setGuardando] = useState(false);
 
@@ -151,16 +131,11 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
         if (t.length < 3) { setCandidatos([]); return undefined; } // eslint-disable-line react-hooks/set-state-in-effect -- sin término no hay lista que mostrar; dejarla puesta ofrecería resultados de otra búsqueda
         let vivo = true;
         const id = setTimeout(async () => {
-            const digitos = t.replace(/\D/g, '');
             setBuscando(true);
             try {
-                const r = await buscarPersona({
-                    numero: digitos.length === 9 ? t : '',
-                    telefono: digitos.length === 8 ? t : '',
-                    nombre: digitos.length === 9 || digitos.length === 8 ? '' : t,
-                });
+                const r = await buscarPersona(terminoDeBusqueda(t));
                 if (!vivo) return;
-                setCandidatos((r.donde ?? []).flatMap((d) => d.filas.map((x) => comoPersona(d.clave, x))));
+                setCandidatos((r.donde ?? []).flatMap((d) => d.filas.map((x) => comoPersonaDe(d.clave, x))));
                 // El resumen se pide sólo cuando hay UNA ficha de cliente: con
                 // varias, elegir por nosotros es adivinar de quién son los datos.
                 const resumen = r.cliente ? await resumenDeCliente(r.cliente.id) : null;
@@ -176,16 +151,7 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
 
     /** Elegir a alguien LLENA los campos: es el punto de todo el selector. */
     const elegir = (c) => {
-        setF((p) => ({
-            ...p,
-            solicitante_nombre:    c.nombre    || p.solicitante_nombre,
-            solicitante_documento: c.documento || p.solicitante_documento,
-            solicitante_numero:    c.numero    || p.solicitante_numero,
-            solicitante_telefono:  c.telefono  || p.solicitante_telefono,
-            solicitante_correo:    c.correo    || p.solicitante_correo,
-            solicitante_direccion: c.direccion || p.solicitante_direccion,
-            identidad_numero:      p.identidad_numero || (c.documento === 'DUI' ? c.numero : ''),
-        }));
+        setF((p) => llenarConPersona(p, c));
         setCandidatos([]);
     };
 
@@ -227,55 +193,18 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
     // Los tres campos que tienen FORMA. Se validan con el canónico de clientes,
     // que ya sabe el dígito verificador del DUI: escribir la comprobación acá
     // daría un segundo criterio y el día que difieran nadie va a saber cuál manda.
-    const malDui = !!f.solicitante_numero?.trim() && f.solicitante_documento === 'DUI'
-        && !duiValido(f.solicitante_numero);
-    const malTel = !!f.solicitante_telefono?.trim() && !telefonoValido(f.solicitante_telefono);
-    const malCorreo = !!f.solicitante_correo?.trim() && !correoValido(f.solicitante_correo);
-    const malIdent = !!f.identidad_numero?.trim() && f.identidad_documento === 'DUI'
-        && !duiValido(f.identidad_numero);
+    const { malDui, malTel, malCorreo, malIdent } = useMemo(() => erroresDeForma(f), [f]);
 
     // Lo que hace falta para que la fila deje de ser una hoja impresa y pase a
     // ser una solicitud en trámite: quién pide, qué pide, cuándo se recibió y
     // con qué documento se comprobó que es quien dice.
-    const faltaParaRecibir = useMemo(() => {
-        const faltan = [];
-        if (!f.recibida_at)                 faltan.push('la fecha del acuse');
-        if (!f.solicitante_nombre?.trim())  faltan.push('el nombre');
-        if (!(f.derechos?.length))          faltan.push('qué solicita');
-        if (!f.identidad_numero?.trim())    faltan.push('el número del documento cotejado');
-        if (malDui)    faltan.push('un DUI válido');
-        if (malIdent)  faltan.push('un DUI cotejado válido');
-        if (malTel)    faltan.push('un teléfono de ocho dígitos');
-        if (malCorreo) faltan.push('un correo con forma de correo');
-        return faltan;
-    }, [f, malDui, malIdent, malTel, malCorreo]);
+    const faltaParaRecibir = useMemo(() => faltaParaRecibirDe(f), [f]);
 
     const guardar = useCallback(async (estado) => {
         if (!solicitud) return;
         setGuardando(true);
         try {
-            const campos = {
-                estado,
-                recibida_at: f.recibida_at ? new Date(f.recibida_at).toISOString() : null,
-                solicitante_nombre:    f.solicitante_nombre?.trim()    || null,
-                solicitante_documento: f.solicitante_documento?.trim() || null,
-                solicitante_numero:    f.solicitante_numero?.trim()    || null,
-                solicitante_direccion: f.solicitante_direccion?.trim() || null,
-                solicitante_telefono:  f.solicitante_telefono?.trim()  || null,
-                solicitante_correo:    f.solicitante_correo?.trim()    || null,
-                por_representacion:    !!f.por_representacion,
-                representacion_doc:    f.representacion_doc?.trim()    || null,
-                derechos:              f.derechos ?? [],
-                descripcion:           f.descripcion?.trim()           || null,
-                via_respuesta:         f.via_respuesta                 || null,
-                identidad_documento:   f.identidad_documento           || null,
-                identidad_numero:      f.identidad_numero?.trim()      || null,
-                notas:                 f.notas?.trim()                 || null,
-            };
-            if (estado === 'RESUELTA') {
-                campos.resolucion  = f.resolucion?.trim() || null;
-                campos.resuelta_at = new Date().toISOString();
-            }
+            const campos = camposDeSolicitud(f, estado);
             // La bitácora (`REGISTRAR_…` / `RESOLVER_SOLICITUD_DATOS`) la
             // anota `guardarSolicitud`.
             const fila = await guardarSolicitud(solicitud.id, campos);
@@ -579,23 +508,6 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
  * dos. Traducir acá y no en cada sitio es lo que permite que elegir a una
  * persona llene los campos sin importar de dónde salió.
  */
-function comoPersona(clave, x) {
-    const base = { origen: clave };
-    if (clave === 'practicante') return { ...base,
-        nombre: `${x.first_names ?? ''} ${x.last_names ?? ''}`.trim(),
-        documento: 'DUI', numero: x.dui, telefono: x.phone, correo: '', direccion: '' };
-    if (clave === 'proveedor') return { ...base,
-        nombre: x.nombre, documento: x.dui ? 'DUI' : 'NIT', numero: x.dui || x.nit,
-        telefono: x.telefono, correo: x.correo, direccion: x.direccion };
-    if (clave === 'receta') return { ...base,
-        nombre: x.paciente_nombre, documento: 'DUI', numero: x.paciente_documento,
-        telefono: '', correo: '', direccion: '' };
-    if (clave === 'empleado') return { ...base,
-        nombre: x.name, documento: 'DUI', numero: x.dui,
-        telefono: x.phone, correo: x.email, direccion: x.address };
-    return { ...base, nombre: x.name, documento: x.dui ? 'DUI' : 'NIT',
-        numero: x.dui || x.nit, telefono: x.phone, correo: x.email, direccion: x.direccion };
-}
 
 /** El nombre que muestra cada sitio: no todos lo guardan en `name`. */
 function nombreDe(d) {

@@ -263,3 +263,56 @@ export async function descargarCorteZPdf(filas, nombreArchivo) {
     const pdfMake = await getPdfMake();
     pdfMake.createPdf(construirCorteZDoc(filas)).download(nombreArchivo);
 }
+
+// ─── El mismo papel en HTML, para el teléfono ───────────────────────────────
+// La app no tiene pdfmake: arma el PDF con el motor del sistema a partir de
+// HTML. Para que los dos papeles no se separen, el HTML NO se escribe aparte:
+// se TRADUCE del mismo documento (`construirCorteZDoc`) — los mismos textos,
+// las mismas tablas, los mismos estilos. Lo que cambia es sólo la tinta.
+const escHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function estiloCss(st = {}) {
+    const p = [];
+    if (st.fontSize) p.push(`font-size:${st.fontSize}pt`);
+    if (st.bold) p.push('font-weight:700');
+    if (st.color) p.push(`color:${st.color}`);
+    if (st.alignment) p.push(`text-align:${st.alignment}`);
+    if (st.lineHeight) p.push(`line-height:${st.lineHeight}`);
+    if (Array.isArray(st.margin)) p.push(`margin:${st.margin[1]}pt ${st.margin[2]}pt ${st.margin[3]}pt ${st.margin[0]}pt`);
+    return p.join(';');
+}
+
+function celdaHtml(c, estilos, ultimaCol) {
+    const obj = (c && typeof c === 'object') ? c : { text: c };
+    const st = { ...(obj.style ? estilos[obj.style] : {}), ...(obj.bold ? { bold: true } : {}) };
+    const alinear = ultimaCol || st.alignment === 'right' ? 'text-align:right;' : '';
+    return `<td style="${alinear}${estiloCss({ ...st, margin: undefined, alignment: undefined })}">${escHtml(obj.text)}</td>`;
+}
+
+/** Traduce el subconjunto de pdfmake que usa este papel (texto, tablas, saltos) a HTML. */
+export function pdfmakeAHtml(doc) {
+    const estilos = doc.styles || {};
+    const base = estiloCss(doc.defaultStyle || {});
+    const cuerpo = (doc.content || []).map((n) => {
+        if (n.pageBreak === 'before') return '<div style="page-break-before:always"></div>';
+        if (n.table) {
+            const rayas = n.layout === 'noBorders' ? '' : ' class="rayas"';
+            const filas = n.table.body.map((fila) => `<tr>${fila.map((c, i) => celdaHtml(c, estilos, i > 0)).join('')}</tr>`).join('');
+            return `<table${rayas} style="${estiloCss({ margin: n.margin })}">${filas}</table>`;
+        }
+        return `<div style="${estiloCss({ ...(n.style ? estilos[n.style] : {}), ...(n.margin ? { margin: n.margin } : {}) })}">${escHtml(n.text)}</div>`;
+    }).join('');
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>
+@page{size:letter;margin:34pt 40pt 30pt 40pt}
+body{font-family:Helvetica,Arial,sans-serif;${base};color:#000;margin:0}
+table{width:100%;border-collapse:collapse}
+td{padding:2pt 3pt;vertical-align:top}
+table.rayas tr+tr td{border-top:0.5pt solid #ccc}
+</style></head><body>${cuerpo}</body></html>`;
+}
+
+/** El Corte Z en HTML (una sucursal por hoja), el mismo papel que el PDF del portal. */
+export function corteZHtml(filas) {
+    if (!filas?.length) throw new Error('No hay Corte Z para este período.');
+    return pdfmakeAHtml(construirCorteZDoc(filas));
+}

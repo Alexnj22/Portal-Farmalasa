@@ -14,8 +14,8 @@
 // mismas decisiones del portal (EN VIVO si la sala ya publicó y no hay
 // borrador, si no al BORRADOR; Bodega guarda un delta sobre la suma de las
 // salas; un A o B a 0·0 pregunta). Con alcance de una sala, sólo se edita la
-// propia. La revisión de la sala entera (publicar y descartar en lote, la
-// matriz ABC·XYZ) sigue en el portal: es trabajo de escritorio.
+// propia. La revisión de la sala entera (publicar, descartar y recalcular) es
+// `minmax-sala`; la matriz ABC·XYZ y la configuración siguen en el portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -386,9 +386,9 @@ export default function MinMaxProducto() {
               ) : null}
             </>
           )}
-          {canManage && todas ? (
-            <BotonGrande texto="Revisar la sala completa (portal)" borde
-              onPress={() => router.push({ pathname: '/portal', params: { ruta: '/minmax', nombre: 'Min / Max' } })} />
+          {canManage ? (
+            <BotonGrande texto="Revisar la sala completa" borde
+              onPress={() => router.push({ pathname: '/minmax-sala', params: miErp != null ? { sala: String(miErp) } : {} })} />
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>

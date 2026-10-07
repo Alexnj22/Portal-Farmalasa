@@ -25,7 +25,7 @@ import { clickable } from '@nucleo/utils/clickable';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { preguntarASaly } from '@nucleo/data/ia';
-import { bloqueDeLaBase, distribucionDePregunta, indicesInvertidos, preguntaDeLaBase, puntajeDeBloque, puntajeGlobal, respuestaDeLaBase } from '@nucleo/utils/climaLaboral';
+import { autocalificacion, bloqueDeLaBase, conteoDeOpciones, distribucionDePregunta, filasPorSucursal, IDX_INCONFORMIDADES, IDX_RAZONES, indiceDeAutocalificacion, indicesInvertidos, preguntaDeLaBase, puntajeDeBloque, puntajeGlobal, respuestaDeLaBase } from '@nucleo/utils/climaLaboral';
 
 // Jefe inmediato de cada sucursal — configuración de org-chart
 const SUPERVISOR_DE_JEFE = {
@@ -421,10 +421,7 @@ export default function EncuestaView() {
 
     const invertedIndices = useMemo(() => indicesInvertidos(PREGUNTAS), [PREGUNTAS]);
 
-    const selfRatingIdx = useMemo(() => {
-        const p = PREGUNTAS.find(p => p.tipo === 'numerica');
-        return p ? p.idx : 30;
-    }, [PREGUNTAS]);
+    const selfRatingIdx = useMemo(() => indiceDeAutocalificacion(PREGUNTAS), [PREGUNTAS]);
 
     const filteredRows = useMemo(() => {
         let r = RESPUESTAS;
@@ -434,17 +431,7 @@ export default function EncuestaView() {
         return r;
     }, [filterSucursal, filterRol, RESPUESTAS]);
 
-    const personasBySucursal = useMemo(() => {
-        const map = {};
-        filteredRows.forEach(row => {
-            const k = row.sucursal || 'Sin sucursal';
-            if (!map[k]) map[k] = [];
-            map[k].push(row);
-        });
-        return Object.entries(map)
-            .sort((a, b) => a[0].localeCompare(b[0]))
-            .map(([name, rows]) => [name, [...rows].sort((a, b) => (b.isJefe ? 1 : 0) - (a.isJefe ? 1 : 0))]);
-    }, [filteredRows]);
+    const personasBySucursal = useMemo(() => filasPorSucursal(filteredRows), [filteredRows]);
 
     const bloquesScores = useMemo(() =>
         BLOQUES.map(b => ({ ...b, score: blockScore(filteredRows, b.indices, invertedIndices) })),
@@ -454,40 +441,15 @@ export default function EncuestaView() {
 
     // Distribución P31 (autocalificación — puede ser A/B/C/D legacy o número 1-10)
     const selfRatings = useMemo(() => {
-        const dist = { A: 0, B: 0, C: 0, D: 0 };
-        const numericVals = [];
-        filteredRows.forEach(r => {
-            const v = r.r[selfRatingIdx];
-            if (!v) return;
-            if (dist[v] !== undefined) {
-                dist[v]++;                         // legacy A/B/C/D
-                const mid = { A: 9.5, B: 7.5, C: 5.5, D: 2.5 }[v];
-                if (mid) numericVals.push(mid);
-            } else {
-                const n = parseInt(v, 10);
-                if (!isNaN(n) && n >= 1 && n <= 10) {
-                    if (n >= 9) dist.A++; else if (n >= 7) dist.B++; else if (n >= 5) dist.C++; else dist.D++;
-                    numericVals.push(n);
-                }
-            }
-        });
-        const numericAvg = numericVals.length ? numericVals.reduce((a, b) => a + b, 0) / numericVals.length : null;
-        return { dist, numericAvg };
+        const { dist, promedio } = autocalificacion(filteredRows, selfRatingIdx);
+        return { dist, numericAvg: promedio };
     }, [filteredRows, selfRatingIdx]);
 
     // Razones de permanencia (P3 = index 2)
-    const razones = useMemo(() => {
-        const map = { A: 0, B: 0, C: 0, D: 0 };
-        filteredRows.forEach(r => { const v = r.r[2]; if (v && map[v] !== undefined) map[v]++; });
-        return map;
-    }, [filteredRows]);
+    const razones = useMemo(() => conteoDeOpciones(filteredRows, IDX_RAZONES), [filteredRows]);
 
     // Comunicación de inconformidades (P34 = index 33)
-    const comunicacion = useMemo(() => {
-        const map = { A: 0, B: 0, C: 0, D: 0 };
-        filteredRows.forEach(r => { const v = r.r[33]; if (v && map[v] !== undefined) map[v]++; });
-        return map;
-    }, [filteredRows]);
+    const comunicacion = useMemo(() => conteoDeOpciones(filteredRows, IDX_INCONFORMIDADES), [filteredRows]);
 
     const toggleQ = (id) => setExpandedQ(prev => prev === id ? null : id);
 

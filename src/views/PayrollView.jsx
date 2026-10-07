@@ -28,7 +28,7 @@ import { registrarEgreso } from '@nucleo/data/egreso';
 import { abrirVentanaDeImpresion, escribirEImprimir } from '../plataforma/ventanaDeImpresion';
 import { descargarArchivo } from '../plataforma/descargas';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { ESTADO_PLANILLA, montoEnLetras, ordenDeCargo, rotuloDePeriodo } from '@nucleo/utils/planilla';
+import { ESTADO_PLANILLA, csvDelBanco, montoEnLetras, ordenDeCargo, rotuloDePeriodo } from '@nucleo/utils/planilla';
 import { PRINT_CSS, buildBoletaHTML } from '@nucleo/utils/boletaDePapel';
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt    = (n) => formatMoney(n || 0);
@@ -359,12 +359,8 @@ const PayrollView = ({ openModal }) => {
     };
 
     const downloadCSV = () => {
-        const rows = filteredEntries.map(e => {
-            const emp = e.employee || {};
-            const acct = canApprove ? (emp.account_number || '') : '****';
-            return `${emp.name||''},${emp.bank_name||''},${acct},${emp.account_type||''},${round2(e.net_pay).toFixed(2)}`;
-        }).join('\n');
-        const blob = new Blob([`Nombre,Banco,Cuenta,Tipo,Monto\n${rows}`], { type: 'text/csv' });
+        // El CSV del banco: núcleo (`csvDelBanco`), el mismo que arma la app.
+        const blob = new Blob([csvDelBanco(filteredEntries, { cuentasVisibles: !!canApprove })], { type: 'text/csv' });
         descargarArchivo(blob, `planilla-banco-${activePeriod.name}.csv`);
         // La salida más sensible del portal: nombre, banco y número de cuenta de
         // cada persona. `cuentas_visibles` distingue quién se llevó los números

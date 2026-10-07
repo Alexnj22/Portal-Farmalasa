@@ -7,6 +7,7 @@ import { fetchOvertimeBankRows } from '@nucleo/data/payroll';
 import NocturnalLegalInfo from '../common/NocturnalLegalInfo';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { saldoDeBancoDeHoras } from '@nucleo/utils/planilla';
 
 const fmt    = (n) => formatMoney(n || 0);
 const round2 = (n) => parseFloat((n || 0).toFixed(2));
@@ -51,18 +52,8 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
     useEffect(() => {
         if (!emp.id) return;
         fetchOvertimeBankRows(emp.id)
-            .then(({ data }) => {
-                let diurnal = 0, nocturnal = 0;
-                for (const row of data || []) {
-                    const sign = row.type === 'EARNED' ? 1 : -1;
-                    if (row.subtype === 'NOCTURNAL') nocturnal += sign * row.hours;
-                    else                             diurnal   += sign * row.hours;
-                }
-                setOtBank({
-                    diurnal:   parseFloat(Math.max(0, diurnal).toFixed(2)),
-                    nocturnal: parseFloat(Math.max(0, nocturnal).toFixed(2)),
-                });
-            });
+            // El saldo por tipo: núcleo (`saldoDeBancoDeHoras`), el mismo de la app.
+            .then(({ data }) => setOtBank(saldoDeBancoDeHoras(data)));
     }, [emp.id]);
 
     const dPay  = parseFloat(dPayInput)  || 0;

@@ -116,3 +116,99 @@ export function categoriaDeAntiguedad(fechaIngreso, ahora = Date.now()) {
     if (meses < 60) return 'C';
     return 'D';
 }
+
+// ── A quién va una encuesta interna ─────────────────────────────────────────
+
+/** Las cuatro formas de dirigir una encuesta: todo el personal, unas
+ *  sucursales, las jefaturas de sala o unas personas. */
+export const ALCANCES_DE_ENCUESTA = [
+    { id: 'all',       label: 'Todos' },
+    { id: 'branches',  label: 'Sucursales' },
+    { id: 'roles',     label: 'Jefaturas' },
+    { id: 'employees', label: 'Personal' },
+];
+
+/** Qué ids se guardan con el alcance: con «todos» o «jefaturas», ninguno. */
+export const idsDelAlcance = (alcance, ids) => ((alcance === 'all' || alcance === 'roles') ? [] : (ids || []));
+
+/** Quiénes deberían responderla —del alcance guardado— y todavía no lo hicieron.
+ *  Con «todos» (o sin ids) la lista no se arma: sería todo el personal. */
+export function pendientesDelAlcance(encuesta, empleados, respondieron) {
+    if (!encuesta) return [];
+    const ids = encuesta.scope_ids || [];
+    let pool;
+    if (encuesta.scope_tipo === 'roles' && ids.length) pool = (empleados || []).filter((e) => ids.includes(e.role_id));
+    else if (encuesta.scope_tipo === 'branches' && ids.length) pool = (empleados || []).filter((e) => ids.some((id) => e.branch?.id === id));
+    else if (encuesta.scope_tipo === 'employees' && ids.length) pool = (empleados || []).filter((e) => ids.includes(e.id));
+    else return [];
+    return pool.filter((e) => !respondieron.has(e.id));
+}
+
+// ── El análisis de la encuesta de clima (Resumen, Segmentos, Individuos) ────
+// Lo usan `EncuestaView` del portal y `encuesta` de la app.
+
+/** P3: por qué se quedan. */
+export const RAZONES_DE_PERMANENCIA = [
+    { k: 'A', label: 'Me encanta, quiero jubilarme' },
+    { k: 'B', label: 'Estabilidad y beneficios' },
+    { k: 'C', label: 'Sin otra opción por ahora' },
+    { k: 'D', label: 'Buscando otro trabajo' },
+];
+/** P34: con quién comunican las inconformidades. */
+export const CANALES_DE_INCONFORMIDAD = [
+    { k: 'A', label: 'Jefe inmediato' },
+    { k: 'B', label: 'Supervisión / Admin' },
+    { k: 'C', label: 'Compañeros' },
+    { k: 'D', label: 'Nadie (se lo guardan)' },
+];
+/** Los rangos de la autocalificación (1 a 10, o A–D en las encuestas viejas). */
+export const RANGOS_DE_AUTOCALIFICACION = [
+    { k: 'A', label: '9 – 10' }, { k: 'B', label: '7 – 8' }, { k: 'C', label: '5 – 6' }, { k: 'D', label: '1 – 4' },
+];
+export const IDX_RAZONES = 2;
+export const IDX_INCONFORMIDADES = 33;
+
+/** La pregunta numérica de la encuesta es la autocalificación (por defecto, la 31). */
+export function indiceDeAutocalificacion(preguntas) {
+    const p = (preguntas || []).find((x) => x.tipo === 'numerica');
+    return p ? p.idx : 30;
+}
+
+/** Cuántos eligieron A, B, C o D en la pregunta `idx`. */
+export function conteoDeOpciones(filas, idx) {
+    const map = { A: 0, B: 0, C: 0, D: 0 };
+    (filas || []).forEach((r) => { const v = r.r?.[idx]; if (v && map[v] !== undefined) map[v]++; });
+    return map;
+}
+
+/** Una autocalificación en su rango (A–D) y su número, o null si no se entiende. */
+export function leerAutocalificacion(v) {
+    if (!v) return null;
+    const mid = { A: 9.5, B: 7.5, C: 5.5, D: 2.5 }[v];
+    if (mid) return { rango: v, numero: mid };   // encuestas viejas: A/B/C/D
+    const n = parseInt(v, 10);
+    if (Number.isNaN(n) || n < 1 || n > 10) return null;
+    return { rango: n >= 9 ? 'A' : n >= 7 ? 'B' : n >= 5 ? 'C' : 'D', numero: n };
+}
+
+/** La autocalificación de todos: cuántos en cada rango y el promedio. */
+export function autocalificacion(filas, idx) {
+    const dist = { A: 0, B: 0, C: 0, D: 0 };
+    const nums = [];
+    (filas || []).forEach((r) => {
+        const a = leerAutocalificacion(r.r?.[idx]);
+        if (!a) return;
+        dist[a.rango]++;
+        nums.push(a.numero);
+    });
+    return { dist, promedio: nums.length ? nums.reduce((s, n) => s + n, 0) / nums.length : null };
+}
+
+/** Las respuestas agrupadas por sucursal, en orden alfabético y con los jefes primero. */
+export function filasPorSucursal(filas) {
+    const map = {};
+    (filas || []).forEach((row) => { const k = row.sucursal || 'Sin sucursal'; (map[k] ||= []).push(row); });
+    return Object.entries(map)
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([name, rows]) => [name, [...rows].sort((a, b) => (b.isJefe ? 1 : 0) - (a.isJefe ? 1 : 0))]);
+}

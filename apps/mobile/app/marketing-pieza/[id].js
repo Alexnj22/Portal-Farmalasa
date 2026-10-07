@@ -6,15 +6,17 @@
 // por resuelto). Las funciones son las del núcleo (`data/marketing`), así que
 // la base decide igual que en el portal.
 //
-// Diseñar, subir archivos, pautar y mover la pieza siguen en el portal.
+// Quien edita además la edita con sus diseños (`marketing-editar`), la pauta
+// (`marketing-pauta`) y la duplica a otro mes (`duplicarPiezas`, la del portal).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import {
-  comentar, enviarPieza, fetchComentarios, fetchHistorial, fetchPersonas, marcarResuelto, revisarPieza,
+  comentar, duplicarPiezas, enviarPieza, fetchComentarios, fetchHistorial, fetchPersonas, marcarResuelto, revisarPieza,
 } from '@nucleo/data/marketing';
+import { correrMes, etiquetaMes } from '@nucleo/utils/fecha';
 import { estadoDe, formatoDe, fraseDeHistorial, tipoDeArchivo } from '@nucleo/utils/marketing';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -47,6 +49,8 @@ export default function PiezaDeMarketing() {
   const puedeAprobar = hasPermission('marketing', 'can_approve');
   const abierta = piezaElegida();
   const [pieza, setPieza] = useState(abierta?.pieza ?? null);
+  // Al volver de editarla o pautarla, la pieza recordada trae lo guardado.
+  useFocusEffect(useCallback(() => { const p = piezaElegida()?.pieza; if (p) setPieza(p); }, []));
   const mes = abierta?.mes ?? null;
   const firmas = abierta?.firmas ?? new Map();
   const [comentarios, setComentarios] = useState(null);
@@ -54,6 +58,22 @@ export default function PiezaDeMarketing() {
   const [personas, setPersonas] = useState({});
   const [texto, setTexto] = useState('');
   const [ocupado, setOcupado] = useState(false);
+
+  // Duplicar a otro mes: la copia nace pendiente, sin diseños ni pauta. «Semana»
+  // la pone en la misma semana del mes; «día», en el mismo número de día.
+  const duplicar = () => {
+    const base = String(mes?.mes || pieza?.fecha || '').slice(0, 7);
+    const destinos = [1, 2, 3].map((n) => correrMes(base, n));
+    const opciones = [...destinos.map((m) => etiquetaMes(m)), 'Cancelar'];
+    ActionSheetIOS.showActionSheetWithOptions({ title: 'Duplicar a', options: opciones, cancelButtonIndex: opciones.length - 1 }, (i) => {
+      if (i >= destinos.length) return;
+      const destino = destinos[i];
+      ActionSheetIOS.showActionSheetWithOptions({ title: `Duplicar a ${etiquetaMes(destino)}`, message: 'La copia nace pendiente, sin diseños ni pauta.', options: ['Misma semana del mes', 'Mismo número de día', 'Cancelar'], cancelButtonIndex: 2 }, (j) => {
+        if (j > 1) return;
+        correr(() => duplicarPiezas([pieza.id], destino, j === 0 ? 'semana' : 'dia'), `Duplicada a ${etiquetaMes(destino)}`);
+      });
+    });
+  };
 
   const cargar = useCallback(async () => {
     if (!mes?.id || !pieza?.id) return;
@@ -180,8 +200,13 @@ export default function PiezaDeMarketing() {
             <Campo value={texto} onChangeText={setTexto} placeholder="Escribe un comentario…" maxLength={2000} />
             <BotonGrande texto="Comentar" onPress={mandarComentario} deshabilitado={ocupado || !texto.trim()} />
           </Seccion>
-          <BotonGrande texto="Diseños, pauta y edición (portal)" borde color={MARCA.azulClaro}
-            onPress={() => router.push({ pathname: '/portal', params: { ruta: '/marketing', nombre: 'Marketing' } })} />
+          {puedeEditar ? (
+            <Seccion titulo="Diseñador">
+              <BotonGrande texto="Editar la pieza y sus diseños" onPress={() => router.push('/marketing-editar')} />
+              <BotonGrande borde texto={pieza?.pauta ? 'La pauta' : 'Pautarla'} color={MARCA.azulClaro} onPress={() => router.push('/marketing-pauta')} />
+              <BotonGrande borde texto="Duplicar a otro mes" color={MARCA.azulClaro} onPress={duplicar} />
+            </Seccion>
+          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </>

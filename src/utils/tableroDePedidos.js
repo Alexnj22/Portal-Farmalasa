@@ -615,3 +615,41 @@ export const EVENTO_DE_DIFERENCIA = {
     no_reenviado:            'decidió no reenviar la caja que no llegó',
 };
 
+
+/**
+ * Cómo va cada PEDIDO entero (sus salas juntas): si todas salieron, si alguna
+ * se está preparando, si alguna ya salió. Anular decide sobre el pedido, no
+ * sobre una sala: si alguna ya salió no se anula, y si alguna se está
+ * preparando hace falta un motivo.
+ */
+export function etapasPorPedido(rows = []) {
+    const map = new Map();
+    for (const row of rows) {
+        const prev = map.get(row.pedido_id) ?? { allFinalized: true, anyActive: false, anyFinalized: false };
+        map.set(row.pedido_id, {
+            allFinalized: prev.allFinalized && !!row.finalizado_at,
+            anyActive: prev.anyActive || (!!row.iniciado_at && !row.finalizado_at),
+            anyFinalized: prev.anyFinalized || !!row.finalizado_at,
+        });
+    }
+    return map;
+}
+
+/** ¿Se puede anular el pedido de esta fila? Y si se puede, ¿pide motivo? */
+export function anulacionDelPedido(row, etapas) {
+    const st = etapas?.get(row?.pedido_id) ?? {};
+    return { puede: row?.pedido_status === 'confirmado' && !st.anyFinalized, pideMotivo: !!st.anyActive };
+}
+
+/** Una sala sin MIN·MAX publicado no se puede reponer: no hay qué pedir. */
+export function salaSinMinMaxPublicado(stat) {
+    return !stat || ((stat.con_bodega_productos ?? 0) + (stat.sin_bodega_productos ?? 0)) === 0;
+}
+
+/** Cuánto le urge a una sala: ≥65% de depleción alta, ≥40% media, si no baja. */
+export function nivelDeUrgencia(pct) {
+    if (pct == null) return 'none';
+    if (pct >= 65) return 'high';
+    if (pct >= 40) return 'mid';
+    return 'low';
+}

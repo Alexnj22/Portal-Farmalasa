@@ -181,7 +181,8 @@ function nombreSeguro(nombre) {
  */
 export async function subirDiseno({ mesId, piezaId, archivo, orden, subidoPor, anteriorId = null, medidas = {} }) {
     const path = `${mesId}/${piezaId}/${Date.now()}-${nombreSeguro(archivo.name)}`;
-    const url = await subirArchivo(BUCKET_MARKETING, path, archivo, { contentType: archivo.type });
+    // `archivo` es un File del navegador o lo que arma la app: `{ name, type, size, datos }`.
+    const url = await subirArchivo(BUCKET_MARKETING, path, archivo.datos ?? archivo, { contentType: archivo.type });
     const data = sinError(await supabase.from('marketing_archivos').insert({
         pieza_id: piezaId, url, nombre: archivo.name, mime: archivo.type || null,
         orden: orden ?? 0, subido_por: subidoPor, anterior_id: anteriorId,

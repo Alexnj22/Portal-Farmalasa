@@ -3,11 +3,12 @@
 // bloque y, al tocar uno, cómo se repartieron las respuestas de cada pregunta;
 // y los comentarios. Quien sólo ve su sala, ve su sala.
 //
-// Puntuar sale del núcleo (`climaLaboral`), lo mismo del portal. El resumen
-// con IA, los segmentos y los individuos siguen en el portal.
+// Puntuar sale del núcleo (`climaLaboral`), lo mismo del portal. Resumen,
+// Segmentos e Individuos están en `componentes/encuestas/AnalisisClima`. El
+// resumen de comentarios con IA sigue en el portal.
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -19,7 +20,8 @@ import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { BotonGrande, Seccion } from '../componentes/formulario/Piezas';
+import { Seccion } from '../componentes/formulario/Piezas';
+import { Individuos, Resumen, Segmentos as SegmentosDeClima } from '../componentes/encuestas/AnalisisClima';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
@@ -44,7 +46,7 @@ export default function Encuesta() {
   const [encuestas, setEncuestas] = useState(null);
   const [encuestaId, setEncuestaId] = useState(null);
   const [datos, setDatos] = useState(null);
-  const [vista, setVista] = useState('bloques');
+  const [vista, setVista] = useState('resumen');
   const [abierto, setAbierto] = useState(null);
 
   useEffect(() => { fetchSurveys().then(({ data }) => { setEncuestas(data || []); if (data?.length) setEncuestaId(data[0].id); }); }, []);
@@ -65,6 +67,7 @@ export default function Encuesta() {
   const global = datos ? puntajeGlobal(filas, datos.bloques, inv) : null;
   const nivel = global != null ? nivelDePuntaje(global) : null;
   const comentarios = filas.filter((r) => r.comentario?.trim());
+  const encuestaActual = (encuestas || []).find((e) => e.id === encuestaId);
   const grupos = (encuestas || []).length > 1 ? [{ id: 'encuesta', titulo: 'Encuesta', activa: String(encuestaId), porDefecto: String(encuestas[0].id), onCambiar: (v) => setEncuestaId(Number(v) || v),
     opciones: encuestas.map((e) => ({ id: String(e.id), label: e.nombre || e.titulo || `Encuesta ${e.año ?? ''}` })) }] : [];
 
@@ -91,7 +94,13 @@ export default function Encuesta() {
               <Kpi icono="Users" rotulo="Participaron" valor={String(filas.length)} color={MARCA.azul} apoyo={(() => { const j = filas.filter((r) => r.isJefe).length; return `${j} jefe${j === 1 ? '' : 's'}`; })()} />
               <Kpi icono="MessageSquare" rotulo="Comentarios" valor={String(comentarios.length)} color={MARCA.violeta} apoyo="escritos" />
             </FilaDeKpis>
-            <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'bloques', label: 'Por bloque' }, { id: 'comentarios', label: 'Comentarios' }]} />
+            <Segmentos activa={vista} onCambiar={setVista} opciones={[
+              { id: 'resumen', label: 'Resumen' }, { id: 'bloques', label: 'Bloques' }, { id: 'segmentos', label: 'Segmentos' },
+              { id: 'personas', label: 'Individuos' }, { id: 'comentarios', label: 'Comentarios' },
+            ]} />
+            {vista === 'resumen' ? <Resumen filas={filas} bloques={datos.bloques} preguntas={datos.preguntas} inv={inv} /> : null}
+            {vista === 'segmentos' ? <SegmentosDeClima filas={filas} bloques={datos.bloques} inv={inv} /> : null}
+            {vista === 'personas' ? <Individuos filas={filas} bloques={datos.bloques} preguntas={datos.preguntas} inv={inv} anonima={!!encuestaActual?.anonima} /> : null}
             {vista === 'bloques' ? datos.bloques.map((b) => {
               const s = puntajeDeBloque(filas, b.indices, inv);
               const n = s != null ? nivelDePuntaje(s) : null;
@@ -125,7 +134,7 @@ export default function Encuesta() {
                   </Vidrio>
                 </Pressable>
               );
-            }) : (
+            }) : vista === 'comentarios' ? (
               <View style={{ marginHorizontal: 16, gap: 8 }}>
                 {comentarios.length ? comentarios.map((c, i) => (
                   <Vidrio key={i} radio={16}>
@@ -136,11 +145,7 @@ export default function Encuesta() {
                   </Vidrio>
                 )) : <Seccion><Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Nadie dejó comentarios.</Text></Seccion>}
               </View>
-            )}
-            <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-              <BotonGrande texto="Más análisis (portal)" borde color={MARCA.azulClaro}
-                onPress={() => router.push({ pathname: '/portal', params: { ruta: '/encuesta', nombre: 'Clima organizacional' } })} />
-            </View>
+            ) : null}
           </>
         ) : null}
       </ScrollView>

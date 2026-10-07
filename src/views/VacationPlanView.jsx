@@ -27,8 +27,8 @@ import PortalTextarea from '../components/common/PortalTextarea';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { soloPersonalEnPlanilla } from '@nucleo/utils/tipoDeFicha';
 import { hora12 } from '@nucleo/utils/hora';
-import { fechaTexto } from '@nucleo/utils/fecha';
-import { diasDeVacacion, diasUsadosPorPersona, planesVisibles } from '@nucleo/utils/planDeVacaciones';
+import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { diasDeVacacion, diasUsadosPorPersona, elegibilidadDeVacaciones, planesVisibles } from '@nucleo/utils/planDeVacaciones';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtDate  = (d) => d ? fechaTexto(d, { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -165,10 +165,10 @@ const EligibilityBanner = ({ info }) => {
                         Antigüedad: <strong>{yearsWorked} años</strong>
                     </p>
                     <p className={`text-label font-medium ${cfg.bodyColor}`}>
-                        Último aniversario: <strong>{fmtDate(lastAnniversary?.toISOString().split('T')[0])}</strong>
+                        Último aniversario: <strong>{fmtDate(lastAnniversary)}</strong>
                     </p>
                     <p className={`text-label font-medium ${cfg.bodyColor}`}>
-                        Ventana válida hasta: <strong>{fmtDate(windowEnd?.toISOString().split('T')[0])}</strong>
+                        Ventana válida hasta: <strong>{fmtDate(windowEnd)}</strong>
                     </p>
                 </>
             ) : (
@@ -178,7 +178,7 @@ const EligibilityBanner = ({ info }) => {
                     </p>
                     {nextAnniversary && (
                         <p className={`text-label font-medium ${cfg.bodyColor}`}>
-                            Próximo aniversario: <strong>{fmtDate(nextAnniversary.toISOString().split('T')[0])}</strong>
+                            Próximo aniversario: <strong>{fmtDate(nextAnniversary)}</strong>
                         </p>
                     )}
                     {isNearEligible && (
@@ -512,35 +512,11 @@ const VacationPlanView = () => {
 
     const selectedEmployee = useMemo(() => employees.find(e => String(e.id) === String(empId)), [employees, empId]);
 
-    const eligibilityInfo = useMemo(() => {
-        if (!selectedEmployee?.hire_date) return null;
-        const hire = new Date(selectedEmployee.hire_date + 'T12:00:00');
-        const now  = new Date();
-        const msWorked    = now - hire;
-        const yearsWorked = msWorked / (1000 * 60 * 60 * 24 * 365.25);
-        const monthsWorked = Math.floor(msWorked / (1000 * 60 * 60 * 24 * 30.44));
-        const isEligible   = yearsWorked >= 1;
-        const isNearEligible = !isEligible && monthsWorked >= 9;
-
-        const nextAnniversary = new Date(now.getFullYear(), hire.getMonth(), hire.getDate());
-        if (nextAnniversary < now) nextAnniversary.setFullYear(now.getFullYear() + 1);
-        const lastAnniversary = new Date(nextAnniversary);
-        lastAnniversary.setFullYear(lastAnniversary.getFullYear() - 1);
-        const windowEnd = new Date(lastAnniversary);
-        windowEnd.setMonth(windowEnd.getMonth() + 3);
-        const inWindow = isEligible && now >= lastAnniversary && now <= windowEnd;
-
-        return {
-            isEligible,
-            isNearEligible,
-            yearsWorked: Math.floor(yearsWorked * 10) / 10,
-            monthsWorked,
-            nextAnniversary,
-            lastAnniversary,
-            windowEnd,
-            inWindow,
-        };
-    }, [selectedEmployee]);
+    // La elegibilidad: núcleo (`elegibilidadDeVacaciones`), la misma de la app.
+    const eligibilityInfo = useMemo(
+        () => elegibilidadDeVacaciones(selectedEmployee?.hire_date, hoySV()),
+        [selectedEmployee],
+    );
 
     const computedDays = useMemo(
         () => diasDeVacacion(startDate, endDate, startTime, endTime),

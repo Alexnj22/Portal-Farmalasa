@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1242.1 — Plazo en las llamadas a Wompi
+
+_(pendiente de redactar)_
+
 ## v2.1242.0 — Pago en línea de las reservas con Wompi; cupón Platino, banner de promociones y nivel por lo que acumula
 
 Dos sesiones en el mismo número (origin ya había usado v2.1240.0 y v2.1241.0): van juntas.

@@ -31,6 +31,7 @@ async function tokenWompi(): Promise<string> {
   const r = await fetch(ID, {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
+    signal: AbortSignal.timeout(15_000),
     body: new URLSearchParams({
       grant_type: "client_credentials",
       audience: "wompi_api",
@@ -49,6 +50,8 @@ async function api(metodo: string, ruta: string, cuerpo?: unknown) {
     method: metodo,
     headers: { authorization: `Bearer ${await tokenWompi()}`, "content-type": "application/json" },
     body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+    // Wompi lento no puede colgar al cliente ni agotar el aviso: 20 s y se corta.
+    signal: AbortSignal.timeout(20_000),
   });
   const texto = await r.text();
   if (!r.ok) throw new Error(`wompi ${metodo} ${ruta} ${r.status}: ${texto.slice(0, 300)}`);

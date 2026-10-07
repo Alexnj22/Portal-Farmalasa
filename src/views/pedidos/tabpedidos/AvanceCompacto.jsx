@@ -19,7 +19,9 @@ import { pasosDelPedido, PASO_DE_LA_ETAPA } from '@nucleo/utils/tableroDePedidos
 // que lo abrió: preparando es «Preparando», no «Inicio».
 const EN_CURSO = { confirmado: 'Por preparar', iniciado: 'Preparando', preparado: 'Listo', enviado: 'En ruta', llegada: 'Recibiendo' };
 
-export default function AvanceCompacto({ row, stage, rutaStop = null }) {
+// `soloActivo`: en una fila angosta (la vista lista) se rotula sólo el paso
+// en curso — siete rótulos en ~300px se pisaban.
+export default function AvanceCompacto({ row, stage, rutaStop = null, soloActivo = false }) {
     const pasos     = pasosDelPedido(row, { entrega: rutaStop }).slice(0, 7);
     const activeIdx = PASO_DE_LA_ETAPA[stage] ?? 0;
     const pausado   = stage === 'pausado';
@@ -53,6 +55,7 @@ export default function AvanceCompacto({ row, stage, rutaStop = null }) {
                             rótulos no entran en 330px y se pisaban. */}
                         <span className={`mt-1 text-micro leading-tight whitespace-nowrap self-start ${
                             activo ? `font-bold ${pausado ? 'text-warning-text' : 'text-chart-3-text'}`
+                            : soloActivo ? 'hidden'
                             : hecho ? 'text-content-2 hidden sm:block' : 'text-content-3 hidden sm:block'}`}>
                             {activo ? (pausado ? 'Pausado' : EN_CURSO[paso.key] ?? paso.label) : paso.label}
                         </span>

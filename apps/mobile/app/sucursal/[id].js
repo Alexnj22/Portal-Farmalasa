@@ -11,7 +11,8 @@
 //   · Historial — lo que se registró de la sala, con antes → nuevo y quién
 //                 (`historialDeSucursal`), filtrable por dimensión.
 // Todo lo que decide sale del núcleo, el mismo del portal. La ficha se edita
-// en `sucursal/editar`; registrar un pago o subir un documento sigue en el portal.
+// en `sucursal/editar`; los documentos del expediente se suben desde la fila
+// (`AccionesDelDocumento`); registrar un pago sigue en el portal.
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -27,6 +28,8 @@ import { CATEGORIAS_DOCUMENTO } from '@nucleo/data/constants';
 import { formatTime12h } from '@nucleo/utils/helpers';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { openStoredFile } from '@nucleo/utils/storageFiles';
+import { cupoDeKioscos, sucursalLlevaKiosco } from '@nucleo/utils/kioscos';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
@@ -39,6 +42,7 @@ import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Grafica from '../../componentes/metas/Graficas';
 import { colorDeVariante } from '../../componentes/colorDeVariante';
 import { MARCA } from '../../componentes/inicio/marca';
+import AccionesDelDocumento from '../../componentes/sucursal/AccionesDelDocumento';
 
 const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0];
@@ -113,7 +117,8 @@ function Resumen({ b, gente, kioscos }) {
         {!b.phone && !b.cell ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin teléfonos registrados.</Text> : null}
       </Seccion>
       <FilaDeKpis>
-        <Kpi icono="Monitor" rotulo="Kioscos" valor={kioscos == null ? '…' : `${kioscos} / 3`} color={kioscos ? MARCA.violetaClaro : colorSistema.texto2} apoyo="activos para marcar" />
+        <Kpi icono="Monitor" rotulo="Kioscos" valor={kioscos == null ? '…' : `${kioscos} / ${cupoDeKioscos().limite}`} color={kioscos ? MARCA.violetaClaro : colorSistema.texto2} apoyo="activos para marcar"
+          onPress={sucursalLlevaKiosco(b.type || 'FARMACIA') ? () => router.push({ pathname: '/sucursal/kioscos', params: { id: String(b.id) } }) : undefined} />
         <Kpi icono="Users" rotulo="Personal" valor={String(gente.length)} color={MARCA.azulClaro} apoyo={gente.length ? 'asignados' : 'nadie asignado'} />
       </FilaDeKpis>
       {tipo === 'FARMACIA' ? (
@@ -145,23 +150,26 @@ function Resumen({ b, gente, kioscos }) {
   );
 }
 
-function Documento({ d, primero }) {
+function Documento({ b, d, primero, puedeEditar }) {
   const e = estadoDeDocumento(d.url, vencimientoEfectivo(d));
   const color = colorDeVariante(e.variant);
   const fecha = d.hasIssueDate && d.issueDate ? `emitido ${corta(d.issueDate)}` : vencimientoEfectivo(d) ? `vence ${corta(d.expDate)}` : null;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador, paddingTop: primero ? 0 : 9 }}>
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{d.title}</Text>
-        {fecha ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{fecha}</Text> : null}
+    <View style={{ borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador, paddingTop: primero ? 0 : 9 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{d.title}</Text>
+          {fecha ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{fecha}</Text> : null}
+        </View>
+        <Pildora texto={e.label} color={color} />
+        {d.url ? <Boton texto="Ver" onPress={() => Promise.resolve(openStoredFile(d.url)).catch(() => {})} /> : null}
       </View>
-      <Pildora texto={e.label} color={color} />
-      {d.url ? <Boton texto="Ver" onPress={() => Linking.openURL(d.url).catch(() => {})} /> : null}
+      {puedeEditar ? <AccionesDelDocumento b={b} d={d} /> : null}
     </View>
   );
 }
 
-function Expediente({ b }) {
+function Expediente({ b, puedeEditar }) {
   const [todos, setTodos] = useState(false);
   const exp = useMemo(() => documentosDeSucursal(b), [b]);
   // Como el portal: de arranque sólo lo que pide atención (falta, vence, vencido).
@@ -182,7 +190,7 @@ function Expediente({ b }) {
         opciones={[{ id: 'atencion', label: 'Piden atención' }, { id: 'todos', label: 'Todos' }]} />
       {grupos.map(([titulo, lista]) => (
         <Seccion key={titulo} titulo={`${titulo} · ${lista.length}`}>
-          {lista.map((d, i) => <Documento key={d.id} d={d} primero={i === 0} />)}
+          {lista.map((d, i) => <Documento key={d.id} b={b} d={d} primero={i === 0} puedeEditar={puedeEditar} />)}
         </Seccion>
       ))}
       {!grupos.length ? <Aviso texto={todos ? 'Esta sucursal no tiene documentos configurados.' : 'Todo el expediente está al día.'} /> : null}
@@ -282,7 +290,7 @@ export default function Sucursal() {
   const [pestana, setPestana] = useState('resumen');
   const [kioscos, setKioscos] = useState(null);
   useEffect(() => {
-    fetchBranchKiosks(id).then(({ data }) => setKioscos((data || []).filter((k) => k.status === 'ACTIVE').length)).catch(() => setKioscos(0));
+    fetchBranchKiosks(id).then(({ data }) => setKioscos(cupoDeKioscos(data).activos)).catch(() => setKioscos(0));
   }, [id]);
   if (!b) return <Aviso tono="freno" texto="No se encontró la sucursal." />;
   const tipo = b.type || 'FARMACIA';
@@ -303,7 +311,7 @@ export default function Sucursal() {
         <Segmentos activa={pestana} onCambiar={setPestana}
           opciones={[{ id: 'resumen', label: 'Resumen' }, { id: 'expediente', label: 'Expediente' }, { id: 'gastos', label: 'Gastos' }, { id: 'historial', label: 'Historial' }]} />
         {pestana === 'resumen' ? <Resumen b={b} gente={gente} kioscos={kioscos} /> : null}
-        {pestana === 'expediente' ? <Expediente b={b} /> : null}
+        {pestana === 'expediente' ? <Expediente b={b} puedeEditar={puedeEditar} /> : null}
         {pestana === 'gastos' ? <Gastos b={b} /> : null}
         {pestana === 'historial' ? <Historial b={b} empleados={empleados} /> : null}
         {puedeEditar ? (
@@ -315,7 +323,7 @@ export default function Sucursal() {
             </View>
           </Seccion>
         ) : null}
-        <Text style={{ color: colorSistema.texto2, fontSize: 13, textAlign: 'center', marginTop: 4 }}>Registrar un pago o subir un documento: en el portal.</Text>
+        <Text style={{ color: colorSistema.texto2, fontSize: 13, textAlign: 'center', marginTop: 4 }}>Registrar un pago, y los documentos de enfermería o los propios: en el portal.</Text>
       </ScrollView>
     </>
   );

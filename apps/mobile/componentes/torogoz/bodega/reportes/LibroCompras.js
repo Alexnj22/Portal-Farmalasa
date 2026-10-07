@@ -17,6 +17,7 @@ import { Aviso } from '../../../formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../../../inicio/Kpi';
 import { MARCA } from '../../../inicio/marca';
 import PasoDeMes from '../../../PasoDeMes';
+import BotonPaquete from './Paquete';
 import { Chapa, Ficha, PETROLEO, Vacio } from '../piezas';
 import { compartirArchivo } from './compartir';
 
@@ -49,6 +50,7 @@ export default function LibroCompras({ buscar }) {
     <View style={{ gap: 12 }}>
       <MenuDeFiltros grupos={[]} extra={extra} />
       <PasoDeMes mes={mes} onCambiar={setMes} />
+      <View style={{ marginHorizontal: 16 }}><BotonPaquete mes={mes} /></View>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       <FilaDeKpis>
         <Kpi icono="BookOpen" rotulo="Compras gravadas" color={PETROLEO} valor={formatMoney(t.gravada)} apoyo={`${formatQty(t.documentos)} Créditos Fiscales`} />

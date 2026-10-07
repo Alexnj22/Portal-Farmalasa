@@ -9,6 +9,7 @@ import { seguirPosicion } from '../../plataforma/ubicacion';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { hora12 } from '@nucleo/utils/hora';
 import { escucharCambios } from '@nucleo/data/tiempoReal';
+import { coordenadasDeSucursales, conductorEnVivo, ordenarParadas, avanceDeEntrega, INTERVALO_POSICION_CONDUCTOR_MS } from '@nucleo/utils/rutasDeEntrega';
 
 
 function fmtTime(iso) {
@@ -46,8 +47,8 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
   const [recalcCount,  setRecalcCount]  = useState(0);
 
   const [localParadas, setLocalParadas] = useState(null);
-  const paradas = (localParadas ?? [...(ruta?.ruta_pedidos ?? [])]).sort((a, b) => a.orden_entrega - b.orden_entrega);
-  const entregadas = paradas.filter(p => p.entregado_at).length;
+  const paradas = ordenarParadas({ ruta_pedidos: localParadas ?? ruta?.ruta_pedidos });
+  const { entregadas } = avanceDeEntrega(paradas);
 
   // ── Sync GPS pos → ref (evita stale closures en intervalos) ────────────────
   useEffect(() => { latestGpsPosRef.current = gpsPos; }, [gpsPos]);
@@ -96,17 +97,8 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
     if (!open) return;
     fetchSucursalesConCoords()
       .then(({ data }) => {
-        const cm = {};
-        let bodega = null;
-        for (const row of data ?? []) {
-          const loc = row.branch?.settings?.location ?? {};
-          const lat = parseFloat(loc.lat), lng = parseFloat(loc.lng);
-          if (!isNaN(lat) && !isNaN(lng)) {
-            cm[row.erp_sucursal_id] = { lat, lng };
-            if (row.es_bodega) bodega = { lat, lng };
-          }
-        }
-        setCoordsMap(cm);
+        const { porSucursal, bodega } = coordenadasDeSucursales(data);
+        setCoordsMap(porSucursal);
         setBodegaCoords(bodega);
       });
   }, [open]);
@@ -151,8 +143,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
       .then(({ data }) => {
         if (!data) return;
         setDriverPos({ lat: parseFloat(data.lat), lng: parseFloat(data.lng) });
-        const ageMin = (Date.now() - new Date(data.updated_at).getTime()) / 60000;
-        setDriverOnline(ageMin < 3);
+        setDriverOnline(conductorEnVivo(data.updated_at));
       });
 
     return escucharCambios(`ruta-loc-${ruta.id}`,
@@ -171,7 +162,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
       const pos = latestGpsPosRef.current;
       if (!pos) return;
       upsertRutaLocation(ruta.id, pos.lat, pos.lng).then(() => {}, () => {});
-    }, 30_000);
+    }, INTERVALO_POSICION_CONDUCTOR_MS);
     return () => clearInterval(interval);
   }, [open, isConductor, ruta.id]);
 

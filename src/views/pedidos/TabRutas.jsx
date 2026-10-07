@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Button from '../../components/common/Button';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import { Truck, CheckCircle2, Home, Play, Plus, ChevronDown, ChevronUp, Navigation, Map, Search } from 'lucide-react';
-import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { clickable } from '@nucleo/utils/clickable';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -15,24 +14,15 @@ import { dialogoDiferido } from '@nucleo/utils/dialogoDiferido';
 const CrearRutaModal = dialogoDiferido(() => import('./CrearRutaModal'));
 const RutaMapModal   = dialogoDiferido(() => import('./RutaMapModal'));
 import Badge from '../../components/common/Badge';
-import {
-    iniciarRuta, completarRuta, updateRutaPedidoEntregado,
-    fetchRutasConParadas, fetchBranchNamesForSucursales, fetchPedidoNumerosByIds,
-} from '@nucleo/data/pedidos';
+import { iniciarRuta, completarRuta, updateRutaPedidoEntregado } from '@nucleo/data/pedidos';
+import { fetchRutasDeEntrega } from '@nucleo/data/rutasDeEntrega';
+import { estadoDeRuta, distanciaTexto, ordenarParadas, avanceDeEntrega, filtrarRutas, separarRutas } from '@nucleo/utils/rutasDeEntrega';
 import { hora12 } from '@nucleo/utils/hora';
 import { escucharCambios } from '@nucleo/data/tiempoReal';
 
-const STATUS_BADGE = {
-  pendiente:  { label: 'Pendiente',  variante: 'warning' },
-  en_ruta:    { label: 'En ruta',    variante: 'chart-9' },
-  completada: { label: 'Completada', variante: 'success' },
-  con_alerta: { label: 'Con alerta', variante: 'danger'  },
-};
-
-function fmtDist(m) {
-  if (!m) return null;
-  return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${m} m`;
-}
+// El estado, la distancia, el orden y el avance salen del núcleo
+// (`utils/rutasDeEntrega.js`): la app pinta las mismas rutas.
+const fmtDist = distanciaTexto;
 // La hora sale del canónico: sus espacios no se cortan, así que se lee como
 // una sola pieza sin juntar la abreviatura a mano.
 function fmtTime(iso) {
@@ -48,11 +38,10 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
   const [mapOpen,   setMapOpen]   = useState(false);
   const showToast = useToastStore(s => s.showToast);
 
-  const paradas = [...(ruta.ruta_pedidos ?? [])].sort((a, b) => a.orden_entrega - b.orden_entrega);
+  const paradas = ordenarParadas(ruta);
   const isConductor = ruta.conductor_id === currentUserId;
-  const entregadas  = paradas.filter(p => p.entregado_at).length;
-  const total       = paradas.length;
-  const badge       = STATUS_BADGE[ruta.status] ?? STATUS_BADGE.pendiente;
+  const { entregadas, total } = avanceDeEntrega(paradas);
+  const badge       = estadoDeRuta(ruta.status);
 
   const handleIniciarRuta = async () => {
     setBusyRuta('iniciar');
@@ -254,40 +243,12 @@ export default function TabRutas({ searchTerm = '' }) {
   const [crearOpen,     setCrearOpen]     = useState(false);
 
   const loadRutas = useCallback(async () => {
-    const { data, error } = await fetchRutasConParadas();
-
-    if (error) { console.error(error); setLoading(false); return; }
-
-    // Enrich stops with sucursal names + pedido numeros
-    const sucIds = [...new Set((data ?? []).flatMap(r =>
-      r.ruta_pedidos.map(rp => rp.erp_sucursal_id)
-    ))];
-    const pedidoIds = [...new Set((data ?? []).flatMap(r =>
-      r.ruta_pedidos.map(rp => rp.pedido_id)
-    ))];
-
-    const [{ data: sucData }, { data: pedData }] = await Promise.all([
-      fetchBranchNamesForSucursales(sucIds.length ? sucIds : [-1]),
-      fetchPedidoNumerosByIds(pedidoIds.length ? pedidoIds : ['00000000-0000-0000-0000-000000000000']),
-    ]);
-
-    const sucNameMap = Object.fromEntries((sucData ?? []).map(s => [s.erp_sucursal_id, s.branch?.name]));
-    const pedNumMap  = Object.fromEntries((pedData ?? []).map(p => [p.id, p.numero]));
-
-    const enriched = (data ?? []).map(ruta => ({
-      ...ruta,
-      ruta_pedidos: ruta.ruta_pedidos.map(rp => ({
-        ...rp,
-        suc_name: sucNameMap[rp.erp_sucursal_id] ?? `Suc. ${rp.erp_sucursal_id}`,
-        numeros:  [pedNumMap[rp.pedido_id]].filter(Boolean),
-      })),
-    }));
-
-    setRutas(enriched);
-    setLoading(false);
+    try { setRutas(await fetchRutasDeEntrega()); }
+    catch (e) { console.error(e); }
+    finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { loadRutas(); }, [loadRutas]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
+  useEffect(() => { loadRutas(); }, [loadRutas]);
 
   // Realtime: recarga cuando cambia el estado de rutas o paradas
   useEffect(() => {
@@ -295,16 +256,8 @@ export default function TabRutas({ searchTerm = '' }) {
   }, [loadRutas]);
 
   // Search filter
-  const filtered = useMemo(() => {
-    if (!searchTerm.trim()) return rutas;
-    return rutas.filter(r =>
-        String(r.numero).includes(searchTerm.trim()) ||
-        tokenMatch(searchTerm, r.conductor_nombre)
-    );
-  }, [rutas, searchTerm]);
-
-  const active    = filtered.filter(r => r.status !== 'completada');
-  const completed = filtered.filter(r => r.status === 'completada');
+  const filtered = useMemo(() => filtrarRutas(rutas, searchTerm), [rutas, searchTerm]);
+  const { activas: active, completadas: completed } = separarRutas(filtered);
 
   return (
     /* El resto de las pestañas de la vista envuelve su contenido en `p-4`;

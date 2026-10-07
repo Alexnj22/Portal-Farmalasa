@@ -5,8 +5,9 @@
 //
 // La visita se registra con un toque: «Vender» abre la venta con el cliente
 // puesto; «Registrar visita» pregunta qué pasó (el diálogo ES la confirmación).
-// La app no tiene permiso de ubicación todavía, así que la visita va sin
-// coordenadas — el portal hace lo mismo en el navegador, y cuenta igual.
+// La visita lleva la ubicación del teléfono si la da en 8 segundos (como el
+// portal en la app); sin ella cuenta igual. «Iniciar ruta» anota el recorrido
+// —un punto por minuto— mientras la app está abierta; ver `rastreo.js`.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Linking, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
@@ -19,6 +20,7 @@ import { RESULTADOS_VISITA, ROTULO_RESULTADO, avanceDeRuta, comoLlegar, enElMapa
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { diasDesde, hoySV } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
+import { posicionActual, ubicacionNegada } from '@plataforma/ubicacion';
 import { colorSistema } from '../../Formulario';
 import Vidrio from '../../Vidrio';
 import Kpi, { FilaDeKpis } from '../../inicio/Kpi';
@@ -27,6 +29,14 @@ import { Aviso } from '../../formulario/Piezas';
 import { MARCA } from '../../inicio/marca';
 import PasoDeDia from './PasoDeDia';
 import Etiqueta from './Etiqueta';
+import MapaDeRuta from './MapaDeRuta';
+import { iniciarRuta, terminarRuta, useRastreoDeRuta } from './rastreo';
+
+const PROBLEMA_GPS = {
+  denegado: 'El teléfono no da permiso de ubicación: la ruta sigue, pero sin recorrido. Se activa en Ajustes › Farmalasa › Ubicación.',
+  'sin-senal': 'Sin señal de GPS por ahora: el recorrido sigue en cuanto vuelva.',
+  'sin-gps': 'El GPS del teléfono no respondió: la ruta sigue, pero sin recorrido.',
+};
 
 const PETROLEO = '#0f6e7d';
 
@@ -102,6 +112,31 @@ export default function Hoy({ puedeConfigurar, fecha, vendedorElegido, onFecha, 
   const esHoy = fecha === hoySV();
   const esMio = vendedorId === user?.id;
   const nombreVendedor = vendedores.find((v) => v.id === vendedorId);
+  const rastreo = useRastreoDeRuta(user?.id);
+
+  // Anotar el recorrido es escribir: se confirma, igual que en el portal.
+  const pedirIniciar = () => {
+    Alert.alert('Iniciar ruta', 'Mientras la app esté abierta, se anota tu ubicación cada minuto hasta que termines la ruta.', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Iniciar', onPress: async () => {
+        iniciarRuta(user?.id);
+        useStaffStore.getState().appendAuditLog?.('DISTRIBUCION_RUTA_INICIADA', String(user?.id ?? ''), { fecha, desde: 'app' });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        // Si el permiso ya estaba negado, se dice UNA vez, acá.
+        if (await ubicacionNegada()) Alert.alert('Sin permiso de ubicación', PROBLEMA_GPS.denegado);
+      } },
+    ]);
+  };
+  const pedirTerminar = () => {
+    Alert.alert('Terminar ruta', 'Se deja de anotar tu ubicación.', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Terminar', style: 'destructive', onPress: () => {
+        terminarRuta(user?.id);
+        useStaffStore.getState().appendAuditLog?.('DISTRIBUCION_RUTA_TERMINADA', String(user?.id ?? ''), { fecha, desde: 'app' });
+        Haptics.selectionAsync().catch(() => {});
+      } },
+    ]);
+  };
 
   const visitar = (c) => {
     Alert.alert(`Visita a ${c.nombre}`, '¿Qué pasó?', [
@@ -110,9 +145,11 @@ export default function Hoy({ puedeConfigurar, fecha, vendedorElegido, onFecha, 
         onPress: async () => {
           setOcupado(c.id);
           try {
-            await registrarVisita(c.id, r.value, {});
-            useStaffStore.getState().appendAuditLog?.('DISTRIBUCION_VISITA', String(c.id), { resultado: r.value, con_gps: false, desde: 'app' });
+            const gps = await posicionActual();
+            await registrarVisita(c.id, r.value, gps ?? {});
+            useStaffStore.getState().appendAuditLog?.('DISTRIBUCION_VISITA', String(c.id), { resultado: r.value, con_gps: !!gps, desde: 'app' });
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+            if (gps && c.lat == null) Alert.alert(c.nombre, 'Se guardó la ubicación del cliente.');
             await cargar();
           } catch (e) {
             Alert.alert('No se pudo registrar la visita', mensajeDeDistribucion(e));
@@ -144,6 +181,19 @@ export default function Hoy({ puedeConfigurar, fecha, vendedorElegido, onFecha, 
           apoyo={recorrido?.ultima ? `${formatQty(recorrido.puntos?.length ?? 0)} puntos · ver en el mapa` : 'Sin ubicaciones'}
           onPress={recorrido?.ultima ? () => Linking.openURL(enElMapa(recorrido.ultima)).catch(() => {}) : undefined} />
       </FilaDeKpis>
+      {esMio && esHoy ? (
+        <View style={{ marginHorizontal: 16, gap: 8 }}>
+          {rastreo.enRuta ? (
+            <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '600', marginHorizontal: 4 }}>En ruta: tu ubicación se anota cada minuto mientras la app esté abierta. Al terminar, toca «Terminar ruta».</Text>
+          ) : null}
+          {rastreo.problema ? <Aviso tono="cuidado" texto={PROBLEMA_GPS[rastreo.problema] ?? PROBLEMA_GPS['sin-gps']} /> : null}
+          <View style={{ flexDirection: 'row' }}>
+            {rastreo.enRuta
+              ? <Accion texto="Terminar ruta" color={MARCA.rojo} onPress={pedirTerminar} />
+              : <Accion texto="Iniciar ruta" lleno onPress={pedirIniciar} />}
+          </View>
+        </View>
+      ) : null}
       {datos?.rutas?.length ? (
         <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{datos.rutas.map((r) => r.nombre).join(' · ')}</Text>
       ) : null}
@@ -154,6 +204,7 @@ export default function Hoy({ puedeConfigurar, fecha, vendedorElegido, onFecha, 
           <Aviso texto={`${datos?.rutas?.length ? 'Las rutas de este día no tienen clientes.' : 'Este día no tiene rutas asignadas.'}${puedeConfigurar ? ' Se arman en «Armar rutas».' : ''}`} />
         </View>
       ) : null}
+      {clientes.length ? <MapaDeRuta clientes={clientes} recorrido={recorrido} /> : null}
       {clientes.map((c, i) => (
         <TarjetaCliente key={c.id} c={c} i={i} puedeActuar={esHoy && esMio} ocupado={ocupado === c.id} onVisita={visitar} />
       ))}

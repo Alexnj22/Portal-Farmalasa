@@ -5,6 +5,7 @@ import { SkeletonText } from '../common/StateViews';
 import { Laptop, AlertCircle, Loader2, Unplug, PowerOff, Activity } from 'lucide-react';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { kioscosActivos, LIMITE_KIOSCOS } from '@nucleo/utils/kioscos';
 
 const FormDispositivos = ({ formData }) => {
     const [kiosks, setKiosks] = useState([]);
@@ -38,7 +39,7 @@ const FormDispositivos = ({ formData }) => {
     }, [formData.id, getBranchKiosks]);
 
     // SOLO ACTIVOS
-    const activeKiosks = useMemo(() => kiosks.filter(k => k.status === 'ACTIVE'), [kiosks]);
+    const activeKiosks = useMemo(() => kioscosActivos(kiosks), [kiosks]);
 
     const executeRevoke = async (deviceId, deviceName) => {
         setIsRevoking(true);
@@ -73,7 +74,7 @@ const FormDispositivos = ({ formData }) => {
                 <div className="bg-success/10 text-success px-3 py-1.5 rounded-full border border-success/30 flex items-center gap-1.5 shadow-sm">
                     <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></div>
                     <span className="text-micro font-black tracking-widest uppercase">
-                        {activeKiosks.length} / 3
+                        {activeKiosks.length} / {LIMITE_KIOSCOS}
                     </span>
                 </div>
             </div>

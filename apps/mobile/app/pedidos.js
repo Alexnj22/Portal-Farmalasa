@@ -13,7 +13,8 @@
 // Con alcance de una sala se ven sólo los suyos; con alcance todas, la sala se
 // elige en el menú. Bodega genera el pedido (`pedido/generar`) y, en la
 // ficha, inicia, pausa, programa la entrega o anula; la llegada de un reenvío
-// se confirma en `pedido/reenvio`. Finalizar (las cajas), rutas y reglas siguen
+// se confirma en `pedido/reenvio`. Las rutas de reparto, con su mapa, en
+// `pedido/rutas`. Finalizar (las cajas), armar rutas y reglas siguen
 // en el portal.
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
@@ -90,6 +91,7 @@ export default function Pedidos() {
   const todas = getScope?.('pedidos') === 'ALL';
   const puede = hasPermission('pedidos', 'can_edit');
   const verMetricas = hasPermission('pedidos_tab_metricas');
+  const verRutas = hasPermission('pedidos_tab_rutas');
   const miErp = BRANCH_A_ERP[Number(salaDelUsuario(user))] ?? null;
   const [vista, setVista] = useState('pedidos');
   const [salaElegida, setSala] = useState('todas');
@@ -175,12 +177,11 @@ export default function Pedidos() {
                   {estado === 'all' ? 'No hay pedidos en curso en este período.' : 'Ningún pedido con este filtro.'}
                 </Text>
               )}
-            {todas && puede ? (
+            {(todas && puede) || verRutas ? (
               <View style={{ marginHorizontal: 16, gap: 8 }}>
-                <BotonGrande texto="Generar pedido" color={MARCA.azul} onPress={() => router.push('/pedido/generar')} />
-                {/* Las rutas piden el mapa y el optimizador de recorrido: siguen en la computadora. */}
-                <BotonGrande texto="Rutas (portal)" borde
-                  onPress={() => router.push({ pathname: '/portal', params: { ruta: '/pedidos', nombre: 'Pedidos' } })} />
+                {todas && puede ? <BotonGrande texto="Generar pedido" color={MARCA.azul} onPress={() => router.push('/pedido/generar')} /> : null}
+                {/* Las rutas, con su mapa, son nativas; ARMAR una (el optimizador) sigue en el portal. */}
+                {verRutas ? <BotonGrande texto="Rutas de reparto" borde onPress={() => router.push('/pedido/rutas')} /> : null}
               </View>
             ) : null}
           </>

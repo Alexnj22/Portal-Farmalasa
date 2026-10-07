@@ -5,9 +5,9 @@
 // dirección (`?reporte=`), como en el portal. Cada archivo sale por la hoja de
 // compartir y queda anotado como salida de datos.
 //
-// El «Paquete del mes» (un ZIP con todo lo fiscal) sigue en el portal: arma el
-// ZIP con `client-zip`, que necesita las secuencias del navegador. Cada libro
-// que lleva adentro se comparte acá uno por uno.
+// El «Paquete del mes» (un ZIP con todo lo fiscal) sale de las vistas de libros
+// y retenciones: el mismo paquete del portal (`paqueteDelMes`, núcleo),
+// comprimido acá con `fflate`.
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';

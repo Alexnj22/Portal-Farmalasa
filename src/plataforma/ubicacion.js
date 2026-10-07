@@ -63,3 +63,34 @@ export async function seguirPosicion(alMoverse, { mensaje = 'Rastreando tu posic
         if (id !== null) geo.clearWatch(id);
     };
 }
+
+// La lectura PUNTUAL (la de una visita). Se pide SÓLO en la app (Capacitor):
+// en el navegador `vercel.json` manda `geolocation=()`, que la apaga en todo
+// el sitio, y la decisión del usuario (2026-10-01) fue «solo para las apps».
+// El plugin nativo pide su propio permiso al sistema la primera vez. Vivía
+// dentro de `views/distribucion/TabRutas.jsx`.
+let geoPromise = null;
+function getGeo() {
+    if (!geoPromise) {
+        geoPromise = import('@capacitor/geolocation')
+            .then(m => m.Geolocation)
+            .catch(err => { geoPromise = null; throw err; });
+    }
+    return geoPromise;
+}
+
+/** La ubicación del aparato, si la da en 8 segundos; si no, `null` (la visita cuenta igual). */
+export async function posicionActual() {
+    if (!esNativo()) return null;
+    try {
+        const Geo = await getGeo();
+        const p = await Geo.getCurrentPosition({ enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 });
+        return { lat: p.coords.latitude, lng: p.coords.longitude };
+    } catch (e) {
+        console.warn('ubicación: sin lectura puntual', e?.message ?? e);
+        return null;
+    }
+}
+
+/** ¿El permiso de ubicación está negado? En el navegador no se pregunta: nunca. */
+export async function ubicacionNegada() { return false; }

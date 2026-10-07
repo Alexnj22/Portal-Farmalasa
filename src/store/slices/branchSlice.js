@@ -7,16 +7,23 @@ import {
 } from '../../data/branches';
 import * as almacen from '@plataforma/almacen';
 import { formatMoney } from '../../utils/formatNumber';
+import { LIMITE_KIOSCOS } from '../../utils/kioscos';
 
 const persistBranches = (branches) => {
     almacen.guardar(CACHE_KEYS.BRANCHES, JSON.stringify(branches));
     return branches;
 };
 
+// Un archivo por subir: el `File` del navegador, o el de la app — que no
+// tiene `File` del navegador y manda `{ name, body: ArrayBuffer, contentType }`
+// (lo arma `archivoDeApp`). Los dos se versionan igual.
+export const esArchivoPorSubir = (v) => (typeof File !== 'undefined' && v instanceof File)
+    || (!!v && typeof v === 'object' && v.body instanceof ArrayBuffer && typeof v.name === 'string');
+
 // Función helper profunda para limpiar objetos antes de mandarlos al JSONB de Supabase
 const sanitizeForJsonb = (obj) => {
     return JSON.parse(JSON.stringify(obj, (key, value) => {
-        if (value instanceof File || value instanceof Blob || typeof value === 'function') {
+        if (esArchivoPorSubir(value) || value instanceof Blob || value instanceof ArrayBuffer || typeof value === 'function') {
             return undefined;
         }
         return value;
@@ -50,7 +57,9 @@ const handleDocumentVersioning = async (branchId, categoryFolder, fileType, newF
         }
     }
 
-    const { error } = await supabase.storage.from('documents').upload(newPath, newFile, { upsert: true });
+    const cuerpo = newFile.body instanceof ArrayBuffer ? newFile.body : newFile;
+    const tipo = newFile.body instanceof ArrayBuffer && newFile.contentType ? { contentType: newFile.contentType } : {};
+    const { error } = await supabase.storage.from('documents').upload(newPath, cuerpo, { upsert: true, ...tipo });
     if (error) throw error;
     const { data: publicUrlData } = supabase.storage.from('documents').getPublicUrl(newPath);
     return publicUrlData.publicUrl;
@@ -174,7 +183,7 @@ export const createBranchSlice = (set, get) => ({
             };
 
             // 1. GESTIÓN DE ARCHIVOS DE RENTA
-            if (payload.settings?.rent?.contract?.documentFile instanceof File) {
+            if (esArchivoPorSubir(payload.settings?.rent?.contract?.documentFile)) {
                 const oldRentUrl = oldSettings?.rent?.contract?.documentUrl;
                 if (oldRentUrl) await archiveOldDoc('CONTRATO_ALQUILER', 'Contrato de Arrendamiento Anterior', oldRentUrl);
 
@@ -201,7 +210,7 @@ export const createBranchSlice = (set, get) => ({
                 for (const f of fileFields) {
                     const newUploadedFile = payload.settings.legal[f.file];
 
-                    if (newUploadedFile instanceof File) {
+                    if (esArchivoPorSubir(newUploadedFile)) {
                         const oldUrl = oldLegal[f.url];
                         if (oldUrl) await archiveOldDoc(f.type, `${f.label} (Histórico)`, oldUrl);
 
@@ -358,7 +367,7 @@ export const createBranchSlice = (set, get) => ({
         try {
             const { count } = await fetchActiveKioskDeviceCount(branchId);
 
-            if (count >= 3) throw new Error("Límite alcanzado: Ya existen 3 dispositivos activos.");
+            if (count >= LIMITE_KIOSCOS) throw new Error(`Límite alcanzado: Ya existen ${LIMITE_KIOSCOS} dispositivos activos.`);
 
             const { data: newDevice, error } = await insertKioskDevice({ branch_id: branchId, device_name: deviceName, status: 'ACTIVE' });
 

@@ -19,6 +19,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { soloPersonalEnPlanilla } from '@nucleo/utils/tipoDeFicha';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { kioscosActivos, sucursalLlevaKiosco } from '@nucleo/utils/kioscos';
 
 // ============================================================================
 // 🚀 COMPONENTE PRINCIPAL
@@ -54,7 +55,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
     const branchType = liveBranch?.type || 'FARMACIA';
     const isFarmacia = branchType === 'FARMACIA';
     const isBodega   = branchType === 'BODEGA';
-    const hasKiosk   = isFarmacia || isBodega;
+    const hasKiosk   = sucursalLlevaKiosco(branchType);
     const hasLegal   = isFarmacia;
     const hasServices = isFarmacia;
     const hasPhone   = isFarmacia || isBodega;
@@ -73,7 +74,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
         const loadKiosks = async () => {
             if (liveBranch?.id) {
                 const devices = await getBranchKiosks(liveBranch.id);
-                const activeDevices = devices ? devices.filter(d => d.status === 'ACTIVE') : [];
+                const activeDevices = kioscosActivos(devices);
                 if (isMounted) setKioskCount(activeDevices.length);
             }
         };

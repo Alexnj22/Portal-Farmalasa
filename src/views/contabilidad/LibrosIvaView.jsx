@@ -17,7 +17,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { formatearNit, formatearNrc } from '@nucleo/utils/nitUtils';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { exportCsv, buildCsvText } from '@nucleo/utils/csvExport';
+import { exportCsv } from '@nucleo/utils/csvExport';
 import { fmtFecha, soloNumero, csvRetencionVentas, CSV_RET_VENTAS_HEADERS, faltantesDelLibro,
          construirLibro } from '@nucleo/utils/libroIva';
 import {
@@ -30,6 +30,7 @@ import {
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 
 import { registrarEgreso } from '@nucleo/data/egreso';
+import { paqueteDeLibrosIva } from '@nucleo/data/paqueteLibrosIva';
 import { descargarArchivo } from '../../plataforma/descargas';
 import { calcularTotales, debitoDeConsumidor } from '@nucleo/utils/librosIva';
 import { correrMes, etiquetaMes, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
@@ -660,79 +661,13 @@ function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, nom
 }
 
 // ── El paquete del mes: un ZIP con carpeta por libro y un CSV por sucursal ───
-//
-// Lo que contabilidad hace hoy es entrar ocho veces, cambiar la sucursal seis
-// veces y bajar 44 archivos a mano. Un archivo mal nombrado o una sucursal
-// salteada en esa rutina no se nota hasta que Hacienda cruza el mes.
-//
-// Trae los libros SIN filtro de sucursal —una llamada por libro, no una por
-// libro y sucursal— y los reparte acá por `branch_id`. Son 8 consultas en vez de
-// 44, el servidor ya aplica el scope del usuario, y el orden dentro de cada
-// sucursal es el que devolvió el RPC, que es el orden legal.
-//
-// Renta y notas de crédito NO se reparten: sus documentos llegan por correo y no
-// traen sucursal (ver `librosIva.js`). Van sueltos en la raíz del ZIP.
-// Inventarles una carpeta de sucursal sería inventarles el dato.
-//
-// Devuelve `null` si no hay una sola fila en el período — quien llama decide qué
-// decir. Lanza si algún libro falla: un paquete al que le falta un libro en
-// silencio es peor que no tener paquete.
-const POR_SUCURSAL = ['consumidor', 'contribuyente', 'compras', 'anulados',
-                      'percepcion', 'retencion', 'retencionVentas'];
-const SIN_SUCURSAL = ['renta', 'notas'];
-const LIBROS_VACIOS = { consumidor: [], contribuyente: [], anulados: [], compras: [],
-                        percepcion: [], retencion: [], notas: [], renta: [],
-                        retencionVentas: [] };
-
+// Qué entra y con qué nombre lo decide el núcleo (`paqueteDeLibrosIva`, el
+// mismo que usa la app); acá sólo se comprime. Devuelve `null` si no hay una
+// sola fila en el período; lanza si algún libro falla.
 async function armarPaqueteDelMes({ desde, hasta, mes, nombreSucursal }) {
-    const { downloadZip } = await getZipLib();
-    const [cons, contrib, anul, comp, perc, ret, nts, rent, rv] = await Promise.all([
-        fetchLibroConsumidor(desde, hasta, null),
-        fetchLibroContribuyente(desde, hasta, null),
-        fetchLibroAnulados(desde, hasta, null),
-        fetchLibroCompras(desde, hasta, null),
-        fetchLibroPercepcion(desde, hasta, null),
-        fetchLibroRetencion(desde, hasta, null),
-        fetchNotasCreditoCompras(desde, hasta),
-        fetchAnexoRetencionRenta(desde, hasta),
-        fetchRetencionVentas(desde, hasta, null),
-    ]);
-    for (const r of [cons, contrib, anul, comp, perc, ret, nts, rent, rv])
-        if (r.error) throw r.error;
-
-    const todo = {
-        consumidor: cons.data || [], contribuyente: contrib.data || [],
-        anulados: anul.data || [], compras: comp.data || [],
-        percepcion: perc.data || [], retencion: ret.data || [],
-        notas: nts.data || [], renta: rent.data || [],
-        retencionVentas: rv.data || [],
-    };
-
-    // Las sucursales que APARECEN en el período, no una lista a mano: el día que
-    // abra una sucursal entra sola, y una que no vendió ni compró no genera seis
-    // archivos vacíos.
-    const ids = [...new Set(POR_SUCURSAL.flatMap(k => todo[k].map(r => r.branch_id)))]
-        .filter(id => id != null)
-        .sort((a, b) => a - b);
-
-    const entradas = [];
-    const agregar = (tab, filasDelLibro, nombre) => {
-        if (filasDelLibro.length === 0) return;   // sin filas no hay archivo
-        const d = { ...LIBROS_VACIOS, [tab]: filasDelLibro };
-        const libro = construirLibro(tab, d, calcularTotales(d)[tab]);
-        entradas.push({ name: nombre(libro), input: buildCsvText(libro.headers, libro.rows) });
-    };
-
-    for (const tab of POR_SUCURSAL)
-        for (const id of ids)
-            agregar(tab, todo[tab].filter(r => r.branch_id === id),
-                l => `${l.base}/${nombreSucursal(id).replace(/\s+/g, '-')}.csv`);
-
-    for (const tab of SIN_SUCURSAL)
-        agregar(tab, todo[tab], l => `${l.base}_${mes}.csv`);
-
-    if (entradas.length === 0) return null;
-    return { blob: await downloadZip(entradas).blob(), nombre: `libros-iva_${mes}.zip`, archivos: entradas.length };
+    const [{ downloadZip }, p] = await Promise.all([getZipLib(), paqueteDeLibrosIva({ desde, hasta, mes, nombreSucursal })]);
+    if (!p) return null;
+    return { blob: await downloadZip(p.entradas.map(e => ({ name: e.name, input: e.texto }))).blob(), nombre: p.nombre, archivos: p.archivos };
 }
 
 export default function LibrosIvaView({ openModal }) {

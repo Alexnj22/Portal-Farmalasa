@@ -14,6 +14,7 @@ import { Aviso, Seccion } from '../../../formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../../../inicio/Kpi';
 import { MARCA } from '../../../inicio/marca';
 import PasoDeMes from '../../../PasoDeMes';
+import BotonPaquete from './Paquete';
 import { PETROLEO } from '../piezas';
 import { compartirArchivo } from './compartir';
 
@@ -45,6 +46,7 @@ export default function Retenciones() {
   return (
     <View style={{ gap: 12 }}>
       <PasoDeMes mes={mes} onCambiar={setMes} />
+      <View style={{ marginHorizontal: 16 }}><BotonPaquete mes={mes} /></View>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       <FilaDeKpis>
         <Kpi icono="Landmark" rotulo="Débito fiscal" color={PETROLEO} valor={formatMoney(r.debito)} apoyo="Contribuyentes + consumidor" />

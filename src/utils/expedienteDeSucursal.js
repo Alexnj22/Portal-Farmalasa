@@ -88,3 +88,52 @@ export function documentosDeSucursal(b) {
         avance: todos.length === 0 ? 100 : Math.round((subidos / todos.length) * 100),
     };
 }
+
+// ── Subir un documento del expediente ──
+// Cada renglón del expediente que tiene un campo propio en `settings` se sube
+// por `updateBranch`, que versiona el archivo (el anterior pasa a `old/` y a
+// `branch_documents` como HISTÓRICO). Los de enfermería y los documentos
+// propios viven en otras listas y siguen en el portal.
+const CAMPO_LEGAL = {
+    srs: 'srsPermit', alcaldia: 'municipal', libros: 'controlledBooks', inyecciones: 'nursingServicePermit',
+    regente_cred: 'regentCredential', regente_insc: 'regentInscription', farmaco: 'farmacovigilanciaAuth',
+    desechos: 'waste', fumigacion: 'fumigation',
+};
+
+// Lo que acepta el bucket `documents` (su `allowed_mime_types` y `file_size_limit`).
+export const TIPOS_DEL_EXPEDIENTE = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+export const TOPE_DEL_EXPEDIENTE = 10 * 1024 * 1024;
+
+/** ¿Este renglón se puede subir desde la app? */
+export const seSubeDesdeLaApp = (docId) => docId in CAMPO_LEGAL || docId === 'arrendamiento';
+/** ¿Se puede quitar? Sólo los legales: el contrato se reemplaza, no se quita. */
+export const seQuitaDesdeLaApp = (docId) => docId in CAMPO_LEGAL;
+
+/** Por qué el archivo no entra, o null si entra. */
+export function problemaDelArchivo({ tipo, tamano }) {
+    if (!TIPOS_DEL_EXPEDIENTE.includes(tipo)) return 'Sólo se aceptan PDF o fotos (JPG, PNG o WEBP).';
+    if (tamano != null && tamano > TOPE_DEL_EXPEDIENTE) return 'El archivo pasa de 10 MB.';
+    return null;
+}
+
+/**
+ * Los ajustes con el archivo nuevo puesto donde `updateBranch` lo busca
+ * (`legal.<campo>File` o `rent.contract.documentFile`), o con su URL en null
+ * para quitarlo (`archivo === null`). Devuelve null si el renglón no se sube acá.
+ */
+export function ajustesConArchivo(settings, docId, archivo) {
+    const s = { ...(settings || {}) };
+    if (docId in CAMPO_LEGAL) {
+        const campo = CAMPO_LEGAL[docId];
+        s.legal = archivo === null
+            ? { ...(s.legal || {}), [`${campo}Url`]: null }
+            : { ...(s.legal || {}), [`${campo}File`]: archivo };
+        return s;
+    }
+    if (docId === 'arrendamiento' && archivo) {
+        const rent = s.rent || {};
+        s.rent = { ...rent, contract: { ...(rent.contract || {}), documentFile: archivo } };
+        return s;
+    }
+    return null;
+}

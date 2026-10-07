@@ -74,7 +74,13 @@
           "cameraPermission": "Farmalasa usa la cámara para escanear cajas y fotografiar la evidencia de una solicitud."
         }
       ],
-      "./plugins/ciclo-por-escenas"
+      "./plugins/ciclo-por-escenas",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Farmalasa usa tu ubicación mientras haces la ruta de ventas, para registrar las visitas a los clientes y el recorrido del día."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false

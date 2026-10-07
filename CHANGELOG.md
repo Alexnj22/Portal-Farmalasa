@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1246.0 — GPS, mapas, archivos y kioscos en la app
+
+- **Rutas con GPS y mapas en la app.** Torogoz: «Iniciar ruta / Terminar ruta» con rastreo en primer plano (la misma regla del portal, ahora en `src/data/distribucionRastreo.js`), visitas con coordenadas y el mapa de los clientes de la ruta con el recorrido del día. Pedidos: las rutas de reparto y su mapa (bodega, paradas, el camión en vivo) pasan a ser nativas; quien conduce anota su posición mientras tiene la pantalla abierta. Armar una ruta sigue en el portal.
+- **Archivos desde el teléfono.** Compras de Torogoz lee el JSON del proveedor eligiendo el archivo; la ficha de la sucursal sube, reemplaza o quita los documentos del expediente (foto, galería o PDF); el «Paquete del mes» en ZIP se comparte desde Reportes de Torogoz y desde Libros de IVA, con los mismos archivos que el portal (la lista vive en el núcleo).
+- **Kioscos de marcación en la app**: los equipos vinculados de cada sala, el cupo de 3 y revocar con confirmación. El cupo y qué cuenta como activo salen de `src/utils/kioscos.js` (estaban escritos a mano en seis sitios).
+- **Arreglo — tiempo real:** `escucharCambios` abría el canal por nombre, y `supabase.channel(nombre)` devuelve el existente: abrir dos veces la misma pantalla reventaba con «cannot add postgres_changes callbacks … after subscribe()». Cada suscripción abre ahora el suyo.
 ## v2.1245.0 — App: pago del carrito de una vez con documento, efectos por nivel, subir de nivel, compartir ofertas y Tienda
 
 - **El carrito se paga de una vez:** al reservar se elige dónde recoger, **cómo pagar** (en línea ahora con Wompi, o al retirar) y **qué documento** (consumidor final o crédito fiscal). Un solo cobro por todo el pedido (`app_reservas_pagos.pedido`; `app_reserva_pago_confirmar` marca pagadas todas las filas del pedido). Pagar una reserva que es parte de un pedido cobra el pedido entero.

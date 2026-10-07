@@ -25,6 +25,7 @@ import {
 } from '@nucleo/data/distribucion';
 import { rutaVentaA } from './rutas';
 import { useEnRuta, esApp } from './rastreo';
+import { posicionActual } from '@plataforma/ubicacion';
 import { hora12 } from '@nucleo/utils/hora';
 import { rotuloTipoCliente } from './comun';
 import { DIAS_RUTA, ROTULO_RESULTADO, avanceDeRuta, comoLlegar, diasDeRuta, alternarDia, moverEnLista, enElMapa } from '@nucleo/utils/distribucionRutas';
@@ -42,33 +43,10 @@ const RESULTADOS = [
 ];
 const DIAS = DIAS_RUTA;
 
-// La ubicación de la visita se pide SÓLO en la app (Capacitor) y SÓLO al
-// registrar la visita de la ruta (decisión del usuario, 2026-10-01: «solo para
-// las apps, y solo cuando se haga ruta de pedido»). En el navegador no se
-// pregunta nada: además `vercel.json` manda `geolocation=()`, que la apaga en
-// todo el sitio. El plugin nativo no depende de esa cabecera: pide su propio
-// permiso al sistema la primera vez.
-let geoPromise = null;
-function getGeo() {
-    if (!geoPromise) {
-        geoPromise = import('@capacitor/geolocation')
-            .then(m => m.Geolocation)
-            .catch(err => { geoPromise = null; throw err; });
-    }
-    return geoPromise;
-}
-/** La ubicación del teléfono, si la da en 8 segundos. Sin ella, la visita cuenta igual. */
-async function ubicacion() {
-    if (!esApp()) return null;
-    try {
-        const Geo = await getGeo();
-        const p = await Geo.getCurrentPosition({ enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 });
-        return { lat: p.coords.latitude, lng: p.coords.longitude };
-    } catch (e) {
-        console.warn('rutas: sin ubicación para la visita', e?.message ?? e);
-        return null;
-    }
-}
+// La ubicación de la visita se pide SÓLO en la app y SÓLO al registrar la
+// visita de la ruta (decisión del usuario, 2026-10-01). La lectura vive en el
+// adaptador de la plataforma (`posicionActual`), que la app nativa también tiene.
+const ubicacion = () => posicionActual();
 
 function Hoy({ puedeConfigurar }) {
     const { user } = useAuth();

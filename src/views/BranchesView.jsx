@@ -15,6 +15,7 @@ import {
     Scale, Zap, Briefcase, Shield, Stethoscope, Sparkles, Activity, ArrowLeft
 } from "lucide-react";
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { kioscosActivos } from '@nucleo/utils/kioscos';
 import { abiertaAhora, alertasDeSucursal, completitudDelPerfil, horarioDefinido, horarioDeHoy, leerAjustes, ORDEN_DE_TIPOS, TIPOS_DE_SUCURSAL } from "@nucleo/utils/sucursales";
 import ConfirmModal from "../components/common/ConfirmModal";
 import AlertModal from "../components/common/AlertModal";
@@ -470,7 +471,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                 try {
                     const results = await Promise.all(
                         branches.map(branch => getBranchKiosks(branch.id).then(devices => {
-                            const activeDevices = devices ? devices.filter(dev => dev.status === 'ACTIVE') : [];
+                            const activeDevices = kioscosActivos(devices);
                             return { id: branch.id, count: activeDevices.length };
                         }))
                     );

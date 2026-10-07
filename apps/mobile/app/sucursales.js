@@ -13,6 +13,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
+import { kioscosActivos } from '@nucleo/utils/kioscos';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchBranchKiosks } from '@nucleo/data/branches';
@@ -34,7 +35,7 @@ export default function Sucursales() {
   useEffect(() => {
     let vivo = true;
     Promise.all((sucursales || []).map((b) => fetchBranchKiosks(b.id)
-      .then(({ data }) => [b.id, (data || []).filter((k) => k.status === 'ACTIVE').length]).catch(() => [b.id, 0])))
+      .then(({ data }) => [b.id, kioscosActivos(data).length]).catch(() => [b.id, 0])))
       .then((pares) => { if (vivo) setKioscos(Object.fromEntries(pares)); });
     return () => { vivo = false; };
   }, [sucursales]);

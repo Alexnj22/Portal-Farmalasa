@@ -15,6 +15,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import * as DocumentPicker from 'expo-document-picker';
+import { File } from 'expo-file-system';
 import { useAuth } from '@nucleo/context/AuthContext';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import { fetchCatalogo, mensajeDeDistribucion } from '@nucleo/data/distribucion';
@@ -184,6 +186,22 @@ export default function CompraTorogoz() {
     }
   };
 
+  // El archivo del proveedor (el .json que mandó por correo): se lee igual
+  // que lo pegado, con el mismo lector del núcleo.
+  const elegirArchivo = async () => {
+    try {
+      const r = await DocumentPicker.getDocumentAsync({ type: ['application/json', 'text/plain', 'public.json'], copyToCacheDirectory: true });
+      if (r.canceled || !r.assets?.[0]) return;
+      const texto = await new File(r.assets[0].uri).text();
+      const json = JSON.parse(texto);
+      await aplicarJson(json);
+      setJsonCrudo(json);
+      listo('Documento leído', 'Revisa los productos, el lote y el vencimiento.');
+    } catch (e) {
+      fallo('No se pudo leer', e instanceof SyntaxError ? 'El archivo no es un JSON válido.' : (e?.message || 'No se pudo leer el documento.'));
+    }
+  };
+
   const guardar = (recibir) => {
     const p = payloadDeCompra(c);
     const mensaje = recibir
@@ -275,6 +293,7 @@ export default function CompraTorogoz() {
         {editable ? (
           <Seccion pie="Se llena solo: número, fecha, montos y productos.">
             <Text style={{ color: colorSistema.texto, fontSize: 15 }}>¿Tienes el JSON del documento del proveedor?</Text>
+            <BotonGrande texto="Elegir el archivo" color={PETROLEO} onPress={elegirArchivo} />
             <BotonGrande texto="Pegar el JSON" borde color={PETROLEO} onPress={() => setPegando(true)} />
           </Seccion>
         ) : null}
@@ -322,7 +341,7 @@ export default function CompraTorogoz() {
 
         <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16, marginBottom: -10 }}>Productos</Text>
         {!c.items.length ? (
-          <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>Sin productos todavía. Pega el JSON del proveedor o agrégalos a mano.</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>Sin productos todavía. Lee el JSON del proveedor o agrégalos a mano.</Text>
         ) : null}
         {c.items.map((it, i) => (
           <RenglonDeCompra key={it.key} it={it} i={i} editable={editable} tipoDoc={c.tipo_doc} opcionesProducto={opcionesProducto} nombreDe={nombreDe}

@@ -9,8 +9,9 @@
 // cumplimiento y «Exportar CSV» (`componentes/fiscal/DetalleDeLibro`). Los
 // permisos son los del portal: cada libro con su `libros_iva_tab_*`, las
 // tarjetas de dinero con `libros_iva_ver_montos` y el CSV con
-// `libros_iva_descargar`. El paquete del mes (ZIP de todas las salas) sigue
-// en el portal.
+// `libros_iva_descargar`, que también abre el paquete del mes: el mismo ZIP de
+// todas las salas que baja el portal (`paqueteDeLibrosIva`, núcleo),
+// comprimido con `fflate` y compartido por la hoja del sistema.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
@@ -28,6 +29,10 @@ import { mesSV, rangoDelMes } from '@nucleo/utils/fecha';
 import { ordenDeSala } from '@nucleo/constants/erp';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import PasoDeMes from '../componentes/PasoDeMes';
+import { compartirZip } from '../componentes/fiscal/zip';
+import { BotonGrande } from '../componentes/formulario/Piezas';
+import { fallo, trabajando, cerrarProgreso } from '../componentes/Progreso';
+import { paqueteDeLibrosIva } from '@nucleo/data/paqueteLibrosIva';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, Dato } from '../componentes/formulario/Piezas';
@@ -58,6 +63,23 @@ export default function LibrosIva() {
   const sucursales = useStaffStore((s) => s.branches);
   const todas = getScope?.('libros_iva') === 'ALL';
   const [mes, setMes] = useState(mesSV);
+  const [zipeando, setZipeando] = useState(false);
+  // El paquete del mes: los libros de TODAS las salas que el usuario alcanza,
+  // una carpeta por libro y un CSV por sala (lo decide el núcleo).
+  const paquete = async () => {
+    setZipeando(true);
+    trabajando('Armando el paquete…');
+    try {
+      const [desde, hasta] = rangoDelMes(mes);
+      const nombreSucursal = (id) => (sucursales || []).find((b) => b.id === id)?.name || `Suc. ${id}`;
+      const p = await paqueteDeLibrosIva({ desde, hasta, mes, nombreSucursal });
+      cerrarProgreso();
+      if (!p) { fallo('Paquete del mes', 'No hay libros con datos en este período.'); return; }
+      await compartirZip({ entradas: p.entradas, nombre: p.nombre, modulo: 'libros_iva', detalle: { mes, paquete: 'mes-completo' } });
+    } catch (e) {
+      fallo('No se pudo armar el paquete', e?.message || 'Intenta de nuevo.');
+    } finally { setZipeando(false); }
+  };
   const [salaElegida, setSala] = useState('ALL');
   const sala = todas ? (salaElegida === 'ALL' ? null : salaElegida) : String(user?.branchId ?? '');
   const [datos, setDatos] = useState(null);
@@ -94,6 +116,11 @@ export default function LibrosIva() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {grupos.length ? <FiltrosActivos grupos={grupos} /> : null}
         <PasoDeMes mes={mes} onCambiar={setMes} />
+        {puedeExportar ? (
+          <View style={{ marginHorizontal: 16 }}>
+            <BotonGrande texto={zipeando ? 'Armando…' : 'Paquete del mes (ZIP)'} borde deshabilitado={zipeando} onPress={paquete} />
+          </View>
+        ) : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {t == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
           <>

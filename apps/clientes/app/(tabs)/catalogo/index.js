@@ -1,0 +1,163 @@
+// El catálogo (2026-10-07): todos los productos con su precio de viñeta y su
+// precio VIP —el que paga el socio—, y si hay en alguna sucursal. Sin buscar,
+// lo más vendido de los últimos 60 días; con la barra del sistema, por nombre
+// o principio activo. Al tocar un producto se abre su ficha.
+//
+// Las tarjetas NO son de vidrio: son muchas en una lista que se desplaza, y el
+// vidrio de iOS 26 cuesta por cada una. Un fondo translúcido sólido se ve igual
+// de limpio y se desplaza fluido.
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, View } from 'react-native';
+import { router, Stack } from 'expo-router';
+import * as Haptics from 'expo-haptics';
+import { colorSistema } from '../../../componentes/sistema';
+import { Vacio } from '../../../componentes/ui';
+import Icono from '../../../componentes/Icono';
+import FotoProducto from '../../../componentes/FotoProducto';
+import { llamar } from '../../../lib/api';
+import { dolares } from '../../../lib/formato';
+import { BUSQUEDAS, nombreProducto } from '../../../lib/catalogo';
+import { useTema } from '../../../tema/tema';
+
+export default function Catalogo() {
+  const t = useTema();
+  const [texto, setTexto] = useState('');
+  const [q, setQ] = useState('');
+  const [lista, setLista] = useState(null);
+  const [hayMas, setHayMas] = useState(false);
+  const [error, setError] = useState(false);
+  const [cargandoMas, setCargandoMas] = useState(false);
+  const pedido = useRef(0);
+
+  // La búsqueda sale 300 ms después de la última tecla.
+  useEffect(() => { const id = setTimeout(() => setQ(texto.trim()), 300); return () => clearTimeout(id); }, [texto]);
+
+  const cargar = useCallback(async (desde = 0) => {
+    const n = ++pedido.current;
+    if (desde === 0) setError(false);
+    const r = await llamar('catalogo', { q, desde });
+    if (n !== pedido.current) return; // llegó tarde: ya se pidió otra cosa
+    if (!r?.ok) { if (desde === 0) setError(true); return; }
+    setLista((ant) => (desde === 0 ? r.productos : [...(ant ?? []), ...r.productos]));
+    setHayMas(!!r.hay_mas);
+  }, [q]);
+  useEffect(() => { setLista(null); cargar(0); }, [cargar]);
+
+  const mas = async () => {
+    if (!hayMas || cargandoMas || !lista) return;
+    setCargandoMas(true);
+    await cargar(lista.length);
+    setCargandoMas(false);
+  };
+
+  const encabezado = (
+    <View style={{ gap: 12, marginBottom: 6 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 2 }}>
+        {BUSQUEDAS.map((b) => {
+          const activa = q === b.q && texto === b.q;
+          return (
+            <Pressable key={b.q} onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(activa ? '' : b.q); }}
+              accessibilityRole="button" accessibilityLabel={b.texto}
+              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingHorizontal: 12, borderRadius: 999,
+                backgroundColor: activa ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.75)'),
+                transform: [{ scale: pressed ? 0.96 : 1 }] })}>
+              <Icono sf={b.sf} respaldo="" tam={13} color={activa ? '#FFFFFF' : colorSistema.texto2} />
+              <Text style={{ fontSize: 14, fontWeight: '600', color: activa ? '#FFFFFF' : colorSistema.texto }}>{b.texto}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+      <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4 }}>
+        {q ? `Resultados para «${q}»` : 'Lo más vendido'}
+      </Text>
+    </View>
+  );
+
+  return (
+    <>
+      <Stack.Screen options={{
+        headerSearchBarOptions: {
+          placeholder: 'Medicamento o principio activo',
+          cancelButtonText: 'Cancelar',
+          hideWhenScrolling: false,
+          autoCapitalize: 'none',
+          onChangeText: (e) => setTexto(e.nativeEvent.text ?? ''),
+          onCancelButtonPress: () => setTexto(''),
+        },
+      }} />
+      <FlatList
+        data={lista ?? []}
+        keyExtractor={(p) => String(p.id)}
+        numColumns={2}
+        columnWrapperStyle={{ gap: 12 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 12, width: '100%', maxWidth: 720, alignSelf: 'center' }}
+        contentInsetAdjustmentBehavior="automatic"
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+        ListHeaderComponent={encabezado}
+        onEndReached={mas}
+        onEndReachedThreshold={0.6}
+        initialNumToRender={8}
+        windowSize={7}
+        removeClippedSubviews
+        renderItem={({ item }) => <TarjetaProducto p={item} />}
+        ListEmptyComponent={
+          error ? <Vacio titulo="No se pudo cargar">Revisa tu conexión e intenta de nuevo.</Vacio>
+            : !lista ? <ActivityIndicator style={{ marginTop: 40 }} />
+              : <Vacio titulo="Sin resultados">Prueba con otro nombre o con el principio activo.</Vacio>
+        }
+        ListFooterComponent={cargandoMas ? <ActivityIndicator style={{ marginVertical: 16 }} /> : null}
+      />
+    </>
+  );
+}
+
+function TarjetaProducto({ p }) {
+  const t = useTema();
+  const ahorro = p.precio_vip != null ? p.precio - p.precio_vip : 0;
+  return (
+    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push(`/producto/${p.id}`); }}
+      accessibilityRole="button" accessibilityLabel={`${nombreProducto(p.nombre)}. Precio ${dolares(p.precio)}${p.precio_vip != null ? `, VIP ${dolares(p.precio_vip)}` : ''}`}
+      style={({ pressed }) => ({ flex: 1, maxWidth: '50%', borderRadius: 22, padding: 10, gap: 8,
+        backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.82)',
+        borderWidth: 0.5, borderColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)',
+        opacity: p.disponible ? 1 : 0.6, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+      <View>
+        <FotoProducto id={p.id} nombre={p.nombre} foto={p.foto} alto={118} />
+        {p.bajo_receta ? (
+          <View style={{ position: 'absolute', top: 6, left: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
+            <Text maxFontSizeMultiplier={1.2} style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800' }}>Bajo Receta</Text>
+          </View>
+        ) : null}
+        {ahorro >= 0.01 ? (
+          <View style={{ position: 'absolute', top: 6, right: 6, backgroundColor: t.color.verde, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
+            <Text maxFontSizeMultiplier={1.2} style={{ color: '#1A2600', fontSize: 11, fontWeight: '900' }}>−{Math.round((ahorro / p.precio) * 100)}% VIP</Text>
+          </View>
+        ) : null}
+      </View>
+      <View style={{ gap: 2, paddingHorizontal: 2 }}>
+        <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto, lineHeight: 18 }} numberOfLines={2}>{nombreProducto(p.nombre)}</Text>
+        <Text style={{ fontSize: 12, color: colorSistema.texto3 }} numberOfLines={1}>
+          {p.disponible ? (p.presentaciones > 1 ? `${p.presentaciones} presentaciones` : nombreProducto(p.presentacion ?? '')) : 'Sin existencia'}
+        </Text>
+      </View>
+      <View style={{ gap: 0, paddingHorizontal: 2 }}>
+        {p.precio_vip != null ? (
+          <>
+            <Text style={{ fontSize: 12, color: colorSistema.texto3, textDecorationLine: 'line-through', fontVariant: ['tabular-nums'] }}>
+              {p.presentaciones > 1 ? 'Desde ' : ''}{dolares(p.precio)}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 5 }}>
+              <Text style={{ fontSize: 19, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(p.precio_vip)}</Text>
+              <Text style={{ fontSize: 11, fontWeight: '800', color: t.color.magentaTexto }}>VIP</Text>
+            </View>
+          </>
+        ) : (
+          <Text style={{ fontSize: 19, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>
+            {p.presentaciones > 1 ? <Text style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto3 }}>Desde </Text> : null}{dolares(p.precio)}
+          </Text>
+        )}
+      </View>
+    </Pressable>
+  );
+}

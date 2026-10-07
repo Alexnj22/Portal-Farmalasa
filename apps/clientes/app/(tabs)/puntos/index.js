@@ -8,6 +8,7 @@ import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo } from '../../../comp
 import { useCuenta } from '../../../lib/cuenta';
 import { dolares, entero, fecha, nombrePropio } from '../../../lib/formato';
 import TarjetaSocio from '../../../componentes/TarjetaSocio';
+import Nivel from '../../../componentes/Nivel';
 import { LinearGradient } from 'expo-linear-gradient';
 import Vencimientos from '../../../componentes/Vencimientos';
 import Cumpleanos from '../../../componentes/Cumpleanos';
@@ -105,7 +106,7 @@ export default function Puntos() {
 
       {/* La tarjeta de socio: saldo al frente, código y QR al reverso. */}
       <Entrada indice={1}>
-        <TarjetaSocio activa={visible} nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
+        <TarjetaSocio activa={visible} nivel={resumen.nivel?.clave} nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
           codigo={resumen.codigo} socioDesde={resumen.socio_desde} />
       </Entrada>
 
@@ -113,6 +114,13 @@ export default function Puntos() {
       {Platform.OS === 'ios' ? (
         <Entrada indice={1}>
           <BotonWallet serial={resumen.wallet_serial} />
+        </Entrada>
+      ) : null}
+
+      {/* El nivel: Cliente VIP, Plata, Oro o Platino, y cuánto falta. */}
+      {resumen.nivel ? (
+        <Entrada indice={2}>
+          <Nivel nivel={resumen.nivel} />
         </Entrada>
       ) : null}
 

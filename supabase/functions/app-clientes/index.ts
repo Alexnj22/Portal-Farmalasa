@@ -31,6 +31,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { TEXTOS_CONSENTIMIENTO as TEXTOS } from "../_shared/consentimientoPuntos.ts";
 import { clienteDelEnlace, enlaceDePase, paseDeCliente } from "../_shared/pase.ts";
+import { nivelDeCliente } from "../_shared/nivel.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -452,6 +453,7 @@ Deno.serve(async (req) => {
           enlace: h.enlace ?? null, boton: h.boton ?? null, fin: h.fin,
           // «Reservar» abre esta oferta; «Más información» va al WhatsApp de la empresa.
           oferta_id: h.oferta_id ?? null,
+          publicada_at: h.publicada_at ?? null,
         })),
         whatsapp: WHATSAPP_EMPRESA,
       };
@@ -475,6 +477,48 @@ Deno.serve(async (req) => {
       return json({ ok: true, anotada: !error });
     };
     if (accion === "historia_vista_publica") return await anotarVista(body, null);
+
+    // ── Catálogo (2026-10-07): precio de viñeta y precio VIP, y dónde hay.
+    // Público como la vitrina: no hace falta cuenta para mirar precios.
+    if (accion === "catalogo") {
+      const q = String(body?.q ?? "").slice(0, 60);
+      const desde = Math.max(0, Math.min(1000, Number(body?.desde) || 0));
+      const { data, error } = await admin.rpc("app_catalogo", { p_q: q, p_desde: desde, p_limite: 30 });
+      if (error) throw error;
+      return json({ ok: true, ...(data as any) });
+    }
+    if (accion === "catalogo_producto") {
+      const id = Number(body?.id);
+      if (!Number.isInteger(id) || id <= 0) return json({ ok: false, mensaje: "Producto no válido." });
+      const [{ data, error }, { data: salas, error: eS }] = await Promise.all([
+        admin.rpc("app_catalogo_producto", { p_id: id }),
+        admin.from("branches").select("id, name").eq("type", "FARMACIA"),
+      ]);
+      if (error) throw error;
+      if (eS) throw eS;
+      if (!data) return json({ ok: false, mensaje: "Este producto ya no está en el catálogo." });
+      const nombre = new Map((salas ?? []).map((b: any) => [Number(b.id), sucursal(b.name)]));
+      // deno-lint-ignore no-explicit-any
+      const d: any = data;
+      // Dos filas iguales (misma presentación y precio) se muestran una vez.
+      const vistas = new Set<string>();
+      return json({
+        ok: true,
+        producto: {
+          ...d,
+          presentaciones: (d.presentaciones ?? []).filter((x: any) => {
+            const k = `${x.tipo}|${x.precio}|${x.precio_vip}`;
+            if (vistas.has(k)) return false;
+            vistas.add(k);
+            return true;
+          }),
+          existencias: (d.existencias ?? []).filter((e: any) => nombre.has(Number(e.branch_id)))
+            .map((e: any) => ({ ...e, sala: nombre.get(Number(e.branch_id)) })),
+          salas: [...nombre.entries()].map(([id, n]) => ({ id, sala: n })),
+        },
+        whatsapp: WHATSAPP_EMPRESA,
+      });
+    }
 
     // Las salas: dirección, teléfonos y horario, y si está abierta AHORA (hora
     // de El Salvador). Pública: se ve también sin cuenta.
@@ -810,6 +854,7 @@ Deno.serve(async (req) => {
       const { data: nac, error: eNac } = await admin.from("customers").select("fecha_nacimiento").eq("id", customerId).maybeSingle();
       if (eNac) console.error("no se pudo leer el cumpleaños:", eNac.message);
       const { data: cfgP, error: eCfg } = await admin.from("puntos_config").select("puntos_cumpleanos").limit(1).maybeSingle();
+      const nivel = await nivelDeCliente(admin, customerId);
       if (eCfg) console.error("no se pudo leer la configuración:", eCfg.message);
       const cumpleanos = String(nac?.fecha_nacimiento ?? "").slice(5, 10) === hoyMD
         || (await muestrasDe(admin, customerId, "cumpleanos")).length > 0;
@@ -826,7 +871,9 @@ Deno.serve(async (req) => {
         reservas_abiertas: (resAb ?? []).length,
         reservas_listas: (resAb ?? []).filter((r: any) => r.estado === "lista").length,
         wallet_serial: `socio-${customerId}`,
-        regalo_cumpleanos: Number(cfgP?.puntos_cumpleanos ?? 0),
+        // El nivel (Plata/Oro/Platino) y cuánto falta para el siguiente.
+        nivel,
+        regalo_cumpleanos: nivel.clave === "vip" ? Number(cfgP?.puntos_cumpleanos ?? 0) : nivel.cumpleanos,
         codigo,
         socio_desde: primero?.ganado_el ?? null,
         saldo,

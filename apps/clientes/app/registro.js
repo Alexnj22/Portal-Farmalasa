@@ -14,6 +14,7 @@ import { llamar } from '../lib/api';
 import { plataforma, useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
 import { documentoEscrito, fechaDeNacimiento } from '../lib/formato';
+import { useBloqueo } from '../lib/bloqueo';
 
 export default function Registro() {
   const t = useTema();
@@ -53,7 +54,7 @@ export default function Registro() {
       plataforma, dispositivo: Device.modelName ?? null,
     });
     setEnviando(false);
-    if (r?.ok && r.token) await abrir(r.token);
+    if (r?.ok && r.token) { useBloqueo.setState({ bloqueada: false }); await abrir(r.token); }
     else setError(r?.mensaje ?? 'No se pudo completar el registro.');
   }
 

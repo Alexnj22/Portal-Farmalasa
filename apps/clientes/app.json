@@ -25,7 +25,14 @@
       },
       "associatedDomains": [
         "applinks:portal.farmasalud.lat"
-      ]
+      ],
+      "infoPlist": {
+        "CFBundleDevelopmentRegion": "es",
+        "CFBundleLocalizations": [
+          "es"
+        ],
+        "CFBundleAllowMixedLocalizations": true
+      }
     },
     "android": {
       "package": "lat.farmasalud.clientes",

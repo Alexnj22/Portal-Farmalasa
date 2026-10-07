@@ -17,6 +17,10 @@ export default function Pestanas() {
         <NativeTabs.Trigger.Icon sf={{ default: 'tag', selected: 'tag.fill' }} md="sell" />
         <NativeTabs.Trigger.Label>Ofertas</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="catalogo">
+        <NativeTabs.Trigger.Icon sf={{ default: 'square.grid.2x2', selected: 'square.grid.2x2.fill' }} md="grid_view" />
+        <NativeTabs.Trigger.Label>Catálogo</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="inyecciones">
         <NativeTabs.Trigger.Icon sf={{ default: 'syringe', selected: 'syringe.fill' }} md="vaccines" />
         <NativeTabs.Trigger.Label>Inyecciones</NativeTabs.Trigger.Label>

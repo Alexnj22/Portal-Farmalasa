@@ -11,6 +11,7 @@ import { llamar } from '../lib/api';
 import { plataforma, useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
 import { documentoEscrito } from '../lib/formato';
+import { useBloqueo } from '../lib/bloqueo';
 import { datosConBiometria, entradaDisponible, guardarEntrada, olvidarEntrada } from '../lib/entradaGuardada';
 
 // El alfabeto del código no tiene letras ni números que se confundan
@@ -51,6 +52,8 @@ export default function Entrar() {
     setEnviando(false);
     if (r?.ok && r.token) {
       await guardarEntrada(datos);
+      // Recién entró con sus datos o su cara: no se le pide Face ID otra vez.
+      useBloqueo.setState({ bloqueada: false });
       await abrir(r.token);
       return true;
     }

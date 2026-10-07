@@ -191,6 +191,8 @@ function Visor({ historias, inicio, alVer, alTocarBoton, alCerrar }) {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Image source={require('../assets/icono.png')} style={{ width: 28, height: 28, borderRadius: 8 }} />
                   <Text style={{ color: '#FFF', fontWeight: '800', fontSize: 14 }}>Farmacia Salud</Text>
+                  {/* Duran 24 horas: cuándo se publicó, como en un estado. */}
+                  {h.publicada_at ? <Text style={{ color: 'rgba(255,255,255,0.75)', fontWeight: '600', fontSize: 13 }}>{haceCuanto(h.publicada_at)}</Text> : null}
                 </View>
                 <Pressable onPress={cerrar} hitSlop={14} accessibilityRole="button" accessibilityLabel="Cerrar">
                   <Icono sf="xmark" respaldo="✕" tam={20} color="#FFFFFF" />
@@ -228,6 +230,14 @@ function Visor({ historias, inicio, alVer, alTocarBoton, alCerrar }) {
       </GestureHandlerRootView>
     </Modal>
   );
+}
+
+/** «hace 5 min», «hace 3 h»: las historias duran 24 horas. */
+function haceCuanto(iso) {
+  const min = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000));
+  if (min < 1) return 'ahora';
+  if (min < 60) return `hace ${min} min`;
+  return `hace ${Math.floor(min / 60)} h`;
 }
 
 // El WhatsApp de la empresa: lo manda el servidor; éste es el de respaldo.

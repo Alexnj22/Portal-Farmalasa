@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1239.0 — App: niveles Plata, Oro y Platino, catálogo con precio VIP y ajustes
+
+- **Niveles del programa de puntos (aprobados):** Cliente VIP, Plata ($500 en 12 meses, ×1.25), Oro ($1,000, ×1.5) y Platino ($2,000, ×2). Tabla `puntos_niveles` (editable con permiso de puntos), `puntos_compra_12m` y `puntos_nivel_de`. El motor (`puntos_acumular`) multiplica cada compra según lo comprado en los 12 meses anteriores —sin contar la compra misma— y guarda en el lote `puntos_base` y `nivel`. Cumpleaños por nivel (50/75/100/100) y 48 h para retirar reservas en Oro y Platino. Hoy: 495 Plata, 133 Oro, 63 Platino.
+- **App: tarjeta por nivel** (morada, plata, dorada, platino), tarjeta «Tu nivel» con ×factor, barra de «te faltan $X para…» y beneficios. Wallet muestra «CLIENTE ORO», etc. (`_shared/nivel.ts`).
+- **Catálogo en la app** (pestaña nueva): lo más vendido de 60 días (`app_catalogo_destacados`, cron nocturno `app-catalogo-destacados`) o búsqueda por nombre y principio activo con la barra del sistema; búsquedas rápidas (dolor, gripe, vitaminas…). Cada producto con precio de viñeta y precio VIP de la MISMA presentación, «Bajo Receta», existencia; ficha con todas las presentaciones, dónde hay por sucursal y «Consultar por WhatsApp». Público, como la vitrina (`app_catalogo`, `app_catalogo_producto`).
+- **Mis compras:** las últimas 10, con resumen arriba y tarjetas nuevas (puntos con el nivel que los multiplicó).
+- **Historias:** el visor dice hace cuánto se publicó (duran 24 h).
+- **Arreglos:** el teclado y las hojas del sistema en español (`CFBundleLocalizations`); el gesto de volver desde el inicio ya no muestra el login (pila vaciada al entrar/salir y sin gesto en pestañas y bienvenida); después de entrar con Face ID o con el DUI ya no pide Face ID otra vez.
+
 ## v2.1238.0 — App: entrada con Face ID, avisos que no se apagan, historial de inyecciones y ajustes de la revisión
 
 Cambios pedidos por el usuario sobre la compilación 12 de la app de clientes:

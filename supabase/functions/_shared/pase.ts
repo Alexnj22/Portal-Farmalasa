@@ -17,6 +17,7 @@
 import forge from "npm:node-forge@1.3.1";
 import { zipSync } from "npm:fflate@0.8.2";
 import { IMAGENES_PASE } from "./imagenesPase.ts";
+import { nivelDeCliente } from "./nivel.ts";
 
 const PASS_TYPE = "pass.lat.farmasalud.puntos";
 const EQUIPO = "ZZWA3Q7Q35";
@@ -28,6 +29,8 @@ export interface DatosPase {
   equivale: number;
   codigo: string | null;
   socioDesde: string | null;
+  /** «Cliente VIP», «Plata», «Oro» o «Platino». */
+  nivel?: string;
 }
 
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
@@ -54,6 +57,9 @@ const pem = (b64: string) => new TextDecoder().decode(Uint8Array.from(atob(b64),
 export const TIPO_PASE = PASS_TYPE;
 export const serialDe = (customerId: number) => `socio-${customerId}`;
 export const clienteDelSerial = (serial: string) => Number(String(serial).replace(/^socio-/, "")) || null;
+
+/** El rótulo sobre el nombre: «CLIENTE VIP», «CLIENTE ORO»… */
+const nivelRotulo = (n?: string) => (!n || /vip/i.test(n) ? "CLIENTE VIP" : `CLIENTE ${n.toUpperCase()}`);
 
 export async function armarPase(d: DatosPase): Promise<Uint8Array> {
   const certB64 = Deno.env.get("WALLET_CERT_B64"), keyB64 = Deno.env.get("WALLET_KEY_B64"), wwdrB64 = Deno.env.get("WALLET_WWDR_B64");
@@ -84,7 +90,8 @@ export async function armarPase(d: DatosPase): Promise<Uint8Array> {
         // Lo que dice la pantalla bloqueada cuando la tarjeta se actualiza.
         changeMessage: "Tu saldo de Puntos Salud ahora es %@" }],
       secondaryFields: [
-        { key: "nombre", label: "CLIENTE VIP", value: corto(d.nombre) },
+        // El nivel al frente (Plata, Oro, Platino); el de entrada se llama «Cliente VIP».
+        { key: "nombre", label: nivelRotulo(d.nivel), value: corto(d.nombre) },
         { key: "desde", label: "CLIENTE DESDE", value: desde(d.socioDesde), textAlignment: "PKTextAlignmentRight" },
       ],
       backFields: [
@@ -173,11 +180,12 @@ export async function paseDeCliente(admin: any, id: number): Promise<{ pase: Uin
     admin.from("puntos_lote").select("ganado_el").eq("customer_id", id).order("ganado_el", { ascending: true }).limit(1).maybeSingle(),
     admin.from("puntos_cuenta").select("updated_at").eq("customer_id", id).maybeSingle(),
   ]);
+  const nivel = await nivelDeCliente(admin, id);
   if (eC) throw eC; if (eE) throw eE; if (eK) throw eK; if (eP) throw eP; if (eT) throw eT;
   const saldo = Number(est?.saldo ?? 0);
   const pase = await armarPase({
     customerId: id, nombre: c?.name ?? "", saldo, equivale: Math.round(saldo) / 100,
-    codigo: cod?.codigo ?? null, socioDesde: pri?.ganado_el ?? null,
+    codigo: cod?.codigo ?? null, socioDesde: pri?.ganado_el ?? null, nivel: nivel.nombre,
   });
   return { pase, cambio: cta?.updated_at ?? null };
 }

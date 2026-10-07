@@ -454,7 +454,7 @@ export const AREAS = [
                  // dos actos aparte —migrar los saldos y crear el cron— que
                  // todavía no se hicieron. Ver
                  // docs/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md
-                 'puntos_cuenta', 'puntos_lote', 'puntos_salida', 'puntos_salida_lote',
+                 'puntos_cuenta', 'puntos_lote', 'puntos_niveles', 'puntos_salida', 'puntos_salida_lote',
                  'puntos_vencimiento_log', 'puntos_config',
                  // La copia del sistema de puntos anterior (se apaga el
                  // 2026-10-01) y la bitácora del arranque de esa madrugada.
@@ -730,9 +730,9 @@ export const AREAS = [
             'supabase/functions/_shared/imagenesPase.ts',
             'supabase/functions/_shared/consentimientoPuntos.ts',
         ],
-        tablas: ['app_cliente_sesiones', 'app_cliente_preregistros', 'ofertas_clientes', 'app_cliente_muestras', 'app_cliente_referido_codigo', 'app_cliente_referidos', 'app_cliente_avisos', 'wallet_registros', 'app_historias', 'app_historias_vistas', 'app_reservas'],
+        tablas: ['app_cliente_sesiones', 'app_cliente_preregistros', 'ofertas_clientes', 'app_cliente_muestras', 'app_cliente_referido_codigo', 'app_cliente_referidos', 'app_cliente_avisos', 'wallet_registros', 'app_historias', 'app_historias_vistas', 'app_reservas', 'app_catalogo_destacados'],
         edge: ['app-clientes', 'avisos-clientes', 'wallet-pases'],
-        crons: ['puntos-referidos-hora', 'purge-app-cliente-avisos', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min'],
+        crons: ['puntos-referidos-hora', 'purge-app-cliente-avisos', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min', 'app-catalogo-destacados'],
         docs: ['docs/APP-CLIENTES-2026-10-05.md'],
     },
 

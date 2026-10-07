@@ -24,7 +24,7 @@ const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: '
 const OSCURO = { ...DarkTheme, colors: { ...DarkTheme.colors, background: 'transparent' } };
 const PUBLICAS = new Set(['bienvenida', 'entrar', 'registro']);
 // Se ven con o sin sesión: la vitrina, las sucursales y el detalle de una oferta.
-const ABIERTAS = new Set(['vitrina', 'sucursales', 'oferta', 'mis-puntos', 'legal']);
+const ABIERTAS = new Set(['vitrina', 'sucursales', 'oferta', 'producto', 'mis-puntos', 'legal']);
 const WEB = Platform.OS === 'web';
 let entradaAutomaticaHecha = false;
 
@@ -69,8 +69,11 @@ function Guardia() {
     // Sin sesión se limpia TODO lo que la sesión anterior dejó en memoria: en un
     // teléfono compartido, el siguiente cliente no debe ver ni un instante las
     // ofertas exclusivas ni el saldo del anterior.
-    if (!token && !publica) { useCuenta.getState().limpiar(); useOfertas.getState().limpiar(); router.replace('/bienvenida'); }
-    if (token && (publica || !segmentos.length)) router.replace('/puntos');
+    // Al cambiar de lado se vacía la pila: lo que quedaba debajo (Entrar, o las
+    // pestañas) se podía alcanzar con el gesto de volver.
+    const limpiarPila = () => { if (router.canDismiss()) router.dismissAll(); };
+    if (!token && !publica) { useCuenta.getState().limpiar(); useOfertas.getState().limpiar(); limpiarPila(); router.replace('/bienvenida'); }
+    if (token && (publica || !segmentos.length)) { limpiarPila(); router.replace('/puntos'); }
   }, [token, lista, segmentos]);
   return null;
 }
@@ -141,11 +144,14 @@ function Raiz() {
             contentStyle: { backgroundColor: 'transparent' },
           }}>
             <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="bienvenida" options={{ headerShown: false }} />
+            {/* Sin gesto de volver: detrás de las pestañas quedaba Entrar y
+                deslizar mandaba un segundo al login (2026-10-07). */}
+            <Stack.Screen name="bienvenida" options={{ headerShown: false, gestureEnabled: false }} />
             <Stack.Screen name="entrar" options={{ title: 'Entrar' }} />
             <Stack.Screen name="registro" options={{ title: 'Unirme' }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false, gestureEnabled: false }} />
             <Stack.Screen name="oferta/[id]" options={{ presentation: 'modal', headerShown: false }} />
+            <Stack.Screen name="producto/[id]" options={{ presentation: 'modal', headerShown: false }} />
             <Stack.Screen name="compras" options={{ title: 'Mis compras' }} />
             <Stack.Screen name="sucursales" options={{ title: 'Nuestras sucursales' }} />
             <Stack.Screen name="notificaciones" options={{ title: 'Notificaciones' }} />

@@ -125,6 +125,12 @@ function techoDeclarado(d, filas, horas) {
  * gate lo dice con el número viejo y el nuevo a la vista. */
 const CRONS = [
   {
+    job: 'app-catalogo-destacados', slug: null, cadencia: '40 8 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Rehace «lo más vendido» del catálogo de la app (60 días, 300 productos) de noche, '
+          + 'para no sumar ~70,000 renglones cada vez que alguien abre la pestaña. Sólo la base propia.',
+  },
+  {
     job: 'reservas-vencer-15min', slug: null, cadencia: '*/15 * * * *',
     corridasDia: 96, sistema: 0,
     motivo: 'Vence las reservas de la app: «lista» con el plazo de 24 h cumplido, o «pendiente» cuya '

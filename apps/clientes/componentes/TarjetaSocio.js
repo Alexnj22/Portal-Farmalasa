@@ -48,7 +48,17 @@ const SOLTAR = { damping: 18, stiffness: 160 };
 const limitar = (v) => { 'worklet'; return Math.max(-1, Math.min(1, v)); };
 const vibrar = (fuerte) => Haptics.impactAsync(fuerte ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 
-export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, activa = true }) {
+// Los colores de cada nivel (plan aprobado 2026-10-07): morada (Cliente VIP),
+// plata, dorada y platino. El texto queda blanco en las cuatro.
+export const COLORES_NIVEL = {
+  vip: { frente: ['#2B0B3A', T['logo-magenta'], '#5B1E9C'], reverso: ['#1A0822', '#3A1048'], rotulo: 'SOCIO VIP' },
+  plata: { frente: ['#3B414C', '#A3ABB8', '#59616E'], reverso: ['#262B33', '#454C57'], rotulo: 'PLATA' },
+  oro: { frente: ['#4A2E04', '#C99A2E', '#6E4A0C'], reverso: ['#2E1D03', '#5A3D0A'], rotulo: 'ORO' },
+  platino: { frente: ['#151A24', '#7D8AA3', '#283142'], reverso: ['#0E121A', '#2A3242'], rotulo: 'PLATINO' },
+};
+
+export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel = 'vip', activa = true }) {
+  const paleta = COLORES_NIVEL[nivel] ?? COLORES_NIVEL.vip;
   // Con «Reducir movimiento» del iPhone: sin giroscopio, sin luz que pasa.
   const reducir = useReducedMotion();
   const giro = useSharedValue(0);              // 0 = frente, 1 = reverso
@@ -167,12 +177,12 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
     <GestureDetector gesture={gestos}>
       <Animated.View style={[{ aspectRatio: 1.586, width: '100%' }, estilos.sombra, sombra, ladeo]}
         accessible accessibilityRole="button"
-        accessibilityLabel={`Tu tarjeta de socio. Saldo ${dolares(equivale)}. Toca para ver tu código.`}
+        accessibilityLabel={`Tu tarjeta ${paleta.rotulo.toLowerCase()}. Saldo ${dolares(equivale)}. Toca para ver tu código.`}
         accessibilityHint="Gira la tarjeta" onAccessibilityTap={voltear}>
         {/* ── Frente ── */}
         <Animated.View style={[StyleSheet.absoluteFill, estilos.cara, frente]}>
           <LinearGradient
-            colors={['#2B0B3A', T['logo-magenta'], '#5B1E9C']}
+            colors={paleta.frente}
             locations={[0, 0.55, 1]}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFill}
@@ -198,7 +208,7 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
                 <Image source={require('../assets/icono.png')} style={{ width: 30, height: 30, borderRadius: 8 }} />
                 <Text maxFontSizeMultiplier={1.3} style={estilos.marca}>PUNTOS SALUD</Text>
               </View>
-              <Text maxFontSizeMultiplier={1.3} style={estilos.socio}>SOCIO</Text>
+              <Text maxFontSizeMultiplier={1.3} style={estilos.socio}>{paleta.rotulo}</Text>
             </View>
 
             {/* El «chip», como en una tarjeta de verdad. */}
@@ -219,7 +229,7 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
 
         {/* ── Reverso: el código ── */}
         <Animated.View style={[StyleSheet.absoluteFill, estilos.cara, reverso]}>
-          <LinearGradient colors={['#1A0822', '#3A1048']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+          <LinearGradient colors={paleta.reverso} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
           <BrilloTarjeta x={x} y={y} barrido={barrido} />
           <View style={[estilos.contenido, { flexDirection: 'row', alignItems: 'center', gap: 18 }]}>
             <View style={estilos.qr}>

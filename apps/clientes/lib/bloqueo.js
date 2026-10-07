@@ -33,6 +33,8 @@ export async function nombreBiometria() {
 export async function verificar(motivo = 'Desbloquea Puntos Salud') {
   try {
     const r = await LocalAuthentication.authenticateAsync({ promptMessage: motivo, cancelLabel: 'Cancelar' });
+    // La vuelta de la hoja de Face ID no cuenta como «volver a la app».
+    ultimoDesbloqueo = Date.now();
     return r.success;
   } catch {
     return false;

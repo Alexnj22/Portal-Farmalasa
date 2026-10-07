@@ -1,10 +1,15 @@
 // Apple Wallet desde la app (módulo nativo local: modules/wallet/ios).
 // Fuera de iPhone no existe: todo contesta «no disponible».
 import { Platform } from 'react-native';
-import { requireOptionalNativeModule } from 'expo-modules-core';
+import { requireNativeViewManager, requireOptionalNativeModule } from 'expo-modules-core';
 
 const N = Platform.OS === 'ios' ? requireOptionalNativeModule('Wallet') : null;
 export const TIPO_PASE = 'pass.lat.farmasalud.puntos';
+
+// El botón oficial de Apple (PKAddPassButton). Null si el módulo no está.
+let VistaBoton = null;
+if (N) { try { VistaBoton = requireNativeViewManager('Wallet'); } catch { VistaBoton = null; } }
+export const BotonWalletNativo = VistaBoton;
 
 export const walletDisponible = () => { try { return !!N?.disponible(); } catch { return false; } };
 export const tienePase = (serial) => { try { return !!N?.tiene(TIPO_PASE, serial); } catch { return false; } };

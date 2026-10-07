@@ -4,3 +4,7 @@ dist/
 .env
 ios/
 android/
+
+# El código nativo de los módulos locales SÍ va al repo (la regla `ios/` de
+# arriba es para el proyecto generado por prebuild y se lo tragaba).
+!modules/*/ios/

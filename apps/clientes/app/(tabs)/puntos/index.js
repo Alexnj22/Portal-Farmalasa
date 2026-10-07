@@ -21,7 +21,7 @@ import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '
 import { useSesion } from '../../../lib/sesion';
 import { sincronizarAvisos } from '../../../lib/avisos';
 import { cuponDePrueba, nivelDePrueba, useModoPrueba } from '../../../lib/prueba';
-import { abrirPase, agregarPorSafari, tienePase, walletDisponible } from '../../../modules/wallet';
+import { BotonWalletNativo, abrirPase, agregarPorSafari, tienePase, walletDisponible } from '../../../modules/wallet';
 import { suave, useTema } from '../../../tema/tema';
 import { colorSistema } from '../../../componentes/sistema';
 import { navegar } from '../../../lib/navegar';
@@ -339,6 +339,15 @@ function BotonWallet({ serial, nivelPrueba }) {
     }
     setCargando(false);
   };
+  // El botón oficial de Apple (PKAddPassButton) cuando está en la compilación;
+  // el dibujado a mano queda de respaldo.
+  if (BotonWalletNativo && !tiene) {
+    return (
+      <View style={{ alignSelf: 'center', width: 260, height: 48, opacity: cargando ? 0.6 : 1 }} accessibilityRole="button" accessibilityLabel="Agregar a Apple Wallet">
+        <BotonWalletNativo style={{ width: 260, height: 48 }} onPress={tocar} />
+      </View>
+    );
+  }
   return (
     <Pressable onPress={tocar} accessibilityRole="button" accessibilityLabel={tiene ? 'Ver en Apple Wallet' : 'Agregar a Apple Wallet'}
       style={({ pressed }) => ({

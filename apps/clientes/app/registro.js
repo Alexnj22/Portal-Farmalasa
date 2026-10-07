@@ -14,6 +14,7 @@ import { llamar } from '../lib/api';
 import { plataforma, useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
 import { documentoEscrito, fechaDeNacimiento } from '../lib/formato';
+import FechaNacimiento from '../componentes/FechaNacimiento';
 import { useBloqueo } from '../lib/bloqueo';
 import { navegar } from '../lib/navegar';
 
@@ -71,7 +72,7 @@ export default function Registro() {
       </Grupo>
       <Grupo titulo="Opcional" pie={fechaMala ? 'Esa fecha no existe. Escríbela como DD/MM/AAAA.' : 'La fecha es para tu regalo de cumpleaños.'}>
         <FilaCampo placeholder="Correo" value={f.email} onChangeText={cambiar('email')} keyboardType="email-address" autoCapitalize="none" textContentType="emailAddress" />
-        <FilaCampo placeholder="Nacimiento (DD/MM/AAAA)" value={f.fecha_nacimiento} onChangeText={cambiar('fecha_nacimiento')} keyboardType="numbers-and-punctuation" />
+        <FechaNacimiento valor={f.fecha_nacimiento} alCambiar={cambiar('fecha_nacimiento')} />
       </Grupo>
       <Grupo titulo="¿Te invitaron?" pie="Escribe el código de quien te invitó: con tu primera compra de $10 o más, los dos ganan 50 puntos.">
         <FilaCampo placeholder="Código de invitación" value={f.referido} autoCapitalize="characters" autoCorrect={false}

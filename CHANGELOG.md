@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1255.0 — App: botón oficial de Apple Wallet y fecha de nacimiento con el selector del sistema
+
+- **App: botón oficial «Agregar a Apple Wallet»** (`PKAddPassButton`), como vista nativa del módulo `modules/wallet` (`BotonWalletView`). El dibujado a mano queda de respaldo si el módulo no está en la compilación.
+- **App: fecha de nacimiento con el selector del sistema** (SwiftUI `DatePicker` de `@expo/ui`) en el registro, de 1900 a hoy. El valor sigue siendo DD/MM/AAAA; fuera de iPhone, el campo de texto de siempre.
+- **El código nativo del módulo de Wallet no estaba en el repo**: la regla `ios/` de `apps/clientes/.gitignore` (pensada para el proyecto que genera prebuild) también excluía `modules/wallet/ios/`, así que `WalletModule.swift` y su podspec sólo existían en esta Mac. Se agrega `!modules/*/ios/` y entran al repo.
+
 ## v2.1254.0 — Entrega a domicilio, reserva en sucursal con anticipo y pedidos agrupados
 
 - **App: entrega a domicilio.** En el carrito, «Cómo lo recibes»: retiro en sucursal o **a domicilio** (sale de la sucursal elegida, con dirección y referencia). El costo del envío y desde cuánto es gratis se configuran en **Ofertas para clientes → Reservas → Entrega a domicilio** (`app_ajustes`; arranca en $1.50, gratis desde $25). El servidor vuelve a calcular el envío al reservar; se guarda en cada renglón del pedido (`costo_envio`) y se cobra una vez. «Mis reservas» muestra y cobra el total del pedido completo, con envío.

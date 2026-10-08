@@ -149,6 +149,18 @@ const REGLAS = [
     // pedidos (sólo Bodega crea y despacha; la sala recibe lo suyo). Con la
     // forma `CÓDIGO: texto` caía al genérico, que no dice por qué.
     [/BRANCH_SCOPE_DENIED/i, 'Tu permiso es solo para tu sucursal: esto le corresponde a Bodega o a otra sucursal.'],
+    // — Pasos del pedido en una sola transacción (2026-10-08) —
+    // Los YA_… casi siempre son un doble clic y la pantalla los toma como
+    // éxito; si alguno llega hasta acá es porque otra persona se adelantó.
+    [/NO_INICIADO/, 'Esa sala todavía no empezó a prepararse: no se puede finalizar.'],
+    [/YA_FINALIZADO/, 'Esa sala ya estaba finalizada. Recarga la pantalla.'],
+    [/YA_CONFIRMADA/, 'La llegada de esa sala ya se había confirmado. Recarga la pantalla.'],
+    [/YA_CONFIRMADO/, 'La llegada de ese reenvío ya se había confirmado. Recarga la pantalla.'],
+    [/PAGINA_ITEMS_REQUERIDO/, 'No se pudo saber qué productos venían en las cajas que faltan. Intenta de nuevo.'],
+    [/INVALID: el reenvío no lleva nada/, 'Marca al menos una caja, Electrolit o caja especial para reenviar.'],
+    [/INVALID: falta la fecha de entrega/, 'Falta la fecha de entrega.'],
+    [/NOT_FOUND: esa sucursal no tiene ese pedido/, 'Esa sucursal ya no tiene ese pedido. Recarga la pantalla.'],
+    [/NOT_FOUND: el reenvío \d+ no existe/, 'Ese reenvío ya no existe. Recarga la pantalla.'],
     // `ACCION_INVALIDA` lo lanza `set_traslado_interruptor` cuando la llave del
     // freno no existe. Salía CRUDO a la pantalla: los dos frenos del sobrante
     // se veían en Mantenimiento y morían así al accionarlos, del 18 al 21-ago.

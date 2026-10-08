@@ -8,6 +8,7 @@ import { fetchAllRows } from '../utils/supabaseUtils';
 import { buscarProductos } from './busquedaProductos';
 import { anotar, conBitacora } from './audit';
 import { recibirTrasladoPedido, updatePedidoSucursalStatus } from './pedidos';
+import { rpcConRespaldo } from './rpcConRespaldo';
 
 export function fetchProductPreciosOpts(productId) {
     return supabase.from('product_precios')
@@ -174,21 +175,16 @@ export function recibirPedidoDeSucursal(params, { accion = null, ...contexto } =
 // El camino bueno es `marcar_hojas_recibidas`, que une en la base sin
 // duplicados. Mientras esa función no exista, se cae al UPDATE de siempre pero
 // RELEYENDO la fila justo antes y uniendo: deja una ventana de milisegundos en
-// vez de la de todo el conteo. `rpcDeHojas` recuerda que no existe para no
+// vez de la de todo el conteo. `rpcConRespaldo` recuerda que no existe para no
 // preguntar en cada hoja.
-let rpcDeHojas = true;
-const FUNCION_INEXISTENTE = new Set(['PGRST202', '42883']);
-
 async function agregarHojasRecibidas(pedidoId, sucursalId, hojas) {
     const lista = [...new Set((hojas ?? []).map(Number).filter(Number.isFinite))].sort((a, b) => a - b);
-    if (rpcDeHojas) {
-        const res = await supabase.rpc('marcar_hojas_recibidas', {
-            p_pedido_id: pedidoId, p_sucursal_id: sucursalId, p_hojas: lista,
-        });
-        if (!res.error) return res;
-        if (!FUNCION_INEXISTENTE.has(res.error.code)) return res;
-        rpcDeHojas = false;
-    }
+    return rpcConRespaldo('marcar_hojas_recibidas', {
+        p_pedido_id: pedidoId, p_sucursal_id: sucursalId, p_hojas: lista,
+    }, () => unirHojasPasoAPaso(pedidoId, sucursalId, lista));
+}
+
+async function unirHojasPasoAPaso(pedidoId, sucursalId, lista) {
     const { data: fila, error: errLectura } = await supabase.from('pedido_sucursal_status')
         .select('hojas_recibidas')
         .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucursalId)

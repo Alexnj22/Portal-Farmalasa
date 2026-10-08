@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1233.1 — Pedidos: finalizar, llegada, reenvío y programar en un solo paso
+
+- **Cinco operaciones pasan a hacerse en un solo paso de la base**: finalizar con cajas, confirmar llegada, llegada del reenvío, programar entrega y pedir reenvío. Las hojas recibidas se agregan en la base.
+  - Si se corta la red a la mitad, ya no queda el pedido hecho a medias.
+  - Dos personas a la vez ya no se pisan los historiales.
+- **Transición sin riesgo**: `rpcConRespaldo` usa la función nueva si existe. Si la base todavía no la tiene (producción hoy), sigue por el camino de antes y no vuelve a preguntar.
+- Los errores de negocio se dicen en palabras de negocio.
+  - Un doble clic («ya estaba finalizado», «la llegada ya se confirmó») se toma como hecho, no como error.
+- **Electrolit faltante**: la pantalla elige qué renglón faltó (sólo si se puede saber) y la función de llegada lo marca. Antes la función tomaba los N primeros por id. Si no se sabe cuál fue, no se bloquea ninguno y queda anotado en la sala.
+- Probado de punta a punta contra el entorno de pruebas, por la función nueva y por el camino de respaldo.
+
 ## v2.1233.0 — Pedidos: auditoría — tablero más rápido, recepción, rutas y Generar sin huecos
 
 Auditoría completa del módulo (4 frentes). Todo probado contra el entorno de pruebas.

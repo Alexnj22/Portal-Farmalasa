@@ -11,17 +11,18 @@ import { ERP_NAMES, SUCURSALES as ERP_ORDER } from '../constants/erp';
 import { printFromPedidoItems } from '../utils/pedidoPrint';
 import { PAUSE_REASONS } from '../constants/pedidos';
 import { getBranchStage, claveParada, agruparPorRuta, currentMonthRange, necesitaAtencion, tieneObservacion, filtrarPedidos, pedidosPorSala } from '../utils/tableroDePedidos';
-import { anularPedido, avanzarEtapaDePedidoEnSala, confirmarEnvioPedido, despacharTrasladoPedido, fetchActiveRutas, fetchApoyoForPedido, fetchApoyoForPedidos, fetchAttendancePunches, fetchBranchNamesForSucursales, fetchEmployeeBranchId, fetchEntregasDePedidos, fetchItemsSinIngresar, fetchPausaHistorial, fetchPedidoItemEventosAll, fetchPedidoItemsAll, fetchPedidoItemsFaltaElectrolit, fetchPedidoItemsFaltaEspeciales, fetchPedidoSucursalStatus, fetchPedidosEnCurso, fetchResumenDeRenglonesPorPedido, fetchResumenIngresoPedidos, fetchRutaLocations, fetchTrasladosDePedidos, marcarRastreoDeFondo, noReenviarEspeciales, recibirTrasladoPedido, resolverRenglonDePedido, sucursalDeLaSala, tieneEtiquetaDeDespacho, updatePedidoItemsFaltaCaja, updatePedidoSucursalStatus, updateRutaPedidoEntregado, upsertRutaLocation } from '../data/pedidos';
+import { anularPedido, avanzarEtapaDePedidoEnSala, despacharTrasladoPedido, fetchActiveRutas, fetchApoyoForPedido, fetchApoyoForPedidos, fetchAttendancePunches, fetchBranchNamesForSucursales, fetchEmployeeBranchId, fetchEntregasDePedidos, fetchItemsSinIngresar, fetchPausaHistorial, fetchPedidoItemEventosAll, fetchPedidoItemsAll, fetchPedidoSucursalStatus, fetchPedidosEnCurso, fetchResumenDeRenglonesPorPedido, fetchResumenIngresoPedidos, fetchRutaLocations, fetchTrasladosDePedidos, marcarRastreoDeFondo, noReenviarEspeciales, recibirTrasladoPedido, resolverRenglonDePedido, sucursalDeLaSala, tieneEtiquetaDeDespacho, updateRutaPedidoEntregado, upsertRutaLocation } from '../data/pedidos';
 import {
     fetchDevolucionesDePedido, decidirDevolucion,
     subirEvidencia, moverDevoluciones, recibirDevoluciones,
 } from '../data/devoluciones';
 import { decidirDiferencia, confirmarLlegadaDiferencia } from '../data/diferencias';
 import { confirmarLlegadaDePedido } from '../data/llegadaDePedido';
+import { confirmarLlegadaDeReenvio, finalizarSalaConCajas, pedirReenvioSala, programarEntregaSala } from '../data/pasosDelPedido';
 import { seguirPosicion } from '@plataforma/ubicacion';
 
 import { mensajeAmigable } from '../utils/errorMessages';
-import { cajasDeRenglon, construirCajasEspeciales, renglonesQueSalen, renglonesDeCajasFaltantes } from '../utils/cajasEspeciales';
+import { cajasDeRenglon, construirCajasEspeciales, renglonesQueSalen } from '../utils/cajasEspeciales';
 import { fetchEmployeesPublicByIds } from '../data/employees';
 import { escucharCambios } from '../data/tiempoReal';
 
@@ -790,11 +791,13 @@ export function usePedidosData({ searchTerm = '' }) {
         const { pedidoId, sucId, historial } = programarModal;
         setSavingProgramar(true);
         try {
-            const emp    = empMap.get(user?.id);
-            const entry  = { programada_at: newIso, registrado_at: new Date().toISOString(), por: user?.id ?? null, nombre: emp?.name ?? null };
-            const newHist = [...(historial ?? []), entry];
-            const { error } = await updatePedidoSucursalStatus(pedidoId, sucId,
-                { entrega_programada_at: newIso, entrega_programada_historial: newHist });
+            // La entrada se AGREGA en la base (`programar_entrega_sala`); el
+            // historial y el nombre sólo los usa el camino viejo de respaldo.
+            const emp = empMap.get(user?.id);
+            const { error } = await programarEntregaSala({
+                pedidoId, sucId, cuando: newIso, historial,
+                por: user?.id ?? null, nombre: emp?.name ?? null,
+            });
             if (error) throw error;
             useStaff.getState().appendAuditLog('PEDIDO_ENTREGA_PROGRAMADA', pedidoId, { sucursal_id: sucId, entrega_at: newIso });
             setProgramarModal(null);
@@ -952,27 +955,23 @@ export function usePedidosData({ searchTerm = '' }) {
 
         setBusyAction('finalizar');
         try {
-            // 1. Qué sale de verdad. Va ANTES de finalizar porque la RPC solo
-            //    toca renglones en 'pendiente', y porque el traslado al sistema
-            //    se apoya en este dato: sin él mandaría lo asignado, que es
-            //    justo lo que puede no haber salido.
-            const { error: envErr } = await confirmarEnvioPedido(pedidoId, sucId, ajustesEnvio);
-            if (envErr) throw envErr;
-
-            // 2. Finalizar. El `error` de esta RPC NO se puede ignorar: rechaza
-            //    con excepción cuando hay una pausa sin reanudar, y supabase-js
-            //    devuelve el error en vez de lanzarlo — sin este chequeo el
-            //    rechazo se perdía y el resto seguía escribiendo igual.
-            const { error: lcErr } = await avanzarEtapaDePedidoEnSala({
-                p_pedido_id: pedidoId, p_sucursal_id: sucId,
-                p_stage: 'finalizar', p_user_id: user?.id ?? null,
+            // 1-3. Qué sale, finalizar, y cajas y hojas: UNA transacción
+            //      (`finalizar_sala_con_cajas`, `data/pasosDelPedido`). Antes
+            //      eran tres escrituras y si la tercera fallaba la sala quedaba
+            //      finalizada sin cajas ni hojas, sin forma de reintentar.
+            const { data: fin, error: finErr } = await finalizarSalaConCajas({
+                pedidoId, sucId, userId: user?.id ?? null,
+                totalCajas, cajaMap, paginaItems, cajasElectrolit, cajasEspeciales, ajustesEnvio,
             });
-            if (lcErr) throw lcErr;
-
-            // 3. Cajas y hojas.
-            const { error: pssErr } = await updatePedidoSucursalStatus(pedidoId, sucId,
-                { total_cajas: totalCajas, caja_map: cajaMap, pagina_items: paginaItems, cajas_electrolit: cajasElectrolit, cajas_especiales: cajasEspeciales });
-            if (pssErr) throw pssErr;
+            if (finErr) throw finErr;
+            // El segundo clic de un doble clic: el primero ya finalizó y ya
+            // mandó el traslado. No se anota ni se despacha otra vez.
+            if (fin?.yaEstaba) {
+                useToastStore.getState().showToast('Ya estaba finalizado', 'Esta sala ya se había finalizado.', 'info');
+                setFinalizarModal(null);
+                await loadActive();
+                return true;
+            }
 
             useStaff.getState().appendAuditLog('PEDIDO_FINALIZADO', pedidoId, {
                 totalCajas, cajasElectrolit,
@@ -1099,32 +1098,24 @@ export function usePedidosData({ searchTerm = '' }) {
         reenvioEnCursoRef.current = true;
         setBusyAction('reenvio');
         try {
-            const now = new Date().toISOString();
+            // El ciclo lo numera la base sobre la fila bloqueada
+            // (`pedir_reenvio_sala`): leído acá, dos pedidos simultáneos daban
+            // el MISMO número, que es la clave con la que la ruta marca el
+            // reenvío. Nace PENDIENTE: el aviso sale cuando sale la ruta.
             const especialesLabels = especialesFaltantes.map(e => (typeof e === 'string' ? e : e.label));
-            // Leer historial actual para calcular ciclo
-            const { data: pss, error: pssErr } = await fetchPedidoSucursalStatus(pedidoId, sucId, 'reenvios_historial');
-            if (pssErr) throw pssErr;
-            const historial = pss?.reenvios_historial ?? [];
-            const ciclo     = historial.length + 1;
-            // El ciclo nace PENDIENTE (2026-10-07): `sent_at` nulo y sin tocar
-            // `reenvio_bodega_at`. Antes se daba por enviado al apretar el botón
-            // y la sala recibía «Reenvío en camino» con la caja todavía en
-            // bodega. Ahora sale con una ruta: cuando la ruta sale, la base le
-            // pone `sent_at` y avisa (`avisar_salida_de_ruta`).
-            const nuevoCiclo = { ciclo, cajas: cajasFaltantes, electrolits: electrolitsFaltantes, especiales: especialesLabels, sent_at: null, sent_by: null, solicitado_at: now, solicitado_por: user?.id ?? null, arrived_at: null, arrived_tipo: null, cajas_ok: [], cajas_danadas: [], cajas_aun_faltantes: [] };
-
-            const { error: reenvioErr } = await updatePedidoSucursalStatus(pedidoId, sucId, {
-                reenvio_por:        user?.id ?? null,
-                reenvios_historial: [...historial, nuevoCiclo],
+            const { data: reenvio, error: reenvioErr } = await pedirReenvioSala({
+                pedidoId, sucId, cajas: cajasFaltantes, especiales: especialesLabels,
+                electrolits: electrolitsFaltantes, userId: user?.id ?? null,
             });
             if (reenvioErr) throw reenvioErr;
+            const ciclo = reenvio?.ciclo;
 
             useStaff.getState().appendAuditLog('PEDIDO_REENVIO_CAJA', pedidoId, { sucursal_id: sucId, ciclo, cajas: cajasFaltantes, electrolits: electrolitsFaltantes, especiales: especialesLabels });
 
             // El aviso «reenvío en camino» lo escribe la base cuando la ruta
             // SALE. Se abre «Nueva ruta» con el reenvío ya marcado.
             await loadActive();
-            setCrearRutaOpen([`${pedidoId}__${sucId}__r${ciclo}`]);
+            setCrearRutaOpen([reenvio?.clave ?? `${pedidoId}__${sucId}__r${ciclo}`]);
         } catch (e) {
             console.error(e);
             useToastStore.getState().showToast('No se pudo registrar el reenvío', mensajeAmigable(e), 'error');
@@ -1202,113 +1193,29 @@ export function usePedidosData({ searchTerm = '' }) {
         const { pedidoId, sucId, key, ciclo, historial, electrolitCount = 0, especialesList = [] } = reenvioLlegadaModal;
         setBusyAction('segunda_llegada');
         try {
-            const now = new Date().toISOString();
+            // Todo en UNA transacción (`confirmar_llegada_reenvio`,
+            // `data/pasosDelPedido`): el ciclo, las cajas, el Electrolit, las
+            // especiales y los renglones que se liberan. Antes eran de cuatro a
+            // siete escrituras y un corte en el medio dejaba la llegada
+            // confirmada con renglones todavía bloqueados.
             const hasFalta = cajasFaltantes.length > 0;
-            const arrived_tipo = hasFalta && cajasDanadas.length > 0 ? 'mixto'
-                               : hasFalta                            ? 'falta_caja'
-                               : cajasDanadas.length > 0             ? 'caja_danada'
-                               :                                        'ok';
-
-            // Actualizar el ciclo correspondiente en el historial
-            const nuevoHistorial = historial.map(c =>
-                c.ciclo === ciclo
-                    ? { ...c, arrived_at: now, arrived_tipo, arrived_por: user?.id ?? null, cajas_ok: cajasOk, cajas_danadas: cajasDanadas, cajas_aun_faltantes: cajasFaltantes, nota: nota || null,
-                      // Lo que sigue faltando, escrito en el ciclo: el aviso a bodega
-                      // sale de la base con ESTA escritura, antes de las que siguen.
-                      electrolit_ok: electrolitCount > 0 ? electrolitOk === true : null,
-                      especiales_aun: especialesAun }
-                    : c
-            );
-
-            const { error: segundaErr } = await updatePedidoSucursalStatus(pedidoId, sucId, {
-                segunda_llegada_at: now,
-                reenvios_historial: nuevoHistorial,
-                falta_cajas: hasFalta ? cajasFaltantes : [],
-                // Escribir estado electrolit al DB cuando estaban en este ciclo de reenvío
-                ...(electrolitCount > 0 ? { electrolit_ok: electrolitOk === true, electrolit_faltantes: electrolitOk ? 0 : electrolitCount } : {}),
+            const { data: llego, error: llegoErr } = await confirmarLlegadaDeReenvio({
+                pedidoId, sucId, ciclo, historial, userId: user?.id ?? null,
+                cajasOk, cajasDanadas, cajasFaltantes, nota,
+                electrolitOk, electrolitCount, especialesList, especialesAun,
             });
-            if (segundaErr) throw segundaErr;
+            if (llegoErr) throw llegoErr;
+            if (!llego?.yaEstaba) {
+                useStaff.getState().appendAuditLog('PEDIDO_REENVIO_LLEGADA', pedidoId, { ciclo, arrived_tipo: llego?.arrived_tipo ?? null, cajasOk, cajasDanadas, cajasFaltantes });
+            }
 
-            useStaff.getState().appendAuditLog('PEDIDO_REENVIO_LLEGADA', pedidoId, { ciclo, arrived_tipo, cajasOk, cajasDanadas, cajasFaltantes });
-
-            // Cargar mapa de páginas + estado actual de especiales para merge
+            // El mapa de hojas y lo ya contado, para abrir la recepción de lo
+            // que llegó.
             const { data: pss, error: pssErr } = await fetchPedidoSucursalStatus(pedidoId, sucId,
-                'caja_map, pagina_items, paginas, hojas_recibidas, cajas_danadas, cajas_especiales_llegadas, cajas_especiales');
+                'caja_map, pagina_items, paginas, hojas_recibidas');
             if (pssErr) throw pssErr;
             const cajaMapDb     = pss?.caja_map    ?? {};
             const paginaItemsDb = pss?.pagina_items ?? {};
-
-            const getItemIds = (cajas) => {
-                if (!Object.keys(paginaItemsDb).length) return [];
-                return cajas.flatMap(n => (cajaMapDb[String(n)] ?? []).flatMap(p => paginaItemsDb[String(p)] ?? []));
-            };
-
-            // Limpiar falta_caja en ítems de cajas que SÍ llegaron (OK o dañadas)
-            const cajasLlegaron = [...cajasOk, ...cajasDanadas];
-            if (cajasLlegaron.length > 0) {
-                const llegadaIds = getItemIds(cajasLlegaron);
-                if (llegadaIds.length > 0) {
-                    const { error: okErr } = await updatePedidoItemsFaltaCaja(llegadaIds, false);
-                    if (okErr) throw okErr;
-                }
-            }
-
-            // Mantener falta_caja: true solo en cajas que AÚN no llegaron
-            if (hasFalta) {
-                const mIds = getItemIds(cajasFaltantes);
-                if (mIds.length > 0) {
-                    const { error: aunErr } = await updatePedidoItemsFaltaCaja(mIds, true);
-                    if (aunErr) throw aunErr;
-                }
-            }
-
-            // Limpiar falta_caja en electrolits si llegaron en este reenvío
-            if (electrolitCount > 0 && electrolitOk) {
-                const faltaElec = await fetchPedidoItemsFaltaElectrolit(pedidoId, sucId);
-                if (faltaElec === null) throw new Error('No se pudieron leer los renglones de Electrolit marcados como faltantes.');
-                const elecIds = faltaElec.filter(r => (r.products?.nombre ?? '').toLowerCase().includes('electrolit')).map(r => r.id);
-                if (elecIds.length > 0) {
-                    const { error: elecOkErr } = await updatePedidoItemsFaltaCaja(elecIds, false);
-                    if (elecOkErr) throw elecOkErr;
-                }
-            }
-
-            // Especiales: actualizar cajas_especiales_llegadas en DB + limpiar falta_caja en items
-            const espLlegaron = (especialesList ?? []).filter(l => !especialesAun.includes(l));
-            if (espLlegaron.length > 0 || especialesAun.length > 0) {
-                // Merge: marcar las que llegaron como 'ok', las aún faltantes siguen 'faltante'
-                const mergedEsp = { ...(pss?.cajas_especiales_llegadas ?? {}) };
-                for (const label of espLlegaron)  mergedEsp[label] = 'ok';
-                for (const label of especialesAun) mergedEsp[label] = 'faltante';
-                const { error: mergedErr } = await updatePedidoSucursalStatus(pedidoId, sucId, { cajas_especiales_llegadas: mergedEsp });
-                if (mergedErr) throw mergedErr;
-
-                // Limpiar falta_caja en items de especiales que sí llegaron
-                if (espLlegaron.length > 0) {
-                    const faltaEsp = await fetchPedidoItemsFaltaEspeciales(pedidoId, sucId);
-                    if (faltaEsp === null) throw new Error('No se pudieron leer los renglones de cajas especiales marcados como faltantes.');
-                    if (faltaEsp.length > 0) {
-                        // Si todas llegaron → limpiar todos. Si algunas aún faltan →
-                        // limpiar los renglones de las ETIQUETAS que llegaron, nunca
-                        // los de una que sigue faltando. Antes se cortaba la lista por
-                        // posición (`slice` proporcional): llegaba E2 y se daba por
-                        // recibido el producto de E1 (2026-10-07). La etiqueta → renglón
-                        // sale de `cajas_especiales`, igual que en la primera llegada.
-                        const marcar = (labels) => Object.fromEntries(labels.map(l => [l, 'faltante']));
-                        const { ids: idsLlegaron } = renglonesDeCajasFaltantes(pss?.cajas_especiales ?? [], marcar(espLlegaron));
-                        const { ids: idsAun }      = renglonesDeCajasFaltantes(pss?.cajas_especiales ?? [], marcar(especialesAun));
-                        const sigueFaltando = new Set(idsAun);
-                        const pendientes    = new Set(faltaEsp.map(r => r.id));
-                        const idsToClean = especialesAun.length === 0
-                            ? faltaEsp.map(r => r.id)
-                            : idsLlegaron.filter(id => pendientes.has(id) && !sigueFaltando.has(id));
-                        if (idsToClean.length > 0) {
-                            const { error: cleanErr } = await updatePedidoItemsFaltaCaja(idsToClean, false);
-                            if (cleanErr) throw cleanErr;
-                        }
-                    }
-                }
-            }
 
             // Si aún falta algo, el aviso a BODEGA lo escribe la base al ver
             // `segunda_llegada_at` (`avisar_camino_del_pedido`). Antes lo mandaba

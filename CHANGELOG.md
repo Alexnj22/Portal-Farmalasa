@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.25 — Recepción: el contador de diferencia queda encima del campo
+
+- **El «+19» / «-1» de recepción ya no se ve de vidrio**: el campo de cantidad es `relative z-base` y su borde y su relleno teñido se pintaban encima del contador. Ahora el contador va un nivel arriba (`z-tabs`) y el encabezado fijo de la lista otro más (`z-header`), para que al bajar nada pase por encima. Queda anotado en la regla «un sólido es sólido».
+
 ## v2.1232.24 — Encabezados fijos opacos del todo y contador de diferencia entero
 
 - **Los encabezados fijos tapan del todo, en todo el portal**: el fondo canónico (`--thead-bg`) es 97-98% opaco y lo que pasaba por debajo se alcanzaba a ver. Ahora lleva el fondo de la página debajo, que es opaco.

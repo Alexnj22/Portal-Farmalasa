@@ -22,6 +22,7 @@
 import { useEffect, useRef } from 'react';
 import EfectoNivel from './EfectoNivel';
 import Mineral, { MATERIALES } from './minerales/Mineral';
+import LogoEnRelieve from './minerales/LogoEnRelieve';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -231,13 +232,13 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
           {/* El logo al centro: llena el espacio entre el chip y el nombre
               (pedido del usuario, 2026-10-06), con un halo suave. */}
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
-            <Medallon tam={92} />
+            <LogoEnRelieve tam={84} x={x} y={y} />
           </View>
 
           <View style={estilos.contenido}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Medallon tam={34} />
+                <LogoEnRelieve tam={30} x={x} y={y} />
                 <Text maxFontSizeMultiplier={1.3} style={estilos.marca}>PUNTOS SALUD</Text>
               </View>
               <Text maxFontSizeMultiplier={1.3} style={estilos.socio}>{paleta.rotulo}</Text>
@@ -294,24 +295,6 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
 // logo de color se perdía. Va sobre una cara blanca con bisel —luz arriba a
 // la izquierda, sombra abajo a la derecha— y sombra propia, así se lee sobre
 // cualquier material y parece incrustado en la tarjeta.
-function Medallon({ tam }) {
-  const r = tam / 2;
-  return (
-    <View style={{ width: tam, height: tam, borderRadius: r, shadowColor: '#000', shadowOpacity: 0.45, shadowRadius: tam * 0.12, shadowOffset: { width: 0, height: tam * 0.05 } }}>
-      {/* El bisel del borde. */}
-      <LinearGradient colors={['#FFFFFF', 'rgba(255,255,255,0.55)', 'rgba(120,120,130,0.9)']} locations={[0, 0.45, 1]}
-        start={{ x: 0.15, y: 0.1 }} end={{ x: 0.85, y: 0.95 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: r }} />
-      {/* La cara, un poco hundida: sombra interior arriba, luz abajo. */}
-      <View style={{ position: 'absolute', top: tam * 0.07, left: tam * 0.07, right: tam * 0.07, bottom: tam * 0.07, borderRadius: r, overflow: 'hidden', backgroundColor: '#FBFAFC' }}>
-        <LinearGradient colors={['rgba(0,0,0,0.10)', 'rgba(0,0,0,0)', 'rgba(255,255,255,0.0)']} locations={[0, 0.35, 1]}
-          start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={StyleSheet.absoluteFill} />
-      </View>
-      <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
-        <Image source={require('../assets/icono.png')} style={{ width: tam * 0.72, height: tam * 0.72, borderRadius: tam * 0.36 }} />
-      </View>
-    </View>
-  );
-}
 
 // La etiqueta que flota al sumar o restar puntos, y el destello de la tarjeta.
 function CambioDeSaldo({ delta }) {

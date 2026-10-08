@@ -152,41 +152,37 @@ half4 main(float2 p) {
 }`,
   // La tarjeta del EQUIPO (empleados, precio Mayoreo Plus por política):
   // fibra de carbono tejida con la franja de la marca, magenta a verde.
+  // Equipo (rehecha 2026-10-08, «más moderna, sin fibra de carbono»): tinta
+  // profunda con dos cintas de luz que ondulan solas —magenta, violeta y verde
+  // de la marca— y una retícula de puntos que se enciende al paso de la luz.
   empleado: `
+float cinta(float2 uv, float a, float fase, float alto, float amp, float frec) {
+  float y = alto + amp * sin(uv.x * frec + fase) + amp * 0.35 * sin(uv.x * frec * 2.3 - fase * 1.4);
+  return y - uv.y;
+}
 half4 main(float2 p) {
   float a = res.x / res.y; float2 uv = p / res.y;
-  // Grafito profundo con un tejido de carbono apenas visible.
-  float2 q = float2(uv.x + uv.y, uv.x - uv.y) * 30.0;
-  float2 f = fract(q); float par = mod(floor(q.x) + floor(q.y), 2.0);
-  float hilo = par > 0.5 ? sin(f.x * 3.1416) : sin(f.y * 3.1416);
-  float3 c = float3(0.035, 0.037, 0.045) + float3(0.045, 0.046, 0.055) * hilo * (0.6 + 0.4 * (par > 0.5 ? tilt.x : -tilt.x));
-  // Guilloché: ondas finas concéntricas, como el fondo de seguridad de un billete.
-  float2 cg = uv - float2(a * 0.18, 0.95);
-  float ondas = sin(length(cg) * 140.0 + sin(atan(cg.y, cg.x) * 9.0) * 2.2);
-  c += float3(0.55, 0.58, 0.66) * smoothstep(0.92, 1.0, ondas) * 0.05;
-  // Banda de titanio satinado que sigue la inclinación.
-  float banda = exp(-sq((uv.x / a + uv.y * 0.35 - (0.62 + tilt.x * 0.55)) * 3.2));
-  c += float3(0.42, 0.44, 0.50) * banda * 0.22;
-  // Las franjas de la marca: finas, metálicas, con un destello que las recorre.
-  float d = (uv.x / a) - uv.y * 0.55 - (0.33 + tilt.x * 0.03);
-  float magenta = smoothstep(0.0, 0.006, d) * (1.0 - smoothstep(0.034, 0.040, d));
-  float verde = smoothstep(0.052, 0.058, d) * (1.0 - smoothstep(0.086, 0.092, d));
-  float largo = uv.y * 1.2 + uv.x * 0.25;
-  float brillo = exp(-sq((fract(t * 0.12) * 2.4 - 0.6) - largo) * 18.0);
-  float3 metalM = float3(0.66, 0.11, 0.52) * (0.85 + 0.35 * banda) + float3(1.0, 0.75, 0.9) * brillo * 0.55;
-  float3 metalV = float3(0.50, 0.70, 0.08) * (0.85 + 0.35 * banda) + float3(0.92, 1.0, 0.7) * brillo * 0.55;
-  c = mix(c, metalM, magenta);
-  c = mix(c, metalV, verde);
-  // Filos de luz a los lados de las franjas.
-  float filo = (1.0 - smoothstep(0.0, 0.0025, abs(d + 0.012))) + (1.0 - smoothstep(0.0, 0.0025, abs(d - 0.104)));
-  c += float3(0.80, 0.82, 0.88) * filo * (0.18 + 0.5 * brillo);
-  // Viñeta: más oscuro en los bordes, como una tarjeta metálica.
-  c *= 0.78 + 0.22 * smoothstep(1.25, 0.25, length(uv - float2(a * 0.5, 0.5)));
-  c += float3(1.0) * destellos(p, 0.015, 1.2) * 0.35;
-  // El canto: un filo de luz fino en el borde, más brillante del lado de la luz.
-  float borde = min(min(p.x, p.y), min(res.x - p.x, res.y - p.y));
-  float canto = 1.0 - smoothstep(0.0, 2.2, borde);
-  c += float3(0.75, 0.78, 0.86) * canto * (0.25 + 0.35 * banda);
+  float3 c = mix(float3(0.020, 0.022, 0.045), float3(0.045, 0.030, 0.075), uv.y);
+  float ft = t * 0.45 + tilt.x * 1.2;
+  // Dos cintas: el brillo cae con la distancia a cada curva.
+  float d1 = abs(cinta(uv, a, ft, 0.56 - tilt.y * 0.06, 0.13, 2.4));
+  float d2 = abs(cinta(uv, a, ft * 0.8 + 2.1, 0.44 - tilt.y * 0.06, 0.10, 3.1));
+  float x = clamp(uv.x / a, 0.0, 1.0);
+  float3 marca = x < 0.5 ? mix(float3(0.78, 0.13, 0.62), float3(0.48, 0.20, 0.85), x * 2.0)
+                         : mix(float3(0.48, 0.20, 0.85), float3(0.45, 0.80, 0.18), (x - 0.5) * 2.0);
+  float halo1 = exp(-d1 * 9.0) * 0.55 + exp(-d1 * 60.0) * 0.9;
+  float halo2 = exp(-d2 * 11.0) * 0.35 + exp(-d2 * 80.0) * 0.6;
+  c += marca * halo1 + marca.zxy * 0.6 * halo2;
+  c += float3(1.0) * (exp(-d1 * 260.0) * 0.55 + exp(-d2 * 320.0) * 0.35);
+  // Retícula de puntos que se ilumina cerca de las cintas.
+  float2 g = fract(p / (res.y * 0.035)) - 0.5;
+  float punto = 1.0 - smoothstep(0.06, 0.14, length(g));
+  float cerca = exp(-min(d1, d2) * 6.0);
+  c += float3(0.75, 0.70, 0.95) * punto * (0.035 + 0.25 * cerca);
+  // Un reflejo diagonal que cruza con la inclinación.
+  float banda = exp(-sq((uv.x / a + uv.y * 0.4 - (0.7 + tilt.x * 0.6)) * 3.5));
+  c += float3(0.55, 0.55, 0.70) * banda * 0.10;
+  c *= 0.82 + 0.18 * smoothstep(1.3, 0.2, length(uv - float2(a * 0.5, 0.5)));
   return half4(c, 1.0);
 }`,
   jade: `

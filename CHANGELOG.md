@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1260.7 — Logo en relieve y tarjeta de Equipo con cintas de luz
+
+- **Logo de la tarjeta en relieve:** un shader lee el contorno del logo como mapa de alturas, ilumina sus biseles con una luz que sigue la inclinación del teléfono y el dedo, le pone brillo especular y proyecta su sombra al lado contrario. Reemplaza al disco blanco (`LogoEnRelieve`).
+- **Tarjeta de Equipo rehecha** («más moderna, sin fibra de carbono»): tinta profunda con dos cintas de luz que ondulan solas en los colores de la marca, una retícula de puntos que se enciende al paso de la luz y un reflejo que cruza con la inclinación. Wallet con las mismas franjas.
+
 ## v2.1260.6 — Compras: el sync de cada 10 minutos solo baja los días con compras nuevas
 
 - **Modo incremental:** cada 10 minutos se pide primero la lista de compras sin renglones, la misma que usa el backfill rápido y 27 veces más barata. Se compara contra lo que ya tiene el portal y solo los días con una compra nueva bajan el reporte completo. Medido: **1.8 s las 7 sucursales**, contra ~112 s de la pasada completa.

@@ -16,8 +16,10 @@ const TextoAnimado = Animated.createAnimatedComponent(TextInput);
  * TextInput no editable porque es lo único cuyo texto puede cambiar desde el
  * hilo de la interfaz sin pasar por un render de React.
  */
-export function NumeroAnimado({ valor, formato = 'dolares', duracion = 900, estilo }) {
-  const v = useSharedValue(0);
+// `desde`: de dónde arranca la cuenta (el saldo anterior, para que se vea
+// sumar o restar); sin él, desde 0.
+export function NumeroAnimado({ valor, formato = 'dolares', duracion = 900, estilo, desde = 0 }) {
+  const v = useSharedValue(Number(desde) || 0);
   useEffect(() => {
     v.value = withTiming(Number(valor) || 0, { duration: duracion, easing: Easing.out(Easing.cubic) });
   }, [valor, duracion, v]);

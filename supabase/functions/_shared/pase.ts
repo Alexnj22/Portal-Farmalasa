@@ -16,7 +16,7 @@
 // nombre. Se ACTUALIZA SOLA: `wallet-pases` es el servicio web de PassKit.
 import forge from "npm:node-forge@1.3.1";
 import { zipSync } from "npm:fflate@0.8.2";
-import { IMAGENES_PASE } from "./imagenesPase.ts";
+import { FRANJAS_NIVEL, IMAGENES_PASE } from "./imagenesPase.ts";
 import { nivelDeCliente } from "./nivel.ts";
 
 const PASS_TYPE = "pass.lat.farmasalud.puntos";
@@ -59,6 +59,16 @@ export const serialDe = (customerId: number) => `socio-${customerId}`;
 export const clienteDelSerial = (serial: string) => Number(String(serial).replace(/^socio-/, "")) || null;
 
 /** El rótulo sobre el nombre: «CLIENTE VIP», «CLIENTE ORO»… */
+// Colores de la tarjeta por nivel (2026-10-08): el fondo continúa la franja de
+// ese nivel (scripts/wallet/imagenes.py, TEMAS) y los rótulos van en su acento.
+const NIVELES: Record<string, { fondo: string; rotulo: string }> = {
+  vip: { fondo: "rgb(52, 14, 66)", rotulo: "rgb(180, 228, 80)" },
+  plata: { fondo: "rgb(58, 64, 74)", rotulo: "rgb(220, 226, 234)" },
+  oro: { fondo: "rgb(74, 46, 6)", rotulo: "rgb(255, 217, 120)" },
+  platino: { fondo: "rgb(10, 11, 14)", rotulo: "rgb(232, 236, 242)" },
+};
+const claveDeNivel = (n?: string) => /platino/i.test(n ?? "") ? "platino" : /oro/i.test(n ?? "") ? "oro" : /plata/i.test(n ?? "") ? "plata" : "vip";
+
 const nivelRotulo = (n?: string) => (!n || /vip/i.test(n) ? "CLIENTE VIP" : `CLIENTE ${n.toUpperCase()}`);
 
 export async function armarPase(d: DatosPase): Promise<Uint8Array> {
@@ -82,8 +92,8 @@ export async function armarPase(d: DatosPase): Promise<Uint8Array> {
     // y los rótulos van en el verde del logo: así la franja y el cuerpo se leen
     // como UNA tarjeta y no como un rectángulo pegado sobre otro.
     foregroundColor: "rgb(255, 255, 255)",
-    labelColor: "rgb(180, 228, 80)",
-    backgroundColor: "rgb(52, 14, 66)",
+    labelColor: NIVELES[claveDeNivel(d.nivel)].rotulo,
+    backgroundColor: NIVELES[claveDeNivel(d.nivel)].fondo,
     storeCard: {
       headerFields: [{ key: "puntos", label: "PUNTOS", value: Math.round(d.saldo), textAlignment: "PKTextAlignmentRight" }],
       primaryFields: [{ key: "saldo", label: "SALDO DE PUNTOS", value: d.equivale, currencyCode: "USD",
@@ -107,6 +117,15 @@ export async function armarPase(d: DatosPase): Promise<Uint8Array> {
 
   const archivos: Record<string, Uint8Array> = { "pass.json": new TextEncoder().encode(JSON.stringify(pase)) };
   for (const [n, b64] of Object.entries(IMAGENES_PASE)) archivos[n] = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  // La franja del nivel reemplaza a la morada (sin @1x: Wallet usa @2x/@3x).
+  const clave = claveDeNivel(d.nivel);
+  if (clave !== "vip") {
+    delete archivos["strip.png"];
+    for (const n of ["strip@2x.png", "strip@3x.png"]) {
+      const b64 = FRANJAS_NIVEL[`${clave}|${n}`];
+      if (b64) archivos[n] = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    }
+  }
 
   // manifest.json: SHA-1 de cada archivo.
   const manifiesto: Record<string, string> = {};

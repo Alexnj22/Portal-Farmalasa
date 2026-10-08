@@ -20,6 +20,11 @@ export default function EfectoNivel({ nivel, activa, x }) {
   if (nivel === 'plata') return <Cepillado />;
   if (nivel === 'oro') return <Destellos activa={activa} color="#FFF6D5" />;
   if (nivel === 'platino') return (<><Holograma x={x} /><Destellos activa={activa} color="#E8ECF2" /></>);
+  // Mayorista: el brillo de cada piedra; el Diamante, con holograma.
+  if (nivel === 'jade') return <><Cepillado /><Destellos activa={activa} color="#D8FFF0" /></>;
+  if (nivel === 'zafiro') return <Destellos activa={activa} color="#D6E3FF" />;
+  if (nivel === 'rubi') return <Destellos activa={activa} color="#FFD6DE" />;
+  if (nivel === 'diamante') return (<><Holograma x={x} /><Destellos activa={activa} color="#FFFFFF" /></>);
   return null;
 }
 

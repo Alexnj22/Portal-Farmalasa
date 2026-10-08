@@ -17,23 +17,28 @@ export const NIVELES_PRUEBA = [
 export const useModoPrueba = create((set) => ({
   activo: false,
   nivel: 'oro',
+  // Rango de Cliente Mayorista de muestra (null = no es mayorista).
+  mayorista: null,
   // Cambia con «Volver a tapar el cupón»: un id nuevo se puede raspar otra vez.
   semilla: Date.now().toString(36),
   reiniciarCupon: () => set({ semilla: Date.now().toString(36), cuponUsado: false }),
   // «Ver cupón usado» y «Ver animación» (2026-10-08).
   cuponUsado: false,
   demoCupon: 0,
+  // «Simular: ganar / usar puntos» (2026-10-08): sólo mueve el saldo que se ve.
+  ajuste: 0,
+  simularPuntos: (n) => set((e) => ({ ajuste: e.ajuste + n })),
   verCuponUsado: (v) => set({ cuponUsado: v }),
   verAnimacionCupon: () => set((e) => ({ cuponUsado: false, demoCupon: e.demoCupon + 1 })),
   cargar: async () => {
     try {
       const v = JSON.parse((await SecureStore.getItemAsync(CLAVE)) ?? 'null');
-      if (v) set({ activo: !!v.activo, nivel: v.nivel ?? 'oro' });
+      if (v) set({ activo: !!v.activo, nivel: v.nivel ?? 'oro', mayorista: v.mayorista ?? null });
     } catch { /* sin guardar */ }
   },
   poner: (cambio) => set((x) => {
     const nuevo = { ...x, ...cambio };
-    SecureStore.setItemAsync(CLAVE, JSON.stringify({ activo: nuevo.activo, nivel: nuevo.nivel })).catch(() => {});
+    SecureStore.setItemAsync(CLAVE, JSON.stringify({ activo: nuevo.activo, nivel: nuevo.nivel, mayorista: nuevo.mayorista })).catch(() => {});
     return nuevo;
   }),
 }));

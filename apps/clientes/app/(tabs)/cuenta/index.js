@@ -220,6 +220,13 @@ export default function Cuenta() {
                 opciones={NIVELES_PRUEBA.map((n) => ({ valor: n.clave, rotulo: n.clave === 'vip' ? 'VIP' : n.nombre }))} />
             </View>
           ) : null}
+          {prueba.activo ? (
+            <View style={{ padding: 12, gap: 6 }}>
+              <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>Cliente Mayorista</Text>
+              <Segmentos valor={prueba.mayorista ?? 'no'} alCambiar={(m) => prueba.poner({ mayorista: m === 'no' ? null : m })}
+                opciones={[{ valor: 'no', rotulo: 'No' }, { valor: 'jade', rotulo: 'Jade' }, { valor: 'zafiro', rotulo: 'Zafiro' }, { valor: 'rubi', rotulo: 'Rubí' }, { valor: 'diamante', rotulo: 'Diam.' }]} />
+            </View>
+          ) : null}
           {prueba.activo && ['oro', 'platino'].includes(prueba.nivel) ? (
             <FilaAccion sf="arrow.counterclockwise" texto="Volver a tapar el cupón" alTocar={() => { prueba.reiniciarCupon(); navegar('/puntos'); }} />
           ) : null}
@@ -230,6 +237,8 @@ export default function Cuenta() {
             <FilaAccion sf="checkmark.seal.fill" texto={prueba.cuponUsado ? 'Ver el cupón sin usar' : 'Ver el cupón ya usado'}
               alTocar={() => { prueba.verCuponUsado(!prueba.cuponUsado); navegar('/puntos'); }} />
           ) : null}
+          <FilaAccion sf="plus.circle.fill" texto="Simular: ganar 250 puntos" alTocar={() => { prueba.simularPuntos(250); navegar('/puntos'); }} />
+          <FilaAccion sf="minus.circle.fill" texto="Simular: usar 500 puntos" alTocar={() => { prueba.simularPuntos(-500); navegar('/puntos'); }} />
           <FilaAccion sf="gift.fill" texto="Ver la pantalla de cumpleaños" alTocar={() => navegar('/puntos?cumple=1')} />
           <FilaAccion sf="crown.fill" texto="Ver la pantalla de subir de nivel" alTocar={() => navegar('/puntos?nivel=1')} />
         </Grupo>

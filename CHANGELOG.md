@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1257.0 — App: Wallet por nivel, rangos de mayorista en prueba, reverso animado, cupón que se corta y animación de puntos
+
+- **La tarjeta de Apple Wallet cambia con el nivel:** fondo, color de rótulos y franja propios de Plata, Oro y Platino (antes todas salían moradas). `scripts/wallet/imagenes.py` genera las franjas por nivel (`FRANJAS_NIVEL`, sólo @2x/@3x) y `_shared/pase.ts` las usa. Verificado con la cuenta de prueba: Oro y Platino salen con sus colores y su franja.
+- **Rangos de Cliente Mayorista en modo de prueba:** Jade, Zafiro, Rubí y Diamante (de las Condiciones del Cliente Mayorista), cada uno con su tarjeta (verde jade, azul zafiro, rojo rubí, acero diamante con holograma) y un panel con rango, precio (Mayoreo / Plus / Elite), puntos por $1 de mayoreo, promedio mensual y cuánto falta para el siguiente. Se elige en Cuenta → Modo de prueba.
+- **Reverso de la tarjeta:** ahora tiene los mismos efectos que el frente (resplandor, acabado del nivel y luz).
+- **Brillo al girar:** se pide al tocar y no a mitad del giro (desde la reacción del giro no siempre llegaba); al salir de la pestaña con el QR a la vista vuelve el brillo de antes.
+- **El cupón usado se corta por las muescas:** al usarse se rasga por la línea punteada (vibraciones cortas), la parte grande se separa del talón y se inclina, y el sello «USADO» cae con un golpe. Abierto ya usado, se ve cortado y quieto.
+- **Sumar y restar puntos se ven:** si el saldo cambió desde la última vez, la tarjeta cuenta desde el anterior, flota una etiqueta «+250 pts» / «−500 pts» y destella en verde o rojo, con vibración. Modo de prueba: «Simular: ganar 250 puntos» y «Simular: usar 500 puntos».
+
 ## v2.1256.0 — App: raspable más difícil y animado, aviso al restar puntos, modo sin conexión, Wallet directo y pago más rápido
 
 - **Raspable más difícil y con más vida:** se mide lo raspado por celdas (14×5) y se descubre con el **70 %** de la superficie limpia, con un dedo más fino (24 pt). Antes contaba el largo del trazo: tres rayas en el mismo sitio lo descubrían. Mientras se raspa salta polvo plateado, la leyenda se apaga y vibra cada ~28 pt; al descubrir, la capa se abre, el premio salta con un resorte, el cupón destella, confeti y dos vibraciones.

@@ -11,11 +11,14 @@ import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import { Canvas, Group, LinearGradient as SkGradiente, Path, Rect, Skia, vec } from '@shopify/react-native-skia';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, interpolate, runOnJS, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import Icono from './Icono';
 import { COLORES_NIVEL } from './TarjetaSocio';
 import { Confeti } from './animacion';
 import { dolares, fecha } from '../lib/formato';
+
+// La línea punteada entre las muescas: por ahí se «corta» al usarlo.
+const CORTE = 86;
 
 const clave = (id) => `puntos_salud_cupon_raspado_${String(id).replace(/[^\w-]/g, '')}`;
 
@@ -38,8 +41,43 @@ export default function Cupon({ cupon, nivel = 'platino', fondo, activa = true, 
     if (!cupon?.id) return;
     SecureStore.getItemAsync(clave(cupon.id)).catch(() => null).then((v) => setRaspado(v === '1'));
   }, [cupon?.id]);
+
+  // Usado (2026-10-08): las muescas ya decían «por aquí se corta», así que al
+  // usarse el cupón se CORTA por la línea punteada: la parte grande se separa
+  // del talón con un tirón, se inclina un poco y cae el sello. Si se abre la
+  // app con el cupón ya usado, se ve cortado y quieto.
+  const usadoAhora = !!cupon && cupon.restantes <= 0;
+  const [medida, setMedida] = useState(null);
+  const corte = useSharedValue(usadoAhora ? 1 : 0);
+  const sello = useSharedValue(usadoAhora ? 1 : 0);
+  const antes = useRef(null);
+  useEffect(() => {
+    if (antes.current === false && usadoAhora) {
+      // El «rasgado»: vibraciones cortas seguidas, y el tirón.
+      [0, 60, 120, 180, 240].forEach((ms) => setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}), ms));
+      setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}), 300);
+      corte.value = withSequence(withTiming(-0.12, { duration: 140 }), withTiming(0.05, { duration: 160, easing: Easing.inOut(Easing.quad) }),
+        withSpring(1, { damping: 9, stiffness: 140 }));
+      sello.value = 0;
+      sello.value = withDelay(650, withSpring(1, { damping: 11, stiffness: 260 }));
+      setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {}), 760);
+    } else if (!usadoAhora) {
+      corte.value = 0; sello.value = 0;
+    } else if (antes.current == null) {
+      corte.value = 1; sello.value = 1;
+    }
+    antes.current = usadoAhora;
+  }, [usadoAhora]); // eslint-disable-line react-hooks/exhaustive-deps
+  const estiloParte = useAnimatedStyle(() => ({
+    transform: [{ translateX: corte.value * 12 }, { translateY: corte.value * 4 }, { rotate: `${corte.value * 3}deg` }],
+  }));
+  const estiloSello = useAnimatedStyle(() => ({
+    opacity: Math.min(1, sello.value * 1.4),
+    transform: [{ rotate: '-14deg' }, { scale: interpolate(sello.value, [0, 1], [2.6, 1]) }],
+  }));
+
   if (!cupon || raspado == null) return null;
-  const usado = cupon.restantes <= 0;
+  const usado = usadoAhora;
   const parcial = !usado && cupon.restantes < cupon.puntos;
   const paleta = COLORES_NIVEL[nivel] ?? COLORES_NIVEL.platino;
   const colores = usado ? ['#4A4A4F', '#8C8C93', '#5A5A60'] : paleta.frente;
@@ -55,9 +93,14 @@ export default function Cupon({ cupon, nivel = 'platino', fondo, activa = true, 
     destello.value = withSequence(withTiming(0.85, { duration: 120 }), withTiming(0, { duration: 700 }));
   };
 
-  return (
-    <View>
-      <View style={{ borderRadius: 22, overflow: 'hidden' }}>
+  const sello_ = usado ? (
+    <Animated.View pointerEvents="none" style={[{ position: 'absolute', right: 14, top: 18,
+      borderWidth: 3, borderColor: '#FF453A', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 2, backgroundColor: 'rgba(255,255,255,0.08)' }, estiloSello]}>
+      <Text style={{ color: '#FF453A', fontSize: 20, fontWeight: '900', letterSpacing: 3 }}>USADO</Text>
+    </Animated.View>
+  ) : null;
+
+  const cara = (
         <LinearGradient colors={colores} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={{ padding: 18, flexDirection: 'row', alignItems: 'center', gap: 16, minHeight: 104 }}>
           <View style={{ width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.18)' }}>
@@ -77,16 +120,33 @@ export default function Cupon({ cupon, nivel = 'platino', fondo, activa = true, 
             </Text>
           </View>
           {!usado && raspado ? <Brillo activa={activa} /> : null}
-          {usado ? (
-            <View pointerEvents="none" style={{ position: 'absolute', right: 14, top: 18, transform: [{ rotate: '-14deg' }],
-              borderWidth: 3, borderColor: '#FF453A', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 2, backgroundColor: 'rgba(255,255,255,0.08)' }}>
-              <Text style={{ color: '#FF453A', fontSize: 20, fontWeight: '900', letterSpacing: 3 }}>USADO</Text>
-            </View>
-          ) : null}
           <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: '#FFFFFF' }, estiloDestello]} />
         </LinearGradient>
-        {!raspado && !usado ? <Raspable key={`${cupon.id}-${demo}`} alDescubrir={descubrir} auto={auto} /> : null}
-      </View>
+  );
+
+  return (
+    <View>
+      {usado && medida ? (
+        // Cortado: el talón queda y la parte grande se separa. Las dos son la
+        // misma cara recortada, así el corte cae justo en la línea punteada.
+        <View style={{ height: medida.alto }}>
+          <View style={{ position: 'absolute', left: 0, top: 0, width: CORTE, height: medida.alto, overflow: 'hidden', borderTopLeftRadius: 22, borderBottomLeftRadius: 22 }}>
+            <View style={{ width: medida.ancho }}>{cara}</View>
+          </View>
+          <Animated.View style={[{ position: 'absolute', left: CORTE, top: 0, width: medida.ancho - CORTE, height: medida.alto, overflow: 'hidden',
+            borderTopRightRadius: 22, borderBottomRightRadius: 22, transformOrigin: 'left bottom' }, estiloParte]}>
+            <View style={{ width: medida.ancho, marginLeft: -CORTE }}>{cara}</View>
+            {sello_}
+          </Animated.View>
+        </View>
+      ) : (
+        <View style={{ borderRadius: 22, overflow: 'hidden' }}
+          onLayout={(e) => setMedida({ ancho: e.nativeEvent.layout.width, alto: e.nativeEvent.layout.height })}>
+          {cara}
+          {!raspado && !usado ? <Raspable key={`${cupon.id}-${demo}`} alDescubrir={descubrir} auto={auto} /> : null}
+          {usado ? sello_ : null}
+        </View>
+      )}
       {/* Las muescas de un cupón, del color del fondo. */}
       <View style={{ position: 'absolute', left: 78, top: -8, width: 16, height: 16, borderRadius: 8, backgroundColor: fondo }} />
       <View style={{ position: 'absolute', left: 78, bottom: -8, width: 16, height: 16, borderRadius: 8, backgroundColor: fondo }} />

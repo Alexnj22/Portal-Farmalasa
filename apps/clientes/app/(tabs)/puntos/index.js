@@ -4,11 +4,13 @@
 import { useMemo, useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, AppState, Platform, Pressable, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo } from '../../../componentes/ui';
 import { useCuenta } from '../../../lib/cuenta';
 import { dolares, entero, fecha, nombrePropio } from '../../../lib/formato';
 import TarjetaSocio from '../../../componentes/TarjetaSocio';
 import Nivel from '../../../componentes/Nivel';
+import Mayorista, { rangoDePrueba } from '../../../componentes/Mayorista';
 import Cupon from '../../../componentes/Cupon';
 import SubisteDeNivel from '../../../componentes/SubisteDeNivel';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -44,7 +46,26 @@ export default function Puntos() {
   const enPrueba = !!real?.prueba && prueba.activo;
   // El cupón de prueba se arma UNA vez (su premio es al azar).
   const cuponPrueba = useMemo(() => cuponDePrueba(prueba.nivel, prueba.semilla, prueba.cuponUsado), [prueba.nivel, prueba.semilla, prueba.cuponUsado]);
-  const resumen = enPrueba ? { ...real, nivel: nivelDePrueba(prueba.nivel), cupon: ['oro', 'platino'].includes(prueba.nivel) ? cuponPrueba : null } : real;
+  // En prueba el saldo se puede mover a mano («Simular: ganar/usar puntos») para ver la animación.
+  const saldoPrueba = enPrueba && real ? Math.max(0, Number(real.saldo ?? 0) + prueba.ajuste) : null;
+  const resumen = enPrueba ? { ...real, nivel: nivelDePrueba(prueba.nivel), cupon: ['oro', 'platino'].includes(prueba.nivel) ? cuponPrueba : null,
+    saldo: saldoPrueba, equivale: saldoPrueba / 100 } : real;
+
+  // Sumar y restar se VEN (2026-10-08): el último saldo que se mostró queda en
+  // el teléfono; si el nuevo es distinto, la tarjeta cuenta desde el anterior.
+  const saldoActual = resumen && !resumen.pendiente ? Number(resumen.saldo ?? 0) : null;
+  const claveSaldo = `puntos_salud_saldo_visto_${String(resumen?.codigo ?? '').replace(/[^\w]/g, '')}`;
+  const [movSaldo, setMovSaldo] = useState({ previo: null, cambio: null });
+  useEffect(() => {
+    if (saldoActual == null || !resumen?.codigo) return;
+    SecureStore.getItemAsync(claveSaldo).catch(() => null).then((v) => {
+      const antes = v == null ? null : Number(v);
+      if (antes != null && Number.isFinite(antes) && antes !== saldoActual) {
+        setMovSaldo({ previo: { saldo: antes, equivale: antes / 100 }, cambio: { id: Date.now(), delta: saldoActual - antes } });
+      }
+      SecureStore.setItemAsync(claveSaldo, String(saldoActual)).catch(() => {});
+    });
+  }, [saldoActual, claveSaldo]); // eslint-disable-line react-hooks/exhaustive-deps
   const visible = useVisible();
   const [refrescando, setRefrescando] = useState(false);
   const pedir = useSesion((s) => s.pedir);
@@ -124,7 +145,8 @@ export default function Puntos() {
 
       {/* La tarjeta de socio: saldo al frente, código y QR al reverso. */}
       <Entrada indice={1}>
-        <TarjetaSocio activa={visible} nivel={resumen.nivel?.clave} nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
+        <TarjetaSocio activa={visible} nivel={enPrueba && prueba.mayorista ? prueba.mayorista : resumen.nivel?.clave} nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
+          previo={movSaldo.previo} cambio={movSaldo.cambio}
           codigo={resumen.codigo} socioDesde={resumen.socio_desde} />
       </Entrada>
 
@@ -137,6 +159,12 @@ export default function Puntos() {
 
       {/* El nivel: Cliente VIP, Plata, Oro o Platino, y cuánto falta. Justo
           debajo de la tarjeta (usuario, 2026-10-07). */}
+      {/* Cliente Mayorista (modo de prueba): su rango, arriba del nivel de puntos. */}
+      {enPrueba && prueba.mayorista ? (
+        <Entrada indice={1}>
+          <Mayorista rango={rangoDePrueba(prueba.mayorista)} />
+        </Entrada>
+      ) : null}
       {resumen.nivel ? (
         <Entrada indice={1}>
           <Nivel nivel={resumen.nivel} />

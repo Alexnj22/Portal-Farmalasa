@@ -103,3 +103,8 @@ export async function guardarAjustesEnvio({ activo, costo, gratisDesde, nota }, 
     // Sin policy que lo deje, el UPDATE devuelve 0 filas sin error: se dice.
     if (!filas?.length) throw new Error('No tienes permiso para cambiar el envío a domicilio.');
 }
+
+/** El anticipo de una reserva vencida queda a favor 30 días: la sala lo marca al aplicarlo en caja. */
+export async function usarSaldoAFavor(id) {
+    return sinError(await supabase.rpc('reserva_usar_saldo_favor', { p_id: Number(id) }));
+}

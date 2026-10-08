@@ -30,6 +30,9 @@ export function lineasDeDecision(req) {
  *  · `editable`    — hay algo que ajustar (se decide, es un movimiento o un abono, y no se está rechazando).
  *  · `conCantidad` — además de marcar, se puede bajar la cantidad (no en un abono).
  *  · `porLinea`    — hay casillas: con UNA sola línea, desmarcarla sería rechazar, y para eso está su botón.
+ *
+ * @param {any} req
+ * @param {{ decidible?: boolean, rechazando?: boolean }} [opciones]
  */
 export function ajustesPosibles(req, { decidible, rechazando = false } = {}) {
     const abono = esAbonoPorConfirmar(req);

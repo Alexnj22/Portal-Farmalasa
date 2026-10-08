@@ -125,7 +125,7 @@ export async function confirmarLlegadaDeReenvio({
 
     const espLlegaron = (especialesList ?? []).filter((l) => !especialesAun.includes(l));
     if (espLlegaron.length || especialesAun.length) {
-        const merged = { ...(pss?.cajas_especiales_llegadas ?? {}) };
+        const merged = { .../** @type {Record<string, string>} */ (pss?.cajas_especiales_llegadas ?? {}) };
         for (const l of espLlegaron) merged[l] = 'ok';
         for (const l of especialesAun) merged[l] = 'faltante';
         sinError(await updatePedidoSucursalStatus(pedidoId, sucId, { cajas_especiales_llegadas: merged }));

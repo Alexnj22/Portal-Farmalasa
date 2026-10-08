@@ -265,6 +265,31 @@ Deno.serve(async (req) => {
     // ════════════════════════════════════════════════════════════════════
     // Sin sesión: entrar y registrarse.
     // ════════════════════════════════════════════════════════════════════
+    // ── Errores de la app (2026-10-08): la app manda aquí lo que falla, con o
+    // sin sesión (también falla antes de entrar). Con freno: si en 5 minutos ya
+    // llegaron 300, se descarta — un bucle no puede llenar la tabla.
+    if (accion === "reportar_error") {
+      const txt = (v: unknown, n: number) => (v == null ? null : String(v).slice(0, n));
+      const { count, error: eC } = await admin.from("app_errores").select("id", { count: "exact", head: true })
+        .gte("created_at", new Date(Date.now() - 5 * 60_000).toISOString());
+      if (eC) console.error("reportar_error: conteo", eC.message);
+      if ((count ?? 0) >= 300) return json({ ok: true, descartado: true });
+      let customerId: number | null = null;
+      if (typeof body?.token === "string" && body.token.length > 10) {
+        const { data: ses, error: eS } = await admin.from("app_cliente_sesiones").select("customer_id")
+          .eq("token_hash", await sha256(body.token)).is("revocada_at", null).maybeSingle();
+        if (eS) console.error("reportar_error: sesión", eS.message);
+        customerId = ses?.customer_id ?? null;
+      }
+      const { error } = await admin.from("app_errores").insert({
+        customer_id: customerId, fatal: body?.fatal === true, mensaje: txt(body?.mensaje, 1000) ?? "(sin mensaje)",
+        pila: txt(body?.pila, 8000), pantalla: txt(body?.pantalla, 200), version: txt(body?.version, 40),
+        compilacion: txt(body?.compilacion, 40), plataforma: txt(body?.plataforma, 20), dispositivo: txt(body?.dispositivo, 120),
+      });
+      if (error) console.error("reportar_error:", error.message);
+      return json({ ok: true });
+    }
+
     if (accion === "entrar") {
       const doc = limpiarDoc(body?.documento);
       const tel = limpiarTel(body?.telefono);
@@ -731,7 +756,7 @@ Deno.serve(async (req) => {
 
     if (accion === "mis_reservas") {
       const { data, error } = await admin.from("app_reservas")
-        .select("id, estado, origen, pedido, documento, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega, costo_envio")
+        .select("id, estado, origen, pedido, documento, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega, costo_envio, saldo_favor, saldo_favor_vence, saldo_favor_usado_at")
         .eq("customer_id", customerId).gte("created_at", new Date(Date.now() - 45 * 86400_000).toISOString())
         .order("created_at", { ascending: false }).limit(30);
       if (error) throw error;

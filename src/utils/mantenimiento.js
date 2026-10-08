@@ -81,7 +81,7 @@ export const rotuloDeInterruptor = (accion) => INTERRUPTOR[accion] ?? SIN_NOMBRE
 
 /** Lo que le falta a un candado: «faltan 28 min», «faltan 3 h 5 min» o «vencido». */
 export function tiempoRestante(expiresAt, ahora = Date.now()) {
-    const ms = new Date(expiresAt) - ahora;
+    const ms = new Date(expiresAt).getTime() - Number(ahora);
     if (ms <= 0) return 'vencido';
     const min = Math.floor(ms / 60000);
     if (min < 60) return `faltan ${min} min`;
@@ -90,7 +90,7 @@ export function tiempoRestante(expiresAt, ahora = Date.now()) {
 
 /** Cuántas horas dura un candado (redondeado, al menos 1), como texto para el selector. */
 export const horasDelCandado = (lock) =>
-    String(Math.max(1, Math.round((new Date(lock.expires_at) - new Date(lock.locked_at)) / 3600_000)));
+    String(Math.max(1, Math.round((new Date(lock.expires_at).getTime() - new Date(lock.locked_at).getTime()) / 3600_000)));
 
 /** Cuánto puede durar un candado: las mismas opciones en el portal y en la app. */
 export const HORAS_DE_CANDADO = [1, 2, 4, 8, 12, 24].map((h) => ({ value: String(h), label: h === 1 ? '1 hora' : `${h} horas` }));

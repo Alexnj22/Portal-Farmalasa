@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { CheckCircle2, MessageCircle, PackageCheck, Plus, ShoppingBag, Truck, XCircle } from 'lucide-react';
+import { CheckCircle2, MessageCircle, PackageCheck, Plus, ShoppingBag, Truck, Wallet, XCircle } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import ListRow from '../../components/common/ListRow';
@@ -14,9 +14,10 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
+import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import {
-    cambiarEstadoReserva, codigoDeReserva, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp,
+    cambiarEstadoReserva, codigoDeReserva, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, usarSaldoAFavor,
     mensajeDeReservaLista, whatsappDe,
 } from '@nucleo/data/reservas';
 
@@ -117,11 +118,21 @@ export default function WidgetReservas({ todas = false }) {
         );
     }
 
-    const pendientes = filas.filter((r) => r.estado === 'pendiente').length;
+    // Los saldos a favor (anticipos de reservas vencidas) van aparte: no son reservas abiertas.
+    const saldos = filas.filter((r) => r.estado === 'vencida' && Number(r.saldo_favor) > 0);
+    const abiertas = filas.filter((r) => r.estado !== 'vencida');
+    const usarSaldo = async (r) => {
+        setOcupada(r.id);
+        try { await usarSaldoAFavor(r.id); showToast('Saldo a favor aplicado', `${formatMoney(Number(r.saldo_favor))} de ${String(r.cliente ?? '').split(/\s+/)[0]}`, 'success'); cargar(); }
+        catch (err) { showToast('No se pudo aplicar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error'); }
+        finally { setOcupada(null); }
+    };
+
+    const pendientes = abiertas.filter((r) => r.estado === 'pendiente').length;
     const buscado = codigo.trim().toUpperCase();
     const visibles = buscado
-        ? filas.filter((r) => codigoDeReserva(r.id).includes(buscado) || String(r.pedido ?? '').includes(buscado))
-        : (todas ? filas : filas.slice(0, MAX_FILAS));
+        ? abiertas.filter((r) => codigoDeReserva(r.id).includes(buscado) || String(r.pedido ?? '').includes(buscado))
+        : (todas ? abiertas : abiertas.slice(0, MAX_FILAS));
     const delPedido = buscado.startsWith('P-') ? visibles.filter((r) => r.pedido === buscado) : [];
     // Un pedido del carrito es UNA tarjeta con todos sus productos (2026-10-07).
     const grupos = [];
@@ -207,8 +218,23 @@ export default function WidgetReservas({ todas = false }) {
                     </li>
                 ))}
             </ul>
-            {!todas && !buscado && filas.length > MAX_FILAS && (
-                <span className="text-label text-content-3 mt-auto">y {filas.length - MAX_FILAS} más</span>
+            {!todas && !buscado && abiertas.length > MAX_FILAS && (
+                <span className="text-label text-content-3 mt-auto">y {abiertas.length - MAX_FILAS} más</span>
+            )}
+            {saldos.length > 0 && (
+                <div className="space-y-1.5">
+                    <p className="text-label font-semibold text-content-2">Saldos a favor (anticipos de reservas vencidas)</p>
+                    <ul className="space-y-1.5 min-w-0">
+                        {saldos.map((r) => (
+                            <li key={r.id}>
+                                <ListRow surface="card" density="sm" icon={Wallet}
+                                    title={`${formatMoney(Number(r.saldo_favor))} a favor de ${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}`}
+                                    subtitle={`${codigoDeReserva(r.id)} · ${r.producto} · vale hasta el ${fechaTexto(r.saldo_favor_vence, { day: 'numeric', month: 'short' })}${todas && r.sala ? ` · ${r.sala}` : ''}`}
+                                    trailing={<Button variant="secondary" size="xs" icon={CheckCircle2} loading={ocupada === r.id} onClick={() => usarSaldo(r)}>Aplicado en caja</Button>} />
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             )}
             <WidgetEncargos branchId={salaEncargos} />
             {modalNueva}

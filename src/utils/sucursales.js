@@ -105,7 +105,7 @@ export const alertasDeSucursal = (branch, currentTimestamp, branchEmployees = []
         if (!dateString) return;
         const [year, month, day] = dateString.split('-');
         const targetDate = new Date(year, month - 1, day, 0, 0, 0, 0);
-        const diffDays = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
+        const diffDays = Math.ceil((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
         if (diffDays < 0) alerts.push({ level: 'critical', message: `${label} Vencido(a)`, icono: 'AlertTriangle' });
         else if (diffDays <= warningDays) alerts.push({ level: 'warning', message: `${label} vence en ${diffDays} días`, icono: 'AlertTriangle' });
@@ -115,7 +115,7 @@ export const alertasDeSucursal = (branch, currentTimestamp, branchEmployees = []
         if (!paidThrough) return;
         const [year, month] = paidThrough.split('-');
         const targetDate = new Date(year, month, 0, 0, 0, 0, 0); 
-        const diffDays = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
+        const diffDays = Math.ceil((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
         if (diffDays < -15) alerts.push({ level: 'critical', message: `Pago de ${serviceName} atrasado`, icono: 'AlertTriangle' });
         else if (diffDays < 0) alerts.push({ level: 'warning', message: `Revisar pago de ${serviceName}`, icono: 'AlertCircle' });

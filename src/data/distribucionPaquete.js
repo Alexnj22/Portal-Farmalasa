@@ -68,5 +68,5 @@ export async function paqueteDelMes(mes) {
     ]);
     const entradas = archivosDelPaquete({ ventas, compras, relacionadas });
     if (!entradas.length) return null;
-    return { entradas, nombre: `torogoz-paquete-${mes}.zip`, archivos: entradas.length, sinSello: Number(ventas?.sin_sello?.documentos ?? 0) };
+    return { entradas, nombre: `torogoz-paquete-${mes}.zip`, archivos: entradas.length, sinSello: Number(/** @type {any} */ (ventas)?.sin_sello?.documentos ?? 0) };
 }

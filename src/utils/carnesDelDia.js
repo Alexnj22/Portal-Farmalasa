@@ -42,5 +42,5 @@ export function carnesPorSala(filas) {
     }
     return [...mapa.entries()]
         .map(([sala, items]) => ({ sala, items: [...items].sort((a, b) => a.nombre.localeCompare(b.nombre)) }))
-        .sort((a, b) => (a.sala === SIN_SUCURSAL) - (b.sala === SIN_SUCURSAL) || a.sala.localeCompare(b.sala));
+        .sort((a, b) => Number(a.sala === SIN_SUCURSAL) - Number(b.sala === SIN_SUCURSAL) || a.sala.localeCompare(b.sala));
 }

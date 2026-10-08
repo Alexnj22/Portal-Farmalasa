@@ -176,13 +176,13 @@ function nombreSeguro(nombre) {
  * nueva de ese diseño: la base le pone el número y retira la anterior.
  * `medidas` ({ tamano, ancho, alto }) las mide la pantalla al elegir el archivo.
  *
- * @param {{ mesId: string, piezaId: string, archivo: File, orden?: number, subidoPor?: string,
+ * @param {{ mesId: string, piezaId: string, archivo: File | { name: string, type?: string, size?: number, datos?: any }, orden?: number, subidoPor?: string,
  *           anteriorId?: string | null, medidas?: { tamano?: number, ancho?: number, alto?: number } }} p
  */
 export async function subirDiseno({ mesId, piezaId, archivo, orden, subidoPor, anteriorId = null, medidas = {} }) {
     const path = `${mesId}/${piezaId}/${Date.now()}-${nombreSeguro(archivo.name)}`;
     // `archivo` es un File del navegador o lo que arma la app: `{ name, type, size, datos }`.
-    const url = await subirArchivo(BUCKET_MARKETING, path, archivo.datos ?? archivo, { contentType: archivo.type });
+    const url = await subirArchivo(BUCKET_MARKETING, path, /** @type {any} */ (archivo).datos ?? archivo, { contentType: archivo.type });
     const data = sinError(await supabase.from('marketing_archivos').insert({
         pieza_id: piezaId, url, nombre: archivo.name, mime: archivo.type || null,
         orden: orden ?? 0, subido_por: subidoPor, anterior_id: anteriorId,

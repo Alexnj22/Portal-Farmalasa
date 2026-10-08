@@ -129,7 +129,7 @@ export function clasificarCompras(purchases, hoy = new Date()) {
 /** Las compras con recibo, de la más nueva a la más vieja. */
 export const comprasOrdenadas = (purchases) => [...(purchases || [])]
     .filter((p) => p.purchase_receipts)
-    .sort((a, b) => new Date(b.purchase_receipts.fecha) - new Date(a.purchase_receipts.fecha));
+    .sort((a, b) => new Date(b.purchase_receipts.fecha).getTime() - new Date(a.purchase_receipts.fecha).getTime());
 
 /**
  * El historial de precios sin repetidos: `product_precios_history` guarda una
@@ -144,5 +144,5 @@ export function historialDePreciosSinRepetir(history) {
         const snap = JSON.stringify(ORDEN_DE_NIVELES.map((k) => r[k]));
         if (lastByPres[key] !== snap) { out.push(r); lastByPres[key] = snap; }
     }
-    return out.sort((a, b) => new Date(b.valid_from) - new Date(a.valid_from));
+    return out.sort((a, b) => new Date(b.valid_from).getTime() - new Date(a.valid_from).getTime());
 }

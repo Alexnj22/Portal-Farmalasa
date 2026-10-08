@@ -31,7 +31,7 @@ export function indexarLotes(filas) {
         m.get(k).push({ id: Number(l.id), lote: l.lote, vence: l.vence ?? null, existencia: Number(l.existencia) || 0 });
     }
     for (const lista of m.values()) {
-        lista.sort((a, b) => (a.vence == null) - (b.vence == null) || String(a.vence).localeCompare(String(b.vence)) || a.id - b.id);
+        lista.sort((a, b) => Number(a.vence == null) - Number(b.vence == null) || String(a.vence).localeCompare(String(b.vence)) || a.id - b.id);
     }
     return m;
 }

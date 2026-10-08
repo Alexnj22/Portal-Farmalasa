@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1260.1 — gate:tipos vuelve a verde: 19 archivos del núcleo
+
+- **`gate:tipos` vuelve a verde.** Estaba en verde el 2026-10-05 y desde entonces entraron 19 archivos del núcleo con avisos nuevos (no corre en el pre-commit). Todos de forma, ninguno de contrato con la base: restas entre fechas (`Date - Date` → `.getTime()`), restas entre booleanos al ordenar (`Number(...)`), parámetros por desestructuración sin JSDoc (tsc infería el tipo del valor por defecto `{}`), dos arreglos sin tipo al que luego se le agrega una propiedad, y los imports `.ts` de la distribuidora (`allowImportingTsExtensions` en `tsconfig.nucleo.json`, válido con `noEmit`). Ningún cambio de comportamiento. Baseline fijado (4 archivos bajaron).
+- **Anticipo de una reserva que vence sin retirarse → saldo a favor 30 días** (decisión del usuario): `reservas_vencer` lo deja en `app_reservas.saldo_favor` con su vencimiento; no se devuelve en efectivo. La sala lo ve en su tablero («Saldos a favor») y lo marca «Aplicado en caja» (`reserva_usar_saldo_favor`, sólo su sala, queda en la bitácora). La constancia impresa lo dice y la app lo muestra en Mis reservas.
+- **Errores de la app al portal:** mientras no haya cuenta de Sentry (crearla la tiene que hacer el usuario), cada error de JavaScript —también los fatales, antes de cerrarse— se manda a `app_errores` por la acción `reportar_error`: mensaje y pila (limpios de DUI y tokens), pantalla, versión, compilación y modelo. Con freno de 300 cada 5 minutos y retención de 90 días.
+
 ## v2.1260.0 — Clientes Mayoristas en el portal y la app, tarjeta de Equipo, Bronce, medallón del logo y arreglos
 
 - **Portal: Clientes Mayoristas** (Comercial → Clientes Mayoristas, módulo de permisos `mayoristas`), según las Condiciones del Cliente Mayorista y el Procedimiento de Clientes actualizados (docs/legal, vigentes 15-oct-2026). Pestañas **Solicitudes** (de la app o propuestas por un dependiente), **Candidatos** (quien compró a precio de mayoreo en 6 meses, con el requisito de la cláusula 2.3 a la vista: promedio $100/mes en 3 meses o una factura de $500), **Mayoristas** (precio y rango del mes) e **Historial** (todo, de un solo lugar). El detalle muestra compras por mes, margen (interno), regularidad y antigüedad, y permite proponer, aprobar o rechazar (con motivo), cambiar el precio o retirar.

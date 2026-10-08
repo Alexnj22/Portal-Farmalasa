@@ -342,6 +342,11 @@ export const LEVELS_WITH_PROFESSION = ['UNIVERSITARIO'];
  * lista nueva. Se archiva sólo cuando de verdad se REEMPLAZA un archivo por
  * otro: la traza (cuándo y quién) va siempre; el archivo anterior, sólo en los
  * documentos de `CON_ARCHIVO_ANTERIOR`. Quitar un archivo no archiva nada.
+ *
+ * @param {any[]} lista
+ * @param {string} categoria
+ * @param {any} patch
+ * @param {{ quien?: string, hoy?: string, listaDeLaFicha?: any[] }} [opciones]
  */
 export function documentoReemplazado(lista, categoria, patch, { quien = '', hoy, listaDeLaFicha = [] } = {}) {
     const docs = [...(lista || [])];

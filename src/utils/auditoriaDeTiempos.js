@@ -53,7 +53,7 @@ export function auditarDia({ dateStr, emp, shiftById, timesheets = [], homeBranc
 
     const dayPunches = (emp.attendance || [])
         .filter((p) => getCSTDateStr(p.timestamp) === dateStr)
-        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     const entryPunch = dayPunches.find((p) => TIPOS_DE_ENTRADA.has(p.type));
     const exitPunch = [...dayPunches].reverse().find((p) => TIPOS_DE_SALIDA.has(p.type));
     const lunchOut = dayPunches.find((p) => p.type === 'OUT_LUNCH');

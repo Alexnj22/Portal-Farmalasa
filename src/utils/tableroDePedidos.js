@@ -13,8 +13,8 @@ export function elapsed(isoFrom, isoTo = null) {
     if (!isoFrom) return null;
     const from = new Date(isoFrom);
     const to   = isoTo ? new Date(isoTo) : new Date();
-    if (isNaN(from) || isNaN(to)) return null;
-    return Math.floor((to - from) / 60_000);
+    if (isNaN(from.getTime()) || isNaN(to.getTime())) return null;
+    return Math.floor((to.getTime() - from.getTime()) / 60_000);
 }
 
 export function fmtEntrega(iso) {
@@ -411,6 +411,7 @@ export function pasosDelPedido(row, { quien = () => null, entrega = null, conduc
     if (!row) return [];
     const p = id => (id ? quien(id) ?? null : null);
     const entregador = entrega?.entregado_por ? (p(entrega.entregado_por) ?? conductor) : conductor;
+    /** @type {Array<{ key: string, label: string, time: any, emp: any, isRutaNode?: boolean, extra?: boolean }>} */
     const pasos = [
         { key: 'confirmado',     label: 'Confirmado', time: row.created_at,          emp: p(row.created_by) },
         { key: 'iniciado',       label: 'Inicio',     time: row.iniciado_at,         emp: p(row.iniciado_por) },

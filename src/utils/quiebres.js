@@ -18,6 +18,9 @@ export function resumenDeQuiebres(filas, diasFoto) {
 /**
  * Los filtros de la lista. «Con Min/Max» (puesto por defecto) deja sólo lo que
  * la sala ya decidió tener; «Nunca hubo», lo que no tuvo existencia ni un día.
+ *
+ * @param {any[]} filas
+ * @param {{ diasFoto?: number, soloConMinMax?: boolean, soloSinNada?: boolean, busca?: string }} [filtros]
  */
 export function filtrarQuiebres(filas, { diasFoto, soloConMinMax = true, soloSinNada = false, busca = '' } = {}) {
     const t = String(busca || '').trim();

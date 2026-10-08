@@ -21,7 +21,7 @@ export function limiteDeEnvioABodega(fechaVencimiento, mesesDevolucion) {
  *  · no devolutivo (ND) → avisar al jefe a partir de ~7 meses antes.
  */
 export function avisoDeLote(lote, politica, ahora = new Date()) {
-    const dias = Math.ceil((new Date(lote.fecha_vencimiento) - ahora) / 86400000);
+    const dias = Math.ceil((new Date(lote.fecha_vencimiento).getTime() - new Date(ahora).getTime()) / 86400000);
     const limite = politica?.es_devolutivo && politica?.meses_devolucion != null
         ? limiteDeEnvioABodega(lote.fecha_vencimiento, politica.meses_devolucion) : null;
     return {

@@ -70,6 +70,8 @@ export function crearAnotador(registrar) {
  * Empieza a medir y anotar. Devuelve una función que detiene todo.
  * `alProblema(motivo|null)` avisa si el GPS falla ('denegado'|'sin-senal'|'sin-gps')
  * y lo limpia en cuanto vuelve a llegar una posición.
+ *
+ * @param {{ mensaje?: string, alProblema?: (motivo: string | null) => void }} [opciones]
  */
 export function arrancarRastreo({ mensaje = 'Ruta de Torogoz activa.', alProblema } = {}) {
     const anotador = crearAnotador((p) => {

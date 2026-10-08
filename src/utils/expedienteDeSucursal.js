@@ -18,7 +18,7 @@ export const DIAS_DE_AVISO_DOCUMENTO = 45;
 export function estadoDeDocumento(url, expDate, hoy = new Date()) {
     if (!url) return { type: 'MISSING', label: 'Falta documento', variant: 'warning' };
     if (expDate) {
-        const diff = Math.ceil((new Date(expDate) - hoy) / (1000 * 60 * 60 * 24));
+        const diff = Math.ceil((new Date(expDate).getTime() - new Date(hoy).getTime()) / (1000 * 60 * 60 * 24));
         if (diff < 0) return { type: 'EXPIRED', label: 'Vencido', variant: 'danger', dias: diff };
         if (diff <= DIAS_DE_AVISO_DOCUMENTO) return { type: 'WARNING', label: `Vence en ${diff}d`, variant: 'chart-4', dias: diff };
     }
@@ -41,6 +41,7 @@ export function documentosDeSucursal(b) {
     const hasInjections = !!legal.injections;
     const hasControlledBooks = !!legal.controlledBooks;
 
+    /** @type {Array<{ id: string, title: string, url: any, expDate: any, hasExpiration?: boolean, modal: string }>} */
     const permisos = [
         { id: 'srs', title: 'Licencia CSSP / DNM', url: legal.srsPermitUrl, expDate: legal.srsExpiration, hasExpiration: true, modal: 'editSrsPermit' },
         { id: 'alcaldia', title: 'Solvencia Municipal', url: legal.municipalUrl, expDate: legal.municipalExpiration, hasExpiration: true, modal: 'editBranchLegal' },

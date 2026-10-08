@@ -4,9 +4,11 @@
 import { Text, View } from 'react-native';
 import { Boton } from './ui';
 import { colorSistema } from './sistema';
+import { reportarError } from '../lib/errores';
 
 export default function ErrorDePantalla({ error, retry }) {
   console.error('Pantalla con error:', error?.message ?? error);
+  reportarError(error, { fatal: false });
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 14 }}>
       <Text style={{ fontSize: 44 }}>😕</Text>

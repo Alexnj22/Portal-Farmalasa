@@ -311,6 +311,19 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando }) {
         ) : null}
       </View>
 
+      {/* El anticipo de una reserva vencida queda a favor 30 días (2026-10-08). */}
+      {Number(r.saldo_favor) > 0 ? (
+        <View style={{ borderRadius: 14, padding: 12, gap: 2, backgroundColor: 'rgba(52,199,89,0.12)' }}>
+          <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto }}>
+            {r.saldo_favor_usado_at ? `Usaste tu saldo a favor de ${dolares(r.saldo_favor)}` : `Tienes ${dolares(r.saldo_favor)} a favor`}
+          </Text>
+          {!r.saldo_favor_usado_at ? (
+            <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>
+              Tu anticipo te sirve para otra compra en cualquier sucursal hasta el {fecha(r.saldo_favor_vence)}. No se devuelve en efectivo.
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
       {r.pago_estado === 'pendiente' && Number(r.total) > 0 ? (
         <View style={{ gap: 6 }}>
           {/* Un pedido del carrito se cobra entero: sus productos + el envío. */}

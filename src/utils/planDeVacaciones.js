@@ -60,7 +60,7 @@ export function elegibilidadDeVacaciones(fechaIngreso, hoy) {
     const aFecha = (s) => { const [a, m, d] = String(s).slice(0, 10).split('-').map(Number); return new Date(Date.UTC(a, m - 1, d)); };
     const aTexto = (d) => d.toISOString().slice(0, 10);
     const ingreso = aFecha(fechaIngreso), ahora = aFecha(hoy);
-    const ms = ahora - ingreso;
+    const ms = ahora.getTime() - ingreso.getTime();
     const anios = ms / (1000 * 60 * 60 * 24 * 365.25);
     const meses = Math.floor(ms / (1000 * 60 * 60 * 24 * 30.44));
     const elegible = anios >= 1;

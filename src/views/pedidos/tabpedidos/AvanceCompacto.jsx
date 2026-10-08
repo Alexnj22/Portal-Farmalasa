@@ -17,7 +17,7 @@
 // siete pasos del flujo: los extra (falta caja, reenvío, diferencias) los dice
 // la fila de datos con su número.
 import React from 'react';
-import { Check, Pause, Warehouse, Store } from 'lucide-react';
+import { Check, Pause, Warehouse, Store, AlertTriangle, Truck, PackageCheck, ClipboardCheck, ClipboardX } from 'lucide-react';
 import { pasosDelPedido, PASO_DE_LA_ETAPA, fmtHM, fmtMin, elapsed } from '@nucleo/utils/tableroDePedidos';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
@@ -42,6 +42,18 @@ const TRAMO = {
     bodega: { titulo: 'Bodega y transporte', Icono: Warehouse, punto: 'bg-chart-3', borde: 'border-chart-3', linea: 'bg-chart-3/60', texto: 'text-chart-3-text' },
     sala:   { titulo: 'Sucursal',            Icono: Store,     punto: 'bg-chart-9', borde: 'border-chart-9', linea: 'bg-chart-9/60', texto: 'text-chart-9-text' },
 };
+// Lo que se salió del flujo (faltante, reenvío, diferencias), con quién y
+// cuándo. Antes sólo vivía en la línea completa de la tarjeta: en la lista no
+// había forma de saber quién reportó el faltante.
+const INCIDENCIA = [
+    [/^falta_caja$/,   AlertTriangle,  'text-danger-text'],
+    [/^reenvio/,       Truck,          'text-brand-text'],
+    [/^seg_llegada/,   PackageCheck,   'text-success-text'],
+    [/^diferencias$/,  ClipboardX,     'text-warning-text'],
+    [/^corregido$/,    ClipboardCheck, 'text-success-text'],
+];
+const incidenciaDe = key => INCIDENCIA.find(([re]) => re.test(key)) ?? [null, AlertTriangle, 'text-content-2'];
+
 const LADO = { confirmado: 'bodega', iniciado: 'bodega', preparado: 'bodega', enviado: 'bodega', ruta_entregado: 'bodega', llegada: 'sala', erp: 'sala' };
 
 /**
@@ -82,7 +94,9 @@ export function EncabezadoDeAvance() {
 }
 
 export default function AvanceCompacto({ row, stage, rutaStop = null, conductor = null, rotulos = 'sm', detalle = false, quien = () => null, apoyo = null }) {
-    const pasos     = pasosDelPedido(row, { entrega: rutaStop, quien, conductor }).slice(0, 7);
+    const todos     = pasosDelPedido(row, { entrega: rutaStop, quien, conductor });
+    const pasos     = todos.slice(0, 7);
+    const incidencias = detalle ? todos.slice(7).filter(x => x.time) : [];
     const activeIdx = PASO_DE_LA_ETAPA[stage] ?? 0;
     const pausado   = stage === 'pausado';
     // En «Finalizado» ya no hay nada en curso: el último paso es un hecho.
@@ -165,7 +179,7 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
         );
     };
 
-    return (
+    const linea = (
         <div className="flex items-start w-full gap-3" aria-label="Avance del pedido">
             {tramos.map((lista, ti) => {
                 const lado = ti === 0 ? 'bodega' : 'sala';
@@ -196,6 +210,31 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
                     </React.Fragment>
                 );
             })}
+        </div>
+    );
+    if (incidencias.length === 0) return linea;
+    return (
+        <div className="flex flex-col gap-3">
+            {linea}
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-2.5 border-t border-divider">
+                <span className="text-micro font-semibold text-content-3 uppercase tracking-wider">Incidencias</span>
+                {incidencias.map(x => {
+                    const [, Icono, tono] = incidenciaDe(x.key);
+                    return (
+                        <span key={x.key} className="flex items-center gap-1.5 text-micro">
+                            <Icono size={13} className={tono} aria-hidden="true" />
+                            <span className={`font-semibold ${tono}`}>{x.label}</span>
+                            <span className="text-content-3 tabular-nums">{fmtHM(x.time)}</span>
+                            {x.emp && (
+                                <>
+                                    <AvatarConEstado emp={x.emp} px={18} radio="rounded-full" marco="" mostrarChip={false} />
+                                    <span className="text-content-2">{shortEmployeeName(x.emp)}</span>
+                                </>
+                            )}
+                        </span>
+                    );
+                })}
+            </div>
         </div>
     );
 }

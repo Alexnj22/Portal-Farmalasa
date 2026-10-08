@@ -233,19 +233,58 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
     // encabezado de la vista, que también es pegajoso y cuyo alto cambia con
     // la densidad y las pestañas. Se MIDE en vez de adivinarse.
     const [topEncabezado, setTopEncabezado] = React.useState(96);
+    // Cuánto sobresale la barra de la página a cada lado de la lista: pegado,
+    // el encabezado toma ESE ancho para leerse como su continuación.
+    const [alas, setAlas] = React.useState({ izq: 0, der: 0 });
+    const listaRef = React.useRef(null);
     React.useLayoutEffect(() => {
         if (vista !== 'lista') return undefined;
         const hdr = document.querySelector('[data-surface="page-header"]');
         if (!hdr) return undefined;
         const medir = () => {
             const top = parseFloat(getComputedStyle(hdr).top) || 0;
-            setTopEncabezado(Math.round(top + hdr.getBoundingClientRect().height + 8));
+            const r = hdr.getBoundingClientRect();
+            setTopEncabezado(Math.round(top + r.height));
+            const l = listaRef.current?.getBoundingClientRect();
+            if (l) setAlas({ izq: Math.max(0, Math.round(l.left - r.left)), der: Math.max(0, Math.round(r.right - l.right)) });
         };
         medir();
         const ro = new ResizeObserver(medir);
         ro.observe(hdr);
+        if (listaRef.current) ro.observe(listaRef.current);
         return () => ro.disconnect();
-    }, [vista]);
+    }, [vista, loading]);
+
+    // Pegado (2026-10-08): al quedar fijo, el encabezado de columnas SALE de
+    // debajo de la barra de la página —se desliza desde ella— y se pega a su
+    // borde sin esquinas arriba, así se lee como una sola pieza. El centinela
+    // de altura 0 justo antes dice cuándo pasó: cuando cruza el borde de la
+    // barra. Va por la Web Animations API y no por una clase: la animación es
+    // de un instante (el cruce), no un estado.
+    const centinelaRef = React.useRef(null);
+    const encabezadoRef = React.useRef(null);
+    const [pegado, setPegado] = React.useState(false);
+    React.useEffect(() => {
+        const c = centinelaRef.current;
+        if (vista !== 'lista' || !c) return undefined;
+        const io = new IntersectionObserver(([e]) => {
+            setPegado(!e.isIntersecting && e.boundingClientRect.top < topEncabezado + 1);
+        }, { rootMargin: `-${topEncabezado + 1}px 0px 0px 0px`, threshold: 0 });
+        io.observe(c);
+        return () => io.disconnect();
+    }, [vista, topEncabezado, loading]);
+    React.useEffect(() => {
+        const el = encabezadoRef.current;
+        if (!pegado || !el?.animate) return;
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+        // Duración y curva del reloj del portal (`--dur-slow`, `--ease-spring`).
+        const css = getComputedStyle(el);
+        const dur = parseFloat(css.getPropertyValue('--dur-slow')) || 300;
+        el.animate(
+            [{ transform: 'translateY(-100%)', opacity: 0.4 }, { transform: 'translateY(0)', opacity: 1 }],
+            { duration: dur, easing: css.getPropertyValue('--ease-spring').trim() || 'ease-out' },
+        );
+    }, [pegado]);
 
     // ── Render ────────────────────────────────────────────────────────────────
 
@@ -272,7 +311,7 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
         const danadas = Array.isArray(row.cajas_danadas) ? row.cajas_danadas : [];
         const marca = stage === 'pausado' ? { Icono: Pause, cls: 'text-warning-text', txt: 'En pausa' }
             // Con el reenvío ya en camino no hay nada que resolver: se espera.
-            : faltan.enCamino ? { Icono: Truck, cls: 'text-info-text', txt: 'Reenvío en camino' }
+            : faltan.enCamino ? { Icono: Truck, cls: 'text-brand-text', txt: 'Reenvío en camino' }
             : (faltan.hay || difsDeLaSala > 0) ? { Icono: AlertTriangle, cls: 'text-danger-text', txt: 'Con problema' }
             : danadas.length > 0 ? { Icono: AlertTriangle, cls: 'text-warning-text', txt: 'Caja dañada' }
             : null;
@@ -1066,14 +1105,25 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                             {/* Pegajoso: al bajar, los nombres de los pasos se quedan
                                 a la vista. `data-pegajoso` le da fondo opaco (§15.1):
                                 una superficie pegajosa tiene que tapar. */}
-                            <div data-pegajoso style={{
-                                    top: topEncabezado,
+                            <div ref={(el) => { centinelaRef.current = el; listaRef.current = el; }} aria-hidden="true" className="h-0" />
+                            <div ref={encabezadoRef} data-pegajoso data-pegado={pegado || undefined} style={{
+                                    // Suelto, a 8px de la barra. Pegado, se mete 12px
+                                    // DEBAJO de ella (tapa sus esquinas redondas) y toma
+                                    // su ancho: se lee como la barra que se alarga.
+                                    top: topEncabezado + (pegado ? -12 : 8),
+                                    paddingTop: pegado ? 24 : undefined,
+                                    marginLeft: pegado ? -alas.izq : 0,
+                                    marginRight: pegado ? -alas.der : 0,
+                                    // Lo que crece hacia afuera se devuelve como relleno:
+                                    // las columnas no se mueven ni un píxel (pl-4 / pr-3).
+                                    paddingLeft: pegado ? 16 + alas.izq : undefined,
+                                    paddingRight: pegado ? 12 + alas.der : undefined,
                                     // `--thead-bg` es 97-98% opaco: con un botón azul
                                     // pasando por debajo, se alcanzaba a ver. El fondo
                                     // de la página debajo lo vuelve opaco del todo.
                                     background: 'linear-gradient(var(--thead-bg), var(--thead-bg)), var(--bg-page)',
                                 }}
-                                className="hidden lg:grid lg:sticky z-tabs rounded-xl gap-x-5 pl-4 pr-3 pt-3 pb-2.5 shadow-[var(--shadow-elevation-sm)] lg:grid-cols-[9rem_minmax(24rem,1fr)_17rem_1rem]">
+                                className={`hidden lg:grid lg:sticky z-tabs gap-x-5 pl-4 pr-3 pt-3 pb-2.5 transition-[border-radius,box-shadow,margin,padding] duration-[var(--dur-base)] lg:grid-cols-[9rem_minmax(24rem,1fr)_17rem_1rem] ${pegado ? 'rounded-b-xl rounded-t-none shadow-[var(--shadow-elevation-md)]' : 'rounded-xl shadow-[var(--shadow-elevation-sm)]'}`}>
                                 <span className="self-end text-caption font-semibold text-content-2">Sala</span>
                                 <EncabezadoDeAvance />
                                 <span className="self-end text-caption font-semibold text-content-2">Estado</span>

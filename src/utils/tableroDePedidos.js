@@ -431,7 +431,16 @@ export function pasosDelPedido(row, { quien = () => null, entrega = null, conduc
         const historial = row.reenvios_historial ?? [];
         if (historial.length > 0) {
             historial.forEach((ciclo, i) => {
-                pasos.push({ key: `reenvio_${i}`, label: historial.length > 1 ? `Reenvío ${ciclo.ciclo}` : 'Reenvío', time: ciclo.sent_at, emp: p(row.reenvio_por), extra: true });
+                const n = historial.length > 1 ? ` ${ciclo.ciclo}` : '';
+                // Pedido y salida son dos momentos (2026-10-08): el ciclo nace
+                // pendiente y toma `sent_at` cuando sale su ruta. Quien lo pidió
+                // es `solicitado_por`; los ciclos viejos sólo tienen `reenvio_por`.
+                const pidio = p(ciclo.solicitado_por ?? row.reenvio_por);
+                if (!ciclo.sent_at) {
+                    pasos.push({ key: `reenvio_${i}`, label: `Reenvío${n} pedido`, time: ciclo.solicitado_at ?? null, emp: pidio, extra: true });
+                } else {
+                    pasos.push({ key: `reenvio_${i}`, label: `Reenvío${n} salió`, time: ciclo.sent_at, emp: p(ciclo.sent_by) ?? pidio, extra: true });
+                }
                 if (ciclo.arrived_at) {
                     pasos.push({ key: `seg_llegada_${i}`, label: historial.length > 1 ? `Llegada R.${ciclo.ciclo}` : '2ª Llegada', time: ciclo.arrived_at, emp: p(ciclo.arrived_por), extra: true });
                 }

@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.21 — Pedidos (lista): incidencias con quién y cuándo, y encabezado que sale de la barra
+
+- **Incidencias en la fila abierta**: faltante o caja dañada (quién lo reportó y a qué hora), reenvío pedido, reenvío salió (quién lo despachó), segunda llegada (quién recibió) y diferencias reportadas o corregidas. Cada una con foto, nombre y hora. Antes, en la lista no había forma de saber quién reportó el faltante.
+- El reenvío pendiente se distingue del que ya salió («Reenvío pedido» frente a «Reenvío salió»), también en la línea completa de las tarjetas.
+- **Encabezado de columnas integrado con la barra de la página**: al bajar, sale de debajo de ella con una animación, toma su ancho y queda pegado sin esquinas arriba. Las columnas no se mueven. Respeta «reducir movimiento».
+- Entorno de pruebas: apoyos sembrados en preparación y en recepción de los pedidos de muestra.
+
 ## v2.1232.20 — Pedidos (lista): el texto del estado ya no queda debajo del botón
 
 - El detalle del estado («Falta: E1 · YASMIN X 21 COMPRIMIDOS») quedaba tapado por el botón de acción. Ahora se ajusta a su columna y baja hasta dos renglones.

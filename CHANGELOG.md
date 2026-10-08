@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.24 — Encabezados fijos opacos del todo y contador de diferencia entero
+
+- **Los encabezados fijos tapan del todo, en todo el portal**: el fondo canónico (`--thead-bg`) es 97-98% opaco y lo que pasaba por debajo se alcanzaba a ver. Ahora lleva el fondo de la página debajo, que es opaco.
+- **Confirmar recepción**: el encabezado de la lista queda por encima de los campos de cada renglón; antes los selects y las cantidades se dibujaban encima al bajar. El contador de diferencia («+19», «-1») tiene alto fijo y ya no se corta contra el borde del renglón.
+
 ## v2.1232.23 — Pedidos: recepción más limpia; el placeholder ya no es opción; los sólidos son sólidos
 
 - **El placeholder ya no aparece como opción** en ningún select: `LiquidSelect` descarta la opción vacía cuyo texto es igual al placeholder («¿De qué sucursal?» en cajas extra; «Estado», «Marca», «Formato» y «Laboratorio» en los filtros de Promociones, Marketing, Encuestas y Ofertas). Si el select no se puede limpiar, pone la fila «Todos» para volver. En «Agregar un laboratorio» de Promociones, el rótulo pasó a ser el placeholder. Queda como regla en CLAUDE.md.

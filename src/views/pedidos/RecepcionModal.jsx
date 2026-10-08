@@ -1953,7 +1953,7 @@ export default function RecepcionModal({
                             `--thead-bg` vía `data-pegajoso`; era `bg-surface-card
                             backdrop-blur-sm`, con el que las filas se leían a
                             través del encabezado al desplazar. */}
-                        <div data-pegajoso className="sticky top-0 z-base border-b-2 border-divider shadow-sm">
+                        <div data-pegajoso className="sticky top-0 z-tabs border-b-2 border-divider shadow-sm">
                             <div className={`grid ${EXTRAS_GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
                                 <span />
                                 <span className="col-span-2 text-center text-caption font-bold text-chart-9-text uppercase tracking-widest border-b-2 border-chart-9 pb-1">Lo que llegó</span>
@@ -2243,7 +2243,7 @@ export default function RecepcionModal({
                     lista (era una lupa de 15px que reemplazaba al título), y
                     los encabezados bajan de peso — la banda «Lo que llegó»
                     repetía lo que ya dice la columna «Llegó». */}
-                <div data-pegajoso className="sticky top-0 z-base border-b border-divider">
+                <div data-pegajoso className="sticky top-0 z-tabs border-b border-divider">
                     {gridRows.length > 5 && (
                         <div className="px-5 pt-3 pb-2">
                             <SearchInput ref={searchRef} size="sm" value={prodSearch} onChange={setProdSearch}
@@ -2341,8 +2341,13 @@ export default function RecepcionModal({
                                             inputClassName="text-center font-bold tabular-nums"
                                         />
                                         {hasDiff && (
+                                            // Contador de esquina: alto fijo y texto centrado. Con el
+                                            // alto natural del `Badge` (leading-none, py-0.5) el «+7»
+                                            // quedaba pegado al borde de arriba y se leía cortado.
                                             <Badge variant={delta < 0 ? 'danger' : 'success'} tone="solid" size="sm" uppercase={false}
-                                                        className="absolute -top-2 -right-2 shadow-[var(--shadow-elevation-sm)] tabular-nums">{delta > 0 ? '+' : ''}{delta}</Badge>
+                                                className="absolute -top-1.5 -right-2.5 h-5 min-w-5 justify-center rounded-full tabular-nums shadow-[var(--shadow-elevation-sm)]">
+                                                {delta > 0 ? '+' : ''}{delta}
+                                            </Badge>
                                         )}
                                     </div>
 

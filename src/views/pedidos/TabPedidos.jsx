@@ -1137,10 +1137,6 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                     // las columnas no se mueven ni un píxel (pl-4 / pr-3).
                                     paddingLeft: pegado ? 16 + alas.izq : undefined,
                                     paddingRight: pegado ? 12 + alas.der : undefined,
-                                    // `--thead-bg` es 97-98% opaco: con un botón azul
-                                    // pasando por debajo, se alcanzaba a ver. El fondo
-                                    // de la página debajo lo vuelve opaco del todo.
-                                    background: 'linear-gradient(var(--thead-bg), var(--thead-bg)), var(--bg-page)',
                                 }}
                                 className={`hidden lg:grid lg:sticky z-tabs gap-x-5 pl-4 pr-3 pt-3 pb-2.5 transition-[border-radius,box-shadow,margin,padding] duration-[var(--dur-base)] lg:grid-cols-[9rem_minmax(24rem,1fr)_17rem_1rem] ${pegado ? 'rounded-b-xl rounded-t-none shadow-[var(--shadow-elevation-md)]' : 'rounded-xl shadow-[var(--shadow-elevation-sm)]'}`}>
                                 <span className="self-end text-caption font-semibold text-content-2">Sala</span>

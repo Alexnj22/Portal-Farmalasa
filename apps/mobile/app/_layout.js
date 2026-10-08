@@ -13,11 +13,16 @@ import { notificarActividad } from '@plataforma/cicloDeVida';
 import { useTema } from '../tema/tema';
 import BotonCampana from '../componentes/BotonCampana';
 import { CapaDeProgreso } from '../componentes/Progreso';
+import HojasAndroid, { instalarHojasAndroid } from '../componentes/HojasAndroid';
 import Aurora from '../componentes/Aurora';
 import { escucharToques, registrarAvisos } from '../componentes/avisos';
 // Define la tarea del GPS de fondo de las rutas: iOS relanza la app sin pantalla
 // para entregar posiciones, y la tarea tiene que existir desde el arranque.
 import { revisarRastreoDeFondo } from '../plataforma/rastreoDeFondo';
+
+// Android no trae la hoja de opciones ni el prompt de iOS: se instalan antes de
+// que cualquier pantalla los pida (ver componentes/HojasAndroid).
+instalarHojasAndroid();
 
 // Lo que hace `App.jsx` del portal alrededor de las pantallas:
 //  - al entrar, cargar salas, personal y catálogos al store (`fetchBoot`); sin
@@ -88,6 +93,7 @@ export default function Raiz() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           </Stack>
           <CapaDeProgreso />
+          <HojasAndroid />
         </AuthProvider>
       </View>
     </SafeAreaProvider>

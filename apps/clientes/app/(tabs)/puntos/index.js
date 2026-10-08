@@ -24,7 +24,7 @@ import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '
 import { useSesion } from '../../../lib/sesion';
 import { sincronizarAvisos } from '../../../lib/avisos';
 import { cuponDePrueba, nivelDePrueba, useModoPrueba } from '../../../lib/prueba';
-import { BotonWalletNativo, abrirPase, agregarDirecto, agregarPorSafari, tienePase, walletDisponible } from '../../../modules/wallet';
+import { BotonWalletNativo, abrirPase, agregarAGoogleWallet, agregarDirecto, agregarPorSafari, googleWalletDisponible, tienePase, walletDisponible } from '../../../modules/wallet';
 import { suave, useTema } from '../../../tema/tema';
 import { colorSistema } from '../../../componentes/sistema';
 import { navegar } from '../../../lib/navegar';
@@ -169,6 +169,10 @@ export default function Puntos() {
       {Platform.OS === 'ios' ? (
         <Entrada indice={1}>
           <BotonWallet serial={resumen.wallet_serial} nivelPrueba={enPrueba ? `${material ?? prueba.nivel}${empleado ? '+equipo' : ''}` : null} />
+        </Entrada>
+      ) : googleWalletDisponible(resumen) ? (
+        <Entrada indice={1}>
+          <BotonGoogleWallet nivelPrueba={enPrueba ? (material ?? prueba.nivel) : null} />
         </Entrada>
       ) : null}
 
@@ -419,6 +423,36 @@ function BotonWallet({ serial, nivelPrueba }) {
       <Icono sf="wallet.pass.fill" respaldo="💳" tam={20} color="#FFFFFF" />
       <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>
         {cargando ? 'Preparando…' : 'Agregar a Apple Wallet'}
+      </Text>
+    </Pressable>
+  );
+}
+
+// Google Wallet (Android): el mismo lugar y la misma forma que el de Apple —
+// botón negro, redondeado, con el nombre de la cartera—. Google no sabe
+// decirle a la app si ya está guardada, así que el botón queda siempre: tocarlo
+// otra vez la vuelve a mostrar en Google Wallet.
+function BotonGoogleWallet({ nivelPrueba }) {
+  const pedir = useSesion((s) => s.pedir);
+  const [cargando, setCargando] = useState(false);
+  const tocar = async () => {
+    if (cargando) return;
+    setCargando(true);
+    if (!(await agregarAGoogleWallet(pedir, nivelPrueba))) {
+      Alert.alert('No se pudo preparar la tarjeta', 'Revisa tu conexión e intenta de nuevo.');
+    }
+    setCargando(false);
+  };
+  return (
+    <Pressable onPress={tocar} accessibilityRole="button" accessibilityLabel="Agregar a Google Wallet"
+      style={({ pressed }) => ({
+        alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#1F1F1F',
+        borderRadius: 999, paddingHorizontal: 20, minHeight: 48, borderWidth: 1, borderColor: '#747775',
+        opacity: cargando ? 0.6 : 1, transform: [{ scale: pressed ? 0.97 : 1 }],
+      })}>
+      <Icono sf="wallet.pass.fill" respaldo="💳" tam={20} color="#FFFFFF" />
+      <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>
+        {cargando ? 'Preparando…' : 'Agregar a Google Wallet'}
       </Text>
     </Pressable>
   );

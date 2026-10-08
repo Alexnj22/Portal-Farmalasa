@@ -1,0 +1,4 @@
+{
+  "platforms": ["android"],
+  "android": { "modules": ["lat.farmasalud.clientes.widget.WidgetSaldoModule"] }
+}

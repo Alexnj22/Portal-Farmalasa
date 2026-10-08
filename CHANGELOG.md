@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1262.0 — Android: las dos apps compilan en esta Mac, widget, pase de Google Wallet y sucursales cercanas
+
+Las dos apps nativas (`apps/mobile` y `apps/clientes`) compilan para Android en esta Mac, con Android Studio y sin EAS, y se probaron en el emulador.
+
+- **`scripts/subir-android.mjs`**, gemelo de `subir-ios.mjs`: compila, firma con la llave de subida (`~/.claves-farmalasa/android-upload.*`) y sube a la pista «internal» de Google Play con la API de publicación. Toma el `versionCode` de Play y de la libreta local. Sin la cuenta de servicio de Play, o si la app no existe en Play Console, deja el `.aab` y explica qué hacer. Tiene las opciones `--sin-subir` y `--apk`.
+- **Hojas y prompts de iOS en Android** (`componentes/HojasAndroid.js`, en las dos apps). En Android, `ActionSheetIOS` (~45 pantallas de la app del portal) cerraba la app, y `Alert.prompt` (~25) no hacía nada: la acción se perdía sin aviso. Ahora las dos funciones existen en Android con la misma firma, dibujadas por un host en la raíz. También se corrigieron las alertas de Android con más de 3 botones, que perdían opciones (motivos de rechazo, «elegir de una lista», tratamientos).
+- **Puntos Salud — se cerraba al abrir en Android**: el botón Material recibía `width: '100%'` y Compose sólo acepta números. Ahora usa `BotonNativo.android.js` con `fillMaxWidth`.
+- **Puntos Salud — íconos**: en Android salían como emoji o como hueco. Ahora usan Material Symbols (`Icono.js`, con un mapa de 100 nombres verificados contra la fuente).
+- **Puntos Salud — widget de saldo en Android** (`modules/widget-saldo`, módulo nativo con RemoteViews). Usa el mismo JSON y el mismo camino de actualización que el de iOS, y se borra al cerrar sesión.
+- **Puntos Salud — sucursales más cercanas**: el permiso de ubicación «mientras se usa» se pide sólo al tocar el botón, en iOS y Android, y nunca en segundo plano. La distancia se calcula en el teléfono; sin permiso, la lista queda igual. `app-clientes` (`salas`) ahora manda `lat`/`lng` de `branches.settings.location`.
+- **Google Wallet** (`_shared/paseGoogle.ts`): enlace «Agregar a Google Wallet» con un JWT RS256 firmado en el servidor, acción `google_wallet_enlace`, y actualización del saldo con el mismo cron de `wallet-pases` (PATCH; un 404 significa que esa persona no la guardó). Queda apagado hasta cargar `GOOGLE_WALLET_ISSUER_ID` y `GOOGLE_WALLET_SA_B64`. `datosDeCliente` se separó de `paseDeCliente` para que Apple y Google lean lo mismo.
+- **Avisos en Android**: Puntos Salud conecta su `google-services.json` desde `~/.claves-farmalasa` (`app.config.js`), sólo si el archivo trae su paquete.
+- **App del portal — modo oscuro en Android**: `colorSistema` usa atributos del tema (DayNight) en vez de colores fijos de modo claro.
 ## v2.1261.5 — Pedidos: el tablero sin techo de filas y el navegador escribe sólo lo suyo
 
 - `20261009112835_get_pedidos_en_curso_json`: el tablero de pedidos devuelve un solo JSON, así que el tope de 1000 filas ya no lo puede cortar en silencio (hoy son 194 y crecían ~50 por mes). Sin parámetro responde igual que antes, byte a byte, y las apps ya instaladas no notan el cambio. Acepta `p_desde` opcional.

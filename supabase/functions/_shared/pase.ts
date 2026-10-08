@@ -41,12 +41,12 @@ export interface DatosPase {
 }
 
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-const desde = (f: string | null) => {
+export const desde = (f: string | null) => {
   const m = String(f ?? "").match(/^(\d{4})-(\d{2})/);
   return m ? `${MESES[Number(m[2]) - 1]} ${m[1]}` : "—";
 };
 // Primer nombre + primer apellido, la regla del portal.
-const corto = (n: string) => {
+export const corto = (n: string) => {
   const p = String(n ?? "").trim().split(/\s+/).filter(Boolean);
   const x = p.length >= 4 ? [p[0], p[2]] : p.length === 3 ? [p[0], p[1]] : p;
   return x.map((w) => w[0].toUpperCase() + w.slice(1).toLowerCase()).join(" ");
@@ -70,7 +70,7 @@ export const clienteDelSerial = (serial: string) => Number(String(serial).replac
 // genera scripts/wallet/materiales.mjs con los shaders de la app y vive en el
 // bucket privado `wallet-materiales`; el fondo del pase es el color en el que
 // esa franja nace y muere, y los rótulos van en su acento.
-const MATERIALES: Record<string, { fondo: string; rotulo: string }> = {
+export const MATERIALES: Record<string, { fondo: string; rotulo: string }> = {
   vip: { fondo: "rgb(40, 10, 52)", rotulo: "rgb(180, 228, 80)" },
   bronce: { fondo: "rgb(34, 15, 6)", rotulo: "rgb(242, 176, 122)" },
   plata: { fondo: "rgb(44, 48, 56)", rotulo: "rgb(220, 226, 234)" },
@@ -84,7 +84,7 @@ const MATERIALES: Record<string, { fondo: string; rotulo: string }> = {
 };
 const PIEDRAS = ["jade", "zafiro", "rubi", "diamante"];
 const sinTilde = (n?: string) => String(n ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-const claveDeNivel = (n?: string) => {
+export const claveDeNivel = (n?: string) => {
   const t = sinTilde(n);
   if (t.includes("equipo") || t === "personal") return "empleado";
   return Object.keys(MATERIALES).find((k) => k !== "vip" && t.includes(k)) ?? "vip";
@@ -109,7 +109,7 @@ async function franjasDe(admin: any, clave: string): Promise<Record<string, Uint
   return r;
 }
 
-const nivelRotulo = (n?: string) => {
+export const nivelRotulo = (n?: string) => {
   const k = claveDeNivel(n);
   if (k === "empleado" || /equipo|^personal$/i.test(String(n))) return "PERSONAL FARMACIA SALUD";
   if (PIEDRAS.includes(k)) return `MAYORISTA ${String(n).toUpperCase()}`;
@@ -238,6 +238,14 @@ export async function clienteDelEnlace(token: string): Promise<number | null> {
 // `nivelDePrueba`: sólo para la cuenta de prueba (modo de prueba de la app), que
 // pide ver la tarjeta con otro nivel. Nunca para un cliente real.
 export async function paseDeCliente(admin: any, id: number, nivelDePrueba?: string, equipoPrueba = false): Promise<{ pase: Uint8Array; cambio: string | null }> {
+  const { datos, cambio } = await datosDeCliente(admin, id, nivelDePrueba, equipoPrueba);
+  const pase = await armarPase({ ...datos, franjas: await franjasDe(admin, claveDeNivel(datos.nivel)) });
+  return { pase, cambio };
+}
+
+/** Lo que dice la tarjeta de una ficha. Lo usan Apple (arriba) y Google (`paseGoogle.ts`): una sola lectura para las dos. */
+// deno-lint-ignore no-explicit-any
+export async function datosDeCliente(admin: any, id: number, nivelDePrueba?: string, equipoPrueba = false): Promise<{ datos: DatosPase; cambio: string | null }> {
   const [{ data: c, error: eC }, { data: est, error: eE }, { data: cod, error: eK }, { data: pri, error: eP }, { data: cta, error: eT }] = await Promise.all([
     admin.from("customers").select("name").eq("id", id).maybeSingle(),
     admin.rpc("puntos_estado_cuenta", { p_customer_id: id }),
@@ -256,12 +264,11 @@ export async function paseDeCliente(admin: any, id: number, nivelDePrueba?: stri
   const nombreNivel = nivelDePrueba ?? (rango ? NOMBRE_RANGO[rango] ?? nivel.nombre : nivel.nombre);
   if (eC) throw eC; if (eE) throw eE; if (eK) throw eK; if (eP) throw eP; if (eT) throw eT;
   const saldo = Number(est?.saldo ?? 0);
-  const pase = await armarPase({
+  const datos: DatosPase = {
     customerId: id, nombre: c?.name ?? "", saldo, equivale: Math.round(saldo) / 100,
     codigo: cod?.codigo ?? null, socioDesde: pri?.ganado_el ?? null, nivel: nombreNivel,
-    franjas: await franjasDe(admin, claveDeNivel(nombreNivel)),
     prueba: !!nivelDePrueba,
     equipo: nivelDePrueba ? equipoPrueba : esEmpleado === true,
-  });
-  return { pase, cambio: cta?.updated_at ?? null };
+  };
+  return { datos, cambio: cta?.updated_at ?? null };
 }

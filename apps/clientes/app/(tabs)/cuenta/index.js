@@ -10,7 +10,7 @@ import { Aviso } from '../../../componentes/ui';
 import { useSesion } from '../../../lib/sesion';
 import { useCuenta } from '../../../lib/cuenta';
 import { pedirTokenDeAvisos, recordarAvisos } from '../../../lib/avisos';
-import { abrirPase, agregarDirecto, agregarPorSafari, tienePase, walletDisponible } from '../../../modules/wallet';
+import { abrirPase, agregarAGoogleWallet, agregarDirecto, agregarPorSafari, googleWalletDisponible, tienePase, walletDisponible } from '../../../modules/wallet';
 import { nombreBiometria, useBloqueo } from '../../../lib/bloqueo';
 import { olvidarEntrada } from '../../../lib/entradaGuardada';
 import { NIVELES_PRUEBA, useModoPrueba } from '../../../lib/prueba';
@@ -204,6 +204,14 @@ export default function Cuenta() {
         {resumen?.wallet_serial && walletDisponible() ? (
           <FilaAccion sf="wallet.pass.fill" texto={enWallet ? 'Ver mi tarjeta en Apple Wallet' : 'Agregar mi tarjeta a Apple Wallet'}
             alTocar={() => wallet()} />
+        ) : null}
+        {googleWalletDisponible(resumen) ? (
+          <FilaAccion sf="wallet.pass.fill" texto="Agregar mi tarjeta a Google Wallet" alTocar={async () => {
+            const enPrueba = !!resumen?.prueba && prueba.activo;
+            if (!(await agregarAGoogleWallet(pedirW, enPrueba ? prueba.nivel : null))) {
+              Alert.alert('No se pudo preparar la tarjeta', 'Revisa tu conexión e intenta de nuevo.');
+            }
+          }} />
         ) : null}
         {resumen?.wallet_serial && walletDisponible() && enWallet ? (
           <FilaAccion sf="arrow.clockwise" texto="Volver a agregar la tarjeta a Wallet" alTocar={() => wallet({ abrir: false })} />

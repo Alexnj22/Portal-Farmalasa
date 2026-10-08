@@ -5,7 +5,13 @@
 // iPhone, Google Maps en Android), WhatsApp y llamar —. El horario de la
 // semana se despliega con una animación corta y sin rebote (con resorte se
 // veía raro). Pública.
-import { useCallback, useEffect, useState } from 'react';
+//
+// «Más cercanas» (2026-10-08): con permiso de ubicación MIENTRAS SE USA —que se
+// pide sólo acá, y sólo cuando la persona toca el botón—, la lista se ordena
+// por distancia y cada tarjeta dice a cuánto queda. La cuenta se hace en el
+// teléfono: la ubicación no se envía ni se guarda. Sin permiso, la lista es la
+// de siempre.
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image as ImagenCache } from 'expo-image';
@@ -19,6 +25,7 @@ import IconoWhatsapp from '../componentes/IconoWhatsapp';
 import { Entrada } from '../componentes/animacion';
 import { colorSistema } from '../componentes/sistema';
 import { llamar } from '../lib/api';
+import { distanciaKm, textoDistancia, useUbicacionMientrasSeUsa } from '../lib/cercania';
 import { useTema } from '../tema/tema';
 
 // Fotos de stock (Unsplash, licencia libre) mientras cada sucursal no tenga la
@@ -41,19 +48,31 @@ export default function Sucursales() {
   const cargar = useCallback(async () => { const r = await llamar('salas'); setDatos((ant) => (r?.ok || !ant?.ok ? r : ant)); }, []);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
+  const ubicacion = useUbicacionMientrasSeUsa();
+  const salas = useMemo(() => {
+    const lista = (datos?.ok ? datos.salas : []).map((s) => ({ ...s, km: distanciaKm(ubicacion.posicion, s) }));
+    if (!ubicacion.posicion) return lista;
+    return [...lista].sort((a, b) => (a.km ?? Infinity) - (b.km ?? Infinity));
+  }, [datos, ubicacion.posicion]);
 
   if (!datos) return <Cargando />;
   if (!datos.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}><Aviso>No se pudieron cargar las sucursales. Desliza hacia abajo para reintentar.</Aviso></Pantalla>;
-  const abiertas = datos.salas.filter((s) => s.abierta).length;
+  const abiertas = salas.filter((s) => s.abierta).length;
 
   return (
     <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
       <Entrada indice={0}>
         <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto2, marginLeft: 4 }}>
-          {abiertas ? `${abiertas} de ${datos.salas.length} abiertas ahora` : 'Todas cerradas en este momento'}
+          {abiertas ? `${abiertas} de ${salas.length} abiertas ahora` : 'Todas cerradas en este momento'}
+          {ubicacion.posicion ? ' · la más cercana primero' : ''}
         </Text>
       </Entrada>
-      {datos.salas.map((s, i) => (
+      {ubicacion.puedePedir && !ubicacion.posicion ? (
+        <Entrada indice={0}>
+          <BotonCercanas buscando={ubicacion.buscando} alTocar={ubicacion.pedir} />
+        </Entrada>
+      ) : null}
+      {salas.map((s, i) => (
         <Entrada key={s.id} indice={i + 1}>
           <TarjetaSucursal s={s} indice={i} />
         </Entrada>
@@ -91,6 +110,7 @@ function TarjetaSucursal({ s, indice }) {
           <Text style={{ fontSize: 22, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.3 }} numberOfLines={1}>{s.nombre}</Text>
           <Text style={{ fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.9)' }}>
             {s.abierta ? `Cierra a las ${hora(s.cierra_hoy)}` : s.abre_hoy ? `Abre a las ${hora(s.abre_hoy)}` : 'Cerrada hoy'}
+            {s.km != null ? ` · ${textoDistancia(s.km)}` : ''}
           </Text>
         </View>
       </View>
@@ -132,6 +152,20 @@ function TarjetaSucursal({ s, indice }) {
     </View>
     </Vidrio>
     </Animated.View>
+  );
+}
+
+function BotonCercanas({ buscando, alTocar }) {
+  const t = useTema();
+  return (
+    <Pressable onPress={alTocar} disabled={buscando} accessibilityRole="button" accessibilityLabel="Ver primero las sucursales más cercanas"
+      style={({ pressed }) => ({
+        minHeight: 48, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 16,
+        backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', opacity: buscando ? 0.6 : 1, transform: [{ scale: pressed ? 0.97 : 1 }],
+      })}>
+      <Icono sf="location.fill" respaldo="📍" tam={18} color={t.color.magentaTexto} />
+      <Text style={{ fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>{buscando ? 'Buscando dónde estás…' : 'Ver las más cercanas'}</Text>
+    </Pressable>
   );
 }
 

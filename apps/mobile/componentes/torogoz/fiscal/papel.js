@@ -78,7 +78,7 @@ export async function enviarDocumentoPorCorreo(dte, { destinatario = null } = {}
  * En Android, la alerta (que admite tres botones: con más, usar la lista).
  */
 export function elegir(titulo, opciones) {
-  if (Platform.OS === 'ios') {
+  if (Platform.OS !== 'web') {   // en Android, la hoja de componentes/HojasAndroid
     const textos = [...opciones.map((o) => o.texto), 'Cancelar'];
     const destructiva = opciones.findIndex((o) => o.destructiva);
     ActionSheetIOS.showActionSheetWithOptions(

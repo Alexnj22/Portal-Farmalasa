@@ -15,12 +15,18 @@ import { Platform, PlatformColor, ScrollView, Text, TextInput, View } from 'reac
 import Vidrio from './Vidrio';
 
 const ios = Platform.OS === 'ios';
+// En Android, los atributos del TEMA (DayNight): cambian solos con el modo
+// oscuro, como los de iOS. Con hex fijos de modo claro (lo que había hasta el
+// 2026-10-08) el texto salía casi negro sobre la aurora oscura. La web sigue
+// con los hex.
+const android = Platform.OS === 'android';
+const sistema = (iosNombre, androidAttr, web) => (ios ? PlatformColor(iosNombre) : android ? PlatformColor(androidAttr) : web);
 export const colorSistema = {
-  fondo: ios ? PlatformColor('systemGroupedBackground') : '#F2F2F7',
-  fila: ios ? PlatformColor('secondarySystemGroupedBackground') : '#FFFFFF',
-  texto: ios ? PlatformColor('label') : '#1C1B1F',
-  texto2: ios ? PlatformColor('secondaryLabel') : '#49454F',
-  placeholder: ios ? PlatformColor('placeholderText') : '#79747E',
+  fondo: sistema('systemGroupedBackground', '?android:attr/colorBackground', '#F2F2F7'),
+  fila: sistema('secondarySystemGroupedBackground', '?android:attr/colorBackgroundFloating', '#FFFFFF'),
+  texto: sistema('label', '?android:attr/textColorPrimary', '#1C1B1F'),
+  texto2: sistema('secondaryLabel', '?android:attr/textColorSecondary', '#49454F'),
+  placeholder: sistema('placeholderText', '?android:attr/textColorHint', '#79747E'),
   separador: ios ? PlatformColor('separator') : '#CAC4D0',
   separadorClaro: 'rgba(127,127,127,0.25)',   // para SVG, que no lee colores del sistema
   rojo: ios ? PlatformColor('systemRed') : '#B3261E',

@@ -21,6 +21,10 @@ import { useTema } from '../tema/tema';
 import { colorSistema } from '../componentes/sistema';
 import { navegar } from '../lib/navegar';
 import AvisoSinConexion from '../componentes/AvisoSinConexion';
+import HojasAndroid, { instalarHojasAndroid } from '../componentes/HojasAndroid';
+
+// La hoja de opciones y el prompt de iOS, en Android (componentes/HojasAndroid).
+instalarHojasAndroid();
 export { default as ErrorBoundary } from '../componentes/ErrorDePantalla';
 
 const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent' } };
@@ -175,6 +179,7 @@ function Raiz() {
           </Stack>
           <AvisoSinConexion />
           <Bloqueo />
+          <HojasAndroid />
         </GestureHandlerRootView>
       </SafeAreaProvider>
     </ThemeProvider>

@@ -31,6 +31,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { TEXTOS_CONSENTIMIENTO as TEXTOS } from "../_shared/consentimientoPuntos.ts";
 import { clienteDelEnlace, enlaceDePase, paseDeCliente } from "../_shared/pase.ts";
+import { enlaceGoogleWallet, googleWalletListo } from "../_shared/paseGoogle.ts";
 import { nivelDeCliente } from "../_shared/nivel.ts";
 import { validarFiscales } from "../_shared/fiscal.ts";
 import { calentarWompi, crearEnlace } from "../_shared/wompi.ts";
@@ -147,6 +148,11 @@ function tokenNuevo(): string {
 const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
 
 const limpiarDoc = (v: unknown) => String(v ?? "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+// deno-lint-ignore no-explicit-any
+const coordenadas = (loc: any) => {
+  const lat = parseFloat(loc?.lat), lng = parseFloat(loc?.lng);
+  return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : { lat: null, lng: null };
+};
 const limpiarTel = (v: unknown) => String(v ?? "").replace(/\D/g, "");
 const plataformaValida = (p: unknown) => (["ios", "android", "web"].includes(String(p)) ? String(p) : null);
 
@@ -629,6 +635,10 @@ Deno.serve(async (req) => {
           foto: b.settings?.foto_app ? fotos.get(b.settings.foto_app) ?? null : null, foto_clave: b.settings?.foto_app ?? null, telefono: b.phone, celular: b.cell, horario,
           abierta: a != null && c != null && ahora >= a && ahora < c,
           cierra_hoy: hoy.cierra, abre_hoy: hoy.abre,
+          // Dónde está (`settings.location`, la misma que usan las rutas de
+          // reparto): la app ordena «más cercanas» en el TELÉFONO, así que la
+          // ubicación de la persona nunca viaja al servidor (2026-10-08).
+          ...coordenadas(b.settings?.location),
         };
       });
       return json({ ok: true, salas });
@@ -1404,6 +1414,8 @@ Deno.serve(async (req) => {
         reservas_abiertas: (resAb ?? []).length,
         reservas_listas: (resAb ?? []).filter((r: any) => r.estado === "lista").length,
         wallet_serial: `socio-${customerId}`,
+        // Android: la app ofrece «Agregar a Google Wallet» sólo si el emisor está configurado.
+        google_wallet: googleWalletListo(),
         // El nivel (Plata/Oro/Platino) y cuánto falta para el siguiente.
         nivel,
         // Inyecciones por aplicar: el Inicio las muestra (ya no son pestaña).
@@ -1526,6 +1538,15 @@ Deno.serve(async (req) => {
       let bin = "";
       for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
       return json({ ok: true, pase: btoa(bin), serial: `socio-${customerId}` });
+    }
+
+    // Google Wallet (Android): el enlace «Agregar a Google Wallet», con la
+    // tarjeta firmada adentro (ver `_shared/paseGoogle.ts`).
+    if (accion === "google_wallet_enlace") {
+      if (!googleWalletListo()) return json({ ok: false, motivo: "sin_configurar" });
+      const [pedido, extra] = String(body?.nivel_prueba ?? "").split("+");
+      const nivelPrueba = NOMBRE_NIVEL[pedido] && await esDePrueba(customerId) ? NOMBRE_NIVEL[pedido] : undefined;
+      return json({ ok: true, url: await enlaceGoogleWallet(admin, customerId, nivelPrueba, !!nivelPrueba && extra === "equipo") });
     }
 
     if (accion === "wallet_enlace") {

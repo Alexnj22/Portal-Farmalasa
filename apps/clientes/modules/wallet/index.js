@@ -44,3 +44,20 @@ export async function agregarDirecto(pedir, nivelPrueba) {
     return !!(await N.agregar(r.pase));
   } catch { return null; }
 }
+
+// ── Google Wallet (Android, 2026-10-08) ─────────────────────────────────────
+// No hay módulo nativo: el servidor arma el enlace «Agregar a Google Wallet»
+// (`google_wallet_enlace`, ver supabase/functions/_shared/paseGoogle.ts) y el
+// teléfono lo abre — Google Wallet lo atiende si está instalada, y si no, el
+// navegador. El botón aparece sólo si el servidor dice que el emisor está
+// configurado (`resumen.google_wallet`).
+export const googleWalletDisponible = (resumen) => Platform.OS === 'android' && !!resumen?.google_wallet;
+
+/** true si se abrió el enlace; false si el servidor no lo dio. */
+export async function agregarAGoogleWallet(pedir, nivelPrueba) {
+  const { Linking } = require('react-native');
+  const r = await pedir('google_wallet_enlace', nivelPrueba ? { nivel_prueba: nivelPrueba } : {});
+  if (!r?.ok || !r.url) return false;
+  await Linking.openURL(r.url);
+  return true;
+}

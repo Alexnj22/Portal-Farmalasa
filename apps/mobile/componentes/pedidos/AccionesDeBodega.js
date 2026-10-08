@@ -58,7 +58,7 @@ export default function AccionesDeBodega({ row, etapa, etapas, onCambio }) {
   };
   const pedirAnular = () => {
     const texto = `Se anula el pedido #${row.numero} completo, en todas sus salas. No se deshace.`;
-    if (anular.pideMotivo && Platform.OS === 'ios') {
+    if (anular.pideMotivo && Platform.OS !== 'web') {
       Alert.prompt('Anular pedido', `${texto}\n\nUna sala ya lo está preparando: escribe el motivo.`, [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Anular', style: 'destructive', onPress: (m) => { if (String(m ?? '').trim()) hacerAnular(String(m).trim()); else fallo('Falta el motivo', 'Escríbelo para poder anular.'); } },

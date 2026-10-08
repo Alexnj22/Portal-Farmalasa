@@ -82,6 +82,18 @@
       "./plugins/ciclo-por-escenas",
       "@bacons/apple-targets",
       "@sentry/react-native",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Puntos Salud usa tu ubicación sólo mientras ves «Nuestras sucursales», para mostrarte primero la más cercana. No se guarda ni se envía.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "motionUsagePermission": false,
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false,
+          "isAndroidForegroundServiceEnabled": false
+        }
+      ],
       "expo-image"
     ],
     "owner": "farmasalud",

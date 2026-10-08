@@ -35,7 +35,7 @@ const TECLADO = { dui: 'number-pad', nit: 'number-pad', nrc: 'number-pad', phone
 
 // Elegir de una lista con la hoja del sistema (o una alerta en Android).
 function elegir(titulo, opciones, alElegir) {
-  if (Platform.OS === 'ios') {
+  if (Platform.OS !== 'web') {
     ActionSheetIOS.showActionSheetWithOptions({ title: titulo, options: [...opciones, 'Cancelar'], cancelButtonIndex: opciones.length },
       (i) => { if (i < opciones.length) alElegir(opciones[i]); });
   } else {

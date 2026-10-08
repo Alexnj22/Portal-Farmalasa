@@ -72,7 +72,7 @@ export function VentasPorHora({ ctx }) {
   const elegirSala = () => {
     if (propia || salas.length < 2) return;
     const nombres = salas.map((b) => b.name);
-    if (Platform.OS === 'ios') {
+    if (Platform.OS !== 'web') {
       ActionSheetIOS.showActionSheetWithOptions(
         { title: 'Sala', options: [...nombres, 'Cancelar'], cancelButtonIndex: nombres.length },
         (i) => { if (i < nombres.length) { setElegida(String(salas[i].id)); setDia(null); } },

@@ -34,7 +34,7 @@ export default function Tratamientos() {
   const yaNo = (t) => {
     const elegir = (i) => {
       if (i == null || i >= MOTIVOS.length) return;
-      if (MOTIVOS[i] === 'Otro motivo' && Platform.OS === 'ios') {
+      if (MOTIVOS[i] === 'Otro motivo' && Platform.OS !== 'web') {
         Alert.prompt('¿Por qué ya no lo tomas?', 'Nos ayuda a no molestarte.', [
           { text: 'Cancelar', style: 'cancel' },
           { text: 'Guardar', onPress: (x) => cambiar(t, false, (x ?? '').trim() || 'Otro motivo') },
@@ -43,7 +43,9 @@ export default function Tratamientos() {
       }
       cambiar(t, false, MOTIVOS[i]);
     };
-    if (Platform.OS === 'ios') {
+    // En Android, la hoja de componentes/HojasAndroid: su alerta dibuja sólo
+    // tres botones y los motivos son cuatro más «Cancelar».
+    if (Platform.OS !== 'web') {
       ActionSheetIOS.showActionSheetWithOptions({ title: 'Ya no lo tomo', message: 'Dejamos de recordártelo. ¿Por qué?',
         options: [...MOTIVOS, 'Cancelar'], cancelButtonIndex: MOTIVOS.length }, elegir);
     } else {

@@ -12,7 +12,7 @@ export const PETROLEO = '#0f6e7d';
 export function elegirDe({ titulo, mensaje, opciones, onElegir }) {
   Haptics.selectionAsync().catch(() => {});
   const habiles = opciones.filter(o => !o.deshabilitada);
-  if (Platform.OS === 'ios') {
+  if (Platform.OS !== 'web') {
     ActionSheetIOS.showActionSheetWithOptions(
       { title: titulo, message: mensaje, options: [...habiles.map(o => o.label), 'Cancelar'], cancelButtonIndex: habiles.length },
       (i) => { if (i < habiles.length) onElegir(habiles[i].value); },

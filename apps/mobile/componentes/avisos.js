@@ -4,7 +4,7 @@
 // navegador: mismos destinatarios, mismo horario laboral, mismo texto. La app
 // sólo tiene que (1) registrar el teléfono a nombre de quien entró, (2)
 // soltarlo al salir y (3) abrir la pantalla del aviso al tocarlo.
-import { Alert, Platform } from 'react-native';
+import { ActionSheetIOS, Alert, Platform } from 'react-native';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
@@ -90,6 +90,14 @@ export async function enviarTraslado(d) {
 // El motivo sale de la MISMA lista cerrada que valida la base
 // (`validar_rechazo_traslado`); «Otro» exige escribir cuál.
 function pedirMotivo() {
+  // En Android, la hoja: su alerta dibuja sólo tres botones y los motivos son
+  // más (ver componentes/HojasAndroid). iOS sigue con su alerta.
+  if (Platform.OS === 'android') {
+    return new Promise((ok) => ActionSheetIOS.showActionSheetWithOptions({
+      title: '¿Por qué lo rechazas?', options: [...MOTIVOS_RECHAZO, 'Cancelar'], cancelButtonIndex: MOTIVOS_RECHAZO.length,
+      destructiveButtonIndex: MOTIVOS_RECHAZO.map((m, i) => (m === 'Otro' ? null : i)).filter((i) => i != null),
+    }, (i) => ok(i < MOTIVOS_RECHAZO.length ? MOTIVOS_RECHAZO[i] : null)));
+  }
   return new Promise((ok) => Alert.alert('¿Por qué lo rechazas?', undefined, [
     ...MOTIVOS_RECHAZO.map((m) => ({ text: m, style: m === 'Otro' ? 'default' : 'destructive', onPress: () => ok(m) })),
     { text: 'Cancelar', style: 'cancel', onPress: () => ok(null) },
@@ -97,7 +105,7 @@ function pedirMotivo() {
 }
 
 function pedirTexto(titulo = '¿Cuál es el motivo?') {
-  if (Platform.OS !== 'ios') return Promise.resolve(null);   // Alert.prompt sólo existe en iOS
+  if (Platform.OS === 'web') return Promise.resolve(null);   // Alert.prompt: iOS, y Android por componentes/HojasAndroid
   return new Promise((ok) => Alert.prompt(titulo, undefined, [
     { text: 'Cancelar', style: 'cancel', onPress: () => ok(null) },
     { text: 'Rechazar', style: 'destructive', onPress: (v) => ok(String(v ?? '').trim() || null) },
@@ -148,7 +156,7 @@ export async function decidirDesdeAviso(d, modo, userId, nota = '') {
   if (!userId) { abrirRuta(d.url); return false; }
   if (modo === 'reject' && !nota) {
     nota = await pedirTexto('¿Por qué la rechazas?');
-    if (!nota) { if (Platform.OS !== 'ios') abrirRuta(d.url); return false; }
+    if (!nota) { if (Platform.OS === 'web') abrirRuta(d.url); return false; }
   }
   if (d.prueba) { listo('Prueba', modo === 'approve' ? 'Así se vería: aprobada. No se aprobó nada.' : `Así se vería: rechazada («${nota}»). No se rechazó nada.`); return false; }
   trabajando(`${modo === 'approve' ? 'Aprobando' : 'Rechazando'}${deQue(d)}…`);

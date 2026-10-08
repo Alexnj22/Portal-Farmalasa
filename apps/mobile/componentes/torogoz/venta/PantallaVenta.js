@@ -146,7 +146,7 @@ export default function PantallaVenta({ pedidoId = null, desde = null, cliente: 
       return;
     }
     const texto = `La venta de ${cliente?.nombre ?? ''} por ${formatMoney(venta.total)} deja de salir en Pendientes. Queda anulada en Pedidos, con el motivo${s.esperandoAprobacion ? ', y se cancela la solicitud de descuento' : ''}.`;
-    if (Platform.OS !== 'ios') {
+    if (Platform.OS === 'web') {
       Alert.alert(`Borrar la preventa ${pedido.pedido.id}`, texto, [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Borrar preventa', style: 'destructive', onPress: async () => ir(await s.borrar('')) },

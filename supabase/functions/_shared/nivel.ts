@@ -10,6 +10,8 @@ export type Nivel = {
   cupon_mensual: number;
   compra: number;
   siguiente: { clave: string; nombre: string; desde: number; factor: number; falta: number } | null;
+  /** false mientras los niveles estén apagados (Reglamento v2 sin publicar). */
+  activos: boolean;
 };
 
 /** Hoy en El Salvador, 'AAAA-MM-DD'. */
@@ -17,13 +19,18 @@ const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 1
 
 // deno-lint-ignore no-explicit-any
 export async function nivelDeCliente(admin: any, customerId: number): Promise<Nivel> {
-  const [{ data: compra, error: eC }, { data: niveles, error: eN }] = await Promise.all([
+  const [{ data: compra, error: eC }, { data: niveles, error: eN }, { data: cfg, error: eF }] = await Promise.all([
     admin.rpc("puntos_compra_12m", { p_customer_id: customerId, p_hasta: hoySV() }),
     admin.from("puntos_niveles").select("clave, nombre, desde, factor, puntos_cumpleanos, horas_reserva, cupon_mensual").order("desde"),
+    admin.from("puntos_config").select("niveles_activos").limit(1).maybeSingle(),
   ]);
   if (eC) throw eC;
   if (eN) throw eN;
-  const c = Number(compra ?? 0);
+  if (eF) throw eF;
+  // Apagados hasta el Reglamento v2 (2026-10-08): todos en el nivel de entrada,
+  // igual que `puntos_nivel_de` en la base. La app no muestra la escalera.
+  const activos = cfg?.niveles_activos === true;
+  const c = activos ? Number(compra ?? 0) : 0;
   // deno-lint-ignore no-explicit-any
   const lista = (niveles ?? []).map((n: any) => ({ ...n, desde: Number(n.desde), factor: Number(n.factor) }));
   const i = Math.max(0, lista.findLastIndex((n: any) => n.desde <= c));
@@ -32,7 +39,8 @@ export async function nivelDeCliente(admin: any, customerId: number): Promise<Ni
   return {
     clave: n.clave, nombre: n.nombre, factor: n.factor, cumpleanos: n.puntos_cumpleanos, horas_reserva: n.horas_reserva,
     cupon_mensual: Number(n.cupon_mensual ?? 0),
-    compra: Math.round(c * 100) / 100,
+    compra: Math.round(Number(compra ?? 0) * 100) / 100,
+    activos,
     siguiente: s ? { clave: s.clave, nombre: s.nombre, desde: s.desde, factor: s.factor, falta: Math.max(0, Math.round((s.desde - c) * 100) / 100) } : null,
   };
 }

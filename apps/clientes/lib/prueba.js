@@ -8,7 +8,8 @@ import { create } from 'zustand';
 const CLAVE = 'puntos_salud_modo_prueba';
 
 export const NIVELES_PRUEBA = [
-  { clave: 'vip', nombre: 'Cliente VIP', factor: 1, desde: 0, cumpleanos: 50 },
+  // Reglamento v2: el nivel de entrada se llama Bronce.
+  { clave: 'bronce', nombre: 'Bronce', factor: 1, desde: 0, cumpleanos: 50 },
   { clave: 'plata', nombre: 'Plata', factor: 1.25, desde: 500, cumpleanos: 75 },
   { clave: 'oro', nombre: 'Oro', factor: 1.5, desde: 1000, cumpleanos: 100 },
   { clave: 'platino', nombre: 'Platino', factor: 2, desde: 2000, cumpleanos: 100 },
@@ -50,20 +51,32 @@ export function nivelDePrueba(clave) {
   const s = NIVELES_PRUEBA[i + 1];
   const compra = s ? Math.round((n.desde + (s.desde - n.desde) * 0.7) * 100) / 100 : 2850;
   return {
-    clave: n.clave, nombre: n.nombre, factor: n.factor, cumpleanos: n.cumpleanos, horas_reserva: i >= 2 ? 48 : 24,
+    clave: n.clave, nombre: n.nombre, factor: n.factor, cumpleanos: n.cumpleanos, horas_reserva: 24, activos: true,
     cupon_mensual: n.clave === 'platino' ? 500 : 0, compra,
     siguiente: s ? { clave: s.clave, nombre: s.nombre, desde: s.desde, factor: s.factor, falta: Math.round((s.desde - compra) * 100) / 100 } : null,
   };
 }
 
-/** Un cupón de muestra (Oro o Platino). `semilla` cambia con «Volver a tapar». */
+// Los premios de la raspable del Reglamento v2 (cláusula 5), con su probabilidad.
+const PREMIOS = {
+  oro: [[45, { puntos: 25 }], [30, { puntos: 50 }], [15, { puntos: 100 }], [8, { descuento: 5, tope: 5 }], [2, { puntos: 250 }]],
+  platino: [[40, { puntos: 100 }], [30, { puntos: 200 }], [15, { puntos: 300 }], [10, { descuento: 15, tope: 10 }], [5, { puntos: 1000 }]],
+};
+
+/** Un cupón de muestra (Oro o Platino, premios del v2). `semilla` cambia con «Volver a tapar». */
 export function cuponDePrueba(nivel, semilla, usado = false) {
   const hoy = new Date();
   const fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
   const vence = `${fin.getFullYear()}-${String(fin.getMonth() + 1).padStart(2, '0')}-${String(fin.getDate()).padStart(2, '0')}`;
-  const premios = nivel === 'oro' ? [100, 200, 500] : [300, 500, 1000];
-  const puntos = premios[Math.floor(Math.random() * premios.length)];
-  return { id: `prueba-${nivel}-${semilla}`, puntos, restantes: usado ? 0 : puntos, vence, titulo: `Cupón ${nivel === 'oro' ? 'Oro' : 'Platino'} del mes` };
+  const tabla = PREMIOS[nivel === 'oro' ? 'oro' : 'platino'];
+  let r = Math.random() * 100; let premio = tabla[0][1];
+  for (const [peso, p] of tabla) { if (r < peso) { premio = p; break; } r -= peso; }
+  const puntos = premio.puntos ?? 0;
+  return {
+    id: `prueba-${nivel}-${semilla}`, puntos, restantes: usado ? 0 : (puntos || 1), vence,
+    descuento: premio.descuento ?? null, tope: premio.tope ?? null,
+    titulo: `Raspable ${nivel === 'oro' ? 'Oro' : 'Platino'} del mes`,
+  };
 }
 
 // Se lee lo guardado al abrir la app.

@@ -3,6 +3,7 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useTema } from '../../tema/tema';
 import { useCarrito } from '../../lib/carrito';
+export { default as ErrorBoundary } from '../../componentes/ErrorDePantalla';
 
 const TRANSPARENTE = { backgroundColor: 'transparent' };
 

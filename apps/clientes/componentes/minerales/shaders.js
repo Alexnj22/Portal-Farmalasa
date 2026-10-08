@@ -101,6 +101,19 @@ half4 main(float2 p) {
   c += float3(0.45, 0.70, 0.08) * smoothstep(0.55, 1.4, uv.x / a + uv.y) * 0.35;
   return half4(c, 1.0);
 }`,
+  bronce: `
+half4 main(float2 p) {
+  float a = res.x / res.y; float2 uv = p / res.y;
+  // Bronce cepillado: cobre cálido con una banda de luz y un velo de pátina.
+  float cep = noise(float2(uv.x * 1.2, uv.y * 230.0)) * 0.6 + noise(float2(uv.x * 3.0, uv.y * 80.0)) * 0.4;
+  float3 c = mix(float3(0.22, 0.10, 0.04), float3(0.56, 0.31, 0.14), uv.y * 0.3 + cep * 0.55);
+  float banda = exp(-sq((uv.x - a * (0.5 + tilt.x * 0.55)) * 2.3));
+  c += float3(0.95, 0.62, 0.38) * banda * (0.30 + cep * 0.35);
+  float patina = smoothstep(0.55, 0.85, fbm(uv * 2.2 + 5.0));
+  c = mix(c, float3(0.20, 0.32, 0.27), patina * 0.10);
+  float2 L = luz(a); c += float3(1.0, 0.70, 0.45) * exp(-dot(uv - L, uv - L) * 4.0) * 0.18;
+  return half4(c, 1.0);
+}`,
   plata: `
 half4 main(float2 p) {
   float a = res.x / res.y; float2 uv = p / res.y;

@@ -21,6 +21,7 @@ import { useTema } from '../tema/tema';
 import { colorSistema } from '../componentes/sistema';
 import { navegar } from '../lib/navegar';
 import AvisoSinConexion from '../componentes/AvisoSinConexion';
+export { default as ErrorBoundary } from '../componentes/ErrorDePantalla';
 
 const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent' } };
 const OSCURO = { ...DarkTheme, colors: { ...DarkTheme.colors, background: 'transparent' } };

@@ -58,15 +58,17 @@ export const COLORES_NIVEL = {
   //   VIP morado de la marca · Plata gris metálico · Oro dorado ·
   //   Platino negro (la «black card»), con un brillo apenas iridiscente.
   vip: { frente: ['#2B0B3A', T['logo-magenta'], '#5B1E9C'], reverso: ['#1A0822', '#3A1048'], rotulo: 'SOCIO VIP', sombra: '#5B1E9C', acento: '#E06BC2' },
+  // Bronce: el nivel de entrada del Reglamento v2 (hoy sólo en modo de prueba).
+  bronce: { frente: ['#3A1A08', '#9A5A2C', '#5A2E12'], reverso: ['#24100A', '#5A2E12'], rotulo: 'BRONCE', sombra: '#5A2E12', acento: '#F2B07A' },
   plata: { frente: ['#4A525E', '#A9B2BE', '#5E6774'], reverso: ['#2A3038', '#4A525E'], rotulo: 'PLATA', sombra: '#4A525E', acento: '#DCE3EC' },
   oro: { frente: ['#7A4A00', '#E0A93A', '#9A6408'], reverso: ['#3F2600', '#7A4A00'], rotulo: 'ORO', sombra: '#9A6408', acento: '#FFD978' },
   platino: { frente: ['#08090C', '#262A33', '#08090C'], reverso: ['#000000', '#16181E'], rotulo: 'PLATINO', sombra: '#000000', acento: '#E8ECF2' },
   // Cliente Mayorista (2026-10-08, en modo de prueba): sus rangos son piedras,
   // cada una con su color — Jade, Zafiro, Rubí y Diamante.
-  jade: { frente: ['#06281F', '#1F9E77', '#0B4D3A'], reverso: ['#041A14', '#0B4D3A'], rotulo: 'MAYORISTA · JADE', sombra: '#0B4D3A', acento: '#8CF5CE' },
-  zafiro: { frente: ['#061440', '#2E5BD6', '#0A2470'], reverso: ['#040C2A', '#0A2470'], rotulo: 'MAYORISTA · ZAFIRO', sombra: '#0A2470', acento: '#A9C2FF' },
-  rubi: { frente: ['#3A0410', '#C0163A', '#62081C'], reverso: ['#24020A', '#62081C'], rotulo: 'MAYORISTA · RUBÍ', sombra: '#62081C', acento: '#FF9AAE' },
-  diamante: { frente: ['#18222E', '#8FB3CF', '#26384A'], reverso: ['#0E151D', '#26384A'], rotulo: 'MAYORISTA · DIAMANTE', sombra: '#26384A', acento: '#EAF6FF' },
+  jade: { frente: ['#06281F', '#1F9E77', '#0B4D3A'], reverso: ['#041A14', '#0B4D3A'], rotulo: 'JADE', sombra: '#0B4D3A', acento: '#8CF5CE' },
+  zafiro: { frente: ['#061440', '#2E5BD6', '#0A2470'], reverso: ['#040C2A', '#0A2470'], rotulo: 'ZAFIRO', sombra: '#0A2470', acento: '#A9C2FF' },
+  rubi: { frente: ['#3A0410', '#C0163A', '#62081C'], reverso: ['#24020A', '#62081C'], rotulo: 'RUBÍ', sombra: '#62081C', acento: '#FF9AAE' },
+  diamante: { frente: ['#18222E', '#8FB3CF', '#26384A'], reverso: ['#0E151D', '#26384A'], rotulo: 'DIAMANTE', sombra: '#26384A', acento: '#EAF6FF' },
 };
 
 // `previo` y `cambio` (2026-10-08): el saldo anterior y la diferencia. Con

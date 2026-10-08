@@ -110,11 +110,12 @@ export default function Cupon({ cupon, nivel = 'platino', fondo, activa = true, 
             <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '800', letterSpacing: 1.5 }}>TU CUPÓN DEL MES</Text>
             <Animated.View style={[{ alignSelf: 'flex-start' }, estiloSalto]}>
               <Text style={{ color: '#FFFFFF', fontSize: 28, fontWeight: '900', fontVariant: ['tabular-nums'], textDecorationLine: usado ? 'line-through' : 'none' }}>
-                {dolares((parcial ? cupon.restantes : cupon.puntos) / 100)}
+                {cupon.descuento ? `${cupon.descuento}% OFF` : dolares((parcial ? cupon.restantes : cupon.puntos) / 100)}
               </Text>
             </Animated.View>
             <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13 }}>
               {usado ? 'Ya lo usaste. ¡El próximo mes llega otro!'
+                : cupon.descuento ? `En una compra, hasta ${dolares(cupon.tope)} · hasta el ${fecha(cupon.vence)}`
                 : parcial ? `Te quedan ${dolares(cupon.restantes / 100)} de ${dolares(cupon.puntos / 100)} · hasta el ${fecha(cupon.vence)}`
                   : `Úsalo en caja con tu tarjeta · hasta el ${fecha(cupon.vence)}`}
             </Text>

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1259.0 — Niveles apagados hasta el Reglamento v2 (revertidos los 109 puntos), vista previa del v2 en la app y arreglo del cierre de la build 28
+
+- **Niveles apagados hasta que el Reglamento v2 se firme y se publique** (decisión del usuario). Desde el 2026-10-07 la acumulación multiplicaba por nivel y el cron entregaba la raspable sin que estuviera anunciado. Un interruptor, `puntos_config.niveles_activos` (false): con él apagado `puntos_nivel_de` devuelve siempre el nivel de entrada, así que acumular (×1), cumpleaños (monto base), cupones (ninguno) y reservas (24 h) vuelven a lo de antes; `_shared/nivel.ts` lo respeta y la app no muestra la escalera. Encenderlo es cambiar una fila.
+- **Revertidos los puntos de más:** 23 compras de clientes Plata y Oro, **109 puntos**, ninguno gastado: cada lote volvió a 1 punto por $1 y los saldos se ajustaron (verificado: 0 lotes con extra, 0 saldos descuadrados). Sin aviso al cliente. Simulación de cupones tras el cambio: 0. Quedan vigentes los **41 cupones (8,300 puntos)** ya entregados.
+- **Vista previa del Reglamento v2 en el modo de prueba:** nivel de entrada **Bronce** (material de bronce cepillado, en la app y en Wallet), beneficios del v2 por nivel y la raspable con los premios y probabilidades del v2 (Oro 25/50/100/250 puntos o 5 % de descuento hasta $5; Platino 100/200/300/1,000 puntos o 15 % hasta $10).
+- **Arreglo del cierre de la build 28:** con el modo de prueba en un rango de mayorista, el aviso «MODO DE PRUEBA · …» leía `nivel.nombre` sobre un nivel vacío y la app se cerraba (`TypeError: Cannot read property 'nombre' of null`, reproducido en el simulador). Además, cada layout exporta ahora un `ErrorBoundary`: si una pantalla falla al dibujarse, muestra «Algo salió mal · Reintentar» en vez de cerrar la app. Rótulos de las piedras más cortos (no tapan «PUNTOS SALUD»).
+- `gate:perf`: declarado `app_catalogo_rehacer_destacados` (3.1 GB, una vez al día a las 02:40 SV).
+
 ## v2.1258.0 — App: tarjetas de materiales (metales y piedras) en la app y en Wallet, mayorista sin nivel y tratamientos en Inicio
 
 - **Tarjetas de material:** cada tarjeta es un shader de Skia vivo (`componentes/minerales/shaders.js`), que sigue la inclinación del teléfono y el dedo: **VIP** seda morada, **Plata** y **Oro** cepillados con banda de luz (Oro con destellos), **Platino** titanio negro con tornasol; y las piedras del Cliente Mayorista: **Jade** translúcido con vetas, **Zafiro** facetado con estrella de seis puntas, **Rubí** facetado con fuego interior y **Diamante** en corte brillante (mesa octogonal, facetas triangulares y dispersión de arcoíris). El reverso lleva el mismo material, oscurecido para el QR. Sólo corre el reloj con la tarjeta a la vista.

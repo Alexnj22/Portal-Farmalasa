@@ -67,6 +67,7 @@ export const clienteDelSerial = (serial: string) => Number(String(serial).replac
 // esa franja nace y muere, y los rótulos van en su acento.
 const MATERIALES: Record<string, { fondo: string; rotulo: string }> = {
   vip: { fondo: "rgb(40, 10, 52)", rotulo: "rgb(180, 228, 80)" },
+  bronce: { fondo: "rgb(34, 15, 6)", rotulo: "rgb(242, 176, 122)" },
   plata: { fondo: "rgb(44, 48, 56)", rotulo: "rgb(220, 226, 234)" },
   oro: { fondo: "rgb(64, 38, 4)", rotulo: "rgb(255, 217, 120)" },
   platino: { fondo: "rgb(9, 10, 13)", rotulo: "rgb(232, 236, 242)" },

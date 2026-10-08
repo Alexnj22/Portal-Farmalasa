@@ -12,11 +12,13 @@ import { useTema } from '../tema/tema';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icono from './Icono';
 
+// Los del Reglamento v2 (cláusula 4): lo que se ve en el modo de prueba.
 export const BENEFICIOS = {
+  bronce: ['1 punto por cada $1', 'Ofertas exclusivas', '50 puntos en tu cumpleaños'],
   vip: ['1 punto por cada $1', 'Ofertas exclusivas', 'Regalo de cumpleaños'],
-  plata: ['1.25 puntos por cada $1', 'Cumpleaños de 75 puntos'],
-  oro: ['1.5 puntos por cada $1', 'Cupón mensual', 'Cumpleaños de 100 puntos', '48 h para retirar reservas'],
-  platino: ['2 puntos por cada $1', 'Cupón mensual', 'Cumpleaños de 100 puntos', '48 h para retirar reservas'],
+  plata: ['1.25 puntos por cada $1', '75 puntos en tu cumpleaños'],
+  oro: ['1.5 puntos por cada $1', '100 puntos en tu cumpleaños', 'Raspable mensual'],
+  platino: ['2 puntos por cada $1', '100 puntos en tu cumpleaños', 'Raspable mensual Platino'],
 };
 
 const factorTexto = (f) => (Number(f) === 1 ? '1 punto' : `${String(Number(f)).replace('.', '.')} puntos`);

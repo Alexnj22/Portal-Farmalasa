@@ -136,7 +136,7 @@ export default function Puntos() {
         <Pressable onPress={() => navegar('/cuenta')} accessibilityRole="button"
           style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FF9F0A', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
           <Icono sf="testtube.2" respaldo="" tam={12} color="#1A1000" />
-          <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {resumen.nivel.nombre.toUpperCase()}</Text>
+          <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {String(mayorista ? `Mayorista ${rangoDePrueba(mayorista).nombre}` : resumen.nivel?.nombre ?? '').toUpperCase()}</Text>
         </Pressable>
       ) : null}
       <SubisteDeNivel nivel={resumen.nivel} forzar={verNivel === '1'} />
@@ -172,7 +172,9 @@ export default function Puntos() {
           <Mayorista rango={rangoDePrueba(mayorista)} />
         </Entrada>
       ) : null}
-      {resumen.nivel && !mayorista ? (
+      {/* Mientras los niveles estén apagados (Reglamento v2 sin publicar) no se
+          muestra la escalera; en el modo de prueba, sí. */}
+      {resumen.nivel && !mayorista && resumen.nivel.activos !== false ? (
         <Entrada indice={1}>
           <Nivel nivel={resumen.nivel} />
         </Entrada>

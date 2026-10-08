@@ -171,7 +171,7 @@ Deno.serve(async (req) => {
     return (count ?? 0) > 0;
   };
   // Modo de prueba: los niveles y, para ver su tarjeta, los rangos de mayorista.
-  const NOMBRE_NIVEL: Record<string, string> = { vip: "Cliente VIP", plata: "Plata", oro: "Oro", platino: "Platino",
+  const NOMBRE_NIVEL: Record<string, string> = { vip: "Cliente VIP", bronce: "Bronce", plata: "Plata", oro: "Oro", platino: "Platino",
     jade: "Jade", zafiro: "Zafiro", rubi: "Rubí", diamante: "Diamante" };
 
 

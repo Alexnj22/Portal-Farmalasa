@@ -8,9 +8,13 @@ import {
     ClipboardList,
     Package,
     TriangleAlert,
-    Check, Search, PackageX, Repeat,
+    Check, Search, PackageX, Repeat, RotateCcw, Download, FileText, X,
 } from 'lucide-react';
+import { EmptyState } from '../../components/common/StateViews';
+import PedidoModal from './PedidoModal';
+import { resumenPorSala } from './logicaDeRutas';
 import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -35,7 +39,9 @@ function friendlyError(e) {
 function fmtTimeSince(iso) {
     if (!iso) return null;
     const d = Math.floor((Date.now() - new Date(iso)) / 86_400_000);
-    if (d === 0) return 'hoy';
+    // `<= 0`: una fecha apenas en el futuro (reloj del equipo, zona horaria)
+    // daba «hace -1 días».
+    if (d <= 0) return 'hoy';
     if (d === 1) return 'ayer';
     // Palabras completas: «hace 3m» se leía como minutos.
     if (d < 14)  return `hace ${d} días`;
@@ -80,6 +86,17 @@ export default function TabGenerar({ searchTerm = '' }) {
 
     const [dashStats,   setDashStats]   = useState([]);
     const [dashLoading, setDashLoading] = useState(true);
+    // Un error al leer el tablero NO es «no hay nada»: antes dejaba las seis
+    // salas como «Pendiente MIN/MAX» y la tabla como «No hay productos sin
+    // stock», dos afirmaciones falsas sobre una lectura que no llegó.
+    const [dashError,   setDashError]   = useState(null);
+
+    // El paso intermedio antes de confirmar (resumen por sala) y, después,
+    // los PDF por sala. `null` = cerrado.
+    //   { paso: 'resumen', rows, sucursales, global }
+    //   { paso: 'pdfs', numero, map, sucIds, codigoFn, meta, estado: {sid: 'idle'|'preparando'|'enviado'|'error'} }
+    const [flujo,      setFlujo]      = useState(null);
+    const [preparando, setPreparando] = useState(false);
 
     const [sinBodega,     setSinBodega]     = useState([]);
     const [sinBodegaLoad, setSinBodegaLoad] = useState(false);
@@ -99,12 +116,17 @@ export default function TabGenerar({ searchTerm = '' }) {
     const refreshStats = useCallback(() => {
         setDashLoading(true);
         setSinBodegaLoad(true);
+        setDashError(null);
         fetchTableroParaGenerarPedido({ p_sucursal_ids: SUCURSALES })
-            .then(({ data }) => {
+            .then(({ data, error: e }) => {
+                if (e) throw e;
                 setDashStats(Array.isArray(data?.stats) ? data.stats : []);
                 setSinBodega(Array.isArray(data?.sin_bodega) ? data.sin_bodega : []);
             })
-            .catch(() => { setDashStats([]); setSinBodega([]); })
+            .catch((e) => {
+                setDashStats([]); setSinBodega([]);
+                setDashError(mensajeAmigable(e, 'No se pudo leer cómo están las sucursales. Intenta de nuevo.'));
+            })
             .finally(() => { setDashLoading(false); setSinBodegaLoad(false); });
     }, []);
 
@@ -124,10 +146,14 @@ export default function TabGenerar({ searchTerm = '' }) {
         });
     }, []);
 
-    // ── Generar directo: calcula + confirma final + imprime ────
-    const handleGenerarDirecto = useCallback(async () => {
+    // ── Paso 1: calcular y mostrar el resumen por sala ─────────
+    // Antes «Generar y confirmar» pasaba de las tarjetas al pedido confirmado
+    // sin mostrar qué se iba a mandar. Ahora se calcula la vista previa, se
+    // muestra por sala, y recién «Confirmar» la guarda — la MISMA vista previa,
+    // así que lo que se ve es lo que se confirma.
+    const handlePrepararResumen = useCallback(async () => {
         if (selected.size === 0) return;
-        setConfirming(true); setError(null);
+        setPreparando(true); setError(null);
         try {
             const rpcParams = globalMode
                 ? { p_sucursal_ids: SUCURSALES, p_target_ids: [...selected] }
@@ -141,6 +167,40 @@ export default function TabGenerar({ searchTerm = '' }) {
                 showToast('Sin necesidades', msg, 'info');
                 return;
             }
+            setFlujo({ paso: 'resumen', rows, sucursales: [...selected], global: globalMode });
+        } catch (e) {
+            const msg = friendlyError(e);
+            setError(msg);
+            showToast('Error al calcular el pedido', msg, 'error');
+        } finally {
+            setPreparando(false);
+        }
+    }, [selected, globalMode, showToast]);
+
+    // ── Un PDF de una sala ─────────────────────────────────────
+    // `printPerSucursal` con UNA sala por llamada: el navegador deja pasar una
+    // descarga por clic y bloquea las que vienen detrás de la primera. Antes se
+    // disparaban todas cada 150 ms sin esperar, y el aviso decía «PDF listo»
+    // aunque de la segunda en adelante no bajara ninguna.
+    const descargarSala = useCallback(async (sid) => {
+        const f = flujo;
+        if (!f || f.paso !== 'pdfs') return;
+        setFlujo(prev => prev && { ...prev, estado: { ...prev.estado, [sid]: 'preparando' } });
+        try {
+            await printPerSucursal(f.map, [sid], r => r.cantidad_asignada, f.codigoFn, f.meta);
+            setFlujo(prev => prev && { ...prev, estado: { ...prev.estado, [sid]: 'enviado' } });
+        } catch (e) {
+            console.error('[TabGenerar] PDF de sala:', e);
+            setFlujo(prev => prev && { ...prev, estado: { ...prev.estado, [sid]: 'error' } });
+        }
+    }, [flujo]);
+
+    // ── Paso 2: confirmar lo que se vio ────────────────────────
+    const handleConfirmar = useCallback(async () => {
+        if (!flujo || flujo.paso !== 'resumen') return;
+        const { rows, sucursales, global } = flujo;
+        setConfirming(true); setError(null);
+        try {
             const pItems = rows.map(row => ({
                 erp_sucursal_id:       row.erp_sucursal_id,
                 erp_product_id:        row.erp_product_id,
@@ -170,10 +230,20 @@ export default function TabGenerar({ searchTerm = '' }) {
                 p_items:          pItems,
                 p_responsable_id: esEmpleado ? user.id : null,
                 p_revisado_por:   null,
-                p_sucursal_ids:   [...selected],
+                p_sucursal_ids:   sucursales,
             }, { directo: true });
             if (confErr) throw confErr;
-            const { data: ped } = await fetchPedidoNumero(pedidoId);
+
+            // El número: si la lectura falla se reintenta UNA vez, y si sigue
+            // sin llegar se dice «el pedido», nunca «Pedido #undefined» (que
+            // además viajaba al encabezado del PDF).
+            let numero = null;
+            for (let intento = 0; intento < 2 && numero == null; intento++) {
+                const { data: ped, error: numErr } = await fetchPedidoNumero(pedidoId);
+                if (numErr) console.error('[TabGenerar] número del pedido:', numErr);
+                numero = ped?.numero ?? null;
+            }
+            const rotulo = numero != null ? `Pedido #${numero}` : 'El pedido';
 
             const map = {};
             for (const row of rows) {
@@ -185,7 +255,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                 else                          map[s].normal.push(row);
             }
             const sucIds     = SUCURSALES.filter(id => map[id]);
-            const meta       = { responsable: user?.name ?? null, revisor: null, generadoPor: user?.name ?? null, pedidoNumero: ped?.numero };
+            const meta       = { responsable: user?.name ?? null, revisor: null, generadoPor: user?.name ?? null, pedidoNumero: numero ?? undefined };
 
             // Numero por sucursal por mes: cuántos pedidos previos tiene cada sucursal este mes + 1
             const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
@@ -200,24 +270,29 @@ export default function TabGenerar({ searchTerm = '' }) {
                 }
             }
 
-            const codigoFn   = buildPedidoCodigo(countsBySuc, new Date(), globalMode ? SUCURSALES.length : sucIds.length);
+            const codigoFn   = buildPedidoCodigo(countsBySuc, new Date(), global ? SUCURSALES.length : sucIds.length);
             const codigosMap = {};
             for (const id of sucIds) codigosMap[id] = codigoFn(id);
 
-            iniciarCodigosDeSucursalesDelPedido({
+            // Los códigos de sala son los que llevan los PDF y los que se buscan
+            // después: el error ya no se descarta.
+            const { error: codErr } = await iniciarCodigosDeSucursalesDelPedido({
                 p_pedido_id: pedidoId,
                 p_codigos:   sucIds.map(id => ({ erp_sucursal_id: id, codigo: codigosMap[id] })),
-            }).then(() => {}).catch(() => {});
-
-            printPerSucursal(map, sucIds, r => r.cantidad_asignada, codigoFn, meta);
+            });
+            if (codErr) {
+                console.error('[TabGenerar] códigos de sala:', codErr);
+                showToast('Los códigos de las salas no se guardaron',
+                    'El pedido quedó confirmado. Avisa al equipo de sistemas para asignarlos.', 'warning');
+            }
 
             // Capturar grupos de páginas en background para que Finalizar sea instantáneo
             ;(async () => {
                 let capturadas = 0;
-                try {
-                    for (const sid of sucIds) {
+                for (const sid of sucIds) {
+                    try {
                         const rawItems = await fetchPedidoItemsForPrintCapture(pedidoId, sid);
-                        if (!rawItems?.length) continue;
+                        if (!rawItems?.length) { capturadas++; continue; }
                         // `tiene_dispatch_label` no es columna de pedido_items: sale de la
                         // regla de despacho y se deriva acá igual que en usePedidosData.
                         // isAdicional() lo necesita para reconocer las cajas de Electrolit;
@@ -228,18 +303,21 @@ export default function TabGenerar({ searchTerm = '' }) {
                             tiene_dispatch_label: tieneEtiquetaDeDespacho(r),
                         }));
                         const groups = await getExactPageGroups(sid, itemsConLabel);
-                        if (groups.length) {
-                            await updatePedidoSucursalStatus(pedidoId, sid, { paginas: groups });
-                            capturadas++;
-                        }
+                        if (!groups.length) continue;
+                        // Sólo cuenta la que se GUARDÓ: antes `capturadas++` iba
+                        // después de una escritura cuyo `error` nadie miraba, así
+                        // que un rechazo se contaba como captura y el aviso de
+                        // abajo no salía.
+                        const { error: guardarErr } = await updatePedidoSucursalStatus(pedidoId, sid, { paginas: groups });
+                        if (guardarErr) { console.error('[pedidos] guardar hojas sala', sid, guardarErr); continue; }
+                        capturadas++;
+                    } catch (e) {
+                        // Ya NO en silencio. Este bloque se quedó callado cuando le
+                        // falló al pedido #97 —460 productos, un pedido real— y el
+                        // pedido siguió sin saber qué producto va en qué hoja hasta
+                        // que alguien lo finalizara.
+                        console.error('[pedidos] captura de hojas sala', sid, e);
                     }
-                } catch (e) {
-                    // Ya NO en silencio. Este bloque se quedó callado cuando le
-                    // falló al pedido #97 —460 productos, un pedido real— y el
-                    // pedido siguió sin saber qué producto va en qué hoja hasta
-                    // que alguien lo finalizara. El respaldo existe, pero
-                    // enterarse recién ahí es enterarse tarde.
-                    console.error('[pedidos] captura de hojas:', e);
                 }
                 if (capturadas < sucIds.length) {
                     showToast(
@@ -252,20 +330,43 @@ export default function TabGenerar({ searchTerm = '' }) {
             })();
 
             showToast(
-                `Pedido #${ped?.numero} confirmado`,
-                `${pItems.length} productos en ${sucIds.length} sucursal${sucIds.length > 1 ? 'es' : ''}. PDF listo para imprimir.`,
+                `${rotulo} confirmado`,
+                `${pItems.length} productos en ${sucIds.length} sucursal${sucIds.length > 1 ? 'es' : ''}.`,
                 'success',
             );
+            const estado = Object.fromEntries(sucIds.map(id => [id, 'idle']));
+            const siguiente = { paso: 'pdfs', numero, map, sucIds, codigoFn, meta, estado };
+            setFlujo(siguiente);
             setSelected(new Set());
             refreshStats();
+
+            // Con UNA sala, la descarga sale sola (el navegador deja pasar la
+            // primera). Con varias, una por clic desde la lista.
+            if (sucIds.length === 1) {
+                const sid = sucIds[0];
+                setFlujo(prev => prev && { ...prev, estado: { ...prev.estado, [sid]: 'preparando' } });
+                try {
+                    await printPerSucursal(map, [sid], r => r.cantidad_asignada, codigoFn, meta);
+                    setFlujo(prev => prev && { ...prev, estado: { ...prev.estado, [sid]: 'enviado' } });
+                } catch (e) {
+                    console.error('[TabGenerar] PDF:', e);
+                    setFlujo(prev => prev && { ...prev, estado: { ...prev.estado, [sid]: 'error' } });
+                }
+            }
         } catch (e) {
             const msg = friendlyError(e);
             setError(msg);
+            setFlujo(null);
             showToast('Error al generar el pedido', msg, 'error');
         } finally {
             setConfirming(false);
         }
-    }, [selected, globalMode, employees, user, refreshStats, showToast]);
+    }, [flujo, employees, user, refreshStats, showToast]);
+
+    const resumen = useMemo(
+        () => (flujo?.paso === 'resumen' ? resumenPorSala(flujo.rows) : []),
+        [flujo],
+    );
 
     // ── Derived maps ───────────────────────────────────────────
     const statMap = useMemo(() => {
@@ -279,7 +380,7 @@ export default function TabGenerar({ searchTerm = '' }) {
     const visibleSucursales = SUCURSALES;
 
     const isSucPending = (id) => {
-        if (dashLoading) return false;
+        if (dashLoading || dashError) return false;
         const s = statMap[id];
         return !s || ((s.con_bodega_productos ?? 0) + (s.sin_bodega_productos ?? 0)) === 0;
     };
@@ -393,6 +494,16 @@ export default function TabGenerar({ searchTerm = '' }) {
                 )}
 
                 {/* ── Sucursal cards ─────────────────────────── */}
+                {dashError ? (
+                    <EmptyState
+                        compact
+                        icon={TriangleAlert}
+                        iconClass="text-danger-text"
+                        title="No se pudieron cargar las sucursales"
+                        subtitle={dashError}
+                        action={<Button variant="secondary" icon={RotateCcw} onClick={refreshStats}>Reintentar</Button>}
+                    />
+                ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                     {visibleSucursales.map((id) => {
                         const stat      = statMap[id];
@@ -511,6 +622,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                         );
                     })}
                 </div>
+                )}
 
                 {/* ── Generar ────────────────────────────────── */}
                 {/* Pie con el resumen a la izquierda y la acción a la derecha:
@@ -521,10 +633,10 @@ export default function TabGenerar({ searchTerm = '' }) {
                             ? 'Elige al menos una sucursal para generar el pedido.'
                             : `${selected.size} sucursal${selected.size > 1 ? 'es' : ''} · ${productosElegidos.toLocaleString()} producto${productosElegidos === 1 ? '' : 's'} con stock en Bodega`}
                     </span>
-                    <Button tone="success" size="lg" onClick={handleGenerarDirecto} icon={ClipboardList}
+                    <Button tone="success" size="lg" onClick={handlePrepararResumen} icon={ClipboardList}
                         className="w-full sm:w-auto"
-                        disabled={confirming || selected.size === 0} loading={confirming}>
-                        {confirming ? 'Confirmando…' : 'Generar y confirmar'}
+                        disabled={preparando || confirming || selected.size === 0 || !!dashError} loading={preparando}>
+                        {preparando ? 'Calculando…' : 'Generar y confirmar'}
                     </Button>
                     {/* `Notice` y no un span con su ícono a mano: es el canónico
                         del aviso inline (§15.6). */}
@@ -544,7 +656,10 @@ export default function TabGenerar({ searchTerm = '' }) {
                 sortDir={sinSortDir}
                 onSort={handleSinSort}
                 loading={sinBodegaLoad}
-                empty={{
+                empty={dashError ? {
+                    icon: TriangleAlert,
+                    message: 'No se pudo cargar esta lista. Usa «Reintentar» arriba.',
+                } : {
                     icon: Package,
                     message: searchTerm
                         ? `Sin resultados para "${searchTerm}"`
@@ -615,6 +730,114 @@ export default function TabGenerar({ searchTerm = '' }) {
                     total={sinFiltered.length}
                 />
             )}
+
+            <PasoDeConfirmacion
+                flujo={flujo}
+                resumen={resumen}
+                confirming={confirming}
+                onVolver={() => setFlujo(null)}
+                onConfirmar={handleConfirmar}
+                onDescargar={descargarSala}
+            />
         </div>
+    );
+}
+
+// ── El paso entre las tarjetas y el pedido confirmado ──────────────────────
+// Un solo diálogo con dos momentos: el RESUMEN por sala (Confirmar / Volver) y,
+// ya confirmado, los PDF por sala, cada uno con su botón y su estado. El
+// estado dice «Descarga iniciada» y no «Descargado»: el navegador no avisa si
+// el archivo terminó de bajar, y la pantalla no promete lo que no sabe.
+const ESTADO_PDF = {
+    idle:       null,
+    preparando: { label: 'Preparando…',       variante: 'neutral' },
+    enviado:    { label: 'Descarga iniciada', variante: 'success' },
+    error:      { label: 'No se pudo',        variante: 'danger'  },
+};
+
+function PasoDeConfirmacion({ flujo, resumen, confirming, onVolver, onConfirmar, onDescargar }) {
+    const abierto = !!flujo;
+    const esResumen = flujo?.paso === 'resumen';
+    const cerrar = confirming ? () => {} : onVolver;
+    const tot = resumen.reduce((a, s) => ({
+        renglones: a.renglones + s.renglones, unidades: a.unidades + s.unidades,
+    }), { renglones: 0, unidades: 0 });
+    return (
+        <PedidoModal open={abierto} onClose={cerrar} maxWidth="max-w-lg"
+            ariaLabel={esResumen ? 'Resumen del pedido' : 'PDF por sala'}>
+            <PedidoModal.Header className="px-5 pt-5 pb-3">
+                <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                        <h3 className="text-body-xl font-black text-content leading-tight">
+                            {esResumen ? 'Revisa antes de confirmar'
+                                : flujo?.numero != null ? `Pedido #${flujo.numero} confirmado` : 'Pedido confirmado'}
+                        </h3>
+                        <p className="text-label text-content-3 mt-0.5">
+                            {esResumen
+                                ? `${resumen.length} sala${resumen.length !== 1 ? 's' : ''} · ${tot.renglones.toLocaleString()} renglones · ${tot.unidades.toLocaleString()} unidades`
+                                : (flujo?.sucIds?.length ?? 0) > 1
+                                    ? 'Descarga el PDF de cada sala. El navegador deja pasar una descarga por clic.'
+                                    : 'El PDF de la sala se está descargando.'}
+                        </p>
+                    </div>
+                    <Button variant="ghost" icon={X} iconOnly title="Cerrar" disabled={confirming} onClick={cerrar} />
+                </div>
+            </PedidoModal.Header>
+            <PedidoModal.Body className="px-5 py-3">
+                {esResumen ? (
+                    <ul className="space-y-2">
+                        {resumen.map(s => (
+                            <li key={s.erp_sucursal_id} data-surface="card" className="px-3 py-2.5">
+                                <p className="text-body font-bold text-content">{ERP_NAMES[s.erp_sucursal_id] ?? `Sucursal ${s.erp_sucursal_id}`}</p>
+                                <p className="text-caption text-content-3 tabular-nums mt-0.5">
+                                    {s.renglones.toLocaleString()} {s.renglones === 1 ? 'renglón' : 'renglones'}
+                                    {' · '}{s.unidades.toLocaleString()} unidad{s.unidades !== 1 ? 'es' : ''}
+                                </p>
+                                {(s.revision > 0 || s.sinStock > 0 || s.agotamiento > 0) && (
+                                    <span className="mt-1.5 flex flex-wrap gap-1.5">
+                                        {s.revision > 0 && <Badge variant="warning" size="sm" uppercase={false}>{s.revision} en revisión</Badge>}
+                                        {s.agotamiento > 0 && <Badge variant="chart-3" size="sm" uppercase={false}>{s.agotamiento} por agotamiento</Badge>}
+                                        {s.sinStock > 0 && <Badge variant="danger" size="sm" uppercase={false}>{s.sinStock} sin stock en Bodega</Badge>}
+                                    </span>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <ul className="space-y-2">
+                        {(flujo?.sucIds ?? []).map(sid => {
+                            const est = flujo.estado?.[sid] ?? 'idle';
+                            const chip = ESTADO_PDF[est];
+                            return (
+                                <li key={sid} data-surface="card" className="flex flex-wrap items-center gap-2 px-3 py-2.5">
+                                    <FileText size={16} className="text-content-3 shrink-0" aria-hidden="true" />
+                                    <span className="min-w-0 flex-1">
+                                        <span className="block text-body font-bold text-content">{ERP_NAMES[sid] ?? `Sucursal ${sid}`}</span>
+                                        <span className="block text-caption text-content-3 tabular-nums">{flujo.codigoFn?.(sid)}.pdf</span>
+                                    </span>
+                                    {chip && <Badge variant={chip.variante} size="sm" uppercase={false}>{chip.label}</Badge>}
+                                    <Button variant="secondary" icon={Download} loading={est === 'preparando'}
+                                        onClick={() => onDescargar(sid)}>
+                                        {est === 'idle' ? 'Descargar' : 'Otra vez'}
+                                    </Button>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                )}
+            </PedidoModal.Body>
+            <PedidoModal.Footer className="flex justify-end gap-2">
+                {esResumen ? (
+                    <>
+                        <Button variant="secondary" disabled={confirming} onClick={onVolver}>Volver</Button>
+                        <Button tone="success" icon={Check} loading={confirming} onClick={onConfirmar}>
+                            {confirming ? 'Confirmando…' : 'Confirmar'}
+                        </Button>
+                    </>
+                ) : (
+                    <Button variant="secondary" onClick={onVolver}>Listo</Button>
+                )}
+            </PedidoModal.Footer>
+        </PedidoModal>
     );
 }

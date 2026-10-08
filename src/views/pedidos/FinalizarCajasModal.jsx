@@ -12,6 +12,7 @@ import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import { lanzarSimulacroTraslado, fetchTrasladoErp, updatePedidoSucursalStatus } from '@nucleo/data/pedidos';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { esperaDeSondeo } from './logicaDeRutas';
 import { buscarProductos } from '@nucleo/data/busquedaProductos';
 
 // Un solo «sin productos» para siempre: `items` es dependencia del efecto que
@@ -95,31 +96,43 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
         return () => { vivo = false; };
     }, [open, pedidoId, sucId]);
 
-    // Sondeo cada 3 s hasta que deje de estar en curso. Un fallo de red no corta
-    // el sondeo — se reintenta en el siguiente tick.
+    // Sondeo hasta que deje de estar en curso, con ESPERA CRECIENTE (3, 6, 12,
+    // 24, 24… s — `esperaDeSondeo`) y el mismo tope total de 2 minutos. Antes
+    // era cada 3 s hasta 40 veces: 40 lecturas para algo que suele tardar ~40 s.
+    // Lo rápido se entera igual de pronto; lo lento cuesta 8 lecturas y no 40.
+    // Un fallo de red no corta el sondeo — se reintenta en la siguiente vuelta.
     //
     // Con TOPE (2026-10-07): sin él, una revisión trabada en «en curso» sondeaba
     // hasta cerrar el modal y dejaba el botón de finalizar bloqueado para
     // siempre. A los 2 minutos se da por no respondida y se puede confirmar
     // igual, ajustando a mano — lo mismo que cuando la revisión falla.
-    const intentosSimu = useRef(0);
+    //
+    // Depende SÓLO de `simuId`: antes dependía también de `simu`, y cada lectura
+    // rearmaba el intervalo; el contador vivía en un ref que nunca volvía a cero,
+    // así que al reabrir el modal el sondeo arrancaba ya agotado.
     useEffect(() => {
-        if (!simuId || (simu && simu.estado !== 'en_curso')) return;
+        if (!simuId) return undefined;
         let vivo = true;
-        const t = setInterval(async () => {
-            intentosSimu.current += 1;
-            if (intentosSimu.current > 40) {
-                clearInterval(t);
-                if (vivo) setSimuError('la revisión tardó demasiado');
-                return;
-            }
+        let t = null;
+        let intento = 0;
+        const vuelta = async () => {
             try {
                 const { data } = await fetchTrasladoErp(simuId);
-                if (vivo && data) setSimu(data);
-            } catch { /* se reintenta en el próximo tick */ }
-        }, 3000);
-        return () => { vivo = false; clearInterval(t); };
-    }, [simuId, simu]);
+                if (!vivo) return;
+                if (data) {
+                    setSimu(data);
+                    if (data.estado !== 'en_curso') return;
+                }
+            } catch { /* se reintenta en la próxima vuelta */ }
+            if (!vivo) return;
+            intento += 1;
+            const espera = esperaDeSondeo(intento);
+            if (espera == null) { setSimuError(e => e ?? 'la revisión tardó demasiado'); return; }
+            t = setTimeout(vuelta, espera);
+        };
+        t = setTimeout(vuelta, esperaDeSondeo(0));
+        return () => { vivo = false; clearTimeout(t); };
+    }, [simuId]);
 
     // No se finaliza mientras se revisa la existencia (2026-10-07): lo que el
     // sistema dice que no hay arranca en cero cuando llega la revisión, y

@@ -8,7 +8,12 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 // Mismas etiquetas que LLEGADA_TIPO_INFO en PostCompletionSection.jsx (solo
 // el texto — el estilo de esta tarjeta sigue el patrón "completado" propio
-// de este componente, ver bloque "Confirmado en Sistema de Ventas").
+// de este componente, ver bloque "Confirmado en el inventario").
+//
+// Los rótulos de los pasos dicen lo que se HACE —contar, ingresar al
+// inventario—, nunca el nombre del sistema donde termina el dato. Decían
+// «Sistema de Ventas» en tres lugares, y para la sala eso es un nombre que no
+// significa nada: lo que le importa es si ya puede vender lo que llegó.
 const LLEGADA_TIPO_LABEL = {
     completa:    'sin novedad',
     caja_danada: 'caja dañada',
@@ -137,11 +142,11 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
             {llegadaOk && todosReenviosResueltos && !hasFaltaPendiente && hasFaltaItems && (
                 <Notice variant="chart-3" icon={Database}
                     action={accion(<Button tone="chart-3" disabled={!!busy} onClick={onOpenReenvioModal}>Revisar</Button>)}>
-                    Revisar caja del reenvío en Sistema de Ventas
+                    Contar lo que llegó en el reenvío
                 </Notice>
             )}
 
-            {/* Paso 2: Confirmar en Sistema de Ventas */}
+            {/* Paso 2: contar e ingresar al inventario */}
             {llegadaOk && !erpOk && (
                 <Notice variant="chart-3" icon={Database}
                     /* Dos botones en la ranura, así que van envueltos — pero la
@@ -154,11 +159,11 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                             <Button tone="chart-3" disabled={!!busy} onClick={onOpenRecibir}>Confirmar</Button>
                         </span>
                     ) : null}>
-                    Paso 2 — Confirmar en Sistema de Ventas {pendientesCount > 0 ? `(${pendientesCount})` : ''}
+                    Paso 2 — Contar e ingresar {pendientesCount > 0 ? `(${pendientesCount})` : ''}
                 </Notice>
             )}
 
-            {/* Completado en ERP */}
+            {/* Completado: contado e ingresado */}
             {/* Con «Revisar lo contado»: hasta el 2026-09-02 este aviso era el
                 final del camino y con él se iba el único botón que abre la
                 pantalla de recepción. Quien nota el error al terminar —que es
@@ -173,7 +178,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                             <Button variant="secondary" disabled={!!busy} onClick={onOpenRecibir}>Revisar lo contado</Button>
                         </span>
                     ) : empChip(erpEmp)}>
-                    Confirmado en Sistema de Ventas
+                    Confirmado en el inventario
                 </Notice>
             )}
         </div>

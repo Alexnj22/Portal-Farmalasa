@@ -120,204 +120,60 @@ function etiquetaDeLaSala(estadoSala, stage, entregada, difsPendientes = 0) {
 // PostCompletionSection, ReceptionActions, FilterPill: extraídos a
 // ./tabpedidos/ (Bloque 6.C) — importados arriba.
 
-// ─── Main component ───────────────────────────────────────────────────────────
-// Bloque 6.C (continuación): el estado/fetch de este componente vive en el
-// hook usePedidosData (./tabpedidos/usePedidosData.js) — mismos nombres,
-// misma lógica, extracción mecánica. Este archivo queda solo con el JSX.
-export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
-    const { hasPermission, isSU } = useAuth();
-    // `pedidos_descargar` gatea la REIMPRESIÓN de un pedido ya generado, no la
-    // impresión que sale al generarlo: esa es el entregable del flujo de bodega
-    // —el papel con el que se arman las cajas— y bloquearla dejaría el pedido
-    // hecho y sin hoja. El permiso se llama "Reimprimir el pedido" por eso.
-    const canDownload = hasPermission('pedidos_descargar');
-    // { pedidoId, sucId, item, opcion, nota } — el renglón cuya foto falta.
-    const [devolverModal, setDevolverModal] = React.useState(null);
-    // Qué ruta está siendo movida ahora mismo. Sin esto, dos toques seguidos en
-    // «Iniciar» mandan DOS avisos de salida a cada sala de la ruta — el aviso ya
-    // se fue y no se puede retirar. Es por ruta y no una bandera global porque
-    // un conductor puede tener varias en pantalla.
-    const [rutaOcupada, setRutaOcupada] = React.useState(null);
-    const {
-        user, isBranch, canEdit, canEditMinMax,
-        erpSucursalId, branchName,
-        filterSuc, setFilterSuc,
-        filterStatus, setFilterStatus,
-        filterDate, setFilterDate,
-        activeRows,
-        loading,
-        expanded,
-        items,
-        eventosMap,
-        devolucionesMap,
-        loadingItems,
-        llegadaStatus,
-        erpStatus,
-        busyAction,
-        busyLifecycle,
-        crearRutaOpen, setCrearRutaOpen,
-        modal, setModal,
-        rutaMapOpen, setRutaMapOpen,
-        pedidoRutaMap,
-        llegadaModal, setLlegadaModal,
-        reenvioLlegadaModal, setReenvioLlegadaModal,
-        reenviarConfirmModal, setReenviarConfirmModal,
-        finalizarModal, setFinalizarModal,
-        newAlert, setNewAlert,
-        pauseModal, setPauseModal,
-        pauseHistory,
-        pauseRazon, setPauseRazon,
-        pauseComment, setPauseComment,
-        kioskLunch,
-        apoyoMap,
-        apoyoModal, setApoyoModal,
-        cardStats,
-        trasladoStats,
-        ingresoStats,
-        ingresoEnCurso,
-        vigilarIngreso,
-        handleReintentarIngreso,
-        entregaMap,
-        anularModal, setAnularModal,
-        busyAnular,
-        printingPdf,
-        programarModal, setProgramarModal,
-        savingProgramar,
-        empMap,
-        loadActive,
-        loadActiveRutas,
-        fetchItems,
-        toggleExpand,
-        handleLifecycle,
-        handleProgramarEntrega,
-        handlePrintPdf,
-        openPauseModal,
-        confirmPause,
-        handleApoyoSuccess,
-        handleAnular,
-        openFinalizarModal,
-        handleFinalizarConCajas,
-        handleLlegada,
-        handleLlegadaConfirm,
-        handleResolverFaltantes,
-        handleSegundaLlegada,
-        handleReenvioLlegadaConfirm,
-        handleEntregarStop,
-        handleMarkErp,
-        openModal,
-        openReenvioModal,
-        handleReportarDiferencias,
-        handleCorregirBodega,
-        handleConfirmarCorreccion,
-        handleProponerConFoto,
-        handleMoverDevolucion,
-        handleProbarDevolucion,
-        handleRecibirDevolucion,
-        handleDecidirDiferencia,
-        handleConfirmarLlegadaDiferencia,
-        filterOptions,
-        hasObservacion,
-        pedidoStageMap,
-        filteredRows,
-        sucursalCounts,
-        renderGroups,
-    } = usePedidosData({ searchTerm });
+// Los grupos de la lista: «¿qué toca hacer?», en orden de urgencia. Lo que
+// tiene un problema abierto va primero, sea cual sea su etapa.
+const GRUPOS_LISTA = [
+    { key: 'problemas',   label: 'Con problemas',     Icono: AlertTriangle, tono: 'text-danger-text' },
+    { key: 'pausado',     label: 'En pausa',          Icono: Pause,         tono: 'text-warning-text' },
+    { key: 'sin_iniciar', label: 'Por preparar',      Icono: ClipboardList, tono: 'text-content' },
+    { key: 'preparando',  label: 'En preparación',    Icono: Package,       tono: 'text-content' },
+    { key: 'preparado',   label: 'Listos para salir', Icono: PackageCheck,  tono: 'text-content' },
+    { key: 'transito',    label: 'En camino',         Icono: Truck,         tono: 'text-content' },
+    { key: 'contando',    label: 'En la sala',        Icono: Store,         tono: 'text-content' },
+    { key: 'erp',         label: 'Completados',       Icono: CheckCircle2,  tono: 'text-content-3' },
+];
 
-    // Supervisión es el CARGO, no el alcance. Bodega tiene alcance «todas las
-    // salas» sobre Pedidos y NO es supervisión: confundirlos le daba el turno de
-    // la sala (medido el 2026-08-17). La base decide igual con
-    // `auth_es_supervision()`; acá sólo se elige qué botón se pinta.
-    const esSupervision = esCargoDeSupervision(user?.rango);
+// Las acciones que la fila puede pedir. `acc` las expone con identidad FIJA y
+// llama siempre a la versión vigente del hook (ver `FilaDeSala`).
+const ACCIONES_DE_FILA = [
+    'toggleExpand', 'handleLifecycle', 'openPauseModal', 'openFinalizarModal', 'handlePrintPdf',
+    'handleReintentarIngreso', 'handleEntregarStop', 'handleLlegada', 'openModal', 'openReenvioModal',
+    'handleSegundaLlegada', 'fetchItems', 'handleDecidirDiferencia', 'handleConfirmarLlegadaDiferencia',
+    'handleCorregirBodega', 'handleConfirmarCorreccion', 'handleProbarDevolucion', 'handleMoverDevolucion',
+    'handleRecibirDevolucion', 'setAnularModal', 'setApoyoModal', 'setProgramarModal', 'setCrearRutaOpen',
+    'setReenviarConfirmModal', 'setDevolverModal',
+];
 
-    // Dónde se pega el encabezado de los pasos (vista lista): justo debajo del
-    // encabezado de la vista, que también es pegajoso y cuyo alto cambia con
-    // la densidad y las pestañas. Se MIDE en vez de adivinarse.
-    const [topEncabezado, setTopEncabezado] = React.useState(96);
-    // Cuánto sobresale la barra de la página a cada lado de la lista: pegado,
-    // el encabezado toma ESE ancho para leerse como su continuación.
-    const [alas, setAlas] = React.useState({ izq: 0, der: 0 });
-    const listaRef = React.useRef(null);
-    React.useLayoutEffect(() => {
-        if (vista !== 'lista') return undefined;
-        const hdr = document.querySelector('[data-surface="page-header"]');
-        if (!hdr) return undefined;
-        const medir = () => {
-            const top = parseFloat(getComputedStyle(hdr).top) || 0;
-            const r = hdr.getBoundingClientRect();
-            setTopEncabezado(Math.round(top + r.height));
-            const l = listaRef.current?.getBoundingClientRect();
-            if (l) setAlas({ izq: Math.max(0, Math.round(l.left - r.left)), der: Math.max(0, Math.round(r.right - l.right)) });
-        };
-        medir();
-        const ro = new ResizeObserver(medir);
-        ro.observe(hdr);
-        if (listaRef.current) ro.observe(listaRef.current);
-        return () => ro.disconnect();
-    }, [vista, loading]);
+// ─── La fila de una sala ─────────────────────────────────────────────────────
+// Un componente con `React.memo` (2026-10-08). Vivía como una función dentro de
+// `TabPedidos`, así que CUALQUIER cambio del tablero —abrir una fila, que llegue
+// el detalle de otra, el encabezado que se pega al bajar— volvía a dibujar
+// todas las salas con sus datos, botones y secciones. Ahora cada fila recibe
+// sólo lo SUYO (sus renglones, sus cuentas, su parada) y se salta el dibujo si
+// nada de eso cambió. Las acciones llegan en `acc`, un objeto estable: si
+// viajaran sueltas, una función nueva por render haría inútil el `memo`.
+//
+// El cuerpo es el mismo que tenía: mismas condiciones, mismos botones, mismo
+// diseño en las dos vistas.
+function AvisoSinRenglones({ mensaje, onReintentar }) {
+    return (
+        <div className="px-3 pb-2">
+            <Notice variant="danger" icon={AlertTriangle} compact
+                action={<Button variant="secondary" size="xs" icon={RefreshCw} onClick={onReintentar}>Reintentar</Button>}>
+                {mensaje}
+            </Notice>
+        </div>
+    );
+}
 
-    // Pegado (2026-10-08): al quedar fijo, el encabezado de columnas SALE de
-    // debajo de la barra de la página —se desliza desde ella— y se pega a su
-    // borde sin esquinas arriba, así se lee como una sola pieza. El centinela
-    // de altura 0 justo antes dice cuándo pasó: cuando cruza el borde de la
-    // barra. Va por la Web Animations API y no por una clase: la animación es
-    // de un instante (el cruce), no un estado.
-    const centinelaRef = React.useRef(null);
-    const encabezadoRef = React.useRef(null);
-    const [pegado, setPegado] = React.useState(false);
-    React.useEffect(() => {
-        const c = centinelaRef.current;
-        if (vista !== 'lista' || !c) return undefined;
-        const io = new IntersectionObserver(([e]) => {
-            setPegado(!e.isIntersecting && e.boundingClientRect.top < topEncabezado + 1);
-        }, { rootMargin: `-${topEncabezado + 1}px 0px 0px 0px`, threshold: 0 });
-        io.observe(c);
-        return () => io.disconnect();
-    }, [vista, topEncabezado, loading]);
-    React.useEffect(() => {
-        const el = encabezadoRef.current;
-        if (!pegado || !el?.animate) return;
-        if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-        // Duración y curva del reloj del portal (`--dur-slow`, `--ease-spring`).
-        const css = getComputedStyle(el);
-        const dur = parseFloat(css.getPropertyValue('--dur-slow')) || 300;
-        el.animate(
-            [{ transform: 'translateY(-100%)', opacity: 0.4 }, { transform: 'translateY(0)', opacity: 1 }],
-            { duration: dur, easing: css.getPropertyValue('--ease-spring').trim() || 'ease-out' },
-        );
-    }, [pegado]);
-
-    // Al abrir una fila, se CENTRA ya abierta (2026-10-08). Se espera a que
-    // lleguen sus productos —es lo que le cambia la altura— y a un cuadro más
-    // para medirla ya pintada. Si abierta no cabe, va arriba, bajo el
-    // encabezado pegajoso, para que se lea desde el principio.
-    const abiertaCargada = expanded ? Boolean(items[expanded]) : false;
-    React.useEffect(() => {
-        if (!expanded) return undefined;
-        const id = requestAnimationFrame(() => requestAnimationFrame(() => {
-            const el = document.querySelector(`[data-fila-pedido="${expanded}"]`);
-            if (!el) return;
-            const reducir = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-            const libre = window.innerHeight - topEncabezado - 64;
-            el.style.scrollMarginTop = `${topEncabezado + 64}px`;
-            el.scrollIntoView({ block: el.offsetHeight > libre ? 'start' : 'center', behavior: reducir ? 'auto' : 'smooth' });
-        }));
-        return () => cancelAnimationFrame(id);
-    }, [expanded, abiertaCargada, topEncabezado]);
-
-    // ── Render ────────────────────────────────────────────────────────────────
-
-    if (loading) {
-        return (
-            <div className="py-20"><SkeletonText lines={5} /></div>
-        );
-    }
-
-    // ── Vista LISTA (en prueba, 2026-10-07) ──────────────────────────────
-    // Una fila por sala, agrupadas por lo que toca hacer. Usa las MISMAS
-    // piezas que la tarjeta (`datosJSX`, `accionesJSX`, `seccionesJSX`), así
-    // que botones, condiciones, recepción y diferencias son idénticos: sólo
-    // cambia cómo se dibuja. Cerrada: sala, avance, estado y la acción
-    // principal. Abierta: lo mismo que la tarjeta abierta.
+const FilaDeSala = React.memo(function FilaDeSala({
+    row, vista, isExp, observada,
+    misItems, misEventos, misDevoluciones, cargandoItems, errorItems,
+    llegadaMarcada, erpMarcado, busyAction, isLCBusy, imprimiendo,
+    stats, traslado, ingreso, ingresoCorriendo, entrega, apoyo, rutaInfo, etapaPedido,
+    empMap, user, isBranch, isSU, canEdit, canEditMinMax, canDownload, erpSucursalId, esSupervision,
+    acc, ref,
+}) {
     const renderFilaLista = ({ row, cardKey, isExp, stage, etiqueta, tiempoEnEtapa, rtStop, rtCond,
         prepApoyo, recepApoyo, faltan, difsDeLaSala, datosJSX, accionesJSX, seccionesJSX }) => {
         // El estado se marca con una FRANJA fina a la izquierda, no con el borde
@@ -334,10 +190,10 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
             : danadas.length > 0 ? { Icono: AlertTriangle, cls: 'text-warning-text', txt: 'Caja dañada' }
             : null;
         // Sin el agrupamiento por ruta de la tarjeta, la fila dice en cuál va.
-        const rutaDeLaFila = stage === 'transito' ? pedidoRutaMap.get(claveParada(row.pedido_id, row.erp_sucursal_id))?.ruta : null;
+        const rutaDeLaFila = stage === 'transito' ? rutaInfo?.ruta : null;
         return (
-            <div key={cardKey} data-fila-pedido={cardKey} data-surface="card" className="select-none"
-                {...clickable(() => toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id), { label: `Pedido ${row.codigo ?? row.numero}` })}
+            <div key={cardKey} ref={ref} data-fila-pedido={cardKey} data-surface="card" className="select-none"
+                {...clickable(() => acc.toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id), { label: `Pedido ${row.codigo ?? row.numero}` })}
                 aria-expanded={isExp}>
                 <div className="grid items-center gap-x-5 gap-y-2 pl-4 pr-3 py-3.5 grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[9rem_minmax(24rem,1fr)_17rem_1rem]">
                     <div className="min-w-0">
@@ -413,33 +269,14 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                             <div className="flex items-center gap-1 flex-wrap min-w-0">{datosJSX}</div>
                             <div className="ml-auto flex items-center gap-1.5 flex-wrap">{accionesJSX}</div>
                         </div>
-                        <ItemSections allItems={items[cardKey] ?? []} loading={loadingItems && !items[cardKey]} canEditMinMax={canEditMinMax} />
+                        {errorItems && <AvisoSinRenglones mensaje={errorItems} onReintentar={() => acc.fetchItems(cardKey, row.pedido_id, row.erp_sucursal_id)} />}
+                        <ItemSections allItems={misItems ?? []} loading={cargandoItems && !misItems} canEditMinMax={canEditMinMax} />
                     </div>
                 )}
             </div>
         );
     };
 
-    // Los grupos de la lista: «¿qué toca hacer?», en orden de urgencia. Lo que
-    // tiene un problema abierto va primero, sea cual sea su etapa.
-    const GRUPOS_LISTA = [
-        { key: 'problemas',   label: 'Con problemas',     Icono: AlertTriangle, tono: 'text-danger-text' },
-        { key: 'pausado',     label: 'En pausa',          Icono: Pause,         tono: 'text-warning-text' },
-        { key: 'sin_iniciar', label: 'Por preparar',      Icono: ClipboardList, tono: 'text-content' },
-        { key: 'preparando',  label: 'En preparación',    Icono: Package,       tono: 'text-content' },
-        { key: 'preparado',   label: 'Listos para salir', Icono: PackageCheck,  tono: 'text-content' },
-        { key: 'transito',    label: 'En camino',         Icono: Truck,         tono: 'text-content' },
-        { key: 'contando',    label: 'En la sala',        Icono: Store,         tono: 'text-content' },
-        { key: 'erp',         label: 'Completados',       Icono: CheckCircle2,  tono: 'text-content-3' },
-    ];
-    const grupoDeLaFila = (row) => {
-        const ck = `act_${row.pedido_id}_${row.erp_sucursal_id}`;
-        const f = faltantesDeLaSala(row);
-        if ((f.hay && !f.enCamino) || (cardStats[ck]?.sinResolver ?? 0) > 0) return 'problemas';
-        return getBranchStage(row);
-    };
-
-    const renderSala = (row) => {
                             const stage      = getBranchStage(row);
                             const estadoSala = estadoDeLaSala(row);
                             // Lo que no llegó, de una sola fuente para la etiqueta,
@@ -452,10 +289,7 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                             // después — el chip aparecía de golpe. Y con dos
                             // cuentas de la misma cosa, la lista y la tarjeta
                             // podían decir distinto.
-                            const difsDeLaSala = cardStats[cardKey]?.sinResolver ?? 0;
-                            const isExp      = expanded === cardKey;
-                            const lcKey      = `lc_${row.pedido_id}_${row.erp_sucursal_id}`;
-                            const isLCBusy   = busyLifecycle === lcKey;
+                            const difsDeLaSala = stats?.sinResolver ?? 0;
 
                             const canActuar = canEdit && !isBranch; // GESTIONAR + Alcance TODOS
                             // La sala de ESTA tarjeta — ver el bloque de Recepción más abajo.
@@ -486,8 +320,8 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                             const elapsedTrans = stage === 'transito'   ? fmtMin(elapsed(row.finalizado_at)) : null;
 
                             // La parada de esta sala en su ruta: dice si ya la entregaron.
-                            const paradaSala = pedidoRutaMap.get(claveParada(row.pedido_id, sucDeLaTarjeta))?.stop
-                                ?? entregaMap[cardKey] ?? null;
+                            const paradaSala = rutaInfo?.stop
+                                ?? entrega ?? null;
                             const entregada  = !!paradaSala?.entregado_at;
                             const etiqueta   = etiquetaDeLaSala(estadoSala, stage, entregada, difsDeLaSala);
                             const tiempoEnEtapa = elapsedPrep  ? `${elapsedPrep} preparando`
@@ -495,7 +329,7 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                                 : elapsedTrans && !entregada ? `${elapsedTrans} en ruta`
                                                 : null;
 
-                            const apoyoBucket  = apoyoMap[cardKey] ?? { preparacion: [], recepcion: [] };
+                            const apoyoBucket  = apoyo ?? { preparacion: [], recepcion: [] };
                             const prepApoyo    = apoyoBucket.preparacion ?? [];
                             const recepApoyo   = apoyoBucket.recepcion   ?? [];
 
@@ -510,15 +344,13 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                             // pedido no se anula. Es la única de estas guardas que se queda.
                             const canAnular = canActuar && !isBranch
                                 && row.pedido_status === 'confirmado'
-                                && !(pedidoStageMap.get(row.pedido_id)?.anyFinalized);
+                                && !(etapaPedido?.anyFinalized);
 
                             // Solo fade cuando completado: parcial queda visible (pendiente corrección)
                             // …salvo que le falte algo: «Completado» con una caja sin
                             // llegar no es un pedido cerrado, y apagarlo lo escondía.
                             const isFadedOut = row.pedido_status === 'completado' && !!row.recibido_erp_at && !faltan.hay;  // sutil: solo baja un poco la opacidad
 
-                                            const rutaInfo = pedidoRutaMap.get(claveParada(row.pedido_id, sucDeLaTarjeta));
-                                            const entrega  = entregaMap[cardKey] ?? null;
                                             const rtStop   = rutaInfo?.stop ?? entrega ?? null;
                                             const condId   = rutaInfo?.ruta?.conductor_id ?? entrega?.ruta?.conductor_id ?? null;
                                             const rtCond   = condId ? empMap.get(condId) ?? null : null;
@@ -526,16 +358,20 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                             // Las piezas que comparten las dos formas de dibujar la sala
                             // (tarjeta y lista, 2026-10-07): mismos datos, mismos botones
                             // con las mismas condiciones, mismas secciones.
-                            const datosJSX = (<>
+                            // Los datos y las secciones sólo se arman donde se
+                            // dibujan: en la lista, una fila cerrada no los
+                            // muestra (2026-10-08).
+                            const necesitaDetalle = vista !== 'lista' || isExp;
+                            const datosJSX = !necesitaDetalle ? null : (<>
                                         {/* Lo que dice la base de esta sala: enviados, sistema, inventario. */}
-                                        {cardStats[cardKey] && (
+                                        {stats && (
                                             <>
-                                            <Badge uppercase={false}>{cardStats[cardKey].enviados} {['sin_iniciar', 'preparando', 'preparado', 'pausado'].includes(stage) ? 'productos' : 'enviados'}</Badge>
+                                            <Badge uppercase={false}>{stats.enviados} {['sin_iniciar', 'preparando', 'preparado', 'pausado'].includes(stage) ? 'productos' : 'enviados'}</Badge>
                                             {(() => {
                                                 // El traslado al sistema. Sólo se pinta si el
                                                 // pedido llegó a intentarlo: en los que se
                                                 // despacharon a mano no hay nada que decir.
-                                                const tr = trasladoStats?.[cardKey];
+                                                const tr = traslado;
                                                 if (!tr) return null;
                                                 const nHall = Array.isArray(tr.hallazgos) ? tr.hallazgos.length : 0;
                                                 if (tr.estado === 'despachado') return (
@@ -559,13 +395,13 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                                 // existe por diseño. Hasta acá el único aviso era un
                                                 // toast que se va solo, y es el ÚNICO estado que deja
                                                 // a la sala sin poder facturar.
-                                                const ing = ingresoStats?.[cardKey];
+                                                const ing = ingreso;
                                                 if (!ing || !ing.lineas) return null;
                                                 // Está entrando AHORA: la sala confirmó y se fue, y
                                                 // el ingreso sigue solo. Mientras dure, el rojo de
                                                 // «sin ingresar» sería un susto y su reintento una
                                                 // carrera contra algo que ya está en marcha.
-                                                if (ingresoEnCurso?.[cardKey] && ing.sin_ingresar > 0) return (
+                                                if (ingresoCorriendo && ing.sin_ingresar > 0) return (
                                                     <Badge variant="chart-3" uppercase={false}>entrando al inventario…</Badge>
                                                 );
                                                 if (ing.sin_ingresar > 0) return (
@@ -578,7 +414,7 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                                                 variant="secondary" size="xs" icon={RefreshCw}
                                                                 disabled={busyAction === 'ingreso'}
                                                                 title="Vuelve a ingresar al inventario sólo lo que ya se contó y no entró"
-                                                                onClick={() => handleReintentarIngreso(row.pedido_id, row.erp_sucursal_id)}
+                                                                onClick={() => acc.handleReintentarIngreso(row.pedido_id, row.erp_sucursal_id)}
                                                             >Reintentar</Button>
                                                         )}
                                                     </>
@@ -593,14 +429,14 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                                 );
                                                 return null;
                                             })()}
-                                            {(cardStats[cardKey].agotamiento ?? 0) > 0 && (
-                                                <Badge uppercase={false}>{cardStats[cardKey].agotamiento} stock insuf.</Badge>
+                                            {(stats.agotamiento ?? 0) > 0 && (
+                                                <Badge uppercase={false}>{stats.agotamiento} stock insuf.</Badge>
                                             )}
-                                            {cardStats[cardKey].sinStock > 0 && (
-                                                <Badge uppercase={false}>{cardStats[cardKey].sinStock} sin stock</Badge>
+                                            {stats.sinStock > 0 && (
+                                                <Badge uppercase={false}>{stats.sinStock} sin stock</Badge>
                                             )}
-                                            {cardStats[cardKey].porRegla > 0 && (
-                                                <Badge icon={AlertTriangle} uppercase={false}>{cardStats[cardKey].porRegla} por regla</Badge>
+                                            {stats.porRegla > 0 && (
+                                                <Badge icon={AlertTriangle} uppercase={false}>{stats.porRegla} por regla</Badge>
                                             )}
                                         </>
                                         )}
@@ -676,7 +512,7 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                                 clic de más anulaba el pedido. Sigue en rojo (§15.2: una
                                                 acción irreversible no se atenúa). */}
                                             {verSecundarias && canAnular && (
-                                                <Button variant="destructive" icon={Ban} className="mr-2" onClick={e => { e.stopPropagation(); const st = pedidoStageMap.get(row.pedido_id) ?? {}; setAnularModal({ pedidoId: row.pedido_id, numero: row.numero, requiresReason: !!(st.anyActive) }); }}>Anular</Button>
+                                                <Button variant="destructive" icon={Ban} className="mr-2" onClick={e => { e.stopPropagation(); const st = etapaPedido ?? {}; acc.setAnularModal({ pedidoId: row.pedido_id, numero: row.numero, requiresReason: !!(st.anyActive) }); }}>Anular</Button>
                                             )}
                                             {/* El botón se pedía además con `!isApoyoBodega`,
                                                 o sea «que YO no esté ya de apoyo» — y esto
@@ -690,46 +526,46 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                                 Los repetidos los frena el modal, que para
                                                 eso recibe `existingApoyo`. */}
                                             {verSecundarias && canApoyo && (
-                                                <Button variant="secondary" icon={UserPlus} disabled={isLCBusy} onClick={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, cardKey, tipo: 'preparacion' })}>Apoyo</Button>
+                                                <Button variant="secondary" icon={UserPlus} disabled={isLCBusy} onClick={() => acc.setApoyoModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, cardKey, tipo: 'preparacion' })}>Apoyo</Button>
                                             )}
                                             {/* `icon` + `loading` del canónico, en vez de armar
                                                 el intercambio ícono/spinner a mano en cada
                                                 botón: `Button` ya lo hace, y además apaga el
                                                 click y marca `aria-busy` mientras corre. */}
                                             {verSecundarias && canActuar && canDownload && (
-                                                <Button variant="secondary" icon={FileDown} loading={printingPdf === row.pedido_id} onClick={e => { e.stopPropagation(); handlePrintPdf(row.pedido_id, row.numero, row.erp_sucursal_id, cardKey, row.codigo); }}>PDF</Button>
+                                                <Button variant="secondary" icon={FileDown} loading={imprimiendo} onClick={e => { e.stopPropagation(); acc.handlePrintPdf(row.pedido_id, row.numero, row.erp_sucursal_id, cardKey, row.codigo, !!row.finalizado_at); }}>PDF</Button>
                                             )}
                                             {verSecundarias && canActuar && !isBranch && stage === 'preparado' && (
                                                 <Button
                                                     variant="secondary"
                                                     icon={CalendarClock}
-                                                    onClick={e => { e.stopPropagation(); setProgramarModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, currentAt: row.entrega_programada_at ?? null, historial: row.entrega_programada_historial ?? [] }); }}
+                                                    onClick={e => { e.stopPropagation(); acc.setProgramarModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, currentAt: row.entrega_programada_at ?? null, historial: row.entrega_programada_historial ?? [] }); }}
                                                 >
                                                     {row.entrega_programada_at ? fmtEntrega(row.entrega_programada_at) : 'Programar'}
                                                 </Button>
                                             )}
                                             {/* Entregué — conductor, junto a PDF para ahorrar espacio */}
-                                            {pedidoRutaMap.has(claveParada(row.pedido_id, row.erp_sucursal_id)) && (() => {
-                                                const { ruta, stop } = pedidoRutaMap.get(claveParada(row.pedido_id, row.erp_sucursal_id));
+                                            {!!rutaInfo && (() => {
+                                                const { ruta, stop } = rutaInfo;
                                                 const isConductorHere = !!(user?.id && ruta.conductor_id && user.id === ruta.conductor_id);
                                                 if (!isConductorHere || !!stop?.entregado_at || ruta.status !== 'en_ruta') return null;
                                                 return (
-                                                    <Button variant="primary" icon={CheckCircle2} onClick={e => { e.stopPropagation(); handleEntregarStop(stop.id, ruta.id, stop.erp_sucursal_id); }}>Entregué</Button>
+                                                    <Button variant="primary" icon={CheckCircle2} onClick={e => { e.stopPropagation(); acc.handleEntregarStop(stop.id, ruta.id, stop.erp_sucursal_id); }}>Entregué</Button>
                                                 );
                                             })()}
-                                            {canIniciar      && <Button variant="primary" icon={Play}      loading={isLCBusy} onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}>Iniciar</Button>}
-                                            {verSecundarias && canPausar && <Button variant="secondary" icon={Pause}     loading={isLCBusy} onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}>Pausar</Button>}
-                                            {canFinalizar    && <Button variant="primary" icon={Flag}      loading={isLCBusy || busyAction === `finalizar_load_${cardKey}`} onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)}>Finalizar</Button>}
-                                            {canReanudar     && <Button variant="primary" icon={RotateCcw} loading={isLCBusy} onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}>Reanudar</Button>}
-                                            {canMarcarEnRuta && <Button variant="primary" icon={Truck} onClick={() => setCrearRutaOpen([`${row.pedido_id}__${row.erp_sucursal_id}`])}>Crear ruta</Button>}
+                                            {canIniciar      && <Button variant="primary" icon={Play}      loading={isLCBusy} onClick={() => acc.handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}>Iniciar</Button>}
+                                            {verSecundarias && canPausar && <Button variant="secondary" icon={Pause}     loading={isLCBusy} onClick={() => acc.openPauseModal(row.pedido_id, row.erp_sucursal_id)}>Pausar</Button>}
+                                            {canFinalizar    && <Button variant="primary" icon={Flag}      loading={isLCBusy || busyAction === `finalizar_load_${cardKey}`} onClick={() => acc.openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)}>Finalizar</Button>}
+                                            {canReanudar     && <Button variant="primary" icon={RotateCcw} loading={isLCBusy} onClick={() => acc.handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}>Reanudar</Button>}
+                                            {canMarcarEnRuta && <Button variant="primary" icon={Truck} onClick={() => acc.setCrearRutaOpen([`${row.pedido_id}__${row.erp_sucursal_id}`])}>Crear ruta</Button>}
                                             {(() => {
-                                                const rutaActiva       = pedidoRutaMap.get(claveParada(row.pedido_id, row.erp_sucursal_id))?.ruta;
+                                                const rutaActiva       = rutaInfo?.ruta;
                                                 const conductorEnRuta  = rutaActiva?.status === 'en_ruta' && !rutaActiva?.vuelta_base_at;
                                                 if (!canActuar || isBranch || !faltan.hay || faltan.enCamino) return null;
                                                 // Ya se pidió el reenvío: falta la ruta. Volver a ofrecer
                                                 // «Reenviar caja» abría un segundo ciclo por las mismas cajas.
                                                 if (faltan.porDespachar) return (
-                                                    <Button variant="primary" icon={Truck} onClick={() => setCrearRutaOpen([])}>Crear ruta</Button>
+                                                    <Button variant="primary" icon={Truck} onClick={() => acc.setCrearRutaOpen([])}>Crear ruta</Button>
                                                 );
                                                 /* Era un `div` con `role="img"` —que le promete
                                                    a un lector de pantalla una imagen— y con el
@@ -742,11 +578,11 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                                     </Notice>
                                                 );
                                                 return (
-                                                    <Button variant="primary" icon={Truck} loading={busyAction === 'reenvio'} onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: faltan.cajas, electrolits: faltan.electrolits, productos: faltan.productosEspeciales, noReenviar: [] })}>Reenviar caja</Button>
+                                                    <Button variant="primary" icon={Truck} loading={busyAction === 'reenvio'} onClick={() => acc.setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: faltan.cajas, electrolits: faltan.electrolits, productos: faltan.productosEspeciales, noReenviar: [] })}>Reenviar caja</Button>
                                                 );
                                             })()}
                             </>);
-                            const seccionesJSX = (<>
+                            const seccionesJSX = !necesitaDetalle ? null : (<>
                                     {/* Lo que no llegó, dicho a la SALA. En cuanto terminaba
                                         de contar lo demás, el bloque de Recepción se cerraba y
                                         la tarjeta decía «Completado» a secas: nada le avisaba
@@ -794,22 +630,22 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                     {(isBranch || isSU) && (row.erp_sucursal_id ?? erpSucursalId) && hayRecepcionPendiente({
                                         enviadoAt: row.enviado_at,
                                         pedidoStatus: row.pedido_status,
-                                        pendientes: cardStats[cardKey]?.pendientes ?? 0,
+                                        pendientes: stats?.pendientes ?? 0,
                                         reenviosHistorial: row.reenvios_historial ?? [],
                                     }) && stage !== 'erp' && (
                                         <div onClick={e => e.stopPropagation()}>
                                             <ReceptionActions
                                                 canEdit={canEdit}
-                                                llegadaOk={!!llegadaStatus[cardKey] || !!row.llegada_fisica_at}
-                                                erpOk={!!erpStatus[cardKey] || !!row.recibido_erp_at}
+                                                llegadaOk={!!llegadaMarcada || !!row.llegada_fisica_at}
+                                                erpOk={!!erpMarcado || !!row.recibido_erp_at}
                                                 llegadaEmp={llegadaEmp}
                                                 erpEmp={erpEmp}
-                                                pendientesCount={cardStats[cardKey]?.pendientes ?? 0}
-                                                onMarkLlegada={() => handleLlegada(row.pedido_id, sucDeLaTarjeta, cardKey)}
-                                                onOpenRecibir={() => openModal(row.pedido_id, row.numero, row.codigo, sucDeLaTarjeta, cardKey)}
-                                                onOpenReenvioModal={() => openReenvioModal(row.pedido_id, row.numero, row.codigo, sucDeLaTarjeta, cardKey)}
-                                                onSegundaLlegada={() => handleSegundaLlegada(row.pedido_id, sucDeLaTarjeta, cardKey, row.reenvios_historial ?? [], row.falta_cajas ?? [], row.caja_map ?? {})}
-                                                onApoyo={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: sucDeLaTarjeta, cardKey, tipo: 'recepcion' })}
+                                                pendientesCount={stats?.pendientes ?? 0}
+                                                onMarkLlegada={() => acc.handleLlegada(row.pedido_id, sucDeLaTarjeta, cardKey)}
+                                                onOpenRecibir={() => acc.openModal(row.pedido_id, row.numero, row.codigo, sucDeLaTarjeta, cardKey)}
+                                                onOpenReenvioModal={() => acc.openReenvioModal(row.pedido_id, row.numero, row.codigo, sucDeLaTarjeta, cardKey)}
+                                                onSegundaLlegada={() => acc.handleSegundaLlegada(row.pedido_id, sucDeLaTarjeta, cardKey, row.reenvios_historial ?? [], row.falta_cajas ?? [], row.caja_map ?? {})}
+                                                onApoyo={() => acc.setApoyoModal({ pedidoId: row.pedido_id, sucId: sucDeLaTarjeta, cardKey, tipo: 'recepcion' })}
                                                 busy={busyAction}
                                                 llegadaTipo={row.llegada_tipo}
                                                 reenviosHistorial={row.reenvios_historial ?? []}
@@ -818,7 +654,7 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                                 reenvioBodygaAt={row.reenvio_bodega_at ?? null}
                                                 segundaLlegadaAt={row.segunda_llegada_at ?? null}
                                                 cajasEspeciales={row.cajas_especiales ?? []}
-                                                hasFaltaItems={(items[cardKey] ?? []).some(r => r.falta_caja && r.status === 'pendiente' && r.cantidad_asignada > 0)}
+                                                hasFaltaItems={(misItems ?? []).some(r => r.falta_caja && r.status === 'pendiente' && r.cantidad_asignada > 0)}
                                             />
                                         </div>
                                     )}
@@ -834,43 +670,43 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                         <div onClick={e => e.stopPropagation()}>
                                             <DifSection
                                                 row={row}
-                                                difItems={(items[cardKey] ?? []).filter(r => r.status === 'con_diferencia' || r.error_tipo)}
-                                                eventos={eventosMap[cardKey] ?? []}
-                                                devoluciones={devolucionesMap[cardKey] ?? []}
+                                                difItems={(misItems ?? []).filter(r => r.status === 'con_diferencia' || r.error_tipo)}
+                                                eventos={misEventos ?? []}
+                                                devoluciones={misDevoluciones ?? []}
                                                 isBranch={isBranch}
                                                 busyAction={busyAction}
                                                 empMap={empMap}
                                                 readOnly={row.pedido_status === 'completado'}
-                                                onNeedItems={() => fetchItems(cardKey, row.pedido_id, row.erp_sucursal_id)}
-                                                itemsLoaded={!!items[cardKey]}
+                                                onNeedItems={() => acc.fetchItems(cardKey, row.pedido_id, row.erp_sucursal_id)}
+                                                itemsLoaded={!!misItems}
                                                 esSupervision={esSupervision}
                                                 onDecidirDiferencia={(itemId, accion, tipo, nota) =>
-                                                    handleDecidirDiferencia(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, itemId, accion, tipo, nota)
+                                                    acc.handleDecidirDiferencia(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, itemId, accion, tipo, nota)
                                                 }
                                                 onConfirmarLlegada={(itemId) =>
-                                                    handleConfirmarLlegadaDiferencia(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, itemId)
+                                                    acc.handleConfirmarLlegadaDiferencia(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, itemId)
                                                 }
                                                 onPedirFoto={(item, opcion, nota) =>
-                                                    setDevolverModal({
+                                                    acc.setDevolverModal({
                                                         pedidoId: row.pedido_id,
                                                         sucId: erpSucursalId ?? row.erp_sucursal_id,
                                                         item, opcion, nota,
                                                     })
                                                 }
                                                 onCorregirBodega={(nota) =>
-                                                    handleCorregirBodega(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, nota)
+                                                    acc.handleCorregirBodega(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, nota)
                                                 }
                                                 onConfirmarCorreccion={() =>
-                                                    handleConfirmarCorreccion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id)
+                                                    acc.handleConfirmarCorreccion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id)
                                                 }
                                                 onProbarDevolucion={(id) =>
-                                                    handleProbarDevolucion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, id)
+                                                    acc.handleProbarDevolucion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, id)
                                                 }
                                                 onMoverDevolucion={(id) =>
-                                                    handleMoverDevolucion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, id)
+                                                    acc.handleMoverDevolucion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, id)
                                                 }
                                                 onRecibirDevolucion={(id) =>
-                                                    handleRecibirDevolucion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, id)
+                                                    acc.handleRecibirDevolucion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, id)
                                                 }
                                             />
                                         </div>
@@ -882,10 +718,10 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                             <PostCompletionSection
                                                 row={row}
                                                 cardKey={cardKey}
-                                                difItems={(items[cardKey] ?? []).filter(r => r.status === 'con_diferencia' || r.error_tipo)}
+                                                difItems={(misItems ?? []).filter(r => r.status === 'con_diferencia' || r.error_tipo)}
                                                 empMap={empMap}
-                                                onNeedItems={() => fetchItems(cardKey, row.pedido_id, row.erp_sucursal_id)}
-                                                itemsLoaded={!!items[cardKey]}
+                                                onNeedItems={() => acc.fetchItems(cardKey, row.pedido_id, row.erp_sucursal_id)}
+                                                itemsLoaded={!!misItems}
                                             />
                                         </div>
                                     )}
@@ -912,10 +748,11 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                        el gate `vidrio-a-mano` no la veía. */
                                     data-surface="card"
                                     data-fila-pedido={cardKey}
+                                    ref={ref}
                                     className={`select-none ${
                                         stage === 'pausado'
                                             ? 'ring-2 ring-warning/45 shadow-[var(--shadow-glow-warning-lg)]'
-                                            : (hasObservacion(row) && row.pedido_status !== 'completado') || faltan.hay
+                                            : (observada && row.pedido_status !== 'completado') || faltan.hay
                                                 ? 'ring-2 ring-chart-4/45 shadow-[var(--shadow-glow-chart-4)]'
                                                 : isFadedOut
                                                     ? 'opacity-80'
@@ -926,7 +763,7 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                        por `clickable()` gana foco, teclado y el gel del
                                        material, que un `onClick` suelto no da. */
                                     {...clickable(
-                                        () => toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id),
+                                        () => acc.toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id),
                                         { label: `Pedido ${row.codigo ?? row.numero}` },
                                     )}
                                     aria-expanded={isExp}
@@ -1026,12 +863,275 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                     <AnimatePresence>
                                         {isExp && (
                                             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden" onClick={e => e.stopPropagation()}>
-                                                <ItemSections allItems={items[cardKey] ?? []} loading={loadingItems && !items[cardKey]} canEditMinMax={canEditMinMax} />
+                                                {errorItems && <AvisoSinRenglones mensaje={errorItems} onReintentar={() => acc.fetchItems(cardKey, row.pedido_id, row.erp_sucursal_id)} />}
+                                                <ItemSections allItems={misItems ?? []} loading={cargandoItems && !misItems} canEditMinMax={canEditMinMax} />
                                             </motion.div>
                                         )}
                                     </AnimatePresence>
                                 </motion.div>
                             );
+});
+
+// ─── Main component ───────────────────────────────────────────────────────────
+// Bloque 6.C (continuación): el estado/fetch de este componente vive en el
+// hook usePedidosData (./tabpedidos/usePedidosData.js) — mismos nombres,
+// misma lógica, extracción mecánica. Este archivo queda solo con el JSX.
+export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
+    const { hasPermission, isSU } = useAuth();
+    // `pedidos_descargar` gatea la REIMPRESIÓN de un pedido ya generado, no la
+    // impresión que sale al generarlo: esa es el entregable del flujo de bodega
+    // —el papel con el que se arman las cajas— y bloquearla dejaría el pedido
+    // hecho y sin hoja. El permiso se llama "Reimprimir el pedido" por eso.
+    const canDownload = hasPermission('pedidos_descargar');
+    // { pedidoId, sucId, item, opcion, nota } — el renglón cuya foto falta.
+    const [devolverModal, setDevolverModal] = React.useState(null);
+    // Qué ruta está siendo movida ahora mismo. Sin esto, dos toques seguidos en
+    // «Iniciar» mandan DOS avisos de salida a cada sala de la ruta — el aviso ya
+    // se fue y no se puede retirar. Es por ruta y no una bandera global porque
+    // un conductor puede tener varias en pantalla.
+    const [rutaOcupada, setRutaOcupada] = React.useState(null);
+    const {
+        user, isBranch, canEdit, canEditMinMax,
+        erpSucursalId, branchName,
+        filterSuc, setFilterSuc,
+        filterStatus, setFilterStatus,
+        filterDate, setFilterDate,
+        activeRows,
+        loading,
+        expanded,
+        items,
+        eventosMap,
+        devolucionesMap,
+        loadingItems,
+        itemsError,
+        llegadaStatus,
+        erpStatus,
+        busyAction,
+        busyLifecycle,
+        crearRutaOpen, setCrearRutaOpen,
+        modal, setModal,
+        rutaMapOpen, setRutaMapOpen,
+        pedidoRutaMap,
+        llegadaModal, setLlegadaModal,
+        reenvioLlegadaModal, setReenvioLlegadaModal,
+        reenviarConfirmModal, setReenviarConfirmModal,
+        finalizarModal, setFinalizarModal,
+        newAlert, setNewAlert,
+        pauseModal, setPauseModal,
+        pauseHistory,
+        pauseRazon, setPauseRazon,
+        pauseComment, setPauseComment,
+        kioskLunch,
+        apoyoMap,
+        apoyoModal, setApoyoModal,
+        cardStats,
+        trasladoStats,
+        ingresoStats,
+        ingresoEnCurso,
+        vigilarIngreso,
+        handleReintentarIngreso,
+        entregaMap,
+        anularModal, setAnularModal,
+        busyAnular,
+        printingPdf,
+        programarModal, setProgramarModal,
+        savingProgramar,
+        empMap,
+        loadActive,
+        loadActiveRutas,
+        fetchItems,
+        toggleExpand,
+        handleLifecycle,
+        handleProgramarEntrega,
+        handlePrintPdf,
+        openPauseModal,
+        confirmPause,
+        handleApoyoSuccess,
+        handleAnular,
+        openFinalizarModal,
+        handleFinalizarConCajas,
+        handleLlegada,
+        handleLlegadaConfirm,
+        handleResolverFaltantes,
+        handleSegundaLlegada,
+        handleReenvioLlegadaConfirm,
+        handleEntregarStop,
+        handleMarkErp,
+        openModal,
+        openReenvioModal,
+        handleReportarDiferencias,
+        handleCorregirBodega,
+        handleConfirmarCorreccion,
+        handleProponerConFoto,
+        handleMoverDevolucion,
+        handleProbarDevolucion,
+        handleRecibirDevolucion,
+        handleDecidirDiferencia,
+        handleConfirmarLlegadaDiferencia,
+        filterOptions,
+        hasObservacion,
+        pedidoStageMap,
+        filteredRows,
+        sucursalCounts,
+        renderGroups,
+    } = usePedidosData({ searchTerm });
+
+    // Supervisión es el CARGO, no el alcance. Bodega tiene alcance «todas las
+    // salas» sobre Pedidos y NO es supervisión: confundirlos le daba el turno de
+    // la sala (medido el 2026-08-17). La base decide igual con
+    // `auth_es_supervision()`; acá sólo se elige qué botón se pinta.
+    const esSupervision = esCargoDeSupervision(user?.rango);
+
+    // `acc`: las acciones de la fila con identidad fija. La ref se pone al día
+    // después de cada render; la fila sólo las llama al tocar un botón, nunca
+    // mientras se dibuja, así que siempre encuentra la vigente.
+    const accionesVigentes = React.useRef({});
+    React.useLayoutEffect(() => {
+        accionesVigentes.current = {
+            toggleExpand, handleLifecycle, openPauseModal, openFinalizarModal, handlePrintPdf,
+            handleReintentarIngreso, handleEntregarStop, handleLlegada, openModal, openReenvioModal,
+            handleSegundaLlegada, fetchItems, handleDecidirDiferencia, handleConfirmarLlegadaDiferencia,
+            handleCorregirBodega, handleConfirmarCorreccion, handleProbarDevolucion, handleMoverDevolucion,
+            handleRecibirDevolucion, setAnularModal, setApoyoModal, setProgramarModal, setCrearRutaOpen,
+            setReenviarConfirmModal, setDevolverModal,
+        };
+    }, [toggleExpand, handleLifecycle, openPauseModal, openFinalizarModal, handlePrintPdf,
+        handleReintentarIngreso, handleEntregarStop, handleLlegada, openModal, openReenvioModal,
+        handleSegundaLlegada, fetchItems, handleDecidirDiferencia, handleConfirmarLlegadaDiferencia,
+        handleCorregirBodega, handleConfirmarCorreccion, handleProbarDevolucion, handleMoverDevolucion,
+        handleRecibirDevolucion, setAnularModal, setApoyoModal, setProgramarModal, setCrearRutaOpen,
+        setReenviarConfirmModal, setDevolverModal]);
+    const avisarSinComprobar = () => useToastStore.getState().showToast(
+        'Quedó guardado, pero no se pudo comprobar',
+        'No se pudo releer el pedido para ver si quedó alguna diferencia. Abre la tarjeta de nuevo para revisarlo.',
+        'warning', 9000,
+    );
+    const acc = React.useMemo(() => Object.fromEntries(ACCIONES_DE_FILA.map(n => [n, (...args) => accionesVigentes.current[n]?.(...args)])), []);
+
+    // Dónde se pega el encabezado de los pasos (vista lista): justo debajo del
+    // encabezado de la vista, que también es pegajoso y cuyo alto cambia con
+    // la densidad y las pestañas. Se MIDE en vez de adivinarse.
+    const [topEncabezado, setTopEncabezado] = React.useState(96);
+    // Cuánto sobresale la barra de la página a cada lado de la lista: pegado,
+    // el encabezado toma ESE ancho para leerse como su continuación.
+    const [alas, setAlas] = React.useState({ izq: 0, der: 0 });
+    const listaRef = React.useRef(null);
+    React.useLayoutEffect(() => {
+        if (vista !== 'lista') return undefined;
+        const hdr = document.querySelector('[data-surface="page-header"]');
+        if (!hdr) return undefined;
+        const medir = () => {
+            const top = parseFloat(getComputedStyle(hdr).top) || 0;
+            const r = hdr.getBoundingClientRect();
+            setTopEncabezado(Math.round(top + r.height));
+            const l = listaRef.current?.getBoundingClientRect();
+            if (l) setAlas({ izq: Math.max(0, Math.round(l.left - r.left)), der: Math.max(0, Math.round(r.right - l.right)) });
+        };
+        medir();
+        const ro = new ResizeObserver(medir);
+        ro.observe(hdr);
+        if (listaRef.current) ro.observe(listaRef.current);
+        return () => ro.disconnect();
+    }, [vista, loading]);
+
+    // Pegado (2026-10-08): al quedar fijo, el encabezado de columnas SALE de
+    // debajo de la barra de la página —se desliza desde ella— y se pega a su
+    // borde sin esquinas arriba, así se lee como una sola pieza. El centinela
+    // de altura 0 justo antes dice cuándo pasó: cuando cruza el borde de la
+    // barra. Va por la Web Animations API y no por una clase: la animación es
+    // de un instante (el cruce), no un estado.
+    const centinelaRef = React.useRef(null);
+    const encabezadoRef = React.useRef(null);
+    const [pegado, setPegado] = React.useState(false);
+    React.useEffect(() => {
+        const c = centinelaRef.current;
+        if (vista !== 'lista' || !c) return undefined;
+        const io = new IntersectionObserver(([e]) => {
+            setPegado(!e.isIntersecting && e.boundingClientRect.top < topEncabezado + 1);
+        }, { rootMargin: `-${topEncabezado + 1}px 0px 0px 0px`, threshold: 0 });
+        io.observe(c);
+        return () => io.disconnect();
+    }, [vista, topEncabezado, loading]);
+    React.useEffect(() => {
+        const el = encabezadoRef.current;
+        if (!pegado || !el?.animate) return;
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+        // Duración y curva del reloj del portal (`--dur-slow`, `--ease-spring`).
+        const css = getComputedStyle(el);
+        const dur = parseFloat(css.getPropertyValue('--dur-slow')) || 300;
+        el.animate(
+            [{ transform: 'translateY(-100%)', opacity: 0.4 }, { transform: 'translateY(0)', opacity: 1 }],
+            { duration: dur, easing: css.getPropertyValue('--ease-spring').trim() || 'ease-out' },
+        );
+    }, [pegado]);
+
+    // Al abrir una fila, se CENTRA ya abierta (2026-10-08). Se espera a que
+    // lleguen sus productos —es lo que le cambia la altura— y a un cuadro más
+    // para medirla ya pintada. Si abierta no cabe, va arriba, bajo el
+    // encabezado pegajoso, para que se lea desde el principio.
+    const abiertaCargada = expanded ? Boolean(items[expanded]) : false;
+    React.useEffect(() => {
+        if (!expanded) return undefined;
+        const id = requestAnimationFrame(() => requestAnimationFrame(() => {
+            const el = document.querySelector(`[data-fila-pedido="${expanded}"]`);
+            if (!el) return;
+            const reducir = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+            const libre = window.innerHeight - topEncabezado - 64;
+            el.style.scrollMarginTop = `${topEncabezado + 64}px`;
+            el.scrollIntoView({ block: el.offsetHeight > libre ? 'start' : 'center', behavior: reducir ? 'auto' : 'smooth' });
+        }));
+        return () => cancelAnimationFrame(id);
+    }, [expanded, abiertaCargada, topEncabezado]);
+
+    // ── Render ────────────────────────────────────────────────────────────────
+
+    if (loading) {
+        return (
+            <div className="py-20"><SkeletonText lines={5} /></div>
+        );
+    }
+
+    // ── Vista LISTA (en prueba, 2026-10-07) ──────────────────────────────
+    // Una fila por sala, agrupadas por lo que toca hacer. Usa las MISMAS
+    // piezas que la tarjeta (`datosJSX`, `accionesJSX`, `seccionesJSX`), así
+    // que botones, condiciones, recepción y diferencias son idénticos: sólo
+    // cambia cómo se dibuja. Cerrada: sala, avance, estado y la acción
+    // principal. Abierta: lo mismo que la tarjeta abierta.
+    const grupoDeLaFila = (row) => {
+        const ck = `act_${row.pedido_id}_${row.erp_sucursal_id}`;
+        const f = faltantesDeLaSala(row);
+        if ((f.hay && !f.enCamino) || (cardStats[ck]?.sinResolver ?? 0) > 0) return 'problemas';
+        return getBranchStage(row);
+    };
+    // Una pasada para todos los grupos (eran ocho `filter` sobre la lista).
+    const filasPorGrupo = new Map();
+    filteredRows.forEach(r => {
+        const g = grupoDeLaFila(r);
+        (filasPorGrupo.get(g) ?? filasPorGrupo.set(g, []).get(g)).push(r);
+    });
+
+    // Lo de CADA fila, recortado de los mapas del tablero: así `FilaDeSala`
+    // recibe el mismo valor mientras lo suyo no cambie y el `memo` funciona.
+    const renderSala = (row) => {
+        const cardKey = `act_${row.pedido_id}_${row.erp_sucursal_id}`;
+        return (
+            <FilaDeSala
+                key={cardKey}
+                row={row} vista={vista} isExp={expanded === cardKey} observada={hasObservacion(row)}
+                misItems={items[cardKey]} misEventos={eventosMap[cardKey]} misDevoluciones={devolucionesMap[cardKey]}
+                cargandoItems={!!loadingItems[cardKey]} errorItems={itemsError[cardKey]}
+                llegadaMarcada={llegadaStatus[cardKey]} erpMarcado={erpStatus[cardKey]}
+                busyAction={busyAction} isLCBusy={busyLifecycle === `lc_${row.pedido_id}_${row.erp_sucursal_id}`}
+                imprimiendo={printingPdf === row.pedido_id}
+                stats={cardStats[cardKey]} traslado={trasladoStats?.[cardKey]} ingreso={ingresoStats?.[cardKey]}
+                ingresoCorriendo={ingresoEnCurso?.[cardKey]} entrega={entregaMap[cardKey]} apoyo={apoyoMap[cardKey]}
+                rutaInfo={pedidoRutaMap.get(claveParada(row.pedido_id, row.erp_sucursal_id))}
+                etapaPedido={pedidoStageMap.get(row.pedido_id)}
+                empMap={empMap} user={user} isBranch={isBranch} isSU={isSU} canEdit={canEdit}
+                canEditMinMax={canEditMinMax} canDownload={canDownload} erpSucursalId={erpSucursalId}
+                esSupervision={esSupervision} acc={acc}
+            />
+        );
     };
 
     return (
@@ -1144,7 +1244,7 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                 <span className="self-end text-caption font-semibold text-content-2">Estado</span>
                             </div>
                             {GRUPOS_LISTA.map(g => {
-                                const filas = filteredRows.filter(r => grupoDeLaFila(r) === g.key);
+                                const filas = filasPorGrupo.get(g.key) ?? [];
                                 if (!filas.length) return null;
                                 // Dentro de «En camino», las salas de una misma ruta van
                                 // juntas bajo el encabezado de su ruta: el conductor, las
@@ -1419,7 +1519,10 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                     onCorregido={async () => {
                         const { pedido, sucId, key } = modal;
                         const loaded = await fetchItems(key, pedido.id, sucId);
-                        if ((loaded || []).some(r => r.status === 'con_diferencia')) {
+                        // Sin la lista no se sabe si quedó una diferencia: se
+                        // dice, en vez de dar por hecho que no.
+                        if (loaded === null) avisarSinComprobar();
+                        else if (loaded.some(r => r.status === 'con_diferencia')) {
                             await handleReportarDiferencias(pedido.id, sucId);
                         }
                         await loadActive();
@@ -1431,17 +1534,22 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                         // pregunta cada tanto hasta que termine, para que la
                         // tarjeta pase a «en el inventario» sin recargar nada.
                         vigilarIngreso(pedido.id, sucId);
+                        // UNA recarga del tablero y UNA del detalle por recepción
+                        // (2026-10-08). Eran tres del tablero —la de «Confirmado»,
+                        // ésta y el eco de Realtime— y dos del detalle.
                         if (allDone) {
-                            await handleMarkErp(pedido.id, sucId, key);
-                            // Re-fetch items to get accurate con_diferencia count
+                            await handleMarkErp(pedido.id, sucId, key, { sinRecargar: true });
+                            // Los renglones frescos dicen si quedó una diferencia;
+                            // reportarla va ANTES de recargar el tablero para que
+                            // la tarjeta ya la muestre.
                             const loaded = await fetchItems(key, pedido.id, sucId);
-                            const realHasDiff = hasDiff || (loaded || []).some(r => r.status === 'con_diferencia');
+                            if (loaded === null && !hasDiff) avisarSinComprobar();
+                            const realHasDiff = hasDiff || (loaded ?? []).some(r => r.status === 'con_diferencia');
                             if (realHasDiff) await handleReportarDiferencias(pedido.id, sucId);
+                            await loadActive();
                         } else {
-                            // Partial box confirmed — reload items before active so DifSection gets fresh data
-                            await fetchItems(key, pedido.id, sucId);
+                            await Promise.all([loadActive(), fetchItems(key, pedido.id, sucId)]);
                         }
-                        await loadActive();
                     }}
                 />
             )}

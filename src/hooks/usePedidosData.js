@@ -11,7 +11,7 @@ import { ERP_NAMES, SUCURSALES as ERP_ORDER } from '../constants/erp';
 import { printFromPedidoItems } from '../utils/pedidoPrint';
 import { PAUSE_REASONS } from '../constants/pedidos';
 import { getBranchStage, claveParada, agruparPorRuta, currentMonthRange, necesitaAtencion, tieneObservacion, filtrarPedidos, pedidosPorSala } from '../utils/tableroDePedidos';
-import { anularPedido, avanzarEtapaDePedidoEnSala, confirmarEnvioPedido, despacharTrasladoPedido, fetchActiveRutas, fetchApoyoForPedido, fetchApoyoForPedidos, fetchAttendancePunches, fetchBranchNamesForSucursales, fetchEmployeeBranchId, fetchEntregasDePedidos, fetchItemsSinIngresar, fetchPausaHistorial, fetchPedidoItemEventosAll, fetchPedidoItemsAll, fetchPedidoItemsFaltaElectrolit, fetchPedidoItemsFaltaEspeciales, fetchPedidoSucursalStatus, fetchPedidosEnCurso, fetchResumenDeRenglonesPorPedido, fetchResumenIngresoPedidos, fetchRutaLocations, fetchSucursalIdForBranch, fetchTrasladosDePedidos, noReenviarEspeciales, recibirTrasladoPedido, resolverRenglonDePedido, tieneEtiquetaDeDespacho, updatePedidoItemsFaltaCaja, updatePedidoSucursalStatus, updateRutaPedidoEntregado, upsertRutaLocation } from '../data/pedidos';
+import { anularPedido, avanzarEtapaDePedidoEnSala, confirmarEnvioPedido, despacharTrasladoPedido, fetchActiveRutas, fetchApoyoForPedido, fetchApoyoForPedidos, fetchAttendancePunches, fetchBranchNamesForSucursales, fetchEmployeeBranchId, fetchEntregasDePedidos, fetchItemsSinIngresar, fetchPausaHistorial, fetchPedidoItemEventosAll, fetchPedidoItemsAll, fetchPedidoItemsFaltaElectrolit, fetchPedidoItemsFaltaEspeciales, fetchPedidoSucursalStatus, fetchPedidosEnCurso, fetchResumenDeRenglonesPorPedido, fetchResumenIngresoPedidos, fetchRutaLocations, fetchTrasladosDePedidos, marcarRastreoDeFondo, noReenviarEspeciales, recibirTrasladoPedido, resolverRenglonDePedido, sucursalDeLaSala, tieneEtiquetaDeDespacho, updatePedidoItemsFaltaCaja, updatePedidoSucursalStatus, updateRutaPedidoEntregado, upsertRutaLocation } from '../data/pedidos';
 import {
     fetchDevolucionesDePedido, decidirDevolucion,
     subirEvidencia, moverDevoluciones, recibirDevoluciones,
@@ -29,6 +29,51 @@ import { escucharCambios } from '../data/tiempoReal';
 // los renglones de un pedido llega como UN aviso por renglón, casi juntos: con
 // esta ventana, los 206 de una recepción se vuelven una o dos recargas.
 const ESPERA_RECARGA_MS = 1500;
+
+// El eco de lo propio (2026-10-08). Cada acción recarga el tablero al terminar
+// y además la base le devuelve a esta misma pantalla el aviso de lo que se
+// acaba de escribir: dos recargas iguales por clic. Si la recarga agendada por
+// un aviso iba a correr menos de esto después de otra que ya arrancó, esa otra
+// ya leyó lo que el aviso anuncia. Lo que se pierde es un cambio AJENO que
+// llegue en el medio segundo siguiente a una recarga propia — y lo trae el
+// próximo aviso.
+const ECO_MS = 2000;
+
+// Cada cuánto se mira si el conductor sigue mandando su posición. Antes se
+// recargaban las rutas enteras (tres consultas) con CADA posición GPS, en cada
+// navegador con el tablero abierto; «en línea» sólo necesita la hora de la
+// última posición, y se considera en línea por 3 minutos.
+const PULSO_GPS_MS = 60_000;
+const EN_LINEA_MS  = 3 * 60_000;
+
+// Lo que vuelve igual se queda con el objeto de antes, para que `React.memo`
+// pueda saltarse lo que no cambió. Se compara por contenido (JSON): las filas
+// son datos planos de la base, sin funciones ni fechas como objeto.
+function conservarIguales(prev, next, clave) {
+    if (!Array.isArray(prev) || !prev.length) return next;
+    const antes = new Map(prev.map(r => [clave(r), r]));
+    let todoIgual = prev.length === next.length;
+    const out = next.map((r, i) => {
+        const viejo = antes.get(clave(r));
+        if (viejo && JSON.stringify(viejo) === JSON.stringify(r)) {
+            if (prev[i] !== viejo) todoIgual = false;
+            return viejo;
+        }
+        todoIgual = false;
+        return r;
+    });
+    return todoIgual ? prev : out;
+}
+function conservarIgualesEnMapa(prev, next) {
+    if (!prev) return next;
+    let todoIgual = Object.keys(prev).length === Object.keys(next).length;
+    const out = {};
+    for (const [k, v] of Object.entries(next)) {
+        if (k in prev && JSON.stringify(prev[k]) === JSON.stringify(v)) out[k] = prev[k];
+        else { out[k] = v; todoIgual = false; }
+    }
+    return todoIgual ? prev : out;
+}
 
 export function usePedidosData({ searchTerm = '' }) {
     const { user, getScope, hasPermission } = useAuth();
@@ -72,8 +117,12 @@ export function usePedidosData({ searchTerm = '' }) {
 
     const [expanded,     setExpanded]     = useState(null);
     const [expandedMeta, setExpandedMeta] = useState(null);
+    // El canal de Realtime lee el detalle abierto de una ref y no de sus deps:
+    // con `expanded` en las deps, abrir o cerrar una fila cerraba el canal y lo
+    // volvía a abrir (un `phx_join` por clic, en cada navegador).
+    const expandedRef     = useRef(null);
     const expandedMetaRef = useRef(null);
-    useEffect(() => { expandedMetaRef.current = expandedMeta; }, [expandedMeta]);
+    useEffect(() => { expandedRef.current = expanded; expandedMetaRef.current = expandedMeta; }, [expanded, expandedMeta]);
 
     // ── Recargas pedidas por Realtime, juntadas (2026-09-14) ──
     // Cada aviso de `pedido_items` recargaba el detalle entero del pedido: 5
@@ -98,18 +147,26 @@ export function usePedidosData({ searchTerm = '' }) {
     // porque se pintan pegadas a su renglón: una diferencia y lo que se decidió
     // hacer con ella son la misma conversación.
     const [devolucionesMap, setDevolucionesMap] = useState({});
-    const [loadingItems,  setLoadingItems]  = useState(false);
+    // Cargando y error POR TARJETA (2026-10-08). Era un booleano para todas:
+    // el detalle que se recargaba por un aviso de Realtime ponía en «cargando»
+    // a la tarjeta que se estaba mirando, y la primera que terminaba lo apagaba
+    // para las demás.
+    const [loadingItems,  setLoadingItems]  = useState({});
+    const [itemsError,    setItemsError]    = useState({});
     const [llegadaStatus, setLlegadaStatus] = useState({});
     const [erpStatus,     setErpStatus]     = useState({});
     const [busyAction,    setBusyAction]    = useState(null);
+    // El freno del reenvío vive también en una ref: dos clics en el mismo
+    // cuadro llegan antes de que `busyAction` se repinte.
+    const reenvioEnCursoRef = useRef(false);
     const [busyLifecycle, setBusyLifecycle] = useState(null);
     const [crearRutaOpen, setCrearRutaOpen] = useState(null); // null | string[] (keys pre-seleccionados)
     const [modal,         setModal]         = useState(null);
     const [rutaMapOpen,   setRutaMapOpen]   = useState(null); // ruta obj para RutaMapModal
 
     // Rutas activas: mapa `claveParada(pedidoId, sucId)` → { ruta, stop, driverOnline }.
-    // Por PARADA y no por pedido — ver `claveParada` en ./helpers.
-    const [pedidoRutaMap, setPedidoRutaMap] = useState(new Map());
+    // Por PARADA y no por pedido — ver `claveParada` en ./helpers. Se deriva
+    // más abajo (`pedidoRutaMap`, junto a `loadActiveRutas`).
 
     const [llegadaModal,         setLlegadaModal]         = useState(null); // { pedidoId, sucId, key, rows }
     const [reenvioLlegadaModal,  setReenvioLlegadaModal]  = useState(null); // { pedidoId, sucId, key, ciclo, cajasCiclo }
@@ -149,84 +206,119 @@ export function usePedidosData({ searchTerm = '' }) {
     // ── Branch ERP ────────────────────────────────────────────────────────────
 
     useEffect(() => {
-        if (!isBranch || !user?.id) return;
+        if (!isBranch || !user?.id) return undefined;
+        let vivo = true;
         (async () => {
-            const { data: emp, error: empErr } = await fetchEmployeeBranchId(user.id);
-            if (empErr) console.error('fetch employee branch_id failed:', empErr.message);
-            if (!emp?.branch_id) return;
-            const { data: mapRow, error: mapErr } = await fetchSucursalIdForBranch(emp.branch_id);
+            // La sala de quien entra ya viene en la sesión: `user.branchId` lo
+            // ponen el login y `ensure_user_by_code`. Sólo una sesión guardada
+            // antes de que existiera ese dato la pregunta a la base. Y la
+            // sucursal de esa sala se recuerda (`sucursalDeLaSala`): cada cambio
+            // de pestaña volvía a pedir las dos.
+            let branchId = user.branchId ?? null;
+            if (branchId == null) {
+                const { data: emp, error: empErr } = await fetchEmployeeBranchId(user.id);
+                if (empErr) console.error('fetch employee branch_id failed:', empErr.message);
+                branchId = emp?.branch_id ?? null;
+            }
+            if (branchId == null) return;
+            const { data: mapRow, error: mapErr } = await sucursalDeLaSala(branchId);
             if (mapErr) console.error('fetch erp_sucursal_map failed:', mapErr.message);
-            if (!mapRow) return;
+            if (!vivo || !mapRow) return;
             setErpSucursalId(mapRow.erp_sucursal_id);
             setFilterSuc(mapRow.erp_sucursal_id);
             setBranchName(ERP_NAMES[mapRow.erp_sucursal_id] ?? `Sucursal ${mapRow.erp_sucursal_id}`);
         })();
-    }, [isBranch, user?.id]);
+        return () => { vivo = false; };
+    }, [isBranch, user?.id, user?.branchId]);
 
     // ── Loaders ───────────────────────────────────────────────────────────────
 
+    // Número de petición y hora de arranque de la última carga del tablero. El
+    // número evita que una respuesta vieja pise a una nueva (dos recargas
+    // seguidas pueden volver en desorden); la hora es la que mira el eco.
+    const cargaActivosRef       = useRef(0);
+    const ultimaCargaActivosRef = useRef(0);
     const loadActive = useCallback(async () => {
-        const { data, error } = await fetchPedidosEnCurso();
-        if (error) { console.error('loadActive: get_pedidos_en_curso failed:', error.message); return []; }
-        setActiveRows(data ?? []);
-        const rows = data ?? [];
-        const stats = {};
-        rows.forEach(row => {
-            stats[`act_${row.pedido_id}_${row.erp_sucursal_id}`] = { enviados: 0, sinStock: 0, porRegla: 0, agotamiento: 0 };
-        });
-        const ids = [...new Set(rows.map(r => r.pedido_id))];
-        if (ids.length) {
-            const { data: statRows, error: statErr } = await fetchResumenDeRenglonesPorPedido({ p_pedido_ids: ids });
-            if (statErr) console.error('loadActive: get_pedido_item_stats failed:', statErr.message);
-            (statRows ?? []).forEach(s => {
-                const k = `act_${s.pedido_id}_${s.erp_sucursal_id}`;
-                stats[k] = { enviados: s.enviados, sinStock: s.sin_stock, porRegla: s.por_regla, agotamiento: s.agotamiento ?? 0, pendientes: s.pendientes ?? 0, sinResolver: s.sin_resolver ?? 0 };
-            });
-        }
-        setCardStats(stats);
+        const turno = ++cargaActivosRef.current;
+        ultimaCargaActivosRef.current = Date.now();
+        try {
+            const { data, error } = await fetchPedidosEnCurso();
+            if (error) { console.error('loadActive: get_pedidos_en_curso failed:', error.message); return []; }
+            const rows = data ?? [];
+            const ids = [...new Set(rows.map(r => r.pedido_id))];
 
-        // El estado del traslado al sistema, para que la tarjeta lo muestre. Va
-        // en una sola consulta para las N tarjetas, y su fallo no puede tumbar
-        // la carga del tablero: sin esto simplemente no se pinta el badge.
-        const traslados = {};
-        if (ids.length) {
-            const { data: trRows, error: trErr } = await fetchTrasladosDePedidos(ids);
-            if (trErr) console.error('loadActive: traslados failed:', trErr.message);
-            (trRows ?? []).forEach(t => {
+            // Las cuatro consultas por tarjeta van JUNTAS (2026-10-08): iban una
+            // detrás de otra —cinco viajes en serie para pintar el tablero— y
+            // cada una hacía su propio repintado. Ninguna depende de otra, y el
+            // fallo de una no tumba el tablero: sólo deja sin su badge.
+            const vacio = { data: [], error: null };
+            const [statRes, trRes, ingRes, entRes] = ids.length
+                ? await Promise.all([
+                    fetchResumenDeRenglonesPorPedido({ p_pedido_ids: ids }),
+                    fetchTrasladosDePedidos(ids),
+                    fetchResumenIngresoPedidos(ids),
+                    fetchEntregasDePedidos(ids),
+                ])
+                : [vacio, vacio, vacio, vacio];
+            if (statRes.error) console.error('loadActive: get_pedido_item_stats failed:', statRes.error.message);
+            if (trRes.error)   console.error('loadActive: traslados failed:', trRes.error.message);
+            if (ingRes.error)  console.error('loadActive: ingreso al inventario failed:', ingRes.error.message);
+            if (entRes.error)  console.error('loadActive: entregas failed:', entRes.error.message);
+
+            // Mientras ésta viajaba arrancó otra: la otra trae lo más nuevo.
+            if (turno !== cargaActivosRef.current) return rows;
+
+            const stats = {};
+            rows.forEach(row => {
+                stats[`act_${row.pedido_id}_${row.erp_sucursal_id}`] = { enviados: 0, sinStock: 0, porRegla: 0, agotamiento: 0 };
+            });
+            (statRes.data ?? []).forEach(st => {
+                const k = `act_${st.pedido_id}_${st.erp_sucursal_id}`;
+                stats[k] = { enviados: st.enviados, sinStock: st.sin_stock, porRegla: st.por_regla, agotamiento: st.agotamiento ?? 0, pendientes: st.pendientes ?? 0, sinResolver: st.sin_resolver ?? 0 };
+            });
+
+            // El estado del traslado al sistema, para que la tarjeta lo muestre.
+            // Llegan del intento más viejo al más nuevo (`fetchTrasladosDePedidos`):
+            // al indexar por sala, gana el último intento.
+            const traslados = {};
+            (trRes.data ?? []).forEach(t => {
                 traslados[`act_${t.pedido_id}_${t.erp_sucursal_id}`] = t;
             });
-        }
-        setTrasladoStats(traslados);
 
-        // Y si lo confirmado llegó al inventario. Mismo criterio que arriba: una
-        // sola consulta para las N tarjetas y su fallo no tumba el tablero.
-        const ingresos = {};
-        if (ids.length) {
-            const { data: ingRows, error: ingErr } = await fetchResumenIngresoPedidos(ids);
-            if (ingErr) console.error('loadActive: ingreso al inventario failed:', ingErr.message);
-            (ingRows ?? []).forEach(r => {
+            // Y si lo confirmado llegó al inventario.
+            const ingresos = {};
+            (ingRes.data ?? []).forEach(r => {
                 ingresos[`act_${r.pedido_id}_${r.erp_sucursal_id}`] = r;
             });
-        }
-        setIngresoStats(ingresos);
 
-        // La entrega de cada parada. Viaja con el pedido y no con la ruta: el
-        // mapa de rutas activas sólo conoce las de hoy, así que al día siguiente
-        // el paso «Entregado» se quedaba vacío aunque el conductor lo hubiera
-        // marcado. Se guarda por (pedido, sucursal) — el mapa de rutas se indexa
-        // sólo por pedido, y un pedido de dos sucursales tiene dos paradas.
-        const entregas = {};
-        if (ids.length) {
-            const { data: entRows, error: entErr } = await fetchEntregasDePedidos(ids);
-            if (entErr) console.error('loadActive: entregas failed:', entErr.message);
-            (entRows ?? []).forEach(e => {
+            // La entrega de cada parada. Viaja con el pedido y no con la ruta: el
+            // mapa de rutas activas sólo conoce las de hoy, así que al día siguiente
+            // el paso «Entregado» se quedaba vacío aunque el conductor lo hubiera
+            // marcado. Se guarda por (pedido, sucursal) — el mapa de rutas se indexa
+            // sólo por pedido, y un pedido de dos sucursales tiene dos paradas.
+            const entregas = {};
+            (entRes.data ?? []).forEach(e => {
                 entregas[`act_${e.pedido_id}_${e.erp_sucursal_id}`] = {
                     ...e, ruta: { conductor_id: e.conductor_id, conductor_nombre: e.conductor_nombre },
                 };
             });
+
+            // Todo de una vez: React junta estos cinco en UN repintado. Y lo que
+            // no cambió conserva su objeto (`conservarIguales`): la fila de cada
+            // sala se dibuja con `React.memo`, y un objeto nuevo con los mismos
+            // datos la volvía a dibujar entera en cada recarga.
+            setActiveRows(prev => conservarIguales(prev, rows, r => `${r.pedido_id}_${r.erp_sucursal_id}`));
+            setCardStats(prev => conservarIgualesEnMapa(prev, stats));
+            setTrasladoStats(prev => conservarIgualesEnMapa(prev, traslados));
+            setIngresoStats(prev => conservarIgualesEnMapa(prev, ingresos));
+            setEntregaMap(prev => conservarIgualesEnMapa(prev, entregas));
+            return rows;
+        } catch (e) {
+            // Un tropiezo de red no puede convertirse en «no se pudo finalizar»
+            // en quien recarga después de escribir: la recarga es aparte.
+            console.error('loadActive:', e);
+            return [];
         }
-        setEntregaMap(entregas);
-        return rows;
     }, []);
 
     useEffect(() => {
@@ -245,20 +337,31 @@ export function usePedidosData({ searchTerm = '' }) {
         if (!parciales.length) return;
         parciales.forEach(r => {
             const key = `act_${r.pedido_id}_${r.erp_sucursal_id}`;
-            if (!items[key]) fetchItems(key, r.pedido_id, r.erp_sucursal_id);
+            // `detallesPedidosRef`: ya pedido (aunque siga en vuelo). Sin esto,
+            // cada recarga del tablero mientras viajaba la primera lo volvía a
+            // pedir entero.
+            if (!items[key] && !detallesPedidosRef.current.has(key)) fetchItems(key, r.pedido_id, r.erp_sucursal_id);
         });
     }, [activeRows]); // eslint-disable-line
 
     // Batch-load apoyo for ALL users whenever activeRows changes (branch + bodega)
+    //
+    // Depende de la LISTA DE PEDIDOS como texto, no de `activeRows`: ese arreglo
+    // es nuevo en cada recarga del tablero aunque traiga los mismos pedidos, y
+    // cada recarga volvía a pedir el apoyo de todos y a firmar sus fotos. Un
+    // apoyo nuevo ya lo pinta `handleApoyoSuccess`, y el detalle abierto lo
+    // relee con `fetchItems`.
+    const idsDePedidos = useMemo(() => [...new Set(activeRows.map(r => r.pedido_id))].sort().join(','), [activeRows]);
     useEffect(() => {
-        if (!activeRows.length) return;
+        if (!idsDePedidos) return undefined;
+        let vivo = true;
         (async () => {
-            const ids = [...new Set(activeRows.map(r => r.pedido_id))];
-            if (!ids.length) return;
+            const ids = idsDePedidos.split(',');
             // Branch: filter to their sucursal only; bodega: load all sucursales
-            const { data } = await fetchApoyoForPedidos(ids, isBranch && erpSucursalId ? erpSucursalId : null);
+            const { data, error } = await fetchApoyoForPedidos(ids, isBranch && erpSucursalId ? erpSucursalId : null);
+            if (error) console.error('apoyo de los pedidos:', error.message);
             await signPhotosDeep(data || []);
-            if (!data) return;
+            if (!vivo || !data) return;
             const map = {};
             data.forEach(r => {
                 const key = `act_${r.pedido_id}_${r.erp_sucursal_id}`;
@@ -271,101 +374,181 @@ export function usePedidosData({ searchTerm = '' }) {
             });
             setApoyoMap(prev => ({ ...prev, ...map }));
         })();
-    }, [isBranch, erpSucursalId, activeRows]);
+        return () => { vivo = false; };
+    }, [isBranch, erpSucursalId, idsDePedidos]);
 
     // ── Realtime ──────────────────────────────────────────────────────────────
 
-    useEffect(() => {
-        const juntar = (clave, recargar) => {
-            const pendientes = recargasRef.current;
-            if (pendientes.has(clave)) return;
-            pendientes.set(clave, setTimeout(() => { pendientes.delete(clave); recargar(); }, ESPERA_RECARGA_MS));
-        };
-        const recargarActivos = () => juntar('activos', () => loadActive());
-        const recargarDetalle = (key, pedidoId, sucId) => {
-            if (!key || !detallesPedidosRef.current.has(key)) return;
-            juntar(`detalle:${key}`, () => fetchItems(key, pedidoId, sucId));
-        };
-        return escucharCambios('tab-pedidos-rt', [
-            { tabla: 'pedidos', alCambiar: (payload) => {
-                recargarActivos();
-                juntar('rutas', () => loadActiveRutas()); // rutas/ruta_pedidos pueden no estar en la pub; pedidos sí
-                const s = payload.new?.status;
-                if (isBranch && s === 'enviado') {
-                    const ids = payload.new?.sucursal_ids ?? [];
-                    if (erpSucursalId && ids.includes(erpSucursalId)) {
-                        setNewAlert({ numero: payload.new.numero });
-                        setTimeout(() => setNewAlert(null), 8000);
-                    }
+    // Lo que los canales llaman vive en refs: los canales se abren UNA vez y no
+    // se cierran y reabren cada vez que cambia una función o la fila abierta.
+    // `fetchItems` y `loadActiveRutas` se declaran más abajo; sus refs se
+    // actualizan en un efecto pegado a ellas.
+    const fetchItemsRef      = useRef(null);
+    const loadActiveRutasRef = useRef(null);
+    const isBranchRef        = useRef(isBranch);
+    const erpSucursalIdRef   = useRef(erpSucursalId);
+    useEffect(() => { isBranchRef.current = isBranch; erpSucursalIdRef.current = erpSucursalId; }, [isBranch, erpSucursalId]);
+    // Hora de arranque de la última carga de cada detalle — la que mira el eco.
+    const ultimaCargaDetalleRef = useRef({});
+
+    // UNA sola cola de recargas para todos los canales: el aviso de `pedidos` y
+    // el de `rutas` piden recargar las rutas, y con dos colas eran dos recargas.
+    const juntar = useCallback((clave, recargar) => {
+        const pendientes = recargasRef.current;
+        if (pendientes.has(clave)) return;
+        pendientes.set(clave, setTimeout(() => { pendientes.delete(clave); recargar(); }, ESPERA_RECARGA_MS));
+    }, []);
+    const recargarActivos = useCallback(() => juntar('activos', () => {
+        // El eco: una acción propia ya recargó (ver `ECO_MS`).
+        if (Date.now() - ultimaCargaActivosRef.current < ECO_MS) return;
+        loadActive();
+    }), [juntar, loadActive]);
+    const recargarRutas = useCallback(() => juntar('rutas', () => loadActiveRutasRef.current?.()), [juntar]);
+    const recargarDetalle = useCallback((key, pedidoId, sucId) => {
+        if (!key || !detallesPedidosRef.current.has(key)) return;
+        juntar(`detalle:${key}`, () => {
+            if (Date.now() - (ultimaCargaDetalleRef.current[key] ?? 0) < ECO_MS) return;
+            fetchItemsRef.current?.(key, pedidoId, sucId);
+        });
+    }, [juntar]);
+
+    useEffect(() => escucharCambios('tab-pedidos-rt', [
+        { tabla: 'pedidos', alCambiar: (payload) => {
+            recargarActivos();
+            recargarRutas(); // rutas/ruta_pedidos pueden no estar en la pub; pedidos sí
+            const s = payload.new?.status;
+            const sala = erpSucursalIdRef.current;
+            if (isBranchRef.current && s === 'enviado') {
+                const ids = payload.new?.sucursal_ids ?? [];
+                if (sala && ids.includes(sala)) {
+                    setNewAlert({ numero: payload.new.numero });
+                    setTimeout(() => setNewAlert(null), 8000);
                 }
-                const meta = expandedMetaRef.current;
-                const affectedId = payload.new?.id ?? payload.old?.id;
-                if (meta && meta.pedidoId === affectedId) recargarDetalle(expanded, meta.pedidoId, meta.sucId);
-            } },
-            { tabla: 'pedido_sucursal_status', alCambiar: () => { recargarActivos(); } },
-            { tabla: 'pedido_item_eventos', evento: 'INSERT', alCambiar: (payload) => {
-                const { pedido_id, erp_sucursal_id } = payload.new ?? {};
-                if (!pedido_id) return;
-                recargarDetalle(`act_${pedido_id}_${erp_sucursal_id}`, pedido_id, erp_sucursal_id);
-                recargarActivos();
-            } },
-            { tabla: 'pedido_items', evento: 'UPDATE', alCambiar: (payload) => {
+            }
+            const meta = expandedMetaRef.current;
+            const affectedId = payload.new?.id ?? payload.old?.id;
+            if (meta && meta.pedidoId === affectedId) recargarDetalle(expandedRef.current, meta.pedidoId, meta.sucId);
+        } },
+        { tabla: 'pedido_sucursal_status', alCambiar: () => { recargarActivos(); } },
+        { tabla: 'pedido_item_eventos', evento: 'INSERT', alCambiar: (payload) => {
+            const { pedido_id, erp_sucursal_id } = payload.new ?? {};
+            if (!pedido_id) return;
+            recargarDetalle(`act_${pedido_id}_${erp_sucursal_id}`, pedido_id, erp_sucursal_id);
+            recargarActivos();
+        } },
+    ]), [recargarActivos, recargarRutas, recargarDetalle]);
+
+    // Los renglones, SÓLO del pedido abierto (2026-10-08). El canal de arriba
+    // escuchaba todo UPDATE de `pedido_items` sin filtro: cada renglón contado en
+    // cualquier sala llegaba a cada navegador con el tablero abierto —206
+    // avisos por recepción, por navegador— para descartarse acá casi siempre.
+    // Con el filtro la base sólo manda los del pedido que alguien mira.
+    const pedidoAbierto = expandedMeta?.pedidoId ?? null;
+    useEffect(() => {
+        if (!pedidoAbierto) return undefined;
+        return escucharCambios(`tab-pedidos-items-${pedidoAbierto}`, [
+            { tabla: 'pedido_items', evento: 'UPDATE', filtro: `pedido_id=eq.${pedidoAbierto}`, alCambiar: (payload) => {
                 const { pedido_id, erp_sucursal_id } = payload.new ?? {};
                 if (!pedido_id) return;
                 recargarDetalle(`act_${pedido_id}_${erp_sucursal_id}`, pedido_id, erp_sucursal_id);
             } },
         ]);
-        // fetchItems/loadActiveRutas quedan fuera: se declaran más abajo en el archivo
-        // (forward reference) y sus propias deps (isBranch/erpSucursalId; loadActiveRutas
-        // no tiene ninguna) rara vez cambian durante la vida de este componente, así que
-        // el riesgo real de closure obsoleta es bajo — mover su declaración antes de este
-        // efecto en un archivo de 3900+ líneas queda fuera de alcance de este barrido de lint.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [loadActive, isBranch, erpSucursalId, expanded]);
+    }, [pedidoAbierto, recargarDetalle]);
 
     // ── Rutas activas: mapa (pedido, sala) → { ruta, stop, driverOnline } ────
-    const loadingRutasRef = useRef(false);
+    //
+    // Se guardan las rutas y la hora de la última posición de cada una, y el
+    // mapa se DERIVA: «en línea» depende del reloj, no de que llegue un aviso.
+    const [rutasActivas, setRutasActivas] = useState([]);
+    const [posiciones,   setPosiciones]   = useState({}); // ruta_id → updated_at
+    const [reloj,        setReloj]        = useState(() => Date.now());
+    // Una carga a la vez, pero sin tirar la que llega en vuelo: el candado
+    // descartaba la recarga pedida mientras otra viajaba, y si esa otra había
+    // leído ANTES del cambio, el cambio no se veía hasta el próximo aviso. Ahora
+    // queda pendiente y se corre al terminar.
+    const loadingRutasRef  = useRef(false);
+    const rutasPendienteRef = useRef(false);
     const loadActiveRutas = useCallback(async () => {
-        if (loadingRutasRef.current) return;
+        if (loadingRutasRef.current) { rutasPendienteRef.current = true; return; }
         loadingRutasRef.current = true;
-        const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-        const { data, error } = await fetchActiveRutas(todayStart.toISOString());
-        if (error) console.error('loadActiveRutas: fetch rutas failed:', error.message);
-        if (!data?.length) { setPedidoRutaMap(new Map()); loadingRutasRef.current = false; return; }
+        try {
+            do {
+                rutasPendienteRef.current = false;
+                const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+                const { data, error } = await fetchActiveRutas(todayStart.toISOString());
+                if (error) { console.error('loadActiveRutas: fetch rutas failed:', error.message); continue; }
+                if (!data?.length) { setRutasActivas([]); setPosiciones({}); continue; }
 
-        const rutaIds = data.map(r => r.id);
-        const allStops = data.flatMap(r => r.ruta_pedidos ?? []);
-        const sucIds   = [...new Set(allStops.map(s => s.erp_sucursal_id))];
+                const rutaIds = data.map(r => r.id);
+                const allStops = data.flatMap(r => r.ruta_pedidos ?? []);
+                const sucIds   = [...new Set(allStops.map(st => st.erp_sucursal_id))];
 
-        const [{ data: locs, error: locsErr }, { data: sucData, error: sucErr }] = await Promise.all([
-            fetchRutaLocations(rutaIds),
-            sucIds.length
-                ? fetchBranchNamesForSucursales(sucIds)
-                : Promise.resolve({ data: [] }),
-        ]);
-        if (locsErr) console.error('loadActiveRutas: fetch ruta_locations failed:', locsErr.message);
-        if (sucErr) console.error('loadActiveRutas: fetch erp_sucursal_map failed:', sucErr.message);
+                const [{ data: locs, error: locsErr }, { data: sucData, error: sucErr }] = await Promise.all([
+                    fetchRutaLocations(rutaIds),
+                    sucIds.length
+                        ? fetchBranchNamesForSucursales(sucIds)
+                        : Promise.resolve({ data: [] }),
+                ]);
+                if (locsErr) console.error('loadActiveRutas: fetch ruta_locations failed:', locsErr.message);
+                if (sucErr) console.error('loadActiveRutas: fetch erp_sucursal_map failed:', sucErr.message);
 
-        const onlineMap  = Object.fromEntries((locs ?? []).map(l => {
-            const ageMin = (Date.now() - new Date(l.updated_at).getTime()) / 60000;
-            return [l.ruta_id, ageMin < 3];
-        }));
-        const sucNameMap = Object.fromEntries((sucData ?? []).map(s => [s.erp_sucursal_id, s.branch?.name]));
-
-        const map = new Map();
-        data.forEach(ruta => {
-            const enriched = (ruta.ruta_pedidos ?? []).map(s => ({
-                ...s, suc_name: sucNameMap[s.erp_sucursal_id] ?? `Suc. ${s.erp_sucursal_id}`,
-            }));
-            enriched.forEach(stop => {
-                map.set(claveParada(stop.pedido_id, stop.erp_sucursal_id), { ruta: { ...ruta, ruta_pedidos: enriched }, stop, driverOnline: onlineMap[ruta.id] ?? false });
-            });
-        });
-        setPedidoRutaMap(map);
-        loadingRutasRef.current = false;
+                const sucNameMap = Object.fromEntries((sucData ?? []).map(x => [x.erp_sucursal_id, x.branch?.name]));
+                setRutasActivas(data.map(ruta => ({
+                    ...ruta,
+                    ruta_pedidos: (ruta.ruta_pedidos ?? []).map(st => ({
+                        ...st, suc_name: sucNameMap[st.erp_sucursal_id] ?? `Suc. ${st.erp_sucursal_id}`,
+                    })),
+                })));
+                setPosiciones(Object.fromEntries((locs ?? []).map(l => [l.ruta_id, l.updated_at])));
+                setReloj(Date.now());
+            } while (rutasPendienteRef.current);
+        } catch (e) {
+            console.error('loadActiveRutas:', e);
+        } finally {
+            loadingRutasRef.current = false;
+        }
     }, []);
+    useEffect(() => { loadActiveRutasRef.current = loadActiveRutas; }, [loadActiveRutas]);
 
     useEffect(() => { loadActiveRutas(); }, [loadActiveRutas]);
+
+    // «En línea» como texto: el mapa sólo se rehace si cambia QUIÉN está en
+    // línea, no cada vez que avanza el reloj.
+    const enLinea = useMemo(() => Object.entries(posiciones)
+        .filter(([, t]) => reloj - new Date(t).getTime() < EN_LINEA_MS)
+        .map(([id]) => id).sort().join(','), [posiciones, reloj]);
+    const pedidoRutaMap = useMemo(() => {
+        const online = new Set(enLinea ? enLinea.split(',') : []);
+        const map = new Map();
+        rutasActivas.forEach(ruta => {
+            (ruta.ruta_pedidos ?? []).forEach(stop => {
+                map.set(claveParada(stop.pedido_id, stop.erp_sucursal_id), { ruta, stop, driverOnline: online.has(String(ruta.id)) });
+            });
+        });
+        return map;
+    }, [rutasActivas, enLinea]);
+
+    // El pulso: mientras haya una ruta EN CURSO, una lectura liviana de la hora
+    // de la última posición por minuto (una consulta de dos columnas), en vez
+    // de recargar las rutas enteras por cada posición GPS en cada navegador.
+    const rutasEnCurso = useMemo(() => rutasActivas.filter(r => r.status === 'en_ruta').map(r => r.id).sort().join(','), [rutasActivas]);
+    useEffect(() => {
+        if (!rutasEnCurso) return undefined;
+        let vivo = true;
+        const ids = rutasEnCurso.split(',');
+        const t = setInterval(async () => {
+            const { data, error } = await fetchRutaLocations(ids);
+            if (!vivo) return;
+            if (error) { console.error('pulso GPS:', error.message); return; }
+            setPosiciones(prev => {
+                const next = { ...prev };
+                (data ?? []).forEach(l => { next[l.ruta_id] = l.updated_at; });
+                return next;
+            });
+            setReloj(Date.now());
+        }, PULSO_GPS_MS);
+        return () => { vivo = false; clearInterval(t); };
+    }, [rutasEnCurso]);
 
     // Resolver las caras que faltan. Se junta lo que las filas visibles ya
     // nombran —quien confirmó, inició, finalizó, envió, recibió, reenvió, el
@@ -422,29 +605,41 @@ export function usePedidosData({ searchTerm = '' }) {
         })();
         return () => { vivo = false; };
     }, [activeRows, pedidoRutaMap, entregaMap, empMap]);
-    useEffect(() => {
-        return escucharCambios('pedido-rutas-rt', [
-            { tabla: 'rutas', alCambiar: () => { loadActiveRutas(); loadActive(); } },
-            { tabla: 'ruta_pedidos', alCambiar: () => { loadActiveRutas(); loadActive(); } },
-            { tabla: 'ruta_locations', alCambiar: loadActiveRutas },
-        ]);
-    }, [loadActiveRutas, loadActive]);
+    useEffect(() => escucharCambios('pedido-rutas-rt', [
+        // Por la misma cola que el canal principal (`juntar`): crear una ruta de
+        // cinco paradas son seis avisos casi juntos, y cada uno recargaba las
+        // rutas y el tablero enteros. `ruta_locations` ya NO se escucha acá:
+        // ver `PULSO_GPS_MS`.
+        { tabla: 'rutas',        alCambiar: () => { recargarRutas(); recargarActivos(); } },
+        { tabla: 'ruta_pedidos', alCambiar: () => { recargarRutas(); recargarActivos(); } },
+    ]), [recargarRutas, recargarActivos]);
 
     // ── GPS background persistente — conductor con ruta en_ruta ──────────────
     // Corre independiente del RutaMapModal: pantalla apagada o modal cerrado.
     // Cómo se mide lo decide la plataforma (`plataforma/ubicacion`).
-    const bgGpsPosRef = useRef(null);
-    useEffect(() => {
-        // Solo activo si el usuario es conductor de una ruta en_ruta hoy
+    //
+    // Depende del ID de la ruta (texto), no del mapa de rutas: el mapa es nuevo
+    // en cada recarga, y cada recarga apagaba y volvía a encender el GPS.
+    //
+    // Y es el ÚNICO que escribe mientras corre: `marcarRastreoDeFondo` le avisa
+    // al mapa de la ruta (`hayRastreoDeFondo`) que no escriba él también.
+    const rutaDelConductor = useMemo(() => {
         const entry = [...pedidoRutaMap.values()]
             .find(v => v.ruta.conductor_id && String(v.ruta.conductor_id) === String(user?.id) && v.ruta.status === 'en_ruta');
-        if (!entry) return;
-
-        const rutaId = entry.ruta.id;
+        return entry ? String(entry.ruta.id) : null;
+    }, [pedidoRutaMap, user?.id]);
+    const bgGpsPosRef = useRef(null);
+    useEffect(() => {
+        if (!rutaDelConductor) return undefined;
+        const rutaId = rutaDelConductor;
         let detener = null;
         let cerrado = false;
         seguirPosicion((pos) => { bgGpsPosRef.current = pos; })
-            .then((d) => { if (cerrado) d(); else detener = d; })
+            .then((d) => {
+                if (cerrado) { d(); return; }
+                detener = d;
+                marcarRastreoDeFondo(rutaId, true);
+            })
             .catch((e) => console.warn('[BG-GPS] start error:', e));
         // Escribir a DB cada 30s
         const intervalo = setInterval(() => {
@@ -456,70 +651,101 @@ export function usePedidosData({ searchTerm = '' }) {
             cerrado = true;
             detener?.();
             clearInterval(intervalo);
+            marcarRastreoDeFondo(rutaId, false);
         };
-    }, [pedidoRutaMap, user?.id]);
+    }, [rutaDelConductor]);
 
     // ── Fetch items ───────────────────────────────────────────────────────────
 
+    // Devuelve los renglones, o `null` si no se pudieron leer COMPLETOS. Antes
+    // devolvía `[]` en el error, y `[]` es también «este pedido no tiene
+    // renglones»: FINALIZAR guardaba cero cajas especiales y cero Electrolit, e
+    // IMPRIMIR sacaba un PDF sin productos, sin que nadie se enterara
+    // (2026-10-08). Quien llama decide qué hacer con el `null`; la tarjeta lo
+    // muestra con `itemsError`.
+    //
+    // Las cinco consultas van juntas: iban en tres tandas una detrás de otra.
+    const cargasDetalleRef = useRef({});
     const fetchItems = useCallback(async (key, pedidoId, sucId) => {
-        if (!pedidoId) return;
+        if (!pedidoId) return null;
         detallesPedidosRef.current.add(key);
-        setLoadingItems(true);
+        const turno = (cargasDetalleRef.current[key] ?? 0) + 1;
+        cargasDetalleRef.current[key] = turno;
+        ultimaCargaDetalleRef.current[key] = Date.now();
+        const vigente = () => cargasDetalleRef.current[key] === turno;
+        setLoadingItems(prev => ({ ...prev, [key]: true }));
         const sucFilter = sucId ?? (isBranch && erpSucursalId ? erpSucursalId : null);
         try {
-
-        // Paginated fetch — pedidos con >1000 items existen en producción
-        const allItemRows = await fetchPedidoItemsAll(pedidoId, sucFilter) ?? [];
-
-        const lcPromise = (sucFilter && isBranch)
-            ? fetchPedidoSucursalStatus(pedidoId, sucFilter, 'recibido_erp_at, llegada_fisica_at')
-            : Promise.resolve({ data: null });
-
-        const apoyoQ = fetchApoyoForPedido(pedidoId, sucFilter);
-
-        // Paginated eventos fetch (cap-safe)
-        const allEvRows = await fetchPedidoItemEventosAll(pedidoId, sucFilter) ?? [];
-
-        // Las devoluciones van en el mismo viaje que el resto: son pocas filas y
-        // se pintan pegadas a su renglón, así que pedirlas aparte sería un
-        // segundo tirón para ver la mitad de la misma tarjeta.
-        const devsQ = fetchDevolucionesDePedido(pedidoId, sucFilter);
-
-        const [{ data: lcRow, error: lcErr }, { data: apoyoRows, error: apoyoErr }, devs] =
-            await Promise.all([lcPromise, apoyoQ, devsQ]);
-        if (lcErr) throw lcErr;
-        if (apoyoErr) throw apoyoErr;
-        setDevolucionesMap(prev => ({ ...prev, [key]: devs }));
-        await signPhotosDeep(apoyoRows || []);
-        const resolved = allItemRows.map(row => ({
-            ...row,
-            presentations: (row.products?.product_precios || [])
-                .filter(pp => pp.activo !== false)
-                .map(pp => ({ factor: pp.factor, tipo: pp.presentaciones?.tipo }))
-                .filter(p => p.tipo && p.factor >= 1),
-            tiene_dispatch_label: tieneEtiquetaDeDespacho(row),
-        }));
-        setItems(prev => ({ ...prev, [key]: resolved }));
-        setEventosMap(prev => ({ ...prev, [key]: allEvRows }));
-        const apoyoByTipo = { preparacion: [], recepcion: [] };
-        (apoyoRows || []).forEach(r => {
-            const t = r.tipo ?? 'preparacion';
-            if (!apoyoByTipo[t]) apoyoByTipo[t] = [];
-            apoyoByTipo[t].push({ id: r.employee_id, ...r.employees });
-        });
-        setApoyoMap(prev => ({ ...prev, [key]: apoyoByTipo }));
-        if (lcRow) {
-            setErpStatus(prev => ({ ...prev, [key]: !!lcRow.recibido_erp_at }));
-            setLlegadaStatus(prev => ({ ...prev, [key]: !!lcRow.llegada_fisica_at }));
-        }
-        return resolved;
+            const lcPromise = (sucFilter && isBranch)
+                ? fetchPedidoSucursalStatus(pedidoId, sucFilter, 'recibido_erp_at, llegada_fisica_at')
+                : Promise.resolve({ data: null, error: null });
+            // Paginadas (`fetchAllRows`, cap-safe): pedidos con >1000 renglones
+            // existen en producción. Las devoluciones van en el mismo viaje: son
+            // pocas filas y se pintan pegadas a su renglón.
+            const [allItemRows, allEvRows, { data: lcRow, error: lcErr }, { data: apoyoRows, error: apoyoErr }, devs] =
+                await Promise.all([
+                    fetchPedidoItemsAll(pedidoId, sucFilter),
+                    fetchPedidoItemEventosAll(pedidoId, sucFilter),
+                    lcPromise,
+                    fetchApoyoForPedido(pedidoId, sucFilter),
+                    fetchDevolucionesDePedido(pedidoId, sucFilter),
+                ]);
+            if (allItemRows === null) throw new Error('No se pudieron leer todos los productos del pedido.');
+            if (allEvRows === null) throw new Error('No se pudo leer el historial de las diferencias del pedido.');
+            if (lcErr) throw lcErr;
+            if (apoyoErr) throw apoyoErr;
+            await signPhotosDeep(apoyoRows || []);
+            const resolved = allItemRows.map(row => ({
+                ...row,
+                presentations: (row.products?.product_precios || [])
+                    .filter(pp => pp.activo !== false)
+                    .map(pp => ({ factor: pp.factor, tipo: pp.presentaciones?.tipo }))
+                    .filter(p => p.tipo && p.factor >= 1),
+                tiene_dispatch_label: tieneEtiquetaDeDespacho(row),
+            }));
+            // Una lectura vieja de la MISMA tarjeta no pisa a una más nueva; a
+            // quien la esperaba igual se le devuelve lo que leyó.
+            if (!vigente()) return resolved;
+            const apoyoByTipo = { preparacion: [], recepcion: [] };
+            (apoyoRows || []).forEach(r => {
+                const t = r.tipo ?? 'preparacion';
+                if (!apoyoByTipo[t]) apoyoByTipo[t] = [];
+                apoyoByTipo[t].push({ id: r.employee_id, ...r.employees });
+            });
+            setItems(prev => ({ ...prev, [key]: resolved }));
+            setEventosMap(prev => ({ ...prev, [key]: allEvRows }));
+            setDevolucionesMap(prev => ({ ...prev, [key]: devs }));
+            setApoyoMap(prev => ({ ...prev, [key]: apoyoByTipo }));
+            setItemsError(prev => { if (!prev[key]) return prev; const n = { ...prev }; delete n[key]; return n; });
+            if (lcRow) {
+                setErpStatus(prev => ({ ...prev, [key]: !!lcRow.recibido_erp_at }));
+                setLlegadaStatus(prev => ({ ...prev, [key]: !!lcRow.llegada_fisica_at }));
+            }
+            return resolved;
         } catch (err) {
             console.error('[fetchItems] error:', err?.message ?? err);
-            return [];
+            // Se puede volver a pedir: sin esto, `detallesPedidosRef` lo daba por
+            // pedido y la carga automática no lo reintentaba nunca.
+            if (vigente()) {
+                detallesPedidosRef.current.delete(key);
+                setItemsError(prev => ({ ...prev, [key]: mensajeAmigable(err, 'No se pudieron cargar los productos del pedido.') }));
+            }
+            return null;
         } finally {
-            setLoadingItems(false);
+            if (vigente()) setLoadingItems(prev => { const n = { ...prev }; delete n[key]; return n; });
         }
     }, [isBranch, erpSucursalId]);
+    useEffect(() => { fetchItemsRef.current = fetchItems; }, [fetchItems]);
+
+    // El aviso para quien tocó un botón que necesita los renglones y no los
+    // tiene. Mismo texto en los cuatro sitios.
+    const avisarSinRenglones = useCallback((que) => {
+        useToastStore.getState().showToast(
+            `No se pudo ${que}`,
+            'No se pudieron leer los productos del pedido. Revisa la conexión e intenta de nuevo.',
+            'error',
+        );
+    }, []);
 
     const toggleExpand = useCallback(async (key, pedidoId, sucId) => {
         if (expanded === key) { setExpanded(null); setExpandedMeta(null); return; }
@@ -540,7 +766,16 @@ export function usePedidosData({ searchTerm = '' }) {
             loadActive();
             // El aviso «en preparación» a la sala lo escribe la base
             // (`avisar_camino_del_pedido`), no esta pantalla.
-        } catch (e) { console.error('Lifecycle error:', e); } finally { setBusyLifecycle(null); }
+            return true;
+        } catch (e) {
+            // Se dice (2026-10-08). Era un `console.error` a secas: «Iniciar»,
+            // «Pausar» o «Reanudar» rechazados por la base —una pausa sin
+            // reanudar, un permiso— giraban, se apagaban y no pasaba nada.
+            console.error('Lifecycle error:', e);
+            const que = { iniciar: 'iniciar', pausar: 'pausar', reanudar: 'reanudar', finalizar: 'finalizar' }[stage] ?? 'guardar el cambio';
+            useToastStore.getState().showToast(`No se pudo ${que}`, mensajeAmigable(e, 'Intenta de nuevo.'), 'error');
+            return false;
+        } finally { setBusyLifecycle(null); }
     }, [user, loadActive]);
 
     const [anularModal,      setAnularModal]      = useState(null); // { pedidoId, numero, requiresReason }
@@ -564,17 +799,28 @@ export function usePedidosData({ searchTerm = '' }) {
             useStaff.getState().appendAuditLog('PEDIDO_ENTREGA_PROGRAMADA', pedidoId, { sucursal_id: sucId, entrega_at: newIso });
             setProgramarModal(null);
             await loadActive();
-        } catch (e) { console.error(e); } finally { setSavingProgramar(false); }
+        } catch (e) {
+            console.error(e);
+            useToastStore.getState().showToast('No se pudo programar la entrega', mensajeAmigable(e, 'Intenta de nuevo.'), 'error');
+        } finally { setSavingProgramar(false); }
     }, [programarModal, user, empMap, loadActive]);
 
-    const handlePrintPdf = useCallback(async (pedidoId, pedidoNumero, sucId, cardKey, codigo) => {
+    // `finalizada`: la sala ya despachó, y la hoja reimpresa tiene que decir lo
+    // que SALIÓ (`cantidad_enviada`), no lo asignado — ver `printFromPedidoItems`.
+    const handlePrintPdf = useCallback(async (pedidoId, pedidoNumero, sucId, cardKey, codigo, finalizada = false) => {
         setPrintingPdf(pedidoId);
         try {
             let rows = items[cardKey];
             if (!rows) rows = await fetchItems(cardKey, pedidoId, sucId);
-            await printFromPedidoItems(pedidoNumero, [[sucId, rows ?? []]], {}, codigo ?? `${pedidoNumero}`);
-        } catch (e) { console.error('PDF error:', e); } finally { setPrintingPdf(null); }
-    }, [items, fetchItems]);
+            // Sin renglones no se imprime: un PDF vacío se ve como un pedido
+            // vacío, y con él en la mano nadie arma las cajas que faltan.
+            if (!rows?.length) { avisarSinRenglones('imprimir'); return; }
+            await printFromPedidoItems(pedidoNumero, [[sucId, rows]], finalizada ? { cantidad: 'enviada' } : {}, codigo ?? `${pedidoNumero}`);
+        } catch (e) {
+            console.error('PDF error:', e);
+            useToastStore.getState().showToast('No se pudo imprimir', mensajeAmigable(e, 'Intenta de nuevo.'), 'error');
+        } finally { setPrintingPdf(null); }
+    }, [items, fetchItems, avisarSinRenglones]);
 
     const openPauseModal = useCallback(async (pedidoId, sucId) => {
         try {
@@ -616,8 +862,10 @@ export function usePedidosData({ searchTerm = '' }) {
         const reason = PAUSE_REASONS.find(r => r.key === pauseRazon);
         let razon = reason?.label ?? pauseRazon;
         if (pauseComment.trim()) razon += ` — ${pauseComment.trim()}`;
-        await handleLifecycle(pauseModal.pedidoId, pauseModal.sucId, 'pausar', razon);
-        setPauseModal(null);
+        // Se cierra sólo si la pausa entró: cerrado sobre un rechazo, quien
+        // pausó se iba creyendo que el reloj se había detenido.
+        const ok = await handleLifecycle(pauseModal.pedidoId, pauseModal.sucId, 'pausar', razon);
+        if (ok) setPauseModal(null);
     }, [pauseModal, pauseRazon, pauseComment, handleLifecycle]);
 
     const handleApoyoSuccess = useCallback((emp, cardKey, tipo = 'preparacion') => {
@@ -661,13 +909,21 @@ export function usePedidosData({ searchTerm = '' }) {
                 items[key] ? Promise.resolve(items[key]) : fetchItems(key, pedidoId, sucId),
                 fetchPedidoSucursalStatus(pedidoId, sucId, 'paginas'),
             ]);
+            // Con los renglones vacíos o a medias NO se abre (2026-10-08): de
+            // esta lista salen las cajas especiales y las de Electrolit que se
+            // guardan al finalizar, y con `[]` se guardaban CERO sin aviso.
+            if (!rowsResult?.length) { avisarSinRenglones('abrir el cierre del pedido'); return; }
+            if (pssResult.error) throw pssResult.error;
             setFinalizarModal({
                 pedidoId, sucId, numero, key,
-                rows:    rowsResult ?? [],
+                rows:    rowsResult,
                 paginas: pssResult.data?.paginas ?? null,
             });
-        } catch (e) { console.error('openFinalizarModal:', e); } finally { setBusyAction(null); }
-    }, [busyAction, items, fetchItems]);
+        } catch (e) {
+            console.error('openFinalizarModal:', e);
+            useToastStore.getState().showToast('No se pudo abrir el cierre del pedido', mensajeAmigable(e, 'Intenta de nuevo.'), 'error');
+        } finally { setBusyAction(null); }
+    }, [busyAction, items, fetchItems, avisarSinRenglones]);
 
     const handleFinalizarConCajas = useCallback(async ({ totalCajas, cajaMap, paginaItems, ajustesEnvio = [] }) => {
         if (!finalizarModal) return;
@@ -742,7 +998,7 @@ export function usePedidosData({ searchTerm = '' }) {
                 if (!despacho.ok) {
                     useToastStore.getState().showToast(
                         'El pedido quedó finalizado, pero no salió del sistema',
-                        despacho.error ?? 'Se puede reintentar desde el pedido.',
+                        mensajeAmigable(despacho.error, 'Se puede reintentar desde el pedido.'),
                         'warning',
                     );
                 }
@@ -776,8 +1032,11 @@ export function usePedidosData({ searchTerm = '' }) {
             rows = await fetchItems(key, pedidoId, sucId);
             setBusyAction(null);
         }
-        setLlegadaModal({ pedidoId, sucId, key, rows: rows ?? [] });
-    }, [busyAction, items, fetchItems]);
+        // La llegada marca con estos renglones qué no vino; sin ellos marcaría
+        // nada y diría que sí.
+        if (!rows) { avisarSinRenglones('confirmar la llegada'); return; }
+        setLlegadaModal({ pedidoId, sucId, key, rows });
+    }, [busyAction, items, fetchItems, avisarSinRenglones]);
 
     const handleLlegadaConfirm = useCallback(async ({ cajasDanadas, cajasFaltantes, nota, electrolitFaltantes = null, especialesLlegadas = null, cajasExtra = 0, cajasExtraNotas = null }) => {
         if (!llegadaModal) return;
@@ -786,10 +1045,21 @@ export function usePedidosData({ searchTerm = '' }) {
         try {
             // La lógica vive en el núcleo (`data/llegadaDePedido`): la app del
             // teléfono confirma la llegada con la misma función.
-            const { tipo } = await confirmarLlegadaDePedido({
+            const { tipo, electrolitSinUbicar = 0 } = await confirmarLlegadaDePedido({
                 pedidoId, sucId, rows, userId: user?.id ?? null,
                 cajasDanadas, cajasFaltantes, nota, electrolitFaltantes, especialesLlegadas, cajasExtra, cajasExtraNotas,
             });
+            // El Electrolit que faltó sin saber de qué sabor: queda anotado en la
+            // sala y no se bloquea ningún renglón al azar — ver
+            // `renglonesDeElectrolitFaltante`. Se dice para que al contar no
+            // sorprenda que el producto aparezca para contarse.
+            if (electrolitSinUbicar > 0) {
+                useToastStore.getState().showToast(
+                    'Electrolit faltante anotado en la sala',
+                    `No se pudo saber de qué sabor ${electrolitSinUbicar === 1 ? 'es la caja que no llegó' : `son las ${electrolitSinUbicar} cajas que no llegaron`}. Al contar, anota como faltante el que no esté.`,
+                    'info', 9000,
+                );
+            }
 
             useStaff.getState().appendAuditLog('PEDIDO_LLEGADA_CONFIRMADA', pedidoId, { tipo, cajasFaltantes, cajasDanadas, cajasExtra, cajasExtraNotas });
             setLlegadaStatus(prev => ({ ...prev, [key]: true }));
@@ -803,8 +1073,7 @@ export function usePedidosData({ searchTerm = '' }) {
             // ANTES de escribir y un error se llevaba todo lo que se había
             // anotado en el modal (2026-10-07).
             setLlegadaModal(null);
-            await loadActive();
-            await fetchItems(key, pedidoId, sucId);
+            await Promise.all([loadActive(), fetchItems(key, pedidoId, sucId)]);
             return true;
         } catch (e) {
             // Y se dice. Un `console.error` a secas dejaba a quien recibe
@@ -813,13 +1082,21 @@ export function usePedidosData({ searchTerm = '' }) {
             useToastStore.getState().showToast('No se pudo confirmar la llegada', mensajeAmigable(e), 'error');
             return false;
         } finally { setBusyAction(null); }
-    }, [llegadaModal, user, branchName, loadActive, fetchItems]);
+    }, [llegadaModal, user, loadActive, fetchItems]);
 
     // `especialesFaltantes` llega como `[{ label, producto }]` —de
     // `faltantesDeLaSala`— para que el aviso nombre el producto. El ciclo guarda
     // sólo las etiquetas: es la clave que leen la segunda llegada y
     // `cajas_especiales_llegadas`.
-    const handleReenviarCaja = useCallback(async (pedidoId, sucId, numero, cajasFaltantes, electrolitsFaltantes = 0, especialesFaltantes = []) => {
+    //
+    // `desdeResolver`: lo llama `handleResolverFaltantes`, que ya tomó el
+    // `busyAction` y lo soltó en el medio. Cualquier otro llamador pasa por el
+    // freno de doble clic: dos clics abrían DOS ciclos de reenvío por las
+    // mismas cajas (2026-10-08).
+    const handleReenviarCaja = useCallback(async (pedidoId, sucId, numero, cajasFaltantes, electrolitsFaltantes = 0, especialesFaltantes = [], { desdeResolver = false } = {}) => {
+        if (busyAction && !desdeResolver) { useToastStore.getState().showToast('Espera', 'Hay una operación en curso, intenta de nuevo.', 'info'); return; }
+        if (reenvioEnCursoRef.current) return;
+        reenvioEnCursoRef.current = true;
         setBusyAction('reenvio');
         try {
             const now = new Date().toISOString();
@@ -851,8 +1128,8 @@ export function usePedidosData({ searchTerm = '' }) {
         } catch (e) {
             console.error(e);
             useToastStore.getState().showToast('No se pudo registrar el reenvío', mensajeAmigable(e), 'error');
-        } finally { setBusyAction(null); }
-    }, [user, loadActive]);
+        } finally { reenvioEnCursoRef.current = false; setBusyAction(null); }
+    }, [busyAction, user, loadActive]);
 
     // Lo que bodega decidió sobre lo que no llegó: una parte se reenvía y otra
     // no. «No reenviar» va PRIMERO y, si falla, no se reenvía nada: son la misma
@@ -862,13 +1139,16 @@ export function usePedidosData({ searchTerm = '' }) {
     // `noReenviar` son productos, no cajas —`[{ labels, producto }]`—: el
     // sistema hace un traslado por producto y se anula entero.
     const handleResolverFaltantes = useCallback(async ({ pedidoId, sucId, numero, cajas = [], electrolits = 0, reenviarEspeciales = [], noReenviar = [] }) => {
+        if (busyAction || reenvioEnCursoRef.current) { useToastStore.getState().showToast('Espera', 'Hay una operación en curso, intenta de nuevo.', 'info'); return; }
         if (noReenviar.length > 0) {
             setBusyAction('reenvio');
             const labels = noReenviar.flatMap(p => p.labels);
             const r = await noReenviarEspeciales(pedidoId, sucId, labels);
             if (!r?.ok) {
                 setBusyAction(null);
-                useToastStore.getState().showToast('No se pudo cancelar el reenvío', r?.error ?? 'Intenta de nuevo.', 'error');
+                // El motivo del servidor pasa por el traductor: viaja tal cual lo
+                // escribió la función («Faltan pedido_id o …») y eso no se lee.
+                useToastStore.getState().showToast('No se pudo cancelar el reenvío', mensajeAmigable(r?.error, 'Intenta de nuevo.'), 'error');
                 return;
             }
             useStaff.getState().appendAuditLog('PEDIDO_NO_REENVIO', pedidoId, {
@@ -886,11 +1166,11 @@ export function usePedidosData({ searchTerm = '' }) {
             setBusyAction(null);
         }
         if (cajas.length > 0 || electrolits > 0 || reenviarEspeciales.length > 0) {
-            await handleReenviarCaja(pedidoId, sucId, numero, cajas, electrolits, reenviarEspeciales);
+            await handleReenviarCaja(pedidoId, sucId, numero, cajas, electrolits, reenviarEspeciales, { desdeResolver: true });
         } else {
             await loadActive();
         }
-    }, [handleReenviarCaja, loadActive]);
+    }, [busyAction, handleReenviarCaja, loadActive]);
 
     // Abre el modal de confirmación de llegada de reenvío (sustituye el botón ciego anterior)
     const handleSegundaLlegada = useCallback((pedidoId, sucId, key, reenviosHistorial, faltaCajasLegacy = [], cajaMap = {}) => {
@@ -1038,8 +1318,7 @@ export function usePedidosData({ searchTerm = '' }) {
             // ANTES de escribir y un error se llevaba todo lo que se había
             // anotado en el modal (2026-10-07).
             setReenvioLlegadaModal(null);
-            await loadActive();
-            const freshItems = await fetchItems(key, pedidoId, sucId);
+            const [, freshItems] = await Promise.all([loadActive(), fetchItems(key, pedidoId, sucId)]);
 
             // Auto-abrir RecepcionModal para los ítems de las cajas/especiales/electrolits que sí llegaron
             const pendingArrived  = (freshItems || []).filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0 && !r.falta_caja);
@@ -1069,7 +1348,7 @@ export function usePedidosData({ searchTerm = '' }) {
             useToastStore.getState().showToast('No se pudo confirmar la llegada del reenvío', mensajeAmigable(e), 'error');
             return false;
         } finally { setBusyAction(null); }
-    }, [reenvioLlegadaModal, user, branchName, loadActive, fetchItems, activeRows]);
+    }, [reenvioLlegadaModal, user, loadActive, fetchItems, activeRows]);
 
     const handleEntregarStop = useCallback(async (stopId, rutaId, sucId) => {
         try {
@@ -1082,8 +1361,12 @@ export function usePedidosData({ searchTerm = '' }) {
         }
     }, [user, loadActiveRutas]);
 
-    const handleMarkErp = useCallback(async (pedidoId, sucId, key) => {
-        if (busyAction) { useToastStore.getState().showToast('Espera', 'Hay una operación en curso, intenta de nuevo.', 'info'); return; }
+    // `sinRecargar`: lo pide el cierre de la recepción (`onConfirmed`), que
+    // recarga el tablero y el detalle UNA vez al final. Recargando también acá
+    // eran dos recargas del tablero por cada recepción terminada.
+    // Devuelve si quedó confirmado.
+    const handleMarkErp = useCallback(async (pedidoId, sucId, key, { sinRecargar = false } = {}) => {
+        if (busyAction) { useToastStore.getState().showToast('Espera', 'Hay una operación en curso, intenta de nuevo.', 'info'); return false; }
         setBusyAction('erp');
         try {
             // Mismo silencio que la llegada: sin mirar el `error`, la tarjeta
@@ -1093,10 +1376,12 @@ export function usePedidosData({ searchTerm = '' }) {
             if (error) throw error;
             useStaff.getState().appendAuditLog('PEDIDO_LIFECYCLE_RECIBIR_ERP', pedidoId, { sucursal_id: sucId });
             setErpStatus(prev => ({ ...prev, [key]: true }));
-            await loadActive();
+            if (!sinRecargar) await loadActive();
+            return true;
         } catch (e) {
             console.error(e);
             useToastStore.getState().showToast('No se pudo confirmar', mensajeAmigable(e), 'error');
+            return false;
         } finally { setBusyAction(null); }
     }, [busyAction, user, loadActive]);
 
@@ -1124,7 +1409,7 @@ export function usePedidosData({ searchTerm = '' }) {
                 return;
             }
             const erp = await recibirTrasladoPedido(pedidoId, sucId, { itemIds });
-            if (!erp.ok && erp.codigo !== 'NADA_QUE_RECIBIR') throw new Error(erp.error ?? 'No se pudo ingresar.');
+            if (!erp.ok && erp.codigo !== 'NADA_QUE_RECIBIR') throw new Error(mensajeAmigable(erp.error, 'No se pudo ingresar.'));
             useStaff.getState().appendAuditLog('REINTENTAR_INGRESO_INVENTARIO', pedidoId, {
                 sucursal_id: sucId, items_count: itemIds.length,
                 entraron: erp.recibidas ?? null, completo: erp.completo ?? null,
@@ -1192,7 +1477,13 @@ export function usePedidosData({ searchTerm = '' }) {
     }, []);
 
     const openModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {
-        const loaded = await fetchItems(key, pedidoId, sucId);
+        // Los renglones y el reparto por hoja van JUNTOS: no dependen uno del
+        // otro, y en serie eran dos esperas antes de que se abriera la pantalla.
+        const [loaded, pssRes] = await Promise.all([
+            fetchItems(key, pedidoId, sucId),
+            fetchPedidoSucursalStatus(pedidoId, sucId, 'pagina_items, paginas, hojas_recibidas'),
+        ]);
+        if (loaded === null) { avisarSinRenglones('abrir la recepción'); return; }
         // Lo que queda por contar, MÁS lo que ya se anotó como llegado de más.
         // Los extras no son «pendientes» —nacen con su diferencia puesta—, así
         // que este filtro los dejaba afuera y reabrir la pantalla mostraba la
@@ -1234,14 +1525,11 @@ export function usePedidosData({ searchTerm = '' }) {
         // El reparto por hoja y lo ya contado. `pagina_items` es lo que decide si
         // se puede contar por hoja; `paginas` trae el rótulo de cada una (su
         // primer laboratorio), que es como quien recibe la reconoce en el papel.
-        let paginaItems = {}, paginas = [], hojasRecibidas = [];
-        {
-            const { data: pss, error: pssErr } = await fetchPedidoSucursalStatus(pedidoId, sucId, 'pagina_items, paginas, hojas_recibidas');
-            if (pssErr) console.error('openModal: fetch pedido_sucursal_status failed:', pssErr.message);
-            paginaItems    = pss?.pagina_items    ?? {};
-            paginas        = pss?.paginas         ?? [];
-            hojasRecibidas = pss?.hojas_recibidas ?? [];
-        }
+        const { data: pss, error: pssErr } = pssRes;
+        if (pssErr) console.error('openModal: fetch pedido_sucursal_status failed:', pssErr.message);
+        const paginaItems    = pss?.pagina_items    ?? {};
+        const paginas        = pss?.paginas         ?? [];
+        const hojasRecibidas = pss?.hojas_recibidas ?? [];
 
         const especialesLlegadas = activeRow?.cajas_especiales_llegadas ?? {};
         // La lista de cajas especiales tal como se imprimió, para que la pantalla
@@ -1259,14 +1547,15 @@ export function usePedidosData({ searchTerm = '' }) {
         const itemsYaContados = (loaded || []).filter(r => r.status !== 'pendiente').map(r => r.id);
 
         setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, confirmados, cajaDanada, cajaMap, paginaItems, paginas, hojasRecibidas, faltaCajas, hasFaltaItems, especialesLlegadas, cajasEspeciales, itemsEnReenvio, itemsYaContados });
-    }, [fetchItems, activeRows]);
+    }, [fetchItems, activeRows, avisarSinRenglones]);
 
     const openReenvioModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {
         const loaded = await fetchItems(key, pedidoId, sucId);
+        if (loaded === null) { avisarSinRenglones('abrir el reenvío'); return; }
         const rows = (loaded || []).filter(r => r.falta_caja && r.status === 'pendiente' && r.cantidad_asignada > 0);
         if (!rows.length) return;
         setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, cajaDanada: [] });
-    }, [fetchItems]);
+    }, [fetchItems, avisarSinRenglones]);
 
     // No lanza: lo llama `onConfirmed` del modal de recepción, que ya cerró la
     // pantalla. Pero tampoco firma lo que no ocurrió — si el reporte no entra,
@@ -1334,7 +1623,14 @@ export function usePedidosData({ searchTerm = '' }) {
             useStaff.getState().appendAuditLog(`PEDIDO_RESOLUCION_${action.toUpperCase()}`, pedidoId, { item_id: itemId, tipo, nota });
             const key = `act_${pedidoId}_${sucId}`;
             await Promise.all([loadActive(), fetchItems(key, pedidoId, sucId)]);
-        } catch (e) { console.error('resolverItem:', e); } finally { setBusyAction(null); }
+            return true;
+        } catch (e) {
+            // Se dice: con sólo `console.error`, una resolución rechazada se veía
+            // igual que una que entró.
+            console.error('resolverItem:', e);
+            useToastStore.getState().showToast('No se pudo resolver', mensajeAmigable(e, 'Intenta de nuevo.'), 'error');
+            return false;
+        } finally { setBusyAction(null); }
     }, [user, loadActive, fetchItems]);
 
     // ── Devolución a bodega ───────────────────────────────────────────────────
@@ -1381,7 +1677,7 @@ export function usePedidosData({ searchTerm = '' }) {
                          : 'Quedaron de acuerdo, pero no salió',
                     r.ok ? (aLaSala ? 'Falta confirmar la entrada en la sala.'
                                     : 'Falta que bodega confirme la entrada.')
-                         : (r.fallos?.[0]?.error ?? r.error ?? 'Se puede reintentar.'),
+                         : mensajeAmigable(r.fallos?.[0]?.error ?? r.error, 'Se puede reintentar.'),
                     r.ok ? 'success' : 'warning',
                 );
             } else if (data?.estado === 'escalada') {
@@ -1453,7 +1749,7 @@ export function usePedidosData({ searchTerm = '' }) {
                 if (!r.ok) {
                     useToastStore.getState().showToast(
                         'Quedó aceptada, pero no salió',
-                        r.fallos?.[0]?.error ?? r.error ?? 'Se puede reintentar.',
+                        mensajeAmigable(r.fallos?.[0]?.error ?? r.error, 'Se puede reintentar.'),
                         'warning',
                     );
                 } else {
@@ -1484,7 +1780,7 @@ export function usePedidosData({ searchTerm = '' }) {
             useToastStore.getState().showToast(
                 r.ok ? 'Salió de la sala' : 'No salió',
                 r.ok ? 'Falta confirmar la entrada en bodega.'
-                     : (r.fallos?.[0]?.error ?? r.error ?? 'Se puede reintentar.'),
+                     : mensajeAmigable(r.fallos?.[0]?.error ?? r.error, 'Se puede reintentar.'),
                 r.ok ? 'success' : 'error',
             );
             useStaff.getState().appendAuditLog('PEDIDO_DEVOLUCION_MOVIDA', pedidoId, {
@@ -1516,7 +1812,7 @@ export function usePedidosData({ searchTerm = '' }) {
                     ? `${hecho.producto ?? 'El producto'} · ${hecho.presentacion ?? 'sin presentación'} · `
                       + `${(hecho.renglones ?? []).map(x => `${x.cantidad} del lote ${x.lote ?? 'sin lote'}`).join(', ') || 'sin lotes'}`
                       + (hecho.avisos?.length ? ` · ${hecho.avisos.join(' · ')}` : '')
-                    : (r.fallos?.[0]?.error ?? r.error ?? 'Sin detalle.'),
+                    : mensajeAmigable(r.fallos?.[0]?.error ?? r.error, 'Sin detalle.'),
                 r.ok ? 'success' : 'warning', 12000,
             );
             useStaff.getState().appendAuditLog('PEDIDO_DEVOLUCION_PROBADA', pedidoId, {
@@ -1537,7 +1833,7 @@ export function usePedidosData({ searchTerm = '' }) {
             if (!r.ok) {
                 useToastStore.getState().showToast(
                     'No se pudo ingresar',
-                    r.fallos?.[0]?.error ?? r.error ?? 'Se puede reintentar.',
+                    mensajeAmigable(r.fallos?.[0]?.error ?? r.error, 'Se puede reintentar.'),
                     'error',
                 );
             } else {
@@ -1665,6 +1961,7 @@ export function usePedidosData({ searchTerm = '' }) {
         eventosMap,
         devolucionesMap,
         loadingItems,
+        itemsError,
         llegadaStatus,
         erpStatus,
         busyAction,

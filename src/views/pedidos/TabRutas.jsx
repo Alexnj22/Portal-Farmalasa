@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Button from '../../components/common/Button';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
-import { Truck, CheckCircle2, Home, Play, Plus, ChevronDown, ChevronUp, Navigation, Map, Search, Clock, PackageCheck, User } from 'lucide-react';
+import { Truck, CheckCircle2, Home, Play, Plus, ChevronDown, ChevronUp, Navigation, Map, Search, Clock, PackageCheck, User, XCircle, Flag } from 'lucide-react';
+import PromptModal from '../../components/common/PromptModal';
 import { useSearchParams } from 'react-router-dom';
 import StatCard from '../../components/common/StatCard';
 import CarrilCards from '../../components/common/CarrilCards';
@@ -24,9 +25,15 @@ import {
     iniciarRuta, completarRuta, updateRutaPedidoEntregado,
     fetchRutasConParadas, fetchBranchNamesForSucursales, fetchPedidoNumerosByIds,
 } from '@nucleo/data/pedidos';
+import { marcarParadaNoEntregada, cerrarRutaConMotivo, MSG_FUNCION_DE_RUTA_FALTA } from '@nucleo/data/rutas';
 import { hora12 } from '@nucleo/utils/hora';
 import { escucharCambios } from '@nucleo/data/tiempoReal';
 
+// `con_alerta` está en el CHECK de `rutas.status` pero NADA lo escribe
+// (medido el 2026-10-08: cero rutas en producción con ese estado, y ninguna
+// función ni pantalla lo asigna). No se ofrece en ningún filtro ni acción; el
+// rótulo queda sólo para que una ruta que algún día lo tenga no se pinte como
+// «Pendiente», que sería mentir sobre ella.
 const STATUS_BADGE = {
   pendiente:  { label: 'Pendiente',  variante: 'warning' },
   en_ruta:    { label: 'En ruta',    variante: 'chart-9' },
@@ -53,12 +60,20 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh, abierta =
   const [busyStop,  setBusyStop]  = useState(null);
   const [busyRuta,  setBusyRuta]  = useState(null);
   const [mapOpen,   setMapOpen]   = useState(false);
+  // Las dos salidas que piden motivo: una parada que no se pudo entregar y
+  // cerrar la ruta con paradas pendientes. `null` = diálogo cerrado.
+  const [noEntregada, setNoEntregada] = useState(null);   // la parada
+  const [cerrarAbierto, setCerrarAbierto] = useState(false);
   const showToast = useToastStore(s => s.showToast);
 
   const paradas = [...(ruta.ruta_pedidos ?? [])].sort((a, b) => a.orden_entrega - b.orden_entrega);
   const isConductor = ruta.conductor_id === currentUserId;
   const entregadas  = paradas.filter(p => p.entregado_at).length;
   const total       = paradas.length;
+  // `no_entregado_at` lo escribe `ruta_parada_no_entregada` (si la parada se
+  // queda en la ruta marcada; si la función la quita, simplemente no está).
+  const pendientes  = paradas.filter(p => !p.entregado_at && !p.no_entregado_at).length;
+  const gestiona    = canEdit && !isBranch;
   const badge       = STATUS_BADGE[ruta.status] ?? STATUS_BADGE.pendiente;
 
   const handleIniciarRuta = async () => {
@@ -87,6 +102,37 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh, abierta =
       showToast('No se pudo marcar la entrega', mensajeAmigable(e), 'error');
     }
     finally { setBusyStop(null); }
+  };
+
+  const handleNoEntregada = async (motivo) => {
+    const stop = noEntregada;
+    if (!stop) return;
+    setBusyStop(stop.id);
+    try {
+      const { error } = await marcarParadaNoEntregada({
+        rutaId: ruta.id, pedidoId: stop.pedido_id, sucursalId: stop.erp_sucursal_id, motivo,
+      });
+      if (error) throw error;
+      setNoEntregada(null);
+      showToast('Parada devuelta', `${stop.suc_name} queda disponible para otra ruta.`, 'success');
+      onRefresh();
+    } catch (e) {
+      showToast('No se pudo marcar la parada', e?.falta ? MSG_FUNCION_DE_RUTA_FALTA : mensajeAmigable(e), 'error');
+    }
+    finally { setBusyStop(null); }
+  };
+
+  const handleCerrarConPendientes = async (motivo) => {
+    setBusyRuta('cerrar');
+    try {
+      const { error } = await cerrarRutaConMotivo({ rutaId: ruta.id, motivo });
+      if (error) throw error;
+      setCerrarAbierto(false);
+      onRefresh();
+    } catch (e) {
+      showToast('No se pudo cerrar la ruta', e?.falta ? MSG_FUNCION_DE_RUTA_FALTA : mensajeAmigable(e), 'error');
+    }
+    finally { setBusyRuta(null); }
   };
 
   const handleVueltaBase = async () => {
@@ -166,12 +212,15 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh, abierta =
         <div className="border-t border-divider px-4 py-3 space-y-3">
           {/* Paradas */}
           <div className="space-y-2">
+            {total === 0 && (
+              <p className="text-caption text-content-3 px-1">Sin paradas: las que tenía se devolvieron para otra ruta.</p>
+            )}
             {paradas.map((stop, idx) => {
               const isEntregado = !!stop.entregado_at;
               const isBusy = busyStop === stop.id;
 
               return (
-                <div key={stop.id} data-surface={isEntregado ? undefined : 'card'} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${isEntregado ? 'bg-success/10 border-success/30' : ''}`}>
+                <div key={stop.id} data-surface={isEntregado ? undefined : 'card'} className={`flex flex-wrap items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${isEntregado ? 'bg-success/10 border-success/30' : ''}`}>
                   {/* Number */}
                   <span className={`w-5 h-5 rounded-full text-micro font-black flex items-center justify-center shrink-0 ${
                     isEntregado ? 'bg-success-solid text-white' : 'bg-chart-3/10 text-chart-3-text'
@@ -204,12 +253,25 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh, abierta =
                           Entregado {fmtTime(stop.entregado_at)}
                         </span>
                       )}
+                      {!isEntregado && stop.no_entregado_at && (
+                        <Badge variant="danger" size="sm" uppercase={false}>No entregada</Badge>
+                      )}
                     </div>
                   </div>
 
-                  {/* Conductor action */}
-                  {isConductor && !isBranch && !isEntregado && ruta.status === 'en_ruta' && (
-                    <Button tone="success" icon={CheckCircle2} loading={isBusy} onClick={() => handleEntregarStop(stop)}>Entregué</Button>
+                  {/* Acciones de la parada. «Entregué» era sólo del conductor:
+                      si él no podía marcar (sin señal, sin teléfono), nadie
+                      podía. Quien gestiona rutas también la marca, y además
+                      puede devolverla cuando no se pudo entregar. */}
+                  {!isEntregado && !stop.no_entregado_at && ruta.status === 'en_ruta' && !isBranch && (isConductor || canEdit) && (
+                    <div className="flex flex-wrap items-center gap-2 ml-auto">
+                      {gestiona && (
+                        <Button variant="secondary" icon={XCircle} disabled={isBusy} onClick={() => setNoEntregada(stop)}>No se pudo entregar</Button>
+                      )}
+                      <Button tone="success" icon={CheckCircle2} loading={isBusy} onClick={() => handleEntregarStop(stop)}>
+                        {isConductor ? 'Entregué' : 'Marcar entregada'}
+                      </Button>
+                    </div>
                   )}
                   {isEntregado && (
                     <CheckCircle2 size={16} className="text-success shrink-0" />
@@ -222,11 +284,21 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh, abierta =
           {/* Conductor actions */}
           {!isBranch && (
             <div className="flex gap-2 pt-1">
-              {ruta.status === 'pendiente' && isConductor && (
+              {/* Una ruta armada «para después» la arranca su conductor o
+                  quien gestiona rutas (puede haberla armado para otro). */}
+              {ruta.status === 'pendiente' && (isConductor || canEdit) && (
                 <Button tone="chart-3" icon={Play} loading={busyRuta === 'iniciar'} onClick={handleIniciarRuta}>Iniciar ruta</Button>
               )}
-              {ruta.status === 'en_ruta' && (isConductor || canEdit) && entregadas === total && total > 0 && (
+              {/* Sin `total > 0`: si todas las paradas se devolvieron («No se
+                  pudo entregar» las saca de la ruta), la ruta queda vacía en la
+                  calle y necesita volver igual — antes no tenía salida. */}
+              {ruta.status === 'en_ruta' && (isConductor || canEdit) && pendientes === 0 && (
                 <Button tone="chart-8" icon={Home} loading={busyRuta === 'vuelta'} onClick={handleVueltaBase}>Volver a base</Button>
+              )}
+              {ruta.status === 'en_ruta' && gestiona && pendientes > 0 && (
+                <Button variant="secondary" icon={Flag} loading={busyRuta === 'cerrar'} onClick={() => setCerrarAbierto(true)}>
+                  Cerrar ruta
+                </Button>
               )}
               {ruta.vuelta_base_at && (
                 <span className="text-caption text-content-3 flex items-center gap-1 px-2">
@@ -238,6 +310,28 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh, abierta =
         </div>
       )}
       <RutaMapModal ruta={ruta} open={mapOpen} onClose={() => setMapOpen(false)} currentUserId={currentUserId} />
+      <PromptModal
+        isOpen={!!noEntregada}
+        onClose={() => setNoEntregada(null)}
+        onConfirm={handleNoEntregada}
+        title="No se pudo entregar"
+        message={noEntregada ? `${noEntregada.suc_name} vuelve a quedar disponible para otra ruta. ¿Qué pasó?` : undefined}
+        placeholder="Ej.: la sala estaba cerrada"
+        confirmText="Devolver la parada"
+        isProcessing={!!noEntregada && busyStop === noEntregada.id}
+        required
+      />
+      <PromptModal
+        isOpen={cerrarAbierto}
+        onClose={() => setCerrarAbierto(false)}
+        onConfirm={handleCerrarConPendientes}
+        title="Cerrar ruta"
+        message={`Quedan ${pendientes} parada${pendientes !== 1 ? 's' : ''} sin entregar. La ruta se cierra igual y queda anotado el motivo.`}
+        placeholder="Ej.: el camión se averió"
+        confirmText="Cerrar ruta"
+        isProcessing={busyRuta === 'cerrar'}
+        required
+      />
     </div>
   );
 }

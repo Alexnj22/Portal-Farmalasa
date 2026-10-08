@@ -1175,7 +1175,11 @@ export function usePedidosData({ searchTerm = '' }) {
         const historial = reenviosHistorial ?? [];
         // Sólo un ciclo que SALIÓ puede llegar: uno pendiente sigue en bodega.
         const cicloIdx  = historial.findIndex(c => c.sent_at && !c.arrived_at);
-        const ciclo     = cicloIdx >= 0 ? historial[cicloIdx] : historial[historial.length - 1];
+        const ciclo     = cicloIdx >= 0 ? historial[cicloIdx] : null;
+        if (!ciclo && historial.some(c => c && !c.sent_at && !c.arrived_at)) {
+            useToastStore.getState().showToast('El reenvío todavía no sale', 'Las cajas siguen en bodega: se confirman cuando salga su ruta.', 'info');
+            return;
+        }
         if (!ciclo) {
             if (faltaCajasLegacy.length > 0) {
                 setReenvioLlegadaModal({ pedidoId, sucId, key, ciclo: 1, cajasCiclo: faltaCajasLegacy, electrolitCount: 0, especialesList: [], historial: [], cajaMap });

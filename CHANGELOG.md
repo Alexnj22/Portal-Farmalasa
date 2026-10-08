@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1233.4 — Pedidos: riesgos menores de la revisión
+
+Riesgos menores de la revisión producción contra dev:
+- **Llegada:** un doble toque en «Llegaron las N cajas» ya no manda la llegada dos veces.
+- **Reenvío que todavía no salió:** confirmar su llegada ahora dice «El reenvío todavía no sale». Antes abría el último ciclo aunque estuviera en bodega.
+- **`LiquidSelect` en la hoja táctil:** la fila «Todos» también aparece en los filtros que no se limpian.
+- **Mapa del conductor:** al abrirlo ya no pide dos trazados a Google; espera el primero antes de decidir si se desvió.
+- **Buscador de productos:** se abre animado; antes saltaba.
+- **«No disponible todavía»** ya no habla de «instalar su parte en la base».
+
 ## v2.1233.3 — Pedidos: reenvío compatible con la base actual y recargas que no se tragan cambios ajenos
 
 Correcciones de la revisión producción contra dev:

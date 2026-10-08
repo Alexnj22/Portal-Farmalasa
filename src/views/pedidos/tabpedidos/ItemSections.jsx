@@ -16,6 +16,10 @@ import { calcSolicitado, rotuloDePresentacion, seccionesDeRenglones } from '@nuc
 import SearchInput from '../../../components/common/SearchInput';
 import { useSearchToggle } from '../../../plataforma/useSearchToggle';
 import { fetchStockParamsForRevision, guardarMinMaxDesdePedido, effectiveMinMaxPair } from '@nucleo/data/stockParams';
+
+// Framer no interpola `min(20rem, 60vw)` (salta en vez de animar): el ancho del
+// buscador abierto va en píxeles, la misma regla.
+const anchoBuscador = () => Math.min(320, Math.round((typeof window !== 'undefined' ? window.innerWidth : 1280) * 0.6));
 import PortalInput from '../../../components/common/PortalInput';
 
 const MINI_PAGE = 15;
@@ -249,7 +253,7 @@ function ItemSection({ label, count, variante = 'neutral', rows, columns, noteEl
                 </Button>
                 <AnimatePresence mode="wait">
                     {searchOpen ? (
-                        <motion.div {...searchContainerRef} key="input" initial={{ width: 0, opacity: 0 }} animate={{ width: 'min(20rem, 60vw)', opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden shrink-0 flex items-center gap-1">
+                        <motion.div {...searchContainerRef} key="input" initial={{ width: 0, opacity: 0 }} animate={{ width: anchoBuscador(), opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden shrink-0 flex items-center gap-1">
                             <SearchInput
                                 ref={searchRef}
                                 size="sm"

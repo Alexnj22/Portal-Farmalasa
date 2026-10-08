@@ -853,7 +853,7 @@ const LiquidSelect = ({
                     parecidos={parecidos}
                     onSearchChange={onSearchChange}
                     isLoading={isLoading}
-                    clearable={clearable}
+                    clearable={clearable || rotuloComoOpcion}
                     clearLabel={clearLabel}
                 />
             ) : createPortal(

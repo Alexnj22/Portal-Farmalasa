@@ -10,7 +10,7 @@ import { tokenMatch } from '../utils/searchUtils';
 import { ERP_NAMES, SUCURSALES as ERP_ORDER } from '../constants/erp';
 import { printFromPedidoItems } from '../utils/pedidoPrint';
 import { PAUSE_REASONS } from '../constants/pedidos';
-import { getBranchStage, claveParada, agruparPorRuta, currentMonthRange, necesitaAtencion, tieneObservacion, filtrarPedidos, pedidosPorSala } from '../utils/tableroDePedidos';
+import { getBranchStage, claveParada, currentMonthRange, necesitaAtencion, tieneObservacion, filtrarPedidos, pedidosPorSala } from '../utils/tableroDePedidos';
 import { anularPedido, avanzarEtapaDePedidoEnSala, despacharTrasladoPedido, fetchActiveRutas, fetchApoyoForPedido, fetchApoyoForPedidos, fetchAttendancePunches, fetchBranchNamesForSucursales, fetchEmployeeBranchId, fetchEntregasDePedidos, fetchItemsSinIngresar, fetchPausaHistorial, fetchPedidoItemEventosAll, fetchPedidoItemsAll, fetchPedidoSucursalStatus, fetchPedidosEnCurso, fetchResumenDeRenglonesPorPedido, fetchResumenIngresoPedidos, fetchRutaLocations, fetchTrasladosDePedidos, marcarRastreoDeFondo, noReenviarEspeciales, recibirTrasladoPedido, resolverRenglonDePedido, sucursalDeLaSala, tieneEtiquetaDeDespacho, updateRutaPedidoEntregado, upsertRutaLocation } from '../data/pedidos';
 import {
     fetchDevolucionesDePedido, decidirDevolucion,
@@ -1848,13 +1848,6 @@ export function usePedidosData({ searchTerm = '' }) {
             .filter(s => s.total > 0);
     }, [activeRows, filterDate, isBranch, erpSucursalId]);
 
-    // Agrupa filteredRows: rutas primero (con sus paradas), luego el resto.
-    // El reparto vive en `agruparPorRuta` (./helpers) para poder probarlo sin
-    // montar la vista — ver `tests/unit/rutaPorSala.test.js`.
-    const renderGroups = useMemo(
-        () => agruparPorRuta(filteredRows, pedidoRutaMap, user?.id),
-        [filteredRows, pedidoRutaMap, user]);
-
     return {
         user, isBranch, canEdit, canEditMinMax,
         erpSucursalId, branchName,
@@ -1941,6 +1934,5 @@ export function usePedidosData({ searchTerm = '' }) {
         pedidoStageMap,
         filteredRows,
         sucursalCounts,
-        renderGroups,
     };
 }

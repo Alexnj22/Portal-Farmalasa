@@ -58,8 +58,9 @@ const LADO = { confirmado: 'bodega', iniciado: 'bodega', preparado: 'bodega', en
 
 /**
  * `rotulos`: 'siempre', 'activo' (sólo el paso en curso: la lista, que dice
- *   los nombres UNA vez en su encabezado) o 'sm' (la tarjeta: en el teléfono
- *   sólo el paso en curso, porque siete rótulos en 330px se pisaban).
+ *   los nombres UNA vez en su encabezado) o 'sm' (en el teléfono sólo el paso
+ *   en curso, porque siete rótulos en 330px se pisaban; lo usaba la tarjeta,
+ *   retirada el 2026-10-08 — hoy el tablero pasa siempre 'activo' o 'siempre').
  * `detalle`: la fila abierta — hora, foto, persona y duración de cada tramo.
  * `quien`: id → empleado, para el detalle.
  * `apoyo`: `{ bodega: [...], sala: [...] }` — quién apoyó en cada lado.

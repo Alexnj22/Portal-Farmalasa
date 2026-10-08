@@ -788,7 +788,16 @@ Deno.serve(async (req) => {
 
     const correr = async () => {
       const results: any[] = [];
-      const logRows: any[] = [];
+
+      // El log se escribe POR SUCURSAL, apenas termina cada una. Antes se
+      // juntaba y se insertaba al final: si la corrida moría en el medio (el
+      // 2026-10-08 Bodega trajo 638 renglones y la corrida pasó los 150 s) no
+      // quedaba NINGUNA fila, ni de las sucursales que sí habían terminado, y
+      // el vigilante avisaba que las 7 estaban sin correr.
+      const anotar = async (fila: any) => {
+        const { error } = await supabase.from('purchase_sync_log').insert(fila);
+        if (error) console.error(`purchase_sync_log insert (${fila.branch_id}):`, error.message);
+      };
 
       for (const { branchId, erpId } of purchaseBranches) {
         let lastErr: string | null = null;
@@ -807,7 +816,7 @@ Deno.serve(async (req) => {
 
         if (result) {
           results.push({ branchId, erpId, ...result });
-          logRows.push({
+          await anotar({
             branch_id: branchId, erp_sucursal_id: erpId,
             fini: startDate, ffin: endDate,
             receipts_total: result.total, receipts_new: result.new,
@@ -815,7 +824,7 @@ Deno.serve(async (req) => {
           });
         } else {
           results.push({ branchId, erpId, error: lastErr });
-          logRows.push({
+          await anotar({
             branch_id: branchId, erp_sucursal_id: erpId,
             fini: startDate, ffin: endDate,
             receipts_total: 0, receipts_new: 0, items_inserted: 0,
@@ -823,9 +832,6 @@ Deno.serve(async (req) => {
           });
         }
       }
-
-      if (logRows.length > 0)
-        await supabase.from('purchase_sync_log').insert(logRows);
 
       return results;
     };
@@ -836,11 +842,12 @@ Deno.serve(async (req) => {
     // el trabajo estuviera bien. Con `waitUntil` la respuesta sale ya y el sync
     // sigue corriendo, que es lo que un backfill necesita.
     //
-    // Es opt-in y no lo usa el cron a propósito: el cron pide 2 días, termina en
-    // segundos, y quiere el resultado en la respuesta para que un fallo se vea.
-    // En background el único rastro es `purchase_sync_log` — suficiente para un
-    // backfill que uno mira después, insuficiente para el camino de todos los
-    // días.
+    // Desde el 2026-10-08 el cron de 10 min TAMBIÉN lo usa. La premisa de antes
+    // —«el cron pide 2 días y termina en segundos»— dejó de ser cierta: el ERP
+    // tarda ~0.18 s por renglón, y un día de recepción grande en Bodega (528
+    // renglones, 638 con el día anterior) llevó la corrida de 20 s a más de
+    // 150 s. El rastro es `purchase_sync_log`, que ahora se escribe por
+    // sucursal y es lo que mira el vigilante «Sync purchases sin correr».
     if (background) {
       // @ts-ignore — EdgeRuntime es global del runtime de Supabase
       EdgeRuntime.waitUntil(correr().catch(async (e: any) => {

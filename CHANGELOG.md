@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1260.3 — Compras: el sync de cada 10 minutos ya no se corta en días de recepción grande
+
+- **Causa:** el reporte de compras del sistema de origen tarda ~0.18 s por renglón. El 8-oct Bodega recibió 29 compras con 528 renglones (638 con el día anterior), y la corrida pasó de ~20 s en la madrugada a más de 150 s, el límite de la función. Desde las 14:40 casi ninguna corrida terminaba y llegaron 7 avisos «Sync purchases sin correr».
+- **El cron corre en segundo plano** (`background: true`): la función contesta enseguida y sigue trabajando, con espacio para unos 2,000 renglones.
+- **El registro se escribe por sucursal**, apenas termina cada una. Antes iba todo al final, así que una corrida cortada a la mitad no dejaba ninguna fila y el aviso acusaba a las 7 sucursales juntas.
+
 ## v2.1260.2 — Tarjeta de Equipo más ejecutiva y crédito a 30 días
 
 - **Tarjeta de Equipo más ejecutiva:** grafito profundo con un tejido de carbono apenas visible, guilloché fino (como el fondo de seguridad de un billete), una banda de titanio satinado que sigue la inclinación, las franjas de la marca finas y metálicas con un destello que las recorre, y un filo de luz en el canto. La misma en Wallet (franjas regeneradas).

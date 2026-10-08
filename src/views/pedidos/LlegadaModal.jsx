@@ -382,7 +382,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                                     <LiquidSelect
                                                         value={d.sucursalId ?? ''}
                                                         onChange={v => setExtraField(i, 'sucursalId', v)}
-                                                        options={[{ value: '', label: '¿De qué sucursal?' }, ...SUC_OPTIONS]}
+                                                        options={SUC_OPTIONS}
                                                         compact
                                                         clearable={false}
                                                         placeholder="¿De qué sucursal?"

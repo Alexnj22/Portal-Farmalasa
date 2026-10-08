@@ -298,27 +298,35 @@ const LiquidSelect = ({
     // ve un `useMemo` capturado por una función previa, no puede preservar la
     // memoización y deja de optimizar el componente entero (lo marca el lint
     // como "Compilation Skipped").
+    const rotuloComoOpcion = options.some(opt => opt.value === '' && opt.label === placeholder);
     const { lista: filteredOptions, aproximado: sonParecidos } = useMemo(() => {
         const exactas = (lista) => ({ lista, aproximado: false });
+        // El placeholder NUNCA es una opción (2026-10-08). Una opción de valor
+        // vacío con el MISMO texto que el placeholder es el rótulo del campo
+        // copiado en la lista: «¿De qué sucursal?» salía como si se pudiera
+        // elegir. Para volver a vacío está el botón de limpiar (`clearable`).
+        // Las opciones vacías con texto PROPIO («Todas», «Consumidor Final»)
+        // son una elección de verdad y se quedan.
+        const opciones = options.filter(opt => !(opt.value === '' && opt.label === placeholder));
         if (serverSearch) {
             // Parent controls data — show everything except separator and empty-value (handled by clearable button)
-            return { lista: options.filter(opt => !opt.isSeparator && opt.value !== ''), aproximado: !!parecidos && !!searchTerm.trim() };
+            return { lista: opciones.filter(opt => !opt.isSeparator && opt.value !== ''), aproximado: !!parecidos && !!searchTerm.trim() };
         }
         // Large lists: require typing before showing anything
         if (isLargeList && !searchTerm) return exactas([]);
-        if (!searchTerm.trim()) return exactas(options.slice(0, maxOptions));
+        if (!searchTerm.trim()) return exactas(opciones.slice(0, maxOptions));
         // La regla del portal (utils/busqueda.js). Las opciones de un select son
         // un catálogo —se busca UNA— así que lo más parecido va primero. Antes
         // era `includes` de la frase entera: «500 acetaminofen» no encontraba
         // «ACETAMINOFEN 500MG».
         const { resultados, aproximado } = filtrar(
             searchTerm,
-            options.filter(opt => !opt.isSeparator),
+            opciones.filter(opt => !opt.isSeparator),
             opt => [opt.label, opt.sublabel],
             { orden: 'relevancia' },
         );
         return { lista: resultados.slice(0, maxOptions), aproximado };
-    }, [options, searchTerm, isLargeList, maxOptions, serverSearch, parecidos]);
+    }, [options, placeholder, searchTerm, isLargeList, maxOptions, serverSearch, parecidos]);
 
     // Navigable (non-separator, non-disabled) options — used for keyboard nav
     const selectableOptions = useMemo(() =>
@@ -540,7 +548,11 @@ const LiquidSelect = ({
             {/* Si se abre hacia arriba, mostramos los resultados en el mismo orden, pero invertimos la posición del botón "Limpiar/Placeholder" si es necesario. Por UX, es mejor dejarlo arriba */}
             <div className="flex flex-col gap-1 w-full overflow-y-auto min-h-0
                 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                {!searchTerm && clearable && value != null && value !== '' && (
+                {/* El rótulo copiado como opción se quitó de la lista (ver
+                    `opciones`): si el llamador contaba con esa opción para
+                    volver a «todos» —los filtros van con `clearable={false}`—,
+                    la vuelta es esta fila. */}
+                {!searchTerm && (clearable || rotuloComoOpcion) && value != null && value !== '' && (
                     <button
                         type="button"
                         onClick={() => handleSelect('')}

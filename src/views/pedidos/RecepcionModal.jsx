@@ -1530,6 +1530,20 @@ export default function RecepcionModal({
     // Popular el 2026-08-14 («E3 — Caja especial» con tres leches adentro).
     // `filasAbiertas` ya resuelve los tres alcances; no hay nada que decidir.
     const gridRows = filasAbiertas;
+    // Lo que el pie resume: misma cuenta que pinta cada renglón (fRaw vs enviado).
+    const resumenConteo = gridRows.reduce((acc, r) => {
+        const erpFactor  = Number(r.factor) || 1;
+        const dispFactor = Number(r.dispatch_factor) || erpFactor;
+        const enviado    = enviadoDe(r);
+        if (yaRecibido(r)) { acc.recibidos += 1; return acc; }
+        const fQty  = fQtyVals[r.id]  ?? toDispatch(enviado, erpFactor, dispFactor);
+        const fPres = fPresVals[r.id] ?? dispFactor;
+        const igual = Math.round(fQty * fPres / erpFactor) === enviado;
+        acc.total += 1;
+        if (igual) acc.iguales += 1; else acc.conDiferencia += 1;
+        return acc;
+    }, { total: 0, iguales: 0, conDiferencia: 0, recibidos: 0 });
+
     const visibleRows = prodSearch.trim()
         ? gridRows.filter(r => tokenMatch(prodSearch, r.products?.nombre))
         : gridRows;
@@ -2210,15 +2224,6 @@ export default function RecepcionModal({
                         )}
                     </AnimatePresence>
                     <div className="flex items-center gap-1.5 shrink-0">
-                        <motion.button
-                            onClick={() => setShowSearch(s => { if (!s) setTimeout(() => searchRef.current?.focus(), 80); else setProdSearch(''); return !s; })}
-                            animate={showSearch ? { scale: 1.15 } : { scale: 1 }}
-                            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                            className={`p-1.5 rounded-lg transition-colors ${showSearch ? 'bg-brand/10 text-brand-text' : 'text-content-3 hover:text-content-2'}`}
-                            title="Buscar producto"
-                        >
-                            <Search size={15} />
-                        </motion.button>
                         <Button variant="ghost" icon={X} disabled={!showSearch && saving} iconOnly onClick={showSearch ? () => { setShowSearch(false); setProdSearch(''); } : (hayHojas ? goBack : cerrarModal)} />
                     </div>
                 </div>
@@ -2234,17 +2239,22 @@ export default function RecepcionModal({
               <div className="max-h-[54dvh] overflow-y-auto">
                 {/* §15.1 · pegajoso = tiene que OCLUIR — ver el encabezado gemelo
                     de la pestaña de extras, unas líneas más arriba. */}
-                <div data-pegajoso className="sticky top-0 z-base border-b-2 border-divider shadow-sm">
-                    <div className={`grid ${GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
-                        <span /><span />
-                        <span className="col-span-2 text-center text-caption font-bold text-chart-9-text uppercase tracking-widest border-b-2 border-chart-9 pb-1">Lo que llegó</span>
-                        <span />
-                    </div>
-                    <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
-                        <span className="text-caption font-bold text-content-2 uppercase tracking-wide">Producto</span>
-                        <span className="text-caption font-bold text-content-2 uppercase text-center">Enviado</span>
-                        <span className="text-caption font-bold text-chart-9-text uppercase text-center">Pres.</span>
-                        <span className="text-caption font-bold text-chart-9-text uppercase text-center">Cant.</span>
+                {/* Rediseño 2026-10-08: el buscador vive FIJO arriba de la
+                    lista (era una lupa de 15px que reemplazaba al título), y
+                    los encabezados bajan de peso — la banda «Lo que llegó»
+                    repetía lo que ya dice la columna «Llegó». */}
+                <div data-pegajoso className="sticky top-0 z-base border-b border-divider">
+                    {gridRows.length > 5 && (
+                        <div className="px-5 pt-3 pb-2">
+                            <SearchInput ref={searchRef} size="sm" value={prodSearch} onChange={setProdSearch}
+                                placeholder={`Buscar entre ${gridRows.length} productos…`} />
+                        </div>
+                    )}
+                    <div className={`grid ${GRID} gap-x-2 items-center px-5 pt-1.5 pb-2`}>
+                        <span className="text-micro font-semibold text-content-3 uppercase tracking-wider">Producto</span>
+                        <span className="text-micro font-semibold text-content-3 uppercase tracking-wider text-center">Enviado</span>
+                        <span className="text-micro font-semibold text-content-3 uppercase tracking-wider text-center">Presentación</span>
+                        <span className="text-micro font-semibold text-chart-9-text uppercase tracking-wider text-center">Llegó</span>
                         <span />
                     </div>
                 </div>
@@ -2332,7 +2342,7 @@ export default function RecepcionModal({
                                         />
                                         {hasDiff && (
                                             <Badge variant={delta < 0 ? 'danger' : 'success'} tone="solid" size="sm" uppercase={false}
-                                                        className="absolute -top-1.5 -right-1.5">{delta > 0 ? '+' : ''}{delta}</Badge>
+                                                        className="absolute -top-2 -right-2 shadow-[var(--shadow-elevation-sm)] tabular-nums">{delta > 0 ? '+' : ''}{delta}</Badge>
                                         )}
                                     </div>
 
@@ -2351,12 +2361,15 @@ export default function RecepcionModal({
                                         {recibidoSolo ? (
                                             <Check size={15} className="text-success" aria-hidden="true" />
                                         ) : (<>
+                                            {/* Fantasma: con trece renglones, trece pares
+                                                de bloques naranja y verde eran la mitad del
+                                                ruido del modal. El color queda en el ícono. */}
                                             <Button
                                                 icon={AlertTriangle}
                                                 iconOnly
                                                 size="sm"
-                                                tone="chart-4"
-                                                soft
+                                                variant="ghost"
+                                                className={hasProb || hasDiff ? 'text-warning-text bg-warning/10' : 'text-warning-text'}
                                                 onClick={toggleProblema}
                                                 title={panelOpen ? 'Cancelar problema' : hasProb ? 'Editar problema' : hasDiff ? 'Diferencia detectada' : 'Reportar problema'}
                                             />
@@ -2367,8 +2380,8 @@ export default function RecepcionModal({
                                                 icon={PackageCheck}
                                                 iconOnly
                                                 size="sm"
-                                                tone="success"
-                                                soft
+                                                variant="ghost"
+                                                className="text-success-text"
                                                 disabled={saving}
                                                 onClick={() => handleRecibirSolo(r)}
                                                 title={defDispQty > 1
@@ -2416,13 +2429,26 @@ export default function RecepcionModal({
                         <AlertTriangle size={13} /> {saveError}
                     </div>
                 )}
+                {/* Qué se va a confirmar, antes de apretar: cuántos llegaron
+                    iguales y cuántos con diferencia. */}
+                {resumenConteo.total > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap text-caption text-content-3" role="status">
+                        <span className="tabular-nums"><strong className="text-content-2">{resumenConteo.iguales}</strong> como se enviaron</span>
+                        {resumenConteo.conDiferencia > 0 && (
+                            <Badge variant="warning" size="sm" uppercase={false}>{resumenConteo.conDiferencia} con diferencia</Badge>
+                        )}
+                        {resumenConteo.recibidos > 0 && (
+                            <Badge variant="success" size="sm" uppercase={false}>{resumenConteo.recibidos} ya recibidos</Badge>
+                        )}
+                    </div>
+                )}
                 <div className="flex justify-between gap-2">
-                    <Button variant="secondary" disabled={saving} onClick={hayHojas ? goBack : cerrarModal}>{hayHojas ? 'Volver' : 'Cancelar'}</Button>
+                    <Button variant="ghost" disabled={saving} onClick={hayHojas ? goBack : cerrarModal}>{hayHojas ? 'Volver' : 'Cancelar'}</Button>
                     <div className="flex items-center gap-2">
                         {/* Sin «Todo OK» en una hoja que venía en una caja dañada o
                             que no llegó: es justo la que hay que mirar de a uno. */}
                         {!hojaEnAlerta && (
-                            <Button tone="success" icon={Check} disabled={saving} title="Confirma recibido exactamente como se envió, sin revisar línea por línea" onClick={() => setConfirmarHoja('todook')}>Todo OK</Button>
+                            <Button variant="secondary" icon={Check} disabled={saving} title="Confirma recibido exactamente como se envió, sin revisar línea por línea" onClick={() => setConfirmarHoja('todook')}>Todo OK</Button>
                         )}
                         <Button tone="success" disabled={saving} onClick={() => setConfirmarHoja('contado')}>{saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
                             {alcance === 'especial' ? `Confirmar ${selectedEspecial.label}`

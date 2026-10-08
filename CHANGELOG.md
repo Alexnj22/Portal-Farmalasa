@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.23 — Pedidos: recepción más limpia; el placeholder ya no es opción; los sólidos son sólidos
+
+- **El placeholder ya no aparece como opción** en ningún select: `LiquidSelect` descarta la opción vacía cuyo texto es igual al placeholder («¿De qué sucursal?» en cajas extra; «Estado», «Marca», «Formato» y «Laboratorio» en los filtros de Promociones, Marketing, Encuestas y Ofertas). Si el select no se puede limpiar, pone la fila «Todos» para volver. En «Agregar un laboratorio» de Promociones, el rótulo pasó a ser el placeholder. Queda como regla en CLAUDE.md.
+- **Los sólidos son sólidos**: los `Badge` con texto blanco tenían borde transparente y dejaban ver lo de atrás; el «-1» de recepción se veía translúcido. Ahora el borde es del mismo color. La pastilla del mapa de rutas dejó de ser `bg-brand/90`.
+- **Confirmar recepción, más limpio**:
+  - Buscador siempre visible arriba de la lista (cuando hay más de 5 productos).
+  - Encabezados de columna más livianos, sin la banda «Lo que llegó».
+  - Botones de cada renglón sin bloques de color: el color va solo en el ícono.
+  - Un resumen junto a los botones («6 como se enviaron · 1 con diferencia»).
+  - Jerarquía clara: Cancelar discreto, Todo OK secundario y Confirmar como acción principal.
+
 ## v2.1232.22 — Pedidos: fila centrada al abrir, buscador legible, «No sale» y el cero visible
 
 - **Al abrir una fila se centra en pantalla**, ya abierta. Si abierta no cabe, queda arriba, bajo el encabezado.

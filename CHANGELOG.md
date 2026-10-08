@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1260.6 — Compras: el sync de cada 10 minutos solo baja los días con compras nuevas
+
+- **Modo incremental:** cada 10 minutos se pide primero la lista de compras sin renglones, la misma que usa el backfill rápido y 27 veces más barata. Se compara contra lo que ya tiene el portal y solo los días con una compra nueva bajan el reporte completo. Medido: **1.8 s las 7 sucursales**, contra ~112 s de la pasada completa.
+- **Una pasada completa por hora** (minuto 0) recoge lo que la lista no ve: un renglón corregido en una compra que ya existía.
+- Si la lista falla, esa sucursal hace la pasada completa: nunca se queda sin bajar nada.
+
 ## v2.1260.5 — Mín·Máx y productos nuevos: un solo push por aviso
 
 - El recálculo mensual de Mín·Máx y el aviso diario de productos nuevos mandaban su propio push **y** creaban el aviso, que dispara otro push al crearse: cada persona recibía dos. Queda solo el del aviso.

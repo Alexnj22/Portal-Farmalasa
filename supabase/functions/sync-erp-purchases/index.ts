@@ -620,6 +620,55 @@ async function completarFichasDeProveedor(
   }
 }
 
+// ── Modo incremental: la lista barata decide qué días bajar ─────────────────
+// El sync de cada 10 minutos bajaba el JSON pesado de ayer+hoy aunque nada
+// hubiera cambiado: ~112 s por corrida el 2026-10-08, ~0.15 s por renglón.
+// `admin_compras_fecha_dt.php` trae las mismas compras SIN renglones, 27× más
+// rápido. Se pide esa lista, se cruza contra `purchase_receipts`, y sólo los
+// días con una compra que el portal todavía no tiene pagan el JSON pesado.
+//
+// Lo que NO ve: una compra que ya existe y a la que le corrigen un renglón —la
+// lista no cambia—. Eso lo recoge la pasada completa de cada hora (el cron
+// manda `incremental: false` en el minuto 0).
+async function diasConCompraNueva(
+  supabase: any, erpId: number, username: string, password: string,
+  startDate: string, endDate: string,
+): Promise<{ dias: string[]; lista: number; nuevas: number }> {
+  const cookie = await withRetry(() => getSessionCookie(username, password));
+  // La sucursal es estado de SESIÓN en este endpoint (ver fastBackfill).
+  await withRetry(() => fetch(SESION_URL, {
+    method: 'POST',
+    headers: { Cookie: cookie, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ process: 'set_sucursal', id_sucursal: String(erpId) }).toString(),
+    signal: AbortSignal.timeout(20_000),
+  }).then(r => { if (!r.ok) throw new Error(`cambio_sesion HTTP ${r.status}`); return r; }));
+
+  const qs    = `fechai=${startDate}&fechaf=${endDate}&draw=1&start=0&length=5000`;
+  const dt    = JSON.parse(await traer(`${ADMIN_DT_URL}?${qs}`, cookie));
+  const filas: any[][] = dt?.data ?? [];
+  if (!Array.isArray(dt?.data)) throw new Error('lista de compras sin `data`');
+  if (filas.length === 0) return { dias: [], lista: 0, nuevas: 0 };
+
+  const ids = filas.map(f => Number(f[0])).filter(Boolean);
+  const existentes = await selectAllByIn<any>(
+    supabase, 'purchase_receipts', 'erp_purchase_id',
+    'erp_purchase_id', ids, (q) => q.eq('erp_sucursal_id', erpId),
+  );
+  const ya = new Set<number>((existentes ?? []).map((r: any) => Number(r.erp_purchase_id)));
+
+  const dias = new Set<string>();
+  let nuevas = 0;
+  for (const f of filas) {
+    if (ya.has(Number(f[0]))) continue;
+    nuevas++;
+    const dia = String(f[6] ?? '').trim().slice(0, 10);
+    // Una fecha que no se entiende no se adivina: se baja el rango entero.
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dia)) return { dias: [...dayRange(startDate, endDate)], lista: filas.length, nuevas };
+    dias.add(dia);
+  }
+  return { dias: [...dias].sort(), lista: filas.length, nuevas };
+}
+
 // ── retryFailed: detecta brechas y reintenta día a día ───────────────────────
 // Una brecha es un par (sucursal, día) sin un registro de éxito que lo cubra —
 // da igual si falló o si nunca se intentó, porque en los dos casos no hay dato.
@@ -725,6 +774,7 @@ Deno.serve(async (req) => {
       retryFailed: doRetry = false,
       since        = '2025-05-01',  // fecha mínima para retry
       background   = false,         // ver "Modo background" más abajo
+      incremental  = false,         // ver "Modo incremental" más arriba
       fastBackfill: doFast = false, // ver "Backfill rápido" más arriba
     } = body;
 
@@ -814,7 +864,20 @@ Deno.serve(async (req) => {
         let lastErr: string | null = null;
         let result: any = { total: 0, new: 0, items: 0 };
 
-        for (const dia of dayRange(startDate, endDate)) {
+        // Incremental: sólo los días con una compra nueva. Si la lista barata
+        // falla, se cae a la pasada completa — nunca a no bajar nada.
+        let dias: string[] = [...dayRange(startDate, endDate)];
+        if (incremental) {
+          try {
+            const d = await diasConCompraNueva(supabase, erpId, username, password, startDate, endDate);
+            dias = d.dias;
+            result.lista = d.lista;
+          } catch (e: any) {
+            console.error(`incremental ${branchId}: la lista falló, pasada completa —`, e.message);
+          }
+        }
+
+        for (const dia of dias) {
           // Sin reintento aquí: `syncBranch` ya reintenta login y descarga. Dos
           // capas de reintentos sobre una descarga de 150 s pasaban del límite
           // de 400 s de la función sin dejar ni una fila.

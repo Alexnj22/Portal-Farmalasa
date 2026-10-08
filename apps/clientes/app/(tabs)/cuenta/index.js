@@ -197,6 +197,9 @@ export default function Cuenta() {
         {resumen && !resumen.pendiente ? (
           <FilaAccion sf="pills.fill" texto="Mis tratamientos" alTocar={() => navegar('/tratamientos')} />
         ) : null}
+        {resumen && !resumen.pendiente ? (
+          <FilaMayorista m={resumen.mayorista} pedir={pedir} alCambiar={() => cargar({ forzar: true })} />
+        ) : null}
         <FilaAccion sf="mappin.and.ellipse" texto="Nuestras sucursales" alTocar={() => navegar('/sucursales')} />
         {resumen?.wallet_serial && walletDisponible() ? (
           <FilaAccion sf="wallet.pass.fill" texto={enWallet ? 'Ver mi tarjeta en Apple Wallet' : 'Agregar mi tarjeta a Apple Wallet'}
@@ -221,9 +224,13 @@ export default function Cuenta() {
             </View>
           ) : null}
           {prueba.activo ? (
+            <FilaInterruptor titulo="Ver como empleado" detalle="La tarjeta de Equipo (precio Mayoreo Plus)."
+              valor={!!prueba.empleado} alCambiar={(v) => prueba.poner({ empleado: v, mayorista: v ? null : prueba.mayorista })} />
+          ) : null}
+          {prueba.activo ? (
             <View style={{ padding: 12, gap: 6 }}>
               <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>Cliente Mayorista</Text>
-              <Segmentos valor={prueba.mayorista ?? 'no'} alCambiar={(m) => prueba.poner({ mayorista: m === 'no' ? null : m })}
+              <Segmentos valor={prueba.mayorista ?? 'no'} alCambiar={(m) => prueba.poner({ mayorista: m === 'no' ? null : m, empleado: m === 'no' ? prueba.empleado : false })}
                 opciones={[{ valor: 'no', rotulo: 'No' }, { valor: 'jade', rotulo: 'Jade' }, { valor: 'zafiro', rotulo: 'Zafiro' }, { valor: 'rubi', rotulo: 'Rubí' }, { valor: 'diamante', rotulo: 'Diam.' }]} />
             </View>
           ) : null}
@@ -265,4 +272,25 @@ export default function Cuenta() {
       </Grupo>
     </Formulario>
   );
+}
+
+// Cliente Mayorista (Condiciones §2, Procedimiento §3): se pide desde aquí y
+// lo decide Administración en el portal en 5 días hábiles.
+function FilaMayorista({ m, pedir, alCambiar }) {
+  const estado = m?.estado;
+  if (estado === 'aprobado') {
+    return <FilaAccion sf="diamond.fill" texto={`Cliente Mayorista · ${m.precio === 'mayoreo_plus' ? 'Mayoreo Plus' : 'Mayoreo'}`} flecha={false} alTocar={() => navegar('/puntos')} />;
+  }
+  if (estado === 'solicitado') {
+    return <FilaAccion sf="clock.fill" texto="Cliente Mayorista: solicitud en revisión" flecha={false}
+      alTocar={() => Alert.alert('Solicitud en revisión', 'Administración la responde en un máximo de 5 días hábiles. Te avisamos aquí.')} />;
+  }
+  const pedirla = () => Alert.alert('Ser Cliente Mayorista',
+    'Es para quien compra en volumen y de forma habitual. Para pedirlo necesitas haber comprado en promedio $100 al mes en los últimos 3 meses, o una compra de $500 en una sola factura, y tu ficha completa (documento y teléfono).\n\nLa empresa responde en 5 días hábiles.',
+    [{ text: 'Cancelar', style: 'cancel' }, { text: 'Solicitar', onPress: async () => {
+      const r = await pedir('solicitar_mayorista', {});
+      Alert.alert(r?.ok ? 'Solicitud enviada' : 'No se pudo', r?.ok ? 'Te avisamos cuando Administración la revise.' : (r?.mensaje ?? 'Revisa tu conexión.'));
+      if (r?.ok) alCambiar?.();
+    } }]);
+  return <FilaAccion sf="diamond" texto={estado === 'rechazado' ? 'Volver a solicitar ser Cliente Mayorista' : 'Quiero ser Cliente Mayorista'} alTocar={pedirla} />;
 }

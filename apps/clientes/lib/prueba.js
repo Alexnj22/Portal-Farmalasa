@@ -20,6 +20,8 @@ export const useModoPrueba = create((set) => ({
   nivel: 'oro',
   // Rango de Cliente Mayorista de muestra (null = no es mayorista).
   mayorista: null,
+  // Ver la app como empleado (tarjeta de Equipo).
+  empleado: false,
   // Cambia con «Volver a tapar el cupón»: un id nuevo se puede raspar otra vez.
   semilla: Date.now().toString(36),
   reiniciarCupon: () => set({ semilla: Date.now().toString(36), cuponUsado: false }),
@@ -34,12 +36,12 @@ export const useModoPrueba = create((set) => ({
   cargar: async () => {
     try {
       const v = JSON.parse((await SecureStore.getItemAsync(CLAVE)) ?? 'null');
-      if (v) set({ activo: !!v.activo, nivel: v.nivel ?? 'oro', mayorista: v.mayorista ?? null });
+      if (v) set({ activo: !!v.activo, nivel: v.nivel ?? 'oro', mayorista: v.mayorista ?? null, empleado: !!v.empleado });
     } catch { /* sin guardar */ }
   },
   poner: (cambio) => set((x) => {
     const nuevo = { ...x, ...cambio };
-    SecureStore.setItemAsync(CLAVE, JSON.stringify({ activo: nuevo.activo, nivel: nuevo.nivel, mayorista: nuevo.mayorista })).catch(() => {});
+    SecureStore.setItemAsync(CLAVE, JSON.stringify({ activo: nuevo.activo, nivel: nuevo.nivel, mayorista: nuevo.mayorista, empleado: nuevo.empleado })).catch(() => {});
     return nuevo;
   }),
 }));

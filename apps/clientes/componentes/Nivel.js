@@ -15,7 +15,7 @@ import Icono from './Icono';
 // Los del Reglamento v2 (cláusula 4): lo que se ve en el modo de prueba.
 export const BENEFICIOS = {
   bronce: ['1 punto por cada $1', 'Ofertas exclusivas', '50 puntos en tu cumpleaños'],
-  vip: ['1 punto por cada $1', 'Ofertas exclusivas', 'Regalo de cumpleaños'],
+  vip: ['1 punto por cada $1', 'Ofertas exclusivas', '50 puntos en tu cumpleaños'],
   plata: ['1.25 puntos por cada $1', '75 puntos en tu cumpleaños'],
   oro: ['1.5 puntos por cada $1', '100 puntos en tu cumpleaños', 'Raspable mensual'],
   platino: ['2 puntos por cada $1', '100 puntos en tu cumpleaños', 'Raspable mensual Platino'],

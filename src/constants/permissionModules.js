@@ -245,6 +245,7 @@ const GRUPOS_CRUDOS = [
                 // igual sin ver cuánto factura cada cliente.
                 { key: 'clientes_ver_montos', label: 'Ver la facturación por cliente', tipo: 'cap' },
             ]},
+            { key: 'mayoristas',     label: 'Clientes Mayoristas', desc: 'Las solicitudes para ser Cliente Mayorista (del cliente en la app o del dependiente), los candidatos —quien compró a precio de mayoreo en 6 meses— con su historial, y los aprobados con su precio y su rango. Ver = mirar; editar = proponer un cliente; aprobar = aprobar, rechazar, cambiar el precio o retirar (quien aprueba no puede ser quien pidió)', icono: 'Gem', hasApprove: true },
             { key: 'puntos',         label: 'Puntos',        desc: 'El programa de puntos entero: lo acumulado y canjeado por día y por sala, los avisos de canjes sin saldo y anulaciones con puntos ya gastados, cuándo vencen, y las cuentas del sistema anterior que quedaron por asignar. Editar = asignar una de esas cuentas a la ficha de un cliente', icono: 'Star', hasApprove: false, sub: [
                 // Una por pestaña (pedido del usuario, 2026-09-25). Avisos es sólo
                 // de administración; Consulta la ve también la caja.

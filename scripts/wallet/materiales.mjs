@@ -49,7 +49,7 @@ if (modo === 'muestra') {
   // y se suben al bucket privado `wallet-materiales`.
   const FONDOS = {
     vip: [40, 10, 52], bronce: [34, 15, 6], plata: [44, 48, 56], oro: [64, 38, 4], platino: [9, 10, 13],
-    jade: [4, 30, 22], zafiro: [3, 12, 48], rubi: [40, 2, 10], diamante: [16, 19, 25],
+    empleado: [10, 10, 12], jade: [4, 30, 22], zafiro: [3, 12, 48], rubi: [40, 2, 10], diamante: [16, 19, 25],
   };
   const { mkdirSync } = await import('node:fs');
   mkdirSync(salida, { recursive: true });

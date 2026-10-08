@@ -4134,6 +4134,165 @@ export type Database = {
           },
         ]
       }
+      clientes_mayoristas: {
+        Row: {
+          aprobado_desde: string | null
+          created_at: string
+          customer_id: number
+          estado: string
+          motivo: string | null
+          nota_solicitud: string | null
+          origen: string
+          precio: string
+          resuelto_at: string | null
+          resuelto_por: string | null
+          retiro_programado: string | null
+          solicitado_at: string
+          solicitado_por: string | null
+          updated_at: string
+        }
+        Insert: {
+          aprobado_desde?: string | null
+          created_at?: string
+          customer_id: number
+          estado: string
+          motivo?: string | null
+          nota_solicitud?: string | null
+          origen: string
+          precio?: string
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+          retiro_programado?: string | null
+          solicitado_at?: string
+          solicitado_por?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aprobado_desde?: string | null
+          created_at?: string
+          customer_id?: number
+          estado?: string
+          motivo?: string | null
+          nota_solicitud?: string | null
+          origen?: string
+          precio?: string
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+          retiro_programado?: string | null
+          solicitado_at?: string
+          solicitado_por?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clientes_mayoristas_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_mayoristas_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "clientes_mayoristas_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_mayoristas_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_mayoristas_solicitado_por_fkey"
+            columns: ["solicitado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_mayoristas_solicitado_por_fkey"
+            columns: ["solicitado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clientes_mayoristas_historial: {
+        Row: {
+          accion: string
+          created_at: string
+          customer_id: number
+          estado: string | null
+          id: number
+          nota: string | null
+          origen: string | null
+          por: string | null
+          precio: string | null
+        }
+        Insert: {
+          accion: string
+          created_at?: string
+          customer_id: number
+          estado?: string | null
+          id?: number
+          nota?: string | null
+          origen?: string | null
+          por?: string | null
+          precio?: string | null
+        }
+        Update: {
+          accion?: string
+          created_at?: string
+          customer_id?: number
+          estado?: string | null
+          id?: number
+          nota?: string | null
+          origen?: string | null
+          por?: string | null
+          precio?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clientes_mayoristas_historial_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_mayoristas_historial_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "clientes_mayoristas_historial_por_fkey"
+            columns: ["por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_mayoristas_historial_por_fkey"
+            columns: ["por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes_por_revisar: {
         Row: {
           created_at: string
@@ -14771,6 +14930,63 @@ export type Database = {
           },
         ]
       }
+      mayoristas_resumen_mensual: {
+        Row: {
+          a_mayoreo: number
+          a_plus: number
+          costo: number
+          created_at: string
+          customer_id: number
+          facturas: number
+          facturas_mayoreo: number
+          mayor_factura: number
+          mes: string
+          total: number
+          ultima_compra: string | null
+        }
+        Insert: {
+          a_mayoreo?: number
+          a_plus?: number
+          costo?: number
+          created_at?: string
+          customer_id: number
+          facturas?: number
+          facturas_mayoreo?: number
+          mayor_factura?: number
+          mes: string
+          total?: number
+          ultima_compra?: string | null
+        }
+        Update: {
+          a_mayoreo?: number
+          a_plus?: number
+          costo?: number
+          created_at?: string
+          customer_id?: number
+          facturas?: number
+          facturas_mayoreo?: number
+          mayor_factura?: number
+          mes?: string
+          total?: number
+          ultima_compra?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mayoristas_resumen_mensual_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mayoristas_resumen_mensual_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+        ]
+      }
       medicos: {
         Row: {
           agregado_por: string | null
@@ -19665,6 +19881,7 @@ export type Database = {
           id: boolean
           inicio: string | null
           minimo_canje: number
+          niveles_activos: boolean
           nota: string | null
           puntos_cumpleanos: number
           updated_at: string
@@ -19678,6 +19895,7 @@ export type Database = {
           id?: boolean
           inicio?: string | null
           minimo_canje?: number
+          niveles_activos?: boolean
           nota?: string | null
           puntos_cumpleanos?: number
           updated_at?: string
@@ -19691,6 +19909,7 @@ export type Database = {
           id?: boolean
           inicio?: string | null
           minimo_canje?: number
+          niveles_activos?: boolean
           nota?: string | null
           puntos_cumpleanos?: number
           updated_at?: string
@@ -25689,6 +25908,7 @@ export type Database = {
         Args: { p_item_id: number; p_prefijo: string }
         Returns: string
       }
+      cliente_es_empleado: { Args: { p_customer: number }; Returns: boolean }
       clientes_anotar_nacimiento: { Args: { p_filas: Json }; Returns: number }
       clientes_sin_distrito_corregibles: {
         Args: never
@@ -29183,6 +29403,28 @@ export type Database = {
         Args: { p_decision: string; p_pieza_id: string; p_texto?: string }
         Returns: Json
       }
+      mayorista_de: { Args: { p_customer: number }; Returns: Json }
+      mayorista_detalle: { Args: { p_customer: number }; Returns: Json }
+      mayorista_proponer: {
+        Args: { p_customer: number; p_nota: string; p_precio: string }
+        Returns: Json
+      }
+      mayorista_rango: { Args: { p_customer: number }; Returns: string }
+      mayorista_resolver: {
+        Args: {
+          p_accion: string
+          p_customer: number
+          p_nota: string
+          p_precio: string
+        }
+        Returns: Json
+      }
+      mayorista_solicitar_app: {
+        Args: { p_customer: number; p_nota: string }
+        Returns: Json
+      }
+      mayoristas_listado: { Args: never; Returns: Json }
+      mayoristas_rehacer_resumen: { Args: never; Returns: number }
       merge_purchase_dte_documents: {
         Args: { p_source_id: number; p_target_id: number }
         Returns: undefined

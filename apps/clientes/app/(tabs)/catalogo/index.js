@@ -177,7 +177,7 @@ function TarjetaProducto({ p }) {
   const ahorro = p.precio_vip != null ? p.precio - p.precio_vip : 0;
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${p.id}`); }}
-      accessibilityRole="button" accessibilityLabel={`${nombreProducto(p.nombre)}. Precio ${dolares(p.precio)}${p.precio_vip != null ? `, VIP ${dolares(p.precio_vip)}` : ''}`}
+      accessibilityRole="button" accessibilityLabel={`${nombreProducto(p.nombre)}. Precio ${dolares(p.precio)}${p.precio_vip != null ? `, Preferente ${dolares(p.precio_vip)}` : ''}`}
       style={({ pressed }) => ({ flex: 1, maxWidth: '50%', borderRadius: 22, padding: 10, gap: 8,
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.82)',
         borderWidth: 0.5, borderColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)',
@@ -191,7 +191,7 @@ function TarjetaProducto({ p }) {
         ) : null}
         {ahorro >= 0.01 ? (
           <View style={{ position: 'absolute', top: 6, right: 6, backgroundColor: t.color.verde, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
-            <Text maxFontSizeMultiplier={1.2} style={{ color: '#1A2600', fontSize: 11, fontWeight: '900' }}>−{Math.round((ahorro / p.precio) * 100)}% VIP</Text>
+            <Text maxFontSizeMultiplier={1.2} style={{ color: '#1A2600', fontSize: 11, fontWeight: '900' }}>−{Math.round((ahorro / p.precio) * 100)}%</Text>
           </View>
         ) : null}
       </View>
@@ -219,7 +219,7 @@ function TarjetaProducto({ p }) {
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 5 }}>
               <Text style={{ fontSize: 19, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(p.precio_vip)}</Text>
-              <Text style={{ fontSize: 11, fontWeight: '800', color: t.color.magentaTexto }}>VIP</Text>
+              <Text style={{ fontSize: 11, fontWeight: '800', color: t.color.magentaTexto }}>PREFERENTE</Text>
             </View>
           </>
         ) : (

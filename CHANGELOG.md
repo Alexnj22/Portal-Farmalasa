@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1260.0 — Clientes Mayoristas en el portal y la app, tarjeta de Equipo, Bronce, medallón del logo y arreglos
+
+- **Portal: Clientes Mayoristas** (Comercial → Clientes Mayoristas, módulo de permisos `mayoristas`), según las Condiciones del Cliente Mayorista y el Procedimiento de Clientes actualizados (docs/legal, vigentes 15-oct-2026). Pestañas **Solicitudes** (de la app o propuestas por un dependiente), **Candidatos** (quien compró a precio de mayoreo en 6 meses, con el requisito de la cláusula 2.3 a la vista: promedio $100/mes en 3 meses o una factura de $500), **Mayoristas** (precio y rango del mes) e **Historial** (todo, de un solo lugar). El detalle muestra compras por mes, margen (interno), regularidad y antigüedad, y permite proponer, aprobar o rechazar (con motivo), cambiar el precio o retirar.
+  - Reglas en la base: quien aprueba no puede ser quien pidió; se aprueba sólo una solicitud abierta y con la ficha completa; un retiro rige 15 días después del aviso.
+  - Precios (Procedimiento §1): Mayoreo = columna `clinica`, Mayoreo Plus = columna `mayoreo` (`premium` y `precio_7` sin uso). Una venta cuenta como «a mayoreo» si además está por debajo del Preferente.
+  - Rangos (Condiciones §4): Jade al ingresar; Zafiro ≥ $300, Rubí ≥ $800, Diamante ≥ $2,000 de promedio en 3 meses.
+  - Las 16 fichas con «(4)»/«(5)» en el nombre entraron aprobadas (7 Mayoreo, 9 Mayoreo Plus). El procedimiento habla de 26: las otras 10 no están en la base del portal.
+  - `mayoristas_resumen_mensual` se rehace cada noche (cron `mayoristas-resumen-diario`, 02:50 SV): leer las ventas en vivo eran 625 MB por consulta; el listado tarda ~100 ms.
+- **App: Cliente Mayorista real:** con la condición aprobada, la tarjeta (también en Wallet) es la de su rango y no muestra nivel; en Cuenta se pide «Quiero ser Cliente Mayorista» (requisitos explicados) y se ve el estado. Raspable: Rubí el de Oro, Diamante el de Platino. Cumpleaños por rango.
+- **Tarjeta de Equipo** para empleados activos (cruce por DUI, `cliente_es_empleado`; hoy 8 de 48 tienen ficha): fibra de carbono con las franjas de la marca, en la app y en Wallet; panel «Precio Mayoreo Plus por política de personal». En prueba: «Ver como empleado».
+- **Logo central como medallón** (cara blanca con bisel y sombra): se lee sobre cualquier material.
+- **Nivel de entrada «Bronce»** (Reglamento v2): nombre en la base, material de bronce en la tarjeta y en Wallet. El precio de socio se llama **Preferente** en la app (antes «VIP»).
+- **Retiradas las 41 raspables** entregadas antes del reglamento (8,300 puntos, ninguna usada; saldos cuadrados) y **apagada la entrega a domicilio** (sólo retiro en tienda).
+- **Wallet de prueba:** serie propia y sin actualizaciones, para que Wallet no la reemplace con el nivel real.
+- **`puntos_sellar_estado`:** de ~26,000 a ~19,000 bloques por llamada (203 → 148 MB): estadísticas al día (`puntos_enviados` nunca se había analizado), autovacuum/analyze al 2 % y `puntos_marcar_sin_enviar` descarta primero las facturas ya selladas.
+- Encuesta de ejemplo para la app en borrador («Tu experiencia con Farmacia Salud (app)», 25 puntos).
+
 ## v2.1259.2 — App: GPS de la ruta en segundo plano también en Android
 
 - **El rastreo de la ruta con la app cerrada, también en Android.** La configuración de `expo-location` sólo lo habilitaba en iOS (`isIosBackgroundLocationEnabled`). Se agregan `isAndroidBackgroundLocationEnabled` (permiso de ubicación «Todo el tiempo») e `isAndroidForegroundServiceEnabled` (el servicio con el aviso fijo «Ruta en curso», que Android exige para seguir marcando en segundo plano). El flujo de permisos de `plataforma/rastreoDeFondo.js` ya pedía primero «mientras se usa» y después «siempre», que es el orden que Android 11+ exige.

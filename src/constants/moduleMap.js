@@ -61,6 +61,7 @@ export const MODULE_MAP = {
     facturacion:       { path: '/facturacion',      label: 'Facturación',              icono: 'FileText'   },
     cotizaciones:      { path: '/cotizaciones',     label: 'Cotizaciones',             icono: 'Receipt'    },
     clientes:          { path: '/clientes',         label: 'Clientes',                 icono: 'Contact'    },
+    mayoristas:        { path: '/mayoristas',       label: 'Clientes Mayoristas',      icono: 'Gem'        },
     // La venta en ruta de la S.A.S. de distribución (otro NIT, su propio emisor de DTE).
     // Vive en su propia entrada, fuera del menú de las farmacias (2026-09-28).
     distribucion:      { path: '/torogoz',          label: 'Torogoz',                  icono: 'Truck'      },

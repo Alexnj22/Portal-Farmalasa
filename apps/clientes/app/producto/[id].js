@@ -114,7 +114,7 @@ export default function Producto() {
           {p.laboratorio ? <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto3 }}>{nombreProducto(p.laboratorio)}</Text> : null}
         </View>
 
-        {/* Precios: cada presentación con el de viñeta y el VIP; se toca la que se quiere. */}
+        {/* Precios: cada presentación con el de viñeta y el Preferente (antes «VIP», Procedimiento de Clientes §1); se toca la que se quiere. */}
         <Titular texto={p.bajo_receta ? 'Precios' : 'Elige la presentación'} />
         <View style={{ marginHorizontal: 16, borderRadius: 20, backgroundColor: superficie, overflow: 'hidden' }}>
           {(p.presentaciones ?? []).map((x, i) => {
@@ -139,7 +139,7 @@ export default function Producto() {
                       <>
                         <Text style={{ fontSize: 13, color: colorSistema.texto3, textDecorationLine: 'line-through', fontVariant: ['tabular-nums'] }}>{dolares(x.precio)}</Text>
                         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 5 }}>
-                          <Text style={{ fontSize: 11, fontWeight: '800', color: t.color.magentaTexto }}>VIP</Text>
+                          <Text style={{ fontSize: 11, fontWeight: '800', color: t.color.magentaTexto }}>PREFERENTE</Text>
                           <Text style={{ fontSize: 20, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(x.precio_vip)}</Text>
                         </View>
                       </>
@@ -153,7 +153,7 @@ export default function Producto() {
           })}
         </View>
         <Text style={{ fontSize: 13, color: colorSistema.texto3, marginHorizontal: 32, marginTop: 8 }}>
-          El precio VIP es para socios de Puntos Salud: muestra tu tarjeta en caja.
+          El precio Preferente es para quien tiene cuenta en Puntos Salud: muestra tu tarjeta en caja.
         </Text>
 
         {/* Dónde hay. */}

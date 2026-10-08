@@ -150,6 +150,29 @@ half4 main(float2 p) {
   c += float3(0.9, 0.95, 1.0) * destellos(p, 0.04, 1.4) * 0.7;
   return half4(c, 1.0);
 }`,
+  // La tarjeta del EQUIPO (empleados, precio Mayoreo Plus por política):
+  // fibra de carbono tejida con la franja de la marca, magenta a verde.
+  empleado: `
+half4 main(float2 p) {
+  float a = res.x / res.y; float2 uv = p / res.y;
+  // El tejido: dos hilos cruzados en diagonal, cada uno con su brillo.
+  float2 q = float2(uv.x + uv.y, uv.x - uv.y) * 26.0;
+  float2 f = fract(q); float2 g = floor(q);
+  float par = mod(g.x + g.y, 2.0);
+  float hilo = par > 0.5 ? sin(f.x * 3.1416) : sin(f.y * 3.1416);
+  float luzHilo = par > 0.5 ? 0.5 + 0.5 * tilt.x : 0.5 - 0.5 * tilt.x;
+  float3 c = float3(0.05, 0.05, 0.06) + float3(0.10, 0.10, 0.12) * hilo * (0.5 + luzHilo * 0.8);
+  // Dos franjas de la marca en diagonal: magenta y verde, con filo de luz.
+  float d = (uv.x / a) - uv.y * 0.55 - (0.30 + tilt.x * 0.04);
+  float magenta = smoothstep(0.0, 0.012, d) * (1.0 - smoothstep(0.075, 0.087, d));
+  float verde = smoothstep(0.105, 0.117, d) * (1.0 - smoothstep(0.165, 0.177, d));
+  c = mix(c, float3(0.71, 0.10, 0.55) * (0.8 + 0.25 * hilo), magenta * 0.95);
+  c = mix(c, float3(0.55, 0.76, 0.06) * (0.8 + 0.25 * hilo), verde * 0.95);
+  float filo = (1.0 - smoothstep(0.0, 0.004, abs(d - 0.19))) + (1.0 - smoothstep(0.0, 0.004, abs(d + 0.02)));
+  c += float3(0.85, 0.85, 0.9) * filo * 0.30;
+  float2 L = luz(a); c += float3(0.6, 0.6, 0.7) * exp(-dot(uv - L, uv - L) * 6.0) * 0.12;
+  return half4(c, 1.0);
+}`,
   jade: `
 half4 main(float2 p) {
   float a = res.x / res.y; float2 uv = p / res.y;

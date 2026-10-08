@@ -25,7 +25,8 @@ const clave = (id) => `puntos_salud_cupon_raspado_${String(id).replace(/[^\w-]/g
 
 // `demo` (modo de prueba): cada vez que cambia, el cupón se tapa y se raspa
 // solo, para ver la animación completa sin gastar el del mes.
-export default function Cupon({ cupon, nivel = 'platino', fondo, activa = true, demo = 0 }) {
+export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, activa = true, demo = 0 }) {
+  const nivel = nivelDado === 'vip' ? 'bronce' : nivelDado;
   const [raspado, setRaspado] = useState(null); // null = leyendo
   const [festejo, setFestejo] = useState(false);
   const [auto, setAuto] = useState(false);

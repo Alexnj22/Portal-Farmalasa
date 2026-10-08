@@ -31,6 +31,9 @@ export interface DatosPase {
   socioDesde: string | null;
   /** «Cliente VIP», «Plata», «Oro», «Platino» o un rango de mayorista («Zafiro»…). */
   nivel?: string;
+  /** Tarjeta del modo de prueba: serie propia y sin actualizaciones, para que
+   *  Wallet la guarde APARTE y no la «corrija» con el nivel real (2026-10-08). */
+  prueba?: boolean;
   /** Las franjas del material (`strip@2x.png`, `strip@3x.png`); sin ellas, la morada de siempre. */
   franjas?: Record<string, Uint8Array>;
 }
@@ -71,6 +74,7 @@ const MATERIALES: Record<string, { fondo: string; rotulo: string }> = {
   plata: { fondo: "rgb(44, 48, 56)", rotulo: "rgb(220, 226, 234)" },
   oro: { fondo: "rgb(64, 38, 4)", rotulo: "rgb(255, 217, 120)" },
   platino: { fondo: "rgb(9, 10, 13)", rotulo: "rgb(232, 236, 242)" },
+  empleado: { fondo: "rgb(10, 10, 12)", rotulo: "rgb(224, 107, 194)" },
   jade: { fondo: "rgb(4, 30, 22)", rotulo: "rgb(140, 245, 206)" },
   zafiro: { fondo: "rgb(3, 12, 48)", rotulo: "rgb(169, 194, 255)" },
   rubi: { fondo: "rgb(40, 2, 10)", rotulo: "rgb(255, 154, 174)" },
@@ -80,6 +84,7 @@ const PIEDRAS = ["jade", "zafiro", "rubi", "diamante"];
 const sinTilde = (n?: string) => String(n ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 const claveDeNivel = (n?: string) => {
   const t = sinTilde(n);
+  if (t.includes("equipo")) return "empleado";
   return Object.keys(MATERIALES).find((k) => k !== "vip" && t.includes(k)) ?? "vip";
 };
 
@@ -104,6 +109,7 @@ async function franjasDe(admin: any, clave: string): Promise<Record<string, Uint
 
 const nivelRotulo = (n?: string) => {
   const k = claveDeNivel(n);
+  if (k === "empleado" || /equipo/i.test(String(n))) return "EQUIPO FARMACIA SALUD";
   if (PIEDRAS.includes(k)) return `MAYORISTA ${String(n).toUpperCase()}`;
   return !n || k === "vip" ? "CLIENTE VIP" : `CLIENTE ${n.toUpperCase()}`;
 };
@@ -117,13 +123,16 @@ export async function armarPase(d: DatosPase): Promise<Uint8Array> {
     formatVersion: 1,
     passTypeIdentifier: PASS_TYPE,
     teamIdentifier: EQUIPO,
-    serialNumber: serialDe(d.customerId),
+    serialNumber: d.prueba ? `${serialDe(d.customerId)}-prueba-${claveDeNivel(d.nivel)}` : serialDe(d.customerId),
     // Servicio web de PassKit (`wallet-pases`): el iPhone se registra al
-    // agregarla y baja la versión nueva cuando cambian los puntos.
-    webServiceURL: `${Deno.env.get("SUPABASE_URL")}/functions/v1/wallet-pases`,
-    authenticationToken: await tokenDePase(serialDe(d.customerId)),
+    // agregarla y baja la versión nueva cuando cambian los puntos. La de
+    // prueba no lo lleva: si no, el servicio la devolvería con el nivel real.
+    ...(d.prueba ? {} : {
+      webServiceURL: `${Deno.env.get("SUPABASE_URL")}/functions/v1/wallet-pases`,
+      authenticationToken: await tokenDePase(serialDe(d.customerId)),
+    }),
     organizationName: "Farmacia Salud",
-    description: "Tarjeta Cliente VIP · Puntos Salud",
+    description: "Tarjeta Puntos Salud",
     logoText: "Puntos Salud",
     // El fondo continúa el tono oscuro de la franja (scripts/wallet/imagenes.py),
     // y los rótulos van en el verde del logo: así la franja y el cuerpo se leen
@@ -235,12 +244,21 @@ export async function paseDeCliente(admin: any, id: number, nivelDePrueba?: stri
     admin.from("puntos_cuenta").select("updated_at").eq("customer_id", id).maybeSingle(),
   ]);
   const nivel = await nivelDeCliente(admin, id);
+  // El personal lleva la tarjeta de Equipo también en Wallet.
+  const { data: esEmpleado, error: eEm } = nivelDePrueba ? { data: false, error: null } : await admin.rpc("cliente_es_empleado", { p_customer: id });
+  if (eEm) console.error("pase: no se supo si es empleado:", eEm.message);
+  // El Cliente Mayorista lleva la tarjeta de su rango (no tiene nivel).
+  const { data: rango, error: eRg } = nivelDePrueba || esEmpleado === true ? { data: null, error: null } : await admin.rpc("mayorista_rango", { p_customer: id });
+  if (eRg) console.error("pase: no se leyó el rango:", eRg.message);
+  const NOMBRE_RANGO: Record<string, string> = { jade: "Jade", zafiro: "Zafiro", rubi: "Rubí", diamante: "Diamante" };
+  const nombreNivel = nivelDePrueba ?? (esEmpleado === true ? "Equipo" : rango ? NOMBRE_RANGO[rango] ?? nivel.nombre : nivel.nombre);
   if (eC) throw eC; if (eE) throw eE; if (eK) throw eK; if (eP) throw eP; if (eT) throw eT;
   const saldo = Number(est?.saldo ?? 0);
   const pase = await armarPase({
     customerId: id, nombre: c?.name ?? "", saldo, equivale: Math.round(saldo) / 100,
-    codigo: cod?.codigo ?? null, socioDesde: pri?.ganado_el ?? null, nivel: nivelDePrueba ?? nivel.nombre,
-    franjas: await franjasDe(admin, claveDeNivel(nivelDePrueba ?? nivel.nombre)),
+    codigo: cod?.codigo ?? null, socioDesde: pri?.ganado_el ?? null, nivel: nombreNivel,
+    franjas: await franjasDe(admin, claveDeNivel(nombreNivel)),
+    prueba: !!nivelDePrueba,
   });
   return { pase, cambio: cta?.updated_at ?? null };
 }

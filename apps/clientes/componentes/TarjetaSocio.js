@@ -57,12 +57,15 @@ export const COLORES_NIVEL = {
   // El COLOR dice el nivel; los efectos sólo lo acompañan, suaves (2026-10-07):
   //   VIP morado de la marca · Plata gris metálico · Oro dorado ·
   //   Platino negro (la «black card»), con un brillo apenas iridiscente.
-  vip: { frente: ['#2B0B3A', T['logo-magenta'], '#5B1E9C'], reverso: ['#1A0822', '#3A1048'], rotulo: 'SOCIO VIP', sombra: '#5B1E9C', acento: '#E06BC2' },
+  // El nivel de entrada es Bronce (Reglamento v2, cláusula 4); su clave sigue 'vip'.
+  vip: { frente: ['#3A1A08', '#9A5A2C', '#5A2E12'], reverso: ['#24100A', '#5A2E12'], rotulo: 'BRONCE', sombra: '#5A2E12', acento: '#F2B07A' },
   // Bronce: el nivel de entrada del Reglamento v2 (hoy sólo en modo de prueba).
   bronce: { frente: ['#3A1A08', '#9A5A2C', '#5A2E12'], reverso: ['#24100A', '#5A2E12'], rotulo: 'BRONCE', sombra: '#5A2E12', acento: '#F2B07A' },
   plata: { frente: ['#4A525E', '#A9B2BE', '#5E6774'], reverso: ['#2A3038', '#4A525E'], rotulo: 'PLATA', sombra: '#4A525E', acento: '#DCE3EC' },
   oro: { frente: ['#7A4A00', '#E0A93A', '#9A6408'], reverso: ['#3F2600', '#7A4A00'], rotulo: 'ORO', sombra: '#9A6408', acento: '#FFD978' },
   platino: { frente: ['#08090C', '#262A33', '#08090C'], reverso: ['#000000', '#16181E'], rotulo: 'PLATINO', sombra: '#000000', acento: '#E8ECF2' },
+  // Equipo (empleados): carbono con la franja de la marca.
+  empleado: { frente: ['#0B0B0E', '#2A2A30', '#0B0B0E'], reverso: ['#000000', '#16161A'], rotulo: 'EQUIPO', sombra: '#000000', acento: '#E06BC2' },
   // Cliente Mayorista (2026-10-08, en modo de prueba): sus rangos son piedras,
   // cada una con su color — Jade, Zafiro, Rubí y Diamante.
   jade: { frente: ['#06281F', '#1F9E77', '#0B4D3A'], reverso: ['#041A14', '#0B4D3A'], rotulo: 'JADE', sombra: '#0B4D3A', acento: '#8CF5CE' },
@@ -75,7 +78,9 @@ export const COLORES_NIVEL = {
 // ellos el monto CUENTA hasta el nuevo (sube o baja), sale una etiqueta
 // «+250 pts» / «−500 pts» que flota hacia arriba y la tarjeta destella en
 // verde o en rojo.
-export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel = 'vip', activa = true, previo = null, cambio = null }) {
+export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nivelDado = 'vip', activa = true, previo = null, cambio = null }) {
+  // 'vip' es la clave del nivel de entrada, que ahora es Bronce: lleva su material.
+  const nivel = nivelDado === 'vip' ? 'bronce' : nivelDado;
   const paleta = COLORES_NIVEL[nivel] ?? COLORES_NIVEL.vip;
   // Con «Reducir movimiento» del iPhone: sin giroscopio, sin luz que pasa.
   const reducir = useReducedMotion();
@@ -226,15 +231,13 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
           {/* El logo al centro: llena el espacio entre el chip y el nombre
               (pedido del usuario, 2026-10-06), con un halo suave. */}
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
-            <View style={estilos.halo}>
-              <Image source={require('../assets/icono.png')} style={{ width: 64, height: 64, borderRadius: 16 }} />
-            </View>
+            <Medallon tam={92} />
           </View>
 
           <View style={estilos.contenido}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Image source={require('../assets/icono.png')} style={{ width: 30, height: 30, borderRadius: 8 }} />
+                <Medallon tam={34} />
                 <Text maxFontSizeMultiplier={1.3} style={estilos.marca}>PUNTOS SALUD</Text>
               </View>
               <Text maxFontSizeMultiplier={1.3} style={estilos.socio}>{paleta.rotulo}</Text>
@@ -284,6 +287,29 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
       </Animated.View>
     </GestureDetector>
     </>
+  );
+}
+
+// El logo como MEDALLÓN acuñado (2026-10-08): sobre zafiro, rubí o carbono el
+// logo de color se perdía. Va sobre una cara blanca con bisel —luz arriba a
+// la izquierda, sombra abajo a la derecha— y sombra propia, así se lee sobre
+// cualquier material y parece incrustado en la tarjeta.
+function Medallon({ tam }) {
+  const r = tam / 2;
+  return (
+    <View style={{ width: tam, height: tam, borderRadius: r, shadowColor: '#000', shadowOpacity: 0.45, shadowRadius: tam * 0.12, shadowOffset: { width: 0, height: tam * 0.05 } }}>
+      {/* El bisel del borde. */}
+      <LinearGradient colors={['#FFFFFF', 'rgba(255,255,255,0.55)', 'rgba(120,120,130,0.9)']} locations={[0, 0.45, 1]}
+        start={{ x: 0.15, y: 0.1 }} end={{ x: 0.85, y: 0.95 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: r }} />
+      {/* La cara, un poco hundida: sombra interior arriba, luz abajo. */}
+      <View style={{ position: 'absolute', top: tam * 0.07, left: tam * 0.07, right: tam * 0.07, bottom: tam * 0.07, borderRadius: r, overflow: 'hidden', backgroundColor: '#FBFAFC' }}>
+        <LinearGradient colors={['rgba(0,0,0,0.10)', 'rgba(0,0,0,0)', 'rgba(255,255,255,0.0)']} locations={[0, 0.35, 1]}
+          start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={StyleSheet.absoluteFill} />
+      </View>
+      <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
+        <Image source={require('../assets/icono.png')} style={{ width: tam * 0.72, height: tam * 0.72, borderRadius: tam * 0.36 }} />
+      </View>
+    </View>
   );
 }
 

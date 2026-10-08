@@ -34,7 +34,7 @@ export async function nivelDeCliente(admin: any, customerId: number): Promise<Ni
   // deno-lint-ignore no-explicit-any
   const lista = (niveles ?? []).map((n: any) => ({ ...n, desde: Number(n.desde), factor: Number(n.factor) }));
   const i = Math.max(0, lista.findLastIndex((n: any) => n.desde <= c));
-  const n = lista[i] ?? { clave: "vip", nombre: "Cliente VIP", factor: 1, puntos_cumpleanos: 50, horas_reserva: 24, cupon_mensual: 0 };
+  const n = lista[i] ?? { clave: "vip", nombre: "Bronce", factor: 1, puntos_cumpleanos: 50, horas_reserva: 24, cupon_mensual: 0 };
   const s = lista[i + 1];
   return {
     clave: n.clave, nombre: n.nombre, factor: n.factor, cumpleanos: n.puntos_cumpleanos, horas_reserva: n.horas_reserva,

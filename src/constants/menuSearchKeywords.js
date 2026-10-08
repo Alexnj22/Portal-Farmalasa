@@ -60,6 +60,7 @@ export const MODULE_SEARCH_KEYWORDS = {
     proveedores:        ['suppliers', 'contactos de proveedor', 'maestro de proveedores'],
     inyecciones:        ['inyeccion', 'aplicacion', 'aplicar', 'ampolla', 'pendientes', 'bitacora de aplicaciones', 'neurobion', 'jeringa'],
     puntos:             ['puntos salud', 'programa de puntos', 'canje', 'canjes', 'fidelidad', 'lealtad', 'saldo de puntos', 'vencimiento de puntos'],
+    mayoristas:         ['mayoreo', 'mayoreo plus', 'cliente mayorista', 'jade', 'zafiro', 'rubi', 'diamante', 'precio especial', 'solicitud mayorista'],
     clientes:           ['customers', 'ficha del cliente', 'ficha fiscal', 'receptor', 'dui', 'nit', 'nrc', 'contribuyente', 'consumidor final', 'distrito', 'municipio'],
     conteo_inventario:  ['auditoria de inventario', 'conteo fisico', 'cuadre de stock'],
     // Las palabras con las que la sala y el regente la buscan de verdad. «SRS»,

@@ -95,6 +95,7 @@ const MarketingView = lazy(IMPORTADORES.MarketingView);
 const GaleriaView = lazy(IMPORTADORES.GaleriaView);
 const EncuestasClientesView = lazy(IMPORTADORES.EncuestasClientesView);
 const OfertasClientesView = lazy(IMPORTADORES.OfertasClientesView);
+const MayoristasView = lazy(IMPORTADORES.MayoristasView);
 const AplicarEncuestaView = lazy(IMPORTADORES.AplicarEncuestaView);
 const EncuestaPublicaView = lazy(IMPORTADORES.EncuestaPublicaView);
 const ProveedoresView = lazy(IMPORTADORES.ProveedoresView);
@@ -920,6 +921,7 @@ function MainApp() {
                                     <Route path="distribucion/venta" element={<IrATorogoz />} />
                                     <Route path="distribucion/venta/:pedidoId" element={<IrATorogoz />} />
                                     <Route path="clientes" element={<PermissionGuard moduleKey="clientes"><ClientesView openModal={openModal} /></PermissionGuard>} />
+                                    <Route path="mayoristas" element={<PermissionGuard moduleKey="mayoristas"><MayoristasView /></PermissionGuard>} />
                                     <Route path="productos" element={<PermissionGuard moduleKey="productos"><ProductosView /></PermissionGuard>} />
                                     <Route path="laboratorios" element={<PermissionGuard moduleKey="laboratorios"><LaboratoriosView /></PermissionGuard>} />
                                     <Route path="pedidos" element={<PermissionGuard moduleKey="pedidos"><PedidosView /></PermissionGuard>} />
@@ -1144,6 +1146,7 @@ const ROUTE_TITLES = {
     '/torogoz/solicitudes': 'Solicitudes',
     '/torogoz/emisor':    'Empresa',
     '/clientes':          'Clientes',
+    '/mayoristas':        'Clientes Mayoristas',
     '/metas':             'Metas',
     // Copiado LITERAL del `title` del GlassViewLayout de la vista: es lo que
     // exige gate:rutas, y por buenos motivos — el título de la pestaña del

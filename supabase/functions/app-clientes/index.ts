@@ -171,8 +171,8 @@ Deno.serve(async (req) => {
     return (count ?? 0) > 0;
   };
   // Modo de prueba: los niveles y, para ver su tarjeta, los rangos de mayorista.
-  const NOMBRE_NIVEL: Record<string, string> = { vip: "Cliente VIP", bronce: "Bronce", plata: "Plata", oro: "Oro", platino: "Platino",
-    jade: "Jade", zafiro: "Zafiro", rubi: "Rubí", diamante: "Diamante" };
+  const NOMBRE_NIVEL: Record<string, string> = { vip: "Bronce", bronce: "Bronce", plata: "Plata", oro: "Oro", platino: "Platino",
+    jade: "Jade", zafiro: "Zafiro", rubi: "Rubí", diamante: "Diamante", empleado: "Equipo" };
 
 
   if (enlaceWallet) {
@@ -725,7 +725,7 @@ Deno.serve(async (req) => {
       return json({ ok: true, sucursales: conSucursal(data ?? []) });
     }
 
-    if (["mis_tratamientos", "tratamiento_cambiar", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo"].includes(accion)) {
+    if (["solicitar_mayorista", "mis_tratamientos", "tratamiento_cambiar", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo"].includes(accion)) {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
 
@@ -956,6 +956,14 @@ Deno.serve(async (req) => {
         .eq("id", Number(body?.id)).eq("customer_id", customerId).in("estado", ["solicitado", "confirmado"]).neq("pago_estado", "pagado").select("id");
       if (error) throw error;
       return json(data?.length ? { ok: true } : { ok: false, mensaje: "Ese encargo ya no se puede cancelar desde la app. Escríbele a la sucursal." });
+    }
+
+    // ── Pedir ser Cliente Mayorista (2026-10-08): queda «en revisión» y lo
+    // decide Administración en el portal (Procedimiento de Clientes §3).
+    if (accion === "solicitar_mayorista") {
+      const { data, error } = await admin.rpc("mayorista_solicitar_app", { p_customer: customerId, p_nota: String(body?.nota ?? "") });
+      if (error) throw error;
+      return json(data);
     }
 
     // ── Recordatorios de tratamiento (2026-10-07) ───────────────────────
@@ -1373,6 +1381,18 @@ Deno.serve(async (req) => {
         // El nivel (Plata/Oro/Platino) y cuánto falta para el siguiente.
         nivel,
         // Inyecciones por aplicar: el Inicio las muestra (ya no son pestaña).
+        // Cliente Mayorista (2026-10-08): estado, precio y rango (Condiciones).
+        mayorista: await (async () => {
+          const { data, error } = await admin.rpc("mayorista_de", { p_customer: customerId });
+          if (error) { console.error("resumen mayorista:", error.message); return null; }
+          return data ?? null;
+        })(),
+        // Empleado activo (por DUI): tarjeta de Equipo, precio Mayoreo Plus (2026-10-08).
+        empleado: await (async () => {
+          const { data, error } = await admin.rpc("cliente_es_empleado", { p_customer: customerId });
+          if (error) { console.error("resumen empleado:", error.message); return false; }
+          return data === true;
+        })(),
         // Los tratamientos activos, los que se acaban primero (Inicio, 2026-10-08).
         tratamientos: await (async () => {
           const { data, error } = await admin.rpc("app_tratamientos_de", { p_customer: customerId });

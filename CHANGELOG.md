@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1233.0 — Pedidos: auditoría — tablero más rápido, recepción, rutas y Generar sin huecos
+
+Auditoría completa del módulo (4 frentes). Todo probado contra el entorno de pruebas.
+
+**Tablero y datos**
+- Recarga del tablero: 4 consultas en paralelo y un solo repintado. Con número de petición, una respuesta vieja ya no pisa a una nueva.
+- Actualizaciones en vivo:
+  - Abrir o cerrar una fila ya no reabre el canal de actualizaciones.
+  - Los renglones se escuchan sólo del pedido abierto.
+  - Las posiciones GPS ya no recargan todas las pantallas.
+  - Crear una ruta pasa por la misma cola que el resto.
+  - Un eco de una acción propia no recarga dos veces.
+- Pausar o reanudar: de 13 a 7 peticiones.
+- La fila es un componente memorizado, y el detalle se arma sólo si está abierta.
+- Si falla la carga de renglones, Finalizar, Imprimir, Llegada y Recepción no siguen con una lista vacía. Lo dicen y ofrecen «Reintentar».
+- Iniciar, pausar, resolver y programar avisan si fallan; antes sólo quedaba en la consola.
+- Filtros por estado de la SALA (no del pedido), y el mes en hora de El Salvador.
+- Electrolit faltante: no se marca por posición; sólo cuando se sabe cuál es.
+- La reimpresión de una sala finalizada usa lo enviado.
+- Rutas activas sin tope de 50.
+- El último intento de traslado es el que manda en la etiqueta.
+
+**Recepción**
+- «Terminé» con un solo criterio (`quedaTodoListo`) en los cinco caminos: ya no se completa una sala con una caja sin llegar.
+- «Todo OK» guarda lo enviado exacto y no redondea a la presentación (25 en blíster ×10 guardaba 30). El conteo arranca sin inventar diferencias.
+- Hojas recibidas se agregan, no se pisan entre dos personas.
+- Quitar un extra espera a la base. «Confirmar todo» ingresa al inventario aunque falle la marca de hojas.
+- Llegada de un toque, «Llegaron las N cajas»; el detalle queda en «Algo llegó mal». Igual en el reenvío.
+- Sin «Sistema de Ventas» ni mensajes crudos del servidor en pantalla.
+
+**Rutas, Generar, Finalizar**
+- Mapa:
+  - Crear ruta hace un mapa y trazados en caché con espera de 800 ms: de 8 mapas + 8 trazados a 0 + 1 al ordenar paradas.
+  - El mapa de la ruta guarda en caché coordenadas y trazado.
+  - El recálculo se hace sólo si el conductor se desvía 300 m.
+  - Un solo escritor de la posición GPS.
+- Si Google rechaza la llave, el mapa cae a Leaflet al instante; antes «Calculando ruta…» quedaba girando para siempre.
+- Rutas: «No se pudo entregar» por parada y «Cerrar ruta» con paradas pendientes, con motivo. Se puede elegir conductor y dejar la ruta lista para salir después. La duración incluye 10 min por parada.
+- Generar: resumen por sala antes de confirmar, PDF por sala con su estado, errores visibles con «Reintentar» y nunca «Pedido #undefined».
+- Métricas y Crear ruta: los errores se ven como error, no como «sin datos».
+- Finalizar: la revisión de existencias espera 3, 6, 12, 24… s (unas 8 lecturas en vez de 40).
+
+**Base (entorno de pruebas; producción pendiente de aprobación)**
+- Manifiestos de alcance, eficiencia y bloques actualizados para las funciones nuevas.
+
 ## v2.1232.26 — Diferencias: cada salida dice qué va a pasar
 
 - **Diferencias, más claras y compactas**: cada salida es una tarjeta que dice QUÉ VA A PASAR si se elige («La sala le regresa la cantidad a bodega — el producto se queda en bodega…» frente a «Bodega manda el producto — va en la próxima caja…»). Antes la explicación era un párrafo aparte que sólo hablaba de la opción elegida.

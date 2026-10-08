@@ -3,14 +3,18 @@ import Checkbox from '../../components/common/Checkbox';
 import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
-import { SkeletonText } from '../../components/common/StateViews';
+import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import { X, Truck, ChevronUp, ChevronDown, MapPin, User, Package, Clock, ArrowRight, CheckCircle2, Loader2, Navigation, Warehouse, Plus, Trash2, Building2, AlertTriangle, RotateCcw } from 'lucide-react';
 import { signPhotosDeep } from '@nucleo/utils/storageFiles';
 import { useAuth } from '@nucleo/context/AuthContext';
 import PedidoModal from './PedidoModal';
 import { optimizeRoute, optimizarPorCarretera, armarRuta, tramoEnLineaRecta, totalRoute, getDirectionsREST } from '@nucleo/utils/routeOptimizer';
 import { loadGoogleMaps, loadLeaflet, matrizPorCarretera } from '../../plataforma/mapas';
-import { crearRuta, fetchEmployeeDriverInfo, fetchSalasListasParaRuta, fetchReenviosPorDespachar, fetchPedidosDisponiblesParaRuta, fetchSucursalesConCoords, updateRutaStatus } from '@nucleo/data/pedidos';
+import { crearRuta, fetchSalasListasParaRuta, fetchReenviosPorDespachar, fetchPedidosDisponiblesParaRuta, fetchSucursalesConCoords, updateRutaStatus } from '@nucleo/data/pedidos';
+import { fetchConductoresPosibles } from '@nucleo/data/rutas';
+import LiquidSelect from '../../components/common/LiquidSelect';
+import SegmentedControl from '../../components/common/SegmentedControl';
+import { claveDePuntos, crearCache, duracionConParadas, llegadasEstimadas, MIN_POR_PARADA } from './logicaDeRutas';
 import { describirFaltantes } from '@nucleo/utils/tableroDePedidos';
 
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -27,8 +31,21 @@ function fmtMin(min) {
   return `${Math.floor(min / 60)}h ${min % 60}min`;
 }
 
-// Tiempo fijo de descarga por parada — se recalibrará con datos reales
-function svcMin() { return 10; }
+// El tiempo de descarga por parada es `MIN_POR_PARADA` (logicaDeRutas.js).
+
+// ── El mapa y lo que cuesta ─────────────────────────────────────────────────
+// Antes, CADA subida/bajada de una parada borraba el mapa (`innerHTML = ''`),
+// creaba un `google.maps.Map` nuevo —una carga de mapa que se paga— y pedía un
+// trazado nuevo —otra petición que se paga—, aunque el orden ya se hubiera
+// visto. Ahora: el mapa se crea UNA vez por apertura del paso 2, sólo se
+// cambia el trazado; el trazado se pide ~800 ms después del último cambio
+// (subir tres veces seguidas una parada es UN pedido, no tres) y queda en
+// memoria por clave de puntos mientras la página viva. Los números de cada
+// tramo y del regreso salen de la tabla de distancias de la optimización
+// —que ya los trae—, no del trazado.
+const ESPERA_TRAZADO_MS = 800;
+const TOPE_TABLA_MS = 10_000;
+const trazados = crearCache(40);   // `${tipo}:${claveDePuntos}` → trazado
 
 // La bodega cuando todavía no llegaron sus coordenadas (antes, un literal
 // escrito en la línea que lo usaba).
@@ -53,13 +70,23 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
   // `conductorNombre` es el nombre COMPLETO: es lo que queda guardado en la ruta
   // y en la bitácora. Lo que se ve —y lo que dice el aviso a la sucursal— es el
   // corto (`conductorCorto`).
-  const [conductorNombre, setConductorNombre] = useState('');
-  const [conductorCorto,  setConductorCorto]  = useState('');
-  const [conductorPhoto,  setConductorPhoto]  = useState(null);
+  // El conductor ya no es siempre quien arma la ruta: se elige entre la gente
+  // que puede mover rutas (`fetchConductoresPosibles`). Por defecto, uno mismo.
+  const [conductores,     setConductores]     = useState([]);
+  const [conductorId,     setConductorId]     = useState(null);
+  // «Salir ahora» arranca la ruta al crearla (es lo que dispara los avisos de
+  // «en camino» a las salas y marca los reenvíos como salidos —trigger
+  // `avisar_salida_de_ruta`—). «Dejarla lista» la deja en `pendiente`, y se
+  // arranca después con «Iniciar ruta» en la pestaña de Rutas: el mismo
+  // contrato, sólo que más tarde.
+  const [salida,          setSalida]          = useState('ahora');
   const [pedidosDisp,     setPedidosDisp]     = useState([]);
   const [coordsMap,       setCoordsMap]       = useState({});
   const [bodegaCoords,    setBodegaCoords]    = useState(null);
   const [loadingData,     setLoadingData]     = useState(true);
+  // Un error de carga NO es «no hay pedidos»: se dice y se ofrece reintentar.
+  const [loadError,       setLoadError]       = useState(null);
+  const [intentoCarga,    setIntentoCarga]    = useState(0);
   const [sucNameMap,      setSucNameMap]      = useState({}); // erp_sucursal_id → nombre
 
   // Step 1
@@ -69,12 +96,14 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
   const [paradas,        setParadas]        = useState([]);
   // Con qué se miden los tramos: carretera si la optimización pudo pedir la
   // tabla a Google, línea recta si no. Lo usan también los cambios a mano.
-  const medirRef = useRef(tramoEnLineaRecta);
+  // Estado y no ref: el regreso a bodega se deriva de él en el render.
+  const [medir,          setMedir]          = useState(() => tramoEnLineaRecta);
   const [optimizing,     setOptimizing]     = useState(false);
   const [mapsMode,       setMapsMode]       = useState(false);
-  const [returnLeg,      setReturnLeg]      = useState(null);
   const [showAddVisita,  setShowAddVisita]  = useState(false); // picker de encargo extra
-  const mapRef = useRef(null);
+  const mapRef  = useRef(null);
+  const mapaRef = useRef(null);   // { div, tipo, map, … } — el mapa vivo del paso 2
+  const [mapaListo, setMapaListo] = useState(0);
 
   // Submit
   const [submitting,   setSubmitting]   = useState(false);
@@ -84,36 +113,50 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
   // ── Load data on open ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!open) return;
+    let vivo = true;
     setStep(1);
     setSelected(new Set());
     setParadas([]);
-    setReturnLeg(null);
     setMapError(false);
+    setLoadError(null);
     setLoadingData(true);
+    setSalida('ahora');
+    setConductorId(null);
 
-    if (user?.id) {
-      fetchEmployeeDriverInfo(user.id)
-        .then(({ data }) => {
-          setConductorNombre(data ? `${data.first_names} ${data.last_names}`.trim() : (user.email ?? 'Usuario'));
-          setConductorCorto(data ? shortEmployeeName(data) : (user.email ?? 'Usuario'));
-          if (data?.photo_url) { signPhotosDeep(data).then(() => setConductorPhoto(data.photo_url)); } else { setConductorPhoto(null); }
-        });
-    }
+    // Los conductores posibles. Si la lista no llega, el conductor queda en
+    // quien arma la ruta (lo de siempre) y no se bloquea nada.
+    fetchConductoresPosibles().then(async ({ data, error }) => {
+      if (!vivo) return;
+      if (error) console.error('[CrearRutaModal] conductores:', error);
+      const lista = (data ?? []).map(e => ({
+        id: e.id, photo_url: e.photo_url ?? null,
+        nombre: `${e.first_names ?? ''} ${e.last_names ?? ''}`.trim(),
+        corto: shortEmployeeName(e),
+      }));
+      if (lista.some(c => c.photo_url)) await signPhotosDeep(lista).catch(() => {});
+      if (!vivo) return;
+      setConductores(lista);
+      setConductorId(prev => prev ?? (user?.id ?? null));
+    });
 
     // Primero los pedidos abiertos y DESPUÉS sus salas: así la segunda
     // consulta va acotada a esos pedidos y descarta las que ya salieron.
     fetchPedidosDisponiblesParaRuta().then(async (pedRes) => {
+      // Un error no puede pasar por «no hay pedidos para despachar».
+      if (pedRes.error) throw pedRes.error;
       const [pssRes, coordRes, reenRes] = await Promise.all([
         fetchSalasListasParaRuta((pedRes.data ?? []).map(p => p.id)),
         fetchSucursalesConCoords(),
         fetchReenviosPorDespachar(),
       ]);
-      // Un error no puede pasar por «no hay pedidos para despachar».
-      if (pedRes.error) throw pedRes.error;
       if (pssRes.error) throw pssRes.error;
       if (reenRes.error) throw reenRes.error;
+      // Sin coordenadas no hay nombres de sala ni bodega: antes este error se
+      // ignoraba y la lista salía con «Suc. 3» y la ruta sin mapa.
+      if (coordRes.error) throw coordRes.error;
       return [pedRes, pssRes, coordRes, reenRes];
     }).then(([pedRes, pssRes, coordRes, reenRes]) => {
+      if (!vivo) return;
       const pedidoMap = {};
       for (const p of (pedRes.data ?? [])) pedidoMap[p.id] = p;
 
@@ -173,10 +216,30 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
       }
     }).catch(err => {
       console.error('[CrearRutaModal] load error:', err?.message ?? err);
+      if (vivo) setLoadError(mensajeAmigable(err, 'No se pudieron cargar los pedidos listos para salir.'));
     }).finally(() => {
-      setLoadingData(false);
+      if (vivo) setLoadingData(false);
     });
-  }, [open, user?.id, user?.email, initialKeys]);
+    return () => { vivo = false; };
+  }, [open, user?.id, initialKeys, intentoCarga]);
+
+  // El conductor elegido (y su nombre COMPLETO, que es lo que queda guardado en
+  // la ruta y en la bitácora; lo que se ve es el corto). Si la lista no llegó
+  // o quien arma no está en ella, se usa la sesión como antes.
+  const conductorElegido = useMemo(() => {
+    const c = conductores.find(x => String(x.id) === String(conductorId));
+    if (c) return c;
+    return { id: user?.id ?? null, nombre: user?.name ?? user?.email ?? 'Usuario', corto: user?.name ? shortEmployeeName({ name: user.name }) : (user?.email ?? 'Usuario'), photo_url: null };
+  }, [conductores, conductorId, user]);
+  const conductorNombre = conductorElegido.nombre;
+  const conductorCorto  = conductorElegido.corto;
+  const conductorPhoto  = conductorElegido.photo_url;
+  const esUnoMismo      = String(conductorElegido.id) === String(user?.id);
+  const opcionesConductor = useMemo(() => {
+    const ops = conductores.map(c => ({ value: String(c.id), label: c.corto + (String(c.id) === String(user?.id) ? ' (tú)' : '') }));
+    if (user?.id && !ops.some(o => o.value === String(user.id))) ops.unshift({ value: String(user.id), label: `${conductorElegido.corto} (tú)` });
+    return ops;
+  }, [conductores, user?.id, conductorElegido.corto]);
 
   // ── Derived ────────────────────────────────────────────────────────────────
   const selectedItems = useMemo(() =>
@@ -197,9 +260,13 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
   }, [pedidosDisp, selected.size]);
 
   // ── Timeline con tiempos acumulados (reactivo al orden) ───────────────────
+  // El acumulado de cada parada es la hora de LLEGADA: conducción hasta ahí más
+  // las descargas de las paradas anteriores. Antes sólo sumaba conducción —el
+  // `svc` se calculaba y no se usaba—, y una ruta de tres salas se estimaba en
+  // 15 min cuando duró 125.
   const timeline = useMemo(() => {
-    let cumul = 0;
-    return paradas.map(stop => {
+    const llegadas = llegadasEstimadas(paradas);
+    return paradas.map((stop, i) => {
       const cajas      = stop.items?.reduce((s, it) => s + (it.total_cajas      ?? 0), 0) ?? 0;
       const electrolit = stop.items?.reduce((s, it) => s + (it.cajas_electrolit ?? 0), 0) ?? 0;
       // `cajas_especiales` es la LISTA de cajas, no un número: `0 + [{…}]` daba
@@ -208,131 +275,69 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
       // cuando había cajas especiales ni cuando no.
       const especiales = stop.items?.reduce((s, it) => s + (it.cajas_especiales?.length ?? 0), 0) ?? 0;
       const drive = stop.dur_min ?? 0;
-      const svc   = svcMin(cajas);
-      cumul += drive;
-      return { stop, cajas, electrolit, especiales, drive, svc, cumul };
+      return { stop, cajas, electrolit, especiales, drive, cumul: llegadas[i] };
     });
   }, [paradas]);
 
+  // El regreso a bodega se mide con la MISMA medida que los tramos (la tabla
+  // de carretera de la optimización, o la línea recta): ya no hace falta pedir
+  // un trazado a Google para conocer este número.
+  const returnLeg = useMemo(() => {
+    if (!paradas.length || !bodegaCoords) return null;
+    const ultima = [...paradas].reverse().find(p => coordsMap[p.erp_sucursal_id]);
+    return ultima ? medir(coordsMap[ultima.erp_sucursal_id], bodegaCoords) : null;
+  }, [paradas, coordsMap, bodegaCoords, medir]);
+
   const totalDriveMin = paradas.reduce((s, p) => s + (p.dur_min ?? 0), 0) + (returnLeg?.dur_min ?? 0);
-  const totalTime     = (timeline[timeline.length - 1]?.cumul ?? 0) + (returnLeg?.dur_min ?? 0);
+  const totalTime     = duracionConParadas(totalDriveMin, paradas.length);
   const totalDist     = totalRoute(paradas.filter(s => s.dist_m != null)).dist_m + (returnLeg?.dist_m ?? 0);
 
   // Clave estable que cambia cuando el orden o composición de paradas cambia
   const paradasKey = paradas.map(p => `${p._uid ?? p.erp_sucursal_id}-${p.orden}`).join('|');
 
-  // ── Map rendering (Google Maps JS → Leaflet + proxy fallback) ───────────
+  // ── El mapa: se crea UNA vez por paso 2 (Google Maps JS → Leaflet) ───────
   useEffect(() => {
-    if (step !== 2 || !paradas.length || !bodegaCoords) return;
+    if (step !== 2 || !bodegaCoords || !mapRef.current || mapError) return;
+    const div = mapRef.current;
+    if (mapaRef.current?.div === div) return;          // ya está
     let cancelled = false;
     let authFailed = false;
 
-    // Limpiar mapa anterior antes de re-renderizar
-    if (mapRef.current) mapRef.current.innerHTML = '';
-
-    // Haversine return leg — siempre recalcular al cambiar paradas
-    const lastCoords = coordsMap[paradas[paradas.length - 1]?.erp_sucursal_id];
-    if (lastCoords) {
-      // Con la misma medida que los tramos (carretera si se conoce), no con una
-      // fórmula aparte: el 40 km/h estaba copiado acá a mano.
-      setReturnLeg(medirRef.current(lastCoords, bodegaCoords));
-    }
-
-    const orderedPoints = [
-      bodegaCoords,
-      ...paradas.map(p => coordsMap[p.erp_sucursal_id]).filter(Boolean),
-      bodegaCoords,
-    ];
-    const fallbackLatLngs = orderedPoints.map(p => [p.lat, p.lng]);
-
-    // Leaflet con polyline (real vía proxy o recta como último recurso)
-    async function initLeaflet(useProxyPolyline = true) {
+    async function initLeaflet() {
       try {
         const L = await loadLeaflet();
-        if (cancelled || !mapRef.current) return;
-        mapRef.current.innerHTML = '';
-        const lmap = L.map(mapRef.current, { zoomControl: true, attributionControl: true });
+        if (cancelled || mapRef.current !== div) return;
+        div.innerHTML = '';
+        const lmap = L.map(div, { zoomControl: true, attributionControl: true });
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
           maxZoom: 18,
         }).addTo(lmap);
-
-        let polylineLatLngs = fallbackLatLngs;
-        if (useProxyPolyline) {
-          try {
-            const dirs = await getDirectionsREST(orderedPoints);
-            if (dirs && !cancelled) {
-              polylineLatLngs = dirs.polylinePoints;
-              if (dirs.returnLeg) setReturnLeg(dirs.returnLeg);
-              setMapsMode(true);
-              console.log('[maps] Directions proxy OK — ruta real dibujada');
-            }
-          } catch (e) {
-            console.warn('[maps] Directions proxy falló:', e?.message ?? e);
-          }
-        }
-
-        if (cancelled) return;
-        L.polyline(polylineLatLngs, { color: '#6366f1', weight: 5, opacity: 0.85 }).addTo(lmap);
-        L.marker([bodegaCoords.lat, bodegaCoords.lng], {
-          icon: L.divIcon({ className: '', html: `<div style="width:30px;height:30px;border-radius:50%;background:#1e1b4b;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:13px">🏭</div>`, iconSize: [30,30], iconAnchor: [15,15] }),
-          title: 'Bodega',
-        }).addTo(lmap);
-        paradas.forEach((stop, i) => {
-          const c = coordsMap[stop.erp_sucursal_id]; if (!c) return;
-          L.marker([c.lat, c.lng], {
-            icon: L.divIcon({ className: '', html: `<div style="width:26px;height:26px;border-radius:50%;background:#6366f1;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:bold">${i+1}</div>`, iconSize: [26,26], iconAnchor: [13,13] }),
-            title: stop.suc_name,
-          }).addTo(lmap);
-        });
-        lmap.fitBounds(polylineLatLngs.filter(p => p[0] && p[1]), { padding: [20, 20] });
+        mapaRef.current = { div, tipo: 'leaflet', L, map: lmap, capa: L.layerGroup().addTo(lmap) };
+        setMapaListo(n => n + 1);
       } catch (e) {
         console.error('[maps] Leaflet init error:', e);
         if (!cancelled) setMapError(true);
       }
     }
 
-    // Intentar Google Maps JS SDK primero
     const prevAuthFailure = window.gm_authFailure;
     window.gm_authFailure = () => {
-      console.warn('[maps] gm_authFailure — Maps JS key inválida, usando Leaflet');
-      if (!authFailed) { authFailed = true; initLeaflet(); }
+      console.warn('[maps] gm_authFailure — usando Leaflet');
+      if (!authFailed) { authFailed = true; mapaRef.current = null; initLeaflet(); }
       if (prevAuthFailure) prevAuthFailure();
     };
 
     loadGoogleMaps().then(maps => {
-      if (cancelled || !mapRef.current) return;
-      console.log('[maps] Google Maps JS cargado OK');
-      const origin  = new maps.LatLng(bodegaCoords.lat, bodegaCoords.lng);
-      const mapInst = new maps.Map(mapRef.current, {
+      if (cancelled || authFailed || mapRef.current !== div) return;
+      const map = new maps.Map(div, {
         zoom: 11, center: { lat: bodegaCoords.lat, lng: bodegaCoords.lng },
         disableDefaultUI: true, zoomControl: true, gestureHandling: 'cooperative',
         styles: [{ featureType:'poi', stylers:[{visibility:'off'}] }, { featureType:'transit', stylers:[{visibility:'off'}] }],
       });
-      if (authFailed) return;
-      const dr = new maps.DirectionsRenderer({ map: mapInst, suppressMarkers: true, polylineOptions: { strokeColor: '#6366f1', strokeWeight: 5, strokeOpacity: 0.85 } });
-      new maps.DirectionsService().route({
-        origin, destination: origin,
-        waypoints: paradas.filter(p => coordsMap[p.erp_sucursal_id]).map(p => ({ location: new maps.LatLng(coordsMap[p.erp_sucursal_id].lat, coordsMap[p.erp_sucursal_id].lng), stopover: true })),
-        travelMode: maps.TravelMode.DRIVING, optimizeWaypoints: false,
-      }, (result, status) => {
-        if (cancelled || authFailed) return;
-        console.log('[maps] DirectionsService status:', status);
-        if (status === 'OK') {
-          dr.setDirections(result);
-          const retLeg = result.routes[0].legs.at(-1);
-          if (retLeg) setReturnLeg({ dist_m: retLeg.distance.value, dur_min: Math.max(1, Math.round(retLeg.duration.value / 60)) });
-          setMapsMode(true);
-        } else {
-          new maps.Polyline({ path: fallbackLatLngs.map(p => ({ lat: p[0], lng: p[1] })), map: mapInst, strokeColor: '#6366f1', strokeWeight: 4, strokeOpacity: 0.7 });
-        }
-        const mkSvg = (label, fill, size) => encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size/2}" cy="${size/2}" r="${size/2-1.5}" fill="${fill}" stroke="white" stroke-width="2.5"/><text x="${size/2}" y="${size/2+4}" text-anchor="middle" fill="white" font-size="${size*0.4}" font-weight="bold">${label}</text></svg>`);
-        new maps.Marker({ position: origin, map: mapInst, zIndex: 100, title: 'Bodega', icon: { url: `data:image/svg+xml;utf8,${mkSvg('🏭','#1e1b4b',34)}`, scaledSize: new maps.Size(34,34), anchor: new maps.Point(17,17) } });
-        paradas.forEach((stop, i) => {
-          const c = coordsMap[stop.erp_sucursal_id]; if (!c) return;
-          new maps.Marker({ position: { lat: c.lat, lng: c.lng }, map: mapInst, zIndex: 90-i, title: stop.suc_name, icon: { url: `data:image/svg+xml;utf8,${mkSvg(i+1,'#6366f1',30)}`, scaledSize: new maps.Size(30,30), anchor: new maps.Point(15,15) } });
-        });
-      });
+      const dr = new maps.DirectionsRenderer({ map, suppressMarkers: true, preserveViewport: true, polylineOptions: { strokeColor: '#6366f1', strokeWeight: 5, strokeOpacity: 0.85 } });
+      mapaRef.current = { div, tipo: 'google', maps, map, dr, capas: [] };
+      setMapaListo(n => n + 1);
     }).catch(err => {
       console.warn('[maps] loadGoogleMaps error:', err?.message ?? err);
       if (!cancelled && !authFailed) initLeaflet();
@@ -342,14 +347,101 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
       cancelled = true;
       window.gm_authFailure = prevAuthFailure;
     };
+  }, [step, bodegaCoords, mapError]);
+
+  // Al salir del paso 2 el `<div>` del mapa se desmonta: el mapa vivo se suelta.
+  useEffect(() => { if (step !== 2) mapaRef.current = null; }, [step]);
+
+  // ── El trazado: marcadores al instante, carretera con espera y caché ─────
+  useEffect(() => {
+    const m = mapaRef.current;
+    if (!m || step !== 2 || !paradas.length || !bodegaCoords) return;
+    let vigente = true;
+
+    const conCoords = paradas.filter(p => coordsMap[p.erp_sucursal_id]);
+    const puntos = [bodegaCoords, ...conCoords.map(p => coordsMap[p.erp_sucursal_id]), bodegaCoords];
+    const latLngs = puntos.map(p => [p.lat, p.lng]);
+    const clave = `${m.tipo}:${claveDePuntos(puntos)}`;
+
+    // Marcadores y encuadre: no cuestan nada, se pintan ya.
+    if (m.tipo === 'google') {
+      const { maps, map } = m;
+      m.capas.forEach(c => c.setMap(null));
+      m.capas = [];
+      const mkSvg = (label, fill, size) => encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size/2}" cy="${size/2}" r="${size/2-1.5}" fill="${fill}" stroke="white" stroke-width="2.5"/><text x="${size/2}" y="${size/2+4}" text-anchor="middle" fill="white" font-size="${size*0.4}" font-weight="bold">${label}</text></svg>`);
+      m.capas.push(new maps.Marker({ position: bodegaCoords, map, zIndex: 100, title: 'Bodega', icon: { url: `data:image/svg+xml;utf8,${mkSvg('🏭','#1e1b4b',34)}`, scaledSize: new maps.Size(34,34), anchor: new maps.Point(17,17) } }));
+      paradas.forEach((stop, i) => {
+        const c = coordsMap[stop.erp_sucursal_id]; if (!c) return;
+        m.capas.push(new maps.Marker({ position: c, map, zIndex: 90-i, title: stop.suc_name, icon: { url: `data:image/svg+xml;utf8,${mkSvg(i+1,'#6366f1',30)}`, scaledSize: new maps.Size(30,30), anchor: new maps.Point(15,15) } }));
+      });
+      const b = new maps.LatLngBounds();
+      puntos.forEach(p => b.extend(p));
+      map.fitBounds(b, 30);
+    } else {
+      const { L, map, capa } = m;
+      capa.clearLayers();
+      L.marker([bodegaCoords.lat, bodegaCoords.lng], {
+        icon: L.divIcon({ className: '', html: `<div style="width:30px;height:30px;border-radius:50%;background:#1e1b4b;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:13px">🏭</div>`, iconSize: [30,30], iconAnchor: [15,15] }),
+        title: 'Bodega',
+      }).addTo(capa);
+      paradas.forEach((stop, i) => {
+        const c = coordsMap[stop.erp_sucursal_id]; if (!c) return;
+        L.marker([c.lat, c.lng], {
+          icon: L.divIcon({ className: '', html: `<div style="width:26px;height:26px;border-radius:50%;background:#6366f1;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:bold">${i+1}</div>`, iconSize: [26,26], iconAnchor: [13,13] }),
+          title: stop.suc_name,
+        }).addTo(capa);
+      });
+      map.fitBounds(latLngs, { padding: [20, 20] });
+    }
+
+    // La línea del trazado: de la caché, o recta mientras llega la de verdad.
+    const pintar = (trazado) => {
+      if (!vigente) return;
+      if (m.tipo === 'google') {
+        m.recta?.setMap(null); m.recta = null;
+        if (trazado) { m.dr.setMap(m.map); m.dr.setDirections(trazado); }
+        else {
+          m.dr.setMap(null);
+          m.recta = new m.maps.Polyline({ path: puntos, map: m.map, strokeColor: '#6366f1', strokeWeight: 4, strokeOpacity: 0.7 });
+        }
+      } else {
+        m.linea?.remove();
+        m.linea = m.L.polyline(trazado ?? latLngs, { color: '#6366f1', weight: 5, opacity: 0.85 }).addTo(m.map);
+      }
+      setMapsMode(!!trazado);
+    };
+
+    const enCache = trazados.get(clave);
+    if (enCache) { pintar(enCache); return () => { vigente = false; }; }
+    pintar(null);
+    if (conCoords.length === 0) return () => { vigente = false; };
+
+    const t = setTimeout(() => {
+      if (!vigente) return;
+      if (m.tipo === 'google') {
+        new m.maps.DirectionsService().route({
+          origin: bodegaCoords, destination: bodegaCoords,
+          waypoints: conCoords.map(p => ({ location: coordsMap[p.erp_sucursal_id], stopover: true })),
+          travelMode: m.maps.TravelMode.DRIVING, optimizeWaypoints: false,
+        }, (result, status) => {
+          if (status === 'OK') { trazados.set(clave, result); pintar(result); }
+          else console.warn('[maps] trazado:', status);
+        });
+      } else {
+        getDirectionsREST(puntos)
+          .then(dirs => { if (dirs?.polylinePoints) { trazados.set(clave, dirs.polylinePoints); pintar(dirs.polylinePoints); } })
+          .catch(e => console.warn('[maps] trazado por el intermediario falló:', e?.message ?? e));
+      }
+    }, ESPERA_TRAZADO_MS);
+
+    return () => { vigente = false; clearTimeout(t); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, bodegaCoords, paradasKey]);
+  }, [mapaListo, paradasKey]);
 
   // ── Step 1 → 2: optimize ──────────────────────────────────────────────────
   const handleOptimize = useCallback(async () => {
     if (!selectedItems.length) return;
     setOptimizing(true);
-    setReturnLeg(null);
 
     const sucMap = new Map();
     for (const item of selectedItems) {
@@ -370,15 +462,20 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
     const bodega = bodegaCoords ?? BODEGA_POR_DEFECTO;
 
     let optimized;
-    let usedMaps = false;
     try {
-      const r = await optimizarPorCarretera(stopsWithCoords, bodega, matrizPorCarretera);
+      // Con tope: si la tabla no contesta (llave rechazada, sin red), la
+      // promesa de Google no termina NUNCA y el botón quedaba en «Calculando
+      // ruta…» para siempre — medido en el entorno de pruebas el 2026-10-08.
+      // A los `TOPE_TABLA_MS` se cae a la línea recta, como ante un error.
+      const r = await optimizarPorCarretera(stopsWithCoords, bodega, (puntos) => Promise.race([
+        matrizPorCarretera(puntos),
+        new Promise((_, rechazar) => setTimeout(() => rechazar(new Error('la tabla de distancias no contestó')), TOPE_TABLA_MS)),
+      ]));
       optimized = r.paradas;
-      medirRef.current = r.medir;
-      usedMaps  = true;
+      setMedir(() => r.medir);
     } catch {
       optimized = optimizeRoute(stopsWithCoords, bodega);
-      medirRef.current = tramoEnLineaRecta;
+      setMedir(() => tramoEnLineaRecta);
     }
 
     const ts = Date.now();
@@ -390,7 +487,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
     ].map((s, i) => ({ ...s, _uid: `stop-${i}-${ts}` }));
 
     setParadas(allOrdered);
-    setMapsMode(usedMaps);
+    setMapsMode(false);   // lo dice el trazado cuando llega
     setOptimizing(false);
     setStep(2);
   }, [selectedItems, coordsMap, bodegaCoords]);
@@ -402,8 +499,8 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
   // desde la que tenía antes y los totales —que se guardan con la ruta—
   // quedaban mal.
   const rearmar = useCallback(
-    (lista) => armarRuta(lista, bodegaCoords ?? BODEGA_POR_DEFECTO, medirRef.current),
-    [bodegaCoords],
+    (lista) => armarRuta(lista, bodegaCoords ?? BODEGA_POR_DEFECTO, medir),
+    [bodegaCoords, medir],
   );
 
   const moveStop = useCallback((idx, dir) => {
@@ -453,16 +550,17 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
       const totals = totalRoute(paradas.filter(s => s.dist_m != null));
 
       const { data: rutaId, error } = await crearRuta({
-        p_conductor_id:      user?.id ?? null,
+        p_conductor_id:      conductorElegido.id ?? user?.id ?? null,
         p_conductor_nombre:  conductorNombre,
         p_paradas:           rpcParadas,
         p_distancia_total_m: (totalDist || totals.dist_m) || null,
-        p_duracion_min:      totalDriveMin || totals.dur_min || null,
+        // Con las descargas (`MIN_POR_PARADA` por parada), no sólo conducir.
+        p_duracion_min:      totalTime || totals.dur_min || null,
         p_creado_por:        user?.id ?? null,
       });
       if (error) throw error;
 
-      // Auto-iniciar + guardar encargos extra
+      // Iniciar (si sale ahora) + guardar encargos extra
       const visitasData = paradas
         .filter(s => s.isEncargo)
         .map(s => ({ erp_sucursal_id: s.erp_sucursal_id, suc_name: s.suc_name, orden: s.orden, dist_m: s.dist_m ?? null, dur_min: s.dur_min ?? null }));
@@ -470,8 +568,14 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
       // si falla, la ruta queda en «pendiente» y abajo igual se avisaba a las
       // salas que su pedido «salió de bodega». Se corta antes — la ruta ya
       // existe y se arranca desde la pestaña de Rutas, que es la recuperación.
-      const { error: salidaErr } = await updateRutaStatus(rutaId, { status: 'en_ruta', salida_at: new Date().toISOString(), ...(visitasData.length > 0 ? { visitas: visitasData } : {}) });
-      if (salidaErr) throw salidaErr;
+      const patch = {
+        ...(salida === 'ahora' ? { status: 'en_ruta', salida_at: new Date().toISOString() } : {}),
+        ...(visitasData.length > 0 ? { visitas: visitasData } : {}),
+      };
+      if (Object.keys(patch).length > 0) {
+        const { error: salidaErr } = await updateRutaStatus(rutaId, patch);
+        if (salidaErr) throw salidaErr;
+      }
 
       // `RUTA_CREADA` lo anota `crearRuta` en la capa de datos.
 
@@ -487,7 +591,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
     } finally {
       setSubmitting(false);
     }
-  }, [conductorNombre, conductorCorto, paradas, submitting, user, totalDist, totalDriveMin, onCreated, onClose]);
+  }, [conductorElegido.id, conductorNombre, paradas, submitting, user, totalDist, totalTime, salida, onCreated, onClose]);
 
   // El gate mira el montaje-para-SALIDA y no `open` a secas: cortar en el
   // mismo tick del cierre desmontaba el componente antes de que
@@ -518,17 +622,39 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
       <PedidoModal.Body className="px-5 py-4 space-y-4">
         {loadingData ? (
           <div className="flex items-center justify-center py-10"><SkeletonText lines={4} className="w-full max-w-md" /></div>
+        ) : loadError ? (
+          <EmptyState
+            compact
+            icon={AlertTriangle}
+            iconClass="text-danger-text"
+            title="No se pudieron cargar los pedidos"
+            subtitle={loadError}
+            action={<Button variant="secondary" icon={RotateCcw} onClick={() => setIntentoCarga(n => n + 1)}>Reintentar</Button>}
+          />
         ) : step === 1 ? (
           <>
-            {/* Conductor (auto = usuario actual) */}
-            <div className="flex items-center gap-2.5 px-3 py-2.5 bg-chart-3/10 rounded-xl border border-chart-3/30">
+            {/* Conductor: por defecto quien arma la ruta, pero se puede elegir
+                a otra persona que pueda mover rutas. */}
+            <div className="flex flex-wrap items-center gap-2.5 px-3 py-2.5 bg-chart-3/10 rounded-xl border border-chart-3/30">
               {conductorPhoto
-                ? <img src={conductorPhoto} className="w-7 h-7 rounded-full object-cover border-2 border-chart-3/30 shrink-0" />
+                ? <img src={conductorPhoto} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-chart-3/30 shrink-0" />
                 : <div className="w-7 h-7 rounded-full bg-chart-3-solid flex items-center justify-center shrink-0"><User size={13} className="text-white" /></div>
               }
-              <div>
-                <p className="text-micro font-semibold text-chart-3-text uppercase tracking-wider">Conductor (tú)</p>
-                <p className="text-body-sm font-bold text-chart-3-text">{conductorCorto || '…'}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-micro font-semibold text-chart-3-text uppercase tracking-wider">{esUnoMismo ? 'Conductor (tú)' : 'Conductor'}</p>
+                {opcionesConductor.length > 1 ? (
+                  <div className="mt-1 max-w-[260px]">
+                    <LiquidSelect
+                      ariaLabel="Conductor"
+                      value={String(conductorElegido.id ?? '')}
+                      onChange={v => setConductorId(v || null)}
+                      options={opcionesConductor}
+                      compact clearable={false}
+                    />
+                  </div>
+                ) : (
+                  <p className="text-body-sm font-bold text-chart-3-text">{conductorCorto || '…'}</p>
+                )}
               </div>
             </div>
 
@@ -613,7 +739,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                   <MapPin size={20} className="text-content-3" />
                   <p className="text-label font-semibold text-content-3">Mapa no disponible</p>
                   <p className="text-caption text-content-3 max-w-[220px]">
-                    La API key de Google Maps no está habilitada para Maps JavaScript API o tiene restricciones de dominio.
+                    El mapa no se pudo cargar. La ruta, los tiempos y las distancias de abajo siguen valiendo.
                   </p>
                 </div>
               ) : (
@@ -637,7 +763,21 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                 : <div className="w-6 h-6 rounded-full bg-chart-3-solid flex items-center justify-center shrink-0"><User size={11} className="text-white" /></div>
               }
               <span className="text-body-sm text-content-2 font-medium">Conductor:</span>
-              <span className="text-body-sm font-bold text-content">{conductorCorto}</span>
+              <span className="text-body-sm font-bold text-content">{conductorCorto}{esUnoMismo ? ' (tú)' : ''}</span>
+            </div>
+
+            {/* ── Cuándo sale ───────────────────────────────────────────── */}
+            {/* Salir es lo que avisa a las salas «en camino» y da por salidos
+                los reenvíos: con «Dejarla lista» eso pasa al apretar «Iniciar
+                ruta» en la pestaña de Rutas, no al crearla. */}
+            <div className="flex flex-wrap items-center gap-2">
+              <SegmentedControl size="sm" tone="chart-3" label="Cuándo sale" value={salida} onChange={setSalida}
+                options={[{ value: 'ahora', label: 'Salir ahora' }, { value: 'despues', label: 'Dejarla lista para después' }]} />
+              <span className="text-caption text-content-3">
+                {salida === 'ahora'
+                  ? 'Las salas reciben el aviso de «en camino» al crearla.'
+                  : 'Queda armada; se inicia desde Rutas y ahí avisa a las salas.'}
+              </span>
             </div>
 
             {/* ── Timeline de paradas ───────────────────────────────────── */}
@@ -801,7 +941,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                   <div className="flex-1 bg-warning/10 rounded-xl px-3 py-2 border border-warning/30 text-center">
                     <p className="text-micro text-warning-text font-semibold uppercase tracking-wider">Tiempo total</p>
                     <p className="text-subtitle font-black text-warning-text">{fmtMin(totalTime)}</p>
-                    <p className="text-micro text-warning-text/60">conducir + descargas</p>
+                    <p className="text-micro text-warning-text/60">conducir + {MIN_POR_PARADA} min por parada</p>
                   </div>
                   <div className="flex-1 bg-surface-card-hover rounded-xl px-3 py-2 border border-divider text-center">
                     <p className="text-micro text-content-2 font-semibold uppercase tracking-wider">Solo conducir</p>
@@ -819,7 +959,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
         {step === 1 ? (
           <>
             <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-            <Button tone="chart-3" disabled={selectedItems.length === 0 || optimizing} onClick={handleOptimize}>{optimizing
+            <Button tone="chart-3" disabled={selectedItems.length === 0 || optimizing || !!loadError} onClick={handleOptimize}>{optimizing
                 ? <><Loader2 size={14} className="animate-spin" />Calculando ruta…</>
                 : <><ArrowRight size={14} />Ver ruta optimizada</>
               }</Button>
@@ -827,7 +967,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
         ) : (
           <>
             <div className="flex flex-col items-start gap-1 flex-1 min-w-0">
-              <Button variant="secondary" onClick={() => { setStep(1); setReturnLeg(null); setSubmitError(null); }}>← Atrás</Button>
+              <Button variant="secondary" onClick={() => { setStep(1); setSubmitError(null); }}>← Atrás</Button>
               {submitError && (
                 <p className="text-label text-danger-text flex items-center gap-1 pl-1">
                   <AlertTriangle size={11} /> {submitError}
@@ -835,7 +975,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
               )}
             </div>
             <Button tone="chart-3" disabled={submitting} onClick={handleSubmit}>{submitting ? <Loader2 size={14} className="animate-spin" /> : <Truck size={14} />}
-              Crear Ruta</Button>
+              {salida === 'ahora' ? 'Crear y salir' : 'Crear ruta'}</Button>
           </>
         )}
       </PedidoModal.Footer>

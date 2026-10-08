@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { X, MapPin, CheckCircle2, Clock, Crosshair, Truck, Radio, RefreshCw } from 'lucide-react';
@@ -9,6 +9,37 @@ import { seguirPosicion } from '../../plataforma/ubicacion';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { hora12 } from '@nucleo/utils/hora';
 import { escucharCambios } from '@nucleo/data/tiempoReal';
+import { hayRastreoDeFondo } from '../../plataforma/rastreoRuta';
+import { claveDePuntos, crearCache, debeRecalcular } from './logicaDeRutas';
+
+// ── Lo que no cambia mientras la página vive ────────────────────────────────
+// Cada trazado por carretera es una petición que se paga. Abrir el mapa de la
+// misma ruta dos veces pedía dos trazados idénticos, y cada apertura volvía a
+// leer las coordenadas de las salas, que no cambian en el día. Las dos cosas
+// quedan en memoria del módulo hasta recargar la página.
+let coordsPromesa = null;
+function coordenadasDeSalas() {
+  if (!coordsPromesa) {
+    coordsPromesa = fetchSucursalesConCoords().then((res) => {
+      if (res.error) { coordsPromesa = null; throw res.error; }
+      return res.data ?? [];
+    }, (err) => { coordsPromesa = null; throw err; });
+  }
+  return coordsPromesa;
+}
+const trazados = crearCache(30);   // clave de puntos → DirectionsResult
+
+// El recálculo desde la posición del conductor NO se cachea (el origen cambia
+// siempre), así que lleva su propio freno: nunca dos en menos de un minuto,
+// aunque el GPS siga diciendo «desviado» (un desvío largo a propósito, o un
+// GPS que salta).
+const RECALCULO_MIN_MS = 60_000;
+
+/** El trazado de un DirectionsResult como `[{lat,lng}]`, para medir desvíos. */
+function trazadoDe(result) {
+  const path = result?.routes?.[0]?.overview_path ?? [];
+  return path.map(p => ({ lat: p.lat(), lng: p.lng() }));
+}
 
 
 function fmtTime(iso) {
@@ -33,6 +64,9 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
   const watchIdRef      = useRef(null);
   const latestGpsPosRef = useRef(null);   // sin stale closures en intervalos
   const firstWriteRef   = useRef(false);
+  const trazadoRef      = useRef([]);     // el trazado vigente, para medir desvíos
+  const claveRecalcRef  = useRef('');     // qué paradas pendientes tenía ese trazado
+  const ultimoRecalcRef = useRef(0);
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [coordsMap,    setCoordsMap]    = useState({});
@@ -46,8 +80,18 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
   const [recalcCount,  setRecalcCount]  = useState(0);
 
   const [localParadas, setLocalParadas] = useState(null);
-  const paradas = (localParadas ?? [...(ruta?.ruta_pedidos ?? [])]).sort((a, b) => a.orden_entrega - b.orden_entrega);
+  // Memorizada: el efecto del recálculo depende de ella, y recalculada en cada
+  // render era un arreglo nuevo cada vez (ver el recálculo más abajo).
+  const paradas = useMemo(
+    () => [...(localParadas ?? ruta?.ruta_pedidos ?? [])].sort((a, b) => a.orden_entrega - b.orden_entrega),
+    [localParadas, ruta?.ruta_pedidos],
+  );
   const entregadas = paradas.filter(p => p.entregado_at).length;
+  // Clave ESTABLE (una cadena) de lo que falta por entregar. `paradas` es un
+  // arreglo nuevo en cada render: depender de él reiniciaba el efecto siempre.
+  const clavePendientes = claveDePuntos(paradas
+    .filter(p => !p.entregado_at && !p.no_entregado_at)
+    .map(p => coordsMap[p.erp_sucursal_id]));
 
   // ── Sync GPS pos → ref (evita stale closures en intervalos) ────────────────
   useEffect(() => { latestGpsPosRef.current = gpsPos; }, [gpsPos]);
@@ -87,6 +131,9 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
     leafletDrvRef.current   = null;
     latestGpsPosRef.current = null;
     firstWriteRef.current   = false;
+    trazadoRef.current      = [];
+    claveRecalcRef.current  = '';
+    ultimoRecalcRef.current = 0;
     watchIdRef.current?.();
     watchIdRef.current = null;
   }, [open]);
@@ -94,11 +141,11 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
   // ── Cargar coordenadas de sucursales ────────────────────────────────────────
   useEffect(() => {
     if (!open) return;
-    fetchSucursalesConCoords()
-      .then(({ data }) => {
+    coordenadasDeSalas()
+      .then((data) => {
         const cm = {};
         let bodega = null;
-        for (const row of data ?? []) {
+        for (const row of data) {
           const loc = row.branch?.settings?.location ?? {};
           const lat = parseFloat(loc.lat), lng = parseFloat(loc.lng);
           if (!isNaN(lat) && !isNaN(lng)) {
@@ -108,7 +155,8 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
         }
         setCoordsMap(cm);
         setBodegaCoords(bodega);
-      });
+      })
+      .catch((err) => console.error('[RutaMap] coordenadas:', err?.message ?? err));
   }, [open]);
 
   // ── GPS propio — solo conductor ─────────────────────────────────────────────
@@ -165,50 +213,66 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
   }, [open, isConductor, ruta.id]);
 
   // ── Conductor: escribir posición en DB cada 30 s ───────────────────────────
+  // Sólo si NO hay rastreo de fondo (`usePedidosData`) escribiendo ya la
+  // posición de esta ruta: eran dos escritores sobre la misma fila. Se
+  // pregunta en cada vuelta, no al montar, porque el de fondo puede arrancar o
+  // detenerse con el mapa abierto.
   useEffect(() => {
     if (!open || !isConductor) return;
     const interval = setInterval(() => {
       const pos = latestGpsPosRef.current;
-      if (!pos) return;
+      if (!pos || hayRastreoDeFondo(String(ruta.id))) return;
       upsertRutaLocation(ruta.id, pos.lat, pos.lng).then(() => {}, () => {});
     }, 30_000);
     return () => clearInterval(interval);
   }, [open, isConductor, ruta.id]);
 
-  // ── Conductor: recalcular ruta cada 2 minutos ───────────────────────────────
+  // ── Conductor: recalcular el trazado cuando hace falta ───────────────────
+  // Antes era «cada 2 minutos» y en la práctica NUNCA: el efecto dependía de
+  // `paradas`, un arreglo nuevo en cada render, así que el intervalo se
+  // reiniciaba antes de cumplirse. Ahora no hay reloj: se pide un trazado nuevo
+  // desde la posición del conductor sólo si se alejó más de
+  // `UMBRAL_DESVIO_M` del vigente o si cambió lo que falta por entregar — y
+  // nunca dos en menos de `RECALCULO_MIN_MS`.
   useEffect(() => {
-    if (!open || !isConductor || !mapReady || !bodegaCoords) return;
-    const interval = setInterval(() => {
-      const pos = latestGpsPosRef.current;
-      if (!pos || !mapsApiRef.current || !dirRendererRef.current) return;
-      const pending = paradas.filter(p => !p.entregado_at && coordsMap[p.erp_sucursal_id]);
-      if (!pending.length) return;
-      const maps = mapsApiRef.current;
-      new maps.DirectionsService().route({
-        origin:      new maps.LatLng(pos.lat, pos.lng),
-        destination: new maps.LatLng(bodegaCoords.lat, bodegaCoords.lng),
-        waypoints:   pending.map(p => ({
-          location: new maps.LatLng(coordsMap[p.erp_sucursal_id].lat, coordsMap[p.erp_sucursal_id].lng),
-          stopover: true,
-        })),
-        travelMode:        maps.TravelMode.DRIVING,
-        optimizeWaypoints: false,
-      }, (result, status) => {
-        if (status === 'OK') {
-          dirRendererRef.current.setDirections(result);
-          setRecalcCount(c => c + 1);
-        }
-      });
-    }, 120_000); // 2 minutos
-    return () => clearInterval(interval);
-  }, [open, isConductor, mapReady, bodegaCoords, paradas, coordsMap]);
+    if (!open || !isConductor || !mapReady || !bodegaCoords || !gpsPos) return;
+    const maps = mapsApiRef.current;
+    if (!maps || !dirRendererRef.current) return;
+    const recalcular = debeRecalcular({
+      pos: gpsPos, polilinea: trazadoRef.current,
+      clavePendientes, claveAnterior: claveRecalcRef.current,
+    });
+    if (!recalcular) return;
+    if (Date.now() - ultimoRecalcRef.current < RECALCULO_MIN_MS) return;
+    const pending = paradas.filter(p => !p.entregado_at && !p.no_entregado_at && coordsMap[p.erp_sucursal_id]);
+    if (!pending.length) return;
+    ultimoRecalcRef.current = Date.now();
+    claveRecalcRef.current  = clavePendientes;
+    new maps.DirectionsService().route({
+      origin:      new maps.LatLng(gpsPos.lat, gpsPos.lng),
+      destination: new maps.LatLng(bodegaCoords.lat, bodegaCoords.lng),
+      waypoints:   pending.map(p => ({
+        location: new maps.LatLng(coordsMap[p.erp_sucursal_id].lat, coordsMap[p.erp_sucursal_id].lng),
+        stopover: true,
+      })),
+      travelMode:        maps.TravelMode.DRIVING,
+      optimizeWaypoints: false,
+    }, (result, status) => {
+      if (status === 'OK' && dirRendererRef.current) {
+        dirRendererRef.current.setDirections(result);
+        trazadoRef.current = trazadoDe(result);
+        setRecalcCount(c => c + 1);
+      }
+    });
+  }, [open, isConductor, mapReady, bodegaCoords, gpsPos, clavePendientes, coordsMap, paradas]);
 
   // ── Actualizar marcador GPS conductor en el mapa ────────────────────────────
   useEffect(() => {
     if (!gpsPos || !isConductor) return;
 
-    // Primera posición: escribir inmediatamente a DB
-    if (!firstWriteRef.current) {
+    // Primera posición: escribir inmediatamente a DB — salvo que el rastreo
+    // de fondo ya la esté escribiendo (ver arriba).
+    if (!firstWriteRef.current && !hayRastreoDeFondo(String(ruta.id))) {
       firstWriteRef.current = true;
       upsertRutaLocation(ruta.id, gpsPos.lat, gpsPos.lng).then(() => {}, () => {});
     }
@@ -334,7 +398,17 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
       });
       dirRendererRef.current = dr;
 
-      if (withCoords.length > 0) {
+      // El trazado de la ruta completa depende sólo de los puntos y su orden:
+      // si ya se pidió en esta página, se reusa (ver `trazados`).
+      const clave = claveDePuntos([bodegaCoords, ...withCoords.map(p => coordsMap[p.erp_sucursal_id]), bodegaCoords]);
+      const pintar = (result) => {
+        dr.setDirections(result);
+        trazadoRef.current = trazadoDe(result);
+        claveRecalcRef.current = clavePendientes;
+      };
+      if (clave && trazados.has(clave)) {
+        pintar(trazados.get(clave));
+      } else if (clave) {
         new maps.DirectionsService().route({
           origin, destination: origin,
           waypoints: withCoords.map(p => ({
@@ -343,7 +417,8 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
           })),
           travelMode: maps.TravelMode.DRIVING, optimizeWaypoints: false,
         }, (result, status) => {
-          if (!cancelled && !authFailed && status === 'OK') dr.setDirections(result);
+          if (status === 'OK') trazados.set(clave, result);
+          if (!cancelled && !authFailed && status === 'OK') pintar(result);
         });
       }
 
@@ -469,7 +544,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
           {/* Info recálculo automático — conductor */}
           {isConductor && gpsStatus === 'ok' && (
             <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-brand rounded-lg px-2 py-1 text-micro font-semibold text-white shadow-sm">
-              <RefreshCw size={8} /> Recalcula c/2 min
+              <RefreshCw size={8} /> Recalcula si te desvías
             </div>
           )}
         </div>

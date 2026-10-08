@@ -1,6 +1,7 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C) — shared by the main tab and
 // its extracted sub-components, kept here so neither side duplicates it.
 import { hora12 } from './hora';
+import { diaDe, diaSV } from './fecha';
 
 export function fmtMin(min) {
     if (min == null || isNaN(min) || min < 0) return null;
@@ -311,14 +312,12 @@ export function calcSolicitado(row) {
     return Math.max(0, Math.ceil(row.max_qty_snapshot - row.stock_packs_snapshot));
 }
 
+// El mes de EL SALVADOR, no el del equipo: los dos rangos de abajo se comparan
+// contra `created_at` pasado a día de la sala (`diaDe`), así que el mes también
+// tiene que ser el de la sala. Con el reloj del equipo, una computadora con
+// otra zona veía otro mes en la primera y la última noche.
 export function currentMonthRange() {
-    const now = new Date();
-    const y = now.getFullYear(), m = now.getMonth();
-    const pad = n => String(n).padStart(2, '0');
-    const fini = `${y}-${pad(m + 1)}-01`;
-    const last = new Date(y, m + 1, 0);
-    const ffin = `${y}-${pad(m + 1)}-${pad(last.getDate())}`;
-    return `${fini}|${ffin}`;
+    return rangoDeMes(0);
 }
 
 // ── Lo que el tablero y la app nativa leen IGUAL (2026-10-06) ───────────────
@@ -330,9 +329,26 @@ export function currentMonthRange() {
 /** El rango de un mes como `desde|hasta` (0 = este mes, -1 = el anterior). */
 export function rangoDeMes(desplazamiento = 0, hoy = new Date()) {
     const pad = n => String(n).padStart(2, '0');
-    const ini = new Date(hoy.getFullYear(), hoy.getMonth() + desplazamiento, 1);
-    const fin = new Date(ini.getFullYear(), ini.getMonth() + 1, 0);
-    return `${ini.getFullYear()}-${pad(ini.getMonth() + 1)}-01|${fin.getFullYear()}-${pad(fin.getMonth() + 1)}-${pad(fin.getDate())}`;
+    // El mes de hoy EN LA SALA (`diaSV`), y desde ahí aritmética de calendario
+    // en UTC, que no depende de la zona del equipo.
+    const [y, m] = diaSV(hoy).split('-').map(Number);
+    const ini = new Date(Date.UTC(y, m - 1 + desplazamiento, 1));
+    const fin = new Date(Date.UTC(ini.getUTCFullYear(), ini.getUTCMonth() + 1, 0));
+    return `${ini.getUTCFullYear()}-${pad(ini.getUTCMonth() + 1)}-01|${fin.getUTCFullYear()}-${pad(fin.getUTCMonth() + 1)}-${pad(fin.getUTCDate())}`;
+}
+
+/**
+ * ¿Cae este pedido dentro de `desde|hasta`? El día es el de EL SALVADOR
+ * (`diaDe`), no el de UTC: `created_at.slice(0, 10)` leía el día en Greenwich,
+ * así que un pedido creado el 31 a las 7 pm de la sala ya «era» del 1 del mes
+ * siguiente — salía del tablero de su mes y entraba en el del otro.
+ */
+export function enRangoDeDias(iso, rango) {
+    if (!rango) return true;
+    const [desde, hasta] = rango.split('|');
+    const d = diaDe(iso);
+    if (!d) return !desde && !hasta;
+    return (!desde || d >= desde) && (!hasta || d <= hasta);
 }
 
 /** Los filtros de estado del tablero — los de `FilterPill`. */
@@ -374,24 +390,26 @@ export function tieneObservacion(r, sinIngresar = 0) {
  * `'all'` esconde los completados SIN observación: el que tiene algo abierto
  * sigue a la vista aunque diga «completado».
  */
+//
+// Las cuatro ramas preguntan por el estado de la SALA (`estadoDeLaSala`), no
+// por `pedido_status` (2026-10-08). Tres de ellas todavía miraban el del
+// PEDIDO, que es el defecto que ya costó el rótulo de la tarjeta: en un pedido
+// de varias salas, una sala ya completada seguía en «Todos» y fuera de
+// «Completados» mientras otra del mismo pedido no terminara, y una sala con
+// observación cuyo pedido ya se había cerrado salía de «Con observación».
 export function filtrarPedidos(rows, { estado = 'all', rango = null, observado = r => tieneObservacion(r) } = {}) {
     let filas = rows ?? [];
+    const completada = r => estadoDeLaSala(r) === 'completado';
     if (estado === 'completado') {
-        filas = filas.filter(r => r.pedido_status === 'completado');
+        filas = filas.filter(completada);
     } else if (estado === 'observacion') {
-        filas = filas.filter(r => (observado(r) && r.pedido_status !== 'completado') || faltantesDeLaSala(r).hay);
+        filas = filas.filter(r => (observado(r) && !completada(r)) || faltantesDeLaSala(r).hay);
     } else if (estado !== 'all') {
         filas = filas.filter(r => estadoDeLaSala(r) === estado);
     } else {
-        filas = filas.filter(r => r.pedido_status !== 'completado' || observado(r));
+        filas = filas.filter(r => !completada(r) || observado(r));
     }
-    if (rango) {
-        const [desde, hasta] = rango.split('|');
-        filas = filas.filter(r => {
-            const d = r.created_at?.slice(0, 10);
-            return (!desde || d >= desde) && (!hasta || d <= hasta);
-        });
-    }
+    if (rango) filas = filas.filter(r => enRangoDeDias(r.created_at, rango));
     return filas;
 }
 
@@ -563,11 +581,9 @@ export function minutosLegibles(min) {
 
 /** Cuántos pedidos tiene cada sala en un rango `desde|hasta` (las tarjetas del tablero). */
 export function pedidosPorSala(rows, rango = null) {
-    const [desde, hasta] = (rango ?? '').split('|');
     const cuenta = new Map();
     (rows ?? []).forEach(r => {
-        const d = r.created_at?.slice(0, 10);
-        if ((desde && d < desde) || (hasta && d > hasta)) return;
+        if (!enRangoDeDias(r.created_at, rango)) return;
         cuenta.set(r.erp_sucursal_id, (cuenta.get(r.erp_sucursal_id) ?? 0) + 1);
     });
     return cuenta;

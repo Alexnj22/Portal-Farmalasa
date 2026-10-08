@@ -15,13 +15,60 @@
  *   4. se guarda el detalle en `pedido_sucursal_status`.
  * Los avisos a Bodega los dispara la base (`avisar_camino_del_pedido`).
  *
- * Devuelve `{ tipo }` o LANZA: quien llama decide cómo decirlo.
+ * Devuelve `{ tipo, electrolitSinUbicar }` o LANZA: quien llama decide cómo
+ * decirlo. `electrolitSinUbicar` son las cajas de Electrolit que faltaron y no
+ * se pudo saber de qué sabor eran: quedan anotadas en la sala, sin renglón.
  */
 import {
     avanzarEtapaDePedidoEnSala, fetchPedidoItemsPendientesIds, fetchPedidoSucursalStatus,
     updatePedidoItemsFaltaCaja, updatePedidoSucursalStatus,
 } from './pedidos';
-import { renglonesDeCajasFaltantes } from '../utils/cajasEspeciales';
+import { cajasDeRenglon, renglonesDeCajasFaltantes } from '../utils/cajasEspeciales';
+
+/**
+ * Qué renglones bloquea «faltaron N cajas de Electrolit» — sólo cuando se
+ * puede SABER cuáles son.
+ *
+ * La sala responde un número, no un sabor: la pantalla de llegada pregunta
+ * «¿cuántas cajas de Electrolit no llegaron?». Antes se marcaban los primeros N
+ * renglones de Electrolit de la lista (`slice(0, n)`), o sea que con dos sabores
+ * y una caja faltante se daba por no llegada la de MANZANA aunque faltara la de
+ * COCO —la misma clase de error que costó el pedido #178 con las especiales— y
+ * además contaba renglones donde la sala contaba CAJAS.
+ *
+ * Se puede saber en dos casos, y sólo en esos se marca:
+ *   · faltan todas — entonces son todos los renglones;
+ *   · todas son del mismo producto — da igual cuál de sus renglones.
+ * Si no, NO se marca ninguno: el faltante queda anotado en la sala
+ * (`electrolit_faltantes`) y `sinUbicar` lo dice para que quien llama lo avise.
+ * Marcar uno al azar bloquea un producto que está en el estante y deja contar
+ * como llegado el que no vino; sin marcar, el que no llegó sale como diferencia
+ * al contarlo, que es la verdad.
+ *
+ * Los candidatos son los de `cajas_electrolit` (Electrolit despachado por CAJA)
+ * que NO viajan como caja especial: ésas se preguntan aparte, con su etiqueta
+ * E1…En, y ya tienen su propio mapa (`renglonesDeCajasFaltantes`). Las cajas
+ * se cuentan sobre lo que SALIÓ (`cantidad_enviada`), no sobre lo asignado.
+ */
+export function renglonesDeElectrolitFaltante(rows, faltantes) {
+    const n = Number(faltantes) || 0;
+    if (n <= 0) return { ids: [], sinUbicar: 0 };
+    const candidatos = (rows ?? []).filter((r) =>
+        (r?.products?.nombre ?? '').toLowerCase().includes('electrolit')
+        && (r?.dispatch_tipo ?? '').toUpperCase() === 'CAJA'
+        && r?.caja_especial !== true
+        && !r?.falta_caja
+        && r?.status === 'pendiente')
+        .map((r) => ({ r, cajas: cajasDeRenglon({ ...r, cantidad_asignada: r.cantidad_enviada ?? r.cantidad_asignada }) }))
+        .filter((c) => c.cajas > 0);
+    if (!candidatos.length) return { ids: [], sinUbicar: n };
+    const total = candidatos.reduce((s, c) => s + c.cajas, 0);
+    const productos = new Set(candidatos.map((c) => c.r.erp_product_id ?? c.r.products?.nombre));
+    if (n >= total || productos.size === 1) {
+        return { ids: candidatos.map((c) => c.r.id), sinUbicar: 0 };
+    }
+    return { ids: [], sinUbicar: n };
+}
 
 // Cuenta TODO lo que no llegó, no sólo las cajas numeradas. Escrito con
 // `cajasFaltantes` a secas, el 1-sep-2026 Salud 1 reportó cuatro cajas de
@@ -80,12 +127,13 @@ export async function confirmarLlegadaDePedido({
         }
     }
 
-    if (hasFaltaElec && rows.length > 0) {
-        const faltaElecItems = rows
-            .filter((r) => (r.products?.nombre ?? '').toLowerCase().includes('electrolit') && !r.falta_caja && r.status !== 'recibido')
-            .slice(0, electrolitFaltantes);
-        if (faltaElecItems.length > 0) {
-            const { error } = await updatePedidoItemsFaltaCaja(faltaElecItems.map((r) => r.id), true);
+    // Ver `renglonesDeElectrolitFaltante`: sólo se marca lo que se sabe cuál es.
+    let electrolitSinUbicar = 0;
+    if (hasFaltaElec) {
+        const { ids, sinUbicar } = renglonesDeElectrolitFaltante(rows, electrolitFaltantes);
+        electrolitSinUbicar = sinUbicar;
+        if (ids.length > 0) {
+            const { error } = await updatePedidoItemsFaltaCaja(ids, true);
             if (error) throw error;
         }
     }
@@ -120,5 +168,5 @@ export async function confirmarLlegadaDePedido({
         cajas_extra_notas: cajasExtra > 0 ? (cajasExtraNotas ?? null) : null,
     });
     if (metaErr) throw metaErr;
-    return { tipo };
+    return { tipo, electrolitSinUbicar };
 }

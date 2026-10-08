@@ -7,8 +7,9 @@ import { useSearchParams } from 'react-router-dom';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import {
     BarChart2, Clock, Truck, PackageCheck,
-    Pause, ClipboardList, Building2, RefreshCw, Search,
+    Pause, ClipboardList, Building2, RefreshCw, Search, TriangleAlert,
 } from 'lucide-react';
+import Button from '../../components/common/Button';
 import { ERP_NAMES } from '@nucleo/constants/erp';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -74,9 +75,14 @@ export default function TabMetricas({ searchTerm = '' }) {
     const [razones,     setRazones]     = useState([]);
     const [loading,     setLoading]     = useState(true);
     const [refreshing,  setRefreshing]  = useState(false);
+    // Un error NO es «sin tiempos registrados»: antes los dos se pintaban
+    // igual, y el consejo «prueba con un período más largo» no arregla una
+    // lectura que falló.
+    const [errorCarga,  setErrorCarga]  = useState(false);
 
     const load = useCallback(async (days) => {
         setRefreshing(true);
+        setErrorCarga(false);
         try {
             const hasta  = toDateStr(new Date());
             const desdeD = new Date();
@@ -95,6 +101,7 @@ export default function TabMetricas({ searchTerm = '' }) {
             console.error('[TabMetricas]', err?.message ?? err);
             setKpis([]);
             setRazones([]);
+            setErrorCarga(true);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -114,7 +121,7 @@ export default function TabMetricas({ searchTerm = '' }) {
     }, [sucursalStats, searchTerm]);
 
     const maxConteo = razones[0]?.conteo || 1;
-    const sinDatos  = !loading && kpis.length === 0;
+    const sinDatos  = !loading && !errorCarga && kpis.length === 0;
 
     return (
         <div className="p-3 md:p-5 flex flex-col gap-4">
@@ -149,7 +156,18 @@ export default function TabMetricas({ searchTerm = '' }) {
                 </div>
             </div>
 
-            {sinDatos ? (
+            {errorCarga && !refreshing ? (
+                <div data-surface="card">
+                    <EmptyState
+                        compact
+                        icon={TriangleAlert}
+                        iconClass="text-danger-text"
+                        title="No se pudieron cargar los tiempos"
+                        subtitle="La lectura falló. Revisa la conexión e intenta de nuevo."
+                        action={<Button variant="secondary" icon={RefreshCw} onClick={() => { setLoading(true); load(days); }}>Reintentar</Button>}
+                    />
+                </div>
+            ) : sinDatos ? (
                 <div data-surface="card">
                     <EmptyState
                         compact

@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1233.3 — Pedidos: reenvío compatible con la base actual y recargas que no se tragan cambios ajenos
+
+Correcciones de la revisión producción contra dev:
+- **El reenvío funciona con la base de producción actual.** Que el reenvío salga en una ruta depende de la columna `ruta_pedidos.reenvio_ciclo` y de la migración que lo hace salir con la ruta. `reenvioSaleEnRuta()` lo pregunta una vez por carga de página. Sin la columna, el reenvío sale como hoy: enviado al pedirlo, con `reenvio_bodega_at` y su aviso a la sala, y no se abre «Nueva ruta». Antes:
+  - el ciclo quedaba pendiente para siempre;
+  - la sala no podía confirmar su llegada;
+  - «Nueva ruta» dejaba de abrir para todas las salas (error de columna inexistente).
+- **Las recargas en vivo ya no se tragan cambios de otra persona.** Una recarga agendada por un aviso se salta sólo si otra carga ARRANCÓ después de que llegó ese aviso. Antes comparaba contra «ahora» y descartaba lo que otra persona cambiaba en los 2 s siguientes a cualquier carga.
+
 ## v2.1233.2 — Pedidos: la lista es la vista oficial
 
 - **La lista es la vista oficial de «Pedidos»**, en escritorio y en el teléfono. Se quitan la pestaña temporal «Pedidos (lista)» (un enlace viejo `?tab=pedidos_lista` abre «Pedidos») y la vista de tarjetas (~840 líneas menos).

@@ -21,6 +21,7 @@ import {
 } from './pedidos';
 import { renglonesDeCajasFaltantes } from '../utils/cajasEspeciales';
 import { codigoDeNegocio, rpcConRespaldo } from './rpcConRespaldo';
+import { reenvioSaleEnRuta } from './pedidos';
 
 function yaEstabaHecho(res, codigo) {
     if (res.error && codigoDeNegocio(res.error) === codigo) {
@@ -90,20 +91,29 @@ export async function pedirReenvioSala({ pedidoId, sucId, cajas = [], especiales
         p_especiales: etiquetas, p_electrolits: electrolits,
     }, async () => {
         const now = new Date().toISOString();
+        const enRuta = await reenvioSaleEnRuta();
         const { data: pss, error: pssErr } = await fetchPedidoSucursalStatus(pedidoId, sucId, 'reenvios_historial');
         if (pssErr) return { data: null, error: pssErr };
         const historial = pss?.reenvios_historial ?? [];
         const ciclo     = historial.length + 1;
-        // El ciclo nace PENDIENTE (2026-10-07): `sent_at` nulo y sin tocar
-        // `reenvio_bodega_at`. Cuando la ruta sale, la base le pone `sent_at`
-        // y avisa (`avisar_salida_de_ruta`).
-        const nuevoCiclo = { ciclo, cajas, electrolits, especiales: etiquetas, sent_at: null, sent_by: null, solicitado_at: now, solicitado_por: userId, arrived_at: null, arrived_tipo: null, cajas_ok: [], cajas_danadas: [], cajas_aun_faltantes: [] };
+        // Con la base al día, el ciclo nace PENDIENTE (2026-10-07): `sent_at`
+        // nulo y sin tocar `reenvio_bodega_at`; cuando la ruta sale, la base le
+        // pone `sent_at` y avisa (`avisar_salida_de_ruta`). Sin esa migración
+        // (`reenvioSaleEnRuta` en falso), sale como siempre: enviado al
+        // pedirlo, y `reenvio_bodega_at` dispara el aviso a la sala.
+        const nuevoCiclo = {
+            ciclo, cajas, electrolits, especiales: etiquetas,
+            sent_at: enRuta ? null : now, sent_by: enRuta ? null : userId,
+            solicitado_at: now, solicitado_por: userId,
+            arrived_at: null, arrived_tipo: null, cajas_ok: [], cajas_danadas: [], cajas_aun_faltantes: [],
+        };
         const { error } = await updatePedidoSucursalStatus(pedidoId, sucId, {
             reenvio_por:        userId,
+            ...(enRuta ? {} : { reenvio_bodega_at: now }),
             reenvios_historial: [...historial, nuevoCiclo],
         });
         if (error) return { data: null, error };
-        return { data: { ciclo, clave: `${pedidoId}__${sucId}__r${ciclo}` }, error: null };
+        return { data: { ciclo, clave: `${pedidoId}__${sucId}__r${ciclo}`, enRuta }, error: null };
     });
 }
 

@@ -162,7 +162,11 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                         {/* Encabezado */}
                         <div className="flex items-center gap-2">
                             <span className="flex-1 text-label font-bold text-content truncate">{item.products?.nombre}</span>
-                            {et && <Badge variant={et.variante} size="sm" className="shrink-0" uppercase={false}>{et.label}</Badge>}
+                            {/* Faltante y sobrante ya los dice «Faltan 1» / «1 de más»
+                                en la línea de abajo, con el número. */}
+                            {et && !['faltante', 'sobrante'].includes(item.error_tipo) && (
+                                <Badge variant={et.variante} size="sm" className="shrink-0" uppercase={false}>{et.label}</Badge>
+                            )}
                         </div>
 
                         {/* Las cifras son la EVIDENCIA del problema: de ahí sale
@@ -601,21 +605,22 @@ function Cifras({ item }) {
     const delta    = (fisico == null || enviado == null) ? null : fisico - enviado;
     const tonoFis  = delta == null || delta === 0 ? 'text-content'
                    : delta < 0 ? 'text-danger-text' : 'text-success-text';
+    // Una sola línea (2026-10-08): «Enviado 1 → Contado 0 · Faltan 1». Eran
+    // tres columnas con rótulo en versalitas encima de cada número, que para
+    // dos cifras y una resta ocupaban un renglón y medio.
     return (
-        <div className="flex items-end gap-4 flex-wrap">
-            {sol != null && <Cifra rotulo="Solicitado" valor={sol} tono="text-content-2" />}
-            <Cifra rotulo="Enviado" valor={enviado} tono="text-content-2" />
-            <ArrowRight size={13} className="text-content-3 mb-1.5 shrink-0" />
+        <div className="flex items-center gap-x-2 gap-y-1 flex-wrap text-body-sm">
+            <span className="text-content-3">Enviado <strong className="font-bold text-content-2 tabular-nums">{enviado ?? '—'}</strong></span>
+            <ArrowRight size={13} className="text-content-3 shrink-0" aria-hidden="true" />
             {/* «Contado» y no «Físico»: es el mismo número que la pantalla de
-                recepción pide como «¿cuántos contaste?» y que el carril de abajo
-                llama «corrigió lo contado». Tres nombres para un dato hacen
-                dudar de si son el mismo. */}
-            <Cifra rotulo="Contado" valor={fisico} tono={tonoFis} />
+                recepción pide como «¿cuántos contaste?». */}
+            <span className="text-content-3">Contado <strong className={`font-bold tabular-nums ${tonoFis}`}>{fisico ?? '—'}</strong></span>
             {delta != null && delta !== 0 && (
-                <Badge variant={delta < 0 ? 'danger' : 'success'} size="sm" uppercase={false} className="mb-1">
+                <Badge variant={delta < 0 ? 'danger' : 'success'} size="sm" uppercase={false}>
                     {delta < 0 ? `Faltan ${-delta}` : `${delta} de más`}
                 </Badge>
             )}
+            {sol != null && <span className="text-caption text-content-3 ml-auto tabular-nums">de {sol} solicitados</span>}
         </div>
     );
 }

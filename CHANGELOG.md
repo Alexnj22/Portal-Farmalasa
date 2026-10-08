@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1259.2 — App: GPS de la ruta en segundo plano también en Android
+
+- **El rastreo de la ruta con la app cerrada, también en Android.** La configuración de `expo-location` sólo lo habilitaba en iOS (`isIosBackgroundLocationEnabled`). Se agregan `isAndroidBackgroundLocationEnabled` (permiso de ubicación «Todo el tiempo») e `isAndroidForegroundServiceEnabled` (el servicio con el aviso fijo «Ruta en curso», que Android exige para seguir marcando en segundo plano). El flujo de permisos de `plataforma/rastreoDeFondo.js` ya pedía primero «mientras se usa» y después «siempre», que es el orden que Android 11+ exige.
+- **Necesita compilar la app de nuevo** para Android: es configuración nativa. Para publicarla en Google Play hay que declarar el uso de ubicación en segundo plano en la consola de Play (formulario de permisos sensibles, con un video del flujo).
+
 ## v2.1259.1 — App: cupón con el material del rango, tarjetas que no se dibujaban y colores fieles
 
 - **El cupón del mes lleva el material del nivel o del rango** (Zafiro, Rubí, Diamante, Oro, Platino…), animado: una luz que va y viene sola sobre las facetas o el metal. Usado, sigue en gris y se corta por las muescas.

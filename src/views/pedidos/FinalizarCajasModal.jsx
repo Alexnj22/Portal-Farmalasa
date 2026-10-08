@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
-import { ChevronLeft, Loader2, X, Package, PackageCheck, RotateCcw, TriangleAlert, Search, RotateCw } from 'lucide-react';
+import { ChevronLeft, Loader2, X, Package, PackageCheck, RotateCcw, TriangleAlert, Search, Ban, SearchX } from 'lucide-react';
 import PedidoModal from './PedidoModal';
 import { getExactPageGroups } from '@nucleo/utils/pedidoPrint';
 import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
@@ -12,6 +12,7 @@ import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import { lanzarSimulacroTraslado, fetchTrasladoErp, updatePedidoSucursalStatus } from '@nucleo/data/pedidos';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { buscarProductos } from '@nucleo/data/busquedaProductos';
 
 // Un solo «sin productos» para siempre: `items` es dependencia del efecto que
 // reinicia el diálogo, y un `[]` nuevo en cada render lo volvía a correr —y a
@@ -186,6 +187,33 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
     // Solo los productos que de verdad salen: los que la bodega no pudo cubrir
     // nunca estuvieron en la caja, así que no hay nada que confirmar sobre ellos.
     const despachables = items.filter(r => !r.sin_stock && (r.cantidad_asignada ?? 0) > 0);
+
+    // La búsqueda dice POR QUÉ no encuentra (2026-10-08): «zx» sin resultados
+    // no decía si el producto no existe, no va en el pedido o ya se está
+    // corrigiendo arriba. Lo del pedido se mira acá; el catálogo, sólo si
+    // aquí no hay nada, con la búsqueda canónica.
+    const termino = busqueda.trim();
+    const nombresDe = r => [r.products?.nombre, r.products?.laboratorios?.nombre];
+    const resultados = termino.length >= 2
+        ? smartFilter(termino, despachables.filter(r => !(String(r.id) in ajustes)), nombresDe).results
+        : [];
+    const yaCorregido = termino.length >= 2 && resultados.length === 0
+        ? smartFilter(termino, despachables.filter(r => String(r.id) in ajustes), nombresDe).results[0] ?? null : null;
+    const sinAsignar = termino.length >= 2 && resultados.length === 0 && !yaCorregido
+        ? smartFilter(termino, items.filter(r => !despachables.includes(r)), nombresDe).results[0] ?? null : null;
+    const buscarEnCatalogo = termino.length >= 2 && resultados.length === 0 && !yaCorregido && !sinAsignar;
+    const [catalogo, setCatalogo] = useState({ termino: '', nombre: null, cargando: false });
+    useEffect(() => {
+        if (!buscarEnCatalogo) return undefined;
+        let vivo = true;
+        const t = setTimeout(async () => {
+            const { data, error } = await buscarProductos(termino, { select: 'id, nombre', limite: 1 });
+            if (!vivo) return;
+            if (error) console.warn('[FinalizarCajas] búsqueda en catálogo:', error.message);
+            setCatalogo({ termino, nombre: data?.[0]?.nombre ?? null, cargando: false, fallo: !!error });
+        }, 300);
+        return () => { vivo = false; clearTimeout(t); };
+    }, [buscarEnCatalogo, termino]);
 
     // Un ajuste es una EXCEPCIÓN: solo cuenta si difiere de lo asignado.
     const ajustesLista = Object.entries(ajustes)
@@ -457,8 +485,12 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                                     <p className="text-micro text-content-3 mt-0.5 leading-snug">{a.motivo}</p>
                                                 )}
                                             </div>
-                                            <Button variant="ghost" size="xs" icon={RotateCw} iconOnly
-                                                aria-label="Dejar como se asignó"
+                                            {/* Cerrar = el producto vuelve a salir como se
+                                                asignó. Era una flecha circular, que se leía
+                                                como «actualizar». */}
+                                            <Button variant="ghost" size="xs" icon={X} iconOnly
+                                                aria-label="Quitar la corrección: sale como se asignó"
+                                                title="Quitar la corrección"
                                                 onClick={() => quitarAjuste(id)} />
                                         </div>
                                         <div className="flex items-center gap-2 mt-2">
@@ -477,8 +509,15 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                                 />
                                             </div>
                                             <span className="text-label text-content-3">sale</span>
-                                            {enCero && (
+                                            {enCero ? (
                                                 <Badge variant="danger" size="sm" uppercase={false} className="ml-auto">no sale</Badge>
+                                            ) : (
+                                                // Un toque para «no salió nada» en vez de borrar y
+                                                // escribir un cero.
+                                                <Button variant="ghost" size="xs" icon={Ban} className="ml-auto text-danger-text"
+                                                    onClick={() => setCantidad(id, 0)}>
+                                                    No sale
+                                                </Button>
                                             )}
                                         </div>
                                     </div>
@@ -496,14 +535,13 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                             onChange={e => setBusqueda(e.target.value)}
                             placeholder="¿Salió distinto algún otro? Búscalo aquí"
                         />
-                        {busqueda.trim().length >= 2 && (
+                        {resultados.length > 0 && (
                             <div className="mt-2 space-y-1">
-                                {smartFilter(busqueda, despachables.filter(r => !(String(r.id) in ajustes)),
-                                    r => [r.products?.nombre, r.products?.laboratorios?.nombre])
-                                    .results.slice(0, 6).map(r => (
-                                        <button key={r.id} type="button"
+                                {resultados.slice(0, 6).map(r => (
+                                    <div key={r.id} className="flex items-center gap-1 pl-3 pr-1 py-1 rounded-xl bg-surface-card-hover border border-divider hover:border-chart-1/40 transition-colors">
+                                        <button type="button"
                                             onClick={() => { setCantidad(r.id, Number(r.cantidad_asignada ?? 0), ''); setBusqueda(''); }}
-                                            className="w-full text-left px-3 py-2 rounded-xl bg-surface-card-hover border border-divider hover:border-chart-1/40 transition-colors">
+                                            className="flex-1 min-w-0 text-left py-1">
                                             <span className="text-label font-medium text-content-2 truncate block">
                                                 {r.products?.nombre ?? '—'}
                                             </span>
@@ -511,8 +549,26 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                                 asignado {r.cantidad_asignada}
                                             </span>
                                         </button>
-                                    ))}
+                                        <Button variant="ghost" size="xs" icon={Ban} className="text-danger-text"
+                                            onClick={() => { setCantidad(r.id, 0, ''); setBusqueda(''); }}>
+                                            No sale
+                                        </Button>
+                                    </div>
+                                ))}
                             </div>
+                        )}
+                        {termino.length >= 2 && resultados.length === 0 && (
+                            <p className="mt-2 flex items-start gap-2 px-1 text-caption text-content-3" role="status">
+                                <SearchX size={14} className="shrink-0 mt-0.5" aria-hidden="true" />
+                                <span>
+                                    {yaCorregido ? <>Ya lo estás corrigiendo arriba: <strong className="text-content-2">{yaCorregido.products?.nombre}</strong>.</>
+                                        : sinAsignar ? <><strong className="text-content-2">{sinAsignar.products?.nombre}</strong> va en el pedido, pero no se le asignó nada: no hay de dónde sacarlo.</>
+                                        : catalogo.cargando || catalogo.termino !== termino ? 'Buscando en el catálogo…'
+                                        : catalogo.fallo ? <>Ningún producto de este pedido coincide con «{termino}».</>
+                                        : catalogo.nombre ? <><strong className="text-content-2">{catalogo.nombre}</strong> no va en este pedido.</>
+                                        : <>No existe ningún producto con «{termino}». Revisa cómo lo escribiste.</>}
+                                </span>
+                            </p>
                         )}
                     </div>
 

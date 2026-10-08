@@ -161,7 +161,10 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
                     id={name}
                     type={type}
                     name={name}
-                    value={value || ''}
+                    // `|| ''` borraba el CERO: un campo de cantidad con 0 se veía
+                    // vacío —«no llegó ninguno» parecía «no lo conté»— (recepción
+                    // de pedidos, 2026-10-08). Sólo null/undefined son «vacío».
+                    value={value ?? ''}
                     onChange={handleInputChange}
                     placeholder={placeholder}
                     readOnly={readOnly}

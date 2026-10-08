@@ -38,7 +38,9 @@ export default function Mineral({ material, x, y, activa = true }) {
   }));
   if (!efecto) return null;
   return (
-    <Canvas style={StyleSheet.absoluteFill} onSize={tam} pointerEvents="none">
+    // sRGB: el mismo espacio de color con que se diseñó y con que salen las
+    // franjas de Wallet (en P3, por defecto en iOS, el zafiro se veía verdoso).
+    <Canvas style={StyleSheet.absoluteFill} onSize={tam} colorSpace="srgb" pointerEvents="none">
       <Fill><Shader source={efecto} uniforms={uniforms} /></Fill>
     </Canvas>
   );

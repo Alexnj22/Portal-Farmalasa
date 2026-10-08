@@ -221,7 +221,7 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
           {/* Una sombra suave abajo: el nombre y el saldo se leen sobre cualquier material. */}
           <LinearGradient pointerEvents="none" colors={['transparent', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.38)']}
             locations={[0, 0.5, 1]} style={StyleSheet.absoluteFill} />
-          <BrilloTarjeta x={x} y={y} barrido={barrido} />
+          <BrilloTarjeta x={x} y={y} barrido={barrido} sinArcoiris={MATERIALES.includes(nivel)} />
 
           {/* El logo al centro: llena el espacio entre el chip y el nombre
               (pedido del usuario, 2026-10-06), con un halo suave. */}
@@ -269,7 +269,7 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
           {MATERIALES.includes(nivel) ? <Mineral material={nivel} x={x} y={y} activa={false} />
             : <EfectoNivel nivel={nivel} activa={activa && !reducir} x={x} />}
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.42)' }]} />
-          <BrilloTarjeta x={x} y={y} barrido={barrido} />
+          <BrilloTarjeta x={x} y={y} barrido={barrido} sinArcoiris={MATERIALES.includes(nivel)} />
           <View style={[estilos.contenido, { flexDirection: 'row', alignItems: 'center', gap: 18 }]}>
             <View style={estilos.qr}>
               {codigo ? <QRCode value={QR_DE(codigo)} size={118} color="#1A0822" backgroundColor="#FFFFFF" /> : null}

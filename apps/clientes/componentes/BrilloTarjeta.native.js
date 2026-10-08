@@ -18,7 +18,9 @@ const ARCOIRIS = [
   'rgba(90,200,250,0.35)', 'rgba(175,82,222,0.35)', 'rgba(255,0,128,0)',
 ];
 
-export default function BrilloTarjeta({ x, y, barrido }) {
+// `sinArcoiris`: sobre una tarjeta de material (2026-10-08) el holograma la
+// teñía (el zafiro salía verdoso); el material ya trae su propia luz.
+export default function BrilloTarjeta({ x, y, barrido, sinArcoiris = false }) {
   const [t, setT] = useState({ w: 0, h: 0 });
   const { w, h } = t;
 
@@ -34,9 +36,11 @@ export default function BrilloTarjeta({ x, y, barrido }) {
       onLayout={(e) => setT({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
       {w ? (
         <Canvas style={StyleSheet.absoluteFill}>
-          <Rect x={0} y={0} width={w} height={h} blendMode="overlay">
-            <LinearGradient start={holoInicio} end={holoFin} colors={ARCOIRIS} />
-          </Rect>
+          {!sinArcoiris ? (
+            <Rect x={0} y={0} width={w} height={h} blendMode="overlay">
+              <LinearGradient start={holoInicio} end={holoFin} colors={ARCOIRIS} />
+            </Rect>
+          ) : null}
           <Rect x={0} y={0} width={w} height={h} blendMode="screen">
             <RadialGradient c={centro} r={radio} colors={['rgba(255,255,255,0.42)', 'rgba(255,255,255,0.08)', 'rgba(255,255,255,0)']} positions={[0, 0.45, 1]} />
           </Rect>

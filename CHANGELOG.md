@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1259.1 — App: cupón con el material del rango, tarjetas que no se dibujaban y colores fieles
+
+- **El cupón del mes lleva el material del nivel o del rango** (Zafiro, Rubí, Diamante, Oro, Platino…), animado: una luz que va y viene sola sobre las facetas o el metal. Usado, sigue en gris y se corta por las muescas.
+- **«Unas secciones tienen tarjeta y otras no»:** el Liquid Glass de iOS 26 a veces no se dibuja cuando la tarjeta entra con una animación de opacidad o se monta fuera de pantalla, y quedaba el texto suelto. `Vidrio` ahora pone el vidrio en su propia capa sobre una base de color: si el vidrio falla, la tarjeta igual se ve. Arregla todas las pantallas (todo pasa por `Vidrio`).
+- **Colores fieles en las tarjetas de material:** el lienzo de Skia se fija en sRGB (en P3, el de iOS por defecto, se desplazaban), y el holograma arcoíris de la tarjeta vieja ya no se pinta encima de los materiales (teñía el zafiro de verde). Verificado en el simulador: el zafiro sale azul, igual que en Wallet.
+
 ## v2.1259.0 — Niveles apagados hasta el Reglamento v2 (revertidos los 109 puntos), vista previa del v2 en la app y arreglo del cierre de la build 28
 
 - **Niveles apagados hasta que el Reglamento v2 se firme y se publique** (decisión del usuario). Desde el 2026-10-07 la acumulación multiplicaba por nivel y el cron entregaba la raspable sin que estuviera anunciado. Un interruptor, `puntos_config.niveles_activos` (false): con él apagado `puntos_nivel_de` devuelve siempre el nivel de entrada, así que acumular (×1), cumpleaños (monto base), cupones (ninguno) y reservas (24 h) vuelven a lo de antes; `_shared/nivel.ts` lo respeta y la app no muestra la escalera. Encenderlo es cambiar una fila.

@@ -14,6 +14,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { Easing, interpolate, runOnJS, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import Icono from './Icono';
 import { COLORES_NIVEL } from './TarjetaSocio';
+import Mineral, { MATERIALES } from './minerales/Mineral';
 import { Confeti } from './animacion';
 import { dolares, fecha } from '../lib/formato';
 
@@ -32,6 +33,15 @@ export default function Cupon({ cupon, nivel = 'platino', fondo, activa = true, 
   const salto = useSharedValue(1);
   const destello = useSharedValue(0);
   const estiloSalto = useAnimatedStyle(() => ({ transform: [{ scale: salto.value }] }));
+  // El cupón lleva el MATERIAL del nivel o del rango (2026-10-08), vivo: sin
+  // giroscopio, una luz que va y viene sola sobre las facetas o el metal.
+  const luzX = useSharedValue(-0.6);
+  const luzY = useSharedValue(0.3);
+  useEffect(() => {
+    if (!activa) return;
+    luzX.value = withRepeat(withTiming(0.6, { duration: 4200, easing: Easing.inOut(Easing.sin) }), -1, true);
+    luzY.value = withRepeat(withTiming(-0.3, { duration: 5600, easing: Easing.inOut(Easing.sin) }), -1, true);
+  }, [activa]); // eslint-disable-line react-hooks/exhaustive-deps
   const estiloDestello = useAnimatedStyle(() => ({ opacity: destello.value }));
   useEffect(() => {
     if (!demo) return;
@@ -103,6 +113,12 @@ export default function Cupon({ cupon, nivel = 'platino', fondo, activa = true, 
   const cara = (
         <LinearGradient colors={colores} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={{ padding: 18, flexDirection: 'row', alignItems: 'center', gap: 16, minHeight: 104 }}>
+          {!usado && MATERIALES.includes(nivel) ? (
+            <>
+              <Mineral material={nivel} x={luzX} y={luzY} activa={activa} />
+              <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.22)' }]} />
+            </>
+          ) : null}
           <View style={{ width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.18)' }}>
             <Icono sf={usado ? 'checkmark.seal.fill' : 'ticket.fill'} respaldo="🎟" tam={24} color="#FFFFFF" />
           </View>

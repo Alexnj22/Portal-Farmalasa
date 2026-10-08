@@ -2,7 +2,7 @@
 // desenfoque del sistema en iOS anteriores, y en Android una tarjeta Material
 // translúcida con su elevación (Android no tiene vidrio: su lenguaje es la
 // superficie tonal). Sobre la aurora las tres se leen como la misma pieza.
-import { Platform, useColorScheme, View } from 'react-native';
+import { Platform, StyleSheet, useColorScheme, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 
@@ -17,11 +17,18 @@ export default function Vidrio({ style, children, radio = 22, interactivo = fals
   // pero el texto tiene fondo.
   const velo = oscuro ? 'rgba(18,16,24,0.55)' : 'rgba(255,255,255,0.62)';
   if (HAY_VIDRIO) {
+    // El vidrio va DETRÁS, en su propia capa, sobre una base de color
+    // (2026-10-08): el Liquid Glass a veces no se dibuja cuando la tarjeta
+    // entra con una animación de opacidad (Entrada) o se monta fuera de
+    // pantalla, y quedaba el texto suelto sin tarjeta — «unas tienen card y
+    // otras no». Con la base, si el vidrio falla, la tarjeta igual se ve.
+    const base = oscuro ? 'rgba(18,16,24,0.42)' : 'rgba(255,255,255,0.46)';
     return (
-      <GlassView glassEffectStyle="regular" isInteractive={interactivo} tintColor={tinte ?? velo}
-        style={[forma, style]}>
+      <View style={[forma, { backgroundColor: base }, style]}>
+        <GlassView glassEffectStyle="regular" isInteractive={interactivo} tintColor={tinte ?? velo}
+          style={StyleSheet.absoluteFill} pointerEvents="none" />
         {children}
-      </GlassView>
+      </View>
     );
   }
   if (Platform.OS === 'ios') {

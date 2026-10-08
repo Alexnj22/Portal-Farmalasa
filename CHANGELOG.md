@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1233.2 — Pedidos: la lista es la vista oficial
+
+- **La lista es la vista oficial de «Pedidos»**, en escritorio y en el teléfono. Se quitan la pestaña temporal «Pedidos (lista)» (un enlace viejo `?tab=pedidos_lista` abre «Pedidos») y la vista de tarjetas (~840 líneas menos).
+- **Lo que sólo tenía la tarjeta y pasó a la lista:**
+  - «Iniciar» y «Base» del conductor en el encabezado de su ruta, con «En vivo»;
+  - la ruta propia primero y, dentro de cada ruta, lo no entregado primero;
+  - la nota del pedido;
+  - la marca de «Con observación».
+- **Teléfono:**
+  - La línea de pasos abierta va en un carril deslizable y los rótulos ya no se enciman.
+  - El estado ya no corta el nombre de la sala.
+  - Botones de 44pt.
+
 ## v2.1233.1 — Pedidos: finalizar, llegada, reenvío y programar en un solo paso
 
 - **Cinco operaciones pasan a hacerse en un solo paso de la base**: finalizar con cajas, confirmar llegada, llegada del reenvío, programar entrega y pedir reenvío. Las hojas recibidas se agregan en la base.

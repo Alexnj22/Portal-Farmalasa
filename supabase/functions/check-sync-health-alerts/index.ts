@@ -231,6 +231,11 @@ serve(async (req) => {
       });
     }
 
+    // Las alertas NUEVAS se juntan por (dominio, título) antes de avisar: el
+    // 2026-10-08 una sola corrida de compras que no terminaba mandó SIETE push
+    // —uno por sucursal— con el mismo texto. Ahora es un aviso que nombra las
+    // siete.
+    const nuevas: typeof alerts = [];
     let sent = 0;
     for (const alert of alerts) {
       // Upsert idempotente PRIMERO — solo se envía push si la fila fue
@@ -246,27 +251,35 @@ serve(async (req) => {
       if (logErr) { console.error('log error:', logErr); continue; }
       if (!inserted || inserted.length === 0) continue; // ya alertado, no reenviar
 
-      if (recipientIds.length === 0) { sent++; continue; } // logueado igual, sin push si no hay destinatarios
+      nuevas.push(alert);
+    }
 
-      const pushRes = await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
-        method:  'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${Deno.env.get('ADMIN_INVOKE_SECRET') ?? ''}`,
-          'x-cron-secret': Deno.env.get('CRON_INVOKE_SECRET') ?? '',
+    // Se escribe por `notify_employees`, que deja el aviso en la CAMPANA y
+    // manda el push con el mismo texto. Antes se llamaba al push directo: el
+    // teléfono sonaba y al entrar al portal no había nada que leer.
+    const grupos = new Map<string, typeof alerts>();
+    for (const a of nuevas) {
+      const k = `${a.domain}|${a.title}`;
+      grupos.set(k, [...(grupos.get(k) ?? []), a]);
+    }
+    for (const grupo of grupos.values()) {
+      if (recipientIds.length === 0) { sent += grupo.length; continue; } // logueado igual, sin aviso si no hay destinatarios
+      const a0 = grupo[0];
+      const { error: avisoErr } = await supabase.rpc('notify_employees', {
+        p_recipients: recipientIds,
+        p_type: 'SYNC_SALUD',
+        p_title: `⚠️ ${a0.title}`,
+        p_body: grupo.map((a) => a.message).join('\n').slice(0, 1500),
+        p_link: '/permissions',
+        p_metadata: {
+          domain: a0.domain,
+          scopes: grupo.map((a) => a.scopeKey),
+          alert_keys: grupo.map((a) => a.alertKey),
         },
-        body: JSON.stringify({
-          title: alert.title,
-          message: alert.message,
-          url: '/permissions',
-          urgent: false,
-          target_type: 'EMPLOYEE',
-          target_value: recipientIds,
-          announcement_id: `sync-health-${alert.domain}-${alert.scopeKey}-${alert.alertKey}`,
-        }),
+        p_push: true,
       });
-      if (pushRes.ok) sent++;
-      else console.error('push error:', alert.domain, await pushRes.text());
+      if (avisoErr) console.error('notify_employees:', a0.domain, avisoErr.message);
+      else sent += grupo.length;
     }
 
     return new Response(JSON.stringify({ ok: true, alerts: alerts.length, sent }), {

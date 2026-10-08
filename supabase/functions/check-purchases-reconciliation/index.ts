@@ -254,27 +254,22 @@ Deno.serve(async (req) => {
 
       if (recipientIds.length === 0) { enviadas++; continue; }
 
-      const push = await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
-        method: 'POST',
-        headers: {
-          'Content-Type':  'application/json',
-          'Authorization': `Bearer ${Deno.env.get('ADMIN_INVOKE_SECRET') ?? ''}`,
-          'x-cron-secret': Deno.env.get('CRON_INVOKE_SECRET') ?? '',
-        },
-        body: JSON.stringify({
-          title: `Libro de compras no cuadra — ${h.mes}`,
-          message: faltan !== 0
-            ? `Sucursal ${h.branchId}: al portal le faltan ${faltan} documento(s) y $${plata} contra el ERP.`
-            : `Sucursal ${h.branchId}: mismo conteo (${h.erpN}) pero $${plata} de diferencia — hay un documento editado en el ERP.`,
-          url: '/libros-iva?tab=compras',
-          urgent: false,
-          target_type: 'EMPLOYEE',
-          target_value: recipientIds,
-          announcement_id: `compras-cuadre-${h.branchId}-${h.mes}-${alertKey}`,
-        }),
+      // Por `notify_employees`: campana + push con el mismo texto (antes era
+      // sólo push y en el portal no quedaba nada). El texto ya no nombra al
+      // sistema de origen: ahora se lee en pantalla.
+      const { error: avisoErr } = await supabase.rpc('notify_employees', {
+        p_recipients: recipientIds,
+        p_type: 'COMPRAS_CUADRE',
+        p_title: `⚠️ Libro de compras no cuadra — ${h.mes}`,
+        p_body: faltan !== 0
+          ? `Sucursal ${h.branchId}: al libro le faltan ${faltan} documento(s) y $${plata}.`
+          : `Sucursal ${h.branchId}: mismo conteo (${h.erpN}) pero $${plata} de diferencia — hay un documento que se editó después de registrarlo.`,
+        p_link: '/libros-iva?tab=compras',
+        p_metadata: { branch_id: h.branchId, mes: h.mes, alert_key: alertKey },
+        p_push: true,
       });
-      if (push.ok) enviadas++;
-      else console.error('push:', await push.text());
+      if (!avisoErr) enviadas++;
+      else console.error('notify_employees:', avisoErr.message);
     }
 
     // — alerta de fichas duplicadas, con su propio dominio en el log
@@ -290,27 +285,19 @@ Deno.serve(async (req) => {
       if (e2) problemas.push(`sync_alert_log duplicados: ${e2.message}`);
       else if (ins && ins.length > 0 && recipientIds.length > 0) {
         const d0 = duplicados[0];
-        const push = await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
-          method: 'POST',
-          headers: {
-            'Content-Type':  'application/json',
-            'Authorization': `Bearer ${Deno.env.get('ADMIN_INVOKE_SECRET') ?? ''}`,
-            'x-cron-secret': Deno.env.get('CRON_INVOKE_SECRET') ?? '',
-          },
-          body: JSON.stringify({
-            title: 'Dos fichas para el mismo proveedor',
-            message: duplicados.length === 1
-              ? `${d0.motivo} (${d0.clave}): hay dos fichas del mismo proveedor y el libro solo usa una.`
-              : `${duplicados.length} proveedores tienen ficha repetida. El libro usa una sola de cada par.`,
-            url: '/proveedores',
-            urgent: false,
-            target_type: 'EMPLOYEE',
-            target_value: recipientIds,
-            announcement_id: `prov-dup-${claves.slice(0, 60)}`,
-          }),
+        const { error: avisoErr } = await supabase.rpc('notify_employees', {
+          p_recipients: recipientIds,
+          p_type: 'PROVEEDOR_DUPLICADO',
+          p_title: '⚠️ Dos fichas para el mismo proveedor',
+          p_body: duplicados.length === 1
+            ? `${d0.motivo} (${d0.clave}): hay dos fichas del mismo proveedor y el libro solo usa una.`
+            : `${duplicados.length} proveedores tienen ficha repetida. El libro usa una sola de cada par.`,
+          p_link: '/proveedores',
+          p_metadata: { claves: claves.slice(0, 200) },
+          p_push: true,
         });
-        if (push.ok) enviadas++;
-        else console.error('push duplicados:', await push.text());
+        if (!avisoErr) enviadas++;
+        else console.error('notify_employees duplicados:', avisoErr.message);
       }
     }
 

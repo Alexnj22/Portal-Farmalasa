@@ -123,13 +123,17 @@ async function syncBranch(
   endDate: string,
 ): Promise<{ total: number; new: number; items: number }> {
 
-  // 1. Login + fetch — timeout aumentado a 100s para días con muchas compras
+  // 1. Login + fetch. El ERP tarda ~0.15 s por renglón (medido el 2026-10-08:
+  // Bodega, 583 renglones de un día, 87 s). Por eso el sync normal pide UN día
+  // por llamada (ver `correr`) y el timeout es de 150 s. Dos intentos y no
+  // tres: un reintento de una descarga que se pasó del timeout casi siempre se
+  // vuelve a pasar, y tres de 100 s se comían solos el presupuesto entero.
   const cookie = await withRetry(() => getSessionCookie(username, password));
   const url    = `${COMPRAS_BASE}?fini=${startDate}&ffin=${endDate}&id_sucursal=${erpId}`;
   const res    = await withRetry(() => fetch(url, {
     headers: { Cookie: cookie },
-    signal:  AbortSignal.timeout(100_000),
-  }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r; }));
+    signal:  AbortSignal.timeout(150_000),
+  }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r; }), 2);
 
   const payload = await res.json();
 
@@ -778,7 +782,10 @@ Deno.serve(async (req) => {
     // Un `branchId` en el body ahora filtra el mapa en vez de reasignarle el
     // erpId de Bodega: antes, pedir la sucursal 4 traía las compras de Bodega y
     // las guardaba como si fueran de la 4.
-    const todas = getPurchaseBranches();
+    // Bodega va AL FINAL: es la que trae casi todos los renglones, y si se
+    // come el tiempo, que sea después de que las otras seis ya anotaron.
+    const todas = getPurchaseBranches()
+      .sort((a, b) => Number(a.branchId === BODEGA_BRANCH_ID) - Number(b.branchId === BODEGA_BRANCH_ID));
     const purchaseBranches = onlyBranch
       ? todas.filter(b => b.branchId === onlyBranch)
       : todas;
@@ -799,20 +806,28 @@ Deno.serve(async (req) => {
         if (error) console.error(`purchase_sync_log insert (${fila.branch_id}):`, error.message);
       };
 
+      // UN día por llamada al ERP. Su costo es por renglón, así que la ventana
+      // ayer+hoy de un día grande de Bodega (638 renglones el 2026-10-08) pasaba
+      // del timeout de la descarga, y un día solo cabe. El log sigue siendo una
+      // fila por sucursal con el rango completo: el éxito exige todos los días.
       for (const { branchId, erpId } of purchaseBranches) {
         let lastErr: string | null = null;
-        let result: any = null;
+        let result: any = { total: 0, new: 0, items: 0 };
 
-        for (let attempt = 1; attempt <= 3; attempt++) {
+        for (const dia of dayRange(startDate, endDate)) {
+          // Sin reintento aquí: `syncBranch` ya reintenta login y descarga. Dos
+          // capas de reintentos sobre una descarga de 150 s pasaban del límite
+          // de 400 s de la función sin dejar ni una fila.
+          let r: any = null;
           try {
-            result  = await syncBranch(supabase, branchId, erpId, username, password, startDate, endDate);
-            lastErr = null;
-            break;
+            r = await syncBranch(supabase, branchId, erpId, username, password, dia, dia);
           } catch (e: any) {
-            lastErr = e.message;
-            if (attempt < 3) await new Promise(r => setTimeout(r, 3000 * attempt));
+            lastErr = `${dia}: ${e.message}`;
           }
+          if (!r) { result = null; break; }
+          result.total += r.total; result.new += r.new; result.items += r.items;
         }
+        if (result) lastErr = null;
 
         if (result) {
           results.push({ branchId, erpId, ...result });

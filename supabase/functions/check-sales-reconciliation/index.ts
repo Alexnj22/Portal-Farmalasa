@@ -445,29 +445,23 @@ Deno.serve(async (req) => {
         if (!inserted || inserted.length === 0) continue;
         if (recipientIds.length === 0) { enviadas++; continue; }
 
-        const push = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-push-notification`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${Deno.env.get('ADMIN_INVOKE_SECRET') ?? ''}`,
-            'x-cron-secret': Deno.env.get('CRON_INVOKE_SECRET') ?? '',
-          },
-          body: JSON.stringify({
-            title: `Libro de ventas no cuadra — ${h.dia}`,
-            // El aviso dice la CAUSA, no una receta genérica. Antes decía
-            // siempre «hay que resincronizar», y en el caso de Salud 1 del
-            // 14/07 resincronizar no servía de nada: el que había perdido el
-            // registro era el origen.
-            message: `Sucursal ${h.branchId}: $${Math.abs(h.diferencia).toFixed(2)} de diferencia. ${resumenCausa(h)}`,
-            url: '/libros-iva?tab=consumidor',
-            urgent: false,
-            target_type: 'EMPLOYEE',
-            target_value: recipientIds,
-            announcement_id: `ventas-cuadre-${h.branchId}-${h.dia}-${alertKey}`,
-          }),
+        // Por `notify_employees`: campana + push con el mismo texto. Antes era
+        // sólo push y al entrar al portal no quedaba nada que leer.
+        const { error: avisoErr } = await supabase.rpc('notify_employees', {
+          p_recipients: recipientIds,
+          p_type: 'VENTAS_CUADRE',
+          p_title: `⚠️ Libro de ventas no cuadra — ${h.dia}`,
+          // El aviso dice la CAUSA, no una receta genérica. Antes decía
+          // siempre «hay que resincronizar», y en el caso de Salud 1 del
+          // 14/07 resincronizar no servía de nada: el que había perdido el
+          // registro era el origen.
+          p_body: `Sucursal ${h.branchId}: $${Math.abs(h.diferencia).toFixed(2)} de diferencia. ${resumenCausa(h)}`,
+          p_link: '/libros-iva?tab=consumidor',
+          p_metadata: { branch_id: h.branchId, dia: h.dia, alert_key: alertKey },
+          p_push: true,
         });
-        if (push.ok) enviadas++;
-        else console.error('push:', await push.text());
+        if (!avisoErr) enviadas++;
+        else console.error('notify_employees:', avisoErr.message);
       }
     }
 

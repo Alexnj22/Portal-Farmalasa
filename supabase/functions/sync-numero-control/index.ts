@@ -203,25 +203,19 @@ Deno.serve(async (req) => {
         const detalle = Object.entries(motivos)
           .sort((a, b) => b[1] - a[1]).slice(0, 2)
           .map(([m, n]) => `${m} (${n})`).join(', ');
-        const push = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-push-notification`, {
-          method: 'POST',
-          headers: {
-            'Content-Type':  'application/json',
-            'Authorization': `Bearer ${Deno.env.get('ADMIN_INVOKE_SECRET') ?? ''}`,
-            'x-cron-secret': Deno.env.get('CRON_INVOKE_SECRET') ?? '',
-          },
-          body: JSON.stringify({
-            title: 'Libros IVA: falta el número de control',
-            message: `No se pudo traer el número de control de ${fallidos} documento(s) — ${detalle}. Quedan ${restantes} pendientes; los libros de ventas están incompletos.`,
-            url: '/libros-iva?tab=anulados',
-            urgent: false,
-            target_type: 'EMPLOYEE',
-            target_value: recipientIds,
-            announcement_id: `numero-control-${alertKey}`,
-          }),
+        // Por `notify_employees`: campana + push con el mismo texto (antes era
+        // sólo push y en el portal no quedaba nada).
+        const { error: avisoErr } = await supabase.rpc('notify_employees', {
+          p_recipients: recipientIds,
+          p_type: 'NUMERO_CONTROL',
+          p_title: '⚠️ Libros IVA: falta el número de control',
+          p_body: `No se pudo traer el número de control de ${fallidos} documento(s) — ${detalle}. Quedan ${restantes} pendientes; los libros de ventas están incompletos.`,
+          p_link: '/libros-iva?tab=anulados',
+          p_metadata: { fallidos, restantes, alert_key: alertKey },
+          p_push: true,
         });
-        alertaEnviada = push.ok;
-        if (!push.ok) console.error('push:', await push.text());
+        alertaEnviada = !avisoErr;
+        if (avisoErr) console.error('notify_employees:', avisoErr.message);
       }
     }
 

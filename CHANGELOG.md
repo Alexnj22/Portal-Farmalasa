@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1260.4 — Avisos técnicos en la campana y compras un día a la vez
+
+- **Las alertas que sólo llegaban al teléfono ahora quedan también en la campana.** Cuatro funciones llamaban al push directo y en el portal no quedaba nada que leer: la salud de las sincronizaciones, el cuadre del libro de compras (y el de proveedores duplicados), el cuadre del libro de ventas y el número de control. Ahora pasan por `notify_employees`, que escribe la campana y manda el push con el mismo texto.
+- **Una alerta por problema, no una por sucursal.** La salud de las sincronizaciones junta las alertas nuevas del mismo tipo: el 8-oct una sola corrida de compras que no terminaba mandó siete push iguales.
+- **El aviso de compras ya no nombra al sistema de origen**, porque ahora se lee en pantalla.
+- **Compras pide un día a la vez.** Con ayer y hoy juntos, Bodega (638 renglones) pasaba del tiempo de descarga y los reintentos se comían los 400 s de la corrida sin dejar ni una fila. Un día solo (583 renglones) tardó 87 s. Bodega va al final, para que las otras seis anoten primero.
+
 ## v2.1260.3 — Compras: el sync de cada 10 minutos ya no se corta en días de recepción grande
 
 - **Causa:** el reporte de compras del sistema de origen tarda ~0.18 s por renglón. El 8-oct Bodega recibió 29 compras con 528 renglones (638 con el día anterior), y la corrida pasó de ~20 s en la madrugada a más de 150 s, el límite de la función. Desde las 14:40 casi ninguna corrida terminaba y llegaron 7 avisos «Sync purchases sin correr».

@@ -82,6 +82,13 @@ const SegmentedControl = memo(({
 }) => {
     const s = SIZE[size] || SIZE.md;
     const enBloque = layout === 'block';
+    // `description` (2026-10-08): en bloque, cada opción puede decir QUÉ PASA
+    // si se elige, debajo de su rótulo. Nació en las diferencias de pedidos:
+    // la explicación vivía en un párrafo aparte que sólo hablaba de la
+    // elegida, así que para comparar había que tocar las dos. Con descripción,
+    // la opción deja de ser un rótulo en versalitas y pasa a ser una tarjeta
+    // que se lee: título normal, texto a la izquierda, alto libre.
+    const conDescripcion = enBloque && options.some(o => o.description);
 
     return (
         // `radiogroup` y no una fila de botones sueltos: es la semántica real
@@ -125,14 +132,15 @@ const SegmentedControl = memo(({
                         // `active:`. Este componente solo eran **62 de los 74**
                         // controles mudos de Permisos: el alcance de cada
                         // módulo se elige acá.
-                        className={`inline-flex items-center justify-center gap-1.5
-                            ${stacked ? 'rounded-card' : 'rounded-btn'}
-                            font-black uppercase tracking-widest
+                        className={`inline-flex gap-1.5
+                            ${conDescripcion ? 'items-start justify-start text-left' : 'items-center justify-center'}
+                            ${stacked || conDescripcion ? 'rounded-card' : 'rounded-btn'}
+                            ${conDescripcion ? 'font-bold' : 'font-black uppercase tracking-widest'}
                             transition-[background-color,color,border-color,transform] duration-[var(--dur-base)]
                             active:scale-[0.97]
                             disabled:opacity-40 disabled:cursor-not-allowed
                             ${enBloque
-                                ? `w-full px-3 text-caption border ${stacked ? 'flex-col gap-1.5 py-3' : 'h-11'}`
+                                ? `w-full px-3 text-caption border ${conDescripcion ? 'gap-2.5 py-2.5 min-h-11' : stacked ? 'flex-col gap-1.5 py-3' : 'h-11'}`
                                 : `whitespace-nowrap ${s.op}`}
                             ${activa
                                 ? (ACTIVO[op.tone || tone] || ACTIVO.brand) + ' shadow-sm'
@@ -145,8 +153,18 @@ const SegmentedControl = memo(({
                                    activo, no el desvanecerse del resto. */
                                 : 'text-content-2 hover:text-content'
                                     + (enBloque ? ' bg-surface-card border-border-card hover:border-brand/40' : '')}`}>
-                        {Icono && <Icono size={stacked ? 18 : s.icono} strokeWidth={stacked ? 1.8 : 2.5} />}
-                        {op.label}
+                        {Icono && <Icono size={stacked ? 18 : conDescripcion ? 16 : s.icono} strokeWidth={stacked ? 1.8 : 2.5}
+                            className={conDescripcion ? 'shrink-0 mt-0.5' : undefined} />}
+                        {conDescripcion ? (
+                            <span className="flex flex-col gap-0.5 min-w-0">
+                                <span className="text-label leading-tight">{op.label}</span>
+                                {op.description && (
+                                    <span className={`text-caption font-medium leading-snug ${activa ? 'opacity-90' : 'text-content-3'}`}>
+                                        {op.description}
+                                    </span>
+                                )}
+                            </span>
+                        ) : op.label}
                     </button>
                 );
             })}

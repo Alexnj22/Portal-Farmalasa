@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.26 — Diferencias: cada salida dice qué va a pasar
+
+- **Diferencias, más claras y compactas**: cada salida es una tarjeta que dice QUÉ VA A PASAR si se elige («La sala le regresa la cantidad a bodega — el producto se queda en bodega…» frente a «Bodega manda el producto — va en la próxima caja…»). Antes la explicación era un párrafo aparte que sólo hablaba de la opción elegida.
+- Debajo, «Nota», qué sigue («Bodega la acepta o propone la otra. Sin acuerdo, decide supervisión.») y **Proponer**, todo en un renglón.
+- Las cifras van en una línea: «Enviado 1 → Contado 0 · Faltan 1 · de 10 solicitados». Sin la etiqueta «Faltante» repetida arriba.
+- `SegmentedControl` acepta `description` por opción en el modo bloque.
+
 ## v2.1232.25 — Recepción: el contador de diferencia queda encima del campo
 
 - **El «+19» / «-1» de recepción ya no se ve de vidrio**: el campo de cantidad es `relative z-base` y su borde y su relleno teñido se pintaban encima del contador. Ahora el contador va un nivel arriba (`z-tabs`) y el encabezado fijo de la lista otro más (`z-header`), para que al bajar nada pase por encima. Queda anotado en la regla «un sólido es sólido».

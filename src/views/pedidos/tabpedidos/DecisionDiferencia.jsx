@@ -127,25 +127,22 @@ export default function DecisionDiferencia({
         if (readOnly) return null;
         if (turno !== 'yo') return <Marco><Espera texto={ESPERA.sala} /></Marco>;
 
-        const sel = opciones.find(o => o.valor === elegida);
         return (
             <Marco>
-                <p className="text-micro font-black text-content-3 uppercase tracking-widest">
-                    Cómo se arregla
+                {/* Rediseño 2026-10-08: cada salida dice en su propia tarjeta
+                    QUÉ VA A PASAR si se elige — antes había que tocar las dos
+                    para leer la explicación, que vivía en un párrafo aparte. */}
+                <p className="text-micro font-semibold text-content-3 uppercase tracking-wider">
+                    ¿Cómo se arregla?
                 </p>
                 <SegmentedControl
                     value={elegida} onChange={setTocada} label="Cómo se arregla"
                     layout="block" columns={2} tone="chart-3"
                     options={opciones.map(o => ({
-                        value: o.valor, label: o.rotulo_corto ?? o.rotulo, icon: iconoDe(o),
+                        value: o.valor, label: o.rotulo ?? o.rotulo_corto, icon: iconoDe(o),
+                        description: ayudaPara(o, { esSala, esSupervision }),
                     }))}
                 />
-                {sel && (
-                    <p className="text-caption leading-snug text-content-2">
-                        <strong className="font-semibold text-content">{sel.rotulo}</strong>
-                        {' — '}{ayudaPara(sel, { esSala, esSupervision })}
-                    </p>
-                )}
                 {/* La nota se pide sólo si alguien la quiere. Estaba siempre a la
                     vista y casi nunca se usa: un renglón por diferencia, y con
                     tres abiertas son tres campos vacíos compitiendo con lo único
@@ -154,24 +151,26 @@ export default function DecisionDiferencia({
                     <PortalInput
                         aria-label="Nota de la decisión" tono="chart-3" compact autoFocus
                         value={nota} onChange={e => setNota(e.target.value)}
-                        placeholder="Nota…"
+                        placeholder="Nota para bodega…"
                     />
                 )}
-                <div className="flex items-center gap-2">
-                    {/* `md` y no el chico: es la acción del bloque y estaba más
-                        baja que las dos opciones de arriba, así que se leía como
-                        un accesorio del campo de nota en vez de como el paso
-                        siguiente. */}
-                    <Button tone="chart-3" size="md" className="px-8" loading={ocupado} disabled={!elegida}
+                <div className="flex items-center gap-2 flex-wrap">
+                    {!conNota && (
+                        <Button variant="ghost" size="sm" icon={MessageSquarePlus}
+                            onClick={() => setConNota(true)}>Nota</Button>
+                    )}
+                    {/* Qué sigue después de proponer: que nadie crea que con
+                        el clic ya se movió algo. */}
+                    <span className="flex-1 min-w-0 text-caption text-content-3 leading-snug">
+                        {esSala ? 'Bodega la acepta o propone la otra.' : 'La sala la acepta o propone la otra.'}
+                        {' '}Sin acuerdo, decide supervisión.
+                    </span>
+                    <Button tone="chart-3" loading={ocupado} disabled={!elegida}
                         onClick={() => (necesitaFoto(elegida)
                             ? onPedirFoto?.(item, elegida, nota || null)
                             : decidir('proponer', elegida, nota || null))}>
                         Proponer
                     </Button>
-                    {!conNota && (
-                        <Button variant="ghost" size="sm" icon={MessageSquarePlus}
-                            onClick={() => setConNota(true)}>Agregar nota</Button>
-                    )}
                 </div>
             </Marco>
         );

@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1260.5 — Mín·Máx y productos nuevos: un solo push por aviso
+
+- El recálculo mensual de Mín·Máx y el aviso diario de productos nuevos mandaban su propio push **y** creaban el aviso, que dispara otro push al crearse: cada persona recibía dos. Queda solo el del aviso.
+- Ahora que el aviso es el único canal, un error al crearlo se registra en lugar de pasar en silencio.
+
 ## v2.1260.4 — Avisos técnicos en la campana y compras un día a la vez
 
 - **Las alertas que sólo llegaban al teléfono ahora quedan también en la campana.** Cuatro funciones llamaban al push directo y en el portal no quedaba nada que leer: la salud de las sincronizaciones, el cuadre del libro de compras (y el de proveedores duplicados), el cuadre del libro de ventas y el número de control. Ahora pasan por `notify_employees`, que escribe la campana y manda el push con el mismo texto.

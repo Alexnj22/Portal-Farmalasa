@@ -81,39 +81,14 @@ Deno.serve(async (req) => {
   const title   = `${total} producto${total > 1 ? "s" : ""} nuevo${total > 1 ? "s" : ""} ayer (${ayer})`;
   const message = `Se agregaron ${total} producto${total > 1 ? "s" : ""} al catálogo el ${ayer}. Revisá MinMax para asignarlos a las sucursales que corresponda.\n\n${listaCorta}${resto}`;
 
-  // 4. Push notification
+  // 4. El push lo manda el trigger `trg_push_on_announcement` al crear el
+  // anuncio. Hasta el 2026-10-08 esta función mandaba OTRO push por su cuenta
+  // y cada destinatario recibía dos por el mismo aviso.
   let notified = 0;
-  const pushUrl      = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-push-notification`;
-  const invokeSecret = Deno.env.get("ADMIN_INVOKE_SECRET")!;
-
-  try {
-    const pushRes = await fetch(pushUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${invokeSecret}`,
-        "x-cron-secret": Deno.env.get("CRON_INVOKE_SECRET") ?? "",
-      },
-      body: JSON.stringify({
-        title,
-        message,
-        url: "/minmax",
-        urgent: false,
-        target_type: "EMPLOYEE",
-        target_value: ids,
-      }),
-    });
-    if (pushRes.ok) {
-      const pushData = await pushRes.json();
-      notified = pushData.sent ?? 0;
-    }
-  } catch (err) {
-    console.error("[notify-new-products] Error al enviar push:", err);
-  }
 
   // 5. Anuncio persistente
   try {
-    await supabase.from("announcements").insert({
+    const { error: annErr } = await supabase.from("announcements").insert({
       title,
       message,
       target_type: "EMPLOYEE",
@@ -130,6 +105,9 @@ Deno.serve(async (req) => {
         url:     "/minmax",
       },
     });
+    // Es el ÚNICO canal (el push sale de su trigger): si falla, que se vea.
+    if (annErr) console.error("[notify-new-products] Error al crear anuncio:", annErr.message);
+    else notified = ids.length;
   } catch (err) {
     console.error("[notify-new-products] Error al crear anuncio:", err);
   }

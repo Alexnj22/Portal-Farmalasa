@@ -122,8 +122,6 @@ serve(async (req) => {
 
   let notified = 0;
   if (empIds.length > 0) {
-    const pushUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-push-notification`;
-    const invokeSecret = Deno.env.get("ADMIN_INVOKE_SECRET")!;
 
     // El detalle de lo que se saltó va SIEMPRE que haya algo saltado: es la
     // información que faltaba para notar que el recálculo no estaba corriendo.
@@ -143,37 +141,14 @@ serve(async (req) => {
           : `Recálculo mensual completado en ${succeeded.length}/${ERP_ORDER.length} sucursales. ${totalAutoApplied.toLocaleString()} productos actualizados automáticamente. No hay borradores pendientes.${detalleSaltadas}`;
 
     const pushTitle = "Recálculo mensual MIN/MAX";
-    try {
-      const pushRes = await fetch(pushUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${invokeSecret}`,
-          "x-cron-secret": Deno.env.get("CRON_INVOKE_SECRET") ?? "",
-        },
-        body: JSON.stringify({
-          title: pushTitle,
-          message,
-          url: "/minmax",
-          // Que no se recalculara nada sí es urgente: el MIN/MAX se quedó viejo
-          // y nadie lo sabría hasta el mes siguiente.
-          urgent: failed.length > 0 || nadaSeCalculo,
-          target_type: "EMPLOYEE",
-          target_value: empIds,
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (pushRes.ok) {
-        const pushData = await pushRes.json();
-        notified = pushData.sent ?? 0;
-      }
-    } catch (err) {
-      console.error("[auto-calculate-minmax] Error al enviar push:", err);
-    }
+
+    // El push lo manda el trigger `trg_push_on_announcement` al crear el
+    // anuncio de abajo. Hasta el 2026-10-08 esta función mandaba OTRO push por
+    // su cuenta y cada aprobador recibía dos por el mismo aviso.
 
     // Anuncio persistente con trazabilidad de lectura (read_by[])
     try {
-      await supabase.from("announcements").insert({
+      const { error: annErr } = await supabase.from("announcements").insert({
         title: pushTitle,
         message,
         target_type: "EMPLOYEE",
@@ -195,6 +170,9 @@ serve(async (req) => {
           url: "/minmax",
         },
       });
+      // Es el ÚNICO canal (el push sale de su trigger): si falla, que se vea.
+      if (annErr) console.error("[auto-calculate-minmax] Error al crear anuncio:", annErr.message);
+      else notified = empIds.length;
     } catch (err) {
       console.error("[auto-calculate-minmax] Error al crear anuncio:", err);
     }

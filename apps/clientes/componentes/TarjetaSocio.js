@@ -21,6 +21,7 @@
 //     poco a mitad del giro y vibra cuando muestra la otra cara.
 import { useEffect, useRef } from 'react';
 import EfectoNivel from './EfectoNivel';
+import Mineral, { MATERIALES } from './minerales/Mineral';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -211,13 +212,13 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFill}
           />
-          {/* Un resplandor verde del logo en la esquina, y el brillo móvil. */}
-          <LinearGradient pointerEvents="none"
-            colors={['transparent', 'transparent', 'rgba(142,195,15,0.45)']}
-            locations={[0, 0.55, 1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill} />
-          {/* El acabado del nivel: cepillado, destellos u holograma. */}
-          <EfectoNivel nivel={nivel} activa={activa && !reducir} x={x} />
+          {/* El material (2026-10-08): metal o piedra según el nivel o el rango,
+              vivo con la inclinación. El degradado de arriba queda de respaldo. */}
+          {MATERIALES.includes(nivel) ? <Mineral material={nivel} x={x} y={y} activa={activa && !reducir} />
+            : <EfectoNivel nivel={nivel} activa={activa && !reducir} x={x} />}
+          {/* Una sombra suave abajo: el nombre y el saldo se leen sobre cualquier material. */}
+          <LinearGradient pointerEvents="none" colors={['transparent', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.38)']}
+            locations={[0, 0.5, 1]} style={StyleSheet.absoluteFill} />
           <BrilloTarjeta x={x} y={y} barrido={barrido} />
 
           {/* El logo al centro: llena el espacio entre el chip y el nombre
@@ -261,13 +262,11 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
         {/* ── Reverso: el código ── */}
         <Animated.View style={[StyleSheet.absoluteFill, estilos.cara, reverso]}>
           <LinearGradient colors={paleta.reverso} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-          {/* Los mismos efectos del frente (2026-10-08): el resplandor, el acabado
-              del nivel y la luz. El QR queda sobre su fondo blanco, legible. */}
-          <LinearGradient pointerEvents="none"
-            colors={['rgba(142,195,15,0.35)', 'transparent', 'transparent']}
-            locations={[0, 0.45, 1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill} />
-          <EfectoNivel nivel={nivel} activa={activa && !reducir} x={x} />
+          {/* El mismo material del frente, más oscuro para que el código se lea.
+              Sigue la inclinación, pero su reloj va quieto (no gasta dos veces). */}
+          {MATERIALES.includes(nivel) ? <Mineral material={nivel} x={x} y={y} activa={false} />
+            : <EfectoNivel nivel={nivel} activa={activa && !reducir} x={x} />}
+          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.42)' }]} />
           <BrilloTarjeta x={x} y={y} barrido={barrido} />
           <View style={[estilos.contenido, { flexDirection: 'row', alignItems: 'center', gap: 18 }]}>
             <View style={estilos.qr}>

@@ -63,6 +63,18 @@ export default function Mayorista({ rango }) {
       ) : (
         <Texto nivel={2} estilo={{ fontSize: 14 }}>Estás en el rango más alto: {dolares(rango.compra)} al mes en promedio.</Texto>
       )}
+      {/* Lo que da su rango (Condiciones, cláusula 5). */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+        {[`${rango.puntos} pts por $1 a precio de mayoreo`, '1 punto por $1 a precio Público',
+          ...(rango.clave === 'zafiro' ? ['Raspable mensual Oro'] : ['rubi', 'diamante'].includes(rango.clave) ? ['Raspable mensual Platino'] : []),
+          `Tu precio: ${rango.precio}`].map((b) => (
+          <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5,
+            backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }}>
+            <Icono sf="checkmark" respaldo="✓" tam={10} color={t.color.verdeTexto} />
+            <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto2 }}>{b}</Text>
+          </View>
+        ))}
+      </View>
       <View style={{ flexDirection: 'row', gap: 6 }}>
         {RANGOS.map((r) => {
           const p = COLORES_NIVEL[r.clave];
@@ -77,7 +89,10 @@ export default function Mayorista({ rango }) {
           );
         })}
       </View>
-      <Texto nivel={3} estilo={{ fontSize: 12 }}>El rango se recalcula el primer día de cada mes con el promedio de los tres meses anteriores.</Texto>
+      <Texto nivel={3} estilo={{ fontSize: 12 }}>
+        Como Cliente Mayorista no tienes nivel de Puntos Salud: tu escalera es tu rango. Se recalcula el primer día de cada mes con el
+        promedio de los tres meses anteriores, y el precio lo asigna la empresa aparte.
+      </Texto>
     </Tarjeta>
   );
 }

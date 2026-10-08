@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1258.0 — App: tarjetas de materiales (metales y piedras) en la app y en Wallet, mayorista sin nivel y tratamientos en Inicio
+
+- **Tarjetas de material:** cada tarjeta es un shader de Skia vivo (`componentes/minerales/shaders.js`), que sigue la inclinación del teléfono y el dedo: **VIP** seda morada, **Plata** y **Oro** cepillados con banda de luz (Oro con destellos), **Platino** titanio negro con tornasol; y las piedras del Cliente Mayorista: **Jade** translúcido con vetas, **Zafiro** facetado con estrella de seis puntas, **Rubí** facetado con fuego interior y **Diamante** en corte brillante (mesa octogonal, facetas triangulares y dispersión de arcoíris). El reverso lleva el mismo material, oscurecido para el QR. Sólo corre el reloj con la tarjeta a la vista.
+- **Wallet con el mismo material:** `scripts/wallet/materiales.mjs` dibuja las franjas con los MISMOS shaders (CanvasKit) y las sube al bucket privado nuevo `wallet-materiales` (sin policies: sólo el servidor las lee); `_shared/pase.ts` las usa por nivel o rango, con fondo y rótulos del material. `imagenesPase.ts` vuelve a 397 KB (las franjas ya no van en el código). Verificado: Zafiro, Diamante y VIP salen con su franja y firmados.
+- **Cliente Mayorista sin nivel** (Condiciones, cláusula 5, y Reglamento v2, cláusula 4): en modo de prueba, con un rango elegido, desaparece «Tu nivel» y queda sólo el rango; la raspable es la de Oro para Zafiro y la de Platino para Rubí y Diamante (Jade no tiene). El panel del rango dice sus puntos a precio de mayoreo, 1 punto por $1 a precio Público, la raspable y su precio.
+- **Mis tratamientos en Inicio:** los tres que se acaban primero, con cuántos días faltan y «Reservar» (resaltado si faltan 3 días o menos); «Ver todos» abre la pantalla completa. Viene en el resumen.
+
 ## v2.1257.0 — App: Wallet por nivel, rangos de mayorista en prueba, reverso animado, cupón que se corta y animación de puntos
 
 - **La tarjeta de Apple Wallet cambia con el nivel:** fondo, color de rótulos y franja propios de Plata, Oro y Platino (antes todas salían moradas). `scripts/wallet/imagenes.py` genera las franjas por nivel (`FRANJAS_NIVEL`, sólo @2x/@3x) y `_shared/pase.ts` las usa. Verificado con la cuenta de prueba: Oro y Platino salen con sus colores y su franja.

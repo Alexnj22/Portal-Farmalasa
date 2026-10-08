@@ -170,7 +170,9 @@ Deno.serve(async (req) => {
     if (error) throw error;
     return (count ?? 0) > 0;
   };
-  const NOMBRE_NIVEL: Record<string, string> = { vip: "Cliente VIP", plata: "Plata", oro: "Oro", platino: "Platino" };
+  // Modo de prueba: los niveles y, para ver su tarjeta, los rangos de mayorista.
+  const NOMBRE_NIVEL: Record<string, string> = { vip: "Cliente VIP", plata: "Plata", oro: "Oro", platino: "Platino",
+    jade: "Jade", zafiro: "Zafiro", rubi: "Rubí", diamante: "Diamante" };
 
 
   if (enlaceWallet) {
@@ -1371,6 +1373,12 @@ Deno.serve(async (req) => {
         // El nivel (Plata/Oro/Platino) y cuánto falta para el siguiente.
         nivel,
         // Inyecciones por aplicar: el Inicio las muestra (ya no son pestaña).
+        // Los tratamientos activos, los que se acaban primero (Inicio, 2026-10-08).
+        tratamientos: await (async () => {
+          const { data, error } = await admin.rpc("app_tratamientos_de", { p_customer: customerId });
+          if (error) { console.error("resumen tratamientos:", error.message); return []; }
+          return ((data ?? []) as any[]).filter((x) => x.estado === "activo").slice(0, 3);
+        })(),
         // Encuestas por responder (para la tarjeta del Inicio).
         encuesta: await (async () => {
           const { data, error } = await admin.rpc("encuesta_app_disponibles", { p_customer: customerId });

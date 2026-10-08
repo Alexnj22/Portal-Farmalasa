@@ -5,6 +5,7 @@ import { useMemo, useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, AppState, Platform, Pressable, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import * as Haptics from 'expo-haptics';
 import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo } from '../../../componentes/ui';
 import { useCuenta } from '../../../lib/cuenta';
 import { dolares, entero, fecha, nombrePropio } from '../../../lib/formato';
@@ -48,7 +49,13 @@ export default function Puntos() {
   const cuponPrueba = useMemo(() => cuponDePrueba(prueba.nivel, prueba.semilla, prueba.cuponUsado), [prueba.nivel, prueba.semilla, prueba.cuponUsado]);
   // En prueba el saldo se puede mover a mano («Simular: ganar/usar puntos») para ver la animación.
   const saldoPrueba = enPrueba && real ? Math.max(0, Number(real.saldo ?? 0) + prueba.ajuste) : null;
-  const resumen = enPrueba ? { ...real, nivel: nivelDePrueba(prueba.nivel), cupon: ['oro', 'platino'].includes(prueba.nivel) ? cuponPrueba : null,
+  // Cliente Mayorista (Condiciones, cláusula 5): NO tiene nivel de Puntos
+  // Salud, sólo su rango. La raspable: Zafiro como Oro; Rubí y Diamante como Platino.
+  const mayorista = enPrueba ? prueba.mayorista : null;
+  const raspableDe = mayorista ? ({ zafiro: 'oro', rubi: 'platino', diamante: 'platino' }[mayorista] ?? null)
+    : (['oro', 'platino'].includes(prueba.nivel) ? prueba.nivel : null);
+  const cuponMay = useMemo(() => (raspableDe ? cuponDePrueba(raspableDe, prueba.semilla, prueba.cuponUsado) : null), [raspableDe, prueba.semilla, prueba.cuponUsado]);
+  const resumen = enPrueba ? { ...real, nivel: mayorista ? null : nivelDePrueba(prueba.nivel), cupon: mayorista ? cuponMay : (raspableDe ? cuponPrueba : null),
     saldo: saldoPrueba, equivale: saldoPrueba / 100 } : real;
 
   // Sumar y restar se VEN (2026-10-08): el último saldo que se mostró queda en
@@ -145,7 +152,7 @@ export default function Puntos() {
 
       {/* La tarjeta de socio: saldo al frente, código y QR al reverso. */}
       <Entrada indice={1}>
-        <TarjetaSocio activa={visible} nivel={enPrueba && prueba.mayorista ? prueba.mayorista : resumen.nivel?.clave} nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
+        <TarjetaSocio activa={visible} nivel={mayorista ?? resumen.nivel?.clave} nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
           previo={movSaldo.previo} cambio={movSaldo.cambio}
           codigo={resumen.codigo} socioDesde={resumen.socio_desde} />
       </Entrada>
@@ -153,19 +160,19 @@ export default function Puntos() {
       {/* Apple Wallet, justo debajo de la tarjeta (usuario, 2026-10-08): la tarjeta en la Cartera, para mostrarla en caja sin abrir la app. */}
       {Platform.OS === 'ios' ? (
         <Entrada indice={1}>
-          <BotonWallet serial={resumen.wallet_serial} nivelPrueba={enPrueba ? prueba.nivel : null} />
+          <BotonWallet serial={resumen.wallet_serial} nivelPrueba={enPrueba ? (mayorista ?? prueba.nivel) : null} />
         </Entrada>
       ) : null}
 
       {/* El nivel: Cliente VIP, Plata, Oro o Platino, y cuánto falta. Justo
           debajo de la tarjeta (usuario, 2026-10-07). */}
       {/* Cliente Mayorista (modo de prueba): su rango, arriba del nivel de puntos. */}
-      {enPrueba && prueba.mayorista ? (
+      {mayorista ? (
         <Entrada indice={1}>
-          <Mayorista rango={rangoDePrueba(prueba.mayorista)} />
+          <Mayorista rango={rangoDePrueba(mayorista)} />
         </Entrada>
       ) : null}
-      {resumen.nivel ? (
+      {resumen.nivel && !mayorista ? (
         <Entrada indice={1}>
           <Nivel nivel={resumen.nivel} />
         </Entrada>
@@ -174,7 +181,7 @@ export default function Puntos() {
       {/* El cupón del mes (Platino): saldo de regalo que vence a fin de mes. */}
       {resumen.cupon ? (
         <Entrada indice={2}>
-          <Cupon cupon={resumen.cupon} nivel={resumen.nivel?.clave} activa={visible} fondo={t.oscuro ? '#0A090E' : '#F5F4F8'} demo={enPrueba ? prueba.demoCupon : 0} />
+          <Cupon cupon={resumen.cupon} nivel={mayorista ?? resumen.nivel?.clave} activa={visible} fondo={t.oscuro ? '#0A090E' : '#F5F4F8'} demo={enPrueba ? prueba.demoCupon : 0} />
         </Entrada>
       ) : null}
 
@@ -205,6 +212,13 @@ export default function Puntos() {
           detalle={resumen.reservas_listas ? `${resumen.reservas_listas} lista${resumen.reservas_listas === 1 ? '' : 's'} para retirar` : resumen.reservas_abiertas ? `${resumen.reservas_abiertas} en curso` : 'Ninguna activa'}
           resaltar={resumen.reservas_listas > 0} alTocar={() => navegar('/reservas')} />
       </Entrada>
+
+      {/* Mis tratamientos (2026-10-08): lo que compra con regularidad y cuándo se le acaba. */}
+      {Array.isArray(resumen.tratamientos) ? (
+        <Entrada indice={2}>
+          <TratamientosInicio lista={resumen.tratamientos} />
+        </Entrada>
+      ) : null}
 
       {/* El estado del canje. El saldo cuenta hacia arriba y la barra se llena
           con resorte: lo primero que se ve MOVERSE es lo que la persona tiene. */}
@@ -426,6 +440,47 @@ function Campana({ generacion }) {
 }
 
 // Un acceso del Inicio: ícono, nombre y una línea de cómo va.
+const diasHasta = (f) => Math.round((Date.parse(`${f}T12:00:00Z`) - Date.parse(`${new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10)}T12:00:00Z`)) / 86400_000);
+
+function TratamientosInicio({ lista }) {
+  const t = useTema();
+  return (
+    <Tarjeta estilo={{ gap: 10 }}>
+      <Pressable onPress={() => navegar('/tratamientos')} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 36 }}>
+        <View style={{ width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.verde, t.oscuro ? 0.28 : 0.16) }}>
+          <Icono sf="pills.fill" respaldo="💊" tam={17} color={t.color.verdeTexto} />
+        </View>
+        <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: colorSistema.texto }}>Mis tratamientos</Text>
+        <Text style={{ fontSize: 14, fontWeight: '600', color: colorSistema.texto2 }}>Ver todos</Text>
+        <Icono sf="chevron.right" respaldo="›" tam={12} color={colorSistema.texto3} />
+      </Pressable>
+      {!lista.length ? (
+        <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>
+          Cuando compres un medicamento con regularidad, te avisamos aquí antes de que se te acabe.
+        </Text>
+      ) : lista.map((x) => {
+        const d = diasHasta(x.se_acaba);
+        const urge = d <= 3;
+        return (
+          <View key={x.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={{ flex: 1, gap: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto }} numberOfLines={1}>{nombrePropio(x.nombre)}</Text>
+              <Text style={{ fontSize: 13, fontWeight: urge ? '700' : '400', color: urge ? t.color.magentaTexto : colorSistema.texto2 }}>
+                {d < 0 ? `Se te acabó hace ${-d} día${d === -1 ? '' : 's'}` : d === 0 ? 'Se te acaba hoy' : `Se te acaba en ${d} día${d === 1 ? '' : 's'}`}
+              </Text>
+            </View>
+            <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${x.product_id}`); }} accessibilityRole="button"
+              style={({ pressed }) => ({ minHeight: 34, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center',
+                backgroundColor: urge ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'), transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+              <Text style={{ fontSize: 13, fontWeight: '800', color: urge ? '#FFFFFF' : colorSistema.texto }}>Reservar</Text>
+            </Pressable>
+          </View>
+        );
+      })}
+    </Tarjeta>
+  );
+}
+
 function Acceso({ sf, titulo, detalle, color, resaltar, alTocar }) {
   const t = useTema();
   return (

@@ -16,7 +16,7 @@
 // nombre. Se ACTUALIZA SOLA: `wallet-pases` es el servicio web de PassKit.
 import forge from "npm:node-forge@1.3.1";
 import { zipSync } from "npm:fflate@0.8.2";
-import { FRANJAS_NIVEL, IMAGENES_PASE } from "./imagenesPase.ts";
+import { IMAGENES_PASE } from "./imagenesPase.ts";
 import { nivelDeCliente } from "./nivel.ts";
 
 const PASS_TYPE = "pass.lat.farmasalud.puntos";
@@ -29,8 +29,10 @@ export interface DatosPase {
   equivale: number;
   codigo: string | null;
   socioDesde: string | null;
-  /** «Cliente VIP», «Plata», «Oro» o «Platino». */
+  /** «Cliente VIP», «Plata», «Oro», «Platino» o un rango de mayorista («Zafiro»…). */
   nivel?: string;
+  /** Las franjas del material (`strip@2x.png`, `strip@3x.png`); sin ellas, la morada de siempre. */
+  franjas?: Record<string, Uint8Array>;
 }
 
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
@@ -59,17 +61,51 @@ export const serialDe = (customerId: number) => `socio-${customerId}`;
 export const clienteDelSerial = (serial: string) => Number(String(serial).replace(/^socio-/, "")) || null;
 
 /** El rótulo sobre el nombre: «CLIENTE VIP», «CLIENTE ORO»… */
-// Colores de la tarjeta por nivel (2026-10-08): el fondo continúa la franja de
-// ese nivel (scripts/wallet/imagenes.py, TEMAS) y los rótulos van en su acento.
-const NIVELES: Record<string, { fondo: string; rotulo: string }> = {
-  vip: { fondo: "rgb(52, 14, 66)", rotulo: "rgb(180, 228, 80)" },
-  plata: { fondo: "rgb(58, 64, 74)", rotulo: "rgb(220, 226, 234)" },
-  oro: { fondo: "rgb(74, 46, 6)", rotulo: "rgb(255, 217, 120)" },
-  platino: { fondo: "rgb(10, 11, 14)", rotulo: "rgb(232, 236, 242)" },
+// El MATERIAL de la tarjeta (2026-10-08): el mismo de la app. Su franja la
+// genera scripts/wallet/materiales.mjs con los shaders de la app y vive en el
+// bucket privado `wallet-materiales`; el fondo del pase es el color en el que
+// esa franja nace y muere, y los rótulos van en su acento.
+const MATERIALES: Record<string, { fondo: string; rotulo: string }> = {
+  vip: { fondo: "rgb(40, 10, 52)", rotulo: "rgb(180, 228, 80)" },
+  plata: { fondo: "rgb(44, 48, 56)", rotulo: "rgb(220, 226, 234)" },
+  oro: { fondo: "rgb(64, 38, 4)", rotulo: "rgb(255, 217, 120)" },
+  platino: { fondo: "rgb(9, 10, 13)", rotulo: "rgb(232, 236, 242)" },
+  jade: { fondo: "rgb(4, 30, 22)", rotulo: "rgb(140, 245, 206)" },
+  zafiro: { fondo: "rgb(3, 12, 48)", rotulo: "rgb(169, 194, 255)" },
+  rubi: { fondo: "rgb(40, 2, 10)", rotulo: "rgb(255, 154, 174)" },
+  diamante: { fondo: "rgb(16, 19, 25)", rotulo: "rgb(234, 246, 255)" },
 };
-const claveDeNivel = (n?: string) => /platino/i.test(n ?? "") ? "platino" : /oro/i.test(n ?? "") ? "oro" : /plata/i.test(n ?? "") ? "plata" : "vip";
+const PIEDRAS = ["jade", "zafiro", "rubi", "diamante"];
+const sinTilde = (n?: string) => String(n ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const claveDeNivel = (n?: string) => {
+  const t = sinTilde(n);
+  return Object.keys(MATERIALES).find((k) => k !== "vip" && t.includes(k)) ?? "vip";
+};
 
-const nivelRotulo = (n?: string) => (!n || /vip/i.test(n) ? "CLIENTE VIP" : `CLIENTE ${n.toUpperCase()}`);
+// Las franjas, leídas una vez por instancia.
+const franjasCache = new Map<string, Uint8Array>();
+// deno-lint-ignore no-explicit-any
+async function franjasDe(admin: any, clave: string): Promise<Record<string, Uint8Array>> {
+  const r: Record<string, Uint8Array> = {};
+  await Promise.all([2, 3].map(async (e) => {
+    const ruta = `${clave}@${e}x.png`;
+    let b = franjasCache.get(ruta);
+    if (!b) {
+      const { data, error } = await admin.storage.from("wallet-materiales").download(ruta);
+      if (error || !data) { console.error("pase: no se leyó la franja", ruta, error?.message); return; }
+      b = new Uint8Array(await data.arrayBuffer());
+      franjasCache.set(ruta, b);
+    }
+    r[`strip@${e}x.png`] = b;
+  }));
+  return r;
+}
+
+const nivelRotulo = (n?: string) => {
+  const k = claveDeNivel(n);
+  if (PIEDRAS.includes(k)) return `MAYORISTA ${String(n).toUpperCase()}`;
+  return !n || k === "vip" ? "CLIENTE VIP" : `CLIENTE ${n.toUpperCase()}`;
+};
 
 export async function armarPase(d: DatosPase): Promise<Uint8Array> {
   const certB64 = Deno.env.get("WALLET_CERT_B64"), keyB64 = Deno.env.get("WALLET_KEY_B64"), wwdrB64 = Deno.env.get("WALLET_WWDR_B64");
@@ -92,8 +128,8 @@ export async function armarPase(d: DatosPase): Promise<Uint8Array> {
     // y los rótulos van en el verde del logo: así la franja y el cuerpo se leen
     // como UNA tarjeta y no como un rectángulo pegado sobre otro.
     foregroundColor: "rgb(255, 255, 255)",
-    labelColor: NIVELES[claveDeNivel(d.nivel)].rotulo,
-    backgroundColor: NIVELES[claveDeNivel(d.nivel)].fondo,
+    labelColor: MATERIALES[claveDeNivel(d.nivel)].rotulo,
+    backgroundColor: MATERIALES[claveDeNivel(d.nivel)].fondo,
     storeCard: {
       headerFields: [{ key: "puntos", label: "PUNTOS", value: Math.round(d.saldo), textAlignment: "PKTextAlignmentRight" }],
       primaryFields: [{ key: "saldo", label: "SALDO DE PUNTOS", value: d.equivale, currencyCode: "USD",
@@ -117,14 +153,10 @@ export async function armarPase(d: DatosPase): Promise<Uint8Array> {
 
   const archivos: Record<string, Uint8Array> = { "pass.json": new TextEncoder().encode(JSON.stringify(pase)) };
   for (const [n, b64] of Object.entries(IMAGENES_PASE)) archivos[n] = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-  // La franja del nivel reemplaza a la morada (sin @1x: Wallet usa @2x/@3x).
-  const clave = claveDeNivel(d.nivel);
-  if (clave !== "vip") {
+  // La franja del material reemplaza a la de respaldo (sin @1x: Wallet usa @2x/@3x).
+  if (d.franjas && Object.keys(d.franjas).length === 2) {
     delete archivos["strip.png"];
-    for (const n of ["strip@2x.png", "strip@3x.png"]) {
-      const b64 = FRANJAS_NIVEL[`${clave}|${n}`];
-      if (b64) archivos[n] = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-    }
+    Object.assign(archivos, d.franjas);
   }
 
   // manifest.json: SHA-1 de cada archivo.
@@ -207,6 +239,7 @@ export async function paseDeCliente(admin: any, id: number, nivelDePrueba?: stri
   const pase = await armarPase({
     customerId: id, nombre: c?.name ?? "", saldo, equivale: Math.round(saldo) / 100,
     codigo: cod?.codigo ?? null, socioDesde: pri?.ganado_el ?? null, nivel: nivelDePrueba ?? nivel.nombre,
+    franjas: await franjasDe(admin, claveDeNivel(nivelDePrueba ?? nivel.nombre)),
   });
   return { pase, cambio: cta?.updated_at ?? null };
 }

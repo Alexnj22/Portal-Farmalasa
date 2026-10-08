@@ -94,23 +94,13 @@ for n, s in {'icon.png': 29, 'icon@2x.png': 58, 'icon@3x.png': 87, 'logo.png': 5
 for e in (1, 2, 3):
     imgs['strip.png' if e == 1 else f'strip@{e}x.png'] = png(franja(e))
 
-# Las franjas de los otros niveles (sin @1x: ningún iPhone con Wallet la usa).
-franjas = {}
-for clave, tema in TEMAS.items():
-    if clave == 'vip':
-        continue
-    for e in (2, 3):
-        franjas[f'{clave}|strip@{e}x.png'] = png(franja(e, tema))
+# Las franjas de cada nivel/material ya no salen de acá: las genera
+# scripts/wallet/materiales.mjs con los shaders de la app (bucket wallet-materiales).
 
 with open(SALIDA, 'w') as f:
     f.write('// Imágenes de la tarjeta de Wallet. GENERADO por scripts/wallet/imagenes.py: no editar a mano.\n')
     f.write('export const IMAGENES_PASE: Record<string, string> = {\n')
     for n, b in imgs.items():
-        f.write(f'  "{n}": "{b}",\n')
-    f.write('};\n')
-    f.write('// Franjas por nivel: clave «nivel|archivo».\n')
-    f.write('export const FRANJAS_NIVEL: Record<string, string> = {\n')
-    for n, b in franjas.items():
         f.write(f'  "{n}": "{b}",\n')
     f.write('};\n')
 print('ok', {n: len(b) for n, b in imgs.items()})

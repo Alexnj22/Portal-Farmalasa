@@ -109,6 +109,31 @@ Deno.serve(async (req) => {
         url: l.origen === "cumpleanos" ? "/puntos?cumple=1" : "/puntos" });
     }
 
+    // ── Se restaron puntos (2026-10-08): canje, anulación, ajuste, vencimiento
+    // o una compra pasada a otra ficha. Con el saldo que queda.
+    const { data: salidas, error: eSal } = !inmediato ? { data: [], error: null } : await admin.from("puntos_salida")
+      .select("id, customer_id, tipo, puntos, monto, sucursal, motivo")
+      .in("customer_id", clientes).is("revertida_at", null)
+      .gte("created_at", new Date(Date.now() - 2 * 3600_000).toISOString());
+    if (eSal) console.error("no se pudieron leer las salidas:", eSal.message);
+    if (salidas?.length) {
+      const { data: cuentas, error: eCu } = await admin.from("puntos_cuenta").select("customer_id, saldo")
+        .in("customer_id", [...new Set(salidas.map((x: any) => x.customer_id))]);
+      if (eCu) console.error("no se pudieron leer los saldos:", eCu.message);
+      const saldo = new Map((cuentas ?? []).map((c: any) => [Number(c.customer_id), Number(c.saldo)]));
+      for (const x of salidas as any[]) {
+        const pts = Number(x.puntos);
+        const queda = saldo.has(Number(x.customer_id)) ? ` Te quedan ${saldo.get(Number(x.customer_id))!.toLocaleString("en-US")} puntos.` : "";
+        const [titulo, cuerpo] =
+          x.tipo === "canje" ? [`Usaste ${pts} puntos 💳`, `${x.monto ? `Ahorraste $${Number(x.monto).toFixed(2)}` : "Canjeaste tus puntos"}${x.sucursal ? ` en ${x.sucursal}` : ""}.${queda}`]
+          : x.tipo === "anulacion" ? [`Se restaron ${pts} puntos`, `Se anuló una compra y se quitaron los puntos que te había dado.${queda}`]
+          : x.tipo === "vencimiento" ? [`Vencieron ${pts} puntos`, `Pasó un año sin usarlos.${queda}`]
+          : x.tipo === "cambio_cliente" ? [`Se movieron ${pts} puntos`, `Una compra se registró a nombre de otra persona.${queda}`]
+          : [`Ajuste de ${pts} puntos`, `${x.motivo ? `${x.motivo}.` : "Se corrigió tu saldo."}${queda}`];
+        candidatos.push({ customer_id: x.customer_id, tipo: "restado", ref: `salida:${x.id}`, titulo, cuerpo, url: "/puntos" });
+      }
+    }
+
     // ── Subiste de nivel (2026-10-07): sólo quien acaba de comprar puede
     // haber subido. Un aviso por nivel y por cliente (la llave es el nivel).
     const compraron = [...new Set((lotes ?? []).filter((l) => l.origen === "venta").map((l) => Number(l.customer_id)))];

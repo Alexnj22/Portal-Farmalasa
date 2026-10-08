@@ -70,7 +70,7 @@ export default function Reservas() {
       cargar();
     } },
   ]);
-  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
+  useFocusEffect(useCallback(() => { cargar(); pedir('pago_preparar'); }, [cargar, pedir]));
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
   useEffect(() => { const id = setInterval(() => setAhora(Date.now()), 30000); return () => clearInterval(id); }, []);
 

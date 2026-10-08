@@ -21,7 +21,7 @@ import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '
 import { useSesion } from '../../../lib/sesion';
 import { sincronizarAvisos } from '../../../lib/avisos';
 import { cuponDePrueba, nivelDePrueba, useModoPrueba } from '../../../lib/prueba';
-import { BotonWalletNativo, abrirPase, agregarPorSafari, tienePase, walletDisponible } from '../../../modules/wallet';
+import { BotonWalletNativo, abrirPase, agregarDirecto, agregarPorSafari, tienePase, walletDisponible } from '../../../modules/wallet';
 import { suave, useTema } from '../../../tema/tema';
 import { colorSistema } from '../../../componentes/sistema';
 import { navegar } from '../../../lib/navegar';
@@ -43,7 +43,7 @@ export default function Puntos() {
   const prueba = useModoPrueba();
   const enPrueba = !!real?.prueba && prueba.activo;
   // El cupón de prueba se arma UNA vez (su premio es al azar).
-  const cuponPrueba = useMemo(() => cuponDePrueba(prueba.nivel, prueba.semilla), [prueba.nivel, prueba.semilla]);
+  const cuponPrueba = useMemo(() => cuponDePrueba(prueba.nivel, prueba.semilla, prueba.cuponUsado), [prueba.nivel, prueba.semilla, prueba.cuponUsado]);
   const resumen = enPrueba ? { ...real, nivel: nivelDePrueba(prueba.nivel), cupon: ['oro', 'platino'].includes(prueba.nivel) ? cuponPrueba : null } : real;
   const visible = useVisible();
   const [refrescando, setRefrescando] = useState(false);
@@ -128,6 +128,13 @@ export default function Puntos() {
           codigo={resumen.codigo} socioDesde={resumen.socio_desde} />
       </Entrada>
 
+      {/* Apple Wallet, justo debajo de la tarjeta (usuario, 2026-10-08): la tarjeta en la Cartera, para mostrarla en caja sin abrir la app. */}
+      {Platform.OS === 'ios' ? (
+        <Entrada indice={1}>
+          <BotonWallet serial={resumen.wallet_serial} nivelPrueba={enPrueba ? prueba.nivel : null} />
+        </Entrada>
+      ) : null}
+
       {/* El nivel: Cliente VIP, Plata, Oro o Platino, y cuánto falta. Justo
           debajo de la tarjeta (usuario, 2026-10-07). */}
       {resumen.nivel ? (
@@ -136,17 +143,10 @@ export default function Puntos() {
         </Entrada>
       ) : null}
 
-      {/* Apple Wallet: la tarjeta en la Cartera, para mostrarla en caja sin abrir la app. */}
-      {Platform.OS === 'ios' ? (
-        <Entrada indice={1}>
-          <BotonWallet serial={resumen.wallet_serial} nivelPrueba={enPrueba ? prueba.nivel : null} />
-        </Entrada>
-      ) : null}
-
       {/* El cupón del mes (Platino): saldo de regalo que vence a fin de mes. */}
       {resumen.cupon ? (
         <Entrada indice={2}>
-          <Cupon cupon={resumen.cupon} nivel={resumen.nivel?.clave} activa={visible} fondo={t.oscuro ? '#0A090E' : '#F5F4F8'} />
+          <Cupon cupon={resumen.cupon} nivel={resumen.nivel?.clave} activa={visible} fondo={t.oscuro ? '#0A090E' : '#F5F4F8'} demo={enPrueba ? prueba.demoCupon : 0} />
         </Entrada>
       ) : null}
 
@@ -333,10 +333,13 @@ function BotonWallet({ serial, nivelPrueba }) {
     if (cargando) return;
     if (tiene && abrirPase(serial)) return;
     setCargando(true);
-    // Por Safari: iOS muestra su propia pantalla para agregarla (2026-10-07).
-    if (!(await agregarPorSafari(pedir, nivelPrueba))) {
+    // Directo a Wallet (2026-10-08): la tarjeta se baja acá y la hoja de Apple
+    // se presenta en una ventana propia. Si algo falla, por Safari.
+    const ok = await agregarDirecto(pedir, nivelPrueba);
+    if (ok === null && !(await agregarPorSafari(pedir, nivelPrueba))) {
       Alert.alert('No se pudo preparar la tarjeta', 'Revisa tu conexión e intenta de nuevo.');
     }
+    if (ok) setTiene(tienePase(serial));
     setCargando(false);
   };
   // El botón oficial de Apple (PKAddPassButton) cuando está en la compilación;

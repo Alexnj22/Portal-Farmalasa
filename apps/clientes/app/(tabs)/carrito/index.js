@@ -78,6 +78,8 @@ export default function Carrito() {
     setSala((ant) => ant ?? lista[0]?.id ?? null);
   }, [ids, pedir]); // eslint-disable-line react-hooks/exhaustive-deps -- `items` se lee en el momento
   useFocusEffect(useCallback(() => { cargarSalas(); }, [cargarSalas]));
+  // Deja listo el cobro en línea mientras se elige (Wompi responde más rápido al tocar «Pagar»).
+  useFocusEffect(useCallback(() => { if (ids) pedir('pago_preparar'); }, [ids, pedir]));
 
   const normal = items.reduce((s, x) => s + x.precio * x.cantidad, 0);
   const subtotal = items.reduce((s, x) => s + (x.precio_vip ?? x.precio) * x.cantidad, 0);

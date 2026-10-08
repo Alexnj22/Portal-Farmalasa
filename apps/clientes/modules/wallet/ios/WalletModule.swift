@@ -84,18 +84,35 @@ public class WalletModule: Module {
       self.serialHoja = (pase.passTypeIdentifier, pase.serialNumber)
       hoja.delegate = self.delegado
       self.delegado.alCerrar = { [weak self] in self?.terminar() }
-      guard let arriba = self.appContext?.utilities?.currentViewController() else {
+      // En una VENTANA PROPIA (2026-10-08): presentada sobre las pestañas
+      // nativas salía en negro. Una ventana nueva, encima de todo, con un
+      // controlador vacío y transparente, no hereda nada de la jerarquía de la app.
+      guard let escena = UIApplication.shared.connectedScenes
+        .compactMap({ $0 as? UIWindowScene })
+        .first(where: { $0.activationState == .foregroundActive }) ?? UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first else {
         promise.reject("WALLET_VISTA", "No se pudo mostrar la tarjeta."); return
       }
-      hoja.modalPresentationStyle = .formSheet
-      var arriba2 = arriba
-      while let siguiente = arriba2.presentedViewController { arriba2 = siguiente }
-      arriba2.present(hoja, animated: true)
+      let ventana = UIWindow(windowScene: escena)
+      ventana.windowLevel = .alert + 1
+      let base = UIViewController()
+      base.view.backgroundColor = .clear
+      ventana.rootViewController = base
+      ventana.makeKeyAndVisible()
+      self.ventanaHoja = ventana
+      hoja.modalPresentationStyle = .pageSheet
+      // Sin cerrar deslizando: la hoja tiene «Cancelar» y «Agregar», y así el
+      // delegado siempre avisa y la ventana nunca queda tapando la app.
+      hoja.isModalInPresentation = true
+      base.present(hoja, animated: true)
   }
+
+  private var ventanaHoja: UIWindow?
 
   private let delegado = Delegado()
 
   private func terminar() {
+    ventanaHoja?.isHidden = true
+    ventanaHoja = nil
     guard let promesa = promesaHoja, let (tipo, serial) = serialHoja else { return }
     promesaHoja = nil
     promesa.resolve(PKPassLibrary().pass(withPassTypeIdentifier: tipo, serialNumber: serial) != nil)

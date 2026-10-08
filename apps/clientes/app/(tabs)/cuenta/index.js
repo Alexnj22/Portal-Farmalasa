@@ -10,7 +10,7 @@ import { Aviso } from '../../../componentes/ui';
 import { useSesion } from '../../../lib/sesion';
 import { useCuenta } from '../../../lib/cuenta';
 import { pedirTokenDeAvisos, recordarAvisos } from '../../../lib/avisos';
-import { abrirPase, agregarPorSafari, tienePase, walletDisponible } from '../../../modules/wallet';
+import { abrirPase, agregarDirecto, agregarPorSafari, tienePase, walletDisponible } from '../../../modules/wallet';
 import { nombreBiometria, useBloqueo } from '../../../lib/bloqueo';
 import { olvidarEntrada } from '../../../lib/entradaGuardada';
 import { NIVELES_PRUEBA, useModoPrueba } from '../../../lib/prueba';
@@ -53,8 +53,10 @@ export default function Cuenta() {
   const wallet = async ({ abrir = true } = {}) => {
     if (abrir && enWallet && abrirPase(serialW)) return;
     const enPrueba = !!resumen?.prueba && prueba.activo;
-    // Por Safari: iOS muestra su propia pantalla para agregarla (2026-10-07).
-    if (!(await agregarPorSafari(pedirW, enPrueba ? prueba.nivel : null))) {
+    // Directo a Wallet; por Safari si falla (2026-10-08).
+    const ok = await agregarDirecto(pedirW, enPrueba ? prueba.nivel : null);
+    if (ok) setEnWallet(tienePase(serialW));
+    if (ok === null && !(await agregarPorSafari(pedirW, enPrueba ? prueba.nivel : null))) {
       Alert.alert('No se pudo preparar la tarjeta', 'Revisa tu conexión e intenta de nuevo.');
     }
   };
@@ -221,12 +223,19 @@ export default function Cuenta() {
           {prueba.activo && ['oro', 'platino'].includes(prueba.nivel) ? (
             <FilaAccion sf="arrow.counterclockwise" texto="Volver a tapar el cupón" alTocar={() => { prueba.reiniciarCupon(); navegar('/puntos'); }} />
           ) : null}
+          {prueba.activo && ['oro', 'platino'].includes(prueba.nivel) ? (
+            <FilaAccion sf="sparkles" texto="Ver la animación del cupón" alTocar={() => { prueba.verAnimacionCupon(); navegar('/puntos'); }} />
+          ) : null}
+          {prueba.activo && ['oro', 'platino'].includes(prueba.nivel) ? (
+            <FilaAccion sf="checkmark.seal.fill" texto={prueba.cuponUsado ? 'Ver el cupón sin usar' : 'Ver el cupón ya usado'}
+              alTocar={() => { prueba.verCuponUsado(!prueba.cuponUsado); navegar('/puntos'); }} />
+          ) : null}
           <FilaAccion sf="gift.fill" texto="Ver la pantalla de cumpleaños" alTocar={() => navegar('/puntos?cumple=1')} />
           <FilaAccion sf="crown.fill" texto="Ver la pantalla de subir de nivel" alTocar={() => navegar('/puntos?nivel=1')} />
         </Grupo>
         <Grupo titulo="Avisos de prueba" pie="Llegan de verdad a este teléfono (con los avisos activados) y a la campana. Toca el aviso para ver la pantalla que abre.">
           {[['cumpleanos', 'gift.fill', 'Cumpleaños'], ['puntos', 'star.fill', 'Ganaste puntos'], ['cupon', 'ticket.fill', 'Cupón del mes'],
-            ['nivel', 'crown.fill', 'Subiste de nivel'], ['tratamiento', 'pills.fill', 'Tratamiento'], ['reserva', 'bag.fill', 'Reserva lista']].map(([tipo, sf, texto]) => (
+            ['nivel', 'crown.fill', 'Subiste de nivel'], ['tratamiento', 'pills.fill', 'Tratamiento'], ['restado', 'minus.circle.fill', 'Usaste puntos'], ['reserva', 'bag.fill', 'Reserva lista']].map(([tipo, sf, texto]) => (
             <FilaAccion key={tipo} sf={sf} texto={`Recibir aviso: ${texto}`} flecha={false} alTocar={async () => {
               const r = await pedir('prueba_aviso', { tipo });
               Alert.alert(r?.ok ? 'Aviso enviado' : 'No se envió', r?.ok ? 'Llega en unos segundos. Bloquea el teléfono para verlo como notificación.' : (r?.mensaje ?? 'Revisa tu conexión.'));

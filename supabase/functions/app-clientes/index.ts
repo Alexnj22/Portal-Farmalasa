@@ -33,7 +33,7 @@ import { TEXTOS_CONSENTIMIENTO as TEXTOS } from "../_shared/consentimientoPuntos
 import { clienteDelEnlace, enlaceDePase, paseDeCliente } from "../_shared/pase.ts";
 import { nivelDeCliente } from "../_shared/nivel.ts";
 import { validarFiscales } from "../_shared/fiscal.ts";
-import { crearEnlace } from "../_shared/wompi.ts";
+import { calentarWompi, crearEnlace } from "../_shared/wompi.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -830,6 +830,9 @@ Deno.serve(async (req) => {
     const costoDeEnvio = (cfg: { costo: number; gratis_desde: number | null }, subtotal: number) =>
       cfg.gratis_desde != null && subtotal >= cfg.gratis_desde ? 0 : cfg.costo;
 
+    // Abrir el carrito o Mis reservas deja el cobro listo (token de Wompi).
+    if (accion === "pago_preparar") return json({ ok: await calentarWompi() });
+
     if (accion === "carrito_existencias") {
       const ids = (Array.isArray(body?.ids) ? body.ids : []).map(Number).filter((n: number) => Number.isInteger(n) && n > 0).slice(0, 20);
       const envio = await ajustesEnvio();
@@ -847,9 +850,13 @@ Deno.serve(async (req) => {
     // deno-lint-ignore no-explicit-any
     async function enlaceDePago({ pedido, total, branchId, descripcion }: { pedido: string; total: number; branchId: any; descripcion: string }) {
       const identificador = `${pedido}-${Date.now().toString(36)}`;
-      const { data: salaFila, error: eS } = await admin.from("branches").select("name").eq("id", branchId).maybeSingle();
+      // En paralelo (2026-10-08): la sala, la fila del pago y el token de Wompi.
+      const [{ data: salaFila, error: eS }, { error: eP }] = await Promise.all([
+        admin.from("branches").select("name").eq("id", branchId).maybeSingle(),
+        admin.from("app_reservas_pagos").insert({ pedido, identificador, monto: total }),
+        calentarWompi(),
+      ]);
       if (eS) throw eS;
-      const { error: eP } = await admin.from("app_reservas_pagos").insert({ pedido, identificador, monto: total });
       if (eP) throw eP;
       const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/wompi-pagos`;
       try {
@@ -859,8 +866,10 @@ Deno.serve(async (req) => {
           urlRedirect: `${base}?ref=${encodeURIComponent(identificador)}`, urlWebhook: base, minutos: 30,
         });
         const url = enlace.urlEnlaceLargo || enlace.urlEnlace;
-        const { error: eU } = await admin.from("app_reservas_pagos").update({ enlace_id: enlace.idEnlace, enlace_url: url }).eq("identificador", identificador);
-        if (eU) console.error("app-clientes: no se guardó el enlace del pedido:", eU.message);
+        // Anotar el enlace no hace esperar al cliente: el pago se reconoce por el identificador.
+        const anotar = admin.from("app_reservas_pagos").update({ enlace_id: enlace.idEnlace, enlace_url: url }).eq("identificador", identificador)
+          .then(({ error: eU }: any) => { if (eU) console.error("app-clientes: no se guardó el enlace del pedido:", eU.message); });
+        try { (globalThis as any).EdgeRuntime?.waitUntil(anotar); } catch { /* sin waitUntil se termina igual */ }
         return { url, total, prueba: !enlace.estaProductivo };
       } catch (e) {
         console.error("app-clientes: wompi no creó el enlace del pedido:", (e as Error)?.message ?? e);
@@ -1056,6 +1065,7 @@ Deno.serve(async (req) => {
         puntos: { tipo: "ganado", titulo: "Ganaste 25 puntos", cuerpo: "Gracias por tu compra. Mira tu saldo en la app.", url: "/puntos" },
         cupon: { tipo: "ganado", titulo: "Tu cupón del mes 🎟️", cuerpo: "Ya llegó: ráscalo en la app para descubrir cuánto ganaste.", url: "/puntos" },
         nivel: { tipo: "nivel", titulo: "¡Subiste de nivel! 👑", cuerpo: "Desde ahora ganas más puntos con cada compra.", url: "/puntos?nivel=1" },
+        restado: { tipo: "restado", titulo: "Usaste 500 puntos 💳", cuerpo: "Ahorraste $5.00 en Salud 1. Te quedan 1,200 puntos.", url: "/puntos" },
         tratamiento: { tipo: "tratamiento", titulo: "¿Ya te toca otra vez? 💊", cuerpo: "Se te está por acabar tu medicamento. Resérvalo y lo tenemos listo.", url: "/tratamientos" },
         reserva: { tipo: "reserva", titulo: "Tu reserva está lista", cuerpo: "Pasa a retirarla con tu código.", url: "/reservas" },
       };
@@ -1217,9 +1227,12 @@ Deno.serve(async (req) => {
       // Un identificador por INTENTO: Wompi no deja repetirlo, y el cliente
       // puede cerrar la hoja y volver a tocar «Pagar».
       const identificador = `${codigo}-${Date.now().toString(36)}`;
-      const { data: salaFila, error: eS } = await admin.from("branches").select("name").eq("id", r.branch_id).maybeSingle();
+      const [{ data: salaFila, error: eS }, { error: eP }] = await Promise.all([
+        admin.from("branches").select("name").eq("id", r.branch_id).maybeSingle(),
+        admin.from("app_reservas_pagos").insert({ reserva_id: r.id, identificador, monto: total }),
+        calentarWompi(),
+      ]);
       if (eS) throw eS;
-      const { error: eP } = await admin.from("app_reservas_pagos").insert({ reserva_id: r.id, identificador, monto: total });
       if (eP) throw eP;
       const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/wompi-pagos`;
       let enlace;

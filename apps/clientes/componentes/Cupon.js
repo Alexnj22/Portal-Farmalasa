@@ -11,7 +11,7 @@ import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import { Canvas, Group, LinearGradient as SkGradiente, Path, Rect, Skia, vec } from '@shopify/react-native-skia';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import Icono from './Icono';
 import { COLORES_NIVEL } from './TarjetaSocio';
 import { Confeti } from './animacion';
@@ -19,9 +19,21 @@ import { dolares, fecha } from '../lib/formato';
 
 const clave = (id) => `puntos_salud_cupon_raspado_${String(id).replace(/[^\w-]/g, '')}`;
 
-export default function Cupon({ cupon, nivel = 'platino', fondo, activa = true }) {
+// `demo` (modo de prueba): cada vez que cambia, el cupón se tapa y se raspa
+// solo, para ver la animación completa sin gastar el del mes.
+export default function Cupon({ cupon, nivel = 'platino', fondo, activa = true, demo = 0 }) {
   const [raspado, setRaspado] = useState(null); // null = leyendo
   const [festejo, setFestejo] = useState(false);
+  const [auto, setAuto] = useState(false);
+  // El premio «salta» al descubrirse, y el cupón destella.
+  const salto = useSharedValue(1);
+  const destello = useSharedValue(0);
+  const estiloSalto = useAnimatedStyle(() => ({ transform: [{ scale: salto.value }] }));
+  const estiloDestello = useAnimatedStyle(() => ({ opacity: destello.value }));
+  useEffect(() => {
+    if (!demo) return;
+    setRaspado(false); setAuto(true);
+  }, [demo]);
   useEffect(() => {
     if (!cupon?.id) return;
     SecureStore.getItemAsync(clave(cupon.id)).catch(() => null).then((v) => setRaspado(v === '1'));
@@ -33,10 +45,14 @@ export default function Cupon({ cupon, nivel = 'platino', fondo, activa = true }
   const colores = usado ? ['#4A4A4F', '#8C8C93', '#5A5A60'] : paleta.frente;
 
   const descubrir = () => {
-    SecureStore.setItemAsync(clave(cupon.id), '1').catch(() => {});
+    if (!auto) SecureStore.setItemAsync(clave(cupon.id), '1').catch(() => {});
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {}), 180);
     setRaspado(true);
+    setAuto(false);
     setFestejo(true);
+    salto.value = withSequence(withTiming(0.6, { duration: 0 }), withSpring(1.18, { damping: 6, stiffness: 220 }), withSpring(1, { damping: 12 }));
+    destello.value = withSequence(withTiming(0.85, { duration: 120 }), withTiming(0, { duration: 700 }));
   };
 
   return (
@@ -49,9 +65,11 @@ export default function Cupon({ cupon, nivel = 'platino', fondo, activa = true }
           </View>
           <View style={{ flex: 1, gap: 2, borderLeftWidth: 1.5, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.45)', paddingLeft: 16 }}>
             <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '800', letterSpacing: 1.5 }}>TU CUPÓN DEL MES</Text>
-            <Text style={{ color: '#FFFFFF', fontSize: 28, fontWeight: '900', fontVariant: ['tabular-nums'], textDecorationLine: usado ? 'line-through' : 'none' }}>
-              {dolares((parcial ? cupon.restantes : cupon.puntos) / 100)}
-            </Text>
+            <Animated.View style={[{ alignSelf: 'flex-start' }, estiloSalto]}>
+              <Text style={{ color: '#FFFFFF', fontSize: 28, fontWeight: '900', fontVariant: ['tabular-nums'], textDecorationLine: usado ? 'line-through' : 'none' }}>
+                {dolares((parcial ? cupon.restantes : cupon.puntos) / 100)}
+              </Text>
+            </Animated.View>
             <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13 }}>
               {usado ? 'Ya lo usaste. ¡El próximo mes llega otro!'
                 : parcial ? `Te quedan ${dolares(cupon.restantes / 100)} de ${dolares(cupon.puntos / 100)} · hasta el ${fecha(cupon.vence)}`
@@ -65,8 +83,9 @@ export default function Cupon({ cupon, nivel = 'platino', fondo, activa = true }
               <Text style={{ color: '#FF453A', fontSize: 20, fontWeight: '900', letterSpacing: 3 }}>USADO</Text>
             </View>
           ) : null}
+          <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: '#FFFFFF' }, estiloDestello]} />
         </LinearGradient>
-        {!raspado && !usado ? <Raspable alDescubrir={descubrir} /> : null}
+        {!raspado && !usado ? <Raspable key={`${cupon.id}-${demo}`} alDescubrir={descubrir} auto={auto} /> : null}
       </View>
       {/* Las muescas de un cupón, del color del fondo. */}
       <View style={{ position: 'absolute', left: 78, top: -8, width: 16, height: 16, borderRadius: 8, backgroundColor: fondo }} />
@@ -91,41 +110,94 @@ function Brillo({ activa }) {
   );
 }
 
-// La capa para raspar: plateada; el dedo la va borrando. Con la mitad
-// raspada, se descubre sola.
-function Raspable({ alDescubrir }) {
+// La capa para raspar (2026-10-08: más difícil y con más vida). Se mide lo
+// raspado por CELDAS y no por largo del trazo —con el largo, tres rayas en el
+// mismo sitio contaban como raspar todo—: se descubre con el 70 % de la
+// superficie limpia. Mientras se raspa salta polvo plateado del dedo, la
+// leyenda se apaga y el teléfono vibra.
+const GROSOR = 24;
+const COLS = 14;
+const FILAS = 5;
+const META = 0.7;
+
+function Raspable({ alDescubrir, auto = false }) {
   const [tam, setTam] = useState(null);
   const [trazo, setTrazo] = useState(() => Skia.Path.Make());
-  const largo = useRef(0);
+  const [polvo, setPolvo] = useState([]);
+  const celdas = useRef(new Set());
   const desdeToque = useRef(0);
+  const desdePolvo = useRef(0);
   const ultimo = useRef(null);
   const listo = useRef(false);
+  const idPolvo = useRef(0);
   const capa = useSharedValue(1);
-  const GROSOR = 34;
+  const leyenda = useSharedValue(1);
+
+  const marcar = (x, y) => {
+    // Las celdas que cubre el círculo del dedo.
+    const cw = tam.w / COLS; const ch = tam.h / FILAS; const r = GROSOR / 2;
+    for (let cx = Math.max(0, Math.floor((x - r) / cw)); cx <= Math.min(COLS - 1, Math.floor((x + r) / cw)); cx++) {
+      for (let cy = Math.max(0, Math.floor((y - r) / ch)); cy <= Math.min(FILAS - 1, Math.floor((y + r) / ch)); cy++) {
+        const mx = (cx + 0.5) * cw; const my = (cy + 0.5) * ch;
+        if (Math.hypot(mx - x, my - y) <= r + Math.min(cw, ch) * 0.35) celdas.current.add(cy * COLS + cx);
+      }
+    }
+  };
 
   const agregar = (x, y, nuevo) => {
     if (listo.current || !tam) return;
     const p = trazo.copy();
-    if (nuevo || !ultimo.current) { p.moveTo(x, y); p.lineTo(x + 0.1, y + 0.1); Haptics.selectionAsync().catch(() => {}); }
-    else {
-      p.lineTo(x, y);
+    if (nuevo || !ultimo.current) {
+      p.moveTo(x, y); p.lineTo(x + 0.1, y + 0.1);
+      Haptics.selectionAsync().catch(() => {});
+      leyenda.value = withTiming(0, { duration: 250 });
+      marcar(x, y);
+    } else {
       const d = Math.hypot(x - ultimo.current.x, y - ultimo.current.y);
-      largo.current += d;
-      // Se SIENTE raspar: un toque leve cada ~40 pt de recorrido (2026-10-07).
+      p.lineTo(x, y);
+      // Las celdas del tramo, cada pocos puntos.
+      const pasos = Math.max(1, Math.ceil(d / 6));
+      for (let k = 1; k <= pasos; k++) marcar(ultimo.current.x + ((x - ultimo.current.x) * k) / pasos, ultimo.current.y + ((y - ultimo.current.y) * k) / pasos);
       desdeToque.current += d;
-      if (desdeToque.current > 40) { desdeToque.current = 0; Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); }
+      if (desdeToque.current > 28) { desdeToque.current = 0; Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); }
+      desdePolvo.current += d;
+      if (desdePolvo.current > 18) {
+        desdePolvo.current = 0;
+        const nuevos = Array.from({ length: 3 }, () => ({ id: idPolvo.current++, x, y, dx: (Math.random() - 0.5) * 70, dy: 10 + Math.random() * 50, t: 3 + Math.random() * 4 }));
+        setPolvo((v) => [...v.slice(-24), ...nuevos]);
+      }
     }
     ultimo.current = { x, y };
     setTrazo(p);
-    if (largo.current > (tam.w * tam.h) / GROSOR * 0.5) {
+    if (celdas.current.size >= COLS * FILAS * META) {
       listo.current = true;
-      capa.value = withTiming(0, { duration: 350 }, (fin) => { if (fin) runOnJS(alDescubrir)(); });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      capa.value = withTiming(0, { duration: 420, easing: Easing.out(Easing.cubic) }, (fin) => { if (fin) runOnJS(alDescubrir)(); });
     }
   };
+  const soltar = () => { ultimo.current = null; };
+
+  // Modo demostración: un dedo invisible raspa en zigzag.
+  useEffect(() => {
+    if (!auto || !tam) return undefined;
+    let k = 0; const total = 90;
+    const t = setInterval(() => {
+      if (listo.current || k > total * 1.6) { clearInterval(t); return; }
+      const fila = Math.floor(k / 15); const avance = (k % 15) / 14;
+      const x = (fila % 2 ? 1 - avance : avance) * tam.w;
+      const y = ((fila % (FILAS + 1)) + 0.5) * (tam.h / (FILAS + 1)) + Math.sin(k) * 4;
+      agregar(Math.max(4, Math.min(tam.w - 4, x)), y, k === 0);
+      k++;
+    }, 22);
+    return () => clearInterval(t);
+  }, [auto, tam]); // eslint-disable-line react-hooks/exhaustive-deps -- `agregar` lee refs
+
   const gesto = Gesture.Pan().minDistance(0)
     .onBegin((e) => runOnJS(agregar)(e.x, e.y, true))
-    .onUpdate((e) => runOnJS(agregar)(e.x, e.y, false));
-  const estilo = useAnimatedStyle(() => ({ opacity: capa.value }));
+    .onUpdate((e) => runOnJS(agregar)(e.x, e.y, false))
+    .onFinalize(() => runOnJS(soltar)());
+  const estilo = useAnimatedStyle(() => ({ opacity: capa.value, transform: [{ scale: 1 + (1 - capa.value) * 0.06 }] }));
+  const estiloLeyenda = useAnimatedStyle(() => ({ opacity: leyenda.value }));
 
   return (
     <GestureDetector gesture={gesto}>
@@ -142,12 +214,28 @@ function Raspable({ alDescubrir }) {
             </Group>
           </Canvas>
         ) : null}
-        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center', gap: 4 }]}>
+        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center', gap: 4 }, estiloLeyenda]}>
           <Icono sf="hand.draw.fill" respaldo="👆" tam={22} color="#5A606A" />
           <Text style={{ color: '#4A505A', fontSize: 15, fontWeight: '900', letterSpacing: 2 }}>RASPA TU CUPÓN</Text>
           <Text style={{ color: '#5A606A', fontSize: 12, fontWeight: '600' }}>¿Cuánto ganaste este mes?</Text>
-        </View>
+        </Animated.View>
+        {polvo.map((q) => <Particula key={q.id} q={q} alTerminar={() => setPolvo((v) => v.filter((z) => z.id !== q.id))} />)}
       </Animated.View>
     </GestureDetector>
+  );
+}
+
+// Una pizca de polvo plateado que salta del dedo y cae.
+function Particula({ q, alTerminar }) {
+  const v = useSharedValue(0);
+  useEffect(() => {
+    v.value = withTiming(1, { duration: 520, easing: Easing.out(Easing.quad) }, (fin) => { if (fin) runOnJS(alTerminar)(); });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const estilo = useAnimatedStyle(() => ({
+    opacity: 1 - v.value,
+    transform: [{ translateX: q.dx * v.value }, { translateY: q.dy * v.value * v.value }, { rotate: `${v.value * 200}deg` }],
+  }));
+  return (
+    <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: q.x - q.t / 2, top: q.y - q.t / 2, width: q.t, height: q.t, borderRadius: 1.5, backgroundColor: '#C9CED6' }, estilo]} />
   );
 }

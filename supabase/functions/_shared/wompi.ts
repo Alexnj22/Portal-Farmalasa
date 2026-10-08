@@ -45,6 +45,10 @@ async function tokenWompi(): Promise<string> {
   return token.valor;
 }
 
+/** Deja el token listo antes de que el cliente toque «Pagar» (2026-10-08): el
+ *  primer cobro de una instancia nueva gastaba ~1 s sólo en pedirlo. */
+export const calentarWompi = () => tokenWompi().then(() => true).catch(() => false);
+
 async function api(metodo: string, ruta: string, cuerpo?: unknown) {
   const r = await fetch(`${API}${ruta}`, {
     method: metodo,

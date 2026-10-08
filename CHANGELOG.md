@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1256.0 — App: raspable más difícil y animado, aviso al restar puntos, modo sin conexión, Wallet directo y pago más rápido
+
+- **Raspable más difícil y con más vida:** se mide lo raspado por celdas (14×5) y se descubre con el **70 %** de la superficie limpia, con un dedo más fino (24 pt). Antes contaba el largo del trazo: tres rayas en el mismo sitio lo descubrían. Mientras se raspa salta polvo plateado, la leyenda se apaga y vibra cada ~28 pt; al descubrir, la capa se abre, el premio salta con un resorte, el cupón destella, confeti y dos vibraciones.
+- **Modo de prueba:** «Ver la animación del cupón» (se tapa y un dedo invisible lo raspa en zigzag, sin gastar el cupón real) y «Ver el cupón ya usado».
+- **Aviso al restar puntos:** canje («Usaste 500 puntos · ahorraste $5.00 en Salud 1 · te quedan…»), anulación, ajuste, vencimiento y compra pasada a otra ficha, desde `puntos_salida`. Aviso de prueba «Usaste puntos».
+- **Sin internet:** las lecturas (inicio, reservas, facturas, catálogo, ofertas, historias, avisos…) se guardan en el teléfono; sin red se muestra lo último con un aviso arriba «Sin conexión · lo que ves es de hace X». Reservar, pagar o canjear nunca usan datos guardados. Una lectura con señal mala se corta a los 12 s. Al cerrar sesión se borra lo guardado.
+- **Cumpleaños permanente en la cuenta de prueba:** una muestra «cumpleaños» creada el 6-oct lo forzaba todos los días; se borró (la pantalla se ve desde el modo de prueba).
+- **Apple Wallet:** el botón va justo debajo de la tarjeta y agrega **directo en Wallet** (la hoja de Apple se presenta en una ventana propia, encima de todo, y sin cerrar deslizando); Safari queda sólo de respaldo si falla.
+- **Pago con Wompi más rápido:** el token se deja listo al abrir el carrito o Mis reservas (`pago_preparar`), la sala, la fila del pago y el token se piden en paralelo, y anotar el enlace ya no hace esperar al cliente.
+
 ## v2.1255.0 — App: botón oficial de Apple Wallet y fecha de nacimiento con el selector del sistema
 
 - **App: botón oficial «Agregar a Apple Wallet»** (`PKAddPassButton`), como vista nativa del módulo `modules/wallet` (`BotonWalletView`). El dibujado a mano queda de respaldo si el módulo no está en la compilación.

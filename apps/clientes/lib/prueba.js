@@ -19,7 +19,12 @@ export const useModoPrueba = create((set) => ({
   nivel: 'oro',
   // Cambia con «Volver a tapar el cupón»: un id nuevo se puede raspar otra vez.
   semilla: Date.now().toString(36),
-  reiniciarCupon: () => set({ semilla: Date.now().toString(36) }),
+  reiniciarCupon: () => set({ semilla: Date.now().toString(36), cuponUsado: false }),
+  // «Ver cupón usado» y «Ver animación» (2026-10-08).
+  cuponUsado: false,
+  demoCupon: 0,
+  verCuponUsado: (v) => set({ cuponUsado: v }),
+  verAnimacionCupon: () => set((e) => ({ cuponUsado: false, demoCupon: e.demoCupon + 1 })),
   cargar: async () => {
     try {
       const v = JSON.parse((await SecureStore.getItemAsync(CLAVE)) ?? 'null');
@@ -47,13 +52,13 @@ export function nivelDePrueba(clave) {
 }
 
 /** Un cupón de muestra (Oro o Platino). `semilla` cambia con «Volver a tapar». */
-export function cuponDePrueba(nivel, semilla) {
+export function cuponDePrueba(nivel, semilla, usado = false) {
   const hoy = new Date();
   const fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
   const vence = `${fin.getFullYear()}-${String(fin.getMonth() + 1).padStart(2, '0')}-${String(fin.getDate()).padStart(2, '0')}`;
   const premios = nivel === 'oro' ? [100, 200, 500] : [300, 500, 1000];
   const puntos = premios[Math.floor(Math.random() * premios.length)];
-  return { id: `prueba-${nivel}-${semilla}`, puntos, restantes: puntos, vence, titulo: `Cupón ${nivel === 'oro' ? 'Oro' : 'Platino'} del mes` };
+  return { id: `prueba-${nivel}-${semilla}`, puntos, restantes: usado ? 0 : puntos, vence, titulo: `Cupón ${nivel === 'oro' ? 'Oro' : 'Platino'} del mes` };
 }
 
 // Se lee lo guardado al abrir la app.

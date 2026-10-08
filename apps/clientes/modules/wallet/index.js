@@ -30,3 +30,17 @@ export async function agregarPorSafari(pedir, nivelPrueba) {
   await Linking.openURL(r.url);
   return true;
 }
+
+/**
+ * Directo a Wallet (2026-10-08): baja la tarjeta y presenta la hoja de Apple
+ * en una ventana propia. true = agregada, false = la cerró sin agregar,
+ * null = no se pudo (sin módulo, sin red o error): el que llama usa Safari.
+ */
+export async function agregarDirecto(pedir, nivelPrueba) {
+  if (!N) return null;
+  try {
+    const r = await pedir('wallet_pase', nivelPrueba ? { nivel_prueba: nivelPrueba } : {});
+    if (!r?.ok || !r.pase) return null;
+    return !!(await N.agregar(r.pase));
+  } catch { return null; }
+}

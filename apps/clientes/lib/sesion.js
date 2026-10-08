@@ -5,6 +5,7 @@ import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { olvidarSincronizacion } from './avisos';
 import { llamar } from './api';
+import { olvidarTodo } from './sinConexion';
 
 const CLAVE = 'puntos_salud_sesion';
 
@@ -47,6 +48,7 @@ export const useSesion = create((set, get) => ({
 
   cerrar: async () => {
     await almacen.borrar().catch(() => {});
+    await olvidarTodo();
     set({ token: null });
   },
 

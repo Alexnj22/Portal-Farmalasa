@@ -20,6 +20,7 @@ import * as Notifications from 'expo-notifications';
 import { useTema } from '../tema/tema';
 import { colorSistema } from '../componentes/sistema';
 import { navegar } from '../lib/navegar';
+import AvisoSinConexion from '../componentes/AvisoSinConexion';
 
 const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent' } };
 const OSCURO = { ...DarkTheme, colors: { ...DarkTheme.colors, background: 'transparent' } };
@@ -171,6 +172,7 @@ function Raiz() {
             <Stack.Screen name="tratamientos" options={{ title: 'Mis tratamientos' }} />
             <Stack.Screen name="mis-puntos" options={{ headerShown: false }} />
           </Stack>
+          <AvisoSinConexion />
           <Bloqueo />
         </GestureHandlerRootView>
       </SafeAreaProvider>

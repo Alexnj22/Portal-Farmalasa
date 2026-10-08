@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1260.2 — Tarjeta de Equipo más ejecutiva y crédito a 30 días
+
+- **Tarjeta de Equipo más ejecutiva:** grafito profundo con un tejido de carbono apenas visible, guilloché fino (como el fondo de seguridad de un billete), una banda de titanio satinado que sigue la inclinación, las franjas de la marca finas y metálicas con un destello que las recorre, y un filo de luz en el canto. La misma en Wallet (franjas regeneradas).
+- **Beneficio de personal: crédito a 30 días**, en el panel de la tarjeta de Equipo junto al precio Mayoreo Plus.
+
 ## v2.1260.1 — gate:tipos vuelve a verde: 19 archivos del núcleo
 
 - **`gate:tipos` vuelve a verde.** Estaba en verde el 2026-10-05 y desde entonces entraron 19 archivos del núcleo con avisos nuevos (no corre en el pre-commit). Todos de forma, ninguno de contrato con la base: restas entre fechas (`Date - Date` → `.getTime()`), restas entre booleanos al ordenar (`Number(...)`), parámetros por desestructuración sin JSDoc (tsc infería el tipo del valor por defecto `{}`), dos arreglos sin tipo al que luego se le agrega una propiedad, y los imports `.ts` de la distribuidora (`allowImportingTsExtensions` en `tsconfig.nucleo.json`, válido con `noEmit`). Ningún cambio de comportamiento. Baseline fijado (4 archivos bajaron).

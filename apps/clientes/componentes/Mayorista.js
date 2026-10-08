@@ -126,7 +126,7 @@ export function Equipo() {
         </View>
       </View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-        {['Precio Mayoreo Plus', 'En todas las sucursales', 'Lo de precio Público acumula puntos'].map((b) => (
+        {['Precio Mayoreo Plus', 'Crédito a 30 días', 'En todas las sucursales', 'Lo de precio Preferente acumula puntos'].map((b) => (
           <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5,
             backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }}>
             <Icono sf="checkmark" respaldo="✓" tam={10} color={t.color.verdeTexto} />
@@ -135,8 +135,8 @@ export function Equipo() {
         ))}
       </View>
       <Texto nivel={3} estilo={{ fontSize: 12 }}>
-        Por política de personal compras a precio Mayoreo Plus. Lo comprado a ese precio no acumula puntos; lo comprado a precio Público, sí.
-        Muestra tu tarjeta en caja.
+        Por política de personal compras a precio Mayoreo Plus y puedes llevar tus compras al crédito, a pagar en 30 días.
+        Lo comprado a precio de personal no acumula puntos; lo comprado a precio Preferente, sí. Muestra tu tarjeta en caja.
       </Texto>
     </Tarjeta>
   );

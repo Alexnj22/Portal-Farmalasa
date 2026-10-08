@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1232.22 — Pedidos: fila centrada al abrir, buscador legible, «No sale» y el cero visible
+
+- **Al abrir una fila se centra en pantalla**, ya abierta. Si abierta no cabe, queda arriba, bajo el encabezado.
+- **Buscador de productos de la tarjeta**: ahora es un botón con ícono y la palabra «Buscar», y el campo abre a 20rem («Producto o código…»). Antes era una lupa de 12px y abría a 190px.
+- **Confirmar lo que sale**: la búsqueda dice por qué no encuentra: «no existe ningún producto con…», «X no va en este pedido», «va en el pedido pero no se le asignó nada» o «ya lo estás corrigiendo arriba». Cada resultado y cada producto corregido tienen el botón **No sale**, que lo deja en 0 de un toque. Quitar la corrección es una **X** y no la flecha circular, que se leía como «actualizar».
+- **Un 0 ya no se ve vacío** en ningún campo del portal (`PortalInput` mostraba `value || ''`). En recepción, «no llegó ninguno» se veía igual que «no lo conté».
+
 ## v2.1232.21 — Pedidos (lista): incidencias con quién y cuándo, y encabezado que sale de la barra
 
 - **Incidencias en la fila abierta**: faltante o caja dañada (quién lo reportó y a qué hora), reenvío pedido, reenvío salió (quién lo despachó), segunda llegada (quién recibió) y diferencias reportadas o corregidas. Cada una con foto, nombre y hora. Antes, en la lista no había forma de saber quién reportó el faltante.

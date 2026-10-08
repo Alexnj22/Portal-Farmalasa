@@ -286,6 +286,24 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
         );
     }, [pegado]);
 
+    // Al abrir una fila, se CENTRA ya abierta (2026-10-08). Se espera a que
+    // lleguen sus productos —es lo que le cambia la altura— y a un cuadro más
+    // para medirla ya pintada. Si abierta no cabe, va arriba, bajo el
+    // encabezado pegajoso, para que se lea desde el principio.
+    const abiertaCargada = expanded ? Boolean(items[expanded]) : false;
+    React.useEffect(() => {
+        if (!expanded) return undefined;
+        const id = requestAnimationFrame(() => requestAnimationFrame(() => {
+            const el = document.querySelector(`[data-fila-pedido="${expanded}"]`);
+            if (!el) return;
+            const reducir = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+            const libre = window.innerHeight - topEncabezado - 64;
+            el.style.scrollMarginTop = `${topEncabezado + 64}px`;
+            el.scrollIntoView({ block: el.offsetHeight > libre ? 'start' : 'center', behavior: reducir ? 'auto' : 'smooth' });
+        }));
+        return () => cancelAnimationFrame(id);
+    }, [expanded, abiertaCargada, topEncabezado]);
+
     // ── Render ────────────────────────────────────────────────────────────────
 
     if (loading) {
@@ -318,7 +336,7 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
         // Sin el agrupamiento por ruta de la tarjeta, la fila dice en cuál va.
         const rutaDeLaFila = stage === 'transito' ? pedidoRutaMap.get(claveParada(row.pedido_id, row.erp_sucursal_id))?.ruta : null;
         return (
-            <div key={cardKey} data-surface="card" className="select-none"
+            <div key={cardKey} data-fila-pedido={cardKey} data-surface="card" className="select-none"
                 {...clickable(() => toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id), { label: `Pedido ${row.codigo ?? row.numero}` })}
                 aria-expanded={isExp}>
                 <div className="grid items-center gap-x-5 gap-y-2 pl-4 pr-3 py-3.5 grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[9rem_minmax(24rem,1fr)_17rem_1rem]">
@@ -893,6 +911,7 @@ export default function TabPedidos({ searchTerm = '', vista = 'tarjetas' }) {
                                        pestañas—, y por vivir en una constante de string
                                        el gate `vidrio-a-mano` no la veía. */
                                     data-surface="card"
+                                    data-fila-pedido={cardKey}
                                     className={`select-none ${
                                         stage === 'pausado'
                                             ? 'ring-2 ring-warning/45 shadow-[var(--shadow-glow-warning-lg)]'

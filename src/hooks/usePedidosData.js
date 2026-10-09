@@ -1805,6 +1805,16 @@ export function usePedidosData({ searchTerm = '' }) {
     // En ruta (transito) → procesando → con observación → erp
     const STAGE_ORDER = { transito: 0, preparando: 1, contando: 2, pausado: 3, preparado: 4, sin_iniciar: 5, erp: 7 };
 
+    // Cuántas salas del período ya se completaron, para que la lista vacía
+    // diga «ya se completaron» y ofrezca verlas, en vez de un «sin pedidos»
+    // que parecía que se había borrado algo (2026-10-09).
+    const completadosEnPeriodo = useMemo(() => {
+        let rows = activeRows;
+        if (isBranch && erpSucursalId) rows = rows.filter(r => r.erp_sucursal_id === erpSucursalId);
+        if (filterSuc) rows = rows.filter(r => r.erp_sucursal_id === Number(filterSuc));
+        return filtrarPedidos(rows, { estado: 'completado', rango: filterDate }).length;
+    }, [activeRows, isBranch, erpSucursalId, filterSuc, filterDate]);
+
     const filteredRows = useMemo(() => {
         let rows = activeRows;
         // guard cliente para branch: nunca mostrar datos de otra sucursal aunque la query DB llegue tarde
@@ -1940,6 +1950,7 @@ export function usePedidosData({ searchTerm = '' }) {
         hasObservacion,
         pedidoStageMap,
         filteredRows,
+        completadosEnPeriodo,
         sucursalCounts,
     };
 }

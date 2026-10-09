@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { enRangoDeDias, filtrarPedidos, pedidosPorSala, rangoDeMes } from '@nucleo/utils/tableroDePedidos';
+import { enRangoDeDias, esDeAntesDelPeriodo, filtrarPedidos, pedidosPorSala, rangoDeMes } from '@nucleo/utils/tableroDePedidos';
 import { renglonesDeElectrolitFaltante } from '@nucleo/data/llegadaDePedido';
 import { fetchAllRows } from '@nucleo/utils/supabaseUtils';
 
@@ -37,7 +37,8 @@ describe('el día del pedido es el de El Salvador', () => {
     it('un pedido de la noche del 30 es de septiembre, no de octubre', () => {
         expect(enRangoDeDias(finDeMes.created_at, '2026-09-01|2026-09-30')).toBe(true);
         expect(enRangoDeDias(finDeMes.created_at, '2026-10-01|2026-10-31')).toBe(false);
-        expect(filtrarPedidos([finDeMes], { rango: '2026-10-01|2026-10-31' })).toEqual([]);
+        // Con un estado concreto, el período manda: no es de octubre.
+        expect(filtrarPedidos([finDeMes], { estado: 'confirmado', rango: '2026-10-01|2026-10-31' })).toEqual([]);
         expect(pedidosPorSala([finDeMes], '2026-09-01|2026-09-30').get(1)).toBe(1);
     });
     it('una fecha sin hora se lee tal cual', () => {
@@ -110,5 +111,25 @@ describe('fetchAllRows — una lista a medias no se hace pasar por entera', () =
         expect(await fetchAllRows(paginas(1), { completo: true })).toBeNull();
         expect((await fetchAllRows(paginas(-1), { completo: true })).length).toBe(1001);
         err.mockRestore();
+    });
+});
+
+// «Pendientes y con observación» no pierde lo que sigue abierto de un mes
+// anterior (2026-10-09): con «Este mes» y todo lo del mes ya recibido, la lista
+// salía vacía mientras dos pedidos de agosto seguían con algo pendiente.
+describe('pendientes de meses anteriores', () => {
+    const octubre = '2026-10-01|2026-10-31';
+    const agostoAbierto   = { pedido_id: 'a', erp_sucursal_id: 1, pedido_status: 'parcial', enviado_at: 'x', diferencias_reportadas_at: 'z', created_at: '2026-08-17T15:00:00Z' };
+    const agostoCompleto  = { pedido_id: 'b', erp_sucursal_id: 2, pedido_status: 'completado', enviado_at: 'x', recibido_erp_at: 'y', created_at: '2026-08-10T15:00:00Z' };
+    const octubreCompleto = { pedido_id: 'c', erp_sucursal_id: 3, pedido_status: 'completado', enviado_at: 'x', recibido_erp_at: 'y', created_at: '2026-10-03T15:00:00Z' };
+    const filas = [agostoAbierto, agostoCompleto, octubreCompleto];
+    const ids = rs => rs.map(r => r.pedido_id);
+    it('se ven con el filtro por defecto, y lo completado de antes no', () => {
+        expect(ids(filtrarPedidos(filas, { rango: octubre }))).toEqual(['a']);
+        expect(esDeAntesDelPeriodo(agostoAbierto, octubre)).toBe(true);
+        expect(esDeAntesDelPeriodo(octubreCompleto, octubre)).toBe(false);
+    });
+    it('«Completados» sigue mirando sólo el período', () => {
+        expect(ids(filtrarPedidos(filas, { estado: 'completado', rango: octubre }))).toEqual(['c']);
     });
 });

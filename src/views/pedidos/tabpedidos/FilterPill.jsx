@@ -1,7 +1,7 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C)
 import { CircleDot } from 'lucide-react';
 import PeriodPicker from '../../../components/common/PeriodPicker';
-import { currentMonthRange } from '@nucleo/utils/tableroDePedidos';
+import { currentMonthRange, ESTADOS_DEL_TABLERO } from '@nucleo/utils/tableroDePedidos';
 import FilterBar from '../../../components/common/FilterBar';
 
 /**
@@ -10,13 +10,9 @@ import FilterBar from '../../../components/common/FilterBar';
  * da segmentado hasta 3 y select de 4 en adelante, y ese umbral se evalúa sobre
  * este arreglo.
  */
-const ESTADOS = [
-    { value: 'all',         label: 'Todos los estados' },
-    { value: 'confirmado',  label: 'Pendientes' },
-    { value: 'enviado',     label: 'En ruta' },
-    { value: 'observacion', label: 'Con observación' },
-    { value: 'completado',  label: 'Completados' },
-];
+// La lista es la del núcleo (`ESTADOS_DEL_TABLERO`), la misma de la app: dos
+// copias ya habían quedado con rótulos distintos.
+const ESTADOS = ESTADOS_DEL_TABLERO;
 
 /**
  * Los filtros de Pedidos. Desde el 2026-07-30 es un `FilterBar` de verdad.
@@ -68,7 +64,7 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
                     value={filterStatus}
                     onChange={v => setFilterStatus(v || 'all')}
                     options={ESTADOS}
-                    placeholder="Todos los estados"
+                    placeholder="Pendientes"
                     ancho="180px"
                 />
             </FilterBar.Section>

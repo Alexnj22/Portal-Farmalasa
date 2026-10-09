@@ -353,8 +353,12 @@ export function enRangoDeDias(iso, rango) {
 
 /** Los filtros de estado del tablero — los de `FilterPill`. */
 export const ESTADOS_DEL_TABLERO = [
-    { value: 'all',         label: 'Todos los estados' },
-    { value: 'confirmado',  label: 'Pendientes' },
+    // «Todos los estados» prometía todo y escondía lo completado sin
+    // observación: con un mes entero ya recibido, la lista salía vacía y
+    // parecía que se había borrado (2026-10-09). «Pendientes» = todo lo que
+    // tiene algo por hacer, del período y de antes; lo cerrado, en «Completados».
+    { value: 'all',         label: 'Pendientes' },
+    { value: 'confirmado',  label: 'Por despachar' },
     { value: 'enviado',     label: 'En ruta' },
     { value: 'observacion', label: 'Con observación' },
     { value: 'completado',  label: 'Completados' },
@@ -419,8 +423,20 @@ export function filtrarPedidos(rows, { estado = 'all', rango = null, observado =
     } else {
         filas = filas.filter(r => !completada(r) || observado(r));
     }
-    if (rango) filas = filas.filter(r => enRangoDeDias(r.created_at, rango));
+    // Con «Pendientes y con observación», lo que sigue abierto de un período
+    // ANTERIOR también se ve (2026-10-09): un pedido de agosto con una
+    // diferencia sin resolver no deja de estar pendiente porque cambió el mes.
+    // La pantalla lo marca con `esDeAntesDelPeriodo`.
+    if (rango) filas = filas.filter(r => enRangoDeDias(r.created_at, rango)
+        || (estado === 'all' && esDeAntesDelPeriodo(r, rango)));
     return filas;
+}
+
+/** ¿El pedido es de ANTES del período elegido? (el día en hora de El Salvador). */
+export function esDeAntesDelPeriodo(r, rango) {
+    const desde = rango ? rango.split('|')[0] : null;
+    const d = diaDe(r?.created_at);
+    return !!(desde && d && d < desde);
 }
 
 /**

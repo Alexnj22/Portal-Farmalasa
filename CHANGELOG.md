@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1261.2 — Pedidos: «Pendientes» incluye lo de meses anteriores y la lista vacía ofrece ver completados
+
+- **El filtro por defecto se llama «Pendientes»** y no «Todos los estados». Muestra lo que tiene algo por hacer, y siempre escondió lo completado sin observación: con un mes entero ya recibido la lista salía vacía y parecía que se había borrado algo (pasó en producción el 2026-10-09; no se había borrado nada). «Pendientes» de antes pasa a llamarse «Por despachar». La lista sale del núcleo (`ESTADOS_DEL_TABLERO`), así que la app ve los mismos nombres.
+- **Lo pendiente de meses anteriores se ve**, en su propia sección arriba, «Pendientes de meses anteriores». Con «Este mes» se perdían los pedidos de agosto que siguen con algo abierto.
+- **La lista vacía dice por qué**: «Los N pedidos del período ya se completaron», con el botón **Ver completados**.
+
 ## v2.1261.1 — Pedidos: recordatorio «llegó y no se recibió» en producción
 
 - Migración `20261009021409_cron_llego_y_no_se_recibio` aplicada en producción. El cron `avisar-pedidos-sin-recibir` corre cada 30 min (6:00–23:30 SV) y avisa a la sala a las 2 h y a supervisión a las 6 h cuando un pedido llegó y no se recibió. Una vez por umbral, sólo lo de los últimos 3 días. La primera corrida no tuvo nada que avisar.

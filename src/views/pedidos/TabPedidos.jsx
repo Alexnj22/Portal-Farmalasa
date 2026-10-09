@@ -9,7 +9,7 @@ import Notice from '../../components/common/Notice';
 import { SkeletonText } from '../../components/common/StateViews';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    ChevronDown, ChevronRight, CheckCircle2,
+    ChevronDown, ChevronRight, CheckCircle2, History,
     Package, Building2, AlertTriangle,
     Truck, Pause, Play, Home,
     X, Send, RotateCcw, Flag,
@@ -22,7 +22,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { ERP_NAMES } from '@nucleo/constants/erp';
-import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, estadoDeLaSala, claveParada, puedePrepararse, puedeDespacharse, faltantesDeLaSala, describirFaltantes } from '@nucleo/utils/tableroDePedidos';
+import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, estadoDeLaSala, claveParada, puedePrepararse, puedeDespacharse, faltantesDeLaSala, describirFaltantes, esDeAntesDelPeriodo } from '@nucleo/utils/tableroDePedidos';
 import ItemSections from './tabpedidos/ItemSections';
 import AvanceCompacto, { EncabezadoDeAvance } from './tabpedidos/AvanceCompacto';
 import DifSection from './tabpedidos/DifSection';
@@ -122,6 +122,10 @@ function etiquetaDeLaSala(estadoSala, stage, entregada, difsPendientes = 0) {
 // Los grupos de la lista: «¿qué toca hacer?», en orden de urgencia. Lo que
 // tiene un problema abierto va primero, sea cual sea su etapa.
 const GRUPOS_LISTA = [
+    // Lo que sigue abierto de un período anterior (2026-10-09): arriba de todo,
+    // porque es lo más atrasado, y con su propio nombre para que no se confunda
+    // con lo del mes.
+    { key: 'anteriores',  label: 'Pendientes de meses anteriores', Icono: History, tono: 'text-warning-text' },
     { key: 'problemas',   label: 'Con problemas',     Icono: AlertTriangle, tono: 'text-danger-text' },
     { key: 'pausado',     label: 'En pausa',          Icono: Pause,         tono: 'text-warning-text' },
     { key: 'sin_iniciar', label: 'Por preparar',      Icono: ClipboardList, tono: 'text-content' },
@@ -833,6 +837,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         hasObservacion,
         pedidoStageMap,
         filteredRows,
+        completadosEnPeriodo,
         sucursalCounts,
     } = usePedidosData({ searchTerm });
 
@@ -955,6 +960,7 @@ export default function TabPedidos({ searchTerm = '' }) {
     // 2026-10-07 al lado de las tarjetas, que se retiraron: es la única forma
     // del tablero, en escritorio y en el teléfono (`FilaDeSala`).
     const grupoDeLaFila = (row) => {
+        if (filterStatus === 'all' && esDeAntesDelPeriodo(row, filterDate)) return 'anteriores';
         const ck = `act_${row.pedido_id}_${row.erp_sucursal_id}`;
         const f = faltantesDeLaSala(row);
         if ((f.hay && !f.enCamino) || (cardStats[ck]?.sinResolver ?? 0) > 0) return 'problemas';
@@ -1061,16 +1067,34 @@ export default function TabPedidos({ searchTerm = '' }) {
                             subtitle={`Ningún pedido coincide con "${searchTerm}".`}
                         />
                     ) : (
-                        <EmptyState
-                            compact
-                            icon={Inbox}
-                            iconClass="text-chart-1-text"
-                            glowClass="bg-chart-1/30"
-                            title="Sin pedidos activos"
-                            subtitle={filterSuc || filterStatus
-                                ? 'Ningún pedido cumple con los filtros aplicados.'
-                                : undefined}
-                        />
+                        // Con el filtro por defecto y todo lo del período ya recibido,
+                        // la lista vacía decía «Sin pedidos activos» y parecía que se
+                        // había borrado algo (2026-10-09). Ahora dice cuántos se
+                        // completaron y ofrece verlos.
+                        filterStatus === 'all' && completadosEnPeriodo > 0 ? (
+                            <EmptyState
+                                compact
+                                icon={CheckCircle2}
+                                iconClass="text-success-text"
+                                glowClass="bg-success/30"
+                                title="Todo al día"
+                                subtitle={completadosEnPeriodo === 1
+                                    ? 'El único pedido del período ya se completó.'
+                                    : `Los ${completadosEnPeriodo} pedidos del período ya se completaron.`}
+                                action={<Button variant="secondary" icon={CheckCircle2} onClick={() => setFilterStatus('completado')}>Ver completados</Button>}
+                            />
+                        ) : (
+                            <EmptyState
+                                compact
+                                icon={Inbox}
+                                iconClass="text-chart-1-text"
+                                glowClass="bg-chart-1/30"
+                                title="Sin pedidos activos"
+                                subtitle={filterSuc || filterStatus
+                                    ? 'Ningún pedido cumple con los filtros aplicados.'
+                                    : undefined}
+                            />
+                        )
                     )
                 ) : (
                         <div className="space-y-8">

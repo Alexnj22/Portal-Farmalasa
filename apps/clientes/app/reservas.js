@@ -7,6 +7,14 @@
 // Vencidas/Canceladas. El filtro lo aplica el servidor (para que «ver más»
 // traiga más de lo filtrado), de a 20 por cursor. Las abiertas llegan siempre
 // completas en la primera página; lo que se pagina son las terminadas.
+//
+// Un pedido del carrito es UNA tarjeta (2026-10-09). El servidor guarda una
+// fila por producto (mismo `pedido`), y antes cada una era su tarjeta, con su
+// QR, su «Pagar el pedido» y su «Cancelar»: tres botones de pagar que cobraban
+// lo mismo. Hoy se agrupa AL VUELO sobre lo que haya cargado (`agruparPorPedido`):
+// como se pagina por renglón, los de un mismo pedido terminado pueden llegar
+// en páginas distintas, y al bajar la siguiente se suman a la tarjeta que ya
+// estaba. Las reservas sueltas siguen como antes.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Platform, Pressable, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -55,6 +63,29 @@ const VACIO_FILTRO = {
 // «Todas» va sin parámetros: es la misma lectura que hacen el carrito y el pago
 // (y la que queda guardada para cuando no hay conexión).
 const datosDe = (filtro) => (filtro === 'todas' ? undefined : { estado: filtro });
+
+// Las filas en grupos: un grupo por pedido del carrito (en el orden de su
+// primera fila) y uno por cada reserva suelta. Se llama por separado para las
+// abiertas y las terminadas: un renglón cancelado de un pedido abierto va con
+// las terminadas.
+function agruparPorPedido(filas) {
+  const grupos = [];
+  const porPedido = new Map();
+  for (const r of filas) {
+    if (!r.pedido) { grupos.push({ clave: `r:${r.id}`, pedido: null, filas: [r] }); continue; }
+    let g = porPedido.get(r.pedido);
+    if (!g) { g = { clave: `p:${r.pedido}`, pedido: r.pedido, filas: [] }; porPedido.set(r.pedido, g); grupos.push(g); }
+    g.filas.push(r);
+  }
+  return grupos;
+}
+// Un pedido está listo cuando lo están todos sus productos: se retiran juntos.
+const estadoDeGrupo = (g) => (g.filas.every((r) => r.estado === 'lista') ? 'lista' : 'pendiente');
+// El pago del pedido: pagado si lo están todos; si no, el de la primera fila
+// con anticipo, o pendiente.
+const pagoDeGrupo = (g) => (g.filas.every((r) => r.pago_estado === 'pagado') ? 'pagado'
+  : g.filas.find((r) => r.pago_estado && r.pago_estado !== 'pendiente' && r.pago_estado !== 'pagado')?.pago_estado ?? 'pendiente');
+const totalDeFila = (r) => Number(r.total ?? Number(r.precio_unitario ?? 0) * Number(r.cantidad ?? 1));
 
 export default function Reservas() {
   const t = useTema();
@@ -116,6 +147,20 @@ export default function Reservas() {
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
   useEffect(() => { const id = setInterval(() => setAhora(Date.now()), 30000); return () => clearInterval(id); }, []);
 
+  // Un pedido se cancela entero: cada renglón por su cuenta (la misma acción
+  // del servidor, que sólo cancela los suyos, abiertos y sin pagar en línea).
+  const cancelarPedido = (g) => Alert.alert('Cancelar pedido', `¿Cancelar el pedido ${g.pedido} completo (${g.filas.length} productos)?`, [
+    { text: 'No', style: 'cancel' },
+    { text: 'Cancelar pedido', style: 'destructive', onPress: async () => {
+      const res = await Promise.all(g.filas.map((r) => pedir('cancelar_reserva', { id: r.id })));
+      const fallidas = res.filter((x) => !x?.ok);
+      if (!fallidas.length) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      else Alert.alert(fallidas.length === res.length ? 'No se pudo cancelar' : 'Se canceló sólo una parte del pedido',
+        fallidas[0]?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
+      cargar();
+      useCuenta.getState().cargar({ forzar: true }).catch(() => {});
+    } },
+  ]);
   const cancelar = (r) => Alert.alert('Cancelar reserva', `¿Cancelar ${r.producto_nombre}?`, [
     { text: 'No', style: 'cancel' },
     { text: 'Cancelar reserva', style: 'destructive', onPress: async () => {
@@ -180,20 +225,26 @@ export default function Reservas() {
   }
   // Primero lo que se puede retirar ya, después lo que se está preparando, y
   // abajo lo terminado. La reserva señalada (desde un aviso) va primero en su grupo.
-  const primero = (a, b) => (String(b.id) === String(resaltar)) - (String(a.id) === String(resaltar));
-  const listas = d.reservas.filter((r) => r.estado === 'lista').sort(primero);
-  const preparando = d.reservas.filter((r) => r.estado === 'pendiente').sort(primero);
+  // Un pedido del carrito cuenta (y se muestra) como UNA tarjeta.
+  const esResaltado = (g) => g.filas.some((r) => String(r.id) === String(resaltar));
+  const primero = (a, b) => esResaltado(b) - esResaltado(a);
+  const gruposAbiertos = agruparPorPedido(d.reservas.filter((r) => r.estado === 'pendiente' || r.estado === 'lista'));
+  const listas = gruposAbiertos.filter((g) => estadoDeGrupo(g) === 'lista').sort(primero);
+  const preparando = gruposAbiertos.filter((g) => estadoDeGrupo(g) === 'pendiente').sort(primero);
   const abiertas = [...listas, ...preparando];
-  const cerradas = d.reservas.filter((r) => r.estado !== 'pendiente' && r.estado !== 'lista');
-  // Cuántos productos lleva cada pedido del carrito (cada uno es una tarjeta).
-  const delPedido = new Map();
-  for (const r of abiertas) if (r.pedido) delPedido.set(r.pedido, (delPedido.get(r.pedido) ?? 0) + 1);
-  const tarjeta = (r, i) => (
-    <Entrada key={r.id} indice={Math.min(i, 8)}>
-      <ReservaAbierta r={r} ahora={ahora} alCancelar={() => cancelar(r)} alPagar={() => pagar(r)} pagando={pagando === r.id}
-        resaltada={String(r.id) === String(resaltar)} productosDelPedido={r.pedido ? delPedido.get(r.pedido) ?? 1 : 1} />
-    </Entrada>
-  );
+  const cerradas = agruparPorPedido(d.reservas.filter((r) => r.estado !== 'pendiente' && r.estado !== 'lista'));
+  const tarjeta = (g, i) => {
+    const r = g.filas[0];
+    return (
+      <Entrada key={`a:${g.clave}`} indice={Math.min(i, 8)}>
+        {g.filas.length > 1 ? (
+          <PedidoAbierto g={g} ahora={ahora} alCancelar={() => cancelarPedido(g)} alPagar={() => pagar(r)} pagando={pagando === r.id} resaltada={esResaltado(g)} />
+        ) : (
+          <ReservaAbierta r={r} ahora={ahora} alCancelar={() => cancelar(r)} alPagar={() => pagar(r)} pagando={pagando === r.id} resaltada={esResaltado(g)} />
+        )}
+      </Entrada>
+    );
+  };
   return (
     <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando} alFinal={d.siguiente ? cargarMas : undefined}>
       {chips}
@@ -206,13 +257,13 @@ export default function Reservas() {
       {filtro !== 'todas' && !d.reservas.length ? <Vacio titulo="Nada por aquí">{VACIO_FILTRO[filtro]}</Vacio> : null}
       {abiertas.length ? <ResumenReservas listas={listas.length} preparando={preparando.length} /> : null}
       {listas.length ? <Seccion texto="Listas para retirar" n={listas.length} /> : null}
-      {listas.map((r, i) => tarjeta(r, i))}
+      {listas.map((g, i) => tarjeta(g, i))}
       {preparando.length ? <Seccion texto="En preparación" n={preparando.length} /> : null}
-      {preparando.map((r, i) => tarjeta(r, listas.length + i))}
+      {preparando.map((g, i) => tarjeta(g, listas.length + i))}
       {cerradas.length && filtro === 'todas' ? <Seccion texto="Anteriores" /> : null}
-      {cerradas.map((r, i) => (
-        <Entrada key={r.id} indice={Math.min(abiertas.length + i, 8)}>
-          <ReservaCerrada r={r} />
+      {cerradas.map((g, i) => (
+        <Entrada key={`c:${g.clave}`} indice={Math.min(abiertas.length + i, 8)}>
+          {g.filas.length > 1 ? <PedidoCerrado g={g} /> : <ReservaCerrada r={g.filas[0]} />}
         </Entrada>
       ))}
       {d.siguiente ? (
@@ -335,8 +386,6 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando, resaltada = fa
   const t = useTema();
   const lista = r.estado === 'lista';
   const e = estadoDe(t, r.estado);
-  const pasos = ['Recibida', 'Lista', 'Retirada'];
-  const actual = lista ? 1 : 0;
   const pago = PAGO[r.pago_estado] ?? PAGO.pendiente;
   const domicilio = r.entrega === 'domicilio';
   const ahorro = r.precio_normal != null && r.precio_unitario != null && r.precio_normal > r.precio_unitario
@@ -374,34 +423,10 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando, resaltada = fa
       </View>
 
       {/* Los pasos: dónde va la reserva. */}
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        {pasos.map((p, i) => (
-          <View key={p} style={{ flex: i < pasos.length - 1 ? 1 : 0, flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ alignItems: 'center', gap: 4 }}>
-              <View style={{ width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center',
-                backgroundColor: i <= actual ? (lista ? '#34C759' : t.color.magenta) : (t.oscuro ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)') }}>
-                {i <= actual ? <Icono sf="checkmark" respaldo="✓" tam={11} color="#FFFFFF" /> : null}
-              </View>
-              <Text style={{ fontSize: 11, fontWeight: i === actual ? '800' : '600', color: i <= actual ? colorSistema.texto : colorSistema.texto3 }}>{p}</Text>
-            </View>
-            {i < pasos.length - 1 ? (
-              <View style={{ flex: 1, height: 2, marginHorizontal: 6, marginBottom: 16, borderRadius: 1,
-                backgroundColor: i < actual ? (lista ? '#34C759' : t.color.magenta) : (t.oscuro ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)') }} />
-            ) : null}
-          </View>
-        ))}
-      </View>
+      <Pasos lista={lista} />
 
       {lista && r.vence_at ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 14, padding: 12, backgroundColor: 'rgba(52,199,89,0.16)' }}>
-          <Icono sf="timer" respaldo="⏱" tam={16} color={t.color.exitoTexto} />
-          <View style={{ flex: 1, gap: 1 }}>
-            <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.exitoTexto }}>
-              Lista para {domicilio ? 'entregar' : 'retirar'}: {restante(r.vence_at, ahora)}
-            </Text>
-            <Text style={{ fontSize: 12, color: colorSistema.texto2 }}>Vence el {fechaHora(r.vence_at)}</Text>
-          </View>
-        </View>
+        <CuentaRegresiva vence={r.vence_at} ahora={ahora} domicilio={domicilio} />
       ) : (
         <Text style={{ fontSize: 14, lineHeight: 20, color: colorSistema.texto2 }}>
           La sucursal la está preparando. Te avisamos cuando esté lista{r.oferta_fin ? `; la oferta vale hasta el ${fecha(r.oferta_fin)}` : ''}.
@@ -478,6 +503,259 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando, resaltada = fa
           <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.rojo }}>Cancelar reserva</Text>
         </Pressable>
       )}
+    </Tarjeta>
+  );
+}
+
+// Los pasos: Recibida → Lista → Retirada.
+function Pasos({ lista }) {
+  const t = useTema();
+  const pasos = ['Recibida', 'Lista', 'Retirada'];
+  const actual = lista ? 1 : 0;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      {pasos.map((p, i) => (
+        <View key={p} style={{ flex: i < pasos.length - 1 ? 1 : 0, flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ alignItems: 'center', gap: 4 }}>
+            <View style={{ width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center',
+              backgroundColor: i <= actual ? (lista ? '#34C759' : t.color.magenta) : (t.oscuro ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)') }}>
+              {i <= actual ? <Icono sf="checkmark" respaldo="✓" tam={11} color="#FFFFFF" /> : null}
+            </View>
+            <Text style={{ fontSize: 11, fontWeight: i === actual ? '800' : '600', color: i <= actual ? colorSistema.texto : colorSistema.texto3 }}>{p}</Text>
+          </View>
+          {i < pasos.length - 1 ? (
+            <View style={{ flex: 1, height: 2, marginHorizontal: 6, marginBottom: 16, borderRadius: 1,
+              backgroundColor: i < actual ? (lista ? '#34C759' : t.color.magenta) : (t.oscuro ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)') }} />
+          ) : null}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// Las 24 horas para retirar, con la hora en que vence.
+function CuentaRegresiva({ vence, ahora, domicilio }) {
+  const t = useTema();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 14, padding: 12, backgroundColor: 'rgba(52,199,89,0.16)' }}>
+      <Icono sf="timer" respaldo="⏱" tam={16} color={t.color.exitoTexto} />
+      <View style={{ flex: 1, gap: 1 }}>
+        <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.exitoTexto }}>
+          Lista para {domicilio ? 'entregar' : 'retirar'}: {restante(vence, ahora)}
+        </Text>
+        <Text style={{ fontSize: 12, color: colorSistema.texto2 }}>Vence el {fechaHora(vence)}</Text>
+      </View>
+    </View>
+  );
+}
+
+// Un pedido del carrito en curso (2026-10-09): UNA tarjeta con sus productos
+// (nombre, cantidad, precio), el total con el envío, un solo código y un solo
+// pagar / compartir / cancelar. La sucursal, la entrega y la fecha son las del
+// pedido (el carrito las elige una vez para todos sus renglones).
+function PedidoAbierto({ g, ahora, alCancelar, alPagar, pagando, resaltada = false }) {
+  const t = useTema();
+  const r = g.filas[0];
+  const estado = estadoDeGrupo(g);
+  const lista = estado === 'lista';
+  const e = estadoDe(t, estado);
+  const pagoClave = pagoDeGrupo(g);
+  const pago = PAGO[pagoClave] ?? PAGO.pendiente;
+  const algunaPagada = g.filas.some((f) => f.pago_estado === 'pagado');
+  const domicilio = r.entrega === 'domicilio';
+  const unidades = g.filas.reduce((n, f) => n + Number(f.cantidad ?? 1), 0);
+  const subtotal = g.filas.reduce((n, f) => n + totalDeFila(f), 0);
+  const envio = Math.max(0, ...g.filas.map((f) => Number(f.costo_envio ?? 0)));
+  // El total lo calcula el servidor (renglones abiertos + envío una vez); si
+  // no viniera, la misma cuenta acá.
+  const total = r.total_pedido ?? Math.round((subtotal + envio) * 100) / 100;
+  const ahorro = g.filas.reduce((n, f) => n + (f.precio_normal != null && f.precio_unitario != null && f.precio_normal > f.precio_unitario
+    ? (f.precio_normal - f.precio_unitario) * f.cantidad : 0), 0);
+  const venceLista = lista ? g.filas.map((f) => f.vence_at).filter(Boolean).sort()[0] : null;
+  const anticipo = g.filas.reduce((n, f) => n + Number(f.anticipo ?? 0), 0);
+  const pagadoAt = g.filas.map((f) => f.pagado_at).filter(Boolean).sort().pop();
+  const [verCodigo, setVerCodigo] = useState(lista);
+  return (
+    <Tarjeta tono={lista ? t.color.verde : resaltada ? t.color.magenta : undefined} estilo={{ gap: 14 }}>
+      {resaltada ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Icono sf="arrow.down.circle.fill" respaldo="↓" tam={14} color={t.color.magentaTexto} />
+          <Text style={{ fontSize: 13, fontWeight: '800', color: t.color.magentaTexto }}>Ese producto va en este pedido</Text>
+        </View>
+      ) : null}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', flex: 1 }}>
+          {lista ? <Latido><Pildora e={e} /></Latido> : <Pildora e={e} />}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4,
+            backgroundColor: t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }}>
+            <Icono sf="cart.fill" respaldo="" tam={11} color={colorSistema.texto2} />
+            <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 12, fontWeight: '800', color: colorSistema.texto2 }}>Pedido</Text>
+          </View>
+        </View>
+        <Text style={{ fontSize: 13, fontWeight: '800', color: colorSistema.texto3, fontVariant: ['tabular-nums'] }}>{g.pedido}</Text>
+      </View>
+
+      <View style={{ gap: 2 }}>
+        <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto, letterSpacing: -0.3 }}>
+          {g.filas.length} productos
+        </Text>
+        <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto3 }}>
+          {unidades} {unidades === 1 ? 'unidad' : 'unidades'} · se {domicilio ? 'entregan' : 'retiran'} juntos
+        </Text>
+      </View>
+
+      {/* Los productos del pedido. */}
+      <View style={{ borderRadius: 16, paddingHorizontal: 12, backgroundColor: t.oscuro ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.035)' }}>
+        {g.filas.map((f, i) => (
+          <View key={f.id} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start', paddingVertical: 10,
+            borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
+            <Text style={{ minWidth: 26, fontSize: 15, fontWeight: '800', color: colorSistema.texto2, fontVariant: ['tabular-nums'] }}>{f.cantidad}×</Text>
+            <View style={{ flex: 1, gap: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{f.producto_nombre}</Text>
+              {f.tipo === 'promocion' && f.oferta_titulo ? (
+                <Text style={{ fontSize: 12, fontWeight: '600', color: t.color.magentaTexto }} numberOfLines={1}>{f.oferta_titulo}</Text>
+              ) : null}
+              {f.precio_unitario != null ? (
+                <Text style={{ fontSize: 12, color: colorSistema.texto3, fontVariant: ['tabular-nums'] }}>{dolares(f.precio_unitario)} c/u</Text>
+              ) : null}
+            </View>
+            {f.precio_unitario != null ? (
+              <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(totalDeFila(f))}</Text>
+            ) : null}
+          </View>
+        ))}
+      </View>
+
+      <Pasos lista={lista} />
+
+      {lista && venceLista ? (
+        <CuentaRegresiva vence={venceLista} ahora={ahora} domicilio={domicilio} />
+      ) : (
+        <Text style={{ fontSize: 14, lineHeight: 20, color: colorSistema.texto2 }}>
+          La sucursal está preparando tu pedido. Te avisamos cuando esté listo.
+        </Text>
+      )}
+
+      <View>
+        {domicilio ? (
+          <Dato sf="house.fill" rotulo="Entrega" valor="A domicilio" detalle={r.direccion_entrega} />
+        ) : (
+          <Dato sf="storefront.fill" rotulo="Retiro en sucursal" valor={r.sala ?? 'Sucursal'} detalle={r.sala_direccion}
+            accion={r.sala ? { texto: 'Cómo llegar', alTocar: () => Linking.openURL(mapa(r)).catch(() => {}) } : null} />
+        )}
+        <Separador />
+        <Dato sf={pago.sf} rotulo="Pago" valor={pago.texto} color={tonoColor(t, pago.tono)}
+          detalle={`${METODO[r.pago_metodo] ?? 'En caja, al retirar'}${pagoClave === 'anticipo' && anticipo ? ` · anticipo ${dolares(anticipo)}` : ''}${pagadoAt ? ` · ${fechaHora(pagadoAt)}` : ''}`} />
+        <Separador />
+        <Dato sf="calendar" rotulo="Pedido el" valor={fechaHora(r.created_at)} />
+      </View>
+
+      <View style={{ gap: 4, paddingTop: 12, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
+        {envio > 0 ? (
+          <>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>Productos</Text>
+              <Text style={{ fontSize: 13, color: colorSistema.texto2, fontVariant: ['tabular-nums'] }}>{dolares(subtotal)}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>Envío</Text>
+              <Text style={{ fontSize: 13, color: colorSistema.texto2, fontVariant: ['tabular-nums'] }}>{dolares(envio)}</Text>
+            </View>
+          </>
+        ) : null}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          {ahorro > 0 ? <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.magentaTexto }}>Ahorras {dolares(ahorro)}</Text> : <View />}
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: colorSistema.texto3 }}>{pagoClave === 'pagado' ? 'PAGASTE' : 'TOTAL'}</Text>
+            <Text style={{ fontSize: 24, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(total)}</Text>
+          </View>
+        </View>
+      </View>
+
+      {g.filas.map((f) => <SaldoAFavor key={f.id} r={f} />)}
+      {pagoClave === 'pendiente' && !algunaPagada && Number(total) > 0 ? (
+        <View style={{ gap: 6 }}>
+          <Boton alTocar={alPagar} cargando={pagando}>{`Pagar el pedido ${dolares(total)}${envio > 0 ? ' (con envío)' : ''}`}</Boton>
+          <Text style={{ fontSize: 12, textAlign: 'center', color: colorSistema.texto3 }}>
+            O paga al retirar, en la sucursal. Pagado en línea tienes 7 días para retirarlo.
+          </Text>
+        </View>
+      ) : null}
+
+      {/* Un solo código para todo el pedido. */}
+      <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setVerCodigo((x) => !x); }} accessibilityRole="button"
+        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Icono sf="qrcode" respaldo="" tam={16} color={colorSistema.texto} />
+          <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>Pedido {g.pedido}</Text>
+        </View>
+        <Icono sf={verCodigo ? 'chevron.up' : 'chevron.down'} respaldo="" tam={12} color={colorSistema.texto3} />
+      </Pressable>
+      {verCodigo ? (
+        <CodigoReserva codigo={g.pedido} tam={140} compartir={domicilio ? null : {
+          producto: `${g.filas.length} productos (${r.producto_nombre} y más)`, sala: r.sala, pedido: true,
+        }} />
+      ) : null}
+
+      {algunaPagada ? (
+        <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto2 }}>
+          Ya está pagado. Para cancelarlo, escríbele a la sucursal.
+        </Text>
+      ) : (
+        <Pressable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.rojo }}>Cancelar pedido</Text>
+        </Pressable>
+      )}
+    </Tarjeta>
+  );
+}
+
+// Un pedido terminado: compacto, con sus productos debajo. Si sus renglones
+// terminaron distinto (uno cancelado y el resto retirado), cada uno dice el suyo.
+function PedidoCerrado({ g }) {
+  const t = useTema();
+  const r = g.filas[0];
+  const mismoEstado = g.filas.every((f) => f.estado === r.estado);
+  const e = estadoDe(t, mismoEstado ? r.estado : 'retirada');
+  const retirada = g.filas.some((f) => f.estado === 'retirada');
+  const pagoClave = pagoDeGrupo(g);
+  const pago = PAGO[pagoClave] ?? PAGO.pendiente;
+  const total = g.filas.reduce((n, f) => n + (f.precio_unitario != null ? totalDeFila(f) : 0), 0);
+  const cerrada = g.filas.map((f) => f.cerrada_at ?? f.created_at).filter(Boolean).sort().pop();
+  return (
+    <Tarjeta estilo={{ gap: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Icono sf={retirada ? 'checkmark.circle.fill' : 'xmark.circle'} respaldo="•" tam={24} color={e.color} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }} numberOfLines={1}>Pedido de {g.filas.length} productos</Text>
+          <Text style={{ fontSize: 13, color: colorSistema.texto3 }} numberOfLines={1}>
+            {mismoEstado ? `${e.texto} · ` : ''}{r.entrega === 'domicilio' ? 'A domicilio' : r.sala} · {fechaHora(cerrada)}
+          </Text>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto3, fontVariant: ['tabular-nums'] }}>Pedido {g.pedido}</Text>
+        </View>
+        <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(total)}</Text>
+      </View>
+      <View style={{ marginLeft: 36, gap: 4 }}>
+        {g.filas.map((f) => (
+          <View key={f.id} style={{ flexDirection: 'row', gap: 8 }}>
+            <Text style={{ flex: 1, fontSize: 13, color: colorSistema.texto2 }} numberOfLines={1}>
+              {f.cantidad} × {f.producto_nombre}{mismoEstado ? '' : ` · ${estadoDe(t, f.estado).texto}`}
+            </Text>
+            {f.precio_unitario != null ? (
+              <Text style={{ fontSize: 13, color: colorSistema.texto2, fontVariant: ['tabular-nums'] }}>{dolares(totalDeFila(f))}</Text>
+            ) : null}
+          </View>
+        ))}
+      </View>
+      {retirada || pagoClave !== 'pendiente' ? (
+        <View style={{ flexDirection: 'row', gap: 6, marginLeft: 36, flexWrap: 'wrap' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4, backgroundColor: FONDOS[pago.tono] }}>
+            <Icono sf={pago.sf} respaldo="" tam={11} color={tonoColor(t, pago.tono)} />
+            <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 12, fontWeight: '800', color: tonoColor(t, pago.tono) }}>{pago.texto}</Text>
+          </View>
+        </View>
+      ) : null}
+      {g.filas.map((f) => <SaldoAFavor key={f.id} r={f} />)}
     </Tarjeta>
   );
 }

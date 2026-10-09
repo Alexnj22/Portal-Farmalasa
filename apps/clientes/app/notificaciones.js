@@ -6,9 +6,11 @@
 // Rediseño (2026-10-09, «que se vea más moderno, con opción de limpiar»):
 // agrupada por día, ícono y color por clase de aviso (los mismos del banner
 // con la app abierta), deslizar a la izquierda para borrar uno y «Limpiar»
-// arriba para borrar todos. Borrar es OCULTAR EN ESTE TELÉFONO
-// (lib/bandejaOculta.js): la fila del servidor es la bitácora que evita el
-// aviso repetido y no se puede tocar.
+// arriba para borrar todos. Borrar es OCULTAR, y desde el mismo día en el
+// servidor (`bandeja_ocultar` marca `oculto_at`): se va de todos los teléfonos
+// de la persona. La fila no se borra —es la bitácora que evita el aviso
+// repetido—. El ocultamiento local (lib/bandejaOculta.js) es el optimista y el
+// respaldo: lo que el servidor no confirmó se reintenta en la próxima carga.
 //
 // Lo nuevo se distingue durante la visita aunque el servidor ya lo haya dado
 // por leído al abrir (la campana se apaga enseguida); «Marcar como leídas»
@@ -28,7 +30,7 @@ import { colorSistema } from '../componentes/sistema';
 import { estiloDeAviso } from '../componentes/estiloDeAviso';
 import { useSesion } from '../lib/sesion';
 import { alLlegarAviso } from '../lib/avisos';
-import { leerOcultas, ocultar } from '../lib/bandejaOculta';
+import { leerOcultas, olvidar, ocultar } from '../lib/bandejaOculta';
 import { suave, useTema } from '../tema/tema';
 import { navegar } from '../lib/navegar';
 
@@ -98,11 +100,26 @@ export default function Notificaciones() {
   const [refrescando, setRefrescando] = useState(false);
 
   useEffect(() => { leerOcultas().then((s) => setOcultas(new Set(s))); }, []);
+  // Le pide al servidor que oculte; si confirma, la lista local los olvida.
+  // Si no (sin conexión, o la base todavía sin `oculto_at`), quedan ocultos
+  // acá y se reintenta en la próxima carga. Nunca lanza.
+  const sincronizar = useCallback(async (datos, ids) => {
+    try {
+      const r = await pedir('bandeja_ocultar', datos);
+      if (r?.ok && ids.length) setOcultas(new Set(await olvidar(ids)));
+    } catch { /* queda el ocultamiento local */ }
+  }, [pedir]);
   const cargar = useCallback(async () => {
     const r = await pedir('bandeja');
     setD((ant) => (r?.ok || !ant?.ok ? r : ant));
     if (r?.ok && r.sin_leer) pedir('bandeja_leida');
-  }, [pedir]);
+    // Borrados en el teléfono que el servidor todavía devuelve: reintentar.
+    if (r?.ok && !r.sinConexion) {
+      const locales = await leerOcultas();
+      const pendientes = (r.avisos ?? []).map((a) => Number(a.id)).filter((id) => locales.has(id));
+      if (pendientes.length) sincronizar({ ids: pendientes }, pendientes);
+    }
+  }, [pedir, sincronizar]);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   // Llega un aviso con la bandeja a la vista: se recarga sola. Con un respiro,
   // porque el envío marca la fila como enviada un instante después del push.
@@ -117,10 +134,13 @@ export default function Notificaciones() {
   const nuevas = visibles.filter(esNueva).length;
   const filas = useMemo(() => agrupar(visibles), [visibles]);
 
-  const borrar = useCallback(async (ids) => {
+  // Primero acá (al instante), después en el servidor.
+  const borrar = useCallback(async (ids, todas = false) => {
     const s = await ocultar(ids);
     setOcultas(new Set(s));
-  }, []);
+    const nums = ids.map(Number).filter(Number.isFinite);
+    sincronizar(todas ? { todas: true, hasta_id: Math.max(...nums) } : { ids: nums }, nums);
+  }, [sincronizar]);
   const borrarUna = useCallback((a) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     borrar([a.id]);
@@ -128,11 +148,11 @@ export default function Notificaciones() {
   const limpiarTodo = useCallback(() => {
     if (!visibles.length) return;
     confirmar('¿Borrar todas las notificaciones?',
-      'Se quitan de esta bandeja. Tus puntos, cupones y ofertas no cambian.',
+      'Se quitan de tu bandeja en todos tus teléfonos. Tus puntos, cupones y ofertas no cambian.',
       'Borrar todas',
       () => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        borrar(visibles.map((a) => a.id));
+        borrar(visibles.map((a) => a.id), true);
       });
   }, [visibles, borrar]);
   const marcarLeidas = () => { Haptics.selectionAsync().catch(() => {}); setTodasVistas(true); };

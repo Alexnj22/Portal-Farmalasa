@@ -9,7 +9,7 @@
 // Wallet muestra la tarjeta y la persona toca «Guardar».
 //
 // Lo que dice es lo mismo que la de Apple —sale de `datosDeCliente`, una sola
-// lectura para las dos—: saldo en dólares, puntos, nivel, «cliente desde» y el
+// lectura para las dos—: saldo en dólares, puntos, nivel y el
 // QR con la MISMA dirección que el ticket (`/mis-puntos?codigo=`).
 //
 // Secretos de la función (nunca en el repositorio):
@@ -23,7 +23,7 @@
 // contesta 404 si esa persona nunca la guardó, y eso no es un error. La
 // ventana es más larga que la cadencia para que un minuto perdido no deje una
 // tarjeta vieja; repetir el PATCH no cambia nada.
-import { claveDeNivel, corto, datosDeCliente, desde, MATERIALES, nivelRotulo, type DatosPase } from "./pase.ts";
+import { claveDeNivel, corto, datosDeCliente, MATERIALES, nivelRotulo, type DatosPase } from "./pase.ts";
 
 interface CuentaDeServicio { client_email: string; private_key: string }
 
@@ -95,7 +95,6 @@ function objeto(d: DatosPase) {
     textModulesData: [
       // Igual que en Apple: el personal lleva su nivel con « · TEAM».
       { id: "nivel", header: `${nivelRotulo(d.nivel)}${d.equipo ? " · TEAM" : ""}`, body: corto(d.nombre) },
-      { id: "desde", header: "Cliente desde", body: desde(d.socioDesde) },
       { id: "como", header: "Cómo se usa", body: "Muestra el código en caja: acumulas en cada compra y canjeas desde 100 puntos ($1)." },
     ],
     linksModuleData: { uris: [{ id: "reglamento", uri: REGLAMENTO, description: "Reglamento" }] },

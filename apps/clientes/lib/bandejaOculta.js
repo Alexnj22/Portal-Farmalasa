@@ -1,8 +1,13 @@
-// Los avisos que la persona BORRÓ de su bandeja (2026-10-09). Se guardan en el
-// teléfono y no en el servidor, a propósito: `app_cliente_avisos` es además la
-// bitácora que impide mandar dos veces el mismo aviso (UNIQUE customer_id,
-// tipo, ref), así que borrar la fila haría que el aviso se volviera a mandar.
-// Ocultarlo acá no toca esa bitácora.
+// Los avisos que la persona BORRÓ de su bandeja (2026-10-09). Borrar es
+// OCULTAR: `app_cliente_avisos` es además la bitácora que impide mandar dos
+// veces el mismo aviso (UNIQUE customer_id, tipo, ref), así que la fila nunca
+// se borra. El servidor la marca con `oculto_at` (acción `bandeja_ocultar`) y
+// deja de devolverla en todos los teléfonos de la persona.
+//
+// Esta lista local es el lado OPTIMISTA y el respaldo: el aviso desaparece al
+// instante, y si el servidor no confirma (sin conexión, o la columna todavía no
+// existe) sigue oculto acá y se reintenta en la próxima carga. Cuando el
+// servidor confirma, el ID se olvida (`olvidar`).
 //
 // Se guardan los ID de las filas (únicos en toda la tabla, así que en un
 // teléfono compartido no se mezclan cuentas). Con tope: el servidor sólo
@@ -48,5 +53,16 @@ export async function ocultar(ids) {
   const recortado = [...nuevo].sort((a, b) => b - a).slice(0, TOPE);
   cache = new Set(recortado);
   await almacen.guardar(JSON.stringify(recortado)).catch(() => {});
+  return cache;
+}
+
+/** Saca estos ID de la lista local: el servidor ya los ocultó. */
+export async function olvidar(ids) {
+  const actual = await leerOcultas();
+  const quitar = new Set([...ids].map(Number));
+  if (![...quitar].some((id) => actual.has(id))) return actual;
+  const quedan = [...actual].filter((id) => !quitar.has(id));
+  cache = new Set(quedan);
+  await almacen.guardar(JSON.stringify(quedan)).catch(() => {});
   return cache;
 }

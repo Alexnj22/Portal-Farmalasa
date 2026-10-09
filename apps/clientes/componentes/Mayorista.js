@@ -4,7 +4,10 @@
 // los tres meses anteriores, se recalcula el primer día del mes, y da puntos
 // por cada US$1.00 a precio de mayoreo. El precio (Mayoreo, Plus, Elite) es
 // independiente del rango.
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Tarjeta, Texto } from './ui';
 import { BarraAnimada } from './animacion';
@@ -43,12 +46,19 @@ export function rangoReal(m) {
 
 export default function Mayorista({ rango, pie = null }) {
   const t = useTema();
+  // Desplegable, igual que el panel de nivel (2026-10-09): cerrado se ve el
+  // rango, la barra y cuánto falta; al tocarlo, los beneficios, la escalera y
+  // las condiciones. El estado va antes del `return null` (regla de hooks).
+  const [abierto, setAbierto] = useState(false);
   if (!rango) return null;
   const paleta = COLORES_NIVEL[rango.clave];
   const sig = rango.siguiente;
+  const alternar = () => { Haptics.selectionAsync().catch(() => {}); setAbierto((v) => !v); };
   return (
     <Tarjeta estilo={{ gap: 12 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <Pressable onPress={alternar} accessibilityRole="button" accessibilityState={{ expanded: abierto }}
+        accessibilityLabel={`Cliente de mayoreo: ${rango.nombre}. ${abierto ? 'Ocultar' : 'Ver'} beneficios`}
+        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, opacity: pressed ? 0.7 : 1 })}>
         <LinearGradient colors={paleta.frente} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={{ width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '45deg' }] }}>
           <View style={{ transform: [{ rotate: '-45deg' }] }}><Icono sf="diamond.fill" respaldo="◆" tam={18} color="#FFFFFF" /></View>
@@ -61,7 +71,10 @@ export default function Mayorista({ rango, pie = null }) {
           <Text style={{ fontSize: 15, fontWeight: '900', color: colorSistema.texto }}>{rango.precio}</Text>
           <Text style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto3 }}>{rango.puntos} pts / $1 de mayoreo</Text>
         </View>
-      </View>
+        <View style={{ transform: [{ rotate: abierto ? '180deg' : '0deg' }] }}>
+          <Icono sf="chevron.down" respaldo="⌄" tam={14} color={colorSistema.texto3} />
+        </View>
+      </Pressable>
       {sig ? (
         <View style={{ gap: 6 }}>
           <BarraAnimada avance={Math.min(1, rango.compra / sig.desde)} color={paleta.frente[1]} fondo={t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'} />
@@ -74,6 +87,8 @@ export default function Mayorista({ rango, pie = null }) {
       ) : (
         <Texto nivel={2} estilo={{ fontSize: 14 }}>Estás en el rango más alto: {dolares(rango.compra)} al mes en promedio.</Texto>
       )}
+      {abierto ? (
+      <Animated.View entering={FadeIn.duration(220)} style={{ gap: 12 }}>
       {/* Lo que da su rango (Condiciones, cláusula 5). */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {[`${rango.puntos} pts por $1 a tu precio de mayoreo`, '1 punto por $1 a precio Preferente',
@@ -106,6 +121,12 @@ export default function Mayorista({ rango, pie = null }) {
         promedio de los tres meses anteriores, y el precio lo asigna la empresa aparte.
       </Texto>
       {pie}
+      </Animated.View>
+      ) : (
+        <Pressable onPress={alternar} hitSlop={8} style={{ alignSelf: 'flex-start' }}>
+          <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.magentaTexto }}>Ver beneficios</Text>
+        </Pressable>
+      )}
     </Tarjeta>
   );
 }

@@ -203,14 +203,18 @@ half4 main(float2 p) {
   // en el canto y polvo de estrellas.
   float2 cc = uv - float2(a * 0.5, 0.5);
   float rr = length(cc); float an = atan(cc.y, cc.x);
-  float cep = noise(float2(rr * 260.0, an * 3.0)) * 0.55 + noise(float2(rr * 90.0, an * 8.0)) * 0.45;
+  // Sin costuras (2026-10-09): el ángulo salta de +π a −π a la izquierda del
+  // centro; todo lo angular va por cos/sin, que no saltan.
+  float2 dir = rr > 0.0001 ? cc / rr : float2(1.0, 0.0);
+  float cep = noise(float2(rr * 260.0, 0.5)) * 0.55 + noise(float2(rr * 90.0 + dir.x * 2.0, dir.y * 2.0 + 7.0)) * 0.45;
   float3 c = mix(float3(0.035, 0.038, 0.050), float3(0.13, 0.14, 0.17), cep * 0.6 + 0.2);
   // El cepillado circular toma luz en dos lóbulos que siguen la inclinación.
-  float lob = pow(abs(cos(an - atan(tilt.y + 0.001, tilt.x + 0.001) - 0.6)), 8.0);
+  float aL = 0.6 + tilt.x * 1.6 - tilt.y * 1.1;
+  float lob = pow(abs(dot(dir, float2(cos(aL), sin(aL)))), 8.0);
   c += float3(0.55, 0.58, 0.66) * lob * smoothstep(0.05, 0.6, rr) * 0.22;
   // Difracción: anillos finos que se tiñen de arcoíris según el ángulo.
   float anillos = 0.5 + 0.5 * sin(rr * 180.0);
-  float3 iris = 0.5 + 0.5 * cos(6.2831 * (an / 6.2831 * 2.0 + tilt.x * 0.9 - tilt.y * 0.6 + rr * 1.5 + float3(0.0, 0.33, 0.67)));
+  float3 iris = 0.5 + 0.5 * cos(6.2831 * (dot(dir, float2(0.8, 0.6)) * 0.5 + tilt.x * 0.9 - tilt.y * 0.6 + rr * 1.5 + float3(0.0, 0.33, 0.67)));
   c += iris * anillos * lob * 0.16 * smoothstep(0.08, 0.5, rr);
   // Banda holográfica ancha que cruza al inclinar.
   float banda = exp(-sq((uv.x / a + uv.y * 0.5 - (0.75 + tilt.x * 0.6)) * 3.0));

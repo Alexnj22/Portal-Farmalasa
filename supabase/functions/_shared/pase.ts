@@ -150,7 +150,6 @@ export async function armarPase(d: DatosPase): Promise<Uint8Array> {
       secondaryFields: [
         // El nivel al frente (Plata, Oro, Platino); el de entrada se llama «Cliente VIP».
         { key: "nombre", label: `${nivelRotulo(d.nivel)}${d.equipo ? " · TEAM" : ""}`, value: corto(d.nombre) },
-        { key: "desde", label: "CLIENTE DESDE", value: desde(d.socioDesde), textAlignment: "PKTextAlignmentRight" },
       ],
       backFields: [
         { key: "como", label: "Cómo se usa", value: "Muestra el código en caja: acumulas en cada compra y canjeas desde 100 puntos ($1)." },

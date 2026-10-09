@@ -365,6 +365,7 @@ export type Database = {
           enviado: boolean
           id: number
           leido_at: string | null
+          oculto_at: string | null
           ref: string
           tipo: string
           titulo: string
@@ -377,6 +378,7 @@ export type Database = {
           enviado?: boolean
           id?: never
           leido_at?: string | null
+          oculto_at?: string | null
           ref: string
           tipo: string
           titulo: string
@@ -389,6 +391,7 @@ export type Database = {
           enviado?: boolean
           id?: never
           leido_at?: string | null
+          oculto_at?: string | null
           ref?: string
           tipo?: string
           titulo?: string
@@ -404,6 +407,102 @@ export type Database = {
           },
           {
             foreignKeyName: "app_cliente_avisos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+        ]
+      }
+      app_cliente_correo_envios: {
+        Row: {
+          cantidad: number
+          correo: string
+          created_at: string
+          customer_id: number
+          enviado: boolean
+          error: string | null
+          facturas: string[]
+          id: number
+          modo: string
+          proveedor_id: string | null
+        }
+        Insert: {
+          cantidad: number
+          correo: string
+          created_at?: string
+          customer_id: number
+          enviado?: boolean
+          error?: string | null
+          facturas: string[]
+          id?: never
+          modo: string
+          proveedor_id?: string | null
+        }
+        Update: {
+          cantidad?: number
+          correo?: string
+          created_at?: string
+          customer_id?: number
+          enviado?: boolean
+          error?: string | null
+          facturas?: string[]
+          id?: never
+          modo?: string
+          proveedor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_cliente_correo_envios_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_correo_envios_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+        ]
+      }
+      app_cliente_correos: {
+        Row: {
+          correo: string
+          created_at: string
+          customer_id: number
+          id: number
+          usado_at: string
+          veces: number
+        }
+        Insert: {
+          correo: string
+          created_at?: string
+          customer_id: number
+          id?: never
+          usado_at?: string
+          veces?: number
+        }
+        Update: {
+          correo?: string
+          created_at?: string
+          customer_id?: number
+          id?: never
+          usado_at?: string
+          veces?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_cliente_correos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_correos_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "dte_rechazos_vigentes"
@@ -20286,6 +20385,7 @@ export type Database = {
           origen: string
           puntos: number
           puntos_base: number | null
+          raspado_el: string | null
           ref_anterior: number | null
           restantes: number
           sucursal: string | null
@@ -20304,6 +20404,7 @@ export type Database = {
           origen: string
           puntos: number
           puntos_base?: number | null
+          raspado_el?: string | null
           ref_anterior?: number | null
           restantes: number
           sucursal?: string | null
@@ -20322,6 +20423,7 @@ export type Database = {
           origen?: string
           puntos?: number
           puntos_base?: number | null
+          raspado_el?: string | null
           ref_anterior?: number | null
           restantes?: number
           sucursal?: string | null
@@ -30064,6 +30166,10 @@ export type Database = {
         Returns: number
       }
       puntos_consumir: {
+        Args: { p_customer_id: number; p_puntos: number; p_salida_id: number }
+        Returns: number
+      }
+      puntos_consumir_canje: {
         Args: { p_customer_id: number; p_puntos: number; p_salida_id: number }
         Returns: number
       }

@@ -5,6 +5,7 @@
 //   · Usado: en gris, con el sello «USADO» (o lo que queda, si se usó una parte).
 // Se usa en caja como cualquier saldo, mostrando la tarjeta.
 import { LIVIANO } from '../lib/rendimiento';
+import { useSesion } from '../lib/sesion';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -31,6 +32,9 @@ const clave = (id) => `puntos_salud_cupon_raspado_${String(id).replace(/[^\w-]/g
 export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, activa = true, demo = 0 }) {
   const nivel = nivelDado === 'vip' ? 'bronce' : nivelDado;
   const [raspado, setRaspado] = useState(null); // null = leyendo
+  // Sólo los cupones reales (id numérico) se anotan en el servidor; los de prueba no.
+  const pedirSesion = useSesion((x) => x.pedir);
+  const pedir = Number.isFinite(Number(cupon?.id)) ? pedirSesion : null;
   const [festejo, setFestejo] = useState(false);
   const [auto, setAuto] = useState(false);
   // El premio «salta» al descubrirse, y el cupón destella.
@@ -53,7 +57,12 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
   }, [demo]);
   useEffect(() => {
     if (!cupon?.id) return;
-    SecureStore.getItemAsync(clave(cupon.id)).catch(() => null).then((v) => setRaspado(v === '1'));
+    // El servidor manda (`cupon.raspado`); el teléfono es respaldo y lo sube si el servidor no lo sabía.
+    if (cupon.raspado) { setRaspado(true); return; }
+    SecureStore.getItemAsync(clave(cupon.id)).catch(() => null).then((v) => {
+      setRaspado(v === '1');
+      if (v === '1' && !auto) pedir?.('cupon_raspado', { id: cupon.id }).catch(() => {});
+    });
   }, [cupon?.id]);
 
   // Usado (2026-10-08): las muescas ya decían «por aquí se corta», así que al
@@ -105,7 +114,10 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
   const colores = usado ? ['#4A4A4F', '#8C8C93', '#5A5A60'] : paleta.frente;
 
   const descubrir = () => {
-    if (!auto) SecureStore.setItemAsync(clave(cupon.id), '1').catch(() => {});
+    if (!auto) {
+      SecureStore.setItemAsync(clave(cupon.id), '1').catch(() => {});
+      pedir?.('cupon_raspado', { id: cupon.id }).catch(() => {});
+    }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {}), 180);
     setRaspado(true);

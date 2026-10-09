@@ -1,0 +1,75 @@
+diff --git a/supabase/functions/sync-dte-sales/index.ts b/supabase/functions/sync-dte-sales/index.ts
+index ddba7e569..ea23a7e4a 100644
+--- a/supabase/functions/sync-dte-sales/index.ts
++++ b/supabase/functions/sync-dte-sales/index.ts
+@@ -141,6 +141,31 @@ function parseTipoDoc(correlativo: string): string {
+   return parts[parts.length - 1] || 'UNKNOWN';
+ }
+ 
++/**
++ * Una nota de crédito y la factura que corrige.
++ *
++ * Es nota de crédito si el sufijo del correlativo lo dice (NC/NCR/NCE) o si el
++ * origen manda el tipo de DTE '05'. La referencia se busca primero con la forma
++ * del DTE (`documentoRelacionado[0].numeroDocumento`) y después con los nombres
++ * planos que podría usar el listado del origen: el formato real de una NC en
++ * `descarga_dte_emitidos_json.php` todavía no se vio, así que se aceptan las
++ * variantes y lo que no traiga referencia simplemente no se liga.
++ */
++const SUFIJOS_NC = new Set(['NC', 'NCR', 'NCE']);
++function relacionDeNota(venta: any): { numero: string; tipoGeneracion: number | null } | null {
++  const tipoDte = String(venta?.tipo_dte ?? venta?.tipoDte ?? venta?.identificacion?.tipoDte ?? '');
++  const sufijo = parseTipoDoc(String(venta?.correlativo ?? '')).toUpperCase();
++  if (tipoDte !== '05' && !SUFIJOS_NC.has(sufijo)) return null;
++  const dr = venta?.documentoRelacionado ?? venta?.documento_relacionado;
++  const primero = Array.isArray(dr) ? dr[0] : (dr && typeof dr === 'object' ? dr : null);
++  const numero = primero?.numeroDocumento ?? primero?.numero_documento
++    ?? (typeof dr === 'string' ? dr : null)
++    ?? venta?.codigo_relacionado ?? venta?.codigo_generacion_relacionado ?? null;
++  if (numero == null || String(numero).trim() === '') return null;
++  const tg = Number(primero?.tipoGeneracion ?? primero?.tipo_generacion);
++  return { numero: String(numero).trim().toUpperCase(), tipoGeneracion: Number.isFinite(tg) ? tg : null };
++}
++
+ function numEq(a: any, b: any): boolean {
+   if (a == null && b == null) return true;
+   if (a == null || b == null) return false;
+@@ -577,6 +602,38 @@ async function syncBranch(
+     }
+   }
+ 
++  // 5b. Notas de crédito → a qué factura corrigen (2026-10-09).
++  //
++  // Hasta hoy no llegó ninguna NC de venta (sólo COF y CCF), pero cuando llegue
++  // el motor de puntos tiene que quitarle a ESE cliente los puntos de la parte
++  // acreditada, y para eso hace falta saber qué factura corrige. El DTE lo dice
++  // en `documentoRelacionado[].numeroDocumento` (con tipoGeneracion 2 es el
++  // codigo_generacion de la factura original); la base lo resuelve a un id
++  // (trigger de `ventas_nota_credito`).
++  //
++  // Sólo en documentos NUEVOS (o en una reparación con forceItems): la relación
++  // de una NC no cambia, y escribirla cada minuto sería churn.
++  //
++  // No aborta la corrida: si falla (p. ej. la tabla todavía no existe porque la
++  // función se desplegó antes que la migración) queda en el log y la venta ya
++  // está guardada. Lo que no se ligue, el motor no lo descuenta — y eso se ve.
++  const notas: any[] = [];
++  for (const venta of ventas) {
++    const erpId_s = String(venta.id_factura);
++    if (!newErpIds.has(erpId_s) && !forceItems) continue;
++    const invoiceId = invoiceIdMap.get(erpId_s);
++    if (!invoiceId) continue;
++    const rel = relacionDeNota(venta);
++    if (!rel) continue;
++    notas.push({ nc_invoice_id: invoiceId, codigo_relacionado: rel.numero, tipo_generacion: rel.tipoGeneracion });
++  }
++  if (notas.length > 0) {
++    const { error: ncErr } = await supabase
++      .from('ventas_nota_credito')
++      .upsert(notas, { onConflict: 'nc_invoice_id' });
++    if (ncErr) console.error(`[notas-credito] sucursal ${branchId}: ${notas.length} sin ligar — ${ncErr.message}`);
++  }
++
+   // 6. Changelogs
+   // El error de este insert NO se descarta.
+   //

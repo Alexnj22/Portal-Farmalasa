@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1266.0 — App de clientes: cupón primero, facturas por correo, notificaciones sincronizadas y motor sin escrituras inútiles
+
+- **El canje gasta primero el cupón del mes** (decisión del usuario): `puntos_consumir_canje` ordena `(origen = 'cupon') DESC, ganado_el, id` y `puntos_registrar_canje` la usa. Sólo el canje: anular, vencer y ajustar siguen con `puntos_consumir` (una anulación no se come el cupón).
+- **El raspado del cupón queda en el servidor** (`puntos_lote.raspado_el`, acción `cupon_raspado`): en otro teléfono o al reinstalar ya no aparece sin raspar.
+- **Mayoreo: sin aprobados.** Se quitaron los 16 que se habían cargado desde los nombres «(4)/(5)» el 8-oct (siguen como candidatos en el portal); ninguno recibió aviso.
+- **Wallet sin «Cliente desde»** (Apple y Google). **Platino sin costura** al girar (el ángulo saltaba de +π a −π; ahora todo lo angular va por cos/sin).
+- **Panel de mayoreo desplegable**, como el del nivel. `Nivel.js`: el `useState` iba después de un `return null` (regla de hooks).
+- **Notificaciones: borrar sincroniza entre teléfonos** (`app_cliente_avisos.oculto_at`, acción `bandeja_ocultar`; la fila no se borra: es la bitácora anti-duplicado).
+- **Reservas: un pedido del carrito es UNA tarjeta** con sus productos, el total, un solo código y un solo botón de pagar/cancelar.
+- **Mis facturas:** PDF dentro de la app también en Android (pdf.js en la WebView, el PDF no sale a terceros); selección de varias para descargar en .zip o **enviar por correo** a un correo guardado (`app_cliente_correos`, `app_cliente_correo_envios`, acción `facturas_enviar`, tope 30 facturas y 10 envíos/día). **El envío necesita `RESEND_API_KEY` y `CORREO_REMITENTE_CLIENTES`**: sin ellos la app dice que todavía no está disponible.
+- **Motor de puntos: `puntos_sellar_estado` ya no bloquea ~1,450 filas por minuto para no escribir nada** — de 1,350 a 8 registros de WAL por llamada (~172 MB de WAL al día menos). Verificado: 1,458 ventas con lote en la ventana, 0 sin sellar.
+- Propuesta (no aplicada) para descontar puntos con notas de crédito: `docs/propuestas/notas-credito-puntos-2026-10-09/`.
+
 ## v2.1265.1 — Puntos: el valor de los puntos dice «vale» y la venta muestra su total
 
 - **Movimientos de la cuenta de puntos (portal y app):** debajo de «+130» iba «$1.30» a secas —lo que valen los puntos— y se leía como el monto de la venta, que fue $130.00. Ahora dice **«vale $1.30»**, y la línea de la compra lleva el total de la factura: **«Compra de $130.00 · 08/10/2026 · Salud 2»** (en un canje, «Venta de …»).

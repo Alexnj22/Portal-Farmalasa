@@ -28,6 +28,9 @@ const factorTexto = (f) => (Number(f) === 1 ? '1 punto' : `${String(Number(f)).r
 
 export default function Nivel({ nivel, pie = null }) {
   const t = useTema();
+  // Los hooks van ANTES del `return null`: un hook después de un retorno
+  // condicional cierra la app cuando el nivel pasa de no estar a estar.
+  const [abierto, setAbierto] = useState(false);
   if (!nivel) return null;
   const paleta = COLORES_NIVEL[nivel.clave] ?? COLORES_NIVEL.vip;
   const sig = nivel.siguiente;
@@ -37,7 +40,6 @@ export default function Nivel({ nivel, pie = null }) {
   const yaAlcanza = apagados && nivel.proyectado && nivel.proyectado.clave !== nivel.clave ? nivel.proyectado : null;
   // Desplegable (2026-10-09, «que no ocupe tanta pantalla»): cerrado se ve el
   // nivel, la barra y cuánto falta; al tocarlo, los beneficios y el detalle.
-  const [abierto, setAbierto] = useState(false);
   const alternar = () => { Haptics.selectionAsync().catch(() => {}); setAbierto((v) => !v); };
   return (
     <Tarjeta estilo={{ gap: 12 }}>

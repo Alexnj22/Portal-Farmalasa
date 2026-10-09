@@ -764,6 +764,18 @@ Deno.serve(async (req) => {
       return json({ ok: true, sucursales: conSucursal(data ?? []) });
     }
 
+    // El cupón del mes ya se raspó (2026-10-09): queda en el servidor, así en
+    // otro teléfono o al reinstalar no aparece sin raspar. Sólo su propio cupón.
+    if (accion === "cupon_raspado") {
+      if (!customerId) return json({ ok: false });
+      const id = Number(body?.id);
+      if (!Number.isFinite(id)) return json({ ok: false, mensaje: "Cupón inválido." });
+      const { error } = await admin.from("puntos_lote").update({ raspado_el: new Date().toISOString() })
+        .eq("id", id).eq("customer_id", customerId).eq("origen", "cupon").is("raspado_el", null);
+      if (error) throw error;
+      return json({ ok: true });
+    }
+
     if (["solicitar_mayorista", "mis_tratamientos", "tratamiento_cambiar", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo"].includes(accion)) {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
@@ -1203,6 +1215,36 @@ Deno.serve(async (req) => {
       });
     }
 
+    // El documento (PDF o JSON) de una factura del cliente, guardado en
+    // `sales-dte`: si todavía no estaba, se baja del emisor y se guarda (igual
+    // que `sync-sales-dte`). Devuelve la ruta, o el mensaje para el cliente.
+    // La usan `factura_documento` y `facturas_enviar`.
+    // deno-lint-ignore no-explicit-any
+    async function documentoGuardado(f: any, formato: "pdf" | "json"): Promise<{ ruta: string } | { mensaje: string }> {
+      if (!f?.codigo_generacion) return { mensaje: "Esta factura no tiene documento electrónico." };
+      const cg = String(f.codigo_generacion).toUpperCase();
+      const [a, m] = String(f.fecha).split("-");
+      const ruta = `${a}/${m}/${cg}.${formato}`;
+      // Firmar es la consulta por llave: si el objeto no existe, no hay firma
+      // (y el error es «not found», el esperado: se baja del emisor).
+      const { data: ya, error: eYa } = await admin.storage.from("sales-dte").createSignedUrl(ruta, 60);
+      if (ya?.signedUrl) return { ruta };
+      if (eYa && !/not.?found/i.test(eYa.message)) console.error("documento: no se pudo consultar el guardado:", eYa.message);
+      const origen = `https://clientesdte3.oss.com.sv/farma_salud/downloads/dteqr_${formato}.php?codigoGeneracion=${cg}`;
+      let buf: Uint8Array | null = null;
+      try {
+        const res = await fetch(origen, { signal: AbortSignal.timeout(30_000) });
+        if (res.ok) buf = new Uint8Array(await res.arrayBuffer());
+      } catch (e) { console.error("documento:", (e as Error)?.message); }
+      const valido = buf && buf.byteLength > 4 && (formato === "pdf"
+        ? buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46
+        : (() => { try { return Boolean(JSON.parse(new TextDecoder().decode(buf!))?.identificacion?.numeroControl); } catch { return false; } })());
+      if (!valido) return { mensaje: "El documento todavía no está disponible. Intenta más tarde o pídelo en la sucursal." };
+      const { error: eU } = await admin.storage.from("sales-dte").upload(ruta, buf!, { contentType: formato === "pdf" ? "application/pdf" : "application/json", upsert: true });
+      if (eU) throw eU;
+      return { ruta };
+    }
+
     // El PDF o el JSON de una factura que todavía no estaba guardada: se baja,
     // se guarda (igual que `sync-sales-dte`) y se firma. Sólo del cliente. Una
     // muestra (`muestra-N`) usa el documento de la factura real que presta.
@@ -1217,27 +1259,245 @@ Deno.serve(async (req) => {
       const { data: f, error } = await admin.from("sales_invoices").select("id, fecha, codigo_generacion")
         .eq("id", idFactura).eq("customer_id", customerId).maybeSingle();
       if (error) throw error;
-      if (!f?.codigo_generacion) return json({ ok: false, mensaje: "Esta factura no tiene documento electrónico." });
-      const cg = String(f.codigo_generacion).toUpperCase();
-      const [a, m] = String(f.fecha).split("-");
-      const ruta = `${a}/${m}/${cg}.${formato}`;
-      let firmada = (await admin.storage.from("sales-dte").createSignedUrl(ruta, 3600)).data?.signedUrl ?? null;
-      if (!firmada) {
-        const origen = `https://clientesdte3.oss.com.sv/farma_salud/downloads/dteqr_${formato}.php?codigoGeneracion=${cg}`;
-        let buf: Uint8Array | null = null;
-        try {
-          const res = await fetch(origen, { signal: AbortSignal.timeout(30_000) });
-          if (res.ok) buf = new Uint8Array(await res.arrayBuffer());
-        } catch (e) { console.error("factura_documento:", (e as Error)?.message); }
-        const valido = buf && buf.byteLength > 4 && (formato === "pdf"
-          ? buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46
-          : (() => { try { return Boolean(JSON.parse(new TextDecoder().decode(buf!))?.identificacion?.numeroControl); } catch { return false; } })());
-        if (!valido) return json({ ok: false, mensaje: "El documento todavía no está disponible. Intenta más tarde o pídelo en la sucursal." });
-        const { error: eU } = await admin.storage.from("sales-dte").upload(ruta, buf!, { contentType: formato === "pdf" ? "application/pdf" : "application/json", upsert: true });
-        if (eU) throw eU;
-        firmada = (await admin.storage.from("sales-dte").createSignedUrl(ruta, 3600)).data?.signedUrl ?? null;
+      const doc = await documentoGuardado(f, formato);
+      if ("mensaje" in doc) return json({ ok: false, mensaje: doc.mensaje });
+      const { data: s, error: eS } = await admin.storage.from("sales-dte").createSignedUrl(doc.ruta, 3600);
+      if (eS) console.error("factura_documento: no se firmó:", eS.message);
+      return json(s?.signedUrl ? { ok: true, url: s.signedUrl } : { ok: false, mensaje: "No se pudo preparar el documento." });
+    }
+
+    // ── Facturas por correo (2026-10-09) ─────────────────────────────────
+    // `facturas_enviar` {ids, correo}: manda el PDF y el JSON de varias
+    // facturas a un correo. Las facturas tienen que ser de ESTA ficha (las
+    // muestras `muestra-N` de la cuenta de prueba prestan el documento de una
+    // factura real de la misma ficha). Topes: 30 facturas por correo y 10
+    // correos enviados por día por ficha.
+    //
+    // Adjuntos o enlaces: van ADJUNTOS mientras el total quepa holgado en un
+    // correo (8 MB sin codificar: el proveedor acepta 40 MB ya codificados y
+    // muchos buzones cortan en 10-25 MB). Si no cabe, el correo lleva enlaces
+    // firmados que valen 7 días — el cliente igual recibe todo, y un correo
+    // que el buzón rechaza no le sirve a nadie.
+    //
+    // Proveedor: Resend (como `distribucion-correo`): `RESEND_API_KEY` +
+    // `CORREO_REMITENTE_CLIENTES` (o `CORREO_REMITENTE`), con el dominio
+    // verificado. Sin eso contesta «todavía no está disponible» y no registra.
+    //
+    // Los correos usados se guardan en `app_cliente_correos` (en el servidor:
+    // así siguen ahí al cambiar de teléfono). `correos_lista` los devuelve con
+    // el de la ficha primero; `correo_borrar` quita uno guardado.
+    const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    const TOPE_FACTURAS_CORREO = 30;
+    const TOPE_CORREOS_DIA = 10;
+    const TOPE_CORREOS_GUARDADOS = 10;
+    const limpiarCorreo = (v: unknown) => String(v ?? "").trim().toLowerCase();
+    const correoOk = (c: string) => c.length <= 254 && CORREO_VALIDO.test(c);
+
+    if (accion === "correos_lista") {
+      if (!customerId) return json({ ok: true, correos: [] });
+      const [{ data: c, error: eC }, { data: g, error: eG }] = await Promise.all([
+        admin.from("customers").select("email").eq("id", customerId).maybeSingle(),
+        admin.from("app_cliente_correos").select("correo, usado_at").eq("customer_id", customerId)
+          .order("usado_at", { ascending: false }).limit(TOPE_CORREOS_GUARDADOS),
+      ]);
+      if (eC) throw eC;
+      if (eG) throw eG;
+      const ficha = limpiarCorreo(c?.email);
+      const correos = [
+        ...(correoOk(ficha) ? [{ correo: ficha, de_ficha: true, usado_at: null }] : []),
+        // deno-lint-ignore no-explicit-any
+        ...(g ?? []).filter((x: any) => x.correo !== ficha).map((x: any) => ({ correo: x.correo, de_ficha: false, usado_at: x.usado_at })),
+      ];
+      return json({ ok: true, correos });
+    }
+
+    if (accion === "correo_borrar") {
+      if (!customerId) return json({ ok: true });
+      const correo = limpiarCorreo(body?.correo);
+      const { error } = await admin.from("app_cliente_correos").delete().eq("customer_id", customerId).eq("correo", correo);
+      if (error) throw error;
+      return json({ ok: true });
+    }
+
+    if (accion === "facturas_enviar") {
+      if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para recibir tus facturas." });
+      const correo = limpiarCorreo(body?.correo);
+      if (!correoOk(correo)) return json({ ok: false, mensaje: "Ese correo no parece válido. Revísalo e intenta de nuevo." });
+      const ids = [...new Set((Array.isArray(body?.ids) ? body.ids : []).map((x: unknown) => String(x ?? "").trim()).filter(Boolean))] as string[];
+      if (!ids.length) return json({ ok: false, mensaje: "Elige al menos una factura." });
+      if (ids.length > TOPE_FACTURAS_CORREO) return json({ ok: false, mensaje: `Puedes enviar hasta ${TOPE_FACTURAS_CORREO} facturas por correo.` });
+
+      const { count: hoyEnviados, error: eCnt } = await admin.from("app_cliente_correo_envios")
+        .select("id", { count: "exact", head: true }).eq("customer_id", customerId).eq("enviado", true)
+        .gte("created_at", new Date(Date.now() - 86400_000).toISOString());
+      if (eCnt) throw eCnt;
+      if ((hoyEnviados ?? 0) >= TOPE_CORREOS_DIA) {
+        return json({ ok: false, mensaje: `Ya enviaste ${TOPE_CORREOS_DIA} correos en las últimas 24 horas. Intenta más tarde o descarga tus facturas.` });
       }
-      return json(firmada ? { ok: true, url: firmada } : { ok: false, mensaje: "No se pudo preparar el documento." });
+      const llave = Deno.env.get("RESEND_API_KEY");
+      const remitente = Deno.env.get("CORREO_REMITENTE_CLIENTES") ?? Deno.env.get("CORREO_REMITENTE");
+      if (!llave || !remitente) {
+        console.error("facturas_enviar: falta RESEND_API_KEY o CORREO_REMITENTE_CLIENTES");
+        return json({ ok: false, mensaje: "El envío por correo todavía no está disponible. Mientras tanto, puedes descargar tus facturas." });
+      }
+
+      // Qué factura real hay detrás de cada id (las muestras prestan una).
+      const tipoDoc = (t: unknown) => {
+        const s = String(t ?? "").toUpperCase();
+        return s === "CCF" ? "Crédito fiscal" : s === "NC" || s === "NCR" ? "Nota de crédito" : "Factura";
+      };
+      const numeroDe = (c: unknown) => (c == null ? null : String(c).split("_")[0].replace(/^0+(?=\d)/, ""));
+      const muestras = ids.some((i) => i.startsWith("muestra-")) ? await muestrasDe(admin, customerId, "factura") : [];
+      const pedidos: { id: string; real: number; muestra: any }[] = [];
+      for (const id of ids) {
+        if (id.startsWith("muestra-")) {
+          const m = muestras.find((x: any) => `muestra-${x.id}` === id);
+          if (!m) return json({ ok: false, mensaje: "Alguna de las facturas elegidas no es de tu cuenta." });
+          if (!Number(m.documento_de)) return json({ ok: false, mensaje: "Uno de los ejemplos no tiene documento." });
+          pedidos.push({ id, real: Number(m.documento_de), muestra: m });
+        } else {
+          if (!/^\d+$/.test(id)) return json({ ok: false, mensaje: "Alguna de las facturas elegidas no es de tu cuenta." });
+          pedidos.push({ id, real: Number(id), muestra: null });
+        }
+      }
+      const reales = [...new Set(pedidos.map((p) => p.real))];
+      // ≤ 30 ids únicos (`id` es la llave): la respuesta no se acerca al techo de 1000.
+      const { data: fs, error: eF } = await admin.from("sales_invoices")
+        .select("id, fecha, codigo_generacion, tipo_documento, correlativo, total")
+        .in("id", reales).eq("customer_id", customerId);
+      if (eF) throw eF;
+      const porId = new Map((fs ?? []).map((f: any) => [Number(f.id), f]));
+      if (reales.some((r) => !porId.has(r))) return json({ ok: false, mensaje: "Alguna de las facturas elegidas no es de tu cuenta." });
+
+      // Los dos documentos de cada factura, de a 5 a la vez.
+      const rutas = new Map<string, string>(); // `${id}.${formato}` → ruta
+      const tareas = reales.flatMap((r) => (["pdf", "json"] as const).map((fmt) => ({ r, fmt })));
+      for (let i = 0; i < tareas.length; i += 5) {
+        const tanda = await Promise.all(tareas.slice(i, i + 5).map(async ({ r, fmt }) => ({ r, fmt, doc: await documentoGuardado(porId.get(r), fmt) })));
+        for (const { r, fmt, doc } of tanda) {
+          if ("mensaje" in doc) {
+            const f = porId.get(r);
+            return json({ ok: false, mensaje: `${tipoDoc(f?.tipo_documento)} N.º ${numeroDe(f?.correlativo) ?? r}: ${doc.mensaje}` });
+          }
+          rutas.set(`${r}.${fmt}`, doc.ruta);
+        }
+      }
+
+      // Lo que ve el cliente de cada documento, y el nombre de sus archivos.
+      const usados = new Set<string>();
+      const renglones = pedidos.map((p) => {
+        const f = porId.get(p.real);
+        const tipo = p.muestra ? tipoDoc(p.muestra.tipo_documento) : tipoDoc(f.tipo_documento);
+        const numero = p.muestra ? (p.muestra.numero ? String(p.muestra.numero) : null) : numeroDe(f.correlativo);
+        const fechaDoc = String(p.muestra?.fecha ?? f.fecha);
+        const total = Number(p.muestra ? p.muestra.total ?? 0 : f.total ?? 0);
+        let base = `${tipo.replace(/[^A-Za-z]+/g, "-").replace(/-+$/, "")}-${String(numero ?? fechaDoc).replace(/[^A-Za-z0-9-]/g, "")}`;
+        for (let n = 2; usados.has(base); n++) base = `${base.replace(/_\d+$/, "")}_${n}`;
+        usados.add(base);
+        return { p, f, tipo, numero, fechaDoc, total, base, pdf: rutas.get(`${p.real}.pdf`)!, json: rutas.get(`${p.real}.json`)! };
+      });
+
+      // Adjuntos si caben; si no, enlaces de 7 días.
+      const MAX_ADJUNTOS = 8 * 1024 * 1024;
+      const b64 = (bytes: Uint8Array) => {
+        let bin = "";
+        for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+        return btoa(bin);
+      };
+      const bytesDe = new Map<string, Uint8Array>();
+      let peso = 0;
+      let modo: "adjuntos" | "enlaces" = "adjuntos";
+      const unicas = [...new Set(renglones.flatMap((r) => [r.pdf, r.json]))];
+      for (let i = 0; i < unicas.length && modo === "adjuntos"; i += 6) {
+        const tanda = await Promise.all(unicas.slice(i, i + 6).map(async (ruta) => {
+          const { data, error } = await admin.storage.from("sales-dte").download(ruta);
+          if (error) throw error;
+          return [ruta, new Uint8Array(await data.arrayBuffer())] as const;
+        }));
+        for (const [ruta, bytes] of tanda) { bytesDe.set(ruta, bytes); peso += bytes.byteLength; }
+        if (peso > MAX_ADJUNTOS) modo = "enlaces";
+      }
+      const enlaces = new Map<string, string>();
+      if (modo === "enlaces") {
+        bytesDe.clear();
+        const { data: sf, error: eSf } = await admin.storage.from("sales-dte").createSignedUrls(unicas, 7 * 86400);
+        if (eSf) throw eSf;
+        for (const s of sf ?? []) if (s.path && s.signedUrl && !s.error) enlaces.set(s.path, s.signedUrl);
+        if (unicas.some((r) => !enlaces.has(r))) return json({ ok: false, mensaje: "No se pudieron preparar los documentos. Intenta de nuevo." });
+      }
+
+      const esc = (s: unknown) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
+      const dinero = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      const fechaLarga = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+      const uno = renglones.length === 1;
+      const asunto = uno
+        ? `${renglones[0].tipo}${renglones[0].numero ? ` N.º ${renglones[0].numero}` : ""} — Farmacia Salud`
+        : `Tus ${renglones.length} facturas — Farmacia Salud`;
+      const filasHtml = renglones.map((r) => `<tr>
+<td style="padding:8px 0;border-bottom:1px solid #eef1f4">${esc(r.tipo)}${r.numero ? ` N.º ${esc(r.numero)}` : ""}<br><span style="color:#5b6675;font-size:12px">${esc(fechaLarga(r.fechaDoc))}</span></td>
+<td style="padding:8px 0;border-bottom:1px solid #eef1f4;text-align:right;font-family:monospace">${esc(dinero(r.total))}${modo === "enlaces"
+        ? `<br><a href="${esc(enlaces.get(r.pdf))}" style="color:#0f6e7d;font-size:12px">PDF</a> · <a href="${esc(enlaces.get(r.json))}" style="color:#0f6e7d;font-size:12px">JSON</a>` : ""}</td></tr>`).join("");
+      const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#f4f6f8;font-family:Arial,Helvetica,sans-serif;color:#1c2430">
+<table role="presentation" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;padding:24px" width="100%"><tr><td>
+<p style="margin:0 0 4px;font-size:13px;color:#5b6675">Farmacia Salud</p>
+<h1 style="margin:0 0 16px;font-size:20px">${uno ? "Tu documento electrónico" : "Tus documentos electrónicos"}</h1>
+<p style="margin:0 0 16px;font-size:14px">${modo === "adjuntos"
+        ? `Te enviamos ${uno ? "tu documento" : "tus documentos"} desde la app Puntos Salud. Cada uno va adjunto en PDF (para ver o imprimir) y en JSON (el archivo electrónico).`
+        : "Te enviamos tus documentos desde la app Puntos Salud. Como son muchos para adjuntarlos, aquí tienes los enlaces para descargarlos: valen 7 días."}</p>
+<table role="presentation" width="100%" style="border-collapse:collapse;font-size:13px">${filasHtml}</table>
+<p style="margin:16px 0 0;font-size:12px;color:#8a94a3">Si no pediste este correo, puedes ignorarlo.</p>
+</td></tr></table></body></html>`;
+      const attachments = modo === "adjuntos"
+        ? renglones.flatMap((r) => [
+          { filename: `${r.base}.pdf`, content: b64(bytesDe.get(r.pdf)!) },
+          { filename: `${r.base}.json`, content: b64(bytesDe.get(r.json)!) },
+        ])
+        : undefined;
+
+      // Se anota ANTES de mandar: si el registro falla, no sale nada.
+      const { data: envio, error: eIns } = await admin.from("app_cliente_correo_envios").insert({
+        customer_id: customerId, correo, facturas: ids, cantidad: ids.length, modo,
+      }).select("id").single();
+      if (eIns) throw eIns;
+
+      const huella = (await sha256(`${customerId}|${correo}|${[...ids].sort().join(",")}`)).slice(0, 24);
+      const r = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${llave}`, "Content-Type": "application/json", "Idempotency-Key": `facturas-${huella}-${Math.floor(Date.now() / 60_000)}` },
+        body: JSON.stringify({ from: remitente, to: [correo], subject: asunto, html, attachments }),
+        signal: AbortSignal.timeout(45_000),
+      }).catch((e) => ({ ok: false, status: 0, text: async () => (e as Error).message }) as unknown as Response);
+      const texto = await r.text();
+      let proveedorId: string | null = null;
+      if (r.ok) { try { proveedorId = JSON.parse(texto).id ?? null; } catch { /* sin id */ } }
+      const { error: eUpd } = await admin.from("app_cliente_correo_envios")
+        .update({ enviado: r.ok, proveedor_id: proveedorId, error: r.ok ? null : `${r.status}: ${texto.slice(0, 300)}` })
+        .eq("id", envio.id);
+      if (eUpd) console.error("facturas_enviar: no se anotó el resultado:", eUpd.message);
+      if (!r.ok) {
+        console.error("facturas_enviar:", r.status, texto.slice(0, 300));
+        return json({ ok: false, mensaje: "No se pudo enviar el correo. Intenta de nuevo en un rato." });
+      }
+
+      // El correo queda guardado para la próxima vez (tope 10 por ficha), y el
+      // registro de envíos de esta ficha se purga a los 365 días.
+      const { error: eG } = await admin.from("app_cliente_correos")
+        .upsert({ customer_id: customerId, correo, usado_at: new Date().toISOString() }, { onConflict: "customer_id,correo" });
+      if (eG) console.error("facturas_enviar: no se guardó el correo:", eG.message);
+      else {
+        const { data: viejos, error: eV } = await admin.from("app_cliente_correos").select("id").eq("customer_id", customerId)
+          .order("usado_at", { ascending: false }).range(TOPE_CORREOS_GUARDADOS, TOPE_CORREOS_GUARDADOS + 50);
+        if (eV) console.error("facturas_enviar: no se leyeron los guardados:", eV.message);
+        else if (viejos?.length) {
+          const { error: eB } = await admin.from("app_cliente_correos").delete().in("id", viejos.map((v: any) => v.id));
+          if (eB) console.error("facturas_enviar: no se recortaron los guardados:", eB.message);
+        }
+      }
+      const { error: ePurga } = await admin.from("app_cliente_correo_envios").delete().eq("customer_id", customerId)
+        .lt("created_at", new Date(Date.now() - 365 * 86400_000).toISOString());
+      if (ePurga) console.error("facturas_enviar: no se purgó el registro:", ePurga.message);
+
+      return json({ ok: true, enviado: true, correo, cantidad: ids.length, modo });
     }
 
     // ── Modo de prueba: avisos de muestra al teléfono (2026-10-07) ───────
@@ -1445,15 +1705,54 @@ Deno.serve(async (req) => {
     }
 
     // La BANDEJA: los avisos que ya se le mandaron, para verlos en la app.
+    //
+    // Borrar un aviso (2026-10-09) lo OCULTA: marca `oculto_at` y la bandeja
+    // ya no lo devuelve, en todos los teléfonos de la persona. La fila NO se
+    // borra nunca: `app_cliente_avisos` es también la bitácora que impide
+    // mandar dos veces el mismo aviso (UNIQUE customer_id, tipo, ref).
+    //
+    // Mientras la columna no exista en la base, la bandeja sigue como antes
+    // (sin el filtro) y `bandeja_ocultar` contesta `motivo: "sin_columna"`:
+    // la app conserva el ocultamiento local y lo reintenta en la próxima carga.
+    const sinColumnaOculto = (e: any) => e?.code === "42703" || /oculto_at/.test(String(e?.message ?? ""));
     if (accion === "bandeja" && !customerId) return json({ ok: true, avisos: [], sin_leer: 0 });
     if (accion === "bandeja_leida" && !customerId) return json({ ok: true });
+    if (accion === "bandeja_ocultar" && !customerId) return json({ ok: true, ocultos: 0 });
     if (accion === "bandeja") {
-      const { data, error } = await admin.from("app_cliente_avisos")
-        .select("id, tipo, titulo, cuerpo, url, created_at, leido_at")
-        .eq("customer_id", customerId).eq("enviado", true)
-        .order("created_at", { ascending: false }).limit(50);
+      const leer = (conFiltro: boolean) => {
+        let q = admin.from("app_cliente_avisos")
+          .select("id, tipo, titulo, cuerpo, url, created_at, leido_at")
+          .eq("customer_id", customerId).eq("enviado", true);
+        if (conFiltro) q = q.is("oculto_at", null);
+        return q.order("created_at", { ascending: false }).limit(50);
+      };
+      let { data, error } = await leer(true);
+      if (error && sinColumnaOculto(error)) ({ data, error } = await leer(false));
       if (error) throw error;
       return json({ ok: true, avisos: data ?? [], sin_leer: (data ?? []).filter((a) => !a.leido_at).length });
+    }
+    // `{ ids: [...] }` oculta esos; `{ todas: true }` oculta todos los que
+    // siguen a la vista, y con `hasta_id` sólo hasta ese (el más nuevo que la
+    // persona VIO): uno que llegó mientras tanto no se borra sin haberse visto.
+    // Siempre acotado a la ficha de la sesión — nunca se confía en los ids.
+    if (accion === "bandeja_ocultar") {
+      const ids = Array.isArray(body?.ids)
+        ? [...new Set(body.ids.map(Number).filter((n: number) => Number.isSafeInteger(n) && n > 0))].slice(0, 200)
+        : [];
+      const todas = body?.todas === true;
+      if (!todas && !ids.length) return json({ ok: false, mensaje: "No hay avisos para borrar." });
+      let q = admin.from("app_cliente_avisos").update({ oculto_at: new Date().toISOString() })
+        .eq("customer_id", customerId).is("oculto_at", null);
+      if (todas) {
+        const hasta = Number(body?.hasta_id);
+        if (Number.isSafeInteger(hasta) && hasta > 0) q = q.lte("id", hasta);
+      } else {
+        q = q.in("id", ids);
+      }
+      const { data, error } = await q.select("id");
+      if (error && sinColumnaOculto(error)) return json({ ok: false, motivo: "sin_columna", mensaje: "Se borraron sólo en este teléfono." });
+      if (error) throw error;
+      return json({ ok: true, ocultos: data?.length ?? 0 });
     }
     if (accion === "bandeja_leida") {
       const { error } = await admin.from("app_cliente_avisos").update({ leido_at: new Date().toISOString() })
@@ -1538,7 +1837,7 @@ Deno.serve(async (req) => {
       const nivel = await nivelDeCliente(admin, customerId);
       // El cupón del mes (Platino): puntos que vencen a fin de mes.
       const inicioMes = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 8) + "01";
-      const { data: cup, error: eCup } = await admin.from("puntos_lote").select("id, puntos, restantes, vence_el, motivo")
+      const { data: cup, error: eCup } = await admin.from("puntos_lote").select("id, puntos, restantes, vence_el, motivo, raspado_el")
         .eq("customer_id", customerId).eq("origen", "cupon").gte("ganado_el", inicioMes).maybeSingle();
       if (eCup) throw eCup;
       if (eCfg) console.error("no se pudo leer la configuración:", eCfg.message);
@@ -1604,7 +1903,7 @@ Deno.serve(async (req) => {
         })(),
         // Cuenta de prueba: la app ofrece el «modo de prueba» en Cuenta.
         prueba: await esDePrueba(customerId),
-        cupon: cup ? { id: cup.id, puntos: Number(cup.puntos), restantes: Number(cup.restantes), vence: cup.vence_el, titulo: cup.motivo } : null,
+        cupon: cup ? { id: cup.id, puntos: Number(cup.puntos), restantes: Number(cup.restantes), vence: cup.vence_el, titulo: cup.motivo, raspado: !!cup.raspado_el } : null,
         regalo_cumpleanos: nivel.clave === "vip" ? Number(cfgP?.puntos_cumpleanos ?? 0) : nivel.cumpleanos,
         codigo,
         socio_desde: primero?.ganado_el ?? null,

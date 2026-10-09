@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1233.5 — Pedidos: «Con observación» sin pérdidas, sin cargas dobles, aviso al no haber qué contar
+
+Hallazgos de la prueba en vivo de paridad (producción contra dev, mismos datos):
+- **«Con observación» ya no pierde salas.** Al pasar los filtros al estado de la sala, cuatro salas recibidas con diferencias pendientes o con faltante salían del filtro. Ahora el filtro es la regla de producción MÁS lo que sigue abierto aunque el pedido se haya cerrado: una caja que falta o una diferencia sin resolver. Prueba nueva.
+- **Abrir una fila con «Resumen de recepción» ya no carga los renglones dos o cuatro veces.** `asegurarItems` no vuelve a pedir lo que ya está o se está trayendo. Medido: 4 peticiones en vez de 8 a 16.
+- **«Confirmar» sin nada que contar ya no queda mudo.** Pasaba también en producción. Ahora avisa «No hay nada para contar todavía», y explica si es porque todo venía en las cajas que faltaron.
+
 ## v2.1233.4 — Pedidos: riesgos menores de la revisión
 
 Riesgos menores de la revisión producción contra dev:

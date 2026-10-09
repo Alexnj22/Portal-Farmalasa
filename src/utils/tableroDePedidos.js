@@ -403,7 +403,17 @@ export function filtrarPedidos(rows, { estado = 'all', rango = null, observado =
     if (estado === 'completado') {
         filas = filas.filter(completada);
     } else if (estado === 'observacion') {
-        filas = filas.filter(r => (observado(r) && !completada(r)) || faltantesDeLaSala(r).hay);
+        // «Con observación» = la regla de siempre (algo observado en un pedido
+        // que no está cerrado) MÁS lo que sigue abierto aunque el pedido se
+        // haya cerrado: una caja que falta o una diferencia sin resolver.
+        // Medirlo contra la sala «completada» (como quedó un rato el
+        // 2026-10-08) sacaba del filtro justo a las salas recibidas con
+        // diferencias pendientes — lo cazó la prueba de paridad con producción.
+        // Y no se suma toda observación de un pedido cerrado: `llegada_tipo`
+        // queda escrito para siempre aunque el faltante ya se haya resuelto.
+        filas = filas.filter(r => (observado(r) && r.pedido_status !== 'completado')
+            || faltantesDeLaSala(r).hay
+            || (!!r.diferencias_reportadas_at && !r.confirmado_correccion_at));
     } else if (estado !== 'all') {
         filas = filas.filter(r => estadoDeLaSala(r) === estado);
     } else {

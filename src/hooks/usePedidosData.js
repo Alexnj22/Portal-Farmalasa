@@ -141,6 +141,10 @@ export function usePedidosData({ searchTerm = '' }) {
     }, []);
 
     const [items,         setItems]         = useState({});
+    // Los renglones vigentes y las cargas en vuelo, para `asegurarItems`.
+    const itemsRef           = useRef({});
+    const enCursoDetalleRef  = useRef(new Set());
+    useEffect(() => { itemsRef.current = items; }, [items]);
     const [eventosMap,    setEventosMap]    = useState({});
     // Las devoluciones del pedido, por tarjeta. Viven al lado de los ítems
     // porque se pintan pegadas a su renglón: una diferencia y lo que se decidió
@@ -680,6 +684,7 @@ export function usePedidosData({ searchTerm = '' }) {
         ultimaCargaDetalleRef.current[key] = Date.now();
         const vigente = () => cargasDetalleRef.current[key] === turno;
         setLoadingItems(prev => ({ ...prev, [key]: true }));
+        enCursoDetalleRef.current.add(key);
         const sucFilter = sucId ?? (isBranch && erpSucursalId ? erpSucursalId : null);
         try {
             const lcPromise = (sucFilter && isBranch)
@@ -738,9 +743,20 @@ export function usePedidosData({ searchTerm = '' }) {
             }
             return null;
         } finally {
-            if (vigente()) setLoadingItems(prev => { const n = { ...prev }; delete n[key]; return n; });
+            if (vigente()) {
+                enCursoDetalleRef.current.delete(key);
+                setLoadingItems(prev => { const n = { ...prev }; delete n[key]; return n; });
+            }
         }
     }, [isBranch, erpSucursalId]);
+    // Para lo que pide los renglones SÓLO si faltan (el resumen de recepción al
+    // montarse): si ya están o ya se están trayendo, no vuelve a pedirlos. Abrir
+    // una fila con resumen hacía la carga dos veces —la del clic y la del
+    // resumen— y con el doble montaje de desarrollo, cuatro (paridad, 2026-10-08).
+    const asegurarItems = useCallback((key, pedidoId, sucId) => {
+        if (itemsRef.current[key] || enCursoDetalleRef.current.has(key)) return null;
+        return fetchItems(key, pedidoId, sucId);
+    }, [fetchItems]);
     useEffect(() => { fetchItemsRef.current = fetchItems; }, [fetchItems]);
 
     // El aviso para quien tocó un botón que necesita los renglones y no los
@@ -1432,8 +1448,19 @@ export function usePedidosData({ searchTerm = '' }) {
             const enviado = r.cantidad_enviada ?? r.cantidad_asignada ?? 0;
             return enviado > 0 || (r.cantidad_recibida ?? 0) > 0;
         });
-        if (!rows.length && !confirmados.length) return;
         const hasFaltaItems = (loaded || []).some(r => r.falta_caja && r.status === 'pendiente' && r.cantidad_asignada > 0);
+        // Nada que contar: antes el botón no hacía NADA, sin aviso (lo vio la
+        // prueba de paridad, igual en producción). Pasa cuando todo lo de la
+        // sala venía en las cajas que faltaron.
+        if (!rows.length && !confirmados.length) {
+            useToastStore.getState().showToast(
+                'No hay nada para contar todavía',
+                hasFaltaItems
+                    ? 'Todo lo de esta sala venía en las cajas que faltaron. Se cuenta cuando llegue el reenvío.'
+                    : 'Esta sala no tiene productos pendientes de contar.',
+                'info');
+            return;
+        }
         const activeRow  = activeRows.find(r => r.pedido_id === pedidoId && r.erp_sucursal_id === sucId);
         // cajas_danadas y falta_cajas son ahora arrays independientes (soporta 'mixto')
         const cajaDanada = activeRow?.cajas_danadas ?? [];
@@ -1909,6 +1936,7 @@ export function usePedidosData({ searchTerm = '' }) {
         loadActive,
         loadActiveRutas,
         fetchItems,
+        asegurarItems,
         toggleExpand,
         handleLifecycle,
         handleProgramarEntrega,

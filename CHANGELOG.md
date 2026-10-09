@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1263.0 — App de clientes: minerales refinados, Team y celebraciones de mayoreo
+
+- **Minerales refinados:** facetas más grandes («el mineral más cerca») y aristas suaves en metales y piedras (`gema`, `metal`, diamante); las líneas marcadas competían con los textos. Franjas de Wallet regeneradas.
+- **Logo central del material, sin color** (decisión del usuario), con la sombra del bisel más sutil. El logo junto a «PUNTOS SALUD» va en blanco.
+- **El chip dorado brilla:** oro con volumen, pistas de contacto grabadas y un reflejo que sigue la inclinación.
+- **Sin «Socio desde»** en la tarjeta de la app.
+- **«Personal» pasa a «Team»:** el sello dice TEAM (sin ícono), el panel «Team Farmacia Salud», Apple y Google Wallet «· TEAM».
+- **Puntos para canjear, justo debajo del nivel.**
+- **Mayoreo celebra y avisa:** pantallas de subir de rango (Zafiro/Rubí/Diamante), de pasar a precio Mayoreo Plus y de bienvenida al ser aprobado (`SubisteDeNivel` generalizado, cola de pantallas en un solo Modal). Push en `avisos-clientes`: bienvenida y Mayoreo Plus desde `clientes_mayoristas_historial` (48 h, cada minuto), subida de rango en la corrida diaria (la primera vez sólo anota, sin avisar). `mayorista_de` devuelve `aprobado_desde`. Botones de prueba en Cuenta.
+
 ## v2.1262.11 — App de clientes: el texto del movimiento llega al binario
 
 - La 38 salió igual sin `NSMotionUsageDescription`: el plugin de `expo-location` tenía `motionUsagePermission: false`, que **borra** la clave aunque esté en `ios.infoPlist`. Ahora el texto va en esa opción del plugin. De paso, `UIRequiresFullScreen` se ponía en `false` por encima del infoPlist: va como `ios.requireFullScreen: true`. Verificado con `expo config --type introspect`.

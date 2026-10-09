@@ -14,6 +14,8 @@
 //   · inyeccion   — una inyección pagada hace 3 días y todavía sin aplicar.
 //   · oferta      — una oferta publicada en los últimos 2 días; SÓLO a quien
 //                   aceptó recibir promociones (es publicidad).
+//   · mayoreo     — (2026-10-09) aprobado como cliente de mayoreo o pasado a
+//                   Mayoreo Plus (inmediato), y subir de rango (diario).
 //
 // ── Por qué no manda dos veces ─────────────────────────────────────────────
 // Antes de enviar, cada aviso se INSERTA en `app_cliente_avisos`, cuya UNIQUE
@@ -145,6 +147,98 @@ Deno.serve(async (req) => {
         candidatos.push({ customer_id: n.customer_id, tipo: "nivel", ref: `nivel:${n.clave}`,
           titulo: `¡Subiste a ${n.nombre}! 👑`, cuerpo: "Desde ahora ganas más puntos con cada compra. Mira tus beneficios.",
           url: "/puntos?nivel=1" });
+      }
+    }
+
+    // ── Mayoreo: aprobado, o pasado de Mayoreo a Mayoreo Plus (2026-10-09) ──
+    // Sale del historial que escribe `mayorista_resolver` (acciones «aprobado»
+    // y «precio_cambiado»), de las últimas 48 h: una aprobación de noche se
+    // avisa a la mañana. La llave es la fila del historial. Sólo si sigue
+    // aprobado y con ese precio (si lo deshicieron, no se avisa).
+    if (inmediato) {
+      const { data: hist, error: eH } = await admin.from("clientes_mayoristas_historial")
+        .select("id, customer_id, accion, precio")
+        .in("customer_id", clientes).in("accion", ["aprobado", "precio_cambiado"])
+        .gte("created_at", new Date(Date.now() - 48 * 3600_000).toISOString());
+      if (eH) console.error("no se pudo leer el historial de mayoreo:", eH.message);
+      if (hist?.length) {
+        const ids = [...new Set(hist.map((h: any) => Number(h.customer_id)))];
+        const [{ data: vig, error: eVg }, { data: previos, error: ePv }] = await Promise.all([
+          admin.from("clientes_mayoristas").select("customer_id, estado, precio").in("customer_id", ids),
+          // El precio que tenía antes de cada cambio: la fila anterior con precio.
+          admin.from("clientes_mayoristas_historial").select("id, customer_id, precio")
+            .in("customer_id", ids).not("precio", "is", null).order("id", { ascending: true }),
+        ]);
+        if (eVg) console.error("no se pudo leer el estado de mayoreo:", eVg.message);
+        if (ePv) console.error("no se pudo leer el precio anterior:", ePv.message);
+        const vigente = new Map((vig ?? []).map((v: any) => [Number(v.customer_id), v]));
+        const NOMBRE_PRECIO: Record<string, string> = { mayoreo: "Mayoreo", mayoreo_plus: "Mayoreo Plus" };
+        for (const h of hist as any[]) {
+          const v = vigente.get(Number(h.customer_id));
+          if (!v || v.estado !== "aprobado") continue;
+          if (h.accion === "aprobado") {
+            candidatos.push({ customer_id: h.customer_id, tipo: "mayoreo", ref: `mayoreo:${h.id}`,
+              titulo: "¡Bienvenido a precio de mayoreo! 💎",
+              cuerpo: `Te aprobamos como cliente de mayoreo con precio ${NOMBRE_PRECIO[v.precio] ?? "Mayoreo"}. Mira tu rango y tus beneficios.`,
+              url: "/puntos?mayoreo=1" });
+            continue;
+          }
+          // precio_cambiado: sólo la subida de Mayoreo a Mayoreo Plus se celebra.
+          if (h.precio !== "mayoreo_plus" || v.precio !== "mayoreo_plus") continue;
+          const antes = (previos ?? []).filter((p: any) => Number(p.customer_id) === Number(h.customer_id) && Number(p.id) < Number(h.id)).at(-1);
+          if (ePv || antes?.precio !== "mayoreo") continue;
+          candidatos.push({ customer_id: h.customer_id, tipo: "mayoreo", ref: `mayoreo:${h.id}`,
+            titulo: "Ahora tienes precio Mayoreo Plus 🏷️",
+            cuerpo: "Desde hoy pagas a precio Mayoreo Plus en todas las sucursales. Muestra tu tarjeta en caja.",
+            url: "/puntos?precio=1" });
+        }
+      }
+    }
+
+    // ── Mayoreo: subiste de rango (2026-10-09) ──────────────────────────────
+    // El rango (Jade < Zafiro < Rubí < Diamante) se recalcula el día 1 con el
+    // promedio de 3 meses: basta la corrida diaria. Sólo subidas: la bitácora
+    // guarda cada rango ya avisado (ref `rango:<clave>`); se avisa si el de hoy
+    // es más alto que todos los anotados. La PRIMERA vez que se ve a un cliente
+    // aprobado su rango se anota en silencio (enviado = false, no sale en la
+    // campana): no se sabe de dónde venía, y al aprobarlo ya recibió la bienvenida.
+    if (diario) {
+      const ORDEN_RANGO: Record<string, number> = { jade: 0, zafiro: 1, rubi: 2, diamante: 3 };
+      const NOMBRE_RANGO: Record<string, string> = { jade: "Jade", zafiro: "Zafiro", rubi: "Rubí", diamante: "Diamante" };
+      const { data: aprob, error: eAp } = await admin.from("clientes_mayoristas").select("customer_id")
+        .in("customer_id", clientes).eq("estado", "aprobado");
+      if (eAp) console.error("no se pudieron leer los clientes de mayoreo:", eAp.message);
+      const ids = (aprob ?? []).map((a: any) => Number(a.customer_id));
+      if (ids.length) {
+        const { data: vistos, error: eVi } = await admin.from("app_cliente_avisos").select("customer_id, ref")
+          .in("customer_id", ids).eq("tipo", "mayoreo").like("ref", "rango:%");
+        if (eVi) console.error("no se pudieron leer los rangos avisados:", eVi.message);
+        const tope = new Map<number, number>();
+        for (const v of vistos ?? []) {
+          const o = ORDEN_RANGO[String(v.ref).slice(6)] ?? -1;
+          tope.set(Number(v.customer_id), Math.max(tope.get(Number(v.customer_id)) ?? -1, o));
+        }
+        const rangos = await Promise.all(ids.map(async (id) => {
+          const { data, error } = await admin.rpc("mayorista_rango", { p_customer: id });
+          if (error) { console.error("no se pudo leer el rango:", error.message); return null; }
+          return { id, clave: String(data ?? "") };
+        }));
+        const silenciosos: Aviso[] = [];
+        // Sin la bitácora no se sabe qué ya se avisó: mejor no avisar nada.
+        for (const r of eVi ? [] : rangos) {
+          if (!r || !(r.clave in ORDEN_RANGO)) continue;
+          const aviso: Aviso = { customer_id: r.id, tipo: "mayoreo", ref: `rango:${r.clave}`,
+            titulo: `¡Subiste a ${NOMBRE_RANGO[r.clave]}! 💎`,
+            cuerpo: "Tu compra promedio de los últimos 3 meses subió tu rango de mayoreo. Mira tus beneficios.",
+            url: "/puntos?rango=1" };
+          if (!tope.has(r.id)) silenciosos.push(aviso);
+          else if (ORDEN_RANGO[r.clave] > tope.get(r.id)!) candidatos.push(aviso);
+        }
+        if (silenciosos.length) {
+          const { error: eSi } = await admin.from("app_cliente_avisos")
+            .upsert(silenciosos, { onConflict: "customer_id,tipo,ref", ignoreDuplicates: true });
+          if (eSi) console.error("no se pudo anotar el rango de partida:", eSi.message);
+        }
       }
     }
 

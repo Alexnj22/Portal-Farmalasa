@@ -1195,6 +1195,10 @@ Deno.serve(async (req) => {
         puntos: { tipo: "ganado", titulo: "Ganaste 25 puntos", cuerpo: "Gracias por tu compra. Mira tu saldo en la app.", url: "/puntos" },
         cupon: { tipo: "ganado", titulo: "Tu cupón del mes 🎟️", cuerpo: "Ya llegó: ráspalo en la app para descubrir cuánto ganaste.", url: "/puntos" },
         nivel: { tipo: "nivel", titulo: "¡Subiste de nivel! 👑", cuerpo: "Desde ahora ganas más puntos con cada compra.", url: "/puntos?nivel=1" },
+        // Mayoreo (2026-10-09): la pantalla se ve con el rango de prueba elegido en Cuenta.
+        rango: { tipo: "mayoreo", titulo: "¡Subiste a Rubí! 💎", cuerpo: "Tu compra promedio de los últimos 3 meses subió tu rango de mayoreo. Mira tus beneficios.", url: "/puntos?rango=1" },
+        precio: { tipo: "mayoreo", titulo: "Ahora tienes precio Mayoreo Plus 🏷️", cuerpo: "Desde hoy pagas a precio Mayoreo Plus en todas las sucursales.", url: "/puntos?precio=1" },
+        mayoreo: { tipo: "mayoreo", titulo: "¡Bienvenido a precio de mayoreo! 💎", cuerpo: "Te aprobamos como cliente de mayoreo. Mira tu precio y tu rango.", url: "/puntos?mayoreo=1" },
         restado: { tipo: "restado", titulo: "Usaste 500 puntos 💳", cuerpo: "Ahorraste $5.00 en Salud 1. Te quedan 1,200 puntos.", url: "/puntos" },
         tratamiento: { tipo: "tratamiento", titulo: "¿Ya te toca otra vez? 💊", cuerpo: "Se te está por acabar tu medicamento. Resérvalo y lo tenemos listo.", url: "/tratamientos" },
         reserva: { tipo: "reserva", titulo: "Tu reserva está lista", cuerpo: "Pasa a retirarla con tu código.", url: "/reservas" },

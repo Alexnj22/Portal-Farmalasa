@@ -12,33 +12,103 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORES_NIVEL } from './TarjetaSocio';
 import EfectoNivel from './EfectoNivel';
 import { BENEFICIOS } from './Nivel';
+import { PRECIOS } from './Mayorista';
 import { Confeti } from './animacion';
 import Icono from './Icono';
 
+// Mayoreo (2026-10-09): la misma pantalla celebra también subir de RANGO
+// (Jade → Zafiro → Rubí → Diamante), pasar de precio Mayoreo a Mayoreo Plus
+// y la primera vez que se ve aprobado como cliente de mayoreo. Cada cosa
+// guarda en el teléfono lo último que vio; bajar no celebra (y se anota en
+// silencio). La primera vez que se ve un rango o un precio sólo se anota:
+// no se sabe de dónde venía.
 const CLAVE = 'puntos_salud_ultimo_nivel';
+const CLAVE_RANGO = 'puntos_salud_ultimo_rango';
+const CLAVE_PRECIO = 'puntos_salud_ultimo_precio';
+const CLAVE_BIENVENIDA = 'puntos_salud_mayoreo_bienvenida';
 const ORDEN = { vip: 0, plata: 1, oro: 2, platino: 3 };
+const ORDEN_RANGO = { jade: 0, zafiro: 1, rubi: 2, diamante: 3 };
+const ORDEN_PRECIO = { mayoreo: 0, mayoreo_plus: 1 };
+// La bienvenida es para quien acaban de aprobar: quien instala la app meses
+// después de su aprobación no la ve (sin la fecha, se da por reciente).
+const DIAS_BIENVENIDA = 45;
 
-export default function SubisteDeNivel({ nivel, forzar = false }) {
-  const [mostrar, setMostrar] = useState(null);
-  // Modo de prueba / el aviso «subiste de nivel»: se muestra aunque ya se haya visto.
-  useEffect(() => { if (forzar && nivel?.clave) setMostrar(nivel); }, [forzar]); // eslint-disable-line react-hooks/exhaustive-deps
+const leer = (k) => SecureStore.getItemAsync(k).catch(() => null);
+const guardar = (k, v) => { SecureStore.setItemAsync(k, v).catch(() => {}); };
+const precioDe = (m) => m?.precioClave ?? (m?.precio === PRECIOS.mayoreo_plus ? 'mayoreo_plus' : 'mayoreo');
+const reciente = (f) => !f || (Date.now() - Date.parse(`${String(f).slice(0, 10)}T12:00:00`)) / 86400000 <= DIAS_BIENVENIDA;
+
+const beneficiosRango = (m) => [`${m.puntos} pts por cada $1 a tu precio de mayoreo`, '1 punto por cada $1 a precio Preferente',
+  `${m.cumpleanos} puntos en tu cumpleaños`, ...(m.raspable ? [`Raspable mensual ${m.raspable}`] : [])];
+const pantallaNivel = (n) => ({ clave: n.clave, etiqueta: '¡SUBISTE DE NIVEL!', titulo: n.nombre, icono: ['crown.fill', '👑'],
+  texto: 'Gracias por tu preferencia. Desde ahora ganas más con cada compra:', beneficios: BENEFICIOS[n.clave] ?? [] });
+const pantallaRango = (m) => ({ clave: m.clave, etiqueta: '¡SUBISTE DE RANGO!', titulo: m.nombre, subtitulo: 'Cliente de mayoreo', icono: ['diamond.fill', '◆'],
+  texto: `Tu compra promedio de los últimos tres meses te llevó a ${m.nombre}. Desde ahora:`, beneficios: beneficiosRango(m) });
+const pantallaPrecio = (m) => ({ clave: m.clave, etiqueta: '¡NUEVO PRECIO!', titulo: 'Mayoreo Plus', subtitulo: 'Cliente de mayoreo', icono: ['tag.fill', '🏷️'],
+  texto: 'Ahora tienes precio Mayoreo Plus. Muestra tu tarjeta en caja:', beneficios: ['Precio Mayoreo Plus en tus compras', 'En todas las sucursales', `Sigues en tu rango ${m.nombre}`] });
+const pantallaBienvenida = (m) => ({ clave: m.clave, etiqueta: '¡BIENVENIDO!', titulo: 'Precio de mayoreo', subtitulo: `Cliente de mayoreo · ${m.nombre}`, icono: ['diamond.fill', '◆'],
+  texto: 'Te aprobamos como cliente de mayoreo. Desde ahora:', beneficios: [`Precio ${PRECIOS[precioDe(m)] ?? 'Mayoreo'} en todas las sucursales`,
+    `${m.puntos} pts por cada $1 a tu precio de mayoreo`, 'Tu rango sube con tu compra promedio de 3 meses'] });
+
+let siguienteId = 0;
+
+/**
+ * `nivel`: el nivel de Puntos Salud. `mayoreo`: el rango del cliente de mayoreo
+ * (`rangoReal` o `rangoDePrueba` de Mayorista.js), o null. Los `forzar*` la
+ * muestran aunque ya se haya visto (modo de prueba y los avisos que la abren).
+ */
+export default function SubisteDeNivel({ nivel, forzar = false, mayoreo = null, forzarRango = false, forzarPrecio = false, forzarBienvenida = false }) {
+  const [cola, setCola] = useState([]);
+  const poner = (p) => setCola((c) => [...c, { ...p, id: ++siguienteId }]);
+  // Modo de prueba / los avisos: se muestran aunque ya se hayan visto.
+  useEffect(() => { if (forzar && nivel?.clave) poner(pantallaNivel(nivel)); }, [forzar]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (forzarRango && mayoreo?.clave) poner(pantallaRango(mayoreo)); }, [forzarRango]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (forzarPrecio && mayoreo?.clave) poner(pantallaPrecio(mayoreo)); }, [forzarPrecio]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (forzarBienvenida && mayoreo?.clave) poner(pantallaBienvenida(mayoreo)); }, [forzarBienvenida]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!nivel?.clave) return;
     let vivo = true;
-    SecureStore.getItemAsync(CLAVE).catch(() => null).then((ultimo) => {
+    leer(CLAVE).then((ultimo) => {
       if (!vivo) return;
-      if (ultimo && (ORDEN[nivel.clave] ?? 0) > (ORDEN[ultimo] ?? 0)) setMostrar(nivel);
-      if (ultimo !== nivel.clave) SecureStore.setItemAsync(CLAVE, nivel.clave).catch(() => {});
+      if (ultimo && (ORDEN[nivel.clave] ?? 0) > (ORDEN[ultimo] ?? 0)) poner(pantallaNivel(nivel));
+      if (ultimo !== nivel.clave) guardar(CLAVE, nivel.clave);
     });
     return () => { vivo = false; };
   }, [nivel?.clave]); // eslint-disable-line react-hooks/exhaustive-deps
-  if (!mostrar) return null;
-  return <Celebracion nivel={mostrar} alCerrar={() => setMostrar(null)} />;
+  // Mayoreo: bienvenida la primera vez; después, subir de rango y de precio.
+  const precio = mayoreo?.clave ? precioDe(mayoreo) : null;
+  useEffect(() => {
+    if (!mayoreo?.clave) return;
+    let vivo = true;
+    Promise.all([leer(CLAVE_BIENVENIDA), leer(CLAVE_RANGO), leer(CLAVE_PRECIO)]).then(([vista, ultRango, ultPrecio]) => {
+      if (!vivo) return;
+      if (!vista) {
+        // La bienvenida ya cuenta el rango y el precio: no se celebran aparte.
+        if (reciente(mayoreo.aprobadoDesde)) poner(pantallaBienvenida(mayoreo));
+        guardar(CLAVE_BIENVENIDA, '1');
+      } else {
+        if (ultRango && (ORDEN_RANGO[mayoreo.clave] ?? 0) > (ORDEN_RANGO[ultRango] ?? 0)) poner(pantallaRango(mayoreo));
+        if (ultPrecio && (ORDEN_PRECIO[precio] ?? 0) > (ORDEN_PRECIO[ultPrecio] ?? 0)) poner(pantallaPrecio(mayoreo));
+      }
+      if (ultRango !== mayoreo.clave) guardar(CLAVE_RANGO, mayoreo.clave);
+      if (ultPrecio !== precio) guardar(CLAVE_PRECIO, precio);
+    });
+    return () => { vivo = false; };
+  }, [mayoreo?.clave, precio]); // eslint-disable-line react-hooks/exhaustive-deps
+  const actual = cola[0];
+  if (!actual) return null;
+  // Un solo Modal para toda la cola: cerrar uno y abrir otro en el mismo
+  // instante falla en iOS. El `key` reinicia la animación de cada pantalla.
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={() => setCola((c) => c.slice(1))} statusBarTranslucent>
+      <Celebracion key={actual.id} p={actual} alCerrar={() => setCola((c) => c.slice(1))} />
+    </Modal>
+  );
 }
 
-function Celebracion({ nivel, alCerrar }) {
+function Celebracion({ p, alCerrar }) {
   const ins = useSafeAreaInsets();
-  const paleta = COLORES_NIVEL[nivel.clave] ?? COLORES_NIVEL.vip;
+  const paleta = COLORES_NIVEL[p.clave] ?? COLORES_NIVEL.vip;
   const corona = useSharedValue(0);
   const texto = useSharedValue(0);
   useEffect(() => {
@@ -48,30 +118,35 @@ function Celebracion({ nivel, alCerrar }) {
   }, [corona, texto]);
   const eCorona = useAnimatedStyle(() => ({ transform: [{ scale: corona.value }, { rotate: `${(1 - Math.min(1, corona.value)) * -20}deg` }] }));
   const eTexto = useAnimatedStyle(() => ({ opacity: texto.value, transform: [{ translateY: (1 - texto.value) * 20 }] }));
-  const colores = nivel.clave === 'oro' ? ['#FFD45E', '#FFF6D5', '#E5AE34', '#FFFFFF']
-    : nivel.clave === 'platino' ? ['#7DF9FF', '#FF6EC7', '#B4FF7D', '#FFFFFF'] : ['#FFFFFF', '#C3CAD4', '#8EC30F', '#E5E9EF'];
+  const colores = p.clave === 'oro' ? ['#FFD45E', '#FFF6D5', '#E5AE34', '#FFFFFF']
+    : p.clave === 'platino' ? ['#7DF9FF', '#FF6EC7', '#B4FF7D', '#FFFFFF']
+      // Las piedras del mayoreo: el confeti con el color de la piedra.
+      : ORDEN_RANGO[p.clave] !== undefined ? [paleta.acento, '#FFFFFF', paleta.frente[1], paleta.acento]
+        : ['#FFFFFF', '#C3CAD4', '#8EC30F', '#E5E9EF'];
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={alCerrar} statusBarTranslucent>
       <LinearGradient colors={paleta.frente} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-        <EfectoNivel nivel={nivel.clave} activa x={null} />
+        <EfectoNivel nivel={p.clave} activa x={null} />
         {/* Un velo oscuro para que el texto blanco se lea sobre plata y oro. */}
         <LinearGradient colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.45)']} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 18, paddingTop: ins.top + 20 }}>
           <Animated.View style={[{ width: 120, height: 120, borderRadius: 60, alignItems: 'center', justifyContent: 'center',
             backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)' }, eCorona]}>
-            <Icono sf="crown.fill" respaldo="👑" tam={56} color="#FFFFFF" />
+            <Icono sf={p.icono[0]} respaldo={p.icono[1]} tam={56} color="#FFFFFF" />
           </Animated.View>
           <Animated.View style={[{ alignItems: 'center', gap: 10 }, eTexto]}>
-            <Text style={{ color: paleta.acento ?? '#FFFFFF', fontSize: 15, fontWeight: '900', letterSpacing: 3, textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 8 }}>¡SUBISTE DE NIVEL!</Text>
-            <Text style={{ color: '#FFFFFF', fontSize: 44, fontWeight: '900', letterSpacing: -1, textShadowColor: 'rgba(0,0,0,0.3)', textShadowRadius: 12 }}>{nivel.nombre}</Text>
+            <Text style={{ color: paleta.acento ?? '#FFFFFF', fontSize: 15, fontWeight: '900', letterSpacing: 3, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 8 }}>{p.etiqueta}</Text>
+            <Text adjustsFontSizeToFit numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 44, fontWeight: '900', letterSpacing: -1, textShadowColor: 'rgba(0,0,0,0.3)', textShadowRadius: 12 }}>{p.titulo}</Text>
+            {p.subtitulo ? (
+              <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '700', opacity: 0.9, textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 6 }}>{p.subtitulo}</Text>
+            ) : null}
             <Text style={{ color: '#FFFFFF', fontSize: 16, textAlign: 'center', maxWidth: 300, textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 6 }}>
-              Gracias por tu preferencia. Desde ahora ganas más con cada compra:
+              {p.texto}
             </Text>
             <View style={{ gap: 8, marginTop: 6, alignSelf: 'stretch', backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20, padding: 16 }}>
-              {(BENEFICIOS[nivel.clave] ?? []).map((b) => (
+              {p.beneficios.map((b) => (
                 <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <Icono sf="checkmark.seal.fill" respaldo="✓" tam={16} color={paleta.acento ?? '#FFFFFF'} />
-                  <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600' }}>{b}</Text>
+                  <Text style={{ flex: 1, color: '#FFFFFF', fontSize: 15, fontWeight: '600' }}>{b}</Text>
                 </View>
               ))}
             </View>
@@ -84,6 +159,5 @@ function Celebracion({ nivel, alCerrar }) {
         </Pressable>
         <Confeti colores={colores} alTerminar={() => {}} />
       </LinearGradient>
-    </Modal>
   );
 }

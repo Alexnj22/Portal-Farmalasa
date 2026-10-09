@@ -40,7 +40,7 @@ const ROTULOS = {
 
 export default function Puntos() {
   const t = useTema();
-  const { cumple, nivel: verNivel } = useLocalSearchParams();
+  const { cumple, nivel: verNivel, rango: verRango, precio: verPrecio, mayoreo: verMayoreo } = useLocalSearchParams();
   const { resumen: real, error, cargar, generacion } = useCuenta();
   // Modo de prueba (sólo la cuenta de prueba): se ve como el nivel elegido.
   const prueba = useModoPrueba();
@@ -144,10 +144,11 @@ export default function Puntos() {
         <Pressable onPress={() => navegar('/cuenta')} accessibilityRole="button"
           style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FF9F0A', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
           <Icono sf="testtube.2" respaldo="" tam={12} color="#1A1000" />
-          <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {String(`${mayorista ? `Mayoreo ${rangoDePrueba(mayorista).nombre}` : resumen.nivel?.nombre ?? ''}${empleado ? ' · Personal' : ''}`).toUpperCase()}</Text>
+          <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {String(`${mayorista ? `Mayoreo ${rangoDePrueba(mayorista).nombre}` : resumen.nivel?.nombre ?? ''}${empleado ? ' · Team' : ''}`).toUpperCase()}</Text>
         </Pressable>
       ) : null}
-      <SubisteDeNivel nivel={resumen.nivel} forzar={verNivel === '1'} />
+      <SubisteDeNivel nivel={resumen.nivel} forzar={verNivel === '1'} mayoreo={mayorista ? (mayoristaReal ?? rangoDePrueba(mayorista)) : null}
+        forzarRango={verRango === '1'} forzarPrecio={verPrecio === '1'} forzarBienvenida={verMayoreo === '1'} />
       <Cumpleanos activo={!!resumen.cumpleanos} forzar={cumple === '1'} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
       {/* Encima de todo (zIndex): la tarjeta de abajo gira y se escala, y no puede tapar la campana. */}
       <Entrada indice={0} estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 2 }}>
@@ -160,7 +161,7 @@ export default function Puntos() {
 
       {/* La tarjeta de socio: saldo al frente, código y QR al reverso. */}
       <Entrada indice={1}>
-        <TarjetaSocio activa={visible} equipo={empleado} estiloLogo={enPrueba ? prueba.logo : 'color'} nivel={material ?? resumen.nivel?.clave} nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
+        <TarjetaSocio activa={visible} equipo={empleado} estiloLogo={enPrueba ? prueba.logo : 'material'} nivel={material ?? resumen.nivel?.clave} nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
           previo={movSaldo.previo} cambio={movSaldo.cambio}
           codigo={resumen.codigo} socioDesde={resumen.socio_desde} />
       </Entrada>
@@ -197,6 +198,36 @@ export default function Puntos() {
           <Nivel nivel={resumen.nivel} pie={empleado ? <BeneficiosEquipo /> : null} />
         </Entrada>
       ) : null}
+
+      {/* El estado del canje (2026-10-09: justo debajo del nivel, pedido del usuario). El saldo cuenta hacia arriba y la barra se llena
+          con resorte: lo primero que se ve MOVERSE es lo que la persona tiene. */}
+      <Entrada indice={2}>
+        <Tarjeta tono={falta > 0 ? t.color.magenta : t.color.verde} estilo={{ gap: 10 }}>
+          {falta > 0 ? (
+            <>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+                <NumeroAnimado valor={saldo} formato="entero" estilo={{ fontSize: 28, fontWeight: '800', color: t.color.magentaTexto }} />
+                <Texto nivel={2}>de {MINIMO_DE_CANJE} puntos para tu primer canje</Texto>
+              </View>
+              <BarraAnimada avance={saldo / MINIMO_DE_CANJE} color={t.color.magenta} fondo={suave(t.color.magenta, 0.18)} />
+              <Texto nivel={2} estilo={{ fontSize: 14 }}>Te faltan {entero(falta)} puntos.</Texto>
+            </>
+          ) : (
+            <>
+              <Latido estilo={{ alignSelf: 'flex-start' }}>
+                <View style={{ backgroundColor: t.color.verde, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 }}>
+                  <Text style={{ fontSize: 15, fontWeight: '800', color: '#1A2600' }}>¡Ya puedes canjear!</Text>
+                </View>
+              </Latido>
+              <Texto nivel={2} estilo={{ fontSize: 14 }}>
+                Tienes <Text style={{ fontWeight: '800', color: t.color.verdeTexto }}>{dolares(resumen.equivale)}</Text> para descontar. Toca tu tarjeta y muestra el código en caja.
+              </Texto>
+            </>
+          )}
+        </Tarjeta>
+        {/* Fuera de la tarjeta (que recorta) y UNA vez por sesión. */}
+        {falta === 0 && !confetiMostrado ? <Confeti colores={[t.color.verde, t.color.magenta, '#FFD60A', '#5AC8FA']} alTerminar={marcarConfeti} /> : null}
+      </Entrada>
 
       {/* El cupón del mes (Platino): saldo de regalo que vence a fin de mes. */}
       {resumen.cupon ? (
@@ -240,35 +271,6 @@ export default function Puntos() {
         </Entrada>
       ) : null}
 
-      {/* El estado del canje. El saldo cuenta hacia arriba y la barra se llena
-          con resorte: lo primero que se ve MOVERSE es lo que la persona tiene. */}
-      <Entrada indice={2}>
-        <Tarjeta tono={falta > 0 ? t.color.magenta : t.color.verde} estilo={{ gap: 10 }}>
-          {falta > 0 ? (
-            <>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-                <NumeroAnimado valor={saldo} formato="entero" estilo={{ fontSize: 28, fontWeight: '800', color: t.color.magentaTexto }} />
-                <Texto nivel={2}>de {MINIMO_DE_CANJE} puntos para tu primer canje</Texto>
-              </View>
-              <BarraAnimada avance={saldo / MINIMO_DE_CANJE} color={t.color.magenta} fondo={suave(t.color.magenta, 0.18)} />
-              <Texto nivel={2} estilo={{ fontSize: 14 }}>Te faltan {entero(falta)} puntos.</Texto>
-            </>
-          ) : (
-            <>
-              <Latido estilo={{ alignSelf: 'flex-start' }}>
-                <View style={{ backgroundColor: t.color.verde, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '800', color: '#1A2600' }}>¡Ya puedes canjear!</Text>
-                </View>
-              </Latido>
-              <Texto nivel={2} estilo={{ fontSize: 14 }}>
-                Tienes <Text style={{ fontWeight: '800', color: t.color.verdeTexto }}>{dolares(resumen.equivale)}</Text> para descontar. Toca tu tarjeta y muestra el código en caja.
-              </Texto>
-            </>
-          )}
-        </Tarjeta>
-        {/* Fuera de la tarjeta (que recorta) y UNA vez por sesión. */}
-        {falta === 0 && !confetiMostrado ? <Confeti colores={[t.color.verde, t.color.magenta, '#FFD60A', '#5AC8FA']} alTerminar={marcarConfeti} /> : null}
-      </Entrada>
 
       {congelado ? (
         <Aviso tipo="aviso">Tu saldo está en pausa porque no aceptaste el programa. Puedes volver a aceptarlo en Cuenta.</Aviso>

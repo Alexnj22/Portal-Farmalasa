@@ -93,8 +93,8 @@ function objeto(d: DatosPase) {
     secondaryLoyaltyPoints: { label: "Puntos", balance: { int: Math.round(d.saldo) } },
     barcode: { type: "QR_CODE", value: qr, alternateText: d.codigo ?? "" },
     textModulesData: [
-      // Igual que en Apple: el personal lleva su nivel con « · PERSONAL».
-      { id: "nivel", header: `${nivelRotulo(d.nivel)}${d.equipo ? " · PERSONAL" : ""}`, body: corto(d.nombre) },
+      // Igual que en Apple: el personal lleva su nivel con « · TEAM».
+      { id: "nivel", header: `${nivelRotulo(d.nivel)}${d.equipo ? " · TEAM" : ""}`, body: corto(d.nombre) },
       { id: "desde", header: "Cliente desde", body: desde(d.socioDesde) },
       { id: "como", header: "Cómo se usa", body: "Muestra el código en caja: acumulas en cada compra y canjeas desde 100 puntos ($1)." },
     ],

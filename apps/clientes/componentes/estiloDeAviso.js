@@ -12,6 +12,8 @@ const ESTILOS = {
   ganado: ['star.fill', '★', 'verde'],
   restado: ['creditcard.fill', '$', 'azul'],
   nivel: ['crown.fill', '♛', 'violeta'],
+  // Mayoreo: subir de rango, pasar a Mayoreo Plus, ser aprobado.
+  mayoreo: ['diamond.fill', '◆', 'azul'],
   cumpleanos: ['birthday.cake.fill', '🎂', 'magenta'],
   vence: ['hourglass', '⏳', 'naranja'],
   vencimiento: ['hourglass', '⏳', 'naranja'],
@@ -40,6 +42,7 @@ export function tipoDeUrl(url) {
   if (url.startsWith('/reservas')) return 'reserva';
   if (url.includes('cumple=')) return 'cumpleanos';
   if (url.includes('nivel=')) return 'nivel';
+  if (url.includes('rango=') || url.includes('precio=') || url.includes('mayoreo=')) return 'mayoreo';
   if (url.startsWith('/puntos')) return 'ganado';
   return null;
 }

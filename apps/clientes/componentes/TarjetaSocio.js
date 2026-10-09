@@ -44,10 +44,6 @@ import { NumeroAnimado } from './animacion';
 
 const T = tokens.temas.solid;
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-const desde = (f) => {
-  const m = String(f ?? '').match(/^(\d{4})-(\d{2})/);
-  return m ? `${MESES[Number(m[2]) - 1]} ${m[1]}` : null;
-};
 const QR_DE = (codigo) => `https://portal.farmasalud.lat/mis-puntos?codigo=${codigo}`;
 const GIRO = { damping: 15, stiffness: 110, mass: 1 };
 const SUAVE = { damping: 20, stiffness: 90 };
@@ -86,7 +82,7 @@ export const COLORES_NIVEL = {
 let yaGiro = false;
 const CLAVE_PISTA = 'puntos_salud_tarjeta_girada';
 
-export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nivelDado = 'vip', activa = true, previo = null, cambio = null, equipo = false, estiloLogo = 'color' }) {
+export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nivelDado = 'vip', activa = true, previo = null, cambio = null, equipo = false, estiloLogo = 'material' }) {
   // 'vip' es la clave del nivel de entrada, que ahora es Bronce: lleva su material.
   const nivel = nivelDado === 'vip' ? 'bronce' : nivelDado;
   const paleta = COLORES_NIVEL[nivel] ?? COLORES_NIVEL.vip;
@@ -235,7 +231,7 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
     <GestureDetector gesture={gestos}>
       <Animated.View style={[{ aspectRatio: 1.586, width: '100%' }, estilos.sombra, { shadowColor: paleta.sombra }, sombra, ladeo]}
         accessible accessibilityRole="button"
-        accessibilityLabel={`Tu tarjeta ${paleta.rotulo.toLowerCase()}${equipo ? ', personal de Farmacia Salud' : ''}. Saldo ${dolares(equivale)}. Toca para ver tu código.`}
+        accessibilityLabel={`Tu tarjeta ${paleta.rotulo.toLowerCase()}${equipo ? ', del Team Farmacia Salud' : ''}. Saldo ${dolares(equivale)}. Toca para ver tu código.`}
         accessibilityHint="Gira la tarjeta" onAccessibilityTap={voltear}>
         {/* ── Frente ── */}
         <Animated.View style={[StyleSheet.absoluteFill, estilos.cara, frente]}>
@@ -264,7 +260,7 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 {/* El efecto es sólo del logo central; éste va plano. */}
-                <Image source={require('../assets/icono.png')} style={{ width: 30, height: 30 }} />
+                <Image source={require('../assets/icono.png')} style={{ width: 30, height: 30, tintColor: '#FFFFFF' }} />
                 <Text maxFontSizeMultiplier={1.3} style={estilos.marca}>PUNTOS SALUD</Text>
               </View>
               {/* Qué tarjeta es, siempre en dos renglones (2026-10-09): «CLIENTE» sobre
@@ -280,14 +276,13 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
             {/* El «chip», como en una tarjeta de verdad; al personal, a su lado
                 derecho, el sello holográfico de PERSONAL (2026-10-08). */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <LinearGradient colors={['#F5E6A8', '#C9A64A', '#F1DC8C']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={estilos.chip} />
+              <ChipOro x={x} />
               {equipo ? <SelloEquipo x={x} y={y} activa={activa && !reducir} /> : null}
             </View>
 
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
               <View style={{ flex: 1, gap: 2 }}>
                 <Text maxFontSizeMultiplier={1.3} style={estilos.nombre} numberOfLines={1}>{nombreTarjeta.toUpperCase()}</Text>
-                {desde(socioDesde) ? <Text maxFontSizeMultiplier={1.3} style={estilos.desde}>Socio desde {desde(socioDesde)}</Text> : null}
               </View>
               <View style={{ alignItems: 'flex-end' }}>
                 <NumeroAnimado key={`s${cambio?.id ?? 0}`} valor={equivale} desde={previo?.equivale ?? equivale} duracion={1200} estilo={[estilos.saldo, { textAlign: 'right' }]} />
@@ -337,6 +332,27 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
 // logo de color se perdía. Va sobre una cara blanca con bisel —luz arriba a
 // la izquierda, sombra abajo a la derecha— y sombra propia, así se lee sobre
 // cualquier material y parece incrustado en la tarjeta.
+
+// El chip (2026-10-09, «no brilla como oro, se ve plano»): oro con volumen
+// —sombra en un borde, luz en el otro—, las pistas de contacto grabadas y un
+// reflejo que lo cruza siguiendo la inclinación.
+function ChipOro({ x }) {
+  const reflejo = useAnimatedStyle(() => ({ transform: [{ translateX: (x ? x.value : 0) * 34 }, { rotate: '20deg' }] }));
+  return (
+    <View style={[estilos.chip, { overflow: 'hidden', borderWidth: 0.5, borderColor: 'rgba(90,60,0,0.55)' }]}>
+      <LinearGradient colors={['#FFF1B8', '#E8B94A', '#A8741A', '#F6D77A', '#C8902A']} locations={[0, 0.3, 0.55, 0.78, 1]}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+      {/* Las pistas de contacto, grabadas. */}
+      <View style={{ position: 'absolute', left: '33%', top: 0, bottom: 0, width: 0.8, backgroundColor: 'rgba(100,66,0,0.45)' }} />
+      <View style={{ position: 'absolute', left: '66%', top: 0, bottom: 0, width: 0.8, backgroundColor: 'rgba(100,66,0,0.45)' }} />
+      <View style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 0.8, backgroundColor: 'rgba(100,66,0,0.45)' }} />
+      <View style={{ position: 'absolute', left: '33%', right: '33%', top: '28%', bottom: '28%', borderRadius: 3, borderWidth: 0.8, borderColor: 'rgba(100,66,0,0.45)' }} />
+      <Animated.View pointerEvents="none" style={[{ position: 'absolute', top: -12, bottom: -12, left: 12, width: 14 }, reflejo]}>
+        <LinearGradient colors={['rgba(255,255,255,0)', 'rgba(255,255,240,0.85)', 'rgba(255,255,255,0)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+      </Animated.View>
+    </View>
+  );
+}
 
 // La etiqueta que flota al sumar o restar puntos, y el destello de la tarjeta.
 function CambioDeSaldo({ delta }) {

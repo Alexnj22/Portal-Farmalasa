@@ -29,13 +29,15 @@ export function rangoDePrueba(clave) {
   const i = Math.max(0, RANGOS.findIndex((r) => r.clave === clave));
   const r = RANGOS[i]; const s = RANGOS[i + 1];
   const compra = s ? Math.round(Math.max(150, r.desde + (s.desde - r.desde) * 0.6)) : 2400;
-  return { ...r, precio: PRECIOS[PRECIO_MUESTRA[r.clave]], compra, siguiente: s ? { ...s, falta: s.desde - compra } : null };
+  return { ...r, precio: PRECIOS[PRECIO_MUESTRA[r.clave]], precioClave: PRECIO_MUESTRA[r.clave], compra, siguiente: s ? { ...s, falta: s.desde - compra } : null };
 }
 export function rangoReal(m) {
   if (!m || m.estado !== 'aprobado') return null;
   const i = Math.max(0, RANGOS.findIndex((r) => r.clave === (m.rango ?? 'jade')));
   const r = RANGOS[i]; const s = RANGOS[i + 1]; const compra = Number(m.prom_3m ?? 0);
-  return { ...r, precio: PRECIOS[m.precio] ?? 'Mayoreo', compra, retiro: m.retiro_programado ?? null,
+  // precioClave y aprobadoDesde: para las pantallas de SubisteDeNivel (subir a Plus, bienvenida).
+  return { ...r, precio: PRECIOS[m.precio] ?? 'Mayoreo', precioClave: PRECIOS[m.precio] ? m.precio : 'mayoreo', aprobadoDesde: m.aprobado_desde ?? null,
+    compra, retiro: m.retiro_programado ?? null,
     siguiente: s ? { ...s, falta: Math.max(0, s.desde - compra) } : null };
 }
 
@@ -118,7 +120,7 @@ export function BeneficiosEquipo({ mayoreo = null }) {
   const t = useTema();
   return (
     <View style={{ gap: 8, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colorSistema.separador }}>
-      <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto }}>Personal Farmacia Salud</Text>
+      <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto }}>Team Farmacia Salud</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {['Precio Mayoreo Plus', 'Crédito a 30 días', 'En todas las sucursales'].map((b) => (
           <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5,

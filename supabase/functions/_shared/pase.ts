@@ -111,7 +111,7 @@ async function franjasDe(admin: any, clave: string): Promise<Record<string, Uint
 
 export const nivelRotulo = (n?: string) => {
   const k = claveDeNivel(n);
-  if (k === "empleado" || /equipo|^personal$/i.test(String(n))) return "PERSONAL FARMACIA SALUD";
+  if (k === "empleado" || /equipo|^personal$/i.test(String(n))) return "TEAM FARMACIA SALUD";
   if (PIEDRAS.includes(k)) return `MAYOREO ${String(n).toUpperCase()}`;
   return !n || k === "vip" ? "CLIENTE VIP" : `CLIENTE ${n.toUpperCase()}`;
 };
@@ -149,7 +149,7 @@ export async function armarPase(d: DatosPase): Promise<Uint8Array> {
         changeMessage: "Tu saldo de Puntos Salud ahora es %@" }],
       secondaryFields: [
         // El nivel al frente (Plata, Oro, Platino); el de entrada se llama «Cliente VIP».
-        { key: "nombre", label: `${nivelRotulo(d.nivel)}${d.equipo ? " · PERSONAL" : ""}`, value: corto(d.nombre) },
+        { key: "nombre", label: `${nivelRotulo(d.nivel)}${d.equipo ? " · TEAM" : ""}`, value: corto(d.nombre) },
         { key: "desde", label: "CLIENTE DESDE", value: desde(d.socioDesde), textAlignment: "PKTextAlignmentRight" },
       ],
       backFields: [

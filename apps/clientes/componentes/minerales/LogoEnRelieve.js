@@ -48,7 +48,8 @@ half4 main(float2 p) {
   // metal repujado, y el bisel más marcado para que el relieve se lea solo.
   float lift = a * 0.10 * (1.0 - conColor);
   col = col + float3(1.0) * lift; alf = alf + lift * (1.0 - alf);
-  float aSom = sombraB * mix(0.80, 0.55, conColor);
+  // Sombra del bisel sutil (2026-10-09: «más sutil, la luz está bien»).
+  float aSom = sombraB * mix(0.38, 0.55, conColor);
   col = col * (1.0 - aSom); alf = alf + aSom * (1.0 - alf);
   float luzT = clamp(brilloB * 0.75 + barra * 0.25, 0.0, 1.0);
   col = col + float3(1.0) * luzT * (1.0 - alf * 0.3); alf = max(alf, luzT);
@@ -65,7 +66,7 @@ function efectoLogo() {
 
 const FUENTE = require('../../assets/icono.png');
 
-export default function LogoEnRelieve({ tam, x, y, estilo = 'color' }) {
+export default function LogoEnRelieve({ tam, x, y, estilo = 'material' }) {
   const img = useImage(FUENTE);
   const fx = efectoLogo();
   const uniforms = useDerivedValue(() => ({

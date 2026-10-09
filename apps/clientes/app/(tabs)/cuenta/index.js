@@ -232,7 +232,7 @@ export default function Cuenta() {
             </View>
           ) : null}
           {prueba.activo ? (
-            <FilaInterruptor titulo="Ver como empleado" detalle="Su nivel o rango con el sello de Personal."
+            <FilaInterruptor titulo="Ver como empleado" detalle="Su nivel o rango con el sello Team."
               valor={!!prueba.empleado} alCambiar={(v) => prueba.poner({ empleado: v })} />
           ) : null}
           {prueba.activo ? (
@@ -263,10 +263,21 @@ export default function Cuenta() {
           <FilaAccion sf="minus.circle.fill" texto="Simular: usar 500 puntos" alTocar={() => { prueba.simularPuntos(-500); navegar('/puntos'); }} />
           <FilaAccion sf="gift.fill" texto="Ver la pantalla de cumpleaños" alTocar={() => navegar('/puntos?cumple=1')} />
           <FilaAccion sf="crown.fill" texto="Ver la pantalla de subir de nivel" alTocar={() => navegar('/puntos?nivel=1')} />
+          {/* Mayoreo (2026-10-09): las pantallas de rango, precio y bienvenida; con el rango de prueba elegido arriba. */}
+          {prueba.activo && prueba.mayorista ? (
+            <FilaAccion sf="diamond.fill" texto="Ver la pantalla de subir de rango" alTocar={() => navegar('/puntos?rango=1')} />
+          ) : null}
+          {prueba.activo && prueba.mayorista ? (
+            <FilaAccion sf="tag.fill" texto="Ver la pantalla de precio Mayoreo Plus" alTocar={() => navegar('/puntos?precio=1')} />
+          ) : null}
+          {prueba.activo && prueba.mayorista ? (
+            <FilaAccion sf="sparkles" texto="Ver la bienvenida a precio de mayoreo" alTocar={() => navegar('/puntos?mayoreo=1')} />
+          ) : null}
         </Grupo>
         <Grupo titulo="Avisos de prueba" pie="Llegan de verdad a este teléfono (con los avisos activados) y a la campana. Toca el aviso para ver la pantalla que abre.">
           {[['cumpleanos', 'gift.fill', 'Cumpleaños'], ['puntos', 'star.fill', 'Ganaste puntos'], ['cupon', 'ticket.fill', 'Cupón del mes'],
-            ['nivel', 'crown.fill', 'Subiste de nivel'], ['tratamiento', 'pills.fill', 'Tratamiento'], ['restado', 'minus.circle.fill', 'Usaste puntos'], ['reserva', 'bag.fill', 'Reserva lista']].map(([tipo, sf, texto]) => (
+            ['nivel', 'crown.fill', 'Subiste de nivel'], ['rango', 'diamond.fill', 'Subiste de rango (mayoreo)'], ['precio', 'tag.fill', 'Precio Mayoreo Plus'],
+            ['mayoreo', 'sparkles', 'Aprobado en mayoreo'], ['tratamiento', 'pills.fill', 'Tratamiento'], ['restado', 'minus.circle.fill', 'Usaste puntos'], ['reserva', 'bag.fill', 'Reserva lista']].map(([tipo, sf, texto]) => (
             <FilaAccion key={tipo} sf={sf} texto={`Recibir aviso: ${texto}`} flecha={false} alTocar={async () => {
               const r = await pedir('prueba_aviso', { tipo });
               Alert.alert(r?.ok ? 'Aviso enviado' : 'No se envió', r?.ok ? 'Llega en unos segundos. Bloquea el teléfono para verlo como notificación.' : (r?.mensaje ?? 'Revisa tu conexión.'));

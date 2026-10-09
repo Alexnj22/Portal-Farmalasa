@@ -23,7 +23,7 @@ export const useModoPrueba = create((set) => ({
   // Ver la app como empleado (tarjeta de Equipo).
   empleado: false,
   // El logo central: 'color' (velo de la marca) o 'material' (sólo relieve), para comparar.
-  logo: 'color',
+  logo: 'material',
   // Cambia con «Volver a tapar el cupón»: un id nuevo se puede raspar otra vez.
   semilla: Date.now().toString(36),
   reiniciarCupon: () => set({ semilla: Date.now().toString(36), cuponUsado: false }),
@@ -38,7 +38,7 @@ export const useModoPrueba = create((set) => ({
   cargar: async () => {
     try {
       const v = JSON.parse((await SecureStore.getItemAsync(CLAVE)) ?? 'null');
-      if (v) set({ activo: !!v.activo, nivel: v.nivel ?? 'oro', mayorista: v.mayorista ?? null, empleado: !!v.empleado, logo: v.logo === 'material' ? 'material' : 'color' });
+      if (v) set({ activo: !!v.activo, nivel: v.nivel ?? 'oro', mayorista: v.mayorista ?? null, empleado: !!v.empleado, logo: v.logo === 'color' ? 'color' : 'material' });
     } catch { /* sin guardar */ }
   },
   poner: (cambio) => set((x) => {

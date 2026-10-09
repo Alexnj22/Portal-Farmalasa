@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1262.3 — subir-android: --aab para subir un bundle ya firmado
+
+- `subir-android.mjs --aab=RUTA` sube un `.aab` ya firmado sin volver a compilar. El número del registro y el nombre de la versión salen del `versionCode` que Play lee del bundle, no del que calcula el script. Con la cuenta de servicio `play-publicar` (2026-10-09), Farmalasa 1.0.0 (11) se subió así a la prueba interna: es la primera subida automática.
+
+## v2.1262.2 — Android: textos visibles, modo oscuro, Inicio, Yo, pestañas, botones de marca y aurora más liviana
 ## v2.1262.2 — Android: textos visibles, modo oscuro, Inicio, Yo, pestañas, botones de marca y aurora más liviana
 
 Revisión visual de las dos apps en Android, después de que la prueba interna de Farmalasa se viera «horrible» en un teléfono real.

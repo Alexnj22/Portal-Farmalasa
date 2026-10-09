@@ -7,6 +7,8 @@
 //
 //   --sin-subir   compila y firma el .aab y se detiene (no habla con Google Play)
 //   --apk         además arma un .apk firmado, para instalar con `adb install`
+//   --aab=RUTA    no compila: sube ese .aab ya firmado (el versionCode es el
+//                 que trae adentro)
 //   --version-code=N   usa N si es mayor que lo que se sabe (sin la cuenta de
 //                 servicio de Play no se le puede preguntar el último: la app
 //                 del personal ya tenía una subida de EAS el 2026-09-30)
@@ -47,6 +49,7 @@ import { join, resolve } from 'node:path';
 
 const args = process.argv.slice(2);
 const banderas = new Set(args.filter((a) => a.startsWith('--')).map((a) => a.split('=')[0]));
+const aabHecho = args.find((a) => a.startsWith('--aab='))?.split('=').slice(1).join('=') || null;
 const codigoPedido = Number(args.find((a) => a.startsWith('--version-code='))?.split('=')[1]) || 0;
 const [carpeta, perfil] = args.filter((a) => !a.startsWith('--'));
 if (!carpeta || !perfil) {
@@ -173,52 +176,59 @@ if (puedeSubir) {
 const versionCode = Math.max(ultimoEnPlay + 1, (Number(subidas[CLAVE_REGISTRO]) || 0) + 1, (Number(appJson.android?.versionCode) || 0) + 1, codigoPedido);
 console.log(`→ ${appJson.name} (${paquete}) · versión ${appJson.version} · versionCode ${versionCode}${esProduccion ? '' : ' · PRUEBAS'}`);
 
-// ── Compilar ────────────────────────────────────────────────────────────────
-const entorno = {
-  ...process.env, ...env, JAVA_HOME, ANDROID_HOME, EXPO_PUBLIC_PRUEBA_CODIGO: '',
-  PATH: `${join(JAVA_HOME, 'bin')}:${join(ANDROID_HOME, 'platform-tools')}:${process.env.PATH}`,
-  ...(process.env.SENTRY_AUTH_TOKEN ? {} : { SENTRY_DISABLE_AUTO_UPLOAD: 'true' }),
-  // La firma viaja por el entorno, nunca por la línea de comandos (se vería en `ps`).
-  FL_KEYSTORE: llave.ANDROID_KEYSTORE, FL_KEY_ALIAS: llave.ANDROID_KEY_ALIAS,
-  FL_STORE_PASSWORD: llave.ANDROID_STORE_PASSWORD, FL_KEY_PASSWORD: llave.ANDROID_KEY_PASSWORD || llave.ANDROID_STORE_PASSWORD,
-};
-const correr = (cmd, cwd = app) => execSync(cmd, { cwd, stdio: 'inherit', env: entorno });
-correr('npx expo prebuild -p android --clean');
+let aab = aabHecho;
+if (aab) {
+  if (!existsSync(aab)) { console.error(`No existe ${aab}`); process.exit(1); }
+  console.log(`→ sin compilar: se sube ${aab}`);
+} else {
+  // ── Compilar ────────────────────────────────────────────────────────────────
+  const entorno = {
+    ...process.env, ...env, JAVA_HOME, ANDROID_HOME, EXPO_PUBLIC_PRUEBA_CODIGO: '',
+    PATH: `${join(JAVA_HOME, 'bin')}:${join(ANDROID_HOME, 'platform-tools')}:${process.env.PATH}`,
+    ...(process.env.SENTRY_AUTH_TOKEN ? {} : { SENTRY_DISABLE_AUTO_UPLOAD: 'true' }),
+    // La firma viaja por el entorno, nunca por la línea de comandos (se vería en `ps`).
+    FL_KEYSTORE: llave.ANDROID_KEYSTORE, FL_KEY_ALIAS: llave.ANDROID_KEY_ALIAS,
+    FL_STORE_PASSWORD: llave.ANDROID_STORE_PASSWORD, FL_KEY_PASSWORD: llave.ANDROID_KEY_PASSWORD || llave.ANDROID_STORE_PASSWORD,
+  };
+  const correr = (cmd, cwd = app) => execSync(cmd, { cwd, stdio: 'inherit', env: entorno });
+  correr('npx expo prebuild -p android --clean');
 
-// La firma de subida y el número, en el build.gradle GENERADO.
-const gradle = join(app, 'android', 'app', 'build.gradle');
-let g = readFileSync(gradle, 'utf8');
-const antes = g;
-g = g.replace(/versionCode \d+/, `versionCode ${versionCode}`)
-  .replace(/signingConfigs \{\n/, `signingConfigs {
-        subida {
-            storeFile file(System.getenv('FL_KEYSTORE'))
-            storePassword System.getenv('FL_STORE_PASSWORD')
-            keyAlias System.getenv('FL_KEY_ALIAS')
-            keyPassword System.getenv('FL_KEY_PASSWORD')
-        }
-`)
-  .replace(/(release \{[\s\S]*?)signingConfig signingConfigs\.debug/, '$1signingConfig signingConfigs.subida');
-if (g === antes || !g.includes('signingConfigs.subida') || !g.includes(`versionCode ${versionCode}`)) {
-  console.error('No se pudo poner la firma o el número en android/app/build.gradle: la plantilla de Expo cambió. Revisar el reemplazo.');
-  process.exit(1);
-}
-writeFileSync(gradle, g);
+  // La firma de subida y el número, en el build.gradle GENERADO.
+  const gradle = join(app, 'android', 'app', 'build.gradle');
+  let g = readFileSync(gradle, 'utf8');
+  const antes = g;
+  g = g.replace(/versionCode \d+/, `versionCode ${versionCode}`)
+    .replace(/signingConfigs \{\n/, `signingConfigs {
+          subida {
+              storeFile file(System.getenv('FL_KEYSTORE'))
+              storePassword System.getenv('FL_STORE_PASSWORD')
+              keyAlias System.getenv('FL_KEY_ALIAS')
+              keyPassword System.getenv('FL_KEY_PASSWORD')
+          }
+  `)
+    .replace(/(release \{[\s\S]*?)signingConfig signingConfigs\.debug/, '$1signingConfig signingConfigs.subida');
+  if (g === antes || !g.includes('signingConfigs.subida') || !g.includes(`versionCode ${versionCode}`)) {
+    console.error('No se pudo poner la firma o el número en android/app/build.gradle: la plantilla de Expo cambió. Revisar el reemplazo.');
+    process.exit(1);
+  }
+  writeFileSync(gradle, g);
 
-const android = join(app, 'android');
-correr(`./gradlew bundleRelease${banderas.has('--apk') ? ' assembleRelease' : ''} --console=plain`, android);
+  const android = join(app, 'android');
+  correr(`./gradlew bundleRelease${banderas.has('--apk') ? ' assembleRelease' : ''} --console=plain`, android);
 
-// El .aab, con nombre propio, a una carpeta que no borra el próximo prebuild.
-const salida = join(CLAVES, 'compilaciones-android');
-mkdirSync(salida, { recursive: true });
-const nombre = `${paquete}-${appJson.version}-${versionCode}${esProduccion ? '' : '-pruebas'}`;
-const aab = join(salida, `${nombre}.aab`);
-copyFileSync(join(android, 'app', 'build', 'outputs', 'bundle', 'release', 'app-release.aab'), aab);
-console.log(`✓ ${aab}`);
-if (banderas.has('--apk')) {
-  const apk = join(salida, `${nombre}.apk`);
-  copyFileSync(join(android, 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk'), apk);
-  console.log(`✓ ${apk}`);
+  // El .aab, con nombre propio, a una carpeta que no borra el próximo prebuild.
+  const salida = join(CLAVES, 'compilaciones-android');
+  mkdirSync(salida, { recursive: true });
+  const nombre = `${paquete}-${appJson.version}-${versionCode}${esProduccion ? '' : '-pruebas'}`;
+  aab = join(salida, `${nombre}.aab`);
+  copyFileSync(join(android, 'app', 'build', 'outputs', 'bundle', 'release', 'app-release.aab'), aab);
+  console.log(`✓ ${aab}`);
+  if (banderas.has('--apk')) {
+    const apk = join(salida, `${nombre}.apk`);
+    copyFileSync(join(android, 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk'), apk);
+    console.log(`✓ ${apk}`);
+  }
+
 }
 
 // ── Subir ───────────────────────────────────────────────────────────────────
@@ -239,7 +249,7 @@ Desde la segunda versión, este script sube solo.`);
 const edit = await play('POST', '/edits', { cuerpo: {} });
 const subido = await play('POST', `/edits/${edit.id}/bundles`, { binario: readFileSync(aab) });
 const lanzar = async (status) => play('PUT', `/edits/${edit.id}/tracks/internal`, {
-  cuerpo: { track: 'internal', releases: [{ name: `${appJson.version} (${versionCode})`, versionCodes: [String(subido.versionCode)], status }] },
+  cuerpo: { track: 'internal', releases: [{ name: `${appJson.version} (${subido.versionCode})`, versionCodes: [String(subido.versionCode)], status }] },
 });
 try {
   await lanzar('completed');
@@ -248,5 +258,5 @@ try {
   if (/draft/i.test(e.texto ?? '')) await lanzar('draft'); else throw e;
 }
 await play('POST', `/edits/${edit.id}:commit`);
-writeFileSync(REGISTRO, JSON.stringify({ ...subidas, [CLAVE_REGISTRO]: versionCode }, null, 2) + '\n');
-console.log(`✓ ${appJson.name} ${appJson.version} (${versionCode}) subida a la pista «internal» de Google Play.`);
+writeFileSync(REGISTRO, JSON.stringify({ ...subidas, [CLAVE_REGISTRO]: Number(subido.versionCode) }, null, 2) + '\n');
+console.log(`✓ ${appJson.name} ${appJson.version} (${subido.versionCode}) subida a la pista «internal» de Google Play.`);

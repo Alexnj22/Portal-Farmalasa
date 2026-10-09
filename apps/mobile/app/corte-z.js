@@ -131,7 +131,7 @@ function Tarjeta({ f, verMontos }) {
         </Seccion>
       ) : null}
       {f.ticket ? (
-        <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setTicket((v) => !v); }} style={{ minHeight: 44, justifyContent: 'center', marginHorizontal: 4 }}>
+        <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setTicket((v) => !v); }} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', marginHorizontal: 4, opacity: pressed ? 0.55 : 1 })}>
           <Text style={{ color: MARCA.azulClaro, fontSize: 15 }}>{ticket ? 'Ocultar el original' : 'Ver el original'}</Text>
         </Pressable>
       ) : null}

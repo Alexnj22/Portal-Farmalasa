@@ -3,6 +3,7 @@
 // (7 llamadas, de las cuales 4 reutilizan funciones ya definidas acá:
 // fetchSurveys, fetchSurveyBloques, fetchSurveyPreguntas, updateSurvey).
 import { supabase } from '../supabaseClient';
+import { fetchAllRows } from '../utils/supabaseUtils';
 import { conBitacora } from './audit';
 import { preguntarASaly } from './ia';
 
@@ -10,8 +11,13 @@ export function fetchSurveys() {
     return supabase.from('surveys').select('*').order('año', { ascending: false });
 }
 
-export function fetchSurveyResponseCounts(surveyIds) {
-    return supabase.from('survey_responses').select('survey_id').in('survey_id', surveyIds);
+// `.in()` sobre `survey_id`, que se REPITE (una fila por respuesta): acotar la
+// entrada no acota la salida, y pasando las 1000 respuestas el conteo salía
+// corto sin error. Paginado entero.
+export async function fetchSurveyResponseCounts(surveyIds) {
+    const data = await fetchAllRows(() => supabase.from('survey_responses').select('id, survey_id')
+        .in('survey_id', surveyIds).order('id', { ascending: true }), { completo: true });
+    return data == null ? { data: null, error: new Error('No se pudo contar las respuestas') } : { data, error: null };
 }
 
 export function fetchEmployeesForSurvey() {
@@ -28,10 +34,11 @@ export function fetchSurveyPreguntas(surveyId) {
     return supabase.from('survey_preguntas').select('*').eq('survey_id', surveyId).order('numero');
 }
 
-export function fetchSurveyResponses(surveyId) {
-    return supabase.from('survey_responses')
+export async function fetchSurveyResponses(surveyId) {
+    const data = await fetchAllRows(() => supabase.from('survey_responses')
         .select('*, employee:employees!employee_id(id, first_names, last_names, photo_url, role_id, branch:branches(id, name))')
-        .eq('survey_id', surveyId);
+        .eq('survey_id', surveyId).order('id', { ascending: true }), { completo: true });
+    return data == null ? { data: null, error: new Error('No se pudo leer las respuestas') } : { data, error: null };
 }
 
 // Sin bitácora a propósito: además de la edición del administrador, la usa

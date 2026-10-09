@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1267.0 — Auditoría de calidad de la app
+
+- **Auditoría de calidad de la app (cinco áreas, seis ejes: misma información que el portal, datos completos, paginación, fluidez, tacto y dispositivos).**
+  - **Datos que se cortaban en silencio (también en el portal):** ventas por forma de pago y piezas del cajón en Cortes (ya rondaban 1000 filas al mes), lo ya resuelto de Facturación (al pasar de 1000 volvía como pendiente), la quincena de toda la plantilla, las respuestas de encuestas y su conteo, las ventas perdidas procesadas, las ubicaciones de laboratorios, los productos ignorados de Mín·Máx, los proveedores de Compras y la Auditoría del sistema (filtraba en el teléfono sobre los últimos 1000).
+  - **Listas:** componente común `ListaPaginada` (pide a la base por páginas, carga sola al final, carga/vacío/error con reintento, columnas en iPad) más `useMasAlFinal`/`useEnTramos`; las listas largas de Torogoz, ventas, facturación, clientes, productos, bolsas, cortes, puntos, notificaciones y avisos cargan por partes.
+  - **Fluidez y tacto:** mapas que ya no redibujan pines en cada posición, renglones memoizados al contar un pedido, `Tocable` y háptico en los botones grandes (unos 60 botones no acusaban el toque), Cortes ya no dice «Nada por confirmar» cuando la lectura falla.
+  - **Dispositivos:** columnas en iPad, cajas de monto que crecen con letra grande, botones fijos que respetan el área segura.
+  - **Información que faltaba:** totales de Depósitos y de Conteos de bolsas, y el saldo a favor de una reserva vencida («Aplicado en caja», en Reservas de mi sala).
 ## v2.1266.0 — App de clientes: cupón primero, facturas por correo, notificaciones sincronizadas y motor sin escrituras inútiles
 
 - **El canje gasta primero el cupón del mes** (decisión del usuario): `puntos_consumir_canje` ordena `(origen = 'cupon') DESC, ganado_el, id` y `puntos_registrar_canje` la usa. Sólo el canje: anular, vencer y ajustar siguen con `puntos_consumir` (una anulación no se come el cupón).

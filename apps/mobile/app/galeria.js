@@ -8,7 +8,8 @@
 // Qué entra a la galería, el texto y los archivos vigentes salen del núcleo
 // (`marketing`), lo mismo del portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Modal, Pressable, RefreshControl, ScrollView, Share, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Image, Modal, RefreshControl, ScrollView, Share, Text, View, useWindowDimensions } from 'react-native';
+import { useEnTramos } from '../componentes/alFinal';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchGaleria, firmarDisenos } from '@nucleo/data/marketing';
@@ -24,6 +25,7 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import ConAurora from '../componentes/ConAurora';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo } from '../componentes/Progreso';
+import Tocable from '../componentes/Tocable';
 
 function Detalle({ pieza, firmadas, onCerrar }) {
   const medios = mediosDe(pieza);
@@ -42,7 +44,7 @@ function Detalle({ pieza, firmadas, onCerrar }) {
         <ScrollView contentContainerStyle={{ padding: 20, gap: 14, paddingBottom: 48 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }} numberOfLines={2}>{pieza.titulo}</Text>
-            <Pressable onPress={onCerrar} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cerrar</Text></Pressable>
+            <Tocable onPress={onCerrar} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cerrar</Text></Tocable>
           </View>
           {medios.map((a, i) => (tipoDeArchivo(a) === 'imagen' && firmadas.get(a.url)
             ? <Image key={a.id ?? a.url} source={{ uri: firmadas.get(a.url) }} style={{ width: '100%', aspectRatio: a.ancho && a.alto ? a.ancho / a.alto : 1, borderRadius: 16 }} resizeMode="contain" />
@@ -78,6 +80,7 @@ export default function Galeria() {
   useEffect(() => { cargar(); }, [cargar]);
 
   const visibles = useMemo(() => (piezas || []).filter((p) => (!formato || p.formato === formato) && (!texto.trim() || tokenMatch(texto.trim(), p.titulo, p.copy, p.hashtags))), [piezas, formato, texto]);
+  const tramo = useEnTramos(visibles, 40, `${formato}|${texto}`);
   const lado = (width - 16 * 2 - 10) / 2;
   const grupos = [{ id: 'formato', titulo: 'Formato', activa: formato, porDefecto: '', onCambiar: setFormato,
     opciones: [{ id: '', label: 'Todos' }, ...FORMATOS.map((f) => ({ id: f.value, label: f.label }))] }];
@@ -92,23 +95,23 @@ export default function Galeria() {
         },
       }} />
       <MenuDeFiltros grupos={grupos} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
+      <ScrollView {...tramo.scroll} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {piezas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
           <View style={{ marginHorizontal: 16, flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-            {visibles.map((p) => {
+            {tramo.visibles.map((p) => {
               const portada = mediosDe(p).find((a) => tipoDeArchivo(a) === 'imagen' && firmadas.get(a.url));
               return (
-                <Pressable key={p.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(p); }}
+                <Tocable key={p.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(p); }}
                   style={({ pressed }) => ({ width: lado, gap: 4, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
                   {portada ? <Image source={{ uri: firmadas.get(portada.url) }} style={{ width: lado, height: lado, borderRadius: 14 }} />
                     : <View style={{ width: lado, height: lado, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{formatoDe(p.formato).label}</Text></View>}
                   <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '600' }} numberOfLines={2}>{p.titulo}</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 11 }}>{`${formatoDe(p.formato).label} · ${fechaTexto(p.fecha, { day: 'numeric', month: 'short' })}`}</Text>
-                </Pressable>
+                </Tocable>
               );
             })}
           </View>

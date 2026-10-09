@@ -9,7 +9,7 @@
 // Si la promoción baja el precio en la venta, al agregar o quitar se pregunta
 // si el descuento también cambia. Las mismas funciones del portal.
 import { useCallback, useEffect, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { volver } from '../../componentes/volver';
 import * as Haptics from 'expo-haptics';
@@ -29,6 +29,7 @@ import Fecha from '../../componentes/formulario/Fecha';
 import { MARCA } from '../../componentes/inicio/marca';
 import AgregarProductos from '../../componentes/promociones/AgregarProductos';
 import { fallo, listo } from '../../componentes/Progreso';
+import Tocable from '../../componentes/Tocable';
 
 function Numero({ valor, onCambiar, placeholder }) {
   return (
@@ -69,14 +70,14 @@ function ResumenDiario({ promocionId }) {
       {OPCIONES_RESUMEN_DIARIO.map((o, i) => {
         const si = resumenElegido(valor, o.key);
         return (
-          <Pressable key={o.key} onPress={() => { Haptics.selectionAsync().catch(() => {}); tocar(o.key); }}
+          <Tocable key={o.key} onPress={() => { Haptics.selectionAsync().catch(() => {}); tocar(o.key); }}
             style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', minHeight: 44, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, opacity: pressed ? 0.6 : 1 })}>
             <View style={{ flex: 1 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{o.rotulo}</Text>
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{o.detalle}</Text>
             </View>
             {si ? <Text style={{ color: MARCA.azulClaro, fontSize: 19, fontWeight: '700' }}>✓</Text> : null}
-          </Pressable>
+          </Tocable>
         );
       })}
     </Seccion>
@@ -128,7 +129,7 @@ function Renglon({ r, onHecho, preguntarDescuento }) {
         </Text>
       </View>
       <Linea titulo="Lote (unidades)"><Numero valor={lote} onCambiar={setLote} placeholder="Sin lote" /></Linea>
-      <Pressable onPress={elegirPres}><Text style={{ color: colorSistema.acento, fontSize: 15 }}>{factor ? `Sólo la presentación ×${factor}` : 'Cualquier presentación'} ›</Text></Pressable>
+      <Tocable onPress={elegirPres}><Text style={{ color: colorSistema.acento, fontSize: 15 }}>{factor ? `Sólo la presentación ×${factor}` : 'Cualquier presentación'} ›</Text></Tocable>
       {loteIlegible ? <Aviso tono="cuidado" texto="El lote no es un número." /> : null}
       {declaradoCambio ? (
         <BotonGrande borde texto={ocupado === 'declarado' ? 'Guardando…' : 'Guardar lote y presentación'} deshabilitado={!!ocupado || loteIlegible}
@@ -155,7 +156,7 @@ function Renglon({ r, onHecho, preguntarDescuento }) {
           onPress={() => confirmar('Cambiar la fecha', 'Extender un producto extiende la promoción. Uno que cerró porque se acabó el lote no se reabre moviendo la fecha.', 'fin',
             () => extenderRenglon(r.id, fin), 'Fecha guardada')} />
       ) : null}
-      <Pressable onPress={() => preguntarDescuento('quitar', r)}><Text style={{ color: MARCA.rojo, fontSize: 15, fontWeight: '600' }}>Quitar de la promoción</Text></Pressable>
+      <Tocable onPress={() => preguntarDescuento('quitar', r)}><Text style={{ color: MARCA.rojo, fontSize: 15, fontWeight: '600' }}>Quitar de la promoción</Text></Tocable>
     </View>
   );
 }

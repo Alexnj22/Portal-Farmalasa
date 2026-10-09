@@ -3,8 +3,9 @@
 // la misma categoría (`setProveedoresCategoriaBulk`), o a cada uno LA SUYA,
 // la sugerida por su propio giro (`applyProveedoresCategoriaSugerida`). Las
 // dos anotan en la bitácora. Pide `proveedores.can_edit`.
-import { useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { ActionSheetIOS, ActivityIndicator, Alert, FlatList, Pressable, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -15,11 +16,28 @@ import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
-import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 
+// Cientos de proveedores: lista virtualizada y fila memoizada que sólo se
+// repinta cuando cambia SU marca.
+const Fila = memo(function Fila({ r, elegido, primero, onTocar }) {
+  return (
+    <Pressable onPress={() => onTocar(r.id)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, minHeight: 54,
+      marginHorizontal: 16, borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador, opacity: pressed ? 0.7 : 1 })}>
+      <Text style={{ fontSize: 20, color: elegido ? MARCA.verde : colorSistema.texto2 }}>{elegido ? '●' : '○'}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }} numberOfLines={1}>{r.nombre}</Text>
+        <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={1}>
+          {[r.categoria_nombre ?? 'Sin categoría', r.categoria_sugerida_nombre ? `sugerida: ${r.categoria_sugerida_nombre}` : null].filter(Boolean).join(' · ')}
+        </Text>
+      </View>
+    </Pressable>
+  );
+});
+
 export default function ProveedoresEnLote() {
+  const margen = useSafeAreaInsets();
   const { hasPermission } = useAuth();
   const puede = hasPermission('proveedores', 'can_edit');
   const [filas, setFilas] = useState(null);
@@ -43,6 +61,10 @@ export default function ProveedoresEnLote() {
   }, [filas, filtro, busca]);
   const conSugerida = useMemo(() => (filas ?? []).filter((r) => sel.has(r.id) && r.categoria_sugerida_id).length, [filas, sel]);
   const ids = [...sel];
+  const tocar = useCallback((id) => {
+    Haptics.selectionAsync().catch(() => {});
+    setSel((x0) => { const x = new Set(x0); if (x.has(id)) x.delete(id); else x.add(id); return x; });
+  }, []);
 
   const correr = async (fn, titulo) => {
     trabajando('Guardando…');
@@ -75,38 +97,26 @@ export default function ProveedoresEnLote() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Categoría en lote', headerLargeTitle: false,
         headerSearchBarOptions: { placeholder: 'Nombre, alias o NIT', onChangeText: (e) => setBusca(e.nativeEvent.text) } }} />
       <MenuDeFiltros grupos={grupos} />
-      <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 120, gap: 10 }}>
-        <FiltrosActivos grupos={grupos} />
-        {!puede ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Asignar categorías pide permiso de edición en Proveedores." /></View> : null}
-        <View style={{ flexDirection: 'row', marginHorizontal: 20, alignItems: 'center' }}>
-          <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>{`${visibles.length} proveedores · ${sel.size} elegidos`}</Text>
-          <Pressable onPress={() => setSel(sel.size === visibles.length ? new Set() : new Set(visibles.map((r) => r.id)))} style={{ minHeight: 40, justifyContent: 'center' }}>
-            <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{sel.size === visibles.length && visibles.length ? 'Quitar todos' : 'Elegir todos'}</Text>
-          </Pressable>
-        </View>
-        {filas == null ? <ActivityIndicator /> : (
-          <View style={{ marginHorizontal: 16 }}>
-            <Vidrio radio={20}>
-              <View style={{ paddingVertical: 4 }}>
-                {visibles.map((r, i) => (
-                  <Pressable key={r.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setSel((s) => { const x = new Set(s); if (x.has(r.id)) x.delete(r.id); else x.add(r.id); return x; }); }}
-                    style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, minHeight: 54, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
-                    <Text style={{ fontSize: 20, color: sel.has(r.id) ? MARCA.verde : colorSistema.texto2 }}>{sel.has(r.id) ? '●' : '○'}</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }} numberOfLines={1}>{r.nombre}</Text>
-                      <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={1}>
-                        {[r.categoria_nombre ?? 'Sin categoría', r.categoria_sugerida_nombre ? `sugerida: ${r.categoria_sugerida_nombre}` : null].filter(Boolean).join(' · ')}
-                      </Text>
-                    </View>
-                  </Pressable>
-                ))}
-              </View>
-            </Vidrio>
+      <FlatList data={filas == null ? [] : visibles} keyExtractor={(r) => String(r.id)} extraData={sel}
+        renderItem={({ item: r, index: i }) => <Fila r={r} primero={!i} elegido={sel.has(r.id)} onTocar={tocar} />}
+        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" initialNumToRender={16} windowSize={9}
+        contentContainerStyle={{ paddingVertical: 8, paddingBottom: 120 + margen.bottom }}
+        ListHeaderComponent={(
+          <View style={{ gap: 10, marginBottom: 6 }}>
+            <FiltrosActivos grupos={grupos} />
+            {!puede ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Asignar categorías pide permiso de edición en Proveedores." /></View> : null}
+            <View style={{ flexDirection: 'row', marginHorizontal: 20, alignItems: 'center' }}>
+              <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>{`${visibles.length} proveedores · ${sel.size} elegidos`}</Text>
+              <Pressable onPress={() => setSel(sel.size === visibles.length ? new Set() : new Set(visibles.map((r) => r.id)))} style={{ minHeight: 44, justifyContent: 'center' }}>
+                <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{sel.size === visibles.length && visibles.length ? 'Quitar todos' : 'Elegir todos'}</Text>
+              </Pressable>
+            </View>
+            {filas == null ? <ActivityIndicator /> : null}
           </View>
         )}
-      </ScrollView>
+        ListEmptyComponent={filas == null ? null : <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 24, fontSize: 15 }}>Ningún proveedor con este filtro.</Text>} />
       {puede && sel.size ? (
-        <View style={{ position: 'absolute', left: 16, right: 16, bottom: 28, flexDirection: 'row', gap: 10 }}>
+        <View style={{ position: 'absolute', left: 16, right: 16, bottom: 16 + margen.bottom, flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1 }}><BotonGrande texto={`Asignar (${sel.size})`} color={MARCA.azul} onPress={asignar} /></View>
           {conSugerida ? <View style={{ flex: 1 }}><BotonGrande texto={`Sugerida (${conSugerida})`} color={MARCA.violetaClaro} onPress={aceptarSugeridas} /></View> : null}
         </View>

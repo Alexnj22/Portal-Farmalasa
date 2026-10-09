@@ -8,6 +8,7 @@
 // en `cotizacion/nueva`, con las mismas reglas del portal (núcleo `cotizacion`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { useEnTramos } from '../componentes/alFinal';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -50,6 +51,7 @@ export default function Cotizaciones() {
   const q = texto.trim();
   const visibles = useMemo(() => (filas || []).filter((c) => (estado === 'todas' || (estado === 'anuladas' ? c.status === 'ANULADA' : c.status !== 'ANULADA'))
     && (!q || tokenMatch(q, c.numero, c.customer_name, c.created_by_name))), [filas, estado, q]);
+  const tramo = useEnTramos(visibles, 40, `${estado}|${q}`);
 
   const cuentas = useMemo(() => {
     const t = { total: 0, activas: 0, anuladas: 0, monto: 0 };
@@ -68,7 +70,7 @@ export default function Cotizaciones() {
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
+      <ScrollView {...tramo.scroll} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {filas ? (
@@ -85,7 +87,7 @@ export default function Cotizaciones() {
         ) : null}
         <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'vigentes', label: 'Vigentes' }, { id: 'anuladas', label: 'Anuladas' }, { id: 'todas', label: 'Todas' }]} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.map((c) => (
+        {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : tramo.visibles.map((c) => (
           <Pressable key={c.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/cotizacion/[id]', params: { id: String(c.id) } }); }}
             style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
             <Vidrio radio={18} interactivo>

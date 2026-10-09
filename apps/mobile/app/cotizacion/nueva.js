@@ -14,7 +14,7 @@
 // la sesión se cierra por inactividad y diez renglones son varios minutos.
 // Editando no: la fila de la base es la verdad.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, ScrollView, Switch, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -42,6 +42,7 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { cotizacionGuardada, guardarCotizaciones } from '../../componentes/cotizaciones/cache';
 import { compartirPdf } from '../../componentes/pdf';
 import { fallo, listo } from '../../componentes/Progreso';
+import Tocable from '../../componentes/Tocable';
 
 const BORRADOR = 'cotizacion_nueva';
 const sinGuion = (html) => html.replace(/<script>[\s\S]*?<\/script>/g, '');
@@ -61,10 +62,10 @@ function Eleccion({ rotulo, valor, opciones, onCambiar }) {
   };
   const actual = opciones.find((o) => String(o.value) === String(valor));
   return (
-    <Pressable onPress={elegir} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', minHeight: 40, opacity: pressed ? 0.6 : 1 })}>
+    <Tocable onPress={elegir} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', minHeight: 40, opacity: pressed ? 0.6 : 1 })}>
       <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>{rotulo}</Text>
       <Text style={{ color: colorSistema.acento, fontSize: 16 }}>{actual?.label ?? 'Elegir'}  ›</Text>
-    </Pressable>
+    </Tocable>
   );
 }
 
@@ -85,14 +86,14 @@ function Renglon({ item, idx, presentaciones, niveles, esCCF, onCambiar, onQuita
       ) : <Aviso tono="cuidado" texto="Este producto no tiene precios activos: pon el precio a mano." />}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>Cantidad</Text>
-        <Pressable onPress={() => paso(-1)} hitSlop={6} style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(127,127,127,0.18)' }}>
+        <Tocable onPress={() => paso(-1)} hitSlop={6} style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(127,127,127,0.18)' }}>
           <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '600' }}>−</Text>
-        </Pressable>
+        </Tocable>
         <Campo multiline={false} keyboardType="decimal-pad" value={String(item.cantidad)} onChangeText={(v) => onCambiar('cantidad', v)}
           style={{ width: 72, textAlign: 'center', fontWeight: '700' }} />
-        <Pressable onPress={() => paso(1)} hitSlop={6} style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(127,127,127,0.18)' }}>
+        <Tocable onPress={() => paso(1)} hitSlop={6} style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(127,127,127,0.18)' }}>
           <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '600' }}>+</Text>
-        </Pressable>
+        </Tocable>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>Precio unitario (con IVA)</Text>
@@ -105,7 +106,7 @@ function Renglon({ item, idx, presentaciones, niveles, esCCF, onCambiar, onQuita
         </Text>
       ) : null}
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Pressable onPress={onQuitar} hitSlop={8}><Text style={{ color: MARCA.rojo, fontSize: 15, fontWeight: '600' }}>Quitar</Text></Pressable>
+        <Tocable onPress={onQuitar} hitSlop={8}><Text style={{ color: MARCA.rojo, fontSize: 15, fontWeight: '600' }}>Quitar</Text></Tocable>
         <Text style={{ flex: 1, textAlign: 'right', color: colorSistema.texto, fontSize: 17, fontWeight: '800' }}>{formatMoney(item.subtotal)}</Text>
       </View>
     </Seccion>
@@ -132,10 +133,10 @@ function Buscador({ placeholder, buscar, render, onElegir }) {
       {res.cargando ? <ActivityIndicator /> : null}
       {res.parecidos && res.filas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Sin coincidencia exacta: se muestran los parecidos.</Text> : null}
       {res.filas.slice(0, 8).map((f, i) => (
-        <Pressable key={f.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); onElegir(f); setTexto(''); }}
+        <Tocable key={f.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); onElegir(f); setTexto(''); }}
           style={({ pressed }) => ({ paddingVertical: 9, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, opacity: pressed ? 0.6 : 1 })}>
           {render(f)}
-        </Pressable>
+        </Tocable>
       ))}
     </View>
   );
@@ -299,7 +300,7 @@ export default function NuevaCotizacion() {
                     <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '600' }}>{cliente.name}</Text>
                     {cliente.nit ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`NIT ${cliente.nit}`}</Text> : null}
                   </View>
-                  <Pressable onPress={() => setCliente(null)} hitSlop={8}><Text style={{ color: colorSistema.acento, fontSize: 15 }}>Cambiar</Text></Pressable>
+                  <Tocable onPress={() => setCliente(null)} hitSlop={8}><Text style={{ color: colorSistema.acento, fontSize: 15 }}>Cambiar</Text></Tocable>
                 </View>
               ) : (
                 <>

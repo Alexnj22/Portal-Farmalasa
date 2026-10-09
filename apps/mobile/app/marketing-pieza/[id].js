@@ -15,7 +15,7 @@
 // promoción; y en la conversación, editar o quitar el comentario propio
 // mientras nadie haya respondido.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -39,6 +39,7 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { colorDeVariante } from '../../componentes/colorDeVariante';
 import { piezaElegida } from '../../componentes/marketing/elegida';
 import { fallo, listo } from '../../componentes/Progreso';
+import Tocable from '../../componentes/Tocable';
 
 function Quien({ id, personas }) {
   if (!id) return <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>Automático</Text>;
@@ -243,15 +244,15 @@ export default function PiezaDeMarketing() {
                 {c.marca ? <Text style={{ color: colorSistema.texto2, fontSize: 12, marginLeft: 28 }}>Marcado sobre un diseño (se ve en el portal)</Text> : null}
                 <View style={{ flexDirection: 'row', gap: 16, marginLeft: 28 }}>
                   {puedeEditar || puedeAprobar ? (
-                    <Pressable onPress={() => correr(() => marcarResuelto(c.id, !c.resuelto), c.resuelto ? 'Reabierto' : 'Resuelto')} hitSlop={6}>
+                    <Tocable onPress={() => correr(() => marcarResuelto(c.id, !c.resuelto), c.resuelto ? 'Reabierto' : 'Resuelto')} hitSlop={6}>
                       <Text style={{ color: c.resuelto ? MARCA.ambar : MARCA.verde, fontSize: 13, fontWeight: '700' }}>{c.resuelto ? 'Reabrir' : 'Marcar resuelto'}</Text>
-                    </Pressable>
+                    </Tocable>
                   ) : null}
                   {c.autor_id === yoId && c.tipo === 'comentario' ? (
-                    <Pressable onPress={() => editarMio(c)} hitSlop={6}><Text style={{ color: MARCA.azulClaro, fontSize: 13, fontWeight: '600' }}>Editar</Text></Pressable>
+                    <Tocable onPress={() => editarMio(c)} hitSlop={6}><Text style={{ color: MARCA.azulClaro, fontSize: 13, fontWeight: '600' }}>Editar</Text></Tocable>
                   ) : null}
                   {c.autor_id === yoId && c.tipo === 'comentario' && !c.respuestas?.length ? (
-                    <Pressable onPress={() => quitarMio(c)} hitSlop={6}><Text style={{ color: MARCA.rojo, fontSize: 13, fontWeight: '600' }}>Quitar</Text></Pressable>
+                    <Tocable onPress={() => quitarMio(c)} hitSlop={6}><Text style={{ color: MARCA.rojo, fontSize: 13, fontWeight: '600' }}>Quitar</Text></Tocable>
                   ) : null}
                 </View>
               </View>

@@ -25,6 +25,7 @@ import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { PETROLEO, useEmisor } from '../../componentes/torogoz/comercial/Piezas';
+import { useMasAlFinal } from '../../componentes/ListaPaginada';
 
 const POR_PAGINA = 40;
 const rotuloTipo = (t) => TIPOS_COMPRA.find((x) => x.value === t)?.label ?? t;
@@ -44,6 +45,8 @@ export default function ComprasTorogoz() {
   const [vista, setVista] = useState('recibida');
   const [buscar, setBuscar] = useState('');
   const [cuantos, setCuantos] = useState(POR_PAGINA);
+  // Al acercarse al final se pinta la página siguiente sola; «Ver más» queda de respaldo.
+  const alFinal = useMasAlFinal(() => setCuantos((n) => n + POR_PAGINA));
   const [recargando, setRecargando] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -70,7 +73,7 @@ export default function ComprasTorogoz() {
         headerSearchBarOptions: { placeholder: 'Proveedor o número', hideWhenScrolling: false,
           onChangeText: (e) => { setCuantos(POR_PAGINA); setBuscar(e.nativeEvent.text); }, onCancelButtonPress: () => setBuscar('') },
       }} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
+      <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FilaDeKpis>

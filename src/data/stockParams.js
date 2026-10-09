@@ -137,8 +137,13 @@ export function fetchStockParamsUpdates(erpSucursalId, sinceIso, sinceProductId 
 
 // ── TabSinMinMax.jsx (productos descartados de las sugerencias) ─────────────
 
-export function fetchMinMaxIgnored(erpSucursalId) {
-    return supabase.from('minmax_ignored').select('erp_product_id').eq('erp_sucursal_id', erpSucursalId);
+// Los productos que la sala decidió no llevar crecen sin tope; pasadas las
+// 1000 filas volvían a la lista de «vendidos sin Mín·Máx». En tandas, misma
+// forma `{ data, error }` (2026-10-09).
+export async function fetchMinMaxIgnored(erpSucursalId) {
+    const data = await fetchAllRows(() => supabase.from('minmax_ignored').select('erp_product_id')
+        .eq('erp_sucursal_id', erpSucursalId).order('erp_product_id'), { completo: true });
+    return data == null ? { data: null, error: new Error('No se pudieron leer los productos ignorados.') } : { data, error: null };
 }
 
 export function upsertMinMaxIgnored(erpSucursalId, erpProductId) {

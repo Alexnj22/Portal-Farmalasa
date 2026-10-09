@@ -314,7 +314,7 @@ export default function DiferenciaCorte() {
                         const marcada = marcadas.includes(c.id);
                         return (
                           <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 }}>
-                            <Pressable onPress={() => alternar(c.id)} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <Pressable onPress={() => alternar(c.id)} style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 40, opacity: pressed ? 0.55 : 1 })}>
                               <Text style={{ color: marcada ? MARCA.verde : colorSistema.texto2, fontSize: 20 }}>{marcada ? '☑' : '☐'}</Text>
                               <View style={{ flex: 1 }}>
                                 <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{shortEmployeeName(c)}</Text>
@@ -322,7 +322,7 @@ export default function DiferenciaCorte() {
                               </View>
                             </Pressable>
                             {marcada ? (
-                              <View style={{ width: 110 }}>
+                              <View style={{ minWidth: 110 }}>
                                 <Campo multiline={false} value={montos[c.id] ?? ''} keyboardType="decimal-pad"
                                   onChangeText={(v) => setMontos((m) => ({ ...m, [c.id]: dinero(v) }))} style={{ textAlign: 'center' }} />
                               </View>

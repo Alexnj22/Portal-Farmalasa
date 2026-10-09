@@ -7,6 +7,7 @@
 // el producto, cuánto se entregó, a quién y quién lo recetó.
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { useEnTramos } from '../componentes/alFinal';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -55,12 +56,13 @@ export default function LibroReceta() {
     return c;
   }, [filas]);
   const visibles = (filas || []).filter((r) => vista === 'todas' || r.estado === vista);
+  const tramo = useEnTramos(visibles, 40, vista);
   const esEsteMes = mes === hoySV().slice(0, 7);
 
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Libro bajo receta', headerLargeTitle: true }} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
+      <ScrollView {...tramo.scroll} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {nombre ? <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '700', marginHorizontal: 20 }}>{nombre}</Text> : null}
@@ -81,7 +83,7 @@ export default function LibroReceta() {
           </Pressable>
         ) : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {filas == null ? <ActivityIndicator style={{ marginTop: 32 }} /> : visibles.length ? visibles.map((r) => {
+        {filas == null ? <ActivityIndicator style={{ marginTop: 32 }} /> : visibles.length ? tramo.visibles.map((r) => {
           const estado = ESTADO_RENGLON[r.estado] ?? { label: r.estado, variant: 'neutral' };
           const faltan = faltantesDelRenglon(r);
           const tocable = r.estado === 'pendiente' && puedeCompletar;

@@ -11,7 +11,7 @@ import LiquidModal from '../common/LiquidModal';
 import {
     adjuntarComprobanteDeposito, anularDeposito, fetchDepositos, subirComprobante,
 } from '@nucleo/data/bolsas';
-import { rangoDeDiasDelDeposito } from '@nucleo/utils/depositoDeEfectivo';
+import { rangoDeDiasDelDeposito, totalesDeDepositos } from '@nucleo/utils/depositoDeEfectivo';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
@@ -379,25 +379,7 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
      * remanentes sería un saldo, y un saldo es exactamente el seguimiento que
      * el portal dejó de hacer. En cada cierre sigue estando, porque ahí cierra
      * la cuenta de ese cierre. */
-    const totales = useMemo(() => lista
-        .filter((d) => !d.anulado_at && d.destino !== 'ANTERIOR')
-        .reduce((a, d) => ({
-            banco: a.banco + Number(d.monto_deposito || 0),
-            efectivo: a.efectivo + Number(d.monto_efectivo || 0),
-            /* Los que fueron al banco y NO tienen boleta. Cuadrar contra el
-               estado de cuenta es lo único para lo que este registro existe, y
-               ese es el momento en que hace falta el papel.
-
-               Medido el 2026-08-26: los dos únicos depósitos reales —$19,250 y
-               $16,175— estaban sin comprobante. El campo se había agregado el
-               día anterior y la fila sólo marcaba a los que SÍ lo tenían: un
-               clip ausente no se lee como «falta», se lee como nada. */
-            sinBoleta: a.sinBoleta
-                + ((Number(d.monto_deposito || 0) >= 0.01 && !d.comprobante_url) ? 1 : 0),
-            sinBoletaMonto: a.sinBoletaMonto
-                + ((Number(d.monto_deposito || 0) >= 0.01 && !d.comprobante_url)
-                    ? Number(d.monto_deposito || 0) : 0),
-        }), { banco: 0, efectivo: 0, sinBoleta: 0, sinBoletaMonto: 0 }), [lista]);
+    const totales = useMemo(() => totalesDeDepositos(lista), [lista]);
 
     return (
         <section className="space-y-2">

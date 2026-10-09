@@ -25,6 +25,7 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
 import VentaPerdida from '../../componentes/torogoz/bodega/VentaPerdida';
 import { Chapa, Ficha, PETROLEO, Vacio, confirmar } from '../../componentes/torogoz/bodega/piezas';
+import { useMasAlFinal } from '../../componentes/ListaPaginada';
 
 const OPCIONES = VISTAS_PERDIDAS.map((v) => ({ id: v.key, label: v.label }));
 const PAGINA = 60;
@@ -53,6 +54,8 @@ export default function VentasPerdidas() {
   const [anotando, setAnotando] = useState(false);
   const [emisor, setEmisor] = useState(null);
   const [cuantos, setCuantos] = useState(PAGINA);
+  // Al acercarse al final se pinta la página siguiente sola; «Ver más» queda de respaldo.
+  const alFinal = useMasAlFinal(() => setCuantos((n) => n + PAGINA));
   const [recargando, setRecargando] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -96,7 +99,7 @@ export default function VentasPerdidas() {
         },
       }} />
       <MenuDeFiltros grupos={[]} extra={extra} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
+      <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Segmentos opciones={OPCIONES} activa={vista} onCambiar={(v) => router.setParams({ estado: v })} />
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>

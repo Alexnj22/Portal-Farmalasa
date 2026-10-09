@@ -10,7 +10,7 @@
 // Sin esas decisiones no se aprueba. Aprobar congela la hoja; reabrir pide
 // motivo. La cuenta es del núcleo (`resumenDelSemestre`), la misma del portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { aprobarBonoSemestral, decidirBonoSemestral, fetchBonoSemestral } from '@nucleo/data/metas';
@@ -31,14 +31,15 @@ import { MARCA } from '../inicio/marca';
 import { colorDeVariante } from '../colorDeVariante';
 import { fallo, listo } from '../Progreso';
 import { compartirCsv } from '../fiscal/csv';
+import Tocable from '../Tocable';
 
 function Paso({ sem, onCambiar }) {
   const actual = semestreDe(ymHoySV());
   const flecha = (t, n, off) => (
-    <Pressable disabled={off} hitSlop={8} onPress={() => { Haptics.selectionAsync().catch(() => {}); onCambiar(semestreSumar(sem, n)); }}
+    <Tocable disabled={off} hitSlop={8} onPress={() => { Haptics.selectionAsync().catch(() => {}); onCambiar(semestreSumar(sem, n)); }}
       style={({ pressed }) => ({ minWidth: 52, minHeight: 48, alignItems: 'center', justifyContent: 'center', opacity: off ? 0.3 : pressed ? 0.5 : 1 })}>
       <Text style={{ color: MARCA.azulClaro, fontSize: 26 }}>{t}</Text>
-    </Pressable>
+    </Tocable>
   );
   return (
     <View style={{ marginHorizontal: 16 }}>
@@ -135,10 +136,10 @@ export default function Semestral({ canApprove }) {
               apoyo={r.aprobado && hoja?.aprobado_por ? `por ${shortEmployeeName(hoja.aprobado_por)}` : `${r.cerrados} de 6 meses cerrados`} />
           </FilaDeKpis>
           {r.personas.length ? (
-            <Pressable hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-end', marginHorizontal: 20, minHeight: 32, justifyContent: 'center' }}
+            <Tocable hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-end', marginHorizontal: 20, minHeight: 32, justifyContent: 'center' }}
               onPress={() => compartirCsv({ ...csvDelSemestre(r, sem), modulo: 'metas' }).catch((e) => fallo('No se pudo compartir', e?.message || ''))}>
               <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Descargar la hoja (CSV)</Text>
-            </Pressable>
+            </Tocable>
           ) : null}
           {r.meses.length ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginHorizontal: 16 }}>

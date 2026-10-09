@@ -8,7 +8,7 @@
 // con `metas` editar, con la MISMA llamada del portal (`setBonificaciones`). Es
 // un interruptor de toda la red: cada cambio pide confirmación.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Switch, Text, View } from 'react-native';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchBonoMetaSala, setBonificaciones } from '@nucleo/data/metas';
 import { TRAMO_CFG, ymHoySV, ymLabel } from '@nucleo/utils/metasUtils';
@@ -24,6 +24,7 @@ import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import { COLOR_TRAMO } from './Mes';
 import { fallo, listo, trabajando } from '../Progreso';
+import Tocable from '../Tocable';
 
 export default function Bono({ sala, salaNombre, ym, esMesActual, config, canEdit = false, onCambioBono }) {
   const empleados = useStaffStore((s) => s.employees);
@@ -87,10 +88,10 @@ export default function Bono({ sala, salaNombre, ym, esMesActual, config, canEdi
               {[{ id: 'mes', label: 'Este mes' }, { id: 'siempre', label: 'Indefinido' }].map((o) => {
                 const on = (o.id === 'mes') === !!hasta;
                 return (
-                  <Pressable key={o.id} disabled={guardando || on} onPress={() => cambiarBono(true, o.id === 'mes')}
+                  <Tocable key={o.id} disabled={guardando || on} onPress={() => cambiarBono(true, o.id === 'mes')}
                     style={{ paddingHorizontal: 14, minHeight: 36, justifyContent: 'center', borderRadius: 999, backgroundColor: on ? MARCA.azul : 'rgba(127,127,127,0.18)' }}>
                     <Text style={{ color: on ? '#fff' : colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{o.label}</Text>
-                  </Pressable>
+                  </Tocable>
                 );
               })}
             </View>

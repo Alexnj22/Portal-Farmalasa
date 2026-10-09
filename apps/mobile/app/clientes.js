@@ -14,7 +14,8 @@
 // las fichas que se congelaron o que parecen repetidas, con «Marcar revisado».
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -209,6 +210,14 @@ export default function Clientes() {
       opciones: ORDEN_CLIENTES.map((o) => ({ id: o.value, label: o.label })) },
   ];
   const quedan = datos.total > datos.rows.length;
+  const alFinal = useMasAlFinal(() => setPagina((p) => p + 1), pestana === 'lista' && !cargando && quedan);
+  const [recargando, setRecargando] = useState(false);
+  const recargar = async () => {
+    setRecargando(true);
+    fetchCustomersStats().then(setStats).catch(() => {});
+    if (pagina === 1) await cargar(); else setPagina(1);
+    setRecargando(false);
+  };
 
   return (
     <>
@@ -221,7 +230,8 @@ export default function Clientes() {
       }} />
       <MenuDeFiltros grupos={pestana === 'lista' ? grupos : []} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
-        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag">
+        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" {...alFinal}
+        refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
         <FiltrosActivos grupos={grupos} />
         {veClientes ? (
           <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'lista', label: 'Clientes' }, { id: 'revisar', label: 'Por revisar' }]} />

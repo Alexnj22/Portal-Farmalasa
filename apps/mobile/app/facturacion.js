@@ -23,7 +23,8 @@
 // los días que quedan salen del núcleo (`colasDeFacturacion`). Los montos,
 // sólo con `facturacion_ver_montos`.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -55,6 +56,7 @@ import { fallo, listo } from '../componentes/Progreso';
 import Saltos from '../componentes/fiscal/Saltos';
 import NoEfectivo from '../componentes/fiscal/NoEfectivo';
 import Resueltas from '../componentes/fiscal/Resueltas';
+import Tocable from '../componentes/Tocable';
 
 const PAGINA = 40;
 const COLAS = [
@@ -178,6 +180,7 @@ export default function Facturacion() {
   };
 
   const visibles = lista.slice(0, paginas * PAGINA);
+  const alFinal = useMasAlFinal(() => setPaginas((p) => p + 1), visibles.length < lista.length);
   const textoDias = diasQuedan === 0 ? 'Último día' : `${diasQuedan}`;
 
   return (
@@ -191,7 +194,7 @@ export default function Facturacion() {
       }} />
       <MenuDeFiltros grupos={grupos} extra={canEdit && BOLSA[cola] ? { icono: 'paperplane', etiqueta: 'Solventar todas', onPress: solventarTodas } : null} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
-        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
+        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" {...alFinal}
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargaHija((x) => x + 1); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
         {colas.length > 1 ? (
@@ -242,7 +245,7 @@ export default function Facturacion() {
               return (
                 <View key={r.id} style={{ marginHorizontal: 16 }}>
                   <Vidrio radio={18} tinte={esCcf ? 'rgba(240,68,56,0.10)' : undefined}>
-                    <Pressable disabled={!canEdit || !solventable} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(abierto ? null : r.id); setNota(''); }} style={{ padding: 12, gap: 5 }}>
+                    <Tocable disabled={!canEdit || !solventable} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(abierto ? null : r.id); setNota(''); }} style={{ padding: 12, gap: 5 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <Text selectable style={{ flex: 1, color: esCcf ? MARCA.rojo : colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${r.tipo_documento ?? '—'} ${r.correlativo ?? 'sin número'}`}</Text>
                         <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{verMontos ? formatMoney(r.total || 0) : '—'}</Text>
@@ -259,7 +262,7 @@ export default function Facturacion() {
                       {cola === 'obs' ? (r.motivos_mh || []).map((m, k) => <Text key={`${k}-${m}`} style={{ color: MARCA.rojo, fontSize: 13 }}>{m}</Text>) : null}
                       {cola === 'obs' && !solventable ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Se cierra sola cuando llegue el sello.</Text> : null}
                       {canEdit && solventable && !abierto ? <Text style={{ color: MARCA.azulClaro, fontSize: 13, fontWeight: '700' }}>{cola === 'mh' ? 'Solventar o resolver ›' : 'Resolver ›'}</Text> : null}
-                    </Pressable>
+                    </Tocable>
                     {abierto ? (
                       <View style={{ paddingHorizontal: 12, paddingBottom: 12, gap: 8 }}>
                         {cola === 'mh' ? (

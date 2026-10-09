@@ -145,6 +145,22 @@ export default function RutaDeReparto() {
   const { entregadas, total, completa } = avanceDeEntrega(paradas);
   const trazo = useMemo(() => trazoDeReparto(coords.bodega, paradas, coords.porSucursal), [coords, paradas]);
   const region = useMemo(() => encuadre([...trazo, ...(mio ? [mio] : []), ...(camion ? [camion] : [])]), [trazo, mio, camion]);
+  // Los pines fijos (bodega y paradas) se arman una vez por cambio de la ruta,
+  // no en cada posición del camión que llega cada 30 s; y con
+  // `tracksViewChanges={false}` el mapa no los vuelve a rasterizar.
+  const linea = useMemo(() => trazo.map(coord), [trazo]);
+  const pinesFijos = useMemo(() => [
+    coords.bodega ? <Marker key="bodega" tracksViewChanges={false} coordinate={coord(coords.bodega)} title="Bodega"><Pin texto="B" color="#1e1b4b" alto={32} /></Marker> : null,
+    ...paradas.map((p, i) => {
+      const c = coords.porSucursal[p.erp_sucursal_id];
+      return c ? (
+        <Marker key={p.id} tracksViewChanges={false} coordinate={coord(c)} title={`${i + 1}. ${p.suc_name}`}
+          description={p.entregado_at ? `Entregado ${hora12(p.entregado_at)}` : 'Pendiente'}>
+          <Pin texto={i + 1} color={p.entregado_at ? MARCA.verde : INDIGO} />
+        </Marker>
+      ) : null;
+    }),
+  ], [coords, paradas]);
   const enVivo = camion ? conductorEnVivo(camion.at) : false;
 
   const hacer = (titulo, mensaje, boton, accion, exito) => {
@@ -203,17 +219,8 @@ export default function RutaDeReparto() {
                 <Vidrio radio={20}>
                   <View style={{ height: 380, borderRadius: 20, overflow: 'hidden' }}>
                     <MapView ref={mapa} style={{ flex: 1 }} initialRegion={region} showsUserLocation={conductor} showsPointsOfInterest={false}>
-                      {trazo.length > 1 ? <Polyline coordinates={trazo.map(coord)} strokeColor={INDIGO} strokeWidth={4} /> : null}
-                      {coords.bodega ? <Marker coordinate={coord(coords.bodega)} title="Bodega"><Pin texto="B" color="#1e1b4b" alto={32} /></Marker> : null}
-                      {paradas.map((p, i) => {
-                        const c = coords.porSucursal[p.erp_sucursal_id];
-                        return c ? (
-                          <Marker key={p.id} coordinate={coord(c)} title={`${i + 1}. ${p.suc_name}`}
-                            description={p.entregado_at ? `Entregado ${hora12(p.entregado_at)}` : 'Pendiente'}>
-                            <Pin texto={i + 1} color={p.entregado_at ? MARCA.verde : INDIGO} />
-                          </Marker>
-                        ) : null;
-                      })}
+                      {linea.length > 1 ? <Polyline coordinates={linea} strokeColor={INDIGO} strokeWidth={4} /> : null}
+                      {pinesFijos}
                       {!conductor && camion ? (
                         <Marker coordinate={coord(camion)} title={`Conductor: ${ruta.conductor_nombre}`} description={enVivo ? 'En vivo' : `Última posición ${hora12(camion.at)}`}>
                           <Pin texto="🚚" color="#1d4ed8" alto={34} />

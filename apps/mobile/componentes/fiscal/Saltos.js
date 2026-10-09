@@ -7,7 +7,7 @@
 // solventado, este mes o todo. Qué está pendiente y la fila que se escribe
 // salen del núcleo (`colasDeFacturacion`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Text, View } from 'react-native';
 import {
   fetchGapResolutions, fetchNullResolutionIds, fetchSalesInvoiceGaps, fetchSalesInvoiceNulls, insertGapResolution, insertNullResolution,
 } from '@nucleo/data/facturacion';
@@ -25,6 +25,7 @@ import Kpi, { FilaDeKpis } from '../inicio/Kpi';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
 import { fallo, listo, trabajando } from '../Progreso';
+import Tocable from '../Tocable';
 
 const pedirComentario = (titulo, mensaje) => new Promise((resolve) => {
   Alert.prompt(titulo, mensaje, [
@@ -73,9 +74,9 @@ export default function Saltos({ sala, nombreSala, recarga, canEdit = false, use
 
   if (!d) return <ActivityIndicator style={{ marginTop: 24 }} />;
   const accion = (texto, onPress) => (
-    <Pressable onPress={onPress} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
+    <Tocable onPress={onPress} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
       <Text style={{ color: MARCA.verde, fontSize: 15, fontWeight: '700' }}>{texto}</Text>
-    </Pressable>
+    </Tocable>
   );
 
   return (
@@ -122,11 +123,11 @@ export default function Saltos({ sala, nombreSala, recarga, canEdit = false, use
 
       {d.res.length ? (
         <View style={{ marginHorizontal: 16, gap: 8, marginTop: 8 }}>
-          <Pressable onPress={() => setVerHistorial((v) => !v)} hitSlop={8} style={{ minHeight: 40, justifyContent: 'center' }}>
+          <Tocable onPress={() => setVerHistorial((v) => !v)} hitSlop={8} style={{ minHeight: 40, justifyContent: 'center' }}>
             <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>
               {`${verHistorial ? '▾' : '▸'} ${solventados.length} salto${solventados.length === 1 ? '' : 's'} solventado${solventados.length === 1 ? '' : 's'} ${todos ? 'en total' : 'este mes'}`}
             </Text>
-          </Pressable>
+          </Tocable>
           {verHistorial ? (
             <>
               {solventados.map((r) => (
@@ -138,9 +139,9 @@ export default function Saltos({ sala, nombreSala, recarga, canEdit = false, use
                   </View>
                 </Vidrio>
               ))}
-              <Pressable onPress={() => setTodos((v) => !v)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center', alignSelf: 'center' }}>
+              <Tocable onPress={() => setTodos((v) => !v)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center', alignSelf: 'center' }}>
                 <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{todos ? 'Ver solo este mes' : `Ver todos (${d.res.length})`}</Text>
-              </Pressable>
+              </Tocable>
             </>
           ) : null}
         </View>

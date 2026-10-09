@@ -19,6 +19,7 @@ import { BotonGrande } from '../../componentes/formulario/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { iconoDe } from '../../tema/iconos';
+import { useColumnas } from '../../componentes/ListaPaginada';
 import { useRastreoDeRuta } from '../../componentes/torogoz/rutas/rastreo';
 
 // El color de la marca de la distribuidora (COLORES_DISTRIBUIDORA.petroleo).
@@ -41,9 +42,9 @@ const MENU = [
   { seccion: 'emisor', label: 'Empresa', icono: 'Landmark', soloConfig: true },
 ];
 
-function Mosaico({ item, numero, grave }) {
+function Mosaico({ item, numero, grave, ancho }) {
   return (
-    <Pressable style={{ width: '48%' }} accessibilityRole="button" accessibilityLabel={item.label}
+    <Pressable style={{ width: ancho }} accessibilityRole="button" accessibilityLabel={item.label}
       onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push(`/torogoz/${item.seccion}`); }}>
       {({ pressed }) => (
         <Vidrio radio={20} interactivo>
@@ -91,6 +92,9 @@ export default function Torogoz() {
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
 
   const items = MENU.filter((i) => !i.soloConfig || puedeConfigurar);
+  // Dos mosaicos en teléfono; en tableta, tres o cuatro (no un teléfono estirado).
+  const columnas = Math.max(2, useColumnas(230, 4));
+  const ancho = `${Math.floor(100 / columnas) - 2}%`;
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Torogoz', headerLargeTitle: true }} />
@@ -105,7 +109,7 @@ export default function Torogoz() {
         {puedeVender ? <BotonGrande texto="Nueva venta" color={PETROLEO} onPress={() => router.push('/torogoz/venta')} /> : null}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }}>
           {items.map((i) => (
-            <Mosaico key={i.seccion} item={i} numero={i.contador ? cuentas[i.contador] : 0} grave={i.contador === 'facturacion' && cuentas.grave} />
+            <Mosaico key={i.seccion} ancho={ancho} item={i} numero={i.contador ? cuentas[i.contador] : 0} grave={i.contador === 'facturacion' && cuentas.grave} />
           ))}
         </View>
       </ScrollView>

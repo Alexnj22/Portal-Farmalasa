@@ -27,6 +27,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -110,6 +111,9 @@ export default function FacturasCompra() {
       opciones: [{ id: 'fecha', label: 'Más recientes' }, { id: 'proveedor', label: 'Proveedor' }, { id: 'tipo', label: 'Tipo' }, { id: 'monto', label: 'Mayor monto' }] },
   ];
 
+  // Al llegar abajo se pinta la página siguiente sola; «Ver más» queda de respaldo.
+  const alFinal = useMasAlFinal(() => setMostrar((n) => n + POR_PAGINA), !!filas && visibles.length > mostrar);
+
   return (
     <>
       <Stack.Screen options={{
@@ -120,7 +124,7 @@ export default function FacturasCompra() {
         },
       }} />
       <MenuDeFiltros grupos={grupos} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
+      <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <PasoDeMes mes={mes} onCambiar={setMes} />

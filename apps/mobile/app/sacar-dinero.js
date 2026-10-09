@@ -164,7 +164,7 @@ export default function SacarDinero() {
             <Seccion titulo="La salida">
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>Monto</Text>
-                <View style={{ width: 140 }}><Campo multiline={false} value={monto} onChangeText={(v) => setMonto(v.replace(/[^\d.,]/g, ''))} keyboardType="decimal-pad" placeholder="$0.00" style={{ textAlign: 'center' }} /></View>
+                <View style={{ minWidth: 140 }}><Campo multiline={false} value={monto} onChangeText={(v) => setMonto(v.replace(/[^\d.,]/g, ''))} keyboardType="decimal-pad" placeholder="$0.00" style={{ textAlign: 'center' }} /></View>
               </View>
               {n > 0 && eleccion.alcanza ? (
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>

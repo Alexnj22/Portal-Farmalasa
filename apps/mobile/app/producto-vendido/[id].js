@@ -6,6 +6,7 @@
 // Tocar una venta abre la factura.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { useMasAlFinal } from '../../componentes/ListaPaginada';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -76,11 +77,13 @@ export default function ProductoVendido() {
   const mayorVendedor = Math.max(1, ...vendedores.map((v) => parseFloat(v.neto || 0)));
   const mayorMes = Math.max(1, ...meses.map((m) => parseFloat(m.neto || 0)));
 
+  const alFinal = useMasAlFinal(() => setCuantas((n) => n + POR_PAGINA), lineas.length > cuantas);
+
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Lo que se vendió' }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
-        contentInsetAdjustmentBehavior="automatic"
+        contentInsetAdjustmentBehavior="automatic" {...alFinal}
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <View style={{ gap: 4, marginHorizontal: 4 }}>
           <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{nombre}</Text>

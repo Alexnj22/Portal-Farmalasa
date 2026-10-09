@@ -9,7 +9,7 @@
 // (`inyeccionesAjustes`), los mismos del portal; las escrituras, las mismas
 // funciones de la base.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -31,6 +31,7 @@ import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
 import { fallo, listo, trabajando } from '../Progreso';
 import { guardar } from '../comercial/elegido';
+import Tocable from '../Tocable';
 
 const audit = (...a) => useStaffStore.getState().appendAuditLog(...a);
 
@@ -77,10 +78,10 @@ function Precios() {
 
 function Contador({ valor, onCambiar }) {
   const boton = (t, d, off) => (
-    <Pressable disabled={off} onPress={() => { Haptics.selectionAsync().catch(() => {}); onCambiar(valor + d); }} accessibilityLabel={d < 0 ? 'Una menos' : 'Una más'}
+    <Tocable disabled={off} onPress={() => { Haptics.selectionAsync().catch(() => {}); onCambiar(valor + d); }} accessibilityLabel={d < 0 ? 'Una menos' : 'Una más'}
       style={({ pressed }) => ({ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.10)', opacity: off ? 0.3 : pressed ? 0.5 : 1 })}>
       <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '600' }}>{t}</Text>
-    </Pressable>
+    </Tocable>
   );
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -109,10 +110,10 @@ function Agregar({ filas, onElegir }) {
       {resultados.map((p) => {
         const marca = ya.get(String(p.id));
         return (
-          <Pressable key={p.id} disabled={!!marca} onPress={() => onElegir(p)}
+          <Tocable key={p.id} disabled={!!marca} onPress={() => onElegir(p)}
             style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: marca ? 0.45 : pressed ? 0.6 : 1 })}>
             <Text style={{ color: colorSistema.texto, fontSize: 15 }} numberOfLines={2}>{p.nombre}{marca ? ` · ${marca}` : ''}</Text>
-          </Pressable>
+          </Tocable>
         );
       })}
     </Seccion>
@@ -181,12 +182,12 @@ function CatalogoDeDosis({ recarga }) {
           {`Cuántas aplicaciones trae UNA unidad suelta. Una caja multiplica por lo que trae. Lo que sólo se vende entero —un TRI PACK— es su propia unidad. Un vial que rinde según la dosis se cuenta «por ml». Mientras no se confirma, rige la sugerencia. ${sinConfirmar} sin confirmar.`}
         </Text>
         <View style={{ flexDirection: 'row', gap: 16 }}>
-          <Pressable onPress={() => setSoloSinConfirmar((v) => !v)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+          <Tocable onPress={() => setSoloSinConfirmar((v) => !v)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
             <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{soloSinConfirmar ? 'Ver también las confirmadas' : 'Ver sólo las sin confirmar'}</Text>
-          </Pressable>
-          <Pressable onPress={() => setAgregando((v) => !v)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+          </Tocable>
+          <Tocable onPress={() => setAgregando((v) => !v)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
             <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{agregando ? 'Cerrar' : 'Agregar un producto'}</Text>
-          </Pressable>
+          </Tocable>
         </View>
       </View>
       {agregando ? <Agregar filas={filas} onElegir={(p) => clasificar(p.id, true, p.nombre, 'agregar')} /> : null}
@@ -214,17 +215,17 @@ function CatalogoDeDosis({ recarga }) {
                   </View>
                 )}
                 <View style={{ flexDirection: 'row', gap: 18, flexWrap: 'wrap' }}>
-                  <Pressable disabled={ocupado != null} onPress={() => clasificar(f.erp_product_id, valorAlQuitar(f), f.descripcion, 'quitar')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                  <Tocable disabled={ocupado != null} onPress={() => clasificar(f.erp_product_id, valorAlQuitar(f), f.descripcion, 'quitar')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                     <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '600' }}>Quitar</Text>
-                  </Pressable>
-                  <Pressable disabled={ocupado != null} onPress={() => porMl(f)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                  </Tocable>
+                  <Tocable disabled={ocupado != null} onPress={() => porMl(f)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                     <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{ml ? 'Cambiar ml' : 'Por ml'}</Text>
-                  </Pressable>
+                  </Tocable>
                   {!ml ? (
-                    <Pressable disabled={ocupado != null || (f.confirmadas != null && n === f.confirmadas)} onPress={() => confirmar(f)} hitSlop={8}
+                    <Tocable disabled={ocupado != null || (f.confirmadas != null && n === f.confirmadas)} onPress={() => confirmar(f)} hitSlop={8}
                       style={{ minHeight: 36, justifyContent: 'center', opacity: f.confirmadas != null && n === f.confirmadas ? 0.4 : 1 }}>
                       <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '700' }}>Confirmar</Text>
-                    </Pressable>
+                    </Tocable>
                   ) : null}
                 </View>
               </View>
@@ -235,9 +236,9 @@ function CatalogoDeDosis({ recarga }) {
       {!visibles.length ? <View style={{ marginHorizontal: 16 }}><Aviso texto={soloSinConfirmar ? 'Todas confirmadas.' : 'Sin inyecciones vendidas en 90 días.'} /></View> : null}
       {quitados.length ? (
         <View style={{ marginHorizontal: 16, gap: 8 }}>
-          <Pressable onPress={() => setVerQuitados((v) => !v)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+          <Tocable onPress={() => setVerQuitados((v) => !v)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
             <Text style={{ color: colorSistema.texto2, fontSize: 14, fontWeight: '700' }}>{verQuitados ? 'Ocultar los quitados' : `Quitados a mano (${quitados.length})`}</Text>
-          </Pressable>
+          </Tocable>
           {verQuitados ? quitados.map((f) => (
             <Vidrio key={clave(f)} radio={16}>
               <View style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -245,9 +246,9 @@ function CatalogoDeDosis({ recarga }) {
                   <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }} numberOfLines={2}>{f.descripcion}</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`No cuenta como inyección${f.clasificado_por ? ` · lo quitó ${shortEmployeeName(f.clasificado_por)}` : ''}`}</Text>
                 </View>
-                <Pressable disabled={ocupado != null} onPress={() => clasificar(f.erp_product_id, null, f.descripcion, 'incluir')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                <Tocable disabled={ocupado != null} onPress={() => clasificar(f.erp_product_id, null, f.descripcion, 'incluir')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                   <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Volver a incluir</Text>
-                </Pressable>
+                </Tocable>
               </View>
             </Vidrio>
           )) : null}

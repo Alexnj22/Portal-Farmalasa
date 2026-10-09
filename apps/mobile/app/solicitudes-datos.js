@@ -10,7 +10,8 @@
 // o en PDF; cada solicitud se reimprime, se registra y se resuelve en
 // `solicitud-datos/[id]`, donde se arma también la respuesta.
 import { useCallback, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { useEnTramos } from '../componentes/alFinal';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { alarmasDePlazo, crearSolicitud, DERECHOS, ESTADOS, fetchSolicitudes, filtrarSolicitudes, plazoDe } from '@nucleo/data/solicitudesDatos';
@@ -28,6 +29,7 @@ import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo } from '../componentes/Progreso';
 import { compartirPdf, imprimirPapel } from '../componentes/pdf';
+import Tocable from '../componentes/Tocable';
 
 const ROTULO = Object.fromEntries(DERECHOS.map((d) => [d.clave, d.rotulo]));
 // Un instante (timestamptz o Date): `fechaTexto` lo lleva al día de El Salvador.
@@ -80,6 +82,7 @@ export default function SolicitudesDatos() {
     ]);
 
   const visibles = useMemo(() => filtrarSolicitudes(filas, { pestana, texto }, tokenMatch), [filas, pestana, texto]);
+  const tramo = useEnTramos(visibles, 40, `${pestana}|${texto}`);
   const { vencidas, apremian } = useMemo(() => alarmasDePlazo(filas), [filas]);
 
   return (
@@ -91,7 +94,7 @@ export default function SolicitudesDatos() {
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
+      <ScrollView {...tramo.scroll} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'tramite', label: 'En trámite' }, { id: 'resueltas', label: 'Resueltas' }, { id: 'todas', label: 'Todas' }]} />
@@ -101,11 +104,11 @@ export default function SolicitudesDatos() {
             <Aviso tono={vencidas ? 'freno' : 'cuidado'} texto={[vencidas ? `${vencidas} vencida${vencidas === 1 ? '' : 's'}` : null, apremian ? `${apremian} vence${apremian === 1 ? '' : 'n'} en 3 días hábiles o menos` : null].filter(Boolean).join(' · ')} />
           </View>
         ) : null}
-        {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.map((s) => {
+        {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : tramo.visibles.map((s) => {
           const plazo = plazoDe(s);
           const abiertaEsta = abierta === s.id;
           return (
-            <Pressable key={s.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(abiertaEsta ? null : s.id); }} style={{ marginHorizontal: 16 }}>
+            <Tocable key={s.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(abiertaEsta ? null : s.id); }} style={{ marginHorizontal: 16 }}>
               <Vidrio radio={18} interactivo tinte={plazo?.vencida ? 'rgba(240,68,56,0.12)' : undefined}>
                 <View style={{ padding: 12, gap: 6 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -140,7 +143,7 @@ export default function SolicitudesDatos() {
                   ) : null}
                 </View>
               </Vidrio>
-            </Pressable>
+            </Tocable>
           );
         })}
         {filas && !visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>{texto.trim() ? 'Sin coincidencias' : 'Sin solicitudes aquí'}</Text> : null}

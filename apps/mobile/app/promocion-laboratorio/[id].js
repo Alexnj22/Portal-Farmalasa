@@ -9,7 +9,7 @@
 // núcleo (`promocionesUtils`), los mismos del portal. El alta guarda borrador
 // como el portal; al editar, lo guardado ES el borrador.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, ScrollView, Text, TextInput, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import {
@@ -30,16 +30,17 @@ import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario
 import { MARCA } from '../../componentes/inicio/marca';
 import { Icono } from '../../componentes/promociones/Piezas';
 import { fallo, listo } from '../../componentes/Progreso';
+import Tocable from '../../componentes/Tocable';
 
 const BORRADOR = 'promocion_laboratorio';
 const PAGA = [{ id: '', label: 'Todavía no se sabe' }, { id: 'empresa', label: 'La empresa' }, { id: 'proveedor', label: 'Un proveedor' }];
 
 function Fila({ titulo, valor, onPress }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', minHeight: 44, opacity: pressed ? 0.6 : 1 })}>
+    <Tocable onPress={onPress} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', minHeight: 44, opacity: pressed ? 0.6 : 1 })}>
       <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>{titulo}</Text>
       <Text style={{ color: colorSistema.acento, fontSize: 16 }}>{valor}</Text>
-    </Pressable>
+    </Tocable>
   );
 }
 
@@ -59,10 +60,10 @@ function Buscador({ catalogo, excluir, onElegir, placeholder }) {
     <View style={{ gap: 4 }}>
       <Campo multiline={false} value={q} onChangeText={setQ} placeholder={placeholder} />
       {hallados.map((x) => (
-        <Pressable key={x.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); onElegir(x); setQ(''); }}
+        <Tocable key={x.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); onElegir(x); setQ(''); }}
           style={({ pressed }) => ({ paddingVertical: 8, opacity: pressed ? 0.6 : 1 })}>
           <Text style={{ color: MARCA.azulClaro, fontSize: 15 }}>{`+ ${x.nombre}`}</Text>
-        </Pressable>
+        </Tocable>
       ))}
     </View>
   );
@@ -185,9 +186,9 @@ export default function PromocionLaboratorio() {
               {labs.map((l) => (
                 <View key={l.id} style={{ flexDirection: 'row', alignItems: 'center', minHeight: 36 }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>{l.nombre}</Text>
-                  <Pressable hitSlop={8} onPress={() => setLabs((xs) => xs.filter((x) => Number(x.id) !== Number(l.id)))}>
+                  <Tocable hitSlop={8} onPress={() => setLabs((xs) => xs.filter((x) => Number(x.id) !== Number(l.id)))}>
                     <Icono nombre="X" color={MARCA.rojo} tamano={16} />
-                  </Pressable>
+                  </Tocable>
                 </View>
               ))}
               <Buscador catalogo={catalogo} excluir={labIds} placeholder="Agregar un laboratorio…" onElegir={(l) => setLabs((xs) => [...xs, l])} />
@@ -198,12 +199,12 @@ export default function PromocionLaboratorio() {
                 <View key={n.nivel} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>{`Nivel ${n.nivel}`}</Text>
                   <Monto valor={n.monto} onCambiar={(v) => setNivel(n.nivel, v)} placeholder="$ monto" />
-                  {niveles.length > 1 ? <Pressable hitSlop={8} onPress={() => quitarNivel(n.nivel)}><Icono nombre="Trash2" color={MARCA.rojo} tamano={16} /></Pressable> : null}
+                  {niveles.length > 1 ? <Tocable hitSlop={8} onPress={() => quitarNivel(n.nivel)}><Icono nombre="Trash2" color={MARCA.rojo} tamano={16} /></Tocable> : null}
                 </View>
               ))}
-              <Pressable onPress={() => setNiveles((ns) => [...ns, { nivel: (ns.at(-1)?.nivel || 0) + 1, monto: '' }])} hitSlop={6}>
+              <Tocable onPress={() => setNiveles((ns) => [...ns, { nivel: (ns.at(-1)?.nivel || 0) + 1, monto: '' }])} hitSlop={6}>
                 <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>+ Agregar nivel</Text>
-              </Pressable>
+              </Tocable>
             </Seccion>
 
             {salas.map((s) => (
@@ -215,9 +216,9 @@ export default function PromocionLaboratorio() {
                   </View>
                 ))}
                 {salaTiene(s.id) && hayVacias ? (
-                  <Pressable hitSlop={6} onPress={() => { Haptics.selectionAsync().catch(() => {}); setUmbrales((u) => copiarUmbralesDeSala(u, salas, niveles, s.id)); }}>
+                  <Tocable hitSlop={6} onPress={() => { Haptics.selectionAsync().catch(() => {}); setUmbrales((u) => copiarUmbralesDeSala(u, salas, niveles, s.id)); }}>
                     <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Copiar a las salas vacías</Text>
-                  </Pressable>
+                  </Tocable>
                 ) : null}
               </Seccion>
             ))}

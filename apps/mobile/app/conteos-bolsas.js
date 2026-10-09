@@ -3,25 +3,28 @@
 // sin resolver) y quién las contó. Tocar una tanda la abre por sala, con cada
 // bolsa y su diferencia. Sólo lectura, detrás de `bolsas_ver_montos` como en el
 // portal: «CNT-260826-1 · 43 bolsas» sin montos no contesta nada.
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchConteos } from '@nucleo/data/bolsas';
-import { rangoDeDiasDelDeposito } from '@nucleo/utils/depositoDeEfectivo';
+import { rangoDeDiasDelDeposito, totalesDeConteos } from '@nucleo/utils/depositoDeEfectivo';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { fechaHora12, hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, Dato } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato } from '../componentes/formulario/Piezas';
 import Segmentos from '../componentes/Segmentos';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 
 const RANGOS = [{ id: '30', label: '30 días' }, { id: '90', label: '90 días' }, { id: 'todo', label: 'Todo' }];
+// «Todo» crece con cada tanda: se pinta de a 30.
+const POR_PAGINA = 30;
 const corta = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'short' }) : '');
 const nombre = (p) => { const n = p?.name ?? p?.nombre; return n ? shortEmployeeName({ ...p, name: n }) : null; };
 
@@ -30,7 +33,7 @@ function Tanda({ c }) {
   const pendiente = Number(c.pendiente ?? c.diferencia ?? 0);
   const quienes = (c.contaron || []).map(nombre).filter(Boolean);
   return (
-    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta((a) => !a); }}>
+    <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.55 : 1 })} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta((a) => !a); }}>
       <Vidrio radio={18} interactivo>
         <View style={{ padding: 14, gap: 6 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
@@ -90,6 +93,10 @@ export default function ConteosBolsas() {
   const [rango, setRango] = useState('30');
   const [lista, setLista] = useState(null);
   const [recargando, setRecargando] = useState(false);
+  const [cuantos, setCuantos] = useState(POR_PAGINA);
+  const totales = useMemo(() => totalesDeConteos(lista), [lista]);
+  // La página siguiente se pinta sola al acercarse al final (el botón queda de respaldo).
+  const alFinal = useMasAlFinal(() => setCuantos((n) => n + POR_PAGINA));
   const cargar = useCallback(async () => {
     const desde = rango === 'todo' ? null : sumarDias(hoySV(), -Number(rango));
     setLista((await Promise.resolve(fetchConteos({ desde, hasta: null })).catch(() => [])) || []);
@@ -103,14 +110,20 @@ export default function ConteosBolsas() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Conteos', headerLargeTitle: true }} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
+      <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos opciones={RANGOS} activa={rango} onCambiar={(v) => { setLista(null); setRango(v); }} />
+        <Segmentos opciones={RANGOS} activa={rango} onCambiar={(v) => { setLista(null); setCuantos(POR_PAGINA); setRango(v); }} />
         <View style={{ marginHorizontal: 16, gap: 10 }}>
           {lista == null ? <ActivityIndicator style={{ marginTop: 30 }} />
             : !lista.length ? <Aviso texto="Sin conteos en estas fechas." />
-              : lista.map((c) => <Tanda key={c.id} c={c} />)}
+              : (<>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4, fontVariant: ['tabular-nums'] }}>
+                  {`${lista.length} ${lista.length === 1 ? 'conteo' : 'conteos'} · ${formatMoney(totales.contado)} contado${totales.abiertas ? ` · ${totales.abiertas} sin resolver` : ''}`}
+                </Text>
+                {lista.slice(0, cuantos).map((c) => <Tanda key={c.id} c={c} />)}
+                {lista.length > cuantos ? <BotonGrande borde texto={`Ver ${Math.min(POR_PAGINA, lista.length - cuantos)} más · quedan ${lista.length - cuantos}`} onPress={() => setCuantos((n) => n + POR_PAGINA)} /> : null}
+              </>)}
         </View>
       </ScrollView>
     </>

@@ -6,7 +6,7 @@
 // El cruce lo hace la base (`get_inyecciones_aplicadas`); resumen, filtro y CSV
 // salen del núcleo (`inyeccionesPorCobrar`), los mismos que usa el portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { desvincularCobro } from '@nucleo/data/inyecciones';
@@ -30,6 +30,7 @@ import { MARCA } from '../inicio/marca';
 import { fallo, listo, trabajando } from '../Progreso';
 import { compartirCsv } from '../fiscal/csv';
 import { guardar } from '../comercial/elegido';
+import Tocable from '../Tocable';
 
 const PAGINA = 40;
 const fechaCorta = (f) => fechaNumerica(f, { anio: false });
@@ -135,9 +136,9 @@ export default function PorCobrar({ busqueda, sala, nombreSala, puedeAsignar, ra
       <View style={{ marginHorizontal: 16, flexDirection: 'row', alignItems: 'center' }}>
         <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>{`${filtradas.length} ventas`}</Text>
         {filtradas.length ? (
-          <Pressable onPress={descargar} hitSlop={8} accessibilityRole="button">
+          <Tocable onPress={descargar} hitSlop={8} accessibilityRole="button">
             <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Descargar CSV</Text>
-          </Pressable>
+          </Tocable>
         ) : null}
       </View>
       {filtradas.slice(0, cuantas).map((v) => (
@@ -162,9 +163,9 @@ export default function PorCobrar({ busqueda, sala, nombreSala, puedeAsignar, ra
                 </Text>
               ) : null}
               {v.cobro && v.vinculo === 'a_mano' && puedeAsignar ? (
-                <Pressable onPress={() => desasignar(v)} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
+                <Tocable onPress={() => desasignar(v)} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
                   <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '600' }}>Deshacer asignación</Text>
-                </Pressable>
+                </Tocable>
               ) : null}
             </View>
           </Vidrio>
@@ -197,9 +198,9 @@ export default function PorCobrar({ busqueda, sala, nombreSala, puedeAsignar, ra
                   {c.origen === 'TRAIDA' ? <Pildora texto="Traída" color={colorSistema.texto2} /> : null}
                   <View style={{ flex: 1 }} />
                   {puedeAsignar && c.origen !== 'TRAIDA' ? (
-                    <Pressable onPress={() => asignar(c)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                    <Tocable onPress={() => asignar(c)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                       <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '700' }}>Asignar a una venta</Text>
-                    </Pressable>
+                    </Tocable>
                   ) : null}
                 </View>
               </View>

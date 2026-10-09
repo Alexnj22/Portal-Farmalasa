@@ -78,8 +78,11 @@ export function Opciones({ opciones, valor, onCambiar, color = MARCA.azulClaro }
 }
 
 export function BotonGrande({ texto, color = MARCA.azul, onPress, deshabilitado, borde = false }) {
+  // El toque se siente: un golpe leve en cada botón de acción de la app, así
+  // ninguna pantalla tiene que acordarse de pedirlo.
+  const tocar = onPress ? (e) => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); onPress(e); } : undefined;
   return (
-    <Pressable onPress={onPress} disabled={deshabilitado} accessibilityRole="button"
+    <Pressable onPress={tocar} disabled={deshabilitado} accessibilityRole="button"
       style={({ pressed }) => ({ minHeight: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18,
         backgroundColor: borde ? 'transparent' : color, borderWidth: borde ? 1.5 : 0, borderColor: color,
         opacity: deshabilitado ? 0.4 : pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] })}>

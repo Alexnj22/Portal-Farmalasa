@@ -13,9 +13,10 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  cambiarEstadoReserva, codigoDeReserva, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, mensajeDeReservaLista, whatsappDe,
+  cambiarEstadoReserva, codigoDeReserva, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, mensajeDeReservaLista, usarSaldoAFavor, whatsappDe,
 } from '@nucleo/data/reservas';
-import { pilaDelCliente, reservasPendientes, reservasPorCodigo, resumenDelPedido } from '@nucleo/utils/reservasDeSala';
+import { pilaDelCliente, reservasAbiertas, reservasPendientes, reservasPorCodigo, resumenDelPedido, saldosAFavor } from '@nucleo/utils/reservasDeSala';
+import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -92,7 +93,27 @@ export default function ReservasDeSala() {
     ]);
   };
 
+  // El anticipo de una reserva vencida queda a favor del cliente 30 días: la
+  // sala lo marca cuando lo aplica en caja (`reserva_usar_saldo_favor`, la
+  // misma del widget del portal).
+  const usarSaldo = (r) => {
+    Alert.alert('Saldo a favor aplicado en caja', `${formatMoney(Number(r.saldo_favor))} a favor de ${pilaDelCliente(r)} (${codigoDeReserva(r.id)}). Márcalo sólo cuando ya se descontó en caja.`, [
+      { text: 'Volver', style: 'cancel' },
+      { text: 'Ya se aplicó', onPress: async () => {
+        setOcupada(r.id);
+        try {
+          await usarSaldoAFavor(r.id);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          listo('Saldo a favor aplicado', `${formatMoney(Number(r.saldo_favor))} de ${pilaDelCliente(r)}`);
+          cargar();
+        } catch (e) { fallo('No se pudo aplicar', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setOcupada(null); }
+      } },
+    ]);
+  };
+
   const lista = filas || [];
+  const abiertas = reservasAbiertas(lista);
+  const saldos = saldosAFavor(lista);
   const buscado = codigo.trim().toUpperCase();
   const visibles = reservasPorCodigo(lista, codigo);
   const pedido = resumenDelPedido(visibles, codigo);
@@ -114,7 +135,20 @@ export default function ReservasDeSala() {
           </Seccion>
         ) : null}
         {filas && buscado && !visibles.length ? <View style={{ marginHorizontal: 16 }}><Aviso texto="No hay una reserva abierta con ese código en esta sala." /></View> : null}
-        {filas && !lista.length && (sala || todas) ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Sin reservas. Cuando un cliente aparte algo desde la app, aparece aquí." /></View> : null}
+        {filas && !abiertas.length && !saldos.length && (sala || todas) ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Sin reservas. Cuando un cliente aparte algo desde la app, aparece aquí." /></View> : null}
+        {saldos.length && !buscado ? (
+          <Seccion titulo="Saldos a favor" pie="Anticipos de reservas vencidas: valen 30 días y se descuentan en caja.">
+            {saldos.map((r, i) => (
+              <View key={r.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: i ? 9 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, opacity: ocupada === r.id ? 0.5 : 1 }}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${formatMoney(Number(r.saldo_favor))} a favor de ${pilaDelCliente(r)}`}</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${codigoDeReserva(r.id)} · ${r.producto}${r.saldo_favor_vence ? ` · vale hasta el ${fechaTexto(r.saldo_favor_vence, { day: 'numeric', month: 'short' })}` : ''}${todas && r.sala ? ` · ${r.sala}` : ''}`}</Text>
+                </View>
+                <Accion texto="Aplicado en caja" color={MARCA.verde} onPress={() => usarSaldo(r)} deshabilitado={!!ocupada} />
+              </View>
+            ))}
+          </Seccion>
+        ) : null}
         {visibles.map((r) => (
           <View key={r.id} style={{ marginHorizontal: 16 }}>
             <Vidrio radio={18} tinte={r.estado === 'pendiente' ? 'rgba(247,144,9,0.10)' : undefined}>

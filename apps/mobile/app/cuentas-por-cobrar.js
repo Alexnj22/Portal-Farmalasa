@@ -33,6 +33,7 @@ import { ordenDeSala } from '@nucleo/constants/erp';
 import Segmentos from '../componentes/Segmentos';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -100,6 +101,8 @@ export default function CuentasPorCobrar() {
   const [orden, setOrden] = useState('ANTIGUOS');
   const [vendedor, setVendedor] = useState('');
   const [cuantos, setCuantos] = useState(POR_PAGINA);
+  // La página siguiente se pinta sola al acercarse al final (el botón queda de respaldo).
+  const alFinal = useMasAlFinal(() => setCuantos((n) => n + POR_PAGINA));
   const [leidoSala, setLeidoSala] = useState(null);
   const [texto, setTexto] = useState('');
   const [creditos, setCreditos] = useState(null);
@@ -195,7 +198,7 @@ export default function CuentasPorCobrar() {
         },
       }} />
       {grupos.length ? <MenuDeFiltros grupos={grupos} /> : null}
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
+      <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />

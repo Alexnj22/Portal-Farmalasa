@@ -17,6 +17,7 @@
 // pantalla sin enseñar el dinero.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -243,6 +244,8 @@ export default function Ventas() {
   const rangoTexto = fini === ffin ? fechaTexto(fini, { weekday: 'long', day: 'numeric', month: 'long' })
     : `${fechaTexto(fini, { day: 'numeric', month: 'short' })} – ${fechaTexto(ffin, { day: 'numeric', month: 'short' })}`;
 
+  const alFinal = useMasAlFinal(() => setPagina((p) => p + 1), !cargando && datos.hayMas);
+
   return (
     <>
       <Stack.Screen options={{
@@ -254,7 +257,7 @@ export default function Ventas() {
       }} />
       <MenuDeFiltros grupos={grupos} extra={{ icono: privado ? 'eye' : 'eye.slash', etiqueta: privado ? 'Mostrar montos' : 'Ocultar montos', onPress: () => setPrivado((v) => !v) }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
-        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
+        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" {...alFinal}
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
         <FiltrosActivos grupos={grupos} />
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20, textTransform: fini === ffin ? 'capitalize' : 'none' }}>{rangoTexto}</Text>

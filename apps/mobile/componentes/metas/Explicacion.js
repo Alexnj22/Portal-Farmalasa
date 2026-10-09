@@ -3,7 +3,7 @@
 // factor que corresponde a cómo cerró el último. Se pide al abrirla
 // (`explicar_meta_propuesta`), no antes: casi nadie la abre.
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { explicarMetaPropuesta } from '@nucleo/data/metas';
 import { ymLabelCorto } from '@nucleo/utils/metasUtils';
@@ -11,6 +11,7 @@ import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
 import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
+import Tocable from '../Tocable';
 
 function Paso({ n, titulo, monto, children }) {
   return (
@@ -50,10 +51,10 @@ export default function Explicacion({ branchId, yearMonth, montoPropuesto }) {
   return (
     <Vidrio radio={20}>
       <View style={{ padding: 14, gap: 12 }}>
-        <Pressable onPress={alternar} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', minHeight: 32 }}>
+        <Tocable onPress={alternar} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', minHeight: 32 }}>
           <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>De dónde sale la meta</Text>
           <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>{abierto ? 'Ocultar' : 'Ver'}</Text>
-        </Pressable>
+        </Tocable>
         {abierto && cargando ? <ActivityIndicator /> : null}
         {abierto && error ? nota('No se pudo traer el detalle del cálculo.') : null}
         {abierto && d ? (

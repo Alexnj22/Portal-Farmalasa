@@ -44,6 +44,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo } from '../componentes/formulario/Piezas';
 import Fotos, { subirFotos } from '../componentes/formulario/Fotos';
@@ -54,6 +55,9 @@ import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import DetalleDeBolsa from '../componentes/caja/DetalleDeBolsa';
 
+// Las contadas de 30 días son cientos (362 medidas el 2026-10-09): se pintan
+// de a 40 para que la lista no se trabe en un teléfono chico.
+const POR_PAGINA = 40;
 const dia = (f) => fechaTexto(f, { weekday: 'short', day: 'numeric', month: 'short' });
 
 /** Agrupa por sala, en el orden de la red, y dentro por fecha. */
@@ -153,6 +157,10 @@ export default function Bolsas() {
   const [resolviendo, setResolviendo] = useState(null);
   const [porDepositar, setPorDepositar] = useState([]);
   const [etapa, setEtapa] = useState('camino');
+  const [cuantos, setCuantos] = useState(POR_PAGINA);
+  // La página siguiente se pinta sola al acercarse al final (el botón queda de respaldo).
+  const alFinal = useMasAlFinal(() => setCuantos((n) => n + POR_PAGINA));
+  useEffect(() => { setCuantos(POR_PAGINA); }, [etapa]); // eslint-disable-line react-hooks/set-state-in-effect -- cada etapa empieza en la primera página
   const [bolsas, setBolsas] = useState(null);
   const [diferencias, setDiferencias] = useState([]);
   const [contadas, setContadas] = useState([]);
@@ -193,6 +201,8 @@ export default function Bolsas() {
   const porContar = useMemo(() => (bolsas || []).filter((b) => b.estado === 'RECIBIDA'), [bolsas]);
   const marcadas = porContar.filter((b) => contadoDeBolsa(b) != null);
   const lista = etapa === 'sala' ? enSala : etapa === 'camino' ? enCamino : etapa === 'contar' ? porContar : etapa === 'contadas' ? contadas : diferencias;
+  // Contar y recibir necesitan todas a la vista (se eligen y se anotan una por una).
+  const paginar = etapa === 'contadas' || etapa === 'diferencias';
   const sinRecibir = [...enSala, ...enCamino];
   const { bolsa: masVieja, dias: diasMasVieja } = laMasVieja([...enSala, ...enCamino, ...porContar]);
   const sinCuadrar = diferencias.reduce((a, b) => a + Math.abs(diferenciaDeBolsa(b) ?? 0), 0);
@@ -243,7 +253,7 @@ export default function Bolsas() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Bolsas', headerLargeTitle: true }} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
+      <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {bolsas ? (
@@ -312,7 +322,7 @@ export default function Bolsas() {
               deshabilitado={!!ocupado} onPress={() => recibir(elegidas.size ? [...elegidas] : enCamino.map((b) => b.id))} />
           </View>
         ) : null}
-        {bolsas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : porSala(lista).map(([sala, del]) => (
+        {bolsas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : porSala(paginar ? lista.slice(0, cuantos) : lista).map(([sala, del]) => (
           <View key={sala} style={{ gap: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', marginHorizontal: 20, marginTop: 6 }}>
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{nombreDeSala(sala)}</Text>
@@ -378,6 +388,11 @@ export default function Bolsas() {
             })}
           </View>
         ))}
+        {paginar && lista.length > cuantos ? (
+          <View style={{ marginHorizontal: 16 }}>
+            <BotonGrande borde texto={`Ver ${Math.min(POR_PAGINA, lista.length - cuantos)} más · quedan ${lista.length - cuantos}`} onPress={() => setCuantos((n) => n + POR_PAGINA)} />
+          </View>
+        ) : null}
         {bolsas && !lista.length ? (
           <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>
             {etapa === 'sala' ? 'Ninguna bolsa en las salas' : etapa === 'camino' ? 'No hay bolsas esperando recepción' : etapa === 'contar' ? 'No hay bolsas por contar'

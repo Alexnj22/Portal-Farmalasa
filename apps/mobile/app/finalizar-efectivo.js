@@ -41,7 +41,7 @@ function FilaMonto({ rotulo, valor, onCambiar, pie }) {
     <View style={{ gap: 4 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{rotulo}</Text>
-        <View style={{ width: 150 }}>
+        <View style={{ minWidth: 150 }}>
           <Campo multiline={false} value={valor} onChangeText={(v) => onCambiar(limpio(v))}
             keyboardType="decimal-pad" placeholder="$0.00" style={{ textAlign: 'center' }} />
         </View>

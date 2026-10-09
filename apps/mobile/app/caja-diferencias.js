@@ -88,7 +88,7 @@ export default function CajaDiferencias() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await recargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
         {puedeAnotar && porAnotar.length ? (
-          <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push('/asentar-diferencias'); }} style={{ marginHorizontal: 16 }}>
+          <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push('/asentar-diferencias'); }} style={({ pressed }) => ({ marginHorizontal: 16, opacity: pressed ? 0.55 : 1 })}>
             <Vidrio radio={18} interactivo tinte="rgba(52,120,246,0.14)">
               <View style={{ padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <View style={{ flex: 1 }}>

@@ -61,3 +61,42 @@ export function rangoDeDiasDelDeposito(d, corta) {
     if (!d?.dia_desde) return '—';
     return d.dia_desde === d.dia_hasta ? corta(d.dia_desde) : `${corta(d.dia_desde)} → ${corta(d.dia_hasta)}`;
 }
+
+/**
+ * Los totales de la lista de cierres (`get_depositos`): lo que fue al banco, lo
+ * que se entregó en mano y los depósitos al banco SIN su boleta. Escrito una vez
+ * para el portal (`DepositosAlBanco`) y la app.
+ *
+ * Un cierre CORREGIDO no cuenta —sus bolsas volvieron a estar por cerrar— y uno
+ * `ANTERIOR` tampoco: no registra ningún movimiento. El remanente NO se acumula
+ * («ya no es responsabilidad ni control del portal, es efectivo del dueño»,
+ * usuario 2026-08-26): un total de remanentes sería un saldo.
+ */
+export function totalesDeDepositos(lista) {
+    return (lista || [])
+        .filter((d) => !d.anulado_at && d.destino !== 'ANTERIOR')
+        .reduce((a, d) => {
+            const banco = Number(d.monto_deposito || 0);
+            const sinBoleta = banco >= 0.01 && !d.comprobante_url;
+            return {
+                banco: a.banco + banco,
+                efectivo: a.efectivo + Number(d.monto_efectivo || 0),
+                sinBoleta: a.sinBoleta + (sinBoleta ? 1 : 0),
+                sinBoletaMonto: a.sinBoletaMonto + (sinBoleta ? banco : 0),
+            };
+        }, { banco: 0, efectivo: 0, sinBoleta: 0, sinBoletaMonto: 0 });
+}
+
+/**
+ * Los totales de la lista de conteos de bolsas (`get_conteos`): lo contado y las
+ * bolsas que no cuadraron y todavía no tienen causa («sin resolver»; las ya
+ * resueltas no son trabajo pendiente). Para el portal (`ConteosDeBolsas`) y la
+ * app.
+ */
+export function totalesDeConteos(lista) {
+    return (lista || []).reduce((a, c) => ({
+        contado: a.contado + Number(c.total_contado || 0),
+        abiertas: a.abiertas + Math.max(0, Number(c.descuadradas || 0) - Number(c.resueltas || 0)),
+        justificado: a.justificado + Number(c.justificado || 0),
+    }), { contado: 0, abiertas: 0, justificado: 0 });
+}

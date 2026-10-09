@@ -7,6 +7,7 @@
 // desde el ERP). Extraído de ComprasView.jsx: 5 llamadas supabase.from().
 import { supabase } from '../supabaseClient';
 import { patronSinTildes } from '../utils/busqueda';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
 export function fetchPurchaseReceiptItems(receiptId) {
     return supabase.from('purchase_receipt_items')
@@ -52,8 +53,12 @@ export function fetchProductPurchaseSummaryPage(from, to, searchTerm) {
     return q;
 }
 
-export function fetchSuppliersBasic() {
-    return supabase.from('suppliers').select('id, nombre').order('nombre');
+// En tandas (2026-10-09): el catálogo de proveedores de compras no tiene tope,
+// y el filtro de proveedor de Compras se quedaba con los primeros 1000 por
+// nombre sin avisar. Misma forma `{ data, error }`.
+export async function fetchSuppliersBasic() {
+    const data = await fetchAllRows(() => supabase.from('suppliers').select('id, nombre').order('nombre').order('id'), { completo: true });
+    return data == null ? { data: null, error: new Error('No se pudieron leer los proveedores.') } : { data, error: null };
 }
 
 export function fetchUnlinkedPurchaseReceiptsCount() {

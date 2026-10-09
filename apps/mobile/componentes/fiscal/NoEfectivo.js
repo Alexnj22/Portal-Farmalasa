@@ -9,7 +9,7 @@
 // `insertPaymentConfirmation`, la misma función del portal, que deja su
 // renglón en la bitácora.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { fetchNonCashInvoices, fetchPaymentConfirmationIds, fetchPaymentConfirmationsHistorial, insertPaymentConfirmation } from '@nucleo/data/facturacion';
@@ -26,6 +26,7 @@ import Vidrio from '../Vidrio';
 import PasoDeMes from '../PasoDeMes';
 import { MARCA } from '../inicio/marca';
 import { fallo, listo } from '../Progreso';
+import Tocable from '../Tocable';
 
 const ROTULO = { tarjeta: 'Tarjeta', credito: 'Crédito', transferencia: 'Transferencia', bitcoin: 'Bitcoin', cheque: 'Cheque' };
 const finDeMes = (mes) => { const [a, m] = mes.split('-').map(Number); return `${mes}-${String(new Date(a, m, 0).getDate()).padStart(2, '0')}`; };
@@ -112,14 +113,14 @@ export default function NoEfectivo({ sala, nombreSala, texto, canEdit, user, ver
             return (
               <View key={r.id} style={{ marginHorizontal: 16 }}>
                 <Vidrio radio={18}>
-                  <Pressable disabled={!canEdit} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(abierto ? null : r.id); setNota(''); setFoto(null); }} style={{ padding: 12, gap: 4 }}>
+                  <Tocable disabled={!canEdit} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(abierto ? null : r.id); setNota(''); setFoto(null); }} style={{ padding: 12, gap: 4 }}>
                     <View style={{ flexDirection: 'row', gap: 8 }}>
                       <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${r.tipo_documento ?? ''} ${r.correlativo ?? 'sin número'}`}</Text>
                       <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{verMontos ? formatMoney(r.total) : '—'}</Text>
                     </View>
                     <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{[r.cliente || 'Sin cliente', nombreSala(r.branch_id), r.fecha ? `${fechaTexto(r.fecha, { day: 'numeric', month: 'short' })}${r.hora ? ` ${String(r.hora).slice(0, 5)}` : ''}` : null].filter(Boolean).join(' · ')}</Text>
                     <View style={{ flexDirection: 'row', gap: 6 }}><Pildora texto={ROTULO[t] ?? t} color={MARCA.azulClaro} />{canEdit && !abierto ? <Text style={{ color: MARCA.azulClaro, fontSize: 13, fontWeight: '700' }}>Confirmar ›</Text> : null}</View>
-                  </Pressable>
+                  </Tocable>
                   {abierto ? (
                     <View style={{ paddingHorizontal: 12, paddingBottom: 12, gap: 8 }}>
                       <Campo value={nota} onChangeText={setNota} placeholder="Nota (opcional): número de voucher, banco…" />

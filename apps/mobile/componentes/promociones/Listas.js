@@ -5,7 +5,7 @@
 // con `decidirExcedente`, la misma llamada del portal (negar exige el motivo,
 // como lo exige la base).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { borrarDescuento, fetchDescuentos, fotoParaApp } from '@nucleo/data/descuentos';
@@ -30,6 +30,7 @@ import { colorDeVariante } from '../colorDeVariante';
 import { guardar } from '../comercial/elegido';
 import { guardarOferta } from '../ofertas/acentos';
 import { fallo, listo } from '../Progreso';
+import Tocable from '../Tocable';
 
 const Vacio = ({ texto }) => <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>{texto}</Text>;
 const Tarjeta = ({ children }) => <View style={{ marginHorizontal: 16 }}><Vidrio radio={18}><View style={{ padding: 14, gap: 6 }}>{children}</View></Vidrio></View>;
@@ -77,9 +78,9 @@ export function Descuentos({ busqueda, salaDe, puedeEditar = false, puedeApp = f
 
   if (datos == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
   const accion = (texto, color, onPress, off) => (
-    <Pressable disabled={off} onPress={onPress} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center', opacity: off ? 0.4 : 1 }}>
+    <Tocable disabled={off} onPress={onPress} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center', opacity: off ? 0.4 : 1 }}>
       <Text style={{ color, fontSize: 14, fontWeight: '700' }}>{texto}</Text>
-    </Pressable>
+    </Tocable>
   );
   return (
     <>
@@ -190,12 +191,12 @@ export function Excedentes({ busqueda, puedeAprobar }) {
           <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${fmtUnidades(f.unidades)} de más${f.lote_total != null ? ` · lote ${fmtUnidades(f.lote_total)}` : ''}`}</Text>
           {puedeAprobar ? (
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
-              <Pressable disabled={ocupado === f.id} onPress={() => aprobar(f)} style={({ pressed }) => ({ flex: 1, minHeight: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: MARCA.verde, opacity: ocupado === f.id ? 0.5 : pressed ? 0.8 : 1 })}>
+              <Tocable disabled={ocupado === f.id} onPress={() => aprobar(f)} style={({ pressed }) => ({ flex: 1, minHeight: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: MARCA.verde, opacity: ocupado === f.id ? 0.5 : pressed ? 0.8 : 1 })}>
                 <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>Aprobar</Text>
-              </Pressable>
-              <Pressable disabled={ocupado === f.id} onPress={() => negar(f)} style={({ pressed }) => ({ flex: 1, minHeight: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: MARCA.rojo, opacity: ocupado === f.id ? 0.5 : pressed ? 0.8 : 1 })}>
+              </Tocable>
+              <Tocable disabled={ocupado === f.id} onPress={() => negar(f)} style={({ pressed }) => ({ flex: 1, minHeight: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: MARCA.rojo, opacity: ocupado === f.id ? 0.5 : pressed ? 0.8 : 1 })}>
                 <Text style={{ color: MARCA.rojo, fontSize: 15, fontWeight: '700' }}>Negar</Text>
-              </Pressable>
+              </Tocable>
             </View>
           ) : null}
         </Tarjeta>

@@ -5,7 +5,7 @@
 // presupuesto no puede pasar el tope del mes (lo fija gerencia).
 import { volver } from '../componentes/volver';
 import { useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, ScrollView, Text, TextInput, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { fetchCatalogos, fetchPiezas, guardarPauta, quitarPauta } from '@nucleo/data/marketing';
 import { asignadoEnPauta, OBJETIVOS_PAUTA } from '@nucleo/utils/marketing';
@@ -18,6 +18,7 @@ import Fecha from '../componentes/formulario/Fecha';
 import { MARCA } from '../componentes/inicio/marca';
 import { guardarPieza as recordarPieza, piezaElegida } from '../componentes/marketing/elegida';
 import { fallo, listo } from '../componentes/Progreso';
+import Tocable from '../componentes/Tocable';
 
 const CAMPOS = ['redes', 'objetivo', 'publico', 'presupuesto', 'fecha_inicio', 'fecha_fin', 'gastado', 'alcance', 'impresiones', 'interacciones', 'mensajes', 'clics', 'notas'];
 const RESULTADOS = [['gastado', 'Gastado ($)'], ['alcance', 'Alcance'], ['impresiones', 'Impresiones'], ['interacciones', 'Interacciones'], ['mensajes', 'Mensajes'], ['clics', 'Clics']];
@@ -86,17 +87,17 @@ export default function PautaDePieza() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
           <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '700' }}>{pieza.titulo}</Text>
           <Seccion titulo="El plan" pie={limite ? `Presupuesto del mes ${formatMoney(limite)} · otras piezas ${formatMoney(otros)} · queda ${formatMoney(Math.max(libre, 0))}` : 'Gerencia todavía no fija el presupuesto del mes.'}>
-            <Pressable onPress={() => {
+            <Tocable onPress={() => {
               const opciones = [...OBJETIVOS_PAUTA.map((o) => o.label), 'Cancelar'];
               ActionSheetIOS.showActionSheetWithOptions({ title: 'Objetivo', options: opciones, cancelButtonIndex: opciones.length - 1 }, (i) => { if (i < OBJETIVOS_PAUTA.length) set('objetivo')(OBJETIVOS_PAUTA[i].value); });
             }} style={{ flexDirection: 'row', minHeight: 44, alignItems: 'center' }}>
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>Objetivo</Text>
               <Text style={{ color: colorSistema.acento, fontSize: 16 }}>{OBJETIVOS_PAUTA.find((o) => o.value === form.objetivo)?.label || 'Elegir'} ›</Text>
-            </Pressable>
-            <Pressable onPress={elegirRed} style={{ flexDirection: 'row', minHeight: 44, alignItems: 'center' }}>
+            </Tocable>
+            <Tocable onPress={elegirRed} style={{ flexDirection: 'row', minHeight: 44, alignItems: 'center' }}>
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>Redes</Text>
               <Text style={{ color: colorSistema.acento, fontSize: 16 }}>{nombreRedes} ›</Text>
-            </Pressable>
+            </Tocable>
             <Numero titulo="Presupuesto ($)" valor={form.presupuesto} onCambiar={set('presupuesto')} />
             {pasado ? <Aviso tono="cuidado" texto="Se pasa del presupuesto del mes." /> : null}
             <Campo multiline={false} value={form.publico} onChangeText={set('publico')} placeholder="Público (edad, zona, intereses)" />
@@ -107,7 +108,7 @@ export default function PautaDePieza() {
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Hasta</Text>
               {form.fecha_fin ? <Fecha valor={form.fecha_fin} onCambiar={set('fecha_fin')} desde={form.fecha_inicio} />
-                : <Pressable onPress={() => set('fecha_fin')(form.fecha_inicio || pieza.fecha)}><Text style={{ color: colorSistema.acento, fontSize: 16 }}>Elegir</Text></Pressable>}
+                : <Tocable onPress={() => set('fecha_fin')(form.fecha_inicio || pieza.fecha)}><Text style={{ color: colorSistema.acento, fontSize: 16 }}>Elegir</Text></Tocable>}
             </View>
           </Seccion>
           <Seccion titulo="Lo que trajo" pie="Vacío es «todavía no se anotó», no cero.">

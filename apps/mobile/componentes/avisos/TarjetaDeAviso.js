@@ -83,7 +83,8 @@ function Fallback({ n, detalle, expandida }) {
   );
 }
 
-export default function TarjetaDeAviso({ n, detalle, onAbrir, pie = null, sinAcciones = false }) {
+// `margen`: 16 en la bandeja; 0 dentro de `ListaPaginada`, que ya pone el suyo.
+export default function TarjetaDeAviso({ n, detalle, onAbrir, pie = null, sinAcciones = false, margen = 16 }) {
   const { user, hasPermission } = useAuth();
   const sucursales = useStaffStore((s) => s.branches);
   const marcarResuelto = useStaffStore((s) => s.marcarAvisoDeSolicitudResuelto);
@@ -127,7 +128,7 @@ export default function TarjetaDeAviso({ n, detalle, onAbrir, pie = null, sinAcc
 
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onAbrir(); }}
-      style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.985 : 1 }] })}>
+      style={({ pressed }) => ({ marginHorizontal: margen, transform: [{ scale: pressed ? 0.985 : 1 }] })}>
       <Vidrio radio={22} interactivo tinte={sinLeer ? 'rgba(59,130,246,0.10)' : undefined}>
         <View style={{ padding: 14, gap: 12 }}>
           {t?.encabezado ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>{t.encabezado}</Text> : null}

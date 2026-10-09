@@ -28,6 +28,7 @@ import { Aviso, BotonGrande } from '../../componentes/formulario/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import Etiqueta from '../../componentes/torogoz/rutas/Etiqueta';
 import { recordarPedido } from '../../componentes/torogoz/pedidos/elegido';
+import { useMasAlFinal } from '../../componentes/ListaPaginada';
 
 const PETROLEO = '#0f6e7d';
 const POR_PAGINA = 40;
@@ -78,6 +79,8 @@ export default function TorogozPedidos() {
   const [recargando, setRecargando] = useState(false);
   const [texto, setTexto] = useState('');
   const [cuantos, setCuantos] = useState(POR_PAGINA);
+  // Al acercarse al final se pinta la página siguiente sola; «Ver más» queda de respaldo.
+  const alFinal = useMasAlFinal(() => setCuantos((n) => n + POR_PAGINA));
   const buscar = useTextoRebotado(texto);
   const pedidoRef = useRef(0);
 
@@ -109,7 +112,7 @@ export default function TorogozPedidos() {
           onChangeText: (e) => { setTexto(e.nativeEvent.text); setCuantos(POR_PAGINA); }, onCancelButtonPress: () => setTexto(''),
         },
       }} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
+      <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {puedeVender ? (
           <View style={{ marginHorizontal: 16 }}>

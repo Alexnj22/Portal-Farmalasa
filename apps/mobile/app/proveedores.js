@@ -22,6 +22,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -88,6 +89,9 @@ export default function Proveedores() {
       opciones: [{ id: 'docs', label: 'Más documentos' }, { id: 'ultima', label: 'Última compra' }, { id: 'nombre', label: 'Nombre' }, { id: 'categoria', label: 'Categoría' }] },
   ];
 
+  // Al llegar abajo se pinta la página siguiente sola; «Ver más» queda de respaldo.
+  const alFinal = useMasAlFinal(() => setMostrar((n) => n + POR_PAGINA), !!filas && visibles.length > mostrar);
+
   return (
     <>
       <Stack.Screen options={{
@@ -98,7 +102,7 @@ export default function Proveedores() {
         },
       }} />
       <MenuDeFiltros grupos={grupos} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
+      <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />

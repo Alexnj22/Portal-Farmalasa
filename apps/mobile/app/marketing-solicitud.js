@@ -5,7 +5,7 @@
 // aviso. Guarda borrador como el portal.
 import { volver } from '../componentes/volver';
 import { useEffect, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { crearSolicitud, fetchCatalogos } from '@nucleo/data/marketing';
@@ -18,16 +18,17 @@ import { colorSistema } from '../componentes/Formulario';
 import { BotonGrande, Campo, Opciones, Seccion } from '../componentes/formulario/Piezas';
 import Fecha from '../componentes/formulario/Fecha';
 import { fallo, listo } from '../componentes/Progreso';
+import Tocable from '../componentes/Tocable';
 
 const BORRADOR = 'marketing_solicitud_nueva';
 const VACIA = { tipo: 'digital', titulo: '', descripcion: '', marca_id: '', formato: '', tamano: '', fecha_deseada: '', prioridad: 'normal' };
 
 function Fila({ titulo, valor, onPress }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', minHeight: 44, opacity: pressed ? 0.6 : 1 })}>
+    <Tocable onPress={onPress} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', minHeight: 44, opacity: pressed ? 0.6 : 1 })}>
       <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>{titulo}</Text>
       <Text style={{ color: colorSistema.acento, fontSize: 16 }}>{valor} ›</Text>
-    </Pressable>
+    </Tocable>
   );
 }
 const elegir = (titulo, lista, onElegir) => {
@@ -85,7 +86,7 @@ export default function PedirAlDisenador() {
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Para cuándo</Text>
               {form.fecha_deseada ? <Fecha valor={form.fecha_deseada} onCambiar={set('fecha_deseada')} />
-                : <Pressable onPress={() => set('fecha_deseada')(hoySV())}><Text style={{ color: colorSistema.acento, fontSize: 16 }}>Elegir</Text></Pressable>}
+                : <Tocable onPress={() => set('fecha_deseada')(hoySV())}><Text style={{ color: colorSistema.acento, fontSize: 16 }}>Elegir</Text></Tocable>}
             </View>
             <Fila titulo="Prioridad" valor={PRIORIDADES.find((p) => p.value === form.prioridad)?.label} onPress={() => elegir('Prioridad', PRIORIDADES, set('prioridad'))} />
           </Seccion>

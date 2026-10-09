@@ -15,7 +15,7 @@
 // Ojo: la pestaña «Avisos» de la app son las NOTIFICACIONES; esto es otra cosa
 // (en el portal, `/mis-avisos`).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -106,6 +106,8 @@ function Tarjeta({ a, userId, onLeer }) {
   );
 }
 
+const Separador = () => <View style={{ height: 12 }} />;
+
 export default function Comunicados() {
   const { user } = useAuth();
   const comunicados = useStaffStore((s) => s.announcements);
@@ -167,32 +169,44 @@ export default function Comunicados() {
         <MenuDeFiltros grupos={[{ id: 'tipo', titulo: 'Mostrar', porDefecto: 'ALL', activa: filtro, onCambiar: setFiltro,
           opciones: filtros.map((f) => ({ id: f.key, label: `${f.label} · ${f.count}` })) }]} />
       ) : null}
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
+      {/* Lista virtualizada: con «meses anteriores» abiertos son todos los
+          comunicados de la persona, y un ScrollView los pinta todos de golpe. */}
+      <FlatList style={{ flex: 1 }} data={lista} keyExtractor={(a) => String(a.id)}
+        contentContainerStyle={{ paddingVertical: 12, paddingBottom: 48 }}
+        ItemSeparatorComponent={Separador}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await Promise.resolve(recargar?.({ force: true })).catch(() => {}); setRecargando(false); }} />}>
-        <Segmentos opciones={PESTANAS.map((p) => ({ ...p, label: p.id === 'UNREAD' && sinLeer ? `Sin leer · ${sinLeer}` : p.label }))}
-          activa={pestana} onCambiar={(v) => { setPestana(v); setFiltro('ALL'); }} />
-        {apartados.length ? (
-          <View style={{ marginHorizontal: 16 }}>
-            <BotonGrande texto={`Deshacer · ${apartados.length} marcado${apartados.length === 1 ? '' : 's'}`} borde color={MARCA.azulClaro} onPress={deshacer} />
+        initialNumToRender={8} windowSize={7} removeClippedSubviews
+        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await Promise.resolve(recargar?.({ force: true })).catch(() => {}); setRecargando(false); }} />}
+        ListHeaderComponent={(
+          <View style={{ gap: 12, marginBottom: 12 }}>
+            <Segmentos opciones={PESTANAS.map((p) => ({ ...p, label: p.id === 'UNREAD' && sinLeer ? `Sin leer · ${sinLeer}` : p.label }))}
+              activa={pestana} onCambiar={(v) => { setPestana(v); setFiltro('ALL'); }} />
+            {apartados.length ? (
+              <View style={{ marginHorizontal: 16 }}>
+                <BotonGrande texto={`Deshacer · ${apartados.length} marcado${apartados.length === 1 ? '' : 's'}`} borde color={MARCA.azulClaro} onPress={deshacer} />
+              </View>
+            ) : null}
           </View>
-        ) : null}
-        {lista.map((a) => <Tarjeta key={a.id} a={a} userId={user?.id} onLeer={leer} />)}
-        {!lista.length ? (
-          <View style={{ alignItems: 'center', marginTop: 40, gap: 6, paddingHorizontal: 32 }}>
+        )}
+        renderItem={({ item }) => <Tarjeta a={item} userId={user?.id} onLeer={leer} />}
+        ListEmptyComponent={(
+          <View style={{ alignItems: 'center', marginTop: 28, gap: 6, paddingHorizontal: 32 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '700' }}>{pestana === 'UNREAD' && !texto.trim() ? '¡Todo al día!' : 'Nada por aquí'}</Text>
             <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center' }}>
               {pestana === 'UNREAD' && !texto.trim() ? 'Leíste todos tus avisos. Nada se te escapa.' : texto.trim() ? 'Ningún aviso con ese texto.' : 'No hay avisos leídos este mes.'}
             </Text>
           </View>
-        ) : null}
-        {pestana === 'UNREAD' && lista.length > 1 ? (
-          <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Marcar todos como leídos" borde color={MARCA.verde} onPress={leerTodos} /></View>
-        ) : null}
-        {pestana === 'READ' && !verViejos && hayLeidosViejos(mios, user?.id) ? (
-          <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver los de meses anteriores" borde color={MARCA.azulClaro} onPress={() => setVerViejos(true)} /></View>
-        ) : null}
-      </ScrollView>
+        )}
+        ListFooterComponent={(
+          <View style={{ gap: 12, marginTop: 12 }}>
+            {pestana === 'UNREAD' && lista.length > 1 ? (
+              <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Marcar todos como leídos" borde color={MARCA.verde} onPress={leerTodos} /></View>
+            ) : null}
+            {pestana === 'READ' && !verViejos && hayLeidosViejos(mios, user?.id) ? (
+              <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver los de meses anteriores" borde color={MARCA.azulClaro} onPress={() => setVerViejos(true)} /></View>
+            ) : null}
+          </View>
+        )} />
     </>
   );
 }

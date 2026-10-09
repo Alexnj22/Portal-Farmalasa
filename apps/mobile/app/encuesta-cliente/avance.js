@@ -7,7 +7,7 @@
 // ficha» la busca y los acredita en el acto (`asignarIncentivo`, la misma del
 // portal). El afiche impreso con el QR sigue en el portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Share, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, RefreshControl, ScrollView, Share, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -29,6 +29,7 @@ import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { colorDeVariante } from '../../componentes/colorDeVariante';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
+import Tocable from '../../componentes/Tocable';
 
 const ESTADO_INCENTIVO = {
   acreditado: { label: 'Acreditado', variant: 'success' }, entregado: { label: 'Entregada', variant: 'success' },
@@ -61,16 +62,16 @@ function AsignarFicha({ incentivo, onListo, onCancelar }) {
     <View style={{ gap: 8, paddingTop: 8 }}>
       <Campo multiline={false} autoCorrect={false} placeholder="Nombre, teléfono, DUI…" value={texto} onChangeText={setTexto} />
       {resultados.map((c) => (
-        <Pressable key={c.id} disabled={c.acumula_puntos === false} onPress={() => elegir(c)}
+        <Tocable key={c.id} disabled={c.acumula_puntos === false} onPress={() => elegir(c)}
           style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: c.acumula_puntos === false ? 0.45 : pressed ? 0.6 : 1 })}>
           <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{c.name}</Text>
           <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${c.phone || 'Sin teléfono'}${c.acumula_puntos === false ? ' · no acumula puntos' : ''}`}</Text>
-        </Pressable>
+        </Tocable>
       ))}
       {q.length >= 3 && !resultados.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Sin fichas con esa búsqueda.</Text> : null}
-      <Pressable onPress={onCancelar} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 32, justifyContent: 'center' }}>
+      <Tocable onPress={onCancelar} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 32, justifyContent: 'center' }}>
         <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Cancelar</Text>
-      </Pressable>
+      </Tocable>
     </View>
   );
 }
@@ -145,14 +146,14 @@ export default function AvanceEncuesta() {
                       {publica && (conQr || conTablet) ? (
                         <View style={{ flexDirection: 'row', gap: 18, flexWrap: 'wrap' }}>
                           {conQr ? (
-                            <Pressable onPress={() => compartir(enlaceDeEncuesta(s.token), `Encuesta · ${s.nombre}`)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                            <Tocable onPress={() => compartir(enlaceDeEncuesta(s.token), `Encuesta · ${s.nombre}`)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                               <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Compartir el enlace</Text>
-                            </Pressable>
+                            </Tocable>
                           ) : null}
                           {conTablet ? (
-                            <Pressable onPress={() => compartir(enlaceDeEncuesta(s.token, true), `Tablet · ${s.nombre}`)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                            <Tocable onPress={() => compartir(enlaceDeEncuesta(s.token, true), `Tablet · ${s.nombre}`)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                               <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Enlace de la tablet</Text>
-                            </Pressable>
+                            </Tocable>
                           ) : null}
                         </View>
                       ) : null}
@@ -194,9 +195,9 @@ export default function AvanceEncuesta() {
                           asignando === i.id
                             ? <AsignarFicha incentivo={i} onCancelar={() => setAsignando(null)} onListo={() => { setAsignando(null); cargar(); }} />
                             : (
-                              <Pressable onPress={() => setAsignando(i.id)} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
+                              <Tocable onPress={() => setAsignando(i.id)} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
                                 <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>Asignar ficha</Text>
-                              </Pressable>
+                              </Tocable>
                             )
                         ) : null}
                       </View>

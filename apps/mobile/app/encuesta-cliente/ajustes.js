@@ -9,7 +9,7 @@
 // tabla con el token del QR de cada una. Sólo se edita en borrador y con
 // permiso; si no, se ve igual, sin controles. Las cuentas son del núcleo.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, ScrollView, Switch, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -26,6 +26,7 @@ import { Aviso, Campo, Opciones, Seccion } from '../../componentes/formulario/Pi
 import FechaOpcional from '../../componentes/torogoz/bodega/FechaOpcional';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo } from '../../componentes/Progreso';
+import Tocable from '../../componentes/Tocable';
 
 const RETARDO = 900;
 const ESTADO_GUARDADO = { listo: 'Guardado', pendiente: 'Sin guardar…', guardando: 'Guardando…', error: 'No se guardó' };
@@ -153,13 +154,13 @@ export default function AjustesEncuesta() {
                   <View style={{ gap: 6 }}>
                     <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Para un margen de ±5% con 95% de confianza: ${porSala ? `${sugerida} en total (cada sucursal por separado)` : `${sugerida ?? '—'} respuestas`}`}</Text>
                     {porSala ? (
-                      <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); cambiarSucursales(conMetasSugeridas(sucursales, poblacion)); }} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
+                      <Tocable onPress={() => { Haptics.selectionAsync().catch(() => {}); cambiarSucursales(conMetasSugeridas(sucursales, poblacion)); }} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
                         <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Usar las sugeridas</Text>
-                      </Pressable>
+                      </Tocable>
                     ) : sugerida ? (
-                      <Pressable onPress={() => set('meta_total')(sugerida)} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
+                      <Tocable onPress={() => set('meta_total')(sugerida)} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
                         <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>{`Usar ${sugerida}`}</Text>
-                      </Pressable>
+                      </Tocable>
                     ) : null}
                   </View>
                 ) : null}

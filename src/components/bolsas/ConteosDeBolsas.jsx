@@ -6,6 +6,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { DataTable, DataRow, DataCell } from '../common/DataTable';
 import LiquidModal from '../common/LiquidModal';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { totalesDeConteos } from '@nucleo/utils/depositoDeEfectivo';
 // El rango de días vive en `etapas` porque también lo arma el motor para el
 // rótulo de la ranura de la píldora, y este archivo se carga en diferido.
 import { rangoDeDias } from '../../views/bolsas/etapas';
@@ -544,14 +545,7 @@ export default function ConteosDeBolsas({
        descuadradas ya resueltas no son trabajo pendiente. Es el mismo criterio
        que la columna «Sin resolver» y que la baldosa del carril — tres sitios
        de la misma pantalla contando lo mismo. */
-    const totales = useMemo(() => filas.reduce((a, c) => ({
-        contado: a.contado + Number(c.total_contado || 0),
-        abiertas: a.abiertas + Math.max(0, Number(c.descuadradas || 0) - Number(c.resueltas || 0)),
-        /* Lo EXPLICADO del período. Ya no arma un aviso —ver el comentario de
-           abajo— pero se queda calculado: es una línea, y el día que alguien
-           quiera la cifra del mes ya está. */
-        justificado: a.justificado + Number(c.justificado || 0),
-    }), { contado: 0, abiertas: 0, justificado: 0 }), [filas]);
+    const totales = useMemo(() => totalesDeConteos(filas), [filas]);
 
     return (
         <section className="space-y-2">

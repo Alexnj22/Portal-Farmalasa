@@ -10,7 +10,7 @@
 // sumar el pedido salen del núcleo (`reservasDeSala`). `todas`: todas las salas
 // (la pestaña de Ofertas para clientes); si no, la sala de quien la abre.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Text, View } from 'react-native';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
   cambiarEstadoReserva, codigoDeReserva, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, mensajeDeReservaLista, whatsappDe,
@@ -25,6 +25,7 @@ import { Pildora } from '../avisos/Piezas';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
 import { fallo, listo, trabajando } from '../Progreso';
+import Tocable from '../Tocable';
 
 const REFRESCO_MS = 2 * 60 * 1000;
 
@@ -128,24 +129,24 @@ export default function Reservas({ sala, todas = false, recarga }) {
               </View>
               <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
                 {r.estado === 'pendiente' ? (
-                  <Pressable disabled={ocupada === r.id} onPress={() => mover(r, 'lista')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                  <Tocable disabled={ocupada === r.id} onPress={() => mover(r, 'lista')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                     <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '700' }}>Apartar y avisar</Text>
-                  </Pressable>
+                  </Tocable>
                 ) : (
                   <>
                     {!r.tiene_app ? (
-                      <Pressable onPress={() => avisarPorWhatsapp(r)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                      <Tocable onPress={() => avisarPorWhatsapp(r)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                         <Text style={{ color: MARCA.verde, fontSize: 15, fontWeight: '600' }}>Avisar por WhatsApp</Text>
-                      </Pressable>
+                      </Tocable>
                     ) : null}
-                    <Pressable disabled={ocupada === r.id} onPress={() => mover(r, 'retirada')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                    <Tocable disabled={ocupada === r.id} onPress={() => mover(r, 'retirada')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                       <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '700' }}>Retirada</Text>
-                    </Pressable>
+                    </Tocable>
                   </>
                 )}
-                <Pressable disabled={ocupada === r.id} onPress={() => mover(r, 'cancelada')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                <Tocable disabled={ocupada === r.id} onPress={() => mover(r, 'cancelada')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                   <Text style={{ color: MARCA.rojo, fontSize: 15, fontWeight: '600' }}>Cancelar</Text>
-                </Pressable>
+                </Tocable>
               </View>
             </View>
           </Vidrio>

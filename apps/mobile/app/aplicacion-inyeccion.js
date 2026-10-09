@@ -55,7 +55,7 @@ function Contador({ etiqueta, valor, min = 0, max = 99, onCambiar }) {
 function Venta({ v, activa, onElegir }) {
   const agotada = Number(v.disponibles) <= 0;
   return (
-    <Pressable onPress={agotada ? undefined : onElegir} disabled={agotada}>
+    <Pressable onPress={agotada ? undefined : onElegir} disabled={agotada} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }] })}>
       <Vidrio radio={16} interactivo={!agotada} tinte={activa ? 'rgba(52,120,246,0.18)' : undefined}>
         <View style={{ padding: 12, gap: 4, opacity: agotada ? 0.5 : 1 }}>
           <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{v.cliente || 'Sin nombre'}</Text>
@@ -233,7 +233,7 @@ export default function AplicacionInyeccion() {
                 <Venta v={venta} activa onElegir={() => {}} />
                 <BotonGrande texto="Cambiar venta" borde onPress={() => { setVentaId(null); setVentaExterna(null); setCuantas({}); setMezcla(false); }} />
                 {(venta.renglones || []).filter((r) => r.disponibles > 0).length >= 2 ? (
-                  <Pressable onPress={() => setMezcla((m) => !m)} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 40 }}>
+                  <Pressable onPress={() => setMezcla((m) => !m)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 40, opacity: pressed ? 0.55 : 1 })}>
                     <Text style={{ color: mezcla ? MARCA.verde : colorSistema.texto2, fontSize: 20 }}>{mezcla ? '☑' : '☐'}</Text>
                     <Text style={{ color: colorSistema.texto, fontSize: 15 }}>Se mezclan en la misma jeringa</Text>
                   </Pressable>
@@ -255,7 +255,7 @@ export default function AplicacionInyeccion() {
                               const activa = dosis[r.linea_num] != null && Number(dosis[r.linea_num]) === Number(d);
                               return (
                                 <Pressable key={d} onPress={() => { setDosis((x) => ({ ...x, [r.linea_num]: d })); setCuantas((q) => ({ ...q, [r.linea_num]: Math.min(q[r.linea_num] || 0, n) })); }}
-                                  style={{ minHeight: 36, paddingHorizontal: 12, borderRadius: 18, justifyContent: 'center', backgroundColor: activa ? MARCA.azul : 'rgba(127,127,127,0.18)' }}>
+                                  style={({ pressed }) => ({ minHeight: 36, paddingHorizontal: 12, borderRadius: 18, justifyContent: 'center', backgroundColor: activa ? MARCA.azul : 'rgba(127,127,127,0.18)', opacity: pressed ? 0.6 : 1 })}>
                                   <Text style={{ color: activa ? '#fff' : colorSistema.texto, fontSize: 13, fontWeight: '700' }}>{`${fmtMl(d)} ml · ${n}`}</Text>
                                 </Pressable>
                               );
@@ -264,7 +264,7 @@ export default function AplicacionInyeccion() {
                         ) : null}
                         {mezcla ? (
                           <Pressable onPress={() => setEnMezcla((s) => { const x = new Set(s); if (x.has(r.linea_num)) x.delete(r.linea_num); else x.add(r.linea_num); return x; })}
-                            style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 36 }}>
+                            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 36, opacity: pressed ? 0.55 : 1 })}>
                             <Text style={{ color: enMezcla.has(r.linea_num) ? MARCA.verde : colorSistema.texto2, fontSize: 18 }}>{enMezcla.has(r.linea_num) ? '☑' : '☐'}</Text>
                             <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Entra en la mezcla</Text>
                           </Pressable>
@@ -286,13 +286,13 @@ export default function AplicacionInyeccion() {
                 {ficha ? (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{`Ficha: ${ficha.name}`}</Text>
-                    <Pressable onPress={() => { setFicha(null); setBuscaFicha(''); }}><Text style={{ color: MARCA.rojo, fontWeight: '700' }}>Quitar</Text></Pressable>
+                    <Pressable onPress={() => { setFicha(null); setBuscaFicha(''); }}><Text style={({ pressed }) => ({ color: MARCA.rojo, fontWeight: '700', opacity: pressed ? 0.55 : 1 })}>Quitar</Text></Pressable>
                   </View>
                 ) : (
                   <>
                     <Campo multiline={false} value={buscaFicha} onChangeText={setBuscaFicha} placeholder="Ficha del cliente (opcional): nombre, DUI o teléfono" />
                     {buscaFicha.trim().length >= 3 ? fichas.map((f) => (
-                      <Pressable key={f.id} onPress={() => setFicha(f)} style={{ minHeight: 40, justifyContent: 'center' }}>
+                      <Pressable key={f.id} onPress={() => setFicha(f)} style={({ pressed }) => ({ minHeight: 40, justifyContent: 'center', opacity: pressed ? 0.55 : 1 })}>
                         <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{`${f.name}${f.dui ? ` · ${f.dui}` : ''}`}</Text>
                       </Pressable>
                     )) : null}

@@ -4,7 +4,7 @@
 // tocaron un botón (tocar el número abre quién la vio), hasta cuándo se ve, y
 // —con permiso— publicar, retirar, publicar otras 24 horas, editar y borrar.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Image, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, Image, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { borrarHistoria, fetchHistorias, fetchVistasHistorias, publicarHistoria } from '@nucleo/data/ofertasClientes';
@@ -20,6 +20,7 @@ import Vidrio from '../Vidrio';
 import { colorDeVariante } from '../colorDeVariante';
 import { fallo, listo } from '../Progreso';
 import { guardar } from '../comercial/elegido';
+import Tocable from '../Tocable';
 
 export const ESTADOS_DE_HISTORIA = [
   { id: 'todas', label: 'Todas' }, { id: 'vigente', label: 'En la app' }, { id: 'borrador', label: 'Sin publicar' }, { id: 'terminada', label: 'Terminó' },
@@ -90,7 +91,7 @@ export default function Historias({ busqueda, estado, puedeEditar, recarga }) {
         const vence = venceHistoria(h);
         const v = vistas.get(h.id);
         return (
-          <Pressable key={h.id} onPress={() => (puedeEditar ? abrirHistoria(h) : null)} onLongPress={() => menu(h)} delayLongPress={350}
+          <Tocable key={h.id} onPress={() => (puedeEditar ? abrirHistoria(h) : null)} onLongPress={() => menu(h)} delayLongPress={350}
             style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
             <Vidrio radio={18} interactivo>
               <View style={{ padding: 12, flexDirection: 'row', gap: 12 }}>
@@ -105,14 +106,14 @@ export default function Historias({ busqueda, estado, puedeEditar, recarga }) {
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{h.boton ? `Botón: ${h.boton}` : 'Sin botón'}</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{vence ? `Se ve hasta el ${fechaTexto(vence, { day: 'numeric', month: 'short' })} · ${hora12(vence)}` : 'Sin publicar'}</Text>
                   {v?.vistas ? (
-                    <Pressable onPress={() => verQuienes(h)} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 32, justifyContent: 'center' }}>
+                    <Tocable onPress={() => verQuienes(h)} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 32, justifyContent: 'center' }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{`${v.vistas.toLocaleString('es-SV')} la vieron${v.tocaron ? ` · ${v.tocaron} tocaron` : ''} ›`}</Text>
-                    </Pressable>
+                    </Tocable>
                   ) : <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Nadie la ha visto todavía</Text>}
                 </View>
               </View>
             </Vidrio>
-          </Pressable>
+          </Tocable>
         );
       })}
       {!filas.length && !error ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Sin historias con ese filtro</Text> : null}

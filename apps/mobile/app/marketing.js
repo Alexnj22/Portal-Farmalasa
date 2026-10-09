@@ -23,7 +23,7 @@
 // objetivo y el presupuesto de pauta del mes (el presupuesto, quien aprueba) y
 // los Ajustes del calendario (`marketing-ajustes`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import {
@@ -53,6 +53,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import { colorDeVariante } from '../componentes/colorDeVariante';
 import { guardarPieza } from '../componentes/marketing/elegida';
 import { fallo, listo } from '../componentes/Progreso';
+import Tocable from '../componentes/Tocable';
 
 export default function Marketing() {
   const { hasPermission, user } = useAuth();
@@ -200,9 +201,9 @@ export default function Marketing() {
                 </FilaDeKpis>
                 {fila.objetivo ? <View style={{ marginHorizontal: 20 }}><Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Objetivo del mes: ${fila.objetivo}`}</Text></View> : null}
                 {puedeEditar || puedeAprobar ? (
-                  <Pressable onPress={datosDelMes} hitSlop={8} style={{ marginHorizontal: 20, minHeight: 32, justifyContent: 'center' }}>
+                  <Tocable onPress={datosDelMes} hitSlop={8} style={{ marginHorizontal: 20, minHeight: 32, justifyContent: 'center' }}>
                     <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{puedeAprobar ? 'Objetivo y presupuesto del mes' : 'Objetivo del mes'}</Text>
-                  </Pressable>
+                  </Tocable>
                 ) : null}
                 {puedeEnviarMes || puedeAprobarMes ? (
                   <View style={{ marginHorizontal: 16, flexDirection: 'row', gap: 10 }}>
@@ -220,7 +221,7 @@ export default function Marketing() {
                       const imagenes = (p.archivos || []).filter((a) => tipoDeArchivo(a) === 'imagen' && datos.firmas.get(a.url));
                       const abiertaEsta = abierta === p.id;
                       return (
-                        <Pressable key={p.id} onPress={() => abrirPieza(p)} onLongPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(abiertaEsta ? null : p.id); }} delayLongPress={300} style={{ marginHorizontal: 16 }}>
+                        <Tocable key={p.id} onPress={() => abrirPieza(p)} onLongPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(abiertaEsta ? null : p.id); }} delayLongPress={300} style={{ marginHorizontal: 16 }}>
                           <Vidrio radio={18} interactivo>
                             <View style={{ padding: 12, gap: 6 }}>
                               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -241,7 +242,7 @@ export default function Marketing() {
                               ) : null}
                             </View>
                           </Vidrio>
-                        </Pressable>
+                        </Tocable>
                       );
                     })}
                   </View>
@@ -282,17 +283,17 @@ export default function Marketing() {
                         <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
                           {s.estado === 'nueva' ? (
                             <>
-                              <Pressable onPress={() => responder(s, 'aceptada')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                              <Tocable onPress={() => responder(s, 'aceptada')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                                 <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '700' }}>{s.tipo === 'impreso' ? 'Aceptar' : 'Aceptar y planificar'}</Text>
-                              </Pressable>
-                              <Pressable onPress={() => responder(s, 'rechazada')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                              </Tocable>
+                              <Tocable onPress={() => responder(s, 'rechazada')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                                 <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '600' }}>Rechazar</Text>
-                              </Pressable>
+                              </Tocable>
                             </>
                           ) : (
-                            <Pressable onPress={() => responder(s, 'entregada')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                            <Tocable onPress={() => responder(s, 'entregada')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                               <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '700' }}>Marcar entregada</Text>
-                            </Pressable>
+                            </Tocable>
                           )}
                         </View>
                       ) : null}

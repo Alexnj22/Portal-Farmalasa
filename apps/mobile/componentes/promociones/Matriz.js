@@ -4,7 +4,7 @@
 // medir contra otro mes («estás simulando»); un mes cerrado muestra los
 // números congelados que se pagaron, no un recálculo de hoy.
 import { useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { fetchPromocionLaboratorio } from '@nucleo/data/promociones';
 import { csvMatrizDeLaboratorio, fmtMoneda, fmtUnidades, mesesRecientes, rotuloMes } from '@nucleo/utils/promocionesUtils';
@@ -18,6 +18,7 @@ import Vidrio from '../Vidrio';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
 import { MARCA } from '../inicio/marca';
 import { Barra, TresDatos } from './Piezas';
+import Tocable from '../Tocable';
 
 export default function Matriz({ promocionId }) {
   const [mes, setMes] = useState('');
@@ -58,16 +59,16 @@ export default function Matriz({ promocionId }) {
       {datos.congelado ? <Aviso texto={`Mes cerrado: estos números quedaron congelados al terminar ${rotuloMes(datos.year_month)} — son los que se pagaron.`} /> : null}
       {datos.simulacion ? <Aviso tono="cuidado" texto={`Estás simulando: así habría quedado si hubiera corrido en ${rotuloMes(datos.mes_medido)}. La promoción es de ${rotuloMes(datos.year_month)} y no cambió.`} /> : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Pressable onPress={elegirMes} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+        <Tocable onPress={elegirMes} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
           <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>{`Medido contra ${rotuloMes(datos.mes_medido || datos.year_month)} ▾`}</Text>
-        </Pressable>
+        </Tocable>
         {salas.length ? (
-          <Pressable hitSlop={8} accessibilityRole="button" onPress={() => {
+          <Tocable hitSlop={8} accessibilityRole="button" onPress={() => {
             const c = csvMatrizDeLaboratorio(datos, promocionId);
             compartirCsv({ ...c, modulo: 'promociones' }).catch((e) => fallo('No se pudo compartir', e?.message || ''));
           }}>
             <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Exportar</Text>
-          </Pressable>
+          </Tocable>
         ) : null}
       </View>
       <View style={{ marginHorizontal: -16 }}>

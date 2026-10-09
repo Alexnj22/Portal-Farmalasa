@@ -13,7 +13,7 @@
 // (`conTramoPorSalaYDia`) con su color y el estado. Tocar una abre
 // `corte/[id]`, donde se lee el detalle y se confirma o se descarta.
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -26,11 +26,13 @@ import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto, hoySV, mesSV, sumarDias } from '@nucleo/utils/fecha';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../componentes/Segmentos';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
-import { BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
 import Fecha from '../componentes/formulario/Fecha';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
@@ -107,12 +109,20 @@ export default function Cortes() {
   const [diferencia, setDiferencia] = useState('TODAS');
   const [texto, setTexto] = useState('');
   const [filas, setFilas] = useState(null);
+  const [error, setError] = useState('');
   const [cuantos, setCuantos] = useState(POR_PAGINA);
+  // La página siguiente se pinta sola al acercarse al final (el botón queda de respaldo).
+  const alFinal = useMasAlFinal(() => setCuantos((n) => n + POR_PAGINA));
   const [recargando, setRecargando] = useState(false);
   const [desde, hasta] = rangoDe(periodo, libre);
 
   const cargar = useCallback(async () => {
-    const r = await fetchCortes({ desde, hasta }).catch(() => null);
+    // Un fallo NO se pinta como «Nada por confirmar»: en una pantalla de caja,
+    // una lista vacía por error se lee como «todo en orden».
+    let fallo = null;
+    const r = await fetchCortes({ desde, hasta }).catch((e) => { fallo = e; return null; });
+    if (fallo) { setError(mensajeAmigable(fallo)); setFilas((f) => f ?? []); return; }
+    setError('');
     setFilas(conTramoPorSalaYDia(r || []));
     setCuantos(POR_PAGINA);
   }, [desde, hasta]);
@@ -150,7 +160,7 @@ export default function Cortes() {
         },
       }} />
       <MenuDeFiltros grupos={grupos} extra={{ icono: 'banknote', etiqueta: 'Efectivo', onPress: () => router.push('/efectivo') }} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 40 }}
+      <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 40 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
@@ -193,7 +203,13 @@ export default function Cortes() {
           </>
         ) : null}
         <Segmentos activa={estado} onCambiar={setEstado} opciones={ESTADOS} />
-        {filas == null ? null : visibles.length ? (
+        {error ? (
+          <View style={{ marginHorizontal: 16, gap: 8 }}>
+            <Aviso tono="freno" texto={`No se pudieron leer los cortes. ${error}`} />
+            <BotonGrande texto="Reintentar" borde onPress={cargar} />
+          </View>
+        ) : null}
+        {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : error ? null : visibles.length ? (
           <>
             {visibles.slice(0, cuantos).map((c) => (
               <Tarjeta key={c.id} c={c} sala={nombre(c.branch_id)} conSala={todas && !sala} conFecha={variosDias} />

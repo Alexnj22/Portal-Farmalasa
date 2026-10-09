@@ -26,6 +26,7 @@ import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { GRIS, PETROLEO, guardarElegida, useEmisor } from '../../componentes/torogoz/comercial/Piezas';
+import { useMasAlFinal } from '../../componentes/ListaPaginada';
 
 const POR_PAGINA = 40;
 
@@ -76,6 +77,8 @@ export default function CatalogoTorogoz() {
   const [buscar, setBuscar] = useState('');
   const [canal, setCanal] = useState('todos');
   const [cuantos, setCuantos] = useState(POR_PAGINA);
+  // Al acercarse al final se pinta la página siguiente sola; «Ver más» queda de respaldo.
+  const alFinal = useMasAlFinal(() => setCuantos((n) => n + POR_PAGINA));
   const [recargando, setRecargando] = useState(false);
   const pedido = useRef(0);
   const hoy = hoySV();
@@ -111,7 +114,7 @@ export default function CatalogoTorogoz() {
         },
       }} />
       <MenuDeFiltros grupos={grupos} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
+      <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />

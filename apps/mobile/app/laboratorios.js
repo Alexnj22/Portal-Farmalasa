@@ -9,8 +9,8 @@
 // sala, salas cubiertas) y cada laboratorio dice en cuántas salas está
 // ubicado. La segunda pestaña es la política de vencimiento
 // (`componentes/fiscal/PoliticaVencimiento`), editable como en el portal.
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -31,6 +31,7 @@ import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
+import { ErrorConReintento, useColumnas } from '../componentes/ListaPaginada';
 import ConAurora from '../componentes/ConAurora';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
@@ -81,6 +82,30 @@ function Editar({ lab, sala, nombreSala, inicial, onCerrar, onGuardado }) {
   );
 }
 
+// ~300 laboratorios: lista virtualizada y tarjeta memoizada.
+const TarjetaLab = memo(function TarjetaLab({ l, d, cubiertas, totalSalas, onAbrir, columnas }) {
+  const r = rotuloDeUbicacion(d);
+  return (
+    <Pressable onPress={() => onAbrir(l)}
+      style={({ pressed }) => ({ ...(columnas > 1 ? { flex: 1 / columnas } : { marginHorizontal: 16 }), marginTop: 10, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+      <Vidrio radio={18} interactivo>
+        <View style={{ padding: 12, gap: 6 }}>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{l.nombre}</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${cubiertas} de ${totalSalas} salas`}</Text>
+          </View>
+          {tieneUbicacion(d) ? (
+            <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
+              {r.sala ? <Pildora texto={r.sala} color={MARCA.azulClaro} /> : null}
+              {r.bodega ? <Pildora texto={`Bodega · ${r.bodega}`} color={MARCA.ambar} /> : null}
+            </View>
+          ) : <Text style={{ color: colorSistema.texto2, fontSize: 13, fontStyle: 'italic' }}>Sin ubicación — tocar para agregar</Text>}
+        </View>
+      </Vidrio>
+    </Pressable>
+  );
+});
+
 export default function Laboratorios() {
   const { user, getScope, hasPermission } = useAuth();
   const [pestana, setPestana] = useState('ubicaciones');
@@ -95,6 +120,7 @@ export default function Laboratorios() {
   const [seccion, setSeccion] = useState('principales');
   const [editando, setEditando] = useState(null);
   const [recargando, setRecargando] = useState(false);
+  const columnas = useColumnas();
 
   const cargar = useCallback(async () => {
     const [{ data: l, error: e1 }, { data: u, error: e2 }] = await Promise.all([fetchLaboratoriosBasic(), fetchLabLocations()]);
@@ -117,6 +143,7 @@ export default function Laboratorios() {
   const salas = useMemo(() => [...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)), [sucursales]);
   const conUbicacion = useMemo(() => (labs || []).filter((l) => tieneUbicacion(ubic[l.id]?.[sala])).length, [labs, ubic, sala]);
   const salasCubiertas = (labId) => Object.values(ubic[labId] || {}).filter(tieneUbicacion).length;
+  const abrir = useCallback((l) => { Haptics.selectionAsync().catch(() => {}); setEditando(l); }, []);
   const porSeccion = useMemo(() => {
     const c = {};
     for (const l of labs || []) { const k = seccionDeLaboratorio(l.nombre); c[k] = (c[k] || 0) + 1; }
@@ -135,49 +162,33 @@ export default function Laboratorios() {
         },
       }} />
       {grupos.length && pestana === 'ubicaciones' ? <MenuDeFiltros grupos={grupos} /> : null}
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
-        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'ubicaciones', label: 'Ubicaciones' }, { id: 'vencimiento', label: 'Política de vencimiento' }]} />
-        {pestana === 'vencimiento' ? <PoliticaVencimiento texto={texto} canEdit={hasPermission('laboratorios', 'can_edit')} /> : null}
-        {pestana === 'ubicaciones' ? (<>
-        {grupos.length ? <FiltrosActivos grupos={grupos} /> : null}
-        {labs ? (
-          <FilaDeKpis>
-            <Kpi icono="FlaskConical" rotulo="Laboratorios" valor={String(labs.length)} color={MARCA.azulClaro} apoyo={`${salas.length} salas`} />
-            <Kpi icono="Check" rotulo="Con ubicación" valor={String(conUbicacion)} color={conUbicacion === labs.length ? MARCA.verde : MARCA.ambar} apoyo={`en ${nombreSala}`} />
-          </FilaDeKpis>
-        ) : null}
-        {!q ? <Segmentos activa={seccion} onCambiar={setSeccion} opciones={SECCIONES_DE_LABORATORIO.map((s) => ({ id: s.key, label: `${s.key === 'principales' ? 'Principales' : s.key === 'insumos' ? 'Insumos' : 'Cosméticos'}${porSeccion[s.key] ? ` · ${porSeccion[s.key]}` : ''}` }))} /> : null}
-        {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {labs == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.map((l) => {
-          const d = ubic[l.id]?.[sala];
-          const r = rotuloDeUbicacion(d);
-          return (
-            <Pressable key={l.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setEditando(l); }}
-              style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-              <Vidrio radio={18} interactivo>
-                <View style={{ padding: 12, gap: 6 }}>
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
-                    <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{l.nombre}</Text>
-                    <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${salasCubiertas(l.id)} de ${salas.length} salas`}</Text>
-                  </View>
-                  {tieneUbicacion(d) ? (
-                    <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
-                      {r.sala ? <Pildora texto={r.sala} color={MARCA.azulClaro} /> : null}
-                      {r.bodega ? <Pildora texto={`Bodega · ${r.bodega}`} color={MARCA.ambar} /> : null}
-                    </View>
-                  ) : <Text style={{ color: colorSistema.texto2, fontSize: 13, fontStyle: 'italic' }}>Sin ubicación — tocar para agregar</Text>}
-                </View>
-              </Vidrio>
-            </Pressable>
-          );
-        })}
-        {labs && !visibles.length ? (
+      <FlatList key={`c${columnas}`} numColumns={columnas} columnWrapperStyle={columnas > 1 ? { gap: 10, paddingHorizontal: 16 } : undefined}
+        data={pestana === 'ubicaciones' && labs ? visibles : []} keyExtractor={(l) => String(l.id)}
+        renderItem={({ item: l }) => <TarjetaLab l={l} d={ubic[l.id]?.[sala]} cubiertas={salasCubiertas(l.id)} totalSalas={salas.length} onAbrir={abrir} columnas={columnas} />}
+        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" initialNumToRender={12} windowSize={9}
+        contentContainerStyle={{ paddingVertical: 12, paddingBottom: 48 }}
+        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}
+        ListHeaderComponent={(
+          <View style={{ gap: 10 }}>
+            <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'ubicaciones', label: 'Ubicaciones' }, { id: 'vencimiento', label: 'Política de vencimiento' }]} />
+            {pestana === 'vencimiento' ? <PoliticaVencimiento texto={texto} canEdit={hasPermission('laboratorios', 'can_edit')} /> : null}
+            {pestana === 'ubicaciones' ? (<>
+              {grupos.length ? <FiltrosActivos grupos={grupos} /> : null}
+              {labs ? (
+                <FilaDeKpis>
+                  <Kpi icono="FlaskConical" rotulo="Laboratorios" valor={String(labs.length)} color={MARCA.azulClaro} apoyo={`${salas.length} salas`} />
+                  <Kpi icono="Check" rotulo="Con ubicación" valor={String(conUbicacion)} color={conUbicacion === labs.length ? MARCA.verde : MARCA.ambar} apoyo={`en ${nombreSala}`} />
+                </FilaDeKpis>
+              ) : null}
+              {!q ? <Segmentos activa={seccion} onCambiar={setSeccion} opciones={SECCIONES_DE_LABORATORIO.map((s) => ({ id: s.key, label: `${s.key === 'principales' ? 'Principales' : s.key === 'insumos' ? 'Insumos' : 'Cosméticos'}${porSeccion[s.key] ? ` · ${porSeccion[s.key]}` : ''}` }))} /> : null}
+              {error ? <ErrorConReintento mensaje={error} onReintentar={cargar} /> : null}
+              {labs == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+            </>) : null}
+          </View>
+        )}
+        ListEmptyComponent={pestana === 'ubicaciones' && labs ? (
           <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Ningún laboratorio con esa búsqueda</Text>
-        ) : null}
-        </>) : null}
-      </ScrollView>
+        ) : null} />
       {editando ? (
         <Editar lab={editando} sala={sala} nombreSala={nombreSala}
           inicial={{ ...ubicacionVacia(), ...Object.fromEntries(Object.entries(ubic[editando.id]?.[sala] || {}).map(([k, v]) => [k, v ?? ''])) }}

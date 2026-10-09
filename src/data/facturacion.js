@@ -6,6 +6,15 @@
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { anotar, conBitacora } from './audit';
+// Las listas de «ya resuelto» (anulaciones, pagos confirmados, observaciones)
+// crecen para siempre y se usan para RESTAR de las colas: cortadas en 1000,
+// lo resuelto después de la fila 1000 volvería a aparecer como pendiente, sin
+// error. Se piden enteras (`completo`: una lista a medias es peor que ninguna)
+// y se devuelven con la forma de siempre, `{ data, error }`, que es la que
+// esperan el portal y la app.
+const enteras = (consulta) => fetchAllRows(consulta, { completo: true })
+    .then((data) => (data == null ? { data: null, error: new Error('No se pudo leer la lista completa.') } : { data, error: null }));
+
 
 /**
  * Termina el trámite pendiente ante Hacienda: invalida las anuladas que no se
@@ -223,8 +232,8 @@ export function fetchInvoiceObservations(desde, hasta, filterBranch) {
 // factura observada suele estar además pendiente de sello; compartirla haría
 // que "ya revisé la suma" la sacara de la cola con fecha límite de Hacienda.
 export function fetchObservationResolutions(columns) {
-    return supabase.from('sales_observation_resolutions')
-        .select(columns).order('resolved_at', { ascending: false });
+    return enteras(() => supabase.from('sales_observation_resolutions')
+        .select(columns).order('resolved_at', { ascending: false }).order('id'));
 }
 
 // Las funciones que resuelven algo fiscal ANOTAN su propia entrada en la
@@ -255,7 +264,7 @@ export function fetchInvoicesByIds(ids, columns) {
 // ── Resoluciones de anulación (sales_invoice_resolutions) ──────────────────
 
 export function fetchInvoiceResolutionIds() {
-    return supabase.from('sales_invoice_resolutions').select('invoice_id');
+    return enteras(() => supabase.from('sales_invoice_resolutions').select('invoice_id').order('id'));
 }
 
 // ── Solventado internamente: lo que NO se tramita ante Hacienda ─────────────
@@ -380,7 +389,7 @@ export async function searchBranchInvoices(branchId, ambito, texto, codigos = []
 }
 
 export function fetchInvoiceResolutionsHistorial(columns) {
-    return supabase.from('sales_invoice_resolutions').select(columns).order('resolved_at', { ascending: false });
+    return enteras(() => supabase.from('sales_invoice_resolutions').select(columns).order('resolved_at', { ascending: false }).order('id'));
 }
 
 /**
@@ -454,13 +463,13 @@ export function fetchNonCashInvoices(filterBranch, fini, ffin, nonCashTypes) {
 }
 
 export function fetchPaymentConfirmationIds() {
-    return supabase.from('sales_payment_confirmations').select('invoice_id');
+    return enteras(() => supabase.from('sales_payment_confirmations').select('invoice_id').order('id'));
 }
 
 export function fetchPaymentConfirmationsHistorial() {
-    return supabase.from('sales_payment_confirmations')
+    return enteras(() => supabase.from('sales_payment_confirmations')
         .select('id, invoice_id, confirmed_by, confirmed_by_photo, confirmed_at, notes, proof_url, tipo_pago, branch_id')
-        .order('confirmed_at', { ascending: false });
+        .order('confirmed_at', { ascending: false }).order('id'));
 }
 
 export function insertPaymentConfirmation(payload, contexto = {}) {

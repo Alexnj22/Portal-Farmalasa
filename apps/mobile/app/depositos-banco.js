@@ -6,7 +6,7 @@
 // La sección entera va detrás de `bolsas_ver_montos`, como en el portal: un
 // depósito sin sus montos no contesta ninguna de las preguntas por las que
 // existe (cuadrar contra el estado de cuenta, seguir el remanente).
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -14,8 +14,9 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchDepositos } from '@nucleo/data/bolsas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
-import { rangoDeDiasDelDeposito } from '@nucleo/utils/depositoDeEfectivo';
+import { rangoDeDiasDelDeposito, totalesDeDepositos } from '@nucleo/utils/depositoDeEfectivo';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
 import Segmentos from '../componentes/Segmentos';
@@ -24,6 +25,8 @@ import { MARCA } from '../componentes/inicio/marca';
 import { recordarDeposito } from '../componentes/caja/depositoElegido';
 
 const RANGOS = [{ id: '30', label: '30 días' }, { id: '90', label: '90 días' }, { id: 'todo', label: 'Todo' }];
+// «Todo» crece con cada cierre: se pinta de a 30.
+const POR_PAGINA = 30;
 const corta = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'short' }) : '');
 
 export default function DepositosBanco() {
@@ -32,6 +35,10 @@ export default function DepositosBanco() {
   const [rango, setRango] = useState('30');
   const [lista, setLista] = useState(null);
   const [recargando, setRecargando] = useState(false);
+  const [cuantos, setCuantos] = useState(POR_PAGINA);
+  // La página siguiente se pinta sola al acercarse al final (el botón queda de respaldo).
+  const alFinal = useMasAlFinal(() => setCuantos((n) => n + POR_PAGINA));
+  const totales = useMemo(() => totalesDeDepositos(lista), [lista]);
 
   const cargar = useCallback(async () => {
     const desde = rango === 'todo' ? null : sumarDias(hoySV(), -Number(rango));
@@ -48,14 +55,21 @@ export default function DepositosBanco() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Depósitos', headerLargeTitle: true }} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
+      <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos opciones={RANGOS} activa={rango} onCambiar={(v) => { setLista(null); setRango(v); }} />
+        <Segmentos opciones={RANGOS} activa={rango} onCambiar={(v) => { setLista(null); setCuantos(POR_PAGINA); setRango(v); }} />
         <View style={{ marginHorizontal: 16, gap: 10 }}>
           {lista == null ? <ActivityIndicator style={{ marginTop: 30 }} /> : !lista.length ? (
             <Aviso texto="Sin depósitos en estas fechas." />
-          ) : lista.map((d) => {
+          ) : (<>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4, fontVariant: ['tabular-nums'] }}>
+              {`${lista.length} ${lista.length === 1 ? 'cierre' : 'cierres'} · al banco ${formatMoney(totales.banco)}${totales.efectivo >= 0.01 ? ` · en mano ${formatMoney(totales.efectivo)}` : ''}`}
+            </Text>
+            {totales.sinBoleta > 0 ? (
+              <Aviso tono="freno" texto={`${totales.sinBoleta === 1 ? 'Un depósito al banco no tiene su boleta' : `${totales.sinBoleta} depósitos al banco no tienen su boleta`} (${formatMoney(totales.sinBoletaMonto)}). Se anexa abriendo el cierre.`} />
+            ) : null}
+            {lista.slice(0, cuantos).map((d) => {
             const anulado = !!d.anulado_at;
             return (
               <Pressable key={d.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); recordarDeposito(d); router.push({ pathname: '/deposito/[id]', params: { id: String(d.id) } }); }}>
@@ -81,6 +95,8 @@ export default function DepositosBanco() {
               </Pressable>
             );
           })}
+            {lista.length > cuantos ? <BotonGrande borde texto={`Ver ${Math.min(POR_PAGINA, lista.length - cuantos)} más · quedan ${lista.length - cuantos}`} onPress={() => setCuantos((n) => n + POR_PAGINA)} /> : null}
+          </>)}
           {lista?.length ? <BotonGrande texto="Finalizar el efectivo" borde onPress={() => router.push('/finalizar-efectivo')} /> : null}
         </View>
       </ScrollView>

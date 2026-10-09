@@ -33,6 +33,7 @@ import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import Segmentos from '../componentes/Segmentos';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -235,6 +236,8 @@ export default function Inventario() {
       opciones: [{ id: 'laboratorio', label: 'Laboratorio' }, { id: 'descripcion', label: 'Producto' }, { id: 'unidades', label: 'Más unidades' }] },
   ];
   const quedan = datos.total > datos.filas.length;
+  // Al llegar abajo pide la página siguiente sola; «Ver más» queda de respaldo.
+  const alFinal = useMasAlFinal(() => setPagina((p) => p + 1), quedan && !cargando);
   // Cuándo se actualizó la sala (la última corrida buena del inventario). Con
   // todas las salas, la que más tiempo lleva sin actualizarse.
   const sincronia = (() => {
@@ -254,7 +257,7 @@ export default function Inventario() {
         },
       }} />
       <MenuDeFiltros grupos={grupos} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
+      <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
         <FiltrosActivos grupos={grupos} />

@@ -17,7 +17,7 @@
 // se rehace sólo cuando entran comentarios nuevos), las rondas de la encuesta,
 // y los accesos a Ajustes (`ajustes`) y al Avance con sus enlaces (`avance`).
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
   fetchComentarios, fetchEncuesta, fetchEventos, fetchPersonas, fetchProblemas, fetchRespuestasParaExportar, fetchResultados, fetchResumen, fetchRondas, guardarResumen,
@@ -42,6 +42,7 @@ import CicloDeEncuesta from '../../componentes/encuestas/Ciclo';
 import PreguntaPorPregunta from '../../componentes/encuestas/Distribucion';
 import { compartirCsv } from '../../componentes/fiscal/csv';
 import { fallo, trabajando, cerrarProgreso } from '../../componentes/Progreso';
+import Tocable from '../../componentes/Tocable';
 
 const EVENTO = {
   creada: 'creó la encuesta', enviada: 'la envió a revisión', aprobada: 'la aprobó', rechazada: 'la devolvió con cambios',
@@ -181,12 +182,12 @@ export default function EncuestaCliente() {
             ) : datos ? (
               <>
                 <View style={{ marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-                  <Pressable onPress={elegirSala} hitSlop={8} style={{ flex: 1, minHeight: 36, justifyContent: 'center' }}>
+                  <Tocable onPress={elegirSala} hitSlop={8} style={{ flex: 1, minHeight: 36, justifyContent: 'center' }}>
                     <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>{`${sala ? salasConRespuestas.find((x) => Number(x.branch_id) === sala)?.nombre ?? 'Sucursal' : 'Todas las sucursales'} ▾`}</Text>
-                  </Pressable>
-                  <Pressable onPress={exportar} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                  </Tocable>
+                  <Tocable onPress={exportar} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                     <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Exportar CSV</Text>
-                  </Pressable>
+                  </Tocable>
                 </View>
                 <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'resultados', label: 'Resultados' }, { id: 'comentarios', label: comentarios?.length ? `Comentarios · ${comentarios.length}` : 'Comentarios' }]} />
                 {vista === 'resultados' ? (
@@ -248,9 +249,9 @@ export default function EncuestaCliente() {
                         <View style={{ padding: 12, gap: 6 }}>
                           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>Resumen de los comentarios</Text>
-                            <Pressable disabled={!estResumen.puede || resumiendo} onPress={resumir} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center', opacity: !estResumen.puede || resumiendo ? 0.45 : 1 }}>
+                            <Tocable disabled={!estResumen.puede || resumiendo} onPress={resumir} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center', opacity: !estResumen.puede || resumiendo ? 0.45 : 1 }}>
                               <Text style={{ color: MARCA.violetaClaro, fontSize: 14, fontWeight: '700' }}>{resumiendo ? 'Resumiendo…' : estResumen.boton}</Text>
-                            </Pressable>
+                            </Tocable>
                           </View>
                           {estResumen.ayuda ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{estResumen.ayuda}</Text> : null}
                           {resumen?.texto ? (

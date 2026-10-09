@@ -10,7 +10,7 @@
 // modos». Forma, validación y lo que se manda salen del núcleo, los mismos del
 // portal. Guarda borrador con el id en la clave.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, ScrollView, Switch, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchDescuento, fetchPreciosDeProductos, guardarDescuento } from '@nucleo/data/descuentos';
@@ -32,6 +32,7 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import { leer } from '../../componentes/comercial/elegido';
 import { volver } from '../../componentes/volver';
+import Tocable from '../../componentes/Tocable';
 
 export default function CorregirDescuento() {
   const { id } = useLocalSearchParams();
@@ -146,9 +147,9 @@ export default function CorregirDescuento() {
                           {!c.precio ? 'Sin precio registrado' : `${formatMoney(c.precio)} → ${formatMoney(c.queda)}${c.costo ? ` · cuesta ${formatMoney(c.costo)}` : ''}${c.bajoCosto ? ` · pierde ${formatMoney(c.pierde)} por unidad` : ''}`}
                         </Text>
                       </View>
-                      <Pressable onPress={() => quitar(p.id)} hitSlop={8} accessibilityLabel={`Quitar ${p.nombre}`} style={{ minHeight: 40, justifyContent: 'center' }}>
+                      <Tocable onPress={() => quitar(p.id)} hitSlop={8} accessibilityLabel={`Quitar ${p.nombre}`} style={{ minHeight: 40, justifyContent: 'center' }}>
                         <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '600' }}>Quitar</Text>
-                      </Pressable>
+                      </Tocable>
                     </View>
                   );
                 })}
@@ -156,9 +157,9 @@ export default function CorregirDescuento() {
                 {resultados.map((p) => {
                   const ya = f.productos.some((x) => x.id === p.id);
                   return (
-                    <Pressable key={p.id} disabled={ya} onPress={() => agregar(p)} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: ya ? 0.45 : pressed ? 0.6 : 1 })}>
+                    <Tocable key={p.id} disabled={ya} onPress={() => agregar(p)} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: ya ? 0.45 : pressed ? 0.6 : 1 })}>
                       <Text style={{ color: colorSistema.texto, fontSize: 15 }} numberOfLines={2}>{`${p.nombre}${ya ? ' · ya está' : ''}`}</Text>
-                    </Pressable>
+                    </Tocable>
                   );
                 })}
               </Seccion>

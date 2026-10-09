@@ -21,6 +21,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../../componentes/Segmentos';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { useMasAlFinal } from '../../componentes/ListaPaginada';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Seccion } from '../../componentes/formulario/Piezas';
 import { Grilla, Pildora } from '../../componentes/avisos/Piezas';
@@ -44,6 +45,7 @@ export default function PuntosCliente() {
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
   const [mostrar, setMostrar] = useState(30);
+  const alFinal = useMasAlFinal(() => setMostrar((n) => n + 30));
   const [filtro, setFiltro] = useState('todos');
   const [mesElegido, setMesElegido] = useState(null);
   const [unidad, setUnidad] = useState('puntos');
@@ -109,7 +111,7 @@ export default function PuntosCliente() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Puntos', headerLargeTitle: false }} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }}
+      <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <Aviso tono="freno" texto={error} /> : null}
@@ -165,7 +167,7 @@ export default function PuntosCliente() {
             ) : null}
             <Segmentos margen={0} activa={filtro} onCambiar={(v) => { setFiltro(v); setMostrar(30); }} opciones={FILTROS_DE_MOVIMIENTO.map((f) => ({ id: f.value, label: f.label }))} />
             {mesElegido ? (
-              <Pressable onPress={() => setMesElegido(null)} style={{ alignSelf: 'flex-start' }} accessibilityLabel="Quitar el filtro del mes">
+              <Pressable onPress={() => setMesElegido(null)} style={({ pressed }) => ({ alignSelf: 'flex-start', opacity: pressed ? 0.55 : 1 })} accessibilityLabel="Quitar el filtro del mes">
                 <Pildora texto={`${mesLargo(mesElegido)}  ✕`} color={MARCA.azulClaro} />
               </Pressable>
             ) : null}

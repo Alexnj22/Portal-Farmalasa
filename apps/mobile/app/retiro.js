@@ -46,12 +46,12 @@ function Bulto({ b, primero, onSoltar, onTicket }) {
         </Text>
       </View>
       {onTicket && b.codigo ? (
-        <Pressable hitSlop={8} onPress={onTicket} style={{ minHeight: 44, justifyContent: 'center' }}>
+        <Pressable hitSlop={8} onPress={onTicket} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.55 : 1 })}>
           <Text style={{ color: MARCA.azulClaro, fontSize: 15 }}>Ticket</Text>
         </Pressable>
       ) : null}
       {onSoltar ? (
-        <Pressable hitSlop={8} onPress={onSoltar} style={{ minHeight: 44, justifyContent: 'center' }}>
+        <Pressable hitSlop={8} onPress={onSoltar} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.55 : 1 })}>
           <Text style={{ color: MARCA.rojo, fontSize: 15 }}>Soltar</Text>
         </Pressable>
       ) : null}

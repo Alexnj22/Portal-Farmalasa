@@ -29,6 +29,7 @@ import Segmentos from '../componentes/Segmentos';
 import PorAsignar from '../componentes/puntos/PorAsignar';
 import Traspasos from '../componentes/puntos/Traspasos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -40,7 +41,7 @@ import Resumen, { COLOR_ACUMULADO, COLOR_CANJEADO } from '../componentes/puntos/
 const COLOR = { danger: MARCA.rojo, warning: MARCA.ambar, info: MARCA.azulClaro };
 const POR_PAGINA = 30;
 
-function Consulta({ busqueda, orden, dir }) {
+function Consulta({ busqueda, orden, dir, masRef }) {
   const [datos, setDatos] = useState({ total: 0, filas: [] });
   const [desde, setDesde] = useState(0);
   const [cargando, setCargando] = useState(true);
@@ -59,6 +60,12 @@ function Consulta({ busqueda, orden, dir }) {
       .catch((e) => { if (yo === pedido.current) setError(mensajeAmigable(e)); })
       .finally(() => { if (yo === pedido.current) setCargando(false); });
   }, [busqueda, desde, orden, dir]);
+  // El ScrollView de la pantalla pide la página siguiente al acercarse al final.
+  useEffect(() => {
+    if (!masRef) return undefined;
+    masRef.current = () => { if (!cargando && datos.total > datos.filas.length) setDesde(datos.filas.length); };
+    return () => { masRef.current = null; };
+  });
   return (
     <>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
@@ -135,6 +142,8 @@ function Avisos() {
 
 export default function Puntos() {
   const { hasPermission } = useAuth();
+  const masConsulta = useRef(null);
+  const alFinal = useMasAlFinal(() => masConsulta.current?.());
   const pestanas = useMemo(() => [
     hasPermission('puntos_tab_resumen', 'can_view') && { id: 'resumen', label: 'Resumen' },
     hasPermission('puntos_tab_consulta', 'can_view') && { id: 'consulta', label: 'Consulta' },
@@ -171,14 +180,14 @@ export default function Puntos() {
         } : undefined,
       }} />
       <MenuDeFiltros grupos={grupos} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
+      <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={() => { setRecargando(true); setLlave((k) => k + 1); setTimeout(() => setRecargando(false), 600); }} />}>
         {pestanas.length > 1 ? <Segmentos activa={pestana} onCambiar={setPestana} opciones={pestanas} /> : null}
         <FiltrosActivos grupos={grupos} />
         {!pestana ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto="Tu cargo no tiene acceso a Puntos." /></View>
           : pestana === 'resumen' ? <Resumen key={llave} onIrA={(p) => { if (pestanas.some((x) => x.id === p)) setPestana(p); }} />
-            : pestana === 'consulta' ? <Consulta key={llave} busqueda={busqueda} orden={ordenCol} dir={ordenDir} />
+            : pestana === 'consulta' ? <Consulta key={llave} busqueda={busqueda} orden={ordenCol} dir={ordenDir} masRef={masConsulta} />
               : pestana === 'por_asignar' ? <PorAsignar key={llave} busqueda={busqueda} />
                 : (<><Traspasos key={`t${llave}`} puedeResolver={hasPermission('puntos_ajustar', 'can_view')} /><Avisos key={llave} /></>)}
       </ScrollView>

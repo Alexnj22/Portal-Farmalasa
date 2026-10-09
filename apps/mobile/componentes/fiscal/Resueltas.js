@@ -7,7 +7,7 @@
 //     «Solventado internamente» de las que se excluyeron del barrido —nunca se
 //     le mandaron a Hacienda, a propósito—.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import {
   fetchConfirmedMhInvoices, fetchExcluidasDelBarrido, fetchInvoiceResolutionsHistorial, fetchInvoicesByIds,
 } from '@nucleo/data/facturacion';
@@ -19,6 +19,7 @@ import { colorSistema } from '../Formulario';
 import { Pildora } from '../avisos/Piezas';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
+import Tocable from '../Tocable';
 
 const COLUMNAS = 'id, correlativo, erp_invoice_id, branch_id, tipo_documento, cliente, fecha, total';
 
@@ -64,11 +65,11 @@ export default function Resueltas({ cola, sala, nombreSala, verMontos, recarga }
   const visibles = useMemo(() => (filas || []).filter((r) => todos || String(r.resolved_at || '').startsWith(mes)), [filas, todos, mes]);
   return (
     <View style={{ marginHorizontal: 16, gap: 8, marginTop: 8 }}>
-      <Pressable onPress={() => setAbierto((v) => !v)} hitSlop={8} style={{ minHeight: 40, justifyContent: 'center' }}>
+      <Tocable onPress={() => setAbierto((v) => !v)} hitSlop={8} style={{ minHeight: 40, justifyContent: 'center' }}>
         <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>
           {`${abierto ? '▾' : '▸'} ${cola === 'mh' ? 'Selladas y resueltas' : 'Solventadas'} ${todos ? '· todas' : '· este mes'}${filas ? ` · ${visibles.length}` : ''}`}
         </Text>
-      </Pressable>
+      </Tocable>
       {abierto ? (
         filas == null ? <ActivityIndicator /> : (
           <>
@@ -96,9 +97,9 @@ export default function Resueltas({ cola, sala, nombreSala, verMontos, recarga }
               );
             })}
             {!visibles.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Nada resuelto en este período.</Text> : null}
-            <Pressable onPress={() => setTodos((v) => !v)} hitSlop={8} style={{ alignSelf: 'center', minHeight: 36, justifyContent: 'center' }}>
+            <Tocable onPress={() => setTodos((v) => !v)} hitSlop={8} style={{ alignSelf: 'center', minHeight: 36, justifyContent: 'center' }}>
               <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{todos ? 'Ver solo este mes' : 'Ver todas'}</Text>
-            </Pressable>
+            </Tocable>
           </>
         )
       ) : null}

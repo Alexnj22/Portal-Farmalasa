@@ -12,7 +12,7 @@
 // Todo lo que se arma sale del núcleo (`promocionesUtils`), lo mismo del portal.
 import { volver } from '../../componentes/volver';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -34,6 +34,7 @@ import Fecha from '../../componentes/formulario/Fecha';
 import { MARCA } from '../../componentes/inicio/marca';
 import AgregarProductos from '../../componentes/promociones/AgregarProductos';
 import { fallo, listo } from '../../componentes/Progreso';
+import Tocable from '../../componentes/Tocable';
 
 const BORRADOR = 'promocion_nueva';
 const DESC_NUEVO = { activo: false, tipo: '%', monto: '', todas: true, branchId: '', finPropio: '' };
@@ -226,7 +227,7 @@ export default function NuevaPromocionProducto() {
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Hasta</Text>
               {general.fin ? <Fecha valor={general.fin} onCambiar={(v) => cambiarGeneral('fin', v)} desde={general.inicio} />
-                : <Pressable onPress={() => cambiarGeneral('fin', general.inicio)}><Text style={{ color: colorSistema.acento, fontSize: 16 }}>Elegir</Text></Pressable>}
+                : <Tocable onPress={() => cambiarGeneral('fin', general.inicio)}><Text style={{ color: colorSistema.acento, fontSize: 16 }}>Elegir</Text></Tocable>}
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Lote por producto (unidades)</Text>
@@ -237,9 +238,9 @@ export default function NuevaPromocionProducto() {
               <>
                 <Opciones valor={general.paga} onCambiar={(v) => cambiarGeneral('paga', v)} opciones={[{ id: 'proveedor', label: 'Paga un proveedor' }, { id: 'empresa', label: 'Paga la empresa' }]} />
                 {general.paga === 'proveedor' ? (
-                  <Pressable onPress={elegirProveedor} style={({ pressed }) => ({ minHeight: 40, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+                  <Tocable onPress={elegirProveedor} style={({ pressed }) => ({ minHeight: 40, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
                     <Text style={{ color: colorSistema.acento, fontSize: 16 }}>{proveedorNombre || 'Elegir el proveedor…'}</Text>
-                  </Pressable>
+                  </Tocable>
                 ) : null}
                 {[['bono_vendedor', 'Al vendedor ($)'], ['bono_adm', 'Fondo administración ($)'], ['bono_bodega', 'Fondo bodega ($)'], ['unidades_por_bono', 'Cada cuántas unidades']].map(([k, t]) => (
                   <View key={k} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -264,22 +265,22 @@ export default function NuevaPromocionProducto() {
           <Seccion titulo={`Productos · ${renglones.length}`}>
             {renglones.map((r, i) => (
               <View key={r.erp_product_id} style={{ gap: 8, paddingTop: i ? 10 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
-                <Pressable onPress={() => abrirRenglon(i)} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+                <Tocable onPress={() => abrirRenglon(i)} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
                   <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{r.producto}</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
                     {[r.laboratorio, r.lote_total ? `lote ${r.lote_total}` : 'sin lote', r.factor_unidades ? `sólo ×${r.factor_unidades}` : null, r.ajustado ? 'ajustado' : null, r.fin ? `hasta ${fechaTexto(r.fin, { day: 'numeric', month: 'short' })}` : null].filter(Boolean).join(' · ')}
                   </Text>
-                </Pressable>
+                </Tocable>
                 {abierto === i ? (
                   <View style={{ gap: 8 }}>
-                    <Pressable onPress={() => elegirPresentacion(i)}>
+                    <Tocable onPress={() => elegirPresentacion(i)}>
                       <Text style={{ color: colorSistema.acento, fontSize: 15 }}>{r.factor_unidades ? `Presentación ×${r.factor_unidades}` : 'Cualquier presentación'} ›</Text>
-                    </Pressable>
+                    </Tocable>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 15 }}>Su lote</Text>
                       <Numero valor={r.lote_total} onCambiar={(v) => cambiarRenglon(i, 'lote_total', v)} placeholder="Sin lote" />
                     </View>
-                    <Pressable onPress={() => quitar(i)}><Text style={{ color: MARCA.rojo, fontSize: 15, fontWeight: '600' }}>Quitar de la promoción</Text></Pressable>
+                    <Tocable onPress={() => quitar(i)}><Text style={{ color: MARCA.rojo, fontSize: 15, fontWeight: '600' }}>Quitar de la promoción</Text></Tocable>
                   </View>
                 ) : null}
               </View>
@@ -300,9 +301,9 @@ export default function NuevaPromocionProducto() {
                   <>
                     <FilaConSwitch titulo="En todas las salas" detalle="La caja acepta un descuento en una sala o en todas, nunca en varias." valor={desc.todas} onCambiar={(v) => setDesc((d) => ({ ...d, todas: v }))} />
                     {!desc.todas ? (
-                      <Pressable onPress={() => elegirSalaDescuento(marcadas)}>
+                      <Tocable onPress={() => elegirSalaDescuento(marcadas)}>
                         <Text style={{ color: colorSistema.acento, fontSize: 16 }}>{salas.find((s) => String(s.id) === String(desc.branchId))?.name || 'Elegir la sala…'}</Text>
-                      </Pressable>
+                      </Tocable>
                     ) : null}
                   </>
                 ) : null}

@@ -97,3 +97,38 @@ export function fetchAuditLogs(limit) {
         .order('created_at', { ascending: false })
         .limit(limit);
 }
+
+/**
+ * Una PÁGINA de la bitácora con los filtros aplicados EN LA BASE (2026-10-09).
+ *
+ * `fetchAuditLogs(1000)` traía los últimos 1000 registros y el período, la
+ * acción y la búsqueda se aplicaban después, en el teléfono: con «Todo» o un
+ * rango viejo, lo que quedaba fuera de esos 1000 no existía para el filtro
+ * (CLAUDE.md, «un tope se aplica ANTES del filtro»). Aquí cada filtro va en la
+ * consulta y se pagina por `created_at` (cursor), así una página siempre son
+ * los `limite` más recientes que CUMPLEN, sin importar cuántos haya. Se pagina
+ * por posición (`desdeFila`) y no por cursor de fecha: dos registros con el
+ * mismo instante en el borde de la página se perderían con `lt(created_at)`.
+ *
+ * El día es el de El Salvador (UTC−6 fijo, sin horario de verano), igual que
+ * `filtrarBitacora`. La búsqueda exige cada palabra en alguna de las cuatro
+ * columnas, como `tokenMatch`.
+ *
+ * @param {{accion?: string, desde?: string, hasta?: string, texto?: string, desdeFila?: number, limite?: number}} f
+ */
+export function fetchBitacoraPagina({ accion = 'ALL', desde = '', hasta = '', texto = '', desdeFila = 0, limite = 50 } = {}) {
+    let q = supabase.from('audit_logs')
+        .select('id,user_id,user_name,action,target_id,details,source,severity,branch_id,branch_name,device_name,input_method,created_at')
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .range(desdeFila, desdeFila + limite - 1);
+    if (accion && accion !== 'ALL') q = q.eq('action', accion);
+    if (desde) q = q.gte('created_at', `${desde}T00:00:00-06:00`);
+    if (hasta) q = q.lt('created_at', `${hasta}T23:59:59.999-06:00`);
+    for (const palabra of String(texto).trim().split(/\s+/).filter(Boolean)) {
+        const p = palabra.replace(/[,()%*\\]/g, '');
+        if (!p) continue;
+        q = q.or(['user_name', 'action', 'branch_name', 'device_name'].map((c) => `${c}.ilike.*${p}*`).join(','));
+    }
+    return q;
+}

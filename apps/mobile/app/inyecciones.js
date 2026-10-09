@@ -170,11 +170,13 @@ function Pendientes({ busqueda, salaPropia, nombreSala, puedeAplicar }) {
 
 function Bitacora({ busqueda, salaPropia }) {
   const [filas, setFilas] = useState(null);
+  // Treinta días de la red pueden ser cientos de aplicaciones: se pintan de 40 en 40.
+  const [cuantas, setCuantas] = useState(40);
   const [error, setError] = useState(null);
   const [dias, setDias] = useState(7);
   useEffect(() => {
     let vivo = true;
-    setFilas(null);
+    setFilas(null); setCuantas(40);
     const hasta = hoySV();
     fetchBitacoraDeAplicaciones({ sala: salaPropia, desde: sumarDias(hasta, -(dias - 1)), hasta, buscar: busqueda })
       .then((d) => { if (vivo) { setFilas(d); setError(null); } })
@@ -187,7 +189,7 @@ function Bitacora({ busqueda, salaPropia }) {
       <Segmentos activa={String(dias)} onCambiar={(v) => setDias(Number(v))} opciones={[{ id: '1', label: 'Hoy' }, { id: '7', label: '7 días' }, { id: '30', label: '30 días' }]} />
       {filas ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${filas.length} pagadas · ${aplicadas} aplicadas`}</Text> : null}
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-      {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : filas.map((f) => (
+      {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : filas.slice(0, cuantas).map((f) => (
         <View key={f.id} style={{ marginHorizontal: 16 }}>
           <Vidrio radio={18}>
             <View style={{ padding: 12, gap: 4 }}>
@@ -205,6 +207,7 @@ function Bitacora({ busqueda, salaPropia }) {
           </Vidrio>
         </View>
       ))}
+      {filas && filas.length > cuantas ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto={`Ver más · quedan ${filas.length - cuantas}`} borde onPress={() => setCuantas((n) => n + 40)} /></View> : null}
       {filas && !filas.length && !error ? (
         <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Sin aplicaciones en el período</Text>
       ) : null}

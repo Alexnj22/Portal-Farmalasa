@@ -168,7 +168,7 @@ export default function MeterDinero() {
             <Seccion titulo="El ingreso">
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{montoCerrado ? 'Monto (confirmado por la boleta)' : 'Monto'}</Text>
-                <View style={{ width: 140 }}>
+                <View style={{ minWidth: 140 }}>
                   <Campo multiline={false} value={monto} editable={!montoCerrado} onChangeText={(v) => setMonto(v.replace(/[^\d.,]/g, ''))}
                     keyboardType="decimal-pad" placeholder="$0.00" style={{ textAlign: 'center' }} />
                 </View>

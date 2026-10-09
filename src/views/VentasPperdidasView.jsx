@@ -12,7 +12,7 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import {
-    fetchBranchesForVentasPerdidas, fetchEmployeesSafeBasic, fetchVentasPerdidas, updateVentaPerdidaStatus,
+    fetchBranchesForVentasPerdidas, fetchEmployeesSafeBasic, fetchVentasPerdidasCompletas, updateVentaPerdidaStatus,
 } from '@nucleo/data/ventasPerdidas';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { hoySV } from '@nucleo/utils/fecha';
@@ -64,7 +64,7 @@ export default function VentasPperdidasView() {
         const load = async () => {
             setLoading(true);
             try {
-                const { data, error } = await fetchVentasPerdidas(activeTab);
+                const { data, error } = await fetchVentasPerdidasCompletas(activeTab);
                 if (error) console.error('VentasPperdidasView: fetch ventas_perdidas failed:', error.message);
                 if (!cancelled) setRows(data || []);
             } catch (e) {

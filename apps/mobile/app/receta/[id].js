@@ -14,7 +14,7 @@
 // La firma la pone el servidor (`completar_dispensacion` guarda quién y
 // cuándo); rechaza un renglón anulado o de un mes cerrado.
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -33,6 +33,7 @@ import Fotos from '../../componentes/formulario/Fotos';
 import Segmentos from '../../componentes/Segmentos';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
+import Tocable from '../../componentes/Tocable';
 
 const num = (t) => (String(t).trim() === '' ? null : Number(String(t).replace(',', '.')));
 
@@ -192,9 +193,9 @@ export default function CompletarReceta() {
                   <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{medico.nombre}</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`N.º ${medico.numero_junta ?? '—'}${medico.carrera ? ` · ${medico.carrera}` : ''}${medico.delConsejo ? ' · del Consejo' : ''}`}</Text>
                 </View>
-                <Pressable onPress={() => { setMedico(null); setCandidatos([]); }} hitSlop={8} style={{ minHeight: 44, justifyContent: 'center' }}>
+                <Tocable onPress={() => { setMedico(null); setCandidatos([]); }} hitSlop={8} style={{ minHeight: 44, justifyContent: 'center' }}>
                   <Text style={{ color: colorSistema.acento, fontSize: 15 }}>Cambiar</Text>
-                </Pressable>
+                </Tocable>
               </View>
             ) : (
               <>
@@ -212,11 +213,11 @@ export default function CompletarReceta() {
                 <BotonGrande texto={buscando ? 'Buscando…' : 'Buscar'} borde deshabilitado={buscando || (modo === 'numero' ? !numero.trim() : !(nombres.trim() || apellidos.trim()))} onPress={buscar} />
                 {avisoBusqueda ? <Aviso tono="cuidado" texto={avisoBusqueda} /> : null}
                 {candidatos.map((c, i) => (
-                  <Pressable key={`${c.numero_junta}-${i}`} onPress={() => { Haptics.selectionAsync().catch(() => {}); setMedico(c); setCandidatos([]); }}
+                  <Tocable key={`${c.numero_junta}-${i}`} onPress={() => { Haptics.selectionAsync().catch(() => {}); setMedico(c); setCandidatos([]); }}
                     style={({ pressed }) => ({ paddingVertical: 9, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, opacity: pressed ? 0.6 : 1 })}>
                     <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{c.nombre}</Text>
                     <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`N.º ${c.numero_junta}${c.carrera ? ` · ${c.carrera}` : ''}${c.id ? ' · ya está en el portal' : ''}`}</Text>
-                  </Pressable>
+                  </Tocable>
                 ))}
               </>
             )}

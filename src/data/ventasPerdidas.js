@@ -2,6 +2,7 @@
 // VentasPperdidasView.jsx: 4 llamadas supabase.from().
 import { supabase } from '../supabaseClient';
 import { conBitacora } from './audit';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
 export function fetchBranchesForVentasPerdidas() {
     return supabase.from('branches').select('id, name');
@@ -39,4 +40,17 @@ export function insertVentaPerdida(payload, contexto = {}) {
         producto: payload.descripcion || payload.producto_buscado, cantidad: payload.cantidad,
         sucursal_id: payload.branch_id ?? null, ...contexto,
     });
+}
+
+// Todas las filas de un estado, en tandas de 1000 (2026-10-09). `fetchVentasPerdidas`
+// a secas cae bajo el techo de PostgREST: «procesado» es historia que sólo
+// crece, y pasadas las 1000 la lista, los «más pedidos» y el CSV se quedaban
+// con las más nuevas sin avisar. El `id` desempata el orden entre tandas.
+export async function fetchVentasPerdidasCompletas(status) {
+    const data = await fetchAllRows(() => supabase.from('ventas_perdidas')
+        .select('id, producto_buscado, descripcion, principio_activo, laboratorio, cantidad, branch_id, reportado_por, status, created_at')
+        .eq('status', status)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false }), { completo: true });
+    return data == null ? { data: null, error: new Error('No se pudieron leer las ventas perdidas.') } : { data, error: null };
 }

@@ -6,7 +6,7 @@
 // Sólo se edita en borrador y con permiso; si no, se ve igual, sin controles.
 // Las operaciones sobre el cuestionario son del núcleo (`encuestasClientes`).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, ScrollView, Switch, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -24,6 +24,7 @@ import { Pildora } from '../../componentes/avisos/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo } from '../../componentes/Progreso';
+import Tocable from '../../componentes/Tocable';
 
 const RETARDO = 900;
 
@@ -38,12 +39,12 @@ function Rotulo({ texto }) {
 
 function Elegir({ rotulo, valor, onPress }) {
   return (
-    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }}
+    <Tocable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', minHeight: 40, gap: 10, opacity: pressed ? 0.6 : 1 })}>
       <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{rotulo}</Text>
       <Text style={{ flex: 1, color: colorSistema.acento, fontSize: 15, textAlign: 'right' }}>{valor}</Text>
       <Text style={{ color: colorSistema.texto2, fontSize: 18 }}>›</Text>
-    </Pressable>
+    </Tocable>
   );
 }
 
@@ -66,7 +67,7 @@ function Pregunta({ p, numero, anteriores, numeradas, dimensiones, editable, abi
   return (
     <Vidrio radio={16}>
       <View style={{ padding: 12, gap: 10 }}>
-        <Pressable onPress={editable ? onToggle : undefined} onLongPress={editable ? onMenu : undefined} style={{ flexDirection: 'row', gap: 8 }}>
+        <Tocable onPress={editable ? onToggle : undefined} onLongPress={editable ? onMenu : undefined} style={{ flexDirection: 'row', gap: 8 }}>
           <Text style={{ color: colorSistema.texto2, fontSize: 14, fontWeight: '700', width: 24 }}>{`${numero}.`}</Text>
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={{ color: p.texto ? colorSistema.texto : colorSistema.texto2, fontSize: 15, fontWeight: '600', fontStyle: p.texto ? 'normal' : 'italic' }}>
@@ -80,7 +81,7 @@ function Pregunta({ p, numero, anteriores, numeradas, dimensiones, editable, abi
             {!abierta && tipo.opciones ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{(p.opciones || []).map((o) => o.texto || '—').join(' · ')}</Text> : null}
           </View>
           {editable ? <Text style={{ color: colorSistema.texto2, fontSize: 18 }}>{abierta ? '▾' : '›'}</Text> : null}
-        </Pressable>
+        </Tocable>
 
         {editable && abierta ? (
           <View style={{ gap: 10 }}>
@@ -102,17 +103,17 @@ function Pregunta({ p, numero, anteriores, numeradas, dimensiones, editable, abi
                   <View key={o.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Campo multiline={false} value={o.texto} placeholder={`Opción ${oi + 1}`} style={{ flex: 1 }}
                       onChangeText={(v) => set('opciones')(p.opciones.map((x) => (x.id === o.id ? { ...x, texto: v } : x)))} />
-                    <Pressable hitSlop={6} disabled={oi === 0} onPress={() => set('opciones')(mover(p.opciones, oi, -1))}>
+                    <Tocable hitSlop={6} disabled={oi === 0} onPress={() => set('opciones')(mover(p.opciones, oi, -1))}>
                       <Text style={{ color: oi === 0 ? colorSistema.texto2 : MARCA.azulClaro, fontSize: 18 }}>↑</Text>
-                    </Pressable>
-                    <Pressable hitSlop={6} disabled={p.opciones.length <= 2} onPress={() => set('opciones')(p.opciones.filter((x) => x.id !== o.id))}>
+                    </Tocable>
+                    <Tocable hitSlop={6} disabled={p.opciones.length <= 2} onPress={() => set('opciones')(p.opciones.filter((x) => x.id !== o.id))}>
                       <Text style={{ color: p.opciones.length <= 2 ? colorSistema.texto2 : MARCA.rojo, fontSize: 16, fontWeight: '700' }}>✕</Text>
-                    </Pressable>
+                    </Tocable>
                   </View>
                 ))}
-                <Pressable onPress={() => set('opciones')([...(p.opciones || []), nuevaOpcion(p.opciones)])}>
+                <Tocable onPress={() => set('opciones')([...(p.opciones || []), nuevaOpcion(p.opciones)])}>
                   <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '700' }}>+ Agregar opción</Text>
-                </Pressable>
+                </Tocable>
               </View>
             ) : null}
 
@@ -149,9 +150,9 @@ function Pregunta({ p, numero, anteriores, numeradas, dimensiones, editable, abi
                 ) : null}
               </View>
             ) : null}
-            <Pressable onPress={onMenu}>
+            <Tocable onPress={onMenu}>
               <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Subir, bajar, duplicar o quitar…</Text>
-            </Pressable>
+            </Tocable>
           </View>
         ) : null}
       </View>
@@ -290,16 +291,16 @@ export default function DisenarEncuesta() {
               {!(s.preguntas || []).length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Esta sección no tiene preguntas.</Text> : null}
               {editable ? (
                 <View style={{ flexDirection: 'row', gap: 14 }}>
-                  <Pressable onPress={() => hoja('Agregar pregunta', TIPOS_PREGUNTA.map((t) => ({ value: t.value, label: t.label })), (v) => {
+                  <Tocable onPress={() => hoja('Agregar pregunta', TIPOS_PREGUNTA.map((t) => ({ value: t.value, label: t.label })), (v) => {
                     const r = agregarPregunta(cuestionario, si, v);
                     cambiar(r.cuestionario);
                     setAbierta(r.id);
                   })}>
                     <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '700' }}>+ Agregar pregunta</Text>
-                  </Pressable>
-                  <Pressable onPress={() => menuDeSeccion(si)}>
+                  </Tocable>
+                  <Tocable onPress={() => menuDeSeccion(si)}>
                     <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>Sección…</Text>
-                  </Pressable>
+                  </Tocable>
                 </View>
               ) : null}
             </Seccion>

@@ -6,7 +6,7 @@
 // mientras sigue nueva. Qué se puede con cada una sale del núcleo
 // (`accionesDeIdea`), lo mismo del portal; las escrituras, las del portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { crearIdea, editarIdea, fetchIdeas, fetchPersonas, moverIdea, quitarIdea } from '@nucleo/data/marketing';
@@ -27,6 +27,7 @@ import { MARCA } from '../inicio/marca';
 import { colorDeVariante } from '../colorDeVariante';
 import { fallo, listo } from '../Progreso';
 import { guardar } from '../comercial/elegido';
+import Tocable from '../Tocable';
 
 const VACIA = { titulo: '', detalle: '', marca_id: '', formato: '' };
 const ROTULO_ACCION = {
@@ -109,14 +110,14 @@ export default function Ideas({ busqueda, marcas, piezasDelMes, mes, yoId, puede
           <Campo multiline={false} placeholder="Ej. Reel: cómo leer la etiqueta de un medicamento" value={form.titulo} onChangeText={(t) => setForm((f) => ({ ...f, titulo: t }))} />
           <Campo placeholder="Detalle (opcional): para qué, a quién, una referencia…" value={form.detalle} onChangeText={(t) => setForm((f) => ({ ...f, detalle: t }))} />
           <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
-            <Pressable hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}
+            <Tocable hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}
               onPress={() => hoja('Marca', [{ value: '', label: 'Cualquiera' }, ...marcasActivas.map((m) => ({ value: m.id, label: m.nombre }))], (v) => setForm((f) => ({ ...f, marca_id: v })))}>
               <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{`Marca: ${marcasActivas.find((m) => m.id === form.marca_id)?.nombre ?? 'cualquiera'} ▾`}</Text>
-            </Pressable>
-            <Pressable hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}
+            </Tocable>
+            <Tocable hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}
               onPress={() => hoja('Formato', [{ value: '', label: 'El que convenga' }, ...FORMATOS.map((x) => ({ value: x.value, label: x.label }))], (v) => setForm((f) => ({ ...f, formato: v })))}>
               <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{`Formato: ${form.formato ? formatoDe(form.formato).label : 'el que convenga'} ▾`}</Text>
-            </Pressable>
+            </Tocable>
           </View>
           <BotonGrande texto={guardando ? 'Guardando…' : 'Agregar idea'} deshabilitado={!form.titulo.trim() || guardando} onPress={agregar} />
         </Seccion>
@@ -145,9 +146,9 @@ export default function Ideas({ busqueda, marcas, piezasDelMes, mes, yoId, puede
                 {acciones.length ? (
                   <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
                     {acciones.map((a) => (
-                      <Pressable key={a} onPress={() => accion(i, a)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                      <Tocable key={a} onPress={() => accion(i, a)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                         <Text style={{ color: a === 'quitar' || a === 'descartar' ? MARCA.rojo : MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{ROTULO_ACCION[a]}</Text>
-                      </Pressable>
+                      </Tocable>
                     ))}
                   </View>
                 ) : null}

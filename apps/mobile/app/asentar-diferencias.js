@@ -117,7 +117,7 @@ export default function AsentarDiferenciasApp() {
                           const dentro = !excluidas.has(k);
                           return (
                             <View key={k} style={{ gap: 6, paddingTop: 6, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
-                              <Pressable onPress={() => alternar(k)} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 40 }}>
+                              <Pressable onPress={() => alternar(k)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 40, opacity: pressed ? 0.55 : 1 })}>
                                 <Text style={{ color: dentro ? MARCA.verde : colorSistema.texto2, fontSize: 20 }}>{dentro ? '☑' : '☐'}</Text>
                                 <View style={{ flex: 1 }}>
                                   <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{`${corta(d.fecha)} · ${formatMoney(Math.abs(Number(d.monto)))}`}</Text>
@@ -136,7 +136,7 @@ export default function AsentarDiferenciasApp() {
                                     </View>
                                   </View>
                                 ) : (
-                                  <Pressable onPress={() => { setCorrigiendo(d.id); setMotivo(''); setRefCorregir(''); setCausa(d.causa || ''); }} style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
+                                  <Pressable onPress={() => { setCorrigiendo(d.id); setMotivo(''); setRefCorregir(''); setCausa(d.causa || ''); }} style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center', opacity: pressed ? 0.55 : 1 })}>
                                     <Text style={{ color: MARCA.ambar, fontSize: 14, fontWeight: '700' }}>No lleva movimiento</Text>
                                   </Pressable>
                                 )

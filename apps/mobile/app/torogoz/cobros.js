@@ -26,6 +26,7 @@ import Segmentos from '../../componentes/Segmentos';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
+import { useMasAlFinal } from '../../componentes/ListaPaginada';
 
 const PETROLEO = '#0f6e7d';
 const POR_PAGINA = 50;
@@ -120,6 +121,8 @@ export default function Cobros() {
   const [tramo, setTramo] = useState('');
   const [texto, setTexto] = useState('');
   const [cuantos, setCuantos] = useState(POR_PAGINA);
+  // Al acercarse al final se pinta la página siguiente sola; «Ver más» queda de respaldo.
+  const alFinal = useMasAlFinal(() => setCuantos((n) => n + POR_PAGINA));
   const [recargando, setRecargando] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -143,7 +146,7 @@ export default function Cobros() {
         headerSearchBarOptions: { placeholder: 'Cliente o ruta', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto('') },
       }} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
+      <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}

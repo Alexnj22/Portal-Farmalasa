@@ -19,7 +19,7 @@
 //   · lo ya contado se puede CORREGIR (`corregirRecepcionDeItem`): no mueve
 //     existencias, deja la diferencia para hablarla con Bodega;
 //   · lo que llegó y no venía se anota en `pedido/extras`.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -52,9 +52,14 @@ const presentacion = (r) => {
   const l = PRES[r.dispatch_tipo] ?? r.dispatch_tipo ?? 'Unidad';
   return f > 1 ? `${l} ×${f}` : l;
 };
+const SIN_VALOR = {};
 const PROBLEMAS = [['danado', 'Dañado'], ['vencido', 'Vencido'], ['otro', 'Otro']];
 
-function Renglon({ r, valor, onCambiar, primero, onSolo, ocupado }) {
+// Memoizado y con callbacks estables: «todo el pedido» son cientos de
+// renglones, y tocar «+» en uno no tiene por qué repintar los demás.
+const Renglon = memo(function Renglon({ r, valor, onCambiar: cambiarDe, primero, onSolo: soloDe, ocupado }) {
+  const onCambiar = (p) => cambiarDe(r.id, p);
+  const onSolo = soloDe ? () => soloDe(r) : null;
   const ini = conteoInicial(r);
   const esperado = ini.fQty;
   const qty = valor.fQty ?? esperado;
@@ -95,7 +100,7 @@ function Renglon({ r, valor, onCambiar, primero, onSolo, ocupado }) {
       ) : null}
     </View>
   );
-}
+});
 
 // Un renglón ya contado, con «Corregir»: la cantidad y una nota.
 function Contado({ r, primero, onCorregir, ocupado }) {
@@ -303,6 +308,12 @@ export default function Recibir() {
     } },
   ]);
 
+  // Estables para que el renglón memoizado no se repinte entero en cada toque.
+  const cambiar = useCallback((id, p) => setValores((v) => ({ ...v, [id]: { ...(v[id] ?? {}), ...p } })), []);
+  const soloRef = useRef(soloEste);
+  soloRef.current = soloEste;
+  const solo = useCallback((r) => soloRef.current(r), []);
+
   const titulo = `Contar #${numero ?? ''}`;
   if (!derivado) return (<><Stack.Screen options={{ ...BARRA_NATIVA, title: titulo }} /><ActivityIndicator style={{ marginTop: 120 }} /></>);
 
@@ -320,9 +331,8 @@ export default function Recibir() {
             </Pressable>
             <Seccion titulo={`${filasAbiertas.length} producto${filasAbiertas.length === 1 ? '' : 's'}`}>
               {filasAbiertas.map((r, i) => (
-                <Renglon key={r.id} r={r} primero={!i} valor={valores[r.id] ?? {}} ocupado={guardando}
-                  onSolo={filasAbiertas.length > 1 ? () => soloEste(r) : null}
-                  onCambiar={(p) => setValores((v) => ({ ...v, [r.id]: { ...(v[r.id] ?? {}), ...p } }))} />
+                <Renglon key={r.id} r={r} primero={!i} valor={valores[r.id] ?? SIN_VALOR} ocupado={guardando}
+                  onSolo={filasAbiertas.length > 1 ? solo : null} onCambiar={cambiar} />
               ))}
             </Seccion>
             {!editado ? <BotonGrande texto={guardando ? 'Guardando…' : 'Todo llegó bien'} color={MARCA.verde} deshabilitado={guardando} onPress={() => confirmar(true)} /> : null}

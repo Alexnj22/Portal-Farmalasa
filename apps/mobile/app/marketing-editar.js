@@ -10,7 +10,7 @@
 import { volver } from '../componentes/volver';
 import { leer } from '../componentes/comercial/elegido';
 import { useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
@@ -31,16 +31,17 @@ import Fecha from '../componentes/formulario/Fecha';
 import { MARCA } from '../componentes/inicio/marca';
 import { guardarPieza as recordarPieza, piezaElegida } from '../componentes/marketing/elegida';
 import { fallo, listo } from '../componentes/Progreso';
+import Tocable from '../componentes/Tocable';
 
 function Rotulo({ texto }) {
   return <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', marginBottom: -4 }}>{texto}</Text>;
 }
 function Fila({ titulo, valor, onPress }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', minHeight: 44, opacity: pressed ? 0.6 : 1 })}>
+    <Tocable onPress={onPress} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', minHeight: 44, opacity: pressed ? 0.6 : 1 })}>
       <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>{titulo}</Text>
       <Text style={{ color: colorSistema.acento, fontSize: 16 }}>{valor} ›</Text>
-    </Pressable>
+    </Tocable>
   );
 }
 function Chips({ opciones, elegidas, onAlternar }) {
@@ -49,10 +50,10 @@ function Chips({ opciones, elegidas, onAlternar }) {
       {opciones.map((o) => {
         const on = elegidas.includes(o.id);
         return (
-          <Pressable key={o.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); onAlternar(o.id); }}
+          <Tocable key={o.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); onAlternar(o.id); }}
             style={{ paddingHorizontal: 14, minHeight: 36, justifyContent: 'center', borderRadius: 999, backgroundColor: on ? MARCA.azul : 'rgba(127,127,127,0.18)' }}>
             <Text style={{ color: on ? '#fff' : colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{o.label}</Text>
-          </Pressable>
+          </Tocable>
         );
       })}
     </View>
@@ -208,17 +209,17 @@ export default function EditarPiezaDeMarketing() {
               {archivos.filter((a) => !a.reemplazado).map((a) => {
                 const url = firmas.get?.(a.url) || a.url;
                 return (
-                  <Pressable key={a.id} onLongPress={() => quitarExistente(a)}>
+                  <Tocable key={a.id} onLongPress={() => quitarExistente(a)}>
                     {tipoDeArchivo(a) === 'imagen' && url ? <Image source={{ uri: url }} style={{ width: 84, height: 84, borderRadius: 12 }} />
                       : <View style={{ width: 84, height: 84, borderRadius: 12, backgroundColor: 'rgba(127,127,127,0.18)', alignItems: 'center', justifyContent: 'center', padding: 6 }}><Text style={{ color: colorSistema.texto2, fontSize: 11, textAlign: 'center' }} numberOfLines={3}>{a.nombre || a.enlace || 'Archivo'}</Text></View>}
-                  </Pressable>
+                  </Tocable>
                 );
               })}
               {nuevos.map((n, i) => (
-                <Pressable key={n.uri} onPress={() => setNuevos((l) => l.filter((_, j) => j !== i))}>
+                <Tocable key={n.uri} onPress={() => setNuevos((l) => l.filter((_, j) => j !== i))}>
                   <Image source={{ uri: n.uri }} style={{ width: 84, height: 84, borderRadius: 12, opacity: 0.8 }} />
                   <Text style={{ position: 'absolute', top: 4, right: 6, color: '#fff', fontWeight: '800' }}>✕</Text>
-                </Pressable>
+                </Tocable>
               ))}
             </View>
             <BotonGrande borde texto="Agregar desde Fotos" onPress={elegirFoto} />

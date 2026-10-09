@@ -38,6 +38,7 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import { enviarDocumentoPorCorreo } from '../../componentes/torogoz/fiscal/papel';
 import { ACCIONES_DE_DINERO, SeHaceEnElPortal } from '../../componentes/torogoz/soloConsulta';
+import { useMasAlFinal } from '../../componentes/ListaPaginada';
 
 const PETROLEO = '#0f6e7d';
 const POR_PAGINA = 50;
@@ -84,6 +85,8 @@ export default function Facturacion() {
   const [tipo, setTipo] = useState('');
   const [texto, setTexto] = useState('');
   const [cuantos, setCuantos] = useState(POR_PAGINA);
+  // Al acercarse al final se pinta la página siguiente sola; «Ver más» queda de respaldo.
+  const alFinal = useMasAlFinal(() => setCuantos((n) => n + POR_PAGINA));
   const [recargando, setRecargando] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [avisoFirma, setAvisoFirma] = useState('');
@@ -194,7 +197,7 @@ export default function Facturacion() {
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto('') },
       }} />
       <MenuDeFiltros grupos={grupos} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
+      <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />

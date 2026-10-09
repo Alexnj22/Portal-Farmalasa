@@ -72,10 +72,15 @@ export function fetchPendingShiftExceptions() {
         .order('id', { ascending: true }));
 }
 
-export function fetchQuincenaTimesheets(startDate, endDate) {
-    return supabase.from('timesheets')
+// Una quincena de TODA la plantilla: 48 personas × 16 días ya son 768 filas, y
+// el techo silencioso de PostgREST es 1000. Con la plantilla creciendo, la
+// quincena dejaba gente afuera sin error — por eso va paginada entera.
+export async function fetchQuincenaTimesheets(startDate, endDate) {
+    const data = await fetchAllRows(() => supabase.from('timesheets')
         .select('id, employee_id, work_date, regular_hours, overtime_hours, late_minutes, is_absent, status, nocturnal_hours, nocturnal_overtime_hours, absence_type')
-        .gte('work_date', startDate).lte('work_date', endDate);
+        .gte('work_date', startDate).lte('work_date', endDate)
+        .order('id', { ascending: true }), { completo: true });
+    return data == null ? { data: null, error: new Error('No se pudo leer la quincena completa') } : { data, error: null };
 }
 
 /**

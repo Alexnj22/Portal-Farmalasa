@@ -105,16 +105,16 @@ export default function AbonoApartado() {
                     ) : (
                       <>
                         <Campo multiline={false} value={r.nombre} maxLength={60} onChangeText={(v) => cambiar(r.clave, 'nombre', v)} placeholder="Producto: escríbelo o búscalo" />
-                        <Pressable onPress={() => setBuscando(r.clave)} style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
+                        <Pressable onPress={() => setBuscando(r.clave)} style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center', opacity: pressed ? 0.55 : 1 })}>
                           <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>{r.erp_product_id ? 'Buscar otro en el catálogo' : 'Buscarlo en el catálogo'}</Text>
                         </Pressable>
                         <View style={{ flexDirection: 'row', gap: 8 }}>
                           <View style={{ width: 70 }}><Campo multiline={false} value={r.cantidad} keyboardType="number-pad" onChangeText={(v) => cambiar(r.clave, 'cantidad', v.replace(/\D/g, ''))} placeholder="Cant." style={{ textAlign: 'center' }} /></View>
                           <View style={{ flex: 1 }}><Campo multiline={false} value={r.presentacion} maxLength={30} onChangeText={(v) => cambiar(r.clave, 'presentacion', v)} placeholder="Presentación" /></View>
-                          <View style={{ width: 100 }}><Campo multiline={false} value={r.precio} keyboardType="decimal-pad" onChangeText={(v) => cambiar(r.clave, 'precio', dinero(v))} placeholder="por definir" style={{ textAlign: 'center' }} /></View>
+                          <View style={{ minWidth: 100 }}><Campo multiline={false} value={r.precio} keyboardType="decimal-pad" onChangeText={(v) => cambiar(r.clave, 'precio', dinero(v))} placeholder="por definir" style={{ textAlign: 'center' }} /></View>
                         </View>
                         {renglones.length > 1 ? (
-                          <Pressable onPress={() => setRenglones((rs) => rs.filter((x) => x.clave !== r.clave))} style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
+                          <Pressable onPress={() => setRenglones((rs) => rs.filter((x) => x.clave !== r.clave))} style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center', opacity: pressed ? 0.55 : 1 })}>
                             <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '600' }}>Quitar</Text>
                           </Pressable>
                         ) : null}
@@ -132,7 +132,7 @@ export default function AbonoApartado() {
                 {excede ? <Aviso tono="freno" texto="El abono no puede pasar del total." /> : null}
               </Seccion>
 
-              <Pressable onPress={() => setVerPolitica((v) => !v)} style={{ minHeight: 36, justifyContent: 'center', marginHorizontal: 4 }}>
+              <Pressable onPress={() => setVerPolitica((v) => !v)} style={({ pressed }) => ({ minHeight: 36, justifyContent: 'center', marginHorizontal: 4, opacity: pressed ? 0.55 : 1 })}>
                 <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>{verPolitica ? 'Ocultar la política de reserva' : 'Ver la política de reserva'}</Text>
               </Pressable>
               {verPolitica ? POLITICA_DE_RESERVA.map((t, i) => <Aviso key={i} texto={`${i + 1}. ${t}`} />) : null}

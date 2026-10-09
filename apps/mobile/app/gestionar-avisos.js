@@ -13,7 +13,7 @@
 // el portal. A quién le llega, la lectura y la sección
 // salen del núcleo (`avisosInternos`).
 import { useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, Switch, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -221,6 +221,8 @@ function Ficha({ a, onCerrar, puedeEditar, onArchivar, onEliminar, onEditar }) {
   );
 }
 
+const Separador = () => <View style={{ height: 10 }} />;
+
 export default function GestionarAvisos() {
   const { user, hasPermission, getScope } = useAuth();
   const avisos = useStaffStore((s) => s.announcements);
@@ -241,9 +243,17 @@ export default function GestionarAvisos() {
   const cargos = useMemo(() => [...(roles || [])].sort((a, b) => String(a.name).localeCompare(String(b.name), 'es')), [roles]);
   const procesados = useMemo(() => (avisos || []).map((a) => avisoConLectura(a, empleados, nombreDeSala))
     .filter((a) => !deSala || a.targetType === 'GLOBAL' || (a.targetType === 'BRANCH' && String(a.targetValue) === String(user?.branchId))), [avisos, empleados, nombreDeSala, deSala, user?.branchId]);
-  const cuenta = (k) => procesados.filter((a) => seccionDeAviso(a) === k).length;
-  const visibles = procesados.filter((a) => seccionDeAviso(a) === seccion && (!texto.trim() || tokenMatch(texto.trim(), a.title, a.message, a.badgeText)))
-    .sort((a, b) => String(b.createdAt ?? b.created_at ?? '').localeCompare(String(a.createdAt ?? a.created_at ?? '')));
+  const recargar = useStaffStore((s) => s.fetchBoot);
+  const [recargando, setRecargando] = useState(false);
+  // Contar y filtrar una sola vez por cambio, no en cada render (los archivados crecen sin tope).
+  const cuentas = useMemo(() => {
+    const c = { ACTIVE: 0, SCHEDULED: 0, ARCHIVED: 0 };
+    procesados.forEach((a) => { const k = seccionDeAviso(a); c[k] = (c[k] || 0) + 1; });
+    return c;
+  }, [procesados]);
+  const cuenta = (k) => cuentas[k] || 0;
+  const visibles = useMemo(() => procesados.filter((a) => seccionDeAviso(a) === seccion && (!texto.trim() || tokenMatch(texto.trim(), a.title, a.message, a.badgeText)))
+    .sort((a, b) => String(b.createdAt ?? b.created_at ?? '').localeCompare(String(a.createdAt ?? a.created_at ?? ''))), [procesados, seccion, texto]);
   const elegido = abierto ? procesados.find((a) => a.id === abierto) : null;
 
   const confirmarArchivar = (a) => Alert.alert('¿Archivar aviso?', `«${a.title}» deja de verse en la bandeja de todos.`, [
@@ -271,17 +281,27 @@ export default function GestionarAvisos() {
         },
       }} />
       <MenuDeFiltros grupos={[]} extra={puedeEditar ? { icono: 'plus', etiqueta: 'Publicar un aviso', onPress: () => setNuevo(true) } : null} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag">
-        <Segmentos activa={seccion} onCambiar={setSeccion} opciones={[
-          { id: 'ACTIVE', label: cuenta('ACTIVE') ? `Activos · ${cuenta('ACTIVE')}` : 'Activos' },
-          { id: 'SCHEDULED', label: cuenta('SCHEDULED') ? `Programados · ${cuenta('SCHEDULED')}` : 'Programados' },
-          { id: 'ARCHIVED', label: 'Archivados' },
-        ]} />
-        {visibles.map((a) => {
+      <FlatList style={{ flex: 1 }} data={visibles} keyExtractor={(a) => String(a.id)}
+        contentContainerStyle={{ paddingVertical: 12, paddingBottom: 48 }}
+        ItemSeparatorComponent={Separador}
+        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
+        initialNumToRender={8} windowSize={7} removeClippedSubviews
+        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await Promise.resolve(recargar?.({ force: true })).catch(() => {}); setRecargando(false); }} />}
+        ListHeaderComponent={(
+          <View style={{ marginBottom: 10 }}>
+            <Segmentos activa={seccion} onCambiar={setSeccion} opciones={[
+              { id: 'ACTIVE', label: cuenta('ACTIVE') ? `Activos · ${cuenta('ACTIVE')}` : 'Activos' },
+              { id: 'SCHEDULED', label: cuenta('SCHEDULED') ? `Programados · ${cuenta('SCHEDULED')}` : 'Programados' },
+              { id: 'ARCHIVED', label: 'Archivados' },
+            ]} />
+          </View>
+        )}
+        ListEmptyComponent={<Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 28 }}>Sin avisos en esta sección</Text>}
+        renderItem={({ item: a }) => {
           const urgente = a.priority === 'URGENT' && seccion !== 'SCHEDULED';
           const fecha = a.createdAt || a.created_at || a.date;
           return (
-            <Pressable key={a.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierto(a.id); }}
+            <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierto(a.id); }}
               style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
               <Vidrio radio={18} interactivo tinte={urgente && a.readPercentage < 100 ? 'rgba(240,68,56,0.12)' : undefined}>
                 <View style={{ padding: 12, gap: 6 }}>
@@ -302,9 +322,7 @@ export default function GestionarAvisos() {
               </Vidrio>
             </Pressable>
           );
-        })}
-        {!visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Sin avisos en esta sección</Text> : null}
-      </ScrollView>
+        }} />
       <Nuevo abierto={nuevo} onCerrar={() => setNuevo(false)} salas={salas} salaFija={deSala ? user?.branchId : null} cargos={cargos} empleados={empleados} />
       {editando ? <Nuevo key={editando.id} abierto editando={editando} onCerrar={() => setEditando(null)} salas={salas} salaFija={deSala ? user?.branchId : null} cargos={cargos} empleados={empleados} /> : null}
       {elegido && !editando ? <Ficha a={elegido} onCerrar={() => setAbierto(null)} puedeEditar={puedeEditar} onArchivar={confirmarArchivar} onEliminar={confirmarEliminar}

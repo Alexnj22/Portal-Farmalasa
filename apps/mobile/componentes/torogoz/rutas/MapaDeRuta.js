@@ -48,7 +48,7 @@ export default function MapaDeRuta({ clientes = [], recorrido = null, alto = 280
               <Polyline coordinates={linea.map((p) => ({ latitude: p.lat, longitude: p.lng }))} strokeColor={MARCA.azulClaro} strokeWidth={4} />
             ) : null}
             {conPin.map((c) => (
-              <Marker key={c.id} coordinate={{ latitude: Number(c.lat), longitude: Number(c.lng) }}
+              <Marker tracksViewChanges={false} key={c.id} coordinate={{ latitude: Number(c.lat), longitude: Number(c.lng) }}
                 title={`${c.n}. ${c.nombre}`} description={estadoDe(c)}>
                 <Pin n={c.n} color={colorDe(c)} />
               </Marker>

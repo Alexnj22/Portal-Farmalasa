@@ -2,6 +2,7 @@ import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { signPhotosDeep } from '../utils/storageFiles';
 import { conBitacora } from './audit';
+import { sumarDias } from '../utils/fecha';
 
 // Cortes de caja — lectura para CortesView y el widget del Inicio.
 //
@@ -625,6 +626,24 @@ export async function fetchDiferencias({ desde, hasta }) {
     return data || [];
 }
 
+/* Una función que devuelve FILAS por sala × día (× forma de pago) cae bajo el
+ * techo de 1000 de PostgREST en cuanto el rango crece: 7 salas × 31 días × 4-5
+ * formas de pago ya ronda las 1000 en un mes, y Cortes del portal pide el
+ * período entero. Se parte la ENTRADA por tramos de fechas (patrón A de
+ * CLAUDE.md): cada tramo de 14 días trae a lo sumo ~7×14×(formas) filas, y las
+ * filas de tramos distintos no se repiten porque `fecha` es parte de la clave.
+ * Un rango abierto (sin desde o sin hasta) va en una sola llamada, como antes. */
+async function porTramosDeFechas({ desde, hasta }, llamar, dias = 14) {
+    if (!desde || !hasta || desde > hasta) return llamar(desde, hasta);
+    const tramos = [];
+    for (let d = desde; d <= hasta; d = sumarDias(d, dias)) {
+        const fin = sumarDias(d, dias - 1);
+        tramos.push([d, fin < hasta ? fin : hasta]);
+    }
+    const partes = await Promise.all(tramos.map(([d, h]) => llamar(d, h)));
+    return partes.flat();
+}
+
 /**
  * La venta del período abierta por forma de pago.
  *
@@ -633,11 +652,13 @@ export async function fetchDiferencias({ desde, hasta }) {
  * `sales_invoices.tipo_pago` las trae todas.
  */
 export async function fetchVentasPorPago({ desde, hasta }) {
-    const { data, error } = await supabase.rpc('get_ventas_por_forma_de_pago', {
-        p_desde: desde, p_hasta: hasta,
+    return porTramosDeFechas({ desde, hasta }, async (d, h) => {
+        const { data, error } = await supabase.rpc('get_ventas_por_forma_de_pago', {
+            p_desde: d, p_hasta: h,
+        });
+        if (error) { console.error('cortes: fetchVentasPorPago failed:', error.message); return []; }
+        return data || [];
     });
-    if (error) { console.error('cortes: fetchVentasPorPago failed:', error.message); return []; }
-    return data || [];
 }
 
 /**
@@ -658,11 +679,13 @@ export async function fetchVentasPorPago({ desde, hasta }) {
  * respuesta no puede viajarle al navegador antes del conteo.
  */
 export async function fetchPiezasDelCajon({ desde, hasta, branchId = null }) {
-    const { data, error } = await supabase.rpc('get_caja_piezas_del_rango', {
-        p_desde: desde, p_hasta: hasta, p_branch: branchId ? Number(branchId) : null,
+    return porTramosDeFechas({ desde, hasta }, async (d, h) => {
+        const { data, error } = await supabase.rpc('get_caja_piezas_del_rango', {
+            p_desde: d, p_hasta: h, p_branch: branchId ? Number(branchId) : null,
+        });
+        if (error) { console.error('cortes: fetchPiezasDelCajon failed:', error.message); return []; }
+        return data || [];
     });
-    if (error) { console.error('cortes: fetchPiezasDelCajon failed:', error.message); return []; }
-    return data || [];
 }
 
 /** La bitácora de un corte: cada firma, reapertura y resolución. */

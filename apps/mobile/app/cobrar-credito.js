@@ -227,7 +227,7 @@ export default function CobrarCredito() {
             <Seccion titulo="El comprobante" pie={otros.length ? `Deuda total: ${formatMoney(debeTodo)} en ${hermanos.length} créditos` : `Debe ${formatMoney(debeTodo)}`}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>Monto</Text>
-                <View style={{ width: 140 }}><Campo multiline={false} value={montoDoc} onChangeText={escribirMonto} keyboardType="decimal-pad" placeholder="$0.00" style={{ textAlign: 'center' }} /></View>
+                <View style={{ minWidth: 140 }}><Campo multiline={false} value={montoDoc} onChangeText={escribirMonto} keyboardType="decimal-pad" placeholder="$0.00" style={{ textAlign: 'center' }} /></View>
               </View>
               <Fecha valor={fechaDoc || null} onCambiar={setFechaDoc} />
               <Campo multiline={false} value={documento} onChangeText={setDocumento} maxLength={40} placeholder="Número del comprobante" autoCapitalize="characters" />
@@ -257,7 +257,7 @@ export default function CobrarCredito() {
                       <Text style={{ flex: 1, color: excede ? MARCA.rojo : puesto > 0.004 && queda <= 0.004 ? MARCA.verde : colorSistema.texto2, fontSize: 14 }}>
                         {excede ? `Más de lo que debe (${formatMoney(debe)})` : puesto <= 0.004 ? `debe ${formatMoney(debe)}` : queda <= 0.004 ? 'Queda solvente' : `queda ${formatMoney(queda)} de ${formatMoney(debe)}`}
                       </Text>
-                      <View style={{ width: 104 }}>
+                      <View style={{ minWidth: 104 }}>
                         <Campo multiline={false} value={reparto[h.id] ?? ''} keyboardType="decimal-pad" placeholder="0.00" style={{ textAlign: 'center' }}
                           onChangeText={(v) => setReparto((r) => ({ ...r, [h.id]: hastaElTope(v.replace(/[^\d.,]/g, '').replace(',', '.'), debe).valor }))} />
                       </View>

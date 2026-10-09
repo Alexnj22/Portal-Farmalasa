@@ -864,9 +864,17 @@ export function anularSalida(operacionId, motivo) {
 export async function fetchSaldos(ids) {
     const unicos = [...new Set((ids || []).filter(Boolean))];
     if (!unicos.length) return new Map();
-    const { data, error } = await supabase.rpc('get_bolsas_saldos', { p_ids: unicos });
-    if (error) { console.error('bolsas: fetchSaldos failed:', error.message); return new Map(); }
-    return new Map((data || []).map((r) => [r.bolsa_id, r]));
+    // `get_bolsas_saldos` devuelve FILAS (una por bolsa), así que PostgREST la
+    // corta en 1000 sin avisar. Se parte la ENTRADA (patrón A de CLAUDE.md):
+    // `bolsa_id` es único en la salida, así que 500 ids traen ≤500 filas. Medido
+    // el 2026-10-09: Bolsas pide ~390 a la vez (25 vivas + 362 contadas en 30
+    // días) y crece con el volumen.
+    const tandas = [];
+    for (let i = 0; i < unicos.length; i += 500) tandas.push(unicos.slice(i, i + 500));
+    const resultados = await Promise.all(tandas.map((p_ids) => supabase.rpc('get_bolsas_saldos', { p_ids })));
+    const fallo = resultados.find((r) => r.error);
+    if (fallo) { console.error('bolsas: fetchSaldos failed:', fallo.error.message); return new Map(); }
+    return new Map(resultados.flatMap((r) => r.data || []).map((r) => [r.bolsa_id, r]));
 }
 
 /** Lo que salió de una bolsa, con su operación: para el detalle y la etiqueta. */

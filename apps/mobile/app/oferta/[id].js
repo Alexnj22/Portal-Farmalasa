@@ -10,7 +10,7 @@
 // Se guarda con `guardarOferta` del núcleo, el mismo del portal; la imagen va al
 // bucket privado con `subirImagen`, que ahora acepta lo que da el teléfono.
 import { useMemo, useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, ScrollView, Switch, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
@@ -27,6 +27,7 @@ import Fecha from '../../componentes/formulario/Fecha';
 import { MARCA } from '../../componentes/inicio/marca';
 import { colorDeAcento, ofertaElegida } from '../../componentes/ofertas/acentos';
 import { fallo, listo } from '../../componentes/Progreso';
+import Tocable from '../../componentes/Tocable';
 
 // El rótulo encima de un campo: con el campo lleno, el texto de ayuda ya no se
 // ve y no se sabe qué es cada caja.
@@ -102,7 +103,7 @@ export default function EditarOferta() {
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
           {/* Cómo la verá el cliente: la foto con el color de su acento. */}
-          <Pressable onPress={elegirFoto} style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
+          <Tocable onPress={elegirFoto} style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
             <View style={{ borderRadius: 20, overflow: 'hidden', aspectRatio: 16 / 9, backgroundColor: `${acento}33`, alignItems: 'center', justifyContent: 'center' }}>
               {imagen ? <Image source={{ uri: imagen }} style={{ position: 'absolute', width: '100%', height: '100%' }} resizeMode="cover" /> : null}
               {f.etiqueta.trim() ? (
@@ -114,7 +115,7 @@ export default function EditarOferta() {
                 <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>{imagen ? 'Cambiar imagen' : 'Elegir imagen (16:9)'}</Text>
               </View>
             </View>
-          </Pressable>
+          </Tocable>
 
           {deDescuento ? <Aviso texto="Las fechas, las salas y los precios siguen al descuento solos: si lo corriges o lo borras en la caja, la app se entera." /> : null}
           {deDescuento && oferta.sin_receta > 0 ? <Aviso tono="cuidado" texto={`${oferta.sin_receta === 1 ? 'Un producto bajo receta no se muestra' : `${oferta.sin_receta} productos bajo receta no se muestran`} en la app. El descuento sigue valiendo en caja.`} /> : null}
@@ -134,7 +135,7 @@ export default function EditarOferta() {
           <Seccion titulo="Color">
             <View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
               {ACENTOS_DE_OFERTA.map((a) => (
-                <Pressable key={a.valor} accessibilityRole="radio" accessibilityState={{ selected: f.acento === a.valor }} accessibilityLabel={a.rotulo}
+                <Tocable key={a.valor} accessibilityRole="radio" accessibilityState={{ selected: f.acento === a.valor }} accessibilityLabel={a.rotulo}
                   onPress={() => { Haptics.selectionAsync().catch(() => {}); cambiar('acento')(a.valor); }} hitSlop={6}
                   style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colorDeAcento(a.valor), borderWidth: f.acento === a.valor ? 3 : 0, borderColor: '#fff' }} />
               ))}
@@ -166,10 +167,10 @@ export default function EditarOferta() {
                   {salas.map((s) => {
                     const on = f.branch_ids.includes(s.id);
                     return (
-                      <Pressable key={s.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); alternarSala(s.id); }}
+                      <Tocable key={s.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); alternarSala(s.id); }}
                         style={{ paddingHorizontal: 14, minHeight: 36, justifyContent: 'center', borderRadius: 999, backgroundColor: on ? MARCA.azul : 'rgba(127,127,127,0.18)' }}>
                         <Text style={{ color: on ? '#fff' : colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{s.name}</Text>
-                      </Pressable>
+                      </Tocable>
                     );
                   })}
                 </View>

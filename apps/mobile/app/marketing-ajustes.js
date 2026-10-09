@@ -8,7 +8,7 @@
 // Apagar algo lo saca de los formularios sin tocar lo ya planificado. Las
 // escrituras son las del portal (`data/marketing`).
 import { useCallback, useEffect, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, ScrollView, Switch, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import {
@@ -22,6 +22,7 @@ import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo } from '../componentes/Progreso';
+import Tocable from '../componentes/Tocable';
 
 function Fila({ titulo, detalle, valor, onCambiar, deshabilitado }) {
   return (
@@ -75,10 +76,10 @@ export default function AjustesDeMarketing() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Ajustes de marketing' }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag">
         <Seccion titulo="El calendario" pie={!puedeAprobar ? 'Los cambia quien aprueba el calendario.' : null}>
-          <Pressable disabled={!puedeAprobar || guardando} onPress={elegirDia} style={{ flexDirection: 'row', alignItems: 'center', minHeight: 44 }}>
+          <Tocable disabled={!puedeAprobar || guardando} onPress={elegirDia} style={{ flexDirection: 'row', alignItems: 'center', minHeight: 44 }}>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>Fecha límite para enviar el mes siguiente</Text>
             <Text style={{ color: puedeAprobar ? MARCA.azulClaro : colorSistema.texto2, fontSize: 15, fontWeight: '600' }}>{`Día ${ajustes?.dia_limite_envio ?? 20}`}</Text>
-          </Pressable>
+          </Tocable>
           <Fila titulo="Recordatorio de las 8:00" detalle="Lo de hoy, lo vencido y la fecha límite" valor={ajustes?.recordatorios_activos ?? true} deshabilitado={!puedeAprobar || guardando}
             onCambiar={(on) => confirmar(on ? 'Prender recordatorios' : 'Apagar recordatorios', on ? 'Vuelve el aviso de las 8:00.' : 'Ya no llega el aviso de las 8:00.', () => guardarAjustes({ recordatorios_activos: on }))} />
         </Seccion>
@@ -95,9 +96,9 @@ export default function AjustesDeMarketing() {
             <View style={{ gap: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 10 }}>
               <Campo multiline={false} placeholder="Nueva fecha (ej. Día del Padre)" value={fecha.nombre} onChangeText={(t) => setFecha((x) => ({ ...x, nombre: t }))} />
               <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-                <Pressable onPress={elegirMes} hitSlop={8} style={{ minHeight: 40, justifyContent: 'center' }}>
+                <Tocable onPress={elegirMes} hitSlop={8} style={{ minHeight: 40, justifyContent: 'center' }}>
                   <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>{fecha.mes ? NOMBRES_DE_MES[fecha.mes - 1] : 'Mes ▾'}</Text>
-                </Pressable>
+                </Tocable>
                 <Campo multiline={false} keyboardType="number-pad" placeholder="Día" value={String(fecha.dia)} onChangeText={(t) => setFecha((x) => ({ ...x, dia: t.replace(/\D/g, '') }))} style={{ width: 80 }} />
               </View>
               <Campo multiline={false} placeholder="Idea (opcional)" value={fecha.idea} onChangeText={(t) => setFecha((x) => ({ ...x, idea: t }))} />

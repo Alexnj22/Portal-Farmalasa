@@ -8,7 +8,7 @@
 // escribe, igual que en el portal (son varias filas y la sesión de sala se
 // cierra a los 5 minutos).
 import { useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -25,6 +25,7 @@ import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo } from '../componentes/Progreso';
+import Tocable from '../componentes/Tocable';
 
 const BORRADOR = 'meta_gasto';
 const FILA_VACIA = { branchId: '', monto: '' };
@@ -35,13 +36,13 @@ function Rotulo({ texto }) {
 
 function Elegir({ rotulo, valor, onPress, primero }) {
   return (
-    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }}
+    <Tocable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', minHeight: 44, gap: 10, opacity: pressed ? 0.6 : 1,
         borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador })}>
       <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>{rotulo}</Text>
       <Text style={{ color: colorSistema.acento, fontSize: 16 }}>{valor}</Text>
       <Text style={{ color: colorSistema.texto2, fontSize: 18 }}>›</Text>
-    </Pressable>
+    </Tocable>
   );
 }
 
@@ -152,17 +153,17 @@ export default function MetaGasto() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <Campo multiline={false} keyboardType="decimal-pad" value={String(f.monto)} onChangeText={(v) => setFila(i, { monto: v })} placeholder="Monto $0.00" style={{ flex: 1 }} />
                   {filas.length > 1 ? (
-                    <Pressable hitSlop={8} onPress={() => setFilas((fs) => fs.filter((_, j) => j !== i))}>
+                    <Tocable hitSlop={8} onPress={() => setFilas((fs) => fs.filter((_, j) => j !== i))}>
                       <Text style={{ color: MARCA.rojo, fontSize: 15, fontWeight: '600' }}>Quitar</Text>
-                    </Pressable>
+                    </Tocable>
                   ) : null}
                 </View>
               </View>
             ))}
             {filas.length < salaOpciones.length ? (
-              <Pressable onPress={() => setFilas((fs) => [...fs, FILA_VACIA])}>
+              <Tocable onPress={() => setFilas((fs) => [...fs, FILA_VACIA])}>
                 <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '700' }}>+ Otra sala</Text>
-              </Pressable>
+              </Tocable>
             ) : null}
             {total > 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Total: ${formatMoney(total)}`}</Text> : null}
           </Seccion>

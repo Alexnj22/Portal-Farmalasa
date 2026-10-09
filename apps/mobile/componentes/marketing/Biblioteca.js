@@ -4,7 +4,7 @@
 // `#RRGGBB` y se comparte con un toque. Quien edita o aprueba agrega (archivo
 // del teléfono, foto o enlace) y quita. Validar y agrupar sale del núcleo.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Image, Linking, Pressable, Share, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, Image, Linking, Share, Text, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { fetchRecursos, firmarDisenos, guardarRecurso, quitarRecurso } from '@nucleo/data/marketing';
 import { TIPOS_DE_RECURSO, colorEscrito, colorValido, faltaEnRecurso, recursosPorMarca } from '@nucleo/utils/marketing';
@@ -15,6 +15,7 @@ import { BotonGrande, Campo, Seccion } from '../formulario/Piezas';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
 import { fallo, listo, trabajando } from '../Progreso';
+import Tocable from '../Tocable';
 
 const VACIO = { tipo: 'logo', marca_id: '', nombre: '', enlace: '', color: '' };
 const hoja = (titulo, lista, onElegir) => ActionSheetIOS.showActionSheetWithOptions(
@@ -81,13 +82,13 @@ export default function Biblioteca({ marcas, puedeGestionar, yoId, recarga }) {
         <View style={{ marginHorizontal: 16 }}>
           <Seccion titulo="Agregar a la biblioteca">
             <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
-              <Pressable hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }} onPress={() => hoja('Qué es', TIPOS_DE_RECURSO, (v) => setForm((f) => ({ ...f, tipo: v })))}>
+              <Tocable hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }} onPress={() => hoja('Qué es', TIPOS_DE_RECURSO, (v) => setForm((f) => ({ ...f, tipo: v })))}>
                 <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{`${TIPOS_DE_RECURSO.find((t) => t.value === form.tipo)?.label} ▾`}</Text>
-              </Pressable>
-              <Pressable hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}
+              </Tocable>
+              <Tocable hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}
                 onPress={() => hoja('De qué marca', [{ value: '', label: 'Todas' }, ...(marcas || []).map((m) => ({ value: m.id, label: m.nombre }))], (v) => setForm((f) => ({ ...f, marca_id: v })))}>
                 <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{`Marca: ${marcaNombre(form.marca_id)} ▾`}</Text>
-              </Pressable>
+              </Tocable>
             </View>
             <Campo multiline={false} placeholder={esColor ? 'Ej. Azul principal' : 'Ej. Logo horizontal blanco'} value={form.nombre} onChangeText={(t) => setForm((f) => ({ ...f, nombre: t }))} />
             {esColor ? (
@@ -95,9 +96,9 @@ export default function Biblioteca({ marcas, puedeGestionar, yoId, recarga }) {
                 onChangeText={(t) => setForm((f) => ({ ...f, color: colorEscrito(t) }))} />
             ) : (
               <>
-                <Pressable onPress={elegirArchivo} hitSlop={8} style={{ minHeight: 40, justifyContent: 'center' }}>
+                <Tocable onPress={elegirArchivo} hitSlop={8} style={{ minHeight: 40, justifyContent: 'center' }}>
                   <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>{archivo ? `Archivo: ${archivo.name}` : 'Elegir un archivo'}</Text>
-                </Pressable>
+                </Tocable>
                 <Campo multiline={false} autoCapitalize="none" autoCorrect={false} keyboardType="url" placeholder="O un enlace (Drive, Canva): https://…" value={form.enlace}
                   onChangeText={(t) => setForm((f) => ({ ...f, enlace: t }))} />
               </>
@@ -115,7 +116,7 @@ export default function Biblioteca({ marcas, puedeGestionar, yoId, recarga }) {
             const src = r.url && /^image\//.test(r.mime || '') ? firmas.get(r.url) : null;
             return (
               <Vidrio key={r.id} radio={16}>
-                <Pressable onPress={() => abrir(r)} style={({ pressed }) => ({ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12, opacity: pressed ? 0.7 : 1 })}>
+                <Tocable onPress={() => abrir(r)} style={({ pressed }) => ({ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12, opacity: pressed ? 0.7 : 1 })}>
                   {r.color ? <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: r.color }} />
                     : src ? <Image source={{ uri: src }} style={{ width: 40, height: 40, borderRadius: 8 }} resizeMode="cover" />
                       : <View style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: 'rgba(127,127,127,0.2)' }} />}
@@ -124,11 +125,11 @@ export default function Biblioteca({ marcas, puedeGestionar, yoId, recarga }) {
                     <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[TIPOS_DE_RECURSO.find((t) => t.value === r.tipo)?.label, r.color, r.enlace ? 'enlace' : null].filter(Boolean).join(' · ')}</Text>
                   </View>
                   {puedeGestionar ? (
-                    <Pressable onPress={() => quitar(r)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                    <Tocable onPress={() => quitar(r)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                       <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '600' }}>Quitar</Text>
-                    </Pressable>
+                    </Tocable>
                   ) : null}
-                </Pressable>
+                </Tocable>
               </Vidrio>
             );
           })}

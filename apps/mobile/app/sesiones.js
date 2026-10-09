@@ -11,9 +11,9 @@
 // tiempo (1 h, 8 h, 1 día, 1 semana o indefinido — `DURACIONES_DE_BLOQUEO`) y
 // el motivo; el bloqueo cierra todas sus conexiones. No se ofrece sobre uno
 // mismo: la base lo rechaza y quedarías fuera. Todo sale de `data/sesiones`.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import {
@@ -132,7 +132,8 @@ export default function Sesiones() {
     setError(e ? (e.code === '42501' ? 'Tu cargo todavía no tiene acceso a Conexiones.' : 'No se pudo cargar la lista.') : null);
     setFilas(data || []);
   }, []);
-  useEffect(() => { cargar(); const t = setInterval(cargar, 60_000); return () => clearInterval(t); }, [cargar]);
+  // Al día cada minuto sólo mientras se mira: con otra pantalla encima no consulta.
+  useFocusEffect(useCallback(() => { cargar(); const t = setInterval(cargar, 60_000); return () => clearInterval(t); }, [cargar]));
 
   const personas = useMemo(() => agruparPorPersona(filas || []), [filas]);
   const visibles = personas.filter((p) => {

@@ -21,11 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1262.4 — Google Wallet: la tarjeta del personal en modo de prueba
+
+- Al pasar `sesion/android` sobre `main`: Google Wallet usa también el dato `equipo` que agregó la tarjeta del personal (« · PERSONAL» en el rótulo, y una tarjeta aparte en el modo de prueba, igual que Apple). `datosDeCliente` recibe `equipoPrueba`, y `google_wallet_enlace` acepta `nivel_prueba` con el formato «nivel+equipo».
+
 ## v2.1262.3 — subir-android: --aab para subir un bundle ya firmado
 
 - `subir-android.mjs --aab=RUTA` sube un `.aab` ya firmado sin volver a compilar. El número del registro y el nombre de la versión salen del `versionCode` que Play lee del bundle, no del que calcula el script. Con la cuenta de servicio `play-publicar` (2026-10-09), Farmalasa 1.0.0 (11) se subió así a la prueba interna: es la primera subida automática.
 
-## v2.1262.2 — Android: textos visibles, modo oscuro, Inicio, Yo, pestañas, botones de marca y aurora más liviana
 ## v2.1262.2 — Android: textos visibles, modo oscuro, Inicio, Yo, pestañas, botones de marca y aurora más liviana
 
 Revisión visual de las dos apps en Android, después de que la prueba interna de Farmalasa se viera «horrible» en un teléfono real.
@@ -38,14 +41,12 @@ Revisión visual de las dos apps en Android, después de que la prueba interna d
 - **Aurora** (las dos apps): el SVG de pantalla completa se cachea como textura de la GPU (`renderToHardwareTextureAndroid`) en vez de repintarse en la CPU cada vez que algo se mueve encima.
 
 ## v2.1262.1 — Android: llave por app en subir-android, --version-code y tarjetas sin sombra transparentada
-## v2.1262.1 — Android: llave por app en subir-android, --version-code y tarjetas sin sombra transparentada
 
 - **`subir-android.mjs` firma cada app con la llave que Play ya conoce.** La app del personal (`lat.farmasalud.portal`) ya tenía una prueba interna subida con EAS el 30-sep, con la llave que generó Expo. Se bajó de expo.dev a `~/.claves-farmalasa/android-upload-portal.*`, se verificó contra Expo (SHA-1 `03:20…40:FE`) y se elige por paquete (`LLAVE_POR_PAQUETE`). Puntos Salud sigue con `android-upload.*`, que Google aceptará en el paquete viejo cuando apruebe el reseteo pedido hoy.
 - **`--version-code=N`**: sin la cuenta de servicio de Play no se le puede preguntar a Play el último número, y la subida de EAS ya usó el 1. La primera de esta Mac sale con el 10.
 - **Las tarjetas de vidrio en Android** ya no llevan `elevation`: la sombra se transparentaba por el fondo al 80% y dejaba un rectángulo más claro adentro de cada tarjeta (visto en el emulador). Ahora las separa un borde fino.
 - `apps/mobile` suma `expo-system-ui`: sin él, Android no aplica `userInterfaceStyle: automatic` a la ventana raíz.
 
-## v2.1262.0 — Android: las dos apps compilan en esta Mac, widget, pase de Google Wallet y sucursales cercanas
 ## v2.1262.0 — Android: las dos apps compilan en esta Mac, widget, pase de Google Wallet y sucursales cercanas
 
 Las dos apps nativas (`apps/mobile` y `apps/clientes`) compilan para Android en esta Mac, con Android Studio y sin EAS, y se probaron en el emulador.

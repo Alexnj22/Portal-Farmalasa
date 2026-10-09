@@ -172,7 +172,7 @@ export default function Puntos() {
         </Entrada>
       ) : googleWalletDisponible(resumen) ? (
         <Entrada indice={1}>
-          <BotonGoogleWallet nivelPrueba={enPrueba ? (material ?? prueba.nivel) : null} />
+          <BotonGoogleWallet nivelPrueba={enPrueba ? `${material ?? prueba.nivel}${empleado ? '+equipo' : ''}` : null} />
         </Entrada>
       ) : null}
 

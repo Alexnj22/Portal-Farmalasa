@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1261.3 — Pedidos: limpieza de datos viejos en producción
+
+- Migración `20261009033845_limpieza_datos_pedidos` aplicada en producción con OK del usuario:
+  - las rutas 7, 8, 9, 13 y 15 quedan cerradas;
+  - 3,197 renglones de 12 pedidos de agosto recibidos por fuera pasan a anulados;
+  - la pausa del #111 se cierra con duración 0;
+  - la devolución en error del #116 pasa a rechazada;
+  - las dos diferencias acordadas del #116 quedan confirmadas, y la sala y el pedido se cierran.
+
+  El #176 (escalado) queda para que lo decida supervisión en el portal.
+
 ## v2.1261.2 — Pedidos: «Pendientes» incluye lo de meses anteriores y la lista vacía ofrece ver completados
 
 - **El filtro por defecto se llama «Pendientes»** y no «Todos los estados». Muestra lo que tiene algo por hacer, y siempre escondió lo completado sin observación: con un mes entero ya recibido la lista salía vacía y parecía que se había borrado algo (pasó en producción el 2026-10-09; no se había borrado nada). «Pendientes» de antes pasa a llamarse «Por despachar». La lista sale del núcleo (`ESTADOS_DEL_TABLERO`), así que la app ve los mismos nombres.

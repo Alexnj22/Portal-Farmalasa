@@ -18,7 +18,10 @@ describe('pedidos — núcleo compartido con la app', () => {
         ];
         expect(filtrarPedidos(rows).map(r => r.pedido_id)).toEqual([2, 3]);
         expect(filtrarPedidos(rows, { estado: 'completado' }).map(r => r.pedido_id)).toEqual([1, 2]);
-        expect(filtrarPedidos(rows, { rango: '2026-10-01|2026-10-31' }).map(r => r.pedido_id)).toEqual([2]);
+        // Lo pendiente de un mes anterior sigue a la vista en «Pendientes»
+        // (2026-10-09); con un estado concreto, el rango manda.
+        expect(filtrarPedidos(rows, { rango: '2026-10-01|2026-10-31' }).map(r => r.pedido_id)).toEqual([2, 3]);
+        expect(filtrarPedidos(rows, { estado: 'completado', rango: '2026-10-01|2026-10-31' }).map(r => r.pedido_id)).toEqual([1, 2]);
     });
 
     it('lo que no entró al inventario es observación', () => {

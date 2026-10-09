@@ -758,7 +758,7 @@ export async function fetchReenviosPorDespachar() {
     const tomados = new Set((enRuta ?? []).map(r => `${r.pedido_id}__${r.erp_sucursal_id}__r${r.reenvio_ciclo}`));
     const out = [];
     for (const f of filas) {
-        for (const c of (Array.isArray(f.reenvios_historial) ? f.reenvios_historial : [])) {
+        for (const c of /** @type {any[]} */ (Array.isArray(f.reenvios_historial) ? f.reenvios_historial : [])) {
             if (!c || c.sent_at || c.arrived_at) continue;
             const key = `${f.pedido_id}__${f.erp_sucursal_id}__r${c.ciclo}`;
             if (tomados.has(key)) continue;

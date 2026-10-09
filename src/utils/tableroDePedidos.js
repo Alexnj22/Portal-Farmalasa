@@ -331,7 +331,7 @@ export function rangoDeMes(desplazamiento = 0, hoy = new Date()) {
     const pad = n => String(n).padStart(2, '0');
     // El mes de hoy EN LA SALA (`diaSV`), y desde ahí aritmética de calendario
     // en UTC, que no depende de la zona del equipo.
-    const [y, m] = diaSV(hoy).split('-').map(Number);
+    const [y, m] = diaSV(hoy.getTime()).split('-').map(Number);
     const ini = new Date(Date.UTC(y, m - 1 + desplazamiento, 1));
     const fin = new Date(Date.UTC(ini.getUTCFullYear(), ini.getUTCMonth() + 1, 0));
     return `${ini.getUTCFullYear()}-${pad(ini.getUTCMonth() + 1)}-01|${fin.getUTCFullYear()}-${pad(fin.getUTCMonth() + 1)}-${pad(fin.getUTCDate())}`;
@@ -455,7 +455,7 @@ export function esDeAntesDelPeriodo(r, rango) {
  */
 export const PASO_DE_LA_ETAPA = { sin_iniciar: 0, preparando: 1, pausado: 1, preparado: 2, transito: 3, contando: 5, erp: 6 };
 
-export function pasosDelPedido(row, { quien = () => null, entrega = null, conductor = null } = {}) {
+export function pasosDelPedido(row, { quien = /** @type {(id: any) => any} */ (() => null), entrega = null, conductor = null } = {}) {
     if (!row) return [];
     const p = id => (id ? quien(id) ?? null : null);
     const entregador = entrega?.entregado_por ? (p(entrega.entregado_por) ?? conductor) : conductor;

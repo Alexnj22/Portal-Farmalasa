@@ -94,7 +94,7 @@ export async function pedirReenvioSala({ pedidoId, sucId, cajas = [], especiales
         const enRuta = await reenvioSaleEnRuta();
         const { data: pss, error: pssErr } = await fetchPedidoSucursalStatus(pedidoId, sucId, 'reenvios_historial');
         if (pssErr) return { data: null, error: pssErr };
-        const historial = pss?.reenvios_historial ?? [];
+        const historial = /** @type {any[]} */ (pss?.reenvios_historial ?? []);
         const ciclo     = historial.length + 1;
         // Con la base al día, el ciclo nace PENDIENTE (2026-10-07): `sent_at`
         // nulo y sin tocar `reenvio_bodega_at`; cuando la ruta sale, la base le
@@ -211,7 +211,7 @@ async function llegadaDeReenvioPasoAPaso({
     // Especiales: las que llegaron 'ok', las que no 'faltante'.
     const espLlegaron = (especialesList ?? []).filter(l => !especialesAun.includes(l));
     if (espLlegaron.length > 0 || especialesAun.length > 0) {
-        const mergedEsp = { ...(pss?.cajas_especiales_llegadas ?? {}) };
+        const mergedEsp = { .../** @type {Record<string, string>} */ (pss?.cajas_especiales_llegadas ?? {}) };
         for (const label of espLlegaron)  mergedEsp[label] = 'ok';
         for (const label of especialesAun) mergedEsp[label] = 'faltante';
         const { error: mergedErr } = await updatePedidoSucursalStatus(pedidoId, sucId, { cajas_especiales_llegadas: mergedEsp });

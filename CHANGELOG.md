@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1261.5 — Pedidos: el tablero sin techo de filas y el navegador escribe sólo lo suyo
+
+- `20261009112835_get_pedidos_en_curso_json`: el tablero de pedidos devuelve un solo JSON, así que el tope de 1000 filas ya no lo puede cortar en silencio (hoy son 194 y crecían ~50 por mes). Sin parámetro responde igual que antes, byte a byte, y las apps ya instaladas no notan el cambio. Acepta `p_desde` opcional.
+- `20261009133153_columnas_que_el_navegador_puede_escribir`: el navegador sólo puede escribir directamente las columnas que el código realmente escribe (fase 1, que incluye las de builds viejos de la app). Ya no puede marcar «recibido», «finalizado» o «corrección confirmada», ni cambiar cantidades, estados o resoluciones de renglones, ni el autor de una ruta. Quién entregó una parada lo firma la sesión.
+- Tipos de la base regenerados; se corrigieron avisos de forma en `pedidos.js`, `pasosDelPedido.js` y `tableroDePedidos.js`, y la prueba del filtro por defecto ahora refleja los pendientes de meses anteriores.
+
 ## v2.1261.4 — Pedidos: la fila dice qué no entró al inventario y por qué
 
 - Nueva función `detalle_sin_ingresar(uuid[])` (migración `20261009035121`):

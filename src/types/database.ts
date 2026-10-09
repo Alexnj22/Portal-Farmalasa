@@ -28415,60 +28415,7 @@ export type Database = {
           total_productos: number
         }[]
       }
-      get_pedidos_en_curso: {
-        Args: never
-        Returns: {
-          caja_map: Json
-          cajas_danadas: Json
-          cajas_electrolit: number
-          cajas_especiales: Json
-          cajas_especiales_llegadas: Json
-          codigo: string
-          confirmado_correccion_at: string
-          confirmado_correccion_por: string
-          corregido_bodega_at: string
-          corregido_bodega_nota: string
-          corregido_bodega_por: string
-          created_at: string
-          created_by: string
-          diferencias_reportadas_at: string
-          diferencias_reportadas_por: string
-          electrolit_faltantes: number
-          electrolit_ok: boolean
-          entrega_programada_at: string
-          entrega_programada_historial: Json
-          enviado_at: string
-          enviado_por: string
-          erp_sucursal_id: number
-          falta_caja_at: string
-          falta_cajas: Json
-          finalizado_at: string
-          finalizado_por: string
-          iniciado_at: string
-          iniciado_por: string
-          llegada_fisica_at: string
-          llegada_fisica_por: string
-          llegada_nota: string
-          llegada_tipo: string
-          min_pausado_total: number
-          notes: string
-          numero: number
-          pausado_at: string
-          pauses: Json
-          pedido_id: string
-          pedido_status: string
-          reanudado_at: string
-          reanudado_por: string
-          recibido_erp_at: string
-          recibido_erp_por: string
-          reenvio_bodega_at: string
-          reenvio_por: string
-          reenvios_historial: Json
-          segunda_llegada_at: string
-          status: string
-          total_cajas: number
-        }[]
-      }
+      get_pedidos_en_curso: { Args: { p_desde?: string }; Returns: Json }
       get_pending_mh_invoices: { Args: { p_branch_id?: number }; Returns: Json }
       get_periodo_fiscal: { Args: { p_periodo: string }; Returns: Json }
       get_periodos_fiscales: { Args: never; Returns: Json }

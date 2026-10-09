@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1262.7 — Google Wallet: logo cuadrado
+
+- La tarjeta de Google Wallet usa el logo cuadrado del portal (`Logo512.png`): Google pide el del programa cuadrado, y el que estaba (el de las facturas) es apaisado, 435×123. No cambia nada mientras el emisor no esté configurado.
+
 ## v2.1262.6 — App del personal: vuelve a compilar (faltaba el adaptador del rastreo de ruta)
 
 - `apps/mobile/plataforma/rastreoRuta.js`: es el gemelo de `src/plataforma/rastreoRuta.js` y tiene los mismos nombres y el mismo contrato. `src/data/pedidos.js` lo importa desde que el rastreo de fondo y el mapa dejaron de escribir los dos la misma posición. Sin este archivo la app del personal no compilaba (`Unable to resolve module @plataforma/rastreoRuta`). Se detectó al armar el paquete de JavaScript para iOS y Android, y ahora los dos se arman sin errores.

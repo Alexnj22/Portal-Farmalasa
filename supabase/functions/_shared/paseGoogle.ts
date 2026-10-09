@@ -27,7 +27,9 @@ import { claveDeNivel, corto, datosDeCliente, desde, MATERIALES, nivelRotulo, ty
 
 interface CuentaDeServicio { client_email: string; private_key: string }
 
-const LOGO = "https://portal.farmasalud.lat/logo-la-salud.png";
+// Cuadrado: Google pide el logo del programa cuadrado (el de las facturas es
+// apaisado, 435×123). 512 px es lo más grande que publica el portal hoy.
+const LOGO = "https://portal.farmasalud.lat/Logo512.png";
 const REGLAMENTO = "https://portal.farmasalud.lat/reglamento-puntos";
 
 export const googleWalletListo = () => !!(Deno.env.get("GOOGLE_WALLET_ISSUER_ID") && Deno.env.get("GOOGLE_WALLET_SA_B64"));

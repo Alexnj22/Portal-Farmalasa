@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1262.11 — App de clientes: el texto del movimiento llega al binario
+
+- La 38 salió igual sin `NSMotionUsageDescription`: el plugin de `expo-location` tenía `motionUsagePermission: false`, que **borra** la clave aunque esté en `ios.infoPlist`. Ahora el texto va en esa opción del plugin. De paso, `UIRequiresFullScreen` se ponía en `false` por encima del infoPlist: va como `ios.requireFullScreen: true`. Verificado con `expo config --type introspect`.
+
 ## v2.1262.10 — App de clientes: texto del sensor de movimiento para Apple
 
 - Apple rechazó la entrega 37 (ITMS-90683): faltaba `NSMotionUsageDescription`. La tarjeta lee el giroscopio para que el brillo siga la inclinación; el texto va en `app.json` → `ios.infoPlist`.

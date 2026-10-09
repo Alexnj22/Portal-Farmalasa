@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1262.5 — Pedidos: sin escrituras directas en las tablas del pedido
+
+- Migración `20261009135456_columnas_del_navegador_fase_2` aplicada en producción con OK del usuario (las apps son de prueba): desde el navegador y la app sólo se puede escribir directamente `pedido_sucursal_status.paginas`. En `pedido_items` no se escribe nada directo.
+- La web y la app ya no tienen el camino «de respaldo» con escrituras sueltas. Finalizar, la llegada, el reenvío (pedirlo y su llegada), programar la entrega y las hojas recibidas van sólo por su función de la base, en una transacción. Se borró `rpcConRespaldo` junto con la sonda de `reenvio_ciclo`.
+- Las páginas se guardan con `guardarPaginasDeSala`, que no puede mandar otra columna.
+- Quién programó o confirmó lo pone la base desde la sesión, no lo manda la pantalla.
+
 ## v2.1262.4 — Google Wallet: la tarjeta del personal en modo de prueba
 
 - Al pasar `sesion/android` sobre `main`: Google Wallet usa también el dato `equipo` que agregó la tarjeta del personal (« · PERSONAL» en el rótulo, y una tarjeta aparte en el modo de prueba, igual que Apple). `datosDeCliente` recibe `equipoPrueba`, y `google_wallet_enlace` acepta `nivel_prueba` con el formato «nivel+equipo».

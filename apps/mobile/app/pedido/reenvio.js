@@ -11,7 +11,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchPedidoItemsAll, fetchPedidosEnCurso } from '@nucleo/data/pedidos';
 import { cicloDeReenvioPendiente, confirmarLlegadaDeReenvio, reenvioTodaviaEnBodega } from '@nucleo/data/accionesDePedido';
@@ -44,7 +43,6 @@ function Elegir({ valor, onCambiar, opciones = ESTADOS }) {
 export default function LlegoElReenvio() {
   const { pedidoId, sucId, numero } = useLocalSearchParams();
   const suc = Number(sucId);
-  const { user } = useAuth();
   const [row, setRow] = useState(undefined);
   const [cajas, setCajas] = useState({});
   const [especiales, setEspeciales] = useState({});
@@ -72,8 +70,8 @@ export default function LlegoElReenvio() {
       const cajasFaltantes = listaCajas.filter((n) => estadoDe(n) === 'faltante');
       const especialesAun = listaEsp.filter((l) => especiales[l] === 'faltante');
       const r = await confirmarLlegadaDeReenvio({
-        pedidoId, sucId: suc, ciclo: ciclo.ciclo, historial: ciclo.historial, electrolitCount: ciclo.electrolits, especialesList: listaEsp,
-        userId: user?.id ?? null, cajasOk, cajasDanadas, cajasFaltantes, nota: nota.trim(),
+        pedidoId, sucId: suc, ciclo: ciclo.ciclo, electrolitCount: ciclo.electrolits,
+        cajasOk, cajasDanadas, cajasFaltantes, nota: nota.trim(),
         electrolitOk: ciclo.electrolits > 0 ? electrolit === 'ok' : true, especialesAun,
       });
       // `yaEstaba`: un segundo toque sobre una llegada ya confirmada — no se anota dos veces.

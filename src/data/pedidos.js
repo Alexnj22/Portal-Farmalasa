@@ -211,8 +211,8 @@ function escrituraDeRuta(builder) {
 //
 // La lección es que la red de las rutas se escribió para las rutas y nadie la
 // llevó al camino de al lado. Por eso ahora el mecanismo está aparte y las dos
-// puertas lo usan: `pedido_sucursal_status` (llegada, cajas recibidas,
-// reenvíos) y `pedido_items` (qué caja no llegó).
+// puertas lo usan. De la recepción hoy sólo queda `guardarPaginasDeSala`: el
+// resto se mudó a funciones de la base (2026-10-09).
 const MSG_RECEPCION_SIN_EFECTO = 'No se pudo guardar el avance de la recepción. Puede que ya no tengas permiso para gestionar pedidos: vuelve a iniciar sesión y, si sigue igual, consulta con tu jefatura.';
 
 function escrituraDeRecepcion(builder) {
@@ -332,51 +332,6 @@ export function fetchPedidoItemEventosAll(pedidoId, sucFilter) {
         if (sucFilter) q = q.eq('erp_sucursal_id', sucFilter);
         return q;
     }, { completo: true });
-}
-
-/*
- * Las tres de abajo PAGINAN, y no por precaución: el umbral YA se cruzó.
- *
- * Medido el 2026-08-21 sobre la tabla real: el pedido más grande tiene **1,108
- * renglones para una sola sucursal**, o sea 108 por encima del tope de 1,000 de
- * PostgREST. Sin paginar, `fetchPedidoItemsPendientesIds` devolvía 1,000 ids y
- * el `updatePedidoItemsFaltaCaja` de quien la llama marcaba 1,000: los otros
- * 108 renglones quedaban SIN marcar `falta_caja`, la pantalla daba la caja por
- * procesada y esos renglones figuraban como si hubieran llegado.
- *
- * No falla, no avisa y no queda en ningún log — es exactamente la forma del
- * truncado silencioso del CLAUDE.md. Y crece solo: los pedidos se agrandan.
- *
- * Devuelven el ARREGLO ya resuelto (no la query), así que quien las llama
- * desestructuraba `{ data, error }` y ahora recibe las filas. Ver el ajuste en
- * usePedidosData.
- */
-export function fetchPedidoItemsPendientesIds(pedidoId, sucId) {
-    return fetchAllRows(() => supabase.from('pedido_items').select('id')
-        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).eq('status', 'pendiente')
-        .order('id', { ascending: true }));
-}
-
-export function fetchPedidoItemsFaltaElectrolit(pedidoId, sucId) {
-    return fetchAllRows(() => supabase.from('pedido_items')
-        .select('id, products(nombre)')
-        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId)
-        .eq('falta_caja', true).eq('status', 'pendiente')
-        .order('id', { ascending: true }));
-}
-
-export function fetchPedidoItemsFaltaEspeciales(pedidoId, sucId) {
-    return fetchAllRows(() => supabase.from('pedido_items')
-        .select('id')
-        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId)
-        .eq('falta_caja', true).eq('status', 'pendiente').eq('caja_especial', true)
-        .order('id', { ascending: true }));
-}
-
-export function updatePedidoItemsFaltaCaja(ids, value) {
-    return escrituraDeRecepcion(
-        supabase.from('pedido_items').update({ falta_caja: value }).in('id', ids)
-    );
 }
 
 /**
@@ -615,19 +570,23 @@ export async function fetchResumenTraslado(pedidoId, sucId) {
 }
 
 // ── pedido_sucursal_status ──────────────────────────────────────────────────
-// Getter/setter genéricos — mismo par (pedido_id, erp_sucursal_id) en TODOS
-// los sitios que los usan, solo cambian las columnas seleccionadas o el
-// payload del update. El caller sigue armando el patch/columns exactos que
-// ya armaba antes; acá solo se centraliza el query builder.
+// Lectura genérica (mismo par pedido_id, erp_sucursal_id; cambian las columnas)
+// y la única escritura directa que queda: `paginas`.
 
 export function fetchPedidoSucursalStatus(pedidoId, sucId, columns) {
     return supabase.from('pedido_sucursal_status').select(/** @type {'*'} */ (columns))
         .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle();
 }
 
-export function updatePedidoSucursalStatus(pedidoId, sucId, patch) {
+// La ÚNICA columna de la sala que el navegador puede escribir directo
+// (2026-10-09, migración `columnas_del_navegador_fase_2`): las hojas tal como
+// se imprimieron. Todo lo demás de `pedido_sucursal_status` y de `pedido_items`
+// va por las funciones de un paso (`pasosDelPedido`, `llegadaDePedido`,
+// `recepcion`). Por eso no recibe un patch: un setter genérico invitaba a
+// mandar otra columna, que hoy daría «permission denied».
+export function guardarPaginasDeSala(pedidoId, sucId, paginas) {
     return escrituraDeRecepcion(
-        supabase.from('pedido_sucursal_status').update(patch)
+        supabase.from('pedido_sucursal_status').update({ paginas })
             .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId)
     );
 }
@@ -716,31 +675,7 @@ export function fetchPedidosDisponiblesParaRuta() {
 // llegan sólo las salas con algo pendiente, de pedidos de cualquier estado:
 // un pedido «completado» puede deber una caja. Y se descartan los ciclos que
 // ya están en una ruta que todavía no salió, para no ofrecerlos dos veces.
-// ¿La base ya sabe sacar un reenvío EN UNA RUTA? (2026-10-08) Depende de la
-// columna `ruta_pedidos.reenvio_ciclo` y de que la base le ponga `sent_at` al
-// ciclo cuando la ruta sale (migración `reenvio_sale_en_ruta`). Mientras esa
-// migración no esté —producción hoy—, el reenvío tiene que seguir saliendo como
-// siempre: «enviado» al pedirlo, con su aviso. Si no, el ciclo quedaría
-// pendiente para siempre, la sala no podría confirmar su llegada y la consulta
-// de abajo rompería «Nueva ruta» para todas las salas. Se pregunta una vez por
-// carga de página; un error que no sea «no existe la columna» no decide nada.
-let reenvioEnRutaPromesa = null;
-export function reenvioSaleEnRuta() {
-    if (!reenvioEnRutaPromesa) {
-        reenvioEnRutaPromesa = supabase.from('ruta_pedidos').select('reenvio_ciclo').limit(1)
-            .then(({ error }) => {
-                if (!error) return true;
-                const sinColumna = error.code === '42703' || error.code === 'PGRST204' || /reenvio_ciclo/.test(error.message ?? '');
-                if (!sinColumna) reenvioEnRutaPromesa = null;   // reintentar la próxima vez
-                return !sinColumna ? true : false;
-            });
-    }
-    return reenvioEnRutaPromesa;
-}
-
 export async function fetchReenviosPorDespachar() {
-    // Sin la columna no hay ciclos «por despachar»: nacen enviados.
-    if (!(await reenvioSaleEnRuta())) return { data: [], error: null };
     const { data, error } = await supabase.from('pedido_sucursal_status')
         .select('pedido_id, erp_sucursal_id, reenvios_historial, pedidos!inner(numero, status)')
         // `.contains()` con un arreglo lo manda como arreglo de Postgres

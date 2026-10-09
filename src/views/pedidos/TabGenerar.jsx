@@ -22,7 +22,7 @@ import { printPerSucursal, getExactPageGroups } from '@nucleo/utils/pedidoPrint'
 import { confirmarPedidoDirecto, vistaPreviaDePedido } from '@nucleo/data/accionesDePedido';
 import { nivelDeUrgenciaDeSala, salaSinMinMaxPublicado, urgenciaDeSala } from '@nucleo/utils/tableroDePedidos';
 import { ERP_NAMES, SUCURSALES } from '@nucleo/constants/erp';
-import { fetchActiveEmployeesBasic, fetchPedidoItemsForPrintCapture, fetchTableroParaGenerarPedido, tieneEtiquetaDeDespacho, updatePedidoSucursalStatus } from '@nucleo/data/pedidos';
+import { fetchActiveEmployeesBasic, fetchPedidoItemsForPrintCapture, fetchTableroParaGenerarPedido, tieneEtiquetaDeDespacho, guardarPaginasDeSala } from '@nucleo/data/pedidos';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 
 function friendlyError(e) {
@@ -231,7 +231,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                         // después de una escritura cuyo `error` nadie miraba, así
                         // que un rechazo se contaba como captura y el aviso de
                         // abajo no salía.
-                        const { error: guardarErr } = await updatePedidoSucursalStatus(pedidoId, sid, { paginas: groups });
+                        const { error: guardarErr } = await guardarPaginasDeSala(pedidoId, sid, groups);
                         if (guardarErr) { console.error('[pedidos] guardar hojas sala', sid, guardarErr); continue; }
                         capturadas++;
                     } catch (e) {

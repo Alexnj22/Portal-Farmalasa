@@ -46,11 +46,11 @@ export async function anularPedidoConMotivo({ pedidoId, userId = null, motivo = 
  * Programar (o mover) la entrega a una sala; cada cambio queda en el historial.
  * La entrada se AGREGA en la base (`programar_entrega_sala`, `pasosDelPedido`):
  * reescribir el arreglo entero con lo que leyó la pantalla dejaba que dos
- * pantallas abiertas se pisaran la entrada sin error. `historial` y `nombre`
- * sólo los usa el camino viejo, mientras la base no tenga la función.
+ * pantallas abiertas se pisaran la entrada sin error. Quién la programó lo
+ * pone la base desde la sesión.
  */
-export async function programarEntregaDePedido({ pedidoId, sucId, nuevoIso, historial = [], userId = null, nombre = null }) {
-    sinError(await programarEntregaSala({ pedidoId, sucId, cuando: nuevoIso, historial, por: userId, nombre }));
+export async function programarEntregaDePedido({ pedidoId, sucId, nuevoIso }) {
+    sinError(await programarEntregaSala({ pedidoId, sucId, cuando: nuevoIso }));
 }
 
 /**
@@ -94,13 +94,13 @@ export function cicloDeReenvioPendiente(historial = [], faltaCajasLegacy = []) {
  * `segunda_llegada_at` (`avisar_camino_del_pedido`), no quien llama.
  */
 export async function confirmarLlegadaDeReenvio({
-    pedidoId, sucId, ciclo, historial = [], electrolitCount = 0, especialesList = [], userId = null,
+    pedidoId, sucId, ciclo, electrolitCount = 0,
     cajasOk = [], cajasDanadas = [], cajasFaltantes = [], nota = '', electrolitOk = true, especialesAun = [],
 }) {
     const { data, error } = await llegadaDeReenvioEnLaBase({
-        pedidoId, sucId, ciclo, historial, userId,
+        pedidoId, sucId, ciclo,
         cajasOk, cajasDanadas, cajasFaltantes, nota,
-        electrolitOk, electrolitCount, especialesList, especialesAun,
+        electrolitOk, electrolitCount, especialesAun,
     });
     if (error) throw error;
     // El mapa de hojas y lo ya contado, para abrir la recepción de lo que llegó.

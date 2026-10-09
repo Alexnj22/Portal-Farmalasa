@@ -302,7 +302,7 @@ const EXCEPCIONES = {
 
   'src/views/pedidos/RecepcionModal.jsx':
     'Lo que ya se hizo NO se pierde: cada hoja confirmada se escribe al servidor ' +
-    'en el momento (`updatePedidoSucursalStatus` con `hojas_recibidas`), así que ' +
+    'en el momento (`marcarHojasRecibidas` → `marcar_hojas_recibidas`), así que ' +
     'una sesión cortada deja el pedido en el punto exacto donde iba. ' +
     'Lo que queda en memoria es la hoja EN CURSO, y ahí un borrador sería peor ' +
     'que la pérdida: sus cinco mapas por renglón —cantidad, presentación, nota, ' +

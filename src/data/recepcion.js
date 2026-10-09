@@ -1,14 +1,14 @@
 // Bloque 6.A — capa de datos, entidad "recepcion" (recepción física de
 // pedidos en sucursal). Extraído de RecepcionModal.jsx: 9 llamadas
-// supabase.from(). El update de pedido_sucursal_status (cajas_recibidas,
-// 3 sitios) reutiliza updatePedidoSucursalStatus ya definido en
-// data/pedidos.js (Bloque 6.A) — mismo query exacto, no se duplica.
+// supabase.from(). Lo que escribe en el pedido va por funciones de la base:
+// desde el 2026-10-09 el navegador no escribe `pedido_sucursal_status` (salvo
+// `paginas`) ni `pedido_items`.
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { buscarProductos } from './busquedaProductos';
 import { anotar, conBitacora } from './audit';
-import { recibirTrasladoPedido, updatePedidoSucursalStatus } from './pedidos';
-import { rpcConRespaldo } from './rpcConRespaldo';
+import { recibirTrasladoPedido } from './pedidos';
+import { pasoDelPedido } from './pasosDelPedido';
 
 export function fetchProductPreciosOpts(productId) {
     return supabase.from('product_precios')
@@ -172,27 +172,13 @@ export function recibirPedidoDeSucursal(params, { accion = null, ...contexto } =
 // apoyo— se pisaban: la segunda en guardar borraba la hoja de la primera, que
 // reaparecía pendiente y se volvía a contar.
 //
-// El camino bueno es `marcar_hojas_recibidas`, que une en la base sin
-// duplicados. Mientras esa función no exista, se cae al UPDATE de siempre pero
-// RELEYENDO la fila justo antes y uniendo: deja una ventana de milisegundos en
-// vez de la de todo el conteo. `rpcConRespaldo` recuerda que no existe para no
-// preguntar en cada hoja.
-async function agregarHojasRecibidas(pedidoId, sucursalId, hojas) {
+// `marcar_hojas_recibidas` une en la base sin duplicados. Es el único camino:
+// desde el 2026-10-09 el navegador no puede escribir `hojas_recibidas`.
+function agregarHojasRecibidas(pedidoId, sucursalId, hojas) {
     const lista = [...new Set((hojas ?? []).map(Number).filter(Number.isFinite))].sort((a, b) => a - b);
-    return rpcConRespaldo('marcar_hojas_recibidas', {
+    return pasoDelPedido('marcar_hojas_recibidas', {
         p_pedido_id: pedidoId, p_sucursal_id: sucursalId, p_hojas: lista,
-    }, () => unirHojasPasoAPaso(pedidoId, sucursalId, lista));
-}
-
-async function unirHojasPasoAPaso(pedidoId, sucursalId, lista) {
-    const { data: fila, error: errLectura } = await supabase.from('pedido_sucursal_status')
-        .select('hojas_recibidas')
-        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucursalId)
-        .maybeSingle();
-    if (errLectura) return { data: null, error: errLectura };
-    const yaEstaban = Array.isArray(fila?.hojas_recibidas) ? fila.hojas_recibidas.map(Number) : [];
-    const union = [...new Set([...yaEstaban, ...lista])].filter(Number.isFinite).sort((a, b) => a - b);
-    return updatePedidoSucursalStatus(pedidoId, sucursalId, { hojas_recibidas: union });
+    });
 }
 
 /**

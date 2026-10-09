@@ -10,7 +10,7 @@ import PortalInput from '../../components/common/PortalInput';
 import Notice from '../../components/common/Notice';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { smartFilter } from '@nucleo/utils/searchUtils';
-import { lanzarSimulacroTraslado, fetchTrasladoErp, updatePedidoSucursalStatus } from '@nucleo/data/pedidos';
+import { lanzarSimulacroTraslado, fetchTrasladoErp, guardarPaginasDeSala } from '@nucleo/data/pedidos';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { esperaDeSondeo } from './logicaDeRutas';
 import { buscarProductos } from '@nucleo/data/busquedaProductos';
@@ -74,7 +74,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                 // de verdad un pedido al que se le cortó la captura —le pasó al
                 // #97, con 460 productos—.
                 if (groups.length && pedidoId) {
-                    updatePedidoSucursalStatus(pedidoId, sucId, { paginas: groups })
+                    guardarPaginasDeSala(pedidoId, sucId, groups)
                         .then(({ error }) => { if (error) console.error('guardar hojas:', error.message); });
                 }
             })

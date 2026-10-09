@@ -816,13 +816,12 @@ export function usePedidosData({ searchTerm = '' }) {
 
     const handleProgramarEntrega = useCallback(async (newIso) => {
         if (!programarModal) return;
-        const { pedidoId, sucId, historial } = programarModal;
+        const { pedidoId, sucId } = programarModal;
         setSavingProgramar(true);
         try {
             // La entrada se AGREGA en la base (`programar_entrega_sala`), por el
-            // núcleo (`programarEntregaDePedido`), lo mismo que la app. El
-            // historial y el nombre sólo los usa el camino viejo de respaldo.
-            await programarEntregaDePedido({ pedidoId, sucId, nuevoIso: newIso, historial, userId: user?.id ?? null, nombre: empMap.get(user?.id)?.name ?? null });
+            // núcleo (`programarEntregaDePedido`), lo mismo que la app.
+            await programarEntregaDePedido({ pedidoId, sucId, nuevoIso: newIso });
             useStaff.getState().appendAuditLog('PEDIDO_ENTREGA_PROGRAMADA', pedidoId, { sucursal_id: sucId, entrega_at: newIso });
             setProgramarModal(null);
             await loadActive();
@@ -830,7 +829,7 @@ export function usePedidosData({ searchTerm = '' }) {
             console.error(e);
             useToastStore.getState().showToast('No se pudo programar la entrega', mensajeAmigable(e, 'Intenta de nuevo.'), 'error');
         } finally { setSavingProgramar(false); }
-    }, [programarModal, user, empMap, loadActive]);
+    }, [programarModal, loadActive]);
 
     // `finalizada`: la sala ya despachó, y la hoja reimpresa tiene que decir lo
     // que SALIÓ (`cantidad_enviada`), no lo asignado — ver `printFromPedidoItems`.
@@ -977,7 +976,7 @@ export function usePedidosData({ searchTerm = '' }) {
             //      eran tres escrituras y si la tercera fallaba la sala quedaba
             //      finalizada sin cajas ni hojas, sin forma de reintentar.
             const { data: fin, error: finErr } = await finalizarSalaConCajas({
-                pedidoId, sucId, userId: user?.id ?? null,
+                pedidoId, sucId,
                 totalCajas, cajaMap, paginaItems, cajasElectrolit, cajasEspeciales, ajustesEnvio,
             });
             if (finErr) throw finErr;
@@ -1122,7 +1121,7 @@ export function usePedidosData({ searchTerm = '' }) {
             const especialesLabels = especialesFaltantes.map(e => (typeof e === 'string' ? e : e.label));
             const { data: reenvio, error: reenvioErr } = await pedirReenvioSala({
                 pedidoId, sucId, cajas: cajasFaltantes, especiales: especialesLabels,
-                electrolits: electrolitsFaltantes, userId: user?.id ?? null,
+                electrolits: electrolitsFaltantes,
             });
             if (reenvioErr) throw reenvioErr;
             const ciclo = reenvio?.ciclo;
@@ -1130,11 +1129,9 @@ export function usePedidosData({ searchTerm = '' }) {
             useStaff.getState().appendAuditLog('PEDIDO_REENVIO_CAJA', pedidoId, { sucursal_id: sucId, ciclo, cajas: cajasFaltantes, electrolits: electrolitsFaltantes, especiales: especialesLabels });
 
             // El aviso «reenvío en camino» lo escribe la base cuando la ruta
-            // SALE. Se abre «Nueva ruta» con el reenvío ya marcado. Si la base
-            // todavía no saca reenvíos en ruta (`enRuta === false`), el reenvío
-            // ya salió al pedirlo, como siempre: no hay ruta que armar.
+            // SALE. Se abre «Nueva ruta» con el reenvío ya marcado.
             await loadActive();
-            if (reenvio?.enRuta !== false) setCrearRutaOpen([reenvio?.clave ?? `${pedidoId}__${sucId}__r${ciclo}`]);
+            setCrearRutaOpen([reenvio?.clave ?? `${pedidoId}__${sucId}__r${ciclo}`]);
         } catch (e) {
             console.error(e);
             useToastStore.getState().showToast('No se pudo registrar el reenvío', mensajeAmigable(e), 'error');
@@ -1208,7 +1205,7 @@ export function usePedidosData({ searchTerm = '' }) {
 
     const handleReenvioLlegadaConfirm = useCallback(async ({ cajasOk, cajasDanadas, cajasFaltantes, nota, electrolitOk = true, especialesAun = [] }) => {
         if (!reenvioLlegadaModal) return;
-        const { pedidoId, sucId, key, ciclo, historial, electrolitCount = 0, especialesList = [] } = reenvioLlegadaModal;
+        const { pedidoId, sucId, key, ciclo, electrolitCount = 0 } = reenvioLlegadaModal;
         setBusyAction('segunda_llegada');
         try {
             // Todo en UNA transacción (`confirmar_llegada_reenvio`), por el núcleo
@@ -1220,7 +1217,7 @@ export function usePedidosData({ searchTerm = '' }) {
             // abrir la recepción de lo que llegó.
             const hasFalta = cajasFaltantes.length > 0;
             const llego = await confirmarLlegadaDeReenvio({
-                pedidoId, sucId, ciclo, historial, electrolitCount, especialesList, userId: user?.id ?? null,
+                pedidoId, sucId, ciclo, electrolitCount,
                 cajasOk, cajasDanadas, cajasFaltantes, nota, electrolitOk, especialesAun,
             });
             if (!llego.yaEstaba) {

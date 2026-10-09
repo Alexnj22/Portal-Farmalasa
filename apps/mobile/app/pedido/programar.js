@@ -6,7 +6,6 @@ import { volver } from '../../componentes/volver';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchPedidoSucursalStatus } from '@nucleo/data/pedidos';
 import { programarEntregaDePedido } from '@nucleo/data/accionesDePedido';
@@ -28,7 +27,6 @@ const aIso = (dia, hora) => new Date(`${dia}T${hora}:00-06:00`).toISOString();
 
 export default function ProgramarEntrega() {
   const { pedidoId, sucId, numero } = useLocalSearchParams();
-  const { user } = useAuth();
   const empleados = useStaffStore((s) => s.employees);
   const [pss, setPss] = useState(null);
   const [dia, setDia] = useState(hoySV());
@@ -58,8 +56,7 @@ export default function ProgramarEntrega() {
     setGuardando(true);
     try {
       const iso = aIso(dia, hora);
-      const yo = (empleados || []).find((x) => String(x.id) === String(user?.id));
-      await programarEntregaDePedido({ pedidoId, sucId: Number(sucId), nuevoIso: iso, historial, userId: user?.id ?? null, nombre: yo?.name ?? null });
+      await programarEntregaDePedido({ pedidoId, sucId: Number(sucId), nuevoIso: iso });
       useStaffStore.getState().appendAuditLog?.('PEDIDO_ENTREGA_PROGRAMADA', pedidoId, { sucursal_id: Number(sucId), entrega_at: iso, desde: 'app' });
       listo('Entrega programada', `${fechaTexto(iso, { weekday: 'long', day: 'numeric', month: 'long' })} · ${hora12(iso)}`);
       volver('/pedidos');

@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1233.8 — Pedidos: tanda 2 aplicada (aviso sala lista e índices)
+
+Migraciones aplicadas en PRODUCCIÓN el 2026-10-09 (tanda 2), con `lock_timeout`:
+- `20261009005803_aviso_sala_lista_para_salir`: a los Auxiliares de Bodega les llega «Sala X lista para salir · N cajas» cuando una sala queda finalizada con sus cajas. Una sola vez por sala, y funciona con el portal publicado y con el nuevo.
+- `20261009005805_indices_pedidos`: 4 índices de FK nuevos; se quitan 2 que no se usaban (0 y 69 lecturas). Los 2 muy usados que el borrador quería quitar se dejan: ahorro nulo y riesgo de cambiar planes.
+
 ## v2.1233.7 — Pedidos: migraciones de la tanda 1 aplicadas en producción
 
 Migraciones aplicadas en PRODUCCIÓN el 2026-10-09 (tanda 1), con OK del usuario y con `lock_timeout`. Las funciones quedaron idénticas a las probadas en el entorno de pruebas (huella md5 comparada; dos difieren sólo en formato).

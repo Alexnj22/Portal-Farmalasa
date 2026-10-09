@@ -56,6 +56,13 @@ float4 voro4(float2 p) {
   }
   return float4(rel, sqrt(d2) - sqrt(d1), id);
 }
+// Las aristas viven en las ORILLAS (2026-10-09): al centro —detrás del logo y
+// de los textos— la faceta es limpia; hacia los bordes aparecen las aristas.
+float orilla(float2 uv) {
+  float a = res.x / res.y;
+  float2 d = (uv - float2(a * 0.5, 0.5)) / float2(a * 0.5, 0.5);
+  return smoothstep(0.35, 1.05, length(d));
+}
 // Una piedra tallada: dos capas de facetas (grandes y finas), cada faceta con
 // su propia pendiente — se aclara de un lado y se oscurece del otro, y cambia
 // con la inclinación —, bisel brillante en las aristas y profundidad oscura.
@@ -71,8 +78,9 @@ float3 gema(float2 uv, float escala, float3 hondo, float3 cuerpo, float3 brillo,
   // Aristas SUAVES (2026-10-09): marcadas competían con los textos.
   float arista = 1.0 - smoothstep(0.0, 0.06, v.z);
   float aristaFina = 1.0 - smoothstep(0.0, 0.03, w.z);
-  c += brillo * arista * (0.10 + 0.16 * max(0.0, dot(n, tilt)));
-  c += brillo * aristaFina * 0.025;
+  float o = orilla(uv);
+  c += brillo * arista * (0.06 + 0.22 * o) * (0.6 + 0.6 * max(0.0, dot(n, tilt)));
+  c += brillo * aristaFina * 0.03 * o;
   return c;
 }
 // Destellos que titilan sobre una grilla fina.
@@ -104,8 +112,9 @@ float3 metal(float2 uv, float escala, float3 oscuro, float3 medio, float3 claro,
   float arista = 1.0 - smoothstep(0.0, 0.055, v.z);
   float aristaFina = 1.0 - smoothstep(0.0, 0.03, w.z);
   float3 tor = 0.5 + 0.5 * cos(6.2831 * (v.w + uv.x * 0.4 + tilt.x * 0.6 + float3(0.0, 0.33, 0.67)));
-  c += mix(claro, tor, iris) * arista * (0.12 + 0.18 * max(0.0, dot(n, tilt) + 0.3));
-  c += claro * aristaFina * 0.025;
+  float o = orilla(uv);
+  c += mix(claro, tor, iris) * arista * (0.05 + 0.22 * o) * (0.6 + 0.6 * max(0.0, dot(n, tilt) + 0.3));
+  c += claro * aristaFina * 0.03 * o;
   return c;
 }
 float2 luz(float a) { return float2(a * (0.5 + tilt.x * 0.38), 0.5 - tilt.y * 0.38); }
@@ -130,7 +139,15 @@ half4 main(float2 p) {
   float a = res.x / res.y; float2 uv = p / res.y;
   // Bronce tallado (2026-10-09): cobre cálido en facetas grandes, con el velo
   // tornasol de la bornita en las aristas y una luz ámbar que sigue al teléfono.
-  float3 c = metal(uv, 1.55, float3(0.16, 0.06, 0.02), float3(0.58, 0.28, 0.10), float3(1.00, 0.72, 0.46), 2.7, 0.45);
+  float3 c = metal(uv, 1.15, float3(0.16, 0.06, 0.02), float3(0.58, 0.28, 0.10), float3(1.00, 0.72, 0.46), 2.7, 0.45);
+  // Lo único del bronce: cáusticas de luz que ondulan lentas sobre el metal,
+  // como reflejo de agua, y manchas tornasol de bornita que cambian con la luz.
+  float2 cq = uv * 3.0 + float2(t * 0.05, -t * 0.035) + tilt * 0.4;
+  float caus = pow(1.0 - abs(sin((fbm(cq) + fbm(cq * 1.7 + 3.0)) * 6.0)), 6.0);
+  c += float3(1.0, 0.70, 0.42) * caus * 0.045;
+  float born = smoothstep(0.58, 0.82, fbm(uv * 1.6 + 7.0));
+  float3 tB = 0.5 + 0.5 * cos(6.2831 * (fbm(uv * 2.0) + tilt.x * 0.5 + float3(0.55, 0.75, 0.95)));
+  c = mix(c, c * 0.6 + tB * 0.35, born * 0.30);
   float2 L = luz(a); c += float3(1.0, 0.55, 0.25) * exp(-dot(uv - L, uv - L) * 3.2) * 0.22;
   // Un barrido de luz lento que cruza la tarjeta.
   float barr = exp(-sq((uv.x / a + uv.y * 0.4 - fract(t * 0.07) * 2.2 + 0.4) * 5.0));
@@ -143,7 +160,14 @@ half4 main(float2 p) {
   float a = res.x / res.y; float2 uv = p / res.y;
   // Plata cristalizada: facetas finas y frías, como una geoda de hematita
   // pulida, con un tornasol azulado leve y destellos.
-  float3 c = metal(uv, 2.0, float3(0.10, 0.11, 0.14), float3(0.42, 0.45, 0.51), float3(0.80, 0.83, 0.88), 5.3, 0.30);
+  float3 c = metal(uv, 1.35, float3(0.10, 0.11, 0.14), float3(0.42, 0.45, 0.51), float3(0.80, 0.83, 0.88), 5.3, 0.30);
+  // Lo único de la plata: escarcha — cristales finísimos que destellan uno a
+  // uno según el ángulo, y un brillo satinado frío que corre con la inclinación.
+  float2 gq = floor(p / 7.0); float hq = hash(gq); float2 fq = fract(p / 7.0) - 0.5;
+  float esc = step(0.975, hq) * pow(max(0.0, sin(hq * 80.0 + tilt.x * 9.0 - tilt.y * 7.0 + t * 0.8)), 10.0) * exp(-length(fq) * 9.0);
+  c += float3(0.92, 0.96, 1.0) * esc * 0.8;
+  float sat = exp(-sq((uv.x / a - uv.y * 0.3 - (0.5 + tilt.x * 0.7)) * 2.6));
+  c += float3(0.70, 0.78, 0.92) * sat * 0.12;
   float2 L = luz(a); c += float3(0.80, 0.86, 0.95) * exp(-dot(uv - L, uv - L) * 3.5) * 0.18;
   float barr = exp(-sq((uv.x / a + uv.y * 0.4 - fract(t * 0.07) * 2.2 + 0.4) * 5.0));
   c += float3(0.9, 0.95, 1.0) * barr * 0.14;
@@ -155,7 +179,15 @@ half4 main(float2 p) {
   float a = res.x / res.y; float2 uv = p / res.y;
   // Oro tallado: facetas de pepita en oro profundo, aristas encendidas, un
   // tornasol leve y polvo de destellos.
-  float3 c = metal(uv, 1.7, float3(0.20, 0.10, 0.0), float3(0.72, 0.46, 0.08), float3(1.0, 0.86, 0.48), 8.1, 0.18);
+  float3 c = metal(uv, 1.2, float3(0.20, 0.10, 0.0), float3(0.72, 0.46, 0.08), float3(1.0, 0.86, 0.48), 8.1, 0.18);
+  // Lo único del oro: hojuelas de pan de oro que se encienden cada una con su
+  // ángulo, y un resplandor cálido que respira detrás del logo.
+  float4 fl = voro4(uv * 22.0 + 4.0);
+  float hoja = smoothstep(0.25, 0.0, length(fl.xy)) * step(0.82, fl.w);
+  float ang = fl.w * 37.0;
+  c += float3(1.0, 0.88, 0.5) * hoja * pow(max(0.0, sin(ang + tilt.x * 6.0 + tilt.y * 4.0)), 6.0) * 0.8;
+  float2 cc = uv - float2(a * 0.5, 0.5);
+  c += float3(1.0, 0.75, 0.30) * exp(-dot(cc, cc) * 9.0) * (0.10 + 0.04 * sin(t * 0.9));
   float2 L = luz(a); c += float3(1.0, 0.78, 0.30) * exp(-dot(uv - L, uv - L) * 3.2) * 0.20;
   float barr = exp(-sq((uv.x / a + uv.y * 0.4 - fract(t * 0.07) * 2.2 + 0.4) * 5.0));
   c += float3(1.0, 0.92, 0.65) * barr * 0.16;
@@ -165,14 +197,29 @@ half4 main(float2 p) {
   platino: `
 half4 main(float2 p) {
   float a = res.x / res.y; float2 uv = p / res.y;
-  float grano = noise(uv * 180.0) * 0.04;
-  float3 c = float3(0.035, 0.038, 0.048) + grano;
-  float fase = (uv.x * 0.5 + uv.y) * 0.9 + tilt.x * 0.9 - tilt.y * 0.6 + fbm(uv * 1.5) * 0.6;
-  float3 iris = 0.5 + 0.5 * cos(6.2831 * (fase + float3(0.0, 0.33, 0.67)));
-  float banda = exp(-sq((uv.x / a + uv.y * 0.5 - (0.75 + tilt.x * 0.6)) * 3.2));
-  c += iris * banda * 0.26;
-  float2 L = luz(a); c += float3(0.75, 0.80, 0.90) * exp(-dot(uv - L, uv - L) * 7.0) * 0.12;
-  c += float3(0.9, 0.95, 1.0) * destellos(p, 0.04, 1.4) * 0.7;
+  // Platino (2026-10-09, «le falta algo premium»): metal oscuro cepillado en
+  // círculos —como el fondo de un reloj fino— alrededor del logo, con una
+  // difracción holográfica que gira en arcoíris al inclinar, un filo de luz
+  // en el canto y polvo de estrellas.
+  float2 cc = uv - float2(a * 0.5, 0.5);
+  float rr = length(cc); float an = atan(cc.y, cc.x);
+  float cep = noise(float2(rr * 260.0, an * 3.0)) * 0.55 + noise(float2(rr * 90.0, an * 8.0)) * 0.45;
+  float3 c = mix(float3(0.035, 0.038, 0.050), float3(0.13, 0.14, 0.17), cep * 0.6 + 0.2);
+  // El cepillado circular toma luz en dos lóbulos que siguen la inclinación.
+  float lob = pow(abs(cos(an - atan(tilt.y + 0.001, tilt.x + 0.001) - 0.6)), 8.0);
+  c += float3(0.55, 0.58, 0.66) * lob * smoothstep(0.05, 0.6, rr) * 0.22;
+  // Difracción: anillos finos que se tiñen de arcoíris según el ángulo.
+  float anillos = 0.5 + 0.5 * sin(rr * 180.0);
+  float3 iris = 0.5 + 0.5 * cos(6.2831 * (an / 6.2831 * 2.0 + tilt.x * 0.9 - tilt.y * 0.6 + rr * 1.5 + float3(0.0, 0.33, 0.67)));
+  c += iris * anillos * lob * 0.16 * smoothstep(0.08, 0.5, rr);
+  // Banda holográfica ancha que cruza al inclinar.
+  float banda = exp(-sq((uv.x / a + uv.y * 0.5 - (0.75 + tilt.x * 0.6)) * 3.0));
+  c += iris * banda * 0.14;
+  // Filo de luz en el canto.
+  float borde = min(min(p.x, p.y), min(res.x - p.x, res.y - p.y));
+  c += float3(0.80, 0.84, 0.95) * (1.0 - smoothstep(0.0, 2.5, borde)) * 0.35;
+  c += float3(0.9, 0.95, 1.0) * destellos(p, 0.05, 1.4) * 0.8;
+  c *= 0.85 + 0.15 * smoothstep(1.2, 0.2, rr);
   return half4(c, 1.0);
 }`,
   // La tarjeta del EQUIPO (empleados, precio Mayoreo Plus por política):
@@ -237,7 +284,7 @@ half4 main(float2 p) {
   zafiro: `
 half4 main(float2 p) {
   float a = res.x / res.y; float2 uv = p / res.y;
-  float3 c = gema(uv, 1.7, float3(0.0, 0.02, 0.10), float3(0.04, 0.16, 0.55), float3(0.45, 0.65, 1.0), 1.3);
+  float3 c = gema(uv, 1.2, float3(0.0, 0.02, 0.10), float3(0.04, 0.16, 0.55), float3(0.45, 0.65, 1.0), 1.3);
   // Asterismo: la estrella de seis puntas del zafiro estrella, que corre con la luz.
   float2 c0 = float2(a * (0.66 + tilt.x * 0.28), 0.42 - tilt.y * 0.28);
   float2 r = uv - c0; float est = 0.0;
@@ -248,14 +295,24 @@ half4 main(float2 p) {
   }
   c += float3(0.80, 0.88, 1.0) * est * 0.45 + float3(0.40, 0.58, 1.0) * exp(-dot(r, r) * 14.0) * 0.30;
   c += float3(0.85, 0.92, 1.0) * destellos(p, 0.02, 1.8) * 0.5;
+  // Seda de rutilo: agujas finísimas a 60°, visibles sólo cuando la luz las toca.
+  float seda = 0.0;
+  for (int k = 0; k < 3; k++) {
+    float ang2 = float(k) * 1.0472 + 0.3; float2 dd = float2(cos(ang2), sin(ang2));
+    seda += pow(max(0.0, sin(dot(uv, float2(-dd.y, dd.x)) * 260.0 + hash(floor(uv * 6.0) + float(k)) * 6.0)), 40.0) * step(0.6, noise(uv * 5.0 + float(k) * 3.0));
+  }
+  c += float3(0.75, 0.85, 1.0) * seda * 0.08 * (0.4 + max(0.0, tilt.x + 0.4));
   return half4(c, 1.0);
 }`,
   rubi: `
 half4 main(float2 p) {
   float a = res.x / res.y; float2 uv = p / res.y;
-  float3 c = gema(uv, 1.8, float3(0.08, 0.0, 0.02), float3(0.55, 0.02, 0.10), float3(1.0, 0.36, 0.45), 4.2);
+  float3 c = gema(uv, 1.25, float3(0.08, 0.0, 0.02), float3(0.55, 0.02, 0.10), float3(1.0, 0.36, 0.45), 4.2);
   // Fuego interior: un rojo encendido que sigue la luz.
   float2 L = luz(a); c += float3(0.90, 0.08, 0.18) * exp(-dot(uv - L, uv - L) * 2.6) * 0.30;
+  // Lo único del rubí: un fuego interior que late despacio desde el centro.
+  float2 cr = uv - float2(a * 0.5, 0.5);
+  c += float3(1.0, 0.12, 0.22) * exp(-dot(cr, cr) * 5.0) * (0.10 + 0.06 * sin(t * 1.1));
   c += float3(1.0, 0.85, 0.88) * destellos(p, 0.03, 2.2) * 0.6;
   return half4(c, 1.0);
 }`,
@@ -264,15 +321,16 @@ half4 main(float2 p) {
   float a = res.x / res.y; float2 uv = p / res.y;
   // Un brillante visto de frente: mesa octogonal al centro y anillos de
   // facetas TRIANGULARES (estrella, cometas, faja), con aristas rectas.
-  float2 c0 = float2(a * (0.70 + tilt.x * 0.04), 0.50 - tilt.y * 0.04);
+  // Centrado justo DETRÁS del logo, con la mesa grande (2026-10-09).
+  float2 c0 = float2(a * 0.5 + tilt.x * 0.02, 0.50 - tilt.y * 0.02);
   float2 r = uv - c0; float ang = atan(r.y, r.x) + 0.3927;
   float paso = 6.2831853 / 8.0;
   // Distancia «octogonal»: con ella los anillos son octágonos, no círculos.
   float oct = length(r) * cos(mod(ang, paso) - paso * 0.5) / cos(paso * 0.5);
   // Anillos que crecen 1.6× cada uno: cerca de la mesa, facetas chicas; afuera,
   // más facetas por anillo para que no queden planchas grandes.
-  float anillo = oct < 0.17 ? 0.0 : floor(log(oct / 0.17) / log(1.6)) + 1.0;
-  float r0 = 0.17 * pow(1.6, anillo - 1.0);
+  float anillo = oct < 0.27 ? 0.0 : floor(log(oct / 0.27) / log(1.6)) + 1.0;
+  float r0 = 0.27 * pow(1.6, anillo - 1.0);
   float r1 = r0 * 1.6;
   float N = anillo < 1.5 ? 8.0 : anillo < 3.5 ? 16.0 : 32.0;
   float fa = (ang / 6.2831853 + 0.5) * N; float sec = floor(fa); float fs = fract(fa);
@@ -287,7 +345,7 @@ half4 main(float2 p) {
   float k = clamp(0.5 + 0.5 * (dot(n, tilt) * 1.4 + (id - 0.5) * 1.3) + (fs - 0.5) * 0.3 * n.x + (fr - 0.5) * 0.25 * n.y, 0.0, 1.0);
   float3 c = mix(float3(0.10, 0.12, 0.16), float3(0.88, 0.92, 0.99), k * k);
   // La mesa: plana, con un reflejo que se mueve.
-  float mesa = 1.0 - step(0.17, oct);
+  float mesa = 1.0 - step(0.27, oct);
   float3 cm = mix(float3(0.26, 0.30, 0.38), float3(0.80, 0.86, 0.95), 0.5 + 0.5 * sin(tilt.x * 3.0 + (uv.x + uv.y) * 7.0));
   c = mix(c, cm, mesa * 0.9);
   // Aristas finas y brillantes: entre sectores, entre anillos y la diagonal.
@@ -295,7 +353,7 @@ half4 main(float2 p) {
   float dSec = min(fs, 1.0 - fs) * esc;
   float dAni = min(oct - r0, r1 - oct);
   float dTri = abs(lado - frP) * min(esc, (r1 - r0)) * 0.5;
-  float d = anillo < 0.5 ? abs(oct - 0.17) : min(min(dSec, dAni), dTri);
+  float d = anillo < 0.5 ? abs(oct - 0.27) : min(min(dSec, dAni), dTri);
   float arista = 1.0 - smoothstep(0.0, 0.006, d);
   c += float3(0.92, 0.96, 1.0) * arista * 0.16;
   // Fuego: el arcoíris del diamante en las facetas que la luz toca.

@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1265.0 — App de clientes: minerales con detalles propios, reservas compartibles y con filtros
+
+- **Minerales:** las aristas viven en las orillas (`orilla()`): detrás del logo y los textos la faceta queda limpia; facetas aún más cerca. Cada uno con su detalle: bronce con cáusticas lentas y manchas tornasol de bornita; plata con escarcha que destella grano a grano; oro con hojuelas de pan de oro y un resplandor que respira; zafiro con seda de rutilo; rubí con fuego interior que late. **Diamante** centrado detrás del logo con la mesa más grande. **Platino** rehecho: cepillado circular de reloj fino, difracción holográfica que gira en arcoíris, filo de luz en el canto. Wallet regenerada.
+- **Pantallas de subir (nivel, rango, Mayoreo Plus, bienvenida) y cumpleaños:** ya no se salen; contenido en ScrollView con áreas seguras, modo compacto en pantallas bajas y topes de tamaño de letra.
+- **Cupón usado:** la animación ya no invade las tarjetas de abajo (ranura en la línea punteada, sin giro ni desplazamiento, recortada a su caja) y dice que el premio ya está en el saldo.
+- **Reservas:** el código/QR se puede compartir (imagen en iOS, texto en Android) para que otra persona retire; las condiciones lo dicen (versión 2026-10-09: se vuelven a aceptar al reservar) y la constancia impresa también. **Mis reservas** con filtros (Todas · Abiertas · Retiradas · Vencidas o canceladas) y paginación por cursor de a 20; las abiertas llegan completas en la primera página.
+
 ## v2.1264.0 — Auditoría completa: todo nativo en la app
 
 - **Auditoría completa portal ↔ app, y todo lo que faltaba pasó a nativo.** Cinco áreas revisadas botón por botón contra el portal (tablas en el scratchpad de la sesión):

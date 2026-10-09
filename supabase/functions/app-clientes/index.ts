@@ -55,7 +55,9 @@ const POR_PAGINA = 20;
 const WHATSAPP_EMPRESA = "50323010013";
 
 const TERMINOS_RESERVA = {
-  version: "2026-10-07",
+  // 2026-10-09: + quién puede retirar (el código compartido). Cambiar la versión
+  // vuelve a pedir la aceptación la próxima vez que se reserve.
+  version: "2026-10-09",
   titulo: "Así funciona tu reserva",
   puntos: [
     "Por ahora puedes reservar productos que estén en oferta.",
@@ -67,6 +69,7 @@ const TERMINOS_RESERVA = {
     "Puedes pagarla en línea desde la app o al retirarla en la sucursal.",
     "Si la pagaste en línea, tienes 7 días para retirarla desde que esté lista. Pasado ese plazo el producto vuelve a la venta, pero tu pago se conserva y la sucursal la aparta de nuevo cuando vengas.",
     "Una reserva pagada en línea no se cancela desde la app: escríbele a la sucursal.",
+    "Si no puedes ir tú, comparte el código de tu reserva (desde Mis reservas) con alguien de confianza: quien lo presente en la sucursal puede retirarla, y pagarla si falta. Como el código basta para retirarla, no lo publiques.",
   ],
 };
 
@@ -765,19 +768,69 @@ Deno.serve(async (req) => {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
 
+    // Mis reservas — paginada y con filtro (2026-10-09). Antes: las últimas 30
+    // de los últimos 45 días, sin forma de ver más atrás.
+    //
+    // `estado`: «todas» (por defecto), «abiertas» (pendiente/lista),
+    // «retiradas» o «cerradas» (vencidas y canceladas). El filtro va en el
+    // servidor para que la paginación sea la de lo filtrado.
+    //
+    // Las ABIERTAS nunca se paginan: son pocas (3 activas como mucho, más los
+    // renglones de los pedidos del carrito) y tienen que llegar JUNTAS — la
+    // pantalla las agrupa arriba («Listas para retirar» / «En preparación») y
+    // el total de un pedido suma todos sus renglones abiertos. En «todas» van
+    // completas en la primera página y el cursor recorre sólo las terminadas.
+    //
+    // Cursor `antes` = {created_at, id} de la última fila mostrada, de a 20
+    // (como `mis_facturas`): una reserva nueva mientras se baja no repite ni
+    // salta ninguna.
     if (accion === "mis_reservas") {
-      const { data, error } = await admin.from("app_reservas")
-        .select("id, estado, origen, pedido, documento, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega, costo_envio, saldo_favor, saldo_favor_vence, saldo_favor_usado_at")
-        .eq("customer_id", customerId).gte("created_at", new Date(Date.now() - 45 * 86400_000).toISOString())
-        .order("created_at", { ascending: false }).limit(30);
-      if (error) throw error;
+      const COLS = "id, estado, origen, pedido, documento, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega, costo_envio, saldo_favor, saldo_favor_vence, saldo_favor_usado_at";
+      const ABIERTAS = ["pendiente", "lista"];
+      const TERMINADAS: Record<string, string[]> = {
+        todas: ["retirada", "vencida", "cancelada"], retiradas: ["retirada"], cerradas: ["vencida", "cancelada"],
+      };
+      const filtro = ["todas", "abiertas", "retiradas", "cerradas"].includes(String(body?.estado)) ? String(body.estado) : "todas";
+      const POR_PAGINA = 20;
+      const antes = body?.antes && typeof body.antes === "object" ? body.antes : null;
+      const cursorOk = antes && /^\d{4}-\d{2}-\d{2}T[\d:.]+([+-]\d{2}:?\d{2}|Z)?$/.test(String(antes.created_at ?? "")) && Number.isFinite(Number(antes.id));
+
+      // Las abiertas: todas de una vez, sólo en la primera página.
+      let abiertas: any[] = [];
+      if ((filtro === "todas" || filtro === "abiertas") && !antes) {
+        const { data, error } = await admin.from("app_reservas").select(COLS).limit(200) // tope deliberado: son pocas
+          .eq("customer_id", customerId).in("estado", ABIERTAS)
+          .order("created_at", { ascending: false }).order("id", { ascending: false });
+        if (error) throw error;
+        abiertas = data ?? [];
+      }
+      // Las terminadas, por página.
+      let terminadas: any[] = [];
+      let siguiente: { created_at: string; id: number } | null = null;
+      if (filtro !== "abiertas") {
+        let q = admin.from("app_reservas").select(COLS).limit(20) // = POR_PAGINA
+          .eq("customer_id", customerId).in("estado", TERMINADAS[filtro])
+          .order("created_at", { ascending: false }).order("id", { ascending: false });
+        if (cursorOk) {
+          const C = String(antes.created_at), I = Number(antes.id);
+          q = q.or(`created_at.lt."${C}",and(created_at.eq."${C}",id.lt.${I})`);
+        }
+        const { data, error } = await q;
+        if (error) throw error;
+        terminadas = data ?? [];
+        const ultima = terminadas[terminadas.length - 1];
+        if (terminadas.length === POR_PAGINA && ultima) siguiente = { created_at: ultima.created_at, id: Number(ultima.id) };
+      }
+      const data = [...abiertas, ...terminadas];
+
       const { data: salas, error: eS } = await admin.from("branches").select("id, name, address");
       if (eS) throw eS;
       const sala = new Map((salas ?? []).map((b: any) => [Number(b.id), b]));
       // Lo que se cobra de un pedido del carrito: sus renglones abiertos + el envío una vez.
+      // (Completo: las abiertas llegan todas juntas, ver arriba.)
       const porPedido = new Map<string, { suma: number; envio: number }>();
-      for (const r of data ?? []) {
-        if (!r.pedido || !["pendiente", "lista"].includes(r.estado)) continue;
+      for (const r of data) {
+        if (!r.pedido || !ABIERTAS.includes(r.estado)) continue;
         const t = porPedido.get(r.pedido) ?? { suma: 0, envio: 0 };
         t.suma += Number(r.precio_unitario ?? 0) * Number(r.cantidad ?? 1);
         t.envio = Math.max(t.envio, Number(r.costo_envio ?? 0));
@@ -785,7 +838,9 @@ Deno.serve(async (req) => {
       }
       return json({
         ok: true,
-        reservas: (data ?? []).map((r: any) => {
+        estado: filtro,
+        siguiente,
+        reservas: data.map((r: any) => {
           const tp = r.pedido ? porPedido.get(r.pedido) : null;
           const b: any = sala.get(Number(r.branch_id));
           return {

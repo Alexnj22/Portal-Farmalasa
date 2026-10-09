@@ -2,8 +2,13 @@
 // un producto normal, en qué va, cómo se entrega (retiro en qué sucursal, o a
 // domicilio), cómo se paga y si ya está pagado. Una reserva «lista» muestra la
 // cuenta regresiva de las 24 horas; una pendiente o lista se puede cancelar.
-import { useCallback, useEffect, useState } from 'react';
-import { Alert, Linking, Platform, Pressable, Text, View } from 'react-native';
+//
+// Paginada y con filtros (2026-10-09): chips Todas · Abiertas · Retiradas ·
+// Vencidas/Canceladas. El filtro lo aplica el servidor (para que «ver más»
+// traiga más de lo filtrado), de a 20 por cursor. Las abiertas llegan siempre
+// completas en la primera página; lo que se pagina son las terminadas.
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Linking, Platform, Pressable, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
@@ -40,19 +45,52 @@ function restante(iso, ahora) {
   return h ? `quedan ${h} h ${m} min` : `quedan ${m} min`;
 }
 
+// Los filtros: la clave es la que entiende el servidor (`estado`).
+const FILTROS = [['todas', 'Todas'], ['abiertas', 'Abiertas'], ['retiradas', 'Retiradas'], ['cerradas', 'Vencidas o canceladas']];
+const VACIO_FILTRO = {
+  abiertas: 'No tienes reservas en preparación ni listas para retirar.',
+  retiradas: 'Todavía no has retirado ninguna reserva.',
+  cerradas: 'Ninguna reserva tuya venció ni se canceló.',
+};
+// «Todas» va sin parámetros: es la misma lectura que hacen el carrito y el pago
+// (y la que queda guardada para cuando no hay conexión).
+const datosDe = (filtro) => (filtro === 'todas' ? undefined : { estado: filtro });
+
 export default function Reservas() {
   const t = useTema();
   const pedir = useSesion((s) => s.pedir);
-  const [d, setD] = useState(null);
+  const [filtro, setFiltro] = useState('todas');
+  const [porFiltro, setPorFiltro] = useState({});
+  const d = porFiltro[filtro];
   const [ahora, setAhora] = useState(Date.now());
   const [refrescando, setRefrescando] = useState(false);
   const [encargos, setEncargos] = useState([]);
   // Desde el aviso «ya tienes una reserva» o el carrito: esa reserva va primero y marcada.
   const { resaltar } = useLocalSearchParams();
   const cargar = useCallback(() => Promise.all([
-    pedir('mis_reservas').then((r) => setD((ant) => (r?.ok || !ant?.ok ? r : ant))),
+    pedir('mis_reservas', datosDe(filtro)).then((r) => setPorFiltro((ant) => ({ ...ant, [filtro]: r?.ok || !ant[filtro]?.ok ? r : ant[filtro] }))),
     pedir('mis_encargos').then((r) => { if (r?.ok) setEncargos(r.encargos); }),
-  ]), [pedir]);
+  ]), [pedir, filtro]);
+  // Ver más: desde la última reserva mostrada (cursor), se suma a la lista.
+  const [masCargando, setMasCargando] = useState(false);
+  const pidiendo = useRef(false);
+  const cargarMas = useCallback(async () => {
+    const actual = porFiltro[filtro];
+    if (pidiendo.current || !actual?.ok || !actual.siguiente) return;
+    pidiendo.current = true; setMasCargando(true);
+    try {
+      const r = await pedir('mis_reservas', { ...datosDe(filtro), antes: actual.siguiente });
+      if (r?.ok) {
+        setPorFiltro((ant) => {
+          const previo = ant[filtro];
+          // Si entretanto se recargó la lista, esta página ya no le corresponde.
+          if (!previo?.ok || previo.siguiente !== actual.siguiente) return ant;
+          const vistas = new Set(previo.reservas.map((x) => String(x.id)));
+          return { ...ant, [filtro]: { ...previo, siguiente: r.siguiente, reservas: [...previo.reservas, ...r.reservas.filter((x) => !vistas.has(String(x.id)))] } };
+        });
+      }
+    } finally { pidiendo.current = false; setMasCargando(false); }
+  }, [pedir, filtro, porFiltro]);
   // Pagar el anticipo de un encargo confirmado (Wompi, como las reservas).
   const pagarEncargo = async (e) => {
     const res = await pedir('pagar_encargo', { id: e.id });
@@ -73,7 +111,8 @@ export default function Reservas() {
       cargar();
     } },
   ]);
-  useFocusEffect(useCallback(() => { cargar(); pedir('pago_preparar'); }, [cargar, pedir]));
+  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
+  useFocusEffect(useCallback(() => { pedir('pago_preparar'); }, [pedir]));
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
   useEffect(() => { const id = setInterval(() => setAhora(Date.now()), 30000); return () => clearInterval(id); }, []);
 
@@ -103,21 +142,28 @@ export default function Reservas() {
       await WebBrowser.openAuthSessionAsync(res.url, 'puntossalud://reservas');
       for (let i = 0; i < 4; i++) {
         const nuevo = await pedir('mis_reservas');
-        if (nuevo?.ok) setD(nuevo);
         if (nuevo?.reservas?.find((x) => x.id === r.id)?.pago_estado === 'pagado') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
           break;
         }
         await new Promise((ok) => setTimeout(ok, 1500));
       }
+      // Se recarga el filtro que se está viendo (desde su primera página).
+      await cargar();
     } finally {
       setPagando(null);
     }
   };
 
-  if (!d) return <Cargando />;
-  if (!d.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}><Vacio titulo="No se pudieron cargar">{d.mensaje ?? 'Revisa tu conexión y desliza hacia abajo para reintentar.'}</Vacio></Pantalla>;
-  if (!d.reservas.length && !encargos.length) {
+  const chips = (
+    <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+      {FILTROS.map(([k, texto]) => <Chip key={k} texto={texto} activo={filtro === k} alTocar={() => setFiltro(k)} />)}
+    </View>
+  );
+  // Al cambiar de filtro los chips se quedan: sólo la lista muestra que carga.
+  if (!d) return filtro === 'todas' ? <Cargando /> : <Pantalla conPestanas={false}>{chips}<ActivityIndicator style={{ marginTop: 24 }} /></Pantalla>;
+  if (!d.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>{filtro === 'todas' ? null : chips}<Vacio titulo="No se pudieron cargar">{d.mensaje ?? 'Revisa tu conexión y desliza hacia abajo para reintentar.'}</Vacio></Pantalla>;
+  if (filtro === 'todas' && !d.reservas.length && !encargos.length) {
     return (
       <Pantalla conPestanas={false}>
         <Vacio titulo="Sin reservas">Aparta productos de las ofertas o del catálogo (desde el carrito) y pásalos a retirar sin hacer fila.</Vacio>
@@ -149,25 +195,45 @@ export default function Reservas() {
     </Entrada>
   );
   return (
-    <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
-      {encargos.length ? (
+    <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando} alFinal={d.siguiente ? cargarMas : undefined}>
+      {chips}
+      {filtro === 'todas' && encargos.length ? (
         <>
           <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4 }}>Encargos</Text>
           {encargos.map((e) => <Encargo key={e.id} e={e} alPagar={() => pagarEncargo(e)} alCancelar={() => cancelarEncargo(e)} />)}
         </>
       ) : null}
+      {filtro !== 'todas' && !d.reservas.length ? <Vacio titulo="Nada por aquí">{VACIO_FILTRO[filtro]}</Vacio> : null}
       {abiertas.length ? <ResumenReservas listas={listas.length} preparando={preparando.length} /> : null}
       {listas.length ? <Seccion texto="Listas para retirar" n={listas.length} /> : null}
       {listas.map((r, i) => tarjeta(r, i))}
       {preparando.length ? <Seccion texto="En preparación" n={preparando.length} /> : null}
       {preparando.map((r, i) => tarjeta(r, listas.length + i))}
-      {cerradas.length ? <Seccion texto="Anteriores" /> : null}
+      {cerradas.length && filtro === 'todas' ? <Seccion texto="Anteriores" /> : null}
       {cerradas.map((r, i) => (
         <Entrada key={r.id} indice={Math.min(abiertas.length + i, 8)}>
           <ReservaCerrada r={r} />
         </Entrada>
       ))}
+      {d.siguiente ? (
+        <Pressable onPress={cargarMas} disabled={masCargando} accessibilityRole="button"
+          style={({ pressed }) => ({ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, minHeight: 44, borderRadius: 999, opacity: pressed ? 0.6 : 1 })}>
+          {masCargando ? <ActivityIndicator /> : null}
+          <Text style={{ fontSize: 14, fontWeight: '600', color: colorSistema.texto2 }}>{masCargando ? 'Cargando más…' : 'Ver más reservas'}</Text>
+        </Pressable>
+      ) : null}
     </Pantalla>
+  );
+}
+
+function Chip({ texto, activo, alTocar }) {
+  const t = useTema();
+  return (
+    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} hitSlop={5} accessibilityRole="button" accessibilityState={{ selected: activo }}
+      style={({ pressed }) => ({ minHeight: 34, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', transform: [{ scale: pressed ? 0.97 : 1 }],
+        backgroundColor: activo ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)') })}>
+      <Text style={{ fontSize: 14, fontWeight: '700', color: activo ? '#FFFFFF' : colorSistema.texto }}>{texto}</Text>
+    </Pressable>
   );
 }
 
@@ -395,7 +461,13 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando, resaltada = fa
         </View>
         <Icono sf={verCodigo ? 'chevron.up' : 'chevron.down'} respaldo="" tam={12} color={colorSistema.texto3} />
       </Pressable>
-      {verCodigo ? <CodigoReserva codigo={codigo} tam={140} /> : null}
+      {/* Compartir (2026-10-09): si no puede ir, se lo pasa a otra persona. A domicilio no aplica. */}
+      {verCodigo ? (
+        <CodigoReserva codigo={codigo} tam={140} compartir={domicilio ? null : {
+          producto: r.pedido && productosDelPedido > 1 ? `${productosDelPedido} productos (${r.producto_nombre} y más)` : `${r.cantidad} × ${r.producto_nombre}`,
+          sala: r.sala, pedido: !!r.pedido,
+        }} />
+      ) : null}
 
       {r.pago_estado === 'pagado' ? (
         <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto2 }}>

@@ -3,7 +3,7 @@
 // acabado del nivel, confeti y lo que gana. El último nivel visto se guarda en
 // el teléfono; bajar de nivel no celebra nada (y se anota en silencio).
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
@@ -108,6 +108,7 @@ export default function SubisteDeNivel({ nivel, forzar = false, mayoreo = null, 
 
 function Celebracion({ p, alCerrar }) {
   const ins = useSafeAreaInsets();
+  const { height: alto } = useWindowDimensions();
   const paleta = COLORES_NIVEL[p.clave] ?? COLORES_NIVEL.vip;
   const corona = useSharedValue(0);
   const texto = useSharedValue(0);
@@ -123,39 +124,57 @@ function Celebracion({ p, alCerrar }) {
       // Las piedras del mayoreo: el confeti con el color de la piedra.
       : ORDEN_RANGO[p.clave] !== undefined ? [paleta.acento, '#FFFFFF', paleta.frente[1], paleta.acento]
         : ['#FFFFFF', '#C3CAD4', '#8EC30F', '#E5E9EF'];
+  // Medidas (2026-10-09, «el contenido no cabe en la card y se sale»): el
+  // bloque de texto ocupa TODO el ancho útil —antes se medía por su contenido
+  // y la fila de beneficios crecía sin tope hacia los lados—, el contenido va
+  // en un ScrollView por si el texto del sistema está muy grande, y en
+  // pantallas bajas (iPhone SE) todo se achica un poco. El botón queda fijo
+  // abajo, siempre a la vista.
+  const compacta = alto < 720;
+  const disco = compacta ? 88 : 120;
   return (
       <LinearGradient colors={paleta.frente} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
         <EfectoNivel nivel={p.clave} activa x={null} />
         {/* Un velo oscuro para que el texto blanco se lea sobre plata y oro. */}
         <LinearGradient colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.45)']} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 18, paddingTop: ins.top + 20 }}>
-          <Animated.View style={[{ width: 120, height: 120, borderRadius: 60, alignItems: 'center', justifyContent: 'center',
-            backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)' }, eCorona]}>
-            <Icono sf={p.icono[0]} respaldo={p.icono[1]} tam={56} color="#FFFFFF" />
-          </Animated.View>
-          <Animated.View style={[{ alignItems: 'center', gap: 10 }, eTexto]}>
-            <Text style={{ color: paleta.acento ?? '#FFFFFF', fontSize: 15, fontWeight: '900', letterSpacing: 3, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 8 }}>{p.etiqueta}</Text>
-            <Text adjustsFontSizeToFit numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 44, fontWeight: '900', letterSpacing: -1, textShadowColor: 'rgba(0,0,0,0.3)', textShadowRadius: 12 }}>{p.titulo}</Text>
+        <ScrollView style={{ flex: 1 }} bounces={false} showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: compacta ? 12 : 18,
+            paddingTop: ins.top + (compacta ? 16 : 24), paddingBottom: 16, paddingLeft: Math.max(24, ins.left + 16), paddingRight: Math.max(24, ins.right + 16) }}>
+          {/* Margen para el rebote del disco (escala 1.15): no se recorta. */}
+          <View style={{ padding: disco * 0.08 }}>
+            <Animated.View style={[{ width: disco, height: disco, borderRadius: disco / 2, alignItems: 'center', justifyContent: 'center',
+              backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)' }, eCorona]}>
+              <Icono sf={p.icono[0]} respaldo={p.icono[1]} tam={Math.round(disco * 0.46)} color="#FFFFFF" />
+            </Animated.View>
+          </View>
+          <Animated.View style={[{ alignSelf: 'stretch', alignItems: 'center', gap: compacta ? 8 : 10, maxWidth: 440, width: '100%' }, eTexto]}>
+            <Text maxFontSizeMultiplier={1.3} style={{ color: paleta.acento ?? '#FFFFFF', fontSize: compacta ? 13 : 15, fontWeight: '900', letterSpacing: compacta ? 2 : 3, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 8 }}>{p.etiqueta}</Text>
+            <Text adjustsFontSizeToFit minimumFontScale={0.5} numberOfLines={1} maxFontSizeMultiplier={1.2}
+              style={{ alignSelf: 'stretch', textAlign: 'center', color: '#FFFFFF', fontSize: compacta ? 36 : 44, fontWeight: '900', letterSpacing: -1, textShadowColor: 'rgba(0,0,0,0.3)', textShadowRadius: 12 }}>{p.titulo}</Text>
             {p.subtitulo ? (
-              <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '700', opacity: 0.9, textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 6 }}>{p.subtitulo}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '700', opacity: 0.9, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 6 }}>{p.subtitulo}</Text>
             ) : null}
-            <Text style={{ color: '#FFFFFF', fontSize: 16, textAlign: 'center', maxWidth: 300, textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 6 }}>
+            <Text maxFontSizeMultiplier={1.3} style={{ color: '#FFFFFF', fontSize: compacta ? 15 : 16, lineHeight: compacta ? 20 : 22, textAlign: 'center', maxWidth: 320, textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 6 }}>
               {p.texto}
             </Text>
-            <View style={{ gap: 8, marginTop: 6, alignSelf: 'stretch', backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20, padding: 16 }}>
+            <View style={{ gap: compacta ? 8 : 10, marginTop: 6, alignSelf: 'stretch', backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20,
+              paddingHorizontal: 16, paddingVertical: compacta ? 12 : 16 }}>
               {p.beneficios.map((b) => (
-                <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <Icono sf="checkmark.seal.fill" respaldo="✓" tam={16} color={paleta.acento ?? '#FFFFFF'} />
-                  <Text style={{ flex: 1, color: '#FFFFFF', fontSize: 15, fontWeight: '600' }}>{b}</Text>
+                <View key={b} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                  <View style={{ paddingTop: 2 }}>
+                    <Icono sf="checkmark.seal.fill" respaldo="✓" tam={16} color={paleta.acento ?? '#FFFFFF'} />
+                  </View>
+                  <Text maxFontSizeMultiplier={1.3} style={{ flex: 1, flexShrink: 1, color: '#FFFFFF', fontSize: compacta ? 14 : 15, lineHeight: compacta ? 19 : 20, fontWeight: '600' }}>{b}</Text>
                 </View>
               ))}
             </View>
           </Animated.View>
-        </View>
+        </ScrollView>
         <Pressable onPress={alCerrar} accessibilityRole="button"
-          style={({ pressed }) => ({ marginHorizontal: 24, marginBottom: ins.bottom + 20, minHeight: 54, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
+          style={({ pressed }) => ({ marginHorizontal: Math.max(24, ins.left + 16), marginTop: 8, marginBottom: Math.max(ins.bottom, 12) + (compacta ? 12 : 20),
+            minHeight: compacta ? 50 : 54, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
             backgroundColor: '#FFFFFF', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-          <Text style={{ color: '#1A1320', fontSize: 17, fontWeight: '900' }}>¡Genial!</Text>
+          <Text maxFontSizeMultiplier={1.3} style={{ color: '#1A1320', fontSize: 17, fontWeight: '900' }}>¡Genial!</Text>
         </Pressable>
         <Confeti colores={colores} alTerminar={() => {}} />
       </LinearGradient>

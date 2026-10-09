@@ -31,6 +31,8 @@ export function construirConstanciaDeReserva({ codigo, cliente, producto, cantid
         codigos: [{ valor: codigo, simbologia: 'CODE128' }],
         pie: [
             'Presenta este papel para retirar.',
+            'Si no puedes venir, quien lo presente',
+            'puede retirar la reserva.',
             'Si no la retiras en 7 dias, el anticipo',
             'queda a tu favor 30 dias para otra compra.',
             'No se devuelve en efectivo.',

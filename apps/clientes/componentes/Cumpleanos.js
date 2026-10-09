@@ -9,7 +9,8 @@
 // lo cuenta. `resumen.cumpleanos` lo prende el servidor (o la muestra
 // `cumpleanos` de `app_cliente_muestras`, para verla sin esperar al día).
 import { useEffect, useMemo, useState } from 'react';
-import { Dimensions, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
@@ -56,6 +57,8 @@ export default function Cumpleanos({ activo, nombre, puntos, forzar = false }) {
 
 function Fiesta({ nombre, puntos, alCerrar }) {
   const t = useTema();
+  const ins = useSafeAreaInsets();
+  const compacta = useWindowDimensions().height < 720;
   const pastel = useSharedValue(0);
   const latido = useSharedValue(1);
   const texto = useSharedValue(0);
@@ -76,32 +79,38 @@ function Fiesta({ nombre, puntos, alCerrar }) {
       {GLOBOS.map((g, i) => <Globo key={i} emoji={g} indice={i} color={COLORES_GLOBO[i % COLORES_GLOBO.length]} />)}
       <Confeti colores={['#FF2D55', '#FFD60A', '#5AC8FA', '#AF52DE', t.color.verde, t.color.magenta]} />
 
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 14 }}>
-        <Animated.Text style={[{ fontSize: 110 }, estiloPastel]}>🎂</Animated.Text>
-        <Animated.View style={[{ alignItems: 'center', gap: 10 }, estiloTexto]}>
-          <Text style={{ fontSize: 15, fontWeight: '800', letterSpacing: 2, color: t.color.magentaTexto }}>HOY ES TU DÍA</Text>
-          <Text style={{ fontSize: 34, fontWeight: '900', textAlign: 'center', letterSpacing: -0.5, color: t.oscuro ? '#FFFFFF' : '#2B0B3A' }}>
+      {/* Mismo criterio que SubisteDeNivel (2026-10-09): áreas seguras, un
+          ScrollView por si el texto del sistema está grande y medidas que se
+          achican en pantallas bajas (iPhone SE), para que nada se salga. */}
+      <ScrollView style={{ flex: 1 }} bounces={false} showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: compacta ? 10 : 14,
+          paddingTop: ins.top + 20, paddingBottom: Math.max(ins.bottom, 12) + 20, paddingHorizontal: 28 }}>
+        <Animated.Text maxFontSizeMultiplier={1} style={[{ fontSize: compacta ? 84 : 110 }, estiloPastel]}>🎂</Animated.Text>
+        <Animated.View style={[{ alignSelf: 'stretch', alignItems: 'center', gap: compacta ? 8 : 10 }, estiloTexto]}>
+          <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 15, fontWeight: '800', letterSpacing: 2, color: t.color.magentaTexto }}>HOY ES TU DÍA</Text>
+          <Text maxFontSizeMultiplier={1.2} adjustsFontSizeToFit minimumFontScale={0.6} numberOfLines={nombre ? 3 : 2}
+            style={{ alignSelf: 'stretch', fontSize: compacta ? 30 : 34, fontWeight: '900', textAlign: 'center', letterSpacing: -0.5, color: t.oscuro ? '#FFFFFF' : '#2B0B3A' }}>
             ¡Feliz cumpleaños{nombre ? `,\n${nombre}` : ''}!
           </Text>
           {puntos ? (
-            <View style={{ backgroundColor: t.color.verde, borderRadius: 20, paddingHorizontal: 20, paddingVertical: 12, alignItems: 'center', marginTop: 6 }}>
-              <Text style={{ fontSize: 13, fontWeight: '800', color: '#1A2600', letterSpacing: 1 }}>TU REGALO</Text>
-              <Text style={{ fontSize: 30, fontWeight: '900', color: '#1A2600' }}>{puntos} puntos</Text>
-              <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A2600' }}>{dolares(puntos / 100)} para tu próxima compra</Text>
+            <View style={{ maxWidth: '100%', backgroundColor: t.color.verde, borderRadius: 20, paddingHorizontal: 20, paddingVertical: 12, alignItems: 'center', marginTop: 6 }}>
+              <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 13, fontWeight: '800', color: '#1A2600', letterSpacing: 1 }}>TU REGALO</Text>
+              <Text maxFontSizeMultiplier={1.2} adjustsFontSizeToFit numberOfLines={1} style={{ fontSize: compacta ? 26 : 30, fontWeight: '900', color: '#1A2600' }}>{puntos} puntos</Text>
+              <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 14, fontWeight: '700', color: '#1A2600', textAlign: 'center' }}>{dolares(puntos / 100)} para tu próxima compra</Text>
             </View>
           ) : null}
-          <Text style={{ fontSize: 15, lineHeight: 21, textAlign: 'center', color: t.oscuro ? 'rgba(255,255,255,0.85)' : '#4A2A55', marginTop: 4 }}>
+          <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 15, lineHeight: 21, textAlign: 'center', color: t.oscuro ? 'rgba(255,255,255,0.85)' : '#4A2A55', marginTop: 4 }}>
             Gracias por ser parte de Farmacia Salud. Que tengas un día lleno de salud y alegría.
           </Text>
         </Animated.View>
         <Pressable onPress={alCerrar} accessibilityRole="button"
           style={({ pressed }) => ({
-            marginTop: 18, backgroundColor: t.color.magenta, borderRadius: 999, paddingHorizontal: 40, paddingVertical: 15,
+            marginTop: compacta ? 10 : 18, minHeight: 50, justifyContent: 'center', backgroundColor: t.color.magenta, borderRadius: 999, paddingHorizontal: 40, paddingVertical: 14,
             transform: [{ scale: pressed ? 0.96 : 1 }],
           })}>
-          <Text style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '800' }}>¡Gracias! 🥳</Text>
+          <Text maxFontSizeMultiplier={1.3} style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '800' }}>¡Gracias! 🥳</Text>
         </Pressable>
-      </View>
+      </ScrollView>
     </View>
   );
 }

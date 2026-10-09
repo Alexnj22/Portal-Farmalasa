@@ -191,7 +191,7 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
             ) : null}
             {error ? <Text style={{ fontSize: 15, color: colorSistema.rojo, textAlign: 'center' }}>{error}</Text> : null}
             <Boton texto={enviando ? 'Reservando…' : 'Reservar'} color={t.color.magenta} alTocar={reservar} deshabilitado={!sala || enviando} />
-            <Text style={{ fontSize: 13, color: colorSistema.texto3, textAlign: 'center' }}>Pagas en la sucursal al retirar.</Text>
+            <Text style={{ fontSize: 13, color: colorSistema.texto3, textAlign: 'center' }}>Pagas en la sucursal al retirar. Si no puedes ir tú, puedes compartir el código de la reserva con quien la vaya a retirar.</Text>
           </ScrollView>
         ) : null}
 
@@ -201,6 +201,10 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
             <Text style={{ fontSize: 26, fontWeight: '900', color: colorSistema.texto, textAlign: 'center' }}>Tu reserva {hecha.codigo}</Text>
             <Text style={{ fontSize: 16, lineHeight: 22, color: colorSistema.texto2, textAlign: 'center' }}>
               Te avisamos cuando {elegida?.sala ?? 'la sucursal'} la tenga lista. Desde ese aviso tienes 24 horas para retirarla.
+            </Text>
+            {/* Retiro por otra persona (2026-10-09): la sucursal la encuentra sólo por el código. */}
+            <Text style={{ fontSize: 14, lineHeight: 20, color: colorSistema.texto3, textAlign: 'center' }}>
+              Si no puedes ir tú, comparte el código desde Mis reservas con alguien de confianza: quien lo presente en la sucursal puede retirarla.
             </Text>
             <View style={{ alignSelf: 'stretch', gap: 10, marginTop: 10 }}>
               <Boton texto="Ver mis reservas" color={t.color.magenta} alTocar={() => { alCerrar(); setTimeout(() => navegar('/reservas'), 300); }} />

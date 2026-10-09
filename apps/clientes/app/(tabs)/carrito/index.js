@@ -150,7 +150,8 @@ export default function Carrito() {
               : hecho.domicilio ? `${hecho.sala ?? 'La sucursal'} ya recibió tu pedido. Te avisamos cuando salga hacia tu casa.`
               : `${hecho.sala ?? 'La sucursal'} ya recibió tu pedido y lo va a preparar. Te avisamos cuando esté listo.`}
           </Texto>
-          <CodigoReserva codigo={hecho.pedido} />
+          {/* A domicilio no se retira: compartir el código sólo sirve para el retiro. */}
+          <CodigoReserva codigo={hecho.pedido} compartir={hecho.domicilio ? null : { sala: hecho.sala, pedido: true }} />
           <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>
             Total: {dolares(hecho.total)} · {hecho.pagado ? 'pagado' : hecho.enLinea ? 'pago pendiente (puedes pagarlo en Mis reservas)' : hecho.domicilio ? 'pagas al recibir' : 'pagas al retirar'}
           </Text>

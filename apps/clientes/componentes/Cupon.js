@@ -21,6 +21,8 @@ import { dolares, fecha } from '../lib/formato';
 
 // La línea punteada entre las muescas: por ahí se «corta» al usarlo.
 const CORTE = 86;
+// Lo que se abre la ranura del corte al usarse (dentro de la caja del cupón).
+const RANURA = 7;
 
 const clave = (id) => `puntos_salud_cupon_raspado_${String(id).replace(/[^\w-]/g, '')}`;
 
@@ -65,14 +67,13 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
   const antes = useRef(null);
   useEffect(() => {
     if (antes.current === false && usadoAhora) {
-      // El «rasgado»: vibraciones cortas seguidas, y el tirón.
-      [0, 60, 120, 180, 240].forEach((ms) => setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}), ms));
-      setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}), 300);
-      corte.value = withSequence(withTiming(-0.12, { duration: 140 }), withTiming(0.05, { duration: 160, easing: Easing.inOut(Easing.quad) }),
-        withSpring(1, { damping: 9, stiffness: 140 }));
+      // El «rasgado»: tres vibraciones cortas, un tironcito y la abertura.
+      [0, 70, 140].forEach((ms) => setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}), ms));
+      corte.value = withSequence(withTiming(0.3, { duration: 110, easing: Easing.out(Easing.quad) }), withTiming(0.12, { duration: 120 }),
+        withSpring(1, { damping: 16, stiffness: 120 }));
       sello.value = 0;
-      sello.value = withDelay(650, withSpring(1, { damping: 11, stiffness: 260 }));
-      setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {}), 760);
+      sello.value = withDelay(520, withSpring(1, { damping: 14, stiffness: 220 }));
+      setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}), 600);
     } else if (!usadoAhora) {
       corte.value = 0; sello.value = 0;
     } else if (antes.current == null) {
@@ -80,12 +81,21 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
     }
     antes.current = usadoAhora;
   }, [usadoAhora]); // eslint-disable-line react-hooks/exhaustive-deps
-  const estiloParte = useAnimatedStyle(() => ({
-    transform: [{ translateX: corte.value * 12 }, { translateY: corte.value * 4 }, { rotate: `${corte.value * 3}deg` }],
-  }));
+  // El corte NO sale de la caja del cupón (2026-10-09, «choca con las cards de
+  // abajo»): antes la parte grande se corría 12 px y giraba 3° sobre su
+  // esquina, y su punta bajaba ~18 px encima de la tarjeta siguiente. Ahora se
+  // ABRE una ranura en la línea punteada: la parte grande se angosta desde la
+  // izquierda en vez de moverse, así su borde derecho no se mueve nunca. Sin
+  // giro, sin desplazamiento vertical y sin escala fuera de su caja.
+  const ancho = medida?.ancho ?? 0;
+  const estiloParte = useAnimatedStyle(() => {
+    const abre = Math.max(0, corte.value) * RANURA;
+    return { left: CORTE + abre, width: Math.max(0, ancho - CORTE - abre), opacity: 1 - Math.max(0, corte.value) * 0.08 };
+  }, [ancho]);
+  // El sello cae con poca escala (1.35 → 1): se nota sin cubrir media pantalla.
   const estiloSello = useAnimatedStyle(() => ({
-    opacity: Math.min(1, sello.value * 1.4),
-    transform: [{ rotate: '-14deg' }, { scale: interpolate(sello.value, [0, 1], [2.6, 1]) }],
+    opacity: Math.min(1, sello.value * 1.6),
+    transform: [{ rotate: '-12deg' }, { scale: interpolate(sello.value, [0, 1], [1.35, 1]) }],
   }));
 
   if (!cupon || raspado == null) return null;
@@ -135,7 +145,9 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
               {usado ? 'Ya lo usaste. ¡El próximo mes llega otro!'
                 : cupon.descuento ? `En una compra, hasta ${dolares(cupon.tope)} · hasta el ${fecha(cupon.vence)}`
                 : parcial ? `Te quedan ${dolares(cupon.restantes / 100)} de ${dolares(cupon.puntos / 100)} · hasta el ${fecha(cupon.vence)}`
-                  : `Úsalo en caja con tu tarjeta · hasta el ${fecha(cupon.vence)}`}
+                  // Aclaración (2026-10-09): el premio YA está sumado al saldo;
+                  // raspar sólo lo descubre. No hay nada que «reclamar».
+                  : `Ya está en tu saldo. Úsalo en caja con tu tarjeta hasta el ${fecha(cupon.vence)}`}
             </Text>
           </View>
           {!usado && raspado ? <Brillo activa={activa && !LIVIANO} /> : null}
@@ -148,13 +160,15 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
       {usado && medida ? (
         // Cortado: el talón queda y la parte grande se separa. Las dos son la
         // misma cara recortada, así el corte cae justo en la línea punteada.
-        <View style={{ height: medida.alto }}>
+        // `overflow: hidden` en la caja: pase lo que pase, nada se pinta fuera.
+        <View style={{ height: medida.alto, overflow: 'hidden' }}>
           <View style={{ position: 'absolute', left: 0, top: 0, width: CORTE, height: medida.alto, overflow: 'hidden', borderTopLeftRadius: 22, borderBottomLeftRadius: 22 }}>
             <View style={{ width: medida.ancho }}>{cara}</View>
           </View>
-          <Animated.View style={[{ position: 'absolute', left: CORTE, top: 0, width: medida.ancho - CORTE, height: medida.alto, overflow: 'hidden',
-            borderTopRightRadius: 22, borderBottomRightRadius: 22, transformOrigin: 'left bottom' }, estiloParte]}>
-            <View style={{ width: medida.ancho, marginLeft: -CORTE }}>{cara}</View>
+          <Animated.View style={[{ position: 'absolute', top: 0, height: medida.alto, overflow: 'hidden',
+            borderTopLeftRadius: 4, borderBottomLeftRadius: 4, borderTopRightRadius: 22, borderBottomRightRadius: 22 }, estiloParte]}>
+            {/* Anclada a la derecha: al angostarse la parte, su contenido no se corre. */}
+            <View style={{ position: 'absolute', right: 0, top: 0, width: medida.ancho }}>{cara}</View>
             {sello_}
           </Animated.View>
         </View>

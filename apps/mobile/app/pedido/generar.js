@@ -1,5 +1,5 @@
 // Generar un pedido de Bodega a las salas, NATIVO — `TabGenerar` del portal:
-// las salas con su urgencia (depleción promedio), cuántos productos tienen con
+// las salas con su urgencia (productos bajo mínimo, `urgenciaDeSala`), cuántos productos tienen con
 // y sin existencia en Bodega, la distribución global, y «Generar».
 //
 // Calcula, confirma y pone el código de cada sala con `generarPedidoDirecto`
@@ -15,7 +15,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchTableroParaGenerarPedido } from '@nucleo/data/pedidos';
 import { generarPedidoDirecto } from '@nucleo/data/accionesDePedido';
-import { nivelDeUrgencia, salaSinMinMaxPublicado } from '@nucleo/utils/tableroDePedidos';
+import { nivelDeUrgenciaDeSala, salaSinMinMaxPublicado, urgenciaDeSala } from '@nucleo/utils/tableroDePedidos';
 import { ERP_NAMES, SUCURSALES } from '@nucleo/constants/erp';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
@@ -61,7 +61,10 @@ export default function GenerarPedido() {
       if (!gen) { listo('Sin necesidades', 'Las salas elegidas están abastecidas: no hay nada que pedir.'); return; }
       useStaffStore.getState().appendAuditLog?.('PEDIDO_GENERADO', gen.pedidoId, { numero: gen.numero, salas: gen.sucIds, productos: gen.items.length, desde: 'app' });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      listo(`Pedido #${gen.numero} confirmado`, `${gen.items.length} productos en ${gen.sucIds.length} sala${gen.sucIds.length === 1 ? '' : 's'}. Imprímelo en la computadora de Bodega (Pedidos → PDF).`);
+      // Sin número (la lectura falló dos veces) se dice «El pedido», nunca «#null».
+      const rotulo = gen.numero != null ? `Pedido #${gen.numero}` : 'El pedido';
+      const avisoCodigos = gen.codigosError ? ' Los códigos de las salas no se guardaron: avisa al equipo de sistemas.' : '';
+      listo(`${rotulo} confirmado`, `${gen.items.length} productos en ${gen.sucIds.length} sala${gen.sucIds.length === 1 ? '' : 's'}. Imprímelo en la computadora de Bodega (Pedidos → PDF).${avisoCodigos}`);
       setElegidas(new Set());
       volver('/pedidos');
     } catch (e) {
@@ -96,7 +99,8 @@ export default function GenerarPedido() {
                 const st = porSala.get(id);
                 const sin = salaSinMinMaxPublicado(st);
                 const on = elegidas.has(id);
-                const nivel = nivelDeUrgencia(st?.avg_urgencia_pct);
+                const nivel = nivelDeUrgenciaDeSala(st);
+                const urg = urgenciaDeSala(st);
                 return (
                   <Pressable key={id} disabled={sin} onPress={() => alternar(id)} style={({ pressed }) => ({ width: '48%', opacity: sin ? 0.45 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
                     <Vidrio radio={18} interactivo={!sin} tinte={on ? 'rgba(0,82,204,0.35)' : undefined}>
@@ -108,7 +112,7 @@ export default function GenerarPedido() {
                         {sin ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Sin MIN·MAX publicado</Text> : (
                           <>
                             <Text style={{ color: COLOR_URGENCIA[nivel], fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
-                              {st?.avg_urgencia_pct != null ? `${Math.round(st.avg_urgencia_pct)}%` : '—'}
+                              {urg != null ? `${Math.round(urg)}%` : '—'}
                             </Text>
                             <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${st?.con_bodega_productos ?? 0} con Bodega · ${st?.sin_bodega_productos ?? 0} sin`}</Text>
                           </>

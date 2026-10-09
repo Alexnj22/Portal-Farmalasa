@@ -25,12 +25,109 @@ export function esperadoEnDespacho(r) {
     return toDispatch(enviadoDe(r), erpFactor, dispFactor);
 }
 
-/** El renglón tal como llegó: sin diferencia. */
+/**
+ * Una cantidad en unidades del sistema, dicha en la presentación de despacho
+ * SI CABE EXACTA, y en la unidad del sistema si no. Devuelve `{ fQty, fPres }`
+ * —cuántas y de qué factor—, que es la forma en que la pantalla cuenta.
+ *
+ * Existe por el redondeo. Bodega puede asignar 25 de un producto que se
+ * despacha en blíster de 10: «2.5 blísteres» se redondeaba a 3, la casilla
+ * arrancaba en 3 y, sin que nadie tocara nada, el renglón ya decía «+5». Y
+ * «Todo OK» guardaba 30 recibido sin diferencia sobre 25 enviados (con 24,
+ * guardaba 20). Ofreciendo la unidad cuando no cabe exacta, el valor inicial
+ * es lo enviado, al número.
+ */
+export function enPresentacion(cantidad, r) {
+    const erpFactor = Number(r?.factor) || 1;
+    const dispFactor = Number(r?.dispatch_factor) || erpFactor;
+    const n = Number(cantidad) || 0;
+    if (dispFactor === erpFactor) return { fQty: n, fPres: dispFactor };
+    const enDespacho = n * erpFactor / dispFactor;
+    if (Math.abs(enDespacho - Math.round(enDespacho)) < 1e-9) return { fQty: Math.round(enDespacho), fPres: dispFactor };
+    return { fQty: n, fPres: erpFactor };
+}
+
+/** Con qué arranca el conteo de un renglón: lo enviado, sin inventar diferencia. */
+export const conteoInicial = (r) => enPresentacion(enviadoDe(r), r);
+
+/**
+ * El renglón tal como llegó: sin diferencia. Guarda lo enviado AL NÚMERO —ver
+ * `enPresentacion`: pasar por la presentación de despacho lo redondeaba—.
+ */
 export function renglonTodoOk(r) {
-    const erpFactor = Number(r.factor) || 1;
-    const dispFactor = Number(r.dispatch_factor) || erpFactor;
-    const rawQty = Math.round(toDispatch(enviadoDe(r), erpFactor, dispFactor) * dispFactor / erpFactor);
-    return { pedido_item_id: r.id, cantidad_recibida: rawQty, nota_diferencia: null, error_tipo: null, cantidad_problema: null };
+    return { pedido_item_id: r.id, cantidad_recibida: enviadoDe(r), nota_diferencia: null, error_tipo: null, cantidad_problema: null };
+}
+
+/**
+ * ¿La recepción de esta sala quedó TERMINADA, o sólo se contó lo que llegó?
+ *
+ * «Terminé» lo decían cinco caminos del modal de recepción y cada uno lo
+ * contestaba a su manera: la caja especial, «Confirmar todo» y «Finalizar»
+ * miraban si quedaban cajas en reenvío; cerrar la última hoja y el pedido sin
+ * hojas mandaban `true` a secas. Con una caja que no llegó, contar la última
+ * hoja dejaba la sala Completada — y la caja, cuando llegara, ya no tenía
+ * dónde contarse. Una sola respuesta para los cinco.
+ *
+ * @param {{ hojasPorContar?: number, especialesPorContar?: number,
+ *           cajasQueNoLlegaron?: number[], hayRenglonesEnReenvio?: boolean,
+ *           hojasPorRevisar?: number }} estado
+ */
+export function quedaTodoListo({
+    hojasPorContar = 0, especialesPorContar = 0, cajasQueNoLlegaron = [],
+    hayRenglonesEnReenvio = false, hojasPorRevisar = 0,
+} = {}) {
+    return hojasPorContar === 0
+        && especialesPorContar === 0
+        && hojasPorRevisar === 0
+        && (cajasQueNoLlegaron?.length ?? 0) === 0
+        && !hayRenglonesEnReenvio;
+}
+
+/** El rótulo de una presentación: «CAJA X 10», o el factor si no hay más. */
+export function etiquetaDePresentacion(p) {
+    const f = Number(p?.factor) || 1;
+    const tipo = p?.presentaciones?.tipo || '';
+    const det = p?.descripcion || '';
+    return tipo ? `${tipo}${det ? ' ' + det : ''}` : det || (f === 1 ? 'Unidad' : `×${f}`);
+}
+
+/**
+ * `{ product_id: [{ factor, label }] }` a partir de filas de `product_precios`
+ * (activas), una opción por factor, en orden de factor.
+ */
+export function mapaDePresentaciones(filas) {
+    const map = {};
+    [...(filas ?? [])]
+        .filter(p => p && p.activo !== false)
+        .sort((a, b) => (Number(a.factor) || 1) - (Number(b.factor) || 1))
+        .forEach(p => {
+            const pid = p.product_id;
+            if (pid == null) return;
+            const f = Number(p.factor) || 1;
+            if (!map[pid]) map[pid] = [];
+            if (!map[pid].some(x => x.factor === f)) map[pid].push({ factor: f, label: etiquetaDePresentacion(p) });
+        });
+    return map;
+}
+
+/**
+ * Las presentaciones armadas desde los renglones mismos, que ya traen
+ * `products.product_precios`. Así no hace falta otra consulta con un `.in()`
+ * de mil ids en la URL. Devuelve `null` si a los renglones les falta algo para
+ * armar el rótulo igual que la consulta aparte (la `descripcion`): un rótulo
+ * distinto del de siempre confunde más que lo que ahorra.
+ */
+export function presentacionesDeRenglones(rows) {
+    const filas = [];
+    for (const r of rows ?? []) {
+        const precios = r?.products?.product_precios;
+        if (!Array.isArray(precios)) return null;
+        for (const p of precios) {
+            if (!p || !('descripcion' in p)) return null;
+            filas.push({ ...p, product_id: r.erp_product_id });
+        }
+    }
+    return mapaDePresentaciones(filas);
 }
 
 /**
@@ -50,8 +147,12 @@ export function renglonContado(r, { fQty, fPres, problema = null, nota = null, c
     const erpFactor = Number(r.factor) || 1;
     const dispFactor = Number(r.dispatch_factor) || erpFactor;
     const enviado = enviadoDe(r);
-    const qty = fQty ?? toDispatch(enviado, erpFactor, dispFactor);
-    const pres = fPres ?? dispFactor;
+    // Sin conteo escrito, lo enviado tal cual (ver `conteoInicial`). Con una
+    // cantidad y sin presentación, la cantidad viene en la de DESPACHO —así
+    // cuenta la app, que sólo manda `fQty`—.
+    const ini = conteoInicial(r);
+    const qty = fQty ?? ini.fQty;
+    const pres = fPres ?? (fQty != null ? dispFactor : ini.fPres);
     const hasProb = !!problema;
     const fRaw = Math.round(qty * pres / erpFactor);
     const isDiff = fRaw !== enviado || hasProb;

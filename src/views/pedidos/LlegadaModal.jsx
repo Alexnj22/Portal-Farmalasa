@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Checkbox from '../../components/common/Checkbox';
-import { PackageCheck, PackageX, PackagePlus, Package, AlertTriangle, X, Loader2, Zap, HelpCircle, RotateCcw, Check } from 'lucide-react';
+import { PackageCheck, PackageX, PackagePlus, Package, AlertTriangle, X, Zap, HelpCircle, RotateCcw, Check, ChevronLeft } from 'lucide-react';
 import PedidoModal from './PedidoModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { getPageGroups } from '@nucleo/utils/pedidoPrint';
@@ -50,6 +50,14 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
     const [extraError,           setExtraError]           = useState(null);
     const [submitting,           setSubmitting]           = useState(false);
     const [hasDraft,             setHasDraft]             = useState(false);
+    // ── Un toque para el caso de siempre (2026-10-08) ─────────────────────────
+    // Medido en producción: las 125 llegadas registradas fueron «completa». El
+    // paso igual abría con la lista de cajas, una fila y un segmentado por
+    // caja, y la pregunta del Electrolit sin responder trababa el botón: había
+    // que leer y tocar para decir lo que pasa siempre. Ahora abre con UNA
+    // pregunta —¿llegó todo?— y el detalle caja por caja queda detrás de
+    // «Algo llegó mal», con el circuito completo de dañadas, faltantes y extras.
+    const [modo,                 setModo]                 = useState('rapido'); // 'rapido' | 'detalle'
 
     // Check for draft on open
     useEffect(() => {
@@ -76,7 +84,20 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
     const espFaltantes = cajasEspeciales.filter(e => espEstados[e.label] === 'faltante').map(e => e.label);
     const electrolitPendiente = electrolitAparte > 0 && electrolitFaltantes === null;
 
-    const handleConfirm = () => {
+    // Espera a que se guarde: si falla, sigue abierto y el borrador intacto.
+    // Un doble toque en «Llegaron las N cajas» mandaba la llegada dos veces
+    // (el modal queda abierto mientras guarda): el ref frena el segundo.
+    const enviandoRef = useRef(false);
+    const enviar = async (payload) => {
+        if (enviandoRef.current) return;
+        enviandoRef.current = true;
+        setSubmitting(true);
+        const ok = await onConfirm(payload);
+        if (ok === false) { enviandoRef.current = false; setSubmitting(false); return; }
+        if (draftKey) clearDraft(draftKey);
+    };
+
+    const handleConfirm = async () => {
         // Validar cajas extra: si no tiene rotulación, requerir número de caja
         for (let i = 0; i < cajasExtra; i++) {
             const d = cajasExtraData[i] ?? {};
@@ -86,9 +107,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
             }
         }
         setExtraError(null);
-        setSubmitting(true);
-        if (draftKey) clearDraft(draftKey);
-        onConfirm({
+        await enviar({
             cajasOk, cajasDanadas, cajasFaltantes, nota: nota.trim(),
             electrolitFaltantes:    electrolitAparte > 0 ? electrolitFaltantes : null,
             especialesLlegadas:     cajasEspeciales.length > 0
@@ -98,6 +117,25 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
             cajasExtraNotas:        cajasExtra > 0 ? cajasExtraNotas : null,
         });
     };
+
+    // «Llegaron las N cajas»: la MISMA forma que manda el detalle con todo en
+    // OK, el Electrolit respondido («todas llegaron», o sea 0 faltantes) y sin
+    // cajas de más. No es otro contrato: es el detalle contestado de una vez.
+    const handleTodoLlego = () => enviar({
+        cajasOk: cajas.map(c => c.num), cajasDanadas: [], cajasFaltantes: [], nota: '',
+        electrolitFaltantes:    electrolitAparte > 0 ? 0 : null,
+        especialesLlegadas:     cajasEspeciales.length > 0
+            ? Object.fromEntries(cajasEspeciales.map(e => [e.label, 'ok']))
+            : null,
+        cajasExtra:             0,
+        cajasExtraNotas:        null,
+    });
+
+    // Cuántas cajas FÍSICAS se esperan: las del pedido, las de Electrolit que
+    // no son especiales y las especiales. Es el número que la sala cuenta en la
+    // puerta, así que es el que va en el botón.
+    const totalCajas = cajas.length + electrolitAparte + cajasEspeciales.length;
+    const enDetalle  = modo === 'detalle' || totalCajas === 0;
 
     // Serializar cajasExtraData a notas de texto para el handler existente
     // eslint-disable-next-line react-hooks/preserve-manual-memoization -- el compiler no puede re-optimizar este useMemo por su cuenta, la memoización manual sigue funcionando igual
@@ -132,7 +170,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
         }
         setEstados({}); setNota(''); setElectrolitFaltantes(null);
         setEspEstados({}); setCajasExtra(0); setCajasExtraData({});
-        setExtraError(null); setSubmitting(false);
+        setExtraError(null); setSubmitting(false); setModo('rapido');
         onClose();
     };
 
@@ -147,6 +185,8 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
         setCajasExtra(d.cajasExtra ?? 0);
         setCajasExtraData(d.cajasExtraData ?? {});
         setHasDraft(false);
+        // Un borrador es siempre del detalle: se retoma ahí.
+        setModo('detalle');
         clearDraft(draftKey);
     };
 
@@ -167,7 +207,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
             <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-divider shrink-0">
                 <div className="flex-1">
                     <p className="text-label font-medium text-content-2 uppercase tracking-wide">Pedido #{pedidoNumero}</p>
-                    <h3 className="text-body-lg font-bold text-content leading-tight">¿Cómo llegó cada caja?</h3>
+                    <h3 className="text-body-lg font-bold text-content leading-tight">{enDetalle ? '¿Cómo llegó cada caja?' : '¿Llegó todo?'}</h3>
                 </div>
                 <Button variant="ghost" icon={X} disabled={submitting} iconOnly onClick={handleClose} />
             </div>
@@ -182,6 +222,52 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                 </div>
             )}
 
+            {!enDetalle && (<>
+                <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-5 py-5 space-y-4">
+                    {/* Qué se está dando por bueno, en el idioma de la puerta:
+                        cuántas cajas y de qué clase. Sin esto el botón grande
+                        promete un número sin decir de dónde sale. */}
+                    <div data-surface="card" className="p-4 flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-success shadow-[var(--shadow-glow-success)] flex items-center justify-center shrink-0">
+                            <Package size={18} className="text-white" aria-hidden="true" />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-body font-bold text-content-2 leading-tight tabular-nums">
+                                {totalCajas} caja{totalCajas !== 1 ? 's' : ''} en este pedido
+                            </p>
+                            <ul className="mt-1 space-y-0.5 text-caption text-content-3">
+                                {cajas.length > 0 && (
+                                    <li>{cajas.length} del pedido{cajas.length > 1 ? ` (#${cajas[0].num}–#${cajas[cajas.length - 1].num})` : ` (#${cajas[0].num})`}</li>
+                                )}
+                                {electrolitAparte > 0 && (
+                                    <li>{electrolitAparte} de Electrolit</li>
+                                )}
+                                {cajasEspeciales.length > 0 && (
+                                    <li>{cajasEspeciales.length} especial{cajasEspeciales.length !== 1 ? 'es' : ''} ({cajasEspeciales.map(e => e.label).join(', ')})</li>
+                                )}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <Button size="lg" icon={PackageCheck} className="w-full" loading={submitting} onClick={handleTodoLlego}>
+                        {totalCajas === 1 ? 'Llegó la caja' : `Llegaron las ${totalCajas} cajas`}
+                    </Button>
+                    <div className="flex flex-col items-center gap-1">
+                        <Button variant="secondary" icon={AlertTriangle} className="w-full" disabled={submitting} onClick={() => setModo('detalle')}>
+                            Algo llegó mal
+                        </Button>
+                        <p className="text-caption text-content-3 text-center">
+                            Una caja dañada, una que no llegó o cajas de más: se marca caja por caja.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="px-5 pb-5 pt-3 border-t border-divider shrink-0 flex justify-start">
+                    <Button variant="ghost" disabled={submitting} onClick={handleClose}>Cancelar</Button>
+                </div>
+            </>)}
+
+            {enDetalle && (<>
             {/* Body — todo el contenido variable va aquí, scrollea cuando no cabe */}
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-5 py-4 space-y-4">
                 <p className="text-caption text-content-2 uppercase tracking-wide font-semibold">
@@ -380,7 +466,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                                     <LiquidSelect
                                                         value={d.sucursalId ?? ''}
                                                         onChange={v => setExtraField(i, 'sucursalId', v)}
-                                                        options={[{ value: '', label: '¿De qué sucursal?' }, ...SUC_OPTIONS]}
+                                                        options={SUC_OPTIONS}
                                                         compact
                                                         clearable={false}
                                                         placeholder="¿De qué sucursal?"
@@ -436,7 +522,12 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                     cortado a media palabra. Envolviendo, baja entero a su
                     renglón. En escritorio nada cambia: los dos entran. */}
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                    <Button variant="secondary" disabled={submitting} onClick={handleClose}>Cancelar</Button>
+                    {/* Volver al resumen y no cerrar: quien abrió el detalle por
+                        error no tiene por qué empezar de nuevo. Con un pedido
+                        sin cajas no hay resumen al que volver. */}
+                    {totalCajas > 0
+                        ? <Button variant="secondary" icon={ChevronLeft} disabled={submitting} onClick={() => setModo('rapido')}>Volver</Button>
+                        : <Button variant="secondary" disabled={submitting} onClick={handleClose}>Cancelar</Button>}
                     {/* El Electrolit se responde, no se omite. Sin responder, el
                         contador viajaba en `null` y la llegada quedaba sin decir
                         nada de las cajas más caras del despacho — un hueco que se
@@ -445,12 +536,13 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                         no se puede apretar, como en el modal de reenvío. */}
                     <Button loading={submitting} disabled={electrolitPendiente} onClick={handleConfirm}>
                         {electrolitPendiente
-                            ? 'Respondé el Electrolit primero'
+                            ? 'Responde el Electrolit primero'
                             : Object.keys(estados).length === 0 && cajas.length > 0
                                 ? 'Confirmar que todas llegaron'
                                 : 'Confirmar llegada'}</Button>
                 </div>
             </div>
+            </>)}
         </PedidoModal>
     );
 }

@@ -614,6 +614,7 @@ const CRONS = [
   // Está declarado igual para que el cruce contra producción avise si alguien lo
   // apaga — y apagarlo sería justamente perder el recordatorio.
   { job: 'avisar-cambios-que-no-se-quedaron',    slug: null,                          cadencia: '20 12-23,0-5 * * *', corridasDia: 18, sistema: 0, motivo: 'Compara el portal contra lo aprobado y avisa. No toca el sistema de origen.' },
+  { job: 'avisar-pedidos-sin-recibir',           slug: null,                          cadencia: '*/30 12-23,0-5 * * *', corridasDia: 36, sistema: 0, motivo: 'Pedidos que llegaron a la sala y no se recibieron: a la sala a las 2 h, a supervisión a las 6 h, una sola vez por umbral (avisos_emitidos). Pura base: no toca el sistema de origen. Borrador 12 de Pedidos (2026-10-08).' },
   { job: 'recordar-linea-base-egreso-mensual',  slug: null,                          cadencia: '0 15 1 * *', corridasDia: 0.033, sistema: 0, motivo: 'Mira export_log y avisa. No toca el sistema de origen.' },
   { job: 'sincronizar-fichas-clientes-2130-sv', slug: 'sincronizar-fichas-clientes', cadencia: '30 3 * * *', corridasDia: 1, sistema: null, motivo: 'Corrida nocturna de fichas.' },
   { job: 'regularizar-dte-2230-sv',             slug: 'regularizar-dte',             cadencia: '30 4 * * *', corridasDia: 1, sistema: null, motivo: 'Envío nocturno a Hacienda.' },

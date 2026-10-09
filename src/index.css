@@ -694,7 +694,11 @@
 thead.sticky,
 [data-pegajoso],
 [data-cobertura] {
-  background: var(--thead-bg);
+  /* `--thead-bg` es 97-98% opaco: lo que pasa por debajo se alcanzaba a ver
+     (un campo de recepción se leía a través del encabezado, 2026-10-08).
+     Debajo va el fondo de la página, que es opaco: la tapa tapa del todo y
+     el color que se ve es el mismo. */
+  background: linear-gradient(var(--thead-bg), var(--thead-bg)), var(--bg-page);
   backdrop-filter: none;
 }
 

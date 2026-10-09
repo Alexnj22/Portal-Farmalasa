@@ -14,7 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchPedidoItemsAll, fetchPedidosEnCurso } from '@nucleo/data/pedidos';
-import { cicloDeReenvioPendiente, confirmarLlegadaDeReenvio } from '@nucleo/data/accionesDePedido';
+import { cicloDeReenvioPendiente, confirmarLlegadaDeReenvio, reenvioTodaviaEnBodega } from '@nucleo/data/accionesDePedido';
 import { ERP_NAMES } from '@nucleo/constants/erp';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
@@ -76,7 +76,8 @@ export default function LlegoElReenvio() {
         userId: user?.id ?? null, cajasOk, cajasDanadas, cajasFaltantes, nota: nota.trim(),
         electrolitOk: ciclo.electrolits > 0 ? electrolit === 'ok' : true, especialesAun,
       });
-      useStaffStore.getState().appendAuditLog?.('PEDIDO_REENVIO_LLEGADA', pedidoId, { ciclo: ciclo.ciclo, arrived_tipo: r.arrivedTipo, cajasOk, cajasDanadas, cajasFaltantes, desde: 'app' });
+      // `yaEstaba`: un segundo toque sobre una llegada ya confirmada — no se anota dos veces.
+      if (!r.yaEstaba) useStaffStore.getState().appendAuditLog?.('PEDIDO_REENVIO_LLEGADA', pedidoId, { ciclo: ciclo.ciclo, arrived_tipo: r.arrivedTipo, cajasOk, cajasDanadas, cajasFaltantes, desde: 'app' });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       // Lo que llegó se cuenta: si quedaron renglones pendientes sin falta, al conteo.
       const renglones = await fetchPedidoItemsAll(pedidoId, suc).catch(() => []);
@@ -97,7 +98,9 @@ export default function LlegoElReenvio() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>{`Pedido #${numero} · ${ERP_NAMES[suc] ?? ''}${ciclo ? ` · reenvío ${ciclo.ciclo}` : ''}`}</Text>
         {row === undefined ? <ActivityIndicator /> : !ciclo ? (
-          <Aviso tono="cuidado" texto="No hay un reenvío pendiente de confirmar en esta sala." />
+          <Aviso tono="cuidado" texto={reenvioTodaviaEnBodega(row?.reenvios_historial)
+            ? 'El reenvío todavía no sale: las cajas siguen en Bodega y se confirman cuando salga su ruta.'
+            : 'No hay un reenvío pendiente de confirmar en esta sala.'} />
         ) : (
           <>
             {listaCajas.length ? (

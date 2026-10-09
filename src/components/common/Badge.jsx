@@ -58,12 +58,16 @@ const ON_DARK = {
     info:    'text-chart-1   bg-chart-1/[0.16] border-chart-1/30',
 };
 
+// El borde del sólido es DE SU MISMO COLOR, nunca `border-transparent`
+// (2026-10-08): transparente, el anillo de 1px dejaba ver lo de atrás —el
+// borde del campo sobre el que se monta el «-1» de recepción— y el sólido se
+// leía como translúcido.
 const SOLID = {
-    success: 'text-white bg-success-solid border-transparent',
-    warning: 'text-white bg-warning-solid border-transparent',
-    danger:  'text-white bg-danger-solid  border-transparent',
-    info:    'text-white bg-brand         border-transparent',
-    neutral: 'text-white bg-chart-8-solid border-transparent',
+    success: 'text-white bg-success-solid border-success-solid',
+    warning: 'text-white bg-warning-solid border-warning-solid',
+    danger:  'text-white bg-danger-solid  border-danger-solid',
+    info:    'text-white bg-brand         border-brand',
+    neutral: 'text-white bg-chart-8-solid border-chart-8-solid',
 };
 
 // Categóricos: un color por categoría, sin significado de severidad. Cubren
@@ -84,12 +88,12 @@ Object.assign(SOFT, {
     'chart-8': 'text-chart-8-text bg-chart-8/[0.12] border-chart-8/30',
 });
 Object.assign(SOLID, {
-    'chart-1': 'text-white bg-chart-1-solid border-transparent',
-    'chart-3': 'text-white bg-chart-3-solid border-transparent',
-    'chart-4': 'text-white bg-chart-4-solid border-transparent',
-    'chart-9': 'text-white bg-chart-9-solid border-transparent',
-    'chart-6': 'text-white bg-chart-6-solid border-transparent',
-    'chart-8': 'text-white bg-chart-8-solid border-transparent'});
+    'chart-1': 'text-white bg-chart-1-solid border-chart-1-solid',
+    'chart-3': 'text-white bg-chart-3-solid border-chart-3-solid',
+    'chart-4': 'text-white bg-chart-4-solid border-chart-4-solid',
+    'chart-9': 'text-white bg-chart-9-solid border-chart-9-solid',
+    'chart-6': 'text-white bg-chart-6-solid border-chart-6-solid',
+    'chart-8': 'text-white bg-chart-8-solid border-chart-8-solid'});
 
 const DOT = {
     success: 'bg-success', warning: 'bg-warning', danger: 'bg-danger',

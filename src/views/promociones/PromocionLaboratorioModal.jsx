@@ -182,7 +182,6 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
     };
 
     const opcionesLab = useMemo(() => ([
-        { value: '', label: 'Agregar un laboratorio…' },
         ...catalogo
             .filter((l) => !labs.some((x) => Number(x.id) === Number(l.id)))
             .map((l) => ({ value: String(l.id), label: l.nombre })),
@@ -241,6 +240,7 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
                                     onChange={agregarLab}
                                     options={opcionesLab}
                                     clearable={false}
+                                    placeholder="Agregar un laboratorio…"
                                     ariaLabel="Agregar un laboratorio"
                                 />
                             </Campo>

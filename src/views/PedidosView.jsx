@@ -61,7 +61,9 @@ export default function PedidosView() {
 
     const allowedTabs = TABS.filter(t => hasPermission(t.permKey));
     const defaultTab  = allowedTabs[0]?.key ?? 'generar';
-    const rawTab      = searchParams.get('tab');
+    // `pedidos_lista` fue la pestaña de prueba de la lista (2026-10-07); el
+    // usuario la eligió y pasó a ser «Pedidos». Un enlace viejo cae ahí.
+    const rawTab      = searchParams.get('tab') === 'pedidos_lista' ? 'pedidos' : searchParams.get('tab');
     const activeTab   = VALID.has(rawTab) && allowedTabs.some(t => t.key === rawTab) ? rawTab : defaultTab;
 
     const [rawSearch, setRawSearch, debouncedSearch] = useBusqueda();

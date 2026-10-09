@@ -1322,6 +1322,20 @@ instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`
 ## Estándares del proyecto
 - Ver `DESIGN.md` para patrones de UI (glassmorphism, filter pills, tabs, search)
 - Siempre usar `LiquidSelect` en lugar de `<select>` nativo
+  - **El placeholder NUNCA va como opción** (2026-10-08). `{ value: '', label: '¿De qué sucursal?' }`
+    al tope de `options` es el rótulo del campo copiado en la lista, y salía
+    como si se pudiera elegir. El rótulo va en `placeholder`; para volver a
+    vacío está `clearable` (o la fila «Todos»). `LiquidSelect` ya descarta la
+    opción vacía cuyo texto es IGUAL al `placeholder` y, si el select no es
+    `clearable` (los filtros), pone la fila de vuelta. Una opción vacía con
+    texto PROPIO («Todas», «Consumidor Final») sí es una elección y se queda.
+  - **Un sólido es sólido**: un `Badge tone="solid"` o una pastilla con
+    `text-white` no lleva fondo con `/NN` ni borde `transparent` — el anillo
+    transparente dejaba ver el borde del campo de atrás y el «-1» de
+    recepción se leía translúcido. Y si va montado sobre un campo, lleva
+    `z-tabs`: `PortalInput` es `relative z-base`, así que sin eso el borde y
+    el relleno del campo se pintan ENCIMA del contador y parece vidrio aunque
+    el color sea opaco. Verificar con lupa, no con `getComputedStyle`.
 - Badges `es_antibiotico=true` → "Bajo Receta" (NUNCA "Abx")
 - Toda acción de usuario → `appendAuditLog` (staffStore → `audit_logs`)
 - **Impresión en ticketera: `await imprimirDocumento(ticket)` de

@@ -15,10 +15,10 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { completarRuta, fetchRutaLocationSingle, fetchSucursalesConCoords, iniciarRuta, updateRutaPedidoEntregado, upsertRutaLocation } from '@nucleo/data/pedidos';
-import { fetchRutasDeEntrega } from '@nucleo/data/rutasDeEntrega';
+import { completarRuta, fetchRutaLocationSingle, iniciarRuta, updateRutaPedidoEntregado, upsertRutaLocation } from '@nucleo/data/pedidos';
+import { fetchCoordenadasDeSucursales, fetchRutasDeEntrega } from '@nucleo/data/rutasDeEntrega';
 import { escucharCambios } from '@nucleo/data/tiempoReal';
-import { INTERVALO_POSICION_CONDUCTOR_MS, avanceDeEntrega, conductorEnVivo, coordenadasDeSucursales, distanciaTexto, estadoDeRuta, ordenarParadas, trazoDeReparto } from '@nucleo/utils/rutasDeEntrega';
+import { INTERVALO_POSICION_CONDUCTOR_MS, avanceDeEntrega, conductorEnVivo, distanciaTexto, estadoDeRuta, ordenarParadas, trazoDeReparto } from '@nucleo/utils/rutasDeEntrega';
 import { encuadre } from '@nucleo/utils/encuadreDelMapa';
 import { hora12 } from '@nucleo/utils/hora';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -81,8 +81,9 @@ export default function RutaDeReparto() {
     { tabla: 'rutas', evento: 'UPDATE', filtro: `id=eq.${id}` },
   ], () => { cargar(); }), [id, cargar]);
   useEffect(() => {
-    Promise.resolve(fetchSucursalesConCoords())
-      .then(({ data }) => setCoords(coordenadasDeSucursales(data)))
+    // Con caché del núcleo: las coordenadas de las salas no cambian en el día.
+    fetchCoordenadasDeSucursales()
+      .then(setCoords)
       .catch(() => {});
   }, []);
 

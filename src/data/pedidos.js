@@ -15,6 +15,7 @@
 // fetchAllRows (utils/supabaseUtils.js), el helper que ya existe en el
 // proyecto para esto.
 import { supabase } from '../supabaseClient';
+import { marcarRastreoDeFondo as marcarRastreoEnPlataforma, hayRastreoDeFondo as hayRastreoEnPlataforma } from '@plataforma/rastreoRuta';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { anotar, conBitacora } from './audit';
 
@@ -26,6 +27,18 @@ export function fetchEmployeeBranchId(userId) {
 
 export function fetchSucursalIdForBranch(branchId) {
     return supabase.from('erp_sucursal_map').select('erp_sucursal_id').eq('branch_id', branchId).eq('es_bodega', false).maybeSingle();
+}
+
+// La sucursal de una sala no cambia mientras el portal está abierto, y el
+// tablero la preguntaba cada vez que se montaba (cada cambio de pestaña). Se
+// guarda sólo la respuesta BUENA: un fallo de red no se queda pegado.
+const sucursalDeSala = new Map();
+export async function sucursalDeLaSala(branchId) {
+    if (branchId == null) return { data: null, error: null };
+    if (sucursalDeSala.has(branchId)) return { data: sucursalDeSala.get(branchId), error: null };
+    const { data, error } = await fetchSucursalIdForBranch(branchId);
+    if (!error && data) sucursalDeSala.set(branchId, data);
+    return { data, error };
 }
 
 // ── pedidoPrint.js (direcciones para el encabezado del PDF de despacho) ────
@@ -119,6 +132,28 @@ export async function fetchEntregasDePedidos(pedidoIds) {
 
 export function fetchRutaLocations(rutaIds) {
     return supabase.from('ruta_locations').select('ruta_id, updated_at').in('ruta_id', rutaIds);
+}
+
+// ── Un solo escritor de GPS por ruta ─────────────────────────────────────────
+// El tablero de pedidos rastrea en segundo plano al conductor de una ruta en
+// curso (`usePedidosData`), y el mapa de la ruta, abierto, también escribía su
+// posición: el mismo teléfono mandaba dos `upsert` por intervalo a la misma
+// fila, y cada uno es un aviso de Realtime para todos los que miran. Mientras el
+// rastreo de fondo esté activo para una ruta, el mapa sólo LEE.
+//
+// Vive acá (y no en el hook) porque el mapa también se abre desde Rutas de
+// entrega, que no monta el tablero: importar el hook para leer una bandera
+// arrastraría el tablero entero a esa pestaña.
+//
+// El estado vive en UN solo lugar, `@plataforma/rastreoRuta` —el mapa lo lee
+// de ahí—; esto sólo adapta el orden de argumentos que usa el hook.
+export function marcarRastreoDeFondo(rutaId, activo) {
+    if (rutaId == null) return;
+    marcarRastreoEnPlataforma(activo, String(rutaId));
+}
+/** ¿El rastreo de fondo ya escribe la posición de esta ruta? Si sí, el mapa no escribe. */
+export function hayRastreoDeFondo(rutaId) {
+    return rutaId != null && hayRastreoEnPlataforma(String(rutaId));
 }
 
 export function upsertRutaLocation(rutaId, lat, lng) {
@@ -217,20 +252,36 @@ export function updateRutaPedidoEntregado(stopId, userId, contexto = {}) {
 // Extraído de TabRutas.jsx (5 de sus 7 sitios reutilizan funciones ya
 // definidas arriba: updateRutaStatus, updateRutaPedidoEntregado,
 // fetchBranchNamesForSucursales, fetchBranchIdForSucursal).
-export function fetchRutasConParadas() {
-    return supabase.from('rutas')
-        .select(`
-            id, numero, conductor_id, conductor_nombre, status,
-            salida_at, vuelta_base_at, distancia_total_m, duracion_estimada_min, created_at,
-            ruta_pedidos (
-              id, pedido_id, erp_sucursal_id, orden_entrega,
-              distancia_desde_anterior_m, duracion_desde_anterior_min,
-              entregado_at, entregado_por, confirmado_suc_at, discrepancia
-            )
-        `)
-        .in('status', ['pendiente', 'en_ruta', 'completada', 'con_alerta'])
-        .order('created_at', { ascending: false })
-        .limit(50);
+//
+// Dos consultas y no una (2026-10-08). Con un solo `.limit(50)` sobre todas,
+// una ruta ACTIVA vieja —pendiente o con alerta desde hace días— quedaba detrás
+// de 50 completadas más nuevas y desaparecía de la pestaña sin que nadie la
+// hubiera cerrado. Las activas van todas (paginadas: el tope de 1000 de
+// PostgREST no avisa) y de las completadas, las 50 más recientes.
+const RUTAS_SELECT = `
+    id, numero, conductor_id, conductor_nombre, status,
+    salida_at, vuelta_base_at, distancia_total_m, duracion_estimada_min, created_at,
+    ruta_pedidos (
+      id, pedido_id, erp_sucursal_id, orden_entrega,
+      distancia_desde_anterior_m, duracion_desde_anterior_min,
+      entregado_at, entregado_por, confirmado_suc_at, discrepancia
+    )
+`;
+export async function fetchRutasConParadas() {
+    const [activas, completadas] = await Promise.all([
+        fetchAllRows(() => supabase.from('rutas').select(RUTAS_SELECT)
+            .in('status', ['pendiente', 'en_ruta', 'con_alerta'])
+            .order('created_at', { ascending: false }).order('id'), { completo: true }),
+        supabase.from('rutas').select(RUTAS_SELECT)
+            .eq('status', 'completada')
+            .order('created_at', { ascending: false })
+            .limit(50),
+    ]);
+    if (activas === null) return { data: null, error: new Error('No se pudieron leer las rutas activas.') };
+    if (completadas.error) return { data: null, error: completadas.error };
+    const data = [...activas, ...(completadas.data ?? [])]
+        .sort((a, b) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? '')));
+    return { data, error: null };
 }
 
 export function fetchPedidoNumerosByIds(pedidoIds) {
@@ -248,28 +299,39 @@ const ITEMS_SELECT = `
     resolucion_status, resolucion_tipo, resolucion_nota,
     resuelto_por, resuelto_at, confirmado_suc_por, confirmado_suc_at,
     rechazado_por, rechazado_at, nota_rechazo,
-    products ( nombre, es_antibiotico, laboratorios ( nombre ), product_precios ( factor, activo, presentaciones!id_presentacion ( tipo ) ), dispatch_rules ( dispatch_label ) ),
+    products ( nombre, es_antibiotico, laboratorios ( nombre ), product_precios ( factor, activo, descripcion, presentaciones!id_presentacion ( tipo ) ), dispatch_rules ( dispatch_label ) ),
     presentaciones!erp_presentacion_id ( tipo )
 `;
 
 // Pedidos con >1000 items existen en producción — paginado con fetchAllRows
 // (antes era un while-loop manual duplicado con el de pedido_item_eventos).
+//
+// `completo: true`: si falla CUALQUIER página devuelve `null`, no la mitad. Con
+// estos renglones se cuentan las cajas al finalizar y se arma el PDF; una lista
+// a medias se veía igual que una entera y FINALIZAR guardaba cero cajas
+// especiales sobre un pedido que las tenía (2026-10-08).
 export function fetchPedidoItemsAll(pedidoId, sucFilter) {
     return fetchAllRows(() => {
         let q = supabase.from('pedido_items').select(ITEMS_SELECT).eq('pedido_id', pedidoId);
         if (sucFilter) q = q.eq('erp_sucursal_id', sucFilter);
-        return q;
-    });
+        // Orden FIJO: sin él, entre una página y la siguiente la base puede
+        // devolver las filas en otro orden y un pedido de más de 1000 renglones
+        // carga filas repetidas y le faltan otras, sin error (2026-10-07).
+        return q.order('id');
+    }, { completo: true });
 }
 
 export function fetchPedidoItemEventosAll(pedidoId, sucFilter) {
     return fetchAllRows(() => {
         let q = supabase.from('pedido_item_eventos')
             .select('id, pedido_item_id, tipo, resolucion_tipo, nota, hecho_por, created_at')
-            .eq('pedido_id', pedidoId).order('created_at', { ascending: true });
+            // `id` desempata: dos eventos del mismo instante podían cambiar de
+            // página entre una lectura y la siguiente (el mismo defecto que ya
+            // se corrigió arriba en los renglones).
+            .eq('pedido_id', pedidoId).order('created_at', { ascending: true }).order('id');
         if (sucFilter) q = q.eq('erp_sucursal_id', sucFilter);
         return q;
-    });
+    }, { completo: true });
 }
 
 /*
@@ -490,11 +552,18 @@ export async function recibirTrasladoPedido(pedidoId, sucId, { hoja = null, item
  * Una por tarjeta serían N viajes para pintar un badge. Se filtra al despacho
  * real —el simulacro es diagnóstico y no es lo que la tarjeta cuenta—.
  */
+//
+// Hay UNA fila por intento, no por sala: un despacho que falló y se reintentó
+// deja dos. Sin orden, la que ganaba en el tablero era la que la base devolviera
+// última, y una sala ya despachada podía mostrar «no salió» del intento viejo.
+// Van del más viejo al más nuevo para que, al indexarlas por sala, gane el
+// último intento.
 export function fetchTrasladosDePedidos(pedidoIds) {
     return supabase.from('pedido_traslado_erp')
-        .select('pedido_id, erp_sucursal_id, estado, lineas, productos, hallazgos, error_msg')
+        .select('pedido_id, erp_sucursal_id, estado, lineas, productos, hallazgos, error_msg, created_at')
         .in('pedido_id', pedidoIds)
-        .eq('modo', 'real').eq('paso', 'enviar');
+        .eq('modo', 'real').eq('paso', 'enviar')
+        .order('created_at', { ascending: true }).order('id');
 }
 
 /**
@@ -598,7 +667,9 @@ export function fetchPedidoSucursalStatusForPedidos(pedidoIds, sucIds) {
 export function fetchPedidoItemsForPrintCapture(pedidoId, sucId) {
     return fetchAllRows(() => supabase.from('pedido_items')
         .select('id, factor, dispatch_factor, dispatch_tipo, cantidad_asignada, lotes_asignados, sin_stock, caja_especial, products(nombre, es_antibiotico, laboratorios(nombre), dispatch_rules(dispatch_label))')
-        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).gt('cantidad_asignada', 0));
+        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).gt('cantidad_asignada', 0)
+        // Orden fijo para que la paginación no repita ni pierda renglones.
+        .order('id'));
 }
 
 // ── CrearRutaModal.jsx (6 sitios — 2 de ellos reutilizan updateRutaStatus y
@@ -613,10 +684,99 @@ export function fetchPedidosDisponiblesParaRuta() {
         .in('status', ['confirmado', 'enviado', 'parcial']).order('numero');
 }
 
-export function fetchPedidoSucursalStatusFinalizados() {
-    return supabase.from('pedido_sucursal_status')
-        .select('pedido_id, erp_sucursal_id, total_cajas, cajas_electrolit, cajas_especiales, finalizado_at')
-        .not('finalizado_at', 'is', null);
+// Las salas que se pueden poner en una ruta NUEVA: preparadas, que no
+// salieron en ninguna ruta y que no llegaron (2026-10-07).
+//
+// Antes traía TODA sala finalizada de la historia y el modal sólo cruzaba
+// contra los pedidos abiertos, así que ofrecía salas que ya iban en otra
+// ruta, ya entregadas o ya recibidas: medido en producción ese día, el modal
+// ofrecía 3 y sólo 1 se podía despachar. Regla del usuario: *«si el pedido ya
+// se fue en una ruta, está entregado o recibido, no debe poderse agregar en
+// otra ruta»*.
+//
+// Y sin acotar por pedido leía las 186 filas finalizadas de la historia, que
+// al pasar de 1000 se habrían truncado en silencio (CLAUDE.md, límite de
+// PostgREST). Acotado a los pedidos abiertos son unas pocas: siete salas como
+// mucho por pedido.
+// Los reenvíos de cajas faltantes que esperan ruta (2026-10-07): ciclos de
+// `reenvios_historial` sin `sent_at`. Salen ARRIBA en «Nueva ruta», ya
+// marcados — regla del usuario: el reenvío va en otra ruta y como prioridad.
+//
+// Se filtra en la base por contención (`@> [{"sent_at": null}]`), así que
+// llegan sólo las salas con algo pendiente, de pedidos de cualquier estado:
+// un pedido «completado» puede deber una caja. Y se descartan los ciclos que
+// ya están en una ruta que todavía no salió, para no ofrecerlos dos veces.
+// ¿La base ya sabe sacar un reenvío EN UNA RUTA? (2026-10-08) Depende de la
+// columna `ruta_pedidos.reenvio_ciclo` y de que la base le ponga `sent_at` al
+// ciclo cuando la ruta sale (migración `reenvio_sale_en_ruta`). Mientras esa
+// migración no esté —producción hoy—, el reenvío tiene que seguir saliendo como
+// siempre: «enviado» al pedirlo, con su aviso. Si no, el ciclo quedaría
+// pendiente para siempre, la sala no podría confirmar su llegada y la consulta
+// de abajo rompería «Nueva ruta» para todas las salas. Se pregunta una vez por
+// carga de página; un error que no sea «no existe la columna» no decide nada.
+let reenvioEnRutaPromesa = null;
+export function reenvioSaleEnRuta() {
+    if (!reenvioEnRutaPromesa) {
+        reenvioEnRutaPromesa = supabase.from('ruta_pedidos').select('reenvio_ciclo').limit(1)
+            .then(({ error }) => {
+                if (!error) return true;
+                const sinColumna = error.code === '42703' || error.code === 'PGRST204' || /reenvio_ciclo/.test(error.message ?? '');
+                if (!sinColumna) reenvioEnRutaPromesa = null;   // reintentar la próxima vez
+                return !sinColumna ? true : false;
+            });
+    }
+    return reenvioEnRutaPromesa;
+}
+
+export async function fetchReenviosPorDespachar() {
+    // Sin la columna no hay ciclos «por despachar»: nacen enviados.
+    if (!(await reenvioSaleEnRuta())) return { data: [], error: null };
+    const { data, error } = await supabase.from('pedido_sucursal_status')
+        .select('pedido_id, erp_sucursal_id, reenvios_historial, pedidos!inner(numero, status)')
+        // `.contains()` con un arreglo lo manda como arreglo de Postgres
+        // (`{…}`) y sobre `jsonb` falla: «invalid input syntax for type json».
+        .filter('reenvios_historial', 'cs', JSON.stringify([{ sent_at: null }]))
+        .neq('pedidos.status', 'anulado');
+    if (error) return { data: null, error };
+    const filas = data ?? [];
+    if (!filas.length) return { data: [], error: null };
+    const { data: enRuta, error: e2 } = await supabase.from('ruta_pedidos')
+        .select('pedido_id, erp_sucursal_id, reenvio_ciclo')
+        .in('pedido_id', [...new Set(filas.map(f => f.pedido_id))])
+        .not('reenvio_ciclo', 'is', null);
+    if (e2) return { data: null, error: e2 };
+    const tomados = new Set((enRuta ?? []).map(r => `${r.pedido_id}__${r.erp_sucursal_id}__r${r.reenvio_ciclo}`));
+    const out = [];
+    for (const f of filas) {
+        for (const c of (Array.isArray(f.reenvios_historial) ? f.reenvios_historial : [])) {
+            if (!c || c.sent_at || c.arrived_at) continue;
+            const key = `${f.pedido_id}__${f.erp_sucursal_id}__r${c.ciclo}`;
+            if (tomados.has(key)) continue;
+            out.push({
+                key, pedido_id: f.pedido_id, erp_sucursal_id: f.erp_sucursal_id, numero: f.pedidos?.numero,
+                reenvio_ciclo: c.ciclo, cajas: c.cajas ?? [], electrolits: c.electrolits ?? 0, especiales: c.especiales ?? [],
+            });
+        }
+    }
+    return { data: out, error: null };
+}
+
+export async function fetchSalasListasParaRuta(pedidoIds) {
+    const ids = [...new Set(pedidoIds ?? [])];
+    if (!ids.length) return { data: [], error: null };
+    const [pss, enRuta] = await Promise.all([
+        supabase.from('pedido_sucursal_status')
+            .select('pedido_id, erp_sucursal_id, total_cajas, cajas_electrolit, cajas_especiales, finalizado_at')
+            .in('pedido_id', ids)
+            .not('finalizado_at', 'is', null)
+            .is('llegada_fisica_at', null)
+            .is('recibido_erp_at', null),
+        supabase.from('ruta_pedidos').select('pedido_id, erp_sucursal_id').in('pedido_id', ids),
+    ]);
+    if (pss.error)    return { data: null, error: pss.error };
+    if (enRuta.error) return { data: null, error: enRuta.error };
+    const yaSalieron = new Set((enRuta.data ?? []).map(r => `${r.pedido_id}__${r.erp_sucursal_id}`));
+    return { data: (pss.data ?? []).filter(r => !yaSalieron.has(`${r.pedido_id}__${r.erp_sucursal_id}`)), error: null };
 }
 
 export function fetchSucursalesConCoords() {

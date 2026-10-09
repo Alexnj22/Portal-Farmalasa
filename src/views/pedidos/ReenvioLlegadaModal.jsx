@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
-import { PackageCheck, PackageX, AlertTriangle, X, Loader2, Truck, Zap, Package, Check } from 'lucide-react';
+import { PackageCheck, PackageX, AlertTriangle, X, Truck, Zap, Package, Check, ChevronLeft } from 'lucide-react';
 import PedidoModal from './PedidoModal';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
@@ -33,6 +33,10 @@ export default function ReenvioLlegadaModal({
     const [electrolitOk,    setElectrolitOk]    = useState(null); // null=sin responder, true=todas ok, false=aun faltan
     const [espEstados,      setEspEstados]       = useState({});   // label → 'ok' | 'faltante'
     const [submitting,      setSubmitting]       = useState(false);
+    // Mismo arreglo que `LlegadaModal`: abre con UNA pregunta —¿llegó todo el
+    // reenvío?— y el detalle por caja queda detrás de «Algo llegó mal». Un
+    // reenvío es justo lo que se mandó porque faltaba: casi siempre llega.
+    const [modo,            setModo]             = useState('rapido'); // 'rapido' | 'detalle'
 
     const getEst = (num) => estados[num] ?? 'ok';
     const setEst = (num, val) => setEstados(prev => ({ ...prev, [num]: val }));
@@ -48,22 +52,41 @@ export default function ReenvioLlegadaModal({
     // Electrolit debe ser respondido antes de poder confirmar
     const electrolitPending = electrolitCount > 0 && electrolitOk === null;
 
-    const handleConfirm = () => {
+    // Espera a que se guarde: si falla, el modal sigue abierto con lo marcado.
+    const enviar = async (payload) => {
+        if (submitting) return;
         setSubmitting(true);
-        onConfirm({
-            cajasOk,
-            cajasDanadas,
-            cajasFaltantes,
-            nota: nota.trim(),
-            electrolitOk:  electrolitCount > 0 ? (electrolitOk === true) : true,
-            especialesAun: especialesList.length > 0 ? espFaltantes : [],
-        });
+        const ok = await onConfirm(payload);
+        if (ok === false) setSubmitting(false);
     };
+
+    const handleConfirm = () => enviar({
+        cajasOk,
+        cajasDanadas,
+        cajasFaltantes,
+        nota: nota.trim(),
+        electrolitOk:  electrolitCount > 0 ? (electrolitOk === true) : true,
+        especialesAun: especialesList.length > 0 ? espFaltantes : [],
+    });
+
+    // «Llegó todo»: el mismo contrato de `onConfirm` con todo en OK. No es una
+    // escritura distinta, es el detalle contestado de una vez.
+    const handleTodoLlego = () => enviar({
+        cajasOk: [...cajasCiclo], cajasDanadas: [], cajasFaltantes: [], nota: '',
+        electrolitOk: true, especialesAun: [],
+    });
+
+    const totalCajas = cajasCiclo.length + electrolitCount + especialesList.length;
+    const enDetalle  = modo === 'detalle' || !hasContent;
+    // Lo que se marcó mal, para el resumen del pie: cajas, Electrolit y
+    // especiales. Sólo miraba las cajas, así que un Electrolit o una especial
+    // que seguía faltando no aparecía en el resumen.
+    const hayAvisos = hayProblemas || electrolitOk === false || espFaltantes.length > 0;
 
     const handleClose = () => {
         if (submitting) return;
         setEstados({}); setNota(''); setElectrolitOk(null);
-        setEspEstados({}); setSubmitting(false);
+        setEspEstados({}); setSubmitting(false); setModo('rapido');
         onClose();
     };
 
@@ -85,11 +108,48 @@ export default function ReenvioLlegadaModal({
                     <p className="text-label font-medium text-content-2 uppercase tracking-wide">
                         Pedido #{pedidoNumero} · Reenvío {cicloNum > 1 ? cicloNum : ''}
                     </p>
-                    <h3 className="text-body-lg font-bold text-content leading-tight">¿Cómo llegó el reenvío?</h3>
+                    <h3 className="text-body-lg font-bold text-content leading-tight">{enDetalle ? '¿Cómo llegó el reenvío?' : '¿Llegó todo el reenvío?'}</h3>
                 </div>
                 <Button variant="ghost" icon={X} disabled={submitting} iconOnly onClick={handleClose} />
             </div>
 
+            {!enDetalle && (<>
+                <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-5 py-5 space-y-4">
+                    <div data-surface="card" className="p-4 flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-chart-3 shadow-[var(--shadow-glow-chart-3-md)] flex items-center justify-center shrink-0">
+                            <Package size={18} className="text-white" aria-hidden="true" />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-body font-bold text-content-2 leading-tight tabular-nums">
+                                {totalCajas} caja{totalCajas !== 1 ? 's' : ''} en este reenvío
+                            </p>
+                            <ul className="mt-1 space-y-0.5 text-caption text-content-3">
+                                {cajasCiclo.length > 0 && <li>Caja{cajasCiclo.length !== 1 ? 's' : ''} {cajasCiclo.map(n => `#${n}`).join(', ')}</li>}
+                                {electrolitCount > 0 && <li>{electrolitCount} de Electrolit</li>}
+                                {especialesList.length > 0 && <li>Especial{especialesList.length !== 1 ? 'es' : ''} {especialesList.join(', ')}</li>}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <Button size="lg" icon={PackageCheck} className="w-full" loading={submitting} onClick={handleTodoLlego}>
+                        {totalCajas === 1 ? 'Llegó la caja' : `Llegaron las ${totalCajas} cajas`}
+                    </Button>
+                    <div className="flex flex-col items-center gap-1">
+                        <Button variant="secondary" icon={AlertTriangle} className="w-full" disabled={submitting} onClick={() => setModo('detalle')}>
+                            Algo llegó mal
+                        </Button>
+                        <p className="text-caption text-content-3 text-center">
+                            Una caja dañada o una que todavía no llegó: se marca caja por caja.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="px-5 pb-5 pt-3 border-t border-divider shrink-0 flex justify-start">
+                    <Button variant="ghost" disabled={submitting} onClick={handleClose}>Cancelar</Button>
+                </div>
+            </>)}
+
+            {enDetalle && (<>
             {/* Body */}
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-5 py-4 space-y-4">
 
@@ -151,16 +211,20 @@ export default function ReenvioLlegadaModal({
                                 </span>
                             )}
                         </div>
-                        <div className="flex gap-2">
-                            <Button size="sm" tone="success" icon={Check} className="flex-1" onClick={() => setElectrolitOk(true)}>Sí llegaron</Button>
-                            <Button
-                                size="sm"
-                                variant="destructive"
-                                icon={PackageX}
-                                className="flex-1"
-                                onClick={() => setElectrolitOk(false)}
-                            >Aún faltan</Button>
-                        </div>
+                        {/* Un uno-de-dos, no dos botones: eran dos sólidos lado a
+                            lado —verde y rojo— que no mostraban cuál se había
+                            elegido. Mismo control que el Electrolit de la
+                            primera llegada. */}
+                        <SegmentedControl
+                            layout="block"
+                            label="¿Llegaron las cajas de Electrolit?"
+                            value={electrolitOk === null ? null : electrolitOk ? 'si' : 'no'}
+                            onChange={v => setElectrolitOk(v === 'si')}
+                            options={[
+                                { value: 'si', label: 'Sí llegaron', icon: Check,    tone: 'success' },
+                                { value: 'no', label: 'Aún faltan',  icon: PackageX, tone: 'danger'  },
+                            ]}
+                        />
                     </div>
                 )}
 
@@ -216,7 +280,7 @@ export default function ReenvioLlegadaModal({
 
             {/* Footer */}
             <div className="px-5 pb-5 pt-3 border-t border-divider space-y-3 shrink-0">
-                {hayProblemas && (
+                {hayAvisos && (
                     <div className="flex flex-wrap gap-1.5">
                         {cajasDanadas.length > 0 && (
                             <Badge variant="warning" uppercase={false} icon={AlertTriangle}>Dañada{cajasDanadas.length > 1 ? 's' : ''}: {cajasDanadas.map(n => `#${n}`).join(', ')}</Badge>
@@ -234,14 +298,17 @@ export default function ReenvioLlegadaModal({
                 )}
                 {/* `flex-wrap` — mismo motivo que en `LlegadaModal`: el rótulo
                     del botón principal no se encoge y en un teléfono salía
-                    cortado. Acá el más largo es «Respondé el Electrolit
+                    cortado. Acá el más largo es «Responde el Electrolit
                     primero». */}
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                    <Button variant="secondary" disabled={submitting} onClick={handleClose}>Cancelar</Button>
-                    <Button tone="chart-3" disabled={submitting || !hasContent || electrolitPending} onClick={handleConfirm}>{submitting && <Loader2 size={11} className="animate-spin" />}
-                        {electrolitPending ? 'Respondé el Electrolit primero' : 'Confirmar reenvío'}</Button>
+                    {hasContent
+                        ? <Button variant="secondary" icon={ChevronLeft} disabled={submitting} onClick={() => setModo('rapido')}>Volver</Button>
+                        : <Button variant="secondary" disabled={submitting} onClick={handleClose}>Cancelar</Button>}
+                    <Button tone="chart-3" loading={submitting} disabled={!hasContent || electrolitPending} onClick={handleConfirm}>
+                        {electrolitPending ? 'Responde el Electrolit primero' : 'Confirmar reenvío'}</Button>
                 </div>
             </div>
+            </>)}
         </PedidoModal>
     );
 }

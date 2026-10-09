@@ -7,10 +7,11 @@
 // cambie el historial de reenvíos o la cuenta del código, las dos pantallas
 // dejarían el mismo pedido en estados distintos.
 import {
-    anularPedido, avanzarEtapaDePedidoEnSala, confirmarPedido, fetchPedidoIdsSinceExcluding, fetchPedidoItemsFaltaElectrolit,
-    fetchPedidoItemsFaltaEspeciales, fetchPedidoNumero, fetchPedidoSucursalStatus, fetchPedidoSucursalStatusForPedidos,
-    fetchVistaPreviaDePedido, iniciarCodigosDeSucursalesDelPedido, updatePedidoItemsFaltaCaja, updatePedidoSucursalStatus,
+    anularPedido, avanzarEtapaDePedidoEnSala, confirmarPedido, fetchPedidoIdsSinceExcluding, fetchPedidoNumero,
+    fetchPedidoSucursalStatus, fetchPedidoSucursalStatusForPedidos, fetchVistaPreviaDePedido,
+    iniciarCodigosDeSucursalesDelPedido,
 } from './pedidos';
+import { confirmarLlegadaDeReenvio as llegadaDeReenvioEnLaBase, programarEntregaSala } from './pasosDelPedido';
 import { PAUSE_REASONS } from '../constants/pedidos';
 import { SUCURSALES } from '../constants/erp';
 import { buildPedidoCodigo, fefoProject } from '../utils/codigoDePedido';
@@ -41,33 +42,53 @@ export async function anularPedidoConMotivo({ pedidoId, userId = null, motivo = 
     sinError(await anularPedido({ p_pedido_id: pedidoId, p_anulado_por: userId, p_motivo: motivo || null }));
 }
 
-/** Programar (o mover) la entrega a una sala; cada cambio queda en el historial. */
+/**
+ * Programar (o mover) la entrega a una sala; cada cambio queda en el historial.
+ * La entrada se AGREGA en la base (`programar_entrega_sala`, `pasosDelPedido`):
+ * reescribir el arreglo entero con lo que leyó la pantalla dejaba que dos
+ * pantallas abiertas se pisaran la entrada sin error. `historial` y `nombre`
+ * sólo los usa el camino viejo, mientras la base no tenga la función.
+ */
 export async function programarEntregaDePedido({ pedidoId, sucId, nuevoIso, historial = [], userId = null, nombre = null }) {
-    const entry = { programada_at: nuevoIso, registrado_at: new Date().toISOString(), por: userId, nombre };
-    sinError(await updatePedidoSucursalStatus(pedidoId, sucId, {
-        entrega_programada_at: nuevoIso, entrega_programada_historial: [...(historial ?? []), entry],
-    }));
+    sinError(await programarEntregaSala({ pedidoId, sucId, cuando: nuevoIso, historial, por: userId, nombre }));
 }
 
 /**
- * El ciclo de reenvío que falta confirmar: el primero sin `arrived_at`. Sin
- * historial, los pedidos viejos traían sólo `falta_cajas`: se arma un ciclo 1.
- * `null` si no hay nada pendiente.
+ * ¿Hay un reenvío pedido que todavía no salió de Bodega? Con la base al día el
+ * ciclo nace PENDIENTE (`sent_at` nulo) y la base le pone `sent_at` cuando sale
+ * su ruta: hasta entonces no se puede confirmar su llegada.
+ */
+export function reenvioTodaviaEnBodega(historial = []) {
+    return (historial ?? []).some((c) => c && !c.sent_at && !c.arrived_at);
+}
+
+/**
+ * El ciclo de reenvío que falta confirmar: el primero que SALIÓ (`sent_at`) y
+ * no llegó. Uno pendiente sigue en Bodega y no cuenta (ver
+ * `reenvioTodaviaEnBodega`); antes se tomaba el primero sin `arrived_at`, o el
+ * último aunque ya hubiera llegado. Sin historial, los pedidos viejos traían
+ * sólo `falta_cajas`: se arma un ciclo 1. `null` si no hay nada que confirmar.
  */
 export function cicloDeReenvioPendiente(historial = [], faltaCajasLegacy = []) {
     const h = historial ?? [];
-    const idx = h.findIndex((c) => !c.arrived_at);
-    const ciclo = idx >= 0 ? h[idx] : h[h.length - 1];
+    const ciclo = h.find((c) => c?.sent_at && !c.arrived_at);
     if (!ciclo) {
-        return faltaCajasLegacy.length ? { ciclo: 1, cajas: faltaCajasLegacy, electrolits: 0, especiales: [], historial: [] } : null;
+        if (reenvioTodaviaEnBodega(h)) return null;
+        return faltaCajasLegacy?.length ? { ciclo: 1, cajas: faltaCajasLegacy, electrolits: 0, especiales: [], historial: [] } : null;
     }
     return { ciclo: ciclo.ciclo, cajas: ciclo.cajas ?? [], electrolits: ciclo.electrolits ?? 0, especiales: ciclo.especiales ?? [], historial: h };
 }
 
 /**
- * Confirmar la llegada de un reenvío. Escribe el ciclo en el historial, deja
- * `falta_caja` sólo en lo que sigue sin llegar y actualiza Electrolit y cajas
- * especiales. Devuelve lo que la pantalla necesita para abrir el conteo.
+ * Confirmar la llegada de un reenvío. Todo en UNA transacción de la base
+ * (`confirmar_llegada_reenvio`, `pasosDelPedido`): el ciclo, las cajas, el
+ * Electrolit, las especiales y los renglones que se liberan. Antes eran de
+ * cuatro a siete escrituras desde el cliente y un corte en el medio dejaba la
+ * llegada confirmada con renglones todavía bloqueados. Mientras la base no
+ * tenga la función, `pasosDelPedido` cae al camino de pasos sueltos.
+ *
+ * Devuelve lo que la pantalla necesita para abrir el conteo. `yaEstaba`: el
+ * segundo clic de un doble clic — ya estaba confirmada, sólo hay que refrescar.
  *
  * El aviso a Bodega si todavía falta algo lo escribe la base al ver
  * `segunda_llegada_at` (`avisar_camino_del_pedido`), no quien llama.
@@ -76,72 +97,22 @@ export async function confirmarLlegadaDeReenvio({
     pedidoId, sucId, ciclo, historial = [], electrolitCount = 0, especialesList = [], userId = null,
     cajasOk = [], cajasDanadas = [], cajasFaltantes = [], nota = '', electrolitOk = true, especialesAun = [],
 }) {
-    const now = new Date().toISOString();
-    const hasFalta = cajasFaltantes.length > 0;
-    const arrivedTipo = hasFalta && cajasDanadas.length > 0 ? 'mixto'
-        : hasFalta ? 'falta_caja'
-        : cajasDanadas.length > 0 ? 'caja_danada'
-        : 'ok';
-
-    const nuevoHistorial = (historial ?? []).map((c) => (c.ciclo === ciclo
-        ? { ...c, arrived_at: now, arrived_tipo: arrivedTipo, arrived_por: userId, cajas_ok: cajasOk, cajas_danadas: cajasDanadas, cajas_aun_faltantes: cajasFaltantes, nota: nota || null,
-            // Lo que sigue faltando, escrito en el ciclo: el aviso a bodega
-            // sale de la base con ESTA escritura, antes de las que siguen.
-            electrolit_ok: electrolitCount > 0 ? electrolitOk === true : null,
-            especiales_aun: especialesAun }
-        : c));
-
-    sinError(await updatePedidoSucursalStatus(pedidoId, sucId, {
-        segunda_llegada_at: now,
-        reenvios_historial: nuevoHistorial,
-        falta_cajas: hasFalta ? cajasFaltantes : [],
-        ...(electrolitCount > 0 ? { electrolit_ok: electrolitOk === true, electrolit_faltantes: electrolitOk ? 0 : electrolitCount } : {}),
-    }));
-
+    const { data, error } = await llegadaDeReenvioEnLaBase({
+        pedidoId, sucId, ciclo, historial, userId,
+        cajasOk, cajasDanadas, cajasFaltantes, nota,
+        electrolitOk, electrolitCount, especialesList, especialesAun,
+    });
+    if (error) throw error;
+    // El mapa de hojas y lo ya contado, para abrir la recepción de lo que llegó.
     const { data: pss, error: pssErr } = await fetchPedidoSucursalStatus(pedidoId, sucId,
-        'caja_map, pagina_items, paginas, hojas_recibidas, cajas_danadas, cajas_especiales_llegadas');
+        'caja_map, pagina_items, paginas, hojas_recibidas');
     if (pssErr) throw pssErr;
-    const cajaMapDb = pss?.caja_map ?? {};
-    const paginaItemsDb = pss?.pagina_items ?? {};
-    const idsDeCajas = (cajas) => {
-        if (!Object.keys(paginaItemsDb).length) return [];
-        return cajas.flatMap((n) => (cajaMapDb[String(n)] ?? []).flatMap((p) => paginaItemsDb[String(p)] ?? []));
+    return {
+        arrivedTipo: data?.arrived_tipo ?? null,
+        yaEstaba: !!data?.yaEstaba,
+        cajaMap: pss?.caja_map ?? {}, paginaItems: pss?.pagina_items ?? {},
+        paginas: pss?.paginas ?? [], hojasRecibidas: pss?.hojas_recibidas ?? [],
     };
-
-    // Lo que llegó (bien o dañado) deja de faltar; lo que no, sigue faltando.
-    const llegaron = idsDeCajas([...cajasOk, ...cajasDanadas]);
-    if (llegaron.length) sinError(await updatePedidoItemsFaltaCaja(llegaron, false));
-    if (hasFalta) {
-        const siguen = idsDeCajas(cajasFaltantes);
-        if (siguen.length) sinError(await updatePedidoItemsFaltaCaja(siguen, true));
-    }
-
-    if (electrolitCount > 0 && electrolitOk) {
-        const faltaElec = await fetchPedidoItemsFaltaElectrolit(pedidoId, sucId);
-        if (faltaElec === null) throw new Error('No se pudieron leer los renglones de Electrolit marcados como faltantes.');
-        const elecIds = faltaElec.filter((r) => (r.products?.nombre ?? '').toLowerCase().includes('electrolit')).map((r) => r.id);
-        if (elecIds.length) sinError(await updatePedidoItemsFaltaCaja(elecIds, false));
-    }
-
-    const espLlegaron = (especialesList ?? []).filter((l) => !especialesAun.includes(l));
-    if (espLlegaron.length || especialesAun.length) {
-        const merged = { .../** @type {Record<string, string>} */ (pss?.cajas_especiales_llegadas ?? {}) };
-        for (const l of espLlegaron) merged[l] = 'ok';
-        for (const l of especialesAun) merged[l] = 'faltante';
-        sinError(await updatePedidoSucursalStatus(pedidoId, sucId, { cajas_especiales_llegadas: merged }));
-        if (espLlegaron.length) {
-            const faltaEsp = await fetchPedidoItemsFaltaEspeciales(pedidoId, sucId);
-            if (faltaEsp === null) throw new Error('No se pudieron leer los renglones de cajas especiales marcados como faltantes.');
-            if (faltaEsp.length) {
-                const idsToClean = especialesAun.length === 0
-                    ? faltaEsp.map((r) => r.id)
-                    : faltaEsp.slice(0, Math.round(faltaEsp.length * espLlegaron.length / (especialesList ?? []).length)).map((r) => r.id);
-                if (idsToClean.length) sinError(await updatePedidoItemsFaltaCaja(idsToClean, false));
-            }
-        }
-    }
-
-    return { arrivedTipo, cajaMap: cajaMapDb, paginaItems: paginaItemsDb, paginas: pss?.paginas ?? [], hojasRecibidas: pss?.hojas_recibidas ?? [] };
 }
 
 /** Un renglón de la vista previa, como lo espera `confirm_pedido`. */
@@ -184,28 +155,43 @@ export function renglonesPorSala(rows) {
 }
 
 /**
- * Generar un pedido directo: calcula, confirma y deja el código de cada sala.
- * NO imprime: el papel lo arma quien llama (el portal, con pdfmake).
- * Devuelve `null` si las salas están abastecidas.
- *
- * `globalMode`: el cálculo mira a TODAS las salas (reparte la Bodega entre
- * todas) pero el pedido sale sólo para las elegidas.
+ * La vista previa de un pedido directo (lo que se va a mandar, renglón por
+ * renglón). `globalMode`: el cálculo mira a TODAS las salas (reparte la Bodega
+ * entre todas) pero el pedido sale sólo para las elegidas.
  */
-export async function generarPedidoDirecto({ salas, globalMode = false, userId = null, responsableId = null }) {
+export async function vistaPreviaDePedido({ salas, globalMode = false }) {
     const elegidas = [...salas];
     const rpcParams = globalMode ? { p_sucursal_ids: SUCURSALES, p_target_ids: elegidas } : { p_sucursal_ids: elegidas };
     const { data, error } = await fetchVistaPreviaDePedido(rpcParams);
     if (error) throw error;
-    const rows = Array.isArray(data) ? data : [];
-    if (!rows.length) return null;
+    return Array.isArray(data) ? data : [];
+}
 
+/**
+ * Confirma una vista previa YA calculada y deja el código de cada sala. Va
+ * aparte de `vistaPreviaDePedido` para que el portal muestre el resumen por
+ * sala ANTES de confirmar: lo que se ve es lo que se guarda.
+ * NO imprime: el papel lo arma quien llama (el portal, con pdfmake).
+ *
+ * `numero` puede venir `null` (la lectura se reintenta una vez): quien llama
+ * dice «el pedido», nunca «Pedido #undefined». `codigosError`: los códigos de
+ * sala no se guardaron — el pedido SÍ quedó confirmado, y hay que avisarlo.
+ */
+export async function confirmarPedidoDirecto({ rows, salas, globalMode = false, userId = null, responsableId = null }) {
+    const elegidas = [...salas];
     const items = rows.map(renglonParaConfirmar);
     const { data: pedidoId, error: confErr } = await confirmarPedido({
         p_created_by: userId, p_notes: null, p_items: items,
         p_responsable_id: responsableId, p_revisado_por: null, p_sucursal_ids: elegidas,
     }, { directo: true });
     if (confErr) throw confErr;
-    const { data: ped } = await fetchPedidoNumero(pedidoId);
+
+    let numero = null;
+    for (let intento = 0; intento < 2 && numero == null; intento++) {
+        const { data: ped, error: numErr } = await fetchPedidoNumero(pedidoId);
+        if (numErr) console.error('[pedidos] número del pedido:', numErr);
+        numero = ped?.numero ?? null;
+    }
 
     const map = renglonesPorSala(rows);
     const sucIds = SUCURSALES.filter((id) => map[id]);
@@ -223,12 +209,29 @@ export async function generarPedidoDirecto({ salas, globalMode = false, userId =
     const codigoFn = buildPedidoCodigo(cuenta, new Date(), globalMode ? SUCURSALES.length : sucIds.length);
     const codigos = {};
     for (const id of sucIds) codigos[id] = codigoFn(id);
-    // `Promise.resolve`: una consulta de supabase se puede esperar pero NO trae
-    // `.catch` propio — escrito directo revienta con «undefined is not a function»
-    // después de haber creado el pedido.
-    await Promise.resolve(iniciarCodigosDeSucursalesDelPedido({
-        p_pedido_id: pedidoId, p_codigos: sucIds.map((id) => ({ erp_sucursal_id: id, codigo: codigos[id] })),
-    })).catch(() => {});
+    // Los códigos de sala son los que llevan los PDF y los que se buscan
+    // después: el error ya no se descarta, vuelve en `codigosError`.
+    let codigosError = null;
+    try {
+        const { error } = await iniciarCodigosDeSucursalesDelPedido({
+            p_pedido_id: pedidoId, p_codigos: sucIds.map((id) => ({ erp_sucursal_id: id, codigo: codigos[id] })),
+        });
+        codigosError = error ?? null;
+    } catch (e) {
+        codigosError = e;
+    }
+    if (codigosError) console.error('[pedidos] códigos de sala:', codigosError);
 
-    return { pedidoId, numero: ped?.numero ?? null, rows, items, map, sucIds, codigoFn, codigos };
+    return { pedidoId, numero, rows, items, map, sucIds, codigoFn, codigos, codigosError };
+}
+
+/**
+ * Generar un pedido directo de una vez: calcula, confirma y deja el código de
+ * cada sala (la app del teléfono). Devuelve `null` si las salas están
+ * abastecidas.
+ */
+export async function generarPedidoDirecto({ salas, globalMode = false, userId = null, responsableId = null }) {
+    const rows = await vistaPreviaDePedido({ salas, globalMode });
+    if (!rows.length) return null;
+    return confirmarPedidoDirecto({ rows, salas, globalMode, userId, responsableId });
 }

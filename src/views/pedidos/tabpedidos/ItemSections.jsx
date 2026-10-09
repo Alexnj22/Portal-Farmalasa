@@ -16,6 +16,10 @@ import { calcSolicitado, rotuloDePresentacion, seccionesDeRenglones } from '@nuc
 import SearchInput from '../../../components/common/SearchInput';
 import { useSearchToggle } from '../../../plataforma/useSearchToggle';
 import { fetchStockParamsForRevision, guardarMinMaxDesdePedido, effectiveMinMaxPair } from '@nucleo/data/stockParams';
+
+// Framer no interpola `min(20rem, 60vw)` (salta en vez de animar): el ancho del
+// buscador abierto va en píxeles, la misma regla.
+const anchoBuscador = () => Math.min(320, Math.round((typeof window !== 'undefined' ? window.innerWidth : 1280) * 0.6));
 import PortalInput from '../../../components/common/PortalInput';
 
 const MINI_PAGE = 15;
@@ -249,21 +253,26 @@ function ItemSection({ label, count, variante = 'neutral', rows, columns, noteEl
                 </Button>
                 <AnimatePresence mode="wait">
                     {searchOpen ? (
-                        <motion.div {...searchContainerRef} key="input" initial={{ width: 0, opacity: 0 }} animate={{ width: 190, opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden shrink-0 flex items-center gap-1">
+                        <motion.div {...searchContainerRef} key="input" initial={{ width: 0, opacity: 0 }} animate={{ width: anchoBuscador(), opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden shrink-0 flex items-center gap-1">
                             <SearchInput
                                 ref={searchRef}
                                 size="sm"
                                 value={search}
                                 onChange={val => { setSearch(val); setPage(1); }}
                                 onKeyDown={e => e.key === 'Escape' && closeSearch()}
-                                placeholder="Buscar…"
+                                placeholder="Producto o código…"
                             />
                             <Button variant="ghost" icon={X} iconOnly onClick={closeSearch} />
                         </motion.div>
                     ) : (
-                        <motion.button key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={openSearch} className="p-1.5 rounded-lg text-content-3 hover:text-brand-text hover:bg-brand/10 transition-colors shrink-0">
-                            <Search size={12} />
-                        </motion.button>
+                        // Un botón que se lee (ícono + «Buscar»), no una lupa de 12px
+                        // que nadie encontraba. El campo abre a 20rem: a 190px el
+                        // texto de 16px (obligatorio, §25) no dejaba ver lo escrito.
+                        <motion.div key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="shrink-0">
+                            <Button variant="ghost" size="sm" icon={Search} onClick={openSearch} aria-label={`Buscar en ${label}`}>
+                                <span className="hidden sm:inline">Buscar</span>
+                            </Button>
+                        </motion.div>
                     )}
                 </AnimatePresence>
                 <Button variant="ghost" onClick={() => setOpen(v => !v)}>{open ? <ChevronDown size={12} className="text-content-3" /> : <ChevronRight size={12} className="text-content-3" />}</Button>

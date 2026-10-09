@@ -13,7 +13,16 @@ import { GOOGLE_MAPS_API_KEY } from './config';
 
 // ── Google Maps (una sola carga por página) ──────────────────────────────────
 let _mapsPromise = null;
+// Google rechaza la llave UNA vez por página (`gm_authFailure`) y después sus
+// servicios quedan colgados: la tabla de distancias no contesta nunca y un
+// mapa nuevo sale en blanco. Se recuerda acá para que quien pida mapas después
+// caiga directo al respaldo en vez de esperar algo que no va a llegar
+// (medido el 2026-10-08: «Calculando ruta…» para siempre).
+let _llaveRechazada = false;
+/** ¿Google ya rechazó la llave en esta página? */
+export function googleMapsRechazado() { return _llaveRechazada; }
 export function loadGoogleMaps() {
+    if (_llaveRechazada) return Promise.reject(new Error('InvalidKey'));
     if (_mapsPromise) return _mapsPromise;
     if (window.google?.maps?.DistanceMatrixService) {
         _mapsPromise = Promise.resolve(window.google.maps);
@@ -25,7 +34,8 @@ export function loadGoogleMaps() {
         // gm_authFailure se dispara cuando la key es inválida o está restringida
         const prevAuthFailure = window.gm_authFailure;
         window.gm_authFailure = () => {
-            _mapsPromise = null; // permite reintentar si la key se corrige
+            _mapsPromise = null;
+            _llaveRechazada = true;
             reject(new Error('InvalidKey'));
             if (prevAuthFailure) prevAuthFailure();
         };

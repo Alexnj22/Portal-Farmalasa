@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1261.0 — Pedidos: auditoría del módulo, lista oficial y funciones de un solo paso
+
+Llega a producción el trabajo del módulo Pedidos (rama `sesion/pedidos-visual`, revisado contra producción con prueba de paridad en vivo). El detalle está en las entradas de abajo; lo principal:
+- **La lista es la vista oficial de Pedidos**, con encabezado fijo, filas que se centran al abrir, incidencias con quién y cuándo, y línea de tiempo con el día.
+- **Correcciones:**
+  - finalizar e imprimir ya no trabajan con datos vacíos;
+  - «Terminé» con un solo criterio;
+  - «Todo OK» sin redondear;
+  - los filtros miran el estado de la sala;
+  - Crear ruta sólo ofrece salas válidas;
+  - los errores ya no quedan mudos;
+  - un 0 se ve en todos los campos;
+  - los placeholders ya no salen como opción;
+  - los sólidos se ven sólidos.
+- **Eficiencia:**
+  - entrar a Pedidos baja de unas 48 a 25 peticiones;
+  - pausar o reanudar, de 13 a 7;
+  - ordenar paradas en el mapa, de 16 llamadas a Google a 1.
+- **Funciones de un solo paso en la base**, ya aplicadas en producción: finalizar, llegada, llegada del reenvío, programar, pedir reenvío y hojas recibidas. Rutas: «No se pudo entregar» y «Cerrar ruta».
+- **Unido con la reorganización de main** que comparte la lógica con la app. Las funciones compartidas reciben las mismas correcciones (ciclo de reenvío, programar, llegada del reenvío, urgencia, coordenadas con caché y rutas activas sin tope).
+
 ## v2.1260.9 — La tarjeta dice Cliente Mayorista y el sello dice Personal
 
 - **La tarjeta del mayorista lo dice:** «CLIENTE MAYORISTA» sobre el rango (antes sólo decía «JADE», «ZAFIRO»…).
@@ -335,6 +356,286 @@ Cambios pedidos por el usuario sobre la compilación 12 de la app de clientes:
 - **Quién vio cada historia.** Nueva tabla `app_historias_vistas` (una fila por persona e historia; sin cuenta, por un identificador aleatorio del teléfono, sin nombre) que escribe sólo `app-clientes` (`historia_vista` / `historia_vista_publica` → `app_historia_registrar_vista`). En Ofertas para clientes → Historias, columna **Vistas** con cuántos tocaron un botón; al tocar el número, la lista de clientes con fecha y hora (`app_historia_quienes_vieron`, con el permiso del módulo). Cuenta desde la compilación 11 de la app.
 - **«Reservar» y «Más información» en las historias.** Una historia puede llevar a una oferta (`app_historias.oferta_id`, elegida en el editor): la app muestra **Reservar**, que abre la oferta y, si tiene un solo producto, la hoja de reserva directamente. Toda historia tiene **Más información**, que abre WhatsApp con la empresa (2301-0013) y el nombre de la historia.
 - Las historias de prueba tienen imágenes verticales: antes eran fotos horizontales recortadas a pantalla completa y sólo se veía el fondo de color.
+
+## v2.1233.8 — Pedidos: tanda 2 aplicada (aviso sala lista e índices)
+
+Migraciones aplicadas en PRODUCCIÓN el 2026-10-09 (tanda 2), con `lock_timeout`:
+- `20261009005803_aviso_sala_lista_para_salir`: a los Auxiliares de Bodega les llega «Sala X lista para salir · N cajas» cuando una sala queda finalizada con sus cajas. Una sola vez por sala, y funciona con el portal publicado y con el nuevo.
+- `20261009005805_indices_pedidos`: 4 índices de FK nuevos; se quitan 2 que no se usaban (0 y 69 lecturas). Los 2 muy usados que el borrador quería quitar se dejan: ahorro nulo y riesgo de cambiar planes.
+
+## v2.1233.7 — Pedidos: migraciones de la tanda 1 aplicadas en producción
+
+Migraciones aplicadas en PRODUCCIÓN el 2026-10-09 (tanda 1), con OK del usuario y con `lock_timeout`. Las funciones quedaron idénticas a las probadas en el entorno de pruebas (huella md5 comparada; dos difieren sólo en formato).
+- `20261009004337_reenvio_sale_en_ruta`: columna `ruta_pedidos.reenvio_ciclo`. `crear_ruta` y el aviso de salida conocen el reenvío.
+- `…004549_get_pedido_preview_rendimiento`: Generar para toda la red pasa de 4.4 s a 1.6 s medidos en producción.
+- `…004631_cerrar_pedido_si_todo_resuelto_solo_servidor`: deja de poder llamarse desde el navegador.
+- `…004651_alcance_guardar_minmax_desde_pedido`, `…004744_alcance_anular_codigos_enviado_resolver`: anular, códigos, «marcar enviado» y resolver respetan la sucursal. Quienes generan y anulan hoy tienen alcance de red: nada cambia para ellos.
+- `…004812` a `…005049`: las funciones de un solo paso. Hojas recibidas, llegada, llegada del reenvío, finalizar, programar entrega y pedir reenvío.
+- `…005227_rutas_no_entregada_cerrar_y_crear`: «No se pudo entregar», «Cerrar ruta» (tabla `ruta_paradas_no_entregadas`), y `crear_ruta` rechaza una sala que ya va en otra ruta.
+
+## v2.1233.6 — Pedidos: la línea de tiempo dice el día cuando no es de hoy
+
+- **La línea de tiempo de la fila abierta dice el día** cuando el paso no es de hoy, en hora de El Salvador («1 oct · 12:06 p. m.»), y lo mismo las incidencias. Lo encontró la verificación final contra producción: con la lista sólo se veía la hora, y «Listo 12:03 → 74h 47m → En ruta 12:19» no se entendía. La tarjeta vieja sí mostraba el día.
+
+## v2.1233.5 — Pedidos: «Con observación» sin pérdidas, sin cargas dobles, aviso al no haber qué contar
+
+Hallazgos de la prueba en vivo de paridad (producción contra dev, mismos datos):
+- **«Con observación» ya no pierde salas.** Al pasar los filtros al estado de la sala, cuatro salas recibidas con diferencias pendientes o con faltante salían del filtro. Ahora el filtro es la regla de producción MÁS lo que sigue abierto aunque el pedido se haya cerrado: una caja que falta o una diferencia sin resolver. Prueba nueva.
+- **Abrir una fila con «Resumen de recepción» ya no carga los renglones dos o cuatro veces.** `asegurarItems` no vuelve a pedir lo que ya está o se está trayendo. Medido: 4 peticiones en vez de 8 a 16.
+- **«Confirmar» sin nada que contar ya no queda mudo.** Pasaba también en producción. Ahora avisa «No hay nada para contar todavía», y explica si es porque todo venía en las cajas que faltaron.
+
+## v2.1233.4 — Pedidos: riesgos menores de la revisión
+
+Riesgos menores de la revisión producción contra dev:
+- **Llegada:** un doble toque en «Llegaron las N cajas» ya no manda la llegada dos veces.
+- **Reenvío que todavía no salió:** confirmar su llegada ahora dice «El reenvío todavía no sale». Antes abría el último ciclo aunque estuviera en bodega.
+- **`LiquidSelect` en la hoja táctil:** la fila «Todos» también aparece en los filtros que no se limpian.
+- **Mapa del conductor:** al abrirlo ya no pide dos trazados a Google; espera el primero antes de decidir si se desvió.
+- **Buscador de productos:** se abre animado; antes saltaba.
+- **«No disponible todavía»** ya no habla de «instalar su parte en la base».
+
+## v2.1233.3 — Pedidos: reenvío compatible con la base actual y recargas que no se tragan cambios ajenos
+
+Correcciones de la revisión producción contra dev:
+- **El reenvío funciona con la base de producción actual.** Que el reenvío salga en una ruta depende de la columna `ruta_pedidos.reenvio_ciclo` y de la migración que lo hace salir con la ruta. `reenvioSaleEnRuta()` lo pregunta una vez por carga de página. Sin la columna, el reenvío sale como hoy: enviado al pedirlo, con `reenvio_bodega_at` y su aviso a la sala, y no se abre «Nueva ruta». Antes:
+  - el ciclo quedaba pendiente para siempre;
+  - la sala no podía confirmar su llegada;
+  - «Nueva ruta» dejaba de abrir para todas las salas (error de columna inexistente).
+- **Las recargas en vivo ya no se tragan cambios de otra persona.** Una recarga agendada por un aviso se salta sólo si otra carga ARRANCÓ después de que llegó ese aviso. Antes comparaba contra «ahora» y descartaba lo que otra persona cambiaba en los 2 s siguientes a cualquier carga.
+
+## v2.1233.2 — Pedidos: la lista es la vista oficial
+
+- **La lista es la vista oficial de «Pedidos»**, en escritorio y en el teléfono. Se quitan la pestaña temporal «Pedidos (lista)» (un enlace viejo `?tab=pedidos_lista` abre «Pedidos») y la vista de tarjetas (~840 líneas menos).
+- **Lo que sólo tenía la tarjeta y pasó a la lista:**
+  - «Iniciar» y «Base» del conductor en el encabezado de su ruta, con «En vivo»;
+  - la ruta propia primero y, dentro de cada ruta, lo no entregado primero;
+  - la nota del pedido;
+  - la marca de «Con observación».
+- **Teléfono:**
+  - La línea de pasos abierta va en un carril deslizable y los rótulos ya no se enciman.
+  - El estado ya no corta el nombre de la sala.
+  - Botones de 44pt.
+
+## v2.1233.1 — Pedidos: finalizar, llegada, reenvío y programar en un solo paso
+
+- **Cinco operaciones pasan a hacerse en un solo paso de la base**: finalizar con cajas, confirmar llegada, llegada del reenvío, programar entrega y pedir reenvío. Las hojas recibidas se agregan en la base.
+  - Si se corta la red a la mitad, ya no queda el pedido hecho a medias.
+  - Dos personas a la vez ya no se pisan los historiales.
+- **Transición sin riesgo**: `rpcConRespaldo` usa la función nueva si existe. Si la base todavía no la tiene (producción hoy), sigue por el camino de antes y no vuelve a preguntar.
+- Los errores de negocio se dicen en palabras de negocio.
+  - Un doble clic («ya estaba finalizado», «la llegada ya se confirmó») se toma como hecho, no como error.
+- **Electrolit faltante**: la pantalla elige qué renglón faltó (sólo si se puede saber) y la función de llegada lo marca. Antes la función tomaba los N primeros por id. Si no se sabe cuál fue, no se bloquea ninguno y queda anotado en la sala.
+- Probado de punta a punta contra el entorno de pruebas, por la función nueva y por el camino de respaldo.
+
+## v2.1233.0 — Pedidos: auditoría — tablero más rápido, recepción, rutas y Generar sin huecos
+
+Auditoría completa del módulo (4 frentes). Todo probado contra el entorno de pruebas.
+
+**Tablero y datos**
+- Recarga del tablero: 4 consultas en paralelo y un solo repintado. Con número de petición, una respuesta vieja ya no pisa a una nueva.
+- Actualizaciones en vivo:
+  - Abrir o cerrar una fila ya no reabre el canal de actualizaciones.
+  - Los renglones se escuchan sólo del pedido abierto.
+  - Las posiciones GPS ya no recargan todas las pantallas.
+  - Crear una ruta pasa por la misma cola que el resto.
+  - Un eco de una acción propia no recarga dos veces.
+- Pausar o reanudar: de 13 a 7 peticiones.
+- La fila es un componente memorizado, y el detalle se arma sólo si está abierta.
+- Si falla la carga de renglones, Finalizar, Imprimir, Llegada y Recepción no siguen con una lista vacía. Lo dicen y ofrecen «Reintentar».
+- Iniciar, pausar, resolver y programar avisan si fallan; antes sólo quedaba en la consola.
+- Filtros por estado de la SALA (no del pedido), y el mes en hora de El Salvador.
+- Electrolit faltante: no se marca por posición; sólo cuando se sabe cuál es.
+- La reimpresión de una sala finalizada usa lo enviado.
+- Rutas activas sin tope de 50.
+- El último intento de traslado es el que manda en la etiqueta.
+
+**Recepción**
+- «Terminé» con un solo criterio (`quedaTodoListo`) en los cinco caminos: ya no se completa una sala con una caja sin llegar.
+- «Todo OK» guarda lo enviado exacto y no redondea a la presentación (25 en blíster ×10 guardaba 30). El conteo arranca sin inventar diferencias.
+- Hojas recibidas se agregan, no se pisan entre dos personas.
+- Quitar un extra espera a la base. «Confirmar todo» ingresa al inventario aunque falle la marca de hojas.
+- Llegada de un toque, «Llegaron las N cajas»; el detalle queda en «Algo llegó mal». Igual en el reenvío.
+- Sin «Sistema de Ventas» ni mensajes crudos del servidor en pantalla.
+
+**Rutas, Generar, Finalizar**
+- Mapa:
+  - Crear ruta hace un mapa y trazados en caché con espera de 800 ms: de 8 mapas + 8 trazados a 0 + 1 al ordenar paradas.
+  - El mapa de la ruta guarda en caché coordenadas y trazado.
+  - El recálculo se hace sólo si el conductor se desvía 300 m.
+  - Un solo escritor de la posición GPS.
+- Si Google rechaza la llave, el mapa cae a Leaflet al instante; antes «Calculando ruta…» quedaba girando para siempre.
+- Rutas: «No se pudo entregar» por parada y «Cerrar ruta» con paradas pendientes, con motivo. Se puede elegir conductor y dejar la ruta lista para salir después. La duración incluye 10 min por parada.
+- Generar: resumen por sala antes de confirmar, PDF por sala con su estado, errores visibles con «Reintentar» y nunca «Pedido #undefined».
+- Métricas y Crear ruta: los errores se ven como error, no como «sin datos».
+- Finalizar: la revisión de existencias espera 3, 6, 12, 24… s (unas 8 lecturas en vez de 40).
+
+**Base (entorno de pruebas; producción pendiente de aprobación)**
+- Manifiestos de alcance, eficiencia y bloques actualizados para las funciones nuevas.
+
+## v2.1232.26 — Diferencias: cada salida dice qué va a pasar
+
+- **Diferencias, más claras y compactas**: cada salida es una tarjeta que dice QUÉ VA A PASAR si se elige («La sala le regresa la cantidad a bodega — el producto se queda en bodega…» frente a «Bodega manda el producto — va en la próxima caja…»). Antes la explicación era un párrafo aparte que sólo hablaba de la opción elegida.
+- Debajo, «Nota», qué sigue («Bodega la acepta o propone la otra. Sin acuerdo, decide supervisión.») y **Proponer**, todo en un renglón.
+- Las cifras van en una línea: «Enviado 1 → Contado 0 · Faltan 1 · de 10 solicitados». Sin la etiqueta «Faltante» repetida arriba.
+- `SegmentedControl` acepta `description` por opción en el modo bloque.
+
+## v2.1232.25 — Recepción: el contador de diferencia queda encima del campo
+
+- **El «+19» / «-1» de recepción ya no se ve de vidrio**: el campo de cantidad es `relative z-base` y su borde y su relleno teñido se pintaban encima del contador. Ahora el contador va un nivel arriba (`z-tabs`) y el encabezado fijo de la lista otro más (`z-header`), para que al bajar nada pase por encima. Queda anotado en la regla «un sólido es sólido».
+
+## v2.1232.24 — Encabezados fijos opacos del todo y contador de diferencia entero
+
+- **Los encabezados fijos tapan del todo, en todo el portal**: el fondo canónico (`--thead-bg`) es 97-98% opaco y lo que pasaba por debajo se alcanzaba a ver. Ahora lleva el fondo de la página debajo, que es opaco.
+- **Confirmar recepción**: el encabezado de la lista queda por encima de los campos de cada renglón; antes los selects y las cantidades se dibujaban encima al bajar. El contador de diferencia («+19», «-1») tiene alto fijo y ya no se corta contra el borde del renglón.
+
+## v2.1232.23 — Pedidos: recepción más limpia; el placeholder ya no es opción; los sólidos son sólidos
+
+- **El placeholder ya no aparece como opción** en ningún select: `LiquidSelect` descarta la opción vacía cuyo texto es igual al placeholder («¿De qué sucursal?» en cajas extra; «Estado», «Marca», «Formato» y «Laboratorio» en los filtros de Promociones, Marketing, Encuestas y Ofertas). Si el select no se puede limpiar, pone la fila «Todos» para volver. En «Agregar un laboratorio» de Promociones, el rótulo pasó a ser el placeholder. Queda como regla en CLAUDE.md.
+- **Los sólidos son sólidos**: los `Badge` con texto blanco tenían borde transparente y dejaban ver lo de atrás; el «-1» de recepción se veía translúcido. Ahora el borde es del mismo color. La pastilla del mapa de rutas dejó de ser `bg-brand/90`.
+- **Confirmar recepción, más limpio**:
+  - Buscador siempre visible arriba de la lista (cuando hay más de 5 productos).
+  - Encabezados de columna más livianos, sin la banda «Lo que llegó».
+  - Botones de cada renglón sin bloques de color: el color va solo en el ícono.
+  - Un resumen junto a los botones («6 como se enviaron · 1 con diferencia»).
+  - Jerarquía clara: Cancelar discreto, Todo OK secundario y Confirmar como acción principal.
+
+## v2.1232.22 — Pedidos: fila centrada al abrir, buscador legible, «No sale» y el cero visible
+
+- **Al abrir una fila se centra en pantalla**, ya abierta. Si abierta no cabe, queda arriba, bajo el encabezado.
+- **Buscador de productos de la tarjeta**: ahora es un botón con ícono y la palabra «Buscar», y el campo abre a 20rem («Producto o código…»). Antes era una lupa de 12px y abría a 190px.
+- **Confirmar lo que sale**: la búsqueda dice por qué no encuentra: «no existe ningún producto con…», «X no va en este pedido», «va en el pedido pero no se le asignó nada» o «ya lo estás corrigiendo arriba». Cada resultado y cada producto corregido tienen el botón **No sale**, que lo deja en 0 de un toque. Quitar la corrección es una **X** y no la flecha circular, que se leía como «actualizar».
+- **Un 0 ya no se ve vacío** en ningún campo del portal (`PortalInput` mostraba `value || ''`). En recepción, «no llegó ninguno» se veía igual que «no lo conté».
+
+## v2.1232.21 — Pedidos (lista): incidencias con quién y cuándo, y encabezado que sale de la barra
+
+- **Incidencias en la fila abierta**: faltante o caja dañada (quién lo reportó y a qué hora), reenvío pedido, reenvío salió (quién lo despachó), segunda llegada (quién recibió) y diferencias reportadas o corregidas. Cada una con foto, nombre y hora. Antes, en la lista no había forma de saber quién reportó el faltante.
+- El reenvío pendiente se distingue del que ya salió («Reenvío pedido» frente a «Reenvío salió»), también en la línea completa de las tarjetas.
+- **Encabezado de columnas integrado con la barra de la página**: al bajar, sale de debajo de ella con una animación, toma su ancho y queda pegado sin esquinas arriba. Las columnas no se mueven. Respeta «reducir movimiento».
+- Entorno de pruebas: apoyos sembrados en preparación y en recepción de los pedidos de muestra.
+
+## v2.1232.20 — Pedidos (lista): el texto del estado ya no queda debajo del botón
+
+- El detalle del estado («Falta: E1 · YASMIN X 21 COMPRIMIDOS») quedaba tapado por el botón de acción. Ahora se ajusta a su columna y baja hasta dos renglones.
+
+## v2.1232.19 — Pedidos: reenvío en camino, caja dañada y entrega programada se distinguen en la lista
+
+- **Reenvío en camino** ya no se marca como problema: la fila lleva un camión y dice «Reenvío en camino: Caja #3», y la etiqueta roja «Faltante» pasa a «Reenvío en camino».
+- **Caja dañada** se marca en la fila (ícono de alerta y «Dañada: #2»); antes sólo se veía al abrirla.
+- **Entrega programada**: la sala lista dice cuándo sale («Sale mañana 9:00 a. m.»).
+- Antes de despachar, la cuenta dice «productos» y no «enviados».
+- Entorno de pruebas: `semilla_pedidos_escenarios.sql` siembra un pedido por cada situación (reenvío por despachar, en camino y recibido; caja dañada; Electrolit; caja especial faltante y no reenviada; caja de más; diferencia corregida; entrega programada; apoyo).
+
+## v2.1232.18 — Pedidos (lista): estado y acción en una columna, más aire para los pasos
+
+- **Estado y acción comparten una sola columna** (estado a la izquierda, botón a la derecha). Eran dos columnas fijas y en las filas sin botón quedaba un hueco vacío a la derecha; ese ancho ahora es de la línea de pasos.
+
+## v2.1232.17 — Pedidos (lista): la fila abierta queda alineada con el encabezado
+
+- **Al abrir una fila, su línea de pasos se queda en su columna**, alineada con el encabezado (antes pasaba a todo el ancho y se desalineaba). Crece hacia abajo con la hora, la foto y el nombre de cada paso; los títulos de tramo no se repiten adentro.
+
+## v2.1232.16 — Pedidos (lista): encabezado con columnas, secciones marcadas y rutas agrupadas
+
+- **Encabezado de la lista con columnas** (*Sala · Bodega y transporte · Sucursal · Estado*), con ícono por tramo, nombres de pasos más legibles y alineados con los puntos.
+- **Sin franja lateral** (el canon la prohíbe): lo que tiene un problema lleva un ícono junto al nombre de la sala, en su color.
+- **Secciones marcadas**: ícono, nombre, cuenta y una línea que las separa.
+- **En «En camino», las salas de una misma ruta van juntas** bajo el encabezado de su ruta: número, conductor con foto, entregas y botón de mapa.
+- Al abrir una fila, la hora, la foto y el nombre quedan **centrados bajo cada punto** (el primero de cada tramo a la izquierda y el último a la derecha).
+
+## v2.1232.15 — Pedidos: cinco fallas de los modales de recepción, llegada y finalizar
+
+- **Recepción: los extras anotados ya no desaparecen al volver a abrir el modal.** Estaban guardados, pero al abrir la lista se reiniciaba vacía y la sala podía anotarlos otra vez.
+- **Pedidos de más de 1000 renglones cargan completos y sin repetidos**: la carga por páginas no tenía un orden fijo, así que entre página y página podían repetirse o faltar filas sin error. Igual en las presentaciones de Recepción.
+- **Reenvío: las cajas especiales que llegaron se marcan por etiqueta**, no por posición. Antes, si llegaba E2 y no E1, podía darse por recibido el producto de E1.
+- **Asignar cajas, Llegada y Reenvío ya no se cierran antes de guardar.** Si algo falla, el modal sigue abierto con lo anotado y el borrador intacto; antes un error de red se llevaba todo (por ejemplo, el reparto de 20 páginas en cajas).
+- **No se puede finalizar mientras se revisan las existencias**: el botón dice «Revisando existencias…». Si la revisión falla o tarda más de 2 minutos, se puede confirmar igual ajustando a mano. El sondeo ya no corre sin tope.
+
+## v2.1232.14 — Pedidos (lista): encabezado de pasos fijo y «En camino»
+
+- **El encabezado de los pasos se queda fijo** al bajar, justo debajo del encabezado de la vista (se mide, no se adivina: cambia con la densidad), con fondo opaco para que las filas no se lean a través.
+- El grupo «En la calle» pasa a llamarse **«En camino»**.
+
+## v2.1232.13 — Pedidos (lista): menos ruido y fotos de quién hizo cada paso
+
+- **Los nombres de los pasos y de los tramos van UNA vez, arriba de la lista**, alineados con los puntos; en cada fila sólo los puntos y el paso en curso. Antes se repetían en todas las filas.
+- **El estado es un texto con su color**, sin pastilla: la pastilla repetía lo que dice el paso en curso.
+- **Más aire** entre filas y entre grupos.
+- **Al abrir una fila, la línea de avance pasa a todo el ancho** con la hora, **la foto** y el nombre de quién hizo cada paso, la duración de cada tramo y **el apoyo de bodega y de sucursal con su foto**. Las acciones completas bajan al detalle.
+
+## v2.1232.12 — Pedidos (lista): franja de estado, avance en dos tramos y detalle en la misma línea
+
+- **El estado de la fila se marca con una franja fina a la izquierda**, no con el borde entero: con varias filas con problema seguidas, los bordes de color dominaban la pantalla.
+- **El avance siempre dice qué es cada paso** y va **en dos tramos con su color**: *Bodega y transporte* (confirmado, inicio, listo, en ruta, entregado) y *Sucursal* (llegada, finalizado), separados por un corte.
+- **Al abrir la fila, la hora, la persona y la duración de cada tramo salen en la MISMA línea de arriba**; ya no se repite una segunda línea de tiempo debajo. Debajo quedan los datos, el apoyo en recepción y los productos.
+
+## v2.1232.11 — Pedidos: pestaña de prueba con la vista en lista
+
+- **Pestaña temporal «Pedidos (lista)»** para comparar con la de tarjetas y elegir: una fila por sala, agrupadas por lo que toca hacer (*Con problemas · En pausa · Por preparar · En preparación · Listos para salir · En la calle · En la sala · Completados*). La fila cerrada muestra sala, avance, estado y la acción principal; abierta, lo mismo que la tarjeta abierta.
+- Las dos usan el mismo componente y las mismas piezas (datos, acciones, recepción y diferencias), así que botones y condiciones son idénticos. Se quita la que no se elija.
+
+## v2.1232.10 — Pedidos: Rutas con filtros; último pedido rotulado
+
+- **Rutas de entrega con cifras y filtros** (§17.0): *En la calle* (con paradas entregadas), *Por salir* y *Completadas hoy*. Por defecto sólo las **activas**; las completadas se piden por estado, período (hoy · 7 · 30 días) y conductor, y entran cerradas. Los filtros quedan en la dirección. «Crear ruta» es la acción de la barra.
+- **Generar**: la fecha del último pedido sale rotulada («Último pedido hace 3 días»). Antes decía «hoy» o «hace 3m» suelto, y «3m» se leía como minutos.
+- **Pedidos**: «Crear ruta» desde una tarjeta abre el modal con esa sala ya marcada.
+
+## v2.1232.9 — Pedidos: la lista de reenvíos de crear ruta carga
+
+- La consulta de reenvíos pendientes de «Nueva ruta» armaba mal el filtro sobre `jsonb` y el modal salía vacío. Ahora carga; y un error al cargar se ve como error, no como «no hay pedidos».
+
+## v2.1232.8 — Pedidos: el reenvío de cajas sale en una ruta
+
+- **El reenvío de cajas faltantes sale en una ruta.** «Reenviar caja» ya no lo da por enviado en el momento: queda **por despachar** y la tarjeta lo dice. La sala ve «Bodega ya preparó el reenvío: sale en la próxima ruta».
+- **«Nueva ruta de entrega» muestra los reenvíos arriba, como prioridad y ya marcados**, con qué cajas llevan. Son paradas como cualquiera, con el mismo optimizador.
+- **El aviso «Reenvío en camino» sale cuando la ruta sale**, con conductor y hora. Antes salía al apretar el botón, con la caja todavía en bodega. La parada de reenvío no manda además el aviso genérico «Tu pedido salió».
+- Una caja pedida y sin ruta no puede confirmarse como llegada, y no se puede pedir dos veces.
+- **Necesita la migración `reenvio_sale_en_ruta`** (columna `ruta_pedidos.reenvio_ciclo`, `crear_ruta` y `avisar_salida_de_ruta`). Va a producción ANTES que este portal: sin ella, un reenvío pedido nunca saldría.
+
+## v2.1232.7 — Pedidos: crear ruta sólo ofrece salas que no salieron
+
+- **«Nueva ruta de entrega» sólo ofrece salas que se pueden despachar**: preparadas, que no salieron en ninguna ruta y que no llegaron. Antes ofrecía también las que ya iban en otra ruta, ya entregadas o ya recibidas — medido en producción: ofrecía 3 y sólo 1 era real.
+- La consulta va acotada a los pedidos abiertos: antes leía toda sala finalizada de la historia (186 filas hoy) y al pasar de 1000 se habría cortado sin aviso. Un error al cargar ya no se lee como «no hay pedidos para despachar».
+
+## v2.1232.6 — Pedidos: la etiqueta dice el paso de la sala y Anular va aparte
+
+- **La etiqueta de cada tarjeta dice en qué paso va la sala**, igual que su avance: *Por preparar, En preparación, Pausado, Listo para despachar, En ruta, Entregado, Recibiendo, Completado*. Antes salía del estado del pedido y una sala que ya había recibido, o a la que ya le habían entregado, seguía diciendo «En ruta».
+- **Con diferencias pendientes manda «Con diferencias»**: decía «Completado» con «2 difs. pendientes» al lado.
+- **Anular va primero y separado** de la acción principal: junto a Finalizar o Iniciar, un clic de más anulaba el pedido. Sigue en rojo.
+- En el avance compacto, el paso en curso dice lo que está pasando: *Preparando*, no *Inicio*.
+- Entorno de pruebas: todo pedido despachado de la siembra tiene su ruta (el portal toma «salió» de la ruta).
+
+## v2.1232.5 — Pedidos: la tarjeta en tres zonas
+
+- **La tarjeta de cada pedido se ordena en tres zonas.** Arriba, la **sucursal** como título (el código queda en gris al lado) y el estado de la sala con su tiempo en la etapa, dicho una sola vez. En el medio, el **avance en una línea de puntos**: la línea completa con quién y a qué hora se abre al tocar la tarjeta. Abajo, **una sola fila** con los datos (enviados, cajas, faltantes, diferencias) y las acciones.
+- **Una acción principal por tarjeta**, en el color de marca: el siguiente paso (Iniciar, Finalizar, Reanudar, Crear ruta, Entregué, Reenviar caja). Pausar, Programar, Apoyo y PDF van en gris; Anular sigue en rojo. Antes cada botón tenía su color y todos pesaban igual. Las condiciones de cada botón no cambiaron.
+- Cada tarjeta pasa de ~270px a ~150px cerrada: entran el doble de pedidos por pantalla.
+
+## v2.1232.4 — Login: Tab desde el usuario va a la contraseña
+
+- **Login**: Tab desde el usuario ahora va a la contraseña. El botón del ojo estaba antes del campo en la página y se llevaba el foco; se sigue viendo en el mismo lugar.
+
+## v2.1232.3 — Pedidos · Generar: la urgencia vuelve a % con barra
+
+- **La urgencia se ve como % con barra y color, sin etiquetas.** El % es qué tan cerca está la sala de ser urgente: 100% = 50 productos bajo mínimo o 25 en cero; 50% = 25 bajo mínimo. Rojo con la barra llena, naranja desde la mitad, verde por debajo. Debajo, el conteo: «35 bajo mínimo · 32 en cero».
+
+## v2.1232.2 — Pedidos · Generar: la urgencia se cuenta en productos bajo mínimo
+
+- **La urgencia de cada sucursal ya no es un porcentaje**: cuenta los productos **bajo su mínimo que Bodega puede mandar**, y los que están **en cero**. El % de antes medía qué tan vacíos estaban en promedio, no cuántos: 43 productos a medio llenar salían naranja y 13 casi vacíos, rojo.
+- **Tres estados con nombre**: *Urgente* (50+ bajo mínimo o 25+ en cero), *Reponer pronto* (25–49) y *Al día*. Los cortes salen de 35 días de existencias reales de las seis salas: dan en promedio una sala urgente por día.
+- Necesita la versión nueva de `get_pedido_generar_dashboard` (agrega `bajo_min_productos` y `en_cero_productos`); mientras no esté, la tarjeta sigue mostrando el % de antes.
+
+## v2.1232.1 — Pedidos: Generar y Métricas rediseñados, y siembra de pruebas
+
+**Generar**
+
+- **Tarjetas de sucursal**: el fondo ya no se pinta con la urgencia (con todas entre 43% y 67% salían las seis naranjas y la elegida no se distinguía). Fondo neutro, el % rotulado como «Urgencia» con una barra, y una casilla siempre visible que se llena al elegir. Más bajas: en el teléfono las seis entran en una pantalla y media en vez de tres.
+- **Acciones ordenadas**: «Distribución global» pasa a interruptor y queda junto a «Seleccionar todas», arriba a la derecha. Abajo, un pie con el resumen de lo elegido (sucursales y productos con stock en Bodega) y «Generar y confirmar» a la derecha.
+- **Sin stock en Bodega**: el título va en la cabecera de la tabla. El total deja de ir en rojo y «Ventas 6m» pierde la flecha de tendencia, que no medía una tendencia.
+
+**Métricas**
+
+- **Métricas sigue el canon de las demás vistas** (§17.0): una sola fila con las cinco tarjetas y la barra de filtros; el período (7 / 30 / 90 días) es una ranura de la barra y queda en la dirección, así que F5 no lo devuelve a 30; «Actualizar» es la acción de la barra. Se fueron el encabezado propio y el «Refrescar» suelto.
+- **Tablas canónicas**: «Por sucursal» y «Motivos de pausa» son `DataTable` con su título en la cabecera. Los números van en neutro —antes cada columna tenía un color que no significaba nada— y los motivos se leen con su nombre («Interrupción externa», no `interrupcion`).
+- **Entorno de pruebas**: `scripts/entorno-pruebas/semilla_pedidos_completa.sql` siembra 22 pedidos en todas las etapas, cinco rutas (una en ruta) y pausas, para poder revisar Pedidos, Rutas y Métricas. Idempotente, marca `[demo]`, con freno contra producción.
 
 ## v2.1232.0 — App: promociones y mi perfil
 

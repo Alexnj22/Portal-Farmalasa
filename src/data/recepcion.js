@@ -8,6 +8,7 @@ import { fetchAllRows } from '../utils/supabaseUtils';
 import { buscarProductos } from './busquedaProductos';
 import { anotar, conBitacora } from './audit';
 import { recibirTrasladoPedido, updatePedidoSucursalStatus } from './pedidos';
+import { rpcConRespaldo } from './rpcConRespaldo';
 
 export function fetchProductPreciosOpts(productId) {
     return supabase.from('product_precios')
@@ -15,14 +16,25 @@ export function fetchProductPreciosOpts(productId) {
         .eq('product_id', productId).eq('activo', true).order('factor');
 }
 
+// Ids por consulta. El `.in()` viaja en la URL, y un pedido grande pedía las
+// presentaciones de ~1,100 productos de una sola vez: una URL de ~8 KB, al
+// borde de lo que aceptan el proxy y PostgREST. Y `product_id` se REPITE en
+// `product_precios` (una fila por presentación), así que acotar la entrada no
+// acota la salida: cada tanda sigue paginando con `fetchAllRows`.
+const TANDA_DE_IDS = 200;
+
 // Paginado con fetchAllRows — antes era un while-loop manual con el mismo
 // patrón 1000-en-1000 ya presente en otros archivos de este bloque.
-export function fetchProductPreciosOptsForProducts(productIds) {
-    return fetchAllRows(() =>
+export async function fetchProductPreciosOptsForProducts(productIds) {
+    const ids = [...new Set((productIds ?? []).filter(id => id != null))];
+    const tandas = [];
+    for (let i = 0; i < ids.length; i += TANDA_DE_IDS) tandas.push(ids.slice(i, i + TANDA_DE_IDS));
+    const partes = await Promise.all(tandas.map(tanda => fetchAllRows(() =>
         supabase.from('product_precios')
             .select('product_id, factor, descripcion, presentaciones!id_presentacion(tipo)')
-            .in('product_id', productIds).eq('activo', true).order('factor')
-    );
+            .in('product_id', tanda).eq('activo', true).order('factor').order('id')  // `id` desempata: paginar sin orden único repite o salta filas
+    )));
+    return partes.flatMap(p => p ?? []);
 }
 
 // `fetchPedidoApoyoBasic` se retiró con la franja de «Responsables» del modal de
@@ -153,6 +165,36 @@ export function recibirPedidoDeSucursal(params, { accion = null, ...contexto } =
     });
 }
 
+// ── Las hojas contadas se AGREGAN, no se reescriben ─────────────────────────
+//
+// `hojas_recibidas` se escribía entero con la lista que tenía la pantalla. Dos
+// personas contando hojas distintas del mismo pedido —lo normal en una sala con
+// apoyo— se pisaban: la segunda en guardar borraba la hoja de la primera, que
+// reaparecía pendiente y se volvía a contar.
+//
+// El camino bueno es `marcar_hojas_recibidas`, que une en la base sin
+// duplicados. Mientras esa función no exista, se cae al UPDATE de siempre pero
+// RELEYENDO la fila justo antes y uniendo: deja una ventana de milisegundos en
+// vez de la de todo el conteo. `rpcConRespaldo` recuerda que no existe para no
+// preguntar en cada hoja.
+async function agregarHojasRecibidas(pedidoId, sucursalId, hojas) {
+    const lista = [...new Set((hojas ?? []).map(Number).filter(Number.isFinite))].sort((a, b) => a - b);
+    return rpcConRespaldo('marcar_hojas_recibidas', {
+        p_pedido_id: pedidoId, p_sucursal_id: sucursalId, p_hojas: lista,
+    }, () => unirHojasPasoAPaso(pedidoId, sucursalId, lista));
+}
+
+async function unirHojasPasoAPaso(pedidoId, sucursalId, lista) {
+    const { data: fila, error: errLectura } = await supabase.from('pedido_sucursal_status')
+        .select('hojas_recibidas')
+        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucursalId)
+        .maybeSingle();
+    if (errLectura) return { data: null, error: errLectura };
+    const yaEstaban = Array.isArray(fila?.hojas_recibidas) ? fila.hojas_recibidas.map(Number) : [];
+    const union = [...new Set([...yaEstaban, ...lista])].filter(Number.isFinite).sort((a, b) => a - b);
+    return updatePedidoSucursalStatus(pedidoId, sucursalId, { hojas_recibidas: union });
+}
+
 /**
  * Deja las hojas marcadas como recibidas y anota lo que se cerró con ellas:
  * `hojas` ([{ hoja, items_count }]) una entrada por hoja, `especiales`
@@ -162,7 +204,7 @@ export function recibirPedidoDeSucursal(params, { accion = null, ...contexto } =
  */
 export async function marcarHojasRecibidas(pedidoId, sucursalId, hojasRecibidas,
     { hojas = [], especiales = [], pedido = null, ...contexto } = {}) {
-    const res = await updatePedidoSucursalStatus(pedidoId, sucursalId, { hojas_recibidas: hojasRecibidas });
+    const res = await agregarHojasRecibidas(pedidoId, sucursalId, hojasRecibidas);
     if (res?.error) return res;
     for (const { hoja, items_count } of hojas) {
         anotar('CONFIRMAR_RECEPCION_HOJA', pedidoId, { sucursal_id: sucursalId, hoja, items_count, ...contexto });

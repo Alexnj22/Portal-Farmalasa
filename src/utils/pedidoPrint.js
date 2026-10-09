@@ -655,16 +655,25 @@ export async function printPerSucursal(grouped, sortedSucIds, getAdjusted, codig
 
 
 
+// `meta.cantidad === 'enviada'` (2026-10-08): la REIMPRESIÓN de una sala ya
+// finalizada dice lo que SALIÓ (`cantidad_enviada`), no lo asignado — al
+// finalizar se puede despachar menos o nada de un renglón, y la hoja
+// reimpresa decía la cantidad vieja sobre una caja que llevaba otra. El
+// renglón que no salió se queda en la hoja con 0 en vez de desaparecer: las
+// hojas se reparten por renglones, y sacarlo corría a los de abajo a la hoja
+// siguiente, o sea que la hoja reimpresa ya no era la que viaja en la caja.
 export async function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, titleOverride = null) {
     const [logo, addrMap] = await Promise.all([getLogoBase64(), getAddressMap()]);
     const ds = dateSuffix();
+    const porEnviado = meta?.cantidad === 'enviada';
+    const cantidadDe = r => (porEnviado ? (r.cantidad_enviada ?? r.cantidad_asignada) : r.cantidad_asignada) ?? 0;
 
     const sections = sucGroups.map(([sucId, rows]) => {
         const printRows = rows.filter(r => !r.sin_stock && !isAdicional(r)).map(r => {
             const erpFactor  = r.factor ?? 1;
             const dispFactor = r.dispatch_factor ?? erpFactor;
             const dispTipo   = r.dispatch_tipo ?? r.presentaciones?.tipo ?? '';
-            const qty        = toDispatch(r.cantidad_asignada ?? 0, erpFactor, dispFactor);
+            const qty        = toDispatch(cantidadDe(r), erpFactor, dispFactor);
             const isLabel    = r.tiene_dispatch_label === true;
             return {
                 product_name:      r.products?.nombre ?? '?',
@@ -673,21 +682,22 @@ export async function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, t
                 es_antibiotico:    r.products?.es_antibiotico ?? false,
                 qty,
                 qty_base: isLabel ? qty * dispFactor : null,
-                lotes: lotesAsignadosToDispatch(
+                lotes: qty > 0 ? lotesAsignadosToDispatch(
                     Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],
                     erpFactor, dispFactor,
-                ),
+                ) : [],
+                _asignado: toDispatch(r.cantidad_asignada ?? 0, erpFactor, dispFactor),
             };
-        }).filter(r => r.qty > 0);
+        }).filter(r => r.qty > 0 || (porEnviado && r._asignado > 0));
 
         let eCounter = 1;
         const especiales = rows
-            .filter(r => !r.sin_stock && isAdicional(r) && (r.cantidad_asignada ?? 0) > 0)
+            .filter(r => !r.sin_stock && isAdicional(r) && cantidadDe(r) > 0)
             .sort((a, b) => (a.products?.nombre ?? '').localeCompare(b.products?.nombre ?? '', 'es'))
             .flatMap(r => {
                 const erpF     = r.factor ?? 1;
                 const dispF    = r.dispatch_factor ?? erpF;
-                const qty      = toDispatch(r.cantidad_asignada ?? 1, erpF, dispF);
+                const qty      = toDispatch(cantidadDe(r) || 1, erpF, dispF);
                 const dispTipo = r.dispatch_tipo ?? r.presentaciones?.tipo ?? '';
                 const rawLotes = lotesAsignadosToDispatch(
                     Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],

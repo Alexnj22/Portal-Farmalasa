@@ -21,7 +21,7 @@
     "get_pedido_preview": {
       "bloques": 76000,
       "deuda": true,
-      "motivo": "346 a 892 MB por llamada según con cuántas salas se llame (58,289 de media sobre 5 llamadas; 114,173 en la forma con `p_target_ids`). La vista previa de generar pedido. NO auditado. Lee `mv_product_factor`, que es la vista materializada del factor de presentación."
+      "motivo": "346 a 892 MB por llamada según con cuántas salas se llame (58,289 de media sobre 5 llamadas; 114,173 en la forma con `p_target_ids`). La vista previa de generar pedido. NO auditado. Lee `mv_product_factor`, que es la vista materializada del factor de presentación. · DIAGNOSTICADA el 2026-10-08 (borrador 13 de Pedidos, aplicado sólo en el entorno de pruebas): el TIEMPO se iba en minmax_eff_min/max (LANGUAGE sql + SET search_path, opacas, cuatro llamadas por renglón de product_stock_params) y los BLOQUES en el SELECT final (subconsulta correlacionada de presentaciones + products/laboratorios por bucle anidado, ~11 bloques por renglón de salida). Medido en pruebas con toda la red: 464 → 120 ms y 4,800 → 1,522 bloques, mismo JSON (salvo el orden de dos presentaciones con igual factor). El techo NO se baja hasta medirla en producción después de aplicar."
     },
     "get_product_drill_lines": {
       "bloques": 58000,

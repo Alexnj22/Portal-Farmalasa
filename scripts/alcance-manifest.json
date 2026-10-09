@@ -412,6 +412,12 @@
     "confirmar_envio_pedido": {
       "guarda": "alcance"
     },
+    "confirmar_llegada_pedido": {
+      "guarda": "alcance"
+    },
+    "confirmar_llegada_reenvio": {
+      "guarda": "alcance"
+    },
     "contexto_de_solicitud_minmax": {
       "guarda": "cruza-por-diseno",
       "motivo": "Detalle de una solicitud de cambio de MIN·MAX: la sala propia, o MIN·MAX, o la bandeja de solicitudes. Decisión del usuario (2026-10-02): Jefe/a de Compras ve otras salas «al desplegar el producto», no sala por sala. Hasta el 2026-10-02 no pedía nada."
@@ -511,6 +517,9 @@
         "metas"
       ],
       "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "finalizar_sala_con_cajas": {
+      "guarda": "alcance"
     },
     "get_abonos_del_dia": {
       "guarda": "alcance"
@@ -656,6 +665,12 @@
       "guarda": "cruza-por-diseno",
       "motivo": "Lo pagado y sin aplicar de TODAS las salas, de sólo lectura: el cliente paga en una sucursal y se aplica en otra. Pedido del usuario (2026-10-05): «si ya está pagado y va de Salud 1 a Salud 2, en Salud 2 no aparece». p_branch_id es un filtro, no un candado."
     },
+    "marcar_hojas_recibidas": {
+      "guarda": "alcance"
+    },
+    "pedir_reenvio_sala": {
+      "guarda": "alcance"
+    },
     "preview_metas_gasto": {
       "guarda": "modulo-de-red",
       "modulos": [
@@ -666,6 +681,9 @@
     "productos_parados_de_sala": {
       "guarda": "cruza-por-diseno",
       "motivo": "Pestaña Parados de INVENTARIO. Exige gestion_stock o minmax, que hoy sólo tienen cargos de red y Jefe/a de Compras — que tiene `inventario` en red, o sea que ver los parados de cualquier sala es suyo por Inventario, no por MIN·MAX."
+    },
+    "programar_entrega_sala": {
+      "guarda": "alcance"
     },
     "publish_stock_params": {
       "guarda": "alcance"
@@ -717,6 +735,9 @@
     "retiro_pendientes_en_sala": {
       "guarda": "cruza-por-diseno",
       "motivo": "La usa el recorrido de entrega (RetiroModal): quien maneja ve lo que espera salir de cada sala que visita, y la sala la define el último código escaneado. Acotarla a la sala propia rompería el recorrido. Devuelve códigos y productos de traslados, sin datos personales ni dinero. Exige `traslados.can_view`."
+    },
+    "ruta_parada_no_entregada": {
+      "guarda": "alcance"
     },
     "sala_abierta_ahora": {
       "guarda": "sin-sala",

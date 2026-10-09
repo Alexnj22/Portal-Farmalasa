@@ -1,10 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { avisoDePuntos, claveDeMovimiento, detalleDeMovimiento, dolaresDePuntos, motorQuieto, rotuloDeMovimiento } from '@nucleo/utils/puntosTexto';
+import { avisoDePuntos, claveDeMovimiento, detalleDeMovimiento, dolaresDePuntos, montoDeVenta, motorQuieto, rotuloDeMovimiento, valeTexto } from '@nucleo/utils/puntosTexto';
 
 describe('puntosTexto', () => {
     it('100 puntos son un dólar', () => {
         expect(dolaresDePuntos(420)).toBe('$4.20');
         expect(dolaresDePuntos(null)).toBe('$0.00');
+    });
+    it('el valor de los puntos dice «vale» y el monto de la venta va aparte', () => {
+        // Caso real: una compra de $130.00 dio 130 puntos, y «$1.30» a secas se leía como la venta.
+        expect(valeTexto(130)).toBe('vale $1.30');
+        expect(valeTexto(-250)).toBe('vale $2.50');
+        expect(montoDeVenta({ tipo: 'compra' }, { total: 130 })).toBe('Compra de $130.00');
+        expect(montoDeVenta({ tipo: 'canje' }, { total: '18.5' })).toBe('Venta de $18.50');
+        expect(montoDeVenta({ tipo: 'ajuste' }, {})).toBeNull();
+        expect(montoDeVenta({ tipo: 'compra' }, { total: null })).toBeNull();
     });
     it('la clave del detalle es <tipo>-<id>, y el canje devuelto usa la del canje', () => {
         expect(claveDeMovimiento({ tipo: 'ajuste', id: 4 })).toBe('ajuste-4');

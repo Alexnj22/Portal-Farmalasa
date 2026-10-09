@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1265.1 — Puntos: el valor de los puntos dice «vale» y la venta muestra su total
+
+- **Movimientos de la cuenta de puntos (portal y app):** debajo de «+130» iba «$1.30» a secas —lo que valen los puntos— y se leía como el monto de la venta, que fue $130.00. Ahora dice **«vale $1.30»**, y la línea de la compra lleva el total de la factura: **«Compra de $130.00 · 08/10/2026 · Salud 2»** (en un canje, «Venta de …»).
+- `puntos_panel_cliente` publica `total` en el detalle de cada movimiento; el texto vive en el núcleo (`valeTexto`, `montoDeVenta`) para que portal y app digan lo mismo.
+
 ## v2.1265.0 — App de clientes: minerales con detalles propios, reservas compartibles y con filtros
 
 - **Minerales:** las aristas viven en las orillas (`orilla()`): detrás del logo y los textos la faceta queda limpia; facetas aún más cerca. Cada uno con su detalle: bronce con cáusticas lentas y manchas tornasol de bornita; plata con escarcha que destella grano a grano; oro con hojuelas de pan de oro y un resplandor que respira; zafiro con seda de rutilo; rubí con fuego interior que late. **Diamante** centrado detrás del logo con la mesa más grande. **Platino** rehecho: cepillado circular de reloj fino, difracción holográfica que gira en arcoíris, filo de luz en el canto. Wallet regenerada.

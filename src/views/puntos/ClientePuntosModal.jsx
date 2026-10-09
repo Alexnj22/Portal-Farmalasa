@@ -41,7 +41,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, fechaTexto } from '@nucleo/utils/fecha';
 import { fetchPuntosCliente, ajustarPuntos } from '@nucleo/data/puntos';
-import { claveDeMovimiento, detalleDeMovimiento, rotuloDeMovimiento, MOTIVOS_DE_AJUSTE_PUNTOS } from '@nucleo/utils/puntosTexto';
+import { claveDeMovimiento, detalleDeMovimiento, montoDeVenta, rotuloDeMovimiento, valeTexto, MOTIVOS_DE_AJUSTE_PUNTOS } from '@nucleo/utils/puntosTexto';
 import { FILTROS_DE_MOVIMIENTO, mesesDeCuenta, movimientoPasaFiltro, repartoDeCuenta } from '@nucleo/utils/puntosCuenta';
 import CodigoDeAcceso from './CodigoDeAcceso';
 import VentaDelAviso from './VentaDelAviso';
@@ -563,7 +563,7 @@ function Movimiento({ m, sala, info = {} }) {
                     {detalle ? <span className="font-normal text-content-3"> · {detalle}</span> : null}
                 </p>
                 <p className="text-caption text-content-3 tabular-nums truncate">
-                    {fechaNumerica(m.fecha)}{sala ? ` · ${sala}` : ''}
+                    {[montoDeVenta(m, info), fechaNumerica(m.fecha), sala].filter(Boolean).join(' · ')}
                 </p>
                 {persona ? (
                     <p className="text-caption text-content-3 flex items-center gap-1.5 mt-1 min-w-0">
@@ -580,7 +580,7 @@ function Movimiento({ m, sala, info = {} }) {
                 <p className="text-body-sm font-black tabular-nums text-content">
                     {p > 0 ? '+' : '−'}{pts(Math.abs(p))}
                 </p>
-                <p className="text-caption text-content-3 tabular-nums">{dolares(Math.abs(p))}</p>
+                <p className="text-caption text-content-3 tabular-nums">{valeTexto(p)}</p>
             </div>
         </div>
     );

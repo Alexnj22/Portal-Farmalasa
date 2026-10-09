@@ -12,6 +12,26 @@ import { formatMoney, formatQty } from './formatNumber';
 export const dolaresDePuntos = (puntos) => formatMoney((Number(puntos) || 0) / 100);
 export const puntosTexto = (n) => formatQty(Number(n) || 0);
 
+/**
+ * Lo que VALEN unos puntos, dicho como tal (2026-10-09). Debajo de «+130» iba
+ * «$1.30» a secas y se leía como el monto de la venta — que fue $130.00 — y
+ * parecía que el cliente había ganado cien veces lo que compró.
+ */
+export const valeTexto = (puntos) => `vale ${dolaresDePuntos(Math.abs(Number(puntos) || 0))}`;
+
+/**
+ * El total de la factura del movimiento, para que el monto de la VENTA esté
+ * escrito y no se confunda con el valor de los puntos. `info.total` lo trae
+ * `puntos_panel_cliente.detalle`; sin factura (ajuste, cumpleaños) no hay nada
+ * que decir y devuelve `null`. En un canje la factura es la venta donde se
+ * usaron, no una compra que los dio.
+ */
+export function montoDeVenta(m, info = {}) {
+    if (info?.total == null || !Number.isFinite(Number(info.total))) return null;
+    const monto = formatMoney(Number(info.total));
+    return m?.tipo === 'canje' || m?.tipo === 'canje_devuelto' ? `Venta de ${monto}` : `Compra de ${monto}`;
+}
+
 /** El rótulo de cada tipo de movimiento de la cuenta. */
 export const ROTULO_MOVIMIENTO = {
     compra: 'Compra',

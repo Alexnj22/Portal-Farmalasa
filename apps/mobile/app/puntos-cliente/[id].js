@@ -14,7 +14,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchPuntosCliente } from '@nucleo/data/puntos';
-import { claveDeMovimiento, detalleDeMovimiento, dolaresDePuntos, puntosTexto, rotuloDeMovimiento } from '@nucleo/utils/puntosTexto';
+import { claveDeMovimiento, detalleDeMovimiento, dolaresDePuntos, montoDeVenta, puntosTexto, rotuloDeMovimiento, valeTexto } from '@nucleo/utils/puntosTexto';
 import { FILTROS_DE_MOVIMIENTO, mesesDeCuenta, movimientoPasaFiltro, partesDelReparto, repartoDeCuenta } from '@nucleo/utils/puntosCuenta';
 import { fechaNumerica, fechaTexto } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -90,7 +90,7 @@ export default function PuntosCliente() {
           <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={2}>
             {rotuloDeMovimiento(m)}{detalle ? <Text style={{ fontWeight: '400', color: colorSistema.texto2 }}>{` · ${detalle}`}</Text> : null}
           </Text>
-          <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{[fechaNumerica(m.fecha), d.salas?.[m.sucursal] ?? m.sucursal].filter(Boolean).join(' · ')}</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{[montoDeVenta(m, info), fechaNumerica(m.fecha), d.salas?.[m.sucursal] ?? m.sucursal].filter(Boolean).join(' · ')}</Text>
           {persona ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Avatar empleado={persona} tamano={18} />
@@ -100,7 +100,7 @@ export default function PuntosCliente() {
         </View>
         <View style={{ alignItems: 'flex-end' }}>
           <Text style={{ color: p > 0 ? MARCA.verde : colorSistema.texto, fontSize: 15, fontWeight: '800' }}>{`${p > 0 ? '+' : '−'}${puntosTexto(Math.abs(p))}`}</Text>
-          <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{dolaresDePuntos(Math.abs(p))}</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{valeTexto(p)}</Text>
         </View>
       </View>
     );

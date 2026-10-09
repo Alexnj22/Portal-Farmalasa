@@ -224,13 +224,13 @@ export default function Cuenta() {
             </View>
           ) : null}
           {prueba.activo ? (
-            <FilaInterruptor titulo="Ver como empleado" detalle="La tarjeta de Equipo (precio Mayoreo Plus)."
-              valor={!!prueba.empleado} alCambiar={(v) => prueba.poner({ empleado: v, mayorista: v ? null : prueba.mayorista })} />
+            <FilaInterruptor titulo="Ver como empleado" detalle="Su nivel o rango con el sello de Equipo."
+              valor={!!prueba.empleado} alCambiar={(v) => prueba.poner({ empleado: v })} />
           ) : null}
           {prueba.activo ? (
             <View style={{ padding: 12, gap: 6 }}>
               <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>Cliente Mayorista</Text>
-              <Segmentos valor={prueba.mayorista ?? 'no'} alCambiar={(m) => prueba.poner({ mayorista: m === 'no' ? null : m, empleado: m === 'no' ? prueba.empleado : false })}
+              <Segmentos valor={prueba.mayorista ?? 'no'} alCambiar={(m) => prueba.poner({ mayorista: m === 'no' ? null : m })}
                 opciones={[{ valor: 'no', rotulo: 'No' }, { valor: 'jade', rotulo: 'Jade' }, { valor: 'zafiro', rotulo: 'Zafiro' }, { valor: 'rubi', rotulo: 'Rubí' }, { valor: 'diamante', rotulo: 'Diam.' }]} />
             </View>
           ) : null}

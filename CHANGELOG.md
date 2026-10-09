@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1260.8 — Empleados: su nivel o rango con el sello de Equipo
+
+- **El personal lleva la tarjeta de SU nivel de cliente** (Bronce/Plata/Oro/Platino) **o de su rango de mayorista** si Administración lo aprobó, con un **sello holográfico de Equipo** —perla tornasol que cambia con la inclinación— junto al chip. Decisión del usuario: el empleado acumula puntos en lo que compra a precio Preferente o más alto, así que le aplican los niveles como a cualquier cliente, y puede ser mayorista siempre bajo autorización.
+- **Una sola tarjeta y un solo panel:** los beneficios de Equipo (Mayoreo Plus, crédito a 30 días) van dentro del panel de su nivel o rango; solos sólo si los niveles están apagados.
+- Wallet: material del nivel o rango y «· EQUIPO» en el rótulo; el pase de prueba con Equipo tiene su propio serial. En modo de prueba, «Ver como empleado» se combina con cualquier nivel o rango.
+
 ## v2.1260.7 — Logo en relieve y tarjeta de Equipo con cintas de luz
 
 - **Logo de la tarjeta en relieve:** un shader lee el contorno del logo como mapa de alturas, ilumina sus biseles con una luz que sigue la inclinación del teléfono y el dedo, le pone brillo especular y proyecta su sombra al lado contrario. Reemplaza al disco blanco (`LogoEnRelieve`).

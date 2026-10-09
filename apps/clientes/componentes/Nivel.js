@@ -23,7 +23,7 @@ export const BENEFICIOS = {
 
 const factorTexto = (f) => (Number(f) === 1 ? '1 punto' : `${String(Number(f)).replace('.', '.')} puntos`);
 
-export default function Nivel({ nivel }) {
+export default function Nivel({ nivel, pie = null }) {
   const t = useTema();
   if (!nivel) return null;
   const paleta = COLORES_NIVEL[nivel.clave] ?? COLORES_NIVEL.vip;
@@ -86,6 +86,7 @@ export default function Nivel({ nivel }) {
         </View>
       ) : null}
       <Texto nivel={3} estilo={{ fontSize: 12 }}>Según lo que compraste en los últimos 12 meses: {dolares(nivel.compra)}.</Texto>
+      {pie}
     </Tarjeta>
   );
 }

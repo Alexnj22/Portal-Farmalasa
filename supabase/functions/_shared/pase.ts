@@ -34,6 +34,8 @@ export interface DatosPase {
   /** Tarjeta del modo de prueba: serie propia y sin actualizaciones, para que
    *  Wallet la guarde APARTE y no la «corrija» con el nivel real (2026-10-08). */
   prueba?: boolean;
+  /** Personal: su nivel o rango con «· EQUIPO» en el rótulo (2026-10-08). */
+  equipo?: boolean;
   /** Las franjas del material (`strip@2x.png`, `strip@3x.png`); sin ellas, la morada de siempre. */
   franjas?: Record<string, Uint8Array>;
 }
@@ -123,7 +125,7 @@ export async function armarPase(d: DatosPase): Promise<Uint8Array> {
     formatVersion: 1,
     passTypeIdentifier: PASS_TYPE,
     teamIdentifier: EQUIPO,
-    serialNumber: d.prueba ? `${serialDe(d.customerId)}-prueba-${claveDeNivel(d.nivel)}` : serialDe(d.customerId),
+    serialNumber: d.prueba ? `${serialDe(d.customerId)}-prueba-${claveDeNivel(d.nivel)}${d.equipo ? "-equipo" : ""}` : serialDe(d.customerId),
     // Servicio web de PassKit (`wallet-pases`): el iPhone se registra al
     // agregarla y baja la versión nueva cuando cambian los puntos. La de
     // prueba no lo lleva: si no, el servicio la devolvería con el nivel real.
@@ -147,7 +149,7 @@ export async function armarPase(d: DatosPase): Promise<Uint8Array> {
         changeMessage: "Tu saldo de Puntos Salud ahora es %@" }],
       secondaryFields: [
         // El nivel al frente (Plata, Oro, Platino); el de entrada se llama «Cliente VIP».
-        { key: "nombre", label: nivelRotulo(d.nivel), value: corto(d.nombre) },
+        { key: "nombre", label: `${nivelRotulo(d.nivel)}${d.equipo ? " · EQUIPO" : ""}`, value: corto(d.nombre) },
         { key: "desde", label: "CLIENTE DESDE", value: desde(d.socioDesde), textAlignment: "PKTextAlignmentRight" },
       ],
       backFields: [
@@ -235,7 +237,7 @@ export async function clienteDelEnlace(token: string): Promise<number | null> {
 // deno-lint-ignore no-explicit-any
 // `nivelDePrueba`: sólo para la cuenta de prueba (modo de prueba de la app), que
 // pide ver la tarjeta con otro nivel. Nunca para un cliente real.
-export async function paseDeCliente(admin: any, id: number, nivelDePrueba?: string): Promise<{ pase: Uint8Array; cambio: string | null }> {
+export async function paseDeCliente(admin: any, id: number, nivelDePrueba?: string, equipoPrueba = false): Promise<{ pase: Uint8Array; cambio: string | null }> {
   const [{ data: c, error: eC }, { data: est, error: eE }, { data: cod, error: eK }, { data: pri, error: eP }, { data: cta, error: eT }] = await Promise.all([
     admin.from("customers").select("name").eq("id", id).maybeSingle(),
     admin.rpc("puntos_estado_cuenta", { p_customer_id: id }),
@@ -244,14 +246,14 @@ export async function paseDeCliente(admin: any, id: number, nivelDePrueba?: stri
     admin.from("puntos_cuenta").select("updated_at").eq("customer_id", id).maybeSingle(),
   ]);
   const nivel = await nivelDeCliente(admin, id);
-  // El personal lleva la tarjeta de Equipo también en Wallet.
+  // El personal lleva la tarjeta de SU nivel o rango, con «· EQUIPO» (2026-10-08).
   const { data: esEmpleado, error: eEm } = nivelDePrueba ? { data: false, error: null } : await admin.rpc("cliente_es_empleado", { p_customer: id });
   if (eEm) console.error("pase: no se supo si es empleado:", eEm.message);
   // El Cliente Mayorista lleva la tarjeta de su rango (no tiene nivel).
-  const { data: rango, error: eRg } = nivelDePrueba || esEmpleado === true ? { data: null, error: null } : await admin.rpc("mayorista_rango", { p_customer: id });
+  const { data: rango, error: eRg } = nivelDePrueba ? { data: null, error: null } : await admin.rpc("mayorista_rango", { p_customer: id });
   if (eRg) console.error("pase: no se leyó el rango:", eRg.message);
   const NOMBRE_RANGO: Record<string, string> = { jade: "Jade", zafiro: "Zafiro", rubi: "Rubí", diamante: "Diamante" };
-  const nombreNivel = nivelDePrueba ?? (esEmpleado === true ? "Equipo" : rango ? NOMBRE_RANGO[rango] ?? nivel.nombre : nivel.nombre);
+  const nombreNivel = nivelDePrueba ?? (rango ? NOMBRE_RANGO[rango] ?? nivel.nombre : nivel.nombre);
   if (eC) throw eC; if (eE) throw eE; if (eK) throw eK; if (eP) throw eP; if (eT) throw eT;
   const saldo = Number(est?.saldo ?? 0);
   const pase = await armarPase({
@@ -259,6 +261,7 @@ export async function paseDeCliente(admin: any, id: number, nivelDePrueba?: stri
     codigo: cod?.codigo ?? null, socioDesde: pri?.ganado_el ?? null, nivel: nombreNivel,
     franjas: await franjasDe(admin, claveDeNivel(nombreNivel)),
     prueba: !!nivelDePrueba,
+    equipo: nivelDePrueba ? equipoPrueba : esEmpleado === true,
   });
   return { pase, cambio: cta?.updated_at ?? null };
 }

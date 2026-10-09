@@ -162,7 +162,8 @@ Deno.serve(async (req) => {
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
   // La tarjeta de Wallet de una ficha, firmada (ver `_shared/pase.ts`).
-  const paseDe = async (id: number, nivelDePrueba?: string) => (await paseDeCliente(admin, id, nivelDePrueba)).pase;
+  // `oro+equipo`: en prueba, el nivel y además el sello de Equipo.
+  const paseDe = async (id: number, nivelDePrueba?: string, equipoPrueba = false) => (await paseDeCliente(admin, id, nivelDePrueba, equipoPrueba)).pase;
   // La cuenta de PRUEBA es la que tiene muestras (`app_cliente_muestras`): la
   // única que puede ver la app «como» otro nivel (modo de prueba).
   const esDePrueba = async (id: number) => {
@@ -180,9 +181,9 @@ Deno.serve(async (req) => {
       const id = await clienteDelEnlace(enlaceWallet);
       if (!id) return new Response("Este enlace ya venció. Vuelve a tocar «Agregar a Wallet» en la app.", { status: 410, headers: { "Content-Type": "text/plain; charset=utf-8" } });
       // Modo de prueba: la cuenta de prueba puede pedir la tarjeta con otro nivel.
-      const nivelQ = new URL(req.url).searchParams.get("nivel") ?? "";
+      const [nivelQ, extraQ] = (new URL(req.url).searchParams.get("nivel") ?? "").split("+");
       const nivelPrueba = NOMBRE_NIVEL[nivelQ] && await esDePrueba(id) ? NOMBRE_NIVEL[nivelQ] : undefined;
-      const pkpass = await paseDe(id, nivelPrueba);
+      const pkpass = await paseDe(id, nivelPrueba, !!nivelPrueba && extraQ === "equipo");
       return new Response(pkpass, { headers: {
         "Content-Type": "application/vnd.apple.pkpass",
         "Content-Disposition": "attachment; filename=PuntosSalud.pkpass",
@@ -1519,9 +1520,9 @@ Deno.serve(async (req) => {
     // La tarjeta en base64, para la hoja nativa de Apple dentro de la app
     // (modules/wallet): sin enlaces ni Safari de por medio.
     if (accion === "wallet_pase") {
-      const pedido = String(body?.nivel_prueba ?? "");
+      const [pedido, extra] = String(body?.nivel_prueba ?? "").split("+");
       const nivelPrueba = NOMBRE_NIVEL[pedido] && await esDePrueba(customerId) ? NOMBRE_NIVEL[pedido] : undefined;
-      const bytes = await paseDe(customerId, nivelPrueba);
+      const bytes = await paseDe(customerId, nivelPrueba, !!nivelPrueba && extra === "equipo");
       let bin = "";
       for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
       return json({ ok: true, pase: btoa(bin), serial: `socio-${customerId}` });
@@ -1529,7 +1530,8 @@ Deno.serve(async (req) => {
 
     if (accion === "wallet_enlace") {
       const base = Deno.env.get("SUPABASE_URL")!;
-      const nivel = NOMBRE_NIVEL[String(body?.nivel_prueba ?? "")] ? `&nivel=${String(body.nivel_prueba)}` : "";
+      const [pedidoE, extraE] = String(body?.nivel_prueba ?? "").split("+");
+      const nivel = NOMBRE_NIVEL[pedidoE] ? `&nivel=${encodeURIComponent(pedidoE + (extraE === "equipo" ? "+equipo" : ""))}` : "";
       return json({ ok: true, url: `${base}/functions/v1/app-clientes?wallet=${await enlaceDePase(customerId)}${nivel}` });
     }
 

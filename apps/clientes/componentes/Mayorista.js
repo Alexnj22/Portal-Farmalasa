@@ -4,7 +4,7 @@
 // los tres meses anteriores, se recalcula el primer día del mes, y da puntos
 // por cada US$1.00 a precio de mayoreo. El precio (Mayoreo, Plus, Elite) es
 // independiente del rango.
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Tarjeta, Texto } from './ui';
 import { BarraAnimada } from './animacion';
@@ -39,7 +39,7 @@ export function rangoReal(m) {
     siguiente: s ? { ...s, falta: Math.max(0, s.desde - compra) } : null };
 }
 
-export default function Mayorista({ rango }) {
+export default function Mayorista({ rango, pie = null }) {
   const t = useTema();
   if (!rango) return null;
   const paleta = COLORES_NIVEL[rango.clave];
@@ -103,6 +103,7 @@ export default function Mayorista({ rango }) {
         Como Cliente Mayorista no tienes nivel de Puntos Salud: tu escalera es tu rango. Se recalcula el primer día de cada mes con el
         promedio de los tres meses anteriores, y el precio lo asigna la empresa aparte.
       </Texto>
+      {pie}
     </Tarjeta>
   );
 }
@@ -110,23 +111,16 @@ export default function Mayorista({ rango }) {
 // La tarjeta de Equipo (2026-10-08): por política, el personal compra a precio
 // Mayoreo Plus. Lo comprado a precio de personal no acumula puntos (Reglamento,
 // cláusula 3.3: sólo acumula lo comprado a precio Público o Preferente).
-export function Equipo() {
+// Los beneficios del personal (2026-10-08): van DENTRO del panel de su nivel
+// o de su rango —una sola tarjeta, un solo panel—; sólo si no hay panel de
+// nivel (niveles apagados) se muestran solos.
+export function BeneficiosEquipo() {
   const t = useTema();
-  const paleta = COLORES_NIVEL.empleado;
   return (
-    <Tarjeta estilo={{ gap: 10 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <LinearGradient colors={paleta.frente} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={{ width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
-          <Icono sf="person.2.fill" respaldo="👥" tam={18} color="#FFFFFF" />
-        </LinearGradient>
-        <View style={{ flex: 1, gap: 1 }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto3 }}>Tarjeta de</Text>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto, letterSpacing: -0.3 }}>Equipo Farmacia Salud</Text>
-        </View>
-      </View>
+    <View style={{ gap: 8, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colorSistema.separador }}>
+      <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto }}>Equipo Farmacia Salud</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-        {['Precio Mayoreo Plus', 'Crédito a 30 días', 'En todas las sucursales', 'Lo de precio Preferente acumula puntos'].map((b) => (
+        {['Precio Mayoreo Plus', 'Crédito a 30 días', 'En todas las sucursales'].map((b) => (
           <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5,
             backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }}>
             <Icono sf="checkmark" respaldo="✓" tam={10} color={t.color.verdeTexto} />
@@ -135,9 +129,13 @@ export function Equipo() {
         ))}
       </View>
       <Texto nivel={3} estilo={{ fontSize: 12 }}>
-        Por política de personal compras a precio Mayoreo Plus y puedes llevar tus compras al crédito, a pagar en 30 días.
-        Lo comprado a precio de personal no acumula puntos; lo comprado a precio Preferente, sí. Muestra tu tarjeta en caja.
+        Por política de personal compras a precio Mayoreo Plus y puedes llevar tus compras al crédito, a pagar en 30 días. Lo que compras a
+        precio Preferente o más alto acumula puntos y cuenta para tu nivel, como a cualquier cliente. Muestra tu tarjeta en caja.
       </Texto>
-    </Tarjeta>
+    </View>
   );
+}
+
+export function Equipo() {
+  return <Tarjeta estilo={{ gap: 0 }}><BeneficiosEquipo /></Tarjeta>;
 }

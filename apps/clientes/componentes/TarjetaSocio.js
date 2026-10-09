@@ -23,6 +23,7 @@ import { useEffect, useRef } from 'react';
 import EfectoNivel from './EfectoNivel';
 import Mineral, { MATERIALES } from './minerales/Mineral';
 import LogoEnRelieve from './minerales/LogoEnRelieve';
+import SelloEquipo from './minerales/SelloEquipo';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -79,7 +80,7 @@ export const COLORES_NIVEL = {
 // ellos el monto CUENTA hasta el nuevo (sube o baja), sale una etiqueta
 // «+250 pts» / «−500 pts» que flota hacia arriba y la tarjeta destella en
 // verde o en rojo.
-export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nivelDado = 'vip', activa = true, previo = null, cambio = null }) {
+export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nivelDado = 'vip', activa = true, previo = null, cambio = null, equipo = false }) {
   // 'vip' es la clave del nivel de entrada, que ahora es Bronce: lleva su material.
   const nivel = nivelDado === 'vip' ? 'bronce' : nivelDado;
   const paleta = COLORES_NIVEL[nivel] ?? COLORES_NIVEL.vip;
@@ -210,7 +211,7 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
     <GestureDetector gesture={gestos}>
       <Animated.View style={[{ aspectRatio: 1.586, width: '100%' }, estilos.sombra, { shadowColor: paleta.sombra }, sombra, ladeo]}
         accessible accessibilityRole="button"
-        accessibilityLabel={`Tu tarjeta ${paleta.rotulo.toLowerCase()}. Saldo ${dolares(equivale)}. Toca para ver tu código.`}
+        accessibilityLabel={`Tu tarjeta ${paleta.rotulo.toLowerCase()}${equipo ? ' de Equipo' : ''}. Saldo ${dolares(equivale)}. Toca para ver tu código.`}
         accessibilityHint="Gira la tarjeta" onAccessibilityTap={voltear}>
         {/* ── Frente ── */}
         <Animated.View style={[StyleSheet.absoluteFill, estilos.cara, frente]}>
@@ -244,8 +245,12 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
               <Text maxFontSizeMultiplier={1.3} style={estilos.socio}>{paleta.rotulo}</Text>
             </View>
 
-            {/* El «chip», como en una tarjeta de verdad. */}
-            <LinearGradient colors={['#F5E6A8', '#C9A64A', '#F1DC8C']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={estilos.chip} />
+            {/* El «chip», como en una tarjeta de verdad; al personal, a su lado
+                derecho, el sello holográfico de Equipo (2026-10-08). */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <LinearGradient colors={['#F5E6A8', '#C9A64A', '#F1DC8C']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={estilos.chip} />
+              {equipo ? <SelloEquipo x={x} y={y} activa={activa && !reducir} /> : null}
+            </View>
 
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
               <View style={{ flex: 1, gap: 2 }}>

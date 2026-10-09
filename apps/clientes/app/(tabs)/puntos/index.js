@@ -11,7 +11,7 @@ import { useCuenta } from '../../../lib/cuenta';
 import { dolares, entero, fecha, nombrePropio } from '../../../lib/formato';
 import TarjetaSocio from '../../../componentes/TarjetaSocio';
 import Nivel from '../../../componentes/Nivel';
-import Mayorista, { Equipo, rangoDePrueba, rangoReal } from '../../../componentes/Mayorista';
+import Mayorista, { BeneficiosEquipo, Equipo, rangoDePrueba, rangoReal } from '../../../componentes/Mayorista';
 import Cupon from '../../../componentes/Cupon';
 import SubisteDeNivel from '../../../componentes/SubisteDeNivel';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -54,9 +54,11 @@ export default function Puntos() {
   // El rango: de prueba, o el real si Administración lo aprobó.
   const mayoristaReal = !enPrueba ? rangoReal(real?.mayorista) : null;
   const mayorista = enPrueba ? prueba.mayorista : mayoristaReal?.clave ?? null;
-  // Empleado activo: tarjeta de Equipo (precio Mayoreo Plus por política).
-  const empleado = enPrueba ? !!prueba.empleado && !mayorista : !!real?.empleado;
-  const material = mayorista ?? (empleado ? 'empleado' : null);
+  // Empleado activo (2026-10-08): lleva la tarjeta de SU nivel de cliente, o la
+  // de su rango si Administración lo aprobó como mayorista, con el sello de
+  // Equipo encima. Acumula puntos en lo que compra a precio Preferente o más.
+  const empleado = enPrueba ? !!prueba.empleado : !!real?.empleado;
+  const material = mayorista;
   // Condiciones §5.4: Rubí recibe el raspable de Oro y Diamante el de Platino.
   const raspableDe = mayorista ? ({ rubi: 'oro', diamante: 'platino' }[mayorista] ?? null)
     : (['oro', 'platino'].includes(prueba.nivel) ? prueba.nivel : null);
@@ -142,7 +144,7 @@ export default function Puntos() {
         <Pressable onPress={() => navegar('/cuenta')} accessibilityRole="button"
           style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FF9F0A', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
           <Icono sf="testtube.2" respaldo="" tam={12} color="#1A1000" />
-          <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {String(mayorista ? `Mayorista ${rangoDePrueba(mayorista).nombre}` : empleado ? 'Equipo' : resumen.nivel?.nombre ?? '').toUpperCase()}</Text>
+          <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {String(`${mayorista ? `Mayorista ${rangoDePrueba(mayorista).nombre}` : resumen.nivel?.nombre ?? ''}${empleado ? ' · Equipo' : ''}`).toUpperCase()}</Text>
         </Pressable>
       ) : null}
       <SubisteDeNivel nivel={resumen.nivel} forzar={verNivel === '1'} />
@@ -158,7 +160,7 @@ export default function Puntos() {
 
       {/* La tarjeta de socio: saldo al frente, código y QR al reverso. */}
       <Entrada indice={1}>
-        <TarjetaSocio activa={visible} nivel={material ?? resumen.nivel?.clave} nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
+        <TarjetaSocio activa={visible} equipo={empleado} nivel={material ?? resumen.nivel?.clave} nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
           previo={movSaldo.previo} cambio={movSaldo.cambio}
           codigo={resumen.codigo} socioDesde={resumen.socio_desde} />
       </Entrada>
@@ -166,7 +168,7 @@ export default function Puntos() {
       {/* Apple Wallet, justo debajo de la tarjeta (usuario, 2026-10-08): la tarjeta en la Cartera, para mostrarla en caja sin abrir la app. */}
       {Platform.OS === 'ios' ? (
         <Entrada indice={1}>
-          <BotonWallet serial={resumen.wallet_serial} nivelPrueba={enPrueba ? (material ?? prueba.nivel) : null} />
+          <BotonWallet serial={resumen.wallet_serial} nivelPrueba={enPrueba ? `${material ?? prueba.nivel}${empleado ? '+equipo' : ''}` : null} />
         </Entrada>
       ) : null}
 
@@ -175,10 +177,11 @@ export default function Puntos() {
       {/* Cliente Mayorista (modo de prueba): su rango, arriba del nivel de puntos. */}
       {mayorista ? (
         <Entrada indice={1}>
-          <Mayorista rango={mayoristaReal ?? rangoDePrueba(mayorista)} />
+          <Mayorista rango={mayoristaReal ?? rangoDePrueba(mayorista)} pie={empleado ? <BeneficiosEquipo /> : null} />
         </Entrada>
       ) : null}
-      {empleado ? (
+      {/* Sin panel de nivel (niveles apagados), los beneficios de Equipo van solos. */}
+      {empleado && !mayorista && !(resumen.nivel && resumen.nivel.activos !== false) ? (
         <Entrada indice={1}>
           <Equipo />
         </Entrada>
@@ -187,7 +190,7 @@ export default function Puntos() {
           muestra la escalera; en el modo de prueba, sí. */}
       {resumen.nivel && !mayorista && resumen.nivel.activos !== false ? (
         <Entrada indice={1}>
-          <Nivel nivel={resumen.nivel} />
+          <Nivel nivel={resumen.nivel} pie={empleado ? <BeneficiosEquipo /> : null} />
         </Entrada>
       ) : null}
 

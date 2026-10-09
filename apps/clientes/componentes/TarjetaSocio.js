@@ -19,7 +19,8 @@
 //   · la sombra se corre al lado contrario de la inclinación;
 //   · tocarla, o deslizarla rápido de lado, la GIRA: se levanta, se encoge un
 //     poco a mitad del giro y vibra cuando muestra la otra cara.
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import * as SecureStore from 'expo-secure-store';
 import EfectoNivel from './EfectoNivel';
 import Mineral, { MATERIALES } from './minerales/Mineral';
 import LogoEnRelieve from './minerales/LogoEnRelieve';
@@ -80,6 +81,10 @@ export const COLORES_NIVEL = {
 // ellos el monto CUENTA hasta el nuevo (sube o baja), sale una etiqueta
 // «+250 pts» / «−500 pts» que flota hacia arriba y la tarjeta destella en
 // verde o en rojo.
+// La pista de «tócala para girarla»: el asomo es una vez por sesión de la app.
+let yaGiro = false;
+const CLAVE_PISTA = 'puntos_salud_tarjeta_girada';
+
 export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nivelDado = 'vip', activa = true, previo = null, cambio = null, equipo = false }) {
   // 'vip' es la clave del nivel de entrada, que ahora es Bronce: lleva su material.
   const nivel = nivelDado === 'vip' ? 'bronce' : nivelDado;
@@ -112,6 +117,21 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
   useEffect(() => {
     entrada.value = withTiming(1, { duration: 450, easing: Easing.out(Easing.cubic) });
   }, [entrada]);
+  // Que se ENTIENDA que se toca y se gira (2026-10-09): una vez por sesión,
+  // si todavía no la giró, la tarjeta «asoma» el reverso y vuelve; y debajo,
+  // la pista «Toca la tarjeta…» hasta la primera vez que la gire.
+  const [pista, setPista] = useState(false);
+  useEffect(() => {
+    SecureStore.getItemAsync(CLAVE_PISTA).then((v) => setPista(v !== '1')).catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (!activa || reducir || yaGiro) return;
+    yaGiro = true;
+    giro.value = withDelay(1400, withSequence(
+      withTiming(0.16, { duration: 420, easing: Easing.out(Easing.cubic) }),
+      withSpring(0, GIRO),
+    ));
+  }, [activa]); // eslint-disable-line react-hooks/exhaustive-deps
   // La franja de luz: al llegar y cada ~6 s, sólo mientras se ve.
   useEffect(() => {
     if (!activa || reducir) { cancelAnimation(barrido); return; }
@@ -125,6 +145,8 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
   // El brillo se pide AL TOCAR, no a mitad del giro (2026-10-08): desde la
   // reacción del giro no llegaba siempre, y el QR quedaba con la pantalla oscura.
   const voltear = () => {
+    yaGiro = true;
+    if (pista) { setPista(false); SecureStore.setItemAsync(CLAVE_PISTA, '1').catch(() => {}); }
     vibrar(false);
     const aReverso = giro.value <= 0.5;
     giro.value = withSpring(aReverso ? 1 : 0, GIRO);
@@ -242,13 +264,14 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
                 <LogoEnRelieve tam={30} x={x} y={y} />
                 <Text maxFontSizeMultiplier={1.3} style={estilos.marca}>PUNTOS SALUD</Text>
               </View>
-              {/* El mayorista lo dice en la tarjeta (2026-10-08): «CLIENTE MAYORISTA» sobre su rango. */}
-              {['jade', 'zafiro', 'rubi', 'diamante'].includes(nivel) ? (
-                <View style={{ alignItems: 'flex-end', gap: 1 }}>
-                  <Text maxFontSizeMultiplier={1.2} style={[estilos.socio, { fontSize: 8.5, letterSpacing: 1.8, color: 'rgba(255,255,255,0.6)' }]}>CLIENTE MAYORISTA</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={estilos.socio}>{paleta.rotulo}</Text>
-                </View>
-              ) : <Text maxFontSizeMultiplier={1.3} style={estilos.socio}>{paleta.rotulo}</Text>}
+              {/* Qué tarjeta es, siempre en dos renglones (2026-10-09): «CLIENTE» sobre
+                  el nivel (Bronce…Platino) o «MAYOREO» sobre el rango (Jade…Diamante). */}
+              <View style={{ alignItems: 'flex-end', gap: 1 }}>
+                <Text maxFontSizeMultiplier={1.2} style={[estilos.socio, { fontSize: 8.5, letterSpacing: 1.8, color: 'rgba(255,255,255,0.6)' }]}>
+                  {['jade', 'zafiro', 'rubi', 'diamante'].includes(nivel) ? 'MAYOREO' : 'CLIENTE'}
+                </Text>
+                <Text maxFontSizeMultiplier={1.3} style={estilos.socio}>{paleta.rotulo}</Text>
+              </View>
             </View>
 
             {/* El «chip», como en una tarjeta de verdad; al personal, a su lado
@@ -298,6 +321,11 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
         </Animated.View>
       </Animated.View>
     </GestureDetector>
+    {pista ? (
+      <View pointerEvents="none" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 10 }}>
+        <Text style={{ fontSize: 12.5, fontWeight: '600', color: 'rgba(140,140,150,1)' }}>↻  Toca la tarjeta para ver tu código · inclínala para ver el brillo</Text>
+      </View>
+    ) : null}
     </>
   );
 }

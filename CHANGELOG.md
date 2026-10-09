@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1262.8 — App de clientes: tarjetas por reglamento, facturas, notificaciones y reservas
+
+Pruebas del usuario en la compilación 35 (2026-10-09):
+
+- **Tarjetas según el reglamento:** dos renglones siempre — «CLIENTE» sobre el nivel (Bronce…Platino) o «MAYOREO» sobre el rango (Jade…Diamante); Wallet dice «MAYOREO ZAFIRO». Bronce, Plata y Oro rehechos como metales tallados (`metal()` en shaders.js: facetas espejo que cambian con la inclinación, aristas encendidas, velo tornasol, barrido de luz y destellos). Franjas de Wallet regeneradas.
+- **Logo acuñado DENTRO del material:** la cara deja ver el material con un velo de la marca, y el relieve sale de luz y sombra en el bisel.
+- **Se entiende que la tarjeta se gira:** una vez por sesión «asoma» el reverso y vuelve; debajo, la pista «Toca la tarjeta para ver tu código» hasta la primera vez que se gira.
+- **Niveles apagados:** el panel se muestra igual (antes desaparecía y Bronce quedaba sin beneficios ni «te faltan»): progreso con la compra real, qué nivel ya alcanza y que se activan con el nuevo reglamento.
+- **Personal:** el texto explica que lo comprado a precio de personal no acumula puntos aunque sea Plata/Oro/Platino, salvo que además tenga precio de mayoreo aprobado (entonces acumula por su rango).
+- **Raspable:** si no se termina, la capa vuelve a cubrirse a los 2.5 s (y al salir de la pantalla); sólo vale raspado completo. El aviso dice «ráspalo».
+- **Mis facturas:** por defecto el mes anterior y el actual, con «Todo» y filtros (Vigentes · Anuladas · Con nota de crédito); PDF dentro de la app (WebView); «Descargar» comparte PDF y JSON juntos en un .zip; sin el documento de Hacienda; anuladas con sus documentos; notas de crédito agrupadas bajo su factura. Muestras para la cuenta de prueba (`app_cliente_muestras` admite `factura`). Las notas de crédito de venta reales todavía no llegan a la base.
+- **Notificaciones:** bandeja agrupada por día, ícono y color por tipo, deslizar para borrar, «Limpiar» (local al teléfono: la tabla del servidor es también el registro que evita reenviar), y un banner propio animado cuando llega un aviso con la app abierta.
+- **Reservas:** tarjeta «Tus reservas» en el carrito con cuántas hay y cuántas están listas; aviso al agregar o reservar un producto ya reservado (ver, cancelar esa o seguir); la pantalla de reservas agrupada por estado. El saldo a favor de una reserva vencida ahora sí se ve.
+- **Sólo vertical:** `UISupportedInterfaceOrientations` = Portrait y `UIRequiresFullScreen`.
+- **Mis facturas paginada:** de a 30, por cursor (fecha·hora·id de la última mostrada) para que una factura nueva no repita ni salte ninguna; al acercarse al final o con «Ver más facturas» se traen las siguientes (hay un cliente con 51,792 facturas). `Pantalla` acepta `alFinal`.
+
+
 ## v2.1262.7 — Google Wallet: logo cuadrado
 
 - La tarjeta de Google Wallet usa el logo cuadrado del portal (`Logo512.png`): Google pide el del programa cuadrado, y el que estaba (el de las facturas) es apaisado, 435×123. No cambia nada mientras el emisor no esté configurado.

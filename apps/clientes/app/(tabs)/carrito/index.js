@@ -22,6 +22,7 @@ import { dolares } from '../../../lib/formato';
 import { nombreProducto } from '../../../lib/catalogo';
 import { suave, useTema } from '../../../tema/tema';
 import { navegar } from '../../../lib/navegar';
+import { resumenDeReservas, reservasDelProducto } from '../../../lib/reservaDuplicada';
 
 const CLAVE_TERMINOS = 'puntos_salud_terminos_reserva';
 
@@ -31,6 +32,10 @@ export default function Carrito() {
   const { cantidad, quitar, vaciar } = useCarrito.getState();
   const pedir = useSesion((s) => s.pedir);
   const pendiente = useCuenta((s) => !!s.resumen?.pendiente);
+  const resumen = useCuenta((s) => s.resumen);
+  // Las reservas abiertas se ven acá también (2026-10-09): al entrar se
+  // refresca el resumen (con su caché de un minuto).
+  useFocusEffect(useCallback(() => { useCuenta.getState().cargar().catch(() => {}); }, []));
   const [salas, setSalas] = useState(null);
   const [sala, setSala] = useState(null);
   const [enviando, setEnviando] = useState(false);
@@ -112,6 +117,7 @@ export default function Carrito() {
     setEnviando(false);
     if (!r?.ok) { Alert.alert('No se pudo reservar', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
     vaciar();
+    useCuenta.getState().cargar({ forzar: true }).catch(() => {});
     const base = { pedido: r.pedido, total: r.total, sala: salas?.find((s) => s.id === sala)?.sala, pagado: false, enLinea: pagoReal === 'en_linea', porConfirmar: faltan > 0, domicilio: aDomicilio };
     setDireccion('');
     // Pagar en línea: la hoja de Wompi; el pago lo confirma el servidor.
@@ -158,6 +164,7 @@ export default function Carrito() {
   if (!items.length) {
     return (
       <Pantalla>
+        <TusReservas resumen={resumen} />
         <Vacio titulo="Tu carrito está vacío">Agrega productos desde el catálogo y resérvalos para retirar en la sucursal que prefieras.</Vacio>
         <Boton alTocar={() => navegar('/catalogo')}>Ver el catálogo</Boton>
       </Pantalla>
@@ -166,12 +173,24 @@ export default function Carrito() {
 
   return (
     <Pantalla>
-      {items.map((x) => (
+      <TusReservas resumen={resumen} />
+      {items.map((x) => {
+        const yaReservado = reservasDelProducto(resumen, x.id)[0];
+        return (
         <Tarjeta key={`${x.id}|${x.factor}`} estilo={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
           <View style={{ width: 64 }}><FotoProducto id={x.id} nombre={x.nombre} foto={x.foto} alto={64} radio={14} /></View>
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }} numberOfLines={2}>{nombreProducto(x.nombre)}</Text>
             <Text style={{ fontSize: 12, color: colorSistema.texto3 }}>{nombreProducto(x.tipo || 'Unidad')}</Text>
+            {yaReservado ? (
+              <Pressable onPress={() => navegar(`/reservas?resaltar=${yaReservado.id}`)} accessibilityRole="link" hitSlop={6}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start' }}>
+                <Icono sf="exclamationmark.circle.fill" respaldo="!" tam={12} color={t.color.avisoTexto} />
+                <Text style={{ fontSize: 12, fontWeight: '700', color: t.color.avisoTexto }}>
+                  Ya lo tienes reservado ({yaReservado.codigo})
+                </Text>
+              </Pressable>
+            ) : null}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Contador valor={x.cantidad} alCambiar={(n) => cantidad(x, n)} />
               <View style={{ alignItems: 'flex-end' }}>
@@ -185,7 +204,8 @@ export default function Carrito() {
             <Icono sf="xmark.circle.fill" respaldo="✕" tam={20} color={colorSistema.texto3} />
           </Pressable>
         </Tarjeta>
-      ))}
+        );
+      })}
 
       {/* Cómo lo recibes: retiro o a domicilio (si el portal lo tiene activo). */}
       {envioCfg?.activo ? (
@@ -301,6 +321,50 @@ export default function Carrito() {
         }} alCerrar={() => setTerminos(null)} />
       </Modal>
     </Pantalla>
+  );
+}
+
+// «Tus reservas» (2026-10-09): cuántas hay abiertas, cuántas listas para
+// retirar y un toque para verlas. Un pedido del carrito cuenta como una.
+function TusReservas({ resumen }) {
+  const t = useTema();
+  const { total, listas, productos } = resumenDeReservas(resumen);
+  if (!total) return null;
+  const enCurso = total - listas;
+  const nombres = [...new Set(productos.map((x) => nombreProducto(x.producto_nombre ?? '')).filter(Boolean))];
+  const titulo = listas
+    ? `${listas === 1 ? '1 reserva lista' : `${listas} reservas listas`} para retirar`
+    : `${total === 1 ? '1 reserva' : `${total} reservas`} en preparación`;
+  const detalle = listas && enCurso ? `y ${enCurso === 1 ? '1 más' : `${enCurso} más`} en preparación` : null;
+  return (
+    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar('/reservas'); }} accessibilityRole="button"
+      accessibilityLabel={`Tus reservas: ${titulo}${detalle ? `, ${detalle}` : ''}. Ver mis reservas`}
+      style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+      <Tarjeta tono={listas ? t.color.verde : undefined} estilo={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+        <View style={{ width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+          backgroundColor: listas ? suave(t.color.verde, 0.25) : suave(t.color.magenta, t.oscuro ? 0.24 : 0.12) }}>
+          <Icono sf={listas ? 'bag.fill' : 'clock.fill'} respaldo="•" tam={20} color={listas ? t.color.verdeTexto : t.color.magentaTexto} />
+          <View style={{ position: 'absolute', top: -6, right: -6, minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 5,
+            alignItems: 'center', justifyContent: 'center', backgroundColor: listas ? '#34C759' : t.color.magenta }}>
+            <Text maxFontSizeMultiplier={1.2} style={{ fontSize: 12, fontWeight: '900', color: '#FFFFFF', fontVariant: ['tabular-nums'] }}>{total}</Text>
+          </View>
+        </View>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={{ fontSize: 12, fontWeight: '800', letterSpacing: 0.5, color: colorSistema.texto3 }}>TUS RESERVAS</Text>
+          <Text style={{ fontSize: 16, fontWeight: '800', color: listas ? t.color.verdeTexto : colorSistema.texto }}>{titulo}</Text>
+          {detalle ? <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>{detalle}</Text> : null}
+          {nombres.length ? (
+            <Text style={{ fontSize: 13, color: colorSistema.texto3 }} numberOfLines={1}>
+              {nombres.slice(0, 2).join(' · ')}{nombres.length > 2 ? ` y ${nombres.length - 2} más` : ''}
+            </Text>
+          ) : null}
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>Ver</Text>
+          <Icono sf="chevron.right" respaldo="›" tam={13} color={colorSistema.texto3} />
+        </View>
+      </Tarjeta>
+    </Pressable>
   );
 }
 

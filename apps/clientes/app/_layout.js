@@ -25,6 +25,7 @@ import HojasAndroid, { instalarHojasAndroid } from '../componentes/HojasAndroid'
 
 // La hoja de opciones y el prompt de iOS, en Android (componentes/HojasAndroid).
 instalarHojasAndroid();
+import AvisoEnApp from '../componentes/AvisoEnApp';
 export { default as ErrorBoundary } from '../componentes/ErrorDePantalla';
 
 const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent' } };
@@ -178,6 +179,8 @@ function Raiz() {
             <Stack.Screen name="mis-puntos" options={{ headerShown: false }} />
           </Stack>
           <AvisoSinConexion />
+          {/* El aviso con la app abierta: debajo del bloqueo, que lo tapa. */}
+          <AvisoEnApp />
           <Bloqueo />
           <HojasAndroid />
         </GestureHandlerRootView>

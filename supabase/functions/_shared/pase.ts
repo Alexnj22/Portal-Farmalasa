@@ -112,7 +112,7 @@ async function franjasDe(admin: any, clave: string): Promise<Record<string, Uint
 export const nivelRotulo = (n?: string) => {
   const k = claveDeNivel(n);
   if (k === "empleado" || /equipo|^personal$/i.test(String(n))) return "PERSONAL FARMACIA SALUD";
-  if (PIEDRAS.includes(k)) return `MAYORISTA ${String(n).toUpperCase()}`;
+  if (PIEDRAS.includes(k)) return `MAYOREO ${String(n).toUpperCase()}`;
   return !n || k === "vip" ? "CLIENTE VIP" : `CLIENTE ${n.toUpperCase()}`;
 };
 

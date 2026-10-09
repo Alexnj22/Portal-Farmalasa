@@ -7,11 +7,38 @@ import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 
+// Con la app ABIERTA, el aviso lo presenta la propia app con su banner
+// (componentes/AvisoEnApp.js) en vez del del sistema (2026-10-09): se ve con
+// los colores y el ícono de la bandeja, se toca para ir y se desliza para
+// cerrar. Sólo mientras ese banner está montado y puede mostrarse (con sesión
+// y sin el bloqueo encima); si no, sale el del sistema — nunca se pierde.
+// En los dos casos queda en el centro de notificaciones (`shouldShowList`).
+let bannerPropio = false;
+export function usarBannerPropio(activo) { bannerPropio = !!activo; }
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowBanner: true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false,
+    shouldShowBanner: !bannerPropio, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false,
   }),
 });
+
+// Quien quiera enterarse de un aviso que llegó con la app abierta: el banner,
+// la campana (para sumar uno) y la bandeja (para recargarse si está a la vista).
+const oyentes = new Set();
+let escuchando = false;
+/** Se suscribe a los avisos que llegan con la app abierta. Devuelve cómo desuscribirse. */
+export function alLlegarAviso(fn) {
+  if (!escuchando && Platform.OS !== 'web') {
+    escuchando = true;
+    Notifications.addNotificationReceivedListener((n) => {
+      const c = n?.request?.content ?? {};
+      const aviso = { id: n?.request?.identifier ?? String(Date.now()), titulo: c.title ?? '', cuerpo: c.body ?? '', url: c.data?.url ?? null, tipo: c.data?.tipo ?? null };
+      for (const f of oyentes) { try { f(aviso); } catch { /* un oyente roto no tapa a los demás */ } }
+    });
+  }
+  oyentes.add(fn);
+  return () => { oyentes.delete(fn); };
+}
 
 /** Devuelve el token de avisos, o `{ error }` con una frase que se puede mostrar. */
 export async function pedirTokenDeAvisos() {

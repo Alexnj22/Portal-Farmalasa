@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
         ? ["¡Feliz cumpleaños! 🎂", `Te regalamos ${pts} puntos para celebrar.`]
         : l.origen === "cupon"
           // Sin decir el premio: se descubre raspándolo en la app.
-          ? ["Tu cupón del mes 🎟️", "Ya llegó: ráscalo en la app para descubrir cuánto ganaste."]
+          ? ["Tu cupón del mes 🎟️", "Ya llegó: ráspalo en la app para descubrir cuánto ganaste."]
         : l.origen === "referido"
           ? ["¡Tu invitación funcionó! 🎉", `Ganaste ${pts} puntos por invitar a un amigo.`]
           : [`Ganaste ${pts} puntos`, "Gracias por tu compra. Mira tu saldo en la app."];

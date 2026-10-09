@@ -27,6 +27,8 @@ import { useOfertas } from '../../lib/ofertas';
 import { useSesion } from '../../lib/sesion';
 import { useCuenta } from '../../lib/cuenta';
 import ReservarHoja from '../../componentes/ReservarHoja';
+import { seguirSiYaReservado } from '../../lib/reservaDuplicada';
+import { navegar } from '../../lib/navegar';
 import Icono from '../../componentes/Icono';
 import { dolares, fecha } from '../../lib/formato';
 import { acentoDe, suave, useTema } from '../../tema/tema';
@@ -76,9 +78,17 @@ export default function Oferta() {
   const puedeReservar = !!token && o.disponible && !preRegistro && !o.pronto;
   // Desde «Reservar» de una historia: con un solo producto, la hoja se abre
   // sola; con varios, cada uno tiene su botón.
+  // Si ese producto ya está reservado, se pregunta antes de abrir la hoja
+  // (2026-10-09). Para ver la reserva, primero se cierra esta hoja.
+  const abrirReserva = async (p) => {
+    const seguir = await seguirSiYaReservado(p.id, {
+      alVer: (r) => { router.back(); setTimeout(() => navegar(`/reservas?resaltar=${r.id}`), 300); },
+    });
+    if (seguir) setReservando(p);
+  };
   if (reservar === '1' && puedeReservar && o.productos?.length === 1 && !reservando && !autoAbierta.current) {
     autoAbierta.current = true;
-    setTimeout(() => setReservando(o.productos[0]), 350);
+    setTimeout(() => abrirReserva(o.productos[0]), 350);
   }
   const ahorroMax = Math.max(0, ...(o.productos ?? []).map((p) => (p.precio ?? 0) - (p.precio_descuento ?? 0)));
 
@@ -150,7 +160,7 @@ export default function Oferta() {
                         ) : null}
                       </View>
                       {puedeReservar ? (
-                        <Pressable onPress={() => setReservando(p)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Reservar ${p.nombre}`}
+                        <Pressable onPress={() => abrirReserva(p)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Reservar ${p.nombre}`}
                           style={({ pressed }) => ({ backgroundColor: a.fuerte, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
                           <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '800' }}>Reservar</Text>
                         </Pressable>

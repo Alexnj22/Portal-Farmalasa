@@ -1032,51 +1032,135 @@ Deno.serve(async (req) => {
       return json(data);
     }
 
-    // ── Mis facturas (2026-10-07): consumidor final y crédito fiscal del
-    // último año, con el PDF y el JSON del documento (el archivo que el
-    // portal guarda en `sales-dte`) y la consulta pública de Hacienda.
+    // ── Mis facturas (2026-10-07; rehecha 2026-10-09): consumidor final y
+    // crédito fiscal, con el PDF y el JSON del documento (el archivo que el
+    // portal guarda en `sales-dte`). Las anuladas salen marcadas y con sus
+    // documentos; las notas de crédito, DEBAJO de la factura que corrigen.
+    //
+    // `periodo`: «reciente» (por defecto) = este mes y el anterior en El
+    // Salvador; «todo» = las más recientes hasta el tope (deliberado, menor que
+    // el techo de 1000 filas — y el cliente se entera si se llegó a él).
+    //
+    // Las notas de crédito de venta TODAVÍA NO llegan a `sales_invoices` (medido
+    // el 2026-10-09: sólo hay COF y CCF). El amarre se deja escrito para el día
+    // que lleguen: una nota trae `relacionada` = id de la factura que corrige;
+    // sin eso sale suelta. Las muestras (cuenta de prueba) ya lo usan.
     if (accion === "mis_facturas") {
-      const { data, error } = await admin.from("sales_invoices")
-        .select("id, fecha, hora, tipo_documento, correlativo, total, codigo_generacion, recibido_mh, branch_id, estado")
-        .eq("customer_id", customerId).gte("fecha", new Date(Date.now() - 365 * 86400_000).toISOString().slice(0, 10))
-        .order("fecha", { ascending: false }).order("hora", { ascending: false }).limit(60);
+      const todo = body?.periodo === "todo";
+      const [a0, m0] = hoySV().split("-").map(Number);
+      const desde = todo ? null : `${m0 === 1 ? a0 - 1 : a0}-${String(m0 === 1 ? 12 : m0 - 1).padStart(2, "0")}-01`;
+      // Paginada (2026-10-09): de a 30, por CURSOR (la última fecha·hora·id que
+      // se mostró) y no por número de página — si entra una factura nueva
+      // mientras se baja, no se repite ni se salta ninguna. Hay clientes con
+      // decenas de miles de facturas.
+      const POR_PAGINA = 30;
+      const antes = body?.antes && typeof body.antes === "object" ? body.antes : null;
+      const fechaOk = (v: unknown) => /^\d{4}-\d{2}-\d{2}$/.test(String(v ?? ""));
+      const horaOk = (v: unknown) => /^\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(String(v ?? ""));
+      let q = admin.from("sales_invoices")
+        .select("id, fecha, hora, tipo_documento, correlativo, total, codigo_generacion, branch_id, estado")
+        .eq("customer_id", customerId)
+        .order("fecha", { ascending: false }).order("hora", { ascending: false }).order("id", { ascending: false })
+        .limit(30); // = POR_PAGINA
+      if (desde) q = q.gte("fecha", desde);
+      if (antes && fechaOk(antes.fecha) && horaOk(antes.hora) && Number.isFinite(Number(antes.id))) {
+        const F = antes.fecha, H = antes.hora, I = Number(antes.id);
+        q = q.or(`fecha.lt.${F},and(fecha.eq.${F},hora.lt.${H}),and(fecha.eq.${F},hora.eq.${H},id.lt.${I})`);
+      }
+      const { data, error } = await q;
       if (error) throw error;
+      const ultima = (data ?? [])[(data ?? []).length - 1];
+      const siguiente = (data ?? []).length === POR_PAGINA && ultima ? { fecha: ultima.fecha, hora: ultima.hora, id: ultima.id } : null;
       const { data: salas, error: eS } = await admin.from("branches").select("id, name");
       if (eS) throw eS;
       const nombre = new Map((salas ?? []).map((b: any) => [Number(b.id), sucursal(b.name)]));
+
+      // Muestras de la cuenta de prueba (`tipo = 'factura'`). Sus documentos
+      // son los de una factura real de la MISMA ficha (`documento_de`).
+      // Las muestras van sólo en la primera página.
+      const muestras = antes ? [] : (await muestrasDe(admin, customerId, "factura"))
+        .filter((m: any) => m.fecha && (!desde || String(m.fecha) >= desde));
+      const prestadas = [...new Set(muestras.map((m: any) => Number(m.documento_de)).filter((n: number) => n > 0))];
+      const docDe = new Map<number, any>();
+      if (prestadas.length) {
+        const { data: ds, error: eD } = await admin.from("sales_invoices").select("id, fecha, codigo_generacion")
+          .in("id", prestadas).eq("customer_id", customerId);
+        if (eD) throw eD;
+        for (const x of ds ?? []) if (x.codigo_generacion) docDe.set(Number(x.id), x);
+      }
+
+      const ruta = (f: any) => {
+        if (!f?.codigo_generacion) return null;
+        const [a, m] = String(f.fecha).split("-");
+        return `${a}/${m}/${String(f.codigo_generacion).toUpperCase()}`;
+      };
       const filas = (data ?? []).filter((f: any) => f.codigo_generacion);
-      const rutas = filas.flatMap((f: any) => {
-        const [a, m] = String(f.fecha).split("-"); const cg = String(f.codigo_generacion).toUpperCase();
-        return [`${a}/${m}/${cg}.pdf`, `${a}/${m}/${cg}.json`];
-      });
+      const base = [...filas.map(ruta), ...[...docDe.values()].map(ruta)].filter(Boolean) as string[];
+      const rutas = [...new Set(base)].flatMap((r) => [`${r}.pdf`, `${r}.json`]);
       const firmadas = new Map<string, string>();
       if (rutas.length) {
         const { data: fs, error: eF } = await admin.storage.from("sales-dte").createSignedUrls(rutas, 3600);
         if (eF) console.error("mis_facturas: no se firmaron:", eF.message);
         for (const f of fs ?? []) if (f.path && f.signedUrl && !f.error) firmadas.set(f.path, f.signedUrl);
       }
-      return json({
-        ok: true,
-        facturas: filas.map((f: any) => {
-          const [a, m] = String(f.fecha).split("-"); const cg = String(f.codigo_generacion).toUpperCase();
+      const numero = (c: unknown) => (c == null ? null : String(c).split("_")[0].replace(/^0+(?=\d)/, ""));
+      const tipoDe = (t: unknown) => {
+        const s = String(t ?? "").toUpperCase();
+        return s === "CCF" ? "credito_fiscal" : s === "NC" || s === "NCR" ? "nota_credito" : "consumidor_final";
+      };
+
+      // deno-lint-ignore no-explicit-any
+      const docs: any[] = [
+        ...filas.map((f: any) => {
+          const r = ruta(f);
           return {
-            id: f.id, fecha: f.fecha, hora: f.hora, total: Number(f.total), correlativo: f.correlativo,
-            tipo: f.tipo_documento === "CCF" ? "credito_fiscal" : f.tipo_documento === "NC" || f.tipo_documento === "NCR" ? "nota_credito" : "consumidor_final",
-            anulada: !venta_valida_js(f.estado),
-            sala: nombre.get(Number(f.branch_id)) ?? null, codigo: cg,
-            pdf: firmadas.get(`${a}/${m}/${cg}.pdf`) ?? null, json: firmadas.get(`${a}/${m}/${cg}.json`) ?? null,
-            hacienda: `https://admin.factura.gob.sv/consultaPublica?ambiente=01&codGen=${cg}&fechaEmi=${f.fecha}`,
+            id: f.id, clave: String(f.id), fecha: f.fecha, hora: f.hora, total: Number(f.total),
+            numero: numero(f.correlativo), tipo: tipoDe(f.tipo_documento), anulada: !venta_valida_js(f.estado),
+            sala: nombre.get(Number(f.branch_id)) ?? null, relacionada: null,
+            pdf: firmadas.get(`${r}.pdf`) ?? null, json: firmadas.get(`${r}.json`) ?? null,
           };
         }),
+        ...muestras.map((m: any) => {
+          const r = ruta(docDe.get(Number(m.documento_de)));
+          return {
+            id: `muestra-${m.id}`, clave: m.clave ? String(m.clave) : `muestra-${m.id}`, fecha: m.fecha, hora: m.hora ?? null,
+            total: Number(m.total ?? 0), numero: m.numero ? String(m.numero) : null, tipo: tipoDe(m.tipo_documento),
+            anulada: m.anulada === true, sala: sucursal(m.sala) ?? null,
+            relacionada: m.relacionada == null ? null : String(m.relacionada),
+            pdf: r ? firmadas.get(`${r}.pdf`) ?? null : null, json: r ? firmadas.get(`${r}.json`) ?? null : null,
+            sin_documento: !r,
+          };
+        }),
+      ];
+      // Cada nota de crédito, debajo de su factura (si la factura está en la lista).
+      const porClave = new Map(docs.filter((d) => d.tipo !== "nota_credito").map((d) => [d.clave, d]));
+      // deno-lint-ignore no-explicit-any
+      const sueltas: any[] = [];
+      for (const d of docs) {
+        const madre = d.tipo === "nota_credito" && d.relacionada ? porClave.get(d.relacionada) : null;
+        if (madre) (madre.notas ??= []).push(d); else sueltas.push(d);
+      }
+      const orden = (x: any, y: any) => `${y.fecha} ${y.hora ?? ""}`.localeCompare(`${x.fecha} ${x.hora ?? ""}`);
+      for (const d of sueltas) d.notas?.sort(orden);
+      return json({
+        ok: true, periodo: todo ? "todo" : "reciente", desde, siguiente,
+        facturas: sueltas.sort(orden),
       });
     }
 
     // El PDF o el JSON de una factura que todavía no estaba guardada: se baja,
-    // se guarda (igual que `sync-sales-dte`) y se firma. Sólo del cliente.
+    // se guarda (igual que `sync-sales-dte`) y se firma. Sólo del cliente. Una
+    // muestra (`muestra-N`) usa el documento de la factura real que presta.
     if (accion === "factura_documento") {
       const formato = body?.formato === "json" ? "json" : "pdf";
+      let idFactura = Number(body?.id);
+      if (String(body?.id ?? "").startsWith("muestra-")) {
+        const m = (await muestrasDe(admin, customerId, "factura")).find((x: any) => `muestra-${x.id}` === String(body.id));
+        idFactura = Number(m?.documento_de);
+        if (!idFactura) return json({ ok: false, mensaje: "Este ejemplo no tiene documento." });
+      }
       const { data: f, error } = await admin.from("sales_invoices").select("id, fecha, codigo_generacion")
-        .eq("id", Number(body?.id)).eq("customer_id", customerId).maybeSingle();
+        .eq("id", idFactura).eq("customer_id", customerId).maybeSingle();
       if (error) throw error;
       if (!f?.codigo_generacion) return json({ ok: false, mensaje: "Esta factura no tiene documento electrónico." });
       const cg = String(f.codigo_generacion).toUpperCase();
@@ -1109,7 +1193,7 @@ Deno.serve(async (req) => {
       const TIPOS: Record<string, { tipo: string; titulo: string; cuerpo: string; url: string }> = {
         cumpleanos: { tipo: "cumpleanos", titulo: "¡Feliz cumpleaños! 🎂", cuerpo: "Te regalamos puntos para celebrar. Ábrela y míralos.", url: "/puntos?cumple=1" },
         puntos: { tipo: "ganado", titulo: "Ganaste 25 puntos", cuerpo: "Gracias por tu compra. Mira tu saldo en la app.", url: "/puntos" },
-        cupon: { tipo: "ganado", titulo: "Tu cupón del mes 🎟️", cuerpo: "Ya llegó: ráscalo en la app para descubrir cuánto ganaste.", url: "/puntos" },
+        cupon: { tipo: "ganado", titulo: "Tu cupón del mes 🎟️", cuerpo: "Ya llegó: ráspalo en la app para descubrir cuánto ganaste.", url: "/puntos" },
         nivel: { tipo: "nivel", titulo: "¡Subiste de nivel! 👑", cuerpo: "Desde ahora ganas más puntos con cada compra.", url: "/puntos?nivel=1" },
         restado: { tipo: "restado", titulo: "Usaste 500 puntos 💳", cuerpo: "Ahorraste $5.00 en Salud 1. Te quedan 1,200 puntos.", url: "/puntos" },
         tratamiento: { tipo: "tratamiento", titulo: "¿Ya te toca otra vez? 💊", cuerpo: "Se te está por acabar tu medicamento. Resérvalo y lo tenemos listo.", url: "/tratamientos" },
@@ -1402,7 +1486,10 @@ Deno.serve(async (req) => {
       const cumpleanos = String(nac?.fecha_nacimiento ?? "").slice(5, 10) === hoyMD
         || (await muestrasDe(admin, customerId, "cumpleanos")).length > 0;
 
-      const { data: resAb, error: eRA } = await admin.from("app_reservas").select("estado")
+      // Con el producto: la app avisa «ya tienes una reserva de este producto»
+      // al agregarlo al carrito o reservarlo otra vez (2026-10-09). Son pocas
+      // filas (tope de 3 reservas activas), así que viajan en el resumen.
+      const { data: resAb, error: eRA } = await admin.from("app_reservas").select("id, estado, producto_id, producto_nombre, pago_estado, pedido")
         .eq("customer_id", customerId).in("estado", ["pendiente", "lista"]);
       if (eRA) console.error("no se pudieron leer las reservas:", eRA.message);
 
@@ -1413,6 +1500,10 @@ Deno.serve(async (req) => {
         cumpleanos,
         reservas_abiertas: (resAb ?? []).length,
         reservas_listas: (resAb ?? []).filter((r: any) => r.estado === "lista").length,
+        reservas_productos: (resAb ?? []).map((r: any) => ({
+          id: r.id, producto_id: r.producto_id == null ? null : Number(r.producto_id), producto_nombre: r.producto_nombre,
+          estado: r.estado, pagada: r.pago_estado === "pagado", codigo: r.pedido ?? `R-${String(r.id).padStart(6, "0")}`,
+        })),
         wallet_serial: `socio-${customerId}`,
         // Android: la app ofrece «Agregar a Google Wallet» sólo si el emisor está configurado.
         google_wallet: googleWalletListo(),

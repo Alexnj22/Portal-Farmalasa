@@ -10,7 +10,8 @@ import Vidrio from './Vidrio';
 import { colorSistema } from './sistema';
 import { suave, useTema } from '../tema/tema';
 
-export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true }) {
+// `alFinal`: se llama al acercarse al final (listas paginadas, 2026-10-09).
+export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal }) {
   const ins = useSafeAreaInsets();
   return (
     <ScrollView
@@ -22,6 +23,10 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
         width: '100%', maxWidth: 560, alignSelf: 'center',
       }}
       keyboardShouldPersistTaps="handled"
+      scrollEventThrottle={alFinal ? 250 : undefined}
+      onScroll={alFinal ? ({ nativeEvent: e }) => {
+        if (e.layoutMeasurement.height + e.contentOffset.y >= e.contentSize.height - 700) alFinal();
+      } : undefined}
       refreshControl={alRefrescar ? <RefreshControl refreshing={refrescando} onRefresh={alRefrescar} /> : undefined}
     >
       {children}

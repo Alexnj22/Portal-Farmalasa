@@ -161,7 +161,7 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
         <View style={{ borderRadius: 22, overflow: 'hidden' }}
           onLayout={(e) => setMedida({ ancho: e.nativeEvent.layout.width, alto: e.nativeEvent.layout.height })}>
           {cara}
-          {!raspado && !usado ? <Raspable key={`${cupon.id}-${demo}`} alDescubrir={descubrir} auto={auto} /> : null}
+          {!raspado && !usado ? <Raspable key={`${cupon.id}-${demo}`} alDescubrir={descubrir} auto={auto} activa={activa} /> : null}
           {usado ? sello_ : null}
         </View>
       )}
@@ -198,7 +198,11 @@ const COLS = 14;
 const FILAS = 5;
 const META = 0.7;
 
-function Raspable({ alDescubrir, auto = false }) {
+// Si no se termina de raspar, la capa VUELVE a cubrirse (2026-10-09, pedido del
+// usuario): sólo vale un cupón raspado completo. El premio ya está asignado en
+// el servidor; esto es lo visual. Se restablece a los 2.5 s de soltar sin
+// terminar, y también al salir de la pantalla.
+function Raspable({ alDescubrir, auto = false, activa = true }) {
   const [tam, setTam] = useState(null);
   const [trazo, setTrazo] = useState(() => Skia.Path.Make());
   const [polvo, setPolvo] = useState([]);
@@ -210,6 +214,21 @@ function Raspable({ alDescubrir, auto = false }) {
   const idPolvo = useRef(0);
   const capa = useSharedValue(1);
   const leyenda = useSharedValue(1);
+  const recubre = useSharedValue(0);
+  const espera = useRef(null);
+  const limpiar = () => {
+    celdas.current = new Set(); ultimo.current = null;
+    setTrazo(Skia.Path.Make()); setPolvo([]);
+    recubre.value = 0;
+  };
+  const restablecer = () => {
+    if (listo.current || celdas.current.size === 0) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    leyenda.value = withTiming(1, { duration: 450 });
+    recubre.value = withTiming(1, { duration: 450, easing: Easing.inOut(Easing.quad) }, (fin) => { if (fin) runOnJS(limpiar)(); });
+  };
+  useEffect(() => { if (!activa && !listo.current) { clearTimeout(espera.current); limpiar(); leyenda.value = 1; } }, [activa]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => clearTimeout(espera.current), []);
 
   const marcar = (x, y) => {
     // Las celdas que cubre el círculo del dedo.
@@ -225,6 +244,7 @@ function Raspable({ alDescubrir, auto = false }) {
   const agregar = (x, y, nuevo) => {
     if (listo.current || !tam) return;
     const p = trazo.copy();
+    clearTimeout(espera.current);
     if (nuevo || !ultimo.current) {
       p.moveTo(x, y); p.lineTo(x + 0.1, y + 0.1);
       Haptics.selectionAsync().catch(() => {});
@@ -253,7 +273,11 @@ function Raspable({ alDescubrir, auto = false }) {
       capa.value = withTiming(0, { duration: 420, easing: Easing.out(Easing.cubic) }, (fin) => { if (fin) runOnJS(alDescubrir)(); });
     }
   };
-  const soltar = () => { ultimo.current = null; };
+  const soltar = () => {
+    ultimo.current = null;
+    clearTimeout(espera.current);
+    if (!listo.current && !auto) espera.current = setTimeout(restablecer, 2500);
+  };
 
   // Modo demostración: un dedo invisible raspa en zigzag.
   useEffect(() => {
@@ -289,6 +313,10 @@ function Raspable({ alDescubrir, auto = false }) {
                 <SkGradiente start={vec(0, 0)} end={vec(tam.w, tam.h)} colors={['#B9BEC6', '#ECEFF3', '#A4AAB3', '#DDE1E7', '#B0B6BF']} />
               </Rect>
               <Path path={trazo} style="stroke" strokeWidth={GROSOR} strokeCap="round" strokeJoin="round" blendMode="clear" color="black" />
+              {/* La capa que vuelve a cubrir lo raspado si no se terminó. */}
+              <Rect x={0} y={0} width={tam.w} height={tam.h} opacity={recubre}>
+                <SkGradiente start={vec(0, 0)} end={vec(tam.w, tam.h)} colors={['#B9BEC6', '#ECEFF3', '#A4AAB3', '#DDE1E7', '#B0B6BF']} />
+              </Rect>
             </Group>
           </Canvas>
         ) : null}

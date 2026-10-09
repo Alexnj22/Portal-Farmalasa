@@ -31,7 +31,11 @@
         "CFBundleLocalizations": [
           "es"
         ],
-        "CFBundleAllowMixedLocalizations": true
+        "CFBundleAllowMixedLocalizations": true,
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait"
+        ],
+        "UIRequiresFullScreen": true
       }
     },
     "android": {

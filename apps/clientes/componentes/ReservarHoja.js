@@ -17,6 +17,7 @@ import BotonNativo from './BotonNativo';
 import Icono from './Icono';
 import { useSesion } from '../lib/sesion';
 import { useBloqueo } from '../lib/bloqueo';
+import { useCuenta } from '../lib/cuenta';
 import { dolares } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
 import { navegar } from '../lib/navegar';
@@ -81,6 +82,8 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
     setEnviando(false);
     if (r?.ok) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      // El resumen sabe qué productos están reservados (aviso de duplicado y carrito).
+      useCuenta.getState().cargar({ forzar: true }).catch(() => {});
       setHecha(r);
       setPaso('hecha');
     } else {

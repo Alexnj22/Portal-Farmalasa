@@ -22,7 +22,7 @@ import Icono from '../../../componentes/Icono';
 import { useVisible } from '../../../lib/visible';
 import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '../../../componentes/animacion';
 import { useSesion } from '../../../lib/sesion';
-import { sincronizarAvisos } from '../../../lib/avisos';
+import { alLlegarAviso, sincronizarAvisos } from '../../../lib/avisos';
 import { cuponDePrueba, nivelDePrueba, useModoPrueba } from '../../../lib/prueba';
 import { BotonWalletNativo, abrirPase, agregarAGoogleWallet, agregarDirecto, agregarPorSafari, googleWalletDisponible, tienePase, walletDisponible } from '../../../modules/wallet';
 import { suave, useTema } from '../../../tema/tema';
@@ -144,7 +144,7 @@ export default function Puntos() {
         <Pressable onPress={() => navegar('/cuenta')} accessibilityRole="button"
           style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FF9F0A', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
           <Icono sf="testtube.2" respaldo="" tam={12} color="#1A1000" />
-          <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {String(`${mayorista ? `Mayorista ${rangoDePrueba(mayorista).nombre}` : resumen.nivel?.nombre ?? ''}${empleado ? ' · Personal' : ''}`).toUpperCase()}</Text>
+          <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {String(`${mayorista ? `Mayoreo ${rangoDePrueba(mayorista).nombre}` : resumen.nivel?.nombre ?? ''}${empleado ? ' · Personal' : ''}`).toUpperCase()}</Text>
         </Pressable>
       ) : null}
       <SubisteDeNivel nivel={resumen.nivel} forzar={verNivel === '1'} />
@@ -181,18 +181,18 @@ export default function Puntos() {
       {/* Cliente Mayorista (modo de prueba): su rango, arriba del nivel de puntos. */}
       {mayorista ? (
         <Entrada indice={1}>
-          <Mayorista rango={mayoristaReal ?? rangoDePrueba(mayorista)} pie={empleado ? <BeneficiosEquipo /> : null} />
+          <Mayorista rango={mayoristaReal ?? rangoDePrueba(mayorista)} pie={empleado ? <BeneficiosEquipo mayoreo={mayoristaReal ?? rangoDePrueba(mayorista)} /> : null} />
         </Entrada>
       ) : null}
       {/* Sin panel de nivel (niveles apagados), los beneficios de Equipo van solos. */}
-      {empleado && !mayorista && !(resumen.nivel && resumen.nivel.activos !== false) ? (
+      {empleado && !mayorista && !resumen.nivel ? (
         <Entrada indice={1}>
           <Equipo />
         </Entrada>
       ) : null}
-      {/* Mientras los niveles estén apagados (Reglamento v2 sin publicar) no se
+      {/* Con los niveles apagados (Reglamento v2 sin publicar) el panel se muestra igual y lo explica; antes no se
           muestra la escalera; en el modo de prueba, sí. */}
-      {resumen.nivel && !mayorista && resumen.nivel.activos !== false ? (
+      {resumen.nivel && !mayorista ? (
         <Entrada indice={1}>
           <Nivel nivel={resumen.nivel} pie={empleado ? <BeneficiosEquipo /> : null} />
         </Entrada>
@@ -473,8 +473,13 @@ function Campana({ generacion }) {
     campanaGen = generacion; campanaAt = Date.now();
     pedir('bandeja').then((r) => { if (r?.ok) { campanaUltimo = r.sin_leer ?? 0; setSinLeer(campanaUltimo); } });
   }, [pedir, generacion]));
+  // Un aviso que llega con la app abierta suma uno al instante, sin esperar
+  // al minuto de la próxima consulta.
+  useEffect(() => alLlegarAviso(() => { campanaUltimo += 1; setSinLeer(campanaUltimo); }), []);
+  // Abrir la bandeja los marca leídos: la campana se apaga ya, no al minuto.
+  const abrirBandeja = () => { campanaUltimo = 0; setSinLeer(0); navegar('/notificaciones'); };
   return (
-    <Pressable onPress={() => navegar('/notificaciones')} hitSlop={10} accessibilityRole="button"
+    <Pressable onPress={abrirBandeja} hitSlop={10} accessibilityRole="button"
       accessibilityLabel={sinLeer ? `Notificaciones, ${sinLeer} sin leer` : 'Notificaciones'}
       style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)', transform: [{ scale: pressed ? 0.92 : 1 }] })}>

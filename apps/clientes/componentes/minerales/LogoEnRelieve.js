@@ -20,24 +20,33 @@ float alto(float2 p, float e) {
         + logo.eval(p + float2(0, e)).a + logo.eval(p - float2(0, e)).a) / 6.0;
 }
 half4 main(float2 p) {
-  float e = max(1.0, res.x * 0.018);
+  // ACUÑADO dentro del material (2026-10-09, «que se fusione con el efecto de
+  // la tarjeta, como si estuviera dentro»): la cara del logo deja ver el
+  // material con un velo de los colores de la marca, y el relieve sale sólo
+  // de luz y sombra en el bisel —que se mueven con la inclinación—.
+  float e = max(1.0, res.x * 0.02);
   half4 c = logo.eval(p);
+  float a = c.a;
+  float3 marca = a > 0.001 ? c.rgb / a : float3(0.0);
   float2 g = float2(alto(p - float2(e, 0), e) - alto(p + float2(e, 0), e),
                     alto(p - float2(0, e), e) - alto(p + float2(0, e), e));
-  float3 n = normalize(float3(g * 2.2, 0.55));
-  float3 luz = normalize(float3(-0.45 + tilt.x * 1.1, -0.65 + tilt.y * 1.1, 0.75));
-  float dif = clamp(dot(n, luz), 0.0, 1.0);
-  float3 r = reflect(-luz, n);
-  float spec = pow(max(r.z, 0.0), 22.0);
-  // Un reflejo ancho que cruza la cara con la inclinación, como un esmalte.
+  float2 luz2 = normalize(float2(-0.5 + tilt.x * 1.2, -0.7 + tilt.y * 1.2));
+  float borde = dot(g, luz2) * 2.6;
+  float brilloB = clamp(borde, 0.0, 1.0);
+  float sombraB = clamp(-borde, 0.0, 1.0);
+  // Un reflejo que cruza la cara al inclinar.
   float2 uv = p / res;
-  float barra = exp(-pow((uv.x + uv.y * 0.6 - (0.75 + tilt.x * 0.9)) * 4.0, 2.0));
-  float3 cara = c.rgb * (0.62 + 0.55 * dif) + float3(1.0) * (spec * 0.9 + barra * 0.22) * c.a;
-  // La sombra: el logo corrido al lado contrario de la luz, difuso.
-  float2 corre = float2(-luz.x, -luz.y) * res.x * 0.045 + float2(0.0, res.x * 0.02);
-  float sombra = alto(p - corre, e * 2.0) * 0.55;
-  float a = c.a;
-  return half4(cara * a + float3(0.0) * (1.0 - a), a + sombra * (1.0 - a));
+  float v = (uv.x + uv.y * 0.6 - (0.75 + tilt.x * 0.9)) * 4.0;
+  float barra = exp(-v * v) * a;
+  // Capas premultiplicadas: velo de marca, sombra del bisel, luz del bisel.
+  float aVelo = a * 0.62;
+  float3 col = marca * aVelo;
+  float alf = aVelo;
+  float aSom = sombraB * 0.55;
+  col = col * (1.0 - aSom); alf = alf + aSom * (1.0 - alf);
+  float luzT = clamp(brilloB * 0.75 + barra * 0.25, 0.0, 1.0);
+  col = col + float3(1.0) * luzT * (1.0 - alf * 0.3); alf = max(alf, luzT);
+  return half4(col, alf);
 }`;
 
 let efecto;

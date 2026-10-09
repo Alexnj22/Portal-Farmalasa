@@ -84,6 +84,29 @@ float destellos(float2 p, float densidad, float velocidad) {
   return step(1.0 - densidad, h) * tw * (exp(-length(f) * 14.0) + cruz * 0.6);
 }
 float sq(float x) { return x * x; }
+// Metal tallado (2026-10-09): como gema() pero OPACO — cada faceta es un
+// espejo con su propia normal, el reflejo salta de una a otra al inclinar,
+// las aristas brillan y entre las facetas queda un velo tornasol (iris),
+// como la pátina de un mineral metálico.
+float3 metal(float2 uv, float escala, float3 oscuro, float3 medio, float3 claro, float semilla, float iris) {
+  float4 v = voro4(uv * escala + semilla);
+  float4 w = voro4(uv * escala * 2.6 + semilla * 1.3);
+  float2 n = hash2(float2(v.w * 71.0, v.w * 13.0)) * 2.0 - 1.0;
+  float2 m = hash2(float2(w.w * 37.0, w.w * 61.0)) * 2.0 - 1.0;
+  float pend = dot(n, tilt) * 1.6 + dot(n, -v.xy) * 1.2 + dot(m, tilt) * 0.4 + n.x * 0.35;
+  float k = clamp(0.5 + 0.5 * pend, 0.0, 1.0);
+  float3 c = mix(oscuro, medio, smoothstep(0.0, 0.7, k));
+  c = mix(c, claro, smoothstep(0.62, 1.0, k));
+  // Microtextura cepillada dentro de cada faceta, en su propia dirección.
+  float ang = v.w * 6.283; float2 dir = float2(cos(ang), sin(ang));
+  c *= 0.92 + 0.08 * noise(float2(dot(uv, dir) * 220.0, dot(uv, float2(-dir.y, dir.x)) * 6.0));
+  float arista = 1.0 - smoothstep(0.0, 0.03, v.z);
+  float aristaFina = 1.0 - smoothstep(0.0, 0.018, w.z);
+  float3 tor = 0.5 + 0.5 * cos(6.2831 * (v.w + uv.x * 0.4 + tilt.x * 0.6 + float3(0.0, 0.33, 0.67)));
+  c += mix(claro, tor, iris) * arista * (0.35 + 0.45 * max(0.0, dot(n, tilt) + 0.3));
+  c += claro * aristaFina * 0.10;
+  return c;
+}
 float2 luz(float a) { return float2(a * (0.5 + tilt.x * 0.38), 0.5 - tilt.y * 0.38); }
 `;
 
@@ -104,37 +127,38 @@ half4 main(float2 p) {
   bronce: `
 half4 main(float2 p) {
   float a = res.x / res.y; float2 uv = p / res.y;
-  // Bronce cepillado: cobre cálido con una banda de luz y un velo de pátina.
-  float cep = noise(float2(uv.x * 1.2, uv.y * 230.0)) * 0.6 + noise(float2(uv.x * 3.0, uv.y * 80.0)) * 0.4;
-  float3 c = mix(float3(0.22, 0.10, 0.04), float3(0.56, 0.31, 0.14), uv.y * 0.3 + cep * 0.55);
-  float banda = exp(-sq((uv.x - a * (0.5 + tilt.x * 0.55)) * 2.3));
-  c += float3(0.95, 0.62, 0.38) * banda * (0.30 + cep * 0.35);
-  float patina = smoothstep(0.55, 0.85, fbm(uv * 2.2 + 5.0));
-  c = mix(c, float3(0.20, 0.32, 0.27), patina * 0.10);
-  float2 L = luz(a); c += float3(1.0, 0.70, 0.45) * exp(-dot(uv - L, uv - L) * 4.0) * 0.18;
+  // Bronce tallado (2026-10-09): cobre cálido en facetas grandes, con el velo
+  // tornasol de la bornita en las aristas y una luz ámbar que sigue al teléfono.
+  float3 c = metal(uv, 2.4, float3(0.16, 0.06, 0.02), float3(0.58, 0.28, 0.10), float3(1.00, 0.72, 0.46), 2.7, 0.45);
+  float2 L = luz(a); c += float3(1.0, 0.55, 0.25) * exp(-dot(uv - L, uv - L) * 3.2) * 0.22;
+  // Un barrido de luz lento que cruza la tarjeta.
+  float barr = exp(-sq((uv.x / a + uv.y * 0.4 - fract(t * 0.07) * 2.2 + 0.4) * 5.0));
+  c += float3(1.0, 0.78, 0.55) * barr * 0.16;
+  c += float3(1.0, 0.85, 0.65) * destellos(p, 0.03, 1.6) * 0.6;
   return half4(c, 1.0);
 }`,
   plata: `
 half4 main(float2 p) {
   float a = res.x / res.y; float2 uv = p / res.y;
-  float cep = noise(float2(uv.x * 1.2, uv.y * 260.0)) * 0.6 + noise(float2(uv.x * 3.0, uv.y * 90.0)) * 0.4;
-  float3 c = mix(float3(0.24, 0.27, 0.31), float3(0.50, 0.54, 0.60), uv.y * 0.4 + cep * 0.5);
-  float banda = exp(-sq((uv.x - a * (0.5 + tilt.x * 0.55)) * 2.4));
-  c += float3(0.55, 0.58, 0.62) * banda * (0.35 + cep * 0.35);
-  float banda2 = exp(-sq((uv.x - a * (0.15 - tilt.x * 0.3)) * 5.0));
-  c += float3(0.4) * banda2 * 0.18;
-  c += float3(1.0) * destellos(p, 0.03, 1.6) * 0.5;
+  // Plata cristalizada: facetas finas y frías, como una geoda de hematita
+  // pulida, con un tornasol azulado leve y destellos.
+  float3 c = metal(uv, 3.1, float3(0.10, 0.11, 0.14), float3(0.42, 0.45, 0.51), float3(0.80, 0.83, 0.88), 5.3, 0.30);
+  float2 L = luz(a); c += float3(0.80, 0.86, 0.95) * exp(-dot(uv - L, uv - L) * 3.5) * 0.18;
+  float barr = exp(-sq((uv.x / a + uv.y * 0.4 - fract(t * 0.07) * 2.2 + 0.4) * 5.0));
+  c += float3(0.9, 0.95, 1.0) * barr * 0.14;
+  c += float3(1.0) * destellos(p, 0.05, 1.8) * 0.8;
   return half4(c, 1.0);
 }`,
   oro: `
 half4 main(float2 p) {
   float a = res.x / res.y; float2 uv = p / res.y;
-  float cep = noise(float2(uv.x * 1.2, uv.y * 240.0)) * 0.6 + noise(float2(uv.x * 3.0, uv.y * 80.0)) * 0.4;
-  float3 c = mix(float3(0.30, 0.17, 0.01), float3(0.70, 0.46, 0.10), uv.y * 0.3 + cep * 0.55);
-  float banda = exp(-sq((uv.x - a * (0.5 + tilt.x * 0.55)) * 2.2));
-  c += float3(0.95, 0.75, 0.35) * banda * (0.35 + cep * 0.4);
-  float2 L = luz(a); c += float3(1.0, 0.85, 0.45) * exp(-dot(uv - L, uv - L) * 4.0) * 0.25;
-  c += float3(1.0, 0.95, 0.75) * destellos(p, 0.06, 2.0) * 0.9;
+  // Oro tallado: facetas de pepita en oro profundo, aristas encendidas, un
+  // tornasol leve y polvo de destellos.
+  float3 c = metal(uv, 2.6, float3(0.20, 0.10, 0.0), float3(0.72, 0.46, 0.08), float3(1.0, 0.86, 0.48), 8.1, 0.18);
+  float2 L = luz(a); c += float3(1.0, 0.78, 0.30) * exp(-dot(uv - L, uv - L) * 3.2) * 0.20;
+  float barr = exp(-sq((uv.x / a + uv.y * 0.4 - fract(t * 0.07) * 2.2 + 0.4) * 5.0));
+  c += float3(1.0, 0.92, 0.65) * barr * 0.16;
+  c += float3(1.0, 0.97, 0.80) * destellos(p, 0.07, 2.0) * 0.9;
   return half4(c, 1.0);
 }`,
   platino: `

@@ -4,7 +4,7 @@
 // cuenta regresiva de las 24 horas; una pendiente o lista se puede cancelar.
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Platform, Pressable, Text, View } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
 import { Boton, Cargando, Pantalla, Tarjeta, Vacio } from '../componentes/ui';
@@ -16,13 +16,14 @@ import { useSesion } from '../lib/sesion';
 import { dolares, fecha } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
 import { navegar } from '../lib/navegar';
+import { useCuenta } from '../lib/cuenta';
 
 // Colores del tema (cambian con el modo oscuro y se leen sobre el vidrio).
 const ESTADO_BASE = {
-  pendiente: { texto: 'Preparando', tono: 'aviso' },
+  pendiente: { texto: 'En preparación', tono: 'aviso' },
   lista: { texto: '¡Lista para retirar!', tono: 'exito' },
   retirada: { texto: 'Retirada', tono: 'neutro' },
-  vencida: { texto: 'Venció', tono: 'peligro' },
+  vencida: { texto: 'Venció sin retirar', tono: 'peligro' },
   cancelada: { texto: 'Cancelada', tono: 'neutro' },
 };
 const FONDOS = { aviso: 'rgba(255,159,10,0.18)', exito: 'rgba(52,199,89,0.2)', peligro: 'rgba(255,59,48,0.14)', neutro: 'rgba(120,110,130,0.16)' };
@@ -46,6 +47,8 @@ export default function Reservas() {
   const [ahora, setAhora] = useState(Date.now());
   const [refrescando, setRefrescando] = useState(false);
   const [encargos, setEncargos] = useState([]);
+  // Desde el aviso «ya tienes una reserva» o el carrito: esa reserva va primero y marcada.
+  const { resaltar } = useLocalSearchParams();
   const cargar = useCallback(() => Promise.all([
     pedir('mis_reservas').then((r) => setD((ant) => (r?.ok || !ant?.ok ? r : ant))),
     pedir('mis_encargos').then((r) => { if (r?.ok) setEncargos(r.encargos); }),
@@ -81,6 +84,8 @@ export default function Reservas() {
       if (res?.ok) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       else Alert.alert('No se pudo cancelar', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
       cargar();
+      // El carrito y el aviso de duplicado leen las reservas del resumen.
+      useCuenta.getState().cargar({ forzar: true }).catch(() => {});
     } },
   ]);
 
@@ -115,38 +120,80 @@ export default function Reservas() {
   if (!d.reservas.length && !encargos.length) {
     return (
       <Pantalla conPestanas={false}>
-        <Vacio titulo="Sin reservas">Aparta productos de las ofertas y pásalos a retirar sin hacer fila.</Vacio>
-        <Pressable onPress={() => navegar('/ofertas')} style={{ alignSelf: 'center', padding: 12 }}>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: t.color.magentaTexto }}>Ver ofertas</Text>
-        </Pressable>
+        <Vacio titulo="Sin reservas">Aparta productos de las ofertas o del catálogo (desde el carrito) y pásalos a retirar sin hacer fila.</Vacio>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
+          <Pressable onPress={() => navegar('/ofertas')} accessibilityRole="button" style={{ padding: 12, minHeight: 44, justifyContent: 'center' }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: t.color.magentaTexto }}>Ver ofertas</Text>
+          </Pressable>
+          <Pressable onPress={() => navegar('/catalogo')} accessibilityRole="button" style={{ padding: 12, minHeight: 44, justifyContent: 'center' }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: t.color.magentaTexto }}>Ver catálogo</Text>
+          </Pressable>
+        </View>
       </Pantalla>
     );
   }
-  const abiertas = d.reservas.filter((r) => r.estado === 'pendiente' || r.estado === 'lista');
+  // Primero lo que se puede retirar ya, después lo que se está preparando, y
+  // abajo lo terminado. La reserva señalada (desde un aviso) va primero en su grupo.
+  const primero = (a, b) => (String(b.id) === String(resaltar)) - (String(a.id) === String(resaltar));
+  const listas = d.reservas.filter((r) => r.estado === 'lista').sort(primero);
+  const preparando = d.reservas.filter((r) => r.estado === 'pendiente').sort(primero);
+  const abiertas = [...listas, ...preparando];
   const cerradas = d.reservas.filter((r) => r.estado !== 'pendiente' && r.estado !== 'lista');
+  // Cuántos productos lleva cada pedido del carrito (cada uno es una tarjeta).
+  const delPedido = new Map();
+  for (const r of abiertas) if (r.pedido) delPedido.set(r.pedido, (delPedido.get(r.pedido) ?? 0) + 1);
+  const tarjeta = (r, i) => (
+    <Entrada key={r.id} indice={Math.min(i, 8)}>
+      <ReservaAbierta r={r} ahora={ahora} alCancelar={() => cancelar(r)} alPagar={() => pagar(r)} pagando={pagando === r.id}
+        resaltada={String(r.id) === String(resaltar)} productosDelPedido={r.pedido ? delPedido.get(r.pedido) ?? 1 : 1} />
+    </Entrada>
+  );
   return (
     <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
       {encargos.length ? (
         <>
           <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4 }}>Encargos</Text>
           {encargos.map((e) => <Encargo key={e.id} e={e} alPagar={() => pagarEncargo(e)} alCancelar={() => cancelarEncargo(e)} />)}
-          {abiertas.length ? <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4, marginTop: 8 }}>Reservas</Text> : null}
         </>
       ) : null}
-      {abiertas.map((r, i) => (
-        <Entrada key={r.id} indice={Math.min(i, 8)}>
-          <ReservaAbierta r={r} ahora={ahora} alCancelar={() => cancelar(r)} alPagar={() => pagar(r)} pagando={pagando === r.id} />
-        </Entrada>
-      ))}
-      {cerradas.length ? (
-        <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4, marginTop: 8 }}>Anteriores</Text>
-      ) : null}
+      {abiertas.length ? <ResumenReservas listas={listas.length} preparando={preparando.length} /> : null}
+      {listas.length ? <Seccion texto="Listas para retirar" n={listas.length} /> : null}
+      {listas.map((r, i) => tarjeta(r, i))}
+      {preparando.length ? <Seccion texto="En preparación" n={preparando.length} /> : null}
+      {preparando.map((r, i) => tarjeta(r, listas.length + i))}
+      {cerradas.length ? <Seccion texto="Anteriores" /> : null}
       {cerradas.map((r, i) => (
         <Entrada key={r.id} indice={Math.min(abiertas.length + i, 8)}>
           <ReservaCerrada r={r} />
         </Entrada>
       ))}
     </Pantalla>
+  );
+}
+
+// El rótulo de un grupo, con cuántas lleva.
+function Seccion({ texto, n }) {
+  return (
+    <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4, marginTop: 8 }}>
+      {texto}{n ? ` · ${n}` : ''}
+    </Text>
+  );
+}
+
+// Arriba de todo, de un vistazo: cuántas se pueden retirar ya y cuántas faltan.
+function ResumenReservas({ listas, preparando }) {
+  const t = useTema();
+  const caja = (n, texto, color, fondo) => (
+    <View style={{ flex: 1, borderRadius: 18, padding: 14, gap: 2, backgroundColor: fondo }}>
+      <Text style={{ fontSize: 28, fontWeight: '900', color, fontVariant: ['tabular-nums'] }}>{n}</Text>
+      <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto2 }}>{texto}</Text>
+    </View>
+  );
+  return (
+    <View style={{ flexDirection: 'row', gap: 10 }}>
+      {caja(listas, listas === 1 ? 'Lista para retirar' : 'Listas para retirar', listas ? t.color.exitoTexto : colorSistema.texto3, listas ? FONDOS.exito : FONDOS.neutro)}
+      {caja(preparando, 'En preparación', preparando ? t.color.avisoTexto : colorSistema.texto3, preparando ? FONDOS.aviso : FONDOS.neutro)}
+    </View>
   );
 }
 
@@ -218,7 +265,7 @@ const Separador = () => <View style={{ height: 0.5, backgroundColor: colorSistem
 
 // Una reserva en curso: qué es (promoción o producto), en qué paso va
 // (Recibida → Lista → Retirada), cómo se entrega, cómo se paga y cuánto.
-function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando }) {
+function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando, resaltada = false, productosDelPedido = 1 }) {
   const t = useTema();
   const lista = r.estado === 'lista';
   const e = estadoDe(t, r.estado);
@@ -233,7 +280,13 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando }) {
   const [verCodigo, setVerCodigo] = useState(lista);
   const codigo = r.pedido ?? r.codigo;
   return (
-    <Tarjeta tono={lista ? t.color.verde : undefined} estilo={{ gap: 14 }}>
+    <Tarjeta tono={lista ? t.color.verde : resaltada ? t.color.magenta : undefined} estilo={{ gap: 14 }}>
+      {resaltada ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Icono sf="arrow.down.circle.fill" respaldo="↓" tam={14} color={t.color.magentaTexto} />
+          <Text style={{ fontSize: 13, fontWeight: '800', color: t.color.magentaTexto }}>Esta es la reserva de ese producto</Text>
+        </View>
+      ) : null}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
         <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', flex: 1 }}>
           {lista ? <Latido><Pildora e={e} /></Latido> : <Pildora e={e} />}
@@ -246,6 +299,11 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando }) {
         <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto, letterSpacing: -0.3 }}>{r.producto_nombre}</Text>
         {r.tipo === 'promocion' && r.oferta_titulo ? (
           <Text style={{ fontSize: 14, fontWeight: '600', color: t.color.magentaTexto }} numberOfLines={1}>{r.oferta_titulo}</Text>
+        ) : null}
+        {r.pedido && productosDelPedido > 1 ? (
+          <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto3 }}>
+            Parte del pedido {r.pedido} · {productosDelPedido} productos que se retiran juntos
+          </Text>
         ) : null}
       </View>
 
@@ -271,9 +329,12 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando }) {
       {lista && r.vence_at ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 14, padding: 12, backgroundColor: 'rgba(52,199,89,0.16)' }}>
           <Icono sf="timer" respaldo="⏱" tam={16} color={t.color.exitoTexto} />
-          <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: t.color.exitoTexto }}>
-            Lista para {domicilio ? 'entregar' : 'retirar'}: {restante(r.vence_at, ahora)}
-          </Text>
+          <View style={{ flex: 1, gap: 1 }}>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.exitoTexto }}>
+              Lista para {domicilio ? 'entregar' : 'retirar'}: {restante(r.vence_at, ahora)}
+            </Text>
+            <Text style={{ fontSize: 12, color: colorSistema.texto2 }}>Vence el {fechaHora(r.vence_at)}</Text>
+          </View>
         </View>
       ) : (
         <Text style={{ fontSize: 14, lineHeight: 20, color: colorSistema.texto2 }}>
@@ -312,18 +373,7 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando }) {
       </View>
 
       {/* El anticipo de una reserva vencida queda a favor 30 días (2026-10-08). */}
-      {Number(r.saldo_favor) > 0 ? (
-        <View style={{ borderRadius: 14, padding: 12, gap: 2, backgroundColor: 'rgba(52,199,89,0.12)' }}>
-          <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto }}>
-            {r.saldo_favor_usado_at ? `Usaste tu saldo a favor de ${dolares(r.saldo_favor)}` : `Tienes ${dolares(r.saldo_favor)} a favor`}
-          </Text>
-          {!r.saldo_favor_usado_at ? (
-            <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>
-              Tu anticipo te sirve para otra compra en cualquier sucursal hasta el {fecha(r.saldo_favor_vence)}. No se devuelve en efectivo.
-            </Text>
-          ) : null}
-        </View>
-      ) : null}
+      <SaldoAFavor r={r} />
       {r.pago_estado === 'pendiente' && Number(r.total) > 0 ? (
         <View style={{ gap: 6 }}>
           {/* Un pedido del carrito se cobra entero: sus productos + el envío. */}
@@ -375,6 +425,7 @@ function ReservaCerrada({ r }) {
           <Text style={{ fontSize: 13, color: colorSistema.texto3 }} numberOfLines={1}>
             {e.texto} · {r.entrega === 'domicilio' ? 'A domicilio' : r.sala} · {fechaHora(r.cerrada_at ?? r.created_at)}
           </Text>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto3, fontVariant: ['tabular-nums'] }}>{r.pedido ? `Pedido ${r.pedido}` : `Código ${r.codigo}`}</Text>
         </View>
         {r.precio_unitario != null ? (
           <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(r.total ?? r.precio_unitario * r.cantidad)}</Text>
@@ -389,7 +440,25 @@ function ReservaCerrada({ r }) {
           </View>
         ) : null}
       </View>
+      {/* El anticipo de una vencida queda a favor 30 días: se ve también acá, que es donde vive la vencida. */}
+      <SaldoAFavor r={r} />
     </Tarjeta>
+  );
+}
+
+function SaldoAFavor({ r }) {
+  if (!(Number(r.saldo_favor) > 0)) return null;
+  return (
+    <View style={{ borderRadius: 14, padding: 12, gap: 2, backgroundColor: 'rgba(52,199,89,0.12)' }}>
+      <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto }}>
+        {r.saldo_favor_usado_at ? `Usaste tu saldo a favor de ${dolares(r.saldo_favor)}` : `Tienes ${dolares(r.saldo_favor)} a favor`}
+      </Text>
+      {!r.saldo_favor_usado_at ? (
+        <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>
+          Tu anticipo te sirve para otra compra en cualquier sucursal hasta el {fecha(r.saldo_favor_vence)}. No se devuelve en efectivo.
+        </Text>
+      ) : null}
+    </View>
   );
 }
 

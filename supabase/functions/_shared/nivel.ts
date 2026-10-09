@@ -12,6 +12,8 @@ export type Nivel = {
   siguiente: { clave: string; nombre: string; desde: number; factor: number; falta: number } | null;
   /** false mientras los niveles estén apagados (Reglamento v2 sin publicar). */
   activos: boolean;
+  /** Apagados: el nivel que su compra real ya alcanza (se aplica al encenderlos). */
+  proyectado: { clave: string; nombre: string } | null;
 };
 
 /** Hoy en El Salvador, 'AAAA-MM-DD'. */
@@ -30,17 +32,23 @@ export async function nivelDeCliente(admin: any, customerId: number): Promise<Ni
   // Apagados hasta el Reglamento v2 (2026-10-08): todos en el nivel de entrada,
   // igual que `puntos_nivel_de` en la base. La app no muestra la escalera.
   const activos = cfg?.niveles_activos === true;
-  const c = activos ? Number(compra ?? 0) : 0;
+  const real = Number(compra ?? 0);
+  const c = activos ? real : 0;
   // deno-lint-ignore no-explicit-any
   const lista = (niveles ?? []).map((n: any) => ({ ...n, desde: Number(n.desde), factor: Number(n.factor) }));
   const i = Math.max(0, lista.findLastIndex((n: any) => n.desde <= c));
   const n = lista[i] ?? { clave: "vip", nombre: "Bronce", factor: 1, puntos_cumpleanos: 50, horas_reserva: 24, cupon_mensual: 0 };
   const s = lista[i + 1];
+  // Apagados (2026-10-09): la tarjeta sigue en el de entrada, pero el panel
+  // dice cuánto le falta con su compra REAL y qué nivel ya alcanza.
+  const iReal = Math.max(0, lista.findLastIndex((x: any) => x.desde <= real));
+  const proyectado = !activos && lista[iReal] ? { clave: lista[iReal].clave, nombre: lista[iReal].nombre } : null;
   return {
     clave: n.clave, nombre: n.nombre, factor: n.factor, cumpleanos: n.puntos_cumpleanos, horas_reserva: n.horas_reserva,
     cupon_mensual: Number(n.cupon_mensual ?? 0),
     compra: Math.round(Number(compra ?? 0) * 100) / 100,
     activos,
-    siguiente: s ? { clave: s.clave, nombre: s.nombre, desde: s.desde, factor: s.factor, falta: Math.max(0, Math.round((s.desde - c) * 100) / 100) } : null,
+    proyectado,
+    siguiente: s ? { clave: s.clave, nombre: s.nombre, desde: s.desde, factor: s.factor, falta: Math.max(0, Math.round((s.desde - real) * 100) / 100) } : null,
   };
 }

@@ -19,6 +19,7 @@ import { dolares } from '../../lib/formato';
 import { nombreProducto, recordarVisto } from '../../lib/catalogo';
 import { suave, useTema } from '../../tema/tema';
 import { navegar } from '../../lib/navegar';
+import { seguirSiYaReservado } from '../../lib/reservaDuplicada';
 
 const ESTADO = {
   hay: { texto: 'Disponible', sf: 'checkmark.circle.fill', tono: 'exito' },
@@ -75,9 +76,15 @@ export default function Producto() {
   const mayor = [...(p.presentaciones ?? [])].sort((a, b) => (b.factor ?? 1) - (a.factor ?? 1))[0];
   const elegida_factor = sel ?? mayor?.factor ?? 1;
   const elegidaP = (p.presentaciones ?? []).find((x) => (x.factor ?? 1) === elegida_factor) ?? mayor;
-  const agregar = (x, n = 1) => {
+  const agregar = async (x, n = 1) => {
     if (!x) return;
     if (p.bajo_receta) { Alert.alert('Bajo receta', 'Este producto se compra en la sucursal presentando la receta.'); return; }
+    // Si ya está reservado, se pregunta antes (2026-10-09). Para ver la
+    // reserva primero se cierra esta hoja.
+    const seguir = await seguirSiYaReservado(p.id, {
+      alVer: (r) => { router.back(); setTimeout(() => navegar(`/reservas?resaltar=${r.id}`), 300); },
+    });
+    if (!seguir) return;
     const ok = useCarrito.getState().agregar({ id: p.id, nombre: p.nombre, foto: p.foto, tipo: x.tipo, factor: x.factor ?? 1, precio: x.precio, precio_vip: x.precio_vip }, n);
     if (!ok) { Alert.alert('Carrito lleno', 'El carrito admite hasta 10 productos distintos.'); return; }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});

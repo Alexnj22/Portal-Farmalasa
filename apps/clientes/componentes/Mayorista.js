@@ -52,7 +52,7 @@ export default function Mayorista({ rango, pie = null }) {
           <View style={{ transform: [{ rotate: '-45deg' }] }}><Icono sf="diamond.fill" respaldo="◆" tam={18} color="#FFFFFF" /></View>
         </LinearGradient>
         <View style={{ flex: 1, gap: 1 }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto3 }}>Cliente Mayorista</Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto3 }}>Cliente de mayoreo</Text>
           <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto, letterSpacing: -0.3 }}>{rango.nombre}</Text>
         </View>
         <View style={{ alignItems: 'flex-end' }}>
@@ -84,7 +84,7 @@ export default function Mayorista({ rango, pie = null }) {
           </View>
         ))}
       </View>
-      {rango.retiro ? <Texto nivel={2} estilo={{ fontSize: 13 }}>Tu condición de Cliente Mayorista termina el {rango.retiro}.</Texto> : null}
+      {rango.retiro ? <Texto nivel={2} estilo={{ fontSize: 13 }}>Tu precio de mayoreo termina el {rango.retiro}.</Texto> : null}
       <View style={{ flexDirection: 'row', gap: 6 }}>
         {RANGOS.map((r) => {
           const p = COLORES_NIVEL[r.clave];
@@ -100,7 +100,7 @@ export default function Mayorista({ rango, pie = null }) {
         })}
       </View>
       <Texto nivel={3} estilo={{ fontSize: 12 }}>
-        Como Cliente Mayorista no tienes nivel de Puntos Salud: tu escalera es tu rango. Se recalcula el primer día de cada mes con el
+        Con precio de mayoreo no tienes nivel de Puntos Salud: tu escalera es tu rango. Se recalcula el primer día de cada mes con el
         promedio de los tres meses anteriores, y el precio lo asigna la empresa aparte.
       </Texto>
       {pie}
@@ -114,7 +114,7 @@ export default function Mayorista({ rango, pie = null }) {
 // Los beneficios del personal (2026-10-08): van DENTRO del panel de su nivel
 // o de su rango —una sola tarjeta, un solo panel—; sólo si no hay panel de
 // nivel (niveles apagados) se muestran solos.
-export function BeneficiosEquipo() {
+export function BeneficiosEquipo({ mayoreo = null }) {
   const t = useTema();
   return (
     <View style={{ gap: 8, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colorSistema.separador }}>
@@ -129,8 +129,11 @@ export function BeneficiosEquipo() {
         ))}
       </View>
       <Texto nivel={3} estilo={{ fontSize: 12 }}>
-        Por política de personal compras a precio Mayoreo Plus y puedes llevar tus compras al crédito, a pagar en 30 días. Lo que compras a
-        precio Preferente o más alto acumula puntos y cuenta para tu nivel, como a cualquier cliente. Muestra tu tarjeta en caja.
+        Por política de personal compras a precio Mayoreo Plus y puedes llevar tus compras al crédito, a pagar en 30 días.{' '}
+        {mayoreo
+          ? `Como además te aprobaron precio de mayoreo, lo que compras a precio de mayoreo acumula puntos según tu rango ${mayoreo.nombre}, y lo demás 1 punto por cada $1.`
+          : 'Lo que compras a precio de personal (Mayoreo Plus) NO acumula puntos, aunque seas Plata, Oro o Platino; lo que compras a precio Preferente o más alto sí, y cuenta para tu nivel.'}
+        {' '}Muestra tu tarjeta en caja.
       </Texto>
     </View>
   );

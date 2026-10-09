@@ -29,6 +29,9 @@ export default function Nivel({ nivel, pie = null }) {
   const paleta = COLORES_NIVEL[nivel.clave] ?? COLORES_NIVEL.vip;
   const sig = nivel.siguiente;
   const avance = sig ? Math.min(1, nivel.compra / sig.desde) : 1;
+  // Niveles apagados hasta el nuevo reglamento: se explica, sin esconder el panel.
+  const apagados = nivel.activos === false;
+  const yaAlcanza = apagados && nivel.proyectado && nivel.proyectado.clave !== nivel.clave ? nivel.proyectado : null;
   return (
     <Tarjeta estilo={{ gap: 12 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -46,7 +49,16 @@ export default function Nivel({ nivel, pie = null }) {
         </View>
       </View>
 
-      {sig ? (
+      {apagados ? (
+        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start', borderRadius: 14, padding: 10, backgroundColor: t.oscuro ? 'rgba(255,214,10,0.12)' : 'rgba(255,204,0,0.14)' }}>
+          <Icono sf="clock.fill" respaldo="⏱" tam={13} color={colorSistema.texto2} />
+          <Text style={{ flex: 1, fontSize: 13, color: colorSistema.texto2 }}>
+            {yaAlcanza ? <Text style={{ fontWeight: '800', color: colorSistema.texto }}>Con tus compras ya alcanzas {yaAlcanza.nombre}. </Text> : null}
+            Los niveles se activan con el nuevo reglamento; mientras tanto ganas 1 punto por cada $1.
+          </Text>
+        </View>
+      ) : null}
+      {sig && !(yaAlcanza && sig.falta === 0) ? (
         <View style={{ gap: 6 }}>
           <BarraAnimada avance={avance} color={t.color.verde} fondo={t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'} />
           <Texto nivel={2} estilo={{ fontSize: 14 }}>

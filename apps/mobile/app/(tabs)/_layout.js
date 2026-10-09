@@ -3,7 +3,7 @@
 // usuario del 2026-09-29: «que se vea nativa con los elementos nativos», y que
 // la app ABRA en Inicio.
 import { useEffect } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -42,7 +42,7 @@ export default function Pestanas() {
   useMantenerPorDecidir();
   const globo = sinLeer + porDecidir;
   return (
-    <NativeTabs>
+    <NativeTabs labelVisibilityMode="labeled">
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="inicio">
         <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
         <NativeTabs.Trigger.Label>Inicio</NativeTabs.Trigger.Label>
@@ -53,7 +53,8 @@ export default function Pestanas() {
       </NativeTabs.Trigger>
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="avisos">
         <NativeTabs.Trigger.Icon sf={{ default: 'bell', selected: 'bell.fill' }} md="notifications" />
-        <NativeTabs.Trigger.Label>Notificaciones</NativeTabs.Trigger.Label>
+        {/* En Android no cabe con los cinco rótulos a la vista: «Notificacion…». */}
+        <NativeTabs.Trigger.Label>{Platform.OS === 'android' ? 'Avisos' : 'Notificaciones'}</NativeTabs.Trigger.Label>
         {globo ? <NativeTabs.Trigger.Badge>{globo > 99 ? '99+' : String(globo)}</NativeTabs.Trigger.Badge> : null}
       </NativeTabs.Trigger>
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="yo">

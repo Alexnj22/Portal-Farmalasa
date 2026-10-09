@@ -11,30 +11,40 @@
 // EditText), y los controles de @expo/ui (botón, selector, interruptor) van en
 // su propio `Host`, que es la forma documentada de mezclarlos.
 import { Children, forwardRef, isValidElement } from 'react';
-import { Platform, PlatformColor, ScrollView, Text, TextInput, View } from 'react-native';
+import { Appearance, Platform, PlatformColor, ScrollView, Text, TextInput, View } from 'react-native';
 import Vidrio from './Vidrio';
 
 const ios = Platform.OS === 'ios';
-// En Android, los atributos del TEMA (DayNight): cambian solos con el modo
-// oscuro, como los de iOS. Con hex fijos de modo claro (lo que había hasta el
-// 2026-10-08) el texto salía casi negro sobre la aurora oscura. La web sigue
-// con los hex.
-const android = Platform.OS === 'android';
-const sistema = (iosNombre, androidAttr, web) => (ios ? PlatformColor(iosNombre) : android ? PlatformColor(androidAttr) : web);
+// Fuera de iPhone, cada color se lee como GETTER y devuelve el del modo ACTUAL
+// del teléfono (claro u oscuro) — lo mismo que hace Puntos Salud
+// (apps/clientes/componentes/sistema.js). Medido en el emulador el 2026-10-08:
+//  - hex fijos (hasta entonces) eran de modo claro: en oscuro, texto casi
+//    negro sobre la aurora oscura;
+//  - `PlatformColor('?android:attr/…')` dejó el login SIN texto;
+//  - y `PlatformColor` en general no sirve en Android porque los componentes
+//    nativos de @expo/ui (Icon, Switch…) no aceptan ese objeto como color.
+// Con un hex por modo, cualquier componente lo entiende.
+const oscuro = () => Appearance.getColorScheme() === 'dark';
+const COLORES = {
+  // nombre: [color de iOS, claro, oscuro]
+  fondo: ['systemGroupedBackground', '#F2F2F7', '#000000'],
+  fila: ['secondarySystemGroupedBackground', '#FFFFFF', '#1C1C1E'],
+  texto: ['label', '#1C1B1F', '#F2F2F7'],
+  texto2: ['secondaryLabel', '#49454F', '#CAC4D0'],
+  placeholder: ['placeholderText', '#79747E', '#938F99'],
+  separador: ['separator', 'rgba(60,60,67,0.29)', 'rgba(84,84,88,0.6)'],
+  rojo: ['systemRed', '#B3261E', '#FF453A'],
+  verde: ['systemGreen', '#1B873F', '#30D158'],
+  naranja: ['systemOrange', '#B26A00', '#FF9F0A'],
+  acento: ['link', '#0052CC', '#0A84FF'],
+};
 export const colorSistema = {
-  fondo: sistema('systemGroupedBackground', '?android:attr/colorBackground', '#F2F2F7'),
-  fila: sistema('secondarySystemGroupedBackground', '?android:attr/colorBackgroundFloating', '#FFFFFF'),
-  texto: sistema('label', '?android:attr/textColorPrimary', '#1C1B1F'),
-  texto2: sistema('secondaryLabel', '?android:attr/textColorSecondary', '#49454F'),
-  placeholder: sistema('placeholderText', '?android:attr/textColorHint', '#79747E'),
-  separador: ios ? PlatformColor('separator') : '#CAC4D0',
   separadorClaro: 'rgba(127,127,127,0.25)',   // para SVG, que no lee colores del sistema
-  rojo: ios ? PlatformColor('systemRed') : '#B3261E',
-  verde: ios ? PlatformColor('systemGreen') : '#1B873F',
-  naranja: ios ? PlatformColor('systemOrange') : '#B26A00',
-  acento: ios ? PlatformColor('link') : '#0052CC',
   acentoTinte: 'rgba(0,82,204,0.12)',
 };
+for (const [k, [nativo, claro, noche]] of Object.entries(COLORES)) {
+  Object.defineProperty(colorSistema, k, { enumerable: true, get: ios ? () => PlatformColor(nativo) : () => (oscuro() ? noche : claro) });
+}
 
 export function Formulario({ children, contentContainerStyle, ...props }) {
   return (

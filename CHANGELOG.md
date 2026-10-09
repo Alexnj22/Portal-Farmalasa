@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1262.2 — Android: textos visibles, modo oscuro, Inicio, Yo, pestañas, botones de marca y aurora más liviana
+
+Revisión visual de las dos apps en Android, después de que la prueba interna de Farmalasa se viera «horrible» en un teléfono real.
+
+- **App del portal — los textos no se veían.** `colorSistema` con `PlatformColor('?android:attr/…')` dejó el login sin título ni campos. Ahora, fuera de iPhone, cada color es un getter que devuelve el hex del modo actual del teléfono, igual que en Puntos Salud. `PlatformColor` tampoco servía en general: los componentes nativos de @expo/ui (Icon, Switch) no lo aceptan en Android.
+- **Inicio**: la fecha llevaba `marginTop: -6` para pegarse al título grande de iOS, y en Android quedaba cortada bajo la barra.
+- **Yo**: en Android la lista de Compose salía como filas blancas de borde a borde. Ahora usa las mismas tarjetas de vidrio y renglones que el Menú.
+- **Pestañas**: con más de tres, Android sólo mostraba el rótulo de la activa. Ahora van todos (`labelVisibilityMode="labeled"`), y en Android «Notificaciones» se llama «Avisos» para que quepa.
+- **Puntos Salud — botones**: el botón Material arma su paleta desde el color semilla y en modo oscuro dejaba el magenta en rosa pastel. Ahora `BotonNativo.android.js` pinta el de la marca, como en iPhone.
+- **Aurora** (las dos apps): el SVG de pantalla completa se cachea como textura de la GPU (`renderToHardwareTextureAndroid`) en vez de repintarse en la CPU cada vez que algo se mueve encima.
+
+## v2.1262.1 — Android: llave por app en subir-android, --version-code y tarjetas sin sombra transparentada
 ## v2.1262.1 — Android: llave por app en subir-android, --version-code y tarjetas sin sombra transparentada
 
 - **`subir-android.mjs` firma cada app con la llave que Play ya conoce.** La app del personal (`lat.farmasalud.portal`) ya tenía una prueba interna subida con EAS el 30-sep, con la llave que generó Expo. Se bajó de expo.dev a `~/.claves-farmalasa/android-upload-portal.*`, se verificó contra Expo (SHA-1 `03:20…40:FE`) y se elige por paquete (`LLAVE_POR_PAQUETE`). Puntos Salud sigue con `android-upload.*`, que Google aceptará en el paquete viejo cuando apruebe el reseteo pedido hoy.

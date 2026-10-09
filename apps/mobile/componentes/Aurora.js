@@ -21,8 +21,11 @@ export default function Aurora() {
   const oscuro = useColorScheme() === 'dark';
   const base = oscuro ? '#08070D' : '#F3F2F8';
   const fuerza = oscuro ? 0.42 : 0.30;
+  // En Android, el SVG de pantalla completa se volvía a pintar en la CPU cada
+  // vez que algo se movía encima (las pantallas son transparentes): como
+  // textura de la GPU se pinta una vez (2026-10-09, «es lento»).
   return (
-    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: base }]}>
+    <View pointerEvents="none" renderToHardwareTextureAndroid style={[StyleSheet.absoluteFill, { backgroundColor: base }]}>
       <Svg width="100%" height="100%">
         <Defs>
           {MANCHAS.map((m) => (

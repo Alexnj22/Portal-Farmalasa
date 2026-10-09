@@ -2,7 +2,7 @@
 // Alex» es el TÍTULO GRANDE de la barra del sistema —se encoge al desplazar—;
 // acá queda la línea de abajo (sala · día) y la foto, que va a la derecha de
 // la barra y lleva a «Yo».
-import { Image, Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, View, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { saludoDeLaHora } from '@nucleo/utils/inicio';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -30,7 +30,7 @@ export function FotoDeCuenta({ user, tamano = 34 }) {
 export default function Encabezado({ sala }) {
   const hoy = new Date().toLocaleDateString('es-SV', { weekday: 'long', day: 'numeric', month: 'long' });
   return (
-    <Text style={{ color: colorSistema.texto2, fontSize: 15, paddingHorizontal: 20, marginTop: -6 }} numberOfLines={1}>
+    <Text style={{ color: colorSistema.texto2, fontSize: 15, paddingHorizontal: 20, marginTop: Platform.OS === 'ios' ? -6 : 12 }} numberOfLines={1}>
       {[sala, hoy.charAt(0).toUpperCase() + hoy.slice(1)].filter(Boolean).join(' · ')}
     </Text>
   );

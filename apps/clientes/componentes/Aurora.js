@@ -15,10 +15,13 @@ export default function Aurora(_props) {
   const oscuro = useColorScheme() === 'dark';
   const base = oscuro ? '#0A090E' : '#F5F4F8';
   const fuerza = oscuro ? 0.32 : 0.22;
+  // En Android, el SVG de pantalla completa se volvía a pintar en la CPU cada
+  // vez que algo se movía encima (las pantallas son transparentes): como
+  // textura de la GPU se pinta una vez (2026-10-09, «es lento»).
   return (
     // En la web, `fixed` y no `absolute`: con `absolute` la aurora mide lo que
     // mide el contenido y se corta donde termina la pantalla más corta.
-    <View pointerEvents="none" style={[StyleSheet.absoluteFill, Platform.OS === 'web' && { position: 'fixed' }, { backgroundColor: base }]}>
+    <View pointerEvents="none" renderToHardwareTextureAndroid style={[StyleSheet.absoluteFill, Platform.OS === 'web' && { position: 'fixed' }, { backgroundColor: base }]}>
       <Svg width="100%" height="100%">
         <Defs>
           {MANCHAS.map((m) => (

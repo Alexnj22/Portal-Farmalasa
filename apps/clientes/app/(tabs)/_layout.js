@@ -11,7 +11,7 @@ export default function Pestanas() {
   const t = useTema();
   const enCarrito = useCarrito((s) => s.items.length);
   return (
-    <NativeTabs tintColor={t.color.magenta}>
+    <NativeTabs tintColor={t.color.magenta} labelVisibilityMode="labeled">
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="puntos">
         <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
         <NativeTabs.Trigger.Label>Inicio</NativeTabs.Trigger.Label>

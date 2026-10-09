@@ -18,7 +18,13 @@
 // la fila de datos con su número.
 import React from 'react';
 import { Check, Pause, Warehouse, Store, AlertTriangle, Truck, PackageCheck, ClipboardCheck, ClipboardX } from 'lucide-react';
-import { pasosDelPedido, PASO_DE_LA_ETAPA, fmtHM, fmtMin, elapsed } from '@nucleo/utils/tableroDePedidos';
+import { pasosDelPedido, PASO_DE_LA_ETAPA, fmtHM, fmtMin, fmtDia, elapsed } from '@nucleo/utils/tableroDePedidos';
+import { diaDe, hoySV } from '@nucleo/utils/fecha';
+
+// El día va con la hora cuando el paso NO es de hoy (en hora de El Salvador):
+// «Listo 12:03 → 74h 47m → En ruta 12:19» sin el día no se entendía
+// (verificación final contra producción, 2026-10-08; la tarjeta vieja lo decía).
+const diaSiNoEsHoy = iso => (iso && diaDe(iso) !== hoySV() ? fmtDia(iso) : null);
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
 
@@ -158,6 +164,7 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
                 </span>
                 {detalle && e.paso.time && (
                     <span className="text-micro text-content-3 tabular-nums leading-tight whitespace-nowrap">
+                        {diaSiNoEsHoy(e.paso.time) && <>{diaSiNoEsHoy(e.paso.time)}<br /></>}
                         {fmtHM(e.paso.time)}
                     </span>
                 )}
@@ -225,7 +232,7 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
                         <span key={x.key} className="flex items-center gap-1.5 text-micro">
                             <Icono size={13} className={tono} aria-hidden="true" />
                             <span className={`font-semibold ${tono}`}>{x.label}</span>
-                            <span className="text-content-3 tabular-nums">{fmtHM(x.time)}</span>
+                            <span className="text-content-3 tabular-nums">{[diaSiNoEsHoy(x.time), fmtHM(x.time)].filter(Boolean).join(' ')}</span>
                             {x.emp && (
                                 <>
                                     <AvatarConEstado emp={x.emp} px={18} radio="rounded-full" marco="" mostrarChip={false} />

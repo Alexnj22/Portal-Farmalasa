@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1233.6 — Pedidos: la línea de tiempo dice el día cuando no es de hoy
+
+- **La línea de tiempo de la fila abierta dice el día** cuando el paso no es de hoy, en hora de El Salvador («1 oct · 12:06 p. m.»), y lo mismo las incidencias. Lo encontró la verificación final contra producción: con la lista sólo se veía la hora, y «Listo 12:03 → 74h 47m → En ruta 12:19» no se entendía. La tarjeta vieja sí mostraba el día.
+
 ## v2.1233.5 — Pedidos: «Con observación» sin pérdidas, sin cargas dobles, aviso al no haber qué contar
 
 Hallazgos de la prueba en vivo de paridad (producción contra dev, mismos datos):

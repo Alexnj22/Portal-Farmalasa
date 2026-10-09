@@ -228,12 +228,19 @@ export default function Cuenta() {
           {prueba.activo ? (
             <View style={{ padding: 12 }}>
               <Segmentos valor={prueba.nivel} alCambiar={(n) => prueba.poner({ nivel: n })}
-                opciones={NIVELES_PRUEBA.map((n) => ({ valor: n.clave, rotulo: n.clave === 'vip' ? 'VIP' : n.nombre }))} />
+                opciones={NIVELES_PRUEBA.map((n) => ({ valor: n.clave, rotulo: n.clave === 'vip' ? 'Bronce' : n.nombre }))} />
             </View>
           ) : null}
           {prueba.activo ? (
             <FilaInterruptor titulo="Ver como empleado" detalle="Su nivel o rango con el sello de Personal."
               valor={!!prueba.empleado} alCambiar={(v) => prueba.poner({ empleado: v })} />
+          ) : null}
+          {prueba.activo ? (
+            <View style={{ padding: 12, gap: 6 }}>
+              <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>Logo de la tarjeta</Text>
+              <Segmentos valor={prueba.logo ?? 'color'} alCambiar={(v) => prueba.poner({ logo: v })}
+                opciones={[{ valor: 'color', rotulo: 'Con color' }, { valor: 'material', rotulo: 'Del material' }]} />
+            </View>
           ) : null}
           {prueba.activo ? (
             <View style={{ padding: 12, gap: 6 }}>

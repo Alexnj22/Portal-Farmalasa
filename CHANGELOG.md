@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1262.9 — Nivel desplegable, textos legibles, logo central y modo liviano
+
+- **Panel del nivel desplegable:** cerrado muestra el nivel, la barra y cuánto falta; al tocarlo, los beneficios, el aviso de niveles apagados y el detalle.
+- **Textos de la tarjeta legibles:** sombras de texto marcadas y velos arriba y abajo; sobre plata y oro casi no se distinguían.
+- **El efecto del logo, sólo en el central;** el de la esquina y el del sello de Personal van planos. Logo central en dos variantes para comparar en el modo de prueba («Con color» / «Del material»: sin color de la marca, sólo relieve).
+- **Modo liviano para teléfonos antiguos** (`lib/rendimiento.js`): año de equipo < 2018 o < 2.5 GB de memoria → el material se dibuja una vez y queda quieto, sin giroscopio ni animación continua (igual que con «Reducir movimiento»).
+
 ## v2.1262.8 — App de clientes: tarjetas por reglamento, facturas, notificaciones y reservas
 
 Pruebas del usuario en la compilación 35 (2026-10-09):

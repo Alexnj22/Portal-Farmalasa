@@ -4,6 +4,7 @@
 //   · Vigente: el cupón con un brillo que pasa cada pocos segundos.
 //   · Usado: en gris, con el sello «USADO» (o lo que queda, si se usó una parte).
 // Se usa en caja como cualquier saldo, mostrando la tarjeta.
+import { LIVIANO } from '../lib/rendimiento';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -116,7 +117,7 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
           style={{ padding: 18, flexDirection: 'row', alignItems: 'center', gap: 16, minHeight: 104 }}>
           {!usado && MATERIALES.includes(nivel) ? (
             <>
-              <Mineral material={nivel} x={luzX} y={luzY} activa={activa} />
+              <Mineral material={nivel} x={luzX} y={luzY} activa={activa && !LIVIANO} />
               <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.22)' }]} />
             </>
           ) : null}
@@ -137,7 +138,7 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
                   : `Úsalo en caja con tu tarjeta · hasta el ${fecha(cupon.vence)}`}
             </Text>
           </View>
-          {!usado && raspado ? <Brillo activa={activa} /> : null}
+          {!usado && raspado ? <Brillo activa={activa && !LIVIANO} /> : null}
           <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: '#FFFFFF' }, estiloDestello]} />
         </LinearGradient>
   );

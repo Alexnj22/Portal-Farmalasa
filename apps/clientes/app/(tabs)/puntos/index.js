@@ -160,7 +160,7 @@ export default function Puntos() {
 
       {/* La tarjeta de socio: saldo al frente, código y QR al reverso. */}
       <Entrada indice={1}>
-        <TarjetaSocio activa={visible} equipo={empleado} nivel={material ?? resumen.nivel?.clave} nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
+        <TarjetaSocio activa={visible} equipo={empleado} estiloLogo={enPrueba ? prueba.logo : 'color'} nivel={material ?? resumen.nivel?.clave} nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
           previo={movSaldo.previo} cambio={movSaldo.cambio}
           codigo={resumen.codigo} socioDesde={resumen.socio_desde} />
       </Entrada>

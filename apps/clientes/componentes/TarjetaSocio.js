@@ -37,6 +37,7 @@ import * as Haptics from 'expo-haptics';
 import * as Brightness from 'expo-brightness';
 import tokens from '@nucleo/constants/tokens.json';
 import useInclinacion from './useInclinacion';
+import { LIVIANO } from '../lib/rendimiento';
 import BrilloTarjeta from './BrilloTarjeta';
 import { dolares, entero } from '../lib/formato';
 import { NumeroAnimado } from './animacion';
@@ -85,12 +86,13 @@ export const COLORES_NIVEL = {
 let yaGiro = false;
 const CLAVE_PISTA = 'puntos_salud_tarjeta_girada';
 
-export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nivelDado = 'vip', activa = true, previo = null, cambio = null, equipo = false }) {
+export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nivelDado = 'vip', activa = true, previo = null, cambio = null, equipo = false, estiloLogo = 'color' }) {
   // 'vip' es la clave del nivel de entrada, que ahora es Bronce: lleva su material.
   const nivel = nivelDado === 'vip' ? 'bronce' : nivelDado;
   const paleta = COLORES_NIVEL[nivel] ?? COLORES_NIVEL.vip;
   // Con «Reducir movimiento» del iPhone: sin giroscopio, sin luz que pasa.
-  const reducir = useReducedMotion();
+  // Movimiento reducido o teléfono antiguo: material quieto, sin giroscopio.
+  const reducir = useReducedMotion() || LIVIANO;
   const giro = useSharedValue(0);              // 0 = frente, 1 = reverso
   const entrada = useSharedValue(0);
   const barrido = useSharedValue(0);
@@ -248,26 +250,27 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
           {MATERIALES.includes(nivel) ? <Mineral material={nivel} x={x} y={y} activa={activa && !reducir} />
             : <EfectoNivel nivel={nivel} activa={activa && !reducir} x={x} />}
           {/* Una sombra suave abajo: el nombre y el saldo se leen sobre cualquier material. */}
-          <LinearGradient pointerEvents="none" colors={['transparent', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.38)']}
-            locations={[0, 0.5, 1]} style={StyleSheet.absoluteFill} />
+          <LinearGradient pointerEvents="none" colors={['rgba(0,0,0,0.30)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.50)']}
+            locations={[0, 0.28, 0.55, 1]} style={StyleSheet.absoluteFill} />
           <BrilloTarjeta x={x} y={y} barrido={barrido} sinArcoiris={MATERIALES.includes(nivel)} />
 
           {/* El logo al centro: llena el espacio entre el chip y el nombre
               (pedido del usuario, 2026-10-06), con un halo suave. */}
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
-            <LogoEnRelieve tam={84} x={x} y={y} />
+            <LogoEnRelieve tam={84} x={x} y={y} estilo={estiloLogo} />
           </View>
 
           <View style={estilos.contenido}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <LogoEnRelieve tam={30} x={x} y={y} />
+                {/* El efecto es sólo del logo central; éste va plano. */}
+                <Image source={require('../assets/icono.png')} style={{ width: 30, height: 30 }} />
                 <Text maxFontSizeMultiplier={1.3} style={estilos.marca}>PUNTOS SALUD</Text>
               </View>
               {/* Qué tarjeta es, siempre en dos renglones (2026-10-09): «CLIENTE» sobre
                   el nivel (Bronce…Platino) o «MAYOREO» sobre el rango (Jade…Diamante). */}
               <View style={{ alignItems: 'flex-end', gap: 1 }}>
-                <Text maxFontSizeMultiplier={1.2} style={[estilos.socio, { fontSize: 8.5, letterSpacing: 1.8, color: 'rgba(255,255,255,0.6)' }]}>
+                <Text maxFontSizeMultiplier={1.2} style={[estilos.socio, { fontSize: 8.5, letterSpacing: 1.8, opacity: 0.85 }]}>
                   {['jade', 'zafiro', 'rubi', 'diamante'].includes(nivel) ? 'MAYOREO' : 'CLIENTE'}
                 </Text>
                 <Text maxFontSizeMultiplier={1.3} style={estilos.socio}>{paleta.rotulo}</Text>
@@ -376,17 +379,19 @@ const estilos = StyleSheet.create({
   cara: { borderRadius: 22, overflow: 'hidden', backfaceVisibility: 'hidden' },
   sombra: { shadowColor: '#2B0B3A', shadowRadius: 22, borderRadius: 22 },
   contenido: { flex: 1, padding: 20, justifyContent: 'space-between' },
-  marca: { color: '#FFFFFF', fontSize: 15, fontWeight: '800', letterSpacing: 2, textShadowColor: 'rgba(0,0,0,0.3)', textShadowRadius: 5 },
-  socio: { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '800', letterSpacing: 2.5 },
+  // Sombras de texto marcadas (2026-10-09): sobre metal claro (plata, oro) los
+  // textos casi no se distinguían.
+  marca: { color: '#FFFFFF', fontSize: 15, fontWeight: '800', letterSpacing: 2, textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 6, textShadowOffset: { width: 0, height: 1 } },
+  socio: { color: '#FFFFFF', fontSize: 11, fontWeight: '900', letterSpacing: 2.5, textShadowColor: 'rgba(0,0,0,0.65)', textShadowRadius: 5, textShadowOffset: { width: 0, height: 1 } },
   chip: { width: 46, height: 34, borderRadius: 7 },
   halo: {
     padding: 6, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
     shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },
   },
-  nombre: { color: '#FFFFFF', fontSize: 17, fontWeight: '700', letterSpacing: 1.5, textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 6 },
-  desde: { color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: '600' },
-  saldo: { color: '#FFFFFF', fontSize: 30, fontWeight: '900', letterSpacing: -0.5, fontVariant: ['tabular-nums'], textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 8 },
-  puntos: { color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '700' },
+  nombre: { color: '#FFFFFF', fontSize: 17, fontWeight: '800', letterSpacing: 1.5, textShadowColor: 'rgba(0,0,0,0.65)', textShadowRadius: 7, textShadowOffset: { width: 0, height: 1 } },
+  desde: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', opacity: 0.92, textShadowColor: 'rgba(0,0,0,0.65)', textShadowRadius: 5, textShadowOffset: { width: 0, height: 1 } },
+  saldo: { color: '#FFFFFF', fontSize: 30, fontWeight: '900', letterSpacing: -0.5, fontVariant: ['tabular-nums'], textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 9, textShadowOffset: { width: 0, height: 1 } },
+  puntos: { color: '#FFFFFF', fontSize: 13, fontWeight: '800', opacity: 0.95, textShadowColor: 'rgba(0,0,0,0.65)', textShadowRadius: 5, textShadowOffset: { width: 0, height: 1 } },
   qr: { backgroundColor: '#FFFFFF', padding: 10, borderRadius: 14 },
   codigo: { color: '#FFFFFF', fontSize: 32, fontWeight: '900', letterSpacing: 6, fontVariant: ['tabular-nums'] },
   ayuda: { color: 'rgba(255,255,255,0.75)', fontSize: 13, lineHeight: 18 },

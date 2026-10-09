@@ -14,6 +14,8 @@ const SKSL = `
 uniform shader logo;
 uniform float2 res;
 uniform float2 tilt;
+// 1 = velo con los colores de la marca; 0 = del mismo material, sólo relieve.
+uniform float conColor;
 float alto(float2 p, float e) {
   // Alfa suavizado: promedio en cruz, para que el bisel sea redondo y no un filo.
   return (logo.eval(p).a * 2.0 + logo.eval(p + float2(e, 0)).a + logo.eval(p - float2(e, 0)).a
@@ -39,10 +41,14 @@ half4 main(float2 p) {
   float v = (uv.x + uv.y * 0.6 - (0.75 + tilt.x * 0.9)) * 4.0;
   float barra = exp(-v * v) * a;
   // Capas premultiplicadas: velo de marca, sombra del bisel, luz del bisel.
-  float aVelo = a * 0.62;
+  float aVelo = a * 0.62 * conColor;
   float3 col = marca * aVelo;
   float alf = aVelo;
-  float aSom = sombraB * 0.55;
+  // Sin color (conColor = 0): la cara apenas más clara que el material, como
+  // metal repujado, y el bisel más marcado para que el relieve se lea solo.
+  float lift = a * 0.10 * (1.0 - conColor);
+  col = col + float3(1.0) * lift; alf = alf + lift * (1.0 - alf);
+  float aSom = sombraB * mix(0.80, 0.55, conColor);
   col = col * (1.0 - aSom); alf = alf + aSom * (1.0 - alf);
   float luzT = clamp(brilloB * 0.75 + barra * 0.25, 0.0, 1.0);
   col = col + float3(1.0) * luzT * (1.0 - alf * 0.3); alf = max(alf, luzT);
@@ -59,12 +65,13 @@ function efectoLogo() {
 
 const FUENTE = require('../../assets/icono.png');
 
-export default function LogoEnRelieve({ tam, x, y }) {
+export default function LogoEnRelieve({ tam, x, y, estilo = 'color' }) {
   const img = useImage(FUENTE);
   const fx = efectoLogo();
   const uniforms = useDerivedValue(() => ({
     res: [tam, tam],
     tilt: [x ? x.value : 0, y ? y.value : 0],
+    conColor: estilo === 'material' ? 0 : 1,
   }));
   if (!fx || !img) {
     return <View style={{ width: tam, height: tam }}><Image source={FUENTE} style={{ width: tam, height: tam }} /></View>;

@@ -3,11 +3,10 @@
 // sello, como la lámina holográfica de seguridad de un documento. Tornasol que
 // cambia de color con la inclinación, con líneas de difracción finas y un
 // destello que lo cruza.
-import { Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import { Canvas, Fill, Shader, Skia } from '@shopify/react-native-skia';
 import { useDerivedValue, useFrameCallback, useSharedValue } from 'react-native-reanimated';
 import { useEffect } from 'react';
-import LogoEnRelieve from './LogoEnRelieve';
 
 const SKSL = `
 uniform float2 res;
@@ -53,7 +52,7 @@ export default function SelloEquipo({ x, y, activa = true, ancho = 86, alto = 30
         </Canvas>
       ) : null}
       <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-        <LogoEnRelieve tam={alto * 0.56} x={x} y={y} />
+        <Image source={require('../../assets/icono.png')} style={{ width: alto * 0.56, height: alto * 0.56 }} />
         <Text maxFontSizeMultiplier={1} style={{ fontSize: alto * 0.36, fontWeight: '900', letterSpacing: 1.2, color: 'rgba(30,20,45,0.78)' }}>PERSONAL</Text>
       </View>
     </View>

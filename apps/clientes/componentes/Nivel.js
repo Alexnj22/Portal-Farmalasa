@@ -2,7 +2,10 @@
 // lo comprado en los últimos 12 meses. Dice cuántos puntos da cada dólar hoy y
 // cuánto falta para el siguiente, con una barra. La regla vive en la base
 // (`puntos_niveles`); acá sólo se muestra.
-import { Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { Tarjeta, Texto } from './ui';
 import { BarraAnimada } from './animacion';
 import { COLORES_NIVEL } from './TarjetaSocio';
@@ -32,9 +35,15 @@ export default function Nivel({ nivel, pie = null }) {
   // Niveles apagados hasta el nuevo reglamento: se explica, sin esconder el panel.
   const apagados = nivel.activos === false;
   const yaAlcanza = apagados && nivel.proyectado && nivel.proyectado.clave !== nivel.clave ? nivel.proyectado : null;
+  // Desplegable (2026-10-09, «que no ocupe tanta pantalla»): cerrado se ve el
+  // nivel, la barra y cuánto falta; al tocarlo, los beneficios y el detalle.
+  const [abierto, setAbierto] = useState(false);
+  const alternar = () => { Haptics.selectionAsync().catch(() => {}); setAbierto((v) => !v); };
   return (
     <Tarjeta estilo={{ gap: 12 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <Pressable onPress={alternar} accessibilityRole="button" accessibilityState={{ expanded: abierto }}
+        accessibilityLabel={`Tu nivel: ${nivel.nombre}. ${abierto ? 'Ocultar' : 'Ver'} beneficios`}
+        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, opacity: pressed ? 0.7 : 1 })}>
         <LinearGradient colors={paleta.frente} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={{ width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
           <Icono sf="crown.fill" respaldo="★" tam={19} color="#FFFFFF" />
@@ -47,17 +56,11 @@ export default function Nivel({ nivel, pie = null }) {
           <Text style={{ fontSize: 20, fontWeight: '900', color: t.color.verdeTexto, fontVariant: ['tabular-nums'] }}>×{Number(nivel.factor)}</Text>
           <Text style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto3 }}>{factorTexto(nivel.factor)} / $1</Text>
         </View>
-      </View>
-
-      {apagados ? (
-        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start', borderRadius: 14, padding: 10, backgroundColor: t.oscuro ? 'rgba(255,214,10,0.12)' : 'rgba(255,204,0,0.14)' }}>
-          <Icono sf="clock.fill" respaldo="⏱" tam={13} color={colorSistema.texto2} />
-          <Text style={{ flex: 1, fontSize: 13, color: colorSistema.texto2 }}>
-            {yaAlcanza ? <Text style={{ fontWeight: '800', color: colorSistema.texto }}>Con tus compras ya alcanzas {yaAlcanza.nombre}. </Text> : null}
-            Los niveles se activan con el nuevo reglamento; mientras tanto ganas 1 punto por cada $1.
-          </Text>
+        <View style={{ transform: [{ rotate: abierto ? '180deg' : '0deg' }] }}>
+          <Icono sf="chevron.down" respaldo="⌄" tam={14} color={colorSistema.texto3} />
         </View>
-      ) : null}
+      </Pressable>
+
       {sig && !(yaAlcanza && sig.falta === 0) ? (
         <View style={{ gap: 6 }}>
           <BarraAnimada avance={avance} color={t.color.verde} fondo={t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'} />
@@ -70,6 +73,17 @@ export default function Nivel({ nivel, pie = null }) {
         <Texto nivel={2} estilo={{ fontSize: 14 }}>Estás en el nivel más alto. ¡Gracias por tu preferencia!</Texto>
       )}
 
+      {abierto ? (
+      <Animated.View entering={FadeIn.duration(220)} style={{ gap: 12 }}>
+      {apagados ? (
+        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start', borderRadius: 14, padding: 10, backgroundColor: t.oscuro ? 'rgba(255,214,10,0.12)' : 'rgba(255,204,0,0.14)' }}>
+          <Icono sf="clock.fill" respaldo="⏱" tam={13} color={colorSistema.texto2} />
+          <Text style={{ flex: 1, fontSize: 13, color: colorSistema.texto2 }}>
+            {yaAlcanza ? <Text style={{ fontWeight: '800', color: colorSistema.texto }}>Con tus compras ya alcanzas {yaAlcanza.nombre}. </Text> : null}
+            Los niveles se activan con el nuevo reglamento; mientras tanto ganas 1 punto por cada $1.
+          </Text>
+        </View>
+      ) : null}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {(BENEFICIOS[nivel.clave] ?? []).map((b) => (
           <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5,
@@ -99,6 +113,14 @@ export default function Nivel({ nivel, pie = null }) {
       ) : null}
       <Texto nivel={3} estilo={{ fontSize: 12 }}>Según lo que compraste en los últimos 12 meses: {dolares(nivel.compra)}.</Texto>
       {pie}
+      </Animated.View>
+      ) : (
+        <Pressable onPress={alternar} hitSlop={8} style={{ alignSelf: 'flex-start' }}>
+          <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.magentaTexto }}>
+            {apagados ? 'Ver beneficios y cuándo se activan' : 'Ver beneficios'}
+          </Text>
+        </Pressable>
+      )}
     </Tarjeta>
   );
 }

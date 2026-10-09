@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1261.1 — Pedidos: recordatorio «llegó y no se recibió» en producción
+
+- Migración `20261009021409_cron_llego_y_no_se_recibio` aplicada en producción. El cron `avisar-pedidos-sin-recibir` corre cada 30 min (6:00–23:30 SV) y avisa a la sala a las 2 h y a supervisión a las 6 h cuando un pedido llegó y no se recibió. Una vez por umbral, sólo lo de los últimos 3 días. La primera corrida no tuvo nada que avisar.
+
 ## v2.1261.0 — Pedidos: auditoría del módulo, lista oficial y funciones de un solo paso
 
 Llega a producción el trabajo del módulo Pedidos (rama `sesion/pedidos-visual`, revisado contra producción con prueba de paridad en vivo). El detalle está en las entradas de abajo; lo principal:

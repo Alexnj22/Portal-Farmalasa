@@ -8,6 +8,8 @@ import {
 import * as almacen from '@plataforma/almacen';
 import { formatMoney } from '../../utils/formatNumber';
 import { LIMITE_KIOSCOS } from '../../utils/kioscos';
+import { buscarCargo } from '../../utils/roles';
+import { SIN_ASIGNAR } from '../../data/constants';
 
 const persistBranches = (branches) => {
     almacen.guardar(CACHE_KEYS.BRANCHES, JSON.stringify(branches));
@@ -84,7 +86,7 @@ export const createBranchSlice = (set, get) => ({
             if (typeof payload.weekly_hours === 'string') { try { payload.weekly_hours = JSON.parse(payload.weekly_hours); } catch { payload.weekly_hours = {}; } }
 
             let pendingRentFile = null;
-            if (payload.settings?.rent?.contract?.documentFile instanceof File) {
+            if (esArchivoPorSubir(payload.settings?.rent?.contract?.documentFile)) {
                 pendingRentFile = payload.settings.rent.contract.documentFile;
             }
 
@@ -227,6 +229,37 @@ export const createBranchSlice = (set, get) => ({
                 }
             }
 
+            // 3. ARCHIVOS DE CADA ENFERMERA (carné, licencia y recibo de anualidad).
+            // El formulario los ponía en `<campo>File` y nadie los subía: la
+            // limpieza de abajo los borraba y el renglón seguía en «falta
+            // documento» sin error (2026-10-09: ninguna ruta escribía `carneUrl`;
+            // no mordió todavía porque ninguna sala tiene enfermeras cargadas).
+            // Se versionan igual que los legales.
+            const enfermeras = payload.settings?.legal?.nursingRegents;
+            if (Array.isArray(enfermeras)) {
+                const viejas = Array.isArray(oldLegal.nursingRegents) ? oldLegal.nursingRegents : [];
+                const ARCHIVOS_DE_ENFERMERA = [
+                    { file: 'carneFile', url: 'carneUrl', type: 'CARNE_JVQE', label: 'Carné JVQE', dbType: 'carne_jvqe' },
+                    { file: 'licenciaFile', url: 'licenciaUrl', type: 'LICENCIA_ENFERMERIA', label: 'Licencia de Regencia de Enfermería', dbType: 'licencia_enfermeria' },
+                    { file: 'anualidadFile', url: 'anualidadUrl', type: 'ANUALIDAD_ENFERMERIA', label: 'Recibo de Anualidad de Enfermería', dbType: 'anualidad_enfermeria' },
+                ];
+                const resultado = [];
+                for (const n of enfermeras) {
+                    const vieja = viejas.find(v => String(v.id) === String(n.id)) || {};
+                    const fila = { ...n };
+                    for (const f of ARCHIVOS_DE_ENFERMERA) {
+                        if (esArchivoPorSubir(n[f.file])) {
+                            const oldUrl = vieja[f.url];
+                            if (oldUrl) await archiveOldDoc(f.type, `${f.label} (Histórico)`, oldUrl, { enfermera: n.employeeId || null });
+                            fila[f.url] = await handleDocumentVersioning(id, 'legal', `${f.dbType}_${n.id}`, n[f.file], oldUrl);
+                        }
+                        delete fila[f.file];
+                    }
+                    resultado.push(fila);
+                }
+                mergedSettings.legal.nursingRegents = resultado;
+            }
+
             // Limpiamos todo el objeto de basura binaria antes de enviar a JSONB
             const cleanSettingsForDB = sanitizeForJsonb(mergedSettings);
 
@@ -248,7 +281,8 @@ export const createBranchSlice = (set, get) => ({
 
             const requiredStaffIds = [];
             if (legalNow.regentEmployeeId) requiredStaffIds.push(legalNow.regentEmployeeId);
-            if (legalNow.farmacovigilanciaId) requiredStaffIds.push(legalNow.farmacovigilanciaId);
+            const referenteNow = legalNow.pharmacovigilanceEmployeeId || legalNow.farmacovigilanciaId;
+            if (referenteNow) requiredStaffIds.push(referenteNow);
             if (legalNow.nursingRegents && Array.isArray(legalNow.nursingRegents)) {
                 legalNow.nursingRegents.forEach(n => {
                     if (n.employeeId) requiredStaffIds.push(n.employeeId);
@@ -281,12 +315,14 @@ export const createBranchSlice = (set, get) => ({
                 auditLogFired = true;
             }
 
-            if (oldLegal.farmacovigilanciaId !== legalNow.farmacovigilanciaId) {
+            // Las dos claves del mismo referente (la vieja la escribía un solo
+            // formulario): se compara el que resulta, no la clave.
+            if ((oldLegal.pharmacovigilanceEmployeeId || oldLegal.farmacovigilanciaId) !== referenteNow) {
                 await get().appendAuditLog('EDITAR_SUCURSAL', id, {
                     timeline_title: 'Asignación de farmacovigilancia',
                     dimension: 'LEGAL',
                     branch_id: id,
-                    new_value: legalNow.farmacovigilanciaId ? 'Referente Actualizado' : 'Referente Removido'
+                    new_value: referenteNow ? 'Referente Actualizado' : 'Referente Removido'
                 });
                 auditLogFired = true;
             }
@@ -335,6 +371,58 @@ export const createBranchSlice = (set, get) => ({
             console.error("Fallo al actualizar sucursal:", err);
             throw err;
         }
+    },
+
+    /**
+     * Asignar la jefatura (o la subjefatura) de una sala — lo que guardaba
+     * `UnifiedModal` (editBranchLeadership), mudado acá para que el portal y la
+     * app hagan lo mismo. El cargo se resuelve contra la TABLA y, si no
+     * resuelve, NO se escribe (regla «un rótulo no es una clave»). Si había
+     * alguien en el puesto, se lo reasigna o se lo deja sin sala, según
+     * `outgoingAction`. Lanza con un mensaje para la pantalla.
+     */
+    asignarJefaturaDeSucursal: async (datos) => {
+        const { updateEmployee, employees, roles, appendAuditLog, fetchEmployees, fetchBranchHistory } = get();
+        if (!datos.selectedEmpId) throw new Error('Debes seleccionar a un empleado de la lista.');
+        if (datos.isPermanent === false && !datos.interimEndDate) throw new Error('Para un interinato, la fecha de finalización es obligatoria.');
+        const elegido = (employees || []).find(e => e.id === datos.selectedEmpId);
+        const branchId = datos.branch?.id || datos.branchId || datos.id;
+        const branchName = datos.branch?.name || datos.name || 'Sucursal';
+        const cargo = buscarCargo(roles, datos.targetRole);
+        if (datos.targetRole && !cargo) throw new Error(`El cargo «${datos.targetRole}» ya no existe en el catálogo. Actualiza la página e intenta de nuevo.`);
+
+        if (datos.currentAssignee && datos.currentAssignee !== datos.selectedEmpId) {
+            if (datos.outgoingAction === 'REASSIGN') {
+                const salida = buscarCargo(roles, datos.outgoingRole);
+                if (!salida) throw new Error(`El cargo de salida «${datos.outgoingRole || '—'}» no existe en el catálogo. Elige otro para continuar.`);
+                await updateEmployee(datos.currentAssignee, { branchId: datos.outgoingBranch, role_id: salida.id });
+                await appendAuditLog('EMPLEADO_RELEVADO', datos.currentAssignee, {
+                    type: 'REASSIGNMENT', previous_branch_id: branchId, previous_branch_name: branchName,
+                    target_branch_id: datos.outgoingBranch, previous_role: datos.targetRole, new_role: salida.name,
+                    note: `Relevado de jefatura en ${branchName}`,
+                });
+            } else {
+                await updateEmployee(datos.currentAssignee, { branchId: null, role_id: null });
+                await appendAuditLog('EMPLEADO_DESVINCULADO_SUCURSAL', datos.currentAssignee, {
+                    type: 'UNASSIGNED', previous_branch_id: branchId, previous_branch_name: branchName,
+                    previous_role: datos.targetRole, new_role: SIN_ASIGNAR,
+                    note: `Removido de la sucursal ${branchName} a la bolsa de trabajo flotante.`,
+                });
+            }
+        }
+
+        await updateEmployee(datos.selectedEmpId, { branchId, role_id: cargo ? cargo.id : null });
+        await appendAuditLog(datos.moveType || 'EMPLEADO_ASIGNADO', datos.selectedEmpId, {
+            type: datos.moveType || 'PROMOTION',
+            previous_branch_id: elegido?.branchId || null, target_branch_id: branchId, target_branch_name: branchName,
+            previous_role: elegido?.role || null, new_role: cargo?.name ?? SIN_ASIGNAR,
+            note: datos.notes || 'Asignación realizada desde el Panel de Sucursales',
+            isInterim: datos.isPermanent === false, interimEndDate: datos.interimEndDate || null,
+            ...(datos.desde ? { desde: datos.desde } : {}),
+        });
+        if (fetchEmployees) await fetchEmployees();
+        if (fetchBranchHistory && branchId) await fetchBranchHistory(branchId);
+        return true;
     },
 
     deleteBranch: async (id) => {
@@ -469,7 +557,7 @@ export const createBranchSlice = (set, get) => ({
         try {
             let receiptUrl = null;
 
-            if (expenseData.receiptFile instanceof File) {
+            if (esArchivoPorSubir(expenseData.receiptFile)) {
                 receiptUrl = await handleDocumentVersioning(
                     branchId,
                     'expenses',
@@ -506,7 +594,7 @@ export const createBranchSlice = (set, get) => ({
             const branch = get().branches.find(b => String(b.id) === String(branchId));
             if (branch) {
                 const newSettings = JSON.parse(JSON.stringify(branch.settings || {}));
-                const isPending = !(expenseData.receiptFile instanceof File);
+                const isPending = !esArchivoPorSubir(expenseData.receiptFile);
 
                 if (expenseData.expense_type === 'rent') {
                     if (!newSettings.rent) newSettings.rent = {};

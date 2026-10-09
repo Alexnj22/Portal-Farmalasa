@@ -1,6 +1,7 @@
 // Las acciones del ciclo de una encuesta a clientes, NATIVO — las mismas del
 // portal (`EncuestaDetalle`): Enviar a revisión, Aprobar, Devolver con cambios,
-// Publicar, Cerrar ahora, Nueva versión y Archivar, cada una con su permiso y
+// Publicar, Cerrar ahora, Nueva versión, Archivar y Borrar (sólo un borrador o
+// una plantilla en borrador), cada una con su permiso y
 // su estado. Las funciones son las del núcleo (`data/encuestasClientes`), así
 // que la base valida igual que desde el portal.
 //
@@ -12,8 +13,10 @@ import { Alert, Pressable, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import {
-  archivarEncuesta, cerrarEncuesta, duplicarEncuesta, enviarARevision, publicarEncuesta, revisarEncuesta,
+  archivarEncuesta, borrarEncuesta, cerrarEncuesta, duplicarEncuesta, enviarARevision, publicarEncuesta, revisarEncuesta,
 } from '@nucleo/data/encuestasClientes';
+import { encuestaBorrable } from '@nucleo/utils/encuestasClientes';
+import { volver } from '../volver';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { colorSistema } from '../Formulario';
@@ -26,6 +29,7 @@ export function botonesDelCiclo(encuesta, { puedeEditar, puedeAprobar, sinProble
   const b = [];
   if (encuesta.es_plantilla) {
     if (puedeEditar) b.push({ k: 'usar', label: 'Crear encuesta con esta plantilla', color: MARCA.azul });
+    if (encuestaBorrable(encuesta, puedeEditar)) b.push({ k: 'borrar', label: 'Borrar la plantilla', color: MARCA.rojo, borde: true });
     return b;
   }
   if (encuesta.estado === 'borrador' && puedeEditar) b.push({ k: 'enviar', label: 'Enviar a revisión', color: MARCA.azul, deshabilitado: !sinProblemas });
@@ -37,6 +41,7 @@ export function botonesDelCiclo(encuesta, { puedeEditar, puedeAprobar, sinProble
   if (encuesta.estado === 'publicada' && puedeEditar) b.push({ k: 'cerrar', label: 'Cerrar ahora', color: MARCA.rojo, borde: true });
   if (puedeEditar && encuesta.estado !== 'borrador') b.push({ k: 'version', label: 'Nueva versión', color: MARCA.azulClaro, borde: true });
   if (['borrador', 'aprobada', 'cerrada'].includes(encuesta.estado) && puedeEditar) b.push({ k: 'archivar', label: 'Archivar', color: colorSistema.texto2, borde: true });
+  if (encuestaBorrable(encuesta, puedeEditar)) b.push({ k: 'borrar', label: 'Borrar el borrador', color: MARCA.rojo, borde: true });
   return b;
 }
 
@@ -104,6 +109,16 @@ export default function CicloDeEncuesta({ encuesta, sinProblemas = true, onHecho
     } else if (k === 'archivar') {
       if (await confirmar('Archivar la encuesta', 'Sale de la lista principal y queda en «Cerradas». No se borra nada.', 'Archivar')) {
         correr(() => archivarEncuesta(encuesta.id), 'Encuesta archivada');
+      }
+    } else if (k === 'borrar') {
+      if (await confirmar(encuesta.es_plantilla ? 'Borrar la plantilla' : 'Borrar el borrador', 'Se borra con todas sus preguntas. No se puede deshacer.', 'Borrar', true)) {
+        setOcupado(true);
+        try {
+          await borrarEncuesta(encuesta.id, encuesta.nombre);
+          listo('Borrada', encuesta.nombre);
+          volver('/encuestas-clientes');
+        } catch (e) { fallo('No se pudo borrar', mensajeAmigable(e, 'Intenta de nuevo.')); }
+        setOcupado(false);
       }
     } else if (k === 'version' || k === 'usar') {
       correr(() => duplicarEncuesta(encuesta.id), k === 'usar' ? 'Encuesta creada' : 'Versión nueva creada');

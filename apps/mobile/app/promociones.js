@@ -9,7 +9,10 @@
 // pantalla muestra 4. Estado, Tipo y Laboratorio van en el menú de filtros.
 //
 // Mantener presionada una tarjeta: Volver a borrador / Activar (con la misma
-// confirmación del portal) y Duplicar. Crear y editar siguen en el portal.
+// confirmación del portal), Duplicar, Reactivar y Editar (desde el editor, borrar
+// un borrador y elegir a quién le llega el resumen diario). Crear
+// por producto o por laboratorio, con el «+». En Descuentos: corregir, borrar
+// y llevar a la app de clientes.
 import { useCallback, useMemo, useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
@@ -209,7 +212,7 @@ export default function Promociones() {
           )
         ) : null}
 
-        {pestana === 'descuentos' ? <Descuentos key={`d${vuelta}`} busqueda={q} salaDe={salaDe} /> : null}
+        {pestana === 'descuentos' ? <Descuentos key={`d${vuelta}`} busqueda={q} salaDe={salaDe} puedeEditar={puedeEditar} puedeApp={hasPermission('ofertas_clientes', 'can_edit')} /> : null}
         {pestana === 'excedentes' ? <Excedentes key={`e${vuelta}`} busqueda={q} puedeAprobar={puedeAprobar} /> : null}
         {pestana === 'pagos' ? <Pagos key={`p${vuelta}`} busqueda={q} soloPendientes={fPagos === 'pendientes'} /> : null}
 

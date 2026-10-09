@@ -15,6 +15,7 @@ import {
     CLASE_ANTIBIOTICO, ESTADO_RENGLON, faltantesDelRenglon, rotularLibro,
 } from '@nucleo/data/bitacoras';
 import { exportCsv } from '@nucleo/utils/csvExport';
+import { csvDelLibroBajoReceta } from '@nucleo/utils/libroBajoReceta';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
 
@@ -114,27 +115,9 @@ export default function TabBajoReceta({
     // orden de sus folios, y un archivo que sale en el orden en que alguien
     // dejó la tabla no se puede cotejar contra el papel.
     const descargar = useCallback(() => {
-        const filas = [...renglones]
-            .sort((a, b) => a.folio - b.folio)
-            .map(r => [
-                r.folio_txt, r.fecha, hora12(r.hora),
-                r.producto_nombre, r.laboratorio || '', r.lote || '', r.vence || '',
-                r.cantidad, r.prescrito ?? '', r.paciente || '', r.medico || '',
-                r.numero_junta || '', r.receta_correlativo || '',
-                r.tiene_foto ? 'SI' : 'NO', r.correlativo_doc || '',
-                r.vendedor || '', ESTADO_RENGLON[r.estado]?.label || r.estado,
-                r.motivo_anulacion || '',
-            ]);
-        exportCsv(
-            ['FOLIO', 'FECHA', 'HORA', 'MEDICAMENTO', 'LABORATORIO', 'LOTE', 'VENCE',
-             'CANTIDAD DISPENSADA', 'CANTIDAD PRESCRITA', 'PACIENTE', 'PRESCRIPTOR',
-             'N JUNTA', 'RECETA', 'COPIA DE RECETA', 'DOCUMENTO', 'DESPACHO',
-             'ESTADO', 'MOTIVO DE ANULACION'],
-            filas,
-            `libro-${clase === CLASE_ANTIBIOTICO ? 'antibioticos' : 'bajo-receta'}-${
-                (sucursalNombre || 'sala').toLowerCase().replace(/\s+/g, '-')}-${periodo || 'periodo'}.csv`,
-            'bitacoras',
-        );
+        // Columnas, orden por folio y nombre del archivo: núcleo (`libroBajoReceta`), igual que la app.
+        const c = csvDelLibroBajoReceta(renglones, { clase, sucursalNombre, periodo });
+        exportCsv(c.headers, c.rows, `${c.nombre}.csv`, 'bitacoras');
     }, [renglones, clase, sucursalNombre, periodo]);
 
     if (cargando) return <LoadingState label="Cargando el libro…" />;

@@ -15,7 +15,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { formatPct } from '@nucleo/utils/formatNumber';
 import { exportCsv } from '@nucleo/utils/csvExport';
-import { lecturaNps, categoriasDe, tablaDeRespuestas, tipoDe, estadoDe } from '@nucleo/utils/encuestasClientes';
+import { lecturaNps, categoriasDe, tablaDeRespuestas, tipoDe, estadoDe, loteParaResumir, archivoDeEncuesta, estadoDelResumen } from '@nucleo/utils/encuestasClientes';
 import {
     fetchResultados, fetchComentarios, fetchRondas, fetchRespuestasParaExportar, fetchResumen, guardarResumen,
 } from '@nucleo/data/encuestasClientes';
@@ -66,7 +66,7 @@ export default function ResultadosEncuesta({ encuesta }) {
             const filas = await fetchRespuestasParaExportar(encuesta.id);
             const { headers, rows } = tablaDeRespuestas(encuesta.cuestionario, filas,
                 { fechaHora: (f) => `${fechaTexto(f, { day: '2-digit', month: '2-digit', year: 'numeric' })} ${hora12(f)}` });
-            exportCsv(headers, rows, `encuesta-${encuesta.nombre.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w-]+/g, '-').toLowerCase()}.csv`, 'encuestas_clientes');
+            exportCsv(headers, rows, `${archivoDeEncuesta(encuesta.nombre)}.csv`, 'encuestas_clientes');
         } catch (err) {
             showToast('No se pudo exportar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
         } finally {
@@ -82,15 +82,8 @@ export default function ResultadosEncuesta({ encuesta }) {
         setResumiendo(true);
         try {
             const hasta = comentarios[0]?.created_at;
-            const vistos = new Set();
-            const lote = [];
-            for (const c of comentarios) {
-                const clave = c.texto.trim().toLowerCase();
-                if (vistos.has(clave)) continue;
-                vistos.add(clave);
-                lote.push({ sucursal: c.sucursal, nps: c.nps, pregunta: c.pregunta, texto: c.texto.slice(0, 300) });
-                if (lote.length >= 100) break;
-            }
+            // Sin repetidos, recortados y hasta 100: núcleo (`loteParaResumir`), lo mismo que la app.
+            const lote = loteParaResumir(comentarios);
             const { data, error: e } = await preguntarASaly({
                 action: 'analyze-customer-survey', payload: { encuesta: encuesta.nombre, comments: lote },
             });
@@ -204,15 +197,13 @@ export default function ResultadosEncuesta({ encuesta }) {
                                 <MessageSquareText size={13} /> Comentarios ({comentarios.length})
                             </h3>
                             {comentarios.length >= 3 && (() => {
-                                const hay = !!resumen?.texto;
-                                const nuevos = resumen?.nuevos ?? 0;
-                                const puede = !hay || nuevos >= (resumen?.minimo_nuevos ?? 5);
+                                // Cuándo se puede rehacer y qué dice el botón: núcleo (`estadoDelResumen`).
+                                const r = estadoDelResumen(resumen);
                                 return (
-                                    <Button variant="secondary" size="sm" icon={Sparkles} loading={resumiendo} disabled={!puede}
-                                        title={puede ? 'Resume los comentarios con IA y lo guarda para todos'
-                                            : `Se actualiza cuando entren ${resumen.minimo_nuevos} comentarios nuevos (van ${nuevos}).`}
+                                    <Button variant="secondary" size="sm" icon={Sparkles} loading={resumiendo} disabled={!r.puede}
+                                        title={r.ayuda || 'Resume los comentarios con IA y lo guarda para todos'}
                                         onClick={resumir}>
-                                        {!hay ? 'Resumir con IA' : puede ? `Actualizar resumen (${nuevos} nuevos)` : 'Resumen al día'}
+                                        {r.boton}
                                     </Button>
                                 );
                             })()}

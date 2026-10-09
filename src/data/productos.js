@@ -6,6 +6,7 @@
 import { supabase } from '../supabaseClient';
 import { buscarIdsDeProducto, enElOrdenDe } from './busquedaProductos';
 import { anotar, conBitacora } from './audit';
+import { worstMarginOf } from '../utils/preciosDeProducto';
 
 // Las escrituras de la ficha anotan su propia entrada en la bitácora (D3,
 // 2026-09-28): cualquier cliente que las llame la deja. `contexto` son los
@@ -329,4 +330,55 @@ export async function fetchNombreDeProducto(productId) {
     const { data, error } = await supabase.from('products').select('nombre').eq('id', productId).maybeSingle();
     if (error) { console.error('productos: fetchNombreDeProducto', error.message); return null; }
     return data?.nombre ?? null;
+}
+
+/** Los principios activos de un producto, en su orden (para editarlos). */
+export async function fetchPrincipiosDeProducto(productId) {
+    const { data, error } = await supabase.from('product_active_principles')
+        .select('id, nombre, concentracion, orden').eq('product_id', productId).order('orden');
+    if (error) throw error;
+    return data ?? [];
+}
+
+// ── Las cuentas del catálogo, para el portal y el teléfono ─────────────────
+// Vivían como bucles dentro de `TabCatalogo`. Se paginan solas (las dos fuentes
+// pasan de 1000 filas) y devuelven los ids, que es lo que filtra la lista.
+
+/** Los productos con alguna presentación en pérdida (<0 %) o con margen bajo (<15 %). */
+export async function fetchIdsPorMargen(campos) {
+    const perdida = new Set();
+    const bajo = new Set();
+    const PAGE = 1000;
+    for (let from = 0; ; from += PAGE) {
+        const { data, error } = await fetchProductPreciosMarginPage(null, from);
+        if (error || !data) break;
+        for (const pp of data) {
+            const w = worstMarginOf(pp, campos);
+            if (w === null) continue;
+            if (w < 0) perdida.add(pp.product_id);
+            if (w < 15) bajo.add(pp.product_id);
+        }
+        if (data.length !== PAGE) break;
+    }
+    return { perdida, bajo };
+}
+
+/** Los productos con algún cambio (ficha o precio) desde `inicioIso`; sin los cambios ocultos. */
+export async function fetchIdsModificadosDesde(inicioIso, ocultos = new Set(['laboratorio_id'])) {
+    const ids = new Set();
+    const PAGE = 1000;
+    const recorrer = async (tabla) => {
+        const esProd = tabla === 'products_changelog';
+        for (let from = 0; ; from += PAGE) {
+            const { data, error } = await fetchChangelogPage(tabla, esProd, inicioIso, from, PAGE);
+            if (error) throw error;
+            for (const r of data ?? []) {
+                if (esProd && ocultos.has(r.campo) && !r.valor_anterior) continue;
+                ids.add(r.product_id);
+            }
+            if ((data ?? []).length !== PAGE) break;
+        }
+    };
+    await Promise.all([recorrer('products_changelog'), recorrer('product_precios_changelog')]);
+    return ids;
 }

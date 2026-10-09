@@ -11,9 +11,10 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { NOMBRES_DE_MES, fechaTexto } from '@nucleo/utils/fecha';
 import { fechaEspecialEn } from '@nucleo/utils/marketing';
 import { guardarMarca, activarRed, guardarAjustes, guardarFechaEspecial } from '@nucleo/data/marketing';
-import { COLORES_MARCA, puntoDeMarca } from './iconos';
+import { DIAS_LIMITE_DE_ENVIO, colorLibreDeMarca, diaDeFechaValido } from '@nucleo/utils/marketing';
+import { puntoDeMarca } from './iconos';
 
-const DIAS_LIMITE = Array.from({ length: 28 }, (_, i) => ({ value: i + 1, label: `Día ${i + 1}` }));
+const DIAS_LIMITE = DIAS_LIMITE_DE_ENVIO.map((d) => ({ value: d, label: `Día ${d}` }));
 const MESES = NOMBRES_DE_MES.map((m, i) => ({ value: i + 1, label: m }));
 
 /**
@@ -30,8 +31,8 @@ export default function AjustesModal({ open, onClose, marcas, redes, ajustes, fe
 
     if (!open) return null;
 
-    const usados = new Set(marcas.map((m) => m.color));
-    const libre = COLORES_MARCA.find((c) => !usados.has(c)) || COLORES_MARCA[marcas.length % COLORES_MARCA.length];
+    // El color libre sale del núcleo (`colorLibreDeMarca`): la app agrega igual.
+    const libre = colorLibreDeMarca(marcas);
     const anio = new Date().getFullYear();
 
     const intentar = async (fn) => {
@@ -51,7 +52,7 @@ export default function AjustesModal({ open, onClose, marcas, redes, ajustes, fe
         setNueva('');
     });
 
-    const diaValido = Number(fecha.dia) >= 1 && Number(fecha.dia) <= 31;
+    const diaValido = diaDeFechaValido(fecha.dia);
     const agregarFecha = () => intentar(async () => {
         await guardarFechaEspecial({ nombre: fecha.nombre, mes: Number(fecha.mes), dia: Number(fecha.dia), idea: fecha.idea });
         setFecha({ nombre: '', mes: '', dia: '', idea: '' });

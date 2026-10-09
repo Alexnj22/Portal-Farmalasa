@@ -211,3 +211,21 @@ export async function reimprimirTicketDeTraslado({ metadata, pide, sala, familia
     }
     return imprimirTicketDeTraslado({ sala, ...datos });
 }
+
+/**
+ * El ticket de un traslado guardado, listo para mandar a la caja de la sala
+ * desde cualquier cliente (el teléfono lo encola con su propio impresor). `null`
+ * si el traslado no tiene número: sin barras no es el mismo papel.
+ *
+ * @returns {{ ticket: object, titulo: string } | null}
+ */
+export function ticketParaReimprimir({ metadata, pide = null, familia = 'solicitud' }) {
+    const datos = datosDelTicketGuardado(metadata, { pide, familia });
+    if (!datos) return null;
+    const titulo = [
+        datos?.familia === 'envio' ? 'ENVIO' : 'SOLICITUD',
+        datos?.codigo || datos?.aplicado?.id_traslado,
+        datos?.destino,
+    ].filter(Boolean).join(' ');
+    return { ticket: construirTicketDeTraslado(datos), titulo };
+}

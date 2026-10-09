@@ -16,7 +16,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import useDiasConDiferencia from '@nucleo/hooks/useDiasConDiferencia';
 import {
-  desgloseDelDia, diaEnFiltro, diaEnMes, mesesDeLosDias, ordenarDias, porSigno, responsablesDelDia, resumenDeDias,
+  desgloseDelDia, diaEnFiltro, diaEnMes, mesesDeLosDias, ordenarDias, pendientesDeRegistrar, porSigno, responsablesDelDia, resumenDeDias,
 } from '@nucleo/utils/diferenciasDeCaja';
 import { etiquetaMes, fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -35,7 +35,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import { BarraDelDia, ESTADO_DIF, montoDelDia } from '../componentes/cortes/diferencias';
 
 export default function CajaDiferencias() {
-  const { user, getScope } = useAuth();
+  const { user, getScope, hasPermission } = useAuth();
   const sucursales = useStaffStore((s) => s.branches);
   const todas = getScope?.('cortes_caja') === 'ALL';
   const miSala = String(user?.branchId ?? user?.branch_id ?? '');
@@ -44,7 +44,8 @@ export default function CajaDiferencias() {
   const [mes, setMes] = useState(() => hoySV().slice(0, 7));
   const [salaElegida, setSala] = useState('todas');
   const [recargando, setRecargando] = useState(false);
-  const { dias, cargando, error, recargar } = useDiasConDiferencia({ activo: true, hasta: hoySV() });
+  const { dias, resoluciones, cargando, error, recargar } = useDiasConDiferencia({ activo: true, hasta: hoySV() });
+  const puedeAnotar = hasPermission?.('cortes_caja_resolver');
   useFocusEffect(useCallback(() => { recargar(); }, [recargar]));
   // «Sin faltantes» sólo después de haber leído: antes de la primera lectura la
   // lista vacía no dice nada.
@@ -58,6 +59,7 @@ export default function CajaDiferencias() {
     .filter((d) => !sala || String(d.branch_id) === String(sala))
     .filter((d) => diaEnMes(d, mes)), [dias, signo, sala, mes]);
   const resumen = useMemo(() => resumenDeDias(delMes), [delMes]);
+  const porAnotar = useMemo(() => pendientesDeRegistrar(resoluciones, { sala }), [resoluciones, sala]);
   const visibles = useMemo(() => ordenarDias(delMes.filter((d) => diaEnFiltro(d, filtro))), [delMes, filtro]);
 
   const meses = useMemo(() => {
@@ -85,6 +87,19 @@ export default function CajaDiferencias() {
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await recargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
+        {puedeAnotar && porAnotar.length ? (
+          <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push('/asentar-diferencias'); }} style={{ marginHorizontal: 16 }}>
+            <Vidrio radio={18} interactivo tinte="rgba(52,120,246,0.14)">
+              <View style={{ padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${porAnotar.length} ${porAnotar.length === 1 ? 'movimiento' : 'movimientos'} por anotar en el sistema`}</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Dinero que ya entró o salió del cajón por una diferencia.</Text>
+                </View>
+                <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '700' }}>Anotar ›</Text>
+              </View>
+            </Vidrio>
+          </Pressable>
+        ) : null}
         <Segmentos activa={signo} onCambiar={(v) => { setSigno(v); setFiltro(v === 'sobra' ? 'TODOS' : 'PENDIENTES'); }}
           opciones={[{ id: 'falta', label: 'Faltantes' }, { id: 'sobra', label: 'Sobrantes' }]} />
         {!cargando || dias.length ? (

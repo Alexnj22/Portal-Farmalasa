@@ -82,8 +82,12 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                     </label>
                     <div className="transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] hover:shadow-md rounded-3xl">
                         <LiquidSelect 
-                            value={legalData.farmacovigilanciaId || ""} 
-                            onChange={(val) => updateLegalField('farmacovigilanciaId', val)} 
+                            value={legalData.pharmacovigilanceEmployeeId || legalData.farmacovigilanciaId || ""}
+                            // La clave es `pharmacovigilanceEmployeeId`: la que miran las
+                            // alertas, la completitud y la app. Ésta escribía
+                            // `farmacovigilanciaId` y el referente asignado acá no
+                            // contaba en ningún otro lado (2026-10-09).
+                            onChange={(val) => updateLegalField('pharmacovigilanceEmployeeId', val)}
                             options={referentOptions} 
                             placeholder="Seleccionar referente..."
                             icon={Users}

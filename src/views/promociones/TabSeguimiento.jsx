@@ -14,7 +14,7 @@ import MatrizLaboratorio from './MatrizLaboratorio';
 import TituloSeccion from './TituloSeccion';
 import {
     fmtMoneda, fmtUnidades, porLaboratorio, rotuloPresentacion, MOTIVO_CIERRE,
-    esLaboratorio, estadoVisible, fmtVigencia, rotuloMes, mensajeDeCarga, vendedoresPorSala,
+    esLaboratorio, estadoVisible, fmtVigencia, rotuloMes, mensajeDeCarga, vendedoresPorSala, csvVendedoresDePromocion,
 } from '@nucleo/utils/promocionesUtils';
 
 /**
@@ -123,12 +123,9 @@ export default function TabSeguimiento({
     }
 
     const exportar = () => {
-        exportCsv(
-            ['VENDEDOR', 'SALA', 'UNIDADES', 'DOCUMENTOS', 'BONO'],
-            vendedores.map((v) => [v.nombre, v.sala || '', v.unidades, v.documentos, v.bono]),
-            `promocion_${(detalle?.nombre || '').replace(/\W+/g, '_')}.csv`,
-            'promociones',
-        );
+        // Columnas y filas del núcleo: la app comparte el mismo archivo.
+        const c = csvVendedoresDePromocion(vendedores, detalle?.nombre);
+        exportCsv(c.headers, c.rows, `${c.nombre}.csv`, 'promociones');
     };
 
     return (

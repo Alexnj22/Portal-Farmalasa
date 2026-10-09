@@ -11,8 +11,9 @@
 // Un renglón ya contado queda cerrado; «Editar» lo abre (como el candado del
 // portal) para que un toque no cambie un conteo hecho.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, AppState, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -29,7 +30,12 @@ import Escaner from '../../componentes/Escaner';
 import Segmentos from '../../componentes/Segmentos';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
-import { fallo, listo, trabajando } from '../../componentes/Progreso';
+import { cerrarProgreso, fallo, listo, trabajando } from '../../componentes/Progreso';
+import { compartirPdf } from '../../componentes/pdf';
+import { compartirCsv } from '../../componentes/fiscal/csv';
+import { csvDeAjustesConteo } from '@nucleo/utils/conteoPapel';
+import { ajusteDeConteoHtml, hojaDeConteoHtml, resultadosDeConteoHtml } from '@nucleo/utils/conteoPapelHtml';
+import { registrarEgreso } from '@nucleo/data/egreso';
 import Resumen from '../../componentes/conteos/Resumen';
 import Historial from '../../componentes/conteos/Historial';
 import AgregarRenglon from '../../componentes/conteos/AgregarRenglon';
@@ -134,6 +140,8 @@ function Renglon({ it, editable, onGuardado, onHistorial, onLote, onRecontar }) 
   );
 }
 
+const contadosVivos = (r) => Number(r?.contados ?? 0);
+
 export default function Conteo() {
   const { id } = useLocalSearchParams();
   const { hasPermission } = useAuth();
@@ -145,6 +153,12 @@ export default function Conteo() {
   const fetchConteoResumen = useStaffStore((s) => s.fetchConteoResumen);
   const aprobarConteoInventario = useStaffStore((s) => s.aprobarConteoInventario);
   const marcarAjusteErp = useStaffStore((s) => s.marcarAjusteErp);
+  const fetchConteoLaboratorios = useStaffStore((s) => s.fetchConteoLaboratorios);
+  const sincronizarConteoEnVivo = useStaffStore((s) => s.sincronizarConteoEnVivo);
+  const eliminarConteoInventario = useStaffStore((s) => s.eliminarConteoInventario);
+  const fetchTodosLosItemsConteo = useStaffStore((s) => s.fetchTodosLosItemsConteo);
+  const [labs, setLabs] = useState([]);
+  const [laboratorioId, setLaboratorioId] = useState('todos');
   const [agregando, setAgregando] = useState(false);
   const [accion, setAccion] = useState(null);   // { item, modo: 'lote' | 'recuento' }
   const [conteo, setConteo] = useState(null);
@@ -166,13 +180,19 @@ export default function Conteo() {
     setConteo(c); setResumen(r);
   }, [id, fetchConteoDetalle, fetchConteoResumen]);
   useEffect(() => { cargarConteo(); }, [cargarConteo]);
-  useEffect(() => { setPagina(1); }, [busqueda, filtro]);
+  useEffect(() => { setPagina(1); }, [busqueda, filtro, laboratorioId]);
+  // Los laboratorios del conteo no cambian mientras se cuenta: una vez.
+  useEffect(() => {
+    let vivo = true;
+    Promise.resolve(fetchConteoLaboratorios(id)).then((r) => { if (vivo) setLabs(r ?? []); }).catch(() => {});
+    return () => { vivo = false; };
+  }, [id, fetchConteoLaboratorios]);
 
   const cargar = useCallback(async () => {
     const yo = ++pedido.current;
     setCargando(true);
     try {
-      const r = await fetchConteoProductsPage(id, { page: pagina, pageSize: POR_PAGINA, search: busqueda, filtro });
+      const r = await fetchConteoProductsPage(id, { page: pagina, pageSize: POR_PAGINA, search: busqueda, filtro, laboratorioId: laboratorioId === 'todos' ? null : Number(laboratorioId) });
       if (yo !== pedido.current) return;
       setProductos((p) => ({ filas: pagina === 1 ? r.rows : [...p.filas, ...r.rows], total: r.total, aproximado: r.aproximado }));
       // Si la búsqueda deja UN producto (lo típico al escanear), se abre solo.
@@ -182,7 +202,7 @@ export default function Conteo() {
     } finally {
       if (yo === pedido.current) setCargando(false);
     }
-  }, [id, pagina, busqueda, filtro, fetchConteoProductsPage]);
+  }, [id, pagina, busqueda, filtro, laboratorioId, fetchConteoProductsPage]);
   useEffect(() => { cargar(); }, [cargar]);
 
   useEffect(() => {
@@ -198,6 +218,68 @@ export default function Conteo() {
   const verSistema = resumen?.ver_sistema ?? productos.filas.some((p) => p.ver_sistema);
   const filtros = FILTROS_CONTEO.filter((f) => !f.soloConSistema || verSistema);
   const sala = (sucursales || []).find((b) => String(b.id) === String(conteo?.branch_id))?.name;
+
+  // Lo que entra a la sala DESPUÉS de empezar el conteo se suma solo, como en el
+  // portal: al abrir y cada vez que la app vuelve al frente (contar toma horas
+  // y la pantalla se deja abierta). Y se avisa: el «faltan N» sube.
+  const cargarRef = useRef(null);
+  useEffect(() => { cargarRef.current = () => { cargar(); cargarConteo(); }; });
+  const abiertoParaContar = conteoEditable(conteo);
+  useEffect(() => {
+    if (!abiertoParaContar) return undefined;
+    let vivo = true;
+    const traer = () => Promise.resolve(sincronizarConteoEnVivo(id)).then((r) => {
+      if (!vivo || !r?.agregados) return;
+      const n = r.agregados;
+      listo('Llegaron productos nuevos', `Se ${n === 1 ? 'agregó 1 producto que entró' : `agregaron ${n} productos que entraron`} a la sala después de empezar el conteo. Ya se pueden contar.`);
+      cargarRef.current?.();
+    }).catch(() => {});
+    traer();
+    const sub = AppState.addEventListener('change', (e) => { if (e === 'active') traer(); });
+    return () => { vivo = false; sub.remove(); };
+  }, [id, abiertoParaContar, sincronizarConteoEnVivo]);
+
+  // Eliminar: con el permiso propio, o mientras no se haya contado nada.
+  const puedeEliminar = puedeEditar && (hasPermission('conteo_inventario_eliminar') || (conteoEditable(conteo) && contadosVivos(resumen) === 0));
+  const eliminar = () => Alert.alert('Eliminar el conteo', `Se borra el conteo de ${sala ?? 'la sala'} con todos sus renglones. No se puede deshacer.`, [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Eliminar', style: 'destructive', onPress: async () => {
+      trabajando('Eliminando…');
+      try {
+        const r = await eliminarConteoInventario(id);
+        listo('Conteo eliminado', `Se borraron ${r?.total_items ?? 0} renglón(es).`);
+        router.back();
+      } catch (e) { fallo('No se pudo eliminar', mensajeAmigable(e)); }
+    } },
+  ]);
+  // El papel del conteo: hoja para contar (ciega si el dato no viene), resultados,
+  // ajuste en PDF o CSV — el contenido del núcleo (`conteoPapel`), el del portal.
+  const puedePapel = hasPermission('conteo_inventario_descargar');
+  const papel = () => {
+    const op = [['Hoja para contar', 'hoja'], ['Resultados', 'resultados'], ['Ajuste (PDF)', 'ajuste'], ['Ajuste (CSV)', 'csv']];
+    ActionSheetIOS.showActionSheetWithOptions({ title: 'Papel del conteo', options: [...op.map((o) => o[0]), 'Cancelar'], cancelButtonIndex: op.length }, async (i) => {
+      const tipo = op[i]?.[1];
+      if (!tipo) return;
+      trabajando('Preparando el documento…');
+      try {
+        const todos = await fetchTodosLosItemsConteo(id);
+        const c = { ...conteo, branches: { name: sala } };
+        if (tipo === 'csv') {
+          const { headers, rows, nombre } = csvDeAjustesConteo(c, todos);
+          cerrarProgreso();
+          await compartirCsv({ headers, rows, nombre, modulo: 'conteo_inventario', detalle: { conteo_id: id } });
+          return;
+        }
+        const html = tipo === 'hoja' ? hojaDeConteoHtml(c, todos, { ciego: !todos[0]?.ver_sistema })
+          : tipo === 'resultados' ? resultadosDeConteoHtml(c, todos) : ajusteDeConteoHtml(c, todos);
+        cerrarProgreso();
+        if (await compartirPdf({ html, nombre: `${op[i][0]} ${sala ?? ''}` })) registrarEgreso('conteo_inventario', { formato: 'pdf', filas: todos.length, detalle: { conteo_id: id, tipo, via: 'app' } });
+      } catch (e) { fallo('No se pudo armar el documento', mensajeAmigable(e)); }
+    });
+  };
+
+  const gruposLab = labs.length > 1 ? [{ id: 'lab', titulo: 'Laboratorio', activa: laboratorioId, porDefecto: 'todos', onCambiar: setLaboratorioId,
+    opciones: [{ id: 'todos', label: 'Todos' }, ...labs.map((l) => ({ id: String(l.laboratorio_id ?? l.id), label: l.laboratorio_nombre ?? l.nombre ?? '—' }))] }] : [];
   // Mientras el conteo está abierto, los totales de la fila vienen vacíos: manda el resumen en vivo.
   const total = Number(resumen?.total_items ?? conteo?.total_items) || 0;
   const contados = Number(resumen?.contados ?? conteo?.total_contados) || 0;
@@ -282,6 +364,7 @@ export default function Conteo() {
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
+      <MenuDeFiltros grupos={gruposLab} extra={puedePapel && conteo ? { icono: 'printer', etiqueta: 'Papel del conteo', onPress: papel } : null} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 60 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
@@ -331,6 +414,7 @@ export default function Conteo() {
             </View>
           ) : null}
           <Segmentos activa={filtro} onCambiar={setFiltro} opciones={filtros.map((f) => ({ id: f.key, label: f.key === 'DIFERENCIA' ? 'Diferencia' : f.label }))} />
+          <FiltrosActivos grupos={gruposLab} />
           {productos.aproximado && busqueda ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="No hay coincidencia exacta: se muestran productos parecidos." /></View> : null}
           <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${productos.total.toLocaleString('es-SV')} producto${productos.total === 1 ? '' : 's'}`}</Text>
           {productos.filas.map((p) => {
@@ -371,6 +455,11 @@ export default function Conteo() {
           {editable ? (
             <View style={{ marginHorizontal: 16, marginTop: 8 }}>
               <BotonGrande texto="Finalizar el conteo" borde color={MARCA.verde} onPress={finalizar} />
+            </View>
+          ) : null}
+          {puedeEliminar ? (
+            <View style={{ marginHorizontal: 16, marginTop: 4 }}>
+              <BotonGrande texto="Eliminar el conteo" borde color={MARCA.rojo} onPress={eliminar} />
             </View>
           ) : null}
         </ScrollView>

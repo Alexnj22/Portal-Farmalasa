@@ -4,6 +4,7 @@
 // fetchSurveys, fetchSurveyBloques, fetchSurveyPreguntas, updateSurvey).
 import { supabase } from '../supabaseClient';
 import { conBitacora } from './audit';
+import { preguntarASaly } from './ia';
 
 export function fetchSurveys() {
     return supabase.from('surveys').select('*').order('año', { ascending: false });
@@ -84,4 +85,21 @@ export function fetchSurveyResponsesForView(surveyId) {
 
 export function fetchSurveyAiSummaries(surveyId) {
     return supabase.from('surveys').select('ai_summaries').eq('id', surveyId).single();
+}
+
+/**
+ * Resume los comentarios de un segmento con Saly y lo guarda en la encuesta,
+ * mezclado con lo que ya hubiera (otro segmento puede estar guardándose a la
+ * vez). Portal y app. Devuelve el texto, o lanza.
+ */
+export async function generarResumenDeComentarios(surveyId, comments, segment) {
+    const { data, error } = await preguntarASaly({ action: 'analyze-survey-comments', payload: { comments, segment } });
+    if (error) throw error;
+    const summary = data?.aiSummary || 'Sin respuesta.';
+    if (surveyId) {
+        const { data: current } = await fetchSurveyAiSummaries(surveyId);
+        const merged = { ...(current?.ai_summaries || {}), [segment]: summary };
+        await updateSurvey(surveyId, { ai_summaries: merged });
+    }
+    return summary;
 }

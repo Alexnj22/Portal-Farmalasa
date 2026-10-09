@@ -197,3 +197,25 @@ export async function getDirectionsREST(points) {
 }
 
 export { BODEGA_SUC_ID };
+
+// ── La tabla de carretera por el intermediario del servidor ─────────────────
+// La web la pide al SDK de Google (`plataforma/mapas.js#matrizPorCarretera`);
+// el teléfono no tiene SDK de mapas web, así que la pide a `maps-proxy`, que
+// ya respondía `distancematrix`. Misma forma `{ dist, dur }` en metros y
+// segundos, para `optimizarPorCarretera`. Lanza si no hay respuesta útil: quien
+// la pide cae a la línea recta, igual que en la web.
+export async function matrizPorCarreteraREST(puntos) {
+  const fmt = (p) => `${p.lat},${p.lng}`;
+  const lista = puntos.map(fmt).join('|');
+  const data = await mapsProxy('distancematrix', { origins: lista, destinations: lista });
+  if (data?.status !== 'OK' || !Array.isArray(data.rows)) throw new Error(data?.error_message ?? data?.error ?? 'Sin tabla de carretera');
+  const n = puntos.length;
+  const dist = Array.from({ length: n }, () => new Array(n).fill(null));
+  const dur  = Array.from({ length: n }, () => new Array(n).fill(null));
+  data.rows.forEach((row, i) => {
+    (row.elements ?? []).forEach((el, j) => {
+      if (el.status === 'OK') { dist[i][j] = el.distance.value; dur[i][j] = el.duration.value; }
+    });
+  });
+  return { dist, dur };
+}

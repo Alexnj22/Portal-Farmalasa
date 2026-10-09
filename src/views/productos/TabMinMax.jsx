@@ -26,7 +26,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { useNavigate } from 'react-router-dom';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { applyPresRule } from '@nucleo/utils/presentacion';
+import { csvDeMinMax } from '@nucleo/utils/csvMinMax';
 import { normXyz, sortedPres, smallestPres, formatUnits, formatDominant, hasDispatchRisk } from '@nucleo/utils/minmaxTabla';
 import { ERP_NAMES, ERP_ORDER, ALERT, STAT_CFGS, VISIBLE_STAT_KEYS, AJUSTE_CFGS, MOTIVO_AJUSTE } from './tabminmax/constants';
 import CoverageBar from './tabminmax/CoverageBar';
@@ -155,92 +155,14 @@ const validateEditForRow = (edit, row) => {
 };
 
 // netStockMap: { erp_product_id → net_sucursal_stock } fetched before calling
+// El contenido sale del núcleo (`csvDeMinMax`), el mismo que exporta el teléfono.
 function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {}, supplierMap = {}) {
     const SEP = ';';
-
-    // Bodega: ordenar por laboratorio → producto
-    const sorted = isBodega
-        ? [...rows].sort((a, b) => {
-            const la = (a.laboratorio_nombre || '').toLowerCase();
-            const lb = (b.laboratorio_nombre || '').toLowerCase();
-            return la < lb ? -1 : la > lb ? 1 : (a.product_name || '').localeCompare(b.product_name || '', 'es');
-          })
-        : rows;
-
-    const h = isBodega
-        ? ['Sucursal','Laboratorio','Producto','Clase','MIN','MAX','Presentación','Inventario actual','Cantidad a pedir','Proveedor','Alerta']
-        : ['Sucursal','Laboratorio','Producto','Clase','MIN (und)','MAX (und)','Ventas 6 meses'];
-
-    const lines = sorted.map(r => {
-        const abc  = (r.draft_abc_class || r.abc_class || '');
-        const xyz  = normXyz(r.draft_demand_variability || r.demand_variability);
-        const minU = r.effective_min ?? 0;
-        const maxU = r.effective_max ?? 0;
-
-        if (isBodega) {
-            // Presentación mayor disponible del producto
-            const pres   = sortedPres(r.presentations || []);
-            const best   = pres[0];
-            const factor = best?.factor ?? 1;
-            const tipo   = best ? best.tipo.trim() : 'und';
-
-            let minPres = applyPresRule(minU, factor);
-            let maxPres = applyPresRule(maxU, factor);
-            const invPres = applyPresRule(Number(r.current_stock ?? 0), factor);
-
-            // MIN y MAX no pueden quedar iguales tras conversión: MIN = MAX - 1
-            if (maxPres > 0 && minPres === maxPres) minPres = maxPres - 1;
-
-            const hasVal = maxU > 0 || minU > 0;
-
-            const bodegaStock  = Number(r.current_stock ?? 0);
-            const sucursalStock = Number(netStockMap[r.erp_product_id] ?? 0);
-            const totalStock   = bodegaStock + sucursalStock;
-            const vel          = Number(r.daily_velocity ?? 0);
-            const daysCoverage = vel > 0 ? totalStock / vel : Infinity;
-            // Bodega está bajo su propio MIN → no puede cumplir un ciclo de despacho completo
-            const belowBodegaMin = minU > 0 && bodegaStock < minU;
-
-            const alertLabel = (() => {
-                if (bodegaStock === 0) return 'SIN STOCK';
-                if (!hasVal) return 'SIN MIN/MAX';
-                const hasVel = vel > 0 && isFinite(daysCoverage);
-                const d = hasVel ? Math.round(daysCoverage) : null;
-                if (belowBodegaMin) return d !== null ? `CRÍTICO (${d}d red)` : 'CRÍTICO';
-                if (!hasVel) return '';
-                if (daysCoverage < 14) return `CRÍTICO (${d}d)`;
-                if (daysCoverage < 30) return `ATENCIÓN (${d}d)`;
-                return '';
-            })();
-
-            const cantidadAPedir = hasVal ? Math.max(0, maxPres - invPres) : '';
-            const proveedor = supplierMap[r.erp_product_id] || 'Sin registro';
-
-            return [
-                `"${(sucursalName||'').replace(/"/g,'""')}"`,
-                `"${(r.laboratorio_nombre||'').replace(/"/g,'""')}"`,
-                `"${(r.product_name||'').replace(/"/g,'""')}"`,
-                `${abc}${xyz}`,
-                hasVal ? minPres : '',
-                hasVal ? maxPres : '',
-                `"${tipo}"`,
-                invPres,
-                cantidadAPedir,
-                `"${proveedor.replace(/"/g,'""')}"`,
-                alertLabel,
-            ].join(SEP);
-        }
-
-        return [
-            `"${(sucursalName||'').replace(/"/g,'""')}"`,
-            `"${(r.laboratorio_nombre||'').replace(/"/g,'""')}"`,
-            `"${(r.product_name||'').replace(/"/g,'""')}"`,
-            `${abc}${xyz}`,
-            (maxU > 0 || minU > 0) ? minU : '',
-            maxU > 0 ? maxU : '',
-            r.units_sold_6m ?? 0,
-        ].join(SEP);
-    });
+    const { headers: h, filas } = csvDeMinMax(rows, sucursalName, isBodega, netStockMap, supplierMap);
+    const sorted = filas;
+    // Las columnas de texto van entre comillas, como siempre salió el archivo.
+    const deTexto = new Set(isBodega ? [0, 1, 2, 6, 9] : [0, 1, 2]);
+    const lines = filas.map(f => f.map((v, i) => (deTexto.has(i) ? `"${String(v).replace(/"/g, '""')}"` : v)).join(SEP));
 
     // BOM + semicolon-separated + CRLF for Excel compatibility (Spanish locale)
     const blob = new Blob(['﻿' + [h.join(SEP), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8;' });

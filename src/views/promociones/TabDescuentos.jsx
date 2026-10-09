@@ -15,7 +15,9 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { fmtVigencia, estadoDescuento } from '@nucleo/utils/promocionesUtils';
+import {
+    SECCIONES_DE_DESCUENTOS, descuentosPorEstado, fmtVigencia, estadoDescuento, ofertaDesdeDescuento,
+} from '@nucleo/utils/promocionesUtils';
 
 /** Vigente, programado o terminado — el canónico vive en `promocionesUtils`. */
 const estado = (d) => estadoDescuento(d);
@@ -23,11 +25,7 @@ const estado = (d) => estadoDescuento(d);
 /* El subtítulo dice QUÉ HACE cada grupo, no lo que ya dice su nombre: la
    diferencia entre los tres es si un precio está bajo ahora, lo va a estar, o
    lo estuvo — y eso es lo que decide si hay que mirarlo hoy. */
-const SECCIONES = [
-    { clave: 'activos',     titulo: 'Descontando ahora', sub: 'bajan el precio hoy' },
-    { clave: 'programados', titulo: 'Programados',       sub: 'todavía no empiezan' },
-    { clave: 'terminados',  titulo: 'Terminados',        sub: 'ya no tocan ningún precio' },
-];
+const SECCIONES = SECCIONES_DE_DESCUENTOS;
 
 /**
  * Los descuentos que la venta aplica al renglón.
@@ -59,13 +57,7 @@ export default function TabDescuentos({
         setFallo(null);
         try {
             const [foto, previa] = await Promise.all([fotoParaApp(d.id), fetchOfertaDeDescuento(d.id)]);
-            setOferta(previa
-                ? { ...previa, ...foto, sin_receta: foto.sin_receta }
-                : {
-                    ...foto,
-                    titulo: d.promocion || d.descripcion,
-                    promocion_id: null,
-                });
+            setOferta(ofertaDesdeDescuento(d, foto, previa));
         } catch (e) {
             setFallo(mensajeAmigable(e, 'No se pudo leer el descuento.'));
         } finally {
@@ -76,14 +68,7 @@ export default function TabDescuentos({
     /* Dentro de cada sección, por fecha y en la dirección que sirve: los que
        descuentan hoy y los terminados, por el que ACABA antes —lo que vence es
        lo urgente—; los programados, por el que EMPIEZA antes. */
-    const porEstado = useMemo(() => {
-        const g = { activos: [], programados: [], terminados: [] };
-        for (const d of descuentos) g[estado(d).clave].push(d);
-        g.activos.sort((a, b) => String(a.fin).localeCompare(String(b.fin)));
-        g.programados.sort((a, b) => String(a.inicio).localeCompare(String(b.inicio)));
-        g.terminados.sort((a, b) => String(b.fin).localeCompare(String(a.fin)));
-        return g;
-    }, [descuentos]);
+    const porEstado = useMemo(() => descuentosPorEstado(descuentos), [descuentos]);
 
     const confirmarBorrado = async () => {
         setOcupado(true);

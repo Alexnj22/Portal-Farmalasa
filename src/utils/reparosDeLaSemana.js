@@ -39,3 +39,19 @@ export function reparosDeLaSemana({ personas = [], rosters = {}, turnos = [], fe
     const porPublicar = personas.filter((e) => !publicados.has(String(e.id))).length;
     return { reparos, porPublicar };
 }
+
+/**
+ * Quién sale y vuelve a entrar sin las 8 horas del Art. 21, persona por
+ * persona y con las horas exactas — el aviso fijo sobre el calendario del
+ * portal (`ScheduleCalendar`) y de la app (`horarios.js`).
+ * @returns {Array<{ emp: string, desde: string, hasta: string, horas: number }>}
+ */
+export function descansosCortos({ personas = [], rosters = {}, turnos = [], fechas = [] }) {
+    const salida = [];
+    personas.forEach((emp) => {
+        const sch = parse(rosters[emp.id]);
+        const dias = fechas.map((fecha) => ({ fecha, resuelto: resolverTurnoDelDia(sch[claveDeDia(new Date(`${fecha}T00:00:00`))], turnos) }));
+        descansoInsuficiente(dias).forEach((f) => salida.push({ emp: shortEmployeeName(emp), ...f }));
+    });
+    return salida;
+}

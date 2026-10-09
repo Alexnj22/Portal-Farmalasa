@@ -5,6 +5,7 @@ import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { buscarIdsDeProducto } from './busquedaProductos';
 import { conBitacora } from './audit';
+import { payloadDeRegla } from '../utils/reglasDeDespacho';
 
 // keepIdPresentacion: la regla ya configurada puede apuntar a una presentación
 // que desde entonces se marcó activo=false en el catálogo — igual debe listarse
@@ -109,4 +110,34 @@ export function updateDispatchRule(id, payload) {
 export function insertDispatchRule(payload) {
     return conBitacora(supabase.from('dispatch_rules').insert(payload).select().single(),
         'CREAR_REGLA_DESPACHO', String(payload?.erp_product_id), payload);
+}
+
+/**
+ * Guardar la regla de un producto como la deja el editor: sin presentación se
+ * QUITA (si existía); con presentación se crea o se actualiza. Devuelve la
+ * regla guardada, o `null` si quedó sin regla. Lanza si la base lo rechaza.
+ * La usan el portal y el teléfono.
+ */
+export async function guardarReglaDeDespacho(productId, vals, existente = null) {
+    if (!vals.dispatch_id_presentacion) {
+        if (existente) {
+            const { error } = await deleteDispatchRule(existente.id, { erp_product_id: productId });
+            if (error) throw error;
+        }
+        return null;
+    }
+    const payload = payloadDeRegla(productId, vals);
+    const { data, error } = existente
+        ? await updateDispatchRule(existente.id, payload)
+        : await insertDispatchRule(payload);
+    if (error) throw error;
+    return data;
+}
+
+/** La regla de UN producto (o `null`), con el tipo de su presentación. */
+export async function fetchReglaDeProducto(productId) {
+    const { data, error } = await supabase.from('dispatch_rules').select(DISPATCH_RULE_SELECT)
+        .eq('erp_product_id', productId).maybeSingle();
+    if (error) throw error;
+    return data ? { ...data, dispatch_tipo: data.presentaciones?.tipo ?? null } : null;
 }

@@ -12,14 +12,16 @@ import { LoadingState } from './common/StateViews';
 import useMontadoParaSalida from '../plataforma/useMontadoParaSalida';
 import { mensajeAmigable, mensajeConPrefijo } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { buscarCargo } from '@nucleo/utils/roles';
-import { CATEGORIAS_DOCUMENTO, categoriaDeDocumento, SIN_ASIGNAR } from './common/catalogos/constantes';
+import { CATEGORIAS_DOCUMENTO } from './common/catalogos/constantes';
 import { clearDraft } from '@nucleo/utils/draftUtils';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import AvisoDeBorrador from './common/AvisoDeBorrador';
 import { SENSITIVE_FIELDS } from '@nucleo/store/utils';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
 import { analizarDocumento } from '@nucleo/data/ia';
+import { problemaDelPago, registroDelPago } from '@nucleo/utils/pagoDeSucursal';
+import { ajustesConDocumentoPropio, documentoPropio, problemaDelDocumentoPropio, rutaDelDocumentoPropio } from '@nucleo/utils/expedienteDeSucursal';
+import { recontratacionCompleta, datosDeRecontratacion, ingresoCompleto } from '@nucleo/utils/reingresoYRecontratacion';
 
 // -------------------------
 // CARGA DIFERIDA
@@ -629,8 +631,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         if (type === "addCustomDocument" || type === "editCustomDocument") {
             const docData = formData.newDocData;
 
-            if (!docData || !docData.title?.trim()) {
-                setValidationError("El nombre del documento es obligatorio.");
+            const problemaDelDoc = docData ? problemaDelDocumentoPropio(docData) : 'El nombre del documento es obligatorio.';
+            if (problemaDelDoc) {
+                setValidationError(problemaDelDoc);
                 return;
             }
 
@@ -647,7 +650,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     try {
                         const NOMBRE_DEL_BUCKET = 'documents';
                         const fileExt = docData.file.name.split('.').pop();
-                        const filePath = `branches/${targetBranchId}/customDocs/${docId}_${Date.now()}.${fileExt}`;
+                        const filePath = rutaDelDocumentoPropio(targetBranchId, docId, fileExt);
 
                         const publicUrl = await subirArchivo(NOMBRE_DEL_BUCKET, filePath, docData.file, { upsert: true });
 
@@ -672,31 +675,10 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     }
                 }
 
-                const documentObject = {
-                    id: docId,
-                    title: docData.title.trim(),
-                    // Se guarda la CLAVE, siempre resuelta: si algún día llega
-                    // un rótulo viejo por otra vía, entra normalizado y no como
-                    // una séptima categoría que ninguna sección pinta.
-                    category: categoriaDeDocumento(docData.category),
-                    hasIssueDate: docData.hasIssueDate,
-                    issueDate: docData.hasIssueDate ? docData.issueDate : null,
-                    hasExpiration: docData.hasExpiration,
-                    expDate: docData.hasExpiration ? docData.expDate : null,
-                    url: fileUrl, 
-                    aiSummary: aiSummary
-                };
-
-                const currentSettings = originalBranch.settings || {};
-                let currentCustomDocs = currentSettings.customDocs || [];
-
-                if (type === "editCustomDocument") {
-                    currentCustomDocs = currentCustomDocs.map(doc => doc.id === docId ? documentObject : doc);
-                } else {
-                    currentCustomDocs = [...currentCustomDocs, documentObject];
-                }
-
-                const updatedSettings = { ...currentSettings, customDocs: currentCustomDocs };
+                // La forma del documento y dónde va: núcleo (`expedienteDeSucursal`),
+                // la misma que usa la app.
+                const documentObject = documentoPropio({ id: docId, datos: docData, url: fileUrl, aiSummary });
+                const updatedSettings = ajustesConDocumentoPropio(originalBranch.settings, documentObject);
                 const payloadToSave = { ...originalBranch, settings: updatedSettings };
 
                 const { updateBranch, appendAuditLog } = useStaff.getState();
@@ -773,117 +755,17 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         }
 
         if (type === "editBranchLeadership") {
-            if (!formData.selectedEmpId) {
-                setValidationError("Debes seleccionar a un empleado de la lista.");
-                return;
-            }
-            if (formData.isPermanent === false && !formData.interimEndDate) {
-                setValidationError("Para un interinato, la fecha de finalización es obligatoria.");
-                return;
-            }
-
+            // La asignación vive en el store (`asignarJefaturaDeSucursal`), la
+            // misma que usa la app: el cargo se resuelve contra la tabla y, si
+            // no resuelve, no se escribe nada.
             setIsSaving(true);
             try {
-                const { updateEmployee, employees, roles } = useStaff.getState();
-                const selectedEmp = employees.find(e => e.id === formData.selectedEmpId);
-
-                const actualBranchId = formData.branch?.id || formData.branchId || formData.id;
-                const actualBranchName = formData.branch?.name || formData.name || 'Sucursal';
-
-                // ── El cargo se resuelve contra la tabla, y si no resuelve NO se
-                // escribe ────────────────────────────────────────────────────
-                // Acá había dos `roles.find(r => r.name === …)` por igualdad
-                // exacta de cadena contra listas escritas a mano, y el `? :` de
-                // abajo convertía «no encontré el cargo» en `role_id: null`.
-                // Medido el 2026-08-12: la tabla dice «Regente de Enfermeria» y
-                // el formulario ofrecía «Regente de Enfermería», así que relevar
-                // a un regente de enfermería dejaba a la persona sin cargo, sin
-                // error y sin log. Un fallo que no falla es el que sobrevive.
-                const targetRoleObj = buscarCargo(roles, formData.targetRole);
-                if (formData.targetRole && !targetRoleObj) {
-                    setValidationError(`El cargo «${formData.targetRole}» ya no existe en el catálogo. Actualiza la página e intenta de nuevo.`);
-                    setIsSaving(false);
-                    return;
-                }
-                const targetRoleId = targetRoleObj ? targetRoleObj.id : null;
-
-                const { updateEmployee: _ue, appendAuditLog } = useStaff.getState();
-
-                if (formData.currentAssignee && formData.currentAssignee !== formData.selectedEmpId) {
-                    if (formData.outgoingAction === 'REASSIGN') {
-                        const outRoleObj = buscarCargo(roles, formData.outgoingRole);
-                        if (!outRoleObj) {
-                            setValidationError(`El cargo de salida «${formData.outgoingRole || '—'}» no existe en el catálogo. Elige otro para continuar.`);
-                            setIsSaving(false);
-                            return;
-                        }
-
-                        await updateEmployee(formData.currentAssignee, {
-                            branchId: formData.outgoingBranch,
-                            role_id: outRoleObj.id,
-                        });
-
-                        await appendAuditLog('EMPLEADO_RELEVADO', formData.currentAssignee, {
-                            type: 'REASSIGNMENT',
-                            previous_branch_id: actualBranchId,
-                            previous_branch_name: actualBranchName,
-                            target_branch_id: formData.outgoingBranch,
-                            previous_role: formData.targetRole,
-                            // Igual que arriba: lo que queda en la bitácora es
-                            // el nombre que de verdad se guardó.
-                            new_role: outRoleObj.name,
-                            note: `Relevado de jefatura en ${actualBranchName}`,
-                        });
-
-                    } else {
-                        // Sin `role:` en el payload. `employees` NO tiene esa
-                        // columna —`updateEmployee` la borra antes de escribir y
-                        // el store la deriva de `role_id` después— así que
-                        // mandarla sólo hacía creer que se guardaba un rótulo.
-                        await updateEmployee(formData.currentAssignee, {
-                            branchId: null,
-                            role_id: null,
-                        });
-
-                        await appendAuditLog('EMPLEADO_DESVINCULADO_SUCURSAL', formData.currentAssignee, {
-                            type: 'UNASSIGNED',
-                            previous_branch_id: actualBranchId,
-                            previous_branch_name: actualBranchName,
-                            previous_role: formData.targetRole,
-                            new_role: SIN_ASIGNAR,
-                            note: `Removido de la sucursal ${actualBranchName} a la bolsa de trabajo flotante.`,
-                        });
-                    }
-                }
-
-                await updateEmployee(formData.selectedEmpId, {
-                    branchId: actualBranchId,
-                    role_id: targetRoleId,
-                });
-
-                await appendAuditLog(formData.moveType || 'EMPLEADO_ASIGNADO', formData.selectedEmpId, {
-                    type: formData.moveType || 'PROMOTION',
-                    previous_branch_id: selectedEmp?.branchId || null,
-                    target_branch_id: actualBranchId,
-                    target_branch_name: actualBranchName,
-                    previous_role: selectedEmp?.role || null,
-                    // El nombre de la FILA, no el texto del formulario: lo que
-                    // queda en la bitácora es el cargo que de verdad se guardó.
-                    new_role: targetRoleObj?.name ?? SIN_ASIGNAR,
-                    note: formData.notes || 'Asignación realizada desde el Panel de Sucursales',
-                    isInterim: formData.isPermanent === false,
-                    interimEndDate: formData.interimEndDate || null,
-                });
-
-                const { fetchEmployees, fetchBranchHistory } = useStaff.getState();
-                if (fetchEmployees) await fetchEmployees();
-                if (fetchBranchHistory && actualBranchId) await fetchBranchHistory(actualBranchId);
-
+                await useStaff.getState().asignarJefaturaDeSucursal(formData);
                 window.dispatchEvent(new CustomEvent('force-history-refresh'));
                 onClose();
             } catch (err) {
                 console.error("Error guardando jefatura:", err);
-                setValidationError("Error al procesar el relevo de personal.");
+                setValidationError(mensajeAmigable(err, "Error al procesar el relevo de personal."));
             } finally {
                 setIsSaving(false);
             }
@@ -893,32 +775,19 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         if (type === "registerPayment") {
             const { _currentService, _paymentData, _auditPayload, id, settings } = formData;
 
-            if (!_paymentData || !_paymentData.amount || !_paymentData.billing_month) {
-                setValidationError("El monto exacto y el mes que cubre son obligatorios.");
+            const problemaDelPagoActual = problemaDelPago(_paymentData);
+            if (problemaDelPagoActual) {
+                setValidationError(problemaDelPagoActual);
                 return;
             }
 
             setIsSaving(true);
             try {
-                const { uploadDocument, registerBranchExpense } = useStaff.getState();
-
-                if (_paymentData.receiptFile) {
-                    const path = `expenses/${id}/${_currentService}/${_paymentData.billing_month}_${Date.now()}`;
-                    if (uploadDocument) await uploadDocument(path, _paymentData.receiptFile);
-                }
-
-                const serviceData = _currentService === 'rent' ? (settings?.rent || {}) : ((settings?.services || {})[_currentService] || {});
-                const dueDay = serviceData.dueDay || 1; 
-                const formattedDueDate = `${_paymentData.billing_month}-${String(dueDay).padStart(2, '0')}`;
-
-                const expenseRecord = {
-                    expense_type: _currentService,
-                    billing_month: _paymentData.billing_month,
-                    amount: Number(_paymentData.amount),
-                    due_date: formattedDueDate,
-                    receiptFile: _paymentData.receiptFile, 
-                    notes: _paymentData.notes || null
-                };
+                const { registerBranchExpense } = useStaff.getState();
+                // El registro (con el vencimiento del día de pago) sale del
+                // núcleo, el mismo que arma la app. El comprobante lo sube y lo
+                // versiona `registerBranchExpense`, que también deja la bitácora.
+                const expenseRecord = registroDelPago(settings, _currentService, _paymentData);
 
                 if (registerBranchExpense) await registerBranchExpense(id, expenseRecord);
 
@@ -936,23 +805,14 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         }
 
         if (type === "rehireEmployee") {
-            if (!formData.rehire_hire_date || !formData.rehire_branch_id || !formData.rehire_role_id) {
+            if (!recontratacionCompleta(formData)) {
                 setValidationError("Fecha de ingreso, sucursal y cargo son obligatorios.");
                 return;
             }
             setIsSaving(true);
             try {
                 const { rehireEmployee } = useStaff.getState();
-                await rehireEmployee(formData.id, {
-                    hire_date:              formData.rehire_hire_date,
-                    branch_id:              formData.rehire_branch_id,
-                    role_id:                formData.rehire_role_id,
-                    secondary_role_id:      formData.rehire_secondary_role_id || null,
-                    contract_type:          formData.rehire_contract_type || 'INDEFINIDO',
-                    weekly_contracted_hours: formData.rehire_weekly_hours || 44,
-                    base_salary:            formData.rehire_base_salary || null,
-                    notes:                  formData.rehire_notes || '',
-                });
+                await rehireEmployee(formData.id, datosDeRecontratacion(formData));
                 const { showToast } = useToastStore.getState();
                 if (showToast) showToast("Recontratación Registrada", `${formData.name} ha sido recontratado/a exitosamente.`, "success");
                 descartarBorrador();   // la recontratación existe: el borrador ya no sirve
@@ -966,7 +826,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         }
 
         if (type === "vacationRecall") {
-            if (!formData.recall_date || !formData.recall_shift_id || !formData.recall_reason?.trim()) {
+            if (!ingresoCompleto(formData)) {
                 setValidationError("Fecha, turno y motivo son obligatorios.");
                 return;
             }

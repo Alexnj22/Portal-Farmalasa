@@ -18,6 +18,7 @@ import { fechaTexto } from './fecha';
 // La matemática de generar un pedido (FEFO y el código por sala) vive en
 // `codigoDePedido`, sin pdfmake: la usa también la app del teléfono.
 import { fefoProject } from './codigoDePedido';
+import { esAdicional, lotesAsignadosToDispatch, seccionDePedido, toDispatch } from './papelDePedido';
 export { fefoProject };
 export { buildPedidoCodigo } from './codigoDePedido';
 
@@ -49,10 +50,7 @@ const SUCURSALES_ORDER  = SUCURSALES;
 const CUSTOM_LABELS    = ['CAJA', 'ESTUCHE', 'BOLSA'];
 
 // Va a "Cajas Adicionales" solo si dispatch_label='CAJA' (Electrolit) o caja_especial. ESTUCHE/BOLSA van en tabla normal.
-function isAdicional(row) {
-    return row.caja_especial === true ||
-           (row.tiene_dispatch_label === true && (row.dispatch_tipo ?? '').toUpperCase() === 'CAJA');
-}
+const isAdicional = esAdicional;
 
 // Nombre de farmacia según destino
 function getFarmaciaName(sucId) {
@@ -552,22 +550,9 @@ export async function getExactPageGroups(sucId, rawItems) {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 
-export function toDispatch(qty, erpFactor, dispFactor) {
-    if (!dispFactor || dispFactor === erpFactor) return qty;
-    return Math.round(qty * erpFactor / dispFactor);
-}
-export function lotesToDispatch(lotes, erpFactor, dispFactor) {
-    if (!dispFactor || dispFactor === erpFactor) return lotes ?? [];
-    return (lotes ?? [])
-        .map(l => ({ ...l, packs: Math.floor((l.packs ?? 0) * erpFactor / dispFactor) }))
-        .filter(l => l.packs > 0);
-}
-export function lotesAsignadosToDispatch(lotes, erpFactor, dispFactor) {
-    if (!dispFactor || dispFactor === erpFactor) return lotes ?? [];
-    return (lotes ?? [])
-        .map(l => ({ ...l, take: toDispatch(l.take ?? l.cantidad ?? l.packs ?? 0, erpFactor, dispFactor) }))
-        .filter(l => l.take > 0);
-}
+// `toDispatch` y las conversiones de lotes viven en `papelDePedido` (sin
+// pdfmake: el teléfono las usa para reimprimir la misma hoja).
+export { toDispatch, lotesToDispatch, lotesAsignadosToDispatch } from './papelDePedido';
 
 // Un PDF individual por sucursal, nombrado con el código del pedido.
 // Descarga simultánea: todos los blobs se construyen en paralelo y se
@@ -665,63 +650,12 @@ export async function printPerSucursal(grouped, sortedSucIds, getAdjusted, codig
 export async function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, titleOverride = null) {
     const [logo, addrMap] = await Promise.all([getLogoBase64(), getAddressMap()]);
     const ds = dateSuffix();
-    const porEnviado = meta?.cantidad === 'enviada';
-    const cantidadDe = r => (porEnviado ? (r.cantidad_enviada ?? r.cantidad_asignada) : r.cantidad_asignada) ?? 0;
 
-    const sections = sucGroups.map(([sucId, rows]) => {
-        const printRows = rows.filter(r => !r.sin_stock && !isAdicional(r)).map(r => {
-            const erpFactor  = r.factor ?? 1;
-            const dispFactor = r.dispatch_factor ?? erpFactor;
-            const dispTipo   = r.dispatch_tipo ?? r.presentaciones?.tipo ?? '';
-            const qty        = toDispatch(cantidadDe(r), erpFactor, dispFactor);
-            const isLabel    = r.tiene_dispatch_label === true;
-            return {
-                product_name:      r.products?.nombre ?? '?',
-                laboratorio:       r.products?.laboratorios?.nombre ?? '',
-                presentacion_tipo: dispTipo,
-                es_antibiotico:    r.products?.es_antibiotico ?? false,
-                qty,
-                qty_base: isLabel ? qty * dispFactor : null,
-                lotes: qty > 0 ? lotesAsignadosToDispatch(
-                    Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],
-                    erpFactor, dispFactor,
-                ) : [],
-                _asignado: toDispatch(r.cantidad_asignada ?? 0, erpFactor, dispFactor),
-            };
-        }).filter(r => r.qty > 0 || (porEnviado && r._asignado > 0));
-
-        let eCounter = 1;
-        const especiales = rows
-            .filter(r => !r.sin_stock && isAdicional(r) && cantidadDe(r) > 0)
-            .sort((a, b) => (a.products?.nombre ?? '').localeCompare(b.products?.nombre ?? '', 'es'))
-            .flatMap(r => {
-                const erpF     = r.factor ?? 1;
-                const dispF    = r.dispatch_factor ?? erpF;
-                const qty      = toDispatch(cantidadDe(r) || 1, erpF, dispF);
-                const dispTipo = r.dispatch_tipo ?? r.presentaciones?.tipo ?? '';
-                const rawLotes = lotesAsignadosToDispatch(
-                    Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],
-                    erpF, dispF,
-                ).filter(l => l.lote || l.fecha_vencimiento);
-                const lotPool  = rawLotes.map(l => ({ ...l, _rem: l.take ?? l.cantidad ?? l.packs ?? 0 }));
-                return Array.from({ length: qty }, () => {
-                    let boxLot = null;
-                    for (const lot of lotPool) {
-                        if (lot._rem > 0) { boxLot = { lote: lot.lote, fecha_vencimiento: lot.fecha_vencimiento, take: 1 }; lot._rem--; break; }
-                    }
-                    return { label: `E${eCounter++}`, product_name: r.products?.nombre ?? '?', presentacion_tipo: dispTipo, dispF, tiene_dispatch_label: r.tiene_dispatch_label === true, lotes: boxLot ? [boxLot] : [] };
-                });
-            });
-
-        return {
-            sucId, nombre: ERP_NAMES_DEFAULT[sucId] ?? `Sucursal ${sucId}`,
-            codigo: sucGroups.length === 1 ? (titleOverride ?? null) : null,
-            rows:     printRows,
-            especiales,
-            sinCount: rows.filter(r => r.sin_stock).length,
-            revCount: rows.filter(r => r.revision_minmax && !r.sin_stock && !r.caja_especial).length,
-        };
-    });
+    // El contenido de cada sala es el del núcleo (`seccionDePedido`): la
+    // misma hoja que reimprime el teléfono.
+    const sections = sucGroups.map(([sucId, rows]) =>
+        seccionDePedido(sucId, rows, sucGroups.length === 1 ? (titleOverride ?? null) : null,
+            { cantidad: meta?.cantidad }));
 
     const title = titleOverride
         ?? (sucGroups.length === 1

@@ -3,11 +3,12 @@
 // quién hizo cada paso y cuánto tardó, quién apoyó, cómo llegó, las
 // diferencias y los productos por laboratorio.
 //
-// Todo de lectura, con las mismas reglas del portal (núcleo: `pasosDelPedido`,
+// Con las mismas reglas del portal (núcleo: `pasosDelPedido`,
 // `seccionesDeRenglones`, `resumenDeRecepcion`, `renglonesConDiferencia`).
 // Confirmar la llegada, contar y la llegada de un reenvío abren pantallas
-// nativas; Bodega inicia, pausa, programa o anula desde aquí
-// (`AccionesDeBodega`). Decidir una diferencia y finalizar siguen en el portal.
+// nativas; Bodega inicia, pausa, finaliza, imprime, programa, reenvía, arma la
+// ruta o anula desde aquí (`AccionesDeBodega`), y las diferencias se deciden
+// en su propio renglón (`DecisionDiferencia`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -36,6 +37,9 @@ import Diferencias from '../../componentes/pedidos/Diferencias';
 import { idsDelPedido, usePersonas } from '../../componentes/pedidos/personas';
 import { ETAPA, etapaDeLaTarjeta, PASOS, pasoDeLaEtapa } from '../../componentes/pedidos/etapa';
 import AccionesDeBodega from '../../componentes/pedidos/AccionesDeBodega';
+import RevisionMinMax from '../../componentes/pedidos/RevisionMinMax';
+import { fetchDevolucionesDePedido } from '@nucleo/data/devoluciones';
+import { esCargoDeSupervision } from '@nucleo/utils/decisionDiferencia';
 
 const COLOR_ESTADO = { confirmado: MARCA.azulClaro, enviado: MARCA.violetaClaro, parcial: MARCA.ambar, completado: MARCA.verde, anulado: MARCA.rojo };
 
@@ -72,13 +76,15 @@ function Gente({ rotulo, personas }) {
 export default function DetalleDePedido() {
   const { pedidoId, sucId, numero } = useLocalSearchParams();
   const suc = Number(sucId);
-  const { hasPermission, getScope } = useAuth();
+  const { user, hasPermission, getScope } = useAuth();
+  const esSupervision = esCargoDeSupervision(user?.rango);
   const puede = hasPermission('pedidos', 'can_edit');
   const esSala = getScope?.('pedidos') !== 'ALL';
   const [row, setRow] = useState(undefined);
   const [todasLasFilas, setTodasLasFilas] = useState([]);
   const [items, setItems] = useState(null);
   const [eventos, setEventos] = useState([]);
+  const [devoluciones, setDevoluciones] = useState([]);
   const [apoyo, setApoyo] = useState({ preparacion: [], recepcion: [] });
   const [entrega, setEntrega] = useState(null);
   const [error, setError] = useState(null);
@@ -115,8 +121,9 @@ export default function DetalleDePedido() {
     if (!difs.length) return undefined;
     let vivo = true;
     fetchPedidoItemEventosAll(pedidoId, suc).then((ev) => { if (vivo) setEventos(ev ?? []); }).catch(() => {});
+    Promise.resolve(fetchDevolucionesDePedido(pedidoId, suc)).then(({ data }) => { if (vivo) setDevoluciones(data ?? []); }).catch(() => {});
     return () => { vivo = false; };
-  }, [difs.length, pedidoId, suc]);
+  }, [difs.length, pedidoId, suc, items]);
 
   const ids = useMemo(() => [...idsDelPedido(row), ...eventos.map((e) => e.hecho_por), entrega?.entregado_por, entrega?.conductor_id].filter(Boolean),
     [row, eventos, entrega]);
@@ -172,6 +179,7 @@ export default function DetalleDePedido() {
               ) : null}
               {puede && etapa === 'transito' ? <BotonGrande texto="Confirmar que llegó" color={MARCA.azul} onPress={() => ir('/pedido/llegada')} /> : null}
               {puede && etapa === 'contando' ? <BotonGrande texto="Contar lo que llegó" color={MARCA.verde} onPress={() => ir('/pedido/recibir')} /> : null}
+              {puede && esSala && etapa === 'erp' ? <BotonGrande texto="Corregir lo contado o anotar algo de más" borde onPress={() => ir('/pedido/recibir')} /> : null}
               {puede && faltan?.enCamino ? <BotonGrande texto="Llegó el reenvío" color={MARCA.azul} borde onPress={() => ir('/pedido/reenvio')} /> : null}
               {puede && !esSala ? <AccionesDeBodega row={row} etapa={etapa} etapas={etapas} onCambio={cargar} /> : null}
             </Bloque>
@@ -195,11 +203,14 @@ export default function DetalleDePedido() {
 
             {difs.length ? (
               <Bloque titulo="Diferencias">
-                <Diferencias items={difs} eventos={eventos} quien={quien} />
-                {puede && row.diferencias_reportadas_at && !row.confirmado_correccion_at ? (
-                  <BotonGrande texto="Resolver en el portal" borde color={MARCA.ambar}
-                    onPress={() => router.push({ pathname: '/portal', params: { ruta: '/pedidos', nombre: 'Pedidos' } })} />
-                ) : null}
+                <Diferencias items={difs} eventos={eventos} quien={quien} devoluciones={devoluciones} row={row}
+                  actuar={puede ? { pedidoId: row.pedido_id, sucId: suc, esSala, esSupervision, onCambio: cargar } : null} />
+              </Bloque>
+            ) : null}
+
+            {hasPermission('minmax', 'can_edit') && (items ?? []).some((i) => i.revision_minmax) ? (
+              <Bloque titulo="Revisar MIN·MAX">
+                <RevisionMinMax items={items} />
               </Bloque>
             ) : null}
 

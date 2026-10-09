@@ -5,17 +5,12 @@ import ViewTabBar from '../components/common/ViewTabBar';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { fetchOrphanObjects, updateOrphanObjectStatus } from '@nucleo/data/orphanObjects';
+import { fetchOrphanObjects, updateOrphanObjectStatus, ESTADOS_HUERFANO, PESTANAS_HUERFANOS, huerfanosDePestana } from '@nucleo/data/orphanObjects';
 import Badge from '../components/common/Badge';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { fechaTexto } from '@nucleo/utils/fecha';
 
-const STATUS_LABELS = {
-    candidate: 'Candidato',
-    confirmed_orphan: 'Confirmado huérfano',
-    false_positive: 'Falso positivo',
-    resolved: 'Resuelto',
-};
+const STATUS_LABELS = ESTADOS_HUERFANO;
 
 const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }));
 
@@ -26,12 +21,7 @@ const STATUS_BADGE = {
     resolved: { icon: CheckCircle2, variante: 'success' },
 };
 
-const TABS = [
-    { key: 'todos', label: 'Todos' },
-    { key: 'candidate', label: 'Candidatos' },
-    { key: 'confirmed_orphan', label: 'Confirmados' },
-    { key: 'resolved', label: 'Resueltos' },
-];
+const TABS = PESTANAS_HUERFANOS;
 
 const EMPTY_ARRAY = [];
 
@@ -67,8 +57,7 @@ const OrphanObjectsView = () => {
     };
 
     const filteredRows = useMemo(() => {
-        if (activeTab === 'todos') return rows;
-        return rows.filter(r => r.status === activeTab);
+        return huerfanosDePestana(rows, activeTab);
     }, [rows, activeTab]);
 
     const filtersContent = (

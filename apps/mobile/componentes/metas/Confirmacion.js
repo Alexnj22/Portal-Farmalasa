@@ -5,17 +5,24 @@
 // (`montoAjustadoDeMeta`, ±10 pasos).
 //
 // Quien NO puede aprobar pero sí editar ve «Registrar autorización del
-// gerente»: el camino para cuando el gerente aprueba de palabra. Queda
-// asentado quién autorizó y a esa persona le llega el aviso.
+// gerente»: el camino para cuando el gerente aprueba de palabra —una o todas
+// las del mes de golpe—. Queda asentado quién autorizó y a esa persona le
+// llega el aviso. Cada tarjeta lleva su historial: quién la movió y cuánto
+// (`cambioDeMeta`, núcleo, el mismo del portal).
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import {
-  aprobarMeta, aprobarMetaPorAutorizacion, aprobarMetasLote, confirmarMeta, confirmarMetasLote, devolverMeta,
-  fetchAutorizadores, fetchMetasRows, generarPropuestas,
+  aprobarMeta, aprobarMetaPorAutorizacion, aprobarMetasLote, aprobarMetasPorAutorizacionLote, confirmarMeta, confirmarMetasLote, devolverMeta,
+  fetchAutorizadores, fetchMetasCambios, fetchMetasRows, generarPropuestas,
 } from '@nucleo/data/metas';
-import { ESTADO_DE_META, PASOS_MAX_META, baseDeMeta, diaHoySV, montoAjustadoDeMeta, ymHoySV, ymLabel, ymSumar } from '@nucleo/utils/metasUtils';
-import { formatMoney } from '@nucleo/utils/formatNumber';
+import {
+  ESTADO_DE_META, PASOS_MAX_META, baseDeMeta, cambioDeMeta, cambiosPorMeta, diaHoySV, montoAjustadoDeMeta, ymHoySV, ymLabel, ymSumar,
+} from '@nucleo/utils/metasUtils';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { fechaHora12 } from '@nucleo/utils/hora';
+import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
 import { Aviso, BotonGrande } from '../formulario/Piezas';
@@ -55,9 +62,18 @@ export default function Confirmacion({ salaNombre, canEdit, canApprove, onCambio
   const [ajustes, setAjustes] = useState({});
   const [autorizadores, setAutorizadores] = useState([]);
   const [ocupado, setOcupado] = useState(null);
+  // meta_id → sus cambios. `null` = no se pudo leer: distinto de «sin cambios».
+  const [cambios, setCambios] = useState({});
+  const empleados = useStaffStore((st) => st.employees);
+  const porId = useMemo(() => new Map((empleados || []).map((e) => [e.id, e])), [empleados]);
 
   const cargar = useCallback(async () => {
-    try { setRows(await fetchMetasRows([ymActual, ymSig])); setAjustes({}); setError(null); }
+    try {
+      const r = await fetchMetasRows([ymActual, ymSig]);
+      setRows(r); setAjustes({}); setError(null);
+      // El historial va después y aparte: si falla, la pantalla sigue sirviendo para confirmar.
+      fetchMetasCambios(r.map((x) => x.id)).then((l) => setCambios(cambiosPorMeta(l))).catch(() => setCambios(null));
+    }
     catch (e) { setError(mensajeAmigable(e, 'Error al cargar el flujo')); setRows([]); }
   }, [ymActual, ymSig]);
   useEffect(() => { cargar(); }, [cargar]);
@@ -179,9 +195,30 @@ export default function Confirmacion({ salaNombre, canEdit, canApprove, onCambio
                       </View>
                       {r.estado === 'oficial' && r.autorizado_por ? (
                         <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                          {`Autorizó ${autorizadores.find((a) => a.id === r.autorizado_por)?.name || 'la gerencia'}${r.autorizado_nota ? ` — ${r.autorizado_nota}` : ''}`}
+                          {`Autorizó ${(() => { const a = autorizadores.find((x) => x.id === r.autorizado_por); return a ? shortEmployeeName(a) : 'la gerencia'; })()}${r.autorizado_nota ? ` — ${r.autorizado_nota}` : ''}`}
                         </Text>
                       ) : null}
+                      {cambios === null ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>No se pudo cargar quién cambió esta meta.</Text>
+                        : (cambios[r.id] || []).some((c) => c.actor) ? (
+                          <View style={{ gap: 6, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 8 }}>
+                            <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' }}>Cambios</Text>
+                            {(cambios[r.id] || []).map((cb) => {
+                              const c = cambioDeMeta(cb);
+                              const emp = cb.actor ? porId.get(cb.actor) : null;
+                              return (
+                                <View key={cb.id} style={{ gap: 1 }}>
+                                  <Text style={{ color: colorSistema.texto, fontSize: 13 }}>
+                                    {`${cb.actor ? (emp ? shortEmployeeName(emp) : 'Alguien') : 'El sistema'} ${c.texto}${c.despues != null ? ` ${formatMoney(c.despues)}` : ''}`}
+                                  </Text>
+                                  <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
+                                    {`${c.mov ? `${c.mov > 0 ? 'subió' : 'bajó'} ${formatMoney(Math.abs(c.mov))} (${formatPct(c.pct)}) · ` : ''}${fechaHora12(cb.created_at)}`}
+                                  </Text>
+                                  {cb.nota ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`«${cb.nota}»`}</Text> : null}
+                                </View>
+                              );
+                            })}
+                          </View>
+                        ) : null}
                     </View>
                   </Vidrio>
                 </View>
@@ -196,6 +233,18 @@ export default function Confirmacion({ salaNombre, canEdit, canApprove, onCambio
                       { mes: g.ym, total: totConf, salas: porConfirmar.map((r) => `${salaNombre(r.branch_id)}=${montoDe(r)}`).join(', '), desde: 'app' }),
                       'Metas confirmadas', `${porConfirmar.length} salas · ${formatMoney(totConf)}.`) },
                   ])} />
+              </View>
+            ) : null}
+            {!canApprove && canEdit && porAprobar.length >= 2 ? (
+              <View style={{ marginHorizontal: 16 }}>
+                <BotonGrande texto={ocupado === `la${g.ym}` ? 'Registrando…' : `Registrar la autorización de las ${porAprobar.length}`} borde color={MARCA.verde} deshabilitado={ocupado != null}
+                  onPress={() => pedirAutorizacion((quien, nota) => Alert.alert('Dejar oficiales todas',
+                    `Las ${porAprobar.length} metas (${formatMoney(totApr)}) quedan oficiales de golpe. Queda asentado que las ejecutaste tú con autorización de ${shortEmployeeName(quien)}, y le llega el aviso.`, [
+                      { text: 'Cancelar', style: 'cancel' },
+                      { text: 'Dejar oficiales', onPress: () => accion(`la${g.ym}`, () => aprobarMetasPorAutorizacionLote({ ids: porAprobar.map((r) => r.id), autorizoPor: quien.id, nota },
+                        { mes: g.ym, cuantas: porAprobar.length, total: totApr, salas: porAprobar.map((r) => salaNombre(r.branch_id)).join(', '), autorizo: quien.name, desde: 'app' }),
+                        'Metas oficiales', `${porAprobar.length} salas quedaron registradas con esa autorización, y a quien autorizó le llegó el aviso.`) },
+                    ]))} />
               </View>
             ) : null}
             {canApprove && porAprobar.length >= 2 ? (

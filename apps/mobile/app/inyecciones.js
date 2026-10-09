@@ -8,11 +8,16 @@
 //   · Bitácora: cada aplicación de los últimos días, quién cobró, quién aplicó,
 //     cuándo y dónde.
 //
-// «Por cobrar» (vincular cobros a ventas) y «Ajustes» (precios y dosis) se
-// hacen en el portal. Agrupar y contar sale del núcleo (`inyeccionesPendientes`).
+//   · Por cobrar: las ventas con inyección y su cobro, por vendedor, y los
+//     cobros sueltos para asignar a mano (`componentes/inyecciones/PorCobrar`).
+//   · Ajustes: precio por aplicación y aplicaciones por producto
+//     (`componentes/inyecciones/Ajustes`).
+// Las cuatro pestañas del portal, con sus mismos permisos. Agrupar y contar
+// sale del núcleo (`inyeccionesPendientes`, `inyeccionesPorCobrar`,
+// `inyeccionesAjustes`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -35,6 +40,9 @@ import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
+import { MenuDeFiltros } from '../componentes/Filtros';
+import PorCobrar, { periodosDePorCobrar } from '../componentes/inyecciones/PorCobrar';
+import Ajustes from '../componentes/inyecciones/Ajustes';
 
 const factura = (c) => String(c || '').replace(/^0+/, '');
 const fechaCorta = (f) => fechaNumerica(String(f || '').slice(0, 10), { anio: false });
@@ -207,9 +215,13 @@ function Bitacora({ busqueda, salaPropia }) {
 export default function Inyecciones() {
   const { user, hasPermission, getScope } = useAuth();
   const sucursales = useStaffStore((s) => s.branches);
+  const puedeDosis = hasPermission('inyecciones_dosis');
+  const puedePrecio = hasPermission('inyecciones_precios');
   const pestanas = useMemo(() => [
+    hasPermission('inyecciones_tab_por_cobrar') && { id: 'por-cobrar', label: 'Por cobrar' },
     hasPermission('inyecciones_tab_pendientes') && { id: 'pendientes', label: 'Pendientes' },
     hasPermission('inyecciones_tab_bitacora') && { id: 'bitacora', label: 'Bitácora' },
+    (hasPermission('inyecciones_dosis') || hasPermission('inyecciones_precios')) && { id: 'ajustes', label: 'Ajustes' },
   ].filter(Boolean), [hasPermission]);
   const [elegida, setPestana] = useState(null);
   const pestana = elegida && pestanas.some((p) => p.id === elegida) ? elegida : pestanas[0]?.id;
@@ -219,7 +231,14 @@ export default function Inyecciones() {
   const busqueda = useTextoRebotado(texto, 350).trim();
   const [llave, setLlave] = useState(0);
   const [recargando, setRecargando] = useState(false);
-  const portal = (tab) => router.push({ pathname: '/portal', params: { ruta: `/inyecciones?tab=${tab}`, nombre: 'Inyecciones' } });
+  // Por cobrar: período y sala propios (el portal también los separa del resto).
+  const periodos = useMemo(() => periodosDePorCobrar(), []);
+  const [rango, setRango] = useState(periodos[0].id);
+  const [salaFiltro, setSalaFiltro] = useState('todas');
+  const salaPorCobrar = salaPropia || (salaFiltro === 'todas' ? null : Number(salaFiltro));
+  // Al volver de asignar un cobro o de guardar por ml, se relee.
+  const [vuelta, setVuelta] = useState(0);
+  useFocusEffect(useCallback(() => { setVuelta((v) => v + 1); }, []));
 
   return (
     <>
@@ -230,18 +249,25 @@ export default function Inyecciones() {
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
+      {pestana === 'por-cobrar' ? (
+        <MenuDeFiltros grupos={[
+          { id: 'periodo', titulo: 'Período', activa: rango, porDefecto: periodos[0].id, onCambiar: setRango, opciones: periodos },
+          ...(salaPropia ? [] : [{ id: 'sala', titulo: 'Sucursal', activa: salaFiltro, porDefecto: 'todas', onCambiar: setSalaFiltro,
+            opciones: [{ id: 'todas', label: 'Todas las salas' }, ...(sucursales || []).map((b) => ({ id: String(b.id), label: b.name }))] }]),
+        ]} />
+      ) : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={() => { setRecargando(true); setLlave((k) => k + 1); setTimeout(() => setRecargando(false), 600); }} />}>
         {pestanas.length > 1 ? <Segmentos activa={pestana} onCambiar={setPestana} opciones={pestanas} /> : null}
         {!pestana ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto="Tu cargo no tiene acceso a las inyecciones." /></View>
-          : pestana === 'pendientes'
-            ? <Pendientes key={llave} busqueda={busqueda} salaPropia={salaPropia} nombreSala={nombreSala} puedeAplicar={hasPermission('caja_vales', 'can_edit')} />
-            : <Bitacora key={llave} busqueda={busqueda} salaPropia={salaPropia} />}
-        <View style={{ marginHorizontal: 16, gap: 8, marginTop: 8 }}>
-          {hasPermission('inyecciones_tab_por_cobrar') ? <BotonGrande texto="Por cobrar (portal)" borde color={MARCA.azulClaro} onPress={() => portal('por-cobrar')} /> : null}
-          {hasPermission('inyecciones_dosis') || hasPermission('inyecciones_precios') ? <BotonGrande texto="Precios y dosis (portal)" borde color={colorSistema.texto2} onPress={() => portal('ajustes')} /> : null}
-        </View>
+          : pestana === 'por-cobrar'
+            ? <PorCobrar busqueda={busqueda} sala={salaPorCobrar} nombreSala={nombreSala} puedeAsignar={puedeDosis} rango={rango} recarga={`${llave}-${vuelta}`} />
+            : pestana === 'ajustes'
+              ? <Ajustes puedePrecio={puedePrecio} puedeDosis={puedeDosis} recarga={`${llave}-${vuelta}`} />
+              : pestana === 'pendientes'
+                ? <Pendientes key={llave} busqueda={busqueda} salaPropia={salaPropia} nombreSala={nombreSala} puedeAplicar={hasPermission('caja_vales', 'can_edit')} />
+                : <Bitacora key={llave} busqueda={busqueda} salaPropia={salaPropia} />}
       </ScrollView>
     </>
   );

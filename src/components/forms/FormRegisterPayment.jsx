@@ -6,32 +6,9 @@ import LiquidDatePicker from '../common/LiquidDatePicker';
 import FileField from '../common/FileField';
 import PortalInput from '../common/PortalInput';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
-import { formatMoney } from '@nucleo/utils/formatNumber';
+import { SERVICIOS_DE_PAGO, auditoriaDelPago, datosDelServicio, mesInicialDelPago, yaEstabaPagado } from '@nucleo/utils/pagoDeSucursal';
 
-const SERVICE_LABELS = {
-    rent: 'Arrendamiento',
-    light: 'Energía eléctrica',
-    water: 'Agua potable',
-    internet: 'Internet fijo',
-    phone: 'Plan celular',
-    taxes: 'Impuestos / Alcaldía'
-};
-
-// Función para calcular automáticamente el MES SIGUIENTE al último pagado
-const getNextMonth = (yyyymm) => {
-    if (!yyyymm) {
-        const d = new Date();
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    }
-    const [y, m] = yyyymm.split('-').map(Number);
-    let nextM = m + 1;
-    let nextY = y;
-    if (nextM > 12) {
-        nextM = 1;
-        nextY++;
-    }
-    return `${nextY}-${String(nextM).padStart(2, '0')}`;
-};
+const SERVICE_LABELS = SERVICIOS_DE_PAGO;
 
 const FormRegisterPayment = ({ formData, setFormData }) => {
     const serviceId = formData._currentService || 'light';
@@ -39,7 +16,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
 
     // Buscar datos actuales del servicio
     const settings = formData.settings || {};
-    const defaultData = serviceId === 'rent' ? (settings.rent || {}) : ((settings.services || {})[serviceId] || {});
+    const defaultData = datosDelServicio(settings, serviceId);
     const currentPaidThrough = defaultData.paidThrough; // El último mes que se pagó
 
 // 🔴 Detectamos si abrió el modal solo para subir el recibo
@@ -48,21 +25,14 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
     const [paymentData, setPaymentData] = useState({
         amount: defaultData.amount || '',
         // Si está subiendo recibo, lo anclamos al mes que debe. Si es nuevo, pasa al siguiente.
-        billing_month: isPendingMode ? currentPaidThrough : getNextMonth(currentPaidThrough), 
+        billing_month: mesInicialDelPago(settings, serviceId, isPendingMode),
         notes: '',
         receiptFile: null
     });
 
     // Validar si el mes seleccionado ya fue pagado
-    const isAlreadyPaid = () => {
-        if (!currentPaidThrough || !paymentData.billing_month) return false;
-        const [currY, currM] = currentPaidThrough.split('-').map(Number);
-        const [selY, selM] = paymentData.billing_month.split('-').map(Number);
-        if (selY < currY || (selY === currY && selM <= currM)) return true;
-        return false;
-    };
+    const isAlreadyPaid = () => yaEstabaPagado(currentPaidThrough, paymentData.billing_month);
 
-    // Apagamos la alerta roja si solo está subiendo el recibo pendiente
     const isConflict = !isPendingMode && isAlreadyPaid();
 
     // Actualizar estado local y enviarlo a UnifiedModal
@@ -71,7 +41,6 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
         setPaymentData(updated);
 
         const hasFile = !!updated.receiptFile;
-        const fileStatusMsg = hasFile ? 'Comprobante adjunto' : '⚠️ COMPROBANTE PENDIENTE';
 
         // 🛡️ Preparamos el payload de auditoría y marcamos si el comprobante queda pendiente
         setFormData({
@@ -80,14 +49,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                 ...updated,
                 isReceiptPending: !hasFile // El orquestador o la vista usarán esto para exigir la subida después
             },
-            _auditPayload: {
-                action_type: 'REGISTRO_PAGO_SERVICIO',
-                timeline_title: `Pago de ${serviceName}`,
-                dimension: 'FINANZAS',
-                old_value: currentPaidThrough || 'Sin pagos previos',
-                new_value: `Mes: ${updated.billing_month} | Monto: ${formatMoney(updated.amount)} | ${fileStatusMsg}`,
-                notas: updated.notes || ''
-            }
+            _auditPayload: { action_type: 'REGISTRO_PAGO_SERVICIO', ...auditoriaDelPago(settings, serviceId, updated) }
         });
     };
 
@@ -99,14 +61,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                 ...paymentData,
                 isReceiptPending: true // Inicialmente no hay archivo
             },
-            _auditPayload: {
-                action_type: 'REGISTRO_PAGO_SERVICIO',
-                timeline_title: `Pago de ${serviceName}`,
-                dimension: 'FINANZAS',
-                old_value: currentPaidThrough || 'Sin pagos previos',
-                new_value: `Mes: ${paymentData.billing_month} | Monto: ${formatMoney(paymentData.amount)} | ⚠️ COMPROBANTE PENDIENTE`,
-                notas: paymentData.notes || ''
-            }
+            _auditPayload: { action_type: 'REGISTRO_PAGO_SERVICIO', ...auditoriaDelPago(settings, serviceId, paymentData) }
         }));
         // eslint-disable-next-line
     }, []);

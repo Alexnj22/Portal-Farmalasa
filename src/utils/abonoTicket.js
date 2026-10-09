@@ -200,3 +200,42 @@ export function construirComprobanteDeAbono({ abono, sala, hechoPor, hechoAt }) 
         ],
     };
 }
+
+// ── El formulario del abono (portal y app) ───────────────────────────────────
+// Vivía en `components/caja/DialogoAbono.jsx`. El porqué de cada regla sigue
+// allá: el precio se ESCRIBE (el que rige es el que la sala cotiza) y «por
+// definir» es un estado — sin precio no hay total ni saldo prometido.
+
+/** El total de lo apartado, o null si algún renglón no tiene precio («por definir»). */
+export function totalDelApartado(renglones) {
+    if (!renglones?.length) return null;
+    let suma = 0;
+    for (const r of renglones) {
+        const p = String(r.precio ?? '').trim();
+        if (p === '') return null;
+        const n = Number(p) * (Number(r.cantidad) || 0);
+        if (!Number.isFinite(n)) return null;
+        suma += n;
+    }
+    return suma;
+}
+
+/** Lo que se puede guardar: cliente (3+ letras), algún producto con nombre, un monto > 0 y no más que el total. */
+export function estadoDelApartado({ cliente, renglones, abonado }) {
+    const total = totalDelApartado(renglones);
+    const monto = Number(abonado);
+    const conNombre = (renglones || []).filter((r) => String(r.nombre ?? '').trim().length > 1);
+    const excede = total != null && Number.isFinite(monto) && monto > total;
+    const saldo = total == null ? null : Math.max(0, total - (Number.isFinite(monto) ? monto : 0));
+    const valido = String(cliente ?? '').trim().length >= 3 && conNombre.length > 0 && Number.isFinite(monto) && monto > 0 && !excede;
+    return { total, monto, saldo, excede, valido, conNombre };
+}
+
+/** Los renglones como viajan a `anotarAbono`. */
+export const renglonesDelApartado = (conNombre) => conNombre.map((r) => ({
+    erp_product_id: r.erp_product_id ?? null,
+    nombre: String(r.nombre).trim(),
+    presentacion: String(r.presentacion ?? '').trim() || null,
+    cantidad: Number(r.cantidad) || 1,
+    precio: String(r.precio ?? '').trim() === '' ? null : Number(r.precio),
+}));

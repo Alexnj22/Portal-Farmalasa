@@ -8,6 +8,7 @@ import { formatDate } from '@nucleo/utils/helpers';
 import PortalTextarea from '../common/PortalTextarea';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hoySV } from '@nucleo/utils/fecha';
+import { vacacionEnCurso, ingresoFueraDelPeriodo } from '@nucleo/utils/reingresoYRecontratacion';
 
 const FormVacationRecall = ({ formData, setFormData }) => {
     const { shifts } = useStaffStore();
@@ -15,15 +16,7 @@ const FormVacationRecall = ({ formData, setFormData }) => {
     const emp = formData?.employee;
 
     // Detectar el rango de vacaciones activo desde el historial
-    const activeVacation = useMemo(() => {
-        const today = hoySV();
-        return (emp?.history || []).find(h =>
-            h.type === 'VACATION' &&
-            h.date <= today &&
-            (h.metadata?.endDate >= today || !h.metadata?.endDate) &&
-            h.metadata?.status !== 'CANCELLED'
-        );
-    }, [emp]);
+    const activeVacation = useMemo(() => vacacionEnCurso(emp, hoySV()), [emp]);
 
     const vacStart = activeVacation?.date || formData?.vacStart;
     const vacEnd   = activeVacation?.metadata?.endDate || formData?.vacEnd;
@@ -76,8 +69,7 @@ const FormVacationRecall = ({ formData, setFormData }) => {
                     onChange={val => set('recall_date', val)}
                     icon={Calendar}
                     />
-                {vacStart && vacEnd && formData?.recall_date &&
-                    (formData.recall_date < vacStart || formData.recall_date > vacEnd) && (
+                {ingresoFueraDelPeriodo(formData?.recall_date, vacStart, vacEnd) && (
                     <p className="text-caption text-danger-text font-bold mt-1 ml-1">
                         ⚠ La fecha debe estar dentro del período de vacaciones ({formatDate(vacStart)} – {formatDate(vacEnd)})
                     </p>

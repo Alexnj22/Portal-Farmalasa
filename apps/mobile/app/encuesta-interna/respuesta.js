@@ -7,13 +7,14 @@
 // (`categoriaDeAntiguedad`, núcleo).
 //
 // Se guarda con `insertSurveyResponse` / `updateSurveyResponse`, los mismos
-// del portal, que anotan la bitácora solos.
+// del portal, que anotan la bitácora solos. Una respuesta ya capturada también
+// se elimina (`deleteSurveyResponse`, con confirmación), como en el portal.
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import {
-  fetchEmployeesForSurvey, fetchSurveyBloques, fetchSurveyPreguntas, fetchSurveyResponses, insertSurveyResponse, updateSurveyResponse,
+  deleteSurveyResponse, fetchEmployeesForSurvey, fetchSurveyBloques, fetchSurveyPreguntas, fetchSurveyResponses, insertSurveyResponse, updateSurveyResponse,
 } from '@nucleo/data/encuestas';
 import { categoriaDeAntiguedad } from '@nucleo/utils/climaLaboral';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -129,6 +130,18 @@ export default function RespuestaInterna() {
     router.back();
   };
 
+  const eliminar = () => Alert.alert('¿Eliminar la respuesta?', `Se borra la respuesta de ${elegido ? nombreDe(elegido) : 'esta persona'} y deja de contar en los resultados.`, [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Eliminar', style: 'destructive', onPress: async () => {
+      setGuardando(true);
+      const { error } = await deleteSurveyResponse(editando.id, { surveyId: encuesta.id, employeeId: editando.employee_id });
+      setGuardando(false);
+      if (error) { fallo('No se pudo eliminar', error.message || ''); return; }
+      listo('Respuesta eliminada', '');
+      router.back();
+    } },
+  ]);
+
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: editando ? 'Editar respuesta' : 'Nueva respuesta', headerLargeTitle: false }} />
@@ -184,6 +197,7 @@ export default function RespuestaInterna() {
                 <Campo value={comentario} onChangeText={setComentario} placeholder="¿Qué mejorarías del ambiente de trabajo?" style={{ minHeight: 80 }} />
               </Seccion>
               <BotonGrande texto={guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Registrar respuesta'} onPress={guardar} deshabilitado={guardando || !empleadoId} />
+              {editando ? <BotonGrande texto="Eliminar la respuesta" borde color={MARCA.rojo} onPress={eliminar} deshabilitado={guardando} /> : null}
             </>
           )}
         </ScrollView>

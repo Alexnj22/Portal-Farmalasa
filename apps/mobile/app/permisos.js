@@ -12,6 +12,11 @@
 // (`guardarPermisoDeCargo`, `copiarPermisosDeCargo`, …): quién le dio acceso a
 // quién queda registrado también desde el teléfono.
 //
+// También las tres acciones en bloque del portal: «Activar todo», encender o
+// apagar una SECCIÓN entera (el interruptor de su encabezado) y «Delegar las
+// decisiones en ausencia», con las MISMAS funciones y las filas del núcleo
+// (`filasParaActivarTodo`, `filasDeSeccion`, `filasParaDelegar`).
+//
 // Lo que se pinta cambia antes de que conteste el servidor; si la escritura
 // falla, se recarga del servidor (la pantalla nunca muestra un permiso que
 // nadie guardó).
@@ -23,11 +28,13 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import {
   fetchRolePermissions, fetchRolesForPermissions, guardarPermisoDeCargo, upsertRolePermission, upsertRolePermissionsBulk,
   cambiarNivelDePrecioDeCargo, cambiarSuperUsuarioDeCargo, cambiarTiempoDeInactividadDeCargo, copiarPermisosDeCargo,
+  activarTodoParaCargo, cambiarSeccionDeCargo, delegarDecisionesDeCargo,
 } from '@nucleo/data/permissions';
 import { MODULE_GROUPS } from '@nucleo/constants/permissionModules';
 import { cargosNivelANivel } from '@nucleo/utils/jerarquiaDeCargos';
 import {
   MAX_INACTIVIDAD, MIN_INACTIVIDAD, ROTULO_ALCANCE, filasCopiadasDe, mapaDePermisos, permisoEnPalabras, planDeCambioDePermiso,
+  delegaDecisiones, filasDeSeccion, filasParaActivarTodo, filasParaDelegar, modulosDelGrupo, seccionEncendida,
 } from '@nucleo/utils/permisosDeCargo';
 import { NIVELES_DE_PRECIO } from '@nucleo/utils/preciosDeProducto';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
@@ -161,6 +168,32 @@ export default function Permisos() {
     ]);
   };
 
+  // ── Las acciones en bloque ──
+  const enBloque = async (clave, filas, escribir, titulo) => {
+    setGuardando(clave);
+    const { error: e } = await escribir(filas);
+    setGuardando(null);
+    if (e) fallo('No se pudo guardar', mensajeAmigable(e)); else listo(titulo, cargo.name);
+    cargar();
+  };
+  const activarTodo = () => Alert.alert('¿Activar todos los permisos?', `Se habilitan todos los módulos para «${cargo.name}». Lo que ya tenía se sobreescribe y se quita el tope de precio.`, [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Sí, activar todo', onPress: () => enBloque('todo', filasParaActivarTodo(mapa, roleId, MODULE_GROUPS),
+      (f) => activarTodoParaCargo(roleId, f, contexto), 'Todo activado') },
+  ]);
+  const alternarSeccion = (g, activar) => {
+    const modulos = modulosDelGrupo(g);
+    Alert.alert(activar ? '¿Activar toda la sección?' : '¿Apagar toda la sección?',
+      `${activar ? 'Se habilitan' : 'Se quitan'} los ${modulos.length} permisos de «${g.group}» para «${cargo.name}».`, [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: activar ? 'Sí, activar' : 'Sí, apagar', style: activar ? 'default' : 'destructive',
+          onPress: () => enBloque(`g:${g.group}`, filasDeSeccion(mapa, roleId, modulos, activar),
+            (f) => cambiarSeccionDeCargo(roleId, f, activar, contexto), activar ? 'Sección activada' : 'Sección apagada') },
+      ]);
+  };
+  const delegar = (valor) => enBloque('delegar', filasParaDelegar(mapa, roleId, valor),
+    async (f) => ({ error: (await delegarDecisionesDeCargo(roleId, f, valor, contexto))?.error }), valor ? 'Decisiones delegadas en ausencia' : 'Ya no delega');
+
   const opcionesPrecio = [{ id: '', label: 'Sin límite (todos los precios)' }, ...NIVELES_DE_PRECIO.map((n) => ({ id: n.key, label: n.label }))];
   const minutos = cargo?.idle_limit_min ?? 5;
   const opcionesTiempo = [...new Set([...OPCIONES_INACTIVIDAD, minutos])].sort((a, b) => a - b).map((n) => ({ id: String(n), label: enPalabras(n) }));
@@ -195,17 +228,37 @@ export default function Permisos() {
                 <Interruptor primero titulo="Super Usuario" detalle="Entra a todo, sin importar lo que diga cada módulo." valor={!!cargo.is_su} onCambiar={alternarSU} deshabilitado={bloqueado} />
                 <Elegir rotulo="Cerrar la sesión sin uso después de" valor={String(minutos)} opciones={opcionesTiempo} onCambiar={cambiarInactividad} deshabilitado={bloqueado} />
                 <Elegir rotulo="Nivel de precio máximo" valor={cargo.max_price_level ?? ''} opciones={opcionesPrecio} onCambiar={cambiarPrecio} deshabilitado={bloqueado} />
+                <Interruptor titulo="Delegar las decisiones en ausencia" detalle="Cuando falta, las solicitudes que decide este cargo pasan a su superior o a su suplente."
+                  valor={delegaDecisiones(mapa, cargoId)} onCambiar={delegar} deshabilitado={bloqueado} />
                 {puedeEditar ? (
                   <Elegir rotulo="Copiar los permisos de otro cargo" valor="" vacio="Elegir cargo…"
                     opciones={roles.filter((r) => r.id !== roleId).map((r) => ({ id: String(r.id), label: r.name }))} onCambiar={(v) => v && copiarDesde(v)} deshabilitado={bloqueado} />
                 ) : null}
               </Seccion>
             </View>
+            {puedeEditar ? (
+              <View style={{ marginHorizontal: 16 }}>
+                <Pressable onPress={activarTodo} disabled={bloqueado} accessibilityRole="button"
+                  style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', alignItems: 'center', borderRadius: 14, borderWidth: 1, borderColor: MARCA.verde, opacity: bloqueado ? 0.5 : pressed ? 0.7 : 1 })}>
+                  <Text style={{ color: MARCA.verde, fontSize: 15, fontWeight: '700' }}>Activar todos los permisos</Text>
+                </Pressable>
+              </View>
+            ) : null}
             {cargo.is_su ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Super Usuario: lo de abajo no lo limita mientras esté encendido." /></View> : null}
 
             <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'con', label: 'Con acceso' }, { id: 'todos', label: 'Todos los módulos' }]} />
             {grupos.map((g) => (
-              <View key={g.group} style={{ marginHorizontal: 16 }}>
+              <View key={g.group} style={{ marginHorizontal: 16, gap: 6 }}>
+                {puedeEditar && !texto.trim() ? (() => {
+                  const original = MODULE_GROUPS.find((x) => x.group === g.group);
+                  const encendida = seccionEncendida(mapa, cargoId, original);
+                  return (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 }}>
+                      <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>{encendida ? 'Toda la sección encendida' : 'Encender toda la sección'}</Text>
+                      <Switch value={encendida} onValueChange={(v) => alternarSeccion(original, v)} disabled={bloqueado} />
+                    </View>
+                  );
+                })() : null}
                 <Seccion titulo={g.group}>
                   {g.modules.map((m, i) => {
                     const p = de(m.key) || {};

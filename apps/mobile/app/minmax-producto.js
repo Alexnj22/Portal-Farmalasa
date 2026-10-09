@@ -27,7 +27,7 @@ import { fetchNombreDeProducto } from '@nucleo/data/productos';
 import {
   fetchLotesPorVencer, fetchPoliticaDeVencimiento, fetchProductCostHistory, fetchResumenDelProductoPorSala,
   fetchStockConfigFull, fetchStockParams, fetchStockParamsHistory, fetchUltimasVentasDelProducto,
-  ocultarProductoMinMax, salaTieneMinMaxPublicado, updateStockParams, upsertStockParams,
+  marcarAccionStockMuerto, ocultarProductoMinMax, salaTieneMinMaxPublicado, updateStockParams, upsertStockParams,
 } from '@nucleo/data/stockParams';
 import { diasDeCobertura, planDeGuardadoMinMax, planDeRestaurarMinMax, estadoDeProyeccion } from '@nucleo/utils/minmaxGuardar';
 import { ALERTA_ETIQUETA } from '@nucleo/constants/minmax';
@@ -102,6 +102,31 @@ function Historial({ producto, sucursal }) {
       {h.abc_class ? <Pildora texto={`${h.abc_class}${h.demand_variability ?? ''}`} color={MARCA.violetaClaro} /> : null}
     </View>
   ));
+}
+
+// Sin movimiento (stock muerto): marcarlo para traslado o para liquidación,
+// como el panel del portal. Es una constancia en la bitácora, no mueve nada.
+function StockMuerto({ fila, productoId }) {
+  const [hecho, setHecho] = useState(null);
+  const marcar = (accion) => Alert.alert(accion === 'transfer' ? 'Marcar para traslado' : 'Marcar para liquidación',
+    `${ERP_NAMES[fila.erp_sucursal_id] ?? 'Sala'} · ${Number(fila.current_stock ?? 0)} en existencia. Queda registrado en la bitácora.`, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Marcar', onPress: async () => {
+        await Promise.resolve(marcarAccionStockMuerto(productoId, accion, { product: fila.product_name, stock: Number(fila.current_stock), erp_sucursal_id: fila.erp_sucursal_id, desde: 'app' })).catch(() => {});
+        setHecho(accion);
+      } },
+    ]);
+  return (
+    <View style={{ gap: 6 }}>
+      <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.5 }}>SIN MOVIMIENTO</Text>
+      {hecho ? <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '600' }}>{hecho === 'transfer' ? 'Marcado para traslado — registrado' : 'Marcado para liquidación — registrado'}</Text> : (
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <View style={{ flex: 1 }}><BotonGrande texto="Para traslado" borde color={MARCA.ambar} onPress={() => marcar('transfer')} /></View>
+          <View style={{ flex: 1 }}><BotonGrande texto="Para liquidación" borde color={MARCA.azulClaro} onPress={() => marcar('liquidate')} /></View>
+        </View>
+      )}
+    </View>
+  );
 }
 
 function Sala({ fila, productoId, ciclo, puedeEditar, onGuardar, onRestaurar, onOcultar, onMostrar }) {
@@ -183,6 +208,7 @@ function Sala({ fila, productoId, ciclo, puedeEditar, onGuardar, onRestaurar, on
                 </View>
               </View>
             ) : null}
+            {fila.is_dead_stock || fila.alert_status === 'dead_stock' ? <StockMuerto fila={fila} productoId={productoId} /> : null}
             <View style={{ gap: 4 }}>
               <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', letterSpacing: 0.4 }}>HISTORIAL DE CÁLCULOS</Text>
               <Historial producto={productoId} sucursal={fila.erp_sucursal_id} />

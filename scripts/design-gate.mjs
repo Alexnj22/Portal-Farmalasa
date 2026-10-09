@@ -380,6 +380,8 @@ const EXCEPTIONS = {
   'src/utils/pedidoPrint.js': ['hex'],            // pdfmake: docDefinition, no CSS
   'src/plataforma/documentoDeBienvenida.js': ['hex'],  // idem: es un PDF, no hay tokens de tema en un papel
   'src/utils/constanciaDeSancion.js': ['hex'],    // idem: la constancia del Art. 83 se imprime y se firma
+  'src/utils/marcaDelPapel.js': ['hex'],
+  'src/utils/planillaDePapel.js': ['hex'],        // idem: la planilla impresa (negro y gris de rejilla, sin tema)          // idem: los colores del logo para el PAPEL (carné, bienvenida, constancia)
   // El QR tiene que ser negro puro sobre blanco puro: es lo que lee un lector, y
   // un token de tema lo dejaría claro sobre claro en oscuro — ilegible para
   // cualquier teléfono. Mismo criterio que la guía de encuadre de la cámara.

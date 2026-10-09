@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Sparkles, Thermometer } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import { rango12 } from '@nucleo/utils/hora';
+import { conHorarioCambiado, hhmm, horasParaElegir, mediasHoras } from '@nucleo/utils/configuracionDeBitacoras';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Los horarios de un área — cuándo se toma la temperatura y cuándo se limpia.
@@ -30,7 +31,6 @@ import { rango12 } from '@nucleo/utils/hora';
 // redonda, así que la lista de medias horas es un selector solo.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const hhmm = (t) => String(t || '').slice(0, 5);
 
 /** «07:30» → «7:30 AM». La sala lee la hora en 12 horas, como el reloj. */
 function rotularHora(hm) {
@@ -41,28 +41,8 @@ function rotularHora(hm) {
     return `${h12}:${String(m || 0).padStart(2, '0')} ${ampm}`;
 }
 
-/**
- * Las medias horas entre que la sucursal abre y cierra.
- *
- * «Los horarios disponibles deben ser los de cada sucursal» (usuario): antes se
- * ofrecía de 5 AM a 10:30 PM en todas, y con eso se podía poner una lectura a
- * una hora en que el local está cerrado — nadie la puede tomar y el mes la
- * cuenta como faltante todos los días. Sin horario cargado se cae al rango
- * viejo, que es la única respuesta honesta cuando no se sabe.
- */
-function mediasHoras(abre = '05:00', cierra = '22:30') {
-    const aMin = (t) => {
-        const [h, m] = String(t).split(':').map(Number);
-        return (Number.isNaN(h) ? 5 : h) * 60 + (Number.isNaN(m) ? 0 : m);
-    };
-    const ini = Math.floor(aMin(abre) / 30) * 30;
-    const fin = Math.ceil(aMin(cierra) / 30) * 30;
-    const salida = [];
-    for (let m = ini; m <= Math.min(fin, 23 * 60 + 30); m += 30) {
-        salida.push(`${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`);
-    }
-    return salida;
-}
+// Las medias horas de la sala salen del núcleo (`mediasHoras`), las mismas
+// que ofrece la app.
 
 function SelectorDeHora({ value, onChange, etiqueta, nombre, horas }) {
     // Si el valor guardado no cae en una media hora (por ejemplo 07:15, puesto
@@ -70,9 +50,7 @@ function SelectorDeHora({ value, onChange, etiqueta, nombre, horas }) {
     // es que el selector muestre vacío y el primer guardado le cambie la hora a
     // la sala sin que nadie lo haya pedido.
     const opciones = useMemo(() => {
-        const v = hhmm(value);
-        const base = horas.includes(v) || !v ? horas : [...horas, v].sort();
-        return base.map(h => ({ value: h, label: rotularHora(h) }));
+        return horasParaElegir(value, horas).map(h => ({ value: h, label: rotularHora(h) }));
     }, [value, horas]);
 
     return (
@@ -102,7 +80,7 @@ export default function EditorDeHorarios({ tipo, filas, onCambiar, rango }) {
     // igual necesita ver a qué hora se le exige cada cosa.
     const soloLectura = typeof onCambiar !== 'function';
     const cambiar = (i, parche) =>
-        onCambiar(lista.map((f, j) => (j === i ? { ...f, ...parche } : f)));
+        onCambiar(conHorarioCambiado(lista, i, parche));
 
     return (
         <div className="space-y-2">

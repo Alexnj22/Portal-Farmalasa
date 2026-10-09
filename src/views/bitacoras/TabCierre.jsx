@@ -8,7 +8,8 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import { LoadingState } from '../../components/common/StateViews';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { cerrarMes, correrPeriodo, fetchCierres, fetchLibroPendientes, fetchMesImpreso, fetchResumenMes, periodoDe, reabrirMes } from '@nucleo/data/bitacoras';
-import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { hoySV } from '@nucleo/utils/fecha';
+import { cumplimiento, nombreDelPeriodo, puedeFirmarElCierre, rotularCumplimiento, tonoDelCumplimiento } from '@nucleo/utils/cierreDeBitacoras';
 import { registrarEgreso } from '@nucleo/data/egreso';
 import { imprimirMesDeBitacoras } from '@nucleo/utils/bitacoraPrint';
 import { abrirVentanaDeImpresion, VENTANA_BLOQUEADA } from '../../plataforma/ventanaDeImpresion';
@@ -29,19 +30,12 @@ import { logoComoDataUrl, LOGO_DE_LA_EMPRESA } from '@nucleo/utils/marcaDeLaSala
 // muestra en grande antes de firmar en vez de esconderlos.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const nombreMes = (p) => {
-    const txt = fechaTexto(`${String(p).slice(0, 7)}-01`, { month: 'long', year: 'numeric' });
-    // Sólo la PRIMERA letra. La clase `capitalize` de CSS pone mayúscula en cada
-    // palabra y dejaba «Julio De 2026».
-    return txt.charAt(0).toUpperCase() + txt.slice(1);
-};
-
-const pct = (hechas, esperadas) => (esperadas > 0 ? Math.round((hechas / esperadas) * 100) : null);
-
-// `null` se pinta «—», no «100%». Un mes sin nada esperado no es un mes
-// cumplido: es un mes que no aplica, y decir 100% sería firmar un logro vacío.
-const rotularPct = (p) => (p === null ? '—' : `${p}%`);
-const tonoPct = (p) => (p === null ? undefined : p === 100 ? 'success' : 'warning');
+// Núcleo (`cierreDeBitacoras`): el nombre del mes y el cumplimiento, los
+// mismos que pinta la app.
+const nombreMes = nombreDelPeriodo;
+const pct = cumplimiento;
+const rotularPct = rotularCumplimiento;
+const tonoPct = tonoDelCumplimiento;
 
 /** Un número del resumen, con su rótulo. El tono lo pone quien lo usa. */
 function Cifra({ valor, label, tono }) {
@@ -357,7 +351,7 @@ export default function TabCierre({ branchId, fechaVista }) {
                                     : 'Por ejemplo: las cuatro lecturas faltantes son del 12 y 13, cuando la sala cerró por el corte de energía.'}
                             />
                             <Button variant="primary" icon={CalendarCheck} onClick={firmar} loading={guardando}
-                                disabled={libroPend > 0 && obs.trim().length < 15}>
+                                disabled={!puedeFirmarElCierre(libroPend, obs)}>
                                 Firmar y cerrar el mes
                             </Button>
                         </section>

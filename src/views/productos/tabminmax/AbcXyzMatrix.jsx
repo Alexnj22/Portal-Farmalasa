@@ -2,7 +2,7 @@
 import React, { useMemo, useState, useRef, useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { BarChart2, ChevronDown } from 'lucide-react';
-import { normXyz } from '@nucleo/utils/minmaxTabla';
+import { matrizAbcXyz } from '@nucleo/utils/minmaxTabla';
 import Button from '../../../components/common/Button';
 import useCapaFlotante from '../../../plataforma/capaFlotante';
 import useLayoutCompacto from '@nucleo/hooks/useLayoutCompacto';
@@ -50,19 +50,8 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
     // línea) y en táctil no hay hover que apagar.
     useCapaFlotante(abierto && !compacto);
 
-    const matrix = useMemo(() => {
-        const m = {};
-        for (const abc of ABC_KEYS)
-            for (const xyz of XYZ_KEYS)
-                m[`${abc}${xyz}`] = 0;
-        for (const r of data) {
-            if (r.is_dead_stock || r.alert_status === 'no_data') continue;
-            const abc = r.draft_abc_class || r.abc_class || 'D';
-            const xyz = normXyz(r.draft_demand_variability || r.demand_variability);
-            if (m[`${abc}${xyz}`] !== undefined) m[`${abc}${xyz}`]++;
-        }
-        return m;
-    }, [data]);
+    // El conteo es del núcleo (`matrizAbcXyz`), el mismo del teléfono.
+    const matrix = useMemo(() => matrizAbcXyz(data), [data]);
 
     const totalPorAbc = abc => XYZ_KEYS.reduce((s, x) => s + matrix[`${abc}${x}`], 0);
 

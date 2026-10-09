@@ -85,7 +85,8 @@
           "locationAlwaysAndWhenInUsePermission": "Farmalasa sigue marcando tu ubicación con la app cerrada mientras tienes una ruta iniciada, para que en el mapa se vea dónde va el reparto. Al terminar la ruta deja de usarla.",
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true,
-          "isAndroidForegroundServiceEnabled": true
+          "isAndroidForegroundServiceEnabled": true,
+          "motionUsagePermission": "Farmalasa usa el sensor de movimiento para saber si vas en ruta y ahorrar batería al marcar tu ubicación."
         }
       ]
     ],

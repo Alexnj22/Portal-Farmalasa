@@ -4,6 +4,7 @@ import Badge from '../common/Badge';
 import { Search, User, MapPin, Briefcase, ArrowRightLeft, TrendingUp, Clock, ShieldCheck, CheckCircle2, FileText, AlertCircle, UserMinus, Award, Phone, CalendarDays } from 'lucide-react';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { tipoDeMovimiento } from '@nucleo/utils/edicionDeSucursal';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect'; 
 import PortalTextarea from '../common/PortalTextarea';
@@ -79,15 +80,7 @@ const FormLeadership = ({ formData, setFormData }) => {
     const empBranch = useMemo(() => branches.find(b => String(b.id) === String(selectedEmp?.branchId)), [branches, selectedEmp]);
     
     // 4. Lógica de Movimiento
-    const moveType = useMemo(() => {
-        if (!selectedEmp || !formData.branch) return 'NONE';
-        const isSameBranch = String(selectedEmp.branchId) === String(formData.branch.id);
-        const isSameRole = selectedEmp.role === formData.targetRole;
-        if (isSameBranch && !isSameRole) return 'PROMOTION';
-        if (!isSameBranch && isSameRole) return 'TRANSFER';
-        if (!isSameBranch && !isSameRole) return 'TRANSFER_PROMOTION';
-        return 'LATERAL';
-    }, [selectedEmp, formData.branch, formData.targetRole]);
+    const moveType = useMemo(() => tipoDeMovimiento(selectedEmp, formData.branch, formData.targetRole), [selectedEmp, formData.branch, formData.targetRole]);
 
     useEffect(() => {
         if (formData.moveType !== moveType) setFormData(prev => ({ ...prev, moveType }));

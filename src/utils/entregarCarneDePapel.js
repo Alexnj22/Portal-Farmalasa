@@ -34,7 +34,7 @@ export async function entregarCarneDePapel({
     const emitido = await emitirCarneTemporal(employeeId, motivo, salaId);
     if (!emitido.ok) {
         showToast('No se emitió el carné', emitido.motivo, 'error');
-        return { ok: false };
+        return { ok: false, emitido: false, motivo: emitido.motivo };
     }
 
     const r = await imprimirCarneDePapel({
@@ -58,7 +58,7 @@ export async function entregarCarneDePapel({
                 : 'Vale hasta medianoche de hoy.',
             'success',
         );
-        return { ok: true };
+        return { ok: true, via: r.via };
     }
 
     // El carné YA está emitido: lo que falló es el papel. Decirlo así evita que
@@ -70,5 +70,7 @@ export async function entregarCarneDePapel({
         'warning',
         12000,
     );
-    return { ok: false };
+    // Se EMITIÓ (el de antes ya no sirve) pero no salió papel: quien llama
+    // necesita las dos cosas para decirlo bien.
+    return { ok: false, emitido: true, motivo: r.detalle };
 }

@@ -10,14 +10,15 @@
 //
 // Los costos y márgenes sólo con `productos_ver_costos` (la base no los manda
 // sin él); los niveles de precio, hasta el tope del cargo (`nivelesVisibles`).
-// Editar (foto, devolutivo, categoría) pide `productos_tab_catalogo`, el mismo
-// permiso que abre el catálogo del portal donde se edita.
+// Editar (foto, devolutivo, categoría, principios activos, ubicaciones y si se
+// ve en la app de clientes) pide `productos_tab_catalogo`, el mismo permiso que
+// abre el catálogo del portal donde se edita.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Switch, Text, View } from 'react-native';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchInventoryByProductIds } from '@nucleo/data/inventory';
-import { fetchFichaDeProducto, fetchProductDetail, fetchUbicacionesDeProducto, updateProductDevolutivo } from '@nucleo/data/productos';
+import { fetchFichaDeProducto, fetchProductDetail, fetchUbicacionesDeProducto, fetchVisibleEnApp, setVisibleEnApp, updateProductDevolutivo } from '@nucleo/data/productos';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { COLUMNAS_DE_PRECIO, alertaDeMargen, nivelesVisibles, specialLossLabel } from '@nucleo/utils/preciosDeProducto';
@@ -95,7 +96,22 @@ export default function Producto() {
       setFilas((x) => x ?? []);
     }
   }, [productId, conCosto]);
-  useEffect(() => { cargar(); }, [cargar]);
+  // Se relee al volver de editar los principios o las ubicaciones.
+  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
+
+  // ¿Se ve en el catálogo de la app de clientes?
+  const [enApp, setEnApp] = useState(null);
+  useEffect(() => {
+    let vivo = true;
+    Promise.resolve(fetchVisibleEnApp(productId)).then((v) => { if (vivo) setEnApp(v); }).catch(() => {});
+    return () => { vivo = false; };
+  }, [productId]);
+  const alternarEnApp = async (v) => {
+    const antes = enApp;
+    setEnApp(v);
+    try { await setVisibleEnApp(productId, v, { producto: ficha?.nombre, desde: 'app' }); Haptics.selectionAsync().catch(() => {}); }
+    catch (e) { setEnApp(antes); fallo('No se pudo guardar', mensajeAmigable(e)); }
+  };
 
   const salas = useMemo(() => {
     const porSala = new Map();
@@ -232,6 +248,15 @@ export default function Producto() {
               <Text style={{ color: ficha.tipo_medicamento ? colorSistema.texto : colorSistema.texto2, fontSize: 16 }}>{ficha.tipo_medicamento || 'Sin categoría'}</Text>
               {puedeEditar ? <Text style={{ color: colorSistema.texto2, fontSize: 18 }}>›</Text> : null}
             </Pressable>
+            {enApp != null ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 10, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Se ve en la app de clientes</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{enApp ? 'Aparece en el catálogo de la app.' : 'Oculto del catálogo de la app.'}</Text>
+                </View>
+                <Switch value={enApp} disabled={!puedeEditar} onValueChange={alternarEnApp} />
+              </View>
+            ) : null}
           </Seccion>
         ) : null}
 
@@ -240,12 +265,23 @@ export default function Producto() {
             {detalle.principles.length ? detalle.principles.map((p, i) => (
               <Dato key={p.id ?? i} primero={i === 0} rotulo={p.nombre} valor={p.concentracion || '—'} />
             )) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{ficha?.principio_activo || 'Sin principios activos registrados.'}</Text>}
+            {puedeEditar ? (
+              <Pressable onPress={() => router.push({ pathname: '/producto/principios', params: { id: String(productId), nombre: titulo } })} style={{ minHeight: 40, justifyContent: 'center' }}>
+                <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>Editar los principios activos</Text>
+              </Pressable>
+            ) : null}
           </Seccion>
         ) : null}
 
-        {ubicaciones.length ? (
+        {ubicaciones.length || puedeEditar ? (
           <Seccion titulo="Ubicaciones">
             {ubicaciones.map((u, i) => <Dato key={u.branch_id} primero={i === 0} rotulo={nombreSala.get(Number(u.branch_id)) ?? `Sala ${u.branch_id}`} valor={textoUbicacion(u)} />)}
+            {!ubicaciones.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin ubicación en ninguna sala.</Text> : null}
+            {puedeEditar ? (
+              <Pressable onPress={() => router.push({ pathname: '/producto/ubicaciones', params: { id: String(productId), nombre: titulo } })} style={{ minHeight: 40, justifyContent: 'center' }}>
+                <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>Editar las ubicaciones</Text>
+              </Pressable>
+            ) : null}
           </Seccion>
         ) : null}
 

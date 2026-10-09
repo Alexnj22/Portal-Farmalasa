@@ -19,6 +19,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchBranchKiosks } from '@nucleo/data/branches';
 import { abiertaAhora, ahoraEnSV, alertasDeSucursal, horarioDeHoy, ORDEN_DE_TIPOS, TIPOS_DE_SUCURSAL } from '@nucleo/utils/sucursales';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { useAuth } from '@nucleo/context/AuthContext';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -29,6 +30,7 @@ import { MARCA } from '../componentes/inicio/marca';
 export default function Sucursales() {
   const sucursales = useStaffStore((s) => s.branches);
   const empleados = useStaffStore((s) => s.employees);
+  const puedeEditar = useAuth().hasPermission('branches', 'can_edit');
   const [texto, setTexto] = useState('');
   const [filtro, setFiltro] = useState('ALL');
   const [kioscos, setKioscos] = useState({});
@@ -72,6 +74,11 @@ export default function Sucursales() {
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
+      {puedeEditar ? (
+        <Stack.Toolbar placement="right">
+          <Stack.Toolbar.Button icon="plus" accessibilityLabel="Nueva sucursal" onPress={() => router.push({ pathname: '/sucursal/editar', params: { nueva: '1' } })} />
+        </Stack.Toolbar>
+      ) : null}
       <MenuDeFiltros grupos={grupos} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag">
         <FiltrosActivos grupos={grupos} />
@@ -101,7 +108,7 @@ export default function Sucursales() {
           </View>
         ))}
         {!visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Ninguna sucursal con ese filtro</Text> : null}
-        {/* Editar una sucursal: desde su ficha (horarios, legal, inmueble y servicios). */}
+        {/* Editar una sucursal: desde su ficha. Crear una: el + de la barra (permiso de editar sucursales, como el portal). */}
       </ScrollView>
     </>
   );

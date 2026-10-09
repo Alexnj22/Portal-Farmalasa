@@ -38,7 +38,7 @@ import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { filaDeProductoVendido as mapAggRow, precioALaVista, totalesDeProductos, CODIGOS_ESPECIALES as SPECIAL_CODES, diasDelRango as countDays, horaDeCorte as currentHoraCorte, mesEnCurso as currentMonthRange, periodoAnterior as computePrevRange, mesAnteriorDe, puestosDelMesAnterior, rankingDeVendedores, renglonesDeLaVenta, variacionPorDia as dailyPct, ventasDiariasDelVendedor } from '@nucleo/utils/ventasPeriodo';
+import { filaDeProductoVendido as mapAggRow, precioALaVista, totalesDeProductos, CODIGOS_ESPECIALES as SPECIAL_CODES, diasDelRango as countDays, horaDeCorte as currentHoraCorte, mesEnCurso as currentMonthRange, periodoAnterior as computePrevRange, mesAnteriorDe, puestosDelMesAnterior, rankingDeVendedores, renglonesDeLaVenta, variacionPorDia as dailyPct, ventasDiariasDelVendedor, cuantosOcultos, productosSegunOcultos, laboratoriosDeProductos } from '@nucleo/utils/ventasPeriodo';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
@@ -1751,23 +1751,11 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     // Ocultar producto es global y permanente (no como el buscador, que es solo
     // para encontrar) — por defecto la vista excluye los ocultos; showHidden
     // invierte a "solo ocultos" para poder revisarlos/destaparlos.
-    const hiddenCount = useMemo(() => rows.filter(r => r.oculto_en_ventas).length, [rows]);
-    const visibleBaseRows = useMemo(() =>
-        rows.filter(r => showHidden ? r.oculto_en_ventas : !r.oculto_en_ventas),
-        [rows, showHidden]
-    );
+    // Ocultos y laboratorios: núcleo (`ventasPeriodo`), lo mismo que la app.
+    const hiddenCount = useMemo(() => cuantosOcultos(rows), [rows]);
+    const visibleBaseRows = useMemo(() => productosSegunOcultos(rows, showHidden), [rows, showHidden]);
 
-    const labOptions = useMemo(() => {
-        const seen = new Map();
-        for (const r of visibleBaseRows) {
-            if (r.laboratorio_id != null && !seen.has(r.laboratorio_id)) {
-                seen.set(r.laboratorio_id, r.laboratorio_nombre || `Lab. ${r.laboratorio_id}`);
-            }
-        }
-        return [...seen.entries()]
-            .map(([value, label]) => ({ value: String(value), label }))
-            .sort((a, b) => a.label.localeCompare(b.label));
-    }, [visibleBaseRows]);
+    const labOptions = useMemo(() => laboratoriosDeProductos(visibleBaseRows), [visibleBaseRows]);
 
     // Close drill-down and clear drill cache whenever period/branch changes
     useEffect(() => {
@@ -2127,7 +2115,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             const ids = new Set(searchRows.map(r => r.erp_product_id));
             base = [...searchRows, ...rows.filter(r => !ids.has(r.erp_product_id))];
         }
-        return base.filter(r => showHidden ? r.oculto_en_ventas : !r.oculto_en_ventas);
+        return productosSegunOcultos(base, showHidden);
     }, [rows, searchRows, searchTerm, filterBranch, showHidden]);
 
     // filtered + sorted — busca en TODO el dataset, no solo en la página visible

@@ -10,19 +10,18 @@ import { tokenMatch } from '../utils/searchUtils';
 import { ERP_NAMES, SUCURSALES as ERP_ORDER } from '../constants/erp';
 import { printFromPedidoItems } from '../utils/pedidoPrint';
 import { getBranchStage, etapasPorPedido, claveParada, currentMonthRange, necesitaAtencion, tieneObservacion, filtrarPedidos, pedidosPorSala } from '../utils/tableroDePedidos';
-import { avanzarEtapaDePedidoEnSala, despacharTrasladoPedido, fetchActiveRutas, fetchApoyoForPedido, fetchApoyoForPedidos, fetchAttendancePunches, fetchBranchNamesForSucursales, fetchDetalleSinIngresar, fetchEmployeeBranchId, fetchEntregasDePedidos, fetchItemsSinIngresar, fetchPausaHistorial, fetchPedidoItemEventosAll, fetchPedidoItemsAll, fetchPedidoSucursalStatus, fetchPedidosEnCurso, fetchResumenDeRenglonesPorPedido, fetchResumenIngresoPedidos, fetchRutaLocations, fetchTrasladosDePedidos, marcarRastreoDeFondo, noReenviarEspeciales, recibirTrasladoPedido, resolverRenglonDePedido, sucursalDeLaSala, tieneEtiquetaDeDespacho, updateRutaPedidoEntregado, upsertRutaLocation } from '../data/pedidos';
+import { avanzarEtapaDePedidoEnSala, fetchActiveRutas, fetchApoyoForPedido, fetchApoyoForPedidos, fetchAttendancePunches, fetchBranchNamesForSucursales, fetchDetalleSinIngresar, fetchEmployeeBranchId, fetchEntregasDePedidos, fetchPausaHistorial, fetchPedidoItemEventosAll, fetchPedidoItemsAll, fetchPedidoSucursalStatus, fetchPedidosEnCurso, fetchResumenDeRenglonesPorPedido, fetchResumenIngresoPedidos, fetchRutaLocations, fetchTrasladosDePedidos, marcarRastreoDeFondo, noReenviarEspeciales, resolverRenglonDePedido, sucursalDeLaSala, tieneEtiquetaDeDespacho, updateRutaPedidoEntregado, upsertRutaLocation } from '../data/pedidos';
 import {
-    fetchDevolucionesDePedido, decidirDevolucion,
+    fetchDevolucionesDePedido,
     subirEvidencia, moverDevoluciones, recibirDevoluciones,
 } from '../data/devoluciones';
-import { decidirDiferencia, confirmarLlegadaDiferencia } from '../data/diferencias';
+import { confirmarLlegadaDiferencia } from '../data/diferencias';
+import { decidirDiferenciaYMover, decidirDevolucionYMover, finalizarPedidoConCajas, registrarReenvio, reintentarIngreso } from '../data/accionesDeBodega';
 import { anularPedidoConMotivo, cicloDeReenvioPendiente, confirmarLlegadaDeReenvio, etapaDePedido, programarEntregaDePedido, reenvioTodaviaEnBodega, textoDePausa } from '../data/accionesDePedido';
 import { confirmarLlegadaDePedido } from '../data/llegadaDePedido';
-import { finalizarSalaConCajas, pedirReenvioSala } from '../data/pasosDelPedido';
 import { seguirPosicion } from '@plataforma/ubicacion';
 
 import { mensajeAmigable } from '../utils/errorMessages';
-import { cajasDeRenglon, construirCajasEspeciales, renglonesQueSalen } from '../utils/cajasEspeciales';
 import { fetchEmployeesPublicByIds } from '../data/employees';
 import { escucharCambios } from '../data/tiempoReal';
 
@@ -948,41 +947,15 @@ export function usePedidosData({ searchTerm = '' }) {
         if (!finalizarModal) return;
         const { pedidoId, sucId } = finalizarModal;
         const allRows = finalizarModal.rows ?? [];
-        // Las dos cuentas de cajas salen de lo que de verdad SALE, no de lo
-        // asignado: `ajustesEnvio` ya dice qué renglón se despacha corto o no se
-        // despacha. Contar una caja que acaba de declararse no enviada le pide a
-        // la sala que reciba algo que nunca viajó — ver `renglonesQueSalen`.
-        const rowsQueSalen = renglonesQueSalen(allRows, ajustesEnvio);
-
-        // Contar cajas Electrolit: solo los que despachan por CAJA (625ml).
-        // Cuenta CAJAS con la misma fórmula que las especiales — antes tenía su
-        // propio `Math.round(...)` copiado, y dos fórmulas para "cuántas cajas
-        // son estas unidades" es una discrepancia esperando su parcial.
-        const cajasElectrolit = rowsQueSalen
-            .filter(r =>
-                (r.products?.nombre ?? '').toLowerCase().includes('electrolit') &&
-                (r.dispatch_tipo ?? '').toUpperCase() === 'CAJA'
-            )
-            .reduce((sum, r) => sum + cajasDeRenglon(r), 0);
-
-        // Cajas especiales: E1, E2… una por CAJA. Un Electrolit ×12 es una caja
-        // especial, no doce.
-        const cajasEspeciales = construirCajasEspeciales(rowsQueSalen);
-
         setBusyAction('finalizar');
         try {
-            // 1-3. Qué sale, finalizar, y cajas y hojas: UNA transacción
-            //      (`finalizar_sala_con_cajas`, `data/pasosDelPedido`). Antes
-            //      eran tres escrituras y si la tercera fallaba la sala quedaba
-            //      finalizada sin cajas ni hojas, sin forma de reintentar.
-            const { data: fin, error: finErr } = await finalizarSalaConCajas({
-                pedidoId, sucId,
-                totalCajas, cajaMap, paginaItems, cajasElectrolit, cajasEspeciales, ajustesEnvio,
-            });
-            if (finErr) throw finErr;
+            // Qué sale, finalizar, y cajas y hojas en UNA transacción, y después
+            // el traslado aparte: el núcleo (`finalizarPedidoConCajas`), el mismo
+            // que usa la app.
+            const r = await finalizarPedidoConCajas({ pedidoId, sucId, rows: allRows, totalCajas, cajaMap, paginaItems, ajustesEnvio });
             // El segundo clic de un doble clic: el primero ya finalizó y ya
             // mandó el traslado. No se anota ni se despacha otra vez.
-            if (fin?.yaEstaba) {
+            if (r.yaEstaba) {
                 useToastStore.getState().showToast('Ya estaba finalizado', 'Esta sala ya se había finalizado.', 'info');
                 setFinalizarModal(null);
                 await loadActive();
@@ -990,38 +963,19 @@ export function usePedidosData({ searchTerm = '' }) {
             }
 
             useStaff.getState().appendAuditLog('PEDIDO_FINALIZADO', pedidoId, {
-                totalCajas, cajasElectrolit,
-                cajasEspeciales: cajasEspeciales.length,
+                totalCajas, cajasElectrolit: r.cajasElectrolit,
+                cajasEspeciales: r.cajasEspeciales.length,
                 cajas: Object.keys(cajaMap).length,
                 ajustes_envio: ajustesEnvio.length,
                 no_enviados: ajustesEnvio.filter(a => a.cantidad_enviada === 0).length,
             });
 
-            // 4. Y recién ahora sale del sistema: un traslado por producto.
-            //    Va al final a propósito — necesita `finalizado_at` y necesita
-            //    las hojas ya escritas, porque el número de hoja viaja adentro
-            //    de cada traslado. Responde enseguida y sigue en segundo plano;
-            //    el avance se sigue en `pedido_traslado_erp`.
-            //
-            //    Un fallo acá NO tumba el finalizado, y por eso va en su PROPIO
-            //    try: si se cayera al catch de afuera, el mensaje diría «no se
-            //    pudo finalizar» sobre un pedido que sí quedó finalizado, y
-            //    quien despacha lo intentaría de nuevo. Un tropiezo de red al
-            //    invocar no puede reescribir lo que ya pasó.
-            try {
-                const despacho = await despacharTrasladoPedido(pedidoId, sucId);
-                if (!despacho.ok) {
-                    useToastStore.getState().showToast(
-                        'El pedido quedó finalizado, pero no salió del sistema',
-                        mensajeAmigable(despacho.error, 'Se puede reintentar desde el pedido.'),
-                        'warning',
-                    );
-                }
-            } catch (e) {
-                console.error('despacho del traslado:', e);
+            // El traslado al sistema es la parte que puede fallar SOLA: el pedido
+            // ya quedó finalizado.
+            if (!r.despacho.ok) {
                 useToastStore.getState().showToast(
                     'El pedido quedó finalizado, pero no salió del sistema',
-                    mensajeAmigable(e, 'Se puede reintentar desde el pedido.'),
+                    mensajeAmigable(r.despacho.error, 'Se puede reintentar desde el pedido.'),
                     'warning',
                 );
             }
@@ -1115,16 +1069,10 @@ export function usePedidosData({ searchTerm = '' }) {
         setBusyAction('reenvio');
         try {
             // El ciclo lo numera la base sobre la fila bloqueada
-            // (`pedir_reenvio_sala`): leído acá, dos pedidos simultáneos daban
-            // el MISMO número, que es la clave con la que la ruta marca el
-            // reenvío. Nace PENDIENTE: el aviso sale cuando sale la ruta.
-            const especialesLabels = especialesFaltantes.map(e => (typeof e === 'string' ? e : e.label));
-            const { data: reenvio, error: reenvioErr } = await pedirReenvioSala({
-                pedidoId, sucId, cajas: cajasFaltantes, especiales: especialesLabels,
-                electrolits: electrolitsFaltantes,
-            });
-            if (reenvioErr) throw reenvioErr;
-            const ciclo = reenvio?.ciclo;
+            // (`pedir_reenvio_sala`, vía `registrarReenvio` del núcleo). Nace
+            // PENDIENTE: el aviso sale cuando sale la ruta.
+            const { ciclo, clave, especialesLabels } = await registrarReenvio({ pedidoId, sucId, cajas: cajasFaltantes, electrolits: electrolitsFaltantes, especiales: especialesFaltantes });
+            const reenvio = { clave };
 
             useStaff.getState().appendAuditLog('PEDIDO_REENVIO_CAJA', pedidoId, { sucursal_id: sucId, ciclo, cajas: cajasFaltantes, electrolits: electrolitsFaltantes, especiales: especialesLabels });
 
@@ -1318,32 +1266,29 @@ export function usePedidosData({ searchTerm = '' }) {
         if (busyAction) { useToastStore.getState().showToast('Espera', 'Hay una operación en curso, intenta de nuevo.', 'info'); return; }
         setBusyAction('ingreso');
         try {
-            const { itemIds, error } = await fetchItemsSinIngresar(pedidoId, sucId);
-            if (error) throw error;
-            if (!itemIds.length) {
+            const r = await reintentarIngreso({ pedidoId, sucId });
+            if (r.nada) {
                 useToastStore.getState().showToast('Nada que ingresar', 'Todo lo confirmado ya está en el inventario.', 'info');
                 await loadActive();
                 return;
             }
-            const erp = await recibirTrasladoPedido(pedidoId, sucId, { itemIds });
-            if (!erp.ok && erp.codigo !== 'NADA_QUE_RECIBIR') throw new Error(mensajeAmigable(erp.error, 'No se pudo ingresar.'));
             useStaff.getState().appendAuditLog('REINTENTAR_INGRESO_INVENTARIO', pedidoId, {
-                sucursal_id: sucId, items_count: itemIds.length,
-                entraron: erp.recibidas ?? null, completo: erp.completo ?? null,
+                sucursal_id: sucId, items_count: r.pedidos,
+                entraron: r.entraron, completo: r.completo,
             });
             // Lo que ENTRÓ, no lo que se pidió. Decía «N entraron» sobre el
             // tamaño de la lista aunque no hubiera entrado ninguno: con
             // `NADA_QUE_RECIBIR` —que se acepta como éxito— la cuenta era cero y
             // el aviso igual felicitaba.
-            const entraron = erp.recibidas ?? 0;
+            const entraron = r.entraron;
             if (entraron === 0) {
                 useToastStore.getState().showToast('Nada entró al inventario',
                     'Los productos siguen pendientes. Si se repite, hay que revisarlos en el sistema.', 'error', 8000);
             } else {
                 useToastStore.getState().showToast('Ingresado',
                     `${entraron} producto${entraron !== 1 ? 's' : ''} entr${entraron !== 1 ? 'aron' : 'ó'} al inventario.`
-                    + (erp.completo === false ? ` Quedan ${itemIds.length - entraron} por reintentar.` : ''),
-                    erp.completo === false ? 'info' : 'success');
+                    + (r.completo === false ? ` Quedan ${r.pedidos - entraron} por reintentar.` : ''),
+                    r.completo === false ? 'info' : 'success');
             }
             await loadActive();
         } catch (e) {
@@ -1592,26 +1537,22 @@ export function usePedidosData({ searchTerm = '' }) {
     const handleDecidirDiferencia = useCallback(async (pedidoId, sucId, itemId, accion, tipo, nota, evidencia = []) => {
         setBusyAction(`dif_${itemId}`);
         try {
-            const { data, error } = await decidirDiferencia({ itemId, accion, tipo, nota, evidencia });
-            if (error) throw error;
+            const { data, movimiento } = await decidirDiferenciaYMover({ itemId, accion, tipo, nota, evidencia });
 
             useStaff.getState().appendAuditLog(`PEDIDO_DIFERENCIA_${String(accion).toUpperCase()}`, pedidoId, {
                 sucursal_id: sucId, item_id: itemId, opcion: data?.opcion ?? tipo, estado: data?.estado,
             });
 
-            if (data?.devolucion_id) {
-                // Los dos sentidos salen por acá desde el 2026-08-24: el
-                // sobrante hace el mismo traslado de papel con el origen y el
-                // destino cambiados. Lo único que cambia es cómo se cuenta.
-                const aLaSala = data?.mueve === 'traslado_a_sala';
-                const r = await moverDevoluciones([data.devolucion_id], { simulacro: false });
+            if (movimiento) {
+                // Los dos sentidos salen por acá desde el 2026-08-24.
+                const aLaSala = movimiento.aLaSala;
                 useToastStore.getState().showToast(
-                    r.ok ? (aLaSala ? 'Salió de bodega' : 'Salió de la sala')
+                    movimiento.ok ? (aLaSala ? 'Salió de bodega' : 'Salió de la sala')
                          : 'Quedaron de acuerdo, pero no salió',
-                    r.ok ? (aLaSala ? 'Falta confirmar la entrada en la sala.'
+                    movimiento.ok ? (aLaSala ? 'Falta confirmar la entrada en la sala.'
                                     : 'Falta que bodega confirme la entrada.')
-                         : mensajeAmigable(r.fallos?.[0]?.error ?? r.error, 'Se puede reintentar.'),
-                    r.ok ? 'success' : 'warning',
+                         : mensajeAmigable(movimiento.error, 'Se puede reintentar.'),
+                    movimiento.ok ? 'success' : 'warning',
                 );
             } else if (data?.estado === 'escalada') {
                 useToastStore.getState().showToast(
@@ -1674,24 +1615,13 @@ export function usePedidosData({ searchTerm = '' }) {
     const handleDecidirDevolucion = useCallback(async (pedidoId, sucId, id, accion, nota) => {
         setBusyAction(`devdec_${id}`);
         try {
-            const { error } = await decidirDevolucion(id, accion, nota);
-            if (error) throw error;
-
-            if (accion === 'aceptar') {
-                const r = await moverDevoluciones([id], { simulacro: false });
-                if (!r.ok) {
-                    useToastStore.getState().showToast(
-                        'Quedó aceptada, pero no salió',
-                        mensajeAmigable(r.fallos?.[0]?.error ?? r.error, 'Se puede reintentar.'),
-                        'warning',
-                    );
-                } else {
-                    useToastStore.getState().showToast(
-                        'Salió de la sala',
-                        'Falta confirmar la entrada en bodega.',
-                        'success',
-                    );
-                }
+            const { movimiento } = await decidirDevolucionYMover(id, accion, nota);
+            if (movimiento) {
+                useToastStore.getState().showToast(
+                    movimiento.ok ? 'Salió de la sala' : 'Quedó aceptada, pero no salió',
+                    movimiento.ok ? 'Falta confirmar la entrada en bodega.' : mensajeAmigable(movimiento.error, 'Se puede reintentar.'),
+                    movimiento.ok ? 'success' : 'warning',
+                );
             }
             useStaff.getState().appendAuditLog(`PEDIDO_DEVOLUCION_${accion.toUpperCase()}`, pedidoId, {
                 sucursal_id: sucId, devolucion_id: id, nota,

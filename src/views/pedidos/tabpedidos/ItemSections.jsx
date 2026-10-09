@@ -16,6 +16,7 @@ import { calcSolicitado, rotuloDePresentacion, seccionesDeRenglones } from '@nuc
 import SearchInput from '../../../components/common/SearchInput';
 import { useSearchToggle } from '../../../plataforma/useSearchToggle';
 import { fetchStockParamsForRevision, guardarMinMaxDesdePedido, effectiveMinMaxPair } from '@nucleo/data/stockParams';
+import { mensajeDeMinMax, validarMinMax } from '@nucleo/utils/minmaxDesdePedido';
 
 // Framer no interpola `min(20rem, 60vw)` (salta en vez de animar): el ancho del
 // buscador abierto va en píxeles, la misma regla.
@@ -410,15 +411,8 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
 
     // Mirrors the DB constraint chk_min_lt_max:
     // min=0 → max must be 0 or 1; min≥1 → max must be strictly > min
-    const validateEdit = (edit) => {
-        const min = parseInt(edit.min, 10);
-        const max = parseInt(edit.max, 10);
-        if (isNaN(min) || min < 0) return 'MIN inválido';
-        if (isNaN(max) || max < 0) return 'MAX inválido';
-        if (min === 0 && max > 1)  return 'Con MIN=0, MAX debe ser 0 o 1';
-        if (min >= 1 && max <= min) return 'MAX debe ser mayor que MIN';
-        return null;
-    };
+    // La regla es la del núcleo (`validarMinMax`), la misma del teléfono.
+    const validateEdit = validarMinMax;
 
     const doSave = async (row, min, max) => {
         // La compuerta también acá y no sólo en los campos: `doSave` lo llaman
@@ -458,9 +452,7 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
         } catch (e) {
             // Revert to last-saved values so the input doesn't stay in an invalid state
             revertToOrig(row.id);
-            const msg = /check constraint/i.test(e?.message ?? '')
-                ? 'Valor fuera del rango permitido (MIN=0 → MAX 0–1; MIN≥1 → MAX > MIN).'
-                : (e?.message ?? 'No se pudo guardar.');
+            const msg = mensajeDeMinMax(e);
             useToastStore.getState().showToast('Error al guardar', msg, 'error');
         } finally {
             setSavingId(null);

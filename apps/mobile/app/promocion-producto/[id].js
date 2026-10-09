@@ -3,19 +3,22 @@
 //   · lote y presentación (retroactivos: son el acuerdo con el laboratorio);
 //   · los montos del bono «desde hoy» (no reescriben lo ya ganado);
 //   · extender su fin (extender un producto extiende la promoción);
-//   · quitarlo, y agregar productos nuevos con lo heredado de la campaña.
+//   · quitarlo, y agregar productos nuevos con lo heredado de la campaña;
+//   · a quién le llega el resumen diario (supervisión, salas o nadie);
+//   · borrar la promoción entera, sólo si sigue en borrador.
 // Si la promoción baja el precio en la venta, al agregar o quitar se pregunta
 // si el descuento también cambia. Las mismas funciones del portal.
 import { useCallback, useEffect, useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
+import { volver } from '../../componentes/volver';
 import * as Haptics from 'expo-haptics';
 import {
-  agregarRenglonesAPromocion, editarRenglon, editarTarifaRenglon, extenderRenglon, fetchPresentacionesDeProducto,
-  fetchPromocion, fetchProveedoresDelSistema, quitarRenglon,
+  agregarRenglonesAPromocion, ajustarResumenPromocion, borrarPromocion, editarRenglon, editarTarifaRenglon, extenderRenglon,
+  fetchPresentacionesDeProducto, fetchPromocion, fetchProveedoresDelSistema, fetchResumenDePromocion, quitarRenglon,
 } from '@nucleo/data/promociones';
 import { sincronizarProductosDelDescuento } from '@nucleo/data/descuentos';
-import { fmtUnidades, numeroEscrito, renglonesParaAgregar } from '@nucleo/utils/promocionesUtils';
+import { OPCIONES_RESUMEN_DIARIO, alternarResumen, fmtUnidades, numeroEscrito, renglonesParaAgregar, resumenElegido } from '@nucleo/utils/promocionesUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -39,6 +42,44 @@ function Linea({ titulo, children }) {
       <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{titulo}</Text>
       {children}
     </View>
+  );
+}
+
+// A quién le llega el resumen diario (7:30 a. m.): cada toque se guarda solo,
+// como en el portal; si falla, vuelve a lo de antes.
+function ResumenDiario({ promocionId }) {
+  const [valor, setValor] = useState(null);
+  useEffect(() => {
+    let vivo = true;
+    fetchResumenDePromocion(promocionId)
+      .then((r) => { if (vivo) setValor({ supervision: !!r?.supervision, salas: !!r?.salas }); })
+      .catch(() => { if (vivo) setValor({ supervision: false, salas: false }); });
+    return () => { vivo = false; };
+  }, [promocionId]);
+  if (!valor) return null;
+  const tocar = async (key) => {
+    const antes = valor;
+    const nuevo = alternarResumen(valor, key);
+    setValor(nuevo);
+    try { await ajustarResumenPromocion(promocionId, nuevo); }
+    catch (e) { setValor(antes); fallo('No se pudo guardar el resumen diario', mensajeAmigable(e)); }
+  };
+  return (
+    <Seccion titulo="Resumen diario · 7:30 a. m.">
+      {OPCIONES_RESUMEN_DIARIO.map((o, i) => {
+        const si = resumenElegido(valor, o.key);
+        return (
+          <Pressable key={o.key} onPress={() => { Haptics.selectionAsync().catch(() => {}); tocar(o.key); }}
+            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', minHeight: 44, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, opacity: pressed ? 0.6 : 1 })}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{o.rotulo}</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{o.detalle}</Text>
+            </View>
+            {si ? <Text style={{ color: MARCA.azulClaro, fontSize: 19, fontWeight: '700' }}>✓</Text> : null}
+          </Pressable>
+        );
+      })}
+    </Seccion>
   );
 }
 
@@ -201,6 +242,17 @@ export default function EditarPromocionProducto() {
               <AgregarProductos yaElegidos={renglones.map((r) => r.erp_product_id)} ocupado={agregando}
                 onAgregar={(prods) => { Haptics.selectionAsync().catch(() => {}); preguntarDescuento('agregar', prods); }} />
             </Seccion>
+          ) : null}
+          {promo ? <ResumenDiario promocionId={promo.id} /> : null}
+          {promo?.estado === 'borrador' ? (
+            <BotonGrande texto="Borrar promoción" borde color={MARCA.rojo} onPress={() => Alert.alert('Borrar la promoción',
+              `«${promo.nombre}» se borra con todos sus productos. Sólo se puede porque sigue en borrador: una que ya corrió es historia y no se borra.`, [
+                { text: 'Cancelar', style: 'cancel' },
+                { text: 'Borrar', style: 'destructive', onPress: async () => {
+                  try { await borrarPromocion(promo.id); listo('Promoción borrada', ''); volver('/promociones'); }
+                  catch (e) { fallo('No se pudo borrar la promoción', mensajeAmigable(e)); }
+                } },
+              ])} />
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>

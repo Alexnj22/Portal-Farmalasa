@@ -14,6 +14,10 @@ import { lanzarSimulacroTraslado, fetchTrasladoErp, guardarPaginasDeSala } from 
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { esperaDeSondeo } from './logicaDeRutas';
 import { buscarProductos } from '@nucleo/data/busquedaProductos';
+import {
+    ajustesDeEnvio, ajustesDelSimulacro, alternarCaja, armarCajaMap, armarPaginaItems, asignacionCompleta, asignacionInicial,
+    cuantasCajas, despachablesDe,
+} from '@nucleo/utils/finalizarCajas';
 
 // Un solo «sin productos» para siempre: `items` es dependencia del efecto que
 // reinicia el diálogo, y un `[]` nuevo en cada render lo volvía a correr —y a
@@ -157,49 +161,28 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
     // No pisa lo que quien despacha ya tocó.
     useEffect(() => {
         if (simu?.estado !== 'verificado') return;
-        const porProducto = new Map(items.map(i => [Number(i.erp_product_id), i]));
-        const nuevos = {};
-        for (const h of (simu.hallazgos ?? [])) {
-            const it = porProducto.get(Number(h.erp_product_id));
-            if (it) nuevos[it.id] = { cantidad: 0, motivo: String(h.detalle ?? h.codigo ?? '').slice(0, 160) };
-        }
+        const nuevos = ajustesDelSimulacro(simu, items);
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setAjustes(prev => ({ ...nuevos, ...prev }));
     }, [simu, items]);
 
     const totalPages = pageGroups.length;
-    const cajaCount  = Math.max(1, parseInt(totalCajasInput, 10) || 1);
+    const cajaCount  = cuantasCajas(totalCajasInput);
 
     const handleGoScreen2 = () => {
-        const defaults = Array.from({ length: totalPages }, (_, i) => {
-            const box = cajaCount >= totalPages
-                ? i + 1
-                : Math.floor(i * cajaCount / totalPages) + 1;
-            return [box];
-        });
-        setPageAssignments(defaults);
+        setPageAssignments(asignacionInicial(totalPages, cajaCount));
         setScreen(2);
     };
 
     const toggleBox = (pageIdx, boxNum) => {
-        setPageAssignments(prev => {
-            const next = prev.map(arr => [...arr]);
-            const cur  = next[pageIdx] ?? [];
-            if (cur.includes(boxNum)) {
-                if (cur.length === 1) return next;
-                next[pageIdx] = cur.filter(b => b !== boxNum);
-            } else {
-                next[pageIdx] = [...cur, boxNum].sort((a, b) => a - b);
-            }
-            return next;
-        });
+        setPageAssignments(prev => alternarCaja(prev, pageIdx, boxNum));
     };
 
-    const isValid = pageAssignments.length === totalPages && pageAssignments.every(a => a.length > 0);
+    const isValid = asignacionCompleta(pageAssignments, totalPages);
 
     // Solo los productos que de verdad salen: los que la bodega no pudo cubrir
     // nunca estuvieron en la caja, así que no hay nada que confirmar sobre ellos.
-    const despachables = items.filter(r => !r.sin_stock && (r.cantidad_asignada ?? 0) > 0);
+    const despachables = despachablesDe(items);
 
     // La búsqueda dice POR QUÉ no encuentra (2026-10-08): «zx» sin resultados
     // no decía si el producto no existe, no va en el pedido o ya se está
@@ -229,15 +212,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
     }, [buscarEnCatalogo, termino]);
 
     // Un ajuste es una EXCEPCIÓN: solo cuenta si difiere de lo asignado.
-    const ajustesLista = Object.entries(ajustes)
-        .map(([id, a]) => {
-            const it = despachables.find(r => String(r.id) === String(id));
-            if (!it) return null;
-            const cant = Number(a.cantidad);
-            if (!Number.isFinite(cant) || cant === Number(it.cantidad_asignada)) return null;
-            return { pedido_item_id: Number(id), cantidad_enviada: cant, motivo: a.motivo || null };
-        })
-        .filter(Boolean);
+    const ajustesLista = ajustesDeEnvio(ajustes, items);
 
     const noEnviados = ajustesLista.filter(a => a.cantidad_enviada === 0).length;
 
@@ -248,18 +223,9 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
         if (submitting || !isValid) return;
         setSubmitting(true);
 
-        const cajaMap = {};
-        for (let i = 1; i <= cajaCount; i++) cajaMap[String(i)] = [];
-        pageAssignments.forEach((boxes, idx) => {
-            const pg = idx + 1;
-            boxes.forEach(b => {
-                if (!cajaMap[String(b)]) cajaMap[String(b)] = [];
-                cajaMap[String(b)].push(pg);
-            });
-        });
-
-        const paginaItems = {};
-        pageGroups.forEach((pg, idx) => { paginaItems[String(idx + 1)] = pg.ids; });
+        // El reparto sale del núcleo (`finalizarCajas`), el mismo de la app.
+        const cajaMap = armarCajaMap(pageAssignments, cajaCount);
+        const paginaItems = armarPaginaItems(pageGroups);
 
         const ok = await onConfirm({ totalCajas: cajaCount, cajaMap, paginaItems, ajustesEnvio: ajustesLista });
         if (ok === false) { setSubmitting(false); return; }

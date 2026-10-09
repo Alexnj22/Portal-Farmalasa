@@ -1,14 +1,16 @@
-// Editar la ficha de una sucursal, NATIVO — las cuatro secciones del portal
-// (`FormSucursal`): horarios, legal, inmueble y servicios. La sección llega en
-// `?seccion=` desde la ficha.
+// Editar la ficha de una sucursal, NATIVO — las secciones del portal
+// (`FormSucursal` + los diálogos de regencia): general, horarios, legal,
+// enfermería, inmueble y servicios. La sección llega en `?seccion=` desde la
+// ficha. Con `?nueva=1` es el alta de una sucursal (sólo lo general), por el
+// mismo `addBranch` del portal.
 //
 // Las reglas son del núcleo (`edicionDeSucursal`): el horario, el fin del
 // contrato, quién puede ser regente. Y el guardado es el del portal,
 // `updateBranch`, con la sucursal COMPLETA y los cambios encima — con sólo los
 // cambios, el nombre y los teléfonos se escribirían en blanco.
 //
-// Los documentos (PDF de licencias, contratos, solvencias) se ven pero no se
-// suben desde acá: `updateBranch` los versiona como `File` del navegador.
+// Los documentos (PDF de licencias, contratos, solvencias, los de cada
+// enfermera) se suben desde la fila del expediente en la ficha.
 import { useMemo, useState } from 'react';
 import { ActionSheetIOS, Alert, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -18,8 +20,10 @@ import { WEEK_DAYS } from '@nucleo/data/constants';
 import {
   OPCIONES_DE_EXTINTOR, SERVICIOS_BASICOS, candidatosLegales, cambiarDiaDelHorario, copiarDiaAnterior,
   diaDePago, diaDelHorario, esAlquilada, finDeContrato, horarioIncompleto, limpiarAjustes, limpiarHorario,
-  sucursalConCambios,
+  sucursalConCambios, generalDeSucursal, problemaDeLoGeneral, conEnfermeraNueva, sinEnfermera, conEnfermeraCambiada,
 } from '@nucleo/utils/edicionDeSucursal';
+import { EL_SALVADOR_GEO } from '@nucleo/data/elSalvadorGeo';
+import { formatPhoneMask } from '@nucleo/utils/helpers';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -34,9 +38,10 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
 
 const SECCIONES = [
-  { id: 'horarios', label: 'Horarios' }, { id: 'legal', label: 'Legal' },
-  { id: 'inmueble', label: 'Inmueble' }, { id: 'servicios', label: 'Servicios' },
+  { id: 'general', label: 'General' }, { id: 'horarios', label: 'Horarios' }, { id: 'legal', label: 'Legal' },
+  { id: 'enfermeria', label: 'Enfermería' }, { id: 'inmueble', label: 'Inmueble' }, { id: 'servicios', label: 'Servicios' },
 ];
+const DEPARTAMENTOS = Object.keys(EL_SALVADOR_GEO).map((d) => ({ value: d, label: d }));
 
 function Rotulo({ texto }) {
   return <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', marginBottom: -4, marginLeft: 2 }}>{texto}</Text>;
@@ -83,25 +88,32 @@ const hojaDeOpciones = (titulo, opciones, onElegir) => ActionSheetIOS.showAction
 );
 
 export default function EditarSucursal() {
-  const { id, seccion: seccionInicial } = useLocalSearchParams();
+  const { id, seccion: seccionInicial, nueva } = useLocalSearchParams();
+  const esNueva = nueva === '1';
   const branches = useStaffStore((s) => s.branches);
   const employees = useStaffStore((s) => s.employees);
   const updateBranch = useStaffStore((s) => s.updateBranch);
+  const addBranch = useStaffStore((s) => s.addBranch);
   const branch = useMemo(() => (branches || []).find((b) => String(b.id) === String(id)) ?? null, [branches, id]);
 
-  const [seccion, setSeccion] = useState(SECCIONES.some((x) => x.id === seccionInicial) ? seccionInicial : 'horarios');
+  const [seccion, setSeccion] = useState(esNueva ? 'general' : SECCIONES.some((x) => x.id === seccionInicial) ? seccionInicial : 'horarios');
+  const [general, setGeneral] = useState(() => generalDeSucursal(branch));
   const [ajustes, setAjustes] = useState(() => limpiarAjustes(branch?.settings));
   const [horario, setHorario] = useState(() => limpiarHorario(branch?.weeklyHours || branch?.weekly_hours));
   const [alquilada, setAlquilada] = useState(() => esAlquilada(branch, limpiarAjustes(branch?.settings)));
   const [guardando, setGuardando] = useState(false);
   const candidatos = useMemo(() => candidatosLegales(employees), [employees]);
 
-  if (!branch) return <View style={{ padding: 16 }}><Aviso tono="freno" texto="No se encontró la sucursal." /></View>;
+  if (!branch && !esNueva) return <View style={{ padding: 16 }}><Aviso tono="freno" texto="No se encontró la sucursal." /></View>;
 
   const legal = ajustes.legal || {};
   const rent = ajustes.rent || { contract: {} };
   const contrato = rent.contract || {};
   const services = ajustes.services || {};
+  const ubicacion = ajustes.location || {};
+  const enfermeras = Array.isArray(legal.nursingRegents) ? legal.nursingRegents : [];
+  const cambiarGeneral = (campo, valor) => setGeneral((g) => ({ ...g, [campo]: valor }));
+  const cambiarEnfermeras = (lista) => cambiar('legal', 'nursingRegents', lista);
   const inyecciones = !!legal.injections;
 
   const cambiar = (categoria, campo, valor) => setAjustes((a) => ({ ...a, [categoria]: { ...(a[categoria] || {}), [campo]: valor } }));
@@ -126,17 +138,20 @@ export default function EditarSucursal() {
       Alert.alert('Faltan horas', 'Hay días marcados como abiertos sin hora de apertura o de cierre.');
       return;
     }
-    Alert.alert('Guardar la sucursal', `Se guardan los cambios de «${branch.name}».`, [
+    const problema = problemaDeLoGeneral(general);
+    if (problema) { Alert.alert('Falta un dato', problema); return; }
+    Alert.alert(esNueva ? 'Crear la sucursal' : 'Guardar la sucursal', esNueva ? `Se crea «${general.name.trim()}».` : `Se guardan los cambios de «${branch.name}».`, [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Guardar', onPress: async () => {
+      { text: esNueva ? 'Crear' : 'Guardar', onPress: async () => {
         setGuardando(true);
         try {
           const datos = sucursalConCambios(branch, {
-            ajustes, horario,
-            tipoDeInmueble: alquilada !== esAlquilada(branch, limpiarAjustes(branch.settings)) ? (alquilada ? 'RENTED' : 'OWNED') : undefined,
+            ajustes, horario, general,
+            tipoDeInmueble: !esNueva && alquilada !== esAlquilada(branch, limpiarAjustes(branch.settings)) ? (alquilada ? 'RENTED' : 'OWNED') : undefined,
           });
-          await updateBranch(branch.id, datos);
-          listo('Sucursal guardada', '');
+          if (esNueva) await addBranch(datos);
+          else await updateBranch(branch.id, datos);
+          listo(esNueva ? 'Sucursal creada' : 'Sucursal guardada', esNueva ? general.name.trim() : '');
           router.back();
         } catch (e) {
           fallo('No se pudo guardar', mensajeAmigable(e, 'Intenta de nuevo.'));
@@ -149,11 +164,75 @@ export default function EditarSucursal() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: branch.name, headerLargeTitle: false }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: esNueva ? 'Nueva sucursal' : branch.name, headerLargeTitle: false }} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }}
           contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
-          <Segmentos activa={seccion} onCambiar={setSeccion} opciones={SECCIONES} margen={0} />
+          {esNueva ? null : <Segmentos activa={seccion} onCambiar={setSeccion} opciones={SECCIONES} margen={0} />}
+
+          {seccion === 'general' ? (
+            <>
+              <Seccion titulo="Identidad">
+                <Rotulo texto="Nombre comercial" />
+                <Campo multiline={false} value={general.name} onChangeText={(v) => cambiarGeneral('name', v)} placeholder="Ej. Salud 6" />
+                <FechaFila rotulo="Abrió el" valor={general.openingDate} onCambiar={(v) => cambiarGeneral('openingDate', v)} />
+              </Seccion>
+              <Seccion titulo="Ubicación">
+                <Elegir primero rotulo="Departamento" valor={ubicacion.department || 'Elegir'}
+                  onPress={() => hojaDeOpciones('Departamento', DEPARTAMENTOS, (v) => setAjustes((a) => ({ ...a, location: { ...(a.location || {}), department: v, municipality: '' } })))} />
+                <Elegir rotulo="Distrito / municipio" valor={ubicacion.municipality || 'Elegir'}
+                  onPress={() => (ubicacion.department
+                    ? hojaDeOpciones('Distrito / municipio', (EL_SALVADOR_GEO[ubicacion.department] || []).map((m) => ({ value: m, label: m })), (v) => cambiar('location', 'municipality', v))
+                    : Alert.alert('Primero el departamento', 'Elige el departamento para ver sus municipios.'))} />
+                <Rotulo texto="Dirección" />
+                <Campo value={general.address} onChangeText={(v) => cambiarGeneral('address', v)} placeholder="Calle, número, barrio" />
+                <Rotulo texto="Enlace de Google Maps" />
+                <Campo multiline={false} autoCapitalize="none" keyboardType="url" value={ubicacion.mapsUrl || ''} onChangeText={(v) => cambiar('location', 'mapsUrl', v)} placeholder="https://maps.google.com/…" />
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <View style={{ flex: 1, gap: 6 }}>
+                    <Rotulo texto="Latitud" />
+                    <Campo multiline={false} keyboardType="numbers-and-punctuation" value={ubicacion.lat != null ? String(ubicacion.lat) : ''} onChangeText={(v) => cambiar('location', 'lat', v ? Number(v) : null)} />
+                  </View>
+                  <View style={{ flex: 1, gap: 6 }}>
+                    <Rotulo texto="Longitud" />
+                    <Campo multiline={false} keyboardType="numbers-and-punctuation" value={ubicacion.lng != null ? String(ubicacion.lng) : ''} onChangeText={(v) => cambiar('location', 'lng', v ? Number(v) : null)} />
+                  </View>
+                </View>
+              </Seccion>
+              <Seccion titulo="Contacto">
+                <Rotulo texto="Teléfono fijo" />
+                <Campo multiline={false} keyboardType="phone-pad" value={general.phone} onChangeText={(v) => cambiarGeneral('phone', formatPhoneMask(v))} placeholder="0000-0000" />
+                <Rotulo texto="Celular" />
+                <Campo multiline={false} keyboardType="phone-pad" value={general.cell} onChangeText={(v) => cambiarGeneral('cell', formatPhoneMask(v))} placeholder="0000-0000" />
+              </Seccion>
+            </>
+          ) : null}
+
+          {seccion === 'enfermeria' ? (
+            <>
+              <Seccion titulo="Permiso del servicio de enfermería" pie={inyecciones ? null : 'La sala no tiene marcado «Aplica inyecciones» (sección Legal): sin eso, estos documentos no le piden nada.'}>
+                <Rotulo texto="Número de permiso" />
+                <Campo multiline={false} value={legal.nursingServicePermit || ''} onChangeText={(v) => cambiar('legal', 'nursingServicePermit', v)} />
+                <FechaFila rotulo="Vence" valor={legal.nursingServicePermitExp} onCambiar={(v) => cambiar('legal', 'nursingServicePermitExp', v)} />
+              </Seccion>
+              <Seccion titulo={`Profesionales asignados · ${enfermeras.length}`} pie="Asignar a alguien la mueve a esta sucursal, igual que en el portal. El carné, la licencia y el recibo de cada una se suben desde el expediente.">
+                {enfermeras.map((n, i) => (
+                  <View key={n.id ?? i} style={{ gap: 6, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 10 : 0 }}>
+                    <Elegir primero rotulo={`Enfermería ${i + 1}`} valor={n.employeeId ? nombre(n.employeeId) : 'Elegir'}
+                      onPress={() => hojaDeOpciones('Profesional', candidatos.enfermeria.map((e) => ({ value: e.id, label: shortEmployeeName(e) })),
+                        (v) => cambiarEnfermeras(conEnfermeraCambiada(enfermeras, i, 'employeeId', v)))} />
+                    <FechaFila rotulo="Vence la anualidad" valor={n.anualidadExp} onCambiar={(v) => cambiarEnfermeras(conEnfermeraCambiada(enfermeras, i, 'anualidadExp', v))} />
+                    <Pressable hitSlop={6} onPress={() => Alert.alert('Quitar del equipo', `Enfermería ${i + 1} deja de figurar en esta sucursal al guardar.`, [
+                      { text: 'Cancelar', style: 'cancel' }, { text: 'Quitar', style: 'destructive', onPress: () => cambiarEnfermeras(sinEnfermera(enfermeras, i)) },
+                    ])} style={{ minHeight: 44, justifyContent: 'center' }}>
+                      <Text style={{ color: MARCA.rojo, fontSize: 15, fontWeight: '600' }}>Quitar</Text>
+                    </Pressable>
+                  </View>
+                ))}
+                <BotonGrande texto="Añadir profesional" borde onPress={() => cambiarEnfermeras(conEnfermeraNueva(enfermeras))} />
+              </Seccion>
+            </>
+          ) : null}
 
           {seccion === 'horarios' ? (
             <Seccion titulo="Horario de atención" pie="Los días abiertos necesitan apertura y cierre.">

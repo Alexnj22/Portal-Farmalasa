@@ -13,7 +13,7 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { LoadingState } from '../../components/common/StateViews';
-import { estadoDeHistoria, venceHistoria } from '@nucleo/utils/ofertasClientes';
+import { DESTINOS_DE_LA_APP, estadoDeHistoria, filaDeHistoria, historiaValida, venceHistoria } from '@nucleo/utils/ofertasClientes';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
@@ -31,13 +31,9 @@ import FormatoImagen from './FormatoImagen';
  * lista cerrada y no se escribe, para que un enlace mal tecleado no deje un
  * botón que no hace nada.
  */
-const DESTINOS = [
-    { valor: '', rotulo: 'Sin botón', boton: null },
-    { valor: '/ofertas', rotulo: 'Ofertas', boton: 'Ver ofertas' },
-    { valor: '/sucursales', rotulo: 'Sucursales', boton: 'Ver sucursales' },
-    { valor: '/puntos', rotulo: 'Mis puntos', boton: 'Ver mis puntos' },
-    { valor: '/invitar', rotulo: 'Invitar amigos', boton: 'Invitar' },
-];
+// La lista de destinos, la validación y la fila salen del núcleo: la app del
+// personal guarda la misma historia.
+const DESTINOS = DESTINOS_DE_LA_APP;
 
 export default function HistoriasPanel({ busqueda, puedeEditar, showToast }) {
     const [historias, setHistorias] = useState(null);
@@ -194,19 +190,13 @@ function HistoriaModal({ historia, onClose, onGuardada, onError }) {
     const [archivo, setArchivo] = useState(null);
     const [guardando, setGuardando] = useState(false);
     const cambiar = (k) => (v) => setF((x) => ({ ...x, [k]: v }));
-    const valido = f.titulo.trim().length >= 3 && (archivo || historia.imagen_path);
+    const valido = historiaValida(f, archivo || historia.imagen_path);
 
     const guardar = async () => {
         setGuardando(true);
         try {
             const imagen_path = archivo ? await subirImagen(archivo) : historia.imagen_path;
-            const destino = DESTINOS.find((d) => d.valor === f.enlace) ?? DESTINOS[0];
-            await guardarHistoria(historia.id, {
-                // Duran 24 horas desde que se publican; `inicio`/`fin` sólo cumplen con la tabla.
-                titulo: f.titulo.trim(), rotulo: f.rotulo.trim() || null, texto: f.texto.trim() || null, imagen_path, inicio: hoySV(), fin: sumarDias(hoySV(), 1),
-                enlace: destino.valor || null, boton: destino.boton, publicada: f.publicada,
-                oferta_id: f.oferta_id || null,
-            });
+            await guardarHistoria(historia.id, filaDeHistoria(f, imagen_path, hoySV(), sumarDias(hoySV(), 1)));
             onGuardada();
         } catch (err) {
             onError(err);

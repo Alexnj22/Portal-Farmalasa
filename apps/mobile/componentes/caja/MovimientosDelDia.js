@@ -59,7 +59,7 @@ function Correccion({ dato }) {
   );
 }
 
-function Movimiento({ l, corte, quien }) {
+function Movimiento({ l, corte, quien, puedeOperar, onCorregir }) {
   const [abierto, setAbierto] = useState(false);
   const [foto, setFoto] = useState(null);       // null | 'cargando' | { url } | { error }
   const clase = l.anulado ? { icono: 'Ban', color: colorSistema.texto2 } : (CLASE[l.clase] || CLASE.entra);
@@ -147,13 +147,19 @@ function Movimiento({ l, corte, quien }) {
           ) : null}
           {foto?.error ? <Aviso tono="freno" texto="No se pudo abrir la boleta. Vuelve a intentarlo." /> : null}
           {foto?.url ? <Image source={{ uri: foto.url }} resizeMode="contain" style={{ width: '100%', height: 280, borderRadius: 12, backgroundColor: 'rgba(127,127,127,0.1)' }} /> : null}
+          {puedeOperar && onCorregir && l.movimiento && !l.anulado ? (
+            <Pressable onPress={() => onCorregir(l.movimiento)} accessibilityRole="button"
+              style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 40, paddingHorizontal: 14, borderRadius: 20, justifyContent: 'center', backgroundColor: `${MARCA.ambar}26`, opacity: pressed ? 0.7 : 1 })}>
+              <Text style={{ color: MARCA.ambar, fontSize: 14, fontWeight: '700' }}>Pedir una corrección</Text>
+            </Pressable>
+          ) : null}
         </View>
       ) : null}
     </Vidrio>
   );
 }
 
-export default function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, etiquetaDe, correcciones, cortes, anotaron, puedeVerBolsas }) {
+export default function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, etiquetaDe, correcciones, cortes, anotaron, puedeVerBolsas, puedeOperar = false, onCorregir }) {
   const lineas = lineasDelDia({ movimientos, deBolsas, cobros, etiquetaDe, correcciones });
   if (!lineas.length && puedeVerBolsas) return null;
   const grupos = repartirPorCorte(lineas, cortes);
@@ -177,7 +183,7 @@ export default function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, 
               {`${g.lineas.length} ${g.lineas.length === 1 ? 'movimiento' : 'movimientos'}${!g.corte ? ` · ${conSigno(netoDelTramo(g.lineas))}` : ''}`}
             </Text>
           </View>
-          {g.lineas.map((l) => <Movimiento key={l.clave} l={l} corte={g.corte} quien={anotaron?.get(l.quien)} />)}
+          {g.lineas.map((l) => <Movimiento key={l.clave} l={l} corte={g.corte} quien={anotaron?.get(l.quien)} puedeOperar={puedeOperar} onCorregir={onCorregir} />)}
         </View>
       ))}
     </View>

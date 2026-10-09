@@ -106,7 +106,15 @@ export const TIPOS_DEL_EXPEDIENTE = ['application/pdf', 'image/jpeg', 'image/png
 export const TOPE_DEL_EXPEDIENTE = 10 * 1024 * 1024;
 
 /** ¿Este renglón se puede subir desde la app? */
-export const seSubeDesdeLaApp = (docId) => docId in CAMPO_LEGAL || docId === 'arrendamiento';
+export const seSubeDesdeLaApp = (docId) => docId in CAMPO_LEGAL || docId === 'arrendamiento' || !!archivoDeEnfermera(docId);
+
+// Los renglones de cada enfermera (`nurse_carne_0`, `nurse_lic_1`…) y el campo
+// de su fila en `legal.nursingRegents` donde `updateBranch` busca el archivo.
+const CAMPO_DE_ENFERMERA = { carne: 'carneFile', lic: 'licenciaFile', anualidad: 'anualidadFile' };
+function archivoDeEnfermera(docId) {
+    const m = /^nurse_(carne|lic|anualidad)_(\d+)$/.exec(String(docId));
+    return m ? { campo: CAMPO_DE_ENFERMERA[m[1]], indice: Number(m[2]) } : null;
+}
 /** ¿Se puede quitar? Sólo los legales: el contrato se reemplaza, no se quita. */
 export const seQuitaDesdeLaApp = (docId) => docId in CAMPO_LEGAL;
 
@@ -131,6 +139,14 @@ export function ajustesConArchivo(settings, docId, archivo) {
             : { ...(s.legal || {}), [`${campo}File`]: archivo };
         return s;
     }
+    const enf = archivoDeEnfermera(docId);
+    if (enf && archivo) {
+        const lista = Array.isArray(s.legal?.nursingRegents) ? [...s.legal.nursingRegents] : [];
+        if (!lista[enf.indice]) return null;
+        lista[enf.indice] = { ...lista[enf.indice], [enf.campo]: archivo };
+        s.legal = { ...(s.legal || {}), nursingRegents: lista };
+        return s;
+    }
     if (docId === 'arrendamiento' && archivo) {
         const rent = s.rent || {};
         s.rent = { ...rent, contract: { ...(rent.contract || {}), documentFile: archivo } };
@@ -138,3 +154,45 @@ export function ajustesConArchivo(settings, docId, archivo) {
     }
     return null;
 }
+
+// ── Documentos propios (los que la sala agrega a mano) ──────────────────────
+// La misma forma que arma el portal (`addCustomDocument`/`editCustomDocument`
+// en `UnifiedModal`) y la misma ruta en el bucket, para que un documento
+// agregado desde la app y otro desde la oficina sean el mismo dato.
+
+/** Dónde se guarda el archivo de un documento propio. */
+export const rutaDelDocumentoPropio = (branchId, docId, ext, ahora = Date.now()) =>
+    `branches/${branchId}/customDocs/${docId}_${ahora}.${ext}`;
+
+/** El documento tal como se guarda en `settings.customDocs`. */
+export function documentoPropio({ id, datos, url = null, aiSummary = null }) {
+    return {
+        id,
+        title: String(datos.title || '').trim(),
+        category: categoriaDeDocumento(datos.category),
+        hasIssueDate: !!datos.hasIssueDate,
+        issueDate: datos.hasIssueDate ? (datos.issueDate || null) : null,
+        hasExpiration: !!datos.hasExpiration,
+        expDate: datos.hasExpiration ? (datos.expDate || null) : null,
+        url,
+        aiSummary,
+    };
+}
+
+/** Los ajustes con el documento agregado (o reemplazado, si ya existía su id). */
+export function ajustesConDocumentoPropio(settings, doc) {
+    const actuales = settings?.customDocs || [];
+    const existe = actuales.some(d => d.id === doc.id);
+    return { ...(settings || {}), customDocs: existe ? actuales.map(d => (d.id === doc.id ? doc : d)) : [...actuales, doc] };
+}
+
+/** Los ajustes sin ese documento propio. */
+export const ajustesSinDocumentoPropio = (settings, docId) =>
+    ({ ...(settings || {}), customDocs: (settings?.customDocs || []).filter(d => d.id !== docId) });
+
+/** Por qué no se puede guardar el documento propio, o null. */
+export const problemaDelDocumentoPropio = (datos) => (!String(datos?.title || '').trim()
+    ? 'El nombre del documento es obligatorio.'
+    : datos.hasExpiration && !datos.expDate ? 'Falta la fecha de vencimiento.'
+    : datos.hasIssueDate && !datos.issueDate ? 'Falta la fecha de emisión.'
+    : null);

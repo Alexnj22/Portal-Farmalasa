@@ -16,19 +16,11 @@ import { ERP_NAMES } from '../productos/tabminmax/constants';
 import { effectiveMinMaxPair } from '@nucleo/data/stockParams';
 import { parMinMaxValido, motivosQueExigenExplicacion, ajusteSinCambio, fmtUltimaVenta, solicitudDeMinMax, mensajeDeMinMax } from '@nucleo/utils/minmaxSolicitud';
 import PortalTextarea from '../../components/common/PortalTextarea';
+import { presentacionDominante, equivalenteEnCajas, presentacionesDelProducto } from '@nucleo/utils/minmaxSolicitud';
 
-// Presentación dominante (la "caja" más grande, factor>1) para mostrar equivalentes.
-function dominantPres(pres) {
-  const uniq = [...new Map((pres || []).map(p => [p.factor, p])).values()];
-  return uniq.filter(p => p.factor > 1).sort((a, b) => b.factor - a.factor)[0] || null;
-}
-// "≈ N CAJA" para un valor en unidades (ceil: la caja es indivisible).
-function fmtEquiv(units, pres) {
-  const d = dominantPres(pres);
-  const n = Number(units);
-  if (!d || !n) return null;
-  return `≈ ${Math.ceil(n / d.factor)} ${(d.tipo || 'caja').trim()}`;
-}
+// La presentación de referencia y su equivalente: núcleo (`minmaxSolicitud`), lo mismo de la app.
+const dominantPres = presentacionDominante;
+const fmtEquiv = equivalenteEnCajas;
 
 /* ── Form: propone min/max para un producto+sucursal ── */
 function RequestForm({ product, erp, user, onBack, onSuccess }) {
@@ -48,9 +40,7 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
     fetchProductPreciosForMinMax(product.id)
       .then(({ data }) => {
         if (cancelled) return;
-        setPres((data || [])
-          .map(r => ({ tipo: r.presentaciones?.tipo, factor: r.factor, descripcion: r.descripcion }))
-          .filter(p => p.factor));
+        setPres(presentacionesDelProducto(data));
       });
     return () => { cancelled = true; };
   }, [product.id]);

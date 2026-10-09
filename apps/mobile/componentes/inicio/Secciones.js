@@ -16,6 +16,7 @@ import * as C from './widgets/comercial';
 import * as O from './widgets/operacion';
 import * as G from './widgets/general';
 import { VentasPorHora } from './widgets/ventasPorHora';
+import { Reservas } from './widgets/reservas';
 import Kpi, { Avance, Curva, FilaDeKpis } from './Kpi';
 import { colorSistema } from '../Formulario';
 import { iconoDe } from '../../tema/iconos';
@@ -224,6 +225,7 @@ export const SECCIONES = [
   { id: 'cortes', pestanas: ['general', 'comercial'], permiso: 'dash_cortes_sala', Componente: C.Cortes },
   { id: 'bolsas', pestanas: ['general', 'comercial'], permiso: 'dash_bolsas_sala', Componente: C.Bolsas },
   { id: 'cotizaciones', pestanas: ['general', 'comercial'], permiso: 'dash_cotizaciones', Componente: C.Cotizaciones },
+  { id: 'reservas', pestanas: ['general', 'comercial'], permiso: 'dash_reservas', Componente: Reservas },
   // RRHH
   { id: 'turnos', pestanas: ['general', 'rrhh'], permiso: 'dash_shifts', Componente: W.Turnos },
   { id: 'tendencia', pestanas: ['general', 'rrhh'], permiso: 'dash_trend', Componente: W.Tendencia },

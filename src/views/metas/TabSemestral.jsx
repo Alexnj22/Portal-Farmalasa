@@ -25,7 +25,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import {
     ymHoySV, ymLabelCorto, semestreDe, semestreSumar, semestreLabel, semestrePagoLabel,
-    SEMESTRE_INICIO, ESTADO_MES_SEMESTRAL, ROTULO_DE_BAJA, resumenDelSemestre,
+    SEMESTRE_INICIO, ESTADO_MES_SEMESTRAL, ROTULO_DE_BAJA, resumenDelSemestre, csvDelSemestre,
 } from '@nucleo/utils/metasUtils';
 
 // El primer semestre, el estado de cada mes, el rótulo de una baja y la cuenta
@@ -124,17 +124,9 @@ export default function TabSemestral({ canApprove, searchTerm = '' }) {
     }, [showToast]);
 
     const exportar = () => {
-        exportCsv(
-            ['PERSONA', 'CODIGO', 'SALA', ...meses.map((m) => ymLabelCorto(m.ym).toUpperCase()), 'TOTAL', 'SE PAGA'],
-            personas.map((p) => [
-                p.nombre, p.code || '', (p.salas || []).join(' / '),
-                ...meses.map((m) => Number(p.por_mes?.[m.ym] ?? 0)),
-                Number(p.total || 0),
-                p.pagar ? 'SI' : (p.decision ? 'NO' : 'POR DECIDIR'),
-            ]),
-            `bono_semestral_${sem}.csv`,
-            'metas',
-        );
+        // Columnas y filas del núcleo: la app comparte el mismo archivo.
+        const c = csvDelSemestre(r, sem);
+        exportCsv(c.headers, c.rows, `${c.nombre}.csv`, 'metas');
     };
 
     const columnas = useMemo(() => [

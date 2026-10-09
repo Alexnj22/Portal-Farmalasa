@@ -15,20 +15,33 @@
 // portal: piezas, aprobadas, con cambios y las que se pautan, con el
 // presupuesto del mes. Crear y editar piezas (`marketing-editar`), su pauta
 // (`marketing-pauta`) y pedir un diseño (`marketing-solicitud`) también.
+//
+// Las demás pestañas del portal: el Feed de cada marca (`componentes/marketing/
+// Feed`), el banco de Ideas (`Ideas`), la Biblioteca de marca (`Biblioteca`) y
+// las Solicitudes, que se aceptan (y se planifican: la pieza nace con lo de la
+// solicitud), se rechazan o se marcan entregadas con su respuesta. Además el
+// objetivo y el presupuesto de pauta del mes (el presupuesto, quien aprueba) y
+// los Ajustes del calendario (`marketing-ajustes`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { aprobarMes, fetchMes, fetchPiezas, fetchSolicitudes, firmarDisenos, publicarMes } from '@nucleo/data/marketing';
+import {
+  actualizarMes, aprobarMes, crearMes, fetchCatalogos, fetchMes, fetchPiezas, fetchSolicitudes, firmarDisenos, publicarMes, responderSolicitud,
+} from '@nucleo/data/marketing';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import {
-  ESTADOS_MES, estadoDe, estadoSolicitudDe, formatoDe, piezasPorDia, prioridadDe, resumenDelMes, ROTULO_CORTO, tipoDeArchivo, totalesDePauta,
+  ESTADOS_MES, estadoDe, estadoSolicitudDe, formatoDe, piezasPorDia, prellenadoDeSolicitud, prioridadDe, resumenDelMes, ROTULO_CORTO, tipoDeArchivo, totalesDePauta,
 } from '@nucleo/utils/marketing';
 import { etiquetaMes, fechaTexto, mesSV } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import PasoDeMes from '../componentes/PasoDeMes';
+import Ideas from '../componentes/marketing/Ideas';
+import Biblioteca from '../componentes/marketing/Biblioteca';
+import Feed from '../componentes/marketing/Feed';
+import { guardar as guardarElegido } from '../componentes/comercial/elegido';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -42,7 +55,8 @@ import { guardarPieza } from '../componentes/marketing/elegida';
 import { fallo, listo } from '../componentes/Progreso';
 
 export default function Marketing() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
+  const yoId = user?.id;
   const puedeEditar = hasPermission('marketing', 'can_edit');
   const puedeAprobar = hasPermission('marketing', 'can_approve');
   const [ocupado, setOcupado] = useState(false);
@@ -50,6 +64,8 @@ export default function Marketing() {
   const [vista, setVista] = useState('calendario');
   const [datos, setDatos] = useState(null);
   const [solicitudes, setSolicitudes] = useState(null);
+  const [catalogos, setCatalogos] = useState({ marcas: [], redes: [] });
+  const [vuelta, setVuelta] = useState(0);
   const [abierta, setAbierta] = useState(null);
   const [error, setError] = useState(null);
   const [recargando, setRecargando] = useState(false);
@@ -66,7 +82,9 @@ export default function Marketing() {
   useEffect(() => { setDatos(null); setAbierta(null); }, [mes]);
   // Al volver de una pieza se relee: lo aprobado allá tiene que verse acá.
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
-  useEffect(() => { fetchSolicitudes().then(setSolicitudes).catch(() => setSolicitudes([])); }, []);
+  const cargarSolicitudes = useCallback(() => { fetchSolicitudes().then(setSolicitudes).catch(() => setSolicitudes([])); }, []);
+  useEffect(() => { cargarSolicitudes(); fetchCatalogos().then(setCatalogos).catch(() => {}); }, [cargarSolicitudes]);
+  useFocusEffect(useCallback(() => { setVuelta((v) => v + 1); }, []));
 
   const resumen = useMemo(() => resumenDelMes(datos?.piezas), [datos]);
   const porDia = useMemo(() => piezasPorDia(datos?.piezas), [datos]);
@@ -103,6 +121,46 @@ export default function Marketing() {
       } },
     ], 'plain-text');
   };
+  // El objetivo del mes (quien edita) y su presupuesto de pauta (quien aprueba),
+  // como `DatosDelMesModal`: si el mes no existe todavía, se crea.
+  const datosDelMes = () => Alert.prompt('Objetivo del mes', 'Qué se busca este mes con las redes.', [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Siguiente', onPress: (objetivo) => {
+      const guardarMes = async (cambios) => {
+        try {
+          const f = fila ?? await crearMes(mes);
+          await actualizarMes(f.id, cambios);
+          listo('Mes guardado', etiquetaMes(mes)); cargar();
+        } catch (e) { fallo('No se pudo guardar', mensajeAmigable(e)); }
+      };
+      if (!puedeAprobar) { guardarMes({ objetivo }); return; }
+      Alert.prompt('Presupuesto de pauta del mes', 'En dólares. Lo manda quien aprueba.', [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Guardar', onPress: (monto) => guardarMes({ objetivo, presupuesto_pauta: String(monto || '').replace(',', '.') }) },
+      ], 'plain-text', fila?.presupuesto_pauta ? String(fila.presupuesto_pauta) : '', 'decimal-pad');
+    } },
+  ], 'plain-text', fila?.objetivo || '');
+
+  const responder = (s, estado) => {
+    const titulos = { aceptada: s.tipo === 'impreso' ? 'Aceptar la solicitud' : 'Aceptar y planificar', rechazada: 'Rechazar la solicitud', entregada: 'Marcar entregada' };
+    Alert.prompt(titulos[estado], 'Respuesta para quien la pidió (opcional):', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Guardar', style: estado === 'rechazada' ? 'destructive' : 'default', onPress: async (respuesta) => {
+        try {
+          const f = await responderSolicitud(s.id, estado, respuesta);
+          listo(estado === 'aceptada' ? 'Solicitud aceptada' : estado === 'rechazada' ? 'Solicitud rechazada' : 'Solicitud entregada', s.titulo);
+          cargarSolicitudes();
+          // Lo impreso no va al calendario de redes: se acepta y se entrega.
+          if (estado === 'aceptada' && f.tipo !== 'impreso') {
+            const { mes: destino, prellenado } = prellenadoDeSolicitud(f, mes);
+            guardarElegido('marketing-prellenado', prellenado);
+            router.push({ pathname: '/marketing-editar', params: { mes: destino, desde: 'solicitud' } });
+          }
+        } catch (e) { fallo('No se pudo responder', mensajeAmigable(e)); }
+      } },
+    ], 'plain-text', s.respuesta || '');
+  };
+
   const abrirPieza = (p) => {
     Haptics.selectionAsync().catch(() => {});
     guardarPieza(p, fila, datos.firmas);
@@ -114,7 +172,10 @@ export default function Marketing() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Marketing', headerLargeTitle: true }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'calendario', label: 'Calendario' }, { id: 'solicitudes', label: abiertasSol ? `Solicitudes · ${abiertasSol}` : 'Solicitudes' }]} />
+        <Segmentos activa={vista} onCambiar={setVista} opciones={[
+          { id: 'calendario', label: 'Calendario' }, { id: 'feed', label: 'Feed' }, { id: 'ideas', label: 'Ideas' },
+          { id: 'solicitudes', label: abiertasSol ? `Solicitudes · ${abiertasSol}` : 'Solicitudes' }, { id: 'biblioteca', label: 'Marca' },
+        ]} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {vista === 'calendario' ? (
           <>
@@ -138,6 +199,11 @@ export default function Marketing() {
                   <Kpi icono="Megaphone" rotulo="Se pautan" valor={String(resumen.pautadas)} color={MARCA.violeta} apoyo={pauta.presupuestoMes ? `${formatMoney(pauta.presupuesto)} de ${formatMoney(pauta.presupuestoMes)}` : (pauta.presupuesto ? formatMoney(pauta.presupuesto) : 'Sin inversión')} />
                 </FilaDeKpis>
                 {fila.objetivo ? <View style={{ marginHorizontal: 20 }}><Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Objetivo del mes: ${fila.objetivo}`}</Text></View> : null}
+                {puedeEditar || puedeAprobar ? (
+                  <Pressable onPress={datosDelMes} hitSlop={8} style={{ marginHorizontal: 20, minHeight: 32, justifyContent: 'center' }}>
+                    <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{puedeAprobar ? 'Objetivo y presupuesto del mes' : 'Objetivo del mes'}</Text>
+                  </Pressable>
+                ) : null}
                 {puedeEnviarMes || puedeAprobarMes ? (
                   <View style={{ marginHorizontal: 16, flexDirection: 'row', gap: 10 }}>
                     {puedeEnviarMes ? <View style={{ flex: 1 }}><BotonGrande texto={fila.version > 0 ? 'Reenviar el mes' : 'Enviar a revisión'} color={MARCA.azul} borde onPress={() => decidirMes('publicar')} deshabilitado={ocupado} /></View> : null}
@@ -184,6 +250,15 @@ export default function Marketing() {
               </>
             )}
           </>
+        ) : vista === 'feed' ? (
+          <>
+            <PasoDeMes mes={mes} onCambiar={setMes} />
+            {datos == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : <Feed piezas={datos.piezas} marcas={catalogos.marcas} firmas={datos.firmas} onAbrir={abrirPieza} />}
+          </>
+        ) : vista === 'ideas' ? (
+          <Ideas busqueda="" marcas={catalogos.marcas} piezasDelMes={datos?.piezas || []} mes={mes} yoId={yoId} puedeEditar={puedeEditar} puedeAprobar={puedeAprobar} recarga={vuelta} />
+        ) : vista === 'biblioteca' ? (
+          <Biblioteca marcas={catalogos.marcas} puedeGestionar={puedeEditar || puedeAprobar} yoId={yoId} recarga={vuelta} />
         ) : solicitudes == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
           <View style={{ gap: 8 }}>
             {solicitudes.map((s) => {
@@ -201,6 +276,26 @@ export default function Marketing() {
                         {[formatoDe(s.formato).label, s.tamano, s.fecha_deseada ? `para el ${fechaTexto(s.fecha_deseada, { day: 'numeric', month: 'short' })}` : null].filter(Boolean).join(' · ')}
                       </Text>
                       {s.prioridad && s.prioridad !== 'normal' ? <Pildora texto={pr.label} color={colorDeVariante(pr.variant)} /> : null}
+                      {s.descripcion ? <Text style={{ color: colorSistema.texto, fontSize: 13 }}>{s.descripcion}</Text> : null}
+                      {s.respuesta ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontStyle: 'italic' }}>{`Respuesta: ${s.respuesta}`}</Text> : null}
+                      {puedeEditar && ['nueva', 'aceptada'].includes(s.estado) ? (
+                        <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
+                          {s.estado === 'nueva' ? (
+                            <>
+                              <Pressable onPress={() => responder(s, 'aceptada')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                                <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '700' }}>{s.tipo === 'impreso' ? 'Aceptar' : 'Aceptar y planificar'}</Text>
+                              </Pressable>
+                              <Pressable onPress={() => responder(s, 'rechazada')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                                <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '600' }}>Rechazar</Text>
+                              </Pressable>
+                            </>
+                          ) : (
+                            <Pressable onPress={() => responder(s, 'entregada')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                              <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '700' }}>Marcar entregada</Text>
+                            </Pressable>
+                          )}
+                        </View>
+                      ) : null}
                     </View>
                   </Vidrio>
                 </View>
@@ -216,6 +311,11 @@ export default function Marketing() {
             </View>
           ) : null}
           <BotonGrande texto="Pedir un diseño" borde color={MARCA.azulClaro} onPress={() => router.push('/marketing-solicitud')} />
+          {puedeEditar || puedeAprobar ? (
+            <View style={{ marginTop: 10 }}>
+              <BotonGrande texto="Ajustes del calendario" borde color={colorSistema.texto2} onPress={() => router.push('/marketing-ajustes')} />
+            </View>
+          ) : null}
         </View>
       </ScrollView>
     </>

@@ -19,7 +19,9 @@ import {
 } from '@nucleo/data/descuentos';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { ordenarPorPerdida, precioConDescuento } from '@nucleo/utils/promocionesUtils';
+import {
+    TIPOS_DE_DESCUENTO, cuentaDelProducto, formaDeDescuento, ordenarPorPerdida, payloadDeDescuento, problemasAlCorregirDescuento,
+} from '@nucleo/utils/promocionesUtils';
 import { hoySV } from '@nucleo/utils/fecha';
 import Campo from './Campo';
 
@@ -31,21 +33,11 @@ import Campo from './Campo';
  * son $30.12. Medido. El rótulo corto se lee como «$10.04 y ya», que es la
  * mitad del dinero en una venta de dos.
  */
-const TIPOS = [
-    { value: '%', label: 'Porcentaje del renglón' },
-    { value: '$', label: 'Monto por cada unidad' },
-];
+// Los tipos, la forma del formulario, lo que impide guardar y lo que se manda
+// salen del núcleo (`promocionesUtils`): la app corrige el mismo descuento.
+const TIPOS = TIPOS_DE_DESCUENTO;
 
-const vacio = () => ({
-    descripcion: '',
-    tipo: '%',
-    monto: '',
-    inicio: hoySV(),
-    fin: '',
-    todas: true,
-    branchId: '',
-    productos: [],   // [{ id, nombre }]
-});
+const vacio = () => formaDeDescuento(null, hoySV());
 
 /**
  * CORREGIR un descuento que ya existe. Acá no se crea.
@@ -112,16 +104,7 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
         fetchDescuento(descuentoId)
             .then((d) => {
                 if (!vivo) return;
-                setF({
-                    descripcion: d.descripcion || '',
-                    tipo: d.tipo === '$' ? '$' : '%',
-                    monto: d.monto ? String(d.monto) : '',
-                    inicio: d.inicio || hoySV(),
-                    fin: d.fin || '',
-                    todas: d.todas_las_salas === true,
-                    branchId: d.branch_id ? String(d.branch_id) : '',
-                    productos: d.productos || [],
-                });
+                setF(formaDeDescuento(d, hoySV()));
             })
             .catch((e) => { if (vivo) setFallo(mensajeAmigable(e, 'No se pudo cargar el descuento.')); })
             .finally(() => { if (vivo) setCargando(false); });
@@ -163,34 +146,15 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
     );
 
     // ── Lo que impide guardar, dicho antes de intentarlo ───────────────────
-    const problemas = useMemo(() => {
-        const l = [];
-        if (!f.descripcion.trim()) l.push('Ponle un nombre al descuento.');
-        if (!Number.isFinite(monto) || monto <= 0) l.push('El descuento tiene que ser mayor que cero.');
-        if (f.tipo === '%' && monto > 100) l.push('Un porcentaje no puede pasar de 100.');
-        if (!f.fin) l.push('Falta la fecha de fin.');
-        if (f.inicio && f.fin && f.fin < f.inicio) l.push('La fecha de fin es anterior a la de inicio.');
-        if (!f.productos.length) l.push('Agrega al menos un producto.');
-        if (alcanceTodo && !f.todas && !f.branchId) l.push('Elige la sala.');
-        return l;
-    }, [f, monto, alcanceTodo]);
+    const problemas = useMemo(() => problemasAlCorregirDescuento(f, alcanceTodo), [f, alcanceTodo]);
 
     const enviar = async (forzar) => {
         setFallo(null);
         setGuardando(true);
         try {
-            const r = await guardarDescuento({
-                id: editando ? Number(descuentoId) : 0,
-                descripcion: f.descripcion.trim(),
-                tipo: f.tipo,
-                monto,
-                inicio: f.inicio,
-                fin: f.fin,
-                todas_las_salas: f.todas,
-                branch_id: f.todas ? (salas[0]?.id ?? null) : Number(f.branchId),
-                productos: f.productos.map((p) => p.id),
-                forzar: forzar === true,
-            });
+            const r = await guardarDescuento(payloadDeDescuento(f, {
+                id: editando ? descuentoId : 0, salaPorDefecto: salas[0]?.id ?? null, forzar,
+            }));
             if (r.avisos) { setAvisos(r.avisos); return; }
             setAvisos([]);
             descartar();
@@ -392,21 +356,17 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
  * presentación que se vendería perdiendo.
  */
 function FilaProducto({ producto, datos, tipo, monto, onQuitar }) {
-    const precio = Number(datos?.precio) || 0;
     /* El costo llega YA con IVA desde `get_precios_para_descuento`. Tiene que
        ser así: `vineta` es el precio al público —con IVA— y la columna `costo`
        es el precio neto de la factura de compra, o sea 13 % más barato. Sin la
        conversión, «bajo el costo» dejaba pasar descuentos que venden
-       perdiendo. */
-    const costo = Number(datos?.costo_con_iva) || 0;
-    const queda = precio ? precioConDescuento(precio, tipo, monto) : null;
-    const bajoCosto = queda !== null && costo > 0 && queda < costo;
+       perdiendo. La cuenta sale del núcleo (`cuentaDelProducto`). */
+    const { precio, costo, queda, bajoCosto, pierde } = cuentaDelProducto(datos, tipo, monto);
     /* Cuánto se pierde POR UNIDAD. El «bajo el costo» a secas no dice si son
        tres centavos o dos dólares, y la decisión no es la misma: una campaña
        puede aceptar perder poco por mover volumen, no perder el doble de lo que
        cuesta. Va por unidad porque es la única cifra que se puede multiplicar
        por lo que se espera vender. */
-    const pierde = bajoCosto ? costo - queda : 0;
 
     return (
         <div className="flex items-center gap-2 px-3 py-2.5">

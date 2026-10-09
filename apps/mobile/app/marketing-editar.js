@@ -8,14 +8,15 @@
 // Llega con `?mes=AAAA-MM` para una nueva (si el mes no existe, se crea al
 // guardar) o con la pieza elegida en la lista para editarla.
 import { volver } from '../componentes/volver';
+import { leer } from '../componentes/comercial/elegido';
 import { useEffect, useMemo, useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import {
-  crearMes, fetchCatalogos, fetchMes, fetchPiezas, firmarDisenos, guardarPauta, guardarPieza, quitarArchivo, quitarPauta, subirDiseno,
+  crearMes, fetchCatalogos, fetchMes, fetchPiezas, firmarDisenos, guardarPauta, guardarPieza, quitarArchivo, quitarPauta, subirDiseno, moverIdea,
 } from '@nucleo/data/marketing';
 import {
   asignadoEnPauta, datosDePieza, ESTADOS_DE_SALIDA, ESTADOS_DEL_DISENADOR, ESTADOS_PIEZA, faltaEnPieza, FORMATOS, PIEZA_VACIA, PILARES, tipoDeArchivo,
@@ -64,8 +65,11 @@ const elegir = (titulo, lista, onElegir) => {
 
 export default function EditarPiezaDeMarketing() {
   const { user } = useAuth();
-  const { mes: mesParam } = useLocalSearchParams();
+  const { mes: mesParam, desde } = useLocalSearchParams();
   const sel = mesParam ? null : piezaElegida();
+  // Una pieza nueva que nace de una idea o de una solicitud aceptada trae lo suyo
+  // (`prellenadoDeIdea` / `prellenadoDeSolicitud`, núcleo, lo mismo del portal).
+  const pre = useMemo(() => (mesParam && desde ? leer('marketing-prellenado') : null), [mesParam, desde]);
   const pieza = sel?.pieza ?? null;
   const mesTexto = String(mesParam || sel?.mes?.mes || mesSV()).slice(0, 7);
   const [mesFila, setMesFila] = useState(sel?.mes ?? null);
@@ -77,7 +81,11 @@ export default function EditarPiezaDeMarketing() {
     redes: pieza.redes || [], hora: pieza.hora ? String(pieza.hora).slice(0, 5) : '',
     copy: pieza.copy || '', hashtags: pieza.hashtags || '', notas: pieza.notas || '', pilar: pieza.pilar || '',
     pautar: !!pieza.pautar, monto: pieza.pauta?.presupuesto != null ? String(pieza.pauta.presupuesto) : '',
-  } : { ...PIEZA_VACIA, fecha: `${mesTexto}-01` }));
+  } : {
+    ...PIEZA_VACIA, fecha: `${mesTexto}-01`,
+    ...(pre ? { titulo: pre.titulo || '', notas: pre.notas || '', formato: pre.formato || PIEZA_VACIA.formato, marcas: pre.marca_id ? [pre.marca_id] : [],
+      fecha: pre.fecha || `${mesTexto}-01`, ...(pre.solicitud_id ? { solicitud_id: pre.solicitud_id } : {}) } : {}),
+  }));
   const [archivos, setArchivos] = useState(pieza?.archivos ?? []);
   const [firmas, setFirmas] = useState(sel?.firmas ?? new Map());
   const [nuevos, setNuevos] = useState([]);
@@ -128,6 +136,8 @@ export default function EditarPiezaDeMarketing() {
       let mesId = mesFila?.id;
       if (!mesId) { const creado = await crearMes(mesTexto); mesId = creado.id; setMesFila(creado); }
       const fila = await guardarPieza(mesId, { ...datosDePieza(form, pieza), id: pieza?.id });
+      // La idea que la originó queda «usada» y ligada a esta pieza, como en el portal.
+      if (!pieza && pre?.idea_id) await moverIdea(pre.idea_id, 'usada', { piezaId: fila.id }).catch(() => {});
       const monto = Number(form.monto) || 0;
       if (form.pautar && (monto !== Number(pieza?.pauta?.presupuesto || 0) || !pieza?.pauta)) await guardarPauta(fila.id, { presupuesto: monto, redes: form.redes });
       else if (!form.pautar && pieza?.pauta) await quitarPauta(fila.id);

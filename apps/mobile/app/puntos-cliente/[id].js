@@ -6,11 +6,11 @@
 // movimiento con quién lo hizo, filtrable por Todos / Acumulados / Canjes.
 // Las cuentas salen del núcleo (`puntosCuenta`), las mismas del portal.
 //
-// Dar o quitar puntos a mano y el código de acceso del cliente se hacen en el
-// portal (dentro de la app).
+// Abajo, el código de acceso del cliente (`componentes/puntos/CodigoDeAcceso`)
+// y dar o quitar puntos a mano (`componentes/puntos/AjustarPuntos`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchPuntosCliente } from '@nucleo/data/puntos';
@@ -29,6 +29,8 @@ import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import Grafica, { BarraDePartes } from '../../componentes/metas/Graficas';
 import { COLOR_ACUMULADO, COLOR_CANJEADO, ejeDe, etiquetaMes } from '../../componentes/puntos/Resumen';
+import CodigoDeAcceso from '../../componentes/puntos/CodigoDeAcceso';
+import AjustarPuntos from '../../componentes/puntos/AjustarPuntos';
 
 const ROL = { 'vendió': 'Vendió', 'ajustó': 'Ajustó' };
 const MINIMO = 100;
@@ -182,9 +184,12 @@ export default function PuntosCliente() {
                 ))}
               </Seccion>
             ) : null}
-            {hasPermission('puntos_ajustar') || hasPermission('puntos', 'can_edit') ? (
-              <BotonGrande texto="Ajustar o dar código de acceso (portal)" borde color={MARCA.azulClaro}
-                onPress={() => router.push({ pathname: '/portal', params: { ruta: '/puntos?tab=consulta', nombre: 'Puntos' } })} />
+            {d?.cliente?.id != null ? (
+              <CodigoDeAcceso customerId={d.cliente.id} nombre={d.cliente.nombre || ''} telefono={d.cliente.telefono}
+                puedeEditar={hasPermission('clientes', 'can_edit')} />
+            ) : null}
+            {d?.cliente?.id != null && hasPermission('puntos_ajustar', 'can_view') ? (
+              <AjustarPuntos customerId={d.cliente.id} nombre={d.cliente.nombre || ''} saldo={saldo} onHecho={cargar} />
             ) : null}
           </>
         ) : null}

@@ -9,8 +9,10 @@
 //   · Avisos: lo que hay que revisar (canjes sin saldo, anulaciones con puntos
 //     gastados, movimientos fuera de lo normal).
 //
+//   · Por asignar: las cuentas del sistema anterior que no pasaron solas; tocar
+//     una abre `asignar-cuenta`. En Avisos, arriba, los traspasos de puntos de
+//     los cambios de cliente que quedaron a medias (reintentar o resolver a mano).
 // Cada pestaña con su permiso, como en el portal; la base lo vuelve a comprobar.
-// Asignar cuentas del sistema anterior y los traspasos siguen en el portal.
 // Los rótulos salen del núcleo (`puntosTexto`).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
@@ -24,6 +26,8 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../componentes/Segmentos';
+import PorAsignar from '../componentes/puntos/PorAsignar';
+import Traspasos from '../componentes/puntos/Traspasos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
@@ -135,6 +139,7 @@ export default function Puntos() {
     hasPermission('puntos_tab_resumen', 'can_view') && { id: 'resumen', label: 'Resumen' },
     hasPermission('puntos_tab_consulta', 'can_view') && { id: 'consulta', label: 'Consulta' },
     hasPermission('puntos_tab_avisos', 'can_view') && { id: 'avisos', label: 'Avisos' },
+    hasPermission('puntos_tab_por_asignar', 'can_view') && { id: 'por_asignar', label: 'Por asignar' },
   ].filter(Boolean), [hasPermission]);
   const [elegida, setPestana] = useState(null);
   const pestana = elegida && pestanas.some((p) => p.id === elegida) ? elegida : pestanas[0]?.id;
@@ -160,7 +165,7 @@ export default function Puntos() {
     <>
       <Stack.Screen options={{
         ...BARRA_NATIVA, title: 'Puntos', headerLargeTitle: true,
-        headerSearchBarOptions: pestana === 'consulta' ? {
+        headerSearchBarOptions: pestana === 'consulta' || pestana === 'por_asignar' ? {
           placeholder: 'Nombre, DUI o teléfono', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         } : undefined,
@@ -174,7 +179,8 @@ export default function Puntos() {
         {!pestana ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto="Tu cargo no tiene acceso a Puntos." /></View>
           : pestana === 'resumen' ? <Resumen key={llave} onIrA={(p) => { if (pestanas.some((x) => x.id === p)) setPestana(p); }} />
             : pestana === 'consulta' ? <Consulta key={llave} busqueda={busqueda} orden={ordenCol} dir={ordenDir} />
-              : <Avisos key={llave} />}
+              : pestana === 'por_asignar' ? <PorAsignar key={llave} busqueda={busqueda} />
+                : (<><Traspasos key={`t${llave}`} puedeResolver={hasPermission('puntos_ajustar', 'can_view')} /><Avisos key={llave} /></>)}
       </ScrollView>
     </>
   );

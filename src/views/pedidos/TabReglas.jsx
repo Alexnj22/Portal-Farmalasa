@@ -20,8 +20,11 @@ import AvisoParecidos from '../../components/common/AvisoParecidos';
 import {
     fetchProductPresentacionesForDispatch, fetchLaboratorios, fetchAllDispatchRules,
     fetchActiveProductsCount, fetchNewProductsThisMonth, fetchProductsWithLabPage,
-    deleteDispatchRule, updateDispatchRule, insertDispatchRule,
+    guardarReglaDeDespacho,
 } from '@nucleo/data/dispatchRules';
+import {
+    MULTIPLOS, NECESIDAD_EJEMPLO, SIN_REGLA, calcularDespacho, presentacionesOfrecidas, valoresDeRegla,
+} from '@nucleo/utils/reglasDeDespacho';
 import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -30,10 +33,10 @@ import { useExpedienteMovil, CORTE_TELEFONO } from '../../components/common/usar
 import useMediaQuery from '../../plataforma/useMediaQuery';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 
-const MULTIPLO_PILLS = [1, 2, 3, 5, 10, 25, 50];
+const MULTIPLO_PILLS = MULTIPLOS;
 const EASE           = [0.16, 1, 0.3, 1];
 
-const EMPTY_VALS = { dispatch_id_presentacion: null, dispatch_multiplo: '1', notes: '', dispatch_label: '', caja_especial: false };
+const EMPTY_VALS = SIN_REGLA;
 
 const COLS = [
     { key: 'laboratorio_nombre', label: 'Laboratorio',     align: 'left',   sortable: true },
@@ -96,22 +99,8 @@ const presStyle = (tipo) => {
 
 // Cuánto se despacha ante una necesidad de N unidades. Es la MISMA cuenta que
 // hace el pedido; acá sólo se muestra.
-const NECESIDAD_EJEMPLO = 7;
-function calcularDespacho(multiplo, etiqueta) {
-    const m = multiplo > 0 ? multiplo : 1;
-    // Con etiqueta y múltiplo, el PDF cuenta CAJAS (una por lote), no packs.
-    const porEtiqueta = !!etiqueta && m > 1;
-    return {
-        porEtiqueta,
-        cantidad: porEtiqueta
-            ? Math.ceil(NECESIDAD_EJEMPLO / m)
-            : Math.ceil(NECESIDAD_EJEMPLO / m) * m,
-    };
-}
+// `NECESIDAD_EJEMPLO` y `calcularDespacho` viven en el núcleo (`reglasDeDespacho`).
 
-// ── El resultado de la regla ──────────────────────────────────────────────────
-// Era una nota al pie en gris, y es lo único que verifica que la regla hace lo
-// que se quiere: pasa a anclar la columna.
 function ResultadoDespacho({ multiplo, tipo, etiqueta, compacto = false }) {
     const { porEtiqueta, cantidad } = calcularDespacho(multiplo, etiqueta);
     const unidad = porEtiqueta ? etiqueta : (tipo ? `pack(s) de ${tipo}` : 'pack(s)');
@@ -197,16 +186,8 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
 
     // Deduplica por factor numérico — si dos presentaciones tienen el mismo factor,
     // muestra solo una. Prefiere la que ya apunta la regla existente.
-    const dedupedPres = useMemo(() => {
-        const existingId = rule?.dispatch_id_presentacion ?? null;
-        const groups = new Map(); // factor → pres row
-        for (const pres of presentations) {
-            const f = pres.factor;
-            if (!groups.has(f)) groups.set(f, pres);
-            if (pres.id_presentacion === existingId) groups.set(f, pres);
-        }
-        return [...groups.values()].sort((a, b) => b.factor - a.factor);
-    }, [presentations, rule?.dispatch_id_presentacion]);
+    const dedupedPres = useMemo(() => presentacionesOfrecidas(presentations, rule?.dispatch_id_presentacion ?? null),
+        [presentations, rule?.dispatch_id_presentacion]);
 
     const multiplo      = Number(vals.dispatch_multiplo) || 1;
     const selectedPres  = dedupedPres.find(p => p.id_presentacion === vals.dispatch_id_presentacion);
@@ -750,13 +731,7 @@ export default function TabReglas({ searchTerm = '' }) {
         setEditingId(productId);
         setSaveError(null);
         setJustSaved(false);
-        setEditVals({
-            dispatch_id_presentacion: rule?.dispatch_id_presentacion ?? null,
-            dispatch_multiplo:        String(rule?.dispatch_multiplo ?? 1),
-            notes:                    rule?.notes ?? '',
-            dispatch_label:           rule?.dispatch_label ?? '',
-            caja_especial:            rule?.caja_especial ?? false,
-        });
+        setEditVals(valoresDeRegla(rule));
     }, []);
 
     const cancelEdit  = useCallback(() => { setEditingId(null); setSaveError(null); }, []);
@@ -777,40 +752,15 @@ export default function TabReglas({ searchTerm = '' }) {
         setSaving(true); setSaveError(null);
         const existing = rulesMapRef.current[productId];
         try {
-            if (!v.dispatch_id_presentacion) {
-                // Quitar regla → delete si existe
-                if (existing) {
-                    const { error } = await deleteDispatchRule(existing.id, { erp_product_id: productId });
-                    if (error) throw error;
-                    const next = { ...rulesMapRef.current };
-                    delete next[productId];
-                    rulesMapRef.current = next;
-                    setRulesMap(next);
-                }
+            // Crear, actualizar o quitar: núcleo (`guardarReglaDeDespacho`), el
+            // mismo del teléfono.
+            const saved = await guardarReglaDeDespacho(productId, v, existing ?? null);
+            if (!saved) {
+                const next = { ...rulesMapRef.current };
+                delete next[productId];
+                rulesMapRef.current = next;
+                setRulesMap(next);
             } else {
-                const payload = {
-                    erp_product_id:           productId,
-                    dispatch_id_presentacion: v.dispatch_id_presentacion,
-                    dispatch_multiplo:        Number(v.dispatch_multiplo) || 1,
-                    dispatch_label:           v.dispatch_label || null,
-                    caja_especial:            v.caja_especial ?? false,
-                    solo_cajas:               false,   // NOT NULL en DB
-                    multiplo:                 null,
-                    blister:                  null,
-                    multiplo_unidades:        null,
-                    notes:                    v.notes || null,
-                    updated_at:               new Date().toISOString(),
-                };
-                let saved;
-                if (existing) {
-                    const { data, error } = await updateDispatchRule(existing.id, payload);
-                    if (error) throw error;
-                    saved = data;
-                } else {
-                    const { data, error } = await insertDispatchRule(payload);
-                    if (error) throw error;
-                    saved = data;
-                }
                 // dispatch_tipo desde presCache (ya cargado al abrir el panel)
                 const cachedPres = presCache.current[productId] ?? [];
                 const matchPres  = cachedPres.find(p => p.id_presentacion === v.dispatch_id_presentacion);

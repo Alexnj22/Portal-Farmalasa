@@ -49,7 +49,9 @@ function Fila({ rotulo, children }) {
 }
 
 export default function NuevaPersonal() {
-  const { tipo: tipoParam } = useLocalSearchParams();
+  // `empleado`: desde la ficha de alguien («Nueva solicitud a su nombre»), como
+  // el `prefillEmployeeId` del portal. Sólo vale con alcance para elegir.
+  const { tipo: tipoParam, empleado: empleadoParam } = useLocalSearchParams();
   const tipo = String(tipoParam || 'VACATION');
   const { user, getScope } = useAuth();
   const empleados = useStaffStore((s) => s.employees);
@@ -59,7 +61,7 @@ export default function NuevaPersonal() {
 
   // A nombre de quién: la persona que usa la app, salvo que se elija a otra.
   // Derivado y no guardado, porque al abrir el usuario puede no haber cargado.
-  const [elegido, setEmpleadoId] = useState(null);
+  const [elegido, setEmpleadoId] = useState(() => (empleadoParam && puedeElegir ? String(empleadoParam) : null));
   const empleadoId = elegido ?? String(user?.id ?? '');
   const [buscaPersona, setBuscaPersona] = useState('');
   const [payload, setPayload] = useState({});

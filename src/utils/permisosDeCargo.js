@@ -173,3 +173,58 @@ export function filasCopiadasDe(permisos, desdeId, haciaId, moduleGroups, ahora 
 /** Minutos sin uso antes de cerrar la sesión de un cargo: la base los acota. */
 export const MIN_INACTIVIDAD = 5;
 export const MAX_INACTIVIDAD = 1440;
+
+// ── Las tres acciones en bloque (2026-10-09), para el portal y la app ───────
+
+/** Los módulos de un grupo con sus sub-permisos, como filas a escribir (sub: sin «Aprobar»). */
+export const modulosDelGrupo = (grupo) => (grupo?.modules || [])
+    .flatMap(m => [m, ...(m.sub || []).map(t => ({ key: t.key, hasApprove: false, isTab: true }))]);
+
+/** ¿Está encendida la sección entera? (todos sus módulos PRINCIPALES con «Ver»). */
+export const seccionEncendida = (permisos, roleId, grupo) => (grupo?.modules || [])
+    .every(m => (permisos || {})[`${roleId}:${m.key}`]?.can_view);
+
+/**
+ * Encender o apagar una sección entera: Ver y Gestionar, y Aprobar donde el
+ * módulo lo tiene. El alcance que ya tenía se conserva.
+ */
+export function filasDeSeccion(permisos, roleId, modulos, activar, ahora = new Date().toISOString()) {
+    return (modulos || []).map(m => ({
+        role_id: roleId, module_key: m.key,
+        can_view: activar, can_edit: activar, can_approve: activar && !!m.hasApprove,
+        scope: (permisos || {})[`${roleId}:${m.key}`]?.scope || 'ALL', updated_at: ahora,
+    }));
+}
+
+/** «Activar todo»: todo encendido —las pestañas y capacidades sin «Gestionar»—, con su alcance. */
+export function filasParaActivarTodo(permisos, roleId, moduleGroups, ahora = new Date().toISOString()) {
+    return (moduleGroups || []).flatMap(g => g.modules.flatMap(m => [m, ...(m.sub || []).map(s => ({ key: s.key, hasApprove: false, isTab: true }))]))
+        .map(m => ({
+            role_id: roleId, module_key: m.key,
+            can_view: true, can_edit: !m.isTab, can_approve: !!m.hasApprove,
+            scope: (permisos || {})[`${roleId}:${m.key}`]?.scope || 'ALL', updated_at: ahora,
+        }));
+}
+
+/** Las familias que decide la bandeja de solicitudes más `requests`, que la abre. */
+export const CLAVES_DE_DECIDIR = ['requests_facturacion', 'requests_inventario', 'requests_minmax', 'requests_caja', 'requests_cuentas_por_cobrar', 'traslados'];
+
+/**
+ * Delegar (o no) las decisiones en ausencia: las familias y `requests` en una
+ * sola vez. Delegar decidir sin delegar ver dejaría al suplente con permiso
+ * para resolver algo que no puede abrir.
+ */
+export function filasParaDelegar(permisos, roleId, valor, familias = CLAVES_DE_DECIDIR, ahora = new Date().toISOString()) {
+    return [...familias, 'requests'].map(k => {
+        const pv = (permisos || {})[`${roleId}:${k}`] || {};
+        return {
+            role_id: roleId, module_key: k,
+            can_view: pv.can_view ?? false, can_edit: pv.can_edit ?? false, can_approve: pv.can_approve ?? false,
+            scope: pv.scope || 'ALL', delega_en_ausencia: valor, updated_at: ahora,
+        };
+    });
+}
+
+/** ¿Delega hoy? */
+export const delegaDecisiones = (permisos, roleId, familias = CLAVES_DE_DECIDIR) =>
+    [...familias, 'requests'].some(k => (permisos || {})[`${roleId}:${k}`]?.delega_en_ausencia);

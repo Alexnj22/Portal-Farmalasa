@@ -442,3 +442,106 @@ export function datosDePieza(form, pieza = null) {
     if (datos.estado === 'publicado' && !pieza?.publicado_en) datos.publicado_en = new Date().toISOString();
     return datos;
 }
+
+// ── Ideas, feed y la pieza (2026-10-09) ─────────────────────────────────────
+// Lo que deciden el banco de ideas (`TabIdeas`) y el feed (`TabFeed`), escrito
+// UNA vez para el portal y la app del personal.
+
+export const ESTADOS_IDEA = {
+    nueva: { label: 'Nueva', variant: 'chart-3' },
+    en_trabajo: { label: 'En trabajo', variant: 'info' },
+    usada: { label: 'Usada', variant: 'success' },
+    descartada: { label: 'Descartada', variant: 'neutral' },
+};
+export const VISTAS_DE_IDEAS = [
+    { value: 'abiertas', label: 'Abiertas', pasa: (i) => i.estado === 'nueva' || i.estado === 'en_trabajo' },
+    { value: 'usada', label: 'Usadas', pasa: (i) => i.estado === 'usada' },
+    { value: 'descartada', label: 'Descartadas', pasa: (i) => i.estado === 'descartada' },
+    { value: 'todas', label: 'Todas', pasa: () => true },
+];
+export const ideasDeLaVista = (ideas, vista) => (ideas || []).filter((VISTAS_DE_IDEAS.find((v) => v.value === vista) || VISTAS_DE_IDEAS[0]).pasa);
+export const cuentaDeIdeas = (ideas) => Object.fromEntries(VISTAS_DE_IDEAS.map((v) => [v.value, (ideas || []).filter(v.pasa).length]));
+
+/**
+ * Qué se puede hacer con una idea. Gestionar (tomar, ligar, descartar, soltar,
+ * reabrir) lo hace quien edita o aprueba; crear la pieza, quien edita; editar y
+ * quitar, sólo quien la dejó mientras sigue nueva.
+ */
+export function accionesDeIdea(idea, { gestiona, puedeEditar, yoId }) {
+    const abierta = idea.estado === 'nueva' || idea.estado === 'en_trabajo';
+    const a = [];
+    if (gestiona && idea.estado === 'nueva') a.push('tomar');
+    if (gestiona && abierta && puedeEditar) a.push('crear_pieza');
+    if (gestiona && abierta) a.push('ligar');
+    if (gestiona && idea.estado === 'en_trabajo') a.push('soltar');
+    if (gestiona && abierta) a.push('descartar');
+    if (gestiona && !abierta) a.push('reabrir');
+    if (idea.autor_id === yoId && idea.estado === 'nueva') a.push('editar', 'quitar');
+    return a;
+}
+
+/** La portada de una pieza: su primer diseño vigente (imagen o video). */
+export const portadaDePieza = (p) => (p?.archivos || []).find((a) => a.url && !a.reemplazado && /^(image|video)\//.test(a.mime || 'image/'));
+const masNuevaPrimero = (a, b) => (b.fecha || '').localeCompare(a.fecha || '') || (b.hora || '').localeCompare(a.hora || '');
+
+/**
+ * El mes como se verá en el perfil de la red de una marca: la cuadrícula, lo
+ * más nuevo arriba, y las historias aparte. `alcance` 'aprobado' deja sólo lo
+ * que ya tiene el visto bueno.
+ */
+export function feedDeMarca(piezas, marcaId, alcance = 'todo') {
+    const deMarca = (piezas || [])
+        .filter((p) => marcaId == null || esDeMarca(p, marcaId))
+        .filter((p) => alcance === 'todo' || tieneOk(p))
+        .sort(masNuevaPrimero);
+    return { cuadricula: deMarca.filter((p) => p.formato !== 'historia'), historias: deMarca.filter((p) => p.formato === 'historia') };
+}
+
+/** Lo que trae la pieza nueva que nace de una idea («Crear pieza»). */
+export const prellenadoDeIdea = (i) => ({
+    titulo: i.titulo, notas: i.detalle || '', formato: i.formato || 'post',
+    ...(i.marca_id ? { marca_id: i.marca_id } : {}), idea_id: i.id,
+});
+
+/** Lo que trae la pieza que nace de una solicitud aceptada, y en qué mes va. */
+export function prellenadoDeSolicitud(s, mesActual) {
+    const mesDestino = s.fecha_deseada ? s.fecha_deseada.slice(0, 7) : mesActual;
+    return {
+        mes: mesDestino,
+        prellenado: {
+            titulo: s.titulo, notas: s.descripcion || '', marca_id: s.marca_id || '',
+            formato: s.formato || 'post', solicitud_id: s.id,
+            fecha: s.fecha_deseada || `${mesDestino}-01`,
+        },
+    };
+}
+
+// ── La biblioteca de marca (`TabBiblioteca`) ────────────────────────────────
+export const TIPOS_DE_RECURSO = [
+    { value: 'logo', label: 'Logos' }, { value: 'color', label: 'Paleta' }, { value: 'tipografia', label: 'Tipografías' },
+    { value: 'foto', label: 'Fotos' }, { value: 'plantilla', label: 'Plantillas' }, { value: 'manual', label: 'Manual de marca' },
+    { value: 'otro', label: 'Otros' },
+];
+export const colorValido = (c) => /^#[0-9A-Fa-f]{6}$/.test(String(c || ''));
+/** Lo escrito en el campo de color: con su «#» delante. */
+export const colorEscrito = (t) => { const v = String(t || '').trim(); return v && !v.startsWith('#') ? `#${v}` : v; };
+/** Si falta algo para agregar el recurso: nombre, y un color válido o un archivo o un enlace http(s). */
+export const faltaEnRecurso = (f, tieneArchivo) => !String(f.nombre || '').trim()
+    || (f.tipo === 'color' ? !colorValido(f.color) : (!tieneArchivo && !/^https?:\/\//i.test(String(f.enlace || '').trim())));
+/** Los recursos agrupados: primero los de todas las marcas, después cada marca. Grupos vacíos no salen. */
+export function recursosPorMarca(recursos, marcas) {
+    const g = [{ id: '', nombre: 'Todas las marcas', color: null }, ...(marcas || [])];
+    return g.map((m) => ({ ...m, items: (recursos || []).filter((r) => String(r.marca_id || '') === String(m.id)) })).filter((m) => m.items.length);
+}
+
+// ── Ajustes del calendario (`AjustesModal`) ─────────────────────────────────
+/** Los colores que puede llevar una marca (tokens de gráfica vigentes, DESIGN.md §6). */
+export const COLORES_DE_MARCA = ['chart-1', 'chart-3', 'chart-4', 'chart-6', 'chart-8', 'chart-9'];
+/** El primer color que ninguna marca usa; si están todos, se repite en orden. */
+export function colorLibreDeMarca(marcas) {
+    const usados = new Set((marcas || []).map((m) => m.color));
+    return COLORES_DE_MARCA.find((c) => !usados.has(c)) || COLORES_DE_MARCA[(marcas || []).length % COLORES_DE_MARCA.length];
+}
+/** El día límite para enviar el mes siguiente: del 1 al 28. */
+export const DIAS_LIMITE_DE_ENVIO = Array.from({ length: 28 }, (_, i) => i + 1);
+export const diaDeFechaValido = (d) => Number(d) >= 1 && Number(d) <= 31;

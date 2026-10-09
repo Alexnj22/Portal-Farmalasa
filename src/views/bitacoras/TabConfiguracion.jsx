@@ -14,6 +14,7 @@ import { PLANTILLA_AREA, TIPO_AREA, aplicarHorarios, apagarRefrigerador, areaNue
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { hora12 } from '@nucleo/utils/hora';
 import { hoySV } from '@nucleo/utils/fecha';
+import { areaCambiada, areasAgregables, horariosUnidos, unAnoDespues } from '@nucleo/utils/configuracionDeBitacoras';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Configuración de las áreas.
@@ -53,12 +54,6 @@ const rotularHora12 = (hm) => hora12(hm);
  * y editable—; no proponerla obliga a hacer la cuenta de cabeza, que es donde
  * aparece el «2027» escrito sobre un certificado de 2026.
  */
-const unAnoDespues = (fecha) => {
-    const d = new Date(`${fecha}T12:00:00Z`);
-    d.setUTCFullYear(d.getUTCFullYear() + 1);
-    return d.toISOString().slice(0, 10);
-};
-
 function Area({ area, puedeEditar, onGuardado }) {
     const Icono = ICONO[area.tipo] || Thermometer;
     // Un área que sólo se limpia no tiene termómetro que identificar ni
@@ -76,12 +71,7 @@ function Area({ area, puedeEditar, onGuardado }) {
     const [error, setError] = useState(null);
     const [ok, setOk] = useState(false);
 
-    const puntosSucios = JSON.stringify(puntos) !== JSON.stringify(area.puntos || []);
-    const sucio = activa !== area.activa
-        || instrumento !== (area.instrumento || '')
-        || calibrado !== (area.calibrado_hasta || '')
-        || calibradoEl !== (area.calibrado_el || '')
-        || puntosSucios;
+    const sucio = areaCambiada(area, { activa, instrumento, calibrado, calibradoEl, puntos });
 
 
     const guardar = useCallback(async () => {
@@ -278,13 +268,7 @@ function HorariosDeLaSucursal({ branchId, areas, puedeEditar, onCambio }) {
     // hora que aparece. Después de guardar, todas las áreas quedan iguales —
     // que es el punto; antes de guardar puede haber diferencias, y mostrar la
     // primera es la única respuesta honesta sin inventar una.
-    const unir = useCallback((campo) => {
-        const mapa = new Map();
-        for (const a of areas) {
-            for (const f of a[campo] || []) if (!mapa.has(f.clave)) mapa.set(f.clave, { ...f });
-        }
-        return [...mapa.values()];
-    }, [areas]);
+    const unir = useCallback((campo) => horariosUnidos(areas, campo), [areas]);
 
     const [franjas, setFranjas] = useState(() => unir('franjas'));
     const [limpiezas, setLimpiezas] = useState(() => unir('limpiezas'));
@@ -484,15 +468,7 @@ function AgregarArea({ branchId, areas, onCreada }) {
     // Sólo los tipos que faltan: la base tiene UNIQUE (sucursal, tipo, nombre),
     // así que ofrecer uno repetido termina en un error de Postgres en vez de en
     // un aviso. Un segundo refrigerador se agrega escribiéndole otro nombre.
-    const disponibles = useMemo(() => {
-        const usados = new Set(areas.map(a => `${a.tipo}|${a.nombre}`));
-        return Object.entries(PLANTILLA_AREA)
-            // El refrigerador no se agrega por acá: es un interruptor de la
-            // sucursal («no es un área, significa que se tienen medicamentos
-            // ahí»), y tiene su propia tarjeta arriba.
-            .filter(([t, p]) => t !== 'refrigerador' && !usados.has(`${t}|${p.nombre}`))
-            .map(([t]) => ({ value: t, label: TIPO_AREA[t] || t }));
-    }, [areas]);
+    const disponibles = useMemo(() => areasAgregables(areas), [areas]);
 
     const crear = useCallback(async () => {
         if (!tipo) return;

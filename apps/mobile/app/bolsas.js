@@ -6,8 +6,10 @@
 //     contar» con su monto— y recién «Confirmar el conteo» cierra la tanda
 //     entera (usuario, 24-ago). Lo marcado vive en el SERVIDOR: es efectivo
 //     contado a mano y no se pierde con la app cerrada.
-//   · Diferencias: las que no cuadraron y nadie resolvió. Resolver, depositar
-//     al banco y los conteos por tanda siguen en el portal (dentro de la app).
+//   · Diferencias: las que no cuadraron y nadie resolvió, cada una con
+//     «Anotar la causa» (justificar, repuesto o retirado, con foto de respaldo).
+//   · Contado y sin cerrar: «Finalizar el efectivo» (banco / en mano /
+//     remanente) y el archivo de depósitos y de conteos por tanda.
 //   · En la sala y Contadas (las de los últimos 30 días): las dos puntas del
 //     circuito, como las pestañas del portal, para LEER.
 //
@@ -22,15 +24,17 @@
 // (`saldoDeBolsa`), no contra lo guardado, y el servidor rechaza si no coincide
 // con el suyo.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  confirmarConteo, desmarcarConteoBolsa, fetchBolsas, fetchBolsasConDiferencia, fetchSaldos, marcarConteoBolsa, recibirBolsas,
+  confirmarConteo, desmarcarConteoBolsa, fetchBolsas, fetchBolsasConDiferencia, fetchPorDepositar, fetchSaldos, marcarConteoBolsa, recibirBolsas,
+  resolverDiferenciaBolsa,
 } from '@nucleo/data/bolsas';
-import { contadoDeBolsa, diferenciaDeBolsa, saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
+import { contadoDeBolsa, diferenciaDeBolsa, rotuloDeVia, saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
+import { contadoDeBolsas } from '@nucleo/utils/depositoDeEfectivo';
 import { DIAS_DE_ALARMA_BOLSA, laMasVieja } from '@nucleo/utils/bolsasTexto';
 import { ordenDeSala } from '@nucleo/constants/erp';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -41,7 +45,8 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo } from '../componentes/formulario/Piezas';
+import Fotos, { subirFotos } from '../componentes/formulario/Fotos';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
@@ -99,13 +104,54 @@ function Contar({ bolsa, verMontos, ocupado, onMarcar, onDesmarcar }) {
   );
 }
 
+/** La causa de una diferencia: justificar, o repuesto/retirado, con foto opcional
+ *  de respaldo. La foto se sube ANTES de resolver: saldar diciendo que hay
+ *  respaldo cuando no llegó es peor que no adjuntarlo (igual que el portal). */
+function Resolver({ bolsa, userId, onResuelta, onCancelar }) {
+  const [causa, setCausa] = useState('');
+  const [fotos, setFotos] = useState([]);
+  const [ocupado, setOcupado] = useState(false);
+  const dif = diferenciaDeBolsa(bolsa) ?? 0;
+  const falta = dif < 0;
+  const saldar = (via) => Alert.alert(`¿${rotuloDeVia(via)}?`, `${bolsa.folio}: ${falta ? 'faltaron' : 'sobraron'} ${formatMoney(Math.abs(dif))}.\n«${causa.trim()}»`, [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: rotuloDeVia(via), onPress: async () => {
+      setOcupado(true);
+      try {
+        const url = fotos.length
+          ? (await subirFotos(fotos, { bucket: 'payment-proofs', carpeta: `bolsas/${bolsa.branch_id ?? 'sin-sala'}/${userId ?? 'anon'}` }))[0] ?? null : null;
+        const { error } = await resolverDiferenciaBolsa(bolsa.id, via, causa.trim(), url);
+        if (error) throw error;
+        listo(`${bolsa.folio} · ${rotuloDeVia(via).toLowerCase()}`);
+        onResuelta();
+      } catch (e) {
+        fallo('No se pudo resolver', mensajeAmigable(e));
+      } finally { setOcupado(false); }
+    } },
+  ]);
+  return (
+    <View style={{ gap: 8 }}>
+      <Campo value={causa} onChangeText={setCausa} placeholder={falta ? 'Por qué faltó y qué se hizo…' : 'Por qué sobró y qué se hizo…'} />
+      <Fotos fotos={fotos} onCambiar={setFotos} max={1} />
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <View style={{ flex: 1 }}><BotonGrande texto="Justificar" borde deshabilitado={ocupado || !causa.trim()} onPress={() => saldar('JUSTIFICA')} /></View>
+        <View style={{ flex: 1 }}><BotonGrande texto={falta ? 'Repuesto' : 'Retirado'} color={MARCA.verde} deshabilitado={ocupado || !causa.trim()} onPress={() => saldar(falta ? 'REPONE' : 'RETIRA')} /></View>
+      </View>
+      <BotonGrande texto="Cancelar" borde color={colorSistema.texto2} onPress={onCancelar} />
+    </View>
+  );
+}
+
 export default function Bolsas() {
-  const { getScope, hasPermission } = useAuth();
+  const { getScope, hasPermission, user } = useAuth();
   const sucursales = useStaffStore((s) => s.branches);
   const empleados = useStaffStore((s) => s.employees);
   const alcanceTodos = getScope?.('bolsas') === 'ALL';
   const puedeContar = hasPermission('bolsas_conteo', 'can_edit');
   const verMontos = hasPermission('bolsas_ver_montos');
+  const puedeEntregar = hasPermission('bolsas', 'can_edit');
+  const [resolviendo, setResolviendo] = useState(null);
+  const [porDepositar, setPorDepositar] = useState([]);
   const [etapa, setEtapa] = useState('camino');
   const [bolsas, setBolsas] = useState(null);
   const [diferencias, setDiferencias] = useState([]);
@@ -119,21 +165,24 @@ export default function Bolsas() {
 
   const cargar = useCallback(async () => {
     const hoy = hoySV();
-    const [vivas, conDif, contadas] = await Promise.all([
+    const [vivas, conDif, contadas, paraBanco] = await Promise.all([
       fetchBolsas({ estados: ['ABIERTA', 'ENTREGADA', 'RECIBIDA'] }),
       fetchBolsasConDiferencia(),
       // Las contadas por FECHA DE CONTEO: la de un corte del martes que se
       // cuenta hoy no puede desaparecer al firmarla.
       fetchBolsas({ desde: sumarDias(hoy, -29), hasta: hoy, estados: ['CONTADA'], porFechaDeConteo: true }),
+      // Sin rango a propósito: efectivo confirmado que nadie cerró es un pendiente.
+      puedeContar ? fetchPorDepositar() : Promise.resolve([]),
     ]);
+    setPorDepositar(paraBanco || []);
     const todas = [...(vivas || []), ...(conDif || []), ...(contadas || [])];
     const saldos = await fetchSaldos([...new Set(todas.map((b) => b.id))]);
     const conSaldo = (b) => ({ ...b, ...(saldos.get(b.id) || {}) });
     setBolsas((vivas || []).map(conSaldo));
     setDiferencias((conDif || []).map(conSaldo));
     setContadas((contadas || []).map(conSaldo));
-  }, []);
-  useEffect(() => { cargar(); }, [cargar]);
+  }, [puedeContar]);
+  useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
   const nombreDeSala = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? `Sala ${id}`;
   const porId = useMemo(() => new Map((empleados || []).map((e) => [String(e.id), e])), [empleados]);
@@ -218,6 +267,20 @@ export default function Bolsas() {
               onPress={diferencias.length ? () => { setEtapa('diferencias'); setElegidas(new Set()); } : undefined} />
           </FilaDeKpis>
         ) : null}
+        {puedeContar && porDepositar.length ? (
+          <View style={{ marginHorizontal: 16 }}>
+            <Vidrio radio={20}>
+              <View style={{ padding: 14, gap: 10 }}>
+                <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}>Contado y sin cerrar</Text>
+                <Text style={{ color: colorSistema.texto, fontSize: 28, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
+                  {verMontos ? formatMoney(contadoDeBolsas(porDepositar)) : String(porDepositar.length)}
+                </Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`en ${porDepositar.length} ${porDepositar.length === 1 ? 'bolsa' : 'bolsas'}`}</Text>
+                <BotonGrande texto="Finalizar el efectivo" color={MARCA.verde} onPress={() => router.push('/finalizar-efectivo')} />
+              </View>
+            </Vidrio>
+          </View>
+        ) : null}
         <Segmentos activa={etapa} onCambiar={(e) => { setEtapa(e); setElegidas(new Set()); }} opciones={[
           { id: 'sala', label: 'Sala' },
           { id: 'camino', label: 'Recibir' },
@@ -290,6 +353,11 @@ export default function Bolsas() {
                     {etapa === 'diferencias' && dif != null ? (
                       <Pildora texto={`Se contaron ${formatMoney(contadoDeBolsa(b))} · ${dif > 0 ? 'sobran' : 'faltan'} ${formatMoney(Math.abs(dif))}`} color={MARCA.rojo} />
                     ) : null}
+                    {etapa === 'diferencias' && (puedeContar || puedeEntregar) ? (
+                      resolviendo === b.id
+                        ? <Resolver bolsa={b} userId={user?.id} onCancelar={() => setResolviendo(null)} onResuelta={() => { setResolviendo(null); cargar(); }} />
+                        : <BotonGrande texto="Anotar la causa" borde onPress={() => setResolviendo(b.id)} />
+                    ) : null}
                   </View>
                 </Vidrio>
               );
@@ -316,18 +384,15 @@ export default function Bolsas() {
               : etapa === 'contadas' ? 'Ninguna contada en 30 días' : 'Sin diferencias por resolver'}
           </Text>
         ) : null}
-        {etapa === 'diferencias' && diferencias.length ? (
-          <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-            <BotonGrande texto="Resolver en el portal" borde color={MARCA.azulClaro}
-              onPress={() => router.push({ pathname: '/portal', params: { ruta: '/bolsas?tab=diferencias', nombre: 'Bolsas' } })} />
+        {verMontos ? (
+          <View style={{ marginHorizontal: 16, marginTop: 8, flexDirection: 'row', gap: 10 }}>
+            <View style={{ flex: 1 }}><BotonGrande texto="Depósitos" borde color={MARCA.azulClaro} onPress={() => router.push('/depositos-banco')} /></View>
+            <View style={{ flex: 1 }}><BotonGrande texto="Conteos" borde color={MARCA.azulClaro} onPress={() => router.push('/conteos-bolsas')} /></View>
           </View>
         ) : null}
-        <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-          <BotonGrande texto="Depósitos e historial (portal)" borde color={colorSistema.texto2}
-            onPress={() => router.push({ pathname: '/portal', params: { ruta: '/bolsas?tab=finalizadas', nombre: 'Bolsas' } })} />
-        </View>
       </ScrollView>
-      <DetalleDeBolsa bolsa={abierta} sala={abierta ? nombreDeSala(abierta.branch_id) : ''} verMontos={verMontos} onCerrar={() => setAbierta(null)} />
+      <DetalleDeBolsa bolsa={abierta} sala={abierta ? nombreDeSala(abierta.branch_id) : ''} verMontos={verMontos} onCerrar={() => setAbierta(null)}
+        onCambio={cargar} cerradaPor={abierta ? (quien(abierta.cerrada_por) || '') : ''} />
     </>
   );
 }

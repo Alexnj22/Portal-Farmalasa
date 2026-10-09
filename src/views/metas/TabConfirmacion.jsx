@@ -24,6 +24,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import {
     ymHoySV, ymSumar, ymLabel, ymLabelCorto, diaHoySV, TRAMO_CFG,
     PASOS_MAX_META, baseDeMeta, montoAjustadoDeMeta, ESTADO_DE_META,
+    EVENTO_DE_META, EVENTO_DE_META_SIN_MONTO, cambiosPorMeta,
 } from '@nucleo/utils/metasUtils';
 
 // Un toque = 1% sobre la propuesta, y el recorrido se topa en ±10%: más que eso
@@ -34,22 +35,12 @@ const PASOS_MAX = PASOS_MAX_META;
 // Cómo se lee cada evento de `metas_historial` en la línea de «Cambios». Uno
 // que no esté acá se muestra con su nombre, sin guiones: mejor eso que
 // esconderlo.
-const EVENTO_TXT = {
-    propuesta_generada: 'la propuso en',
-    propuesta_recalculada: 'la recalculó en',
-    recalculada_por_formula: 'la recalculó en',
-    confirmada: 'la confirmó en',
-    aprobada: 'la aprobó en',
-    aprobada_con_ajuste: 'la aprobó con ajuste en',
-    devuelta: 'la devolvió',
-    ingreso_manual: 'la escribió a mano en',
-    gasto_cargado: 'le sumó un gasto; quedó en',
-    gasto_anulado: 'anuló un gasto; quedó en',
-    reabierta_por_gasto: 'la reabrió por un gasto en',
-};
+// Los rótulos de cada evento y la cuenta de cada cambio salen del núcleo
+// (`metasUtils`): la app cuenta el mismo historial.
+const EVENTO_TXT = EVENTO_DE_META;
 // Eventos donde el monto no cambió de mano: decir «la devolvió $X» se lee como
 // si el monto fuera parte de la devolución.
-const EVENTO_SIN_MONTO = new Set(['devuelta']);
+const EVENTO_SIN_MONTO = EVENTO_DE_META_SIN_MONTO;
 
 // La base de venta sobre la que corre el ajuste (ver `montoDe`).
 const baseDe = baseDeMeta;
@@ -130,9 +121,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                 fetchMetasCambios(r.map((x) => x.id))
                     .then((lista) => {
                         if (!alive) return;
-                        const porMeta = {};
-                        for (const c of lista) (porMeta[c.meta_id] ||= []).push(c);
-                        setCambios(porMeta);
+                        setCambios(cambiosPorMeta(lista));
                     })
                     .catch(() => { if (alive) setCambios(null); });
             })

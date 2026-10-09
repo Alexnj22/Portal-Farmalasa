@@ -9,8 +9,7 @@ import PromptModal from '../common/PromptModal';
 import { EmptyState, SkeletonText } from '../common/StateViews';
 import PhotoLightbox from '../common/PhotoLightbox';
 import {
-    anularBolsa, anularSalida, fetchEventosDeBolsa, fetchOperacionDeBolsa, fetchSalidasDeBolsa,
-    pedirCorreccion,
+    anularBolsa, anularLaSalidaDeBolsa, fetchEventosDeBolsa, fetchSalidasDeBolsa,
 } from '@nucleo/data/bolsas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -175,32 +174,21 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
          * `operar-caja` borra la parte del cajón y anula la de la bolsa. El
          * servidor también lo frena (`anular_salida_de_bolsa`); esto es para
          * que el camino sea pedirla y no un error. */
-        if (!eraBolsa) {
-            const op = await fetchOperacionDeBolsa(anulando.operacionId);
-            const caja = op?.caja;
-            if (caja && !caja.anulado_at && caja.erp_movimiento_id) {
-                const r = await pedirCorreccion({
-                    sala: caja.branch_id, movimiento: caja.movimiento_id, que: 'ANULAR', motivo,
-                });
-                setOcupado(null);
-                if (r?.error) {
-                    showToast?.('No se pudo pedir', mensajeAmigable(r.error, 'Vuelve a intentar en un momento.'), 'error');
-                    return;
-                }
-                showToast?.('Anulación pedida',
-                    `Esta salida también sacó ${formatMoney(caja.monto)} de la caja: al aprobarse se anulan las dos partes.`,
-                    'success');
-                setAnulando(null);
-                return;
-            }
+        // La regla —una salida que también sacó de la caja se PIDE corregir en
+        // vez de anularse— es del núcleo (`anularLaSalidaDeBolsa`): la app la usa igual.
+        const r = eraBolsa ? await anularBolsa(bolsa.id, motivo) : await anularLaSalidaDeBolsa(anulando.operacionId, motivo);
+        if (r?.pedida) {
+            setOcupado(null);
+            showToast?.('Anulación pedida',
+                `Esta salida también sacó ${formatMoney(r.monto)} de la caja: al aprobarse se anulan las dos partes.`,
+                'success');
+            setAnulando(null);
+            return;
         }
-
-        const { error } = eraBolsa
-            ? await anularBolsa(bolsa.id, motivo)
-            : await anularSalida(anulando.operacionId, motivo);
+        const error = r?.error;
         if (error) {
             setOcupado(null);
-            showToast?.('No se pudo anular', mensajeAmigable(error, 'Vuelve a intentar en un momento.'), 'error');
+            showToast?.(eraBolsa ? 'No se pudo anular' : 'No se pudo anular ni pedir', mensajeAmigable(error, 'Vuelve a intentar en un momento.'), 'error');
             return;
         }
         showToast?.(eraBolsa ? 'Bolsa anulada' : 'Salida anulada', '', 'success');

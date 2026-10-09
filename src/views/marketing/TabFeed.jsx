@@ -4,7 +4,7 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import { EmptyState } from '../../components/common/StateViews';
 import { clickable } from '@nucleo/utils/clickable';
 import { fechaTexto, etiquetaMes } from '@nucleo/utils/fecha';
-import { formatoDe, esDeMarca, tieneOk, ROTULO_CORTO } from '@nucleo/utils/marketing';
+import { formatoDe, ROTULO_CORTO, feedDeMarca, portadaDePieza } from '@nucleo/utils/marketing';
 import { ICONOS_FORMATO, ICONO_DESCONOCIDO, tintaDeMarca, tonoDeEstado } from './iconos';
 
 const ALCANCE = [
@@ -12,11 +12,10 @@ const ALCANCE = [
     { value: 'aprobado', label: 'Sólo aprobado' },
 ];
 
-const portada = (p) => (p.archivos || []).find((a) => a.url && !a.reemplazado && /^(image|video)\//.test(a.mime || 'image/'));
+// La portada y el feed de cada marca salen del núcleo (`marketing`): la app arma el mismo.
+const portada = portadaDePieza;
 const portadaDe = (p, firmadas) => { const a = portada(p); return a ? firmadas?.get?.(a.url) : null; };
 
-/** Lo más nuevo arriba, como lo muestra la red. */
-const masNuevaPrimero = (a, b) => (b.fecha || '').localeCompare(a.fecha || '') || (b.hora || '').localeCompare(a.hora || '');
 
 /**
  * El mes como se verá en el perfil de la red: la cuadrícula de tres, lo más
@@ -31,16 +30,7 @@ export default function TabFeed({ mes, piezas, marcas, firmadas, onAbrir }) {
     const [alcance, setAlcance] = useState('todo');
     const marca = marcas.find((m) => m.id === marcaId);
 
-    const { cuadricula, historias } = useMemo(() => {
-        const deMarca = piezas
-            .filter((p) => marcaId == null || esDeMarca(p, marcaId))
-            .filter((p) => alcance === 'todo' || tieneOk(p))
-            .sort(masNuevaPrimero);
-        return {
-            cuadricula: deMarca.filter((p) => p.formato !== 'historia'),
-            historias: deMarca.filter((p) => p.formato === 'historia'),
-        };
-    }, [piezas, marcaId, alcance]);
+    const { cuadricula, historias } = useMemo(() => feedDeMarca(piezas, marcaId, alcance), [piezas, marcaId, alcance]);
 
     const chip = (activo) => `shrink-0 flex items-center gap-2 rounded-full border pl-1.5 pr-3 min-h-[var(--tap-min)] md:min-h-0 md:py-1
         text-label font-semibold transition-colors active:scale-[0.97]

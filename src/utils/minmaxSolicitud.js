@@ -166,3 +166,24 @@ export function mensajeDeMinMax(msg = '', sala = 'la sucursal') {
     if (msg.includes('MMCR_BODEGA')) return 'Bodega no admite estas solicitudes: su MIN y su MAX salen de la suma de las salas.';
     return msg || 'Error al enviar';
 }
+
+// ── La presentación de referencia (2026-10-09), portal y app ────────────────
+
+/** Las presentaciones del producto tal como las lee el formulario (factor y tipo). */
+export const presentacionesDelProducto = (filas = []) => (filas || [])
+    .map((r) => ({ tipo: r.presentaciones?.tipo, factor: r.factor, descripcion: r.descripcion }))
+    .filter((p) => p.factor);
+
+/** La «caja» más grande (factor > 1), para decir cuántas unidades trae. */
+export function presentacionDominante(pres) {
+    const uniq = [...new Map((pres || []).map((p) => [p.factor, p])).values()];
+    return uniq.filter((p) => p.factor > 1).sort((a, b) => b.factor - a.factor)[0] || null;
+}
+
+/** «≈ N CAJA» para un valor en unidades (hacia arriba: la caja no se parte). */
+export function equivalenteEnCajas(unidades, pres) {
+    const d = presentacionDominante(pres);
+    const n = Number(unidades);
+    if (!d || !n) return null;
+    return `≈ ${Math.ceil(n / d.factor)} ${(d.tipo || 'caja').trim()}`;
+}

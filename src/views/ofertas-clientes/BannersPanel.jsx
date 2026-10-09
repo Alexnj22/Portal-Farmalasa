@@ -14,7 +14,7 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { LoadingState } from '../../components/common/StateViews';
 import FormatoImagen from './FormatoImagen';
-import { estadoDeOferta } from '@nucleo/utils/ofertasClientes';
+import { DESTINOS_DE_LA_APP, bannerValido, estadoDeOferta, filaDeBanner } from '@nucleo/utils/ofertasClientes';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
@@ -30,13 +30,9 @@ import {
  * una pantalla de la app. Sin banners vigentes, la app muestra las ofertas.
  * Tabla `app_banners`; mismo permiso y bucket que las ofertas.
  */
-const DESTINOS = [
-    { value: '', label: 'Ninguno' },
-    { value: '/ofertas', label: 'Ofertas' },
-    { value: '/sucursales', label: 'Sucursales' },
-    { value: '/puntos', label: 'Mis puntos' },
-    { value: '/invitar', label: 'Invitar amigos' },
-];
+// Los destinos, la validación y la fila salen del núcleo: la app del personal
+// guarda el mismo banner. En el banner «Sin botón» se llama «Ninguno».
+const DESTINOS = DESTINOS_DE_LA_APP.map((d) => ({ value: d.valor, label: d.valor ? d.rotulo : 'Ninguno' }));
 
 export default function BannersPanel({ busqueda, puedeEditar, showToast }) {
     const [banners, setBanners] = useState(null);
@@ -182,18 +178,14 @@ function BannerModal({ banner, onClose, onGuardado, onError }) {
             .catch((err) => console.error('BannerModal: no se pudieron cargar las ofertas', err));
     }, []);
     const cambiar = (k) => (v) => setF((x) => ({ ...x, [k]: v }));
-    const valido = f.titulo.trim().length >= 3 && f.inicio && f.fin && f.fin >= f.inicio && (archivo || banner.imagen_path);
+    const valido = bannerValido(f, archivo || banner.imagen_path);
 
     const guardar = async () => {
         setGuardando(true);
         try {
             const imagen_path = archivo ? await subirImagen(archivo) : banner.imagen_path;
-            await guardarBanner(banner.id, {
-                titulo: f.titulo.trim(), titulo_visible: f.titulo_visible, imagen_path,
-                // Con oferta, el banner abre la oferta; si no, la pantalla elegida.
-                oferta_id: f.oferta_id || null, enlace: f.oferta_id ? null : (f.enlace || null),
-                inicio: f.inicio, fin: f.fin, publicada: f.publicada,
-            });
+            // Con oferta, el banner abre la oferta; si no, la pantalla elegida.
+            await guardarBanner(banner.id, filaDeBanner(f, imagen_path));
             clearDraft(claveBorrador);
             onGuardado();
         } catch (err) {

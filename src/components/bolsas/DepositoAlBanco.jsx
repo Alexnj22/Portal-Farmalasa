@@ -10,6 +10,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { contadoDeBolsas, faltasDelDeposito, repartoDelDeposito } from '@nucleo/utils/depositoDeEfectivo';
 
 /**
  * Lo que sigue después de confirmar el conteo: cuánto se lleva al banco.
@@ -116,51 +117,22 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, on
         return () => { vivo = false; };
     }, [abierto]);
 
-    const contado = useMemo(
-        () => bolsas.reduce((a, b) => a + Number(b.contado || 0), 0),
-        [bolsas],
-    );
+    const contado = useMemo(() => contadoDeBolsas(bolsas), [bolsas]);
 
-    const nAporte = Number(String(aporte).replace(',', '.')) || 0;
-    const disponible = Math.round((contado + nAporte) * 100) / 100;
-    /* Cada parte llega hasta lo que la otra deja libre (la regla de todo campo
-     * de dinero, DESIGN.md §15.11.2, usuario 2026-09-29): escribir de más pone
-     * el máximo en vez de trabar el cierre.
-     *
-     * Pero el tope se aplica al LEER, no al escribir: el estado guarda lo que
-     * la persona tecleó. DEP-261005-1 (2026-10-05): se escribieron $25,145 al
-     * banco ANTES de anotar los $425 de afuera; el campo los recortó a $24,720
-     * en el estado, y cuando el aporte subió el máximo el número ya no volvía.
-     * Los $425 —que sí se remesaron— quedaron como remanente. Guardando lo
-     * escrito, anotar el aporte después completa solo el monto: el orden en que
-     * se llenan los campos deja de importar.
-     *
-     * Cuando las dos partes no caben, cede la que se tocó ÚLTIMA: la otra ya
-     * estaba decidida. */
+    /* El reparto y sus topes salen del núcleo (`repartoDelDeposito`), la misma
+     * regla que usa la app. Los topes se aplican al LEER: el estado guarda lo
+     * que la persona tecleó — DEP-261005-1 (2026-10-05) se escribieron $25,145
+     * al banco ANTES de anotar los $425 de afuera, y recortar al escribir los
+     * dejaba como remanente. Cuando las dos partes no caben, cede la que se
+     * tocó ÚLTIMA. */
     const [ultimo, setUltimo] = useState('banco');
-    const escritoBanco = Number(String(monto).replace(',', '.')) || 0;
-    const escritoEfectivo = Number(String(montoEfectivo).replace(',', '.')) || 0;
-    const recortar = (n, tope) => Math.max(0, Math.min(n, Math.round(tope * 100) / 100));
-    let nMonto, nEfectivo;
-    if (ultimo === 'efectivo') {
-        nMonto = recortar(escritoBanco, disponible);
-        nEfectivo = recortar(escritoEfectivo, disponible - nMonto);
-    } else {
-        nEfectivo = recortar(escritoEfectivo, disponible);
-        nMonto = recortar(escritoBanco, disponible - nEfectivo);
-    }
-    const bancoRecortado = escritoBanco - nMonto > 0.004;
-    const efectivoRecortado = escritoEfectivo - nEfectivo > 0.004;
-    const reparto = Math.round((nMonto + nEfectivo) * 100) / 100;
-    const remanente = Math.round((disponible - reparto) * 100) / 100;
-    const noAlcanza = remanente < 0;
-    const topeBanco = Math.round((disponible - nEfectivo) * 100) / 100;
-    const topeEfectivo = Math.round((disponible - nMonto) * 100) / 100;
-    const faltaNota = nAporte > 0 && !aporteNota.trim();
-    /* Cada parte pide lo suyo, y sólo si esa parte existe: un cierre entero al
-     * banco no pregunta a quién, y uno entero en mano no pregunta banco. */
-    const faltaBanco = nMonto > 0 && !banco;
-    const faltaQuien = nEfectivo > 0 && !entregadoA;
+    const {
+        nAporte, disponible, nMonto, nEfectivo, reparto, remanente, escritoBanco, escritoEfectivo,
+        bancoRecortado, efectivoRecortado, noAlcanza, topeBanco, topeEfectivo,
+    } = repartoDelDeposito({ contado, aporte, escritoBanco: monto, escritoEfectivo: montoEfectivo, ultimo });
+    const { faltaNota, faltaBanco, faltaQuien } = faltasDelDeposito({
+        nMonto, nEfectivo, nAporte, banco, entregadoA, aporteNota,
+    });
 
     const cerrar = useCallback(async () => {
         setError(null);

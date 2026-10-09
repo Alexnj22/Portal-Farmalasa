@@ -408,7 +408,10 @@ const BranchCard = memo(({
                 {!['ADMINISTRATIVA','EXTERNA'].includes(branch.type) && (
                     <>
                         <div className="w-px h-8 bg-divider mx-2"></div>
-                        <button type="button" onClick={() => openModal && openModal("manageKiosks", branch)} className="flex flex-col gap-1.5 w-1/2 items-end group/kiosk hover:bg-surface-card p-2 -mr-2 -my-2 rounded-xl transition-all active:scale-[0.97] cursor-pointer" title="Gestionar kioscos">
+                        {/* Como en la ficha (`BranchDetailView`): gestionar —o sea, poder
+                            revocar— es de quien edita sucursales. Antes se abría para
+                            cualquiera que viera la lista (2026-10-09). */}
+                        <button type="button" disabled={!canEdit} onClick={() => canEdit && openModal && openModal("manageKiosks", branch)} className="flex flex-col gap-1.5 w-1/2 items-end group/kiosk hover:bg-surface-card p-2 -mr-2 -my-2 rounded-xl transition-all active:scale-[0.97] cursor-pointer disabled:cursor-default disabled:hover:bg-transparent disabled:active:scale-100" title={canEdit ? 'Gestionar kioscos' : 'Kioscos activos'}>
                             <div className="flex items-center gap-2 text-content-3 transition-colors duration-[var(--dur-slow)] group-hover/kiosk:text-content-2">
                                 <span className="text-caption font-bold uppercase tracking-widest">Kioscos</span>
                                 <Monitor size={14} className="transition-transform duration-[var(--dur-slow)] group-hover/kiosk:scale-110 group-hover/kiosk:text-chart-3-text" strokeWidth={2.5} />

@@ -1540,3 +1540,21 @@ export async function fetchSalasConCaja() {
     if (error) { console.error('caja: salas con caja:', error.message); return []; }
     return [...new Set((data || []).map((r) => r.branch_id))];
 }
+
+/**
+ * Anular una salida de bolsa desde su detalle (portal y app). Si la salida
+ * también sacó dinero de la CAJA y esa parte ya llegó al sistema, no se anula
+ * acá: se PIDE la corrección del movimiento de caja, y al aprobarse se anulan
+ * las dos partes. Si no, se anula la salida. Vivía en `DetalleDeBolsa.jsx`.
+ * Devuelve `{ pedida, monto }`, `{ anulada }` o `{ error }`.
+ */
+export async function anularLaSalidaDeBolsa(operacionId, motivo) {
+    const op = await fetchOperacionDeBolsa(operacionId);
+    const caja = op?.caja;
+    if (caja && !caja.anulado_at && caja.erp_movimiento_id) {
+        const r = await pedirCorreccion({ sala: caja.branch_id, movimiento: caja.movimiento_id, que: 'ANULAR', motivo });
+        return r?.error ? { error: r.error } : { pedida: true, monto: caja.monto };
+    }
+    const { error } = await anularSalida(operacionId, motivo);
+    return error ? { error } : { anulada: true };
+}

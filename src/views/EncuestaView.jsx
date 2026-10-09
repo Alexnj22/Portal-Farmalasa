@@ -19,12 +19,12 @@ import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import FilterBar from '../components/common/FilterBar';
 import {
     fetchSurveys, fetchSurveyBloques, fetchSurveyPreguntas, fetchSurveyResponsesForView,
-    fetchSurveyAiSummaries, updateSurvey,
+    fetchSurveyAiSummaries, generarResumenDeComentarios,
 } from '@nucleo/data/encuestas';
 import { clickable } from '@nucleo/utils/clickable';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { preguntarASaly } from '@nucleo/data/ia';
+import { seccionesDelResumen } from '@nucleo/utils/resumenDeComentarios';
 import { autocalificacion, bloqueDeLaBase, conteoDeOpciones, distribucionDePregunta, filasPorSucursal, IDX_INCONFORMIDADES, IDX_RAZONES, indiceDeAutocalificacion, indicesInvertidos, preguntaDeLaBase, puntajeDeBloque, puntajeGlobal, respuestaDeLaBase } from '@nucleo/utils/climaLaboral';
 
 // Jefe inmediato de cada sucursal — configuración de org-chart
@@ -230,35 +230,8 @@ const TABS = [
 
 // ─── AI summary helpers ───────────────────────────────────────────────────────
 
-function parseAiSections(rawText) {
-    if (!rawText) return [];
-    // Normalize **Title**: (colon outside closing asterisks) → **Title:** so both formats parse
-    const text = rawText.replace(/\*\*([^*]+?)\*\*:/g, '**$1:**');
-    const regex = /\*\*([^*]+?):\*\*/g;
-    const rawParts = [];
-    let lastEnd = 0;
-    let match;
-    while ((match = regex.exec(text)) !== null) {
-        if (match.index > lastEnd) rawParts.push({ type: 'text', content: text.slice(lastEnd, match.index).trim() });
-        rawParts.push({ type: 'header', title: match[1] });
-        lastEnd = match.index + match[0].length;
-    }
-    if (lastEnd < text.length) rawParts.push({ type: 'text', content: text.slice(lastEnd).trim() });
-
-    const sections = [];
-    let i = 0;
-    while (i < rawParts.length) {
-        if (rawParts[i].type === 'header') {
-            const content = (i + 1 < rawParts.length && rawParts[i + 1].type === 'text') ? rawParts[i + 1].content : '';
-            sections.push({ title: rawParts[i].title, content });
-            i += content ? 2 : 1;
-        } else {
-            if (rawParts[i].content) sections.push({ title: null, content: rawParts[i].content });
-            i++;
-        }
-    }
-    return sections.length ? sections : [{ title: null, content: text }];
-}
+// El parser y los segmentos viven en el núcleo (`resumenDeComentarios`).
+const parseAiSections = seccionesDelResumen;
 
 function getSectionStyle(title) {
     if (!title) return { Icon: Sparkles, color: 'text-chart-3', dot: 'bg-chart-3' };
@@ -458,16 +431,9 @@ export default function EncuestaView() {
         const surveyId = selectedSurveyIdRef.current;
         setLoadingAi(p => ({ ...p, [segment]: true }));
         try {
-            const { data, error } = await preguntarASaly({ action: 'analyze-survey-comments', payload: { comments, segment } });
-            if (error) throw error;
-            const summary = data.aiSummary || 'Sin respuesta.';
+            // La llamada y el guardado: `generarResumenDeComentarios`, la misma de la app.
+            const summary = await generarResumenDeComentarios(surveyId, comments, segment);
             setAiSummaries(prev => ({ ...prev, [segment]: summary }));
-            if (surveyId) {
-                // Fetch current saved summaries, merge, and save — avoids losing concurrent segments
-                const { data: current } = await fetchSurveyAiSummaries(surveyId);
-                const merged = { ...(current?.ai_summaries || {}), [segment]: summary };
-                await updateSurvey(surveyId, { ai_summaries: merged });
-            }
         } catch {
             setAiSummaries(p => ({ ...p, [segment]: 'Error al generar resumen.' }));
         } finally {

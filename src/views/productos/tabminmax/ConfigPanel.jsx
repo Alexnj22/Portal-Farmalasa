@@ -8,6 +8,7 @@ import { Settings2, X, Loader2, CheckCircle2, Save } from 'lucide-react';
 import { updateStockConfig } from '@nucleo/data/stockParams';
 import PortalInput from '../../../components/common/PortalInput';
 import { usuarioDeLaSesion } from '@nucleo/data/auth';
+import { payloadDeConfigMinMax, validarConfigMinMax } from '@nucleo/utils/configMinMax';
 
 // Definido a nivel de módulo — dentro del componente, React lo recreaba en cada render
 // y desmontaba/remontaba el <input>, perdiendo el foco tras cada tecla (M-4).
@@ -35,31 +36,12 @@ export default function ConfigPanel({ config, onSave, onClose }) {
     const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
     const handleSave = async () => {
-        if (Number(form.cycle_days) < 1) { setErr('El ciclo debe ser ≥ 1 día'); return; }
-        if (Number(form.abc_a_pct) >= Number(form.abc_b_pct)) { setErr('El umbral A debe ser menor que el B'); return; }
-        if (Number(form.xyz_x_percentile) >= Number(form.xyz_y_percentile)) { setErr('El percentil de X debe ser menor que el de Y'); return; }
-        if (Number(form.xyz_y_percentile) > 100) { setErr('El percentil de Y no puede superar 100'); return; }
-        if (Number(form.approaching_pct) < 1 || Number(form.approaching_pct) > 100) { setErr('Alerta próximo debe estar entre 1 y 100%'); return; }
+        // Validación y payload: núcleo (`configMinMax`), los mismos del teléfono.
+        const motivo = validarConfigMinMax(form);
+        if (motivo) { setErr(motivo); return; }
         setSaving(true); setErr('');
         const user = await usuarioDeLaSesion();
-        const payload = {
-            cycle_days:          Number(form.cycle_days),
-            reorder_x_days:      Number(form.reorder_x_days),
-            reorder_y_days:      Number(form.reorder_y_days),
-            reorder_z_days:      Number(form.reorder_z_days),
-            xyz_x_percentile:    Number(form.xyz_x_percentile),
-            xyz_y_percentile:    Number(form.xyz_y_percentile),
-            abc_a_pct:           Number(form.abc_a_pct),
-            abc_b_pct:           Number(form.abc_b_pct),
-            analysis_days:       Number(form.analysis_days),
-            approaching_pct:     Number(form.approaching_pct),
-            buffer_x_days:       Number(form.buffer_x_days),
-            buffer_y_days:       Number(form.buffer_y_days),
-            buffer_z_days:       Number(form.buffer_z_days),
-            outlier_percentile:  Number(form.outlier_percentile ?? 95),
-            updated_at:          new Date().toISOString(),
-            updated_by:          user?.email ?? null,
-        };
+        const payload = payloadDeConfigMinMax(form, user?.email ?? null);
         try {
             // Anota el cambio en la bitácora la propia función de datos (D3):
             // mueve el MIN·MAX de todo el catálogo a la vez.

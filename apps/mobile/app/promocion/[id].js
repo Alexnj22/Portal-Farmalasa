@@ -18,7 +18,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchPromocion } from '@nucleo/data/promociones';
 import {
   estadoVisible, fmtMoneda, fmtUnidades, fmtVigencia, mensajeDeCarga, MOTIVO_CIERRE, porLaboratorio,
-  resumenDeSeguimiento, rotuloMes, rotuloPresentacion, vendedoresPorSala,
+  resumenDeSeguimiento, rotuloMes, rotuloPresentacion, vendedoresPorSala, csvVendedoresDePromocion,
 } from '@nucleo/utils/promocionesUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
@@ -32,6 +32,8 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { colorDeVariante } from '../../componentes/colorDeVariante';
 import { AvanceDelLote, Barra, BarrasPorSala, Icono, TresDatos } from '../../componentes/promociones/Piezas';
 import Matriz from '../../componentes/promociones/Matriz';
+import { compartirCsv } from '../../componentes/fiscal/csv';
+import { fallo } from '../../componentes/Progreso';
 import { alternarPromocion, duplicarConPreguntas } from '../../componentes/promociones/acciones';
 import { promocionElegida } from '../../componentes/promociones/elegida';
 
@@ -202,6 +204,14 @@ export default function Promocion() {
                   </View>
                 ))}
                 <Titulo texto="Quién vendió" sub="unidades base, por sala" />
+                {(detalle.vendedores || []).length ? (
+                  <Pressable hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-end', minHeight: 32, justifyContent: 'center' }} onPress={() => {
+                    const c = csvVendedoresDePromocion(detalle.vendedores, detalle.nombre);
+                    compartirCsv({ ...c, modulo: 'promociones' }).catch((err) => fallo('No se pudo compartir', err?.message || ''));
+                  }}>
+                    <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Exportar CSV</Text>
+                  </Pressable>
+                ) : null}
                 {salasVend.length ? salasVend.map((g) => <SalaQueVendio key={g.sala} g={g} conBono={r.conBono} personaDe={personaDe} />)
                   : <Aviso texto="Nadie ha vendido productos de esta promoción en su vigencia." />}
                 {detalle.sin_dueno?.unidades > 0 ? (

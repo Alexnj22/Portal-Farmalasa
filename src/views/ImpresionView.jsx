@@ -7,7 +7,6 @@ import Notice from '../components/common/Notice';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
-import { EMPRESA } from '@nucleo/constants/empresa';
 import { APP_VERSION } from '../version';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import {
@@ -15,8 +14,9 @@ import {
     imprimirMarco, ajustarAltoDePagina, enviarAImpresoraDeLaComputadora,
     comprobarLaConexion, permisoDeRedLocal,
     leerAjustesDeImpresion, guardarAjustesDeImpresion,
-    reglaDeColumnas, fechaHora, codigosDePrueba, conCodigosDibujados,
+    conCodigosDibujados,
 } from '@nucleo/utils/ticketPrint';
+import { ticketDePruebaDeImpresion } from '@nucleo/utils/pruebaDeImpresion';
 
 const EMPTY_ARRAY = [];
 
@@ -94,66 +94,9 @@ const ImpresionView = () => {
     //
     // El texto no menciona ningún otro sistema: quien recibe este papel trabaja
     // en el portal (regla de CLAUDE.md, «la pantalla habla del PORTAL»).
-    const ticket = useMemo(() => {
-        const ahora = new Date();
-        return {
-            ancho,
-            encabezado: {
-                titulo: EMPRESA.razonSocial.toUpperCase(),
-                lineas: [
-                    sucursal?.name ?? 'Sucursal sin definir',
-                    sucursal?.address ?? '',
-                    sucursal?.phone ? `Tel. ${sucursal.phone}` : '',
-                    `NIT ${EMPRESA.nit}  ·  NRC ${EMPRESA.nrc}`,
-                ].filter(Boolean),
-            },
-            titulo: 'Prueba de impresión',
-            datos: [
-                ['Fecha', fechaHora(ahora)],
-                ['Hecha por', user?.name ?? '—'],
-                ['Rollo elegido', `${ancho} mm`],
-                ['Desde', deDondeSeImprime()],
-                ['Portal', `v${APP_VERSION}`],
-            ],
-            bloques: [
-                {
-                    titulo: 'Cuántas letras entran',
-                    texto: 'El renglón más largo que NO se parta en dos es el ancho de esta impresora.',
-                    monoespaciado: `32:\n${reglaDeColumnas(32)}\n40:\n${reglaDeColumnas(40)}`
-                        + `\n48:\n${reglaDeColumnas(48)}`,
-                },
-            ],
-            items: {
-                columnas: [
-                    { label: 'Producto', ancho: '46%', alinear: 'izq' },
-                    { label: 'Cant', ancho: '12%', alinear: 'cen' },
-                    { label: 'P. Unit', ancho: '20%', alinear: 'der' },
-                    { label: 'Total', ancho: '22%', alinear: 'der' },
-                ],
-                filas: [
-                    ['ACETAMINOFEN 500MG TABLETAS CAJA CON 100 UNIDADES', '2', '$0.35', '$0.70'],
-                    ['IBUPROFENO 400MG', '1', '$1.25', '$1.25'],
-                    ['ALCOHOL GEL 250ML', '10', '$2.50', '$25.00'],
-                ],
-            },
-            totales: [
-                ['Gravado', '$23.85'],
-                ['IVA 13%', '$3.10'],
-                ['TOTAL', '$26.95', true],
-            ],
-            // Las dos simbologías juntas: la pregunta que este papel contesta no
-            // es «¿imprime barras?» sino «¿cuál de las dos lee el lector de la
-            // sala?», y eso se responde pasando el lector por las dos en el
-            // mismo papel.
-            codigos: codigosDePrueba(),
-            barraPrueba: true,
-            pie: [
-                'Esta hoja es una prueba: no es un comprobante',
-                'y no corresponde a ninguna venta.',
-                `Portal Farmalasa · v${APP_VERSION}`,
-            ],
-        };
-    }, [ancho, sucursal, user]);
+    const ticket = useMemo(() => ticketDePruebaDeImpresion({
+        ancho, sucursal, quien: user?.name, desde: deDondeSeImprime(), version: APP_VERSION,
+    }), [ancho, sucursal, user]);
 
     // Las barras del HTML las dibuja `jsbarcode`, que se baja bajo demanda: el
     // documento se arma en dos tiempos y la vista previa se pinta con lo que

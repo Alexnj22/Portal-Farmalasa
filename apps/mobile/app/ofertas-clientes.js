@@ -10,7 +10,11 @@
 //
 // Pre-registros: el toque abre la búsqueda de su ficha por documento para
 // vincularla, o descartarlo (`preregistro/[id]`).
-import { useCallback, useEffect, useMemo, useState } from 'react';
+//
+// Las cinco pestañas del portal: Ofertas, Historias (`componentes/ofertas/
+// Historias`), Banners (`Banners`), Reservas de todas las salas (`Reservas`,
+// con `ofertas_clientes` editar) y Pre-registros.
+import { useCallback, useMemo, useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Alert, Image, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -33,6 +37,9 @@ import { colorDeVariante } from '../componentes/colorDeVariante';
 import { colorDeAcento, guardarOferta } from '../componentes/ofertas/acentos';
 import { guardarPreregistro } from '../componentes/ofertas/preregistro';
 import { fallo, listo } from '../componentes/Progreso';
+import Historias, { ESTADOS_DE_HISTORIA, abrirHistoria } from '../componentes/ofertas/Historias';
+import Banners, { abrirBanner } from '../componentes/ofertas/Banners';
+import Reservas from '../componentes/ofertas/Reservas';
 
 const rango = (o) => `${fechaTexto(o.inicio, { day: 'numeric', month: 'short' })} – ${fechaTexto(o.fin, { day: 'numeric', month: 'short' })}`;
 
@@ -61,7 +68,8 @@ export default function OfertasClientes() {
     }
   }, [veClientes]);
   // Al volver del editor la lista se relee: lo guardado tiene que verse.
-  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
+  const [vuelta, setVuelta] = useState(0);
+  useFocusEffect(useCallback(() => { cargar(); setVuelta((v) => v + 1); }, [cargar]));
 
   const nombreSala = useMemo(() => new Map(salas.map((s) => [s.id, s.name])), [salas]);
   const conEstado = useMemo(() => (ofertas ?? []).map((o) => ({ ...o, _estado: estadoDeOferta(o, hoy) })), [ofertas, hoy]);
@@ -71,10 +79,22 @@ export default function OfertasClientes() {
     .filter((o) => !texto.trim() || tokenMatch(texto, o.titulo, o.etiqueta ?? ''));
   const preVisibles = (pre ?? []).filter((p) => !texto.trim() || tokenMatch(texto, p.nombre, p.documento, p.telefono));
 
-  const grupos = pestana === 'ofertas' ? [{
+  const grupos = pestana === 'ofertas' || pestana === 'banners' ? [{
     id: 'estado', titulo: 'Estado', activa: estado, porDefecto: 'todas', onCambiar: setEstado,
     opciones: [{ id: 'todas', label: 'Todas' }, ...ESTADOS_DE_OFERTA.map((e) => ({ id: e.value, label: e.label }))],
+  }] : pestana === 'historias' ? [{
+    id: 'estado', titulo: 'Estado', activa: estado, porDefecto: 'todas', onCambiar: setEstado, opciones: ESTADOS_DE_HISTORIA,
   }] : [];
+  const cambiarPestana = (p) => { setPestana(p); setEstado('todas'); };
+  const nuevo = !puedeEditar ? null
+    : pestana === 'ofertas' ? { icono: 'plus', etiqueta: 'Nueva oferta', onPress: () => abrir(null) }
+      : pestana === 'historias' ? { icono: 'plus', etiqueta: 'Nueva historia', onPress: () => abrirHistoria(null) }
+        : pestana === 'banners' ? { icono: 'plus', etiqueta: 'Nuevo banner', onPress: () => abrirBanner(null) } : null;
+  const pestanas = [
+    { id: 'ofertas', label: 'Ofertas' }, { id: 'historias', label: 'Historias' }, { id: 'banners', label: 'Banners' },
+    ...(puedeEditar ? [{ id: 'reservas', label: 'Reservas' }] : []),
+    ...(veClientes ? [{ id: 'preregistros', label: pre?.length ? `Pre-registros · ${pre.length}` : 'Pre-registros' }] : []),
+  ];
 
   const abrir = (o) => {
     if (!puedeEditar) return;
@@ -110,24 +130,22 @@ export default function OfertasClientes() {
       <Stack.Screen options={{
         ...BARRA_NATIVA, title: 'Ofertas para clientes', headerLargeTitle: true,
         headerSearchBarOptions: {
-          placeholder: pestana === 'ofertas' ? 'Buscar oferta' : 'Nombre o documento', hideWhenScrolling: false,
+          placeholder: pestana === 'preregistros' ? 'Nombre o documento' : pestana === 'historias' ? 'Buscar historia' : pestana === 'banners' ? 'Buscar banner' : 'Buscar oferta', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
-      <MenuDeFiltros grupos={grupos} extra={puedeEditar && pestana === 'ofertas' ? { icono: 'plus', etiqueta: 'Nueva oferta', onPress: () => abrir(null) } : null} />
+      <MenuDeFiltros grupos={grupos} extra={nuevo} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        {veClientes ? (
-          <Segmentos activa={pestana} onCambiar={setPestana} opciones={[
-            { id: 'ofertas', label: 'Ofertas' },
-            { id: 'preregistros', label: pre?.length ? `Pre-registros · ${pre.length}` : 'Pre-registros' },
-          ]} />
-        ) : null}
+        <Segmentos activa={pestana} onCambiar={cambiarPestana} opciones={pestanas} />
         <FiltrosActivos grupos={grupos} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
 
-        {pestana === 'ofertas' ? (
+        {pestana === 'historias' ? <Historias busqueda={texto.trim()} estado={estado} puedeEditar={puedeEditar} recarga={vuelta} />
+          : pestana === 'banners' ? <Banners busqueda={texto.trim()} estado={estado} puedeEditar={puedeEditar} recarga={vuelta} />
+          : pestana === 'reservas' ? <Reservas todas recarga={vuelta} />
+          : pestana === 'ofertas' ? (
           ofertas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
             <>
               <FilaDeKpis>

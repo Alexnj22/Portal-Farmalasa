@@ -9,7 +9,7 @@
 // arma el archivo con `construirLibro` —el ÚNICO camino que produce el anexo
 // que se presenta, el mismo del portal— y lo pasa a la hoja de compartir.
 import { useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { construirLibro, CSV_RET_VENTAS_HEADERS, csvRetencionVentas, faltantesDelLibro, fmtFecha, soloNumero } from '@nucleo/utils/libroIva';
 import { debitoDeConsumidor } from '@nucleo/utils/librosIva';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -20,7 +20,8 @@ import { Pildora } from '../avisos/Piezas';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
 import { compartirCsv } from './csv';
-import { fallo } from '../Progreso';
+import { fallo, trabajando, cerrarProgreso } from '../Progreso';
+import { compartirArchivoDelDte, compartirPaqueteDelDte } from './archivosDelDte';
 
 const PAGINA = 40;
 
@@ -120,6 +121,16 @@ export default function DetalleDeLibro({ tab, titulo, libros, totales, mes, sufi
                   ))}
                 </View>
                 {x.falta ? <Pildora texto={x.falta} color={MARCA.ambar} /> : null}
+                {tab === 'retencionVentas' && puedeExportar && (r.json_path || r.pdf_path) ? (
+                  <View style={{ flexDirection: 'row', gap: 18, flexWrap: 'wrap' }}>
+                    {[['JSON', () => compartirArchivoDelDte(r, 'json'), !r.json_path], ['PDF', () => compartirArchivoDelDte(r, 'pdf'), !r.pdf_path], ['Los dos (ZIP)', () => compartirPaqueteDelDte(r), false]].map(([t, fn, off]) => (
+                      <Pressable key={t} disabled={off} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center', opacity: off ? 0.4 : 1 }}
+                        onPress={async () => { trabajando('Bajando el archivo…'); try { await fn(); cerrarProgreso(); } catch (e) { fallo('No se pudo compartir', e?.message || ''); } }}>
+                        <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{t}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                ) : null}
               </View>
             </Vidrio>
           </View>

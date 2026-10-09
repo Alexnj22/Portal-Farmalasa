@@ -2,7 +2,8 @@ import React from 'react';
 import { Minus, Plus, Sparkles } from 'lucide-react';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
-import { PUNTOS_POR_AREA, TIPOS_DE_PUNTO, ajustarPuntos, contarPuntos } from '@nucleo/data/bitacoras';
+import { ajustarPuntos } from '@nucleo/data/bitacoras';
+import { puntosDelArea } from '@nucleo/utils/configuracionDeBitacoras';
 import { alternarGrupoDePuntos, alternarPunto, gruposDePuntos, rotuloCortoDePunto } from '@nucleo/utils/rondaDeBitacora';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -54,16 +55,13 @@ function Contador({ label, singular, valor, minimo = 0, onCambiar }) {
  */
 export default function PuntosDeLimpieza({ tipoDeArea, puntos, onCambiar }) {
     const lista = puntos || [];
-    const receta = PUNTOS_POR_AREA[tipoDeArea];
+    // Qué tipos lleva el área y cuántos de cada uno —con el mínimo del área: el
+    // servicio sanitario arranca en 1, mostrar 0 sería decir que la sala no
+    // tiene baño—: núcleo (`puntosDelArea`), igual que la app.
+    const receta = puntosDelArea(tipoDeArea, lista);
     if (!receta) return null;
-
-    const tipos = TIPOS_DE_PUNTO.filter(t => receta.tipos.includes(t.tipo));
-
-    // Cuántos hay de verdad, contando el mínimo del área: el servicio sanitario
-    // arranca en 1 porque siempre hay al menos uno, aunque nadie lo haya
-    // configurado. Mostrar 0 sería decir que la sala no tiene baño.
-    const cuenta = (tipo) => Math.max(contarPuntos(lista, tipo), receta.minimo);
-    const total = tipos.reduce((n, t) => n + cuenta(t.tipo), 0);
+    const { tipos, total } = receta;
+    const cuenta = (tipo) => tipos.find(t => t.tipo === tipo)?.cuenta ?? 0;
 
     return (
         <div className="space-y-2">

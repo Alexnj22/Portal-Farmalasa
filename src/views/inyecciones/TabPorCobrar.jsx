@@ -18,13 +18,15 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { desvincularCobro } from '@nucleo/data/inyecciones';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { fetchInyeccionesAplicadas } from '@nucleo/data/ventas';
-import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { smartFilter } from '@nucleo/utils/searchUtils';
 import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
+import {
+    DESDE_EL_PORTAL, ESTADOS_DE_COBRO as ESTADOS, CABECERA_CSV_POR_COBRAR, filasCsvPorCobrar, filtrarVentasDeInyeccion,
+    nombreDeCobro as nombre, porVendedorDeInyecciones, rangoPorDefecto, resumenPorCobrar,
+} from '@nucleo/utils/inyeccionesPorCobrar';
 import { exportCsv } from '@nucleo/utils/csvExport';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
-import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
+import { fechaNumerica } from '@nucleo/utils/fecha';
 
 /*
  * «¿A quién se le cobró la aplicación?» — las ventas con inyección del período
@@ -45,30 +47,8 @@ import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
  * es un hecho, «estimado» es una suposición y se muestra como tal.
  */
 
-// Desde este día la aplicación se anota en el portal, con hora y persona. Antes
-// se escribía directo en la caja y no hay con qué emparejarla.
-const DESDE_EL_PORTAL = '2026-09-03';
-
-const ESTADOS = [
-    { value: 'todas', label: 'Todas' },
-    { value: 'con',   label: 'Con cobro' },
-    { value: 'sin',   label: 'Sin cobro' },
-];
-
-/* El período por defecto arranca el día en que la aplicación empezó a anotarse
- * en el portal, y no el 1.º del mes: antes de eso toda venta sale «sin cobro»
- * y el resumen mentiría. Cuando esa fecha quede a más de tres meses —el tope
- * de la función— se vuelve al mes en curso. */
-function rangoPorDefecto() {
-    const hoy = hoySV();
-    const [y, m] = hoy.split('-').map(Number);
-    const limite = new Date(Date.UTC(y, m - 1, Number(hoy.slice(8)) - 90)).toISOString().slice(0, 10);
-    const desde = DESDE_EL_PORTAL >= limite ? DESDE_EL_PORTAL : `${hoy.slice(0, 7)}-01`;
-    return `${desde}|${hoy}`;
-}
-
-const nombre = (n) => (n ? shortEmployeeName(n) : '—');
-const productosTexto = (v) => (v.productos || []).map((p) => p.descripcion).join(' · ');
+// El período por defecto, el resumen, el filtro y el CSV salen del núcleo
+// (`inyeccionesPorCobrar`): la app cuenta igual.
 const fechaCorta = (f) => fechaNumerica(f, { anio: false });
 
 export default function TabPorCobrar({
@@ -128,21 +108,11 @@ export default function TabPorCobrar({
         [branches],
     );
 
-    const conCobro = useMemo(() => ventas.filter((v) => v.cobro), [ventas]);
-    const pctCobrado = ventas.length ? (conCobro.length / ventas.length) * 100 : 0;
-    const montoSueltos = sueltos.reduce((s, c) => s + Number(c.monto || 0), 0);
+    const resumen = useMemo(() => resumenPorCobrar(datos), [datos]);
+    const pctCobrado = resumen.pct;
+    const montoSueltos = resumen.montoSueltos;
 
-    const filtradas = useMemo(() => {
-        let r = ventas;
-        if (estado === 'con') r = r.filter((v) => v.cobro);
-        if (estado === 'sin') r = r.filter((v) => !v.cobro);
-        if (searchTerm?.trim()) {
-            r = smartFilter(searchTerm, r, (v) => [
-                v.correlativo, v.cliente, v.vendedor_nombre, productosTexto(v),
-            ]).results;
-        }
-        return r;
-    }, [ventas, estado, searchTerm]);
+    const filtradas = useMemo(() => filtrarVentasDeInyeccion(ventas, estado, searchTerm), [ventas, estado, searchTerm]);
 
     const { page, pageSize, totalPages, setPage, setPageSize, resetPage } =
         usePaginaEnUrl({ total: filtradas.length, tamPorDefecto: 50 });
@@ -150,28 +120,12 @@ export default function TabPorCobrar({
     const pagina = filtradas.slice((page - 1) * pageSize, page * pageSize);
 
     // Por vendedor: quién vende inyecciones y a cuántas les cobra la aplicación.
-    const porVendedor = useMemo(() => {
-        const m = new Map();
-        for (const v of ventas) {
-            const k = v.cod_vendedor || '—';
-            const a = m.get(k) || { cod: k, id: v.vendedor_id, nombre: v.vendedor_nombre, ventas: 0, con: 0 };
-            a.ventas += 1;
-            if (v.cobro) a.con += 1;
-            m.set(k, a);
-        }
-        return [...m.values()].sort((a, b) => b.ventas - a.ventas);
-    }, [ventas]);
+    const porVendedor = useMemo(() => porVendedorDeInyecciones(ventas), [ventas]);
 
     const descargar = () => {
         exportCsv(
-            ['FECHA', 'HORA', 'SUCURSAL', 'FACTURA', 'CLIENTE', 'PRODUCTOS', 'UNIDADES', 'TOTAL',
-             'VENDEDOR', 'APLICACION COBRADA', 'HORA DEL COBRO', 'MONTO DEL COBRO', 'COBRO REGISTRADO POR'],
-            filtradas.map((v) => [
-                v.fecha, hora12(v.hora), nombreSala(v.branch_id), v.correlativo, v.cliente, productosTexto(v),
-                v.unidades, v.total, nombre(v.vendedor_nombre),
-                v.cobro ? 'SI' : 'NO', hora12(v.cobro?.hora), v.cobro?.monto ?? '',
-                v.cobro ? nombre(v.cobro.registrado_nombre) : '',
-            ]),
+            CABECERA_CSV_POR_COBRAR,
+            filasCsvPorCobrar(filtradas, nombreSala),
             `inyecciones_${fini}_${ffin}.csv`,
             'inyecciones',
         );
@@ -188,14 +142,14 @@ export default function TabPorCobrar({
                         value={loading ? '—' : ventas.length.toLocaleString()}
                         sub="Facturas del período" loading={loading} />
                     <StatCard icon={CheckCircle2} label="Con cobro de aplicación"
-                        value={loading ? '—' : conCobro.length.toLocaleString()}
+                        value={loading ? '—' : resumen.con.toLocaleString()}
                         iconBg="bg-success/10" iconCls="text-success"
                         sub={loading ? undefined : `${formatPct(pctCobrado)} de las ventas`}
                         active={estado === 'con'} tono="success"
                         onClick={() => setEstado((e) => (e === 'con' ? 'todas' : 'con'))}
                         loading={loading} />
                     <StatCard icon={CircleSlash} label="Sin cobro"
-                        value={loading ? '—' : (ventas.length - conCobro.length).toLocaleString()}
+                        value={loading ? '—' : (ventas.length - resumen.con).toLocaleString()}
                         iconBg="bg-warning/10" iconCls="text-warning" valueCls="text-warning-text"
                         sub="No se encontró su cobro"
                         active={estado === 'sin'} tono="warning"

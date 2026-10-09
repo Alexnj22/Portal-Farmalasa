@@ -10,7 +10,7 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchResumenDeVendedores, fetchResumenDeVentas, fetchVendorMonthlyStats } from '@nucleo/data/ventas';
-import { diasDelRango, horaDeCorte, mesAnteriorDe, periodoAnterior, puestosDelMesAnterior, rankingDeVendedores, variacionPorDia } from '@nucleo/utils/ventasPeriodo';
+import { diasDelRango, horaDeCorte, mesAnteriorDe, montoPrivado, periodoAnterior, puestosDelMesAnterior, rankingDeVendedores, variacionPorDia } from '@nucleo/utils/ventasPeriodo';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -31,7 +31,7 @@ function Movimiento({ antes, ahora }) {
   return <Text style={{ color: d > 0 ? MARCA.verde : MARCA.rojo, fontSize: 12, fontWeight: '800' }}>{`${d > 0 ? '▲' : '▼'}${Math.abs(d)}`}</Text>;
 }
 
-export default function Vendedores({ fini, ffin, sala, busqueda, verCifras }) {
+export default function Vendedores({ fini, ffin, sala, busqueda, verCifras, privado = false }) {
   const sucursales = useStaffStore((s) => s.branches);
   const empleados = useStaffStore((s) => s.employees);
   const porCodigo = useMemo(() => new Map((empleados || []).map((e) => [e.code, e])), [empleados]);
@@ -73,7 +73,7 @@ export default function Vendedores({ fini, ffin, sala, busqueda, verCifras }) {
     <>
       {verCifras ? (
         <FilaDeKpis>
-          <Kpi icono="TrendingUp" rotulo="Total" valor={formatMoney(ranking.total, { decimales: 0 })} color={MARCA.verde}
+          <Kpi icono="TrendingUp" rotulo="Total" valor={montoPrivado(formatMoney(ranking.total, { decimales: 0 }), privado)} color={MARCA.verde}
             apoyo={previo ? conSigno(variacionPorDia(ranking.total, dias, previo.total, previo.dias)) : null} />
           <Kpi icono="Users" rotulo="Vendedores" valor={String(ranking.conocidos.length)} color={MARCA.azul}
             apoyo={`${ranking.facturas.toLocaleString('es-SV')} facturas`} />
@@ -87,7 +87,7 @@ export default function Vendedores({ fini, ffin, sala, busqueda, verCifras }) {
         const otras = v.branchIds.filter((id) => id !== base);
         return (
           <Pressable key={v.cod_vendedor}
-            onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/vendedor/[cod]', params: { cod: v.cod_vendedor, fini, ffin, nombre: nombreDeVendedor(v), sala: base ?? '' } }); }}
+            onPress={() => { if (privado) return; Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/vendedor/[cod]', params: { cod: v.cod_vendedor, fini, ffin, nombre: nombreDeVendedor(v), sala: base ?? '' } }); }}
             style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
             <Vidrio radio={20} interactivo>
               <View style={{ padding: 14, gap: 10 }}>
@@ -104,8 +104,8 @@ export default function Vendedores({ fini, ffin, sala, busqueda, verCifras }) {
                     </Text>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={{ color: MARCA.verde, fontSize: 17, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(v.total, { decimales: 0 })}</Text>
-                    <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`ticket ${formatMoney(v.count ? v.total / v.count : 0)}`}</Text>
+                    <Text style={{ color: MARCA.verde, fontSize: 17, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{montoPrivado(formatMoney(v.total, { decimales: 0 }), privado)}</Text>
+                    <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`ticket ${montoPrivado(formatMoney(v.count ? v.total / v.count : 0), privado)}`}</Text>
                   </View>
                 </View>
                 <View style={{ height: 4, borderRadius: 2, backgroundColor: colorSistema.separador, overflow: 'hidden' }}>
@@ -124,7 +124,7 @@ export default function Vendedores({ fini, ffin, sala, busqueda, verCifras }) {
                 <Text style={{ color: MARCA.ambar, fontSize: 15, fontWeight: '700' }}>{`Código sin ficha · ${nombreDeSala(u.branch_id)}`}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${u.count} fact. con un vendedor que no existe`}</Text>
               </View>
-              <Text style={{ color: MARCA.ambar, fontSize: 17, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(u.total, { decimales: 0 })}</Text>
+              <Text style={{ color: MARCA.ambar, fontSize: 17, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{montoPrivado(formatMoney(u.total, { decimales: 0 }), privado)}</Text>
             </View>
           </Vidrio>
         </View>

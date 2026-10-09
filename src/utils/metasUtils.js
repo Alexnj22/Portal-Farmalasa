@@ -371,3 +371,57 @@ export function resumenDeGastos(gastos) {
         margen: gastos?.[0]?.margen_pct ?? 25,
     };
 }
+
+/** El CSV de la hoja del pago semestral (portal y app, el mismo archivo). `r` es `resumenDelSemestre`. */
+export function csvDelSemestre(r, sem) {
+    const meses = r?.meses || [];
+    return {
+        headers: ['PERSONA', 'CODIGO', 'SALA', ...meses.map((m) => ymLabelCorto(m.ym).toUpperCase()), 'TOTAL', 'SE PAGA'],
+        rows: (r?.personas || []).map((p) => [
+            p.nombre, p.code || '', (p.salas || []).join(' / '),
+            ...meses.map((m) => Number(p.por_mes?.[m.ym] ?? 0)),
+            Number(p.total || 0),
+            p.pagar ? 'SI' : (p.decision ? 'NO' : 'POR DECIDIR'),
+        ]),
+        nombre: `bono_semestral_${sem}`,
+    };
+}
+
+// ── El historial de cambios de una meta (Confirmación) ──────────────────────
+// Lo que dice cada renglón de «quién movió la meta», escrito UNA vez para el
+// portal (`TabConfirmacion`) y la app (`componentes/metas/Confirmacion`).
+export const EVENTO_DE_META = {
+    propuesta_generada: 'la propuso en',
+    propuesta_recalculada: 'la recalculó en',
+    recalculada_por_formula: 'la recalculó en',
+    confirmada: 'la confirmó en',
+    aprobada: 'la aprobó en',
+    aprobada_con_ajuste: 'la aprobó con ajuste en',
+    devuelta: 'la devolvió',
+    ingreso_manual: 'la escribió a mano en',
+    gasto_cargado: 'le sumó un gasto; quedó en',
+    gasto_anulado: 'anuló un gasto; quedó en',
+    reabierta_por_gasto: 'la reabrió por un gasto en',
+};
+export const EVENTO_DE_META_SIN_MONTO = new Set(['devuelta']);
+
+/** Un cambio leído: qué hizo, en cuánto quedó y cuánto la movió (null si no aplica). */
+export function cambioDeMeta(cb) {
+    const antes = cb.monto_antes != null ? Number(cb.monto_antes) : null;
+    const despues = cb.monto_despues != null ? Number(cb.monto_despues) : null;
+    const conMonto = !EVENTO_DE_META_SIN_MONTO.has(cb.evento);
+    const mov = antes > 0 && despues != null && conMonto ? Math.round((despues - antes) * 100) / 100 : null;
+    return {
+        texto: EVENTO_DE_META[cb.evento] || String(cb.evento || '').replace(/_/g, ' '),
+        despues: conMonto ? despues : null,
+        mov,
+        pct: mov != null && antes > 0 ? Math.abs(mov / antes) * 100 : null,
+    };
+}
+
+/** Los cambios agrupados por meta, en el orden en que llegan (más viejo primero). */
+export function cambiosPorMeta(lista) {
+    const porMeta = {};
+    for (const c of lista || []) (porMeta[c.meta_id] ||= []).push(c);
+    return porMeta;
+}

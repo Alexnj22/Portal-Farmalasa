@@ -126,3 +126,6 @@ export function avisoDeCambioDeCliente({ vista = null, aplicado = null } = {}) {
             + (vista.ya_gastados > 0 ? ` ${pts(vista.ya_gastados)} ya los gastó: no se le pueden quitar.` : ''),
     };
 }
+
+/** Los motivos de un ajuste a mano (dar o quitar puntos): portal y app. «Otro» exige detalle. */
+export const MOTIVOS_DE_AJUSTE_PUNTOS = ['Cumpleaños', 'Promoción', 'Reclamo del cliente', 'Corrección', 'Otro'];

@@ -2,8 +2,8 @@
 // misma información que la versión de teléfono del portal (TabHoy): las cuatro
 // cifras del día, un bloque por momento con lo hecho y lo que falta, las áreas
 // en pausa y la ronda para anotar. El Libro bajo receta también es nativo
-// (`app/libro-receta.js`); Cierre de mes y Configuración, que son de
-// administración, se abren como el portal.
+// (`app/libro-receta.js`), igual que el Cierre de mes (`bitacoras-cierre`) y
+// la Configuración (`bitacoras-config`).
 //
 // La sala va en el menú de filtros de la barra (sólo con alcance todas) y el
 // día con el selector del sistema; la bitácora de mañana no existe, así que no
@@ -122,8 +122,8 @@ export default function Bitacoras() {
 
   const otras = [
     hasPermission('bitacoras_tab_libro', 'can_view') && { id: 'libro', label: 'Libro bajo receta', abrir: () => router.push({ pathname: '/libro-receta', params: { sala } }) },
-    hasPermission('bitacoras_tab_cierre', 'can_view') && { id: 'cierre', label: 'Cierre de mes', abrir: () => router.push({ pathname: '/portal', params: { ruta: '/bitacoras?tab=cierre', nombre: 'Cierre de mes' } }) },
-    hasPermission('bitacoras_configurar', 'can_edit') && { id: 'config', label: 'Configuración', abrir: () => router.push({ pathname: '/portal', params: { ruta: '/bitacoras?tab=config', nombre: 'Configuración' } }) },
+    hasPermission('bitacoras_tab_cierre', 'can_view') && { id: 'cierre', label: 'Cierre de mes', abrir: () => router.push({ pathname: '/bitacoras-cierre', params: { sala, fecha } }) },
+    hasPermission('bitacoras_configurar', 'can_edit') && { id: 'config', label: 'Configuración', abrir: () => router.push({ pathname: '/bitacoras-config', params: { sala } }) },
   ].filter(Boolean);
 
   const grupos = alcanceTodas ? [{ id: 'sala', titulo: 'Sala', activa: sala, porDefecto: miSala ? String(miSala) : sala, onCambiar: setSala, opciones: salas.map((o) => ({ id: o.value, label: o.label })) }] : [];

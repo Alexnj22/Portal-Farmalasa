@@ -554,7 +554,11 @@ export const createEmployeeSlice = (set, get) => ({
             const fileExt = file.name.split(".").pop();
             const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
             const path = folder ? `${String(folder).replace(/\/+$/, '')}/${fileName}` : fileName;
-            const { error } = await supabase.storage.from(bucket).upload(path, file);
+            // El «archivo de la app» (`{ name, body: ArrayBuffer, contentType }`)
+            // sube sus bytes con su tipo; el `File` del navegador ya lo trae.
+            const { error } = file.body
+                ? await supabase.storage.from(bucket).upload(path, file.body, { contentType: file.contentType })
+                : await supabase.storage.from(bucket).upload(path, file);
             if (error) throw error;
             const { data } = supabase.storage.from(bucket).getPublicUrl(path);
             return data.publicUrl;

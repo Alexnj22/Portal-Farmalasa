@@ -6,6 +6,7 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect';
 import FileField from '../common/FileField';
+import { conEnfermeraCambiada, conEnfermeraNueva, sinEnfermera } from '@nucleo/utils/edicionDeSucursal';
 import PortalInput from '../common/PortalInput';
 import { clickable } from '@nucleo/utils/clickable';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -30,19 +31,14 @@ const FormNursingRegents = ({ formData, setFormData }) => {
         });
     };
 
-    const addNurse = () => updateLegalField('nursingRegents', [...nursingRegents, { id: Date.now(), employeeId: '', anualidadExp: '' }]);
+    const addNurse = () => updateLegalField('nursingRegents', conEnfermeraNueva(nursingRegents));
     
-    const removeNurse = (index) => {
-        const newArr = [...nursingRegents];
-        newArr.splice(index, 1);
-        updateLegalField('nursingRegents', newArr);
-    };
+    const removeNurse = (index) => updateLegalField('nursingRegents', sinEnfermera(nursingRegents, index));
 
-    const updateNurse = (index, field, value) => {
-        const newArr = [...nursingRegents];
-        newArr[index] = { ...newArr[index], [field]: value };
-        updateLegalField('nursingRegents', newArr);
-    };
+    // Por POSICIÓN en la lista. Los tres archivos la llamaban con `nurse.id`
+    // (un `Date.now()`), o sea que escribían en la casilla 1,7 billones del
+    // arreglo y el archivo nunca quedaba con su enfermera (2026-10-09).
+    const updateNurse = (index, field, value) => updateLegalField('nursingRegents', conEnfermeraCambiada(nursingRegents, index, field, value));
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)] pb-2 pt-2">
@@ -140,7 +136,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                         density="sm"
                                         file={nurse.carneFile}
                                         url={nurse.carneUrl}
-                                        onChange={f => updateNurse(nurse.id, 'carneFile', f)}
+                                        onChange={f => updateNurse(index, 'carneFile', f)}
                                     />
 
                                     <FileField
@@ -149,7 +145,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                         density="sm"
                                         file={nurse.licenciaFile}
                                         url={nurse.licenciaUrl}
-                                        onChange={f => updateNurse(nurse.id, 'licenciaFile', f)}
+                                        onChange={f => updateNurse(index, 'licenciaFile', f)}
                                     />
                                 </div>
 
@@ -169,7 +165,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                                 emptyState="pending"
                                                 file={nurse.anualidadFile}
                                                 url={nurse.anualidadUrl}
-                                                onChange={f => updateNurse(nurse.id, 'anualidadFile', f)}
+                                                onChange={f => updateNurse(index, 'anualidadFile', f)}
                                             />
                                         </div>
 

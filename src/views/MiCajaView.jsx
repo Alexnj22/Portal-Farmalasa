@@ -67,7 +67,7 @@ import { conSigno, formatMoney } from '@nucleo/utils/formatNumber';
 import { imprimirDocumento } from '@nucleo/utils/imprimirDiferido';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
-import { saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
+import { accionDeLaCaja, bolsasDelDia, declaradoDelCorte, embolsadoDelDia } from '@nucleo/utils/corteDeCaja';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 
@@ -635,14 +635,8 @@ export default function MiCajaView({ comoPestana = false }) {
         [ventas],
     );
 
-    const bolsasDeHoy = useMemo(
-        () => (bolsas || []).filter((b) => b.fecha && diaAbierto && b.fecha === diaAbierto),
-        [bolsas, diaAbierto],
-    );
-    const yaEmbolsado = useMemo(
-        () => bolsasDeHoy.reduce((t, b) => t + saldoDeBolsa(b), 0),
-        [bolsasDeHoy],
-    );
+    const bolsasDeHoy = useMemo(() => bolsasDelDia(bolsas, diaAbierto), [bolsas, diaAbierto]);
+    const yaEmbolsado = useMemo(() => embolsadoDelDia(bolsasDeHoy), [bolsasDeHoy]);
 
     const correr = useCallback(async (fn, exito) => {
         setOcupado(true);
@@ -790,14 +784,14 @@ export default function MiCajaView({ comoPestana = false }) {
      * Una sola primaria: el corte con la caja abierta, abrirla cuando no. Con
      * dos, ninguna es la acción principal. */
     const acciones = useMemo(() => {
-        if (!puedeOperar || !sala) return [];
-        /* Sin saber si está abierta no se ofrece NADA. Ofrecer «Abrir la caja»
-         * cuando la lectura falló es invitar a abrir una que ya está abierta:
-         * el sistema lo rechaza, pero el que aprieta se entera por un error que
-         * parece de otra cosa. */
-        if (noSePudo) return [];
-        if (!estado?.abierta) {
-            if (diaCerrado) return [];
+        /* Qué se ofrece lo decide el núcleo (`accionDeLaCaja`), el mismo juez
+         * que usa la app. Sin saber si está abierta no se ofrece NADA: ofrecer
+         * «Abrir la caja» cuando la lectura falló es invitar a abrir una que ya
+         * está abierta, y el que aprieta se entera por un error que parece de
+         * otra cosa. */
+        const accion = accionDeLaCaja({ puedeOperar, sala, noSePudo, estado });
+        if (accion == null || accion === 'cerrada-dia') return [];
+        if (accion === 'abrir') {
             return [{ key: 'abrir', icon: DoorOpen, label: 'Abrir la caja', rotulo: 'Abrir',
                 variant: 'primary', rotuloFijo: true, onClick: () => setDialogo('abrir') }];
         }
@@ -811,7 +805,7 @@ export default function MiCajaView({ comoPestana = false }) {
          *
          * `=== false` a propósito: el estado contesta `true` cuando todavía no
          * se observó, y ahí no hay que ofrecer nada. Ver `caja_estado`. */
-        if (estado.turno_corriendo === false) {
+        if (accion === 'iniciar-turno') {
             return [{ key: 'iniciar-turno', icon: PlayCircle, label: 'Iniciar el turno',
                 rotulo: 'Iniciar turno', variant: 'primary', rotuloFijo: true,
                 onClick: () => correr(() => iniciarTurno(sala), 'El turno quedó iniciado.') }];
@@ -2699,7 +2693,7 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0
     const valido = efectivo !== '' && Number(efectivo) >= 0;
     /* Lo que se declara es el ACUMULADO del día; lo que se cuenta, sólo el
      * cajón. La suma la hace el portal — ver `yaEmbolsado` en la vista. */
-    const declarado = (Number(efectivo) || 0) + yaEmbolsado;
+    const declarado = declaradoDelCorte(efectivo, yaEmbolsado);
 
     /* ── UN CORTE A MEDIAS NO DEJA HACER OTRO ──────────────────────────────
      *

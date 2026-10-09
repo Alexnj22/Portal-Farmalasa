@@ -8,6 +8,7 @@ import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import useSobreviveAlCierre from '@nucleo/hooks/useSobreviveAlCierre';
 import { asentarDiferencias, justificarDiferencia } from '@nucleo/data/cortes';
+import { claveDeFilaDeAsiento, gruposParaAsentar } from '@nucleo/utils/diferenciasDeCaja';
 import { construirComprobanteDeAsiento } from '@nucleo/utils/corteComprobante';
 import { imprimirDocumento } from '@nucleo/utils/imprimirDiferido';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -63,10 +64,10 @@ import { fechaTexto } from '@nucleo/utils/fecha';
  * servidor rechaza una causa encontrada sin comprobante.
  */
 
-const clave = (d) => `${d.branch_id}|${Number(d.monto) < 0 ? 'ENTRA' : 'SALE'}`;
+// Agrupar por sala y signo es del núcleo (`gruposParaAsentar`): también lo usa la app.
 // Un abono y una diferencia pueden tener el mismo `id` numérico: son tablas
 // distintas. La marca de excluida no puede confundirlos.
-const claveFila = (d) => `${d.kind === 'abono' ? 'a' : 'd'}${d.id}`;
+const claveFila = claveDeFilaDeAsiento;
 
 export default function AsentarDiferencias({ abierto, diferencias = [], nombreSala = {}, onClose, onHecho }) {
     const { user } = useAuth();
@@ -91,17 +92,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
     const [causaCorregir, setCausaCorregir] = useState('');
     const [refCorregir, setRefCorregir] = useState('');
 
-    const grupos = useMemo(() => {
-        const m = new Map();
-        for (const d of visibles || []) {
-            const k = clave(d);
-            if (!m.has(k)) {
-                m.set(k, { k, branchId: d.branch_id, entra: Number(d.monto) < 0, filas: [] });
-            }
-            m.get(k).filas.push(d);
-        }
-        return [...m.values()];
-    }, [visibles]);
+    const grupos = useMemo(() => gruposParaAsentar(visibles), [visibles]);
 
     const alternar = useCallback((k) => {
         setExcluidas((prev) => {

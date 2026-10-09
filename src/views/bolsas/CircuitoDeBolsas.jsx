@@ -33,7 +33,7 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { rangoDeDias } from './etapas';
 import { DIAS_DE_ALARMA_BOLSA, laMasVieja } from '@nucleo/utils/bolsasTexto';
 import { useToastStore } from '@nucleo/store/toastStore';
-import { diferenciaDeBolsa, saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
+import { diferenciaDeBolsa, saldoDeBolsa, rotuloDeVia } from '@nucleo/utils/bolsasReparto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 import { diasEntre, fechaTexto, hoySV } from '@nucleo/utils/fecha';
@@ -711,8 +711,7 @@ function VerRespaldo({ url, etiqueta = 'Ver el respaldo' }) {
 
 /* Cómo se saldó la diferencia. Vivía escrito a mano en el pie de «Contadas»;
  * desde que también se resuelve mientras se cuenta, lo dicen dos sitios. */
-const VIA = { REPONE: 'Repuesto', RETIRA: 'Retirado', JUSTIFICA: 'Justificado' };
-const rotuloDeVia = (via) => VIA[via] || 'Justificado';
+// `rotuloDeVia` vive en el núcleo (`bolsasReparto`): también lo usa la app.
 
 /**
  * Resolver la diferencia de una bolsa contada.

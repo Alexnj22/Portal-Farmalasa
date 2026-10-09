@@ -18,9 +18,9 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } fro
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { buscarProductosMinMax, fetchCurrentStockParams, fetchMinMaxContextoVenta, insertMinMaxChangeRequest } from '@nucleo/data/minmaxRequests';
+import { buscarProductosMinMax, fetchCurrentStockParams, fetchMinMaxContextoVenta, fetchProductPreciosForMinMax, insertMinMaxChangeRequest } from '@nucleo/data/minmaxRequests';
 import { effectiveMinMaxPair } from '@nucleo/data/stockParams';
-import { ajusteSinCambio, fmtUltimaVenta, mensajeDeMinMax, motivosQueExigenExplicacion, parMinMaxValido, solicitudDeMinMax } from '@nucleo/utils/minmaxSolicitud';
+import { ajusteSinCambio, equivalenteEnCajas, presentacionDominante, presentacionesDelProducto, fmtUltimaVenta, mensajeDeMinMax, motivosQueExigenExplicacion, parMinMaxValido, solicitudDeMinMax } from '@nucleo/utils/minmaxSolicitud';
 import { BRANCH_A_ERP, ERP_BODEGA, ERP_NAMES, ERP_ORDEN } from '@nucleo/constants/erp';
 import { useBusqueda } from '@nucleo/hooks/useBusqueda';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
@@ -81,6 +81,17 @@ export default function MinMax() {
     fetchMinMaxContextoVenta(producto.id, erp).then((c) => { if (vivo) setVentas(c); });
     return () => { vivo = false; };
   }, [producto, erp]);
+  // Las presentaciones del producto: cuántas unidades trae la caja y el
+  // equivalente en cajas de cada número, como el formulario del portal.
+  const [pres, setPres] = useState([]);
+  useEffect(() => {
+    if (!producto) { setPres([]); return undefined; }
+    let vivo = true;
+    Promise.resolve(fetchProductPreciosForMinMax(producto.id)).then(({ data }) => { if (vivo) setPres(presentacionesDelProducto(data)); }).catch(() => {});
+    return () => { vivo = false; };
+  }, [producto]);
+  const caja = presentacionDominante(pres);
+  const enCajas = (n) => equivalenteEnCajas(n, pres);
 
   const nMin = min.trim() === '' ? null : Number.parseInt(min, 10);
   const nMax = max.trim() === '' ? null : Number.parseInt(max, 10);
@@ -139,17 +150,17 @@ export default function MinMax() {
                 <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{producto.nombre}</Text>
                 {cargando ? <Text style={{ color: colorSistema.texto2 }}>Cargando…</Text> : (
                   <>
-                    <Dato primero rotulo="MIN · MAX de hoy" valor={actual?.min != null ? `${actual.min} · ${actual.max}` : 'Sin par todavía'} fuerte />
+                    <Dato primero rotulo="MIN · MAX de hoy" valor={actual?.min != null ? `${actual.min} · ${actual.max}${enCajas(actual.min) || enCajas(actual.max) ? `  (${enCajas(actual.min) || '—'} · ${enCajas(actual.max) || '—'})` : ''}` : 'Sin par todavía'} fuerte />
                     <Dato rotulo="Vendido este mes" valor={ventas?.unidadesMes ?? '—'} />
                     <Dato rotulo="Vendido en 6 meses" valor={actual?.sales6m ?? '—'} />
-                    <Dato rotulo="En existencia" valor={ventas?.existencia ?? '—'} />
+                    <Dato rotulo="En existencia" valor={ventas?.existencia != null ? `${ventas.existencia}${enCajas(ventas.existencia) ? `  ${enCajas(ventas.existencia)}` : ''}` : '—'} />
                     <Dato rotulo="Última venta" valor={ventas?.ultimaVenta ? fmtUltimaVenta(ventas.ultimaVenta) : '—'} />
                   </>
                 )}
               </Seccion>
               {oculto ? <Aviso tono="freno" texto={`Este producto está oculto en ${sala}: primero hay que mostrarlo de nuevo en Min/Max.`} /> : (
                 <>
-                  <Seccion titulo="Lo que propones (en unidades)">
+                  <Seccion titulo="Lo que propones (en unidades)" pie={caja ? `${caja.factor} unidades = 1 ${caja.tipo?.trim() || 'caja'}.${caja.descripcion ? ` Factor calculado: ${caja.descripcion}.` : ''}` : null}>
                     <View style={{ flexDirection: 'row', gap: 12 }}>
                       <Numero rotulo="MIN" valor={min} onCambiar={setMin} />
                       <Numero rotulo="MAX" valor={max} onCambiar={setMax} />

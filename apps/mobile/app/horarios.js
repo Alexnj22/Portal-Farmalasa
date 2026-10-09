@@ -34,7 +34,8 @@ import { resolverTurnoDelDia, HORAS_SEMANA_DIURNA } from '@nucleo/utils/turnoDel
 import { calculateEmployeeWeeklyHoursLocal, getDayConflictLocal } from '@nucleo/utils/scheduleHelpers';
 import { evaluarCoberturaDelDia } from '@nucleo/utils/coberturaDelDia';
 import { estadisticasDeVentaPorHora } from '@nucleo/utils/ventasPorHora';
-import { reparosDeLaSemana } from '@nucleo/utils/reparosDeLaSemana';
+import { descansosCortos, reparosDeLaSemana } from '@nucleo/utils/reparosDeLaSemana';
+import { HORAS_ENTRE_JORNADAS } from '@nucleo/utils/turnoDelDia';
 import { formatWeekRange, getLocalMonday, shiftWeek } from '@nucleo/utils/semana';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
@@ -149,6 +150,12 @@ export default function Horarios() {
     return evaluarCoberturaDelDia(dia, horarios, turnos || [], stats?.specificHours?.[dia] || []);
   }, [semana, personas, dia, turnos, stats]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Art. 21: quién sale y vuelve a entrar sin sus 8 horas, con las horas
+  // exactas — el aviso fijo que el portal pinta sobre el calendario
+  // (`descansosCortos`, núcleo), no sólo al publicar.
+  const cortos = useMemo(() => (semana ? descansosCortos({ personas, rosters: semana.rosters || {}, turnos: turnos || [], fechas }) : []),
+    [semana, personas, turnos, fechas]);
+
   const publicar = () => {
     const { reparos, porPublicar } = reparosDeLaSemana({ personas, rosters: semana?.rosters || {}, turnos: turnos || [], fechas, publicados: semana?.publishedIds || new Set() });
     const que = porPublicar === 1 ? 'Se publicará 1 horario' : `Se publicarán ${porPublicar} horarios`;
@@ -247,6 +254,20 @@ export default function Horarios() {
           <View style={{ marginHorizontal: 16, gap: 8 }}>
             <Aviso tono="cuidado" texto={`${semana.borradores} horario${semana.borradores === 1 ? '' : 's'} de esta semana sin publicar.`} />
             {puedePublicar ? <BotonGrande texto={publicando ? 'Publicando…' : `Publicar (${semana.borradores})`} onPress={publicar} deshabilitado={publicando} /> : null}
+          </View>
+        ) : null}
+
+        {cortos.length ? (
+          <View style={{ marginHorizontal: 16 }}>
+            <Vidrio radio={18} tinte="rgba(240,68,56,0.10)">
+              <View style={{ padding: 12, gap: 6 }}>
+                {cortos.slice(0, 6).map((f) => (
+                  <Text key={`${f.emp}-${f.desde}`} style={{ color: MARCA.rojo, fontSize: 13, fontWeight: '600' }}>
+                    {`${f.emp} sale el ${fechaTexto(f.desde, { weekday: 'long' })} y vuelve a entrar con ${f.horas} h de descanso. El reglamento pide ${HORAS_ENTRE_JORNADAS} (Art. 21).`}
+                  </Text>
+                ))}
+              </View>
+            </Vidrio>
           </View>
         ) : null}
 

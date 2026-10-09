@@ -614,3 +614,123 @@ export function renglonesParaAgregar(promo, prods, proveedores = []) {
         })),
     };
 }
+
+// ── Corregir un descuento (2026-10-09) ──────────────────────────────────────
+// Lo que decide el formulario «Corregir descuento», escrito UNA vez para el
+// portal (`DescuentoModal`) y la app (`descuento/[id]`): cómo se lee el que
+// viene de la base, qué impide guardar y qué se manda.
+
+/** Los dos tipos, dichos como los aplica la venta: el monto es POR UNIDAD. */
+export const TIPOS_DE_DESCUENTO = [
+    { value: '%', label: 'Porcentaje del renglón' },
+    { value: '$', label: 'Monto por cada unidad' },
+];
+
+/** El formulario a partir del descuento leído de la base (o vacío). */
+export function formaDeDescuento(d, hoy) {
+    if (!d) return { descripcion: '', tipo: '%', monto: '', inicio: hoy, fin: '', todas: true, branchId: '', productos: [] };
+    return {
+        descripcion: d.descripcion || '',
+        tipo: d.tipo === '$' ? '$' : '%',
+        monto: d.monto ? String(d.monto) : '',
+        inicio: d.inicio || hoy,
+        fin: d.fin || '',
+        todas: d.todas_las_salas === true,
+        branchId: d.branch_id ? String(d.branch_id) : '',
+        productos: d.productos || [],
+    };
+}
+
+/** Lo que impide guardar, dicho antes de intentarlo (en orden: el primero es el que se muestra). */
+export function problemasAlCorregirDescuento(f, alcanceTodo) {
+    const monto = Number(f.monto);
+    const l = [];
+    if (!String(f.descripcion ?? '').trim()) l.push('Ponle un nombre al descuento.');
+    if (!Number.isFinite(monto) || monto <= 0) l.push('El descuento tiene que ser mayor que cero.');
+    if (f.tipo === '%' && monto > 100) l.push('Un porcentaje no puede pasar de 100.');
+    if (!f.fin) l.push('Falta la fecha de fin.');
+    if (f.inicio && f.fin && f.fin < f.inicio) l.push('La fecha de fin es anterior a la de inicio.');
+    if (!(f.productos || []).length) l.push('Agrega al menos un producto.');
+    if (alcanceTodo && !f.todas && !f.branchId) l.push('Elige la sala.');
+    return l;
+}
+
+/** Lo que se le manda a `guardarDescuento`. `salaPorDefecto`: la primera sala de venta (para «todas»). */
+export function payloadDeDescuento(f, { id = 0, salaPorDefecto = null, forzar = false } = {}) {
+    return {
+        id: Number(id) > 0 ? Number(id) : 0,
+        descripcion: String(f.descripcion).trim(),
+        tipo: f.tipo,
+        monto: Number(f.monto),
+        inicio: f.inicio,
+        fin: f.fin,
+        todas_las_salas: !!f.todas,
+        branch_id: f.todas ? salaPorDefecto : Number(f.branchId),
+        productos: (f.productos || []).map((p) => p.id),
+        forzar: forzar === true,
+    };
+}
+
+/** En cuánto queda un producto: precio → queda, costo con IVA, si cae bajo el costo y cuánto pierde por unidad. */
+export function cuentaDelProducto(datos, tipo, monto) {
+    const precio = Number(datos?.precio) || 0;
+    const costo = Number(datos?.costo_con_iva) || 0;
+    const queda = precio ? precioConDescuento(precio, tipo, monto) : null;
+    const bajoCosto = queda !== null && costo > 0 && queda < costo;
+    return { precio, costo, queda, bajoCosto, pierde: bajoCosto ? costo - queda : 0 };
+}
+
+/* Los descuentos en sus tres secciones, en la dirección que sirve: los que
+   descuentan hoy y los terminados, por el que ACABA antes —lo que vence es lo
+   urgente—; los programados, por el que EMPIEZA antes. El orden de las
+   secciones es el de la atención (`SECCIONES_DE_DESCUENTOS`). */
+export const SECCIONES_DE_DESCUENTOS = [
+    { clave: 'activos', titulo: 'Descontando ahora', sub: 'bajan el precio hoy' },
+    { clave: 'programados', titulo: 'Programados', sub: 'todavía no empiezan' },
+    { clave: 'terminados', titulo: 'Terminados', sub: 'ya no tocan ningún precio' },
+];
+export function descuentosPorEstado(descuentos, hoy = hoySV()) {
+    const g = { activos: [], programados: [], terminados: [] };
+    for (const d of descuentos || []) g[estadoDescuento(d, hoy).clave].push(d);
+    g.activos.sort((a, b) => String(a.fin).localeCompare(String(b.fin)));
+    g.programados.sort((a, b) => String(a.inicio).localeCompare(String(b.inicio)));
+    g.terminados.sort((a, b) => String(b.fin).localeCompare(String(a.fin)));
+    return g;
+}
+
+/** La oferta de la app que nace de un descuento: la que ya tenía (con la foto nueva encima) o una nueva. */
+export const ofertaDesdeDescuento = (d, foto, previa) => (previa
+    ? { ...previa, ...foto, sin_receta: foto.sin_receta }
+    : { ...foto, titulo: d.promocion || d.descripcion, promocion_id: null });
+
+/** A quién le llega el resumen diario de una promoción (7:30 a. m.). Los íconos los pone cada pantalla. */
+export const OPCIONES_RESUMEN_DIARIO = [
+    { key: 'no', rotulo: 'Sin avisar', detalle: 'No manda resumen.' },
+    { key: 'supervision', rotulo: 'Supervisión', detalle: 'Todas las salas.' },
+    { key: 'salas', rotulo: 'Salas', detalle: 'Cada una, lo suyo.' },
+];
+export const resumenElegido = (valor, key) => (key === 'no' ? !valor?.supervision && !valor?.salas : !!valor?.[key]);
+/** «Sin avisar» apaga los dos; los otros dos se prenden y apagan cada uno. */
+export const alternarResumen = (valor, key) => (key === 'no'
+    ? { supervision: false, salas: false }
+    : { ...valor, [key]: !valor?.[key] });
+
+/** El CSV de «quién vendió» una promoción (Seguimiento). */
+export function csvVendedoresDePromocion(vendedores, nombre) {
+    return {
+        headers: ['VENDEDOR', 'SALA', 'UNIDADES', 'DOCUMENTOS', 'BONO'],
+        rows: (vendedores || []).map((v) => [v.nombre, v.sala || '', v.unidades, v.documentos, v.bono]),
+        nombre: `promocion_${String(nombre || '').replace(/\W+/g, '_')}`,
+    };
+}
+
+/** El CSV de la matriz de una promoción de laboratorio, sala por sala. */
+export function csvMatrizDeLaboratorio(datos, promocionId) {
+    const salas = Array.isArray(datos?.salas) ? datos.salas : [];
+    return {
+        headers: ['SALA', 'VENTA', 'NIVEL', 'PERSONAS', 'CADA PERSONA', 'COSTO', 'FALTA PARA EL SIGUIENTE'],
+        rows: salas.map((x) => [x.sala, x.venta, x.nivel ?? '', x.personas, x.monto_por_persona, x.costo,
+            x.siguiente_nivel != null ? x.falta : '']),
+        nombre: `promocion_laboratorio_${String(datos?.nombre || promocionId).replace(/\W+/g, '_')}_${datos?.mes_medido || datos?.year_month || ''}`,
+    };
+}

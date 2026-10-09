@@ -33,6 +33,7 @@ import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hoySV } from '@nucleo/utils/fecha';
+import { esSuspension as suspende, diasAlElegir, hastaDeLaSuspension, sancionCompleta, codigoDeSancion, motivoDeLaPropuesta } from '@nucleo/utils/sancion';
 
 const fmtFecha = (iso) => {
     if (!iso) return '';
@@ -97,33 +98,14 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
 
     // El peldaño 3 es de UN día por definición del Art. 83; el 4 va de 2 a 30.
     // Se refleja acá para que el campo no ofrezca lo que la base va a rechazar.
+    // Las reglas viven en el núcleo (`sancion`): la app las aplica igual.
     useEffect(() => {
-        if (peldano === 3) setDias('1');
-        else if (peldano === 4 && (dias === '1' || dias === '')) setDias('2');
-    }, [peldano]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    const esSuspension = peldano === 3 || peldano === 4;
-    // El último día de la suspensión, para el papel. La base lo calcula igual
-    // (`fecha + dias - 1`) y sigue siendo la verdad: esto es una copia para
-    // imprimir, no una segunda regla.
-    const hastaISO = useMemo(() => {
-        if (!esSuspension || !fecha) return null;
-        const n = Math.max(1, Number(dias) || 1);
-        const d = new Date(`${fecha}T12:00:00`);
-        if (Number.isNaN(d.getTime())) return null;
-        d.setDate(d.getDate() + n - 1);
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    }, [esSuspension, fecha, dias]);
-    const puedeGuardar = useMemo(() => {
-        if (!falta || !peldano || !fecha || guardando) return false;
-        if (peldano === 4) {
-            const n = Number(dias);
-            if (!Number.isFinite(n) || n < 2 || n > 30) return false;
-            if (!autorizacion.trim()) return false;
-        }
-        return true;
-    }, [falta, peldano, fecha, dias, autorizacion, guardando]);
-
+        setDias(d => diasAlElegir(peldano, d));
+    }, [peldano]);
+    const esSuspension = suspende(peldano);
+    const hastaISO = useMemo(() => hastaDeLaSuspension(peldano, fecha, dias), [peldano, fecha, dias]);
+    const puedeGuardar = useMemo(() => !guardando && sancionCompleta({ falta, peldano, fecha, dias, autorizacion }),
+        [falta, peldano, fecha, dias, autorizacion, guardando]);
     const guardar = useCallback(async () => {
         setGuardando(true);
         try {
@@ -141,9 +123,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
             // cuenta ni ordena— y por eso no se muestra como si lo fuera: es un
             // LOCALIZADOR, y seis dígitos hexadecimales alcanzan para encontrar
             // una fila entre las que va a haber en años.
-            const codigo = eventoId
-                ? `S-${String(fecha).slice(0, 4)}-${String(eventoId).replace(/-/g, '').slice(0, 6).toUpperCase()}`
-                : null;
+            const codigo = codigoDeSancion(eventoId, fecha);
 
             clearDraft(claveBorrador);
 
@@ -227,12 +207,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                         {/* En qué se apoya la propuesta. Va ANTES de los peldaños: se
                             lee el motivo y después se elige, no al revés. */}
                         <Notice variant={escalera.faltas_en_60_dias > 0 ? 'warning' : 'info'} icon={Info}>
-                            {escalera.faltas_en_60_dias > 0
-                                ? `${escalera.faltas_en_60_dias} falta(s) en los últimos 60 días. El Art. 83 permite subir de peldaño por reincidencia.`
-                                : escalera.verbales_misma_causa > 0
-                                    ? `${escalera.verbales_misma_causa} amonestación(es) verbal(es) por esta misma causa. El num. 2 permite pasar a la escrita.`
-                                    : 'Sin antecedentes que habiliten subir de peldaño.'}
-                            {escalera.rectificado_el && ` Se cuenta desde el memorando del Art. 86 del ${fmtFecha(escalera.rectificado_el)}.`}
+                            {motivoDeLaPropuesta(escalera, fmtFecha)}
                         </Notice>
 
                         <div className="space-y-2">

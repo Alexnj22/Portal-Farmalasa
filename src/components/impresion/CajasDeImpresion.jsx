@@ -12,6 +12,7 @@ import {
 import { construirTicketDePruebaDeCaja, textoParaElRollo, ticketEnBase64 } from '@nucleo/utils/ticketPrint';
 import { APP_VERSION } from '../../version';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { ESTADOS_DE_LA_COLA, LINEA_DE_ACTUALIZAR, avisoAlQuitarCaja, codigoPartido, estadoDelAgente, latidoMostrado } from '@nucleo/utils/pruebaDeImpresion';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -47,66 +48,15 @@ import { useToastStore } from '@nucleo/store/toastStore';
  */
 
 const VACIO = [];
-const MINUTO = 60_000;
-
-const haceCuanto = (iso) => {
-    if (!iso) return { txt: 'nunca preguntó', vivo: false };
-    const ms = Date.now() - Date.parse(iso);
-    if (ms < 2 * MINUTO) return { txt: 'ahora mismo', vivo: true };
-    if (ms < 60 * MINUTO) return { txt: `hace ${Math.round(ms / MINUTO)} min`, vivo: false };
-    if (ms < 48 * 60 * MINUTO) return { txt: `hace ${Math.round(ms / (60 * MINUTO))} h`, vivo: false };
-    return { txt: `hace ${Math.round(ms / (24 * 60 * MINUTO))} días`, vivo: false };
+// Los íconos de cada estado de la cola; el texto sale del núcleo.
+const ICONO_ESTADO = {
+    PENDIENTE:   { icon: Clock,         clase: 'text-content-3' },
+    IMPRIMIENDO: { icon: Printer,       clase: 'text-content-2' },
+    IMPRESO:     { icon: CheckCircle2,  clase: 'text-success-text' },
+    ERROR:       { icon: AlertTriangle, clase: 'text-danger-text' },
 };
-
-/**
- * Qué decir de una caja: si está al día y por dónde le escribe a la ticketera.
- *
- * **El canal no es un detalle técnico y por eso se pinta.** Una caja que
- * imprime por CUPS le QUITA la ticketera al sistema de facturación —el backend
- * `usb` de CUPS desengancha el dispositivo del kernel— y esa sala deja de poder
- * facturar hasta que alguien apaga y prende el aparato. Pasó en Salud 1 el
- * 19-ago-2026. Escrito en una nota de instalación no lo ve nadie; acá sí.
- *
- * Y sin versión publicada la pantalla NO opina: no poder leer el archivo no es
- * lo mismo que estar atrasada, y mandar a actualizar una caja que estaba bien
- * enseña a ignorar el aviso.
- */
-const estadoDelAgente = (caja, publicada) => {
-    if (!caja.vinculada_at) return null;
-    const version = caja.agente_version || null;
-    const canal = caja.agente_canal || null;
-    // Un agente viejo no informa nada: es exactamente el que hay que actualizar,
-    // y decir «sin datos» sería esconder la respuesta que se está buscando.
-    if (!version) return { txt: 'versión vieja — hay que actualizarla', mal: true };
-
-    // Los dos problemas se DICEN JUNTOS, no gana uno. Con `if/else`, una caja
-    // atrasada Y en CUPS sólo mostraba el CUPS, y eso manda a revisar la
-    // impresora cuando lo que pasa es que la corrección todavía no le llegó —
-    // dos acciones distintas para un mismo renglón (Salud 1, 19-ago-2026).
-    const problemas = [];
-    if (publicada && version !== publicada) problemas.push('atrasada — la corrección aún no le llega');
-    if (canal === 'CUPS') problemas.push('imprime por CUPS, le quita la ticketera al otro sistema');
-    if (problemas.length) return { txt: problemas.join(' · '), mal: true };
-
-    return { txt: `al día · escribe en ${canal || 'la ticketera'}`, mal: false };
-};
-
-/**
- * La línea que pone al día una caja. Vive acá y se puede copiar de la pantalla
- * a propósito: el agente **no se puede actualizar a distancia** —lo único que
- * ejecuta es el comando de imprimir, y eso no se cambia—, así que alguien tiene
- * que correr algo en esa computadora. Que sea UNA línea dictable por teléfono
- * es la diferencia entre eso y viajar a cada sucursal.
- */
-const LINEA_DE_ACTUALIZAR =
-    'curl -fsSL https://portal.farmasalud.lat/agente-impresion/actualizar.sh | sudo bash';
-
-const ESTADOS = {
-    PENDIENTE:   { txt: 'Esperando',  icon: Clock,         clase: 'text-content-3' },
-    IMPRIMIENDO: { txt: 'Saliendo',   icon: Printer,       clase: 'text-content-2' },
-    IMPRESO:     { txt: 'Impreso',    icon: CheckCircle2,  clase: 'text-success-text' },
-    ERROR:       { txt: 'No salió',   icon: AlertTriangle, clase: 'text-danger-text' },
-};
+const ESTADOS = Object.fromEntries(Object.entries(ESTADOS_DE_LA_COLA)
+    .map(([k, v]) => [k, { txt: v.txt, ...ICONO_ESTADO[k] }]));
 
 export default function CajasDeImpresion({ puedeEditar }) {
     // El `|| []` va DENTRO del selector: afuera crea un array nuevo en cada
@@ -234,7 +184,7 @@ export default function CajasDeImpresion({ puedeEditar }) {
                         grande, espaciado y partido en dos mitades: es la forma
                         de que no se lea mal desde el otro lado del mostrador. */}
                     <span className="block my-2 font-mono text-title font-black tracking-[0.2em] text-content select-all">
-                        {nueva.codigo.slice(0, 4)}-{nueva.codigo.slice(4)}
+                        {codigoPartido(nueva.codigo)}
                     </span>
                     <span className="block font-normal text-content-2">
                         En esa computadora, abre una terminal y escribe{' '}
@@ -299,9 +249,7 @@ export default function CajasDeImpresion({ puedeEditar }) {
                 // «Sin instalar» y «no contesta» son cosas distintas: la primera
                 // es un código que nadie canjeó, la segunda una caja apagada. Un
                 // solo texto para las dos mandaría a revisar el lugar equivocado.
-                const latido = c.vinculada_at
-                    ? haceCuanto(c.ultimo_latido)
-                    : { txt: 'sin instalar', vivo: false };
+                const latido = latidoMostrado(c);
                 const agente = estadoDelAgente(c, publicada);
                 return (
                     <div key={c.id} data-surface="card" className="p-3 flex items-center gap-3 flex-wrap">
@@ -408,14 +356,7 @@ export default function CajasDeImpresion({ puedeEditar }) {
                 onClose={() => (borrando ? null : setABorrar(null))}
                 onConfirm={borrar}
                 title={`¿Quitar «${aBorrar?.nombre ?? ''}»?`}
-                message={
-                    aBorrar?.ultimo_latido
-                        ? `Esta caja está contestando: ${nombreSala[aBorrar.branch_id] || 'esa sala'} `
-                          + 'deja de recibir papel hasta que la vuelvas a instalar. '
-                          + 'Lo que ya se imprimió por ella se conserva.'
-                        : 'Nunca dio señales de vida, así que no está imprimiendo nada. '
-                          + 'Desaparece de la lista y no se puede deshacer.'
-                }
+                message={avisoAlQuitarCaja(aBorrar, nombreSala[aBorrar?.branch_id])}
                 confirmText="Sí, quitar"
                 isProcessing={borrando}
             />

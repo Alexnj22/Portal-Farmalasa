@@ -52,6 +52,11 @@ export default function Vacaciones() {
   const processChangeRequest = useStaffStore((s) => s.processChangeRequest);
   const updateVacationPlanStatus = useStaffStore((s) => s.updateVacationPlanStatus);
   const deleteVacationPlan = useStaffStore((s) => s.deleteVacationPlan);
+  const encabezados = useStaffStore((s) => s.vacationHeaders);
+  const generando = useStaffStore((s) => s.isGeneratingPlan);
+  const fetchVacationHeaders = useStaffStore((s) => s.fetchVacationHeaders);
+  const generateAIPlan = useStaffStore((s) => s.generateAIPlan);
+  const preApprovePlan = useStaffStore((s) => s.preApprovePlan);
   const [vista, setVista] = useState('lista');
   const todas = getScope?.('vacation_plan') === 'ALL';
   const anioActual = Number(hoySV().slice(0, 4));
@@ -66,6 +71,7 @@ export default function Vacaciones() {
     await Promise.all([fetchVacationPlans(anio, sala === 'ALL' ? null : sala), fetchVacationChangeRequests(anio)]);
   }, [anio, sala, fetchVacationPlans, fetchVacationChangeRequests]);
   useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => { Promise.resolve(fetchVacationHeaders?.()).catch(() => {}); }, [fetchVacationHeaders]);
 
   const delAnio = useMemo(() => (planes || []).filter((p) => p.year === anio), [planes, anio]);
   const usados = useMemo(() => diasUsadosPorPersona(delAnio, anio), [delAnio, anio]);
@@ -95,6 +101,25 @@ export default function Vacaciones() {
   ];
 
   const puedeEditar = hasPermission('vacation_plan', 'can_edit');
+  // El encabezado del plan del año y sus dos acciones del portal: generar (o
+  // rehacer) la propuesta (`generateAIPlan`) y pre-aprobarla para que la vean
+  // los empleados (`preApprovePlan`).
+  const encabezado = (encabezados || []).find((h) => h.year === anio) || null;
+  const borradores = delAnio.filter((p) => p.status === 'DRAFT').length;
+  const generar = () => Alert.alert(encabezado ? 'Rehacer la propuesta' : 'Generar la propuesta', `El portal propone las vacaciones de ${anio}. Lo que esté en borrador se reemplaza.`, [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: encabezado ? 'Rehacer' : 'Generar', onPress: async () => {
+      const r = await Promise.resolve(generateAIPlan(anio)).catch((e) => ({ success: false, error: e?.message }));
+      if (r?.success) { listo('Plan generado', `${r.count} vacaciones propuestas por el portal.`); cargar(); } else fallo('No se generó', r?.error || 'No se pudo generar el plan.');
+    } },
+  ]);
+  const preAprobar = () => Alert.alert('Pre-aprobar el plan', `El plan ${anio} pasa a ser visible para los empleados.`, [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Pre-aprobar', onPress: async () => {
+      const ok = await Promise.resolve(preApprovePlan(encabezado.id, anio)).catch(() => false);
+      if (ok) { listo('Pre-aprobado', 'El plan es ahora visible para los empleados.'); cargar(); } else fallo('No se pudo pre-aprobar', '');
+    } },
+  ]);
   // Editar, confirmar o cancelar un plan, como los botones de la fila del
   // portal (sólo planificado o confirmado; confirmar, sólo planificado).
   const acciones = (p) => {
@@ -139,6 +164,17 @@ export default function Vacaciones() {
           <Kpi icono="RefreshCw" rotulo="Cambios pedidos" valor={String(cambiosPendientes)} color={cambiosPendientes ? MARCA.ambar : MARCA.azul}
             apoyo={cambiosPendientes ? 'esperan respuesta' : 'ninguno pendiente'} />
         </FilaDeKpis>
+        {puedeEditar ? (
+          <View style={{ marginHorizontal: 16, gap: 8 }}>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
+              {encabezado ? `Plan ${anio}: ${({ DRAFT: 'Borrador', PRE_APPROVED: 'Pre-aprobado · visible para empleados', FINALIZED: 'Finalizado' })[encabezado.status] || encabezado.status}${encabezado.ai_generated ? ' · propuesto por el portal' : ''}` : `Plan ${anio}: sin plan generado`}
+            </Text>
+            {!encabezado || encabezado.status === 'DRAFT' ? (
+              <BotonGrande texto={generando ? 'Generando…' : encabezado ? 'Rehacer la propuesta' : 'Generar la propuesta'} borde color={MARCA.violetaClaro} deshabilitado={generando} onPress={generar} />
+            ) : null}
+            {encabezado?.status === 'DRAFT' && borradores > 0 ? <BotonGrande texto="Pre-aprobar el plan" color={MARCA.azul} onPress={preAprobar} /> : null}
+          </View>
+        ) : null}
         <SolicitudesDeCambio cambios={(cambios || []).filter((c) => c.status === 'PENDING')} puedeDecidir={hasPermission('vacation_plan', 'can_edit')}
           procesar={processChangeRequest} aprobadorId={user?.id} alTerminar={cargar} />
         <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'lista', label: 'Por mes' }, { id: 'anio', label: 'El año' }]} />

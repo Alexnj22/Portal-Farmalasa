@@ -11,19 +11,13 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { downloadStoredFile, openStoredFile } from '@nucleo/utils/storageFiles';
 import { guardarRecurso, quitarRecurso } from '@nucleo/data/marketing';
+import { TIPOS_DE_RECURSO, colorEscrito, colorValido as esColorValido, faltaEnRecurso, recursosPorMarca } from '@nucleo/utils/marketing';
 import { abrirEnPestanaNueva } from '@plataforma/descargas';
 import { puntoDeMarca } from './iconos';
 
-const TIPOS = [
-    { value: 'logo',       label: 'Logos',       icono: ImageIcon },
-    { value: 'color',      label: 'Paleta',      icono: Palette },
-    { value: 'tipografia', label: 'Tipografías', icono: Type },
-    { value: 'foto',       label: 'Fotos',       icono: ImageIcon },
-    { value: 'plantilla',  label: 'Plantillas',  icono: FileText },
-    // Entregable mensual del contrato: cuenta en el control del servicio.
-    { value: 'manual',     label: 'Manual de marca', icono: BookOpen },
-    { value: 'otro',       label: 'Otros',       icono: FileText },
-];
+// Rótulos, validación y agrupado: núcleo (`marketing`), lo mismo que la app; acá, los íconos.
+const ICONO_RECURSO = { logo: ImageIcon, color: Palette, tipografia: Type, foto: ImageIcon, plantilla: FileText, manual: BookOpen, otro: FileText };
+const TIPOS = TIPOS_DE_RECURSO.map((t) => ({ ...t, icono: ICONO_RECURSO[t.value] }));
 const VACIO = { tipo: 'logo', marca_id: '', nombre: '', enlace: '', color: '' };
 
 /**
@@ -39,15 +33,11 @@ export default function TabBiblioteca({ recursos, marcas, firmadas, puedeGestion
     const [quitando, setQuitando] = useState(null);
     const marcasLista = Object.values(marcas);
 
-    const grupos = useMemo(() => {
-        const g = [{ id: '', nombre: 'Todas las marcas', color: null }, ...marcasLista];
-        return g.map((m) => ({ ...m, items: recursos.filter((r) => String(r.marca_id || '') === String(m.id)) }))
-            .filter((m) => m.items.length);
-    }, [recursos, marcasLista]);
+    const grupos = useMemo(() => recursosPorMarca(recursos, marcasLista), [recursos, marcasLista]);
 
     const esColor = form.tipo === 'color';
-    const colorValido = /^#[0-9A-Fa-f]{6}$/.test(form.color);
-    const falta = !form.nombre.trim() || (esColor ? !colorValido : (!archivo && !/^https?:\/\//i.test(form.enlace.trim())));
+    const colorValido = esColorValido(form.color);
+    const falta = faltaEnRecurso(form, !!archivo);
 
     const agregar = async () => {
         if (falta) return;
@@ -106,7 +96,7 @@ export default function TabBiblioteca({ recursos, marcas, firmadas, puedeGestion
                     </div>
                     {esColor ? (
                         <PortalInput label="Color (#RRGGBB)" name="recurso_color" value={form.color}
-                            onChange={(e) => { const v = e.target.value.trim(); setForm((f) => ({ ...f, color: v && !v.startsWith('#') ? `#${v}` : v })); }}
+                            onChange={(e) => { const v = colorEscrito(e.target.value); setForm((f) => ({ ...f, color: v })); }}
                             placeholder="Seis dígitos, ej. 1A47C5" hasError={!!form.color && !colorValido} />
                     ) : (
                         <div className="grid gap-3 sm:grid-cols-2 items-end">

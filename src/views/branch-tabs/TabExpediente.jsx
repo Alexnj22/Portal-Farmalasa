@@ -12,7 +12,7 @@ import SearchInput from '../../components/common/SearchInput';
 import { EmptyState } from '../../components/common/StateViews';
 import { CATEGORIAS_DOCUMENTO } from '../../components/common/catalogos/constantes';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { documentosDeSucursal, estadoDeDocumento } from '@nucleo/utils/expedienteDeSucursal';
+import { ajustesSinDocumentoPropio, documentosDeSucursal, estadoDeDocumento } from '@nucleo/utils/expedienteDeSucursal';
 
 // ============================================================================
 // 🎨 HELPER: ESTADOS DEL DOCUMENTO Y FECHAS
@@ -201,9 +201,7 @@ const TabExpediente = ({ liveBranch, openModal, puedeEditar = false }) => {
         if (!docToDelete) return;
         setIsDeleting(true);
         try {
-            const currentCustomDocs = liveBranch?.settings?.customDocs || [];
-            const updatedDocs = currentCustomDocs.filter(d => d.id !== docToDelete);
-            const payloadToSave = { ...liveBranch, settings: { ...liveBranch.settings, customDocs: updatedDocs } };
+            const payloadToSave = { ...liveBranch, settings: ajustesSinDocumentoPropio(liveBranch.settings, docToDelete) };
             await useStaffStore.getState().updateBranch(liveBranch.id, payloadToSave);
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
             setDeleteModalOpen(false);

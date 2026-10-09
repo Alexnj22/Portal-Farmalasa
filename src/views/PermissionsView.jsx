@@ -32,7 +32,7 @@ import {
 } from '@nucleo/data/permissions';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { cargosNivelANivel } from '@nucleo/utils/jerarquiaDeCargos';
-import { MAX_INACTIVIDAD, MIN_INACTIVIDAD, filasCopiadasDe, mapaDePermisos, planDeCambioDePermiso } from '@nucleo/utils/permisosDeCargo';
+import { MAX_INACTIVIDAD, MIN_INACTIVIDAD, filasCopiadasDe, filasParaDelegar, filasParaActivarTodo, filasDeSeccion, mapaDePermisos, planDeCambioDePermiso } from '@nucleo/utils/permisosDeCargo';
 
 // ─── Módulos del sistema agrupados por función ─────────────────────────────
 // MODULE_GROUPS vive en constants/permissionModules.js (lo comparte MaintenanceView).
@@ -788,18 +788,9 @@ const PermissionsView = () => {
             }
             return next;
         });
-        await delegarDecisionesDeCargo(roleId, claves.map(k => {
-            const pv = permissions[`${roleId}:${k}`] || {};
-            return {
-                role_id: roleId, module_key: k,
-                can_view: pv.can_view ?? false,
-                can_edit: pv.can_edit ?? false,
-                can_approve: pv.can_approve ?? false,
-                scope: pv.scope || 'ALL',
-                delega_en_ausencia: value,
-                updated_at: new Date().toISOString(),
-            };
-        }), value, { cargo: orgRoles.find(r => r.id === roleId)?.name });
+        // Las filas salen del núcleo (`filasParaDelegar`), las mismas de la app.
+        await delegarDecisionesDeCargo(roleId, filasParaDelegar(permissions, roleId, value, FAMILIAS_DECIDIR.map(f => f.key)),
+            value, { cargo: orgRoles.find(r => r.id === roleId)?.name });
     }, [permissions, orgRoles]);
 
     /* Las tarjetas ACTIVAS primero, dentro de cada grupo.
@@ -824,15 +815,7 @@ const PermissionsView = () => {
     const handleActivateAll = useCallback(async () => {
         if (!selectedRoleId) return;
         setActivatingAll(true);
-        const rows = MODULES.map(m => ({
-            role_id: selectedRoleId,
-            module_key: m.key,
-            can_view: true,
-            can_edit: m.isTab ? false : true,
-            can_approve: m.hasApprove ? true : false,
-            scope: permissions[`${selectedRoleId}:${m.key}`]?.scope || 'ALL',
-            updated_at: new Date().toISOString(),
-        }));
+        const rows = filasParaActivarTodo(permissions, selectedRoleId, MODULE_GROUPS);
         const { error } = await activarTodoParaCargo(selectedRoleId, rows, {
             cargo: orgRoles.find(r => r.id === selectedRoleId)?.name,
         });
@@ -901,15 +884,7 @@ const PermissionsView = () => {
             });
             return next;
         });
-        const rows = groupModules.map(m => ({
-            role_id: selectedRoleId,
-            module_key: m.key,
-            can_view: activate,
-            can_edit: activate,
-            can_approve: activate && !!m.hasApprove,
-            scope: permissions[`${selectedRoleId}:${m.key}`]?.scope || 'ALL',
-            updated_at: new Date().toISOString(),
-        }));
+        const rows = filasDeSeccion(permissions, selectedRoleId, groupModules, activate);
         await cambiarSeccionDeCargo(selectedRoleId, rows, activate, {
             cargo: orgRoles.find(r => r.id === selectedRoleId)?.name,
         });

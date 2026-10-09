@@ -8,7 +8,11 @@ import { router } from 'expo-router';
 // 30 días al 2026-09-28): bitácoras 34, traslados 36, efectivo 34, pedidos 23.
 export const PANTALLAS_DE_LA_APP = {
   '/inicio': true,             // es la pestaña Inicio (los grupos de expo-router no cuentan en la ruta)
-  '/mis-avisos': '/avisos',    // es la pestaña de avisos; OJO: `/avisos` del PORTAL es «Gestionar avisos», otra cosa
+  '/cargar-compra': true, // las facturas sin cargar y la compra armada
+  '/impresion': true, // prueba de impresión y las cajas de las salas
+  '/objetos-huerfanos': true,
+  '/prueba-ios': true, // diagnóstico del teléfono
+  '/mis-avisos': '/comunicados', // los comunicados (Sin leer / Leídos); las notificaciones son la pestaña `/avisos`
   '/bitacoras': true,
   '/traslados': true,
   '/ventas-hoy': true,   // no existe en el portal: es la pantalla nativa de «Ventas de hoy»

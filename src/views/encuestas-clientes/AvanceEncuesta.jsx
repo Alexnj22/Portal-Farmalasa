@@ -11,7 +11,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { formatPct } from '@nucleo/utils/formatNumber';
-import { canalDe, metaTotal } from '@nucleo/utils/encuestasClientes';
+import { canalDe, enlaceDeEncuesta, metaTotal } from '@nucleo/utils/encuestasClientes';
 import { fetchAvance } from '@nucleo/data/encuestasClientes';
 import IncentivosEncuesta from './IncentivosEncuesta';
 import { abrirAfiche, imprimirAfiche } from './aficheQr';
@@ -45,7 +45,8 @@ export default function AvanceEncuesta({ encuesta, puedeEditar }) {
     if (error) return <Notice variant="danger" icon={AlertTriangle}>{mensajeAmigable(error, 'No se pudo cargar el avance.')}</Notice>;
     if (!avance) return <LoadingState label="Contando respuestas…" />;
 
-    const enlace = (token, tablet) => `${window.location.origin}/e/${token}${tablet ? '?modo=tablet' : ''}`;
+    // El enlace sale del núcleo; acá, con el origen de donde se abrió el portal.
+    const enlace = (token, tablet) => enlaceDeEncuesta(token, tablet, window.location.origin);
     const copiar = async (texto) => {
         try {
             await navigator.clipboard.writeText(texto);

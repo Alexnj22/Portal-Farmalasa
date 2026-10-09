@@ -8,6 +8,8 @@
 // (`updatePayrollPeriodStatus`) y con confirmación: Aprobar (borrador con
 // renglones) y Marcar pagada (aprobada). «Todas las boletas» arma el MISMO
 // papel del portal (`documentoDeBoletas`) en un PDF para compartir o imprimir,
+// y lo mismo la planilla impresa —global, o de una sala desde «Papeles» en su
+// encabezado— (`documentoDePlanilla`),
 // y se anota como egreso.
 //
 // También, con la llave de aprobar o editar la nómina: abrir una quincena
@@ -28,6 +30,7 @@ import { fetchUnapprovedTimesheetsCount } from '@nucleo/data/payroll';
 import { registrarEgreso } from '@nucleo/data/egreso';
 import { ESTADO_PLANILLA, csvDelBanco, ordenDeCargo, rotuloDePeriodo, totalesDePlanilla } from '@nucleo/utils/planilla';
 import { documentoDeBoletas } from '@nucleo/utils/boletaDePapel';
+import { documentoDePlanilla } from '@nucleo/utils/planillaDePapel';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -198,25 +201,51 @@ export default function Nomina() {
 
   const papeles = () => {
     Haptics.selectionAsync().catch(() => {});
+    const deSala = sala !== 'ALL';
     ActionSheetIOS.showActionSheetWithOptions(
-      { options: ['Todas las boletas', 'CSV del banco', 'Cancelar'], cancelButtonIndex: 2 },
-      (i) => { if (i === 0) boletas(); else if (i === 1) csvBanco(); },
+      { options: ['Todas las boletas', deSala ? 'Planilla de la sala' : 'Planilla global', 'CSV del banco', 'Cancelar'], cancelButtonIndex: 3 },
+      (i) => {
+        if (i === 0) boletas(visibles, sala === 'ALL' ? null : sala);
+        else if (i === 1) planilla(visibles, deSala ? sala : undefined);
+        else if (i === 2) csvBanco();
+      },
     );
   };
 
-  const boletas = () => {
-    if (!visibles.length || !periodo) return;
-    const html = () => documentoDeBoletas(visibles, periodo, sucursales || []);
-    const anotar = (formato) => registrarEgreso('nomina', { formato, filas: visibles.length, detalle: { periodo: periodo.id, sala: sala === 'ALL' ? null : sala, via: 'app' } });
-    Haptics.selectionAsync().catch(() => {});
+  // Un papel (boletas o planilla): compartir el PDF o mandarlo a AirPrint, y
+  // anotarlo como salida de datos.
+  const repartir = (html, nombre, filas, salaK, que) => {
+    const anotar = (formato) => registrarEgreso('nomina', { formato, filas, detalle: { periodo: periodo.id, sala: salaK ?? null, papel: que, via: 'app' } });
     ActionSheetIOS.showActionSheetWithOptions(
-      { title: `${visibles.length} boleta${visibles.length === 1 ? '' : 's'}`, options: ['Compartir PDF', 'Imprimir', 'Cancelar'], cancelButtonIndex: 2 },
+      { title: nombre, options: ['Compartir PDF', 'Imprimir', 'Cancelar'], cancelButtonIndex: 2 },
       async (i) => {
         try {
-          if (i === 0) { if (await compartirPdf({ html: html(), nombre: `Boletas ${rotuloDePeriodo(periodo.start_date, periodo.end_date)}` })) anotar('pdf'); }
+          if (i === 0) { if (await compartirPdf({ html: html(), nombre })) anotar('pdf'); }
           else if (i === 1) { await imprimirPapel(html()); anotar('impresion'); }
         } catch (e) { fallo('No se pudo armar el papel', e?.message || ''); }
       },
+    );
+  };
+  const boletas = (lista, salaK) => {
+    if (!lista.length || !periodo) return;
+    Haptics.selectionAsync().catch(() => {});
+    repartir(() => documentoDeBoletas(lista, periodo, sucursales || []),
+      `Boletas ${salaK ? `${nombreSala(salaK)} ` : ''}${rotuloDePeriodo(periodo.start_date, periodo.end_date)}`, lista.length, salaK, 'boletas');
+  };
+  // La planilla impresa del portal (`documentoDePlanilla`): global, o de una
+  // sala (`salaK` = su id; '' = «Otras áreas»).
+  const planilla = (lista, salaK) => {
+    if (!lista.length || !periodo) return;
+    Haptics.selectionAsync().catch(() => {});
+    const opciones = salaK === undefined ? {} : { sala: (sucursales || []).find((b) => String(b.id) === String(salaK)) || null };
+    repartir(() => documentoDePlanilla(lista, periodo, sucursales || [], opciones),
+      `Planilla ${salaK === undefined ? 'global' : nombreSala(salaK)} ${rotuloDePeriodo(periodo.start_date, periodo.end_date)}`, lista.length, salaK, 'planilla');
+  };
+  const papelesDeSala = (k, l) => {
+    Haptics.selectionAsync().catch(() => {});
+    ActionSheetIOS.showActionSheetWithOptions(
+      { title: nombreSala(k), options: ['Boletas de la sala', 'Planilla de la sala', 'Cancelar'], cancelButtonIndex: 2 },
+      (i) => { if (i === 0) boletas(l, k); else if (i === 1) planilla(l, k); },
     );
   };
 
@@ -313,9 +342,16 @@ export default function Nomina() {
 
         {(cargando && !(entradas || []).length) || periodos == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : porSala.map(([k, l]) => (
           <View key={k} style={{ gap: 8 }}>
-            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>
-              {`${nombreSala(k)} · ${formatMoney(l.reduce((s, e) => s + Number(e.net_pay || 0), 0))}`}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, marginTop: 4 }}>
+              <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4 }}>
+                {`${nombreSala(k)} · ${formatMoney(l.reduce((s, e) => s + Number(e.net_pay || 0), 0))}`}
+              </Text>
+              {puedeDescargar ? (
+                <Pressable hitSlop={8} onPress={() => papelesDeSala(k, l)} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
+                  <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>Papeles</Text>
+                </Pressable>
+              ) : null}
+            </View>
             <View style={{ marginHorizontal: 16 }}>
               <Vidrio radio={20}>
                 <View style={{ padding: 12, gap: 10 }}>

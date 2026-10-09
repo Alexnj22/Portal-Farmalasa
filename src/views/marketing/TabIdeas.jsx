@@ -17,25 +17,16 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaHora12 } from '@nucleo/utils/hora';
 import { fechaTexto, etiquetaMes } from '@nucleo/utils/fecha';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { FORMATOS, formatoDe } from '@nucleo/utils/marketing';
+import { FORMATOS, formatoDe, ESTADOS_IDEA, VISTAS_DE_IDEAS, cuentaDeIdeas, ideasDeLaVista } from '@nucleo/utils/marketing';
 import { crearIdea, editarIdea, quitarIdea, moverIdea } from '@nucleo/data/marketing';
 import { ICONOS_FORMATO, ICONO_DESCONOCIDO, puntoDeMarca } from './iconos';
 import { Quien } from './Historial';
 
-const ESTADO_IDEA = {
-    nueva:      { label: 'Nueva',      variant: 'chart-3', tono: undefined },
-    en_trabajo: { label: 'En trabajo', variant: 'info',    tono: 'brand' },
-    usada:      { label: 'Usada',      variant: 'success', tono: 'success' },
-    descartada: { label: 'Descartada', variant: 'neutral', tono: undefined },
-};
-
-const VISTAS = [
-    { value: 'abiertas',   label: 'Abiertas',    pasa: (i) => i.estado === 'nueva' || i.estado === 'en_trabajo' },
-    { value: 'usada',      label: 'Usadas',      pasa: (i) => i.estado === 'usada' },
-    { value: 'descartada', label: 'Descartadas', pasa: (i) => i.estado === 'descartada' },
-    { value: 'todas',      label: 'Todas',       pasa: () => true },
-];
-
+// Estados, vistas y conteos: núcleo (`marketing`), los mismos que la app.
+const ESTADO_IDEA = Object.fromEntries(Object.entries(ESTADOS_IDEA).map(([k, v]) => [k, {
+    ...v, tono: k === 'en_trabajo' ? 'brand' : k === 'usada' ? 'success' : undefined,
+}]));
+const VISTAS = VISTAS_DE_IDEAS;
 const VACIA = { titulo: '', detalle: '', marca_id: '', formato: '' };
 
 /**
@@ -58,11 +49,11 @@ export default function TabIdeas({
     const opcionesMarca = marcas.filter((m) => m.activo).map((m) => ({ value: m.id, label: m.nombre, punto: puntoDeMarca(m.color) }));
     const opcionesFormato = FORMATOS.map((f) => ({ value: f.value, label: f.label }));
 
-    const cuenta = useMemo(() => Object.fromEntries(VISTAS.map((v) => [v.value, ideas.filter(v.pasa).length])), [ideas]);
-    const visibles = useMemo(() => {
-        const v = VISTAS.find((x) => x.value === vista) || VISTAS[0];
-        return ideas.filter(v.pasa).filter((i) => !busqueda || tokenMatch(busqueda, `${i.titulo} ${i.detalle || ''}`));
-    }, [ideas, vista, busqueda]);
+    const cuenta = useMemo(() => cuentaDeIdeas(ideas), [ideas]);
+    const visibles = useMemo(
+        () => ideasDeLaVista(ideas, vista).filter((i) => !busqueda || tokenMatch(busqueda, `${i.titulo} ${i.detalle || ''}`)),
+        [ideas, vista, busqueda],
+    );
 
     const fallo = (t) => (err) => showToast(t, mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
 

@@ -798,3 +798,4 @@ export const resolverRenglonDePedido = (params) => supabase.rpc('resolve_pedido_
 
 /** El estado de una ruta de reparto ('pendiente' | 'en_ruta' | 'completada'); lo usa el rastreo de fondo de la app. */
 export const fetchEstadoDeRuta = (rutaId) => supabase.from('rutas').select('status').eq('id', rutaId).maybeSingle();
+

@@ -24,3 +24,20 @@ export function updateOrphanObjectStatus(id, status, contexto = {}) {
         .single(),
         'ORPHAN_OBJECT_STATUS_CHANGE', String(id), { ...contexto, to: status });
 }
+
+// Los estados de un candidato y las pestañas del tablero: los mismos rótulos
+// en el portal y en la app.
+export const ESTADOS_HUERFANO = {
+    candidate: 'Candidato',
+    confirmed_orphan: 'Confirmado huérfano',
+    false_positive: 'Falso positivo',
+    resolved: 'Resuelto',
+};
+export const PESTANAS_HUERFANOS = [
+    { key: 'todos', label: 'Todos' },
+    { key: 'candidate', label: 'Candidatos' },
+    { key: 'confirmed_orphan', label: 'Confirmados' },
+    { key: 'resolved', label: 'Resueltos' },
+];
+/** Las filas de una pestaña («todos» no filtra). */
+export const huerfanosDePestana = (filas, pestana) => (pestana === 'todos' ? filas : filas.filter(r => r.status === pestana));

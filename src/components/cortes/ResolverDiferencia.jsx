@@ -17,7 +17,7 @@ import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { repartirEnPartes, severidad } from '@nucleo/utils/cortesDiagnostico';
-import { pendienteDe } from '@nucleo/utils/diferenciasDeCaja';
+import { cuentaDeResolucion, pendienteDe, propuestaDeResponsables, VIA_LARGO } from '@nucleo/utils/diferenciasDeCaja';
 import { hastaElTope } from '@nucleo/utils/hastaElTope';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -93,13 +93,7 @@ function VerFoto({ url }) {
     );
 }
 
-const VIA_LARGO = {
-    REPONE: 'Sin causa · con responsables',
-    RETIRA: 'Se retiró el sobrante',
-    JUSTIFICA: 'Se encontró la causa',
-};
 
-const centavos = (n) => Math.round(Number(n || 0) * 100);
 const aMonto = (c) => Math.round(c) / 100;
 
 const selloDeTiempo = (iso) => (iso ? fechaHora12(iso) : '');
@@ -318,11 +312,7 @@ export default function ResolverDiferencia({
             // de este corte. Si nadie vendió —o las ventas todavía no llegaron—
             // cae a los del turno y a quien tiene la sesión, que era la regla de
             // antes. Nunca la sala entera: eso sería inventar responsables.
-            const vendieron = filas.filter((f) => Number(f.ventas) > 0).map((f) => f.id);
-            const previa = vendieron.length
-                ? vendieron
-                : filas.filter((f) => f.del_turno || f.id === userId).map((f) => f.id);
-            setMarcadas(new Set(previa.length ? previa : filas.slice(0, 1).map((f) => f.id)));
+            setMarcadas(new Set(propuestaDeResponsables(filas, userId)));
         });
         return () => { vivo = false; };
     }, [abriendo, corteId, via, userId]);
@@ -340,19 +330,19 @@ export default function ResolverDiferencia({
         setMontos(new Map(ids.map((id, i) => [id, partes[i]])));
     }
 
-    const sumaAportes = useMemo(
-        () => [...marcadas].reduce((a, id) => a + centavos(montos.get(id) ?? 0), 0),
-        [marcadas, montos],
-    );
-    const objetivo = centavos(pendiente);
-    const restan = objetivo - sumaAportes;
+    // La cuenta (objetivo, lo que explica la causa, lo que falta repartir y el
+    // freno del botón) es la del núcleo: la misma que usa la app.
+    const cuenta = cuentaDeResolucion({
+        via, pendiente, montoCausa, causa, evidenciaRef, conFoto: !!foto,
+        aportes: [...marcadas].map((id) => montos.get(id) ?? 0),
+    });
+    const { objetivo, restan } = cuenta;
 
     // Lo que explica la causa: vacío = todo lo que queda. Nunca más que eso:
     // un número mayor se lleva al tope al escribirlo (usuario, 2026-09-29:
     // «si se escribe un valor mayor que se ponga el max permitido»), y acá
     // también, por si lo que queda bajó con el borrador ya escrito.
-    const explica = String(montoCausa).trim() === '' ? objetivo : Math.min(objetivo, centavos(montoCausa));
-    const explicaInvalido = via === 'JUSTIFICA' && explica < 1;
+    const { explica, explicaInvalido } = cuenta;
     const escribirMontoCausa = (valor) => setMontoCausa(hastaElTope(valor, aMonto(objetivo)).valor);
     const quedaTrasCausa = via === 'JUSTIFICA' && !explicaInvalido ? objetivo - explica : 0;
 
@@ -482,7 +472,7 @@ export default function ResolverDiferencia({
     }
 
     const opciones = [{ value: 'JUSTIFICA', label: 'Se encontró la causa' }, { value: 'REPONE', label: 'No se encontró' }];
-    const faltaComprobante = via === 'JUSTIFICA' && !evidenciaRef.trim() && !foto;
+    const { faltaComprobante } = cuenta;
 
     return (
         <div className="space-y-2">

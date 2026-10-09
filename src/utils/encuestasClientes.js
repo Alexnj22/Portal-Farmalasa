@@ -431,3 +431,70 @@ export function valorInicialDeCondicion(p) {
 
 /** La condición «mostrar sólo si» que mira a la pregunta `c`, con su primer operador. */
 export const condicionSobre = (c) => ({ pregunta: c.id, operador: operadoresPara(c.tipo)[0].value, valor: valorInicialDeCondicion(c) });
+
+// ── Ajustes, resumen y exportación (2026-10-09) ─────────────────────────────
+// Lo que decide la pestaña Ajustes, el resumen con IA y el nombre del CSV,
+// escrito UNA vez para el portal y la app del personal.
+
+/** Un número de meta escrito a mano: vacío = sin meta; si no, un entero de 1 para arriba. */
+export const numeroDeMetaEscrito = (v) => (v === '' || v == null ? null : Math.max(1, parseInt(String(v).replace(/\D/g, ''), 10) || 0) || null);
+
+/** Prender o apagar un canal sin repetirlo. */
+export const canalesCon = (canales, c, on) => (on ? [...new Set([...(canales || []), c])] : (canales || []).filter((x) => x !== c));
+
+/** Agregar o quitar una sucursal de la encuesta (nueva sin meta). */
+export const sucursalesCon = (lista, branchId, on) => (on
+    ? [...(lista || []), { branch_id: branchId, meta: null }]
+    : (lista || []).filter((s) => s.branch_id !== branchId));
+
+/** La cuota de una sucursal, escrita a mano. */
+export const conMetaDeSucursal = (lista, branchId, v) => (lista || []).map((s) => (s.branch_id === branchId ? { ...s, meta: numeroDeMetaEscrito(v) } : s));
+
+/** Cada sucursal con la muestra sugerida para su población. */
+export const conMetasSugeridas = (lista, poblacion) => (lista || []).map((s) => ({ ...s, meta: muestraSugerida(poblacion?.[s.branch_id] || 0) }));
+
+/** La muestra sugerida para lo elegido: por sucursal, la suma de cada una; general, la del total de atenciones. */
+export function sugeridaDeLaEncuesta(encuesta, lista, poblacion) {
+    if (encuesta?.alcance === 'sucursales') return (lista || []).reduce((a, s) => a + (muestraSugerida(poblacion?.[s.branch_id] || 0) || 0), 0);
+    return muestraSugerida((lista || []).reduce((a, s) => a + (poblacion?.[s.branch_id] || 0), 0));
+}
+
+/**
+ * Los comentarios que viajan a la IA para resumir: los más recientes, sin
+ * repetidos y recortados a 300 letras, hasta 100. La IA es cara y tiene cuota.
+ */
+export function loteParaResumir(comentarios, max = 100) {
+    const vistos = new Set();
+    const lote = [];
+    for (const c of comentarios || []) {
+        const clave = String(c.texto ?? '').trim().toLowerCase();
+        if (!clave || vistos.has(clave)) continue;
+        vistos.add(clave);
+        lote.push({ sucursal: c.sucursal, nps: c.nps, pregunta: c.pregunta, texto: String(c.texto).slice(0, 300) });
+        if (lote.length >= max) break;
+    }
+    return lote;
+}
+
+/** Si el resumen se puede (re)hacer: no hay uno, o entraron `minimo_nuevos` comentarios desde el anterior. */
+export function estadoDelResumen(resumen) {
+    const hay = !!resumen?.texto;
+    const nuevos = resumen?.nuevos ?? 0;
+    const minimo = resumen?.minimo_nuevos ?? 5;
+    const puede = !hay || nuevos >= minimo;
+    return {
+        hay, nuevos, puede,
+        boton: !hay ? 'Resumir con IA' : puede ? `Actualizar resumen (${nuevos} nuevos)` : 'Resumen al día',
+        ayuda: hay && !puede ? `Se actualiza cuando entren ${minimo} comentarios nuevos (van ${nuevos}).` : null,
+    };
+}
+
+/** El nombre del CSV de respuestas: sin tildes ni símbolos. */
+export const archivoDeEncuesta = (nombre) => `encuesta-${String(nombre || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w-]+/g, '-').toLowerCase()}`;
+
+/** Una encuesta se puede borrar mientras es borrador (también una plantilla). */
+export const encuestaBorrable = (e, puedeEditar) => !!puedeEditar && e?.estado === 'borrador';
+
+/** El enlace público de una encuesta en una sucursal (QR, ticket, mensaje); `tablet` la deja en modo de mostrador. */
+export const ORIGEN_DEL_PORTAL = 'https://portal.farmasalud.lat';
+export const enlaceDeEncuesta = (token, tablet = false, origen = ORIGEN_DEL_PORTAL) => `${origen}/e/${token}${tablet ? '?modo=tablet' : ''}`;

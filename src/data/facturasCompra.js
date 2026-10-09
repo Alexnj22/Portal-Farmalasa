@@ -358,3 +358,53 @@ export async function downloadPurchaseDteZipBulk(ids, onProgress, { includePendi
     });
     return { total, incluidos, fallidos: fallidos.length };
 }
+
+/**
+ * Los archivos del ZIP del período, en BYTES, para un cliente que comprime por
+ * su cuenta (el teléfono, con `fflate`). Mismo manifiesto que la descarga
+ * masiva del portal (`export-purchase-dte-manifest`), mismos reintentos por
+ * archivo, misma nota de errores dentro del ZIP. Anota la salida y la
+ * bitácora cuando quien llama confirma que se compartió (`anotarZipCompartido`).
+ *
+ * @returns {{ entradas: Array<{name: string, bytes: Uint8Array}>, total: number, incluidos: number, fallidos: string[] }}
+ */
+export async function archivosDelZipDelPeriodo(ids, { includePendingReview = true, onProgress } = {}) {
+    const { files, warnings } = await pedirManifiesto(ids, includePendingReview);
+    const fallidos = [...(warnings || [])];
+    const entradas = [];
+    let hechos = 0;
+    const bajarBytes = async (url) => {
+        let ultimo = 'no se pudo descargar';
+        for (let intento = 1; intento <= INTENTOS_POR_ARCHIVO; intento++) {
+            try {
+                const res = await fetch(url);
+                if (res.ok) return { bytes: new Uint8Array(await res.arrayBuffer()) };
+                ultimo = `HTTP ${res.status}`;
+                if (res.status === 404) break;
+            } catch (e) { ultimo = e?.message || 'conexión interrumpida'; }
+            if (intento < INTENTOS_POR_ARCHIVO) await esperar(1000 * 2 ** (intento - 1));
+        }
+        return { error: ultimo };
+    };
+    for (let i = 0; i < files.length; i += DESCARGA_CONCURRENCIA) {
+        const tanda = files.slice(i, i + DESCARGA_CONCURRENCIA);
+        const res = await Promise.all(tanda.map(f => bajarBytes(f.url)));
+        res.forEach((r, k) => {
+            hechos++;
+            if (r.bytes) entradas.push({ name: tanda[k].name, bytes: r.bytes });
+            else fallidos.push(`${tanda[k].name}: ${r.error}`);
+        });
+        onProgress?.({ hechos, total: files.length, fallidos: fallidos.length });
+    }
+    if (!entradas.length) throw new Error('No se pudo descargar ningún archivo.');
+    if (fallidos.length) {
+        entradas.push({ name: 'manifest-errores.txt', bytes: new TextEncoder().encode(`Archivos que no se pudieron incluir en este ZIP:\n\n${fallidos.join('\n')}\n`) });
+    }
+    return { entradas, total: files.length, incluidos: entradas.length - (fallidos.length ? 1 : 0), fallidos };
+}
+
+/** La salida y la bitácora del ZIP del período, cuando de verdad se compartió. */
+export function anotarZipCompartido({ ids, total, incluidos, fallidos, contexto = {} }) {
+    registrarEgreso('dte_compra', { formato: 'zip', filas: incluidos, detalle: { masiva: true, pedidos: total, fallidos: fallidos.length, ...contexto } });
+    anotar('FACTURAS_COMPRA_DESCARGA_MASIVA', null, { cantidad: ids.length, archivos: total, incluidos, fallidos: fallidos.length, ...contexto });
+}

@@ -102,3 +102,4 @@ export function imprimirTicketDeCodigo(datos, { sala = null } = {}) {
         tituloDeCola: 'Codigo de acceso a Mis puntos',
     });
 }
+

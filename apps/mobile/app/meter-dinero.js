@@ -14,8 +14,10 @@
 // Se anota por `anotarIngreso` con una clave por formulario —dos toques no
 // anotan dos veces— y sale el comprobante del movimiento.
 //
-// Los motivos que llevan comprobante propio (el abono de un crédito) no se
-// anotan acá: tienen su pantalla.
+// Los motivos que llevan comprobante propio se ofrecen igual que en el portal,
+// y al elegirlos se abre su pantalla (`DialogoMovimiento` → `onComprobante`):
+// la aplicación de inyección (`APLICACION`) va a `aplicacion-inyeccion` y el
+// resto —el abono para apartar— a `abono-apartado`.
 import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -57,7 +59,7 @@ export default function MeterDinero() {
 
   useEffect(() => {
     let vivo = true;
-    fetchTiposDeMovimiento().then((t) => vivo && setTipos((t || []).filter((x) => x.sentido === 'ENTRADA' && !x.lleva_comprobante)));
+    fetchTiposDeMovimiento().then((t) => vivo && setTipos((t || []).filter((x) => x.sentido === 'ENTRADA')));
     return () => { vivo = false; };
   }, []);
 
@@ -75,6 +77,11 @@ export default function MeterDinero() {
   const problema = useMemo(() => problemaDeBoleta(repetidas, true, boleta), [repetidas, boleta]);
 
   const elegir = (v) => {
+    const elegido = tipos.find((t) => t.codigo === v);
+    if (elegido?.lleva_comprobante) {
+      router.replace({ pathname: elegido.codigo === 'APLICACION' ? '/aplicacion-inyeccion' : '/abono-apartado', params: { sala } });
+      return;
+    }
     setCodigo(v); setFotos([]); setLectura(null); setAviso(null); setSentido(null); setMontoCerrado(false);
   };
 

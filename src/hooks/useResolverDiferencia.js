@@ -26,9 +26,15 @@ import { shortEmployeeName } from '../utils/nameUtils';
  * dinero ya está en la caja. Que falle la impresora es un problema de papel; se
  * reimprime. Que no se guarde es un problema de plata.
  */
-export default function useResolverDiferencia({ nombreSala = {}, origen = 'modulo' } = {}) {
+export default function useResolverDiferencia({ nombreSala = {}, origen = 'modulo', avisar = null, imprimirTicket = null } = {}) {
     const { user } = useAuth();
-    const showToast = useToastStore((s) => s.showToast);
+    /* La app no pinta los toasts del store ni tiene diálogo de impresión: pasa
+     * su propio aviso y su impresora (la cola de la sala). El portal no pasa
+     * nada y sigue igual. Mismas firmas: (título, texto, tipo) y
+     * (ticket, { sala }) → { ok, detalle }. */
+    const toast = useToastStore((s) => s.showToast);
+    const showToast = avisar ?? toast;
+    const imprimirDoc = imprimirTicket ?? imprimirDocumento;
     const [ocupado, setOcupado] = useState(false);
 
     /**
@@ -48,7 +54,7 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
         // EN la sala. Si esta computadora no tiene la ticketera —gerencia
         // resolviendo desde la oficina— el papel sale en la caja de esa
         // sucursal en vez de salir acá, donde no sirve.
-        const r = await imprimirDocumento(ticket, { sala: corte.branch_id });
+        const r = await imprimirDoc(ticket, { sala: corte.branch_id });
         if (r.ok) {
             await marcarComprobanteImpreso(dif.id);
             showToast?.('Comprobante enviado a la impresora',
@@ -57,7 +63,7 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
             showToast?.('No se pudo imprimir', r.detalle, 'error');
         }
         return r.ok;
-    }, [nombreSala, showToast, user]);
+    }, [nombreSala, showToast, user, imprimirDoc]);
 
     const resolver = useCallback(async (corte, {
         via, causa, montoVisto, monto = null, personas = [], nombres = [], evidenciaRef = null, evidenciaFoto = null,
@@ -119,7 +125,7 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
             registradoPor: user?.name || '',
             cuando: cuando || new Date().toISOString(),
         });
-        const r = await imprimirDocumento(ticket, { sala: corte.branch_id });
+        const r = await imprimirDoc(ticket, { sala: corte.branch_id });
         if (r.ok) {
             const ids = abonos.map((a) => a.id).filter(Boolean);
             if (ids.length) await marcarAbonosImpresos(ids);
@@ -129,7 +135,7 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
             showToast?.('No se pudo imprimir', r.detalle, 'error');
         }
         return r.ok;
-    }, [nombreSala, showToast, user]);
+    }, [nombreSala, showToast, user, imprimirDoc]);
 
     /**
      * El INGRESO del abono en la caja de la sala, hecho por el portal (usuario,

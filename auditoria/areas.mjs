@@ -123,7 +123,7 @@ export const AREAS = [
             'src/utils/timeClock.audit.js', 'src/utils/timeClock.helpers.js', 'src/utils/timeClock.rules.js',
             'src/components/forms/FormSetPassword.jsx',
             'src/components/forms/FormDispositivos.jsx',
-            'src/utils/kioscos.js',
+            'src/utils/kioscos.js', 'src/utils/pagoDeSucursal.js',
             'src/utils/attendanceQueue.js',
         ],
         tablas: ['kiosk_credentials', 'kiosk_devices', 'kiosk_pin_attempts', 'carnes_temporales',
@@ -204,6 +204,13 @@ export const AREAS = [
             // escribe es el expediente — aunque su efecto se sienta en el
             // kiosco y en la planilla.
             'src/data/disciplina.js', 'src/components/personal/SancionModal.jsx',
+            // Las reglas de la ficha que comparte la app (2026-10-09): la acción
+            // de personal, el historial con su id real, la sanción y su constancia
+            // en HTML, el reingreso y la recontratación, el pin del carné y el
+            // carné de papel.
+            'src/utils/novedadDePersonal.js', 'src/utils/historialDeFicha.js', 'src/utils/sancion.js',
+            'src/utils/reingresoYRecontratacion.js', 'src/utils/pinDeKiosco.js', 'src/utils/carneDePapel.js',
+            'src/utils/pdfmakeAHtml.js', 'src/utils/marcaDelPapel.js', 'tests/unit/novedadDePersonal.test.js',
             'src/data/nationalities.js',
             'src/store/slices/employeeSlice.js', 'src/store/slices/practicantesSlice.js',
             'src/utils/ageUtils.js', 'src/utils/nameUtils.js', 'src/utils/staffHelpers.js',
@@ -316,6 +323,7 @@ export const AREAS = [
         modulos: ['payroll', 'payroll_descargar'],
         rutas: ['/nomina'],
         archivos: [
+            'src/utils/planillaDePapel.js',
             'src/views/PayrollView.jsx', 'src/utils/boletaDePapel.js',
             'src/data/payroll.js',
             'src/store/slices/payrollSlice.js',
@@ -363,8 +371,9 @@ export const AREAS = [
         modulos: ['announcements', 'emp_announcements', 'encuesta', 'encuesta_admin', 'entrevistas'],
         rutas: ['/avisos', '/mis-avisos', '/notificaciones', '/encuesta', '/encuesta-admin', '/entrevistas'],
         archivos: [
+            'src/utils/misComunicados.js',
             'src/views/AnnouncementsView.jsx', 'src/views/employee/EmployeeAnnouncementsView.jsx',
-            'src/views/EncuestaView.jsx', 'src/views/EncuestaAdminView.jsx',
+            'src/utils/resumenDeComentarios.js', 'src/views/EncuestaView.jsx', 'src/views/EncuestaAdminView.jsx',
             'src/views/NotificacionesView.jsx',
             'src/data/notifications.js', 'src/data/pushSubscriptions.js', 'src/data/encuestas.js',
             'src/store/slices/notificationsSlice.js',
@@ -433,6 +442,9 @@ export const AREAS = [
             'src/data/inyecciones.js',
             'src/views/InyeccionesView.jsx',
             'src/views/inyecciones/',
+            // Por cobrar y Ajustes, escritos una vez para el portal y la app.
+            'src/utils/inyeccionesPorCobrar.js',
+            'src/utils/inyeccionesAjustes.js',
             'src/components/common/AvisoSinProducto.jsx',
             // La costura con el sistema de puntos. Vive acá y no en Clientes
             // porque la sirve la misma función y el estado es de una VENTA;
@@ -441,6 +453,7 @@ export const AREAS = [
             // La vista del programa (2026-09-25).
             'src/views/PuntosView.jsx',
             'src/views/puntos/',
+            'src/utils/codigoDePuntos.js',
         ],
         tablas: ['sales_invoices', 'sales_invoice_items', 'sales_invoice_changelog', 'sales_daily_stats',
                  'ventas_monthly_stats', 'sales_alert_log', 'sales_gap_resolutions',
@@ -601,6 +614,9 @@ export const AREAS = [
             'src/hooks/useDiasConDiferencia.js', 'src/utils/diferenciasDeCaja.js',
             'src/utils/bolsaComprobante.js', 'src/utils/bolsasReparto.js', 'src/utils/corteComprobante.js',
             'src/utils/cortesDiagnostico.js', 'src/utils/cajasEspeciales.js',
+            'src/utils/depositoDeEfectivo.js', 'src/utils/corteDeCaja.js',
+            'src/utils/cobroDeAplicacion.js', 'tests/unit/cobroDeAplicacion.test.js',
+            'tests/unit/depositoDeEfectivo.test.js', 'tests/unit/corteDeCaja.test.js',
             'src/utils/corteTicket.js', 'src/utils/abonoTicket.js', 'src/utils/movimientoTicket.js',
             'src/data/creditos.js', 'src/views/CuentasPorCobrarView.jsx',
         ],
@@ -732,6 +748,8 @@ export const AREAS = [
             'src/data/reservas.js',
             'src/views/dashboard/WidgetReservas.jsx',
             'src/utils/ofertasClientes.js',
+            // Las reservas vistas desde la sala (widget del portal y app del personal).
+            'src/utils/reservasDeSala.js',
             'supabase/functions/_shared/ofertaDeDescuento.ts',
             'supabase/functions/app-clientes/',
             'supabase/functions/avisos-clientes/',
@@ -795,7 +813,7 @@ export const AREAS = [
             'src/data/evidencia.js',
             'src/data/conteoInventario.js', 'src/data/ventasPerdidas.js',
             'src/store/slices/conteoInventarioSlice.js',
-            'src/utils/conteoInventarioPrint.js',
+            'src/utils/conteoInventarioPrint.js', 'src/utils/conteoPapel.js', 'src/utils/conteoPapelHtml.js',
         ],
         tablas: ['inventory', 'inventory_sync_huella', 'inventory_sync_log',
                  'conteos_inventario', 'conteo_inventario_items', 'conteo_inventario_item_history',
@@ -821,7 +839,8 @@ export const AREAS = [
             'src/views/productos/TabQuiebres.jsx',
             'src/views/productos/tabminmax/',
             'src/data/stockParams.js', 'src/data/minmaxRequests.js',
-            'src/hooks/useMinMaxData.js', 'src/utils/minmaxTabla.js', 'src/constants/minmax.js',
+            'src/utils/edicionDeProducto.js',
+            'src/hooks/useMinMaxData.js', 'src/utils/minmaxTabla.js', 'src/constants/minmax.js', 'src/utils/configMinMax.js', 'src/utils/csvMinMax.js',
         ],
         tablas: ['product_stock_params', 'product_stock_params_history', 'stock_config',
                  'minmax_change_requests', 'minmax_ignored', 'minmax_sync_log',
@@ -851,6 +870,8 @@ export const AREAS = [
             'src/data/dispatchRules.js', 'src/data/recepcion.js', 'src/data/pasosDelPedido.js',
             'src/hooks/useResolverDiferencia.js', 'src/hooks/usePedidosData.js',
             'src/utils/tableroDePedidos.js', 'src/data/accionesDePedido.js', 'src/constants/pedidos.js',
+            'src/utils/finalizarCajas.js', 'src/data/accionesDeBodega.js', 'src/utils/papelDePedido.js', 'src/utils/papelDePedidoHtml.js',
+            'src/utils/armarRutaDeReparto.js', 'src/utils/logicaDeRutas.js', 'src/utils/reglasDeDespacho.js', 'src/utils/extrasDeRecepcion.js', 'src/utils/minmaxDesdePedido.js',
             'src/utils/rutasDeEntrega.js', 'src/data/rutasDeEntrega.js',
             'src/utils/pedidoPrint.js', 'src/utils/hojasRecepcion.js',
             'src/utils/routeOptimizer.js', 'src/utils/decisionDiferencia.js',
@@ -901,6 +922,7 @@ export const AREAS = [
             'src/views/ComprasView.jsx', 'src/views/purchases/',
             'src/data/compras.js', 'src/data/cargarCompra.js', 'src/data/cuentasPorPagar.js',
             'src/data/facturasCompra.js', 'src/data/facturasSala.js', 'src/data/proveedores.js',
+            'src/utils/deducibilidadPorRegla.js',
             'src/components/forms/FormProveedorDetail.jsx', 'src/components/forms/FormPurchaseDteViewer.jsx',
             'src/components/forms/FormRegisterPayment.jsx',
         ],
@@ -957,9 +979,11 @@ export const AREAS = [
         rutas: ['/bitacoras'],
         archivos: [
             'src/views/BitacorasView.jsx', 'src/views/bitacoras/',
+            // El CSV del libro bajo receta, para el portal y la app.
+            'src/utils/libroBajoReceta.js',
             'src/components/bitacoras/', 'src/components/srs/',
             'src/data/bitacoras.js',
-            'src/utils/bitacoraPrint.js',
+            'src/utils/bitacoraPrint.js', 'src/utils/cierreDeBitacoras.js', 'src/utils/configuracionDeBitacoras.js',
         ],
         tablas: ['bitacora_areas', 'bitacora_cierres', 'bitacora_correcciones', 'bitacora_dispensaciones',
                  'bitacora_folios', 'bitacora_lecturas', 'bitacora_limpiezas',
@@ -985,7 +1009,7 @@ export const AREAS = [
             'src/views/ImpresionView.jsx',
             'src/components/impresion/',
             'src/data/impresion.js',
-            'src/utils/ticketPrint.js', 'src/utils/ticketCampos.js',
+            'src/utils/ticketPrint.js', 'src/utils/ticketCampos.js', 'src/utils/pruebaDeImpresion.js',
             'scripts/agente-impresion/', 'scripts/publicar-agente.mjs',
         ],
         tablas: ['cola_impresion', 'impresion_dispositivos'],

@@ -11,10 +11,11 @@
 // `facturas_compra_ver_montos`. Insignias: invalidado (con fecha y motivo),
 // «Sin JSON», nota que corrige a otro documento. Orden por fecha, proveedor,
 // tipo o monto. Desde la ficha de un proveedor llega con `busca` (su NIT).
-// La pestaña Revisión (emparejar PDF, adjuntar JSON), buscar correos y el ZIP
-// del período siguen en el portal: piden el archivo a la vista.
+// La pestaña Revisión y «Buscar correos» son `factura-compra/revision`. El ZIP
+// del período y detectar el código dentro de un PDF siguen en el portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { compartirZipDeFacturas } from '../componentes/compras/zipDeFacturas';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchPurchaseDteDocuments } from '@nucleo/data/facturasCompra';
@@ -36,13 +37,17 @@ import Vidrio from '../componentes/Vidrio';
 import PasoDeMes from '../componentes/PasoDeMes';
 import { MARCA } from '../componentes/inicio/marca';
 import { guardarDocumentos } from '../componentes/compras/documentos';
+import { cerrarProgreso, fallo, trabajando } from '../componentes/Progreso';
 
 const POR_PAGINA = 40;
 
 export default function FacturasCompra() {
   // El total de la cabecera es de quien tiene `facturas_compra_ver_montos`,
   // como las tarjetas del portal.
-  const verMontos = useAuth().hasPermission('facturas_compra_ver_montos');
+  const { hasPermission } = useAuth();
+  const verMontos = hasPermission('facturas_compra_ver_montos');
+  const verRevision = hasPermission('facturas_compra', 'can_edit') || hasPermission('facturas_compra_abrir');
+  const puedeZip = hasPermission('facturas_compra_descargar');
   const { busca } = useLocalSearchParams();
   const [mes, setMes] = useState(mesSV);
   const [filas, setFilas] = useState(null);
@@ -81,6 +86,18 @@ export default function FacturasCompra() {
     if (orden === 'monto') return Number(b.monto_total || 0) - Number(a.monto_total || 0);
     return String(b.fecha_emision).localeCompare(String(a.fecha_emision));
   }), [filas, estado, tipo, texto, orden, soloSinProv]);
+  // El ZIP del período (JSON + PDF de lo que se ve, y lo pendiente de revisión).
+  const zipDelMes = () => Alert.alert('ZIP del mes', `${visibles.length} documentos con sus JSON y PDF, más lo pendiente de revisión. Se descarga en el teléfono: con muchos documentos tarda.`, [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Armar', onPress: async () => {
+      trabajando('Bajando los archivos…');
+      try {
+        const r = await compartirZipDeFacturas(visibles.map((d) => d.id), { onProgress: (p) => trabajando(`Bajando ${p.hechos} de ${p.total}…`), contexto: { mes } });
+        cerrarProgreso();
+        if (r.fallidos.length) fallo('Faltaron archivos', `${r.fallidos.length} no se pudieron incluir (van listados dentro del ZIP).`);
+      } catch (e) { fallo('No se pudo armar el ZIP', mensajeAmigable(e)); }
+    } },
+  ]);
   // Las tarjetas cuentan el período del tipo elegido, como el portal (no la búsqueda).
   const t = useMemo(() => tarjetasDeDocumentosDeCompra((filas || []).filter((r) => tipo === 'todos' || r.tipo_dte === tipo)), [filas, tipo]);
 
@@ -108,6 +125,8 @@ export default function FacturasCompra() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <PasoDeMes mes={mes} onCambiar={setMes} />
         <FiltrosActivos grupos={grupos} />
+        {verRevision ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Revisión y correos" borde onPress={() => router.push('/factura-compra/revision')} /></View> : null}
+        {puedeZip && filas?.length ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto={`ZIP del mes (${visibles.length})`} borde onPress={zipDelMes} /></View> : null}
         {filas && verMontos ? (
           <>
             <FilaDeKpis>

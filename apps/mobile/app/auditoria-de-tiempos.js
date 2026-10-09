@@ -20,7 +20,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchQuincenaTimesheets, marcarMarcajesRevisados } from '@nucleo/data/attendanceAudit';
-import { isPendingPunch } from '@nucleo/utils/quincena';
+import { isAutoPunch, isEditedPunch, isPendingPunch } from '@nucleo/utils/quincena';
 import { auditarDia, ROTULO_MARCA } from '@nucleo/utils/auditoriaDeTiempos';
 import { fmtTimeCSTStr } from '@nucleo/utils/quincena';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
@@ -168,9 +168,19 @@ export default function AuditoriaDeTiempos() {
                   {abiertoEste ? (
                     <View style={{ gap: 4, marginTop: 4 }}>
                       {a.dayPunches.length ? a.dayPunches.map((p) => (
-                        <View key={p.id ?? p.timestamp} style={{ flexDirection: 'row', borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 6 }}>
-                          <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14 }}>{ROTULO_MARCA[p.type] ?? p.type}</Text>
-                          <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{fmtTimeCSTStr(p.timestamp)}</Text>
+                        <View key={p.id ?? p.timestamp} style={{ gap: 3, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 6 }}>
+                          <View style={{ flexDirection: 'row' }}>
+                            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14 }}>{ROTULO_MARCA[p.type] ?? p.type}</Text>
+                            <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{fmtTimeCSTStr(p.timestamp)}</Text>
+                          </View>
+                          {/* Lo mismo que cada marca dice en el portal: la cerró el sistema,
+                              espera a Talento Humano, se corrigió, o se marcó en otra sala. */}
+                          {(() => {
+                            const bid = p.details?.audit_info?.branchId ?? p.branch_id;
+                            const apoyo = bid && String(bid) !== String(e.branchId ?? e.branch_id) ? (sucursales || []).find((b) => String(b.id) === String(bid))?.name : null;
+                            const marcas = [isAutoPunch(p) && ['Auto', MARCA.violetaClaro], isPendingPunch(p) && ['Pend. TH', MARCA.ambar], isEditedPunch(p) && ['Editado', MARCA.verde], apoyo && [`Apoyo ${apoyo}`, MARCA.azulClaro]].filter(Boolean);
+                            return marcas.length ? <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>{marcas.map(([t, c]) => <Pildora key={t} texto={t} color={c} />)}</View> : null;
+                          })()}
                         </View>
                       )) : <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Sin marcas este día.</Text>}
                       {a.inconsistencies.map((i) => (

@@ -16,13 +16,14 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 import {
     getRoleTheme, getDayConflictLocal, calculateEmployeeWeeklyHoursLocal,
-    resolverTurnoDelDia, tramosDeLaJornada, descansoInsuficiente,
+    resolverTurnoDelDia, tramosDeLaJornada,
     HORAS_SEMANA_DIURNA, HORAS_JORNADA_DIURNA, DESCANSOS_POR_SEMANA, HORAS_ENTRE_JORNADAS,
 } from '@nucleo/utils/scheduleHelpers';
 import { clickable } from '@nucleo/utils/clickable';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { evaluarCoberturaDelDia } from '@nucleo/utils/coberturaDelDia';
+import { descansosCortos } from '@nucleo/utils/reparosDeLaSemana';
 
 // ============================================================================
 // 🛠️ ICONOS CUSTOM
@@ -553,19 +554,10 @@ const ScheduleCalendar = memo(({
      * deben mediar ocho horas. Con turnos rotativos es el reparo que más se
      * escapa: cerrar a las 22:00 y abrir a las 7:00 deja nueve, pero cerrar a
      * las 22:00 y entrar a las 6:00 deja ocho justas. Nadie lo miraba. */
-    const descansoCorto = useMemo(() => {
-        const salida = [];
-        employeesInView.forEach(emp => {
-            const raw = weeklyRosters[emp.id] || {};
-            const sch = (typeof raw === 'string') ? JSON.parse(raw || '{}') : raw;
-            const dias = calendarDates.map(fecha => ({
-                fecha,
-                resuelto: resolverTurnoDelDia(sch[new Date(fecha + 'T00:00:00').getDay()], shifts),
-            }));
-            descansoInsuficiente(dias).forEach(f => salida.push({ emp: shortEmployeeName(emp), ...f }));
-        });
-        return salida;
-    }, [employeesInView, weeklyRosters, calendarDates, shifts]);
+    // Núcleo (`descansosCortos`): la app avisa exactamente lo mismo.
+    const descansoCorto = useMemo(() => descansosCortos({
+        personas: employeesInView, rosters: weeklyRosters, turnos: shifts, fechas: calendarDates,
+    }), [employeesInView, weeklyRosters, calendarDates, shifts]);
 
     const reparos = [
         ...descansoCorto.map(f => ({

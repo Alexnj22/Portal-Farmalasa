@@ -50,3 +50,43 @@ export const ESTADOS_DE_OFERTA = [
     { value: 'vigente', label: 'En la app' }, { value: 'programada', label: 'Programada' },
     { value: 'borrador', label: 'Sin publicar' }, { value: 'terminada', label: 'Terminada' },
 ];
+
+/**
+ * A dónde lleva el botón de una historia o un banner en la app de clientes. Se
+ * elige de una lista cerrada y no se escribe, para que un enlace mal tecleado
+ * no deje un botón que no hace nada. `boton` es el texto que la historia pinta.
+ * La lista es UNA para el portal y para la app del personal.
+ */
+export const DESTINOS_DE_LA_APP = [
+    { valor: '', rotulo: 'Sin botón', boton: null },
+    { valor: '/ofertas', rotulo: 'Ofertas', boton: 'Ver ofertas' },
+    { valor: '/sucursales', rotulo: 'Sucursales', boton: 'Ver sucursales' },
+    { valor: '/puntos', rotulo: 'Mis puntos', boton: 'Ver mis puntos' },
+    { valor: '/invitar', rotulo: 'Invitar amigos', boton: 'Invitar' },
+];
+
+/** Una historia se puede guardar con título de 3 letras y una imagen (nueva o la que ya tenía). */
+export const historiaValida = (f, tieneImagen) => String(f.titulo ?? '').trim().length >= 3 && !!tieneImagen;
+
+/** La fila de `app_historias` que se guarda. Duran 24 h desde que se publican; `inicio`/`fin` sólo cumplen con la tabla. */
+export function filaDeHistoria(f, imagen_path, hoy, manana) {
+    const destino = DESTINOS_DE_LA_APP.find((d) => d.valor === (f.enlace ?? '')) ?? DESTINOS_DE_LA_APP[0];
+    return {
+        titulo: f.titulo.trim(), rotulo: f.rotulo?.trim() || null, texto: f.texto?.trim() || null, imagen_path,
+        inicio: hoy, fin: manana, enlace: destino.valor || null, boton: destino.boton, publicada: !!f.publicada,
+        oferta_id: f.oferta_id || null,
+    };
+}
+
+/** Un banner: título, fechas en orden y una imagen. */
+export const bannerValido = (f, tieneImagen) => String(f.titulo ?? '').trim().length >= 3
+    && !!f.inicio && !!f.fin && f.fin >= f.inicio && !!tieneImagen;
+
+/** La fila de `app_banners`: con oferta, abre la oferta; si no, la pantalla elegida. */
+export function filaDeBanner(f, imagen_path) {
+    return {
+        titulo: f.titulo.trim(), titulo_visible: !!f.titulo_visible, imagen_path,
+        oferta_id: f.oferta_id || null, enlace: f.oferta_id ? null : (f.enlace || null),
+        inicio: f.inicio, fin: f.fin, publicada: !!f.publicada,
+    };
+}

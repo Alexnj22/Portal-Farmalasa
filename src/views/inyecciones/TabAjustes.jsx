@@ -13,7 +13,9 @@ import {
 } from '@nucleo/data/inyecciones';
 import { aplicacionesPorDosis, fmtMl } from '@nucleo/utils/inyeccionDosis';
 import MililitrosModal from './MililitrosModal';
-import { formatMoney } from '@nucleo/utils/formatNumber';
+import {
+    APLICACIONES_MAX, comoSeVende, partirCatalogoDeDosis, preciosCambiados, sinDecidirDosis as sinDecidir, valorAlQuitar,
+} from '@nucleo/utils/inyeccionesAjustes';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
@@ -53,7 +55,7 @@ function Precios({ showToast }) {
             .catch((e) => showToast('No se pudo leer el precio', mensajeAmigable(e), 'error'));
     }, [showToast]);
 
-    const cambiados = precios ? ['COMPRADA', 'TRAIDA'].filter((o) => Number(borrador[o]) !== precios[o]) : [];
+    const cambiados = preciosCambiados(precios, borrador);
     const guardar = async () => {
         setGuardando(true);
         try {
@@ -91,14 +93,8 @@ function Precios({ showToast }) {
     );
 }
 
-/* Cómo se vende el producto, para que quien confirma sepa qué es «la unidad
- * suelta»: [1, 5] → «suelta y en caja de 5». Si sólo se vende entero, la
- * unidad es el paquete (un TRI PACK, «X 3 AMPOLLAS»). */
-function comoSeVende(factores) {
-    const cajas = (factores || []).filter((f) => f > 1);
-    if (!cajas.length) return 'Se vende sólo entero';
-    return `Se vende suelta y en caja de ${cajas.join(' o ')}`;
-}
+// «Cómo se vende», qué está sin decidir y el reparto del catálogo salen del
+// núcleo (`inyeccionesAjustes`): la app decide igual.
 
 function CatalogoDeDosis({ showToast }) {
     const [filas, setFilas] = useState(null);
@@ -115,10 +111,7 @@ function CatalogoDeDosis({ showToast }) {
     useEffect(() => { cargar(); }, [cargar]);
 
     const clave = (f) => String(f.erp_product_id);
-    const activas = useMemo(() => (filas || []).filter((f) => f.clasificacion !== 'quitado'), [filas]);
-    const quitados = useMemo(() => (filas || []).filter((f) => f.clasificacion === 'quitado'), [filas]);
-    // Contar por ml también es una confirmación: alguien dijo cuánto trae.
-    const sinDecidir = (f) => f.confirmadas == null && f.contenido_ml == null;
+    const { activas, quitados, sinConfirmar } = useMemo(() => partirCatalogoDeDosis(filas), [filas]);
     const visibles = useMemo(
         () => activas.filter((f) => !soloSinConfirmar || sinDecidir(f)),
         [activas, soloSinConfirmar],
@@ -142,7 +135,7 @@ function CatalogoDeDosis({ showToast }) {
             setGuardando(null);
         }
     };
-    const quitar = (f) => clasificar(f.erp_product_id, f.clasificacion === 'incluido' ? null : false, f.descripcion, 'quitar');
+    const quitar = (f) => clasificar(f.erp_product_id, valorAlQuitar(f), f.descripcion, 'quitar');
 
     const confirmar = async (f) => {
         const n = editando[clave(f)] ?? f.confirmadas ?? f.sugeridas;
@@ -176,7 +169,6 @@ function CatalogoDeDosis({ showToast }) {
         }
     };
 
-    const sinConfirmar = activas.filter(sinDecidir).length;
 
     // Los que ya están en la lista salen igual al buscar, marcados y sin poder
     // elegirse (pedido del usuario, 2026-10-03). Un quitado se vuelve a incluir
@@ -264,7 +256,7 @@ function CatalogoDeDosis({ showToast }) {
                                         disabled={n <= 1} onClick={() => setEditando((e) => ({ ...e, [clave(f)]: n - 1 }))} />
                                     <span className="w-6 text-center font-black tabular-nums">{n}</span>
                                     <Button variant="secondary" size="sm" iconOnly icon={Plus} title="Una más"
-                                        disabled={n >= 20} onClick={() => setEditando((e) => ({ ...e, [clave(f)]: n + 1 }))} />
+                                        disabled={n >= APLICACIONES_MAX} onClick={() => setEditando((e) => ({ ...e, [clave(f)]: n + 1 }))} />
                                     {f.confirmadas == null
                                         ? <Badge variant="warning" size="sm">Sugerida</Badge>
                                         : <Badge variant="success" size="sm">{f.confirmado_por ? shortEmployeeName(f.confirmado_por) : 'Confirmada'}</Badge>}

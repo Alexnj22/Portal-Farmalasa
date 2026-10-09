@@ -113,3 +113,44 @@ export function resumenDeRegularizarUna(res, correlativo) {
     const fallo = (res.detalle || []).find((d) => !d.ok);
     return { titulo: 'Hacienda no la aceptó', texto: fallo?.error || 'No quedó registrado el motivo.', tono: 'warning' };
 }
+
+// ── Saltos de correlativo y campos nulos (pestaña Saltos) ───────────────────
+// Lo que decide la pestaña, escrito UNA vez para el portal y la app.
+
+/** La llave de un salto: sala, tipo de documento y el rango. */
+export const claveDeSalto = (g) => `${g.branch_id}__${g.tipo_documento}__${g.gap_from}__${g.gap_to}`;
+
+/** Los saltos que nadie ha solventado. */
+export function saltosPendientes(gaps, resoluciones) {
+    const hechos = new Set((resoluciones || []).map(claveDeSalto));
+    return (gaps || []).filter((g) => !hechos.has(claveDeSalto(g)));
+}
+
+/** Las resoluciones con su salto al lado; `mes` ('YYYY-MM') limita a las de ese mes. */
+export function saltosSolventados(gaps, resoluciones, mes = null) {
+    const lista = (resoluciones || []).map((r) => ({
+        ...r,
+        gap: (gaps || []).find((g) => claveDeSalto(g) === claveDeSalto(r)) || null,
+    }));
+    return mes ? lista.filter((r) => (r.resolved_at || '').startsWith(mes)) : lista;
+}
+
+// Los nulos que son sólo el sello o el código de Hacienda van en Pendiente MH,
+// no acá.
+const CAMPOS_DE_HACIENDA = new Set(['recibido_mh', 'codigo_generacion']);
+export const nuloEsDeHacienda = (n) => (n.campos_nulos || []).every((c) => CAMPOS_DE_HACIENDA.has(c));
+
+/** Los documentos con campos nulos que siguen abiertos (sin resolver y que no son de Hacienda). */
+export function nulosPendientes(nulls, idsResueltos) {
+    const hechos = idsResueltos instanceof Set ? idsResueltos : new Set(idsResueltos || []);
+    return (nulls || []).filter((n) => !hechos.has(n.id) && !nuloEsDeHacienda(n));
+}
+
+/** Lo que se escribe al solventar un salto (el portal y la app, iguales). */
+export const filaDeSaltoSolventado = (g, comentario, quien) => ({
+    branch_id: g.branch_id, tipo_documento: g.tipo_documento, gap_from: g.gap_from, gap_to: g.gap_to,
+    comment: String(comentario ?? '').trim() || null, resolved_by: quien || 'Desconocido',
+});
+
+/** El correlativo con sus siete cifras, como en el talonario. */
+export const correlativo7 = (n) => String(n).padStart(7, '0');

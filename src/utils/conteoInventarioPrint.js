@@ -6,6 +6,9 @@
 import { exportCsv } from './csvExport';
 import { fechaNumerica } from './fecha';
 import { formatMoney } from './formatNumber';
+import {
+    FUENTE_LABEL, SCOPE_LABEL, csvDeAjustesConteo, esAjuste, esSimple, ordenarParaDigitar, ordenarRenglonesDeConteo, valorAjuste,
+} from './conteoPapel';
 
 // pdfmake bajo demanda — mismo motivo que en pedidoPrint.js: estático metía
 // 809 kB gzip de fuentes embebidas en el chunk de ConteoDetailView, y esta
@@ -46,38 +49,20 @@ function num(n) {
 // desempate no desempata nada y dos presentaciones del mismo producto salían en
 // el orden en que vinieron — distinto entre la hoja y el reporte. La
 // presentación cierra el orden en los dos modos.
-function sortItems(items) {
-    return [...items].sort((a, b) =>
-        (a.laboratorio_nombre || '').localeCompare(b.laboratorio_nombre || '', 'es')
-        || (a.product_nombre || '').localeCompare(b.product_nombre || '', 'es')
-        || (a.lote || '').localeCompare(b.lote || '', 'es')
-        || (a.presentacion || '').localeCompare(b.presentacion || '', 'es')
-    );
-}
+const sortItems = ordenarRenglonesDeConteo;
 
 // Un conteo sencillo no lleva lote ni vencimiento: las columnas que los muestran
 // no van vacías, no van. Se deriva de la cabecera y no de `item.lote`, porque en
 // modo por lote también hay renglones sin etiqueta.
-const esSimple = (conteo) => conteo?.modo === 'SIMPLE';
+
 
 // El papel no puede decir 'CICLICO' ni 'BAJO_RECETA': son las claves internas.
 // Mismo texto que la lista de conteos, para que la hoja y la pantalla nombren
 // lo mismo.
-const SCOPE_LABEL = {
-    TOTAL: 'Todo el inventario',
-    LABORATORIO: 'Por laboratorio',
-    BAJO_RECETA: 'Bajo Receta',
-    MANUAL: 'Selección manual',
-    CICLICO: 'Cíclico del mes',
-};
 
 // Quien tiene la hoja en la mano necesita saber contra qué se va a comparar lo
 // que escriba: si es contra este papel, o contra la existencia del momento en
 // que se teclee. Son dos resultados distintos y hasta ahora no se decía.
-const FUENTE_LABEL = {
-    HOJA: 'Se compara contra esta hoja',
-    VIVO: 'Se compara contra la existencia del momento',
-};
 
 function headerBlock(conteo, subtitle) {
     return {
@@ -666,17 +651,10 @@ const AJU_LABELS_SIMPLE = ['Código', 'Producto', 'Presentación', 'Sistema', 'F
 // así que no hay nada que teclear en el sistema. Cuando la pila sí falta, sus
 // renglones salen enteros —con el número por presentación—, que es lo que hace
 // falta para corregirla.
-const esAjuste = (i) => i.diferencia != null && i.diferencia !== 0 && (i.diferencia_grupo ?? i.diferencia) !== 0;
-const valorAjuste = (i) => (i.costo_unitario != null ? i.diferencia * Number(i.costo_unitario) : null);
 
 // Orden por código: es como se teclea en el ERP, un renglón tras otro, sin
 // tener que buscar el producto por nombre en cada línea.
-function sortParaDigitar(items) {
-    return [...items].sort((a, b) =>
-        (a.erp_product_id ?? 0) - (b.erp_product_id ?? 0)
-        || (a.lote || '').localeCompare(b.lote || '', 'es')
-        || (a.presentacion || '').localeCompare(b.presentacion || '', 'es'));
-}
+const sortParaDigitar = ordenarParaDigitar;
 
 function loteAjusteCell(item) {
     const marcas = [];
@@ -821,36 +799,9 @@ export async function printAjustesConteo(conteo, items) {
 // Mismo contenido en CSV: para filtrar, ordenar o cargar en lote si el ERP lo
 // admite, sin volver a teclear lo que ya está medido.
 export function exportAjustesConteo(conteo, items) {
-    const simple = esSimple(conteo);
-    const ajustes = sortParaDigitar(items.filter(esAjuste));
-    // Dos columnas menos en sencillo, no dos columnas de celdas vacías: quien
-    // abre la planilla filtra por lo que hay, y una columna «Lote» entera en
-    // blanco se lee como un dato que se perdió, no como uno que no existe.
-    const headers = [
-        'Tipo', 'ID INTERNO', 'Codigo barras', 'Producto', 'Laboratorio', 'Presentacion',
-        ...(simple ? [] : ['Lote', 'Vence']),
-        'Area', simple ? 'Alta a mano' : 'Alta de lote', 'Sistema', 'Fisico', 'Ajuste',
-        'Costo unitario', 'Valor ajuste', 'Nota',
-    ];
-    const rows = ajustes.map((i) => [
-        i.diferencia < 0 ? 'FALTANTE' : 'SOBRANTE',
-        i.erp_product_id ?? '',
-        i.codigo_barras ?? '',
-        i.product_nombre ?? '',
-        i.laboratorio_nombre ?? '',
-        i.presentacion ?? '',
-        ...(simple ? [] : [i.lote ?? '', i.fecha_vencimiento ?? '']),
-        i.is_vencidos ? 'VENCIDOS' : 'NORMAL',
-        i.es_agregado_manual ? 'SI' : 'NO',
-        i.sistema_cantidad,
-        i.fisico_cantidad,
-        i.diferencia,
-        i.costo_unitario ?? '',
-        valorAjuste(i) != null ? valorAjuste(i).toFixed(2) : '',
-        i.nota ?? '',
-    ]);
-    const suc = (conteo.branches?.name || 'sucursal').replace(/[^a-zA-Z0-9]/g, '_');
-    exportCsv(headers, rows, `Ajuste_${suc}_${String(conteo.id).slice(0, 8)}.csv`, 'conteo_inventario');
+    // Columnas y filas: núcleo (`csvDeAjustesConteo`), el mismo CSV del teléfono.
+    const { headers, rows, nombre } = csvDeAjustesConteo(conteo, items);
+    exportCsv(headers, rows, `${nombre}.csv`, 'conteo_inventario');
 }
 
 // items: filas de get_conteo_items_jsonb. soloDiferencias filtra antes de imprimir.

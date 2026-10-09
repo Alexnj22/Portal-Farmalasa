@@ -1,11 +1,13 @@
-// Las diferencias de un pedido en una sala, NATIVO y de SÓLO LECTURA — lo que
-// muestra `DifSection` del portal: cada renglón con su clase (faltante,
-// sobrante, dañado, vencido…), solicitado → enviado → contado, en qué punto va
-// la conversación (contesta bodega, contesta la sala, lo ve supervisión,
-// resuelta), la salida acordada y la actividad con quién y cuándo.
+// Las diferencias de un pedido en una sala, NATIVO — lo que muestra
+// `DifSection` del portal: cada renglón con su clase (faltante, sobrante,
+// dañado, vencido…), solicitado → enviado → contado, en qué punto va la
+// conversación, la salida acordada y la actividad con quién y cuándo.
 //
-// Decidir —proponer, aceptar, escalar, devolver— sigue en el portal: acá se
-// mira. Los rótulos y las cuentas salen del núcleo, los mismos de allá.
+// Con `actuar` (quien tiene permiso de editar) cada renglón trae su decisión
+// —proponer, aceptar, contraproponer, rechazar, supervisar, confirmar la
+// llegada, mover y recibir la devolución— (`DecisionDiferencia`), y al final
+// el cierre de la sala: bodega marca la corrección y la sala la confirma. Los
+// rótulos, las cuentas y el turno salen del núcleo, los mismos de allá.
 import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
@@ -18,6 +20,8 @@ import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import { FONDO, Pildora } from '../avisos/Piezas';
 import Avatar from '../Avatar';
+import DecisionDiferencia from './DecisionDiferencia';
+import CierreDeDiferencias from './CierreDeDiferencias';
 
 const COLOR_TIPO = { danger: MARCA.rojo, success: MARCA.verde, warning: MARCA.ambar, neutral: colorSistema.texto2 };
 
@@ -30,7 +34,7 @@ function Cifra({ rotulo, valor, color }) {
   );
 }
 
-function Diferencia({ item, eventos, catalogo, quien }) {
+function Diferencia({ item, eventos, catalogo, quien, actuar, dev }) {
   const [verActividad, setVerActividad] = useState(false);
   const tipo = TIPO_DE_DIFERENCIA[item.error_tipo] ?? TIPO_DE_DIFERENCIA.diferencia;
   const { solicitado, enviado, contado, delta } = cifrasDelRenglon(item);
@@ -59,6 +63,10 @@ function Diferencia({ item, eventos, catalogo, quien }) {
       </View>
       {item.nota_diferencia ? <Text style={{ color: colorSistema.texto, fontSize: 13 }}>{`“${item.nota_diferencia}”`}</Text> : null}
       {item.resolucion_nota ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{item.resolucion_nota}</Text> : null}
+      {actuar && !resuelta ? (
+        <DecisionDiferencia item={item} catalogo={catalogo} dev={dev} pedidoId={actuar.pedidoId} sucId={actuar.sucId}
+          esSala={actuar.esSala} esSupervision={actuar.esSupervision} onCambio={actuar.onCambio} />
+      ) : null}
       {suyos.length ? (
         <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setVerActividad((v) => !v); }} style={{ minHeight: 36, justifyContent: 'center' }}>
           <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{verActividad ? 'Ocultar la actividad' : `Ver la actividad · ${suyos.length}`}</Text>
@@ -85,7 +93,7 @@ function Diferencia({ item, eventos, catalogo, quien }) {
   );
 }
 
-export default function Diferencias({ items, eventos = [], quien }) {
+export default function Diferencias({ items, eventos = [], quien, actuar = null, devoluciones = [], row = null }) {
   const [catalogo, setCatalogo] = useState({});
   useEffect(() => {
     let vivo = true;
@@ -93,16 +101,23 @@ export default function Diferencias({ items, eventos = [], quien }) {
     return () => { vivo = false; };
   }, []);
   if (!items?.length) return null;
+  // La devolución VIVA de cada renglón (o la última rechazada, que explica por qué no).
+  const devPorItem = new Map();
+  for (const d of devoluciones) {
+    const previa = devPorItem.get(d.pedido_item_id);
+    if (!previa || previa.estado === 'rechazada') devPorItem.set(d.pedido_item_id, d);
+  }
   const abiertas = items.filter((d) => d.resolucion_status !== 'confirmada');
   const orden = [...abiertas, ...items.filter((d) => d.resolucion_status === 'confirmada')];
   return (
     <View style={{ gap: 10 }}>
       {abiertas.length ? (
         <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '600' }}>
-          {`${abiertas.length} sin resolver. Proponer o aceptar una salida se hace en el portal.`}
+          {`${abiertas.length} sin resolver.`}
         </Text>
       ) : <Text style={{ color: MARCA.verde, fontSize: 13, fontWeight: '600' }}>{items.length === 1 ? 'La diferencia está resuelta.' : `Las ${items.length} diferencias están resueltas.`}</Text>}
-      {orden.map((d) => <Diferencia key={d.id} item={d} eventos={eventos} catalogo={catalogo} quien={quien} />)}
+      {orden.map((d) => <Diferencia key={d.id} item={d} eventos={eventos} catalogo={catalogo} quien={quien} actuar={actuar} dev={devPorItem.get(d.id) ?? null} />)}
+      {!abiertas.length && row ? <CierreDeDiferencias row={row} resueltas={items.length} actuar={actuar} quien={quien} /> : null}
     </View>
   );
 }

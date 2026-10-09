@@ -221,7 +221,8 @@ export default function Metas() {
         ) : pestana === 'bono' ? (
           <>
             <PasoYm ym={ymBono} onCambiar={setYmBono} min={YM_INICIO_HISTORIA} max={ymActual} actual={ymActual} />
-            <Bono key={llave} sala={todas ? salaBono : String(user?.branchId)} salaNombre={salaNombre} ym={ymBono} esMesActual={ymBono === ymActual} config={config} />
+            <Bono key={llave} sala={todas ? salaBono : String(user?.branchId)} salaNombre={salaNombre} ym={ymBono} esMesActual={ymBono === ymActual} config={config}
+              canEdit={puedeEditar} onCambioBono={() => setLlave((k) => k + 1)} />
           </>
         ) : pestana === 'semestral' ? (
           <Semestral key={llave} canApprove={puedeAprobar} />

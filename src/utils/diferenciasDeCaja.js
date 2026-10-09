@@ -371,3 +371,65 @@ export function responsablesDelDia(dia) {
         .map((p) => ({ ...p, monto: p.monto / 100, abonado: p.abonado / 100, saldo: p.saldo / 100 }))
         .sort((a, b) => b.saldo - a.saldo || String(a.nombre).localeCompare(String(b.nombre)));
 }
+
+// ── El formulario de resolver una diferencia (portal y app) ─────────────────
+// Vivía dentro de `components/cortes/ResolverDiferencia.jsx`. El porqué de cada
+// regla sigue allá; acá queda la cuenta, para que las dos pantallas no la
+// escriban dos veces.
+
+/** Cómo se dice cada camino en la lista de lo que ya se hizo. */
+export const VIA_LARGO = {
+    REPONE: 'Sin causa · con responsables',
+    RETIRA: 'Se retiró el sobrante',
+    JUSTIFICA: 'Se encontró la causa',
+};
+
+/**
+ * A quién se propone como responsable: quien VENDIÓ en el tramo del corte; si
+ * nadie vendió, los del turno o quien está resolviendo; y si tampoco, el primero.
+ */
+export function propuestaDeResponsables(candidatos, userId) {
+    const filas = candidatos || [];
+    const vendieron = filas.filter((f) => Number(f.ventas) > 0).map((f) => f.id);
+    const previa = vendieron.length ? vendieron : filas.filter((f) => f.del_turno || f.id === userId).map((f) => f.id);
+    return previa.length ? previa : filas.slice(0, 1).map((f) => f.id);
+}
+
+/**
+ * La cuenta del formulario, en centavos: cuánto hay que cubrir, cuánto explica
+ * la causa (vacío = todo), si es válido y cuánto falta repartir entre
+ * responsables. `faltaGuardar` es el freno del botón, el mismo del portal.
+ */
+export function cuentaDeResolucion({ via, pendiente, montoCausa = '', aportes = [], causa = '', evidenciaRef = '', conFoto = false }) {
+    const objetivo = centavos(pendiente);
+    const explica = String(montoCausa).trim() === '' ? objetivo : Math.min(objetivo, centavos(montoCausa));
+    const explicaInvalido = via === 'JUSTIFICA' && explica < 1;
+    const suma = (aportes || []).reduce((a, m) => a + centavos(m), 0);
+    const restan = objetivo - suma;
+    const faltaComprobante = via === 'JUSTIFICA' && !String(evidenciaRef).trim() && !conFoto;
+    const faltaGuardar = !via || !String(causa).trim() || faltaComprobante || explicaInvalido
+        || (via === 'REPONE' && (restan !== 0 || !(aportes || []).length));
+    return {
+        objetivo, explica, explicaInvalido, restan, faltaComprobante, faltaGuardar,
+        montoExplica: Math.round(explica) / 100,
+        quedaTrasCausa: via === 'JUSTIFICA' && !explicaInvalido ? (objetivo - explica) / 100 : 0,
+    };
+}
+
+/**
+ * Lo que falta anotar en el sistema, agrupado por sala Y por signo: un faltante
+ * entra dinero y un sobrante lo saca, y allá son dos documentos (ingreso y
+ * vale) con dos números. Mezclarlos haría imposible cuadrarlos. Vivía en
+ * `components/cortes/AsentarDiferencias.jsx`.
+ */
+export const claveDeAsiento = (d) => `${d.branch_id}|${Number(d.monto) < 0 ? 'ENTRA' : 'SALE'}`;
+export const claveDeFilaDeAsiento = (d) => `${d.kind === 'abono' ? 'a' : 'd'}${d.id}`;
+export function gruposParaAsentar(filas) {
+    const m = new Map();
+    for (const d of filas || []) {
+        const k = claveDeAsiento(d);
+        if (!m.has(k)) m.set(k, { k, branchId: d.branch_id, entra: Number(d.monto) < 0, filas: [] });
+        m.get(k).filas.push(d);
+    }
+    return [...m.values()];
+}

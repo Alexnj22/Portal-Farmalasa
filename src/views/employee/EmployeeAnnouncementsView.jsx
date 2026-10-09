@@ -11,7 +11,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import { smartFilter } from '@nucleo/utils/searchUtils';
-import { announcementAppliesToUser } from '@nucleo/utils/announcementAudience';
+import { comunicadosDeLaPersona, comunicadosDeLaPestana, filtrosDeLeidos, aplicarFiltroDeLeidos, hayLeidosViejos, yaLoLeyo, loLeyoAntesDeEditarse, TIPO_DE_CONSTANCIA } from '@nucleo/utils/misComunicados';
 import { clickable } from '@nucleo/utils/clickable';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { EmptyState } from '../../components/common/StateViews';
@@ -30,13 +30,9 @@ const REQUEST_DETAIL_ICONS = {
 const fmtDate = (d) => d ? fechaTexto(d, { weekday: 'short', day: '2-digit', month: 'short' }) : null;
 
 const AnnouncementCard = memo(({ ann, userId, onRead }) => {
-    const isRead = (ann.readBy || []).some(r =>
-        String(typeof r === 'object' ? r.employeeId : r) === String(userId)
-    );
-    // True if this user read a previous version before the last edit
-    const wasReadBefore = !!ann.editedAt && (ann.prevReadBy || []).some(r =>
-        String(typeof r === 'object' ? r.employeeId : r) === String(userId)
-    );
+    const isRead = yaLoLeyo(ann, userId);
+    // Lo leyó antes de la última edición
+    const wasReadBefore = loLeyoAntesDeEditarse(ann, userId);
 
     const isUrgent = ann.priority === 'URGENT';
     const meta = ann.metadata || null;
@@ -157,7 +153,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                         <div className="flex items-center gap-2">
                             <FileCheck size={12} className="text-chart-1-text flex-shrink-0" strokeWidth={2} />
                             <span className="text-body-sm font-bold text-content-2">
-                                {{ LABORAL: 'Constancia Laboral', SALARIO: 'Constancia de Salario', BANCARIA: 'Constancia Bancaria' }[meta.certificateType] || meta.certificateType}
+                                {TIPO_DE_CONSTANCIA[meta.certificateType] || meta.certificateType}
                             </span>
                         </div>
                     )}
@@ -524,7 +520,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                         <div className="flex items-center gap-2">
                                             <FileCheck size={12} className="text-chart-1-text flex-shrink-0" strokeWidth={2}/>
                                             <span className="text-body-sm font-bold text-content-2">
-                                                {{ LABORAL: 'Constancia Laboral', SALARIO: 'Constancia de Salario', BANCARIA: 'Constancia Bancaria' }[meta.certificateType] || meta.certificateType}
+                                                {TIPO_DE_CONSTANCIA[meta.certificateType] || meta.certificateType}
                                             </span>
                                         </div>
                                     )}
@@ -607,77 +603,25 @@ const EmployeeAnnouncementsView = () => {
     // propio. Al pasar la barra a `ViewTabBar` quedaron los tres huérfanos —
     // que es la prueba de que eran duplicado del canónico, no personalización.
     const isStoreLoading = employees.length === 0 && announcements.length === 0;
-    const currentYM = new Date().toISOString().slice(0, 7);
-
-    const readCheck = useCallback((ann) => (ann.readBy || []).some(r =>
-        String(typeof r === 'object' ? r.employeeId : r) === String(user?.id)
-    ), [user?.id]);
-
-    const myAnnouncements = useMemo(() => {
-        if (!user) return [];
-        return (announcements || []).filter(a => {
-            if (a.isArchived) return false;
-            if (a.scheduledFor && new Date(a.scheduledFor) > new Date()) return false;
-            return announcementAppliesToUser(a, user, roles);
-        }).sort((a, b) => {
-            // Urgentes primero, luego más antiguos (orden cronológico para el stack sin leer)
-            const aUrgent = a.priority === 'URGENT' ? 0 : 1;
-            const bUrgent = b.priority === 'URGENT' ? 0 : 1;
-            if (aUrgent !== bUrgent) return aUrgent - bUrgent;
-            return new Date(a.date) - new Date(b.date);
-        });
-    }, [announcements, user, roles]);
-
-    const byTab = useMemo(() => {
-        let list = myAnnouncements;
-        if (tab === 'UNREAD') {
-            list = list.filter(a => !readCheck(a));
-        } else if (tab === 'READ') {
-            list = list.filter(a => readCheck(a));
-            if (!showOldRead) list = list.filter(a => (a.date || '').slice(0, 7) === currentYM);
-            // Leídos: día más reciente primero; dentro del mismo día urgentes antes; mismo día+urgencia → hora más reciente
-            list = [...list].sort((a, b) => {
-                const aDay = (a.date || '').slice(0, 10);
-                const bDay = (b.date || '').slice(0, 10);
-                if (bDay > aDay) return 1;
-                if (bDay < aDay) return -1;
-                const aUrgent = a.priority === 'URGENT' ? 0 : 1;
-                const bUrgent = b.priority === 'URGENT' ? 0 : 1;
-                if (aUrgent !== bUrgent) return aUrgent - bUrgent;
-                return new Date(b.date) - new Date(a.date);
-            });
-        }
-        return list;
-    }, [myAnnouncements, tab, showOldRead, currentYM, readCheck]);
-
+    // Qué le toca, cada pestaña y los subfiltros salen del núcleo
+    // (`misComunicados`): la app pinta exactamente la misma lista.
+    const myAnnouncements = useMemo(() => comunicadosDeLaPersona(announcements, user, roles), [announcements, user, roles]);
+    const byTab = useMemo(() => comunicadosDeLaPestana(myAnnouncements, tab, user?.id, { verViejos: showOldRead }),
+        [myAnnouncements, tab, showOldRead, user?.id]);
     // Subfiltros disponibles para la tab READ
     const readFilters = useMemo(() => {
         if (tab !== 'READ') return [];
-        const list = byTab;
-        return [
-            { key: 'ALL',      label: 'Todos',     icon: null,      count: list.length },
-            { key: 'URGENT',   label: 'Urgentes',  icon: Flame,     count: list.filter(a => a.priority === 'URGENT').length },
-            { key: 'GLOBAL',   label: 'Global',    icon: Globe,     count: list.filter(a => a.targetType === 'GLOBAL').length },
-            { key: 'BRANCH',   label: 'Sucursal',  icon: Building2, count: list.filter(a => a.targetType === 'BRANCH').length },
-            { key: 'ROLE',     label: 'Cargo',     icon: User,      count: list.filter(a => a.targetType === 'ROLE').length },
-            { key: 'EMPLOYEE', label: 'Personal',  icon: User,      count: list.filter(a => a.targetType === 'EMPLOYEE').length },
-        ].filter(f => f.key === 'ALL' || f.count > 0);
+        const iconos = { URGENT: Flame, GLOBAL: Globe, BRANCH: Building2, ROLE: User, EMPLOYEE: User };
+        return filtrosDeLeidos(byTab).map(f => ({ ...f, icon: iconos[f.key] || null }));
     }, [tab, byTab]);
-
     const filteredRaw = useMemo(() => {
-        let list = byTab;
-        if (typeFilter === 'URGENT') list = list.filter(a => a.priority === 'URGENT');
-        else if (typeFilter !== 'ALL') list = list.filter(a => a.targetType === typeFilter);
+        const list = aplicarFiltroDeLeidos(byTab, typeFilter);
         if (!searchQuery.trim()) return { filtered: list, isAnnFuzzy: false };
         const { results, isFuzzy } = smartFilter(searchQuery, list, a => [a.title, a.message]);
         return { filtered: results, isAnnFuzzy: isFuzzy };
     }, [byTab, typeFilter, searchQuery]);
     const { filtered, isAnnFuzzy } = filteredRaw;
-
-    const hasOldRead = useMemo(() =>
-        myAnnouncements.some(a => readCheck(a) && (a.date || '').slice(0, 7) !== currentYM)
-    , [myAnnouncements, currentYM, readCheck]);
-
+    const hasOldRead = useMemo(() => hayLeidosViejos(myAnnouncements, user?.id), [myAnnouncements, user?.id]);
     const handleRead = (id) => {
         if (user?.id) markAnnouncementAsRead(id, user.id);
     };

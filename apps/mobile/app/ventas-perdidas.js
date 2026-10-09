@@ -6,6 +6,9 @@
 // el mostrador, con el teléfono en la mano, en el momento en que el cliente lo
 // pide. La forma del reporte y el resumen salen del núcleo (`ventasPerdidas`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { hoySV } from '@nucleo/utils/fecha';
+import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
+import { compartirCsv } from '../componentes/fiscal/csv';
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -81,6 +84,8 @@ export default function VentasPerdidas() {
   const [reportando, setReportando] = useState(false);
   const [procesando, setProcesando] = useState(null);
   const [recargando, setRecargando] = useState(false);
+  const [sala, setSala] = useState('todas');
+  const [quienFiltro, setQuienFiltro] = useState('todos');
 
   const cargar = useCallback(async () => {
     const { data, error } = await fetchVentasPerdidas(estado);
@@ -91,7 +96,23 @@ export default function VentasPerdidas() {
 
   const porId = useMemo(() => new Map((empleados || []).map((e) => [String(e.id), e])), [empleados]);
   const nombreDeSala = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name;
-  const top = estado === 'pendiente' ? masSolicitados(filas || []) : [];
+  // Filtros por sala y por quién reportó (sobre lo que trae el estado elegido).
+  const visibles = useMemo(() => (filas || []).filter((r) => (sala === 'todas' || String(r.branch_id) === sala)
+    && (quienFiltro === 'todos' || String(r.reportado_por) === quienFiltro)), [filas, sala, quienFiltro]);
+  const top = estado === 'pendiente' ? masSolicitados(visibles) : [];
+  const grupos = [
+    { id: 'sala', titulo: 'Sala', activa: sala, porDefecto: 'todas', onCambiar: setSala,
+      opciones: [{ id: 'todas', label: 'Todas' }, ...[...new Set((filas || []).map((r) => String(r.branch_id)).filter((x) => x && x !== 'null'))].map((id) => ({ id, label: nombreDeSala(id) ?? `Sala ${id}` }))] },
+    { id: 'quien', titulo: 'Reportó', activa: quienFiltro, porDefecto: 'todos', onCambiar: setQuienFiltro,
+      opciones: [{ id: 'todos', label: 'Todos' }, ...[...new Set((filas || []).map((r) => String(r.reportado_por)).filter((x) => x && x !== 'null'))].map((id) => ({ id, label: porId.get(id) ? shortEmployeeName(porId.get(id)) : 'Alguien' }))] },
+  ];
+  // El mismo CSV del portal (columnas y orden), anotado como salida de datos.
+  const exportar = () => compartirCsv({
+    headers: ['Fecha', 'Producto', 'Buscado como', 'Cantidad', 'Principio activo', 'Laboratorio', 'Sucursal', 'Reportado por'],
+    rows: visibles.map((r) => [fechaHora12(r.created_at, { day: '2-digit', month: 'short', year: 'numeric' }), r.descripcion || r.producto_buscado || '', r.producto_buscado || '', r.cantidad ?? '',
+      r.principio_activo || '', r.laboratorio || '', nombreDeSala(r.branch_id) || '', porId.get(String(r.reportado_por))?.name || '']),
+    nombre: `ventas_perdidas_${estado}_${hoySV()}`, modulo: 'ventas_perdidas', detalle: { tab: estado },
+  }).catch((e) => fallo('No se pudo exportar', mensajeAmigable(e)));
 
   const marcar = async (r) => {
     setProcesando(r.id);
@@ -105,6 +126,7 @@ export default function VentasPerdidas() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Ventas perdidas', headerLargeTitle: true }} />
+      <MenuDeFiltros grupos={grupos} extra={visibles.length ? { icono: 'square.and.arrow.up', etiqueta: 'Exportar CSV', onPress: exportar } : null} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
@@ -112,6 +134,7 @@ export default function VentasPerdidas() {
           <BotonGrande texto="Reportar lo que pidieron" color={MARCA.rojo} onPress={() => setReportando(true)} />
         </View>
         <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'pendiente', label: 'Pendientes' }, { id: 'procesado', label: 'Procesados' }]} />
+        <FiltrosActivos grupos={grupos} />
         {top.length ? (
           <View style={{ marginHorizontal: 16, gap: 8 }}>
             <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 4 }}>Más pedidos</Text>
@@ -120,7 +143,7 @@ export default function VentasPerdidas() {
             </View>
           </View>
         ) : null}
-        {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : filas.map((r) => {
+        {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.map((r) => {
           const nombre = r.descripcion || r.producto_buscado;
           const buscado = r.descripcion && r.producto_buscado !== r.descripcion ? r.producto_buscado : null;
           const quien = porId.get(String(r.reportado_por));
@@ -154,7 +177,7 @@ export default function VentasPerdidas() {
             </View>
           );
         })}
-        {filas && !filas.length ? (
+        {filas && !visibles.length ? (
           <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>
             {estado === 'pendiente' ? 'Sin ventas perdidas pendientes' : 'Sin registros procesados'}
           </Text>

@@ -20,7 +20,7 @@ import { guardarDescuento, sincronizarProductosDelDescuento } from '@nucleo/data
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
-import { fmtUnidades, fmtVigencia, MOTIVO_CIERRE, descuentoDesdeLaPromocion, estadoVisible, mensajeDeCarga, numeroEscrito, renglonesParaAgregar } from '@nucleo/utils/promocionesUtils';
+import { fmtUnidades, fmtVigencia, MOTIVO_CIERRE, descuentoDesdeLaPromocion, estadoVisible, mensajeDeCarga, numeroEscrito, renglonesParaAgregar, OPCIONES_RESUMEN_DIARIO, alternarResumen, resumenElegido } from '@nucleo/utils/promocionesUtils';
 import DescuentoEnVentas from './DescuentoEnVentas';
 import AgregarProductos from './AgregarProductos';
 import Campo from './Campo';
@@ -843,11 +843,9 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar, a
  * que excluye a las otras (usuario, 24-sep: «que sean seleccionables múltiples,
  * menos el sin avisar»). Quitar la última elegida vuelve a «Sin avisar»: nunca
  * queda un estado sin ninguna marcada, que se leería como «no cargó». */
-const OPCIONES_RESUMEN = [
-    { key: 'no',          icon: BellOff,     rotulo: 'Sin avisar',  detalle: 'No manda resumen.' },
-    { key: 'supervision', icon: ShieldCheck, rotulo: 'Supervisión', detalle: 'Todas las salas.' },
-    { key: 'salas',       icon: Store,       rotulo: 'Salas',       detalle: 'Cada una, lo suyo.' },
-];
+// Rótulos y lógica en el núcleo (la app ajusta el mismo resumen); acá, los íconos.
+const ICONO_RESUMEN = { no: BellOff, supervision: ShieldCheck, salas: Store };
+const OPCIONES_RESUMEN = OPCIONES_RESUMEN_DIARIO.map((o) => ({ ...o, icon: ICONO_RESUMEN[o.key] }));
 
 function ResumenDiario({ promocionId }) {
     const [valor, setValor] = useState(null);   // { supervision, salas }
@@ -862,15 +860,11 @@ function ResumenDiario({ promocionId }) {
         return () => { vivo = false; };
     }, [promocionId]);
 
-    const elegida = (key) => (key === 'no'
-        ? !valor?.supervision && !valor?.salas
-        : !!valor?.[key]);
+    const elegida = (key) => resumenElegido(valor, key);
 
     const tocar = async (key) => {
         const antes = valor;
-        const nuevo = key === 'no'
-            ? { supervision: false, salas: false }
-            : { ...valor, [key]: !valor?.[key] };
+        const nuevo = alternarResumen(valor, key);
         setValor(nuevo);
         setGuardando(true);
         setFallo(null);

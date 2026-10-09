@@ -8,7 +8,9 @@
 //
 // Publicar uno nuevo desde el teléfono, con los mismos destinos del portal:
 // todos, una sala, un CARGO o PERSONAS sueltas; y programarlo para un día
-// (desde mañana, como el portal). A quién le llega, la lectura y la sección
+// (desde mañana, como el portal). Y corregir uno que NADIE ha leído todavía
+// (`updateAnnouncement`, con `editedAt`): uno ya leído se archiva, igual que en
+// el portal. A quién le llega, la lectura y la sección
 // salen del núcleo (`avisosInternos`).
 import { useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
@@ -50,18 +52,24 @@ function Cabecera({ titulo, onCerrar }) {
   );
 }
 
-function Nuevo({ abierto, onCerrar, salas, salaFija, cargos, empleados }) {
+// `editando`: el aviso que se corrige (sólo si nadie lo leyó, la misma regla
+// del portal); sin él, es uno nuevo. Se monta de nuevo por aviso (`key`), así
+// el estado inicial sale de él.
+function Nuevo({ abierto, onCerrar, salas, salaFija, cargos, empleados, editando = null }) {
   const createAnnouncement = useStaffStore((s) => s.createAnnouncement);
-  const [titulo, setTitulo] = useState('');
-  const [mensaje, setMensaje] = useState('');
-  const [tipo, setTipo] = useState(salaFija ? 'BRANCH' : 'GLOBAL');
-  const [sala, setSala] = useState(salaFija ? String(salaFija) : '');
-  const [cargo, setCargo] = useState('');
-  const [personas, setPersonas] = useState(new Set());
+  const updateAnnouncement = useStaffStore((s) => s.updateAnnouncement);
+  const e0 = editando;
+  const programadoAntes = e0?.scheduledFor && new Date(e0.scheduledFor) > new Date();
+  const [titulo, setTitulo] = useState(e0?.title ?? '');
+  const [mensaje, setMensaje] = useState(e0?.message ?? '');
+  const [tipo, setTipo] = useState(e0?.targetType ?? (salaFija ? 'BRANCH' : 'GLOBAL'));
+  const [sala, setSala] = useState(e0?.targetType === 'BRANCH' ? String(e0.targetValue) : salaFija ? String(salaFija) : '');
+  const [cargo, setCargo] = useState(e0?.targetType === 'ROLE' ? String(e0.targetValue) : '');
+  const [personas, setPersonas] = useState(new Set(e0?.targetType === 'EMPLOYEE' ? (e0.targetValue || []).map(String) : []));
   const [buscaPersona, setBuscaPersona] = useState('');
-  const [urgente, setUrgente] = useState(false);
-  const [programar, setProgramar] = useState(false);
-  const [dia, setDia] = useState(manana());
+  const [urgente, setUrgente] = useState(e0?.priority === 'URGENT');
+  const [programar, setProgramar] = useState(!!programadoAntes);
+  const [dia, setDia] = useState(programadoAntes ? String(e0.scheduledFor).slice(0, 10) : manana());
   const [enviando, setEnviando] = useState(false);
 
   const destinoListo = tipo === 'GLOBAL' || (tipo === 'BRANCH' && sala) || (tipo === 'ROLE' && cargo) || (tipo === 'EMPLOYEE' && personas.size);
@@ -70,20 +78,26 @@ function Nuevo({ abierto, onCerrar, salas, salaFija, cargos, empleados }) {
   const candidatos = (empleados || []).filter((e) => !buscaPersona.trim() || tokenMatch(buscaPersona.trim(), e.name, e.role)).slice(0, 40);
 
   const publicar = async () => {
-    setEnviando(true); trabajando('Publicando…');
+    setEnviando(true); trabajando(e0 ? 'Guardando…' : 'Publicando…');
     try {
       const [y, m, d] = dia.split('-');
-      await createAnnouncement({
+      const datos = {
         title: titulo.trim(), message: mensaje.trim(), priority: urgente ? 'URGENT' : 'NORMAL',
         targetType: salaFija ? 'BRANCH' : tipo,
         targetValue: salaFija ? String(salaFija) : tipo === 'GLOBAL' ? null : tipo === 'BRANCH' ? sala : tipo === 'ROLE' ? cargo : [...personas].map(String),
         // Como el portal: programado = a medianoche del día elegido.
         scheduledFor: programar ? new Date(Number(y), Number(m) - 1, Number(d), 0, 0, 0, 0).toISOString() : null,
-      });
-      listo(programar ? 'Aviso programado' : 'Aviso publicado', titulo.trim());
-      setTitulo(''); setMensaje(''); setUrgente(false); setPersonas(new Set()); setProgramar(false);
+      };
+      if (e0) {
+        await updateAnnouncement(e0.id, { ...datos, editedAt: new Date().toISOString() }, {});
+        listo('Aviso actualizado', titulo.trim());
+      } else {
+        await createAnnouncement(datos);
+        listo(programar ? 'Aviso programado' : 'Aviso publicado', titulo.trim());
+        setTitulo(''); setMensaje(''); setUrgente(false); setPersonas(new Set()); setProgramar(false);
+      }
       onCerrar();
-    } catch (e) { fallo('No se pudo publicar', e?.message || 'Vuelve a intentar.'); }
+    } catch (e) { fallo(e0 ? 'No se pudo guardar' : 'No se pudo publicar', e?.message || 'Vuelve a intentar.'); }
     setEnviando(false);
   };
   const alternarPersona = (id) => setPersonas((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -93,7 +107,7 @@ function Nuevo({ abierto, onCerrar, salas, salaFija, cargos, empleados }) {
       <ConAurora>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 60 }} keyboardShouldPersistTaps="handled">
-            <Cabecera titulo="Nuevo aviso" onCerrar={onCerrar} />
+            <Cabecera titulo={e0 ? 'Editar aviso' : 'Nuevo aviso'} onCerrar={onCerrar} />
             <Seccion titulo="El aviso">
               <Campo multiline={false} value={titulo} onChangeText={setTitulo} placeholder="Título" />
               <Campo value={mensaje} onChangeText={setMensaje} placeholder="Mensaje" style={{ minHeight: 100 }} />
@@ -140,7 +154,7 @@ function Nuevo({ abierto, onCerrar, salas, salaFija, cargos, empleados }) {
               ) : null}
               {programar && dia <= hoySV() ? <Aviso tono="cuidado" texto="Programado tiene que ser desde mañana. Para hoy, publícalo de una vez." /> : null}
             </Seccion>
-            <BotonGrande texto={enviando ? 'Publicando…' : programar ? 'Programar' : 'Publicar'} color={urgente ? MARCA.rojo : MARCA.azul} deshabilitado={!valido || enviando} onPress={publicar} />
+            <BotonGrande texto={enviando ? (e0 ? 'Guardando…' : 'Publicando…') : e0 ? 'Guardar cambios' : programar ? 'Programar' : 'Publicar'} color={urgente ? MARCA.rojo : MARCA.azul} deshabilitado={!valido || enviando} onPress={publicar} />
           </ScrollView>
         </KeyboardAvoidingView>
       </ConAurora>
@@ -160,7 +174,7 @@ function Persona({ e, detalle, primero }) {
   );
 }
 
-function Ficha({ a, onCerrar, puedeEditar, onArchivar, onEliminar }) {
+function Ficha({ a, onCerrar, puedeEditar, onArchivar, onEliminar, onEditar }) {
   const [verPendientes, setVerPendientes] = useState(false);
   if (!a) return null;
   const leidoEl = new Map((a.readBy || []).filter((r) => typeof r === 'object').map((r) => [String(r.employeeId), r.readAt || r.read_at]));
@@ -197,9 +211,10 @@ function Ficha({ a, onCerrar, puedeEditar, onArchivar, onEliminar }) {
               <Pressable onPress={() => setVerPendientes(true)}><Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{`Ver los ${pendientes.length}`}</Text></Pressable>
             ) : null}
           </Seccion>
+          {puedeEditar && !a.isArchived && !a.readIds.length ? <BotonGrande texto="Editar" color={MARCA.azul} onPress={() => onEditar(a)} /> : null}
           {puedeEditar && !a.isArchived ? <BotonGrande texto="Archivar" borde color={colorSistema.texto2} onPress={() => onArchivar(a)} /> : null}
           {puedeEditar && !a.readIds.length ? <BotonGrande texto="Eliminar" borde color={MARCA.rojo} onPress={() => onEliminar(a)} /> : null}
-          {puedeEditar && a.readIds.length ? <Aviso texto="Alguien ya lo leyó: no se elimina, se archiva." /> : null}
+          {puedeEditar && a.readIds.length ? <Aviso texto="Alguien ya lo leyó: no se edita ni se elimina. Se archiva y se publica uno nuevo." /> : null}
         </ScrollView>
       </ConAurora>
     </Modal>
@@ -220,6 +235,7 @@ export default function GestionarAvisos() {
   const [texto, setTexto] = useState('');
   const [abierto, setAbierto] = useState(null);
   const [nuevo, setNuevo] = useState(false);
+  const [editando, setEditando] = useState(null);
   const nombreDeSala = useMemo(() => new Map((sucursales || []).map((b) => [String(b.id), b.name])), [sucursales]);
   const salas = useMemo(() => [...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)), [sucursales]);
   const cargos = useMemo(() => [...(roles || [])].sort((a, b) => String(a.name).localeCompare(String(b.name), 'es')), [roles]);
@@ -290,7 +306,9 @@ export default function GestionarAvisos() {
         {!visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Sin avisos en esta sección</Text> : null}
       </ScrollView>
       <Nuevo abierto={nuevo} onCerrar={() => setNuevo(false)} salas={salas} salaFija={deSala ? user?.branchId : null} cargos={cargos} empleados={empleados} />
-      {elegido ? <Ficha a={elegido} onCerrar={() => setAbierto(null)} puedeEditar={puedeEditar} onArchivar={confirmarArchivar} onEliminar={confirmarEliminar} /> : null}
+      {editando ? <Nuevo key={editando.id} abierto editando={editando} onCerrar={() => setEditando(null)} salas={salas} salaFija={deSala ? user?.branchId : null} cargos={cargos} empleados={empleados} /> : null}
+      {elegido && !editando ? <Ficha a={elegido} onCerrar={() => setAbierto(null)} puedeEditar={puedeEditar} onArchivar={confirmarArchivar} onEliminar={confirmarEliminar}
+        onEditar={(a) => { setAbierto(null); setEditando(a); }} /> : null}
     </>
   );
 }

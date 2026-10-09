@@ -8,16 +8,24 @@
 //
 // Quien edita además la edita con sus diseños (`marketing-editar`), la pauta
 // (`marketing-pauta`) y la duplica a otro mes (`duplicarPiezas`, la del portal).
+//
+// Y lo demás de `PiezaModal`: agregar un enlace (Drive, Canva) como diseño;
+// liberarla para las salas (Galería) cuando ya está aprobada; quitarla (quien
+// la creó, mientras no esté publicada); medir sus ventas si va ligada a una
+// promoción; y en la conversación, editar o quitar el comentario propio
+// mientras nadie haya respondido.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import {
-  comentar, duplicarPiezas, enviarPieza, fetchComentarios, fetchHistorial, fetchPersonas, marcarResuelto, revisarPieza,
+  agregarEnlace, borrarPieza, comentar, duplicarPiezas, editarComentario, enviarPieza, fetchComentarios, fetchEfectoEnVentas, fetchHistorial,
+  fetchPersonas, liberarPieza, marcarResuelto, quitarComentario, revisarPieza,
 } from '@nucleo/data/marketing';
+import { formatMoney, formatPct, formatQty } from '@nucleo/utils/formatNumber';
 import { correrMes, etiquetaMes } from '@nucleo/utils/fecha';
-import { estadoDe, formatoDe, fraseDeHistorial, tipoDeArchivo } from '@nucleo/utils/marketing';
+import { aptoParaWhatsApp, estadoDe, formatoDe, fraseDeHistorial, tipoDeArchivo, variacionDeVentas } from '@nucleo/utils/marketing';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaHora12, hora12 } from '@nucleo/utils/hora';
@@ -58,6 +66,7 @@ export default function PiezaDeMarketing() {
   const [personas, setPersonas] = useState({});
   const [texto, setTexto] = useState('');
   const [ocupado, setOcupado] = useState(false);
+  const [efecto, setEfecto] = useState(null);
 
   // Duplicar a otro mes: la copia nace pendiente, sin diseños ni pauta. «Semana»
   // la pone en la misma semana del mes; «día», en el mismo número de día.
@@ -127,6 +136,48 @@ export default function PiezaDeMarketing() {
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Enviar', onPress: () => correr(() => enviarPieza(pieza.id), 'Enviada a revisión', { enviada_at: new Date().toISOString() }) },
   ]);
+  // ── Lo demás de la pieza (como `PiezaModal`) ──
+  const yoId = user?.id;
+  const esCreador = !pieza?.created_by || pieza.created_by === yoId;
+  const puedeQuitar = puedeEditar && esCreador && pieza?.estado !== 'publicado';
+  const sePuedeLiberar = ['aprobado', 'programado', 'publicado'].includes(pieza?.estado) && (puedeEditar || puedeAprobar);
+  const quitar = () => Alert.alert('Quitar la pieza', `«${pieza.titulo || 'Pieza'}» se borra con sus diseños. Sólo se puede mientras está pendiente o en proceso.`, [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Quitar', style: 'destructive', onPress: async () => {
+      setOcupado(true);
+      try { await borrarPieza(pieza.id, pieza.titulo, pieza.archivos || []); listo('Pieza quitada', pieza.titulo || ''); router.back(); }
+      catch (e) { fallo('No se pudo quitar', mensajeAmigable(e)); }
+      setOcupado(false);
+    } },
+  ]);
+  const liberar = (on) => Alert.alert(on ? 'Liberar para las salas' : 'Retener', on ? 'Las salas la ven en Galería y la pueden descargar para publicarla en WhatsApp.' : 'Deja de verse en la Galería de las salas.', [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: on ? 'Liberar' : 'Retener', onPress: () => correr(() => liberarPieza(pieza.id, on), on ? 'Liberada para las salas' : 'Retenida', { liberada: on }) },
+  ]);
+  const enlace = () => Alert.prompt('Agregar un enlace', 'El diseño en Drive o Canva (https://…).', [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Agregar', onPress: (t) => {
+      const v = String(t ?? '').trim();
+      if (!/^https?:\/\//i.test(v)) { Alert.alert('Enlace', 'Tiene que empezar con http:// o https://'); return; }
+      correr(async () => {
+        const a = await agregarEnlace({ piezaId: pieza.id, enlace: v, orden: (pieza.archivos || []).length, subidoPor: yoId });
+        setPieza((p) => ({ ...p, archivos: [...(p.archivos || []), a] }));
+      }, 'Enlace agregado');
+    } },
+  ], 'plain-text', '', 'url');
+  const medir = async () => {
+    try { setEfecto((await fetchEfectoEnVentas(pieza.id)) || { vacio: true }); }
+    catch (e) { fallo('No se pudo medir', mensajeAmigable(e)); }
+  };
+  const vEfecto = variacionDeVentas(efecto);
+  const editarMio = (c) => Alert.prompt('Editar el comentario', '', [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Guardar', onPress: (t) => { if (String(t ?? '').trim()) correr(() => editarComentario(c.id, t), 'Comentario corregido'); } },
+  ], 'plain-text', c.texto);
+  const quitarMio = (c) => Alert.alert('Quitar el comentario', 'Se borra para todos.', [
+    { text: 'Cancelar', style: 'cancel' }, { text: 'Quitar', style: 'destructive', onPress: () => correr(() => quitarComentario(c.id), 'Comentario quitado') },
+  ]);
+
   const mandarComentario = () => {
     const v = texto.trim();
     if (!v) return;
@@ -190,21 +241,57 @@ export default function PiezaDeMarketing() {
                 </View>
                 <Text style={{ color: colorSistema.texto, fontSize: 14, marginLeft: 28 }}>{c.texto}</Text>
                 {c.marca ? <Text style={{ color: colorSistema.texto2, fontSize: 12, marginLeft: 28 }}>Marcado sobre un diseño (se ve en el portal)</Text> : null}
-                {puedeEditar || puedeAprobar ? (
-                  <Pressable onPress={() => correr(() => marcarResuelto(c.id, !c.resuelto), c.resuelto ? 'Reabierto' : 'Resuelto')} hitSlop={6} style={{ marginLeft: 28 }}>
-                    <Text style={{ color: c.resuelto ? MARCA.ambar : MARCA.verde, fontSize: 13, fontWeight: '700' }}>{c.resuelto ? 'Reabrir' : 'Marcar resuelto'}</Text>
-                  </Pressable>
-                ) : null}
+                <View style={{ flexDirection: 'row', gap: 16, marginLeft: 28 }}>
+                  {puedeEditar || puedeAprobar ? (
+                    <Pressable onPress={() => correr(() => marcarResuelto(c.id, !c.resuelto), c.resuelto ? 'Reabierto' : 'Resuelto')} hitSlop={6}>
+                      <Text style={{ color: c.resuelto ? MARCA.ambar : MARCA.verde, fontSize: 13, fontWeight: '700' }}>{c.resuelto ? 'Reabrir' : 'Marcar resuelto'}</Text>
+                    </Pressable>
+                  ) : null}
+                  {c.autor_id === yoId && c.tipo === 'comentario' ? (
+                    <Pressable onPress={() => editarMio(c)} hitSlop={6}><Text style={{ color: MARCA.azulClaro, fontSize: 13, fontWeight: '600' }}>Editar</Text></Pressable>
+                  ) : null}
+                  {c.autor_id === yoId && c.tipo === 'comentario' && !c.respuestas?.length ? (
+                    <Pressable onPress={() => quitarMio(c)} hitSlop={6}><Text style={{ color: MARCA.rojo, fontSize: 13, fontWeight: '600' }}>Quitar</Text></Pressable>
+                  ) : null}
+                </View>
               </View>
             )) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin comentarios.</Text>}
             <Campo value={texto} onChangeText={setTexto} placeholder="Escribe un comentario…" maxLength={2000} />
             <BotonGrande texto="Comentar" onPress={mandarComentario} deshabilitado={ocupado || !texto.trim()} />
           </Seccion>
+          {pieza.promocion_id ? (
+            <Seccion titulo="Ventas de la promoción">
+              {!vEfecto && !efecto ? <BotonGrande texto="Medir" borde color={MARCA.azulClaro} onPress={medir} /> : null}
+              {efecto?.pendiente ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`Se puede medir desde el ${fechaTexto(efecto.desde, { day: 'numeric', month: 'long' })}.`}</Text> : null}
+              {efecto?.sin_productos || efecto?.vacio ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>La promoción no tiene productos para comparar.</Text> : null}
+              {vEfecto ? (
+                <>
+                  <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '800' }}>
+                    {`${formatMoney(vEfecto.durante)}${vEfecto.pct != null ? ` · ${vEfecto.pct >= 0 ? '+' : ''}${formatPct(vEfecto.pct, { decimales: 0 })}` : ' · sin ventas antes'}`}
+                  </Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
+                    {`${efecto.dias} días desde el ${fechaTexto(efecto.desde, { day: 'numeric', month: 'short' })}: ${formatQty(vEfecto.unidadesDurante)} unidades, contra ${formatMoney(vEfecto.antes)} (${formatQty(vEfecto.unidadesAntes)} unidades) los ${efecto.dias} días anteriores. Es una referencia: la temporada y el inventario también mueven la venta.`}
+                  </Text>
+                </>
+              ) : null}
+            </Seccion>
+          ) : null}
+          {sePuedeLiberar ? (
+            <Seccion titulo="Para las salas" pie={pieza.liberada ? 'Las salas la ven en Galería y la pueden descargar para publicarla en WhatsApp.' : 'Al liberarla, las salas la ven en Galería y la pueden descargar.'}>
+              <BotonGrande texto={pieza.liberada ? 'Retener (dejar de mostrarla)' : 'Liberar para las salas'} color={pieza.liberada ? MARCA.ambar : MARCA.verde} borde={!!pieza.liberada} deshabilitado={ocupado} onPress={() => liberar(!pieza.liberada)} />
+              {(pieza.archivos || []).filter((a) => a.url && !a.reemplazado).map((a) => {
+                const w = aptoParaWhatsApp(a);
+                return <Text key={a.id ?? a.url} style={{ color: w.apto ? MARCA.verde : MARCA.ambar, fontSize: 12 }}>{`${a.nombre || 'Diseño'}: ${w.apto ? (w.vertical === false ? 'sirve para WhatsApp, pero no es vertical' : 'listo para WhatsApp') : w.motivo}`}</Text>;
+              })}
+            </Seccion>
+          ) : null}
           {puedeEditar ? (
             <Seccion titulo="Diseñador">
+              <BotonGrande borde texto="Agregar un enlace (Drive, Canva)" color={MARCA.azulClaro} onPress={enlace} deshabilitado={ocupado} />
               <BotonGrande texto="Editar la pieza y sus diseños" onPress={() => router.push('/marketing-editar')} />
               <BotonGrande borde texto={pieza?.pauta ? 'La pauta' : 'Pautarla'} color={MARCA.azulClaro} onPress={() => router.push('/marketing-pauta')} />
               <BotonGrande borde texto="Duplicar a otro mes" color={MARCA.azulClaro} onPress={duplicar} />
+              {puedeQuitar ? <BotonGrande borde texto="Quitar la pieza" color={MARCA.rojo} onPress={quitar} deshabilitado={ocupado} /> : null}
             </Seccion>
           ) : null}
         </ScrollView>

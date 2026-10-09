@@ -51,7 +51,10 @@ import { useToastStore } from '@nucleo/store/toastStore';
 // existe; esto es la otra mitad: que un fallo se VEA.
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { diasEntre, hoySV, relojSV } from '@nucleo/utils/fecha';
-import { conteoDeObservaciones, esSolventable, metaObs, NON_CASH_TYPES, OBSERVACIONES, diasQuedanDelMes, observacionesPendientes, resumenDeRegularizacion, resumenDeRegularizarUna, sinResolver } from '@nucleo/utils/colasDeFacturacion';
+import {
+    conteoDeObservaciones, esSolventable, metaObs, NON_CASH_TYPES, OBSERVACIONES, diasQuedanDelMes, observacionesPendientes, resumenDeRegularizacion, resumenDeRegularizarUna, sinResolver,
+    claveDeSalto, correlativo7, filaDeSaltoSolventado, nulosPendientes, saltosPendientes, saltosSolventados,
+} from '@nucleo/utils/colasDeFacturacion';
 function avisarFalloAlSolventar(error, contexto) {
     console.error(`${contexto}: insert resolution failed:`, error.message);
     useToastStore.getState().showToast(
@@ -1624,33 +1627,23 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
 
     useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
-    const gapKey = (g) => `${g.branch_id}__${g.tipo_documento}__${g.gap_from}__${g.gap_to}`;
-
-    const resolvedGapKeys = useMemo(() =>
-        new Set(gapResolutions.map(r => `${r.branch_id}__${r.tipo_documento}__${r.gap_from}__${r.gap_to}`)),
-        [gapResolutions]
-    );
-
-    const pendingGaps = useMemo(() => gaps.filter(g => !resolvedGapKeys.has(gapKey(g))), [gaps, resolvedGapKeys]);
-    const resolvedGaps = useMemo(() =>
-        gapResolutions.map(r => ({
-            ...r,
-            gap: gaps.find(g => g.branch_id === r.branch_id && g.tipo_documento === r.tipo_documento && g.gap_from === r.gap_from && g.gap_to === r.gap_to) || null,
-        })),
-        [gapResolutions, gaps]
-    );
+    // Qué está pendiente, qué se solventó y la fila que se escribe salen del
+    // núcleo (`colasDeFacturacion`): la app solventa igual.
+    const gapKey = claveDeSalto;
+    const pendingGaps = useMemo(() => saltosPendientes(gaps, gapResolutions), [gaps, gapResolutions]);
+    const resolvedGaps = useMemo(() => saltosSolventados(gaps, gapResolutions), [gapResolutions, gaps]);
 
     const currentMonthStr = relojSV().toISOString().slice(0, 7);
     const resolvedGapsThisMonth = useMemo(() =>
-        resolvedGaps.filter(r => (r.resolved_at || '').startsWith(currentMonthStr)),
-        [resolvedGaps, currentMonthStr]
+        saltosSolventados(gaps, gapResolutions, currentMonthStr),
+        [gaps, gapResolutions, currentMonthStr]
     );
     const resolvedGapsDisplay = showAllResolved ? resolvedGaps : resolvedGapsThisMonth;
 
     const handleSolveGap = async (gap) => {
         setSaving(true);
         const resolvedBy = currentUser?.name || currentUser?.email || 'Desconocido';
-        const payload = { branch_id: gap.branch_id, tipo_documento: gap.tipo_documento, gap_from: gap.gap_from, gap_to: gap.gap_to, comment: comment.trim() || null, resolved_by: resolvedBy };
+        const payload = filaDeSaltoSolventado(gap, comment, resolvedBy);
         const { data, error } = await insertGapResolution(payload, { branch_name: getBranch(gap.branch_id) });
         if (error) { avisarFalloAlSolventar(error, 'handleSolveGap'); setSaving(false); return; }
         if (data?.[0]) setGapResolutions(prev => [data[0], ...prev]);
@@ -1673,7 +1666,7 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
 
     if (loading) return <div className="flex justify-center py-24"><SkeletonText lines={4} className="w-full max-w-md" /></div>;
 
-    const pad7 = n => String(n).padStart(7, '0');
+    const pad7 = correlativo7;
 
     const copyNullId = (val) => {
         if (!val) return;
@@ -1689,13 +1682,11 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
         gapsByBranch[g.branch_id].push(g);
     }
 
-    // MH-only null campos — these belong in Pendientes MH, not here
-    const MH_CAMPOS = new Set(['recibido_mh', 'codigo_generacion']);
-    const isMhOnly = (n) => (n.campos_nulos || []).every(c => MH_CAMPOS.has(c));
+    // Los nulos que son sólo de Hacienda van en Pendientes MH (`nulosPendientes`).
 
     // Mismo caso que `grouped` de arriba: el orden de las secciones lo decide
     // el id numérico, y hoy coincide con el del negocio de casualidad.
-    const activeNulls = nulls.filter(n => !nullResolvedIds.has(n.id) && !isMhOnly(n));
+    const activeNulls = nulosPendientes(nulls, nullResolvedIds);
     const nullsByBranch = {};
     for (const n of activeNulls) {
         if (!nullsByBranch[n.branch_id]) nullsByBranch[n.branch_id] = [];

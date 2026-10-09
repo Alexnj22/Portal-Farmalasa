@@ -11,13 +11,22 @@
 // aprobar, devolver, publicar, cerrar, nueva versión, archivar), lo que falta
 // para enviarla, el comentario de la última devolución, la pregunta por
 // pregunta con barras y el historial con quién hizo cada paso.
+//
+// También, como el portal: los resultados de UNA sucursal, el CSV de todas
+// las respuestas, el resumen de los comentarios con IA (guardado para todos;
+// se rehace sólo cuando entran comentarios nuevos), las rondas de la encuesta,
+// y los accesos a Ajustes (`ajustes`) y al Avance con sus enlaces (`avance`).
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { fetchComentarios, fetchEncuesta, fetchEventos, fetchPersonas, fetchProblemas, fetchResultados } from '@nucleo/data/encuestasClientes';
+import {
+  fetchComentarios, fetchEncuesta, fetchEventos, fetchPersonas, fetchProblemas, fetchRespuestasParaExportar, fetchResultados, fetchResumen, fetchRondas, guardarResumen,
+} from '@nucleo/data/encuestasClientes';
+import { preguntarASaly } from '@nucleo/data/ia';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12 } from '@nucleo/utils/hora';
-import { estadoDe, lecturaNps, resumenDeCierre } from '@nucleo/utils/encuestasClientes';
+import { archivoDeEncuesta, estadoDe, estadoDelResumen, lecturaNps, loteParaResumir, resumenDeCierre, tablaDeRespuestas } from '@nucleo/utils/encuestasClientes';
 import { formatPct } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import Segmentos from '../../componentes/Segmentos';
@@ -31,6 +40,8 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { colorDeVariante } from '../../componentes/colorDeVariante';
 import CicloDeEncuesta from '../../componentes/encuestas/Ciclo';
 import PreguntaPorPregunta from '../../componentes/encuestas/Distribucion';
+import { compartirCsv } from '../../componentes/fiscal/csv';
+import { fallo, trabajando, cerrarProgreso } from '../../componentes/Progreso';
 
 const EVENTO = {
   creada: 'creó la encuesta', enviada: 'la envió a revisión', aprobada: 'la aprobó', rechazada: 'la devolvió con cambios',
@@ -47,6 +58,10 @@ export default function EncuestaCliente() {
   const [vista, setVista] = useState('resultados');
   const [error, setError] = useState(null);
 
+  const [sala, setSala] = useState(null);
+  const [rondas, setRondas] = useState([]);
+  const [resumen, setResumen] = useState(null);
+  const [resumiendo, setResumiendo] = useState(false);
   const [problemas, setProblemas] = useState([]);
   const [eventos, setEventos] = useState([]);
   const [personas, setPersonas] = useState({});
@@ -55,8 +70,10 @@ export default function EncuestaCliente() {
     fetchEncuesta(id).then((e) => {
       setEncuesta(e || false);
       if (e && ['publicada', 'cerrada', 'archivada'].includes(e.estado)) {
-        fetchResultados(id).then(setDatos).catch((x) => setError(x?.message || 'No se pudieron cargar los resultados.'));
-        fetchComentarios(id).then(setComentarios).catch(() => setComentarios([]));
+        fetchResultados(id, sala).then(setDatos).catch((x) => setError(x?.message || 'No se pudieron cargar los resultados.'));
+        fetchComentarios(id, sala).then(setComentarios).catch(() => setComentarios([]));
+        fetchRondas(id).then(setRondas).catch(() => setRondas([]));
+        fetchResumen(id, sala).then(setResumen).catch(() => setResumen(null));
       }
       if (e?.estado === 'borrador') fetchProblemas(id).then(setProblemas).catch(() => setProblemas([]));
       fetchEventos(id).then(async (ev) => {
@@ -64,7 +81,7 @@ export default function EncuestaCliente() {
         try { setPersonas(await fetchPersonas((ev || []).map((x) => x.autor_id))); } catch { /* el historial se pinta sin caras */ }
       }).catch(() => setEventos([]));
     }).catch((x) => { setError(x?.message || 'No se pudo cargar la encuesta.'); setEncuesta(false); });
-  }, [id]);
+  }, [id, sala]);
   useEffect(() => { cargar(); }, [cargar]);
   // Al volver de diseñar las preguntas, «Falta para enviarla» se relee.
   const primera = useRef(true);
@@ -79,6 +96,37 @@ export default function EncuestaCliente() {
     else cargar();
   };
   const devuelta = encuesta?.estado === 'borrador' ? eventos.find((e) => e.tipo === 'rechazada' || e.tipo === 'enviada') : null;
+
+  // ── Resultados de una sucursal, CSV y resumen con IA (como el portal) ──
+  const salasConRespuestas = datos?.por_sucursal || [];
+  const elegirSala = () => {
+    const opciones = [{ id: null, label: 'Todas las sucursales' }, ...salasConRespuestas.map((x) => ({ id: Number(x.branch_id), label: x.nombre }))];
+    ActionSheetIOS.showActionSheetWithOptions({ title: 'Sucursal', options: [...opciones.map((o) => o.label), 'Cancelar'], cancelButtonIndex: opciones.length },
+      (i) => { if (i < opciones.length) { setDatos(null); setSala(opciones[i].id); } });
+  };
+  const exportar = async () => {
+    trabajando('Armando el archivo…');
+    try {
+      const filas = await fetchRespuestasParaExportar(encuesta.id);
+      const { headers, rows } = tablaDeRespuestas(encuesta.cuestionario, filas,
+        { fechaHora: (f) => `${fechaTexto(f, { day: '2-digit', month: '2-digit', year: 'numeric' })} ${hora12(f)}` });
+      cerrarProgreso();
+      await compartirCsv({ headers, rows, nombre: archivoDeEncuesta(encuesta.nombre), modulo: 'encuestas_clientes' });
+    } catch (e) { fallo('No se pudo exportar', mensajeAmigable(e, 'Intenta de nuevo.')); }
+  };
+  const resumir = async () => {
+    setResumiendo(true); trabajando('Resumiendo con IA…');
+    try {
+      const { data, error: e } = await preguntarASaly({ action: 'analyze-customer-survey', payload: { encuesta: encuesta.nombre, comments: loteParaResumir(comentarios) } });
+      if (e) throw e;
+      if (!data?.aiSummary) throw new Error('La IA no devolvió un resumen.');
+      await guardarResumen(encuesta.id, sala, data.aiSummary, comentarios[0]?.created_at);
+      setResumen(await fetchResumen(encuesta.id, sala));
+      cerrarProgreso();
+    } catch (e) { fallo('No se pudo resumir', mensajeAmigable(e, 'Intenta de nuevo.')); }
+    setResumiendo(false);
+  };
+  const estResumen = estadoDelResumen(resumen);
 
   const est = encuesta ? estadoDe(encuesta.estado) : null;
   const nps = datos?.nps;
@@ -113,9 +161,17 @@ export default function EncuestaCliente() {
                 </Seccion>
               </View>
             ) : null}
-            <View style={{ marginHorizontal: 16 }}>
+            <View style={{ marginHorizontal: 16, gap: 8 }}>
               <BotonGrande texto={encuesta.estado === 'borrador' ? 'Diseñar las preguntas' : 'Ver las preguntas'} borde color={MARCA.azulClaro}
                 onPress={() => router.push({ pathname: '/encuesta-cliente/disenar', params: { id: String(encuesta.id) } })} />
+              <BotonGrande texto="Vista previa: así la ve el cliente" borde color={MARCA.azulClaro}
+                onPress={() => router.push({ pathname: '/encuesta-cliente/vista', params: { id: String(encuesta.id) } })} />
+              <BotonGrande texto={encuesta.estado === 'borrador' ? 'Ajustes: canales, sucursales, fechas e incentivo' : 'Ver los ajustes'} borde color={MARCA.azulClaro}
+                onPress={() => router.push({ pathname: '/encuesta-cliente/ajustes', params: { id: String(encuesta.id) } })} />
+              {['publicada', 'cerrada'].includes(encuesta.estado) ? (
+                <BotonGrande texto="Avance, enlaces e incentivos" borde color={MARCA.azulClaro}
+                  onPress={() => router.push({ pathname: '/encuesta-cliente/avance', params: { id: String(encuesta.id) } })} />
+              ) : null}
             </View>
             <CicloDeEncuesta encuesta={encuesta} sinProblemas={!problemas.length} onHecho={hecho} />
             {!['publicada', 'cerrada', 'archivada'].includes(encuesta.estado) ? (
@@ -124,6 +180,14 @@ export default function EncuestaCliente() {
               <View style={{ marginHorizontal: 16 }}><Aviso texto="Todavía no hay respuestas." /></View>
             ) : datos ? (
               <>
+                <View style={{ marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                  <Pressable onPress={elegirSala} hitSlop={8} style={{ flex: 1, minHeight: 36, justifyContent: 'center' }}>
+                    <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>{`${sala ? salasConRespuestas.find((x) => Number(x.branch_id) === sala)?.nombre ?? 'Sucursal' : 'Todas las sucursales'} ▾`}</Text>
+                  </Pressable>
+                  <Pressable onPress={exportar} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                    <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Exportar CSV</Text>
+                  </Pressable>
+                </View>
                 <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'resultados', label: 'Resultados' }, { id: 'comentarios', label: comentarios?.length ? `Comentarios · ${comentarios.length}` : 'Comentarios' }]} />
                 {vista === 'resultados' ? (
                   <>
@@ -179,6 +243,27 @@ export default function EncuestaCliente() {
                   </>
                 ) : (
                   <View style={{ marginHorizontal: 16, gap: 8 }}>
+                    {comentarios?.length >= 3 ? (
+                      <Vidrio radio={16}>
+                        <View style={{ padding: 12, gap: 6 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>Resumen de los comentarios</Text>
+                            <Pressable disabled={!estResumen.puede || resumiendo} onPress={resumir} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center', opacity: !estResumen.puede || resumiendo ? 0.45 : 1 }}>
+                              <Text style={{ color: MARCA.violetaClaro, fontSize: 14, fontWeight: '700' }}>{resumiendo ? 'Resumiendo…' : estResumen.boton}</Text>
+                            </Pressable>
+                          </View>
+                          {estResumen.ayuda ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{estResumen.ayuda}</Text> : null}
+                          {resumen?.texto ? (
+                            <>
+                              <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{String(resumen.texto).replace(/\*\*/g, '')}</Text>
+                              <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
+                                {`Resumen de ${resumen.comentarios_n} comentario(s) · ${fechaTexto(resumen.generado_at, { day: 'numeric', month: 'short' })} ${hora12(resumen.generado_at)}${resumen.nuevos > 0 ? ` · ${resumen.nuevos} nuevo(s) desde entonces` : ''}`}
+                              </Text>
+                            </>
+                          ) : null}
+                        </View>
+                      </Vidrio>
+                    ) : null}
                     {comentarios == null ? <ActivityIndicator /> : comentarios.length ? comentarios.slice(0, 100).map((c, i) => (
                       <Vidrio key={c.id ?? i} radio={16}>
                         <View style={{ padding: 12, gap: 4 }}>
@@ -190,6 +275,21 @@ export default function EncuestaCliente() {
                   </View>
                 )}
               </>
+            ) : null}
+            {rondas.length > 1 ? (
+              <View style={{ marginHorizontal: 16 }}>
+                <Seccion titulo="Rondas de esta encuesta">
+                  {rondas.map((r, i) => (
+                    <View key={r.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: i ? 8 : 0 }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: r.id === encuesta.id ? '700' : '400' }}>{`v${r.version} · ${r.nombre}`}</Text>
+                        <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[r.fecha_inicio ? fechaTexto(r.fecha_inicio, { day: 'numeric', month: 'short', year: 'numeric' }) : null, estadoDe(r.estado).label, `${r.respuestas} resp.`].filter(Boolean).join(' · ')}</Text>
+                      </View>
+                      <Pildora texto={`NPS ${r.nps ?? '—'}`} color={colorDeVariante(lecturaNps(r.nps).variant)} />
+                    </View>
+                  ))}
+                </Seccion>
+              </View>
             ) : null}
             {eventos.length ? (
               <View style={{ marginHorizontal: 16 }}>

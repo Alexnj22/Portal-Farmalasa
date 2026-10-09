@@ -9,7 +9,9 @@
 //   · «Dejar aquí» muestra lo que llevas para la sala donde estás, «Aquí
 //     quedan» lo que espera salir de ella, y «Encima tuyo» todo lo cargado,
 //     con alarma a los `DIAS_PARA_ALARMA` días;
-//   · «Soltar» devuelve una bolsa que no debías llevar.
+//   · «Soltar» devuelve una bolsa que no debías llevar;
+//   · «Ticket» vuelve a imprimir el ticket de una bolsa que espera en la sala
+//     (el mismo papel del portal, `ticketParaReimprimir`, a la caja de la sala).
 //
 // Los permisos los decide la base; la bitácora la escribe la capa de datos.
 import { useCallback, useEffect, useState } from 'react';
@@ -17,7 +19,10 @@ import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-
 import { Stack } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { cargarBulto, cerrarRetiro, DIAS_PARA_ALARMA, fetchPendientesEnSala, fetchRetiroAbierto, firmarEntregaConCarne, soltarBulto } from '@nucleo/data/retiros';
-import { fetchTrasladoPorCodigo } from '@nucleo/data/traslados';
+import { fetchTrasladoParaImprimir, fetchTrasladoPorCodigo } from '@nucleo/data/traslados';
+import { ticketParaReimprimir } from '@nucleo/utils/imprimirTraslado';
+import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
+import { imprimirEnLaSala } from '../componentes/imprimir';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -30,7 +35,7 @@ import { fallo, listo } from '../componentes/Progreso';
 
 const cuantos = (items) => { const n = Array.isArray(items) ? items.length : Number(items) || 0; return `${n} producto${n === 1 ? '' : 's'}`; };
 
-function Bulto({ b, primero, onSoltar }) {
+function Bulto({ b, primero, onSoltar, onTicket }) {
   const tarde = Number(b.dias) >= DIAS_PARA_ALARMA;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador }}>
@@ -40,6 +45,11 @@ function Bulto({ b, primero, onSoltar }) {
           {`${cuantos(b.items)}${b.entrego ? ` · te la dio ${b.entrego}` : ''}${b.falta_firma ? ' · falta firma' : ''}${b.dias ? ` · ${b.dias} día${Number(b.dias) === 1 ? '' : 's'}` : ''}`}
         </Text>
       </View>
+      {onTicket && b.codigo ? (
+        <Pressable hitSlop={8} onPress={onTicket} style={{ minHeight: 44, justifyContent: 'center' }}>
+          <Text style={{ color: MARCA.azulClaro, fontSize: 15 }}>Ticket</Text>
+        </Pressable>
+      ) : null}
       {onSoltar ? (
         <Pressable hitSlop={8} onPress={onSoltar} style={{ minHeight: 44, justifyContent: 'center' }}>
           <Text style={{ color: MARCA.rojo, fontSize: 15 }}>Soltar</Text>
@@ -47,6 +57,18 @@ function Bulto({ b, primero, onSoltar }) {
       ) : null}
     </View>
   );
+}
+
+// Volver a imprimir el ticket de una bolsa que espera en la sala.
+async function reimprimirTicket(b, sala) {
+  const { fila } = await fetchTrasladoParaImprimir(b.request_id);
+  if (!fila?.metadata) return { ok: false, detalle: 'No se pudo leer ese traslado.' };
+  const st = useStaffStore.getState();
+  const cache = fila.employee_id ? await st.resolverPersonasDeSolicitudes([fila.employee_id]) : {};
+  const pide = fila.employee_id ? (buscadorDePersonas(st.employees)(fila.employee_id)?.name ?? cache?.[String(fila.employee_id)]?.name ?? null) : null;
+  const papel = ticketParaReimprimir({ metadata: fila.metadata, pide, familia: fila.type === 'INVENTORY_TRANSFER_PUSH' ? 'envio' : 'solicitud' });
+  if (!papel) return { ok: false, detalle: 'Ese traslado no tiene número: su ticket se confirma a mano.' };
+  return imprimirEnLaSala(papel.ticket, sala, papel.titulo);
 }
 
 export default function Retiro() {
@@ -105,6 +127,10 @@ export default function Retiro() {
     return true;
   };
 
+  const reimprimir = async (b) => {
+    const r = await reimprimirTicket(b, salaActual?.id).catch((e) => ({ ok: false, detalle: mensajeAmigable(e) }));
+    if (r?.ok) listo('Ticket enviado', r.detalle ?? 'Se mandó a la caja de la sala.'); else fallo('No se imprimió', r?.detalle ?? '');
+  };
   const soltar = (b) => Alert.alert('¿Soltar esta bolsa?', `${b.origen} → ${b.destino}. Deja de estar a tu cargo.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Soltar', style: 'destructive', onPress: async () => {
@@ -143,7 +169,7 @@ export default function Retiro() {
 
         {pendientes.length ? (
           <Seccion titulo={`Aquí quedan ${pendientes.length} esperando salir`}>
-            {pendientes.map((b, i) => <Bulto key={b.request_id ?? i} b={b} primero={!i} />)}
+            {pendientes.map((b, i) => <Bulto key={b.request_id ?? i} b={b} primero={!i} onTicket={() => reimprimir(b)} />)}
           </Seccion>
         ) : null}
 

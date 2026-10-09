@@ -209,3 +209,22 @@ export function precioALaVista(renglon) {
     const f = renglon.tipo_documento === 'CCF' ? 1 : 1.13;
     return { precio: parseFloat(renglon.precio_unitario || 0) * f, neto: parseFloat(renglon.neto || 0) * f };
 }
+
+// ── Productos ocultos y laboratorios (pestaña Productos, 2026-10-09) ────────
+// Ocultar un producto es global y permanente: por defecto la vista excluye los
+// ocultos; «ver ocultos» invierte a SÓLO los ocultos para revisarlos y
+// destaparlos. Escrito UNA vez para el portal y la app.
+export const productosSegunOcultos = (filas, verOcultos) => (filas || []).filter((r) => (verOcultos ? r.oculto_en_ventas : !r.oculto_en_ventas));
+export const cuantosOcultos = (filas) => (filas || []).filter((r) => r.oculto_en_ventas).length;
+
+/** Los laboratorios que aparecen en la lista, por nombre. */
+export function laboratoriosDeProductos(filas) {
+    const vistos = new Map();
+    for (const r of filas || []) {
+        if (r.laboratorio_id != null && !vistos.has(r.laboratorio_id)) vistos.set(r.laboratorio_id, r.laboratorio_nombre || `Lab. ${r.laboratorio_id}`);
+    }
+    return [...vistos.entries()].map(([value, label]) => ({ value: String(value), label })).sort((a, b) => a.label.localeCompare(b.label));
+}
+
+/** «Ocultar montos»: el monto se reemplaza por puntos, nunca se redondea a otra cosa. */
+export const montoPrivado = (texto, privado) => (privado ? '••••••' : texto);

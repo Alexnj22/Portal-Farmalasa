@@ -7,8 +7,9 @@
 // Filtros del portal: categoría, clase contable, vínculo con el registro de
 // compras, deducibilidad del IVA (sin clasificar / propuesta / confirmada) e
 // inactivos; y los mismos órdenes (documentos, última compra, nombre,
-// categoría). La ficha edita lo mismo que el portal. Lo que queda allá: la
-// asignación de categoría en lote y la revisión de deducibilidad por regla.
+// categoría). La ficha edita lo mismo que el portal; la revisión de
+// deducibilidad por regla es `proveedores-fiscal` y la categoría en lote,
+// `proveedores-lote`.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
@@ -101,6 +102,8 @@ export default function Proveedores() {
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
+        <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Revisar la deducibilidad por regla" borde onPress={() => router.push('/proveedores-fiscal')} /></View>
+        <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Categoría en lote" borde onPress={() => router.push('/proveedores-lote')} /></View>
         {filas ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${visibles.length.toLocaleString('es-SV')} proveedores`}</Text> : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.slice(0, mostrar).map((r) => (

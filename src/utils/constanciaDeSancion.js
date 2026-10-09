@@ -25,7 +25,8 @@
  * logo, y no tokens del modo claro/oscuro. Es el mismo criterio del ticket.
  */
 import { EMPRESA } from '../constants/empresa';
-import { MARCA } from '@plataforma/documentoDeBienvenida';
+import { MARCA } from './marcaDelPapel';
+import { pdfmakeAHtml } from './pdfmakeAHtml';
 
 // pdfmake por `await import()` — la regla de librerías pesadas de CLAUDE.md.
 // Este archivo ya viaja diferido dentro del modal de sanción, pero la librería
@@ -401,4 +402,13 @@ export async function descargarConstancia(datos) {
     } catch (e) {
         return { ok: false, motivo: String(e?.message || e) };
     }
+}
+
+/**
+ * La MISMA constancia como HTML, para el teléfono: `pdfmake` es sólo-web, así
+ * que la app la convierte con `expo-print`. Sin logo (la ruta del logo es del
+ * sitio web); en su lugar va el nombre comercial, que la definición ya prevé.
+ */
+export function htmlDeLaConstancia(datos) {
+    return pdfmakeAHtml(definicionDeLaConstancia({ ...datos, logoPng: null }));
 }

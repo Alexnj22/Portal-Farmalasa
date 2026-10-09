@@ -18,6 +18,7 @@ import PedidoModal from './PedidoModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import SearchInput from '../../components/common/SearchInput';
 import { useSearchToggle } from '../../plataforma/useSearchToggle';
+import { extrasDeRenglones, opcionesDeExtra, opcionesDelCatalogo, rotuloDeDespacho } from '@nucleo/utils/extrasDeRecepcion';
 import { actualizarExtraDePedido, agregarExtraAPedido, corregirRecepcionDeItem, fetchLastDispatchInfo, fetchProductPreciosOpts, fetchProductPreciosOptsForProducts, marcarHojasRecibidas, quitarExtraDePedido, recibirPedidoDeSucursal, recibirProductoSuelto, searchAvailableProducts } from '@nucleo/data/recepcion';
 import { recibirTrasladoPedido } from '@nucleo/data/pedidos';
 import SegmentedControl from '../../components/common/SegmentedControl';
@@ -29,7 +30,7 @@ import { estadoDeHojas, hojasContables, hojasContadas } from '@nucleo/utils/hoja
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { lotesAsignadosToDispatch } from '@nucleo/utils/pedidoPrint';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { conteoInicial, enPresentacion, enviadoDe, etiquetaDePresentacion, mapaDePresentaciones, presentacionesDeRenglones, quedaTodoListo, renglonContado, renglonTodoOk } from '@nucleo/utils/recepcionDePedido';
+import { conteoInicial, enPresentacion, enviadoDe, mapaDePresentaciones, presentacionesDeRenglones, quedaTodoListo, renglonContado, renglonTodoOk } from '@nucleo/utils/recepcionDePedido';
 
 // `EmpChip` vivía acá y se fue con la franja de «Responsables» del pie: era su
 // único uso en todo el repo (el chip de las tarjetas de pedido es
@@ -38,12 +39,8 @@ import { conteoInicial, enPresentacion, enviadoDe, etiquetaDePresentacion, mapaD
 // `enviadoDe`, `conteoInicial` y `enPresentacion` viven en el núcleo
 // (`utils/recepcionDePedido`).
 
-function fmtDispatchLabel(dispatch_tipo, dispatch_factor) {
-    const f = Number(dispatch_factor) || 1;
-    const LABELS = { CAJA: 'Caja', BLISTER: 'Blíster', MULTIPLO: 'Unid', UNIDAD: 'Unidad', caja: 'Caja', blister: 'Blíster', multiplo: 'Unid', multiplo_unidades: 'Unid', solo_cajas: 'Caja', unidad: 'Unidad' };
-    const label = LABELS[dispatch_tipo] ?? dispatch_tipo ?? 'Unidad';
-    return f > 1 ? `${label} ×${f}` : label;
-}
+// Rótulo de la presentación de despacho: núcleo (`extrasDeRecepcion`).
+const fmtDispatchLabel = rotuloDeDespacho;
 
 /**
  * Los lotes del renglón, para quien tiene la caja en la mano.
@@ -548,12 +545,7 @@ const EXTRAS_GRID = 'grid-cols-[minmax(0,1fr)_9rem_3rem_1.75rem]';
 async function fetchPresOpts(productId) {
     const { data, error } = await fetchProductPreciosOpts(productId);
     if (error) console.error('fetchPresOpts failed:', error.message);
-    const opts = [];
-    (data || []).forEach(p => {
-        const f = Number(p.factor) || 1;
-        if (!opts.find(x => x.factor === f)) opts.push({ factor: f, label: etiquetaDePresentacion(p) });
-    });
-    return opts;
+    return opcionesDelCatalogo(data || []);
 }
 
 // ── Los campos de cantidad NO pasan por `PortalInput` (2026-07-28, D3.4) ──
@@ -691,23 +683,7 @@ export default function RecepcionModal({
     // encuentra. Antes era `useState([])` puro y este modal se monta como
     // `{modal && <RecepcionModal/>}`: cualquier cierre se llevaba lo anotado
     // sin un error y sin dejar nada escrito.
-    // Los extras ya guardados se leen de los renglones `es_extra`. Es UNA
-    // función porque se usa dos veces —al montar y al abrir— y la segunda
-    // decía `setExtras([])`: reabrir el modal mostraba la lista vacía con los
-    // extras guardados en la base (2026-10-07).
-    const extrasGuardados = useCallback(() =>
-        rows.filter(r => r.es_extra && r.status !== 'anulado').map(r => ({
-            id: r.id,
-            erp_product_id: r.erp_product_id,
-            nombre: r.products?.nombre ?? '',
-            fPres: Number(r.dispatch_factor) || Number(r.factor) || 1,
-            fQty:  Number(r.cantidad_recibida) || 1,
-            nota:  r.nota_diferencia ?? '',
-            // Con una propuesta en curso la cantidad es la que aceptó la otra
-            // parte: se muestra, no se toca.
-            bloqueado: r.resolucion_status != null,
-        })), [rows]);
-    const [extras, setExtras] = useState(extrasGuardados);
+    const [extras, setExtras] = useState(() => extrasDeRenglones(rows));
     const [extraError, setExtraError] = useState(null);
     const [extraSearch,  setExtraSearch]  = useState('');
     const [extraResults, setExtraResults] = useState([]);
@@ -947,7 +923,7 @@ export default function RecepcionModal({
         setSaveError(null);
         setCorrecciones({}); setCorrigiendoId(null); setHuboCorreccion(false); setConfirmadosQ('');
         setPresMap({});
-        setExtras(extrasGuardados()); setExtraSearch(''); setExtraResults([]);
+        setExtras(extrasDeRenglones(rows)); setExtraSearch(''); setExtraResults([]);
         setProdSearch(''); setShowSearch(false); setPrevScreen(null);
 
         const fQ = {}, fP = {}, notas = {}, errs = {};
@@ -1079,12 +1055,7 @@ export default function RecepcionModal({
 
         const { data: lastDispatch, error: lastDispatchErr } = await fetchLastDispatchInfo(prod.id);
         if (lastDispatchErr) console.error('fetch last dispatch failed:', lastDispatchErr.message);
-        if (lastDispatch?.[0]) {
-            const df = Number(lastDispatch[0].dispatch_factor) || 1;
-            if (!opts.find(o => o.factor === df)) {
-                opts.unshift({ factor: df, label: fmtDispatchLabel(lastDispatch[0].dispatch_tipo, df) });
-            }
-        }
+        opts = opcionesDeExtra(opts, lastDispatch?.[0] ?? null);
 
         if (opts.length > 0) setPresMap(prev => ({ ...prev, [prod.id]: opts }));
         const defF = opts[0]?.factor ?? 1;

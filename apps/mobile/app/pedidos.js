@@ -14,8 +14,8 @@
 // elige en el menú. Bodega genera el pedido (`pedido/generar`) y, en la
 // ficha, inicia, pausa, programa la entrega o anula; la llegada de un reenvío
 // se confirma en `pedido/reenvio`. Las rutas de reparto, con su mapa, en
-// `pedido/rutas`. Finalizar (las cajas), armar rutas y reglas siguen
-// en el portal.
+// `pedido/rutas`; finalizar (las cajas y hojas), el papel, el reenvío y armar
+// la ruta, desde la ficha. Las reglas de despacho, en `pedido/reglas`.
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
@@ -92,6 +92,7 @@ export default function Pedidos() {
   const puede = hasPermission('pedidos', 'can_edit');
   const verMetricas = hasPermission('pedidos_tab_metricas');
   const verRutas = hasPermission('pedidos_tab_rutas');
+  const verReglas = hasPermission('pedidos_tab_reglas');
   const miErp = BRANCH_A_ERP[Number(salaDelUsuario(user))] ?? null;
   const [vista, setVista] = useState('pedidos');
   const [salaElegida, setSala] = useState('todas');
@@ -177,11 +178,11 @@ export default function Pedidos() {
                   {estado === 'all' ? 'No hay pedidos en curso en este período.' : 'Ningún pedido con este filtro.'}
                 </Text>
               )}
-            {(todas && puede) || verRutas ? (
+            {(todas && puede) || verRutas || verReglas ? (
               <View style={{ marginHorizontal: 16, gap: 8 }}>
                 {todas && puede ? <BotonGrande texto="Generar pedido" color={MARCA.azul} onPress={() => router.push('/pedido/generar')} /> : null}
-                {/* Las rutas, con su mapa, son nativas; ARMAR una (el optimizador) sigue en el portal. */}
                 {verRutas ? <BotonGrande texto="Rutas de reparto" borde onPress={() => router.push('/pedido/rutas')} /> : null}
+                {verReglas ? <BotonGrande texto="Reglas de despacho" borde onPress={() => router.push('/pedido/reglas')} /> : null}
               </View>
             ) : null}
           </>

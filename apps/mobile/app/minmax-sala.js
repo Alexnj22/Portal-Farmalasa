@@ -16,11 +16,14 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  calcularMinMaxDeSala, descartarBorradorDeFila, descartarBorradoresDeMinMax, fetchAnalisisDeStock, publicarMinMax,
+  calcularMinMaxDeSala, descartarBorradorDeFila, descartarBorradoresDeMinMax, fetchAnalisisDeStock, fetchProveedorPrincipal, fetchStockNetoPorSala, publicarMinMax,
 } from '@nucleo/data/stockParams';
+import { csvDeMinMax } from '@nucleo/utils/csvMinMax';
+import { hoySV } from '@nucleo/utils/fecha';
+import { compartirCsv } from '../componentes/fiscal/csv';
 import { cuentaADescartar, filaPasaFiltros, mensajeDePublicacion, motivoDeSaltoDelCalculo } from '@nucleo/utils/revisionDeSala';
 import { ALERTA_ETIQUETA, ESTADOS_DE_STOCK } from '@nucleo/constants/minmax';
-import { BRANCH_A_ERP, ERP_NAMES, ERP_ORDEN } from '@nucleo/constants/erp';
+import { BRANCH_A_ERP, ERP_BODEGA, ERP_NAMES, ERP_ORDEN } from '@nucleo/constants/erp';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
@@ -35,7 +38,7 @@ import Segmentos from '../componentes/Segmentos';
 import Vidrio from '../componentes/Vidrio';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import { MARCA } from '../componentes/inicio/marca';
-import { fallo, listo, trabajando } from '../componentes/Progreso';
+import { cerrarProgreso, fallo, listo, trabajando } from '../componentes/Progreso';
 
 const COLOR_ALERTA = {
   out_of_stock: MARCA.rojo, below_min: MARCA.rojo, approaching: MARCA.ambar, ok: MARCA.verde,
@@ -73,7 +76,7 @@ function Fila({ r, onAbrir, onMantener }) {
 }
 
 export default function MinMaxSala() {
-  const { sala: salaParam } = useLocalSearchParams();
+  const { sala: salaParam, abc: abcParam, xyz: xyzParam } = useLocalSearchParams();
   const { user, hasPermission, getScope, moduleLock } = useAuth();
   const todas = getScope?.('minmax') === 'ALL';
   const puede = hasPermission('minmax', 'can_edit');
@@ -83,8 +86,8 @@ export default function MinMaxSala() {
   const [filas, setFilas] = useState(null);
   const [error, setError] = useState(null);
   const [vista, setVista] = useState('todos');
-  const [abc, setAbc] = useState('all');
-  const [xyz, setXyz] = useState('all');
+  const [abc, setAbc] = useState(abcParam ? String(abcParam) : 'all');
+  const [xyz, setXyz] = useState(xyzParam ? String(xyzParam) : 'all');
   const [alerta, setAlerta] = useState('all');
   const [texto, setTexto] = useState('');
   const busca = useTextoRebotado(texto).trim();
@@ -168,17 +171,46 @@ export default function MinMaxSala() {
     setFilas((x) => x.map((f) => (f.erp_product_id === r.erp_product_id ? { ...f, draft_status: 'none', draft_min: r.effective_min, draft_max: r.effective_max } : f)));
   };
 
+  // El CSV del portal (`csvDeMinMax`, núcleo); en Bodega lleva además el stock
+  // neto de las salas y el proveedor principal, pedidos en tandas de 1000 ids.
+  const exportar = async () => {
+    trabajando('Armando el archivo…');
+    try {
+      const esBodega = Number(sala) === ERP_BODEGA;
+      const neto = {}; const proveedor = {};
+      if (esBodega && visibles.length) {
+        const ids = visibles.map((r) => r.erp_product_id);
+        const tandas = []; for (let i = 0; i < ids.length; i += 1000) tandas.push(ids.slice(i, i + 1000));
+        const [ns, sp] = await Promise.all([
+          Promise.all(tandas.map((t) => fetchStockNetoPorSala({ p_product_ids: t }))),
+          Promise.all(tandas.map((t) => fetchProveedorPrincipal({ p_product_ids: t }))),
+        ]);
+        ns.forEach((r) => (r.data ?? []).forEach((x) => { neto[x.erp_product_id] = x.net_stock; }));
+        sp.forEach((r) => (r.data ?? []).forEach((x) => { proveedor[x.erp_product_id] = x.proveedor; }));
+      }
+      const { headers, filas: csv } = csvDeMinMax(visibles, ERP_NAMES[sala], esBodega, neto, proveedor);
+      cerrarProgreso();
+      await compartirCsv({ headers, rows: csv, nombre: `minmax_${ERP_NAMES[sala]}_${hoySV()}`, modulo: 'minmax', detalle: { sucursal: ERP_NAMES[sala], bodega: esBodega } });
+    } catch (e) { fallo('No se pudo exportar', mensajeAmigable(e)); }
+  };
+
   const menuDeSala = () => {
     Haptics.selectionAsync().catch(() => {});
     const opciones = [];
     if (aDescartar.borradores) opciones.push([hayFiltro && idsFiltrados.length ? `Publicar lo filtrado (${idsFiltrados.length})` : `Publicar todo (${aDescartar.borradores})`, 'publicar']);
     if (aDescartar.total) opciones.push([`Descartar todo (${aDescartar.total})`, 'descartar']);
     opciones.push(['Recalcular la sala', 'recalcular']);
+    if (todas) opciones.push(['Configuración y laboratorios', 'config']);
+    opciones.push(['Matriz ABC·XYZ', 'matriz']);
+    if (hasPermission('minmax_descargar')) opciones.push([`Exportar CSV (${visibles.length})`, 'csv']);
     ActionSheetIOS.showActionSheetWithOptions({
       title: ERP_NAMES[sala], options: [...opciones.map((o) => o[0]), 'Cancelar'],
       destructiveButtonIndex: opciones.findIndex((o) => o[1] === 'descartar'), cancelButtonIndex: opciones.length,
     }, (i) => {
       const accion = opciones[i]?.[1];
+      if (accion === 'config') { router.push('/minmax-config'); return; }
+      if (accion === 'csv') { exportar(); return; }
+      if (accion === 'matriz') { router.push({ pathname: '/minmax-matriz', params: { sala: String(sala) } }); return; }
       if (accion === 'publicar') {
         const ids = hayFiltro && idsFiltrados.length ? idsFiltrados : null;
         Alert.alert('Publicar borradores', `${ids ? ids.length : aDescartar.borradores} borradores pasan a ser el MIN·MAX vigente de ${ERP_NAMES[sala]}. Los que vienen de una solicitud aprobada no se tocan.`, [

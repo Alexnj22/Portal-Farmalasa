@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1264.0 — Auditoría completa: todo nativo en la app
+
+- **Auditoría completa portal ↔ app, y todo lo que faltaba pasó a nativo.** Cinco áreas revisadas botón por botón contra el portal (tablas en el scratchpad de la sesión):
+  - **Efectivo y puntos:** abrir la caja, iniciar turno, hacer corte con su comprobante, pedir corrección, pagar bonos, resolver diferencias de corte (abonos, cobrar todo, asentar), **finalizar el efectivo y los depósitos al banco** (reparto, boleta, corregir), causas de diferencia por bolsa, anular vale/bolsa, abono de apartado, cobro de aplicación de inyección, ajustar puntos, código de acceso, asignar cuentas y traspasos.
+  - **Pedidos, bodega, inventario y compras:** finalizar con cajas y hojas, hoja de despacho, reenviar, armar la ruta de reparto, diferencias y devoluciones completas, recepción (uno solo, corregir, extras), reglas de despacho, configuración global y matriz de Mín·Máx, stock muerto, presentaciones y márgenes, papel del conteo, **Cargar compra**, revisión y ZIP de facturas, deducibilidad y categoría de proveedores en lote, ticket del retiro.
+  - **Personal:** comunicados (Mis avisos), acciones de RRHH, sanción con constancia, recontratar, carné del día, historial corregible, nómina global y por sala, propuesta de vacaciones, permisos (activar todo, secciones, delegar), resumen IA del clima, reparos de horario.
+  - **Comercial y fiscal:** marketing completo, ventas (ocultar productos, laboratorio, ocultar montos), saltos e historial de facturación, descuentos y CSV de promociones, bonificaciones y autorización de metas, inyecciones por cobrar y ajustes, historias, banners y reservas, encuestas a clientes completas, archivos de DTE y libro bajo receta.
+  - **Sistema y sucursales:** Prueba de impresión, Objetos huérfanos y Prueba iOS nativas, alta/baja y editor completo de sucursal, documentos propios, enfermería, pagos, jefaturas, cierre y configuración de bitácoras, widget de Reservas.
+- **Arreglos del portal que salieron de la auditoría:** el historial de la ficha (editar/cancelar/adjuntar nunca funcionó), «Ver respaldo legal», el carné que podía imprimirse en otra computadora, los archivos de enfermería que nunca se subían, farmacovigilancia con dos claves, y revocar kioscos sin permiso desde la lista de sucursales.
+- **Unido con los cambios de Pedidos de main:** la hoja reimpresa de una sala finalizada dice lo que SALIÓ también desde la app; finalizar y reenviar desde la app usan las funciones de la base de una sola transacción (`finalizar_sala_con_cajas`, `pedir_reenvio_sala`); armar la ruta en la app ofrece sólo salas que no salieron ni llegaron, pone primero los reenvíos y cuenta las descargas; la recepción de la app cuenta en la unidad del sistema cuando lo enviado no cabe exacto en la caja de despacho (`conteoInicial`). `logicaDeRutas` pasó al núcleo (`src/utils/logicaDeRutas.js`).
+
 ## v2.1263.0 — App de clientes: minerales refinados, Team y celebraciones de mayoreo
 
 - **Minerales refinados:** facetas más grandes («el mineral más cerca») y aristas suaves en metales y piedras (`gema`, `metal`, diamante); las líneas marcadas competían con los textos. Franjas de Wallet regeneradas.

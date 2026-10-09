@@ -13,8 +13,16 @@
 // cargos, sala, contacto, contrato) y «Expediente» la del expediente
 // (`empleado/expediente`: foto, documentos por sección, estudios y la cuenta
 // de la planilla).
-import { useMemo, useState } from 'react';
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+//
+// Y las acciones de la cabecera del portal, con los MISMOS permisos:
+// «Historial, ausencias y solicitudes» (`empleado/historial`), «Acción de
+// personal» (`empleado/accion`), «Sanción» (`empleado/sancion`), «Ingreso en
+// vacaciones» si está gozándolas (`empleado/ingreso-vacaciones`), restablecer
+// la contraseña (`fijarContrasenaDeEmpleado`), el carné del día —imprimirlo
+// en la caja de una sala o anular el vigente— y, si está de baja,
+// «Recontratar» (`empleado/recontratar`).
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, Linking, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
@@ -30,6 +38,12 @@ import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { anotar } from '@nucleo/data/audit';
+import { fijarContrasenaDeEmpleado } from '@nucleo/data/auth';
+import { anularCarneTemporal, carneVigente, fetchCarnesTemporales } from '@nucleo/data/carneTemporal';
+import { vacacionEnCurso } from '@nucleo/utils/reingresoYRecontratacion';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fallo, listo, trabajando } from '../../componentes/Progreso';
+import { useCarneDePapel } from '../../componentes/personas/CarneDePapel';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Dato, Seccion } from '../../componentes/formulario/Piezas';
@@ -64,6 +78,15 @@ export default function Empleado() {
   const emp = useMemo(() => (empleados || []).find((e) => String(e.id) === String(id)), [empleados, id]);
   const [cuantos, setCuantos] = useState(10);
   const hoy = hoySV();
+  const imprimirCarne = useCarneDePapel();
+  const [carne, setCarne] = useState(undefined); // undefined = leyendo · null = no tiene · false = no se pudo leer
+  const leerCarne = useCallback(async () => {
+    if (!id) return;
+    const { data, error } = await Promise.resolve(fetchCarnesTemporales(id, 5)).catch((e) => ({ data: null, error: e }));
+    setCarne(error ? false : ((data || []).find(carneVigente) || null));
+  }, [id]);
+  const puedeCarne = !!hasPermission?.('carne_temporal', 'can_edit');
+  useEffect(() => { if (puedeCarne) leerCarne(); }, [puedeCarne, leerCarne]);  
 
   const sala = useMemo(() => (sucursales || []).find((b) => String(b.id) === String(emp?.branchId ?? emp?.branch_id)), [sucursales, emp]);
   const historial = useMemo(() => historialDePerfil(emp?.history || [], emp?.hire_date || emp?.hireDate, sala?.name), [emp, sala]);
@@ -78,6 +101,36 @@ export default function Empleado() {
   const tel = soloDigitos(emp.phone);
   const cumple = cumpleEn(emp.birth_date || emp.birthDate, hoy);
   const areas = (emp.assigned_branch_ids || []).map((b) => (sucursales || []).find((s) => String(s.id) === String(b))?.name).filter(Boolean);
+  const inactiva = ['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'].includes(emp.status);
+  // Restablecer la contraseña: la MISMA del portal (`set-employee-password`).
+  // Si el servidor da una temporal, se muestra una sola vez y se puede compartir.
+  const restablecer = () => Alert.alert('Restablecer la contraseña', `¿Restablecer la contraseña de ${shortEmployeeName(emp)}? Deberá cambiarla en su próximo acceso.`, [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Restablecer', onPress: async () => {
+      trabajando('Restableciendo…');
+      try {
+        const { data, error } = await fijarContrasenaDeEmpleado(emp.username, '1234', { employeeId: emp.id });
+        if (error) throw error;
+        if (!data?.ok) throw new Error('No se pudo restablecer.');
+        if (data.tempPassword) {
+          listo('Contraseña temporal', 'Anótala o compártela: no se puede volver a ver.');
+          Alert.alert('Contraseña temporal', `Usuario: ${emp.username}\nContraseña: ${data.tempPassword}`, [
+            { text: 'Compartir', onPress: () => Share.share({ message: `Usuario: ${emp.username}\nContraseña temporal: ${data.tempPassword}` }).catch(() => {}) },
+            { text: 'Listo' },
+          ]);
+        } else listo('Contraseña restablecida', `${shortEmployeeName(emp)} deberá cambiarla en su próximo acceso.`);
+      } catch (e) { fallo('No se restableció', mensajeAmigable(e, 'Error de conexión.')); }
+    } },
+  ]);
+  const anularCarne = () => Alert.alert('¿Anular el carné vigente?', 'Ese papel deja de servir de inmediato. Si lo necesita, se imprime otro.', [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Anular', style: 'destructive', onPress: async () => {
+      trabajando('Anulando…');
+      const r = await Promise.resolve(anularCarneTemporal(carne.id, { employeeId: emp.id })).catch((e) => ({ ok: false, motivo: e?.message }));
+      if (r?.ok) listo('Carné anulado', 'Ese papel ya no sirve.'); else fallo('No se anuló', r?.motivo || 'Intenta de nuevo.');
+      leerCarne();
+    } },
+  ]);
   const contactar = (via) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     anotar(via === 'wa' ? 'PERSONAL_WHATSAPP' : 'PERSONAL_LLAMAR', emp.id, { desde: 'app-ficha' });
@@ -191,7 +244,33 @@ export default function Empleado() {
           ) : null}
         </Seccion>
 
-        {hasPermission?.('staff_list', 'can_edit') && !['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'].includes(emp.status) ? (
+        <BotonGrande texto="Historial, ausencias y solicitudes" borde color={MARCA.azulClaro}
+          onPress={() => router.push({ pathname: '/empleado/historial', params: { id: String(emp.id) } })} />
+        {hasPermission?.('staff_detail', 'can_edit') && !inactiva ? (
+          <Seccion titulo="Acciones de personal">
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Accion icono="Plus" rotulo="Acción RRHH" color={MARCA.azulClaro} onPress={() => router.push({ pathname: '/empleado/accion', params: { id: String(emp.id) } })} />
+              <Accion icono="ShieldAlert" rotulo="Sanción" color={MARCA.ambar} onPress={() => router.push({ pathname: '/empleado/sancion', params: { id: String(emp.id) } })} />
+              <Accion icono="KeyRound" rotulo="Contraseña" color={MARCA.violetaClaro} onPress={restablecer} />
+            </View>
+            {vacacionEnCurso(emp, hoy) ? (
+              <BotonGrande texto="Ingreso en vacaciones" borde color={MARCA.ambar} onPress={() => router.push({ pathname: '/empleado/ingreso-vacaciones', params: { id: String(emp.id) } })} />
+            ) : null}
+          </Seccion>
+        ) : null}
+        {puedeCarne && !inactiva ? (
+          <Seccion titulo="Carné del día" pie={carne === false ? 'No se pudo saber si tiene uno vigente.' : carne ? `Tiene uno vigente: vence ${hora12(carne.vence_el)}.` : carne === null ? 'No tiene uno vigente.' : null}>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Accion icono="Printer" rotulo="Imprimir" color={MARCA.azulClaro}
+                onPress={() => imprimirCarne({ employeeId: emp.id, nombre: emp.name, cargo: emp.role || '', sala: sala?.name || '', motivo: 'Desde el perfil', alTerminar: leerCarne })} />
+              {carne ? <Accion icono="Ban" rotulo="Anular el vigente" color={MARCA.rojo} onPress={anularCarne} /> : null}
+            </View>
+          </Seccion>
+        ) : null}
+        {hasPermission?.('staff_list', 'can_edit') && inactiva ? (
+          <BotonGrande texto="Recontratar" color={MARCA.verde} onPress={() => router.push({ pathname: '/empleado/recontratar', params: { id: String(emp.id) } })} />
+        ) : null}
+        {hasPermission?.('staff_list', 'can_edit') && !inactiva ? (
           <BotonGrande texto="Editar la ficha" onPress={() => router.push({ pathname: '/empleado/editar', params: { id: String(emp.id) } })} />
         ) : null}
         {hasPermission?.('staff_detail', 'can_view') ? (

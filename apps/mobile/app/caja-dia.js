@@ -4,9 +4,9 @@
 // lleva abonado, o nada todavía). Las cuentas son las del núcleo
 // (`desgloseDelDia`, `estadoDeCorte`, `pendienteDe`, `saldoDeDiferencia`).
 //
-// Tocar un corte abre su detalle nativo (confirmar o descartar). Asignar
-// responsables o anotar una causa con comprobante se hace en el portal, dentro
-// de la app: es el mismo formulario que la ficha del corte del portal.
+// Tocar un corte abre su detalle nativo (confirmar o descartar); «Resolver la
+// diferencia» abre `diferencia-corte`: causa con comprobante, responsables y
+// sus abonos, igual que la ficha del corte del portal.
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -116,15 +116,18 @@ export default function CajaDia() {
                       {mov?.via === 'REPONE' && saldoDeDiferencia(mov) > 0 ? (
                         <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '600' }}>{`Falta cobrar ${formatMoney(saldoDeDiferencia(mov))}`}</Text>
                       ) : null}
+                      <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/diferencia-corte', params: { sala: String(sala), fecha, signo, corte: String(c.id) } }); }}
+                        accessibilityRole="button" style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 40, paddingHorizontal: 14, borderRadius: 20, justifyContent: 'center', backgroundColor: `${MARCA.azulClaro}26`, opacity: pressed ? 0.7 : 1 })}>
+                        <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>
+                          {hasPermission('cortes_caja_resolver') && (queda > 0.004 || (mov?.via === 'REPONE' && saldoDeDiferencia(mov) > 0)) ? 'Resolver la diferencia' : 'Ver la diferencia'}
+                        </Text>
+                      </Pressable>
                     </View>
                   </Vidrio>
                 </Pressable>
               );
             })}
-            {hasPermission('cortes_caja', 'can_edit') && dia.estadoDif !== 'resuelto' ? (
-              <BotonGrande texto="Resolver en el portal" borde color={MARCA.azulClaro}
-                onPress={() => router.push({ pathname: '/portal', params: { ruta: `/caja?tab=diferencias&sala=${sala}`, nombre: 'Diferencias' } })} />
-            ) : null}
+
           </>
         ) : null}
       </ScrollView>

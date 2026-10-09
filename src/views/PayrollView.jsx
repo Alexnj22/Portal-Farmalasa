@@ -28,8 +28,9 @@ import { registrarEgreso } from '@nucleo/data/egreso';
 import { abrirVentanaDeImpresion, escribirEImprimir } from '../plataforma/ventanaDeImpresion';
 import { descargarArchivo } from '../plataforma/descargas';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { ESTADO_PLANILLA, csvDelBanco, montoEnLetras, ordenDeCargo, rotuloDePeriodo } from '@nucleo/utils/planilla';
+import { ESTADO_PLANILLA, csvDelBanco, ordenDeCargo } from '@nucleo/utils/planilla';
 import { PRINT_CSS, buildBoletaHTML } from '@nucleo/utils/boletaDePapel';
+import { documentoDePlanilla } from '@nucleo/utils/planillaDePapel';
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt    = (n) => formatMoney(n || 0);
 const round2 = (n) => parseFloat((n || 0).toFixed(2));
@@ -38,8 +39,6 @@ const round2 = (n) => parseFloat((n || 0).toFixed(2));
 // Orden por cargo, estados, el período y el monto en letras: `planilla` (núcleo, lo mismo de la app).
 const roleOrder = ordenDeCargo;
 const STATUS_META = ESTADO_PLANILLA;
-const amountInWords = montoEnLetras;
-const periodLabel = rotuloDePeriodo;
 
 // El papel de la boleta (CSS, escape y HTML): núcleo, `boletaDePapel`.
 
@@ -66,63 +65,13 @@ function printBoletasBatch(entries, period, branches) {
     openPrintWindow(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>${PRINT_CSS}</style></head><body>${sections}</body></html>`);
 }
 
-const PLANILLA_CSS = `
-  body{font-family:Arial,sans-serif;font-size:9px;margin:20px}
-  h2,h3,h4{text-align:center;margin:2px}
-  table{width:100%;border-collapse:collapse;margin-top:8px}
-  th{background:#000;color:#fff;padding:3px 4px;font-size:8px}
-  td{border:1px solid #ccc;padding:2px 4px}
-  .right{text-align:right}
-  .total{font-weight:bold;background:#eee}
-  .pb{page-break-after:always}
-  @media print{body{margin:8px}}
-`;
-
-function planillaTableRows(entries, branches) {
-    return entries.map(e => {
-        const emp    = e.employee || {};
-        const branch = branches.find(b => String(b.id) === String(emp.branchId || emp.branch_id));
-        return `<tr>
-          <td>${emp.name||'—'}</td><td>${branch?.name||'Otras áreas'}</td>
-          <td class="right">${round2(e.days_worked)}</td>
-          <td class="right">${formatMoney(round2(e.ordinary_salary))}</td>
-          <td class="right">${formatMoney(round2(e.subtotal_b))}</td>
-          <td class="right">${formatMoney(round2(e.isss_deduction))}</td>
-          <td class="right">${formatMoney(round2(e.afp_deduction))}</td>
-          <td class="right">${formatMoney(round2(e.renta_deduction))}</td>
-          <td class="right">${formatMoney(round2(e.total_deductions))}</td>
-          <td class="right"><b>${formatMoney(round2(e.net_pay))}</b></td>
-        </tr>`;
-    }).join('');
-}
-
-function planillaHeaderRow() {
-    return `<tr><th>Empleado</th><th>Sucursal</th><th>Días</th><th>Sal. Ordinario</th><th>Extras/Otros</th><th>ISSS</th><th>AFP</th><th>Renta</th><th>Total Desc.</th><th>Líquido</th></tr>`;
-}
-
+// La planilla impresa vive en el núcleo (`planillaDePapel`): la app saca la misma.
 function printGlobalPlanilla(entries, period, branches) {
-    const totalNet = entries.reduce((s, e) => s + round2(e.net_pay), 0);
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>${PLANILLA_CSS}</style></head><body>
-<h2>PLANILLA DE PAGO — FARMACIA LA SALUD</h2><h3>${periodLabel(period.start_date,period.end_date).toUpperCase()}</h3>
-<table><thead>${planillaHeaderRow()}</thead><tbody>${planillaTableRows(entries,branches)}</tbody>
-<tfoot><tr class="total"><td colspan="9" class="right">TOTAL A PAGAR:</td><td class="right">${formatMoney(totalNet)}</td></tr></tfoot></table>
-<br/><div style="font-size:10px">Total en letras: ${amountInWords(totalNet)}</div>
-</body></html>`;
-    openPrintWindow(html, 1100, 700);
+    openPrintWindow(documentoDePlanilla(entries, period, branches), 1100, 700);
 }
 
 function printBranchPlanilla(branchEntries, branch, period, branches) {
-    const totalNet = branchEntries.reduce((s, e) => s + round2(e.net_pay), 0);
-    const title    = branch?.name || 'Otras áreas';
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>${PLANILLA_CSS}</style></head><body>
-<h2>PLANILLA DE PAGO — FARMACIA LA SALUD</h2>
-<h3>${periodLabel(period.start_date,period.end_date).toUpperCase()}</h3>
-<h4>${title.toUpperCase()}</h4>
-<table><thead>${planillaHeaderRow()}</thead><tbody>${planillaTableRows(branchEntries,branches)}</tbody>
-<tfoot><tr class="total"><td colspan="9" class="right">TOTAL ${title.toUpperCase()}:</td><td class="right">${formatMoney(totalNet)}</td></tr></tfoot></table>
-<br/><div style="font-size:10px">Total en letras: ${amountInWords(totalNet)}</div>
-</body></html>`;
-    openPrintWindow(html, 1100, 700);
+    openPrintWindow(documentoDePlanilla(branchEntries, period, branches, { sala: branch || null }), 1100, 700);
 }
 
 // ─── Edit entry form (no ModalShell — rendered inside parent's ModalShell) ───

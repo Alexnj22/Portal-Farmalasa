@@ -8,17 +8,10 @@ import PortalTextarea from '../common/PortalTextarea';
 import PortalInput from '../common/PortalInput';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { CONTRATOS_DE_RECONTRATACION, horasAlCambiarContrato, sucursalesPorArea } from '@nucleo/utils/reingresoYRecontratacion';
 
-const CONTRACT_TYPE_OPTIONS = [
-    { value: 'INDEFINIDO',   label: 'Indefinido (Fijo)' },
-    { value: 'TEMPORAL',     label: 'Temporal / plazo fijo' },
-    { value: 'MEDIO_TIEMPO', label: 'Medio tiempo (part-time)' },
-    { value: 'SERVICIOS',    label: 'Servicios profesionales' },
-];
-
-const TYPE_ORDER = ['FARMACIA', 'BODEGA', 'ADMINISTRATIVA', 'EXTERNA'];
-const AREA_LABEL  = { FARMACIA: 'Farmacias', BODEGA: 'Bodega', ADMINISTRATIVA: 'Administración', EXTERNA: 'Personal Externo' };
-
+// Los contratos, las áreas y las horas salen del núcleo (`reingresoYRecontratacion`).
+const CONTRACT_TYPE_OPTIONS = CONTRATOS_DE_RECONTRATACION;
 const portalProps = {
     menuPortalTarget: typeof document !== 'undefined' ? document.body : null,
     menuPosition: 'fixed',
@@ -30,15 +23,10 @@ const reqBadge  = <Badge variant="danger" size="sm" uppercase={false}>Requerido<
 const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
     const set = (key, val) => setFormData(prev => ({ ...prev, [key]: val }));
 
-    const branchOpts = TYPE_ORDER.flatMap(type => {
-        const group = (branches || []).filter(b => (b.type || 'FARMACIA') === type);
-        if (!group.length) return [];
-        return [
-            { value: `__header_${type}`, label: AREA_LABEL[type], isSeparator: true },
-            ...group.map(b => ({ value: String(b.id), label: b.name })),
-        ];
-    });
-
+    const branchOpts = sucursalesPorArea(branches || []).flatMap(g => [
+        { value: `__header_${g.tipo}`, label: g.rotulo, isSeparator: true },
+        ...g.salas.map(b => ({ value: String(b.id), label: b.name })),
+    ]);
     const roleOpts = (roles || []).map(r => ({ value: String(r.id), label: r.name }));
 
     const lastExit = formData.contract_end_date
@@ -47,10 +35,8 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
 
     const handleContractChange = (v) => {
         set('rehire_contract_type', v);
-        if (v === 'MEDIO_TIEMPO') set('rehire_weekly_hours', '22');
-        else if (formData.rehire_weekly_hours === '22') set('rehire_weekly_hours', '44');
+        set('rehire_weekly_hours', horasAlCambiarContrato(v, formData.rehire_weekly_hours));
     };
-
     return (
         <div className="flex flex-col gap-4 w-full">
 

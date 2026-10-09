@@ -7,7 +7,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Pressable, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { fetchPromocionLaboratorio } from '@nucleo/data/promociones';
-import { fmtMoneda, fmtUnidades, mesesRecientes, rotuloMes } from '@nucleo/utils/promocionesUtils';
+import { csvMatrizDeLaboratorio, fmtMoneda, fmtUnidades, mesesRecientes, rotuloMes } from '@nucleo/utils/promocionesUtils';
+import { compartirCsv } from '../fiscal/csv';
+import { fallo } from '../Progreso';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
 import { Aviso } from '../formulario/Piezas';
@@ -55,9 +57,19 @@ export default function Matriz({ promocionId }) {
     <View style={{ gap: 12, opacity: cargando ? 0.6 : 1 }}>
       {datos.congelado ? <Aviso texto={`Mes cerrado: estos números quedaron congelados al terminar ${rotuloMes(datos.year_month)} — son los que se pagaron.`} /> : null}
       {datos.simulacion ? <Aviso tono="cuidado" texto={`Estás simulando: así habría quedado si hubiera corrido en ${rotuloMes(datos.mes_medido)}. La promoción es de ${rotuloMes(datos.year_month)} y no cambió.`} /> : null}
-      <Pressable onPress={elegirMes} style={({ pressed }) => ({ alignSelf: 'flex-start', opacity: pressed ? 0.7 : 1 })}>
-        <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>{`Medido contra ${rotuloMes(datos.mes_medido || datos.year_month)} ▾`}</Text>
-      </Pressable>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Pressable onPress={elegirMes} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+          <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>{`Medido contra ${rotuloMes(datos.mes_medido || datos.year_month)} ▾`}</Text>
+        </Pressable>
+        {salas.length ? (
+          <Pressable hitSlop={8} accessibilityRole="button" onPress={() => {
+            const c = csvMatrizDeLaboratorio(datos, promocionId);
+            compartirCsv({ ...c, modulo: 'promociones' }).catch((e) => fallo('No se pudo compartir', e?.message || ''));
+          }}>
+            <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Exportar</Text>
+          </Pressable>
+        ) : null}
+      </View>
       <View style={{ marginHorizontal: -16 }}>
         <FilaDeKpis>
           <Kpi icono="TrendingUp" rotulo="Venta del mes" valor={fmtMoneda(datos.venta_total)} color={MARCA.azulClaro}

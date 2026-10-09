@@ -8,7 +8,10 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import Notice from '../../components/common/Notice';
 import Button from '../../components/common/Button';
 import { formatQty } from '@nucleo/utils/formatNumber';
-import { CANALES, INCENTIVOS, muestraSugerida, metaTotal } from '@nucleo/utils/encuestasClientes';
+import {
+    CANALES, INCENTIVOS, muestraSugerida, metaTotal, numeroDeMetaEscrito, canalesCon, sucursalesCon, conMetaDeSucursal,
+    conMetasSugeridas, sugeridaDeLaEncuesta,
+} from '@nucleo/utils/encuestasClientes';
 
 /**
  * Cómo, dónde y hasta cuándo se aplica la encuesta, y qué recibe el cliente.
@@ -27,16 +30,12 @@ export default function AjustesEncuesta({ encuesta, sucursales, salas, poblacion
     const conEntrevista = encuesta.canales.includes('entrevista');
 
     const set = (k) => (v) => onChange({ [k]: v });
-    const num = (v) => (v === '' || v == null ? null : Math.max(1, parseInt(String(v).replace(/\D/g, ''), 10) || 0) || null);
-
-    const alternarCanal = (c, on) => onChange({
-        canales: on ? [...new Set([...encuesta.canales, c])] : encuesta.canales.filter((x) => x !== c),
-    });
-    const alternarSala = (id, on) => onSucursales(on
-        ? [...sucursales, { branch_id: id, meta: null }]
-        : sucursales.filter((s) => s.branch_id !== id));
-    const metaDeSala = (id, v) => onSucursales(sucursales.map((s) => (s.branch_id === id ? { ...s, meta: num(v) } : s)));
-    const usarSugeridas = () => onSucursales(sucursales.map((s) => ({ ...s, meta: muestraSugerida(poblacion[s.branch_id] || 0) })));
+    // Canales, sucursales, cuotas y la muestra sugerida: núcleo, lo mismo que la app.
+    const num = numeroDeMetaEscrito;
+    const alternarCanal = (c, on) => onChange({ canales: canalesCon(encuesta.canales, c, on) });
+    const alternarSala = (id, on) => onSucursales(sucursalesCon(sucursales, id, on));
+    const metaDeSala = (id, v) => onSucursales(conMetaDeSucursal(sucursales, id, v));
+    const usarSugeridas = () => onSucursales(conMetasSugeridas(sucursales, poblacion));
 
     return (
         <div className="space-y-5">
@@ -97,7 +96,7 @@ export default function AjustesEncuesta({ encuesta, sucursales, salas, poblacion
                                 <span className="text-body-sm text-content-2">
                                     Para un margen de ±5% con 95% de confianza:{' '}
                                     <strong>{porSala
-                                        ? `${sucursales.reduce((a, s) => a + (muestraSugerida(poblacion[s.branch_id] || 0) || 0), 0)} en total (cada sucursal por separado)`
+                                        ? `${sugeridaDeLaEncuesta(encuesta, sucursales, poblacion)} en total (cada sucursal por separado)`
                                         : `${sugeridaTotal ?? '—'} respuestas`}</strong>
                                 </span>
                                 {porSala ? (

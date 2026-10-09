@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { jefaturaDeSucursal } from '@nucleo/utils/edicionDeSucursal';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import BotonIA from '../../components/common/BotonIA';
 import Button from '../../components/common/Button';
@@ -350,16 +351,12 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
     const isAdmin    = branchType === 'ADMINISTRATIVA';
 
     // Leadership detection — role labels differ by branch type
-    const jefeEmp = isAdmin
-        ? currentStaff.find(e => String(e.role || '').toLowerCase().includes('gerente'))
-        : currentStaff.find(e => String(e.role || '').toLowerCase().includes('jefe') && !String(e.role || '').toLowerCase().includes('subjefe'));
-    const subjefeEmp = isAdmin
-        ? currentStaff.find(e => String(e.role || '').toLowerCase().includes('administrador') || String(e.role || '').toLowerCase().includes('admin'))
-        : currentStaff.find(e => String(e.role || '').toLowerCase().includes('subjefe'));
+    // Núcleo (`jefaturaDeSucursal`): la misma detección que la ficha de la app.
+    const { jefe: jefeEmp, subjefe: subjefeEmp } = jefaturaDeSucursal(currentStaff, branchType);
 
     const legalData = liveBranch?.settings?.legal || {};
     const regentEmp = employees.find(e => String(e.id) === String(legalData.regentEmployeeId));
-    const referentEmp = employees.find(e => String(e.id) === String(legalData.farmacovigilanciaId));
+    const referentEmp = employees.find(e => String(e.id) === String(legalData.pharmacovigilanceEmployeeId || legalData.farmacovigilanciaId));
     const nursingRegents = legalData.nursingRegents || [];
     const hasInjections = isFarmacia && legalData.injections === true;
 

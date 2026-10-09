@@ -16,6 +16,7 @@ import { fetchSalasConCaja } from '@nucleo/data/impresion';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useAuth } from '@nucleo/context/AuthContext';
+import { mensajeDelCodigo, telefonoParaWhatsapp } from '@nucleo/utils/codigoDePuntos';
 import { estadoCodigoAcceso, verCodigoAcceso, emitirCodigoAcceso, salaDeHoy } from '@nucleo/data/puntos';
 import { fechaTexto } from '@nucleo/utils/fecha';
 
@@ -173,8 +174,7 @@ export default function CodigoDeAcceso({ customerId, nombre, telefono, puedeEdit
         aviso('Copiado', 'El código está en el portapapeles.', 'success');
     });
 
-    const telLimpio = String(telefono ?? '').replace(/\D/g, '');
-    const telWhatsapp = telLimpio.length === 8 ? `503${telLimpio}` : telLimpio.length >= 11 ? telLimpio : null;
+    const telWhatsapp = telefonoParaWhatsapp(telefono);
     const whatsapp = () => {
         // La ventana se abre EN el clic, antes de cualquier espera: si se abre
         // después de un `await`, el navegador la trata como ventana emergente y
@@ -190,7 +190,7 @@ export default function CodigoDeAcceso({ customerId, nombre, telefono, puedeEdit
             if (!valor) { ventana?.close(); return; }
             setCodigo(valor);
             const enlace = `${window.location.origin}/mis-puntos?codigo=${valor}`;
-            const texto = `Hola${nombre ? ` ${nombre.split(' ')[0]}` : ''}. Tu código para ver tus puntos es ${valor.slice(0, 3)}-${valor.slice(3)}. Entra aquí: ${enlace}`;
+            const texto = mensajeDelCodigo({ nombre, codigo: valor, enlace });
             const url = `https://wa.me/${telWhatsapp}?text=${encodeURIComponent(texto)}`;
             // Si el navegador bloqueó la ventana, se avisa en vez de sacar a
             // la persona del portal.

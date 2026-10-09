@@ -9,7 +9,7 @@ import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hastaElTope } from '@nucleo/utils/hastaElTope';
-import { DIAS_DE_RESERVA, POLITICA_DE_RESERVA, vencimientoDeReserva } from '@nucleo/utils/abonoTicket';
+import { DIAS_DE_RESERVA, estadoDelApartado, POLITICA_DE_RESERVA, renglonesDelApartado, vencimientoDeReserva } from '@nucleo/utils/abonoTicket';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hoySV } from '@nucleo/utils/fecha';
@@ -90,32 +90,10 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
      * tienen daría una cifra que parece el total y no lo es, y esa es la que el
      * cliente leería en el papel. `null` es la respuesta honesta y es lo que
      * imprime «Por definir». */
-    const total = useMemo(() => {
-        if (!renglones.length) return null;
-        let suma = 0;
-        for (const r of renglones) {
-            const p = String(r.precio ?? '').trim();
-            if (p === '') return null;
-            const n = Number(p) * (Number(r.cantidad) || 0);
-            if (!Number.isFinite(n)) return null;
-            suma += n;
-        }
-        return suma;
-    }, [renglones]);
-
-    const monto = Number(abonado);
-    const saldo = total == null ? null : Math.max(0, total - (Number.isFinite(monto) ? monto : 0));
-
-    const conNombre = renglones.filter((r) => String(r.nombre ?? '').trim().length > 1);
-    // El abono mayor que el total sería un saldo negativo impreso en un
-    // comprobante que el cliente se lleva. Al escribirlo se lleva al total
-    // (`hastaElTope`, la regla de todo campo de dinero); este freno queda para
-    // cuando es el PRECIO el que baja después. Y el servidor también lo frena.
-    const excede = total != null && Number.isFinite(monto) && monto > total;
-    const valido = cliente.trim().length >= 3
-        && conNombre.length > 0
-        && Number.isFinite(monto) && monto > 0
-        && !excede;
+    // El total («por definir» = null), el saldo y qué falta para guardar salen
+    // del núcleo (`estadoDelApartado`): la app pide el abono con la misma regla.
+    // El saldo nunca queda negativo: un monto mayor que el total se frena (`excede`).
+    const { total, monto, saldo, excede, valido, conNombre } = estadoDelApartado({ cliente, renglones, abonado });
 
     /* El día se calcula UNA vez, al abrir, y no en cada render: el reloj no es
      * una función pura, y con el diálogo abierto pasada la medianoche el
@@ -216,14 +194,8 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
         monto,
         total,
         vence_el: vence,
-        renglones: conNombre.map((r) => ({
-            erp_product_id: r.erp_product_id,
-            nombre: String(r.nombre).trim(),
-            presentacion: String(r.presentacion ?? '').trim() || null,
-            cantidad: Number(r.cantidad) || 1,
-            // `null` y no `0`: es «por definir», y un cero es un precio.
-            precio: String(r.precio ?? '').trim() === '' ? null : Number(r.precio),
-        })),
+        // `precio: null` y no `0`: es «por definir», y un cero es un precio.
+        renglones: renglonesDelApartado(conNombre),
     });
 
     if (!abierto) return null;

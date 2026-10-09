@@ -11,7 +11,10 @@
 // variación por día salen del núcleo (`ventasPeriodo`).
 //
 // Período, sala y qué mostrar van en el menú de la barra; la búsqueda (3
-// letras mínimo, igual que el portal) en la barra del sistema.
+// letras mínimo, igual que el portal) en la barra del sistema. En Productos,
+// además, ver los ocultos y el laboratorio. «Ocultar montos» (el ojo de la
+// barra, como el portal) cambia toda cifra por puntos, para mostrar la
+// pantalla sin enseñar el dinero.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
@@ -22,7 +25,7 @@ import {
   fetchInvoicesList, fetchPuntosCanjeados, fetchResumenDeVentas, fetchVentasConReceta,
   fetchVentasRecetaStats, ventasBusquedaEsAproximada,
 } from '@nucleo/data/ventas';
-import { diasDelRango, horaDeCorte, mesEnCurso, periodoAnterior, variacionPorDia } from '@nucleo/utils/ventasPeriodo';
+import { diasDelRango, horaDeCorte, mesEnCurso, montoPrivado, periodoAnterior, variacionPorDia } from '@nucleo/utils/ventasPeriodo';
 import { ESTADOS_ANULADA, ROTULO_PAGO } from '@nucleo/utils/solicitudFacturacion';
 import { correrMes, fechaTexto, hoySV, rangoDelMes, sumarDias } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -61,14 +64,14 @@ const PERIODOS = [
 
 const conSigno = (pct) => (pct == null ? null : `${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct).toFixed(1)}% por día`);
 
-function Fila({ r, sala, vendedor }) {
+function Fila({ r, sala, vendedor, privado }) {
   const anulada = ESTADOS_ANULADA.includes(r.estado);
   const abrir = () => {
     Haptics.selectionAsync().catch(() => {});
     router.push({ pathname: '/venta/[id]', params: { id: String(r.id) } });
   };
   return (
-    <Pressable onPress={abrir} style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+    <Pressable onPress={privado ? undefined : abrir} style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
       <Vidrio radio={20} interactivo>
         <View style={{ padding: 14, gap: 6 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -77,7 +80,7 @@ function Fila({ r, sala, vendedor }) {
             </Text>
             <Text style={{ color: anulada ? colorSistema.texto2 : MARCA.verde, fontSize: 18, fontWeight: '800', fontVariant: ['tabular-nums'],
               textDecorationLine: anulada ? 'line-through' : 'none' }}>
-              {formatMoney(r.total)}
+              {montoPrivado(formatMoney(r.total), privado)}
             </Text>
           </View>
           <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>
@@ -110,6 +113,10 @@ export default function Ventas() {
   const [vistaElegida, setVista] = useState('facturas');
   const vista = vistas.some((v) => v.id === vistaElegida) ? vistaElegida : (vistas[0]?.id ?? 'facturas');
   const [ordenProductos, setOrdenProductos] = useState('neto');
+  const [verOcultos, setVerOcultos] = useState('no');
+  const [laboratorio, setLaboratorio] = useState('todos');
+  const [labs, setLabs] = useState([]);
+  const [privado, setPrivado] = useState(false);
   const miSala = String(user?.branchId || '');
 
   const [periodo, setPeriodo] = useState('mes');
@@ -222,7 +229,11 @@ export default function Ventas() {
     ...(vista === 'facturas' ? [{ id: 'mostrar', titulo: 'Mostrar', activa: mostrar, porDefecto: 'todas', onCambiar: setMostrar,
       opciones: [{ id: 'todas', label: 'Todas las ventas' }, { id: 'receta', label: 'Con receta médica' }, { id: 'anuladas', label: 'Sólo anuladas' }] }] : []),
     ...(vista === 'productos' ? [{ id: 'orden', titulo: 'Ordenar por', activa: ordenProductos, porDefecto: 'neto', onCambiar: setOrdenProductos,
-      opciones: ORDENES_DE_PRODUCTOS }] : []),
+      opciones: ORDENES_DE_PRODUCTOS },
+    { id: 'ocultos', titulo: 'Mostrar', activa: verOcultos, porDefecto: 'no', onCambiar: (v) => { setVerOcultos(v); setLaboratorio('todos'); },
+      opciones: [{ id: 'no', label: 'Los visibles' }, { id: 'si', label: 'Sólo los ocultos' }] },
+    { id: 'lab', titulo: 'Laboratorio', activa: laboratorio, porDefecto: 'todos', onCambiar: setLaboratorio,
+      opciones: [{ id: 'todos', label: 'Todos los laboratorios' }, ...labs.map((l) => ({ id: l.value, label: l.label }))] }] : []),
   ];
 
   const c = cifras;
@@ -241,16 +252,17 @@ export default function Ventas() {
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
-      <MenuDeFiltros grupos={grupos} />
+      <MenuDeFiltros grupos={grupos} extra={{ icono: privado ? 'eye' : 'eye.slash', etiqueta: privado ? 'Mostrar montos' : 'Ocultar montos', onPress: () => setPrivado((v) => !v) }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
         <FiltrosActivos grupos={grupos} />
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20, textTransform: fini === ffin ? 'capitalize' : 'none' }}>{rangoTexto}</Text>
         {vistas.length > 1 ? <Segmentos activa={vista} onCambiar={setVista} opciones={vistas} /> : null}
-        {vista === 'productos' ? <Productos key={`${fini}|${ffin}|${sala}`} fini={fini} ffin={ffin} sala={sala} busqueda={busqueda} verCifras={verCifras} orden={ordenProductos} />
-          : vista === 'vendedores' ? <Vendedores key={`${fini}|${ffin}|${sala}`} fini={fini} ffin={ffin} sala={sala} busqueda={busqueda} verCifras={verCifras} /> : (<>
-        {verCifras && c ? (
+        {vista === 'productos' ? <Productos key={`${fini}|${ffin}|${sala}`} fini={fini} ffin={ffin} sala={sala} busqueda={busqueda} verCifras={verCifras} orden={ordenProductos}
+            verOcultos={verOcultos === 'si'} laboratorio={laboratorio} onLaboratorios={setLabs} privado={privado} />
+          : vista === 'vendedores' ? <Vendedores key={`${fini}|${ffin}|${sala}`} fini={fini} ffin={ffin} sala={sala} busqueda={busqueda} verCifras={verCifras} privado={privado} /> : (<>
+        {verCifras && c && !privado ? (
           <>
             <FilaDeKpis>
               <Kpi icono="TrendingUp" rotulo="Total" valor={formatMoney(c.total, { decimales: 0 })} color={MARCA.verde}
@@ -271,7 +283,7 @@ export default function Ventas() {
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {datos.filas.map((r) => {
           const emp = porCodigo.get(r.cod_vendedor);
-          return <Fila key={r.id} r={r} sala={todas && !sala ? nombreDeSala(r.branch_id) : null} vendedor={emp ? shortEmployeeName(emp) : null} />;
+          return <Fila key={r.id} r={r} sala={todas && !sala ? nombreDeSala(r.branch_id) : null} vendedor={emp ? shortEmployeeName(emp) : null} privado={privado} />;
         })}
         {cargando ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
         {!cargando && datos.hayMas ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setPagina((p) => p + 1)} /></View> : null}

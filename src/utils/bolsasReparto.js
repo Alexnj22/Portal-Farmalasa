@@ -307,3 +307,8 @@ export function elegirOrigen({ efectivoEnCaja, puedeElCajon, lista, monto }) {
         deBolsas: (objetivo - resta) / 100,
     };
 }
+
+/* Cómo se saldó la diferencia de una bolsa. Vivía en `CircuitoDeBolsas`; lo
+ * dicen el portal y la app. */
+export const VIA_DE_DIFERENCIA = { REPONE: 'Repuesto', RETIRA: 'Retirado', JUSTIFICA: 'Justificado' };
+export const rotuloDeVia = (via) => VIA_DE_DIFERENCIA[via] || 'Justificado';

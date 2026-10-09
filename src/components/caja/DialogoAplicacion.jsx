@@ -22,6 +22,9 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaHora12, hora12 } from '@nucleo/utils/hora';
 import { aplicacionesPorDosis, esPorMl, fmtMl, saldoDelRenglon } from '@nucleo/utils/inyeccionDosis';
+import {
+    aplicacionDelCobro, cuentaDelCobro, gruposDePendientes, itemsDelCobro, seleccionDeVenta, topeDeMezcla,
+} from '@nucleo/utils/cobroDeAplicacion';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { buscarClientes } from '@nucleo/data/customers';
@@ -80,10 +83,9 @@ const MODOS = [
 ];
 
 const fechaCorta = (f) => fechaNumerica(f, { anio: false });
-/* El nombre de la factura no sirve para reclamar una pendiente cuando es el
- * genérico de mostrador: medido en pruebas, casi todas las ventas con inyección
- * salen a nombre de «CLIENTES VARIOS». */
-const esGenerico = (n) => !n || /^(CLIENTES? VARIOS|CLIENTE FRECUENTE|CONSUMIDOR FINAL)/i.test(String(n).trim());
+/* El nombre genérico de mostrador («CLIENTES VARIOS», medido: casi todas las
+ * ventas con inyección) no sirve para reclamar una pendiente — lo decide
+ * `esClienteGenerico` del núcleo, dentro de `seleccionDeVenta`. */
 const factura = (c) => String(c || '').replace(/^0+/, '');
 
 export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onCobrar }) {
@@ -168,15 +170,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
     /* Las pendientes de un mismo cobro y producto son UNA fila con contador:
      * pagó 5 y hoy se aplica 2 (en esta u otra sala) → «2 de 5». Antes eran 5
      * filas idénticas que había que tocar una por una. */
-    const gruposPend = useMemo(() => {
-        const m = new Map();
-        for (const p of pendientes || []) {
-            const k = `${p.cobro_id}|${p.producto}|${p.dosis_ml ?? ''}`;
-            if (!m.has(k)) m.set(k, { clave: k, muestra: p, ids: [] });
-            m.get(k).ids.push(p.id);
-        }
-        return [...m.values()];
-    }, [pendientes]);
+    const gruposPend = useMemo(() => gruposDePendientes(pendientes), [pendientes]);
     const idsACanjear = useMemo(() => gruposPend.flatMap((g) => g.ids.slice(0, cuantasCanje[g.clave] || 0)),
         [gruposPend, cuantasCanje]);
 
@@ -198,57 +192,29 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
         setVentaId(v.id);
         // Con un solo renglón con saldo, una aplicación ya marcada: es el caso
         // de casi todas las ventas, y obligar a tocar el «+» es un paso de más.
-        const conSaldo = (v.renglones || []).filter((r) => r.disponibles > 0);
-        setCuantas(conSaldo.length === 1 ? { [conSaldo[0].linea_num]: 1 } : {});
-        // La dosis ya fijada por un cobro anterior, o la única que hay; si hay
-        // varias, se pregunta.
-        setDosis(Object.fromEntries((v.renglones || []).filter(esPorMl).map((r) => [r.linea_num,
-            r.dosis_ml != null ? Number(r.dosis_ml) : (r.opciones_ml?.length === 1 ? Number(r.opciones_ml[0]) : null)])));
+        const sel = seleccionDeVenta(v);
+        setCuantas(sel.cuantas);
+        setDosis(sel.dosis);
         setMezcla(false);
-        setEnMezcla(new Set(conSaldo.map((r) => r.linea_num)));
+        setEnMezcla(sel.enMezcla);
         setVecesMezcla(1);
         setAplicarAhora(1);
-        setANombreDe(esGenerico(v.cliente) ? '' : v.cliente);
+        setANombreDe(sel.aNombreDe);
     };
 
-    const origen = modo === 'TRAIDA' ? 'TRAIDA' : 'COMPRADA';
-    const precio = precios ? (origen === 'TRAIDA' ? precios.TRAIDA : precios.COMPRADA) : null;
     const renglonDe = useCallback((linea) => (venta?.renglones || []).find((r) => r.linea_num === Number(linea)), [venta]);
     // Mezcladas: los elegidos, todos con la misma cantidad y la marca `mezcla`.
-    const topeMezcla = useMemo(() => {
-        const sal = [...enMezcla].map((l) => saldoDelRenglon(renglonDe(l) || {}, dosis[l]));
-        return sal.length && sal.every(Boolean) ? Math.min(...sal.map((x) => x.disponibles)) : 0;
-    }, [enMezcla, renglonDe, dosis]);
+    const topeMezcla = useMemo(() => topeDeMezcla(enMezcla, renglonDe, dosis), [enMezcla, renglonDe, dosis]);
     // Lo elegido no puede pasar del saldo: al cambiar la dosis o quién entra, el tope baja.
     const veces = Math.min(vecesMezcla, topeMezcla);
-    const items = useMemo(() => {
-        const conDosis = (linea, n, extra) => {
-            const r = renglonDe(linea);
-            return {
-                invoice_id: ventaId, linea_num: Number(linea), cantidad: n, ...extra,
-                ...(esPorMl(r) ? { dosis_ml: dosis[linea] ?? null } : {}),
-            };
-        };
-        if (mezcla) {
-            return veces > 0 && enMezcla.size >= 2
-                ? [...enMezcla].sort((a, b) => a - b).map((l) => conDosis(l, veces, { mezcla: true })) : [];
-        }
-        return Object.entries(cuantas).filter(([, n]) => n > 0).map(([linea, n]) => conDosis(linea, n));
-    }, [mezcla, enMezcla, veces, cuantas, ventaId, dosis, renglonDe]);
-    const faltaDosis = items.some((i) => 'dosis_ml' in i && i.dosis_ml == null);
-    // Mezcladas: una aplicación por vez, no una por producto.
-    const total = origen === 'COMPRADA'
-        ? (mezcla ? (items.length ? veces : 0) : items.reduce((s, i) => s + i.cantidad, 0))
-        : cantidad;
-    const monto = precio != null ? Math.round(precio * total * 100) / 100 : null;
-
-    // Lo que queda pagado sin aplicar necesita a nombre de quién: sin eso no hay
-    // a quién dárselo cuando vuelva (pedido del usuario: «que haya un control»).
-    const quedan = total - Math.min(aplicarAhora, total);
-    const valido = precio != null && total > 0 && !!sala && (
-        origen === 'COMPRADA' ? !!venta && items.length > 0 && !faltaDosis 
-            : producto.trim().length > 2
-    ) && (quedan === 0 || aNombreDe.trim().length >= 3);
+    const items = useMemo(() => itemsDelCobro({ mezcla, enMezcla, veces, cuantas, ventaId, dosis, renglonDe }),
+        [mezcla, enMezcla, veces, cuantas, ventaId, dosis, renglonDe]);
+    // La cuenta (origen, precio, total —mezcladas: una por vez—, monto, cuántas
+    // quedan pagadas sin aplicar y si se puede cobrar) es la del núcleo. Lo que
+    // queda sin aplicar necesita a nombre de quién: «que haya un control».
+    const { origen, precio, faltaDosis, total, monto, ahora, quedan, valido } = cuentaDelCobro({
+        modo, precios, items, mezcla, veces, cantidad, aplicarAhora, aNombreDe, venta, producto, sala,
+    });
 
     const cuerpoDeCobrar = useRef(null);
     cuerpoDeCobrar.current = async () => {
@@ -257,13 +223,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
             await onCobrar({
                 clave: claveDeEnvio.current,
                 monto,
-                aplicacion: {
-                    origen,
-                    ...(origen === 'COMPRADA' ? { items } : { producto: producto.trim(), cantidad }),
-                    aplicar_ahora: Math.min(aplicarAhora, total),
-                    cliente: quedan > 0 ? aNombreDe.trim() : (ficha ? ficha.name : null),
-                    ...(origen === 'TRAIDA' && ficha ? { customer_id: ficha.id } : {}),
-                },
+                aplicacion: aplicacionDelCobro({ origen, items, producto, cantidad, ahora, quedan, aNombreDe, ficha }),
             });
         } catch (e) {
             /* Un rechazo del cobro ya lo avisa quien llama (`correr` convierte

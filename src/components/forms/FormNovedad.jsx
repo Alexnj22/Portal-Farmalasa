@@ -12,7 +12,8 @@ import LiquidDatePicker from '../common/LiquidDatePicker';
 import RangeDatePicker from '../common/RangeDatePicker';
 import { EVENT_TYPES, TERMINATION_REASONS, DISABILITY_TYPES, opcionesDeCatalogo, tipoDeIncapacidad } from '@nucleo/data/constants';
 import { formatDate } from '@nucleo/utils/helpers';
-import { buscarCargo } from '@nucleo/utils/roles';
+import { plazaOcupada, asuetoDelDia, finPorLey, diasDelPeriodo, validarNovedad, opcionesDeNovedad, antiguedad } from '@nucleo/utils/novedadDePersonal';
+import { pinDeKiosco } from '@nucleo/utils/pinDeKiosco';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { useNowTick } from '@nucleo/hooks/useNowTick';
@@ -67,106 +68,26 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     // ============================================================================
     // 🚧 AUDITORÍA DE ORGANIGRAMA (¿LA PLAZA ESTÁ OCUPADA?)
     // ============================================================================
-    const targetBranchIdToEval = isTransfer ? formData?.targetBranchId : (activeEmployee?.branchId || activeEmployee?.branch_id);
-    const targetRoleToEval = isPromotion ? formData?.newRole : activeEmployee?.role;
-
-    const headcountWarning = useMemo(() => {
-        if (!targetRoleToEval || (!isPromotion && !isTransfer)) return null;
-
-        // `buscarCargo` y no `find(r => r.name === …)`: si el nombre no calza
-        // por un acento, este `find` devolvía `undefined` y la guarda de cupo
-        // se saltaba entera — el aviso de «cargo lleno» dejaba de aparecer sin
-        // que nada lo dijera.
-        const config = buscarCargo(roles, targetRoleToEval);
-        if (!config || config.max_limit >= 99) return null; // Si no tiene límite duro, pasa limpio
-
-        // Buscamos quiénes ocupan el cargo actualmente
-        const occupants = employees.filter(e => {
-            if (e.status !== 'ACTIVO') return false;
-            if (e.role !== targetRoleToEval) return false;
-            if (String(e.id) === String(activeEmployee?.id)) return false; // Nos excluimos a nosotros mismos
-            
-            // Si es rol de sucursal, debe coincidir la sucursal destino
-            if (config.scope === 'BRANCH') {
-                return String(e.branchId || e.branch_id) === String(targetBranchIdToEval);
-            }
-            return true; // Si es GLOBAL, ya es un match
-        });
-
-        if (occupants.length >= config.max_limit) {
-            return {
-                role: targetRoleToEval,
-                limit: config.max_limit,
-                scope: config.scope,
-                occupants: occupants
-            };
-        }
-        return null;
-    }, [targetBranchIdToEval, targetRoleToEval, employees, roles, activeEmployee, isPromotion, isTransfer]);
-
-    // ============================================================================
-    // 🇸🇻 MOTOR DINÁMICO DE ASUETOS Y VACACIONES
-    // ============================================================================
-    // `formData?.date` en deps es a propósito: `formData` puede venir undefined y
-    // `formData.date` sin encadenamiento opcional rompería. Tenía encima un
-    // `eslint-disable-next-line react-hooks/preserve-manual-memoization` que dejó
-    // de hacer falta y pasó a ser una advertencia por directiva sin usar.
-    const getHolidayInfo = useMemo(() => {
-        if (!formData?.date) return null;
-        const [, m, d] = formData.date.split('-');
-        const md = `${m}-${d}`;
-        return holidays.find(h => h.is_recurring ? h.holiday_date.endsWith(md) : h.holiday_date === formData.date);
-    }, [formData?.date, holidays]);
-
+    // Las reglas viven en el núcleo (`novedadDePersonal`): la app valida igual.
+    const headcountWarning = useMemo(
+        () => plazaOcupada({ type, formData, empleado: activeEmployee, empleados: employees, roles }),
+        [type, formData, activeEmployee, employees, roles]);
+    const getHolidayInfo = useMemo(() => asuetoDelDia(formData?.date, holidays), [formData?.date, holidays]);
     useEffect(() => {
         if (!formData?.date || formData?.manualEndDateOverride) return;
-
-        const start = new Date(formData.date + 'T12:00:00');
-        let daysToAdd = 0;
-
-        if (isVacation) daysToAdd = 14; // 15 días continuos (1 + 14)
-        else if (isDisability && formData?.disabilityType === 'MATERNIDAD') daysToAdd = 111; // 112 días (16 sem)
-
-        if (daysToAdd > 0) {
-            const end = new Date(start);
-            end.setDate(start.getDate() + daysToAdd);
-            const endStr = end.toISOString().split('T')[0];
+        const endStr = finPorLey(type, formData.date, formData?.disabilityType);
+        if (endStr) {
             if (formData.endDate !== endStr) setFormData(prev => ({ ...prev, endDate: endStr }));
         } else if (isDisability && formData?.disabilityType && formData?.disabilityType !== 'MATERNIDAD') {
-            // Solo limpiar si no hay días de incapacidad definidos (si hay, onChange ya calculó endDate)
             if (formData.endDate && !formData?.disabilityDays) setFormData(prev => ({ ...prev, endDate: null }));
         }
-    }, [formData?.date, isVacation, isDisability, formData?.disabilityType, formData?.manualEndDateOverride, formData?.disabilityDays, formData.endDate, setFormData]);
-
-    // ── El PIN de acá es una PREVISUALIZACIÓN, no el dato ──────────────────
-    // Desde el 2026-09-03 `kiosk_pin` lo deriva del código un trigger de
-    // Postgres: lo que este cálculo produzca se pisa al guardar. Se conserva
-    // porque la pantalla lo muestra para copiarlo antes de confirmar.
-    //
-    // Ojo con una diferencia que hasta hoy nadie podía notar: acá el código se
-    // normaliza antes de hashear (`trim`, sin espacios, mayúsculas) y en el
-    // formulario de la ficha —y en el trigger— se hashea tal cual. Da lo mismo
-    // porque el código es SÓLO números (`enforce_numeric_employee_code`), pero
-    // era una cuarta copia del algoritmo con una regla propia.
+    }, [type, formData?.date, isDisability, formData?.disabilityType, formData?.manualEndDateOverride, formData?.disabilityDays, formData.endDate, setFormData]);
     useEffect(() => {
         if (!formData?.newCode) return;
-        const generatePin = async () => {
-            const encoder = new TextEncoder();
-            const hashBuffer = await crypto.subtle.digest(
-                'SHA-256',
-                encoder.encode(formData.newCode.trim().replace(/\s+/g, '').toUpperCase())
-            );
-            const base64 = btoa(String.fromCharCode.apply(null, new Uint8Array(hashBuffer)));
-            const pin = base64.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 8);
-            setFormData(prev => ({
-                ...prev,
-                newKioskPin: pin,
-                date: prev.date || hoySV()
-            }));
-        };
-        generatePin();
+        // El pin sale del núcleo (`pinDeKiosco`), el mismo que calcula la app.
+        const pin = pinDeKiosco(formData.newCode);
+        setFormData(prev => (prev.newKioskPin === pin && prev.date ? prev : { ...prev, newKioskPin: pin, date: prev.date || hoySV() }));
     }, [formData?.newCode, setFormData]);
-
     useEffect(() => {
         if (type !== 'DISABILITY') return;
         if (!formData?.disabilityType) {
@@ -188,16 +109,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
         setFormData(prev => ({ ...prev, hasConflict: !!codeConflict }));
     }, [codeConflict, setFormData]);
 
-    const periodDaysCount = useMemo(() => {
-        if (!formData?.date || !formData?.endDate) return 0;
-        const s = new Date(formData.date + 'T12:00:00');
-        const e = new Date(formData.endDate + 'T12:00:00');
-        return Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
-    }, [formData?.date, formData?.endDate]);
-
-    // ============================================================================
-    // 🗓️ MANEJADOR DE PERMISOS MULTI-FECHA (DÍAS SALTEADOS)
-    // ============================================================================
+    const periodDaysCount = useMemo(() => diasDelPeriodo(formData?.date, formData?.endDate), [formData?.date, formData?.endDate]);
     const handleAddPermissionDate = (dateStr) => {
         if (!dateStr) return;
         setPermPickerKey(k => k + 1); // siempre resetea el picker (force remount)
@@ -218,62 +130,10 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     // ============================================================================
     useEffect(() => {
         if (typeof onValidationChange !== 'function') return;
-
-        let isValid = true;
-        let errorMessage = null;
-
-        if (!type) isValid = false;
-        else if (headcountWarning) { // Bloqueo Fuerte por Organigrama
-            isValid = false;
-            errorMessage = `Plaza Ocupada: Límite de ${headcountWarning.role} alcanzado.`;
-        }
-        else if (isPermission && (!formData?.permissionDates || formData.permissionDates.length === 0)) {
-            isValid = false;
-        }
-        else if (!isPermission && !formData?.date) {
-            isValid = false;
-        }
-        else if (isVacation && getHolidayInfo) {
-            isValid = false;
-            errorMessage = `No se puede iniciar vacaciones en asueto (${getHolidayInfo.name}).`;
-        }
-        else if (isTemporalRange && !formData?.endDate) isValid = false;
-        else if (isTransfer && !formData?.targetBranchId) isValid = false;
-        else if (isPromotion && !formData?.newRole) isValid = false;
-        else if (isSalary && !formData?.newSalary) isValid = false;
-        else if (isDisability && (!formData?.disabilityType || !formData?.certificateNumber)) isValid = false;
-        else if (isTermination && !formData?.terminationReason) isValid = false;
-        else if (isCodeChange && !formData?.newCode) isValid = false;
-        else if (isCodeChange && formData?.hasConflict) {
-            isValid = false;
-            errorMessage = 'El código ya está en uso por otro empleado.';
-        }
-        else if (!formData?.note || formData.note.trim() === '') isValid = false;
-
-        onValidationChange(isValid, errorMessage);
-
-    }, [
-        type, formData?.date, formData?.endDate, formData?.targetBranchId, formData?.newRole,
-        formData?.newSalary, formData?.disabilityType, formData?.certificateNumber,
-        formData?.terminationReason, formData?.newCode, formData?.note, formData?.permissionDates,
-        formData?.hasConflict,
-        isVacation, getHolidayInfo, isTemporalRange, isTransfer, isPromotion,
-        isSalary, isDisability, isTermination, isCodeChange, isPermission, headcountWarning, onValidationChange
-    ]);
-
-    // ============================================================================
-    // 🗂️ CATÁLOGOS PARA SELECTORES
-    // ============================================================================
-    const actionOptions = useMemo(() => {
-        return Object.keys(EVENT_TYPES)
-            .filter(key => key !== 'SHIFT_CHANGE') // Los turnos se gestionan desde el Planificador
-            // Las del Art. 83 se imponen desde el expediente, por su propio camino:
-            // ahí viven la escalera, la firma del servidor y la validación de la
-            // proporción. Ofrecerlas acá sería un atajo que se las salta.
-            .filter(key => !EVENT_TYPES[key].soloPorSancion)
-            .map(key => ({ value: key, label: EVENT_TYPES[key].label }));
-    }, []);
-
+        const { ok, motivo } = validarNovedad({ formData, empleado: activeEmployee, empleados: employees, roles, asuetos: holidays });
+        onValidationChange(ok, motivo);
+    }, [formData, activeEmployee, employees, roles, holidays, onValidationChange]);
+    const actionOptions = useMemo(() => opcionesDeNovedad(), []);
     const branchOptions = useMemo(() => {
         if (!branches) return [];
         return branches.filter(b => String(b.id) !== String(activeEmployee?.branchId || activeEmployee?.branch_id)).map(b => ({ value: String(b.id), label: b.name }));
@@ -669,14 +529,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 {isSalary && (() => {
                     const currentSalary = activeEmployee?.base_salary || activeEmployee?.salary;
                     const currentRole = activeEmployee?.role || activeEmployee?.main_role?.name || '—';
-                    const hireDate = activeEmployee?.hireDate || activeEmployee?.hire_date;
-                    let tenure = '—';
-                    if (hireDate) {
-                        const ms = now - new Date(hireDate).getTime();
-                        const years = Math.floor(ms / (1000 * 60 * 60 * 24 * 365.25));
-                        const months = Math.floor((ms % (1000 * 60 * 60 * 24 * 365.25)) / (1000 * 60 * 60 * 24 * 30.44));
-                        tenure = years > 0 ? `${years} año${years !== 1 ? 's' : ''} ${months > 0 ? `${months} mes${months !== 1 ? 'es' : ''}` : ''}`.trim() : `${months} mes${months !== 1 ? 'es' : ''}`;
-                    }
+                    const tenure = antiguedad(activeEmployee?.hireDate || activeEmployee?.hire_date, now);
                     const newSalary = parseFloat(formData?.newSalary);
                     const diff = currentSalary && newSalary ? newSalary - parseFloat(currentSalary) : null;
                     return (

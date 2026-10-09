@@ -4,14 +4,14 @@
 // hoy y el de «si cierra así». El reparto lo calcula la base
 // (`get_bono_meta_sala`); acá no se recalcula nada.
 //
-// Encender, apagar y la vigencia de las bonificaciones (Este mes / Indefinido)
-// se MUESTRAN pero se cambian en el portal: es un interruptor de toda la red y
-// no se toca de pasada desde el teléfono.
+// Encender, apagar y la vigencia de las bonificaciones (Este mes / Indefinido),
+// con `metas` editar, con la MISMA llamada del portal (`setBonificaciones`). Es
+// un interruptor de toda la red: cada cambio pide confirmación.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, Switch, Text, View } from 'react-native';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { fetchBonoMetaSala } from '@nucleo/data/metas';
-import { TRAMO_CFG, ymLabel } from '@nucleo/utils/metasUtils';
+import { fetchBonoMetaSala, setBonificaciones } from '@nucleo/data/metas';
+import { TRAMO_CFG, ymHoySV, ymLabel } from '@nucleo/utils/metasUtils';
 import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -23,8 +23,9 @@ import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import { COLOR_TRAMO } from './Mes';
+import { fallo, listo, trabajando } from '../Progreso';
 
-export default function Bono({ sala, salaNombre, ym, esMesActual, config }) {
+export default function Bono({ sala, salaNombre, ym, esMesActual, config, canEdit = false, onCambioBono }) {
   const empleados = useStaffStore((s) => s.employees);
   const porId = useMemo(() => new Map((empleados || []).map((e) => [String(e.id), e])), [empleados]);
   const [data, setData] = useState(null);
@@ -45,6 +46,26 @@ export default function Bono({ sala, salaNombre, ym, esMesActual, config }) {
   const hasta = config?.bonificaciones_hasta_ym;
   const nombre = salaNombre(sala);
   const mes = ymLabel(ym).toLowerCase();
+  const mesActual = ymLabel(ymHoySV()).toLowerCase();
+  const [guardando, setGuardando] = useState(false);
+
+  // Hasta cuándo valen: con «Este mes» la vigencia queda en el mes en curso y
+  // el bono se apaga solo al cambiar de mes (lo único que entiende el servidor).
+  const cambiarBono = (on, esteMes) => Alert.alert(
+    on ? (activas ? 'Cambiar la vigencia' : 'Activar las bonificaciones') : 'Apagar las bonificaciones',
+    on ? (esteMes ? `Valen sólo por ${mesActual}: el día 1 se apagan solas. Es para toda la red.` : 'Sin fecha de fin: siguen activas hasta que se apaguen. Es para toda la red.')
+      : 'Las pantallas vuelven a hablar solo de la meta, en toda la red.', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: on ? 'Confirmar' : 'Apagar', style: on ? 'default' : 'destructive', onPress: async () => {
+        setGuardando(true); trabajando('Guardando…');
+        try {
+          await setBonificaciones(on, esteMes);
+          listo(on ? 'Bonificaciones activadas' : 'Bonificaciones apagadas', on ? (esteMes ? `Sólo por ${mesActual}.` : 'Sin fecha de fin.') : 'Las pantallas vuelven a hablar solo de la meta.');
+          onCambioBono?.();
+        } catch (e) { fallo('No se pudo cambiar', mensajeAmigable(e, 'Vuelve a intentarlo.')); }
+        setGuardando(false);
+      } },
+    ]);
 
   return (
     <View style={{ gap: 10 }}>
@@ -59,7 +80,21 @@ export default function Bono({ sala, salaNombre, ym, esMesActual, config }) {
                   : 'Las pantallas hablan de la meta y no nombran el bono.'}
               </Text>
             </View>
+            {canEdit ? <Switch value={activas} disabled={guardando} onValueChange={(on) => cambiarBono(on, on ? !!hasta : false)} /> : null}
           </View>
+          {canEdit && activas ? (
+            <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingBottom: 12 }}>
+              {[{ id: 'mes', label: 'Este mes' }, { id: 'siempre', label: 'Indefinido' }].map((o) => {
+                const on = (o.id === 'mes') === !!hasta;
+                return (
+                  <Pressable key={o.id} disabled={guardando || on} onPress={() => cambiarBono(true, o.id === 'mes')}
+                    style={{ paddingHorizontal: 14, minHeight: 36, justifyContent: 'center', borderRadius: 999, backgroundColor: on ? MARCA.azul : 'rgba(127,127,127,0.18)' }}>
+                    <Text style={{ color: on ? '#fff' : colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{o.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
         </Vidrio>
       </View>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}

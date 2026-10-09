@@ -15,7 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { aprobarBonoSemestral, decidirBonoSemestral, fetchBonoSemestral } from '@nucleo/data/metas';
 import {
-  ESTADO_MES_SEMESTRAL, ROTULO_DE_BAJA, SEMESTRE_INICIO, resumenDelSemestre,
+  ESTADO_MES_SEMESTRAL, ROTULO_DE_BAJA, SEMESTRE_INICIO, csvDelSemestre, resumenDelSemestre,
   semestreDe, semestreLabel, semestrePagoLabel, semestreSumar, ymHoySV, ymLabelCorto,
 } from '@nucleo/utils/metasUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -30,6 +30,7 @@ import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import { colorDeVariante } from '../colorDeVariante';
 import { fallo, listo } from '../Progreso';
+import { compartirCsv } from '../fiscal/csv';
 
 function Paso({ sem, onCambiar }) {
   const actual = semestreDe(ymHoySV());
@@ -133,6 +134,12 @@ export default function Semestral({ canApprove }) {
               color={r.aprobado ? MARCA.verde : MARCA.azulClaro}
               apoyo={r.aprobado && hoja?.aprobado_por ? `por ${shortEmployeeName(hoja.aprobado_por)}` : `${r.cerrados} de 6 meses cerrados`} />
           </FilaDeKpis>
+          {r.personas.length ? (
+            <Pressable hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-end', marginHorizontal: 20, minHeight: 32, justifyContent: 'center' }}
+              onPress={() => compartirCsv({ ...csvDelSemestre(r, sem), modulo: 'metas' }).catch((e) => fallo('No se pudo compartir', e?.message || ''))}>
+              <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Descargar la hoja (CSV)</Text>
+            </Pressable>
+          ) : null}
           {r.meses.length ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginHorizontal: 16 }}>
               {r.meses.map((m) => (

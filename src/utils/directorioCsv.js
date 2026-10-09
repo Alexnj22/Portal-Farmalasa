@@ -56,12 +56,17 @@ const COLUMNAS = [
  * `exportCsv` exige el módulo: sin él el archivo baja igual pero el egreso
  * queda como `sin-declarar`, que es un hallazgo visible en vez de un hueco.
  */
-export function exportarDirectorio(personas, nombreDeSucursal, llaves = {}) {
+/** Las columnas y filas del directorio (las que se pueden llenar), y el nombre del archivo. */
+export function tablaDelDirectorio(personas, nombreDeSucursal, llaves = {}) {
     const columnas = COLUMNAS.filter(c => !c.llave || llaves[c.llave]);
     const ctx = { nombreDeSucursal };
     const filas = soloPersonalEnPlanilla(personas)
         .map(emp => columnas.map(c => c.valor(emp, ctx)));
+    return { headers: columnas.map(c => c.titulo), rows: filas, nombre: `Directorio_Personal_${hoySV()}` };
+}
 
-    const hoy = hoySV();
-    exportCsv(columnas.map(c => c.titulo), filas, `Directorio_Personal_${hoy}.csv`, 'personal');
+export function exportarDirectorio(personas, nombreDeSucursal, llaves = {}) {
+    // La tabla es la misma que comparte la app (`tablaDelDirectorio`).
+    const { headers, rows, nombre } = tablaDelDirectorio(personas, nombreDeSucursal, llaves);
+    exportCsv(headers, rows, `${nombre}.csv`, 'personal');
 }

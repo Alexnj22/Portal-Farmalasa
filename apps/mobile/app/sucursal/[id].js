@@ -12,14 +12,17 @@
 //                 (`historialDeSucursal`), filtrable por dimensión.
 // Todo lo que decide sale del núcleo, el mismo del portal. La ficha se edita
 // en `sucursal/editar`; los documentos del expediente se suben desde la fila
-// (`AccionesDelDocumento`); registrar un pago sigue en el portal.
+// (`AccionesDelDocumento`), los propios se agregan y editan en
+// `sucursal/documento`, y los pagos de cada servicio se registran en
+// `sucursal/pago` — todo con permiso de editar sucursales.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchBranchExpensesHistory, fetchBranchKiosks } from '@nucleo/data/branches';
+import { jefaturaDeSucursal } from '@nucleo/utils/edicionDeSucursal';
 import { abiertaAhora, ahoraEnSV, alertasDeSucursal, completitudDelPerfil, TIPOS_DE_SUCURSAL } from '@nucleo/utils/sucursales';
 import { documentosDeSucursal, estadoDeDocumento, vencimientoEfectivo } from '@nucleo/utils/expedienteDeSucursal';
 import { gastosPorMes, serviciosDeSucursal, totalOperativo, variacionDeGastos } from '@nucleo/utils/gastosDeSucursal';
@@ -34,8 +37,9 @@ import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato, Seccion } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
+import { fallo, listo } from '../../componentes/Progreso';
 import Segmentos from '../../componentes/Segmentos';
 import Avatar from '../../componentes/Avatar';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
@@ -51,7 +55,7 @@ const corta = (f) => (f ? fechaTexto(String(f).slice(0, 10), { day: 'numeric', m
 function Boton({ texto, onPress, color = MARCA.azulClaro }) {
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }} hitSlop={6}
-      style={({ pressed }) => ({ minHeight: 34, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', backgroundColor: `${color}2E`, opacity: pressed ? 0.7 : 1 })}>
+      style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', backgroundColor: `${color}2E`, opacity: pressed ? 0.7 : 1 })}>
       <Text style={{ color, fontSize: 14, fontWeight: '700' }}>{texto}</Text>
     </Pressable>
   );
@@ -73,9 +77,13 @@ function Barra({ rotulo, pct }) {
   );
 }
 
-function Resumen({ b, gente, kioscos }) {
+function Resumen({ b, gente, kioscos, puedeEditar }) {
   const { dia, hora } = ahoraEnSV();
   const alertas = alertasDeSucursal(b, Date.now(), gente);
+  // Como la ficha del portal: en una sala (no en Administración) la tarjeta
+  // vacía de jefe o subjefe lleva a asignarlo.
+  const { jefe, subjefe } = jefaturaDeSucursal(gente, b.type || 'FARMACIA');
+  const faltaJefatura = (b.type || 'FARMACIA') === 'ADMINISTRATIVA' ? [] : [...(jefe ? [] : ['Jefe/a de Sala']), ...(subjefe ? [] : ['Subjefe/a de Sala'])];
   const comp = completitudDelPerfil(b);
   const semana = b.weeklyHours || b.weekly_hours || {};
   const tipo = b.type || 'FARMACIA';
@@ -130,16 +138,23 @@ function Resumen({ b, gente, kioscos }) {
           })}
         </Seccion>
       ) : null}
-      <Seccion titulo={`Personal · ${gente.length}`}>
+      <Seccion titulo={`Personal · ${gente.length}`} pie={faltaJefatura.length ? `Falta ${faltaJefatura.map((c) => c.toLowerCase()).join(' y ')}.` : null}>
         {gente.length ? gente.map((e, i) => (
-          <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 8 : 0 }}>
+          <Pressable key={e.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/empleado/[id]', params: { id: String(e.id) } }); }}
+            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 8 : 0, opacity: pressed ? 0.6 : 1 })}>
             <Avatar empleado={e} tamano={32} />
             <View style={{ flex: 1 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{shortEmployeeName(e)}</Text>
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{[e.role, e.secondary_role].filter(Boolean).join(' · ') || '—'}</Text>
             </View>
-          </View>
+            <Text style={{ color: colorSistema.texto2, fontSize: 18 }}>›</Text>
+          </Pressable>
         )) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Nadie asignado.</Text>}
+        {puedeEditar && faltaJefatura.length ? (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {faltaJefatura.map((c) => <Boton key={c} texto={`Asignar ${c}`} color={MARCA.ambar} onPress={() => router.push({ pathname: '/sucursal/jefatura', params: { id: String(b.id), cargo: c } })} />)}
+          </View>
+        ) : null}
       </Seccion>
       <Seccion titulo="Perfil completo">
         <Barra rotulo="Legal" pct={comp.legal} />
@@ -150,7 +165,7 @@ function Resumen({ b, gente, kioscos }) {
   );
 }
 
-function Documento({ b, d, primero, puedeEditar }) {
+function Documento({ b, d, primero, puedeEditar, propio }) {
   const e = estadoDeDocumento(d.url, vencimientoEfectivo(d));
   const color = colorDeVariante(e.variant);
   const fecha = d.hasIssueDate && d.issueDate ? `emitido ${corta(d.issueDate)}` : vencimientoEfectivo(d) ? `vence ${corta(d.expDate)}` : null;
@@ -164,7 +179,11 @@ function Documento({ b, d, primero, puedeEditar }) {
         <Pildora texto={e.label} color={color} />
         {d.url ? <Boton texto="Ver" onPress={() => Promise.resolve(openStoredFile(d.url)).catch(() => {})} /> : null}
       </View>
-      {puedeEditar ? <AccionesDelDocumento b={b} d={d} /> : null}
+      {puedeEditar && propio ? (
+        <Pressable hitSlop={8} onPress={() => router.push({ pathname: '/sucursal/documento', params: { id: String(b.id), doc: d.id } })} style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start', paddingHorizontal: 6 }}>
+          <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Editar</Text>
+        </Pressable>
+      ) : puedeEditar ? <AccionesDelDocumento b={b} d={d} /> : null}
     </View>
   );
 }
@@ -172,6 +191,7 @@ function Documento({ b, d, primero, puedeEditar }) {
 function Expediente({ b, puedeEditar }) {
   const [todos, setTodos] = useState(false);
   const exp = useMemo(() => documentosDeSucursal(b), [b]);
+  const propios = useMemo(() => new Set(exp.propios.map((d) => d.id)), [exp]);
   // Como el portal: de arranque sólo lo que pide atención (falta, vence, vencido).
   const filtrar = (l) => (todos ? l : l.filter((d) => estadoDeDocumento(d.url, vencimientoEfectivo(d)).type !== 'OK'));
   const grupos = [
@@ -190,15 +210,16 @@ function Expediente({ b, puedeEditar }) {
         opciones={[{ id: 'atencion', label: 'Piden atención' }, { id: 'todos', label: 'Todos' }]} />
       {grupos.map(([titulo, lista]) => (
         <Seccion key={titulo} titulo={`${titulo} · ${lista.length}`}>
-          {lista.map((d, i) => <Documento key={d.id} b={b} d={d} primero={i === 0} puedeEditar={puedeEditar} />)}
+          {lista.map((d, i) => <Documento key={d.id} b={b} d={d} primero={i === 0} puedeEditar={puedeEditar} propio={propios.has(d.id)} />)}
         </Seccion>
       ))}
       {!grupos.length ? <Aviso texto={todos ? 'Esta sucursal no tiene documentos configurados.' : 'Todo el expediente está al día.'} /> : null}
+      {puedeEditar ? <BotonGrande texto="Nuevo documento" borde onPress={() => router.push({ pathname: '/sucursal/documento', params: { id: String(b.id) } })} /> : null}
     </>
   );
 }
 
-function Gastos({ b }) {
+function Gastos({ b, puedeEditar }) {
   const [historial, setHistorial] = useState(null);
   useEffect(() => {
     fetchBranchExpensesHistory(b.id).then(({ data, error }) => setHistorial(error ? [] : gastosPorMes(data))).catch(() => setHistorial([]));
@@ -231,6 +252,15 @@ function Gastos({ b }) {
             <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
               {[s.provider || 'Sin proveedor', s.amount != null ? formatMoney(s.amount) : null, s.estado.state === 'pending_receipt' ? `pagado hasta ${s.paidThrough}` : s.dueDay ? `paga el día ${s.dueDay}` : null].filter(Boolean).join(' · ')}
             </Text>
+            {puedeEditar ? (
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {/* Como el portal: sin día de pago ni último mes pagado, lo que toca es configurarlo. */}
+                {s.dueDay && s.paidThrough
+                  ? <Boton texto="Registrar pago" color={MARCA.verde} onPress={() => router.push({ pathname: '/sucursal/pago', params: { id: String(b.id), servicio: s.clave } })} />
+                  : <Boton texto="Configurar pago" onPress={() => router.push({ pathname: '/sucursal/editar', params: { id: String(b.id), seccion: s.clave === 'rent' ? 'inmueble' : 'servicios' } })} />}
+                {s.isReceiptPending ? <Boton texto="Subir comprobante" color={MARCA.ambar} onPress={() => router.push({ pathname: '/sucursal/pago', params: { id: String(b.id), servicio: s.clave, pendiente: '1' } })} /> : null}
+              </View>
+            ) : null}
           </View>
         ))}
       </Seccion>
@@ -280,6 +310,27 @@ function Historial({ b, empleados }) {
   );
 }
 
+// Eliminar la sala, como el portal: bloqueado mientras tenga gente asignada
+// (el store lo vuelve a comprobar con TODA la ficha, activa o no), y con una
+// confirmación que dice que no se deshace. `deleteBranch` devuelve false si
+// falla — el portal anunciaba «eliminada» igual; acá se mira.
+function eliminarSucursal(b, empleados, deleteBranch) {
+  const asignados = (empleados || []).filter((e) => String(e.branchId ?? e.branch_id) === String(b.id)).length;
+  if (asignados) {
+    Alert.alert('No se puede eliminar', `«${b.name}» tiene ${asignados} persona${asignados === 1 ? '' : 's'} asignada${asignados === 1 ? '' : 's'}. Reasígnalas o dalas de baja primero.`);
+    return;
+  }
+  Alert.alert('Eliminar sucursal', `«${b.name}» se borra del portal. No se puede deshacer.`, [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Eliminar', style: 'destructive', onPress: async () => {
+      const ok = await Promise.resolve(deleteBranch(b.id)).catch(() => false);
+      if (!ok) { fallo('No se pudo eliminar', 'Intenta de nuevo.'); return; }
+      listo('Sucursal eliminada', b.name);
+      router.replace('/sucursales');
+    } },
+  ]);
+}
+
 export default function Sucursal() {
   const { id } = useLocalSearchParams();
   const puedeEditar = useAuth().hasPermission('branches', 'can_edit');
@@ -287,6 +338,7 @@ export default function Sucursal() {
   const empleados = useStaffStore((s) => s.employees);
   const b = useMemo(() => (branches || []).find((x) => String(x.id) === String(id)), [branches, id]);
   const gente = useMemo(() => (empleados || []).filter((e) => String(e.branchId ?? e.branch_id) === String(id) && (e.status || '').toUpperCase() !== 'INACTIVO'), [empleados, id]);
+  const deleteBranch = useStaffStore((s) => s.deleteBranch);
   const [pestana, setPestana] = useState('resumen');
   const [kioscos, setKioscos] = useState(null);
   useEffect(() => {
@@ -310,20 +362,20 @@ export default function Sucursal() {
         </View>
         <Segmentos activa={pestana} onCambiar={setPestana}
           opciones={[{ id: 'resumen', label: 'Resumen' }, { id: 'expediente', label: 'Expediente' }, { id: 'gastos', label: 'Gastos' }, { id: 'historial', label: 'Historial' }]} />
-        {pestana === 'resumen' ? <Resumen b={b} gente={gente} kioscos={kioscos} /> : null}
+        {pestana === 'resumen' ? <Resumen b={b} gente={gente} kioscos={kioscos} puedeEditar={puedeEditar} /> : null}
         {pestana === 'expediente' ? <Expediente b={b} puedeEditar={puedeEditar} /> : null}
-        {pestana === 'gastos' ? <Gastos b={b} /> : null}
+        {pestana === 'gastos' ? <Gastos b={b} puedeEditar={puedeEditar} /> : null}
         {pestana === 'historial' ? <Historial b={b} empleados={empleados} /> : null}
         {puedeEditar ? (
           <Seccion titulo="Editar">
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {[['horarios', 'Horarios'], ['legal', 'Legal'], ['inmueble', 'Inmueble'], ['servicios', 'Servicios']].map(([k, t]) => (
+              {[['general', 'General'], ['horarios', 'Horarios'], ['legal', 'Legal'], ['enfermeria', 'Enfermería'], ['inmueble', 'Inmueble'], ['servicios', 'Servicios']].map(([k, t]) => (
                 <Boton key={k} texto={t} onPress={() => router.push({ pathname: '/sucursal/editar', params: { id: String(b.id), seccion: k } })} />
               ))}
             </View>
           </Seccion>
         ) : null}
-        <Text style={{ color: colorSistema.texto2, fontSize: 13, textAlign: 'center', marginTop: 4 }}>Registrar un pago, y los documentos de enfermería o los propios: en el portal.</Text>
+        {puedeEditar ? <BotonGrande texto="Eliminar sucursal" borde color={MARCA.rojo} onPress={() => eliminarSucursal(b, empleados, deleteBranch)} /> : null}
       </ScrollView>
     </>
   );

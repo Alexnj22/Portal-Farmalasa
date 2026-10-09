@@ -8,7 +8,7 @@ import { LoadingState, EmptyState } from '../../components/common/StateViews';
 import { fetchPromocionLaboratorio } from '@nucleo/data/promociones';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { exportCsv } from '@nucleo/utils/csvExport';
-import { fmtMoneda, fmtUnidades, mesesRecientes, rotuloMes } from '@nucleo/utils/promocionesUtils';
+import { csvMatrizDeLaboratorio, fmtMoneda, fmtUnidades, mesesRecientes, rotuloMes } from '@nucleo/utils/promocionesUtils';
 import Campo from './Campo';
 
 /**
@@ -66,13 +66,9 @@ export default function MatrizLaboratorio({ promocionId, onCabecera }) {
     }, [datos?.year_month]);
 
     const exportar = () => {
-        exportCsv(
-            ['SALA', 'VENTA', 'NIVEL', 'PERSONAS', 'CADA PERSONA', 'COSTO', 'FALTA PARA EL SIGUIENTE'],
-            salas.map((x) => [x.sala, x.venta, x.nivel ?? '', x.personas, x.monto_por_persona, x.costo,
-                x.siguiente_nivel != null ? x.falta : '']),
-            `promocion_laboratorio_${(datos?.nombre || promocionId).toString().replace(/\W+/g, '_')}_${datos?.mes_medido || datos?.year_month || ''}.csv`,
-            'promociones',
-        );
+        // Columnas y filas del núcleo: la app comparte el mismo archivo.
+        const c = csvMatrizDeLaboratorio(datos, promocionId);
+        exportCsv(c.headers, c.rows, `${c.nombre}.csv`, 'promociones');
     };
 
     // El cargador tapa todo sólo la primera vez. Al cambiar de mes se queda la

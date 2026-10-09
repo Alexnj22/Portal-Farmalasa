@@ -416,7 +416,8 @@ export async function guardarRecurso(r, archivo, autorId) {
     let url = null;
     let mime = null;
     if (archivo) {
-        url = await subirArchivo(BUCKET_MARKETING, `biblioteca/${Date.now()}-${nombreSeguro(archivo.name)}`, archivo,
+        // Del teléfono llega `{ name, type, datos: ArrayBuffer }` (no hay `File`).
+        url = await subirArchivo(BUCKET_MARKETING, `biblioteca/${Date.now()}-${nombreSeguro(archivo.name)}`, archivo.datos ?? archivo,
             { contentType: archivo.type });
         mime = archivo.type || null;
     }

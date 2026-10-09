@@ -70,13 +70,8 @@ export const DIRECCION_DEL_PORTAL = 'portal.farmasalud.lat';
  * acá y no en tokens del tema porque un carné IMPRESO no tiene tema — es el
  * mismo criterio que la regla del ticket: el papel no acompaña al modo oscuro.
  */
-export const MARCA = {
-    magenta: '#981D97',
-    verde:   '#8EC30F',
-    tinta:   '#231F20',
-    gris:    '#6B7280',
-    tenue:   '#F3E9F3',
-};
+import { MARCA } from '@nucleo/utils/marcaDelPapel';
+export { MARCA };
 
 /* ── El carné mide lo que mide una tarjeta, y va DE PIE ─────────────────────
  *

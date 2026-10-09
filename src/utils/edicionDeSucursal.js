@@ -114,13 +114,24 @@ export const esAlquilada = (branch, ajustes) =>
  * @param {any} branch
  * @param {{ ajustes?: any, horario?: any, tipoDeInmueble?: string }} [cambios]
  */
-export function sucursalConCambios(branch, { ajustes, horario, tipoDeInmueble } = {}) {
+export function sucursalConCambios(branch, { ajustes, horario, tipoDeInmueble, general } = {}) {
     const base = { ...(branch || {}) };
     const out = {
         ...base,
         name: base.name || base.branchName || '',
         settings: ajustes ? limpiarAjustes(ajustes) : limpiarAjustes(base.settings),
     };
+    // Lo general (nombre, dirección, teléfonos, apertura): las mismas claves
+    // que escribe `BranchTabGeneral` del portal.
+    if (general) {
+        out.name = String(general.name ?? out.name).trim();
+        out.branchName = out.name;
+        out.address = general.address ?? out.address ?? null;
+        out.phone = general.phone ?? out.phone ?? null;
+        out.cell = general.cell ?? out.cell ?? null;
+        out.openingDate = general.openingDate ?? out.openingDate ?? out.opening_date ?? null;
+        out.opening_date = out.openingDate;
+    }
     if (horario) { out.weeklyHours = limpiarHorario(horario); out.weekly_hours = out.weeklyHours; }
     if (tipoDeInmueble) {
         out.propertyType = tipoDeInmueble;
@@ -142,5 +153,53 @@ export function candidatosLegales(empleados) {
         regentes: conCargo.filter((e) => cargo(e).includes('REGENTE') && !cargo(e).includes('ENFERMER')),
         farmacovigilancia: conCargo.filter((e) => cargo(e).includes('FARMACOVIGILANCIA')),
         enfermeria: conCargo.filter((e) => cargo(e).includes('ENFERMER')),
+    };
+}
+
+/** Por qué no se puede guardar lo general, o null. Misma regla que el portal. */
+export const problemaDeLoGeneral = (general) => (!String(general?.name || '').trim() ? 'Falta el Nombre Comercial.' : null);
+
+/** Lo general de una sala tal como lo edita el formulario. */
+export const generalDeSucursal = (b) => ({
+    name: b?.name || b?.branchName || '',
+    address: b?.address || '',
+    phone: b?.phone || '',
+    cell: b?.cell || '',
+    openingDate: b?.openingDate || b?.opening_date || '',
+});
+
+/** El equipo de enfermería: agregar una fila vacía (con su id), quitarla o cambiarla, por POSICIÓN. */
+export const conEnfermeraNueva = (lista, ahora = Date.now()) => [...(lista || []), { id: ahora, employeeId: '', anualidadExp: '' }];
+export const sinEnfermera = (lista, indice) => (lista || []).filter((_, i) => i !== indice);
+export const conEnfermeraCambiada = (lista, indice, campo, valor) => (lista || []).map((n, i) => (i === indice ? { ...n, [campo]: valor } : n));
+
+/**
+ * Qué movimiento es poner a alguien en la jefatura de una sala: ascenso (misma
+ * sala, otro cargo), traslado (otra sala, mismo cargo), las dos cosas, o
+ * lateral. Es el `moveType` que queda en la bitácora.
+ */
+export function tipoDeMovimiento(empleado, sala, cargo) {
+    if (!empleado || !sala) return 'NONE';
+    const mismaSala = String(empleado.branchId) === String(sala.id);
+    const mismoCargo = empleado.role === cargo;
+    if (mismaSala && !mismoCargo) return 'PROMOTION';
+    if (!mismaSala && mismoCargo) return 'TRANSFER';
+    if (!mismaSala && !mismoCargo) return 'TRANSFER_PROMOTION';
+    return 'LATERAL';
+}
+export const TEXTO_DEL_MOVIMIENTO = { PROMOTION: 'Ascenso interno.', TRANSFER: 'Traslado operativo.', TRANSFER_PROMOTION: 'Traslado y ascenso.', LATERAL: 'Movimiento lateral.' };
+
+/** Jefe y subjefe de una sala, como los detecta la ficha del portal (por el texto del cargo). */
+export function jefaturaDeSucursal(gente, tipo) {
+    const cargo = (e) => String(e.role || '').toLowerCase();
+    if (tipo === 'ADMINISTRATIVA') {
+        return {
+            jefe: gente.find(e => cargo(e).includes('gerente')) || null,
+            subjefe: gente.find(e => cargo(e).includes('administrador') || cargo(e).includes('admin')) || null,
+        };
+    }
+    return {
+        jefe: gente.find(e => cargo(e).includes('jefe') && !cargo(e).includes('subjefe')) || null,
+        subjefe: gente.find(e => cargo(e).includes('subjefe')) || null,
     };
 }

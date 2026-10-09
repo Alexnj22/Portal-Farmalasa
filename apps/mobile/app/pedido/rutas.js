@@ -5,7 +5,7 @@
 //
 // Lo que se lee y cómo se rotula sale del núcleo (`data/` y
 // `utils/rutasDeEntrega.js`), lo mismo que pinta el portal. ARMAR una ruta
-// —elegir pedidos y optimizar el recorrido— sigue en el portal.
+// —elegir pedidos y optimizar el recorrido— es `pedido/ruta/nueva`.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
@@ -101,9 +101,7 @@ export default function RutasDeReparto() {
         {completadas.map((r) => <TarjetaRuta key={r.id} ruta={r} yo={user?.id} />)}
         {puedeArmar ? (
           <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-            {/* Armar una ruta elige pedidos y optimiza el recorrido: sigue en el portal. */}
-            <BotonGrande texto="Crear ruta (portal)" borde
-              onPress={() => router.push({ pathname: '/portal', params: { ruta: '/pedidos', nombre: 'Pedidos' } })} />
+            <BotonGrande texto="Crear ruta" borde onPress={() => router.push('/pedido/ruta/nueva')} />
           </View>
         ) : null}
       </ScrollView>

@@ -15,8 +15,11 @@
 // en el portal.
 //
 // Mismo alcance que el portal: sin `staff_list` en ALL se ve sólo la sala propia.
+// Con `staff_list_descargar`, «Exportar el directorio» comparte el MISMO CSV
+// del portal (`tablaDelDirectorio`) con lo que está a la vista; las columnas
+// que la llave no deja llenar no van.
 import { useEffect, useMemo, useState } from 'react';
-import { SectionList, Text, View } from 'react-native';
+import { Pressable, SectionList, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -27,6 +30,8 @@ import { repartirSala } from '@nucleo/utils/mandoDeSala';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import Segmentos from '../componentes/Segmentos';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
+import { tablaDelDirectorio } from '@nucleo/utils/directorioCsv';
+import { compartirCsv } from '../componentes/fiscal/csv';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso } from '../componentes/formulario/Piezas';
@@ -111,6 +116,14 @@ export default function Personal() {
     ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: sala, porDefecto: 'todas', onCambiar: setSala, opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salas] }] : []),
   ];
   const total = secciones.reduce((n, s) => n + s.data.filter((f) => f.emp || f.practicante).length, 0);
+  const puedeExportar = !!hasPermission?.('staff_list_descargar');
+  const exportar = () => {
+    const visibles = secciones.flatMap((s) => s.data.filter((f) => f.emp).map((f) => f.emp));
+    const { headers, rows, nombre } = tablaDelDirectorio(visibles, nombreDe, {
+      identidad: !!hasPermission?.('staff_detail', 'can_view'), credenciales: !!hasPermission?.('ventas', 'can_view'),
+    });
+    Promise.resolve(compartirCsv({ headers, rows, nombre, modulo: 'personal' })).catch(() => {});
+  };
 
   const Cabecera = (
     <View style={{ gap: 12, paddingTop: 12, paddingBottom: 4 }}>
@@ -119,7 +132,14 @@ export default function Personal() {
         <Segmentos activa={vista} onCambiar={setVista}
           opciones={[{ id: 'todos', label: 'Todos' }, { id: 'activos', label: 'Activos' }, { id: 'ausentes', label: ausentes ? `Ausentes · ${ausentes}` : 'Ausentes' }]} />
       ) : null}
-      <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${total} ${tipo === 'practicantes' ? 'practicante' : 'persona'}${total === 1 ? '' : 's'}`}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 20 }}>
+        <Text style={{ color: colorSistema.texto2, fontSize: 13, flex: 1 }}>{`${total} ${tipo === 'practicantes' ? 'practicante' : 'persona'}${total === 1 ? '' : 's'}`}</Text>
+        {puedeExportar && tipo === 'personal' && total ? (
+          <Pressable hitSlop={8} accessibilityRole="button" onPress={exportar} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+            <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>Exportar el directorio</Text>
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 

@@ -8,7 +8,9 @@
 //   · los bonos de promoción que la sala debe;
 //   · todos los movimientos del día, repartidos por el corte que los contó,
 //     con quién los anotó y sus correcciones.
-// Más SACAR DINERO, METER DINERO y CERRAR EL DÍA, que ya estaban.
+// Más ABRIR LA CAJA, INICIAR EL TURNO, HACER CORTE (`hacer-corte`), SACAR y
+// METER DINERO y CERRAR EL DÍA. Qué se ofrece lo decide `accionDeLaCaja` del
+// núcleo, en el orden del portal: sin saber si está abierta no se ofrece nada.
 //
 // ── El conteo a ciegas ──────────────────────────────────────────────────────
 // Regla del usuario (1-sep): quien cuenta ese cajón no puede ver antes cuánto
@@ -34,12 +36,13 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  cerrarElDia, estadoDeCaja, estadoDeCajaEnElOrigen, fetchCorreccionesDeCaja, fetchMovimientosDelPortal,
+  abrirCaja, cerrarElDia, estadoDeCaja, estadoDeCajaEnElOrigen, fetchCorreccionesDeCaja, fetchMovimientosDelPortal, iniciarTurno,
   fetchSalidasDeSalaDelDia, fetchTiposDeSalida,
 } from '@nucleo/data/bolsas';
 import { fetchCortes, fetchPersonas, fetchVentasPorPago } from '@nucleo/data/cortes';
 import { fetchCobrosDelPortal } from '@nucleo/data/creditos';
 import { conMayuscula } from '@nucleo/utils/cajaDelDia';
+import { accionDeLaCaja } from '@nucleo/utils/corteDeCaja';
 import { BRANCH_A_ERP, ERP_BODEGA, ordenDeSala } from '@nucleo/constants/erp';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hora12 } from '@nucleo/utils/hora';
@@ -49,7 +52,7 @@ import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
 import { MenuDeFiltros } from '../componentes/Filtros';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
@@ -120,6 +123,7 @@ export default function Efectivo() {
   const [tipos, setTipos] = useState(VACIO);
   const [recargando, setRecargando] = useState(false);
   const [recarga, setRecarga] = useState(0);
+  const [abriendo, setAbriendo] = useState(null);
   const carga = useRef(0);
 
   useEffect(() => { fetchTiposDeSalida().then((t) => setTipos(t || VACIO)).catch(() => {}); }, []);
@@ -202,7 +206,7 @@ export default function Efectivo() {
       Alert.alert(cortesC.length ? 'El corte no está confirmado' : 'Falta el corte',
         cortesC.length ? 'Un corte descartado o sin revisar no cuenta como conteo del día. Confírmalo antes de cerrar — el cierre no se deshace.'
           : 'Si cierras ahora, el efectivo de toda la jornada queda sin contar ni una vez, y el cierre no se deshace. Haz el corte primero.',
-        [{ text: 'Entendido' }]);
+        cortesC.length ? [{ text: 'Entendido' }] : [{ text: 'Ahora no', style: 'cancel' }, { text: 'Hacer el corte', onPress: () => router.push({ pathname: '/hacer-corte', params: { sala } }) }]);
       return;
     }
     const noSeMidio = falta && falta.medido === false;
@@ -211,7 +215,7 @@ export default function Efectivo() {
       Alert.alert(noSeMidio ? 'No se pudo revisar la caja' : 'Falta contar el efectivo',
         noSeMidio ? 'No se pudo comprobar si quedó dinero sin contar. El día no se cierra sin saberlo: vuelve a intentarlo en un momento.'
           : `${falta?.desde ? `Desde el corte de las ${hora12(falta.desde)} entraron` : 'Hoy entraron'} ${formatMoney(pendiente)} que nadie ha contado. Si cierras ahora, ese dinero queda fuera de todo conteo. Haz el corte primero.`,
-        [{ text: 'Entendido' }]);
+        noSeMidio ? [{ text: 'Entendido' }] : [{ text: 'Ahora no', style: 'cancel' }, { text: 'Hacer el corte', onPress: () => router.push({ pathname: '/hacer-corte', params: { sala } }) }]);
       return;
     }
     Alert.alert(`¿Cerrar el día en ${nombre}?`, 'Se emite el cierre (Z) y la caja no vuelve a abrir hasta mañana. No se deshace.', [
@@ -226,6 +230,34 @@ export default function Efectivo() {
       } },
     ]);
   };
+
+  const accion = accionDeLaCaja({ puedeOperar, sala, noSePudo, estado: cargando ? null : estado });
+  const abrir = () => {
+    const monto = Number(String(abriendo || '').replace(',', '.')) || 0;
+    Alert.alert(`¿Abrir la caja de ${nombre}?`, `Arranca con ${formatMoney(monto)} de efectivo.`, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Abrir', onPress: async () => {
+        trabajando('Abriendo la caja…');
+        const r = await abrirCaja({ sala, montoApertura: monto }).catch((e) => ({ error: e }));
+        if (r?.error) fallo('No se pudo abrir la caja', mensajeAmigable(r.error));
+        else if (r?.aviso) fallo('La caja abrió, con un pendiente', r.aviso);
+        else listo('La caja quedó abierta', nombre);
+        setAbriendo(null);
+        cargar();
+      } },
+    ]);
+  };
+  const iniciar = () => Alert.alert(`¿Iniciar el turno en ${nombre}?`, 'La caja sigue abierta; el turno es lo que deja vender, cortar y cerrar.', [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Iniciar', onPress: async () => {
+      trabajando('Iniciando el turno…');
+      const r = await iniciarTurno(sala).catch((e) => ({ error: e }));
+      if (r?.error) fallo('No se pudo iniciar el turno', mensajeAmigable(r.error));
+      else if (r?.aviso) fallo('Quedó algo pendiente', r.aviso);
+      else listo('El turno quedó iniciado', nombre);
+      cargar();
+    } },
+  ]);
 
   const grupos = todas ? [{ id: 'sala', titulo: 'Sala', activa: sala, porDefecto: sala, onCambiar: setElegida, opciones: salas.map((b) => ({ id: String(b.id), label: b.name })) }] : [];
   const abierta = estado?.abierta && !turnoParado && !noSePudo;
@@ -287,7 +319,7 @@ export default function Efectivo() {
           {sala && !cargando && !noSePudo ? (
             <>
               <PanelDelDia estado={estado} ventas={delDia.ventas} veLosMontos={veLosMontos} entregas={entregas} personas={personas} />
-              <BonosPorPagar sala={sala} cajaAbierta={estado?.abierta === true} recarga={recarga} />
+              <BonosPorPagar sala={sala} cajaAbierta={estado?.abierta === true} recarga={recarga} puedeOperar={puedeOperar} />
             </>
           ) : null}
 
@@ -312,8 +344,20 @@ export default function Efectivo() {
             </Seccion>
           ) : null}
 
-          {puedeOperar && sala && !diaCerrado && !noSePudo ? (
+          {accion === 'abrir' ? (
+            abriendo == null ? <BotonGrande texto="Abrir la caja" color={MARCA.verde} onPress={() => setAbriendo('')} /> : (
+              <Seccion titulo="Abrir la caja" pie="Con cuánto efectivo arranca la caja. Si arranca en cero, déjalo vacío.">
+                <Campo multiline={false} value={abriendo} onChangeText={(v) => setAbriendo(v.replace(/[^\d.,]/g, ''))}
+                  keyboardType="decimal-pad" placeholder="$0.00" style={{ textAlign: 'center' }} />
+                <BotonGrande texto="Abrir" color={MARCA.verde} onPress={abrir} />
+                <BotonGrande texto="Cancelar" borde onPress={() => setAbriendo(null)} />
+              </Seccion>
+            )
+          ) : null}
+          {accion === 'iniciar-turno' ? <BotonGrande texto="Iniciar el turno" color={MARCA.verde} onPress={iniciar} /> : null}
+          {accion === 'operar' ? (
             <View style={{ gap: 10 }}>
+              <BotonGrande texto="Hacer corte" color={MARCA.azul} onPress={() => router.push({ pathname: '/hacer-corte', params: { sala } })} />
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 <View style={{ flex: 1 }}><BotonGrande texto="Meter dinero" color={MARCA.verde} onPress={() => router.push({ pathname: '/meter-dinero', params: { sala } })} /></View>
                 <View style={{ flex: 1 }}><BotonGrande texto="Sacar dinero" color={MARCA.azul} onPress={() => router.push({ pathname: '/sacar-dinero', params: { sala } })} /></View>
@@ -325,7 +369,8 @@ export default function Efectivo() {
           {sala && !cargando && !noSePudo ? (
             <MovimientosDelDia movimientos={delDia.movimientos} deBolsas={delDia.deBolsas} cobros={delDia.cobros}
               dia={estado?.dia} etiquetaDe={etiquetaDe} correcciones={correcciones} cortes={delDia.cortes}
-              anotaron={personas} puedeVerBolsas={puedeVerBolsas} />
+              anotaron={personas} puedeVerBolsas={puedeVerBolsas} puedeOperar={puedeOperar}
+              onCorregir={(m) => router.push({ pathname: '/corregir-movimiento', params: { sala, id: String(m.id), concepto: m.concepto || '', monto: String(m.monto ?? '') } })} />
           ) : null}
 
           {!puedeOperar ? <Aviso tono="nota" texto="Puedes ver el estado de la caja, pero no operarla." /> : null}

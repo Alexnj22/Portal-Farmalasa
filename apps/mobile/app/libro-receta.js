@@ -14,6 +14,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { ESTADO_RENGLON, faltantesDelRenglon, fetchLibro } from '@nucleo/data/bitacoras';
 import { correrMes, etiquetaMes, fechaTexto, hoySV, ultimoDiaDelMes } from '@nucleo/utils/fecha';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
+import { csvDelLibroBajoReceta } from '@nucleo/utils/libroBajoReceta';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso } from '../componentes/formulario/Piezas';
@@ -21,6 +22,8 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import Segmentos from '../componentes/Segmentos';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
+import { compartirCsv } from '../componentes/fiscal/csv';
+import { fallo } from '../componentes/Progreso';
 
 const COLOR = { warning: MARCA.ambar, success: MARCA.verde, neutral: colorSistema.texto2, danger: MARCA.rojo };
 
@@ -71,6 +74,12 @@ export default function LibroReceta() {
           { id: 'completa', label: `Completos · ${cuenta.completa}` },
           { id: 'todas', label: 'Todos' },
         ]} />
+        {filas?.length ? (
+          <Pressable hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-end', marginHorizontal: 20, minHeight: 32, justifyContent: 'center' }}
+            onPress={() => compartirCsv({ ...csvDelLibroBajoReceta(filas, { sucursalNombre: nombre, periodo: mes }), modulo: 'bitacoras' }).catch((e) => fallo('No se pudo compartir', e?.message || ''))}>
+            <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Descargar el libro (CSV)</Text>
+          </Pressable>
+        ) : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {filas == null ? <ActivityIndicator style={{ marginTop: 32 }} /> : visibles.length ? visibles.map((r) => {
           const estado = ESTADO_RENGLON[r.estado] ?? { label: r.estado, variant: 'neutral' };

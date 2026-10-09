@@ -11,6 +11,7 @@ import LiquidModal from '../common/LiquidModal';
 import {
     adjuntarComprobanteDeposito, anularDeposito, fetchDepositos, subirComprobante,
 } from '@nucleo/data/bolsas';
+import { rangoDeDiasDelDeposito } from '@nucleo/utils/depositoDeEfectivo';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
@@ -64,11 +65,7 @@ const COLUMNAS = [
 
 /* El rango de días que cubre un depósito, dicho corto. Un solo día se dice
  * «17 ago» y no «17 ago → 17 ago», que sería decir dos veces lo mismo. */
-const rangoDeDias = (d) => {
-    if (!d?.dia_desde) return '—';
-    const corto = (f) => fechaTexto(f, { day: 'numeric', month: 'short' });
-    return d.dia_desde === d.dia_hasta ? corto(d.dia_desde) : `${corto(d.dia_desde)} → ${corto(d.dia_hasta)}`;
-};
+const rangoDeDias = (d) => rangoDeDiasDelDeposito(d, (f) => fechaTexto(f, { day: 'numeric', month: 'short' }));
 
 /** El detalle: la cuenta que se hizo y qué bolsas se fueron adentro. */
 function Detalle({ deposito, nombreSala, onClose, onCambio }) {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, useMemo } from 'react';
+import { PRINCIPIO_PRESETS, editorDePrincipios, principiosParaGuardar, ubicacionesEditables, ubicacionesParaGuardar } from '@nucleo/utils/edicionDeProducto';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { createPortal } from 'react-dom';
@@ -32,8 +33,8 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import {
     guardarPrincipiosActivos,
     updateProductCategoria, insertProductCategory, guardarUbicacionesProducto,
-    updateProductDevolutivo, updateProductFoto, fetchVisibleEnApp, setVisibleEnApp, fetchProductPreciosMarginPage, fetchProductCounts,
-    fetchChangelogPage, fetchProductsList, fetchProductChangeAndMarginData, fetchProductDetail,
+    updateProductDevolutivo, updateProductFoto, fetchVisibleEnApp, setVisibleEnApp, fetchProductCounts,
+    fetchIdsModificadosDesde, fetchIdsPorMargen, fetchProductsList, fetchProductChangeAndMarginData, fetchProductDetail,
 } from '@nucleo/data/productos';
 import PortalInput from '../../components/common/PortalInput';
 import AvisoParecidos from '../../components/common/AvisoParecidos';
@@ -184,7 +185,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
 
 // ── PrincipiosEditor ──────────────────────────────────────────────────────────
 
-const PA_PRESETS = ['Insumo', 'No aplica'];
+const PA_PRESETS = PRINCIPIO_PRESETS;
 
 const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initial, onSaved }, ref) {
     const [items, setItems] = useState([]);
@@ -194,19 +195,10 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
 
     useEffect(() => {
         skipNextAutosave.current = true;
-        if (initial && initial.length > 0) {
-            const first = initial[0]?.nombre;
-            if (PA_PRESETS.includes(first) && initial.length === 1 && !initial[0]?.concentracion) {
-                setPreset(first);
-                setItems([]);
-            } else {
-                setPreset(null);
-                setItems(initial.map((p, i) => ({ ...p, _key: p.id ?? i })));
-            }
-        } else {
-            setPreset(null);
-            setItems([{ nombre: '', concentracion: '', orden: 0, _key: 0 }]);
-        }
+        // De lo guardado al editor: núcleo (`editorDePrincipios`), el mismo del teléfono.
+        const ed = editorDePrincipios(initial ?? []);
+        setPreset(ed.preset);
+        setItems(ed.items);
     }, [initial]);
 
     const selectPreset = (p) => {
@@ -229,26 +221,7 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
     const save = async ({ quiet = false } = {}) => {
         setSavingPA(true);
         try {
-            let text = null;
-            let saved = [];
-            let rows = [];
-            if (preset) {
-                rows = [{ product_id: productId, nombre: preset, concentracion: null, orden: 0 }];
-                text = preset;
-                saved = [{ nombre: preset }];
-            } else {
-                const toSave = items.filter(p => p.nombre.trim());
-                if (toSave.length > 0) {
-                    rows = toSave.map((p, i) => ({
-                        product_id:    productId,
-                        nombre:        p.nombre.trim(),
-                        concentracion: p.concentracion?.trim() || null,
-                        orden:         i,
-                    }));
-                    text = toSave.map(p => [p.nombre.trim(), p.concentracion?.trim()].filter(Boolean).join(' ')).join(', ');
-                }
-                saved = toSave;
-            }
+            const { rows, text, saved } = principiosParaGuardar(productId, { preset, items });
             // Borra, inserta, escribe el texto y anota (D3).
             await guardarPrincipiosActivos(productId, rows, text);
             if (!quiet) useToastStore.getState().showToast('Guardado', 'Principios activos actualizados.', 'success');
@@ -396,45 +369,16 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
 
     useEffect(() => {
         if (!branches) return;
-        const farm = branches.filter(b => ['FARMACIA', 'BODEGA'].includes(b.type));
-        setLocs(farm.map(b => { // eslint-disable-line react-hooks/set-state-in-effect -- deriva la grilla de ubicaciones desde branches/initial
-            const saved = (initial || []).find(l => l.branch_id === b.id);
-            return {
-                branch_id:      b.id,
-                branch_name:    b.name,
-                branch_type:    b.type,
-                // Sala de ventas
-                tipo:           saved?.estante ? 'estante' : 'vitrina',
-                numero:         saved?.estante || saved?.vitrina || '',
-                peldano:        saved?.peldano || '',
-                // Bodega interna
-                bodega_numero:  saved?.bodega_numero  || '',
-                bodega_peldano: saved?.bodega_peldano || '',
-                // Active view (UI only)
-                view: 'sala',
-            };
-        }));
+        setLocs(ubicacionesEditables(branches, initial || [])); // eslint-disable-line react-hooks/set-state-in-effect -- deriva la grilla de ubicaciones desde branches/initial
     }, [initial, branches]);
 
     const setField = (i, field, value) =>
         setLocs(ls => ls.map((l, j) => j === i ? { ...l, [field]: value } : l));
 
-    const hasAnyData = l =>
-        l.numero.trim() || l.peldano.trim() || l.bodega_numero.trim() || l.bodega_peldano.trim();
 
     const save = async ({ quiet = false } = {}) => {
         try {
-            const toUpsert = locs.filter(hasAnyData).map(l => ({
-                product_id:     productId,
-                branch_id:      l.branch_id,
-                vitrina:        l.tipo === 'vitrina' ? (l.numero.trim() || null) : null,
-                estante:        l.tipo === 'estante' ? (l.numero.trim() || null) : null,
-                peldano:        l.peldano.trim()        || null,
-                bodega_numero:  l.bodega_numero.trim()  || null,
-                bodega_peldano: l.bodega_peldano.trim() || null,
-                updated_at:     new Date().toISOString(),
-            }));
-            const toDelete = locs.filter(l => !hasAnyData(l)).map(l => l.branch_id);
+            const { toUpsert, toDelete } = ubicacionesParaGuardar(productId, locs);
             await guardarUbicacionesProducto(productId, toUpsert, toDelete);
             if (!quiet) useToastStore.getState().showToast('Guardado', 'Ubicaciones actualizadas.', 'success');
         } catch (e) {
@@ -1482,36 +1426,11 @@ export default function TabCatalogo({
         let cancelled = false;
         setStatsLoading(true);
 
-        const PAGE = 1000;
-        const perdidaIds = new Set();
-        const bajoIds    = new Set();
+        // La cuenta paginada vive en el núcleo (`fetchIdsPorMargen`), la misma del teléfono.
         const marginCheckFields = allowedPriceFields.filter(f => f.key !== 'precio_7' && f.key !== 'premium');
-
-        const fetchPage = async (from) => {
-            const { data, error } = await fetchProductPreciosMarginPage(PRICE_SELECT, from);
-            if (cancelled) return;
-            if (error || !data) {
-                setMarginStats({ perdidaIds, bajoIds });
-                setStatsLoading(false);
-                return;
-            }
-            data.forEach(pp => {
-                const w = worstMarginOf(pp, marginCheckFields);
-                if (w === null) return;
-                if (w < 0)  perdidaIds.add(pp.product_id);
-                if (w < 15) bajoIds.add(pp.product_id);
-            });
-            if (data.length === PAGE) {
-                await fetchPage(from + PAGE);
-            } else {
-                setMarginStats({ perdidaIds, bajoIds });
-                setStatsLoading(false);
-            }
-        };
-
-        fetchPage(0).catch(() => {
-            if (!cancelled) { setMarginStats({ perdidaIds: new Set(), bajoIds: new Set() }); setStatsLoading(false); }
-        });
+        fetchIdsPorMargen(marginCheckFields)
+            .then(({ perdida, bajo }) => { if (!cancelled) { setMarginStats({ perdidaIds: perdida, bajoIds: bajo }); setStatsLoading(false); } })
+            .catch(() => { if (!cancelled) { setMarginStats({ perdidaIds: new Set(), bajoIds: new Set() }); setStatsLoading(false); } });
         return () => { cancelled = true; };
     }, [allowedPriceFields]);
 
@@ -1532,25 +1451,10 @@ export default function TabCatalogo({
         setModificadosLoading(true);
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-        const PAGE = 1000;
-        const ids = new Set();
-
-        const fetchPage = async (table, from) => {
-            const isProd = table === 'products_changelog';
-            const { data, error } = await fetchChangelogPage(table, isProd, startOfMonth, from, PAGE);
-            if (error) throw error;
-            if (cancelled) return;
-            (data || []).forEach(r => {
-                if (isProd && CHANGELOG_HIDDEN.has(r.campo) && !r.valor_anterior) return;
-                ids.add(r.product_id);
-            });
-            if ((data || []).length === PAGE) await fetchPage(table, from + PAGE);
-        };
-
-        Promise.all([fetchPage('products_changelog', 0), fetchPage('product_precios_changelog', 0)])
-            .then(() => { if (!cancelled) { setModificadosStats({ ids, count: ids.size }); setModificadosLoading(false); } })
+        // Núcleo (`fetchIdsModificadosDesde`), el mismo del teléfono.
+        fetchIdsModificadosDesde(startOfMonth, CHANGELOG_HIDDEN)
+            .then((ids) => { if (!cancelled) { setModificadosStats({ ids, count: ids.size }); setModificadosLoading(false); } })
             .catch(() => { if (!cancelled) { setModificadosStats({ ids: new Set(), count: 0 }); setModificadosLoading(false); } });
-
         return () => { cancelled = true; };
     }, []);
 

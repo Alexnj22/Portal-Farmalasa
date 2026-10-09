@@ -13,9 +13,14 @@
 //     diferencias, se reportan (`reportar_diferencias`) — como el portal.
 //
 // Lo que se cuenta mal no se pierde: queda como diferencia y se resuelve con
-// Bodega.
+// Bodega. Y como en el portal:
+//   · «Recibir sólo este» cuenta e ingresa UN producto sin contar el resto de
+//     la caja (`recibirProductoSuelto`): para venderlo ya;
+//   · lo ya contado se puede CORREGIR (`corregirRecepcionDeItem`): no mueve
+//     existencias, deja la diferencia para hablarla con Bodega;
+//   · lo que llegó y no venía se anota en `pedido/extras`.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -23,10 +28,10 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { avanzarEtapaDePedidoEnSala, fetchApoyoForPedido, fetchEmployeeByKioskPin, fetchPedidoItemsAll, fetchPedidoSucursalStatus, fetchPedidosEnCurso, recibirTrasladoPedido, upsertPedidoApoyo } from '@nucleo/data/pedidos';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import Escaner from '../../componentes/Escaner';
-import { marcarHojasRecibidas, recibirPedidoDeSucursal } from '@nucleo/data/recepcion';
+import { corregirRecepcionDeItem, marcarHojasRecibidas, recibirPedidoDeSucursal, recibirProductoSuelto } from '@nucleo/data/recepcion';
 import { construirCajasEspeciales } from '@nucleo/utils/cajasEspeciales';
 import { estadoDeHojas } from '@nucleo/utils/hojasRecepcion';
-import { esperadoEnDespacho, renglonContado, renglonTodoOk } from '@nucleo/utils/recepcionDePedido';
+import { conteoInicial, enPresentacion, renglonContado, renglonTodoOk } from '@nucleo/utils/recepcionDePedido';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
@@ -37,18 +42,24 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 
 const PRES = { CAJA: 'Caja', BLISTER: 'Blíster', MULTIPLO: 'Unid', UNIDAD: 'Unidad', caja: 'Caja', blister: 'Blíster', multiplo: 'Unid', multiplo_unidades: 'Unid', solo_cajas: 'Caja', unidad: 'Unidad' };
+// El conteo va en la presentación de despacho SI lo enviado cabe exacto, y en
+// la unidad del sistema si no (`conteoInicial`, el mismo del portal): redondear
+// 25 unidades a «3 blísteres de 10» inventaba una diferencia que no existe.
 const presentacion = (r) => {
+  const { fPres } = conteoInicial(r);
   const f = Number(r.dispatch_factor) || 1;
+  if (fPres !== f) return fPres > 1 ? `Unidad ×${fPres}` : 'Unidad';
   const l = PRES[r.dispatch_tipo] ?? r.dispatch_tipo ?? 'Unidad';
   return f > 1 ? `${l} ×${f}` : l;
 };
 const PROBLEMAS = [['danado', 'Dañado'], ['vencido', 'Vencido'], ['otro', 'Otro']];
 
-function Renglon({ r, valor, onCambiar, primero }) {
-  const esperado = esperadoEnDespacho(r);
+function Renglon({ r, valor, onCambiar, primero, onSolo, ocupado }) {
+  const ini = conteoInicial(r);
+  const esperado = ini.fQty;
   const qty = valor.fQty ?? esperado;
   const distinto = qty !== esperado || !!valor.problema;
-  const paso = (d) => { Haptics.selectionAsync().catch(() => {}); onCambiar({ fQty: Math.max(0, qty + d) }); };
+  const paso = (d) => { Haptics.selectionAsync().catch(() => {}); onCambiar({ fQty: Math.max(0, qty + d), fPres: ini.fPres }); };
   return (
     <View style={{ gap: 8, paddingVertical: 10, borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador }}>
       <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{r.products?.nombre ?? `Producto ${r.erp_product_id}`}</Text>
@@ -77,6 +88,39 @@ function Renglon({ r, valor, onCambiar, primero }) {
         </View>
       ) : null}
       {distinto ? <Campo value={valor.nota ?? ''} onChangeText={(t) => onCambiar({ nota: t })} placeholder="Nota (opcional)" /> : null}
+      {onSolo ? (
+        <Pressable disabled={ocupado} onPress={onSolo} style={({ pressed }) => ({ minHeight: 36, justifyContent: 'center', alignSelf: 'flex-start', opacity: ocupado ? 0.4 : pressed ? 0.6 : 1 })}>
+          <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Recibir sólo este, para venderlo ya</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+// Un renglón ya contado, con «Corregir»: la cantidad y una nota.
+function Contado({ r, primero, onCorregir, ocupado }) {
+  const [abierto, setAbierto] = useState(false);
+  const [cant, setCant] = useState(String(Number(r.cantidad_recibida) || 0));
+  const [nota, setNota] = useState('');
+  return (
+    <View style={{ gap: 6, paddingVertical: 8, borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{r.products?.nombre ?? `Producto ${r.erp_product_id}`}</Text>
+          <Text style={{ color: r.status === 'con_diferencia' ? MARCA.ambar : colorSistema.texto2, fontSize: 12 }}>{`Contado ${enPresentacion(Number(r.cantidad_recibida) || 0, r).fQty} de ${conteoInicial(r).fQty} · ${presentacion(r)}`}</Text>
+        </View>
+        <Pressable onPress={() => setAbierto((v) => !v)} hitSlop={8} style={{ minHeight: 44, justifyContent: 'center' }}>
+          <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{abierto ? 'Cerrar' : 'Corregir'}</Text>
+        </Pressable>
+      </View>
+      {abierto ? (
+        <View style={{ gap: 8 }}>
+          <Campo multiline={false} keyboardType="number-pad" value={cant} onChangeText={(t) => setCant(t.replace(/\D/g, ''))} placeholder="Cantidad que de verdad llegó" />
+          <Campo multiline={false} value={nota} onChangeText={setNota} placeholder="Qué pasó (obligatorio)" />
+          <BotonGrande texto="Guardar la corrección" color={MARCA.ambar} deshabilitado={ocupado || cant === '' || !nota.trim()}
+            onPress={() => onCorregir(r, Number(cant), nota.trim(), () => setAbierto(false))} />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -214,6 +258,51 @@ export default function Recibir() {
     }
   };
 
+  // Recibir UN producto sin contar el resto de la caja: cuenta e ingresa ese
+  // traslado entero (cada producto viaja en el suyo).
+  const soloEste = (r) => Alert.alert('Recibir sólo este', `${r.products?.nombre ?? ''}\n\nSe cuenta como lo anotaste y entra al inventario ya, sin contar el resto.`, [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Recibir', onPress: async () => {
+      setGuardando(true); trabajando('Recibiendo…');
+      try {
+        const { error, erp } = await recibirProductoSuelto({
+          pedidoId, sucursalId: sucId, items: [renglonContado(r, valores[r.id] ?? {})], receivedBy: user?.id ?? null, itemId: r.id,
+        }, { producto: r.products?.nombre ?? null, desde: 'app' });
+        if (error) throw error;
+        if (!erp?.ok && erp?.codigo !== 'NADA_QUE_RECIBIR') fallo('Quedó contado, pero no entró al inventario', `${erp?.error ?? 'Sin detalle'}. Todavía no se puede facturar.`);
+        else listo('Recibido', 'Ya está en el inventario.');
+        setValores((v) => { const n = { ...v }; delete n[r.id]; return n; });
+        await cargar();
+      } catch (e) {
+        fallo('No se pudo recibir', mensajeAmigable(e));
+      } finally {
+        setGuardando(false);
+      }
+    } },
+  ]);
+
+  // Corregir lo YA contado: no mueve existencias, deja la diferencia.
+  const corregir = (r, cantidad, nota, cerrar) => Alert.alert('Corregir el conteo', `${r.products?.nombre ?? ''}: ${Number(r.cantidad_recibida) || 0} → ${cantidad}.`, [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Corregir', onPress: async () => {
+      setGuardando(true);
+      try {
+        const { data, error } = await corregirRecepcionDeItem({ itemId: r.id, cantidad, nota, pedidoId }, {
+          sucursal_id: sucId, producto: r.products?.nombre ?? null, antes: Number(r.cantidad_recibida) || 0, desde: 'app',
+        });
+        if (error) throw error;
+        listo('Corregido', (data?.error_tipo ? 'Quedó anotado como diferencia. Bodega tiene que contestar antes de que el producto se mueva.' : 'El conteo ahora coincide con lo enviado.')
+          + (data?.reabrio_el_cierre ? ' El pedido ya estaba cerrado: vuelve a quedar abierto.' : ''));
+        cerrar?.();
+        await cargar();
+      } catch (e) {
+        fallo('No se pudo corregir', mensajeAmigable(e));
+      } finally {
+        setGuardando(false);
+      }
+    } },
+  ]);
+
   const titulo = `Contar #${numero ?? ''}`;
   if (!derivado) return (<><Stack.Screen options={{ ...BARRA_NATIVA, title: titulo }} /><ActivityIndicator style={{ marginTop: 120 }} /></>);
 
@@ -231,7 +320,8 @@ export default function Recibir() {
             </Pressable>
             <Seccion titulo={`${filasAbiertas.length} producto${filasAbiertas.length === 1 ? '' : 's'}`}>
               {filasAbiertas.map((r, i) => (
-                <Renglon key={r.id} r={r} primero={!i} valor={valores[r.id] ?? {}}
+                <Renglon key={r.id} r={r} primero={!i} valor={valores[r.id] ?? {}} ocupado={guardando}
+                  onSolo={filasAbiertas.length > 1 ? () => soloEste(r) : null}
                   onCambiar={(p) => setValores((v) => ({ ...v, [r.id]: { ...(v[r.id] ?? {}), ...p } }))} />
               ))}
             </Seccion>
@@ -288,6 +378,16 @@ export default function Recibir() {
             })}
           </Seccion>
         ) : null}
+        {(() => {
+          const contados = (datos.items ?? []).filter((r) => !r.es_extra && ['recibido', 'con_diferencia'].includes(r.status));
+          return contados.length ? (
+            <Seccion titulo={`Ya contados · ${contados.length}`} pie="Si contaste mal, corrígelo: queda como diferencia y se habla con Bodega.">
+              {contados.map((r, i) => <Contado key={r.id} r={r} primero={!i} ocupado={guardando} onCorregir={corregir} />)}
+            </Seccion>
+          ) : null;
+        })()}
+        <BotonGrande texto="Llegó algo que no venía en el pedido" borde
+          onPress={() => router.push({ pathname: '/pedido/extras', params: { pedidoId: String(pedidoId), sucId: String(sucId), numero: String(numero ?? '') } })} />
         <Seccion titulo={`Quién ayudó a recibir · ${apoyo.length}`}>
           {apoyo.map((a, i) => (
             <Text key={a.employee_id} style={{ color: colorSistema.texto, fontSize: 15, paddingVertical: 4, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>

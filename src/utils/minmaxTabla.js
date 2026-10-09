@@ -95,3 +95,21 @@ export function sugerenciaParaLaRegla(minActual, maxActual, dispatchPresFactor, 
     );
     return { paquete, minNuevo, maxNuevo };
 }
+
+/**
+ * La matriz ABC × XYZ de una sala: cuántos productos hay en cada cruce. Sin
+ * los de stock muerto ni los sin datos, y con la clase del BORRADOR si lo hay
+ * — lo mismo que cuenta `AbcXyzMatrix` del portal, para que el teléfono diga
+ * el mismo número.
+ */
+export function matrizAbcXyz(filas = []) {
+    const m = {};
+    for (const abc of ['A', 'B', 'C']) for (const xyz of ['X', 'Y', 'Z']) m[`${abc}${xyz}`] = 0;
+    for (const r of filas) {
+        if (r.is_dead_stock || r.alert_status === 'no_data') continue;
+        const abc = r.draft_abc_class || r.abc_class || 'D';
+        const xyz = normXyz(r.draft_demand_variability || r.demand_variability);
+        if (m[`${abc}${xyz}`] !== undefined) m[`${abc}${xyz}`]++;
+    }
+    return m;
+}

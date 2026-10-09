@@ -4,15 +4,20 @@
 // y los comentarios. Quien sólo ve su sala, ve su sala.
 //
 // Puntuar sale del núcleo (`climaLaboral`), lo mismo del portal. Resumen,
-// Segmentos e Individuos están en `componentes/encuestas/AnalisisClima`. El
-// resumen de comentarios con IA sigue en el portal.
-import { useEffect, useMemo, useState } from 'react';
+// Segmentos e Individuos están en `componentes/encuestas/AnalisisClima`. Y el
+// resumen de los comentarios con IA por segmento (General, Jefes, Empleados),
+// con la MISMA función del portal (`generarResumenDeComentarios`: Saly y lo
+// guarda en la encuesta); como en el portal, el que falta se genera solo y
+// cada uno se puede rehacer. Generar sólo lo hace quien ve todas las salas:
+// el resumen es de la encuesta entera y no puede salir de una sola sala.
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { fetchSurveyBloques, fetchSurveyPreguntas, fetchSurveyResponsesForView, fetchSurveys } from '@nucleo/data/encuestas';
+import { fetchSurveyAiSummaries, fetchSurveyBloques, fetchSurveyPreguntas, fetchSurveyResponsesForView, fetchSurveys, generarResumenDeComentarios } from '@nucleo/data/encuestas';
+import { segmentosDeComentarios, seccionesDelResumen, tonoDeSeccion } from '@nucleo/utils/resumenDeComentarios';
 import {
   bloqueDeLaBase, distribucionDePregunta, indicesInvertidos, nivelDePuntaje, preguntaDeLaBase, puntajeDeBloque, puntajeGlobal, respuestaDeLaBase,
 } from '@nucleo/utils/climaLaboral';
@@ -61,6 +66,32 @@ export default function Encuesta() {
       });
     });
   }, [encuestaId]);
+
+  // ── El resumen con IA de los comentarios ──
+  const [resumenes, setResumenes] = useState(null);
+  const [generando, setGenerando] = useState({});
+  const pedidos = useRef(new Set());
+  useEffect(() => {
+    if (!encuestaId) return;
+    setResumenes(null); pedidos.current = new Set(); // eslint-disable-line react-hooks/set-state-in-effect -- reinicio al cambiar de encuesta
+    Promise.resolve(fetchSurveyAiSummaries(encuestaId)).then(({ data }) => setResumenes(data?.ai_summaries || {})).catch(() => setResumenes({}));
+  }, [encuestaId]);
+  const segmentos = useMemo(() => segmentosDeComentarios(datos?.respuestas || []), [datos]);
+  const resumir = async (seg) => {
+    if (!seg.comments.length || !todas) return;
+    pedidos.current.add(seg.key);
+    setGenerando((g) => ({ ...g, [seg.key]: true }));
+    try {
+      const texto = await generarResumenDeComentarios(encuestaId, seg.comments, seg.key);
+      setResumenes((r) => ({ ...(r || {}), [seg.key]: texto }));
+    } catch { setResumenes((r) => ({ ...(r || {}), [seg.key]: 'Error al generar resumen.' })); }
+    setGenerando((g) => ({ ...g, [seg.key]: false }));
+  };
+  // Como el portal: al abrir Comentarios, el segmento sin resumen se genera solo.
+  useEffect(() => {
+    if (vista !== 'comentarios' || !resumenes || !todas) return;
+    segmentos.forEach((seg) => { if (!resumenes[seg.key] && seg.comments.length && !pedidos.current.has(seg.key)) resumir(seg); });
+  }, [vista, resumenes, segmentos, todas]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filas = useMemo(() => (datos?.respuestas || []).filter((r) => todas || r.sucursal === salaPropia), [datos, todas, salaPropia]);
   const inv = useMemo(() => indicesInvertidos(datos?.preguntas), [datos]);
@@ -136,6 +167,36 @@ export default function Encuesta() {
               );
             }) : vista === 'comentarios' ? (
               <View style={{ marginHorizontal: 16, gap: 8 }}>
+                {segmentos.filter((seg) => seg.comments.length).map((seg) => {
+                  const texto = resumenes?.[seg.key];
+                  return (
+                    <Vidrio key={seg.key} radio={18} tinte="rgba(105,41,196,0.14)">
+                      <View style={{ padding: 12, gap: 8 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`Resumen IA · ${seg.label}`}</Text>
+                          {generando[seg.key] ? <ActivityIndicator /> : todas && texto ? (
+                            <Pressable hitSlop={8} onPress={() => resumir(seg)} style={{ minHeight: 44, justifyContent: 'center' }}>
+                              <Text style={{ color: MARCA.violetaClaro, fontSize: 14, fontWeight: '700' }}>Rehacer</Text>
+                            </Pressable>
+                          ) : null}
+                        </View>
+                        {texto ? seccionesDelResumen(texto).map((sec, i) => (
+                          <View key={i} style={{ gap: 2 }}>
+                            {sec.title ? <Text style={{ color: colorDeVariante(tonoDeSeccion(sec.title)), fontSize: 13, fontWeight: '800' }}>{sec.title}</Text> : null}
+                            <Text style={{ color: colorSistema.texto, fontSize: 14, lineHeight: 20 }}>{sec.content.replace(/\*\*/g, '')}</Text>
+                          </View>
+                        )) : !generando[seg.key] ? (
+                          <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{todas ? 'Sin resumen todavía.' : 'Todavía no hay resumen.'}</Text>
+                        ) : null}
+                        {!texto && todas && !generando[seg.key] ? (
+                          <Pressable hitSlop={8} onPress={() => resumir(seg)} style={{ minHeight: 44, justifyContent: 'center' }}>
+                            <Text style={{ color: MARCA.violetaClaro, fontSize: 14, fontWeight: '700' }}>Generar el resumen</Text>
+                          </Pressable>
+                        ) : null}
+                      </View>
+                    </Vidrio>
+                  );
+                })}
                 {comentarios.length ? comentarios.map((c, i) => (
                   <Vidrio key={i} radio={16}>
                     <View style={{ padding: 12, gap: 4 }}>

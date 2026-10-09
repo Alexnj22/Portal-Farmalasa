@@ -5,7 +5,10 @@
 //   · Observaciones: lo que Hacienda recibió con reparos, palabra por palabra,
 //     con el filtro por código y Facturas / La más antigua.
 //   · Anuladas: por solventar, con Pendientes / CCF urgentes / Solventadas.
-//   · Saltos (sólo lectura) y No efectivo (confirmar pagos con comprobante).
+//   · En Hacienda y Anuladas, el historial de lo resuelto (`fiscal/Resueltas`):
+//     selladas del mes, resueltas a mano y las «solventadas internamente».
+//   · Saltos (solventar saltos y campos nulos, con su historial) y No efectivo
+//     (confirmar pagos con comprobante).
 //
 // Acciones, con las MISMAS funciones del portal:
 //   · «Solventar» una pendiente: corrige lo que haga falta y la reenvía
@@ -26,7 +29,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  fetchInvoiceObservations, fetchInvoiceResolutionsHistorial, fetchNulaInvoices, fetchObservationResolutions, fetchPendingMhInvoices,
+  countConfirmedMhInvoices, fetchInvoiceObservations, fetchInvoiceResolutionsHistorial, fetchNulaInvoices, fetchObservationResolutions, fetchPendingMhInvoices,
   insertInvoiceResolution, insertObservationResolution, regularizarDte,
 } from '@nucleo/data/facturacion';
 import {
@@ -51,6 +54,7 @@ import { colorDeVariante } from '../componentes/colorDeVariante';
 import { fallo, listo } from '../componentes/Progreso';
 import Saltos from '../componentes/fiscal/Saltos';
 import NoEfectivo from '../componentes/fiscal/NoEfectivo';
+import Resueltas from '../componentes/fiscal/Resueltas';
 
 const PAGINA = 40;
 const COLAS = [
@@ -87,10 +91,13 @@ export default function Facturacion() {
   const cargar = useCallback(async () => {
     setError(null);
     try {
-      const [mh, resHist, obs, resObs, nulas] = await Promise.all([
+      const hoy = hoySV();
+      const [mh, resHist, obs, resObs, nulas, confirmadas] = await Promise.all([
         fetchPendingMhInvoices(sala), fetchInvoiceResolutionsHistorial('invoice_id, resolved_at'),
         fetchInvoiceObservations('2000-01-01', '2099-12-31', sala), fetchObservationResolutions('invoice_id, resolved_at'),
         fetchNulaInvoices(sala),
+        // Lo que Hacienda ya selló este mes (sello válido: `SELLO_MH_LIKE`), como el portal.
+        Promise.resolve(countConfirmedMhInvoices(sala, `${hoy.slice(0, 7)}-01`, hoy)).then((r) => r.count ?? null).catch(() => null),
       ]);
       if (obs.error) throw new Error(obs.error.message);
       const res = resHist.data || [];
@@ -101,6 +108,7 @@ export default function Facturacion() {
         obs: observacionesPendientes(obs.data, resObs.data),
         nulas: sinResolver(nulas || [], res),
         nulasSolventadasMes: res.filter((r) => idsNulas.has(r.invoice_id) && String(r.resolved_at || '').startsWith(mes)).length,
+        confirmadasMes: confirmadas,
       });
     } catch (e) { setError(e?.message || 'No se pudo cargar'); setDatos({ mh: [], obs: [], nulas: [], nulasSolventadasMes: 0 }); }
   }, [sala]);
@@ -195,7 +203,7 @@ export default function Facturacion() {
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {ocupado === 'todas' ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Enviando a Hacienda… puede tardar un par de minutos." /></View> : null}
 
-        {cola === 'saltos' ? <Saltos sala={sala} nombreSala={nombreSala} recarga={recargaHija} /> : null}
+        {cola === 'saltos' ? <Saltos sala={sala} nombreSala={nombreSala} recarga={recargaHija} canEdit={canEdit} user={user} /> : null}
         {cola === 'noef' ? <NoEfectivo sala={sala} nombreSala={nombreSala} texto={texto} canEdit={canEdit} user={user} verMontos={verMontos} /> : null}
 
         {['mh', 'obs', 'nulas'].includes(cola) && datos ? (
@@ -208,6 +216,7 @@ export default function Facturacion() {
                 </FilaDeKpis>
                 <FilaDeKpis>
                   <Kpi icono="Hourglass" rotulo="Días restantes" valor={textoDias} color={colorDeVariante(tonoDeDiasQuedan(diasQuedan))} pide={diasQuedan <= 2} apoyo="para cerrar el mes" />
+                  <Kpi icono="CheckCircle2" rotulo="Selladas" valor={datos.confirmadasMes == null ? '—' : String(datos.confirmadasMes)} color={MARCA.verde} apoyo="por Hacienda este mes" />
                 </FilaDeKpis>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>Sin sello de Hacienda. El envío nocturno las reintenta solo.</Text>
               </>
@@ -271,6 +280,7 @@ export default function Facturacion() {
               <View style={{ marginHorizontal: 16 }}><BotonGrande texto={`Ver más · quedan ${lista.length - visibles.length}`} borde color={MARCA.azulClaro} onPress={() => setPaginas((p) => p + 1)} /></View>
             ) : null}
             {!lista.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Nada pendiente aquí</Text> : null}
+            {cola === 'mh' || cola === 'nulas' ? <Resueltas cola={cola} sala={sala} nombreSala={nombreSala} verMontos={verMontos} recarga={recargaHija} /> : null}
           </>
         ) : ['mh', 'obs', 'nulas'].includes(cola) ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
       </ScrollView>

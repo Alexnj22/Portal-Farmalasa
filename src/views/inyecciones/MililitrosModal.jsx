@@ -4,6 +4,7 @@ import Button from '../../components/common/Button';
 import LiquidModal from '../../components/common/LiquidModal';
 import PortalInput from '../../components/common/PortalInput';
 import { aplicacionesPorDosis, fmtMl } from '@nucleo/utils/inyeccionDosis';
+import { CASILLAS_DE_DOSIS as CASILLAS, leerMililitros } from '@nucleo/utils/inyeccionesAjustes';
 
 /*
  * Contar un producto por mililitros (2026-10-03).
@@ -17,12 +18,6 @@ import { aplicacionesPorDosis, fmtMl } from '@nucleo/utils/inyeccionDosis';
  * «2,5» es un número, y una coma que separa y otra que es decimal no se pueden
  * distinguir.
  */
-const CASILLAS = 4;
-const num = (t) => {
-    const n = Number(String(t ?? '').replace(',', '.'));
-    return Number.isFinite(n) && n > 0 ? n : null;
-};
-
 export default function MililitrosModal({ fila, guardando, onGuardar, onQuitar, onClose }) {
     const [contenido, setContenido] = useState(fila.contenido_ml != null ? fmtMl(fila.contenido_ml) : '');
     const [dosis, setDosis] = useState(() => {
@@ -30,10 +25,7 @@ export default function MililitrosModal({ fila, guardando, onGuardar, onQuitar, 
         return [...d, ...Array(CASILLAS).fill('')].slice(0, CASILLAS);
     });
 
-    const c = num(contenido);
-    const lista = [...new Set(dosis.map(num).filter((d) => d != null))].sort((a, b) => a - b);
-    const pasadas = c != null && lista.some((d) => d > c);
-    const valido = c != null && c <= 500 && lista.length > 0 && !pasadas;
+    const { c, lista, valido } = leerMililitros(contenido, dosis);
 
     return (
         <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth="max-w-md" ariaLabel="Contar por mililitros">

@@ -24,6 +24,8 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fetchEmployeeApprovalRequestsDetail } from '@nucleo/data/requests';
 import { fetchEmployeeTimeline, fetchCredenciales } from '@nucleo/data/employees';
+import { openStoredFile } from '@nucleo/utils/storageFiles';
+import { historialDeFicha, ausenciasFiltradas, diasDeAusencia, varianteDeEvento, eventoVigente, datosParaCorregir } from '@nucleo/utils/historialDeFicha';
 // `lazy`: el carné del día arrastra el selector de sala y su diálogo, y esta
 // vista la abre TODO el personal para mirar su propio expediente. Sólo lo baja
 // quien tiene el permiso — y sólo cuando el bloque llega a pintarse.
@@ -160,73 +162,27 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const [ausenciasSelectedDay, setAusenciasSelectedDay] = useState(null);
     const [ausenciasCalMonth, setAusenciasCalMonth]       = useState(() => new Date());
 
-    const timeline = useMemo(() => {
-        if (!emp) return [];
-        return timelineData.map(ev => ({
-            id: `${ev.event_type}_${ev.event_date}_${ev.created_at}`,
-            type: ev.event_type,
-            category: ev.category,
-            date: ev.event_date,
-            endDate: ev.event_end_date,
-            note: ev.note || ev.metadata?.note || ev.metadata?.details?.note || 'Evento registrado en el sistema.',
-            metadata: ev.metadata || {},
-            documentId: ev.metadata?.document_id || null,
-            isSystem: ['HIRE', 'ROSTER_PUBLISHED'].includes(ev.event_type),
-        }));
-    }, [timelineData, emp]);
+    // El historial sale del núcleo (`historialDeFicha`), que además amarra cada
+    // novedad con su fila real de `employee_events`: la vista no trae el id, y
+    // con el id sintético de antes «Editar», «Cancelar» y «Adjuntar» no
+    // encontraban la fila.
+    const timeline = useMemo(() => historialDeFicha(timelineData, emp?.history || []), [timelineData, emp]);
 
     const ausenciasData = useMemo(() => {
-        let list = timeline.filter(ev => ev.type === 'PERMIT' || ev.type === 'DISABILITY');
-        if (ausenciasSelectedDay) {
-            list = list.filter(ev => {
-                const meta = ev.metadata || {};
-                if (ev.type === 'PERMIT' && meta.permissionDates?.length > 0) return meta.permissionDates.includes(ausenciasSelectedDay);
-                const start = ev.date || ausenciasSelectedDay;
-                const end   = meta.endDate || ev.date || ausenciasSelectedDay;
-                return ausenciasSelectedDay >= start && ausenciasSelectedDay <= end;
-            });
-        } else {
-            const y = ausenciasCalMonth.getFullYear();
-            const m = String(ausenciasCalMonth.getMonth() + 1).padStart(2, '0');
-            const monthStr = `${y}-${m}`;
-            list = list.filter(ev => {
-                const meta = ev.metadata || {};
-                if (ev.type === 'PERMIT' && meta.permissionDates?.length > 0) return meta.permissionDates.some(d => d.startsWith(monthStr));
-                return (ev.date || '').startsWith(monthStr) || (meta.endDate || '').startsWith(monthStr);
-            });
-        }
-        if (ausenciasSearch.trim()) {
-            list = list.filter(ev => tokenMatch(ausenciasSearch, ev.note, ev.type));
-        }
+        const mes = `${ausenciasCalMonth.getFullYear()}-${String(ausenciasCalMonth.getMonth() + 1).padStart(2, '0')}`;
+        let list = ausenciasFiltradas(timeline, { mes, dia: ausenciasSelectedDay });
+        if (ausenciasSearch.trim()) list = list.filter(ev => tokenMatch(ausenciasSearch, ev.note, ev.type));
         return list;
     }, [timeline, ausenciasSelectedDay, ausenciasCalMonth, ausenciasSearch]);
 
     // Calendar: expand date ranges → map { dateStr: { types, events, isInsuranceDay } }
+    // Calendario: cada día con sus ausencias (núcleo, `diasDeAusencia`).
     const ausenciasCalEvents = useMemo(() => {
-        const map = {};
-        const addDay = (d, type, ev, dayIndex) => {
-            if (!map[d]) map[d] = { types: new Set(), events: [], isInsuranceDay: false };
-            map[d].types.add(type);
-            if (!map[d].events.find(e => e.id === ev.id)) map[d].events.push(ev);
-            if (type === 'DISABILITY' && dayIndex >= 3) map[d].isInsuranceDay = true;
-        };
-        timeline.filter(ev => ev.type === 'PERMIT' || ev.type === 'DISABILITY').forEach(ev => {
-            const meta = ev.metadata || {};
-            if (ev.type === 'PERMIT' && meta.permissionDates?.length > 0) {
-                meta.permissionDates.forEach(d => addDay(d, 'PERMIT', ev, 0));
-            } else {
-                const start = new Date((ev.date || hoySV()) + 'T12:00:00');
-                const end   = new Date((meta.endDate || ev.date || hoySV()) + 'T12:00:00');
-                const cur   = new Date(start);
-                let dayIndex = 0;
-                while (cur <= end) {
-                    addDay(cur.toISOString().split('T')[0], ev.type, ev, dayIndex);
-                    cur.setDate(cur.getDate() + 1);
-                    dayIndex++;
-                }
-            }
-        });
-        return map;
+        const dias = diasDeAusencia(timeline, hoySV());
+        return Object.fromEntries(Object.entries(dias).map(([d, c]) => [d, {
+            types: new Set([c.permiso && 'PERMIT', c.incapacidad && 'DISABILITY'].filter(Boolean)),
+            events: c.eventos, isInsuranceDay: c.seguro,
+        }]));
     }, [timeline]);
 
     // Shift hours per Spanish day name, for tooltip "horas de turno"
@@ -727,42 +683,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 // usan success/warning/danger; el resto —transferencias,
                                                 // categorías de puesto— es categórico puro sin severidad, con los
                                                 // mismos chart-N que usa EmployeeProfileView.
-                                                const VARIANTE_EVENTO = {
-                                                    ROSTER_PUBLISHED:               'neutral',
-                                                    EMPLEADO_ASIGNADO:              'chart-1',
-                                                    REASSIGNMENT:                   'chart-1',
-                                                    EMPLEADO_RELEVADO:              'warning',
-                                                    EMPLEADO_DESVINCULADO_SUCURSAL: 'danger',
-                                                    UNASSIGNED:                     'danger',
-                                                    REHIRE:                         'success',
-                                                    VACATION_RECALL:                'warning',
-                                                    DISABILITY:                     'danger',
-                                                    VACATION:                       'success',
-                                                    PERMIT:                         'success',
-                                                    SUPPORT:                        'chart-4',
-                                                    INDUCTION:                      'chart-9',
-                                                    AMONESTACION_VERBAL:            'warning',
-                                                    AMONESTACION_ESCRITA:           'warning',
-                                                    SUSPENSION:                     'danger',
-                                                    // El Art. 86 es la única del grupo que es una buena noticia:
-                                                    // dice que la persona rectificó y borra los antecedentes.
-                                                    RECTIFICACION:                  'success',
-                                                };
-                                                // Los que se identifican por SUBCADENA y no por igualdad.
-                                                const VARIANTE_POR_PARTE = [
-                                                    ['TRANSFER',    'chart-1'],
-                                                    ['PROMOTION',   'success'],
-                                                    ['SALARY',      'chart-6'],
-                                                    ['TERMINATION', 'danger'],
-                                                ];
-                                                let evVariante = 'neutral';
-                                                if (isHiring) evVariante = 'success';
-                                                else if (VARIANTE_EVENTO[ev.type]) evVariante = VARIANTE_EVENTO[ev.type];
-                                                else if (EVENT_TYPES[ev.type]) {
-                                                    const parte = VARIANTE_POR_PARTE.find(([k]) => ev.type.includes(k));
-                                                    if (parte) evVariante = parte[1];
-                                                }
-
+                                                // El tono de cada evento sale del núcleo (`varianteDeEvento`).
+                                                const evVariante = varianteDeEvento(ev.type, EVENT_TYPES);
                                                 return (
                                                     <div key={ev.id || `evt-${idx}`} className="relative pl-8 group">
                                                         <div className={`absolute -left-[10px] top-1.5 w-4 h-4 rounded-full bg-surface-card border-[4px] shadow-sm group-hover:scale-125 transition-transform duration-[var(--dur-slow)] z-base ${isHiring ? 'border-success' : 'border-brand'}`}></div>
@@ -799,27 +721,23 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                     ) : ev.metadata?.status === 'SUPERSEDED' ? (
                                                                         <Badge size="sm">EDITADO</Badge>
                                                                     ) : ev.documentId ? (
-                                                                        <Button tone="chart-1" soft size="xs" icon={FileText}>Ver Respaldo Legal</Button>
+                                                                        // Antes este botón no tenía `onClick`: no abría nada.
+                                                                        <Button tone="chart-1" soft size="xs" icon={FileText} onClick={() => {
+                                                                            const doc = (emp.documents || []).find(d => String(d.id) === String(ev.documentId) || (ev.eventoId && String(d.event_id) === String(ev.eventoId)));
+                                                                            if (doc?.url) Promise.resolve(openStoredFile(doc.url)).catch(() => {});
+                                                                        }}>Ver Respaldo Legal</Button>
                                                                     ) : (
-                                                                        <Button tone="chart-4" icon={Paperclip} disabled={!canEdit} onClick={() => openModal('uploadDocument', {}, ev.id)}>Adjuntar Soporte</Button>
+                                                                        <Button tone="chart-4" icon={Paperclip} disabled={!canEdit || !ev.eventoId} onClick={() => openModal('uploadDocument', {}, ev.eventoId)}>Adjuntar Soporte</Button>
                                                                     )}
-                                                                    {canEdit && ev.metadata?.status !== 'CANCELLED' && ev.metadata?.status !== 'SUPERSEDED' && (
-                                                                        <Button tone="chart-1" icon={Pencil} disabled={!canEdit} onClick={() => openModal('newEvent', {
-                                                                                type: ev.type,
-                                                                                date: ev.date,
-                                                                                endDate: ev.metadata?.endDate,
-                                                                                note: ev.note,
-                                                                                ...ev.metadata,
-                                                                                employeeId: emp.id,
-                                                                                _editingEventId: ev.id
-                                                                            })}>Editar</Button>
+                                                                    {canEdit && eventoVigente(ev) && (
+                                                                        <Button tone="chart-1" icon={Pencil} disabled={!canEdit} onClick={() => openModal('newEvent', datosParaCorregir(ev, emp.id))}>Editar</Button>
                                                                     )}
                                                                     {/* `destructive` a propósito, y por eso lleva `Ban` y no `X`: acá
                                                                         «Cancelar» no cierra un diálogo, ANULA el evento del empleado
                                                                         —pasa a CANCELLED y pide confirmación—. El glifo es lo que
                                                                         separa los dos sentidos de la misma palabra (§15.2). */}
-                                                                    {canEdit && ev.metadata?.status !== 'CANCELLED' && ev.metadata?.status !== 'SUPERSEDED' && (
-                                                                        <Button variant="destructive" icon={Ban} disabled={!canEdit} onClick={() => { setCancelingEventId(ev.id); setShowCancelModal(true); }}>Cancelar</Button>
+                                                                    {canEdit && eventoVigente(ev) && (
+                                                                        <Button variant="destructive" icon={Ban} disabled={!canEdit} onClick={() => { setCancelingEventId(ev.eventoId); setShowCancelModal(true); }}>Cancelar</Button>
                                                                     )}
                                                                 </div>
                                                             )}

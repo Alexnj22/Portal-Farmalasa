@@ -79,6 +79,7 @@ export const ICONOS = {
   Percent: i('percent', require('@expo/material-symbols/percent.xml')),
   Landmark: i('building.columns', require('@expo/material-symbols/account_balance.xml')),
   Calculator: i('plus.forwardslash.minus', require('@expo/material-symbols/calculate.xml')),
+  ShoppingBag: i('bag', require('@expo/material-symbols/shopping_bag.xml')),
   ShoppingCart: i('cart', require('@expo/material-symbols/shopping_cart.xml')),
   Truck: i('truck.box', require('@expo/material-symbols/local_shipping.xml')),
   Thermometer: i('thermometer.medium', require('@expo/material-symbols/thermostat.xml')),
@@ -95,6 +96,9 @@ export const ICONOS = {
   AlertCircle: i('exclamationmark.circle', require('@expo/material-symbols/error.xml')),
   Phone: i('phone', require('@expo/material-symbols/call.xml')),
   MessageCircle: i('message', require('@expo/material-symbols/chat.xml')),
+  // Ficha de personal: contraseña y «Acción RRHH».
+  KeyRound: i('key', require('@expo/material-symbols/key.xml')),
+  Plus: i('plus', require('@expo/material-symbols/add.xml')),
 };
 
 export const ICONO_GENERICO = i('square.grid.2x2', require('@expo/material-symbols/apps.xml'));

@@ -41,7 +41,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, fechaTexto } from '@nucleo/utils/fecha';
 import { fetchPuntosCliente, ajustarPuntos } from '@nucleo/data/puntos';
-import { claveDeMovimiento, detalleDeMovimiento, rotuloDeMovimiento } from '@nucleo/utils/puntosTexto';
+import { claveDeMovimiento, detalleDeMovimiento, rotuloDeMovimiento, MOTIVOS_DE_AJUSTE_PUNTOS } from '@nucleo/utils/puntosTexto';
 import { FILTROS_DE_MOVIMIENTO, mesesDeCuenta, movimientoPasaFiltro, repartoDeCuenta } from '@nucleo/utils/puntosCuenta';
 import CodigoDeAcceso from './CodigoDeAcceso';
 import VentaDelAviso from './VentaDelAviso';
@@ -426,13 +426,8 @@ function Reparto({ ganados, saldo, canjeado, vencido, anulado }) {
 
 // Los motivos más comunes, para que el libro se pueda leer después. «Otro»
 // obliga a escribir la nota.
-const MOTIVOS_DE_AJUSTE = [
-    { value: 'Cumpleaños', label: 'Cumpleaños' },
-    { value: 'Promoción', label: 'Promoción' },
-    { value: 'Reclamo del cliente', label: 'Reclamo del cliente' },
-    { value: 'Corrección', label: 'Corrección' },
-    { value: 'Otro', label: 'Otro' },
-];
+// Los motivos son del núcleo (`MOTIVOS_DE_AJUSTE_PUNTOS`): también los ofrece la app.
+const MOTIVOS_DE_AJUSTE = MOTIVOS_DE_AJUSTE_PUNTOS.map((m) => ({ value: m, label: m }));
 
 /**
  * Dar o quitar puntos a mano (decisión del usuario, 2026-09-28: «debe haber

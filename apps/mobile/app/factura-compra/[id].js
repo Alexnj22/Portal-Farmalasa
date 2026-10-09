@@ -3,12 +3,17 @@
 // ver el pdf»): quién la emitió, sus números, LOS PRODUCTOS con cantidad y
 // precio leídos del JSON del documento (`renglonesDelDte`), los totales, si el
 // proveedor la anuló, sus notas de crédito, y el PDF y el JSON con el visor del
-// teléfono (URL firmada al momento, `openStoredFile`).
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+// teléfono (URL firmada al momento, `openStoredFile`). Si llegó sin proveedor,
+// se vincula al maestro desde aquí (`setPurchaseDteProveedor`), como el
+// «Emparejar» del portal.
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { fetchPurchaseDteDocuments } from '@nucleo/data/facturasCompra';
+import { fetchPurchaseDteDocuments, setPurchaseDteProveedor } from '@nucleo/data/facturasCompra';
+import { fetchProveedoresMaestro } from '@nucleo/data/proveedores';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { getSignedFileUrl, openStoredFile } from '@nucleo/utils/storageFiles';
 import { renglonesDelDte, totalesDelDte } from '@nucleo/utils/dteJson';
 import { dteTypeLabel } from '@nucleo/utils/dteTypes';
@@ -17,12 +22,12 @@ import { fechaTexto, rangoDelMes } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { documentoGuardado, guardarDocumentos } from '../../componentes/compras/documentos';
-import { fallo } from '../../componentes/Progreso';
+import { fallo, listo } from '../../componentes/Progreso';
 
 const cant = (n) => (n == null ? '' : String(Math.round(n * 1000) / 1000));
 
@@ -37,6 +42,26 @@ export default function FacturaCompra() {
   const [json, setJson] = useState(undefined);   // undefined = cargando · null = no se pudo
   const [error, setError] = useState(null);
   const [recargando, setRecargando] = useState(false);
+  const puedeVincular = useAuth().hasPermission('facturas_compra', 'can_edit');
+  const [vinculando, setVinculando] = useState(false);
+  const [maestro, setMaestro] = useState([]);
+  const [qProv, setQProv] = useState('');
+  useEffect(() => {
+    if (!vinculando || maestro.length) return;
+    Promise.resolve(fetchProveedoresMaestro()).then((l) => setMaestro(l ?? [])).catch((e) => fallo('No se pudo traer el directorio', mensajeAmigable(e)));
+  }, [vinculando, maestro.length]);
+  const candidatos = useMemo(() => (qProv.trim().length >= 2 ? maestro.filter((p) => tokenMatch(qProv, p.nombre, p.alias, p.nit)).slice(0, 8) : []), [qProv, maestro]);
+  const vincular = (p) => Alert.alert('Vincular la factura', `${doc.emisor_nombre || 'Esta factura'} → ${p.nombre}`, [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Vincular', onPress: async () => {
+      try {
+        await setPurchaseDteProveedor(doc.id, p.id, { codigo_generacion: doc.codigo_generacion, desde: 'app' });
+        setDoc((d) => ({ ...d, proveedor_id: p.id, proveedor_nombre: p.nombre }));
+        setVinculando(false);
+        listo('Vinculada', p.nombre);
+      } catch (e) { fallo('No se pudo vincular', mensajeAmigable(e)); }
+    } },
+  ]);
 
   const cargarDoc = useCallback(async () => {
     if (documentoGuardado(id)) { setDoc(documentoGuardado(id)); return; }
@@ -93,6 +118,18 @@ export default function FacturaCompra() {
                 {doc.invalidado && doc.invalidado_motivo ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{doc.invalidado_motivo}</Text> : null}
               </View>
             </Vidrio>
+            {!doc.proveedor_id && puedeVincular ? (vinculando ? (
+              <Seccion titulo="Vincular a un proveedor">
+                <Campo multiline={false} autoFocus value={qProv} onChangeText={setQProv} placeholder="Nombre, alias o NIT" />
+                {!maestro.length ? <ActivityIndicator /> : candidatos.map((p) => (
+                  <Pressable key={p.id} onPress={() => vincular(p)} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+                    <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{p.nombre}</Text>
+                    {p.nit ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`NIT ${p.nit}`}</Text> : null}
+                  </Pressable>
+                ))}
+                <Pressable onPress={() => setVinculando(false)} style={{ minHeight: 40, justifyContent: 'center' }}><Text style={{ color: MARCA.azulClaro, fontSize: 15 }}>Cancelar</Text></Pressable>
+              </Seccion>
+            ) : <BotonGrande texto="Vincular a un proveedor" borde color={MARCA.ambar} onPress={() => setVinculando(true)} />) : null}
 
             <View style={{ flexDirection: 'row', gap: 10 }}>
               {doc.pdf_path ? <View style={{ flex: 1 }}><BotonGrande texto="Ver el PDF" color={MARCA.azul} onPress={() => abrir(doc.pdf_path)} /></View> : null}

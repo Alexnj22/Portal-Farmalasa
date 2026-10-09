@@ -35,7 +35,8 @@
         "UISupportedInterfaceOrientations": [
           "UIInterfaceOrientationPortrait"
         ],
-        "UIRequiresFullScreen": true
+        "UIRequiresFullScreen": true,
+        "NSMotionUsageDescription": "Puntos Salud usa el movimiento del teléfono para que el brillo de tu tarjeta siga la inclinación. No se guarda ni se envía."
       }
     },
     "android": {

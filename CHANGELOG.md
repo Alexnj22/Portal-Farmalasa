@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1262.10 — App de clientes: texto del sensor de movimiento para Apple
+
+- Apple rechazó la entrega 37 (ITMS-90683): faltaba `NSMotionUsageDescription`. La tarjeta lee el giroscopio para que el brillo siga la inclinación; el texto va en `app.json` → `ios.infoPlist`.
+
 ## v2.1262.9 — Nivel desplegable, textos legibles, logo central y modo liviano
 
 - **Panel del nivel desplegable:** cerrado muestra el nivel, la barra y cuánto falta; al tocarlo, los beneficios, el aviso de niveles apagados y el detalle.

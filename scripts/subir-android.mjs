@@ -7,15 +7,23 @@
 //
 //   --sin-subir   compila y firma el .aab y se detiene (no habla con Google Play)
 //   --apk         además arma un .apk firmado, para instalar con `adb install`
+//   --version-code=N   usa N si es mayor que lo que se sabe (sin la cuenta de
+//                 servicio de Play no se le puede preguntar el último: la app
+//                 del personal ya tenía una subida de EAS el 2026-09-30)
 //
 // El segundo argumento es el perfil de `eas.json` del que se toman las
 // variables EXPO_PUBLIC_* (las de PRODUCCIÓN para subir). EAS no se usa.
 //
 // ── Lo que vive en ~/.claves-farmalasa (nunca en el repositorio) ────────────
-//   android-upload.jks + android-upload.env   la llave de SUBIDA (una para las
-//       dos apps). Google Play firma la app con su propia llave (Play App
-//       Signing); ésta sólo prueba que la subida es nuestra. Si se pierde, se
-//       pide un reseteo en Play Console — no se pierde la app, pero tarda días.
+//   android-upload.jks + android-upload.env   la llave de SUBIDA de Puntos
+//       Salud (creada el 2026-10-08; Google la acepta en el paquete viejo tras
+//       el reseteo de llave pedido ese día). Google Play firma la app con su
+//       propia llave (Play App Signing); ésta sólo prueba que la subida es
+//       nuestra. Si se pierde, se pide un reseteo en Play Console — no se
+//       pierde la app, pero tarda días.
+//   android-upload-portal.jks + .env   la de la app del PERSONAL: la creó Expo
+//       el 2026-09-29 y Play ya la conoce (prueba interna del 30-sep). Ver
+//       LLAVE_POR_PAQUETE.
 //   play-publicar.json   la cuenta de servicio con acceso a Play Console (la
 //       API de publicación). Sin ella el script deja el .aab listo y explica.
 //   google-services.json   Firebase (avisos); lo conecta app.config.js de cada app.
@@ -38,7 +46,8 @@ import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 const args = process.argv.slice(2);
-const banderas = new Set(args.filter((a) => a.startsWith('--')));
+const banderas = new Set(args.filter((a) => a.startsWith('--')).map((a) => a.split('=')[0]));
+const codigoPedido = Number(args.find((a) => a.startsWith('--version-code='))?.split('=')[1]) || 0;
 const [carpeta, perfil] = args.filter((a) => !a.startsWith('--'));
 if (!carpeta || !perfil) {
   console.error('Uso: node scripts/subir-android.mjs <carpeta-de-la-app> <perfil-de-eas.json> [--sin-subir] [--apk]');
@@ -58,11 +67,19 @@ for (const [nombre, ruta] of [['JDK de Android Studio', join(JAVA_HOME, 'bin', '
 }
 
 // ── La llave de subida ─────────────────────────────────────────────────────
+// Una por app cuando Play ya conoce otra: la llave de subida la fija la
+// PRIMERA versión que se sube, y una distinta se rechaza.
+const LLAVE_POR_PAQUETE = { 'lat.farmasalud.portal': 'android-upload-portal.env' };
 const leerEnv = (archivo) => Object.fromEntries(readFileSync(archivo, 'utf8').split('\n')
   .map((l) => l.trim()).filter((l) => l && !l.startsWith('#')).map((l) => { const i = l.indexOf('='); return [l.slice(0, i).trim(), l.slice(i + 1).trim()]; }));
-const ENV_LLAVE = join(CLAVES, 'android-upload.env');
+
+// ── La app y sus variables ──────────────────────────────────────────────────
+const appJson = JSON.parse(readFileSync(join(app, 'app.json'), 'utf8')).expo;
+const paquete = appJson.android?.package;
+if (!paquete) { console.error('app.json no tiene android.package'); process.exit(1); }
+const ENV_LLAVE = join(CLAVES, LLAVE_POR_PAQUETE[paquete] ?? 'android-upload.env');
 if (!existsSync(ENV_LLAVE)) {
-  console.error(`Falta la llave de subida: ${ENV_LLAVE} (y android-upload.jks).
+  console.error(`Falta la llave de subida: ${ENV_LLAVE} (y su .jks).
 Se crea UNA vez con keytool (ver el encabezado de este script) y se respalda.`);
   process.exit(1);
 }
@@ -71,11 +88,6 @@ if (!llave.ANDROID_KEYSTORE || !existsSync(llave.ANDROID_KEYSTORE) || !llave.AND
   console.error(`${ENV_LLAVE} incompleto: ANDROID_KEYSTORE, ANDROID_KEY_ALIAS, ANDROID_STORE_PASSWORD, ANDROID_KEY_PASSWORD.`);
   process.exit(1);
 }
-
-// ── La app y sus variables ──────────────────────────────────────────────────
-const appJson = JSON.parse(readFileSync(join(app, 'app.json'), 'utf8')).expo;
-const paquete = appJson.android?.package;
-if (!paquete) { console.error('app.json no tiene android.package'); process.exit(1); }
 const eas = JSON.parse(readFileSync(join(app, 'eas.json'), 'utf8'));
 const env = { ...(eas.build?.[perfil]?.env ?? {}) };
 if (!env.EXPO_PUBLIC_SUPABASE_URL) { console.error(`El perfil «${perfil}» no trae EXPO_PUBLIC_SUPABASE_URL`); process.exit(1); }
@@ -158,7 +170,7 @@ if (puedeSubir) {
     } else throw e;
   }
 }
-const versionCode = Math.max(ultimoEnPlay, Number(subidas[CLAVE_REGISTRO]) || 0, Number(appJson.android?.versionCode) || 0) + 1;
+const versionCode = Math.max(ultimoEnPlay + 1, (Number(subidas[CLAVE_REGISTRO]) || 0) + 1, (Number(appJson.android?.versionCode) || 0) + 1, codigoPedido);
 console.log(`→ ${appJson.name} (${paquete}) · versión ${appJson.version} · versionCode ${versionCode}${esProduccion ? '' : ' · PRUEBAS'}`);
 
 // ── Compilar ────────────────────────────────────────────────────────────────

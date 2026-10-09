@@ -2,7 +2,7 @@
 // desenfoque del sistema en iOS anteriores, y en Android una tarjeta Material
 // translúcida con su elevación (Android no tiene vidrio: su lenguaje es la
 // superficie tonal). Sobre la aurora las tres se leen como la misma pieza.
-import { Platform, useColorScheme, View } from 'react-native';
+import { Platform, StyleSheet, useColorScheme, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 
@@ -29,7 +29,12 @@ export default function Vidrio({ style, children, radio = 22, interactivo = fals
   return (
     <View style={[forma, {
       backgroundColor: oscuro ? 'rgba(40,38,48,0.82)' : 'rgba(255,255,255,0.80)',
-      elevation: 2,
+      // Sin `elevation` (2026-10-08): en Android la sombra se dibuja DETRÁS de
+      // la tarjeta y se transparenta por el fondo al 80%, y quedaba un
+      // rectángulo más claro adentro de cada tarjeta (visto en el emulador).
+      // El borde fino hace de separación sobre la aurora.
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: oscuro ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)',
     }, style]}>
       {children}
     </View>

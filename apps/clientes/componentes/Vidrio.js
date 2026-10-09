@@ -42,7 +42,12 @@ export default function Vidrio({ style, children, radio = 22, interactivo = fals
   return (
     <View style={[forma, {
       backgroundColor: oscuro ? 'rgba(40,38,48,0.82)' : 'rgba(255,255,255,0.80)',
-      elevation: 2,
+      // Sin `elevation` (2026-10-08): en Android la sombra se dibuja DETRÁS de
+      // la tarjeta y se transparenta por el fondo al 80%, y quedaba un
+      // rectángulo más claro adentro de cada tarjeta (visto en el emulador).
+      // El borde fino hace de separación sobre la aurora.
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: oscuro ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)',
     }, style]}>
       {children}
     </View>

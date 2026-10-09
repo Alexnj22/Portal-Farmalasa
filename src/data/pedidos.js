@@ -583,6 +583,16 @@ export function fetchResumenIngresoPedidos(pedidoIds) {
 }
 
 /**
+ * Qué renglón no entró al inventario y por qué: producto, cantidad y el motivo
+ * que dejó el intento. El resumen de arriba sólo cuenta, y «1 sin ingresar»
+ * sin nombre vivió seis semanas en #135 y #136 sin que nadie supiera qué era.
+ * Mismo criterio que `sin_ingresar`, así que lista y número no discrepan.
+ */
+export function fetchDetalleSinIngresar(pedidoIds) {
+    return supabase.rpc('detalle_sin_ingresar', { p_pedido_ids: pedidoIds });
+}
+
+/**
  * Los renglones que hay que reintentar, para mandarlos EXPLÍCITOS.
  *
  * Sin lista, la recepción toma todo lo pendiente de la sucursal — y ahí

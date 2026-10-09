@@ -807,6 +807,63 @@ export type Database = {
           },
         ]
       }
+      app_errores: {
+        Row: {
+          compilacion: string | null
+          created_at: string
+          customer_id: number | null
+          dispositivo: string | null
+          fatal: boolean
+          id: number
+          mensaje: string
+          pantalla: string | null
+          pila: string | null
+          plataforma: string | null
+          version: string | null
+        }
+        Insert: {
+          compilacion?: string | null
+          created_at?: string
+          customer_id?: number | null
+          dispositivo?: string | null
+          fatal?: boolean
+          id?: number
+          mensaje: string
+          pantalla?: string | null
+          pila?: string | null
+          plataforma?: string | null
+          version?: string | null
+        }
+        Update: {
+          compilacion?: string | null
+          created_at?: string
+          customer_id?: number | null
+          dispositivo?: string | null
+          fatal?: boolean
+          id?: number
+          mensaje?: string
+          pantalla?: string | null
+          pila?: string | null
+          plataforma?: string | null
+          version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_errores_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_errores_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+        ]
+      }
       app_historias: {
         Row: {
           boton: string | null
@@ -958,6 +1015,10 @@ export type Database = {
           preparada_por: string | null
           producto_id: number
           producto_nombre: string
+          saldo_favor: number | null
+          saldo_favor_usado_at: string | null
+          saldo_favor_usado_por: string | null
+          saldo_favor_vence: string | null
           terminos_version: string
           updated_at: string
           vence_at: string | null
@@ -995,6 +1056,10 @@ export type Database = {
           preparada_por?: string | null
           producto_id: number
           producto_nombre: string
+          saldo_favor?: number | null
+          saldo_favor_usado_at?: string | null
+          saldo_favor_usado_por?: string | null
+          saldo_favor_vence?: string | null
           terminos_version: string
           updated_at?: string
           vence_at?: string | null
@@ -1032,6 +1097,10 @@ export type Database = {
           preparada_por?: string | null
           producto_id?: number
           producto_nombre?: string
+          saldo_favor?: number | null
+          saldo_favor_usado_at?: string | null
+          saldo_favor_usado_por?: string | null
+          saldo_favor_vence?: string | null
           terminos_version?: string
           updated_at?: string
           vence_at?: string | null
@@ -1063,6 +1132,20 @@ export type Database = {
             columns: ["oferta_id"]
             isOneToOne: false
             referencedRelation: "ofertas_clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_reservas_saldo_favor_usado_por_fkey"
+            columns: ["saldo_favor_usado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_reservas_saldo_favor_usado_por_fkey"
+            columns: ["saldo_favor_usado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -21800,6 +21883,74 @@ export type Database = {
           },
         ]
       }
+      ruta_paradas_no_entregadas: {
+        Row: {
+          created_at: string
+          erp_sucursal_id: number
+          hecho_por: string | null
+          id: number
+          motivo: string
+          orden_entrega: number | null
+          origen: string
+          pedido_id: string
+          reenvio_ciclo: number | null
+          ruta_id: string
+        }
+        Insert: {
+          created_at?: string
+          erp_sucursal_id: number
+          hecho_por?: string | null
+          id?: never
+          motivo: string
+          orden_entrega?: number | null
+          origen: string
+          pedido_id: string
+          reenvio_ciclo?: number | null
+          ruta_id: string
+        }
+        Update: {
+          created_at?: string
+          erp_sucursal_id?: number
+          hecho_por?: string | null
+          id?: never
+          motivo?: string
+          orden_entrega?: number | null
+          origen?: string
+          pedido_id?: string
+          reenvio_ciclo?: number | null
+          ruta_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ruta_paradas_no_entregadas_hecho_por_fkey"
+            columns: ["hecho_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ruta_paradas_no_entregadas_hecho_por_fkey"
+            columns: ["hecho_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ruta_paradas_no_entregadas_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ruta_paradas_no_entregadas_ruta_id_fkey"
+            columns: ["ruta_id"]
+            isOneToOne: false
+            referencedRelation: "rutas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ruta_pedidos: {
         Row: {
           confirmado_suc_at: string | null
@@ -21814,6 +21965,7 @@ export type Database = {
           id: string
           orden_entrega: number
           pedido_id: string
+          reenvio_ciclo: number | null
           ruta_id: string
         }
         Insert: {
@@ -21829,6 +21981,7 @@ export type Database = {
           id?: string
           orden_entrega?: number
           pedido_id: string
+          reenvio_ciclo?: number | null
           ruta_id: string
         }
         Update: {
@@ -21844,6 +21997,7 @@ export type Database = {
           id?: string
           orden_entrega?: number
           pedido_id?: string
+          reenvio_ciclo?: number | null
           ruta_id?: string
         }
         Relationships: [
@@ -25424,6 +25578,7 @@ export type Database = {
         Args: { p_dias?: number }
         Returns: number
       }
+      avisar_pedidos_sin_recibir: { Args: never; Returns: number }
       avisar_productos_sin_venta: {
         Args: { p_muestra_a?: string }
         Returns: number
@@ -25874,6 +26029,10 @@ export type Database = {
         Args: { p_declarado_real?: number; p_nota?: string; p_periodo: string }
         Returns: Json
       }
+      cerrar_ruta: {
+        Args: { p_motivo?: string; p_ruta_id: string }
+        Returns: Json
+      }
       cerrar_traslado_ya_recibido: {
         Args: { p_id_traslado: string; p_msg?: string; p_request_id: string }
         Returns: boolean
@@ -25995,6 +26154,36 @@ export type Database = {
       }
       confirmar_llegada_diferencia: {
         Args: { p_item_id: number; p_nota?: string }
+        Returns: Json
+      }
+      confirmar_llegada_pedido: {
+        Args: {
+          p_cajas_danadas?: number[]
+          p_cajas_extra?: number
+          p_cajas_extra_notas?: Json
+          p_cajas_faltan?: number[]
+          p_electrolit_faltan?: number
+          p_electrolit_ids?: number[]
+          p_especiales_llegadas?: Json
+          p_nota?: string
+          p_pagina_items?: Json
+          p_pedido_id: string
+          p_sucursal_id: number
+        }
+        Returns: Json
+      }
+      confirmar_llegada_reenvio: {
+        Args: {
+          p_cajas_danadas: number[]
+          p_cajas_faltan: number[]
+          p_cajas_ok: number[]
+          p_ciclo: number
+          p_electrolit_faltan: number
+          p_especiales: Json
+          p_nota?: string
+          p_pedido_id: string
+          p_sucursal_id: number
+        }
         Returns: Json
       }
       confirmar_meta_supervisor: {
@@ -26369,6 +26558,7 @@ export type Database = {
         Args: { p_branch_id: number; p_module_key: string }
         Returns: string[]
       }
+      detalle_sin_ingresar: { Args: { p_pedido_ids: string[] }; Returns: Json }
       detectar_proveedores_duplicados: {
         Args: never
         Returns: {
@@ -27102,6 +27292,19 @@ export type Database = {
       }
       finalizar_conteo_inventario: {
         Args: { p_conteo_id: string; p_pendientes_como_cero?: boolean }
+        Returns: Json
+      }
+      finalizar_sala_con_cajas: {
+        Args: {
+          p_ajustes?: Json
+          p_caja_map: Json
+          p_cajas_electrolit: number
+          p_cajas_especiales: Json
+          p_pagina_items: Json
+          p_pedido_id: string
+          p_sucursal_id: number
+          p_total_cajas: number
+        }
         Returns: Json
       }
       find_purchase_dte_document_by_codigo: {
@@ -29202,6 +29405,15 @@ export type Database = {
         Args: { p_branch_id: number; p_bucket: string; p_su: boolean }
         Returns: string
       }
+      liberar_parada_de_ruta: {
+        Args: {
+          p_actor: string
+          p_motivo: string
+          p_origen: string
+          p_parada_id: string
+        }
+        Returns: undefined
+      }
       liberar_solicitud: { Args: { p_request_id: string }; Returns: undefined }
       ligar_abono_a_ingreso: {
         Args: { p_abono_id: number; p_movimiento_id: number }
@@ -29326,6 +29538,10 @@ export type Database = {
       }
       marcar_empujado_al_erp: { Args: { p_ids: number[] }; Returns: Json }
       marcar_etiqueta_impresa: { Args: { p_bolsa_id: number }; Returns: number }
+      marcar_hojas_recibidas: {
+        Args: { p_hojas: number[]; p_pedido_id: string; p_sucursal_id: number }
+        Returns: Json
+      }
       marcar_pedido_enviado: {
         Args: { p_enviado_por?: string; p_pedido_id: string }
         Returns: undefined
@@ -29646,6 +29862,16 @@ export type Database = {
         }
         Returns: Json
       }
+      pedir_reenvio_sala: {
+        Args: {
+          p_cajas: number[]
+          p_electrolits: number
+          p_especiales: Json
+          p_pedido_id: string
+          p_sucursal_id: number
+        }
+        Returns: Json
+      }
       planificar_traslado_pedido: {
         Args: { p_pedido_id: string; p_run_id: string; p_sucursal_id: number }
         Returns: Json
@@ -29672,6 +29898,15 @@ export type Database = {
         Returns: Json
       }
       productos_por_codigo: { Args: { p_search: string }; Returns: number[] }
+      programar_entrega_sala: {
+        Args: {
+          p_cuando: string
+          p_motivo?: string
+          p_pedido_id: string
+          p_sucursal_id: number
+        }
+        Returns: Json
+      }
       promocion_avance: {
         Args: { p_solo_abiertos?: boolean }
         Returns: {
@@ -30414,6 +30649,14 @@ export type Database = {
         Args: { p_decided_by?: string; p_note?: string; p_request_id: number }
         Returns: Json
       }
+      renglones_de_cajas: {
+        Args: { p_caja_map: Json; p_cajas: number[]; p_pagina_items: Json }
+        Returns: number[]
+      }
+      renglones_de_especiales: {
+        Args: { p_cajas_especiales: Json; p_labels: string[] }
+        Returns: number[]
+      }
       reserva_avisada_whatsapp: { Args: { p_id: number }; Returns: undefined }
       reserva_cambiar_estado: {
         Args: { p_estado: string; p_id: number; p_motivo?: string }
@@ -30433,6 +30676,7 @@ export type Database = {
         Returns: Json
       }
       reserva_puede_manejar: { Args: { p_branch_id: number }; Returns: boolean }
+      reserva_usar_saldo_favor: { Args: { p_id: number }; Returns: Json }
       reservar_pago_bono: { Args: { p_item: string }; Returns: Json }
       reservas_de_sucursal: {
         Args: { p_abiertas?: boolean; p_branch_id: number }
@@ -30685,6 +30929,15 @@ export type Database = {
       retiro_soltar: { Args: { p_request_id: string }; Returns: Json }
       revoke_person_sessions: { Args: { p_user_id: string }; Returns: number }
       revoke_session: { Args: { p_session_id: string }; Returns: boolean }
+      ruta_parada_no_entregada: {
+        Args: {
+          p_motivo: string
+          p_pedido_id: string
+          p_ruta_id: string
+          p_sucursal_id: number
+        }
+        Returns: Json
+      }
       sala_abierta_ahora: { Args: { p_branch_id: number }; Returns: boolean }
       sala_con_caja_abierta: { Args: { p_branch_id: number }; Returns: boolean }
       sala_hora_de_cierre: {

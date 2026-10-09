@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1261.4 — Pedidos: la fila dice qué no entró al inventario y por qué
+
+- Nueva función `detalle_sin_ingresar(uuid[])` (migración `20261009035121`):
+  producto, cantidad y motivo de cada renglón contado que no entró al
+  inventario de la sala. Mismo criterio que `sin_ingresar` del resumen.
+- La fila de Pedidos, cerrada, lleva ícono rojo y «No entró al inventario:
+  <producto> (<cant>)» aunque el pedido diga completado. Antes no marcaba nada:
+  #135 (Salud 4) y #136 (Salud 5) estuvieron seis semanas a la vista sin decir
+  por qué (MEDIBRIZ X 2 TABLETAS, bodega con 1 unidad cuando hacían falta 2).
+- Abierta, un aviso con cada renglón, su motivo y el botón Reintentar.
+- Datos, con OK del usuario: 69 salas de pedidos completados (29-jun → 13-ago)
+  que nunca marcaron la recepción quedan cerradas, con la hora de cuando bodega
+  terminó de prepararlas y sin disparar avisos. Quedan a la vista sólo #135,
+  #136 y #176.
+
 ## v2.1261.3 — Pedidos: limpieza de datos viejos en producción
 
 - Migración `20261009033845_limpieza_datos_pedidos` aplicada en producción con OK del usuario:

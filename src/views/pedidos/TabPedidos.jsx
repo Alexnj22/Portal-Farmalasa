@@ -219,6 +219,12 @@ const FilaDeSala = React.memo(function FilaDeSala({
         ?? entrega ?? null;
     const entregada  = !!paradaSala?.entregado_at;
     const etiqueta   = etiquetaDeLaSala(estadoSala, stage, entregada, difsDeLaSala);
+    // Contado y sin entrar al inventario (y no entrando ahora mismo). Se dice
+    // con el producto en la fila cerrada y con el motivo en la abierta.
+    const sinIngreso = !ingresoCorriendo && (ingreso?.sin_ingresar ?? 0) > 0;
+    const sinIngresoTxt = !sinIngreso ? null
+        : `No entró al inventario: ${(ingreso.detalle ?? []).map(d => `${d.producto} (${d.cantidad})`).join(' · ')
+            || `${ingreso.sin_ingresar} producto${ingreso.sin_ingresar > 1 ? 's' : ''}`}`;
     const tiempoEnEtapa = elapsedPrep  ? `${elapsedPrep} preparando`
                         : elapsedPause ? `${elapsedPause} en pausa`
                         : elapsedTrans && !entregada ? `${elapsedTrans} en ruta`
@@ -492,6 +498,35 @@ const FilaDeSala = React.memo(function FilaDeSala({
                     </Notice>
                 </div>
             )}
+            {/* Lo contado que no entró al inventario, renglón por renglón y
+                con el motivo del intento. Antes era un «1 sin ingresar» sin
+                nombre, y la fila cerrada ni eso: #135 y #136 pasaron seis
+                semanas a la vista sin que nadie supiera por qué. */}
+            {sinIngreso && (
+                <div className="px-3 pb-2" onClick={e => e.stopPropagation()}>
+                    <Notice variant="danger" icon={AlertTriangle} bloque
+                        action={canEdit ? (
+                            <Button variant="secondary" size="xs" icon={RefreshCw}
+                                disabled={busyAction === 'ingreso'}
+                                title="Vuelve a ingresar al inventario sólo lo que ya se contó y no entró"
+                                onClick={() => acc.handleReintentarIngreso(row.pedido_id, row.erp_sucursal_id)}
+                            >Reintentar</Button>
+                        ) : null}>
+                        <strong>No entró al inventario de la sala.</strong>{' '}
+                        Se contó pero la sala no lo tiene para vender.
+                        {(ingreso.detalle ?? []).length > 0 && (
+                            <ul className="mt-1 space-y-0.5">
+                                {ingreso.detalle.map(d => (
+                                    <li key={d.pedido_item_id}>
+                                        <strong>{d.producto}</strong> · {d.cantidad} u.
+                                        {d.motivo ? ` — ${d.motivo}` : ''}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </Notice>
+                </div>
+            )}
 
             {/* Entrega estimada — visible en sucursal cuando hay programación y el pedido no ha llegado.
                 Era una franja a sangre pegada al borde de la tarjeta:
@@ -631,6 +666,9 @@ const FilaDeSala = React.memo(function FilaDeSala({
         // Con el reenvío ya en camino no hay nada que resolver: se espera.
         : faltan.enCamino ? { Icono: Truck, cls: 'text-brand-text', txt: 'Reenvío en camino' }
         : (faltan.hay || difsDeLaSala > 0) ? { Icono: AlertTriangle, cls: 'text-danger-text', txt: 'Con problema' }
+        // Va aunque el pedido diga «completado»: es justo el caso que se
+        // escondía (la regla de abajo excluye los completados).
+        : sinIngreso ? { Icono: AlertTriangle, cls: 'text-danger-text', txt: 'No entró al inventario' }
         : danadas.length > 0 ? { Icono: AlertTriangle, cls: 'text-warning-text', txt: 'Caja dañada' }
         // El resto de lo que cuenta como «con observación» (llegada
         // incompleta, Electrolit faltante, algo sin ingresar): la tarjeta lo
@@ -681,13 +719,15 @@ const FilaDeSala = React.memo(function FilaDeSala({
                         el texto medía lo que su contenido y `truncate` no
                         cortaba (lo tapaba el botón). `max-w-full` lo ata a la
                         columna. */}
-                    <span className={`text-caption tabular-nums max-w-full line-clamp-2 break-words ${stage === 'pausado' ? 'text-warning-text' : 'text-content-3'}`}>
+                    <span className={`text-caption tabular-nums max-w-full line-clamp-2 break-words ${stage === 'pausado' ? 'text-warning-text' : (sinIngreso && !faltan.hay && !danadas.length && !difsDeLaSala) ? 'text-danger-text' : 'text-content-3'}`}
+                        title={sinIngresoTxt ?? undefined}>
                         {faltan.porDespachar ? 'Reenvío por salir'
                             : faltan.enCamino ? `Reenvío en camino: ${describirFaltantes(faltan).join(' · ') || 'cajas faltantes'}`
                             : faltan.hay ? `Falta: ${describirFaltantes(faltan).join(' · ')}`
                             : danadas.length > 0 ? `Dañada${danadas.length > 1 ? 's' : ''}: ${danadas.map(n => `#${n}`).join(', ')}`
                             : stage === 'preparado' && row.entrega_programada_at ? `Sale ${fmtEntrega(row.entrega_programada_at).replace(/^\p{Lu}/u, c => c.toLowerCase())}`
                             : difsDeLaSala > 0 ? `${difsDeLaSala} diferencia${difsDeLaSala > 1 ? 's' : ''} por resolver`
+                            : sinIngreso ? sinIngresoTxt
                             : [rutaDeLaFila ? `Ruta #${rutaDeLaFila.numero}` : null, tiempoEnEtapa ?? fmtRelative(row.enviado_at ?? row.created_at)].filter(Boolean).join(' · ')}
                     </span>
                 </div>

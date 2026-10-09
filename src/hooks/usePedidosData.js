@@ -10,7 +10,7 @@ import { tokenMatch } from '../utils/searchUtils';
 import { ERP_NAMES, SUCURSALES as ERP_ORDER } from '../constants/erp';
 import { printFromPedidoItems } from '../utils/pedidoPrint';
 import { getBranchStage, etapasPorPedido, claveParada, currentMonthRange, necesitaAtencion, tieneObservacion, filtrarPedidos, pedidosPorSala } from '../utils/tableroDePedidos';
-import { avanzarEtapaDePedidoEnSala, despacharTrasladoPedido, fetchActiveRutas, fetchApoyoForPedido, fetchApoyoForPedidos, fetchAttendancePunches, fetchBranchNamesForSucursales, fetchEmployeeBranchId, fetchEntregasDePedidos, fetchItemsSinIngresar, fetchPausaHistorial, fetchPedidoItemEventosAll, fetchPedidoItemsAll, fetchPedidoSucursalStatus, fetchPedidosEnCurso, fetchResumenDeRenglonesPorPedido, fetchResumenIngresoPedidos, fetchRutaLocations, fetchTrasladosDePedidos, marcarRastreoDeFondo, noReenviarEspeciales, recibirTrasladoPedido, resolverRenglonDePedido, sucursalDeLaSala, tieneEtiquetaDeDespacho, updateRutaPedidoEntregado, upsertRutaLocation } from '../data/pedidos';
+import { avanzarEtapaDePedidoEnSala, despacharTrasladoPedido, fetchActiveRutas, fetchApoyoForPedido, fetchApoyoForPedidos, fetchAttendancePunches, fetchBranchNamesForSucursales, fetchDetalleSinIngresar, fetchEmployeeBranchId, fetchEntregasDePedidos, fetchItemsSinIngresar, fetchPausaHistorial, fetchPedidoItemEventosAll, fetchPedidoItemsAll, fetchPedidoSucursalStatus, fetchPedidosEnCurso, fetchResumenDeRenglonesPorPedido, fetchResumenIngresoPedidos, fetchRutaLocations, fetchTrasladosDePedidos, marcarRastreoDeFondo, noReenviarEspeciales, recibirTrasladoPedido, resolverRenglonDePedido, sucursalDeLaSala, tieneEtiquetaDeDespacho, updateRutaPedidoEntregado, upsertRutaLocation } from '../data/pedidos';
 import {
     fetchDevolucionesDePedido, decidirDevolucion,
     subirEvidencia, moverDevoluciones, recibirDevoluciones,
@@ -255,14 +255,16 @@ export function usePedidosData({ searchTerm = '' }) {
             // cada una hacía su propio repintado. Ninguna depende de otra, y el
             // fallo de una no tumba el tablero: sólo deja sin su badge.
             const vacio = { data: [], error: null };
-            const [statRes, trRes, ingRes, entRes] = ids.length
+            const [statRes, trRes, ingRes, entRes, detRes] = ids.length
                 ? await Promise.all([
                     fetchResumenDeRenglonesPorPedido({ p_pedido_ids: ids }),
                     fetchTrasladosDePedidos(ids),
                     fetchResumenIngresoPedidos(ids),
                     fetchEntregasDePedidos(ids),
+                    fetchDetalleSinIngresar(ids),
                 ])
-                : [vacio, vacio, vacio, vacio];
+                : [vacio, vacio, vacio, vacio, vacio];
+            if (detRes.error) console.error('loadActive: detalle sin ingresar failed:', detRes.error.message);
             if (statRes.error) console.error('loadActive: get_pedido_item_stats failed:', statRes.error.message);
             if (trRes.error)   console.error('loadActive: traslados failed:', trRes.error.message);
             if (ingRes.error)  console.error('loadActive: ingreso al inventario failed:', ingRes.error.message);
@@ -291,7 +293,13 @@ export function usePedidosData({ searchTerm = '' }) {
             // Y si lo confirmado llegó al inventario.
             const ingresos = {};
             (ingRes.data ?? []).forEach(r => {
-                ingresos[`act_${r.pedido_id}_${r.erp_sucursal_id}`] = r;
+                ingresos[`act_${r.pedido_id}_${r.erp_sucursal_id}`] = { ...r, detalle: [] };
+            });
+            // Y cuál renglón no entró y por qué: sin esto la tarjeta dice un
+            // número y nadie sabe qué producto ni qué lo frenó.
+            (Array.isArray(detRes.data) ? detRes.data : []).forEach(d => {
+                const ing = ingresos[`act_${d.pedido_id}_${d.erp_sucursal_id}`];
+                if (ing) ing.detalle.push(d);
             });
 
             // La entrega de cada parada. Viaja con el pedido y no con la ruta: el
@@ -1375,7 +1383,12 @@ export function usePedidosData({ searchTerm = '' }) {
             const { data, error } = await fetchResumenIngresoPedidos([pedidoId]);
             if (error) { console.error('vigilarIngreso:', error.message); fin(); return; }
             const fila = (data ?? []).find(r => r.erp_sucursal_id === sucId);
-            if (fila) setIngresoStats(p => ({ ...p, [cardKey]: fila }));
+            // El resumen no trae el detalle: se conserva el que había, y se
+            // vacía cuando ya no queda nada por ingresar.
+            if (fila) setIngresoStats(p => ({
+                ...p,
+                [cardKey]: { ...fila, detalle: fila.sin_ingresar > 0 ? (p[cardKey]?.detalle ?? []) : [] },
+            }));
             // Terminó cuando no queda nada por ingresar. Si el sistema dejó algo
             // afuera, el tope corta y la tarjeta lo dice con su reintento.
             if (!fila || fila.sin_ingresar === 0 || vueltas >= 20) fin();

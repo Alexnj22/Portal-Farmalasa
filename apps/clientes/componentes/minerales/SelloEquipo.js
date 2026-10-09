@@ -38,7 +38,7 @@ const efectoSello = () => {
   return efecto;
 };
 
-export default function SelloEquipo({ x, y, activa = true, ancho = 74, alto = 30 }) {
+export default function SelloEquipo({ x, y, activa = true, ancho = 86, alto = 30 }) {
   const fx = efectoSello();
   const t = useSharedValue(0);
   const reloj = useFrameCallback((f) => { t.value += Math.min(0.05, (f.timeSincePreviousFrame ?? 16) / 1000); }, false);
@@ -54,7 +54,7 @@ export default function SelloEquipo({ x, y, activa = true, ancho = 74, alto = 30
       ) : null}
       <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
         <LogoEnRelieve tam={alto * 0.56} x={x} y={y} />
-        <Text maxFontSizeMultiplier={1} style={{ fontSize: alto * 0.36, fontWeight: '900', letterSpacing: 1.2, color: 'rgba(30,20,45,0.78)' }}>EQUIPO</Text>
+        <Text maxFontSizeMultiplier={1} style={{ fontSize: alto * 0.36, fontWeight: '900', letterSpacing: 1.2, color: 'rgba(30,20,45,0.78)' }}>PERSONAL</Text>
       </View>
     </View>
   );

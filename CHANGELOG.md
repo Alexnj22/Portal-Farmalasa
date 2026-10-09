@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1260.9 — La tarjeta dice Cliente Mayorista y el sello dice Personal
+
+- **La tarjeta del mayorista lo dice:** «CLIENTE MAYORISTA» sobre el rango (antes sólo decía «JADE», «ZAFIRO»…).
+- **«Equipo» pasa a «Personal»** (decisión del usuario): el sello dice PERSONAL, el panel «Personal Farmacia Salud» y Wallet «CLIENTE ORO · PERSONAL».
+
 ## v2.1260.8 — Empleados: su nivel o rango con el sello de Equipo
 
 - **El personal lleva la tarjeta de SU nivel de cliente** (Bronce/Plata/Oro/Platino) **o de su rango de mayorista** si Administración lo aprobó, con un **sello holográfico de Equipo** —perla tornasol que cambia con la inclinación— junto al chip. Decisión del usuario: el empleado acumula puntos en lo que compra a precio Preferente o más alto, así que le aplican los niveles como a cualquier cliente, y puede ser mayorista siempre bajo autorización.

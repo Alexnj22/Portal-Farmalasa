@@ -34,7 +34,7 @@ export interface DatosPase {
   /** Tarjeta del modo de prueba: serie propia y sin actualizaciones, para que
    *  Wallet la guarde APARTE y no la «corrija» con el nivel real (2026-10-08). */
   prueba?: boolean;
-  /** Personal: su nivel o rango con «· EQUIPO» en el rótulo (2026-10-08). */
+  /** Personal: su nivel o rango con «· PERSONAL» en el rótulo (2026-10-08). */
   equipo?: boolean;
   /** Las franjas del material (`strip@2x.png`, `strip@3x.png`); sin ellas, la morada de siempre. */
   franjas?: Record<string, Uint8Array>;
@@ -86,7 +86,7 @@ const PIEDRAS = ["jade", "zafiro", "rubi", "diamante"];
 const sinTilde = (n?: string) => String(n ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 const claveDeNivel = (n?: string) => {
   const t = sinTilde(n);
-  if (t.includes("equipo")) return "empleado";
+  if (t.includes("equipo") || t === "personal") return "empleado";
   return Object.keys(MATERIALES).find((k) => k !== "vip" && t.includes(k)) ?? "vip";
 };
 
@@ -111,7 +111,7 @@ async function franjasDe(admin: any, clave: string): Promise<Record<string, Uint
 
 const nivelRotulo = (n?: string) => {
   const k = claveDeNivel(n);
-  if (k === "empleado" || /equipo/i.test(String(n))) return "EQUIPO FARMACIA SALUD";
+  if (k === "empleado" || /equipo|^personal$/i.test(String(n))) return "PERSONAL FARMACIA SALUD";
   if (PIEDRAS.includes(k)) return `MAYORISTA ${String(n).toUpperCase()}`;
   return !n || k === "vip" ? "CLIENTE VIP" : `CLIENTE ${n.toUpperCase()}`;
 };
@@ -149,7 +149,7 @@ export async function armarPase(d: DatosPase): Promise<Uint8Array> {
         changeMessage: "Tu saldo de Puntos Salud ahora es %@" }],
       secondaryFields: [
         // El nivel al frente (Plata, Oro, Platino); el de entrada se llama «Cliente VIP».
-        { key: "nombre", label: `${nivelRotulo(d.nivel)}${d.equipo ? " · EQUIPO" : ""}`, value: corto(d.nombre) },
+        { key: "nombre", label: `${nivelRotulo(d.nivel)}${d.equipo ? " · PERSONAL" : ""}`, value: corto(d.nombre) },
         { key: "desde", label: "CLIENTE DESDE", value: desde(d.socioDesde), textAlignment: "PKTextAlignmentRight" },
       ],
       backFields: [

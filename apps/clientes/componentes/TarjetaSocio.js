@@ -211,7 +211,7 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
     <GestureDetector gesture={gestos}>
       <Animated.View style={[{ aspectRatio: 1.586, width: '100%' }, estilos.sombra, { shadowColor: paleta.sombra }, sombra, ladeo]}
         accessible accessibilityRole="button"
-        accessibilityLabel={`Tu tarjeta ${paleta.rotulo.toLowerCase()}${equipo ? ' de Equipo' : ''}. Saldo ${dolares(equivale)}. Toca para ver tu código.`}
+        accessibilityLabel={`Tu tarjeta ${paleta.rotulo.toLowerCase()}${equipo ? ', personal de Farmacia Salud' : ''}. Saldo ${dolares(equivale)}. Toca para ver tu código.`}
         accessibilityHint="Gira la tarjeta" onAccessibilityTap={voltear}>
         {/* ── Frente ── */}
         <Animated.View style={[StyleSheet.absoluteFill, estilos.cara, frente]}>
@@ -242,11 +242,17 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
                 <LogoEnRelieve tam={30} x={x} y={y} />
                 <Text maxFontSizeMultiplier={1.3} style={estilos.marca}>PUNTOS SALUD</Text>
               </View>
-              <Text maxFontSizeMultiplier={1.3} style={estilos.socio}>{paleta.rotulo}</Text>
+              {/* El mayorista lo dice en la tarjeta (2026-10-08): «CLIENTE MAYORISTA» sobre su rango. */}
+              {['jade', 'zafiro', 'rubi', 'diamante'].includes(nivel) ? (
+                <View style={{ alignItems: 'flex-end', gap: 1 }}>
+                  <Text maxFontSizeMultiplier={1.2} style={[estilos.socio, { fontSize: 8.5, letterSpacing: 1.8, color: 'rgba(255,255,255,0.6)' }]}>CLIENTE MAYORISTA</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={estilos.socio}>{paleta.rotulo}</Text>
+                </View>
+              ) : <Text maxFontSizeMultiplier={1.3} style={estilos.socio}>{paleta.rotulo}</Text>}
             </View>
 
             {/* El «chip», como en una tarjeta de verdad; al personal, a su lado
-                derecho, el sello holográfico de Equipo (2026-10-08). */}
+                derecho, el sello holográfico de PERSONAL (2026-10-08). */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <LinearGradient colors={['#F5E6A8', '#C9A64A', '#F1DC8C']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={estilos.chip} />
               {equipo ? <SelloEquipo x={x} y={y} activa={activa && !reducir} /> : null}

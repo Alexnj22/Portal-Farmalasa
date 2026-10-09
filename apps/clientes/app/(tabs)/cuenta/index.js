@@ -224,7 +224,7 @@ export default function Cuenta() {
             </View>
           ) : null}
           {prueba.activo ? (
-            <FilaInterruptor titulo="Ver como empleado" detalle="Su nivel o rango con el sello de Equipo."
+            <FilaInterruptor titulo="Ver como empleado" detalle="Su nivel o rango con el sello de Personal."
               valor={!!prueba.empleado} alCambiar={(v) => prueba.poner({ empleado: v })} />
           ) : null}
           {prueba.activo ? (

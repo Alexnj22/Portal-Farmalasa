@@ -118,7 +118,7 @@ export function BeneficiosEquipo() {
   const t = useTema();
   return (
     <View style={{ gap: 8, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colorSistema.separador }}>
-      <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto }}>Equipo Farmacia Salud</Text>
+      <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto }}>Personal Farmacia Salud</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {['Precio Mayoreo Plus', 'Crédito a 30 días', 'En todas las sucursales'].map((b) => (
           <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5,

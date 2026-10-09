@@ -144,7 +144,7 @@ export default function Puntos() {
         <Pressable onPress={() => navegar('/cuenta')} accessibilityRole="button"
           style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FF9F0A', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
           <Icono sf="testtube.2" respaldo="" tam={12} color="#1A1000" />
-          <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {String(`${mayorista ? `Mayorista ${rangoDePrueba(mayorista).nombre}` : resumen.nivel?.nombre ?? ''}${empleado ? ' · Equipo' : ''}`).toUpperCase()}</Text>
+          <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {String(`${mayorista ? `Mayorista ${rangoDePrueba(mayorista).nombre}` : resumen.nivel?.nombre ?? ''}${empleado ? ' · Personal' : ''}`).toUpperCase()}</Text>
         </Pressable>
       ) : null}
       <SubisteDeNivel nivel={resumen.nivel} forzar={verNivel === '1'} />

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1262.6 — App del personal: vuelve a compilar (faltaba el adaptador del rastreo de ruta)
+
+- `apps/mobile/plataforma/rastreoRuta.js`: es el gemelo de `src/plataforma/rastreoRuta.js` y tiene los mismos nombres y el mismo contrato. `src/data/pedidos.js` lo importa desde que el rastreo de fondo y el mapa dejaron de escribir los dos la misma posición. Sin este archivo la app del personal no compilaba (`Unable to resolve module @plataforma/rastreoRuta`). Se detectó al armar el paquete de JavaScript para iOS y Android, y ahora los dos se arman sin errores.
+
 ## v2.1262.5 — Pedidos: sin escrituras directas en las tablas del pedido
 
 - Migración `20261009135456_columnas_del_navegador_fase_2` aplicada en producción con OK del usuario (las apps son de prueba): desde el navegador y la app sólo se puede escribir directamente `pedido_sucursal_status.paginas`. En `pedido_items` no se escribe nada directo.

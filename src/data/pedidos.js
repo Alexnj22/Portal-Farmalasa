@@ -706,7 +706,31 @@ export function fetchPedidosDisponiblesParaRuta() {
 // llegan sólo las salas con algo pendiente, de pedidos de cualquier estado:
 // un pedido «completado» puede deber una caja. Y se descartan los ciclos que
 // ya están en una ruta que todavía no salió, para no ofrecerlos dos veces.
+// ¿La base ya sabe sacar un reenvío EN UNA RUTA? (2026-10-08) Depende de la
+// columna `ruta_pedidos.reenvio_ciclo` y de que la base le ponga `sent_at` al
+// ciclo cuando la ruta sale (migración `reenvio_sale_en_ruta`). Mientras esa
+// migración no esté —producción hoy—, el reenvío tiene que seguir saliendo como
+// siempre: «enviado» al pedirlo, con su aviso. Si no, el ciclo quedaría
+// pendiente para siempre, la sala no podría confirmar su llegada y la consulta
+// de abajo rompería «Nueva ruta» para todas las salas. Se pregunta una vez por
+// carga de página; un error que no sea «no existe la columna» no decide nada.
+let reenvioEnRutaPromesa = null;
+export function reenvioSaleEnRuta() {
+    if (!reenvioEnRutaPromesa) {
+        reenvioEnRutaPromesa = supabase.from('ruta_pedidos').select('reenvio_ciclo').limit(1)
+            .then(({ error }) => {
+                if (!error) return true;
+                const sinColumna = error.code === '42703' || error.code === 'PGRST204' || /reenvio_ciclo/.test(error.message ?? '');
+                if (!sinColumna) reenvioEnRutaPromesa = null;   // reintentar la próxima vez
+                return !sinColumna ? true : false;
+            });
+    }
+    return reenvioEnRutaPromesa;
+}
+
 export async function fetchReenviosPorDespachar() {
+    // Sin la columna no hay ciclos «por despachar»: nacen enviados.
+    if (!(await reenvioSaleEnRuta())) return { data: [], error: null };
     const { data, error } = await supabase.from('pedido_sucursal_status')
         .select('pedido_id, erp_sucursal_id, reenvios_historial, pedidos!inner(numero, status)')
         // `.contains()` con un arreglo lo manda como arreglo de Postgres

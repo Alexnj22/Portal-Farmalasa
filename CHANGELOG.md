@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1233.5 — Pedidos: «Con observación» sin pérdidas, sin cargas dobles, aviso al no haber qué contar
+
+Hallazgos de la prueba en vivo de paridad (producción contra dev, mismos datos):
+- **«Con observación» ya no pierde salas.** Al pasar los filtros al estado de la sala, cuatro salas recibidas con diferencias pendientes o con faltante salían del filtro. Ahora el filtro es la regla de producción MÁS lo que sigue abierto aunque el pedido se haya cerrado: una caja que falta o una diferencia sin resolver. Prueba nueva.
+- **Abrir una fila con «Resumen de recepción» ya no carga los renglones dos o cuatro veces.** `asegurarItems` no vuelve a pedir lo que ya está o se está trayendo. Medido: 4 peticiones en vez de 8 a 16.
+- **«Confirmar» sin nada que contar ya no queda mudo.** Pasaba también en producción. Ahora avisa «No hay nada para contar todavía», y explica si es porque todo venía en las cajas que faltaron.
+
+## v2.1233.4 — Pedidos: riesgos menores de la revisión
+
+Riesgos menores de la revisión producción contra dev:
+- **Llegada:** un doble toque en «Llegaron las N cajas» ya no manda la llegada dos veces.
+- **Reenvío que todavía no salió:** confirmar su llegada ahora dice «El reenvío todavía no sale». Antes abría el último ciclo aunque estuviera en bodega.
+- **`LiquidSelect` en la hoja táctil:** la fila «Todos» también aparece en los filtros que no se limpian.
+- **Mapa del conductor:** al abrirlo ya no pide dos trazados a Google; espera el primero antes de decidir si se desvió.
+- **Buscador de productos:** se abre animado; antes saltaba.
+- **«No disponible todavía»** ya no habla de «instalar su parte en la base».
+
+## v2.1233.3 — Pedidos: reenvío compatible con la base actual y recargas que no se tragan cambios ajenos
+
+Correcciones de la revisión producción contra dev:
+- **El reenvío funciona con la base de producción actual.** Que el reenvío salga en una ruta depende de la columna `ruta_pedidos.reenvio_ciclo` y de la migración que lo hace salir con la ruta. `reenvioSaleEnRuta()` lo pregunta una vez por carga de página. Sin la columna, el reenvío sale como hoy: enviado al pedirlo, con `reenvio_bodega_at` y su aviso a la sala, y no se abre «Nueva ruta». Antes:
+  - el ciclo quedaba pendiente para siempre;
+  - la sala no podía confirmar su llegada;
+  - «Nueva ruta» dejaba de abrir para todas las salas (error de columna inexistente).
+- **Las recargas en vivo ya no se tragan cambios de otra persona.** Una recarga agendada por un aviso se salta sólo si otra carga ARRANCÓ después de que llegó ese aviso. Antes comparaba contra «ahora» y descartaba lo que otra persona cambiaba en los 2 s siguientes a cualquier carga.
+
 ## v2.1233.2 — Pedidos: la lista es la vista oficial
 
 - **La lista es la vista oficial de «Pedidos»**, en escritorio y en el teléfono. Se quitan la pestaña temporal «Pedidos (lista)» (un enlace viejo `?tab=pedidos_lista` abre «Pedidos») y la vista de tarjetas (~840 líneas menos).

@@ -238,6 +238,11 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
     if (!open || !isConductor || !mapReady || !bodegaCoords || !gpsPos) return;
     const maps = mapsApiRef.current;
     if (!maps || !dirRendererRef.current) return;
+    // Mientras el primer trazado no llegó, la polilínea vacía se lee como
+    // «desviado» y se pedían dos rutas a Google al abrir. Se espera a tenerlo,
+    // y lo que falta por entregar en ese momento es la referencia.
+    if (!trazadoRef.current?.length) return;
+    if (claveRecalcRef.current == null) claveRecalcRef.current = clavePendientes;
     const recalcular = debeRecalcular({
       pos: gpsPos, polilinea: trazadoRef.current,
       clavePendientes, claveAnterior: claveRecalcRef.current,

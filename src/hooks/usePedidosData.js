@@ -33,12 +33,10 @@ const ESPERA_RECARGA_MS = 1500;
 
 // El eco de lo propio (2026-10-08). Cada acción recarga el tablero al terminar
 // y además la base le devuelve a esta misma pantalla el aviso de lo que se
-// acaba de escribir: dos recargas iguales por clic. Si la recarga agendada por
-// un aviso iba a correr menos de esto después de otra que ya arrancó, esa otra
-// ya leyó lo que el aviso anuncia. Lo que se pierde es un cambio AJENO que
-// llegue en el medio segundo siguiente a una recarga propia — y lo trae el
-// próximo aviso.
-const ECO_MS = 2000;
+// acaba de escribir: dos recargas iguales por clic. La recarga agendada por un
+// aviso se salta si otra carga arrancó DESPUÉS de que llegó ese aviso (ver
+// abajo): esa carga ya leyó lo que el aviso anuncia.
+const yaLoLeyo = (ultimaCarga, desde) => ultimaCarga >= desde;
 
 // Cada cuánto se mira si el conductor sigue mandando su posición. Antes se
 // recargaban las rutas enteras (tres consultas) con CADA posición GPS, en cada
@@ -143,6 +141,10 @@ export function usePedidosData({ searchTerm = '' }) {
     }, []);
 
     const [items,         setItems]         = useState({});
+    // Los renglones vigentes y las cargas en vuelo, para `asegurarItems`.
+    const itemsRef           = useRef({});
+    const enCursoDetalleRef  = useRef(new Set());
+    useEffect(() => { itemsRef.current = items; }, [items]);
     const [eventosMap,    setEventosMap]    = useState({});
     // Las devoluciones del pedido, por tarjeta. Viven al lado de los ítems
     // porque se pintan pegadas a su renglón: una diferencia y lo que se decidió
@@ -397,18 +399,25 @@ export function usePedidosData({ searchTerm = '' }) {
     const juntar = useCallback((clave, recargar) => {
         const pendientes = recargasRef.current;
         if (pendientes.has(clave)) return;
-        pendientes.set(clave, setTimeout(() => { pendientes.delete(clave); recargar(); }, ESPERA_RECARGA_MS));
+        // `desde` es la hora del PRIMER aviso de la tanda: es lo que decide si
+        // una carga ya lo cubrió (ver `yaLoLeyo`).
+        const desde = Date.now();
+        pendientes.set(clave, setTimeout(() => { pendientes.delete(clave); recargar(desde); }, ESPERA_RECARGA_MS));
     }, []);
-    const recargarActivos = useCallback(() => juntar('activos', () => {
-        // El eco: una acción propia ya recargó (ver `ECO_MS`).
-        if (Date.now() - ultimaCargaActivosRef.current < ECO_MS) return;
+    // El eco (2026-10-08, corregido en la revisión): una carga cubre un aviso
+    // sólo si ARRANCÓ después de que el aviso llegó — el cambio ya estaba
+    // escrito, así que esa carga lo leyó. Comparar contra «ahora» (como era)
+    // se tragaba el cambio de otra persona que caía en los 2 s siguientes a
+    // cualquier carga, y no se veía hasta el próximo aviso.
+    const recargarActivos = useCallback(() => juntar('activos', (desde) => {
+        if (yaLoLeyo(ultimaCargaActivosRef.current, desde)) return;
         loadActive();
     }), [juntar, loadActive]);
     const recargarRutas = useCallback(() => juntar('rutas', () => loadActiveRutasRef.current?.()), [juntar]);
     const recargarDetalle = useCallback((key, pedidoId, sucId) => {
         if (!key || !detallesPedidosRef.current.has(key)) return;
-        juntar(`detalle:${key}`, () => {
-            if (Date.now() - (ultimaCargaDetalleRef.current[key] ?? 0) < ECO_MS) return;
+        juntar(`detalle:${key}`, (desde) => {
+            if (yaLoLeyo(ultimaCargaDetalleRef.current[key] ?? 0, desde)) return;
             fetchItemsRef.current?.(key, pedidoId, sucId);
         });
     }, [juntar]);
@@ -675,6 +684,7 @@ export function usePedidosData({ searchTerm = '' }) {
         ultimaCargaDetalleRef.current[key] = Date.now();
         const vigente = () => cargasDetalleRef.current[key] === turno;
         setLoadingItems(prev => ({ ...prev, [key]: true }));
+        enCursoDetalleRef.current.add(key);
         const sucFilter = sucId ?? (isBranch && erpSucursalId ? erpSucursalId : null);
         try {
             const lcPromise = (sucFilter && isBranch)
@@ -733,9 +743,20 @@ export function usePedidosData({ searchTerm = '' }) {
             }
             return null;
         } finally {
-            if (vigente()) setLoadingItems(prev => { const n = { ...prev }; delete n[key]; return n; });
+            if (vigente()) {
+                enCursoDetalleRef.current.delete(key);
+                setLoadingItems(prev => { const n = { ...prev }; delete n[key]; return n; });
+            }
         }
     }, [isBranch, erpSucursalId]);
+    // Para lo que pide los renglones SÓLO si faltan (el resumen de recepción al
+    // montarse): si ya están o ya se están trayendo, no vuelve a pedirlos. Abrir
+    // una fila con resumen hacía la carga dos veces —la del clic y la del
+    // resumen— y con el doble montaje de desarrollo, cuatro (paridad, 2026-10-08).
+    const asegurarItems = useCallback((key, pedidoId, sucId) => {
+        if (itemsRef.current[key] || enCursoDetalleRef.current.has(key)) return null;
+        return fetchItems(key, pedidoId, sucId);
+    }, [fetchItems]);
     useEffect(() => { fetchItemsRef.current = fetchItems; }, [fetchItems]);
 
     // El aviso para quien tocó un botón que necesita los renglones y no los
@@ -1113,9 +1134,11 @@ export function usePedidosData({ searchTerm = '' }) {
             useStaff.getState().appendAuditLog('PEDIDO_REENVIO_CAJA', pedidoId, { sucursal_id: sucId, ciclo, cajas: cajasFaltantes, electrolits: electrolitsFaltantes, especiales: especialesLabels });
 
             // El aviso «reenvío en camino» lo escribe la base cuando la ruta
-            // SALE. Se abre «Nueva ruta» con el reenvío ya marcado.
+            // SALE. Se abre «Nueva ruta» con el reenvío ya marcado. Si la base
+            // todavía no saca reenvíos en ruta (`enRuta === false`), el reenvío
+            // ya salió al pedirlo, como siempre: no hay ruta que armar.
             await loadActive();
-            setCrearRutaOpen([reenvio?.clave ?? `${pedidoId}__${sucId}__r${ciclo}`]);
+            if (reenvio?.enRuta !== false) setCrearRutaOpen([reenvio?.clave ?? `${pedidoId}__${sucId}__r${ciclo}`]);
         } catch (e) {
             console.error(e);
             useToastStore.getState().showToast('No se pudo registrar el reenvío', mensajeAmigable(e), 'error');
@@ -1168,7 +1191,11 @@ export function usePedidosData({ searchTerm = '' }) {
         const historial = reenviosHistorial ?? [];
         // Sólo un ciclo que SALIÓ puede llegar: uno pendiente sigue en bodega.
         const cicloIdx  = historial.findIndex(c => c.sent_at && !c.arrived_at);
-        const ciclo     = cicloIdx >= 0 ? historial[cicloIdx] : historial[historial.length - 1];
+        const ciclo     = cicloIdx >= 0 ? historial[cicloIdx] : null;
+        if (!ciclo && historial.some(c => c && !c.sent_at && !c.arrived_at)) {
+            useToastStore.getState().showToast('El reenvío todavía no sale', 'Las cajas siguen en bodega: se confirman cuando salga su ruta.', 'info');
+            return;
+        }
         if (!ciclo) {
             if (faltaCajasLegacy.length > 0) {
                 setReenvioLlegadaModal({ pedidoId, sucId, key, ciclo: 1, cajasCiclo: faltaCajasLegacy, electrolitCount: 0, especialesList: [], historial: [], cajaMap });
@@ -1421,8 +1448,19 @@ export function usePedidosData({ searchTerm = '' }) {
             const enviado = r.cantidad_enviada ?? r.cantidad_asignada ?? 0;
             return enviado > 0 || (r.cantidad_recibida ?? 0) > 0;
         });
-        if (!rows.length && !confirmados.length) return;
         const hasFaltaItems = (loaded || []).some(r => r.falta_caja && r.status === 'pendiente' && r.cantidad_asignada > 0);
+        // Nada que contar: antes el botón no hacía NADA, sin aviso (lo vio la
+        // prueba de paridad, igual en producción). Pasa cuando todo lo de la
+        // sala venía en las cajas que faltaron.
+        if (!rows.length && !confirmados.length) {
+            useToastStore.getState().showToast(
+                'No hay nada para contar todavía',
+                hasFaltaItems
+                    ? 'Todo lo de esta sala venía en las cajas que faltaron. Se cuenta cuando llegue el reenvío.'
+                    : 'Esta sala no tiene productos pendientes de contar.',
+                'info');
+            return;
+        }
         const activeRow  = activeRows.find(r => r.pedido_id === pedidoId && r.erp_sucursal_id === sucId);
         // cajas_danadas y falta_cajas son ahora arrays independientes (soporta 'mixto')
         const cajaDanada = activeRow?.cajas_danadas ?? [];
@@ -1898,6 +1936,7 @@ export function usePedidosData({ searchTerm = '' }) {
         loadActive,
         loadActiveRutas,
         fetchItems,
+        asegurarItems,
         toggleExpand,
         handleLifecycle,
         handleProgramarEntrega,

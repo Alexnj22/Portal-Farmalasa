@@ -137,7 +137,7 @@ const GRUPOS_LISTA = [
 const ACCIONES_DE_FILA = [
     'toggleExpand', 'handleLifecycle', 'openPauseModal', 'openFinalizarModal', 'handlePrintPdf',
     'handleReintentarIngreso', 'handleEntregarStop', 'handleLlegada', 'openModal', 'openReenvioModal',
-    'handleSegundaLlegada', 'fetchItems', 'handleDecidirDiferencia', 'handleConfirmarLlegadaDiferencia',
+    'handleSegundaLlegada', 'fetchItems', 'asegurarItems', 'handleDecidirDiferencia', 'handleConfirmarLlegadaDiferencia',
     'handleCorregirBodega', 'handleConfirmarCorreccion', 'handleProbarDevolucion', 'handleMoverDevolucion',
     'handleRecibirDevolucion', 'setAnularModal', 'setApoyoModal', 'setProgramarModal', 'setCrearRutaOpen',
     'setReenviarConfirmModal', 'setDevolverModal',
@@ -565,7 +565,7 @@ const FilaDeSala = React.memo(function FilaDeSala({
                         busyAction={busyAction}
                         empMap={empMap}
                         readOnly={row.pedido_status === 'completado'}
-                        onNeedItems={() => acc.fetchItems(cardKey, row.pedido_id, row.erp_sucursal_id)}
+                        onNeedItems={() => acc.asegurarItems(cardKey, row.pedido_id, row.erp_sucursal_id)}
                         itemsLoaded={!!misItems}
                         esSupervision={esSupervision}
                         onDecidirDiferencia={(itemId, accion, tipo, nota) =>
@@ -608,7 +608,7 @@ const FilaDeSala = React.memo(function FilaDeSala({
                         cardKey={cardKey}
                         difItems={(misItems ?? []).filter(r => r.status === 'con_diferencia' || r.error_tipo)}
                         empMap={empMap}
-                        onNeedItems={() => acc.fetchItems(cardKey, row.pedido_id, row.erp_sucursal_id)}
+                        onNeedItems={() => acc.asegurarItems(cardKey, row.pedido_id, row.erp_sucursal_id)}
                         itemsLoaded={!!misItems}
                     />
                 </div>
@@ -800,6 +800,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         loadActive,
         loadActiveRutas,
         fetchItems,
+        asegurarItems,
         toggleExpand,
         handleLifecycle,
         handleProgramarEntrega,
@@ -849,14 +850,14 @@ export default function TabPedidos({ searchTerm = '' }) {
         accionesVigentes.current = {
             toggleExpand, handleLifecycle, openPauseModal, openFinalizarModal, handlePrintPdf,
             handleReintentarIngreso, handleEntregarStop, handleLlegada, openModal, openReenvioModal,
-            handleSegundaLlegada, fetchItems, handleDecidirDiferencia, handleConfirmarLlegadaDiferencia,
+            handleSegundaLlegada, fetchItems, asegurarItems, handleDecidirDiferencia, handleConfirmarLlegadaDiferencia,
             handleCorregirBodega, handleConfirmarCorreccion, handleProbarDevolucion, handleMoverDevolucion,
             handleRecibirDevolucion, setAnularModal, setApoyoModal, setProgramarModal, setCrearRutaOpen,
             setReenviarConfirmModal, setDevolverModal,
         };
     }, [toggleExpand, handleLifecycle, openPauseModal, openFinalizarModal, handlePrintPdf,
         handleReintentarIngreso, handleEntregarStop, handleLlegada, openModal, openReenvioModal,
-        handleSegundaLlegada, fetchItems, handleDecidirDiferencia, handleConfirmarLlegadaDiferencia,
+        handleSegundaLlegada, fetchItems, asegurarItems, handleDecidirDiferencia, handleConfirmarLlegadaDiferencia,
         handleCorregirBodega, handleConfirmarCorreccion, handleProbarDevolucion, handleMoverDevolucion,
         handleRecibirDevolucion, setAnularModal, setApoyoModal, setProgramarModal, setCrearRutaOpen,
         setReenviarConfirmModal, setDevolverModal]);

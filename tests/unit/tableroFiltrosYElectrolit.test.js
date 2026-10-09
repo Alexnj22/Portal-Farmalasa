@@ -25,6 +25,10 @@ describe('filtrarPedidos — el estado es el de la sala', () => {
     it('«Con observación» no pierde la sala con diferencia de un pedido completado', () => {
         expect(ids(filtrarPedidos(filas, { estado: 'observacion' }))).toEqual(['q3', 'r4']);
     });
+    it('«Con observación» no pierde la sala YA RECIBIDA con diferencias de un pedido abierto (paridad con producción)', () => {
+        const s5Recibida = { pedido_id: 't', erp_sucursal_id: 5, pedido_status: 'enviado', enviado_at: 'x', recibido_erp_at: 'y', diferencias_reportadas_at: 'z', created_at: '2026-10-05T15:00:00Z' };
+        expect(ids(filtrarPedidos([s5Recibida], { estado: 'observacion' }))).toEqual(['t5']);
+    });
 });
 
 describe('el día del pedido es el de El Salvador', () => {

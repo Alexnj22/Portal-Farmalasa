@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Checkbox from '../../components/common/Checkbox';
@@ -85,10 +85,15 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
     const electrolitPendiente = electrolitAparte > 0 && electrolitFaltantes === null;
 
     // Espera a que se guarde: si falla, sigue abierto y el borrador intacto.
+    // Un doble toque en «Llegaron las N cajas» mandaba la llegada dos veces
+    // (el modal queda abierto mientras guarda): el ref frena el segundo.
+    const enviandoRef = useRef(false);
     const enviar = async (payload) => {
+        if (enviandoRef.current) return;
+        enviandoRef.current = true;
         setSubmitting(true);
         const ok = await onConfirm(payload);
-        if (ok === false) { setSubmitting(false); return; }
+        if (ok === false) { enviandoRef.current = false; setSubmitting(false); return; }
         if (draftKey) clearDraft(draftKey);
     };
 

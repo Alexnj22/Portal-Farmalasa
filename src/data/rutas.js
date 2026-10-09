@@ -20,7 +20,7 @@ import { supabase } from '../supabaseClient';
 import { conBitacora } from './audit';
 
 export const MSG_FUNCION_DE_RUTA_FALTA =
-    'Esta acción todavía no está disponible: falta instalar su parte en la base. Avisa al equipo de sistemas.';
+    'Esta acción todavía no está disponible. Avisa al equipo de sistemas.';
 
 /** ¿El error dice que la función no existe en la base? */
 export function esFuncionInexistente(error) {

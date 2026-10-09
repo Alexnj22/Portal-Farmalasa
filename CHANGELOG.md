@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1233.7 — Pedidos: migraciones de la tanda 1 aplicadas en producción
+
+Migraciones aplicadas en PRODUCCIÓN el 2026-10-09 (tanda 1), con OK del usuario y con `lock_timeout`. Las funciones quedaron idénticas a las probadas en el entorno de pruebas (huella md5 comparada; dos difieren sólo en formato).
+- `20261009004337_reenvio_sale_en_ruta`: columna `ruta_pedidos.reenvio_ciclo`. `crear_ruta` y el aviso de salida conocen el reenvío.
+- `…004549_get_pedido_preview_rendimiento`: Generar para toda la red pasa de 4.4 s a 1.6 s medidos en producción.
+- `…004631_cerrar_pedido_si_todo_resuelto_solo_servidor`: deja de poder llamarse desde el navegador.
+- `…004651_alcance_guardar_minmax_desde_pedido`, `…004744_alcance_anular_codigos_enviado_resolver`: anular, códigos, «marcar enviado» y resolver respetan la sucursal. Quienes generan y anulan hoy tienen alcance de red: nada cambia para ellos.
+- `…004812` a `…005049`: las funciones de un solo paso. Hojas recibidas, llegada, llegada del reenvío, finalizar, programar entrega y pedir reenvío.
+- `…005227_rutas_no_entregada_cerrar_y_crear`: «No se pudo entregar», «Cerrar ruta» (tabla `ruta_paradas_no_entregadas`), y `crear_ruta` rechaza una sala que ya va en otra ruta.
+
 ## v2.1233.6 — Pedidos: la línea de tiempo dice el día cuando no es de hoy
 
 - **La línea de tiempo de la fila abierta dice el día** cuando el paso no es de hoy, en hora de El Salvador («1 oct · 12:06 p. m.»), y lo mismo las incidencias. Lo encontró la verificación final contra producción: con la lista sólo se veía la hora, y «Listo 12:03 → 74h 47m → En ruta 12:19» no se entendía. La tarjeta vieja sí mostraba el día.

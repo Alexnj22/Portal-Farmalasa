@@ -2,6 +2,13 @@
 // precio VIP, en qué sucursal está TODO, y «Reservar para retirar». Al
 // reservar, la sucursal recibe el aviso para tenerlo listo y el cliente un
 // código (QR) que la sala escanea para prepararlo y facturarlo.
+//
+// Bajo receta (2026-10-12): si algún producto la pide (`receta_ids` del
+// servidor, o la marca con que se agregó), antes de enviar se pide la «Foto de
+// tu receta». TODO el pedido nace en revisión y no se cobra en línea hasta que
+// la sucursal la apruebe; la foto se sube contra el primer renglón y el
+// servidor la anota en todos. Precio de mayoreo: el subtotal usa `precio_tuyo`
+// si lo hay (el servidor lo vuelve a calcular al reservar).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
@@ -23,6 +30,9 @@ import { nombreProducto } from '../../../lib/catalogo';
 import { suave, useTema } from '../../../tema/tema';
 import { navegar } from '../../../lib/navegar';
 import { resumenDeReservas, reservasDelProducto } from '../../../lib/reservaDuplicada';
+import RecetaFoto from '../../../componentes/RecetaFoto';
+import { subirReceta } from '../../../lib/fotos';
+import { precioFinal, rotuloPrecioTuyo } from '../../../lib/precioTuyo';
 
 const CLAVE_TERMINOS = 'puntos_salud_terminos_reserva';
 
@@ -42,6 +52,10 @@ export default function Carrito() {
   const [enviando, setEnviando] = useState(false);
   const [terminos, setTerminos] = useState(null);
   const [hecho, setHecho] = useState(null);
+  // Bajo receta (2026-10-12).
+  const [recetaIds, setRecetaIds] = useState(() => new Set());
+  const [fotoReceta, setFotoReceta] = useState(null);
+  const conReceta = items.some((x) => x.receta || recetaIds.has(x.id));
   // Cómo paga y qué documento quiere (2026-10-07).
   const [pago, setPago] = useState('en_linea');
   // Entrega (2026-10-07): retiro en sucursal o a domicilio (sale de esa sucursal).
@@ -66,7 +80,8 @@ export default function Carrito() {
   const problemaFiscal = documento === 'credito_fiscal' ? errorFiscal(f) : null;
   // A la sucursal elegida le falta algo: no se cobra; se envía para confirmar.
   const faltan = salas?.find((x) => x.id === sala)?.faltan ?? 0;
-  const pagoReal = faltan ? 'al_retirar' : pago;
+  // Con receta no se cobra antes de que la sucursal la apruebe.
+  const pagoReal = faltan || conReceta ? 'al_retirar' : pago;
 
   // Dónde hay de cada producto: se vuelve a preguntar al entrar y si cambia el carrito.
   const ids = useMemo(() => [...new Set(items.map((x) => x.id))].sort().join(','), [items]);
@@ -77,6 +92,7 @@ export default function Carrito() {
     // Si falla, «Reintentar» en vez de la rueda girando para siempre (2026-10-12).
     if (!r?.ok) { setSalas(null); setErrorSalas(true); return; }
     setEnvioCfg(r.envio ?? null);
+    setRecetaIds(new Set((r.receta_ids ?? []).map(Number)));
     const hay = new Map();
     for (const e of r.existencias) hay.set(`${e.product_id}|${e.branch_id}`, Number(e.cantidad));
     const lista = r.salas.map((s) => {
@@ -92,7 +108,7 @@ export default function Carrito() {
   useFocusEffect(useCallback(() => { if (ids) pedir('pago_preparar'); }, [ids, pedir]));
 
   const normal = items.reduce((s, x) => s + x.precio * x.cantidad, 0);
-  const subtotal = items.reduce((s, x) => s + (x.precio_vip ?? x.precio) * x.cantidad, 0);
+  const subtotal = items.reduce((s, x) => s + precioFinal(x) * x.cantidad, 0);
   const aDomicilio = entrega === 'domicilio' && !!envioCfg?.activo;
   const envio = aDomicilio ? (envioCfg.gratis_desde != null && subtotal >= envioCfg.gratis_desde ? 0 : envioCfg.costo) : 0;
   const total = subtotal + envio;
@@ -111,6 +127,7 @@ export default function Carrito() {
       if (problemaFiscal) { Alert.alert('Faltan datos del crédito fiscal', problemaFiscal); return; }
       if (faltaDireccion) { Alert.alert('Falta la dirección', 'Escribe la dirección completa, con una referencia para encontrarte.'); return; }
       if (pendiente) { Alert.alert('Falta completar tu registro', 'Completa tu registro en cualquier sucursal para reservar.'); return; }
+      if (conReceta && !fotoReceta?.uri) { Alert.alert('Falta la foto de tu receta', 'Tu pedido lleva un producto bajo receta: agrega la foto antes de enviarlo.'); return; }
       // Las condiciones, una vez (las mismas de las reservas de ofertas).
       const [term, aceptada] = await Promise.all([pedir('reserva_terminos'), SecureStore.getItemAsync(CLAVE_TERMINOS).catch(() => null)]);
       if (!term?.ok) { Alert.alert('No se pudo reservar', 'Revisa tu conexión e intenta de nuevo.'); return; }
@@ -133,9 +150,17 @@ export default function Carrito() {
         datos_fiscales: documento === 'credito_fiscal' ? f : null,
         items: items.map((x) => ({ producto_id: x.id, factor: x.factor, cantidad: x.cantidad })),
       });
+      if (!r?.ok) { setEnviando(false); Alert.alert('No se pudo reservar', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
+      // La receta se sube ya creado el pedido (contra su primer renglón).
+      let recetaPendiente = null;
+      if (r.receta && fotoReceta?.uri && r.reservas?.[0]) {
+        const sr = await subirReceta(pedir, r.reservas[0], fotoReceta.uri);
+        if (!sr.ok) recetaPendiente = sr.mensaje;
+      }
       setEnviando(false);
-      if (!r?.ok) { Alert.alert('No se pudo reservar', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
-      const base = { pedido: r.pedido, total: r.total, sala: salas?.find((s) => s.id === sala)?.sala, pagado: false, enLinea: pagoReal === 'en_linea', porConfirmar: faltan > 0, domicilio: aDomicilio };
+      const base = { pedido: r.pedido, total: r.total, sala: salas?.find((s) => s.id === sala)?.sala, pagado: false, enLinea: pagoReal === 'en_linea', porConfirmar: faltan > 0, domicilio: aDomicilio,
+        receta: !!r.receta, recetaPendiente };
+      if (r.receta) setFotoReceta(null);
       // La confirmación va ANTES de vaciar y de abrir el cobro (2026-10-12): al
       // volver del pago se veía «Tu carrito está vacío» mientras se verificaba.
       const conCobro = pagoReal === 'en_linea' && !!r.pago?.url;
@@ -173,13 +198,18 @@ export default function Carrito() {
           <View style={{ width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.verde, 0.25) }}>
             <Icono sf="checkmark" respaldo="✓" tam={26} color={t.color.verdeTexto} />
           </View>
-          <Text style={{ fontSize: 22, fontWeight: '900', color: colorSistema.texto }}>¡Pedido reservado!</Text>
+          <Text style={{ fontSize: 22, fontWeight: '900', color: colorSistema.texto }}>{hecho.receta ? 'Pedido en revisión' : '¡Pedido reservado!'}</Text>
           <Texto nivel={2} estilo={{ textAlign: 'center' }}>
-            {hecho.porConfirmar
+            {hecho.receta
+              ? `${hecho.sala ?? 'La sucursal'} va a revisar tu receta. Cuando la apruebe, tu pedido queda confirmado y te avisamos; ahí ya lo puedes pagar.`
+              : hecho.porConfirmar
               ? `${hecho.sala ?? 'La sucursal'} recibió tu pedido y va a confirmar los productos que no tenía a la mano. Te avisamos; pagas al retirar.`
               : hecho.domicilio ? `${hecho.sala ?? 'La sucursal'} ya recibió tu pedido. Te avisamos cuando salga hacia tu casa.`
               : `${hecho.sala ?? 'La sucursal'} ya recibió tu pedido y lo va a preparar. Te avisamos cuando esté listo.`}
           </Texto>
+          {hecho.recetaPendiente ? (
+            <Text style={{ fontSize: 14, lineHeight: 20, color: t.color.avisoTexto, textAlign: 'center' }}>{hecho.recetaPendiente} Sube la foto desde Mis reservas.</Text>
+          ) : null}
           {/* A domicilio no se retira: compartir el código sólo sirve para el retiro. */}
           <CodigoReserva codigo={hecho.pedido} compartir={hecho.domicilio ? null : { sala: hecho.sala, pedido: true }} />
           <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>
@@ -225,8 +255,9 @@ export default function Carrito() {
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Contador valor={x.cantidad} alCambiar={(n) => cantidad(x, n)} />
               <View style={{ alignItems: 'flex-end' }}>
-                {x.precio_vip != null ? <Text style={{ fontSize: 12, color: colorSistema.texto3, textDecorationLine: 'line-through' }}>{dolares(x.precio * x.cantidad)}</Text> : null}
-                <Text style={{ fontSize: 17, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares((x.precio_vip ?? x.precio) * x.cantidad)}</Text>
+                {precioFinal(x) < x.precio ? <Text style={{ fontSize: 12, color: colorSistema.texto3, textDecorationLine: 'line-through' }}>{dolares(x.precio * x.cantidad)}</Text> : null}
+                <Text style={{ fontSize: 17, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(precioFinal(x) * x.cantidad)}</Text>
+                {rotuloPrecioTuyo(x) ? <Text style={{ fontSize: 11, fontWeight: '800', color: t.color.magentaTexto }}>{rotuloPrecioTuyo(x)}</Text> : null}
               </View>
             </View>
           </View>
@@ -294,8 +325,8 @@ export default function Carrito() {
       {/* Cómo pagas. */}
       <Seccion texto="Cómo pagas" />
       <View style={{ flexDirection: 'row', gap: 10 }}>
-        <Opcion sf="creditcard.fill" titulo="En línea ahora" detalle={faltan ? 'No disponible: falta existencia' : 'Tarjeta, seguro con Wompi'}
-          elegida={pagoReal === 'en_linea'} deshabilitada={faltan > 0} alTocar={() => setPago('en_linea')} />
+        <Opcion sf="creditcard.fill" titulo="En línea ahora" detalle={conReceta ? 'Después de revisar tu receta' : faltan ? 'No disponible: falta existencia' : 'Tarjeta, seguro con Wompi'}
+          elegida={pagoReal === 'en_linea'} deshabilitada={faltan > 0 || conReceta} alTocar={() => setPago('en_linea')} />
         <Opcion sf="banknote.fill" titulo={aDomicilio ? 'Al recibir' : 'Al retirar'} detalle={aDomicilio ? 'Efectivo al entregarte' : 'Efectivo o tarjeta en caja'} elegida={pagoReal === 'al_retirar'} alTocar={() => setPago('al_retirar')} />
       </View>
       {faltan ? (
@@ -348,8 +379,10 @@ export default function Carrito() {
         <Texto nivel={3} estilo={{ fontSize: 12 }}>El precio se confirma al reservar. La sucursal recibe tu pedido al instante y te avisamos cuando esté listo.</Texto>
       </Tarjeta>
 
-      <Boton alTocar={reservar} cargando={enviando} deshabilitado={!sala || !!problemaFiscal || faltaDireccion}>
-        {faltan ? 'Enviar para confirmar' : pagoReal === 'en_linea' ? `Pagar ${dolares(total)}` : aDomicilio ? 'Pedir · pagar al recibir' : 'Reservar · pagar al retirar'}
+      {conReceta ? <RecetaFoto foto={fotoReceta} alCambiar={setFotoReceta} /> : null}
+
+      <Boton alTocar={reservar} cargando={enviando} deshabilitado={!sala || !!problemaFiscal || faltaDireccion || (conReceta && !fotoReceta?.uri)}>
+        {conReceta ? 'Enviar para revisión' : faltan ? 'Enviar para confirmar' : pagoReal === 'en_linea' ? `Pagar ${dolares(total)}` : aDomicilio ? 'Pedir · pagar al recibir' : 'Reservar · pagar al retirar'}
       </Boton>
 
       <Modal visible={!!terminos} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setTerminos(null)}>

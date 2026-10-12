@@ -71,7 +71,7 @@ export default function Tratamientos() {
   // Sin ficha todavía: se explica por qué no hay nada (2026-10-12). Antes salía
   // como lista vacía, o con el mensaje de reservar.
   if (d.pendiente || (!d.ok && preRegistro)) {
-    return <Pantalla conPestanas={false}><Vacio titulo="Aún no hay recordatorios">Cuando completes tu registro en cualquier sucursal verás aquí lo que compras con regularidad.</Vacio></Pantalla>;
+    return <Pantalla conPestanas={false}><Vacio titulo="Aún no hay recordatorios" icono="pills.fill" respaldo="✚">Cuando completes tu registro en cualquier sucursal verás aquí lo que compras con regularidad.</Vacio></Pantalla>;
   }
   // Un error no es «no hay recordatorios» (2026-10-12): se dice y se reintenta.
   if (!d.ok) {
@@ -90,7 +90,7 @@ export default function Tratamientos() {
         Lo que compras con regularidad. Te avisamos unos días antes de que se te acabe.
       </Text>
       {!activos.length && !apagados.length ? (
-        <Vacio titulo="Aún no hay recordatorios">Cuando compres un medicamento con regularidad, aparecerá aquí.</Vacio>
+        <Vacio titulo="Aún no hay recordatorios" icono="pills.fill" respaldo="✚">Cuando compres un medicamento con regularidad, aparecerá aquí.</Vacio>
       ) : null}
       {activos.map((t) => <Fila key={t.id} t={t} alReservar={() => navegar(`/producto/${t.product_id}`)} alApagar={() => yaNo(t)} alRecordar={() => setTomas(t)} />)}
       {apagados.length ? <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto2, marginTop: 8, marginLeft: 4 }}>YA NO LO TOMO</Text> : null}

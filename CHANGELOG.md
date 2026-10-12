@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1273.0 — App de clientes: receta con foto, chat, foto de perfil y precios de mayoreo
+
+App de clientes y su función (`app-clientes`, `avisos-clientes`):
+- **Receta con foto**: los productos bajo receta ya se reservan; el pedido entero nace «en revisión», la app pide la foto antes de enviar (`receta_subir_url` / `receta_confirmar`, URL firmada al bucket privado), no se puede pagar ni ver el QR hasta que la sala apruebe; «Subir otra foto» si la piden, y el motivo si se rechaza. La sala decide el PEDIDO completo (migración `receta_por_pedido`) y el aviso a la sala/supervisión sale una vez por pedido.
+- **Chat con la farmacia** (`app/chat.js`, desde Cuenta): burbujas con foto y nombre corto de quien responde, fotos, productos/ofertas tocables, aviso fuera de horario, tope de 30 mensajes cada 10 min. Los pushes de chat y receta los manda `avisos-clientes` (filas pendientes de las últimas 24 h); la bandeja no lista los de chat.
+- **Foto de perfil** opcional en Cuenta (`perfil_*`); si el equipo la quita, se puede subir otra.
+- **Precios de mayoreo**: quien tiene Mayoreo o Mayoreo Plus aprobado ve «Tu precio» en catálogo, ficha y carrito, y `reservar_carrito` lo cobra calculado en el servidor; el personal ve Mayoreo Plus sin acumular puntos. Nadie más recibe esos precios. En modo de prueba: «Según rango / No / Mayoreo / Plus».
+- Pagos: se reutiliza un enlace vigente (< 25 min, mismo monto) en vez de crear uno por toque.
+- Estados vacíos con ícono y tarjeta en todas las pantallas; la pantalla de cumpleaños de prueba ya abre aunque no sea el cumpleaños.
+- Paquetes nuevos: `expo-image-picker`, `expo-image-manipulator` (requieren compilación nativa).
+
 ## v2.1272.0 — Avisos: una sola bandeja, deslizar borra y las solicitudes esperan la decisión
 
 - **Avisos rediseñados en la app y corregidos en la campana del portal** (pedido del usuario: «al deslizar no se eliminan, si toco una y era solicitud se desaparece aun sin confirmar ni descartar… me aparecen como 2 secciones por decidir»).

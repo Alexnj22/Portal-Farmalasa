@@ -10,6 +10,7 @@ import { navegar } from '../lib/navegar';
 import { dolares } from '../lib/formato';
 import { nombreProducto } from '../lib/catalogo';
 import { useTema } from '../tema/tema';
+import { precioFinal } from '../lib/precioTuyo';
 
 export default function FilaProductos({ titulo, sf, productos, accion }) {
   const t = useTema();
@@ -29,7 +30,9 @@ export default function FilaProductos({ titulo, sf, productos, accion }) {
       <FlatList horizontal data={productos} keyExtractor={(p) => String(p.id)} showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ gap: 10, paddingHorizontal: 2 }}
         renderItem={({ item: p }) => {
-          const ahorro = p.precio_vip != null && p.precio ? Math.round(((p.precio - p.precio_vip) / p.precio) * 100) : 0;
+          // Con precio de mayoreo (2026-10-12), el suyo; si no, el Preferente.
+          const final = precioFinal(p);
+          const ahorro = p.precio && final < p.precio ? Math.round(((p.precio - final) / p.precio) * 100) : 0;
           return (
             <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${p.id}`); }}
               accessibilityRole="button" accessibilityLabel={nombreProducto(p.nombre)}
@@ -46,8 +49,8 @@ export default function FilaProductos({ titulo, sf, productos, accion }) {
               <Text numberOfLines={2} style={{ fontSize: 13, fontWeight: '700', lineHeight: 17, color: colorSistema.texto, minHeight: 34 }}>{nombreProducto(p.nombre)}</Text>
               {p.precio != null ? (
                 <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 5 }}>
-                  <Text style={{ fontSize: 16, fontWeight: '900', color: colorSistema.texto }}>{dolares(p.precio_vip ?? p.precio)}</Text>
-                  {p.precio_vip != null ? <Text style={{ fontSize: 11, color: colorSistema.texto3, textDecorationLine: 'line-through' }}>{dolares(p.precio)}</Text> : null}
+                  <Text style={{ fontSize: 16, fontWeight: '900', color: colorSistema.texto }}>{dolares(final)}</Text>
+                  {final < p.precio ? <Text style={{ fontSize: 11, color: colorSistema.texto3, textDecorationLine: 'line-through' }}>{dolares(p.precio)}</Text> : null}
                 </View>
               ) : null}
             </Pressable>

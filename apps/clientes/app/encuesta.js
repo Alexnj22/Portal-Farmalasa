@@ -85,7 +85,7 @@ export default function Encuesta() {
   );
   // Sin ficha todavía, o un error: no es «sin encuestas» (2026-10-12).
   if (d.pendiente || (!d.ok && preRegistro)) {
-    return <Pantalla conPestanas={false}><Vacio titulo="Sin encuestas por ahora">Cuando completes tu registro en cualquier sucursal podrás contestar encuestas y ganar puntos.</Vacio></Pantalla>;
+    return <Pantalla conPestanas={false}><Vacio titulo="Sin encuestas por ahora" icono="checklist" respaldo="✓">Cuando completes tu registro en cualquier sucursal podrás contestar encuestas y ganar puntos.</Vacio></Pantalla>;
   }
   if (!d.ok) {
     return (
@@ -95,8 +95,8 @@ export default function Encuesta() {
       </Pantalla>
     );
   }
-  if (!enc && id) return <Pantalla conPestanas={false}><Vacio titulo="Esta encuesta ya no está disponible">Puede que ya la hayas contestado o que haya terminado. ¡Gracias!</Vacio></Pantalla>;
-  if (!enc) return <Pantalla conPestanas={false}><Vacio titulo="Sin encuestas por ahora">Cuando tengamos una nueva, te avisamos aquí. ¡Gracias!</Vacio></Pantalla>;
+  if (!enc && id) return <Pantalla conPestanas={false}><Vacio titulo="Esta encuesta ya no está disponible" icono="checklist" respaldo="✓">Puede que ya la hayas contestado o que haya terminado. ¡Gracias!</Vacio></Pantalla>;
+  if (!enc) return <Pantalla conPestanas={false}><Vacio titulo="Sin encuestas por ahora" icono="checklist" respaldo="✓">Cuando tengamos una nueva, te avisamos aquí. ¡Gracias!</Vacio></Pantalla>;
 
   return (
     <Pantalla conPestanas={false}>

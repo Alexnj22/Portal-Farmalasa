@@ -41,10 +41,10 @@ export default function Compras() {
   if (!datos) return <Cargando />;
   if (!datos.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}><Aviso>{datos.mensaje}</Aviso></Pantalla>;
   if (datos.pendiente) {
-    return <Pantalla conPestanas={false}><Vacio titulo="Todavía no hay compras">Cuando completes tu registro en sala verás aquí cada compra.</Vacio></Pantalla>;
+    return <Pantalla conPestanas={false}><Vacio titulo="Todavía no hay compras" icono="bag.fill" respaldo="◍">Cuando completes tu registro en sala verás aquí cada compra.</Vacio></Pantalla>;
   }
   if (!datos.compras.length) {
-    return <Pantalla conPestanas={false}><Vacio titulo="Todavía no hay compras">Tus compras con tu DUI aparecen aquí.</Vacio></Pantalla>;
+    return <Pantalla conPestanas={false}><Vacio titulo="Todavía no hay compras" icono="bag.fill" respaldo="◍">Tus compras con tu DUI aparecen aquí.</Vacio></Pantalla>;
   }
 
   const total = datos.compras.reduce((s, c) => s + Number(c.total ?? 0), 0);

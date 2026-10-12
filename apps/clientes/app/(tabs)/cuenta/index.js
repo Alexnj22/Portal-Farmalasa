@@ -1,6 +1,10 @@
 // Cuenta: permisos, avisos, reglamento, cerrar sesión y borrar la cuenta
 // (Apple lo exige dentro de la app, 5.1.1(v)). Forma de Ajustes: grupos con
 // interruptores del sistema y acciones en filas, la destructiva en rojo.
+//
+// 2026-10-12: la foto de perfil (opcional; la ve el equipo en el chat; si el
+// equipo la quita, vuelve el avatar de siempre y se puede subir otra) y la
+// entrada a «Pregúntale a la farmacia», con el punto de mensajes sin leer.
 import { useCallback, useEffect, useState } from 'react';
 import * as Haptics from 'expo-haptics';
 import { Alert, Pressable, Text, View } from 'react-native';
@@ -19,6 +23,8 @@ import { nombrePropio } from '../../../lib/formato';
 import { useTema } from '../../../tema/tema';
 import Icono from '../../../componentes/Icono';
 import { navegar } from '../../../lib/navegar';
+import { Image } from 'expo-image';
+import { elegirFoto, preguntarOrigen, subirFoto } from '../../../lib/fotos';
 
 
 /**
@@ -27,13 +33,18 @@ import { navegar } from '../../../lib/navegar';
  * (usuario, 2026-10-06: «la letra rosa no me gusta»); el rojo sólo en lo
  * destructivo.
  */
-function FilaAccion({ texto, sf, color, flecha = true, alTocar }) {
+function FilaAccion({ texto, sf, color, flecha = true, alTocar, insignia }) {
   return (
     <Pressable accessibilityRole="button" onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingLeft: sf ? 16 : 0, paddingRight: 16,
         backgroundColor: pressed ? colorSistema.separador : 'transparent' })}>
       {sf ? <Icono sf={sf} respaldo="" tam={18} color={color ?? colorSistema.texto2} /> : null}
       <View style={{ flex: 1 }}><FilaTexto color={color}>{texto}</FilaTexto></View>
+      {insignia ? (
+        <View style={{ minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6, marginRight: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: colorSistema.rojo }}>
+          <Text maxFontSizeMultiplier={1.2} style={{ fontSize: 12, fontWeight: '800', color: '#FFFFFF', fontVariant: ['tabular-nums'] }}>{insignia > 99 ? '99+' : insignia}</Text>
+        </View>
+      ) : null}
       {flecha && !color ? <Icono sf="chevron.right" respaldo="›" tam={13} color={colorSistema.texto3} /> : null}
     </Pressable>
   );
@@ -70,6 +81,39 @@ export default function Cuenta() {
   useEffect(() => { nombreBiometria().then(setBiometria); }, []);
 
   useFocusEffect(useCallback(() => { if (!resumen) cargar(); }, [resumen, cargar]));
+
+  // La foto de perfil (2026-10-12): firmada por el servidor, se pide al entrar.
+  const [foto, setFoto] = useState({ url: null, quitada: false, cargando: false });
+  const conFicha = !!resumen && !resumen.pendiente;
+  useFocusEffect(useCallback(() => {
+    if (!conFicha) return;
+    pedir('perfil').then((r) => { if (r?.ok) setFoto({ url: r.foto_url ?? null, quitada: !!r.quitada, cargando: false }); });
+  }, [conFicha, pedir]));
+  const subirPerfil = async () => {
+    const origen = await preguntarOrigen('Tu foto de perfil', 'La ve el equipo de la farmacia cuando chateas con nosotros.');
+    if (!origen) return;
+    const f = await elegirFoto(origen);
+    if (!f) return;
+    if (f.error) { Alert.alert('No se pudo usar la foto', f.error); return; }
+    setFoto((x) => ({ ...x, cargando: true }));
+    const s = await subirFoto(pedir, 'perfil_subir_url', {}, f.uri);
+    const r = s.ok ? await pedir('perfil_confirmar', { ruta: s.ruta }) : s;
+    if (r?.ok) setFoto({ url: r.foto_url ?? f.uri, quitada: false, cargando: false });
+    else { setFoto((x) => ({ ...x, cargando: false })); Alert.alert('No se pudo guardar la foto', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); }
+  };
+  const cambiarFoto = () => {
+    Haptics.selectionAsync().catch(() => {});
+    if (!foto.url) { subirPerfil(); return; }
+    Alert.alert('Tu foto de perfil', undefined, [
+      { text: 'Cambiar foto', onPress: subirPerfil },
+      { text: 'Quitar foto', style: 'destructive', onPress: async () => {
+        const r = await pedir('perfil_quitar');
+        if (r?.ok) setFoto({ url: null, quitada: false, cargando: false });
+        else Alert.alert('No se pudo quitar la foto', r?.mensaje ?? 'Revisa tu conexión.');
+      } },
+      { text: 'Cancelar', style: 'cancel' },
+    ]);
+  };
 
   const c = resumen?.consentimiento;
 
@@ -155,9 +199,33 @@ export default function Cuenta() {
   return (
     <Formulario>
       {resumen?.nombre ? (
-        <Text style={{ fontSize: 22, fontWeight: '700', color: colorSistema.texto, marginHorizontal: 32 }}>
-          {nombrePropio(resumen.nombre)}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginHorizontal: 24 }}>
+          {conFicha ? (
+            <Pressable onPress={cambiarFoto} accessibilityRole="button" accessibilityLabel={foto.url ? 'Cambiar tu foto de perfil' : 'Agregar una foto de perfil'}
+              style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+              {foto.url ? (
+                <Image source={{ uri: foto.url }} style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colorSistema.separador, opacity: foto.cargando ? 0.5 : 1 }} contentFit="cover" />
+              ) : (
+                <View style={{ width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.07)', opacity: foto.cargando ? 0.5 : 1 }}>
+                  <Icono sf="person.fill" respaldo="👤" tam={28} color={colorSistema.texto3} />
+                </View>
+              )}
+              <View style={{ position: 'absolute', right: -2, bottom: -2, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: t.color.magenta }}>
+                <Icono sf="camera.fill" respaldo="+" tam={11} color="#FFFFFF" />
+              </View>
+            </Pressable>
+          ) : null}
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={{ fontSize: 22, fontWeight: '700', color: colorSistema.texto }}>
+              {nombrePropio(resumen.nombre)}
+            </Text>
+            {conFicha && foto.quitada ? (
+              <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>Quitamos tu foto de perfil porque no correspondía. Puedes subir otra.</Text>
+            ) : conFicha && !foto.url ? (
+              <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>Toca para agregar tu foto (opcional)</Text>
+            ) : null}
+          </View>
+        </View>
       ) : null}
       {mensaje ? <Aviso>{mensaje}</Aviso> : null}
 
@@ -184,6 +252,14 @@ export default function Cuenta() {
         <FilaInterruptor titulo="Avisos en este teléfono" valor={valorDe('avisos', resumen?.acepta_avisos === true)}
           alCambiar={avisos} color={t.color.magenta} />
       </Grupo>
+
+      {/* El chat con la farmacia (2026-10-12): arriba, con los sin leer. */}
+      {conFicha ? (
+        <Grupo pie="Te responde el equipo de Farmacia Salud, de 7:00 a 21:00.">
+          <FilaAccion sf="bubble.left.and.bubble.right.fill" texto="Pregúntale a la farmacia" insignia={Number(resumen?.chat_sin_leer) || 0}
+            alTocar={() => navegar('/chat')} />
+        </Grupo>
+      ) : null}
 
       <Grupo>
         {resumen && !resumen.pendiente ? (
@@ -245,6 +321,14 @@ export default function Cuenta() {
           ) : null}
           {prueba.activo ? (
             <View style={{ padding: 12, gap: 6 }}>
+              {/* 2026-10-12: el catálogo, el producto y el carrito con el precio de mayoreo. «Según rango» sigue al rango de muestra. */}
+              <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>Ver precios de mayoreo (sólo se ven; al reservar se cobra el precio real)</Text>
+              <Segmentos valor={prueba.precio ?? 'rango'} alCambiar={(v) => prueba.poner({ precio: v === 'rango' ? null : v })}
+                opciones={[{ valor: 'rango', rotulo: 'Según rango' }, { valor: 'no', rotulo: 'No' }, { valor: 'mayoreo', rotulo: 'Mayoreo' }, { valor: 'mayoreo_plus', rotulo: 'Plus' }]} />
+            </View>
+          ) : null}
+          {prueba.activo ? (
+            <View style={{ padding: 12, gap: 6 }}>
               <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>Cliente Mayorista</Text>
               <Segmentos valor={prueba.mayorista ?? 'no'} alCambiar={(m) => prueba.poner({ mayorista: m === 'no' ? null : m })}
                 opciones={[{ valor: 'no', rotulo: 'No' }, { valor: 'jade', rotulo: 'Jade' }, { valor: 'zafiro', rotulo: 'Zafiro' }, { valor: 'rubi', rotulo: 'Rubí' }, { valor: 'diamante', rotulo: 'Diam.' }]} />
@@ -262,7 +346,7 @@ export default function Cuenta() {
           ) : null}
           <FilaAccion sf="plus.circle.fill" texto="Simular: ganar 250 puntos" alTocar={() => { prueba.simularPuntos(250); navegar('/puntos'); }} />
           <FilaAccion sf="minus.circle.fill" texto="Simular: usar 500 puntos" alTocar={() => { prueba.simularPuntos(-500); navegar('/puntos'); }} />
-          <FilaAccion sf="gift.fill" texto="Ver la pantalla de cumpleaños" alTocar={() => navegar('/puntos?cumple=1')} />
+          <FilaAccion sf="gift.fill" texto="Ver la pantalla de cumpleaños" alTocar={() => navegar(`/puntos?cumple=${Date.now()}`)} />
           <FilaAccion sf="crown.fill" texto="Ver la pantalla de subir de nivel" alTocar={() => navegar('/puntos?nivel=1')} />
           {/* Mayoreo (2026-10-09): las pantallas de rango, precio y bienvenida; con el rango de prueba elegido arriba. */}
           {prueba.activo && prueba.mayorista ? (

@@ -24,6 +24,9 @@ import { BUSQUEDAS, leerVistos, nombreProducto, olvidarVistos, tonoDe } from '..
 import { LinearGradient } from 'expo-linear-gradient';
 import { suave, useTema } from '../../../tema/tema';
 import { navegar } from '../../../lib/navegar';
+// Precio de mayoreo (2026-10-12): el catálogo se pide con la sesión, y a quien
+// le corresponde el servidor le agrega `precio_tuyo` (lib/precioTuyo.js).
+import { datosDePrecio, precioFinal, rotuloPrecioTuyo } from '../../../lib/precioTuyo';
 
 const POR_PAGINA = 20;
 // El servidor no pasa de `desde = 1000` (app-clientes, acción `catalogo`): una
@@ -47,7 +50,7 @@ export default function Catalogo() {
   const [ahorro, setAhorro] = useState([]);
   const [vistos, setVistos] = useState([]);
   useEffect(() => {
-    llamar('catalogo', { q: '', desde: 0, limite: 50 }).then((r) => {
+    llamar('catalogo', { q: '', desde: 0, limite: 50, ...datosDePrecio() }).then((r) => {
       if (!r?.ok) return;
       setAhorro(r.productos.filter((p) => p.precio_vip != null && p.disponible)
         .sort((a, b) => (b.precio - b.precio_vip) / b.precio - (a.precio - a.precio_vip) / a.precio).slice(0, 10));
@@ -61,7 +64,7 @@ export default function Catalogo() {
   const cargar = useCallback(async (p) => {
     const n = ++pedido.current;
     setError(false);
-    const r = await llamar('catalogo', { q, desde: p * POR_PAGINA, limite: POR_PAGINA });
+    const r = await llamar('catalogo', { q, desde: p * POR_PAGINA, limite: POR_PAGINA, ...datosDePrecio() });
     if (n !== pedido.current) return; // llegó tarde: ya se pidió otra cosa
     if (!r?.ok) { setError(true); return; }
     setLista(r.productos);
@@ -179,7 +182,7 @@ export default function Catalogo() {
             </View>
           )
             : !lista ? <ActivityIndicator style={{ marginTop: 40 }} />
-              : <Vacio titulo="Sin resultados">Prueba con otro nombre o con el principio activo.</Vacio>
+              : <Vacio titulo="Sin resultados" icono="magnifyingglass" respaldo="⌕">Prueba con otro nombre o con el principio activo.</Vacio>
         }
         ListFooterComponent={lista?.length && (pagina > 0 || hayMas || error) ? (
           <View style={{ gap: 8 }}>
@@ -195,10 +198,12 @@ export default function Catalogo() {
 
 function TarjetaProducto({ p }) {
   const t = useTema();
-  const ahorro = p.precio_vip != null ? p.precio - p.precio_vip : 0;
+  const final = precioFinal(p);
+  const ahorro = final < p.precio ? p.precio - final : 0;
+  const suyo = rotuloPrecioTuyo(p);
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${p.id}`); }}
-      accessibilityRole="button" accessibilityLabel={`${nombreProducto(p.nombre)}. Precio ${dolares(p.precio)}${p.precio_vip != null ? `, Preferente ${dolares(p.precio_vip)}` : ''}`}
+      accessibilityRole="button" accessibilityLabel={`${nombreProducto(p.nombre)}. Precio ${dolares(p.precio)}${suyo ? `, ${suyo} ${dolares(p.precio_tuyo)}` : p.precio_vip != null ? `, Preferente ${dolares(p.precio_vip)}` : ''}`}
       style={({ pressed }) => ({ flex: 1, maxWidth: '50%', borderRadius: 22, padding: 10, gap: 8,
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.82)',
         borderWidth: 0.5, borderColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)',
@@ -233,7 +238,17 @@ function TarjetaProducto({ p }) {
         ) : null}
       </View>
       <View style={{ gap: 0, paddingHorizontal: 2 }}>
-        {p.precio_vip != null ? (
+        {suyo ? (
+          <>
+            <Text style={{ fontSize: 12, color: colorSistema.texto3, textDecorationLine: 'line-through', fontVariant: ['tabular-nums'] }}>
+              {dolares(p.precio)}
+            </Text>
+            <Text style={{ fontSize: 19, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(p.precio_tuyo)}</Text>
+            <View style={{ alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2, backgroundColor: suave(t.color.magenta, t.oscuro ? 0.28 : 0.12) }}>
+              <Text maxFontSizeMultiplier={1.2} style={{ fontSize: 10, fontWeight: '800', color: t.color.magentaTexto }} numberOfLines={1}>{suyo}</Text>
+            </View>
+          </>
+        ) : p.precio_vip != null ? (
           <>
             <Text style={{ fontSize: 12, color: colorSistema.texto3, textDecorationLine: 'line-through', fontVariant: ['tabular-nums'] }}>
               {dolares(p.precio)}

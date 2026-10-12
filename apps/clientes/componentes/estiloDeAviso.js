@@ -23,6 +23,9 @@ const ESTILOS = {
   encargo: ['shippingbox.fill', '•', 'naranja'],
   oferta: ['tag.fill', '%', 'magenta'],
   historia: ['sparkles', '✦', 'magenta'],
+  // 2026-10-12: la receta revisada y la respuesta del chat.
+  receta: ['doc.text.fill', '•', 'violeta'],
+  chat: ['bubble.left.and.bubble.right.fill', '•', 'azul'],
 };
 const GENERICO = ['bell.fill', '•', 'magenta'];
 
@@ -40,6 +43,7 @@ export function tipoDeUrl(url) {
   if (url.startsWith('/inyecciones')) return 'inyeccion';
   if (url.startsWith('/tratamientos')) return 'tratamiento';
   if (url.startsWith('/reservas')) return 'reserva';
+  if (url.startsWith('/chat')) return 'chat';
   if (url.includes('cumple=')) return 'cumpleanos';
   if (url.includes('nivel=')) return 'nivel';
   if (url.includes('rango=') || url.includes('precio=') || url.includes('mayoreo=')) return 'mayoreo';

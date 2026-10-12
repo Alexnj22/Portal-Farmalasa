@@ -268,11 +268,11 @@ export default function Facturas() {
 
   const cuerpo = !d ? <Cargando />
     // Sin ficha todavía (2026-10-12): antes decía «… para reservar».
-    : d.pendiente || (!d.ok && preRegistro) ? <Vacio titulo="Sin facturas">Cuando completes tu registro en cualquier sucursal verás aquí las facturas de tus compras.</Vacio>
+    : d.pendiente || (!d.ok && preRegistro) ? <Vacio titulo="Sin facturas" icono="doc.text.fill" respaldo="▤">Cuando completes tu registro en cualquier sucursal verás aquí las facturas de tus compras.</Vacio>
     : !d.ok ? <Vacio titulo="No se pudieron cargar">{d.mensaje ?? 'Revisa tu conexión.'}</Vacio>
       : (
         <>
-          {!lista.length ? <Vacio titulo={filtro === 'todas' ? 'Sin facturas' : 'Nada por aquí'}>{VACIO[filtro]}</Vacio> : null}
+          {!lista.length ? <Vacio titulo={filtro === 'todas' ? 'Sin facturas' : 'Nada por aquí'} icono="doc.text.fill" respaldo="▤">{VACIO[filtro]}</Vacio> : null}
           {lista.map((f) => <Factura key={f.id} f={f} ocupada={ocupada} acciones={acciones} seleccion={seleccion} alternar={alternar} />)}
           {d.siguiente ? (
             <Pressable onPress={cargarMas} disabled={masCargando} accessibilityRole="button"

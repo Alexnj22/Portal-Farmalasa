@@ -6,6 +6,7 @@
 import { ActivityIndicator, Platform, ScrollView, Text, View, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BotonNativo from './BotonNativo';
+import Icono from './Icono';
 import Vidrio from './Vidrio';
 import { colorSistema } from './sistema';
 import { suave, useTema } from '../tema/tema';
@@ -79,11 +80,27 @@ export function Cargando() {
   return <View style={{ padding: 60, alignItems: 'center' }}><ActivityIndicator /></View>;
 }
 
-export function Vacio({ titulo, children }) {
+// La pantalla sin nada que mostrar (rehecha 2026-10-12, «solo veo 2 textos,
+// sin forma»): una tarjeta de vidrio con un ícono en su círculo de color, el
+// título, la explicación y, si hay algo que hacer, el botón. `icono` es el
+// nombre SF y `respaldo` el carácter para Android/web; sin ellos, una bandeja.
+// `tono`: el color del círculo (por defecto, el magenta de la marca).
+export function Vacio({ titulo, children, icono: iconoDado, respaldo: respaldoDado, tono, accion, alAccion }) {
+  const t = useTema();
+  // Un error de carga se reconoce por su título: ícono de conexión y gris.
+  const error = !iconoDado && /^No se pud/.test(String(titulo ?? ''));
+  const icono = iconoDado ?? (error ? 'wifi.exclamationmark' : 'tray');
+  const respaldo = respaldoDado ?? (error ? '!' : '○');
+  const c = tono ?? (error ? colorSistema.texto3 : t.color.magenta);
   return (
-    <View style={{ alignItems: 'center', paddingVertical: 48, paddingHorizontal: 24, gap: 6 }}>
+    <Tarjeta estilo={{ alignItems: 'center', paddingVertical: 32, paddingHorizontal: 24, gap: 10 }}>
+      <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: suave(c, t.oscuro ? 0.28 : 0.14),
+        alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
+        <Icono sf={icono} respaldo={respaldo} tam={30} color={c} />
+      </View>
       <Titulo estilo={{ textAlign: 'center', fontSize: 20 }}>{titulo}</Titulo>
-      <Texto nivel={2} estilo={{ textAlign: 'center' }}>{children}</Texto>
-    </View>
+      {children ? <Texto nivel={2} estilo={{ textAlign: 'center', lineHeight: 21, maxWidth: 320 }}>{children}</Texto> : null}
+      {accion && alAccion ? <View style={{ marginTop: 6, alignSelf: 'stretch' }}><Boton alTocar={alAccion}>{accion}</Boton></View> : null}
+    </Tarjeta>
   );
 }

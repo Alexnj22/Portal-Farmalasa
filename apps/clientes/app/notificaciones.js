@@ -252,17 +252,11 @@ export default function Notificaciones() {
   );
 }
 
-/** El estado vacío: un ícono grande en vidrio, el título y una línea. */
+/** El estado vacío: el de todas las pantallas (`Vacio`), con su entrada animada. */
 function SinAvisos({ icono, respaldo, titulo, children }) {
-  const t = useTema();
   return (
-    <Entrada estilo={{ alignItems: 'center', paddingTop: 48 }}>
-      <Vidrio radio={44} tinte={suave(t.color.magenta, t.oscuro ? 0.2 : 0.12)}>
-        <View style={{ width: 88, height: 88, alignItems: 'center', justifyContent: 'center' }}>
-          <Icono sf={icono} respaldo={respaldo} tam={38} color={t.color.magentaTexto} />
-        </View>
-      </Vidrio>
-      <Vacio titulo={titulo}>{children}</Vacio>
+    <Entrada estilo={{ paddingTop: 24 }}>
+      <Vacio titulo={titulo} icono={icono} respaldo={respaldo}>{children}</Vacio>
     </Entrada>
   );
 }

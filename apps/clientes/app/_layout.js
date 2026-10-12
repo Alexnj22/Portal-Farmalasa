@@ -182,6 +182,7 @@ function Raiz() {
             <Stack.Screen name="facturas" options={{ title: 'Mis facturas' }} />
             <Stack.Screen name="encuesta" options={{ title: 'Encuesta' }} />
             <Stack.Screen name="tratamientos" options={{ title: 'Mis tratamientos' }} />
+            <Stack.Screen name="chat" options={{ title: 'Pregúntale a la farmacia' }} />
             <Stack.Screen name="mis-puntos" options={{ headerShown: false }} />
           </Stack>
           <AvisoSinConexion />

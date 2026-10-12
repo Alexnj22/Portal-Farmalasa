@@ -16,6 +16,8 @@
 //                   aceptó recibir promociones (es publicidad).
 //   · mayoreo     — (2026-10-09) aprobado como cliente de mayoreo o pasado a
 //                   Mayoreo Plus (inmediato), y subir de rango (diario).
+//   · receta/chat — (2026-10-12) los escribe la base (`reserva_receta_decidir`,
+//                   `chat_responder`) con `enviado = false`; acá sólo se mandan.
 //
 // ── Por qué no manda dos veces ─────────────────────────────────────────────
 // Antes de enviar, cada aviso se INSERTA en `app_cliente_avisos`, cuya UNIQUE
@@ -82,11 +84,41 @@ Deno.serve(async (req) => {
       return json({ ok: true, prueba: true, ...r });
     }
 
-    const clientes = [...tokens.keys()];
-    if (!clientes.length) return json({ ok: true, avisos: 0, motivo: "nadie con avisos encendidos" });
-
     const modo = body?.modo === "inmediato" || body?.modo === "diario" ? body.modo : "todo";
     const inmediato = modo !== "diario", diario = modo !== "inmediato";
+
+    // ── Avisos que escribe la BASE (2026-10-12): la receta revisada
+    // (`reserva_receta_decidir`, tipo `receta`) y la respuesta del chat
+    // (`chat_responder`, tipo `chat`) entran a `app_cliente_avisos` con
+    // `enviado = false`; esta vuelta los manda. Últimas 24 h: lo que llega de
+    // noche sale a la mañana con la primera corrida. Se marca enviado lo que
+    // Expo aceptó y lo de quien no tiene avisos encendidos (no hay a quién
+    // mandarlo, y así la receta aparece igual en su bandeja); lo que falló
+    // con token se reintenta en la próxima vuelta.
+    let pendientesBase = { enviados: 0, errores: [] as string[] };
+    if (inmediato) {
+      const { data: pend, error: ePd } = await admin.from("app_cliente_avisos")
+        .select("id, customer_id, tipo, ref, titulo, cuerpo, url").limit(500)
+        .in("tipo", ["receta", "chat"]).eq("enviado", false)
+        .gte("created_at", new Date(Date.now() - 24 * 3600_000).toISOString())
+        .order("id", { ascending: true });
+      if (ePd) console.error("no se pudieron leer los avisos pendientes:", ePd.message);
+      if (pend?.length) {
+        const conToken = pend.filter((a: any) => tokens.has(Number(a.customer_id)));
+        const r = await enviar(admin, tokens, conToken.map((a: any) => ({
+          customer_id: Number(a.customer_id), tipo: a.tipo, ref: a.ref, titulo: a.titulo, cuerpo: a.cuerpo ?? "", url: a.url ?? "/",
+        })));
+        const listos = pend.filter((a: any) => !tokens.has(Number(a.customer_id)) || r.ok_por.has(Number(a.customer_id))).map((a: any) => a.id);
+        if (listos.length) {
+          const { error } = await admin.from("app_cliente_avisos").update({ enviado: true }).in("id", listos);
+          if (error) console.error("no se pudieron marcar los avisos pendientes:", error.message);
+        }
+        pendientesBase = { enviados: r.enviados, errores: r.errores };
+      }
+    }
+
+    const clientes = [...tokens.keys()];
+    if (!clientes.length) return json({ ok: true, avisos: 0, motivo: "nadie con avisos encendidos", pendientes: pendientesBase });
     const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
     const masDias = (n: number) => new Date(Date.parse(`${hoy}T00:00:00Z`) + n * 86400_000).toISOString().slice(0, 10);
     const candidatos: Aviso[] = [];
@@ -315,6 +347,8 @@ Deno.serve(async (req) => {
       const { data: nuevas, error: eNu } = await admin.from("app_reservas")
         .select("id, customer_id, producto_nombre, cantidad")
         .in("customer_id", clientes).eq("estado", "pendiente")
+        // Una reserva con receta ya recibe su aviso al aprobarse (tipo `receta`).
+        .is("receta_estado", null)
         .gte("created_at", new Date(Date.now() - 2 * 3600_000).toISOString());
       if (eNu) throw eNu;
       for (const r of nuevas ?? []) {
@@ -388,7 +422,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (!candidatos.length) return json({ ok: true, avisos: 0 });
+    if (!candidatos.length) return json({ ok: true, avisos: 0, pendientes: pendientesBase });
 
     // Anotar primero: lo que ya estaba anotado NO vuelve (la UNIQUE lo frena).
     const { data: nuevos, error: eA } = await admin.from("app_cliente_avisos")
@@ -404,7 +438,7 @@ Deno.serve(async (req) => {
       const { error } = await admin.from("app_cliente_avisos").update({ enviado: true }).in("id", enviados);
       if (error) console.error("no se pudo marcar lo enviado:", error.message);
     }
-    return json({ ok: true, candidatos: candidatos.length, nuevos: aEnviar.length, enviados: r.enviados, errores: r.errores });
+    return json({ ok: true, candidatos: candidatos.length, nuevos: aEnviar.length, enviados: r.enviados, errores: r.errores, pendientes: pendientesBase });
   } catch (e) {
     console.error("[avisos-clientes]", (e as Error)?.message ?? e);
     return json({ ok: false, error: (e as Error)?.message ?? String(e) }, 500);

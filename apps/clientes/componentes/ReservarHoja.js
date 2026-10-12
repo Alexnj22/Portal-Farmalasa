@@ -7,6 +7,12 @@
 //   3. listo: el código de la reserva y a dónde verla.
 //
 // Pagar es en la sucursal, al retirar.
+//
+// Bajo receta (2026-10-12): el servidor dice si el producto la pide
+// (`reserva_existencias.receta`) y entonces el paso 2 lleva «Foto de tu
+// receta»; sin foto no se confirma. La reserva nace «en revisión», se sube la
+// foto y la sucursal decide. Si la subida falla, la reserva queda igual y la
+// foto se sube desde Mis reservas.
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
@@ -22,6 +28,8 @@ import { dolares } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
 import { navegar } from '../lib/navegar';
 import { router } from 'expo-router';
+import RecetaFoto from './RecetaFoto';
+import { subirReceta } from '../lib/fotos';
 
 const CLAVE_TERMINOS = 'puntos_salud_terminos_reserva';
 // Los colores salen del tema (cambian con el modo oscuro).
@@ -44,6 +52,8 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState(null);
   const [hecha, setHecha] = useState(null);
+  const [receta, setReceta] = useState(false);
+  const [fotoReceta, setFotoReceta] = useState(null);
   const fondo = t.oscuro ? '#121016' : '#F5F4F8';
   const superficie = t.oscuro ? '#1E1B24' : '#FFFFFF';
 
@@ -59,6 +69,7 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
       setTerminos(term?.ok ? term : null);
       const lista = (ex?.sucursales ?? []).filter((s) => !oferta.salas || oferta.salas.includes(s.sala));
       setSucursales(lista);
+      setReceta(!!ex?.receta);
       setSala(lista.find((s) => s.nivel !== 'sin')?.branch_id ?? lista[0]?.branch_id ?? null);
       // Sin condiciones o sin sucursales no se puede reservar: se dice y se
       // ofrece reintentar (antes la hoja podía quedar en blanco).
@@ -75,11 +86,17 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
   };
   const reservar = async () => {
     if (enviando || !sala) return;
+    if (receta && !fotoReceta?.uri) { setError('Agrega la foto de tu receta para continuar.'); return; }
     setEnviando(true);
     setError(null);
     const r = await pedir('reservar', {
       oferta_id: oferta.id, producto_id: producto.id, branch_id: sala, cantidad, acepta_terminos: terminos?.version,
     });
+    if (r?.ok && r.receta && fotoReceta?.uri) {
+      // La reserva ya existe: se sube la receta. Si falla, se dice y se sube luego.
+      const s = await subirReceta(pedir, r.id, fotoReceta.uri);
+      if (!s.ok) r.recetaPendiente = s.mensaje;
+    }
     setEnviando(false);
     if (r?.ok) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -100,7 +117,7 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
       <View style={{ flex: 1, backgroundColor: fondo }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18 }}>
           <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>
-            {paso === 'terminos' ? 'Antes de reservar' : paso === 'hecha' ? '¡Reservado!' : 'Reservar'}
+            {paso === 'terminos' ? 'Antes de reservar' : paso === 'hecha' ? (hecha?.receta ? 'Receta enviada' : '¡Reservado!') : 'Reservar'}
           </Text>
           <Pressable onPress={alCerrar} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cerrar">
             <Text style={{ fontSize: 17, fontWeight: '600', color: t.color.magentaTexto }}>Cerrar</Text>
@@ -190,8 +207,10 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
                 Ahora no hay en {elegida.sala}. Tu reserva queda en espera y te avisamos cuando llegue.
               </Text>
             ) : null}
+            {receta ? <RecetaFoto foto={fotoReceta} alCambiar={(f) => { setFotoReceta(f); setError(null); }} superficie={superficie} /> : null}
             {error ? <Text style={{ fontSize: 15, color: colorSistema.rojo, textAlign: 'center' }}>{error}</Text> : null}
-            <Boton texto={enviando ? 'Reservando…' : 'Reservar'} color={t.color.magenta} alTocar={reservar} deshabilitado={!sala || enviando} />
+            <Boton texto={enviando ? (receta ? 'Enviando…' : 'Reservando…') : receta ? 'Enviar para revisión' : 'Reservar'} color={t.color.magenta} alTocar={reservar}
+              deshabilitado={!sala || enviando || (receta && !fotoReceta?.uri)} />
             <Text style={{ fontSize: 13, color: colorSistema.texto3, textAlign: 'center' }}>Pagas en la sucursal al retirar. Si no puedes ir tú, puedes compartir el código de la reserva con quien la vaya a retirar.</Text>
           </ScrollView>
         ) : null}
@@ -201,8 +220,15 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
             <Icono sf="bag.fill.badge.plus" respaldo="🛍️" tam={64} color={t.color.magenta} />
             <Text style={{ fontSize: 26, fontWeight: '900', color: colorSistema.texto, textAlign: 'center' }}>Tu reserva {hecha.codigo}</Text>
             <Text style={{ fontSize: 16, lineHeight: 22, color: colorSistema.texto2, textAlign: 'center' }}>
-              Te avisamos cuando {elegida?.sala ?? 'la sucursal'} la tenga lista. Desde ese aviso tienes 24 horas para retirarla.
+              {hecha.receta
+                ? `${elegida?.sala ?? 'La sucursal'} va a revisar tu receta. Te avisamos cuando la apruebe y tu reserva quede confirmada.`
+                : `Te avisamos cuando ${elegida?.sala ?? 'la sucursal'} la tenga lista. Desde ese aviso tienes 24 horas para retirarla.`}
             </Text>
+            {hecha.recetaPendiente ? (
+              <Text style={{ fontSize: 14, lineHeight: 20, color: t.color.avisoTexto, textAlign: 'center' }}>
+                {hecha.recetaPendiente} Puedes subir la foto desde Mis reservas.
+              </Text>
+            ) : null}
             {/* Retiro por otra persona (2026-10-09): la sucursal la encuentra sólo por el código. */}
             <Text style={{ fontSize: 14, lineHeight: 20, color: colorSistema.texto3, textAlign: 'center' }}>
               Si no puedes ir tú, comparte el código desde Mis reservas con alguien de confianza: quien lo presente en la sucursal puede retirarla.

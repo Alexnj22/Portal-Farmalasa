@@ -41,7 +41,7 @@ export default function Ofertas({ invitacion = false }) {
         </Entrada>
       ) : null}
       {datos.ofertas.length === 0 ? (
-        <Vacio titulo="Pronto habrá ofertas">Cuando publiquemos una nueva aparece aquí.</Vacio>
+        <Vacio titulo="Pronto habrá ofertas" icono="tag.fill" respaldo="%">Cuando publiquemos una nueva aparece aquí.</Vacio>
       ) : null}
       {datos.ofertas.map((o, i) => (
         <Entrada key={o.id} indice={i + (invitacion ? 1 : 0)}>

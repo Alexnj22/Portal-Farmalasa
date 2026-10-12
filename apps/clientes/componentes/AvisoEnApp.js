@@ -18,7 +18,7 @@ import Icono from './Icono';
 import Vidrio from './Vidrio';
 import { colorSistema } from './sistema';
 import { estiloDeAviso, tipoDeUrl } from './estiloDeAviso';
-import { alLlegarAviso, usarBannerPropio } from '../lib/avisos';
+import { alLlegarAviso, chatALaVista, usarBannerPropio } from '../lib/avisos';
 import { useSesion } from '../lib/sesion';
 import { useBloqueo } from '../lib/bloqueo';
 import { navegar } from '../lib/navegar';
@@ -58,6 +58,8 @@ export default function AvisoEnApp() {
     if (!puede) return undefined;
     return alLlegarAviso((a) => {
       if (!a.titulo && !a.cuerpo) return;
+      // Con el chat a la vista, su respuesta ya aparece ahí (2026-10-12).
+      if (chatALaVista() && typeof a.url === 'string' && a.url.startsWith('/chat')) return;
       // Uno nuevo reemplaza al que estaba: baja otra vez desde arriba.
       y.value = FUERA;
       setAviso(a);

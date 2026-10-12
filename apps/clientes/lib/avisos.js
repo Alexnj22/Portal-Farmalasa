@@ -16,6 +16,12 @@ import * as SecureStore from 'expo-secure-store';
 let bannerPropio = false;
 export function usarBannerPropio(activo) { bannerPropio = !!activo; }
 
+// El chat abierto (2026-10-12): sus respuestas no sacan banner encima (ya se
+// ven en la conversación) y la pantalla se recarga al llegar el push.
+let chatAbierto = false;
+export function marcarChatALaVista(v) { chatAbierto = !!v; }
+export function chatALaVista() { return chatAbierto; }
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: !bannerPropio, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false,

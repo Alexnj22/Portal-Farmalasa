@@ -15,8 +15,15 @@
 // como se pagina por renglón, los de un mismo pedido terminado pueden llegar
 // en páginas distintas, y al bajar la siguiente se suman a la tarjeta que ya
 // estaba. Las reservas sueltas siguen como antes.
+//
+// Receta (2026-10-12): lo que lleva un producto bajo receta nace «en revisión»
+// y va en su propia sección, ARRIBA: sin código para retirar y sin pagar
+// (todavía se puede rechazar). Ahí se ve la foto que se mandó, el motivo si la
+// sucursal pidió otra («Subir otra foto»), y en Anteriores, «Rechazada: …».
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Platform, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Modal, Platform, Pressable, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
@@ -30,9 +37,11 @@ import { dolares, fecha } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
 import { navegar } from '../lib/navegar';
 import { useCuenta } from '../lib/cuenta';
+import { elegirFoto, preguntarOrigen, subirReceta } from '../lib/fotos';
 
 // Colores del tema (cambian con el modo oscuro y se leen sobre el vidrio).
 const ESTADO_BASE = {
+  en_revision: { texto: 'En revisión de receta', tono: 'aviso' },
   pendiente: { texto: 'En preparación', tono: 'aviso' },
   lista: { texto: '¡Lista para retirar!', tono: 'exito' },
   retirada: { texto: 'Retirada', tono: 'neutro' },
@@ -55,6 +64,7 @@ function restante(iso, ahora) {
 
 // Los filtros: la clave es la que entiende el servidor (`estado`).
 const FILTROS = [['todas', 'Todas'], ['abiertas', 'Abiertas'], ['retiradas', 'Retiradas'], ['cerradas', 'Vencidas o canceladas']];
+const ABIERTA = (r) => r.estado === 'en_revision' || r.estado === 'pendiente' || r.estado === 'lista';
 const VACIO_FILTRO = {
   abiertas: 'No tienes reservas en preparación ni listas para retirar.',
   retiradas: 'Todavía no has retirado ninguna reserva.',
@@ -163,6 +173,30 @@ export default function Reservas() {
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   useFocusEffect(useCallback(() => { pedir('pago_preparar'); }, [pedir]));
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
+
+  // Subir (otra) foto de la receta (2026-10-12): contra el primer renglón; el
+  // servidor la anota en todo el pedido.
+  const [subiendo, setSubiendo] = useState(null);
+  const subiendoYa = useRef(false);
+  const subirOtra = async (g) => {
+    if (subiendoYa.current) return;
+    const origen = await preguntarOrigen('Foto de tu receta', 'Que se lean bien el nombre del medicamento, la firma y el sello del médico.');
+    if (!origen) return;
+    const f = await elegirFoto(origen);
+    if (!f) return;
+    if (f.error) { Alert.alert('No se pudo usar la foto', f.error); return; }
+    subiendoYa.current = true;
+    setSubiendo(g.clave);
+    try {
+      const r = await subirReceta(pedir, g.filas[0].id, f.uri);
+      if (r.ok) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      else Alert.alert('No se pudo enviar la receta', r.mensaje);
+      await cargar();
+    } finally {
+      subiendoYa.current = false;
+      setSubiendo(null);
+    }
+  };
   useEffect(() => { const id = setInterval(() => setAhora(Date.now()), 30000); return () => clearInterval(id); }, []);
 
   // Un pedido se cancela entero: cada renglón por su cuenta (la misma acción
@@ -258,11 +292,14 @@ export default function Reservas() {
   // Un pedido del carrito cuenta (y se muestra) como UNA tarjeta.
   const esResaltado = (g) => g.filas.some((r) => String(r.id) === String(resaltar));
   const primero = (a, b) => esResaltado(b) - esResaltado(a);
-  const gruposAbiertos = agruparPorPedido(d.reservas.filter((r) => r.estado === 'pendiente' || r.estado === 'lista'));
+  const todosAbiertos = agruparPorPedido(d.reservas.filter(ABIERTA));
+  // Con receta en revisión, el grupo entero espera (todo el pedido).
+  const enRevision = todosAbiertos.filter((g) => g.filas.some((r) => r.estado === 'en_revision')).sort(primero);
+  const gruposAbiertos = todosAbiertos.filter((g) => !g.filas.some((r) => r.estado === 'en_revision'));
   const listas = gruposAbiertos.filter((g) => estadoDeGrupo(g) === 'lista').sort(primero);
   const preparando = gruposAbiertos.filter((g) => estadoDeGrupo(g) === 'pendiente').sort(primero);
-  const abiertas = [...listas, ...preparando];
-  const cerradas = agruparPorPedido(d.reservas.filter((r) => r.estado !== 'pendiente' && r.estado !== 'lista'));
+  const abiertas = [...enRevision, ...listas, ...preparando];
+  const cerradas = agruparPorPedido(d.reservas.filter((r) => !ABIERTA(r)));
   const tarjeta = (g, i) => {
     const r = g.filas[0];
     return (
@@ -285,11 +322,18 @@ export default function Reservas() {
         </>
       ) : null}
       {filtro !== 'todas' && !d.reservas.length ? <Vacio titulo="Nada por aquí">{VACIO_FILTRO[filtro]}</Vacio> : null}
-      {abiertas.length ? <ResumenReservas listas={listas.length} preparando={preparando.length} /> : null}
+      {abiertas.length ? <ResumenReservas listas={listas.length} preparando={preparando.length + enRevision.length} /> : null}
+      {enRevision.length ? <Seccion texto="Receta en revisión" n={enRevision.length} /> : null}
+      {enRevision.map((g, i) => (
+        <Entrada key={`v:${g.clave}`} indice={Math.min(i, 8)}>
+          <EnRevision g={g} resaltada={esResaltado(g)} alSubir={() => subirOtra(g)} subiendo={subiendo === g.clave}
+            alCancelar={() => (g.filas.length > 1 ? cancelarPedido(g) : cancelar(g.filas[0]))} />
+        </Entrada>
+      ))}
       {listas.length ? <Seccion texto="Listas para retirar" n={listas.length} /> : null}
-      {listas.map((g, i) => tarjeta(g, i))}
+      {listas.map((g, i) => tarjeta(g, enRevision.length + i))}
       {preparando.length ? <Seccion texto="En preparación" n={preparando.length} /> : null}
-      {preparando.map((g, i) => tarjeta(g, listas.length + i))}
+      {preparando.map((g, i) => tarjeta(g, enRevision.length + listas.length + i))}
       {cerradas.length && filtro === 'todas' ? <Seccion texto="Anteriores" /> : null}
       {cerradas.map((g, i) => (
         <Entrada key={`c:${g.clave}`} indice={Math.min(abiertas.length + i, 8)}>
@@ -785,6 +829,7 @@ function PedidoCerrado({ g }) {
           </View>
         </View>
       ) : null}
+      <Rechazada r={g.filas.find((f) => f.receta_estado === 'rechazada')} />
       {g.filas.map((f) => <SaldoAFavor key={f.id} r={f} />)}
     </Tarjeta>
   );
@@ -820,8 +865,101 @@ function ReservaCerrada({ r }) {
           </View>
         ) : null}
       </View>
+      <Rechazada r={r.receta_estado === 'rechazada' ? r : null} />
       {/* El anticipo de una vencida queda a favor 30 días: se ve también acá, que es donde vive la vencida. */}
       <SaldoAFavor r={r} />
+    </Tarjeta>
+  );
+}
+
+// La receta rechazada (2026-10-12): la reserva se canceló por eso, y el motivo
+// lo escribió la sucursal.
+function Rechazada({ r }) {
+  const t = useTema();
+  if (!r) return null;
+  return (
+    <View style={{ borderRadius: 14, padding: 12, gap: 2, backgroundColor: FONDOS.peligro }}>
+      <Text style={{ fontSize: 14, fontWeight: '800', color: t.color.peligroTexto }}>Receta rechazada{r.receta_motivo ? `: ${r.receta_motivo}` : ''}</Text>
+      <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>Si tienes dudas, escríbenos desde «Pregúntale a la farmacia».</Text>
+    </View>
+  );
+}
+
+// Una reserva o un pedido con la receta en revisión (2026-10-12). Sin código
+// para retirar y sin pagar: la sucursal todavía la puede rechazar.
+function EnRevision({ g, resaltada, alSubir, subiendo, alCancelar }) {
+  const t = useTema();
+  const ins = useSafeAreaInsets();
+  const r = g.filas[0];
+  const [verFoto, setVerFoto] = useState(false);
+  const estado = r.receta_estado; // null (falta la foto) · 'pendiente' · 'otra_foto'
+  const pide = estado == null || estado === 'otra_foto';
+  const e = estadoDe(t, 'en_revision');
+  const pildora = estado === 'otra_foto' ? { ...e, texto: 'Necesitamos otra foto' } : estado == null ? { ...e, texto: 'Falta la foto de tu receta' } : e;
+  const domicilio = r.entrega === 'domicilio';
+  const total = r.total_pedido ?? g.filas.reduce((n, f) => n + totalDeFila(f), 0);
+  return (
+    <Tarjeta tono={resaltada ? t.color.magenta : undefined} estilo={{ gap: 14 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        {pide ? <Latido><Pildora e={pildora} /></Latido> : <Pildora e={pildora} />}
+        <Text style={{ fontSize: 13, fontWeight: '800', color: colorSistema.texto3, fontVariant: ['tabular-nums'] }}>{g.pedido ?? r.codigo}</Text>
+      </View>
+      <View style={{ gap: 4 }}>
+        {g.filas.map((f) => (
+          <Text key={f.id} style={{ fontSize: g.filas.length > 1 ? 15 : 20, fontWeight: '800', color: colorSistema.texto }}>
+            {g.filas.length > 1 ? `${f.cantidad} × ` : ''}{f.producto_nombre}
+          </Text>
+        ))}
+      </View>
+      {estado === 'otra_foto' ? (
+        <View style={{ borderRadius: 14, padding: 12, gap: 4, backgroundColor: FONDOS.aviso }}>
+          <Text style={{ fontSize: 14, fontWeight: '800', color: t.color.avisoTexto }}>La sucursal necesita otra foto de tu receta</Text>
+          {r.receta_motivo ? <Text style={{ fontSize: 14, lineHeight: 20, color: colorSistema.texto }}>«{r.receta_motivo}»</Text> : null}
+        </View>
+      ) : (
+        <Text style={{ fontSize: 14, lineHeight: 20, color: colorSistema.texto2 }}>
+          {estado == null
+            ? 'Sube la foto de tu receta para que la sucursal pueda revisarla y confirmar tu reserva.'
+            : `${r.sala ?? 'La sucursal'} está revisando tu receta. Cuando la apruebe te avisamos, y ahí ya puedes pagarla y retirarla.`}
+        </Text>
+      )}
+      {pide ? (
+        <Boton alTocar={alSubir} cargando={subiendo}>{estado == null ? 'Subir la foto de mi receta' : 'Subir otra foto'}</Boton>
+      ) : null}
+      <View>
+        {r.receta_url ? (
+          <>
+            <Dato sf="doc.text.image" rotulo="Tu receta" valor={r.receta_subida_at ? `Enviada ${fechaHora(r.receta_subida_at)}` : 'Enviada'}
+              accion={{ texto: 'Ver', alTocar: () => setVerFoto(true) }} />
+            <Separador />
+          </>
+        ) : null}
+        {domicilio ? (
+          <Dato sf="house.fill" rotulo="Entrega" valor="A domicilio" detalle={r.direccion_entrega} />
+        ) : (
+          <Dato sf="storefront.fill" rotulo="Retiro en sucursal" valor={r.sala ?? 'Sucursal'} detalle={r.sala_direccion} />
+        )}
+        <Separador />
+        <Dato sf="clock" rotulo="Pago" valor="Después de la revisión" detalle="No se cobra nada hasta que la sucursal apruebe tu receta." />
+      </View>
+      {r.precio_unitario != null ? (
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', paddingTop: 12, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
+          <Text style={{ fontSize: 12, fontWeight: '700', color: colorSistema.texto3 }}>TOTAL</Text>
+          <Text style={{ fontSize: 22, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(total)}</Text>
+        </View>
+      ) : null}
+      <Pressable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
+        <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.rojo }}>{g.filas.length > 1 ? 'Cancelar pedido' : 'Cancelar reserva'}</Text>
+      </Pressable>
+      <Modal visible={verFoto} animationType="fade" presentationStyle="overFullScreen" transparent onRequestClose={() => setVerFoto(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', paddingTop: ins.top + 12, paddingBottom: ins.bottom + 12 }}>
+          <Pressable onPress={() => setVerFoto(false)} accessibilityRole="button" accessibilityLabel="Cerrar" hitSlop={12}
+            style={{ alignSelf: 'flex-end', paddingHorizontal: 18, minHeight: 44, justifyContent: 'center' }}>
+            <Text style={{ fontSize: 17, fontWeight: '700', color: '#FFFFFF' }}>Cerrar</Text>
+          </Pressable>
+          {r.receta_url ? <Image source={{ uri: r.receta_url }} style={{ flex: 1 }} contentFit="contain" accessibilityLabel="Foto de tu receta" /> : null}
+        </View>
+      </Modal>
     </Tarjeta>
   );
 }

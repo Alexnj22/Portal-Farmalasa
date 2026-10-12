@@ -2,6 +2,10 @@
 // laboratorio, cada presentación con su precio de viñeta y su precio VIP, y en
 // qué sucursal hay. «Consultar» abre WhatsApp con la empresa y el nombre del
 // producto. Hoja del sistema que se cierra deslizando hacia abajo.
+//
+// 2026-10-12: lo bajo receta YA se agrega al carrito (al reservar se pide la
+// foto de la receta), y quien tiene precio de mayoreo lo ve como el principal
+// («Tu precio Mayoreo»), con la viñeta tachada (lib/precioTuyo.js).
 import { useEffect, useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { MAX_UNIDADES, useCarrito } from '../../lib/carrito';
@@ -20,6 +24,7 @@ import { nombreProducto, recordarVisto } from '../../lib/catalogo';
 import { suave, useTema } from '../../tema/tema';
 import { navegar } from '../../lib/navegar';
 import { seguirSiYaReservado } from '../../lib/reservaDuplicada';
+import { datosDePrecio, precioFinal, rotuloPrecioTuyo } from '../../lib/precioTuyo';
 
 const ESTADO = {
   hay: { texto: 'Disponible', sf: 'checkmark.circle.fill', tono: 'exito' },
@@ -38,7 +43,7 @@ export default function Producto() {
   const [encargando, setEncargando] = useState(false);
   const cargar = () => {
     setD(null);
-    llamar('catalogo_producto', { id: Number(id) }).then((r) => {
+    llamar('catalogo_producto', { id: Number(id), ...datosDePrecio() }).then((r) => {
       setD(r ?? { ok: false });
       if (r?.ok) {
         const pm = [...(r.producto.presentaciones ?? [])].sort((a, b) => (b.factor ?? 1) - (a.factor ?? 1))[0];
@@ -78,14 +83,14 @@ export default function Producto() {
   const elegidaP = (p.presentaciones ?? []).find((x) => (x.factor ?? 1) === elegida_factor) ?? mayor;
   const agregar = async (x, n = 1) => {
     if (!x) return;
-    if (p.bajo_receta) { Alert.alert('Bajo receta', 'Este producto se compra en la sucursal presentando la receta.'); return; }
     // Si ya está reservado, se pregunta antes (2026-10-09). Para ver la
     // reserva primero se cierra esta hoja.
     const seguir = await seguirSiYaReservado(p.id, {
       alVer: (r) => { router.back(); setTimeout(() => navegar(`/reservas?resaltar=${r.id}`), 300); },
     });
     if (!seguir) return;
-    const ok = useCarrito.getState().agregar({ id: p.id, nombre: p.nombre, foto: p.foto, tipo: x.tipo, factor: x.factor ?? 1, precio: x.precio, precio_vip: x.precio_vip }, n);
+    const ok = useCarrito.getState().agregar({ id: p.id, nombre: p.nombre, foto: p.foto, tipo: x.tipo, factor: x.factor ?? 1, precio: x.precio, precio_vip: x.precio_vip,
+      precio_tuyo: x.precio_tuyo ?? null, precio_tuyo_nombre: x.precio_tuyo_nombre ?? null, receta: !!p.bajo_receta }, n);
     if (!ok) { Alert.alert('Carrito lleno', 'El carrito admite hasta 10 productos distintos.'); return; }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     setCant(1);
@@ -122,27 +127,39 @@ export default function Producto() {
         </View>
 
         {/* Precios: cada presentación con el de viñeta y el Preferente (antes «VIP», Procedimiento de Clientes §1); se toca la que se quiere. */}
-        <Titular texto={p.bajo_receta ? 'Precios' : 'Elige la presentación'} />
+        <Titular texto="Elige la presentación" />
         <View style={{ marginHorizontal: 16, borderRadius: 20, backgroundColor: superficie, overflow: 'hidden' }}>
           {(p.presentaciones ?? []).map((x, i) => {
-            const ahorro = x.precio_vip != null ? x.precio - x.precio_vip : 0;
+            const ahorro = precioFinal(x) < x.precio ? x.precio - precioFinal(x) : 0;
+            const suyo = rotuloPrecioTuyo(x);
             const elegida = (x.factor ?? 1) === (elegida_factor ?? -1);
             return (
               <View key={i}>
                 {i > 0 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 16 }} /> : null}
-                <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setSel(x.factor ?? 1); }} disabled={p.bajo_receta}
+                <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setSel(x.factor ?? 1); }}
                   accessibilityRole="radio" accessibilityState={{ selected: elegida }}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14,
                     backgroundColor: elegida ? suave(t.color.magenta, t.oscuro ? 0.18 : 0.08) : 'transparent' }}>
-                  {!p.bajo_receta ? <Icono sf={elegida ? 'checkmark.circle.fill' : 'circle'} respaldo="" tam={22} color={elegida ? t.color.magenta : colorSistema.texto3} /> : null}
+                  <Icono sf={elegida ? 'checkmark.circle.fill' : 'circle'} respaldo="" tam={22} color={elegida ? t.color.magenta : colorSistema.texto3} />
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text style={{ fontSize: 16, fontWeight: '600', color: colorSistema.texto }}>{nombreProducto(x.tipo)}</Text>
                     {ahorro >= 0.01 ? (
-                      <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.verdeTexto }}>Ahorras {dolares(ahorro)} con tu tarjeta</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.verdeTexto }}>Ahorras {dolares(ahorro)}{suyo ? '' : ' con tu tarjeta'}</Text>
+                    ) : null}
+                    {suyo && x.precio_tuyo_sin_puntos ? (
+                      <Text style={{ fontSize: 12, color: colorSistema.texto3 }}>A precio de personal no acumula puntos</Text>
                     ) : null}
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
-                    {x.precio_vip != null ? (
+                    {suyo ? (
+                      <>
+                        <Text style={{ fontSize: 13, color: colorSistema.texto3, textDecorationLine: 'line-through', fontVariant: ['tabular-nums'] }}>{dolares(x.precio)}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 5 }}>
+                          <Text style={{ fontSize: 11, fontWeight: '800', color: t.color.magentaTexto }}>{suyo.toUpperCase()}</Text>
+                          <Text style={{ fontSize: 20, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(x.precio_tuyo)}</Text>
+                        </View>
+                      </>
+                    ) : x.precio_vip != null ? (
                       <>
                         <Text style={{ fontSize: 13, color: colorSistema.texto3, textDecorationLine: 'line-through', fontVariant: ['tabular-nums'] }}>{dolares(x.precio)}</Text>
                         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 5 }}>
@@ -162,6 +179,11 @@ export default function Producto() {
         <Text style={{ fontSize: 13, color: colorSistema.texto3, marginHorizontal: 32, marginTop: 8 }}>
           El precio Preferente es para quien tiene cuenta en Puntos Salud: muestra tu tarjeta en caja.
         </Text>
+        {p.bajo_receta ? (
+          <Text style={{ fontSize: 13, color: colorSistema.texto2, marginHorizontal: 32, marginTop: 6 }}>
+            Bajo receta: al reservarlo te pedimos una foto de tu receta, y la sucursal la revisa antes de confirmar tu pedido.
+          </Text>
+        ) : null}
 
         {/* Dónde hay. */}
         <Titular texto="En nuestras sucursales" />
@@ -196,10 +218,11 @@ export default function Producto() {
             <Icono sf="shippingbox.fill" respaldo="📦" tam={17} color="#FFFFFF" />
             <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '800' }}>Pedir por encargo</Text>
           </Pressable>
-        ) : p.bajo_receta ? (
+        ) : p.bajo_receta && !(p.existencias ?? []).length ? (
+          // Bajo receta y sin existencia: no se encarga desde la app (se pide con la receta en la sucursal).
           <View style={{ flex: 1, minHeight: 54, borderRadius: 999, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14,
             backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)' }}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto2, textAlign: 'center' }}>Bajo receta: se compra en la sucursal</Text>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto2, textAlign: 'center' }}>Sin existencia: consúltalo en la sucursal</Text>
           </View>
         ) : (
           <>
@@ -216,13 +239,13 @@ export default function Producto() {
               </Pressable>
             </View>
             <Pressable onPress={() => agregar(elegidaP, cant)} disabled={!elegidaP} accessibilityRole="button"
-              accessibilityLabel={`Agregar ${cant} al carrito por ${elegidaP ? dolares((elegidaP.precio_vip ?? elegidaP.precio) * cant) : ''}`}
+              accessibilityLabel={`Agregar ${cant} al carrito por ${elegidaP ? dolares(precioFinal(elegidaP) * cant) : ''}`}
               style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 54, borderRadius: 999,
                 backgroundColor: t.color.magenta, transform: [{ scale: pressed ? 0.97 : 1 }],
                 shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } })}>
               <Icono sf="cart.badge.plus" respaldo="+" tam={17} color="#FFFFFF" />
               <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
-                Agregar{elegidaP ? ` · ${dolares((elegidaP.precio_vip ?? elegidaP.precio) * cant)}` : ''}
+                Agregar{elegidaP ? ` · ${dolares(precioFinal(elegidaP) * cant)}` : ''}
               </Text>
             </Pressable>
           </>

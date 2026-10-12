@@ -55,7 +55,7 @@ export default function Inyecciones() {
   if (datos.pendiente) {
     return (
       <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
-        <Vacio titulo="Disponible al completar tu ficha">Cuando completes tu registro en sala verás aquí tus inyecciones.</Vacio>
+        <Vacio titulo="Disponible al completar tu ficha" icono="syringe.fill" respaldo="✚">Cuando completes tu registro en sala verás aquí tus inyecciones.</Vacio>
       </Pantalla>
     );
   }

@@ -52,7 +52,8 @@ export async function seguirSiYaReservado(productoId, { alVer } = {}) {
 
   const r = suyas.find((x) => x.estado === 'lista') ?? suyas[0];
   const nombre = nombreProducto(r.producto_nombre ?? 'este producto');
-  const estado = r.estado === 'lista' ? 'ya está lista para retirar' : 'la sucursal la está preparando';
+  const estado = r.estado === 'lista' ? 'ya está lista para retirar'
+    : r.estado === 'en_revision' ? 'espera la revisión de la receta' : 'la sucursal la está preparando';
   const mensaje = suyas.length > 1
     ? `Tienes ${suyas.length} reservas abiertas de ${nombre}. La ${r.codigo} ${estado}.`
     : `Tu reserva ${r.codigo} de ${nombre} ${estado}. ¿Es correcta o quieres cambiarla?`;

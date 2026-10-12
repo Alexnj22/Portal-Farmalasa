@@ -22,6 +22,9 @@ export const useModoPrueba = create((set) => ({
   mayorista: null,
   // Ver la app como empleado (tarjeta de Equipo).
   empleado: false,
+  // Precios de mayoreo en el catálogo (2026-10-12): null = según el rango de
+  // muestra; 'no' | 'mayoreo' | 'mayoreo_plus' = elegido a mano (lib/precioTuyo.js).
+  precio: null,
   // El logo central: 'color' (velo de la marca) o 'material' (sólo relieve), para comparar.
   logo: 'material',
   // Cambia con «Volver a tapar el cupón»: un id nuevo se puede raspar otra vez.
@@ -38,12 +41,13 @@ export const useModoPrueba = create((set) => ({
   cargar: async () => {
     try {
       const v = JSON.parse((await SecureStore.getItemAsync(CLAVE)) ?? 'null');
-      if (v) set({ activo: !!v.activo, nivel: v.nivel ?? 'oro', mayorista: v.mayorista ?? null, empleado: !!v.empleado, logo: v.logo === 'color' ? 'color' : 'material' });
+      if (v) set({ activo: !!v.activo, nivel: v.nivel ?? 'oro', mayorista: v.mayorista ?? null, empleado: !!v.empleado, logo: v.logo === 'color' ? 'color' : 'material',
+        precio: ['no', 'mayoreo', 'mayoreo_plus'].includes(v.precio) ? v.precio : null });
     } catch { /* sin guardar */ }
   },
   poner: (cambio) => set((x) => {
     const nuevo = { ...x, ...cambio };
-    SecureStore.setItemAsync(CLAVE, JSON.stringify({ activo: nuevo.activo, nivel: nuevo.nivel, mayorista: nuevo.mayorista, empleado: nuevo.empleado, logo: nuevo.logo })).catch(() => {});
+    SecureStore.setItemAsync(CLAVE, JSON.stringify({ activo: nuevo.activo, nivel: nuevo.nivel, mayorista: nuevo.mayorista, empleado: nuevo.empleado, logo: nuevo.logo, precio: nuevo.precio })).catch(() => {});
     return nuevo;
   }),
 }));

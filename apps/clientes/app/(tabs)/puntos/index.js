@@ -149,7 +149,7 @@ export default function Puntos() {
       ) : null}
       <SubisteDeNivel nivel={resumen.nivel} forzar={verNivel === '1'} mayoreo={mayorista ? (mayoristaReal ?? rangoDePrueba(mayorista)) : null}
         forzarRango={verRango === '1'} forzarPrecio={verPrecio === '1'} forzarBienvenida={verMayoreo === '1'} />
-      <Cumpleanos activo={!!resumen.cumpleanos} forzar={cumple === '1'} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
+      <Cumpleanos activo={!!resumen.cumpleanos} forzar={cumple ? String(cumple) : false} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
       {/* Encima de todo (zIndex): la tarjeta de abajo gira y se escala, y no puede tapar la campana. */}
       <Entrada indice={0} estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 2 }}>
         <Texto nivel={2} estilo={{ fontSize: 17 }}>{resumen.cumpleanos ? `¡Feliz cumpleaños, ${primerNombre}!` : `Hola, ${primerNombre}`}</Texto>

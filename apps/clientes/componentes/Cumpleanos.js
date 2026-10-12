@@ -32,7 +32,9 @@ export default function Cumpleanos({ activo, nombre, puntos, forzar = false }) {
   const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
 
   useEffect(() => {
-    if (!activo) return;
+    // (2026-10-12) Forzada (modo de prueba o aviso) se muestra aunque hoy no
+    // sea el cumpleaños: antes `!activo` la apagaba y el botón de prueba no hacía nada.
+    if (!activo && !forzar) return;
     // `forzar`: llegó tocando el aviso de cumpleaños — se muestra aunque ya
     // se haya visto hoy (si no, el aviso abría la app y no pasaba nada).
     SecureStore.getItemAsync(CLAVE).catch(() => null).then((visto) => {

@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1267.5 — subir-android --compartir (uso compartido interno)
+
+- `subir-android.mjs --compartir` sube el `.aab` a «uso compartido interno de apps» y devuelve un enlace para instalarlo. No pide la llave aprobada ni el versionCode, pero sí que la app esté publicada: con la Puntos Salud vieja «No publicada», Google contesta `400 NOT_PUBLISHED`.
+- Farmalasa 1.0.0 (12) subida a la prueba interna desde el `main` del 2026-10-12. Trae la auditoría de calidad de la app y el «vale $1.30» de los puntos, que la v11 no tenía.
+
 ## v2.1267.4 — mayorista_rango declarada en el manifiesto de planes
 
 _(pendiente de redactar)_

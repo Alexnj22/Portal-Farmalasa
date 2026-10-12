@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1274.1 — Chat: horario real de las sucursales y mensajes editables
+
+- El chat ya no usa un horario fijo: `farmacia_estado()` junta el horario de cada sucursal (`horario_de_sala`): un **horario especial** cargado para esa fecha (`sucursal_horario_especial`: cerrada o abre/cierra distinto) > **feriado** (tabla de feriados → horario de domingo de la sala) > el horario semanal. La farmacia está «en línea» si al menos una sala está abierta; dice hasta qué hora y, cerrada, cuándo abre («mañana a las 7:00 a. m.»).
+- Las respuestas automáticas salen de `app_chat_ajustes` (editables en el portal) con `{abre}` y `{cierra}` reemplazados por el horario real.
+
 ## v2.1274.0 — Chat: horario de atención, burbuja flotante, estados y panel del cliente
 
 - **Horario de atención 7:00–22:00** (decisión del usuario: abre la primera sucursal, cierra la última). En la app, el chat muestra siempre «Farmacia en línea» o «Farmacia fuera de horario». Cada mensaje del cliente recibe una **respuesta automática** (una por turno, no se repite en 10 h): en horario, «en un momento te atiende alguien»; fuera, «te responderemos a la brevedad cuando abramos, a las 7:00 a. m.». El cron `avisos-clientes-minuto` pasa a cubrir 7:00–21:59 (antes 8:00–19:59): una respuesta de las 20:30 ya no llega al día siguiente.

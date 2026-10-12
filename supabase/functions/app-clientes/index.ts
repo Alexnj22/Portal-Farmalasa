@@ -150,9 +150,45 @@ const nombreCortoEmpleado = (e: any) => {
   const p = String(e?.name ?? "").trim().split(/\s+/).filter(Boolean);
   return p.length <= 2 ? p.join(" ") : `${p[0]} ${p[2]}`;
 };
-// Horario de atención del chat (2026-10-12, decisión del usuario): de 7:00 a
-// 22:00 de El Salvador — abre la primera sucursal y cierra la última.
-const enHorarioSV = () => { const h = new Date(Date.now() - 6 * 3600_000).getUTCHours(); return h >= 7 && h < 22; };
+// Horario de atención del chat (2026-10-12, decisión del usuario): el de las
+// SUCURSALES, no un número fijo — `farmacia_estado()` junta los horarios de
+// todas (horario especial del día > feriado con horario de domingo > semana).
+// Abierta si al menos una lo está. Se guarda un minuto por instancia.
+// deno-lint-ignore no-explicit-any
+let estadoCache: { en: number; v: any } | null = null;
+const horaBonita = (hm: string | null) => {
+  if (!hm) return null;
+  const [h, m] = hm.split(":").map(Number);
+  return `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")} ${h < 12 ? "a. m." : "p. m."}`;
+};
+const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+// deno-lint-ignore no-explicit-any
+async function horarioFarmacia(admin: any) {
+  if (!estadoCache || Date.now() - estadoCache.en > 60_000) {
+    const { data, error } = await admin.rpc("farmacia_estado");
+    if (error) {
+      console.error("farmacia_estado:", error.message);
+      // Sin el dato, se supone abierta de 7 a 22 (lo que era fijo antes).
+      const h = new Date(Date.now() - 6 * 3600_000).getUTCHours();
+      return { abierta: h >= 7 && h < 22, cierra: "10:00 p. m.", abre: "a las 7:00 a. m.", feriado: null, texto: "" };
+    }
+    estadoCache = { en: Date.now(), v: data };
+  }
+  const e = estadoCache.v ?? {};
+  const cierra = horaBonita(e.cierra);
+  let abre: string | null = null;
+  if (e.abre) {
+    const [fecha, hm] = String(e.abre).split("T");
+    const hoy = hoySV();
+    const manana = new Date(Date.parse(`${hoy}T12:00:00Z`) + 86400_000).toISOString().slice(0, 10);
+    const dia = fecha === hoy ? "hoy" : fecha === manana ? "mañana" : `el ${DIAS[new Date(`${fecha}T12:00:00Z`).getUTCDay()]}`;
+    abre = `${dia} a las ${horaBonita(hm)}`;
+  }
+  const texto = e.abierta
+    ? `Atendemos hasta las ${cierra}${e.feriado ? ` (${e.feriado})` : ""}. Te respondemos en unos minutos.`
+    : `Escríbenos igual: te responderemos a la brevedad cuando abramos${abre ? `, ${abre}` : ""}.`;
+  return { abierta: !!e.abierta, cierra, abre, feriado: e.feriado ?? null, texto };
+}
 
 const VERSION_AVISO = `${TEXTOS.version} · ${TEXTOS.aviso}`;
 
@@ -1046,8 +1082,8 @@ Deno.serve(async (req) => {
       }));
     };
     if (accion === "chat_mensajes") {
-      const [cv, mia] = await Promise.all([convDe(), fotoDePerfil()]);
-      const base = { ok: true, fuera_de_horario: !enHorarioSV(), mi_foto: mia.url };
+      const [cv, mia, hor] = await Promise.all([convDe(), fotoDePerfil(), horarioFarmacia(admin)]);
+      const base = { ok: true, fuera_de_horario: !hor.abierta, horario: { abierta: hor.abierta, texto: hor.texto, feriado: hor.feriado }, mi_foto: mia.url };
       if (!cv) return json({ ...base, mensajes: [], hay_mas: false, sin_leer: 0 });
       const desde = Number(body?.desde_id), antes = Number(body?.antes_id);
       const COLS_CHAT = "id, autor, employee_id, texto, foto_ruta, adjunto, created_at";
@@ -1100,23 +1136,30 @@ Deno.serve(async (req) => {
       // Respuesta automática (2026-10-12): el cliente siempre sabe que lo
       // recibimos y cuándo le contestan. Una por turno: no se repite si ya hubo
       // una en las últimas 10 horas.
-      const abierto = enHorarioSV();
+      const hor = await horarioFarmacia(admin);
+      const abierto = hor.abierta;
       let auto: any = null;
       const { data: previa, error: eP } = await admin.from("app_chat_mensajes").select("id")
         .eq("conversacion_id", cv.id).eq("autor", "sistema").gte("created_at", new Date(Date.now() - 10 * 3600_000).toISOString()).limit(1);
       if (eP) console.error("chat_enviar: respuesta automática", eP.message);
       if (!eP && !previa?.length) {
+        // Los textos los edita el equipo en el portal (`app_chat_ajustes`),
+        // con {abre} y {cierra} reemplazados por el horario real.
+        const { data: aj, error: eAj } = await admin.from("app_chat_ajustes").select("mensaje_abierto, mensaje_cerrado").eq("id", true).maybeSingle();
+        if (eAj) console.error("chat_enviar: ajustes", eAj.message);
+        const plantilla = (abierto ? aj?.mensaje_abierto : aj?.mensaje_cerrado)
+          ?? (abierto ? "¡Gracias por escribirnos! Recibimos tu mensaje y en un momento te atiende alguien de nuestro equipo."
+            : "¡Gracias por escribirnos! En este momento estamos fuera de horario. Te responderemos a la brevedad cuando abramos, {abre}.");
+        const texto = String(plantilla).replaceAll("{abre}", hor.abre ?? "en nuestro próximo horario")
+          .replaceAll("{cierra}", hor.cierra ?? "");
         const { data: a, error: eA } = await admin.from("app_chat_mensajes").insert({
-          conversacion_id: cv.id, autor: "sistema",
-          texto: abierto
-            ? "¡Gracias por escribirnos! Recibimos tu mensaje y en un momento te atiende alguien de nuestro equipo."
-            : "¡Gracias por escribirnos! En este momento estamos fuera de horario (atendemos de 7:00 a. m. a 10:00 p. m.). Te responderemos a la brevedad cuando abramos.",
+          conversacion_id: cv.id, autor: "sistema", texto,
         }).select("id, autor, employee_id, texto, foto_ruta, adjunto, created_at").single();
         if (eA) console.error("chat_enviar: respuesta automática", eA.message);
         else auto = a;
       }
       const armados = await armarMensajes(auto ? [m, auto] : [m]);
-      return json({ ok: true, mensaje: armados[0], automatico: armados[1] ?? null, fuera_de_horario: !abierto });
+      return json({ ok: true, mensaje: armados[0], automatico: armados[1] ?? null, fuera_de_horario: !abierto, horario: { abierta: hor.abierta, texto: hor.texto, feriado: hor.feriado } });
     }
     if (accion === "chat_leido") {
       const ahora = new Date().toISOString();

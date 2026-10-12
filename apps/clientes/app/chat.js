@@ -42,7 +42,7 @@ const diaDe = (iso) => {
 };
 const iniciales = (n) => String(n ?? '').trim().split(/\s+/).slice(0, 2).map((p) => p[0] ?? '').join('').toUpperCase() || '·';
 // La hora de El Salvador (UTC-6, sin horario de verano), por si el servidor no contestó.
-// Atendemos de 7:00 a 22:00 (hora de El Salvador), como las sucursales.
+// Mientras llega el horario real del servidor: 7:00 a 22:00 de El Salvador.
 const fueraDeHorarioLocal = () => { const h = new Date(Date.now() - 6 * 3600_000).getUTCHours(); return h < 7 || h >= 22; };
 
 export default function Chat() {
@@ -52,6 +52,8 @@ export default function Chat() {
   const [mensajes, setMensajes] = useState(null);
   const [hayMas, setHayMas] = useState(false);
   const [fuera, setFuera] = useState(fueraDeHorarioLocal());
+  // El texto del horario lo arma el servidor con el horario REAL de las sucursales (2026-10-12).
+  const [horario, setHorario] = useState(null);
   const [error, setError] = useState(null);
   const [pendiente, setPendiente] = useState(false);
   const [texto, setTexto] = useState('');
@@ -79,6 +81,7 @@ export default function Chat() {
     if (!r?.ok) { setError(r?.mensaje ?? 'Revisa tu conexión.'); setMensajes((x) => x ?? []); return; }
     setError(null);
     setFuera(!!r.fuera_de_horario);
+    if (r.horario) setHorario(r.horario);
     setHayMas(!!r.hay_mas);
     anotarUltimo(r.mensajes);
     setMensajes(r.mensajes);
@@ -94,6 +97,7 @@ export default function Chat() {
       const r = await pedir('chat_mensajes', { desde_id: ultimoId.current });
       if (!r?.ok || !r.mensajes?.length) { if (r?.ok) setFuera(!!r.fuera_de_horario); return; }
       setFuera(!!r.fuera_de_horario);
+      if (r.horario) setHorario(r.horario);
       anotarUltimo(r.mensajes);
       setMensajes((ant) => {
         const vistos = new Set((ant ?? []).map((m) => m.id));
@@ -150,6 +154,7 @@ export default function Chat() {
       const r = await pedir('chat_enviar', { texto: tx, foto_ruta: fotoRuta });
       if (!r?.ok) throw new Error(r?.mensaje ?? 'No se pudo enviar. Revisa tu conexión.');
       if (typeof r.fuera_de_horario === 'boolean') setFuera(r.fuera_de_horario);
+      if (r.horario) setHorario(r.horario);
       anotarUltimo([r.mensaje]);
       setMensajes((ant) => {
         const sin = (ant ?? []).filter((m) => m.id !== r.mensaje.id && m.id !== r.automatico?.id).map((m) => (m.id === tmp.id ? r.mensaje : m));
@@ -230,8 +235,8 @@ export default function Chat() {
                   {fuera ? 'Farmacia fuera de horario' : 'Farmacia en línea'}
                 </Text>
                 <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>
-                  {fuera ? 'Escríbenos igual: te responderemos a la brevedad cuando abramos, a las 7:00 a. m.'
-                    : 'Atendemos de 7:00 a. m. a 10:00 p. m. Te respondemos en unos minutos.'}
+                  {horario?.texto || (fuera ? 'Escríbenos igual: te responderemos a la brevedad cuando abramos.'
+                    : 'Te respondemos en unos minutos.')}
                 </Text>
               </View>
             </View>

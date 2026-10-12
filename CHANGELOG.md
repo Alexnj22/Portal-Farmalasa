@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1267.5 — gate:perf y gate:receta en verde; resumen de mayoristas sin totales inflados
+
+_(pendiente de redactar)_
+
 ## v2.1267.4 — mayorista_rango declarada en el manifiesto de planes
 
 _(pendiente de redactar)_

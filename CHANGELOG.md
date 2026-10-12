@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1268.3 — App: Metro encuentra @zxing en un worktree
+
+- `apps/mobile/metro.config.js` vigila `@zxing/library` y `ts-custom-error` por su ruta **real**. En un worktree `node_modules` es un enlace al del repo principal, y con la ruta del enlace la compilación de Android fallaba con «Failed to get the SHA-1 for …/QRCodeWriter.js». En la carpeta principal no cambia nada.
+
 ## v2.1268.2 — App Android: llave de Google Maps desde ~/.claves-farmalasa
 
 - `apps/mobile/app.config.js` mete la llave de Google Maps para Android si existe `~/.claves-farmalasa/google-maps-android.txt` (o `GOOGLE_MAPS_ANDROID_KEY`). Sin llave, el mapa de una ruta cerraba la app («API key not found»). Hoy `SinMapa` muestra «Abrir en Google Maps» (87ea5030a, de otra sesión); con la llave se ve el mapa. Farmalasa 1.0.0 (13) sale de este `main`.

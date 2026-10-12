@@ -22,9 +22,13 @@ const nucleo = path.join(raiz, 'src') + path.sep;
 // cuentas que el documento para Hacienda, que viven con las edge functions.
 // El codificador QR de `@zxing/library` (sólo su parte de JavaScript puro, ver
 // `plataforma/codigoQr.js`) se toma del `node_modules` de la raíz.
-const zxing = path.join(raiz, 'node_modules', '@zxing', 'library') + path.sep;
+// Por su ruta REAL: en un worktree (`npm run worktree`) `node_modules` es un
+// enlace al del repo principal, y Metro sólo reconoce la ruta resuelta — con la
+// del enlace la compilación fallaba con «Failed to get the SHA-1» (2026-10-12).
+const real = (p) => { try { return require('fs').realpathSync(p); } catch { return p; } };
+const zxing = real(path.join(raiz, 'node_modules', '@zxing', 'library')) + path.sep;
 // (con `ts-custom-error`, de lo único que depende).
-const errorPropio = path.join(raiz, 'node_modules', 'ts-custom-error') + path.sep;
+const errorPropio = real(path.join(raiz, 'node_modules', 'ts-custom-error')) + path.sep;
 config.watchFolders = [nucleo, path.join(raiz, 'supabase', 'functions', '_shared', 'dte'), zxing, errorPropio];
 
 const ALIAS = {

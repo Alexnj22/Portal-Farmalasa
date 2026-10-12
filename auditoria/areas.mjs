@@ -737,16 +737,20 @@ export const AREAS = [
         id: 'app-clientes',
         nombre: 'App de clientes (Puntos Salud)',
         resumen: 'La app del cliente: entra con documento + teléfono una sola vez (sesión por token, sólo su huella en la base), ve su saldo y movimientos de puntos, las ofertas publicadas (las exclusivas sólo para socios), las inyecciones que pagó y le faltan aplicar, sus permisos y avisos, y puede borrar su cuenta. Quien no tiene ficha deja un pre-registro que se vincula solo cuando la sala lo registra con el mismo documento y teléfono.',
-        modulos: ['ofertas_clientes', 'mayoristas'],
-        rutas: ['/ofertas-clientes', '/mayoristas'],
+        modulos: ['ofertas_clientes', 'mayoristas', 'chat_clientes'],
+        rutas: ['/ofertas-clientes', '/mayoristas', '/chat-clientes'],
         archivos: [
             'apps/clientes/',
             'src/views/ofertas-clientes/',
+            // El chat con los clientes de la app y la revisión de recetas (2026-10-12).
+            'src/views/chat-clientes/',
+            'src/data/chatClientes.js',
             'src/views/mayoristas/',
             'src/data/mayoristas.js',
             'src/data/ofertasClientes.js',
             'src/data/reservas.js',
             'src/views/dashboard/WidgetReservas.jsx',
+            'src/views/dashboard/RevisarReceta.jsx',
             'src/utils/ofertasClientes.js',
             // Las reservas vistas desde la sala (widget del portal y app del personal).
             'src/utils/reservasDeSala.js',
@@ -760,9 +764,14 @@ export const AREAS = [
             'supabase/functions/wompi-pagos/',
             'supabase/functions/_shared/wompi.ts',
         ],
-        tablas: ['app_cliente_sesiones', 'app_cliente_preregistros', 'ofertas_clientes', 'app_cliente_muestras', 'app_cliente_referido_codigo', 'app_cliente_referidos', 'app_cliente_avisos', 'app_cliente_correos', 'app_cliente_correo_envios', 'wallet_registros', 'app_historias', 'app_historias_vistas', 'app_reservas', 'app_reservas_pagos', 'app_catalogo_destacados', 'app_banners', 'app_catalogo_ocultos', 'app_encargos'],
+        tablas: ['app_cliente_sesiones', 'app_cliente_preregistros', 'ofertas_clientes', 'app_cliente_muestras', 'app_cliente_referido_codigo', 'app_cliente_referidos', 'app_cliente_avisos', 'app_cliente_correos', 'app_cliente_correo_envios', 'wallet_registros', 'app_historias', 'app_historias_vistas', 'app_reservas', 'app_reservas_pagos', 'app_catalogo_destacados', 'app_banners', 'app_catalogo_ocultos', 'app_encargos',
+                 // Chat con la farmacia y foto de perfil (2026-10-12). Los archivos
+                 // viven en el bucket privado `app-clientes-archivos`.
+                 'app_chat_conversaciones', 'app_chat_mensajes', 'app_chat_respuestas', 'app_cliente_fotos'],
         edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'wompi-pagos'],
-        crons: ['puntos-referidos-hora', 'purge-app-cliente-avisos', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min', 'app-catalogo-destacados', 'puntos-cupones-diario'],
+        crons: ['puntos-referidos-hora', 'purge-app-cliente-avisos', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min', 'app-catalogo-destacados', 'puntos-cupones-diario',
+                // Receta de la app sin revisar a las 4 h → supervisión.
+                'recetas-escalar-15min'],
         docs: ['docs/APP-CLIENTES-2026-10-05.md'],
     },
 

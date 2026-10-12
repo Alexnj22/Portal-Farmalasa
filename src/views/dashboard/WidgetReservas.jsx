@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
-import { CheckCircle2, MessageCircle, PackageCheck, Plus, ShoppingBag, Truck, Wallet, XCircle } from 'lucide-react';
+import { CheckCircle2, FileCheck, MessageCircle, PackageCheck, Plus, ShoppingBag, Truck, Wallet, XCircle } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import ListRow from '../../components/common/ListRow';
@@ -17,8 +17,16 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import {
     cambiarEstadoReserva, codigoDeReserva, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, usarSaldoAFavor,
-    mensajeDeReservaLista, whatsappDe,
+    mensajeDeReservaLista, whatsappDe, HORAS_RECETA_URGENTE,
 } from '@nucleo/data/reservas';
+
+// Cuánto lleva esperando una receta, en palabras cortas («25 min», «3 h 10 min»).
+function esperaDeReceta(desde, ahora) {
+    const ms = desde ? Math.max(0, ahora - Date.parse(desde)) : 0;
+    const min = Math.floor(ms / 60000);
+    const horas = Math.floor(min / 60);
+    return { horas: ms / 3600000, texto: horas ? `${horas} h${min % 60 ? ` ${min % 60} min` : ''}` : `${min} min` };
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Reservas de mi sala (2026-10-06): lo que los clientes apartaron desde la app
@@ -36,6 +44,8 @@ import {
 // El alta con anticipo se baja al abrirla: arrastra el buscador de producto, la
 // búsqueda de clientes y la ticketera de la constancia (`ticketPrint`, 8 kB).
 const NuevaReservaSucursal = lazy(() => import('./NuevaReservaSucursal'));
+// La revisión de la receta (2026-10-12) también se baja al abrirla.
+const RevisarReceta = lazy(() => import('./RevisarReceta'));
 
 const REFRESCO_MS = 2 * 60 * 1000;
 const MAX_FILAS = 6;
@@ -60,11 +70,16 @@ export default function WidgetReservas({ todas = false }) {
     // carrito P-XXXXXX): el lector de la caja lo escribe como un teclado.
     const [codigo, setCodigo] = useState('');
     const [nueva, setNueva] = useState(false);
+    // La reserva cuya receta se está mirando, y la hora de la última lectura
+    // (la espera de cada receta se mide contra ella, no contra el reloj del render).
+    const [receta, setReceta] = useState(null);
+    const [ahora, setAhora] = useState(0);
 
     const cargar = useCallback(async () => {
         if (!miSala && !todas) { setCargando(false); return; }
         try {
             setFilas(await fetchReservasDeSucursal(miSala, true));
+            setAhora(Date.now());
         } catch (err) {
             console.error('WidgetReservas: no se pudieron cargar', err);
         } finally {
@@ -102,6 +117,12 @@ export default function WidgetReservas({ todas = false }) {
     const botonNueva = !todas && miSala && !esBodega ? (
         <Button variant="secondary" size="xs" icon={Plus} onClick={() => setNueva(true)}>Reservar con anticipo</Button>
     ) : null;
+    const modalReceta = receta ? (
+        <Suspense fallback={null}>
+            <RevisarReceta reserva={receta} onClose={() => setReceta(null)}
+                onDecidida={() => { setReceta(null); cargar(); }} />
+        </Suspense>
+    ) : null;
     const modalNueva = nueva ? (
         <Suspense fallback={null}>
             <NuevaReservaSucursal branchId={miSala} sala={nombreSala} onClose={() => setNueva(false)} onCreada={cargar} />
@@ -134,6 +155,7 @@ export default function WidgetReservas({ todas = false }) {
     };
 
     const pendientes = abiertas.filter((r) => r.estado === 'pendiente').length;
+    const recetas = abiertas.filter((r) => r.estado === 'en_revision' && r.receta_estado === 'pendiente').length;
     const buscado = codigo.trim().toUpperCase();
     const visibles = buscado
         ? abiertas.filter((r) => codigoDeReserva(r.id).includes(buscado) || String(r.pedido ?? '').includes(buscado))
@@ -142,9 +164,11 @@ export default function WidgetReservas({ todas = false }) {
     // Un pedido del carrito es UNA tarjeta con todos sus productos (2026-10-07).
     const grupos = [];
     for (const r of visibles) {
-        const g = r.pedido ? grupos.find((x) => x.pedido === r.pedido) : null;
+        // Un renglón con receta por revisar va solo: se decide aparte del resto del pedido.
+        const agrupa = r.pedido && r.estado !== 'en_revision';
+        const g = agrupa ? grupos.find((x) => x.pedido === r.pedido && x.estado !== 'en_revision') : null;
         if (g) { g.renglones.push(r); continue; }
-        grupos.push(r.pedido ? { ...r, renglones: [r] } : r);
+        grupos.push(agrupa ? { ...r, renglones: [r] } : r);
     }
     const totalPedido = delPedido.reduce((t, r) => t + Number(r.precio ?? 0) * Number(r.cantidad ?? 1), 0);
 
@@ -152,7 +176,10 @@ export default function WidgetReservas({ todas = false }) {
         <div className="flex flex-col gap-2 h-full">
             <div className="flex items-center justify-between gap-2">
                 <p className="text-label text-content-2">
-                    {pendientes > 0 ? `${pendientes} ${pendientes === 1 ? 'reserva espera' : 'reservas esperan'} que alguien las aparte` : ''}
+                    {[
+                        recetas > 0 ? `${recetas} ${recetas === 1 ? 'receta por revisar' : 'recetas por revisar'}` : '',
+                        pendientes > 0 ? `${pendientes} ${pendientes === 1 ? 'reserva espera' : 'reservas esperan'} que alguien las aparte` : '',
+                    ].filter(Boolean).join(' · ')}
                 </p>
                 {botonNueva}
             </div>
@@ -173,13 +200,17 @@ export default function WidgetReservas({ todas = false }) {
             )}
             {buscado && !visibles.length && <p className="text-body-sm text-content-3">No hay una reserva abierta con ese código en esta sala.</p>}
             <ul className="space-y-1.5 min-w-0">
-                {grupos.map((r) => (
-                    <li key={r.pedido ?? r.id}>
+                {grupos.map((r) => {
+                    const enRevision = r.estado === 'en_revision';
+                    const espera = enRevision ? esperaDeReceta(r.receta_subida_at, ahora) : null;
+                    const urgente = enRevision && r.receta_estado === 'pendiente' && espera.horas >= HORAS_RECETA_URGENTE;
+                    return (
+                    <li key={`${r.pedido ?? ''}-${r.id}`}>
                         <ListRow
                             surface="card"
                             density="sm"
-                            tone={r.estado === 'pendiente' ? 'warning' : null}
-                            icon={r.entrega === 'domicilio' ? Truck : r.estado === 'lista' ? PackageCheck : ShoppingBag}
+                            tone={urgente ? 'danger' : enRevision || r.estado === 'pendiente' ? 'warning' : null}
+                            icon={enRevision ? FileCheck : r.entrega === 'domicilio' ? Truck : r.estado === 'lista' ? PackageCheck : ShoppingBag}
                             title={r.renglones && r.renglones.length > 1
                                 ? `Pedido ${r.pedido} · ${r.renglones.length} productos · ${formatMoney(r.renglones.reduce((t, x) => t + Number(x.precio ?? 0) * Number(x.cantidad ?? 1), 0) + Number(r.costo_envio ?? 0))}`
                                 : `${r.cantidad} × ${r.producto}`}
@@ -189,7 +220,17 @@ export default function WidgetReservas({ todas = false }) {
                                 r.estado === 'lista' ? ` · retira antes de las ${hora12(r.vence_at)}` : ''}${
                                 r.avisado_via === 'whatsapp' ? ' · avisado por WhatsApp' : ''}`}
                             trailing={(
-                                <div className="flex items-center gap-1">
+                                <div className="flex flex-wrap items-center justify-end gap-1">
+                                    {enRevision && r.receta_estado === 'otra_foto' && (
+                                        <Badge variant="info" uppercase={false}
+                                            title={r.receta_motivo ? `Se pidió otra foto: ${r.receta_motivo}` : undefined}>Esperando nueva foto del cliente</Badge>
+                                    )}
+                                    {enRevision && r.receta_estado === 'pendiente' && (
+                                        <Badge variant={urgente ? 'danger' : 'warning'} uppercase={false}
+                                            title={urgente ? `Lleva más de ${HORAS_RECETA_URGENTE} h: ya se avisó a supervisión` : 'Revísala antes de apartar la reserva'}>
+                                            Receta por revisar · {espera.texto}
+                                        </Badge>
+                                    )}
                                     {/* Pagada en línea desde la app (Wompi): en caja NO se cobra. */}
                                     {r.pago_estado === 'pagado' && (
                                         <Badge variant="success" uppercase={false}>{r.origen === 'sucursal' ? 'Pagada' : 'Pagada en línea'}</Badge>
@@ -202,7 +243,12 @@ export default function WidgetReservas({ todas = false }) {
                                         <Badge variant="info" uppercase={false}
                                             title={r.datos_fiscales ? `${r.datos_fiscales.nombre} · NIT ${r.datos_fiscales.nit} · NRC ${r.datos_fiscales.nrc}` : undefined}>CCF</Badge>
                                     )}
-                                    {r.estado === 'pendiente' ? (
+                                    {enRevision ? (
+                                        r.receta_ruta && (
+                                            <Button variant={r.receta_estado === 'pendiente' ? 'primary' : 'ghost'} size="xs" icon={FileCheck}
+                                                onClick={() => setReceta(r)}>Ver receta</Button>
+                                        )
+                                    ) : r.estado === 'pendiente' ? (
                                         <Button variant="primary" size="xs" icon={PackageCheck} loading={ocupada === r.id}
                                             onClick={() => mover(r, 'lista')}>Apartar y avisar</Button>
                                     ) : (
@@ -221,7 +267,8 @@ export default function WidgetReservas({ todas = false }) {
                             )}
                         />
                     </li>
-                ))}
+                    );
+                })}
             </ul>
             {!todas && !buscado && abiertas.length > MAX_FILAS && (
                 <span className="text-label text-content-3 mt-auto">y {abiertas.length - MAX_FILAS} más</span>
@@ -243,6 +290,7 @@ export default function WidgetReservas({ todas = false }) {
             )}
             <WidgetEncargos branchId={salaEncargos} />
             {modalNueva}
+            {modalReceta}
             {whatsapp && (
                 <AvisoWhatsapp reserva={whatsapp} onCerrar={() => setWhatsapp(null)}
                     onEnviado={async () => {

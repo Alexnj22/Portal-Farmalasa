@@ -34,6 +34,7 @@ import {
     Target,
     Landmark,
     Archive,
+    MessageCircle,
 } from 'lucide-react';
 import { NOMBRE_DE_ICONO_POR_TIPO, nombreDelIconoDeTipo } from '@nucleo/constants/tipoIconos';
 
@@ -56,6 +57,7 @@ const ICONOS = {
     FileText,
     Info,
     Landmark,
+    MessageCircle,
     Package,
     PackagePlus,
     Palmtree,

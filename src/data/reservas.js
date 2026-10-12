@@ -27,6 +27,21 @@ export async function cambiarEstadoReserva(id, estado, motivo = null) {
     return sinError(await supabase.rpc('reserva_cambiar_estado', { p_id: id, p_estado: estado, p_motivo: motivo }));
 }
 
+/**
+ * La sala decide sobre la receta que el cliente subió (2026-10-12).
+ * `decision`: 'aprobada' (la reserva pasa a pendiente), 'otra_foto' (sigue en
+ * revisión) o 'rechazada' (se cancela). El motivo es obligatorio salvo al
+ * aprobar. La función avisa al cliente y anota la bitácora por su cuenta.
+ */
+export async function decidirReceta(id, decision, motivo = null) {
+    return sinError(await supabase.rpc('reserva_receta_decidir', {
+        p_id: Number(id), p_decision: decision, p_motivo: String(motivo ?? '').trim() || null,
+    }));
+}
+
+/** Las horas que una receta lleva esperando: a las 4 se avisa a supervisión. */
+export const HORAS_RECETA_URGENTE = 4;
+
 export async function marcarAvisadaPorWhatsapp(id) {
     sinError(await supabase.rpc('reserva_avisada_whatsapp', { p_id: id }));
 }

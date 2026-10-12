@@ -84,6 +84,12 @@ export const NOMBRE_DE_ICONO_POR_TIPO = {
     // Cuentas por cobrar de la distribuidora pasadas del plazo (borrador 0023).
     CARTERA_ATRASADA: 'Wallet',
     CARTERA_ATRASADA_RESUMEN: 'Wallet',
+    // App de clientes (2026-10-12): un cliente escribió en el chat, y la
+    // receta de una reserva espera que la sala la revise (o lleva 4 h sin que
+    // nadie la mire: el aviso a supervisión).
+    CHAT_CLIENTE:       'MessageCircle',
+    RECETA_APP:         'FileCheck',
+    RECETA_SIN_REVISAR: 'FileCheck',
     SYSTEM:           'Info',       // mensaje del portal, no de una persona
 };
 

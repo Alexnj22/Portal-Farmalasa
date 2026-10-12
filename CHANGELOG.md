@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1271.0 — Chat con clientes y revisión de recetas en el portal
+
+Base (migraciones `20261012214624_app_clientes_receta_chat_perfil` y `20261012215044_app_catalogo_precios_mayoreo`):
+- **Receta con foto**: estado `en_revision` en `app_reservas` + columnas `receta_*`; la sala decide con `reserva_receta_decidir` (aprobar → confirmada y pagable; pedir otra foto; rechazar con motivo) y el cliente recibe un aviso. Aviso a la sala al subirse cada foto; a las 4 h sin revisar, `recetas_escalar` (cron `recetas-escalar-15min`) avisa a supervisión con la sala que no la verificó.
+- **Chat con clientes**: `app_chat_conversaciones`, `app_chat_mensajes`, `app_chat_respuestas`; permiso nuevo `chat_clientes` (Gerente General, Administrador, Supervisor/a de Ventas); bandeja `chat_conversaciones` con tipo de cliente, nivel y foto; `chat_tomar` («X está respondiendo…», vence a los 10 min), `chat_responder`, `chat_resolver`. Aviso al equipo cuando una conversación pasa a sin leer.
+- **Foto de perfil del cliente**: `app_cliente_fotos`, el equipo la quita con `cliente_foto_quitar`.
+- Bucket privado `app-clientes-archivos` (recetas por sala, chat, perfil).
+- Catálogo con `precio_mayoreo` (lista Clínica) y `precio_plus` (lista Mayoreo); la función de la app los quita a quien no los tiene aprobados.
+
+Portal:
+- Vista **Chat con clientes** (`/chat-clientes`): bandeja Abiertas/Resueltas, hilo estilo Messenger con foto y nombre de quien responde, fotos, respuestas rápidas, adjuntar producto u oferta, en vivo; en el teléfono, bandeja → hilo.
+- **Reservas**: las que esperan receta van primero, con «Receta por revisar · tiempo» (rojo a las 4 h) y el visor para aprobar, pedir otra foto o rechazar.
+- Avisos `CHAT_CLIENTE`, `RECETA_APP`, `RECETA_SIN_REVISAR` en la campana.
+
 ## v2.1270.0 — App de clientes: recordatorio de tomas
 
 - En **Mis tratamientos**, cada medicamento tiene «Recordarme tomarlo»: 1, 2 o 3 veces al día con horas editables, duración obligatoria (7/14/30 días, uso continuo o hasta una fecha) y nota opcional.

@@ -143,6 +143,13 @@ const CRONS = [
           + 'oferta ya terminó. Un UPDATE sobre la propia tabla (decenas de filas a lo sumo).',
   },
   {
+    job: 'recetas-escalar-15min', slug: null, cadencia: '*/15 * * * *',
+    corridasDia: 96, sistema: 0,
+    motivo: 'Avisa a supervisión de las recetas de la app que llevan más de 4 h sin que la sala las '
+          + 'revise (una vez por foto). SQL puro sobre `app_reservas` por el índice parcial de '
+          + '`en_revision` (LIMIT 50) + `notify_employees`: ninguna petición afuera.',
+  },
+  {
     job: 'wallet-pases-minuto', slug: 'wallet-pases', cadencia: '* * * * *',
     corridasDia: 1440, sistema: 0,
     motivo: 'La tarjeta de Wallet que se actualiza sola: cada minuto busca tarjetas cuyo saldo '

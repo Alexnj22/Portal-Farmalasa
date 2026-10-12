@@ -357,6 +357,191 @@ export type Database = {
           },
         ]
       }
+      app_chat_conversaciones: {
+        Row: {
+          created_at: string
+          customer_id: number
+          estado: string
+          id: number
+          resuelta_at: string | null
+          resuelta_por: string | null
+          sin_leer_cliente: number
+          sin_leer_equipo: number
+          tomada_at: string | null
+          tomada_por: string | null
+          ultimo_de: string | null
+          ultimo_mensaje_at: string
+          ultimo_texto: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id: number
+          estado?: string
+          id?: never
+          resuelta_at?: string | null
+          resuelta_por?: string | null
+          sin_leer_cliente?: number
+          sin_leer_equipo?: number
+          tomada_at?: string | null
+          tomada_por?: string | null
+          ultimo_de?: string | null
+          ultimo_mensaje_at?: string
+          ultimo_texto?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: number
+          estado?: string
+          id?: never
+          resuelta_at?: string | null
+          resuelta_por?: string | null
+          sin_leer_cliente?: number
+          sin_leer_equipo?: number
+          tomada_at?: string | null
+          tomada_por?: string | null
+          ultimo_de?: string | null
+          ultimo_mensaje_at?: string
+          ultimo_texto?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_chat_conversaciones_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_chat_conversaciones_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "app_chat_conversaciones_resuelta_por_fkey"
+            columns: ["resuelta_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_chat_conversaciones_resuelta_por_fkey"
+            columns: ["resuelta_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_chat_conversaciones_tomada_por_fkey"
+            columns: ["tomada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_chat_conversaciones_tomada_por_fkey"
+            columns: ["tomada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_chat_mensajes: {
+        Row: {
+          adjunto: Json | null
+          autor: string
+          conversacion_id: number
+          created_at: string
+          employee_id: string | null
+          foto_ruta: string | null
+          id: number
+          texto: string | null
+        }
+        Insert: {
+          adjunto?: Json | null
+          autor: string
+          conversacion_id: number
+          created_at?: string
+          employee_id?: string | null
+          foto_ruta?: string | null
+          id?: never
+          texto?: string | null
+        }
+        Update: {
+          adjunto?: Json | null
+          autor?: string
+          conversacion_id?: number
+          created_at?: string
+          employee_id?: string | null
+          foto_ruta?: string | null
+          id?: never
+          texto?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_chat_mensajes_conversacion_id_fkey"
+            columns: ["conversacion_id"]
+            isOneToOne: false
+            referencedRelation: "app_chat_conversaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_chat_mensajes_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_chat_mensajes_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_chat_respuestas: {
+        Row: {
+          creada_por: string | null
+          created_at: string
+          id: number
+          texto: string
+          titulo: string
+        }
+        Insert: {
+          creada_por?: string | null
+          created_at?: string
+          id?: never
+          texto: string
+          titulo: string
+        }
+        Update: {
+          creada_por?: string | null
+          created_at?: string
+          id?: never
+          texto?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_chat_respuestas_creada_por_fkey"
+            columns: ["creada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_chat_respuestas_creada_por_fkey"
+            columns: ["creada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_cliente_avisos: {
         Row: {
           created_at: string
@@ -507,6 +692,62 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "dte_rechazos_vigentes"
             referencedColumns: ["customer_id"]
+          },
+        ]
+      }
+      app_cliente_fotos: {
+        Row: {
+          created_at: string
+          customer_id: number
+          quitada_at: string | null
+          quitada_por: string | null
+          ruta: string
+          subida_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: number
+          quitada_at?: string | null
+          quitada_por?: string | null
+          ruta: string
+          subida_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: number
+          quitada_at?: string | null
+          quitada_por?: string | null
+          ruta?: string
+          subida_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_cliente_fotos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_fotos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "app_cliente_fotos_quitada_por_fkey"
+            columns: ["quitada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_fotos_quitada_por_fkey"
+            columns: ["quitada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1114,6 +1355,14 @@ export type Database = {
           preparada_por: string | null
           producto_id: number
           producto_nombre: string
+          receta_escalada_at: string | null
+          receta_estado: string | null
+          receta_fotos: number
+          receta_motivo: string | null
+          receta_revisada_at: string | null
+          receta_revisada_por: string | null
+          receta_ruta: string | null
+          receta_subida_at: string | null
           saldo_favor: number | null
           saldo_favor_usado_at: string | null
           saldo_favor_usado_por: string | null
@@ -1155,6 +1404,14 @@ export type Database = {
           preparada_por?: string | null
           producto_id: number
           producto_nombre: string
+          receta_escalada_at?: string | null
+          receta_estado?: string | null
+          receta_fotos?: number
+          receta_motivo?: string | null
+          receta_revisada_at?: string | null
+          receta_revisada_por?: string | null
+          receta_ruta?: string | null
+          receta_subida_at?: string | null
           saldo_favor?: number | null
           saldo_favor_usado_at?: string | null
           saldo_favor_usado_por?: string | null
@@ -1196,6 +1453,14 @@ export type Database = {
           preparada_por?: string | null
           producto_id?: number
           producto_nombre?: string
+          receta_escalada_at?: string | null
+          receta_estado?: string | null
+          receta_fotos?: number
+          receta_motivo?: string | null
+          receta_revisada_at?: string | null
+          receta_revisada_por?: string | null
+          receta_ruta?: string | null
+          receta_subida_at?: string | null
           saldo_favor?: number | null
           saldo_favor_usado_at?: string | null
           saldo_favor_usado_por?: string | null
@@ -1231,6 +1496,20 @@ export type Database = {
             columns: ["oferta_id"]
             isOneToOne: false
             referencedRelation: "ofertas_clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_reservas_receta_revisada_por_fkey"
+            columns: ["receta_revisada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_reservas_receta_revisada_por_fkey"
+            columns: ["receta_revisada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
             referencedColumns: ["id"]
           },
           {
@@ -26139,6 +26418,24 @@ export type Database = {
         Args: { p_id_traslado: string; p_msg?: string; p_request_id: string }
         Returns: boolean
       }
+      chat_conversaciones: {
+        Args: { p_antes?: string; p_estado?: string }
+        Returns: Json
+      }
+      chat_resolver: { Args: { p_conversacion: number }; Returns: Json }
+      chat_responder: {
+        Args: {
+          p_adjunto?: Json
+          p_conversacion: number
+          p_foto_ruta?: string
+          p_texto: string
+        }
+        Returns: Json
+      }
+      chat_tomar: {
+        Args: { p_conversacion: number; p_soltar?: boolean }
+        Returns: Json
+      }
       clase_de_cliente: {
         Args: { p_customer_id: number; p_texto: string }
         Returns: string
@@ -26170,6 +26467,7 @@ export type Database = {
         Returns: string
       }
       cliente_es_empleado: { Args: { p_customer: number }; Returns: boolean }
+      cliente_foto_quitar: { Args: { p_customer: number }; Returns: Json }
       clientes_anotar_nacimiento: { Args: { p_filas: Json }; Returns: number }
       clientes_sin_distrito_corregibles: {
         Args: never
@@ -27328,6 +27626,10 @@ export type Database = {
       es_inyectable: { Args: { p_descripcion: string }; Returns: boolean }
       es_jefe_de_sala: {
         Args: { p_branch_id: number; p_employee_id: string }
+        Returns: boolean
+      }
+      es_medicamento_de_tratamiento: {
+        Args: { p_nombre: string; p_principio_activo: string }
         Returns: boolean
       }
       es_solicitud_operativa: { Args: { p_type: string }; Returns: boolean }
@@ -30453,6 +30755,7 @@ export type Database = {
           sin_ingresar: number
         }[]
       }
+      recetas_escalar: { Args: never; Returns: number }
       recibir_bolsas: { Args: { p_ids: number[] }; Returns: number }
       reclamar_factura_compra: {
         Args: { p_branch_id: number; p_document_id: number }
@@ -30729,6 +31032,10 @@ export type Database = {
         Returns: Json
       }
       reserva_puede_manejar: { Args: { p_branch_id: number }; Returns: boolean }
+      reserva_receta_decidir: {
+        Args: { p_decision: string; p_id: number; p_motivo?: string }
+        Returns: Json
+      }
       reserva_usar_saldo_favor: { Args: { p_id: number }; Returns: Json }
       reservar_pago_bono: { Args: { p_item: string }; Returns: Json }
       reservas_de_sucursal: {

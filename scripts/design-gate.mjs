@@ -136,6 +136,13 @@ const EXCEPTIONS = {
   // se está editando a esa misma persona.
   'src/components/forms/EmployeeFormModal.jsx': ['foto-sin-aro'],
 
+  // La foto de perfil de un CLIENTE de la app (chat con clientes, 2026-10-12).
+  // El aro dice si una persona del EQUIPO está —vacaciones, incapacidad,
+  // permiso— y un cliente no tiene ficha ni historial que decir:
+  // `AvatarConEstado` lo buscaría entre los empleados por id y no encontraría a
+  // nadie. Los del equipo, en esa misma vista, sí van con `AvatarConEstado`.
+  'src/views/chat-clientes/ClienteAvatar.jsx': ['foto-sin-aro'],
+
   // La encuesta ya usa el ARO para decir otra cosa: `isJefe` pinta un
   // `ring-warning` alrededor de la cara para marcar a quien jefea. Dos aros
   // concéntricos con dos significados distintos no se pueden leer — uno diría

@@ -67,6 +67,9 @@ export const ACTION_LABEL = {
     PEDIDO_PROBLEMA: 'Ver detalle',
     CORTE_NUEVO:     'Revisar el corte',
     DEPOSITO_BANCO:  'Ver el depósito',
+    CHAT_CLIENTE:    'Responder',
+    RECETA_APP:      'Revisar receta',
+    RECETA_SIN_REVISAR: 'Revisar receta',
 };
 
 /* El recordatorio de las 7:30 nombra UNO o VARIOS cortes según lo que haya

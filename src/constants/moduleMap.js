@@ -85,6 +85,7 @@ export const MODULE_MAP = {
     encuestas_clientes: { path: '/encuestas-clientes', label: 'Encuestas a clientes', icono: 'ClipboardCheck' },
     encuestas_aplicar: { path: '/encuestas-aplicar', label: 'Aplicar encuesta',     icono: 'Mic' },
     ofertas_clientes:  { path: '/ofertas-clientes',  label: 'Ofertas para clientes', icono: 'Smartphone' },
+    chat_clientes:     { path: '/chat-clientes',     label: 'Chat con clientes',     icono: 'MessageCircle' },
     galeria:           { path: '/galeria',          label: 'Galería',                  icono: 'FolderOpen' },
     entrevistas:       { path: '/entrevistas',      label: 'Entrevistas',              icono: 'Users',        comingSoon: true },
     productos:         { path: '/productos',        label: 'Productos',                icono: 'Package'       },

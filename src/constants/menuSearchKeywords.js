@@ -41,6 +41,7 @@ export const MODULE_SEARCH_KEYWORDS = {
     galeria:            ['material', 'whatsapp', 'estados', 'descargar disenos', 'publicaciones liberadas', 'imagenes'],
     encuestas_aplicar:  ['entrevista', 'encuesta', 'tablet', 'aplicar encuesta', 'opinion'],
     ofertas_clientes:   ['app de clientes', 'ofertas', 'puntos salud', 'pre-registro', 'vitrina', 'clientes nuevos', 'app'],
+    chat_clientes:      ['chat', 'mensajes', 'conversaciones', 'whatsapp', 'responder clientes', 'app de clientes', 'messenger'],
     encuestas_clientes: ['encuestas', 'nps', 'satisfaccion', 'opinion de clientes', 'entrevistas', 'percepcion', 'atencion al cliente', 'qr'],
     marketing:          ['redes sociales', 'publicaciones', 'calendario de contenido', 'disenador', 'posts', 'reels', 'historias', 'pauta', 'facebook', 'instagram'],
     promociones:        ['descuentos', 'ofertas especiales', 'promos', 'rebaja', 'porcentaje de descuento', 'precio con descuento', 'promocion de producto'],

@@ -17,7 +17,9 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { ORDENES_MAYORISTAS, accionesDeMayorista, filasDeMayoristas, solicitudesPendientes, textoDeAccion } from '@nucleo/utils/mayoristas';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { fechaHora12 } from '@nucleo/utils/hora';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import {
@@ -41,15 +43,6 @@ import {
  * El margen, la regularidad y la antigüedad son de uso interno (Procedimiento
  * §4): no se le mencionan al cliente.
  */
-const textoDeAccion = (h) => ({
-    solicitado: 'Lo pidió desde la app',
-    propuesto: `Propuesto${h.precio ? ` con ${PRECIOS[h.precio]}` : ''}`,
-    aprobado: `Aprobado${h.precio ? ` con ${PRECIOS[h.precio]}` : ''}`,
-    rechazado: 'Rechazado',
-    precio_cambiado: `Precio cambiado a ${PRECIOS[h.precio] ?? '—'}`,
-    retiro_avisado: 'Retiro avisado',
-}[h.accion] ?? h.accion);
-
 const PASO = 100;
 
 export default function MayoristasView() {
@@ -70,7 +63,7 @@ export default function MayoristasView() {
         fetchMayoristas().then(setFilas).catch((err) => setError(mensajeAmigable(err, 'No se pudo cargar la lista.')));
     }, []);
 
-    const solicitudes = (filas ?? []).filter((f) => f.estado === 'solicitado');
+    const solicitudes = solicitudesPendientes(filas);
     const tabs = useMemo(() => [
         { key: 'solicitudes', label: 'Solicitudes', icon: Inbox, badge: solicitudes.length || undefined },
         { key: 'candidatos', label: 'Candidatos', icon: ListChecks },
@@ -105,12 +98,7 @@ function Lista({ tab, filas, busqueda, onAbrir }) {
     const [soloCumplen, setSoloCumplen] = useState(true);
     const [orden, setOrden] = useState('mayoreo');
     const [ver, setVer] = useState(PASO);
-    const base = filas.filter((f) => (tab === 'solicitudes' ? f.estado === 'solicitado'
-        : tab === 'mayoristas' ? f.estado === 'aprobado'
-            : f.estado !== 'aprobado' && f.estado !== 'solicitado' && (!soloCumplen || f.cumple)));
-    const lista = base
-        .filter((f) => !busqueda || tokenMatch(`${f.nombre ?? ''} ${f.documento ?? ''}`, busqueda))
-        .sort((a, b) => (orden === 'promedio' ? b.prom_3m - a.prom_3m : orden === 'reciente' ? String(b.ultima_compra ?? '').localeCompare(String(a.ultima_compra ?? '')) : b.a_mayoreo - a.a_mayoreo));
+    const lista = filasDeMayoristas(filas, { tab, busqueda, soloCumplen, orden });
     const visibles = lista.slice(0, ver);
 
     return (
@@ -132,7 +120,7 @@ function Lista({ tab, filas, busqueda, onAbrir }) {
                     )}
                     <FilterBar.Section label="orden" active={orden !== 'mayoreo'} onClear={() => setOrden('mayoreo')}>
                         <FilterBar.Opciones value={orden} onChange={(v) => setOrden(v || 'mayoreo')} label="Ordenar" umbral={0}
-                            options={[{ value: 'mayoreo', label: 'Más compra a mayoreo' }, { value: 'promedio', label: 'Mayor promedio mensual' }, { value: 'reciente', label: 'Compra más reciente' }]} />
+                            options={ORDENES_MAYORISTAS} />
                     </FilterBar.Section>
                 </FilterBar>
             </div>
@@ -196,7 +184,7 @@ function Historial({ busqueda, onAbrir }) {
             movil={{ usarAccionDeFila: true }} minWidth="680px">
             {lista.map((h, i) => (
                 <DataRow key={h.id} index={i} onClick={() => onAbrir(h.customer_id)}>
-                    <DataCell><span className="text-body-sm text-content-2">{fechaTexto(h.created_at, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</span></DataCell>
+                    <DataCell><span className="text-body-sm text-content-2">{fechaHora12(h.created_at, { day: 'numeric', month: 'short' })}</span></DataCell>
                     <DataCell><span className="text-body-sm font-semibold text-content">{h.customers?.name ?? '—'}</span></DataCell>
                     <DataCell>
                         <span className="text-body-sm text-content-2">{textoDeAccion(h)}{h.nota ? ` — «${h.nota}»` : ''}</span>
@@ -221,7 +209,7 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
         fetchDetalleMayorista(cliente.customer_id).then(setD).catch((err) => showToast('No se pudo cargar', mensajeAmigable(err, ''), 'error'));
     }, [cliente.customer_id, showToast]);
 
-    const esSolicitante = cliente.solicitado_por_id && user?.id && cliente.solicitado_por_id === user.id;
+    const { esSolicitante, proponer: puedeAbrirSolicitud, resolver: resolverSolicitud, gestionar } = accionesDeMayorista(cliente, { puedeProponer, puedeAprobar, userId: user?.id });
     const correr = async (accion, fn, mensaje) => {
         setOcupado(true);
         try {
@@ -234,9 +222,6 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
     };
 
     const est = cliente.estado;
-    const puedeAbrirSolicitud = puedeProponer && (!est || est === 'rechazado' || est === 'retirado');
-    const resolverSolicitud = puedeAprobar && est === 'solicitado' && !esSolicitante;
-    const gestionar = puedeAprobar && est === 'aprobado' && !cliente.retiro_programado;
     const meses = d?.meses ?? [];
 
     return (

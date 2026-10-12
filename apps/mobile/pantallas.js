@@ -8,6 +8,8 @@ import { router } from 'expo-router';
 // 30 días al 2026-09-28): bitácoras 34, traslados 36, efectivo 34, pedidos 23.
 export const PANTALLAS_DE_LA_APP = {
   '/inicio': true,             // es la pestaña Inicio (los grupos de expo-router no cuentan en la ruta)
+  '/chat-clientes': true, // la bandeja y cada conversación (`chat-clientes/[id]`), en vivo
+  '/mayoristas': true, // Clientes Mayoristas: solicitudes, candidatos, mayoristas e historial; la ficha decide
   '/cargar-compra': true, // las facturas sin cargar y la compra armada
   '/impresion': true, // prueba de impresión y las cajas de las salas
   '/objetos-huerfanos': true,

@@ -29,6 +29,7 @@ import ClienteAvatar from './ClienteAvatar';
 import Compositor from './Compositor';
 import PanelCliente from './PanelCliente';
 import { NIVELES, nombreDeCliente, tipoDeCliente } from './etiquetas';
+import { empiezaTanda } from '@nucleo/utils/chatClientes';
 import { escribeAhora, useRelojDeEscritura } from './escribiendo';
 
 // El hilo de una conversación: el contexto del cliente arriba, los mensajes
@@ -345,8 +346,7 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
                 )}
                 {(mensajes ?? []).map((m, i) => {
                     const previo = mensajes[i - 1];
-                    const nuevoGrupo = !previo || previo.autor !== m.autor || previo.employee_id !== m.employee_id
-                        || Date.parse(m.created_at) - Date.parse(previo.created_at) > 15 * 60_000;
+                    const nuevoGrupo = empiezaTanda(m, previo);
                     return (
                         <Burbuja key={m.id} mensaje={m} nuevoGrupo={nuevoGrupo}
                             autor={m.employee_id ? equipo.get(m.employee_id) ?? { id: m.employee_id } : null}

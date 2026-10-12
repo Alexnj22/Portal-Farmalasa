@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1277.0 — Clientes Mayoristas y Chat con clientes nativos; gate:app-nativa
+
+- **`npm run gate:app-nativa`** (pregunta del usuario: «¿por qué si agregamos módulos, en la app no los pasas a nativos de un solo?»): falla si un módulo de `MODULE_MAP` no tiene pantalla nativa en `PANTALLAS_DE_LA_APP` ni está en `EXCEPCIONES` con motivo, o si una ruta nativa declarada no existe. Corre en el pre-commit cuando se toca `moduleMap.js`, `App.jsx` o `pantallas.js`. Al crearlo marcó exactamente los dos que faltaban.
+- **Clientes Mayoristas nativo** (lista con sus cuatro pestañas y ficha con proponer, aprobar, rechazar, precio y retirar; reglas en `src/utils/mayoristas.js`). La hora del historial salía «12:00 p. m.» también en el portal: ahora `fechaHora12`.
+- **Chat con clientes nativo** (bandeja en vivo con sus filtros, conversación con burbujas, tomar/soltar, foto, respuestas rápidas, producto u oferta, ficha del cliente; `src/hooks/useBandejaDelChat.js` y `src/utils/chatClientes.js` compartidos con el portal).
+
 ## v2.1276.1 — App: el chat no se queda sin actualizar con mala señal
 
 - Reporte del usuario: la respuesta del equipo llegó (push enviado) pero no aparecía en el chat de la app hasta salir y volver a entrar. La consulta cada 5 s no tenía tope de tiempo: una petición colgada en mala señal dejaba `preguntando` en verdadero y el chat no volvía a preguntar. Ahora `chat_mensajes`/`chat_escribiendo`/`chat_leido` se cortan a los 10 s (sin marcar «sin conexión») y una consulta colgada más de 15 s se da por perdida.

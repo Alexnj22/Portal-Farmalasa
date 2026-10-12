@@ -755,6 +755,11 @@ export const AREAS = [
             'src/utils/horarioDelChat.js',
             'src/views/mayoristas/',
             'src/data/mayoristas.js',
+            // Las reglas que comparten portal y app (2026-10-12).
+            'src/utils/mayoristas.js',
+            'src/utils/chatClientes.js',
+            'src/hooks/useBandejaDelChat.js',
+            'src/hooks/escrituraDelChat.js',
             'src/data/ofertasClientes.js',
             'src/data/reservas.js',
             'src/views/dashboard/WidgetReservas.jsx',

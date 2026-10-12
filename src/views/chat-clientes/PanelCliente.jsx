@@ -10,6 +10,7 @@ import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { telefonoParaWhatsapp } from '@nucleo/utils/codigoDePuntos';
 import ClienteAvatar from './ClienteAvatar';
 import { NIVELES, nombreDeCliente, tipoDeCliente } from './etiquetas';
+import { RECETA_DEL_CHAT, RESERVA_DEL_CHAT } from '@nucleo/utils/chatClientes';
 
 // «Cliente»: lo que conviene tener a mano mientras se le contesta — quién es,
 // cómo llamarlo, sus puntos, lo último que compró (con sus productos), lo que
@@ -20,17 +21,8 @@ import { NIVELES, nombreDeCliente, tipoDeCliente } from './etiquetas';
 // En escritorio ancho va al costado del hilo; en el teléfono y en el panel de
 // la burbuja, como una pestaña del hilo (ver `Conversacion`).
 
-const RESERVA = {
-    en_revision: { label: 'En revisión', variant: 'warning' },
-    pendiente:   { label: 'Pendiente',   variant: 'info' },
-    lista:       { label: 'Lista para retirar', variant: 'success' },
-};
-const RECETA = {
-    pendiente: 'Receta por revisar',
-    otra_foto: 'Pidió otra foto de la receta',
-    aprobada:  'Receta aprobada',
-    rechazada: 'Receta rechazada',
-};
+const RESERVA = RESERVA_DEL_CHAT;
+const RECETA = RECETA_DEL_CHAT;
 
 const corta = (d) => fechaTexto(d, { day: 'numeric', month: 'short', year: 'numeric' });
 

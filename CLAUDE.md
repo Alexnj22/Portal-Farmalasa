@@ -1590,6 +1590,15 @@ instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`
   `buckets_abiertos` con su motivo. En el pre-commit corre la parte local cuando
   el commit toca `supabase/functions/`. Plan:
   `docs/PLAN-ALCANCE-POR-SUCURSAL-2026-10-02.md`.
+- **`npm run gate:app-nativa` — un módulo nuevo del portal nace también nativo
+  en la app.** Al agregar un módulo o vista al portal (`MODULE_MAP`), en el mismo
+  trabajo se crea su pantalla nativa en `apps/mobile` (iOS con SwiftUI/`@expo/ui`,
+  Android con las piezas Material `.android.js`) y se registra en
+  `PANTALLAS_DE_LA_APP`; si de verdad no corresponde, va a `EXCEPCIONES` de
+  `scripts/app-nativa-gate.mjs` con su motivo. Sin pantalla nativa el módulo no
+  falla: se abre como el portal web dentro de la app, y así entraban las vistas
+  nuevas sin que nadie lo notara (2026-10-12). Corre en el pre-commit cuando el
+  commit toca `moduleMap.js`, `App.jsx` o `pantallas.js`.
 - **`npm run gate:tipos` — la base es un CONTRATO.** `src/types/database.ts`
   son los tipos de producción y el cliente de Supabase se declara con ellos:
   una tabla, columna o parámetro de `.rpc()` que no existe da un aviso de `tsc`

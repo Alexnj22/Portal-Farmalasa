@@ -204,6 +204,14 @@ if git diff --cached --name-only | grep -qE '^src/index\.css$|^src/constants/tok
   node scripts/exportar-tokens.mjs --revisar || exit 1
 fi
 
+# app-nativa-gate: todo módulo del portal tiene su pantalla nativa en la app
+# (o está declarado en EXCEPCIONES con su motivo). Un módulo sin pantalla
+# nativa no falla: se abre como el portal web dentro de la app, y así entraban
+# las vistas nuevas sin que nadie lo notara (2026-10-12). Local y en ms.
+if git diff --cached --name-only | grep -qE '^(src/constants/moduleMap\.js|src/App\.jsx|apps/mobile/pantallas\.js)$'; then
+  node scripts/app-nativa-gate.mjs --hook || exit 1
+fi
+
 # nucleo-alias: lo que cruza el borde del núcleo va por `@nucleo/…` (desde las
 # pantallas) o `@plataforma/…` (desde el núcleo), nunca por ruta relativa — así
 # mudar el núcleo a `packages/core` (F7) no toca ninguna pantalla. Local y en

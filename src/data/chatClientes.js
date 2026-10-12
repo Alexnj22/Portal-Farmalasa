@@ -181,10 +181,11 @@ export async function reaccionarAMensaje(mensajeId, emoji) {
 
 /** Sube una foto del equipo al chat de ese cliente y devuelve su ruta. */
 export async function subirFotoDelEquipo(customerId, archivo) {
-    const tipo = archivo?.type || 'image/jpeg';
+    // Del navegador llega un `File`; de la app, `{ body: ArrayBuffer, contentType }`.
+    const tipo = archivo?.type || archivo?.contentType || 'image/jpeg';
     const ext = tipo === 'image/png' ? 'png' : tipo === 'image/webp' ? 'webp' : tipo === 'image/heic' ? 'heic' : 'jpg';
     const ruta = `chat/${Number(customerId)}/equipo/${Date.now()}.${ext}`;
-    sinError(await supabase.storage.from(BUCKET_APP_CLIENTES).upload(ruta, archivo, { contentType: tipo, upsert: false }));
+    sinError(await supabase.storage.from(BUCKET_APP_CLIENTES).upload(ruta, archivo?.body ?? archivo, { contentType: tipo, upsert: false }));
     return ruta;
 }
 

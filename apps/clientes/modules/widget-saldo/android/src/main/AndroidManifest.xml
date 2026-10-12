@@ -1,0 +1,17 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <!-- El widget de saldo. Se mezcla solo en el manifiesto de la app (es un
+         módulo local de Expo): no hace falta plugin de configuración. -->
+    <receiver
+      android:name="lat.farmasalud.clientes.widget.SaldoWidget"
+      android:exported="false"
+      android:label="@string/widget_saldo_nombre">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+      </intent-filter>
+      <meta-data
+        android:name="android.appwidget.provider"
+        android:resource="@xml/widget_saldo_info" />
+    </receiver>
+  </application>
+</manifest>

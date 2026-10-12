@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Como el de iOS: pequeño (2×2) y mediano (4×2). La app lo redibuja al
+     cambiar el saldo; las 6 horas son la red por si no se abre. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+  android:minWidth="110dp"
+  android:minHeight="110dp"
+  android:minResizeWidth="110dp"
+  android:minResizeHeight="110dp"
+  android:maxResizeWidth="400dp"
+  android:maxResizeHeight="220dp"
+  android:targetCellWidth="2"
+  android:targetCellHeight="2"
+  android:resizeMode="horizontal|vertical"
+  android:updatePeriodMillis="21600000"
+  android:initialLayout="@layout/widget_saldo"
+  android:previewLayout="@layout/widget_saldo"
+  android:description="@string/widget_saldo_descripcion"
+  android:widgetCategory="home_screen" />

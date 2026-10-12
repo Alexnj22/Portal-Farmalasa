@@ -8,3 +8,8 @@ android/
 # El código nativo de los módulos locales SÍ va al repo (la regla `ios/` de
 # arriba es para el proyecto generado por prebuild y se lo tragaba).
 !modules/*/ios/
+# Lo mismo para Android (2026-10-12): el código Kotlin del widget de saldo
+# (modules/widget-saldo/android) estuvo cuatro días sin entrar al repo por la
+# regla `android/`. Su `build/` sí se ignora.
+!modules/*/android/
+modules/*/android/build/

@@ -21,10 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.1267.1 — Snapshot de columnas booleanas al día
+## v2.1267.2 — Snapshot de columnas booleanas al día
 
 - `scripts/db/boolean-columns.json` regenerado contra producción (2026-10-12): de 176 a 201 columnas booleanas en 117 tablas y vistas. `data-gate` en verde (`tipo-booleano` 0).
 - Verificado que las notas de crédito de venta NO existen en el origen: 386,327 documentos de las 6 sucursales desde mayo de 2025, todos COF o CCF, ninguno sin `id_factura` (función de diagnóstico de sólo lectura, ya borrada). Las devoluciones se hacen invalidando la factura (1,088 invalidadas). La propuesta de `docs/propuestas/notas-credito-puntos-2026-10-09/` queda archivada.
+## v2.1267.1 — Puntos Salud Android: paquete de la app vieja y el widget entra al repo
+
+- **Puntos Salud en Android usa el paquete de la app que ya está en Play**, `com.wnapp.id1750888957164` (la que hizo WebIntoApp, con 476 instalaciones). Así la app nueva les llega como **actualización** y no hay que pasar 14 días de prueba con 12 testers, porque la ficha ya existía. En iPhone sigue `lat.farmasalud.clientes`. La llave de subida nueva espera la aprobación de Google (reseteo pedido el 2026-10-08). Firebase ya tiene ese paquete.
+- **El código nativo del widget de saldo no estaba en el repo.** `apps/clientes/.gitignore` ignora toda carpeta `android/` y sólo exceptuaba `modules/*/ios/`. Ahora también `modules/*/android/`, sin su `build/`. El widget estuvo cuatro días vivo sólo en un worktree.
 
 ## v2.1267.0 — Auditoría de calidad de la app
 

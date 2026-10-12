@@ -1,0 +1,4 @@
+<resources>
+  <string name="widget_saldo_nombre">Tu saldo</string>
+  <string name="widget_saldo_descripcion">Tus puntos y lo que vence pronto.</string>
+</resources>

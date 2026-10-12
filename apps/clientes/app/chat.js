@@ -42,7 +42,8 @@ const diaDe = (iso) => {
 };
 const iniciales = (n) => String(n ?? '').trim().split(/\s+/).slice(0, 2).map((p) => p[0] ?? '').join('').toUpperCase() || '·';
 // La hora de El Salvador (UTC-6, sin horario de verano), por si el servidor no contestó.
-const fueraDeHorarioLocal = () => { const h = new Date(Date.now() - 6 * 3600_000).getUTCHours(); return h < 7 || h >= 21; };
+// Atendemos de 7:00 a 22:00 (hora de El Salvador), como las sucursales.
+const fueraDeHorarioLocal = () => { const h = new Date(Date.now() - 6 * 3600_000).getUTCHours(); return h < 7 || h >= 22; };
 
 export default function Chat() {
   const t = useTema();
@@ -150,7 +151,11 @@ export default function Chat() {
       if (!r?.ok) throw new Error(r?.mensaje ?? 'No se pudo enviar. Revisa tu conexión.');
       if (typeof r.fuera_de_horario === 'boolean') setFuera(r.fuera_de_horario);
       anotarUltimo([r.mensaje]);
-      setMensajes((ant) => (ant ?? []).filter((m) => m.id !== r.mensaje.id).map((m) => (m.id === tmp.id ? r.mensaje : m)));
+      setMensajes((ant) => {
+        const sin = (ant ?? []).filter((m) => m.id !== r.mensaje.id && m.id !== r.automatico?.id).map((m) => (m.id === tmp.id ? r.mensaje : m));
+        return r.automatico ? [...sin, r.automatico] : sin;
+      });
+      if (r.automatico) anotarUltimo([r.automatico]);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       return true;
     } catch (e) {
@@ -216,14 +221,20 @@ export default function Chat() {
         onContentSizeChange={() => { if (alFondo.current) lista.current?.scrollToEnd({ animated: false }); }}
         ListHeaderComponent={(
           <View style={{ gap: 10, marginBottom: 8 }}>
-            {fuera ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 16, padding: 12, backgroundColor: suave(t.color.aviso, 0.18) }}>
-                <Icono sf="moon.fill" respaldo="☾" tam={16} color={t.color.avisoTexto} />
-                <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: t.color.avisoTexto }}>
-                  Estamos fuera de horario. Te respondemos mañana desde las 7:00.
+            {/* Estado de la farmacia (2026-10-12): en línea o fuera de horario, siempre a la vista. */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 16, padding: 12,
+              backgroundColor: fuera ? suave(t.color.aviso, 0.18) : suave(t.color.verde, 0.16) }}>
+              <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: fuera ? colorSistema.texto3 : t.color.verde }} />
+              <View style={{ flex: 1, gap: 1 }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: fuera ? t.color.avisoTexto : t.color.verdeTexto }}>
+                  {fuera ? 'Farmacia fuera de horario' : 'Farmacia en línea'}
+                </Text>
+                <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>
+                  {fuera ? 'Escríbenos igual: te responderemos a la brevedad cuando abramos, a las 7:00 a. m.'
+                    : 'Atendemos de 7:00 a. m. a 10:00 p. m. Te respondemos en unos minutos.'}
                 </Text>
               </View>
-            ) : null}
+            </View>
             {error ? <Text style={{ fontSize: 14, color: colorSistema.rojo, textAlign: 'center' }}>{error}</Text> : null}
             {hayMas ? (
               <Pressable onPress={anteriores} disabled={cargandoViejos} accessibilityRole="button"

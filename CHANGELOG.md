@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1274.0 — Chat: horario de atención, burbuja flotante, estados y panel del cliente
+
+- **Horario de atención 7:00–22:00** (decisión del usuario: abre la primera sucursal, cierra la última). En la app, el chat muestra siempre «Farmacia en línea» o «Farmacia fuera de horario». Cada mensaje del cliente recibe una **respuesta automática** (una por turno, no se repite en 10 h): en horario, «en un momento te atiende alguien»; fuera, «te responderemos a la brevedad cuando abramos, a las 7:00 a. m.». El cron `avisos-clientes-minuto` pasa a cubrir 7:00–21:59 (antes 8:00–19:59): una respuesta de las 20:30 ya no llega al día siguiente.
+- **Portal — burbuja flotante** del chat en todas las pantallas (sólo con `chat_clientes`), con los sin leer en vivo; abre la bandeja y el hilo sin salir de la pantalla (pantalla completa en el teléfono). Chunks de 3 kB + 4.6 kB.
+- **Estados** derivados: Nuevo (con espera ámbar > 15 min, roja > 1 h), En atención · nombre, Esperando al cliente, Resuelta — con pestañas en la URL.
+- **Panel «Cliente»** al lado del hilo: tipo, nivel, saldo de puntos, llamar/WhatsApp, últimas 10 compras con sus productos, reservas activas y tratamientos (`chat_cliente_contexto`, DEFINER con la guarda del chat).
+- La campana abre la conversación exacta del aviso `CHAT_CLIENTE`.
+
 ## v2.1273.0 — App de clientes: receta con foto, chat, foto de perfil y precios de mayoreo
 
 App de clientes y su función (`app-clientes`, `avisos-clientes`):

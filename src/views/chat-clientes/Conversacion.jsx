@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { CheckCircle2, ImageOff, Package, Phone, Tag } from 'lucide-react';
+import { CheckCircle2, ImageOff, MessagesSquare, Package, Phone, Tag, UserRound } from 'lucide-react';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -7,6 +7,9 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import Notice from '../../components/common/Notice';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
 import { SkeletonText } from '../../components/common/StateViews';
+import SegmentedControl from '../../components/common/SegmentedControl';
+import useMediaQuery from '../../plataforma/useMediaQuery';
+import { useNowTick } from '@nucleo/hooks/useNowTick';
 import { useRefrescoEnVivo } from '@nucleo/hooks/useRefrescoEnVivo';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -16,8 +19,10 @@ import { cuandoLlego } from '@nucleo/utils/notificacionTexto';
 import {
     MENSAJES_POR_PAGINA, fetchMensajes, quitarFotoDeCliente, resolverConversacion, tomarConversacion,
 } from '@nucleo/data/chatClientes';
+import ChipsDeEstado from './ChipsDeEstado';
 import ClienteAvatar from './ClienteAvatar';
 import Compositor from './Compositor';
+import PanelCliente from './PanelCliente';
 import { NIVELES, nombreDeCliente, tipoDeCliente } from './etiquetas';
 
 // El hilo de una conversación: el contexto del cliente arriba, los mensajes
@@ -28,8 +33,19 @@ import { NIVELES, nombreDeCliente, tipoDeCliente } from './etiquetas';
 // respondiendo» durante 10 minutos, y al salir se suelta. Cada mensaje nuevo
 // del cliente que llega con el hilo abierto la vuelve a tomar, que es lo que
 // deja su contador de «sin leer» en cero.
+//
+// `conPanelCliente` suma el panel «Cliente» (compras, puntos, reservas…): al
+// costado en una pantalla ancha (≥1280px y no `comoPanel`), y si no, como una
+// segunda pestaña del hilo — en el teléfono y en el panel de la burbuja.
 
-export default function Conversacion({ conversacion: c, puedeResponder, equipo, asegurarEquipo, comoPanel, onCambio, onCerrar }) {
+const ANCHO_LATERAL = '(min-width: 1280px)';
+
+export default function Conversacion({ conversacion: c, puedeResponder, equipo, asegurarEquipo, comoPanel, conPanelCliente = false, onCambio, onCerrar }) {
+    const ancha = useMediaQuery(ANCHO_LATERAL);
+    const lateral = conPanelCliente && ancha && !comoPanel;
+    const [pestana, setPestana] = useState('mensajes');
+    const verCliente = conPanelCliente && !lateral && pestana === 'cliente';
+    const ahora = useNowTick(30_000);
     const showToast = useToastStore((s) => s.showToast);
     const [mensajes, setMensajes] = useState(null);
     const [hayAnteriores, setHayAnteriores] = useState(false);
@@ -161,6 +177,8 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
                     <div className="flex flex-wrap items-center gap-1 mt-0.5">
                         <Badge variant={tipo.variant} size="sm" uppercase={false}>{tipo.label}</Badge>
                         {nivel && <Badge variant={nivel.variant} size="sm" uppercase={false}>{nivel.label}</Badge>}
+                        <ChipsDeEstado conversacion={c} ahora={ahora}
+                            atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} />
                         {c.telefono && (
                             <a href={`tel:${String(c.telefono).replace(/\D/g, '')}`}
                                 className="inline-flex items-center gap-1 text-label text-content-2 hover:text-brand-text min-h-[var(--tap-min)] active:scale-[0.97]">
@@ -181,6 +199,23 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
                 )}
             </header>
 
+            {conPanelCliente && !lateral && (
+                <div className="px-4 pt-2">
+                    <SegmentedControl size="sm" label="Ver" value={pestana} onChange={setPestana}
+                        options={[
+                            { value: 'mensajes', label: 'Mensajes', icon: MessagesSquare },
+                            { value: 'cliente', label: 'Cliente', icon: UserRound },
+                        ]} />
+                </div>
+            )}
+
+            <div className="flex-1 min-h-0 flex">
+            {verCliente && (
+                <div className="flex-1 min-w-0 overflow-y-auto overscroll-contain">
+                    <PanelCliente customerId={c.customer_id} />
+                </div>
+            )}
+            <div className={`flex-1 min-w-0 min-h-0 flex-col ${verCliente ? 'hidden' : 'flex'}`}>
             {/* ── Los mensajes ───────────────────────────────────────────── */}
             <div ref={listaRef} className="flex-1 min-h-[240px] overflow-y-auto overscroll-contain px-4 py-3 space-y-1.5">
                 {error && <Notice variant="danger">{error}</Notice>}
@@ -209,6 +244,13 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
             ) : (
                 <p className="px-4 py-3 border-t border-border-subtle text-label text-content-3">Puedes leer las conversaciones; para responder hace falta el permiso de editar.</p>
             )}
+            </div>
+            {lateral && (
+                <aside aria-label="Cliente" className="w-[320px] shrink-0 border-l border-border-subtle overflow-y-auto overscroll-contain">
+                    <PanelCliente customerId={c.customer_id} />
+                </aside>
+            )}
+            </div>
 
             <PhotoLightbox src={foto} alt={`Foto enviada en la conversación con ${nombre}`} onClose={() => setFoto(null)} />
             <ConfirmModal isOpen={quitarFoto} onClose={() => setQuitarFoto(false)} onConfirm={confirmarQuitarFoto}

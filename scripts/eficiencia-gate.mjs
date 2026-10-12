@@ -158,10 +158,10 @@ const CRONS = [
           + 'el ERP; APNs es gratis.',
   },
   {
-    job: 'avisos-clientes-minuto', slug: 'avisos-clientes', cadencia: '* 14-23,0-1 * * *',
-    corridasDia: 720, sistema: 0,
+    job: 'avisos-clientes-minuto', slug: 'avisos-clientes', cadencia: '* 13-23,0-3 * * *',
+    corridasDia: 900, sistema: 0,
     motivo: 'Avisos INMEDIATOS de la app de clientes: puntos ganados y oferta nueva, cada minuto '
-          + 'de 8:00 a 20:00 SV (decisión del usuario, 2026-10-06: la venta tarda ~1 min en llegar '
+          + 'de 7:00 a 22:00 SV desde el 2026-10-12 (horario de atención del chat; antes 8:00 a 20:00 — decisión del usuario, 2026-10-06: la venta tarda ~1 min en llegar '
           + 'de la caja, así que el aviso llega 1–2 min después de pagar). `sistema: 0`: no habla '
           + 'con el ERP; lee la propia base (sesiones con avisos + lotes de las últimas 2 h) y sale '
           + 'antes si nadie tiene avisos. Envía por Expo, gratis. La bitácora impide repetir.',

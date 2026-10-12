@@ -29,6 +29,11 @@ import { useThemeSync } from '@nucleo/hooks/useThemeSync';
  * no salta cuando llega: lo que se difiere es el peso, no el lugar. */
 const NotificationBell = React.lazy(() => import('../common/NotificationBell'));
 
+/* La burbuja del chat con clientes: `lazy` por el mismo motivo que la campana
+ * —y además sólo se monta para quien tiene `chat_clientes`, así que el resto
+ * no la baja nunca—. Ver `views/chat-clientes/BurbujaChat.jsx`. */
+const BurbujaChat = React.lazy(() => import('../../views/chat-clientes/BurbujaChat'));
+
 /** El sitio que la campana va a ocupar, para que nada se corra al llegar. */
 const HuecoDeCampana = () => <div className="w-11 h-11 shrink-0" aria-hidden="true" />;
 import SidebarSettingsMenu from '../common/SidebarSettingsMenu';
@@ -1547,6 +1552,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
             <AvisosApagadosDialog />
             <OfflineBanner />
+
+            {hasPermission('chat_clientes', 'can_view') && (
+                <React.Suspense fallback={null}>
+                    <BurbujaChat oculta={(isMobile && isSidebarOpen) || hayDialogo} />
+                </React.Suspense>
+            )}
 
             <MenuSearchModal
                 isOpen={searchOpen}

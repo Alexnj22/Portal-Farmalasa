@@ -26418,6 +26418,7 @@ export type Database = {
         Args: { p_id_traslado: string; p_msg?: string; p_request_id: string }
         Returns: boolean
       }
+      chat_cliente_contexto: { Args: { p_customer: number }; Returns: Json }
       chat_conversaciones: {
         Args: { p_antes?: string; p_estado?: string }
         Returns: Json

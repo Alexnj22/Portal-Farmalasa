@@ -174,3 +174,50 @@ export async function fetchOfertasVigentes(hoy) {
         .order('fin', { ascending: true })
         .limit(100)) ?? [];
 }
+
+// ── La burbuja y el panel del cliente (2026-10-12) ─────────────────────────
+
+/**
+ * Cuántos mensajes de clientes esperan respuesta en TODAS las conversaciones
+ * abiertas — el número de la burbuja flotante. No sale de la bandeja (que
+ * trae 40 por página): se suma aparte, sólo sobre las que tienen algo sin
+ * leer, así que el tope no recorta nada que importe (500 conversaciones con
+ * mensajes sin leer a la vez es otro problema).
+ */
+export async function fetchSinLeerDelChat() {
+    const filas = sinError(await supabase.from('app_chat_conversaciones')
+        .select('sin_leer_equipo')
+        .eq('estado', 'abierta')
+        .gt('sin_leer_equipo', 0)
+        .limit(500)) ?? [];
+    return filas.reduce((s, f) => s + (Number(f.sin_leer_equipo) || 0), 0);
+}
+
+/**
+ * Todo lo que sirve tener a mano mientras se le contesta a un cliente, en UNA
+ * llamada (`chat_cliente_contexto`, DEFINER con la guarda de `chat_clientes`:
+ * quien contesta el chat no necesariamente puede leer ventas, puntos o
+ * reservas). Contrato:
+ *
+ *   { customer_id, cliente, telefono, foto_ruta, es_team, es_mayoreo, rango,
+ *     compra_12m, nivel, saldo_puntos,
+ *     compras:      [{ id, fecha, hora, tipo_documento, total, sala, n_productos,
+ *                      productos: [{ descripcion, cantidad, total }] }]   ← 10, ≤30 renglones
+ *     reservas:     [{ id, estado, pedido, producto_nombre, cantidad, entrega,
+ *                      receta_estado, vence_at, created_at, sala }]       ← vivas, ≤20
+ *     tratamientos: [{ id, nombre, intervalo_dias, ultima_compra, se_acaba, estado }] }
+ *
+ * `null` si el cliente ya no existe.
+ */
+export async function fetchContextoCliente(customerId) {
+    const ctx = sinError(await supabase.rpc('chat_cliente_contexto', { p_customer: Number(customerId) }));
+    if (!ctx) return null;
+    const foto = ctx.foto_ruta ? await firmarRuta(ctx.foto_ruta) : null;
+    return {
+        ...ctx,
+        foto_url: foto,
+        compras: ctx.compras ?? [],
+        reservas: ctx.reservas ?? [],
+        tratamientos: ctx.tratamientos ?? [],
+    };
+}

@@ -4,12 +4,16 @@ import Badge from '../../components/common/Badge';
 import ListRow from '../../components/common/ListRow';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { cuandoLlego } from '@nucleo/utils/notificacionTexto';
+import ChipsDeEstado from './ChipsDeEstado';
 import ClienteAvatar from './ClienteAvatar';
 import { NIVELES, nombreDeCliente, tipoDeCliente } from './etiquetas';
 
 // Una conversación en la bandeja: quién escribió, qué tipo de cliente es, su
-// nivel, cuántos mensajes esperan respuesta y si alguien ya la está atendiendo.
-export default function FilaDeConversacion({ conversacion: c, activa, tomadaPor, onAbrir }) {
+// nivel, en qué estado está (y cuánto lleva esperando), cuántos mensajes esperan
+// respuesta y si alguien ya la está atendiendo. `atiende` es la ficha de quien
+// la tiene tomada (también si es uno mismo: el chip lo nombra); `tomadaPor`,
+// sólo si es OTRA persona (la línea «… está respondiendo»).
+export default function FilaDeConversacion({ conversacion: c, activa, tomadaPor, atiende, ahora, onAbrir }) {
     const tipo = tipoDeCliente(c);
     const nivel = NIVELES[c.nivel];
     // La abierta no cuenta como «sin leer»: quien la mira ya la está leyendo.
@@ -28,6 +32,7 @@ export default function FilaDeConversacion({ conversacion: c, activa, tomadaPor,
                 </span>
             )}>
             <span className="flex flex-wrap items-center gap-1 mt-0.5">
+                <ChipsDeEstado conversacion={c} atiende={atiende} ahora={ahora} />
                 <Badge variant={tipo.variant} size="sm" uppercase={false}>{tipo.label}</Badge>
                 {nivel && <Badge variant={nivel.variant} size="sm" uppercase={false}>{nivel.label}</Badge>}
             </span>

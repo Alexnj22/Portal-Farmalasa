@@ -19,6 +19,7 @@ import { usePaginaEnUrl } from '../plataforma/usePaginaEnUrl';
 import usePestanaEnUrl from '../plataforma/usePestanaEnUrl';
 import useAccionesDeAviso from '../components/common/useAccionesDeAviso';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { enlaceDeAviso } from '@nucleo/utils/notificacionTexto';
 import { fetchNotificationsPage, DIAS_VISIBLES } from '@nucleo/data/notifications';
 
 /* El historial de avisos — y la papelera (2026-09-04).
@@ -199,9 +200,8 @@ export default function NotificacionesView() {
        escritos antes de que el enlace se guardara. */
     const abrir = useCallback((n) => {
         if (!n.read_at && !n.deleted_at) markNotificationRead(n.id);
-        if (n.link || n.metadata?.request_id) {
-            navigate(n.link || `/requests?solicitud=${n.metadata?.request_id ?? ''}`);
-        }
+        const destino = enlaceDeAviso(n);
+        if (destino) navigate(destino);
     }, [navigate, markNotificationRead]);
 
     const restaurar = useCallback(async (n) => {

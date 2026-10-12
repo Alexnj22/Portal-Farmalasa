@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CheckCircle2, Inbox, MessageCircle, MessagesSquare } from 'lucide-react';
+import { CheckCircle2, Headset, Hourglass, Inbox, MessageCircle, MessagesSquare, Sparkles } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import Button from '../../components/common/Button';
@@ -10,12 +10,12 @@ import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import { useExpedienteMovil } from '../../components/common/usarExpediente';
 import usePestanaEnUrl from '../../plataforma/usePestanaEnUrl';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { useRefrescoEnVivo } from '@nucleo/hooks/useRefrescoEnVivo';
-import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { useNowTick } from '@nucleo/hooks/useNowTick';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { fetchAutoresDelEquipo, fetchConversaciones } from '@nucleo/data/chatClientes';
 import FilaDeConversacion from './FilaDeConversacion';
 import Conversacion from './Conversacion';
+import { FILTROS, estadoDeConversacion, estadoServidor } from './estados';
+import { useBandejaDelChat, useEquipoDelChat } from './useBandeja';
 
 /**
  * Chat con clientes (2026-10-12) — las conversaciones que los clientes abren
@@ -33,86 +33,39 @@ import Conversacion from './Conversacion';
  * pestaña: recargar o volver con el historial no pierde dónde se estaba.
  */
 
-const POR_PAGINA = 40;
+// Los chips de estado (todos derivados de la bandeja, ver `estados.js`). Las
+// cuatro primeras piden las ABIERTAS a la base y filtran acá —con la lista
+// entera, no con la primera página—; «Resueltas» pide las resueltas.
+const ICONOS = { abierta: Inbox, nuevo: Sparkles, atencion: Headset, esperando: Hourglass, resuelta: CheckCircle2 };
 
 export default function ChatClientesView() {
     const { hasPermission, user } = useAuth();
     const puedeResponder = hasPermission('chat_clientes', 'can_edit');
 
-    const tabs = useMemo(() => [
-        { key: 'abierta', label: 'Abiertas', icon: Inbox },
-        { key: 'resuelta', label: 'Resueltas', icon: CheckCircle2 },
-    ], []);
-    const [estado, setEstado] = usePestanaEnUrl(tabs, 'abierta');
+    const claves = useMemo(() => Object.keys(FILTROS), []);
+    const [filtro, setFiltro] = usePestanaEnUrl(claves, 'abierta');
     const [busqueda, setBusqueda] = useState('');
     const [params, setParams] = useSearchParams();
     const abiertaId = params.get('c') ? Number(params.get('c')) : null;
+    const ahora = useNowTick(30_000);
 
-    const [conversaciones, setConversaciones] = useState(null);
-    const [hayMas, setHayMas] = useState(false);
-    const [cargandoMas, setCargandoMas] = useState(false);
-    const [error, setError] = useState(null);
-    // Las fichas del equipo que aparecen en pantalla (quién tomó, quién contestó).
-    const [equipo, setEquipo] = useState(() => new Map());
+    const { equipo, asegurarEquipo } = useEquipoDelChat();
+    const { conversaciones, hayMas, cargandoMas, error, cargar, verMas } = useBandejaDelChat(
+        estadoServidor(filtro), { asegurarEquipo, todas: filtro !== 'resuelta' });
 
-    const asegurarEquipo = useCallback(async (ids) => {
-        const faltan = [...new Set((ids || []).filter(Boolean))];
-        if (!faltan.length) return;
-        try {
-            const filas = await fetchAutoresDelEquipo(faltan);
-            setEquipo((prev) => {
-                const nuevo = new Map(prev);
-                filas.forEach((e) => nuevo.set(e.id, e));
-                return nuevo;
-            });
-        } catch (err) {
-            console.error('ChatClientesView: no se pudieron leer las fichas del equipo', err);
-        }
-    }, []);
+    // Cuántas hay en cada estado, para el número de cada chip (sólo con las
+    // abiertas cargadas: con «Resueltas» la lista es otra).
+    const cuentas = useMemo(() => {
+        const n = { nuevo: 0, atencion: 0, esperando: 0 };
+        if (filtro === 'resuelta') return null;
+        (conversaciones ?? []).forEach((c) => { const e = estadoDeConversacion(c); if (e in n) n[e] += 1; });
+        return n;
+    }, [conversaciones, filtro]);
 
-    // Lectura silenciosa de la primera página. Si ya se habían pedido páginas
-    // viejas, se conservan las que quedan por debajo de la página nueva.
-    const cargar = useCallback(async () => {
-        try {
-            const nuevas = await fetchConversaciones(estado);
-            setConversaciones((prev) => {
-                if (!prev || prev.length <= POR_PAGINA || !nuevas.length) return nuevas;
-                const corte = nuevas[nuevas.length - 1].ultimo_mensaje_at;
-                const ids = new Set(nuevas.map((c) => c.id));
-                return [...nuevas, ...prev.filter((c) => !ids.has(c.id) && c.ultimo_mensaje_at < corte)];
-            });
-            setHayMas((prev) => prev || nuevas.length >= POR_PAGINA);
-            setError(null);
-            asegurarEquipo(nuevas.filter((c) => c.tomada_vigente).map((c) => c.tomada_por));
-        } catch (err) {
-            setError(mensajeAmigable(err, 'No se pudieron cargar las conversaciones.'));
-        }
-    }, [estado, asegurarEquipo]);
-
-    useEffect(() => {
-        setConversaciones(null);
-        setHayMas(false);
-        cargar();
-    }, [cargar]);
-    useRefrescoEnVivo(cargar, { ms: 30_000, tabla: 'app_chat_conversaciones' });
-
-    const verMas = async () => {
-        const ultima = conversaciones?.[conversaciones.length - 1];
-        if (!ultima) return;
-        setCargandoMas(true);
-        try {
-            const mas = await fetchConversaciones(estado, ultima.ultimo_mensaje_at);
-            setConversaciones((prev) => {
-                const ids = new Set((prev ?? []).map((c) => c.id));
-                return [...(prev ?? []), ...mas.filter((c) => !ids.has(c.id))];
-            });
-            setHayMas(mas.length >= POR_PAGINA);
-        } catch (err) {
-            setError(mensajeAmigable(err, 'No se pudieron cargar más conversaciones.'));
-        } finally {
-            setCargandoMas(false);
-        }
-    };
+    const tabs = useMemo(() => claves.map((k) => ({
+        key: k, label: FILTROS[k].label, icon: ICONOS[k],
+        ...(cuentas && cuentas[k] ? (k === 'nuevo' ? { cuenta: cuentas[k], tono: 'danger' } : { cuenta: cuentas[k] }) : {}),
+    })), [claves, cuentas]);
 
     const abrir = useCallback((id) => {
         setParams((prev) => {
@@ -122,9 +75,12 @@ export default function ChatClientesView() {
         }, { replace: id == null });
     }, [setParams]);
 
-    const visibles = useMemo(() => (conversaciones ?? [])
-        .filter((c) => !busqueda || tokenMatch(busqueda, c.cliente ?? '', c.telefono ?? '', c.ultimo_texto ?? '')),
-    [conversaciones, busqueda]);
+    const visibles = useMemo(() => {
+        const entran = new Set(FILTROS[filtro]?.estados ?? []);
+        return (conversaciones ?? [])
+            .filter((c) => entran.has(estadoDeConversacion(c)))
+            .filter((c) => !busqueda || tokenMatch(busqueda, c.cliente ?? '', c.telefono ?? '', c.ultimo_texto ?? ''));
+    }, [conversaciones, busqueda, filtro]);
 
     const { enTelefono, abierto } = useExpedienteMovil(conversaciones, abiertaId);
     const abiertaEnEscritorio = !enTelefono && abiertaId != null
@@ -133,13 +89,13 @@ export default function ChatClientesView() {
 
     const hilo = (conv) => (
         <Conversacion key={conv.id} conversacion={conv} puedeResponder={puedeResponder}
-            equipo={equipo} asegurarEquipo={asegurarEquipo} comoPanel={enTelefono}
+            equipo={equipo} asegurarEquipo={asegurarEquipo} comoPanel={enTelefono} conPanelCliente
             onCambio={cargar} onCerrar={() => abrir(null)} />
     );
 
     return (
         <GlassViewLayout icon={MessageCircle} title="Chat con clientes" fixedScrollMode transparentBody filtersContent={(
-            <ViewTabBar tabs={tabs} activeTab={estado} onTabChange={(t) => { setEstado(t); abrir(null); }}
+            <ViewTabBar tabs={tabs} activeTab={filtro} onTabChange={(t) => { setFiltro(t); if (estadoServidor(t) !== estadoServidor(filtro)) abrir(null); }}
                 searchValue={busqueda} onSearchChange={setBusqueda} placeholder="Buscar por nombre, teléfono o mensaje…" />
         )}>
             <div className="p-4 md:p-6 lg:flex-1 lg:min-h-0 grid gap-4 lg:grid-cols-[minmax(300px,360px)_1fr]">
@@ -148,7 +104,7 @@ export default function ChatClientesView() {
                     {!conversaciones && !error && <LoadingState label="Cargando conversaciones" />}
                     {conversaciones && !visibles.length && (
                         <EmptyState icon={MessagesSquare} compact
-                            title={busqueda ? 'Sin resultados' : estado === 'abierta' ? 'Sin conversaciones abiertas' : 'Sin conversaciones resueltas'}
+                            title={busqueda ? 'Sin resultados' : `Sin conversaciones: ${FILTROS[filtro]?.label.toLowerCase() ?? ''}`}
                             subtitle={busqueda ? 'Prueba con otro nombre o teléfono.' : 'Cuando un cliente escriba desde la app, aparece aquí.'} />
                     )}
                     <ul className="space-y-1.5 min-w-0">
@@ -156,11 +112,12 @@ export default function ChatClientesView() {
                             <li key={c.id}>
                                 <FilaDeConversacion conversacion={c} activa={c.id === abiertaId}
                                     tomadaPor={c.tomada_vigente && String(c.tomada_por) !== String(user?.id) ? equipo.get(c.tomada_por) ?? { id: c.tomada_por } : null}
+                                    atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} ahora={ahora}
                                     onAbrir={() => abrir(c.id)} />
                             </li>
                         ))}
                     </ul>
-                    {hayMas && !busqueda && (
+                    {hayMas && !busqueda && filtro === 'resuelta' && (
                         <div className="flex justify-center pt-1">
                             <Button variant="secondary" size="sm" loading={cargandoMas} onClick={verMas}>Ver más conversaciones</Button>
                         </div>

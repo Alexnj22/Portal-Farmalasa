@@ -72,6 +72,22 @@ export const ACTION_LABEL = {
     RECETA_SIN_REVISAR: 'Revisar receta',
 };
 
+/**
+ * A dónde lleva un aviso al tocarlo. `n.link` ya trae la forma correcta para
+ * cada familia; el respaldo de `request_id` cubre avisos viejos, escritos antes
+ * de que el enlace se guardara.
+ *
+ * `CHAT_CLIENTE` es la excepción que se resuelve acá: su enlace es la bandeja
+ * (`/chat-clientes`) pero el aviso trae en `metadata.conversacion_id` CUÁL
+ * conversación, así que se abre ésa directamente (`?c=<id>`).
+ */
+export const enlaceDeAviso = (n) => {
+    const conv = n?.type === 'CHAT_CLIENTE' ? n?.metadata?.conversacion_id : null;
+    if (conv != null && /^\d+$/.test(String(conv))) return `/chat-clientes?c=${conv}`;
+    if (n?.link) return n.link;
+    return n?.metadata?.request_id ? `/requests?solicitud=${n.metadata.request_id}` : null;
+};
+
 /* El recordatorio de las 7:30 nombra UNO o VARIOS cortes según lo que haya
  * quedado colgado, así que su etiqueta no puede ser fija: es el verbo que
  * promete lo que pasa al tocar la fila, y prometer «los cortes» sobre uno solo

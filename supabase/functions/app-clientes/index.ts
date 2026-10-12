@@ -150,8 +150,9 @@ const nombreCortoEmpleado = (e: any) => {
   const p = String(e?.name ?? "").trim().split(/\s+/).filter(Boolean);
   return p.length <= 2 ? p.join(" ") : `${p[0]} ${p[2]}`;
 };
-// Fuera de 7:00–21:00 de El Salvador, el chat avisa que se responde mañana.
-const enHorarioSV = () => { const h = new Date(Date.now() - 6 * 3600_000).getUTCHours(); return h >= 7 && h < 21; };
+// Horario de atención del chat (2026-10-12, decisión del usuario): de 7:00 a
+// 22:00 de El Salvador — abre la primera sucursal y cierra la última.
+const enHorarioSV = () => { const h = new Date(Date.now() - 6 * 3600_000).getUTCHours(); return h >= 7 && h < 22; };
 
 const VERSION_AVISO = `${TEXTOS.version} · ${TEXTOS.aviso}`;
 
@@ -1096,7 +1097,26 @@ Deno.serve(async (req) => {
         .insert({ conversacion_id: cv.id, autor: "cliente", texto, foto_ruta: fotoRuta })
         .select("id, autor, employee_id, texto, foto_ruta, adjunto, created_at").single();
       if (error) throw error;
-      return json({ ok: true, mensaje: (await armarMensajes([m]))[0], fuera_de_horario: !enHorarioSV() });
+      // Respuesta automática (2026-10-12): el cliente siempre sabe que lo
+      // recibimos y cuándo le contestan. Una por turno: no se repite si ya hubo
+      // una en las últimas 10 horas.
+      const abierto = enHorarioSV();
+      let auto: any = null;
+      const { data: previa, error: eP } = await admin.from("app_chat_mensajes").select("id")
+        .eq("conversacion_id", cv.id).eq("autor", "sistema").gte("created_at", new Date(Date.now() - 10 * 3600_000).toISOString()).limit(1);
+      if (eP) console.error("chat_enviar: respuesta automática", eP.message);
+      if (!eP && !previa?.length) {
+        const { data: a, error: eA } = await admin.from("app_chat_mensajes").insert({
+          conversacion_id: cv.id, autor: "sistema",
+          texto: abierto
+            ? "¡Gracias por escribirnos! Recibimos tu mensaje y en un momento te atiende alguien de nuestro equipo."
+            : "¡Gracias por escribirnos! En este momento estamos fuera de horario (atendemos de 7:00 a. m. a 10:00 p. m.). Te responderemos a la brevedad cuando abramos.",
+        }).select("id, autor, employee_id, texto, foto_ruta, adjunto, created_at").single();
+        if (eA) console.error("chat_enviar: respuesta automática", eA.message);
+        else auto = a;
+      }
+      const armados = await armarMensajes(auto ? [m, auto] : [m]);
+      return json({ ok: true, mensaje: armados[0], automatico: armados[1] ?? null, fuera_de_horario: !abierto });
     }
     if (accion === "chat_leido") {
       const ahora = new Date().toISOString();

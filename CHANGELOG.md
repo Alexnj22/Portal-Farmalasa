@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1268.7 — App de clientes: Platino, Zafiro y Jade como minerales
+
+- **Platino** rehecho como los demás metales: pepita tallada en facetas (grafito con aristas blanco-espejo) y su propia magia, difracción —un arcoíris que salta de faceta en faceta al inclinar— con rayas finas dentro de cada cara. El diseño anterior (cepillado circular) tenía dos fuentes de corte detrás del logo; el nuevo no depende del ángulo desde el centro.
+- **Zafiro** como la piedra real: zonas de color hexagonales del cristal de corindón, seda de rutilo a 60°, asterismo que corre con la luz y facetas de pulido. Paleta sin verde.
+- **Jade** como jadeíta en cabujón: traslucidez con luz interior, textura fibrosa entrelazada, moteado «musgo en la nieve», vetas suaves y brillo ceroso.
+- `TarjetaSocio`: el lienzo del material lleva `key` por nivel; al cambiar de rango ya no puede quedar pintado el material anterior.
+
 ## v2.1268.6 — gate:bundle en verde: Inicio, Cortes y Bolsas más livianos
 
 - **Inicio −25 kB**: la baldosa «Reservas de mi sala» se baja sólo cuando se pinta (`lazy`), igual que las de cortes y bolsas. Antes su cierre —encargos, constancia, `ticketPrint`, `LiquidDatePicker`— lo descargaba todo el que entraba al Inicio, tuviera o no el permiso `dash_reservas`. El formulario de nueva reserva también se baja al abrirlo. 130 → 105 kB.

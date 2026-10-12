@@ -243,7 +243,9 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
           />
           {/* El material (2026-10-08): metal o piedra según el nivel o el rango,
               vivo con la inclinación. El degradado de arriba queda de respaldo. */}
-          {MATERIALES.includes(nivel) ? <Mineral material={nivel} x={x} y={y} activa={activa && !reducir} />
+          {/* `key`: al cambiar de nivel o rango el lienzo se rehace entero; sin
+              eso podía quedar pintado el material anterior. */}
+          {MATERIALES.includes(nivel) ? <Mineral key={nivel} material={nivel} x={x} y={y} activa={activa && !reducir} />
             : <EfectoNivel nivel={nivel} activa={activa && !reducir} x={x} />}
           {/* Una sombra suave abajo: el nombre y el saldo se leen sobre cualquier material. */}
           <LinearGradient pointerEvents="none" colors={['rgba(0,0,0,0.30)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.50)']}
@@ -302,7 +304,7 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
           <LinearGradient colors={paleta.reverso} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
           {/* El mismo material del frente, más oscuro para que el código se lea.
               Sigue la inclinación, pero su reloj va quieto (no gasta dos veces). */}
-          {MATERIALES.includes(nivel) ? <Mineral material={nivel} x={x} y={y} activa={false} />
+          {MATERIALES.includes(nivel) ? <Mineral key={nivel} material={nivel} x={x} y={y} activa={false} />
             : <EfectoNivel nivel={nivel} activa={activa && !reducir} x={x} />}
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.42)' }]} />
           <BrilloTarjeta x={x} y={y} barrido={barrido} sinArcoiris={MATERIALES.includes(nivel)} />

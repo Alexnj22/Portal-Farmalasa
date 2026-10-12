@@ -7,9 +7,9 @@
 // inclinación del teléfono más el dedo). Todo se mide en `uv = p / res.y`.
 //
 //   Metales (Puntos Salud): VIP seda morada · Plata cepillada · Oro cepillado
-//   con destellos · Platino titanio negro con tornasol.
-//   Piedras (Cliente Mayorista): Jade con vetas y luz interior · Zafiro
-//   facetado con estrella (asterismo) · Rubí facetado con fuego · Diamante
+//   con destellos · Platino grafito tallado con difracción.
+//   Piedras (Cliente Mayorista): Jade traslúcido con fibras y moteado · Zafiro
+//   con zonas hexagonales, seda y asterismo · Rubí facetado con fuego · Diamante
 //   facetado con dispersión de arcoíris.
 
 export const PRELUDIO = `
@@ -197,37 +197,27 @@ half4 main(float2 p) {
   platino: `
 half4 main(float2 p) {
   float a = res.x / res.y; float2 uv = p / res.y;
-  // Platino (2026-10-09, «le falta algo premium»): metal oscuro cepillado en
-  // círculos —como el fondo de un reloj fino— alrededor del logo, con una
-  // difracción holográfica que gira en arcoíris al inclinar, un filo de luz
-  // en el canto y polvo de estrellas.
-  float2 cc = uv - float2(a * 0.5, 0.5);
-  float rr = length(cc); float an = atan(cc.y, cc.x);
-  // Sin costuras (2026-10-09): el ángulo salta de +π a −π a la izquierda del
-  // centro; todo lo angular va por cos/sin, que no saltan.
-  float2 dir = rr > 0.0001 ? cc / rr : float2(1.0, 0.0);
-  // (2026-10-12) Nada depende del ángulo cerca del centro: la dirección
-  // cambia de golpe al cruzarlo y dibujaba un molinete cortado detrás del logo.
-  float cep = noise(float2(rr * 260.0, 0.5)) * 0.55 + noise(float2(rr * 90.0, 7.0) + uv * 3.0) * 0.45;
-  float3 c = mix(float3(0.035, 0.038, 0.050), float3(0.13, 0.14, 0.17), cep * 0.6 + 0.2);
-  // El cepillado circular toma luz en dos lóbulos que siguen la inclinación.
-  float aL = 0.6 + tilt.x * 1.6 - tilt.y * 1.1;
-  float lob = pow(abs(dot(dir, float2(cos(aL), sin(aL)))), 8.0);
-  float lejos = smoothstep(0.12, 0.6, rr);
-  c += float3(0.55, 0.58, 0.66) * lob * lejos * 0.22;
-  // Difracción: anillos finos que se tiñen de arcoíris según el ángulo.
-  float anillos = 0.5 + 0.5 * sin(rr * 180.0);
-  // El tono sale de la POSICIÓN (continua), no de la dirección desde el centro.
-  float3 iris = 0.5 + 0.5 * cos(6.2831 * (rr * 2.2 + uv.x / a * 0.6 + uv.y * 0.3 + tilt.x * 0.9 - tilt.y * 0.6 + float3(0.0, 0.33, 0.67)));
-  c += iris * anillos * lob * 0.16 * lejos;
-  // Banda holográfica ancha que cruza al inclinar.
-  float banda = exp(-sq((uv.x / a + uv.y * 0.5 - (0.75 + tilt.x * 0.6)) * 3.0));
-  c += iris * banda * 0.14;
-  // Filo de luz en el canto.
-  float borde = min(min(p.x, p.y), min(res.x - p.x, res.y - p.y));
-  c += float3(0.80, 0.84, 0.95) * (1.0 - smoothstep(0.0, 2.5, borde)) * 0.35;
-  c += float3(0.9, 0.95, 1.0) * destellos(p, 0.05, 1.4) * 0.8;
-  c *= 0.85 + 0.15 * smoothstep(1.2, 0.2, rr);
+  // Platino tallado (2026-10-12, «no está como los otros diseños»): pepita de
+  // platino en facetas, como Bronce, Plata y Oro, pero en metal grafito con
+  // aristas blanco-espejo. Su magia: cada faceta descompone la luz como una
+  // red de difracción —un arcoíris que salta de faceta en faceta al inclinar—
+  // y un polvo de micro-brillo. Nada depende del ángulo desde el centro (el
+  // diseño anterior se cortaba en una línea detrás del logo).
+  float3 c = metal(uv, 1.25, float3(0.045, 0.05, 0.06), float3(0.30, 0.31, 0.35), float3(0.90, 0.92, 0.96), 6.6, 0.65);
+  float4 v = voro4(uv * 1.25 + 6.6);
+  float2 n = hash2(float2(v.w * 71.0, v.w * 13.0)) * 2.0 - 1.0;
+  float kf = clamp(0.5 + 0.5 * (dot(n, tilt) * 1.6 + dot(n, -v.xy) * 1.1 + n.x * 0.35), 0.0, 1.0);
+  float tono = fract(v.w * 2.3 + dot(n, tilt) * 0.45 + uv.x * 0.18);
+  float3 arco = 0.5 + 0.5 * cos(6.2831 * (tono + float3(0.0, 0.33, 0.67)));
+  c = mix(c, c * 0.75 + arco * 0.30, smoothstep(0.70, 1.0, kf) * 0.30);
+  // Rayas finísimas de difracción dentro de cada faceta, en su dirección.
+  float an = v.w * 6.2831; float2 dr = float2(cos(an), sin(an));
+  float rayas = 0.5 + 0.5 * sin(dot(uv, dr) * 340.0);
+  c += arco * rayas * smoothstep(0.60, 1.0, kf) * 0.12;
+  float2 L = luz(a); c += float3(0.85, 0.88, 0.95) * exp(-dot(uv - L, uv - L) * 3.4) * 0.16;
+  float barr = exp(-sq((uv.x / a + uv.y * 0.4 - fract(t * 0.07) * 2.2 + 0.4) * 5.0));
+  c += float3(0.92, 0.95, 1.0) * barr * 0.14;
+  c += float3(1.0) * destellos(p, 0.08, 2.2) * 0.9;
   return half4(c, 1.0);
 }`,
   // La tarjeta del EQUIPO (empleados, precio Mayoreo Plus por política):
@@ -268,48 +258,92 @@ half4 main(float2 p) {
   jade: `
 half4 main(float2 p) {
   float a = res.x / res.y; float2 uv = p / res.y;
-  float2 q = uv * 1.7 + tilt * 0.08;
-  // Profundidad: tres capas de nube a distinta escala, la de atrás más oscura.
-  float fondo = fbm(q * 0.9 + 11.0);
-  float w = fbm(q * 1.4 + fbm(q * 1.8 + t * 0.015) * 1.4);
-  float3 c = mix(float3(0.01, 0.10, 0.07), float3(0.04, 0.33, 0.22), smoothstep(0.2, 0.8, fondo));
-  c = mix(c, float3(0.16, 0.58, 0.40), smoothstep(0.45, 0.85, w) * 0.75);
-  c = mix(c, float3(0.62, 0.90, 0.74), smoothstep(0.72, 0.95, w) * 0.35);
-  // Vetas suaves, como hilos dentro de la piedra.
-  float vena = 1.0 - smoothstep(0.0, 0.16, abs(fbm(q * 1.3 + 3.0) - 0.5));
-  c = mix(c, float3(0.70, 0.92, 0.80), vena * vena * 0.14);
-  // Motas finas, como los cristales dentro del jade.
-  c += float3(0.5, 0.9, 0.7) * smoothstep(0.82, 0.95, noise(uv * 60.0)) * 0.05;
-  // Luz que atraviesa: la piedra es translúcida.
-  float2 L = luz(a); float d = length(uv - L);
-  c += float3(0.30, 0.90, 0.62) * exp(-d * d * 2.2) * 0.30;
-  // Brillo de pulido, ancho y suave.
-  float cera = exp(-sq((uv.x * 0.55 + uv.y - (0.95 + tilt.x * 0.55)) * 2.2));
-  c += float3(0.85, 1.0, 0.92) * cera * 0.10;
-  c *= 0.82 + 0.18 * smoothstep(1.3, 0.2, length(uv - float2(a * 0.5, 0.5)));
+  // Jade (2026-10-12, «que sea mineral, con sus elementos»): jadeíta pulida en
+  // cabujón. Lo que tiene la piedra real:
+  //   · TRASLUCIDEZ: la luz entra y se difunde; el centro brilla desde adentro
+  //     y el brillo sigue a la inclinación;
+  //   · TEXTURA FIBROSA: cristales entrelazados, un «fieltro» fino que se ve
+  //     sólo donde pega la luz;
+  //   · MOTEADO «musgo en la nieve»: nubes verde esmeralda sobre un verde
+  //     lechoso, con zonas más claras y alguna inclusión oscura;
+  //   · BRILLO CEROSO: un reflejo ancho y suave del pulido, que se desliza.
+  float2 cc = uv - float2(a * 0.5, 0.5);
+  float2 q = uv * 1.6 + tilt * 0.06;
+  float musgo = fbm(q * 1.2 + fbm(q * 2.1 + 3.0) * 1.2);
+  float nieve = fbm(q * 0.7 + 17.0);
+  float3 lechoso = float3(0.42, 0.66, 0.52);
+  float3 esmeralda = float3(0.02, 0.42, 0.20);
+  float3 hondo = float3(0.005, 0.12, 0.06);
+  float3 c = mix(hondo, esmeralda, smoothstep(0.25, 0.65, musgo));
+  c = mix(c, lechoso, smoothstep(0.55, 0.85, nieve) * 0.55);
+  // Vetas de esmeralda intensa.
+  float veta = 1.0 - smoothstep(0.0, 0.10, abs(fbm(q * 0.9 + 8.0) - 0.5));
+  c = mix(c, float3(0.0, 0.50, 0.24), veta * veta * 0.30);
+  // Fieltro de fibras: ruido estirado en dos direcciones cruzadas.
+  float f1 = noise(float2(dot(uv, float2(0.94, 0.34)) * 160.0, dot(uv, float2(-0.34, 0.94)) * 12.0));
+  float f2 = noise(float2(dot(uv, float2(0.26, -0.97)) * 150.0, dot(uv, float2(0.97, 0.26)) * 11.0));
+  float fibra = (f1 + f2) * 0.5;
+  // Luz interior (traslucidez) que sigue al teléfono.
+  float2 L = luz(a); float dl = length(uv - L);
+  float dentro = exp(-dl * dl * 2.0);
+  c += float3(0.20, 0.85, 0.50) * dentro * 0.30;
+  c *= 0.90 + 0.22 * fibra * (0.4 + dentro);
+  // Motas finas de cromo (lo que le da el verde a la jadeíta), apenas visibles.
+  float mota = smoothstep(0.80, 0.97, noise(uv * 70.0 + 41.0));
+  c = mix(c, float3(0.0, 0.30, 0.14), mota * 0.35);
+  // Cabujón: el borde se oscurece y el pulido ceroso se desliza al inclinar.
+  c *= 0.78 + 0.22 * smoothstep(1.15, 0.25, length(cc * float2(1.0 / a, 1.0) * 1.6));
+  float cera = exp(-sq((uv.x * 0.55 + uv.y - (0.95 + tilt.x * 0.55 - tilt.y * 0.3)) * 2.4));
+  c += float3(0.85, 1.0, 0.92) * cera * 0.12;
+  c += float3(0.85, 1.0, 0.92) * destellos(p, 0.012, 1.4) * 0.35;
   return half4(c, 1.0);
 }`,
   zafiro: `
+float hexd(float2 q) { q = abs(q); return max(q.x * 0.8660254 + q.y * 0.5, q.y); }
 half4 main(float2 p) {
   float a = res.x / res.y; float2 uv = p / res.y;
-  float3 c = gema(uv, 1.2, float3(0.01, 0.0, 0.11), float3(0.05, 0.09, 0.60), float3(0.48, 0.55, 1.0), 1.3);
-  // Asterismo: la estrella de seis puntas del zafiro estrella, que corre con la luz.
-  float2 c0 = float2(a * (0.66 + tilt.x * 0.28), 0.42 - tilt.y * 0.28);
-  float2 r = uv - c0; float est = 0.0;
-  for (int k = 0; k < 3; k++) {
-    float ang = float(k) * 1.0472; float2 dir = float2(cos(ang), sin(ang));
-    float dd = abs(dot(r, float2(-dir.y, dir.x)));
-    est += exp(-dd * 70.0) * exp(-length(r) * 2.6);
-  }
-  c += float3(0.80, 0.84, 1.0) * est * 0.45 + float3(0.36, 0.42, 1.0) * exp(-dot(r, r) * 14.0) * 0.30;
-  c += float3(0.85, 0.88, 1.0) * destellos(p, 0.02, 1.8) * 0.5;
-  // Seda de rutilo: agujas finísimas a 60°, visibles sólo cuando la luz las toca.
+  // Zafiro (2026-10-12, «que sea mineral, con sus elementos»): el corte de un
+  // cristal de corindón. Lleva lo que tiene la piedra real:
+  //   · ZONAS DE COLOR hexagonales: bandas azul profundo y azul aciano que
+  //     siguen la forma del cristal, centradas detrás del logo;
+  //   · SEDA de rutilo: agujas finísimas a 60° que brillan sólo al tocarlas la luz;
+  //   · ASTERISMO: la estrella de seis puntas que corre con la inclinación;
+  //   · facetas suaves de piedra pulida.
+  // Paleta SIN verde (sólo rojo y azul suben juntos): en el teléfono se leía verdoso.
+  float2 cc = uv - float2(a * 0.5, 0.5);
+  float h = hexd(cc * float2(1.0, 1.15)) + (fbm(uv * 2.2) - 0.5) * 0.12;
+  float zona = 0.5 + 0.5 * sin(h * 38.0 + fbm(uv * 5.0) * 2.0);
+  float zona2 = 0.5 + 0.5 * sin(h * 13.0 + 1.3);
+  float3 hondo = float3(0.010, 0.012, 0.16);
+  float3 cuerpo = float3(0.035, 0.060, 0.52);
+  float3 aciano = float3(0.22, 0.30, 0.96);
+  float3 c = mix(hondo, cuerpo, 0.35 + 0.65 * zona2);
+  c = mix(c, aciano, zona * zona * 0.16 * smoothstep(0.05, 0.25, h));
+  // Facetas de pulido: la luz de cada cara cambia al inclinar.
+  float4 v = voro4(uv * 1.3 + 1.3);
+  float2 n = hash2(float2(v.w * 91.0, v.w * 17.0)) * 2.0 - 1.0;
+  float k = clamp(0.5 + 0.5 * (dot(n, tilt) * 1.2 + dot(n, -v.xy) * 1.2), 0.0, 1.0);
+  c *= 0.55 + 0.75 * k;
+  float arista = 1.0 - smoothstep(0.0, 0.05, v.z);
+  c += float3(0.40, 0.48, 1.0) * arista * (0.04 + 0.20 * orilla(uv)) * (0.5 + 0.7 * max(0.0, dot(n, tilt) + 0.2));
+  // Seda de rutilo.
   float seda = 0.0;
-  for (int k = 0; k < 3; k++) {
-    float ang2 = float(k) * 1.0472 + 0.3; float2 dd = float2(cos(ang2), sin(ang2));
-    seda += pow(max(0.0, sin(dot(uv, float2(-dd.y, dd.x)) * 260.0 + hash(floor(uv * 6.0) + float(k)) * 6.0)), 40.0) * step(0.6, noise(uv * 5.0 + float(k) * 3.0));
+  for (int k2 = 0; k2 < 3; k2++) {
+    float ang2 = float(k2) * 1.0472 + 0.5236; float2 dd = float2(cos(ang2), sin(ang2));
+    float aguja = pow(max(0.0, sin(dot(uv, float2(-dd.y, dd.x)) * 300.0 + noise(uv * 6.0 + float(k2) * 5.0) * 12.0)), 30.0);
+    seda += aguja * step(0.55, noise(uv * 4.0 + float(k2) * 3.0)) * max(0.0, dot(dd, tilt) * 1.5 + 0.35);
   }
-  c += float3(0.75, 0.78, 1.0) * seda * 0.08 * (0.4 + max(0.0, tilt.x + 0.4));
+  c += float3(0.70, 0.74, 1.0) * seda * 0.06;
+  // Asterismo: seis rayos desde el punto donde cae la luz.
+  float2 c0 = float2(a * (0.5 + tilt.x * 0.30), 0.5 - tilt.y * 0.30);
+  float2 r = uv - c0; float est = 0.0;
+  for (int k3 = 0; k3 < 3; k3++) {
+    float ang = float(k3) * 1.0472; float2 dir = float2(cos(ang), sin(ang));
+    est += exp(-abs(dot(r, float2(-dir.y, dir.x))) * 80.0) * exp(-length(r) * 2.4);
+  }
+  c += float3(0.82, 0.84, 1.0) * est * 0.42 + float3(0.30, 0.36, 1.0) * exp(-dot(r, r) * 10.0) * 0.28;
+  c += float3(0.85, 0.87, 1.0) * destellos(p, 0.025, 1.8) * 0.55;
+  c *= 0.80 + 0.20 * smoothstep(1.3, 0.2, length(cc));
   return half4(c, 1.0);
 }`,
   rubi: `

@@ -20,7 +20,12 @@ const config = getDefaultConfig(app);
 const nucleo = path.join(raiz, 'src') + path.sep;
 // El motor de la venta de Torogoz (`utils/distribucionMotor.js`) usa las MISMAS
 // cuentas que el documento para Hacienda, que viven con las edge functions.
-config.watchFolders = [nucleo, path.join(raiz, 'supabase', 'functions', '_shared', 'dte')];
+// El codificador QR de `@zxing/library` (sólo su parte de JavaScript puro, ver
+// `plataforma/codigoQr.js`) se toma del `node_modules` de la raíz.
+const zxing = path.join(raiz, 'node_modules', '@zxing', 'library') + path.sep;
+// (con `ts-custom-error`, de lo único que depende).
+const errorPropio = path.join(raiz, 'node_modules', 'ts-custom-error') + path.sep;
+config.watchFolders = [nucleo, path.join(raiz, 'supabase', 'functions', '_shared', 'dte'), zxing, errorPropio];
 
 const ALIAS = {
   '@nucleo/': path.join(raiz, 'src') + '/',
@@ -39,15 +44,27 @@ config.resolver.resolveRequest = (contexto, nombre, plataforma) => {
       return contexto.resolveRequest(contexto, destino + nombre.slice(prefijo.length), plataforma);
     }
   }
+  if (nombre.startsWith('@zxing/library/cjs/')) {
+    return { type: 'sourceFile', filePath: require.resolve(nombre, { paths: [raiz] }) };
+  }
   if (SOLO_WEB.has(nombre)) {
     return { type: 'sourceFile', filePath: path.join(app, 'plataforma', '_soloWeb.js') };
   }
   const resolver = resolverOriginal || contexto.resolveRequest;
   const esPaquete = !nombre.startsWith('.') && !path.isAbsolute(nombre);
+  // Lo que pida el propio zxing (sus módulos internos, `ts-custom-error`) se
+  // resuelve desde la raíz, donde está instalado.
+  if (esPaquete && contexto.originModulePath.startsWith(zxing)) {
+    return { type: 'sourceFile', filePath: require.resolve(nombre, { paths: [zxing] }) };
+  }
   if (esPaquete && contexto.originModulePath.startsWith(nucleo)) {
     return resolver({ ...contexto, originModulePath: path.join(app, 'package.json') }, nombre, plataforma);
   }
   return resolver(contexto, nombre, plataforma);
 };
+
+// La imprenta del pedido (`motor/motor-pedido.html`, ver scripts/motor-pedido.mjs)
+// viaja como ARCHIVO, no como código: se carga en un WebView sólo al imprimir.
+config.resolver.assetExts = [...config.resolver.assetExts, 'html'];
 
 module.exports = config;

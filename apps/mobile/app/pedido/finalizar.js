@@ -6,17 +6,22 @@
 // Las cuentas (`finalizarCajas`) y la escritura (`finalizarPedidoConCajas`,
 // con su orden) son las del núcleo, las mismas del portal.
 //
-// Las HOJAS son las del papel: las guarda el portal al generar el pedido o al
-// finalizarlo, calculadas del PDF exacto. Si este pedido todavía no las tiene,
-// no se inventan acá — un reparto distinto del papel le diría a la sala que la
+// Las HOJAS son las del papel: se guardan al generar el pedido (en la
+// computadora o en el teléfono), calculadas del PDF exacto. Si este pedido
+// todavía no las tiene, se calculan ACÁ con la imprenta del teléfono
+// (`motorPedido`: el mismo pdfmake y la misma definición del papel que el
+// portal, así que salen las mismas hojas) y se guardan, como hace el portal.
+// Nunca se estiman: un reparto distinto del papel le diría a la sala que la
 // hoja 3 está en la caja 2 cuando está en la 1.
+// Al terminar se pregunta UNA vez si imprimir, compartir o guardar la hoja de
+// despacho de la sala (lo que SALIÓ).
 import { volver } from '../../componentes/volver';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { fetchPedidoItemsAll, fetchPedidoSucursalStatus, fetchTrasladoErp, lanzarSimulacroTraslado } from '@nucleo/data/pedidos';
+import { fetchPedidoItemsAll, fetchPedidoSucursalStatus, fetchTrasladoErp, guardarPaginasDeSala, lanzarSimulacroTraslado, tieneEtiquetaDeDespacho } from '@nucleo/data/pedidos';
 import { finalizarPedidoConCajas } from '@nucleo/data/accionesDeBodega';
 import {
   ajustesDeEnvio, ajustesDelSimulacro, alternarCaja, armarCajaMap, armarPaginaItems, asignacionCompleta, asignacionInicial,
@@ -32,6 +37,8 @@ import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario
 import Segmentos from '../../componentes/Segmentos';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
+import { hojasExactas } from '../../componentes/pedidos/motorPedido';
+import { ofrecerPapelesDelPedido, papelDeLaSala } from '../../componentes/pedidos/papelDelPedido';
 
 const PASOS = [{ id: 1, label: 'Cajas' }, { id: 2, label: 'Hojas' }, { id: 3, label: 'Qué sale' }];
 
@@ -60,6 +67,9 @@ export default function FinalizarPedido() {
   const [simu, setSimu] = useState(null);
   const [simuError, setSimuError] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  // Calcular las hojas en el teléfono cuando el pedido no las trae guardadas.
+  const [calculandoHojas, setCalculandoHojas] = useState(false);
+  const [errorHojas, setErrorHojas] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -67,6 +77,29 @@ export default function FinalizarPedido() {
       Promise.resolve(fetchPedidoSucursalStatus(pedidoId, suc, 'paginas')).catch(() => ({ data: null })),
     ]).then(([rows, { data }]) => { setItems(rows ?? []); setHojas(Array.isArray(data?.paginas) ? data.paginas : []); });
   }, [pedidoId, suc]);
+
+  // Sin hojas guardadas: se calculan con la imprenta del teléfono y se GUARDAN
+  // (como `FinalizarCajasModal`): la próxima apertura ya las trae.
+  const calcularHojas = async () => {
+    if (!items?.length) return;
+    setCalculandoHojas(true);
+    setErrorHojas(null);
+    try {
+      const conEtiqueta = items.map((r) => ({ ...r, tiene_dispatch_label: tieneEtiquetaDeDespacho(r) }));
+      const grupos = await hojasExactas(suc, conEtiqueta);
+      if (!grupos?.length) throw new Error('No salieron hojas para esta sala.');
+      const { error } = await Promise.resolve(guardarPaginasDeSala(pedidoId, suc, grupos)).catch((e) => ({ error: e }));
+      if (error) console.error('guardar hojas:', error?.message ?? error);
+      setHojas(grupos);
+    } catch (e) {
+      setErrorHojas(mensajeAmigable(e));
+    } finally {
+      setCalculandoHojas(false);
+    }
+  };
+  useEffect(() => {
+    if (items && hojas && !hojas.length && items.length && !calculandoHojas && !errorHojas) calcularHojas();
+  }, [items, hojas]); // eslint-disable-line react-hooks/exhaustive-deps -- se calcula una vez al llegar sin hojas
 
   // La revisión de existencia arranca al abrir: tarda lo que lleva contar las cajas.
   useEffect(() => {
@@ -131,6 +164,17 @@ export default function FinalizarPedido() {
       if (r.despacho.ok) listo(`Pedido #${numero} finalizado`, `${cajas} caja${cajas === 1 ? '' : 's'}.`);
       else fallo('Quedó finalizado, pero no salió del sistema', r.despacho.error ?? 'Se puede reintentar desde el pedido.');
       volver('/pedidos');
+      // La hoja de despacho de la sala, con lo que SALIÓ: una sola pregunta.
+      Promise.all([
+        fetchPedidoItemsAll(pedidoId, suc),
+        Promise.resolve(fetchPedidoSucursalStatus(pedidoId, suc, 'codigo')).catch(() => ({ data: null })),
+      ])
+        .then(([filas, { data: st }]) => papelDeLaSala({ numero, sucId: suc, rows: filas ?? [], codigo: st?.codigo ?? null, finalizada: true }))
+        .then((a) => ofrecerPapelesDelPedido({
+          archivos: [a], titulo: `Pedido #${numero} · hoja de despacho`, mensaje: ERP_NAMES[suc] ?? undefined,
+          pedidoId, sucId: suc, alFallar: (e) => fallo('No se pudo', mensajeAmigable(e)),
+        }))
+        .catch(() => { /* el papel se puede sacar después desde el pedido */ });
     } catch (e) {
       fallo('No se pudo finalizar', mensajeAmigable(e));
     } finally {
@@ -150,7 +194,18 @@ export default function FinalizarPedido() {
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>{`Pedido #${numero} · ${ERP_NAMES[suc] ?? ''}`}</Text>
         {!totalHojas ? (
           <View style={{ marginHorizontal: 16, gap: 10 }}>
-            <Aviso tono="cuidado" texto="Este pedido todavía no tiene sus hojas guardadas. Se calculan del papel exacto: finalízalo esta vez en la computadora de Bodega." />
+            {calculandoHojas || !errorHojas ? (
+              <View style={{ alignItems: 'center', gap: 8, paddingVertical: 16 }}>
+                <ActivityIndicator />
+                <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>Calculando las hojas del papel…</Text>
+              </View>
+            ) : (
+              <>
+                <Aviso tono="cuidado" texto={`No se pudieron calcular las hojas: ${errorHojas}`} />
+                <BotonGrande texto="Intentar de nuevo" onPress={calcularHojas} />
+                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Si sigue fallando, esto se hace desde la computadora: Pedidos → Finalizar.</Text>
+              </>
+            )}
           </View>
         ) : (
           <>

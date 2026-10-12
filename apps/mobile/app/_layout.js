@@ -15,10 +15,12 @@ import BotonCampana from '../componentes/BotonCampana';
 import { CapaDeProgreso } from '../componentes/Progreso';
 import HojasAndroid, { instalarHojasAndroid } from '../componentes/HojasAndroid';
 import Aurora from '../componentes/Aurora';
+import { MotorPedido } from '../componentes/pedidos/motorPedido';
 import { escucharToques, registrarAvisos } from '../componentes/avisos';
 // Define la tarea del GPS de fondo de las rutas: iOS relanza la app sin pantalla
 // para entregar posiciones, y la tarea tiene que existir desde el arranque.
 import { revisarRastreoDeFondo } from '../plataforma/rastreoDeFondo';
+import { escucharVisibilidad, soltarVisibilidad, visibilidad } from '../plataforma/cicloDeVida';
 
 // Android no trae la hoja de opciones ni el prompt de iOS: se instalan antes de
 // que cualquier pantalla los pida (ver componentes/HojasAndroid).
@@ -31,7 +33,7 @@ instalarHojasAndroid();
 //    sin esto, «Salir» cerraba la sesión y dejaba un Inicio en blanco, y lo
 //    mismo pasaría cuando la sesión se vence por inactividad.
 function GuardiaDeSesion() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const fetchBoot = useStaffStore((s) => s.fetchBoot);
   const segmentos = useSegments();
   useEffect(() => { if (isAuthenticated) fetchBoot(); }, [isAuthenticated, fetchBoot]);
@@ -39,7 +41,17 @@ function GuardiaDeSesion() {
   useEffect(() => { if (isAuthenticated) registrarAvisos(); }, [isAuthenticated]);
   useEffect(() => (isAuthenticated ? escucharToques() : undefined), [isAuthenticated]);
   // Una ruta que ya terminó (o de ayer) no deja el GPS encendido; una viva se reanuda.
-  useEffect(() => { if (isAuthenticated) Promise.resolve(revisarRastreoDeFondo()).catch(() => {}); }, [isAuthenticated]);
+  // Y si quien conduce tiene una ruta de reparto en curso (iniciada en el
+  // portal), su teléfono empieza a marcar sin abrir la pantalla de la ruta; se
+  // vuelve a mirar cada vez que la app vuelve al frente.
+  const empleadoId = user?.id ?? null;
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    const revisar = () => { if (visibilidad() === 'visible') Promise.resolve(revisarRastreoDeFondo({ empleadoId })).catch(() => {}); };
+    revisar();
+    escucharVisibilidad(revisar);
+    return () => soltarVisibilidad(revisar);
+  }, [isAuthenticated, empleadoId]);
   useEffect(() => {
     if (loading) return;
     const enEntrada = !segmentos.length || segmentos[0] === 'entrar' || segmentos[0] === 'index';
@@ -94,6 +106,8 @@ export default function Raiz() {
           </Stack>
           <CapaDeProgreso />
           <HojasAndroid />
+          {/* La imprenta del pedido: no carga nada hasta que alguien imprime o finaliza. */}
+          <MotorPedido />
         </AuthProvider>
       </View>
     </SafeAreaProvider>

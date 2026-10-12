@@ -13,6 +13,7 @@ vi.mock('pdfmake/build/pdfmake', () => ({
 vi.mock('pdfmake/build/vfs_fonts', () => ({ default: {} }));
 vi.mock('@nucleo/data/pedidos', () => ({
     fetchErpSucursalAddressMap: async () => ({ data: [], error: null }),
+    leerDireccionesDeSalas: async () => ({}),
 }));
 
 const { printFromPedidoItems } = await import('@nucleo/utils/pedidoPrint');

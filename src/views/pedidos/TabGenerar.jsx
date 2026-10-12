@@ -19,10 +19,10 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { printPerSucursal, getExactPageGroups } from '@nucleo/utils/pedidoPrint';
-import { confirmarPedidoDirecto, vistaPreviaDePedido } from '@nucleo/data/accionesDePedido';
+import { capturarHojasDelPedido, confirmarPedidoDirecto, vistaPreviaDePedido } from '@nucleo/data/accionesDePedido';
 import { nivelDeUrgenciaDeSala, salaSinMinMaxPublicado, urgenciaDeSala } from '@nucleo/utils/tableroDePedidos';
 import { ERP_NAMES, SUCURSALES } from '@nucleo/constants/erp';
-import { fetchActiveEmployeesBasic, fetchPedidoItemsForPrintCapture, fetchTableroParaGenerarPedido, tieneEtiquetaDeDespacho, guardarPaginasDeSala } from '@nucleo/data/pedidos';
+import { fetchActiveEmployeesBasic, fetchTableroParaGenerarPedido } from '@nucleo/data/pedidos';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 
 function friendlyError(e) {
@@ -209,40 +209,12 @@ export default function TabGenerar({ searchTerm = '' }) {
                     'El pedido quedó confirmado. Avisa al equipo de sistemas para asignarlos.', 'warning');
             }
 
-            // Capturar grupos de páginas en background para que Finalizar sea instantáneo
+            // Capturar grupos de páginas en background para que Finalizar sea
+            // instantáneo. El recorrido es del núcleo (`capturarHojasDelPedido`),
+            // el mismo del teléfono; acá la imprenta es pdfmake del navegador.
             ;(async () => {
-                let capturadas = 0;
-                for (const sid of sucIds) {
-                    try {
-                        const rawItems = await fetchPedidoItemsForPrintCapture(pedidoId, sid);
-                        if (!rawItems?.length) { capturadas++; continue; }
-                        // `tiene_dispatch_label` no es columna de pedido_items: sale de la
-                        // regla de despacho y se deriva acá igual que en usePedidosData.
-                        // isAdicional() lo necesita para reconocer las cajas de Electrolit;
-                        // sin él la captura las cuenta como filas de la tabla numerada y las
-                        // hojas guardadas dejan de coincidir con el PDF que se imprimió.
-                        const itemsConLabel = rawItems.map(r => ({
-                            ...r,
-                            tiene_dispatch_label: tieneEtiquetaDeDespacho(r),
-                        }));
-                        const groups = await getExactPageGroups(sid, itemsConLabel);
-                        if (!groups.length) continue;
-                        // Sólo cuenta la que se GUARDÓ: antes `capturadas++` iba
-                        // después de una escritura cuyo `error` nadie miraba, así
-                        // que un rechazo se contaba como captura y el aviso de
-                        // abajo no salía.
-                        const { error: guardarErr } = await guardarPaginasDeSala(pedidoId, sid, groups);
-                        if (guardarErr) { console.error('[pedidos] guardar hojas sala', sid, guardarErr); continue; }
-                        capturadas++;
-                    } catch (e) {
-                        // Ya NO en silencio. Este bloque se quedó callado cuando le
-                        // falló al pedido #97 —460 productos, un pedido real— y el
-                        // pedido siguió sin saber qué producto va en qué hoja hasta
-                        // que alguien lo finalizara.
-                        console.error('[pedidos] captura de hojas sala', sid, e);
-                    }
-                }
-                if (capturadas < sucIds.length) {
+                const { capturadas, total } = await capturarHojasDelPedido(pedidoId, sucIds, getExactPageGroups);
+                if (capturadas < total) {
                     showToast(
                         'Las hojas quedaron a medias',
                         'Se van a recalcular al finalizar. Si puedes, deja esta pestaña abierta '

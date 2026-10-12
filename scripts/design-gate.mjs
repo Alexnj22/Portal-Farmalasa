@@ -378,6 +378,8 @@ const EXCEPTIONS = {
   // por eso nunca aparecieron. Son hex por naturaleza de la tecnología,
   // exactamente la categoría "Mapas/canvas/PDF" que ya existe arriba.
   'src/utils/pedidoPrint.js': ['hex'],            // pdfmake: docDefinition, no CSS
+  'src/utils/aficheQr.js': ['hex'],              // el afiche impreso con el QR: papel, sólo negro sobre blanco (el QR tiene que leerse)
+  'src/utils/pedidoPdfDoc.js': ['hex'],           // la misma docDefinition del pedido (papel, no tema), separada para el teléfono
   'src/plataforma/documentoDeBienvenida.js': ['hex'],  // idem: es un PDF, no hay tokens de tema en un papel
   'src/utils/constanciaDeSancion.js': ['hex'],    // idem: la constancia del Art. 83 se imprime y se firma
   'src/utils/marcaDelPapel.js': ['hex'],

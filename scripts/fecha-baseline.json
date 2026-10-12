@@ -11,7 +11,6 @@
   "src/utils/estadoDePersona.js": 1,
   "src/utils/minmaxSolicitud.js": 1,
   "src/utils/notificacionTexto.js": 1,
-  "src/utils/pedidoPrint.js": 1,
   "src/utils/respuestaDeDatos.js": 1,
   "src/utils/scheduleHelpers.js": 1,
   "src/views/AttendanceAuditView.jsx": 1,

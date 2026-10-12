@@ -78,3 +78,16 @@ export function quienesEscriben(estado, ultimas, ahoraMs) {
 
 /** Una ruta de reparto rastrea mientras está «en ruta»; completada o pendiente, no. */
 export const repartoSigueEnRuta = (status) => status === 'en_ruta';
+
+/**
+ * ¿Qué ruta de reparto hay que empezar a rastrear al abrir la app? La que la
+ * base dice que esta persona conduce y está en curso, si el teléfono todavía no
+ * la rastrea. Sin permiso «siempre» no se arranca nada: pedirlo de sorpresa al
+ * abrir la app no es el momento (lo pide «Iniciar ruta», o la pantalla de la
+ * ruta muestra el aviso). Devuelve el id de la ruta o null.
+ */
+export function repartoParaReanudar({ enCurso, guardada, permisoSiempre }) {
+    if (!permisoSiempre || !enCurso) return null;
+    const id = String(enCurso);
+    return guardada && String(guardada) === id ? null : id;
+}

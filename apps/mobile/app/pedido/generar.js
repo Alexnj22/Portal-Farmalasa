@@ -3,9 +3,12 @@
 // y sin existencia en Bodega, la distribución global, y «Generar».
 //
 // Calcula, confirma y pone el código de cada sala con `generarPedidoDirecto`
-// (núcleo), lo mismo que el portal. Lo único que NO hace es imprimir: el papel
-// sale de la computadora de Bodega (Pedidos → PDF), que es donde está la
-// impresora. Una sala sin MIN·MAX publicado no se puede elegir.
+// (núcleo), lo mismo que el portal. Después, igual que la computadora:
+// guarda en qué hoja va cada producto (`capturarHojasDelPedido` con la imprenta
+// del teléfono, que da las MISMAS hojas) y arma el PDF de cada sala, y pregunta
+// UNA vez si imprimirlo, compartirlo o guardarlo. Así el pedido entero —generar,
+// imprimir y finalizar— se puede hacer desde el teléfono.
+// Una sala sin MIN·MAX publicado no se puede elegir.
 import { volver } from '../../componentes/volver';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Switch, Text, View } from 'react-native';
@@ -14,7 +17,9 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchTableroParaGenerarPedido } from '@nucleo/data/pedidos';
-import { generarPedidoDirecto } from '@nucleo/data/accionesDePedido';
+import { capturarHojasDelPedido, generarPedidoDirecto } from '@nucleo/data/accionesDePedido';
+import { hojasExactas } from '../../componentes/pedidos/motorPedido';
+import { ofrecerPapelesDelPedido, papelesAlGenerar } from '../../componentes/pedidos/papelDelPedido';
 import { nivelDeUrgenciaDeSala, salaSinMinMaxPublicado, urgenciaDeSala } from '@nucleo/utils/tableroDePedidos';
 import { ERP_NAMES, SUCURSALES } from '@nucleo/constants/erp';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -64,9 +69,32 @@ export default function GenerarPedido() {
       // Sin número (la lectura falló dos veces) se dice «El pedido», nunca «#null».
       const rotulo = gen.numero != null ? `Pedido #${gen.numero}` : 'El pedido';
       const avisoCodigos = gen.codigosError ? ' Los códigos de las salas no se guardaron: avisa al equipo de sistemas.' : '';
-      listo(`${rotulo} confirmado`, `${gen.items.length} productos en ${gen.sucIds.length} sala${gen.sucIds.length === 1 ? '' : 's'}. Imprímelo en la computadora de Bodega (Pedidos → PDF).${avisoCodigos}`);
+      // Las hojas (qué producto va en qué hoja) se guardan ANTES de soltar la
+      // pantalla: son las que después reparte «Finalizar».
+      trabajando('Guardando las hojas…');
+      const hojas = await capturarHojasDelPedido(gen.pedidoId, gen.sucIds, hojasExactas);
+      trabajando('Armando el papel…');
+      const nombrePersona = user?.name ?? null;
+      const meta = { responsable: nombrePersona, revisor: null, generadoPor: nombrePersona, pedidoNumero: gen.numero ?? undefined };
+      let archivos = [];
+      let fallaPapel = null;
+      try { archivos = await papelesAlGenerar(gen, meta); } catch (e) { fallaPapel = e; }
+      const avisoHojas = hojas.capturadas < hojas.total ? ' Las hojas quedaron a medias: se recalculan al finalizar.' : '';
+      listo(`${rotulo} confirmado`, `${gen.items.length} productos en ${gen.sucIds.length} sala${gen.sucIds.length === 1 ? '' : 's'}.${avisoHojas}${avisoCodigos}`);
       setElegidas(new Set());
       volver('/pedidos');
+      if (fallaPapel) {
+        fallo('El pedido quedó, pero el papel no se armó', `${mensajeAmigable(fallaPapel)} Se puede imprimir desde el pedido.`);
+      } else if (archivos.length) {
+        ofrecerPapelesDelPedido({
+          archivos,
+          titulo: `${rotulo} · el papel`,
+          mensaje: archivos.length > 1 ? `Un PDF por sala (${archivos.length}).` : undefined,
+          nombreZip: gen.numero != null ? `Pedido ${gen.numero}` : 'Pedido',
+          pedidoId: gen.pedidoId,
+          alFallar: (e) => fallo('No se pudo', mensajeAmigable(e)),
+        });
+      }
     } catch (e) {
       const msg = /statement timeout|canceling statement/i.test(e?.message ?? '') ? 'El cálculo tardó demasiado. Intenta con menos salas a la vez.' : mensajeAmigable(e);
       fallo('No se pudo generar el pedido', msg);
@@ -130,7 +158,7 @@ export default function GenerarPedido() {
                 <Switch value={global} onValueChange={setGlobal} />
               </View>
             </Seccion>
-            <Aviso texto="El papel se imprime en la computadora de Bodega (Pedidos → PDF)." />
+            <Aviso texto="Al generar, el papel de cada sala sale aquí mismo: se imprime, se comparte o se guarda. Es el mismo PDF de la computadora." />
             <BotonGrande texto={generando ? 'Generando…' : elegidas.size ? `Generar pedido · ${elegidas.size} sala${elegidas.size === 1 ? '' : 's'}` : 'Elige al menos una sala'}
               color={MARCA.azul} onPress={confirmar} deshabilitado={!elegidas.size || generando} />
           </>

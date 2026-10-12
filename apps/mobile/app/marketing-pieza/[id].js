@@ -13,7 +13,8 @@
 // liberarla para las salas (Galería) cuando ya está aprobada; quitarla (quien
 // la creó, mientras no esté publicada); medir sus ventas si va ligada a una
 // promoción; y en la conversación, editar o quitar el comentario propio
-// mientras nadie haya respondido.
+// mientras nadie haya respondido. Tocar un diseño abre el anotador
+// (`marketing-anotar`): marcar un punto, una zona o a lápiz sobre él.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
@@ -206,7 +207,20 @@ export default function PiezaDeMarketing() {
               {pieza.hashtags ? <Text selectable style={{ color: MARCA.azulClaro, fontSize: 14 }}>{pieza.hashtags}</Text> : null}
             </Seccion>
           ) : null}
-          {imagenes.map((a) => <Image key={a.id ?? a.url} source={{ uri: firmas.get(a.url) }} style={{ width: '100%', aspectRatio: 1, borderRadius: 16 }} resizeMode="cover" />)}
+          {imagenes.map((a) => {
+            // Cuántas marcas tiene este diseño; tocarlo abre el anotador.
+            const n = (comentarios || []).filter((c) => c.archivo_id === a.id && c.marca).length;
+            return (
+              <Tocable key={a.id ?? a.url} accessibilityRole="button" accessibilityLabel="Comentar sobre el diseño"
+                onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/marketing-anotar', params: { archivo: String(a.id) } }); }}
+                style={{ gap: 6 }}>
+                <Image source={{ uri: firmas.get(a.url) }} style={{ width: '100%', aspectRatio: a.ancho && a.alto ? a.ancho / a.alto : 1, borderRadius: 16 }} resizeMode="cover" />
+                <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600', marginHorizontal: 4 }}>
+                  {n ? `Ver y comentar sobre el diseño · ${n} ${n === 1 ? 'marca' : 'marcas'}` : 'Marcar y comentar sobre el diseño'}
+                </Text>
+              </Tocable>
+            );
+          })}
           {!imagenes.length ? <Aviso texto={(pieza.archivos || []).length ? 'Los diseños se ven cuando el mes o la pieza se envía a revisión.' : 'Sin diseños todavía.'} /> : null}
 
           {puedeRevisar ? (
@@ -241,7 +255,15 @@ export default function PiezaDeMarketing() {
                   <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{fechaHora12(c.created_at, { day: 'numeric', month: 'short' })}</Text>
                 </View>
                 <Text style={{ color: colorSistema.texto, fontSize: 14, marginLeft: 28 }}>{c.texto}</Text>
-                {c.marca ? <Text style={{ color: colorSistema.texto2, fontSize: 12, marginLeft: 28 }}>Marcado sobre un diseño (se ve en el portal)</Text> : null}
+                {c.marca ? (
+                  <Tocable hitSlop={6} style={{ marginLeft: 28 }}
+                    onPress={() => {
+                      const numero = (comentarios || []).filter((x) => x.archivo_id === c.archivo_id && x.marca).findIndex((x) => x.id === c.id) + 1;
+                      router.push({ pathname: '/marketing-anotar', params: { archivo: String(c.archivo_id), resaltar: String(numero) } });
+                    }}>
+                    <Text style={{ color: MARCA.azulClaro, fontSize: 12, fontWeight: '600' }}>Ver la marca sobre el diseño</Text>
+                  </Tocable>
+                ) : null}
                 <View style={{ flexDirection: 'row', gap: 16, marginLeft: 28 }}>
                   {puedeEditar || puedeAprobar ? (
                     <Tocable onPress={() => correr(() => marcarResuelto(c.id, !c.resuelto), c.resuelto ? 'Reabierto' : 'Resuelto')} hitSlop={6}>

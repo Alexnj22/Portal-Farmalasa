@@ -10,14 +10,13 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { comentar } from '@nucleo/data/marketing';
 import Marcas from './Marcas';
 import { Quien } from './Historial';
+import { aRelativo, empezarMarca, marcadosDelArchivo, moverMarca, terminarMarca } from '@nucleo/utils/marcasDeDiseno';
 
 const HERRAMIENTAS = [
     { value: 'punto', label: 'Punto', icon: MapPin },
     { value: 'recuadro', label: 'Recuadro', icon: Square },
     { value: 'trazo', label: 'Lápiz', icon: PenLine },
 ];
-
-const acotar = (v) => Math.max(0, Math.min(1, v));
 
 /**
  * Comentar SOBRE el diseño: se marca un punto, se encierra una zona o se
@@ -39,54 +38,33 @@ export default function AnotadorModal({ archivo, src, mesId, piezaId, comentario
     const arrastre = useRef(null);
 
     // Los comentarios de ESTE diseño con marca, numerados en orden.
-    const marcados = useMemo(() => (comentarios || [])
-        .filter((c) => c.archivo_id === archivo.id && c.marca)
-        .map((c, i) => ({ ...c, numero: i + 1 })), [comentarios, archivo.id]);
+    const marcados = useMemo(() => marcadosDelArchivo(comentarios, archivo.id), [comentarios, archivo.id]);
 
     const posicion = (e) => {
         const r = lienzo.current.getBoundingClientRect();
-        return [acotar((e.clientX - r.left) / r.width), acotar((e.clientY - r.top) / r.height)];
+        return aRelativo(e.clientX - r.left, e.clientY - r.top, r.width, r.height);
     };
 
     const bajar = (e) => {
         e.preventDefault();
         lienzo.current.setPointerCapture?.(e.pointerId);
         const [x, y] = posicion(e);
-        if (herramienta === 'punto') {
-            setBorrador({ tipo: 'punto', x, y });
-            return;
-        }
-        arrastre.current = { x, y };
-        setBorrador(herramienta === 'recuadro'
-            ? { tipo: 'recuadro', x, y, w: 0, h: 0 }
-            : { tipo: 'trazo', puntos: [[x, y]] });
+        setBorrador(empezarMarca(herramienta, x, y));
+        if (herramienta !== 'punto') arrastre.current = [x, y];
     };
 
     const mover = (e) => {
         if (!arrastre.current) return;
         const [x, y] = posicion(e);
         const o = arrastre.current;
-        if (herramienta === 'recuadro') {
-            setBorrador({ tipo: 'recuadro', x: Math.min(o.x, x), y: Math.min(o.y, y), w: Math.abs(x - o.x), h: Math.abs(y - o.y) });
-        } else {
-            setBorrador((b) => (b?.tipo === 'trazo' ? { ...b, puntos: [...b.puntos, [x, y]] } : b));
-        }
+        setBorrador((b) => moverMarca(b, o, x, y));
     };
 
     const soltar = () => {
         arrastre.current = null;
         // Un recuadro sin área o un trazo de un solo punto fue un toque sin
-        // querer: no se guarda como marca.
-        setBorrador((b) => {
-            if (b?.tipo === 'recuadro' && (b.w < 0.01 || b.h < 0.01)) return null;
-            if (b?.tipo === 'trazo' && b.puntos.length < 3) return null;
-            if (b?.tipo === 'trazo') {
-                // Menos puntos para guardar: uno de cada tres alcanza para el dibujo.
-                return { ...b, puntos: b.puntos.filter((_, i) => i % 3 === 0 || i === b.puntos.length - 1)
-                    .map(([x, y]) => [Math.round(x * 1000) / 1000, Math.round(y * 1000) / 1000]) };
-            }
-            return b;
-        });
+        // querer: no se guarda como marca (regla en `utils/marcasDeDiseno`).
+        setBorrador((b) => terminarMarca(b));
     };
 
     const enviar = async () => {

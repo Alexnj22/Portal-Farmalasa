@@ -126,10 +126,12 @@ describe('las cotizaciones', () => {
         expect(espia.uso('eq')).toBe(false);
     });
 
-    it('el tope de la lista es deliberado y NO es el cap de PostgREST', () => {
-        // 1000 trunca en silencio; 300 es un freno que se ve.
+    it('la lista se trae ENTERA, paginada: el tope se aplicaba antes del filtro', () => {
+        // Antes `.limit(300)`: las pantallas filtran por estado y búsqueda
+        // DESPUÉS, así que lo que quedaba más atrás no existía para el filtro.
         fetchCotizacionesList();
-        expect(espia.primero('limit')).toEqual([300]);
+        expect(espia.uso('limit')).toBe(false);
+        expect(espia.uso('range')).toBe(true);
         expect(espia.primero('order')).toEqual(['created_at', { ascending: false }]);
     });
 

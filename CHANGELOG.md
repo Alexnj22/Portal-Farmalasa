@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1268.0 — Pedidos completos desde el teléfono, marcas de diseño y afiche QR
+
+- **El pedido entero se hace desde el teléfono.** El motor del PDF del portal (pdfmake, misma definición en `src/utils/pedidoPdfDoc.js`) corre en un WebView oculto de la app (`motor-pedido.html`, se carga sólo al imprimir o finalizar): las hojas y el PDF salen idénticos a la PC (`tests/unit/motorPedido.test.js`). Generar guarda las hojas y pregunta una vez: Imprimir · Compartir PDF · Guardar en Archivos · Ahora no; Finalizar calcula las hojas si faltan y ofrece la hoja de despacho. Regenerar el motor con `node scripts/motor-pedido.mjs` al cambiar el papel.
+- **Marcar sobre el diseño de marketing desde el teléfono** (`marketing-anotar`): punto, recuadro y lápiz con comentario, zoom con pellizco, resolver y quitar; mismas coordenadas 0–1 que el portal (`src/utils/marcasDeDiseno.js`).
+- **Afiche con QR de las encuestas a clientes** en la app, mismo diseño y mismo QR que el portal (`src/utils/aficheQr.js`).
+- **GPS de reparto al abrir la app:** si la persona conduce una ruta en curso (aunque se inició en el portal), el rastreo de fondo arranca solo con el permiso «Siempre».
+- **Topes que recortaban antes del filtro:** Cotizaciones, Galería e Ideas traen todo; los focos del catálogo («Modificados» de un mes grande daba 1,268 ids, ~9 KB de URL) se piden en tandas.
+- `scripts/asc-estado.mjs`: estado de una compilación en App Store Connect, siempre filtrado por la app.
+
 ## v2.1267.5 — subir-android --compartir (uso compartido interno)
 
 - `subir-android.mjs --compartir` sube el `.aab` a «uso compartido interno de apps» y devuelve un enlace para instalarlo. No pide la llave aprobada ni el versionCode, pero sí que la app esté publicada: con la Puntos Salud vieja «No publicada», Google contesta `400 NOT_PUBLISHED`.

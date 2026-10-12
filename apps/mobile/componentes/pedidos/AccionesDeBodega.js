@@ -20,21 +20,18 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { anularPedidoConMotivo, etapaDePedido } from '@nucleo/data/accionesDePedido';
 import { reintentarIngreso } from '@nucleo/data/accionesDeBodega';
 import {
-  fetchActiveRutas, fetchApoyoForPedido, fetchEmployeeByKioskPin, fetchPedidoItemsAll, fetchPedidoSucursalStatus,
+  fetchActiveRutas, fetchApoyoForPedido, fetchEmployeeByKioskPin, fetchPedidoItemsAll,
   fetchResumenIngresoPedidos, upsertPedidoApoyo,
 } from '@nucleo/data/pedidos';
 import { anulacionDelPedido, claveParada, faltantesDeLaSala, puedeDespacharse, puedePrepararse } from '@nucleo/utils/tableroDePedidos';
-import { seccionDePedido } from '@nucleo/utils/papelDePedido';
-import { papelDePedidoHtml } from '@nucleo/utils/papelDePedidoHtml';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { registrarEgreso } from '@nucleo/data/egreso';
 import { BotonGrande, Aviso } from '../formulario/Piezas';
 import { MARCA } from '../inicio/marca';
 import { fallo, listo, trabajando, cerrarProgreso } from '../Progreso';
-import { compartirPdf, imprimirPapel } from '../pdf';
+import { ofrecerPapelesDelPedido, papelDeLaSala } from './papelDelPedido';
 import Escaner from '../Escaner';
 
 const hoyIso = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.toISOString(); };
@@ -108,35 +105,28 @@ export default function AccionesDeBodega({ row, etapa, etapas, onCambio }) {
     ]);
   };
 
-  // La hoja de despacho: la misma del portal, partida en las hojas guardadas.
-  const papel = async (modo) => {
+  // La hoja de despacho: el MISMO PDF que reimprime el portal (su definición y
+  // su imprenta, `papelDeLaSala`). Si la sala ya despachó, dice lo que SALIÓ.
+  // Se arma y se pregunta UNA vez: imprimir, compartir o guardar.
+  const elegirPapel = async () => {
     setOcupado(true);
     trabajando('Armando la hoja…');
     try {
-      const [items, { data: pss }] = await Promise.all([
-        fetchPedidoItemsAll(row.pedido_id, row.erp_sucursal_id),
-        Promise.resolve(fetchPedidoSucursalStatus(row.pedido_id, row.erp_sucursal_id, 'paginas, caja_map')).catch(() => ({ data: null })),
-      ]);
-      // Sala ya finalizada: la hoja dice lo que SALIÓ (`cantidad_enviada`), como el portal.
-      const seccion = seccionDePedido(Number(row.erp_sucursal_id), items ?? [], row.codigo ?? null,
-        row.finalizado_at ? { cantidad: 'enviada' } : {});
-      const html = papelDePedidoHtml(seccion, { numero: row.numero, codigo: row.codigo, paginas: pss?.paginas, cajaMap: pss?.caja_map });
+      const items = await fetchPedidoItemsAll(row.pedido_id, row.erp_sucursal_id);
+      if (!items?.length) { cerrarProgreso(); fallo('Sin productos', 'Esta sala no tiene renglones para imprimir.'); return; }
+      const archivo = await papelDeLaSala({ numero: row.numero, sucId: row.erp_sucursal_id, rows: items, codigo: row.codigo ?? null, finalizada: !!row.finalizado_at });
       cerrarProgreso();
-      if (modo === 'imprimir') await imprimirPapel(html);
-      else if (await compartirPdf({ html, nombre: row.codigo ?? `Pedido ${row.numero} ${seccion.nombre}` })) {
-        registrarEgreso('pedidos', { formato: 'pdf', filas: seccion.rows.length, detalle: { pedido_id: row.pedido_id, sucursal_id: row.erp_sucursal_id, desde: 'app' } });
-      }
+      ofrecerPapelesDelPedido({
+        archivos: [archivo], titulo: `Pedido #${row.numero} · hoja de despacho`,
+        pedidoId: row.pedido_id, sucId: row.erp_sucursal_id,
+        alFallar: (e) => fallo('No se pudo', mensajeAmigable(e)),
+      });
     } catch (e) {
       fallo('No se pudo armar la hoja', mensajeAmigable(e));
     } finally {
       setOcupado(false);
     }
   };
-  const elegirPapel = () => Alert.alert('Hoja de despacho', `Pedido #${row.numero}`, [
-    { text: 'Imprimir', onPress: () => papel('imprimir') },
-    { text: 'Compartir PDF', onPress: () => papel('compartir') },
-    { text: 'Cancelar', style: 'cancel' },
-  ]);
 
   // Apoyo en la preparación: carnés uno tras otro, como el `ApoioScanModal`.
   const abrirApoyo = async () => {

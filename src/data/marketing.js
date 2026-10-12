@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { anotar } from './audit';
+import { fetchAllRows } from '../utils/supabaseUtils';
 import { subirArchivo, signPhotosDeep, signStorageUrls } from '../utils/storageFiles';
 import { primerDia } from '../utils/marketing';
 
@@ -398,10 +399,12 @@ export async function liberarPieza(piezaId, liberar) {
  * Seis meses alcanzan para lo que una sala va a querer reenviar.
  */
 export async function fetchGaleria({ desde }) {
-    const data = sinError(await supabase.from('marketing_piezas')
+    // Completa (antes `.limit(400)`): quien llama filtra después.
+    const data = await fetchAllRows(() => supabase.from('marketing_piezas')
         .select(`id, mes_id, titulo, copy, hashtags, formato, pilar, marca_id, marcas, fecha, hora, estado, redes,
                  liberada, liberada_at, archivos:marketing_archivos(${ARCHIVO_SELECT})`)
-        .gte('fecha', desde).order('fecha', { ascending: false }).limit(400));
+        .gte('fecha', desde).order('fecha', { ascending: false }).order('id', { ascending: false }), { completo: true });
+    if (!data) throw new Error('No se pudo leer la galería.');
     return (data || []).map((p) => ({ ...p, archivos: (p.archivos || []).filter((a) => !a.reemplazado) }));
 }
 
@@ -451,9 +454,12 @@ export async function enviarPieza(piezaId) {
 // ── Banco de ideas ─────────────────────────────────────────────────────────
 
 export async function fetchIdeas() {
-    return sinError(await supabase.from('marketing_ideas')
+    // Completa (antes `.limit(300)`): las pestañas filtran por estado después.
+    const data = await fetchAllRows(() => supabase.from('marketing_ideas')
         .select('*, pieza:marketing_piezas(id, titulo, fecha, mes_id, mes:marketing_meses(mes))')
-        .order('created_at', { ascending: false }).limit(300)) || [];
+        .order('created_at', { ascending: false }).order('id', { ascending: false }), { completo: true });
+    if (!data) throw new Error('No se pudieron leer las ideas.');
+    return data;
 }
 
 /** Cualquiera con acceso deja una idea; la firma es la de la sesión. */

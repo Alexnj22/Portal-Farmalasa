@@ -30,14 +30,20 @@ export function searchCustomersByName(term) {
     return buscarClientes(term, { select: 'id, name, nit', limite: 60 });
 }
 
-export function fetchCotizacionesList(scopeBranchId) {
-    let q = supabase
-        .from('cotizaciones')
-        .select('id, numero, fecha, customer_name, document_type, payment_type, total, status, created_by, created_by_name, created_by_photo, branch_id, applies_retention, notes')
-        .order('created_at', { ascending: false })
-        .limit(300);
-    if (scopeBranchId) q = q.eq('branch_id', scopeBranchId);
-    return q;
+// La lista entera, paginada: antes llevaba `.limit(300)` y las pantallas
+// filtran (estado, búsqueda) DESPUÉS — un tope aplicado antes del filtro deja
+// fuera, sin aviso, las que cumplen y quedaron más atrás. Mismo `{ data, error }`.
+export async function fetchCotizacionesList(scopeBranchId) {
+    const data = await fetchAllRows(() => {
+        let q = supabase
+            .from('cotizaciones')
+            .select('id, numero, fecha, customer_name, document_type, payment_type, total, status, created_by, created_by_name, created_by_photo, branch_id, applies_retention, notes')
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: false });
+        if (scopeBranchId) q = q.eq('branch_id', scopeBranchId);
+        return q;
+    }, { completo: true });
+    return data ? { data, error: null } : { data: null, error: new Error('No se pudieron leer las cotizaciones.') };
 }
 
 export function insertCotizacion(payload) {

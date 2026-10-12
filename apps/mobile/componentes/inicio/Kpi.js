@@ -23,12 +23,12 @@ export default function Kpi({ icono, rotulo, valor, apoyo, color, pide = false, 
               <View style={{ width: 24, height: 24, borderRadius: 7, backgroundColor: `${color}2E`, alignItems: 'center', justifyContent: 'center' }}>
                 <Host matchContents><Icon name={iconoDe(icono)} size={14} color={color} /></Host>
               </View>
-              <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }} numberOfLines={1}>{rotulo}</Text>
+              <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }} numberOfLines={2}>{rotulo}</Text>
               {onPress ? <Text style={{ color: colorSistema.texto2, fontSize: 17, fontWeight: '300', marginTop: -2 }}>›</Text> : null}
             </View>
             <Text style={{ color: pide ? color : colorSistema.texto, fontSize: 28, fontWeight: '800', letterSpacing: -0.6, fontVariant: ['tabular-nums'], marginTop: 6 }}
               numberOfLines={1} adjustsFontSizeToFit>{valor}</Text>
-            {apoyo ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={1}>{apoyo}</Text> : null}
+            {apoyo ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={2}>{apoyo}</Text> : null}
             {visual ? <View style={{ marginTop: 'auto', paddingTop: 6 }}>{visual}</View> : null}
           </View>
         </Vidrio>

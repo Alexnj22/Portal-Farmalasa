@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1268.4 — Las cifras ya no recortan su título
+
+- En la app, el rótulo y la línea de apoyo de cada cifra (`componentes/inicio/Kpi.js`) usan hasta dos líneas: en un iPhone SE con letra grande se cortaban («Pasados del…», «Acumulado…»).
+
 ## v2.1268.3 — App: Metro encuentra @zxing en un worktree
 
 - `apps/mobile/metro.config.js` vigila `@zxing/library` y `ts-custom-error` por su ruta **real**. En un worktree `node_modules` es un enlace al del repo principal, y con la ruta del enlace la compilación de Android fallaba con «Failed to get the SHA-1 for …/QRCodeWriter.js». En la carpeta principal no cambia nada.

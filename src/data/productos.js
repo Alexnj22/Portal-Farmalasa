@@ -203,18 +203,52 @@ const CATALOGO_SELECT = 'id, nombre, principio_activo, tipo_medicamento, es_anti
  * lo más parecido va primero (plan §8.1); si el usuario eligió otra columna,
  * manda esa columna.
  */
+// Un foco del catálogo («Modificados», «En pérdida», «Margen bajo») llega como
+// una lista de ids que viaja en la URL (`id=in.(…)`). Medido el 2026-10-12:
+// hoy son 100, 5 y 36, pero «Modificados» llegó a 1,268 en mayo-2026 — unos
+// 9 KB de URL, más de lo que el gateway acepta. Pasado este número, los ids se
+// piden en tandas y la página se arma acá (`paginaDeIdsGrandes`).
+export const MAX_IDS_EN_URL = 300;
+
+/** Orden local del catálogo, el mismo que pide `fetchProductsList` a la base. */
+export function compararCatalogo(sortField, sortDir) {
+    const dir = sortDir === 'desc' ? -1 : 1;
+    const txt = (a, b) => String(a ?? '').localeCompare(String(b ?? ''), 'es', { sensitivity: 'base' });
+    const nulosAlFinal = (a, b, cmp) => (a == null && b == null ? 0 : a == null ? 1 : b == null ? -1 : cmp(a, b) * dir);
+    return (a, b) => {
+        let r = 0;
+        if (sortField === 'activo') r = (Number(!!a.activo) - Number(!!b.activo)) * dir;
+        else if (sortField === 'categoria') r = nulosAlFinal(a.tipo_medicamento, b.tipo_medicamento, txt);
+        else if (sortField === 'lab') r = nulosAlFinal(a.laboratorios?.nombre ?? null, b.laboratorios?.nombre ?? null, txt);
+        else if (sortField === 'nombre') return txt(a.nombre, b.nombre) * dir;
+        return r || txt(a.nombre, b.nombre);
+    };
+}
+
 export async function fetchProductsList({
     search, page, pageSize, filterActivo, laboratorioId, categoria,
     filterNuevos, effectiveBids, sortField, sortDir,
 }) {
-    const filtrar = (qb) => {
+    const idsGrandes = effectiveBids !== null && effectiveBids !== undefined && effectiveBids.length > MAX_IDS_EN_URL;
+    const filtrar = (qb, { sinBids = false } = {}) => {
         if (filterActivo === 'activos') qb = qb.eq('activo', true);
         if (laboratorioId) qb = qb.eq('laboratorio_id', laboratorioId);
         if (categoria) qb = qb.eq('tipo_medicamento', categoria);
         if (filterNuevos) qb = qb.gte('created_at', filterNuevos);
-        if (effectiveBids !== null) qb = qb.in('id', effectiveBids);
+        if (!sinBids && !idsGrandes && effectiveBids !== null && effectiveBids !== undefined) qb = qb.in('id', effectiveBids);
         return qb;
     };
+
+    // Foco con muchos ids y sin búsqueda: tandas cortas, orden y página acá.
+    if (idsGrandes && !search) {
+        const tandas = [];
+        for (let i = 0; i < effectiveBids.length; i += MAX_IDS_EN_URL) tandas.push(effectiveBids.slice(i, i + MAX_IDS_EN_URL));
+        const res = await Promise.all(tandas.map((t) => filtrar(supabase.from('products').select(CATALOGO_SELECT).in('id', t), { sinBids: true })));
+        const fallo = res.find((r) => r.error);
+        if (fallo) return { data: null, count: 0, error: fallo.error, aproximado: false };
+        const todas = res.flatMap((r) => r.data ?? []).sort(compararCatalogo(sortField, sortDir));
+        return { data: todas.slice((page - 1) * pageSize, page * pageSize), count: todas.length, error: null, aproximado: false };
+    }
 
     let idsBuscados = null;
     let aproximado = false;
@@ -224,17 +258,20 @@ export async function fetchProductsList({
             soloActivos: filterActivo === 'activos',
         });
         if (error) return { data: null, count: 0, error };
-        if (!ids.length) return { data: [], count: 0, error: null };
-        idsBuscados = ids;
+        // Con un foco grande, la búsqueda ya acota: se cruzan acá y viaja sólo el cruce.
+        const enFoco = idsGrandes ? new Set(effectiveBids.map(String)) : null;
+        const cruzados = enFoco ? ids.filter((id) => enFoco.has(String(id))) : ids;
+        if (!cruzados.length) return { data: [], count: 0, error: null };
+        idsBuscados = cruzados;
         aproximado = sonParecidos;
 
         // Orden por defecto + búsqueda = relevancia. Primero los ids que pasan
         // los filtros (sólo el id: pocos bytes), después la página en ese orden.
         if (sortField === 'nombre' && sortDir === 'asc') {
             const { data: quedan, error: e1 } = await filtrar(
-                supabase.from('products').select('id').in('id', ids));
+                supabase.from('products').select('id').in('id', idsBuscados));
             if (e1) return { data: null, count: 0, error: e1 };
-            const orden = enElOrdenDe(quedan, ids).map(r => r.id);
+            const orden = enElOrdenDe(quedan, idsBuscados).map(r => r.id);
             const pagina = orden.slice((page - 1) * pageSize, page * pageSize);
             if (!pagina.length) return { data: [], count: orden.length, error: null, aproximado };
             const { data, error: e2 } = await supabase.from('products')

@@ -5,7 +5,8 @@
 // acreditados o pendientes, muestras entregadas o por entregar—. Unos puntos
 // quedan pendientes cuando el teléfono no apunta a UNA sola ficha: «Asignar
 // ficha» la busca y los acredita en el acto (`asignarIncentivo`, la misma del
-// portal). El afiche impreso con el QR sigue en el portal.
+// portal). El afiche con el QR —el mismo papel del portal, armado por el núcleo
+// (`utils/aficheQr`)— se imprime, se comparte en PDF o se guarda desde acá.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, RefreshControl, ScrollView, Share, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
@@ -14,6 +15,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { asignarIncentivo, fetchAvance, fetchEncuesta, fetchIncentivos, fetchPersonas } from '@nucleo/data/encuestasClientes';
 import { buscarClientes } from '@nucleo/data/customers';
 import { canalDe, enlaceDeEncuesta, metaTotal } from '@nucleo/utils/encuestasClientes';
+import { armarAfiche, nombreDelAfiche } from '@nucleo/utils/aficheQr';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { formatPct } from '@nucleo/utils/formatNumber';
@@ -30,6 +32,7 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { colorDeVariante } from '../../componentes/colorDeVariante';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import Tocable from '../../componentes/Tocable';
+import { ofrecerPapel } from '../../componentes/pdf';
 
 const ESTADO_INCENTIVO = {
   acreditado: { label: 'Acreditado', variant: 'success' }, entregado: { label: 'Entregada', variant: 'success' },
@@ -102,6 +105,17 @@ export default function AvanceEncuesta() {
   useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga de datos
 
   const compartir = (url, titulo) => { Haptics.selectionAsync().catch(() => {}); Share.share({ message: url, title: titulo }).catch(() => {}); };
+  // El afiche de la sala: el QR que abre la encuesta, en carta, para pegar.
+  const afiche = async (s) => {
+    Haptics.selectionAsync().catch(() => {});
+    let html;
+    try { html = await armarAfiche({ encuesta, sucursal: s.nombre, enlace: enlaceDeEncuesta(s.token) }); }
+    catch (e) { fallo('No se pudo dibujar el código QR', mensajeAmigable(e, 'Intenta de nuevo.')); return; }
+    ofrecerPapel({
+      html, nombre: nombreDelAfiche(encuesta, s.nombre), titulo: `Afiche · ${s.nombre}`,
+      alFallar: (e) => fallo('No se pudo preparar el afiche', mensajeAmigable(e, 'Intenta de nuevo.')),
+    });
+  };
   const meta = useMemo(() => (encuesta && avance ? metaTotal(encuesta, avance.por_sucursal) : null), [encuesta, avance]);
   const cuenta = (e) => (incentivos || []).filter((i) => i.estado === e).length;
   const puntosDados = (incentivos || []).filter((i) => i.estado === 'acreditado').reduce((a, i) => a + (i.puntos || 0), 0);
@@ -148,6 +162,11 @@ export default function AvanceEncuesta() {
                           {conQr ? (
                             <Tocable onPress={() => compartir(enlaceDeEncuesta(s.token), `Encuesta · ${s.nombre}`)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                               <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Compartir el enlace</Text>
+                            </Tocable>
+                          ) : null}
+                          {conQr ? (
+                            <Tocable onPress={() => afiche(s)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                              <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Afiche con el QR</Text>
                             </Tocable>
                           ) : null}
                           {conTablet ? (
@@ -206,7 +225,6 @@ export default function AvanceEncuesta() {
                 </Seccion>
               </View>
             ) : null}
-            <View style={{ marginHorizontal: 16 }}><Aviso texto="El afiche con el QR para imprimir se arma en el portal." /></View>
           </>
         )}
       </ScrollView>

@@ -14,6 +14,7 @@ import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import MapView, { Marker, Polyline } from 'react-native-maps';
+import SinMapa, { hayMapa } from '../../../componentes/SinMapa';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { completarRuta, fetchRutaLocationSingle, iniciarRuta, updateRutaPedidoEntregado, upsertRutaLocation } from '@nucleo/data/pedidos';
 import { fetchCoordenadasDeSucursales, fetchRutasDeEntrega } from '@nucleo/data/rutasDeEntrega';
@@ -214,7 +215,7 @@ export default function RutaDeReparto() {
                   `${entregadas}/${total} entregadas`].filter(Boolean).join(' · ')}
               </Text>
             </View>
-            {region ? (
+            {region && !hayMapa ? <SinMapa puntos={linea.map((p) => ({ lat: p.latitude, lng: p.longitude }))} /> : region ? (
               <View style={{ marginHorizontal: 16 }}>
                 <Vidrio radio={20}>
                   <View style={{ height: 380, borderRadius: 20, overflow: 'hidden' }}>

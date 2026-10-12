@@ -9,7 +9,8 @@
 import {
     anularPedido, avanzarEtapaDePedidoEnSala, confirmarPedido, fetchPedidoIdsSinceExcluding, fetchPedidoNumero,
     fetchPedidoSucursalStatus, fetchPedidoSucursalStatusForPedidos, fetchVistaPreviaDePedido,
-    iniciarCodigosDeSucursalesDelPedido,
+    fetchPedidoItemsForPrintCapture, guardarPaginasDeSala, iniciarCodigosDeSucursalesDelPedido,
+    tieneEtiquetaDeDespacho,
 } from './pedidos';
 import { confirmarLlegadaDeReenvio as llegadaDeReenvioEnLaBase, programarEntregaSala } from './pasosDelPedido';
 import { PAUSE_REASONS } from '../constants/pedidos';
@@ -234,4 +235,35 @@ export async function generarPedidoDirecto({ salas, globalMode = false, userId =
     const rows = await vistaPreviaDePedido({ salas, globalMode });
     if (!rows.length) return null;
     return confirmarPedidoDirecto({ rows, salas, globalMode, userId, responsableId });
+}
+
+// ── Las hojas de un pedido recién generado ───────────────────────────────────
+// Después de generar se calcula, por sala, en qué hoja va cada producto y se
+// GUARDA: así «Finalizar» es instantáneo y el papel de la caja coincide con lo
+// que se guardó. `calcularHojas(sucId, items)` es la imprenta de quien llama —
+// `getExactPageGroups` en el portal, `hojasExactas` en el teléfono—: las dos
+// corren la misma definición del papel (`utils/pedidoPdfDoc`) y dan lo mismo.
+// Devuelve cuántas salas quedaron guardadas; ninguna falla queda callada (le
+// pasó al pedido #97, 460 productos: siguió sin hojas hasta finalizarlo).
+export async function capturarHojasDelPedido(pedidoId, sucIds, calcularHojas) {
+    let capturadas = 0;
+    for (const sid of sucIds) {
+        try {
+            const rawItems = await fetchPedidoItemsForPrintCapture(pedidoId, sid);
+            if (!rawItems?.length) { capturadas++; continue; }
+            // `tiene_dispatch_label` no es columna de pedido_items: sale de la
+            // regla de despacho. isAdicional() lo necesita para reconocer las
+            // cajas de Electrolit; sin él la captura las cuenta como filas de la
+            // tabla numerada y las hojas guardadas dejan de coincidir con el PDF.
+            const items = rawItems.map(r => ({ ...r, tiene_dispatch_label: tieneEtiquetaDeDespacho(r) }));
+            const groups = await calcularHojas(sid, items);
+            if (!groups?.length) continue;
+            const { error } = await guardarPaginasDeSala(pedidoId, sid, groups);
+            if (error) { console.error('[pedidos] guardar hojas sala', sid, error); continue; }
+            capturadas++;
+        } catch (e) {
+            console.error('[pedidos] captura de hojas sala', sid, e);
+        }
+    }
+    return { capturadas, total: sucIds.length };
 }

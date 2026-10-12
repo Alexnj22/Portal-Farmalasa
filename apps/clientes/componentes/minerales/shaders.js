@@ -206,16 +206,20 @@ half4 main(float2 p) {
   // Sin costuras (2026-10-09): el ángulo salta de +π a −π a la izquierda del
   // centro; todo lo angular va por cos/sin, que no saltan.
   float2 dir = rr > 0.0001 ? cc / rr : float2(1.0, 0.0);
-  float cep = noise(float2(rr * 260.0, 0.5)) * 0.55 + noise(float2(rr * 90.0 + dir.x * 2.0, dir.y * 2.0 + 7.0)) * 0.45;
+  // (2026-10-12) Nada depende del ángulo cerca del centro: la dirección
+  // cambia de golpe al cruzarlo y dibujaba un molinete cortado detrás del logo.
+  float cep = noise(float2(rr * 260.0, 0.5)) * 0.55 + noise(float2(rr * 90.0, 7.0) + uv * 3.0) * 0.45;
   float3 c = mix(float3(0.035, 0.038, 0.050), float3(0.13, 0.14, 0.17), cep * 0.6 + 0.2);
   // El cepillado circular toma luz en dos lóbulos que siguen la inclinación.
   float aL = 0.6 + tilt.x * 1.6 - tilt.y * 1.1;
   float lob = pow(abs(dot(dir, float2(cos(aL), sin(aL)))), 8.0);
-  c += float3(0.55, 0.58, 0.66) * lob * smoothstep(0.05, 0.6, rr) * 0.22;
+  float lejos = smoothstep(0.12, 0.6, rr);
+  c += float3(0.55, 0.58, 0.66) * lob * lejos * 0.22;
   // Difracción: anillos finos que se tiñen de arcoíris según el ángulo.
   float anillos = 0.5 + 0.5 * sin(rr * 180.0);
-  float3 iris = 0.5 + 0.5 * cos(6.2831 * (dot(dir, float2(0.8, 0.6)) * 0.5 + tilt.x * 0.9 - tilt.y * 0.6 + rr * 1.5 + float3(0.0, 0.33, 0.67)));
-  c += iris * anillos * lob * 0.16 * smoothstep(0.08, 0.5, rr);
+  // El tono sale de la POSICIÓN (continua), no de la dirección desde el centro.
+  float3 iris = 0.5 + 0.5 * cos(6.2831 * (rr * 2.2 + uv.x / a * 0.6 + uv.y * 0.3 + tilt.x * 0.9 - tilt.y * 0.6 + float3(0.0, 0.33, 0.67)));
+  c += iris * anillos * lob * 0.16 * lejos;
   // Banda holográfica ancha que cruza al inclinar.
   float banda = exp(-sq((uv.x / a + uv.y * 0.5 - (0.75 + tilt.x * 0.6)) * 3.0));
   c += iris * banda * 0.14;
@@ -288,7 +292,7 @@ half4 main(float2 p) {
   zafiro: `
 half4 main(float2 p) {
   float a = res.x / res.y; float2 uv = p / res.y;
-  float3 c = gema(uv, 1.2, float3(0.0, 0.02, 0.10), float3(0.04, 0.16, 0.55), float3(0.45, 0.65, 1.0), 1.3);
+  float3 c = gema(uv, 1.2, float3(0.01, 0.0, 0.11), float3(0.05, 0.09, 0.60), float3(0.48, 0.55, 1.0), 1.3);
   // Asterismo: la estrella de seis puntas del zafiro estrella, que corre con la luz.
   float2 c0 = float2(a * (0.66 + tilt.x * 0.28), 0.42 - tilt.y * 0.28);
   float2 r = uv - c0; float est = 0.0;
@@ -297,15 +301,15 @@ half4 main(float2 p) {
     float dd = abs(dot(r, float2(-dir.y, dir.x)));
     est += exp(-dd * 70.0) * exp(-length(r) * 2.6);
   }
-  c += float3(0.80, 0.88, 1.0) * est * 0.45 + float3(0.40, 0.58, 1.0) * exp(-dot(r, r) * 14.0) * 0.30;
-  c += float3(0.85, 0.92, 1.0) * destellos(p, 0.02, 1.8) * 0.5;
+  c += float3(0.80, 0.84, 1.0) * est * 0.45 + float3(0.36, 0.42, 1.0) * exp(-dot(r, r) * 14.0) * 0.30;
+  c += float3(0.85, 0.88, 1.0) * destellos(p, 0.02, 1.8) * 0.5;
   // Seda de rutilo: agujas finísimas a 60°, visibles sólo cuando la luz las toca.
   float seda = 0.0;
   for (int k = 0; k < 3; k++) {
     float ang2 = float(k) * 1.0472 + 0.3; float2 dd = float2(cos(ang2), sin(ang2));
     seda += pow(max(0.0, sin(dot(uv, float2(-dd.y, dd.x)) * 260.0 + hash(floor(uv * 6.0) + float(k)) * 6.0)), 40.0) * step(0.6, noise(uv * 5.0 + float(k) * 3.0));
   }
-  c += float3(0.75, 0.85, 1.0) * seda * 0.08 * (0.4 + max(0.0, tilt.x + 0.4));
+  c += float3(0.75, 0.78, 1.0) * seda * 0.08 * (0.4 + max(0.0, tilt.x + 0.4));
   return half4(c, 1.0);
 }`,
   rubi: `

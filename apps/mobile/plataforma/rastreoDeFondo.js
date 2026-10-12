@@ -22,10 +22,10 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import { supabase } from '@nucleo/supabaseClient';
-import { fetchEstadoDeRuta, upsertRutaLocation } from '@nucleo/data/pedidos';
+import { fetchEstadoDeRuta, fetchRutaEnCursoDeConductor, upsertRutaLocation } from '@nucleo/data/pedidos';
 import { registrarPosicion } from '@nucleo/data/distribucion';
 import { hoySV } from '@nucleo/utils/fecha';
-import { cadenciaDe, quienesEscriben, repartoSigueEnRuta, rutasVigentes, sinRutas, ultimaPosicion } from '@nucleo/utils/rastreoDeFondo';
+import { cadenciaDe, quienesEscriben, repartoParaReanudar, repartoSigueEnRuta, rutasVigentes, sinRutas, ultimaPosicion } from '@nucleo/utils/rastreoDeFondo';
 import * as almacen from './almacen';
 
 export const TAREA_RUTA = 'farmalasa-rastreo-de-ruta';
@@ -159,8 +159,13 @@ export async function quitarRutaDeFondo(tipo) {
  * está en ruta en la base, o Torogoz era de ayer, o se quitó el permiso
  * «siempre», se suelta; si queda algo vivo y la tarea no corre, se reanuda.
  * Nunca queda el GPS encendido sin ruta.
+ *
+ * Con `empleadoId`, además pregunta a la base si esta persona conduce una ruta
+ * de reparto EN CURSO que el teléfono no rastrea —la inició el portal, u otro
+ * teléfono— y la empieza a marcar sin que tenga que abrir su pantalla. Sólo si
+ * ya dio el permiso «siempre»: al abrir la app no se pide nada de sorpresa.
  */
-export async function revisarRastreoDeFondo() {
+export async function revisarRastreoDeFondo({ empleadoId } = {}) {
   const rutas = rutasDeFondo();
   if (rutas.reparto) {
     try {
@@ -172,6 +177,13 @@ export async function revisarRastreoDeFondo() {
     const bg = await Location.getBackgroundPermissionsAsync();
     if (bg.status !== 'granted') { guardarJson(CLAVE_ESTADO, null); await apagar(); avisar(); return; }
   } catch { /* sin módulo de ubicación: nada que revisar */ }
+  if (empleadoId) {
+    try {
+      const { data, error } = await fetchRutaEnCursoDeConductor(empleadoId);
+      const rutaId = error ? null : repartoParaReanudar({ enCurso: data?.id, guardada: rutas.reparto?.rutaId, permisoSiempre: true });
+      if (rutaId) rutas.reparto = { rutaId };
+    } catch { /* sin red: se mira en la próxima apertura */ }
+  }
   try {
     guardarJson(CLAVE_ESTADO, sinRutas(rutas) ? null : rutas);
     if (sinRutas(rutas)) await apagar();

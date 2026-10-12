@@ -8,6 +8,7 @@
     "@expo/ui": "~57.0.21",
     "@supabase/supabase-js": "^2.117.2",
     "expo": "~57.0.25",
+    "expo-asset": "~57.0.19",
     "expo-blur": "~57.0.3",
     "expo-camera": "~57.0.6",
     "expo-constants": "~57.0.19",

@@ -21,9 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1268.5 — App de clientes: Platino sin corte al inclinar y Zafiro más azul
+
+- **Platino**: el arcoíris tomaba su tono de la DIRECCIÓN desde el centro, que cambia de golpe al cruzarlo: detrás del logo se dibujaba un molinete partido en dos que se movía al inclinar. Ahora el tono sale de la posición (continua) y el cepillado no depende del ángulo cerca del centro.
+- **Zafiro**: paleta sin componente verde (fondo, cuerpo, brillo, estrella y seda) — en el teléfono se leía verdoso.
+
+## v2.1268.4 — Las cifras ya no recortan su título
+
+- En la app, el rótulo y la línea de apoyo de cada cifra (`componentes/inicio/Kpi.js`) usan hasta dos líneas: en un iPhone SE con letra grande se cortaban («Pasados del…», «Acumulado…»).
+
+## v2.1268.3 — App: Metro encuentra @zxing en un worktree
+
+- `apps/mobile/metro.config.js` vigila `@zxing/library` y `ts-custom-error` por su ruta **real**. En un worktree `node_modules` es un enlace al del repo principal, y con la ruta del enlace la compilación de Android fallaba con «Failed to get the SHA-1 for …/QRCodeWriter.js». En la carpeta principal no cambia nada.
+
+## v2.1268.2 — App Android: llave de Google Maps desde ~/.claves-farmalasa
+
+- `apps/mobile/app.config.js` mete la llave de Google Maps para Android si existe `~/.claves-farmalasa/google-maps-android.txt` (o `GOOGLE_MAPS_ANDROID_KEY`). Sin llave, el mapa de una ruta cerraba la app («API key not found»). Hoy `SinMapa` muestra «Abrir en Google Maps» (87ea5030a, de otra sesión); con la llave se ve el mapa. Farmalasa 1.0.0 (13) sale de este `main`.
+
+## v2.1268.1 — Android: los mapas ya no cierran la app
+
+- **Android: abrir el mapa de una ruta cerraba la app entera** (reparto, armar ruta y Torogoz): `react-native-maps` usa el SDK de Google Maps y el binario no trae llave («API key not found», medido en el emulador). Ahora cada mapa pregunta `hayMapa` (hay mapa si el binario trae `android.config.googleMaps.apiKey`, o es iPhone) y sin llave muestra la ruta con «Abrir en Google Maps» (`componentes/SinMapa.js`). La v12 de Android tiene el defecto.
+- **El color de selección no se pintaba fuera del Liquid Glass**: en Android y en iOS viejo el día elegido de Horarios (y cualquier píldora con `tinte`) quedaba blanco con texto blanco. `Vidrio` lo pone como capa.
+- Android ya no dice «AirPrint»: dice «Imprimir».
+- El perfil `interna-pruebas` de `eas.json` apuntaba a un entorno de pruebas borrado; ahora al vigente, y su portal web a dev.farmasalud.lat.
+
+## v2.1268.0 — Pedidos completos desde el teléfono, marcas de diseño y afiche QR
+
+- **El pedido entero se hace desde el teléfono.** El motor del PDF del portal (pdfmake, misma definición en `src/utils/pedidoPdfDoc.js`) corre en un WebView oculto de la app (`motor-pedido.html`, se carga sólo al imprimir o finalizar): las hojas y el PDF salen idénticos a la PC (`tests/unit/motorPedido.test.js`). Generar guarda las hojas y pregunta una vez: Imprimir · Compartir PDF · Guardar en Archivos · Ahora no; Finalizar calcula las hojas si faltan y ofrece la hoja de despacho. Regenerar el motor con `node scripts/motor-pedido.mjs` al cambiar el papel.
+- **Marcar sobre el diseño de marketing desde el teléfono** (`marketing-anotar`): punto, recuadro y lápiz con comentario, zoom con pellizco, resolver y quitar; mismas coordenadas 0–1 que el portal (`src/utils/marcasDeDiseno.js`).
+- **Afiche con QR de las encuestas a clientes** en la app, mismo diseño y mismo QR que el portal (`src/utils/aficheQr.js`).
+- **GPS de reparto al abrir la app:** si la persona conduce una ruta en curso (aunque se inició en el portal), el rastreo de fondo arranca solo con el permiso «Siempre».
+- **Topes que recortaban antes del filtro:** Cotizaciones, Galería e Ideas traen todo; los focos del catálogo («Modificados» de un mes grande daba 1,268 ids, ~9 KB de URL) se piden en tandas.
+- `scripts/asc-estado.mjs`: estado de una compilación en App Store Connect, siempre filtrado por la app.
+
+## v2.1267.5 — subir-android --compartir (uso compartido interno)
+
+- `subir-android.mjs --compartir` sube el `.aab` a «uso compartido interno de apps» y devuelve un enlace para instalarlo. No pide la llave aprobada ni el versionCode, pero sí que la app esté publicada: con la Puntos Salud vieja «No publicada», Google contesta `400 NOT_PUBLISHED`.
+- Farmalasa 1.0.0 (12) subida a la prueba interna desde el `main` del 2026-10-12. Trae la auditoría de calidad de la app y el «vale $1.30» de los puntos, que la v11 no tenía.
 ## v2.1267.5 — gate:perf y gate:receta en verde; resumen de mayoristas sin totales inflados
 
-_(pendiente de redactar)_
+- **Resumen de mayoristas: los totales salían inflados un 44%.** `mayoristas_rehacer_resumen` cruzaba cada renglón con `product_precios` por (producto, factor), y hay 1,615 combinaciones con más de una presentación activa: el renglón se duplicaba y sumaba dos veces. Los 6 meses guardaban $963,872 contra $669,146 reales. Ahora agrupa por renglón y clasifica el precio con `bool_or`; se rehízo en el momento y el resumen quedó en $669,718, que es lo real más las ventas del día (migración 20261012171948). `mayorista_rango` pone el nivel con ese total: hoy no había mayoristas aprobados, así que no afectó a nadie.
+- `app_catalogo_rehacer_destacados` entra primero por la ventana de 60 días: de 585,908 bloques y 8.4 s a 126,341 bloques y 140 ms, con las mismas 300 filas (md5 idéntico) (migración 20261012171839). Techo en `bloques-por-llamada.json` bajado de 500,000 a 165,000.
+- `puntos_dar_cupones`: sale enseguida si ningún nivel da cupón (hoy `niveles_activos = false`) y calcula la compra de 12 meses en una sola pasada en vez de 5,271 llamadas (5,271 de 5,271 iguales a `puntos_compra_12m`) (migración 20261012171840).
+- `mayoristas_rehacer_resumen` declarada en el manifiesto de bloques como deuda, con techo provisional: hay que re-medirla en unas noches y bajarlo.
+- Dato: el producto 5284 «LEVOFLOXACINO 750MG X 5 TABLETAS MK», creado el 6-oct, entró al libro bajo receta sin principio activo. Se le cargó `LEVOFLOXACINA`, igual que sus cuatro hermanos.
+
 
 ## v2.1267.4 — mayorista_rango declarada en el manifiesto de planes
 

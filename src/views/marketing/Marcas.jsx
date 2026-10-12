@@ -1,4 +1,5 @@
 import React from 'react';
+import { caminoDeTrazo } from '@nucleo/utils/marcasDeDiseno';
 
 /**
  * Las marcas dibujadas sobre un diseño: un `<svg>` encima de la imagen con
@@ -29,7 +30,7 @@ export default function Marcas({ marcas, borrador = null, resaltada = null, prop
                     );
                 }
                 if (m.tipo === 'trazo' && m.puntos?.length) {
-                    const d = m.puntos.map(([x, y], k) => `${k ? 'L' : 'M'}${x * 100},${y * H}`).join(' ');
+                    const d = caminoDeTrazo(m.puntos, 100, H);
                     const [x0, y0] = m.puntos[0];
                     return (
                         <g key={i} opacity={op}>

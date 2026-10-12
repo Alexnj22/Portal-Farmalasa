@@ -8,6 +8,7 @@
 import { useMemo, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
+import SinMapa, { hayMapa } from '../../SinMapa';
 import { encuadre, puntosValidos } from '@nucleo/utils/encuadreDelMapa';
 import { ROTULO_RESULTADO } from '@nucleo/utils/distribucionRutas';
 import { colorSistema } from '../../Formulario';
@@ -38,6 +39,7 @@ export default function MapaDeRuta({ clientes = [], recorrido = null, alto = 280
   const sinUbicacion = clientes.length - conPin.length;
 
   if (!region) return null;
+  if (!hayMapa) return <SinMapa puntos={conPin} texto="Los clientes de la ruta se ven en Google Maps." />;
   return (
     <View style={{ marginHorizontal: 16, gap: 6 }}>
       <Vidrio radio={20}>

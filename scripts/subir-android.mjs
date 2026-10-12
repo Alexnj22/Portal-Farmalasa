@@ -7,6 +7,12 @@
 //
 //   --sin-subir   compila y firma el .aab y se detiene (no habla con Google Play)
 //   --apk         además arma un .apk firmado, para instalar con `adb install`
+//   --compartir   en vez de la pista «internal», lo sube a «uso compartido
+//                 interno de apps» y devuelve un ENLACE para instalarlo. No
+//                 exige que Play conozca la llave de subida (Google re-firma
+//                 esa copia) ni el versionCode. Pero SÍ exige que la app esté
+//                 PUBLICADA: con la Puntos Salud vieja «No publicada», Google
+//                 contesta 400 NOT_PUBLISHED (medido el 2026-10-12).
 //   --aab=RUTA    no compila: sube ese .aab ya firmado (el versionCode es el
 //                 que trae adentro)
 //   --version-code=N   usa N si es mayor que lo que se sabe (sin la cuenta de
@@ -57,6 +63,7 @@ if (!carpeta || !perfil) {
   process.exit(1);
 }
 const SIN_SUBIR = banderas.has('--sin-subir');
+const COMPARTIR = banderas.has('--compartir');
 const app = resolve(carpeta);
 const CLAVES = join(homedir(), '.claves-farmalasa');
 const REGISTRO = join(CLAVES, 'compilaciones-subidas.json');
@@ -232,6 +239,17 @@ if (aab) {
 }
 
 // ── Subir ───────────────────────────────────────────────────────────────────
+if (COMPARTIR) {
+  if (!existsSync(CUENTA_PLAY)) { console.error(`Falta ${CUENTA_PLAY}.\n\n${comoCrearLaCuentaDePlay()}`); process.exit(1); }
+  const r = await fetch(`https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications/internalappsharing/${paquete}/artifacts/bundle?uploadType=media`, {
+    method: 'POST', headers: { Authorization: `Bearer ${await token()}`, 'Content-Type': 'application/octet-stream' }, body: readFileSync(aab),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.downloadUrl) { console.error(`Uso compartido interno ${r.status}: ${JSON.stringify(j)}`); process.exit(1); }
+  console.log(`✓ Enlace para instalar ${appJson.name} (prueba): ${j.downloadUrl}`);
+  console.log('  En el teléfono hay que activar una vez Play Store → Configuración → Información → tocar 7 veces «Versión de Play Store» → General → «Uso compartido interno de apps».');
+  process.exit(0);
+}
 if (!puedeSubir) {
   if (!appExisteEnPlay) {
     console.log(`

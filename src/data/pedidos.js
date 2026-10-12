@@ -799,3 +799,31 @@ export const resolverRenglonDePedido = (params) => supabase.rpc('resolve_pedido_
 /** El estado de una ruta de reparto ('pendiente' | 'en_ruta' | 'completada'); lo usa el rastreo de fondo de la app. */
 export const fetchEstadoDeRuta = (rutaId) => supabase.from('rutas').select('status').eq('id', rutaId).maybeSingle();
 
+
+/**
+ * La ruta de reparto que esta persona tiene EN CURSO ahora (la más reciente),
+ * o null. La usa la app al abrir y al volver al frente: si la ruta se inició en
+ * el portal, el teléfono de quien conduce empieza a marcar sin tener que abrir
+ * su pantalla. Una sola fila.
+ */
+export const fetchRutaEnCursoDeConductor = (empleadoId) => supabase.from('rutas')
+    .select('id')
+    .eq('conductor_id', empleadoId)
+    .eq('status', 'en_ruta')
+    .order('salida_at', { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+
+// La dirección de cada sala que lleva el encabezado del papel del pedido
+// ({ erp_sucursal_id → address }). La usan las dos imprentas —el portal y el
+// teléfono— para que el papel salga igual. Nunca lanza: sin direcciones el
+// papel sale igual, con el encabezado sin dirección (y se avisa en consola).
+export async function leerDireccionesDeSalas() {
+    try {
+        const { data, error } = await fetchErpSucursalAddressMap();
+        if (error) console.error('leerDireccionesDeSalas:', error.message);
+        const mapa = {};
+        for (const r of data ?? []) mapa[r.erp_sucursal_id] = r.branches?.address ?? '';
+        return mapa;
+    } catch { return {}; }
+}

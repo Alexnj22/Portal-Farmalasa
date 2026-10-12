@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CADENCIAS, cadenciaDe, quienesEscriben, repartoSigueEnRuta, rutasVigentes, sinRutas, tocaEscribir, ultimaPosicion } from '@nucleo/utils/rastreoDeFondo';
+import { CADENCIAS, repartoParaReanudar, cadenciaDe, quienesEscriben, repartoSigueEnRuta, rutasVigentes, sinRutas, tocaEscribir, ultimaPosicion } from '@nucleo/utils/rastreoDeFondo';
 
 describe('rastreo de fondo', () => {
     it('Torogoz de ayer no cuenta; el reparto no caduca por fecha', () => {
@@ -47,5 +47,23 @@ describe('rastreo de fondo', () => {
         expect(repartoSigueEnRuta('en_ruta')).toBe(true);
         expect(repartoSigueEnRuta('completada')).toBe(false);
         expect(repartoSigueEnRuta('pendiente')).toBe(false);
+    });
+});
+
+describe('repartoParaReanudar — la ruta iniciada en el portal empieza a marcar al abrir la app', () => {
+    it('arranca la ruta en curso que el teléfono no rastrea', () => {
+        expect(repartoParaReanudar({ enCurso: 'r1', guardada: null, permisoSiempre: true })).toBe('r1');
+    });
+    it('no la repite si ya es la que rastrea', () => {
+        expect(repartoParaReanudar({ enCurso: 'r1', guardada: 'r1', permisoSiempre: true })).toBeNull();
+    });
+    it('cambia a la ruta nueva si la guardada era otra', () => {
+        expect(repartoParaReanudar({ enCurso: 'r2', guardada: 'r1', permisoSiempre: true })).toBe('r2');
+    });
+    it('sin permiso «siempre» no arranca nada', () => {
+        expect(repartoParaReanudar({ enCurso: 'r1', guardada: null, permisoSiempre: false })).toBeNull();
+    });
+    it('sin ruta en curso no arranca nada', () => {
+        expect(repartoParaReanudar({ enCurso: null, guardada: null, permisoSiempre: true })).toBeNull();
     });
 });

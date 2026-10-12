@@ -149,10 +149,10 @@ export default function Impresion() {
           <Opciones opciones={ANCHOS_ROLLO.map((a) => ({ id: String(a.mm), label: `${a.mm} mm` }))} valor={String(ancho)} onCambiar={cambiarAncho} />
         </Seccion>
 
-        <Seccion titulo="Imprimir el ticket de prueba" pie="A la caja: sale por la ticketera de tu sala (recibido no es lo mismo que impreso: abajo dice qué contestó). AirPrint y PDF: desde este teléfono.">
+        <Seccion titulo="Imprimir el ticket de prueba" pie="A la caja: sale por la ticketera de tu sala (recibido no es lo mismo que impreso: abajo dice qué contestó). Imprimir y PDF: desde este teléfono.">
           <BotonGrande texto={mandando ? 'Mandando…' : `Mandar a la caja de ${sucursal?.name || 'mi sala'}`} onPress={aLaSala} deshabilitado={mandando} />
           <View style={{ flexDirection: 'row', gap: 10 }}>
-            <View style={{ flex: 1 }}><BotonGrande texto="AirPrint" borde onPress={airprint} deshabilitado={!html} /></View>
+            <View style={{ flex: 1 }}><BotonGrande texto={Platform.OS === 'ios' ? 'AirPrint' : 'Imprimir'} borde onPress={airprint} deshabilitado={!html} /></View>
             <View style={{ flex: 1 }}><BotonGrande texto="Compartir PDF" borde onPress={comoPdf} deshabilitado={!html} /></View>
           </View>
         </Seccion>

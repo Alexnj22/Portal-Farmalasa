@@ -39,7 +39,7 @@
       "requireFullScreen": true
     },
     "android": {
-      "package": "lat.farmasalud.clientes",
+      "package": "com.wnapp.id1750888957164",
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/icono.png"

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- RemoteViews: sólo FrameLayout/LinearLayout/TextView/ImageView. Los textos
+     de muestra son los de la vista previa del selector de widgets (como el
+     `placeholder` de iOS); `SaldoWidget.vista` los reemplaza. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:id="@+id/raiz"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@drawable/widget_fondo"
+  android:padding="16dp">
+
+  <LinearLayout
+    android:id="@+id/con_datos"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal">
+      <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="PUNTOS SALUD"
+        android:textColor="#CCFFFFFF"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.15"
+        android:maxLines="1" />
+      <TextView
+        android:id="@+id/nombre"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TU NOMBRE"
+        android:textColor="#CCFFFFFF"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:maxWidth="140dp" />
+    </LinearLayout>
+
+    <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
+
+    <TextView
+      android:id="@+id/dolares"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="$4.20"
+      android:textColor="#FFFFFF"
+      android:textSize="32sp"
+      android:fontFamily="sans-serif-black"
+      android:maxLines="1"
+      android:autoSizeTextType="uniform"
+      android:autoSizeMinTextSize="18sp"
+      android:autoSizeMaxTextSize="36sp" />
+    <TextView
+      android:id="@+id/puntos"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="420 puntos"
+      android:textColor="#D9FFFFFF"
+      android:textSize="13sp"
+      android:textStyle="bold" />
+
+    <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
+
+    <TextView
+      android:id="@+id/pie"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="✓ Listo para canjear"
+      android:textColor="#8FC20F"
+      android:textSize="11sp"
+      android:textStyle="bold"
+      android:maxLines="1"
+      android:ellipsize="end" />
+  </LinearLayout>
+
+  <LinearLayout
+    android:id="@+id/sin_datos"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:visibility="gone">
+    <TextView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="PUNTOS SALUD"
+      android:textColor="#CCFFFFFF"
+      android:textSize="10sp"
+      android:textStyle="bold"
+      android:letterSpacing="0.15" />
+    <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
+    <TextView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Abre la app para ver tu saldo"
+      android:textColor="#FFFFFF"
+      android:textSize="15sp"
+      android:textStyle="bold" />
+  </LinearLayout>
+</FrameLayout>

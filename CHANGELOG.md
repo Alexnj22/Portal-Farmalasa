@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1267.1 — Puntos Salud Android: paquete de la app vieja y el widget entra al repo
+
+- **Puntos Salud en Android usa el paquete de la app que ya está en Play**, `com.wnapp.id1750888957164` (la que hizo WebIntoApp, con 476 instalaciones). Así la app nueva les llega como **actualización** y no hay que pasar 14 días de prueba con 12 testers, porque la ficha ya existía. En iPhone sigue `lat.farmasalud.clientes`. La llave de subida nueva espera la aprobación de Google (reseteo pedido el 2026-10-08). Firebase ya tiene ese paquete.
+- **El código nativo del widget de saldo no estaba en el repo.** `apps/clientes/.gitignore` ignora toda carpeta `android/` y sólo exceptuaba `modules/*/ios/`. Ahora también `modules/*/android/`, sin su `build/`. El widget estuvo cuatro días vivo sólo en un worktree.
+
 ## v2.1267.0 — Auditoría de calidad de la app
 
 - **Auditoría de calidad de la app (cinco áreas, seis ejes: misma información que el portal, datos completos, paginación, fluidez, tacto y dispositivos).**

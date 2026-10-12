@@ -134,6 +134,7 @@ const FormSucursal = ({ formData, setFormData, section = "general" }) => {
                     <BranchTabHorarios
                         schedule={schedule} setDay={setDay}
                         copyPreviousDay={copyPreviousDay} safeDay={safeDay}
+                        branchId={formData.id ?? null}
                     />
                 )}
 

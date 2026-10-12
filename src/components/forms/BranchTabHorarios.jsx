@@ -4,6 +4,7 @@ import TimePicker12 from '../common/TimePicker12';
 import { WEEK_DAYS } from '@nucleo/data/constants';
 import { Switch } from './BranchHelpers';
 import Button from '../common/Button';
+import HorariosEspeciales from './HorariosEspeciales';
 
 // 🚨 OPTIMIZACIÓN MÁXIMA: Extraemos el Día a su propio componente Memoizado
 // Solo se re-renderizará si sus props exactas (open, start, end, isInvalid) cambian.
@@ -84,7 +85,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
 });
 
 // Componente Principal
-const BranchTabHorarios = ({ setDay, copyPreviousDay, safeDay }) => {
+const BranchTabHorarios = ({ setDay, copyPreviousDay, safeDay, branchId, schedule }) => {
 
     const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]";
     const islandHoverClass = "transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
@@ -126,6 +127,8 @@ const BranchTabHorarios = ({ setDay, copyPreviousDay, safeDay }) => {
                     })}
                 </div>
             </div>
+            {/* Días puntuales y feriados: se guardan al momento, en su propia tabla. */}
+            <HorariosEspeciales branchId={branchId} weeklyHours={schedule} />
         </div>
     );
 };

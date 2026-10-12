@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CheckCircle2, Headset, Hourglass, Inbox, MessageCircle, MessagesSquare, Sparkles } from 'lucide-react';
+import { CheckCircle2, Headset, Hourglass, Inbox, MessageCircle, MessagesSquare, Settings2, Sparkles } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import Button from '../../components/common/Button';
@@ -15,6 +15,9 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import FilaDeConversacion from './FilaDeConversacion';
 import Conversacion from './Conversacion';
 import { FILTROS, estadoDeConversacion, estadoServidor } from './estados';
+import EstadoDeLaFarmacia from './EstadoDeLaFarmacia';
+import useFarmaciaEstado from './useFarmaciaEstado';
+import AjustesDelChat from './AjustesDelChat';
 import { useBandejaDelChat, useEquipoDelChat } from './useBandeja';
 
 /**
@@ -48,6 +51,9 @@ export default function ChatClientesView() {
     const [params, setParams] = useSearchParams();
     const abiertaId = params.get('c') ? Number(params.get('c')) : null;
     const ahora = useNowTick(30_000);
+    // El estado que decide cuál respuesta automática recibe quien escribe ahora.
+    const estadoFarmacia = useFarmaciaEstado();
+    const [ajustesAbiertos, setAjustesAbiertos] = useState(false);
 
     const { equipo, asegurarEquipo } = useEquipoDelChat();
     const { conversaciones, hayMas, cargandoMas, error, cargar, verMas } = useBandejaDelChat(
@@ -94,7 +100,14 @@ export default function ChatClientesView() {
     );
 
     return (
-        <GlassViewLayout icon={MessageCircle} title="Chat con clientes" fixedScrollMode transparentBody filtersContent={(
+        <GlassViewLayout icon={MessageCircle} title="Chat con clientes" fixedScrollMode transparentBody subContent={(
+            <div className="flex flex-wrap items-center justify-between gap-2 px-2 md:px-0">
+                <EstadoDeLaFarmacia estado={estadoFarmacia} />
+                {puedeResponder && (
+                    <Button variant="secondary" size="sm" icon={Settings2} onClick={() => setAjustesAbiertos(true)}>Ajustes del chat</Button>
+                )}
+            </div>
+        )} filtersContent={(
             <ViewTabBar tabs={tabs} activeTab={filtro} onTabChange={(t) => { setFiltro(t); if (estadoServidor(t) !== estadoServidor(filtro)) abrir(null); }}
                 searchValue={busqueda} onSearchChange={setBusqueda} placeholder="Buscar por nombre, teléfono o mensaje…" />
         )}>
@@ -138,6 +151,9 @@ export default function ChatClientesView() {
                 onClose={() => abrir(null)}>
                 {(conv) => hilo(conv)}
             </ExpedienteMovil>
+            {puedeResponder && (
+                <AjustesDelChat abierto={ajustesAbiertos} onClose={() => setAjustesAbiertos(false)} estado={estadoFarmacia} />
+            )}
         </GlassViewLayout>
     );
 }

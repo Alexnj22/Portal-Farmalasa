@@ -357,6 +357,48 @@ export type Database = {
           },
         ]
       }
+      app_chat_ajustes: {
+        Row: {
+          created_at: string
+          id: boolean
+          mensaje_abierto: string
+          mensaje_cerrado: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: boolean
+          mensaje_abierto: string
+          mensaje_cerrado: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: boolean
+          mensaje_abierto?: string
+          mensaje_cerrado?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_chat_ajustes_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_chat_ajustes_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_chat_conversaciones: {
         Row: {
           created_at: string
@@ -23497,6 +23539,64 @@ export type Database = {
         }
         Relationships: []
       }
+      sucursal_horario_especial: {
+        Row: {
+          abre: string | null
+          branch_id: number
+          cerrada: boolean
+          cierra: string | null
+          creado_por: string | null
+          created_at: string
+          fecha: string
+          id: number
+          motivo: string | null
+        }
+        Insert: {
+          abre?: string | null
+          branch_id: number
+          cerrada?: boolean
+          cierra?: string | null
+          creado_por?: string | null
+          created_at?: string
+          fecha: string
+          id?: never
+          motivo?: string | null
+        }
+        Update: {
+          abre?: string | null
+          branch_id?: number
+          cerrada?: boolean
+          cierra?: string | null
+          creado_por?: string | null
+          created_at?: string
+          fecha?: string
+          id?: never
+          motivo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sucursal_horario_especial_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sucursal_horario_especial_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sucursal_horario_especial_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           created_at: string | null
@@ -27680,6 +27780,7 @@ export type Database = {
         Args: { p_accion: string; p_branch_id: number }
         Returns: undefined
       }
+      farmacia_estado: { Args: never; Returns: Json }
       ficha_de_persona: { Args: { p_id: string }; Returns: string }
       fichas_para_corregir_dte: {
         Args: never
@@ -29469,6 +29570,14 @@ export type Database = {
       }
       hora_12: { Args: { p_hora: string }; Returns: string }
       hora_del_horario: { Args: { p_texto: string }; Returns: string }
+      horario_de_sala: {
+        Args: { p_branch: number; p_fecha: string }
+        Returns: {
+          abre: string
+          cierra: string
+          origen: string
+        }[]
+      }
       horarios_de_la_semana: {
         Args: { p_branch_id: number; p_week_start: string }
         Returns: Json

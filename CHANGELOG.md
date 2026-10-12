@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1275.0 — Portal: ajustes del chat y horarios especiales de sucursal
+
+- **Ajustes del chat** (Chat con clientes, para quien puede responder): editar las dos respuestas automáticas con `{abre}`/`{cierra}`, vista previa con el horario real y quién lo editó por última vez. Píldora «Farmacia en línea · hasta las 10:00 p. m.» / «Fuera de horario · abre mañana 7:00 a. m.» y el feriado del día.
+- **Horarios especiales** en la ficha de la sucursal → Horarios: días cerrados o con otro horario (feriados, días puntuales), la lista de los próximos feriados con el horario que usarán por defecto (el de domingo) y «Cambiar para este día». Lo usan el chat y el estado «abierta» de la app.
+
 ## v2.1274.1 — Chat: horario real de las sucursales y mensajes editables
 
 - El chat ya no usa un horario fijo: `farmacia_estado()` junta el horario de cada sucursal (`horario_de_sala`): un **horario especial** cargado para esa fecha (`sucursal_horario_especial`: cerrada o abre/cierra distinto) > **feriado** (tabla de feriados → horario de domingo de la sala) > el horario semanal. La farmacia está «en línea» si al menos una sala está abierta; dice hasta qué hora y, cerrada, cuándo abre («mañana a las 7:00 a. m.»).

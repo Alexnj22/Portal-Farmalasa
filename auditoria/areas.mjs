@@ -381,7 +381,7 @@ export const AREAS = [
             'src/components/common/useAccionesDeAviso.jsx',
             'src/components/common/TarjetaDeAviso.jsx', 'src/components/common/paletaDeAviso.js',
             'src/utils/announcementAudience.js', 'src/plataforma/browserNotif.js', 'src/utils/notify.js',
-            'src/utils/notificacionTexto.js', 'src/utils/accionesDeAviso.js', 'src/utils/bandejaDeAvisos.js', 'tests/unit/bandejaDeAvisos.test.js', 'src/utils/tarjetaDeSolicitud.js',
+            'src/utils/notificacionTexto.js', 'src/utils/accionesDeAviso.js', 'src/utils/tarjetaDeSolicitud.js',
             'src/plataforma/pushEquipo.js',
             'src/components/forms/FormAnnouncements.jsx',
         ],
@@ -414,8 +414,12 @@ export const AREAS = [
             'src/components/forms/FormSrsPermit.jsx', 'src/components/forms/FormPharmacyRegent.jsx',
             'src/components/forms/FormNursingRegents.jsx',
             'src/components/forms/FormPharmacovigilance.jsx',
+            // Días puntuales y feriados de cada sala (2026-10-12). La regla
+            // —especial > feriado con horario de domingo > semanal— vive en
+            // `horario_de_sala()`; la usa `farmacia_estado()` para el chat.
+            'src/components/forms/HorariosEspeciales.jsx',
         ],
-        tablas: ['branches', 'branch_documents', 'branch_expenses', 'erp_sucursal_map'],
+        tablas: ['branches', 'branch_documents', 'branch_expenses', 'erp_sucursal_map', 'sucursal_horario_especial'],
         edge: ['analyze-branch', 'check-doc-expiry'],
         crons: ['check-doc-expiry-daily'],
         docs: ['docs/SUCURSALES-EL-EXPEDIENTE-DE-CADA-SALA-2026-08-24.md'],
@@ -745,6 +749,10 @@ export const AREAS = [
             // El chat con los clientes de la app y la revisión de recetas (2026-10-12).
             'src/views/chat-clientes/',
             'src/data/chatClientes.js',
+            // Los mensajes automáticos del chat y el horario real que los
+            // decide (`farmacia_estado()` / `horario_de_sala()`, 2026-10-12).
+            'src/data/horarios.js',
+            'src/utils/horarioDelChat.js',
             'src/views/mayoristas/',
             'src/data/mayoristas.js',
             'src/data/ofertasClientes.js',
@@ -767,7 +775,9 @@ export const AREAS = [
         tablas: ['app_cliente_sesiones', 'app_cliente_preregistros', 'ofertas_clientes', 'app_cliente_muestras', 'app_cliente_referido_codigo', 'app_cliente_referidos', 'app_cliente_avisos', 'app_cliente_correos', 'app_cliente_correo_envios', 'wallet_registros', 'app_historias', 'app_historias_vistas', 'app_reservas', 'app_reservas_pagos', 'app_catalogo_destacados', 'app_banners', 'app_catalogo_ocultos', 'app_encargos',
                  // Chat con la farmacia y foto de perfil (2026-10-12). Los archivos
                  // viven en el bucket privado `app-clientes-archivos`.
-                 'app_chat_conversaciones', 'app_chat_mensajes', 'app_chat_respuestas', 'app_cliente_fotos'],
+                 'app_chat_conversaciones', 'app_chat_mensajes', 'app_chat_respuestas', 'app_cliente_fotos',
+                 // Los dos mensajes automáticos (abierto / fuera de horario).
+                 'app_chat_ajustes'],
         edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'wompi-pagos'],
         crons: ['puntos-referidos-hora', 'purge-app-cliente-avisos', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min', 'app-catalogo-destacados', 'puntos-cupones-diario',
                 // Receta de la app sin revisar a las 4 h → supervisión.

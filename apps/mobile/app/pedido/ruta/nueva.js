@@ -15,6 +15,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'rea
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import MapView, { Marker, Polyline } from 'react-native-maps';
+import SinMapa, { hayMapa } from '../../../componentes/SinMapa';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchEmployeeDriverInfo, fetchPedidosDisponiblesParaRuta, fetchReenviosPorDespachar, fetchSalasListasParaRuta, fetchSucursalesConCoords } from '@nucleo/data/pedidos';
 import { crearRutaYSalir } from '@nucleo/data/accionesDeBodega';
@@ -233,7 +234,7 @@ export default function NuevaRuta() {
           </View>
         ) : (
           <View style={{ marginHorizontal: 16, gap: 12 }}>
-            {region ? (
+            {region && !hayMapa ? <SinMapa puntos={[bodega, ...paradas, bodega]} texto="El orden de la ruta se ve en Google Maps." /> : region ? (
               <Vidrio radio={20}>
                 <View style={{ height: 300, borderRadius: 20, overflow: 'hidden' }}>
                   <MapView style={{ flex: 1 }} region={region} showsPointsOfInterest={false}>

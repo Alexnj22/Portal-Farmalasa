@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1268.1 — Android: los mapas ya no cierran la app
+
+- **Android: abrir el mapa de una ruta cerraba la app entera** (reparto, armar ruta y Torogoz): `react-native-maps` usa el SDK de Google Maps y el binario no trae llave («API key not found», medido en el emulador). Ahora cada mapa pregunta `hayMapa` (hay mapa si el binario trae `android.config.googleMaps.apiKey`, o es iPhone) y sin llave muestra la ruta con «Abrir en Google Maps» (`componentes/SinMapa.js`). La v12 de Android tiene el defecto.
+- **El color de selección no se pintaba fuera del Liquid Glass**: en Android y en iOS viejo el día elegido de Horarios (y cualquier píldora con `tinte`) quedaba blanco con texto blanco. `Vidrio` lo pone como capa.
+- Android ya no dice «AirPrint»: dice «Imprimir».
+- El perfil `interna-pruebas` de `eas.json` apuntaba a un entorno de pruebas borrado; ahora al vigente, y su portal web a dev.farmasalud.lat.
+
 ## v2.1268.0 — Pedidos completos desde el teléfono, marcas de diseño y afiche QR
 
 - **El pedido entero se hace desde el teléfono.** El motor del PDF del portal (pdfmake, misma definición en `src/utils/pedidoPdfDoc.js`) corre en un WebView oculto de la app (`motor-pedido.html`, se carga sólo al imprimir o finalizar): las hojas y el PDF salen idénticos a la PC (`tests/unit/motorPedido.test.js`). Generar guarda las hojas y pregunta una vez: Imprimir · Compartir PDF · Guardar en Archivos · Ahora no; Finalizar calcula las hojas si faltan y ofrece la hoja de despacho. Regenerar el motor con `node scripts/motor-pedido.mjs` al cambiar el papel.

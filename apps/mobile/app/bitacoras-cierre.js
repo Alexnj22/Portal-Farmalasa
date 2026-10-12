@@ -9,7 +9,7 @@
 // motivo, la historia del mes, e imprimirlo (el mismo papel del núcleo,
 // `armarHtmlDelMes`, por AirPrint o PDF, anotado como salida de datos).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -204,7 +204,7 @@ export default function CierreDeBitacoras() {
               {puedeImprimir ? (
                 <Seccion titulo="Imprimir el mes" pie="La grilla, la limpieza y el libro del mes en un solo papel.">
                   <View style={{ flexDirection: 'row', gap: 10 }}>
-                    <View style={{ flex: 1 }}><BotonGrande texto="AirPrint" borde onPress={() => imprimir(false)} /></View>
+                    <View style={{ flex: 1 }}><BotonGrande texto={Platform.OS === 'ios' ? 'AirPrint' : 'Imprimir'} borde onPress={() => imprimir(false)} /></View>
                     <View style={{ flex: 1 }}><BotonGrande texto="Compartir PDF" borde onPress={() => imprimir(true)} /></View>
                   </View>
                 </Seccion>

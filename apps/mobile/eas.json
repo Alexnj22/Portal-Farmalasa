@@ -22,9 +22,9 @@
       "distribution": "store",
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://lyfafocpywvoxefetxah.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5ZmFmb2NweXd2b3hlZmV0eGFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3ODU0OTcsImV4cCI6MjEwNjM2MTQ5N30.wr_jpPQywtJh_BZ--y6UjIYoX1JRwQpQR3fIajmgvlE",
-        "EXPO_PUBLIC_PORTAL_URL": "https://portal.farmasalud.lat"
+        "EXPO_PUBLIC_SUPABASE_URL": "https://qflpvgmjfkrigveglqdb.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmbHB2Z21qZmtyaWd2ZWdscWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzMDU0MzIsImV4cCI6MjEwNjg4MTQzMn0.K7hVD8U0ttZvbn9QO0QrHHHhet5Quhd_dJitoWWkv6w",
+        "EXPO_PUBLIC_PORTAL_URL": "https://dev.farmasalud.lat"
       }
     },
     "produccion": {

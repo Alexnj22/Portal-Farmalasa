@@ -8,6 +8,12 @@ import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 
 const HAY_VIDRIO = Platform.OS === 'ios' && (() => { try { return isLiquidGlassAvailable(); } catch { return false; } })();
 
+// El tinte (lo que marca la píldora o el día elegido) sólo lo pinta el Liquid
+// Glass. Sin él se pone encima como capa de color: si no, en Android y en iOS
+// viejo la píldora elegida quedaba blanca con el texto blanco encima (visto en
+// el emulador, Horarios, 2026-10-12).
+const Tinte = ({ color }) => (color ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: color }]} /> : null);
+
 export default function Vidrio({ style, children, radio = 22, interactivo = false, tinte }) {
   const oscuro = useColorScheme() === 'dark';
   const forma = { borderRadius: radio, overflow: 'hidden' };
@@ -22,6 +28,7 @@ export default function Vidrio({ style, children, radio = 22, interactivo = fals
   if (Platform.OS === 'ios') {
     return (
       <BlurView intensity={60} tint={oscuro ? 'systemMaterialDark' : 'systemMaterialLight'} style={[forma, style]}>
+        <Tinte color={tinte} />
         {children}
       </BlurView>
     );
@@ -36,6 +43,7 @@ export default function Vidrio({ style, children, radio = 22, interactivo = fals
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: oscuro ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)',
     }, style]}>
+      <Tinte color={tinte} />
       {children}
     </View>
   );

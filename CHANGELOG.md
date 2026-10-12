@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1268.5 — App de clientes: Platino sin corte al inclinar y Zafiro más azul
+
+- **Platino**: el arcoíris tomaba su tono de la DIRECCIÓN desde el centro, que cambia de golpe al cruzarlo: detrás del logo se dibujaba un molinete partido en dos que se movía al inclinar. Ahora el tono sale de la posición (continua) y el cepillado no depende del ángulo cerca del centro.
+- **Zafiro**: paleta sin componente verde (fondo, cuerpo, brillo, estrella y seda) — en el teléfono se leía verdoso.
+
 ## v2.1268.4 — Las cifras ya no recortan su título
 
 - En la app, el rótulo y la línea de apoyo de cada cifra (`componentes/inicio/Kpi.js`) usan hasta dos líneas: en un iPhone SE con letra grande se cortaban («Pasados del…», «Acumulado…»).

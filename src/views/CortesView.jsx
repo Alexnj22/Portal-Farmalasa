@@ -14,7 +14,6 @@ import Notice from '../components/common/Notice';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
 import AsentarDiferencias from '../components/cortes/AsentarDiferencias';
 import CorteDetalleModal from '../components/cortes/CorteDetalleModal';
-import DiasConDiferencia from '../components/cortes/DiasConDiferencia';
 import FichasDeCaja from '../components/cortes/FichasDeCaja';
 /* La pestaña «Hoy» es `MiCajaView` entera, y va DIFERIDA a propósito: arrastra
  * los diálogos de operar la caja —abrir, corte, entrada, salida, la lectura de
@@ -41,7 +40,12 @@ const traerMiCaja = () => import('./MiCajaView');
 const miCajaEnVuelo = traerMiCaja();
 miCajaEnVuelo.catch(() => {});
 const MiCajaView = lazy(() => miCajaEnVuelo.catch(traerMiCaja));
-import MovimientosDeCaja from '../components/cortes/MovimientosDeCaja';
+/* Las pestañas «Movimientos» y «Diferencias» se bajan al abrirlas (2026-10-12).
+ * No son la pestaña de entrada —es «Hoy» o «Cortes»— y entre las dos son ~30 kB
+ * de fuente que crecieron con la caja (08-28 → 09-25) y viajaban en el chunk
+ * de la vista para todo el que entraba a mirar cortes. */
+const MovimientosDeCaja = lazy(() => import('../components/cortes/MovimientosDeCaja'));
+const DiasConDiferencia = lazy(() => import('../components/cortes/DiasConDiferencia'));
 import TarjetaCorte from '../components/cortes/TarjetaCorte';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -971,31 +975,33 @@ const CortesView = () => {
                 )}
 
                 {enMovimientos && (
-                    <MovimientosDeCaja
-                        movimientos={movs}
-                        historial={historial}
-                        // Los cortes del período, para dibujar la línea contra la
-                        // que se mide cada movimiento. Ya están cargados.
-                        cortes={cortes}
-                        // Los cobros de crédito del portal: la mitad del dinero
-                        // que el sistema de la caja no sabe nombrar.
-                        cobros={cobros}
-                        cobraron={cobraron}
-                        // Las salidas pagadas con una bolsa: la tercera forma en
-                        // que sale dinero de una sala.
-                        salidasDeBolsa={salidasDeBolsa}
-                        tiposDeSalida={tiposDeSalida}
-                        sacaron={sacaron}
-                        anotados={anotados}
-                        anotaron={cobraron}
-                        puedeVerBolsas={puedeVerBolsas}
-                        salas={salasMap}
-                        cargando={cargandoMovs}
-                        busqueda={busqueda}
-                        tipo={tipoMov}
-                        estado={estadoMov}
-                        onLimpiarBusqueda={() => setBusqueda('')}
-                    />
+                    <Suspense fallback={<LoadingState />}>
+                        <MovimientosDeCaja
+                            movimientos={movs}
+                            historial={historial}
+                            // Los cortes del período, para dibujar la línea contra la
+                            // que se mide cada movimiento. Ya están cargados.
+                            cortes={cortes}
+                            // Los cobros de crédito del portal: la mitad del dinero
+                            // que el sistema de la caja no sabe nombrar.
+                            cobros={cobros}
+                            cobraron={cobraron}
+                            // Las salidas pagadas con una bolsa: la tercera forma en
+                            // que sale dinero de una sala.
+                            salidasDeBolsa={salidasDeBolsa}
+                            tiposDeSalida={tiposDeSalida}
+                            sacaron={sacaron}
+                            anotados={anotados}
+                            anotaron={cobraron}
+                            puedeVerBolsas={puedeVerBolsas}
+                            salas={salasMap}
+                            cargando={cargandoMovs}
+                            busqueda={busqueda}
+                            tipo={tipoMov}
+                            estado={estadoMov}
+                            onLimpiarBusqueda={() => setBusqueda('')}
+                        />
+                    </Suspense>
                 )}
 
                 {(enCortes || enDiferencias) && !(enDiferencias ? cargandoDif : cargando) && puedeResolverDif && sinAsentar.length > 0 && (
@@ -1019,20 +1025,22 @@ const CortesView = () => {
                 )}
 
                 {enDiferencias && (
-                    <DiasConDiferencia
-                        dias={diasDeLaPagina}
-                        diasParaFicha={diasDelRecorte}
-                        cargando={cargandoDif}
-                        error={errorDif}
-                        nombreSala={nombreSala}
-                        puedeResolver={puedeResolverDif}
-                        busqueda={busqueda}
-                        filtroActivo={filtroDif}
-                        signo={signoDif}
-                        onCambio={recargarDif}
-                        onLimpiarBusqueda={() => setBusqueda('')}
-                        onVerTodos={() => { setFiltroDif('TODOS'); setMesDif('TODOS'); setPaginaDif(1); }}
-                    />
+                    <Suspense fallback={<LoadingState />}>
+                        <DiasConDiferencia
+                            dias={diasDeLaPagina}
+                            diasParaFicha={diasDelRecorte}
+                            cargando={cargandoDif}
+                            error={errorDif}
+                            nombreSala={nombreSala}
+                            puedeResolver={puedeResolverDif}
+                            busqueda={busqueda}
+                            filtroActivo={filtroDif}
+                            signo={signoDif}
+                            onCambio={recargarDif}
+                            onLimpiarBusqueda={() => setBusqueda('')}
+                            onVerTodos={() => { setFiltroDif('TODOS'); setMesDif('TODOS'); setPaginaDif(1); }}
+                        />
+                    </Suspense>
                 )}
 
                 {enDiferencias && !cargandoDif && diasVisibles.length > porPaginaDif && (

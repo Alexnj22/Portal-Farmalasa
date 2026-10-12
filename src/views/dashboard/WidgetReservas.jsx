@@ -1,11 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { CheckCircle2, MessageCircle, PackageCheck, Plus, ShoppingBag, Truck, Wallet, XCircle } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import ListRow from '../../components/common/ListRow';
 import SearchInput from '../../components/common/SearchInput';
 import WidgetEncargos from './WidgetEncargos';
-import NuevaReservaSucursal from './NuevaReservaSucursal';
 import LiquidModal from '../../components/common/LiquidModal';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
@@ -33,6 +32,10 @@ import {
 //
 // Las pendientes primero: son las que esperan a alguien de la sala.
 // ═══════════════════════════════════════════════════════════════════════════
+
+// El alta con anticipo se baja al abrirla: arrastra el buscador de producto, la
+// búsqueda de clientes y la ticketera de la constancia (`ticketPrint`, 8 kB).
+const NuevaReservaSucursal = lazy(() => import('./NuevaReservaSucursal'));
 
 const REFRESCO_MS = 2 * 60 * 1000;
 const MAX_FILAS = 6;
@@ -100,7 +103,9 @@ export default function WidgetReservas({ todas = false }) {
         <Button variant="secondary" size="xs" icon={Plus} onClick={() => setNueva(true)}>Reservar con anticipo</Button>
     ) : null;
     const modalNueva = nueva ? (
-        <NuevaReservaSucursal branchId={miSala} sala={nombreSala} onClose={() => setNueva(false)} onCreada={cargar} />
+        <Suspense fallback={null}>
+            <NuevaReservaSucursal branchId={miSala} sala={nombreSala} onClose={() => setNueva(false)} onCreada={cargar} />
+        </Suspense>
     ) : null;
 
     if (cargando) return <SkeletonText lines={3} />;

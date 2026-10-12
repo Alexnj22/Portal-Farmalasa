@@ -613,7 +613,7 @@ export const AREAS = [
             'src/hooks/useCerrarBolsa.js', 'src/hooks/useResolverCorte.js', 'src/hooks/useCortesDeAvisos.js',
             'src/hooks/useDiasConDiferencia.js', 'src/utils/diferenciasDeCaja.js',
             'src/utils/bolsaComprobante.js', 'src/utils/bolsasReparto.js', 'src/utils/corteComprobante.js',
-            'src/utils/cortesDiagnostico.js', 'src/utils/cajasEspeciales.js',
+            'src/utils/cortesDiagnostico.js', 'src/utils/repartoDeSalida.js', 'src/utils/cajasEspeciales.js',
             'src/utils/depositoDeEfectivo.js', 'src/utils/corteDeCaja.js',
             'src/utils/cobroDeAplicacion.js', 'tests/unit/cobroDeAplicacion.test.js',
             'tests/unit/depositoDeEfectivo.test.js', 'tests/unit/corteDeCaja.test.js',

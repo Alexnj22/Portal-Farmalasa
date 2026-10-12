@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1268.6 — gate:bundle en verde: Inicio, Cortes y Bolsas más livianos
+
+- **Inicio −25 kB**: la baldosa «Reservas de mi sala» se baja sólo cuando se pinta (`lazy`), igual que las de cortes y bolsas. Antes su cierre —encargos, constancia, `ticketPrint`, `LiquidDatePicker`— lo descargaba todo el que entraba al Inicio, tuviera o no el permiso `dash_reservas`. El formulario de nueva reserva también se baja al abrirlo. 130 → 105 kB.
+- **Bolsas −5 kB**: `repartoDeUnaSalida` pasa a `utils/repartoDeSalida.js`. Mientras vivía en `cortesDiagnostico` (1,466 líneas), el chunk compartido `bolsas` arrastraba el diagnóstico de cortes entero a Bolsas y a la campana (de 10.0 a 5.3 kB). `cortesDiagnostico` la re-exporta, así que ningún import cambia. 72 → 67 kB.
+- **Cortes −9 kB**: las pestañas Movimientos y Diferencias se bajan al abrirlas; la pestaña de entrada es Hoy o Cortes. 111 → 102 kB.
+- Verificado en el entorno de pruebas con Playwright: la baldosa, las dos pestañas y Bolsas cargan y pintan, sin errores de página.
+- `gate:bundle` estaba en rojo desde el 25-sep. Lo que quedó por encima de los techos se midió módulo por módulo con sourcemaps contra las compilaciones del 28-ago y del 25-sep, y es funcionalidad nueva, no una librería pesada (Cortes: movimientos, fichas y diferencias de caja; Metas: la lógica compartida con la app; el entry: rutas nuevas y refactors del núcleo en ~40 módulos). Esos techos se subieron a mano, cada uno con su motivo en `_motivos`: entry 296→306, Cortes 73→103, Inicio 99→106, Metas 67→82, Bolsas 62→68 y otras once vistas +1 a +7.
+
 ## v2.1268.5 — App de clientes: Platino sin corte al inclinar y Zafiro más azul
 
 - **Platino**: el arcoíris tomaba su tono de la DIRECCIÓN desde el centro, que cambia de golpe al cruzarlo: detrás del logo se dibujaba un molinete partido en dos que se movía al inclinar. Ahora el tono sale de la posición (continua) y el cepillado no depende del ángulo cerca del centro.

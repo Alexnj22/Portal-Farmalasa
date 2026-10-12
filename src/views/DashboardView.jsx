@@ -56,7 +56,6 @@ import WidgetFacturasSala from './dashboard/WidgetFacturasSala';
 import WidgetDatoPedido from './dashboard/WidgetDatoPedido';
 import WidgetBitacoras from './dashboard/WidgetBitacoras';
 import WidgetRecetasPendientes from './dashboard/WidgetRecetasPendientes';
-import WidgetReservas from './dashboard/WidgetReservas';
 import WidgetTransferRequests from './dashboard/WidgetTransferRequests';
 import WidgetMetaSala from './dashboard/WidgetMetaSala';
 /* Las dos baldosas del dinero se bajan al PINTARSE, no al entrar al Inicio.
@@ -72,6 +71,11 @@ import WidgetMetaSala from './dashboard/WidgetMetaSala';
  * una tiene su lugar reservado por la rejilla. */
 const WidgetCortesSala = lazy(() => import('./dashboard/WidgetCortesSala'));
 const WidgetBolsasSala = lazy(() => import('./dashboard/WidgetBolsasSala'));
+/* Reservas de la app (2026-10-06), por lo mismo que las dos de arriba: sólo se
+ * dibuja con `dash_reservas` y la baldosa acomodada, y su cierre —encargos, el
+ * alta con anticipo, el buscador de producto, el calendario y la ticketera de
+ * la constancia— le sumaba ~25 kB al Inicio de TODO el mundo (99 → 130 kB). */
+const WidgetReservas = lazy(() => import('./dashboard/WidgetReservas'));
 // Estaba USADO y sin importar: el componente existe, su rama de render está
 // completa y su permiso registrado, pero faltaba esta línea. No se veía porque
 // `vendedores` tampoco estaba en ninguna pestaña — un bug tapando al otro.

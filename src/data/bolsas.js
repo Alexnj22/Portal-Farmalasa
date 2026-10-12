@@ -2,7 +2,7 @@ import { supabase } from '../supabaseClient';
 import { aBase64Reducido } from '@plataforma/fotoParaLeer';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { signPhotosDeep } from '../utils/storageFiles';
-import { repartoDeUnaSalida } from '../utils/cortesDiagnostico';
+import { repartoDeUnaSalida } from '../utils/repartoDeSalida';
 import { hoySV } from '../utils/fecha';
 import { anotar } from './audit';
 
@@ -1461,7 +1461,7 @@ export async function fetchSalidasDeSalaDelDia({ sala, dia }) {
  *   `porVale`      cuánto aportó a cada vale, por `erp_movimiento_id`.
  *   `montoSinVale` cuánto NO lo contó ningún vale.
  *
- * Las dos las calcula `repartoDeUnaSalida` (`utils/cortesDiagnostico`), con sus
+ * Las dos las calcula `repartoDeUnaSalida` (`utils/repartoDeSalida`), con sus
  * pruebas y el porqué de cada regla.
  *
  * ⚠️ Requiere el permiso de `bolsas`. Sin él la policy devuelve cero filas y NO

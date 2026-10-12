@@ -6,6 +6,11 @@
 // mostrar. Del otro lado hay un cliente, no un técnico.
 import { LECTURAS, guardar, leer, useConexion } from './sinConexion';
 
+// Las consultas EN VIVO del chat (2026-10-12) también llevan tope de tiempo:
+// sin él, una petición colgada en mala señal dejaba al chat esperándola para
+// siempre y las respuestas no aparecían hasta salir y volver a entrar.
+const EN_VIVO = new Set(['chat_mensajes', 'chat_escribiendo', 'chat_leido']);
+
 const URL_BASE = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const LLAVE = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -17,8 +22,9 @@ export async function llamar(accion, datos = {}) {
   try {
     // Una lectura con señal mala no puede colgar la pantalla: a los 12 s se
     // corta y se muestra lo guardado.
-    const control = esLectura && typeof AbortController !== 'undefined' ? new AbortController() : null;
-    const reloj = control ? setTimeout(() => control.abort(), 12_000) : null;
+    const tope = esLectura ? 12_000 : EN_VIVO.has(accion) ? 10_000 : 0;
+    const control = tope && typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const reloj = control ? setTimeout(() => control.abort(), tope) : null;
     const r = await fetch(`${URL_BASE}/functions/v1/app-clientes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', apikey: LLAVE },
@@ -38,6 +44,9 @@ export async function llamar(accion, datos = {}) {
     guardar(accion, datos, cuerpo);
     return cuerpo;
   } catch {
+    // Una consulta en vivo que se cortó no es «sin conexión»: el chat vuelve a
+    // preguntar en unos segundos.
+    if (EN_VIVO.has(accion)) return { ok: false, mensaje: 'No se pudo consultar.' };
     // Sin red: lo último que se vio, marcado como guardado.
     const guardado = await leer(accion, datos);
     useConexion.getState().marcar(true, guardado?.guardadoEn ?? null);

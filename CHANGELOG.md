@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1276.1 — App: el chat no se queda sin actualizar con mala señal
+
+- Reporte del usuario: la respuesta del equipo llegó (push enviado) pero no aparecía en el chat de la app hasta salir y volver a entrar. La consulta cada 5 s no tenía tope de tiempo: una petición colgada en mala señal dejaba `preguntando` en verdadero y el chat no volvía a preguntar. Ahora `chat_mensajes`/`chat_escribiendo`/`chat_leido` se cortan a los 10 s (sin marcar «sin conexión») y una consulta colgada más de 15 s se da por perdida.
+
 ## v2.1276.0 — Chat en vivo: burbuja, escribiendo, visto, reacciones, responder y barra nativa
 
 **Base** (`chat_en_vivo`, `chat_aviso_solo_si_se_acumula`, `chat_reacciones_citas_y_espera`):

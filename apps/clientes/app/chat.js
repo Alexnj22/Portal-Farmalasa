@@ -80,7 +80,7 @@ export default function Chat() {
   const [fotoGrande, setFotoGrande] = useState(null);
   const lista = useRef(null);
   const ultimoId = useRef(0);
-  const preguntando = useRef(false);
+  const preguntando = useRef(0);
   const alFondo = useRef(true);
   const [vivo, setVivo] = useState(SIN_VIVO);
   const rapido = useRef(false);
@@ -122,9 +122,11 @@ export default function Chat() {
 
   // Lo nuevo desde el último que se tiene.
   const nuevos = useCallback(async () => {
-    if (preguntando.current || AppState.currentState !== 'active') return;
+    // `preguntando` guarda la hora: si una consulta quedó colgada más de 15 s,
+    // se da por perdida y se vuelve a preguntar (2026-10-12).
+    if ((preguntando.current && Date.now() - preguntando.current < 15_000) || AppState.currentState !== 'active') return;
     if (!ultimoId.current) { await cargar(); return; }
-    preguntando.current = true;
+    preguntando.current = Date.now();
     try {
       const r = await pedir('chat_mensajes', { desde_id: ultimoId.current });
       // Lo «en vivo» cambia aunque no haya mensajes nuevos.
@@ -139,7 +141,7 @@ export default function Chat() {
       });
       if (r.mensajes.some((m) => m.autor !== 'cliente')) leido();
     } finally {
-      preguntando.current = false;
+      preguntando.current = 0;
     }
   }, [pedir, cargar, leido]);
 

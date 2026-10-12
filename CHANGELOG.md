@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1268.8 — PDF del pedido: origen y destino más legibles
+
+En la orden de despacho, la línea de origen y destino pasa de letra 6 a 8 y
+el nombre de la sala (Bodega / la sucursal) va en negrita. Para que la fila
+no crezca —un punto de más puede correr la última fila a la hoja siguiente—
+el margen vertical pasa de 9/9 a 5.5/5.4. Medido dónde arranca la tabla:
+78.06 pt con cualquier sala; antes 78.1 (dirección corta) u 80.5 (Salud 5).
+Nunca más alta que antes.
+
 ## v2.1268.7 — App de clientes: Platino, Zafiro y Jade como minerales
 
 - **Platino** rehecho como los demás metales: pepita tallada en facetas (grafito con aristas blanco-espejo) y su propia magia, difracción —un arcoíris que salta de faceta en faceta al inclinar— con rayas finas dentro de cada cara. El diseño anterior (cepillado circular) tenía dos fuentes de corte detrás del logo; el nuevo no depende del ángulo desde el centro.

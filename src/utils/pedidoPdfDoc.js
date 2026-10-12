@@ -175,14 +175,22 @@ function buildSectionTable(sec, fecha, logo, addrMap) {
     ];
 
     // Fila 2 — origen → destino en UNA sola línea + Caja más grande a la derecha
-    const originText = bodegaAddr ? `Origen: Bodega · ${bodegaAddr}` : 'Origen: Bodega';
-    const destText   = sucAddr    ? `Destino: ${sec.nombre} · ${sucAddr}` : `Destino: ${sec.nombre}`;
+    // La sala va en negrita para que se lea de un vistazo. Letra 8 (antes 6) y
+    // margen 5.5/5.4 (antes 9/9) para que la fila NO crezca: un punto de más
+    // puede correr la última fila a la hoja siguiente. Medido: la tabla arranca
+    // en 78.06pt con cualquier sala; antes, 78.1 (dirección corta) u 80.5
+    // (Salud 5, la más larga).
+    const lugar = (rotulo, sala, addr) => [
+        `${rotulo}: `,
+        { text: sala, bold: true, color: '#111' },
+        addr ? ` · ${addr}` : '',
+    ];
     const subtitleRow = [
         {
-            colSpan: 6, fillColor: '#ffffff', margin: [6, 9, 6, 9],
+            colSpan: 6, fillColor: '#ffffff', margin: [6, 5.5, 6, 5.4],
             columns: [
-                { text: originText, fontSize: 6, color: '#555', width: '36%' },
-                { text: destText,   fontSize: 6, color: '#555', width: '38%', alignment: 'center' },
+                { text: lugar('Origen', 'Bodega', bodegaAddr),       fontSize: 8, color: '#555', width: '36%' },
+                { text: lugar('Destino', sec.nombre ?? '', sucAddr), fontSize: 8, color: '#555', width: '38%', alignment: 'center' },
                 {
                     width: '26%',
                     text: [

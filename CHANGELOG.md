@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1268.2 — App Android: llave de Google Maps desde ~/.claves-farmalasa
+
+- `apps/mobile/app.config.js` mete la llave de Google Maps para Android si existe `~/.claves-farmalasa/google-maps-android.txt` (o `GOOGLE_MAPS_ANDROID_KEY`). Sin llave, el mapa de una ruta cerraba la app («API key not found»). Hoy `SinMapa` muestra «Abrir en Google Maps» (87ea5030a, de otra sesión); con la llave se ve el mapa. Farmalasa 1.0.0 (13) sale de este `main`.
+
 ## v2.1268.1 — Android: los mapas ya no cierran la app
 
 - **Android: abrir el mapa de una ruta cerraba la app entera** (reparto, armar ruta y Torogoz): `react-native-maps` usa el SDK de Google Maps y el binario no trae llave («API key not found», medido en el emulador). Ahora cada mapa pregunta `hayMapa` (hay mapa si el binario trae `android.config.googleMaps.apiKey`, o es iPhone) y sin llave muestra la ruta con «Abrir en Google Maps» (`componentes/SinMapa.js`). La v12 de Android tiene el defecto.

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1269.1 — Mis tratamientos sólo con medicamentos
+
+- La detección de «Mis tratamientos» (recordatorio de recompra) miraba sólo la frecuencia: podía recordar una recarga o un Electrolit. Ahora exige que sea medicamento — `es_medicamento_de_tratamiento(nombre, principio_activo)`: principio activo o forma farmacéutica/dosis en el nombre, y nada de recargas, bebidas, sueros orales, higiene, cosmética ni material de curación. 2,559 de 4,386 productos activos pasan; ante la duda, no. Se quitaron los 3 detectados que no lo eran.
+
 ## v2.1269.0 — Android nativo: Material 3, fluido y con transiciones propias
 
 - **Android con los controles nativos de Material 3 y fluido** (reporte del usuario: «es lenta, las transiciones no las hace bien… en un Android de gama alta»). Medido con el mismo recorrido en el emulador: cuadros lentos 95% → 33–56%, p50 200 ms → 34–53 ms.

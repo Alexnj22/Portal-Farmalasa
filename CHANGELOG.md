@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1267.4 — mayorista_rango declarada en el manifiesto de planes
+
+_(pendiente de redactar)_
+
 ## v2.1267.3 — gate:tipos en verde otra vez
 
 - 42 avisos de tipos nuevos en 12 archivos del núcleo, todos de forma (ningún contrato con la base roto): parámetros desestructurados sin JSDoc que `tsc` leía como `{}` (`novedadDePersonal`, `planillaDePapel`, `edicionDeSucursal`, `carneDePapel`, `facturasCompra`), `@returns` de funciones `async` sin `Promise<>` (`accionesDeBodega`, `facturasCompra`), restas de `Date` sin `.getTime()`, RPCs que devuelven `json` sin forma (`productos`, `facturasCompra`, `encuestas`) y un JSDoc de `construirTicketDeTraslado` que documentaba los campos como parámetros sueltos. Sin cambios de comportamiento.

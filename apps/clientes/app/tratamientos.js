@@ -1,6 +1,8 @@
 // Mis tratamientos (2026-10-07): lo que el cliente compra con regularidad, con
 // cuándo se le acaba. «Reservar» lleva al producto; «Ya no lo tomo» apaga el
 // recordatorio con un motivo (si vuelve a comprarlo, se reactiva solo).
+// «Recordarme tomarlo» (2026-10-12): avisos de cada toma, sólo en el teléfono
+// (lib/tomas.js, componentes/TomasHoja.js). En la web no aparece.
 import { useCallback, useState } from 'react';
 import { ActionSheetIOS, Alert, Platform, Pressable, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
@@ -13,6 +15,8 @@ import { useCuenta } from '../lib/cuenta';
 import { fecha, nombrePropio } from '../lib/formato';
 import { navegar } from '../lib/navegar';
 import { suave, useTema } from '../tema/tema';
+import TomasHoja from '../componentes/TomasHoja';
+import { DISPONIBLE as TOMAS, quitarRecordatorio, resumenRecordatorio, sincronizarConTratamientos, tomadoHoy, useTomas } from '../lib/tomas';
 
 const MOTIVOS = ['Terminé el tratamiento', 'El médico me lo cambió', 'Lo compro en otro lugar', 'Otro motivo'];
 const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
@@ -23,7 +27,13 @@ export default function Tratamientos() {
   const [d, setD] = useState(null);
   const [refrescando, setRefrescando] = useState(false);
   const preRegistro = useCuenta((s) => !!s.resumen?.pendiente);
-  const cargar = useCallback(async () => { const r = await pedir('mis_tratamientos'); setD((a) => (r?.ok || !a?.ok ? r : a)); }, [pedir]);
+  const [tomas, setTomas] = useState(null); // el tratamiento cuya hoja de tomas está abierta
+  const cargar = useCallback(async () => {
+    const r = await pedir('mis_tratamientos');
+    setD((a) => (r?.ok || !a?.ok ? r : a));
+    // Cuándo se le acaba cada uno, para el «Te quedan pocas» del aviso de toma.
+    if (r?.ok) sincronizarConTratamientos(r.tratamientos);
+  }, [pedir]);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 
@@ -31,6 +41,8 @@ export default function Tratamientos() {
     const r = await pedir('tratamiento_cambiar', { id: t.id, activo, motivo });
     if (!r?.ok) { Alert.alert('No se pudo guardar', r?.mensaje ?? 'Revisa tu conexión.'); return; }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    // «Ya no lo tomo» también apaga los avisos de cada toma.
+    if (!activo) quitarRecordatorio(String(t.product_id));
     cargar();
   };
   const yaNo = (t) => {
@@ -80,15 +92,23 @@ export default function Tratamientos() {
       {!activos.length && !apagados.length ? (
         <Vacio titulo="Aún no hay recordatorios">Cuando compres un medicamento con regularidad, aparecerá aquí.</Vacio>
       ) : null}
-      {activos.map((t) => <Fila key={t.id} t={t} alReservar={() => navegar(`/producto/${t.product_id}`)} alApagar={() => yaNo(t)} />)}
+      {activos.map((t) => <Fila key={t.id} t={t} alReservar={() => navegar(`/producto/${t.product_id}`)} alApagar={() => yaNo(t)} alRecordar={() => setTomas(t)} />)}
       {apagados.length ? <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto2, marginTop: 8, marginLeft: 4 }}>YA NO LO TOMO</Text> : null}
       {apagados.map((t) => <Fila key={t.id} t={t} apagado alEncender={() => cambiar(t, true, null)} />)}
+      {tomas ? <TomasHoja tratamiento={tomas} actual={useTomas.getState().config[String(tomas.product_id)]} alCerrar={() => setTomas(null)} /> : null}
     </Pantalla>
   );
 }
 
-function Fila({ t, apagado, alReservar, alApagar, alEncender }) {
+function Fila({ t, apagado, alReservar, alApagar, alEncender, alRecordar }) {
   const tema = useTema();
+  const pid = String(t.product_id);
+  const recordatorio = useTomas((s) => s.config[pid]);
+  const tomado = useTomas((s) => tomadoHoy(s.registro, pid));
+  const quitar = () => Alert.alert('Quitar recordatorio', `Dejamos de avisarte las tomas de ${nombrePropio(t.nombre)}.`, [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Quitar', style: 'destructive', onPress: () => { quitarRecordatorio(pid); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); } },
+  ]);
   const dias = diasHasta(t.se_acaba);
   const urgente = !apagado && dias <= 3;
   const cuando = dias < 0 ? `Se te acabó hace ${-dias} día${dias === -1 ? '' : 's'}` : dias === 0 ? 'Se te acaba hoy' : `Se te acaba en ${dias} día${dias === 1 ? '' : 's'}`;
@@ -115,6 +135,24 @@ function Fila({ t, apagado, alReservar, alApagar, alEncender }) {
           </>
         )}
       </View>
+      {!apagado && TOMAS ? (recordatorio ? (
+        <View style={{ gap: 8, borderRadius: 12, padding: 12, backgroundColor: tema.oscuro ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.035)' }}>
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
+            <Icono sf="bell.fill" respaldo="🔔" tam={14} color={tema.color.magentaTexto} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto }}>{resumenRecordatorio(recordatorio)}</Text>
+              {recordatorio.nota ? <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>{recordatorio.nota}</Text> : null}
+              {tomado ? <Text style={{ fontSize: 13, fontWeight: '600', color: tema.color.verdeTexto }}>Tomado hoy a las {tomado}</Text> : null}
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Boton texto="Editar" alTocar={alRecordar} />
+            <Boton texto="Quitar recordatorio" alTocar={quitar} />
+          </View>
+        </View>
+      ) : (
+        <View style={{ flexDirection: 'row' }}><Boton texto="Recordarme tomarlo" alTocar={alRecordar} /></View>
+      )) : null}
     </Tarjeta>
   );
 }

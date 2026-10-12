@@ -40,6 +40,18 @@ export function alLlegarAviso(fn) {
   return () => { oyentes.delete(fn); };
 }
 
+/**
+ * El permiso del sistema, preguntado sólo si todavía no está dado. Lo usan el
+ * push (abajo) y el recordatorio de tomas (lib/tomas.js, 2026-10-12), que es
+ * local y por eso funciona también en el simulador.
+ */
+export async function pedirPermisoDeAvisos() {
+  if (Platform.OS === 'web') return false;
+  let { status } = await Notifications.getPermissionsAsync();
+  if (status !== 'granted') ({ status } = await Notifications.requestPermissionsAsync());
+  return status === 'granted';
+}
+
 /** Devuelve el token de avisos, o `{ error }` con una frase que se puede mostrar. */
 export async function pedirTokenDeAvisos() {
   if (Platform.OS === 'web' || !Device.isDevice) return { error: 'Los avisos sólo funcionan en un teléfono.' };
@@ -48,9 +60,7 @@ export async function pedirTokenDeAvisos() {
       name: 'Ofertas y puntos', importance: Notifications.AndroidImportance.DEFAULT,
     });
   }
-  let { status } = await Notifications.getPermissionsAsync();
-  if (status !== 'granted') ({ status } = await Notifications.requestPermissionsAsync());
-  if (status !== 'granted') return { error: 'Activa las notificaciones en los ajustes del teléfono.' };
+  if (!(await pedirPermisoDeAvisos())) return { error: 'Activa las notificaciones en los ajustes del teléfono.' };
   const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
   if (!projectId) return { error: 'Los avisos todavía no están disponibles.' };
   try {

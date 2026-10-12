@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1270.0 — App de clientes: recordatorio de tomas
+
+- En **Mis tratamientos**, cada medicamento tiene «Recordarme tomarlo»: 1, 2 o 3 veces al día con horas editables, duración obligatoria (7/14/30 días, uso continuo o hasta una fecha) y nota opcional.
+- Avisos LOCALES (`lib/tomas.js`, `componentes/TomasHoja.js`): nada se manda al servidor, son datos de salud. Botones «Tomado» (anota la hora) y «Más tarde» (15 min). Si se está por acabar, el aviso agrega «Te quedan pocas, ¿lo reservamos?».
+- Tope de iOS (64 avisos pendientes): se programan 60 y 4 quedan para «Más tarde»; se replanifica en cada apertura. Cerrar sesión borra los recordatorios (teléfono compartido); «Ya no lo tomo» también.
+
 ## v2.1269.1 — Mis tratamientos sólo con medicamentos
 
 - La detección de «Mis tratamientos» (recordatorio de recompra) miraba sólo la frecuencia: podía recordar una recarga o un Electrolit. Ahora exige que sea medicamento — `es_medicamento_de_tratamiento(nombre, principio_activo)`: principio activo o forma farmacéutica/dosis en el nombre, y nada de recargas, bebidas, sueros orales, higiene, cosmética ni material de curación. 2,559 de 4,386 productos activos pasan; ante la duda, no. Se quitaron los 3 detectados que no lo eran.

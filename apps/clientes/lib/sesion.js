@@ -7,6 +7,7 @@ import { olvidarSincronizacion } from './avisos';
 import { llamar } from './api';
 import { olvidarTodo } from './sinConexion';
 import { useCarrito } from './carrito';
+import { olvidarTomas } from './tomas';
 
 const CLAVE = 'puntos_salud_sesion';
 
@@ -53,7 +54,12 @@ export const useSesion = create((set, get) => ({
     // El carrito vive en el teléfono (2026-10-12): en un teléfono compartido,
     // quien entra después heredaba lo que había agregado la cuenta anterior.
     // Si sólo venció la sesión es la misma persona: el carrito se queda.
-    if (get().motivoCierre !== 'vencida') useCarrito.getState().vaciar();
+    if (get().motivoCierre !== 'vencida') {
+      useCarrito.getState().vaciar();
+      // Los recordatorios de tomas, igual (2026-10-12): en un teléfono
+      // compartido, a quien entra después no le suena la medicina del anterior.
+      await olvidarTomas();
+    }
     set({ token: null });
   },
 

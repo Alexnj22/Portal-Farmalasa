@@ -20,11 +20,15 @@ import * as Notifications from 'expo-notifications';
 import { useTema } from '../tema/tema';
 import { colorSistema } from '../componentes/sistema';
 import { navegar } from '../lib/navegar';
+import { esAccionDeToma, instalarTomas } from '../lib/tomas';
 import AvisoSinConexion from '../componentes/AvisoSinConexion';
 import HojasAndroid, { instalarHojasAndroid } from '../componentes/HojasAndroid';
 
 // La hoja de opciones y el prompt de iOS, en Android (componentes/HojasAndroid).
 instalarHojasAndroid();
+// Los botones «Tomado» / «Más tarde» del recordatorio de tomas (2026-10-12):
+// el oyente va desde el arranque para no perder el que despertó a la app.
+instalarTomas();
 import AvisoEnApp from '../componentes/AvisoEnApp';
 export { default as ErrorBoundary } from '../componentes/ErrorDePantalla';
 
@@ -93,6 +97,8 @@ function AbrirAviso() {
   useEffect(() => {
     if (WEB || !token) return undefined;
     const ir = (r) => {
+      // Un botón del recordatorio de tomas no abre nada: lo atiende lib/tomas.
+      if (esAccionDeToma(r)) return;
       const url = r?.notification?.request?.content?.data?.url;
       if (typeof url === 'string' && url.startsWith('/')) navegar(url);
       // Atendido: que no se vuelva a abrir al entrar de nuevo en esta ejecución.

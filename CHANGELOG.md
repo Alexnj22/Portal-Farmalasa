@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1267.1 — Snapshot de columnas booleanas al día
+
+- `scripts/db/boolean-columns.json` regenerado contra producción (2026-10-12): de 176 a 201 columnas booleanas en 117 tablas y vistas. `data-gate` en verde (`tipo-booleano` 0).
+- Verificado que las notas de crédito de venta NO existen en el origen: 386,327 documentos de las 6 sucursales desde mayo de 2025, todos COF o CCF, ninguno sin `id_factura` (función de diagnóstico de sólo lectura, ya borrada). Las devoluciones se hacen invalidando la factura (1,088 invalidadas). La propuesta de `docs/propuestas/notas-credito-puntos-2026-10-09/` queda archivada.
+
 ## v2.1267.0 — Auditoría de calidad de la app
 
 - **Auditoría de calidad de la app (cinco áreas, seis ejes: misma información que el portal, datos completos, paginación, fluidez, tacto y dispositivos).**

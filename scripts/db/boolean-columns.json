@@ -1,7 +1,7 @@
 {
   "_comment": "Snapshot de las columnas BOOLEAN de public.* en prod. Lo usa scripts/data-gate.mjs para detectar el bug de `.eq('col', true)` sobre una columna que NO es booleana (caso recibido_mh, auditoría 2026-07-30). Regenerar con: npm run gate:data -- --regen-schema (imprime el SQL a correr).",
   "_por_que_importa_la_fecha": "El detector NO opina sobre una tabla que no está acá (`if (!(tabla in BOOLEANAS)) continue`), así que un snapshot viejo falla en las DOS direcciones: una tabla nueva entera queda sin vigilar, y una columna nueva de una tabla que SÍ está se reporta como «no es boolean» cuando sí lo es. Medido el 2026-08-21: el snapshot del 30-jul tenía 71 columnas y en prod había 96 — 25 invisibles en tres semanas, entre ellas employees.carne_pendiente, role_permissions.delega_en_ausencia y proveedores_maestro.iva_deducible, que son de tablas ya listadas y por lo tanto candidatas a falso positivo. Si esta fecha tiene más de un mes, regenerar ANTES de creerle al verde.",
-  "_generado": "2026-10-01",
+  "_generado": "2026-10-12",
   "_fuente": "pg_attribute atttypid='boolean' sobre pg_class relkind in ('r','v','m') del esquema public — incluye VISTAS y MATERIALIZADAS, no sólo tablas. El snapshot del 30-jul sólo traía tablas base, y el frontend consulta employees_safe, products_with_lab, v_inventario_lotes, v_sync_health y dte_rechazos_vigentes por nombre igual que a una tabla: sin ellas el detector se callaba justo donde más se lee.",
   "tablas_grandes": {
     "_comment": "Tablas que REQUIEREN paginación (>1000 filas o creciendo sin tope). Conteos reales al 2026-08-21, salvo los `null`, que son «crece sin tope» y no se cuentan. approval_requests entra por la SEGUNDA mitad del criterio, no por tamaño: hoy son cientos de filas, pero es un expediente que sólo crece y el día que cruce las 1000 el corte de PostgREST es mudo.",
@@ -24,6 +24,39 @@
   "tablas": {
     "announcements": [
       "is_archived"
+    ],
+    "app_ajustes": [
+      "envio_activo",
+      "id"
+    ],
+    "app_banners": [
+      "publicada",
+      "titulo_visible"
+    ],
+    "app_cliente_avisos": [
+      "enviado"
+    ],
+    "app_cliente_correo_envios": [
+      "enviado"
+    ],
+    "app_cliente_preregistros": [
+      "acepta_programa",
+      "acepta_promociones"
+    ],
+    "app_cliente_sesiones": [
+      "acepta_avisos"
+    ],
+    "app_errores": [
+      "fatal"
+    ],
+    "app_historias": [
+      "publicada"
+    ],
+    "app_historias_vistas": [
+      "toco_boton"
+    ],
+    "app_reservas_pagos": [
+      "es_real"
     ],
     "avisos_diferidos": [
       "con_push"
@@ -55,10 +88,10 @@
       "activo"
     ],
     "bolsas_tipos_salida": [
-      "pide_boleta",
-      "pide_receptor",
       "activo",
-      "entidad_la_dice_el_papel"
+      "entidad_la_dice_el_papel",
+      "pide_boleta",
+      "pide_receptor"
     ],
     "bono_semestre_decision": [
       "pagar"
@@ -70,11 +103,11 @@
       "conteo_ciclico_activo"
     ],
     "caja_tipos_movimiento": [
-      "pide_boleta",
-      "pide_persona",
-      "lleva_comprobante",
       "activo",
-      "identifica_receptor"
+      "identifica_receptor",
+      "lleva_comprobante",
+      "pide_boleta",
+      "pide_persona"
     ],
     "compra_renglon_pendiente": [
       "ignorado"
@@ -83,13 +116,13 @@
       "otorgado"
     ],
     "conteo_inventario_items": [
-      "is_vencidos",
-      "es_agregado_manual"
+      "es_agregado_manual",
+      "is_vencidos"
     ],
     "conteos_inventario": [
+      "ajuste_erp_aplicado",
       "incluye_vencidos",
-      "pendientes_como_cero",
-      "ajuste_erp_aplicado"
+      "pendientes_como_cero"
     ],
     "cortes_caja_aperturas": [
       "turno_corriendo"
@@ -105,26 +138,26 @@
       "ok"
     ],
     "customers": [
-      "acumula_puntos",
       "acepta_programa_puntos",
-      "acepta_promociones"
+      "acepta_promociones",
+      "acumula_puntos"
     ],
     "dispatch_rules": [
-      "solo_cajas",
-      "caja_especial"
+      "caja_especial",
+      "solo_cajas"
     ],
     "dist_catalogo": [
-      "venta_libre",
-      "activo"
+      "activo",
+      "venta_libre"
     ],
     "dist_clientes": [
+      "activo",
       "contribuyente",
-      "gran_contribuyente",
-      "activo"
+      "gran_contribuyente"
     ],
     "dist_emisores": [
-      "gran_contribuyente",
-      "activo"
+      "activo",
+      "gran_contribuyente"
     ],
     "dist_listas": [
       "activo"
@@ -136,9 +169,9 @@
       "activo"
     ],
     "dist_proveedores": [
-      "relacionada",
+      "activo",
       "gran_contribuyente",
-      "activo"
+      "relacionada"
     ],
     "dist_puntos_venta": [
       "activo"
@@ -159,32 +192,38 @@
       "success"
     ],
     "employees": [
-      "is_studying",
-      "has_maestria",
-      "maestria_is_studying",
-      "has_motorcycle",
-      "has_car",
-      "has_motorcycle_license",
-      "has_car_license",
-      "has_srs_accreditation",
-      "has_disability",
-      "disability_has_certification",
       "carne_pendiente",
+      "disability_has_certification",
+      "has_car",
+      "has_car_license",
+      "has_disability",
+      "has_maestria",
+      "has_motorcycle",
+      "has_motorcycle_license",
+      "has_srs_accreditation",
+      "is_studying",
+      "maestria_is_studying",
       "tiene_acreditacion_dependiente"
     ],
     "employees_safe": [
-      "is_studying",
-      "has_maestria",
-      "maestria_is_studying",
-      "has_motorcycle",
-      "has_car",
-      "has_motorcycle_license",
-      "has_car_license",
-      "has_srs_accreditation",
-      "has_disability",
-      "disability_has_certification",
       "carne_pendiente",
+      "disability_has_certification",
+      "has_car",
+      "has_car_license",
+      "has_disability",
+      "has_maestria",
+      "has_motorcycle",
+      "has_motorcycle_license",
+      "has_srs_accreditation",
+      "is_studying",
+      "maestria_is_studying",
       "tiene_acreditacion_dependiente"
+    ],
+    "encuesta_cliente_dimensiones": [
+      "activo"
+    ],
+    "encuestas_cliente": [
+      "es_plantilla"
     ],
     "erp_sucursal_map": [
       "es_bodega"
@@ -214,50 +253,71 @@
       "is_vencidos",
       "success"
     ],
+    "inyeccion_aplicaciones": [
+      "confirmada"
+    ],
+    "inyeccion_producto_clasificacion": [
+      "es_inyeccion"
+    ],
     "kiosk_pin_attempts": [
       "succeeded"
     ],
     "laboratorios": [
-      "ocultar_en_minmax",
-      "acumula_puntos"
+      "acumula_puntos",
+      "ocultar_en_minmax"
+    ],
+    "marketing_ajustes": [
+      "id",
+      "recordatorios_activos"
+    ],
+    "marketing_archivos": [
+      "reemplazado"
     ],
     "marketing_comentarios": [
       "resuelto"
+    ],
+    "marketing_fechas_especiales": [
+      "activo"
     ],
     "marketing_marcas": [
       "activo"
     ],
     "marketing_piezas": [
+      "liberada",
       "pautar"
     ],
     "marketing_redes": [
       "activo"
     ],
     "metas_bono_persona": [
-      "es_jefe",
-      "en_prueba"
+      "en_prueba",
+      "es_jefe"
     ],
     "metas_config": [
-      "id",
-      "bonificaciones_activas"
+      "bonificaciones_activas",
+      "id"
     ],
     "minmax_sync_log": [
       "success"
     ],
     "mv_stock_analysis": [
-      "is_dead_stock",
-      "is_catalog_only"
+      "is_catalog_only",
+      "is_dead_stock"
+    ],
+    "ofertas_clientes": [
+      "exclusiva",
+      "publicada"
     ],
     "pedido_devolucion": [
       "viaja"
     ],
     "pedido_items": [
-      "sin_stock",
-      "revision_minmax",
-      "falta_caja",
-      "caja_especial",
       "agotamiento",
-      "es_extra"
+      "caja_especial",
+      "es_extra",
+      "falta_caja",
+      "revision_minmax",
+      "sin_stock"
     ],
     "pedido_sucursal_status": [
       "electrolit_ok"
@@ -272,50 +332,51 @@
       "is_hidden"
     ],
     "products": [
-      "es_antibiotico",
       "activo",
-      "perecedero",
-      "requiere_receta",
-      "sin_principio_activo",
       "devolutivo",
+      "es_antibiotico",
       "oculto_en_ventas",
-      "regulado"
+      "perecedero",
+      "regulado",
+      "requiere_receta",
+      "sin_principio_activo"
     ],
     "products_sync_log": [
       "success"
     ],
     "products_with_lab": [
-      "es_antibiotico",
-      "activo"
+      "activo",
+      "es_antibiotico"
     ],
     "promocion_renglon": [
       "tiene_bono"
     ],
     "promociones": [
-      "resumen_supervision",
-      "resumen_salas"
+      "resumen_salas",
+      "resumen_supervision"
     ],
     "proveedores": [
       "devolutivo"
     ],
     "proveedores_maestro": [
-      "percibe_1",
-      "retiene_renta",
       "activo",
+      "iva_deducible",
+      "percibe_1",
       "percibe_1_override",
-      "iva_deducible"
+      "retiene_renta"
     ],
     "puntos_archivo_carga": [
       "completa"
     ],
     "puntos_arranque": [
-      "simulado",
+      "encendido",
       "ok",
-      "encendido"
+      "simulado"
     ],
     "puntos_config": [
+      "acumulacion_activa",
       "id",
-      "acumulacion_activa"
+      "niveles_activos"
     ],
     "puntos_consulta_intentos": [
       "acerto"
@@ -339,14 +400,14 @@
       "firma_requerida"
     ],
     "role_permissions": [
-      "can_view",
-      "can_edit",
       "can_approve",
+      "can_edit",
+      "can_view",
       "delega_en_ausencia"
     ],
     "roles": [
-      "is_su",
-      "es_cuenta_de_pruebas"
+      "es_cuenta_de_pruebas",
+      "is_su"
     ],
     "ruta_pedidos": [
       "discrepancia"
@@ -361,8 +422,8 @@
       "is_active"
     ],
     "solicitudes_datos": [
-      "por_representacion",
-      "negada"
+      "negada",
+      "por_representacion"
     ],
     "stock_config": [
       "pedido_recepcion_activa"

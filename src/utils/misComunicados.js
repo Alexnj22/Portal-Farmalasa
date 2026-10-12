@@ -26,7 +26,7 @@ export function comunicadosDeLaPersona(announcements, user, roles, ahora = new D
         if (a.isArchived) return false;
         if (a.scheduledFor && new Date(a.scheduledFor) > ahora) return false;
         return announcementAppliesToUser(a, user, roles);
-    }).sort((a, b) => urgenteAntes(a, b) || (new Date(a.date) - new Date(b.date)));
+    }).sort((a, b) => urgenteAntes(a, b) || (new Date(a.date).getTime() - new Date(b.date).getTime()));
 }
 
 /** El mes en curso, «AAAA-MM», que es lo que «Leídos» muestra sin pedir más. */
@@ -45,7 +45,7 @@ export function comunicadosDeLaPestana(lista, pestana, userId, { verViejos = fal
     return [...leidos].sort((a, b) => {
         const da = (a.date || '').slice(0, 10); const db = (b.date || '').slice(0, 10);
         if (db !== da) return db > da ? 1 : -1;
-        return urgenteAntes(a, b) || (new Date(b.date) - new Date(a.date));
+        return urgenteAntes(a, b) || (new Date(b.date).getTime() - new Date(a.date).getTime());
     });
 }
 

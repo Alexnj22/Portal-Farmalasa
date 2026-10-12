@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1267.3 — gate:tipos en verde otra vez
+
+- 42 avisos de tipos nuevos en 12 archivos del núcleo, todos de forma (ningún contrato con la base roto): parámetros desestructurados sin JSDoc que `tsc` leía como `{}` (`novedadDePersonal`, `planillaDePapel`, `edicionDeSucursal`, `carneDePapel`, `facturasCompra`), `@returns` de funciones `async` sin `Promise<>` (`accionesDeBodega`, `facturasCompra`), restas de `Date` sin `.getTime()`, RPCs que devuelven `json` sin forma (`productos`, `facturasCompra`, `encuestas`) y un JSDoc de `construirTicketDeTraslado` que documentaba los campos como parámetros sueltos. Sin cambios de comportamiento.
+- Baseline de tipos bajado de 490 a 467 avisos (`--fijar`).
+
 ## v2.1267.2 — Snapshot de columnas booleanas al día
 
 - `scripts/db/boolean-columns.json` regenerado contra producción (2026-10-12): de 176 a 201 columnas booleanas en 117 tablas y vistas. `data-gate` en verde (`tipo-booleano` 0).

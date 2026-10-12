@@ -42,6 +42,11 @@ const encabezado = () => `<tr><th>Empleado</th><th>Sucursal</th><th>Días</th><t
 /**
  * La planilla impresa. Con `sala` (la sucursal o `null` para «Otras áreas")
  * es la de esa sala; sin `sala`, la global.
+ *
+ * @param {any[]} entries
+ * @param {any} period
+ * @param {any[]} branches
+ * @param {{ sala?: any }} [opciones]
  */
 export function documentoDePlanilla(entries, period, branches, { sala } = {}) {
     const totalNet = entries.reduce((s, e) => s + round2(e.net_pay), 0);

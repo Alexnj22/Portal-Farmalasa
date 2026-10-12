@@ -31,7 +31,11 @@ export function rasgosDeNovedad(type, formData = {}) {
     };
 }
 
-/** Si cambia de cargo o de sala hacia una plaza con tope ya llena: quiénes la ocupan. */
+/**
+ * Si cambia de cargo o de sala hacia una plaza con tope ya llena: quiénes la ocupan.
+ *
+ * @param {{ type: string, formData?: any, empleado?: any, empleados?: any[], roles?: any[] }} args
+ */
 export function plazaOcupada({ type, formData = {}, empleado, empleados = [], roles = [] }) {
     const r = rasgosDeNovedad(type, formData);
     if (!r.esCargo && !r.esTraslado) return null;
@@ -86,7 +90,7 @@ export const diaDeRegreso = (fin) => (fin ? masDias(fin, 1) : null);
 /** Cuántos días cubre el período, contando los dos extremos. */
 export function diasDelPeriodo(inicio, fin) {
     if (!inicio || !fin) return 0;
-    return Math.ceil((new Date(`${fin}T12:00:00`) - new Date(`${inicio}T12:00:00`)) / 86400000) + 1;
+    return Math.ceil((new Date(`${fin}T12:00:00`).getTime() - new Date(`${inicio}T12:00:00`).getTime()) / 86400000) + 1;
 }
 
 /** La advertencia de los días que dicta la ley, si el período no los respeta. */
@@ -107,6 +111,8 @@ export const respaldoObligatorio = (type) => type === 'DISABILITY' || type === '
 /**
  * ¿Se puede guardar? `{ ok, motivo }` — `motivo` sólo cuando hay algo que
  * decirle a quien llena (los campos vacíos se ven solos).
+ *
+ * @param {{ formData?: any, empleado?: any, empleados?: any[], roles?: any[], asuetos?: any[] }} args
  */
 export function validarNovedad({ formData = {}, empleado, empleados = [], roles = [], asuetos = [] }) {
     const type = formData.type;

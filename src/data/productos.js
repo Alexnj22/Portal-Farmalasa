@@ -162,7 +162,7 @@ async function preciosConCosto(productIds, soloActivos = true) {
     const { data, error } = await supabase.rpc('get_precios_con_costo', {
         p_product_ids: productIds, p_solo_activos: soloActivos,
     });
-    return { data: error ? null : (data || []), error };
+    return { data: error ? null : /** @type {any[]} */ (data || []), error };
 }
 
 export async function fetchProductPreciosMarginPage(_priceSelect, from) {
@@ -372,7 +372,7 @@ export async function fetchIdsModificadosDesde(inicioIso, ocultos = new Set(['la
         for (let from = 0; ; from += PAGE) {
             const { data, error } = await fetchChangelogPage(tabla, esProd, inicioIso, from, PAGE);
             if (error) throw error;
-            for (const r of data ?? []) {
+            for (const r of /** @type {any[]} */ (data ?? [])) {
                 if (esProd && ocultos.has(r.campo) && !r.valor_anterior) continue;
                 ids.add(r.product_id);
             }

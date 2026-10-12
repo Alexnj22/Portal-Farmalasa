@@ -23,7 +23,7 @@ import { useStaffStore } from '../store/staffStore';
  * @param {boolean} [p.salaElegida] true si esa sucursal la eligió una persona
  * @param {string} [p.emitidoPor]
  * @param {string|null} [p.motivo]
- * @returns {Promise<{ok: boolean}>}
+ * @returns {Promise<{ ok: boolean, emitido?: boolean, via?: string, motivo?: string }>}
  */
 export async function entregarCarneDePapel({
     employeeId, nombre = '', cargo = '', sala = '', salaId = null, salaElegida = false,

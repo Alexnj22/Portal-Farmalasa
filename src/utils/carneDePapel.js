@@ -29,6 +29,7 @@ function hastaCuando(venceEl) {
  * @param {string} [datos.cargo]
  * @param {string} [datos.sala]
  * @param {string} [datos.emitidoPor]
+ * @param {Date} [datos.ahora]
  */
 export function construirCarneDePapel({
     nombre, secreto, venceEl, cargo = '', sala = '', emitidoPor = '', ahora = new Date(),

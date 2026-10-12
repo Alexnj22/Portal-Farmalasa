@@ -98,7 +98,7 @@ export async function findPurchaseDteDocumentByCodigo(codigo) {
 export async function fetchPurchaseDteReviewSources(documentId) {
     const { data, error } = await supabase.rpc('get_purchase_dte_review_source', { p_document_id: documentId });
     if (error) throw error;
-    return data || [];
+    return /** @type {any[]} */ (data || []);
 }
 
 // Una acción de bitácora por cada desenlace de la revisión — son los nombres
@@ -136,6 +136,8 @@ export async function syncPurchaseEmailsNow({ dryRun = false, accountId = null }
  * entrada con el total de la corrida, no una por tanda.
  *
  * `onTanda(n)` avisa el número de tanda que empieza (para el progreso).
+ *
+ * @param {{ maxTandas?: number, onTanda?: (n: number) => void }} [opciones]
  */
 export async function buscarCorreosDeCompras({ maxTandas = 10, onTanda } = {}) {
     let insertados = 0;
@@ -366,7 +368,9 @@ export async function downloadPurchaseDteZipBulk(ids, onProgress, { includePendi
  * archivo, misma nota de errores dentro del ZIP. Anota la salida y la
  * bitácora cuando quien llama confirma que se compartió (`anotarZipCompartido`).
  *
- * @returns {{ entradas: Array<{name: string, bytes: Uint8Array}>, total: number, incluidos: number, fallidos: string[] }}
+ * @param {any[]} ids
+ * @param {{ includePendingReview?: boolean, onProgress?: (p: { hechos: number, total: number, fallidos: number }) => void }} [opciones]
+ * @returns {Promise<{ entradas: Array<{name: string, bytes: Uint8Array}>, total: number, incluidos: number, fallidos: string[] }>}
  */
 export async function archivosDelZipDelPeriodo(ids, { includePendingReview = true, onProgress } = {}) {
     const { files, warnings } = await pedirManifiesto(ids, includePendingReview);

@@ -112,7 +112,7 @@ export const esAlquilada = (branch, ajustes) =>
  * `ajustes` y `horario` reemplazan a los de la fila; lo demás se conserva.
  *
  * @param {any} branch
- * @param {{ ajustes?: any, horario?: any, tipoDeInmueble?: string }} [cambios]
+ * @param {{ ajustes?: any, horario?: any, tipoDeInmueble?: string, general?: any }} [cambios]
  */
 export function sucursalConCambios(branch, { ajustes, horario, tipoDeInmueble, general } = {}) {
     const base = { ...(branch || {}) };

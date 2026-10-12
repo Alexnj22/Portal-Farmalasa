@@ -18,6 +18,7 @@ import { mensajeAmigable } from '../utils/errorMessages';
 import { decidirDevolucion, moverDevoluciones } from './devoluciones';
 import { cajasDeRenglon, construirCajasEspeciales, renglonesQueSalen } from '../utils/cajasEspeciales';
 
+/** @param {{ error?: any }} [r] */
 const sinError = ({ error } = {}) => { if (error) throw error; };
 
 /**
@@ -27,7 +28,7 @@ const sinError = ({ error } = {}) => { if (error) throw error; };
  * puede escribir esas columnas: los pasos sueltos sólo darían «permission
  * denied».
  *
- * @returns {{ yaEstaba?: true, cajasElectrolit, cajasEspeciales, despacho: { ok, error } | null }}
+ * @returns {Promise<{ yaEstaba?: true, cajasElectrolit, cajasEspeciales, despacho: { ok, error } | null }>}
  *   `yaEstaba`: el segundo clic de un doble clic — ya estaba finalizado y NO se
  *   despacha otra vez. `despacho` es la parte que puede fallar SOLA: si falla,
  *   el pedido igual quedó finalizado y se reintenta desde el pedido.
@@ -64,7 +65,7 @@ export async function finalizarPedidoConCajas({ pedidoId, sucId, rows = [], tota
  * (`pedir_reenvio_sala`). El ciclo nace PENDIENTE y la base avisa a la sala
  * cuando sale la ruta que lo lleva.
  *
- * @returns {{ ciclo, clave, especialesLabels }}
+ * @returns {Promise<{ ciclo, clave, especialesLabels }>}
  */
 export async function registrarReenvio({ pedidoId, sucId, cajas = [], electrolits = 0, especiales = [] }) {
     const especialesLabels = especiales.map(e => (typeof e === 'string' ? e : e.label));
@@ -77,7 +78,7 @@ export async function registrarReenvio({ pedidoId, sucId, cajas = [], electrolit
  * Volver a ingresar al inventario lo que la sala ya contó y no entró. La lista
  * sale del SERVIDOR; sin ella entraría lo que nadie contó.
  *
- * @returns {{ nada: true } | { pedidos, entraron, completo }}
+ * @returns {Promise<{ nada: true } | { pedidos, entraron, completo }>}
  */
 export async function reintentarIngreso({ pedidoId, sucId }) {
     const { itemIds, error } = await fetchItemsSinIngresar(pedidoId, sucId);
@@ -101,11 +102,12 @@ export async function pasoDeDiferencias({ pedidoId, sucId, userId = null, paso, 
  * que se arregla en el sistema, la base deja la devolución aceptada y acá se
  * MUEVE; el fallo del movimiento no borra el acuerdo.
  *
- * @returns {{ data, movimiento: null | { ok, aLaSala, error } }}
+ * @returns {Promise<{ data, movimiento: null | { ok, aLaSala, error } }>}
  */
 export async function decidirDiferenciaYMover({ itemId, accion, tipo = null, nota = null, evidencia = [] }) {
-    const { data, error } = await decidirDiferencia({ itemId, accion, tipo, nota, evidencia });
+    const { data: d, error } = await decidirDiferencia({ itemId, accion, tipo, nota, evidencia });
     if (error) throw error;
+    const data = /** @type {any} */ (d);
     let movimiento = null;
     if (data?.devolucion_id) {
         const aLaSala = data?.mueve === 'traslado_a_sala';

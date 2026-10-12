@@ -21,6 +21,7 @@ export const SIN_GIRO = '__sin_giro__';
 // la base es una frase larga y atarla entera acá sería exactamente la lista a
 // mano que se desincroniza. Sin coincidencia el título ES el texto legal —
 // degrada, no se rompe.
+/** @type {Array<[RegExp, string]>} */
 export const TITULOS = [
     [/^Art\. 65 nº1/,                    'Mercadería para reventa'],
     [/^Art\. 65 nº4.*teléfono/i,         'Teléfono e internet'],
@@ -51,6 +52,7 @@ export const tituloDeRegla = (baseLegal) => {
 //
 // `aplica` es el punto de partida de los campos del anexo cuando la respuesta es
 // «sí» — se puede cambiar antes de confirmar, no es una decisión tomada.
+/** @type {Array<[RegExp, { q: string, si?: string, no?: string, aplica?: Record<string, string>, unoPorUno?: boolean }]>} */
 export const PREGUNTAS = [
     [/^Art\. 65-A a\)/, {
         q: '¿La farmacia revende estos alimentos y bebidas?',

@@ -105,7 +105,7 @@ export async function generarResumenDeComentarios(surveyId, comments, segment) {
     const summary = data?.aiSummary || 'Sin respuesta.';
     if (surveyId) {
         const { data: current } = await fetchSurveyAiSummaries(surveyId);
-        const merged = { ...(current?.ai_summaries || {}), [segment]: summary };
+        const merged = { .../** @type {Record<string, string>} */ (current?.ai_summaries || {}), [segment]: summary };
         await updateSurvey(surveyId, { ai_summaries: merged });
     }
     return summary;

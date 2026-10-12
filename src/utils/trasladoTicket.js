@@ -129,16 +129,17 @@ export function salaQueDespacha({ aplicado, origen, respaldo }) {
 /**
  * El ticket de un traslado, listo para `imprimirDocumento`.
  *
- * @param {'solicitud'|'envio'} familia
- * @param {object} aplicado  lo que devolvió el despacho (`r.aplicado`):
- *                           `id_traslado`, `by_name`, `por_respaldo`, `at`
- * @param {string} origen    la sala donde está la bolsa (ver `salaQueDespacha`)
- * @param {string} destino   a qué sala va
- * @param {string} pide      quién la pidió — vacío en un envío, que nadie pidió
- * @param {Array}  items     `[{ nombre, cantidad, presentacion }]`
- * @param {string} [motivo]  por qué se manda (sólo los envíos tienen uno)
- * @param {string} [codigo]  el número de las barras, cuando NO es el del
- *                           traslado. Es el caso del envío: ver abajo.
+ * @param {object} t
+ * @param {string} t.familia     'solicitud' | 'envio'
+ * @param {any} t.aplicado       lo que devolvió el despacho (`r.aplicado`):
+ *                               `id_traslado`, `by_name`, `por_respaldo`, `at`
+ * @param {string} t.origen      la sala donde está la bolsa (ver `salaQueDespacha`)
+ * @param {string} t.destino     a qué sala va
+ * @param {string} [t.pide]      quién la pidió — vacío en un envío, que nadie pidió
+ * @param {any[]}  [t.items]     `[{ nombre, cantidad, presentacion }]`
+ * @param {string} [t.motivo]    por qué se manda (sólo los envíos tienen uno)
+ * @param {string} [t.codigo]    el número de las barras, cuando NO es el del
+ *                               traslado. Es el caso del envío: ver abajo.
  */
 export function construirTicketDeTraslado({
     familia, aplicado, origen, destino, pide, items = [], motivo, codigo,

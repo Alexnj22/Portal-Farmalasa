@@ -24,6 +24,10 @@ export default function Invitar() {
   useFocusEffect(useCallback(() => { pedir('referido').then(setD); }, [pedir]));
 
   if (!d) return <Cargando />;
+  // Sin ficha todavía (2026-10-12): el código de invitación llega con el registro.
+  if (d.pendiente) {
+    return <Pantalla conPestanas={false}><Aviso tipo="aviso">Cuando completes tu registro en cualquier sucursal tendrás tu código para invitar a tus amigos.</Aviso></Pantalla>;
+  }
   if (!d.ok || !d.codigo) return <Pantalla conPestanas={false}><Aviso>{d.mensaje ?? 'No se pudo cargar tu código.'}</Aviso></Pantalla>;
 
   const mensaje = `¡Únete a Puntos Salud de Farmacia Salud! Usa mi código ${d.codigo} al registrarte en la app y los dos ganamos ${d.puntos} puntos con tu primera compra de $${d.minimo} o más.`;

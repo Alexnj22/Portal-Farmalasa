@@ -53,7 +53,7 @@ export default function EncargoHoja({ producto, presentacion, salas, alCerrar })
             </View>
             <Text style={{ fontSize: 22, fontWeight: '900', color: colorSistema.texto, letterSpacing: 2 }}>{hecho}</Text>
             <Text style={{ fontSize: 15, lineHeight: 21, color: colorSistema.texto2, textAlign: 'center' }}>
-              La sucursal y Bodega revisan si lo pueden conseguir. Te avisamos con el precio y la fecha estimada; ahí decides si lo confirmas pagando el anticipo.
+              Revisamos si te lo podemos conseguir. Te avisamos con el precio y la fecha estimada; ahí decides si lo confirmas pagando el anticipo.
             </Text>
             <View style={{ alignSelf: 'stretch' }}><Boton alTocar={alCerrar}>Listo</Boton></View>
           </View>

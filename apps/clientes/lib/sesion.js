@@ -6,6 +6,7 @@ import { create } from 'zustand';
 import { olvidarSincronizacion } from './avisos';
 import { llamar } from './api';
 import { olvidarTodo } from './sinConexion';
+import { useCarrito } from './carrito';
 
 const CLAVE = 'puntos_salud_sesion';
 
@@ -49,6 +50,10 @@ export const useSesion = create((set, get) => ({
   cerrar: async () => {
     await almacen.borrar().catch(() => {});
     await olvidarTodo();
+    // El carrito vive en el teléfono (2026-10-12): en un teléfono compartido,
+    // quien entra después heredaba lo que había agregado la cuenta anterior.
+    // Si sólo venció la sesión es la misma persona: el carrito se queda.
+    if (get().motivoCierre !== 'vencida') useCarrito.getState().vaciar();
     set({ token: null });
   },
 

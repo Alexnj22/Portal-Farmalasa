@@ -33,6 +33,7 @@ import { alLlegarAviso } from '../lib/avisos';
 import { leerOcultas, olvidar, ocultar } from '../lib/bandejaOculta';
 import { suave, useTema } from '../tema/tema';
 import { navegar } from '../lib/navegar';
+import { retocar } from '../lib/sinConexion';
 
 const DIA = 86400_000;
 const claveDia = (f) => `${f.getFullYear()}-${f.getMonth()}-${f.getDate()}`;
@@ -106,7 +107,17 @@ export default function Notificaciones() {
   const sincronizar = useCallback(async (datos, ids) => {
     try {
       const r = await pedir('bandeja_ocultar', datos);
-      if (r?.ok && ids.length) setOcultas(new Set(await olvidar(ids)));
+      if (r?.ok && ids.length) {
+        // Primero se sacan de la lista ya cargada y DESPUÉS se olvidan: al
+        // revés, el aviso volvía a aparecer (la lista local era lo único que
+        // lo tapaba y la bandeja en memoria todavía lo traía).
+        const quitar = new Set(ids.map(Number));
+        setD((ant) => (ant?.ok ? { ...ant, avisos: (ant.avisos ?? []).filter((a) => !quitar.has(Number(a.id))) } : ant));
+        // Y de la copia sin conexión (2026-10-12): sin señal, la bandeja sale de
+        // ahí y, ya olvidados acá, los borrados volvían a aparecer.
+        await retocar('bandeja', {}, (g) => (g?.ok ? { ...g, avisos: (g.avisos ?? []).filter((a) => !quitar.has(Number(a.id))) } : g));
+        setOcultas(new Set(await olvidar(ids)));
+      }
     } catch { /* queda el ocultamiento local */ }
   }, [pedir]);
   const cargar = useCallback(async () => {

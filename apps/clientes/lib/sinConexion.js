@@ -51,6 +51,19 @@ export async function leer(accion, datos) {
   } catch { return null; }
 }
 
+// Retoca la copia guardada de una lectura (2026-10-12). Lo que el servidor ya
+// borró no puede volver a salir de la copia sin conexión: los avisos borrados
+// de la bandeja reaparecían sin señal, porque la copia era de antes de borrar.
+// `cambiar` recibe la respuesta guardada y devuelve la nueva.
+export async function retocar(accion, datos, cambiar) {
+  if (!DIR || !LECTURAS.has(accion)) return;
+  const ruta = `${DIR}${llave(accion, datos)}.json`;
+  try {
+    const { en, r } = JSON.parse(await FS.readAsStringAsync(ruta));
+    await FS.writeAsStringAsync(ruta, JSON.stringify({ en, r: cambiar(r) }));
+  } catch { /* no había copia: nada que retocar */ }
+}
+
 export async function olvidarTodo() {
   if (!DIR) return;
   await FS.deleteAsync(DIR, { idempotent: true }).catch(() => {});

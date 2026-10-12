@@ -9,6 +9,7 @@ import { Boton, Cargando, Pantalla, Tarjeta, Vacio } from '../componentes/ui';
 import { colorSistema } from '../componentes/sistema';
 import { Confeti } from '../componentes/animacion';
 import { useSesion } from '../lib/sesion';
+import { useCuenta } from '../lib/cuenta';
 import { entero } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
 
@@ -35,8 +36,12 @@ export default function Encuesta() {
   const [enviando, setEnviando] = useState(false);
   const [hecho, setHecho] = useState(null);
   const inicio = useRef(Date.now());
-  useFocusEffect(useCallback(() => { pedir('mis_encuestas').then(setD); }, [pedir]));
-  const enc = d?.ok ? (d.encuestas.find((e) => e.id === id) ?? d.encuestas[0]) : null;
+  const preRegistro = useCuenta((s) => !!s.resumen?.pendiente);
+  const cargar = useCallback(() => pedir('mis_encuestas').then((x) => setD((a) => (x?.ok || !a?.ok ? x : a))), [pedir]);
+  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
+  // La pedida y sólo ésa (2026-10-12): si ya no está, se dice; antes abría
+  // OTRA encuesta en su lugar. Sin `id` (desde el menú), la primera.
+  const enc = d?.ok ? (id ? (d.encuestas ?? []).find((e) => String(e.id) === String(id)) : d.encuestas?.[0]) ?? null : null;
 
   // Visibles en orden, evaluando cada condición con lo ya contestado (igual que la base).
   const visibles = useMemo(() => {
@@ -78,6 +83,19 @@ export default function Encuesta() {
       <Boton alTocar={() => router.back()}>Listo</Boton>
     </Pantalla>
   );
+  // Sin ficha todavía, o un error: no es «sin encuestas» (2026-10-12).
+  if (d.pendiente || (!d.ok && preRegistro)) {
+    return <Pantalla conPestanas={false}><Vacio titulo="Sin encuestas por ahora">Cuando completes tu registro en cualquier sucursal podrás contestar encuestas y ganar puntos.</Vacio></Pantalla>;
+  }
+  if (!d.ok) {
+    return (
+      <Pantalla conPestanas={false}>
+        <Vacio titulo="No se pudo cargar">{d.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'}</Vacio>
+        <Boton tipo="secundario" alTocar={() => { setD(null); cargar(); }}>Reintentar</Boton>
+      </Pantalla>
+    );
+  }
+  if (!enc && id) return <Pantalla conPestanas={false}><Vacio titulo="Esta encuesta ya no está disponible">Puede que ya la hayas contestado o que haya terminado. ¡Gracias!</Vacio></Pantalla>;
   if (!enc) return <Pantalla conPestanas={false}><Vacio titulo="Sin encuestas por ahora">Cuando tengamos una nueva, te avisamos aquí. ¡Gracias!</Vacio></Pantalla>;
 
   return (

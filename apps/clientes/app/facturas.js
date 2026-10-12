@@ -28,6 +28,7 @@ import Icono from '../componentes/Icono';
 import EnviarCorreoHoja from '../componentes/EnviarCorreoHoja';
 import Vidrio from '../componentes/Vidrio';
 import { useSesion } from '../lib/sesion';
+import { useCuenta } from '../lib/cuenta';
 import { dolares, fecha } from '../lib/formato';
 import { armarZip, base64ABytes, bytesABase64 } from '../lib/zip';
 import { htmlVisorPdf, ORIGEN_PDFJS } from '../lib/visorPdf';
@@ -101,6 +102,7 @@ export default function Facturas() {
   const [hojaCorreo, setHojaCorreo] = useState(null);
   const [bajandoVarias, setBajandoVarias] = useState(null);
   const d = porPeriodo[periodo];
+  const preRegistro = useCuenta((s) => !!s.resumen?.pendiente);
   const cargar = useCallback(async () => {
     const r = await pedir('mis_facturas', { periodo });
     setPorPeriodo((ant) => ({ ...ant, [periodo]: r?.ok || !ant[periodo]?.ok ? r : ant[periodo] }));
@@ -160,7 +162,10 @@ export default function Facturas() {
   const verPdf = (f) => conEspera(`${f.id}pdf`, async () => {
     // iPhone: la vista web muestra el PDF con su dirección. Android no sabe:
     // se baja al teléfono y lo pinta pdf.js (lib/visorPdf.js).
-    if (enIphone) { setVisor({ f, url: f.pdf ?? await pedirUrl(f, 'pdf') }); return; }
+    // Siempre una dirección recién firmada (2026-10-12): la de la lista vence
+    // en una hora (o es de la copia sin conexión) y la vista web no avisa,
+    // queda en blanco.
+    if (enIphone) { setVisor({ f, url: await pedirUrl(f, 'pdf') }); return; }
     const uri = await bajar(f, 'pdf');
     const base64 = await FS.readAsStringAsync(uri, { encoding: FS.EncodingType.Base64 });
     setVisor({ f, base64 });
@@ -262,6 +267,8 @@ export default function Facturas() {
   };
 
   const cuerpo = !d ? <Cargando />
+    // Sin ficha todavía (2026-10-12): antes decía «… para reservar».
+    : d.pendiente || (!d.ok && preRegistro) ? <Vacio titulo="Sin facturas">Cuando completes tu registro en cualquier sucursal verás aquí las facturas de tus compras.</Vacio>
     : !d.ok ? <Vacio titulo="No se pudieron cargar">{d.mensaje ?? 'Revisa tu conexión.'}</Vacio>
       : (
         <>

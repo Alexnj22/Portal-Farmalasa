@@ -9,6 +9,7 @@ import { Cargando, Pantalla, Tarjeta, Vacio } from '../componentes/ui';
 import { colorSistema } from '../componentes/sistema';
 import Icono from '../componentes/Icono';
 import { useSesion } from '../lib/sesion';
+import { useCuenta } from '../lib/cuenta';
 import { fecha, nombrePropio } from '../lib/formato';
 import { navegar } from '../lib/navegar';
 import { suave, useTema } from '../tema/tema';
@@ -21,6 +22,7 @@ export default function Tratamientos() {
   const pedir = useSesion((s) => s.pedir);
   const [d, setD] = useState(null);
   const [refrescando, setRefrescando] = useState(false);
+  const preRegistro = useCuenta((s) => !!s.resumen?.pendiente);
   const cargar = useCallback(async () => { const r = await pedir('mis_tratamientos'); setD((a) => (r?.ok || !a?.ok ? r : a)); }, [pedir]);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
@@ -54,6 +56,20 @@ export default function Tratamientos() {
   };
 
   if (!d) return <Cargando />;
+  // Sin ficha todavía: se explica por qué no hay nada (2026-10-12). Antes salía
+  // como lista vacía, o con el mensaje de reservar.
+  if (d.pendiente || (!d.ok && preRegistro)) {
+    return <Pantalla conPestanas={false}><Vacio titulo="Aún no hay recordatorios">Cuando completes tu registro en cualquier sucursal verás aquí lo que compras con regularidad.</Vacio></Pantalla>;
+  }
+  // Un error no es «no hay recordatorios» (2026-10-12): se dice y se reintenta.
+  if (!d.ok) {
+    return (
+      <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
+        <Vacio titulo="No se pudieron cargar">{d.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'}</Vacio>
+        <Reintentar alTocar={refrescar} />
+      </Pantalla>
+    );
+  }
   const activos = d.ok ? d.tratamientos.filter((t) => t.estado === 'activo') : [];
   const apagados = d.ok ? d.tratamientos.filter((t) => t.estado !== 'activo') : [];
   return (
@@ -100,6 +116,15 @@ function Fila({ t, apagado, alReservar, alApagar, alEncender }) {
         )}
       </View>
     </Tarjeta>
+  );
+}
+
+function Reintentar({ alTocar }) {
+  const t = useTema();
+  return (
+    <Pressable onPress={alTocar} accessibilityRole="button" hitSlop={8} style={{ alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 14 }}>
+      <Text style={{ fontSize: 17, fontWeight: '700', color: t.color.magentaTexto }}>Reintentar</Text>
+    </Pressable>
   );
 }
 

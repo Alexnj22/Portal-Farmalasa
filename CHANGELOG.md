@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1268.9 — App de clientes: auditoría — notificaciones, carrito, pagos, seguridad
+
+Auditoría completa de la app de clientes y su función (2026-10-12).
+
+**Notificaciones**: deslizar para borrar sí ocultaba el aviso en el servidor, pero reaparecía al instante — al confirmar, la app olvidaba el ID de su lista local de ocultos mientras la bandeja en memoria todavía lo traía. Ahora se saca de la bandeja cargada y de la copia sin conexión antes de olvidarlo. «Limpiar» tenía el mismo defecto.
+
+**App** (`apps/clientes`):
+- Carrito: doble toque en Pagar/Reservar creaba dos pedidos (candado con `useRef`); sucursales y crédito fiscal ya no giran para siempre si falla la lectura (Reintentar / datos a mano); al volver de Wompi ya no se ve «carrito vacío».
+- Reservas: pagar un encargo con doble toque creaba dos enlaces; el navegador de pago va en try/catch.
+- Oferta: con datos viejos en memoria decía «ya no está» u ofrecía como exclusiva a un socio recién entrado; se recarga una vez antes. Temporizador fuera del render.
+- «Ver mis reservas» abría la lista debajo del modal.
+- Facturas: «Ver PDF» en iPhone pide siempre una dirección nueva (la de la lista vence en 1 h).
+- Tratamientos, encuesta y catálogo: error con Reintentar en vez de lista vacía; el catálogo ya no se traba desde la página 51.
+- Pre-registrados ven la explicación correcta en facturas, tratamientos, encuestas, reservas e invitar.
+- Cerrar sesión vacía el carrito (teléfono compartido), salvo si sólo venció la sesión.
+- Sin la palabra «Bodega» en un texto al cliente.
+
+**Seguridad** (`app-clientes`):
+- `reservar` no comprobaba que una oferta exclusiva fuera para socios ni que la sala fuera una farmacia: se podía reservar el precio exclusivo llamando a la acción directo.
+- `reportar_error`: tope por IP (20 cada 5 min) además del global — un solo script ya no deja ciego el registro; pila a 4 KB.
+- `tratamiento_cambiar` y `responder_encuesta` sólo devuelven al cliente los mensajes de un `RAISE` propio (P0001), no los errores internos de Postgres.
+
 ## v2.1268.8 — PDF del pedido: origen y destino más legibles
 
 En la orden de despacho, la línea de origen y destino pasa de letra 6 a 8 y

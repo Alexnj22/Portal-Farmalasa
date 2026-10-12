@@ -159,6 +159,9 @@ const coordenadas = (loc: any) => {
 const limpiarTel = (v: unknown) => String(v ?? "").replace(/\D/g, "");
 const plataformaValida = (p: unknown) => (["ios", "android", "web"].includes(String(p)) ? String(p) : null);
 
+// Freno por IP de `reportar_error` (ver la acción).
+const topeErrores = new Map<string, { n: number; desde: number }>();
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   const json = (body: unknown, status = 200) =>
@@ -284,6 +287,18 @@ Deno.serve(async (req) => {
         .gte("created_at", new Date(Date.now() - 5 * 60_000).toISOString());
       if (eC) console.error("reportar_error: conteo", eC.message);
       if ((count ?? 0) >= 300) return json({ ok: true, descartado: true });
+      // (2026-10-12, auditoría) Tope por IP además del global: sin él, un solo
+      // script llenaba los 300 y dejaba ciego el registro para todos los demás.
+      // Vive en memoria de la instancia: es un freno barato, no una cuenta exacta.
+      const ahora = Date.now();
+      const r = topeErrores.get(ip);
+      if (r && ahora - r.desde < 5 * 60_000) {
+        if (r.n >= 20) return json({ ok: true, descartado: true });
+        r.n++;
+      } else {
+        if (topeErrores.size > 5000) topeErrores.clear();
+        topeErrores.set(ip, { n: 1, desde: ahora });
+      }
       let customerId: number | null = null;
       if (typeof body?.token === "string" && body.token.length > 10) {
         const { data: ses, error: eS } = await admin.from("app_cliente_sesiones").select("customer_id")
@@ -293,7 +308,7 @@ Deno.serve(async (req) => {
       }
       const { error } = await admin.from("app_errores").insert({
         customer_id: customerId, fatal: body?.fatal === true, mensaje: txt(body?.mensaje, 1000) ?? "(sin mensaje)",
-        pila: txt(body?.pila, 8000), pantalla: txt(body?.pantalla, 200), version: txt(body?.version, 40),
+        pila: txt(body?.pila, 4000), pantalla: txt(body?.pantalla, 200), version: txt(body?.version, 40),
         compilacion: txt(body?.compilacion, 40), plataforma: txt(body?.plataforma, 20), dispositivo: txt(body?.dispositivo, 120),
       });
       if (error) console.error("reportar_error:", error.message);
@@ -898,6 +913,19 @@ Deno.serve(async (req) => {
       if (Array.isArray(o.branch_ids) && o.branch_ids.length && !o.branch_ids.map(Number).includes(branchId)) {
         return json({ ok: false, mensaje: "La oferta no aplica en esa sucursal." });
       }
+      // (2026-10-12, auditoría) Lo exclusivo es para socios: la pantalla ya lo
+      // decía, pero el servidor no lo comprobaba y se podía reservar llamando
+      // a la acción directo. Y la sala tiene que ser una farmacia.
+      const [{ data: cs, error: eCs }, { data: salaR, error: eSalaR }] = await Promise.all([
+        admin.from("customers").select("acepta_programa_puntos, acumula_puntos").eq("id", customerId).maybeSingle(),
+        admin.from("branches").select("id").eq("id", branchId).eq("type", "FARMACIA").maybeSingle(),
+      ]);
+      if (eCs) throw eCs;
+      if (eSalaR) throw eSalaR;
+      if (!salaR) return json({ ok: false, mensaje: "Elige una sucursal válida." });
+      if (o.exclusiva && !(cs?.acepta_programa_puntos !== false && cs?.acumula_puntos !== false)) {
+        return json({ ok: false, mensaje: "Esta oferta es exclusiva para socios de Puntos Salud." });
+      }
       const { data: prod, error: eP } = await admin.from("products").select("es_antibiotico, requiere_receta").eq("id", productoId).maybeSingle();
       if (eP) throw eP;
       if (prod?.es_antibiotico || prod?.requiere_receta) return json({ ok: false, mensaje: "Los productos bajo receta no se reservan." });
@@ -1079,7 +1107,7 @@ Deno.serve(async (req) => {
       const { error } = await admin.rpc("app_tratamiento_cambiar", {
         p_customer: customerId, p_id: Number(body?.id), p_activo: body?.activo === true, p_motivo: String(body?.motivo ?? ""),
       });
-      if (error) return json({ ok: false, mensaje: error.message || "No se pudo guardar." });
+      if (error) return json({ ok: false, mensaje: error.code === "P0001" && error.message ? error.message : "No se pudo guardar." });
       return json({ ok: true });
     }
 
@@ -1095,7 +1123,7 @@ Deno.serve(async (req) => {
         p_customer: customerId, p_id: String(body?.id ?? ""), p_respuestas: body?.respuestas ?? {},
         p_duracion: Number.isFinite(Number(body?.duracion)) ? Math.round(Number(body.duracion)) : null,
       });
-      if (error) return json({ ok: false, mensaje: error.message || "No se pudo enviar." });
+      if (error) return json({ ok: false, mensaje: error.code === "P0001" && error.message ? error.message : "No se pudo enviar." });
       return json(data);
     }
 

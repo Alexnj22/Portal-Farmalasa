@@ -21,6 +21,7 @@ import { useCuenta } from '../lib/cuenta';
 import { dolares } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
 import { navegar } from '../lib/navegar';
+import { router } from 'expo-router';
 
 const CLAVE_TERMINOS = 'puntos_salud_terminos_reserva';
 // Los colores salen del tema (cambian con el modo oscuro).
@@ -207,7 +208,12 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
               Si no puedes ir tú, comparte el código desde Mis reservas con alguien de confianza: quien lo presente en la sucursal puede retirarla.
             </Text>
             <View style={{ alignSelf: 'stretch', gap: 10, marginTop: 10 }}>
-              <Boton texto="Ver mis reservas" color={t.color.magenta} alTocar={() => { alCerrar(); setTimeout(() => navegar('/reservas'), 300); }} />
+              {/* Primero se cierra esta hoja y DESPUÉS la de la oferta (2026-10-12): al
+                  navegar con la oferta abierta, Mis reservas quedaba debajo. */}
+              <Boton texto="Ver mis reservas" color={t.color.magenta} alTocar={() => {
+                alCerrar();
+                setTimeout(() => { if (router.canGoBack()) router.back(); setTimeout(() => navegar('/reservas'), 300); }, 300);
+              }} />
             </View>
           </View>
         ) : null}

@@ -96,6 +96,7 @@ export default function Reservas() {
   const [ahora, setAhora] = useState(Date.now());
   const [refrescando, setRefrescando] = useState(false);
   const [encargos, setEncargos] = useState([]);
+  const preRegistro = useCuenta((s) => !!s.resumen?.pendiente);
   // Desde el aviso «ya tienes una reserva» o el carrito: esa reserva va primero y marcada.
   const { resaltar } = useLocalSearchParams();
   const cargar = useCallback(() => Promise.all([
@@ -123,15 +124,32 @@ export default function Reservas() {
     } finally { pidiendo.current = false; setMasCargando(false); }
   }, [pedir, filtro, porFiltro]);
   // Pagar el anticipo de un encargo confirmado (Wompi, como las reservas).
+  // Con candado (2026-10-12): dos toques abrían dos cobros. La ref corta el
+  // segundo toque al instante; el estado deshabilita el botón.
+  const pagandoYa = useRef(false);
+  const [pagandoEncargo, setPagandoEncargo] = useState(null);
   const pagarEncargo = async (e) => {
-    const res = await pedir('pagar_encargo', { id: e.id });
-    if (!res?.ok) { Alert.alert('No se pudo abrir el pago', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
-    await WebBrowser.openAuthSessionAsync(res.url, 'puntossalud://reservas');
-    for (let i = 0; i < 4; i++) {
-      const r = await pedir('mis_encargos');
-      if (r?.ok) setEncargos(r.encargos);
-      if (r?.encargos?.find((x) => x.id === e.id)?.pago_estado === 'pagado') { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); break; }
-      await new Promise((ok) => setTimeout(ok, 1500));
+    if (pagandoYa.current) return;
+    pagandoYa.current = true;
+    setPagandoEncargo(e.id);
+    try {
+      const res = await pedir('pagar_encargo', { id: e.id });
+      if (!res?.ok) { Alert.alert('No se pudo abrir el pago', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
+      try {
+        await WebBrowser.openAuthSessionAsync(res.url, 'puntossalud://reservas');
+      } catch {
+        Alert.alert('No se pudo abrir el pago', 'Intenta de nuevo en un momento.');
+        return;
+      }
+      for (let i = 0; i < 4; i++) {
+        const r = await pedir('mis_encargos');
+        if (r?.ok) setEncargos(r.encargos);
+        if (r?.encargos?.find((x) => x.id === e.id)?.pago_estado === 'pagado') { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); break; }
+        await new Promise((ok) => setTimeout(ok, 1500));
+      }
+    } finally {
+      pagandoYa.current = false;
+      setPagandoEncargo(null);
     }
   };
   const cancelarEncargo = (e) => Alert.alert('Cancelar encargo', `¿Cancelar ${e.producto_nombre}?`, [
@@ -180,11 +198,18 @@ export default function Reservas() {
   // se vuelve a leer, un par de veces, por si el aviso de Wompi se atrasa.
   const [pagando, setPagando] = useState(null);
   const pagar = async (r) => {
+    if (pagandoYa.current) return;
+    pagandoYa.current = true;
     setPagando(r.id);
     try {
       const res = await pedir('pagar_reserva', { id: r.id });
       if (!res?.ok) { Alert.alert('No se pudo abrir el pago', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
-      await WebBrowser.openAuthSessionAsync(res.url, 'puntossalud://reservas');
+      try {
+        await WebBrowser.openAuthSessionAsync(res.url, 'puntossalud://reservas');
+      } catch {
+        Alert.alert('No se pudo abrir el pago', 'Intenta de nuevo en un momento.');
+        return;
+      }
       for (let i = 0; i < 4; i++) {
         const nuevo = await pedir('mis_reservas');
         if (nuevo?.reservas?.find((x) => x.id === r.id)?.pago_estado === 'pagado') {
@@ -196,6 +221,7 @@ export default function Reservas() {
       // Se recarga el filtro que se está viendo (desde su primera página).
       await cargar();
     } finally {
+      pagandoYa.current = false;
       setPagando(null);
     }
   };
@@ -207,6 +233,10 @@ export default function Reservas() {
   );
   // Al cambiar de filtro los chips se quedan: sólo la lista muestra que carga.
   if (!d) return filtro === 'todas' ? <Cargando /> : <Pantalla conPestanas={false}>{chips}<ActivityIndicator style={{ marginTop: 24 }} /></Pantalla>;
+  // Sin ficha todavía (2026-10-12): se explica en vez de «No se pudieron cargar».
+  if (d.pendiente || (!d.ok && preRegistro)) {
+    return <Pantalla conPestanas={false}><Vacio titulo="Sin reservas">Cuando completes tu registro en cualquier sucursal podrás reservar productos y verlos aquí.</Vacio></Pantalla>;
+  }
   if (!d.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>{filtro === 'todas' ? null : chips}<Vacio titulo="No se pudieron cargar">{d.mensaje ?? 'Revisa tu conexión y desliza hacia abajo para reintentar.'}</Vacio></Pantalla>;
   if (filtro === 'todas' && !d.reservas.length && !encargos.length) {
     return (
@@ -251,7 +281,7 @@ export default function Reservas() {
       {filtro === 'todas' && encargos.length ? (
         <>
           <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4 }}>Encargos</Text>
-          {encargos.map((e) => <Encargo key={e.id} e={e} alPagar={() => pagarEncargo(e)} alCancelar={() => cancelarEncargo(e)} />)}
+          {encargos.map((e) => <Encargo key={e.id} e={e} alPagar={() => pagarEncargo(e)} pagando={pagandoEncargo === e.id} alCancelar={() => cancelarEncargo(e)} />)}
         </>
       ) : null}
       {filtro !== 'todas' && !d.reservas.length ? <Vacio titulo="Nada por aquí">{VACIO_FILTRO[filtro]}</Vacio> : null}
@@ -833,7 +863,7 @@ const TEXTO_ENCARGO = {
   rechazado: 'No se pudo conseguir',
   cancelado: 'Cancelado',
 };
-function Encargo({ e, alPagar, alCancelar }) {
+function Encargo({ e, alPagar, alCancelar, pagando = false }) {
   const t = useTema();
   const paso = PASOS_ENCARGO.indexOf(e.estado);
   const cerrado = paso < 0;
@@ -862,7 +892,7 @@ function Encargo({ e, alPagar, alCancelar }) {
       ) : <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>Retiro en {e.sala}</Text>}
       {e.nota_sucursal ? <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>«{e.nota_sucursal}»</Text> : null}
       {e.estado === 'confirmado' && e.pago_estado !== 'pagado' ? (
-        <Boton alTocar={alPagar}>{`Confirmar y pagar ${dolares(e.anticipo)}`}</Boton>
+        <Boton alTocar={alPagar} cargando={pagando}>{`Confirmar y pagar ${dolares(e.anticipo)}`}</Boton>
       ) : null}
       {(e.estado === 'solicitado' || e.estado === 'confirmado') && e.pago_estado !== 'pagado' ? (
         <Pressable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center' }}>

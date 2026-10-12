@@ -55,7 +55,10 @@ export const useBloqueo = create((set, get) => ({
     const ok = await verificar('Confirma para activar el bloqueo');
     ultimoDesbloqueo = Date.now();
     if (!ok) return false;
-    await SecureStore.setItemAsync(CLAVE, '1');
+    // Si el llavero no guarda, no se enciende (2026-10-12): antes la promesa
+    // fallaba sin que nadie la atrapara.
+    const guardado = await SecureStore.setItemAsync(CLAVE, '1').then(() => true).catch(() => false);
+    if (!guardado) return false;
     set({ activo: true });
     return true;
   },

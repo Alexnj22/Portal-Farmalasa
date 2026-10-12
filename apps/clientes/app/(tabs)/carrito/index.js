@@ -2,7 +2,7 @@
 // precio VIP, en qué sucursal está TODO, y «Reservar para retirar». Al
 // reservar, la sucursal recibe el aviso para tenerlo listo y el cliente un
 // código (QR) que la sala escanea para prepararlo y facturarlo.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { errorFiscal, nitEscrito, nrcEscrito } from '../../../lib/fiscal';
@@ -37,6 +37,7 @@ export default function Carrito() {
   // refresca el resumen (con su caché de un minuto).
   useFocusEffect(useCallback(() => { useCuenta.getState().cargar().catch(() => {}); }, []));
   const [salas, setSalas] = useState(null);
+  const [errorSalas, setErrorSalas] = useState(false);
   const [sala, setSala] = useState(null);
   const [enviando, setEnviando] = useState(false);
   const [terminos, setTerminos] = useState(null);
@@ -54,7 +55,9 @@ export default function Carrito() {
   useEffect(() => {
     if (documento !== 'credito_fiscal' || fiscales) return;
     pedir('mis_datos_fiscales').then((r) => {
-      if (!r?.ok) return;
+      // Si no se pudieron traer, se escriben a mano (2026-10-12): antes la
+      // sección giraba para siempre y el botón quedaba deshabilitado.
+      if (!r?.ok) { setFiscales({ completos: false, datos: {} }); setEditarFiscales(true); return; }
       setFiscales(r);
       setF({ nombre: r.datos.nombre ?? '', nit: r.datos.nit ?? '', nrc: r.datos.nrc ?? '', giro: r.datos.giro ?? '', direccion: r.datos.direccion ?? '' });
       setEditarFiscales(!r.completos);
@@ -68,9 +71,11 @@ export default function Carrito() {
   // Dónde hay de cada producto: se vuelve a preguntar al entrar y si cambia el carrito.
   const ids = useMemo(() => [...new Set(items.map((x) => x.id))].sort().join(','), [items]);
   const cargarSalas = useCallback(async () => {
-    if (!ids) { setSalas([]); return; }
+    if (!ids) { setSalas([]); setErrorSalas(false); return; }
+    setErrorSalas(false);
     const r = await pedir('carrito_existencias', { ids: ids.split(',').map(Number) });
-    if (!r?.ok) { setSalas(null); return; }
+    // Si falla, «Reintentar» en vez de la rueda girando para siempre (2026-10-12).
+    if (!r?.ok) { setSalas(null); setErrorSalas(true); return; }
     setEnvioCfg(r.envio ?? null);
     const hay = new Map();
     for (const e of r.existencias) hay.set(`${e.product_id}|${e.branch_id}`, Number(e.cantidad));
@@ -93,47 +98,72 @@ export default function Carrito() {
   const total = subtotal + envio;
   const faltaDireccion = aDomicilio && direccion.trim().length < 10;
 
+  // Dos toques rápidos en «Pagar» creaban dos pedidos (2026-10-12): `enviando`
+  // es estado y no llega a tiempo al segundo toque. El candado es una ref, se
+  // toma en la PRIMERA línea y se suelta al terminar.
+  const tocando = useRef(false);
+  const enviandoYa = useRef(false);
   const reservar = async () => {
-    if (enviando || !sala) return;
-    if (problemaFiscal) { Alert.alert('Faltan datos del crédito fiscal', problemaFiscal); return; }
-    if (faltaDireccion) { Alert.alert('Falta la dirección', 'Escribe la dirección completa, con una referencia para encontrarte.'); return; }
-    if (pendiente) { Alert.alert('Falta completar tu registro', 'Completa tu registro en cualquier sucursal para reservar.'); return; }
-    // Las condiciones, una vez (las mismas de las reservas de ofertas).
-    const [term, aceptada] = await Promise.all([pedir('reserva_terminos'), SecureStore.getItemAsync(CLAVE_TERMINOS).catch(() => null)]);
-    if (!term?.ok) { Alert.alert('No se pudo reservar', 'Revisa tu conexión e intenta de nuevo.'); return; }
-    if (aceptada !== term.version) { setTerminos(term); return; }
-    enviar(term.version);
+    if (tocando.current) return;
+    tocando.current = true;
+    try {
+      if (enviando || !sala) return;
+      if (problemaFiscal) { Alert.alert('Faltan datos del crédito fiscal', problemaFiscal); return; }
+      if (faltaDireccion) { Alert.alert('Falta la dirección', 'Escribe la dirección completa, con una referencia para encontrarte.'); return; }
+      if (pendiente) { Alert.alert('Falta completar tu registro', 'Completa tu registro en cualquier sucursal para reservar.'); return; }
+      // Las condiciones, una vez (las mismas de las reservas de ofertas).
+      const [term, aceptada] = await Promise.all([pedir('reserva_terminos'), SecureStore.getItemAsync(CLAVE_TERMINOS).catch(() => null)]);
+      if (!term?.ok) { Alert.alert('No se pudo reservar', 'Revisa tu conexión e intenta de nuevo.'); return; }
+      if (aceptada !== term.version) { setTerminos(term); return; }
+      await enviar(term.version);
+    } finally {
+      tocando.current = false;
+    }
   };
 
   const enviar = async (version) => {
-    setTerminos(null);
-    setEnviando(true);
-    const r = await pedir('reservar_carrito', {
-      branch_id: sala, acepta_terminos: version, pago: pagoReal, documento,
-      entrega: aDomicilio ? 'domicilio' : 'retiro', direccion: aDomicilio ? direccion.trim() : null,
-      datos_fiscales: documento === 'credito_fiscal' ? f : null,
-      items: items.map((x) => ({ producto_id: x.id, factor: x.factor, cantidad: x.cantidad })),
-    });
-    setEnviando(false);
-    if (!r?.ok) { Alert.alert('No se pudo reservar', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
-    vaciar();
-    useCuenta.getState().cargar({ forzar: true }).catch(() => {});
-    const base = { pedido: r.pedido, total: r.total, sala: salas?.find((s) => s.id === sala)?.sala, pagado: false, enLinea: pagoReal === 'en_linea', porConfirmar: faltan > 0, domicilio: aDomicilio };
-    setDireccion('');
-    // Pagar en línea: la hoja de Wompi; el pago lo confirma el servidor.
-    if (pagoReal === 'en_linea' && r.pago?.url) {
-      await WebBrowser.openAuthSessionAsync(r.pago.url, 'puntossalud://reservas');
-      for (let i = 0; i < 4; i++) {
-        const mr = await pedir('mis_reservas');
-        const delPedido = (mr?.reservas ?? []).filter((x) => x.pedido === r.pedido);
-        if (delPedido.length && delPedido.every((x) => x.pago_estado === 'pagado')) { base.pagado = true; break; }
-        await new Promise((ok) => setTimeout(ok, 1500));
+    if (enviandoYa.current) return;
+    enviandoYa.current = true;
+    try {
+      setTerminos(null);
+      setEnviando(true);
+      const r = await pedir('reservar_carrito', {
+        branch_id: sala, acepta_terminos: version, pago: pagoReal, documento,
+        entrega: aDomicilio ? 'domicilio' : 'retiro', direccion: aDomicilio ? direccion.trim() : null,
+        datos_fiscales: documento === 'credito_fiscal' ? f : null,
+        items: items.map((x) => ({ producto_id: x.id, factor: x.factor, cantidad: x.cantidad })),
+      });
+      setEnviando(false);
+      if (!r?.ok) { Alert.alert('No se pudo reservar', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
+      const base = { pedido: r.pedido, total: r.total, sala: salas?.find((s) => s.id === sala)?.sala, pagado: false, enLinea: pagoReal === 'en_linea', porConfirmar: faltan > 0, domicilio: aDomicilio };
+      // La confirmación va ANTES de vaciar y de abrir el cobro (2026-10-12): al
+      // volver del pago se veía «Tu carrito está vacío» mientras se verificaba.
+      const conCobro = pagoReal === 'en_linea' && !!r.pago?.url;
+      setHecho({ ...base, verificando: conCobro });
+      vaciar();
+      useCuenta.getState().cargar({ forzar: true }).catch(() => {});
+      setDireccion('');
+      // Pagar en línea: la hoja de Wompi; el pago lo confirma el servidor.
+      if (conCobro) {
+        try {
+          await WebBrowser.openAuthSessionAsync(r.pago.url, 'puntossalud://reservas');
+        } catch { /* la hoja no abrió: queda pendiente y se paga desde Mis reservas */ }
+        for (let i = 0; i < 4; i++) {
+          const mr = await pedir('mis_reservas');
+          const delPedido = (mr?.reservas ?? []).filter((x) => x.pedido === r.pedido);
+          if (delPedido.length && delPedido.every((x) => x.pago_estado === 'pagado')) { base.pagado = true; break; }
+          await new Promise((ok) => setTimeout(ok, 1500));
+        }
+      } else if (pagoReal === 'en_linea') {
+        Alert.alert('El pago en línea no está disponible', 'Tu pedido quedó reservado: lo pagas al retirar o desde Mis reservas.');
       }
-    } else if (pagoReal === 'en_linea') {
-      Alert.alert('El pago en línea no está disponible', 'Tu pedido quedó reservado: lo pagas al retirar o desde Mis reservas.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      // Sólo si la persona sigue en la confirmación de ESTE pedido.
+      setHecho((ant) => (ant?.pedido === base.pedido ? base : ant));
+    } finally {
+      enviandoYa.current = false;
+      setEnviando(false);
     }
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    setHecho(base);
   };
 
   if (hecho) {
@@ -153,7 +183,7 @@ export default function Carrito() {
           {/* A domicilio no se retira: compartir el código sólo sirve para el retiro. */}
           <CodigoReserva codigo={hecho.pedido} compartir={hecho.domicilio ? null : { sala: hecho.sala, pedido: true }} />
           <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>
-            Total: {dolares(hecho.total)} · {hecho.pagado ? 'pagado' : hecho.enLinea ? 'pago pendiente (puedes pagarlo en Mis reservas)' : hecho.domicilio ? 'pagas al recibir' : 'pagas al retirar'}
+            Total: {dolares(hecho.total)} · {hecho.pagado ? 'pagado' : hecho.verificando ? 'confirmando el pago…' : hecho.enLinea ? 'pago pendiente (puedes pagarlo en Mis reservas)' : hecho.domicilio ? 'pagas al recibir' : 'pagas al retirar'}
           </Text>
         </Tarjeta>
         <Boton alTocar={() => { setHecho(null); navegar('/reservas'); }}>Ver mis reservas</Boton>
@@ -235,7 +265,14 @@ export default function Carrito() {
         {aDomicilio ? 'Sale desde' : 'Retirar en'}
       </Text>
       <Tarjeta estilo={{ padding: 0, gap: 0 }}>
-        {salas == null ? <ActivityIndicator style={{ margin: 18 }} /> : salas.map((s, i) => {
+        {salas == null && errorSalas ? (
+          <View style={{ alignItems: 'center', gap: 10, padding: 18 }}>
+            <Texto nivel={2} estilo={{ textAlign: 'center', fontSize: 14 }}>No pudimos revisar en qué sucursales hay. Revisa tu conexión.</Texto>
+            <Pressable onPress={() => { setErrorSalas(false); cargarSalas(); }} accessibilityRole="button" hitSlop={8} style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 }}>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: t.color.magentaTexto }}>Reintentar</Text>
+            </Pressable>
+          </View>
+        ) : salas == null ? <ActivityIndicator style={{ margin: 18 }} /> : salas.map((s, i) => {
           const elegida = s.id === sala;
           return (
             <Pressable key={s.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setSala(s.id); }} accessibilityRole="radio" accessibilityState={{ selected: elegida }}>

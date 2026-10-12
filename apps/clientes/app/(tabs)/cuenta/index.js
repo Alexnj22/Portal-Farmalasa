@@ -110,7 +110,8 @@ export default function Cuenta() {
     setMensaje(null);
     let push_token = null;
     if (valor) {
-      const r = await pedirTokenDeAvisos();
+      // Nunca lanza hacia el botón (2026-10-12): un fallo del sistema es un mensaje.
+      const r = await pedirTokenDeAvisos().catch(() => ({ error: 'No se pudieron activar los avisos. Intenta más tarde.' }));
       if (r.error) { setMensaje(r.error); return; }
       push_token = r.token;
     }

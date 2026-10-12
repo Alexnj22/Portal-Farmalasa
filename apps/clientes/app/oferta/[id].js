@@ -44,16 +44,53 @@ export default function Oferta() {
   const [reservando, setReservando] = useState(null);
   const autoAbierta = useRef(false);
   const cargar = useOfertas((s) => s.cargar);
+  const de = useOfertas((s) => s.de);
   const o = datos?.ofertas?.find((x) => String(x.id) === String(id));
   // Abierta desde un enlace o un aviso, en frío, la lista todavía no está en
   // memoria: se pide en vez de decir «ya no está».
   useEffect(() => { if (!datos) cargar(); }, [datos, cargar]);
+  // La lista en memoria puede ser vieja (2026-10-12): abierta desde un aviso,
+  // una historia o un banner, la oferta nueva todavía no estaba y salía «ya no
+  // está»; y la lista de antes de entrar seguía diciendo «exclusiva para
+  // socios». Si no aparece, o es de otra sesión, se pide de nuevo UNA vez
+  // (por cada «quién mira») antes de darla por terminada.
+  const quien = token ? 'sesion' : 'publica';
+  const revisada = useRef(null);
+  const [revisando, setRevisando] = useState(false);
+  const porRevisar = !!datos?.ok && (!o || de !== quien) && revisada.current !== quien;
+  useEffect(() => {
+    if (!porRevisar) return;
+    revisada.current = quien;
+    setRevisando(true);
+    cargar({ forzar: true }).catch(() => {}).finally(() => setRevisando(false));
+  }, [porRevisar, quien, cargar]);
+  // Reservar: con sesión y oferta disponible (lo exclusivo, sólo socios).
+  // Platino la ve antes («pronto»): se mira, pero se reserva desde que empieza.
+  const puedeReservar = !!o && !!token && o.disponible && !preRegistro && !o.pronto;
+  // Desde «Reservar» de una historia: con un solo producto, la hoja se abre
+  // sola; con varios, cada uno tiene su botón.
+  // Si ese producto ya está reservado, se pregunta antes de abrir la hoja
+  // (2026-10-09). Para ver la reserva, primero se cierra esta hoja.
+  const abrirReserva = async (p) => {
+    const seguir = await seguirSiYaReservado(p.id, {
+      alVer: (r) => { router.back(); setTimeout(() => navegar(`/reservas?resaltar=${r.id}`), 300); },
+    });
+    if (seguir) setReservando(p);
+  };
+  // En un efecto y con su limpieza (2026-10-12): antes el reloj se programaba
+  // durante el dibujo y nadie lo cancelaba al cerrar la hoja.
+  const unico = o?.productos?.length === 1 ? o.productos[0] : null;
+  useEffect(() => {
+    if (reservar !== '1' || !puedeReservar || !unico || reservando || autoAbierta.current) return undefined;
+    const reloj = setTimeout(() => { autoAbierta.current = true; abrirReserva(unico); }, 350);
+    return () => clearTimeout(reloj);
+  }, [reservar, puedeReservar, unico, reservando]); // eslint-disable-line react-hooks/exhaustive-deps -- `abrirReserva` se lee en el momento
 
   const fondo = t.oscuro ? '#121016' : '#F5F4F8';
   const superficie = t.oscuro ? '#1E1B24' : '#FFFFFF';
   const cerrar = () => { Haptics.selectionAsync().catch(() => {}); router.back(); };
 
-  if (!datos) return <View style={{ flex: 1, backgroundColor: fondo }}><Cargando /></View>;
+  if (!datos || porRevisar || revisando) return <View style={{ flex: 1, backgroundColor: fondo }}><Cargando /></View>;
   // Falló la red: no es «ya no está». Se dice y se puede reintentar.
   if (!datos.ok) {
     return (
@@ -73,23 +110,6 @@ export default function Oferta() {
     );
   }
   const a = acentoDe(t, o.acento);
-  // Reservar: con sesión y oferta disponible (lo exclusivo, sólo socios).
-  // Platino la ve antes («pronto»): se mira, pero se reserva desde que empieza.
-  const puedeReservar = !!token && o.disponible && !preRegistro && !o.pronto;
-  // Desde «Reservar» de una historia: con un solo producto, la hoja se abre
-  // sola; con varios, cada uno tiene su botón.
-  // Si ese producto ya está reservado, se pregunta antes de abrir la hoja
-  // (2026-10-09). Para ver la reserva, primero se cierra esta hoja.
-  const abrirReserva = async (p) => {
-    const seguir = await seguirSiYaReservado(p.id, {
-      alVer: (r) => { router.back(); setTimeout(() => navegar(`/reservas?resaltar=${r.id}`), 300); },
-    });
-    if (seguir) setReservando(p);
-  };
-  if (reservar === '1' && puedeReservar && o.productos?.length === 1 && !reservando && !autoAbierta.current) {
-    autoAbierta.current = true;
-    setTimeout(() => abrirReserva(o.productos[0]), 350);
-  }
   const ahorroMax = Math.max(0, ...(o.productos ?? []).map((p) => (p.precio ?? 0) - (p.precio_descuento ?? 0)));
 
   return (

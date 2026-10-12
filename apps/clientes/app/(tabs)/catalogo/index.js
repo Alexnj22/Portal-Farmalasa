@@ -9,7 +9,7 @@
 // vidrio de iOS 26 cuesta por cada una. Un fondo translúcido sólido se ve igual
 // de limpio y se desplaza fluido.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useFocusEffect, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { colorSistema } from '../../../componentes/sistema';
@@ -26,6 +26,10 @@ import { suave, useTema } from '../../../tema/tema';
 import { navegar } from '../../../lib/navegar';
 
 const POR_PAGINA = 20;
+// El servidor no pasa de `desde = 1000` (app-clientes, acción `catalogo`): una
+// página que empiece más allá devolvía la misma de antes y «Siguiente» quedaba
+// trabado desde la página 51 (2026-10-12).
+const DESDE_MAX = 1000;
 
 export default function Catalogo() {
   const t = useTema();
@@ -36,6 +40,7 @@ export default function Catalogo() {
   const [error, setError] = useState(false);
   const [pagina, setPagina] = useState(0);
   const [cambiando, setCambiando] = useState(false);
+  const [refrescando, setRefrescando] = useState(false);
   const pedido = useRef(0);
   const listaRef = useRef(null);
   // Las filas de arriba (sin buscar): mayor ahorro VIP y vistos recientemente.
@@ -60,7 +65,7 @@ export default function Catalogo() {
     if (n !== pedido.current) return; // llegó tarde: ya se pidió otra cosa
     if (!r?.ok) { setError(true); return; }
     setLista(r.productos);
-    setHayMas(!!r.hay_mas);
+    setHayMas(!!r.hay_mas && (p + 1) * POR_PAGINA <= DESDE_MAX);
     setPagina(p);
   }, [q]);
   // Otra búsqueda: de vuelta a la página 1.
@@ -74,6 +79,9 @@ export default function Catalogo() {
     setCambiando(false);
     listaRef.current?.scrollToOffset({ offset: 0, animated: true });
   };
+  // Deslizar hacia abajo vuelve a pedir la página que se ve (2026-10-12): si la
+  // primera carga fallaba no había forma de reintentar.
+  const refrescar = async () => { setRefrescando(true); await cargar(lista ? pagina : 0); setRefrescando(false); };
 
   const encabezado = (
     <View style={{ gap: 12, marginBottom: 6 }}>
@@ -159,13 +167,26 @@ export default function Catalogo() {
         windowSize={7}
         removeClippedSubviews
         renderItem={({ item }) => <TarjetaProducto p={item} />}
+        refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} />}
         ListEmptyComponent={
-          error ? <Vacio titulo="No se pudo cargar">Revisa tu conexión e intenta de nuevo.</Vacio>
+          error ? (
+            <View style={{ alignItems: 'center' }}>
+              <Vacio titulo="No se pudo cargar">Revisa tu conexión e intenta de nuevo.</Vacio>
+              <Pressable onPress={() => { setLista(null); cargar(0); }} accessibilityRole="button" hitSlop={8}
+                style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 14 }}>
+                <Text style={{ fontSize: 17, fontWeight: '700', color: t.color.magentaTexto }}>Reintentar</Text>
+              </Pressable>
+            </View>
+          )
             : !lista ? <ActivityIndicator style={{ marginTop: 40 }} />
               : <Vacio titulo="Sin resultados">Prueba con otro nombre o con el principio activo.</Vacio>
         }
-        ListFooterComponent={lista?.length && (pagina > 0 || hayMas) ? (
-          <Paginas pagina={pagina} hayMas={hayMas} cargando={cambiando} alAnterior={() => irA(pagina - 1)} alSiguiente={() => irA(pagina + 1)} />
+        ListFooterComponent={lista?.length && (pagina > 0 || hayMas || error) ? (
+          <View style={{ gap: 8 }}>
+            {/* Cambiar de página falló: la lista de antes se queda, pero se dice. */}
+            {error ? <Text style={{ fontSize: 13, color: t.color.avisoTexto, textAlign: 'center' }}>No se pudo cargar esa página. Revisa tu conexión e intenta de nuevo.</Text> : null}
+            {pagina > 0 || hayMas ? <Paginas pagina={pagina} hayMas={hayMas} cargando={cambiando} alAnterior={() => irA(pagina - 1)} alSiguiente={() => irA(pagina + 1)} /> : null}
+          </View>
         ) : null}
       />
     </>

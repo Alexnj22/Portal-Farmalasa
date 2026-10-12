@@ -10,7 +10,8 @@
 import { volver } from '../componentes/volver';
 import { leer } from '../componentes/comercial/elegido';
 import { useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView, ScrollView, Text, TextInput, View } from 'react-native';
+import Interruptor from '../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
@@ -193,7 +194,7 @@ export default function EditarPiezaDeMarketing() {
           <Seccion titulo="Pauta" pie={limite ? `Presupuesto del mes ${formatMoney(limite)} · asignado a otras ${formatMoney(otros)} · disponible ${formatMoney(Math.max(disponible, 0))}` : 'Gerencia todavía no fija el presupuesto del mes.'}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>Se pautará</Text>
-              <Switch value={!!form.pautar} onValueChange={set('pautar')} />
+              <Interruptor value={!!form.pautar} onValueChange={set('pautar')} />
             </View>
             {form.pautar ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

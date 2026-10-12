@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1269.0 — Android nativo: Material 3, fluido y con transiciones propias
+
+- **Android con los controles nativos de Material 3 y fluido** (reporte del usuario: «es lenta, las transiciones no las hace bien… en un Android de gama alta»). Medido con el mismo recorrido en el emulador: cuadros lentos 95% → 33–56%, p50 200 ms → 34–53 ms.
+  - Fondo sólido de Material y pantallas opacas en Android (antes, pantallas transparentes sobre una aurora SVG: cada transición componía dos pantallas translúcidas); entran con `slide_from_right`. La aurora y el vidrio quedan sólo en iOS.
+  - `Vidrio` en Android es la tarjeta «filled» de Material (sin translúcido, sin `overflow: hidden`).
+  - Controles de Compose (`@expo/ui/jetpack-compose`) en archivos `.android.js`: segmentado de Material, fichas de filtro, Switch de Material 3 (`Interruptor`), hoja inferior de Material para menús y confirmaciones (`HojasAndroid`) y para elegir una opción con buscador (`HojaDeEleccion`).
+  - Los filtros y botones de la barra NO existían en Android (`Stack.Toolbar` es sólo iOS): `FiltrosAndroid` los pone en la barra con la hoja de filtros.
+  - Onda de Material al tocar; contenido pesado de Ventas, Facturación, Productos, Torogoz y Metas se dibuja al terminar la transición (`trasLaTransicion`); marcadores de mapa sin redibujar.
+  - iOS sin cambios (verificado en el simulador).
+
 ## v2.1268.9 — App de clientes: auditoría — notificaciones, carrito, pagos, seguridad
 
 Auditoría completa de la app de clientes y su función (2026-10-12).

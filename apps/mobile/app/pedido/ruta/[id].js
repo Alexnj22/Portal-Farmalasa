@@ -223,7 +223,7 @@ export default function RutaDeReparto() {
                       {linea.length > 1 ? <Polyline coordinates={linea} strokeColor={INDIGO} strokeWidth={4} /> : null}
                       {pinesFijos}
                       {!conductor && camion ? (
-                        <Marker coordinate={coord(camion)} title={`Conductor: ${ruta.conductor_nombre}`} description={enVivo ? 'En vivo' : `Última posición ${hora12(camion.at)}`}>
+                        <Marker tracksViewChanges={false} coordinate={coord(camion)} title={`Conductor: ${ruta.conductor_nombre}`} description={enVivo ? 'En vivo' : `Última posición ${hora12(camion.at)}`}>
                           <Pin texto="🚚" color="#1d4ed8" alto={34} />
                         </Marker>
                       ) : null}

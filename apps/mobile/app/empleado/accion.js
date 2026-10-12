@@ -13,7 +13,8 @@
 // «Editar» del historial del portal. El borrador se guarda solo
 // (`novedad_<id>`, la misma clave del portal).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -242,7 +243,7 @@ export default function AccionDePersonal() {
 
               {r.esCargo ? (
                 <Seccion titulo="Nuevo cargo">
-                  <Fila rotulo="¿Cambia también de sucursal?"><Switch value={!!f.isTransferAndPromotion} onValueChange={(v) => pon({ isTransferAndPromotion: v })} /></Fila>
+                  <Fila rotulo="¿Cambia también de sucursal?"><Interruptor value={!!f.isTransferAndPromotion} onValueChange={(v) => pon({ isTransferAndPromotion: v })} /></Fila>
                   <Campo multiline={false} value={buscaCargo} onChangeText={setBuscaCargo} placeholder="Buscar cargo" />
                   <Opciones valor={f.newRole} onCambiar={(v) => pon({ newRole: v })} opciones={cargos.map((c) => ({ id: c.name, label: c.name }))} />
                 </Seccion>
@@ -266,7 +267,7 @@ export default function AccionDePersonal() {
                 <Seccion titulo="Motivo legal de la baja">
                   <Opciones valor={f.terminationReason} onCambiar={(v) => pon({ terminationReason: v })}
                     opciones={opcionesDeCatalogo(TERMINATION_REASONS).map((o) => ({ id: o.value, label: o.label }))} />
-                  <Fila rotulo="¿Entregó y firmó el finiquito?"><Switch value={!!f.hasFiniquito} onValueChange={(v) => pon({ hasFiniquito: v })} /></Fila>
+                  <Fila rotulo="¿Entregó y firmó el finiquito?"><Interruptor value={!!f.hasFiniquito} onValueChange={(v) => pon({ hasFiniquito: v })} /></Fila>
                 </Seccion>
               ) : null}
 

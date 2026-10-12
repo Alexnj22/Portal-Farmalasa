@@ -57,6 +57,7 @@ import Saltos from '../componentes/fiscal/Saltos';
 import NoEfectivo from '../componentes/fiscal/NoEfectivo';
 import Resueltas from '../componentes/fiscal/Resueltas';
 import Tocable from '../componentes/Tocable';
+import { TrasLaTransicion } from '../componentes/trasLaTransicion';
 
 const PAGINA = 40;
 const COLAS = [
@@ -193,6 +194,7 @@ export default function Facturacion() {
         },
       }} />
       <MenuDeFiltros grupos={grupos} extra={canEdit && BOLSA[cola] ? { icono: 'paperplane', etiqueta: 'Solventar todas', onPress: solventarTodas } : null} />
+      <TrasLaTransicion>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" {...alFinal}
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargaHija((x) => x + 1); setRecargando(false); }} />}>
@@ -287,6 +289,7 @@ export default function Facturacion() {
           </>
         ) : ['mh', 'obs', 'nulas'].includes(cola) ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
       </ScrollView>
+      </TrasLaTransicion>
     </>
   );
 }

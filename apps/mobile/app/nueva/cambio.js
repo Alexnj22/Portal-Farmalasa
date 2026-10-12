@@ -15,7 +15,8 @@
 // `insertApprovalRequestSilent` (anota la bitácora). A Supervisión le avisa la
 // base (`notificar_solicitud_creada`), no la app.
 import { useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../../componentes/Interruptor';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -142,7 +143,7 @@ export default function Cambio() {
                   <Aviso tono="freno" texto="Sólo se anulan el mismo día y requieren nota de crédito." />
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>Entiendo y confirmo que tengo autorización para solicitarlo</Text>
-                    <Switch value={autorizado} onValueChange={setAutorizado} />
+                    <Interruptor value={autorizado} onValueChange={setAutorizado} />
                   </View>
                 </Seccion>
               ) : null}

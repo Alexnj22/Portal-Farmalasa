@@ -8,7 +8,8 @@
 // personas (con buscador). Los ids que se guardan los decide el núcleo
 // (`idsDelAlcance`), la misma regla del portal.
 import { useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import Conmutador from '../../componentes/Interruptor';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
@@ -38,7 +39,7 @@ function Interruptor({ titulo, detalle, valor, onCambiar, primero }) {
         <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{titulo}</Text>
         {detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{detalle}</Text> : null}
       </View>
-      <Switch value={valor} onValueChange={onCambiar} />
+      <Conmutador value={valor} onValueChange={onCambiar} />
     </View>
   );
 }

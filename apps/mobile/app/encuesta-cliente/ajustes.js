@@ -9,7 +9,8 @@
 // tabla con el token del QR de cada una. Sólo se edita en borrador y con
 // permiso; si no, se ve igual, sin controles. Las cuentas son del núcleo.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, ScrollView, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import Conmutador from '../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -38,7 +39,7 @@ function Interruptor({ titulo, detalle, valor, onCambiar, editable }) {
         <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{titulo}</Text>
         {detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{detalle}</Text> : null}
       </View>
-      <Switch value={!!valor} disabled={!editable} onValueChange={onCambiar} />
+      <Conmutador value={!!valor} disabled={!editable} onValueChange={onCambiar} />
     </View>
   );
 }

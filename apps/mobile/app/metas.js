@@ -40,6 +40,7 @@ import Bono from '../componentes/metas/Bono';
 import Historico from '../componentes/metas/Historico';
 import PasoYm from '../componentes/metas/PasoYm';
 import Confirmacion from '../componentes/metas/Confirmacion';
+import { TrasLaTransicion } from '../componentes/trasLaTransicion';
 
 function Tablero({ ym, setYm, sala, todas, user, salaNombre }) {
   const ymActual = ymHoySV();
@@ -205,6 +206,7 @@ export default function Metas() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Metas', headerLargeTitle: true }} />
       <MenuDeFiltros grupos={grupos} />
+      <TrasLaTransicion>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={() => { setRecargando(true); setLlave((k) => k + 1); setTimeout(() => setRecargando(false), 600); }} />}>
@@ -239,6 +241,7 @@ export default function Metas() {
           </View>
         ) : null}
       </ScrollView>
+      </TrasLaTransicion>
     </>
   );
 }

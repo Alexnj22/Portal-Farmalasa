@@ -8,7 +8,8 @@
 //
 // ⚠️ Facturar mueve dinero y transmite a Hacienda, y no se deshace: el botón
 // pide confirmación con el total y la forma de pago antes de escribir.
-import { Alert, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../../Interruptor';
 import * as Haptics from 'expo-haptics';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { FORMA_PAGO, TIPO_DOCUMENTO, leerMonto } from '@nucleo/utils/distribucionComun';
@@ -139,7 +140,7 @@ export default function Cobro({ venta: s, imprimir, setImprimir, onCerrar, onPro
           {!aprobacion && ACCIONES_DE_DINERO ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 4 }}>
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>Imprimir el ticket al facturar</Text>
-              <Switch value={imprimir} onValueChange={setImprimir} />
+              <Interruptor value={imprimir} onValueChange={setImprimir} />
             </View>
           ) : null}
         </Seccion>

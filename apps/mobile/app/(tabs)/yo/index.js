@@ -2,6 +2,7 @@
 // portal vive en el menú del empleado y en la esquina del usuario.
 import { useEffect, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, Switch as SwitchRN, Text, useColorScheme, View } from 'react-native';
+import Interruptor from '../../../componentes/Interruptor';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon, ListItem, Switch } from '@expo/ui';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -81,7 +82,7 @@ export default function Yo() {
         )}
         {biometria.nombre ? (
           <Seccion>
-            <ListItem trailing={<Switch value={biometria.activa} onValueChange={cambiarBiometria} />}>
+            <ListItem trailing={<Interruptor value={biometria.activa} onValueChange={cambiarBiometria} />}>
               {`Entrar con ${biometria.nombre}`}
             </ListItem>
           </Seccion>

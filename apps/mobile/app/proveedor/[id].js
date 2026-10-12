@@ -15,7 +15,8 @@
 // nombre para cheques, notas, activo, percepción, retención),
 // `setProveedorCategoria` y `setProveedorClasificacionFiscal`.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, KeyboardAvoidingView, Linking, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, KeyboardAvoidingView, Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../../componentes/Interruptor';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -237,11 +238,11 @@ export default function Proveedor() {
                     <Opciones valor={form.percibe} onCambiar={cambiar('percibe')} opciones={PERCIBE_OPTIONS.map((o) => ({ id: o.value, label: o.label }))} />
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>Retención de renta 10%</Text>
-                      <Switch value={form.retiene_renta} onValueChange={cambiar('retiene_renta')} />
+                      <Interruptor value={form.retiene_renta} onValueChange={cambiar('retiene_renta')} />
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>Activo</Text>
-                      <Switch value={form.activo} onValueChange={cambiar('activo')} />
+                      <Interruptor value={form.activo} onValueChange={cambiar('activo')} />
                     </View>
                   </Seccion>
                   <View style={{ flexDirection: 'row', gap: 10 }}>

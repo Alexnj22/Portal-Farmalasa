@@ -10,7 +10,8 @@
 // un toque por error no puede cambiar lo que despacha Bodega.
 import { volver } from '../../../componentes/volver';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -137,7 +138,7 @@ export default function ReglaDeProducto() {
             <Seccion titulo="Caja especial">
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44 }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{vals.caja_especial ? 'Cada unidad lleva su etiqueta E1, E2… independiente.' : 'Viaja en las cajas normales.'}</Text>
-                <Switch value={!!vals.caja_especial} disabled={!puede} onValueChange={(on) => set({ caja_especial: on })} />
+                <Interruptor value={!!vals.caja_especial} disabled={!puede} onValueChange={(on) => set({ caja_especial: on })} />
               </View>
             </Seccion>
           </>

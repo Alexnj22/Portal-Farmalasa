@@ -10,7 +10,8 @@
 // modos». Forma, validación y lo que se manda salen del núcleo, los mismos del
 // portal. Guarda borrador con el id en la clave.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, ScrollView, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchDescuento, fetchPreciosDeProductos, guardarDescuento } from '@nucleo/data/descuentos';
@@ -131,7 +132,7 @@ export default function CorregirDescuento() {
                       <Text style={{ color: colorSistema.texto, fontSize: 16 }}>En todas las salas</Text>
                       <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Sin esto, el descuento vale sólo en la sala que elijas.</Text>
                     </View>
-                    <Switch value={f.todas} onValueChange={set('todas')} />
+                    <Interruptor value={f.todas} onValueChange={set('todas')} />
                   </View>
                   {!f.todas ? <Opciones valor={f.branchId} onCambiar={set('branchId')} opciones={salas.map((s) => ({ id: String(s.id), label: s.name }))} /> : null}
                 </Seccion>

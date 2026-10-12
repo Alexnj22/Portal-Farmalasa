@@ -21,7 +21,8 @@
 // falla, se recarga del servidor (la pantalla nunca muestra un permiso que
 // nadie guardó).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Conmutador from '../componentes/Interruptor';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -255,7 +256,7 @@ export default function Permisos() {
                   return (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 }}>
                       <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>{encendida ? 'Toda la sección encendida' : 'Encender toda la sección'}</Text>
-                      <Switch value={encendida} onValueChange={(v) => alternarSeccion(original, v)} disabled={bloqueado} />
+                      <Conmutador value={encendida} onValueChange={(v) => alternarSeccion(original, v)} disabled={bloqueado} />
                     </View>
                   );
                 })() : null}
@@ -270,7 +271,7 @@ export default function Permisos() {
                             <Text style={{ color: p.can_view ? colorSistema.texto : colorSistema.texto2, fontSize: 15, fontWeight: '600' }}>{m.label}</Text>
                             {p.can_view ? <Text style={{ color: MARCA.azulClaro, fontSize: 12 }}>{permisoEnPalabras(p, { conAlcance: !!m.hasScope })}</Text> : null}
                           </View>
-                          <Switch value={!!p.can_view} onValueChange={(v) => cambiar(m.key, 'can_view', v)} disabled={bloqueado} />
+                          <Conmutador value={!!p.can_view} onValueChange={(v) => cambiar(m.key, 'can_view', v)} disabled={bloqueado} />
                         </View>
                         {p.can_view ? (
                           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
@@ -293,7 +294,7 @@ export default function Permisos() {
                               return (
                                 <View key={s.key} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 36 }}>
                                   <Text style={{ flex: 1, color: ps.can_view ? colorSistema.texto : colorSistema.texto2, fontSize: 14 }}>{s.label}</Text>
-                                  <Switch value={!!ps.can_view} onValueChange={(v) => cambiar(s.key, 'can_view', v)} disabled={bloqueado} />
+                                  <Conmutador value={!!ps.can_view} onValueChange={(v) => cambiar(s.key, 'can_view', v)} disabled={bloqueado} />
                                 </View>
                               );
                             })}

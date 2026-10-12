@@ -11,7 +11,8 @@
 // ellas revisan la ventana del aniversario y los traslapes y avisan.
 import { volver } from '../../componentes/volver';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../../componentes/Interruptor';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -169,12 +170,12 @@ export default function PlanDeVacaciones() {
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>El primer día empieza a una hora</Text>
-                  <Switch value={!!f.horaInicio} onValueChange={(v) => cambiar('horaInicio')(v ? '13:00' : '')} />
+                  <Interruptor value={!!f.horaInicio} onValueChange={(v) => cambiar('horaInicio')(v ? '13:00' : '')} />
                 </View>
                 {f.horaInicio ? <View style={{ alignItems: 'flex-end' }}><Hora valor={f.horaInicio} onCambiar={cambiar('horaInicio')} /></View> : null}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>El último día termina a una hora</Text>
-                  <Switch value={!!f.horaFin} onValueChange={(v) => cambiar('horaFin')(v ? '12:00' : '')} />
+                  <Interruptor value={!!f.horaFin} onValueChange={(v) => cambiar('horaFin')(v ? '12:00' : '')} />
                 </View>
                 {f.horaFin ? <View style={{ alignItems: 'flex-end' }}><Hora valor={f.horaFin} onCambiar={cambiar('horaFin')} /></View> : null}
               </Seccion>

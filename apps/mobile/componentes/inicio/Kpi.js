@@ -4,7 +4,7 @@
 // línea de apoyo y, si la hay, una forma que se lee de un vistazo (la curva
 // de ventas del día, la barra de cuántos llegaron). Si pide acción (`pide`),
 // el número toma el color de estado. En vidrio sobre la aurora.
-import { Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
@@ -12,12 +12,16 @@ import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
 import { iconoDe } from '../../tema/iconos';
 
+// Android: la onda de Material dentro de la tarjeta; iOS: la tarjeta se achica.
+const ANDROID = Platform.OS === 'android';
+
 export default function Kpi({ icono, rotulo, valor, apoyo, color, pide = false, onPress, visual }) {
   return (
-    <Pressable style={{ flex: 1 }} disabled={!onPress}
+    <Pressable style={ANDROID ? { flex: 1, borderRadius: 16, overflow: 'hidden' } : { flex: 1 }} disabled={!onPress}
+      android_ripple={ANDROID && onPress ? { color: 'rgba(127,127,127,0.20)', foreground: true } : undefined}
       onPress={onPress ? () => { Haptics.selectionAsync().catch(() => {}); onPress(); } : undefined}>
       {({ pressed }) => (
-        <Vidrio radio={22} interactivo={!!onPress} style={{ transform: [{ scale: pressed ? 0.97 : 1 }] }}>
+        <Vidrio radio={22} interactivo={!!onPress} style={ANDROID ? undefined : { transform: [{ scale: pressed ? 0.97 : 1 }] }}>
           <View style={{ padding: 14, gap: 4, minHeight: 112 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
               <View style={{ width: 24, height: 24, borderRadius: 7, backgroundColor: `${color}2E`, alignItems: 'center', justifyContent: 'center' }}>

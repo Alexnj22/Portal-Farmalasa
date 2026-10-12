@@ -9,6 +9,8 @@ import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 
+const ANDROID = Platform.OS === 'android';
+
 export function Seccion({ titulo, pie, children }) {
   return (
     <View style={{ gap: 7 }}>
@@ -83,10 +85,14 @@ export function BotonGrande({ texto, color = MARCA.azul, onPress, deshabilitado,
   const tocar = onPress ? (e) => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); onPress(e); } : undefined;
   return (
     <Pressable onPress={tocar} disabled={deshabilitado} accessibilityRole="button"
+      // Android: la onda de Material, dentro de la píldora; iOS: se achica.
+      android_ripple={ANDROID ? { color: borde ? `${color}33` : 'rgba(255,255,255,0.28)', foreground: true } : undefined}
       style={({ pressed }) => ({ minHeight: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18,
+        overflow: ANDROID ? 'hidden' : undefined,
         backgroundColor: borde ? 'transparent' : color, borderWidth: borde ? 1.5 : 0, borderColor: color,
-        opacity: deshabilitado ? 0.4 : pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Text style={{ color: borde ? color : '#fff', fontSize: 17, fontWeight: '700' }}>{texto}</Text>
+        opacity: deshabilitado ? 0.4 : !ANDROID && pressed ? 0.8 : 1, transform: [{ scale: !ANDROID && pressed ? 0.98 : 1 }] })}>
+      <Text style={ANDROID ? { color: borde ? color : '#fff', fontSize: 16, fontWeight: '600', letterSpacing: 0.1 }
+        : { color: borde ? color : '#fff', fontSize: 17, fontWeight: '700' }}>{texto}</Text>
     </Pressable>
   );
 }

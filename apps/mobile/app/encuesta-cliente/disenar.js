@@ -6,7 +6,8 @@
 // Sólo se edita en borrador y con permiso; si no, se ve igual, sin controles.
 // Las operaciones sobre el cuestionario son del núcleo (`encuestasClientes`).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, ScrollView, Switch, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -119,13 +120,13 @@ function Pregunta({ p, numero, anteriores, numeradas, dimensiones, editable, abi
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>Obligatoria</Text>
-              <Switch value={!!p.obligatoria} onValueChange={set('obligatoria')} />
+              <Interruptor value={!!p.obligatoria} onValueChange={set('obligatoria')} />
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>
                 {candidatas.length || condicion ? 'Mostrar sólo si…' : 'Mostrar sólo si… (no hay una pregunta antes que sirva)'}
               </Text>
-              <Switch value={!!condicion} disabled={!candidatas.length && !condicion}
+              <Interruptor value={!!condicion} disabled={!candidatas.length && !condicion}
                 onValueChange={(on) => onChange(on ? { ...p, condicion: condicionSobre(candidatas[candidatas.length - 1]) } : sinCondicion(p))} />
             </View>
             {condicion ? (

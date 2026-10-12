@@ -12,7 +12,8 @@
 // columnas salen del núcleo (`bitacora`), con el día de El Salvador. Como en
 // el portal, quien ve la auditoría puede exportarla.
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../componentes/Interruptor';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -152,7 +153,7 @@ export default function AuditoriaDelSistema() {
       <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, gap: 10 }}>
         <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>{`${cargados.toLocaleString('es-SV')} cargados${exportando ? ' · exportando…' : ''}`}</Text>
         <Text style={{ color: enVivo ? MARCA.rojo : colorSistema.texto2, fontSize: 13, fontWeight: enVivo ? '700' : '400' }}>En vivo</Text>
-        <Switch value={enVivo} onValueChange={(v) => { Haptics.selectionAsync().catch(() => {}); setEnVivo(v); }} />
+        <Interruptor value={enVivo} onValueChange={(v) => { Haptics.selectionAsync().catch(() => {}); setEnVivo(v); }} />
       </View>
     </View>
   );

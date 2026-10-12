@@ -27,8 +27,9 @@ const ios = Platform.OS === 'ios';
 const oscuro = () => Appearance.getColorScheme() === 'dark';
 const COLORES = {
   // nombre: [color de iOS, claro, oscuro]
-  fondo: ['systemGroupedBackground', '#F2F2F7', '#000000'],
-  fila: ['secondarySystemGroupedBackground', '#FFFFFF', '#1C1C1E'],
+  // Fuera de iPhone: las superficies de Material 3 (fondo y tarjeta).
+  fondo: ['systemGroupedBackground', '#F5F4F9', '#131218'],
+  fila: ['secondarySystemGroupedBackground', '#FFFFFF', '#211F26'],
   texto: ['label', '#1C1B1F', '#F2F2F7'],
   texto2: ['secondaryLabel', '#49454F', '#CAC4D0'],
   placeholder: ['placeholderText', '#79747E', '#938F99'],

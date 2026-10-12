@@ -8,7 +8,8 @@
 // Apagar algo lo saca de los formularios sin tocar lo ya planificado. Las
 // escrituras son las del portal (`data/marketing`).
 import { useCallback, useEffect, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, ScrollView, Switch, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../componentes/Interruptor';
 import { Stack } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import {
@@ -31,7 +32,7 @@ function Fila({ titulo, detalle, valor, onCambiar, deshabilitado }) {
         <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{titulo}</Text>
         {detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{detalle}</Text> : null}
       </View>
-      <Switch value={!!valor} disabled={deshabilitado} onValueChange={onCambiar} />
+      <Interruptor value={!!valor} disabled={deshabilitado} onValueChange={onCambiar} />
     </View>
   );
 }

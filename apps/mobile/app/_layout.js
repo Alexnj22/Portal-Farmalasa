@@ -3,7 +3,7 @@
 // inactividad y el candado de módulos se deciden con el mismo código.
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useColorScheme, View } from 'react-native';
+import { Platform, useColorScheme, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect } from 'react';
 import { AuthProvider, useAuth } from '@nucleo/context/AuthContext';
@@ -15,6 +15,7 @@ import BotonCampana from '../componentes/BotonCampana';
 import { CapaDeProgreso } from '../componentes/Progreso';
 import HojasAndroid, { instalarHojasAndroid } from '../componentes/HojasAndroid';
 import Aurora from '../componentes/Aurora';
+import { colorSistema } from '../componentes/Formulario';
 import { MotorPedido } from '../componentes/pedidos/motorPedido';
 import { escucharToques, registrarAvisos } from '../componentes/avisos';
 // Define la tarea del GPS de fondo de las rutas: iOS relanza la app sin pantalla
@@ -75,6 +76,13 @@ function CampanaEnVivo() {
 const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent', card: '#F9F9F9' } };
 const OSCURO = { ...DarkTheme, colors: { ...DarkTheme.colors, background: 'transparent', card: '#1C1C1E' } };
 
+// En Android cada pantalla tiene su fondo OPACO (la superficie de Material) y
+// entra con la animación de Material: con fondos transparentes sobre un fondo
+// global, durante la transición se veía la pantalla de atrás a través de la de
+// adelante. En iOS la pila sigue transparente sobre la aurora (el vidrio la
+// necesita detrás).
+const ANDROID = Platform.OS === 'android';
+
 export default function Raiz() {
   const tema = useTema();
   const oscuro = useColorScheme() === 'dark';
@@ -84,12 +92,13 @@ export default function Raiz() {
       {/* Cada toque cuenta como actividad: es lo que en la web hacen el mouse
           y el teclado, y lo que mantiene viva la sesión. */}
       <View style={{ flex: 1 }} onTouchStart={notificarActividad}>
-        <Aurora />
+        {ANDROID ? null : <Aurora />}
         <AuthProvider>
           <GuardiaDeSesion />
           <StatusBar style="auto" />
           <Stack
             screenOptions={{
+              ...(ANDROID ? { animation: 'slide_from_right', contentStyle: { backgroundColor: colorSistema.fondo } } : {}),
               headerTintColor: tema.color.marca,
               // El título en el color del sistema (la flecha y los botones sí,
               // en el de la marca).

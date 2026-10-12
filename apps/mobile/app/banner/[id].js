@@ -4,7 +4,8 @@
 // publicado. A diferencia de una historia, un banner tiene fechas. Validar y
 // armar la fila salen del núcleo (`bannerValido`, `filaDeBanner`).
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../../componentes/Interruptor';
 import { Stack } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
@@ -89,7 +90,7 @@ export default function Banner() {
                 <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Escribir el título sobre la imagen</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Apágalo si la imagen ya trae su texto.</Text>
               </View>
-              <Switch value={f.titulo_visible} onValueChange={cambiar('titulo_visible')} />
+              <Interruptor value={f.titulo_visible} onValueChange={cambiar('titulo_visible')} />
             </View>
           </Seccion>
           <Seccion titulo="Al tocarlo abre">
@@ -118,7 +119,7 @@ export default function Banner() {
                 <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Publicado</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Se ve en la app entre esas fechas.</Text>
               </View>
-              <Switch value={f.publicada} onValueChange={cambiar('publicada')} />
+              <Interruptor value={f.publicada} onValueChange={cambiar('publicada')} />
             </View>
           </Seccion>
           <BotonGrande texto={guardando ? 'Guardando…' : 'Guardar'} color={MARCA.azul} onPress={guardar} deshabilitado={!valido || guardando} />

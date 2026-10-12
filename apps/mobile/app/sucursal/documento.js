@@ -10,7 +10,8 @@
 // y entra por `updateBranch` con la sucursal completa. Eliminarlo, con
 // confirmación, como la papelera del portal.
 import { useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -145,9 +146,9 @@ export default function DocumentoPropio() {
           </Seccion>
 
           <Seccion titulo="Fechas" pie="Si no las escribes y subes el archivo, se intentan leer del documento.">
-            <Fila titulo="Tiene fecha de emisión" primero><Switch value={datos.hasIssueDate} onValueChange={(v) => cambiar('hasIssueDate', v)} /></Fila>
+            <Fila titulo="Tiene fecha de emisión" primero><Interruptor value={datos.hasIssueDate} onValueChange={(v) => cambiar('hasIssueDate', v)} /></Fila>
             {datos.hasIssueDate ? <Fila titulo="Emitido"><Fecha valor={datos.issueDate} onCambiar={(v) => cambiar('issueDate', v)} /></Fila> : null}
-            <Fila titulo="Vence"><Switch value={datos.hasExpiration} onValueChange={(v) => cambiar('hasExpiration', v)} /></Fila>
+            <Fila titulo="Vence"><Interruptor value={datos.hasExpiration} onValueChange={(v) => cambiar('hasExpiration', v)} /></Fila>
             {datos.hasExpiration ? <Fila titulo="Fecha de vencimiento"><Fecha valor={datos.expDate} onCambiar={(v) => cambiar('expDate', v)} /></Fila> : null}
           </Seccion>
 

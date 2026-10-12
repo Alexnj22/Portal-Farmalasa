@@ -239,9 +239,9 @@ export default function NuevaRuta() {
                 <View style={{ height: 300, borderRadius: 20, overflow: 'hidden' }}>
                   <MapView style={{ flex: 1 }} region={region} showsPointsOfInterest={false}>
                     {trazo.length > 1 ? <Polyline coordinates={trazo.map(coord)} strokeColor={INDIGO} strokeWidth={4} /> : null}
-                    <Marker coordinate={coord(bodega)} title="Bodega"><Pin texto="B" color="#1e1b4b" alto={32} /></Marker>
+                    <Marker tracksViewChanges={false} coordinate={coord(bodega)} title="Bodega"><Pin texto="B" color="#1e1b4b" alto={32} /></Marker>
                     {paradas.map((p, i) => (p.lat != null ? (
-                      <Marker key={p._uid} coordinate={coord(p)} title={`${i + 1}. ${p.suc_name}`}><Pin texto={i + 1} color={p.isEncargo ? MARCA.ambar : INDIGO} /></Marker>
+                      <Marker tracksViewChanges={false} key={p._uid} coordinate={coord(p)} title={`${i + 1}. ${p.suc_name}`}><Pin texto={i + 1} color={p.isEncargo ? MARCA.ambar : INDIGO} /></Marker>
                     ) : null))}
                   </MapView>
                 </View>

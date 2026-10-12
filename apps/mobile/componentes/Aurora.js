@@ -7,8 +7,9 @@
 //
 // Los colores salen de los tokens del portal (`src/index.css` → tokens.json):
 // `--logo-green`, `--logo-magenta`, `--brand`, `--brand-purple`.
-import { StyleSheet, useColorScheme, View } from 'react-native';
+import { Platform, StyleSheet, useColorScheme, View } from 'react-native';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
+import { colorSistema } from './Formulario';
 
 const MANCHAS = [
   { id: 'verde', color: '#8EC30F', cx: '12%', cy: '8%', r: '55%' },
@@ -17,8 +18,17 @@ const MANCHAS = [
   { id: 'violeta', color: '#6929C4', cx: '8%', cy: '70%', r: '55%' },
 ];
 
+// En Android no hay aurora: el fondo es la SUPERFICIE de Material 3 (sólida,
+// clara u oscura), como cualquier app de Android. La aurora es lenguaje de
+// iOS —el vidrio la necesita detrás— y en Android, además, obligaba a componer
+// pantallas translúcidas en cada transición (2026-10-12, «en Android es lenta
+// y las transiciones no las hace bien»; «adapta todo a los elementos nativos
+// de Android»).
 export default function Aurora() {
   const oscuro = useColorScheme() === 'dark';
+  if (Platform.OS === 'android') {
+    return <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colorSistema.fondo }]} />;
+  }
   const base = oscuro ? '#08070D' : '#F3F2F8';
   const fuerza = oscuro ? 0.42 : 0.30;
   // En Android, el SVG de pantalla completa se volvía a pintar en la CPU cada

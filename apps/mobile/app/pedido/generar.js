@@ -11,7 +11,8 @@
 // Una sala sin MIN·MAX publicado no se puede elegir.
 import { volver } from '../../componentes/volver';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../../componentes/Interruptor';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -155,7 +156,7 @@ export default function GenerarPedido() {
             <Seccion pie="La Bodega se reparte considerando lo que necesitan TODAS las salas, pero el pedido incluye sólo las elegidas.">
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>Distribución global de Bodega</Text>
-                <Switch value={global} onValueChange={setGlobal} />
+                <Interruptor value={global} onValueChange={setGlobal} />
               </View>
             </Seccion>
             <Aviso texto="Al generar, el papel de cada sala sale aquí mismo: se imprime, se comparte o se guarda. Es el mismo PDF de la computadora." />

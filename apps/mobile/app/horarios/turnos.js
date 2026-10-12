@@ -13,7 +13,8 @@
 // Cambiarle la hora a un turno mueve el horario de todos los que lo usan; por
 // eso guardar una edición pide confirmación.
 import { useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, KeyboardAvoidingView, Modal, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import Interruptor from '../../componentes/Interruptor';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -164,7 +165,7 @@ export default function Turnos() {
                 <Seccion pie="La pausa la heredan los días al asignar el turno.">
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>{`Almuerzo (${form.lunchMinutes ?? MINUTOS_DE_PAUSA} min)`}</Text>
-                    <Switch value={!!form.lunchStart} onValueChange={(v) => cambiar('lunchStart')(v ? '12:00' : '')} />
+                    <Interruptor value={!!form.lunchStart} onValueChange={(v) => cambiar('lunchStart')(v ? '12:00' : '')} />
                   </View>
                   {form.lunchStart ? (
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>

@@ -14,7 +14,8 @@
 // ve en la app de clientes) pide `productos_tab_catalogo`, el mismo permiso que
 // abre el catálogo del portal donde se edita.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Switch, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../../componentes/Interruptor';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchInventoryByProductIds } from '@nucleo/data/inventory';
@@ -240,7 +241,7 @@ export default function Producto() {
                 <Text style={{ color: colorSistema.texto, fontSize: 16 }}>No devolutivo (ND)</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{devolutivo ? 'Se puede devolver al proveedor antes de vencer.' : 'El proveedor NO acepta la devolución.'}</Text>
               </View>
-              <Switch value={!devolutivo} disabled={!puedeEditar || guardandoND} onValueChange={(v) => alternarND(v)} trackColor={{ true: MARCA.ambar }} />
+              <Interruptor value={!devolutivo} disabled={!puedeEditar || guardandoND} onValueChange={(v) => alternarND(v)} trackColor={{ true: MARCA.ambar }} />
             </View>
             <Pressable disabled={!puedeEditar} onPress={() => { Haptics.selectionAsync().catch(() => {}); setEligiendoCategoria(true); }}
               style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 10, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, opacity: pressed ? 0.6 : 1 })}>
@@ -254,7 +255,7 @@ export default function Producto() {
                   <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Se ve en la app de clientes</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{enApp ? 'Aparece en el catálogo de la app.' : 'Oculto del catálogo de la app.'}</Text>
                 </View>
-                <Switch value={enApp} disabled={!puedeEditar} onValueChange={alternarEnApp} />
+                <Interruptor value={enApp} disabled={!puedeEditar} onValueChange={alternarEnApp} />
               </View>
             ) : null}
           </Seccion>

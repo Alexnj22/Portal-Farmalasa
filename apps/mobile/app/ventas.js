@@ -45,6 +45,7 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
+import { TrasLaTransicion } from '../componentes/trasLaTransicion';
 
 const POR_PAGINA = 30;
 const MIN_LETRAS = 3;
@@ -256,6 +257,7 @@ export default function Ventas() {
         },
       }} />
       <MenuDeFiltros grupos={grupos} extra={{ icono: privado ? 'eye' : 'eye.slash', etiqueta: privado ? 'Mostrar montos' : 'Ocultar montos', onPress: () => setPrivado((v) => !v) }} />
+      <TrasLaTransicion>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" {...alFinal}
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
@@ -297,6 +299,7 @@ export default function Ventas() {
         ) : null}
         </>)}
       </ScrollView>
+      </TrasLaTransicion>
     </>
   );
 }

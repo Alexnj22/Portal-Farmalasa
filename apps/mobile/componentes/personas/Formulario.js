@@ -5,7 +5,8 @@
 // alimenta —nunca escrita a mano—: el texto que se muestra es el de la fila y
 // el valor es su id (regla «un rótulo no es una clave» de CLAUDE.md).
 import { useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Conmutador from '../Interruptor';
 import * as Haptics from 'expo-haptics';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import ConAurora from '../ConAurora';
@@ -14,6 +15,10 @@ import { Campo, Opciones } from '../formulario/Piezas';
 import { MARCA } from '../inicio/marca';
 import Fecha from '../formulario/Fecha';
 import { hoySV } from '@nucleo/utils/fecha';
+import HojaDeEleccion from '../HojaDeEleccion';
+
+// Android elige en la hoja inferior de Material; iPhone, en la hoja con buscador.
+const ANDROID = Platform.OS === 'android';
 
 /** El rótulo encima de un campo: con el campo lleno, el texto de ayuda ya no se ve. */
 export function Rotulo({ texto, requerido }) {
@@ -55,7 +60,10 @@ export function Elegir({ rotulo, requerido, valor, opciones, onCambiar, vacio = 
         <Text style={{ color: colorSistema.texto2, fontSize: 16 }}>›</Text>
       </Pressable>
       {error ? <Text style={{ color: MARCA.rojo, fontSize: 12, marginLeft: 2 }}>{error}</Text> : null}
-      {abierta ? (
+      {abierta && ANDROID ? (
+        <HojaDeEleccion titulo={rotulo} valor={String(valor ?? '')} onCerrar={() => setAbierta(false)} onElegir={onCambiar}
+          opciones={[...(vacio != null ? [{ id: '', label: vacio }] : []), ...opciones.map((o) => ({ id: String(o.id), label: o.label, detalle: o.detalle }))]} />
+      ) : abierta ? (
         <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setAbierta(false)}>
           <ConAurora>
             <ScrollView contentContainerStyle={{ padding: 20, gap: 14, paddingBottom: 60 }} keyboardShouldPersistTaps="handled">
@@ -86,7 +94,7 @@ export function Interruptor({ titulo, detalle, valor, onCambiar, primero, deshab
         <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{titulo}</Text>
         {detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{detalle}</Text> : null}
       </View>
-      <Switch value={!!valor} onValueChange={onCambiar} disabled={deshabilitado} />
+      <Conmutador value={!!valor} onValueChange={onCambiar} disabled={deshabilitado} />
     </View>
   );
 }

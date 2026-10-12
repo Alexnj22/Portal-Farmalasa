@@ -29,6 +29,7 @@ import Avatar from '../../componentes/Avatar';
 import { MARCA } from '../../componentes/inicio/marca';
 import { Aviso } from '../../componentes/formulario/Piezas';
 import { Dona, FilaRanking, FormasDePago, Puesto, Punto, Variacion, colorDe } from '../../componentes/torogoz/tablero/Piezas';
+import { TrasLaTransicion } from '../../componentes/trasLaTransicion';
 
 const PETROLEO = '#0f6e7d';
 const VISIBLES = 5;
@@ -97,6 +98,7 @@ export default function TorogozInicio() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Inicio', headerLargeTitle: false }} />
       <MenuDeFiltros grupos={grupos} />
+      <TrasLaTransicion>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Segmentos opciones={OPCIONES_PERIODO} activa={periodo} onCambiar={(v) => router.setParams({ periodo: v })} />
@@ -251,6 +253,7 @@ export default function TorogozInicio() {
             apoyo={`${formatQty(num(datos?.inventario?.sin_existencia))} sin existencia`} onPress={() => router.push('/torogoz/inventario')} />
         </FilaDeKpis>
       </ScrollView>
+      </TrasLaTransicion>
     </>
   );
 }

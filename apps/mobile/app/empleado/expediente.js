@@ -17,7 +17,8 @@
 // captura simple —las dos caras del DUI con su lector, las hojas de un
 // currículum, los datos del contrato del Art. 23— sigue en el portal.
 import { useMemo, useState } from 'react';
-import { Alert, ActionSheetIOS, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, ActionSheetIOS, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
@@ -182,7 +183,7 @@ export default function Expediente() {
             {LEVELS_WITH_STUDY_TOGGLE.includes(nivel) ? (
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>Estudia actualmente</Text>
-                <Switch disabled={!puedeEditar} value={estudios.estudia} onValueChange={(v) => setEstudios((x) => ({ ...x, estudia: v }))} />
+                <Interruptor disabled={!puedeEditar} value={estudios.estudia} onValueChange={(v) => setEstudios((x) => ({ ...x, estudia: v }))} />
               </View>
             ) : null}
             {puedeEditar ? <BotonGrande texto="Guardar estudios" borde color={MARCA.azulClaro} onPress={guardarEstudios} deshabilitado={ocupado} /> : null}

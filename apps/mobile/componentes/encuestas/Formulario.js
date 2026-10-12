@@ -8,7 +8,8 @@
 // No sabe guardar: `onEnviar(respuestas, contacto, segundos)` lo hace quien lo
 // monta; si lanza, el error se muestra y nada se pierde.
 import { useMemo, useState } from 'react';
-import { Pressable, Switch, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import Interruptor from '../Interruptor';
 import * as Haptics from 'expo-haptics';
 import { ACUERDO, CARITAS, motivoParaNoGuardarContacto, primeraSinContestar, recorrido } from '@nucleo/utils/encuestasClientes';
 import { colorSistema } from '../Formulario';
@@ -152,7 +153,7 @@ export default function Formulario({ encuesta, onEnviar, onEntregarMuestra }) {
           <Pressable accessibilityRole="switch" accessibilityState={{ checked: contacto.consiente }}
             onPress={() => { Haptics.selectionAsync().catch(() => {}); setContacto((c) => ({ ...c, consiente: !c.consiente })); setError(null); }}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 }}>
-            <Switch value={contacto.consiente} onValueChange={(v) => setContacto((c) => ({ ...c, consiente: v }))} />
+            <Interruptor value={contacto.consiente} onValueChange={(v) => setContacto((c) => ({ ...c, consiente: v }))} />
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14 }}>{`Consentimiento del cliente${encuesta.texto_consentimiento ? `: ${encuesta.texto_consentimiento}` : ''}`}</Text>
           </Pressable>
           {error ? <Aviso tono="freno" texto={error} /> : null}

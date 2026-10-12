@@ -12,7 +12,8 @@
 // Los documentos (PDF de licencias, contratos, solvencias, los de cada
 // enfermera) se suben desde la fila del expediente en la ficha.
 import { useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import Conmutador from '../../componentes/Interruptor';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -54,7 +55,7 @@ function Interruptor({ titulo, detalle, valor, onCambiar, primero }) {
         <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{titulo}</Text>
         {detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{detalle}</Text> : null}
       </View>
-      <Switch value={!!valor} onValueChange={onCambiar} />
+      <Conmutador value={!!valor} onValueChange={onCambiar} />
     </View>
   );
 }
@@ -253,7 +254,7 @@ export default function EditarSucursal() {
                           <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{`Igual que ${WEEK_DAYS[i - 1].name.toLowerCase()}`}</Text>
                         </Pressable>
                       ) : null}
-                      <Switch value={dia.isOpen} onValueChange={(v) => setHorario((h) => cambiarDiaDelHorario(h, d.id, v ? { isOpen: true, start: '07:00', end: '19:00' } : { isOpen: false }))} />
+                      <Conmutador value={dia.isOpen} onValueChange={(v) => setHorario((h) => cambiarDiaDelHorario(h, d.id, v ? { isOpen: true, start: '07:00', end: '19:00' } : { isOpen: false }))} />
                     </View>
                     {dia.isOpen ? (
                       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

@@ -21,11 +21,18 @@ import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import Vidrio from './Vidrio';
 import { colorSistema } from './Formulario';
+import FiltrosAndroid from './FiltrosAndroid';
 
 const esIOS = Platform.OS === 'ios';
 const activo = (g) => g.activa !== g.porDefecto;
 
 export function MenuDeFiltros({ grupos, extra = null }) {
+  // La barra de herramientas de la pila es sólo de iOS: en Android no se pinta.
+  if (!esIOS) return <FiltrosAndroid grupos={grupos} extra={extra} />;
+  return <MenuDeFiltrosIOS grupos={grupos} extra={extra} />;
+}
+
+function MenuDeFiltrosIOS({ grupos, extra }) {
   const sinLeer = useStaffStore((s) => s.notifications.length);
   const visibles = grupos.filter((g) => g.opciones.length > 1);
   const hayActivo = visibles.some(activo);

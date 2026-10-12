@@ -1,13 +1,15 @@
 // Las pestañas del Inicio (General · Comercial · RRHH · Operación), como las
 // del portal: píldoras de vidrio que se desplazan. Decisión del usuario del
 // 2026-09-30: «que sigan las pestañas para tener acceso a todo siempre».
-import { Pressable, ScrollView, Text } from 'react-native';
+import { Platform, Pressable, ScrollView, Text } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import FichasAndroid from './FichasAndroid';
 import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
 
 export default function Pestanas({ opciones, activa, onCambiar }) {
   if (opciones.length < 2) return null;
+  if (Platform.OS === 'android') return <FichasAndroid opciones={opciones} activa={activa} onCambiar={onCambiar} />;
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
       {opciones.map((o) => {

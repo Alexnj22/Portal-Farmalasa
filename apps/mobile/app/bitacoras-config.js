@@ -9,7 +9,8 @@
 // termómetro y su calibración, y agregar un área. Las reglas y la escritura
 // son las del núcleo (`data/bitacoras`, `configuracionDeBitacoras`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, RefreshControl, ScrollView, Switch, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -215,7 +216,7 @@ function Area({ area, puedeEditar, onGuardado }) {
           ) : null}
           <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 44 }}>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{activa ? 'El área lleva bitácora' : 'Apagada — no cuenta como faltante'}</Text>
-            <Switch value={activa} onValueChange={setActiva} />
+            <Interruptor value={activa} onValueChange={setActiva} />
           </View>
           {sucio ? <BotonGrande texto="Guardar" onPress={guardar} /> : null}
         </>

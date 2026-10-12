@@ -5,7 +5,8 @@
 // (CT Art. 190 y siguientes): por eso las dos acciones lo anotan, y quitar uno
 // pide confirmación.
 import { useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import Interruptor from '../../componentes/Interruptor';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -128,7 +129,7 @@ export default function Feriados() {
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>Se repite cada año</Text>
-                    <Switch value={form.recurrente} onValueChange={(v) => setForm((x) => ({ ...x, recurrente: v }))} />
+                    <Interruptor value={form.recurrente} onValueChange={(v) => setForm((x) => ({ ...x, recurrente: v }))} />
                   </View>
                 </Seccion>
                 <Seccion titulo="Tipo">

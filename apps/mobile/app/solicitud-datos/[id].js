@@ -9,7 +9,8 @@
 // son del núcleo (`solicitudesDatos`), lo mismo del portal. El borrador usa la
 // MISMA clave que el portal: transcribir una hoja lleva más que la sesión.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../../componentes/Interruptor';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import {
@@ -209,7 +210,7 @@ function Cuerpo({ solicitud }) {
           <Campo multiline={false} editable={!resuelta} value={f.solicitante_correo} onChangeText={set('solicitante_correo')} keyboardType="email-address" autoCapitalize="none" />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>Solicita por otra persona, a quien representa</Text>
-            <Switch value={!!f.por_representacion} disabled={resuelta} onValueChange={set('por_representacion')} />
+            <Interruptor value={!!f.por_representacion} disabled={resuelta} onValueChange={set('por_representacion')} />
           </View>
           {f.por_representacion ? (
             <>
@@ -226,7 +227,7 @@ function Cuerpo({ solicitud }) {
                 <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{d.rotulo}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{d.que}</Text>
               </View>
-              <Switch value={(f.derechos ?? []).includes(d.clave)} disabled={resuelta} onValueChange={() => alternarDerecho(d.clave)} />
+              <Interruptor value={(f.derechos ?? []).includes(d.clave)} disabled={resuelta} onValueChange={() => alternarDerecho(d.clave)} />
             </View>
           ))}
           <Rotulo texto="Lo que describe (opcional)" />

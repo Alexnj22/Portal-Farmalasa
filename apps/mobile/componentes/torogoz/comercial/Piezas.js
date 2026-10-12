@@ -4,7 +4,8 @@
 // de una lista LARGA (las 774 actividades de Hacienda, el catálogo entero) y
 // la dirección con los códigos de Hacienda en cascada.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, Switch, Text, View } from 'react-native';
+import { FlatList, Modal, Platform, Pressable, Text, View } from 'react-native';
+import Conmutador from '../../Interruptor';
 import { useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
@@ -17,6 +18,9 @@ import { colorSistema } from '../../Formulario';
 import { Campo } from '../../formulario/Piezas';
 import { MARCA } from '../../inicio/marca';
 import { Rotulo } from '../../personas/Formulario';
+import HojaDeEleccion from '../../HojaDeEleccion';
+
+const ANDROID = Platform.OS === 'android';
 
 /** El color de la distribuidora (COLORES_DISTRIBUIDORA.petroleo). */
 export const PETROLEO = '#0f6e7d';
@@ -42,7 +46,7 @@ export function Interruptor({ rotulo, ayuda, valor, onCambiar, deshabilitado }) 
         <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{rotulo}</Text>
         {ayuda ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{ayuda}</Text> : null}
       </View>
-      <Switch value={!!valor} disabled={deshabilitado} trackColor={{ true: PETROLEO }}
+      <Conmutador value={!!valor} disabled={deshabilitado} trackColor={{ true: PETROLEO }}
         onValueChange={(v) => { Haptics.selectionAsync().catch(() => {}); onCambiar(v); }} />
     </View>
   );
@@ -88,7 +92,10 @@ export function ElegirLargo({ rotulo, requerido, valor, opciones, onCambiar, vac
         {deshabilitado ? null : <Text style={{ color: colorSistema.texto2, fontSize: 16 }}>›</Text>}
       </Pressable>
       {error ? <Text style={{ color: MARCA.rojo, fontSize: 12, marginLeft: 2 }}>{error}</Text> : null}
-      {abierta ? (
+      {abierta && ANDROID ? (
+        <HojaDeEleccion titulo={rotulo ?? 'Elegir'} valor={String(valor ?? '')} onCerrar={() => setAbierta(false)} onElegir={onCambiar} maximo={MAX_VISIBLES}
+          opciones={[...(vacio != null ? [{ id: '', label: vacio }] : []), ...opciones.map((o) => ({ id: String(o.id), label: o.label, detalle: o.detalle }))]} />
+      ) : abierta ? (
         <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setAbierta(false)}>
           <ConAurora>
             <View style={{ padding: 20, paddingBottom: 8, gap: 12 }}>

@@ -13,7 +13,8 @@
 // el portal. A quién le llega, la lectura y la sección
 // salen del núcleo (`avisosInternos`).
 import { useMemo, useState } from 'react';
-import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../componentes/Interruptor';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -144,7 +145,7 @@ function Nuevo({ abierto, onCerrar, salas, salaFija, cargos, empleados, editando
             <Seccion titulo="Cuándo">
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>Programar para otro día</Text>
-                <Switch value={programar} onValueChange={setProgramar} />
+                <Interruptor value={programar} onValueChange={setProgramar} />
               </View>
               {programar ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

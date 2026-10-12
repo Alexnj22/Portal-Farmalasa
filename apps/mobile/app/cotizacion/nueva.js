@@ -14,7 +14,8 @@
 // la sesión se cierra por inactividad y diez renglones son varios minutos.
 // Editando no: la fila de la base es la verdad.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, ScrollView, Switch, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../../componentes/Interruptor';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -339,7 +340,7 @@ export default function NuevaCotizacion() {
                 {esCCF ? (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 6 }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>Retención 1% (gran contribuyente)</Text>
-                    <Switch value={retencion} onValueChange={setRetencion} />
+                    <Interruptor value={retencion} onValueChange={setRetencion} />
                   </View>
                 ) : null}
                 {retencion ? <Dato rotulo="Retención 1%" valor={`−${formatMoney(t.retention)}`} /> : null}

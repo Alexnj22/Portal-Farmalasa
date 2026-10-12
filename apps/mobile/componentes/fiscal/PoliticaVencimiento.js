@@ -9,7 +9,8 @@
 // `deleteProveedor`, `updateProductsMarkND`), con confirmación donde el portal
 // la pide.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import Interruptor from '../Interruptor';
 import * as Haptics from 'expo-haptics';
 import {
   deleteProveedor, fetchLaboratoriosBasic, fetchProductCountByLabDevolutivo, fetchProveedores, insertProveedor, updateProductsMarkND, updateProveedor,
@@ -40,7 +41,7 @@ function Editor({ inicial, onGuardar, onCancelar }) {
       <Campo multiline={false} value={d.nombre} onChangeText={(v) => setD({ ...d, nombre: v })} placeholder="Proveedor" />
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>Devolutivo</Text>
-        <Switch value={d.devolutivo} onValueChange={(v) => setD({ ...d, devolutivo: v })} />
+        <Interruptor value={d.devolutivo} onValueChange={(v) => setD({ ...d, devolutivo: v })} />
       </View>
       {d.devolutivo ? <Campo multiline={false} keyboardType="number-pad" value={String(d.meses_devolucion ?? '')} onChangeText={(v) => setD({ ...d, meses_devolucion: v })} placeholder="Meses antes del vencimiento" /> : null}
       <Campo multiline={false} keyboardType="decimal-pad" value={String(d.vineta ?? '')} onChangeText={(v) => setD({ ...d, vineta: v.replace(',', '.') })} placeholder="Viñeta (opcional)" />

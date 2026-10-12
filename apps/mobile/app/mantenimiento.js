@@ -10,7 +10,8 @@
 // Todo cambio pide confirmación. Los rótulos de los frenos, el tiempo restante
 // y las opciones salen del núcleo (`mantenimiento`, `bannerPortal`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Modal, Pressable, RefreshControl, ScrollView, Switch, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, Modal, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import Conmutador from '../componentes/Interruptor';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -41,7 +42,7 @@ function Fila({ titulo, detalle, extra, valor, onCambiar, ocupado, primero, onTo
         {detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{detalle}</Text> : null}
         {extra ? <Text style={{ color: MARCA.ambar, fontSize: 12, fontWeight: '600' }}>{extra}</Text> : null}
       </View>
-      {ocupado ? <ActivityIndicator /> : <Switch value={valor} onValueChange={onCambiar} />}
+      {ocupado ? <ActivityIndicator /> : <Conmutador value={valor} onValueChange={onCambiar} />}
     </Pressable>
   );
 }
@@ -91,7 +92,7 @@ function Franja() {
             {activo ? `Encendida${banner?.cambiado_at ? ` desde ${fechaHora12(banner.cambiado_at)}` : ''}` : 'Apagada'}
           </Text>
         </View>
-        {guardando ? <ActivityIndicator /> : <Switch value={activo} onValueChange={(v) => { if (v && !texto.trim()) { fallo('Falta el texto', 'Escribe qué dice el aviso antes de encenderlo.'); return; } alternar(v); }} />}
+        {guardando ? <ActivityIndicator /> : <Conmutador value={activo} onValueChange={(v) => { if (v && !texto.trim()) { fallo('Falta el texto', 'Escribe qué dice el aviso antes de encenderlo.'); return; } alternar(v); }} />}
       </View>
       <Campo value={texto} onChangeText={(v) => editar('texto', v)} placeholder="Texto del aviso" maxLength={240} />
       <Campo multiline={false} value={textoCorto} onChangeText={(v) => editar('textoCorto', v)} placeholder="Versión corta (teléfono)" maxLength={80} />

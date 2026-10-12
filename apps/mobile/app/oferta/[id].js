@@ -10,7 +10,8 @@
 // Se guarda con `guardarOferta` del núcleo, el mismo del portal; la imagen va al
 // bucket privado con `subirImagen`, que ahora acepta lo que da el teléfono.
 import { useMemo, useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../../componentes/Interruptor';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
@@ -184,14 +185,14 @@ export default function EditarOferta() {
                 <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Exclusiva para socios</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Todos la ven anunciada; el detalle, sólo los del programa de puntos.</Text>
               </View>
-              <Switch value={f.exclusiva} onValueChange={cambiar('exclusiva')} />
+              <Interruptor value={f.exclusiva} onValueChange={cambiar('exclusiva')} />
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 10 }}>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Publicada</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Se ve en la app mientras hoy esté entre sus fechas.</Text>
               </View>
-              <Switch value={f.publicada} onValueChange={cambiar('publicada')} />
+              <Interruptor value={f.publicada} onValueChange={cambiar('publicada')} />
             </View>
           </Seccion>
 

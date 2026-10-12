@@ -10,7 +10,8 @@
 // caja devuelve avisos o falla, la promoción ya quedó reactivada y la pantalla
 // deja reintentar sólo lo que faltó.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../../componentes/Interruptor';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { reactivarPromocion } from '@nucleo/data/promociones';
@@ -125,7 +126,7 @@ export default function ReactivarPromocion() {
                 <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{`Mover también el descuento hasta el ${fechaLarga(fin)}`}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Esta promoción baja el precio en la venta. Si no lo mueves, el precio no baja aunque la promoción esté activa.</Text>
               </View>
-              <Switch value={mover} onValueChange={setMover} disabled={reactivada} />
+              <Interruptor value={mover} onValueChange={setMover} disabled={reactivada} />
             </View>
             {descuentos.map((d) => (
               <Text key={d.id} style={{ color: colorSistema.texto2, fontSize: 13 }}>

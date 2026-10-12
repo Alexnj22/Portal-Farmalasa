@@ -3,7 +3,7 @@
 // lista escrita a mano), con buscador, «Sin categoría» y crear una nueva. Al
 // elegir se guarda en el acto, como el autoguardado del portal.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { fetchProductCategories } from '@nucleo/data/inventarioTab';
 import { insertProductCategory, updateProductCategoria } from '@nucleo/data/productos';
@@ -14,6 +14,7 @@ import { colorSistema } from '../Formulario';
 import { Campo, Opciones } from '../formulario/Piezas';
 import { MARCA } from '../inicio/marca';
 import { fallo, listo } from '../Progreso';
+import HojaDeEleccion from '../HojaDeEleccion';
 
 export default function Categoria({ productId, actual, onCerrar, onGuardada }) {
   const [lista, setLista] = useState(null);
@@ -33,14 +34,22 @@ export default function Categoria({ productId, actual, onCerrar, onGuardada }) {
     listo('Categoría guardada', cat || 'Sin categoría');
     onGuardada(cat || null);
   };
-  const crear = () => Alert.prompt('Nueva categoría', 'Escribe el nombre como debe verse en el catálogo.', async (nombre) => {
+  const crear = (inicial = texto) => Alert.prompt('Nueva categoría', 'Escribe el nombre como debe verse en el catálogo.', async (nombre) => {
     const n = String(nombre || '').trim();
     if (!n) return;
     const { error } = await insertProductCategory(n);
     if (error) { fallo('No se pudo crear', mensajeAmigable(error)); return; }
     await guardar(n);
-  }, 'plain-text', texto.trim());
+  }, 'plain-text', String(inicial || '').trim());
 
+  // Android: la hoja inferior de Material, con «Crear» al final.
+  if (Platform.OS === 'android' && lista != null && !guardando) {
+    return (
+      <HojaDeEleccion titulo="Categoría" valor={actual || ''} onCerrar={onCerrar} onElegir={(v) => guardar(v)}
+        opciones={[{ id: '', label: 'Sin categoría' }, ...lista.map((c) => ({ id: c, label: c }))]}
+        accion={{ texto: (b) => (b.trim() ? `Crear «${b.trim()}»` : 'Crear una categoría nueva'), onPress: (b) => crear(b) }} />
+    );
+  }
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
       <ConAurora>
@@ -56,7 +65,7 @@ export default function Categoria({ productId, actual, onCerrar, onGuardada }) {
             <Opciones valor={actual || ''} onCambiar={(v) => guardar(v)}
               opciones={[{ id: '', label: 'Sin categoría' }, ...visibles.map((c) => ({ id: c, label: c }))]} />
           )}
-          <Pressable onPress={crear} hitSlop={8} style={{ minHeight: 44, justifyContent: 'center' }}>
+          <Pressable onPress={() => crear()} hitSlop={8} style={{ minHeight: 44, justifyContent: 'center' }}>
             <Text style={{ color: MARCA.azulClaro, fontSize: 16, fontWeight: '600' }}>{texto.trim() ? `Crear «${texto.trim()}»` : 'Crear una categoría nueva'}</Text>
           </Pressable>
         </ScrollView>

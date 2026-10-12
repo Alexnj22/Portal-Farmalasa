@@ -4,7 +4,8 @@
 // si queda publicada (se ve 24 horas desde que se publica). La fila que se
 // guarda sale del núcleo (`filaDeHistoria`), la misma que arma el portal.
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../../componentes/Interruptor';
 import { Stack } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
@@ -99,7 +100,7 @@ export default function Historia() {
                 <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Publicada</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Se ve en la app 24 horas desde que se publica.</Text>
               </View>
-              <Switch value={f.publicada} onValueChange={cambiar('publicada')} />
+              <Interruptor value={f.publicada} onValueChange={cambiar('publicada')} />
             </View>
           </Seccion>
           <BotonGrande texto={guardando ? 'Guardando…' : 'Guardar'} color={MARCA.azul} onPress={guardar} deshabilitado={!valido || guardando} />

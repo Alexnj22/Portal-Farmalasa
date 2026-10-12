@@ -29,6 +29,7 @@ import { Chip } from '../componentes/inicio/Widget';
 import Vidrio from '../componentes/Vidrio';
 import ListaPaginada from '../componentes/ListaPaginada';
 import { MARCA } from '../componentes/inicio/marca';
+import { TrasLaTransicion } from '../componentes/trasLaTransicion';
 
 const POR_PAGINA = 30;
 
@@ -125,6 +126,7 @@ export default function Productos() {
         },
       }} />
       <MenuDeFiltros grupos={grupos} />
+      <TrasLaTransicion>
       <ListaPaginada porPagina={30} cargarPagina={cargarPagina}
         dependencias={[busqueda, estado, categoria, foco, modificados, margen]}
         keyExtractor={(p) => String(p.id)} renderItem={(p) => <FilaProducto p={p} />}
@@ -161,6 +163,7 @@ export default function Productos() {
             ) : null}
           </View>
         )} />
+      </TrasLaTransicion>
     </>
   );
 }

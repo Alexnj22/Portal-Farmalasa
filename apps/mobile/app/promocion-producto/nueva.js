@@ -12,7 +12,8 @@
 // Todo lo que se arma sale del núcleo (`promocionesUtils`), lo mismo del portal.
 import { volver } from '../../componentes/volver';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, KeyboardAvoidingView, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, ScrollView, Text, TextInput, View } from 'react-native';
+import Interruptor from '../../componentes/Interruptor';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -55,7 +56,7 @@ function FilaConSwitch({ titulo, detalle, valor, onCambiar }) {
         <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{titulo}</Text>
         {detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{detalle}</Text> : null}
       </View>
-      <Switch value={!!valor} onValueChange={onCambiar} />
+      <Interruptor value={!!valor} onValueChange={onCambiar} />
     </View>
   );
 }
@@ -255,7 +256,7 @@ export default function NuevaPromocionProducto() {
           <Seccion titulo="Salas" pie={marcadas.length ? 'Si repartes el lote, la suma tiene que dar el lote exacto.' : 'Sin ninguna marcada, aplica en todas.'}>
             {salas.map((s) => (
               <View key={s.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 40 }}>
-                <Switch value={!!general.salas?.[s.id]} onValueChange={(v) => cambiarSala(s.id, v)} />
+                <Interruptor value={!!general.salas?.[s.id]} onValueChange={(v) => cambiarSala(s.id, v)} />
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>{s.name}</Text>
                 {general.salas?.[s.id] ? <Numero valor={general.reparto?.[s.id]} onCambiar={(v) => cambiarReparto(s.id, v)} placeholder="Unidades" ancho={100} /> : null}
               </View>

@@ -12,7 +12,8 @@
 // ⚠ «Cobrar» y «Anular cobro» mueven DINERO de verdad (la cartera y la caja del
 // vendedor). En el entorno de pruebas no se cobra: ahí sólo se mira.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -272,7 +273,7 @@ export default function CuentaDelCliente() {
                     <Campo value={nota} onChangeText={setNota} placeholder="Nota (opcional) — p. ej. abono acordado por teléfono" />
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Imprimir el recibo</Text>
-                      <Switch value={imprimir} onValueChange={setImprimir} />
+                      <Interruptor value={imprimir} onValueChange={setImprimir} />
                     </View>
                   </Seccion>
                   {problema ? <Aviso tono="freno" texto={problema} /> : null}

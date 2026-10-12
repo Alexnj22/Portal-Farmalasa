@@ -8,7 +8,8 @@
 // (`guardarDiaDeHorario`, que NO toca el estado de publicación) o la cobertura
 // de alguien de otra sala.
 import { useMemo, useState } from 'react';
-import { ScrollView, Switch, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import Conmutador from '../Interruptor';
 import { resolverTurnoDelDia } from '@nucleo/utils/turnoDelDia';
 import {
   datosDelDiaParaGuardar, horasDelTurno, limitesDeLaSalaElDia, reparosDeLaCelda, turnosQueCabenElDia,
@@ -35,7 +36,7 @@ function Interruptor({ titulo, valor, onCambiar, children }) {
     <View style={{ gap: 8 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>{titulo}</Text>
-        <Switch value={valor} onValueChange={onCambiar} />
+        <Conmutador value={valor} onValueChange={onCambiar} />
       </View>
       {valor ? children : null}
     </View>

@@ -12,7 +12,8 @@
 // así que estos números reescriben el MIN·MAX de TODO el catálogo, en todas
 // las salas, en el próximo cálculo.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
+import Interruptor from '../componentes/Interruptor';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -123,7 +124,7 @@ function Laboratorios({ puede }) {
               <Text style={{ color: l.ocultar_en_minmax ? colorSistema.texto2 : colorSistema.texto, fontSize: 15 }}>{l.nombre}</Text>
               <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${cuentas[l.id] ?? 0} productos activos${l.ocultar_en_minmax ? ' · oculto' : ''}`}</Text>
             </View>
-            <Switch value={!l.ocultar_en_minmax} disabled={!puede || ocupado === l.id} onValueChange={() => alternar(l)} />
+            <Interruptor value={!l.ocultar_en_minmax} disabled={!puede || ocupado === l.id} onValueChange={() => alternar(l)} />
           </View>
         ))}
       </Seccion>

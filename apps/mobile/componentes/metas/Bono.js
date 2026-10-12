@@ -8,7 +8,8 @@
 // con `metas` editar, con la MISMA llamada del portal (`setBonificaciones`). Es
 // un interruptor de toda la red: cada cambio pide confirmación.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Text, View } from 'react-native';
+import Interruptor from '../Interruptor';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchBonoMetaSala, setBonificaciones } from '@nucleo/data/metas';
 import { TRAMO_CFG, ymHoySV, ymLabel } from '@nucleo/utils/metasUtils';
@@ -81,7 +82,7 @@ export default function Bono({ sala, salaNombre, ym, esMesActual, config, canEdi
                   : 'Las pantallas hablan de la meta y no nombran el bono.'}
               </Text>
             </View>
-            {canEdit ? <Switch value={activas} disabled={guardando} onValueChange={(on) => cambiarBono(on, on ? !!hasta : false)} /> : null}
+            {canEdit ? <Interruptor value={activas} disabled={guardando} onValueChange={(on) => cambiarBono(on, on ? !!hasta : false)} /> : null}
           </View>
           {canEdit && activas ? (
             <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingBottom: 12 }}>

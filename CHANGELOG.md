@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1272.0 — Avisos: una sola bandeja, deslizar borra y las solicitudes esperan la decisión
+
+- **Avisos rediseñados en la app y corregidos en la campana del portal** (pedido del usuario: «al deslizar no se eliminan, si toco una y era solicitud se desaparece aun sin confirmar ni descartar… me aparecen como 2 secciones por decidir»).
+  - **Una solicitud ya no desaparece al tocarla o leerla:** tocar marcaba leído y leído la sacaba (`abrirAviso` en la app, `handleNotifClick` en el portal; «Leer todas» igual). Queda hasta que se decide: `avisoEsperaDecision` + `markAllNotificationsRead({ conservar })`.
+  - **Una sola sección «Por decidir»:** el aviso de cada solicitud se repetía abajo con su propio Aprobar/Rechazar (`ordenarBandeja`, `claveDeDecision`, `src/utils/bandejaDeAvisos.js`). Debajo «Sin leer» y «Ya decididas».
+  - **Deslizar borra de verdad** (no había gesto): a la izquierda elimina con «Deshacer», a la derecha marca leído; se quita primero de la lista y después se olvida, para que no reaparezca (`componentes/Deslizable.js`). Lo que espera decisión no se desliza.
+  - El descuento de Torogoz trae su detalle (cliente, pedido, renglones, total, tope); la tarjeta muestra renglones, motivo y sala.
+  - Abrir algo que ya no existe dice «Ya no está disponible» en vez de «Cannot coerce the result to a single JSON object».
+- `motor-pedido.html` regenerado (había quedado viejo frente a `pedidoPdfDoc`).
+
 ## v2.1271.0 — Chat con clientes y revisión de recetas en el portal
 
 Base (migraciones `20261012214624_app_clientes_receta_chat_perfil` y `20261012215044_app_catalogo_precios_mayoreo`):

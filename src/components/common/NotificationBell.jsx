@@ -6,6 +6,7 @@ import {
     Bell, BellRing, Check, Megaphone, ChevronRight, Trash2, X, Undo2,
 } from 'lucide-react';
 import { useAuth } from '@nucleo/context/AuthContext';
+import { avisoEsperaDecision } from '@nucleo/utils/accionesDeAviso';
 import { useTheme } from '../../plataforma/ThemeContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { announcementAppliesToUser } from '@nucleo/utils/announcementAudience';
@@ -338,8 +339,13 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     // El enlace de salida. `n.link` ya trae la forma correcta para cada familia
     // —incluida `minmax:<id>`, que es otra tabla—; el respaldo sólo cubre avisos
     // viejos, escritos antes de que el enlace se guardara.
+    //
+    // Lo que todavía espera una DECISIÓN no se marca leído al tocarlo
+    // (2026-10-12, «si toco una y era solicitud se desaparece aun sin confirmar
+    // ni descartar»): leído la sacaba de la campana. Se queda hasta que se
+    // decide, y el trigger la da por leída en ese momento.
     const handleNotifClick = (n) => {
-        if (!n.read_at) markNotificationRead(n.id);
+        if (!n.read_at && !avisoEsperaDecision(n, hasPermission)) markNotificationRead(n.id);
         if (!n.link && !n.metadata?.request_id) return;
         setIsOpen(false);
         navigate(n.link || `/requests?solicitud=${n.metadata?.request_id ?? ''}`);
@@ -498,7 +504,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                 <div className="flex items-center gap-0.5">
                                     {unreadNotifs.length > 0 && !confirmClear && !pendingAll && (
                                         <button
-                                            onClick={() => markAllNotificationsRead()}
+                                            onClick={() => markAllNotificationsRead({ conservar: (n) => avisoEsperaDecision(n, hasPermission) })}
                                             title="Marcar todas como leídas"
                                             className={`flex items-center gap-1 text-caption font-black uppercase tracking-widest px-2 py-1.5 rounded-xl transition-colors ${isDark ? 'text-chart-1-text hover:bg-chart-1/10' : 'text-brand-text hover:bg-chart-1/10'}`}
                                         >

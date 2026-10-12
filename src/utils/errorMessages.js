@@ -81,6 +81,12 @@ export function esTextoTecnico(texto) {
 // errores de bloqueo de módulo van arriba porque son los que una persona
 // provoca escribiendo, y son los únicos donde el detalle ayuda a corregir.
 const REGLAS = [
+    // — Lo que se buscó ya no está —
+    // `.single()` sobre una fila que se borró (o que el RLS no deja ver) da
+    // PGRST116 «Cannot coerce the result to a single JSON object». Pasa al
+    // abrir desde un aviso una solicitud que ya se decidió o se borró
+    // (2026-10-12, Avisos): el texto crudo no le dice nada a nadie.
+    [/PGRST116|Cannot coerce the result to a single JSON object/i, 'Ya no está disponible: puede que alguien ya la haya resuelto o borrado.'],
     // — Solicitudes de facturación —
     // Las levanta el trigger `validar_solicitud_facturacion` y el índice
     // parcial de una-pendiente-por-factura. Van primero porque son estados

@@ -123,9 +123,13 @@ export const createNotificationsSlice = (set, get) => ({
 
     // «Marcar todas como leídas» vacía la campana, por lo mismo. El listado las
     // conserva enteras.
-    markAllNotificationsRead: async () => {
+    //
+    // `conservar(n)`: lo que NO se marca —lo que todavía espera una decisión
+    // (`avisoEsperaDecision`). «Leer todas» no contesta ninguna solicitud y no
+    // puede sacarlas de la campana (2026-10-12).
+    markAllNotificationsRead: async ({ conservar } = {}) => {
         const readAt = new Date().toISOString();
-        const unreadIds = get().notifications.filter(n => !n.read_at).map(n => n.id);
+        const unreadIds = get().notifications.filter(n => !n.read_at && !(conservar?.(n))).map(n => n.id);
         if (!unreadIds.length) return;
         set(state => ({
             notifications: state.notifications.filter(n => !unreadIds.includes(n.id)),

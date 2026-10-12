@@ -2,38 +2,72 @@
 // usuario del 2026-09-30: «no salen como cards con la info»).
 //
 // Es la misma bandeja del portal y con las mismas reglas, porque sale del mismo
-// store: `fetchNotifications` trae SÓLO lo no leído (lo que falta atender; lo
-// leído sigue en el historial) y `useNotificationsChannel`, montado en la raíz,
-// la mantiene al día en vivo.
+// store: `fetchNotifications` trae lo no leído (lo leído sigue en el historial)
+// y `useNotificationsChannel`, montado en la raíz, la mantiene al día en vivo.
 //
-// Cada aviso es una tarjeta (`componentes/avisos/TarjetaDeAviso`), la misma de
-// la campana del portal: anillo, barras por sala, quién lo pide y sus datos.
-// Si no tiene tarjeta propia y nombra una solicitud, va su detalle con los
-// renglones de la notificación del teléfono (`detalleDeSolicitud`). Tocarla abre la solicitud en la
-// app (`app/solicitud/[id].js`), que es donde se decide: la lista informa.
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+// Rediseño del 2026-10-12. Reporte del usuario: «al deslizar no se eliminan,
+// si toco una y era solicitud se desaparece aun sin confirmar ni descartar, me
+// aparecen como 2 secciones por decidir y abajo avisos sin leer». Tres reglas:
+//
+//   1. UNA sola sección «Por decidir», arriba (`ordenarBandeja` del núcleo): lo
+//      que la persona tiene que contestar va una vez. Antes el aviso de cada
+//      solicitud se repetía debajo con su propio Aprobar / Rechazar — en
+//      producción, seis ajustes de Mín·Máx salían dos veces cada uno.
+//   2. Lo que espera una decisión NO se va al tocarlo ni al «Leer todas»
+//      (`avisoEsperaDecision`): se queda hasta que se aprueba o se rechaza, y
+//      entonces la base lo da por leído. No se desliza: no hay nada que borrar
+//      de algo que todavía espera.
+//   3. Los avisos se deslizan: a la izquierda se ELIMINAN (con «Deshacer»), a
+//      la derecha se marcan leídos. Eliminar es ocultar (`deleted_at`): sigue en
+//      el historial, de donde se puede devolver.
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { LayoutAnimation, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { cargarFilaDeAviso, esAvisoDeMinMax } from '@nucleo/data/solicitudDeAviso';
 import { detalleDeMinMax, detalleDeSolicitud, recortar } from '@nucleo/utils/tarjetaDeSolicitud';
-import { colorSistema } from '../../../componentes/Formulario';
-import { abrirRuta } from '../../../pantallas';
+import { avisoEsperaDecision } from '@nucleo/utils/accionesDeAviso';
+import { ordenarBandeja } from '@nucleo/utils/bandejaDeAvisos';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
+import { colorSistema } from '../../../componentes/Formulario';
+import { abrirRuta } from '../../../pantallas';
 import { usePorDecidir } from '../../../componentes/porDecidir';
 import TarjetaPorDecidir from '../../../componentes/TarjetaPorDecidir';
 import TarjetaDeAviso from '../../../componentes/avisos/TarjetaDeAviso';
 import { abrirAviso } from '../../../componentes/avisos/abrir';
-
+import Deslizable from '../../../componentes/Deslizable';
+import Tocable from '../../../componentes/Tocable';
+import { MARCA } from '../../../componentes/inicio/marca';
 
 // El detalle se pide para los avisos que nombran una solicitud todavía abierta.
 // Tope: con más, la pestaña pagaría decenas de lecturas por abrirse.
 const TOPE_DE_DETALLES = 20;
+// Cuánto vive el «Deshacer» antes de escribir en la base (la campana del
+// portal usa 3 s; acá un poco más, porque el pulgar tarda más que el mouse).
+const DESHACER_MS = 4000;
+const ANDROID = Platform.OS === 'android';
 
-function Seccion({ texto }) {
+const animar = () => LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+function Seccion({ texto, nota, derecha }) {
   return (
-    <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 32, marginTop: 4 }}>{texto}</Text>
+    <View style={{ marginHorizontal: 32, marginTop: 6, gap: 2 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}>{texto}</Text>
+        {derecha}
+      </View>
+      {nota ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{nota}</Text> : null}
+    </View>
+  );
+}
+
+function Enlace({ texto, onPress }) {
+  return (
+    <Tocable onPress={onPress} hitSlop={8} accessibilityRole="button" style={{ paddingHorizontal: 6, paddingVertical: 4, borderRadius: 8 }}>
+      <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: ANDROID ? '600' : '400' }}>{texto}</Text>
+    </Tocable>
   );
 }
 
@@ -43,12 +77,15 @@ export default function Notificaciones() {
   const recargar = useStaffStore((s) => s.fetchNotifications);
   const marcarLeido = useStaffStore((s) => s.markNotificationRead);
   const marcarTodos = useStaffStore((s) => s.markAllNotificationsRead);
+  const eliminar = useStaffStore((s) => s.deleteNotificationsByIds);
   const [detalles, setDetalles] = useState({});      // id del aviso → detalle recortado
   const [recargando, setRecargando] = useState(false);
+  const [ocultos, setOcultos] = useState(() => new Set());   // borrados que esperan el «Deshacer»
+  const deshacer = useRef(null);                              // { ids, reloj }
+  const [aviso, setAviso] = useState(null);                   // el texto del «Deshacer» a la vista
 
-  // «Por decidir» va ARRIBA y no depende de que el aviso esté sin leer: leer
-  // un aviso no contesta la solicitud (reporte del usuario, 2026-09-30).
   const auth = useAuth();
+  const { hasPermission } = auth;
   const porDecidir = usePorDecidir((s) => s.items);
   const cargarPorDecidir = usePorDecidir((s) => s.cargar);
   const persona = useMemo(() => buscadorDePersonas(empleados), [empleados]);
@@ -57,15 +94,20 @@ export default function Notificaciones() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useFocusEffect(useCallback(() => { cargarPorDecidir(auth); }, [auth.user?.id, cargarPorDecidir]));
 
+  const esperaDecision = useCallback((n) => avisoEsperaDecision(n, hasPermission), [hasPermission]);
+  const visibles = useMemo(() => avisos.filter((n) => !ocultos.has(n.id)), [avisos, ocultos]);
+  const { pendientes, sinLeer, decididos, totalPorDecidir } = useMemo(
+    () => ordenarBandeja(visibles, porDecidir, esperaDecision), [visibles, porDecidir, esperaDecision]);
+
   // El detalle de lo que nombra una solicitud abierta, leído de la base (el
   // aviso es la foto del momento en que salió; la solicitud es la de ahora).
   useEffect(() => {
     let vivo = true;
-    const pendientes = avisos
+    const faltan = [...pendientes, ...sinLeer]
       .filter((n) => n.metadata?.request_id && !n.metadata?.resuelta && !(n.id in detalles))
       .slice(0, TOPE_DE_DETALLES);
-    if (!pendientes.length) return undefined;
-    Promise.all(pendientes.map(async (n) => {
+    if (!faltan.length) return undefined;
+    Promise.all(faltan.map(async (n) => {
       try {
         const fila = await cargarFilaDeAviso(n);
         if (!fila) return [n.id, null];
@@ -73,45 +115,127 @@ export default function Notificaciones() {
       } catch { return [n.id, null]; }
     })).then((pares) => { if (vivo) setDetalles((d) => ({ ...d, ...Object.fromEntries(pares) })); });
     return () => { vivo = false; };
-  }, [avisos, detalles]);
+  }, [pendientes, sinLeer, detalles]);
 
-  const abrir = abrirAviso;
+  // Eliminar con «Deshacer». El orden importa (es el defecto que hacía
+  // reaparecer los avisos en la app de clientes): primero se quita de la
+  // lista del store —`deleteNotificationsByIds` lo hace en el acto—, y RECIÉN
+  // después se olvida de los ocultos. Al revés, entre una cosa y otra el aviso
+  // volvía a pintarse.
+  const confirmarBorrado = useCallback(() => {
+    const p = deshacer.current;
+    if (!p) return;
+    clearTimeout(p.reloj);
+    deshacer.current = null;
+    Promise.resolve(eliminar(p.ids)).catch(() => {}).finally(() => {
+      setOcultos((s) => { const c = new Set(s); p.ids.forEach((id) => c.delete(id)); return c; });
+    });
+    setAviso(null);
+  }, [eliminar]);
+
+  const borrar = useCallback((n) => {
+    if (deshacer.current) confirmarBorrado();   // uno a la vez: el anterior ya no se deshace
+    animar();
+    setOcultos((s) => new Set(s).add(n.id));
+    deshacer.current = { ids: [n.id], reloj: setTimeout(confirmarBorrado, DESHACER_MS) };
+    setAviso('Aviso eliminado');
+  }, [confirmarBorrado]);
+
+  const deshacerBorrado = () => {
+    const p = deshacer.current;
+    if (!p) return;
+    clearTimeout(p.reloj);
+    deshacer.current = null;
+    Haptics.selectionAsync().catch(() => {});
+    animar();
+    setOcultos((s) => { const c = new Set(s); p.ids.forEach((id) => c.delete(id)); return c; });
+    setAviso(null);
+  };
+  // Al salir de la pestaña, lo pendiente de borrar se escribe.
+  useEffect(() => () => { if (deshacer.current) confirmarBorrado(); }, [confirmarBorrado]);
+
+  const leer = (n) => { animar(); marcarLeido(n.id); };
+  const leerTodas = () => {
+    Haptics.selectionAsync().catch(() => {});
+    animar();
+    marcarTodos({ conservar: esperaDecision });
+  };
+
+  const tarjeta = (n, { deslizar }) => {
+    const t = (
+      <TarjetaDeAviso n={n} persona={persona} detalle={detalles[n.id]} margen={deslizar ? 0 : 16}
+        onAbrir={() => abrirAviso(n, { conservar: esperaDecision(n) })} />
+    );
+    if (!deslizar) return <View key={n.id}>{t}</View>;
+    return (
+      <Deslizable key={n.id} onIzquierda={() => borrar(n)} onDerecha={!n.read_at ? () => leer(n) : undefined}>
+        {t}
+      </Deslizable>
+    );
+  };
+
+  const vacio = !totalPorDecidir && !sinLeer.length && !decididos.length;
 
   return (
     <>
       <Stack.Screen options={{
-        // Texto del color de acento, como «Editar» en Mail: el sistema le pone
-        // su propio fondo de vidrio en la barra.
-        headerRight: avisos.length ? () => (
-          <Pressable onPress={() => marcarTodos()} hitSlop={8} accessibilityRole="button">
-            <Text style={{ color: colorSistema.acento, fontSize: 17 }}>Leer todas</Text>
-          </Pressable>
+        headerRight: sinLeer.length ? () => (
+          <Tocable onPress={leerTodas} hitSlop={8} accessibilityRole="button" style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+            <Text style={{ color: colorSistema.acento, fontSize: 17, fontWeight: ANDROID ? '600' : '400' }}>Leer todas</Text>
+          </Tocable>
         ) : undefined,
       }} />
       <ScrollView style={{ flex: 1 }}
-        contentContainerStyle={{ paddingVertical: 12, gap: 12 }}
+        contentContainerStyle={{ paddingVertical: 12, paddingBottom: aviso ? 96 : 24, gap: 12 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setDetalles({}); await Promise.all([recargar(), cargarPorDecidir(auth)]); setRecargando(false); }} />}>
-        {porDecidir.length ? (
+
+        {totalPorDecidir ? (
           <>
-            <Seccion texto={`Por decidir · ${porDecidir.length}`} />
+            <Seccion texto={`Por decidir · ${totalPorDecidir}`} nota="Siguen aquí hasta que las apruebes o las rechaces." />
             {porDecidir.map((i) => <TarjetaPorDecidir key={i.clave} item={i} persona={persona} />)}
-            {avisos.length ? <Seccion texto="Avisos sin leer" /> : null}
+            {pendientes.map((n) => tarjeta(n, { deslizar: false }))}
           </>
         ) : null}
-        {avisos.length ? avisos.map((n) => (
-          <TarjetaDeAviso key={n.id} n={n} persona={persona} detalle={detalles[n.id]} onAbrir={() => abrir(n)} />
-        )) : porDecidir.length ? null : (
-          <View style={{ alignItems: 'center', paddingTop: 80, gap: 6 }}>
+
+        {sinLeer.length ? (
+          <>
+            <Seccion texto={`Sin leer · ${sinLeer.length}`} nota={totalPorDecidir ? null : 'Desliza a la izquierda para eliminar y a la derecha para marcar leído.'} />
+            {sinLeer.map((n) => tarjeta(n, { deslizar: true }))}
+          </>
+        ) : null}
+
+        {decididos.length ? (
+          <>
+            <Seccion texto="Ya decididas" />
+            {decididos.map((n) => tarjeta(n, { deslizar: true }))}
+          </>
+        ) : null}
+
+        {vacio ? (
+          <View style={{ alignItems: 'center', paddingTop: 80, gap: 6, paddingHorizontal: 32 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>Todo al día</Text>
-            <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Lo que llegue aparece acá y en la barra de abajo.</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>No tienes nada por decidir ni avisos sin leer.</Text>
           </View>
-        )}
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 24, paddingTop: 8 }}>
-          <Pressable onPress={() => router.push('/notificaciones')}><Text style={{ color: colorSistema.acento, fontSize: 15 }}>Historial</Text></Pressable>
-          <Pressable onPress={() => abrirRuta('/mis-avisos')}><Text style={{ color: colorSistema.acento, fontSize: 15 }}>Comunicados</Text></Pressable>
+        ) : null}
+
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 20, paddingTop: 8 }}>
+          <Enlace texto="Historial" onPress={() => router.push('/notificaciones')} />
+          <Enlace texto="Comunicados" onPress={() => abrirRuta('/mis-avisos')} />
         </View>
       </ScrollView>
+
+      {aviso ? (
+        <View pointerEvents="box-none" style={{ position: 'absolute', left: 16, right: 16, bottom: 104 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 16, paddingRight: 6, minHeight: 48,
+            borderRadius: ANDROID ? 6 : 14, backgroundColor: ANDROID ? '#313033' : 'rgba(30,30,32,0.94)' }}>
+            <Text style={{ flex: 1, color: '#fff', fontSize: 15 }}>{aviso}</Text>
+            <Tocable onPress={deshacerBorrado} accessibilityRole="button" style={{ paddingHorizontal: 12, minHeight: 40, justifyContent: 'center', borderRadius: 8 }}>
+              <Text style={{ color: ANDROID ? '#D0BCFF' : MARCA.azulClaro, fontSize: 15, fontWeight: '700' }}>Deshacer</Text>
+            </Tocable>
+          </View>
+        </View>
+      ) : null}
     </>
   );
 }

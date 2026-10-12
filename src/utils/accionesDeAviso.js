@@ -44,3 +44,25 @@ export function trasladoPorResolver(n, hasPermission) {
     return n?.type === 'REQUEST_PENDING' && esAvisoDeTraslado(n) && !n.metadata?.resuelta
         && hasPermission('traslados', 'can_approve');
 }
+
+/* ¿Este aviso todavía espera una DECISIÓN de quien lo ve? (2026-10-12)
+ *
+ * Reporte del usuario: «si toco una y era solicitud se desaparece aun sin
+ * confirmar ni descartar». La campana —del portal y de la app— marcaba leído al
+ * tocar, y leído la sacaba de la lista. Pero leer no contesta: una solicitud,
+ * un ajuste de Mín·Máx, un traslado o un envío por recibir se quedan hasta que
+ * alguien los decide, y entonces el trigger `marcar_notificacion_solicitud_
+ * resuelta` escribe `metadata.resuelta` y los da por leídos él mismo.
+ *
+ * Un envío no se aprueba con un botón (se recibe renglón por renglón), pero
+ * igual espera: lo decide la sala con permiso de traslados. */
+export function avisoEsperaDecision(n, hasPermission) {
+    if (!n || n.metadata?.resuelta || n.deleted_at) return false;
+    if (puedeDecidirAviso(n, hasPermission) || trasladoPorResolver(n, hasPermission)) return true;
+    return n.type === 'REQUEST_PENDING' && esAvisoDeEnvio(n) && hasPermission('traslados', 'can_approve');
+}
+
+/** La clave con la que «Por decidir» nombra lo que un aviso pide decidir. */
+export const claveDeDecision = (n) => (n?.type === 'MINMAX_PENDING'
+    ? `minmax:${n.metadata?.request_id}`
+    : String(n?.metadata?.request_id ?? ''));

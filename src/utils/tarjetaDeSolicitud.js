@@ -80,6 +80,14 @@ export function detalleDeSolicitud(s) {
                 renglones: [[String(m.cliente ?? 'Cliente'), dinero(m.monto_actual)],
                     m.que === 'FORMA' ? ['Forma de pago', `${m.forma_actual ?? '?'} → ${m.forma_nueva ?? '?'}`] : ['Monto', `${dinero(m.monto_actual)} → ${dinero(m.monto_nuevo)}`]],
             };
+        // El descuento de una venta de la distribuidora (Torogoz): a quién, qué
+        // renglón y cuánto — sin esto la tarjeta «Por decidir» salía vacía.
+        case 'DIST_DESCUENTO':
+            return {
+                contexto: `Descuento a ${m.cliente ?? 'un cliente'}${m.pedido_id ? ` · pedido ${m.pedido_id}` : ''}`,
+                renglones: (m.renglones ?? []).map((r) => [String(r.descripcion ?? 'Producto'), `−${dinero(r.descuento)}${r.pct != null ? ` (${Number(r.pct).toFixed(1)}%)` : ''}`]),
+                pie: `Total ${dinero(m.total)}${m.tope_pct != null ? ` · tope ${Number(m.tope_pct)}%` : ''}`,
+            };
         default:
             return { renglones: [], pie: s?.note ?? undefined };
     }

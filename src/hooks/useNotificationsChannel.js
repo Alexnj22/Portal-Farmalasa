@@ -5,6 +5,7 @@ import { useStaffStore } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { fireBrowserNotif } from '@plataforma/browserNotif';
 import { useRecargarAlVolver } from './useRecargarAlVolver';
+import { anunciarAviso } from './avisosRecibidos';
 import { irA } from '@plataforma/navegacion';
 
 // Montar UNA sola vez (AppLayout). Carga inicial + realtime de la tabla
@@ -29,6 +30,8 @@ export function useNotificationsChannel() {
                 { event: 'INSERT', schema: 'public', table: 'notifications', filter: `recipient_id=eq.${user.id}` },
                 ({ new: n }) => {
                     _addNotification(n);
+                    // Las pantallas del tema se ponen al día (p. ej. el chat).
+                    anunciarAviso(n);
                     showToast(n.title, n.body || '', 'info');
                     fireBrowserNotif(
                         `Farmalasa · ${n.title}`,

@@ -39,14 +39,25 @@ import { visibilidad, escucharVisibilidad, soltarVisibilidad } from '@plataforma
  *
  * `recargar` tiene que ser la lectura SILENCIOSA —la que no borra la pantalla—.
  * Una que ponga «Cargando» deja la vista parpadeando cada intervalo.
+ *
+ * `ignorar(payload)` (opcional) recibe cada aviso de realtime y, si devuelve
+ * `true`, ese aviso no dispara la lectura. Es para las tablas que también
+ * cargan señales efímeras: el chat marca «está escribiendo» cada 3 s en la
+ * misma fila, y releer la bandeja entera por cada tecla sería una consulta
+ * cara por una señal que el propio aviso ya trae.
  */
+// Cuántos canales se abrieron en esta pestaña: hace único el tema de cada uno.
+let montajes = 0;
+
 export function useRefrescoEnVivo(recargar, {
     ms = 20_000,
     activo = true,
     tabla = null,
     esperaMs = 400,
+    ignorar = null,
 } = {}) {
     const recargarRef = useRef(recargar);
+    const ignorarRef = useRef(ignorar);
     /* El instante de la última lectura. Es una ref y no estado porque cambiarlo
      * no tiene que redibujar nada: nadie lo mira, sólo decide si ya venció.
      * Arranca en 0 y se siembra en un efecto de montaje: leer el reloj DURANTE
@@ -70,6 +81,7 @@ export function useRefrescoEnVivo(recargar, {
     // justamente lo que el compilador de React no admite.
     useEffect(() => { recargarRef.current = recargar; }, [recargar]);
     useEffect(() => { activoRef.current = activo; }, [activo]);
+    useEffect(() => { ignorarRef.current = ignorar; }, [ignorar]);
 
     /* Los DOS caminos leen por acá, y por eso los dos ponen el reloj en hora:
      * si no, un aviso de realtime dejaría al reloj creyendo que la pantalla
@@ -107,23 +119,46 @@ export function useRefrescoEnVivo(recargar, {
     /* El nombre del canal lleva el `useId` del componente: dos vistas mirando la
      * misma tabla a la vez pedirían el mismo tema y una se quedaría sin recibir
      * — un modo de falla mudo, que es el que no se puede permitir acá. */
+    /* …y además un número de MONTAJE, porque `useId` no alcanza (2026-10-12):
+     * el id sale de la posición en el árbol, así que un componente que se
+     * desmonta y se vuelve a montar en el mismo sitio —el hilo del chat al
+     * cambiar de conversación (`key`), o el doble montaje de StrictMode— pide
+     * el MISMO tema. `supabase.channel(tema)` devuelve el canal existente si
+     * todavía está en la lista, y el viejo sigue ahí mientras su `leave` viaja:
+     * el `.on()` se cuelga de un canal que se está yendo, `subscribe()` no hace
+     * nada (sólo se une un canal `closed`) y al llegar el `leave` el canal se
+     * cierra y sale de la lista. Sin error y sin aviso: la pantalla deja de
+     * enterarse hasta que se sale y se vuelve a entrar. */
     const idDelCanal = useId();
     useEffect(() => {
         if (!tabla) return undefined;
+        montajes += 1;
+        const tema = `refresco-${tabla}-${idDelCanal}-${montajes}`;
 
         /* Coalescido a propósito. Confirmar un conteo de treinta bolsas es un
          * UPDATE por bolsa: sin esto serían treinta lecturas completas de la
          * pantalla, todas devolviendo lo mismo. Se espera a que el ruido pare y
          * se lee UNA vez. */
         let plazo = null;
+        let yaUnido = false;
+        const avisar = () => {
+            if (!activoRef.current) { pendienteRef.current = true; return; }
+            clearTimeout(plazo);
+            plazo = setTimeout(leer, esperaMs);
+        };
         const canal = supabase
-            .channel(`refresco-${tabla}-${idDelCanal}`)
-            .on('postgres_changes', { event: '*', schema: 'public', table: tabla }, () => {
-                if (!activoRef.current) { pendienteRef.current = true; return; }
-                clearTimeout(plazo);
-                plazo = setTimeout(leer, esperaMs);
+            .channel(tema)
+            .on('postgres_changes', { event: '*', schema: 'public', table: tabla }, (payload) => {
+                if (ignorarRef.current?.(payload)) return;
+                avisar();
             })
-            .subscribe();
+            /* Un canal que se cayó y se volvió a unir no recupera lo que pasó
+             * mientras tanto: cada REunión cuenta como un aviso. */
+            .subscribe((estado) => {
+                if (estado !== 'SUBSCRIBED') return;
+                if (yaUnido) avisar();
+                yaUnido = true;
+            });
 
         return () => { clearTimeout(plazo); supabase.removeChannel(canal); };
     }, [tabla, esperaMs, leer, idDelCanal]);

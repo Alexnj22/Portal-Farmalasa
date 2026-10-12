@@ -24,7 +24,8 @@ import { useTema } from '../../../tema/tema';
 import Icono from '../../../componentes/Icono';
 import { navegar } from '../../../lib/navegar';
 import { Image } from 'expo-image';
-import { elegirFoto, preguntarOrigen, subirFoto } from '../../../lib/fotos';
+import { subirFoto } from '../../../lib/fotos';
+import { usarVistaPreviaFoto } from '../../../componentes/VistaPreviaFoto';
 
 
 /**
@@ -89,12 +90,11 @@ export default function Cuenta() {
     if (!conFicha) return;
     pedir('perfil').then((r) => { if (r?.ok) setFoto({ url: r.foto_url ?? null, quitada: !!r.quitada, cargando: false }); });
   }, [conFicha, pedir]));
+  // Se revisa con la guía redonda antes de subirla (componentes/VistaPreviaFoto).
+  const vistaPrevia = usarVistaPreviaFoto();
   const subirPerfil = async () => {
-    const origen = await preguntarOrigen('Tu foto de perfil', 'La ve el equipo de la farmacia cuando chateas con nosotros.');
-    if (!origen) return;
-    const f = await elegirFoto(origen);
+    const f = await vistaPrevia.elegir({ titulo: 'Tu foto de perfil', mensaje: 'La ve el equipo de la farmacia cuando chateas con nosotros.', circular: true });
     if (!f) return;
-    if (f.error) { Alert.alert('No se pudo usar la foto', f.error); return; }
     setFoto((x) => ({ ...x, cargando: true }));
     const s = await subirFoto(pedir, 'perfil_subir_url', {}, f.uri);
     const r = s.ok ? await pedir('perfil_confirmar', { ruta: s.ruta }) : s;
@@ -198,6 +198,7 @@ export default function Cuenta() {
 
   return (
     <Formulario>
+      {vistaPrevia.vista}
       {resumen?.nombre ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginHorizontal: 24 }}>
           {conFicha ? (

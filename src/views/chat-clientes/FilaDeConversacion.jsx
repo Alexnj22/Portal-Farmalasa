@@ -7,17 +7,21 @@ import { cuandoLlego } from '@nucleo/utils/notificacionTexto';
 import ChipsDeEstado from './ChipsDeEstado';
 import ClienteAvatar from './ClienteAvatar';
 import { NIVELES, nombreDeCliente, tipoDeCliente } from './etiquetas';
+import { escribeAhora, useRelojDeEscritura } from './escribiendo';
 
 // Una conversación en la bandeja: quién escribió, qué tipo de cliente es, su
 // nivel, en qué estado está (y cuánto lleva esperando), cuántos mensajes esperan
 // respuesta y si alguien ya la está atendiendo. `atiende` es la ficha de quien
 // la tiene tomada (también si es uno mismo: el chip lo nombra); `tomadaPor`,
-// sólo si es OTRA persona (la línea «… está respondiendo»).
+// sólo si es OTRA persona (la línea «… está respondiendo»). Mientras el
+// cliente escribe, la vista previa del último mensaje dice «escribiendo…».
 export default function FilaDeConversacion({ conversacion: c, activa, tomadaPor, atiende, ahora, onAbrir }) {
     const tipo = tipoDeCliente(c);
     const nivel = NIVELES[c.nivel];
     // La abierta no cuenta como «sin leer»: quien la mira ya la está leyendo.
     const sinLeer = activa ? 0 : Number(c.sin_leer_equipo) || 0;
+    const reloj = useRelojDeEscritura([c.cliente_escribiendo_at]);
+    const escribe = escribeAhora(c.cliente_escribiendo_at, reloj);
     return (
         <ListRow surface="card" density="md" onClick={onAbrir} selected={activa}
             className="min-h-[var(--tap-min)]"
@@ -41,6 +45,8 @@ export default function FilaDeConversacion({ conversacion: c, activa, tomadaPor,
                     <AvatarConEstado emp={tomadaPor} px={18} mostrarChip={false} />
                     <span className="truncate">{shortEmployeeName(tomadaPor)} está respondiendo…</span>
                 </span>
+            ) : escribe ? (
+                <span className="block mt-1 text-label truncate italic text-brand-text">escribiendo…</span>
             ) : (
                 <span className={`block mt-1 text-label truncate ${sinLeer ? 'text-content font-semibold' : 'text-content-3'}`}>
                     {c.ultimo_de === 'equipo' ? 'Equipo: ' : ''}{c.ultimo_texto ?? ''}

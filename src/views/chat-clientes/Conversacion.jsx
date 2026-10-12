@@ -9,7 +9,10 @@ import PhotoLightbox from '../../components/common/PhotoLightbox';
 import { SkeletonText } from '../../components/common/StateViews';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import useMediaQuery from '../../plataforma/useMediaQuery';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useAlLlegarAviso } from '@nucleo/hooks/avisosRecibidos';
 import { useNowTick } from '@nucleo/hooks/useNowTick';
+import usePulsacionLarga from '@nucleo/hooks/usePulsacionLarga';
 import { useRefrescoEnVivo } from '@nucleo/hooks/useRefrescoEnVivo';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -17,13 +20,16 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { cuandoLlego } from '@nucleo/utils/notificacionTexto';
 import {
-    MENSAJES_POR_PAGINA, fetchMensajes, quitarFotoDeCliente, resolverConversacion, tomarConversacion,
+    MENSAJES_POR_PAGINA, fetchMensajes, fetchReacciones, quitarFotoDeCliente, reaccionarAMensaje,
+    resolverConversacion, tomarConversacion,
 } from '@nucleo/data/chatClientes';
+import { BarraDeMensaje, CitaDeMensaje, HojaDeMensaje, ReaccionesDeMensaje } from './AccionesDeMensaje';
 import ChipsDeEstado from './ChipsDeEstado';
 import ClienteAvatar from './ClienteAvatar';
 import Compositor from './Compositor';
 import PanelCliente from './PanelCliente';
 import { NIVELES, nombreDeCliente, tipoDeCliente } from './etiquetas';
+import { escribeAhora, useRelojDeEscritura } from './escribiendo';
 
 // El hilo de una conversación: el contexto del cliente arriba, los mensajes
 // (los del cliente a la izquierda, los del equipo a la derecha con la foto y el
@@ -37,6 +43,17 @@ import { NIVELES, nombreDeCliente, tipoDeCliente } from './etiquetas';
 // `conPanelCliente` suma el panel «Cliente» (compras, puntos, reservas…): al
 // costado en una pantalla ancha (≥1280px y no `comoPanel`), y si no, como una
 // segunda pestaña del hilo — en el teléfono y en el panel de la burbuja.
+//
+// Presencia (2026-10-12): abajo del hilo, «<cliente> está escribiendo…» y
+// también «<compañero> está escribiendo…» —para que dos no contesten a la
+// vez—; bajo el último mensaje del equipo, «Visto» si el cliente ya lo leyó
+// (`sin_leer_cliente` en 0) o «Enviado». Los datos vienen en `conversacion`
+// (la bandeja les pone encima la presencia que le llega por realtime).
+//
+// Reacciones y respuestas citadas (2026-10-12): sobre cada globo, con el
+// ratón encima (escritorio) o manteniéndolo presionado (teléfono), los seis
+// emojis, «Responder» y «Copiar». Las reacciones van en píldoras bajo el
+// globo y llegan en vivo por realtime de `app_chat_reacciones`.
 
 const ANCHO_LATERAL = '(min-width: 1280px)';
 
@@ -61,6 +78,42 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
     useEffect(() => { mensajesRef.current = mensajes; }, [mensajes]);
 
     const id = c.id;
+    const { user } = useAuth();
+    const yo = user?.id ?? null;
+    const nombreCliente = nombreDeCliente(c.cliente);
+
+    // ── Reacciones: `Map<mensajeId, filas>` de los mensajes cargados ────────
+    const equipoRef = useRef(equipo);
+    useEffect(() => { equipoRef.current = equipo; }, [equipo]);
+    const [reacciones, setReacciones] = useState(() => new Map());
+    const reaccionIdsRef = useRef(new Set());
+    const leerReacciones = useCallback(async (ids) => {
+        const lista = (ids || []).filter((x) => x != null);
+        if (!lista.length) return;
+        try {
+            const filas = await fetchReacciones(lista);
+            filas.forEach((f) => reaccionIdsRef.current.add(f.id));
+            setReacciones((prev) => {
+                const nuevo = new Map(prev);
+                lista.forEach((mid) => nuevo.delete(Number(mid)));
+                filas.forEach((f) => nuevo.set(f.mensaje_id, [...(nuevo.get(f.mensaje_id) ?? []), f]));
+                return nuevo;
+            });
+            asegurarEquipo(filas.filter((f) => f.employee_id && !equipoRef.current.has(f.employee_id)).map((f) => f.employee_id));
+        } catch (err) {
+            console.error('Conversacion: no se pudieron leer las reacciones', err);
+        }
+    }, [asegurarEquipo]);
+    const releerReacciones = useCallback(() => leerReacciones((mensajesRef.current ?? []).map((m) => m.id)), [leerReacciones]);
+    // El canal de reacciones es de TODAS las conversaciones: sólo cuenta lo que
+    // toca a un mensaje de este hilo (o borra una reacción que está en pantalla;
+    // el DELETE sólo trae el id).
+    const ignorarReaccion = useCallback((payload) => {
+        if (payload?.eventType === 'DELETE') return !reaccionIdsRef.current.has(payload.old?.id);
+        const mid = payload?.new?.mensaje_id;
+        return !(mensajesRef.current ?? []).some((m) => m.id === mid);
+    }, []);
+    useRefrescoEnVivo(releerReacciones, { ms: 30_000, tabla: 'app_chat_reacciones', esperaMs: 250, ignorar: ignorarReaccion });
 
     // Primera página + tomar la conversación; al salir, soltarla.
     useEffect(() => {
@@ -71,7 +124,8 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
                 alFondoRef.current = true;
                 setMensajes(filas);
                 setHayAnteriores(filas.length >= MENSAJES_POR_PAGINA);
-                asegurarEquipo(filas.map((m) => m.employee_id));
+                asegurarEquipo(filas.flatMap((m) => [m.employee_id, m.cita?.employee_id]));
+                leerReacciones(filas.map((m) => m.id));
             })
             .catch((err) => { if (vivo) setError(mensajeAmigable(err, 'No se pudieron cargar los mensajes.')); });
         if (puedeResponder) tomarConversacion(id).then(() => onCambio?.()).catch((err) => console.error('Conversacion: no se pudo tomar', err));
@@ -96,15 +150,27 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
                 const ids = new Set((prev ?? []).map((m) => m.id));
                 return [...(prev ?? []), ...nuevos.filter((m) => !ids.has(m.id))];
             });
-            asegurarEquipo(nuevos.map((m) => m.employee_id));
+            asegurarEquipo(nuevos.flatMap((m) => [m.employee_id, m.cita?.employee_id]));
+            leerReacciones(nuevos.map((m) => m.id));
             if (puedeResponder && nuevos.some((m) => m.autor === 'cliente')) {
                 tomarConversacion(id).then(() => onCambio?.()).catch(() => {});
             }
         } catch (err) {
             console.error('Conversacion: no se pudieron traer los mensajes nuevos', err);
         }
-    }, [id, puedeResponder, asegurarEquipo, onCambio]);
-    useRefrescoEnVivo(traerNuevos, { ms: 20_000, tabla: 'app_chat_mensajes', esperaMs: 250 });
+    }, [id, puedeResponder, asegurarEquipo, onCambio, leerReacciones]);
+    // Realtime es el camino; el reloj (10 s con la pestaña a la vista) y el
+    // aviso de la campana de ESTA conversación, el respaldo. El canal trae los
+    // mensajes de TODAS las conversaciones: los de otra no releen este hilo.
+    const deOtraConversacion = useCallback((payload) => {
+        const conv = payload?.new?.conversacion_id;
+        return conv != null && String(conv) !== String(id);
+    }, [id]);
+    useRefrescoEnVivo(traerNuevos, { ms: 10_000, tabla: 'app_chat_mensajes', esperaMs: 250, ignorar: deOtraConversacion });
+    useAlLlegarAviso('CHAT_CLIENTE', (aviso) => {
+        const conv = aviso?.metadata?.conversacion_id;
+        if (conv == null || String(conv) === String(id)) traerNuevos();
+    });
 
     const verAnteriores = async () => {
         const primero = mensajes?.[0]?.id;
@@ -117,7 +183,8 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
             alFondoRef.current = false;
             setMensajes((prev) => [...viejos, ...(prev ?? [])]);
             setHayAnteriores(viejos.length >= MENSAJES_POR_PAGINA);
-            asegurarEquipo(viejos.map((m) => m.employee_id));
+            asegurarEquipo(viejos.flatMap((m) => [m.employee_id, m.cita?.employee_id]));
+            leerReacciones(viejos.map((m) => m.id));
             // Que la vista no salte: lo que se estaba leyendo queda en su sitio.
             requestAnimationFrame(() => {
                 if (lista) lista.scrollTop += lista.scrollHeight - altoAntes;
@@ -163,9 +230,60 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
         }
     };
 
+    // ── Sobre un mensaje: reaccionar, responderlo citándolo, copiarlo ───────
+    const [respondiendoA, setRespondiendoA] = useState(null);
+    const [opcionesDe, setOpcionesDe] = useState(null);
+    const [opcionesAbiertas, setOpcionesAbiertas] = useState(false);
+
+    const reaccionar = useCallback(async (mensaje, emoji) => {
+        try {
+            await reaccionarAMensaje(mensaje.id, emoji);
+            leerReacciones([mensaje.id]);   // sin esperar el aviso de realtime
+        } catch (err) {
+            showToast('No se pudo reaccionar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        }
+    }, [leerReacciones, showToast]);
+
+    const copiar = useCallback(async (mensaje) => {
+        try {
+            await navigator.clipboard.writeText(String(mensaje.texto ?? ''));
+            showToast('Texto copiado', '', 'success');
+        } catch {
+            showToast('No se pudo copiar', 'Selecciona el texto y cópialo a mano.', 'error');
+        }
+    }, [showToast]);
+
+    // Tocar una cita lleva al mensaje original, si está cargado.
+    const irAMensaje = useCallback((mensajeId) => {
+        const el = listaRef.current?.querySelector(`[data-mensaje-id="${Number(mensajeId)}"]`);
+        if (el) {
+            alFondoRef.current = false;
+            el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        } else {
+            showToast('Es un mensaje anterior', 'Toca «Ver anteriores» para cargarlo.', 'info');
+        }
+    }, [showToast]);
+
+    const abrirOpciones = useCallback((mensaje) => { setOpcionesDe(mensaje); setOpcionesAbiertas(true); }, []);
+
+    // Mi reacción a cada mensaje (para resaltarla en la hoja del teléfono).
+    const misReacciones = new Map();
+    reacciones.forEach((filas, mid) => {
+        const mia = filas.find((r) => r.autor === 'equipo' && yo && String(r.employee_id) === String(yo));
+        if (mia) misReacciones.set(mid, mia.emoji);
+    });
+
     const tipo = tipoDeCliente(c);
     const nivel = NIVELES[c.nivel];
-    const nombre = nombreDeCliente(c.cliente);
+    const nombre = nombreCliente;
+
+    // El último mensaje del equipo es el que lleva «Visto» / «Enviado».
+    let ultimoDelEquipo = null;
+    for (let i = (mensajes?.length ?? 0) - 1; i >= 0; i -= 1) {
+        if (mensajes[i].autor === 'equipo') { ultimoDelEquipo = mensajes[i].id; break; }
+    }
+    const sinLeerCliente = c.sin_leer_cliente == null ? null : Number(c.sin_leer_cliente);
+    const entrega = sinLeerCliente == null ? null : sinLeerCliente === 0 ? 'Visto' : 'Enviado';
 
     return (
         <div data-surface={comoPanel ? undefined : 'card'} className={`flex flex-col min-h-0 ${comoPanel ? 'h-full' : 'flex-1 rounded-card'}`}>
@@ -232,15 +350,23 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
                     return (
                         <Burbuja key={m.id} mensaje={m} nuevoGrupo={nuevoGrupo}
                             autor={m.employee_id ? equipo.get(m.employee_id) ?? { id: m.employee_id } : null}
+                            entrega={m.id === ultimoDelEquipo ? entrega : null}
+                            reacciones={reacciones.get(m.id)} yo={yo} equipo={equipo} cliente={nombre}
+                            puedeReaccionar={puedeResponder}
+                            onReaccionar={reaccionar} onResponder={setRespondiendoA} onCopiar={copiar}
+                            onIrA={irAMensaje} onOpciones={abrirOpciones}
                             onFoto={setFoto} />
                     );
                 })}
                 {mensajes && !mensajes.length && <p className="text-body-sm text-content-3 text-center py-6">Todavía no hay mensajes.</p>}
             </div>
+            <QuienEscribe conversacion={c} cliente={nombre} yo={user?.id} equipo={equipo} asegurarEquipo={asegurarEquipo} />
 
             {/* ── Responder ──────────────────────────────────────────────── */}
             {puedeResponder ? (
-                <Compositor conversacion={c} onEnviado={traerNuevos} />
+                <Compositor conversacion={c} onEnviado={traerNuevos}
+                    respondiendoA={respondiendoA} onQuitarRespuesta={() => setRespondiendoA(null)}
+                    equipo={equipo} cliente={nombre} />
             ) : (
                 <p className="px-4 py-3 border-t border-border-subtle text-label text-content-3">Puedes leer las conversaciones; para responder hace falta el permiso de editar.</p>
             )}
@@ -252,6 +378,12 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
             )}
             </div>
 
+            <HojaDeMensaje abierto={opcionesAbiertas} mensaje={opcionesDe} misReacciones={misReacciones}
+                conTexto={!!opcionesDe?.texto} puedeReaccionar={puedeResponder}
+                onClose={() => setOpcionesAbiertas(false)}
+                onReaccionar={(e) => opcionesDe && reaccionar(opcionesDe, e)}
+                onResponder={() => opcionesDe && setRespondiendoA(opcionesDe)}
+                onCopiar={() => opcionesDe && copiar(opcionesDe)} />
             <PhotoLightbox src={foto} alt={`Foto enviada en la conversación con ${nombre}`} onClose={() => setFoto(null)} />
             <ConfirmModal isOpen={quitarFoto} onClose={() => setQuitarFoto(false)} onConfirm={confirmarQuitarFoto}
                 isProcessing={quitando} title="¿Quitar la foto de perfil?" confirmText="Quitar foto"
@@ -262,47 +394,113 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
 
 // Un mensaje. Los del cliente a la izquierda; los del equipo a la derecha, y
 // el primero de cada tanda lleva la foto y el nombre corto de quien contestó.
-function Burbuja({ mensaje: m, nuevoGrupo, autor, onFoto }) {
+function Burbuja({
+    mensaje: m, nuevoGrupo, autor, entrega, reacciones, yo, equipo, cliente, puedeReaccionar,
+    onReaccionar, onResponder, onCopiar, onIrA, onOpciones, onFoto,
+}) {
+    const conAcciones = m.autor !== 'sistema' && (puedeReaccionar || !!m.texto);
+    // Mantener presionado el globo (teléfono) abre la hoja con las acciones.
+    const gestos = usePulsacionLarga({ activo: conAcciones, alMantener: () => onOpciones(m) });
     if (m.autor === 'sistema') {
         return <p className="text-center text-micro text-content-3 py-1">{m.texto}</p>;
     }
     const delEquipo = m.autor === 'equipo';
     const adj = m.adjunto;
+    const lado = delEquipo ? 'derecha' : 'izquierda';
     return (
-        <div className={`flex flex-col ${delEquipo ? 'items-end' : 'items-start'} ${nuevoGrupo ? 'pt-2' : ''}`}>
+        <div data-mensaje-id={m.id} className={`flex flex-col ${delEquipo ? 'items-end' : 'items-start'} ${nuevoGrupo ? 'pt-2' : ''}`}>
             {nuevoGrupo && delEquipo && (
                 <span className="flex items-center gap-1.5 mb-1 text-micro text-content-3">
                     <span className="font-semibold text-content-2">{shortEmployeeName(autor)}</span>
                     <AvatarConEstado emp={autor} px={20} mostrarChip={false} />
                 </span>
             )}
-            <div className={`max-w-[80%] rounded-card px-3 py-2 space-y-1.5 ${delEquipo ? 'bg-brand text-white' : 'bg-surface-card-hover text-content border border-border-subtle'}`}>
-                {m.foto_ruta && (
-                    m.foto_url ? (
-                        <button type="button" onClick={() => onFoto(m.foto_url)} title="Ampliar la foto"
-                            className="block rounded-input overflow-hidden active:scale-[0.97] min-h-[var(--tap-min)]">
-                            <img src={m.foto_url} alt="Foto enviada en el chat" className="max-h-60 w-auto object-cover" loading="lazy" />
-                        </button>
-                    ) : <span className="text-label opacity-80">Foto no disponible</span>
+            <div className="group relative max-w-[80%]">
+                {conAcciones && puedeReaccionar && (
+                    <BarraDeMensaje alLado={lado} conTexto={!!m.texto}
+                        onReaccionar={(e) => onReaccionar(m, e)} onResponder={() => onResponder(m)} onCopiar={() => onCopiar(m)} />
                 )}
-                {adj?.tipo === 'producto' && (
-                    <span className={`flex items-center gap-2 rounded-input px-2 py-1.5 ${delEquipo ? 'bg-brand-dark/40' : 'bg-surface-card'}`}>
-                        <Package size={14} className="shrink-0" />
-                        <span className="min-w-0">
-                            <span className="block text-body-sm font-semibold truncate">{adj.nombre}</span>
-                            {adj.precio != null && <span className="block text-label tabular-nums">{formatMoney(Number(adj.precio))}</span>}
+                <div {...gestos}
+                    className={`rounded-card px-3 py-2 space-y-1.5 [@media(pointer:coarse)]:select-none [-webkit-touch-callout:none] ${delEquipo ? 'bg-brand text-white' : 'bg-surface-card-hover text-content border border-border-subtle'}`}>
+                    <CitaDeMensaje cita={m.cita} equipo={equipo} cliente={cliente} delEquipo={delEquipo} onIr={onIrA} />
+                    {m.foto_ruta && (
+                        m.foto_url ? (
+                            <button type="button" onClick={() => onFoto(m.foto_url)} title="Ampliar la foto"
+                                className="block rounded-input overflow-hidden active:scale-[0.97] min-h-[var(--tap-min)]">
+                                <img src={m.foto_url} alt="Foto enviada en el chat" className="max-h-60 w-auto object-cover" loading="lazy" />
+                            </button>
+                        ) : <span className="text-label opacity-80">Foto no disponible</span>
+                    )}
+                    {adj?.tipo === 'producto' && (
+                        <span className={`flex items-center gap-2 rounded-input px-2 py-1.5 ${delEquipo ? 'bg-brand-dark/40' : 'bg-surface-card'}`}>
+                            <Package size={14} className="shrink-0" />
+                            <span className="min-w-0">
+                                <span className="block text-body-sm font-semibold truncate">{adj.nombre}</span>
+                                {adj.precio != null && <span className="block text-label tabular-nums">{formatMoney(Number(adj.precio))}</span>}
+                            </span>
                         </span>
-                    </span>
-                )}
-                {adj?.tipo === 'oferta' && (
-                    <span className={`flex items-center gap-2 rounded-input px-2 py-1.5 ${delEquipo ? 'bg-brand-dark/40' : 'bg-surface-card'}`}>
-                        <Tag size={14} className="shrink-0" />
-                        <span className="text-body-sm font-semibold min-w-0 truncate">{adj.titulo}</span>
-                    </span>
-                )}
-                {m.texto && <p className="text-body-sm whitespace-pre-wrap break-words">{m.texto}</p>}
+                    )}
+                    {adj?.tipo === 'oferta' && (
+                        <span className={`flex items-center gap-2 rounded-input px-2 py-1.5 ${delEquipo ? 'bg-brand-dark/40' : 'bg-surface-card'}`}>
+                            <Tag size={14} className="shrink-0" />
+                            <span className="text-body-sm font-semibold min-w-0 truncate">{adj.titulo}</span>
+                        </span>
+                    )}
+                    {m.texto && <p className="text-body-sm whitespace-pre-wrap break-words">{m.texto}</p>}
+                </div>
             </div>
-            <span className="text-micro text-content-3 tabular-nums mt-0.5">{cuandoLlego(m.created_at)}</span>
+            <ReaccionesDeMensaje filas={reacciones} yo={yo} equipo={equipo} cliente={cliente} alLado={lado}
+                puedeReaccionar={puedeReaccionar} onReaccionar={(e) => onReaccionar(m, e)} />
+            <span className="text-micro text-content-3 tabular-nums mt-0.5">
+                {cuandoLlego(m.created_at)}
+                {entrega && <span className={entrega === 'Visto' ? 'font-semibold text-brand-text' : ''}> · {entrega}</span>}
+            </span>
         </div>
+    );
+}
+
+// «… está escribiendo», abajo del hilo: el cliente (por su primer nombre) y,
+// si es OTRA persona del equipo, quién —para que no contesten dos a la vez—.
+// Se apaga sola a los 6 s con su propio reloj, sin esperar otro aviso.
+function QuienEscribe({ conversacion: c, cliente, yo, equipo, asegurarEquipo }) {
+    const otroId = c.escribiendo_por && String(c.escribiendo_por) !== String(yo) ? c.escribiendo_por : null;
+    const ahora = useRelojDeEscritura([c.cliente_escribiendo_at, otroId ? c.escribiendo_at : null]);
+    const escribeCliente = escribeAhora(c.cliente_escribiendo_at, ahora);
+    const escribeOtro = otroId != null && escribeAhora(c.escribiendo_at, ahora);
+    const companero = otroId ? equipo.get(otroId) ?? null : null;
+
+    // La ficha del compañero, si todavía no está (para su nombre corto y su foto).
+    useEffect(() => {
+        if (escribeOtro && !companero) asegurarEquipo([otroId]);
+    }, [escribeOtro, companero, otroId, asegurarEquipo]);
+
+    const primerNombre = String(cliente ?? '').split(/\s+/)[0] || 'El cliente';
+    return (
+        <div role="status" aria-live="polite" className="px-4 empty:hidden">
+            {escribeCliente && (
+                <span className="flex items-center gap-2 py-1 text-label text-content-3">
+                    <Puntos />
+                    <span className="truncate">{primerNombre} está escribiendo…</span>
+                </span>
+            )}
+            {escribeOtro && (
+                <span className="flex items-center gap-1.5 py-1 text-label font-semibold text-brand-text min-w-0">
+                    <AvatarConEstado emp={companero ?? { id: otroId }} px={18} mostrarChip={false} />
+                    <span className="truncate">{companero ? shortEmployeeName(companero) : 'Alguien del equipo'} está escribiendo…</span>
+                    <Puntos />
+                </span>
+            )}
+        </div>
+    );
+}
+
+// Los tres puntos que laten, uno detrás del otro.
+function Puntos() {
+    return (
+        <span aria-hidden="true" className="inline-flex items-center gap-0.5 shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse [animation-delay:200ms]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse [animation-delay:400ms]" />
+        </span>
     );
 }

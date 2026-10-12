@@ -1,25 +1,25 @@
 // «Foto de tu receta» (2026-10-12): el paso que aparece ANTES de confirmar una
 // reserva o un pedido con un producto bajo receta. Se toma o se elige la foto
-// (lib/fotos.js la achica) y se ve en miniatura para revisarla; se sube recién
-// al confirmar, cuando ya existe la reserva a la que pertenece.
-import { Alert, Pressable, Text, View } from 'react-native';
+// (lib/fotos.js la achica), se revisa en grande con zoom antes de aceptarla
+// (componentes/VistaPreviaFoto, 2026-10-12) y queda en miniatura; se sube
+// recién al confirmar, cuando ya existe la reserva a la que pertenece.
+import { Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
 import { colorSistema } from './sistema';
-import { elegirFoto, preguntarOrigen } from '../lib/fotos';
+import { PISTA_RECETA, usarVistaPreviaFoto } from './VistaPreviaFoto';
 import { suave, useTema } from '../tema/tema';
 
 export default function RecetaFoto({ foto, alCambiar, superficie }) {
   const t = useTema();
+  const vistaPrevia = usarVistaPreviaFoto();
   const elegir = async () => {
     Haptics.selectionAsync().catch(() => {});
-    const origen = await preguntarOrigen('Foto de tu receta', 'Que se lean bien el nombre del medicamento, la firma y el sello del médico.');
-    if (!origen) return;
-    const r = await elegirFoto(origen);
-    if (!r) return;
-    if (r.error) { Alert.alert('No se pudo usar la foto', r.error); return; }
-    alCambiar(r);
+    const r = await vistaPrevia.elegir({
+      titulo: 'Foto de tu receta', mensaje: 'Que se lean bien el nombre del medicamento, la firma y el sello del médico.', pista: PISTA_RECETA,
+    });
+    if (r) alCambiar(r);
   };
   return (
     <View style={{ backgroundColor: superficie ?? (t.oscuro ? 'rgba(255,255,255,0.08)' : '#FFFFFF'), borderRadius: 18, padding: 16, gap: 12 }}>
@@ -56,6 +56,7 @@ export default function RecetaFoto({ foto, alCambiar, superficie }) {
           <Text style={{ fontSize: 16, fontWeight: '800', color: t.color.magentaTexto }}>Tomar o elegir la foto</Text>
         </Pressable>
       )}
+      {vistaPrevia.vista}
     </View>
   );
 }

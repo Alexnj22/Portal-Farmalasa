@@ -37,7 +37,8 @@ import { dolares, fecha } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
 import { navegar } from '../lib/navegar';
 import { useCuenta } from '../lib/cuenta';
-import { elegirFoto, preguntarOrigen, subirReceta } from '../lib/fotos';
+import { subirReceta } from '../lib/fotos';
+import { PISTA_RECETA, usarVistaPreviaFoto } from '../componentes/VistaPreviaFoto';
 
 // Colores del tema (cambian con el modo oscuro y se leen sobre el vidrio).
 const ESTADO_BASE = {
@@ -178,13 +179,14 @@ export default function Reservas() {
   // servidor la anota en todo el pedido.
   const [subiendo, setSubiendo] = useState(null);
   const subiendoYa = useRef(false);
+  // Antes de subirla se revisa en grande, con zoom (componentes/VistaPreviaFoto).
+  const vistaPrevia = usarVistaPreviaFoto();
   const subirOtra = async (g) => {
     if (subiendoYa.current) return;
-    const origen = await preguntarOrigen('Foto de tu receta', 'Que se lean bien el nombre del medicamento, la firma y el sello del médico.');
-    if (!origen) return;
-    const f = await elegirFoto(origen);
+    const f = await vistaPrevia.elegir({
+      titulo: 'Foto de tu receta', mensaje: 'Que se lean bien el nombre del medicamento, la firma y el sello del médico.', pista: PISTA_RECETA,
+    });
     if (!f) return;
-    if (f.error) { Alert.alert('No se pudo usar la foto', f.error); return; }
     subiendoYa.current = true;
     setSubiendo(g.clave);
     try {
@@ -315,6 +317,7 @@ export default function Reservas() {
   return (
     <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando} alFinal={d.siguiente ? cargarMas : undefined}>
       {chips}
+      {vistaPrevia.vista}
       {filtro === 'todas' && encargos.length ? (
         <>
           <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4 }}>Encargos</Text>

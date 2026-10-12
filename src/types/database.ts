@@ -401,8 +401,13 @@ export type Database = {
       }
       app_chat_conversaciones: {
         Row: {
+          cliente_escribiendo_at: string | null
           created_at: string
           customer_id: number
+          escribiendo_at: string | null
+          escribiendo_por: string | null
+          espera_recordada_at: string | null
+          esperando_desde: string | null
           estado: string
           id: number
           resuelta_at: string | null
@@ -414,10 +419,16 @@ export type Database = {
           ultimo_de: string | null
           ultimo_mensaje_at: string
           ultimo_texto: string | null
+          visto_equipo_at: string | null
         }
         Insert: {
+          cliente_escribiendo_at?: string | null
           created_at?: string
           customer_id: number
+          escribiendo_at?: string | null
+          escribiendo_por?: string | null
+          espera_recordada_at?: string | null
+          esperando_desde?: string | null
           estado?: string
           id?: never
           resuelta_at?: string | null
@@ -429,10 +440,16 @@ export type Database = {
           ultimo_de?: string | null
           ultimo_mensaje_at?: string
           ultimo_texto?: string | null
+          visto_equipo_at?: string | null
         }
         Update: {
+          cliente_escribiendo_at?: string | null
           created_at?: string
           customer_id?: number
+          escribiendo_at?: string | null
+          escribiendo_por?: string | null
+          espera_recordada_at?: string | null
+          esperando_desde?: string | null
           estado?: string
           id?: never
           resuelta_at?: string | null
@@ -444,6 +461,7 @@ export type Database = {
           ultimo_de?: string | null
           ultimo_mensaje_at?: string
           ultimo_texto?: string | null
+          visto_equipo_at?: string | null
         }
         Relationships: [
           {
@@ -459,6 +477,20 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "dte_rechazos_vigentes"
             referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "app_chat_conversaciones_escribiendo_por_fkey"
+            columns: ["escribiendo_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_chat_conversaciones_escribiendo_por_fkey"
+            columns: ["escribiendo_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "app_chat_conversaciones_resuelta_por_fkey"
@@ -499,6 +531,7 @@ export type Database = {
           employee_id: string | null
           foto_ruta: string | null
           id: number
+          respuesta_a: number | null
           texto: string | null
         }
         Insert: {
@@ -509,6 +542,7 @@ export type Database = {
           employee_id?: string | null
           foto_ruta?: string | null
           id?: never
+          respuesta_a?: number | null
           texto?: string | null
         }
         Update: {
@@ -519,6 +553,7 @@ export type Database = {
           employee_id?: string | null
           foto_ruta?: string | null
           id?: never
+          respuesta_a?: number | null
           texto?: string | null
         }
         Relationships: [
@@ -541,6 +576,62 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_chat_mensajes_respuesta_a_fkey"
+            columns: ["respuesta_a"]
+            isOneToOne: false
+            referencedRelation: "app_chat_mensajes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_chat_reacciones: {
+        Row: {
+          autor: string
+          created_at: string
+          emoji: string
+          employee_id: string | null
+          id: number
+          mensaje_id: number
+        }
+        Insert: {
+          autor: string
+          created_at?: string
+          emoji: string
+          employee_id?: string | null
+          id?: never
+          mensaje_id: number
+        }
+        Update: {
+          autor?: string
+          created_at?: string
+          emoji?: string
+          employee_id?: string | null
+          id?: never
+          mensaje_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_chat_reacciones_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_chat_reacciones_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_chat_reacciones_mensaje_id_fkey"
+            columns: ["mensaje_id"]
+            isOneToOne: false
+            referencedRelation: "app_chat_mensajes"
             referencedColumns: ["id"]
           },
         ]
@@ -26523,12 +26614,19 @@ export type Database = {
         Args: { p_antes?: string; p_estado?: string }
         Returns: Json
       }
+      chat_escribiendo: { Args: { p_conversacion: number }; Returns: Json }
+      chat_reaccionar: {
+        Args: { p_emoji: string; p_mensaje: number }
+        Returns: Json
+      }
+      chat_recordar_espera: { Args: never; Returns: number }
       chat_resolver: { Args: { p_conversacion: number }; Returns: Json }
       chat_responder: {
         Args: {
           p_adjunto?: Json
           p_conversacion: number
           p_foto_ruta?: string
+          p_respuesta_a?: number
           p_texto: string
         }
         Returns: Json

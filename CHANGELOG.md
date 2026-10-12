@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1276.0 — Chat en vivo: burbuja, escribiendo, visto, reacciones, responder y barra nativa
+
+**Base** (`chat_en_vivo`, `chat_aviso_solo_si_se_acumula`, `chat_reacciones_citas_y_espera`):
+- Push al cliente al instante: un trigger en `app_cliente_avisos` llama a `avisos-clientes` en modo `pendientes` (sólo chat y receta); el cron del minuto queda de red.
+- «Escribiendo…» en los dos sentidos y «Visto» (`escribiendo_*`, `cliente_escribiendo_at`, `visto_equipo_at`; `chat_escribiendo`).
+- Avisos al equipo (decisión del usuario: «suficiente con la burbuja»): ya no por cada mensaje; uno cuando una conversación junta 3 sin respuesta y otro a los 15 minutos de espera con la farmacia abierta (`chat_recordar_espera`, cron `chat-recordar-espera-5min`).
+- Reacciones (`app_chat_reacciones`, 👍 ❤️ 😂 😮 🙏 ✅) y responder citando (`respuesta_a`; `chat_responder` con `p_respuesta_a`).
+
+**App de clientes:** burbuja del chat en todas las pantallas con los sin leer; aviso dentro de la app al llegar una respuesta; «Ana está escribiendo…», «Te atiende Ana», «Visto/Enviado»; mantener presionado para reaccionar/responder/copiar, deslizar para responder; barra para escribir estilo iMessage («+» con Tomar foto / Elegir de Fotos, cámara directa, enviar redondo); vista previa de toda foto con zoom y «Elegir otra»; precio de mayoreo sólo para la caja (unidades sueltas a Preferente, también al cobrar) y el rótulo sólo con el nombre del precio.
+
+**Portal:** la bandeja y el hilo no se actualizaban solos — el canal en vivo se nombraba con `useId`, un componente que se volvía a montar pedía el MISMO tema y `supabase.channel()` devolvía el canal viejo que se estaba cerrando: suscriptores vivos en el servidor y una pantalla sorda, sin error. Ahora cada montaje tiene su tema, relee al reconectar, y la burbuja se ajusta con cada aviso. Reacciones, responder citando, «escribiendo…» y «Visto».
+
 ## v2.1275.0 — Portal: ajustes del chat y horarios especiales de sucursal
 
 - **Ajustes del chat** (Chat con clientes, para quien puede responder): editar las dos respuestas automáticas con `{abre}`/`{cierra}`, vista previa con el horario real y quién lo editó por última vez. Píldora «Farmacia en línea · hasta las 10:00 p. m.» / «Fuera de horario · abre mañana 7:00 a. m.» y el feriado del día.

@@ -84,8 +84,12 @@ Deno.serve(async (req) => {
       return json({ ok: true, prueba: true, ...r });
     }
 
-    const modo = body?.modo === "inmediato" || body?.modo === "diario" ? body.modo : "todo";
-    const inmediato = modo !== "diario", diario = modo !== "inmediato";
+    // `pendientes` (2026-10-12): sólo manda los avisos que escribió la base
+    // (respuesta del chat, receta revisada). Lo dispara la propia base al
+    // instante (`chat_responder`, `reserva_receta_decidir`) para que el cliente
+    // no espere al cron del minuto.
+    const modo = ["inmediato", "diario", "pendientes"].includes(body?.modo) ? body.modo : "todo";
+    const inmediato = modo !== "diario", diario = modo !== "inmediato" && modo !== "pendientes";
 
     // ── Avisos que escribe la BASE (2026-10-12): la receta revisada
     // (`reserva_receta_decidir`, tipo `receta`) y la respuesta del chat
@@ -117,6 +121,7 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (modo === "pendientes") return json({ ok: true, pendientes: pendientesBase });
     const clientes = [...tokens.keys()];
     if (!clientes.length) return json({ ok: true, avisos: 0, motivo: "nadie con avisos encendidos", pendientes: pendientesBase });
     const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);

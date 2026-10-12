@@ -1,13 +1,36 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useAlLlegarAviso } from '@nucleo/hooks/avisosRecibidos';
 import { useRefrescoEnVivo } from '@nucleo/hooks/useRefrescoEnVivo';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { fetchAutoresDelEquipo, fetchConversaciones } from '@nucleo/data/chatClientes';
+import {
+    COLUMNAS_PRESENCIA, fetchAutoresDelEquipo, fetchConversaciones, fetchPresenciaDeConversaciones,
+} from '@nucleo/data/chatClientes';
 
 // La bandeja del chat, compartida por la vista y por el panel de la burbuja
 // flotante: la lista paginada (40 por página), su refresco en vivo y las fichas
 // del equipo que aparecen en pantalla (quién tomó, quién contestó).
 
 export const POR_PAGINA = 40;
+
+// Lo que la bandeja muestra de una conversación. Si un aviso de realtime trae
+// estos campos iguales a los que ya hay en pantalla, lo que cambió es sólo la
+// presencia («escribiendo», «visto») y el propio aviso la trae: no se relee
+// la bandeja. Sin esto, cada tecla —la marca se renueva cada 3 s— costaría una
+// lectura entera de la bandeja en cada portal abierto.
+const CAMPOS_DE_LA_BANDEJA = ['estado', 'ultimo_mensaje_at', 'ultimo_de', 'sin_leer_equipo', 'tomada_por', 'tomada_at'];
+// Las fechas pueden llegar escritas distinto por la función y por realtime
+// («…T15:00:00+00:00» / «… 15:00:00+00»): se comparan como instante.
+const comoInstante = (v) => (typeof v === 'string' && /^\d{4}-\d\d-\d\d[T ]\d/.test(v)
+    ? Date.parse(v.replace(' ', 'T').replace(/([+-]\d\d)$/, '$1:00'))
+    : NaN);
+const mismoValor = (a, b) => {
+    if (a == null || b == null) return a == null && b == null;
+    const ia = comoInstante(a);
+    const ib = comoInstante(b);
+    if (Number.isFinite(ia) && Number.isFinite(ib)) return ia === ib;
+    return String(a) === String(b);
+};
+const soloPresencia = (fila) => Object.fromEntries(COLUMNAS_PRESENCIA.map((k) => [k, fila?.[k] ?? null]));
 
 /** Las fichas del equipo que se van necesitando, para nombre corto y foto. */
 export function useEquipoDelChat() {
@@ -41,6 +64,23 @@ export function useBandejaDelChat(estado, { asegurarEquipo, todas = false } = {}
     const [hayMas, setHayMas] = useState(false);
     const [cargandoMas, setCargandoMas] = useState(false);
     const [error, setError] = useState(null);
+    // `Map<id, presencia>` — sale de una lectura aparte y de los avisos de realtime.
+    const [presencia, setPresencia] = useState(() => new Map());
+    const filasRef = useRef(null);
+    useEffect(() => { filasRef.current = conversaciones; }, [conversaciones]);
+
+    const leerPresencia = useCallback(async (ids) => {
+        try {
+            const leidas = await fetchPresenciaDeConversaciones(ids);
+            setPresencia((prev) => {
+                const nuevo = new Map(prev);
+                leidas.forEach((f, id) => nuevo.set(id, soloPresencia(f)));
+                return nuevo;
+            });
+        } catch (err) {
+            console.error('chat-clientes: no se pudo leer quién está escribiendo', err);
+        }
+    }, []);
 
     // Lectura silenciosa de la primera página. Si ya se habían pedido páginas
     // viejas, se conservan las que quedan por debajo de la página nueva.
@@ -56,17 +96,30 @@ export function useBandejaDelChat(estado, { asegurarEquipo, todas = false } = {}
             setHayMas((prev) => prev || nuevas.length >= POR_PAGINA);
             setError(null);
             asegurarEquipo?.(nuevas.filter((c) => c.tomada_vigente).map((c) => c.tomada_por));
+            leerPresencia(nuevas.map((c) => c.id));
         } catch (err) {
             setError(mensajeAmigable(err, 'No se pudieron cargar las conversaciones.'));
         }
-    }, [estado, asegurarEquipo]);
+    }, [estado, asegurarEquipo, leerPresencia]);
 
     useEffect(() => {
         setConversaciones(null);
         setHayMas(false);
         cargar();
     }, [cargar]);
-    useRefrescoEnVivo(cargar, { ms: 30_000, tabla: 'app_chat_conversaciones' });
+    // Un aviso de sólo presencia se aplica tal cual y no relee la bandeja.
+    const ignorar = useCallback((payload) => {
+        const nueva = payload?.new;
+        if (payload?.eventType !== 'UPDATE' || nueva?.id == null) return false;
+        setPresencia((prev) => new Map(prev).set(nueva.id, soloPresencia(nueva)));
+        const actual = (filasRef.current ?? []).find((c) => c.id === nueva.id);
+        if (!actual) return false;
+        return CAMPOS_DE_LA_BANDEJA.every((k) => mismoValor(actual[k], nueva[k]));
+    }, []);
+    // Realtime es el camino; el reloj (15 s con la pestaña a la vista) y el
+    // aviso de la campana son el respaldo si el canal se cae.
+    useRefrescoEnVivo(cargar, { ms: 15_000, tabla: 'app_chat_conversaciones', ignorar });
+    useAlLlegarAviso('CHAT_CLIENTE', cargar);
 
     const verMas = useCallback(async () => {
         const ultima = conversaciones?.[conversaciones.length - 1];
@@ -80,13 +133,14 @@ export function useBandejaDelChat(estado, { asegurarEquipo, todas = false } = {}
             });
             setHayMas(mas.length >= POR_PAGINA);
             asegurarEquipo?.(mas.filter((c) => c.tomada_vigente).map((c) => c.tomada_por));
+            leerPresencia(mas.map((c) => c.id));
         } catch (err) {
             setError(mensajeAmigable(err, 'No se pudieron cargar más conversaciones.'));
             setHayMas(false);
         } finally {
             setCargandoMas(false);
         }
-    }, [conversaciones, estado, asegurarEquipo]);
+    }, [conversaciones, estado, asegurarEquipo, leerPresencia]);
 
     // Con un filtro derivado, la lista entera (hasta el tope).
     const llenas = (conversaciones?.length ?? 0) >= POR_PAGINA * 10;
@@ -94,5 +148,10 @@ export function useBandejaDelChat(estado, { asegurarEquipo, todas = false } = {}
         if (todas && hayMas && !cargandoMas && !error && conversaciones && !llenas) verMas();
     }, [todas, hayMas, cargandoMas, error, conversaciones, llenas, verMas]);
 
-    return { conversaciones, hayMas, cargandoMas, error, cargar, verMas };
+    // Cada fila con su presencia encima (la de la bandeja no la trae).
+    const conPresencia = useMemo(() => (conversaciones
+        ? conversaciones.map((c) => (presencia.has(c.id) ? { ...c, ...presencia.get(c.id) } : c))
+        : conversaciones), [conversaciones, presencia]);
+
+    return { conversaciones: conPresencia, hayMas, cargandoMas, error, cargar, verMas };
 }

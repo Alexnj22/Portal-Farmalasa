@@ -30,6 +30,7 @@ instalarHojasAndroid();
 // el oyente va desde el arranque para no perder el que despertó a la app.
 instalarTomas();
 import AvisoEnApp from '../componentes/AvisoEnApp';
+import BurbujaChat from '../componentes/BurbujaChat';
 export { default as ErrorBoundary } from '../componentes/ErrorDePantalla';
 
 const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent' } };
@@ -186,6 +187,9 @@ function Raiz() {
             <Stack.Screen name="mis-puntos" options={{ headerShown: false }} />
           </Stack>
           <AvisoSinConexion />
+          {/* La burbuja del chat (2026-10-12): encima de las pantallas y debajo
+              de los avisos y del bloqueo. Dónde se esconde: componentes/BurbujaChat. */}
+          <BurbujaChat />
           {/* El aviso con la app abierta: debajo del bloqueo, que lo tapa. */}
           <AvisoEnApp />
           <Bloqueo />

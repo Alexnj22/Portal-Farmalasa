@@ -5,12 +5,22 @@
 // producto o una oferta, que se ven como tarjetas que se tocan para abrirlos.
 //
 // No hay conexión en vivo: mientras la pantalla está a la vista se pregunta
-// cada 5 s por lo NUEVO (`desde_id`), y enseguida al llegar el push de una
-// respuesta. Hacia atrás, de a 30 (`antes_id`). Fuera de 7:00–21:00 (hora de
-// El Salvador) se avisa que la respuesta llega mañana.
+// cada 5 s por lo NUEVO (`desde_id`) —cada 3 s si alguien del equipo está
+// escribiendo o atendiendo—, y enseguida al llegar el push de una respuesta.
+// Con cada respuesta llega `vivo` (2026-10-12): quién escribe ahora, quién
+// atiende y si el equipo ya vio lo último del cliente («Visto»/«Enviado»).
+// Mientras el cliente escribe se avisa (`chat_escribiendo`), a lo sumo cada 3 s.
+// Hacia atrás, de a 30 (`antes_id`). Fuera de horario se avisa cuándo se responde.
+//
+// Reacciones y respuestas (2026-10-12): mantener presionado un mensaje abre su
+// menú (6 reacciones, Responder, Copiar); deslizarlo a la derecha lo responde.
+// Las piezas viven en componentes/ChatPiezas.js. Las reacciones propias se
+// ven al instante; las del equipo en mensajes viejos llegan al volver a entrar
+// (la consulta cada pocos segundos trae sólo lo NUEVO).
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, Text, TextInput, View } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { ActivityIndicator, Alert, AppState, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, Text, View } from 'react-native';
+import { Stack, useFocusEffect } from 'expo-router';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -20,12 +30,20 @@ import { colorSistema } from '../componentes/sistema';
 import { useSesion } from '../lib/sesion';
 import { useCuenta } from '../lib/cuenta';
 import { alLlegarAviso, marcarChatALaVista } from '../lib/avisos';
-import { elegirFoto, preguntarOrigen, subirFoto } from '../lib/fotos';
+import { subirFoto } from '../lib/fotos';
 import { dolares, nombrePropio } from '../lib/formato';
 import { navegar } from '../lib/navegar';
+import { LIVIANO } from '../lib/rendimiento';
+import { usarVistaPreviaFoto } from '../componentes/VistaPreviaFoto';
+import { Cita, Compositor, copiar, Deslizable, MenuMensaje, preguntarAdjunto, Reacciones, Respondiendo, useMedir } from '../componentes/ChatPiezas';
 import { suave, useTema } from '../tema/tema';
 
 const CADA_MS = 5000;
+// Con alguien del equipo escribiendo o atendiendo, la respuesta está cerca.
+const CADA_RAPIDO_MS = 3000;
+// «Está escribiendo» le dura 6 s al equipo: avisar cada 3 s lo mantiene encendido.
+const ESCRIBIENDO_CADA_MS = 3000;
+const SIN_VIVO = { escribiendo: null, atiende: null, visto: false };
 
 const horaDe = (iso) => {
   const d = new Date(iso);
@@ -64,6 +82,19 @@ export default function Chat() {
   const ultimoId = useRef(0);
   const preguntando = useRef(false);
   const alFondo = useRef(true);
+  const [vivo, setVivo] = useState(SIN_VIVO);
+  const rapido = useRef(false);
+  const avisoEscribiendo = useRef(0);
+  const anotarVivo = (v) => {
+    const x = v ? { escribiendo: v.escribiendo || null, atiende: v.atiende || null, visto: !!v.visto } : SIN_VIVO;
+    rapido.current = !!(x.escribiendo || x.atiende);
+    setVivo((a) => (a.escribiendo === x.escribiendo && a.atiende === x.atiende && a.visto === x.visto ? a : x));
+  };
+  const foto = usarVistaPreviaFoto();
+  // Responder citando y el menú de un mensaje (2026-10-12).
+  const [respondiendo, setRespondiendo] = useState(null); // { id, autor, texto, foto, nombre }
+  const [menu, setMenu] = useState(null); // { m, caja }
+  const [resaltado, setResaltado] = useState(null);
 
   // El id más nuevo que ya se tiene (los temporales no cuentan).
   const anotarUltimo = (arr) => {
@@ -82,6 +113,7 @@ export default function Chat() {
     setError(null);
     setFuera(!!r.fuera_de_horario);
     if (r.horario) setHorario(r.horario);
+    if ('vivo' in r) anotarVivo(r.vivo);
     setHayMas(!!r.hay_mas);
     anotarUltimo(r.mensajes);
     setMensajes(r.mensajes);
@@ -95,6 +127,8 @@ export default function Chat() {
     preguntando.current = true;
     try {
       const r = await pedir('chat_mensajes', { desde_id: ultimoId.current });
+      // Lo «en vivo» cambia aunque no haya mensajes nuevos.
+      if (r?.ok && 'vivo' in r) anotarVivo(r.vivo);
       if (!r?.ok || !r.mensajes?.length) { if (r?.ok) setFuera(!!r.fuera_de_horario); return; }
       setFuera(!!r.fuera_de_horario);
       if (r.horario) setHorario(r.horario);
@@ -112,11 +146,18 @@ export default function Chat() {
   useFocusEffect(useCallback(() => {
     marcarChatALaVista(true);
     if (mensajes == null) cargar(); else nuevos();
-    const reloj = setInterval(nuevos, CADA_MS);
+    // Un reloj que se reprograma solo: 3 s con el equipo activo, 5 s si no.
+    let reloj = null;
+    let vivoAca = true;
+    const tic = async () => {
+      await nuevos();
+      if (vivoAca) reloj = setTimeout(tic, rapido.current ? CADA_RAPIDO_MS : CADA_MS);
+    };
+    reloj = setTimeout(tic, rapido.current ? CADA_RAPIDO_MS : CADA_MS);
     // Llegó el push de una respuesta: se pregunta ya, sin esperar los 5 s.
     const quitar = alLlegarAviso((a) => { if (typeof a.url === 'string' && a.url.startsWith('/chat')) nuevos(); });
     const app = AppState.addEventListener('change', (e) => { if (e === 'active') nuevos(); });
-    return () => { marcarChatALaVista(false); clearInterval(reloj); quitar(); app.remove(); };
+    return () => { vivoAca = false; marcarChatALaVista(false); clearTimeout(reloj); quitar(); app.remove(); };
   }, [cargar, nuevos])); // eslint-disable-line react-hooks/exhaustive-deps -- `mensajes` sólo decide la primera carga
 
   const anteriores = async () => {
@@ -141,7 +182,10 @@ export default function Chat() {
     if (enviarYa.current) return;
     enviarYa.current = true;
     setEnviando(true);
-    const tmp = { id: `tmp-${Date.now()}`, autor: 'cliente', texto: tx, foto_url: uri, created_at: new Date().toISOString(), enviando: true };
+    const cita = respondiendo;
+    setRespondiendo(null);
+    const tmp = { id: `tmp-${Date.now()}`, autor: 'cliente', texto: tx, foto_url: uri, created_at: new Date().toISOString(), enviando: true,
+      responde_a: cita ? { id: cita.id, autor: cita.autor, texto: cita.texto, foto: cita.foto } : null, reacciones: [] };
     alFondo.current = true;
     setMensajes((ant) => [...(ant ?? []), tmp]);
     try {
@@ -151,7 +195,7 @@ export default function Chat() {
         if (!s.ok) throw new Error(s.mensaje);
         fotoRuta = s.ruta;
       }
-      const r = await pedir('chat_enviar', { texto: tx, foto_ruta: fotoRuta });
+      const r = await pedir('chat_enviar', { texto: tx, foto_ruta: fotoRuta, ...(cita ? { respuesta_a: cita.id } : {}) });
       if (!r?.ok) throw new Error(r?.mensaje ?? 'No se pudo enviar. Revisa tu conexión.');
       if (typeof r.fuera_de_horario === 'boolean') setFuera(r.fuera_de_horario);
       if (r.horario) setHorario(r.horario);
@@ -165,6 +209,7 @@ export default function Chat() {
       return true;
     } catch (e) {
       setMensajes((ant) => (ant ?? []).filter((m) => m.id !== tmp.id));
+      if (cita) setRespondiendo(cita);
       Alert.alert('No se envió', e?.message ?? 'Revisa tu conexión e intenta de nuevo.');
       return false;
     } finally {
@@ -172,20 +217,53 @@ export default function Chat() {
       setEnviando(false);
     }
   };
+  // «El cliente está escribiendo»: a lo sumo una vez cada 3 s, nunca con el campo vacío.
+  const alEscribir = (v) => {
+    setTexto(v.slice(0, 2000));
+    if (!v.trim() || pendiente) return;
+    const ahora = Date.now();
+    if (ahora - avisoEscribiendo.current < ESCRIBIENDO_CADA_MS) return;
+    avisoEscribiendo.current = ahora;
+    pedir('chat_escribiendo').catch?.(() => {});
+  };
   const enviarTexto = async () => {
     const tx = texto.trim();
     if (!tx || enviando) return;
     setTexto('');
     if (!(await mandar({ texto: tx }))) setTexto(tx);
   };
-  const enviarFoto = async () => {
+  // «+» pregunta Tomar foto / Elegir de Fotos; la cámara de la barra va directo.
+  // Siempre pasa por la vista previa (con zoom) antes de enviarse.
+  const enviarFoto = async (origenDado) => {
     if (enviando) return;
-    const origen = await preguntarOrigen('Enviar una foto', 'Por ejemplo, la caja del medicamento o tu receta.');
+    const origen = origenDado ?? await preguntarAdjunto();
     if (!origen) return;
-    const f = await elegirFoto(origen);
+    const f = await foto.elegir({ origen });
     if (!f) return;
-    if (f.error) { Alert.alert('No se pudo usar la foto', f.error); return; }
     await mandar({ uri: f.uri });
+  };
+
+  // Reaccionar: al instante en pantalla, y si el servidor no lo acepta se
+  // vuelve atrás. Tocar la misma reacción la quita.
+  const reaccionar = async (m, emoji) => {
+    if (typeof m.id !== 'number') return;
+    const antes = m.reacciones ?? [];
+    const yaEra = antes.find((r) => r.mia)?.emoji === emoji;
+    const nuevas = [...antes.filter((r) => !r.mia), ...(yaEra ? [] : [{ emoji, mia: true }])];
+    const poner = (lista) => setMensajes((ant) => (ant ?? []).map((x) => (x.id === m.id ? { ...x, reacciones: lista } : x)));
+    poner(nuevas);
+    Haptics.selectionAsync().catch(() => {});
+    const r = await pedir('chat_reaccionar', { mensaje_id: m.id, emoji: yaEra ? null : emoji });
+    if (!r?.ok) { poner(antes); Alert.alert('No se guardó la reacción', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); }
+  };
+  const responderA = (m) => {
+    if (typeof m.id !== 'number') return;
+    setRespondiendo({ id: m.id, autor: m.autor, texto: m.texto ?? null, foto: !!m.foto_url,
+      nombre: m.autor === 'equipo' ? (m.equipo?.nombre ? nombrePropio(m.equipo.nombre) : 'Farmacia Salud') : null });
+  };
+  const nombreDe = (id) => {
+    const x = (mensajes ?? []).find((y) => y.id === id);
+    return x?.equipo?.nombre ? nombrePropio(x.equipo.nombre) : null;
   };
 
   if (mensajes == null) return <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator /></View>;
@@ -211,9 +289,26 @@ export default function Chat() {
     filas.push({ clave: `m:${m.id}`, m, primero: !mismoAutor(previo, m), ultimo: !mismoAutor(m, siguiente) });
   });
 
+  // «Visto» / «Enviado» debajo del último mensaje del cliente, si es lo
+  // último de la conversación (los avisos del sistema no cuentan).
+  const ultimoReal = [...mensajes].reverse().find((m) => m.autor !== 'sistema');
+  const idConEstado = ultimoReal?.autor === 'cliente' && !ultimoReal.enviando ? ultimoReal.id : null;
+
+  // Tocar la cita lleva al mensaje original, si ya está cargado, y lo resalta.
+  const irA = (id) => {
+    const i = filas.findIndex((f) => f.m?.id === id);
+    if (i < 0) return;
+    alFondo.current = false;
+    try { lista.current?.scrollToIndex({ index: i, viewPosition: 0.4, animated: true }); } catch { /* fuera de lo medido */ }
+    setResaltado(id);
+    setTimeout(() => setResaltado((x) => (x === id ? null : x)), 1400);
+  };
+
   const arriba = Platform.OS === 'ios' ? ins.top + 52 : 0;
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {/* «Te atiende Ana» bajo el título, mientras alguien tiene la conversación. */}
+      <Stack.Screen options={{ headerTitle: () => <TituloChat atiende={vivo.atiende ? nombrePropio(vivo.atiende) : null} /> }} />
       <FlatList
         ref={lista}
         data={filas}
@@ -224,6 +319,10 @@ export default function Chat() {
         onScroll={({ nativeEvent: e }) => { alFondo.current = e.layoutMeasurement.height + e.contentOffset.y >= e.contentSize.height - 80; }}
         scrollEventThrottle={100}
         onContentSizeChange={() => { if (alFondo.current) lista.current?.scrollToEnd({ animated: false }); }}
+        onScrollToIndexFailed={(e) => {
+          lista.current?.scrollToOffset({ offset: e.averageItemLength * e.index, animated: true });
+          setTimeout(() => { try { lista.current?.scrollToIndex({ index: e.index, viewPosition: 0.4, animated: true }); } catch { /* sin medir */ } }, 250);
+        }}
         ListHeaderComponent={(
           <View style={{ gap: 10, marginBottom: 8 }}>
             {/* Estado de la farmacia (2026-10-12): en línea o fuera de horario, siempre a la vista. */}
@@ -264,30 +363,18 @@ export default function Chat() {
         renderItem={({ item: f }) => (f.dia ? (
           <Text style={{ alignSelf: 'center', fontSize: 12, fontWeight: '700', color: colorSistema.texto3, marginVertical: 10, textTransform: 'capitalize' }}>{f.dia}</Text>
         ) : (
-          <Burbuja m={f.m} primero={f.primero} ultimo={f.ultimo} alVerFoto={setFotoGrande} />
+          <Burbuja m={f.m} primero={f.primero} ultimo={f.ultimo} alVerFoto={setFotoGrande}
+            estado={f.m.id === idConEstado ? (vivo.visto ? 'Visto' : 'Enviado') : null}
+            resaltado={resaltado === f.m.id} nombreCitado={f.m.responde_a ? nombreDe(f.m.responde_a.id) : null}
+            alResponder={() => responderA(f.m)} alMenu={(caja) => setMenu({ m: f.m, caja })}
+            alReaccionar={(e) => reaccionar(f.m, e)} alIrA={irA} />
         ))}
+        ListFooterComponent={vivo.escribiendo ? <Escribiendo nombre={nombrePropio(vivo.escribiendo)} /> : null}
       />
 
-      {/* La barra para escribir. */}
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingHorizontal: 10, paddingTop: 8,
-        paddingBottom: Math.max(ins.bottom, 10), borderTopWidth: 0.5, borderTopColor: colorSistema.separador,
-        backgroundColor: t.oscuro ? 'rgba(18,16,24,0.92)' : 'rgba(255,255,255,0.92)' }}>
-        <Pressable onPress={enviarFoto} disabled={enviando} accessibilityRole="button" accessibilityLabel="Enviar una foto" hitSlop={6}
-          style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', opacity: enviando ? 0.4 : 1,
-            transform: [{ scale: pressed ? 0.92 : 1 }] })}>
-          <Icono sf="camera.fill" respaldo="📷" tam={22} color={t.color.magentaTexto} />
-        </Pressable>
-        <TextInput value={texto} onChangeText={(v) => setTexto(v.slice(0, 2000))} placeholder="Escribe tu mensaje" placeholderTextColor={colorSistema.texto3}
-          multiline maxLength={2000} accessibilityLabel="Mensaje"
-          style={{ flex: 1, fontSize: 16, color: colorSistema.texto, minHeight: 44, maxHeight: 120, borderRadius: 22, paddingHorizontal: 14,
-            paddingTop: 11, paddingBottom: 11, backgroundColor: t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }} />
-        <Pressable onPress={enviarTexto} disabled={!texto.trim() || enviando} accessibilityRole="button" accessibilityLabel="Enviar"
-          style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
-            backgroundColor: texto.trim() ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'),
-            transform: [{ scale: pressed ? 0.92 : 1 }] })}>
-          {enviando ? <ActivityIndicator color="#FFFFFF" /> : <Icono sf="arrow.up" respaldo="↑" tam={18} color={texto.trim() ? '#FFFFFF' : colorSistema.texto3} />}
-        </Pressable>
-      </View>
+      {/* La barra para escribir, como iMessage (componentes/ChatPiezas). */}
+      <Compositor texto={texto} alEscribir={alEscribir} alEnviar={enviarTexto} alAdjuntar={enviarFoto} enviando={enviando}
+        encima={respondiendo ? <Respondiendo cita={respondiendo} alCancelar={() => setRespondiendo(null)} /> : null} />
 
       <Modal visible={!!fotoGrande} animationType="fade" transparent presentationStyle="overFullScreen" onRequestClose={() => setFotoGrande(null)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.94)', paddingTop: ins.top + 8, paddingBottom: ins.bottom + 8 }}>
@@ -298,16 +385,76 @@ export default function Chat() {
           {fotoGrande ? <Image source={{ uri: fotoGrande }} style={{ flex: 1 }} contentFit="contain" accessibilityLabel="Foto" /> : null}
         </View>
       </Modal>
+      {foto.vista}
+      {menu ? (
+        <MenuMensaje menu={menu} alCerrar={() => setMenu(null)}
+          alReaccionar={(e) => { const m = menu.m; setMenu(null); reaccionar(m, e); }}
+          alResponder={() => { const m = menu.m; setMenu(null); responderA(m); }}
+          alCopiar={() => {
+            const m = menu.m; setMenu(null);
+            if (copiar(m.texto)) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          }} />
+      ) : null}
     </KeyboardAvoidingView>
   );
+}
+
+// El título del chat, con «Te atiende Ana» debajo cuando alguien la atiende.
+function TituloChat({ atiende }) {
+  const t = useTema();
+  return (
+    <View style={{ alignItems: Platform.OS === 'ios' ? 'center' : 'flex-start' }} accessible accessibilityRole="header"
+      accessibilityLabel={atiende ? `Pregúntale a la farmacia. Te atiende ${atiende}` : 'Pregúntale a la farmacia'}>
+      <Text numberOfLines={1} style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>Pregúntale a la farmacia</Text>
+      {atiende ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: t.color.verde }} />
+          <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: '600', color: t.color.verdeTexto }}>Te atiende {atiende}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+// «Ana está escribiendo…» con tres puntos que saltan (quietos si se pide
+// reducir el movimiento o el teléfono es liviano).
+function Escribiendo({ nombre }) {
+  const t = useTema();
+  const reducir = useReducedMotion() || LIVIANO;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 8 }} accessible accessibilityLiveRegion="polite"
+      accessibilityLabel={`${nombre} está escribiendo`}>
+      <View style={{ width: 30 }} />
+      <View style={{ gap: 3 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 20, borderBottomLeftRadius: 6, paddingHorizontal: 14, height: 38,
+          backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.95)',
+          borderWidth: 0.5, borderColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', alignSelf: 'flex-start' }}>
+          {[0, 1, 2].map((i) => <Punto key={i} i={i} quieto={reducir} />)}
+        </View>
+        <Text style={{ fontSize: 11, color: colorSistema.texto3, marginHorizontal: 4 }}>{nombre} está escribiendo…</Text>
+      </View>
+    </View>
+  );
+}
+
+function Punto({ i, quieto }) {
+  const y = useSharedValue(0);
+  useEffect(() => {
+    if (quieto) { y.value = 0; return; }
+    y.value = withDelay(i * 150, withRepeat(withSequence(withTiming(-4, { duration: 260 }), withTiming(0, { duration: 260 }), withTiming(0, { duration: 380 })), -1));
+  }, [quieto, i, y]);
+  const animado = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }));
+  return <Animated.View style={[{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: colorSistema.texto3 }, animado]} />;
 }
 
 // Un mensaje. Del cliente: a la derecha, en magenta. Del equipo: a la
 // izquierda, con la foto (o las iniciales) y el nombre arriba del primero de
 // una racha. Del sistema: centrado, en gris.
-function Burbuja({ m, primero, ultimo, alVerFoto }) {
+function Burbuja({ m, primero, ultimo, alVerFoto, estado, resaltado, nombreCitado, alResponder, alMenu, alReaccionar, alIrA }) {
   const t = useTema();
+  const [ref, medir] = useMedir();
   const mio = m.autor === 'cliente';
+  const real = typeof m.id === 'number';
   if (m.autor === 'sistema') {
     return <Text style={{ alignSelf: 'center', fontSize: 13, color: colorSistema.texto3, textAlign: 'center', marginVertical: 6, maxWidth: '85%' }}>{m.texto}</Text>;
   }
@@ -315,7 +462,8 @@ function Burbuja({ m, primero, ultimo, alVerFoto }) {
   const colorTexto = mio ? '#FFFFFF' : colorSistema.texto;
   const nombre = m.equipo?.nombre ? nombrePropio(m.equipo.nombre) : 'Farmacia Salud';
   return (
-    <View style={{ flexDirection: 'row', justifyContent: mio ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 8, marginTop: primero ? 8 : 0 }}>
+    <View style={{ flexDirection: 'row', justifyContent: mio ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 8, marginTop: primero ? 8 : 0,
+      borderRadius: 14, backgroundColor: resaltado ? suave(t.color.magenta, 0.12) : 'transparent' }}>
       {!mio ? (
         <View style={{ width: 30 }}>
           {ultimo ? (
@@ -332,22 +480,33 @@ function Burbuja({ m, primero, ultimo, alVerFoto }) {
       ) : null}
       <View style={{ maxWidth: '78%', gap: 3, alignItems: mio ? 'flex-end' : 'flex-start' }}>
         {!mio && primero ? <Text style={{ fontSize: 12, fontWeight: '700', color: colorSistema.texto2, marginLeft: 4 }}>{nombre}</Text> : null}
-        {m.foto_url ? (
-          <Pressable onPress={() => alVerFoto(m.foto_url)} accessibilityRole="imagebutton" accessibilityLabel="Ver foto">
-            <Image source={{ uri: m.foto_url }} style={{ width: 200, height: 240, borderRadius: 18, backgroundColor: colorSistema.separador, opacity: m.enviando ? 0.6 : 1 }}
-              contentFit="cover" />
-          </Pressable>
-        ) : null}
-        {m.adjunto ? <Adjunto a={m.adjunto} /> : null}
-        {m.texto ? (
-          <View style={{ backgroundColor: fondo, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 9, opacity: m.enviando ? 0.7 : 1,
-            borderBottomRightRadius: mio && ultimo ? 6 : 20, borderBottomLeftRadius: !mio && ultimo ? 6 : 20,
-            ...(mio ? {} : { borderWidth: 0.5, borderColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }) }}>
-            <Text selectable style={{ fontSize: 16, lineHeight: 21, color: colorTexto }}>{m.texto}</Text>
+        {/* Deslizar a la derecha responde; mantener presionado abre el menú. */}
+        <Deslizable alResponder={() => { if (real) alResponder(); }} alMantener={() => { if (real) medir(alMenu); }}>
+          <View ref={ref} collapsable={false} style={{ gap: 3, alignItems: mio ? 'flex-end' : 'flex-start' }}>
+            {m.responde_a && !m.texto ? (
+              <View style={{ maxWidth: 260 }}><Cita c={m.responde_a} mio={false} nombreEquipo={nombreCitado} alTocar={() => alIrA(m.responde_a.id)} /></View>
+            ) : null}
+            {m.foto_url ? (
+              <Pressable onPress={() => alVerFoto(m.foto_url)} accessibilityRole="imagebutton" accessibilityLabel="Ver foto">
+                <Image source={{ uri: m.foto_url }} style={{ width: 200, height: 240, borderRadius: 18, backgroundColor: colorSistema.separador, opacity: m.enviando ? 0.6 : 1 }}
+                  contentFit="cover" />
+              </Pressable>
+            ) : null}
+            {m.adjunto ? <Adjunto a={m.adjunto} /> : null}
+            {m.texto ? (
+              <View style={{ backgroundColor: fondo, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 9, opacity: m.enviando ? 0.7 : 1,
+                borderBottomRightRadius: mio && ultimo ? 6 : 20, borderBottomLeftRadius: !mio && ultimo ? 6 : 20,
+                ...(resaltado ? { borderWidth: 2, borderColor: mio ? '#FFFFFF' : t.color.magenta } : mio ? {} : { borderWidth: 0.5, borderColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }) }}>
+                {m.responde_a ? <Cita c={m.responde_a} mio={mio} nombreEquipo={nombreCitado} alTocar={() => alIrA(m.responde_a.id)} /> : null}
+                {/* Sin `selectable`: mantener presionado es el menú (con «Copiar»). */}
+                <Text style={{ fontSize: 16, lineHeight: 21, color: colorTexto }}>{m.texto}</Text>
+              </View>
+            ) : null}
           </View>
-        ) : null}
+        </Deslizable>
+        <Reacciones lista={m.reacciones} mio={mio} alTocar={alReaccionar} />
         {ultimo ? (
-          <Text style={{ fontSize: 11, color: colorSistema.texto3, marginHorizontal: 4 }}>{m.enviando ? 'Enviando…' : horaDe(m.created_at)}</Text>
+          <Text style={{ fontSize: 11, color: colorSistema.texto3, marginHorizontal: 4 }}>{m.enviando ? 'Enviando…' : estado ? `${horaDe(m.created_at)} · ${estado}` : horaDe(m.created_at)}</Text>
         ) : null}
       </View>
     </View>

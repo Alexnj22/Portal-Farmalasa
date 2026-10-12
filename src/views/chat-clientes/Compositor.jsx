@@ -19,17 +19,23 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { preciosDeProducto } from '@nucleo/data/reservas';
 import {
     borrarRespuestaRapida, fetchOfertasVigentes, fetchRespuestasRapidas, guardarRespuestaRapida,
-    responderConversacion, subirFotoDelEquipo,
+    marcarEscribiendo, responderConversacion, subirFotoDelEquipo,
 } from '@nucleo/data/chatClientes';
+import { FranjaDeRespuesta } from './AccionesDeMensaje';
 
 // El cuadro para responder: texto, una foto, una respuesta rápida guardada, o
 // un producto / una oferta vigente que el cliente puede tocar en la app.
 // Enter envía; Shift+Enter hace un salto de línea.
+//
+// Mientras se escribe, avisa «está escribiendo» (`chat_escribiendo`, vale 6 s)
+// a lo sumo cada 3 s: lo ven el cliente en la app y el resto del equipo.
+// `respondiendoA` (un mensaje del hilo) se cita en la respuesta.
 
 const TIPOS_FOTO = 'image/jpeg,image/png,image/webp,image/heic';
 const MAX_FOTO = 8 * 1024 * 1024;   // el `file_size_limit` del bucket
+const CADA_CUANTO_ESCRIBIENDO_MS = 3_000;
 
-export default function Compositor({ conversacion, onEnviado }) {
+export default function Compositor({ conversacion, onEnviado, respondiendoA = null, onQuitarRespuesta, equipo, cliente }) {
     const showToast = useToastStore((s) => s.showToast);
     const [texto, setTexto] = useState('');
     const [archivo, setArchivo] = useState(null);
@@ -37,6 +43,17 @@ export default function Compositor({ conversacion, onEnviado }) {
     const [enviando, setEnviando] = useState(false);
     const [hoja, setHoja] = useState(null); // 'respuestas' | 'producto' | 'oferta'
     const fileRef = useRef(null);
+    const ultimoAvisoRef = useRef(0);
+
+    const escribir = (valor) => {
+        setTexto(valor);
+        if (!valor.trim()) return;
+        const ahora = Date.now();
+        if (ahora - ultimoAvisoRef.current < CADA_CUANTO_ESCRIBIENDO_MS) return;
+        ultimoAvisoRef.current = ahora;
+        // Una señal efímera: si falla, no se le dice nada a quien escribe.
+        marcarEscribiendo(conversacion.id).catch((err) => console.error('Compositor: no se pudo avisar que escribe', err));
+    };
 
     const vista = useMemo(() => (archivo ? URL.createObjectURL(archivo) : null), [archivo]);
     useEffect(() => () => { if (vista) URL.revokeObjectURL(vista); }, [vista]);
@@ -55,10 +72,11 @@ export default function Compositor({ conversacion, onEnviado }) {
         setEnviando(true);
         try {
             const fotoRuta = archivo ? await subirFotoDelEquipo(conversacion.customer_id, archivo) : null;
-            await responderConversacion(conversacion.id, { texto, fotoRuta, adjunto });
+            await responderConversacion(conversacion.id, { texto, fotoRuta, adjunto, respuestaA: respondiendoA?.id ?? null });
             setTexto('');
             setArchivo(null);
             setAdjunto(null);
+            onQuitarRespuesta?.();
             onEnviado?.();
         } catch (err) {
             showToast('No se pudo enviar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
@@ -69,6 +87,9 @@ export default function Compositor({ conversacion, onEnviado }) {
 
     return (
         <div className="border-t border-border-subtle px-3 py-2.5 space-y-2 pb-[max(0.625rem,var(--sa-bottom))]">
+            {respondiendoA && (
+                <FranjaDeRespuesta mensaje={respondiendoA} equipo={equipo ?? new Map()} cliente={cliente} onQuitar={onQuitarRespuesta} />
+            )}
             {(archivo || adjunto) && (
                 <div className="flex flex-wrap items-center gap-2">
                     {archivo && (
@@ -87,7 +108,7 @@ export default function Compositor({ conversacion, onEnviado }) {
                 </div>
             )}
             <PortalTextarea name="chat-respuesta" aria-label="Escribe una respuesta" placeholder="Escribe una respuesta…" rows={2} compact
-                maxLength={2000} value={texto} onChange={(e) => setTexto(e.target.value)}
+                maxLength={2000} value={texto} onChange={(e) => escribir(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent?.isComposing) { e.preventDefault(); enviar(); } }} />
             <div className="flex items-center gap-1">
                 <input ref={fileRef} type="file" accept={TIPOS_FOTO} className="sr-only" onChange={elegirFoto} />

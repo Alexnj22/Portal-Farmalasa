@@ -710,6 +710,15 @@ Deno.serve(async (req) => {
       else if ((cond.clave === "mayoreo_plus" || cond.clave === "mayoreo") && may != null) { tuyo = may; nombre = "Mayoreo"; }
       return { ...resto, precio_tuyo: tuyo, precio_tuyo_nombre: nombre, precio_tuyo_sin_puntos: tuyo != null && cond.sinPuntos };
     };
+    // El mayoreo es por presentación CERRADA (2026-10-12, condiciones de
+    // mayoreo; usuario: «si selecciono unidades, se pone el precio
+    // preferencial»): la lista Mayoreo / Mayoreo Plus vale sólo para la
+    // presentación de mayor `factor` (la caja). Las menores —unidades sueltas,
+    // blíster— van a precio Preferente (VIP) o, sin él, de viñeta: a esas no
+    // se les pone `precio_tuyo` y la app muestra el Preferente de siempre.
+    // La MISMA regla cobra `reservar_carrito`.
+    // deno-lint-ignore no-explicit-any
+    const factorMayor = (lista: any[]) => Math.max(1, ...lista.map((x: any) => Number(x?.factor) || 1));
     if (accion === "catalogo") {
       const q = String(body?.q ?? "").slice(0, 60);
       const desde = Math.max(0, Math.min(1000, Number(body?.desde) || 0));
@@ -738,6 +747,8 @@ Deno.serve(async (req) => {
       const d: any = data;
       // Dos filas iguales (misma presentación y precio) se muestran una vez.
       const vistas = new Set<string>();
+      const caja = factorMayor(d.presentaciones ?? []);
+      const sinLista = { clave: null, sinPuntos: false };
       return json({
         ok: true,
         producto: {
@@ -747,7 +758,7 @@ Deno.serve(async (req) => {
             if (vistas.has(k)) return false;
             vistas.add(k);
             return true;
-          }).map(conPrecioTuyo(cond)),
+          }).map((x: any) => conPrecioTuyo((Number(x?.factor) || 1) === caja ? cond : sinLista)(x)),
           existencias: (d.existencias ?? []).filter((e: any) => nombre.has(Number(e.branch_id)))
             .map((e: any) => ({ ...e, sala: nombre.get(Number(e.branch_id)) })),
           salas: [...nombre.entries()].map(([id, n]) => ({ id, sala: n })),
@@ -1034,7 +1045,9 @@ Deno.serve(async (req) => {
     // está a la vista, y con `antes_id` baja lo anterior, de a 30.
     const POR_PAGINA_CHAT = 30;
     const convDe = async () => {
-      const { data, error } = await admin.from("app_chat_conversaciones").select("id, sin_leer_cliente").eq("customer_id", customerId).maybeSingle();
+      const { data, error } = await admin.from("app_chat_conversaciones")
+        .select("id, sin_leer_cliente, tomada_por, tomada_at, escribiendo_por, escribiendo_at, visto_equipo_at, ultimo_de, ultimo_mensaje_at")
+        .eq("customer_id", customerId).maybeSingle();
       if (error) throw error;
       return data;
     };
@@ -1074,11 +1087,36 @@ Deno.serve(async (req) => {
         if (a.tipo === "oferta" && a.id != null) return { tipo: "oferta", id: String(a.id), titulo: String(a.titulo ?? "") };
         return null;
       };
+      // Reacciones y citas (2026-10-12): cada mensaje trae sus reacciones
+      // (emoji, de quién, y si es la mía) y, si responde a otro, un resumen
+      // del citado.
+      const idsMsg = filas.map((m) => m.id);
+      const idsCita = [...new Set(filas.map((m) => m.respuesta_a).filter(Boolean))];
+      const [{ data: reacs, error: eR }, { data: citas, error: eCi }] = await Promise.all([
+        idsMsg.length ? admin.from("app_chat_reacciones").select("mensaje_id, autor, employee_id, emoji").limit(900).in("mensaje_id", idsMsg)
+          : Promise.resolve({ data: [], error: null }),
+        idsCita.length ? admin.from("app_chat_mensajes").select("id, autor, texto, foto_ruta, conversacion_id").limit(200).in("id", idsCita)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+      if (eR) console.error("chat: reacciones", eR.message);
+      if (eCi) console.error("chat: citas", eCi.message);
+      // deno-lint-ignore no-explicit-any
+      const reacPor = new Map<number, any[]>();
+      for (const r of reacs ?? []) {
+        const k = Number(r.mensaje_id);
+        reacPor.set(k, [...(reacPor.get(k) ?? []), { emoji: r.emoji, mia: r.autor === "cliente" }]);
+      }
+      // deno-lint-ignore no-explicit-any
+      const citaPor = new Map<number, any>((citas ?? []).map((c: any) => [Number(c.id), {
+        id: Number(c.id), autor: c.autor, texto: c.texto ? String(c.texto).slice(0, 140) : null, foto: !!c.foto_ruta,
+      }]));
       return filas.map((m) => ({
         id: Number(m.id), autor: m.autor, texto: m.texto ?? null, created_at: m.created_at,
         foto_url: m.foto_ruta ? fotos.get(m.foto_ruta) ?? null : null,
         adjunto: adjunto(m.adjunto),
         equipo: m.autor === "equipo" ? persona.get(m.employee_id) ?? { nombre: "Farmacia Salud", foto_url: null } : null,
+        reacciones: reacPor.get(Number(m.id)) ?? [],
+        responde_a: m.respuesta_a ? citaPor.get(Number(m.respuesta_a)) ?? null : null,
       }));
     };
     if (accion === "chat_mensajes") {
@@ -1086,7 +1124,7 @@ Deno.serve(async (req) => {
       const base = { ok: true, fuera_de_horario: !hor.abierta, horario: { abierta: hor.abierta, texto: hor.texto, feriado: hor.feriado }, mi_foto: mia.url };
       if (!cv) return json({ ...base, mensajes: [], hay_mas: false, sin_leer: 0 });
       const desde = Number(body?.desde_id), antes = Number(body?.antes_id);
-      const COLS_CHAT = "id, autor, employee_id, texto, foto_ruta, adjunto, created_at";
+      const COLS_CHAT = "id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at";
       // deno-lint-ignore no-explicit-any
       let filas: any[] = [];
       let hayMas = false;
@@ -1105,7 +1143,51 @@ Deno.serve(async (req) => {
         hayMas = (data ?? []).length > POR_PAGINA_CHAT;
         filas = (data ?? []).slice(0, POR_PAGINA_CHAT).reverse();
       }
-      return json({ ...base, mensajes: await armarMensajes(filas), hay_mas: hayMas, sin_leer: Number(cv.sin_leer_cliente ?? 0) });
+      // En vivo (2026-10-12): quién atiende, si está escribiendo y si ya vio lo
+      // último del cliente. «Escribiendo» dura 6 s sin renovarse; atender, 10 min.
+      const ahoraMs = Date.now();
+      const escribe = cv.escribiendo_por && cv.escribiendo_at && ahoraMs - Date.parse(cv.escribiendo_at) < 6_000 ? cv.escribiendo_por : null;
+      const atiende = cv.tomada_por && cv.tomada_at && ahoraMs - Date.parse(cv.tomada_at) < 10 * 60_000 ? cv.tomada_por : null;
+      const ids = [...new Set([escribe, atiende].filter(Boolean))];
+      // deno-lint-ignore no-explicit-any
+      const quien = new Map<string, any>();
+      if (ids.length) {
+        const { data: eqs, error: eE } = await admin.from("employees").select("id, first_names, last_names, name").limit(5).in("id", ids);
+        if (eE) console.error("chat_mensajes: equipo", eE.message);
+        for (const e of eqs ?? []) quien.set(e.id, nombreCortoEmpleado(e));
+      }
+      const vivo = {
+        escribiendo: escribe ? quien.get(escribe) ?? "Farmacia Salud" : null,
+        atiende: atiende ? quien.get(atiende) ?? null : null,
+        visto: cv.ultimo_de === "cliente" && !!cv.visto_equipo_at && Date.parse(cv.visto_equipo_at) >= Date.parse(cv.ultimo_mensaje_at),
+      };
+      return json({ ...base, mensajes: await armarMensajes(filas), hay_mas: hayMas, sin_leer: Number(cv.sin_leer_cliente ?? 0), vivo });
+    }
+    // Reaccionar a un mensaje de su conversación (`emoji` null = quitar).
+    if (accion === "chat_reaccionar") {
+      const mid = Number(body?.mensaje_id);
+      const emoji = body?.emoji == null ? null : String(body.emoji);
+      if (!Number.isSafeInteger(mid) || mid <= 0) return json({ ok: false, mensaje: "Mensaje no válido." });
+      if (emoji && !["👍", "❤️", "😂", "😮", "🙏", "✅"].includes(emoji)) return json({ ok: false, mensaje: "Reacción no válida." });
+      const cv = await convDe();
+      if (!cv) return json({ ok: false, mensaje: "Mensaje no válido." });
+      const { data: msg, error: eM } = await admin.from("app_chat_mensajes").select("id").eq("id", mid).eq("conversacion_id", cv.id).maybeSingle();
+      if (eM) throw eM;
+      if (!msg) return json({ ok: false, mensaje: "Mensaje no válido." });
+      const { error: eD } = await admin.from("app_chat_reacciones").delete().eq("mensaje_id", mid).eq("autor", "cliente");
+      if (eD) throw eD;
+      if (emoji) {
+        const { error: eI } = await admin.from("app_chat_reacciones").insert({ mensaje_id: mid, autor: "cliente", emoji });
+        if (eI) throw eI;
+      }
+      return json({ ok: true });
+    }
+    // El cliente está escribiendo: el portal lo muestra en vivo (dura 6 s).
+    if (accion === "chat_escribiendo") {
+      const { error } = await admin.from("app_chat_conversaciones").update({ cliente_escribiendo_at: new Date().toISOString() })
+        .eq("customer_id", customerId);
+      if (error) throw error;
+      return json({ ok: true });
     }
     if (accion === "chat_subir_url") return json(await urlDeSubida(admin, `chat/${customerId}/${Date.now()}.jpg`));
     if (accion === "chat_enviar") {
@@ -1124,14 +1206,23 @@ Deno.serve(async (req) => {
         cv = data ?? await convDe();
         if (!cv) throw new Error("no se pudo abrir la conversación");
       }
+      // Responder citando: sólo un mensaje de SU conversación.
+      let respuestaA: number | null = null;
+      const pedidaCita = Number(body?.respuesta_a);
+      if (Number.isSafeInteger(pedidaCita) && pedidaCita > 0) {
+        const { data: cita, error: eCt } = await admin.from("app_chat_mensajes").select("id")
+          .eq("id", pedidaCita).eq("conversacion_id", cv.id).maybeSingle();
+        if (eCt) throw eCt;
+        respuestaA = cita ? Number(cita.id) : null;
+      }
       // Freno: 30 mensajes en 10 minutos por cliente.
       const { count, error: eC } = await admin.from("app_chat_mensajes").select("id", { count: "exact", head: true })
         .eq("conversacion_id", cv.id).eq("autor", "cliente").gte("created_at", new Date(Date.now() - 10 * 60_000).toISOString());
       if (eC) throw eC;
       if ((count ?? 0) >= 30) return json({ ok: false, motivo: "muchos_mensajes", mensaje: "Enviaste muchos mensajes seguidos. Espera unos minutos." }, 429);
       const { data: m, error } = await admin.from("app_chat_mensajes")
-        .insert({ conversacion_id: cv.id, autor: "cliente", texto, foto_ruta: fotoRuta })
-        .select("id, autor, employee_id, texto, foto_ruta, adjunto, created_at").single();
+        .insert({ conversacion_id: cv.id, autor: "cliente", texto, foto_ruta: fotoRuta, respuesta_a: respuestaA })
+        .select("id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at").single();
       if (error) throw error;
       // Respuesta automática (2026-10-12): el cliente siempre sabe que lo
       // recibimos y cuándo le contestan. Una por turno: no se repite si ya hubo
@@ -1154,7 +1245,7 @@ Deno.serve(async (req) => {
           .replaceAll("{cierra}", hor.cierra ?? "");
         const { data: a, error: eA } = await admin.from("app_chat_mensajes").insert({
           conversacion_id: cv.id, autor: "sistema", texto,
-        }).select("id, autor, employee_id, texto, foto_ruta, adjunto, created_at").single();
+        }).select("id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at").single();
         if (eA) console.error("chat_enviar: respuesta automática", eA.message);
         else auto = a;
       }
@@ -2041,6 +2132,8 @@ Deno.serve(async (req) => {
         const pr: any = (precios ?? []).filter((q: any) => Number(q.product_id) === x.id && (Number(q.factor) || 1) === x.factor)
           .sort((a: any, b: any) => Number(b.vineta) - Number(a.vineta))[0];
         if (!pr) return json({ ok: false, mensaje: `«${p.nombre}» cambió de presentación. Quítalo y agrégalo de nuevo.` });
+        // ¿Es la caja (la presentación de mayor factor)? Sólo ahí vale el mayoreo.
+        const esCaja = x.factor === factorMayor((precios ?? []).filter((q: any) => Number(q.product_id) === x.id));
         const vineta = Math.round(Number(pr.vineta) * 100) / 100;
         const vip = Number(pr.vip) > 0 && Number(pr.vip) < Number(pr.vineta) ? Math.round(Number(pr.vip) * 100) / 100 : null;
         // Mayoreo (2026-10-12): la MISMA regla de `app_catalogo_producto` —la
@@ -2049,7 +2142,8 @@ Deno.serve(async (req) => {
         // la de Mayoreo. Decide el servidor, nunca el precio que mande la app.
         const techo = vip ?? vineta;
         const lista = (v: unknown) => (Number(v) > 0 && Number(v) < techo ? Math.round(Number(v) * 100) / 100 : null);
-        const precioMay = condPrecio.clave === "mayoreo_plus" ? lista(pr.mayoreo) ?? lista(pr.clinica)
+        const precioMay = !esCaja ? null
+          : condPrecio.clave === "mayoreo_plus" ? lista(pr.mayoreo) ?? lista(pr.clinica)
           : condPrecio.clave === "mayoreo" ? lista(pr.clinica) : null;
         filas.push({
           customer_id: customerId, branch_id: branchId, producto_id: x.id,

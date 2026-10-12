@@ -21,6 +21,10 @@ export function usarBannerPropio(activo) { bannerPropio = !!activo; }
 let chatAbierto = false;
 export function marcarChatALaVista(v) { chatAbierto = !!v; }
 export function chatALaVista() { return chatAbierto; }
+/** ¿Es la respuesta del chat? El push trae `tipo: 'chat'` y `url: '/chat'`. */
+export function esAvisoDeChat(a) {
+  return a?.tipo === 'chat' || (typeof a?.url === 'string' && a.url.startsWith('/chat'));
+}
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({

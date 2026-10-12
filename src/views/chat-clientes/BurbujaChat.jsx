@@ -1,7 +1,8 @@
-import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { MessageCircle } from 'lucide-react';
 import Contador from '../../components/common/Contador';
+import { useAlLlegarAviso } from '@nucleo/hooks/avisosRecibidos';
 import { useRefrescoEnVivo } from '@nucleo/hooks/useRefrescoEnVivo';
 import { fetchSinLeerDelChat } from '@nucleo/data/chatClientes';
 
@@ -24,28 +25,70 @@ import { fetchSinLeerDelChat } from '@nucleo/data/chatClientes';
  * barra va por portal al `body` y desde acá no hay árbol por el que enterarse.
  * Con un diálogo o el menú abiertos se esconde (`oculta`), igual que esa barra.
  * En `/chat-clientes` no aparece: ahí ya está todo.
+ *
+ * Desde que la campana sólo avisa cuando una conversación junta 3 mensajes sin
+ * respuesta (2026-10-12), ESTE número es la señal principal, así que se lleva
+ * por conversación (`Map<id, sin_leer>`) y cada aviso de realtime se aplica
+ * sobre su fila tal cual viene —sin volver a preguntar—: también los de
+ * «está escribiendo», que llegan cada 3 s y no cambian el número. Sólo un
+ * DELETE (que no trae la fila) relee. Respaldo: el reloj y el aviso
+ * `CHAT_CLIENTE` de la campana. Cuando el número SUBE, la burbuja late un
+ * momento (sin sonido).
  */
 
 const PanelDelChat = lazy(() => import('./PanelDelChat'));
 
 export default function BurbujaChat({ oculta = false }) {
     const { pathname } = useLocation();
-    const [sinLeer, setSinLeer] = useState(0);
+    const [porConversacion, setPorConversacion] = useState(() => new Map());
     const [abierto, setAbierto] = useState(false);
+    const [late, setLate] = useState(0);   // el instante en que empezó a latir
     const enLaVista = pathname === '/chat-clientes' || pathname.startsWith('/chat-clientes/');
+    const sinLeer = useMemo(() => [...porConversacion.values()].reduce((s, n) => s + n, 0), [porConversacion]);
 
     const leer = useCallback(async () => {
         try {
-            setSinLeer(await fetchSinLeerDelChat());
+            setPorConversacion(await fetchSinLeerDelChat());
         } catch (err) {
             console.error('BurbujaChat: no se pudo leer cuántos mensajes esperan', err);
         }
     }, []);
     useEffect(() => {
-        fetchSinLeerDelChat().then(setSinLeer)
+        fetchSinLeerDelChat().then(setPorConversacion)
             .catch((err) => console.error('BurbujaChat: no se pudo leer cuántos mensajes esperan', err));
     }, []);
-    useRefrescoEnVivo(leer, { ms: 60_000, tabla: 'app_chat_conversaciones', esperaMs: 600 });
+
+    // Cada aviso trae la fila entera (RLS incluido): se aplica sin preguntar.
+    const aplicar = useCallback((payload) => {
+        const fila = payload?.new;
+        if (payload?.eventType === 'DELETE' || fila?.id == null) return false;
+        const n = fila.estado === 'abierta' ? Number(fila.sin_leer_equipo) || 0 : 0;
+        setPorConversacion((prev) => {
+            if ((prev.get(fila.id) ?? 0) === n) return prev;
+            const nuevo = new Map(prev);
+            if (n > 0) nuevo.set(fila.id, n); else nuevo.delete(fila.id);
+            return nuevo;
+        });
+        return true;
+    }, []);
+    useRefrescoEnVivo(leer, { ms: 30_000, tabla: 'app_chat_conversaciones', esperaMs: 600, ignorar: aplicar });
+    useAlLlegarAviso('CHAT_CLIENTE', leer);
+
+    // Late un momento cuando el número sube (no al bajar ni al cargar).
+    const previoRef = useRef(null);
+    useEffect(() => {
+        const previo = previoRef.current;
+        previoRef.current = sinLeer;
+        if (previo == null || sinLeer <= previo) return undefined;
+        const t = setTimeout(() => setLate(Date.now()), 0);
+        return () => clearTimeout(t);
+    }, [sinLeer]);
+    // Se apaga solo; otra subida mientras late lo reinicia.
+    useEffect(() => {
+        if (!late) return undefined;
+        const t = setTimeout(() => setLate(0), 2400);
+        return () => clearTimeout(t);
+    }, [late]);
 
     if (enLaVista) return null;
 
@@ -64,7 +107,10 @@ export default function BurbujaChat({ oculta = false }) {
                         w-14 h-14 rounded-full bg-brand text-white flex items-center justify-center
                         shadow-[var(--shadow-glow-brand)] transition-transform duration-[var(--dur-fast)]
                         hover:scale-[1.04] active:scale-[0.97]`}>
-                    <MessageCircle size={26} strokeWidth={2} />
+                    {late > 0 && (
+                        <span aria-hidden="true" className="absolute inset-0 rounded-full bg-brand opacity-60 animate-ping motion-reduce:hidden" />
+                    )}
+                    <MessageCircle size={26} strokeWidth={2} className="relative" />
                     <Contador valor={sinLeer} max={99} size="md" className="absolute -top-1 -right-1" aria-hidden="true" />
                 </button>
             )}

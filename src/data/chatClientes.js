@@ -72,8 +72,9 @@ export async function fetchConversaciones(estado = 'abierta', antes = null) {
  * a bajar el hilo entero.
  */
 export async function fetchMensajes(conversacionId, { antesDe = null, despuesDe = null } = {}) {
+    // `cita` es el mensaje al que responde (`respuesta_a`), para su recorte.
     let q = supabase.from('app_chat_mensajes')
-        .select('id, autor, employee_id, texto, foto_ruta, adjunto, created_at')
+        .select('id, autor, employee_id, texto, foto_ruta, adjunto, created_at, respuesta_a, cita:respuesta_a(id, autor, employee_id, texto, foto_ruta)')
         .eq('conversacion_id', Number(conversacionId));
     if (antesDe != null) q = q.lt('id', Number(antesDe));
     if (despuesDe != null) q = q.gt('id', Number(despuesDe));
@@ -94,6 +95,32 @@ export async function fetchAutoresDelEquipo(ids) {
         .limit(200)) ?? [];
 }
 
+// ── Quién escribe y si el cliente ya leyó (2026-10-12) ─────────────────────
+
+/** Las columnas de «presencia» de una conversación: no las trae la bandeja. */
+export const COLUMNAS_PRESENCIA = ['sin_leer_cliente', 'escribiendo_por', 'escribiendo_at', 'cliente_escribiendo_at', 'visto_equipo_at'];
+
+/**
+ * La presencia de las conversaciones que están en pantalla: quién del equipo
+ * escribe, si el cliente escribe y si ya leyó lo nuestro (`sin_leer_cliente`
+ * en 0). `chat_conversaciones` no las devuelve; se leen aparte, sólo para los
+ * ids de la bandeja (≤400: el tope de 10 páginas de 40). Devuelve `Map<id, fila>`.
+ */
+export async function fetchPresenciaDeConversaciones(ids) {
+    const unicos = [...new Set((ids || []).filter((x) => x != null).map(Number))];
+    if (!unicos.length) return new Map();
+    const filas = sinError(await supabase.from('app_chat_conversaciones')
+        .select(`id, ${COLUMNAS_PRESENCIA.join(', ')}`)
+        .in('id', unicos)
+        .limit(500)) ?? [];
+    return new Map(filas.map((f) => [f.id, f]));
+}
+
+/** «Estoy escribiendo»: vale 6 s. El compositor la llama a lo sumo cada 3 s. */
+export async function marcarEscribiendo(conversacionId) {
+    return sinError(await supabase.rpc('chat_escribiendo', { p_conversacion: Number(conversacionId) }));
+}
+
 // ── Acciones ────────────────────────────────────────────────────────────────
 
 /** «Estoy respondiendo»: vence sola a los 10 minutos. `soltar` la libera. */
@@ -106,13 +133,50 @@ export async function tomarConversacion(conversacionId, soltar = false) {
  * (`{ tipo: 'producto', id, nombre, precio }` | `{ tipo: 'oferta', id, titulo }`).
  * El mensaje mismo es el registro: lleva la ficha de quien lo escribió.
  */
-export async function responderConversacion(conversacionId, { texto = '', fotoRuta = null, adjunto = null } = {}) {
+export async function responderConversacion(conversacionId, { texto = '', fotoRuta = null, adjunto = null, respuestaA = null } = {}) {
     return sinError(await supabase.rpc('chat_responder', {
         p_conversacion: Number(conversacionId),
         p_texto: String(texto ?? '').trim() || null,
         p_foto_ruta: fotoRuta,
         p_adjunto: adjunto,
+        p_respuesta_a: respuestaA != null ? Number(respuestaA) : null,
     }));
+}
+
+// ── Reacciones (2026-10-12) ─────────────────────────────────────────────────
+
+/** Los seis emojis que se pueden poner (los mismos que acepta la base). */
+export const EMOJIS_DE_REACCION = ['👍', '❤️', '😂', '😮', '🙏', '✅'];
+const IDS_POR_TANDA = 100;
+const REACCIONES_POR_TANDA = 900;
+
+/**
+ * Las reacciones de los mensajes que están en pantalla. `mensaje_id` se repite
+ * (una reacción por persona y mensaje), así que acotar la entrada no acota la
+ * salida: va en tandas de 100 mensajes con tope de 900 filas cada una — con
+ * seis emojis y una reacción por persona, 9 por mensaje es un hilo con nueve
+ * personas reaccionando a TODO. Si una tanda vuelve llena, se avisa.
+ */
+export async function fetchReacciones(mensajeIds) {
+    const ids = [...new Set((mensajeIds || []).filter((x) => x != null).map(Number))];
+    if (!ids.length) return [];
+    const tandas = [];
+    for (let i = 0; i < ids.length; i += IDS_POR_TANDA) tandas.push(ids.slice(i, i + IDS_POR_TANDA));
+    const resultados = await Promise.all(tandas.map(async (tanda) => {
+        const filas = sinError(await supabase.from('app_chat_reacciones')
+            .select('id, mensaje_id, autor, employee_id, emoji')
+            .in('mensaje_id', tanda)
+            .order('id', { ascending: true })
+            .limit(REACCIONES_POR_TANDA)) ?? [];
+        if (filas.length >= REACCIONES_POR_TANDA) console.warn('chatClientes.js: una tanda de reacciones llegó al tope; pueden faltar');
+        return filas;
+    }));
+    return resultados.flat();
+}
+
+/** Pone (o cambia) mi reacción a un mensaje; `null` la quita. */
+export async function reaccionarAMensaje(mensajeId, emoji) {
+    return sinError(await supabase.rpc('chat_reaccionar', { p_mensaje: Number(mensajeId), p_emoji: emoji ?? null }));
 }
 
 /** Sube una foto del equipo al chat de ese cliente y devuelve su ruta. */
@@ -179,18 +243,20 @@ export async function fetchOfertasVigentes(hoy) {
 
 /**
  * Cuántos mensajes de clientes esperan respuesta en TODAS las conversaciones
- * abiertas — el número de la burbuja flotante. No sale de la bandeja (que
+ * abiertas — el número de la burbuja flotante. Devuelve `Map<id, sin_leer>`. No sale de la bandeja (que
  * trae 40 por página): se suma aparte, sólo sobre las que tienen algo sin
  * leer, así que el tope no recorta nada que importe (500 conversaciones con
  * mensajes sin leer a la vez es otro problema).
  */
 export async function fetchSinLeerDelChat() {
     const filas = sinError(await supabase.from('app_chat_conversaciones')
-        .select('sin_leer_equipo')
+        .select('id, sin_leer_equipo')
         .eq('estado', 'abierta')
         .gt('sin_leer_equipo', 0)
         .limit(500)) ?? [];
-    return filas.reduce((s, f) => s + (Number(f.sin_leer_equipo) || 0), 0);
+    // Por conversación y no la suma: así la burbuja aplica cada aviso de
+    // realtime sobre su fila sin tener que volver a preguntar.
+    return new Map(filas.map((f) => [f.id, Number(f.sin_leer_equipo) || 0]));
 }
 
 /**

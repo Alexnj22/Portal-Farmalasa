@@ -5,7 +5,7 @@
 //
 // 2026-10-12: lo bajo receta YA se agrega al carrito (al reservar se pide la
 // foto de la receta), y quien tiene precio de mayoreo lo ve como el principal
-// («Tu precio Mayoreo»), con la viñeta tachada (lib/precioTuyo.js).
+// («Mayoreo» / «Mayoreo Plus»), con la viñeta tachada (lib/precioTuyo.js).
 import { useEffect, useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { MAX_UNIDADES, useCarrito } from '../../lib/carrito';
@@ -24,7 +24,7 @@ import { nombreProducto, recordarVisto } from '../../lib/catalogo';
 import { suave, useTema } from '../../tema/tema';
 import { navegar } from '../../lib/navegar';
 import { seguirSiYaReservado } from '../../lib/reservaDuplicada';
-import { datosDePrecio, precioFinal, rotuloPrecioTuyo } from '../../lib/precioTuyo';
+import { datosDePrecio, mayoreoSoloEnCaja, precioFinal, rotuloPrecioTuyo } from '../../lib/precioTuyo';
 
 const ESTADO = {
   hay: { texto: 'Disponible', sf: 'checkmark.circle.fill', tono: 'exito' },
@@ -44,6 +44,8 @@ export default function Producto() {
   const cargar = () => {
     setD(null);
     llamar('catalogo_producto', { id: Number(id), ...datosDePrecio() }).then((r) => {
+      // El mayoreo sólo en la caja (lib/precioTuyo): las unidades, a Preferente.
+      if (r?.ok) r = { ...r, producto: { ...r.producto, presentaciones: mayoreoSoloEnCaja(r.producto.presentaciones) } };
       setD(r ?? { ok: false });
       if (r?.ok) {
         const pm = [...(r.producto.presentaciones ?? [])].sort((a, b) => (b.factor ?? 1) - (a.factor ?? 1))[0];
@@ -90,7 +92,7 @@ export default function Producto() {
     });
     if (!seguir) return;
     const ok = useCarrito.getState().agregar({ id: p.id, nombre: p.nombre, foto: p.foto, tipo: x.tipo, factor: x.factor ?? 1, precio: x.precio, precio_vip: x.precio_vip,
-      precio_tuyo: x.precio_tuyo ?? null, precio_tuyo_nombre: x.precio_tuyo_nombre ?? null, receta: !!p.bajo_receta }, n);
+      precio_tuyo: x.precio_tuyo ?? null, precio_tuyo_nombre: x.precio_tuyo_nombre ?? null, factor_mayor: x.factor_mayor ?? null, receta: !!p.bajo_receta }, n);
     if (!ok) { Alert.alert('Carrito lleno', 'El carrito admite hasta 10 productos distintos.'); return; }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     setCant(1);
@@ -179,6 +181,12 @@ export default function Producto() {
         <Text style={{ fontSize: 13, color: colorSistema.texto3, marginHorizontal: 32, marginTop: 8 }}>
           El precio Preferente es para quien tiene cuenta en Puntos Salud: muestra tu tarjeta en caja.
         </Text>
+        {/* Con precio de mayoreo y más de una presentación: por qué las unidades no lo llevan. */}
+        {(p.presentaciones ?? []).some((x) => rotuloPrecioTuyo(x)) && (p.presentaciones ?? []).length > 1 ? (
+          <Text style={{ fontSize: 13, color: colorSistema.texto2, marginHorizontal: 32, marginTop: 6 }}>
+            El precio {rotuloPrecioTuyo((p.presentaciones ?? []).find((x) => rotuloPrecioTuyo(x)))} es por la presentación completa. En unidades sueltas pagas el precio Preferente.
+          </Text>
+        ) : null}
         {p.bajo_receta ? (
           <Text style={{ fontSize: 13, color: colorSistema.texto2, marginHorizontal: 32, marginTop: 6 }}>
             Bajo receta: al reservarlo te pedimos una foto de tu receta, y la sucursal la revisa antes de confirmar tu pedido.

@@ -52,6 +52,7 @@ import { createSign } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { esperarTurno } from './lib/turno-de-compilacion.mjs';
 
 const args = process.argv.slice(2);
 const banderas = new Set(args.filter((a) => a.startsWith('--')).map((a) => a.split('=')[0]));
@@ -64,6 +65,9 @@ if (!carpeta || !perfil) {
 }
 const SIN_SUBIR = banderas.has('--sin-subir');
 const COMPARTIR = banderas.has('--compartir');
+// iOS y Android de la misma app no compilan a la vez (ver el módulo). Con
+// --aab no se compila: sólo se sube, y eso no carga la máquina.
+if (!aabHecho) await esperarTurno(carpeta, 'android');
 const app = resolve(carpeta);
 const CLAVES = join(homedir(), '.claves-farmalasa');
 const REGISTRO = join(CLAVES, 'compilaciones-subidas.json');

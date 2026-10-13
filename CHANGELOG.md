@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1279.3 — Apps: una plataforma a la vez por app
+
+`subir-ios` y `subir-android` de la MISMA app ya no compilan juntos en esta
+Mac: el segundo espera su turno (y avisa cada minuto) en vez de competir por la
+máquina. El 2026-10-13 iOS y Android de Puntos Salud más el Android de la app
+del personal llevaron la carga a ~65 y un pre-commit tardó más de diez minutos.
+El turno es un archivo por app en el directorio temporal del sistema, así lo
+comparten los worktrees; si su dueño murió sin soltarlo, se considera libre.
+Apps distintas no se esperan entre sí, y `--aab` (subir sin compilar) no espera.
+
 ## v2.1279.2 — Personal: editar una ficha vuelve a guardar
 
 Desde el 2026-09-03 editar a un empleado fallaba siempre con «Could not find

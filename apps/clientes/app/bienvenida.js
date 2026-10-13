@@ -1,5 +1,5 @@
-// La primera pantalla de quien no tiene sesión. Dice qué trae la app en tres
-// renglones y las dos reglas del programa —las mismas del afiche de la
+// La primera pantalla de quien no tiene sesión. Dice qué trae la app en cuatro
+// renglones (el cuarto, 2026-10-13: Tienda, Reservas, Facturas y Chat ya existían y no se nombraban) y las dos reglas del programa —las mismas del afiche de la
 // vitrina: verde lo que se gana, magenta lo que se usa—.
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
@@ -15,6 +15,7 @@ const QUE_TRAE = [
   { sf: 'star.fill', simbolo: '★', titulo: 'Tus puntos', detalle: 'Tu saldo en dólares y lo que vence.', tono: 'verde' },
   { sf: 'tag.fill', simbolo: '%', titulo: 'Ofertas', detalle: 'Descuentos de la semana, algunos sólo para socios.', tono: 'magenta' },
   { sf: 'syringe.fill', simbolo: '+', titulo: 'Tus inyecciones', detalle: 'Las que ya pagaste y te faltan aplicar.', tono: 'verde' },
+  { sf: 'bag.fill', simbolo: '◍', titulo: 'Tienda y reservas', detalle: 'Reserva y retira sin fila; tus facturas y un chat con la farmacia.', tono: 'magenta' },
 ];
 
 export default function Bienvenida() {
@@ -36,7 +37,7 @@ export default function Bienvenida() {
             Puntos Salud
           </Text>
           <Texto nivel={2} estilo={{ textAlign: 'center', fontSize: 16, lineHeight: 23, maxWidth: 300 }}>
-            Cada compra suma. Míralo todo desde tu teléfono.
+            Cada compra suma. Tus puntos, la tienda, tus reservas, tus facturas y el chat con la farmacia, en tu teléfono.
           </Texto>
         </View>
 

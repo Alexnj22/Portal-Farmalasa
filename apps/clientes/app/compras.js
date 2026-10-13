@@ -10,7 +10,7 @@ import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Vacio } from '../componentes/ui';
+import { Cargando, Pantalla, Tarjeta, Texto, Vacio } from '../componentes/ui';
 import { Tocable } from '../componentes/animacion';
 import { colorSistema } from '../componentes/sistema';
 import Icono from '../componentes/Icono';
@@ -39,7 +39,7 @@ export default function Compras() {
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 
   if (!datos) return <Cargando />;
-  if (!datos.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}><Aviso>{datos.mensaje}</Aviso></Pantalla>;
+  if (!datos.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}><Vacio titulo="No se pudo cargar" accion="Reintentar" alAccion={refrescar}>{datos.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'}</Vacio></Pantalla>;
   if (datos.pendiente) {
     return <Pantalla conPestanas={false}><Vacio titulo="Todavía no hay compras" icono="bag.fill" respaldo="◍">Cuando completes tu registro en sala verás aquí cada compra.</Vacio></Pantalla>;
   }

@@ -6,7 +6,7 @@ import { Alert, AppState, Platform, Pressable, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import * as Haptics from 'expo-haptics';
-import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo } from '../../../componentes/ui';
+import { Aviso, Cargando, Pantalla, RADIO, Tarjeta, Texto, Titulo, Vacio } from '../../../componentes/ui';
 import { useCuenta } from '../../../lib/cuenta';
 import { dolares, entero, fecha, nombrePropio } from '../../../lib/formato';
 import TarjetaSocio from '../../../componentes/TarjetaSocio';
@@ -102,7 +102,13 @@ export default function Puntos() {
   const refrescar = async () => { setRefrescando(true); await cargar({ forzar: true }); setRefrescando(false); };
 
   if (!resumen && !error) return <Cargando />;
-  if (!resumen) return <Pantalla alRefrescar={refrescar} refrescando={refrescando}><Aviso>{error}</Aviso></Pantalla>;
+  if (!resumen) {
+    return (
+      <Pantalla alRefrescar={refrescar} refrescando={refrescando}>
+        <Vacio titulo="No se pudo cargar" accion="Reintentar" alAccion={refrescar}>{error}</Vacio>
+      </Pantalla>
+    );
+  }
 
   if (resumen.pendiente) {
     return (
@@ -141,8 +147,9 @@ export default function Puntos() {
   return (
     <Pantalla alRefrescar={refrescar} refrescando={refrescando}>
       {enPrueba ? (
-        <Pressable onPress={() => navegar('/cuenta')} accessibilityRole="button"
-          style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FF9F0A', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
+        <Pressable onPress={() => navegar('/cuenta')} accessibilityRole="button" hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
+          accessibilityLabel="Modo de prueba activo. Cambiarlo en Cuenta" accessibilityHint="Abre Cuenta, donde se elige el nivel de prueba"
+          style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FF9F0A', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, minHeight: 28 }}>
           <Icono sf="testtube.2" respaldo="" tam={12} color="#1A1000" />
           <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {String(`${mayorista ? `Mayoreo ${rangoDePrueba(mayorista).nombre}` : resumen.nivel?.nombre ?? ''}${empleado ? ' · Team' : ''}`).toUpperCase()}</Text>
         </Pressable>
@@ -315,7 +322,7 @@ export default function Puntos() {
       <Entrada indice={4}>
         <Tocable alTocar={() => navegar('/sucursales')} etiqueta="Nuestras sucursales">
           <LinearGradient colors={['#4B1E8C', t.color.magenta]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-            style={{ borderRadius: 26, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 14, overflow: 'hidden' }}>
+            style={{ borderRadius: RADIO.tarjeta, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 14, overflow: 'hidden' }}>
             <Text style={{ position: 'absolute', right: 40, top: -30, fontSize: 130, fontWeight: '900', color: 'rgba(255,255,255,0.08)' }}>+</Text>
             <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
               <Icono sf="mappin.and.ellipse" respaldo="📍" tam={24} color="#FFFFFF" />
@@ -332,8 +339,8 @@ export default function Puntos() {
       {/* Las compras, con sus productos: de ahí salen los puntos y las inyecciones. */}
       <Entrada indice={4}>
         <Tocable alTocar={() => navegar('/compras')} etiqueta="Mis compras">
-          <Tarjeta estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ gap: 2 }}>
+          <Tarjeta estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <View style={{ flex: 1, gap: 2 }}>
               <Titulo>Mis compras</Titulo>
               <Texto nivel={2} estilo={{ fontSize: 14 }}>Qué compraste, dónde y cuántos puntos te dio.</Texto>
             </View>
@@ -488,7 +495,7 @@ function Campana({ generacion }) {
       <Icono sf={sinLeer ? 'bell.badge' : 'bell'} respaldo="🔔" tam={21} color={t.color.magentaTexto} />
       {sinLeer ? (
         <View style={{ position: 'absolute', top: 4, right: 4, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4,
-          backgroundColor: '#FF3B30', alignItems: 'center', justifyContent: 'center' }}>
+          backgroundColor: colorSistema.rojo, alignItems: 'center', justifyContent: 'center' }}>
           <Text maxFontSizeMultiplier={1.2} style={{ color: '#FFF', fontSize: 11, fontWeight: '800' }}>{sinLeer > 9 ? '9+' : sinLeer}</Text>
         </View>
       ) : null}
@@ -503,7 +510,8 @@ function TratamientosInicio({ lista }) {
   const t = useTema();
   return (
     <Tarjeta estilo={{ gap: 10 }}>
-      <Pressable onPress={() => navegar('/tratamientos')} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 36 }}>
+      <Pressable onPress={() => navegar('/tratamientos')} accessibilityRole="button" accessibilityLabel="Mis tratamientos, ver todos"
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 }}>
         <View style={{ width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.verde, t.oscuro ? 0.28 : 0.16) }}>
           <Icono sf="pills.fill" respaldo="💊" tam={17} color={t.color.verdeTexto} />
         </View>
@@ -527,6 +535,7 @@ function TratamientosInicio({ lista }) {
               </Text>
             </View>
             <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${x.product_id}`); }} accessibilityRole="button"
+              accessibilityLabel={`Reservar ${nombrePropio(x.nombre)}`} hitSlop={{ top: 5, bottom: 5, left: 4, right: 4 }}
               style={({ pressed }) => ({ minHeight: 34, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center',
                 backgroundColor: urge ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'), transform: [{ scale: pressed ? 0.95 : 1 }] })}>
               <Text style={{ fontSize: 13, fontWeight: '800', color: urge ? '#FFFFFF' : colorSistema.texto }}>Reservar</Text>
@@ -548,11 +557,11 @@ function Acceso({ sf, titulo, detalle, color, resaltar, alTocar }) {
           <View style={{ width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(color, t.oscuro ? 0.28 : 0.16) }}>
             <Icono sf={sf} respaldo="" tam={17} color={color} />
           </View>
-          {resaltar ? <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: '#FF3B30' }} /> : null}
+          {resaltar ? <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: colorSistema.rojo }} /> : null}
         </View>
         <View style={{ gap: 1 }}>
           <Text style={{ fontSize: 16, fontWeight: '700', color: colorSistema.texto }}>{titulo}</Text>
-          <Text style={{ fontSize: 13, color: resaltar ? colorSistema.texto : colorSistema.texto2, fontWeight: resaltar ? '600' : '400' }} numberOfLines={1}>{detalle}</Text>
+          <Text style={{ fontSize: 13, color: resaltar ? colorSistema.texto : colorSistema.texto2, fontWeight: resaltar ? '600' : '400' }} numberOfLines={2}>{detalle}</Text>
         </View>
       </Tarjeta>
     </Pressable>

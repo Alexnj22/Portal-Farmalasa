@@ -92,7 +92,8 @@ export default function Tratamientos() {
       {!activos.length && !apagados.length ? (
         <Vacio titulo="Aún no hay recordatorios" icono="pills.fill" respaldo="✚">Cuando compres un medicamento con regularidad, aparecerá aquí.</Vacio>
       ) : null}
-      {activos.map((t) => <Fila key={t.id} t={t} alReservar={() => navegar(`/producto/${t.product_id}`)} alApagar={() => yaNo(t)} alRecordar={() => setTomas(t)} />)}
+      {activos.map((t) => <Fila key={t.id} t={t} alReservar={() => navegar(`/producto/${t.product_id}`)} alApagar={() => yaNo(t)} alRecordar={() => setTomas(t)}
+        alPreguntar={() => navegar(`/chat?producto=${t.product_id}`)} />)}
       {apagados.length ? <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto2, marginTop: 8, marginLeft: 4 }}>YA NO LO TOMO</Text> : null}
       {apagados.map((t) => <Fila key={t.id} t={t} apagado alEncender={() => cambiar(t, true, null)} />)}
       {tomas ? <TomasHoja tratamiento={tomas} actual={useTomas.getState().config[String(tomas.product_id)]} alCerrar={() => setTomas(null)} /> : null}
@@ -100,7 +101,7 @@ export default function Tratamientos() {
   );
 }
 
-function Fila({ t, apagado, alReservar, alApagar, alEncender, alRecordar }) {
+function Fila({ t, apagado, alReservar, alApagar, alEncender, alRecordar, alPreguntar }) {
   const tema = useTema();
   const pid = String(t.product_id);
   const recordatorio = useTomas((s) => s.config[pid]);
@@ -126,6 +127,15 @@ function Fila({ t, apagado, alReservar, alApagar, alEncender, alRecordar }) {
           </Text>
           {!apagado ? <Text style={{ fontSize: 13, fontWeight: '700', color: urgente ? tema.color.magentaTexto : colorSistema.texto2 }}>{cuando}</Text> : null}
         </View>
+        {/* Preguntar a la farmacia por este medicamento (2026-10-13): abre el chat con él puesto. */}
+        {alPreguntar ? (
+          <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); alPreguntar(); }} accessibilityRole="button"
+            accessibilityLabel={`Preguntar a la farmacia por ${nombrePropio(t.nombre)}`} hitSlop={4}
+            style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
+              backgroundColor: suave(tema.color.magenta, pressed ? 0.3 : (tema.oscuro ? 0.22 : 0.12)) })}>
+            <Icono sf="bubble.left.and.bubble.right.fill" respaldo="💬" tam={18} color={tema.color.magentaTexto} />
+          </Pressable>
+        ) : null}
       </View>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         {apagado ? <Boton texto="Volver a recordarme" alTocar={alEncender} /> : (

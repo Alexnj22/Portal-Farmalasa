@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1279.0 — App de clientes: chat renovado, consultar medicamentos y pulido general
+
+**Chat** (`app/chat.js` reescrito, `componentes/ChatConsultas.js`): globos estilo iMessage agrupados, separadores Hoy/Ayer/fecha, franja «N mensajes nuevos» (abre ahí), ↓ con contador, ✓/✓✓ enviado/visto, encabezado con estado y quién atiende, esqueleto y bienvenida, mensaje fallido con reintentar. **Consultar un medicamento** desde el chat («+»), la ficha del producto y Mis tratamientos: el producto viaja como tarjeta armada en el SERVIDOR (`chat_enviar` con `producto_id`, validado contra el catálogo) con «Ver producto»/«Reservar». Atajos para empezar, enlaces y teléfonos tocables, y «¿Cómo te atendimos?» (`chat_calificar`, una vez por resolución).
+
+**Revisión general:** errores de carga con tarjeta y «Reintentar» en 8 pantallas; teléfonos chicos y letra grande (puntos, catálogo a una columna con fontScale > 1.3, facturas con «…»); toques de 44 pt; selector de hora nativo en recordatorio de tomas; hoja de opciones para la foto de perfil; la burbuja ya no tapa lo último (`ESPACIO_BURBUJA`); borrar notificación con toque y «Deshacer» 4 s; «Reducir movimiento» y teléfonos viejos respetados en aurora, destellos, cumpleaños, confeti, latido y vidrio (y el arreglo de Historias que con Reducir movimiento pasaban todas de golpe); `Chip`, `Seccion` y `RADIO` en `ui.js`; VoiceOver lee el código al girar la tarjeta; textos al día (horario, cupón primero, bienvenida, enlace en Invitar).
+
 ## v2.1278.0 — Portal: etiquetas y calificación del chat, mensajes nuevos a la vista
 
 - **Etiquetas del cliente en el chat** (migración `chat_etiquetas_y_calificacion`, `chat_etiquetar`): Consulta de medicamento, Receta, Reserva, Queja, Precio, Seguimiento, Urgente, Cliente frecuente — en el encabezado del hilo, en las filas (hasta 3 + «+N»), en el panel de la burbuja y como filtro en la dirección. «Urgente» va primero y en rojo.

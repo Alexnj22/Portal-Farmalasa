@@ -161,6 +161,11 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
                   // raspar sólo lo descubre. No hay nada que «reclamar».
                   : `Ya está en tu saldo. Úsalo en caja con tu tarjeta hasta el ${fecha(cupon.vence)}`}
             </Text>
+            {/* El orden del canje (2026-10-13), el de la base
+                (`puntos_canje_gasta_primero_el_cupon`): antes nadie lo decía. */}
+            {!usado && !cupon.descuento ? (
+              <Text style={{ color: 'rgba(255,255,255,0.78)', fontSize: 12 }}>Al canjear, primero se usa el cupón y después tus puntos.</Text>
+            ) : null}
           </View>
           {!usado && raspado ? <Brillo activa={activa && !LIVIANO} /> : null}
           <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: '#FFFFFF' }, estiloDestello]} />

@@ -17,7 +17,7 @@ import { Image as ImagenCache } from 'expo-image';
 import { useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
-import Animated, { cancelAnimation, Easing, runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { cancelAnimation, Easing, ReduceMotion, runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colorSistema } from './sistema';
@@ -130,7 +130,10 @@ function Visor({ historias, inicio, alVer, alTocarBoton, alCerrar }) {
 
   const arrancar = () => {
     if (lectorRef.current) return; // con VoiceOver no avanza sola
-    avance.value = withTiming(1, { duration: DURACION * (1 - avance.value), easing: Easing.linear }, (fin) => { if (fin) runOnJS(siguiente)(); });
+    // La barra es un RELOJ, no un adorno (2026-10-13): con «Reducir movimiento»
+    // Reanimated salta las animaciones al final, y las historias pasaban todas
+    // de golpe. `ReduceMotion.Never` la deja correr igual.
+    avance.value = withTiming(1, { duration: DURACION * (1 - avance.value), easing: Easing.linear, reduceMotion: ReduceMotion.Never }, (fin) => { if (fin) runOnJS(siguiente)(); });
   };
   useEffect(() => {
     alVer(h.id);

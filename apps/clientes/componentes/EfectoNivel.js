@@ -8,7 +8,8 @@
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { cancelAnimation, Easing, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { cancelAnimation, Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import { LIVIANO } from '../lib/rendimiento';
 
 // Posiciones fijas (en %): con azar, cada render las movería.
 const DESTELLOS = [
@@ -41,7 +42,10 @@ function Cepillado() {
   );
 }
 
-function Destellos({ activa, color }) {
+// Con «Reducir movimiento» o en un teléfono viejo (2026-10-13), los destellos
+// quedan quietos: se ven, pero no titilan.
+function Destellos({ activa: visible, color }) {
+  const activa = visible && !useReducedMotion() && !LIVIANO;
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       {DESTELLOS.map(([izq, arriba, tam], i) => <Destello key={i} izq={izq} arriba={arriba} tam={tam} i={i} activa={activa} color={color} />)}

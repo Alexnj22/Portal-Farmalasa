@@ -21,7 +21,7 @@ import { Stack, useFocusEffect } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import * as FS from 'expo-file-system/legacy';
 import * as Haptics from 'expo-haptics';
-import { Cargando, Pantalla, Tarjeta, Texto, Vacio } from '../componentes/ui';
+import { Cargando, Chip, Pantalla, RADIO, Tarjeta, Texto, Vacio } from '../componentes/ui';
 import Segmentos from '../componentes/Segmentos';
 import { colorSistema } from '../componentes/sistema';
 import Icono from '../componentes/Icono';
@@ -231,7 +231,22 @@ export default function Facturas() {
       else if (i === 1) descargarAmbos(f);
     });
   };
-  const acciones = { verPdf, compartirJson, obtener };
+  // «…» junto a «Ver PDF» (2026-10-13): en un teléfono chico o con letra grande
+  // los tres botones no cabían en una fila. El JSON y la descarga van en la hoja
+  // de opciones del sistema (en Android, la de componentes/HojasAndroid).
+  const masOpciones = (f) => {
+    Haptics.selectionAsync().catch(() => {});
+    ActionSheetIOS.showActionSheetWithOptions({
+      title: rotulo(f),
+      options: ['Compartir JSON', 'Enviar por correo', enAndroid ? 'Guardar PDF y JSON en el teléfono' : 'Descargar PDF y JSON', 'Cancelar'],
+      cancelButtonIndex: 3,
+    }, (i) => {
+      if (i === 0) compartirJson(f);
+      else if (i === 1) abrirCorreo([f]);
+      else if (i === 2) descargarAmbos(f);
+    });
+  };
+  const acciones = { verPdf, compartirJson, obtener, masOpciones };
 
   // ── Selección ───────────────────────────────────────────────────────────
   const marcados = seleccion ? [...seleccion].map((id) => porId.get(id)).filter(Boolean) : [];
@@ -296,7 +311,7 @@ export default function Facturas() {
           </Pressable>
         ) : undefined,
       }} />
-      <Pantalla conPestanas={false} alRefrescar={d && !seleccion ? refrescar : undefined} refrescando={refrescando} alFinal={d?.siguiente ? cargarMas : undefined}>
+      <Pantalla conPestanas={false} conBurbuja={false} alRefrescar={d && !seleccion ? refrescar : undefined} refrescando={refrescando} alFinal={d?.siguiente ? cargarMas : undefined}>
         <View style={{ marginHorizontal: -16 }}>
           <Segmentos opciones={PERIODOS} valor={periodo} alCambiar={(p) => { setPeriodo(p); if (seleccion) setSeleccion(new Set()); }} />
         </View>
@@ -416,17 +431,6 @@ function VisorPdf({ visor, alCerrar, alCompartir }) {
   );
 }
 
-function Chip({ texto, activo, alTocar }) {
-  const t = useTema();
-  return (
-    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} accessibilityRole="button" accessibilityState={{ selected: activo }}
-      style={{ minHeight: 34, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center',
-        backgroundColor: activo ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)') }}>
-      <Text style={{ fontSize: 14, fontWeight: '700', color: activo ? '#FFFFFF' : colorSistema.texto }}>{texto}</Text>
-    </Pressable>
-  );
-}
-
 // Una factura y, debajo, sus notas de crédito.
 // En modo selección cada documento lleva su casilla y tocarlo lo marca.
 function Factura({ f, ocupada, acciones, seleccion, alternar }) {
@@ -499,8 +503,8 @@ function Documento({ f, ocupada, acciones, seleccion, alternar, anidada = false 
       ) : (
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Accion sf="doc.richtext.fill" texto="Ver PDF" cargando={ocupada === `${f.id}pdf`} alTocar={() => acciones.verPdf(f)} />
-          <Accion sf="curlybraces" texto="JSON" etiqueta="Compartir JSON" cargando={ocupada === `${f.id}json`} alTocar={() => acciones.compartirJson(f)} />
-          <Accion sf="square.and.arrow.down" texto="Descargar" etiqueta="Enviar por correo o descargar el PDF y el JSON" cargando={ocupada === `${f.id}ambos`} alTocar={() => acciones.obtener(f)} />
+          <Accion sf="ellipsis" respaldo="…" etiqueta="Más opciones: compartir el JSON, enviar por correo o descargar"
+            cargando={ocupada === `${f.id}json` || ocupada === `${f.id}ambos`} alTocar={() => acciones.masOpciones(f)} />
         </View>
       )}
     </>
@@ -516,14 +520,15 @@ function Etiqueta({ texto }) {
   );
 }
 
-function Accion({ sf, texto, etiqueta, alTocar, cargando }) {
+// Sin `texto`, es el botón cuadrado de «…» (44 × 44).
+function Accion({ sf, respaldo = '', texto, etiqueta, alTocar, cargando }) {
   const t = useTema();
   return (
     <Pressable onPress={alTocar} disabled={cargando} accessibilityRole="button" accessibilityLabel={etiqueta ?? texto}
-      style={({ pressed }) => ({ flex: 1, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', minHeight: 40, borderRadius: 12,
+      style={({ pressed }) => ({ flex: texto ? 1 : 0, width: texto ? undefined : 44, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', minHeight: 44, borderRadius: RADIO.chico,
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', opacity: cargando ? 0.5 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
-      <Icono sf={sf} respaldo="" tam={14} color={colorSistema.texto} />
-      <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto }}>{cargando ? '…' : texto}</Text>
+      {cargando && !texto ? <ActivityIndicator /> : <Icono sf={sf} respaldo={respaldo} tam={14} color={colorSistema.texto} />}
+      {texto ? <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto }}>{cargando ? '…' : texto}</Text> : null}
     </Pressable>
   );
 }

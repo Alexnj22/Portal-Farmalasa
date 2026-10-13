@@ -17,7 +17,7 @@ import { useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
-import { Pantalla, Tarjeta, Texto, Vacio, Boton } from '../../../componentes/ui';
+import { Pantalla, Seccion as SeccionUi, Tarjeta, Texto, Vacio, Boton } from '../../../componentes/ui';
 import { colorSistema } from '../../../componentes/sistema';
 import Icono from '../../../componentes/Icono';
 import FotoProducto from '../../../componentes/FotoProducto';
@@ -193,7 +193,7 @@ export default function Carrito() {
 
   if (hecho) {
     return (
-      <Pantalla>
+      <Pantalla conBurbuja={false}>
         <Tarjeta estilo={{ alignItems: 'center', gap: 14, paddingVertical: 26 }}>
           <View style={{ width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.verde, 0.25) }}>
             <Icono sf="checkmark" respaldo="✓" tam={26} color={t.color.verdeTexto} />
@@ -224,7 +224,7 @@ export default function Carrito() {
 
   if (!items.length) {
     return (
-      <Pantalla>
+      <Pantalla conBurbuja={false}>
         <TusReservas resumen={resumen} />
         <Vacio titulo="Tu carrito está vacío">Agrega productos desde el catálogo y resérvalos para retirar en la sucursal que prefieras.</Vacio>
         <Boton alTocar={() => navegar('/catalogo')}>Ver el catálogo</Boton>
@@ -233,7 +233,7 @@ export default function Carrito() {
   }
 
   return (
-    <Pantalla>
+    <Pantalla conBurbuja={false}>
       <TusReservas resumen={resumen} />
       {items.map((x) => {
         const yaReservado = reservasDelProducto(resumen, x.id)[0];
@@ -292,9 +292,7 @@ export default function Carrito() {
       ) : null}
 
       {/* Dónde retirar: primero la sucursal que tiene todo. */}
-      <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4, marginTop: 6 }}>
-        {aDomicilio ? 'Sale desde' : 'Retirar en'}
-      </Text>
+      <Seccion texto={aDomicilio ? 'Sale desde' : 'Retirar en'} />
       <Tarjeta estilo={{ padding: 0, gap: 0 }}>
         {salas == null && errorSalas ? (
           <View style={{ alignItems: 'center', gap: 10, padding: 18 }}>
@@ -477,7 +475,10 @@ function Terminos({ terminos, alAceptar, alCerrar }) {
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: ins.bottom + 24, gap: 14 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={{ fontSize: 22, fontWeight: '900', color: colorSistema.texto, flex: 1 }}>{terminos.titulo}</Text>
-          <Pressable onPress={alCerrar} hitSlop={12} accessibilityRole="button"><Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>Cerrar</Text></Pressable>
+          <Pressable onPress={alCerrar} hitSlop={12} accessibilityRole="button"
+            style={{ minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' }}>
+            <Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>Cerrar</Text>
+          </Pressable>
         </View>
         {terminos.puntos.map((p, i) => (
           <View key={i} style={{ flexDirection: 'row', gap: 12 }}>
@@ -493,8 +494,9 @@ function Terminos({ terminos, alAceptar, alCerrar }) {
   );
 }
 
+// El rótulo de sección de componentes/ui (2026-10-13).
 function Seccion({ texto }) {
-  return <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4, marginTop: 6 }}>{texto}</Text>;
+  return <SeccionUi estilo={{ marginTop: 6 }}>{texto}</SeccionUi>;
 }
 
 // Una opción elegible en tarjeta: ícono, título y una línea.

@@ -10,6 +10,7 @@ import { StyleSheet, useColorScheme, useWindowDimensions, View } from 'react-nat
 import { BlurMask, Canvas, Circle, Group } from '@shopify/react-native-skia';
 import { cancelAnimation, Easing, useDerivedValue, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import tokens from '@nucleo/constants/tokens.json';
+import { LIVIANO } from '../lib/rendimiento';
 
 const T = tokens.temas.solid;
 
@@ -26,7 +27,9 @@ function useVaiven(duracion, activa) {
 
 export default function Aurora({ activa = true }) {
   const oscuro = useColorScheme() === 'dark';
-  const reducir = useReducedMotion();
+  // En un teléfono viejo (lib/rendimiento) la aurora queda quieta: dibujada
+  // una vez, sin animar las manchas cada cuadro (2026-10-13).
+  const reducir = useReducedMotion() || LIVIANO;
   const { width: w, height: h } = useWindowDimensions();
   const mover = activa && !reducir;
   const a = useVaiven(18000, mover);

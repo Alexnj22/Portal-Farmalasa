@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
 import { colorSistema } from './sistema';
-import { Boton } from './ui';
+import { Boton, Seccion } from './ui';
 import { useSesion } from '../lib/sesion';
 import { suave, useTema } from '../tema/tema';
 
@@ -118,7 +118,7 @@ export default function EnviarCorreoHoja({ ids, resumen, alCerrar, alEnviar }) {
 
             {correos === null ? <ActivityIndicator style={{ marginVertical: 12 }} /> : correos.length ? (
               <>
-                <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4 }}>Tus correos</Text>
+                <Seccion>Tus correos</Seccion>
                 <View style={{ backgroundColor: superficie, borderRadius: 18, overflow: 'hidden' }}>
                   {correos.map((c, i) => {
                     const activo = !usandoNuevo && elegido === c.correo;
@@ -148,9 +148,7 @@ export default function EnviarCorreoHoja({ ids, resumen, alCerrar, alEnviar }) {
               </>
             ) : null}
 
-            <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4 }}>
-              {correos?.length ? 'Otro correo' : 'Correo'}
-            </Text>
+            <Seccion>{correos?.length ? 'Otro correo' : 'Correo'}</Seccion>
             <TextInput ref={campo} value={nuevo} onChangeText={(v) => { setNuevo(v); setError(null); }} onBlur={() => setTocadoNuevo(true)}
               placeholder="nombre@correo.com" placeholderTextColor={colorSistema.texto3}
               keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" textContentType="emailAddress"

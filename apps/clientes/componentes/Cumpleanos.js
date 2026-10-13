@@ -17,7 +17,8 @@ import * as SecureStore from 'expo-secure-store';
 import Animated, {
   Easing, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming,
 } from 'react-native-reanimated';
-import { Confeti } from './animacion';
+import { Confeti, useSinMovimiento } from './animacion';
+import { LIVIANO } from '../lib/rendimiento';
 import { dolares } from '../lib/formato';
 import { useBloqueo } from '../lib/bloqueo';
 import { useTema } from '../tema/tema';
@@ -61,14 +62,18 @@ function Fiesta({ nombre, puntos, alCerrar }) {
   const t = useTema();
   const ins = useSafeAreaInsets();
   const compacta = useWindowDimensions().height < 720;
-  const pastel = useSharedValue(0);
+  // Con «Reducir movimiento» o en un teléfono viejo (2026-10-13): sin globos
+  // ni confeti y el pastel ya en su lugar; la felicitación es la misma.
+  const quieta = useSinMovimiento();
+  const pastel = useSharedValue(quieta ? 1 : 0);
   const latido = useSharedValue(1);
-  const texto = useSharedValue(0);
+  const texto = useSharedValue(quieta ? 1 : 0);
   useEffect(() => {
+    if (quieta) return;
     pastel.value = withDelay(200, withSpring(1, { damping: 14, stiffness: 140 }));
     latido.value = withDelay(1200, withRepeat(withSequence(withTiming(1.06, { duration: 500 }), withTiming(1, { duration: 500 })), 4));
     texto.value = withDelay(450, withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) }));
-  }, [pastel, latido, texto]);
+  }, [pastel, latido, texto, quieta]);
   const estiloPastel = useAnimatedStyle(() => ({
     transform: [{ scale: pastel.value * latido.value }, { rotate: `${(1 - pastel.value) * -10}deg` }],
   }));
@@ -76,9 +81,10 @@ function Fiesta({ nombre, puntos, alCerrar }) {
 
   return (
     <View style={StyleSheet.absoluteFill}>
-      <BlurView intensity={60} tint={t.oscuro ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: t.oscuro ? 'rgba(40,8,50,0.45)' : 'rgba(255,230,250,0.45)' }]} />
-      {GLOBOS.map((g, i) => <Globo key={i} emoji={g} indice={i} color={COLORES_GLOBO[i % COLORES_GLOBO.length]} />)}
+      {/* En un teléfono viejo, un velo más denso en vez del desenfoque en vivo. */}
+      {LIVIANO ? null : <BlurView intensity={60} tint={t.oscuro ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />}
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: t.oscuro ? `rgba(40,8,50,${LIVIANO ? 0.9 : 0.45})` : `rgba(255,230,250,${LIVIANO ? 0.92 : 0.45})` }]} />
+      {quieta ? null : GLOBOS.map((g, i) => <Globo key={i} emoji={g} indice={i} color={COLORES_GLOBO[i % COLORES_GLOBO.length]} />)}
       <Confeti colores={['#FF2D55', '#FFD60A', '#5AC8FA', '#AF52DE', t.color.verde, t.color.magenta]} />
 
       {/* Mismo criterio que SubisteDeNivel (2026-10-09): áreas seguras, un

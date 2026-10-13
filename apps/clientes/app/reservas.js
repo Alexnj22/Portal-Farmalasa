@@ -27,7 +27,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
-import { Boton, Cargando, Pantalla, Tarjeta, Vacio } from '../componentes/ui';
+import { Boton, Cargando, Chip, Pantalla, Seccion as SeccionUi, Tarjeta, Vacio } from '../componentes/ui';
 import Icono from '../componentes/Icono';
 import CodigoReserva from '../componentes/CodigoReserva';
 import { Entrada, Latido } from '../componentes/animacion';
@@ -273,7 +273,7 @@ export default function Reservas() {
   if (d.pendiente || (!d.ok && preRegistro)) {
     return <Pantalla conPestanas={false}><Vacio titulo="Sin reservas">Cuando completes tu registro en cualquier sucursal podrás reservar productos y verlos aquí.</Vacio></Pantalla>;
   }
-  if (!d.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>{filtro === 'todas' ? null : chips}<Vacio titulo="No se pudieron cargar">{d.mensaje ?? 'Revisa tu conexión y desliza hacia abajo para reintentar.'}</Vacio></Pantalla>;
+  if (!d.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>{filtro === 'todas' ? null : chips}<Vacio titulo="No se pudieron cargar" accion="Reintentar" alAccion={refrescar}>{d.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'}</Vacio></Pantalla>;
   if (filtro === 'todas' && !d.reservas.length && !encargos.length) {
     return (
       <Pantalla conPestanas={false}>
@@ -320,7 +320,7 @@ export default function Reservas() {
       {vistaPrevia.vista}
       {filtro === 'todas' && encargos.length ? (
         <>
-          <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4 }}>Encargos</Text>
+          <SeccionUi>Encargos</SeccionUi>
           {encargos.map((e) => <Encargo key={e.id} e={e} alPagar={() => pagarEncargo(e)} pagando={pagandoEncargo === e.id} alCancelar={() => cancelarEncargo(e)} />)}
         </>
       ) : null}
@@ -354,24 +354,9 @@ export default function Reservas() {
   );
 }
 
-function Chip({ texto, activo, alTocar }) {
-  const t = useTema();
-  return (
-    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} hitSlop={5} accessibilityRole="button" accessibilityState={{ selected: activo }}
-      style={({ pressed }) => ({ minHeight: 34, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', transform: [{ scale: pressed ? 0.97 : 1 }],
-        backgroundColor: activo ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)') })}>
-      <Text style={{ fontSize: 14, fontWeight: '700', color: activo ? '#FFFFFF' : colorSistema.texto }}>{texto}</Text>
-    </Pressable>
-  );
-}
-
-// El rótulo de un grupo, con cuántas lleva.
+// El rótulo de un grupo, con cuántas lleva (el de componentes/ui, 2026-10-13).
 function Seccion({ texto, n }) {
-  return (
-    <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4, marginTop: 8 }}>
-      {texto}{n ? ` · ${n}` : ''}
-    </Text>
-  );
+  return <SeccionUi n={n} estilo={{ marginTop: 8 }}>{texto}</SeccionUi>;
 }
 
 // Arriba de todo, de un vistazo: cuántas se pueden retirar ya y cuántas faltan.

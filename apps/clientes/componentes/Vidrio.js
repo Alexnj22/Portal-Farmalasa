@@ -5,6 +5,7 @@
 import { Platform, StyleSheet, useColorScheme, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { LIVIANO } from '../lib/rendimiento';
 
 const HAY_VIDRIO = Platform.OS === 'ios' && (() => { try { return isLiquidGlassAvailable(); } catch { return false; } })();
 
@@ -31,7 +32,10 @@ export default function Vidrio({ style, children, radio = 22, interactivo = fals
       </View>
     );
   }
-  if (Platform.OS === 'ios') {
+  // En un iPhone viejo sin Liquid Glass (2026-10-13), el desenfoque en vivo de
+  // cada tarjeta es lo que más cuesta al desplazarse: va el fondo translúcido
+  // sólido de abajo, que sobre la aurora se lee como la misma pieza.
+  if (Platform.OS === 'ios' && !LIVIANO) {
     return (
       <BlurView intensity={70} tint={oscuro ? 'systemThickMaterialDark' : 'systemThickMaterialLight'} style={[forma, style]}>
         {tinte ? <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: tinte }} /> : null}
@@ -49,6 +53,8 @@ export default function Vidrio({ style, children, radio = 22, interactivo = fals
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: oscuro ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)',
     }, style]}>
+      {/* El tinte de la marca, sólo en el iPhone liviano (Android sigue sin él, como antes). */}
+      {tinte && Platform.OS === 'ios' ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: tinte }]} /> : null}
       {children}
     </View>
   );

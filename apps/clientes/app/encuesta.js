@@ -70,7 +70,7 @@ export default function Encuesta() {
 
   if (!d) return <Cargando />;
   if (hecho) return (
-    <Pantalla conPestanas={false}>
+    <Pantalla conPestanas={false} conBurbuja={false}>
       <Confeti />
       <Tarjeta estilo={{ alignItems: 'center', gap: 10, paddingVertical: 28 }}>
         <Text style={{ fontSize: 44 }}>🎉</Text>
@@ -85,21 +85,21 @@ export default function Encuesta() {
   );
   // Sin ficha todavía, o un error: no es «sin encuestas» (2026-10-12).
   if (d.pendiente || (!d.ok && preRegistro)) {
-    return <Pantalla conPestanas={false}><Vacio titulo="Sin encuestas por ahora" icono="checklist" respaldo="✓">Cuando completes tu registro en cualquier sucursal podrás contestar encuestas y ganar puntos.</Vacio></Pantalla>;
+    return <Pantalla conPestanas={false} conBurbuja={false}><Vacio titulo="Sin encuestas por ahora" icono="checklist" respaldo="✓">Cuando completes tu registro en cualquier sucursal podrás contestar encuestas y ganar puntos.</Vacio></Pantalla>;
   }
   if (!d.ok) {
     return (
-      <Pantalla conPestanas={false}>
+      <Pantalla conPestanas={false} conBurbuja={false}>
         <Vacio titulo="No se pudo cargar">{d.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'}</Vacio>
         <Boton tipo="secundario" alTocar={() => { setD(null); cargar(); }}>Reintentar</Boton>
       </Pantalla>
     );
   }
-  if (!enc && id) return <Pantalla conPestanas={false}><Vacio titulo="Esta encuesta ya no está disponible" icono="checklist" respaldo="✓">Puede que ya la hayas contestado o que haya terminado. ¡Gracias!</Vacio></Pantalla>;
-  if (!enc) return <Pantalla conPestanas={false}><Vacio titulo="Sin encuestas por ahora" icono="checklist" respaldo="✓">Cuando tengamos una nueva, te avisamos aquí. ¡Gracias!</Vacio></Pantalla>;
+  if (!enc && id) return <Pantalla conPestanas={false} conBurbuja={false}><Vacio titulo="Esta encuesta ya no está disponible" icono="checklist" respaldo="✓">Puede que ya la hayas contestado o que haya terminado. ¡Gracias!</Vacio></Pantalla>;
+  if (!enc) return <Pantalla conPestanas={false} conBurbuja={false}><Vacio titulo="Sin encuestas por ahora" icono="checklist" respaldo="✓">Cuando tengamos una nueva, te avisamos aquí. ¡Gracias!</Vacio></Pantalla>;
 
   return (
-    <Pantalla conPestanas={false}>
+    <Pantalla conPestanas={false} conBurbuja={false}>
       <View style={{ gap: 4 }}>
         <Text style={{ fontSize: 24, fontWeight: '800', color: colorSistema.texto }}>{enc.nombre}</Text>
         <Text style={{ fontSize: 15, color: colorSistema.texto2 }}>{enc.bienvenida || 'Tu opinión nos ayuda a atenderte mejor.'} Ganas {entero(enc.puntos)} puntos al terminar.</Text>

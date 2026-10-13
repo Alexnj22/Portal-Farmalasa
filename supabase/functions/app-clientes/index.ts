@@ -948,7 +948,7 @@ Deno.serve(async (req) => {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
     // El chat y la foto de perfil (2026-10-12) cuelgan de la ficha.
-    if (["chat_mensajes", "chat_enviar", "chat_leido", "chat_subir_url", "perfil", "perfil_subir_url", "perfil_confirmar", "perfil_quitar"].includes(accion)) {
+    if (["chat_mensajes", "chat_enviar", "chat_leido", "chat_subir_url", "chat_reaccionar", "chat_escribiendo", "chat_calificar", "perfil", "perfil_subir_url", "perfil_confirmar", "perfil_quitar"].includes(accion)) {
       if (!customerId) return json({ ok: false, pendiente: true, mensaje: "Completa tu registro en una sucursal para usar esta opción." });
     }
 
@@ -1046,10 +1046,26 @@ Deno.serve(async (req) => {
     const POR_PAGINA_CHAT = 30;
     const convDe = async () => {
       const { data, error } = await admin.from("app_chat_conversaciones")
-        .select("id, sin_leer_cliente, tomada_por, tomada_at, escribiendo_por, escribiendo_at, visto_equipo_at, ultimo_de, ultimo_mensaje_at")
+        .select("id, sin_leer_cliente, tomada_por, tomada_at, escribiendo_por, escribiendo_at, visto_equipo_at, ultimo_de, ultimo_mensaje_at, estado, resuelta_at, calificacion, calificada_at")
         .eq("customer_id", customerId).maybeSingle();
       if (error) throw error;
       return data;
+    };
+    // El estado para la app (2026-10-13): resuelta o abierta, y si puede
+    // calificar la atención. Se califica UNA vez por cada vez que el equipo la
+    // resuelve: si el cliente vuelve a escribir, el trigger la reabre, y al
+    // resolverla de nuevo (`resuelta_at` posterior a `calificada_at`) se puede
+    // calificar otra vez.
+    // deno-lint-ignore no-explicit-any
+    const estadoConversacion = (cv: any) => {
+      if (!cv) return { estado: null, calificacion: null, puede_calificar: false };
+      const resuelta = cv.estado === "resuelta";
+      const vigente = !!cv.calificada_at && (!cv.resuelta_at || Date.parse(cv.calificada_at) >= Date.parse(cv.resuelta_at));
+      return {
+        estado: cv.estado,
+        calificacion: vigente ? Number(cv.calificacion) || null : null,
+        puede_calificar: resuelta && !vigente,
+      };
     };
     // deno-lint-ignore no-explicit-any
     const armarMensajes = async (filas: any[]) => {
@@ -1083,7 +1099,11 @@ Deno.serve(async (req) => {
       // deno-lint-ignore no-explicit-any
       const adjunto = (a: any) => {
         if (!a || typeof a !== "object") return null;
-        if (a.tipo === "producto" && a.id != null) return { tipo: "producto", id: Number(a.id), nombre: String(a.nombre ?? ""), precio: a.precio == null ? null : Number(a.precio) };
+        // La foto, sólo si es del bucket público de productos (2026-10-13).
+        if (a.tipo === "producto" && a.id != null) {
+          const foto = typeof a.foto === "string" && a.foto.startsWith(`${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/product-photos/`) ? a.foto : null;
+          return { tipo: "producto", id: Number(a.id), nombre: String(a.nombre ?? ""), precio: a.precio == null ? null : Number(a.precio), foto };
+        }
         if (a.tipo === "oferta" && a.id != null) return { tipo: "oferta", id: String(a.id), titulo: String(a.titulo ?? "") };
         return null;
       };
@@ -1121,7 +1141,8 @@ Deno.serve(async (req) => {
     };
     if (accion === "chat_mensajes") {
       const [cv, mia, hor] = await Promise.all([convDe(), fotoDePerfil(), horarioFarmacia(admin)]);
-      const base = { ok: true, fuera_de_horario: !hor.abierta, horario: { abierta: hor.abierta, texto: hor.texto, feriado: hor.feriado }, mi_foto: mia.url };
+      const base = { ok: true, fuera_de_horario: !hor.abierta, horario: { abierta: hor.abierta, texto: hor.texto, feriado: hor.feriado }, mi_foto: mia.url,
+        conversacion: estadoConversacion(cv) };
       if (!cv) return json({ ...base, mensajes: [], hay_mas: false, sin_leer: 0 });
       const desde = Number(body?.desde_id), antes = Number(body?.antes_id);
       const COLS_CHAT = "id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at";
@@ -1193,8 +1214,31 @@ Deno.serve(async (req) => {
     if (accion === "chat_enviar") {
       const crudo = String(body?.texto ?? "").trim();
       if (crudo.length > 2000) return json({ ok: false, mensaje: "El mensaje es muy largo (máximo 2,000 letras)." });
-      const texto = crudo || null;
+      let texto = crudo || null;
       const fotoRuta = body?.foto_ruta ? String(body.foto_ruta) : null;
+      // Consultar un producto (2026-10-13): la app manda SÓLO el id; nombre,
+      // precio y foto los arma el servidor desde el catálogo (la misma
+      // función que la ficha del producto, que ya descarta lo inactivo y lo
+      // oculto). Nunca se confía en lo que diga el teléfono.
+      let adjuntoProducto: Record<string, unknown> | null = null;
+      if (body?.producto_id != null) {
+        const pid = Number(body.producto_id);
+        if (!Number.isSafeInteger(pid) || pid <= 0) return json({ ok: false, mensaje: "Producto no válido." });
+        const { data: prod, error: eProd } = await admin.rpc("app_catalogo_producto", { p_id: pid });
+        if (eProd) throw eProd;
+        if (!prod) return json({ ok: false, mensaje: "Este producto ya no está en el catálogo." });
+        // deno-lint-ignore no-explicit-any
+        const d: any = prod;
+        const precios = (d.presentaciones ?? []).map((x: any) => Number(x?.precio)).filter((n: number) => Number.isFinite(n) && n > 0);
+        adjuntoProducto = {
+          tipo: "producto", id: Number(d.id), nombre: String(d.nombre ?? ""),
+          precio: precios.length ? Math.min(...precios) : null,
+          foto: typeof d.foto === "string" && d.foto ? d.foto : null,
+        };
+        // Sin texto, la pregunta por defecto: así el equipo ve en su lista
+        // de qué se trata (el trigger resume `texto`, no el adjunto).
+        if (!texto) texto = "Quiero consultar por este producto.";
+      }
       if (!texto && !fotoRuta) return json({ ok: false, mensaje: "Escribe un mensaje." });
       if (fotoRuta && !new RegExp(`^chat/${customerId}/\\d+\\.jpg$`).test(fotoRuta)) return json({ ok: false, mensaje: "La foto no es válida. Vuelve a elegirla." });
       if (fotoRuta && !(await archivoExiste(admin, fotoRuta))) return json({ ok: false, mensaje: "La foto no terminó de subirse. Intenta de nuevo." });
@@ -1221,7 +1265,7 @@ Deno.serve(async (req) => {
       if (eC) throw eC;
       if ((count ?? 0) >= 30) return json({ ok: false, motivo: "muchos_mensajes", mensaje: "Enviaste muchos mensajes seguidos. Espera unos minutos." }, 429);
       const { data: m, error } = await admin.from("app_chat_mensajes")
-        .insert({ conversacion_id: cv.id, autor: "cliente", texto, foto_ruta: fotoRuta, respuesta_a: respuestaA })
+        .insert({ conversacion_id: cv.id, autor: "cliente", texto, foto_ruta: fotoRuta, respuesta_a: respuestaA, adjunto: adjuntoProducto })
         .select("id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at").single();
       if (error) throw error;
       // Respuesta automática (2026-10-12): el cliente siempre sabe que lo
@@ -1250,7 +1294,24 @@ Deno.serve(async (req) => {
         else auto = a;
       }
       const armados = await armarMensajes(auto ? [m, auto] : [m]);
-      return json({ ok: true, mensaje: armados[0], automatico: armados[1] ?? null, fuera_de_horario: !abierto, horario: { abierta: hor.abierta, texto: hor.texto, feriado: hor.feriado } });
+      // Escribir reabre la conversación (trigger `app_chat_mensaje_nuevo`).
+      return json({ ok: true, mensaje: armados[0], automatico: armados[1] ?? null, fuera_de_horario: !abierto,
+        conversacion: { estado: "abierta", calificacion: null, puede_calificar: false }, horario: { abierta: hor.abierta, texto: hor.texto, feriado: hor.feriado } });
+    }
+    // Calificar la atención (2026-10-13): sólo con la conversación resuelta
+    // y sin calificar desde que se resolvió. El cliente sale de la sesión.
+    if (accion === "chat_calificar") {
+      const nota = Number(body?.calificacion);
+      if (!Number.isInteger(nota) || nota < 1 || nota > 5) return json({ ok: false, mensaje: "Elige de 1 a 5 estrellas." });
+      const comentario = String(body?.comentario ?? "").trim().slice(0, 500) || null;
+      const cv = await convDe();
+      if (!cv || !estadoConversacion(cv).puede_calificar) return json({ ok: false, mensaje: "Esta conversación ya no se puede calificar." });
+      const { data: hecha, error } = await admin.from("app_chat_conversaciones")
+        .update({ calificacion: nota, calificacion_comentario: comentario, calificada_at: new Date().toISOString() })
+        .eq("id", cv.id).eq("customer_id", customerId).eq("estado", "resuelta").select("id").limit(1);
+      if (error) throw error;
+      if (!hecha?.length) return json({ ok: false, mensaje: "Esta conversación ya no se puede calificar." });
+      return json({ ok: true, conversacion: { estado: "resuelta", calificacion: nota, puede_calificar: false } });
     }
     if (accion === "chat_leido") {
       const ahora = new Date().toISOString();

@@ -103,6 +103,7 @@ const MATERIAL = {
   'square.and.arrow.up': 'ios_share',
   'square.grid.2x2.fill': 'grid_view',
   'square.stack.3d.up.fill': 'stacks',
+  'star': 'star',
   'star.fill': 'star',
   'storefront.fill': 'storefront',
   'syringe.fill': 'syringe',

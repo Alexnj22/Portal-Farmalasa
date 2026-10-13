@@ -7,7 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
 import { colorSistema } from './sistema';
-import { Boton } from './ui';
+import { Boton, RADIO, Seccion } from './ui';
+import SelectorHora, { HORA_NATIVA } from './SelectorHora';
 import { nombrePropio } from '../lib/formato';
 import { DURACIONES, PRESETS, diaTexto, guardarRecordatorio, horaTexto, hoyLocal, quitarRecordatorio, sumarDias } from '../lib/tomas';
 import { useTema } from '../tema/tema';
@@ -37,6 +38,7 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
 
   const veces = (n) => { Haptics.selectionAsync().catch(() => {}); setHoras(PRESETS[n]); };
   const cambiarHora = (i, h, m) => setHoras((xs) => xs.map((x, j) => (j === i ? mover(x, h, m) : x)));
+  const fijarHora = (i, nueva) => setHoras((xs) => xs.map((x, j) => (j === i ? nueva : x)));
   const moverFecha = (n) => setHasta((f) => {
     const nueva = sumarDias(f, n);
     if (nueva <= hoy) return sumarDias(hoy, 1);
@@ -74,10 +76,13 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
       <View style={{ flex: 1, backgroundColor: fondo }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18 }}>
           <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>Recordarme tomarlo</Text>
-          <Pressable onPress={alCerrar} hitSlop={12} accessibilityRole="button"><Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>Cerrar</Text></Pressable>
+          <Pressable onPress={alCerrar} hitSlop={12} accessibilityRole="button"
+            style={{ minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' }}>
+            <Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>Cerrar</Text>
+          </Pressable>
         </View>
         <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: ins.bottom + 24, gap: 16 }} keyboardShouldPersistTaps="handled">
-          <View style={{ backgroundColor: superficie, borderRadius: 18, padding: 16, gap: 4 }}>
+          <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, padding: 16, gap: 4 }}>
             <Text style={{ fontSize: 17, fontWeight: '800', color: colorSistema.texto }}>{nombrePropio(tratamiento.nombre)}</Text>
             <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>Te avisamos en este teléfono a la hora de cada toma.</Text>
           </View>
@@ -86,12 +91,15 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {[1, 2, 3].map((n) => <Pildora key={n} texto={`${n} ${n === 1 ? 'vez' : 'veces'}`} elegida={horas.length === n} alTocar={() => veces(n)} />)}
           </View>
-          <View style={{ backgroundColor: superficie, borderRadius: 18, overflow: 'hidden' }}>
+          <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, overflow: 'hidden' }}>
             {horas.map((h, i) => (
               <View key={i}>
                 {i > 0 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 16 }} /> : null}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14 }}>
                   <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>{horas.length === 1 ? 'Hora' : `Toma ${i + 1}`}</Text>
+                  {HORA_NATIVA ? (
+                    <SelectorHora valor={h} titulo={horas.length === 1 ? 'Hora' : `Toma ${i + 1}`} alCambiar={(nueva) => fijarHora(i, nueva)} />
+                  ) : (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Paso sf="minus" etiqueta="Una hora antes" alTocar={() => cambiarHora(i, -1, 0)} />
                     <Paso sf="plus" etiqueta="Una hora después" alTocar={() => cambiarHora(i, 1, 0)} />
@@ -100,14 +108,15 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
                     <Paso sf="minus" etiqueta="15 minutos antes" alTocar={() => cambiarHora(i, 0, -15)} />
                     <Paso sf="plus" etiqueta="15 minutos después" alTocar={() => cambiarHora(i, 0, 15)} />
                   </View>
+                  )}
                 </View>
               </View>
             ))}
           </View>
-          <Text style={{ fontSize: 12, color: colorSistema.texto3, marginTop: -8, marginLeft: 4 }}>Los botones de la izquierda mueven la hora; los de la derecha, de 15 en 15 minutos.</Text>
+          {!HORA_NATIVA ? <Text style={{ fontSize: 12, color: colorSistema.texto3, marginTop: -8, marginLeft: 4 }}>Los botones de la izquierda mueven la hora; los de la derecha, de 15 en 15 minutos.</Text> : null}
 
           <Seccion>¿Por cuánto tiempo?</Seccion>
-          <View style={{ backgroundColor: superficie, borderRadius: 18, overflow: 'hidden' }}>
+          <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, overflow: 'hidden' }}>
             {DURACIONES.map((d, i) => {
               const elegida = d.id === duracion;
               return (
@@ -122,7 +131,7 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
             })}
           </View>
           {duracion === 'fecha' ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: superficie, borderRadius: 18, padding: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: superficie, borderRadius: RADIO.medio, padding: 14 }}>
               <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>Hasta el</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Paso texto="−7" etiqueta="Una semana antes" alTocar={() => moverFecha(-7)} />
@@ -153,15 +162,11 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
   );
 }
 
-function Seccion({ children }) {
-  return <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4 }}>{children}</Text>;
-}
-
 function Pildora({ texto, elegida, alTocar }) {
   const t = useTema();
   return (
     <Pressable onPress={alTocar} accessibilityRole="radio" accessibilityState={{ selected: elegida }}
-      style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.96 : 1 }],
+      style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: RADIO.chico, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.96 : 1 }],
         backgroundColor: elegida ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)') })}>
       <Text style={{ fontSize: 15, fontWeight: '700', color: elegida ? '#FFFFFF' : colorSistema.texto }}>{texto}</Text>
     </Pressable>
@@ -172,7 +177,8 @@ function Paso({ sf, texto, etiqueta, alTocar }) {
   const t = useTema();
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }}
-      accessibilityRole="button" accessibilityLabel={etiqueta} hitSlop={4}
+      accessibilityRole="button" accessibilityLabel={etiqueta} hitSlop={6}
+      // 32 de lado + 6 de `hitSlop` por lado = 44 pt de dedo (2026-10-13).
       style={({ pressed }) => ({ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.92 : 1 }],
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)' })}>
       {texto ? <Text style={{ fontSize: 12, fontWeight: '800', color: colorSistema.texto }}>{texto}</Text>

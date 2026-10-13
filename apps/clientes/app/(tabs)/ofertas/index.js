@@ -4,7 +4,7 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { Text, View } from 'react-native';
-import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Titulo, Vacio } from '../../../componentes/ui';
+import { Cargando, Pantalla, Tarjeta, Texto, Titulo, Vacio } from '../../../componentes/ui';
 import { colorSistema } from '../../../componentes/sistema';
 import { useTema } from '../../../tema/tema';
 import { Entrada, Tocable } from '../../../componentes/animacion';
@@ -22,7 +22,7 @@ export default function Ofertas({ invitacion = false }) {
   const refrescar = async () => { setRefrescando(true); await cargar({ forzar: true }); setRefrescando(false); };
 
   if (!datos) return <Cargando />;
-  if (!datos.ok) return <Pantalla alRefrescar={refrescar} refrescando={refrescando}><Aviso>{datos.mensaje}</Aviso></Pantalla>;
+  if (!datos.ok) return <Pantalla alRefrescar={refrescar} refrescando={refrescando}><Vacio titulo="No se pudo cargar" accion="Reintentar" alAccion={refrescar}>{datos.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'}</Vacio></Pantalla>;
 
   return (
     <Pantalla alRefrescar={refrescar} refrescando={refrescando}>

@@ -10,27 +10,36 @@ import { Pressable, Share, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { Aviso, Boton, Cargando, Pantalla, Tarjeta, Texto, Titulo } from '../componentes/ui';
+import { Boton, Cargando, Pantalla, RADIO, Tarjeta, Texto, Titulo, Vacio } from '../componentes/ui';
 import { Entrada, NumeroAnimado } from '../componentes/animacion';
 import { colorSistema } from '../componentes/sistema';
 import { useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
 import Icono from '../componentes/Icono';
 
+const ENLACE_APP = 'https://portal.farmasalud.lat/mis-puntos';
+
 export default function Invitar() {
   const t = useTema();
   const pedir = useSesion((s) => s.pedir);
   const [d, setD] = useState(null);
-  useFocusEffect(useCallback(() => { pedir('referido').then(setD); }, [pedir]));
+  const cargar = useCallback(() => pedir('referido').then(setD), [pedir]);
+  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
+  const reintentar = () => { setD(null); cargar(); };
 
   if (!d) return <Cargando />;
   // Sin ficha todavía (2026-10-12): el código de invitación llega con el registro.
   if (d.pendiente) {
-    return <Pantalla conPestanas={false}><Aviso tipo="aviso">Cuando completes tu registro en cualquier sucursal tendrás tu código para invitar a tus amigos.</Aviso></Pantalla>;
+    return <Pantalla conPestanas={false}><Vacio titulo="Tu código llega con tu registro" icono="person.2.fill" respaldo="🤝">Cuando completes tu registro en cualquier sucursal tendrás tu código para invitar a tus amigos.</Vacio></Pantalla>;
   }
-  if (!d.ok || !d.codigo) return <Pantalla conPestanas={false}><Aviso>{d.mensaje ?? 'No se pudo cargar tu código.'}</Aviso></Pantalla>;
+  if (!d.ok || !d.codigo) {
+    return <Pantalla conPestanas={false}><Vacio titulo="No se pudo cargar tu código" accion="Reintentar" alAccion={reintentar}>{d.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'}</Vacio></Pantalla>;
+  }
 
-  const mensaje = `¡Únete a Puntos Salud de Farmacia Salud! Usa mi código ${d.codigo} al registrarte en la app y los dos ganamos ${d.puntos} puntos con tu primera compra de $${d.minimo} o más.`;
+  // El enlace (2026-10-13): no hay todavía un enlace de tienda en el repo; el de
+  // Mis puntos abre la app si está instalada (enlace universal) y, si no, la
+  // página de Puntos Salud del portal.
+  const mensaje = `¡Únete a Puntos Salud de Farmacia Salud! Usa mi código ${d.codigo} al registrarte en la app y los dos ganamos ${d.puntos} puntos con tu primera compra de $${d.minimo} o más. ${ENLACE_APP}`;
   const compartir = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     try { await Share.share({ message: mensaje }); } catch { /* cancelado */ }
@@ -40,7 +49,7 @@ export default function Invitar() {
     <Pantalla conPestanas={false}>
       <Entrada indice={0}>
         <LinearGradient colors={['#2B0B3A', t.color.magenta, '#5B1E9C']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={{ borderRadius: 26, padding: 22, gap: 10, alignItems: 'center' }}>
+          style={{ borderRadius: RADIO.tarjeta, padding: 22, gap: 10, alignItems: 'center' }}>
           <Icono sf="person.2.fill" respaldo="🤝" tam={44} color="#FFFFFF" />
           <Text style={{ fontSize: 24, fontWeight: '800', color: '#FFFFFF', textAlign: 'center' }}>
             Invita y ganen {d.puntos} puntos cada uno
@@ -50,10 +59,12 @@ export default function Invitar() {
           </Text>
           <Pressable onPress={compartir} accessibilityRole="button" accessibilityLabel={`Tu código ${d.codigo}. Toca para compartir.`}
             style={({ pressed }) => ({
-              marginTop: 6, backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 18, borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
+              marginTop: 6, maxWidth: '100%', backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: RADIO.medio, borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
               borderStyle: 'dashed', paddingVertical: 14, paddingHorizontal: 28, transform: [{ scale: pressed ? 0.97 : 1 }],
             })}>
-            <Text style={{ fontSize: 34, fontWeight: '900', letterSpacing: 6, color: '#FFFFFF', fontVariant: ['tabular-nums'] }}>{d.codigo}</Text>
+            {/* Con letra grande o pantalla chica, el código se encoge: partido en dos líneas no se puede dictar. */}
+            <Text adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.5}
+              style={{ fontSize: 34, fontWeight: '900', letterSpacing: 6, color: '#FFFFFF', fontVariant: ['tabular-nums'] }}>{d.codigo}</Text>
           </Pressable>
         </LinearGradient>
       </Entrada>

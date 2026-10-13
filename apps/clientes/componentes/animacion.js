@@ -4,10 +4,17 @@
 import { useEffect } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import Animated, {
-  Easing, useAnimatedProps, useAnimatedStyle, useSharedValue,
+  Easing, useAnimatedProps, useAnimatedStyle, useReducedMotion, useSharedValue,
   withDelay, withRepeat, withSequence, withSpring, withTiming,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { LIVIANO } from '../lib/rendimiento';
+
+// «Reducir movimiento» del sistema o un teléfono viejo (lib/rendimiento):
+// lo decorativo (confeti, latidos, entradas) no se anima (2026-10-13).
+export function useSinMovimiento() {
+  return useReducedMotion() || LIVIANO;
+}
 
 const TextoAnimado = Animated.createAnimatedComponent(TextInput);
 
@@ -94,6 +101,8 @@ function entradaSinOpacidad(retraso) {
 }
 
 export function Entrada({ indice = 0, children, estilo }) {
+  const quieta = useSinMovimiento();
+  if (quieta) return <View style={estilo}>{children}</View>;
   return (
     // Con tope: en listas largas las últimas ya no esperan más de medio segundo.
     <Animated.View style={estilo} entering={entradaSinOpacidad(40 + Math.min(indice, 6) * 55)}>
@@ -145,10 +154,12 @@ function Pieza({ color, angulo, distancia, retraso, ancho }) {
 }
 
 export function Confeti({ colores, alTerminar }) {
+  const quieto = useSinMovimiento();
   useEffect(() => {
-    const reloj = setTimeout(() => alTerminar?.(), 1800);
+    const reloj = setTimeout(() => alTerminar?.(), quieto ? 0 : 1800);
     return () => clearTimeout(reloj);
-  }, [alTerminar]);
+  }, [alTerminar, quieto]);
+  if (quieto) return null;
   const piezas = Array.from({ length: 18 }, (_, i) => ({
     color: colores[i % colores.length],
     angulo: Math.PI * (0.15 + 0.7 * (i / 17)) + (i % 2 ? 0.08 : -0.08),
@@ -169,10 +180,12 @@ export function Confeti({ colores, alTerminar }) {
  * hace; revisión 2026-10-06).
  */
 export function Latido({ children, estilo, escala = 1.05 }) {
+  const quieto = useSinMovimiento();
   const s = useSharedValue(1);
   useEffect(() => {
+    if (quieto) { s.value = 1; return; }
     s.value = withDelay(400, withRepeat(withSequence(withTiming(escala, { duration: 600 }), withTiming(1, { duration: 600 })), 3));
-  }, [s, escala]);
+  }, [s, escala, quieto]);
   const animado = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
   return <Animated.View style={[estilo, animado]}>{children}</Animated.View>;
 }

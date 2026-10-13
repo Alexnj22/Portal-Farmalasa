@@ -7,10 +7,10 @@
 // entrada a «Pregúntale a la farmacia», con el punto de mensajes sin leer.
 import { useCallback, useEffect, useState } from 'react';
 import * as Haptics from 'expo-haptics';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Platform, Pressable, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { colorSistema, FilaInterruptor, FilaTexto, Formulario, Grupo } from '../../../componentes/sistema';
-import { Aviso } from '../../../componentes/ui';
+import { Aviso, ESPACIO_BURBUJA } from '../../../componentes/ui';
 import { useSesion } from '../../../lib/sesion';
 import { useCuenta } from '../../../lib/cuenta';
 import { pedirTokenDeAvisos, recordarAvisos } from '../../../lib/avisos';
@@ -104,15 +104,22 @@ export default function Cuenta() {
   const cambiarFoto = () => {
     Haptics.selectionAsync().catch(() => {});
     if (!foto.url) { subirPerfil(); return; }
-    Alert.alert('Tu foto de perfil', undefined, [
-      { text: 'Cambiar foto', onPress: subirPerfil },
-      { text: 'Quitar foto', style: 'destructive', onPress: async () => {
-        const r = await pedir('perfil_quitar');
-        if (r?.ok) setFoto({ url: null, quitada: false, cargando: false });
-        else Alert.alert('No se pudo quitar la foto', r?.mensaje ?? 'Revisa tu conexión.');
-      } },
-      { text: 'Cancelar', style: 'cancel' },
-    ]);
+    // La hoja de opciones del sistema (2026-10-13), como «Descargar» en
+    // Facturas; en Android la dibuja componentes/HojasAndroid.
+    const quitar = async () => {
+      const r = await pedir('perfil_quitar');
+      if (r?.ok) setFoto({ url: null, quitada: false, cargando: false });
+      else Alert.alert('No se pudo quitar la foto', r?.mensaje ?? 'Revisa tu conexión.');
+    };
+    ActionSheetIOS.showActionSheetWithOptions({
+      title: 'Tu foto de perfil',
+      options: ['Cambiar foto', 'Quitar foto', 'Cancelar'],
+      destructiveButtonIndex: 1,
+      cancelButtonIndex: 2,
+    }, (i) => {
+      if (i === 0) subirPerfil();
+      else if (i === 1) quitar();
+    });
   };
 
   const c = resumen?.consentimiento;
@@ -197,7 +204,8 @@ export default function Cuenta() {
   }
 
   return (
-    <Formulario>
+    // Abajo, el lugar de la burbuja del chat (2026-10-13).
+    <Formulario contentContainerStyle={Platform.OS === 'web' ? undefined : { paddingBottom: 20 + ESPACIO_BURBUJA }}>
       {vistaPrevia.vista}
       {resumen?.nombre ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginHorizontal: 24 }}>
@@ -256,7 +264,7 @@ export default function Cuenta() {
 
       {/* El chat con la farmacia (2026-10-12): arriba, con los sin leer. */}
       {conFicha ? (
-        <Grupo pie="Te responde el equipo de Farmacia Salud, de 7:00 a 21:00.">
+        <Grupo pie="Te responde el equipo de Farmacia Salud en el horario de las sucursales.">
           <FilaAccion sf="bubble.left.and.bubble.right.fill" texto="Pregúntale a la farmacia" insignia={Number(resumen?.chat_sin_leer) || 0}
             alTocar={() => navegar('/chat')} />
         </Grupo>

@@ -25,6 +25,7 @@ import { suave, useTema } from '../../tema/tema';
 import { navegar } from '../../lib/navegar';
 import { seguirSiYaReservado } from '../../lib/reservaDuplicada';
 import { datosDePrecio, mayoreoSoloEnCaja, precioFinal, rotuloPrecioTuyo } from '../../lib/precioTuyo';
+import { useSesion } from '../../lib/sesion';
 
 const ESTADO = {
   hay: { texto: 'Disponible', sf: 'checkmark.circle.fill', tono: 'exito' },
@@ -41,6 +42,8 @@ export default function Producto() {
   const [sel, setSel] = useState(null);
   const [cant, setCant] = useState(1);
   const [encargando, setEncargando] = useState(false);
+  // «Preguntar a la farmacia» (2026-10-13): sólo con sesión (el chat cuelga de la ficha).
+  const conSesion = useSesion((s) => !!s.token);
   const cargar = () => {
     setD(null);
     llamar('catalogo_producto', { id: Number(id), ...datosDePrecio() }).then((r) => {
@@ -126,6 +129,16 @@ export default function Producto() {
             <Text style={{ fontSize: 15, lineHeight: 21, color: colorSistema.texto2 }}>{nombreProducto(p.principio_activo)}</Text>
           ) : null}
           {p.laboratorio ? <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto3 }}>{nombreProducto(p.laboratorio)}</Text> : null}
+          {/* Abre el chat con este producto ya puesto sobre la barra (2026-10-13). */}
+          {conSesion ? (
+            <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.back(); setTimeout(() => navegar(`/chat?producto=${p.id}`), 300); }}
+              accessibilityRole="button" accessibilityLabel={`Preguntar a la farmacia por ${nombre}`}
+              style={({ pressed }) => ({ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, marginTop: 4, paddingHorizontal: 16,
+                borderRadius: 22, backgroundColor: suave(t.color.magenta, pressed ? (t.oscuro ? 0.4 : 0.24) : (t.oscuro ? 0.26 : 0.13)) })}>
+              <Icono sf="bubble.left.and.bubble.right.fill" respaldo="💬" tam={16} color={t.color.magentaTexto} />
+              <Text style={{ fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>Preguntar a la farmacia</Text>
+            </Pressable>
+          ) : null}
         </View>
 
         {/* Precios: cada presentación con el de viñeta y el Preferente (antes «VIP», Procedimiento de Clientes §1); se toca la que se quiere. */}

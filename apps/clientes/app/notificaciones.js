@@ -15,7 +15,7 @@
 // Lo nuevo se distingue durante la visita aunque el servidor ya lo haya dado
 // por leído al abrir (la campana se apaga enseguida); «Marcar como leídas»
 // apaga el resaltado.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Platform, Pressable, RefreshControl, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, useFocusEffect } from 'expo-router';
@@ -24,7 +24,7 @@ import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeabl
 import * as Haptics from 'expo-haptics';
 import Icono from '../componentes/Icono';
 import Vidrio from '../componentes/Vidrio';
-import { Cargando, Pantalla, Tarjeta, Vacio } from '../componentes/ui';
+import { Cargando, ESPACIO_BURBUJA, Pantalla, RADIO, Tarjeta, Vacio } from '../componentes/ui';
 import { Entrada } from '../componentes/animacion';
 import { colorSistema } from '../componentes/sistema';
 import { estiloDeAviso } from '../componentes/estiloDeAviso';
@@ -36,6 +36,10 @@ import { navegar } from '../lib/navegar';
 import { retocar } from '../lib/sinConexion';
 
 const DIA = 86400_000;
+// Deshacer (2026-10-13): el borrado de UN aviso espera esto antes de ir al
+// servidor. `bandeja_ocultar` no tiene vuelta atrás, así que deshacer es no
+// haberlo mandado todavía.
+const ESPERA_DESHACER = 4000;
 const claveDia = (f) => `${f.getFullYear()}-${f.getMonth()}-${f.getDate()}`;
 
 /** «Hoy», «Ayer», «Lunes 5 de octubre» (con el año si no es este). */
@@ -138,8 +142,8 @@ export default function Notificaciones() {
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 
   const visibles = useMemo(
-    () => (d?.ok && ocultas ? (d.avisos ?? []).filter((a) => !ocultas.has(Number(a.id))) : []),
-    [d, ocultas],
+    () => (d?.ok && ocultas ? (d.avisos ?? []).filter((a) => !ocultas.has(Number(a.id)) && !enEspera.has(a.id)) : []),
+    [d, ocultas, enEspera],
   );
   const esNueva = useCallback((a) => !a.leido_at && !todasVistas && !vistas.has(a.id), [todasVistas, vistas]);
   const nuevas = visibles.filter(esNueva).length;
@@ -152,10 +156,48 @@ export default function Notificaciones() {
     const nums = ids.map(Number).filter(Number.isFinite);
     sincronizar(todas ? { todas: true, hasta_id: Math.max(...nums) } : { ids: nums }, nums);
   }, [sincronizar]);
+  // Uno solo: se esconde al instante, pero el borrado de verdad (el local que
+  // persiste y el del servidor) sale a los 4 s, si no se tocó «Deshacer».
+  const [enEspera, setEnEspera] = useState(() => new Set());
+  const [deshacer, setDeshacer] = useState(null); // el último borrado: { id, n }
+  const esperas = useRef(new Map()); // id → temporizador
+  const borrarRef = useRef(borrar);
+  borrarRef.current = borrar;
+  const soltar = (id) => setEnEspera((s) => { if (!s.has(id)) return s; const n = new Set(s); n.delete(id); return n; });
   const borrarUna = useCallback((a) => {
+    const id = a.id;
+    if (esperas.current.has(id)) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    borrar([a.id]);
-  }, [borrar]);
+    setEnEspera((s) => new Set(s).add(id));
+    setDeshacer({ id, n: Date.now() });
+    esperas.current.set(id, setTimeout(async () => {
+      esperas.current.delete(id);
+      await borrarRef.current([id]); // primero queda oculto; recién después sale de la espera
+      soltar(id);
+    }, ESPERA_DESHACER));
+  }, []);
+  const deshacerUltimo = () => {
+    if (!deshacer) return;
+    const id = deshacer.id;
+    clearTimeout(esperas.current.get(id));
+    esperas.current.delete(id);
+    soltar(id);
+    setDeshacer(null);
+    Haptics.selectionAsync().catch(() => {});
+  };
+  // El aviso de «Deshacer» se va solo a los 4 s.
+  useEffect(() => {
+    if (!deshacer) return undefined;
+    const id = setTimeout(() => setDeshacer((x) => (x?.n === deshacer.n ? null : x)), ESPERA_DESHACER);
+    return () => clearTimeout(id);
+  }, [deshacer]);
+  // Al salir de la pantalla, lo que esperaba se borra ya: salir no es deshacer.
+  useEffect(() => () => {
+    const ids = [...esperas.current.keys()];
+    for (const id of ids) clearTimeout(esperas.current.get(id));
+    esperas.current.clear();
+    if (ids.length) borrarRef.current(ids);
+  }, []);
   const limpiarTodo = useCallback(() => {
     if (!visibles.length) return;
     confirmar('¿Borrar todas las notificaciones?',
@@ -184,6 +226,22 @@ export default function Notificaciones() {
     }} />
   );
 
+  const avisoDeshacer = deshacer ? (
+    <View pointerEvents="box-none" // A la izquierda de la burbuja del chat (56 + márgenes), que va encima de todo.
+      style={{ position: 'absolute', left: 16, right: Platform.OS === 'web' ? 16 : 84, bottom: ins.bottom + 16, alignItems: 'center' }}>
+      <View accessibilityLiveRegion="polite"
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 18, paddingRight: 6, borderRadius: 999, minHeight: 52, maxWidth: 520, width: '100%',
+          backgroundColor: t.oscuro ? '#2C2A31' : '#1C1B1F', shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 6 }}>
+        <Icono sf="trash.fill" respaldo="✕" tam={15} color="#FFFFFF" />
+        <Text style={{ flex: 1, fontSize: 15, fontWeight: '600', color: '#FFFFFF' }}>Aviso borrado</Text>
+        <Pressable onPress={deshacerUltimo} accessibilityRole="button" accessibilityLabel="Deshacer el borrado" hitSlop={6}
+          style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 14, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+          <Text style={{ fontSize: 15, fontWeight: '800', color: t.oscuro ? t.color.magentaTexto : '#FF8AD8' }}>Deshacer</Text>
+        </Pressable>
+      </View>
+    </View>
+  ) : null;
+
   if (!d || !ocultas) return <>{barra}<Cargando /></>;
   if (!d.ok) {
     return (
@@ -204,6 +262,7 @@ export default function Notificaciones() {
             Aquí verás tus puntos ganados, cupones, ofertas y recordatorios apenas te lleguen.
           </SinAvisos>
         </Pantalla>
+        {avisoDeshacer}
       </>
     );
   }
@@ -220,7 +279,7 @@ export default function Notificaciones() {
         initialNumToRender={10}
         itemLayoutAnimation={LinearTransition.springify().damping(22).stiffness(200)}
         refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} />}
-        contentContainerStyle={{ padding: 16, paddingBottom: ins.bottom + 24, gap: 10, width: '100%', maxWidth: 560, alignSelf: 'center' }}
+        contentContainerStyle={{ padding: 16, paddingBottom: ins.bottom + 24 + (Platform.OS === 'web' ? 0 : ESPACIO_BURBUJA), gap: 10, width: '100%', maxWidth: 560, alignSelf: 'center' }}
         ListHeaderComponent={nuevas ? (
           <Entrada>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 4 }}>
@@ -237,7 +296,7 @@ export default function Notificaciones() {
         ) : null}
         ListFooterComponent={
           <Text style={{ textAlign: 'center', fontSize: 13, color: colorSistema.texto3, marginTop: 10 }}>
-            Desliza un aviso hacia la izquierda para borrarlo.
+            Desliza un aviso hacia la izquierda y toca «Borrar».
           </Text>
         }
         renderItem={({ item: f, index: i }) => (f.clase === 'dia'
@@ -248,6 +307,7 @@ export default function Notificaciones() {
           )
           : <FilaAviso a={f.aviso} indice={i} nueva={esNueva(f.aviso)} alAbrir={abrir} alBorrar={borrarUna} />)}
       />
+      {avisoDeshacer}
     </>
   );
 }
@@ -262,23 +322,27 @@ function SinAvisos({ icono, respaldo, titulo, children }) {
 }
 
 /** El fondo rojo que aparece al deslizar: el bote crece con el gesto. */
-function AccionBorrar({ progreso }) {
+function AccionBorrar({ progreso, alTocar }) {
   const animado = useAnimatedStyle(() => ({
     transform: [{ scale: interpolate(progreso.value, [0, 1], [0.6, 1], 'clamp') }],
   }));
   return (
-    <View style={{ width: 96, paddingLeft: 10 }}>
-      <View style={{ flex: 1, borderRadius: 26, backgroundColor: colorSistema.rojo, alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+    <Pressable onPress={alTocar} accessibilityRole="button" accessibilityLabel="Borrar este aviso" style={{ width: 96, paddingLeft: 10 }}>
+      <View style={{ flex: 1, borderRadius: RADIO.tarjeta, backgroundColor: colorSistema.rojo, alignItems: 'center', justifyContent: 'center', gap: 4 }}>
         <Animated.View style={[{ alignItems: 'center', gap: 4 }, animado]}>
           <Icono sf="trash.fill" respaldo="✕" tam={20} color="#FFFFFF" />
           <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFFFF' }}>Borrar</Text>
         </Animated.View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
-/** Un aviso. Tocarlo lleva a su pantalla; deslizarlo a la izquierda lo borra. */
+/**
+ * Un aviso. Tocarlo lleva a su pantalla; deslizarlo a la izquierda muestra
+ * «Borrar», y borra al tocarlo (2026-10-13): antes bastaba con pasar el umbral
+ * del gesto y un deslizamiento a medias, al desplazar la lista, borraba sin querer.
+ */
 function FilaAviso({ a, indice, nueva, alAbrir, alBorrar }) {
   const t = useTema();
   const e = estiloDeAviso(t, a.tipo);
@@ -289,9 +353,8 @@ function FilaAviso({ a, indice, nueva, alAbrir, alBorrar }) {
           friction={1.4}
           rightThreshold={72}
           overshootRight={false}
-          renderRightActions={(progreso) => <AccionBorrar progreso={progreso} />}
           onSwipeableWillOpen={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); }}
-          onSwipeableOpen={() => alBorrar(a)}
+          renderRightActions={(progreso) => <AccionBorrar progreso={progreso} alTocar={() => alBorrar(a)} />}
         >
           <Pressable onPress={() => alAbrir(a)} accessibilityRole={a.url ? 'button' : undefined}
             accessibilityLabel={`${nueva ? 'Nueva. ' : ''}${a.titulo}. ${a.cuerpo}. ${hora(a.created_at)}`}

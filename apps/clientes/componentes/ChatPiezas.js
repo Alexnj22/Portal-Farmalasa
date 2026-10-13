@@ -14,8 +14,8 @@
 //   · `MenuMensaje`: el menú del mensaje (las 6 reacciones + Responder +
 //     Copiar) sobre un fondo desenfocado, pegado al globo.
 //   · `Reacciones` y `Cita`: las píldoras bajo el globo y el bloque citado.
-import { useEffect, useRef } from 'react';
-import { ActionSheetIOS, Modal, Platform, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActionSheetIOS, Keyboard, Modal, Platform, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -40,30 +40,46 @@ export function copiar(texto) {
 const resumenDeCita = (c) => (c?.texto ? c.texto : c?.foto ? '📷 Foto' : 'Mensaje');
 
 // ── La barra para escribir ───────────────────────────────────────────────
-/** Pregunta «Tomar foto» / «Elegir de Fotos» con la hoja del sistema (en Android, la de HojasAndroid). */
+/** El «+»: «Consultar un producto» / «Tomar foto» / «Elegir de Fotos», con la hoja del sistema (en Android, la de HojasAndroid). */
 export function preguntarAdjunto() {
   return new Promise((listo) => {
     ActionSheetIOS.showActionSheetWithOptions({
-      title: 'Enviar una foto', message: 'Por ejemplo, la caja del medicamento o tu receta.',
-      options: ['Tomar foto', IOS ? 'Elegir de Fotos' : 'Elegir de la galería', 'Cancelar'], cancelButtonIndex: 2,
-    }, (i) => listo(i === 0 ? 'camara' : i === 1 ? 'galeria' : null));
+      title: 'Adjuntar', message: 'Un producto del catálogo, la caja del medicamento o tu receta.',
+      options: ['Consultar un producto', 'Tomar foto', IOS ? 'Elegir de Fotos' : 'Elegir de la galería', 'Cancelar'], cancelButtonIndex: 3,
+    }, (i) => listo(i === 0 ? 'producto' : i === 1 ? 'camara' : i === 2 ? 'galeria' : null));
   });
 }
 
-export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, encima }) {
+// El teclado a la vista (2026-10-13): con el teclado abierto la barra no lleva
+// el margen del indicador de inicio — quedaba una franja vacía entre la barra
+// y el teclado, que no se ve en ninguna app del sistema.
+function useTecladoAbierto() {
+  const [abierto, setAbierto] = useState(false);
+  useEffect(() => {
+    const [mostrar, ocultar] = IOS ? ['keyboardWillShow', 'keyboardWillHide'] : ['keyboardDidShow', 'keyboardDidHide'];
+    const a = Keyboard.addListener(mostrar, () => setAbierto(true));
+    const b = Keyboard.addListener(ocultar, () => setAbierto(false));
+    return () => { a.remove(); b.remove(); };
+  }, []);
+  return abierto;
+}
+
+// `listo`: hay algo para mandar aunque el texto esté vacío (un producto elegido).
+export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, encima, campoRef, listo = false }) {
   const t = useTema();
   const ins = useSafeAreaInsets();
-  const hay = !!texto.trim();
+  const teclado = useTecladoAbierto();
+  const hay = !!texto.trim() || listo;
   const tinte = t.color.magenta;
   const contenido = (
     <>
       {encima}
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, paddingHorizontal: 6, paddingTop: 6, paddingBottom: Math.max(ins.bottom, 8) }}>
-        <Redondo sf="plus" respaldo="+" etiqueta="Adjuntar una foto" alTocar={() => alAdjuntar(null)} apagado={enviando} />
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, paddingHorizontal: 6, paddingTop: 6, paddingBottom: teclado ? 6 : Math.max(ins.bottom, 8) }}>
+        <Redondo sf="plus" respaldo="+" etiqueta="Adjuntar un producto o una foto" alTocar={() => alAdjuntar(null)} apagado={enviando} />
         <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-end', minHeight: 36, marginVertical: 4, borderRadius: 18,
           backgroundColor: IOS ? (t.oscuro ? 'rgba(28,28,30,0.9)' : 'rgba(255,255,255,0.95)') : (t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'),
           ...(IOS ? { borderWidth: StyleSheet.hairlineWidth, borderColor: t.oscuro ? 'rgba(255,255,255,0.22)' : 'rgba(60,60,67,0.3)' } : {}) }}>
-          <TextInput value={texto} onChangeText={alEscribir} placeholder="Mensaje" placeholderTextColor={colorSistema.placeholder}
+          <TextInput ref={campoRef} value={texto} onChangeText={alEscribir} placeholder={listo ? 'Agrega una pregunta (opcional)' : 'Mensaje'} placeholderTextColor={colorSistema.placeholder}
             multiline maxLength={2000} accessibilityLabel="Mensaje" maxFontSizeMultiplier={1.8} textAlignVertical="center"
             style={{ flex: 1, fontSize: 17, lineHeight: 22, color: colorSistema.texto, maxHeight: 22 * 5 + 16,
               paddingLeft: 14, paddingRight: hay ? 4 : 14, paddingTop: IOS ? 7 : 6, paddingBottom: IOS ? 7 : 6 }} />
@@ -165,7 +181,7 @@ export function Deslizable({ children, alResponder, alMantener }) {
 }
 
 // ── El menú del mensaje ─────────────────────────────────────────────────
-export function MenuMensaje({ menu, alReaccionar, alResponder, alCopiar, alCerrar }) {
+export function MenuMensaje({ menu, alReaccionar, alResponder, alCopiar, alCopiarProducto, alCerrar }) {
   const t = useTema();
   const ins = useSafeAreaInsets();
   const { width: W, height: H } = useWindowDimensions();
@@ -179,14 +195,15 @@ export function MenuMensaje({ menu, alReaccionar, alResponder, alCopiar, alCerra
   const { m, caja } = menu;
   const mio = m.autor === 'cliente';
   const mia = (m.reacciones ?? []).find((r) => r.mia)?.emoji ?? null;
-  const ALTO_EMOJIS = 52, ALTO_ACCIONES = m.texto ? 104 : 52, GAP = 8;
+  const conProducto = m.adjunto?.tipo === 'producto' && !!alCopiarProducto;
+  const ALTO_EMOJIS = 52, ALTO_ACCIONES = 52 * (1 + (m.texto ? 1 : 0) + (conProducto ? 1 : 0)), GAP = 8;
   // Las reacciones arriba del globo y las acciones abajo; si no caben, se
   // corren para quedar dentro de la pantalla (el globo queda donde estaba).
   const top = Math.max(ins.top + 8, Math.min(caja.y - ALTO_EMOJIS - GAP, H - ins.bottom - 16 - ALTO_EMOJIS - ALTO_ACCIONES - GAP * 2 - Math.min(caja.h, 120)));
   const abajo = Math.min(H - ins.bottom - 16 - ALTO_ACCIONES, Math.max(top + ALTO_EMOJIS + GAP + Math.min(caja.h, H / 2), caja.y + caja.h + GAP));
   const anchoEmojis = EMOJIS.length * 44 + 12;
   const izq = Math.max(12, Math.min(W - anchoEmojis - 12, mio ? caja.x + caja.w - anchoEmojis : caja.x));
-  const izqAcc = Math.max(12, Math.min(W - 220 - 12, mio ? caja.x + caja.w - 220 : caja.x));
+  const izqAcc = Math.max(12, Math.min(W - 250 - 12, mio ? caja.x + caja.w - 250 : caja.x));
   const panel = t.oscuro ? 'rgba(44,44,46,0.96)' : 'rgba(255,255,255,0.97)';
   const sombra = { shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 10 };
   const Fila = ({ sf, respaldo, texto, alTocar, borde }) => (
@@ -214,9 +231,10 @@ export function MenuMensaje({ menu, alReaccionar, alResponder, alCopiar, alCerra
           </Pressable>
         ))}
       </Animated.View>
-      <Animated.View style={[{ position: 'absolute', top: abajo, left: izqAcc, width: 220, borderRadius: 14, overflow: 'hidden', backgroundColor: panel }, sombra, animado]}>
+      <Animated.View style={[{ position: 'absolute', top: abajo, left: izqAcc, width: 250, borderRadius: 14, overflow: 'hidden', backgroundColor: panel }, sombra, animado]}>
         <Fila sf="arrowshape.turn.up.left.fill" respaldo="↩" texto="Responder" alTocar={alResponder} />
         {m.texto ? <Fila sf="doc.on.doc" respaldo="⧉" texto="Copiar" alTocar={alCopiar} borde /> : null}
+        {conProducto ? <Fila sf="pills" respaldo="⧉" texto="Copiar nombre del producto" alTocar={alCopiarProducto} borde /> : null}
       </Animated.View>
     </Modal>
   );

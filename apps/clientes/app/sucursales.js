@@ -19,7 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Vidrio from '../componentes/Vidrio';
 import * as Haptics from 'expo-haptics';
 import Animated, { Easing, FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { Aviso, Cargando, Pantalla } from '../componentes/ui';
+import { Cargando, Pantalla, Vacio } from '../componentes/ui';
 import Icono from '../componentes/Icono';
 import IconoWhatsapp from '../componentes/IconoWhatsapp';
 import { Entrada } from '../componentes/animacion';
@@ -56,7 +56,7 @@ export default function Sucursales() {
   }, [datos, ubicacion.posicion]);
 
   if (!datos) return <Cargando />;
-  if (!datos.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}><Aviso>No se pudieron cargar las sucursales. Desliza hacia abajo para reintentar.</Aviso></Pantalla>;
+  if (!datos.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}><Vacio titulo="No se pudieron cargar las sucursales" accion="Reintentar" alAccion={refrescar}>Revisa tu conexión e intenta de nuevo.</Vacio></Pantalla>;
   const abiertas = salas.filter((s) => s.abierta).length;
 
   return (

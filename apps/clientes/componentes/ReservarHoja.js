@@ -15,6 +15,7 @@
 // foto se sube desde Mis reservas.
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Seccion } from './ui';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -165,7 +166,7 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
               ) : null}
             </View>
 
-            <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4 }}>¿Dónde lo retiras?</Text>
+            <Seccion>¿Dónde lo retiras?</Seccion>
             <View style={{ backgroundColor: superficie, borderRadius: 18, overflow: 'hidden' }}>
               {sucursales.map((s, i) => {
                 const n = nivelDe(t, s.nivel);

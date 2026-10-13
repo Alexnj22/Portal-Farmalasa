@@ -21,7 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { PortadaOferta, Plazo } from '../../componentes/TarjetaOferta';
 import { Entrada } from '../../componentes/animacion';
-import { Cargando, Vacio } from '../../componentes/ui';
+import { Cargando, Seccion, Vacio } from '../../componentes/ui';
 import { colorSistema } from '../../componentes/sistema';
 import { useOfertas } from '../../lib/ofertas';
 import { useSesion } from '../../lib/sesion';
@@ -163,9 +163,7 @@ export default function Oferta() {
 
           {o.disponible && o.productos?.length ? (
             <Entrada indice={2} estilo={{ gap: 8 }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4 }}>
-                Productos · {o.productos.length}
-              </Text>
+              <Seccion n={o.productos.length}>Productos</Seccion>
               <View style={{ backgroundColor: superficie, borderRadius: 18, overflow: 'hidden' }}>
                 {o.productos.map((p, i) => (
                   <View key={p.id}>

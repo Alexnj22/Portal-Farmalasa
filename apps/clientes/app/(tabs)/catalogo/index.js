@@ -9,11 +9,11 @@
 // vidrio de iOS 26 cuesta por cada una. Un fondo translúcido sólido se ve igual
 // de limpio y se desplaza fluido.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, Pressable, RefreshControl, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useFocusEffect, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { colorSistema } from '../../../componentes/sistema';
-import { Vacio } from '../../../componentes/ui';
+import { ESPACIO_BURBUJA, RADIO, Seccion, Vacio } from '../../../componentes/ui';
 import Icono from '../../../componentes/Icono';
 import FotoProducto from '../../../componentes/FotoProducto';
 import BannerPromos from '../../../componentes/BannerPromos';
@@ -36,6 +36,10 @@ const DESDE_MAX = 1000;
 
 export default function Catalogo() {
   const t = useTema();
+  // Con letra grande (2026-10-13), dos columnas dejaban el nombre en tres
+  // letras por línea y el precio cortado: pasa a una sola columna.
+  const { fontScale } = useWindowDimensions();
+  const columnas = fontScale > 1.3 ? 1 : 2;
   const [texto, setTexto] = useState('');
   const [q, setQ] = useState('');
   const [lista, setLista] = useState(null);
@@ -101,7 +105,7 @@ export default function Catalogo() {
               accessibilityRole="button" accessibilityLabel="Todo, quitar el filtro" accessibilityState={{ selected: activa }}
               style={({ pressed }) => ({ width: 78, alignItems: 'center', gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
               <View style={{ padding: 2.5, borderRadius: 22, borderWidth: 2, borderColor: activa ? t.color.magenta : 'transparent' }}>
-                <View style={{ width: 60, height: 60, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
+                <View style={{ width: 60, height: 60, borderRadius: RADIO.medio, alignItems: 'center', justifyContent: 'center',
                   backgroundColor: t.oscuro ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.07)' }}>
                   <Icono sf={activa ? 'square.grid.2x2.fill' : 'xmark'} respaldo="" tam={24} color={colorSistema.texto} />
                 </View>
@@ -121,7 +125,7 @@ export default function Catalogo() {
               style={({ pressed }) => ({ width: 78, alignItems: 'center', gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
               <View style={{ padding: 2.5, borderRadius: 22, borderWidth: 2, borderColor: activa ? t.color.magenta : 'transparent' }}>
                 <LinearGradient colors={[c1, c2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                  style={{ width: 60, height: 60, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}>
+                  style={{ width: 60, height: 60, borderRadius: RADIO.medio, alignItems: 'center', justifyContent: 'center' }}>
                   <Icono sf={b.sf} respaldo="" tam={26} color="#FFFFFF" />
                 </LinearGradient>
               </View>
@@ -137,9 +141,7 @@ export default function Catalogo() {
       {!q ? <FilaProductos titulo="Mayor ahorro con tu tarjeta" sf="tag.fill" productos={ahorro} /> : null}
       {!q ? <FilaProductos titulo="Vistos recientemente" sf="clock.arrow.circlepath" productos={vistos}
         accion={{ texto: 'Limpiar', alTocar: () => { olvidarVistos(); setVistos([]); } }} /> : null}
-      <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4 }}>
-        {q ? `Resultados para «${q}»` : 'Lo más vendido'}
-      </Text>
+      <Seccion>{q ? `Resultados para «${q}»` : 'Lo más vendido'}</Seccion>
     </View>
   );
 
@@ -157,11 +159,14 @@ export default function Catalogo() {
       }} />
       <FlatList
         ref={listaRef}
+        // Cambiar `numColumns` exige montar la lista de nuevo.
+        key={`col${columnas}`}
         data={lista ?? []}
         keyExtractor={(p) => String(p.id)}
-        numColumns={2}
-        columnWrapperStyle={{ gap: 12 }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 12, width: '100%', maxWidth: 720, alignSelf: 'center' }}
+        numColumns={columnas}
+        columnWrapperStyle={columnas > 1 ? { gap: 12 } : undefined}
+        // Abajo, el lugar de la burbuja del chat (2026-10-13).
+        contentContainerStyle={{ padding: 16, paddingBottom: 32 + (Platform.OS === 'web' ? 0 : ESPACIO_BURBUJA), gap: 12, width: '100%', maxWidth: 720, alignSelf: 'center' }}
         contentInsetAdjustmentBehavior="automatic"
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
@@ -169,17 +174,13 @@ export default function Catalogo() {
         initialNumToRender={8}
         windowSize={7}
         removeClippedSubviews
-        renderItem={({ item }) => <TarjetaProducto p={item} />}
+        renderItem={({ item }) => <TarjetaProducto p={item} sola={columnas === 1} />}
         refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} />}
         ListEmptyComponent={
           error ? (
-            <View style={{ alignItems: 'center' }}>
-              <Vacio titulo="No se pudo cargar">Revisa tu conexión e intenta de nuevo.</Vacio>
-              <Pressable onPress={() => { setLista(null); cargar(0); }} accessibilityRole="button" hitSlop={8}
-                style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 14 }}>
-                <Text style={{ fontSize: 17, fontWeight: '700', color: t.color.magentaTexto }}>Reintentar</Text>
-              </Pressable>
-            </View>
+            <Vacio titulo="No se pudo cargar" accion="Reintentar" alAccion={() => { setLista(null); cargar(0); }}>
+              Revisa tu conexión e intenta de nuevo.
+            </Vacio>
           )
             : !lista ? <ActivityIndicator style={{ marginTop: 40 }} />
               : <Vacio titulo="Sin resultados" icono="magnifyingglass" respaldo="⌕">Prueba con otro nombre o con el principio activo.</Vacio>
@@ -196,7 +197,7 @@ export default function Catalogo() {
   );
 }
 
-function TarjetaProducto({ p }) {
+function TarjetaProducto({ p, sola = false }) {
   const t = useTema();
   const final = precioFinal(p);
   const ahorro = final < p.precio ? p.precio - final : 0;
@@ -204,12 +205,12 @@ function TarjetaProducto({ p }) {
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${p.id}`); }}
       accessibilityRole="button" accessibilityLabel={`${nombreProducto(p.nombre)}. Precio ${dolares(p.precio)}${suyo ? `, ${suyo} ${dolares(p.precio_tuyo)}` : p.precio_vip != null ? `, Preferente ${dolares(p.precio_vip)}` : ''}`}
-      style={({ pressed }) => ({ flex: 1, maxWidth: '50%', borderRadius: 22, padding: 10, gap: 8,
+      style={({ pressed }) => ({ flex: 1, maxWidth: sola ? '100%' : '50%', borderRadius: 22, padding: 10, gap: 8,
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.82)',
         borderWidth: 0.5, borderColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)',
         opacity: p.disponible ? 1 : 0.6, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
       <View>
-        <FotoProducto id={p.id} nombre={p.nombre} foto={p.foto} alto={118} />
+        <FotoProducto id={p.id} nombre={p.nombre} foto={p.foto} alto={sola ? 160 : 118} />
         {p.bajo_receta ? (
           <View style={{ position: 'absolute', top: 6, left: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
             <Text maxFontSizeMultiplier={1.2} style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800' }}>Bajo Receta</Text>
@@ -253,7 +254,7 @@ function TarjetaProducto({ p }) {
             <Text style={{ fontSize: 12, color: colorSistema.texto3, textDecorationLine: 'line-through', fontVariant: ['tabular-nums'] }}>
               {dolares(p.precio)}
             </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 5 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 5 }}>
               <Text style={{ fontSize: 19, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(p.precio_vip)}</Text>
               <Text style={{ fontSize: 11, fontWeight: '800', color: t.color.magentaTexto }}>PREFERENTE</Text>
             </View>

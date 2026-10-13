@@ -3,7 +3,8 @@
 // texto en los colores del sistema (`label`; los secundarios, sólidos — ver sistema.js), el botón del
 // sistema, y los colores del logo SÓLO para lo que es de la marca: lo que se
 // gana (verde) y lo que se usa (magenta).
-import { ActivityIndicator, Platform, ScrollView, Text, View, RefreshControl } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View, RefreshControl } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BotonNativo from './BotonNativo';
 import Icono from './Icono';
@@ -11,8 +12,18 @@ import Vidrio from './Vidrio';
 import { colorSistema } from './sistema';
 import { suave, useTema } from '../tema/tema';
 
+// Los radios de esquina de la app (2026-10-13): la tarjeta de vidrio, la
+// pieza mediana (fichas de producto, cajas) y la chica (botones, íconos).
+export const RADIO = { chico: 12, medio: 18, tarjeta: 26 };
+
+// Lo que ocupa la burbuja del chat (56 + su margen + un respiro), 2026-10-13:
+// sin este espacio abajo, la burbuja tapaba la última tarjeta de la lista.
+export const ESPACIO_BURBUJA = 88;
+
 // `alFinal`: se llama al acercarse al final (listas paginadas, 2026-10-09).
-export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal }) {
+// `conBurbuja`: deja abajo el lugar de la burbuja del chat (2026-10-13). Las
+// pantallas donde la burbuja no va (componentes/BurbujaChat, `OCULTA`) pasan false.
+export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal, conBurbuja = true }) {
   const ins = useSafeAreaInsets();
   return (
     <ScrollView
@@ -20,7 +31,7 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
       // Tope de ancho: en un iPad o en el navegador las tarjetas se estiraban
       // de borde a borde y una cifra quedaba a medio metro de su rótulo.
       contentContainerStyle={{
-        padding: 16, paddingBottom: (conPestanas ? 24 : 32) + (Platform.OS === 'ios' ? 0 : ins.bottom), gap: 14,
+        padding: 16, paddingBottom: (conPestanas ? 24 : 32) + (Platform.OS === 'ios' ? 0 : ins.bottom) + (conBurbuja && Platform.OS !== 'web' ? ESPACIO_BURBUJA : 0), gap: 14,
         width: '100%', maxWidth: 560, alignSelf: 'center',
       }}
       keyboardShouldPersistTaps="handled"
@@ -41,7 +52,7 @@ export function Tarjeta({ children, estilo, tono }) {
   // Con tono, el tinte de la marca va ENCIMA de un velo del fondo: sólo el
   // tinte dejaba el texto sobre magenta translúcido, difícil de leer.
   return (
-    <Vidrio radio={26} tinte={tono ? suave(tono, 0.22) : undefined}>
+    <Vidrio radio={RADIO.tarjeta} tinte={tono ? suave(tono, 0.22) : undefined}>
       <View style={[{ padding: 18, gap: 8 },
         tono && { backgroundColor: t.oscuro ? 'rgba(18,16,24,0.4)' : 'rgba(255,255,255,0.5)' }, estilo]}>{children}</View>
     </Vidrio>
@@ -102,5 +113,30 @@ export function Vacio({ titulo, children, icono: iconoDado, respaldo: respaldoDa
       {children ? <Texto nivel={2} estilo={{ textAlign: 'center', lineHeight: 21, maxWidth: 320 }}>{children}</Texto> : null}
       {accion && alAccion ? <View style={{ marginTop: 6, alignSelf: 'stretch' }}><Boton alTocar={alAccion}>{accion}</Boton></View> : null}
     </Tarjeta>
+  );
+}
+
+// El rótulo de una sección (2026-10-13): 13 pt, mayúsculas, espaciado 0.4 y el
+// gris secundario. Estaba escrito a mano en ~14 sitios. `n` agrega « · n».
+export function Seccion({ children, n, estilo }) {
+  return (
+    <Text accessibilityRole="header"
+      style={[{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4 }, estilo]}>
+      {children}{n ? ` · ${n}` : ''}
+    </Text>
+  );
+}
+
+// Una píldora de filtro (2026-10-13; antes, una copia en Reservas y otra en
+// Facturas). Mide 34 de alto y el `hitSlop` completa los 44 pt del dedo.
+export function Chip({ texto, activo, alTocar }) {
+  const t = useTema();
+  return (
+    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} hitSlop={{ top: 5, bottom: 5, left: 2, right: 2 }}
+      accessibilityRole="button" accessibilityState={{ selected: activo }}
+      style={({ pressed }) => ({ minHeight: 34, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', transform: [{ scale: pressed ? 0.97 : 1 }],
+        backgroundColor: activo ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)') })}>
+      <Text style={{ fontSize: 14, fontWeight: '700', color: activo ? '#FFFFFF' : colorSistema.texto }}>{texto}</Text>
+    </Pressable>
   );
 }

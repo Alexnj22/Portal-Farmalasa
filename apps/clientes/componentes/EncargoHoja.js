@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
 import { colorSistema } from './sistema';
-import { Boton } from './ui';
+import { Boton, Seccion } from './ui';
 import { useSesion } from '../lib/sesion';
 import { nombreProducto } from '../lib/catalogo';
 import { suave, useTema } from '../tema/tema';
@@ -74,7 +74,7 @@ export default function EncargoHoja({ producto, presentacion, salas, alCerrar })
               </View>
             </View>
 
-            <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4 }}>Retirar en</Text>
+            <Seccion>Retirar en</Seccion>
             <View style={{ backgroundColor: superficie, borderRadius: 18, overflow: 'hidden' }}>
               {(salas ?? []).map((s, i) => {
                 const elegida = s.id === sala;

@@ -25,7 +25,7 @@ import EfectoNivel from './EfectoNivel';
 import Mineral, { MATERIALES } from './minerales/Mineral';
 import LogoEnRelieve from './minerales/LogoEnRelieve';
 import SelloEquipo from './minerales/SelloEquipo';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Image, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   cancelAnimation, Easing, interpolate, runOnJS, useReducedMotion, useAnimatedReaction, useAnimatedStyle, useDerivedValue, useSharedValue,
@@ -81,6 +81,8 @@ export const COLORES_NIVEL = {
 // La pista de «tócala para girarla»: el asomo es una vez por sesión de la app.
 let yaGiro = false;
 const CLAVE_PISTA = 'puntos_salud_tarjeta_girada';
+// El código letra por letra: junto, VoiceOver lo leía como una palabra.
+const deletrear = (c) => String(c).split('').join(' ');
 
 export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nivelDado = 'vip', activa = true, previo = null, cambio = null, equipo = false, estiloLogo = 'material' }) {
   // 'vip' es la clave del nivel de entrada, que ahora es Bronce: lleva su material.
@@ -142,6 +144,9 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
 
   // El brillo se pide AL TOCAR, no a mitad del giro (2026-10-08): desde la
   // reacción del giro no llegaba siempre, y el QR quedaba con la pantalla oscura.
+  // Qué cara se ve, para VoiceOver (2026-10-13): con el reverso a la vista
+  // el rótulo tiene que leer el código, no el saldo del frente.
+  const [deReves, setDeReves] = useState(false);
   const voltear = () => {
     yaGiro = true;
     if (pista) { setPista(false); SecureStore.setItemAsync(CLAVE_PISTA, '1').catch(() => {}); }
@@ -149,6 +154,8 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
     const aReverso = giro.value <= 0.5;
     giro.value = withSpring(aReverso ? 1 : 0, GIRO);
     brilloQr(aReverso);
+    setDeReves(aReverso);
+    if (aReverso && codigo) AccessibilityInfo.announceForAccessibility(`Tu código: ${deletrear(codigo)}`);
   };
   // Con el QR a la vista, la pantalla al máximo (como Wallet), para que el
   // lector de la caja lo lea a la primera; al girarla de vuelta, como estaba.
@@ -231,8 +238,10 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
     <GestureDetector gesture={gestos}>
       <Animated.View style={[{ aspectRatio: 1.586, width: '100%' }, estilos.sombra, { shadowColor: paleta.sombra }, sombra, ladeo]}
         accessible accessibilityRole="button"
-        accessibilityLabel={`Tu tarjeta ${paleta.rotulo.toLowerCase()}${equipo ? ', del Team Farmacia Salud' : ''}. Saldo ${dolares(equivale)}. Toca para ver tu código.`}
-        accessibilityHint="Gira la tarjeta" onAccessibilityTap={voltear}>
+        accessibilityLabel={deReves
+          ? `Tu código: ${codigo ? deletrear(codigo) : 'sin código'}. Muéstralo en caja para usar tus puntos.`
+          : `Tu tarjeta ${paleta.rotulo.toLowerCase()}${equipo ? ', del Team Farmacia Salud' : ''}. Saldo ${dolares(equivale)}. Toca para ver tu código.`}
+        accessibilityHint={deReves ? 'Gira la tarjeta al frente' : 'Gira la tarjeta'} onAccessibilityTap={voltear}>
         {/* ── Frente ── */}
         <Animated.View style={[StyleSheet.absoluteFill, estilos.cara, frente]}>
           <LinearGradient

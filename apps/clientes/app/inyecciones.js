@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, Easing } from 'react-native-reanimated';
-import { Aviso, Cargando, Pantalla, Tarjeta, Texto, Vacio } from '../componentes/ui';
+import { Cargando, Pantalla, Seccion, Tarjeta, Texto, Vacio } from '../componentes/ui';
 import { Entrada, NumeroAnimado } from '../componentes/animacion';
 import { colorSistema } from '../componentes/sistema';
 import { useSesion } from '../lib/sesion';
@@ -51,7 +51,7 @@ export default function Inyecciones() {
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 
   if (!datos) return <Cargando />;
-  if (!datos.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}><Aviso>{datos.mensaje}</Aviso></Pantalla>;
+  if (!datos.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}><Vacio titulo="No se pudo cargar" accion="Reintentar" alAccion={refrescar}>{datos.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'}</Vacio></Pantalla>;
   if (datos.pendiente) {
     return (
       <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
@@ -119,9 +119,7 @@ export default function Inyecciones() {
 
       {aplicadas.length ? (
         <>
-          <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4, marginTop: 8 }}>
-            Historial
-          </Text>
+          <Seccion estilo={{ marginTop: 8 }}>Historial</Seccion>
           <Tarjeta estilo={{ padding: 0, gap: 0 }}>
             {aplicadas.map((a, i) => (
               <View key={`${a.aplicada_at}-${i}`}>

@@ -17,7 +17,10 @@ export const POR_PAGINA = 40;
 // presencia («escribiendo», «visto») y el propio aviso la trae: no se relee
 // la bandeja. Sin esto, cada tecla —la marca se renueva cada 3 s— costaría una
 // lectura entera de la bandeja en cada portal abierto.
-const CAMPOS_DE_LA_BANDEJA = ['estado', 'ultimo_mensaje_at', 'ultimo_de', 'sin_leer_equipo', 'tomada_por', 'tomada_at'];
+// `etiquetas` y la calificación también: las cambia otra persona (o el
+// cliente, al calificar) y la bandeja tiene que releerse para mostrarlas.
+const CAMPOS_DE_LA_BANDEJA = ['estado', 'ultimo_mensaje_at', 'ultimo_de', 'sin_leer_equipo', 'tomada_por', 'tomada_at',
+    'etiquetas', 'calificacion', 'esperando_desde'];
 // Las fechas pueden llegar escritas distinto por la función y por realtime
 // («…T15:00:00+00:00» / «… 15:00:00+00»): se comparan como instante.
 const comoInstante = (v) => (typeof v === 'string' && /^\d{4}-\d\d-\d\d[T ]\d/.test(v)

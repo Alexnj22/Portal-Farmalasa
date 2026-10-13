@@ -8,6 +8,9 @@ import ChipsDeEstado from './ChipsDeEstado';
 import ClienteAvatar from './ClienteAvatar';
 import { NIVELES, nombreDeCliente, tipoDeCliente } from './etiquetas';
 import { escribeAhora, useRelojDeEscritura } from './escribiendo';
+import { ChipsDeEtiquetas } from './EtiquetasDelCliente';
+import { Estrellas } from './Calificacion';
+import { etiquetasDe } from '@nucleo/utils/chatClientes';
 
 // Una conversación en la bandeja: quién escribió, qué tipo de cliente es, su
 // nivel, en qué estado está (y cuánto lleva esperando), cuántos mensajes esperan
@@ -15,6 +18,11 @@ import { escribeAhora, useRelojDeEscritura } from './escribiendo';
 // la tiene tomada (también si es uno mismo: el chip lo nombra); `tomadaPor`,
 // sólo si es OTRA persona (la línea «… está respondiendo»). Mientras el
 // cliente escribe, la vista previa del último mensaje dice «escribiendo…».
+//
+// (2026-10-13) Las etiquetas del equipo van como chips (hasta tres y «+N»);
+// una abierta «Urgente» se tiñe de rojo —y la bandeja la sube—; una resuelta
+// que el cliente calificó muestra sus estrellas. Con mensajes sin leer, el
+// nombre y la vista previa van en negrita; leída, en peso normal.
 export default function FilaDeConversacion({ conversacion: c, activa, tomadaPor, atiende, ahora, onAbrir }) {
     const tipo = tipoDeCliente(c);
     const nivel = NIVELES[c.nivel];
@@ -22,15 +30,18 @@ export default function FilaDeConversacion({ conversacion: c, activa, tomadaPor,
     const sinLeer = activa ? 0 : Number(c.sin_leer_equipo) || 0;
     const reloj = useRelojDeEscritura([c.cliente_escribiendo_at]);
     const escribe = escribeAhora(c.cliente_escribiendo_at, reloj);
+    const urgente = c.estado !== 'resuelta' && etiquetasDe(c).includes('urgente');
+    const nombre = nombreDeCliente(c.cliente);
     return (
         <ListRow surface="card" density="md" onClick={onAbrir} selected={activa}
+            tone={urgente && !activa ? 'danger' : null}
             className="min-h-[var(--tap-min)]"
             leading={<ClienteAvatar conversacion={c} />}
             iconBoxClass="border-transparent bg-transparent w-9 h-9"
-            title={nombreDeCliente(c.cliente)}
+            title={<span className={sinLeer ? 'font-black text-content' : 'font-semibold text-content-2'}>{nombre}</span>}
             trailing={(
                 <span className="flex flex-col items-end gap-1">
-                    <span className="text-micro text-content-3 tabular-nums">{cuandoLlego(c.ultimo_mensaje_at)}</span>
+                    <span className={`text-micro tabular-nums ${sinLeer ? 'text-brand-text font-black' : 'text-content-3'}`}>{cuandoLlego(c.ultimo_mensaje_at)}</span>
                     {sinLeer > 0 && <Badge variant="danger" tone="solid" size="sm" uppercase={false}
                         aria-label={`${sinLeer} sin leer`}>{sinLeer}</Badge>}
                 </span>
@@ -39,7 +50,13 @@ export default function FilaDeConversacion({ conversacion: c, activa, tomadaPor,
                 <ChipsDeEstado conversacion={c} atiende={atiende} ahora={ahora} />
                 <Badge variant={tipo.variant} size="sm" uppercase={false}>{tipo.label}</Badge>
                 {nivel && <Badge variant={nivel.variant} size="sm" uppercase={false}>{nivel.label}</Badge>}
+                {c.calificacion ? <Estrellas valor={c.calificacion} px={10} /> : null}
             </span>
+            {etiquetasDe(c).length > 0 && (
+                <span className="flex flex-wrap items-center gap-1 mt-1">
+                    <ChipsDeEtiquetas conversacion={c} max={3} />
+                </span>
+            )}
             {tomadaPor ? (
                 <span className="flex items-center gap-1.5 mt-1 text-label text-brand-text font-semibold min-w-0">
                     <AvatarConEstado emp={tomadaPor} px={18} mostrarChip={false} />
@@ -48,7 +65,7 @@ export default function FilaDeConversacion({ conversacion: c, activa, tomadaPor,
             ) : escribe ? (
                 <span className="block mt-1 text-label truncate italic text-brand-text">escribiendo…</span>
             ) : (
-                <span className={`block mt-1 text-label truncate ${sinLeer ? 'text-content font-semibold' : 'text-content-3'}`}>
+                <span className={`block mt-1 text-label truncate ${sinLeer ? 'text-content font-semibold' : 'text-content-3 font-normal'}`}>
                     {c.ultimo_de === 'equipo' ? 'Equipo: ' : ''}{c.ultimo_texto ?? ''}
                 </span>
             )}

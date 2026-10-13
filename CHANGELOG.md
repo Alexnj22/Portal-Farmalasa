@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1278.0 — Portal: etiquetas y calificación del chat, mensajes nuevos a la vista
+
+- **Etiquetas del cliente en el chat** (migración `chat_etiquetas_y_calificacion`, `chat_etiquetar`): Consulta de medicamento, Receta, Reserva, Queja, Precio, Seguimiento, Urgente, Cliente frecuente — en el encabezado del hilo, en las filas (hasta 3 + «+N»), en el panel de la burbuja y como filtro en la dirección. «Urgente» va primero y en rojo.
+- **Calificación** del cliente (1–5 + comentario) en las resueltas y un resumen de 30 días arriba de la vista.
+- **Mensajes nuevos a la vista** (estilo iMessage con señales de WhatsApp): franja «N mensajes nuevos» antes del primero sin leer y el hilo abre ahí; botón «↓ N nuevos» si se está más arriba; separadores Hoy/Ayer/fecha; «Enviado/Visto» por grupo; filas sin leer en negrita.
+- El contador de «Nuevo» cuenta desde `esperando_desde`.
+
 ## v2.1277.0 — Clientes Mayoristas y Chat con clientes nativos; gate:app-nativa
 
 - **`npm run gate:app-nativa`** (pregunta del usuario: «¿por qué si agregamos módulos, en la app no los pasas a nativos de un solo?»): falla si un módulo de `MODULE_MAP` no tiene pantalla nativa en `PANTALLAS_DE_LA_APP` ni está en `EXCEPCIONES` con motivo, o si una ruta nativa declarada no existe. Corre en el pre-commit cuando se toca `moduleMap.js`, `App.jsx` o `pantallas.js`. Al crearlo marcó exactamente los dos que faltaban.

@@ -20,6 +20,7 @@
 // sin leer quedó en cero, pero el cliente sigue esperando una respuesta.
 
 import { shortEmployeeName } from './nameUtils';
+import { diaDe, fechaTexto, hoySV, sumarDias } from './fecha';
 
 export const ESTADOS = {
     nuevo:     { label: 'Nuevo',                variant: 'info' },
@@ -40,12 +41,16 @@ const AMBAR_MIN = 15;
 const ROJO_MIN = 60;
 
 /**
- * Cuánto lleva esperando un «Nuevo», desde su último mensaje. `null` para los
- * otros estados. `tono`: 'neutral' | 'warning' | 'danger' (variantes de Badge).
+ * Cuánto lleva esperando un «Nuevo». Se cuenta desde `esperando_desde` —el
+ * PRIMER mensaje del cliente que todavía nadie contestó, lo pone el trigger de
+ * cada mensaje—, no desde el último: un cliente que escribe tres veces en
+ * media hora lleva media hora esperando, no un minuto. Sin esa columna (filas
+ * viejas), el último mensaje. `null` para los otros estados.
+ * `tono`: 'neutral' | 'warning' | 'danger' (variantes de Badge).
  */
 export function esperaDe(c, ahora) {
     if (estadoDeConversacion(c) !== 'nuevo') return null;
-    const desde = Date.parse(c?.ultimo_mensaje_at);
+    const desde = Date.parse(c?.esperando_desde ?? c?.ultimo_mensaje_at);
     if (Number.isNaN(desde)) return null;
     const min = Math.max(0, Math.floor((ahora - desde) / 60_000));
     const label = min < 1 ? 'ahora'
@@ -135,4 +140,81 @@ export function recorteDeMensaje(m) {
     if (m?.adjunto?.tipo === 'producto') return m.adjunto.nombre ?? 'Producto';
     if (m?.adjunto?.tipo === 'oferta') return m.adjunto.titulo ?? 'Oferta';
     return 'Mensaje';
+}
+
+// ── Etiquetas que el equipo le pone a una conversación (2026-10-13) ────────
+//
+// Una conversación por cliente, así que etiquetar la conversación es etiquetar
+// al cliente. Las claves son las que acepta el CHECK de
+// `app_chat_conversaciones.etiquetas` y se guardan con `chat_etiquetar`; el
+// rótulo es libre. `icono` es el NOMBRE del ícono (el núcleo no conoce a
+// lucide: la pantalla trae su mapa). El orden de este objeto es el orden en
+// que se muestran.
+export const ETIQUETAS = {
+    urgente:     { label: 'Urgente',                variant: 'danger',  icono: 'Siren' },
+    medicamento: { label: 'Consulta de medicamento', variant: 'chart-1', icono: 'Pill' },
+    receta:      { label: 'Receta',                 variant: 'chart-6', icono: 'FileText' },
+    reserva:     { label: 'Reserva',                variant: 'chart-4', icono: 'CalendarClock' },
+    precio:      { label: 'Precio',                 variant: 'chart-9', icono: 'BadgeDollarSign' },
+    queja:       { label: 'Queja',                  variant: 'warning', icono: 'MessageSquareWarning' },
+    seguimiento: { label: 'Seguimiento',            variant: 'chart-8', icono: 'Repeat' },
+    frecuente:   { label: 'Cliente frecuente',      variant: 'chart-3', icono: 'Heart' },
+};
+
+/** Las etiquetas de una conversación, conocidas y en el orden del catálogo. */
+export function etiquetasDe(c) {
+    const tiene = new Set(Array.isArray(c?.etiquetas) ? c.etiquetas : []);
+    return Object.keys(ETIQUETAS).filter((k) => tiene.has(k));
+}
+
+/**
+ * El orden de la bandeja: las abiertas con «Urgente» arriba; el resto, como
+ * viene (el último mensaje primero). Estable: no reordena dentro de cada grupo.
+ */
+export function ordenarBandeja(conversaciones) {
+    const lista = conversaciones ?? [];
+    const urgente = (c) => c?.estado !== 'resuelta' && etiquetasDe(c).includes('urgente');
+    return [...lista.filter(urgente), ...lista.filter((c) => !urgente(c))];
+}
+
+// ── Calificación del cliente (1 a 5 estrellas, al resolverse) ──────────────
+
+/** Promedio y cuántas, de las filas con `calificacion`. `null` si no hay ninguna. */
+export function resumenDeCalificaciones(filas) {
+    const notas = (filas ?? []).map((f) => Number(f?.calificacion)).filter((n) => n >= 1 && n <= 5);
+    if (!notas.length) return null;
+    const promedio = notas.reduce((s, n) => s + n, 0) / notas.length;
+    return { promedio: Math.round(promedio * 10) / 10, cuantas: notas.length };
+}
+
+// ── El hilo: separadores de día y mensajes nuevos ─────────────────────────
+
+/** «Hoy», «Ayer» o «lunes, 5 de octubre» (con el año si no es el actual). */
+export function etiquetaDeDia(instante, hoy = hoySV()) {
+    const dia = diaDe(instante);
+    if (!dia) return '';
+    if (dia === hoy) return 'Hoy';
+    if (dia === sumarDias(hoy, -1)) return 'Ayer';
+    const opciones = { weekday: 'long', day: 'numeric', month: 'long' };
+    if (dia.slice(0, 4) !== hoy.slice(0, 4)) opciones.year = 'numeric';
+    const texto = fechaTexto(dia, opciones);
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+/** ¿El mensaje cae en otro día (de El Salvador) que el anterior? */
+export function cambiaDeDia(m, previo) {
+    return !previo || diaDe(m?.created_at) !== diaDe(previo?.created_at);
+}
+
+/**
+ * El id del primer mensaje SIN LEER: el `sinLeer`-ésimo mensaje del cliente
+ * contando desde el final. Si hay más sin leer que mensajes del cliente
+ * cargados, el primero de esos. `null` si no hay nada sin leer.
+ */
+export function primerSinLeer(mensajes, sinLeer) {
+    const n = Number(sinLeer) || 0;
+    if (n <= 0) return null;
+    const delCliente = (mensajes ?? []).filter((m) => m.autor === 'cliente');
+    if (!delCliente.length) return null;
+    return delCliente[Math.max(0, delCliente.length - n)].id;
 }

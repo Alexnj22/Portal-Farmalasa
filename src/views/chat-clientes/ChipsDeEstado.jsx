@@ -20,7 +20,7 @@ export default function ChipsDeEstado({ conversacion: c, atiende, ahora }) {
             </Badge>
             {espera && (
                 <Badge variant={espera.tono} size="sm" uppercase={false} icon={Clock}
-                    title="Tiempo desde el último mensaje del cliente" aria-label={`Esperando desde hace ${espera.label}`}>
+                    title="Tiempo desde el primer mensaje del cliente que sigue sin respuesta" aria-label={`Esperando desde hace ${espera.label}`}>
                     {espera.label}
                 </Badge>
             )}

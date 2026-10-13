@@ -195,6 +195,34 @@ export async function resolverConversacion(conversacionId) {
     return r;
 }
 
+/**
+ * Las etiquetas de una conversación (= de ese cliente): reemplaza la lista
+ * entera. Claves del catálogo `ETIQUETAS` de `utils/chatClientes`; la base las
+ * valida con su CHECK y `chat_etiquetar` exige `chat_clientes` para editar.
+ */
+export async function etiquetarConversacion(conversacionId, etiquetas, antes = []) {
+    const lista = [...new Set((etiquetas || []).filter(Boolean))];
+    const r = sinError(await supabase.rpc('chat_etiquetar', { p_conversacion: Number(conversacionId), p_etiquetas: lista }));
+    anotar('CHAT_CLIENTE_ETIQUETAR', String(conversacionId), { antes, despues: lista });
+    return r;
+}
+
+/**
+ * Las calificaciones que dejaron los clientes en los últimos `dias` días, para
+ * el promedio del encabezado. Una fila por conversación calificada; tope de
+ * 500 deliberado (no el de PostgREST): 500 calificaciones en un mes es otro
+ * volumen de chat y el promedio de esas ya dice lo mismo.
+ */
+export async function fetchCalificacionesRecientes(dias = 30) {
+    const desde = new Date(Date.now() - dias * 86_400_000).toISOString();
+    return sinError(await supabase.from('app_chat_conversaciones')
+        .select('id, calificacion, calificada_at')
+        .not('calificacion', 'is', null)
+        .gte('calificada_at', desde)
+        .order('calificada_at', { ascending: false })
+        .limit(500)) ?? [];
+}
+
 /** Quita la foto de perfil de un cliente (puede subir otra desde la app). */
 export async function quitarFotoDeCliente(customerId) {
     const r = sinError(await supabase.rpc('cliente_foto_quitar', { p_customer: Number(customerId) }));

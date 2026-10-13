@@ -10,7 +10,8 @@ import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { telefonoParaWhatsapp } from '@nucleo/utils/codigoDePuntos';
 import ClienteAvatar from './ClienteAvatar';
 import { NIVELES, nombreDeCliente, tipoDeCliente } from './etiquetas';
-import { RECETA_DEL_CHAT, RESERVA_DEL_CHAT } from '@nucleo/utils/chatClientes';
+import { RECETA_DEL_CHAT, RESERVA_DEL_CHAT, etiquetasDe } from '@nucleo/utils/chatClientes';
+import { ChipsDeEtiquetas } from './EtiquetasDelCliente';
 
 // «Cliente»: lo que conviene tener a mano mientras se le contesta — quién es,
 // cómo llamarlo, sus puntos, lo último que compró (con sus productos), lo que
@@ -26,7 +27,7 @@ const RECETA = RECETA_DEL_CHAT;
 
 const corta = (d) => fechaTexto(d, { day: 'numeric', month: 'short', year: 'numeric' });
 
-export default function PanelCliente({ customerId }) {
+export default function PanelCliente({ customerId, conversacion = null }) {
     const [ctx, setCtx] = useState(undefined);
     const [error, setError] = useState(null);
     const [abierta, setAbierta] = useState(null);
@@ -64,6 +65,13 @@ export default function PanelCliente({ customerId }) {
                     </div>
                 </div>
             </section>
+
+            {/* Las etiquetas del equipo (la calificación va en el encabezado del hilo). */}
+            {etiquetasDe(conversacion).length > 0 && (
+                <section aria-label="Etiquetas" className="flex flex-wrap gap-1">
+                    <ChipsDeEtiquetas conversacion={conversacion} />
+                </section>
+            )}
 
             {ctx.telefono && (
                 <section className="flex flex-wrap gap-2">

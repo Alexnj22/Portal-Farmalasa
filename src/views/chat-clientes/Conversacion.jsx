@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { CheckCircle2, ImageOff, MessagesSquare, Package, Phone, Tag, UserRound } from 'lucide-react';
+import { ArrowDown, CheckCircle2, ImageOff, MessagesSquare, Package, Phone, Tag, Tags, UserRound } from 'lucide-react';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import Notice from '../../components/common/Notice';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
-import { SkeletonText } from '../../components/common/StateViews';
+import { Skeleton } from '../../components/common/StateViews';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import useMediaQuery from '../../plataforma/useMediaQuery';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -18,7 +18,8 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { cuandoLlego } from '@nucleo/utils/notificacionTexto';
+import { diaSV } from '@nucleo/utils/fecha';
+import { hora12 } from '@nucleo/utils/hora';
 import {
     MENSAJES_POR_PAGINA, fetchMensajes, fetchReacciones, quitarFotoDeCliente, reaccionarAMensaje,
     resolverConversacion, tomarConversacion,
@@ -29,7 +30,9 @@ import ClienteAvatar from './ClienteAvatar';
 import Compositor from './Compositor';
 import PanelCliente from './PanelCliente';
 import { NIVELES, nombreDeCliente, tipoDeCliente } from './etiquetas';
-import { empiezaTanda } from '@nucleo/utils/chatClientes';
+import { cambiaDeDia, empiezaTanda, etiquetaDeDia, primerSinLeer } from '@nucleo/utils/chatClientes';
+import { ChipsDeEtiquetas, EditorDeEtiquetas } from './EtiquetasDelCliente';
+import { CalificacionDelCliente } from './Calificacion';
 import { escribeAhora, useRelojDeEscritura } from './escribiendo';
 
 // El hilo de una conversación: el contexto del cliente arriba, los mensajes
@@ -55,6 +58,16 @@ import { escribeAhora, useRelojDeEscritura } from './escribiendo';
 // ratón encima (escritorio) o manteniéndolo presionado (teléfono), los seis
 // emojis, «Responder» y «Copiar». Las reacciones van en píldoras bajo el
 // globo y llegan en vivo por realtime de `app_chat_reacciones`.
+//
+// Lo nuevo se ve (2026-10-13, «estilo iMessage con WhatsApp»): al abrir una
+// conversación con mensajes sin leer, una franja «N mensajes nuevos» antes
+// del primero y el hilo se abre AHÍ, no al fondo. El número se toma de la
+// bandeja al montar, ANTES de que `chat_tomar` lo ponga en cero. Con el hilo
+// abierto y quien lee más arriba, lo que llega suma en un botón «↓ N nuevos»
+// en vez de mover la pantalla; y el globo recién llegado entra con un realce
+// breve. Separadores «Hoy / Ayer / fecha», globos agrupados por tanda (la
+// hora va al final de cada una) y, en los del equipo, «Enviado» o «Visto»:
+// `sin_leer_cliente` dice cuántos de los últimos todavía no leyó.
 
 const ANCHO_LATERAL = '(min-width: 1280px)';
 
@@ -73,8 +86,16 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
     const [resolviendo, setResolviendo] = useState(false);
     const [quitarFoto, setQuitarFoto] = useState(false);
     const [quitando, setQuitando] = useState(false);
+    const [editandoEtiquetas, setEditandoEtiquetas] = useState(false);
     const listaRef = useRef(null);
     const alFondoRef = useRef(true);
+    // Lo sin leer AL ABRIR (antes de tomarla) y dónde va la franja.
+    const [sinLeerAlAbrir] = useState(() => Number(c.sin_leer_equipo) || 0);
+    const [divisor, setDivisor] = useState(null);       // { id, n }
+    const irAlDivisorRef = useRef(false);
+    // Lo que llegó mientras se leía más arriba, y los globos recién llegados.
+    const [nuevosAbajo, setNuevosAbajo] = useState(0);
+    const [recientes, setRecientes] = useState(() => new Set());
     const mensajesRef = useRef(null);
     useEffect(() => { mensajesRef.current = mensajes; }, [mensajes]);
 
@@ -122,7 +143,14 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
         fetchMensajes(id)
             .then((filas) => {
                 if (!vivo) return;
-                alFondoRef.current = true;
+                const primero = primerSinLeer(filas, sinLeerAlAbrir);
+                if (primero != null) {
+                    setDivisor({ id: primero, n: sinLeerAlAbrir });
+                    irAlDivisorRef.current = true;
+                    alFondoRef.current = false;
+                } else {
+                    alFondoRef.current = true;
+                }
                 setMensajes(filas);
                 setHayAnteriores(filas.length >= MENSAJES_POR_PAGINA);
                 asegurarEquipo(filas.flatMap((m) => [m.employee_id, m.cita?.employee_id]));
@@ -147,10 +175,19 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
             if (!nuevos.length) return;
             const lista = listaRef.current;
             alFondoRef.current = !lista || lista.scrollHeight - lista.scrollTop - lista.clientHeight < 120;
+            const ids = new Set(actuales.map((m) => m.id));
+            const llegados = nuevos.filter((m) => !ids.has(m.id));
             setMensajes((prev) => {
-                const ids = new Set((prev ?? []).map((m) => m.id));
-                return [...(prev ?? []), ...nuevos.filter((m) => !ids.has(m.id))];
+                const ya = new Set((prev ?? []).map((m) => m.id));
+                return [...(prev ?? []), ...nuevos.filter((m) => !ya.has(m.id))];
             });
+            // Lo del cliente entra con realce; si quien lee está más arriba,
+            // suma en el botón en vez de mover la pantalla.
+            const delCliente = llegados.filter((m) => m.autor === 'cliente');
+            if (delCliente.length) {
+                setRecientes((prev) => new Set([...prev, ...delCliente.map((m) => m.id)]));
+                if (!alFondoRef.current) setNuevosAbajo((n) => n + delCliente.length);
+            }
             asegurarEquipo(nuevos.flatMap((m) => [m.employee_id, m.cita?.employee_id]));
             leerReacciones(nuevos.map((m) => m.id));
             if (puedeResponder && nuevos.some((m) => m.autor === 'cliente')) {
@@ -197,11 +234,44 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
         }
     };
 
-    // Al fondo cuando llega algo y quien lee ya estaba abajo.
+    // Al abrir con mensajes sin leer, a la franja; si no, al fondo cuando
+    // llega algo y quien lee ya estaba abajo.
     useLayoutEffect(() => {
         const lista = listaRef.current;
-        if (lista && alFondoRef.current) lista.scrollTop = lista.scrollHeight;
+        if (!lista) return;
+        if (irAlDivisorRef.current) {
+            const franja = lista.querySelector('[data-franja-nuevos]');
+            if (franja) {
+                irAlDivisorRef.current = false;
+                lista.scrollTop += franja.getBoundingClientRect().top - lista.getBoundingClientRect().top - 12;
+                alFondoRef.current = lista.scrollHeight - lista.scrollTop - lista.clientHeight < 120;
+                return;
+            }
+        }
+        if (alFondoRef.current) lista.scrollTop = lista.scrollHeight;
     }, [mensajes]);
+
+    // El realce de lo recién llegado se apaga solo.
+    useEffect(() => {
+        if (!recientes.size) return undefined;
+        const t = setTimeout(() => setRecientes(new Set()), 2400);
+        return () => clearTimeout(t);
+    }, [recientes]);
+
+    // Quién lee ¿está abajo? Al llegar al fondo, el botón de nuevos se va.
+    const alDesplazar = useCallback(() => {
+        const lista = listaRef.current;
+        if (!lista) return;
+        const abajo = lista.scrollHeight - lista.scrollTop - lista.clientHeight < 120;
+        alFondoRef.current = abajo;
+        if (abajo) setNuevosAbajo((n) => (n ? 0 : n));
+    }, []);
+    const bajarAlFondo = () => {
+        const lista = listaRef.current;
+        if (lista) lista.scrollTo({ top: lista.scrollHeight, behavior: 'smooth' });
+        alFondoRef.current = true;
+        setNuevosAbajo(0);
+    };
 
     const resolver = async () => {
         setResolviendo(true);
@@ -277,39 +347,50 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
     const tipo = tipoDeCliente(c);
     const nivel = NIVELES[c.nivel];
     const nombre = nombreCliente;
+    const hoy = diaSV(ahora);
 
-    // El último mensaje del equipo es el que lleva «Visto» / «Enviado».
-    let ultimoDelEquipo = null;
-    for (let i = (mensajes?.length ?? 0) - 1; i >= 0; i -= 1) {
-        if (mensajes[i].autor === 'equipo') { ultimoDelEquipo = mensajes[i].id; break; }
-    }
+    // «Enviado» / «Visto» de los mensajes del equipo: `sin_leer_cliente` dice
+    // cuántos de los ÚLTIMOS todavía no leyó; los anteriores, ya los vio.
     const sinLeerCliente = c.sin_leer_cliente == null ? null : Number(c.sin_leer_cliente);
-    const entrega = sinLeerCliente == null ? null : sinLeerCliente === 0 ? 'Visto' : 'Enviado';
+    const noVistos = new Set();
+    if (sinLeerCliente != null && mensajes) {
+        const delEquipo = mensajes.filter((m) => m.autor === 'equipo');
+        delEquipo.slice(Math.max(0, delEquipo.length - sinLeerCliente)).forEach((m) => noVistos.add(m.id));
+    }
+    const entregaDe = (m) => (sinLeerCliente == null || m.autor !== 'equipo' ? null : noVistos.has(m.id) ? 'Enviado' : 'Visto');
 
     return (
-        <div data-surface={comoPanel ? undefined : 'card'} className={`flex flex-col min-h-0 ${comoPanel ? 'h-full' : 'flex-1 rounded-card'}`}>
+        <div data-surface={comoPanel ? undefined : 'card'} className={`flex flex-col min-h-0 ${comoPanel ? 'h-full' : 'flex-1 rounded-card overflow-hidden'}`}>
             {/* ── El cliente ─────────────────────────────────────────────── */}
-            <header className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-border-subtle">
+            <header className="flex-none flex flex-wrap items-start gap-x-3 gap-y-2 px-4 py-3 border-b border-border-subtle">
                 <ClienteAvatar conversacion={c} size="lg" />
-                <div className="min-w-0 flex-1">
-                    <p className="text-body font-semibold text-content truncate">{nombre}</p>
-                    <div className="flex flex-wrap items-center gap-1 mt-0.5">
-                        <Badge variant={tipo.variant} size="sm" uppercase={false}>{tipo.label}</Badge>
-                        {nivel && <Badge variant={nivel.variant} size="sm" uppercase={false}>{nivel.label}</Badge>}
+                <div className="min-w-0 flex-1 basis-48">
+                    <p className="text-body font-black text-content truncate" title={nombre}>{nombre}</p>
+                    <div className="flex flex-wrap items-center gap-1 mt-1">
                         <ChipsDeEstado conversacion={c} ahora={ahora}
                             atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} />
+                        <Badge variant={tipo.variant} size="sm" uppercase={false}>{tipo.label}</Badge>
+                        {nivel && <Badge variant={nivel.variant} size="sm" uppercase={false}>{nivel.label}</Badge>}
                         {c.telefono && (
                             <a href={`tel:${String(c.telefono).replace(/\D/g, '')}`}
-                                className="inline-flex items-center gap-1 text-label text-content-2 hover:text-brand-text min-h-[var(--tap-min)] active:scale-[0.97]">
+                                className="inline-flex items-center gap-1 px-1 rounded-btn text-label text-content-2 hover:text-brand-text tabular-nums min-h-[var(--tap-min)] active:scale-[0.97]">
                                 <Phone size={12} /> {c.telefono}
                             </a>
                         )}
                     </div>
+                    <div className="flex flex-wrap items-center gap-1 mt-1">
+                        <ChipsDeEtiquetas conversacion={c} />
+                        {puedeResponder && (
+                            <Button variant="ghost" size="sm" icon={Tags} onClick={() => setEditandoEtiquetas(true)}>
+                                {c.etiquetas?.length ? 'Editar etiquetas' : 'Etiquetar'}
+                            </Button>
+                        )}
+                    </div>
                 </div>
-                {puedeResponder && (
-                    <div className="flex flex-wrap items-center gap-1.5">
+                {puedeResponder && (c.foto_ruta || c.estado === 'abierta') && (
+                    <div className="flex flex-wrap items-center justify-end gap-1.5 ml-auto">
                         {c.foto_ruta && (
-                            <Button variant="ghost" size="sm" icon={ImageOff} onClick={() => setQuitarFoto(true)}>Quitar foto de perfil</Button>
+                            <Button variant="ghost" size="sm" icon={ImageOff} onClick={() => setQuitarFoto(true)}>Quitar foto</Button>
                         )}
                         {c.estado === 'abierta' && (
                             <Button variant="secondary" size="sm" icon={CheckCircle2} loading={resolviendo} onClick={resolver}>Marcar como resuelta</Button>
@@ -318,8 +399,10 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
                 )}
             </header>
 
+            {c.calificacion ? <CalificacionDelCliente conversacion={c} className="mx-4 mt-3 flex-none" /> : null}
+
             {conPanelCliente && !lateral && (
-                <div className="px-4 pt-2">
+                <div className="flex-none px-4 pt-2">
                     <SegmentedControl size="sm" label="Ver" value={pestana} onChange={setPestana}
                         options={[
                             { value: 'mensajes', label: 'Mensajes', icon: MessagesSquare },
@@ -331,40 +414,69 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
             <div className="flex-1 min-h-0 flex">
             {verCliente && (
                 <div className="flex-1 min-w-0 overflow-y-auto overscroll-contain">
-                    <PanelCliente customerId={c.customer_id} />
+                    <PanelCliente customerId={c.customer_id} conversacion={c} />
                 </div>
             )}
             <div className={`flex-1 min-w-0 min-h-0 flex-col ${verCliente ? 'hidden' : 'flex'}`}>
             {/* ── Los mensajes ───────────────────────────────────────────── */}
-            <div ref={listaRef} className="flex-1 min-h-[240px] overflow-y-auto overscroll-contain px-4 py-3 space-y-1.5">
+            <div className="relative flex-1 min-h-[240px] flex flex-col">
+            <div ref={listaRef} onScroll={alDesplazar} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-3">
                 {error && <Notice variant="danger">{error}</Notice>}
-                {!mensajes && !error && <SkeletonText lines={4} />}
+                {!mensajes && !error && <HiloCargando />}
                 {hayAnteriores && (
-                    <div className="flex justify-center pb-1">
+                    <div className="flex justify-center pb-2">
                         <Button variant="ghost" size="sm" loading={cargandoAnteriores} onClick={verAnteriores}>Ver anteriores</Button>
                     </div>
                 )}
                 {(mensajes ?? []).map((m, i) => {
                     const previo = mensajes[i - 1];
-                    const nuevoGrupo = empiezaTanda(m, previo);
+                    const siguiente = mensajes[i + 1];
+                    const otroDia = cambiaDeDia(m, previo);
+                    const nuevoGrupo = otroDia || empiezaTanda(m, previo) || divisor?.id === m.id;
+                    const finDeGrupo = !siguiente || cambiaDeDia(siguiente, m) || empiezaTanda(siguiente, m) || divisor?.id === siguiente.id;
                     return (
-                        <Burbuja key={m.id} mensaje={m} nuevoGrupo={nuevoGrupo}
-                            autor={m.employee_id ? equipo.get(m.employee_id) ?? { id: m.employee_id } : null}
-                            entrega={m.id === ultimoDelEquipo ? entrega : null}
-                            reacciones={reacciones.get(m.id)} yo={yo} equipo={equipo} cliente={nombre}
-                            puedeReaccionar={puedeResponder}
-                            onReaccionar={reaccionar} onResponder={setRespondiendoA} onCopiar={copiar}
-                            onIrA={irAMensaje} onOpciones={abrirOpciones}
-                            onFoto={setFoto} />
+                        <React.Fragment key={m.id}>
+                            {otroDia && <Separador>{etiquetaDeDia(m.created_at, hoy)}</Separador>}
+                            {divisor?.id === m.id && (
+                                <div data-franja-nuevos="" role="separator" aria-label={`${divisor.n} ${divisor.n === 1 ? 'mensaje nuevo' : 'mensajes nuevos'}`}
+                                    className="flex items-center gap-3 py-3">
+                                    <span className="flex-1 h-px bg-brand/30" />
+                                    <Badge variant="info" size="sm" uppercase={false}>
+                                        {divisor.n} {divisor.n === 1 ? 'mensaje nuevo' : 'mensajes nuevos'}
+                                    </Badge>
+                                    <span className="flex-1 h-px bg-brand/30" />
+                                </div>
+                            )}
+                            <Burbuja mensaje={m} nuevoGrupo={nuevoGrupo} finDeGrupo={finDeGrupo}
+                                recien={recientes.has(m.id)}
+                                autor={m.employee_id ? equipo.get(m.employee_id) ?? { id: m.employee_id } : null}
+                                entrega={finDeGrupo ? entregaDe(m) : null}
+                                reacciones={reacciones.get(m.id)} yo={yo} equipo={equipo} cliente={nombre}
+                                puedeReaccionar={puedeResponder}
+                                onReaccionar={reaccionar} onResponder={setRespondiendoA} onCopiar={copiar}
+                                onIrA={irAMensaje} onOpciones={abrirOpciones}
+                                onFoto={setFoto} />
+                        </React.Fragment>
                     );
                 })}
-                {mensajes && !mensajes.length && <p className="text-body-sm text-content-3 text-center py-6">Todavía no hay mensajes.</p>}
+                {mensajes && !mensajes.length && (
+                    <p className="text-body-sm text-content-3 text-center py-10">Todavía no hay mensajes.</p>
+                )}
+            </div>
+            {nuevosAbajo > 0 && (
+                <div className="absolute inset-x-0 bottom-3 flex justify-center pointer-events-none">
+                    <Button variant="primary" size="sm" icon={ArrowDown} onClick={bajarAlFondo}
+                        className="pointer-events-auto shadow-[var(--shadow-glow-brand)] animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-base)]">
+                        {nuevosAbajo} {nuevosAbajo === 1 ? 'nuevo' : 'nuevos'}
+                    </Button>
+                </div>
+            )}
             </div>
             <QuienEscribe conversacion={c} cliente={nombre} yo={user?.id} equipo={equipo} asegurarEquipo={asegurarEquipo} />
 
             {/* ── Responder ──────────────────────────────────────────────── */}
             {puedeResponder ? (
-                <Compositor conversacion={c} onEnviado={traerNuevos}
+                <Compositor conversacion={c} onEnviado={() => { alFondoRef.current = true; setNuevosAbajo(0); return traerNuevos(); }}
                     respondiendoA={respondiendoA} onQuitarRespuesta={() => setRespondiendoA(null)}
                     equipo={equipo} cliente={nombre} />
             ) : (
@@ -373,7 +485,7 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
             </div>
             {lateral && (
                 <aside aria-label="Cliente" className="w-[320px] shrink-0 border-l border-border-subtle overflow-y-auto overscroll-contain">
-                    <PanelCliente customerId={c.customer_id} />
+                    <PanelCliente customerId={c.customer_id} conversacion={c} />
                 </aside>
             )}
             </div>
@@ -388,40 +500,77 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
             <ConfirmModal isOpen={quitarFoto} onClose={() => setQuitarFoto(false)} onConfirm={confirmarQuitarFoto}
                 isProcessing={quitando} title="¿Quitar la foto de perfil?" confirmText="Quitar foto"
                 message={`La foto de ${nombre} deja de verse en el portal y en su app. Puede subir otra cuando quiera.`} />
+            {editandoEtiquetas && (
+                <EditorDeEtiquetas abierto conversacion={c} onClose={() => setEditandoEtiquetas(false)} onGuardado={onCambio} />
+            )}
+        </div>
+    );
+}
+
+// «Hoy», «Ayer», «lunes, 5 de octubre»: centrado, entre los mensajes.
+function Separador({ children }) {
+    return (
+        <div role="separator" className="flex justify-center py-3">
+            <Badge variant="neutral" size="sm" uppercase={false}>{children}</Badge>
+        </div>
+    );
+}
+
+// Mientras llegan los mensajes: globos con la forma de globos, a los dos lados.
+function HiloCargando() {
+    return (
+        <div aria-hidden="true" className="space-y-3 py-2">
+            {['60%', '40%', '50%', '33%'].map((ancho, i) => (
+                <div key={ancho} className={`flex ${i % 2 ? 'justify-end' : 'justify-start'}`}>
+                    <Skeleton h={36} rounded="1.25rem" w={ancho} />
+                </div>
+            ))}
         </div>
     );
 }
 
 // Un mensaje. Los del cliente a la izquierda; los del equipo a la derecha, y
 // el primero de cada tanda lleva la foto y el nombre corto de quien contestó.
+// Globos agrupados como en iMessage: dentro de una tanda la esquina del lado
+// del autor se achica, y la hora (con «Enviado»/«Visto») va sólo al final.
 function Burbuja({
-    mensaje: m, nuevoGrupo, autor, entrega, reacciones, yo, equipo, cliente, puedeReaccionar,
+    mensaje: m, nuevoGrupo, finDeGrupo, recien, autor, entrega, reacciones, yo, equipo, cliente, puedeReaccionar,
     onReaccionar, onResponder, onCopiar, onIrA, onOpciones, onFoto,
 }) {
     const conAcciones = m.autor !== 'sistema' && (puedeReaccionar || !!m.texto);
     // Mantener presionado el globo (teléfono) abre la hoja con las acciones.
     const gestos = usePulsacionLarga({ activo: conAcciones, alMantener: () => onOpciones(m) });
     if (m.autor === 'sistema') {
-        return <p className="text-center text-micro text-content-3 py-1">{m.texto}</p>;
+        return <p className="text-center text-micro text-content-3 py-2">{m.texto}</p>;
     }
     const delEquipo = m.autor === 'equipo';
     const adj = m.adjunto;
     const lado = delEquipo ? 'derecha' : 'izquierda';
+    // Las esquinas del lado del autor: redondas al empezar y al terminar la
+    // tanda, chicas en el medio (el globo «se pega» al de arriba y al de abajo).
+    const esquinas = delEquipo
+        ? `${nuevoGrupo ? '' : 'rounded-tr-[0.375rem]'} ${finDeGrupo ? '' : 'rounded-br-[0.375rem]'}`
+        : `${nuevoGrupo ? '' : 'rounded-tl-[0.375rem]'} ${finDeGrupo ? '' : 'rounded-bl-[0.375rem]'}`;
     return (
-        <div data-mensaje-id={m.id} className={`flex flex-col ${delEquipo ? 'items-end' : 'items-start'} ${nuevoGrupo ? 'pt-2' : ''}`}>
+        <div data-mensaje-id={m.id}
+            className={`flex flex-col ${delEquipo ? 'items-end' : 'items-start'} ${nuevoGrupo ? 'pt-2.5' : 'pt-0.5'}
+                ${recien ? 'animate-in fade-in slide-in-from-bottom-1 duration-[var(--dur-base)]' : ''}`}>
             {nuevoGrupo && delEquipo && (
-                <span className="flex items-center gap-1.5 mb-1 text-micro text-content-3">
-                    <span className="font-semibold text-content-2">{shortEmployeeName(autor)}</span>
+                <span className="flex items-center gap-1.5 mb-1 text-micro text-content-3 max-w-[80%] min-w-0">
+                    <span className="font-semibold text-content-2 truncate">{shortEmployeeName(autor)}</span>
                     <AvatarConEstado emp={autor} px={20} mostrarChip={false} />
                 </span>
             )}
-            <div className="group relative max-w-[80%]">
+            <div className="group relative max-w-[min(80%,34rem)]">
                 {conAcciones && puedeReaccionar && (
                     <BarraDeMensaje alLado={lado} conTexto={!!m.texto}
                         onReaccionar={(e) => onReaccionar(m, e)} onResponder={() => onResponder(m)} onCopiar={() => onCopiar(m)} />
                 )}
                 <div {...gestos}
-                    className={`rounded-card px-3 py-2 space-y-1.5 [@media(pointer:coarse)]:select-none [-webkit-touch-callout:none] ${delEquipo ? 'bg-brand text-white' : 'bg-surface-card-hover text-content border border-border-subtle'}`}>
+                    className={`rounded-[1.25rem] ${esquinas} px-3.5 py-2 space-y-1.5 [@media(pointer:coarse)]:select-none [-webkit-touch-callout:none]
+                        transition-shadow duration-[var(--dur-lento)]
+                        ${delEquipo ? 'bg-brand text-white' : 'bg-surface-card-hover text-content border border-border-subtle'}
+                        ${recien ? 'ring-2 ring-brand/45 ring-offset-1 ring-offset-transparent' : ''}`}>
                     <CitaDeMensaje cita={m.cita} equipo={equipo} cliente={cliente} delEquipo={delEquipo} onIr={onIrA} />
                     {m.foto_ruta && (
                         m.foto_url ? (
@@ -451,10 +600,12 @@ function Burbuja({
             </div>
             <ReaccionesDeMensaje filas={reacciones} yo={yo} equipo={equipo} cliente={cliente} alLado={lado}
                 puedeReaccionar={puedeReaccionar} onReaccionar={(e) => onReaccionar(m, e)} />
-            <span className="text-micro text-content-3 tabular-nums mt-0.5">
-                {cuandoLlego(m.created_at)}
-                {entrega && <span className={entrega === 'Visto' ? 'font-semibold text-brand-text' : ''}> · {entrega}</span>}
-            </span>
+            {finDeGrupo && (
+                <span className="text-micro text-content-3 tabular-nums mt-0.5 px-1">
+                    {hora12(m.created_at)}
+                    {entrega && <span className={entrega === 'Visto' ? 'font-semibold text-brand-text' : ''}> · {entrega}</span>}
+                </span>
+            )}
         </div>
     );
 }

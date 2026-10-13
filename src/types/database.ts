@@ -401,6 +401,9 @@ export type Database = {
       }
       app_chat_conversaciones: {
         Row: {
+          calificacion: number | null
+          calificacion_comentario: string | null
+          calificada_at: string | null
           cliente_escribiendo_at: string | null
           created_at: string
           customer_id: number
@@ -409,6 +412,7 @@ export type Database = {
           espera_recordada_at: string | null
           esperando_desde: string | null
           estado: string
+          etiquetas: string[]
           id: number
           resuelta_at: string | null
           resuelta_por: string | null
@@ -422,6 +426,9 @@ export type Database = {
           visto_equipo_at: string | null
         }
         Insert: {
+          calificacion?: number | null
+          calificacion_comentario?: string | null
+          calificada_at?: string | null
           cliente_escribiendo_at?: string | null
           created_at?: string
           customer_id: number
@@ -430,6 +437,7 @@ export type Database = {
           espera_recordada_at?: string | null
           esperando_desde?: string | null
           estado?: string
+          etiquetas?: string[]
           id?: never
           resuelta_at?: string | null
           resuelta_por?: string | null
@@ -443,6 +451,9 @@ export type Database = {
           visto_equipo_at?: string | null
         }
         Update: {
+          calificacion?: number | null
+          calificacion_comentario?: string | null
+          calificada_at?: string | null
           cliente_escribiendo_at?: string | null
           created_at?: string
           customer_id?: number
@@ -451,6 +462,7 @@ export type Database = {
           espera_recordada_at?: string | null
           esperando_desde?: string | null
           estado?: string
+          etiquetas?: string[]
           id?: never
           resuelta_at?: string | null
           resuelta_por?: string | null
@@ -26615,6 +26627,10 @@ export type Database = {
         Returns: Json
       }
       chat_escribiendo: { Args: { p_conversacion: number }; Returns: Json }
+      chat_etiquetar: {
+        Args: { p_conversacion: number; p_etiquetas: string[] }
+        Returns: Json
+      }
       chat_reaccionar: {
         Args: { p_emoji: string; p_mensaje: number }
         Returns: Json

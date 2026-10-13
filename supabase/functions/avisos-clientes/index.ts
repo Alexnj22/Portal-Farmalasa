@@ -337,13 +337,43 @@ Deno.serve(async (req) => {
       if (eD) console.error("no se pudieron detectar los tratamientos:", eD.message);
       const { data: trat, error: eT } = await admin.rpc("app_tratamientos_por_recordar", { p_clientes: clientes });
       if (eT) console.error("no se pudieron leer los tratamientos:", eT.message);
-      for (const a of (trat ?? []) as { id: number; customer_id: number; nombre: string; ultima_compra: string }[]) {
-        candidatos.push({
-          customer_id: a.customer_id, tipo: "tratamiento", ref: `trat:${a.id}:${a.ultima_compra}`,
-          titulo: "¿Ya te toca otra vez? 💊",
-          cuerpo: `Se te está por acabar ${a.nombre}. Resérvalo y lo tenemos listo.`,
-          url: "/tratamientos",
-        });
+      // UN aviso por cliente con todos sus medicamentos por acabarse (2026-10-13,
+      // pedido del usuario: «me llegó 2 veces… mejor recibir 1 con los 3»).
+      // Cada medicamento se recuerda una sola vez por compra: la `ref` del aviso
+      // junta las llaves `trat:<id>:<última compra>` separadas por «|», y lo que
+      // ya salió (suelto, como antes, o en un grupo) no se vuelve a incluir.
+      const filas = (trat ?? []) as { id: number; customer_id: number; nombre: string; ultima_compra: string }[];
+      if (filas.length) {
+        const { data: previos, error: ePv } = await admin.from("app_cliente_avisos").select("ref").limit(5000)
+          .eq("tipo", "tratamiento").in("customer_id", [...new Set(filas.map((a) => a.customer_id))])
+          .gte("created_at", new Date(Date.now() - 120 * 86400_000).toISOString());
+        if (ePv) console.error("no se pudieron leer los avisos de tratamiento previos:", ePv.message);
+        const yaAvisados = new Set((previos ?? []).flatMap((p: { ref: string }) => String(p.ref).split("|")));
+        // «LOSARTAN 50 MG X 30 TAB MK» → «Losartan 50 mg»: lo que va antes de la presentación.
+        const corto = (n: string) => {
+          const base = String(n).split(/\s+X\s+/i)[0].trim().replace(/[.,]+$/, "").toLowerCase();
+          return base.replace(/(^|\s)([a-záéíóúñ])/g, (_m, sp, c) => sp + c.toUpperCase())
+            .replace(/\b(Mg|Ml|Mcg|Ui|G)\b/g, (u) => u.toLowerCase());
+        };
+        const porCliente = new Map<number, typeof filas>();
+        for (const a of filas) {
+          if (yaAvisados.has(`trat:${a.id}:${a.ultima_compra}`)) continue;
+          porCliente.set(a.customer_id, [...(porCliente.get(a.customer_id) ?? []), a]);
+        }
+        for (const [cliente, lista] of porCliente) {
+          const nombres = lista.map((a) => corto(a.nombre));
+          const enumerar = nombres.length === 1 ? nombres[0]
+            : `${nombres.slice(0, -1).join(", ")} y ${nombres[nombres.length - 1]}`;
+          candidatos.push({
+            customer_id: cliente, tipo: "tratamiento",
+            ref: lista.map((a) => `trat:${a.id}:${a.ultima_compra}`).sort().join("|"),
+            titulo: lista.length === 1 ? "¿Ya te toca otra vez? 💊" : `Se te están por acabar ${lista.length} medicamentos 💊`,
+            cuerpo: lista.length === 1
+              ? `Se te está por acabar ${enumerar}. Resérvalo y lo tenemos listo.`
+              : `${enumerar}. Resérvalos de una vez y te los tenemos listos.`,
+            url: "/tratamientos",
+          });
+        }
       }
     }
 

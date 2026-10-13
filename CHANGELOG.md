@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1279.1 — Un solo aviso con todos los medicamentos por acabarse
+
+- Pedido del usuario: llegaban 2 o 3 avisos de «se te está por acabar», uno por medicamento. Ahora `avisos-clientes` manda UNO por cliente: «Se te están por acabar 3 medicamentos 💊 — Losartan 50 mg, Metformina 850 mg y Atorvastatina 20 mg. Resérvalos de una vez…». Cada medicamento se recuerda una sola vez por compra (la `ref` junta sus llaves `trat:<id>:<compra>` con «|», y lo ya avisado —suelto o en grupo— no se repite).
+
 ## v2.1279.0 — App de clientes: chat renovado, consultar medicamentos y pulido general
 
 **Chat** (`app/chat.js` reescrito, `componentes/ChatConsultas.js`): globos estilo iMessage agrupados, separadores Hoy/Ayer/fecha, franja «N mensajes nuevos» (abre ahí), ↓ con contador, ✓/✓✓ enviado/visto, encabezado con estado y quién atiende, esqueleto y bienvenida, mensaje fallido con reintentar. **Consultar un medicamento** desde el chat («+»), la ficha del producto y Mis tratamientos: el producto viaja como tarjeta armada en el SERVIDOR (`chat_enviar` con `producto_id`, validado contra el catálogo) con «Ver producto»/«Reservar». Atajos para empezar, enlaces y teléfonos tocables, y «¿Cómo te atendimos?» (`chat_calificar`, una vez por resolución).

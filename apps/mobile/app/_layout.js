@@ -17,6 +17,7 @@ import HojasAndroid, { instalarHojasAndroid } from '../componentes/HojasAndroid'
 import Aurora from '../componentes/Aurora';
 import { colorSistema } from '../componentes/Formulario';
 import { MotorPedido } from '../componentes/pedidos/motorPedido';
+import BurbujaFlotante from '../componentes/chat/BurbujaFlotante';
 import { escucharToques, registrarAvisos } from '../componentes/avisos';
 // Define la tarea del GPS de fondo de las rutas: iOS relanza la app sin pantalla
 // para entregar posiciones, y la tarea tiene que existir desde el arranque.
@@ -113,6 +114,8 @@ export default function Raiz() {
             <Stack.Screen name="entrar" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           </Stack>
+          {/* La burbuja del chat con clientes, como la del portal: flota sobre todo. */}
+          <BurbujaFlotante />
           <CapaDeProgreso />
           <HojasAndroid />
           {/* La imprenta del pedido: no carga nada hasta que alguien imprime o finaliza. */}

@@ -108,6 +108,8 @@ export const ICONOS = {
   AlertCircle: i('exclamationmark.circle', require('@expo/material-symbols/error.xml')),
   Phone: i('phone', require('@expo/material-symbols/call.xml')),
   MessageCircle: i('message', require('@expo/material-symbols/chat.xml')),
+  Responder: i('arrowshape.turn.up.left', require('@expo/material-symbols/reply.xml')),
+  Copiar: i('doc.on.doc', require('@expo/material-symbols/content_copy.xml')),
   // Ficha de personal: contraseña y «Acción RRHH».
   KeyRound: i('key', require('@expo/material-symbols/key.xml')),
   Plus: i('plus', require('@expo/material-symbols/add.xml')),

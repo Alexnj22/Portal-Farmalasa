@@ -13,7 +13,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useNowTick } from '@nucleo/hooks/useNowTick';
 import { useBandejaDelChat, useEquipoDelChat } from '@nucleo/hooks/useBandejaDelChat';
 import { escribeAhora, useRelojDeEscritura } from '@nucleo/hooks/escrituraDelChat';
-import { FILTROS, estadoDeConversacion, estadoServidor, nombreDeCliente } from '@nucleo/utils/chatClientes';
+import { FILTROS, estadoDeConversacion, estadoServidor, nombreDeCliente, ordenarBandeja } from '@nucleo/utils/chatClientes';
 import { cuandoLlego } from '@nucleo/utils/notificacionTexto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
@@ -27,6 +27,8 @@ import { ErrorConReintento, useColumnas, useMasAlFinal } from '../componentes/Li
 import { MARCA } from '../componentes/inicio/marca';
 import { ChipsDeEstado, ClienteAvatar, EtiquetasDeCliente } from '../componentes/chat/Piezas';
 import { recordarConversacion } from '../componentes/chat/elegida';
+import { FichasDeEtiquetas } from '../componentes/chat/Etiquetas';
+import { estrellas } from '@nucleo/utils/chatPersonal';
 
 const Fila = memo(function Fila({ c, tomadaPor, atiende, ahora, columnas }) {
   const sinLeer = Number(c.sin_leer_equipo) || 0;
@@ -53,6 +55,8 @@ const Fila = memo(function Fila({ c, tomadaPor, atiende, ahora, columnas }) {
                 <ChipsDeEstado conversacion={c} atiende={atiende} ahora={ahora} />
                 <EtiquetasDeCliente c={c} />
               </View>
+              <FichasDeEtiquetas conversacion={c} />
+              {estrellas(c.calificacion) ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{estrellas(c.calificacion)}</Text> : null}
               {tomadaPor ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <Avatar empleado={tomadaPor} tamano={18} />
@@ -95,8 +99,9 @@ export default function ChatClientes() {
 
   const visibles = useMemo(() => {
     const entran = new Set(FILTROS[filtro]?.estados ?? []);
-    return (conversaciones ?? []).filter((c) => entran.has(estadoDeConversacion(c)))
-      .filter((c) => !busqueda || tokenMatch(busqueda, c.cliente ?? '', c.telefono ?? '', c.ultimo_texto ?? ''));
+    // «Urgente» arriba, como en el portal (`ordenarBandeja`).
+    return ordenarBandeja((conversaciones ?? []).filter((c) => entran.has(estadoDeConversacion(c)))
+      .filter((c) => !busqueda || tokenMatch(busqueda, c.cliente ?? '', c.telefono ?? '', c.ultimo_texto ?? '')));
   }, [conversaciones, busqueda, filtro]);
   // «Resueltas» pagina al llegar abajo; las abiertas ya se piden todas (los filtros son derivados).
   const scroll = useMasAlFinal(useCallback(() => { if (!cargandoMas) verMas(); }, [cargandoMas, verMas]), filtro === 'resuelta' && hayMas && !busqueda);

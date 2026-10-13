@@ -10,18 +10,20 @@
 // hilo abierto la vuelve a tomar. Los mensajes llegan en vivo
 // (`useRefrescoEnVivo` sobre `app_chat_mensajes`).
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import * as Clipboard from 'expo-clipboard';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useNowTick } from '@nucleo/hooks/useNowTick';
 import { useRefrescoEnVivo } from '@nucleo/hooks/useRefrescoEnVivo';
 import { useEquipoDelChat } from '@nucleo/hooks/useBandejaDelChat';
 import { COLUMNAS_PRESENCIA, EMOJIS_DE_REACCION, MENSAJES_POR_PAGINA, fetchConversaciones, fetchMensajes, fetchPresenciaDeConversaciones, fetchReacciones, quitarFotoDeCliente, reaccionarAMensaje, resolverConversacion, tomarConversacion } from '@nucleo/data/chatClientes';
 import { escribeAhora, useRelojDeEscritura } from '@nucleo/hooks/escrituraDelChat';
-import { empiezaTanda, nombreDeAutor, nombreDeCliente, recorteDeMensaje } from '@nucleo/utils/chatClientes';
+import { cambiaDeDia, empiezaTanda, esperaDe, etiquetaDeDia, nombreDeAutor, nombreDeCliente, recorteDeMensaje } from '@nucleo/utils/chatClientes';
 import { cuandoLlego } from '@nucleo/utils/notificacionTexto';
+import { estrellas, miReaccion } from '@nucleo/utils/chatPersonal';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -39,8 +41,21 @@ import { ChipsDeEstado, ClienteAvatar, EtiquetasDeCliente } from '../../componen
 import PanelCliente from '../../componentes/chat/PanelCliente';
 import Compositor from '../../componentes/chat/Compositor';
 import { conversacionRecordada, recordarConversacion } from '../../componentes/chat/elegida';
+import DeslizarParaResponder from '../../componentes/chat/DeslizarParaResponder';
+import MenuDeMensaje from '../../componentes/chat/MenuDeMensaje';
+import { EtiquetasDeConversacion } from '../../componentes/chat/Etiquetas';
 
-const Burbuja = memo(function Burbuja({ m, nuevaTanda, autor, onFoto, cita, reacciones, entrega, onOpciones }) {
+
+function SeparadorDeDia({ valor }) {
+  return (
+    <View style={{ alignItems: 'center', paddingTop: 14, paddingBottom: 4 }}>
+      <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10,
+        backgroundColor: 'rgba(127,127,127,0.14)', overflow: 'hidden' }}>{etiquetaDeDia(valor)}</Text>
+    </View>
+  );
+}
+
+const Burbuja = memo(function Burbuja({ m, nuevaTanda, autor, onFoto, cita, reacciones, entrega, onOpciones, clienteFoto }) {
   if (m.autor === 'sistema') {
     return <Text style={{ textAlign: 'center', color: colorSistema.texto2, fontSize: 12, paddingVertical: 6, marginHorizontal: 24 }}>{m.texto}</Text>;
   }
@@ -48,14 +63,15 @@ const Burbuja = memo(function Burbuja({ m, nuevaTanda, autor, onFoto, cita, reac
   const adj = m.adjunto;
   const tinta = delEquipo ? '#fff' : colorSistema.texto;
   return (
-    <View style={{ alignItems: delEquipo ? 'flex-end' : 'flex-start', paddingHorizontal: 12, paddingTop: nuevaTanda ? 10 : 2 }}>
+    <View style={{ alignItems: delEquipo ? 'flex-end' : 'flex-start', paddingHorizontal: 12, paddingLeft: delEquipo ? 12 : 44, paddingTop: nuevaTanda ? 10 : 2 }}>
+      {!delEquipo && nuevaTanda && clienteFoto ? <View style={{ position: 'absolute', left: 10, top: nuevaTanda ? 10 : 2 }}>{clienteFoto}</View> : null}
       {nuevaTanda && delEquipo ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
           <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{shortEmployeeName(autor)}</Text>
           <Avatar empleado={autor} tamano={20} />
         </View>
       ) : null}
-      <Pressable onLongPress={() => onOpciones?.(m)} delayLongPress={300} accessibilityHint="Mantén presionado para reaccionar o responder"
+      <Pressable onLongPress={() => onOpciones?.(m)} delayLongPress={300} accessibilityHint="Desliza a la derecha para responder; mantén presionado para reaccionar o copiar"
         style={{ maxWidth: '82%', borderRadius: 18, paddingHorizontal: 12, paddingVertical: 8, gap: 6,
         backgroundColor: delEquipo ? MARCA.azul : 'rgba(127,127,127,0.16)', borderBottomRightRadius: delEquipo ? 6 : 18, borderBottomLeftRadius: delEquipo ? 18 : 6 }}>
         {cita ? (
@@ -80,7 +96,7 @@ const Burbuja = memo(function Burbuja({ m, nuevaTanda, autor, onFoto, cita, reac
             <Text style={{ color: tinta, fontSize: 14, fontWeight: '700' }} numberOfLines={2}>{`🏷 ${adj.titulo}`}</Text>
           </View>
         ) : null}
-        {m.texto ? <Text style={{ color: tinta, fontSize: 16 }} selectable>{m.texto}</Text> : null}
+        {m.texto ? <Text style={{ color: tinta, fontSize: 16 }}>{m.texto}</Text> : null}
       </Pressable>
       {reacciones?.length ? (
         <View style={{ flexDirection: 'row', gap: 4, marginTop: 3 }}>
@@ -116,6 +132,7 @@ export default function ConversacionDelChat() {
   const [pestana, setPestana] = useState('mensajes');
   const [foto, setFoto] = useState(null);
   const [respondiendoA, setRespondiendoA] = useState(null);
+  const [menu, setMenu] = useState(null);
   const [reacciones, setReacciones] = useState(() => new Map());
   const [presencia, setPresencia] = useState(null);
   const mensajesRef = useRef(null);
@@ -222,25 +239,21 @@ export default function ConversacionDelChat() {
       .catch((e) => fallo('No se pudo quitar', mensajeAmigable(e))) },
   ]);
 
+  // `emoji: null` quita la mía (igual que el portal).
   const reaccionar = useCallback(async (m, emoji) => {
     try { await reaccionarAMensaje(m.id, emoji); Haptics.selectionAsync().catch(() => {}); leerReacciones([m.id]); }
     catch (e) { fallo('No se pudo reaccionar', mensajeAmigable(e)); }
   }, [leerReacciones]);
+  // Mantener presionado: la barra de reacciones y el menú corto (`MenuDeMensaje`).
   const opciones = useCallback((m) => {
     if (m.autor === 'sistema') return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    const acciones = [
-      ...(puedeResponder ? EMOJIS_DE_REACCION.map((e) => ({ texto: e, hacer: () => reaccionar(m, e) })) : []),
-      ...(puedeResponder ? [{ texto: 'Responder', hacer: () => setRespondiendoA(m) }] : []),
-    ];
-    if (!acciones.length) return;
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions({ options: [...acciones.map((a) => a.texto), 'Cancelar'], cancelButtonIndex: acciones.length },
-        (i) => { if (i < acciones.length) acciones[i].hacer(); });
-    } else {
-      Alert.alert('Mensaje', undefined, [...acciones.map((a) => ({ text: a.texto, onPress: a.hacer })), { text: 'Cancelar', style: 'cancel' }]);
-    }
-  }, [puedeResponder, reaccionar]);
+    setMenu(m);
+  }, []);
+  const responderA = useCallback((m) => { if (puedeResponder && m.autor !== 'sistema') setRespondiendoA(m); }, [puedeResponder]);
+  const copiar = (m) => Promise.resolve(Clipboard.setStringAsync(String(m.texto ?? '')))
+    .then(() => { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); listo('Copiado'); })
+    .catch(() => fallo('No se pudo copiar'));
 
   // La conversación con su presencia encima (la que llega en vivo).
   const cv = c ? { ...c, ...(presencia ?? {}) } : c;
@@ -258,7 +271,8 @@ export default function ConversacionDelChat() {
     const n = new Map(); (filas ?? []).forEach((f) => n.set(f.emoji, (n.get(f.emoji) ?? 0) + 1));
     return [...n].map(([emoji, k]) => ({ emoji, n: k }));
   };
-  const invertidos = (mensajes ?? []).map((m, i, todos) => ({ m, nuevaTanda: empiezaTanda(m, todos[i - 1]) })).reverse();
+  const invertidos = (mensajes ?? []).map((m, i, todos) => ({ m, nuevaTanda: empiezaTanda(m, todos[i - 1]) || cambiaDeDia(m, todos[i - 1]), nuevoDia: cambiaDeDia(m, todos[i - 1]) })).reverse();
+  const fotoCliente = c ? <ClienteAvatar cliente={c.cliente} fotoUrl={c.foto_url} tamano={26} /> : null;
   const tel = String(c?.telefono ?? '').replace(/\D/g, '');
 
   return (
@@ -274,6 +288,12 @@ export default function ConversacionDelChat() {
                   <EtiquetasDeCliente c={c} />
                   <ChipsDeEstado conversacion={c} ahora={ahora} atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} />
                 </View>
+                {estrellas(cv?.calificacion) || esperaDe(cv, ahora) ? (
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
+                    {[estrellas(cv?.calificacion) ? `${estrellas(cv.calificacion)}${cv.calificacion_comentario ? ` «${cv.calificacion_comentario}»` : ''}` : null,
+                      esperaDe(cv, ahora) ? `espera hace ${esperaDe(cv, ahora).label}` : null].filter(Boolean).join(' · ')}
+                  </Text>
+                ) : null}
                 {tel ? (
                   <Pressable onPress={() => Linking.openURL(`tel:${tel}`).catch(() => {})} hitSlop={6}>
                     <Text style={{ color: MARCA.azulClaro, fontSize: 14 }}>{`📞 ${c.telefono}`}</Text>
@@ -295,6 +315,8 @@ export default function ConversacionDelChat() {
                 ) : null}
               </View>
             ) : null}
+            <EtiquetasDeConversacion conversacion={cv} puedeEditar={puedeResponder}
+              onCambio={(etiquetas) => setC((x) => (x ? { ...x, etiquetas } : x))} />
             <Segmentos margen={0} activa={pestana} onCambiar={setPestana} opciones={[{ id: 'mensajes', label: 'Mensajes' }, { id: 'cliente', label: 'Cliente' }]} />
           </View>
         ) : null}
@@ -308,11 +330,16 @@ export default function ConversacionDelChat() {
             {mensajes ? (
               <FlatList inverted style={{ flex: 1 }} data={invertidos} keyExtractor={(x) => String(x.m.id)}
                 renderItem={({ item }) => (
-                  <Burbuja m={item.m} nuevaTanda={item.nuevaTanda} onFoto={setFoto} onOpciones={opciones}
+                  <View>
+                  {item.nuevoDia ? <SeparadorDeDia valor={item.m.created_at} /> : null}
+                  <DeslizarParaResponder activo={puedeResponder && item.m.autor !== 'sistema'} onResponder={() => responderA(item.m)}>
+                  <Burbuja m={item.m} nuevaTanda={item.nuevaTanda} onFoto={setFoto} onOpciones={opciones} clienteFoto={fotoCliente}
                     autor={item.m.employee_id ? equipo.get(item.m.employee_id) ?? { id: item.m.employee_id } : null}
                     cita={item.m.cita ? { quien: nombreDeAutor(item.m.cita, equipo, nombreCliente), texto: recorteDeMensaje(item.m.cita) } : null}
                     reacciones={resumirReacciones(reacciones.get(item.m.id))}
                     entrega={item.m.id === ultimoDelEquipo ? entrega : null} />
+                  </DeslizarParaResponder>
+                  </View>
                 )}
                 onEndReached={verAnteriores} onEndReachedThreshold={0.3} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive"
                 initialNumToRender={20} windowSize={11} contentContainerStyle={{ paddingVertical: 8 }}
@@ -335,6 +362,11 @@ export default function ConversacionDelChat() {
           </>
         )}
       </KeyboardAvoidingView>
+
+      <MenuDeMensaje mensaje={menu} delEquipo={menu?.autor === 'equipo'} puedeResponder={puedeResponder}
+        mia={menu ? miReaccion(reacciones.get(menu.id), user?.id) : null}
+        onReaccionar={(e) => reaccionar(menu, e)} onResponder={() => responderA(menu)} onCopiar={() => copiar(menu)}
+        onCerrar={() => setMenu(null)} />
 
       <Modal visible={!!foto} transparent animationType="fade" onRequestClose={() => setFoto(null)}>
         <Pressable onPress={() => setFoto(null)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center' }} accessibilityLabel="Cerrar la foto">

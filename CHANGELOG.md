@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1281.0 — Chat en la app: burbuja flotante, deslizar para responder y reacciones
+
+- **Chat con clientes en la app del personal, más nativo** (reporte del usuario: «no me sale la burbuja de chat… me da un listado vertical, no se ve estético; no puedo deslizar para responder»).
+  - **Burbuja flotante** con el número de sin leer en vivo (`src/hooks/useSinLeerDelChat.js`, la lógica de `BurbujaChat.jsx`), late al subir; Liquid Glass en iOS, botón flotante de Material en Android. Sin las tablas del chat (entorno de pruebas) queda en 0 sin error.
+  - **Mantener pulsado:** antes era la hoja del sistema con los 6 emojis en columna; ahora el mensaje se resalta sobre el fondo desenfocado con una barra horizontal de reacciones (los de `chat_reaccionar`) y un menú corto «Responder» / «Copiar» (`expo-clipboard`).
+  - **Deslizar a la derecha para responder**, con háptico al pasar el umbral.
+  - Hilo con separador de día y avatar por tanda; etiquetas (la lista de `ETIQUETAS` del núcleo, `chat_etiquetar`), calificación en estrellas y «espera hace N»; la bandeja ordena con «Urgente» arriba.
+
 ## v2.1280.0 — Carné de dependiente: el teléfono escanea el QR y manda el enlace
 
 En el alta y la edición de un empleado, «Con el teléfono» del carné digital de

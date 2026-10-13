@@ -135,6 +135,11 @@ const getEmployeeValidationError = (formData, type) => {
         if (!formData?.code?.trim()) {
             return "El Código es obligatorio — es la credencial del carné para iniciar sesión.";
         }
+        // Misma regla que el alta: pasar un contrato a Temporal al editar
+        // también exige su base legal y su motivo (Art. 25).
+        if (formData?.contract_type === 'TEMPORAL' && (!formData?.contract_temporal_legal_basis || !formData?.contract_temporal_reason?.trim())) {
+            return "Falta la Base Legal y/o el Motivo Concreto del contrato Temporal (Art. 25).";
+        }
         return null;
     }
     return null;

@@ -662,6 +662,10 @@ export const createEmployeeSlice = (set, get) => ({
                 blood_type: formData.blood_type || null,
                 marital_status: formData.marital_status || null,
                 birth_date: formData.birth_date || null,
+                // Lo completa el lector del DUI (`aplicarDuiLeido`) y la pantalla
+                // lo cuenta como «dato completado»; sin esta línea el alta lo
+                // tiraba y sólo la edición lo guardaba.
+                lugar_nacimiento: formData.lugar_nacimiento ? formData.lugar_nacimiento.trim().toUpperCase() : null,
                 dui: formData.dui || null,
                 alt_identity_document: formData.alt_identity_document || null,
                 alt_identity_document_type: formData.alt_identity_document_type || null,

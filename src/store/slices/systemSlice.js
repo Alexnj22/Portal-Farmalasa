@@ -472,6 +472,10 @@ export const createSystemSlice = (set, get) => ({
                                         // edición aunque ya estuvieran guardados.
                                         e.dui_lugar_expedicion  = i.dui_lugar_expedicion;
                                         e.dui_fecha_expedicion  = i.dui_fecha_expedicion;
+                                        // El vencimiento viene en la misma respuesta y se
+                                        // dejaba caer: la edición lo mostraba vacío aunque
+                                        // estuviera guardado.
+                                        e.dui_fecha_vencimiento = i.dui_fecha_vencimiento;
                                     }
                                 });
                             } catch (e) {

@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1279.2 — Personal: editar una ficha vuelve a guardar
+
+Desde el 2026-09-03 editar a un empleado fallaba siempre con «Could not find
+the 'identidad_conocida' column»: el formulario parte de la ficha del store,
+que trae dos marcas de memoria (`identidad_conocida`, `salario_conocido`) y dos
+columnas de la vista (`system_role`, `rango`) que la tabla no tiene. Peor: el
+DUI, el sueldo y la cuenta ya se habían escrito por la RPC, así que la ficha
+quedaba guardada a medias. Último `EDITAR_EMPLEADO` en bitácora: 28-ago.
+`partirPorLlave` ahora deja pasar sólo las columnas reales de `employees` (lista
+blanca que una prueba exige idéntica a `src/types/database.ts`), para los cinco
+caminos que escriben una ficha.
+
+De paso:
+- El vencimiento del DUI se guardaba pero la edición lo mostraba vacío
+  (`fetchBoot` no lo copiaba al store).
+- El lugar de nacimiento que lee el DUI se descartaba en el alta.
+- Pasar un contrato a Temporal al editar exige base legal y motivo, igual que
+  el alta (Art. 25).
+
 ## v2.1279.1 — Un solo aviso con todos los medicamentos por acabarse
 
 - Pedido del usuario: llegaban 2 o 3 avisos de «se te está por acabar», uno por medicamento. Ahora `avisos-clientes` manda UNO por cliente: «Se te están por acabar 3 medicamentos 💊 — Losartan 50 mg, Metformina 850 mg y Atorvastatina 20 mg. Resérvalos de una vez…». Cada medicamento se recuerda una sola vez por compra (la `ref` junta sus llaves `trat:<id>:<compra>` con «|», y lo ya avisado —suelto o en grupo— no se repite).

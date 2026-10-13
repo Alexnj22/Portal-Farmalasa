@@ -1,5 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { partirPorLlave, CAMPOS_TRAS_LLAVE, SENSITIVE_FIELDS } from '@nucleo/store/utils';
+import fs from 'node:fs';
+import path from 'node:path';
+import { partirPorLlave, CAMPOS_TRAS_LLAVE, SENSITIVE_FIELDS, COLUMNAS_DE_EMPLOYEES } from '@nucleo/store/utils';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El reparto de un payload de ficha entre la tabla y la RPC.
@@ -132,5 +134,29 @@ describe('persistEmployees — las marcas no sobreviven a los datos que marcan',
         expect(fila.salario_conocido).toBeUndefined();
         // Y lo que no es secreto se queda: el caché sigue sirviendo para pintar.
         expect(fila.name).toBe('ANA');
+    });
+});
+
+// La edición arranca de la ficha del store, que trae marcas de memoria y
+// columnas calculadas de `employees_safe`. Una sola en el `update` hace que
+// PostgREST rechace el guardado entero (PGRST204) — pasó del 2026-09-03 al
+// 2026-10-13 sin que se pudiera editar a nadie.
+describe('partirPorLlave — sólo viajan columnas de employees', () => {
+    it('la lista blanca es IDÉNTICA a la fila de employees en los tipos de producción', () => {
+        const tipos = fs.readFileSync(path.join(process.cwd(), 'src/types/database.ts'), 'utf8');
+        const desde = tipos.indexOf('\n      employees: {');
+        const fila = tipos.slice(tipos.indexOf('Row: {', desde), tipos.indexOf('\n        }', desde));
+        const columnas = [...fila.matchAll(/^ {10}([a-z_]+)\??:/gm)].map(m => m[1]).sort();
+        expect(columnas.length).toBeGreaterThan(100);
+        expect([...COLUMNAS_DE_EMPLOYEES].sort()).toEqual(columnas);
+    });
+
+    it('quita marcas de memoria y columnas de la vista, y reparte el resto', () => {
+        const { dbPayload, protegido } = partirPorLlave({
+            phone: '7000-0000', dui: '01234567-8', lugar_nacimiento: 'CHALATENANGO',
+            identidad_conocida: true, salario_conocido: false, rango: 2, branchId: 3,
+        });
+        expect(dbPayload).toEqual({ phone: '7000-0000', lugar_nacimiento: 'CHALATENANGO' });
+        expect(protegido).toEqual({ dui: '01234567-8' });
     });
 });

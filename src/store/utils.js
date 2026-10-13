@@ -57,8 +57,60 @@ export const CAMPOS_TRAS_LLAVE = [
  * cae solo al serializar, y en el patch de la RPC significaría «poner en null»,
  * que es lo contrario de «no lo toqué».
  */
+// ── Sólo viajan las columnas que `employees` TIENE ──────────────────────────
+//
+// El formulario de edición arranca como `{ ...empleadoDelStore }`, y esa fila
+// trae cosas que la tabla no tiene: las marcas que pone `fetchBoot`
+// (`identidad_conocida`, `salario_conocido`) y las columnas calculadas de
+// `employees_safe` (el escalón `rango` y el rol de compatibilidad). Con UNA
+// sola en el `update`, PostgREST rechaza el guardado entero con `PGRST204
+// Could not find the '…' column` — y como la parte protegida ya se escribió
+// por la RPC, la ficha queda guardada por la mitad.
+//
+// Pasó desde el 2026-09-03 (v2.971.3 agregó las marcas) hasta el 2026-10-13:
+// ningún `EDITAR_EMPLEADO` en la bitácora en ese lapso.
+//
+// Es una lista BLANCA y no una de «lo que sobra» a propósito: la de sobrantes
+// se queda corta el día que el store agregue otra marca, y vuelve el mismo
+// defecto sin aviso. Esta no se puede desincronizar en silencio:
+// `tests/unit/camposTrasLlave.test.js` la exige IDÉNTICA a la fila de
+// `employees` en `src/types/database.ts` (los tipos de producción), así que una
+// columna nueva + `npm run tipos:base` hace fallar la prueba hasta agregarla.
+export const COLUMNAS_DE_EMPLOYEES = new Set([
+    'account_number', 'account_type', 'acreditaciones', 'additional_skills', 'address',
+    'afp_estado', 'afp_institution', 'afp_number', 'alt_identity_document',
+    'alt_identity_document_type', 'bank_name', 'base_salary', 'birth_date', 'blocked_at',
+    'blocked_by', 'blocked_reason', 'blocked_until', 'blood_type', 'branch_id',
+    'carne_dependiente_url', 'carne_pendiente', 'chronic_conditions', 'code',
+    'contador_license_number', 'contract_end_date', 'contract_start_date',
+    'contract_temporal_legal_basis', 'contract_temporal_reason', 'contract_type',
+    'contrato_fecha_celebracion', 'contrato_lugar_celebracion', 'contrato_prorrogas',
+    'created_at', 'department', 'disability_grade', 'disability_has_certification',
+    'disability_type', 'distrito', 'dui', 'dui_fecha_expedicion', 'dui_fecha_vencimiento',
+    'dui_lugar_expedicion', 'economic_dependents', 'education_grade_completed',
+    'education_level', 'education_specialty', 'email', 'emergency_contact_extra_phones',
+    'emergency_contact_name', 'emergency_contact_phone', 'emergency_contact_relationship',
+    'emergency_contacts', 'employee_documents', 'exceptions', 'extra_addresses',
+    'extra_emails', 'extra_phones', 'first_names', 'forma_estipulacion_salario', 'gender',
+    'has_car', 'has_car_license', 'has_disability', 'has_maestria', 'has_motorcycle',
+    'has_motorcycle_license', 'has_srs_accreditation', 'herramientas_entregadas',
+    'hire_date', 'hours_owed', 'id', 'is_studying', 'isss_estado', 'isss_number',
+    'kiosk_pin', 'last_names', 'lugar_nacimiento', 'lugar_pago', 'maestria_is_studying',
+    'maestria_study_duration_years', 'maestria_study_start_date', 'maestria_title',
+    'marital_status', 'medico_license_number', 'medio_pago', 'mtps_remitido_fecha',
+    'municipality', 'name', 'nationality', 'nursing_license_number', 'periodo_pago',
+    'pharmacist_license_number', 'phone', 'photo_url', 'profession', 'role_id',
+    'secondary_role_id', 'shift_id', 'srs_accreditation_expiry', 'status',
+    'study_duration_years', 'study_start_date', 'suplente_id',
+    'tiene_acreditacion_dependiente', 'tipo_ficha', 'username', 'weekly_contracted_hours',
+    'weekly_schedule',
+]);
+
 export const partirPorLlave = (payload) => {
-    const dbPayload = { ...payload };
+    const dbPayload = {};
+    for (const [campo, valor] of Object.entries(payload || {})) {
+        if (COLUMNAS_DE_EMPLOYEES.has(campo)) dbPayload[campo] = valor;
+    }
     const protegido = {};
     for (const campo of CAMPOS_TRAS_LLAVE) {
         // Se borra de las dos mitades aunque sea `undefined`: en el `update` se

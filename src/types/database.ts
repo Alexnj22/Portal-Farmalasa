@@ -4599,8 +4599,10 @@ export type Database = {
           employee_id: string | null
           foto_url: string | null
           id: string
+          modo: string
           secreto_hash: string
           solicitada_por: string
+          texto: string | null
           usada_el: string | null
           vence_el: string
         }
@@ -4609,8 +4611,10 @@ export type Database = {
           employee_id?: string | null
           foto_url?: string | null
           id?: string
+          modo?: string
           secreto_hash: string
           solicitada_por: string
+          texto?: string | null
           usada_el?: string | null
           vence_el: string
         }
@@ -4619,8 +4623,10 @@ export type Database = {
           employee_id?: string | null
           foto_url?: string | null
           id?: string
+          modo?: string
           secreto_hash?: string
           solicitada_por?: string
+          texto?: string | null
           usada_el?: string | null
           vence_el?: string
         }
@@ -25582,7 +25588,10 @@ export type Database = {
         Args: { p_abonos: Json; p_diferencia_id: number }
         Returns: Json
       }
-      abrir_captura_de_foto: { Args: { p_employee_id?: string }; Returns: Json }
+      abrir_captura_de_foto: {
+        Args: { p_employee_id?: string; p_modo?: string }
+        Returns: Json
+      }
       activar_promocion: {
         Args: { p_activar?: boolean; p_id: number }
         Returns: Json
@@ -29671,6 +29680,10 @@ export type Database = {
       }
       guardar_minmax_desde_pedido: {
         Args: { p_max: number; p_min: number; p_pedido_item_id: number }
+        Returns: Json
+      }
+      guardar_texto_de_captura: {
+        Args: { p_secreto: string; p_texto: string }
         Returns: Json
       }
       hay_alguien_no_disponible: { Args: never; Returns: boolean }

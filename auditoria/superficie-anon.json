@@ -116,6 +116,13 @@
       "motivo": "El teléfono deja la foto y quema el código en un solo acto. El `usada_el IS NULL` dentro del UPDATE es lo que lo vuelve de un solo uso: con el mismo QR en dos teléfonos, sólo el primero escribe. Lo que consigue quien robe el código es meter una imagen en un formulario que una persona está mirando y todavía no guardó."
     },
     {
+      "nombre": "guardar_texto_de_captura",
+      "area": "personal",
+      "guarda": "secreto del QR",
+      "estado": "abierta-a-proposito",
+      "motivo": "Gemela de guardar_foto_de_captura para capturas abiertas en modo 'qr' (2026-10-13, carné digital de dependiente): el teléfono escanea el código en vivo y deja su TEXTO, sin sesión. Mismo secreto de cinco minutos y un solo uso; sólo escribe si la captura se abrió como 'qr' y el texto tiene ≤1000 caracteres. Lo que consigue quien robe el código es proponer un enlace que la computadora igual valida (normalizarCarne) antes de ponerlo en un formulario sin guardar."
+    },
+    {
       "nombre": "encuesta_publica",
       "area": "encuestas-clientes",
       "guarda": "token del QR",

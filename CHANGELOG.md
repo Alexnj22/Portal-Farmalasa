@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1280.0 — Carné de dependiente: el teléfono escanea el QR y manda el enlace
+
+En el alta y la edición de un empleado, «Con el teléfono» del carné digital de
+dependiente ya no pide una FOTO: el teléfono abre el lector de QR en vivo y
+manda el ENLACE leído, que aparece solo en el formulario y pasa por la misma
+validación que el enlace pegado a mano. Pedido del usuario: «la foto no me
+sirve, debe ser el enlace / qr» — una foto reducida de un QR casi nunca se
+dejaba leer del otro lado.
+
+Es el mismo traspaso de la foto (QR de cinco minutos y un solo uso) con un
+`modo` nuevo: `capturas_de_foto.modo` (`foto`|`qr`) y `.texto`,
+`abrir_captura_de_foto(p_employee_id, p_modo)`, `captura_de_foto_vigente`
+devuelve el modo, y `guardar_texto_de_captura` —sin sesión, como su gemela de
+la foto; declarada en `auditoria/superficie-anon.json`—. Migración
+`20261013160147`. Las demás capturas (foto del empleado, adjuntos) no cambian.
+
 ## v2.1279.3 — Apps: una plataforma a la vez por app
 
 `subir-ios` y `subir-android` de la MISMA app ya no compilan juntos en esta

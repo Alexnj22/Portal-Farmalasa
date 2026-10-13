@@ -35,9 +35,14 @@ export function enlaceDeCaptura(secreto) {
  * comprueba la función, no esta llamada.
  *
  * @param {string|null} employeeId a quién se le va a poner, si ya tiene ficha
+ * @param {'foto'|'qr'} [modo]  `qr` = el teléfono abre el lector en vivo y
+ *                              manda el TEXTO del código, no una imagen (el
+ *                              carné digital de dependiente: lo que se guarda
+ *                              es su enlace, y una foto reducida de un QR casi
+ *                              nunca se deja leer).
  */
-export async function abrirCaptura(employeeId = null) {
-    const { data, error } = await supabase.rpc('abrir_captura_de_foto', { p_employee_id: employeeId });
+export async function abrirCaptura(employeeId = null, modo = 'foto') {
+    const { data, error } = await supabase.rpc('abrir_captura_de_foto', { p_employee_id: employeeId, p_modo: modo });
     if (error) return { ok: false, motivo: 'No se pudo abrir. Revisa tu conexión.' };
     if (!data?.ok) return { ok: false, motivo: 'No se pudo abrir la captura.' };
     return data;
@@ -54,26 +59,35 @@ export async function abrirCaptura(employeeId = null) {
  * @returns {() => void} para dejar de escuchar
  */
 export function esperarFoto(capturaId, alLlegar) {
+    return esperarColumna(capturaId, 'foto_url', alLlegar);
+}
+
+/** Lo mismo, para una captura abierta en modo `qr`: llega el texto leído. */
+export function esperarTexto(capturaId, alLlegar) {
+    return esperarColumna(capturaId, 'texto', alLlegar);
+}
+
+function esperarColumna(capturaId, columna, alLlegar) {
     let vivo = true;
-    const listo = (url) => { if (vivo && url) { vivo = false; alLlegar(url); } };
+    const listo = (valor) => { if (vivo && valor) { vivo = false; alLlegar(valor); } };
 
     const canal = supabase
         .channel(`captura-${capturaId}`)
         .on('postgres_changes',
             { event: 'UPDATE', schema: 'public', table: 'capturas_de_foto', filter: `id=eq.${capturaId}` },
-            (payload) => listo(payload?.new?.foto_url))
+            (payload) => listo(payload?.new?.[columna]))
         .subscribe();
 
     const tic = setInterval(async () => {
         if (!vivo) return;
         const { data, error } = await supabase
-            .from('capturas_de_foto').select('foto_url').eq('id', capturaId).maybeSingle();
+            .from('capturas_de_foto').select(columna).eq('id', capturaId).maybeSingle();
         /* El error no corta el sondeo —el canal en vivo sigue siendo el camino
            principal y esto es su red— pero tampoco se descarta: si falla
            siempre, la red no existe y la única señal sería que la foto «no
            llega», que manda a mirar el teléfono. */
         if (error) { console.warn('sondeo de captura:', error.message); return; }
-        listo(data?.foto_url);
+        listo(data?.[columna]);
     }, 3000);
 
     return () => {

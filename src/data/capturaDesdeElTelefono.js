@@ -97,3 +97,20 @@ export async function mandarFoto(secreto, file) {
     return { ok: true };
 }
 
+
+/**
+ * El teléfono manda el TEXTO de un QR que leyó en vivo (captura en modo `qr`).
+ *
+ * Sin reductor ni archivo: lo que importa del carné digital es su enlace, y
+ * leerlo en el teléfono —con la cámara apuntando al código— es mucho más fiable
+ * que mandar una foto para que la computadora intente leerla. La computadora
+ * valida el texto igual que si lo hubieran pegado.
+ */
+export async function mandarTexto(secreto, texto) {
+    const { data, error } = await supabase.rpc('guardar_texto_de_captura', {
+        p_secreto: secreto, p_texto: String(texto || ''),
+    });
+    if (error) return { ok: false, motivo: 'No se pudo enviar. Revisa tu señal.' };
+    if (!data?.ok) return { ok: false, motivo: data?.motivo || 'No se pudo enviar el código.' };
+    return { ok: true };
+}

@@ -34,8 +34,8 @@
  */
 import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { Camera, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp, Loader2, Plus, Send, X } from 'lucide-react';
-import { capturaVigente, mandarFoto } from '@nucleo/data/capturaDesdeElTelefono';
+import { Camera, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp, Loader2, Plus, QrCode, Send, X } from 'lucide-react';
+import { capturaVigente, mandarFoto, mandarTexto } from '@nucleo/data/capturaDesdeElTelefono';
 import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
@@ -55,6 +55,8 @@ import Badge from '../components/common/Badge';
  * porque salió movida no necesita bajarlo dos veces.
  */
 const EditorDeDocumento = lazy(() => import('../components/common/EditorDeDocumento'));
+// Sólo en modo `qr`: arrastra `@zxing` y prende la cámara en vivo.
+const LectorDeCodigo = lazy(() => import('../components/common/LectorDeCodigo'));
 
 export default function CapturaDeFotoView() {
     const { secreto } = useParams();
@@ -62,6 +64,12 @@ export default function CapturaDeFotoView() {
     const [motivo, setMotivo] = useState('');
     const [para, setPara] = useState('');
     const [vista, setVista] = useState(null);
+    /* `qr` = la computadora no quiere una foto sino el TEXTO de un código (el
+       carné digital de dependiente: se guarda su enlace). Ahí esta pantalla
+       abre el lector en vivo y manda lo leído — una foto reducida de un QR
+       casi nunca se deja leer del otro lado. */
+    const [modo, setModo] = useState('foto');
+    const [leyendo, setLeyendo] = useState(false);
     /* Las hojas ya confirmadas, en orden. Se juntan acá y se mandan de una sola
        vez: por eso el secreto sigue siendo de un uso. */
     const [hojas, setHojas] = useState([]);   // [{ file, vista }]
@@ -85,6 +93,7 @@ export default function CapturaDeFotoView() {
                 return;
             }
             setPara(r.para || '');
+            if (r.modo === 'qr') { setModo('qr'); setLeyendo(true); }
             setEstado('listo');
         })();
         return () => { vivo = false; };
@@ -185,7 +194,9 @@ export default function CapturaDeFotoView() {
                     encima de una boleta de CAESS piensa que se equivocó de
                     código. El rótulo describe lo que la pantalla HACE, que es lo
                     único cierto en todos los casos. */}
-                <p className="text-caption font-black uppercase tracking-widest text-content-3">Foto desde el teléfono</p>
+                <p className="text-caption font-black uppercase tracking-widest text-content-3">
+                    {modo === 'qr' ? 'Código QR desde el teléfono' : 'Foto desde el teléfono'}
+                </p>
                 {para && <p className="text-display-sm font-black text-content mt-1">{para}</p>}
             </div>
 
@@ -199,7 +210,37 @@ export default function CapturaDeFotoView() {
                 </p>
             )}
 
-            {estado === 'listo' && (
+            {estado === 'listo' && modo === 'qr' && (
+                <div className="flex flex-col items-center gap-3 text-center">
+                    <p className="text-caption text-content-3 font-medium max-w-xs leading-snug">
+                        Apunta la cámara al código QR. Lo que lea aparece solo en la computadora.
+                    </p>
+                    <Button icon={QrCode} onClick={() => setLeyendo(true)}>
+                        Escanear el código
+                    </Button>
+                </div>
+            )}
+
+            {leyendo && (
+                <Suspense fallback={null}>
+                    <LectorDeCodigo
+                        abierto
+                        formatos="qr"
+                        titulo="Escanear el código QR"
+                        onCerrar={() => setLeyendo(false)}
+                        onLeer={async (texto) => {
+                            setLeyendo(false);
+                            setEstado('mandando');
+                            const r = await mandarTexto(secreto, texto);
+                            if (r.ok) { setEstado('hecho'); return; }
+                            setEstado('error');
+                            setMotivo(r.motivo);
+                        }}
+                    />
+                </Suspense>
+            )}
+
+            {estado === 'listo' && modo === 'foto' && (
                 <>
                     {/* ── Las hojas confirmadas, en una LISTA vertical ────────
                         Y vertical a propósito, no la tira horizontal que había:
@@ -320,7 +361,8 @@ export default function CapturaDeFotoView() {
             {estado === 'mandando' && (
                 <p className="text-body font-black text-brand-text flex items-center gap-2">
                     <Loader2 size={18} className="animate-spin" />
-                    {hojas.length > 1 ? `Mandando las ${hojas.length} fotos…` : 'Mandando la foto…'}
+                    {modo === 'qr' ? 'Mandando el código…'
+                        : hojas.length > 1 ? `Mandando las ${hojas.length} fotos…` : 'Mandando la foto…'}
                 </p>
             )}
 

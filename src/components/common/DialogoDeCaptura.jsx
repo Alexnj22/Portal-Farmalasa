@@ -30,10 +30,12 @@ import { enlaceDeCaptura } from '@nucleo/data/capturaDeFoto';
  * @param {function} alCerrar
  * @param {function} alRenovar pide un código nuevo cuando el anterior venció
  */
-export default function DialogoDeCaptura({ captura, etiqueta, alCerrar, alRenovar }) {
+export default function DialogoDeCaptura({ captura, etiqueta, alCerrar, alRenovar, modo = 'foto' }) {
+    // `qr`: el teléfono no toma una foto, escanea un código y manda lo que leyó.
+    const esQr = modo === 'qr';
     return (
         <ModalShell open onClose={alCerrar} maxWidthClass="max-w-sm"
-            ariaLabel="Tomar la foto con el teléfono">
+            ariaLabel={esQr ? 'Escanear el código con el teléfono' : 'Tomar la foto con el teléfono'}>
             <div className="p-5 pt-3 flex flex-col items-center gap-4">
                 {/* Una salida EXPLÍCITA. Escape y el clic en el fondo ya cierran,
                     pero los dos son gestos que hay que saber: quien decide no
@@ -41,7 +43,7 @@ export default function DialogoDeCaptura({ captura, etiqueta, alCerrar, alRenova
                     salida a la vista. */}
                 <div className="w-full flex items-center justify-between gap-2">
                     <p className="min-w-0 text-body-sm font-black uppercase tracking-widest text-content-3">
-                        Tomar con el teléfono
+                        {esQr ? 'Escanear con el teléfono' : 'Tomar con el teléfono'}
                     </p>
                     <Button variant="ghost" size="sm" icon={X} iconOnly
                         title="Cerrar" onClick={alCerrar} />
@@ -52,7 +54,9 @@ export default function DialogoDeCaptura({ captura, etiqueta, alCerrar, alRenova
                     iguales, y sin el rótulo no hay forma de saber cuál se abrió. */}
                 <p className="text-label text-content-2 font-medium text-center leading-snug max-w-[260px]">
                     Escanea este código con la cámara del teléfono.
-                    {etiqueta ? ` La foto de «${etiqueta}» va a aparecer aquí sola.` : ' La foto va a aparecer aquí sola.'}
+                    {esQr
+                        ? ` Después escanea el QR de ${etiqueta ? `«${etiqueta}»` : 'tu documento'} y su enlace va a aparecer aquí solo.`
+                        : (etiqueta ? ` La foto de «${etiqueta}» va a aparecer aquí sola.` : ' La foto va a aparecer aquí sola.')}
                 </p>
 
                 <QrDeCaptura
@@ -61,7 +65,7 @@ export default function DialogoDeCaptura({ captura, etiqueta, alCerrar, alRenova
                     alRenovar={alRenovar} />
 
                 <Button variant="secondary" size="sm" onClick={alCerrar}>
-                    Cerrar — la subo desde aquí
+                    {esQr ? 'Cerrar' : 'Cerrar — la subo desde aquí'}
                 </Button>
             </div>
         </ModalShell>

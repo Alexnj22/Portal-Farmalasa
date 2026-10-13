@@ -9,7 +9,8 @@
 // vidrio de iOS 26 cuesta por cada una. Un fondo translúcido sólido se ve igual
 // de limpio y se desplaza fluido.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Platform, Pressable, RefreshControl, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, RefreshControl, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import Presionable from '../../../componentes/Presionable';
 import { useFocusEffect, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { colorSistema } from '../../../componentes/sistema';
@@ -101,7 +102,7 @@ export default function Catalogo() {
         {(() => {
           const activa = !texto;
           return (
-            <Pressable key="todo" onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(''); }}
+            <Presionable key="todo" onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(''); }}
               accessibilityRole="button" accessibilityLabel="Todo, quitar el filtro" accessibilityState={{ selected: activa }}
               style={({ pressed }) => ({ width: 78, alignItems: 'center', gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
               <View style={{ padding: 2.5, borderRadius: 22, borderWidth: 2, borderColor: activa ? t.color.magenta : 'transparent' }}>
@@ -113,14 +114,14 @@ export default function Catalogo() {
               <Text maxFontSizeMultiplier={1.2} style={{ fontSize: 12, lineHeight: 15, fontWeight: activa ? '800' : '600', textAlign: 'center', color: activa ? colorSistema.texto : colorSistema.texto2 }}>
                 {activa ? 'Todo' : 'Quitar filtro'}
               </Text>
-            </Pressable>
+            </Presionable>
           );
         })()}
         {BUSQUEDAS.map((b, i) => {
           const activa = q === b.q && texto === b.q;
           const [c1, c2] = tonoDe(i);
           return (
-            <Pressable key={b.q} onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(activa ? '' : b.q); }}
+            <Presionable key={b.q} onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(activa ? '' : b.q); }}
               accessibilityRole="button" accessibilityLabel={b.texto} accessibilityState={{ selected: activa }}
               style={({ pressed }) => ({ width: 78, alignItems: 'center', gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
               <View style={{ padding: 2.5, borderRadius: 22, borderWidth: 2, borderColor: activa ? t.color.magenta : 'transparent' }}>
@@ -133,7 +134,7 @@ export default function Catalogo() {
                 style={{ fontSize: 12, lineHeight: 15, fontWeight: activa ? '800' : '600', textAlign: 'center', color: activa ? colorSistema.texto : colorSistema.texto2 }}>
                 {b.texto}
               </Text>
-            </Pressable>
+            </Presionable>
           );
         })}
       </ScrollView>
@@ -203,7 +204,7 @@ function TarjetaProducto({ p, sola = false }) {
   const ahorro = final < p.precio ? p.precio - final : 0;
   const suyo = rotuloPrecioTuyo(p);
   return (
-    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${p.id}`); }}
+    <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${p.id}`); }}
       accessibilityRole="button" accessibilityLabel={`${nombreProducto(p.nombre)}. Precio ${dolares(p.precio)}${suyo ? `, ${suyo} ${dolares(p.precio_tuyo)}` : p.precio_vip != null ? `, Preferente ${dolares(p.precio_vip)}` : ''}`}
       style={({ pressed }) => ({ flex: 1, maxWidth: sola ? '100%' : '50%', borderRadius: 22, padding: 10, gap: 8,
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.82)',
@@ -265,7 +266,7 @@ function TarjetaProducto({ p, sola = false }) {
           </Text>
         )}
       </View>
-    </Pressable>
+    </Presionable>
   );
 }
 
@@ -279,19 +280,19 @@ function Paginas({ pagina, hayMas, cargando, alAnterior, alSiguiente }) {
   });
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-      <Pressable onPress={alAnterior} disabled={pagina === 0 || cargando} accessibilityRole="button" accessibilityLabel="Página anterior"
+      <Presionable onPress={alAnterior} disabled={pagina === 0 || cargando} accessibilityRole="button" accessibilityLabel="Página anterior"
         style={boton(pagina > 0 && !cargando)}>
         <Icono sf="chevron.left" respaldo="‹" tam={13} color={colorSistema.texto} />
         <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>Anterior</Text>
-      </Pressable>
+      </Presionable>
       {cargando ? <ActivityIndicator /> : (
         <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto2, fontVariant: ['tabular-nums'] }}>Página {pagina + 1}</Text>
       )}
-      <Pressable onPress={alSiguiente} disabled={!hayMas || cargando} accessibilityRole="button" accessibilityLabel="Página siguiente"
+      <Presionable onPress={alSiguiente} disabled={!hayMas || cargando} accessibilityRole="button" accessibilityLabel="Página siguiente"
         style={boton(hayMas && !cargando)}>
         <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>Siguiente</Text>
         <Icono sf="chevron.right" respaldo="›" tam={13} color={colorSistema.texto} />
-      </Pressable>
+      </Presionable>
     </View>
   );
 }

@@ -18,7 +18,8 @@
 // entre la foto entera y ×2.5 en ese punto. «Elegir otra» vuelve a abrir la
 // cámara o la galería —la misma de antes—, y se puede cambiar de una a la otra.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Platform, Pressable, StatusBar, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Platform, StatusBar, Text, View } from 'react-native';
+import Presionable from './Presionable';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -99,10 +100,10 @@ function VistaPreviaFoto({ estado, alCambiar, alUsar, alCancelar }) {
       <StatusBar barStyle="light-content" />
       <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#000000' }}>
         <View style={{ paddingTop: ins.top + 4, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center' }}>
-          <Pressable onPress={alCancelar} accessibilityRole="button" hitSlop={8}
+          <Presionable onPress={alCancelar} accessibilityRole="button" hitSlop={8}
             style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 10, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
             <Text style={{ fontSize: 17, color: '#FFFFFF' }}>Cancelar</Text>
-          </Pressable>
+          </Presionable>
           <Text numberOfLines={1} style={{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: '#FFFFFF' }}>
             {opciones.circular ? 'Tu foto de perfil' : 'Revisa la foto'}
           </Text>
@@ -123,27 +124,27 @@ function VistaPreviaFoto({ estado, alCambiar, alUsar, alCancelar }) {
           <Text style={{ textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
             {opciones.circular ? 'Así se verá en tu perfil. Pellizca para acercar.' : 'Pellizca o toca dos veces para acercar.'}
           </Text>
-          <Pressable onPress={usar} disabled={eligiendo} accessibilityRole="button"
+          <Presionable onPress={usar} disabled={eligiendo} accessibilityRole="button"
             style={({ pressed }) => ({ minHeight: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8,
               backgroundColor: t.color.magenta, opacity: eligiendo ? 0.5 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
             <Icono sf="checkmark" respaldo="✓" tam={17} color="#FFFFFF" />
             <Text style={{ fontSize: 17, fontWeight: '800', color: '#FFFFFF' }}>Usar esta foto</Text>
-          </Pressable>
+          </Presionable>
           <View style={{ flexDirection: 'row', gap: 10 }}>
-            <Pressable onPress={() => otra(origen)} disabled={eligiendo} accessibilityRole="button"
+            <Presionable onPress={() => otra(origen)} disabled={eligiendo} accessibilityRole="button"
               accessibilityLabel={origen === 'camara' ? 'Tomar otra foto' : 'Elegir otra foto de la galería'}
               style={({ pressed }) => ({ flex: 1, minHeight: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8,
                 backgroundColor: 'rgba(255,255,255,0.16)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
               {eligiendo ? <ActivityIndicator color="#FFFFFF" /> : <Icono sf={origen === 'camara' ? 'camera.fill' : 'photo.on.rectangle'} respaldo="↺" tam={16} color="#FFFFFF" />}
               <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>{origen === 'camara' ? 'Tomar otra' : 'Elegir otra'}</Text>
-            </Pressable>
-            <Pressable onPress={() => otra(otro)} disabled={eligiendo} accessibilityRole="button"
+            </Presionable>
+            <Presionable onPress={() => otra(otro)} disabled={eligiendo} accessibilityRole="button"
               accessibilityLabel={otro === 'camara' ? 'Tomar la foto con la cámara' : 'Elegir de la galería'}
               style={({ pressed }) => ({ flex: 1, minHeight: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8,
                 borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
               <Icono sf={otro === 'camara' ? 'camera.fill' : 'photo.on.rectangle'} respaldo={otro === 'camara' ? '📷' : '🖼'} tam={16} color="#FFFFFF" />
               <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>{otro === 'camara' ? 'Cámara' : 'Galería'}</Text>
-            </Pressable>
+            </Presionable>
           </View>
         </View>
       </GestureHandlerRootView>

@@ -5,7 +5,8 @@
 // por cada US$1.00 a precio de mayoreo. El precio (Mayoreo, Plus, Elite) es
 // independiente del rango.
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import Presionable from './Presionable';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -56,7 +57,7 @@ export default function Mayorista({ rango, pie = null }) {
   const alternar = () => { Haptics.selectionAsync().catch(() => {}); setAbierto((v) => !v); };
   return (
     <Tarjeta estilo={{ gap: 12 }}>
-      <Pressable onPress={alternar} accessibilityRole="button" accessibilityState={{ expanded: abierto }}
+      <Presionable onPress={alternar} accessibilityRole="button" accessibilityState={{ expanded: abierto }}
         accessibilityLabel={`Cliente de mayoreo: ${rango.nombre}. ${abierto ? 'Ocultar' : 'Ver'} beneficios`}
         style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, opacity: pressed ? 0.7 : 1 })}>
         <LinearGradient colors={paleta.frente} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
@@ -74,7 +75,7 @@ export default function Mayorista({ rango, pie = null }) {
         <View style={{ transform: [{ rotate: abierto ? '180deg' : '0deg' }] }}>
           <Icono sf="chevron.down" respaldo="⌄" tam={14} color={colorSistema.texto3} />
         </View>
-      </Pressable>
+      </Presionable>
       {sig ? (
         <View style={{ gap: 6 }}>
           <BarraAnimada avance={Math.min(1, rango.compra / sig.desde)} color={paleta.frente[1]} fondo={t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'} />
@@ -123,9 +124,9 @@ export default function Mayorista({ rango, pie = null }) {
       {pie}
       </Animated.View>
       ) : (
-        <Pressable onPress={alternar} hitSlop={8} style={{ alignSelf: 'flex-start' }}>
+        <Presionable onPress={alternar} hitSlop={8} style={{ alignSelf: 'flex-start' }}>
           <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.magentaTexto }}>Ver beneficios</Text>
-        </Pressable>
+        </Presionable>
       )}
     </Tarjeta>
   );

@@ -15,7 +15,8 @@
 //     Copiar) sobre un fondo desenfocado, pegado al globo.
 //   · `Reacciones` y `Cita`: las píldoras bajo el globo y el bloque citado.
 import { useEffect, useRef, useState } from 'react';
-import { ActionSheetIOS, Keyboard, Modal, Platform, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { ActionSheetIOS, Keyboard, Modal, Platform, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import Presionable from './Presionable';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -84,11 +85,11 @@ export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, 
             style={{ flex: 1, fontSize: 17, lineHeight: 22, color: colorSistema.texto, maxHeight: 22 * 5 + 16,
               paddingLeft: 14, paddingRight: hay ? 4 : 14, paddingTop: IOS ? 7 : 6, paddingBottom: IOS ? 7 : 6 }} />
           {hay ? (
-            <Pressable onPress={alEnviar} disabled={enviando} accessibilityRole="button" accessibilityLabel="Enviar" hitSlop={8}
+            <Presionable onPress={alEnviar} disabled={enviando} accessibilityRole="button" accessibilityLabel="Enviar" hitSlop={8}
               style={({ pressed }) => ({ width: 30, height: 30, margin: 3, borderRadius: 15, alignItems: 'center', justifyContent: 'center',
                 backgroundColor: tinte, opacity: enviando ? 0.5 : 1, transform: [{ scale: pressed ? 0.88 : 1 }] })}>
               <Icono sf="arrow.up" respaldo="↑" tam={15} color="#FFFFFF" />
-            </Pressable>
+            </Presionable>
           ) : null}
         </View>
         {/* Con el campo vacío, el atajo a la cámara (como iMessage / WhatsApp). */}
@@ -111,13 +112,13 @@ export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, 
 function Redondo({ sf, respaldo, etiqueta, alTocar, apagado }) {
   const t = useTema();
   return (
-    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} disabled={apagado} accessibilityRole="button" accessibilityLabel={etiqueta}
+    <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} disabled={apagado} accessibilityRole="button" accessibilityLabel={etiqueta}
       hitSlop={4} style={({ pressed }) => ({ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', opacity: apagado ? 0.4 : 1, transform: [{ scale: pressed ? 0.9 : 1 }] })}>
       <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center',
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.14)' : 'rgba(118,118,128,0.14)' }}>
         <Icono sf={sf} respaldo={respaldo} tam={18} color={t.color.magentaTexto} />
       </View>
-    </Pressable>
+    </Presionable>
   );
 }
 
@@ -133,10 +134,10 @@ export function Respondiendo({ cita, alCancelar }) {
         <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.magentaTexto }} numberOfLines={1}>Respondiendo a {quien}</Text>
         <Text style={{ fontSize: 14, color: colorSistema.texto2 }} numberOfLines={1}>{resumenDeCita(cita)}</Text>
       </View>
-      <Pressable onPress={alCancelar} accessibilityRole="button" accessibilityLabel="Cancelar la respuesta" hitSlop={6}
+      <Presionable onPress={alCancelar} accessibilityRole="button" accessibilityLabel="Cancelar la respuesta" hitSlop={6}
         style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
         <Icono sf="xmark.circle.fill" respaldo="✕" tam={20} color={colorSistema.texto3} />
-      </Pressable>
+      </Presionable>
     </View>
   );
 }
@@ -207,28 +208,28 @@ export function MenuMensaje({ menu, alReaccionar, alResponder, alCopiar, alCopia
   const panel = t.oscuro ? 'rgba(44,44,46,0.96)' : 'rgba(255,255,255,0.97)';
   const sombra = { shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 10 };
   const Fila = ({ sf, respaldo, texto, alTocar, borde }) => (
-    <Pressable onPress={alTocar} accessibilityRole="menuitem"
+    <Presionable onPress={alTocar} accessibilityRole="menuitem"
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52, paddingHorizontal: 16,
         backgroundColor: pressed ? (t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)') : 'transparent',
         ...(borde ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colorSistema.separador } : {}) })}>
       <Text style={{ fontSize: 17, color: colorSistema.texto }}>{texto}</Text>
       <Icono sf={sf} respaldo={respaldo} tam={18} color={colorSistema.texto} />
-    </Pressable>
+    </Presionable>
   );
   return (
     <Modal visible transparent animationType="fade" onRequestClose={alCerrar} statusBarTranslucent>
-      <Pressable style={StyleSheet.absoluteFill} onPress={alCerrar} accessibilityRole="button" accessibilityLabel="Cerrar el menú">
+      <Presionable style={StyleSheet.absoluteFill} onPress={alCerrar} android_ripple={false} accessibilityRole="button" accessibilityLabel="Cerrar el menú">
         {IOS && !LIVIANO ? <BlurView intensity={28} tint={t.oscuro ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
           : <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.35)' }]} />}
-      </Pressable>
+      </Presionable>
       <Animated.View style={[{ position: 'absolute', top, left: izq, flexDirection: 'row', gap: 0, paddingHorizontal: 6, height: ALTO_EMOJIS, alignItems: 'center',
         borderRadius: ALTO_EMOJIS / 2, backgroundColor: panel }, sombra, animado]} accessibilityRole="menu">
         {EMOJIS.map((e) => (
-          <Pressable key={e} onPress={() => alReaccionar(e)} accessibilityRole="menuitem" accessibilityLabel={`Reaccionar con ${e}`} accessibilityState={{ selected: mia === e }}
+          <Presionable key={e} onPress={() => alReaccionar(e)} accessibilityRole="menuitem" accessibilityLabel={`Reaccionar con ${e}`} accessibilityState={{ selected: mia === e }}
             style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
               backgroundColor: mia === e ? suave(t.color.magenta, 0.25) : 'transparent', transform: [{ scale: pressed ? 1.25 : 1 }] })}>
             <Text style={{ fontSize: 26 }} allowFontScaling={false}>{e}</Text>
-          </Pressable>
+          </Presionable>
         ))}
       </Animated.View>
       <Animated.View style={[{ position: 'absolute', top: abajo, left: izqAcc, width: 250, borderRadius: 14, overflow: 'hidden', backgroundColor: panel }, sombra, animado]}>
@@ -252,7 +253,7 @@ export function Reacciones({ lista, mio, alTocar }) {
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: -6, justifyContent: mio ? 'flex-end' : 'flex-start', paddingHorizontal: 6 }}>
       {grupos.map((g) => (
-        <Pressable key={g.emoji} onPress={() => alTocar(g.emoji)} hitSlop={4} accessibilityRole="button"
+        <Presionable key={g.emoji} onPress={() => alTocar(g.emoji)} hitSlop={4} accessibilityRole="button"
           accessibilityLabel={`${g.emoji} ${g.n > 1 ? g.n : ''}${g.mia ? ', tu reacción. Toca para quitarla' : '. Toca para reaccionar igual'}`}
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 3, minHeight: 26, paddingHorizontal: 7, borderRadius: 13,
             backgroundColor: g.mia ? suave(t.color.magenta, t.oscuro ? 0.35 : 0.18) : (t.oscuro ? '#2C2C2E' : '#FFFFFF'),
@@ -260,7 +261,7 @@ export function Reacciones({ lista, mio, alTocar }) {
             transform: [{ scale: pressed ? 0.92 : 1 }] })}>
           <Text style={{ fontSize: 14 }} allowFontScaling={false}>{g.emoji}</Text>
           {g.n > 1 ? <Text style={{ fontSize: 12, fontWeight: '700', color: g.mia ? t.color.magentaTexto : colorSistema.texto2 }}>{g.n}</Text> : null}
-        </Pressable>
+        </Presionable>
       ))}
     </View>
   );
@@ -273,14 +274,14 @@ export function Cita({ c, mio, nombreEquipo, alTocar }) {
   const fondo = mio ? 'rgba(255,255,255,0.2)' : (t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)');
   const barra = mio ? 'rgba(255,255,255,0.85)' : t.color.magenta;
   return (
-    <Pressable onPress={alTocar} accessibilityRole="button" accessibilityLabel={`Responde a ${quien}: ${resumenDeCita(c)}. Toca para verlo`}
+    <Presionable onPress={alTocar} accessibilityRole="button" accessibilityLabel={`Responde a ${quien}: ${resumenDeCita(c)}. Toca para verlo`}
       style={({ pressed }) => ({ flexDirection: 'row', gap: 8, borderRadius: 12, padding: 8, marginBottom: 6, backgroundColor: fondo, opacity: pressed ? 0.7 : 1 })}>
       <View style={{ width: 3, borderRadius: 2, backgroundColor: barra }} />
       <View style={{ flexShrink: 1, gap: 1 }}>
         <Text style={{ fontSize: 13, fontWeight: '700', color: mio ? '#FFFFFF' : t.color.magentaTexto }} numberOfLines={1}>{quien}</Text>
         <Text style={{ fontSize: 14, color: mio ? 'rgba(255,255,255,0.9)' : colorSistema.texto2 }} numberOfLines={2}>{resumenDeCita(c)}</Text>
       </View>
-    </Pressable>
+    </Presionable>
   );
 }
 

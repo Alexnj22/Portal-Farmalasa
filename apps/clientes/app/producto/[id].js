@@ -7,7 +7,8 @@
 // foto de la receta), y quien tiene precio de mayoreo lo ve como el principal
 // («Mayoreo» / «Mayoreo Plus»), con la viñeta tachada (lib/precioTuyo.js).
 import { useEffect, useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Linking, ScrollView, Text, View } from 'react-native';
+import Presionable from '../../componentes/Presionable';
 import { MAX_UNIDADES, useCarrito } from '../../lib/carrito';
 import EncargoHoja from '../../componentes/EncargoHoja';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -67,9 +68,9 @@ export default function Producto() {
     return (
       <View style={{ flex: 1, backgroundColor: fondo, justifyContent: 'center' }}>
         <Vacio titulo="No se pudo cargar">{d.mensaje ?? 'Revisa tu conexión.'}</Vacio>
-        <Pressable onPress={cargar} accessibilityRole="button" style={{ alignSelf: 'center', padding: 14 }}>
+        <Presionable onPress={cargar} accessibilityRole="button" style={{ alignSelf: 'center', padding: 14 }}>
           <Text style={{ fontSize: 17, fontWeight: '700', color: colorSistema.texto }}>Reintentar</Text>
-        </Pressable>
+        </Presionable>
       </View>
     );
   }
@@ -131,13 +132,13 @@ export default function Producto() {
           {p.laboratorio ? <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto3 }}>{nombreProducto(p.laboratorio)}</Text> : null}
           {/* Abre el chat con este producto ya puesto sobre la barra (2026-10-13). */}
           {conSesion ? (
-            <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.back(); setTimeout(() => navegar(`/chat?producto=${p.id}`), 300); }}
+            <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.back(); setTimeout(() => navegar(`/chat?producto=${p.id}`), 300); }}
               accessibilityRole="button" accessibilityLabel={`Preguntar a la farmacia por ${nombre}`}
               style={({ pressed }) => ({ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, marginTop: 4, paddingHorizontal: 16,
                 borderRadius: 22, backgroundColor: suave(t.color.magenta, pressed ? (t.oscuro ? 0.4 : 0.24) : (t.oscuro ? 0.26 : 0.13)) })}>
               <Icono sf="bubble.left.and.bubble.right.fill" respaldo="💬" tam={16} color={t.color.magentaTexto} />
               <Text style={{ fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>Preguntar a la farmacia</Text>
-            </Pressable>
+            </Presionable>
           ) : null}
         </View>
 
@@ -151,7 +152,7 @@ export default function Producto() {
             return (
               <View key={i}>
                 {i > 0 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 16 }} /> : null}
-                <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setSel(x.factor ?? 1); }}
+                <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); setSel(x.factor ?? 1); }}
                   accessibilityRole="radio" accessibilityState={{ selected: elegida }}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14,
                     backgroundColor: elegida ? suave(t.color.magenta, t.oscuro ? 0.18 : 0.08) : 'transparent' }}>
@@ -186,7 +187,7 @@ export default function Producto() {
                       <Text style={{ fontSize: 20, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(x.precio)}</Text>
                     )}
                   </View>
-                </Pressable>
+                </Presionable>
               </View>
             );
           })}
@@ -232,13 +233,13 @@ export default function Producto() {
       <View style={{ position: 'absolute', left: 16, right: 16, bottom: ins.bottom + 12, flexDirection: 'row', gap: 10 }}>
         {!p.bajo_receta && !(p.existencias ?? []).length ? (
           // No hay en ninguna sucursal: se pide por encargo (2026-10-07).
-          <Pressable onPress={() => setEncargando(true)} accessibilityRole="button" accessibilityLabel="Pedir por encargo"
+          <Presionable onPress={() => setEncargando(true)} accessibilityRole="button" accessibilityLabel="Pedir por encargo"
             style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 54, borderRadius: 999,
               backgroundColor: t.color.magenta, transform: [{ scale: pressed ? 0.97 : 1 }],
               shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } })}>
             <Icono sf="shippingbox.fill" respaldo="📦" tam={17} color="#FFFFFF" />
             <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '800' }}>Pedir por encargo</Text>
-          </Pressable>
+          </Presionable>
         ) : p.bajo_receta && !(p.existencias ?? []).length ? (
           // Bajo receta y sin existencia: no se encarga desde la app (se pide con la receta en la sucursal).
           <View style={{ flex: 1, minHeight: 54, borderRadius: 999, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14,
@@ -249,17 +250,17 @@ export default function Producto() {
           <>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 999, paddingHorizontal: 6, minHeight: 54,
               backgroundColor: t.oscuro ? '#2A2630' : '#FFFFFF', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } }}>
-              <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setCant((c) => Math.max(1, c - 1)); }} disabled={cant <= 1}
+              <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); setCant((c) => Math.max(1, c - 1)); }} disabled={cant <= 1}
                 accessibilityRole="button" accessibilityLabel="Menos" style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center', opacity: cant <= 1 ? 0.3 : 1 }}>
                 <Icono sf="minus" respaldo="−" tam={15} color={colorSistema.texto} />
-              </Pressable>
+              </Presionable>
               <Text style={{ fontSize: 18, fontWeight: '900', color: colorSistema.texto, minWidth: 18, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{cant}</Text>
-              <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setCant((c) => Math.min(MAX_UNIDADES, c + 1)); }} disabled={cant >= MAX_UNIDADES}
+              <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); setCant((c) => Math.min(MAX_UNIDADES, c + 1)); }} disabled={cant >= MAX_UNIDADES}
                 accessibilityRole="button" accessibilityLabel="Más" style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center', opacity: cant >= MAX_UNIDADES ? 0.3 : 1 }}>
                 <Icono sf="plus" respaldo="+" tam={15} color={colorSistema.texto} />
-              </Pressable>
+              </Presionable>
             </View>
-            <Pressable onPress={() => agregar(elegidaP, cant)} disabled={!elegidaP} accessibilityRole="button"
+            <Presionable onPress={() => agregar(elegidaP, cant)} disabled={!elegidaP} accessibilityRole="button"
               accessibilityLabel={`Agregar ${cant} al carrito por ${elegidaP ? dolares(precioFinal(elegidaP) * cant) : ''}`}
               style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 54, borderRadius: 999,
                 backgroundColor: t.color.magenta, transform: [{ scale: pressed ? 0.97 : 1 }],
@@ -268,23 +269,23 @@ export default function Producto() {
               <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
                 Agregar{elegidaP ? ` · ${dolares(precioFinal(elegidaP) * cant)}` : ''}
               </Text>
-            </Pressable>
+            </Presionable>
           </>
         )}
-        <Pressable onPress={consultar} accessibilityRole="button" accessibilityLabel="Consultar por WhatsApp"
+        <Presionable onPress={consultar} accessibilityRole="button" accessibilityLabel="Consultar por WhatsApp"
           style={({ pressed }) => ({ width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center',
             backgroundColor: VERDE_WHATSAPP, transform: [{ scale: pressed ? 0.94 : 1 }],
             shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } })}>
           <IconoWhatsapp tam={24} color="#FFFFFF" />
-        </Pressable>
+        </Presionable>
       </View>
 
       {encargando ? <EncargoHoja producto={p} presentacion={elegidaP} salas={p.salas} alCerrar={() => setEncargando(false)} /> : null}
-      <Pressable onPress={cerrar} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cerrar"
+      <Presionable onPress={cerrar} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cerrar"
         style={{ position: 'absolute', top: 14, right: 14, width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center',
           backgroundColor: 'rgba(0,0,0,0.45)' }}>
         <Icono sf="xmark" respaldo="✕" tam={14} color="#FFFFFF" />
-      </Pressable>
+      </Presionable>
     </View>
   );
 }

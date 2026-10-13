@@ -13,6 +13,7 @@
 // raíz). En iOS no se toca nada: `instalarHojasAndroid` no hace nada.
 import { useEffect, useState } from 'react';
 import { ActionSheetIOS, Alert, Modal, Platform, Pressable, ScrollView, Text, TextInput, useColorScheme, View } from 'react-native';
+import HojaDeOpciones from './HojaDeOpciones';
 
 let mostrar = null;          // lo registra el host montado
 const cola = [];             // lo que se pidió antes de que el host montara
@@ -58,7 +59,8 @@ export default function HojasAndroid() {
   }, []);
   if (Platform.OS !== 'android' || !hoja) return null;
 
-  const fondo = oscuro ? '#2C2C2E' : '#FFFFFF';
+  // surfaceContainerHigh de Material 3 (2026-10-13, como la app del personal).
+  const fondo = oscuro ? '#2B2930' : '#F7F2FA';
   const tinta = oscuro ? '#FFFFFF' : '#000000';
   const tenue = oscuro ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)';
   const cerrar = (despues) => {
@@ -72,10 +74,17 @@ export default function HojasAndroid() {
     else { const b = hoja.botones.find((x) => x.style === 'cancel'); cerrar(() => b?.onPress?.()); }
   };
 
+  // Las opciones (2026-10-13): la hoja inferior de Material 3 de verdad
+  // (`HojaDeOpciones.android.js`, ModalBottomSheet de Compose) — se arrastra
+  // para cerrar, y el botón o el gesto de volver la cierran primero.
+  if (hoja.tipo === 'opciones') return <HojaDeOpciones hoja={hoja} fondo={fondo} tinta={tinta} tenue={tenue} cerrar={cerrar} cancelar={cancelar} />;
+
+  // El «escribe el motivo»: el diálogo de Material 3 (esquinas de 28, campo con
+  // contorno, botones de texto a la derecha).
   return (
     <Modal transparent visible animationType="fade" onRequestClose={cancelar} statusBarTranslucent>
       <Pressable onPress={cancelar} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: hoja.tipo === 'opciones' ? 'flex-end' : 'center', padding: 16 }}>
-        <Pressable onPress={() => {}} style={{ backgroundColor: fondo, borderRadius: 24, paddingVertical: 12, maxHeight: '80%' }}>
+        <Pressable onPress={() => {}} style={{ backgroundColor: fondo, borderRadius: 28, paddingVertical: 16, maxHeight: '80%' }}>
           {hoja.titulo ? <Text style={{ color: tinta, fontSize: 18, fontWeight: '700', paddingHorizontal: 20, paddingTop: 8 }}>{hoja.titulo}</Text> : null}
           {hoja.mensaje ? <Text style={{ color: tenue, fontSize: 14, paddingHorizontal: 20, paddingTop: 6 }}>{hoja.mensaje}</Text> : null}
           {hoja.tipo === 'opciones' ? (
@@ -97,12 +106,13 @@ export default function HojasAndroid() {
             <View style={{ paddingHorizontal: 20, paddingTop: 12, gap: 12 }}>
               <TextInput value={texto} onChangeText={setTexto} autoFocus secureTextEntry={hoja.secreto} keyboardType={hoja.teclado}
                 multiline={!hoja.secreto} placeholderTextColor={tenue}
-                style={{ minHeight: 48, maxHeight: 140, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, color: tinta, backgroundColor: 'rgba(127,127,127,0.16)' }} />
+                style={{ minHeight: 56, maxHeight: 140, borderRadius: 4, borderWidth: 1, borderColor: tenue, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: tinta }} />
               <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
                 {hoja.botones.map((b, i) => (
                   <Pressable key={i} accessibilityRole="button" onPress={() => cerrar(() => b.onPress?.(texto))}
-                    style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 16, justifyContent: 'center', borderRadius: 12, backgroundColor: pressed ? 'rgba(127,127,127,0.18)' : 'transparent' })}>
-                    <Text style={{ fontSize: 16, fontWeight: b.style === 'cancel' ? '500' : '700', color: b.style === 'destructive' ? '#FF3B30' : b.style === 'cancel' ? tenue : '#981D97' }}>{b.text}</Text>
+                    android_ripple={{ color: 'rgba(127,127,127,0.22)', foreground: true }}
+                    style={{ minHeight: 48, paddingHorizontal: 16, justifyContent: 'center', borderRadius: 24, overflow: 'hidden' }}>
+                    <Text style={{ fontSize: 16, fontWeight: b.style === 'cancel' ? '500' : '700', color: b.style === 'destructive' ? '#B3261E' : b.style === 'cancel' ? tenue : (oscuro ? '#E2A3E0' : '#981D97') }}>{b.text}</Text>
                   </Pressable>
                 ))}
               </View>

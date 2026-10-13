@@ -14,7 +14,8 @@
 // foto y la sucursal decide. Si la subida falla, la reserva queda igual y la
 // foto se sube desde Mis reservas.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, Text, View } from 'react-native';
+import Presionable from './Presionable';
 import { Seccion } from './ui';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
@@ -120,9 +121,9 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
           <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>
             {paso === 'terminos' ? 'Antes de reservar' : paso === 'hecha' ? (hecha?.receta ? 'Receta enviada' : '¡Reservado!') : 'Reservar'}
           </Text>
-          <Pressable onPress={alCerrar} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cerrar">
+          <Presionable onPress={alCerrar} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cerrar">
             <Text style={{ fontSize: 17, fontWeight: '600', color: t.color.magentaTexto }}>Cerrar</Text>
-          </Pressable>
+          </Presionable>
         </View>
 
         {paso === 'cargando' ? <ActivityIndicator style={{ marginTop: 40 }} /> : null}
@@ -172,7 +173,7 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
                 const n = nivelDe(t, s.nivel);
                 const activa = s.branch_id === sala;
                 return (
-                  <Pressable key={s.branch_id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setSala(s.branch_id); }}
+                  <Presionable key={s.branch_id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setSala(s.branch_id); }}
                     accessibilityRole="radio" accessibilityState={{ selected: activa }}
                     style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14,
                       borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador,
@@ -184,7 +185,7 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
                     <View style={{ backgroundColor: n.fondo, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
                       <Text style={{ fontSize: 12, fontWeight: '700', color: n.color }}>{n.texto}</Text>
                     </View>
-                  </Pressable>
+                  </Presionable>
                 );
               })}
             </View>
@@ -257,11 +258,11 @@ function Boton({ texto, color, alTocar, deshabilitado }) {
 function Paso({ texto, alTocar, deshabilitado }) {
   const t = useTema();
   return (
-    <Pressable onPress={deshabilitado ? undefined : () => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} hitSlop={8}
+    <Presionable onPress={deshabilitado ? undefined : () => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} hitSlop={8}
       accessibilityRole="button" accessibilityLabel={texto === '+' ? 'Más' : 'Menos'}
       style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
         backgroundColor: suave(t.color.magenta, 0.12), opacity: deshabilitado ? 0.35 : 1 }}>
       <Text style={{ fontSize: 22, fontWeight: '800', color: t.color.magentaTexto }}>{texto}</Text>
-    </Pressable>
+    </Presionable>
   );
 }

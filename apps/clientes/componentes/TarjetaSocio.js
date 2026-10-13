@@ -37,7 +37,7 @@ import * as Haptics from 'expo-haptics';
 import * as Brightness from 'expo-brightness';
 import tokens from '@nucleo/constants/tokens.json';
 import useInclinacion from './useInclinacion';
-import { LIVIANO } from '../lib/rendimiento';
+import { ANDROID, LIVIANO } from '../lib/rendimiento';
 import BrilloTarjeta from './BrilloTarjeta';
 import { dolares, entero } from '../lib/formato';
 import { NumeroAnimado } from './animacion';
@@ -181,7 +181,10 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
   // `brilloQr`: el worklet captura las funciones al crearse, y declarada más
   // abajo llegaba vacía — `runOnJS(undefined)` cerraba la app al girar
   // (compilación 10, 2026-10-06).
-  const alCruzar = () => { vibrar(true); };
+  // Qué cara mira al frente AHORA (cambia justo a mitad del giro): en
+  // Android decide qué lienzos se dibujan (ver `verFrente`).
+  const [caraAtras, setCaraAtras] = useState(false);
+  const alCruzar = (atras) => { vibrar(true); if (ANDROID) setCaraAtras(!!atras); };
   useAnimatedReaction(() => giro.value > 0.5, (ahora, antes) => {
     if (antes !== null && ahora !== antes) runOnJS(alCruzar)(ahora);
   });
@@ -216,10 +219,20 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
       ],
     };
   });
-  const sombra = useAnimatedStyle(() => ({
+  // La sombra que se corre: en Android las `shadow*` no existen (allá es
+  // `elevation`, que no sigue la inclinación), así que ni se calcula — era un
+  // estilo animado recalculado en cada cuadro para nada (2026-10-13).
+  const sombra = useAnimatedStyle(() => (ANDROID ? {} : {
     shadowOffset: { width: -x.value * 14, height: 14 + y.value * 8 },
     shadowOpacity: 0.28 + Math.abs(x.value) * 0.12,
   }));
+  // Android (2026-10-13): una cara a la vez. La cara de atrás está oculta
+  // (`backfaceVisibility`), pero sus lienzos de Skia —el material y la luz—
+  // se seguían redibujando con cada movimiento del giroscopio: dos tarjetas
+  // pintadas para ver una. Se monta la que mira al frente, y el cambio es a
+  // mitad del giro, cuando la otra queda de canto.
+  const verFrente = !ANDROID || !caraAtras;
+  const verReverso = !ANDROID || caraAtras;
   const frente = useAnimatedStyle(() => ({
     transform: [{ perspective: 1000 }, { rotateY: `${interpolate(giro.value, [0, 1], [0, 180])}deg` }],
   }));
@@ -254,12 +267,12 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
               vivo con la inclinación. El degradado de arriba queda de respaldo. */}
           {/* `key`: al cambiar de nivel o rango el lienzo se rehace entero; sin
               eso podía quedar pintado el material anterior. */}
-          {MATERIALES.includes(nivel) ? <Mineral key={nivel} material={nivel} x={x} y={y} activa={activa && !reducir} />
+          {!verFrente ? null : MATERIALES.includes(nivel) ? <Mineral key={nivel} material={nivel} x={x} y={y} activa={activa && !reducir} />
             : <EfectoNivel nivel={nivel} activa={activa && !reducir} x={x} />}
           {/* Una sombra suave abajo: el nombre y el saldo se leen sobre cualquier material. */}
           <LinearGradient pointerEvents="none" colors={['rgba(0,0,0,0.30)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.50)']}
             locations={[0, 0.28, 0.55, 1]} style={StyleSheet.absoluteFill} />
-          <BrilloTarjeta x={x} y={y} barrido={barrido} sinArcoiris={MATERIALES.includes(nivel)} />
+          {verFrente ? <BrilloTarjeta x={x} y={y} barrido={barrido} sinArcoiris={MATERIALES.includes(nivel)} /> : null}
 
           {/* El logo al centro: llena el espacio entre el chip y el nombre
               (pedido del usuario, 2026-10-06), con un halo suave. */}
@@ -313,10 +326,10 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
           <LinearGradient colors={paleta.reverso} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
           {/* El mismo material del frente, más oscuro para que el código se lea.
               Sigue la inclinación, pero su reloj va quieto (no gasta dos veces). */}
-          {MATERIALES.includes(nivel) ? <Mineral key={nivel} material={nivel} x={x} y={y} activa={false} />
+          {!verReverso ? null : MATERIALES.includes(nivel) ? <Mineral key={nivel} material={nivel} x={x} y={y} activa={false} />
             : <EfectoNivel nivel={nivel} activa={activa && !reducir} x={x} />}
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.42)' }]} />
-          <BrilloTarjeta x={x} y={y} barrido={barrido} sinArcoiris={MATERIALES.includes(nivel)} />
+          {verReverso ? <BrilloTarjeta x={x} y={y} barrido={barrido} sinArcoiris={MATERIALES.includes(nivel)} /> : null}
           <View style={[estilos.contenido, { flexDirection: 'row', alignItems: 'center', gap: 18 }]}>
             <View style={estilos.qr}>
               {codigo ? <QRCode value={QR_DE(codigo)} size={118} color="#1A0822" backgroundColor="#FFFFFF" /> : null}

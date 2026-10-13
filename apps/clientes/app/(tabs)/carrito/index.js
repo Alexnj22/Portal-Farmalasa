@@ -10,7 +10,8 @@
 // servidor la anota en todos. Precio de mayoreo: el subtotal usa `precio_tuyo`
 // si lo hay (el servidor lo vuelve a calcular al reservar).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, ScrollView, Text, TextInput, View } from 'react-native';
+import Presionable from '../../../componentes/Presionable';
 import * as WebBrowser from 'expo-web-browser';
 import { errorFiscal, nitEscrito, nrcEscrito } from '../../../lib/fiscal';
 import { useFocusEffect } from 'expo-router';
@@ -244,13 +245,13 @@ export default function Carrito() {
             <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }} numberOfLines={2}>{nombreProducto(x.nombre)}</Text>
             <Text style={{ fontSize: 12, color: colorSistema.texto3 }}>{nombreProducto(x.tipo || 'Unidad')}</Text>
             {yaReservado ? (
-              <Pressable onPress={() => navegar(`/reservas?resaltar=${yaReservado.id}`)} accessibilityRole="link" hitSlop={6}
+              <Presionable onPress={() => navegar(`/reservas?resaltar=${yaReservado.id}`)} accessibilityRole="link" hitSlop={6}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start' }}>
                 <Icono sf="exclamationmark.circle.fill" respaldo="!" tam={12} color={t.color.avisoTexto} />
                 <Text style={{ fontSize: 12, fontWeight: '700', color: t.color.avisoTexto }}>
                   Ya lo tienes reservado ({yaReservado.codigo})
                 </Text>
-              </Pressable>
+              </Presionable>
             ) : null}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Contador valor={x.cantidad} alCambiar={(n) => cantidad(x, n)} />
@@ -261,10 +262,10 @@ export default function Carrito() {
               </View>
             </View>
           </View>
-          <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); quitar(x); }} hitSlop={10} accessibilityRole="button" accessibilityLabel={`Quitar ${x.nombre}`}
+          <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); quitar(x); }} hitSlop={10} accessibilityRole="button" accessibilityLabel={`Quitar ${x.nombre}`}
             style={{ alignSelf: 'flex-start', padding: 4 }}>
             <Icono sf="xmark.circle.fill" respaldo="✕" tam={20} color={colorSistema.texto3} />
-          </Pressable>
+          </Presionable>
         </Tarjeta>
         );
       })}
@@ -297,14 +298,14 @@ export default function Carrito() {
         {salas == null && errorSalas ? (
           <View style={{ alignItems: 'center', gap: 10, padding: 18 }}>
             <Texto nivel={2} estilo={{ textAlign: 'center', fontSize: 14 }}>No pudimos revisar en qué sucursales hay. Revisa tu conexión.</Texto>
-            <Pressable onPress={() => { setErrorSalas(false); cargarSalas(); }} accessibilityRole="button" hitSlop={8} style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 }}>
+            <Presionable onPress={() => { setErrorSalas(false); cargarSalas(); }} accessibilityRole="button" hitSlop={8} style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 }}>
               <Text style={{ fontSize: 17, fontWeight: '700', color: t.color.magentaTexto }}>Reintentar</Text>
-            </Pressable>
+            </Presionable>
           </View>
         ) : salas == null ? <ActivityIndicator style={{ margin: 18 }} /> : salas.map((s, i) => {
           const elegida = s.id === sala;
           return (
-            <Pressable key={s.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setSala(s.id); }} accessibilityRole="radio" accessibilityState={{ selected: elegida }}>
+            <Presionable key={s.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setSala(s.id); }} accessibilityRole="radio" accessibilityState={{ selected: elegida }}>
               {i > 0 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 50 }} /> : null}
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, minHeight: 52 }}>
                 <Icono sf={elegida ? 'checkmark.circle.fill' : 'circle'} respaldo="" tam={22} color={elegida ? t.color.magenta : colorSistema.texto3} />
@@ -315,7 +316,7 @@ export default function Carrito() {
                   </Text>
                 </View>
               </View>
-            </Pressable>
+            </Presionable>
           );
         })}
       </Tarjeta>
@@ -347,9 +348,9 @@ export default function Carrito() {
               <Texto nivel={2} estilo={{ fontSize: 14 }}>NIT {f.nit} · NRC {f.nrc}</Texto>
               <Texto nivel={2} estilo={{ fontSize: 14 }}>{f.giro}</Texto>
               <Texto nivel={3} estilo={{ fontSize: 13 }}>{f.direccion}</Texto>
-              <Pressable onPress={() => setEditarFiscales(true)} accessibilityRole="button" style={{ minHeight: 40, justifyContent: 'center' }}>
+              <Presionable onPress={() => setEditarFiscales(true)} accessibilityRole="button" style={{ minHeight: 40, justifyContent: 'center' }}>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto }}>Usar otros datos</Text>
-              </Pressable>
+              </Presionable>
             </>
           ) : (
             <>
@@ -406,7 +407,7 @@ function TusReservas({ resumen }) {
     : `${total === 1 ? '1 reserva' : `${total} reservas`} en preparación`;
   const detalle = listas && enCurso ? `y ${enCurso === 1 ? '1 más' : `${enCurso} más`} en preparación` : null;
   return (
-    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar('/reservas'); }} accessibilityRole="button"
+    <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar('/reservas'); }} accessibilityRole="button"
       accessibilityLabel={`Tus reservas: ${titulo}${detalle ? `, ${detalle}` : ''}. Ver mis reservas`}
       style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }] })}>
       <Tarjeta tono={listas ? t.color.verde : undefined} estilo={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
@@ -433,7 +434,7 @@ function TusReservas({ resumen }) {
           <Icono sf="chevron.right" respaldo="›" tam={13} color={colorSistema.texto3} />
         </View>
       </Tarjeta>
-    </Pressable>
+    </Presionable>
   );
 }
 
@@ -450,12 +451,12 @@ function Fila({ etiqueta, valor, tachado, grande, color }) {
 function Contador({ valor, alCambiar }) {
   const t = useTema();
   const boton = (sf, n, habilitado) => (
-    <Pressable onPress={() => { if (!habilitado) return; Haptics.selectionAsync().catch(() => {}); alCambiar(n); }} disabled={!habilitado}
+    <Presionable onPress={() => { if (!habilitado) return; Haptics.selectionAsync().catch(() => {}); alCambiar(n); }} disabled={!habilitado}
       accessibilityRole="button" accessibilityLabel={sf === 'minus' ? 'Menos' : 'Más'} hitSlop={6}
       style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', opacity: habilitado ? 1 : 0.35,
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)' }}>
       <Icono sf={sf} respaldo={sf === 'minus' ? '−' : '+'} tam={13} color={colorSistema.texto} />
-    </Pressable>
+    </Presionable>
   );
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -475,10 +476,10 @@ function Terminos({ terminos, alAceptar, alCerrar }) {
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: ins.bottom + 24, gap: 14 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={{ fontSize: 22, fontWeight: '900', color: colorSistema.texto, flex: 1 }}>{terminos.titulo}</Text>
-          <Pressable onPress={alCerrar} hitSlop={12} accessibilityRole="button"
+          <Presionable onPress={alCerrar} hitSlop={12} accessibilityRole="button"
             style={{ minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' }}>
             <Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>Cerrar</Text>
-          </Pressable>
+          </Presionable>
         </View>
         {terminos.puntos.map((p, i) => (
           <View key={i} style={{ flexDirection: 'row', gap: 12 }}>
@@ -503,7 +504,7 @@ function Seccion({ texto }) {
 function Opcion({ sf, titulo, detalle, elegida, alTocar, deshabilitada = false }) {
   const t = useTema();
   return (
-    <Pressable onPress={() => { if (deshabilitada) return; Haptics.selectionAsync().catch(() => {}); alTocar(); }} disabled={deshabilitada}
+    <Presionable onPress={() => { if (deshabilitada) return; Haptics.selectionAsync().catch(() => {}); alTocar(); }} disabled={deshabilitada}
       accessibilityRole="radio" accessibilityState={{ selected: elegida, disabled: deshabilitada }}
       style={({ pressed }) => ({ flex: 1, borderRadius: 20, padding: 14, gap: 8, borderWidth: 2, opacity: deshabilitada ? 0.45 : 1,
         borderColor: elegida ? t.color.magenta : 'transparent',
@@ -515,7 +516,7 @@ function Opcion({ sf, titulo, detalle, elegida, alTocar, deshabilitada = false }
       </View>
       <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto }}>{titulo}</Text>
       <Text style={{ fontSize: 12, color: colorSistema.texto2 }}>{detalle}</Text>
-    </Pressable>
+    </Presionable>
   );
 }
 

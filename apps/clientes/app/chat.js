@@ -40,7 +40,8 @@
 //   · «¿Cómo te atendimos?» cuando el equipo marca la consulta como resuelta.
 //   · Enlaces, correos y teléfonos de los mensajes se pueden tocar.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, AppState, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, AppState, FlatList, KeyboardAvoidingView, Modal, Platform, Text, View } from 'react-native';
+import Presionable from '../componentes/Presionable';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { Image } from 'expo-image';
@@ -547,11 +548,11 @@ export default function Chat() {
           ListHeaderComponent={(
             <View style={{ gap: 10, marginBottom: 6 }}>
               {hayMas ? (
-                <Pressable onPress={anteriores} disabled={cargandoViejos} accessibilityRole="button"
+                <Presionable onPress={anteriores} disabled={cargandoViejos} accessibilityRole="button"
                   style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 14 }}>
                   {cargandoViejos ? <Icono sf="clock" respaldo="…" tam={14} color={colorSistema.texto3} /> : null}
                   <Text style={{ fontSize: 15, fontWeight: '600', color: t.color.magentaTexto }}>{cargandoViejos ? 'Cargando…' : 'Ver mensajes anteriores'}</Text>
-                </Pressable>
+                </Presionable>
               ) : null}
               {!mensajes.length ? <Bienvenida /> : null}
               {/* El horario de atención, como el aviso centrado de iMessage. */}
@@ -616,10 +617,10 @@ export default function Chat() {
         titulo={preguntaDelAtajo.current ? '¿Por cuál producto?' : 'Consultar un producto'} />
       <Modal visible={!!fotoGrande} animationType="fade" transparent presentationStyle="overFullScreen" onRequestClose={() => setFotoGrande(null)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.94)', paddingTop: ins.top + 8, paddingBottom: ins.bottom + 8 }}>
-          <Pressable onPress={() => setFotoGrande(null)} accessibilityRole="button" accessibilityLabel="Cerrar" hitSlop={12}
+          <Presionable onPress={() => setFotoGrande(null)} accessibilityRole="button" accessibilityLabel="Cerrar" hitSlop={12}
             style={{ alignSelf: 'flex-end', paddingHorizontal: 18, minHeight: 44, justifyContent: 'center' }}>
             <Text style={{ fontSize: 17, fontWeight: '700', color: '#FFFFFF' }}>Cerrar</Text>
-          </Pressable>
+          </Presionable>
           {fotoGrande ? <Image source={{ uri: fotoGrande }} style={{ flex: 1 }} contentFit="contain" accessibilityLabel="Foto" /> : null}
         </View>
       </Modal>
@@ -715,13 +716,13 @@ function BotonAlFinal({ n, alTocar }) {
   const t = useTema();
   return (
     <Animated.View entering={FadeIn.duration(160)} style={{ position: 'absolute', right: 12, bottom: 12 }}>
-      <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} hitSlop={6} accessibilityRole="button"
+      <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} hitSlop={6} accessibilityRole="button"
         accessibilityLabel={n ? `Ir al final, ${n} ${n === 1 ? 'mensaje nuevo' : 'mensajes nuevos'}` : 'Ir al final'}
         style={({ pressed }) => ({ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
           backgroundColor: t.oscuro ? '#2C2C2E' : '#FFFFFF', transform: [{ scale: pressed ? 0.92 : 1 }],
           shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 4 })}>
         <Icono sf="chevron.down" respaldo="↓" tam={17} color={t.color.magentaTexto} />
-      </Pressable>
+      </Presionable>
       {n ? (
         <View pointerEvents="none" style={{ position: 'absolute', top: -6, right: -4, minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 5,
           alignItems: 'center', justifyContent: 'center', backgroundColor: t.color.magenta }}>
@@ -854,7 +855,7 @@ function Burbuja({ m, primero, ultimo, alVerFoto, entra, estado, rotuloEstado, v
         {/* Deslizar a la derecha responde; mantener presionado abre el menú; tocar muestra la hora. */}
         <Deslizable alResponder={() => { if (real) alResponder(); }} alMantener={() => { if (real) medir(alMenu); }}>
           {/* `onLongPress` vacío: soltar después del menú no cuenta como toque. */}
-          <Pressable ref={ref} collapsable={false} onPress={alTocar} onLongPress={() => {}} delayLongPress={380} accessibilityLabel={leyenda}
+          <Presionable ref={ref} collapsable={false} onPress={alTocar} onLongPress={() => {}} delayLongPress={380} accessibilityLabel={leyenda}
             accessibilityHint={m.fallido ? 'Toca para reintentar' : 'Mantén presionado para reaccionar, responder o copiar'}
             accessibilityActions={real ? [{ name: 'longpress', label: 'Más opciones' }, { name: 'magicTap', label: 'Responder' }] : undefined}
             onAccessibilityAction={(e) => { if (e.nativeEvent.actionName === 'longpress') medir(alMenu); if (e.nativeEvent.actionName === 'magicTap') alResponder(); }}
@@ -869,10 +870,10 @@ function Burbuja({ m, primero, ultimo, alVerFoto, entra, estado, rotuloEstado, v
                 <View style={{ maxWidth: 260 }}><Cita c={m.responde_a} mio={false} nombreEquipo={nombreCitado} alTocar={() => alIrA(m.responde_a.id)} /></View>
               ) : null}
               {m.foto_url ? (
-                <Pressable onPress={() => alVerFoto(m.foto_url)} accessibilityRole="imagebutton" accessibilityLabel="Ver foto">
+                <Presionable onPress={() => alVerFoto(m.foto_url)} accessibilityRole="imagebutton" accessibilityLabel="Ver foto">
                   <Image source={{ uri: m.foto_url }} style={{ width: 210, height: 250, borderRadius: R, backgroundColor: colorSistema.separador, opacity: m.enviando ? 0.6 : 1 }}
                     contentFit="cover" transition={150} />
-                </Pressable>
+                </Presionable>
               ) : null}
               {m.adjunto ? (m.adjunto.tipo === 'producto' ? <TarjetaProducto a={m.adjunto} mio={mio} /> : <Oferta a={m.adjunto} />) : null}
               {m.texto ? (
@@ -885,7 +886,7 @@ function Burbuja({ m, primero, ultimo, alVerFoto, entra, estado, rotuloEstado, v
                 </View>
               ) : null}
             </View>
-          </Pressable>
+          </Presionable>
         </Deslizable>
         <Reacciones lista={m.reacciones} mio={mio} alTocar={alReaccionar} />
         {m.fallido ? (
@@ -913,7 +914,7 @@ function Oferta({ a }) {
   const t = useTema();
   const abrir = () => { Haptics.selectionAsync().catch(() => {}); navegar(`/oferta/${a.id}`); };
   return (
-    <Pressable onPress={abrir} accessibilityRole="button" accessibilityLabel={`Ver la oferta ${a.titulo}`}
+    <Presionable onPress={abrir} accessibilityRole="button" accessibilityLabel={`Ver la oferta ${a.titulo}`}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: R, padding: 12, width: 248,
         backgroundColor: t.oscuro ? '#2C2C2E' : '#FFFFFF', borderWidth: 1, borderColor: suave(t.color.magenta, 0.35),
         transform: [{ scale: pressed ? 0.97 : 1 }] })}>
@@ -925,6 +926,6 @@ function Oferta({ a }) {
         <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }} numberOfLines={2}>{a.titulo}</Text>
       </View>
       <Icono sf="chevron.right" respaldo="›" tam={13} color={colorSistema.texto3} />
-    </Pressable>
+    </Presionable>
   );
 }

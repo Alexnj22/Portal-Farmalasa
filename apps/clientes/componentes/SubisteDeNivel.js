@@ -3,7 +3,8 @@
 // acabado del nivel, confeti y lo que gana. El último nivel visto se guarda en
 // el teléfono; bajar de nivel no celebra nada (y se anota en silencio).
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { Modal, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import Presionable from './Presionable';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
@@ -170,12 +171,12 @@ function Celebracion({ p, alCerrar }) {
             </View>
           </Animated.View>
         </ScrollView>
-        <Pressable onPress={alCerrar} accessibilityRole="button"
+        <Presionable onPress={alCerrar} accessibilityRole="button"
           style={({ pressed }) => ({ marginHorizontal: Math.max(24, ins.left + 16), marginTop: 8, marginBottom: Math.max(ins.bottom, 12) + (compacta ? 12 : 20),
             minHeight: compacta ? 50 : 54, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
             backgroundColor: '#FFFFFF', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
           <Text maxFontSizeMultiplier={1.3} style={{ color: '#1A1320', fontSize: 17, fontWeight: '900' }}>¡Genial!</Text>
-        </Pressable>
+        </Presionable>
         <Confeti colores={colores} alTerminar={() => {}} />
       </LinearGradient>
   );

@@ -1,7 +1,8 @@
 // Una fila horizontal de productos para la Tienda (2026-10-07): «Mayor ahorro
 // con tu tarjeta», «Vistos recientemente». Tarjetas más grandes que las de la
 // cuadrícula, con el porcentaje de ahorro bien visible.
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
+import Presionable from './Presionable';
 import * as Haptics from 'expo-haptics';
 import FotoProducto from './FotoProducto';
 import Icono from './Icono';
@@ -21,10 +22,10 @@ export default function FilaProductos({ titulo, sf, productos, accion }) {
         <Icono sf={sf} respaldo="" tam={14} color={t.color.magentaTexto} />
         <Text style={{ flex: 1, fontSize: 17, fontWeight: '800', color: colorSistema.texto }}>{titulo}</Text>
         {accion ? (
-          <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); accion.alTocar(); }} hitSlop={10} accessibilityRole="button"
+          <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); accion.alTocar(); }} hitSlop={10} accessibilityRole="button"
             style={{ minHeight: 32, justifyContent: 'center', paddingHorizontal: 6 }}>
             <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto2 }}>{accion.texto}</Text>
-          </Pressable>
+          </Presionable>
         ) : null}
       </View>
       <FlatList horizontal data={productos} keyExtractor={(p) => String(p.id)} showsHorizontalScrollIndicator={false}
@@ -34,7 +35,7 @@ export default function FilaProductos({ titulo, sf, productos, accion }) {
           const final = precioFinal(p);
           const ahorro = p.precio && final < p.precio ? Math.round(((p.precio - final) / p.precio) * 100) : 0;
           return (
-            <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${p.id}`); }}
+            <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${p.id}`); }}
               accessibilityRole="button" accessibilityLabel={nombreProducto(p.nombre)}
               style={({ pressed }) => ({ width: 150, borderRadius: 20, padding: 8, gap: 6,
                 backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.85)', transform: [{ scale: pressed ? 0.96 : 1 }] })}>
@@ -53,7 +54,7 @@ export default function FilaProductos({ titulo, sf, productos, accion }) {
                   {final < p.precio ? <Text style={{ fontSize: 11, color: colorSistema.texto3, textDecorationLine: 'line-through' }}>{dolares(p.precio)}</Text> : null}
                 </View>
               ) : null}
-            </Pressable>
+            </Presionable>
           );
         }} />
     </View>

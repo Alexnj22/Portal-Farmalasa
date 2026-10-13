@@ -3,7 +3,8 @@
 // texto en los colores del sistema (`label`; los secundarios, sólidos — ver sistema.js), el botón del
 // sistema, y los colores del logo SÓLO para lo que es de la marca: lo que se
 // gana (verde) y lo que se usa (magenta).
-import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View, RefreshControl } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, Text, View, RefreshControl } from 'react-native';
+import Presionable from './Presionable';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BotonNativo from './BotonNativo';
@@ -12,9 +13,24 @@ import Vidrio from './Vidrio';
 import { colorSistema } from './sistema';
 import { suave, useTema } from '../tema/tema';
 
+const ANDROID = Platform.OS === 'android';
+
 // Los radios de esquina de la app (2026-10-13): la tarjeta de vidrio, la
 // pieza mediana (fichas de producto, cajas) y la chica (botones, íconos).
-export const RADIO = { chico: 12, medio: 18, tarjeta: 26 };
+// En Android, la escala de formas de Material 3: chica 8, mediana 12, grande 16.
+export const RADIO = ANDROID ? { chico: 8, medio: 12, tarjeta: 16 } : { chico: 12, medio: 18, tarjeta: 26 };
+
+// La escala tipográfica de Material 3 en Android (Roboto, 2026-10-13): Title
+// Medium para títulos de tarjeta, Body Large / Body Medium para el texto y
+// Title Small en el color de la marca para los rótulos de sección. En iPhone
+// sigue la de iOS (17 / 15 y el rótulo en mayúsculas).
+const TIPO = ANDROID
+  ? { titulo: { fontSize: 16, lineHeight: 24, fontWeight: '500', letterSpacing: 0.15 },
+      texto1: { fontSize: 16, lineHeight: 24, fontWeight: '400', letterSpacing: 0.5 },
+      texto2: { fontSize: 14, lineHeight: 20, fontWeight: '400', letterSpacing: 0.25 } }
+  : { titulo: { fontSize: 17, fontWeight: '600' },
+      texto1: { fontSize: 17, lineHeight: 22, fontWeight: '400' },
+      texto2: { fontSize: 15, lineHeight: 20, fontWeight: '500' } };
 
 // Lo que ocupa la burbuja del chat (56 + su margen + un respiro), 2026-10-13:
 // sin este espacio abajo, la burbuja tapaba la última tarjeta de la lista.
@@ -25,6 +41,7 @@ export const ESPACIO_BURBUJA = 88;
 // pantallas donde la burbuja no va (componentes/BurbujaChat, `OCULTA`) pasan false.
 export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal, conBurbuja = true }) {
   const ins = useSafeAreaInsets();
+  const t = useTema();
   return (
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
@@ -39,7 +56,10 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
       onScroll={alFinal ? ({ nativeEvent: e }) => {
         if (e.layoutMeasurement.height + e.contentOffset.y >= e.contentSize.height - 700) alFinal();
       } : undefined}
-      refreshControl={alRefrescar ? <RefreshControl refreshing={refrescando} onRefresh={alRefrescar} /> : undefined}
+      // `colors` y `progressBackgroundColor` sólo los lee Android: el círculo de
+      // Material en la marca, sobre la superficie alta (2026-10-13).
+      refreshControl={alRefrescar ? <RefreshControl refreshing={refrescando} onRefresh={alRefrescar}
+        colors={[t.color.magenta]} progressBackgroundColor={ANDROID ? colorSistema.superficieAlta : undefined} /> : undefined}
     >
       {children}
     </ScrollView>
@@ -60,12 +80,12 @@ export function Tarjeta({ children, estilo, tono }) {
 }
 
 export function Titulo({ children, estilo }) {
-  return <Text style={[{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }, estilo]}>{children}</Text>;
+  return <Text style={[TIPO.titulo, { color: colorSistema.texto }, estilo]}>{children}</Text>;
 }
 
 export function Texto({ children, nivel = 1, estilo, ...resto }) {
   const color = nivel === 1 ? colorSistema.texto : nivel === 2 ? colorSistema.texto2 : colorSistema.texto3;
-  return <Text style={[{ fontSize: nivel === 1 ? 17 : 15, color, lineHeight: nivel === 1 ? 22 : 20, fontWeight: nivel === 1 ? '400' : '500' }, estilo]} {...resto}>{children}</Text>;
+  return <Text style={[nivel === 1 ? TIPO.texto1 : TIPO.texto2, { color }, estilo]} {...resto}>{children}</Text>;
 }
 
 /**
@@ -118,10 +138,15 @@ export function Vacio({ titulo, children, icono: iconoDado, respaldo: respaldoDa
 
 // El rótulo de una sección (2026-10-13): 13 pt, mayúsculas, espaciado 0.4 y el
 // gris secundario. Estaba escrito a mano en ~14 sitios. `n` agrega « · n».
+// Android: el subtítulo de lista de Material 3 (Title Small, en el color de
+// la marca, sin mayúsculas).
 export function Seccion({ children, n, estilo }) {
+  const t = useTema();
+  const base = ANDROID
+    ? { fontSize: 14, lineHeight: 20, fontWeight: '500', letterSpacing: 0.1, color: t.color.magentaTexto, marginLeft: 4 }
+    : { fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4 };
   return (
-    <Text accessibilityRole="header"
-      style={[{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 4 }, estilo]}>
+    <Text accessibilityRole="header" style={[base, estilo]}>
       {children}{n ? ` · ${n}` : ''}
     </Text>
   );
@@ -129,14 +154,29 @@ export function Seccion({ children, n, estilo }) {
 
 // Una píldora de filtro (2026-10-13; antes, una copia en Reservas y otra en
 // Facturas). Mide 34 de alto y el `hitSlop` completa los 44 pt del dedo.
+// Android: el «filter chip» de Material 3 — 32 dp de alto (48 con el
+// `hitSlop`), esquinas de 8, contorno cuando no está elegido y relleno tonal
+// con su ✓ cuando sí.
 export function Chip({ texto, activo, alTocar }) {
   const t = useTema();
+  if (ANDROID) {
+    return (
+      <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} hitSlop={{ top: 8, bottom: 8, left: 2, right: 2 }}
+        accessibilityRole="button" accessibilityState={{ selected: activo }}
+        style={{ minHeight: 32, paddingLeft: activo ? 8 : 16, paddingRight: 16, borderRadius: 8, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', gap: 8,
+          borderWidth: activo ? 0 : 1, borderColor: colorSistema.contornoSuave,
+          backgroundColor: activo ? suave(t.color.magenta, t.oscuro ? 0.38 : 0.16) : 'transparent' }}>
+        {activo ? <Icono sf="checkmark" respaldo="✓" tam={18} color={colorSistema.texto} /> : null}
+        <Text style={{ fontSize: 14, lineHeight: 20, fontWeight: '500', letterSpacing: 0.1, color: colorSistema.texto }}>{texto}</Text>
+      </Presionable>
+    );
+  }
   return (
-    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} hitSlop={{ top: 5, bottom: 5, left: 2, right: 2 }}
+    <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} hitSlop={{ top: 5, bottom: 5, left: 2, right: 2 }}
       accessibilityRole="button" accessibilityState={{ selected: activo }}
       style={({ pressed }) => ({ minHeight: 34, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', transform: [{ scale: pressed ? 0.97 : 1 }],
         backgroundColor: activo ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)') })}>
       <Text style={{ fontSize: 14, fontWeight: '700', color: activo ? '#FFFFFF' : colorSistema.texto }}>{texto}</Text>
-    </Pressable>
+    </Presionable>
   );
 }

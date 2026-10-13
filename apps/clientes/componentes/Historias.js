@@ -11,7 +11,8 @@
 //     y siempre «Más información» por WhatsApp con la empresa.
 //   · cada vista se anota en el servidor: el portal cuenta quién la vio.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Dimensions, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Dimensions, Image, Linking, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Presionable from './Presionable';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image as ImagenCache } from 'expo-image';
 import { useFocusEffect } from 'expo-router';
@@ -82,7 +83,7 @@ export default function Historias({ generacion = 0 }) {
         {orden.map((h, i) => {
           const vista = vistas.has(String(h.id));
           return (
-            <Pressable key={h.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta({ i, lista: orden }); }}
+            <Presionable key={h.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta({ i, lista: orden }); }}
               accessibilityRole="button" accessibilityLabel={`Historia: ${h.titulo}`}
               style={({ pressed }) => ({ alignItems: 'center', width: 76, gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
               <LinearGradient colors={vista ? ['#9A9AA2', '#9A9AA2'] : ['#FFD60A', t.color.magenta, '#5B1E9C']}
@@ -95,7 +96,7 @@ export default function Historias({ generacion = 0 }) {
               <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={{ fontSize: 12, fontWeight: vista ? '500' : '700', color: vista ? colorSistema.texto3 : colorSistema.texto }}>
                 {h.rotulo || String(h.titulo ?? '').split(/\s+/)[0]}
               </Text>
-            </Pressable>
+            </Presionable>
           );
         })}
       </ScrollView>
@@ -198,9 +199,9 @@ function Visor({ historias, inicio, alVer, alTocarBoton, alCerrar }) {
                   {/* Duran 24 horas: cuándo se publicó, como en un estado. */}
                   {h.publicada_at ? <Text style={{ color: 'rgba(255,255,255,0.75)', fontWeight: '600', fontSize: 13 }}>{haceCuanto(h.publicada_at)}</Text> : null}
                 </View>
-                <Pressable onPress={cerrar} hitSlop={14} accessibilityRole="button" accessibilityLabel="Cerrar">
+                <Presionable onPress={cerrar} hitSlop={14} accessibilityRole="button" accessibilityLabel="Cerrar">
                   <Icono sf="xmark" respaldo="✕" tam={20} color="#FFFFFF" />
-                </Pressable>
+                </Presionable>
               </View>
             </View>
 
@@ -249,7 +250,7 @@ let whatsapp = '50323010013';
 
 function BotonHistoria({ principal, sf, icono, texto, alTocar }) {
   return (
-    <Pressable onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); alTocar(); }}
+    <Presionable onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); alTocar(); }}
       accessibilityRole="button" accessibilityLabel={texto}
       style={({ pressed }) => ({
         flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', minHeight: 50, borderRadius: 999,
@@ -258,6 +259,6 @@ function BotonHistoria({ principal, sf, icono, texto, alTocar }) {
       })}>
       {icono ?? <Icono sf={sf} respaldo="" tam={17} color={principal ? '#2B0B3A' : '#FFFFFF'} />}
       <Text maxFontSizeMultiplier={1.3} style={{ color: principal ? '#2B0B3A' : '#FFFFFF', fontSize: 17, fontWeight: '800' }}>{texto}</Text>
-    </Pressable>
+    </Presionable>
   );
 }

@@ -2,7 +2,8 @@
 // «app». Las preguntas siguen las mismas condiciones que valida la base
 // (`encuesta_cliente_cumple`), y al enviar se acreditan los puntos solos.
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, Text, TextInput, View } from 'react-native';
+import Presionable from '../componentes/Presionable';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Boton, Cargando, Pantalla, Tarjeta, Vacio } from '../componentes/ui';
@@ -118,11 +119,11 @@ export default function Encuesta() {
 function Opcion({ texto, activa, alTocar, ancho }) {
   const t = useTema();
   return (
-    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} accessibilityRole="button" accessibilityState={{ selected: activa }}
+    <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} accessibilityRole="button" accessibilityState={{ selected: activa }}
       style={({ pressed }) => ({ minHeight: 44, minWidth: ancho, paddingHorizontal: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
         backgroundColor: activa ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'), transform: [{ scale: pressed ? 0.96 : 1 }] })}>
       <Text style={{ fontSize: 15, fontWeight: '700', color: activa ? '#FFFFFF' : colorSistema.texto }}>{texto}</Text>
-    </Pressable>
+    </Presionable>
   );
 }
 

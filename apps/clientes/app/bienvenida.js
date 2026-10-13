@@ -1,7 +1,8 @@
 // La primera pantalla de quien no tiene sesión. Dice qué trae la app en cuatro
 // renglones (el cuarto, 2026-10-13: Tienda, Reservas, Facturas y Chat ya existían y no se nombraban) y las dos reglas del programa —las mismas del afiche de la
 // vitrina: verde lo que se gana, magenta lo que se usa—.
-import { Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, ScrollView, Text, View } from 'react-native';
+import Presionable from '../componentes/Presionable';
 import * as Haptics from 'expo-haptics';
 import { useSesion } from '../lib/sesion';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -102,7 +103,7 @@ function Regla({ color, texto, grande, chico }) {
 function Mirar({ sf, titulo, detalle, alTocar }) {
   const t = useTema();
   return (
-    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} accessibilityRole="button" accessibilityLabel={titulo}
+    <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} accessibilityRole="button" accessibilityLabel={titulo}
       style={({ pressed }) => ({ flex: 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
       <Tarjeta estilo={{ gap: 10, paddingVertical: 16 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -117,6 +118,6 @@ function Mirar({ sf, titulo, detalle, alTocar }) {
           <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>{detalle}</Text>
         </View>
       </Tarjeta>
-    </Pressable>
+    </Presionable>
   );
 }

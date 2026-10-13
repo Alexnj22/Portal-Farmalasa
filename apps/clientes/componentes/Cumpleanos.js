@@ -9,7 +9,8 @@
 // lo cuenta. `resumen.cumpleanos` lo prende el servidor (o la muestra
 // `cumpleanos` de `app_cliente_muestras`, para verla sin esperar al día).
 import { useEffect, useMemo, useState } from 'react';
-import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Dimensions, Modal, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import Presionable from './Presionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -18,7 +19,11 @@ import Animated, {
   Easing, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming,
 } from 'react-native-reanimated';
 import { Confeti, useSinMovimiento } from './animacion';
-import { LIVIANO } from '../lib/rendimiento';
+import { ANDROID, LIVIANO } from '../lib/rendimiento';
+
+// Android (2026-10-13): nunca el desenfoque en vivo — allá no es del sistema y
+// cuesta una pasada de GPU por cuadro mientras suben los globos. Va el velo denso.
+const SIN_DESENFOQUE = LIVIANO || ANDROID;
 import { dolares } from '../lib/formato';
 import { useBloqueo } from '../lib/bloqueo';
 import { useTema } from '../tema/tema';
@@ -82,8 +87,8 @@ function Fiesta({ nombre, puntos, alCerrar }) {
   return (
     <View style={StyleSheet.absoluteFill}>
       {/* En un teléfono viejo, un velo más denso en vez del desenfoque en vivo. */}
-      {LIVIANO ? null : <BlurView intensity={60} tint={t.oscuro ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />}
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: t.oscuro ? `rgba(40,8,50,${LIVIANO ? 0.9 : 0.45})` : `rgba(255,230,250,${LIVIANO ? 0.92 : 0.45})` }]} />
+      {SIN_DESENFOQUE ? null : <BlurView intensity={60} tint={t.oscuro ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />}
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: t.oscuro ? `rgba(40,8,50,${SIN_DESENFOQUE ? 0.9 : 0.45})` : `rgba(255,230,250,${SIN_DESENFOQUE ? 0.92 : 0.45})` }]} />
       {quieta ? null : GLOBOS.map((g, i) => <Globo key={i} emoji={g} indice={i} color={COLORES_GLOBO[i % COLORES_GLOBO.length]} />)}
       <Confeti colores={['#FF2D55', '#FFD60A', '#5AC8FA', '#AF52DE', t.color.verde, t.color.magenta]} />
 
@@ -111,13 +116,13 @@ function Fiesta({ nombre, puntos, alCerrar }) {
             Gracias por ser parte de Farmacia Salud. Que tengas un día lleno de salud y alegría.
           </Text>
         </Animated.View>
-        <Pressable onPress={alCerrar} accessibilityRole="button"
+        <Presionable onPress={alCerrar} accessibilityRole="button"
           style={({ pressed }) => ({
             marginTop: compacta ? 10 : 18, minHeight: 50, justifyContent: 'center', backgroundColor: t.color.magenta, borderRadius: 999, paddingHorizontal: 40, paddingVertical: 14,
             transform: [{ scale: pressed ? 0.96 : 1 }],
           })}>
           <Text maxFontSizeMultiplier={1.3} style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '800' }}>¡Gracias! 🥳</Text>
-        </Pressable>
+        </Presionable>
       </ScrollView>
     </View>
   );

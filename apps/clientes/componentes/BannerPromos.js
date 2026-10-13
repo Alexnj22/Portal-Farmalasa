@@ -6,7 +6,8 @@
 // No avanza solo: un carrusel que se mueve mientras uno lee distrae y gasta
 // batería. Los puntos de abajo dicen cuántas hay.
 import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import Presionable from './Presionable';
 import Animated, { Extrapolation, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useFocusEffect } from 'expo-router';
 import { Image as ImagenCache } from 'expo-image';
@@ -63,7 +64,7 @@ export default function BannerPromos() {
           const a = acentoDe(t, o.acento);
           // El banner del portal ya trae su diseño: proporción 2.4 : 1, como se subió.
           return (
-            <Pressable onPress={() => { if (!o.destino) return; Haptics.selectionAsync().catch(() => {}); navegar(o.destino); }}
+            <Presionable onPress={() => { if (!o.destino) return; Haptics.selectionAsync().catch(() => {}); navegar(o.destino); }}
               accessibilityRole="button" accessibilityLabel={`Oferta: ${o.titulo}`}
               style={({ pressed }) => ({ width: ancho, height: Math.round(ancho / 2.4), borderRadius: 24, overflow: 'hidden', transform: [{ scale: pressed ? 0.98 : 1 }] })}>
               {o.imagen ? (
@@ -89,7 +90,7 @@ export default function BannerPromos() {
               </View>
               </>
               ) : null}
-            </Pressable>
+            </Presionable>
           );
         }}
       />

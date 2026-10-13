@@ -21,7 +21,8 @@
 // (todavía se puede rechazar). Ahí se ve la foto que se mandó, el motivo si la
 // sucursal pidió otra («Subir otra foto»), y en Anteriores, «Rechazada: …».
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Modal, Platform, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Modal, Platform, Text, View } from 'react-native';
+import Presionable from '../componentes/Presionable';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -279,12 +280,12 @@ export default function Reservas() {
       <Pantalla conPestanas={false}>
         <Vacio titulo="Sin reservas">Aparta productos de las ofertas o del catálogo (desde el carrito) y pásalos a retirar sin hacer fila.</Vacio>
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
-          <Pressable onPress={() => navegar('/ofertas')} accessibilityRole="button" style={{ padding: 12, minHeight: 44, justifyContent: 'center' }}>
+          <Presionable onPress={() => navegar('/ofertas')} accessibilityRole="button" style={{ padding: 12, minHeight: 44, justifyContent: 'center' }}>
             <Text style={{ fontSize: 16, fontWeight: '700', color: t.color.magentaTexto }}>Ver ofertas</Text>
-          </Pressable>
-          <Pressable onPress={() => navegar('/catalogo')} accessibilityRole="button" style={{ padding: 12, minHeight: 44, justifyContent: 'center' }}>
+          </Presionable>
+          <Presionable onPress={() => navegar('/catalogo')} accessibilityRole="button" style={{ padding: 12, minHeight: 44, justifyContent: 'center' }}>
             <Text style={{ fontSize: 16, fontWeight: '700', color: t.color.magentaTexto }}>Ver catálogo</Text>
-          </Pressable>
+          </Presionable>
         </View>
       </Pantalla>
     );
@@ -344,11 +345,11 @@ export default function Reservas() {
         </Entrada>
       ))}
       {d.siguiente ? (
-        <Pressable onPress={cargarMas} disabled={masCargando} accessibilityRole="button"
+        <Presionable onPress={cargarMas} disabled={masCargando} accessibilityRole="button"
           style={({ pressed }) => ({ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, minHeight: 44, borderRadius: 999, opacity: pressed ? 0.6 : 1 })}>
           {masCargando ? <ActivityIndicator /> : null}
           <Text style={{ fontSize: 14, fontWeight: '600', color: colorSistema.texto2 }}>{masCargando ? 'Cargando más…' : 'Ver más reservas'}</Text>
-        </Pressable>
+        </Presionable>
       ) : null}
     </Pantalla>
   );
@@ -431,10 +432,10 @@ function Dato({ sf, rotulo, valor, detalle, color, accion }) {
         {detalle ? <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto2 }}>{detalle}</Text> : null}
       </View>
       {accion ? (
-        <Pressable onPress={accion.alTocar} hitSlop={8} accessibilityRole="button" accessibilityLabel={accion.texto}
+        <Presionable onPress={accion.alTocar} hitSlop={8} accessibilityRole="button" accessibilityLabel={accion.texto}
           style={{ minHeight: 44, justifyContent: 'center' }}>
           <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>{accion.texto}</Text>
-        </Pressable>
+        </Presionable>
       ) : null}
     </View>
   );
@@ -540,14 +541,14 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando, resaltada = fa
       ) : null}
 
       {/* El código para retirar: se muestra solo cuando está lista. */}
-      <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setVerCodigo((x) => !x); }} accessibilityRole="button"
+      <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); setVerCodigo((x) => !x); }} accessibilityRole="button"
         style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Icono sf="qrcode" respaldo="" tam={16} color={colorSistema.texto} />
           <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{r.pedido ? `Pedido ${r.pedido}` : `Código ${r.codigo}`}</Text>
         </View>
         <Icono sf={verCodigo ? 'chevron.up' : 'chevron.down'} respaldo="" tam={12} color={colorSistema.texto3} />
-      </Pressable>
+      </Presionable>
       {/* Compartir (2026-10-09): si no puede ir, se lo pasa a otra persona. A domicilio no aplica. */}
       {verCodigo ? (
         <CodigoReserva codigo={codigo} tam={140} compartir={domicilio ? null : {
@@ -561,9 +562,9 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando, resaltada = fa
           Ya está pagada. Para cancelarla, escríbele a la sucursal.
         </Text>
       ) : (
-        <Pressable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
+        <Presionable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
           <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.rojo }}>Cancelar reserva</Text>
-        </Pressable>
+        </Presionable>
       )}
     </Tarjeta>
   );
@@ -745,14 +746,14 @@ function PedidoAbierto({ g, ahora, alCancelar, alPagar, pagando, resaltada = fal
       ) : null}
 
       {/* Un solo código para todo el pedido. */}
-      <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setVerCodigo((x) => !x); }} accessibilityRole="button"
+      <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); setVerCodigo((x) => !x); }} accessibilityRole="button"
         style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Icono sf="qrcode" respaldo="" tam={16} color={colorSistema.texto} />
           <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>Pedido {g.pedido}</Text>
         </View>
         <Icono sf={verCodigo ? 'chevron.up' : 'chevron.down'} respaldo="" tam={12} color={colorSistema.texto3} />
-      </Pressable>
+      </Presionable>
       {verCodigo ? (
         <CodigoReserva codigo={g.pedido} tam={140} compartir={domicilio ? null : {
           producto: `${g.filas.length} productos (${r.producto_nombre} y más)`, sala: r.sala, pedido: true,
@@ -764,9 +765,9 @@ function PedidoAbierto({ g, ahora, alCancelar, alPagar, pagando, resaltada = fal
           Ya está pagado. Para cancelarlo, escríbele a la sucursal.
         </Text>
       ) : (
-        <Pressable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
+        <Presionable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
           <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.rojo }}>Cancelar pedido</Text>
-        </Pressable>
+        </Presionable>
       )}
     </Tarjeta>
   );
@@ -936,15 +937,15 @@ function EnRevision({ g, resaltada, alSubir, subiendo, alCancelar }) {
           <Text style={{ fontSize: 22, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(total)}</Text>
         </View>
       ) : null}
-      <Pressable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
+      <Presionable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
         <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.rojo }}>{g.filas.length > 1 ? 'Cancelar pedido' : 'Cancelar reserva'}</Text>
-      </Pressable>
+      </Presionable>
       <Modal visible={verFoto} animationType="fade" presentationStyle="overFullScreen" transparent onRequestClose={() => setVerFoto(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', paddingTop: ins.top + 12, paddingBottom: ins.bottom + 12 }}>
-          <Pressable onPress={() => setVerFoto(false)} accessibilityRole="button" accessibilityLabel="Cerrar" hitSlop={12}
+          <Presionable onPress={() => setVerFoto(false)} accessibilityRole="button" accessibilityLabel="Cerrar" hitSlop={12}
             style={{ alignSelf: 'flex-end', paddingHorizontal: 18, minHeight: 44, justifyContent: 'center' }}>
             <Text style={{ fontSize: 17, fontWeight: '700', color: '#FFFFFF' }}>Cerrar</Text>
-          </Pressable>
+          </Presionable>
           {r.receta_url ? <Image source={{ uri: r.receta_url }} style={{ flex: 1 }} contentFit="contain" accessibilityLabel="Foto de tu receta" /> : null}
         </View>
       </Modal>
@@ -1021,9 +1022,9 @@ function Encargo({ e, alPagar, alCancelar, pagando = false }) {
         <Boton alTocar={alPagar} cargando={pagando}>{`Confirmar y pagar ${dolares(e.anticipo)}`}</Boton>
       ) : null}
       {(e.estado === 'solicitado' || e.estado === 'confirmado') && e.pago_estado !== 'pagado' ? (
-        <Pressable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center' }}>
+        <Presionable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center' }}>
           <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.rojo }}>Cancelar encargo</Text>
-        </Pressable>
+        </Presionable>
       ) : null}
     </Tarjeta>
   );

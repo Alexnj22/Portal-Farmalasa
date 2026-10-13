@@ -8,7 +8,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Aurora from '../componentes/Aurora';
 import { useAppActiva } from '../lib/visible';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_NATIVA, barraAndroid } from '../componentes/PilaDePestana';
+import * as SystemUI from 'expo-system-ui';
 import { useSesion } from '../lib/sesion';
 import { conReporte } from '../lib/errores';
 import { llamar } from '../lib/api';
@@ -35,6 +36,19 @@ export { default as ErrorBoundary } from '../componentes/ErrorDePantalla';
 
 const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent' } };
 const OSCURO = { ...DarkTheme, colors: { ...DarkTheme.colors, background: 'transparent' } };
+// Android (2026-10-13, «las transiciones no se ven bien»): cada pantalla tiene
+// su fondo OPACO —la superficie de Material 3— y entra con la animación de
+// Android. Con fondos transparentes sobre una aurora global, durante la
+// transición se veía la pantalla de atrás a través de la de adelante, y el
+// sistema tenía que componer las dos más la aurora en cada cuadro. Mismo
+// arreglo que la app del personal (apps/mobile/app/_layout.js).
+const ANDROID = Platform.OS === 'android';
+const CLARO_ANDROID = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: '#F5F4F9', card: '#F5F4F9' } };
+const OSCURO_ANDROID = { ...DarkTheme, colors: { ...DarkTheme.colors, background: '#131218', card: '#131218' } };
+// Hacia adelante, la pantalla entra deslizándose desde la derecha (el eje
+// compartido de Material); las que en iPhone son hojas (una oferta, un
+// producto) suben desde abajo. Las dos las anima el sistema, no JavaScript.
+const MODAL_ANDROID = ANDROID ? { animation: 'slide_from_bottom' } : {};
 const PUBLICAS = new Set(['bienvenida', 'entrar', 'registro']);
 // Se ven con o sin sesión: la vitrina, las sucursales y el detalle de una oferta.
 const ABIERTAS = new Set(['vitrina', 'sucursales', 'oferta', 'o', 'producto', 'mis-puntos', 'legal']);
@@ -143,21 +157,31 @@ function Raiz() {
   const oscuro = useColorScheme() === 'dark';
   const t = useTema();
   usarFondoDelDocumento(oscuro ? '#0A090E' : '#F5F4F8');
+  // Android: el fondo de la VENTANA en el color de la superficie. Es lo que se
+  // ve un instante entre una pantalla y otra, al abrir el teclado o al volver
+  // con el gesto: sin esto era blanco también en modo oscuro (el destello).
+  useEffect(() => {
+    if (ANDROID) SystemUI.setBackgroundColorAsync(colorSistema.fondo).catch(() => {});
+  }, [oscuro]);
+  const pila = ANDROID
+    ? { ...barraAndroid(), headerTintColor: t.color.magentaTexto, animation: 'slide_from_right' }
+    : {
+        ...BARRA_NATIVA,
+        headerTintColor: t.color.magentaTexto,
+        headerBackButtonDisplayMode: 'minimal',
+        headerTitleStyle: { color: colorSistema.texto },
+        contentStyle: { backgroundColor: 'transparent' },
+      };
   return (
-    <ThemeProvider value={oscuro ? OSCURO : CLARO}>
+    <ThemeProvider value={ANDROID ? (oscuro ? OSCURO_ANDROID : CLARO_ANDROID) : (oscuro ? OSCURO : CLARO)}>
       <SafeAreaProvider>
         <GestureHandlerRootView style={{ flex: 1 }}>
-          <AuroraRaiz />
+          {/* Android: sin aurora (componentes/Aurora.android.js); el fondo lo da cada pantalla. */}
+          {ANDROID ? null : <AuroraRaiz />}
           <Guardia />
           <AbrirAviso />
           <StatusBar style="auto" />
-          <Stack screenOptions={{
-            ...BARRA_NATIVA,
-            headerTintColor: t.color.magentaTexto,
-            headerBackButtonDisplayMode: 'minimal',
-            headerTitleStyle: { color: colorSistema.texto },
-            contentStyle: { backgroundColor: 'transparent' },
-          }}>
+          <Stack screenOptions={pila}>
             <Stack.Screen name="index" options={{ headerShown: false }} />
             {/* Oferta y producto: modal clásico. Con `formSheet` la pantalla
                 salía NEGRA (compilación 22, 2026-10-07): el contenido con
@@ -168,9 +192,9 @@ function Raiz() {
             <Stack.Screen name="bienvenida" options={{ headerShown: false, gestureEnabled: false }} />
             <Stack.Screen name="entrar" options={{ title: 'Entrar' }} />
             <Stack.Screen name="registro" options={{ title: 'Unirme' }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false, gestureEnabled: false }} />
-            <Stack.Screen name="oferta/[id]" options={{ presentation: 'modal', headerShown: false, gestureEnabled: true }} />
-            <Stack.Screen name="producto/[id]" options={{ presentation: 'modal', headerShown: false, gestureEnabled: true }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false, gestureEnabled: false, ...(ANDROID ? { animation: 'fade' } : {}) }} />
+            <Stack.Screen name="oferta/[id]" options={{ presentation: 'modal', headerShown: false, gestureEnabled: true, ...MODAL_ANDROID }} />
+            <Stack.Screen name="producto/[id]" options={{ presentation: 'modal', headerShown: false, gestureEnabled: true, ...MODAL_ANDROID }} />
             <Stack.Screen name="o/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="compras" options={{ title: 'Mis compras' }} />
             <Stack.Screen name="sucursales" options={{ title: 'Nuestras sucursales' }} />

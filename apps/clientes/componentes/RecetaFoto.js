@@ -3,7 +3,8 @@
 // (lib/fotos.js la achica), se revisa en grande con zoom antes de aceptarla
 // (componentes/VistaPreviaFoto, 2026-10-12) y queda en miniatura; se sube
 // recién al confirmar, cuando ya existe la reserva a la que pertenece.
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import Presionable from './Presionable';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
@@ -43,18 +44,18 @@ export default function RecetaFoto({ foto, alCambiar, superficie }) {
               <Icono sf="checkmark.circle.fill" respaldo="✓" tam={15} color={t.color.exitoTexto} />
               <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.exitoTexto }}>Lista para enviar</Text>
             </View>
-            <Pressable onPress={elegir} accessibilityRole="button" hitSlop={8} style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}>
+            <Presionable onPress={elegir} accessibilityRole="button" hitSlop={8} style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}>
               <Text style={{ fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>Cambiar foto</Text>
-            </Pressable>
+            </Presionable>
           </View>
         </View>
       ) : (
-        <Pressable onPress={elegir} accessibilityRole="button"
+        <Presionable onPress={elegir} accessibilityRole="button"
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 50, borderRadius: 14,
             borderWidth: 1.5, borderStyle: 'dashed', borderColor: t.color.magenta, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
           <Icono sf="camera.fill" respaldo="📷" tam={17} color={t.color.magentaTexto} />
           <Text style={{ fontSize: 16, fontWeight: '800', color: t.color.magentaTexto }}>Tomar o elegir la foto</Text>
-        </Pressable>
+        </Presionable>
       )}
       {vistaPrevia.vista}
     </View>

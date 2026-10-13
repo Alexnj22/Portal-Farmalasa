@@ -6,7 +6,8 @@
 // El código de invitación NO es el de la tarjeta: ése sirve para entrar a la
 // cuenta y compartirlo sería regalar el acceso.
 import { useCallback, useState } from 'react';
-import { Pressable, Share, Text, View } from 'react-native';
+import { Share, Text, View } from 'react-native';
+import Presionable from '../componentes/Presionable';
 import { useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -57,7 +58,7 @@ export default function Invitar() {
           <Text style={{ fontSize: 15, lineHeight: 21, color: 'rgba(255,255,255,0.88)', textAlign: 'center' }}>
             Cuando tu amigo haga su primera compra de ${d.minimo} o más.
           </Text>
-          <Pressable onPress={compartir} accessibilityRole="button" accessibilityLabel={`Tu código ${d.codigo}. Toca para compartir.`}
+          <Presionable onPress={compartir} accessibilityRole="button" accessibilityLabel={`Tu código ${d.codigo}. Toca para compartir.`}
             style={({ pressed }) => ({
               marginTop: 6, maxWidth: '100%', backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: RADIO.medio, borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
               borderStyle: 'dashed', paddingVertical: 14, paddingHorizontal: 28, transform: [{ scale: pressed ? 0.97 : 1 }],
@@ -65,7 +66,7 @@ export default function Invitar() {
             {/* Con letra grande o pantalla chica, el código se encoge: partido en dos líneas no se puede dictar. */}
             <Text adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.5}
               style={{ fontSize: 34, fontWeight: '900', letterSpacing: 6, color: '#FFFFFF', fontVariant: ['tabular-nums'] }}>{d.codigo}</Text>
-          </Pressable>
+          </Presionable>
         </LinearGradient>
       </Entrada>
 

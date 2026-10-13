@@ -13,7 +13,8 @@
 // de siempre.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, StyleSheet, Text, View } from 'react-native';
+import Presionable from '../componentes/Presionable';
 import { Image as ImagenCache } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Vidrio from '../componentes/Vidrio';
@@ -126,13 +127,13 @@ function TarjetaSucursal({ s, indice }) {
         {s.telefono || s.celular ? <Accion sf="phone.fill" respaldo="📞" texto="Llamar" alTocar={() => abrir(`tel:${soloDigitos(s.celular ?? s.telefono)}`)} /> : null}
       </View>
 
-      <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta((x) => !x); }} accessibilityRole="button"
+      <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta((x) => !x); }} accessibilityRole="button"
         style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>Horario de la semana</Text>
         <Animated.View style={giro}>
           <Icono sf="chevron.down" respaldo="▼" tam={14} color={colorSistema.texto2} />
         </Animated.View>
-      </Pressable>
+      </Presionable>
       {abierta ? (
         <Animated.View entering={FadeIn.duration(220).delay(60)} exiting={FadeOut.duration(120)} style={{ gap: 6 }}>
           {[1, 2, 3, 4, 5, 6, 0].map((d) => {
@@ -158,14 +159,14 @@ function TarjetaSucursal({ s, indice }) {
 function BotonCercanas({ buscando, alTocar }) {
   const t = useTema();
   return (
-    <Pressable onPress={alTocar} disabled={buscando} accessibilityRole="button" accessibilityLabel="Ver primero las sucursales más cercanas"
+    <Presionable onPress={alTocar} disabled={buscando} accessibilityRole="button" accessibilityLabel="Ver primero las sucursales más cercanas"
       style={({ pressed }) => ({
         minHeight: 48, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 16,
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', opacity: buscando ? 0.6 : 1, transform: [{ scale: pressed ? 0.97 : 1 }],
       })}>
       <Icono sf="location.fill" respaldo="📍" tam={18} color={t.color.magentaTexto} />
       <Text style={{ fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>{buscando ? 'Buscando dónde estás…' : 'Ver las más cercanas'}</Text>
-    </Pressable>
+    </Presionable>
   );
 }
 
@@ -181,13 +182,13 @@ function Estado({ abierta }) {
 function Accion({ sf, respaldo, icono, texto, alTocar }) {
   const t = useTema();
   return (
-    <Pressable onPress={alTocar} accessibilityRole="button" accessibilityLabel={texto}
+    <Presionable onPress={alTocar} accessibilityRole="button" accessibilityLabel={texto}
       style={({ pressed }) => ({
         flex: 1, minHeight: 60, borderRadius: 16, alignItems: 'center', justifyContent: 'center', gap: 5,
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', transform: [{ scale: pressed ? 0.96 : 1 }],
       })}>
       {icono ?? <Icono sf={sf} respaldo={respaldo} tam={20} color={colorSistema.texto} />}
       <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto }}>{texto}</Text>
-    </Pressable>
+    </Presionable>
   );
 }

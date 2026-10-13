@@ -2,7 +2,8 @@
 // «420 puntos» no— y el número de puntos va como el detalle de la cifra.
 // Misma decisión que /mis-puntos de la web.
 import { useMemo, useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, AppState, Platform, Pressable, Text, View } from 'react-native';
+import { Alert, AppState, Platform, Text, View } from 'react-native';
+import Presionable from '../../../componentes/Presionable';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import * as Haptics from 'expo-haptics';
@@ -147,12 +148,12 @@ export default function Puntos() {
   return (
     <Pantalla alRefrescar={refrescar} refrescando={refrescando}>
       {enPrueba ? (
-        <Pressable onPress={() => navegar('/cuenta')} accessibilityRole="button" hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
+        <Presionable onPress={() => navegar('/cuenta')} accessibilityRole="button" hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
           accessibilityLabel="Modo de prueba activo. Cambiarlo en Cuenta" accessibilityHint="Abre Cuenta, donde se elige el nivel de prueba"
           style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FF9F0A', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, minHeight: 28 }}>
           <Icono sf="testtube.2" respaldo="" tam={12} color="#1A1000" />
           <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {String(`${mayorista ? `Mayoreo ${rangoDePrueba(mayorista).nombre}` : resumen.nivel?.nombre ?? ''}${empleado ? ' · Team' : ''}`).toUpperCase()}</Text>
-        </Pressable>
+        </Presionable>
       ) : null}
       <SubisteDeNivel nivel={resumen.nivel} forzar={verNivel === '1'} mayoreo={mayorista ? (mayoristaReal ?? rangoDePrueba(mayorista)) : null}
         forzarRango={verRango === '1'} forzarPrecio={verPrecio === '1'} forzarBienvenida={verMayoreo === '1'} />
@@ -239,7 +240,7 @@ export default function Puntos() {
       {/* El cupón del mes (Platino): saldo de regalo que vence a fin de mes. */}
       {resumen.cupon ? (
         <Entrada indice={2}>
-          <Cupon cupon={resumen.cupon} nivel={mayorista ?? resumen.nivel?.clave} activa={visible} fondo={t.oscuro ? '#0A090E' : '#F5F4F8'} demo={enPrueba ? prueba.demoCupon : 0} />
+          <Cupon cupon={resumen.cupon} nivel={mayorista ?? resumen.nivel?.clave} activa={visible} fondo={Platform.OS === 'android' ? colorSistema.fondo : (t.oscuro ? '#0A090E' : '#F5F4F8')} demo={enPrueba ? prueba.demoCupon : 0} />
         </Entrada>
       ) : null}
 
@@ -423,7 +424,7 @@ function BotonWallet({ serial, nivelPrueba }) {
     );
   }
   return (
-    <Pressable onPress={tocar} accessibilityRole="button" accessibilityLabel={tiene ? 'Ver en Apple Wallet' : 'Agregar a Apple Wallet'}
+    <Presionable onPress={tocar} accessibilityRole="button" accessibilityLabel={tiene ? 'Ver en Apple Wallet' : 'Agregar a Apple Wallet'}
       style={({ pressed }) => ({
         alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#000000',
         borderRadius: 12, paddingHorizontal: 18, minHeight: 48, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
@@ -433,7 +434,7 @@ function BotonWallet({ serial, nivelPrueba }) {
       <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>
         {cargando ? 'Preparando…' : 'Agregar a Apple Wallet'}
       </Text>
-    </Pressable>
+    </Presionable>
   );
 }
 
@@ -453,7 +454,7 @@ function BotonGoogleWallet({ nivelPrueba }) {
     setCargando(false);
   };
   return (
-    <Pressable onPress={tocar} accessibilityRole="button" accessibilityLabel="Agregar a Google Wallet"
+    <Presionable onPress={tocar} accessibilityRole="button" accessibilityLabel="Agregar a Google Wallet"
       style={({ pressed }) => ({
         alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#1F1F1F',
         borderRadius: 999, paddingHorizontal: 20, minHeight: 48, borderWidth: 1, borderColor: '#747775',
@@ -463,7 +464,7 @@ function BotonGoogleWallet({ nivelPrueba }) {
       <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>
         {cargando ? 'Preparando…' : 'Agregar a Google Wallet'}
       </Text>
-    </Pressable>
+    </Presionable>
   );
 }
 
@@ -488,7 +489,7 @@ function Campana({ generacion }) {
   // Abrir la bandeja los marca leídos: la campana se apaga ya, no al minuto.
   const abrirBandeja = () => { campanaUltimo = 0; setSinLeer(0); navegar('/notificaciones'); };
   return (
-    <Pressable onPress={abrirBandeja} hitSlop={10} accessibilityRole="button"
+    <Presionable onPress={abrirBandeja} hitSlop={10} accessibilityRole="button"
       accessibilityLabel={sinLeer ? `Notificaciones, ${sinLeer} sin leer` : 'Notificaciones'}
       style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)', transform: [{ scale: pressed ? 0.92 : 1 }] })}>
@@ -499,7 +500,7 @@ function Campana({ generacion }) {
           <Text maxFontSizeMultiplier={1.2} style={{ color: '#FFF', fontSize: 11, fontWeight: '800' }}>{sinLeer > 9 ? '9+' : sinLeer}</Text>
         </View>
       ) : null}
-    </Pressable>
+    </Presionable>
   );
 }
 
@@ -510,7 +511,7 @@ function TratamientosInicio({ lista }) {
   const t = useTema();
   return (
     <Tarjeta estilo={{ gap: 10 }}>
-      <Pressable onPress={() => navegar('/tratamientos')} accessibilityRole="button" accessibilityLabel="Mis tratamientos, ver todos"
+      <Presionable onPress={() => navegar('/tratamientos')} accessibilityRole="button" accessibilityLabel="Mis tratamientos, ver todos"
         style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 }}>
         <View style={{ width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.verde, t.oscuro ? 0.28 : 0.16) }}>
           <Icono sf="pills.fill" respaldo="💊" tam={17} color={t.color.verdeTexto} />
@@ -518,7 +519,7 @@ function TratamientosInicio({ lista }) {
         <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: colorSistema.texto }}>Mis tratamientos</Text>
         <Text style={{ fontSize: 14, fontWeight: '600', color: colorSistema.texto2 }}>Ver todos</Text>
         <Icono sf="chevron.right" respaldo="›" tam={12} color={colorSistema.texto3} />
-      </Pressable>
+      </Presionable>
       {!lista.length ? (
         <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>
           Cuando compres un medicamento con regularidad, te avisamos aquí antes de que se te acabe.
@@ -534,12 +535,12 @@ function TratamientosInicio({ lista }) {
                 {d < 0 ? `Se te acabó hace ${-d} día${d === -1 ? '' : 's'}` : d === 0 ? 'Se te acaba hoy' : `Se te acaba en ${d} día${d === 1 ? '' : 's'}`}
               </Text>
             </View>
-            <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${x.product_id}`); }} accessibilityRole="button"
+            <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${x.product_id}`); }} accessibilityRole="button"
               accessibilityLabel={`Reservar ${nombrePropio(x.nombre)}`} hitSlop={{ top: 5, bottom: 5, left: 4, right: 4 }}
               style={({ pressed }) => ({ minHeight: 34, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center',
                 backgroundColor: urge ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'), transform: [{ scale: pressed ? 0.95 : 1 }] })}>
               <Text style={{ fontSize: 13, fontWeight: '800', color: urge ? '#FFFFFF' : colorSistema.texto }}>Reservar</Text>
-            </Pressable>
+            </Presionable>
           </View>
         );
       })}
@@ -550,7 +551,7 @@ function TratamientosInicio({ lista }) {
 function Acceso({ sf, titulo, detalle, color, resaltar, alTocar }) {
   const t = useTema();
   return (
-    <Pressable onPress={alTocar} accessibilityRole="button" accessibilityLabel={`${titulo}: ${detalle}`}
+    <Presionable onPress={alTocar} accessibilityRole="button" accessibilityLabel={`${titulo}: ${detalle}`}
       style={({ pressed }) => ({ flex: 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
       <Tarjeta estilo={{ gap: 10, paddingVertical: 14 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -564,6 +565,6 @@ function Acceso({ sf, titulo, detalle, color, resaltar, alTocar }) {
           <Text style={{ fontSize: 13, color: resaltar ? colorSistema.texto : colorSistema.texto2, fontWeight: resaltar ? '600' : '400' }} numberOfLines={2}>{detalle}</Text>
         </View>
       </Tarjeta>
-    </Pressable>
+    </Presionable>
   );
 }

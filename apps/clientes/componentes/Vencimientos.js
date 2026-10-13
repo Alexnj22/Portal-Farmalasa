@@ -10,7 +10,8 @@
 //     resorte una tras otra, las de los 3 meses van en naranja, y al tocar una
 //     se ve el detalle de ese mes.
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import Presionable from './Presionable';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Tarjeta, Texto, Titulo } from './ui';
@@ -136,13 +137,13 @@ function Barra({ barra, indice, maximo, elegida, color, alTocar }) {
     opacity: 0.75 + realce.value * 0.25,
   }));
   return (
-    <Pressable onPress={alTocar} style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end', height: '100%', gap: 4 }}
+    <Presionable onPress={alTocar} style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end', height: '100%', gap: 4 }}
       accessibilityRole="button" accessibilityLabel={`${barra.mes} ${barra.anio}: ${entero(barra.puntos)} puntos`}>
       {barra.puntos ? (
         <Text style={{ fontSize: 11, fontWeight: '800', color: colorSistema.texto2, fontVariant: ['tabular-nums'] }}>{entero(barra.puntos)}</Text>
       ) : null}
       <Animated.View style={[{ width: '100%', borderRadius: 8, backgroundColor: barra.puntos ? color : colorSistema.separador }, estiloBarra]} />
       <Text style={{ fontSize: 12, fontWeight: elegida ? '800' : '600', color: elegida ? colorSistema.texto : colorSistema.texto2 }}>{barra.mes}</Text>
-    </Pressable>
+    </Presionable>
   );
 }

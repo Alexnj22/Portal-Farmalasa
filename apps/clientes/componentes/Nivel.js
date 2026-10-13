@@ -3,7 +3,8 @@
 // cuánto falta para el siguiente, con una barra. La regla vive en la base
 // (`puntos_niveles`); acá sólo se muestra.
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import Presionable from './Presionable';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Tarjeta, Texto } from './ui';
@@ -43,7 +44,7 @@ export default function Nivel({ nivel, pie = null }) {
   const alternar = () => { Haptics.selectionAsync().catch(() => {}); setAbierto((v) => !v); };
   return (
     <Tarjeta estilo={{ gap: 12 }}>
-      <Pressable onPress={alternar} accessibilityRole="button" accessibilityState={{ expanded: abierto }}
+      <Presionable onPress={alternar} accessibilityRole="button" accessibilityState={{ expanded: abierto }}
         accessibilityLabel={`Tu nivel: ${nivel.nombre}. ${abierto ? 'Ocultar' : 'Ver'} beneficios`}
         style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, opacity: pressed ? 0.7 : 1 })}>
         <LinearGradient colors={paleta.frente} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
@@ -61,7 +62,7 @@ export default function Nivel({ nivel, pie = null }) {
         <View style={{ transform: [{ rotate: abierto ? '180deg' : '0deg' }] }}>
           <Icono sf="chevron.down" respaldo="⌄" tam={14} color={colorSistema.texto3} />
         </View>
-      </Pressable>
+      </Presionable>
 
       {sig && !(yaAlcanza && sig.falta === 0) ? (
         <View style={{ gap: 6 }}>
@@ -117,11 +118,11 @@ export default function Nivel({ nivel, pie = null }) {
       {pie}
       </Animated.View>
       ) : (
-        <Pressable onPress={alternar} hitSlop={8} style={{ alignSelf: 'flex-start' }}>
+        <Presionable onPress={alternar} hitSlop={8} style={{ alignSelf: 'flex-start' }}>
           <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.magentaTexto }}>
             {apagados ? 'Ver beneficios y cuándo se activan' : 'Ver beneficios'}
           </Text>
-        </Pressable>
+        </Presionable>
       )}
     </Tarjeta>
   );

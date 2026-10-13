@@ -15,7 +15,8 @@
 // - «Seleccionar» (arriba) marca varias, hasta 30: «Enviar por correo» las
 //   manda en un solo correo y «Descargar» las junta en un .zip.
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Modal, Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, Modal, Platform, Share, StyleSheet, Text, View } from 'react-native';
+import Presionable from '../componentes/Presionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, useFocusEffect } from 'expo-router';
 import { WebView } from 'react-native-webview';
@@ -290,11 +291,11 @@ export default function Facturas() {
           {!lista.length ? <Vacio titulo={filtro === 'todas' ? 'Sin facturas' : 'Nada por aquí'} icono="doc.text.fill" respaldo="▤">{VACIO[filtro]}</Vacio> : null}
           {lista.map((f) => <Factura key={f.id} f={f} ocupada={ocupada} acciones={acciones} seleccion={seleccion} alternar={alternar} />)}
           {d.siguiente ? (
-            <Pressable onPress={cargarMas} disabled={masCargando} accessibilityRole="button"
+            <Presionable onPress={cargarMas} disabled={masCargando} accessibilityRole="button"
               style={({ pressed }) => ({ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, minHeight: 44, borderRadius: 999, opacity: pressed ? 0.6 : 1 })}>
               {masCargando ? <ActivityIndicator /> : null}
               <Texto nivel={2} estilo={{ fontSize: 14, fontWeight: '600' }}>{masCargando ? 'Cargando más…' : 'Ver más facturas'}</Texto>
-            </Pressable>
+            </Presionable>
           ) : null}
           {seleccion ? <View style={{ height: 96 }} /> : null}
         </>
@@ -304,11 +305,11 @@ export default function Facturas() {
     <>
       <Stack.Screen options={{
         headerRight: d?.ok && (seleccion || elegibles.length) ? () => (
-          <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); if (seleccion) salirDeSeleccion(); else setSeleccion(new Set()); }}
+          <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); if (seleccion) salirDeSeleccion(); else setSeleccion(new Set()); }}
             hitSlop={10} accessibilityRole="button" accessibilityLabel={seleccion ? 'Terminar la selección' : 'Seleccionar varias facturas'}
             style={({ pressed }) => ({ paddingHorizontal: 6, minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
             <Text style={{ fontSize: 17, fontWeight: seleccion ? '600' : '400', color: t.color.magentaTexto }}>{seleccion ? 'Listo' : 'Seleccionar'}</Text>
-          </Pressable>
+          </Presionable>
         ) : undefined,
       }} />
       <Pantalla conPestanas={false} conBurbuja={false} alRefrescar={d && !seleccion ? refrescar : undefined} refrescando={refrescando} alFinal={d?.siguiente ? cargarMas : undefined}>
@@ -324,11 +325,11 @@ export default function Facturas() {
               {marcados.length ? `${marcados.length} ${marcados.length === 1 ? 'elegida' : 'elegidas'}` : 'Toca las facturas que quieras'}
             </Texto>
             {elegibles.length ? (
-              <Pressable onPress={marcarTodas} hitSlop={8} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
+              <Presionable onPress={marcarTodas} hitSlop={8} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
                 <Text style={{ fontSize: 15, fontWeight: '600', color: t.color.magentaTexto }}>
                   {todasMarcadas ? 'Quitar todas' : elegibles.length > TOPE_SELECCION ? `Elegir ${TOPE_SELECCION}` : 'Elegir todas'}
                 </Text>
-              </Pressable>
+              </Presionable>
             ) : null}
           </View>
         ) : null}
@@ -356,14 +357,14 @@ function BarraSeleccion({ cantidad, progreso, alEnviar, alDescargar }) {
     <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 16, paddingBottom: Math.max(ins.bottom, 12) + 4 }}>
       <Vidrio radio={24} style={{ width: '100%', maxWidth: 560, alignSelf: 'center' }}>
         <View style={{ flexDirection: 'row', gap: 10, padding: 10 }}>
-          <Pressable onPress={alEnviar} disabled={apagada} accessibilityRole="button" accessibilityState={{ disabled: apagada }}
+          <Presionable onPress={alEnviar} disabled={apagada} accessibilityRole="button" accessibilityState={{ disabled: apagada }}
             accessibilityLabel={`Enviar por correo ${cantidad} facturas`}
             style={({ pressed }) => ({ flex: 1, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', minHeight: 48, borderRadius: 16,
               backgroundColor: t.color.magenta, opacity: apagada ? 0.45 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
             <Icono sf="envelope.fill" respaldo="" tam={15} color="#FFFFFF" />
             <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>Enviar por correo</Text>
-          </Pressable>
-          <Pressable onPress={alDescargar} disabled={apagada} accessibilityRole="button" accessibilityState={{ disabled: apagada }}
+          </Presionable>
+          <Presionable onPress={alDescargar} disabled={apagada} accessibilityRole="button" accessibilityState={{ disabled: apagada }}
             accessibilityLabel={`Descargar ${cantidad} facturas`}
             style={({ pressed }) => ({ flex: 1, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', minHeight: 48, borderRadius: 16,
               backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)', opacity: apagada && progreso == null ? 0.45 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
@@ -371,7 +372,7 @@ function BarraSeleccion({ cantidad, progreso, alEnviar, alDescargar }) {
             <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>
               {progreso != null ? `${Math.round(progreso * 100)} %` : enAndroid ? 'Guardar' : 'Descargar'}
             </Text>
-          </Pressable>
+          </Presionable>
         </View>
       </Vidrio>
     </View>
@@ -397,16 +398,16 @@ function VisorPdf({ visor, alCerrar, alCompartir }) {
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={alCerrar}>
       <View style={{ flex: 1, backgroundColor: fondo }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 14, gap: 12 }}>
-          <Pressable onPress={alCerrar} hitSlop={12} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
+          <Presionable onPress={alCerrar} hitSlop={12} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
             <Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>Cerrar</Text>
-          </Pressable>
+          </Presionable>
           <Text numberOfLines={1} style={{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: colorSistema.texto }}>
             {rotulo(visor.f)}
           </Text>
-          <Pressable onPress={compartir} hitSlop={12} accessibilityRole="button" accessibilityLabel={enAndroid ? 'Guardar PDF' : 'Compartir PDF'} disabled={compartiendo}
+          <Presionable onPress={compartir} hitSlop={12} accessibilityRole="button" accessibilityLabel={enAndroid ? 'Guardar PDF' : 'Compartir PDF'} disabled={compartiendo}
             style={{ minWidth: 44, minHeight: 44, alignItems: 'flex-end', justifyContent: 'center', opacity: compartiendo ? 0.5 : 1 }}>
             {compartiendo ? <ActivityIndicator /> : <Icono sf="square.and.arrow.up" respaldo="↗" tam={20} color={t.color.magenta} />}
-          </Pressable>
+          </Presionable>
         </View>
         {error ? (
           <Vacio titulo="No se pudo mostrar">Revisa tu conexión y vuelve a intentar, o guarda el PDF con el botón de arriba.</Vacio>
@@ -487,12 +488,12 @@ function Documento({ f, ocupada, acciones, seleccion, alternar, anidada = false 
   );
   if (eligiendo) {
     return (
-      <Pressable onPress={() => marcable && alternar(f)} disabled={!marcable}
+      <Presionable onPress={() => marcable && alternar(f)} disabled={!marcable}
         accessibilityRole="checkbox" accessibilityState={{ checked: marcado, disabled: !marcable }}
         accessibilityLabel={`${tipo.texto}${f.numero ? ` número ${f.numero}` : ''}, ${dolares(f.total)}`}
         style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: !marcable ? 0.5 : pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
         {fila}
-      </Pressable>
+      </Presionable>
     );
   }
   return (
@@ -524,11 +525,11 @@ function Etiqueta({ texto }) {
 function Accion({ sf, respaldo = '', texto, etiqueta, alTocar, cargando }) {
   const t = useTema();
   return (
-    <Pressable onPress={alTocar} disabled={cargando} accessibilityRole="button" accessibilityLabel={etiqueta ?? texto}
+    <Presionable onPress={alTocar} disabled={cargando} accessibilityRole="button" accessibilityLabel={etiqueta ?? texto}
       style={({ pressed }) => ({ flex: texto ? 1 : 0, width: texto ? undefined : 44, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', minHeight: 44, borderRadius: RADIO.chico,
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', opacity: cargando ? 0.5 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
       {cargando && !texto ? <ActivityIndicator /> : <Icono sf={sf} respaldo={respaldo} tam={14} color={colorSistema.texto} />}
       {texto ? <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto }}>{cargando ? '…' : texto}</Text> : null}
-    </Pressable>
+    </Presionable>
   );
 }

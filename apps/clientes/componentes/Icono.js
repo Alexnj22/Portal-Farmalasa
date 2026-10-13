@@ -100,7 +100,7 @@ const MATERIAL = {
   'rectangle.portrait.and.arrow.right': 'logout',
   'shippingbox.fill': 'package_2',
   'sparkles': 'auto_awesome',
-  'square.and.arrow.up': 'ios_share',
+  'square.and.arrow.up': 'share', // el «compartir» de Android, no el de iOS
   'square.grid.2x2.fill': 'grid_view',
   'square.stack.3d.up.fill': 'stacks',
   'star': 'star',
@@ -123,6 +123,15 @@ const MATERIAL = {
   'xmark': 'close',
   'xmark.circle': 'cancel',
   'xmark.circle.fill': 'cancel',
+  // Los que faltaban y en Android salían como su respaldo de texto (2026-10-13).
+  'arrow.down.circle.fill': 'download_for_offline',
+  'bell.badge.fill': 'notifications_active',
+  'birthday.cake.fill': 'cake',
+  'doc.text.image': 'image',
+  'doc.text.viewfinder': 'document_scanner',
+  'ellipsis': 'more_horiz',
+  'square.and.arrow.down': 'download',
+  'wifi.exclamationmark': 'signal_wifi_bad',
 };
 
 export default function Icono({ sf, respaldo = '•', tam = 22, color }) {

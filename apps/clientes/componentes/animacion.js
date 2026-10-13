@@ -8,7 +8,8 @@ import Animated, {
   withDelay, withRepeat, withSequence, withSpring, withTiming,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { LIVIANO } from '../lib/rendimiento';
+import { ANDROID, LIVIANO } from '../lib/rendimiento';
+import { ONDA } from './Presionable';
 
 // «Reducir movimiento» del sistema o un teléfono viejo (lib/rendimiento):
 // lo decorativo (confeti, latidos, entradas) no se anima (2026-10-13).
@@ -100,9 +101,12 @@ function entradaSinOpacidad(retraso) {
   };
 }
 
+// Android (2026-10-13): sin entrada. La pantalla ya ENTRA con la animación
+// del sistema; sumarle un resorte por tarjeta, montado a la vez que la
+// transición, competía con ella en el hilo de la interfaz y se veía a saltos.
 export function Entrada({ indice = 0, children, estilo }) {
   const quieta = useSinMovimiento();
-  if (quieta) return <View style={estilo}>{children}</View>;
+  if (quieta || ANDROID) return <View style={estilo}>{children}</View>;
   return (
     // Con tope: en listas largas las últimas ya no esperan más de medio segundo.
     <Animated.View style={estilo} entering={entradaSinOpacidad(40 + Math.min(indice, 6) * 55)}>
@@ -114,9 +118,20 @@ export function Entrada({ indice = 0, children, estilo }) {
 /** Algo que se toca: se encoge un poco con resorte y da el toque háptico del sistema. */
 // `onPress` también se acepta: es el que pone `<Link asChild>` para navegar, y
 // sin encadenarlo aquí el toque háptico se perdía.
+// Android (2026-10-13): la onda de Material en vez del resorte (ver Presionable).
 export function Tocable({ alTocar, onPress, children, estilo, etiqueta, ...resto }) {
   const s = useSharedValue(1);
   const animado = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
+  if (ANDROID) {
+    // La onda se recorta a las esquinas de la tarjeta (16, las de Vidrio en Android).
+    return (
+      <Pressable accessibilityRole="button" accessibilityLabel={etiqueta} {...resto} android_ripple={ONDA}
+        style={[{ borderRadius: 16, overflow: 'hidden' }, estilo]}
+        onPress={(e) => { Haptics.selectionAsync().catch(() => {}); alTocar?.(); onPress?.(e); }}>
+        {children}
+      </Pressable>
+    );
+  }
   return (
     <Pressable
       accessibilityRole="button"

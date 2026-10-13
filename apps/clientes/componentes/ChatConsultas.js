@@ -15,7 +15,8 @@
 //   · `Calificar`: «¿Cómo te atendimos?» cuando el equipo resolvió la consulta.
 //   · `TextoConEnlaces`: enlaces, correos y teléfonos de un mensaje, tocables.
 import { useEffect, useRef, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, FlatList, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, FlatList, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import Presionable from './Presionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
@@ -76,9 +77,9 @@ export function BuscadorProducto({ visible, titulo = 'Consultar un producto', al
       <View style={{ flex: 1, backgroundColor: fondo, paddingTop: IOS ? 0 : ins.top }}>
         {/* La barra de la hoja: Cancelar a la izquierda y el título al centro, como en iOS. */}
         <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 56, paddingHorizontal: 8 }}>
-          <Pressable onPress={alCerrar} accessibilityRole="button" hitSlop={8} style={{ minWidth: 88, minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 }}>
+          <Presionable onPress={alCerrar} accessibilityRole="button" hitSlop={8} style={{ minWidth: 88, minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 }}>
             <Text style={{ fontSize: 17, color: t.color.magentaTexto }}>Cancelar</Text>
-          </Pressable>
+          </Presionable>
           <Text accessibilityRole="header" numberOfLines={1} style={{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>{titulo}</Text>
           <View style={{ minWidth: 88 }} />
         </View>
@@ -113,7 +114,7 @@ export function BuscadorProducto({ visible, titulo = 'Consultar un producto', al
             </View>
           )}
           renderItem={({ item: p, index: i }) => (
-            <Pressable onPress={() => elegir(p)} accessibilityRole="button"
+            <Presionable onPress={() => elegir(p)} accessibilityRole="button"
               accessibilityLabel={`${nombreProducto(p.nombre)}${p.precio != null ? `, ${dolares(precioFinal(p))}` : ''}`}
               style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, paddingVertical: 10, minHeight: 64,
                 backgroundColor: pressed ? (t.oscuro ? '#3A3A3C' : '#E5E5EA') : (t.oscuro ? '#2C2C2E' : '#FFFFFF'),
@@ -130,7 +131,7 @@ export function BuscadorProducto({ visible, titulo = 'Consultar un producto', al
                 </View>
               </View>
               <Icono sf="plus.circle.fill" respaldo="+" tam={24} color={t.color.magenta} />
-            </Pressable>
+            </Presionable>
           )}
         />
       </View>
@@ -152,10 +153,10 @@ export function ProductoPendiente({ p, alQuitar }) {
           {nombreProducto(p.nombre)}{p.precio != null ? ` · ${dolares(p.precio)}` : ''}
         </Text>
       </View>
-      <Pressable onPress={alQuitar} accessibilityRole="button" accessibilityLabel="Quitar el producto" hitSlop={6}
+      <Presionable onPress={alQuitar} accessibilityRole="button" accessibilityLabel="Quitar el producto" hitSlop={6}
         style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
         <Icono sf="xmark.circle.fill" respaldo="✕" tam={20} color={colorSistema.texto3} />
-      </Pressable>
+      </Presionable>
     </View>
   );
 }
@@ -198,7 +199,7 @@ export function TarjetaProducto({ a, mio }) {
   return (
     <View style={{ width: 248, borderRadius: 18, overflow: 'hidden', backgroundColor: fondo,
       borderWidth: StyleSheet.hairlineWidth, borderColor: mio ? suave(t.color.magenta, 0.6) : (t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)') }}>
-      <Pressable onPress={ver} accessibilityRole="button" accessibilityLabel={`${nombre}${a.precio != null ? `, desde ${dolares(a.precio)}` : ''}. Ver producto`}
+      <Presionable onPress={ver} accessibilityRole="button" accessibilityLabel={`${nombre}${a.precio != null ? `, desde ${dolares(a.precio)}` : ''}. Ver producto`}
         style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, opacity: pressed ? 0.75 : 1 })}>
         <View style={{ width: 56 }}><FotoProducto id={a.id} nombre={a.nombre} foto={a.foto} alto={56} radio={12} /></View>
         <View style={{ flex: 1, gap: 2 }}>
@@ -206,19 +207,19 @@ export function TarjetaProducto({ a, mio }) {
           <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }} numberOfLines={2}>{nombre}</Text>
           {a.precio != null ? <Text style={{ fontSize: 14, fontWeight: '800', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(a.precio)}</Text> : null}
         </View>
-      </Pressable>
+      </Presionable>
       <View style={{ flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colorSistema.separador }}>
-        <Pressable onPress={ver} accessibilityRole="button" accessibilityLabel={`Ver ${nombre}`}
+        <Presionable onPress={ver} accessibilityRole="button" accessibilityLabel={`Ver ${nombre}`}
           style={({ pressed }) => ({ flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? suave(t.color.magenta, 0.1) : 'transparent' })}>
           <Text style={{ fontSize: 15, fontWeight: '600', color: t.color.magentaTexto }}>Ver producto</Text>
-        </Pressable>
+        </Presionable>
         <View style={{ width: StyleSheet.hairlineWidth, backgroundColor: colorSistema.separador }} />
-        <Pressable onPress={alReservar} disabled={ocupado} accessibilityRole="button" accessibilityLabel={`Reservar ${nombre}`}
+        <Presionable onPress={alReservar} disabled={ocupado} accessibilityRole="button" accessibilityLabel={`Reservar ${nombre}`}
           style={({ pressed }) => ({ flex: 1, minHeight: 44, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center',
             backgroundColor: pressed ? suave(t.color.magenta, 0.1) : 'transparent' })}>
           {ocupado ? <ActivityIndicator size="small" /> : <Icono sf="cart.badge.plus" respaldo="+" tam={15} color={t.color.magentaTexto} />}
           <Text style={{ fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>Reservar</Text>
-        </Pressable>
+        </Presionable>
       </View>
     </View>
   );
@@ -242,14 +243,14 @@ export function Sugerencias({ alElegir }) {
       contentContainerStyle={{ gap: 8, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 2 }}
       accessibilityLabel="Preguntas frecuentes">
       {SUGERENCIAS.map((s) => (
-        <Pressable key={s.texto} onPress={() => { vibrar(); alElegir(s); }} accessibilityRole="button"
+        <Presionable key={s.texto} onPress={() => { vibrar(); alElegir(s); }} accessibilityRole="button"
           accessibilityHint={s.accion === 'enviar' ? 'Envía la pregunta' : 'Elige el producto'}
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingHorizontal: 14, borderRadius: 18,
             backgroundColor: pressed ? suave(t.color.magenta, t.oscuro ? 0.35 : 0.2) : (t.oscuro ? 'rgba(255,255,255,0.1)' : '#FFFFFF'),
             borderWidth: StyleSheet.hairlineWidth, borderColor: suave(t.color.magenta, 0.5) })}>
           <Icono sf={s.sf} respaldo="" tam={14} color={t.color.magentaTexto} />
           <Text style={{ fontSize: 15, fontWeight: '600', color: t.color.magentaTexto }}>{s.texto}</Text>
-        </Pressable>
+        </Presionable>
       ))}
     </ScrollView>
   );
@@ -287,18 +288,18 @@ export function Calificar({ alEnviar, alCerrar }) {
           <Text accessibilityRole="header" style={{ fontSize: 16, fontWeight: '700', color: colorSistema.texto }}>¿Cómo te atendimos?</Text>
           <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>Tu opinión nos ayuda a atenderte mejor.</Text>
         </View>
-        <Pressable onPress={alCerrar} accessibilityRole="button" accessibilityLabel="Ahora no" hitSlop={8}
+        <Presionable onPress={alCerrar} accessibilityRole="button" accessibilityLabel="Ahora no" hitSlop={8}
           style={{ width: 32, height: 32, alignItems: 'center', justifyContent: 'center' }}>
           <Icono sf="xmark" respaldo="✕" tam={13} color={colorSistema.texto3} />
-        </Pressable>
+        </Presionable>
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 4 }} accessibilityRole="radiogroup">
         {[1, 2, 3, 4, 5].map((n) => (
-          <Pressable key={n} onPress={() => { vibrar(); setNota(n); }} accessibilityRole="radio" accessibilityState={{ checked: nota === n }}
+          <Presionable key={n} onPress={() => { vibrar(); setNota(n); }} accessibilityRole="radio" accessibilityState={{ checked: nota === n }}
             accessibilityLabel={`${n} ${n === 1 ? 'estrella' : 'estrellas'}, ${NOTAS[n - 1]}`}
             style={({ pressed }) => ({ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.88 : 1 }] })}>
             <Icono sf={n <= nota ? 'star.fill' : 'star'} respaldo={n <= nota ? '★' : '☆'} tam={32} color={n <= nota ? '#F5A623' : colorSistema.texto3} />
-          </Pressable>
+          </Presionable>
         ))}
       </View>
       {nota ? (
@@ -308,11 +309,11 @@ export function Calificar({ alEnviar, alCerrar }) {
             placeholderTextColor={colorSistema.placeholder} multiline accessibilityLabel="Comentario opcional"
             style={{ minHeight: 64, maxHeight: 120, borderRadius: 12, padding: 10, fontSize: 16, color: colorSistema.texto, textAlignVertical: 'top',
               backgroundColor: t.oscuro ? 'rgba(118,118,128,0.24)' : 'rgba(118,118,128,0.12)' }} />
-          <Pressable onPress={enviar} disabled={enviando} accessibilityRole="button" accessibilityLabel="Enviar calificación"
+          <Presionable onPress={enviar} disabled={enviando} accessibilityRole="button" accessibilityLabel="Enviar calificación"
             style={({ pressed }) => ({ minHeight: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: t.color.magenta,
               opacity: enviando ? 0.6 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
             {enviando ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>Enviar</Text>}
-          </Pressable>
+          </Presionable>
         </>
       ) : null}
     </View>

@@ -7,7 +7,8 @@
 // El envío lo hace la función (`facturas_enviar`): valida que las facturas
 // sean de esta cuenta, el correo y los topes (30 facturas, 10 correos al día).
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TextInput, View } from 'react-native';
+import Presionable from './Presionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
@@ -91,9 +92,9 @@ export default function EnviarCorreoHoja({ ids, resumen, alCerrar, alEnviar }) {
       <KeyboardAvoidingView style={{ flex: 1, backgroundColor: fondo }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18 }}>
           <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>{hecho ? '¡Enviado!' : 'Enviar por correo'}</Text>
-          <Pressable onPress={alCerrar} hitSlop={12} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
+          <Presionable onPress={alCerrar} hitSlop={12} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
             <Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>{hecho ? 'Listo' : 'Cancelar'}</Text>
-          </Pressable>
+          </Presionable>
         </View>
         {hecho ? (
           <View style={{ padding: 18, gap: 14, alignItems: 'center' }}>
@@ -126,19 +127,19 @@ export default function EnviarCorreoHoja({ ids, resumen, alCerrar, alEnviar }) {
                       <View key={c.correo}>
                         {i > 0 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 50 }} /> : null}
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                          <Pressable onPress={() => elegir(c.correo)} onLongPress={() => borrar(c)} accessibilityRole="radio" accessibilityState={{ selected: activo }}
+                          <Presionable onPress={() => elegir(c.correo)} onLongPress={() => borrar(c)} accessibilityRole="radio" accessibilityState={{ selected: activo }}
                             style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, minHeight: 52, opacity: pressed ? 0.6 : 1 })}>
                             <Icono sf={activo ? 'checkmark.circle.fill' : 'circle'} respaldo={activo ? '●' : '○'} tam={22} color={activo ? t.color.magenta : colorSistema.texto3} />
                             <View style={{ flex: 1, gap: 2 }}>
                               <Text style={{ fontSize: 15, fontWeight: activo ? '700' : '500', color: colorSistema.texto }} numberOfLines={1}>{c.correo}</Text>
                               {c.de_ficha ? <Text style={{ fontSize: 12, color: colorSistema.texto3 }}>El de tu ficha</Text> : null}
                             </View>
-                          </Pressable>
+                          </Presionable>
                           {!c.de_ficha ? (
-                            <Pressable onPress={() => borrar(c)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`Quitar ${c.correo}`}
+                            <Presionable onPress={() => borrar(c)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`Quitar ${c.correo}`}
                               style={({ pressed }) => ({ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
                               <Icono sf="trash" respaldo="×" tam={16} color={colorSistema.texto3} />
-                            </Pressable>
+                            </Presionable>
                           ) : null}
                         </View>
                       </View>

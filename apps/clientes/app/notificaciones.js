@@ -16,7 +16,8 @@
 // por leído al abrir (la campana se apaga enseguida); «Marcar como leídas»
 // apaga el resaltado.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Platform, Pressable, RefreshControl, Text, View } from 'react-native';
+import { Alert, Platform, RefreshControl, Text, View } from 'react-native';
+import Presionable from '../componentes/Presionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, useFocusEffect } from 'expo-router';
 import Animated, { FadeOut, LinearTransition, interpolate, useAnimatedStyle } from 'react-native-reanimated';
@@ -218,26 +219,32 @@ export default function Notificaciones() {
   const barra = (
     <Stack.Screen options={{
       headerRight: visibles.length ? () => (
-        <Pressable onPress={limpiarTodo} hitSlop={10} accessibilityRole="button" accessibilityLabel="Borrar todas las notificaciones"
+        <Presionable onPress={limpiarTodo} hitSlop={10} accessibilityRole="button" accessibilityLabel="Borrar todas las notificaciones"
           style={({ pressed }) => ({ paddingHorizontal: 6, minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
           <Text style={{ fontSize: 17, color: t.color.magentaTexto }}>Limpiar</Text>
-        </Pressable>
+        </Presionable>
       ) : undefined,
     }} />
   );
 
+  // Android (2026-10-13): la «snackbar» de Material 3 — esquinas de 4, la
+  // superficie invertida (oscura en modo claro, clara en oscuro) y la acción
+  // en el primario invertido. En iPhone, la píldora de siempre.
+  const snack = Platform.OS === 'android'
+    ? { radio: 4, fondo: t.oscuro ? '#E6E0E9' : '#322F35', texto: t.oscuro ? '#322F35' : '#F5EFF7', accion: t.oscuro ? '#981D97' : '#E2A3E0' }
+    : { radio: 999, fondo: t.oscuro ? '#2C2A31' : '#1C1B1F', texto: '#FFFFFF', accion: t.oscuro ? t.color.magentaTexto : '#FF8AD8' };
   const avisoDeshacer = deshacer ? (
     <View pointerEvents="box-none" // A la izquierda de la burbuja del chat (56 + márgenes), que va encima de todo.
       style={{ position: 'absolute', left: 16, right: Platform.OS === 'web' ? 16 : 84, bottom: ins.bottom + 16, alignItems: 'center' }}>
       <View accessibilityLiveRegion="polite"
-        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 18, paddingRight: 6, borderRadius: 999, minHeight: 52, maxWidth: 520, width: '100%',
-          backgroundColor: t.oscuro ? '#2C2A31' : '#1C1B1F', shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 6 }}>
-        <Icono sf="trash.fill" respaldo="✕" tam={15} color="#FFFFFF" />
-        <Text style={{ flex: 1, fontSize: 15, fontWeight: '600', color: '#FFFFFF' }}>Aviso borrado</Text>
-        <Pressable onPress={deshacerUltimo} accessibilityRole="button" accessibilityLabel="Deshacer el borrado" hitSlop={6}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 18, paddingRight: 6, borderRadius: snack.radio, minHeight: 52, maxWidth: 520, width: '100%',
+          backgroundColor: snack.fondo, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 6 }}>
+        <Icono sf="trash.fill" respaldo="✕" tam={15} color={snack.texto} />
+        <Text style={{ flex: 1, fontSize: 15, fontWeight: '600', color: snack.texto }}>Aviso borrado</Text>
+        <Presionable onPress={deshacerUltimo} accessibilityRole="button" accessibilityLabel="Deshacer el borrado" hitSlop={6}
           style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 14, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
-          <Text style={{ fontSize: 15, fontWeight: '800', color: t.oscuro ? t.color.magentaTexto : '#FF8AD8' }}>Deshacer</Text>
-        </Pressable>
+          <Text style={{ fontSize: 15, fontWeight: '800', color: snack.accion }}>Deshacer</Text>
+        </Presionable>
       </View>
     </View>
   ) : null;
@@ -287,10 +294,10 @@ export default function Notificaciones() {
                 <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.color.magenta }} />
                 <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>{nuevas === 1 ? '1 nueva' : `${nuevas} nuevas`}</Text>
               </View>
-              <Pressable onPress={marcarLeidas} hitSlop={8} accessibilityRole="button"
+              <Presionable onPress={marcarLeidas} hitSlop={8} accessibilityRole="button"
                 style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
                 <Text style={{ fontSize: 15, fontWeight: '600', color: t.color.magentaTexto }}>Marcar como leídas</Text>
-              </Pressable>
+              </Presionable>
             </View>
           </Entrada>
         ) : null}
@@ -327,14 +334,14 @@ function AccionBorrar({ progreso, alTocar }) {
     transform: [{ scale: interpolate(progreso.value, [0, 1], [0.6, 1], 'clamp') }],
   }));
   return (
-    <Pressable onPress={alTocar} accessibilityRole="button" accessibilityLabel="Borrar este aviso" style={{ width: 96, paddingLeft: 10 }}>
+    <Presionable onPress={alTocar} accessibilityRole="button" accessibilityLabel="Borrar este aviso" style={{ width: 96, paddingLeft: 10 }}>
       <View style={{ flex: 1, borderRadius: RADIO.tarjeta, backgroundColor: colorSistema.rojo, alignItems: 'center', justifyContent: 'center', gap: 4 }}>
         <Animated.View style={[{ alignItems: 'center', gap: 4 }, animado]}>
           <Icono sf="trash.fill" respaldo="✕" tam={20} color="#FFFFFF" />
           <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFFFF' }}>Borrar</Text>
         </Animated.View>
       </View>
-    </Pressable>
+    </Presionable>
   );
 }
 
@@ -356,7 +363,7 @@ function FilaAviso({ a, indice, nueva, alAbrir, alBorrar }) {
           onSwipeableWillOpen={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); }}
           renderRightActions={(progreso) => <AccionBorrar progreso={progreso} alTocar={() => alBorrar(a)} />}
         >
-          <Pressable onPress={() => alAbrir(a)} accessibilityRole={a.url ? 'button' : undefined}
+          <Presionable onPress={() => alAbrir(a)} accessibilityRole={a.url ? 'button' : undefined}
             accessibilityLabel={`${nueva ? 'Nueva. ' : ''}${a.titulo}. ${a.cuerpo}. ${hora(a.created_at)}`}
             accessibilityActions={[{ name: 'borrar', label: 'Borrar' }]}
             onAccessibilityAction={(ev) => { if (ev.nativeEvent.actionName === 'borrar') alBorrar(a); }}
@@ -380,7 +387,7 @@ function FilaAviso({ a, indice, nueva, alAbrir, alBorrar }) {
                 ) : null}
               </View>
             </Tarjeta>
-          </Pressable>
+          </Presionable>
         </ReanimatedSwipeable>
       </Entrada>
     </Animated.View>

@@ -7,7 +7,8 @@
 // entrada a «Pregúntale a la farmacia», con el punto de mensajes sin leer.
 import { useCallback, useEffect, useState } from 'react';
 import * as Haptics from 'expo-haptics';
-import { ActionSheetIOS, Alert, Platform, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Platform, Text, View } from 'react-native';
+import Presionable from '../../../componentes/Presionable';
 import { useFocusEffect } from 'expo-router';
 import { colorSistema, FilaInterruptor, FilaTexto, Formulario, Grupo } from '../../../componentes/sistema';
 import { Aviso, ESPACIO_BURBUJA } from '../../../componentes/ui';
@@ -36,7 +37,7 @@ import { usarVistaPreviaFoto } from '../../../componentes/VistaPreviaFoto';
  */
 function FilaAccion({ texto, sf, color, flecha = true, alTocar, insignia }) {
   return (
-    <Pressable accessibilityRole="button" onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }}
+    <Presionable accessibilityRole="button" onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingLeft: sf ? 16 : 0, paddingRight: 16,
         backgroundColor: pressed ? colorSistema.separador : 'transparent' })}>
       {sf ? <Icono sf={sf} respaldo="" tam={18} color={color ?? colorSistema.texto2} /> : null}
@@ -47,7 +48,7 @@ function FilaAccion({ texto, sf, color, flecha = true, alTocar, insignia }) {
         </View>
       ) : null}
       {flecha && !color ? <Icono sf="chevron.right" respaldo="›" tam={13} color={colorSistema.texto3} /> : null}
-    </Pressable>
+    </Presionable>
   );
 }
 
@@ -210,7 +211,7 @@ export default function Cuenta() {
       {resumen?.nombre ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginHorizontal: 24 }}>
           {conFicha ? (
-            <Pressable onPress={cambiarFoto} accessibilityRole="button" accessibilityLabel={foto.url ? 'Cambiar tu foto de perfil' : 'Agregar una foto de perfil'}
+            <Presionable onPress={cambiarFoto} accessibilityRole="button" accessibilityLabel={foto.url ? 'Cambiar tu foto de perfil' : 'Agregar una foto de perfil'}
               style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
               {foto.url ? (
                 <Image source={{ uri: foto.url }} style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colorSistema.separador, opacity: foto.cargando ? 0.5 : 1 }} contentFit="cover" />
@@ -222,7 +223,7 @@ export default function Cuenta() {
               <View style={{ position: 'absolute', right: -2, bottom: -2, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: t.color.magenta }}>
                 <Icono sf="camera.fill" respaldo="+" tam={11} color="#FFFFFF" />
               </View>
-            </Pressable>
+            </Presionable>
           ) : null}
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={{ fontSize: 22, fontWeight: '700', color: colorSistema.texto }}>

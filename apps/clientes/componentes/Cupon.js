@@ -4,7 +4,7 @@
 //   · Vigente: el cupón con un brillo que pasa cada pocos segundos.
 //   · Usado: en gris, con el sello «USADO» (o lo que queda, si se usó una parte).
 // Se usa en caja como cualquier saldo, mostrando la tarjeta.
-import { LIVIANO } from '../lib/rendimiento';
+import { ANDROID, LIVIANO } from '../lib/rendimiento';
 import { useSesion } from '../lib/sesion';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -13,7 +13,7 @@ import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import { Canvas, Group, LinearGradient as SkGradiente, Path, Rect, Skia, vec } from '@shopify/react-native-skia';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { Easing, interpolate, runOnJS, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { cancelAnimation, Easing, interpolate, runOnJS, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import Icono from './Icono';
 import { COLORES_NIVEL } from './TarjetaSocio';
 import Mineral, { MATERIALES } from './minerales/Mineral';
@@ -45,8 +45,11 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
   // giroscopio, una luz que va y viene sola sobre las facetas o el metal.
   const luzX = useSharedValue(-0.6);
   const luzY = useSharedValue(0.3);
+  // Se PARA al dejar de verse (2026-10-13): antes el `return` sólo dejaba de
+  // arrancarla, y la luz seguía yendo y viniendo —y redibujando el material—
+  // con el cupón en otra pestaña. En un Android liviano queda quieta.
   useEffect(() => {
-    if (!activa) return;
+    if (!activa || (ANDROID && LIVIANO)) { cancelAnimation(luzX); cancelAnimation(luzY); return; }
     luzX.value = withRepeat(withTiming(0.6, { duration: 4200, easing: Easing.inOut(Easing.sin) }), -1, true);
     luzY.value = withRepeat(withTiming(-0.3, { duration: 5600, easing: Easing.inOut(Easing.sin) }), -1, true);
   }, [activa]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -209,7 +212,7 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
 function Brillo({ activa }) {
   const x = useSharedValue(-1);
   useEffect(() => {
-    if (!activa) return;
+    if (!activa) { cancelAnimation(x); x.value = -1; return; }
     x.value = withRepeat(withSequence(withTiming(-1, { duration: 0 }), withDelay(2600, withTiming(1.4, { duration: 1100, easing: Easing.inOut(Easing.cubic) }))), -1);
   }, [activa, x]);
   const estilo = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * 360 }, { rotate: '20deg' }] }));

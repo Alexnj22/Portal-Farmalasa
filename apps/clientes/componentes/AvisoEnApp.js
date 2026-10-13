@@ -123,7 +123,7 @@ function Banner({ aviso, gesto, animado }) {
           accessibilityLabel={`${aviso.titulo}. ${aviso.cuerpo}`}
           accessibilityHint={aviso.url ? 'Abre el aviso. Desliza hacia arriba para cerrarlo.' : 'Desliza hacia arriba para cerrarlo.'}>
           <View style={{ borderRadius: 24, shadowColor: '#000', shadowOpacity: t.oscuro ? 0.45 : 0.16, shadowRadius: 18, shadowOffset: { width: 0, height: 8 } }}>
-            <Vidrio radio={24} tinte={suave(e.fuerte, t.oscuro ? 0.16 : 0.1)}>
+            <Vidrio radio={24} tinte={suave(e.fuerte, t.oscuro ? 0.16 : 0.1)} elevacion={6}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingLeft: 12, paddingRight: 16 }}>
                 <View style={{ width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(e.fuerte, t.oscuro ? 0.3 : 0.18) }}>
                   <Icono sf={e.sf} respaldo={e.respaldo} tam={20} color={e.texto} />

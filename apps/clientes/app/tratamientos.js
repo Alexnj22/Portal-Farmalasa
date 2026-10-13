@@ -4,7 +4,8 @@
 // «Recordarme tomarlo» (2026-10-12): avisos de cada toma, sólo en el teléfono
 // (lib/tomas.js, componentes/TomasHoja.js). En la web no aparece.
 import { useCallback, useState } from 'react';
-import { ActionSheetIOS, Alert, Platform, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Platform, Text, View } from 'react-native';
+import Presionable from '../componentes/Presionable';
 import { useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Cargando, Pantalla, Tarjeta, Vacio } from '../componentes/ui';
@@ -129,12 +130,12 @@ function Fila({ t, apagado, alReservar, alApagar, alEncender, alRecordar, alPreg
         </View>
         {/* Preguntar a la farmacia por este medicamento (2026-10-13): abre el chat con él puesto. */}
         {alPreguntar ? (
-          <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); alPreguntar(); }} accessibilityRole="button"
+          <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alPreguntar(); }} accessibilityRole="button"
             accessibilityLabel={`Preguntar a la farmacia por ${nombrePropio(t.nombre)}`} hitSlop={4}
             style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
               backgroundColor: suave(tema.color.magenta, pressed ? 0.3 : (tema.oscuro ? 0.22 : 0.12)) })}>
             <Icono sf="bubble.left.and.bubble.right.fill" respaldo="💬" tam={18} color={tema.color.magentaTexto} />
-          </Pressable>
+          </Presionable>
         ) : null}
       </View>
       <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -170,19 +171,19 @@ function Fila({ t, apagado, alReservar, alApagar, alEncender, alRecordar, alPreg
 function Reintentar({ alTocar }) {
   const t = useTema();
   return (
-    <Pressable onPress={alTocar} accessibilityRole="button" hitSlop={8} style={{ alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 14 }}>
+    <Presionable onPress={alTocar} accessibilityRole="button" hitSlop={8} style={{ alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 14 }}>
       <Text style={{ fontSize: 17, fontWeight: '700', color: t.color.magentaTexto }}>Reintentar</Text>
-    </Pressable>
+    </Presionable>
   );
 }
 
 function Boton({ texto, alTocar, principal }) {
   const t = useTema();
   return (
-    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} accessibilityRole="button"
+    <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} accessibilityRole="button"
       style={({ pressed }) => ({ flex: 1, minHeight: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
         backgroundColor: principal ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'), transform: [{ scale: pressed ? 0.96 : 1 }] })}>
       <Text style={{ fontSize: 14, fontWeight: '700', color: principal ? '#FFFFFF' : colorSistema.texto }}>{texto}</Text>
-    </Pressable>
+    </Presionable>
   );
 }

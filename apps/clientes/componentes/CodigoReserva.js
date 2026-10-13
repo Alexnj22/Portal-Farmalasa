@@ -9,7 +9,8 @@
 // teléfono); si la imagen no se puede armar —o en Android, donde `Share` no
 // lleva archivos— se comparte el texto con el código, la sucursal y el producto.
 import { useRef, useState } from 'react';
-import { Platform, Pressable, Share, Text, View } from 'react-native';
+import { Platform, Share, Text, View } from 'react-native';
+import Presionable from './Presionable';
 import QRCode from 'react-native-qrcode-svg';
 import * as FS from 'expo-file-system/legacy';
 import * as Haptics from 'expo-haptics';
@@ -76,12 +77,12 @@ export default function CodigoReserva({ codigo, tam = 150, ayuda = 'Muéstralo e
       {ayuda ? <Text style={{ fontSize: 13, textAlign: 'center', color: colorSistema.texto2, maxWidth: 280 }}>{ayuda}</Text> : null}
       {compartir ? (
         <>
-          <Pressable onPress={alCompartir} disabled={compartiendo} accessibilityRole="button" accessibilityLabel={`Compartir el código ${codigo}`}
+          <Presionable onPress={alCompartir} disabled={compartiendo} accessibilityRole="button" accessibilityLabel={`Compartir el código ${codigo}`}
             style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 18, borderRadius: 999,
               backgroundColor: t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)', opacity: compartiendo ? 0.5 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
             <Icono sf="square.and.arrow.up" respaldo="↗" tam={15} color={t.color.magentaTexto} />
             <Text style={{ fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>Compartir</Text>
-          </Pressable>
+          </Presionable>
           <Text style={{ fontSize: 12, lineHeight: 17, textAlign: 'center', color: colorSistema.texto3, maxWidth: 290 }}>{TEXTO_COMPARTIR}</Text>
         </>
       ) : null}

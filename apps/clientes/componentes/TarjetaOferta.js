@@ -8,7 +8,8 @@
 //   · la etiqueta aparece con un rebote, un poco después;
 //   · si quedan 3 días o menos, el aviso de «quedan N días» late.
 import { useEffect, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
+import Presionable from './Presionable';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image as ImagenCache } from 'expo-image';
 import Animated, {
@@ -120,11 +121,11 @@ export function PortadaOferta({ oferta: o, alto = 230, conTitulo = true, compart
         ) : null}
         {/* Compartir sin abrir la oferta (2026-10-07). En el detalle va arriba, junto a cerrar. */}
         {compartible ? (
-          <Pressable onPress={() => compartirOferta(o)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Compartir ${o.titulo}`}
+          <Presionable onPress={() => compartirOferta(o)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Compartir ${o.titulo}`}
             style={({ pressed }) => ({ width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center',
               backgroundColor: 'rgba(0,0,0,0.45)', transform: [{ scale: pressed ? 0.9 : 1 }] })}>
             <Icono sf="square.and.arrow.up" respaldo="↗" tam={14} color="#FFFFFF" />
-          </Pressable>
+          </Presionable>
         ) : null}
         </View>
       </View>

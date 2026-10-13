@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1282.0 — App de clientes: Android nativo (Material 3) y más rápido
+
+Pedido del usuario: «en Android es lenta, las transiciones no se ven bien; hazlo nativo, no tiene por qué llevar el fondo de gradiente». Sólo Android (`.android.js` / ramas de plataforma); iOS igual. Sigue el camino de la app del personal.
+- **Superficies:** sin aurora ni desenfoque; pantallas y barras opacas con los tokens de Material 3 (`fondo`, `superficie`, `superficieAlta`, `barra`, `contorno`), `Vidrio` como tarjeta opaca de 16; fondo de ventana según el tema (sin destello blanco).
+- **Navegación:** `slide_from_right` / `slide_from_bottom`, barra superior de Material (título a la izquierda, flecha), barra de navegación M3 con píldora tonal.
+- **Controles:** `Presionable` con onda del sistema en 36 archivos, botón/chip/segmentado de Material, hoja de opciones nativa, FAB del chat (56 dp), snackbar de «Deshacer», íconos de Material que faltaban.
+- **Rendimiento:** sin el lienzo de la aurora por cuadro; `LIVIANO` en Android con < 6 GB o equipos anteriores a 2020; el material de la tarjeta a media resolución y 30 fps, sólo la cara visible; giroscopio a 30 Hz; el cupón deja de animarse fuera de la vista (también en iOS, sin cambio visible).
+- **Tipografía** de Material 3 y blancos de 48 dp.
+
 ## v2.1281.1 — Carné por teléfono: Android abre la cámara
 
 Reporte del usuario: «para android no me abre la cámara, en mi iphone sí».

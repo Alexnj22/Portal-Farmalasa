@@ -1,16 +1,23 @@
 // Cada pestaña lleva su propia pila (la barra de título del sistema, con el
 // título grande de iOS) y su propia AURORA detrás: la barra de pestañas de iOS
-// pone un fondo negro detrás de cada pestaña y tapa la aurora de la raíz.
+// pone un fondo negro detrás de cada una y tapa la aurora de la raíz.
 // Mismo arreglo que la app del personal (apps/mobile/componentes/PilaDePestana.js).
 //
 // En iOS 26 el sistema ya difumina el borde al desplazar; un desenfoque propio
 // encima se ve doble, así que sólo va en iOS anteriores.
-import { Platform, View } from 'react-native';
+//
+// Android (2026-10-13): sin aurora. La pantalla y la barra de arriba son
+// OPACAS, en la superficie de Material 3 (`colorSistema.fondo`): la barra es
+// la «top app bar» chica de Material —título a la izquierda, 22 sp, flecha
+// de volver—, sin títulos grandes ni transparencias.
+import { Platform, useColorScheme, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import Aurora from './Aurora';
+import { colorSistema } from './sistema';
 import { useVisible } from '../lib/visible';
 
+const ANDROID = Platform.OS === 'android';
 const IOS26 = Platform.OS === 'ios' && isLiquidGlassAvailable();
 export const BARRA_NATIVA = Platform.OS === 'ios'
   ? {
@@ -22,9 +29,35 @@ export const BARRA_NATIVA = Platform.OS === 'ios'
     }
   : { headerShadowVisible: false, headerStyle: { backgroundColor: 'transparent' } };
 
+/**
+ * Android: la barra y el fondo de Material, opacos. Es función y no constante
+ * porque los colores siguen el modo oscuro: quien la usa ya se repinta con
+ * `useColorScheme`.
+ */
+export function barraAndroid() {
+  return {
+    headerShadowVisible: false,
+    headerStyle: { backgroundColor: colorSistema.fondo },
+    headerTitleAlign: 'left',
+    // Title Large de Material 3: 22 sp, regular.
+    headerTitleStyle: { color: colorSistema.texto, fontSize: 22, fontWeight: '400' },
+    contentStyle: { backgroundColor: colorSistema.fondo },
+  };
+}
+
 export default function PilaDePestana({ titulo }) {
+  useColorScheme();
   // La aurora de esta pestaña sólo se mueve mientras se ve.
   const visible = useVisible();
+  if (ANDROID) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colorSistema.fondo }}>
+        <Stack screenOptions={barraAndroid()}>
+          <Stack.Screen name="index" options={{ title: titulo }} />
+        </Stack>
+      </View>
+    );
+  }
   return (
     <View style={{ flex: 1 }}>
       <Aurora activa={visible} />

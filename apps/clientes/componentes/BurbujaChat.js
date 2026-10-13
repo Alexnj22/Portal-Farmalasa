@@ -13,7 +13,8 @@
 // app. Sin opacidad de entrada (animacion.js): sube y crece con un resorte,
 // y nada se mueve si el teléfono pide reducir el movimiento o es liviano.
 import { useEffect } from 'react';
-import { AppState, Platform, Pressable, Text } from 'react-native';
+import { AppState, Platform, Text } from 'react-native';
+import Presionable from './Presionable';
 import { useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withSpring } from 'react-native-reanimated';
@@ -36,9 +37,16 @@ const OCULTA = new Set(['chat', 'bienvenida', 'entrar', 'registro', 'index', 'of
 const PESTANA_OCULTA = new Set(['carrito']);
 
 const TAM = 56;
+const ANDROID = Platform.OS === 'android';
 // Lo que ocupa la barra de pestañas sobre el área segura: la de iOS (también
-// la flotante de iOS 26) y la de Material en Android, más un respiro.
-const SOBRE_PESTANAS = Platform.OS === 'ios' ? 62 : 92;
+// la flotante de iOS 26) y la de Material en Android (80 dp), más un respiro
+// (en Android, los 16 dp de margen del FAB).
+const SOBRE_PESTANAS = Platform.OS === 'ios' ? 62 : 96;
+// Android (2026-10-13): el FAB de Material 3 — 56 dp, esquinas de 16 (no un
+// círculo), elevación 3 del sistema en vez de sombra dibujada y la onda al tocar.
+const FORMA = ANDROID
+  ? { borderRadius: 16, overflow: 'hidden', elevation: 6 }
+  : { borderRadius: TAM / 2 };
 
 export default function BurbujaChat() {
   const t = useTema();
@@ -89,16 +97,18 @@ export default function BurbujaChat() {
   const abrir = () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); navegar('/chat'); };
   return (
     <Animated.View pointerEvents="box-none" style={[{ position: 'absolute', right: 16 + ins.right, bottom: abajo, zIndex: 900 }, animado]}>
-      <Pressable onPress={abrir} hitSlop={6} accessibilityRole="button"
+      <Presionable onPress={abrir} hitSlop={6} accessibilityRole="button"
         accessibilityLabel={sinLeer ? `Pregúntale a la farmacia, ${sinLeer} ${sinLeer === 1 ? 'mensaje sin leer' : 'mensajes sin leer'}` : 'Pregúntale a la farmacia'}
-        style={({ pressed }) => ({ width: TAM, height: TAM, borderRadius: TAM / 2, alignItems: 'center', justifyContent: 'center',
+        android_ripple={{ color: 'rgba(255,255,255,0.28)', foreground: true }}
+        style={({ pressed }) => ({ width: TAM, height: TAM, ...FORMA, alignItems: 'center', justifyContent: 'center',
           backgroundColor: t.color.magenta, transform: [{ scale: pressed ? 0.92 : 1 }],
           shadowColor: '#000', shadowOpacity: t.oscuro ? 0.5 : 0.22, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6 })}>
         <Icono sf="bubble.left.and.bubble.right.fill" respaldo="💬" tam={24} color="#FFFFFF" />
-      </Pressable>
+      </Presionable>
       {sinLeer ? (
         <Animated.View pointerEvents="none" style={[{ position: 'absolute', top: -4, right: -4, minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6,
-          alignItems: 'center', justifyContent: 'center', backgroundColor: colorSistema.rojo, borderWidth: 2, borderColor: t.oscuro ? '#0A090E' : '#FFFFFF' }, animadoNumero]}>
+          alignItems: 'center', justifyContent: 'center', backgroundColor: colorSistema.rojo, borderWidth: 2, borderColor: ANDROID ? colorSistema.fondo : (t.oscuro ? '#0A090E' : '#FFFFFF'),
+          ...(ANDROID ? { elevation: 7 } : null) }, animadoNumero]}>
           <Text style={{ fontSize: 12, fontWeight: '800', color: '#FFFFFF' }}>{sinLeer > 99 ? '99+' : String(sinLeer)}</Text>
         </Animated.View>
       ) : null}

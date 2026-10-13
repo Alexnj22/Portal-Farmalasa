@@ -3,7 +3,8 @@
 // solicitud y confirman precio y fecha. El cliente paga el anticipo después,
 // cuando ya sabe cuánto cuesta y cuándo llega.
 import { useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, Text, TextInput, View } from 'react-native';
+import Presionable from './Presionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
@@ -42,7 +43,7 @@ export default function EncargoHoja({ producto, presentacion, salas, alCerrar })
       <View style={{ flex: 1, backgroundColor: fondo }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18 }}>
           <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>{hecho ? '¡Solicitud enviada!' : 'Pedir por encargo'}</Text>
-          <Pressable onPress={alCerrar} hitSlop={12} accessibilityRole="button"><Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>Cerrar</Text></Pressable>
+          <Presionable onPress={alCerrar} hitSlop={12} accessibilityRole="button"><Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>Cerrar</Text></Presionable>
         </View>
         {!token ? (
           <Text style={{ padding: 18, fontSize: 15, color: colorSistema.texto2 }}>Entra con tu cuenta de Puntos Salud para pedir por encargo.</Text>
@@ -79,13 +80,13 @@ export default function EncargoHoja({ producto, presentacion, salas, alCerrar })
               {(salas ?? []).map((s, i) => {
                 const elegida = s.id === sala;
                 return (
-                  <Pressable key={s.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setSala(s.id); }} accessibilityRole="radio" accessibilityState={{ selected: elegida }}>
+                  <Presionable key={s.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setSala(s.id); }} accessibilityRole="radio" accessibilityState={{ selected: elegida }}>
                     {i > 0 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 50 }} /> : null}
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}>
                       <Icono sf={elegida ? 'checkmark.circle.fill' : 'circle'} respaldo="" tam={22} color={elegida ? t.color.magenta : colorSistema.texto3} />
                       <Text style={{ fontSize: 15, fontWeight: elegida ? '700' : '500', color: colorSistema.texto }}>{s.sala}</Text>
                     </View>
-                  </Pressable>
+                  </Presionable>
                 );
               })}
             </View>
@@ -112,11 +113,11 @@ export default function EncargoHoja({ producto, presentacion, salas, alCerrar })
 function Paso({ sf, etiqueta, habilitado, alTocar }) {
   const t = useTema();
   return (
-    <Pressable onPress={() => { if (!habilitado) return; Haptics.selectionAsync().catch(() => {}); alTocar(); }} disabled={!habilitado}
+    <Presionable onPress={() => { if (!habilitado) return; Haptics.selectionAsync().catch(() => {}); alTocar(); }} disabled={!habilitado}
       accessibilityRole="button" accessibilityLabel={etiqueta}
       style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', opacity: habilitado ? 1 : 0.3,
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)' }}>
       <Icono sf={sf} respaldo={sf === 'minus' ? '−' : '+'} tam={14} color={colorSistema.texto} />
-    </Pressable>
+    </Presionable>
   );
 }

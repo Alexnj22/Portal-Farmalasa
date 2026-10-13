@@ -2,7 +2,8 @@
 // cuándo, y una nota («con comida»). Todo se queda en el teléfono
 // (lib/tomas.js): no se manda nada al servidor.
 import { useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, Text, TextInput, View } from 'react-native';
+import Presionable from './Presionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
@@ -76,10 +77,10 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
       <View style={{ flex: 1, backgroundColor: fondo }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18 }}>
           <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>Recordarme tomarlo</Text>
-          <Pressable onPress={alCerrar} hitSlop={12} accessibilityRole="button"
+          <Presionable onPress={alCerrar} hitSlop={12} accessibilityRole="button"
             style={{ minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' }}>
             <Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>Cerrar</Text>
-          </Pressable>
+          </Presionable>
         </View>
         <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: ins.bottom + 24, gap: 16 }} keyboardShouldPersistTaps="handled">
           <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, padding: 16, gap: 4 }}>
@@ -120,13 +121,13 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
             {DURACIONES.map((d, i) => {
               const elegida = d.id === duracion;
               return (
-                <Pressable key={d.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setDuracion(d.id); }} accessibilityRole="radio" accessibilityState={{ selected: elegida }}>
+                <Presionable key={d.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setDuracion(d.id); }} accessibilityRole="radio" accessibilityState={{ selected: elegida }}>
                   {i > 0 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 50 }} /> : null}
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, minHeight: 44 }}>
                     <Icono sf={elegida ? 'checkmark.circle.fill' : 'circle'} respaldo="" tam={22} color={elegida ? t.color.magenta : colorSistema.texto3} />
                     <Text style={{ fontSize: 15, fontWeight: elegida ? '700' : '500', color: colorSistema.texto }}>{d.texto}</Text>
                   </View>
-                </Pressable>
+                </Presionable>
               );
             })}
           </View>
@@ -165,24 +166,24 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
 function Pildora({ texto, elegida, alTocar }) {
   const t = useTema();
   return (
-    <Pressable onPress={alTocar} accessibilityRole="radio" accessibilityState={{ selected: elegida }}
+    <Presionable onPress={alTocar} accessibilityRole="radio" accessibilityState={{ selected: elegida }}
       style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: RADIO.chico, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.96 : 1 }],
         backgroundColor: elegida ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)') })}>
       <Text style={{ fontSize: 15, fontWeight: '700', color: elegida ? '#FFFFFF' : colorSistema.texto }}>{texto}</Text>
-    </Pressable>
+    </Presionable>
   );
 }
 
 function Paso({ sf, texto, etiqueta, alTocar }) {
   const t = useTema();
   return (
-    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }}
+    <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }}
       accessibilityRole="button" accessibilityLabel={etiqueta} hitSlop={6}
       // 32 de lado + 6 de `hitSlop` por lado = 44 pt de dedo (2026-10-13).
       style={({ pressed }) => ({ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.92 : 1 }],
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)' })}>
       {texto ? <Text style={{ fontSize: 12, fontWeight: '800', color: colorSistema.texto }}>{texto}</Text>
         : <Icono sf={sf} respaldo={sf === 'minus' ? '−' : '+'} tam={13} color={colorSistema.texto} />}
-    </Pressable>
+    </Presionable>
   );
 }

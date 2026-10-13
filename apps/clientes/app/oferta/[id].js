@@ -15,7 +15,8 @@
 //   4. las condiciones, y cómo se usa: «se aplica en caja».
 import { useEffect, useRef, useState } from 'react';
 import { compartirOferta } from '../../lib/compartir';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import Presionable from '../../componentes/Presionable';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -96,9 +97,9 @@ export default function Oferta() {
     return (
       <View style={{ flex: 1, backgroundColor: fondo, justifyContent: 'center' }}>
         <Vacio titulo="No se pudo cargar">{datos.mensaje ?? 'Revisa tu conexión.'}</Vacio>
-        <Pressable onPress={() => cargar({ forzar: true })} accessibilityRole="button" style={{ alignSelf: 'center', padding: 14 }}>
+        <Presionable onPress={() => cargar({ forzar: true })} accessibilityRole="button" style={{ alignSelf: 'center', padding: 14 }}>
           <Text style={{ fontSize: 17, fontWeight: '700', color: t.color.magentaTexto }}>Reintentar</Text>
-        </Pressable>
+        </Presionable>
       </View>
     );
   }
@@ -178,10 +179,10 @@ export default function Oferta() {
                         ) : null}
                       </View>
                       {puedeReservar ? (
-                        <Pressable onPress={() => abrirReserva(p)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Reservar ${p.nombre}`}
+                        <Presionable onPress={() => abrirReserva(p)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Reservar ${p.nombre}`}
                           style={({ pressed }) => ({ backgroundColor: a.fuerte, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
                           <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '800' }}>Reservar</Text>
-                        </Pressable>
+                        </Presionable>
                       ) : null}
                       {p.precio != null ? (
                         <View style={{ alignItems: 'flex-end' }}>
@@ -218,21 +219,21 @@ export default function Oferta() {
 
       {/* Cerrar: además del gesto de deslizar la hoja. */}
       {/* Compartir: junto a cerrar, sin tapar la etiqueta del descuento. */}
-      <Pressable onPress={() => compartirOferta(o)} accessibilityRole="button" accessibilityLabel="Compartir oferta" hitSlop={10}
+      <Presionable onPress={() => compartirOferta(o)} accessibilityRole="button" accessibilityLabel="Compartir oferta" hitSlop={10}
         style={({ pressed }) => ({
           position: 'absolute', top: 14, right: 58, width: 34, height: 34, borderRadius: 17,
           backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.92 : 1 }],
         })}>
         <Icono sf="square.and.arrow.up" respaldo="↗" tam={14} color="#FFFFFF" />
-      </Pressable>
-      <Pressable onPress={cerrar} accessibilityRole="button" accessibilityLabel="Cerrar" hitSlop={10}
+      </Presionable>
+      <Presionable onPress={cerrar} accessibilityRole="button" accessibilityLabel="Cerrar" hitSlop={10}
         style={({ pressed }) => ({
           position: 'absolute', top: 14, right: 14, width: 34, height: 34, borderRadius: 17,
           backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center',
           transform: [{ scale: pressed ? 0.92 : 1 }],
         })}>
         <Icono sf="xmark" respaldo="✕" tam={15} color="#FFFFFF" />
-      </Pressable>
+      </Presionable>
     </View>
   );
 }

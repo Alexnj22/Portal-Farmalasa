@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1281.1 — Carné por teléfono: Android abre la cámara
+
+Reporte del usuario: «para android no me abre la cámara, en mi iphone sí».
+Dos causas posibles, y el lector tragaba el error así que no se podía saber:
+en Android el enlace del QR se abre muchas veces dentro del navegador de la app
+de cámara o de Google Lens, que no da cámara en vivo; y la página pedía la
+cámara sola al cargar, sin un toque.
+
+- El lector se abre al TOCAR «Escanear el código», no solo.
+- Nuevo «Si no abre: tomar una foto del código»: usa la cámara del sistema
+  (funciona en cualquier navegador), lee el QR en el propio teléfono a
+  resolución completa y manda el ENLACE, no la foto.
+- `LectorDeCodigo` dice la causa real: navegador sin cámara en vivo, sin
+  permiso, sin cámara, o cámara ocupada por otra app.
+
 ## v2.1281.0 — Chat en la app: burbuja flotante, deslizar para responder y reacciones
 
 - **Chat con clientes en la app del personal, más nativo** (reporte del usuario: «no me sale la burbuja de chat… me da un listado vertical, no se ve estético; no puedo deslizar para responder»).

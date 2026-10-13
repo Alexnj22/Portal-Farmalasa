@@ -93,7 +93,9 @@ export default function CapturaDeFotoView() {
                 return;
             }
             setPara(r.para || '');
-            if (r.modo === 'qr') { setModo('qr'); setLeyendo(true); }
+            // El lector NO se abre solo: en Android, pedir la cámara sin que la
+            // persona haya tocado nada puede quedar bloqueado. Se abre al tocar.
+            if (r.modo === 'qr') setModo('qr');
             setEstado('listo');
         })();
         return () => { vivo = false; };
@@ -218,6 +220,40 @@ export default function CapturaDeFotoView() {
                     <Button icon={QrCode} onClick={() => setLeyendo(true)}>
                         Escanear el código
                     </Button>
+                    {/* ── El camino que funciona en CUALQUIER navegador ──────
+                        En Android, el enlace del QR muchas veces se abre dentro
+                        del navegador de la app de cámara o de Google Lens, y ahí
+                        no hay cámara en vivo (iPhone lo abre en Safari y por eso
+                        allá sí). Una foto con la cámara del sistema sí se puede
+                        en todos lados — y se LEE AQUÍ, a resolución completa, y
+                        lo que viaja es el enlace, no la foto. */}
+                    <label className="inline-flex items-center gap-2 min-h-[var(--tap-min)] px-4 rounded-btn
+                                      text-body-sm font-bold text-content-2 cursor-pointer active:scale-[0.97]">
+                        <Camera size={16} strokeWidth={2.5} />
+                        Si no abre: tomar una foto del código
+                        <input type="file" {...PROPS_CAMARA} className="sr-only" onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = '';
+                            if (!file) return;
+                            setEstado('mandando');
+                            const url = URL.createObjectURL(file);
+                            try {
+                                const { leerQrDeImagen } = await import('@nucleo/utils/leerQrDeImagen');
+                                const texto = await leerQrDeImagen(url);
+                                if (!texto) {
+                                    setEstado('error');
+                                    setMotivo('No se leyó ningún código en la foto. Acércate al QR, que salga nítido, y vuelve a intentar.');
+                                    return;
+                                }
+                                const r = await mandarTexto(secreto, texto);
+                                if (r.ok) { setEstado('hecho'); return; }
+                                setEstado('error');
+                                setMotivo(r.motivo);
+                            } finally {
+                                URL.revokeObjectURL(url);
+                            }
+                        }} />
+                    </label>
                 </div>
             )}
 

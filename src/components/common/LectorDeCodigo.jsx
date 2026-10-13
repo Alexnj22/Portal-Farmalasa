@@ -89,6 +89,15 @@ export default function LectorDeCodigo({ abierto, onCerrar, onLeer, titulo = 'Es
         enfriandoRef.current = false;
 
         (async () => {
+            // Sin `getUserMedia` no hay nada que intentar: es el navegador
+            // integrado de otra app (la cámara o Google Lens en Android abren el
+            // enlace ahí) o una página sin HTTPS. Decir «revisa el permiso» ahí
+            // manda a buscar un permiso que no existe.
+            if (!navigator.mediaDevices?.getUserMedia) {
+                setPreparando(false);
+                setError('Este navegador no deja usar la cámara en vivo. Abre el enlace en Chrome o Safari.');
+                return;
+            }
             try {
                 const [{ BrowserMultiFormatReader }, { DecodeHintType, BarcodeFormat }] = await Promise.all([
                     import('@zxing/browser'),
@@ -123,11 +132,21 @@ export default function LectorDeCodigo({ abierto, onCerrar, onLeer, titulo = 'Es
                     onCerrar?.();
                 });
                 if (!cancelado) setPreparando(false);
-            } catch {
+            } catch (e) {
                 if (cancelado) return;
                 apagar();
                 setPreparando(false);
-                setError('No se pudo abrir la cámara. Revisa que el navegador tenga permiso.');
+                // El motivo real, no uno genérico: «sin permiso», «sin cámara» y
+                // «la cámara la tiene otra app» se arreglan de formas distintas.
+                const porQue = {
+                    NotAllowedError: 'El navegador no tiene permiso para la cámara. Actívalo en los ajustes del sitio y vuelve a intentar.',
+                    SecurityError: 'El navegador no tiene permiso para la cámara. Actívalo en los ajustes del sitio y vuelve a intentar.',
+                    NotFoundError: 'No se encontró ninguna cámara en este equipo.',
+                    OverconstrainedError: 'No se encontró la cámara trasera.',
+                    NotReadableError: 'La cámara la está usando otra app. Ciérrala y vuelve a intentar.',
+                };
+                console.warn('LectorDeCodigo:', e?.name, e?.message);
+                setError(porQue[e?.name] || 'No se pudo abrir la cámara. Revisa que el navegador tenga permiso.');
             }
         })();
 

@@ -143,6 +143,35 @@ async function firmarRutas(admin: any, bucket: string, rutas: string[], segundos
   for (const f of data ?? []) if (f.path && f.signedUrl && !f.error) firmadas.set(f.path, f.signedUrl);
   return firmadas;
 }
+// Las fotos de ofertas, historias, banners y sucursales (bucket
+// `ofertas-clientes`), firmadas por 12 h y GUARDADAS en la instancia
+// (2026-10-14): firmarlas en cada apertura costaba un viaje a Storage —el más
+// lento de la cadena de Ofertas— y daba una URL nueva cada vez, así que el
+// teléfono volvía a bajar la misma foto. Se reusa la firma mientras le queden
+// más de 2 h; con eso la URL es la misma entre aperturas y la caché de
+// imágenes del teléfono la reconoce.
+const FIRMA_SEG = 12 * 3600;
+const firmasOfertas = new Map<string, { url: string; vence: number }>();
+// deno-lint-ignore no-explicit-any
+async function firmarOfertas(admin: any, rutas: string[]): Promise<Map<string, string>> {
+  const ahora = Date.now();
+  const firmadas = new Map<string, string>();
+  const faltan: string[] = [];
+  for (const r of new Set(rutas.filter(Boolean))) {
+    const g = firmasOfertas.get(r);
+    if (g && g.vence - ahora > 2 * 3600_000) firmadas.set(r, g.url); else faltan.push(r);
+  }
+  if (!faltan.length) return firmadas;
+  const { data, error } = await admin.storage.from("ofertas-clientes").createSignedUrls(faltan, FIRMA_SEG);
+  if (error) { console.error("no se pudieron firmar las imágenes:", error.message); return firmadas; }
+  if (firmasOfertas.size > 2000) firmasOfertas.clear(); // tope de memoria
+  for (const f of data ?? []) {
+    if (!f.path || !f.signedUrl || f.error) continue;
+    firmadas.set(f.path, f.signedUrl);
+    firmasOfertas.set(f.path, { url: f.signedUrl, vence: ahora + FIRMA_SEG * 1000 });
+  }
+  return firmadas;
+}
 // La foto de un empleado se guarda como URL «formato público» del bucket
 // privado `empleados` (regla 10 del CLAUDE.md): se saca el bucket y la ruta
 // para firmarla, igual que `getSignedFileUrl` del portal.
@@ -197,6 +226,13 @@ async function horarioFarmacia(admin: any) {
 }
 
 const VERSION_AVISO = `${TEXTOS.version} · ${TEXTOS.aviso}`;
+
+// Las versiones VIGENTES de los dos documentos que la app pide leer y aceptar
+// en el primer inicio (2026-10-14, app/guia.js). El reglamento lleva la fecha
+// de su «Vigente a partir del…» (public/reglamento-puntos.html) y el aviso es
+// el mismo `TEXTOS.aviso` del consentimiento. Subir una de las dos = la app le
+// vuelve a pedir la aceptación (sólo esa página) a todo el mundo.
+const DOCUMENTOS_VIGENTES = { reglamento: "reglamento-2026-10-01", aviso: TEXTOS.aviso };
 
 // Para el alta que no se puede hacer desde la app (el documento ya tiene un
 // registro pendiente con otro teléfono). No dice por qué: confirmar que ese
@@ -514,7 +550,7 @@ Deno.serve(async (req) => {
     }
 
     if (accion === "textos") {
-      return json({ ok: true, textos: { programa: TEXTOS.programa, promociones: TEXTOS.promociones } });
+      return json({ ok: true, textos: { programa: TEXTOS.programa, promociones: TEXTOS.promociones }, documentos: DOCUMENTOS_VIGENTES });
     }
 
     // ── Ofertas exclusivas por nivel (2026-10-14) ─────────────────────────
@@ -557,40 +593,38 @@ Deno.serve(async (req) => {
     // deno-lint-ignore no-explicit-any
     const ofertasPara = async (customerId: number | null): Promise<any> => {
       const hoy = hoySV();
-      // Ofertas exclusivas por nivel (2026-10-14): a qué llega este cliente.
-      const acceso = await accesoDeNivel(customerId);
       // Platino ve las ofertas 2 días ANTES que nadie (2026-10-07), marcadas «pronto».
-      const platino = acceso.nivel === "platino";
-      const tope = platino ? new Date(Date.parse(`${hoy}T12:00:00Z`) + 2 * 86400_000).toISOString().slice(0, 10) : hoy;
-      const { data: filas, error } = await admin.from("ofertas_clientes")
-        .select("id, titulo, descripcion, etiqueta, condiciones, imagen_path, inicio, fin, exclusiva, branch_ids, descuento_tipo, descuento_monto, productos, acento, nivel_minimo")
-        .eq("publicada", true).lte("inicio", tope).gte("fin", hoy)
-        .order("orden", { ascending: true }).order("fin", { ascending: true })
-        .limit(50);
+      const enDosDias = new Date(Date.parse(`${hoy}T12:00:00Z`) + 2 * 86400_000).toISOString().slice(0, 10);
+      // Todo A LA VEZ (2026-10-14). Antes eran siete viajes en fila —nivel,
+      // ofertas, ficha, salas, muestras, firma— y la pestaña tardaba ~0.75 s
+      // de mediana y hasta varios segundos. Las ofertas se piden con la
+      // ventana de Platino (+2 días) y se recortan acá cuando no lo es: así no
+      // esperan a saber el nivel.
+      const [acceso, { data: filasTodas, error }, socio, { data: salas, error: eB }, muestras] = await Promise.all([
+        accesoDeNivel(customerId),
+        admin.from("ofertas_clientes")
+          .select("id, titulo, descripcion, etiqueta, condiciones, imagen_path, inicio, fin, exclusiva, branch_ids, descuento_tipo, descuento_monto, productos, acento, nivel_minimo")
+          .eq("publicada", true).lte("inicio", enDosDias).gte("fin", hoy)
+          .order("orden", { ascending: true }).order("fin", { ascending: true })
+          .limit(80),
+        customerId
+          ? admin.from("customers").select("acepta_programa_puntos, acumula_puntos").eq("id", customerId).maybeSingle()
+            .then(({ data: c, error: eC }: any) => { if (eC) throw eC; return c?.acepta_programa_puntos !== false && c?.acumula_puntos !== false; })
+          : Promise.resolve(false),
+        admin.from("branches").select("id, name"),
+        muestrasDe(admin, customerId, "oferta"),
+      ]);
       if (error) throw error;
-
-      let socio = false;
-      if (customerId) {
-        const { data: c, error: eC } = await admin.from("customers")
-          .select("acepta_programa_puntos, acumula_puntos").eq("id", customerId).maybeSingle();
-        if (eC) throw eC;
-        socio = c?.acepta_programa_puntos !== false && c?.acumula_puntos !== false;
-      }
-      const { data: salas, error: eB } = await admin.from("branches").select("id, name");
+      const tope = acceso.nivel === "platino" ? enDosDias : hoy;
+      // deno-lint-ignore no-explicit-any
+      const filas = (filasTodas ?? []).filter((o: any) => o.inicio <= tope).slice(0, 50);
       if (eB) console.error("no se pudieron leer las salas:", eB.message);
       const nombreSala = new Map((salas ?? []).map((b: any) => [b.id, sucursal(b.name)]));
 
-      // Firmadas en UNA llamada y por 12 horas: firmar una por una costaba una
-      // petición a Storage por oferta en cada apertura, y una URL nueva cada vez
-      // hacía que el teléfono volviera a bajar la misma foto.
-      const muestras = await muestrasDe(admin, customerId, "oferta");
-      const rutas = [...(filas ?? []), ...muestras].map((o: any) => o.imagen_path).filter(Boolean);
-      const firmadas = new Map<string, string>();
-      if (rutas.length) {
-        const { data: fs, error: eF } = await admin.storage.from("ofertas-clientes").createSignedUrls(rutas, 12 * 3600);
-        if (eF) console.error("no se pudieron firmar las imágenes:", eF.message);
-        for (const f of fs ?? []) if (f.path && f.signedUrl) firmadas.set(f.path, f.signedUrl);
-      }
+      // Firmadas en UNA llamada, por 12 horas y reusadas entre aperturas
+      // (`firmarOfertas`): una URL nueva cada vez hacía que el teléfono
+      // volviera a bajar la misma foto.
+      const firmadas = await firmarOfertas(admin, [...filas, ...muestras].map((o: any) => o.imagen_path));
       const ofertas = (filas ?? []).map((o: any) => {
         const imagen = o.imagen_path ? firmadas.get(o.imagen_path) ?? null : null;
         const disponible = !o.exclusiva || socio;
@@ -640,20 +674,17 @@ Deno.serve(async (req) => {
     const historiasPara = async (customerId: number | null): Promise<any> => {
       // Duran 24 horas desde que se publican (`publicada_at` lo pone la base).
       const hace24h = new Date(Date.now() - 24 * 3600_000).toISOString();
-      const { data: filas, error } = await admin.from("app_historias")
-        .select("id, titulo, rotulo, texto, imagen_path, enlace, boton, inicio, fin, oferta_id, publicada_at")
-        .eq("publicada", true).gte("publicada_at", hace24h)
-        .order("orden", { ascending: true }).order("created_at", { ascending: false }).limit(20);
+      // Las historias y las muestras a la vez: no dependen una de otra.
+      const [{ data: filas, error }, muestras] = await Promise.all([
+        admin.from("app_historias")
+          .select("id, titulo, rotulo, texto, imagen_path, enlace, boton, inicio, fin, oferta_id, publicada_at")
+          .eq("publicada", true).gte("publicada_at", hace24h)
+          .order("orden", { ascending: true }).order("created_at", { ascending: false }).limit(20),
+        muestrasDe(admin, customerId, "historia"),
+      ]);
       if (error) throw error;
-      const muestras = await muestrasDe(admin, customerId, "historia");
       const todas = [...(filas ?? []), ...muestras.map((m) => ({ ...m, id: `muestra-${m.id}` }))];
-      const rutas = todas.map((h) => h.imagen_path).filter(Boolean);
-      const firmadas = new Map<string, string>();
-      if (rutas.length) {
-        const { data: fs, error: eF } = await admin.storage.from("ofertas-clientes").createSignedUrls(rutas, 12 * 3600);
-        if (eF) console.error("no se pudieron firmar las historias:", eF.message);
-        for (const f of fs ?? []) if (f.path && f.signedUrl) firmadas.set(f.path, f.signedUrl);
-      }
+      const firmadas = await firmarOfertas(admin, todas.map((h) => h.imagen_path));
       return {
         ok: true,
         historias: todas.filter((h) => firmadas.has(h.imagen_path)).map((h) => ({
@@ -695,13 +726,7 @@ Deno.serve(async (req) => {
         .eq("publicada", true).lte("inicio", hoy).gte("fin", hoy)
         .order("orden", { ascending: true }).order("created_at", { ascending: false }).limit(10);
       if (error) throw error;
-      const rutas = (filas ?? []).map((b: any) => b.imagen_path);
-      const firmadas = new Map<string, string>();
-      if (rutas.length) {
-        const { data: fs, error: eF } = await admin.storage.from("ofertas-clientes").createSignedUrls(rutas, 12 * 3600);
-        if (eF) console.error("no se pudieron firmar los banners:", eF.message);
-        for (const f of fs ?? []) if (f.path && f.signedUrl) firmadas.set(f.path, f.signedUrl);
-      }
+      const firmadas = await firmarOfertas(admin, (filas ?? []).map((b: any) => b.imagen_path));
       return json({
         ok: true,
         banners: (filas ?? []).filter((b: any) => firmadas.has(b.imagen_path)).map((b: any) => ({
@@ -825,12 +850,7 @@ Deno.serve(async (req) => {
       // (ruta en el bucket ofertas-clientes). Mientras no esté, la app pone una
       // de stock.
       const rutasFoto = (data ?? []).map((b: any) => b.settings?.foto_app).filter(Boolean);
-      const fotos = new Map<string, string>();
-      if (rutasFoto.length) {
-        const { data: fs, error: eF } = await admin.storage.from("ofertas-clientes").createSignedUrls(rutasFoto, 12 * 3600);
-        if (eF) console.error("no se pudieron firmar las fotos de sucursales:", eF.message);
-        for (const f of fs ?? []) if (f.path && f.signedUrl) fotos.set(f.path, f.signedUrl);
-      }
+      const fotos = await firmarOfertas(admin, rutasFoto);
       const sv = new Date(Date.now() - 6 * 3600_000);
       const dia = sv.getUTCDay();
       const ahora = sv.getUTCHours() * 60 + sv.getUTCMinutes();
@@ -955,6 +975,49 @@ Deno.serve(async (req) => {
         .update({ acepta_avisos: acepta, push_token: pushToken }).eq("id", ses.id);
       if (error) throw error;
       return json({ ok: true, acepta });
+    }
+
+    // ── Reglas y privacidad del primer inicio (2026-10-14, app/guia.js) ────
+    // `documentos_estado`: ¿esta cuenta ya aceptó las versiones vigentes? La
+    // app lo pregunta una vez por sesión nueva. `aceptar_documentos`: guarda la
+    // aceptación de los dos, cada uno con su versión, la plataforma y la
+    // versión de la app. Valen también para el pre-registro (sin ficha): lo
+    // aceptado como pre-registro sigue valiendo cuando se vincula la ficha.
+    if (accion === "documentos_estado" || accion === "aceptar_documentos") {
+      const filtro = [
+        customerId ? `customer_id.eq.${Number(customerId)}` : null,
+        ses.preregistro_id ? `preregistro_id.eq.${ses.preregistro_id}` : null,
+      ].filter(Boolean).join(",");
+      if (!filtro) return json({ ok: false, motivo: "sin_sesion" }, 401);
+      if (accion === "documentos_estado") {
+        const { data, error } = await admin.from("app_cliente_aceptaciones")
+          .select("documento, version").or(filtro).in("documento", ["reglamento", "aviso"]).limit(200);
+        if (error) throw error;
+        const tiene = (d: string, v: string) => (data ?? []).some((f: any) => f.documento === d && f.version === v);
+        return json({
+          ok: true, documentos: DOCUMENTOS_VIGENTES,
+          aceptado: tiene("reglamento", DOCUMENTOS_VIGENTES.reglamento) && tiene("aviso", DOCUMENTOS_VIGENTES.aviso),
+        });
+      }
+      // Se acepta lo que la persona tenía delante: si la app trae otra versión
+      // (el documento cambió mientras leía), no se anota y se le pide de nuevo.
+      if (body?.reglamento_version !== DOCUMENTOS_VIGENTES.reglamento || body?.aviso_version !== DOCUMENTOS_VIGENTES.aviso) {
+        return json({ ok: false, motivo: "version", documentos: DOCUMENTOS_VIGENTES,
+          mensaje: "Los documentos se actualizaron. Revísalos de nuevo y vuelve a aceptar." });
+      }
+      const comun = {
+        customer_id: customerId ?? null,
+        preregistro_id: customerId ? null : ses.preregistro_id,
+        sesion_id: ses.id,
+        plataforma: plataformaValida(body?.plataforma),
+        version_app: body?.version_app == null ? null : String(body.version_app).slice(0, 40),
+      };
+      const { error } = await admin.from("app_cliente_aceptaciones").insert([
+        { ...comun, documento: "reglamento", version: DOCUMENTOS_VIGENTES.reglamento },
+        { ...comun, documento: "aviso", version: DOCUMENTOS_VIGENTES.aviso },
+      ]);
+      if (error) throw error;
+      return json({ ok: true, documentos: DOCUMENTOS_VIGENTES });
     }
 
     // ── Ofertas: las ve también quien está pendiente ──────────────────────

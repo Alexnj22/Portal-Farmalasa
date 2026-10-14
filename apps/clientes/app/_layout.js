@@ -26,6 +26,7 @@ import AvisoSinConexion from '../componentes/AvisoSinConexion';
 import HojasAndroid, { instalarHojasAndroid } from '../componentes/HojasAndroid';
 import NovedadesHoja from '../componentes/NovedadesHoja';
 import { guiaVista, revisarAlAbrir, usePresentacion } from '../lib/novedades';
+import { revisarAceptacion, useAceptacion } from '../lib/aceptacion';
 
 // La hoja de opciones y el prompt de iOS, en Android (componentes/HojasAndroid).
 instalarHojasAndroid();
@@ -145,14 +146,28 @@ function Presentacion() {
   const guiaPendiente = usePresentacion((s) => s.guiaPendiente);
   const novedades = usePresentacion((s) => s.novedades);
   const pendientes = usePresentacion((s) => s.novedadesPendientes);
+  // Reglas y privacidad (2026-10-14, lib/aceptacion.js): si esta cuenta no
+  // aceptó las versiones vigentes del reglamento y del aviso, se abre la guía
+  // sólo con esa página. En el primer inicio no hace falta: la guía completa
+  // ya la trae.
+  const aceptacionPendiente = useAceptacion((s) => s.pendiente);
   // El token con el que arrancó la app (undefined = todavía no se leyó el llavero).
   const inicial = useRef(undefined);
   useEffect(() => {
     if (WEB || !lista) return;
-    if (inicial.current === undefined) { inicial.current = token; revisarAlAbrir(!!token); return; }
+    if (inicial.current === undefined) {
+      inicial.current = token;
+      revisarAlAbrir(!!token);
+      if (token) revisarAceptacion();
+      return;
+    }
     const antes = inicial.current;
     inicial.current = token;
-    if (!antes && token) guiaVista().then((vista) => { if (!vista) usePresentacion.getState().pedirGuia(); });
+    if (!antes && token) {
+      guiaVista().then((vista) => {
+        if (!vista) usePresentacion.getState().pedirGuia(); else revisarAceptacion();
+      });
+    }
   }, [lista, token]);
   const enPestanas = segmentos[0] === '(tabs)';
   useEffect(() => {
@@ -162,12 +177,18 @@ function Presentacion() {
       const reloj = setTimeout(() => { if (usePresentacion.getState().guiaPendiente) router.push('/guia'); }, 500);
       return () => clearTimeout(reloj);
     }
+    if (aceptacionPendiente && !novedades) {
+      const reloj = setTimeout(() => {
+        if (useAceptacion.getState().pendiente && !usePresentacion.getState().guiaPendiente) router.push('/guia?solo=reglas');
+      }, 500);
+      return () => clearTimeout(reloj);
+    }
     if (pendientes) {
       const reloj = setTimeout(() => usePresentacion.getState().abrirNovedades(pendientes), 800);
       return () => clearTimeout(reloj);
     }
     return undefined;
-  }, [token, bloqueada, enPestanas, guiaPendiente, pendientes]);
+  }, [token, bloqueada, enPestanas, guiaPendiente, aceptacionPendiente, novedades, pendientes]);
   if (!token || bloqueada || !novedades) return null;
   return <NovedadesHoja novedades={novedades} alCerrar={() => usePresentacion.getState().cerrarNovedades()} />;
 }
@@ -181,14 +202,19 @@ const BARRA_CHAT = {
   scrollEdgeEffects: { top: 'hidden', bottom: 'hidden', left: 'hidden', right: 'hidden' },
 };
 
+const AURORA_VIVA = new Set(['', 'index', 'bienvenida', 'entrar', 'registro']);
+
 // La aurora de la raíz: detrás de las pestañas la tapan las suyas, así que ahí
 // se pausa; y siempre con la app en segundo plano.
 function AuroraRaiz() {
   const segmentos = useSegments();
   const activa = useAppActiva();
-  // (2026-10-14) Detrás del chat se ve, pero QUIETA: dibujada una vez, nada
-  // que redibujar por cuadro mientras se desplaza el hilo o sube el teclado.
-  return <Aurora activa={activa && segmentos[0] !== '(tabs)' && segmentos[0] !== 'chat'} />;
+  // (2026-10-14) Viva SÓLO en la entrada (bienvenida, entrar, registro), que
+  // no se desplaza. Detrás del chat y de las listas de la pila (avisos,
+  // compras, reservas, facturas…) se ve, pero QUIETA: una aurora que se mueve
+  // detrás de tarjetas de vidrio obliga a recomponerlas en cada cuadro
+  // mientras se desplaza la lista.
+  return <Aurora activa={activa && AURORA_VIVA.has(segmentos[0] ?? '')} />;
 }
 
 // El bloqueo con Face ID, encima de todo, sólo con sesión abierta.

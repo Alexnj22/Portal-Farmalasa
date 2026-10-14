@@ -24,8 +24,11 @@ export default function Ofertas({ invitacion = false }) {
   if (!datos) return <Cargando />;
   if (!datos.ok) return <Pantalla alRefrescar={refrescar} refrescando={refrescando}><Vacio titulo="No se pudo cargar" accion="Reintentar" alAccion={refrescar}>{datos.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'}</Vacio></Pantalla>;
 
+  // `sinVidrio` (2026-10-14, «las ofertas tardan en cargar»): un pie de
+  // Liquid Glass por tarjeta, desplazándose, se recompone en cada cuadro — lo
+  // mismo que se le quitó al Inicio. El relleno translúcido se ve igual.
   return (
-    <Pantalla alRefrescar={refrescar} refrescando={refrescando}>
+    <Pantalla alRefrescar={refrescar} refrescando={refrescando} sinVidrio>
       {invitacion ? (
         <Entrada indice={0}>
           <Tocable etiqueta="Unirme al programa" alTocar={() => navegar('/registro')}>

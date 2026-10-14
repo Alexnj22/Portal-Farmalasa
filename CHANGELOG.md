@@ -21,7 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.1287.3 — Personal: los tres pendientes de la auditoría
+## v2.1288.0 — App: Notificaciones sin caída, Ofertas rápidas, auditoría y aceptación de reglas
+
+- **Notificaciones se caía** («algo salió mal», `app_errores` 2× en iOS): el `useMemo` del filtro leía `enEspera`, declarado 16 líneas más abajo; Hermes en release no lanza el error de inicialización, da `undefined` → «Cannot read property 'has' of undefined». Escáner AST sobre los 140 archivos de la app: 0 casos más. Android: 0 errores registrados.
+- **Ofertas lentas:** `ofertasPara` hacía ~7 viajes en fila (p50 742 ms, p90 1.8 s, máx 11 s); ahora un `Promise.all` (~3) y las URL firmadas de fotos se reutilizan en la instancia (`firmarOfertas`, también historias/banners/salas). En la app: copia guardada primero, pedidos compartidos (no dobles), sin vidrio por tarjeta.
+- **Carga instantánea con copia** en Inicio, Cuenta, Carrito, avisos, compras, inyecciones, sucursales y tratamientos; `sinVidrio` en las listas; la aurora sólo se mueve en la entrada.
+- **Primer inicio:** sin «Saltar», con «Atrás»; página «Reglas y privacidad» con Reglamento y Aviso completos, casillas habilitadas al llegar al final y «Aceptar y continuar» bloqueado hasta aceptar ambos. La aceptación se guarda en `app_cliente_aceptaciones` (migración nueva; acciones `aceptar_documentos`/`documentos_estado`); si cambia la versión de un documento, la app vuelve a pedir sólo esa página. Quienes ya usan la app la verán una vez.## v2.1287.3 — Personal: los tres pendientes de la auditoría
 
 - **Novedad de sueldo sin monto válido:** se registraba igual y el sueldo no
   cambiaba —el historial decía «Ajuste salarial» sobre un sueldo intacto—. Ahora

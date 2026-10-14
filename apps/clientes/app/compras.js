@@ -17,6 +17,7 @@ import Icono from '../componentes/Icono';
 import { useSesion } from '../lib/sesion';
 import { dolares, entero, fecha } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
+import { copiaParaEmpezar } from '../lib/sinConexion';
 
 const hora12 = (h) => {
   const m = /^(\d{1,2}):(\d{2})/.exec(String(h ?? ''));
@@ -34,7 +35,10 @@ export default function Compras() {
   const [abierta, setAbierta] = useState(null);
   const [refrescando, setRefrescando] = useState(false);
 
-  const cargar = useCallback(async () => { const r = await pedir('compras'); setDatos((ant) => (r?.ok || !ant?.ok ? r : ant)); }, [pedir]);
+  // Lo de la vez anterior se pinta al instante mientras llega lo fresco (2026-10-14).
+  const cargar = useCallback(async () => {
+    copiaParaEmpezar('compras', {}).then((c) => { if (c) setDatos((ant) => ant ?? c); });
+    const r = await pedir('compras'); setDatos((ant) => (r?.ok || !ant?.ok ? r : ant)); }, [pedir]);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 
@@ -51,7 +55,7 @@ export default function Compras() {
   const puntos = datos.compras.reduce((s, c) => s + Number(c.puntos ?? 0), 0);
 
   return (
-    <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
+    <Pantalla sinVidrio conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
       {/* Resumen de lo que se ve abajo. */}
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <Resumen etiqueta={`En ${datos.compras.length} compras`} valor={dolares(total)} />

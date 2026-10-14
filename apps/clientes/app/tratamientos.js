@@ -18,6 +18,7 @@ import { navegar } from '../lib/navegar';
 import { suave, useTema } from '../tema/tema';
 import TomasHoja from '../componentes/TomasHoja';
 import { DISPONIBLE as TOMAS, quitarRecordatorio, resumenRecordatorio, sincronizarConTratamientos, tomadoHoy, useTomas } from '../lib/tomas';
+import { copiaParaEmpezar } from '../lib/sinConexion';
 
 const MOTIVOS = ['Terminé el tratamiento', 'El médico me lo cambió', 'Lo compro en otro lugar', 'Otro motivo'];
 const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
@@ -30,6 +31,8 @@ export default function Tratamientos() {
   const preRegistro = useCuenta((s) => !!s.resumen?.pendiente);
   const [tomas, setTomas] = useState(null); // el tratamiento cuya hoja de tomas está abierta
   const cargar = useCallback(async () => {
+    // Lo de la vez anterior se pinta al instante mientras llega lo fresco (2026-10-14).
+    copiaParaEmpezar('mis_tratamientos', {}).then((c) => { if (c) setD((a) => a ?? c); });
     const r = await pedir('mis_tratamientos');
     setD((a) => (r?.ok || !a?.ok ? r : a));
     // Cuándo se le acaba cada uno, para el «Te quedan pocas» del aviso de toma.
@@ -86,7 +89,7 @@ export default function Tratamientos() {
   const activos = d.ok ? d.tratamientos.filter((t) => t.estado === 'activo') : [];
   const apagados = d.ok ? d.tratamientos.filter((t) => t.estado !== 'activo') : [];
   return (
-    <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
+    <Pantalla sinVidrio conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
       <Text style={{ fontSize: 15, color: colorSistema.texto2 }}>
         Lo que compras con regularidad. Te avisamos unos días antes de que se te acabe.
       </Text>

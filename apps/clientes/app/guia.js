@@ -1,4 +1,4 @@
-// El PRIMER INICIO (2026-10-14, aprobado por el usuario): cinco páginas a
+// El PRIMER INICIO (2026-10-14, aprobado por el usuario): seis páginas a
 // pantalla completa que cuentan cómo funciona la app, una vez, después de la
 // primera entrada o registro en este teléfono (lib/novedades.js decide cuándo).
 // También se abre a mano desde Cuenta → «Cómo funciona la app» y desde el modo
@@ -8,17 +8,33 @@
 //   2. Tu nivel y tu cupón — la escalera de materiales.
 //   3. Tienda y reservas.
 //   4. Chat con la farmacia (y los recordatorios de Mis tratamientos).
-//   5. Avisos y seguridad — los dos son opcionales y se activan aquí mismo.
+//   5. Reglas y privacidad — el reglamento y el aviso, para leer y ACEPTAR.
+//   6. Avisos y seguridad — los dos son opcionales y se activan aquí mismo.
 //
-// Se pasa de página deslizando (el paginado nativo del ScrollView) o con
-// «Siguiente»; «Saltar» está siempre. Se presenta como modal a pantalla
-// completa con la animación del sistema (app/_layout.js). Sin parallax: los
-// puntos de abajo son lo único que sigue al dedo, y con «Reducir movimiento» o
-// en un teléfono liviano ni eso — cambian de golpe.
+// Pedido del usuario (2026-10-14): «que tenga botón atrás, que no se pueda
+// saltar, que salgan las políticas y reglas ahí y no se pueda continuar hasta
+// marcar como leído». Por eso:
+//   · No hay «Saltar». «Atrás» arriba a la izquierda, deslizar hacia atrás, y
+//     el botón atrás de Android va a la página anterior (en la primera no hace
+//     nada: la guía no se cierra por ahí).
+//   · La página 5 muestra los dos documentos enteros; cada casilla se habilita
+//     al llegar al final de su documento, y «Aceptar y continuar» sólo con las
+//     dos marcadas. La aceptación se guarda en el SERVIDOR (lib/aceptacion.js)
+//     y si falla se dice y se reintenta: sin eso no se pasa. Hasta aceptar, la
+//     página 6 ni existe, así que deslizando tampoco se pasa.
+//   · Si después cambia la versión de un documento, la raíz abre esta misma
+//     pantalla con `?solo=reglas`: sólo la página 5.
+//   · Con la cuenta de prueba la aceptación se rehace cada vez y, si no se
+//     puede guardar, se avisa pero no se traba.
+//
+// Se presenta como modal a pantalla completa con la animación del sistema
+// (app/_layout.js). Sin parallax: los puntos de abajo son lo único que sigue
+// al dedo, y con «Reducir movimiento» o en un teléfono liviano ni eso — cambian
+// de golpe.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Platform, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { Alert, BackHandler, Platform, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { Extrapolation, interpolate, runOnJS, useAnimatedScrollHandler, useAnimatedStyle, useReducedMotion, useSharedValue } from 'react-native-reanimated';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -26,6 +42,7 @@ import Aurora from '../componentes/Aurora';
 import Presionable from '../componentes/Presionable';
 import TarjetaSocio, { COLORES_NIVEL } from '../componentes/TarjetaSocio';
 import Icono from '../componentes/Icono';
+import DocumentoLegal from '../componentes/DocumentoLegal';
 import { Boton, Texto } from '../componentes/ui';
 import { colorSistema } from '../componentes/sistema';
 import { rangoReal } from '../componentes/Mayorista';
@@ -35,19 +52,32 @@ import { useCuenta } from '../lib/cuenta';
 import { pedirTokenDeAvisos, recordarAvisos } from '../lib/avisos';
 import { conBiometria, nombreBiometria, sinBloquear, useBloqueo } from '../lib/bloqueo';
 import { marcarGuiaVista, usePresentacion } from '../lib/novedades';
+import { aceptadoEnTelefono, aceptarDocumentos, documentosVigentes, ultimaAceptacion, useAceptacion } from '../lib/aceptacion';
 import { LIVIANO } from '../lib/rendimiento';
 import { agregarAGoogleWallet, agregarDirecto, agregarPorSafari, googleWalletDisponible, tienePase, walletDisponible } from '../modules/wallet';
 
-const PAGINAS = 5;
+const PAGINAS = 6;
+const REGLAS = 4; // la página de «Reglas y privacidad» (índice)
 const ESCALERA = [['bronce', 'Bronce'], ['plata', 'Plata'], ['oro', 'Oro'], ['platino', 'Platino']];
+const DOCUMENTOS = [
+  { clave: 'reglamento', rotulo: 'Reglamento', url: 'https://portal.farmasalud.lat/reglamento-puntos',
+    casilla: 'He leído y acepto el Reglamento del programa Puntos Salud' },
+  { clave: 'aviso', rotulo: 'Aviso de privacidad', url: 'https://portal.farmasalud.lat/privacidad.html',
+    casilla: 'He leído y acepto el Aviso de privacidad' },
+];
+const NADA = { reglamento: false, aviso: false };
+const TODO = { reglamento: true, aviso: true };
 
 export default function Guia() {
   const t = useTema();
   const ins = useSafeAreaInsets();
   const { width: ancho } = useWindowDimensions();
   const reducir = useReducedMotion() || LIVIANO;
+  const { solo } = useLocalSearchParams();
+  const soloReglas = solo === 'reglas';
   const resumen = useCuenta((s) => s.resumen);
   const cargarCuenta = useCuenta((s) => s.cargar);
+  const prueba = !!resumen?.prueba;
   const [pagina, setPagina] = useState(0);
   const lista = useRef(null);
   const x = useSharedValue(0);
@@ -56,12 +86,42 @@ export default function Guia() {
     onMomentumEnd: (e) => { runOnJS(setPagina)(Math.round(e.contentOffset.x / Math.max(1, ancho))); },
   });
 
-  // Se marca al ABRIRLA: si cierra la app a mitad, no vuelve a salir sola.
+  // Reglas y privacidad: qué versiones se aceptan, qué se leyó hasta el final,
+  // qué se marcó y si ya quedó guardado.
+  const [vigentes, setVigentes] = useState(() => useAceptacion.getState().vigentes);
+  const [leidos, setLeidos] = useState(NADA);
+  const [marcas, setMarcas] = useState(NADA);
+  const [yaAceptado, setYaAceptado] = useState(false); // de antes, vigente
+  const [guardado, setGuardado] = useState(false);     // ahora, en el servidor
+  const [guardando, setGuardando] = useState(false);
+  const [errorReglas, setErrorReglas] = useState(null);
+  // La cuenta de prueba rehace la aceptación cada vez.
+  const aceptado = guardado || (yaAceptado && !prueba);
+  const total = soloReglas ? 1 : aceptado ? PAGINAS : REGLAS + 1; // hasta aceptar, la última no existe
+  const enReglas = soloReglas || pagina === REGLAS;
+
+  // Se marca al ABRIRLA: si cierra la app a mitad, no vuelve a salir sola (la
+  // aceptación sí: la pide la raíz mientras no esté guardada).
   useEffect(() => {
-    marcarGuiaVista();
-    usePresentacion.getState().guiaAbierta();
+    if (!soloReglas) {
+      marcarGuiaVista();
+      usePresentacion.getState().guiaAbierta();
+    }
     if (!resumen) cargarCuenta();
+    (async () => {
+      const v = (await documentosVigentes()) ?? useAceptacion.getState().vigentes;
+      if (v) {
+        setVigentes(v);
+        if (await aceptadoEnTelefono(v)) { setYaAceptado(true); setLeidos(TODO); setMarcas(TODO); }
+        return;
+      }
+      // Sin conexión y sin versiones: vale lo que esta sesión ya aceptó aquí.
+      const ultima = await ultimaAceptacion();
+      if (ultima) { setVigentes(ultima); setYaAceptado(true); setLeidos(TODO); setMarcas(TODO); }
+    })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // La cuenta de prueba empieza en blanco aunque ya hubiera aceptado.
+  useEffect(() => { if (prueba && !guardado) { setMarcas(NADA); setLeidos(NADA); } }, [prueba]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const cerrar = useCallback(() => {
     if (router.canGoBack()) router.back(); else router.replace('/puntos');
@@ -71,66 +131,220 @@ export default function Guia() {
     setPagina(n);
     if (reducir) x.value = n * ancho;
   };
+
+  // Atrás de Android: la página anterior; en la primera (o sólo reglas), nada.
+  const paginaRef = useRef(pagina);
+  paginaRef.current = pagina;
+  const irRef = useRef(ir);
+  irRef.current = ir;
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (!soloReglas && paginaRef.current > 0) irRef.current(paginaRef.current - 1);
+      return true;
+    });
+    return () => sub.remove();
+  }, [soloReglas]);
+
+  const despuesDeAceptar = () => {
+    if (soloReglas) { cerrar(); return; }
+    // La última página recién existe: se espera a que se pinte para ir.
+    setTimeout(() => irRef.current(REGLAS + 1), 60);
+  };
+  const aceptar = async () => {
+    if (guardando) return;
+    setErrorReglas(null);
+    setGuardando(true);
+    try {
+      const v = vigentes ?? (await documentosVigentes());
+      if (!v) {
+        if (prueba) { setGuardado(true); despuesDeAceptar(); return; }
+        setErrorReglas('No se pudieron cargar los documentos. Revisa tu conexión e intenta de nuevo.');
+        return;
+      }
+      setVigentes(v);
+      const r = await aceptarDocumentos(v);
+      if (r.ok) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        setGuardado(true);
+        despuesDeAceptar();
+        return;
+      }
+      if (r.motivo === 'version' && r.documentos) {
+        // Cambiaron mientras se leían: se vuelven a leer y a marcar.
+        setVigentes(r.documentos);
+        setLeidos(NADA); setMarcas(NADA);
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      if (prueba) {
+        Alert.alert('Modo de prueba', `No se guardó la aceptación (${r.mensaje}). Se sigue igual.`);
+        setGuardado(true);
+        despuesDeAceptar();
+        return;
+      }
+      setErrorReglas(r.mensaje);
+    } finally {
+      setGuardando(false);
+    }
+  };
+
   const siguiente = () => {
     Haptics.selectionAsync().catch(() => {});
-    if (pagina >= PAGINAS - 1) cerrar(); else ir(pagina + 1);
+    if (enReglas && !aceptado) { aceptar(); return; }
+    if (soloReglas || pagina >= PAGINAS - 1) cerrar(); else ir(pagina + 1);
   };
-  const saltar = () => { Haptics.selectionAsync().catch(() => {}); cerrar(); };
+  const atras = () => {
+    if (soloReglas || pagina <= 0) return;
+    Haptics.selectionAsync().catch(() => {});
+    ir(pagina - 1);
+  };
+
+  const reglas = (
+    <PaginaReglas ancho={ancho} leidos={leidos} marcas={marcas} aceptado={aceptado} error={errorReglas}
+      alLeer={(c) => setLeidos((l) => (l[c] ? l : { ...l, [c]: true }))}
+      alMarcar={(c) => { Haptics.selectionAsync().catch(() => {}); setErrorReglas(null); setMarcas((m) => ({ ...m, [c]: !m[c] })); }} />
+  );
+  const rotulo = enReglas && !aceptado ? 'Aceptar y continuar'
+    : soloReglas || pagina >= PAGINAS - 1 ? 'Empezar' : 'Siguiente';
+  const bloqueado = enReglas && !aceptado && !(marcas.reglamento && marcas.aviso);
 
   return (
     <View style={{ flex: 1 }}>
       <Aurora activa={!reducir} />
-      {/* Arriba: «Saltar», siempre. */}
-      <View style={{ paddingTop: ins.top + 6, paddingHorizontal: 16, flexDirection: 'row', justifyContent: 'flex-end' }}>
-        <Presionable onPress={saltar} hitSlop={10} accessibilityRole="button" accessibilityLabel="Saltar la guía"
-          style={({ pressed }) => ({ minHeight: 44, minWidth: 44, paddingHorizontal: 12, borderRadius: 22, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
-          <Text style={{ fontSize: 17, fontWeight: '600', color: t.color.magentaTexto }}>Saltar</Text>
-        </Presionable>
+      {/* Arriba: «Atrás» desde la segunda página. No hay «Saltar». */}
+      <View style={{ paddingTop: ins.top + 6, paddingHorizontal: 8, minHeight: ins.top + 50, flexDirection: 'row', justifyContent: 'flex-start' }}>
+        {!soloReglas && pagina > 0 ? (
+          <Presionable onPress={atras} hitSlop={10} accessibilityRole="button" accessibilityLabel="Atrás"
+            style={({ pressed }) => ({ minHeight: 44, minWidth: 44, paddingHorizontal: 8, borderRadius: 22, flexDirection: 'row', alignItems: 'center', gap: 2, opacity: pressed ? 0.6 : 1 })}>
+            <Icono sf="chevron.left" respaldo="‹" tam={20} color={t.color.magentaTexto} />
+            <Text style={{ fontSize: 17, fontWeight: Platform.OS === 'ios' ? '400' : '600', color: t.color.magentaTexto }}>Atrás</Text>
+          </Presionable>
+        ) : null}
       </View>
 
-      <Animated.ScrollView ref={lista} horizontal pagingEnabled showsHorizontalScrollIndicator={false} bounces={false}
-        onScroll={alDesplazar} scrollEventThrottle={16} style={{ flex: 1 }} decelerationRate="fast">
-        <Pagina ancho={ancho} titulo="Tu tarjeta Puntos Salud"
-          arte={<Tarjeta resumen={resumen} activa={pagina === 0} ancho={ancho} />}
-          extra={<BotonWallet resumen={resumen} />}>
-          Muéstrala en caja: por cada $1 de compra acumulas puntos, y 100 puntos = $1 de descuento. Tócala para ver tu código.
-        </Pagina>
-        <Pagina ancho={ancho} titulo="Tu nivel y tu cupón"
-          arte={<Escalera actual={rangoReal(resumen?.mayorista) ? null : (resumen?.nivel?.clave === 'vip' ? 'bronce' : resumen?.nivel?.clave)} />}
-          nota={resumen?.nivel?.activos === false
-            ? 'Los niveles se activan pronto, según el reglamento vigente.'
-            : 'Los niveles y sus beneficios siguen el reglamento vigente.'}>
-          Mientras más compras, mejor tu material y tus beneficios. Oro y Platino reciben un cupón raspable cada mes.
-        </Pagina>
-        <Pagina ancho={ancho} titulo="Tienda y reservas" arte={<Insignia sf="bag.fill" respaldo="◍" color={t.color.magenta} texto={t.color.magentaTexto} />}>
-          Aparta productos y retíralos sin hacer fila. Si llevan receta, súbela con una foto.
-        </Pagina>
-        <Pagina ancho={ancho} titulo="Chat con la farmacia" arte={<Insignia sf="bubble.left.and.bubble.right.fill" respaldo="✉" color={t.color.verde} texto={t.color.verdeTexto} />}
-          nota="En Mis tratamientos te recordamos tus tomas y cuándo te toca volver a comprar.">
-          Pregúntanos por un medicamento, su precio o si lo tenemos. Te responde nuestro equipo.
-        </Pagina>
-        <Pagina ancho={ancho} titulo="Avisos y seguridad" arte={<Insignia sf="bell.badge" respaldo="!" color={t.color.magenta} texto={t.color.magentaTexto} />}
-          extra={<Permisos resumen={resumen} />}>
-          Te avisamos cuando ganas puntos, cuando tu reserva está lista y cuando te responden en el chat. Y puedes pedir tu huella o tu cara al abrir la app, para que nadie más vea tu saldo. Las dos cosas son opcionales.
-        </Pagina>
-      </Animated.ScrollView>
+      {soloReglas ? <View style={{ flex: 1 }}>{reglas}</View> : (
+        <Animated.ScrollView ref={lista} horizontal pagingEnabled showsHorizontalScrollIndicator={false} bounces={false}
+          onScroll={alDesplazar} scrollEventThrottle={16} style={{ flex: 1 }} decelerationRate="fast">
+          <Pagina ancho={ancho} titulo="Tu tarjeta Puntos Salud"
+            arte={<Tarjeta resumen={resumen} activa={pagina === 0} ancho={ancho} />}
+            extra={<BotonWallet resumen={resumen} />}>
+            Muéstrala en caja: por cada $1 de compra acumulas puntos, y 100 puntos = $1 de descuento. Tócala para ver tu código.
+          </Pagina>
+          <Pagina ancho={ancho} titulo="Tu nivel y tu cupón"
+            arte={<Escalera actual={rangoReal(resumen?.mayorista) ? null : (resumen?.nivel?.clave === 'vip' ? 'bronce' : resumen?.nivel?.clave)} />}
+            nota={resumen?.nivel?.activos === false
+              ? 'Los niveles se activan pronto, según el reglamento vigente.'
+              : 'Los niveles y sus beneficios siguen el reglamento vigente.'}>
+            Mientras más compras, mejor tu material y tus beneficios. Oro y Platino reciben un cupón raspable cada mes.
+          </Pagina>
+          <Pagina ancho={ancho} titulo="Tienda y reservas" arte={<Insignia sf="bag.fill" respaldo="◍" color={t.color.magenta} texto={t.color.magentaTexto} />}>
+            Aparta productos y retíralos sin hacer fila. Si llevan receta, súbela con una foto.
+          </Pagina>
+          <Pagina ancho={ancho} titulo="Chat con la farmacia" arte={<Insignia sf="bubble.left.and.bubble.right.fill" respaldo="✉" color={t.color.verde} texto={t.color.verdeTexto} />}
+            nota="En Mis tratamientos te recordamos tus tomas y cuándo te toca volver a comprar.">
+            Pregúntanos por un medicamento, su precio o si lo tenemos. Te responde nuestro equipo.
+          </Pagina>
+          {reglas}
+          {aceptado ? (
+            <Pagina ancho={ancho} titulo="Avisos y seguridad" arte={<Insignia sf="bell.badge" respaldo="!" color={t.color.magenta} texto={t.color.magentaTexto} />}
+              extra={<Permisos resumen={resumen} />}>
+              Te avisamos cuando ganas puntos, cuando tu reserva está lista y cuando te responden en el chat. Y puedes pedir tu huella o tu cara al abrir la app, para que nadie más vea tu saldo. Las dos cosas son opcionales.
+            </Pagina>
+          ) : null}
+        </Animated.ScrollView>
+      )}
 
       {/* Abajo: los puntos y el botón principal. */}
       <View style={{ paddingHorizontal: 24, paddingBottom: ins.bottom + 16, paddingTop: 8, gap: 18, width: '100%', maxWidth: 520, alignSelf: 'center' }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }}
-          accessible accessibilityRole="adjustable" accessibilityLabel={`Página ${pagina + 1} de ${PAGINAS}`}
-          accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
-          onAccessibilityAction={(e) => {
-            if (e.nativeEvent.actionName === 'increment' && pagina < PAGINAS - 1) ir(pagina + 1);
-            if (e.nativeEvent.actionName === 'decrement' && pagina > 0) ir(pagina - 1);
-          }}>
-          {Array.from({ length: PAGINAS }, (_, i) => (
-            <Punto key={i} i={i} x={x} ancho={ancho} activo={pagina === i} quieto={reducir} />
-          ))}
-        </View>
-        <Boton alTocar={siguiente}>{pagina >= PAGINAS - 1 ? 'Empezar' : 'Siguiente'}</Boton>
+        {soloReglas ? null : (
+          <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }}
+            accessible accessibilityRole="adjustable" accessibilityLabel={`Página ${pagina + 1} de ${PAGINAS}`}
+            accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+            onAccessibilityAction={(e) => {
+              if (e.nativeEvent.actionName === 'increment' && pagina < total - 1) ir(pagina + 1);
+              if (e.nativeEvent.actionName === 'decrement' && pagina > 0) ir(pagina - 1);
+            }}>
+            {Array.from({ length: PAGINAS }, (_, i) => (
+              <Punto key={i} i={i} x={x} ancho={ancho} activo={pagina === i} quieto={reducir} />
+            ))}
+          </View>
+        )}
+        <Boton alTocar={siguiente} cargando={guardando} deshabilitado={bloqueado}>{rotulo}</Boton>
       </View>
     </View>
+  );
+}
+
+// «Reglas y privacidad»: los dos documentos enteros, uno a la vez (se elige
+// arriba), con texto nativo (componentes/DocumentoLegal: la misma página
+// publicada en el portal, la que se archiva como prueba). Cada casilla se
+// habilita al llegar al final de su documento; tocar una todavía cerrada lleva
+// a ese documento.
+function PaginaReglas({ ancho, leidos, marcas, aceptado, error, alLeer, alMarcar }) {
+  const t = useTema();
+  const [doc, setDoc] = useState('reglamento');
+  const [pista, setPista] = useState(null);
+  const actual = DOCUMENTOS.find((d) => d.clave === doc);
+  return (
+    <View style={{ width: ancho, flex: 1, paddingHorizontal: 20, paddingTop: 4 }}>
+      <View style={{ flex: 1, width: '100%', maxWidth: 560, alignSelf: 'center', gap: 12 }}>
+        <View style={{ gap: 6, alignItems: 'center' }}>
+          <Text accessibilityRole="header" style={{ fontSize: 26, fontWeight: '800', letterSpacing: -0.4, textAlign: 'center', color: colorSistema.texto }}>Reglas y privacidad</Text>
+          <Texto nivel={2} estilo={{ textAlign: 'center', fontSize: 15, lineHeight: 21 }}>
+            {aceptado ? 'Ya los aceptaste. Puedes volver a leerlos cuando quieras en Cuenta.'
+              : 'Léelos hasta el final y marca que los aceptas para continuar.'}
+          </Texto>
+        </View>
+        <View style={{ flexDirection: 'row', gap: 8, justifyContent: 'center' }} accessibilityRole="tablist">
+          {DOCUMENTOS.map((d) => {
+            const elegido = d.clave === doc;
+            return (
+              <Presionable key={d.clave} onPress={() => { setDoc(d.clave); setPista(null); }} accessibilityRole="tab"
+                accessibilityState={{ selected: elegido }} accessibilityLabel={`${d.rotulo}${leidos[d.clave] ? ', leído' : ''}`}
+                style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 14, borderRadius: 22, flexDirection: 'row', alignItems: 'center', gap: 6,
+                  backgroundColor: elegido ? suave(t.color.magenta, t.oscuro ? 0.32 : 0.16) : 'transparent',
+                  borderWidth: 1, borderColor: elegido ? t.color.magenta : colorSistema.contornoSuave, opacity: pressed ? 0.7 : 1 })}>
+                {leidos[d.clave] ? <Icono sf="checkmark.circle.fill" respaldo="✓" tam={16} color={t.color.verdeTexto} /> : null}
+                <Text style={{ fontSize: 15, fontWeight: elegido ? '700' : '600', color: elegido ? t.color.magentaTexto : colorSistema.texto }}>{d.rotulo}</Text>
+              </Presionable>
+            );
+          })}
+        </View>
+        <View style={{ flex: 1, minHeight: 180, borderRadius: 16, borderWidth: 1, borderColor: colorSistema.contornoSuave,
+          backgroundColor: colorSistema.superficie, overflow: 'hidden' }}>
+          <DocumentoLegal key={actual.clave} url={actual.url} incrustado alFinal={() => alLeer(actual.clave)} />
+        </View>
+        <View style={{ gap: 2 }}>
+          {DOCUMENTOS.map((d) => (
+            <Casilla key={d.clave} texto={d.casilla} marcada={!!marcas[d.clave]} habilitada={!aceptado && !!leidos[d.clave]} fija={aceptado}
+              alTocar={() => {
+                if (aceptado) return;
+                if (!leidos[d.clave]) { setDoc(d.clave); setPista(`Lee el ${d.rotulo.toLowerCase()} hasta el final para poder marcarlo.`); return; }
+                setPista(null);
+                alMarcar(d.clave);
+              }} />
+          ))}
+          {pista ? <Texto nivel={3} estilo={{ textAlign: 'center', fontSize: 13 }}>{pista}</Texto> : null}
+          {error ? <Texto nivel={2} estilo={{ textAlign: 'center', color: colorSistema.rojo, fontSize: 14 }}>{error}</Texto> : null}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// Una casilla de aceptación. Antes de leer el documento se ve atenuada (pero
+// se puede tocar: lleva al documento y dice por qué no se marca todavía).
+function Casilla({ texto, marcada, habilitada, fija, alTocar }) {
+  const t = useTema();
+  const atenuada = !habilitada && !fija && !marcada;
+  return (
+    <Presionable onPress={alTocar} accessibilityRole="checkbox" accessibilityLabel={texto}
+      accessibilityState={{ checked: marcada, disabled: !habilitada }}
+      accessibilityHint={habilitada || fija ? undefined : 'Primero lee el documento hasta el final.'}
+      style={({ pressed }) => ({ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6, opacity: pressed ? 0.6 : atenuada ? 0.55 : 1 })}>
+      <Icono sf={marcada ? 'checkmark.square.fill' : 'square'} respaldo={marcada ? '☑' : '☐'} tam={24}
+        color={marcada ? t.color.magenta : colorSistema.texto2} />
+      <Text style={{ flex: 1, fontSize: 15, lineHeight: 20, color: colorSistema.texto }}>{texto}</Text>
+    </Presionable>
   );
 }
 

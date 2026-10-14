@@ -51,6 +51,19 @@ export async function leer(accion, datos) {
   } catch { return null; }
 }
 
+// La copia guardada para PINTAR AL INSTANTE (2026-10-14, «las ofertas tardan
+// en cargar»): una pestaña abierta en frío esperaba a la red con la ruedita
+// aunque el teléfono tuviera lo de la vez anterior. Se pinta la copia y la
+// respuesta fresca la reemplaza al llegar. A diferencia de `leer`, NO marca
+// «sin conexión»: todavía no se sabe si la hay.
+export async function copiaParaEmpezar(accion, datos) {
+  if (!DIR || !LECTURAS.has(accion)) return null;
+  try {
+    const { r } = JSON.parse(await FS.readAsStringAsync(`${DIR}${llave(accion, datos)}.json`));
+    return r?.ok ? r : null;
+  } catch { return null; }
+}
+
 // Retoca la copia guardada de una lectura (2026-10-12). Lo que el servidor ya
 // borró no puede volver a salir de la copia sin conexión: los avisos borrados
 // de la bandeja reaparecían sin señal, porque la copia era de antes de borrar.

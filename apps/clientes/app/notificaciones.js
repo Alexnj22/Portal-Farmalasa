@@ -34,7 +34,7 @@ import { alLlegarAviso } from '../lib/avisos';
 import { leerOcultas, olvidar, ocultar } from '../lib/bandejaOculta';
 import { suave, useTema } from '../tema/tema';
 import { navegar } from '../lib/navegar';
-import { retocar } from '../lib/sinConexion';
+import { retocar, copiaParaEmpezar } from '../lib/sinConexion';
 
 const DIA = 86400_000;
 // Deshacer (2026-10-13): el borrado de UN aviso espera esto antes de ir al
@@ -101,6 +101,9 @@ export default function Notificaciones() {
   const pedir = useSesion((s) => s.pedir);
   const [d, setD] = useState(null);
   const [ocultas, setOcultas] = useState(null);
+  // (2026-10-14) Declarado ANTES del useMemo que lo lee: más abajo, el filtro
+  // lo leía sin inicializar y la pantalla se caía («Cannot read property 'has'»).
+  const [enEspera, setEnEspera] = useState(() => new Set());
   const [vistas, setVistas] = useState(() => new Set()); // tocadas en esta visita
   const [todasVistas, setTodasVistas] = useState(false);
   const [refrescando, setRefrescando] = useState(false);
@@ -126,6 +129,8 @@ export default function Notificaciones() {
     } catch { /* queda el ocultamiento local */ }
   }, [pedir]);
   const cargar = useCallback(async () => {
+    // Lo de la vez anterior se pinta al instante mientras llega lo fresco (2026-10-14).
+    copiaParaEmpezar('bandeja', {}).then((c) => { if (c) setD((ant) => ant ?? c); });
     const r = await pedir('bandeja');
     setD((ant) => (r?.ok || !ant?.ok ? r : ant));
     if (r?.ok && r.sin_leer) pedir('bandeja_leida');
@@ -159,7 +164,6 @@ export default function Notificaciones() {
   }, [sincronizar]);
   // Uno solo: se esconde al instante, pero el borrado de verdad (el local que
   // persiste y el del servidor) sale a los 4 s, si no se tocó «Deshacer».
-  const [enEspera, setEnEspera] = useState(() => new Set());
   const [deshacer, setDeshacer] = useState(null); // el último borrado: { id, n }
   const esperas = useRef(new Map()); // id → temporizador
   const borrarRef = useRef(borrar);

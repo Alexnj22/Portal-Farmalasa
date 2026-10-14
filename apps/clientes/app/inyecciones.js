@@ -14,6 +14,7 @@ import { useSesion } from '../lib/sesion';
 import { fecha } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
 import Icono from '../componentes/Icono';
+import { copiaParaEmpezar } from '../lib/sinConexion';
 
 /** Un anillo que se expande y se desvanece detrás del número: «tienes algo pendiente». */
 function Anillo({ color }) {
@@ -46,7 +47,10 @@ export default function Inyecciones() {
 
   // Si falla la red y ya había datos, se conservan: un tropiezo al cambiar de
   // pestaña no puede cambiar la lista por una pantalla de error.
-  const cargar = useCallback(async () => { const r = await pedir('inyecciones'); setDatos((ant) => (r?.ok || !ant?.ok ? r : ant)); }, [pedir]);
+  // Lo de la vez anterior se pinta al instante mientras llega lo fresco (2026-10-14).
+  const cargar = useCallback(async () => {
+    copiaParaEmpezar('inyecciones', {}).then((c) => { if (c) setDatos((ant) => ant ?? c); });
+    const r = await pedir('inyecciones'); setDatos((ant) => (r?.ok || !ant?.ok ? r : ant)); }, [pedir]);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 
@@ -65,7 +69,7 @@ export default function Inyecciones() {
   const verde = t.color.verde;
 
   return (
-    <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
+    <Pantalla sinVidrio conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
       <Entrada indice={0}>
         <Tarjeta tono={verde} estilo={{ alignItems: 'center', paddingVertical: 28, gap: 10 }}>
           <View style={{ width: 96, height: 96, alignItems: 'center', justifyContent: 'center' }}>

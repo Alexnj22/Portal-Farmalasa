@@ -21,6 +21,7 @@ import { colorSistema } from './sistema';
 import { dolares, diasHasta, fecha } from '../lib/formato';
 import { acentoDe, suave, useTema } from '../tema/tema';
 import Icono from './Icono';
+import { useSinMovimiento } from './animacion';
 import { compartirOferta } from '../lib/compartir';
 import { COLORES_NIVEL } from './TarjetaSocio';
 import { EXCLUSIVAS } from '../lib/exclusiva';
@@ -97,12 +98,16 @@ export function Plazo({ fin, color }) {
 export function PortadaOferta({ oferta: o, alto = 230, conTitulo = true, compartible = true }) {
   const t = useTema();
   const a = acentoDe(t, o.acento);
-  const zoom = useSharedValue(1.12);
-  const etiqueta = useSharedValue(0);
+  // Con «Reducir movimiento» o en un teléfono liviano, quietas desde el inicio
+  // (2026-10-14): una lista de ofertas eran N zooms de 1.4 s a la vez al abrir.
+  const quieta = useSinMovimiento();
+  const zoom = useSharedValue(quieta ? 1 : 1.12);
+  const etiqueta = useSharedValue(quieta ? 1 : 0);
   useEffect(() => {
+    if (quieta) return;
     zoom.value = withTiming(1, { duration: 1400, easing: Easing.out(Easing.cubic) });
     etiqueta.value = withDelay(200, withSpring(1, { damping: 20, stiffness: 200 }));
-  }, [zoom, etiqueta]);
+  }, [zoom, etiqueta, quieta]);
   const estiloFoto = useAnimatedStyle(() => ({ transform: [{ scale: zoom.value }] }));
   const estiloEtiqueta = useAnimatedStyle(() => ({ transform: [{ scale: 0.85 + etiqueta.value * 0.15 }] }));
 

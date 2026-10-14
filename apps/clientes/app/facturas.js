@@ -340,7 +340,7 @@ export default function Facturas() {
           </Presionable>
         ) : undefined,
       }} />
-      <Pantalla conPestanas={false} conBurbuja={false} alRefrescar={d && !seleccion ? refrescar : undefined} refrescando={refrescando} alFinal={d?.siguiente ? cargarMas : undefined}>
+      <Pantalla sinVidrio conPestanas={false} conBurbuja={false} alRefrescar={d && !seleccion ? refrescar : undefined} refrescando={refrescando} alFinal={d?.siguiente ? cargarMas : undefined}>
         <View style={{ marginHorizontal: -16 }}>
           <Segmentos opciones={PERIODOS} valor={periodo} alCambiar={(p) => { setPeriodo(p); if (seleccion) setSeleccion(new Set()); }} />
         </View>

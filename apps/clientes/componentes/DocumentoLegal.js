@@ -16,7 +16,7 @@
 // El lector entiende lo que esas dos páginas usan: h1/h2/h3, párrafos, listas
 // numeradas, una tabla de dos columnas y negritas/cursivas. Lo demás (estilos,
 // el logo embebido, scripts) se descarta.
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Vacio } from './ui';
@@ -115,7 +115,12 @@ function Partes({ partes, estilo }) {
   );
 }
 
-export default function DocumentoLegal({ url }) {
+// `alFinal` (opcional, 2026-10-14): se llama UNA vez cuando la persona llegó al
+// final del texto — o enseguida, si el documento entero cabe sin desplazar. Lo
+// usa la página «Reglas y privacidad» del primer inicio (app/guia.js), que
+// además lo pinta `incrustado`: dentro de otra pantalla que se desplaza, con
+// menos relleno y sin el margen del borde inferior del teléfono.
+export default function DocumentoLegal({ url, alFinal, incrustado = false }) {
   const t = useTema();
   const ins = useSafeAreaInsets();
   const [bloques, setBloques] = useState(() => cache.get(url) ?? null);
@@ -134,11 +139,23 @@ export default function DocumentoLegal({ url }) {
     }
   }, [url]);
   useEffect(() => { cargar(); }, [cargar]);
+  const avisado = useRef(false);
+  const alto = useRef({ vista: 0, contenido: 0 });
+  const revisarFinal = (y = 0) => {
+    const { vista, contenido } = alto.current;
+    if (!alFinal || avisado.current || !vista || !contenido) return;
+    if (y + vista >= contenido - 24) { avisado.current = true; alFinal(); }
+  };
+  useEffect(() => { avisado.current = false; }, [url]);
 
   if (error) return <Vacio titulo="No se pudo abrir" accion="Reintentar" alAccion={cargar}>Revisa tu conexión y vuelve a intentar.</Vacio>;
   if (!bloques) return <ActivityIndicator style={{ marginTop: 40 }} color={t.color.magenta} />;
   return (
-    <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 32 + ins.bottom, gap: 12, maxWidth: 680, width: '100%', alignSelf: 'center' }}>
+    <ScrollView nestedScrollEnabled={incrustado} scrollEventThrottle={64}
+      onLayout={(e) => { alto.current.vista = e.nativeEvent.layout.height; revisarFinal(); }}
+      onContentSizeChange={(_w, h) => { alto.current.contenido = h; revisarFinal(); }}
+      onScroll={alFinal ? (e) => revisarFinal(e.nativeEvent.contentOffset.y) : undefined}
+      contentContainerStyle={{ padding: incrustado ? 16 : 20, paddingBottom: incrustado ? 24 : 32 + ins.bottom, gap: 12, maxWidth: 680, width: '100%', alignSelf: 'center' }}>
       {bloques.map((b, i) => {
         if (b.tipo === 'h1') return <Partes key={i} partes={b.partes} estilo={{ fontSize: 26, lineHeight: 32, fontWeight: '800', color: colorSistema.texto }} />;
         if (b.tipo === 'h2' || b.tipo === 'h3') {

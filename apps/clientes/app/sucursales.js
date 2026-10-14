@@ -28,6 +28,7 @@ import { colorSistema } from '../componentes/sistema';
 import { llamar } from '../lib/api';
 import { distanciaKm, textoDistancia, useUbicacionMientrasSeUsa } from '../lib/cercania';
 import { useTema } from '../tema/tema';
+import { copiaParaEmpezar } from '../lib/sinConexion';
 
 // Fotos de stock (Unsplash, licencia libre) mientras cada sucursal no tenga la
 // suya en `branches.settings.foto_app`. Se alternan para que no se vean iguales.
@@ -46,7 +47,10 @@ export default function Sucursales() {
   const [refrescando, setRefrescando] = useState(false);
   // Al volver a la pantalla se pide de nuevo («abierta» cambia con la hora), y
   // un fallo de red no borra lo que ya se veía.
-  const cargar = useCallback(async () => { const r = await llamar('salas'); setDatos((ant) => (r?.ok || !ant?.ok ? r : ant)); }, []);
+  // Lo de la vez anterior se pinta al instante mientras llega lo fresco (2026-10-14).
+  const cargar = useCallback(async () => {
+    copiaParaEmpezar('salas', {}).then((c) => { if (c) setDatos((ant) => ant ?? c); });
+    const r = await llamar('salas'); setDatos((ant) => (r?.ok || !ant?.ok ? r : ant)); }, []);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
   const ubicacion = useUbicacionMientrasSeUsa();
@@ -61,7 +65,7 @@ export default function Sucursales() {
   const abiertas = salas.filter((s) => s.abierta).length;
 
   return (
-    <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
+    <Pantalla sinVidrio conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
       <Entrada indice={0}>
         <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto2, marginLeft: 4 }}>
           {abiertas ? `${abiertas} de ${salas.length} abiertas ahora` : 'Todas cerradas en este momento'}

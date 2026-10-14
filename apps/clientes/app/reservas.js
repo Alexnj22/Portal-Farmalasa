@@ -317,7 +317,7 @@ export default function Reservas() {
     );
   };
   return (
-    <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando} alFinal={d.siguiente ? cargarMas : undefined}>
+    <Pantalla sinVidrio conPestanas={false} alRefrescar={refrescar} refrescando={refrescando} alFinal={d.siguiente ? cargarMas : undefined}>
       {chips}
       {vistaPrevia.vista}
       {filtro === 'todas' && encargos.length ? (

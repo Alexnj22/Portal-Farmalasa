@@ -49,10 +49,14 @@ export function barraAndroid(principal = false) {
   };
 }
 
-export default function PilaDePestana({ titulo }) {
+// `auroraQuieta` (Inicio, 2026-10-14, «se siente lento»): la aurora se dibuja
+// una vez y no se anima. Detrás de una lista larga que se desplaza, cada
+// cuadro de la aurora obligaba a recomponer todo lo translúcido de encima; y
+// como las manchas se mueven tan lento, quieta se ve igual.
+export default function PilaDePestana({ titulo, auroraQuieta = false }) {
   useColorScheme();
   // La aurora de esta pestaña sólo se mueve mientras se ve.
-  const visible = useVisible();
+  const visible = useVisible() && !auroraQuieta;
   if (ANDROID) {
     return (
       <View style={{ flex: 1, backgroundColor: colorSistema.fondo }}>

@@ -1,6 +1,7 @@
 // Una superficie de VIDRIO: el Liquid Glass de iOS 26 cuando existe, el
 // desenfoque del sistema en iOS anteriores, y en Android la tarjeta OPACA de
 // Material 3 (Android no tiene vidrio: su lenguaje es la superficie tonal).
+import { createContext, useContext } from 'react';
 import { Platform, StyleSheet, useColorScheme, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
@@ -8,14 +9,37 @@ import { LIVIANO } from '../lib/rendimiento';
 
 const HAY_VIDRIO = Platform.OS === 'ios' && (() => { try { return isLiquidGlassAvailable(); } catch { return false; } })();
 
+/**
+ * `true` dentro de una pantalla que pide sus tarjetas SIN vidrio vivo
+ * (`Pantalla sinVidrio`, 2026-10-14): en una lista que se desplaza, cada
+ * Liquid Glass o desenfoque se recompone en cada cuadro con lo que pasa por
+ * detrás. Ahí va el mismo color translúcido del vidrio, sin el efecto.
+ */
+export const SinVidrio = createContext(false);
+
 export default function Vidrio({ style, children, radio = 22, interactivo = false, tinte, elevacion = 0 }) {
   const oscuro = useColorScheme() === 'dark';
+  const sinVidrio = useContext(SinVidrio);
   const forma = { borderRadius: radio, overflow: 'hidden' };
   // Sin tinte propio, un velo del fondo del sistema: el Liquid Glass «regular»
   // es casi transparente y sobre la aurora el texto quedaba encima del color
   // (probado en TestFlight el 2026-10-06). Con el velo se sigue viendo vidrio,
   // pero el texto tiene fondo.
   const velo = oscuro ? 'rgba(18,16,24,0.55)' : 'rgba(255,255,255,0.62)';
+  if (HAY_VIDRIO && sinVidrio) {
+    // Las MISMAS dos capas que el vidrio de abajo —la base y, encima, el velo
+    // o el tinte de la marca—, sin el desenfoque: sobre la aurora quieta (que
+    // ya es un degradado difuso) se ven iguales. El canto claro hace del
+    // reflejo del borde del Liquid Glass.
+    const base = oscuro ? 'rgba(18,16,24,0.42)' : 'rgba(255,255,255,0.46)';
+    return (
+      <View style={[forma, { backgroundColor: base, borderWidth: StyleSheet.hairlineWidth,
+        borderColor: oscuro ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.75)' }, style]}>
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: tinte ?? velo }]} />
+        {children}
+      </View>
+    );
+  }
   if (HAY_VIDRIO) {
     // El vidrio va DETRÁS, en su propia capa, sobre una base de color
     // (2026-10-08): el Liquid Glass a veces no se dibuja cuando la tarjeta
@@ -34,7 +58,7 @@ export default function Vidrio({ style, children, radio = 22, interactivo = fals
   // En un iPhone viejo sin Liquid Glass (2026-10-13), el desenfoque en vivo de
   // cada tarjeta es lo que más cuesta al desplazarse: va el fondo translúcido
   // sólido de abajo, que sobre la aurora se lee como la misma pieza.
-  if (Platform.OS === 'ios' && !LIVIANO) {
+  if (Platform.OS === 'ios' && !LIVIANO && !sinVidrio) {
     return (
       <BlurView intensity={70} tint={oscuro ? 'systemThickMaterialDark' : 'systemThickMaterialLight'} style={[forma, style]}>
         {tinte ? <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: tinte }} /> : null}

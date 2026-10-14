@@ -18,7 +18,7 @@
 //     contextual nativo de @expo/ui: ése exige un Host de SwiftUI por globo
 //     —uno por fila de la lista—, que es justo el costo que se quitó al abrir.
 //   · `Reacciones` y `Cita`: las píldoras bajo el globo y el bloque citado.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActionSheetIOS, Keyboard, Modal, Platform, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import Presionable from './Presionable';
 import { BlurView } from 'expo-blur';
@@ -183,21 +183,31 @@ export function Deslizable({ children, alResponder, alMantener }) {
   const reducir = useReducedMotion() || LIVIANO;
   const x = useSharedValue(0);
   const paso = useSharedValue(false);
-  const vibrar = () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); };
-  const pan = Gesture.Pan()
-    .activeOffsetX(14).failOffsetX(-14).failOffsetY([-12, 12])
-    .onUpdate((e) => {
-      const v = Math.max(0, e.translationX);
-      x.value = v > UMBRAL ? UMBRAL + (v - UMBRAL) * 0.25 : v;
-      if (v > UMBRAL && !paso.value) { paso.value = true; runOnJS(vibrar)(); }
-      if (v <= UMBRAL && paso.value) paso.value = false;
-    })
-    .onEnd(() => { if (paso.value) runOnJS(alResponder)(); })
-    .onFinalize(() => { paso.value = false; x.value = reducir ? withTiming(0, { duration: 120 }) : withSpring(0, { damping: 18, stiffness: 220 }); });
-  // Sólo un MANTENER deliberado abre el menú: 350 ms quieto (si el dedo se
-  // mueve más de 10 px es un desplazamiento y no cuenta).
-  const mantener = Gesture.LongPress().minDuration(350).maxDistance(10).onStart(() => { runOnJS(alMantener)(); });
-  const gesto = Gesture.Race(pan, mantener);
+  // Los manejadores, por ref: el gesto se arma UNA vez por globo y no en cada
+  // dibujo (2026-10-14, desplazamiento más fluido).
+  const fns = useRef({ alResponder, alMantener });
+  fns.current = { alResponder, alMantener };
+  const gesto = useMemo(() => {
+    const vibrar = () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); };
+    const responder = () => fns.current.alResponder?.();
+    const abrirMenu = () => fns.current.alMantener?.();
+    // Horizontal y hacia la derecha, o nada: con 8 px de movimiento vertical
+    // el gesto se rinde y el desplazamiento de la lista no se traba.
+    const pan = Gesture.Pan()
+      .activeOffsetX(14).failOffsetX(-14).failOffsetY([-8, 8])
+      .onUpdate((e) => {
+        const v = Math.max(0, e.translationX);
+        x.value = v > UMBRAL ? UMBRAL + (v - UMBRAL) * 0.25 : v;
+        if (v > UMBRAL && !paso.value) { paso.value = true; runOnJS(vibrar)(); }
+        if (v <= UMBRAL && paso.value) paso.value = false;
+      })
+      .onEnd(() => { if (paso.value) runOnJS(responder)(); })
+      .onFinalize(() => { paso.value = false; x.value = reducir ? withTiming(0, { duration: 120 }) : withSpring(0, { damping: 18, stiffness: 220 }); });
+    // Sólo un MANTENER deliberado abre el menú: 350 ms quieto (si el dedo se
+    // mueve más de 10 px es un desplazamiento y no cuenta).
+    const mantener = Gesture.LongPress().minDuration(350).maxDistance(10).onStart(() => { runOnJS(abrirMenu)(); });
+    return Gesture.Race(pan, mantener);
+  }, [reducir, x, paso]);
   const globo = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
   const flecha = useAnimatedStyle(() => ({
     opacity: interpolate(x.value, [10, UMBRAL], [0, 1], 'clamp'),

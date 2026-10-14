@@ -3,6 +3,7 @@
 // texto en los colores del sistema (`label`; los secundarios, sólidos — ver sistema.js), el botón del
 // sistema, y los colores del logo SÓLO para lo que es de la marca: lo que se
 // gana (verde) y lo que se usa (magenta).
+import { useEffect, useRef } from 'react';
 import { Platform, ScrollView, Text, View, RefreshControl } from 'react-native';
 import IndicadorCarga from './IndicadorCarga';
 import Presionable from './Presionable';
@@ -10,7 +11,8 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BotonNativo from './BotonNativo';
 import Icono from './Icono';
-import Vidrio from './Vidrio';
+import Vidrio, { SinVidrio } from './Vidrio';
+import { ContextoDesplazamiento, crearDesplazamiento } from '../lib/desplazamiento';
 import { colorSistema } from './sistema';
 import { suave, useTema } from '../tema/tema';
 
@@ -40,10 +42,26 @@ export const ESPACIO_BURBUJA = 88;
 // `alFinal`: se llama al acercarse al final (listas paginadas, 2026-10-09).
 // `conBurbuja`: deja abajo el lugar de la burbuja del chat (2026-10-13). Las
 // pantallas donde la burbuja no va (componentes/BurbujaChat, `OCULTA`) pasan false.
-export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal, conBurbuja = true }) {
+//
+// `sinVidrio` (2026-10-14, «el Inicio se siente lento»): las tarjetas de esta
+// pantalla van en el relleno translúcido que imita al vidrio, sin el vidrio
+// vivo. Un Liquid Glass por tarjeta, desplazándose sobre la aurora, se vuelve
+// a componer en cada cuadro; sobre un fondo quieto el relleno se ve igual. El
+// vidrio queda para lo que no se mueve (la barra, los encabezados).
+//
+// El estado del desplazamiento (lib/desplazamiento.js) sale de los eventos de
+// arrastre y de inercia: lo que se anima solo lo usa para pausarse mientras
+// la lista se mueve.
+export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal, conBurbuja = true, sinVidrio = false }) {
   const ins = useSafeAreaInsets();
   const t = useTema();
+  const desp = useRef(null);
+  if (!desp.current) desp.current = crearDesplazamiento();
+  const d = desp.current;
+  useEffect(() => () => d.soltarTodo(), [d]);
   return (
+    <ContextoDesplazamiento.Provider value={d}>
+    <SinVidrio.Provider value={sinVidrio}>
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
       // Tope de ancho: en un iPad o en el navegador las tarjetas se estiraban
@@ -53,6 +71,10 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
         width: '100%', maxWidth: 560, alignSelf: 'center',
       }}
       keyboardShouldPersistTaps="handled"
+      onScrollBeginDrag={d.empezar}
+      onScrollEndDrag={d.soltar}
+      onMomentumScrollBegin={d.inercia}
+      onMomentumScrollEnd={d.terminar}
       scrollEventThrottle={alFinal ? 250 : undefined}
       onScroll={alFinal ? ({ nativeEvent: e }) => {
         if (e.layoutMeasurement.height + e.contentOffset.y >= e.contentSize.height - 700) alFinal();
@@ -64,6 +86,8 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
     >
       {children}
     </ScrollView>
+    </SinVidrio.Provider>
+    </ContextoDesplazamiento.Provider>
   );
 }
 

@@ -172,12 +172,22 @@ function Presentacion() {
   return <NovedadesHoja novedades={novedades} alCerrar={() => usePresentacion.getState().cerrarNovedades()} />;
 }
 
+const BARRA_CHAT = {
+  headerTransparent: true,
+  headerBlurEffect: 'none',
+  headerShadowVisible: false,
+  headerStyle: { backgroundColor: 'transparent' },
+  contentStyle: { backgroundColor: 'transparent' },
+  scrollEdgeEffects: { top: 'hidden', bottom: 'hidden', left: 'hidden', right: 'hidden' },
+};
+
 // La aurora de la raíz: detrás de las pestañas la tapan las suyas, así que ahí
 // se pausa; y siempre con la app en segundo plano.
 function AuroraRaiz() {
   const segmentos = useSegments();
   const activa = useAppActiva();
-  // (2026-10-14) Tampoco detrás del chat: tiene fondo liso propio y la aurora seguía animándose sin verse.
+  // (2026-10-14) Detrás del chat se ve, pero QUIETA: dibujada una vez, nada
+  // que redibujar por cuadro mientras se desplaza el hilo o sube el teclado.
   return <Aurora activa={activa && segmentos[0] !== '(tabs)' && segmentos[0] !== 'chat'} />;
 }
 
@@ -253,7 +263,11 @@ function Raiz() {
             <Stack.Screen name="facturas" options={{ title: 'Mis facturas' }} />
             <Stack.Screen name="encuesta" options={{ title: 'Encuesta' }} />
             <Stack.Screen name="tratamientos" options={{ title: 'Mis tratamientos' }} />
-            <Stack.Screen name="chat" options={{ title: 'Pregúntale a la farmacia' }} />
+            {/* El chat (2026-10-14): barra transparente sobre la aurora, como antes,
+                pero SIN los «scroll edge effects» de iOS 26 (difuminaban el hilo,
+                que va invertido) y sin desenfoque propio: la misma barra quieta y
+                al desplazar. La lista empieza debajo de ella (app/chat.js). */}
+            <Stack.Screen name="chat" options={{ title: 'Pregúntale a la farmacia', ...(ANDROID ? {} : BARRA_CHAT) }} />
             <Stack.Screen name="mis-puntos" options={{ headerShown: false }} />
             {/* El primer inicio (2026-10-14): modal a pantalla completa con la
                 animación del sistema; sin gesto para bajarla (tiene «Saltar»). */}

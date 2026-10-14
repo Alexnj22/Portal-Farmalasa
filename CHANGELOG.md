@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1287.1 — App: chat con su fondo de antes y el Inicio fluido
+
+- **Chat (iOS):** vuelve el fondo y los colores de antes de 887fd7e67 (pedido del usuario: «estaba más bonito»). La barra es transparente pero con los cuatro difuminados de borde de iOS 26 apagados y la lista empezando bajo la barra (`useHeaderHeight`): no cambia de aspecto al deslizar y no vuelve el hilo borroso. La aurora detrás del chat queda en pausa. Lista memoizada (escribir, la consulta de 5 s y «escribiendo…» ya no la redibujan), fotos en caché, deslizar para responder cede antes al scroll vertical.
+- **Inicio lento al desplazar:** 12–15 tarjetas con Liquid Glass vivo recompuestas en cada cuadro sobre una aurora animada, el shader y el giroscopio de la tarjeta andando durante el scroll y fuera de la vista, sombra sin contorno sobre los lienzos de Skia, el cupón animándose, y el Inicio entero repintado por leer todo el almacén. Ahora: `lib/desplazamiento.js` (sabe si se está desplazando, sin `onScroll`), la tarjeta y el cupón se pausan al desplazar y fuera de la vista, sombra en placa opaca, `Pantalla sinVidrio` en el Inicio (mismo aspecto sin desenfoque vivo), aurora quieta en el Inicio y `useCuenta` con selectores.
+
 ## v2.1287.0 — App: chat sin desenfoque y al instante, primer inicio y novedades
 
 - **Chat borroso** (captura del usuario, iOS 26): no era el menú ni la tapa de privacidad — iOS 26 difumina el contenido bajo una barra de título TRANSPARENTE, y con la lista recién invertida ese difuminado caía abajo y con el teclado cubría el hilo. Ahora la barra es opaca, fondo liso del sistema (Material en Android) y el difuminado de bordes apagado; globos del equipo en el gris de iMessage.

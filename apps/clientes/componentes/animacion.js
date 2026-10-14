@@ -119,15 +119,17 @@ function entradaAndroid(retraso) {
   };
 }
 
-export function Entrada({ indice = 0, children, estilo }) {
+// `alMedir`: el `onLayout` del bloque (la tarjeta de socio lo usa para saber
+// si quedó fuera de la vista, 2026-10-14).
+export function Entrada({ indice = 0, children, estilo, alMedir }) {
   const quieta = useSinMovimiento();
-  if (quieta || (ANDROID && indice > 4)) return <View style={estilo}>{children}</View>;
+  if (quieta || (ANDROID && indice > 4)) return <View style={estilo} onLayout={alMedir}>{children}</View>;
   if (ANDROID) {
-    return <Animated.View style={estilo} entering={entradaAndroid(180 + indice * 30)}>{children}</Animated.View>;
+    return <Animated.View style={estilo} onLayout={alMedir} entering={entradaAndroid(180 + indice * 30)}>{children}</Animated.View>;
   }
   return (
     // Con tope: en listas largas las últimas ya no esperan más de medio segundo.
-    <Animated.View style={estilo} entering={entradaSinOpacidad(40 + Math.min(indice, 6) * 55)}>
+    <Animated.View style={estilo} onLayout={alMedir} entering={entradaSinOpacidad(40 + Math.min(indice, 6) * 55)}>
       {children}
     </Animated.View>
   );

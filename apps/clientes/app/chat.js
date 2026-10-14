@@ -65,9 +65,13 @@
 //     título TRANSPARENTE. La lista va invertida (scaleY: -1) y UIKit calcula
 //     el borde en las coordenadas de la lista sin invertir: el difuminado del
 //     título caía abajo y el del teclado subía hasta cubrir casi todo el hilo
-//     —por eso lo de más arriba (debajo de la hora) se veía nítido—. Ahora la
-//     barra del chat es OPACA, en el fondo del sistema como iMessage, y los
-//     cuatro bordes van en `hidden`: nada difumina los mensajes.
+//     —por eso lo de más arriba (debajo de la hora) se veía nítido—. Los
+//     cuatro bordes van en `hidden` (app/_layout, BARRA_CHAT): nada difumina
+//     los mensajes. Primero se probó una barra opaca con fondo liso: el
+//     usuario la rechazó («ahora es negro… al deslizar se pone negro, un
+//     desorden»). Hoy la barra es transparente sobre la aurora QUIETA, como
+//     antes, y la lista empieza DEBAJO de ella: nada pasa por detrás, así que
+//     se ve igual en reposo y al desplazar.
 //   · La DEMORA de la primera apertura era la red (el esqueleto esperaba
 //     `chat_mensajes`) más la aurora animada detrás de una pantalla
 //     transparente durante la transición, y cada tecla volvía a dibujar todos
@@ -76,9 +80,10 @@
 //     por globo (fechas, enlaces) se calcula una vez. En desarrollo se anota
 //     en la consola cuánto tardó el primer cuadro y de dónde salió el hilo.
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, AppState, FlatList, InteractionManager, Keyboard, KeyboardAvoidingView, Modal, Platform, PlatformColor, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, AppState, FlatList, InteractionManager, Keyboard, KeyboardAvoidingView, Modal, Platform, Text, View } from 'react-native';
 import Presionable from '../componentes/Presionable';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import Animated, { FadeIn, useAnimatedKeyboard, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -139,20 +144,22 @@ const iniciales = (n) => String(n ?? '').trim().split(/\s+/).slice(0, 2).map((p)
 // Mientras llega el horario real del servidor: 7:00 a 22:00 de El Salvador.
 const fueraDeHorarioLocal = () => { const h = new Date(Date.now() - 6 * 3600_000).getUTCHours(); return h < 7 || h >= 22; };
 const delEquipo = (m) => m.autor === 'equipo';
-// El fondo del hilo: el del sistema, liso, como iMessage (iOS: systemBackground,
-// que cambia solo con el modo oscuro) y la superficie de Material en Android.
-// Nada detrás que se anime ni que haya que componer en cada cuadro.
-const fondoHilo = () => (IOS ? PlatformColor('systemBackground') : colorSistema.fondo);
-// El globo del equipo: el gris de iMessage (systemGray5) sobre el fondo liso.
-const globoEquipo = (oscuro) => (IOS ? PlatformColor('systemGray5') : (oscuro ? '#26252A' : '#FFFFFF'));
-// Las píldoras (día, horario, avisos del sistema) sobre el fondo liso.
-const pildora = (oscuro) => (oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(118,118,128,0.12)');
+// El fondo del hilo es la aurora de la raíz, como en el resto de la app
+// (2026-10-14, «deja el chat como estaba antes con el fondo, estaba más
+// bonito»): la pantalla es transparente y la aurora, QUIETA detrás del chat
+// (app/_layout, AuroraRaiz) — se dibuja una vez y no cuesta nada al desplazar.
+// Los colores de los globos y las píldoras son los de antes, pensados para ella.
+const globoEquipo = (oscuro) => (oscuro ? '#26252A' : '#FFFFFF');
 // La altura del teclado, cuadro a cuadro, sólo en iOS: en Android la ventana
 // se redimensiona sola (adjustResize) y sumarle la altura lo empujaría dos veces.
 const useTecladoAlto = IOS ? () => useAnimatedKeyboard().height : () => null;
 const fechaCorta = (iso) => {
   try { return new Date(iso).toLocaleDateString('es-SV', { day: 'numeric', month: 'long' }); } catch { return ''; }
 };
+
+const claveDe = (f) => f.clave;
+const CONTENIDO_LISTA = { paddingBottom: 8, paddingHorizontal: 10, paddingTop: 12 };
+const MANTENER_POSICION = { minIndexForVisible: 0, autoscrollToTopThreshold: 80 };
 
 /** El primer mensaje sin leer: el N-ésimo del equipo contando desde el final. */
 function primeroSinLeer(lista, n) {
@@ -170,6 +177,11 @@ function primeroSinLeer(lista, n) {
 export default function Chat() {
   const t = useTema();
   const ins = useSafeAreaInsets();
+  // La barra de título va transparente sobre la aurora; la lista empieza DEBAJO
+  // de ella (no pasa por detrás): así la barra se ve igual quieta y al
+  // desplazar, y iOS 26 no tiene qué difuminar.
+  const altoBarra = useHeaderHeight();
+  const arriba = IOS ? (altoBarra || ins.top + 52) : 0;
   const pedir = useSesion((s) => s.pedir);
   const token = useSesion((s) => s.token);
   const { producto: productoParam, consulta: consultaParam } = useLocalSearchParams();
@@ -552,10 +564,6 @@ export default function Chat() {
       nombre: m.autor === 'equipo' ? (m.equipo?.nombre ? nombrePropio(m.equipo.nombre) : 'Farmacia Salud') : null });
     setTimeout(() => campo.current?.focus?.(), 50);
   };
-  const nombreDe = (id) => {
-    const x = (mensajes ?? []).find((y) => y.id === id);
-    return x?.equipo?.nombre ? nombrePropio(x.equipo.nombre) : null;
-  };
   // Calificar: el agradecimiento se ve antes de que la tarjeta se vaya.
   const convTrasCalificar = useRef(null);
   const calificar = async (nota, comentario) => {
@@ -624,10 +632,119 @@ export default function Chat() {
     lista.current?.scrollToOffset({ offset: 0, animated: true });
   };
 
+  // ── La lista, con props ESTABLES (2026-10-14, «al hacer scroll se siente
+  // lento»). `FlatList` es un PureComponent: si nada de lo que recibe cambia,
+  // escribir en la barra, el sondeo cada 5 s o el «escribiendo…» del equipo NO
+  // la vuelven a dibujar. Por eso cada manejador lee lo que necesita de un ref
+  // y el encabezado y el pie son elementos memorizados.
+  const idConEstado = useMemo(() => {
+    // «Visto» / «Enviado» junto al último mensaje del cliente, si es lo último
+    // de la conversación (los avisos del sistema no cuentan).
+    let ultimoReal = null;
+    for (let i = (mensajes?.length ?? 0) - 1; i >= 0; i -= 1) if (mensajes[i].autor !== 'sistema') { ultimoReal = mensajes[i]; break; }
+    return ultimoReal?.autor === 'cliente' && !ultimoReal.enviando && !ultimoReal.fallido ? ultimoReal.id : null;
+  }, [mensajes]);
+  // El nombre de quien escribió cada mensaje del equipo, para las citas.
+  const nombres = useMemo(() => {
+    const x = new Map();
+    for (const m of mensajes ?? []) if (m.equipo?.nombre) x.set(m.id, nombrePropio(m.equipo.nombre));
+    return x;
+  }, [mensajes]);
+  const vistoVivo = vivo.visto;
+  const renderItem = useCallback(({ item: f }) => {
+    if (f.nuevos) return <FranjaNuevos n={f.nuevos} />;
+    if (f.hora && !f.m) return <Separador dia={f.dia} hora={f.hora} />;
+    const m = f.m;
+    return (
+      <Burbuja m={m} primero={f.primero} ultimo={f.ultimo} entra={recien.current.has(m.id)}
+        estado={m.autor === 'cliente' ? (m.id === idConEstado ? (vistoVivo ? 'visto' : 'enviado') : f.visto ? 'visto' : 'enviado') : null}
+        rotuloEstado={m.id === idConEstado}
+        verHora={horaDe_ === m.id}
+        resaltado={resaltado === m.id} nombreCitado={m.responde_a ? (nombres.get(m.responde_a.id) ?? null) : null}
+        acc={acc} />
+    );
+  }, [acc, idConEstado, vistoVivo, horaDe_, resaltado, nombres]);
+
+  const lejosRef = useRef(false);
+  const sinVerRef = useRef(0);
+  sinVerRef.current = sinVer;
+  const alDesplazar = useCallback(({ nativeEvent: e }) => {
+    const y = e.contentOffset.y;
+    alFondo.current = y < 80;
+    if (alFondo.current && sinVerRef.current) setSinVer(0);
+    const l = y > 240;
+    if (l !== lejosRef.current) { lejosRef.current = l; setLejos(l); }
+  }, []);
+  const ubicarRef = useRef(ubicar);
+  ubicarRef.current = ubicar;
+  const alCambiarAlto = useCallback(() => {
+    if (__DEV__ && !medida.current.anotado) {
+      medida.current.anotado = true;
+      console.log(`[chat] primer cuadro con globos: ${Date.now() - medida.current.t0} ms (hilo de ${medida.current.origen})`);
+    }
+    if (inicial.current) { ubicarRef.current(); return; }
+    if (alFondo.current) lista.current?.scrollToOffset({ offset: 0, animated: true });
+  }, []);
+  const alFallarIndice = useCallback((e) => {
+    lista.current?.scrollToOffset({ offset: e.averageItemLength * e.index, animated: false });
+    setTimeout(() => {
+      try { lista.current?.scrollToIndex({ index: e.index, viewPosition: 0.9, animated: false }); } catch { /* sin medir */ }
+      setListo(true);
+    }, 120);
+  }, []);
+  const estiloLista = useMemo(() => ({ opacity: listo ? 1 : 0 }), [listo]);
+
+  // El pie (arriba en pantalla: la lista va invertida) y el encabezado (abajo).
+  const anterioresRef = useRef(null);
+  const pedirAnteriores = useCallback(() => anterioresRef.current?.(), []);
+  const calificarRef = useRef(null);
+  const enviarCalificacion = useCallback((nota, comentario) => calificarRef.current?.(nota, comentario), []);
+  const cerrarCalificarRef = useRef(null);
+  const alCerrarCalificar = useCallback(() => cerrarCalificarRef.current?.(), []);
+  const masViejo = useMemo(() => (mensajes ?? []).find((m) => typeof m.id === 'number'), [mensajes]);
+  const vacio = !mensajes?.length;
+  const pie = useMemo(() => (
+    <View style={{ gap: 10, marginBottom: 6 }}>
+      {hayMas ? (
+        <Presionable onPress={pedirAnteriores} disabled={cargandoViejos} accessibilityRole="button"
+          style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 14 }}>
+          {cargandoViejos ? <Icono sf="clock" respaldo="…" tam={14} color={colorSistema.texto3} /> : null}
+          <Text style={{ fontSize: 15, fontWeight: '600', color: t.color.magentaTexto }}>{cargandoViejos ? 'Cargando…' : 'Cargar mensajes anteriores'}</Text>
+        </Presionable>
+      ) : null}
+      {hayMas && masViejo ? (
+        <Text style={{ alignSelf: 'center', marginTop: -8, fontSize: 12, color: colorSistema.texto3 }}>Mostrando desde el {fechaCorta(masViejo.created_at)}</Text>
+      ) : null}
+      {vacio ? <Bienvenida preferente={preferente} /> : null}
+      {/* El horario de atención, como el aviso centrado de iMessage. */}
+      <View style={{ alignSelf: 'center', maxWidth: 320, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12,
+        backgroundColor: fuera ? suave(t.color.aviso, t.oscuro ? 0.22 : 0.16) : (t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.75)') }}>
+        <Icono sf={fuera ? 'clock' : 'checkmark.seal.fill'} respaldo="" tam={13} color={fuera ? t.color.avisoTexto : t.color.verdeTexto} />
+        <Text style={{ flexShrink: 1, fontSize: 13, lineHeight: 17, textAlign: 'center', color: fuera ? t.color.avisoTexto : colorSistema.texto2 }}>
+          {horario?.texto || (fuera ? 'Estamos fuera de horario: escríbenos igual y te respondemos al abrir.' : 'Te responde el equipo de Farmacia Salud en unos minutos.')}
+        </Text>
+      </View>
+      {error ? <Text style={{ fontSize: 14, color: colorSistema.rojo, textAlign: 'center' }}>{error}</Text> : null}
+    </View>
+  ), [hayMas, cargandoViejos, masViejo, vacio, preferente, fuera, horario, error, t, pedirAnteriores]);
+  const verCalificar = !!conversacion?.puede_calificar && !calificarCerrado;
+  const resuelta = conversacion?.estado === 'resuelta';
+  const escribiendoNombre = vivo.escribiendo ? nombrePropio(vivo.escribiendo) : null;
+  const encabezado = useMemo(() => (
+    <View>
+      {resuelta ? (
+        <Text style={{ alignSelf: 'center', fontSize: 12, color: colorSistema.texto3, marginTop: 14, textAlign: 'center' }}>
+          Consulta resuelta · escríbenos cuando quieras
+        </Text>
+      ) : null}
+      {verCalificar ? <Calificar alEnviar={enviarCalificacion} alCerrar={alCerrarCalificar} /> : null}
+      {escribiendoNombre ? <Escribiendo nombre={escribiendoNombre} /> : null}
+    </View>
+  ), [resuelta, verCalificar, escribiendoNombre, enviarCalificacion, alCerrarCalificar]);
+
   if (pendiente) {
     return (
-      <View style={{ flex: 1, padding: 16, backgroundColor: fondoHilo() }}>
-        <Stack.Screen options={OPCIONES_BARRA} />
+      <View style={{ flex: 1, padding: 16, paddingTop: IOS ? arriba + 8 : 16 }}>
         <Vacio titulo="Todavía no puedes escribirnos aquí" icono="bubble.left.and.bubble.right.fill" respaldo="💬">
           Cuando completes tu registro en cualquier sucursal podrás chatear con la farmacia desde la app.
         </Vacio>
@@ -635,26 +752,16 @@ export default function Chat() {
     );
   }
   const titulo = (
-    <Stack.Screen options={{ title: 'Farmacia Salud', ...OPCIONES_BARRA, headerTitle: () => (
+    <Stack.Screen options={{ title: 'Farmacia Salud', headerTitle: () => (
       <TituloChat fuera={fuera} atiende={vivo.atiende ? nombrePropio(vivo.atiende) : null} escribiendo={vivo.escribiendo ? nombrePropio(vivo.escribiendo) : null}
         preferente={!!preferente} />
     ) }} />
   );
-  // La barra de título del chat es opaca: la lista empieza debajo de ella.
-  const arriba = 0;
   // El esqueleto sólo la primera vez: con el hilo en memoria se pinta enseguida.
-  if (mensajes == null) return <View style={{ flex: 1, backgroundColor: fondoHilo() }}>{titulo}<Esqueleto arriba={arriba} /></View>;
-  // Desde cuándo se está viendo («Mostrando desde el 7 de octubre»).
-  const masViejo = mensajes.find((m) => typeof m.id === 'number');
-
-  // «Visto» / «Enviado» junto al último mensaje del cliente, si es lo último de
-  // la conversación (los avisos del sistema no cuentan).
-  const ultimoReal = [...mensajes].reverse().find((m) => m.autor !== 'sistema');
-  const idConEstado = ultimoReal?.autor === 'cliente' && !ultimoReal.enviando && !ultimoReal.fallido ? ultimoReal.id : null;
+  if (mensajes == null) return <View style={{ flex: 1 }}>{titulo}<Esqueleto arriba={arriba} /></View>;
   // Los atajos: con la conversación vacía o justo después de la respuesta automática.
   const ultimo = mensajes[mensajes.length - 1];
   const conAtajos = !texto.trim() && !producto && !respondiendo && (!mensajes.length || ultimo?.autor === 'sistema');
-  const verCalificar = !!conversacion?.puede_calificar && !calificarCerrado;
 
   // Tocar la cita lleva al mensaje original, si ya está cargado, y lo resalta.
   const irA = (id) => {
@@ -665,6 +772,9 @@ export default function Chat() {
     setResaltado(id);
     setTimeout(() => setResaltado((x) => (x === id ? null : x)), 1400);
   };
+  anterioresRef.current = anteriores;
+  calificarRef.current = calificar;
+  cerrarCalificarRef.current = cerrarCalificar;
   acciones.current = {
     verFoto: setFotoGrande,
     tocar: (m) => {
@@ -681,95 +791,39 @@ export default function Chat() {
   return (
     <Pantalla tecladoAlto={tecladoAlto}>
       {titulo}
-      <View style={{ flex: 1 }}>
+      {/* La lista empieza debajo de la barra de título (que es transparente
+          sobre la aurora): nada pasa por detrás de ella. */}
+      <View style={{ flex: 1, marginTop: arriba }}>
         <FlatList
           ref={lista}
           data={datos}
           inverted
-          keyExtractor={(f) => f.clave}
-          style={{ opacity: listo ? 1 : 0 }}
+          keyExtractor={claveDe}
+          style={estiloLista}
           // Lo de la primera pantalla, no el hilo entero: el resto se dibuja al subir.
           initialNumToRender={Math.max(12, iNuevos + 4)}
           maxToRenderPerBatch={10}
-          windowSize={11}
+          updateCellsBatchingPeriod={50}
+          windowSize={9}
+          // Android: las filas fuera de la ventana se sueltan del árbol nativo.
+          // En iOS no: con la lista invertida recorta globos al volver a subir.
+          removeClippedSubviews={!IOS}
           // Invertida: el relleno de ARRIBA de la pantalla es el de abajo del contenido.
-          contentContainerStyle={{ paddingBottom: arriba + 8, paddingHorizontal: 10, paddingTop: 12 }}
+          contentContainerStyle={CONTENIDO_LISTA}
+          // La lista empieza debajo de la barra: no hay nada que iOS ajuste ni difumine.
+          contentInsetAdjustmentBehavior="never"
+          automaticallyAdjustKeyboardInsets={false}
           // Con la lista abajo, lo que llega se ve; subida, no se mueve lo que se lee.
-          maintainVisibleContentPosition={{ minIndexForVisible: 0, autoscrollToTopThreshold: 80 }}
+          maintainVisibleContentPosition={MANTENER_POSICION}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
-          onScroll={({ nativeEvent: e }) => {
-            const y = e.contentOffset.y;
-            alFondo.current = y < 80;
-            if (alFondo.current && sinVer) setSinVer(0);
-            const l = y > 240;
-            if (l !== lejos) setLejos(l);
-          }}
+          onScroll={alDesplazar}
           scrollEventThrottle={100}
-          onContentSizeChange={() => {
-            if (__DEV__ && !medida.current.anotado) {
-              medida.current.anotado = true;
-              console.log(`[chat] primer cuadro con globos: ${Date.now() - medida.current.t0} ms (hilo de ${medida.current.origen})`);
-            }
-            if (inicial.current) { ubicar(); return; }
-            if (alFondo.current) lista.current?.scrollToOffset({ offset: 0, animated: true });
-          }}
-          onScrollToIndexFailed={(e) => {
-            lista.current?.scrollToOffset({ offset: e.averageItemLength * e.index, animated: false });
-            setTimeout(() => {
-              try { lista.current?.scrollToIndex({ index: e.index, viewPosition: 0.9, animated: false }); } catch { /* sin medir */ }
-              setListo(true);
-            }, 120);
-          }}
-          ListFooterComponent={(
-            <View style={{ gap: 10, marginBottom: 6 }}>
-              {hayMas ? (
-                <Presionable onPress={anteriores} disabled={cargandoViejos} accessibilityRole="button"
-                  style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 14 }}>
-                  {cargandoViejos ? <Icono sf="clock" respaldo="…" tam={14} color={colorSistema.texto3} /> : null}
-                  <Text style={{ fontSize: 15, fontWeight: '600', color: t.color.magentaTexto }}>{cargandoViejos ? 'Cargando…' : 'Cargar mensajes anteriores'}</Text>
-                </Presionable>
-              ) : null}
-              {hayMas && masViejo ? (
-                <Text style={{ alignSelf: 'center', marginTop: -8, fontSize: 12, color: colorSistema.texto3 }}>Mostrando desde el {fechaCorta(masViejo.created_at)}</Text>
-              ) : null}
-              {!mensajes.length ? <Bienvenida preferente={preferente} /> : null}
-              {/* El horario de atención, como el aviso centrado de iMessage. */}
-              <View style={{ alignSelf: 'center', maxWidth: 320, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12,
-                backgroundColor: fuera ? suave(t.color.aviso, t.oscuro ? 0.22 : 0.16) : pildora(t.oscuro) }}>
-                <Icono sf={fuera ? 'clock' : 'checkmark.seal.fill'} respaldo="" tam={13} color={fuera ? t.color.avisoTexto : t.color.verdeTexto} />
-                <Text style={{ flexShrink: 1, fontSize: 13, lineHeight: 17, textAlign: 'center', color: fuera ? t.color.avisoTexto : colorSistema.texto2 }}>
-                  {horario?.texto || (fuera ? 'Estamos fuera de horario: escríbenos igual y te respondemos al abrir.' : 'Te responde el equipo de Farmacia Salud en unos minutos.')}
-                </Text>
-              </View>
-              {error ? <Text style={{ fontSize: 14, color: colorSistema.rojo, textAlign: 'center' }}>{error}</Text> : null}
-            </View>
-          )}
-          renderItem={({ item: f }) => {
-            if (f.nuevos) return <FranjaNuevos n={f.nuevos} />;
-            if (f.hora && !f.m) return <Separador dia={f.dia} hora={f.hora} />;
-            const m = f.m;
-            const entra = recien.current.has(m.id);
-            return (
-              <Burbuja m={m} primero={f.primero} ultimo={f.ultimo} entra={entra}
-                estado={m.autor === 'cliente' ? (m.id === idConEstado ? (vivo.visto ? 'visto' : 'enviado') : f.visto ? 'visto' : 'enviado') : null}
-                rotuloEstado={m.id === idConEstado}
-                verHora={horaDe_ === m.id}
-                resaltado={resaltado === m.id} nombreCitado={m.responde_a ? nombreDe(m.responde_a.id) : null}
-                acc={acc} />
-            );
-          }}
-          ListHeaderComponent={(
-            <View>
-              {conversacion?.estado === 'resuelta' ? (
-                <Text style={{ alignSelf: 'center', fontSize: 12, color: colorSistema.texto3, marginTop: 14, textAlign: 'center' }}>
-                  Consulta resuelta · escríbenos cuando quieras
-                </Text>
-              ) : null}
-              {verCalificar ? <Calificar alEnviar={calificar} alCerrar={cerrarCalificar} /> : null}
-              {vivo.escribiendo ? <Escribiendo nombre={nombrePropio(vivo.escribiendo)} /> : null}
-            </View>
-          )}
+          onContentSizeChange={alCambiarAlto}
+          onScrollToIndexFailed={alFallarIndice}
+          ListFooterComponent={pie}
+          renderItem={renderItem}
+          ListHeaderComponent={encabezado}
         />
         {/* Ir al final, con cuántas respuestas llegaron mientras se leía arriba. */}
         {lejos && listo ? <BotonAlFinal n={sinVer} alTocar={alFinal} /> : null}
@@ -815,31 +869,13 @@ export default function Chat() {
   );
 }
 
-// La barra de título del chat (2026-10-14): OPACA, en el fondo del sistema,
-// como la de iMessage — no la transparente del resto de la app. Debajo de una
-// barra transparente iOS 26 difumina la lista («scroll edge effect»), y con la
-// lista invertida ese difuminado quedaba al revés y cubría el hilo entero con
-// el teclado abierto. Los cuatro bordes en `hidden`, por si acaso. El fondo de
-// la pantalla también es opaco: la aurora de la raíz no se compone detrás de
-// cada cuadro de la transición ni del desplazamiento.
-const OPCIONES_BARRA = IOS
-  ? {
-      headerTransparent: false,
-      headerBlurEffect: 'none',
-      headerShadowVisible: false,
-      headerStyle: { backgroundColor: PlatformColor('systemBackground') },
-      contentStyle: { backgroundColor: PlatformColor('systemBackground') },
-      scrollEdgeEffects: { top: 'hidden', bottom: 'hidden', left: 'hidden', right: 'hidden' },
-    }
-  : { contentStyle: { backgroundColor: colorSistema.fondo } };
-
 // La pantalla entera sube con el teclado. En iOS, cuadro a cuadro con el del
 // sistema (`useAnimatedKeyboard`, también al bajarlo arrastrando la lista); en
 // Android la ventana ya se redimensiona sola.
 function Pantalla({ tecladoAlto, children }) {
   const empuje = useAnimatedStyle(() => ({ paddingBottom: tecladoAlto ? tecladoAlto.value : 0 }));
-  if (!tecladoAlto) return <KeyboardAvoidingView style={{ flex: 1, backgroundColor: fondoHilo() }} behavior={undefined}>{children}</KeyboardAvoidingView>;
-  return <Animated.View style={[{ flex: 1, backgroundColor: fondoHilo() }, empuje]}>{children}</Animated.View>;
+  if (!tecladoAlto) return <KeyboardAvoidingView style={{ flex: 1 }} behavior={undefined}>{children}</KeyboardAvoidingView>;
+  return <Animated.View style={[{ flex: 1 }, empuje]}>{children}</Animated.View>;
 }
 
 // El título: la farmacia como un contacto — logo, nombre y, debajo, el estado.
@@ -853,7 +889,7 @@ function TituloChat({ fuera, atiende, escribiendo, preferente = false }) {
       <View>
         <Image source={require('../assets/icono.png')} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFFFFF' }} contentFit="cover" />
         <View style={{ position: 'absolute', right: -1, bottom: -1, width: 11, height: 11, borderRadius: 6, borderWidth: 2,
-          borderColor: IOS ? (t.oscuro ? '#000000' : '#FFFFFF') : colorSistema.fondo, backgroundColor: activo ? t.color.verde : colorSistema.texto3 }} />
+          borderColor: t.oscuro ? '#1C1C1E' : '#F2F2F7', backgroundColor: activo ? t.color.verde : colorSistema.texto3 }} />
       </View>
       <View style={{ flexShrink: 1, alignItems: 'flex-start' }}>
         <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={{ fontSize: 16, fontWeight: '700', color: colorSistema.texto }}>Farmacia Salud</Text>
@@ -909,7 +945,7 @@ function Separador({ dia, hora }) {
     <View style={{ alignItems: 'center', marginTop: 14, marginBottom: 6 }} accessible accessibilityRole="header"
       accessibilityLabel={dia ? `${dia}, ${hora}` : hora}>
       <View style={{ flexDirection: 'row', gap: 4, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10,
-        backgroundColor: pildora(t.oscuro) }}>
+        backgroundColor: t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)' }}>
         {dia ? <Text style={{ fontSize: 12, fontWeight: '700', color: colorSistema.texto2, textTransform: dia.length > 4 ? 'capitalize' : 'none' }}>{dia}</Text> : null}
         <Text style={{ fontSize: 12, color: colorSistema.texto3 }}>{hora}</Text>
       </View>
@@ -1045,7 +1081,7 @@ const Burbuja = memo(function Burbuja({ m, primero, ultimo, entra, estado, rotul
   if (m.autor === 'sistema') {
     return (
       <Animated.View entering={entrada} style={{ alignSelf: 'center', maxWidth: '86%', marginVertical: 8, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 14,
-        backgroundColor: pildora(t.oscuro) }}>
+        backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.7)' }}>
         <TextoConEnlaces texto={m.texto} color={colorSistema.texto2} colorEnlace={t.color.magentaTexto} estilo={{ fontSize: 13, lineHeight: 18, textAlign: 'center' }} />
       </Animated.View>
     );
@@ -1069,7 +1105,7 @@ const Burbuja = memo(function Burbuja({ m, primero, ultimo, entra, estado, rotul
           {ultimo ? (
             m.equipo?.foto_url ? (
               <Image source={{ uri: m.equipo.foto_url }} style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: colorSistema.separador }} contentFit="cover"
-                accessibilityLabel={`Foto de ${nombre}`} />
+                cachePolicy="memory-disk" recyclingKey={m.equipo.foto_url} accessibilityLabel={`Foto de ${nombre}`} />
             ) : (
               <View style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.magenta, t.oscuro ? 0.3 : 0.16) }}>
                 <Text maxFontSizeMultiplier={1.1} style={{ fontSize: 11, fontWeight: '800', color: t.color.magentaTexto }}>{iniciales(nombre)}</Text>
@@ -1100,7 +1136,7 @@ const Burbuja = memo(function Burbuja({ m, primero, ultimo, entra, estado, rotul
               {m.foto_url ? (
                 <Presionable onPress={() => alVerFoto(m.foto_url)} accessibilityRole="imagebutton" accessibilityLabel="Ver foto">
                   <Image source={{ uri: m.foto_url }} style={{ width: 210, height: 250, borderRadius: R, backgroundColor: colorSistema.separador, opacity: m.enviando ? 0.6 : 1 }}
-                    contentFit="cover" transition={150} />
+                    contentFit="cover" transition={150} cachePolicy="memory-disk" recyclingKey={m.foto_url} />
                 </Presionable>
               ) : null}
               {m.adjunto ? (m.adjunto.tipo === 'producto' ? <TarjetaProducto a={m.adjunto} mio={mio} /> : <Oferta a={m.adjunto} />) : null}

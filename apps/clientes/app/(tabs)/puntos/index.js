@@ -30,6 +30,8 @@ import { suave, useTema } from '../../../tema/tema';
 import { colorSistema } from '../../../componentes/sistema';
 import { navegar } from '../../../lib/navegar';
 import { sinBloquear } from '../../../lib/bloqueo';
+import { useDesplazamiento } from '../../../lib/desplazamiento';
+import { useShallow } from 'zustand/react/shallow';
 
 const MINIMO_DE_CANJE = 100;
 let confetiMostrado = false;
@@ -45,7 +47,11 @@ const ROTULOS = {
 export default function Puntos() {
   const t = useTema();
   const { cumple, nivel: verNivel, rango: verRango, precio: verPrecio, mayoreo: verMayoreo } = useLocalSearchParams();
-  const { resumen: real, error, cargar, generacion } = useCuenta();
+  // Sólo lo que esta pantalla pinta (2026-10-14): con el almacén entero, cada
+  // `cargando: true/false` de una consulta repintaba el Inicio completo.
+  const { resumen: real, error, cargar, generacion } = useCuenta(useShallow((s) => ({
+    resumen: s.resumen, error: s.error, cargar: s.cargar, generacion: s.generacion,
+  })));
   // Modo de prueba (sólo la cuenta de prueba): se ve como el nivel elegido.
   const prueba = useModoPrueba();
   const enPrueba = !!real?.prueba && prueba.activo;
@@ -149,7 +155,10 @@ export default function Puntos() {
   const primerNombre = nombrePropio(String(resumen.nombre ?? '').split(' ')[0]);
 
   return (
-    <Pantalla alRefrescar={refrescar} refrescando={refrescando}>
+    // `sinVidrio`: las tarjetas de esta lista, en el relleno del vidrio sin el
+    // vidrio vivo (ver Pantalla en componentes/ui.js). La aurora de atrás
+    // está quieta (puntos/_layout.js), así que se ven iguales.
+    <Pantalla alRefrescar={refrescar} refrescando={refrescando} sinVidrio>
       {enPrueba ? (
         <Presionable onPress={() => navegar('/cuenta')} accessibilityRole="button" hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
           accessibilityLabel="Modo de prueba activo. Cambiarlo en Cuenta" accessibilityHint="Abre Cuenta, donde se elige el nivel de prueba"
@@ -171,11 +180,9 @@ export default function Puntos() {
       <Historias generacion={generacion} />
 
       {/* La tarjeta de socio: saldo al frente, código y QR al reverso. */}
-      <Entrada indice={1}>
-        <TarjetaSocio activa={visible} equipo={empleado} estiloLogo={enPrueba ? prueba.logo : 'material'} nivel={material ?? resumen.nivel?.clave} nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
-          previo={movSaldo.previo} cambio={movSaldo.cambio}
-          codigo={resumen.codigo} socioDesde={resumen.socio_desde} />
-      </Entrada>
+      <TarjetaEnVista activa={visible} equipo={empleado} estiloLogo={enPrueba ? prueba.logo : 'material'} nivel={material ?? resumen.nivel?.clave} nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
+        previo={movSaldo.previo} cambio={movSaldo.cambio}
+        codigo={resumen.codigo} socioDesde={resumen.socio_desde} />
 
       {/* Apple Wallet, justo debajo de la tarjeta (usuario, 2026-10-08): la tarjeta en la Cartera, para mostrarla en caja sin abrir la app. */}
       {Platform.OS === 'ios' ? (
@@ -395,6 +402,29 @@ export default function Puntos() {
         </Tarjeta>
       </Entrada>
     </Pantalla>
+  );
+}
+
+// La tarjeta de socio, que se APAGA cuando queda fuera de la vista (2026-10-14,
+// «el Inicio se siente lento»): con la lista desplazada hacia abajo, su
+// material, su luz y el giroscopio seguían trabajando para nadie. Se decide al
+// terminar cada desplazamiento (lib/desplazamiento.js), no cuadro a cuadro, y
+// sólo se repinta este bloque, no el Inicio entero.
+function TarjetaEnVista({ activa, ...props }) {
+  const caja = useRef(null);
+  const enVista = useDesplazamiento((e) => {
+    const c = caja.current;
+    if (!c || !e.alto) return true;
+    return e.y < c.y + c.alto && e.y + e.alto > c.y;
+  });
+  const medir = useCallback((ev) => {
+    const { y, height } = ev.nativeEvent.layout;
+    caja.current = { y, alto: height };
+  }, []);
+  return (
+    <Entrada indice={1} alMedir={medir}>
+      <TarjetaSocio activa={activa && enVista} {...props} />
+    </Entrada>
   );
 }
 

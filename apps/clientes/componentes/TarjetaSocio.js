@@ -27,6 +27,7 @@ import LogoEnRelieve from './minerales/LogoEnRelieve';
 import SelloEquipo from './minerales/SelloEquipo';
 import RotuloLamina from './minerales/RotuloLamina';
 import { despertar, useDespierta } from './reposo';
+import { useMoviendo } from '../lib/desplazamiento';
 import { Momento, vibrarMomento } from './momentos';
 import { AccessibilityInfo, Image, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -106,7 +107,12 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
   // tocar ni inclinar, el material, la luz que pasa y el giroscopio a ritmo
   // pleno se detienen; la tarjeta queda igual, quieta. Tocar o inclinar la despierta.
   const despierta = useDespierta(activa && !reducir);
-  const viva = activa && !reducir && despierta;
+  // Mientras la pantalla se desplaza (lib/desplazamiento.js, 2026-10-14, «el
+  // Inicio se siente lento») el material, la luz que pasa y el giroscopio se
+  // quedan quietos donde están: el shader recalculado en el mismo cuadro que
+  // el desplazamiento era lo que hacía perder cuadros. Al soltar, siguen.
+  const moviendo = useMoviendo();
+  const viva = activa && !reducir && despierta && !moviendo;
   const giro = useSharedValue(0);              // 0 = frente, 1 = reverso
   const entrada = useSharedValue(0);
   const barrido = useSharedValue(0);
@@ -272,6 +278,9 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
   const sombra = useAnimatedStyle(() => (ANDROID ? {} : {
     shadowOffset: { width: -x.value * 14, height: 14 + y.value * 8 },
     shadowOpacity: 0.28 + Math.abs(x.value) * 0.12,
+    // La placa se apaga en los primeros grados del giro: de canto, la cara ya
+    // no la tapa (y una tarjeta de canto casi no da sombra).
+    opacity: Math.max(0, 1 - Math.sin(giro.value * Math.PI) * 4),
   }));
   // Android (2026-10-13): una cara a la vez. La cara de atrás está oculta
   // (`backfaceVisibility`), pero sus lienzos de Skia —el material y la luz—
@@ -294,14 +303,22 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
 
   return (
     <>
-    {activa && !reducir ? <Sensor key={despierta ? 'viva' : 'reposo'} salidaX={sx} salidaY={sy} enReposo={!despierta} /> : null}
+    {activa && !reducir ? <Sensor key={despierta ? 'viva' : 'reposo'} salidaX={sx} salidaY={sy} enReposo={!despierta} pausado={moviendo} /> : null}
     <GestureDetector gesture={gestos}>
-      <Animated.View style={[{ aspectRatio: 1.586, width: '100%' }, estilos.sombra, { shadowColor: paleta.sombra }, sombra, ladeo]}
+      <Animated.View style={[{ aspectRatio: 1.586, width: '100%' }, ladeo]}
         accessible accessibilityRole="button"
         accessibilityLabel={deReves
           ? `Tu código: ${codigo ? deletrear(codigo) : 'sin código'}. Muéstralo en caja para usar tus puntos.`
           : `Tu tarjeta ${paleta.rotulo.toLowerCase()}${equipo ? ', del Team Farmacia Salud' : ''}. Saldo ${dolares(equivale)}. Toca para ver tu código.`}
         accessibilityHint={deReves ? 'Gira la tarjeta al frente' : 'Gira la tarjeta'} onAccessibilityTap={voltear}>
+        {/* La sombra, en su propia placa OPACA (iPhone, 2026-10-14): una sombra
+            sobre una vista transparente se calcula píxel a píxel con todo lo
+            que tiene adentro —los lienzos de Skia incluidos— en cada cuadro,
+            también mientras se desplaza la pantalla. Con fondo sólido, React
+            Native le da el contorno redondeado (`shadowPath`) y la sombra sale
+            casi gratis. La placa queda tapada por la cara; al girar se apaga
+            antes de asomar por el canto. */}
+        {ANDROID ? null : <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, estilos.sombra, { backgroundColor: paleta.sombra, shadowColor: paleta.sombra }, sombra]} />}
         {/* ── Frente ── */}
         <Animated.View style={[StyleSheet.absoluteFill, estilos.cara, frente]}>
           <LinearGradient
@@ -467,17 +484,25 @@ function CambioDeSaldo({ delta, material }) {
 // En reposo (2026-10-14) lee 4 veces por segundo y no mueve nada: sólo mira
 // si la volvieron a inclinar para despertarla. Las primeras lecturas se
 // saltan: un sensor recién montado arranca en cero y parecería un movimiento.
-function Sensor({ salidaX, salidaY, enReposo }) {
+// `pausado` (la pantalla se está desplazando): no mueve nada ni despierta —
+// al desplazar, el teléfono se inclina—; la tarjeta queda como estaba.
+function Sensor({ salidaX, salidaY, enReposo, pausado = false }) {
   const { x, y } = useInclinacion(enReposo ? 250 : 33);
   const lecturas = useSharedValue(0);
   const refX = useSharedValue(0);
   const refY = useSharedValue(0);
   useAnimatedReaction(() => [x.value, y.value], ([a, b]) => {
-    if (!enReposo) { salidaX.value = a; salidaY.value = b; return; }
+    if (pausado) return;
     lecturas.value += 1;
+    if (!enReposo) {
+      // Recién montado, el sensor arranca en cero: la tarjeta se iba plana y
+      // volvía al volver a la vista. Las dos primeras lecturas no cuentan.
+      if (lecturas.value <= 2) return;
+      salidaX.value = a; salidaY.value = b; return;
+    }
     if (lecturas.value <= 3) { refX.value = a; refY.value = b; return; }
     if (Math.abs(a - refX.value) + Math.abs(b - refY.value) > 0.09) runOnJS(despertar)();
-  }, [enReposo]);
+  }, [enReposo, pausado]);
   return null;
 }
 

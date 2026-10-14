@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1290.1 — Login y sesiones: auditoría
+
+Auditoría del login y las sesiones (servidor + navegador). Antes de esto se
+cerraron en producción las cuentas con clave trivial: 3 personas activas con
+`1234` (alta masiva de marzo) y 7 cuentas sin ficha, una con `123456` y cinco
+con la clave igual a su usuario.
+
+- **Cargos superiores protegidos.** Cambiar la contraseña, renombrar el
+  usuario, bloquear la cuenta o emitir un carné de papel ya no se puede sobre
+  alguien de rango mayor al propio, y cada acción queda en la bitácora. Antes
+  bastaba el permiso de editar Personal para apoderarse de la cuenta del
+  Gerente General.
+- **El cambio de clave obligatorio ya no se salta.** Lo decide
+  `app_metadata.cambio_de_clave` (que el navegador no puede escribir), la sesión
+  se renueva tras el cambio y la pantalla se cierra sola si se abandona.
+- **Los 30 días de sesión los decide el servidor**, sólo para teléfonos y la
+  app: antes bastaba escribir `sb_device_class='app'` en el navegador.
+- **La baja anula el carné de papel del día.**
+- **Sesiones:** un login que falla a medias ya no deja la sesión abierta; cerrar
+  en otra pestaña limpia todo (incluido el superusuario); los borradores se
+  borran al cerrar sesión.
+- **Menos llamadas:** el perfil no se vuelve a pedir en cada renovación del
+  token y los permisos tienen tope de 60 s al volver a la pestaña; la vista de
+  sesiones no consulta con la pestaña oculta.
+- **Errores:** un fallo de la base ya no se lee como «carné no encontrado»; una
+  cuenta de carné sin enlace se repara al reintentar; el bloqueo de cuenta ya no
+  dice «bloqueada» cuando falló; el tope de intentos usa la IP real; la app sólo
+  olvida la huella por credenciales malas.
+
 ## v2.1290.0 — Seguro de vida colectivo, órdenes de descuento, cuatro documentos nuevos y el NUP con «Es el DUI»
 
 - **NUP:** el botón «Es el DUI» vive al lado del rótulo y se queda mientras lo

@@ -7,7 +7,7 @@
 // inclinación del teléfono más el dedo). Todo se mide en `uv = p / res.y`.
 //
 //   Metales (Puntos Salud): VIP seda morada · Plata cepillada · Oro cepillado
-//   con destellos · Platino grafito tallado con difracción.
+//   con destellos · Platino grafito cepillado con guilloché holográfico.
 //   Piedras (Cliente Mayorista): Jade traslúcido con fibras y moteado · Zafiro
 //   con zonas hexagonales, seda y asterismo · Rubí facetado con fuego · Diamante
 //   facetado con dispersión de arcoíris.
@@ -197,27 +197,67 @@ half4 main(float2 p) {
   platino: `
 half4 main(float2 p) {
   float a = res.x / res.y; float2 uv = p / res.y;
-  // Platino tallado (2026-10-12, «no está como los otros diseños»): pepita de
-  // platino en facetas, como Bronce, Plata y Oro, pero en metal grafito con
-  // aristas blanco-espejo. Su magia: cada faceta descompone la luz como una
-  // red de difracción —un arcoíris que salta de faceta en faceta al inclinar—
-  // y un polvo de micro-brillo. Nada depende del ángulo desde el centro (el
-  // diseño anterior se cortaba en una línea detrás del logo).
-  float3 c = metal(uv, 1.25, float3(0.045, 0.05, 0.06), float3(0.30, 0.31, 0.35), float3(0.90, 0.92, 0.96), 6.6, 0.65);
-  float4 v = voro4(uv * 1.25 + 6.6);
-  float2 n = hash2(float2(v.w * 71.0, v.w * 13.0)) * 2.0 - 1.0;
-  float kf = clamp(0.5 + 0.5 * (dot(n, tilt) * 1.6 + dot(n, -v.xy) * 1.1 + n.x * 0.35), 0.0, 1.0);
-  float tono = fract(v.w * 2.3 + dot(n, tilt) * 0.45 + uv.x * 0.18);
-  float3 arco = 0.5 + 0.5 * cos(6.2831 * (tono + float3(0.0, 0.33, 0.67)));
-  c = mix(c, c * 0.75 + arco * 0.30, smoothstep(0.70, 1.0, kf) * 0.30);
-  // Rayas finísimas de difracción dentro de cada faceta, en su dirección.
-  float an = v.w * 6.2831; float2 dr = float2(cos(an), sin(an));
-  float rayas = 0.5 + 0.5 * sin(dot(uv, dr) * 340.0);
-  c += arco * rayas * smoothstep(0.60, 1.0, kf) * 0.12;
-  float2 L = luz(a); c += float3(0.85, 0.88, 0.95) * exp(-dot(uv - L, uv - L) * 3.4) * 0.16;
-  float barr = exp(-sq((uv.x / a + uv.y * 0.4 - fract(t * 0.07) * 2.2 + 0.4) * 5.0));
-  c += float3(0.92, 0.95, 1.0) * barr * 0.14;
-  c += float3(1.0) * destellos(p, 0.08, 2.2) * 0.9;
+  // Platino «black card» (2026-10-14, «que se note que es la full de
+  // clientes, más exclusiva»). Ya no en facetas —al inclinar, el reflejo
+  // SALTABA de una faceta a otra y se leía como cortes—: todo es continuo.
+  //   · metal grafito cepillado a lo largo, con el brillo ANISÓTROPO del
+  //     cepillado: una franja de luz alargada que corre con la inclinación;
+  //   · un guilloché (la roseta grabada de los billetes y los relojes finos)
+  //     en lámina holográfica: cada hilo descompone la luz según su ángulo
+  //     contra la inclinación, así que el arcoíris viaja por los anillos;
+  //   · un bisel en el canto: se enciende del lado que mira a la luz y se
+  //     apaga del otro, y un filo de espejo fino;
+  //   · micro-brillo y un barrido lento.
+  // Sin atan sin múltiplo entero ni fract visible: ninguna línea dura.
+  float2 cc = uv - float2(a * 0.5, 0.5);
+  float r = length(cc);
+  // 1. Grafito cepillado.
+  float cep = noise(float2(uv.x * 2.2, uv.y * 240.0)) * 0.6 + noise(float2(uv.x * 5.0, uv.y * 610.0)) * 0.4;
+  float3 c = mix(float3(0.028, 0.030, 0.037), float3(0.105, 0.110, 0.128), smoothstep(-0.2, 1.3, uv.x / a * 0.7 + (1.0 - uv.y) * 0.5));
+  c *= 0.82 + 0.36 * cep;
+  // 2. Brillo anisótropo: alargado a lo ANCHO del cepillado (vertical), su
+  //    lugar sigue a la inclinación y se enciende más cerca de la luz.
+  float hx = uv.x / a - (0.5 + tilt.x * 0.55) + (uv.y - 0.5) * 0.22;
+  float vy = uv.y - (0.5 - tilt.y * 0.45);
+  float aniso = exp(-hx * hx * 22.0) * (0.55 + 0.45 * exp(-vy * vy * 2.5)) * (0.6 + 0.4 * cep);
+  c += float3(0.80, 0.82, 0.88) * aniso * 0.26;
+  // 3. Guilloché holográfico: dos familias de anillos ondulados que se
+  //    cruzan (el θ siempre multiplicado por enteros: continuo al dar la vuelta).
+  float th = atan(cc.y, cc.x);
+  float onda = sin(th * 18.0 + r * 12.0) * 0.013 + sin(th * 6.0 - t * 0.12) * 0.005;
+  float l1 = sin((r + onda) * 240.0);
+  float l2 = sin((r - onda * 1.4) * 240.0 + 1.7);
+  float hilo = smoothstep(0.84, 1.0, l1) + smoothstep(0.84, 1.0, l2) * 0.75;
+  float zona = smoothstep(0.17, 0.32, r) * (1.0 - smoothstep(0.62, 0.98, r));
+  float2 nr = cc / max(r, 0.001);
+  float al = dot(nr, tilt);
+  float3 arco = 0.5 + 0.5 * cos(6.2831 * (al * 0.55 + r * 1.6 + t * 0.015 + float3(0.0, 0.33, 0.67)));
+  float enc = 0.30 + 0.70 * smoothstep(0.0, 0.8, abs(al) + length(tilt) * 0.25 + aniso * 0.6);
+  c += mix(float3(0.55, 0.57, 0.63), arco, 0.80) * hilo * zona * 0.20 * enc;
+  // Un velo iridiscente muy leve sobre toda la lámina, que se corre al inclinar.
+  float3 velo = 0.5 + 0.5 * cos(6.2831 * (uv.x / a * 0.8 - uv.y * 0.5 + tilt.x * 0.5 - tilt.y * 0.3 + float3(0.0, 0.33, 0.67)));
+  c += velo * 0.030 * (0.4 + aniso);
+  // 4. La luz de techo y el barrido lento.
+  float2 L = luz(a); c += float3(0.85, 0.88, 0.95) * exp(-dot(uv - L, uv - L) * 3.0) * 0.10;
+  float barr = exp(-sq((uv.x / a + uv.y * 0.4 - fract(t * 0.06) * 2.4 + 0.5) * 4.5));
+  c += float3(0.92, 0.95, 1.0) * barr * 0.10;
+  // 5. Bisel del canto (sólo con proporción de tarjeta: la franja de Wallet
+  //    es más ancha y no tiene canto). La normal sale de una superelipse:
+  //    suave en las esquinas, sin la arista diagonal de un rectángulo.
+  float2 med = float2(a * 0.5, 0.5);
+  float2 qb = abs(cc) - med + 0.10;
+  float sd = length(max(qb, 0.0)) + min(max(qb.x, qb.y), 0.0) - 0.10;
+  float2 en = normalize(sign(cc) * pow(abs(cc) / med, float2(7.0)) / med + float2(0.0001));
+  float lam = dot(en, normalize(float2(-0.55 + tilt.x * 0.7, -0.80 - tilt.y * 0.7)));
+  float bis = smoothstep(-0.05, 0.0, sd) * (1.0 - step(2.2, a));
+  c += float3(0.88, 0.90, 0.96) * bis * max(lam, 0.0) * 0.32;
+  c *= 1.0 - bis * max(-lam, 0.0) * 0.40;
+  c += float3(0.95, 0.97, 1.0) * exp(-abs(sd + 0.010) * 260.0) * (0.10 + 0.25 * max(lam, 0.0)) * (1.0 - step(2.2, a));
+  // 6. Micro-brillo: polvo que titila y escarcha que se enciende con el ángulo.
+  float2 gq = floor(p / 6.0); float hq = hash(gq + 3.0); float2 fq = fract(p / 6.0) - 0.5;
+  float esc = step(0.982, hq) * pow(max(0.0, sin(hq * 90.0 + tilt.x * 8.0 - tilt.y * 6.0 + t * 0.7)), 12.0) * exp(-length(fq) * 8.0);
+  c += float3(0.94, 0.97, 1.0) * esc * 0.9;
+  c += float3(1.0) * destellos(p, 0.05, 2.0) * 0.7;
   return half4(c, 1.0);
 }`,
   // La tarjeta del EQUIPO (empleados, precio Mayoreo Plus por política):

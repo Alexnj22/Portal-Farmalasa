@@ -15,7 +15,7 @@ import { conReporte } from '../lib/errores';
 import { llamar } from '../lib/api';
 import { useCuenta } from '../lib/cuenta';
 import { useOfertas } from '../lib/ofertas';
-import { useBloqueo, vigilarCicloDeVida } from '../lib/bloqueo';
+import { useBloqueo, useCubierta, vigilarCicloDeVida } from '../lib/bloqueo';
 import PantallaBloqueo from '../componentes/PantallaBloqueo';
 import * as Notifications from 'expo-notifications';
 import { useTema } from '../tema/tema';
@@ -32,6 +32,7 @@ instalarHojasAndroid();
 instalarTomas();
 import AvisoEnApp from '../componentes/AvisoEnApp';
 import BurbujaChat from '../componentes/BurbujaChat';
+import { despertar } from '../componentes/reposo';
 export { default as ErrorBoundary } from '../componentes/ErrorDePantalla';
 
 const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent' } };
@@ -141,13 +142,9 @@ function Bloqueo() {
   // Con el bloqueo encendido, al salir de la app se tapa el contenido: la foto
   // que iOS toma para el selector de apps mostraba el saldo y el QR aunque la
   // app «estuviera bloqueada» (revisión 2026-10-06). Igual que Wallet o un banco.
-  const [cubierta, setCubierta] = useState(false);
+  // En Android, con `blur` (Recientes), y sin tapar lo que la app abrió a propósito (lib/bloqueo, 2026-10-14).
+  const cubierta = useCubierta(activo);
   useEffect(() => { cargar(); return vigilarCicloDeVida(); }, [cargar]);
-  useEffect(() => {
-    if (!activo) return undefined;
-    const sub = AppState.addEventListener('change', (e) => setCubierta(e !== 'active'));
-    return () => sub.remove();
-  }, [activo]);
   if (!token) return null;
   if (bloqueada) return <PantallaBloqueo />;
   return cubierta ? <PantallaBloqueo soloCubrir /> : null;
@@ -175,7 +172,10 @@ function Raiz() {
   return (
     <ThemeProvider value={ANDROID ? (oscuro ? OSCURO_ANDROID : CLARO_ANDROID) : (oscuro ? OSCURO : CLARO)}>
       <SafeAreaProvider>
-        <GestureHandlerRootView style={{ flex: 1 }}>
+        {/* Cualquier toque despierta lo que se anima solo y estaba en reposo
+            (componentes/reposo.js, 2026-10-14): el evento sube desde la vista
+            tocada sin quitarle el gesto a nadie. */}
+        <GestureHandlerRootView style={{ flex: 1 }} onTouchStart={despertar}>
           {/* Android: sin aurora (componentes/Aurora.android.js); el fondo lo da cada pantalla. */}
           {ANDROID ? null : <AuroraRaiz />}
           <Guardia />

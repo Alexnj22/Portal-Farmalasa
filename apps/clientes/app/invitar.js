@@ -17,6 +17,7 @@ import { colorSistema } from '../componentes/sistema';
 import { useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
 import Icono from '../componentes/Icono';
+import { sinBloquear } from '../lib/bloqueo';
 
 const ENLACE_APP = 'https://portal.farmasalud.lat/mis-puntos';
 
@@ -43,7 +44,7 @@ export default function Invitar() {
   const mensaje = `¡Únete a Puntos Salud de Farmacia Salud! Usa mi código ${d.codigo} al registrarte en la app y los dos ganamos ${d.puntos} puntos con tu primera compra de $${d.minimo} o más. ${ENLACE_APP}`;
   const compartir = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    try { await Share.share({ message: mensaje }); } catch { /* cancelado */ }
+    try { await sinBloquear(() => Share.share({ message: mensaje })); } catch { /* cancelado */ }
   };
 
   return (

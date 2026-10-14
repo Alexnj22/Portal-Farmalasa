@@ -34,6 +34,7 @@ import { resumenDeReservas, reservasDelProducto } from '../../../lib/reservaDupl
 import RecetaFoto from '../../../componentes/RecetaFoto';
 import { subirReceta } from '../../../lib/fotos';
 import { precioFinal, rotuloPrecioTuyo } from '../../../lib/precioTuyo';
+import { sinBloquear } from '../../../lib/bloqueo';
 
 const CLAVE_TERMINOS = 'puntos_salud_terminos_reserva';
 
@@ -160,7 +161,9 @@ export default function Carrito() {
       }
       setEnviando(false);
       const base = { pedido: r.pedido, total: r.total, sala: salas?.find((s) => s.id === sala)?.sala, pagado: false, enLinea: pagoReal === 'en_linea', porConfirmar: faltan > 0, domicilio: aDomicilio,
-        receta: !!r.receta, recetaPendiente };
+        receta: !!r.receta, recetaPendiente,
+        // Para la tarjeta que se comparte con quien lo va a retirar (2026-10-14).
+        productos: items.map((x) => ({ nombre: nombreProducto(x.nombre), cantidad: x.cantidad })) };
       if (r.receta) setFotoReceta(null);
       // La confirmación va ANTES de vaciar y de abrir el cobro (2026-10-12): al
       // volver del pago se veía «Tu carrito está vacío» mientras se verificaba.
@@ -172,7 +175,7 @@ export default function Carrito() {
       // Pagar en línea: la hoja de Wompi; el pago lo confirma el servidor.
       if (conCobro) {
         try {
-          await WebBrowser.openAuthSessionAsync(r.pago.url, 'puntossalud://reservas');
+          await sinBloquear(() => WebBrowser.openAuthSessionAsync(r.pago.url, 'puntossalud://reservas'));
         } catch { /* la hoja no abrió: queda pendiente y se paga desde Mis reservas */ }
         for (let i = 0; i < 4; i++) {
           const mr = await pedir('mis_reservas');
@@ -212,7 +215,9 @@ export default function Carrito() {
             <Text style={{ fontSize: 14, lineHeight: 20, color: t.color.avisoTexto, textAlign: 'center' }}>{hecho.recetaPendiente} Sube la foto desde Mis reservas.</Text>
           ) : null}
           {/* A domicilio no se retira: compartir el código sólo sirve para el retiro. */}
-          <CodigoReserva codigo={hecho.pedido} compartir={hecho.domicilio ? null : { sala: hecho.sala, pedido: true }} />
+          <CodigoReserva codigo={hecho.pedido} compartir={hecho.domicilio ? null : {
+            sala: hecho.sala, pedido: true, productos: hecho.productos, total: hecho.total, pagado: !!hecho.pagado, receta: !!hecho.receta,
+          }} />
           <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>
             Total: {dolares(hecho.total)} · {hecho.pagado ? 'pagado' : hecho.verificando ? 'confirmando el pago…' : hecho.enLinea ? 'pago pendiente (puedes pagarlo en Mis reservas)' : hecho.domicilio ? 'pagas al recibir' : 'pagas al retirar'}
           </Text>
@@ -371,7 +376,7 @@ export default function Carrito() {
 
       <Tarjeta estilo={{ gap: 6 }}>
         <Fila etiqueta="Precio normal" valor={dolares(normal)} tachado />
-        {normal - subtotal >= 0.01 ? <Fila etiqueta="Ahorro con tu tarjeta" valor={`−${dolares(normal - subtotal)}`} color={t.color.verdeTexto} /> : null}
+        {normal - subtotal >= 0.01 ? <Fila etiqueta="Ahorro con tu tarjeta de Puntos Salud" valor={`−${dolares(normal - subtotal)}`} color={t.color.verdeTexto} /> : null}
         {aDomicilio ? <Fila etiqueta="Envío a domicilio" valor={envio ? dolares(envio) : 'Gratis'} /> : null}
         <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginVertical: 4 }} />
         <Fila etiqueta="Total" valor={dolares(total)} grande />
@@ -441,7 +446,7 @@ function TusReservas({ resumen }) {
 function Fila({ etiqueta, valor, tachado, grande, color }) {
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-      <Text style={{ fontSize: grande ? 17 : 15, fontWeight: grande ? '800' : '500', color: colorSistema.texto2 }}>{etiqueta}</Text>
+      <Text style={{ flexShrink: 1, paddingRight: 12, fontSize: grande ? 17 : 15, fontWeight: grande ? '800' : '500', color: colorSistema.texto2 }}>{etiqueta}</Text>
       <Text style={{ fontSize: grande ? 24 : 15, fontWeight: grande ? '900' : '600', color: color ?? colorSistema.texto,
         textDecorationLine: tachado ? 'line-through' : 'none', fontVariant: ['tabular-nums'] }}>{valor}</Text>
     </View>

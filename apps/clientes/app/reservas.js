@@ -28,7 +28,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
-import { Boton, Cargando, Chip, Pantalla, Seccion as SeccionUi, Tarjeta, Vacio } from '../componentes/ui';
+import { Boton, Cargando, Pantalla, Seccion as SeccionUi, Tarjeta, Vacio } from '../componentes/ui';
+import GrupoDeBotones from '../componentes/GrupoDeBotones';
 import Icono from '../componentes/Icono';
 import CodigoReserva from '../componentes/CodigoReserva';
 import { Entrada, Latido } from '../componentes/animacion';
@@ -40,6 +41,7 @@ import { navegar } from '../lib/navegar';
 import { useCuenta } from '../lib/cuenta';
 import { subirReceta } from '../lib/fotos';
 import { PISTA_RECETA, usarVistaPreviaFoto } from '../componentes/VistaPreviaFoto';
+import { sinBloquear } from '../lib/bloqueo';
 
 // Colores del tema (cambian con el modo oscuro y se leen sobre el vidrio).
 const ESTADO_BASE = {
@@ -148,7 +150,7 @@ export default function Reservas() {
       const res = await pedir('pagar_encargo', { id: e.id });
       if (!res?.ok) { Alert.alert('No se pudo abrir el pago', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
       try {
-        await WebBrowser.openAuthSessionAsync(res.url, 'puntossalud://reservas');
+        await sinBloquear(() => WebBrowser.openAuthSessionAsync(res.url, 'puntossalud://reservas'));
       } catch {
         Alert.alert('No se pudo abrir el pago', 'Intenta de nuevo en un momento.');
         return;
@@ -242,7 +244,7 @@ export default function Reservas() {
       const res = await pedir('pagar_reserva', { id: r.id });
       if (!res?.ok) { Alert.alert('No se pudo abrir el pago', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
       try {
-        await WebBrowser.openAuthSessionAsync(res.url, 'puntossalud://reservas');
+        await sinBloquear(() => WebBrowser.openAuthSessionAsync(res.url, 'puntossalud://reservas'));
       } catch {
         Alert.alert('No se pudo abrir el pago', 'Intenta de nuevo en un momento.');
         return;
@@ -263,10 +265,9 @@ export default function Reservas() {
     }
   };
 
+  // Android: botones conectados de Material 3 Expressive (2026-10-14).
   const chips = (
-    <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-      {FILTROS.map(([k, texto]) => <Chip key={k} texto={texto} activo={filtro === k} alTocar={() => setFiltro(k)} />)}
-    </View>
+    <GrupoDeBotones opciones={FILTROS} valor={filtro} alCambiar={setFiltro} />
   );
   // Al cambiar de filtro los chips se quedan: sólo la lista muestra que carga.
   if (!d) return filtro === 'todas' ? <Cargando /> : <Pantalla conPestanas={false}>{chips}<ActivityIndicator style={{ marginTop: 24 }} /></Pantalla>;
@@ -552,8 +553,13 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando, resaltada = fa
       {/* Compartir (2026-10-09): si no puede ir, se lo pasa a otra persona. A domicilio no aplica. */}
       {verCodigo ? (
         <CodigoReserva codigo={codigo} tam={140} compartir={domicilio ? null : {
-          producto: r.pedido && productosDelPedido > 1 ? `${productosDelPedido} productos (${r.producto_nombre} y más)` : `${r.cantidad} × ${r.producto_nombre}`,
+          ...(r.pedido && productosDelPedido > 1
+            ? { producto: `${productosDelPedido} productos (${r.producto_nombre} y más)` }
+            : { productos: [{ nombre: r.producto_nombre, cantidad: r.cantidad }] }),
           sala: r.sala, pedido: !!r.pedido,
+          // La tarjeta que se comparte (2026-10-14): total, plazo y si lleva receta.
+          total: r.total_pedido ?? r.total ?? (r.precio_unitario != null ? r.precio_unitario * r.cantidad : null),
+          pagado: r.pago_estado === 'pagado', vence: lista ? r.vence_at : null, receta: r.receta_estado != null,
         }} />
       ) : null}
 
@@ -756,7 +762,8 @@ function PedidoAbierto({ g, ahora, alCancelar, alPagar, pagando, resaltada = fal
       </Presionable>
       {verCodigo ? (
         <CodigoReserva codigo={g.pedido} tam={140} compartir={domicilio ? null : {
-          producto: `${g.filas.length} productos (${r.producto_nombre} y más)`, sala: r.sala, pedido: true,
+          productos: g.filas.map((f) => ({ nombre: f.producto_nombre, cantidad: f.cantidad })), sala: r.sala, pedido: true,
+          total, pagado: pagoClave === 'pagado', vence: venceLista, receta: g.filas.some((f) => f.receta_estado != null),
         }} />
       ) : null}
 

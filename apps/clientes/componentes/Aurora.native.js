@@ -8,22 +8,14 @@
 import { useEffect } from 'react';
 import { StyleSheet, useColorScheme, useWindowDimensions, View } from 'react-native';
 import { BlurMask, Canvas, Circle, Group } from '@shopify/react-native-skia';
-import { cancelAnimation, Easing, useDerivedValue, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import { useDerivedValue, useFrameCallback, useReducedMotion, useSharedValue } from 'react-native-reanimated';
 import tokens from '@nucleo/constants/tokens.json';
 import { LIVIANO } from '../lib/rendimiento';
+import { useDespierta } from './reposo';
 
 const T = tokens.temas.solid;
-
-// `activa`: se pausa donde quedó cuando no se ve (otra pestaña, app en
-// segundo plano) o con «Reducir movimiento»; al volver sigue desde ahí.
-function useVaiven(duracion, activa) {
-  const v = useSharedValue(0);
-  useEffect(() => {
-    if (!activa) { cancelAnimation(v); return; }
-    v.value = withRepeat(withTiming(v.value > 0.5 ? 0 : 1, { duration: duracion, easing: Easing.inOut(Easing.sin) }), -1, true);
-  }, [v, duracion, activa]);
-  return v;
-}
+// Vaivén de 0 a 1 y de vuelta, suave en los extremos (el `Easing.sin` de antes).
+const vaiven = (s, dur) => { 'worklet'; return 0.5 - 0.5 * Math.cos((s / dur) * Math.PI); };
 
 export default function Aurora({ activa = true }) {
   const oscuro = useColorScheme() === 'dark';
@@ -31,10 +23,24 @@ export default function Aurora({ activa = true }) {
   // una vez, sin animar las manchas cada cuadro (2026-10-13).
   const reducir = useReducedMotion() || LIVIANO;
   const { width: w, height: h } = useWindowDimensions();
-  const mover = activa && !reducir;
-  const a = useVaiven(18000, mover);
-  const b = useVaiven(23000, mover);
-  const c = useVaiven(26000, mover);
+  // UN reloj a 15 cuadros por segundo, y en reposo a los 20 s sin tocar
+  // (2026-10-14, «se calienta»). Antes eran tres `withRepeat` infinitos que
+  // redibujaban tres círculos con desenfoque de pantalla completa a la
+  // frecuencia de la pantalla —120 veces por segundo en ProMotion— durante
+  // todo el chat o cualquier pantalla de la pila. Una mancha que cruza la
+  // pantalla en 20 s se mueve menos de un punto entre cuadro y cuadro: a 15
+  // por segundo se ve idéntica.
+  const mover = useDespierta(activa && !reducir);
+  const s = useSharedValue(0);
+  const acum = useSharedValue(0);
+  const reloj = useFrameCallback((f) => {
+    acum.value += Math.min(0.1, (f.timeSincePreviousFrame ?? 16) / 1000);
+    if (acum.value >= 0.066) { s.value += acum.value; acum.value = 0; }
+  }, false);
+  useEffect(() => { reloj.setActive(mover); }, [mover, reloj]);
+  const a = useDerivedValue(() => vaiven(s.value, 18));
+  const b = useDerivedValue(() => vaiven(s.value, 23));
+  const c = useDerivedValue(() => vaiven(s.value, 26));
   const r = Math.max(w, h) * 0.42;
 
   const verdeX = useDerivedValue(() => w * (0.05 + 0.25 * a.value));

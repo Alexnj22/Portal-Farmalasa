@@ -10,6 +10,7 @@
 import { useCallback, useState } from 'react';
 import { Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import { sinBloquear } from './bloqueo';
 
 let Location = null;
 if (Platform.OS === 'ios' || Platform.OS === 'android') {
@@ -46,7 +47,7 @@ export function useUbicacionMientrasSeUsa() {
 
   const pedir = useCallback(async () => {
     if (!Location) return;
-    const p = await Location.requestForegroundPermissionsAsync().catch(() => null);
+    const p = await sinBloquear(() => Location.requestForegroundPermissionsAsync()).catch(() => null);
     if (p?.granted) { setPuedePedir(false); await ubicar(); } else setPuedePedir(false);   // dijo que no: no se insiste
   }, [ubicar]);
 

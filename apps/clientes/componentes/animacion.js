@@ -10,6 +10,9 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { ANDROID, LIVIANO } from '../lib/rendimiento';
 import { ONDA } from './Presionable';
+import { M3, PRESION, SUELTA } from './movimiento';
+
+const PressableAnimado = Animated.createAnimatedComponent(Pressable);
 
 // «Reducir movimiento» del sistema o un teléfono viejo (lib/rendimiento):
 // lo decorativo (confeti, latidos, entradas) no se anima (2026-10-13).
@@ -101,12 +104,27 @@ function entradaSinOpacidad(retraso) {
   };
 }
 
-// Android (2026-10-13): sin entrada. La pantalla ya ENTRA con la animación
-// del sistema; sumarle un resorte por tarjeta, montado a la vez que la
-// transición, competía con ella en el hilo de la interfaz y se veía a saltos.
+// Android (2026-10-14, Material 3 Expressive): un resorte ESPACIAL corto —8 dp
+// hacia arriba, sin escala— y sólo para los primeros bloques. El 2026-10-13
+// se había quitado porque, montado a la vez que la transición del sistema,
+// competía con ella; ahora arranca cuando la transición ya va por la mitad
+// (180 ms) y mueve poco, con la rigidez de la especificación (700, ζ 0.9).
+function entradaAndroid(retraso) {
+  return () => {
+    'worklet';
+    return {
+      initialValues: { transform: [{ translateY: 8 }] },
+      animations: { transform: [{ translateY: withDelay(retraso, withSpring(0, M3.espacial)) }] },
+    };
+  };
+}
+
 export function Entrada({ indice = 0, children, estilo }) {
   const quieta = useSinMovimiento();
-  if (quieta || ANDROID) return <View style={estilo}>{children}</View>;
+  if (quieta || (ANDROID && indice > 4)) return <View style={estilo}>{children}</View>;
+  if (ANDROID) {
+    return <Animated.View style={estilo} entering={entradaAndroid(180 + indice * 30)}>{children}</Animated.View>;
+  }
   return (
     // Con tope: en listas largas las últimas ya no esperan más de medio segundo.
     <Animated.View style={estilo} entering={entradaSinOpacidad(40 + Math.min(indice, 6) * 55)}>
@@ -123,13 +141,18 @@ export function Tocable({ alTocar, onPress, children, estilo, etiqueta, ...resto
   const s = useSharedValue(1);
   const animado = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
   if (ANDROID) {
-    // La onda se recorta a las esquinas de la tarjeta (16, las de Vidrio en Android).
+    // La onda se recorta a las esquinas de la tarjeta (16, las de Vidrio en
+    // Android). Y Material 3 Expressive (2026-10-14): además de la onda, la
+    // pieza se hunde apenas con el resorte de «efectos» y vuelve con el
+    // espacial rápido — corto y sutil, sin rebote visible.
     return (
-      <Pressable accessibilityRole="button" accessibilityLabel={etiqueta} {...resto} android_ripple={ONDA}
-        style={[{ borderRadius: 16, overflow: 'hidden' }, estilo]}
+      <PressableAnimado accessibilityRole="button" accessibilityLabel={etiqueta} {...resto} android_ripple={ONDA}
+        style={[{ borderRadius: 16, overflow: 'hidden' }, estilo, animado]}
+        onPressIn={() => { s.value = withSpring(0.975, PRESION); }}
+        onPressOut={() => { s.value = withSpring(1, SUELTA); }}
         onPress={(e) => { Haptics.selectionAsync().catch(() => {}); alTocar?.(); onPress?.(e); }}>
         {children}
-      </Pressable>
+      </PressableAnimado>
     );
   }
   return (
@@ -137,8 +160,8 @@ export function Tocable({ alTocar, onPress, children, estilo, etiqueta, ...resto
       accessibilityRole="button"
       accessibilityLabel={etiqueta}
       {...resto}
-      onPressIn={() => { s.value = withSpring(0.97, { damping: 20, stiffness: 400 }); }}
-      onPressOut={() => { s.value = withSpring(1, { damping: 14, stiffness: 300 }); }}
+      onPressIn={() => { s.value = withSpring(0.97, PRESION); }}
+      onPressOut={() => { s.value = withSpring(1, SUELTA); }}
       onPress={(e) => { Haptics.selectionAsync().catch(() => {}); alTocar?.(); onPress?.(e); }}
     >
       <Animated.View style={[estilo, animado]}>{children}</Animated.View>

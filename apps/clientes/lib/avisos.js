@@ -6,6 +6,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
+import { sinBloquear } from './bloqueo';
 
 // Con la app ABIERTA, el aviso lo presenta la propia app con su banner
 // (componentes/AvisoEnApp.js) en vez del del sistema (2026-10-09): se ve con
@@ -58,7 +59,8 @@ export function alLlegarAviso(fn) {
 export async function pedirPermisoDeAvisos() {
   if (Platform.OS === 'web') return false;
   let { status } = await Notifications.getPermissionsAsync();
-  if (status !== 'granted') ({ status } = await Notifications.requestPermissionsAsync());
+  // El diálogo del permiso saca a la app del primer plano: no es «irse» (lib/bloqueo).
+  if (status !== 'granted') ({ status } = await sinBloquear(() => Notifications.requestPermissionsAsync()));
   return status === 'granted';
 }
 

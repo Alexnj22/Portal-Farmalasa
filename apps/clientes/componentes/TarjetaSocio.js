@@ -25,6 +25,9 @@ import EfectoNivel from './EfectoNivel';
 import Mineral, { MATERIALES } from './minerales/Mineral';
 import LogoEnRelieve from './minerales/LogoEnRelieve';
 import SelloEquipo from './minerales/SelloEquipo';
+import RotuloLamina from './minerales/RotuloLamina';
+import { despertar, useDespierta } from './reposo';
+import { Momento, vibrarMomento } from './momentos';
 import { AccessibilityInfo, Image, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -91,6 +94,15 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
   // Con «Reducir movimiento» del iPhone: sin giroscopio, sin luz que pasa.
   // Movimiento reducido o teléfono antiguo: material quieto, sin giroscopio.
   const reducir = useReducedMotion() || LIVIANO;
+  // Platino, la tarjeta más alta de clientes (2026-10-14, «que se note que es
+  // la full»): rótulo en lámina, capas con profundidad al inclinar y el
+  // material propio (minerales/shaders.js).
+  const exclusiva = nivel === 'platino';
+  // Reposo (componentes/reposo.js, 2026-10-14, «se calienta»): a los 20 s sin
+  // tocar ni inclinar, el material, la luz que pasa y el giroscopio a ritmo
+  // pleno se detienen; la tarjeta queda igual, quieta. Tocar o inclinar la despierta.
+  const despierta = useDespierta(activa && !reducir);
+  const viva = activa && !reducir && despierta;
   const giro = useSharedValue(0);              // 0 = frente, 1 = reverso
   const entrada = useSharedValue(0);
   const barrido = useSharedValue(0);
@@ -107,6 +119,10 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
   const suaveX = useSharedValue(0);
   const suaveY = useSharedValue(0);
   useAnimatedReaction(() => [sx.value, sy.value], ([a, b]) => {
+    // Zona muerta (2026-10-14): el pulso de la mano movía el sensor una
+    // milésima y el resorte nunca se asentaba — el lienzo se redibujaba cada
+    // cuadro con la tarjeta «quieta».
+    if (Math.abs(a * 2 - suaveX.value) + Math.abs(b * 2 - suaveY.value) < 0.012) return;
     suaveX.value = withSpring(a * 2, SUAVE);
     suaveY.value = withSpring(b * 2, SUAVE);
   });
@@ -134,13 +150,13 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
   }, [activa]); // eslint-disable-line react-hooks/exhaustive-deps
   // La franja de luz: al llegar y cada ~6 s, sólo mientras se ve.
   useEffect(() => {
-    if (!activa || reducir) { cancelAnimation(barrido); return; }
+    if (!viva) { cancelAnimation(barrido); barrido.value = 0; return; }
     barrido.value = 0;
     barrido.value = withDelay(500, withRepeat(withSequence(
       withTiming(1, { duration: 1300, easing: Easing.inOut(Easing.cubic) }),
       withDelay(5000, withTiming(0, { duration: 0 })),
     ), -1));
-  }, [activa, reducir, barrido]);
+  }, [viva, barrido]);
 
   // El brillo se pide AL TOCAR, no a mitad del giro (2026-10-08): desde la
   // reacción del giro no llegaba siempre, y el QR quedaba con la pantalla oscura.
@@ -193,6 +209,7 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
   // se lo deja a la pantalla (que hace scroll).
   const arrastre = Gesture.Pan()
     .activeOffsetX([-8, 8]).failOffsetY([-14, 14])
+    .onBegin(() => { runOnJS(despertar)(); })
     .onUpdate((e) => {
       dedoX.value = limitar(e.translationX / 160);
       dedoY.value = limitar(-e.translationY / 160);
@@ -203,7 +220,25 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
       if (Math.abs(e.velocityX) > 700) runOnJS(voltear)();
     });
   const toque = Gesture.Tap().maxDuration(300).onEnd((_e, ok) => { if (ok) runOnJS(voltear)(); });
-  const gestos = Gesture.Race(arrastre, toque);
+  // Mantenerla presionada (2026-10-14): una ráfaga de luz la cruza y el
+  // teléfono responde con dos golpes hápticos. Sólo de frente.
+  const rafaga = useSharedValue(0);
+  const alRafaga = () => {
+    despertar();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+    setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}), 140);
+  };
+  const largo = Gesture.LongPress().minDuration(420).onStart(() => {
+    if (giro.value > 0.5) return;
+    rafaga.value = 0;
+    rafaga.value = withTiming(1, { duration: 950, easing: Easing.out(Easing.cubic) });
+    runOnJS(alRafaga)();
+  });
+  const gestos = Gesture.Race(arrastre, largo, toque);
+  // Profundidad (Platino): el contenido flota sobre el material y el logo un
+  // poco más; al inclinar, cada capa se corre distinto — paralaje.
+  const capaTexto = useAnimatedStyle(() => (exclusiva ? { transform: [{ translateX: -x.value * 3 }, { translateY: y.value * 2 }] } : {}));
+  const capaLogo = useAnimatedStyle(() => (exclusiva ? { transform: [{ translateX: -x.value * 6 }, { translateY: y.value * 4 }] } : {}));
 
   const ladeo = useAnimatedStyle(() => {
     const medio = Math.sin(giro.value * Math.PI);          // 0 en las caras, 1 a mitad del giro
@@ -247,7 +282,7 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
 
   return (
     <>
-    {activa && !reducir ? <Sensor salidaX={sx} salidaY={sy} /> : null}
+    {activa && !reducir ? <Sensor key={despierta ? 'viva' : 'reposo'} salidaX={sx} salidaY={sy} enReposo={!despierta} /> : null}
     <GestureDetector gesture={gestos}>
       <Animated.View style={[{ aspectRatio: 1.586, width: '100%' }, estilos.sombra, { shadowColor: paleta.sombra }, sombra, ladeo]}
         accessible accessibilityRole="button"
@@ -267,8 +302,8 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
               vivo con la inclinación. El degradado de arriba queda de respaldo. */}
           {/* `key`: al cambiar de nivel o rango el lienzo se rehace entero; sin
               eso podía quedar pintado el material anterior. */}
-          {!verFrente ? null : MATERIALES.includes(nivel) ? <Mineral key={nivel} material={nivel} x={x} y={y} activa={activa && !reducir} />
-            : <EfectoNivel nivel={nivel} activa={activa && !reducir} x={x} />}
+          {!verFrente ? null : MATERIALES.includes(nivel) ? <Mineral key={nivel} material={nivel} x={x} y={y} activa={viva} />
+            : <EfectoNivel nivel={nivel} activa={viva} x={x} />}
           {/* Una sombra suave abajo: el nombre y el saldo se leen sobre cualquier material. */}
           <LinearGradient pointerEvents="none" colors={['rgba(0,0,0,0.30)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.50)']}
             locations={[0, 0.28, 0.55, 1]} style={StyleSheet.absoluteFill} />
@@ -276,11 +311,11 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
 
           {/* El logo al centro: llena el espacio entre el chip y el nombre
               (pedido del usuario, 2026-10-06), con un halo suave. */}
-          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
+          <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, capaLogo]}>
             <LogoEnRelieve tam={84} x={x} y={y} estilo={estiloLogo} />
-          </View>
+          </Animated.View>
 
-          <View style={estilos.contenido}>
+          <Animated.View style={[estilos.contenido, capaTexto]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 {/* El efecto es sólo del logo central; éste va plano. */}
@@ -293,7 +328,9 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
                 <Text maxFontSizeMultiplier={1.2} style={[estilos.socio, { fontSize: 8.5, letterSpacing: 1.8, opacity: 0.85 }]}>
                   {['jade', 'zafiro', 'rubi', 'diamante'].includes(nivel) ? 'MAYOREO' : 'CLIENTE'}
                 </Text>
-                <Text maxFontSizeMultiplier={1.3} style={estilos.socio}>{paleta.rotulo}</Text>
+                {exclusiva
+                  ? <RotuloLamina texto={paleta.rotulo} tam={15} espacio={3} x={x} y={y} estiloRespaldo={estilos.socio} />
+                  : <Text maxFontSizeMultiplier={1.3} style={estilos.socio}>{paleta.rotulo}</Text>}
               </View>
             </View>
 
@@ -301,7 +338,7 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
                 derecho, el sello holográfico de PERSONAL (2026-10-08). */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <ChipOro x={x} />
-              {equipo ? <SelloEquipo x={x} y={y} activa={activa && !reducir} /> : null}
+              {equipo ? <SelloEquipo x={x} y={y} activa={viva} /> : null}
             </View>
 
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -316,10 +353,11 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
                 </View>
               </View>
             </View>
-          </View>
+          </Animated.View>
+          {verFrente ? <Rafaga v={rafaga} /> : null}
         </Animated.View>
 
-        {cambio ? <CambioDeSaldo key={cambio.id} delta={cambio.delta} /> : null}
+        {cambio ? <CambioDeSaldo key={cambio.id} delta={cambio.delta} material={nivel} /> : null}
 
         {/* ── Reverso: el código ── */}
         <Animated.View style={[StyleSheet.absoluteFill, estilos.cara, reverso]}>
@@ -327,7 +365,7 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
           {/* El mismo material del frente, más oscuro para que el código se lea.
               Sigue la inclinación, pero su reloj va quieto (no gasta dos veces). */}
           {!verReverso ? null : MATERIALES.includes(nivel) ? <Mineral key={nivel} material={nivel} x={x} y={y} activa={false} />
-            : <EfectoNivel nivel={nivel} activa={activa && !reducir} x={x} />}
+            : <EfectoNivel nivel={nivel} activa={viva} x={x} />}
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.42)' }]} />
           {verReverso ? <BrilloTarjeta x={x} y={y} barrido={barrido} sinArcoiris={MATERIALES.includes(nivel)} /> : null}
           <View style={[estilos.contenido, { flexDirection: 'row', alignItems: 'center', gap: 18 }]}>
@@ -379,12 +417,16 @@ function ChipOro({ x }) {
 }
 
 // La etiqueta que flota al sumar o restar puntos, y el destello de la tarjeta.
-function CambioDeSaldo({ delta }) {
+// Al GANAR (2026-10-14, «momentos con sensación»): el háptico y la animación
+// propios del material (componentes/momentos.js) en vez del éxito genérico.
+// Al restar se queda el aviso de siempre.
+function CambioDeSaldo({ delta, material }) {
   const v = useSharedValue(0);
   const flash = useSharedValue(0);
   const suma = delta > 0;
   useEffect(() => {
-    Haptics.notificationAsync(suma ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Warning).catch(() => {});
+    if (suma) vibrarMomento(material);
+    else Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
     v.value = withDelay(250, withTiming(1, { duration: 1700, easing: Easing.out(Easing.cubic) }));
     flash.value = withSequence(withTiming(1, { duration: 180 }), withTiming(0, { duration: 900 }));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -396,6 +438,7 @@ function CambioDeSaldo({ delta }) {
   const color = suma ? '#34C759' : '#FF453A';
   return (
     <>
+      {suma ? <Momento material={material} radio={22} /> : null}
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: 22, borderWidth: 3, borderColor: color, backgroundColor: suma ? 'rgba(52,199,89,0.14)' : 'rgba(255,69,58,0.14)' }, borde]} />
       <Animated.View pointerEvents="none" style={[{ position: 'absolute', right: 18, bottom: 62, backgroundColor: color, borderRadius: 999,
         paddingHorizontal: 12, paddingVertical: 5, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } }, etiqueta]}>
@@ -409,10 +452,40 @@ function CambioDeSaldo({ delta }) {
 
 // El giroscopio, montado sólo mientras la tarjeta se ve: al desmontarse, el
 // sensor se suelta y deja de leer.
-function Sensor({ salidaX, salidaY }) {
-  const { x, y } = useInclinacion();
-  useAnimatedReaction(() => [x.value, y.value], ([a, b]) => { salidaX.value = a; salidaY.value = b; });
+// En reposo (2026-10-14) lee 4 veces por segundo y no mueve nada: sólo mira
+// si la volvieron a inclinar para despertarla. Las primeras lecturas se
+// saltan: un sensor recién montado arranca en cero y parecería un movimiento.
+function Sensor({ salidaX, salidaY, enReposo }) {
+  const { x, y } = useInclinacion(enReposo ? 250 : 33);
+  const lecturas = useSharedValue(0);
+  const refX = useSharedValue(0);
+  const refY = useSharedValue(0);
+  useAnimatedReaction(() => [x.value, y.value], ([a, b]) => {
+    if (!enReposo) { salidaX.value = a; salidaY.value = b; return; }
+    lecturas.value += 1;
+    if (lecturas.value <= 3) { refX.value = a; refY.value = b; return; }
+    if (Math.abs(a - refX.value) + Math.abs(b - refY.value) > 0.09) runOnJS(despertar)();
+  }, [enReposo]);
   return null;
+}
+
+// La ráfaga de luz al mantenerla presionada: una franja ancha cruza en
+// diagonal y el canto se enciende un instante.
+function Rafaga({ v }) {
+  const franja = useAnimatedStyle(() => ({
+    opacity: v.value > 0 && v.value < 1 ? 1 : 0,
+    transform: [{ translateX: -260 + v.value * 760 }, { rotate: '22deg' }],
+  }));
+  const canto = useAnimatedStyle(() => ({ opacity: v.value > 0 && v.value < 1 ? Math.sin(v.value * Math.PI) * 0.9 : 0 }));
+  return (
+    <>
+      <Animated.View pointerEvents="none" style={[{ position: 'absolute', top: -80, bottom: -80, left: 0, width: 150 }, franja]}>
+        <LinearGradient colors={['rgba(255,255,255,0)', 'rgba(230,238,255,0.38)', 'rgba(255,255,255,0.62)', 'rgba(255,225,250,0.38)', 'rgba(255,255,255,0)']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+      </Animated.View>
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: 22, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.85)' }, canto]} />
+    </>
+  );
 }
 
 const estilos = StyleSheet.create({

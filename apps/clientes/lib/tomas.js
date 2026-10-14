@@ -32,7 +32,58 @@ const TOPE_POR_MEDICINA = 60;
 const POSPONER_MIN = 15;
 const DIAS_REGISTRO = 30;
 
-export const PRESETS = { 1: ['08:00'], 2: ['08:00', '20:00'], 3: ['08:00', '14:00', '20:00'] };
+export const PRESETS = { 1: ['08:00'], 2: ['08:00', '20:00'], 3: ['08:00', '14:00', '20:00'], 4: ['08:00', '12:00', '16:00', '20:00'],
+  6: ['07:00', '10:00', '13:00', '16:00', '19:00', '22:00'] };
+
+// ── Frecuencias (2026-10-14) ────────────────────────────────────────────────
+// Dos formas de decirlo, las dos de una receta:
+//   · «N veces al día» (1, 2, 3, 4 o 6): las tomas van DENTRO del día
+//     despierto, repartidas parejo (2×: 8:00 y 20:00; 3×: 8:00, 14:00, 20:00);
+//     la persona puede mover cualquiera y, si dos quedan muy juntas o fuera de
+//     orden, la hoja lo advierte y ofrece «Ajustar automáticamente».
+//   · «Cada N horas» (4, 6, 8 o 12): cubren las 24 horas a intervalos exactos
+//     (cada 8 h: 6:00, 14:00 y 22:00). Mover una hora corre todas las demás,
+//     porque lo que manda es el intervalo.
+// Lo que se programa sigue siendo `horas` (la lista de siempre): `modo`, `n` e
+// `inicio` sólo recuerdan cómo se armó para volver a abrir la hoja igual.
+export const FRECUENCIAS = { veces: [1, 2, 3, 4, 6], cada: [4, 6, 8, 12] };
+// Separación pareja dentro del día despierto, y desde qué hora.
+const PASO_VECES = { 1: 0, 2: 12 * 60, 3: 6 * 60, 4: 4 * 60, 6: 3 * 60 };
+const INICIO_CADA = { 4: '06:00', 6: '06:00', 8: '06:00', 12: '08:00' };
+// Menos que esto entre dos tomas seguidas, se advierte (minutos).
+const MINIMO_VECES = { 2: 4 * 60, 3: 3 * 60, 4: 2 * 60, 6: 90 };
+const SEPARACION_TEXTO = { 2: 'unas 12 horas', 3: 'unas 6 a 8 horas', 4: 'unas 4 a 6 horas', 6: 'unas 3 a 4 horas' };
+
+export const aMinutos = (h) => { const [hh, mm] = h.split(':').map(Number); return hh * 60 + mm; };
+const deMinutos = (m) => { const t = ((Math.round(m) % 1440) + 1440) % 1440; return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`; };
+
+/** Las horas de «cada N horas» a partir de la primera toma: cubren el día. */
+export function horasCada(inicio, n) {
+  return Array.from({ length: Math.round(24 / n) }, (_, j) => deMinutos(aMinutos(inicio) + j * n * 60));
+}
+/** Las horas de «N veces al día» a partir de la primera, con la separación pareja. */
+export function horasVeces(inicio, n) {
+  return Array.from({ length: n }, (_, j) => deMinutos(aMinutos(inicio) + j * PASO_VECES[n]));
+}
+/** Lo recomendado para cada frecuencia. */
+export function horasRecomendadas(modo, n) {
+  return modo === 'cada' ? horasCada(INICIO_CADA[n] ?? '06:00', n) : (PRESETS[n] ?? horasVeces('08:00', n));
+}
+/**
+ * «N veces al día»: ¿quedaron bien repartidas? null si sí; si no, la frase.
+ * Se miran las tomas en el orden de la lista (Toma 1, Toma 2…): una que va
+ * antes que la anterior está fuera de orden; una a menos del mínimo, muy junta.
+ */
+export function revisarHoras(horas, n) {
+  if (n < 2 || horas.length < 2) return null;
+  const min = MINIMO_VECES[n] ?? 120;
+  for (let i = 1; i < horas.length; i++) {
+    const dif = aMinutos(horas[i]) - aMinutos(horas[i - 1]);
+    if (dif <= 0) return { tipo: 'orden', mensaje: `La toma ${i + 1} quedó antes que la toma ${i}. Para ${n} veces al día deja ${SEPARACION_TEXTO[n]} entre tomas.` };
+    if (dif < min) return { tipo: 'juntas', mensaje: `Las tomas ${i} y ${i + 1} quedaron muy juntas. Para ${n} veces al día deja ${SEPARACION_TEXTO[n]} entre tomas.` };
+  }
+  return null;
+}
 export const DURACIONES = [
   { id: '7', texto: '7 días', dias: 7 },
   { id: '14', texto: '14 días', dias: 14 },
@@ -66,9 +117,10 @@ export function diaTexto(iso) {
 }
 const enLista = (xs) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} y ${xs[xs.length - 1]}`);
 
-/** «Te recuerdo 8:00 y 20:00 · hasta el 30 oct». */
+/** «Te recuerdo 8:00 y 20:00 · hasta el 30 oct» (o «cada 8 h: 6:00, 14:00 y 22:00 · …»). */
 export function resumenRecordatorio(c) {
-  const horas = enLista(c.horas.map(horaTexto));
+  const lista = c.modo === 'cada' && c.inicio ? horasCada(c.inicio, c.n) : c.horas;
+  const horas = `${c.modo === 'cada' && c.n ? `cada ${c.n} h: ` : ''}${enLista(lista.map(horaTexto))}`;
   return `Te recuerdo ${horas} · ${c.duracion === 'continuo' ? 'uso continuo' : `hasta el ${diaTexto(c.hasta)}`}`;
 }
 

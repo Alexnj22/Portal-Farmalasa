@@ -40,7 +40,12 @@ const efectoSello = () => {
 export default function SelloEquipo({ x, y, activa = true, ancho = 64, alto = 30 }) {
   const fx = efectoSello();
   const t = useSharedValue(0);
-  const reloj = useFrameCallback((f) => { t.value += Math.min(0.05, (f.timeSincePreviousFrame ?? 16) / 1000); }, false);
+  // A 30 cuadros por segundo, como el material (2026-10-14).
+  const acum = useSharedValue(0);
+  const reloj = useFrameCallback((f) => {
+    acum.value += Math.min(0.05, (f.timeSincePreviousFrame ?? 16) / 1000);
+    if (acum.value >= 0.032) { t.value += acum.value; acum.value = 0; }
+  }, false);
   useEffect(() => { reloj.setActive(!!activa); }, [activa, reloj]);
   const uniforms = useDerivedValue(() => ({ res: [ancho, alto], tilt: [x ? x.value : 0, y ? y.value : 0], t: t.value }));
   return (

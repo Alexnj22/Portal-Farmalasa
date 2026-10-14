@@ -80,6 +80,7 @@ const MATERIAL = {
   'location.fill': 'near_me',
   'lock.fill': 'lock',
   'magnifyingglass': 'search',
+  'moon.fill': 'bedtime',
   'map.fill': 'map',
   'mappin.and.ellipse': 'location_on',
   'minus': 'remove',

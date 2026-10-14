@@ -40,6 +40,7 @@
     },
     "android": {
       "package": "com.wnapp.id1750888957164",
+      "predictiveBackGestureEnabled": true,
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/icono.png"

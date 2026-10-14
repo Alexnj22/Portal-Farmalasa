@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react';
 import { Modal, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import Presionable from './Presionable';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,6 +14,7 @@ import EfectoNivel from './EfectoNivel';
 import { BENEFICIOS } from './Nivel';
 import { PRECIOS } from './Mayorista';
 import { Confeti } from './animacion';
+import { Momento, vibrarMomento } from './momentos';
 import Icono from './Icono';
 
 // Mayoreo (2026-10-09): la misma pantalla celebra también subir de RANGO
@@ -114,10 +114,12 @@ function Celebracion({ p, alCerrar }) {
   const corona = useSharedValue(0);
   const texto = useSharedValue(0);
   useEffect(() => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    corona.value = withSequence(withSpring(1.15, { damping: 10, stiffness: 120 }), withSpring(1, { damping: 14 }));
+    // El háptico propio del nivel o la piedra (componentes/momentos.js, 2026-10-14).
+    vibrarMomento(p.clave);
+    // Sin el rebote largo de antes (2026-10-14): crece y se asienta, corto.
+    corona.value = withSequence(withSpring(1.1, { damping: 16, stiffness: 220 }), withSpring(1, { damping: 22, stiffness: 220 }));
     texto.value = withDelay(350, withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) }));
-  }, [corona, texto]);
+  }, [corona, texto]); // eslint-disable-line react-hooks/exhaustive-deps -- `p.clave` no cambia en una celebración
   const eCorona = useAnimatedStyle(() => ({ transform: [{ scale: corona.value }, { rotate: `${(1 - Math.min(1, corona.value)) * -20}deg` }] }));
   const eTexto = useAnimatedStyle(() => ({ opacity: texto.value, transform: [{ translateY: (1 - texto.value) * 20 }] }));
   const colores = p.clave === 'oro' ? ['#FFD45E', '#FFF6D5', '#E5AE34', '#FFFFFF']
@@ -146,6 +148,8 @@ function Celebracion({ p, alCerrar }) {
             <Animated.View style={[{ width: disco, height: disco, borderRadius: disco / 2, alignItems: 'center', justifyContent: 'center',
               backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)' }, eCorona]}>
               <Icono sf={p.icono[0]} respaldo={p.icono[1]} tam={Math.round(disco * 0.46)} color="#FFFFFF" />
+              {/* El momento del nivel: destellos, el barrido holográfico del Platino. */}
+              <Momento material={p.clave} radio={disco / 2} />
             </Animated.View>
           </View>
           <Animated.View style={[{ alignSelf: 'stretch', alignItems: 'center', gap: compacta ? 8 : 10, maxWidth: 440, width: '100%' }, eTexto]}>

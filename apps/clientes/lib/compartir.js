@@ -5,6 +5,7 @@
 import { Share } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as FS from 'expo-file-system/legacy';
+import { sinBloquear } from './bloqueo';
 
 let ocupado = false;
 
@@ -20,7 +21,7 @@ export async function compartirOferta(oferta) {
       const destino = `${FS.cacheDirectory}oferta-${String(oferta.id).replace(/[^\w-]/g, '')}.jpg`;
       url = (await FS.downloadAsync(oferta.imagen, destino)).uri;
     }
-    await Share.share(url ? { url, message: mensaje } : { message: mensaje, url: enlace });
+    await sinBloquear(() => Share.share(url ? { url, message: mensaje } : { message: mensaje, url: enlace }));
   } catch { /* cancelado o sin red */ }
   ocupado = false;
 }

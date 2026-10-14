@@ -22,7 +22,8 @@ import { Stack, useFocusEffect } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import * as FS from 'expo-file-system/legacy';
 import * as Haptics from 'expo-haptics';
-import { Cargando, Chip, Pantalla, RADIO, Tarjeta, Texto, Vacio } from '../componentes/ui';
+import { Cargando, Pantalla, RADIO, Tarjeta, Texto, Vacio } from '../componentes/ui';
+import GrupoDeBotones from '../componentes/GrupoDeBotones';
 import Segmentos from '../componentes/Segmentos';
 import { colorSistema } from '../componentes/sistema';
 import Icono from '../componentes/Icono';
@@ -34,6 +35,7 @@ import { dolares, fecha } from '../lib/formato';
 import { armarZip, base64ABytes, bytesABase64 } from '../lib/zip';
 import { htmlVisorPdf, ORIGEN_PDFJS } from '../lib/visorPdf';
 import { suave, useTema } from '../tema/tema';
+import { sinBloquear } from '../lib/bloqueo';
 
 const TIPO = {
   consumidor_final: { texto: 'Consumidor final', sf: 'doc.text.fill', archivo: 'Factura' },
@@ -74,7 +76,7 @@ const rotulo = (f) => `${tipoDe(f).texto}${f.numero ? ` N.º ${f.numero}` : ''}`
 // persona elige (Storage Access Framework, ya incluido en expo-file-system).
 async function guardarEnAndroid(uri, nombre, ext) {
   const SAF = FS.StorageAccessFramework;
-  const permiso = await SAF.requestDirectoryPermissionsAsync();
+  const permiso = await sinBloquear(() => SAF.requestDirectoryPermissionsAsync());
   if (!permiso.granted) return false;
   const b64 = await FS.readAsStringAsync(uri, { encoding: FS.EncodingType.Base64 });
   const destino = await SAF.createFileAsync(permiso.directoryUri, nombre, MIME[ext]);
@@ -85,7 +87,7 @@ async function guardarEnAndroid(uri, nombre, ext) {
 }
 async function entregar(uri, nombre, ext) {
   if (enAndroid) return guardarEnAndroid(uri, nombre, ext);
-  await Share.share({ url: uri, title: nombre });
+  await sinBloquear(() => Share.share({ url: uri, title: nombre }));
   return true;
 }
 
@@ -316,9 +318,8 @@ export default function Facturas() {
         <View style={{ marginHorizontal: -16 }}>
           <Segmentos opciones={PERIODOS} valor={periodo} alCambiar={(p) => { setPeriodo(p); if (seleccion) setSeleccion(new Set()); }} />
         </View>
-        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-          {ESTADOS.map(([k, texto]) => <Chip key={k} texto={texto} activo={filtro === k} alTocar={() => setFiltro(k)} />)}
-        </View>
+        {/* Android: botones conectados de Material 3 Expressive (2026-10-14). */}
+        <GrupoDeBotones opciones={ESTADOS} valor={filtro} alCambiar={setFiltro} />
         {seleccion ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 }}>
             <Texto nivel={2} estilo={{ fontSize: 14 }}>

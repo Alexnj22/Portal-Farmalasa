@@ -11,7 +11,7 @@ import { llamar } from '../lib/api';
 import { plataforma, useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
 import { documentoEscrito } from '../lib/formato';
-import { useBloqueo } from '../lib/bloqueo';
+import { conBiometria, useBloqueo } from '../lib/bloqueo';
 import { datosConBiometria, entradaDisponible, guardarEntrada, olvidarEntrada } from '../lib/entradaGuardada';
 
 // El alfabeto del código no tiene letras ni números que se confundan
@@ -83,7 +83,7 @@ export default function Entrar() {
       />
       {motivo === 'vencida' ? <Aviso tipo="aviso">Tu sesión terminó. Vuelve a entrar para ver tus puntos.</Aviso> : null}
       {rapida ? (
-        <BotonSistema etiqueta={enviando ? 'Entrando…' : `Entrar con ${rapida.biometria}`} alTocar={entrarRapido}
+        <BotonSistema etiqueta={enviando ? 'Entrando…' : `Entrar ${conBiometria(rapida.biometria)}`} alTocar={entrarRapido}
           deshabilitado={enviando} color={t.color.magenta} />
       ) : null}
       {modo === 'dui' ? (

@@ -266,7 +266,7 @@ export default function Notificaciones() {
         {barra}
         <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
           <SinAvisos icono="bell.badge.fill" respaldo="🔔" titulo={d.avisos?.length ? 'Todo limpio' : 'Estás al día'}>
-            Aquí verás tus puntos ganados, cupones, ofertas y recordatorios apenas te lleguen.
+            Aquí verás tus puntos acumulados, cupones, ofertas y recordatorios apenas te lleguen.
           </SinAvisos>
         </Pantalla>
         {avisoDeshacer}

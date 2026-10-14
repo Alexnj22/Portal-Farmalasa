@@ -9,6 +9,24 @@ export function fecha(v) {
   return `${Number(m[3])} ${MESES[Number(m[2]) - 1]} ${m[1]}`;
 }
 
+const MESES_LARGOS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+/** '2026-10-31' → «31 de octubre» (con el año sólo si no es el de hoy). (2026-10-14) */
+export function fechaLarga(v) {
+  const m = String(v ?? '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return v ? String(v) : '';
+  const anio = new Date(Date.now() - 6 * 3600_000).getUTCFullYear();
+  return `${Number(m[3])} de ${MESES_LARGOS[Number(m[2]) - 1]}${Number(m[1]) !== anio ? ` de ${m[1]}` : ''}`;
+}
+
+/** El último día del mes de una fecha 'YYYY-MM-DD' (así vence el cupón del mes). */
+export function finDeMes(v) {
+  const m = String(v ?? '').match(/^(\d{4})-(\d{2})/);
+  if (!m) return null;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]), 0));
+  return d.toISOString().slice(0, 10);
+}
+
 export const dolares = (n) => `$${Number(n ?? 0).toFixed(2)}`;
 export const entero = (n) => Math.round(Number(n ?? 0)).toLocaleString('en-US');
 

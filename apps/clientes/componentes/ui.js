@@ -3,7 +3,8 @@
 // texto en los colores del sistema (`label`; los secundarios, sólidos — ver sistema.js), el botón del
 // sistema, y los colores del logo SÓLO para lo que es de la marca: lo que se
 // gana (verde) y lo que se usa (magenta).
-import { ActivityIndicator, Platform, ScrollView, Text, View, RefreshControl } from 'react-native';
+import { Platform, ScrollView, Text, View, RefreshControl } from 'react-native';
+import IndicadorCarga from './IndicadorCarga';
 import Presionable from './Presionable';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -107,8 +108,11 @@ export function Aviso({ children, tipo = 'error' }) {
   return <Text style={{ color, fontSize: 15, textAlign: 'center', marginHorizontal: 8 }}>{children}</Text>;
 }
 
+// La carga de una pantalla entera (2026-10-14): en Android el indicador de
+// Material 3 Expressive —una forma que gira y se transforma—; en iPhone, la
+// ruedita del sistema (componentes/IndicadorCarga).
 export function Cargando() {
-  return <View style={{ padding: 60, alignItems: 'center' }}><ActivityIndicator /></View>;
+  return <View style={{ padding: 60, alignItems: 'center' }}><IndicadorCarga tam="grande" /></View>;
 }
 
 // La pantalla sin nada que mostrar (rehecha 2026-10-12, «solo veo 2 textos,

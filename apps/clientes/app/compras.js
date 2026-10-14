@@ -55,7 +55,7 @@ export default function Compras() {
       {/* Resumen de lo que se ve abajo. */}
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <Resumen etiqueta={`En ${datos.compras.length} compras`} valor={dolares(total)} />
-        <Resumen etiqueta="Puntos ganados" valor={`+${entero(puntos)}`} color={t.color.verdeTexto} />
+        <Resumen etiqueta="Puntos acumulados" valor={`+${entero(puntos)}`} color={t.color.verdeTexto} />
       </View>
       {datos.compras.map((c) => (
         <Tocable key={c.id} etiqueta={`Compra en ${c.sala}, ${c.total} dólares`} alTocar={() => setAbierta(abierta === c.id ? null : c.id)}>

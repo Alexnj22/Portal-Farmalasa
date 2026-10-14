@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1285.0 — App de clientes: Material 3 Expressive, Liquid Glass, Platino, menos calor y funciones pedidas
+
+**Visual y rendimiento:** burbuja del chat en Liquid Glass (iOS 26) / FAB expresivo (Android), sin rebote, con sin leer o punto en línea/cerrado (`resumen.chat`); Material 3 Expressive en Android (resorte al tocar y al entrar, indicador de carga que se transforma, títulos más grandes, `GrupoDeBotones` en Facturas/Reservas, volver predictivo); **Platino** nuevo (grafito cepillado, roseta holográfica, bisel, rótulo en lámina, paralaje por capas, ráfaga al mantener presionado); **momentos con sensación** por nivel al ganar puntos y subir de nivel. **Calor:** el material de la tarjeta iba a 120 fps en iPhone → 30 y reposo a los 20 s; giroscopio 60 → 30 Hz (4 en reposo, ignora el temblor); la aurora pasa de tres animaciones infinitas con desenfoque a un reloj de 15 fps con reposo.
+
+**Funciones:** «Acumulados»/«Canjeados»; los puntos del cupón dicen que vencen a fin de mes (fecha exacta) y salen como «Cupón del mes»; «Ahorro con tu tarjeta de Puntos Salud»; compartir reserva/pedido como **imagen** con QR, datos y políticas («¿No lo vas a retirar tú?»); biometría real (Face ID/Touch ID/huella/reconocimiento facial o «biometría»); Reglamento y Aviso de privacidad en Android sin WebView (`DocumentoLegal`) — se cerraba la app; foto de perfil con recorte circular y rotación (JPEG 800 px); **bloqueo en Android** al ir a segundo plano y tapa en Recientes (`sinBloquear()` para cámara, pagos, compartir…); tomas 1/2/3/4/6 al día o cada 4/6/8/12 h con horas recomendadas, ajuste y aviso; Cuenta ordenada sin lo repetido de Inicio; borrar cuenta explica los puntos y ofrece retirar el permiso.
+
+**Servidor:** `resumen` trae `chat: {sin_leer, abierta}`; movimientos del cupón como tipo propio; el **PDF de la factura** se guarda al primer pedido, se precargan las 3 más recientes al abrir Mis facturas y se firma una sola vez (de 39,152 facturas de 60 días sólo 20 tenían el PDF guardado; el emisor tarda 1.4–5.6 s, guardado < 0.5 s).
+
+Paquetes nuevos: `react-native-view-shot`, `expo-sharing` (compilación nativa).
 ## v2.1284.0 — Expediente: documentos con estado, vencimiento y autor; DUI de una vez desde el teléfono
 
 Pedido del usuario sobre la pestaña Documentos del alta de empleado

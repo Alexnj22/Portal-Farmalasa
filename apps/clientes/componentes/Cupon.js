@@ -4,6 +4,7 @@
 //   · Vigente: el cupón con un brillo que pasa cada pocos segundos.
 //   · Usado: en gris, con el sello «USADO» (o lo que queda, si se usó una parte).
 // Se usa en caja como cualquier saldo, mostrando la tarjeta.
+import { useDespierta } from './reposo';
 import { ANDROID, LIVIANO } from '../lib/rendimiento';
 import { useSesion } from '../lib/sesion';
 import { useEffect, useRef, useState } from 'react';
@@ -18,7 +19,7 @@ import Icono from './Icono';
 import { COLORES_NIVEL } from './TarjetaSocio';
 import Mineral, { MATERIALES } from './minerales/Mineral';
 import { Confeti } from './animacion';
-import { dolares, fecha } from '../lib/formato';
+import { dolares, fechaLarga } from '../lib/formato';
 
 // La línea punteada entre las muescas: por ahí se «corta» al usarlo.
 const CORTE = 86;
@@ -43,16 +44,19 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
   const estiloSalto = useAnimatedStyle(() => ({ transform: [{ scale: salto.value }] }));
   // El cupón lleva el MATERIAL del nivel o del rango (2026-10-08), vivo: sin
   // giroscopio, una luz que va y viene sola sobre las facetas o el metal.
+  // Reposo (componentes/reposo.js, 2026-10-14): a los 20 s sin tocar, la luz
+  // y el brillo se quedan quietos; tocar la pantalla los despierta.
+  const enUso = useDespierta(activa);
   const luzX = useSharedValue(-0.6);
   const luzY = useSharedValue(0.3);
   // Se PARA al dejar de verse (2026-10-13): antes el `return` sólo dejaba de
   // arrancarla, y la luz seguía yendo y viniendo —y redibujando el material—
   // con el cupón en otra pestaña. En un Android liviano queda quieta.
   useEffect(() => {
-    if (!activa || (ANDROID && LIVIANO)) { cancelAnimation(luzX); cancelAnimation(luzY); return; }
+    if (!enUso || (ANDROID && LIVIANO)) { cancelAnimation(luzX); cancelAnimation(luzY); return; }
     luzX.value = withRepeat(withTiming(0.6, { duration: 4200, easing: Easing.inOut(Easing.sin) }), -1, true);
     luzY.value = withRepeat(withTiming(-0.3, { duration: 5600, easing: Easing.inOut(Easing.sin) }), -1, true);
-  }, [activa]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [enUso]); // eslint-disable-line react-hooks/exhaustive-deps
   const estiloDestello = useAnimatedStyle(() => ({ opacity: destello.value }));
   useEffect(() => {
     if (!demo) return;
@@ -142,7 +146,7 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
           style={{ padding: 18, flexDirection: 'row', alignItems: 'center', gap: 16, minHeight: 104 }}>
           {!usado && MATERIALES.includes(nivel) ? (
             <>
-              <Mineral material={nivel} x={luzX} y={luzY} activa={activa && !LIVIANO} />
+              <Mineral material={nivel} x={luzX} y={luzY} activa={enUso && !LIVIANO} />
               <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.22)' }]} />
             </>
           ) : null}
@@ -158,19 +162,35 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
             </Animated.View>
             <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13 }}>
               {usado ? 'Ya lo usaste. ¡El próximo mes llega otro!'
-                : cupon.descuento ? `En una compra, hasta ${dolares(cupon.tope)} · hasta el ${fecha(cupon.vence)}`
-                : parcial ? `Te quedan ${dolares(cupon.restantes / 100)} de ${dolares(cupon.puntos / 100)} · hasta el ${fecha(cupon.vence)}`
+                : cupon.descuento ? `En una compra, hasta ${dolares(cupon.tope)}`
+                : parcial ? `Te quedan ${dolares(cupon.restantes / 100)} de ${dolares(cupon.puntos / 100)}`
                   // Aclaración (2026-10-09): el premio YA está sumado al saldo;
                   // raspar sólo lo descubre. No hay nada que «reclamar».
-                  : `Ya está en tu saldo. Úsalo en caja con tu tarjeta hasta el ${fecha(cupon.vence)}`}
+                  : 'Ya está en tu saldo. Úsalo en caja con tu tarjeta.'}
             </Text>
+            {/* Vence con el mes (2026-10-14, pedido del usuario): los puntos del
+                cupón NO duran como los de las compras — `puntos_dar_cupones`
+                les pone vence_el = fin de mes. Se dice con la fecha exacta y
+                sólo después de raspar (antes, el premio sigue escondido). */}
+            {!usado && raspado && cupon.vence ? (
+              <View style={{ alignSelf: 'flex-start', marginTop: 4, flexDirection: 'row', alignItems: 'center', gap: 6,
+                backgroundColor: 'rgba(0,0,0,0.28)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
+                <Icono sf="clock.fill" respaldo="⏰" tam={12} color="#FFFFFF" />
+                <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '800' }}>
+                  Vence el {fechaLarga(cupon.vence)} — úsalo este mes
+                </Text>
+              </View>
+            ) : null}
+            {!usado && raspado && !cupon.descuento ? (
+              <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12 }}>Si no lo canjeas antes, se pierde.</Text>
+            ) : null}
             {/* El orden del canje (2026-10-13), el de la base
                 (`puntos_canje_gasta_primero_el_cupon`): antes nadie lo decía. */}
             {!usado && !cupon.descuento ? (
               <Text style={{ color: 'rgba(255,255,255,0.78)', fontSize: 12 }}>Al canjear, primero se usa el cupón y después tus puntos.</Text>
             ) : null}
           </View>
-          {!usado && raspado ? <Brillo activa={activa && !LIVIANO} /> : null}
+          {!usado && raspado ? <Brillo activa={enUso && !LIVIANO} /> : null}
           <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: '#FFFFFF' }, estiloDestello]} />
         </LinearGradient>
   );

@@ -14,6 +14,7 @@ import { Alert, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as FS from 'expo-file-system/legacy';
+import { sinBloquear } from './bloqueo';
 
 const LADO_MAYOR = 1600;
 
@@ -34,6 +35,12 @@ export function preguntarOrigen(titulo = 'Agregar foto', mensaje) {
  */
 export async function elegirFoto(origen) {
   if (Platform.OS === 'web') return { error: 'Las fotos se suben desde el teléfono.' };
+  // La cámara, la galería y sus permisos sacan a la app del primer plano: con
+  // el bloqueo encendido, eso no es «irse» (lib/bloqueo, 2026-10-14).
+  return sinBloquear(() => elegirFotoSinBloqueo(origen));
+}
+
+async function elegirFotoSinBloqueo(origen) {
   try {
     if (origen === 'camara') {
       const p = await ImagePicker.requestCameraPermissionsAsync();

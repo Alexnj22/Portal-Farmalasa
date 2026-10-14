@@ -9,7 +9,7 @@ import * as SecureStore from 'expo-secure-store';
 import * as Haptics from 'expo-haptics';
 import { Aviso, Cargando, Pantalla, RADIO, Tarjeta, Texto, Titulo, Vacio } from '../../../componentes/ui';
 import { useCuenta } from '../../../lib/cuenta';
-import { dolares, entero, fecha, nombrePropio } from '../../../lib/formato';
+import { diasHasta, dolares, entero, fecha, fechaLarga, finDeMes, nombrePropio } from '../../../lib/formato';
 import TarjetaSocio from '../../../componentes/TarjetaSocio';
 import Nivel from '../../../componentes/Nivel';
 import Mayorista, { BeneficiosEquipo, Equipo, rangoDePrueba, rangoReal } from '../../../componentes/Mayorista';
@@ -29,6 +29,7 @@ import { BotonWalletNativo, abrirPase, agregarAGoogleWallet, agregarDirecto, agr
 import { suave, useTema } from '../../../tema/tema';
 import { colorSistema } from '../../../componentes/sistema';
 import { navegar } from '../../../lib/navegar';
+import { sinBloquear } from '../../../lib/bloqueo';
 
 const MINIMO_DE_CANJE = 100;
 let confetiMostrado = false;
@@ -37,6 +38,8 @@ const marcarConfeti = () => { confetiMostrado = true; };
 const ROTULOS = {
   compra: 'Compra', canje: 'Canje', vencimiento: 'Vencieron', anulacion: 'Compra anulada', ajuste: 'Ajuste',
   cumpleanos: 'Regalo de cumpleaños', canje_devuelto: 'Canje devuelto', referido: 'Por invitar a un amigo',
+  // El cupón del mes (2026-10-14): el servidor lo distingue de una compra porque vence a fin de mes.
+  cupon: 'Cupón del mes',
 };
 
 export default function Puntos() {
@@ -293,17 +296,31 @@ export default function Puntos() {
       <Entrada indice={3} estilo={{ flexDirection: 'row', gap: 12 }}>
         <View style={{ flex: 1 }}>
           <Tarjeta>
-            <Texto nivel={3}>Ganados</Texto>
+            <Texto nivel={3}>Acumulados</Texto>
             <NumeroAnimado valor={resumen.acumulados} formato="entero" estilo={{ fontSize: 24, fontWeight: '700', color: t.color.verdeTexto }} />
           </Tarjeta>
         </View>
         <View style={{ flex: 1 }}>
           <Tarjeta>
-            <Texto nivel={3}>Usados</Texto>
+            <Texto nivel={3}>Canjeados</Texto>
             <NumeroAnimado valor={resumen.canjeados} formato="entero" estilo={{ fontSize: 24, fontWeight: '700', color: t.color.magentaTexto }} />
           </Tarjeta>
         </View>
       </Entrada>
+
+      {/* Lo que queda del cupón del mes vence con el mes (2026-10-14): se dice
+          junto al resumen, con la fecha exacta. Sólo ya raspado. */}
+      {resumen.cupon?.raspado && !resumen.cupon.descuento && Number(resumen.cupon.restantes) > 0 && (diasHasta(resumen.cupon.vence) ?? -1) >= 0 ? (
+        <Entrada indice={3}>
+          <Tarjeta estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <Icono sf="clock.badge.exclamationmark.fill" respaldo="⏰" tam={22} color={colorSistema.naranja} />
+            <Text style={{ flex: 1, fontSize: 14, lineHeight: 19, color: colorSistema.texto }}>
+              <Text style={{ fontWeight: '800' }}>{entero(resumen.cupon.restantes)} puntos son del cupón del mes. </Text>
+              {`Vencen el ${fechaLarga(resumen.cupon.vence)} — úsalos este mes: si no los canjeas, se pierden.`}
+            </Text>
+          </Tarjeta>
+        </Entrada>
+      ) : null}
 
       {/* Invitar: 50 puntos para cada uno (ver app/invitar.js). */}
       <Entrada indice={4}>
@@ -361,6 +378,7 @@ export default function Puntos() {
                 <View style={{ flex: 1 }}>
                   <Texto>{ROTULOS[m.tipo] ?? 'Movimiento'}</Texto>
                   <Texto nivel={3}>{fecha(m.fecha)}{m.sala ? ` · ${m.sala}` : ''}</Texto>
+                  {m.tipo === 'cupon' ? <VenceCupon fecha={m.fecha} /> : null}
                 </View>
                 <Text style={{ fontSize: 17, fontWeight: '700', color: gana ? t.color.verdeTexto : t.color.magentaTexto, fontVariant: ['tabular-nums'] }}>
                   {gana ? '+' : '−'}{entero(Math.abs(m.puntos))}
@@ -448,7 +466,7 @@ function BotonGoogleWallet({ nivelPrueba }) {
   const tocar = async () => {
     if (cargando) return;
     setCargando(true);
-    if (!(await agregarAGoogleWallet(pedir, nivelPrueba))) {
+    if (!(await sinBloquear(() => agregarAGoogleWallet(pedir, nivelPrueba)))) {
       Alert.alert('No se pudo preparar la tarjeta', 'Revisa tu conexión e intenta de nuevo.');
     }
     setCargando(false);
@@ -504,8 +522,21 @@ function Campana({ generacion }) {
   );
 }
 
+// Los puntos de un cupón vencen el último día de SU mes (2026-10-14).
+function VenceCupon({ fecha: f }) {
+  const t = useTema();
+  const vence = finDeMes(f);
+  const dias = diasHasta(vence);
+  if (vence == null || dias == null) return null;
+  return (
+    <Text style={{ fontSize: 13, fontWeight: dias >= 0 ? '700' : '400', color: dias >= 0 ? t.color.magentaTexto : colorSistema.texto3 }}>
+      {dias >= 0 ? `Vencen el ${fechaLarga(vence)} — úsalos este mes` : `Vencieron el ${fechaLarga(vence)}`}
+    </Text>
+  );
+}
+
 // Un acceso del Inicio: ícono, nombre y una línea de cómo va.
-const diasHasta = (f) => Math.round((Date.parse(`${f}T12:00:00Z`) - Date.parse(`${new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10)}T12:00:00Z`)) / 86400_000);
+// `diasHasta` (días desde hoy en El Salvador) viene de lib/formato.
 
 function TratamientosInicio({ lista }) {
   const t = useTema();

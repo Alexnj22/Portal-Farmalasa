@@ -47,6 +47,12 @@ const ES_CODIGO = /^[ACDEFGHJKMNPQRTUVWXY34679]{7}$/;
 const DIAS_SESION = 180;
 const POR_PAGINA_INICIAL = 10;
 const POR_PAGINA = 20;
+// El cupón del mes (2026-10-14): `puntos_estado_cuenta` lo trae como «compra»
+// (su CASE no conoce el origen 'cupon'), pero sus puntos vencen a fin de mes y
+// la app tiene que decirlo. Se reconoce por el motivo que escribe
+// `puntos_dar_cupones` («Cupón <nivel> del mes»).
+// deno-lint-ignore no-explicit-any
+const tipoDeMovimiento = (m: any) => (m.tipo === "compra" && /^Cup[oó]n .* del mes$/.test(String(m.motivo ?? "")) ? "cupon" : m.tipo);
 
 // Las condiciones de la reserva, tal como las lee el cliente. Cambiar el texto
 // exige cambiar la `version`: la app vuelve a pedir que las acepte y cada
@@ -1698,6 +1704,19 @@ Deno.serve(async (req) => {
     // el 2026-10-09: sólo hay COF y CCF). El amarre se deja escrito para el día
     // que lleguen: una nota trae `relacionada` = id de la factura que corrige;
     // sin eso sale suelta. Las muestras (cuenta de prueba) ya lo usan.
+    // Documentos de factura (ver `documentoGuardado`, más abajo): la firma
+    // dura un día, lo que este proceso ya está bajando no se pide dos veces, y
+    // lo que no hace esperar al cliente sigue después de contestar. Declarados
+    // ANTES de `mis_facturas`, que precarga (un `const` leído antes de su
+    // línea lanza).
+    const FIRMA_DOC = 24 * 3600;
+    // deno-lint-ignore no-explicit-any
+    const enCurso: Map<string, Promise<any>> = ((globalThis as any).__appClientesDocsEnCurso ??= new Map());
+    // Lo que no hace esperar al cliente: sigue después de contestar.
+    const enSegundoPlano = (p: Promise<unknown>) => {
+      const q = p.catch((e) => console.error("app-clientes: precarga de documento:", (e as Error)?.message ?? e));
+      try { (globalThis as any).EdgeRuntime?.waitUntil(q); } catch { /* sin waitUntil se termina igual */ }
+    };
     if (accion === "mis_facturas") {
       const todo = body?.periodo === "todo";
       const [a0, m0] = hoySV().split("-").map(Number);
@@ -1752,7 +1771,7 @@ Deno.serve(async (req) => {
       const rutas = [...new Set(base)].flatMap((r) => [`${r}.pdf`, `${r}.json`]);
       const firmadas = new Map<string, string>();
       if (rutas.length) {
-        const { data: fs, error: eF } = await admin.storage.from("sales-dte").createSignedUrls(rutas, 3600);
+        const { data: fs, error: eF } = await admin.storage.from("sales-dte").createSignedUrls(rutas, FIRMA_DOC);
         if (eF) console.error("mis_facturas: no se firmaron:", eF.message);
         for (const f of fs ?? []) if (f.path && f.signedUrl && !f.error) firmadas.set(f.path, f.signedUrl);
       }
@@ -1785,6 +1804,23 @@ Deno.serve(async (req) => {
           };
         }),
       ];
+      // Precarga (2026-10-14): las más recientes de la primera página cuyo PDF
+      // todavía no está guardado se bajan del emisor DESPUÉS de contestar, así
+      // el «Ver PDF» de lo que el cliente casi siempre abre (lo último) ya sale
+      // del almacenamiento. Acotada: 3 por llamada, de los últimos 60 días, y
+      // de a una para no cargarle al emisor una ráfaga.
+      if (!antes) {
+        const limite = new Date(Date.now() - 60 * 86400_000).toISOString().slice(0, 10);
+        const faltan = filas.filter((f: any) => String(f.fecha) >= limite && !firmadas.has(`${ruta(f)}.pdf`)).slice(0, 3);
+        if (faltan.length) {
+          enSegundoPlano((async () => {
+            for (const f of faltan) {
+              await documentoGuardado(f, "pdf");
+              await documentoGuardado(f, "json");
+            }
+          })());
+        }
+      }
       // Cada nota de crédito, debajo de su factura (si la factura está en la lista).
       const porClave = new Map(docs.filter((d) => d.tipo !== "nota_credito").map((d) => [d.clave, d]));
       // deno-lint-ignore no-explicit-any
@@ -1803,36 +1839,58 @@ Deno.serve(async (req) => {
 
     // El documento (PDF o JSON) de una factura del cliente, guardado en
     // `sales-dte`: si todavía no estaba, se baja del emisor y se guarda (igual
-    // que `sync-sales-dte`). Devuelve la ruta, o el mensaje para el cliente.
-    // La usan `factura_documento` y `facturas_enviar`.
+    // que `sync-sales-dte`). Devuelve la ruta (y, si se pidió, la dirección ya
+    // firmada), o el mensaje para el cliente. La usan `factura_documento`,
+    // `facturas_enviar` y la precarga de `mis_facturas`.
+    //
+    // Por qué tardaba (medido el 2026-10-14): de 39,152 facturas con ficha de
+    // los últimos 60 días, sólo 20 tenían el PDF guardado — o sea que CASI CADA
+    // apertura le pedía el PDF al emisor (1.4 s a 5.6 s medidos, 10 s en el
+    // registro) y después firmaba DOS veces. Ahora: la firma de la consulta es
+    // la que se devuelve (una ida menos), lo que ya se está bajando en este
+    // proceso no se pide dos veces, y `mis_facturas` deja guardadas de
+    // antemano las más recientes que falten.
     // deno-lint-ignore no-explicit-any
-    async function documentoGuardado(f: any, formato: "pdf" | "json"): Promise<{ ruta: string } | { mensaje: string }> {
+    async function documentoGuardado(f: any, formato: "pdf" | "json", firmar = false): Promise<{ ruta: string; url?: string } | { mensaje: string }> {
       if (!f?.codigo_generacion) return { mensaje: "Esta factura no tiene documento electrónico." };
       const cg = String(f.codigo_generacion).toUpperCase();
       const [a, m] = String(f.fecha).split("-");
       const ruta = `${a}/${m}/${cg}.${formato}`;
       // Firmar es la consulta por llave: si el objeto no existe, no hay firma
       // (y el error es «not found», el esperado: se baja del emisor).
-      const { data: ya, error: eYa } = await admin.storage.from("sales-dte").createSignedUrl(ruta, 60);
-      if (ya?.signedUrl) return { ruta };
+      const { data: ya, error: eYa } = await admin.storage.from("sales-dte").createSignedUrl(ruta, FIRMA_DOC);
+      if (ya?.signedUrl) return { ruta, url: ya.signedUrl };
       if (eYa && !/not.?found/i.test(eYa.message)) console.error("documento: no se pudo consultar el guardado:", eYa.message);
-      const origen = `https://clientesdte3.oss.com.sv/farma_salud/downloads/dteqr_${formato}.php?codigoGeneracion=${cg}`;
-      let buf: Uint8Array | null = null;
-      try {
-        const res = await fetch(origen, { signal: AbortSignal.timeout(30_000) });
-        if (res.ok) buf = new Uint8Array(await res.arrayBuffer());
-      } catch (e) { console.error("documento:", (e as Error)?.message); }
-      const valido = buf && buf.byteLength > 4 && (formato === "pdf"
-        ? buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46
-        : (() => { try { return Boolean(JSON.parse(new TextDecoder().decode(buf!))?.identificacion?.numeroControl); } catch { return false; } })());
-      if (!valido) return { mensaje: "El documento todavía no está disponible. Intenta más tarde o pídelo en la sucursal." };
-      const { error: eU } = await admin.storage.from("sales-dte").upload(ruta, buf!, { contentType: formato === "pdf" ? "application/pdf" : "application/json", upsert: true });
-      if (eU) throw eU;
-      return { ruta };
+      let trabajo = enCurso.get(ruta);
+      if (!trabajo) {
+        trabajo = (async (): Promise<{ ruta: string } | { mensaje: string }> => {
+          const origen = `https://clientesdte3.oss.com.sv/farma_salud/downloads/dteqr_${formato}.php?codigoGeneracion=${cg}`;
+          let buf: Uint8Array | null = null;
+          try {
+            const res = await fetch(origen, { signal: AbortSignal.timeout(30_000) });
+            if (res.ok) buf = new Uint8Array(await res.arrayBuffer());
+          } catch (e) { console.error("documento:", (e as Error)?.message); }
+          const valido = buf && buf.byteLength > 4 && (formato === "pdf"
+            ? buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46
+            : (() => { try { return Boolean(JSON.parse(new TextDecoder().decode(buf!))?.identificacion?.numeroControl); } catch { return false; } })());
+          if (!valido) return { mensaje: "El documento todavía no está disponible. Intenta más tarde o pídelo en la sucursal." };
+          const { error: eU } = await admin.storage.from("sales-dte").upload(ruta, buf!, { contentType: formato === "pdf" ? "application/pdf" : "application/json", upsert: true });
+          if (eU) throw eU;
+          return { ruta };
+        })().finally(() => enCurso.delete(ruta));
+        enCurso.set(ruta, trabajo);
+      }
+      const hecho = await trabajo;
+      if ("mensaje" in hecho || !firmar) return hecho;
+      const { data: s, error: eS } = await admin.storage.from("sales-dte").createSignedUrl(ruta, FIRMA_DOC);
+      if (eS) console.error("documento: no se firmó:", eS.message);
+      return { ruta, url: s?.signedUrl };
     }
 
-    // El PDF o el JSON de una factura que todavía no estaba guardada: se baja,
-    // se guarda (igual que `sync-sales-dte`) y se firma. Sólo del cliente. Una
+    // El PDF o el JSON de una factura: si ya está guardado, sale la firma de
+    // la consulta (una sola ida al almacenamiento); si no, se baja, se guarda
+    // (igual que `sync-sales-dte`) y se firma. Al bajar el PDF, el JSON de la
+    // misma factura se guarda detrás, sin hacer esperar. Sólo del cliente. Una
     // muestra (`muestra-N`) usa el documento de la factura real que presta.
     if (accion === "factura_documento") {
       const formato = body?.formato === "json" ? "json" : "pdf";
@@ -1845,11 +1903,10 @@ Deno.serve(async (req) => {
       const { data: f, error } = await admin.from("sales_invoices").select("id, fecha, codigo_generacion")
         .eq("id", idFactura).eq("customer_id", customerId).maybeSingle();
       if (error) throw error;
-      const doc = await documentoGuardado(f, formato);
+      const doc = await documentoGuardado(f, formato, true);
       if ("mensaje" in doc) return json({ ok: false, mensaje: doc.mensaje });
-      const { data: s, error: eS } = await admin.storage.from("sales-dte").createSignedUrl(doc.ruta, 3600);
-      if (eS) console.error("factura_documento: no se firmó:", eS.message);
-      return json(s?.signedUrl ? { ok: true, url: s.signedUrl } : { ok: false, mensaje: "No se pudo preparar el documento." });
+      if (formato === "pdf" && f) enSegundoPlano(documentoGuardado(f, "json"));
+      return json(doc.url ? { ok: true, url: doc.url } : { ok: false, mensaje: "No se pudo preparar el documento." });
     }
 
     // ── Facturas por correo (2026-10-09) ─────────────────────────────────
@@ -2464,6 +2521,10 @@ Deno.serve(async (req) => {
       const { data: conv, error: eCv } = await admin.from("app_chat_conversaciones").select("sin_leer_cliente")
         .eq("customer_id", customerId).maybeSingle();
       if (eCv) console.error("no se pudo leer el chat:", eCv.message);
+      // La burbuja del chat (2026-10-14) dice si la farmacia está en línea:
+      // el mismo `horarioFarmacia` del chat, con su minuto de caché por
+      // instancia (no agrega una consulta por resumen).
+      const horChat = await horarioFarmacia(admin);
 
       return json({
         ok: true,
@@ -2471,6 +2532,7 @@ Deno.serve(async (req) => {
         nombre: c.name,
         cumpleanos,
         chat_sin_leer: Number(conv?.sin_leer_cliente ?? 0),
+        chat: { sin_leer: Number(conv?.sin_leer_cliente ?? 0), abierta: !!horChat.abierta },
         reservas_abiertas: (resAb ?? []).length,
         reservas_listas: (resAb ?? []).filter((r: any) => r.estado === "lista").length,
         reservas_productos: (resAb ?? []).map((r: any) => ({
@@ -2536,7 +2598,7 @@ Deno.serve(async (req) => {
         // Un cliente de años tiene cientos y la app no debe bajar ni pintar
         // una lista infinita.
         movimientos: (est?.movimientos ?? []).slice(0, POR_PAGINA_INICIAL).map((m: any) => ({
-          tipo: m.tipo, fecha: m.fecha, puntos: Number(m.puntos),
+          tipo: tipoDeMovimiento(m), fecha: m.fecha, puntos: Number(m.puntos),
           sala: porCodigo.get(String(m.sucursal ?? "")) ?? null,
         })),
         movimientos_total: (est?.movimientos ?? []).length,
@@ -2571,7 +2633,7 @@ Deno.serve(async (req) => {
         ok: true,
         total: todos.length,
         movimientos: todos.slice(desde, desde + POR_PAGINA).map((m: any) => ({
-          tipo: m.tipo, fecha: m.fecha, puntos: Number(m.puntos),
+          tipo: tipoDeMovimiento(m), fecha: m.fecha, puntos: Number(m.puntos),
           sala: porCodigo.get(String(m.sucursal ?? "")) ?? null,
         })),
       });

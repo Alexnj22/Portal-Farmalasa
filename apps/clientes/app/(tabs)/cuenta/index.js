@@ -5,6 +5,14 @@
 // 2026-10-12: la foto de perfil (opcional; la ve el equipo en el chat; si el
 // equipo la quita, vuelve el avatar de siempre y se puede subir otra) y la
 // entrada a «Pregúntale a la farmacia», con el punto de mensajes sin leer.
+//
+// 2026-10-14, ordenada en grupos como Ajustes: Perfil, Seguridad,
+// Notificaciones, Ayuda y chat, Legal y privacidad, Modo de prueba (sólo la
+// cuenta de prueba) y, al final, Cerrar sesión / Borrar mi cuenta. Salió de
+// aquí lo que ya está en el Inicio (Invitar, Mis reservas, Mis tratamientos,
+// Nuestras sucursales y «Agregar a Google Wallet», que allá está siempre); se
+// queda lo que sólo vive aquí (Mis facturas, Cliente Mayorista, ver o volver a
+// agregar la tarjeta en Apple Wallet — el Inicio sólo ofrece agregarla).
 import { useCallback, useEffect, useState } from 'react';
 import * as Haptics from 'expo-haptics';
 import { ActionSheetIOS, Alert, Platform, Text, View } from 'react-native';
@@ -15,8 +23,8 @@ import { Aviso, ESPACIO_BURBUJA } from '../../../componentes/ui';
 import { useSesion } from '../../../lib/sesion';
 import { useCuenta } from '../../../lib/cuenta';
 import { pedirTokenDeAvisos, recordarAvisos } from '../../../lib/avisos';
-import { abrirPase, agregarAGoogleWallet, agregarDirecto, agregarPorSafari, googleWalletDisponible, tienePase, walletDisponible } from '../../../modules/wallet';
-import { nombreBiometria, useBloqueo } from '../../../lib/bloqueo';
+import { abrirPase, agregarDirecto, agregarPorSafari, tienePase, walletDisponible } from '../../../modules/wallet';
+import { conBiometria, nombreBiometria, rotuloBiometria, sinBloquear, useBloqueo } from '../../../lib/bloqueo';
 import { olvidarEntrada } from '../../../lib/entradaGuardada';
 import { NIVELES_PRUEBA, useModoPrueba } from '../../../lib/prueba';
 import Segmentos from '../../../componentes/Segmentos';
@@ -67,7 +75,7 @@ export default function Cuenta() {
     if (abrir && enWallet && abrirPase(serialW)) return;
     const enPrueba = !!resumen?.prueba && prueba.activo;
     // Directo a Wallet; por Safari si falla (2026-10-08).
-    const ok = await agregarDirecto(pedirW, enPrueba ? prueba.nivel : null);
+    const ok = await sinBloquear(() => agregarDirecto(pedirW, enPrueba ? prueba.nivel : null));
     if (ok) setEnWallet(tienePase(serialW));
     if (ok === null && !(await agregarPorSafari(pedirW, enPrueba ? prueba.nivel : null))) {
       Alert.alert('No se pudo preparar la tarjeta', 'Revisa tu conexión e intenta de nuevo.');
@@ -184,22 +192,28 @@ export default function Cuenta() {
     ]);
   }
 
-  // Una sola opción, con el texto claro. Salir del programa de puntos NO va
-  // acá: ya es el interruptor de Permisos, y ponerlo dos veces confundía
-  // (usuario, 2026-10-05: «¿por qué está borrar y borrar y salir de puntos?»).
+  // Qué pasa con los puntos, dicho como es (2026-10-14). `borrar_cuenta` cierra
+  // las sesiones, apaga los avisos y borra el pre-registro; la FICHA no se
+  // borra (es un registro fiscal) y con ella quedan los puntos. Con
+  // `retirar_permisos` además guarda programa = no y promociones = no
+  // (`puntos_guardar_consentimiento`): el Reglamento dice que entonces deja de
+  // acumular y su saldo queda retenido —no vence ni se canjea— hasta que vuelva.
   function borrar() {
     Alert.alert(
       '¿Borrar tu cuenta de la app?',
-      'Se cierra la sesión en todos tus teléfonos y dejas de recibir avisos. Tus puntos no se pierden: si vuelves a comprar con tu DUI sigues acumulando, y puedes volver a entrar cuando quieras.',
+      'Se cierra la sesión en todos tus teléfonos, dejas de recibir avisos y se borran los datos de tu registro en la app.\n\n'
+        + 'Tu ficha y tus puntos siguen en la farmacia: si compras con tu DUI sigues acumulando, y puedes volver a entrar cuando quieras.\n\n'
+        + 'Si además quieres dejar de acumular puntos, elige «Retirar mi permiso del programa»: tu saldo queda en pausa (no vence ni se puede canjear) y dejas de recibir promociones, hasta que vuelvas a aceptarlo.',
       [
         { text: 'Cancelar', style: 'cancel' },
-        { text: 'Borrar cuenta', style: 'destructive', onPress: () => confirmarBorrado() },
+        { text: 'Borrar cuenta', style: 'destructive', onPress: () => confirmarBorrado(false) },
+        { text: 'Borrar y retirar mi permiso del programa', style: 'destructive', onPress: () => confirmarBorrado(true) },
       ],
     );
   }
 
-  async function confirmarBorrado() {
-    const r = await pedir('borrar_cuenta');
+  async function confirmarBorrado(retirar) {
+    const r = await pedir('borrar_cuenta', { retirar_permisos: retirar === true });
     if (r?.ok) { await olvidarEntrada(); await cerrar(); }
     else Alert.alert('No se pudo borrar la cuenta', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
   }
@@ -239,70 +253,63 @@ export default function Cuenta() {
       ) : null}
       {mensaje ? <Aviso>{mensaje}</Aviso> : null}
 
-      {resumen && !resumen.pendiente ? (
-        <Grupo titulo="Permisos" pie="Si quitas el programa, tu saldo queda en pausa; no se pierde.">
-          <FilaInterruptor titulo="Programa de puntos" detalle={c?.textos?.programa}
-            valor={valorDe('programa', c?.programa !== false)} alCambiar={(v) => permiso('programa', v)} color={t.color.magenta} />
-          <FilaInterruptor titulo="Promociones" detalle={c?.textos?.promociones}
-            valor={valorDe('promociones', c?.promociones === true)} alCambiar={(v) => permiso('promociones', v)} color={t.color.magenta} />
+      {/* Perfil: lo que sólo vive aquí. */}
+      {conFicha ? (
+        <Grupo titulo="Perfil">
+          <FilaAccion sf="doc.text.fill" texto="Mis facturas" alTocar={() => navegar('/facturas')} />
+          <FilaMayorista m={resumen.mayorista} pedir={pedir} alCambiar={() => cargar({ forzar: true })} />
+          {resumen?.wallet_serial && walletDisponible() && enWallet ? (
+            <FilaAccion sf="wallet.pass.fill" texto="Ver mi tarjeta en Apple Wallet" alTocar={() => wallet()} />
+          ) : null}
+          {resumen?.wallet_serial && walletDisponible() && enWallet ? (
+            <FilaAccion sf="arrow.clockwise" texto="Volver a agregar la tarjeta a Wallet" alTocar={() => wallet({ abrir: false })} />
+          ) : null}
         </Grupo>
       ) : null}
 
+      {/* Seguridad: sólo si el teléfono tiene una biometría registrada, y con
+          su nombre real (Face ID, Touch ID, huella…; «biometría» si hay varias). */}
       {biometria ? (
-        <Grupo pie={`Pide ${biometria} al abrir la app y al volver después de un rato, para que nadie más vea tu saldo ni tu código.`}>
-          <FilaInterruptor titulo={`Bloquear con ${biometria}`} valor={bloqueoActivo}
+        <Grupo titulo="Seguridad" pie={Platform.OS === 'android'
+          ? `Pide ${rotuloBiometria(biometria)} al abrir la app y cada vez que vuelves a ella, para que nadie más vea tu saldo ni tu código.`
+          : `Pide ${rotuloBiometria(biometria)} al abrir la app y al volver después de un rato, para que nadie más vea tu saldo ni tu código.`}>
+          <FilaInterruptor titulo={`Bloquear ${conBiometria(biometria)}`} valor={bloqueoActivo}
             alCambiar={async (v) => {
               if (!v) { await apagarBloqueo(); return; }
-              if (!(await encenderBloqueo())) Alert.alert(`No se activó ${biometria}`, 'Para activarlo hay que confirmar con tu cara o tu huella.');
+              if (!(await encenderBloqueo())) Alert.alert('No se activó el bloqueo', `Para activarlo hay que confirmar ${conBiometria(biometria)}.`);
             }} color={t.color.magenta} />
         </Grupo>
       ) : null}
 
-      <Grupo pie="Ofertas nuevas y puntos por vencer.">
+      <Grupo titulo="Notificaciones" pie="Ofertas nuevas, puntos por vencer y tus reservas. Las promociones son las ofertas personalizadas que te mandamos.">
         <FilaInterruptor titulo="Avisos en este teléfono" valor={valorDe('avisos', resumen?.acepta_avisos === true)}
           alCambiar={avisos} color={t.color.magenta} />
+        {conFicha ? (
+          <FilaInterruptor titulo="Promociones" detalle={c?.textos?.promociones}
+            valor={valorDe('promociones', c?.promociones === true)} alCambiar={(v) => permiso('promociones', v)} color={t.color.magenta} />
+        ) : null}
       </Grupo>
 
-      {/* El chat con la farmacia (2026-10-12): arriba, con los sin leer. */}
+      {/* El chat con la farmacia (2026-10-12), con los sin leer. Sin ficha
+          todavía no hay Inicio con sus accesos: las sucursales van aquí. */}
       {conFicha ? (
-        <Grupo pie="Te responde el equipo de Farmacia Salud en el horario de las sucursales.">
+        <Grupo titulo="Ayuda y chat" pie="Te responde el equipo de Farmacia Salud en el horario de las sucursales.">
           <FilaAccion sf="bubble.left.and.bubble.right.fill" texto="Pregúntale a la farmacia" insignia={Number(resumen?.chat_sin_leer) || 0}
             alTocar={() => navegar('/chat')} />
         </Grupo>
-      ) : null}
+      ) : (
+        <Grupo titulo="Ayuda">
+          <FilaAccion sf="mappin.and.ellipse" texto="Nuestras sucursales" alTocar={() => navegar('/sucursales')} />
+        </Grupo>
+      )}
 
-      <Grupo>
-        {resumen && !resumen.pendiente ? (
-          <FilaAccion sf="person.2.fill" texto="Invitar a un amigo · 50 puntos" alTocar={() => navegar('/invitar')} />
+      <Grupo titulo="Legal y privacidad" pie={conFicha ? 'Si quitas el programa, tu saldo queda en pausa; no se pierde.' : undefined}>
+        {conFicha ? (
+          <FilaInterruptor titulo="Programa de puntos" detalle={c?.textos?.programa}
+            valor={valorDe('programa', c?.programa !== false)} alCambiar={(v) => permiso('programa', v)} color={t.color.magenta} />
         ) : null}
-        {resumen && !resumen.pendiente ? (
-          <FilaAccion sf="bag.fill" texto="Mis reservas" alTocar={() => navegar('/reservas')} />
-        ) : null}
-        {resumen && !resumen.pendiente ? (
-          <FilaAccion sf="doc.text.fill" texto="Mis facturas" alTocar={() => navegar('/facturas')} />
-        ) : null}
-        {resumen && !resumen.pendiente ? (
-          <FilaAccion sf="pills.fill" texto="Mis tratamientos" alTocar={() => navegar('/tratamientos')} />
-        ) : null}
-        {resumen && !resumen.pendiente ? (
-          <FilaMayorista m={resumen.mayorista} pedir={pedir} alCambiar={() => cargar({ forzar: true })} />
-        ) : null}
-        <FilaAccion sf="mappin.and.ellipse" texto="Nuestras sucursales" alTocar={() => navegar('/sucursales')} />
-        {resumen?.wallet_serial && walletDisponible() ? (
-          <FilaAccion sf="wallet.pass.fill" texto={enWallet ? 'Ver mi tarjeta en Apple Wallet' : 'Agregar mi tarjeta a Apple Wallet'}
-            alTocar={() => wallet()} />
-        ) : null}
-        {googleWalletDisponible(resumen) ? (
-          <FilaAccion sf="wallet.pass.fill" texto="Agregar mi tarjeta a Google Wallet" alTocar={async () => {
-            const enPrueba = !!resumen?.prueba && prueba.activo;
-            if (!(await agregarAGoogleWallet(pedirW, enPrueba ? prueba.nivel : null))) {
-              Alert.alert('No se pudo preparar la tarjeta', 'Revisa tu conexión e intenta de nuevo.');
-            }
-          }} />
-        ) : null}
-        {resumen?.wallet_serial && walletDisponible() && enWallet ? (
-          <FilaAccion sf="arrow.clockwise" texto="Volver a agregar la tarjeta a Wallet" alTocar={() => wallet({ abrir: false })} />
-        ) : null}
+        <FilaAccion sf="doc.text.fill" texto="Reglamento del programa" alTocar={() => navegar('/legal?doc=reglamento')} />
+        <FilaAccion sf="hand.raised.fill" texto="Aviso de privacidad" alTocar={() => navegar('/legal?doc=privacidad')} />
       </Grupo>
 
       {/* Modo de prueba: sólo la cuenta de prueba. Ver la tarjeta, el nivel, el
@@ -381,11 +388,6 @@ export default function Cuenta() {
         </Grupo>
         </>
       ) : null}
-
-      <Grupo>
-        <FilaAccion sf="doc.text.fill" texto="Reglamento del programa" alTocar={() => navegar('/legal?doc=reglamento')} />
-        <FilaAccion sf="hand.raised.fill" texto="Aviso de privacidad" alTocar={() => navegar('/legal?doc=privacidad')} />
-      </Grupo>
 
       <Grupo>
         <FilaAccion texto="Cerrar sesión" flecha={false} alTocar={salir} />

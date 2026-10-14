@@ -2,11 +2,17 @@
 // (2026-10-06: el usuario no quería que abrieran el navegador). Es la misma
 // página publicada en el portal —una sola fuente de verdad, la que se archiva
 // como prueba del consentimiento—, en una vista web sin barra ni direcciones.
+//
+// Android (2026-10-14): abrir cualquiera de los dos CERRABA la app. Allá la
+// misma página se baja y se pinta con texto nativo (componentes/DocumentoLegal,
+// donde está el porqué); en iPhone sigue la vista web, que nunca falló.
 import { useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import { Vacio } from '../componentes/ui';
+import DocumentoLegal from '../componentes/DocumentoLegal';
+import { colorSistema } from '../componentes/sistema';
 import { useTema } from '../tema/tema';
 
 const DOCUMENTOS = {
@@ -20,6 +26,14 @@ export default function Legal() {
   const d = DOCUMENTOS[doc] ?? DOCUMENTOS.reglamento;
   const [error, setError] = useState(false);
   const fondo = t.oscuro ? '#121016' : '#FFFFFF';
+  if (Platform.OS === 'android') {
+    return (
+      <View style={{ flex: 1, backgroundColor: colorSistema.fondo }}>
+        <Stack.Screen options={{ title: d.titulo }} />
+        <DocumentoLegal url={d.url} />
+      </View>
+    );
+  }
   return (
     <View style={{ flex: 1, backgroundColor: fondo }}>
       <Stack.Screen options={{ title: d.titulo }} />

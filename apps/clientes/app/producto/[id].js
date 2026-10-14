@@ -160,7 +160,7 @@ export default function Producto() {
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text style={{ fontSize: 16, fontWeight: '600', color: colorSistema.texto }}>{nombreProducto(x.tipo)}</Text>
                     {ahorro >= 0.01 ? (
-                      <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.verdeTexto }}>Ahorras {dolares(ahorro)}{suyo ? '' : ' con tu tarjeta'}</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.verdeTexto }}>Ahorras {dolares(ahorro)}{suyo ? '' : ' con tu tarjeta de Puntos Salud'}</Text>
                     ) : null}
                     {suyo && x.precio_tuyo_sin_puntos ? (
                       <Text style={{ fontSize: 12, color: colorSistema.texto3 }}>A precio de personal no acumula puntos</Text>

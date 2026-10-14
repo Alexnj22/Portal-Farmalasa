@@ -34,13 +34,17 @@ export const BARRA_NATIVA = Platform.OS === 'ios'
  * porque los colores siguen el modo oscuro: quien la usa ya se repinta con
  * `useColorScheme`.
  */
-export function barraAndroid() {
+// `principal` (2026-10-14, Material 3 Expressive): las pantallas raíz de cada
+// pestaña llevan el título ENFATIZADO —Headline Small en peso fuerte, 26 sp—;
+// las de adentro, el Title Large enfatizado (22 sp, medio).
+export function barraAndroid(principal = false) {
   return {
     headerShadowVisible: false,
     headerStyle: { backgroundColor: colorSistema.fondo },
     headerTitleAlign: 'left',
-    // Title Large de Material 3: 22 sp, regular.
-    headerTitleStyle: { color: colorSistema.texto, fontSize: 22, fontWeight: '400' },
+    headerTitleStyle: principal
+      ? { color: colorSistema.texto, fontSize: 26, fontWeight: '700' }
+      : { color: colorSistema.texto, fontSize: 22, fontWeight: '500' },
     contentStyle: { backgroundColor: colorSistema.fondo },
   };
 }
@@ -52,7 +56,7 @@ export default function PilaDePestana({ titulo }) {
   if (ANDROID) {
     return (
       <View style={{ flex: 1, backgroundColor: colorSistema.fondo }}>
-        <Stack screenOptions={barraAndroid()}>
+        <Stack screenOptions={barraAndroid(true)}>
           <Stack.Screen name="index" options={{ title: titulo }} />
         </Stack>
       </View>

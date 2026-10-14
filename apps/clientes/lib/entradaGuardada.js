@@ -4,7 +4,7 @@
 // ID / Touch ID: sin volver a escribir nada. La sesión sigue durando 180 días;
 // esto es para cuando se cerró (a propósito o porque venció).
 import * as SecureStore from 'expo-secure-store';
-import { nombreBiometria, verificar } from './bloqueo';
+import { conBiometria, nombreBiometria, verificar } from './bloqueo';
 
 const CLAVE = 'puntos_salud_entrada';
 
@@ -25,7 +25,7 @@ export async function entradaDisponible() {
 
 /** Pide Face ID y, si pasa, devuelve los datos guardados. */
 export async function datosConBiometria(biometria) {
-  const ok = await verificar(`Entrar a Puntos Salud con ${biometria}`);
+  const ok = await verificar(`Entrar a Puntos Salud ${conBiometria(biometria)}`);
   if (!ok) return null;
   const v = await SecureStore.getItemAsync(CLAVE).catch(() => null);
   try { return v ? JSON.parse(v) : null; } catch { return null; }

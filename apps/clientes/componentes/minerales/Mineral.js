@@ -37,11 +37,13 @@ export default function Mineral({ material, x, y, activa = true }) {
   const tam = useSharedValue({ width: 0, height: 0 });
   const t = useSharedValue(3);
   const cuadro = useSharedValue(0);
+  // El reloj del material se publica a 30 cuadros por segundo en los DOS
+  // sistemas (2026-10-14, «se calienta»): en un iPhone con ProMotion corría a
+  // 120 y el shader entero se recalculaba 120 veces por segundo para que unos
+  // destellos titilen. Se acumula y se publica cada 1/30 s; el lienzo sólo se
+  // redibuja cuando cambia `t` (o la inclinación, que va por su lado).
   const reloj = useFrameCallback((f) => {
     const paso = Math.min(0.05, (f.timeSincePreviousFrame ?? 16) / 1000);
-    if (!ANDROID) { t.value += paso; return; }
-    // Android: se acumula y se publica cada 1/30 s (cada dos cuadros a 60 Hz,
-    // cada cuatro a 120): el lienzo sólo se redibuja cuando cambia `t`.
     cuadro.value += paso;
     if (cuadro.value >= 0.032) { t.value += cuadro.value; cuadro.value = 0; }
   }, false);

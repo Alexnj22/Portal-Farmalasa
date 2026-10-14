@@ -139,7 +139,7 @@ export default function Catalogo() {
         })}
       </ScrollView>
       {/* Debajo de las categorías (usuario, 2026-10-07: «la categoría siempre abajo del banner»). */}
-      {!q ? <FilaProductos titulo="Mayor ahorro con tu tarjeta" sf="tag.fill" productos={ahorro} /> : null}
+      {!q ? <FilaProductos titulo="Mayor ahorro con tu tarjeta de Puntos Salud" sf="tag.fill" productos={ahorro} /> : null}
       {!q ? <FilaProductos titulo="Vistos recientemente" sf="clock.arrow.circlepath" productos={vistos}
         accion={{ texto: 'Limpiar', alTocar: () => { olvidarVistos(); setVistos([]); } }} /> : null}
       <Seccion>{q ? `Resultados para «${q}»` : 'Lo más vendido'}</Seccion>

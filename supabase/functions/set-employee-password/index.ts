@@ -1,7 +1,7 @@
 // supabase/functions/set-employee-password/index.ts
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { anotarAccionDeCuenta, getCorsHeaders, permisoDeModulo, puedeTocarCuentaDe, requireActiveEmployeeUser } from "../_shared/security.ts";
 
 // Contraseña temporal aleatoria (sin caracteres ambiguos) para resets.
 // Reemplaza los valores triviales '1234'/'123456' que permitían tomar cuentas
@@ -91,6 +91,16 @@ Deno.serve(async (req: Request) => {
     const employee = rows[0];
     if (employee.status && employee.status !== "ACTIVO") return json({ ok: false, error: "EMPLOYEE_INACTIVE", details: "Empleado dado de baja." });
 
+    // No se le cambia la contraseña a un cargo de rango mayor (2026-10-14).
+    // Ver `puedeTocarCuentaDe`: el permiso de editar Personal no alcanza.
+    const alcance = await puedeTocarCuentaDe(admin, caller.id, employee.id);
+    if (alcance.roto) return json({ ok: false, error: "PERMISSION_CHECK_FAILED", details: alcance.roto });
+    if (!alcance.puede) {
+      await anotarAccionDeCuenta(admin, caller, "CLAVE_RECHAZADA_POR_RANGO", employee.id,
+        { username, rango_quien: alcance.rangoCaller, rango_de: alcance.rangoTarget }, "WARNING");
+      return json({ ok: false, error: "INSUFFICIENT_PERMISSIONS", details: "No puedes cambiar la contraseña de un cargo superior al tuyo." });
+    }
+
     // En un reset (o creación) generamos una contraseña temporal aleatoria que
     // se devuelve SOLO al admin autorizado para que se la comunique al empleado.
     const tempPassword = randomTempPassword();
@@ -116,7 +126,15 @@ Deno.serve(async (req: Request) => {
       // La metadata SÍ se refresca: el usuario y el código pueden haber
       // cambiado en el alta, y dejarlos viejos es el desfase de siempre. Lo
       // único que no se toca es la contraseña.
-      if (conservarLaSuya && metaAnterior.must_change_password === false) {
+      // «La eligió ella» sale del `app_metadata`, que el navegador NO puede
+      // escribir (2026-10-14). `user_metadata.must_change_password` sí lo
+      // puede escribir la propia sesión: con `updateUser({data:…})` alguien se
+      // la ponía en `false` y esta función le conservaba la temporal.
+      // `cambio_de_clave = 'primer_acceso'` lo deja la guardia de la base
+      // cuando la contraseña la puso otro, y lo quita cuando la cambia ella.
+      const appAnterior = (existingAuth.user.app_metadata ?? {}) as Record<string, unknown>;
+      const laEligioElla = appAnterior.cambio_de_clave !== "primer_acceso" && metaAnterior.must_change_password === false;
+      if (conservarLaSuya && laEligioElla) {
         const { error: metaErr } = await admin.auth.admin.updateUserById(employee.id, {
           user_metadata: { ...metaAnterior, username, code: employee.code },
         });
@@ -164,6 +182,8 @@ Deno.serve(async (req: Request) => {
 
     // Devolver la temporal sólo cuando la generamos nosotros (reset o creación).
     const generated = isResetRequest || !existingAuth?.user;
+    await anotarAccionDeCuenta(admin, caller, generated ? "CLAVE_TEMPORAL_ASIGNADA" : "CLAVE_ASIGNADA", employee.id,
+      { username, creada: !existingAuth?.user }, "WARNING");
     return json({ ok: true, ...(generated ? { tempPassword } : {}) });
     
   } catch (e) {

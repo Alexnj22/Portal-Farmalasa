@@ -15,7 +15,7 @@
 // CLAUDE.md — depende de QUIÉN llama, no de a qué circuito pertenece.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { anotarAccionDeCuenta, getCorsHeaders, permisoDeModulo, puedeTocarCuentaDe, requireActiveEmployeeUser } from "../_shared/security.ts";
 
 const DOMINIO = "farmalasa.app";
 
@@ -76,6 +76,13 @@ Deno.serve(async (req: Request) => {
     if (!rows?.length) return json({ ok: false, error: "EMPLOYEE_NOT_FOUND" });
 
     const empleado = rows[0];
+
+    // El usuario ES la credencial: renombrarlo es tocar la cuenta. Mismo freno
+    // que cambiar la contraseña (2026-10-14): no sobre un cargo de rango mayor.
+    const alcance = await puedeTocarCuentaDe(admin, caller.id, empleado.id);
+    if (alcance.roto) return json({ ok: false, error: "PERMISSION_CHECK_FAILED", details: alcance.roto });
+    if (!alcance.puede)
+      return json({ ok: false, error: "INSUFFICIENT_PERMISSIONS", details: "No puedes cambiar el usuario de un cargo superior al tuyo." });
     const anterior = (empleado.username || "").toLowerCase();
     // Nada que hacer no es un fallo: quien llama pide un estado final, no un acto.
     if (anterior === nuevo) return json({ ok: true, sin_cambio: true, username: nuevo });
@@ -142,6 +149,8 @@ Deno.serve(async (req: Request) => {
     // Las sesiones abiertas NO se cierran a propósito: el JWT identifica por
     // uuid y sigue siendo válido, así que la persona no pierde lo que esté
     // haciendo. El usuario nuevo lo necesita recién la próxima vez que entre.
+    await anotarAccionDeCuenta(admin, caller, "USUARIO_RENOMBRADO", empleado.id,
+      { anterior: anterior || null, nuevo, cuenta_renombrada: !!cuenta?.user });
     return json({
       ok: true,
       username: nuevo,

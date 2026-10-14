@@ -6,7 +6,7 @@
 // de una baja, y desde el cron apply-scheduled-employee-events (vía ADMIN_INVOKE_SECRET).
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { anotarAccionDeCuenta, permisoDeModulo, puedeTocarCuentaDe, requireActiveEmployeeUser } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -91,6 +91,15 @@ Deno.serve(async (req: Request) => {
     if (action === "disable" && caller && caller.id === employeeId)
       return json({ ok: false, error: "CANNOT_DISABLE_SELF" });
 
+    // No se bloquea —ni se desbloquea— la cuenta de un cargo de rango mayor
+    // (2026-10-14). El cron entra con el secreto y no tiene `caller`: aplica
+    // una baja que alguien con permiso ya decidió.
+    if (caller) {
+      const alcance = await puedeTocarCuentaDe(admin, caller.id, employeeId);
+      if (alcance.roto) return json({ ok: false, error: "PERMISSION_CHECK_FAILED", details: alcance.roto });
+      if (!alcance.puede) return json({ ok: false, error: "INSUFFICIENT_PERMISSIONS", details: "No puedes cambiar el acceso de un cargo superior al tuyo." });
+    }
+
     const banDuration = action === "disable" ? "876000h" : "none";
     const adminHeaders = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
 
@@ -114,34 +123,62 @@ Deno.serve(async (req: Request) => {
       touched++;
     }
 
-    // 2. Cuentas de carné/kiosco @staff.local (best-effort; ensure_user_by_code
-    // ya rechaza INACTIVE, esto solo cierra sesiones/refresh tokens residuales)
-    try {
-      const { data: empRows } = await admin.from("employees").select("code, kiosk_pin").eq("id", employeeId).limit(1);
-      const code = empRows?.[0]?.code?.trim();
-      const pin = empRows?.[0]?.kiosk_pin?.trim() || (code ? await kioskPinFromCode(code) : null);
-      // La cuenta `<número>@staff.local` se CIERRA con la baja pero no se
-      // vuelve a abrir al recontratar: desde el 2026-10-14 nadie entra con el
-      // número a secas (ver `ensure_user_by_code`), y reabrirla devolvería una
-      // cuenta cuya contraseña es el número de vendedor.
-      const emails = [...new Set([
-        code && action === "disable" ? `${code.toLowerCase()}@staff.local` : null,
-        pin ? `${pin.toLowerCase()}@staff.local` : null,
-      ].filter(Boolean))] as string[];
+    // 2. Cuentas de carné/kiosco @staff.local. Cada fallo se ANOTA (2026-10-14):
+    // antes el `catch {}` se tragaba el bloque entero y un bloqueo que no entró
+    // se contaba igual en `touched`, o sea que la respuesta decía «bloqueada»
+    // sobre una cuenta que seguía abierta.
+    const fallidas: string[] = [];
+    const { data: empRows, error: empErr } = await admin.from("employees").select("code, kiosk_pin").eq("id", employeeId).limit(1);
+    if (empErr) fallidas.push(`ficha: ${empErr.message}`);
+    const code = empRows?.[0]?.code?.trim();
+    const pin = empRows?.[0]?.kiosk_pin?.trim() || (code ? await kioskPinFromCode(code) : null);
+    // La cuenta `<número>@staff.local` se CIERRA con la baja pero no se
+    // vuelve a abrir al recontratar: desde el 2026-10-14 nadie entra con el
+    // número a secas (ver `ensure_user_by_code`), y reabrirla devolvería una
+    // cuenta cuya contraseña es el número de vendedor.
+    const emails = [...new Set([
+      code && action === "disable" ? `${code.toLowerCase()}@staff.local` : null,
+      pin ? `${pin.toLowerCase()}@staff.local` : null,
+    ].filter(Boolean))] as string[];
 
-      for (const email of emails) {
+    for (const email of emails) {
+      try {
         const res = await fetch(`${supabaseUrl}/auth/v1/admin/users?filter=${encodeURIComponent(email)}`, { headers: adminHeaders });
-        if (!res.ok) continue;
+        if (!res.ok) { fallidas.push(`${email}: búsqueda ${res.status}`); continue; }
         const list = await res.json().catch(() => null);
         const match = (list?.users || []).find((u: { email?: string }) => u.email === email);
-        if (match?.id) {
-          await admin.auth.admin.updateUserById(match.id, { ban_duration: banDuration });
-          if (action === "disable") await revokeSessions(match.id);
-          touched++;
-        }
+        if (!match?.id) continue;
+        const { error: banErr } = await admin.auth.admin.updateUserById(match.id, { ban_duration: banDuration });
+        if (banErr) { fallidas.push(`${email}: ${banErr.message}`); continue; }
+        if (action === "disable") await revokeSessions(match.id);
+        touched++;
+      } catch (e) {
+        fallidas.push(`${email}: ${String((e as Error)?.message ?? e)}`);
       }
-    } catch { /* best-effort */ }
+    }
 
+    // 3. El carné de PAPEL del día (2026-10-14). Vale hasta medianoche y su
+    // cuenta (`carne-<id>@staff.local`) no la tocaba la baja: quien se iba con
+    // el papel en el bolsillo seguía entrando el resto del día.
+    if (action === "disable") {
+      const { data: papeles, error: papErr } = await admin.from("carnes_temporales")
+        .update({ anulado_el: new Date().toISOString() })
+        .eq("employee_id", employeeId).is("anulado_el", null)
+        .select("auth_user_id");
+      if (papErr) fallidas.push(`carné de papel: ${papErr.message}`);
+      for (const p of (papeles ?? []) as { auth_user_id: string | null }[]) {
+        if (!p.auth_user_id) continue;
+        const { error: apErr } = await admin.rpc("apagar_cuenta_de_carne_temporal", { p_auth_user_id: p.auth_user_id });
+        if (apErr) fallidas.push(`carné de papel: ${apErr.message}`);
+        else touched++;
+      }
+    }
+
+    if (caller) {
+      await anotarAccionDeCuenta(admin, caller, action === "disable" ? "ACCESO_CERRADO" : "ACCESO_REABIERTO", employeeId,
+        { cuentas: touched, fallidas }, fallidas.length ? "CRITICAL" : "WARNING");
+    }
+    if (fallidas.length) return json({ ok: false, error: "PARCIAL", details: fallidas.join(" · "), accounts: touched });
     if (touched === 0) return json({ ok: true, skipped: "NO_AUTH_USER" });
     return json({ ok: true, action, accounts: touched });
   } catch (e) {

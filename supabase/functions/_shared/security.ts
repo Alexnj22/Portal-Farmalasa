@@ -268,3 +268,63 @@ export async function permisoDeModulo(
     roto: null,
   };
 }
+
+// ── ¿Puede quien llama tocar la CUENTA de esta persona? (2026-10-14) ─────────
+//
+// Cambiar la contraseña, renombrar el usuario, bloquear la cuenta o emitir un
+// carné de papel son el mismo poder: abren —o cierran— la sesión de otro. Las
+// cuatro funciones pedían sólo `staff_list.can_edit`, que tienen cargos de
+// rango 3 (Supervisor/a de Ventas) y hasta la cuenta de pruebas (rango 0). O
+// sea que cualquiera de ellos podía ponerle una contraseña conocida al Gerente
+// General y entrar como él, sin aviso y sin dejar rastro.
+//
+// La regla: no se toca la cuenta de alguien con RANGO MAYOR al propio. El
+// rango es el del organigrama (`rango_de_empleado`, el mayor de los dos
+// cargos), el mismo que ya usa la base. Uno mismo siempre puede.
+//
+// Igual que `permisoDeModulo`, separa «no pude averiguarlo» (`roto`) de «no
+// podés»: lo primero se reintenta, lo segundo es una decisión.
+export async function puedeTocarCuentaDe(
+  admin: { rpc: (fn: string, args: Record<string, unknown>) => any },
+  callerId: string,
+  targetId: string,
+): Promise<{ puede: boolean; roto: string | null; rangoCaller?: number; rangoTarget?: number }> {
+  if (callerId === targetId) return { puede: true, roto: null };
+  const [a, b] = await Promise.all([
+    admin.rpc("rango_de_empleado", { p_employee_id: callerId }),
+    admin.rpc("rango_de_empleado", { p_employee_id: targetId }),
+  ]);
+  if (a.error || b.error) {
+    const msg = a.error?.message || b.error?.message;
+    console.error(`[puedeTocarCuentaDe] ${msg}`);
+    return { puede: false, roto: "No se pudo comparar los cargos." };
+  }
+  const rangoCaller = Number(a.data ?? 0);
+  const rangoTarget = Number(b.data ?? 0);
+  return { puede: rangoTarget <= rangoCaller, roto: null, rangoCaller, rangoTarget };
+}
+
+// ── La firma de quien tocó una cuenta ────────────────────────────────────────
+//
+// Estas acciones las hace el servidor con la llave de servicio, así que el
+// navegador no las anota: si no se anotan acá, no quedan en ningún lado. Un
+// fallo al anotar NO deshace la acción (ya está hecha) pero se dice en el log.
+export async function anotarAccionDeCuenta(
+  admin: { from: (t: string) => any },
+  quien: { id: string; name?: string | null },
+  accion: string,
+  sobre: string,
+  detalle: Record<string, unknown> = {},
+  severidad: "INFO" | "WARNING" | "CRITICAL" = "WARNING",
+): Promise<void> {
+  const { error } = await admin.from("audit_logs").insert({
+    action: accion,
+    target_id: sobre,
+    user_id: quien.id,
+    user_name: quien.name ?? null,
+    source: "ADMIN_PANEL",
+    severity: severidad,
+    details: detalle,
+  });
+  if (error) console.error(`[anotarAccionDeCuenta] ${accion}: ${error.message}`);
+}

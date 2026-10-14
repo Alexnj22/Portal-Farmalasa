@@ -38,10 +38,19 @@ const SELECT_COLS = `
 const esCorreoDeCarneTemporal = (email: string | undefined | null) =>
   typeof email === "string" && email.startsWith("carne-") && email.endsWith("@staff.local");
 
+// La IP la pone el borde de la red, no quien llama (2026-10-14). El PRIMER
+// valor de `x-forwarded-for` lo escribe el cliente si quiere: cambiándolo en
+// cada intento, el tope de 15 fallos no se llenaba nunca. `cf-connecting-ip`
+// lo sobrescribe Cloudflare y `x-real-ip` el proxy; el último salto del
+// `x-forwarded-for` es el que agregó el proxy, no el cliente.
 function getClientIp(req: Request): string {
+  const cf = req.headers.get("cf-connecting-ip");
+  if (cf) return cf.trim();
+  const real = req.headers.get("x-real-ip");
+  if (real) return real.trim();
   const fwd = req.headers.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0].trim();
-  return req.headers.get("x-real-ip") ?? "unknown";
+  if (fwd) return fwd.split(",").map((x) => x.trim()).filter(Boolean).pop() ?? "unknown";
+  return "unknown";
 }
 
 async function isRateLimited(ip: string): Promise<boolean> {
@@ -58,7 +67,12 @@ async function isRateLimited(ip: string): Promise<boolean> {
 
 function recordFailure(ip: string): void {
   if (!admin) return;
-  admin.from("login_rate_limit").insert({ client_ip: ip }).then(() => {});
+  // Sin `await` a propósito (no demora la respuesta), pero el error se dice:
+  // un tope que no anota es un tope que no existe.
+  admin.from("login_rate_limit").insert({ client_ip: ip })
+    .then(({ error }: { error: { message: string } | null }) => {
+      if (error) console.error("[ensure_user_by_code] login_rate_limit:", error.message);
+    });
 }
 
 // ── Identidad de quien ya tiene sesión ───────────────────────────────────────
@@ -297,7 +311,10 @@ Deno.serve(async (req: Request) => {
     // sabe ni se puede saber cuál es el secreto, sólo si alguien lo reconoce.
     let porCarneTemporal = false;
     if (!dbError && !rows?.length) {
-      const { data: quien } = await admin.rpc("resolver_carne_temporal", { p_valor: raw });
+      const { data: quien, error: errCarne } = await admin.rpc("resolver_carne_temporal", { p_valor: raw });
+      // Una falla de la base NO es un carné inválido: contestar NOT_FOUND la
+      // disfrazaba de «escaneaste mal» y además sumaba un intento fallido.
+      if (errCarne) return json({ ok: false, error: "DB_ERROR", details: errCarne.message });
       if (quien) {
         porCarneTemporal = true;
         ({ data: rows, error: dbError } = await admin
@@ -327,7 +344,8 @@ Deno.serve(async (req: Request) => {
     // endpoint en una fábrica de cuentas.
     if (porCarneTemporal) {
       const email = `carne-${employee.id}@staff.local`;
-      const { data: cuenta } = await admin.rpc("cuenta_de_carne_temporal", { p_email: email });
+      const { data: cuenta, error: errCuenta } = await admin.rpc("cuenta_de_carne_temporal", { p_email: email });
+      if (errCuenta) return json({ ok: false, error: "DB_ERROR", details: errCuenta.message });
       if (!cuenta) {
         recordFailure(clientIp);
         return json({ ok: false, error: "NOT_FOUND" });
@@ -358,10 +376,21 @@ Deno.serve(async (req: Request) => {
     // El uid de estas cuentas lo genera Auth, así que no coincide con employees.id:
     // sin esta fila, las funciones auth_* no pueden resolver al empleado y la cuenta
     // queda sin permisos. Falla cerrada, nunca abierta.
-    if (isNewUser && createRes.data?.user?.id) {
+    //
+    // Y también cuando la cuenta YA existía (2026-10-14): si la primera vez el
+    // `createUser` entró pero el enlace falló, el reintento caía en «already
+    // exists», se saltaba esto y la persona entraba SIN permisos para siempre.
+    // El upsert es idempotente, así que repetirlo no cuesta nada.
+    let authId: string | null = createRes.data?.user?.id ?? null;
+    if (!authId) {
+      const { data: existente, error: errExiste } = await admin.rpc("cuenta_de_carne_temporal", { p_email: email });
+      if (errExiste) return json({ ok: false, error: "DB_ERROR", details: errExiste.message });
+      authId = (existente as string | null) ?? null;
+    }
+    if (authId) {
       const { error: linkErr } = await admin
         .from("employee_auth_accounts")
-        .upsert({ auth_user_id: createRes.data.user.id, employee_id: employee.id },
+        .upsert({ auth_user_id: authId, employee_id: employee.id },
                 { onConflict: "auth_user_id" });
       if (linkErr) return json({ ok: false, error: "LINK_ERROR", details: linkErr.message });
     }
